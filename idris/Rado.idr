@@ -173,12 +173,29 @@ ex = pairUp $ mapMaybe parseAction inputWords
 
 ----------------------------------------
 
-Cast State (Fin 4) where
+Cast State (Fin 1) where
   cast Q1 = FZ
-  cast Q2 = FS FZ
-  cast Q3 = FS $ FS FZ
-  cast Q4 = FS $ FS $ FS FZ
   cast _  = FZ
+
+Cast State (Fin 2) where
+  cast Q2 = FS FZ
+  cast x  = weaken $ cast x
+
+Cast State (Fin 3) where
+  cast Q3 = FS $ FS FZ
+  cast x  = weaken $ cast x
+
+Cast State (Fin 4) where
+  cast Q4 = FS $ FS $ FS FZ
+  cast x  = weaken $ cast x
+
+Cast State (Fin 5) where
+  cast Q5 = FS $ FS $ FS $ FS FZ
+  cast x  = weaken $ cast x
+
+Cast State (Fin 6) where
+  cast Q6 = FS $ FS $ FS $ FS $ FS FZ
+  cast x  = weaken $ cast x
 
 Cast BWAction Instruction where
   cast [w, b] color =
