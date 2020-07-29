@@ -64,8 +64,11 @@ exec prog state (len ** (tape, pos)) =
   in
   (applyAction (len ** (tape, pos)) color shift, nextState)
 
+MachineResult : Type
+MachineResult = (Nat, Tape)
+
 partial
-runToHalt : Nat -> Program -> State -> Tape -> (Nat, Tape)
+runToHalt : Nat -> Program -> State -> Tape -> MachineResult
 runToHalt count prog state tape =
   let (nextTape, nextState) = exec prog state tape in
     case nextState of
@@ -73,7 +76,7 @@ runToHalt count prog state tape =
       _  => runToHalt (S count) prog nextState nextTape
 
 partial
-runOnBlankTape : Program -> (Nat, Tape)
+runOnBlankTape : Program -> MachineResult
 runOnBlankTape prog = runToHalt 1 prog Q1 (Z ** ([W], FZ))
 
 ----------------------------------------
