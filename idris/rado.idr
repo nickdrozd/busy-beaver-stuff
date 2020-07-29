@@ -75,3 +75,57 @@ runToHalt count prog state tape =
 partial
 runOnBlankTape : Program -> (Nat, Tape)
 runOnBlankTape prog = runToHalt 1 prog Q1 (Z ** ([W], FZ))
+
+----------------------------------------
+
+BB2 : Program
+
+BB2 Q1 W = ((B, R), Q2)
+BB2 Q1 B = ((B, L), Q2)
+
+BB2 Q2 W = ((B, L), Q1)
+BB2 Q2 B = ((B, R), Q0)
+
+BB2 _  c = ((c, L), Q0)
+
+-- λΠ> runOnBlankTape BB2
+-- (6, MkDPair 3 ([B, B, B, B], FS (FS FZ)))
+
+----------------------------------------
+
+BB3 : Program
+
+BB3 Q1 W = ((B, R), Q2)
+BB3 Q1 B = ((B, R), Q0)
+
+BB3 Q2 W = ((B, L), Q2)
+BB3 Q2 B = ((W, R), Q3)
+
+BB3 Q3 W = ((B, L), Q3)
+BB3 Q3 B = ((B, L), Q1)
+
+BB3 _  c = ((c, L), Q0)
+
+-- λΠ> runOnBlankTape BB3
+-- (21, MkDPair 4 ([B, B, B, B, B], FS (FS FZ)))
+
+----------------------------------------
+
+BB4 : Program
+
+BB4 Q1 W = ((B, R), Q2)
+BB4 Q1 B = ((B, L), Q2)
+
+BB4 Q2 W = ((B, L), Q1)
+BB4 Q2 B = ((W, L), Q3)
+
+BB4 Q3 W = ((B, R), Q0)
+BB4 Q3 B = ((B, L), Q4)
+
+BB4 Q4 W = ((B, R), Q4)
+BB4 Q4 B = ((W, R), Q1)
+
+BB4 _  c = ((c, L), Q0)
+
+-- λΠ> runOnBlankTape BB4
+-- (107, MkDPair 13 ([B, W, B, B, B, B, B, B, B, B, B, B, B, B], FS FZ))
