@@ -21,8 +21,11 @@ data State = Q0 | -- the halt state
 Action : Type
 Action = (Color, Shift, State)
 
+Instruction : Type
+Instruction = Color -> Action
+
 Program : Type
-Program = State -> Color -> Action
+Program = State -> Instruction
 
 Tape : Type
 Tape = (len : Nat ** (Vect (S len) Color, Fin (S len)))
@@ -165,12 +168,12 @@ parseAction action = let actionIndex = strIndex action in do
   state <- parseState $ actionIndex 2
   Just (color, shift, state)
 
-pairUp : List ty -> Maybe (List (ty, ty))
+pairUp : List ty -> Maybe (List (Vect 2 ty))
 pairUp [ ] = Just []
 pairUp [_] = Nothing
 pairUp (x1 :: x2 :: xs) = do
   rest <- pairUp xs
-  Just $ (x1, x2) :: rest
+  Just $ [x1, x2] :: rest
 
 -- example
 
@@ -182,8 +185,23 @@ inputWords : List String
 inputWords = words rawInput
 
 partial
-x : Maybe (List (Action, Action))
-x = pairUp $ mapMaybe parseAction inputWords
+ex : Maybe (List (Vect 2 Action))
+ex = pairUp $ mapMaybe parseAction inputWords
 
-makeInstruction : (Action, Action) -> State -> Color -> Action
-makeInstruction (b, w) = ?asdf
+-- ...
+
+Cast State (Fin 4) where
+  cast Q1 = FZ
+  cast Q2 = FS FZ
+  cast Q3 = FS $ FS FZ
+  cast Q4 = FS $ FS $ FS FZ
+  cast _  = FZ
+
+Cast (Vect 2 Action) Instruction where
+  cast [w, b] color =
+    case color of
+      W => w
+      B => b
+
+makeProgram : (Vect 4 (Vect 2 Action)) -> Program
+makeProgram actions state = cast $ index (cast state) actions
