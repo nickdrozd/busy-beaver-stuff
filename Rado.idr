@@ -197,5 +197,41 @@ BB4Literal = [
 BB4 : Program
 BB4 = makeProgram BB4Literal
 
+bb4 : Program
+bb4 Q1 W = (B, R, Q2)
+bb4 Q1 B = (B, L, Q2)
+bb4 Q2 W = (B, L, Q1)
+bb4 Q2 B = (W, L, Q3)
+bb4 Q3 W = (B, R, Q0)
+bb4 Q3 B = (B, L, Q4)
+bb4 Q4 W = (B, R, Q4)
+bb4 Q4 B = (W, R, Q1)
+bb4 _  c = (c, L, Q0)
+
 -- λΠ> runOnBlankTape BB4
 -- (107, MkDPair 13 ([B, W, B, B, B, B, B, B, B, B, B, B, B, B], FS FZ))
+
+----------------------------------------
+
+Show Color where
+  show W = "0"
+  show B = "1"
+
+Show Shift where
+  show L = "L"
+  show R = "R"
+
+Show State where
+  show Q0 = "H"
+  show Q1 = "A"
+  show Q2 = "B"
+  show Q3 = "C"
+  show Q4 = "D"
+  show Q5 = "E"
+  show Q6 = "F"
+
+[ShowAction] Show Action where
+  show (color, shift, state) =
+    show color ++ show shift ++ show state
+
+-- show @{ShowAction} $ bb4 Q1 W
