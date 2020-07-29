@@ -137,13 +137,6 @@ BB4 _  c = (c, L, Q0)
 
 ----------------------------------------
 
-rawInput : String
-rawInput = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
-
-partial
-inputWords : List String
-inputWords = words rawInput
-
 parseColor : Char -> Maybe Color
 parseColor '0' = Just W
 parseColor '1' = Just B
@@ -172,4 +165,25 @@ parseAction action = let actionIndex = strIndex action in do
   state <- parseState $ actionIndex 2
   Just (color, shift, state)
 
--- mapMaybe parseAction inputWords
+pairUp : List ty -> Maybe (List (ty, ty))
+pairUp [ ] = Just []
+pairUp [_] = Nothing
+pairUp (x1 :: x2 :: xs) = do
+  rest <- pairUp xs
+  Just $ (x1, x2) :: rest
+
+-- example
+
+rawInput : String
+rawInput = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
+
+partial
+inputWords : List String
+inputWords = words rawInput
+
+partial
+x : Maybe (List (Action, Action))
+x = pairUp $ mapMaybe parseAction inputWords
+
+makeInstruction : (Action, Action) -> State -> Color -> Action
+makeInstruction (b, w) = ?asdf
