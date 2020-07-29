@@ -119,27 +119,6 @@ BB3 _  c = (c, L, Q0)
 
 ----------------------------------------
 
-BB4 : Program
-
-BB4 Q1 W = (B, R, Q2)
-BB4 Q1 B = (B, L, Q2)
-
-BB4 Q2 W = (B, L, Q1)
-BB4 Q2 B = (W, L, Q3)
-
-BB4 Q3 W = (B, R, Q0)
-BB4 Q3 B = (B, L, Q4)
-
-BB4 Q4 W = (B, R, Q4)
-BB4 Q4 B = (W, R, Q1)
-
-BB4 _  c = (c, L, Q0)
-
--- λΠ> runOnBlankTape BB4
--- (107, MkDPair 13 ([B, W, B, B, B, B, B, B, B, B, B, B, B, B], FS FZ))
-
-----------------------------------------
-
 parseColor : Char -> Maybe Color
 parseColor '0' = Just W
 parseColor '1' = Just B
@@ -188,7 +167,7 @@ partial
 ex : Maybe (List (Vect 2 Action))
 ex = pairUp $ mapMaybe parseAction inputWords
 
--- ...
+----------------------------------------
 
 Cast State (Fin 4) where
   cast Q1 = FZ
@@ -205,3 +184,18 @@ Cast (Vect 2 Action) Instruction where
 
 makeProgram : (Vect 4 (Vect 2 Action)) -> Program
 makeProgram actions state = cast $ index (cast state) actions
+
+----------------------------------------
+
+BB4Literal : Vect 4 (Vect 2 Action)
+BB4Literal = [
+  [(B, R, Q2), (B, L, Q2)],
+  [(B, L, Q1), (W, L, Q3)],
+  [(B, R, Q0), (B, L, Q4)],
+  [(B, R, Q4), (W, R, Q1)]]
+
+BB4 : Program
+BB4 = makeProgram BB4Literal
+
+-- λΠ> runOnBlankTape BB4
+-- (107, MkDPair 13 ([B, W, B, B, B, B, B, B, B, B, B, B, B, B], FS FZ))
