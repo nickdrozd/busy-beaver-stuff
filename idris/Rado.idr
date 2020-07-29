@@ -147,6 +147,10 @@ parseAction action = let actionIndex = strIndex action in do
   state <- parseState $ actionIndex 2
   Just (color, shift, state)
 
+-- n is 2; needs to be changed for more colors
+BWAction : Type
+BWAction = Vect 2 Action
+
 pairUp : List ty -> Maybe (List (Vect 2 ty))
 pairUp [ ] = Just []
 pairUp [_] = Nothing
@@ -164,7 +168,7 @@ inputWords : List String
 inputWords = words rawInput
 
 partial
-ex : Maybe (List (Vect 2 Action))
+ex : Maybe (List BWAction)
 ex = pairUp $ mapMaybe parseAction inputWords
 
 ----------------------------------------
@@ -176,18 +180,18 @@ Cast State (Fin 4) where
   cast Q4 = FS $ FS $ FS FZ
   cast _  = FZ
 
-Cast (Vect 2 Action) Instruction where
+Cast BWAction Instruction where
   cast [w, b] color =
     case color of
       W => w
       B => b
 
-makeProgram : (Vect 4 (Vect 2 Action)) -> Program
+makeProgram : (Cast State $ Fin n) => (Vect n BWAction) -> Program
 makeProgram actions state = cast $ index (cast state) actions
 
 ----------------------------------------
 
-BB4Literal : Vect 4 (Vect 2 Action)
+BB4Literal : Vect 4 BWAction
 BB4Literal = [
   [(B, R, Q2), (B, L, Q2)],
   [(B, L, Q1), (W, L, Q3)],
