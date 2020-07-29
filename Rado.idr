@@ -1,5 +1,7 @@
 import Data.Nat  -- comment out this line in Idris 1
+import Data.List
 import Data.Vect
+import Data.Strings
 
 %default total
 
@@ -132,3 +134,42 @@ BB4 _  c = (c, L, Q0)
 
 -- λΠ> runOnBlankTape BB4
 -- (107, MkDPair 13 ([B, W, B, B, B, B, B, B, B, B, B, B, B, B], FS FZ))
+
+----------------------------------------
+
+rawInput : String
+rawInput = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
+
+partial
+inputWords : List String
+inputWords = words rawInput
+
+parseColor : Char -> Maybe Color
+parseColor '0' = Just W
+parseColor '1' = Just B
+parseColor _   = Nothing
+
+parseShift : Char -> Maybe Shift
+parseShift 'L' = Just L
+parseShift 'R' = Just R
+parseShift _   = Nothing
+
+parseState : Char -> Maybe State
+parseState 'H' = Just Q0
+parseState 'A' = Just Q1
+parseState 'B' = Just Q2
+parseState 'C' = Just Q3
+parseState 'D' = Just Q4
+parseState 'E' = Just Q5
+parseState 'F' = Just Q6
+parseState _   = Nothing
+
+partial
+parseAction : String -> Maybe Action
+parseAction action = let actionIndex = strIndex action in do
+  color <- parseColor $ actionIndex 0
+  shift <- parseShift $ actionIndex 1
+  state <- parseState $ actionIndex 2
+  Just (color, shift, state)
+
+-- mapMaybe parseAction inputWords
