@@ -86,6 +86,31 @@ runOnBlankTape prog = runToHalt 1 prog Q1 (Z ** ([W], FZ))
 
 ----------------------------------------
 
+Show Color where
+  show W = "0"
+  show B = "1"
+
+Show Shift where
+  show L = "L"
+  show R = "R"
+
+Show State where
+  show Q0 = "H"
+  show Q1 = "A"
+  show Q2 = "B"
+  show Q3 = "C"
+  show Q4 = "D"
+  show Q5 = "E"
+  show Q6 = "F"
+
+[ShowAction] Show Action where
+  show (color, shift, state) =
+    show color ++ show shift ++ show state
+
+-- show @{ShowAction} $ bb4 Q1 W
+
+----------------------------------------
+
 BB2 : Program
 
 BB2 Q1 W = (B, R, Q2)
@@ -98,24 +123,6 @@ BB2 _  c = (c, L, Q0)
 
 -- λΠ> runOnBlankTape BB2
 -- (6, MkDPair 3 ([B, B, B, B], FS (FS FZ)))
-
-----------------------------------------
-
-BB3 : Program
-
-BB3 Q1 W = (B, R, Q2)
-BB3 Q1 B = (B, R, Q0)
-
-BB3 Q2 W = (B, L, Q2)
-BB3 Q2 B = (W, R, Q3)
-
-BB3 Q3 W = (B, L, Q3)
-BB3 Q3 B = (B, L, Q1)
-
-BB3 _  c = (c, L, Q0)
-
--- λΠ> runOnBlankTape BB3
--- (21, MkDPair 4 ([B, B, B, B, B], FS (FS FZ)))
 
 ----------------------------------------
 
@@ -163,15 +170,6 @@ partial
 partwayParse : String -> Maybe (List BWAction)
 partwayParse input = pairUp $ mapMaybe parseAction $ words input
 
--- example
-
-bb4input : String
-bb4input = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
-
-partial
-bb4parsed : Maybe (List BWAction)
-bb4parsed = partwayParse bb4input
-
 ----------------------------------------
 
 Cast State (Fin 1) where
@@ -209,6 +207,44 @@ makeProgram actions state = cast $ index (cast state) actions
 
 ----------------------------------------
 
+bb3input : String
+bb3input = "1RB   1RH   1LB   0RC   1LC   1LA"
+
+partial
+bb3parsed : Maybe (List BWAction)
+bb3parsed = partwayParse bb3input
+
+BB3Literal : Vect 3 BWAction
+BB3Literal = [
+  [(B, (R, Q2)), (B, (R, Q0))],
+  [(B, (L, Q2)), (W, (R, Q3))],
+  [(B, (L, Q3)), (B, (L, Q1))]]
+
+BB3 : Program
+BB3 = makeProgram BB3Literal
+
+-- λΠ> runOnBlankTape BB3
+-- (21, MkDPair 4 ([B, B, B, B, B], FS (FS FZ)))
+
+bb3 : Program
+bb3 Q1 W = (B, R, Q2)
+bb3 Q1 B = (B, R, Q0)
+bb3 Q2 W = (B, L, Q2)
+bb3 Q2 B = (W, R, Q3)
+bb3 Q3 W = (B, L, Q3)
+bb3 Q3 B = (B, L, Q1)
+bb3 _  c = (c, L, Q0)
+
+----------------------------------------
+
+bb4input : String
+bb4input = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
+
+partial
+bb4parsed : Maybe (List BWAction)
+bb4parsed = partwayParse bb4input
+
+
 BB4Literal : Vect 4 BWAction
 BB4Literal = [
   [(B, R, Q2), (B, L, Q2)],
@@ -218,6 +254,9 @@ BB4Literal = [
 
 BB4 : Program
 BB4 = makeProgram BB4Literal
+
+-- λΠ> runOnBlankTape BB4
+-- (107, MkDPair 13 ([B, W, B, B, B, B, B, B, B, B, B, B, B, B], FS FZ))
 
 bb4 : Program
 bb4 Q1 W = (B, R, Q2)
@@ -229,31 +268,3 @@ bb4 Q3 B = (B, L, Q4)
 bb4 Q4 W = (B, R, Q4)
 bb4 Q4 B = (W, R, Q1)
 bb4 _  c = (c, L, Q0)
-
--- λΠ> runOnBlankTape BB4
--- (107, MkDPair 13 ([B, W, B, B, B, B, B, B, B, B, B, B, B, B], FS FZ))
-
-----------------------------------------
-
-Show Color where
-  show W = "0"
-  show B = "1"
-
-Show Shift where
-  show L = "L"
-  show R = "R"
-
-Show State where
-  show Q0 = "H"
-  show Q1 = "A"
-  show Q2 = "B"
-  show Q3 = "C"
-  show Q4 = "D"
-  show Q5 = "E"
-  show Q6 = "F"
-
-[ShowAction] Show Action where
-  show (color, shift, state) =
-    show color ++ show shift ++ show state
-
--- show @{ShowAction} $ bb4 Q1 W
