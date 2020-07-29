@@ -158,18 +158,19 @@ pairUp (x1 :: x2 :: xs) = do
   rest <- pairUp xs
   Just $ [x1, x2] :: rest
 
+-- This gets about halfway.
+partial
+partwayParse : String -> Maybe (List BWAction)
+partwayParse input = pairUp $ mapMaybe parseAction $ words input
+
 -- example
 
-rawInput : String
-rawInput = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
+bb4input : String
+bb4input = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
 
 partial
-inputWords : List String
-inputWords = words rawInput
-
-partial
-ex : Maybe (List BWAction)
-ex = pairUp $ mapMaybe parseAction inputWords
+bb4parsed : Maybe (List BWAction)
+bb4parsed = partwayParse bb4input
 
 ----------------------------------------
 
