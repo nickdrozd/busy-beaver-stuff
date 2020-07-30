@@ -73,15 +73,17 @@ MachineResult : Type
 MachineResult = (Nat, Tape)
 
 partial
-runToHalt : Nat -> Program -> State -> Tape -> MachineResult
+runToHalt : Nat -> Program -> State -> Tape -> IO MachineResult
 runToHalt count prog state tape =
   let (nextTape, nextState) = exec prog state tape in
     case nextState of
-      Q0 => (count, nextTape)
-      _  => runToHalt (S count) prog nextState nextTape
+      Q0 => pure (count, nextTape)
+      _  => do
+        putStrLn $ "-> " ++ show count
+        runToHalt (S count) prog nextState nextTape
 
 partial
-runOnBlankTape : Program -> MachineResult
+runOnBlankTape : Program -> IO MachineResult
 runOnBlankTape prog = runToHalt 1 prog Q1 (Z ** ([W], FZ))
 
 ----------------------------------------
@@ -286,12 +288,20 @@ tm5 = makeProgram [
 
 ----------------------------------------
 
-Show Tape where
-  show (len ** _) = show len
+Eq Color where
+  (==) B B = True
+  (==) W W = True
+  (==) _ _ = False
 
+ones : Vect k Color -> Nat
+ones xs = let (n ** _) = filter ((/=) W) xs in n
+
+Show Tape where
+  show (len ** (tape, pos)) = show (len, ones tape, S $ finToNat pos)
+
+partial
 main : IO ()
 main = do
-  let (count, tape) = runOnBlankTape bb4
-  putStrLn $ show count
-  putStrLn $ show tape
+  result <- runOnBlankTape tm5
+  putStrLn $ "\n*** " ++ show result
   pure ()
