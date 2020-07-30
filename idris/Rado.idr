@@ -290,6 +290,23 @@ tm5 = makeProgram [
 
 ----------------------------------------
 
+partial
+bb5parse : Maybe $ List BWAction
+bb5parse = partwayParse
+  "1RB   1LC   1RC   1RB   1RD   0LE   1LA   1LD   1RH   0LA"
+
+bb5 : Program
+bb5 = makeProgram [
+  [(B, (R, Q2)), (B, (L, Q3))],
+  [(B, (R, Q3)), (B, (R, Q2))],
+  [(B, (R, Q4)), (W, (L, Q5))],
+  [(B, (L, Q1)), (B, (L, Q4))],
+  [(B, (R, Q0)), (W, (L, Q1))]]
+
+-- 791146...
+
+----------------------------------------
+
 Eq Color where
   (==) B B = True
   (==) W W = True
@@ -304,6 +321,6 @@ Show Tape where
 partial
 main : IO ()
 main = do
-  result <- runOnBlankTape tm5
+  result <- runOnBlankTape bb5
   putStrLn $ "\n*** " ++ show result
   pure ()
