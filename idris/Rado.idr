@@ -1,7 +1,14 @@
-import Data.Nat  -- comment out this line in Idris 1
+-- Turing machine, along with some Busy Beaver programs
+
+-- works in Idris 2
+
+-- comment out these lines in Idris 1
+-------------------
+import Data.Nat
+import Data.Strings
+-------------------
 import Data.List
 import Data.Vect
-import Data.Strings
 
 %default total
 
@@ -127,6 +134,8 @@ BB2 _  c = (c, L, Q0)
 -- (6, MkDPair 3 ([B, B, B, B], FS (FS FZ)))
 
 ----------------------------------------
+
+-- For parse format, see http://www.logique.jussieu.fr/~michel/ha.html
 
 parseColor : Char -> Maybe Color
 parseColor '0' = Just W
