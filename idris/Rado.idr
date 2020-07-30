@@ -286,6 +286,8 @@ tm5 = makeProgram [
   [(W, (R, Q5)), (B, (R, Q0))],
   [(B, (L, Q3)), (B, (R, Q1))]]
 
+-- (134467, (667, 501))
+
 ----------------------------------------
 
 Eq Color where
@@ -297,7 +299,7 @@ ones : Vect k Color -> Nat
 ones xs = let (n ** _) = filter ((/=) W) xs in n
 
 Show Tape where
-  show (len ** (tape, pos)) = show (len, ones tape, S $ finToNat pos)
+  show (len ** (tape, _)) = show (len, ones tape)
 
 partial
 main : IO ()
