@@ -268,3 +268,30 @@ bb4 Q3 B = (B, L, Q4)
 bb4 Q4 W = (B, R, Q4)
 bb4 Q4 B = (W, R, Q1)
 bb4 _  c = (c, L, Q0)
+
+----------------------------------------
+
+partial
+tm5parse : Maybe $ List BWAction
+tm5parse = partwayParse
+  "1RB   0LC   1RC   1RD   1LA   0RB   0RE   1RH   1LC   1RA"
+
+tm5 : Program
+tm5 = makeProgram [
+  [(B, (R, Q2)), (W, (L, Q3))],
+  [(B, (R, Q3)), (B, (R, Q4))],
+  [(B, (L, Q1)), (W, (R, Q2))],
+  [(W, (R, Q5)), (B, (R, Q0))],
+  [(B, (L, Q3)), (B, (R, Q1))]]
+
+----------------------------------------
+
+Show Tape where
+  show (len ** _) = show len
+
+main : IO ()
+main = do
+  let (count, tape) = runOnBlankTape bb4
+  putStrLn $ show count
+  putStrLn $ show tape
+  pure ()
