@@ -39,8 +39,9 @@ BB3_STRING = "1RB   1RH   1LB   0RC   1LC   1LA"
 
 
 class Machine:
-    def __init__(self, tape):
-        assert len(tape)
+    def __init__(self, prog, tape):
+        self._prog = parse(prog)
+        assert len(tape) > 0
         self._tape = tape
         self._pos = 0
         self._state = 1
@@ -57,10 +58,31 @@ class Machine:
 
         self._pos += 1
 
+    def move(self, shift):
+        if shift == 0:
+            self.move_left()
+        else:
+            self.move_right()
+
     def write(self, color):
         self._tape[self._pos] = color
 
+    def get_instruction(self):
+        return self._prog[self._state]
+
+    def get_color(self):
+        return self._tape[self._pos]
+
     def exec(self):
-        pass
+        instr = self.get_instruction()
+        curr_color = self.get_color()
+
+        (color, shift, state) = instr[curr_color]
+
+        self.write(color)
+        self.move(shift)
+        self._state = state
 
     def run_to_halt(self):
+        while self._state != HALT:
+            self.exec()
