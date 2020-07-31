@@ -44,6 +44,14 @@ class Machine:
         self._state = 0
         self._exec_count = 0
 
+    @property
+    def exec_count(self):
+        return self._exec_count
+
+    @property
+    def ones_count(self):
+        return sum(self._tape)
+
     def move_left(self):
         if self._pos == 0:
             self._tape.insert(0, 0)
@@ -101,8 +109,8 @@ class Machine:
 
         print(
             '\n** {} ** {} ** {}'.format(
-                self._exec_count,
-                sum(self._tape),
+                self.ones_count,
+                self.exec_count,
                 with_pos))
 
 ########################################
