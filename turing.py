@@ -9,17 +9,30 @@ STATE_MAP = {
     'H': '7',
 }
 
+HALT = 7
 
-def parse(instructions):
+SHIFT_MAP = {
+    'L': 0,
+    'R': 1,
+}
+
+
+def parse(program_string):
     instructions = iter([
         instr[1:].replace(
             instr[2],
             STATE_MAP[instr[2]])
         for instr in
-        instructions.split()
+        program_string.split()
     ])
 
-    return tuple(zip(instructions, instructions))
+    return tuple(
+        tuple(
+            (int(SHIFT_MAP[action[0]]), int(action[1]))
+            for action in instr)
+        for instr in
+        zip(instructions, instructions)
+    )
 
 
 BB3_STRING = "1RB   1RH   1LB   0RC   1LC   1LA"
