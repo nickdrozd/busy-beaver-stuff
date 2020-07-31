@@ -39,7 +39,7 @@ BB3 = "1RB   1RH   1LB   0RC   1LC   1LA"
 
 
 class Machine:
-    def __init__(self, prog, tape):
+    def __init__(self, tape, prog):
         self._prog = parse(prog)
         assert len(tape) > 0
         self._tape = tape
@@ -109,6 +109,10 @@ class Machine:
 
 
 if __name__ == '__main__':
-    bb3 = Machine(BB3, [0])
+    bb3 = Machine([0], BB3)
     bb3.run_to_halt()
     bb3.print_results()
+
+    bb4 = Machine([0], '1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA')
+    bb4.run_to_halt()
+    bb4.print_results()
