@@ -19,7 +19,7 @@ SHIFT_MAP = {
 
 def parse(program_string):
     instructions = iter([
-        instr[1:].replace(
+        instr.replace(
             instr[2],
             STATE_MAP[instr[2]])
         for instr in
@@ -28,7 +28,7 @@ def parse(program_string):
 
     return tuple(
         tuple(
-            (int(SHIFT_MAP[action[0]]), int(action[1]))
+            (int(action[0]), int(SHIFT_MAP[action[1]]), int(action[2]))
             for action in instr)
         for instr in
         zip(instructions, instructions)
@@ -36,8 +36,6 @@ def parse(program_string):
 
 
 BB3_STRING = "1RB   1RH   1LB   0RC   1LC   1LA"
-
-print(parse(BB3_STRING))
 
 
 class Machine:
