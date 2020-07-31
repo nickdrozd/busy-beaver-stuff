@@ -94,7 +94,6 @@ class Machine:
     def run_to_halt(self):
         while self._state != HALT:
             self.exec()
-            print(self._exec_count)
 
     def print_results(self):
         squares = [
