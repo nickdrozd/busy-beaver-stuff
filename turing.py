@@ -96,14 +96,16 @@ class Machine:
             for square in self._tape
         ]
 
-        with_pos = [
+        with_pos = ''.join([
             f'[{square}]' if i == self._pos else square
             for i, square in enumerate(squares)
-        ]
+        ])
 
         print(
-            self._exec_count,
-            with_pos)
+            '\n** {} ** {} ** {}'.format(
+                self._exec_count,
+                sum(self._tape),
+                with_pos))
 
 
 if __name__ == '__main__':
