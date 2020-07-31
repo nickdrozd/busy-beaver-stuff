@@ -35,7 +35,7 @@ def parse(program_string):
     )
 
 
-BB3_STRING = "1RB   1RH   1LB   0RC   1LC   1LA"
+BB3 = "1RB   1RH   1LB   0RC   1LC   1LA"
 
 
 class Machine:
@@ -45,6 +45,7 @@ class Machine:
         self._tape = tape
         self._pos = 0
         self._state = 1
+        self._exec_count = 0
 
     def move_left(self):
         if self._pos == 0:
@@ -83,6 +84,29 @@ class Machine:
         self.move(shift)
         self._state = state
 
+        self._exec_count += 1
+
     def run_to_halt(self):
         while self._state != HALT:
             self.exec()
+
+    def print_results(self):
+        squares = [
+            '_' if square == 0 else '#'
+            for square in self._tape
+        ]
+
+        with_pos = [
+            f'[{square}]' if i == self._pos else square
+            for i, square in enumerate(squares)
+        ]
+
+        print(
+            self._exec_count,
+            with_pos)
+
+
+if __name__ == '__main__':
+    bb3 = Machine(BB3, [0])
+    bb3.run_to_halt()
+    bb3.print_results()
