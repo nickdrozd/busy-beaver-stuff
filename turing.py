@@ -44,7 +44,7 @@ class Machine:
         assert len(tape) > 0
         self._tape = tape
         self._pos = 0
-        self._state = 1
+        self._state = 0
         self._exec_count = 0
 
     def move_left(self):
