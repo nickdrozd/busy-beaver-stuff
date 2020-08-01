@@ -49,7 +49,6 @@ class Machine:
         self._pos = 0
         self._state = 0
         self._exec_count = 0
-        self._extensions = 0
 
     @property
     def exec_count(self):
@@ -62,14 +61,12 @@ class Machine:
     def move_left(self):
         if self._pos == 0:
             self._tape.appendleft(0)
-            self._extensions += 1
         else:
             self._pos -= 1
 
     def move_right(self):
         if self._pos == len(self._tape) - 1:
             self._tape.append(0)
-            self._extensions += 1
 
         self._pos += 1
 
@@ -117,10 +114,9 @@ class Machine:
 
     def print_results(self):
         print(
-            '\n** {} ** {} ** {} ** {}'.format(
+            '\n** {} ** {} ** {}'.format(
                 self.ones_count,
                 self.exec_count,
-                self._extensions,
                 self.tape_str()))
 
 ########################################
