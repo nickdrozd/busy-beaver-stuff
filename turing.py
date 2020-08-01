@@ -67,10 +67,13 @@ class Machine:
             tape[pos] = color
 
             if shift:
-                if pos == len(tape) - 1:
+                pos += 1
+
+                try:
+                    tape[pos]
+                except IndexError:
                     tape.append(0)
 
-                pos += 1
             else:
                 if pos == 0:
                     tape.insert(0, 0)
