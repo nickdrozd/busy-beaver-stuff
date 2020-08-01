@@ -133,6 +133,7 @@ def profile():
         stats = yappi.get_func_stats()
         stats.save('yappi.callgrind', type='callgrind')
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile')
@@ -140,17 +141,6 @@ if __name__ == '__main__':
 
     if args.profile:
         with profile():
-            run_bb(TM5)
+            run_bb(BB5)
     else:
-        run_bb(TM5)
-
-
-    # import yappi
-
-    # yappi.set_clock_type('cpu')
-    # yappi.start()
-
-    # run_bb(TM5)
-
-    # stats = yappi.get_func_stats()
-    # stats.save('yappi.callgrind', type='callgrind')
+        run_bb(BB5)
