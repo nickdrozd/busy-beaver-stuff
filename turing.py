@@ -122,16 +122,17 @@ def run_bb(prog):
 @contextmanager
 def profile():
     try:
-        import yappi
+        import cProfile
+        import pstats
 
-        yappi.set_clock_type('cpu')
-        yappi.start()
+        profile = cProfile.Profile()
+        profile.enable()
 
         yield
 
     finally:
-        stats = yappi.get_func_stats()
-        stats.save('yappi.callgrind', type='callgrind')
+        profile.disable()
+        pstats.Stats(profile).sort_stats('cumulative').print_stats(30)
 
 
 if __name__ == '__main__':
@@ -140,7 +141,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.profile:
-        with profile():
-            run_bb(BB5)
+        cProfile.run('run_bb(BB5)')
     else:
         run_bb(BB5)

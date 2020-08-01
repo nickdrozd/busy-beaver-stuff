@@ -9,7 +9,6 @@ test :
 
 profile :
 	python3 turing.py --profile yes
-	gprof2dot yappi.callgrind -f callgrind --colour-nodes-by-selftime | dot -Tpng -o yappi.png
 
 clean :
 	rm -rf yappi.* __pycache__
