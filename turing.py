@@ -39,6 +39,8 @@ def parse(program_string):
 
 ########################################
 
+SQUARE_ALLOC = 12289
+
 class Machine:
     def __init__(self, prog):
         self._prog = parse(prog)
@@ -63,23 +65,20 @@ class Machine:
         prog = self._prog
 
         while state != HALT:
-            (color, shift, state) = prog[state][tape[pos]]
+            try:
+                (color, shift, state) = prog[state][tape[pos]]
 
-            tape[pos] = color
+                tape[pos] = color
+            except IndexError:
+                if pos < 0:
+                    self._tape.insert(0, [0] * SQUARE_ALLOC)
+                else:
+                    self._tape.extend([0] * SQUARE_ALLOC)
 
             if shift:
                 pos += 1
-
-                try:
-                    tape[pos]
-                except IndexError:
-                    tape.append(0)
-
             else:
-                if pos == 0:
-                    tape.insert(0, 0)
-                else:
-                    pos -= 1
+                pos -= 1
 
             exec_count += 1
 
@@ -126,7 +125,7 @@ BB5 = MACHINES['BB5']
 
 def run_bb(prog):
     machine = Machine(prog)
-    machine.run_to_halt([0])
+    machine.run_to_halt([0] * SQUARE_ALLOC)
     machine.print_results()
     return machine
 
