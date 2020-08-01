@@ -61,8 +61,10 @@ class Machine:
         state = 0
         exec_count = 0
 
+        prog = self._prog
+
         while state != HALT:
-            (color, shift, state) = self._prog[state][tape[pos]]
+            (color, shift, state) = prog[state][tape[pos]]
 
             tape[pos] = color
 
