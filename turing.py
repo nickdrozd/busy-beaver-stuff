@@ -1,5 +1,4 @@
 import argparse
-from contextlib import contextmanager
 
 ########################################
 
@@ -118,22 +117,7 @@ def run_bb(prog):
     machine.run_to_halt([0])
     machine.print_results()
 
-
-@contextmanager
-def profile():
-    try:
-        import cProfile
-        import pstats
-
-        profile = cProfile.Profile()
-        profile.enable()
-
-        yield
-
-    finally:
-        profile.disable()
-        pstats.Stats(profile).sort_stats('cumulative').print_stats(30)
-
+########################################
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -141,6 +125,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.profile:
+        import cProfile  # pylint: disable=import-outside-toplevel
         cProfile.run('run_bb(BB5)')
     else:
         run_bb(BB5)
