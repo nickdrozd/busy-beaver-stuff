@@ -1,5 +1,4 @@
 import argparse
-from collections import deque
 from contextlib import contextmanager
 
 ########################################
@@ -45,7 +44,7 @@ class Machine:
     def __init__(self, tape, prog):
         self._prog = parse(prog)
         assert len(tape) > 0
-        self._tape = deque(tape)
+        self._tape = tape
         self._pos = 0
         self._state = 0
         self._exec_count = 0
@@ -60,7 +59,7 @@ class Machine:
 
     def move_left(self):
         if self._pos == 0:
-            self._tape.appendleft(0)
+            self._tape.insert(0, 0)
         else:
             self._pos -= 1
 
@@ -101,23 +100,22 @@ class Machine:
         while self._state != HALT:
             self.exec()
 
-    def tape_str(self):
+    def print_results(self):
         squares = [
             '_' if square == 0 else '#'
             for square in self._tape
         ]
 
-        return ''.join([
+        with_pos = ''.join([
             f'[{square}]' if i == self._pos else square
             for i, square in enumerate(squares)
         ])
 
-    def print_results(self):
         print(
             '\n** {} ** {} ** {}'.format(
                 self.ones_count,
                 self.exec_count,
-                self.tape_str()))
+                with_pos))
 
 ########################################
 
