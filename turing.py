@@ -41,13 +41,12 @@ def parse(program_string):
 ########################################
 
 class Machine:
-    def __init__(self, tape, prog):
+    def __init__(self, prog):
         self._prog = parse(prog)
-        assert len(tape) > 0
-        self._tape = tape
-        self._pos = 0
-        self._state = 0
-        self._exec_count = 0
+        self._tape = None
+        self._pos = None
+        self._state = None
+        self._exec_count = None
 
     @property
     def exec_count(self):
@@ -57,48 +56,32 @@ class Machine:
     def ones_count(self):
         return sum(self._tape)
 
-    def move_left(self):
-        if self._pos == 0:
-            self._tape.insert(0, 0)
-        else:
-            self._pos -= 1
+    def run_to_halt(self, tape):
+        pos = 0
+        state = 0
+        exec_count = 0
 
-    def move_right(self):
-        if self._pos == len(self._tape) - 1:
-            self._tape.append(0)
+        while state != HALT:
+            (color, shift, state) = self._prog[state][tape[pos]]
 
-        self._pos += 1
+            tape[pos] = color
 
-    def move(self, shift):
-        if shift == 0:
-            self.move_left()
-        else:
-            self.move_right()
+            if shift:
+                if pos == len(tape) - 1:
+                    tape.append(0)
 
-    def write(self, color):
-        self._tape[self._pos] = color
+                pos += 1
+            else:
+                if pos == 0:
+                    tape.insert(0, 0)
+                else:
+                    pos -= 1
 
-    def get_instruction(self):
-        return self._prog[self._state]
+            exec_count += 1
 
-    def get_color(self):
-        return self._tape[self._pos]
-
-    def exec(self):
-        instr = self.get_instruction()
-        curr_color = self.get_color()
-
-        (color, shift, state) = instr[curr_color]
-
-        self.write(color)
-        self.move(shift)
-        self._state = state
-
-        self._exec_count += 1
-
-    def run_to_halt(self):
-        while self._state != HALT:
-            self.exec()
+        self._pos = pos
+        self._tape = tape
+        self._exec_count = exec_count
 
     def print_results(self):
         squares = [
@@ -126,8 +109,8 @@ BB5 = "1RB   1LC   1RC   1RB   1RD   0LE   1LA   1LD   1RH   0LA"
 
 
 def run_bb(prog):
-    machine = Machine([0], prog)
-    machine.run_to_halt()
+    machine = Machine(prog)
+    machine.run_to_halt([0])
     machine.print_results()
 
 

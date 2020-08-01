@@ -15,15 +15,15 @@ EXPECTED = {
     BB3: (5, 21),
     BB4: (13, 107),
     TM5: (501, 134467),
-    # BB5: (4098, 47176870),
+    BB5: (4098, 47176870),
 }
 
 
 class TuringTest(unittest.TestCase):
     def test_turing(self):
         for prog, (ones_count, exec_count) in EXPECTED.items():
-            machine = Machine([0], prog)
-            machine.run_to_halt()
+            machine = Machine(prog)
+            machine.run_to_halt([0])
 
             self.assertEqual(
                 ones_count,
