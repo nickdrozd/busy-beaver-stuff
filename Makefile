@@ -1,3 +1,6 @@
+run :
+	python3 turing.py
+
 lint :
 	pylint turing.py test.py
 
