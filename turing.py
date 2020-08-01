@@ -1,7 +1,3 @@
-import argparse
-
-########################################
-
 STATE_MAP = {
     'A': '0',
     'B': '1',
@@ -132,12 +128,4 @@ def run_bb(prog):
 ########################################
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--profile')
-    args = parser.parse_args()
-
-    if args.profile:
-        import cProfile  # pylint: disable=import-outside-toplevel
-        cProfile.run('run_bb(BB5)')
-    else:
-        run_bb(BB5)
+    run_bb(BB5)
