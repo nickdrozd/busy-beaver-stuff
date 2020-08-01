@@ -1,13 +1,6 @@
 import unittest
 
-from turing import Machine
-
-
-BB2 = "1RB   1LB   1LA   1RH"
-BB3 = "1RB   1RH   1LB   0RC   1LC   1LA"
-BB4 = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
-TM5 = "1RB   0LC   1RC   1RD   1LA   0RB   0RE   1RH   1LC   1RA"
-BB5 = "1RB   1LC   1RC   1RB   1RD   0LE   1LA   1LD   1RH   0LA"
+from turing import run_bb, BB2, BB3, BB4, TM5, BB5
 
 
 EXPECTED = {
@@ -22,8 +15,7 @@ EXPECTED = {
 class TuringTest(unittest.TestCase):
     def test_turing(self):
         for prog, (ones_count, exec_count) in EXPECTED.items():
-            machine = Machine(prog)
-            machine.run_to_halt([0])
+            machine = run_bb(prog)
 
             self.assertEqual(
                 ones_count,

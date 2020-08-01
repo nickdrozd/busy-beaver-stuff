@@ -106,16 +106,25 @@ class Machine:
 
 ########################################
 
-BB3 = "1RB   1RH   1LB   0RC   1LC   1LA"
-BB4 = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
-TM5 = "1RB   0LC   1RC   1RD   1LA   0RB   0RE   1RH   1LC   1RA"
-BB5 = "1RB   1LC   1RC   1RB   1RD   0LE   1LA   1LD   1RH   0LA"
+MACHINES = {
+    'BB2': "1RB   1LB   1LA   1RH",
+    'BB3': "1RB   1RH   1LB   0RC   1LC   1LA",
+    'BB4': "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA",
+    'TM5': "1RB   0LC   1RC   1RD   1LA   0RB   0RE   1RH   1LC   1RA",
+    'BB5': "1RB   1LC   1RC   1RB   1RD   0LE   1LA   1LD   1RH   0LA",
+}
 
+BB2 = MACHINES['BB2']
+BB3 = MACHINES['BB3']
+BB4 = MACHINES['BB4']
+TM5 = MACHINES['TM5']
+BB5 = MACHINES['BB5']
 
 def run_bb(prog):
     machine = Machine(prog)
     machine.run_to_halt([0])
     machine.print_results()
+    return machine
 
 ########################################
 
