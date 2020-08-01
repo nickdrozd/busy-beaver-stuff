@@ -3,3 +3,6 @@ lint :
 
 test :
 	python3 -m unittest test.py
+
+profile :
+	python3 turing.py --profile yes

@@ -1,3 +1,8 @@
+import argparse
+from contextlib import contextmanager
+
+########################################
+
 STATE_MAP = {
     'A': '0',
     'B': '1',
@@ -126,5 +131,38 @@ def run_bb(prog):
     machine.print_results()
 
 
+@contextmanager
+def profile():
+    try:
+        import yappi
+
+        yappi.set_clock_type('cpu')
+        yappi.start()
+
+        yield
+
+    finally:
+        stats = yappi.get_func_stats()
+        stats.save('yappi.callgrind', type='callgrind')
+
 if __name__ == '__main__':
-    run_bb(TM5)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--profile')
+    args = parser.parse_args()
+
+    if args.profile:
+        with profile():
+            run_bb(TM5)
+    else:
+        run_bb(TM5)
+
+
+    # import yappi
+
+    # yappi.set_clock_type('cpu')
+    # yappi.start()
+
+    # run_bb(TM5)
+
+    # stats = yappi.get_func_stats()
+    # stats.save('yappi.callgrind', type='callgrind')
