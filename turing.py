@@ -87,22 +87,26 @@ class Machine:
         self._tape = tape
         self._exec_count = exec_count
 
-    def print_results(self):
-        squares = [
-            '_' if square == 0 else '#'
-            for square in self._tape
-        ]
+    def print_results(self, print_tape=False):
+        print('\n'.join([
+            f'ones: {self.ones_count}',
+            f'exec: {self.exec_count}',
+            f'tape: {len(self._tape)}',
+            '',
+        ]))
 
-        with_pos = ''.join([
-            f'[{square}]' if i == self._pos else square
-            for i, square in enumerate(squares)
-        ])
+        if print_tape:
+            squares = [
+                '_' if square == 0 else '#'
+                for square in self._tape
+            ]
 
-        print(
-            '\n** {} ** {} ** {}'.format(
-                self.ones_count,
-                self.exec_count,
-                with_pos))
+            with_pos = ''.join([
+                f'[{square}]' if i == self._pos else square
+                for i, square in enumerate(squares)
+            ])
+
+            print(with_pos)
 
 ########################################
 
