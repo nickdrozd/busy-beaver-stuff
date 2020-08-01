@@ -1,3 +1,5 @@
+all : lint test
+
 run :
 	python3 turing.py
 
@@ -6,6 +8,8 @@ lint :
 
 test :
 	python3 -m unittest test.py
+
+time : test
 
 profile :
 	python3 turing.py --profile yes
