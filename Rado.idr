@@ -14,10 +14,12 @@ import Data.Vect
 
 ----------------------------------------
 
-data Color = W | B
+data Color = C0 |
+   C1 | C2 | C3 |
+   C4 | C5 | C6
 
 blank : Color
-blank = W
+blank = C0
 
 data Shift = L | R
 
@@ -91,13 +93,18 @@ runToHalt count prog state tape =
 
 partial
 runOnBlankTape : Program -> IO MachineResult
-runOnBlankTape prog = runToHalt 1 prog Q1 (Z ** ([W], FZ))
+runOnBlankTape prog = runToHalt 1 prog Q1 (Z ** ([blank], FZ))
 
 ----------------------------------------
 
 Show Color where
-  show W = "0"
-  show B = "1"
+  show C0 = "0"
+  show C1 = "1"
+  show C2 = "2"
+  show C3 = "3"
+  show C4 = "4"
+  show C5 = "5"
+  show C6 = "6"
 
 Show Shift where
   show L = "L"
@@ -116,30 +123,30 @@ Show State where
   show (color, shift, state) =
     show color ++ show shift ++ show state
 
--- show @{ShowAction} $ bb4 Q1 W
+-- show @{ShowAction} $ bb4 Q1 C0
 
 ----------------------------------------
 
 BB2 : Program
 
-BB2 Q1 W = (B, R, Q2)
-BB2 Q1 B = (B, L, Q2)
+BB2 Q1 C0 = (C1, R, Q2)
+BB2 Q1 C1 = (C1, L, Q2)
 
-BB2 Q2 W = (B, L, Q1)
-BB2 Q2 B = (B, R, Q0)
+BB2 Q2 C0 = (C1, L, Q1)
+BB2 Q2 C1 = (C1, R, Q0)
 
 BB2 _  c = (c, L, Q0)
 
 -- λΠ> runOnBlankTape BB2
--- (6, MkDPair 3 ([B, B, B, B], FS (FS FZ)))
+-- (6, MkDPair 3 ([C1, C1, C1, C1], FS (FS FZ)))
 
 ----------------------------------------
 
 -- For parse format, see http://www.logique.jussieu.fr/~michel/ha.html
 
 parseColor : Char -> Maybe Color
-parseColor '0' = Just W
-parseColor '1' = Just B
+parseColor '0' = Just C0
+parseColor '1' = Just C1
 parseColor _   = Nothing
 
 parseShift : Char -> Maybe Shift
@@ -210,8 +217,9 @@ Cast State (Fin 6) where
 Cast BWAction Instruction where
   cast [w, b] color =
     case color of
-      W => w
-      B => b
+      C0 => w
+      C1 => b
+      _  => b
 
 makeProgram : (Cast State $ Fin n) => (Vect n BWAction) -> Program
 makeProgram actions state = cast $ index (cast state) actions
@@ -227,23 +235,23 @@ bb3parsed = partwayParse bb3input
 
 BB3Literal : Vect 3 BWAction
 BB3Literal = [
-  [(B, (R, Q2)), (B, (R, Q0))],
-  [(B, (L, Q2)), (W, (R, Q3))],
-  [(B, (L, Q3)), (B, (L, Q1))]]
+  [(C1, (R, Q2)), (C1, (R, Q0))],
+  [(C1, (L, Q2)), (C0, (R, Q3))],
+  [(C1, (L, Q3)), (C1, (L, Q1))]]
 
 BB3 : Program
 BB3 = makeProgram BB3Literal
 
 -- λΠ> runOnBlankTape BB3
--- (21, MkDPair 4 ([B, B, B, B, B], FS (FS FZ)))
+-- (21, MkDPair 4 ([C1, C1, C1, C1, C1], FS (FS FZ)))
 
 bb3 : Program
-bb3 Q1 W = (B, R, Q2)
-bb3 Q1 B = (B, R, Q0)
-bb3 Q2 W = (B, L, Q2)
-bb3 Q2 B = (W, R, Q3)
-bb3 Q3 W = (B, L, Q3)
-bb3 Q3 B = (B, L, Q1)
+bb3 Q1 C0 = (C1, R, Q2)
+bb3 Q1 C1 = (C1, R, Q0)
+bb3 Q2 C0 = (C1, L, Q2)
+bb3 Q2 C1 = (C0, R, Q3)
+bb3 Q3 C0 = (C1, L, Q3)
+bb3 Q3 C1 = (C1, L, Q1)
 bb3 _  c = (c, L, Q0)
 
 ----------------------------------------
@@ -258,26 +266,26 @@ bb4parsed = partwayParse bb4input
 
 BB4Literal : Vect 4 BWAction
 BB4Literal = [
-  [(B, R, Q2), (B, L, Q2)],
-  [(B, L, Q1), (W, L, Q3)],
-  [(B, R, Q0), (B, L, Q4)],
-  [(B, R, Q4), (W, R, Q1)]]
+  [(C1, R, Q2), (C1, L, Q2)],
+  [(C1, L, Q1), (C0, L, Q3)],
+  [(C1, R, Q0), (C1, L, Q4)],
+  [(C1, R, Q4), (C0, R, Q1)]]
 
 BB4 : Program
 BB4 = makeProgram BB4Literal
 
 -- λΠ> runOnBlankTape BB4
--- (107, MkDPair 13 ([B, W, B, B, B, B, B, B, B, B, B, B, B, B], FS FZ))
+-- (107, MkDPair 13 ([C1, C0, C1, C1, C1, C1, C1, C1, C1, C1, C1, C1, C1, C1], FS FZ))
 
 bb4 : Program
-bb4 Q1 W = (B, R, Q2)
-bb4 Q1 B = (B, L, Q2)
-bb4 Q2 W = (B, L, Q1)
-bb4 Q2 B = (W, L, Q3)
-bb4 Q3 W = (B, R, Q0)
-bb4 Q3 B = (B, L, Q4)
-bb4 Q4 W = (B, R, Q4)
-bb4 Q4 B = (W, R, Q1)
+bb4 Q1 C0 = (C1, R, Q2)
+bb4 Q1 C1 = (C1, L, Q2)
+bb4 Q2 C0 = (C1, L, Q1)
+bb4 Q2 C1 = (C0, L, Q3)
+bb4 Q3 C0 = (C1, R, Q0)
+bb4 Q3 C1 = (C1, L, Q4)
+bb4 Q4 C0 = (C1, R, Q4)
+bb4 Q4 C1 = (C0, R, Q1)
 bb4 _  c = (c, L, Q0)
 
 ----------------------------------------
@@ -289,11 +297,11 @@ tm5parse = partwayParse
 
 tm5 : Program
 tm5 = makeProgram [
-  [(B, (R, Q2)), (W, (L, Q3))],
-  [(B, (R, Q3)), (B, (R, Q4))],
-  [(B, (L, Q1)), (W, (R, Q2))],
-  [(W, (R, Q5)), (B, (R, Q0))],
-  [(B, (L, Q3)), (B, (R, Q1))]]
+  [(C1, (R, Q2)), (C0, (L, Q3))],
+  [(C1, (R, Q3)), (C1, (R, Q4))],
+  [(C1, (L, Q1)), (C0, (R, Q2))],
+  [(C0, (R, Q5)), (C1, (R, Q0))],
+  [(C1, (L, Q3)), (C1, (R, Q1))]]
 
 -- (134467, (667, 501))
 
@@ -306,23 +314,28 @@ bb5parse = partwayParse
 
 bb5 : Program
 bb5 = makeProgram [
-  [(B, (R, Q2)), (B, (L, Q3))],
-  [(B, (R, Q3)), (B, (R, Q2))],
-  [(B, (R, Q4)), (W, (L, Q5))],
-  [(B, (L, Q1)), (B, (L, Q4))],
-  [(B, (R, Q0)), (W, (L, Q1))]]
+  [(C1, (R, Q2)), (C1, (L, Q3))],
+  [(C1, (R, Q3)), (C1, (R, Q2))],
+  [(C1, (R, Q4)), (C0, (L, Q5))],
+  [(C1, (L, Q1)), (C1, (L, Q4))],
+  [(C1, (R, Q0)), (C0, (L, Q1))]]
 
 -- 791146...
 
 ----------------------------------------
 
 Eq Color where
-  (==) B B = True
-  (==) W W = True
-  (==) _ _ = False
+  (==) C0 C0 = True
+  (==) C1 C1 = True
+  (==) C2 C2 = True
+  (==) C3 C3 = True
+  (==) C4 C4 = True
+  (==) C5 C5 = True
+  (==) C6 C6 = True
+  (==) _  _  = False
 
 ones : Vect k Color -> Nat
-ones xs = let (n ** _) = filter ((/=) W) xs in n
+ones xs = let (n ** _) = filter ((/=) blank) xs in n
 
 Show Tape where
   show (len ** (tape, _)) = show (len, ones tape)
@@ -330,6 +343,6 @@ Show Tape where
 partial
 main : IO ()
 main = do
-  result <- runOnBlankTape bb5
+  result <- runOnBlankTape tm5
   putStrLn $ "\n*** " ++ show result
   pure ()
