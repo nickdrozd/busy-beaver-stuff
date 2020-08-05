@@ -67,9 +67,9 @@ class Machine:
                 tape[pos] = color
             except IndexError:
                 if pos < 0:
-                    self._tape.insert(0, [0] * SQUARE_ALLOC)
+                    tape.insert(0, 0)
                 else:
-                    self._tape.extend([0] * SQUARE_ALLOC)
+                    tape.append(0)
 
             if shift:
                 pos += 1
