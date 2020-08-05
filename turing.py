@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 STATE_MAP = {
     'A': '0',
     'B': '1',
@@ -44,6 +46,7 @@ class Machine:
         self._pos = None
         self._state = None
         self._exec_count = None
+        self._beep_count = None
 
     @property
     def exec_count(self):
@@ -53,10 +56,22 @@ class Machine:
     def ones_count(self):
         return sum(self._tape)
 
+    @property
+    def beep_count(self):
+        return sorted(
+            tuple(
+                (key, val)
+                for key, val in
+                self._beep_count.items()),
+            key=lambda x: x[1],
+            reverse=True)
+
     def run_to_halt(self, tape):
         pos = 0
         state = 0
+
         exec_count = 0
+        beep_count = defaultdict(lambda: 0)
 
         prog = self._prog
 
@@ -77,16 +92,19 @@ class Machine:
                 pos -= 1
 
             exec_count += 1
+            beep_count[state] = exec_count
 
         self._pos = pos
         self._tape = tape
         self._exec_count = exec_count
 
+        self._beep_count = dict(beep_count)
+
     def print_results(self, print_tape=False):
         print('\n'.join([
             f'ones: {self.ones_count}',
             f'exec: {self.exec_count}',
-            f'tape: {len(self._tape)}',
+            f'beep: {self.beep_count}',
             '',
         ]))
 
