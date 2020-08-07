@@ -37,8 +37,6 @@ def parse(program_string):
 
 ########################################
 
-SQUARE_ALLOC = 12289
-
 class Machine:
     def __init__(self, prog):
         self._prog = parse(prog)
@@ -77,20 +75,22 @@ class Machine:
         for _ in range(10000):
             old_state = state
 
-            try:
-                (color, shift, state) = prog[state][tape[pos]]
-
-                tape[pos] = color
-            except IndexError:
-                if pos < 0:
-                    tape.insert(0, 0)
-                else:
-                    tape.append(0)
+            (color, shift, state) = prog[state][tape[pos]]
+            tape[pos] = color
 
             if shift:
                 pos += 1
+
+                try:
+                    tape[pos]
+                except IndexError:
+                    tape.append(0)
+
             else:
-                pos -= 1
+                if pos == 0:
+                    tape.insert(0, 0)
+                else:
+                    pos -= 1
 
             exec_count += 1
             beep_count[old_state] = exec_count
@@ -110,17 +110,20 @@ class Machine:
         ]))
 
         if print_tape:
-            squares = [
-                '_' if square == 0 else '#'
-                for square in self._tape
-            ]
+            self.print_tape(self._tape, self._pos)
 
-            with_pos = ''.join([
-                f'[{square}]' if i == self._pos else square
-                for i, square in enumerate(squares)
-            ])
+    def print_tape(self, tape, pos):
+        squares = [
+            '_' if square == 0 else '#'
+            for square in tape
+        ]
 
-            print(with_pos)
+        with_pos = ''.join([
+            f'[{square}]' if i == pos else square
+            for i, square in enumerate(squares)
+        ])
+
+        print(with_pos)
 
 ########################################
 
@@ -140,34 +143,22 @@ BB5 = MACHINES['BB5']
 
 def run_bb(prog):
     machine = Machine(prog)
-    machine.run_to_halt([0] * SQUARE_ALLOC)
+    machine.run_to_halt([0])
     return machine
 
 ########################################
 
-def run_beeps(prog, i=None):
-    if i is None:
-        i = 0
-
-    machine = run_bb(prog)
-    print(f'{i} | {prog.strip()} | {machine.beep_count}')
-
-
 CANDIDATES = [
-    # 171
-    "1LB 0LA 0LC 0RA 1RC 1RD 0LB 0LD",
-    "1LB 0LA 0LD 0RA 0LB 0LC 1RD 1RC",
+    # # BBB(3) = 55
+    # "1LB 0RB 1RA 0LC 1RC 1RA",
 
-    # 159
-    "1LB 0LA 0LD 1RC 0LB 0LC 1RD 0RA",
-    "1LB 0LA 0LC 1RD 1RC 0RA 0LB 0LD",
-
-    # 133
-    "1LB 0LA 0LD 1LB 0LB 0LC 1RD 1RC",
-    "1LB 0LA 0LC 1LB 1RC 1RD 0LB 0LD",
+    # BBB(4) = 2568 ???
+    "1RD 1RA 1LB 1LD 0RB 1RA 0RC 0RD",
 ]
 
 
 if __name__ == '__main__':
     for i, prog in enumerate(CANDIDATES):
-        run_beeps(prog, i)
+        machine = run_bb(prog)
+        # print(f'{i} | {prog.strip()} | {machine.beep_count}')
+        machine.print_results()
