@@ -72,12 +72,10 @@ class Machine:
 
         exec_count = 0
         beep_count = defaultdict(lambda: 0)
-
         prog = self._prog
 
-        for _ in range(100):
-            if state == HALT:
-                break
+        for _ in range(10000):
+            old_state = state
 
             try:
                 (color, shift, state) = prog[state][tape[pos]]
@@ -95,7 +93,7 @@ class Machine:
                 pos -= 1
 
             exec_count += 1
-            beep_count[state] = exec_count
+            beep_count[old_state] = exec_count
 
         self._pos = pos
         self._tape = tape
@@ -152,10 +150,17 @@ def run_beeps(prog, i=None):
         i = 0
 
     machine = run_bb(prog)
-    print(f'{i} | "{prog.strip()}" | {machine.beep_count}')
+    print(f'{i} | {prog.strip()} | {machine.beep_count}')
+
+
+CANDIDATES = [
+    "1LB 0RB 1RA 0LC 1RC 1RA",
+    "1RB 0LB 1LA 0RC 1LC 1LA",
+    "1LC 0RC 1RB 1RA 1RA 0LB",
+    "1RC 0LC 1LB 1LA 1LA 0RB",
+]
 
 
 if __name__ == '__main__':
-    with open('3-state-programs.txt') as progs:
-        for i, prog in enumerate(progs):
-            run_beeps(prog, i)
+    for i, prog in enumerate(CANDIDATES):
+        run_beeps(prog, i)
