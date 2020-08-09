@@ -72,7 +72,9 @@ class Machine:
         beep_count = defaultdict(lambda: 0)
         prog = self._prog
 
-        for _ in range(10000):
+        for _ in range(STEPS):
+            self.print_tape(tape, pos, exec_count)
+
             old_state = state
 
             (color, shift, state) = prog[state][tape[pos]]
@@ -109,10 +111,7 @@ class Machine:
             '',
         ]))
 
-        if print_tape:
-            self.print_tape(self._tape, self._pos)
-
-    def print_tape(self, tape, pos):
+    def print_tape(self, tape, pos, step):
         squares = [
             '_' if square == 0 else '#'
             for square in tape
@@ -141,21 +140,35 @@ BB4 = MACHINES['BB4']
 TM5 = MACHINES['TM5']
 BB5 = MACHINES['BB5']
 
-def run_bb(prog):
+def run_bb(prog, tape=None):
+    if tape is None:
+        tape = [0]
+
     machine = Machine(prog)
-    machine.run_to_halt([0])
+    machine.run_to_halt(tape)
     return machine
 
 ########################################
 
 CANDIDATES = [
     # # BBB(3) = 55
-    # "1LB 0RB 1RA 0LC 1RC 1RA",
+    # "1LB 0RB 1RA 0LC 1RC 1RA",  # 55
+    # "1LB 0RB 1LC 0LC 1RC 1RA",  # 54
+    # "1LB 0RC 1RB 0LC 1RC 1RA",  # 52
+    # "1LB 0RC 0RC 0LC 1RC 1RA",  # 51
 
-    # BBB(4) = 2568 ???
+    # # BBB(4) = 2568 ???
+    # "1RD 1RA 1LB 1LD 0RB 1RA 0RC 0RD",  # 2568
+    # "1LD 1LA 1RB 1RD 0LB 1LA 0LC 0LD",  # mirror
+
+    # # these two are interesting, but not BBB
+    # "1LB 0LA 1LC 1RB 0RB 1LD 0LA 0LC",  # A 4096
+    # "1LB 0LA 1LC 1RB 0RB 1LD 1LA 0LC",  # A 4064
+
     "1RD 1RA 1LB 1LD 0RB 1RA 0RC 0RD",
 ]
 
+STEPS = 2568
 
 if __name__ == '__main__':
     for i, prog in enumerate(CANDIDATES):
