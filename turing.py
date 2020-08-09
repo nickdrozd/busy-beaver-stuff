@@ -75,7 +75,10 @@ class Machine:
 
         prog = self._prog
 
-        while state != HALT:
+        for _ in range(100):
+            if state == HALT:
+                break
+
             try:
                 (color, shift, state) = prog[state][tape[pos]]
 
@@ -146,4 +149,7 @@ def run_bb(prog):
 ########################################
 
 if __name__ == '__main__':
-    run_bb(BB5)
+    with open('3-state-programs.txt') as progs:
+        for i, prog in enumerate(progs):
+            print(i, prog)
+            run_bb(prog)

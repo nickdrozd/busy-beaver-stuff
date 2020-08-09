@@ -16,3 +16,7 @@ profile :
 
 clean :
 	rm -rf yappi.* __pycache__
+
+gen3 :
+	python3 generate-3-state.py > 3-state-programs.txt
+	wc -l 3-state-programs.txt
