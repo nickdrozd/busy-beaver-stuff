@@ -147,10 +147,15 @@ def run_bb(prog):
 
 ########################################
 
+def run_beeps(prog, i=None):
+    if i is None:
+        i = 0
+
+    machine = run_bb(prog)
+    print(f'{i} | "{prog.strip()}" | {machine.beep_count}')
+
+
 if __name__ == '__main__':
     with open('3-state-programs.txt') as progs:
         for i, prog in enumerate(progs):
-            machine = run_bb(prog)
-            print(f'{i} | "{prog.strip()}" | {machine.beep_count}')
-
-    # run_bb("1LB 0RB 1RA 0LC 1RC 1RA")
+            run_beeps(prog, i)
