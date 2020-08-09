@@ -1,3 +1,5 @@
+1RD 1RA 1LB 1LD 0RB 1RA 0RC 0RD
+
 [_]
 #[_]
 #_[_]
