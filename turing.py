@@ -143,7 +143,6 @@ BB5 = MACHINES['BB5']
 def run_bb(prog):
     machine = Machine(prog)
     machine.run_to_halt([0] * SQUARE_ALLOC)
-    machine.print_results()
     return machine
 
 ########################################
@@ -151,5 +150,7 @@ def run_bb(prog):
 if __name__ == '__main__':
     with open('3-state-programs.txt') as progs:
         for i, prog in enumerate(progs):
-            print(i, prog)
-            run_bb(prog)
+            machine = run_bb(prog)
+            print(f'{i} | "{prog.strip()}" | {machine.beep_count}')
+
+    # run_bb("1LB 0RB 1RA 0LC 1RC 1RA")
