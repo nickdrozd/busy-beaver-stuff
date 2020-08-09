@@ -157,18 +157,25 @@ CANDIDATES = [
     # "1LB 0RC 1RB 0LC 1RC 1RA",  # 52
     # "1LB 0RC 0RC 0LC 1RC 1RA",  # 51
 
-    # # BBB(4) = 2568 ???
-    # "1RD 1RA 1LB 1LD 0RB 1RA 0RC 0RD",  # 2568
-    # "1LD 1LA 1RB 1RD 0LB 1LA 0LC 0LD",  # mirror
+    # BBB(4) = 2819 ???
+    "1LB 1LC 1RC 1LD 1LA 1RD 0LD 0RB",
 
-    # # these two are interesting, but not BBB
+    # 2568
+    # "1RD 1RA 1LB 1LD 0RB 1RA 0RC 0RD",
+    # "1LD 1LA 1RB 1RD 0LB 1LA 0LC 0LD",
+    # "1LB 1LA 0LC 0LB 0LD 1LA 1RD 1RB",
+    # "1LB 1LA 0LD 0LB 1RC 1RB 0LC 1LA",
+
+    # # 2512 -- basically the same as 2568
+    # "1LB 1LA 0LC 1RA 1RC 1RD 0LB 0LD",
+    # "1LB 1LA 0LD 1RA 0LB 0LC 1RD 1RC",
+
+    # # these two are interesting, but not BBB (spin-outs)
     # "1LB 0LA 1LC 1RB 0RB 1LD 0LA 0LC",  # A 4096
     # "1LB 0LA 1LC 1RB 0RB 1LD 1LA 0LC",  # A 4064
-
-    "1RD 1RA 1LB 1LD 0RB 1RA 0RC 0RD",
 ]
 
-STEPS = 2568
+STEPS = 2819
 
 if __name__ == '__main__':
     for i, prog in enumerate(CANDIDATES):
