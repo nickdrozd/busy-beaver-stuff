@@ -1,4 +1,9 @@
-STATES = {'A', 'B', 'C', 'D'}
+A = 'A'
+B = 'B'
+C = 'C'
+D = 'D'
+
+STATES = {A, B, C, D}
 
 
 def dump_dot(arrows):
@@ -18,40 +23,65 @@ def is_connected(arrows):
                for dst in STATES.difference(state)):
             return False
 
-    reachable_from_a = arrows['A'].difference('A')
+    for state in STATES:
+        reachable_from_x = arrows[state].difference(state)
 
-    for _ in range(3):
-        reachable = {
-            node
-            for connection in reachable_from_a
-            for node in arrows[connection]
-        }
+        for _ in range(3):
+            reachable = {
+                node
+                for connection in reachable_from_x
+                for node in arrows[connection]
+            }
 
-        reachable_from_a.update(reachable)
+            reachable_from_x.update(reachable)
 
-    return reachable_from_a.issuperset(STATES)
+        if not reachable_from_x.issuperset(STATES):
+            return False
+
+    return True
+
+
+def is_isomorphic(g1, g2):
+    for s1 in STATES:
+        for s2 in STATES.difference(s1):
+            for s3 in STATES.difference({s1, s2}):
+                s4 = list(STATES.difference({s1, s2, s3}))[0]
+
+                m = {
+                    A: s1,
+                    B: s2,
+                    C: s3,
+                    D: s4,
+                }
+
+                if all(g1[s] == g2[m[s]] for s in STATES):
+                    return True
+
+    return False
 
 
 SEEN = []
+ISOS = []
 
 
 if __name__ == '__main__':
-    for dest_a in STATES.difference('A'):
+    for dest_a in STATES.difference(A):
         for rest_a in STATES.difference(dest_a):
-            for dest_b in STATES.difference('B'):
+            for dest_b in STATES.difference(B):
                 for rest_b in STATES.difference(dest_b):
-                    for dest_c in STATES.difference('C'):
+                    for dest_c in STATES.difference(C):
                         for rest_c in STATES.difference(dest_c):
-                            for dest_d in STATES.difference('D'):
+                            for dest_d in STATES.difference(D):
                                 for rest_d in STATES.difference(dest_d):
                                     arrows = {
-                                        'A': {dest_a, rest_a},
-                                        'B': {dest_b, rest_b},
-                                        'C': {dest_c, rest_c},
-                                        'D': {dest_d, rest_d},
+                                        A: {dest_a, rest_a},
+                                        B: {dest_b, rest_b},
+                                        C: {dest_c, rest_c},
+                                        D: {dest_d, rest_d},
                                     }
 
-                                    if any(arrows == seen for seen in SEEN):
+                                    if any(arrows == seen
+                                           for seen in SEEN):
                                         continue
 
                                     SEEN.append(arrows)
@@ -59,8 +89,14 @@ if __name__ == '__main__':
                                     if not is_connected(arrows):
                                         continue
 
-                                    print(arrows)
+                                    if any(is_isomorphic(arrows, graph)
+                                           for graph in ISOS):
+                                        continue
 
-                                    # print(
-                                    #     dump_dot(
-                                    #         arrows))
+                                    ISOS.append(arrows)
+
+                                    # print(arrows)
+
+                                    print(
+                                        dump_dot(
+                                            arrows))
