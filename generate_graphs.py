@@ -9,15 +9,41 @@ def dump_dot(arrows):
     ]))
 
 
+def is_connected(arrows):
+    if all(len(arrows[state]) == 1 for state in STATES):
+        return False
+
+    for state in STATES:
+        if all(state not in arrows[dst]
+               for dst in STATES.difference(state)):
+            return False
+
+    reachable_from_a = arrows['A'].difference('A')
+
+    for _ in range(3):
+        reachable = {
+            node
+            for connection in reachable_from_a
+            for node in arrows[connection]
+        }
+
+        reachable_from_a.update(reachable)
+
+    return reachable_from_a.issuperset(STATES)
+
+
+SEEN = []
+
+
 if __name__ == '__main__':
-    for dest_a in STATES:
-        for rest_a in STATES.difference('A'):
-            for dest_b in STATES:
-                for rest_b in STATES.difference('B'):
-                    for dest_c in STATES:
-                        for rest_c in STATES.difference('C'):
-                            for dest_d in STATES:
-                                for rest_d in STATES.difference('D'):
+    for dest_a in STATES.difference('A'):
+        for rest_a in STATES.difference(dest_a):
+            for dest_b in STATES.difference('B'):
+                for rest_b in STATES.difference(dest_b):
+                    for dest_c in STATES.difference('C'):
+                        for rest_c in STATES.difference(dest_c):
+                            for dest_d in STATES.difference('D'):
+                                for rest_d in STATES.difference(dest_d):
                                     arrows = {
                                         'A': {dest_a, rest_a},
                                         'B': {dest_b, rest_b},
@@ -25,6 +51,16 @@ if __name__ == '__main__':
                                         'D': {dest_d, rest_d},
                                     }
 
-                                    print(
-                                        dump_dot(
-                                            arrows))
+                                    if any(arrows == seen for seen in SEEN):
+                                        continue
+
+                                    SEEN.append(arrows)
+
+                                    if not is_connected(arrows):
+                                        continue
+
+                                    print(arrows)
+
+                                    # print(
+                                    #     dump_dot(
+                                    #         arrows))
