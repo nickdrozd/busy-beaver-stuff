@@ -60,11 +60,19 @@ def is_isomorphic(g1, g2):
     return False
 
 
-SEEN = []
-ISOS = []
+def flatten(arrows):
+    # this will only return one permutation out of 2 ** 8 = 256
+    return ' '.join([
+        connection
+        for state in sorted(STATES)
+        for connection in sorted(arrows[state])
+    ])
 
 
 if __name__ == '__main__':
+    SEEN = []
+    ISOS = []
+
     for dest_a in STATES.difference(A):
         for rest_a in STATES.difference(dest_a):
             for dest_b in STATES.difference(B):
@@ -95,8 +103,6 @@ if __name__ == '__main__':
 
                                     ISOS.append(arrows)
 
-                                    # print(arrows)
+                                    print(flatten(arrows))
 
-                                    print(
-                                        dump_dot(
-                                            arrows))
+                                    # print(dump_dot(arrows))
