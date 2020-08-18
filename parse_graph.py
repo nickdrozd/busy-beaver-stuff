@@ -22,7 +22,7 @@ def get_arrows(prog_string):
 
 
 def dump_dot(arrows):
-    return 'digraph NAME {{\n{}\n}}'.format('\n'.join([
+    return 'digraph NAME {{\n  init -> A;\n{}\n}}'.format('\n'.join([
         f'  {node} -> {target};'
         for node, targets in arrows.items()
         for target in targets
