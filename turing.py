@@ -73,6 +73,9 @@ class Machine:
         prog = self._prog
 
         for _ in range(STEPS):
+            if state == HALT:
+                break
+
             self.print_tape(tape, pos, exec_count)
 
             old_state = state
