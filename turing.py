@@ -179,10 +179,6 @@ CANDIDATES = [
     # # 2512 -- basically the same as 2568
     # "1LB 1LA 0LC 1RA 1RC 1RD 0LB 0LD",
     # "1LB 1LA 0LD 1RA 0LB 0LC 1RD 1RC",
-
-    # # these two are interesting, but not BBB (spin-outs)
-    # "1LB 0LA 1LC 1RB 0RB 1LD 0LA 0LC",  # A 4096
-    # "1LB 0LA 1LC 1RB 0RB 1LD 1LA 0LC",  # A 4064
 ]
 
 STEPS = 2819
