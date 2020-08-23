@@ -73,18 +73,20 @@ if __name__ == '__main__':
     SEEN = []
     ISOS = []
 
-    for rest_a in STATES.difference(B):
-        for dest_b in STATES.difference(B):
-            for rest_b in STATES.difference(dest_b):
-                for dest_c in STATES.difference(C):
-                    for rest_c in STATES.difference(dest_c):
-                        for dest_d in STATES.difference(D):
-                            for rest_d in STATES.difference(dest_d):
+    for a2 in (A, C):
+        for b1 in tuple(STATES.difference(D)):
+            for b2 in tuple(STATES.difference(b1)):
+                if {b1, b2}.intersection({A, B}) and D in {b1, b2}:
+                    continue
+                for c1 in tuple(STATES):
+                    for c2 in tuple(STATES.difference(c1)):
+                        for d1 in tuple(STATES):
+                            for d2 in tuple(STATES.difference(d1)):
                                 arrows = {
-                                    A: {B, rest_a},
-                                    B: {dest_b, rest_b},
-                                    C: {dest_c, rest_c},
-                                    D: {dest_d, rest_d},
+                                    A: {B, a2},
+                                    B: {b1, b2},
+                                    C: {c1, c2},
+                                    D: {d1, d2},
                                 }
 
                                 if any(arrows == seen
