@@ -182,6 +182,18 @@ CANDIDATES = [
     # # 2512 -- basically the same as 2568
     # "1LB 1LA 0LC 1RA 1RC 1RD 0LB 0LD",
     # "1LB 1LA 0LD 1RA 0LB 0LC 1RD 1RC",
+
+    # 159
+    "1RB 1LA 1LC 1RD 1LC 0LD 1LA 0RB",
+
+    # 119
+    "1RB 0LC 1RC 0RD 1LC 1LD 1LA 0RC",
+
+    # 116
+    "1RB 0LC 1LC 0RD 1LC 1LD 1LA 0RC",
+
+    # 109
+    "1RB 0LC 0LC 0RD 1LC 1LD 1LA 0RC",
 ]
 
 STEPS = 2819
