@@ -21,6 +21,6 @@ gen3 :
 	python3 generate-3-state.py > 3-state-programs.txt
 	wc -l 3-state-programs.txt
 
-# make parse_graph prog="'1LB 1LC 1RC 1LD 1LA 1RD 0LD 0RB'"
+# make parse_graph prog="'1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB'"
 parse_graph :
 	python3 parse_graph.py $(prog) | dot -Tpng -o out.png

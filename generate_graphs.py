@@ -73,36 +73,35 @@ if __name__ == '__main__':
     SEEN = []
     ISOS = []
 
-    for dest_a in STATES.difference(A):
-        for rest_a in STATES.difference(dest_a):
-            for dest_b in STATES.difference(B):
-                for rest_b in STATES.difference(dest_b):
-                    for dest_c in STATES.difference(C):
-                        for rest_c in STATES.difference(dest_c):
-                            for dest_d in STATES.difference(D):
-                                for rest_d in STATES.difference(dest_d):
-                                    arrows = {
-                                        A: {dest_a, rest_a},
-                                        B: {dest_b, rest_b},
-                                        C: {dest_c, rest_c},
-                                        D: {dest_d, rest_d},
-                                    }
+    for rest_a in STATES.difference(B):
+        for dest_b in STATES.difference(B):
+            for rest_b in STATES.difference(dest_b):
+                for dest_c in STATES.difference(C):
+                    for rest_c in STATES.difference(dest_c):
+                        for dest_d in STATES.difference(D):
+                            for rest_d in STATES.difference(dest_d):
+                                arrows = {
+                                    A: {B, rest_a},
+                                    B: {dest_b, rest_b},
+                                    C: {dest_c, rest_c},
+                                    D: {dest_d, rest_d},
+                                }
 
-                                    if any(arrows == seen
-                                           for seen in SEEN):
-                                        continue
+                                if any(arrows == seen
+                                       for seen in SEEN):
+                                    continue
 
-                                    SEEN.append(arrows)
+                                SEEN.append(arrows)
 
-                                    if not is_connected(arrows):
-                                        continue
+                                if not is_connected(arrows):
+                                    continue
 
-                                    if any(is_isomorphic(arrows, graph)
-                                           for graph in ISOS):
-                                        continue
+                                if any(is_isomorphic(arrows, graph)
+                                       for graph in ISOS):
+                                    continue
 
-                                    ISOS.append(arrows)
+                                ISOS.append(arrows)
 
-                                    print(flatten(arrows))
+                                # print(flatten(arrows))
 
-                                    # print(dump_dot(arrows))
+                                print(dump_dot(arrows))
