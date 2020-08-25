@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict
 
 STATE_MAP = {
@@ -76,7 +77,7 @@ class Machine:
             if state == HALT:
                 break
 
-            self.print_tape(tape, pos, exec_count)
+            # self.print_tape(tape, pos, exec_count)
 
             old_state = state
 
@@ -154,6 +155,11 @@ def run_bb(prog, tape=None):
 ########################################
 
 CANDIDATES = [
+    # BB2,
+    # BB3,
+    # BB4,
+    # BB5,
+
     # # BBB(3) = 55
     # "1RB 0LB 1LA 0RC 1LC 1LA",  # normal
     # "1LB 0RB 1RA 0LC 1RC 1RA",  # 55
@@ -162,7 +168,7 @@ CANDIDATES = [
     # "1LB 0RC 0RC 0LC 1RC 1RA",  # 51
 
     # BBB(4) = 2819 ???
-    # "1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB",  # normal
+    "1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB",  # normal
     # "1LB 1LC 1RC 1LD 1LA 1RD 0LD 0RB",
     # "1LB 1LD 1RD 1LC 0LC 0RB 1LA 1RC",
     # "1LC 1LB 1LA 1RD 1RB 1LD 0LD 0RC",
@@ -183,23 +189,33 @@ CANDIDATES = [
     # "1LB 1LA 0LC 1RA 1RC 1RD 0LB 0LD",
     # "1LB 1LA 0LD 1RA 0LB 0LC 1RD 1RC",
 
-    # 159
-    "1RB 1LA 1LC 1RD 1LC 0LD 1LA 0RB",
+    # # 159
+    # "1RB 1LA 1LC 1RD 1LC 0LD 1LA 0RB",
 
-    # 119
-    "1RB 0LC 1RC 0RD 1LC 1LD 1LA 0RC",
+    # # 119
+    # "1RB 0LC 1RC 0RD 1LC 1LD 1LA 0RC",
 
-    # 116
-    "1RB 0LC 1LC 0RD 1LC 1LD 1LA 0RC",
+    # # 116
+    # "1RB 0LC 1LC 0RD 1LC 1LD 1LA 0RC",
 
-    # 109
-    "1RB 0LC 0LC 0RD 1LC 1LD 1LA 0RC",
+    # # 109
+    # "1RB 0LC 0LC 0RD 1LC 1LD 1LA 0RC",
 ]
 
 STEPS = 2819
 
 if __name__ == '__main__':
     for i, prog in enumerate(CANDIDATES):
+    # for i, prog in enumerate(sys.stdin):
         machine = run_bb(prog)
-        # print(f'{i} | {prog.strip()} | {machine.beep_count}')
+
+        # if len(machine.beep_count) < 4:
+        #     continue
+
+        # second = machine.beep_count[1][1]
+
+        # if second > 9_000 or second < 107:
+        #     continue
+
+        # print(f'{i} | {prog.strip()} | {machine.beep_count[1:]}')
         machine.print_results()

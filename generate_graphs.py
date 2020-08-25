@@ -104,6 +104,5 @@ if __name__ == '__main__':
 
                                 ISOS.append(arrows)
 
-                                # print(flatten(arrows))
-
-                                print(dump_dot(arrows))
+                                print(flatten(arrows))
+                                # print(dump_dot(arrows))

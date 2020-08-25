@@ -29,8 +29,17 @@ def dump_dot(arrows):
     ]))
 
 
+def flatten(arrows):
+    # this will only return one permutation out of 2 ** 8 = 256
+    return ' '.join([
+        connection
+        for state in sorted(STATES)
+        for connection in sorted(arrows[state])
+    ])
+
+
 if __name__ == '__main__':
     print(
-        dump_dot(
+        flatten(
             get_arrows(
                 sys.argv[1])))
