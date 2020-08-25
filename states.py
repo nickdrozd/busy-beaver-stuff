@@ -1,3 +1,5 @@
+import sys
+
 A, B, C, D = 'A', 'B', 'C', 'D'
 
 STATES = {A, B, C, D}
@@ -14,5 +16,9 @@ if __name__ == '__main__':
                     for c2 in STATES:
                         for d1 in STATES:
                             for d2 in STATES:
-                                print(
-                                    f'B {a2} {b1} {b2} {c1} {c2} {d1} {d2}')
+                                try:
+                                    print(
+                                        f'B {a2} {b1} {b2} {c1} {c2} {d1} {d2}')
+
+                                except BrokenPipeError:
+                                    sys.exit(0)
