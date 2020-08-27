@@ -31,7 +31,7 @@ def is_isomorphic(g1, g2):
                     D: s4,
                 }
 
-                if all(g1[s] == g2[m[s]] for s in STATES):
+                if all(tuple(m[x] for x in g1[s]) == g2[m[s]] for s in STATES):
                     return True
 
     return False
