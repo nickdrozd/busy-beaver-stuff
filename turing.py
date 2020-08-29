@@ -246,17 +246,19 @@ CANDIDATES = [
 STEPS = 2819
 
 if __name__ == '__main__':
-    for i, prog in enumerate(CANDIDATES):
-    # for i, prog in enumerate(sys.stdin):
+    # for i, prog in enumerate(CANDIDATES):
+    #     machine = run_bb(prog)
+    #     machine.print_results()
+
+    for i, prog in enumerate(sys.stdin):
         machine = run_bb(prog)
 
-        # if len(machine.beep_count) < 4:
-        #     continue
+        if len(machine.beep_count) < 4:
+            continue
 
-        # second = machine.beep_count[1][1]
+        second = machine.beep_count[1][1]
 
-        # if second > 9_000 or second < 107:
-        #     continue
+        if second > 9_000 or second < 107:
+            continue
 
-        # print(f'{i} | {prog.strip()} | {machine.beep_count[1:]}')
-        machine.print_results()
+        print(f'{i} | {prog.strip()} | {machine.beep_count[1:]}')
