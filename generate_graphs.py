@@ -11,16 +11,6 @@ def how_many_graphs(state_count, color_count):
     return state_count ** (state_count * color_count)
 
 
-def is_normal(graph):
-    if graph[0][0] != 'B':
-        return False
-
-    for i, state in enumerate(graph[:-COLOR_COUNT]):
-        pass
-
-    return True
-
-
 def generate_states(n):
     assert n <= len(STATES)
 
@@ -32,6 +22,18 @@ def generate_states(n):
 
     # get all the n-tuples of pairs
     yield from itertools.product(pairs, repeat=n)
+
+
+def is_normal(graph):
+    if graph[0][0] != 'B':
+        return False
+
+    for i, connections in enumerate(graph[ : - COLOR_COUNT]):
+        possible = set(STATES[ : i + COLOR_COUNT + 1])
+        if not set(connections).issubset(possible):
+            return False
+
+    return True
 
 
 def main():
