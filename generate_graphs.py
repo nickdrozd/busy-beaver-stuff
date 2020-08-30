@@ -64,10 +64,49 @@ def is_connected(graph):
     return True
 
 
+def is_isomorphic(g1, g2):
+    states = set(STATES)
+    for s1 in states:
+        for s2 in states.difference(s1):
+            for s3 in states.difference({s1, s2}):
+                s4 = list(states.difference({s1, s2, s3}))[0]
+
+                m = {
+                    A: s1,
+                    B: s2,
+                    C: s3,
+                    D: s4,
+                }
+
+                if all(tuple(m[x] for x in g1[s]) == g2[m[s]] for s in STATES):
+                    return True
+
+    return False
+
+
+def iso_filter(graph):
+    return True
+    if any(is_isomorphic(graph, seen) for seen in ISOS):
+        return False
+
+    ISOS.append(graph)
+    return True
+
+
+ISOS = []
+
 def main():
-    print(len(list(
+    connected = filter(
+        iso_filter,
         filter(
             is_connected,
             filter(
                 is_normal,
-                generate_states(4))))))
+                generate_states(4))))
+
+    for graph in connected:
+        print(graph)
+
+
+if __name__ == '__main__':
+    main()
