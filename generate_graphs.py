@@ -36,5 +36,38 @@ def is_normal(graph):
     return True
 
 
+def is_connected(graph):
+    states = set(STATES[:len(graph)])
+
+    arrows = dict(zip(states, graph))
+
+    for state in states:
+        if all(state not in arrows[dst]
+               for dst in states.difference(state)):
+            return False
+
+    for state in states:
+        reachable_from_x = set(arrows[state]).difference(state)
+
+        for _ in range(3):
+            reachable = {
+                node
+                for connection in reachable_from_x
+                for node in arrows[connection]
+            }
+
+            reachable_from_x.update(reachable)
+
+        if not reachable_from_x.issuperset(states):
+            return False
+
+    return True
+
+
 def main():
-    print(len(list(filter(is_normal, generate_states(4)))))
+    print(len(list(
+        filter(
+            is_connected,
+            filter(
+                is_normal,
+                generate_states(4))))))
