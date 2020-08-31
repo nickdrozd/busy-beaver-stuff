@@ -37,13 +37,14 @@ def is_normal(graph):
 
 
 def is_connected(graph):
-    states = set(STATES[:len(graph)])
+    states = STATES[:len(graph)]
 
     arrows = dict(zip(states, graph))
 
     for state in states:
         if all(state not in arrows[dst]
-               for dst in states.difference(state)):
+               for dst in states
+               if dst != state):
             return False
 
     for state in states:
@@ -97,12 +98,10 @@ ISOS = []
 
 def main():
     connected = filter(
-        iso_filter,
+        is_connected,
         filter(
-            is_connected,
-            filter(
-                is_normal,
-                generate_states(4))))
+            is_normal,
+            generate_states(4)))
 
     for graph in connected:
         print(graph)
