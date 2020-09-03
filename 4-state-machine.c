@@ -6,7 +6,7 @@
 
 #define CHECK_X(COUNT) do {                     \
     XX++;                                       \
-    if (XX > X_LIMIT) {goto PRINT;};            \
+    if (XX > X_LIMIT) {goto H;};                \
     COUNT = XX;                                 \
   } while (0)
 
@@ -54,7 +54,7 @@ int c0, c1, c2, c3, c4, c5, c6, c7,
   getc(stdin);
 
 int main (void) {
-  static void* dispatch[] = { &&A, &&B, &&C, &&D };
+  static void* dispatch[] = { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };
 
  INITIALIZE:
   RESET_COUNTS;
@@ -77,7 +77,7 @@ int main (void) {
   CHECK_X(DD);
   INSTRUCTION(c18, c19, c20, c21, c22, c23);
 
- PRINT:
+ H:
   printf("%c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d\n",
          c0, c1, c2, c3, c4, c5, c6, c7,
          c8, c9, c10, c11, c12, c13, c14, c15,
@@ -88,4 +88,9 @@ int main (void) {
 
  EXIT:
   exit(0);
+
+ E:
+ F:
+ G:
+  goto EXIT;
 }
