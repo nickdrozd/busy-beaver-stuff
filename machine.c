@@ -7,9 +7,9 @@
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
 
 #define CHECK_X(COUNT) do {                     \
-    x_count++;                                  \
-    if (x_count > X_LIMIT) {goto H;};           \
-    COUNT = x_count;                            \
+    XX++;                                       \
+    if (XX > X_LIMIT) {goto H;};                \
+    COUNT = XX;                                 \
   } while (0)
 
 int POS;
@@ -36,13 +36,9 @@ int TAPE[TAPE_LEN];
     else                                        \
       ACTION(c0, s0, t0)
 
-int x_count = 0;
-int a_count = 0;
-int b_count = 0;
-int c_count = 0;
-int d_count = 0;
+int XX, AA, BB, CC, DD;
 
-#define RESET_COUNTS x_count = a_count = b_count = c_count = d_count = 0;
+#define RESET_COUNTS XX = AA = BB = CC = DD = 0;
 
 int c0, c1, c2, c3, c4, c5, c6, c7,
   c8, c9, c10, c11, c12, c13, c14, c15,
@@ -68,19 +64,19 @@ int main (void) {
   LOAD_PROGRAM;
 
  A:
-  CHECK_X(a_count);
+  CHECK_X(AA);
   INSTRUCTION(c0, c1, c2, c3, c4, c5);
 
  B:
-  CHECK_X(b_count);
+  CHECK_X(BB);
   INSTRUCTION(c6, c7, c8, c9, c10, c11);
 
  C:
-  CHECK_X(c_count);
+  CHECK_X(CC);
   INSTRUCTION(c12, c13, c14, c15, c16, c17);
 
  D:
-  CHECK_X(d_count);
+  CHECK_X(DD);
   INSTRUCTION(c18, c19, c20, c21, c22, c23);
 
  H:
@@ -88,7 +84,7 @@ int main (void) {
          c0, c1, c2, c3, c4, c5, c6, c7,
          c8, c9, c10, c11, c12, c13, c14, c15,
          c16, c17, c18, c19, c20, c21, c22, c23,
-         a_count, b_count, c_count, d_count);
+         AA, BB, CC, DD);
 
   goto INITIALIZE;
 
