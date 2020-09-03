@@ -8,7 +8,7 @@
 
 #define CHECK_X(COUNT) do {                     \
     XX++;                                       \
-    if (XX > X_LIMIT) {goto PRINT;};                \
+    if (XX > X_LIMIT) {goto PRINT;};            \
     COUNT = XX;                                 \
   } while (0)
 
