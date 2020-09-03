@@ -18,12 +18,12 @@ int TAPE[TAPE_LEN];
 
 #define ZERO_TAPE for (int i = 0; i < TAPE_LEN; i++) { TAPE[i] = 0; }
 
-#define L POS--
-#define R POS++
+#define L POS--;
+#define R POS++;
 
 #define ACTION(c, s, t) {                       \
     TAPE[POS] = c;                              \
-    if (s - 76) { R; } else { L; };             \
+    if (s - 76) { R } else { L };               \
     goto *dispatch[t - 65];                     \
   }
 
@@ -40,11 +40,13 @@ int b_count = 0;
 int c_count = 0;
 int d_count = 0;
 
-char c0, c1, c2, c3, c4, c5, c6, c7,
+#define RESET_COUNTS a_count = b_count = c_count = d_count = 0;
+
+int c0, c1, c2, c3, c4, c5, c6, c7,
   c8, c9, c10, c11, c12, c13, c14, c15,
   c16, c17, c18, c19, c20, c21, c22, c23;
 
-#define READ(var) var = getc(stdin);
+#define READ(VAR) if ((VAR = getc(stdin)) == EOF) goto EXIT;
 
 #define LOAD_PROGRAM                            \
   READ(c0); READ(c1); READ(c2); READ(c3);       \
@@ -59,8 +61,11 @@ int main (void) {
   static void* dispatch[] = { &&A, &&B, &&C, &&D };
 
  INITIALIZE:
+  RESET_COUNTS;
   ZERO_TAPE;
   LOAD_PROGRAM;
+
+  printf("%d\n", c1 - 76);
 
  A:
   CHECK_X(a_count);
@@ -86,8 +91,6 @@ int main (void) {
          c8, c9, c10, c11, c12, c13, c14, c15,
          c16, c17, c18, c19, c20, c21, c22, c23,
          a_count, b_count, c_count, d_count);
-
-  a_count = b_count = c_count = d_count = 0;
 
   goto INITIALIZE;
 
