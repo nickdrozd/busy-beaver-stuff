@@ -17,8 +17,9 @@ int TAPE[TAPE_LEN];
 #define L POS--
 #define R POS++
 
-#define INSTRUCTION(c0, s0, t0, c1, s1, t1) \
-  if (TAPE[POS]) {TAPE[POS] = c1; s1; goto t1;} else {TAPE[POS] = c0; s0; goto t0;}
+#define INSTRUCTION(c0, s0, t0, c1, s1, t1)     \
+  if (TAPE[POS]) {TAPE[POS] = c1; s1; goto t1;} \
+  else {TAPE[POS] = c0; s0; goto t0;}
 
 int x_count = 0;
 
@@ -39,9 +40,12 @@ char c0, c1, c2, c3, c4, c5, c6, c7,
   READ(c8); READ(c9); READ(c10); READ(c11);     \
   READ(c12); READ(c13); READ(c14); READ(c15);   \
   READ(c16); READ(c17); READ(c18); READ(c19);   \
-  READ(c20); READ(c21); READ(c22); READ(c23);
+  READ(c20); READ(c21); READ(c22); READ(c23);   \
+  getc(stdin);
 
 int main (void) {
+  void* dispatch[] { &&A, &&B, &&C, &&D };
+
  INITIALIZE:
   ZERO_TAPE;
   LOAD_PROGRAM;
