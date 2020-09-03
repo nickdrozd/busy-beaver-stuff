@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PROG "1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB"
-
 #define X_LIMIT 100000
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
 
