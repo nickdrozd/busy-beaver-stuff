@@ -12,11 +12,12 @@
     COUNT = x_count;                            \
   } while (0)
 
-int POS = TAPE_LEN / 2;
-
+int POS;
 int TAPE[TAPE_LEN];
 
-#define ZERO_TAPE for (int i = 0; i < TAPE_LEN; i++) { TAPE[i] = 0; }
+#define RESET_TAPE                                      \
+  POS = TAPE_LEN / 2;                                   \
+  for (int i = 0; i < TAPE_LEN; i++) { TAPE[i] = 0; }
 
 #define L POS--;
 #define R POS++;
@@ -34,7 +35,6 @@ int TAPE[TAPE_LEN];
       ACTION(c0, s0, t0)
 
 int x_count = 0;
-
 int a_count = 0;
 int b_count = 0;
 int c_count = 0;
@@ -62,7 +62,7 @@ int main (void) {
 
  INITIALIZE:
   RESET_COUNTS;
-  ZERO_TAPE;
+  RESET_TAPE;
   LOAD_PROGRAM;
 
  A:
