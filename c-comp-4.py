@@ -46,7 +46,8 @@ int main (void) {{
   INSTRUCTION({});
 
  H:
-  printf("%s | %d %d %d %d\\n", PROG, a_count, b_count, c_count, d_count);
+  if (a_count && b_count && c_count && d_count)
+    printf("%s | %d %d %d %d\\n", PROG, a_count, b_count, c_count, d_count);
   exit(0);
 }}
 '''
