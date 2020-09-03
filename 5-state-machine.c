@@ -4,11 +4,11 @@
 #define X_LIMIT 100000000
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
 
-#define CHECK_X(COUNT) do {                     \
+#define CHECK_X(COUNT) {                        \
     XX++;                                       \
     if (XX > X_LIMIT) {goto H;};                \
     COUNT = XX;                                 \
-  } while (0)
+  }
 
 unsigned int POS;
 unsigned int TAPE[TAPE_LEN];
