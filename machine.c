@@ -15,15 +15,17 @@
 int POS;
 int TAPE[TAPE_LEN];
 
-#define RESET_TAPE                                      \
-  POS = TAPE_LEN / 2;                                   \
-  for (int i = 0; i < TAPE_LEN; i++) { TAPE[i] = 0; }
+#define RESET_TAPE                              \
+  POS = TAPE_LEN / 2;                           \
+  for (int i = 0; i < TAPE_LEN; i++) {          \
+    TAPE[i] = 0;                                \
+  }
 
 #define L POS--;
 #define R POS++;
 
 #define ACTION(c, s, t) {                       \
-    TAPE[POS] = c;                              \
+    TAPE[POS] = c - 48;                         \
     if (s - 76) { R } else { L };               \
     goto *dispatch[t - 65];                     \
   }
@@ -67,19 +69,19 @@ int main (void) {
 
  A:
   CHECK_X(a_count);
-  INSTRUCTION(1,'R','B',1,'R','C');
+  INSTRUCTION(c0, c1, c2, c3, c4, c5);
 
  B:
   CHECK_X(b_count);
-  INSTRUCTION(1,'L','C',1,'R','D');
+  INSTRUCTION(c6, c7, c8, c9, c10, c11);
 
  C:
   CHECK_X(c_count);
-  INSTRUCTION(1,'R','A',1,'L','D');
+  INSTRUCTION(c12, c13, c14, c15, c16, c17);
 
  D:
   CHECK_X(d_count);
-  INSTRUCTION(0,'R','D',0,'L','B');
+  INSTRUCTION(c18, c19, c20, c21, c22, c23);
 
  H:
   printf("%c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d\n",
