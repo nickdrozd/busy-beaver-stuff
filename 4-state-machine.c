@@ -35,8 +35,9 @@ unsigned int TAPE[TAPE_LEN];
       ACTION(c0, s0, t0)
 
 unsigned int XX, AA, BB, CC, DD;
+unsigned int PP = 0;
 
-#define RESET_COUNTS XX = AA = BB = CC = DD = 0;
+#define RESET_COUNTS XX = AA = BB = CC = DD = 0; PP++;
 
 int c0, c1, c2, c3, c4, c5, c6, c7,
   c8, c9, c10, c11, c12, c13, c14, c15,
@@ -78,7 +79,8 @@ int main (void) {
   INSTRUCTION(c18, c19, c20, c21, c22, c23);
 
  H:
-  printf("%c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d\n",
+  printf("%d | %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d\n",
+         PP,
          c0, c1, c2, c3, c4, c5, c6, c7,
          c8, c9, c10, c11, c12, c13, c14, c15,
          c16, c17, c18, c19, c20, c21, c22, c23,
@@ -87,6 +89,7 @@ int main (void) {
   goto INITIALIZE;
 
  EXIT:
+  printf("done\n");
   exit(0);
 
  E:
