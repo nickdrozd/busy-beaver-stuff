@@ -10,8 +10,8 @@
     COUNT = XX;                                 \
   } while (0)
 
-int POS;
-int TAPE[TAPE_LEN];
+unsigned int POS;
+unsigned int TAPE[TAPE_LEN];
 
 #define RESET_TAPE                              \
   POS = TAPE_LEN / 2;                           \
@@ -34,7 +34,7 @@ int TAPE[TAPE_LEN];
     else                                        \
       ACTION(c0, s0, t0)
 
-int XX, AA, BB, CC, DD;
+unsigned int XX, AA, BB, CC, DD;
 
 #define RESET_COUNTS XX = AA = BB = CC = DD = 0;
 
