@@ -40,7 +40,7 @@ int b_count = 0;
 int c_count = 0;
 int d_count = 0;
 
-#define RESET_COUNTS a_count = b_count = c_count = d_count = 0;
+#define RESET_COUNTS x_count = a_count = b_count = c_count = d_count = 0;
 
 int c0, c1, c2, c3, c4, c5, c6, c7,
   c8, c9, c10, c11, c12, c13, c14, c15,
@@ -65,25 +65,21 @@ int main (void) {
   ZERO_TAPE;
   LOAD_PROGRAM;
 
-  printf("%d\n", c1 - 76);
-
  A:
   CHECK_X(a_count);
-  INSTRUCTION(c0, c1, c2, c3, c4, c5);
+  INSTRUCTION(1,'R','B',1,'R','C');
 
  B:
   CHECK_X(b_count);
-  INSTRUCTION(c6, c7, c8, c9, c10, c11);
+  INSTRUCTION(1,'L','C',1,'R','D');
 
  C:
   CHECK_X(c_count);
-
-  INSTRUCTION(c12, c13, c14, c15, c16, c17);
+  INSTRUCTION(1,'R','A',1,'L','D');
 
  D:
   CHECK_X(d_count);
-
-  INSTRUCTION(c18, c19, c20, c21, c22, c23);
+  INSTRUCTION(0,'R','D',0,'L','B');
 
  H:
   printf("%c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d\n",
