@@ -81,7 +81,7 @@ class Machine:
 
             old_state = state
 
-            (color, shift, state) = prog[state][tape[pos]]
+            color, shift, state = prog[state][tape[pos]]
             tape[pos] = color
 
             if shift:
@@ -191,8 +191,8 @@ CANDIDATES = [
 
     # # Smaller 4-state progs > 107
 
-    # 1153
-    "1RB 1LB 1RC 0LD 0RD 0RA 1LD 0LA",
+    # # 1153
+    # "1RB 1LB 1RC 0LD 0RD 0RA 1LD 0LA",
 
     # # 705
     # "1RB 1LC 1RC 0RD 0RD 0RC 1LD 1LA",
