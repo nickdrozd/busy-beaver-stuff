@@ -28,12 +28,18 @@ def parse(program_string):
         program_string.split()
     ])
 
+    zipped = (
+        zip(instructions, instructions, instructions)
+        if '2' in program_string else
+        zip(instructions, instructions)
+    )
+
     return tuple(
         tuple(
             (int(action[0]), int(SHIFT_MAP[action[1]]), int(action[2]))
             for action in instr)
         for instr in
-        zip(instructions, instructions)
+        zipped
     )
 
 ########################################
@@ -53,7 +59,11 @@ class Machine:
 
     @property
     def ones_count(self):
-        return sum(self._tape)
+        total = 0
+        for square in self._tape:
+            if square != 0:
+                total += 1
+        return total
 
     @property
     def beep_count(self):
@@ -77,7 +87,7 @@ class Machine:
             if state == HALT:
                 break
 
-            # self.print_tape(tape, pos, exec_count)
+            self.print_tape(tape, pos, exec_count)
 
             old_state = state
 
@@ -117,7 +127,9 @@ class Machine:
 
     def print_tape(self, tape, pos, step):
         squares = [
-            '_' if square == 0 else '#'
+            '_' if square == 0 else
+            '!' if square == 1 else
+            '@'
             for square in tape
         ]
 
@@ -136,6 +148,8 @@ MACHINES = {
     'BB4': "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA",
     'TM5': "1RB 0LC 1RC 1RD 1LA 0RB 0RE 1RH 1LC 1RA",
     'BB5': "1RB 1LC 1RC 1RB 1RD 0LE 1LA 1LD 1RH 0LA",
+
+    'BB2_3': "1RB 2LB 1RH 2LA 2RB 1LB",
 }
 
 BB2 = MACHINES['BB2']
@@ -143,6 +157,7 @@ BB3 = MACHINES['BB3']
 BB4 = MACHINES['BB4']
 TM5 = MACHINES['TM5']
 BB5 = MACHINES['BB5']
+BB2_3 = MACHINES['BB2_3']
 
 def run_bb(prog, tape=None):
     if tape is None:
@@ -159,6 +174,7 @@ CANDIDATES = [
     # BB3,
     # BB4,
     # BB5,
+    # BB2_3,
 
     # # BBB(3) = 55
     # "1RB 0LB 1LA 0RC 1LC 1LA",  # normal
@@ -241,24 +257,31 @@ CANDIDATES = [
 
     # # 109
     # "1RB 0LC 0LC 0RD 1LC 1LD 1LA 0RC",
+
+    # BBB(2, 3)
+
+    "1RB 2LB 1LA 2LB 2RA 0RA",  # 59
+    "1RB 0LB 1RA 1LB 2LA 2RA",  # 45
+    "1RB 2LB 1RA 2LB 2LA 0RA",  # 43
+    "1RB 2RA 2LB 2LB 2LA 0LA",  # 40
 ]
 
-STEPS = 2819
+STEPS = 43
 
 if __name__ == '__main__':
-    # for i, prog in enumerate(CANDIDATES):
-    #     machine = run_bb(prog)
-    #     machine.print_results()
-
-    for i, prog in enumerate(sys.stdin):
+    for i, prog in enumerate(CANDIDATES):
         machine = run_bb(prog)
+        machine.print_results()
 
-        if len(machine.beep_count) < 4:
-            continue
+    # for i, prog in enumerate(sys.stdin):
+    #     machine = run_bb(prog)
 
-        second = machine.beep_count[1][1]
+    #     if len(machine.beep_count) < 4:
+    #         continue
 
-        if second > 9_000 or second < 107:
-            continue
+    #     second = machine.beep_count[1][1]
 
-        print(f'{i} | {prog.strip()} | {machine.beep_count[1:]}')
+    #     if second > 9_000 or second < 107:
+    #         continue
+
+    #     print(f'{i} | {prog.strip()} | {machine.beep_count[1:]}')
