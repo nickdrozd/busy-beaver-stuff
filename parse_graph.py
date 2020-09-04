@@ -1,13 +1,9 @@
 import sys
 
-STATES = ['A', 'B', 'C', 'D']
+STATES = ['A', 'B', 'C', 'D', 'E', 'H']
 
 def get_arrows(prog_string):
-    prog_states = [
-        action[2]
-        for action in
-        prog_string.split()
-    ]
+    prog_states = prog_string.split()
 
     arrows = {
         state: set()
@@ -22,10 +18,10 @@ def get_arrows(prog_string):
 
 
 def dump_dot(arrows):
-    return 'digraph NAME {{\n  init -> A;\n{}\n}}'.format('\n'.join([
-        f'  {node} -> {target};'
+    return 'digraph NAME {{\n  init -> A;\n{}\n}}'.format(''.join([
+        f'  {node} -> {target} [ label=" {i}" ];'
         for node, targets in arrows.items()
-        for target in targets
+        for i, target in enumerate(targets)
     ]))
 
 
@@ -39,7 +35,8 @@ def flatten(arrows):
 
 
 if __name__ == '__main__':
-    print(
-        flatten(
-            get_arrows(
-                sys.argv[1])))
+    for graph in sys.stdin:
+        print(
+            dump_dot(
+                get_arrows(
+                    graph)))
