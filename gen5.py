@@ -92,6 +92,10 @@ def decorate(arrows):
             yield f'1RB 1{s2}C {c3}{s3}{n3} {c4}{s4}{n4} {c5}{s5}{n5} {c6}{s6}{n6} {c7}{s7}{n7} {c8}{s8}{n8} {c9}{s9}{n9} {c10}{s10}{n10}'
 
 
+def compress(prog_string):
+    return prog_string[4:].replace(' ', '')
+
+
 if __name__ == '__main__':
     graphs = filter(
         only_D_self_connected,
@@ -103,4 +107,4 @@ if __name__ == '__main__':
 
     for graph in graphs:
         for prog in decorate(graph):
-            print(prog)
+            print(compress(prog))
