@@ -1,4 +1,5 @@
-from itertools import permutations, product
+import re
+from itertools import permutations, product, filterfalse
 
 STATES = A, B, C, D, E = 'A', 'B', 'C', 'D', 'E'
 
@@ -18,6 +19,9 @@ def graph_to_string(graph, sep=''):
 
 def yield_graphs():
     for b in permutations(STATES, r=2):
+        b0, b1 = b
+        if b0 == A:
+            continue
         for c in permutations(STATES, r=2):
             for d in permutations(STATES, r=2):
                 for e in permutations(STATES, r=2):
@@ -89,7 +93,15 @@ def decorate(arrows):
 
             c3, c4, c5, c6, c7, c8, c9, c10 = colors
 
-            yield f'1{s2}C{c3}{s3}{n3}{c4}{s4}{n4}{c5}{s5}{n5}{c6}{s6}{n6}{c7}{s7}{n7}{c8}{s8}{n8}{c9}{s9}{n9}{c10}{s10}{n10}'
+            yield f'1RB 1{s2}C {c3}{s3}{n3} {c4}{s4}{n4} {c5}{s5}{n5} {c6}{s6}{n6} {c7}{s7}{n7} {c8}{s8}{n8} {c9}{s9}{n9} {c10}{s10}{n10}'
+
+
+def is_obviously_stupid(prog_string):
+    return False
+
+
+def compress(prog_string):
+    return prog_string[4:].replace(' ', '')
 
 
 if __name__ == '__main__':
@@ -103,7 +115,7 @@ if __name__ == '__main__':
 
     try:
         for graph in graphs:
-            for prog in decorate(graph):
-                print(prog)
+            for prog in filterfalse(is_obviously_stupid, decorate(graph)):
+                print(compress(prog))
     except BrokenPipeError:
         pass
