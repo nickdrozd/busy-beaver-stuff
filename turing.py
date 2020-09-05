@@ -260,10 +260,12 @@ CANDIDATES = [
 
     # BBB(2, 3)
 
-    "1RB 2LB 1LA 2LB 2RA 0RA",  # 59
-    "1RB 0LB 1RA 1LB 2LA 2RA",  # 45
-    "1RB 2LB 1RA 2LB 2LA 0RA",  # 43
-    "1RB 2RA 2LB 2LB 2LA 0LA",  # 40
+    # "1RB 2LB 1LA 2LB 2RA 0RA",  # 59
+    # "1RB 0LB 1RA 1LB 2LA 2RA",  # 45
+    # "1RB 2LB 1RA 2LB 2LA 0RA",  # 43
+    # "1RB 2RA 2LB 2LB 2LA 0LA",  # 40
+
+    # "1RB 2LA 1LA 2LA 2RB 0RA",  # Wolram's "universal machine"
 ]
 
 STEPS = 43
