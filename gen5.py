@@ -105,6 +105,9 @@ if __name__ == '__main__':
                 is_normal,
                 yield_graphs())))
 
-    for graph in graphs:
-        for prog in decorate(graph):
-            print(compress(prog))
+    try:
+        for graph in graphs:
+            for prog in decorate(graph):
+                print(compress(prog))
+    except BrokenPipeError:
+        pass
