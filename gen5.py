@@ -83,6 +83,9 @@ def decorate(arrows):
 
         s2, s3, s4, s5, s6, s7, s8, s9, s10 = shifts
 
+        if n3 == A and s3 == R:
+            continue
+
         for colors in product(COLORS, repeat=8):
             if colors.count(1) != 5:
                 continue
