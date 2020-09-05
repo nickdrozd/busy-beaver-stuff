@@ -1,8 +1,8 @@
-import itertools
+from itertools import permutations
 
-A, B, C, D, E = 'A', 'B', 'C', 'D', 'E'
+STATES = A, B, C, D, E = 'A', 'B', 'C', 'D', 'E'
 
-STATES = ( A, B, C, D, E )
+COLORS = R, L = 'R', 'L'
 
 
 def graph_to_string(graph, sep=''):
@@ -15,10 +15,10 @@ def graph_to_string(graph, sep=''):
 
 
 def yield_graphs():
-    for b in itertools.permutations(STATES, r=2):
-        for c in itertools.permutations(STATES, r=2):
-            for d in itertools.permutations(STATES, r=2):
-                for e in itertools.permutations(STATES, r=2):
+    for b in permutations(STATES, r=2):
+        for c in permutations(STATES, r=2):
+            for d in permutations(STATES, r=2):
+                for e in permutations(STATES, r=2):
                     yield {A: (B, C), B: b, C: c, D: d, E: e,}
 
 
@@ -68,19 +68,18 @@ def only_D_self_connected(arrows):
 
 
 def decorate(arrows):
-    return graph_to_string(arrows, sep=' ')
+    yield graph_to_string(arrows, sep=' ')
 
 
 if __name__ == '__main__':
-    graphs = map(
-        decorate,
+    graphs = filter(
+        only_D_self_connected,
         filter(
-            only_D_self_connected,
+            is_strongly_connected,
             filter(
-                is_strongly_connected,
-                filter(
-                    is_normal,
-                    yield_graphs()))))
+                is_normal,
+                yield_graphs())))
 
     for graph in graphs:
-        print(graph)
+        for prog in decorate(graph):
+            print(prog)
