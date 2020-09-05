@@ -1,8 +1,10 @@
-from itertools import permutations
+from itertools import permutations, product
 
 STATES = A, B, C, D, E = 'A', 'B', 'C', 'D', 'E'
 
-COLORS = R, L = 'R', 'L'
+SHIFTS = R, L = 'R', 'L'
+
+COLORS = 1, 2
 
 
 def graph_to_string(graph, sep=''):
@@ -68,7 +70,26 @@ def only_D_self_connected(arrows):
 
 
 def decorate(arrows):
-    yield graph_to_string(arrows, sep=' ')
+    n3, n4 = arrows[B]
+    n5, n6 = arrows[C]
+    n7, n8 = arrows[D]
+    n9, n10 = arrows[E]
+
+    for shifts in product(SHIFTS, repeat=9):
+        L_count = shifts.count(L)
+
+        if L_count > 7 or L_count < 3:
+            continue
+
+        s2, s3, s4, s5, s6, s7, s8, s9, s10 = shifts
+
+        for colors in product(COLORS, repeat=8):
+            if colors.count(1) != 5:
+                continue
+
+            c3, c4, c5, c6, c7, c8, c9, c10 = colors
+
+            yield f'1RB 1{s2}C {c3}{s3}{n3} {c4}{s4}{n4} {c5}{s5}{n5} {c6}{s6}{n6} {c7}{s7}{n7} {c8}{s8}{n8} {c9}{s9}{n9} {c10}{s10}{n10}'
 
 
 if __name__ == '__main__':
