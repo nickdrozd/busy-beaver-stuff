@@ -104,7 +104,7 @@ def compress(prog_string):
     return prog_string[4:].replace(' ', '')
 
 
-if __name__ == '__main__':
+def main():
     graphs = filter(
         only_D_self_connected,
         filter(
@@ -113,9 +113,13 @@ if __name__ == '__main__':
                 is_normal,
                 yield_graphs())))
 
+    for graph in graphs:
+        for prog in filterfalse(is_obviously_stupid, decorate(graph)):
+            print(compress(prog))
+
+
+if __name__ == '__main__':
     try:
-        for graph in graphs:
-            for prog in filterfalse(is_obviously_stupid, decorate(graph)):
-                print(compress(prog))
+        main()
     except BrokenPipeError:
         pass
