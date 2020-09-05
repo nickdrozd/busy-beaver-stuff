@@ -4,7 +4,7 @@ STATES = A, B, C, D, E = 'A', 'B', 'C', 'D', 'E'
 
 SHIFTS = R, L = 'R', 'L'
 
-COLORS = 1, 2
+COLORS = 0, 1
 
 
 def graph_to_string(graph, sep=''):
