@@ -5,7 +5,7 @@ A, B, C, D, E = 'A', 'B', 'C', 'D', 'E'
 STATES = ( A, B, C, D, E )
 
 
-def to_string(graph, sep=''):
+def graph_to_string(graph, sep=''):
     return sep.join(
         dst
         for state in STATES
@@ -23,7 +23,7 @@ def yield_graphs():
 
 
 def is_normal(graph):
-    graph_string = to_string(graph)
+    graph_string = graph_to_string(graph)
 
     if any(state not in graph_string for state in STATES):
         return False
@@ -35,7 +35,7 @@ def is_normal(graph):
     return c < d < e
 
 
-def is_connected(arrows):
+def is_strongly_connected(arrows):
     for state in STATES:
         if all(state not in arrows[dst]
                for dst in set(STATES).difference(state)):
@@ -59,12 +59,28 @@ def is_connected(arrows):
     return True
 
 
+def only_D_self_connected(arrows):
+    if D not in arrows[D]:
+        return False
+
+    return all(state not in arrows[state]
+               for state in set(STATES).difference(D))
+
+
+def decorate(arrows):
+    return graph_to_string(arrows, sep=' ')
+
+
 if __name__ == '__main__':
-    graphs = filter(
-        is_connected,
+    graphs = map(
+        decorate,
         filter(
-            is_normal,
-            yield_graphs()))
+            only_D_self_connected,
+            filter(
+                is_strongly_connected,
+                filter(
+                    is_normal,
+                    yield_graphs()))))
 
     for graph in graphs:
-        print(to_string(graph, sep=' '))
+        print(graph)
