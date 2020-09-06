@@ -29,6 +29,8 @@ def parse(program_string):
     ])
 
     zipped = (
+        zip(instructions, instructions, instructions, instructions)
+        if '3' in program_string else
         zip(instructions, instructions, instructions)
         if '2' in program_string else
         zip(instructions, instructions)
@@ -87,7 +89,7 @@ class Machine:
             if state == HALT:
                 break
 
-            self.print_tape(tape, pos, exec_count)
+            # self.print_tape(tape, pos, exec_count)
 
             old_state = state
 
@@ -127,9 +129,10 @@ class Machine:
 
     def print_tape(self, tape, pos, step):
         squares = [
-            '_' if square == 0 else
             '!' if square == 1 else
-            '@'
+            '@' if square == 2 else
+            '#' if square == 3 else
+            '_' # if square == 0
             for square in tape
         ]
 
@@ -150,6 +153,7 @@ MACHINES = {
     'BB5': "1RB 1LC 1RC 1RB 1RD 0LE 1LA 1LD 1RH 0LA",
 
     'BB2_3': "1RB 2LB 1RH 2LA 2RB 1LB",
+    'BB2_4': "1RB 2LA 1RA 1RA 1LB 1LA 3RB 1RH",
 }
 
 BB2 = MACHINES['BB2']
@@ -158,6 +162,7 @@ BB4 = MACHINES['BB4']
 TM5 = MACHINES['TM5']
 BB5 = MACHINES['BB5']
 BB2_3 = MACHINES['BB2_3']
+BB2_4 = MACHINES['BB2_4']
 
 def run_bb(prog, tape=None):
     if tape is None:
@@ -175,6 +180,7 @@ CANDIDATES = [
     # BB4,
     # BB5,
     # BB2_3,
+    BB2_4,
 
     # # BBB(3) = 55
     # "1RB 0LB 1LA 0RC 1LC 1LA",  # normal
@@ -266,9 +272,11 @@ CANDIDATES = [
     # "1RB 2RA 2LB 2LB 2LA 0LA",  # 40
 
     # "1RB 2LA 1LA 2LA 2RB 0RA",  # Wolram's "universal machine"
+
+    # BBB(2, 4)
 ]
 
-STEPS = 43
+STEPS = 4_000_000
 
 if __name__ == '__main__':
     for i, prog in enumerate(CANDIDATES):
