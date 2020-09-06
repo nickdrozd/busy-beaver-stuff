@@ -4,7 +4,7 @@ run :
 	python3 turing.py
 
 lint :
-	pylint turing.py test.py
+	pylint turing.py test.py generate-2-3.py generate-5-2.py
 
 test :
 	python3 -m unittest test.py

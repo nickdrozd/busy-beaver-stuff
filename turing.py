@@ -1,4 +1,3 @@
-import sys
 from collections import defaultdict
 
 STATE_MAP = {
@@ -89,7 +88,7 @@ class Machine:
             if state == HALT:
                 break
 
-            print_tape(tape, pos)
+            # print_tape(tape, pos)
 
             old_state = state
 
@@ -279,18 +278,4 @@ STEPS = 50_000_000
 
 if __name__ == '__main__':
     for i, program in enumerate(CANDIDATES):
-        machine = run_bb(program)
-        machine.print_results()
-
-    # for i, prog in enumerate(sys.stdin):
-    #     machine = run_bb(prog)
-
-    #     if len(machine.beep_count) < 4:
-    #         continue
-
-    #     second = machine.beep_count[1][1]
-
-    #     if second > 9_000 or second < 107:
-    #         continue
-
-    #     print(f'{i} | {prog.strip()} | {machine.beep_count[1:]}')
+        run_bb(program).print_results()

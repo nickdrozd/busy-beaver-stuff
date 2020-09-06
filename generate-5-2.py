@@ -19,7 +19,7 @@ def graph_to_string(graph, sep=''):
 
 def yield_graphs():
     for b in permutations(STATES, r=2):
-        b0, b1 = b
+        b0, _b1 = b
         if b0 == A:
             continue
         for c in permutations(STATES, r=2):
@@ -65,7 +65,7 @@ def is_strongly_connected(arrows):
     return True
 
 
-def only_D_self_connected(arrows):
+def only_d_self_connected(arrows):
     if D not in arrows[D]:
         return False
 
@@ -115,7 +115,7 @@ def compress(prog_string):
 
 def main():
     graphs = filter(
-        only_D_self_connected,
+        only_d_self_connected,
         filter(
             is_strongly_connected,
             filter(
