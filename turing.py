@@ -146,23 +146,21 @@ class Machine:
 ########################################
 
 MACHINES = {
-    'BB2': "1RB 1LB 1LA 1RH",
-    'BB3': "1RB 1RH 1LB 0RC 1LC 1LA",
-    'BB4': "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA",
-    'TM5': "1RB 0LC 1RC 1RD 1LA 0RB 0RE 1RH 1LC 1RA",
-    'BB5': "1RB 1LC 1RC 1RB 1RD 0LE 1LA 1LD 1RH 0LA",
+    'BB_2_2': "1RB 1LB 1LA 1RH",
+    'BB_3_2': "1RB 1RH 1LB 0RC 1LC 1LA",
+    'BB_4_2': "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA",
+    'BB_5_2': "1RB 1LC 1RC 1RB 1RD 0LE 1LA 1LD 1RH 0LA",
 
-    'BB2_3': "1RB 2LB 1RH 2LA 2RB 1LB",
-    'BB2_4': "1RB 2LA 1RA 1RA 1LB 1LA 3RB 1RH",
+    'BB_2_3': "1RB 2LB 1RH 2LA 2RB 1LB",
+    'BB_2_4': "1RB 2LA 1RA 1RA 1LB 1LA 3RB 1RH",
 }
 
-BB2 = MACHINES['BB2']
-BB3 = MACHINES['BB3']
-BB4 = MACHINES['BB4']
-TM5 = MACHINES['TM5']
-BB5 = MACHINES['BB5']
-BB2_3 = MACHINES['BB2_3']
-BB2_4 = MACHINES['BB2_4']
+BB_2_2 = MACHINES['BB_2_2']
+BB_3_2 = MACHINES['BB_3_2']
+BB_4_2 = MACHINES['BB_4_2']
+BB_5_2 = MACHINES['BB_5_2']
+BB_2_3 = MACHINES['BB_2_3']
+BB_2_4 = MACHINES['BB_2_4']
 
 def run_bb(prog, tape=None):
     if tape is None:
@@ -175,12 +173,12 @@ def run_bb(prog, tape=None):
 ########################################
 
 CANDIDATES = [
-    # BB2,
-    # BB3,
-    # BB4,
-    # BB5,
+    # BB_2_2,
+    # BB_3_2,
+    # BB_4_2,
+    # BB_5_2,
     # BB2_3,
-    BB2_4,
+    # BB2_4,
 
     # # BBB(3) = 55
     # "1RB 0LB 1LA 0RC 1LC 1LA",  # normal
@@ -276,7 +274,7 @@ CANDIDATES = [
     # BBB(2, 4)
 ]
 
-STEPS = 4_000_000
+STEPS = 50_000_000
 
 if __name__ == '__main__':
     for i, prog in enumerate(CANDIDATES):

@@ -1,26 +1,36 @@
 import unittest
 
-from turing import run_bb, BB2, BB3, BB4, TM5, BB5
+from turing import (
+    run_bb,
+    BB_2_2,
+    BB_3_2,
+    BB_4_2,
+    BB_5_2,
+    BB_2_3,
+    BB_2_4,
+)
 
 
 EXPECTED = {
-    BB2: (4, 6),
-    BB3: (5, 21),
-    BB4: (13, 107),
-    TM5: (501, 134467),
-    BB5: (4098, 47176870),
+    BB_2_2: (4, 6),
+    BB_3_2: (5, 21),
+    BB_2_3: (9, 38),
+    BB_4_2: (13, 107),
+    BB_2_4: (2050, 3932964),
+    BB_5_2: (4098, 47176870),
 }
 
 
 class TuringTest(unittest.TestCase):
     def test_turing(self):
-        for prog, (ones_count, exec_count) in EXPECTED.items():
+        for prog, (sigma, shift) in EXPECTED.items():
+            print(prog)
             machine = run_bb(prog)
 
             self.assertEqual(
-                ones_count,
+                sigma,
                 machine.ones_count)
 
             self.assertEqual(
-                exec_count,
+                shift,
                 machine.exec_count)
