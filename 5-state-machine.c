@@ -3,6 +3,10 @@
 
 #define X_LIMIT 100000000
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
+#define BB5_STEPS 47176870
+#define UPPER_BOUND 80000000
+
+#define IN_RANGE(COUNT) (BB5_STEPS < COUNT && COUNT < UPPER_BOUND)
 
 #define CHECK_X(COUNT) {                        \
     XX++;                                       \
@@ -84,14 +88,16 @@ int main (void) {
   INSTRUCTION(c24, c25, c26, c27, c28, c29);
 
  H:
-  printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d %d\n",
-         PP,
-         c3, c4, c5,
-         c6, c7, c8, c9, c10, c11,
-         c12, c13, c14, c15, c16, c17,
-         c18, c19, c20, c21, c22, c23,
-         c24, c25, c26, c27, c28, c29,
-         AA, BB, CC, DD, EE);
+  if (AA && BB && CC && DD && EE)
+    if (IN_RANGE(AA) || IN_RANGE(BB) || IN_RANGE(CC) || IN_RANGE(DD) || IN_RANGE(EE))
+      printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d %d\n",
+             PP,
+             c3, c4, c5,
+             c6, c7, c8, c9, c10, c11,
+             c12, c13, c14, c15, c16, c17,
+             c18, c19, c20, c21, c22, c23,
+             c24, c25, c26, c27, c28, c29,
+             AA, BB, CC, DD, EE);
 
   goto INITIALIZE;
 
