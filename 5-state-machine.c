@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define X_LIMIT 100000000
+#define X_LIMIT 134217728
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
 #define BB5_STEPS 47176870
 #define UPPER_BOUND 80000000
@@ -88,8 +88,8 @@ int main (void) {
   INSTRUCTION(c24, c25, c26, c27, c28, c29);
 
  H:
-  if (AA && BB && CC && DD && EE)
-    if (IN_RANGE(AA) || IN_RANGE(BB) || IN_RANGE(CC) || IN_RANGE(DD) || IN_RANGE(EE))
+  /* if (AA && BB && CC && DD && EE) */
+  /*   if (IN_RANGE(AA) || IN_RANGE(BB) || IN_RANGE(CC) || IN_RANGE(DD) || IN_RANGE(EE)) */
       printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d %d\n",
              PP,
              c3, c4, c5,
