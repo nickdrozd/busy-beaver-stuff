@@ -89,7 +89,7 @@ class Machine:
             if state == HALT:
                 break
 
-            # self.print_tape(tape, pos, exec_count)
+            print_tape(tape, pos)
 
             old_state = state
 
@@ -119,7 +119,7 @@ class Machine:
 
         self._beep_count = dict(beep_count)
 
-    def print_results(self, print_tape=False):
+    def print_results(self):
         print('\n'.join([
             f'ones: {self.ones_count}',
             f'exec: {self.exec_count}',
@@ -127,21 +127,22 @@ class Machine:
             '',
         ]))
 
-    def print_tape(self, tape, pos, step):
-        squares = [
-            '!' if square == 1 else
-            '@' if square == 2 else
-            '#' if square == 3 else
-            '_' # if square == 0
-            for square in tape
-        ]
 
-        with_pos = ''.join([
-            f'[{square}]' if i == pos else square
-            for i, square in enumerate(squares)
-        ])
+def print_tape(tape, pos):
+    squares = [
+        '!' if square == 1 else
+        '@' if square == 2 else
+        '#' if square == 3 else
+        '_' # if square == 0
+        for square in tape
+    ]
 
-        print(with_pos)
+    with_pos = ''.join([
+        f'[{square}]' if i == pos else square
+        for i, square in enumerate(squares)
+    ])
+
+    print(with_pos)
 
 ########################################
 
@@ -277,8 +278,8 @@ CANDIDATES = [
 STEPS = 50_000_000
 
 if __name__ == '__main__':
-    for i, prog in enumerate(CANDIDATES):
-        machine = run_bb(prog)
+    for i, program in enumerate(CANDIDATES):
+        machine = run_bb(program)
         machine.print_results()
 
     # for i, prog in enumerate(sys.stdin):
