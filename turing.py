@@ -167,6 +167,8 @@ MACHINES = {
 
     'BBB_2_3_shift': "1RB 2LB 1LA 2LB 2RA 0RA",
     'BBB_2_3_sigma': "1RB 2LB 1RA 2LB 2LA 0RA",
+
+    'SIAB_3_3': "1RB 2LB 1LC 1LA 2RB 1RB 1RH 2LA 0LC",
 }
 
 BB_2_2 = MACHINES['BB_2_2']
@@ -182,6 +184,8 @@ BBB_4_2 = MACHINES['BBB_4_2']
 
 BBB_2_3_shift = MACHINES['BBB_2_3_shift']
 BBB_2_3_sigma = MACHINES['BBB_2_3_sigma']
+
+SIAB_3_3 = MACHINES['SIAB_3_3']
 
 
 def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
@@ -219,9 +223,11 @@ CANDIDATES = [
     # "1RB 1RA 0RC 0RB 0RD 1RA 1LD 1LB",  # 2568
     # "1RB 1RA 0RC 1LA 1LC 1LD 0RB 0RD",  # 2512
     # "1RB 1LB 1RC 0LD 0RD 0RA 1LD 0LA",  # 1153
+
+    SIAB_3_3,
 ]
 
-STEPS = 2819
+STEPS = None
 PRINT = False
 
 if __name__ == '__main__':
