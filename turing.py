@@ -126,11 +126,13 @@ class Machine:
 
         self._beep_count = dict(beep_count)
 
-    def print_results(self):
-        print('\n'.join([
-            f'ones: {self.ones_count}',
-            f'exec: {self.exec_count}',
-            f'beep: {self.beep_count}',
+
+def print_results(machine):
+    print(
+        '\n'.join([
+            f'ones: {machine.ones_count}',
+            f'exec: {machine.exec_count}',
+            f'beep: {machine.beep_count}',
             '',
         ]))
 
@@ -196,4 +198,8 @@ PRINT = False
 
 if __name__ == '__main__':
     for i, program in enumerate(CANDIDATES):
-        run_bb(program, x_limit=STEPS, watch_tape=PRINT).print_results()
+        print_results(
+            run_bb(
+                program,
+                x_limit = STEPS,
+                watch_tape = PRINT))
