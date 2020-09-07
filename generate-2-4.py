@@ -1,9 +1,19 @@
 from itertools import product
 
 COLORS = 0, 1, 2, 3
-POSITS = 1, 2, 3
 SHIFTS = L, R = 'L', 'R'
 STATES = A, B = 'A', 'B'
+
+
+def is_normal(colors):
+    for color in colors:
+        if color == 2:
+            return True
+        if color == 3:
+            return False
+
+    return False
+
 
 def main():
     for colors in product(COLORS, repeat=7):
@@ -11,6 +21,9 @@ def main():
             or colors.count(1) == 0
             or colors.count(2) == 0
             or colors.count(3) == 0):
+            continue
+
+        if not is_normal(colors):
             continue
 
         c2, c3, c4, c5, c6, c7, c8 = colors
