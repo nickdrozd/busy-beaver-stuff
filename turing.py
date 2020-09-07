@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict
 
 STATE_MAP = {
@@ -76,7 +77,7 @@ class Machine:
             key=lambda x: x[1],
             reverse=True)
 
-    def run_to_halt(self, tape):
+    def run_to_halt(self, tape, x_limit=None):
         pos = 0
         state = 0
 
@@ -84,11 +85,17 @@ class Machine:
         beep_count = defaultdict(lambda: 0)
         prog = self._prog
 
-        for _ in range(STEPS):
+        if x_limit is None:
+            x_limit = sys.maxsize
+
+        while True:
             if state == HALT:
                 break
 
-            # print_tape(tape, pos)
+            if exec_count >= x_limit:
+                break
+
+            print_tape(tape, pos)
 
             old_state = state
 
@@ -153,21 +160,35 @@ MACHINES = {
 
     'BB_2_3': "1RB 2LB 1RH 2LA 2RB 1LB",
     'BB_2_4': "1RB 2LA 1RA 1RA 1LB 1LA 3RB 1RH",
+
+    'BBB_3_2': "1RB 0LB 1LA 0RC 1LC 1LA",
+    'BBB_4_2': "1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB",
+
+    'BBB_2_3_shift': "1RB 2LB 1LA 2LB 2RA 0RA",
+    'BBB_2_3_sigma': "1RB 2LB 1RA 2LB 2LA 0RA",
 }
 
 BB_2_2 = MACHINES['BB_2_2']
 BB_3_2 = MACHINES['BB_3_2']
 BB_4_2 = MACHINES['BB_4_2']
 BB_5_2 = MACHINES['BB_5_2']
+
 BB_2_3 = MACHINES['BB_2_3']
 BB_2_4 = MACHINES['BB_2_4']
 
-def run_bb(prog, tape=None):
+BBB_3_2 = MACHINES['BBB_3_2']
+BBB_4_2 = MACHINES['BBB_4_2']
+
+BBB_2_3_shift = MACHINES['BBB_2_3_shift']
+BBB_2_3_sigma = MACHINES['BBB_2_3_sigma']
+
+
+def run_bb(prog, tape=None, x_limit=None):
     if tape is None:
         tape = [0]
 
     machine = Machine(prog)
-    machine.run_to_halt(tape)
+    machine.run_to_halt(tape, x_limit)
     return machine
 
 ########################################
@@ -177,105 +198,30 @@ CANDIDATES = [
     # BB_3_2,
     # BB_4_2,
     # BB_5_2,
-    # BB2_3,
-    # BB2_4,
+    # BB_2_3,
+    # BB_2_4,
 
     # # BBB(3) = 55
-    # "1RB 0LB 1LA 0RC 1LC 1LA",  # normal
-    # "1LB 0RB 1RA 0LC 1RC 1RA",  # 55
-    # "1LB 0RB 1LC 0LC 1RC 1RA",  # 54
-    # "1LB 0RC 1RB 0LC 1RC 1RA",  # 52
-    # "1LB 0RC 0RC 0LC 1RC 1RA",  # 51
-
-    # # BBB(4) = 2819 ???
-    # "1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB",  # normal
-    # "1LB 1LC 1RC 1LD 1LA 1RD 0LD 0RB",
-    # "1LB 1LD 1RD 1LC 0LC 0RB 1LA 1RC",
-    # "1LC 1LB 1LA 1RD 1RB 1LD 0LD 0RC",
-    # "1LC 1LD 0LB 0RC 1RD 1LB 1LA 1RB",
-    # "1LD 1LB 1LA 1RC 0LC 0RD 1RB 1LC",
-    # "1LD 1LC 0LB 0RD 1LA 1RB 1RC 1LB",
-
-    # # 2568
-    # "1RB 1RA 0RC 0RB 0RD 1RA 1LD 1LB",  # normal
-    # "1RD 1RA 1LB 1LD 0RB 1RA 0RC 0RD",
-    # "1LD 1LA 1RB 1RD 0LB 1LA 0LC 0LD",
-    # "1LB 1LA 0LC 0LB 0LD 1LA 1RD 1RB",
-    # "1LB 1LA 0LD 0LB 1RC 1RB 0LC 1LA",
-    # "1LD 1LA 0LC 1LA 1RC 1RD 0LB 0LD",
-    # "1RD 1RA 0RC 1RA 1LC 1LD 0RB 0RD",
-
-    # # 2512 -- basically the same as 2568
-    # "1LB 1LA 0LC 1RA 1RC 1RD 0LB 0LD",
-    # "1LB 1LA 0LD 1RA 0LB 0LC 1RD 1RC",
-
-    # # Smaller 4-state progs > 107
-
-    # # 1153
-    # "1RB 1LB 1RC 0LD 0RD 0RA 1LD 0LA",
-
-    # # 705
-    # "1RB 1LC 1RC 0RD 0RD 0RC 1LD 1LA",
-
-    # # 703
-    # "1RB 1LC 0RC 0RD 0RD 0RC 1LD 1LA",
-
-    # # 478
-    # "1RB 0LC 1LC 0RD 0LC 1LA 1RA 0RD",
-
-    # # 456
-    # "1RB 1LC 0RC 1RB 0RD 0RC 1LD 1LA",
-
-    # # 326
-    # "1RB 0RC 0RC 1RB 1LC 1LD 1LA 0LC",
-
-    # # 259
-    # "1RB 0RC 1LC 1RC 0LD 1RA 1LD 0LA",
-
-    # # 219
-    # "1RB 0RC 0RC 1RC 0LD 1RA 1LD 0LA",
-
-    # # 209
-    # "1RB 0LC 1LC 0RC 1LC 1LD 0RD 1LA",
-
-    # # 161
-    # "1RB 1LC 1RC 0RB 1LC 0LD 1LA 1LD",
-
-    # # 159
-    # "1RB 1LA 1LC 1RD 1LC 0LD 1LA 0RB",
-
-    # # 147
-    # "1RB 0LC 1LC 0RC 1LC 1LD 1RB 1LA",
-
-    # # 126
-    # "1RB 0RC 1RC 1RB 1LC 1LD 0RA 1LA",
-
-    # # 119
-    # "1RB 0LC 1RC 0RD 1LC 1LD 1LA 0RC",
-
-    # # 118
-    # "1RB 1LC 1RC 0RD 0LC 0LD 1RA 1LA",
-
-    # # 116
-    # "1RB 0LC 1LC 0RD 1LC 1LD 1LA 0RC",
-
-    # # 109
-    # "1RB 0LC 0LC 0RD 1LC 1LD 1LA 0RC",
+    # "1RB 0LB 1LA 0RC 1LC 1LA",  # 55
+    # "1RB 0LB 1RC 0RC 1LC 1LA",  # 54
+    # "1RB 0LC 1LB 0RC 1LC 1LA",  # 52
+    # "1RB 0LC 0LC 0RC 1LC 1LA",  # 51
 
     # BBB(2, 3)
-
     # "1RB 2LB 1LA 2LB 2RA 0RA",  # 59
     # "1RB 0LB 1RA 1LB 2LA 2RA",  # 45
     # "1RB 2LB 1RA 2LB 2LA 0RA",  # 43
     # "1RB 2RA 2LB 2LB 2LA 0LA",  # 40
 
-    # "1RB 2LA 1LA 2LA 2RB 0RA",  # Wolram's "universal machine"
-
-    # BBB(2, 4)
+    # # BBB(4)
+    # "1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB",  # 2819
+    # "1RB 1RA 0RC 0RB 0RD 1RA 1LD 1LB",  # 2568
+    # "1RB 1RA 0RC 1LA 1LC 1LD 0RB 0RD",  # 2512
+    # "1RB 1LB 1RC 0LD 0RD 0RA 1LD 0LA",  # 1153
 ]
 
-STEPS = 50_000_000
+STEPS = 2819
 
 if __name__ == '__main__':
     for i, program in enumerate(CANDIDATES):
-        run_bb(program).print_results()
+        run_bb(program, x_limit=STEPS).print_results()
