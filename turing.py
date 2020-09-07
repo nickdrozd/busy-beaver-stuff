@@ -77,7 +77,7 @@ class Machine:
             key=lambda x: x[1],
             reverse=True)
 
-    def run_to_halt(self, tape, x_limit=None):
+    def run_to_halt(self, tape, x_limit=None, watch_tape=False):
         pos = 0
         state = 0
 
@@ -95,7 +95,8 @@ class Machine:
             if exec_count >= x_limit:
                 break
 
-            print_tape(tape, pos)
+            if watch_tape:
+                print_tape(tape, pos)
 
             old_state = state
 
@@ -183,12 +184,12 @@ BBB_2_3_shift = MACHINES['BBB_2_3_shift']
 BBB_2_3_sigma = MACHINES['BBB_2_3_sigma']
 
 
-def run_bb(prog, tape=None, x_limit=None):
+def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
     if tape is None:
         tape = [0]
 
     machine = Machine(prog)
-    machine.run_to_halt(tape, x_limit)
+    machine.run_to_halt(tape, x_limit, watch_tape)
     return machine
 
 ########################################
@@ -221,7 +222,8 @@ CANDIDATES = [
 ]
 
 STEPS = 2819
+PRINT = False
 
 if __name__ == '__main__':
     for i, program in enumerate(CANDIDATES):
-        run_bb(program, x_limit=STEPS).print_results()
+        run_bb(program, x_limit=STEPS, watch_tape=PRINT).print_results()
