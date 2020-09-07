@@ -173,23 +173,8 @@ MACHINES = {
     'SIAB_3_3': "1RB 2LB 1LC 1LA 2RB 1RB 1RH 2LA 0LC",
 }
 
-BB_2_2 = MACHINES['BB_2_2']
-BB_3_2 = MACHINES['BB_3_2']
-BB_4_2 = MACHINES['BB_4_2']
-BB_5_2 = MACHINES['BB_5_2']
-
-BB_2_3 = MACHINES['BB_2_3']
-BB_2_4 = MACHINES['BB_2_4']
-RU_2_4 = MACHINES['RU_2_4']
-COPY_3_3_2_4 = MACHINES['COPY_3_3_2_4']
-
-BBB_3_2 = MACHINES['BBB_3_2']
-BBB_4_2 = MACHINES['BBB_4_2']
-
-BBB_2_3_shift = MACHINES['BBB_2_3_shift']
-BBB_2_3_sigma = MACHINES['BBB_2_3_sigma']
-
-SIAB_3_3 = MACHINES['SIAB_3_3']
+for name, prog in MACHINES.items():
+    exec(f'{name} = "{prog}"')
 
 
 def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
@@ -203,31 +188,6 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
 ########################################
 
 CANDIDATES = [
-    # BB_2_2,
-    # BB_3_2,
-    # BB_4_2,
-    # BB_5_2,
-    # BB_2_3,
-    # BB_2_4,
-
-    # # BBB(3) = 55
-    # "1RB 0LB 1LA 0RC 1LC 1LA",  # 55
-    # "1RB 0LB 1RC 0RC 1LC 1LA",  # 54
-    # "1RB 0LC 1LB 0RC 1LC 1LA",  # 52
-    # "1RB 0LC 0LC 0RC 1LC 1LA",  # 51
-
-    # BBB(2, 3)
-    # "1RB 2LB 1LA 2LB 2RA 0RA",  # 59
-    # "1RB 0LB 1RA 1LB 2LA 2RA",  # 45
-    # "1RB 2LB 1RA 2LB 2LA 0RA",  # 43
-    # "1RB 2RA 2LB 2LB 2LA 0LA",  # 40
-
-    # # BBB(4)
-    # "1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB",  # 2819
-    # "1RB 1RA 0RC 0RB 0RD 1RA 1LD 1LB",  # 2568
-    # "1RB 1RA 0RC 1LA 1LC 1LD 0RB 0RD",  # 2512
-    # "1RB 1LB 1RC 0LD 0RD 0RA 1LD 0LA",  # 1153
-
     SIAB_3_3,
 ]
 
