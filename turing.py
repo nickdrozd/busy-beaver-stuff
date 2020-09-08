@@ -15,7 +15,7 @@ STATE_MAP = {
 HALT = 7
 
 SHIFT_MAP = {
-    'L': 0,
+    'L': -1,
     'R': 1,
 }
 
@@ -103,19 +103,16 @@ class Machine:
             color, shift, state = prog[state][tape[pos]]
             tape[pos] = color
 
-            if shift:
-                pos += 1
+            pos += shift
 
-                try:
-                    tape[pos]
-                except IndexError:
-                    tape.append(0)
-
+            try:
+                tape[pos]
+            except IndexError:
+                tape.append(0)
             else:
-                if pos == 0:
+                if pos < 0:
+                    pos = 0
                     tape.insert(0, 0)
-                else:
-                    pos -= 1
 
             exec_count += 1
             beep_count[old_state] = exec_count
