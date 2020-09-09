@@ -190,7 +190,15 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
 ########################################
 
 CANDIDATES = [
-    SIAB_3_3,
+    "1RB 2RB 3RA 1LA 3LB 3RA 3RB 2LB",
+    "1RB 2LB 3LA 2RA 1LA 3RB 2RB 1LB",
+    "1RB 2RA 3LA 2RA 2LA 3RB 2RB 1LB",
+    "1RB 2LB 3LA 2RA 2LA 3RB 2RB 1LB",
+    "1RB 2LA 3RA 2LA 3LA 2RB 1LB 3RB",
+    "1RB 2LB 3RA 2LA 3LA 2RB 1LB 3RB",
+    "1RB 2RB 3RA 2LA 3LA 2RB 1LB 3RB",
+    "1RB 2LA 3RA 2LA 1LA 1RB 3LB 2RB",
+    "1RB 2LA 2RA 2RB 3LB 1LA 3RB 2LB",
 ]
 
 STEPS = None
