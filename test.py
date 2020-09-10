@@ -4,6 +4,8 @@ import unittest
 
 from turing import *
 
+# pylint: disable=undefined-variable
+
 HALTING = {
     BB_2_2: (4, 6),
     BB_3_2: (5, 21),
@@ -33,6 +35,8 @@ QUASIHALTING = {
     "1RB 1RA 0RC 1LA 1LC 1LD 0RB 0RD": (0, 2512),
     "1RB 1LB 1RC 0LD 0RD 0RA 1LD 0LA": (20, 1153),
 }
+
+# pylint: enable=undefined-variable
 
 
 class TuringTest(unittest.TestCase):

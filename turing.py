@@ -175,8 +175,8 @@ MACHINES = {
     'SIAB_3_3': "1RB 2LB 1LC 1LA 2RB 1RB 1RH 2LA 0LC",
 }
 
-for name, prog in MACHINES.items():
-    exec(f'{name} = "{prog}"')
+for _name, _prog in MACHINES.items():
+    exec(f'{_name} = "{_prog}"')  # pylint: disable=exec-used
 
 
 def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
