@@ -189,11 +189,23 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
 
 ########################################
 
-CANDIDATES = [
-
+bbb5 = [
+    "1RB 1RC 1RD 0LE 1RE 0LA 1LC 1RD 1LB 0RC",
 ]
 
-STEPS = 2000
+CANDIDATES = [
+    # # 107
+    # "1RD 1RC 1LA 0RD 1LC 0LB 0LA 0RB",  # 3 SO
+    # "1RD 1RC 0RD 0LD 1LC 1LB 0RC 0LA",  # 1 SO
+
+    # # 326
+    # "1RD 1RA 1RA 0RD 1LD 1LB 1LC 0RB",  # 2 SO
+
+    # # 108, 28
+    # "1RD 1RA 1LC 0RD 1LB 0LA 1RC 0RB",
+]
+
+STEPS = 107
 PRINT = True
 
 if __name__ == '__main__':
