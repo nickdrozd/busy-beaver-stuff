@@ -194,9 +194,10 @@ bbb5 = [
 ]
 
 CANDIDATES = [
-    # # 107
-    # "1RD 1RC 1LA 0RD 1LC 0LB 0LA 0RB",  # 3 SO
-    # "1RD 1RC 0RD 0LD 1LC 1LB 0RC 0LA",  # 1 SO
+    "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA",  # bb_4_2
+    # 107
+    "1RB 1RC 0LA 0RD 1LC 0LD 1LA 0RB",  # 3 SO
+    "1RB 1RC 0RC 0LA 1LC 1LD 0RB 0LB",  # 1 SO
 
     # # 326
     # "1RD 1RA 1RA 0RD 1LD 1LB 1LC 0RB",  # 2 SO
@@ -205,7 +206,7 @@ CANDIDATES = [
     # "1RD 1RA 1LC 0RD 1LB 0LA 1RC 0RB",
 ]
 
-STEPS = 107
+STEPS = 200
 PRINT = True
 
 if __name__ == '__main__':
