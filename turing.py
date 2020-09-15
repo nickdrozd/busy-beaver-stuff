@@ -189,15 +189,13 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
 
 ########################################
 
-bbb5 = [
-    "1RB 1RC 1RD 0LE 1RE 0LA 1LC 1RD 1LB 0RC",
-]
-
 CANDIDATES = [
     "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA",  # bb_4_2
     # 107
     "1RB 1RC 0LA 0RD 1LC 0LD 1LA 0RB",  # 3 SO
+    "1RB 0LC 0RC 1RC 1LD 0RD 0LA 1RB",  # 3 SO
     "1RB 1RC 0RC 0LA 1LC 1LD 0RB 0LB",  # 1 SO
+    "1RB 0LA 0RC 1LB 1LC 1LD 0RA 0LB",  # 1 SO
 
     # # 326
     # "1RD 1RA 1RA 0RD 1LD 1LB 1LC 0RB",  # 2 SO
