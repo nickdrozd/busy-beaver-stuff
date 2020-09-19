@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define X_LIMIT 100000
+#define X_LIMIT 2097152
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
 
 #define CHECK_X(COUNT) {                        \
@@ -39,19 +39,17 @@ unsigned int PP = 0;
 
 #define RESET_COUNTS XX = AA = BB = CC = DD = 0; PP++;
 
-int c0, c1, c2, c3, c4, c5, c6, c7,
+int c3, c4, c5, c6, c7,
   c8, c9, c10, c11, c12, c13, c14, c15,
   c16, c17, c18, c19, c20, c21, c22, c23;
 
 #define READ(VAR) if ((VAR = getc(stdin)) == EOF) goto EXIT;
 
-#define LOAD_PROGRAM                            \
-  READ(c0); READ(c1); READ(c2); READ(c3);       \
-  READ(c4); READ(c5); READ(c6); READ(c7);       \
-  READ(c8); READ(c9); READ(c10); READ(c11);     \
-  READ(c12); READ(c13); READ(c14); READ(c15);   \
-  READ(c16); READ(c17); READ(c18); READ(c19);   \
-  READ(c20); READ(c21); READ(c22); READ(c23);   \
+#define LOAD_PROGRAM                                                \
+  READ(c3); READ(c4); READ(c5);                                     \
+  READ(c6); READ(c7); READ(c8); READ(c9); READ(c10); READ(c11);     \
+  READ(c12); READ(c13); READ(c14); READ(c15); READ(c16); READ(c17); \
+  READ(c18); READ(c19); READ(c20); READ(c21); READ(c22); READ(c23); \
   getc(stdin);
 
 int main (void) {
@@ -64,7 +62,7 @@ int main (void) {
 
  A:
   CHECK_X(AA);
-  INSTRUCTION(c0, c1, c2, c3, c4, c5);
+  INSTRUCTION('1', 'R', 'B', c3, c4, c5);
 
  B:
   CHECK_X(BB);
@@ -79,11 +77,12 @@ int main (void) {
   INSTRUCTION(c18, c19, c20, c21, c22, c23);
 
  H:
-  printf("%d | %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d\n",
+  printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d\n",
          PP,
-         c0, c1, c2, c3, c4, c5, c6, c7,
-         c8, c9, c10, c11, c12, c13, c14, c15,
-         c16, c17, c18, c19, c20, c21, c22, c23,
+         c3, c4, c5,
+         c6, c7, c8, c9, c10, c11,
+         c12, c13, c14, c15, c16, c17,
+         c18, c19, c20, c21, c22, c23,
          AA, BB, CC, DD);
 
   goto INITIALIZE;
