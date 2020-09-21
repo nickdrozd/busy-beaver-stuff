@@ -79,7 +79,7 @@ def decorate(arrows):
         s2, s3, s4, s5, s6, s7, s8 = shifts
 
         for colors in product(COLORS, repeat=7):
-            if colors.count(1) < 4:
+            if colors.count(1) < 2:
                 continue
 
             c2, c3, c4, c5, c6, c7, c8 = colors
