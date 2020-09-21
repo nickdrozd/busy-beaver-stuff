@@ -89,6 +89,13 @@ def decorate(arrows):
 
 regexps = (
     '^1RB ... .RB',
+    '^1RB ... 0LB .RC .RA',
+    '^1RB ... 0LB 0LC 0RA',
+    '^1RB ..A 0LB .RC .LA',
+    '^1RB 0RA .LB .LC 0LA',
+    '^1RB 0.A .LB 1LC .RA',
+    '^1RB 1RA .LB .LC 0LA',
+    '^1RB .LA .LB .LC 0LA',
 )
 
 compiled_regexps = [re.compile(regexp) for regexp in regexps]
