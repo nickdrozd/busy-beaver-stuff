@@ -155,30 +155,6 @@ def print_tape(tape, pos):
 
 ########################################
 
-MACHINES = {
-    'BB_2_2': "1RB 1LB 1LA 1RH",
-    'BB_3_2': "1RB 1RH 1LB 0RC 1LC 1LA",
-    'BB_4_2': "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA",
-    'BB_5_2': "1RB 1LC 1RC 1RB 1RD 0LE 1LA 1LD 1RH 0LA",
-
-    'BB_2_3': "1RB 2LB 1RH 2LA 2RB 1LB",
-    'BB_2_4': "1RB 2LA 1RA 1RA 1LB 1LA 3RB 1RH",
-    'RU_2_4': "1RB 3LA 1LA 1RA 2LA 1RH 3RA 3RB",
-    'COPY_3_3_2_4': "1RB 1LC 1RH 1LA 1LC 2RB 1RB 2LC 1RC",
-
-    'BBB_3_2': "1RB 0LB 1LA 0RC 1LC 1LA",
-    'BBB_4_2': "1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB",
-
-    'BBB_2_3_shift': "1RB 2LB 1LA 2LB 2RA 0RA",
-    'BBB_2_3_sigma': "1RB 2LB 1RA 2LB 2LA 0RA",
-
-    'SIAB_3_3': "1RB 2LB 1LC 1LA 2RB 1RB 1RH 2LA 0LC",
-}
-
-for _name, _prog in MACHINES.items():
-    exec(f'{_name} = "{_prog}"')  # pylint: disable=exec-used
-
-
 def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
     if tape is None:
         tape = [0]
