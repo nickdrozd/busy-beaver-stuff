@@ -1,5 +1,5 @@
 import re
-from itertools import product, filterfalse
+from itertools import permutations, product, filterfalse
 
 STATES = A, B, C, D = 'A', 'B', 'C', 'D'
 
@@ -18,14 +18,14 @@ def graph_to_string(graph, sep=''):
 
 
 def yield_graphs():
-    for a in STATES:
-        for b in product(STATES, repeat=2):
+    for a1 in (A, C, D):
+        for b in permutations(STATES, r=2):
             b0, _ = b
             if b0 == A:
                 continue
-            for c in product(STATES, repeat=2):
-                for d in product(STATES, repeat=2):
-                    yield {A: (B, a), B: b, C: c, D: d}
+            for c in permutations(STATES, r=2):
+                for d in permutations(STATES, r=2):
+                    yield {A: (B, a1), B: b, C: c, D: d}
 
 
 def is_normal(graph):
