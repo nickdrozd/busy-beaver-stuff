@@ -3,6 +3,10 @@
 
 #define X_LIMIT 2097152
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
+#define LOWER_BOUND 2000
+#define UPPER_BOUND (X_LIMIT / 2)
+
+#define IN_RANGE(COUNT) (LOWER_BOUND < COUNT && COUNT < UPPER_BOUND)
 
 #define CHECK_X(COUNT) {                        \
     XX++;                                       \
@@ -77,13 +81,14 @@ int main (void) {
   INSTRUCTION(c18, c19, c20, c21, c22, c23);
 
  H:
-  printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d\n",
-         PP,
-         c3, c4, c5,
-         c6, c7, c8, c9, c10, c11,
-         c12, c13, c14, c15, c16, c17,
-         c18, c19, c20, c21, c22, c23,
-         AA, BB, CC, DD);
+  if (IN_RANGE(AA) || IN_RANGE(BB) || IN_RANGE(CC) || IN_RANGE(DD))
+    printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d\n",
+           PP,
+           c3, c4, c5,
+           c6, c7, c8, c9, c10, c11,
+           c12, c13, c14, c15, c16, c17,
+           c18, c19, c20, c21, c22, c23,
+           AA, BB, CC, DD);
 
   goto INITIALIZE;
 
