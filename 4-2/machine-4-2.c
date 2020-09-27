@@ -3,10 +3,11 @@
 
 #define X_LIMIT 2097152
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
-#define LOWER_BOUND 2000
+#define BB4 107
+#define LOWER_BOUND BB4
 #define UPPER_BOUND (X_LIMIT / 2)
 
-#define IN_RANGE(COUNT) (LOWER_BOUND < COUNT && COUNT < UPPER_BOUND)
+#define IN_RANGE(COUNT) (LOWER_BOUND <= COUNT && COUNT < UPPER_BOUND)
 
 #define CHECK_X(COUNT) {                        \
     XX++;                                       \
