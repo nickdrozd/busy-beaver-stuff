@@ -43,22 +43,22 @@ unsigned int PP = 0;
 
 #define RESET_COUNTS XX = AA = BB = CC = DD = EE = 0; PP++;
 
-int c3, c4, c5,
-  c6, c7, c8, c9, c10, c11,
-  c12, c13, c14, c15, c16, c17,
-  c18, c19, c20, c21, c22, c23,
-  c24, c25, c26, c27, c28, c29;
+int a1c, a1s, a1t,
+  b0c, b0s, b0t, b1c, b1s, b1t,
+  c0c, c0s, c0t, c1c, c1s, c1t,
+  d0c, d0s, d0t, d1c, d1s, d1t,
+  e0c, e0s, e0t, e1c, e1s, e1t;
 
 #define READ(VAR) if ((VAR = getc(stdin)) == EOF) goto EXIT;
 
 #define READ_ACTION(C, S, T) READ(C); READ(S); READ(T);
 
 #define LOAD_PROGRAM                                        \
-  READ_ACTION(c3, c4, c5);                                  \
-  READ_ACTION(c6, c7, c8); READ_ACTION(c9, c10, c11);       \
-  READ_ACTION(c12, c13, c14); READ_ACTION(c15, c16, c17);   \
-  READ_ACTION(c18, c19, c20); READ_ACTION(c21, c22, c23);   \
-  READ_ACTION(c24, c25, c26); READ_ACTION(c27, c28, c29);   \
+  READ_ACTION(a1c, a1s, a1t);                               \
+  READ_ACTION(b0c, b0s, b0t); READ_ACTION(b1c, b1s, b1t);   \
+  READ_ACTION(c0c, c0s, c0t); READ_ACTION(c1c, c1s, c1t);   \
+  READ_ACTION(d0c, d0s, d0t); READ_ACTION(d1c, d1s, d1t);   \
+  READ_ACTION(e0c, e0s, e0t); READ_ACTION(e1c, e1s, e1t);   \
   getc(stdin);
 
 int main (void) {
@@ -71,34 +71,34 @@ int main (void) {
 
  A:
   CHECK_X(AA);
-  INSTRUCTION('1', 'R', 'B', c3, c4, c5);
+  INSTRUCTION('1', 'R', 'B', a1c, a1s, a1t);
 
  B:
   CHECK_X(BB);
-  INSTRUCTION(c6, c7, c8, c9, c10, c11);
+  INSTRUCTION(b0c, b0s, b0t, b1c, b1s, b1t);
 
  C:
   CHECK_X(CC);
-  INSTRUCTION(c12, c13, c14, c15, c16, c17);
+  INSTRUCTION(c0c, c0s, c0t, c1c, c1s, c1t);
 
  D:
   CHECK_X(DD);
-  INSTRUCTION(c18, c19, c20, c21, c22, c23);
+  INSTRUCTION(d0c, d0s, d0t, d1c, d1s, d1t);
 
  E:
   CHECK_X(EE);
-  INSTRUCTION(c24, c25, c26, c27, c28, c29);
+  INSTRUCTION(e0c, e0s, e0t, e1c, e1s, e1t);
 
  H:
   /* if (AA && BB && CC && DD && EE) */
   /*   if (IN_RANGE(AA) || IN_RANGE(BB) || IN_RANGE(CC) || IN_RANGE(DD) || IN_RANGE(EE)) */
       printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d %d %d\n",
              PP,
-             c3, c4, c5,
-             c6, c7, c8, c9, c10, c11,
-             c12, c13, c14, c15, c16, c17,
-             c18, c19, c20, c21, c22, c23,
-             c24, c25, c26, c27, c28, c29,
+             a1c, a1s, a1t,
+             b0c, b0s, b0t, b1c, b1s, b1t,
+             c0c, c0s, c0t, c1c, c1s, c1t,
+             d0c, d0s, d0t, d1c, d1s, d1t,
+             e0c, e0s, e0t, e1c, e1s, e1t,
              AA, BB, CC, DD, EE);
 
   goto INITIALIZE;
