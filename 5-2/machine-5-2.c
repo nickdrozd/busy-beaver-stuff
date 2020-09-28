@@ -51,12 +51,14 @@ int c3, c4, c5,
 
 #define READ(VAR) if ((VAR = getc(stdin)) == EOF) goto EXIT;
 
-#define LOAD_PROGRAM                                                \
-  READ(c3); READ(c4); READ(c5);                                     \
-  READ(c6); READ(c7); READ(c8); READ(c9); READ(c10); READ(c11);     \
-  READ(c12); READ(c13); READ(c14); READ(c15); READ(c16); READ(c17); \
-  READ(c18); READ(c19); READ(c20); READ(c21); READ(c22); READ(c23); \
-  READ(c24); READ(c25); READ(c26); READ(c27); READ(c28); READ(c29); \
+#define READ_ACTION(C, S, T) READ(C); READ(S); READ(T);
+
+#define LOAD_PROGRAM                                        \
+  READ_ACTION(c3, c4, c5);                                  \
+  READ_ACTION(c6, c7, c8); READ_ACTION(c9, c10, c11);       \
+  READ_ACTION(c12, c13, c14); READ_ACTION(c15, c16, c17);   \
+  READ_ACTION(c18, c19, c20); READ_ACTION(c21, c22, c23);   \
+  READ_ACTION(c24, c25, c26); READ_ACTION(c27, c28, c29);   \
   getc(stdin);
 
 int main (void) {
