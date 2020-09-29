@@ -1,19 +1,22 @@
 from itertools import product
 
-COLOR = 0, 1, 2
+COLOR = '0', '1', '2'
 SHIFT = 'L', 'R'
 STATE = 'A', 'B'
 
-if __name__ == '__main__':
+def main():
     actions = product(COLOR, SHIFT, STATE)
     for prog in product(actions, repeat=5):
         print(
-            ' '.join(
-                ['1RB'] + [
-                ''.join([
-                    str(instr)
-                    for instr in action
-                ])
+            ''.join([
+                instr
                 for action in prog
+                for instr in action
             ])
         )
+
+if __name__ == '__main__':
+    try:
+        main()
+    except BrokenPipeError:
+        pass
