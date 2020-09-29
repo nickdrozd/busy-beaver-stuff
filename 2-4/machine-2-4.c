@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define X_LIMIT 10000000
+#define X_LIMIT 33554432
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
+#define BB_2_4 3932964
+#define LOWER_BOUND BB_2_4
+#define UPPER_BOUND 16777216
+
+#define IN_RANGE(COUNT) (LOWER_BOUND <= COUNT && COUNT < UPPER_BOUND)
 
 #define CHECK_X(COUNT) {                        \
     XX++;                                       \
@@ -28,31 +33,35 @@ unsigned int TAPE[TAPE_LEN];
     goto *dispatch[t - 65];                     \
   }
 
-#define INSTRUCTION(c0, s0, t0, c1, s1, t1,         \
-                    c2, s2, t2, c3, s3, t3)         \
+#define INSTRUCTION(c0, s0, t0,                     \
+                    c1, s1, t1,                     \
+                    c2, s2, t2,                     \
+                    c3, s3, t3)                     \
   if (TAPE[POS] == 3) ACTION(c3, s3, t3)            \
     else if (TAPE[POS] == 2) ACTION(c2, s2, t2)     \
       else if (TAPE[POS] == 1) ACTION(c1, s1, t1)   \
         else ACTION(c0, s0, t0)
 
-unsigned int XX, AA, BB, CC, DD;
+unsigned int XX, AA, BB;
 unsigned int PP = 0;
 
-#define RESET_COUNTS XX = AA = BB = CC = DD = 0; PP++;
+#define RESET_COUNTS XX = AA = BB = 0; PP++;
 
-int c3, c4, c5, c6, c7,
-  c8, c9, c10, c11, c12, c13, c14, c15,
-  c16, c17, c18, c19, c20, c21, c22, c23;
+int a1c, a1s, a1t, a2c, a2s, a2t, a3c, a3s, a3t,
+  b0c, b0s, b0t, b1c, b1s, b1t, b2c, b2s, b2t, b3c, b3s, b3t;
 
 #define READ(VAR) if ((VAR = getc(stdin)) == EOF) goto EXIT;
 
+#define READ_ACTION(C, S, T) READ(C); READ(S); READ(T);
+
 #define LOAD_PROGRAM                            \
-  READ(c3);                                     \
-  READ(c4); READ(c5); READ(c6); READ(c7);       \
-  READ(c8); READ(c9); READ(c10); READ(c11);     \
-  READ(c12); READ(c13); READ(c14); READ(c15);   \
-  READ(c16); READ(c17); READ(c18); READ(c19);   \
-  READ(c20); READ(c21); READ(c22); READ(c23);   \
+  READ_ACTION(a1c, a1s, a1t);                   \
+  READ_ACTION(a2c, a2s, a2t);                   \
+  READ_ACTION(a3c, a3s, a3t);                   \
+  READ_ACTION(b0c, b0s, b0t);                   \
+  READ_ACTION(b1c, b1s, b1t);                   \
+  READ_ACTION(b2c, b2s, b2t);                   \
+  READ_ACTION(b3c, b3s, b3t);                   \
   getc(stdin);
 
 int main (void) {
@@ -65,21 +74,26 @@ int main (void) {
 
  A:
   CHECK_X(AA);
-  INSTRUCTION('1', 'R', 'B', c3, c4, c5,
-              c6, c7, c8, c9, c10, c11);
+  INSTRUCTION('1', 'R', 'B',
+              a1c, a1s, a1t,
+              a2c, a2s, a2t,
+              a3c, a3s, a3t);
 
  B:
   CHECK_X(BB);
-  INSTRUCTION(c12, c13, c14, c15, c16, c17,
-              c18, c19, c20, c21, c22, c23);
+  INSTRUCTION(b0c, b0s, b0t,
+              b1c, b1s, b1t,
+              b2c, b2s, b2t,
+              b3c, b3s, b3t);
 
  H:
-  printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d\n",
-         PP,
-         c3, c4, c5, c6, c7,
-         c8, c9, c10, c11, c12, c13, c14, c15,
-         c16, c17, c18, c19, c20, c21, c22, c23,
-         AA, BB);
+  if (AA && BB)
+    if (IN_RANGE(AA) || IN_RANGE(BB))
+      printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d\n",
+             PP,
+             a1c, a1s, a1t, a2c, a2s, a2t, a3c, a3s, a3t,
+             b0c, b0s, b0t, b1c, b1s, b1t, b2c, b2s, b2t, b3c, b3s, b3t,
+             AA, BB);
 
   goto INITIALIZE;
 

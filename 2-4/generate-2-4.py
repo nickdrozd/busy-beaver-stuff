@@ -15,12 +15,12 @@ def is_normal(colors):
     return False
 
 
-def main():
+def yield_progs():
     for colors in product(COLORS, repeat=7):
         if (colors.count(0) > 1
-            or colors.count(1) == 0
-            or colors.count(2) == 0
-            or colors.count(3) == 0):
+            or 1 not in colors
+            or 2 not in colors
+            or 3 not in colors):
             continue
 
         if not is_normal(colors):
@@ -31,7 +31,9 @@ def main():
         for states in product(STATES, repeat=7):
             t2, t3, t4, t5, t6, t7, t8 = states
 
-            if A not in (t5, t6, t7, t8):
+            if (A not in  (t2, t3, t4)
+                or A not in (t5, t6, t7, t8)
+                or B not in (t5, t6, t7, t8)):
                 continue
 
             for shifts in product(SHIFTS, repeat=7):
@@ -40,7 +42,16 @@ def main():
 
                 s2, s3, s4, s5, s6, s7, s8 = shifts
 
-                print(f'1RB {c2}{s2}{t2} {c3}{s3}{t3} {c4}{s4}{t4} {c5}{s5}{t5} {c6}{s6}{t6} {c7}{s7}{t7} {c8}{s8}{t8}')
+                yield f'1RB {c2}{s2}{t2} {c3}{s3}{t3} {c4}{s4}{t4} {c5}{s5}{t5} {c6}{s6}{t6} {c7}{s7}{t7} {c8}{s8}{t8}'
+
+
+def compress(prog_string):
+    return prog_string[4:].replace(' ', '')
+
+
+def main():
+    for prog in yield_progs():
+        print(compress(prog))
 
 
 if __name__ == '__main__':
