@@ -42,9 +42,9 @@ QUASIHALTING = {
 
     # BBB_3_2
     "1RB 0LB 1LA 0RC 1LC 1LA": (6, 55),
-    "1LB 0RB 1LC 0LC 1RC 1RA": (6, 54),
-    "1LB 0RC 1RB 0LC 1RC 1RA": (5, 52),
-    "1LB 0RC 0RC 0LC 1RC 1RA": (5, 51),
+    "1RB 0LB 1RC 0RC 1LC 1LA": (6, 54),
+    "1RB 0LC 1LB 0RC 1LC 1LA": (5, 52),
+    "1RB 0LC 0LC 0RC 1LC 1LA": (5, 51),
 
     # BBB_4_2_shift
     "1RB 0LC 1LD 0LA 1RC 1RD 1LA 0LD": (0, 66349),
