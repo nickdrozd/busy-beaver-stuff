@@ -88,7 +88,7 @@ int main (void) {
 
  H:
   if (AA && BB)
-    if (IN_RANGE(AA) || IN_RANGE(BB))
+    /* if (IN_RANGE(AA) || IN_RANGE(BB)) */
       printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d\n",
              PP,
              a1c, a1s, a1t, a2c, a2s, a2t, a3c, a3s, a3t,
