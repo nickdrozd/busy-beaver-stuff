@@ -1,3 +1,5 @@
+.PHONY : all run lint test time profile clean machines
+
 all : lint test
 
 run :
@@ -15,12 +17,11 @@ profile :
 	python3 -m cProfile turing.py
 
 clean :
-	rm -rf yappi.* __pycache__
+	rm -rf yappi.* __pycache__ **/run
 
-gen3 :
-	python3 generate-3-state.py > 3-state-programs.txt
-	wc -l 3-state-programs.txt
-
-# make parse_graph prog="'1RB 1RC 1LC 1RD 1RA 1LD 0RD 0LB'"
-parse_graph :
-	python3 parse_graph.py $(prog) | dot -Tpng -o out.png
+machines :
+	$(MAKE) -C 3-2
+	$(MAKE) -C 2-3
+	$(MAKE) -C 4-2
+	$(MAKE) -C 2-4
+	$(MAKE) -C 5-2
