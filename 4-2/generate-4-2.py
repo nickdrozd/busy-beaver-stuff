@@ -84,6 +84,7 @@ def decorate(arrows):
 
             c2, c3, c4, c5, c6, c7, c8 = colors
 
+            # pylint: disable=line-too-long
             yield f'1R{n1} {c2}{s2}{n2} {c3}{s3}{n3} {c4}{s4}{n4} {c5}{s5}{n5} {c6}{s6}{n6} {c7}{s7}{n7} {c8}{s8}{n8}'
 
 

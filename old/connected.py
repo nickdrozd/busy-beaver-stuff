@@ -11,6 +11,7 @@ def parse_arrows(prog_string):
 
     connections = zip(states, states)
 
+    # pylint: disable=unnecessary-comprehension
     return {
         state: connection
         for (state, connection) in

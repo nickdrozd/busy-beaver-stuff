@@ -24,4 +24,5 @@ if __name__ == '__main__':
 
                 s2, s3, s4, s5, s6, s7, s8 = shifts
 
+                # pylint: disable=line-too-long
                 print(f'1R{n1} {c2}{s2}{n2} {c3}{s3}{n3} {c4}{s4}{n4} {c5}{s5}{n5} {c6}{s6}{n6} {c7}{s7}{n7} {c8}{s8}{n8}')

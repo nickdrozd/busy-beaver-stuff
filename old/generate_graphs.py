@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 A = 'A'
 B = 'B'
 C = 'C'

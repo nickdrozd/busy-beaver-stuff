@@ -17,7 +17,7 @@ if __name__ == '__main__':
                         for s6 in SHIFTS:
                             for s7 in SHIFTS:
                                 for s8 in SHIFTS:
-                                    if (s2 == s3 == s4 == s5 == s6 == s7 == s8):
+                                    if s2 == s3 == s4 == s5 == s6 == s7 == s8:
                                         continue
 
                                     for c2 in COLORS:
@@ -27,7 +27,9 @@ if __name__ == '__main__':
                                                     for c6 in COLORS:
                                                         for c7 in COLORS:
                                                             for c8 in COLORS:
-                                                                if (c2 == c3 == c4 == c5 == c6 == c7 == c8):
+                                                                # pylint: disable=line-too-long
+                                                                if c2 == c3 == c4 == c5 == c6 == c7 == c8:
                                                                     continue
 
+                                                                # pylint: disable=line-too-long
                                                                 print(f'1R{n1} {c2}{s2}{n2} {c3}{s3}{n3} {c4}{s4}{n4} {c5}{s5}{n5} {c6}{s6}{n6} {c7}{s7}{n7} {c8}{s8}{n8}')

@@ -86,7 +86,6 @@ def is_isomorphic(g1, g2):
 
 
 def iso_filter(graph):
-    return True
     if any(is_isomorphic(graph, seen) for seen in ISOS):
         return False
 

@@ -47,6 +47,7 @@ def yield_progs():
                 if s2 == s3 == s4 or s5 == s6 == s7 == s8:
                     continue
 
+                # pylint: disable=line-too-long
                 yield f'1RB {c2}{s2}{t2} {c3}{s3}{t3} {c4}{s4}{t4} {c5}{s5}{t5} {c6}{s6}{t6} {c7}{s7}{t7} {c8}{s8}{t8}'
 
 

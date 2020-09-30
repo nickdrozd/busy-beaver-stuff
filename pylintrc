@@ -5,8 +5,8 @@ score=no
 [MESSAGES CONTROL]
 disable=
   invalid-name,
+  duplicate-code,
+  too-many-locals,
   missing-class-docstring,
   missing-module-docstring,
   missing-function-docstring,
-  line-too-long,
-  too-many-locals,
