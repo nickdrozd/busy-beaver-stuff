@@ -12,4 +12,4 @@ test : $(MACHINES)
 	./$@.run < $@.test
 
 clean :
-	$(RM) $(MACHINES)
+	$(RM) ${C_FILES:.c=.run}
