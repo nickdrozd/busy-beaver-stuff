@@ -1,6 +1,6 @@
 .PHONY : all run lint test time profile clean machines
 
-all : lint test
+all : lint test machines
 
 run :
 	python3 turing.py
@@ -20,8 +20,4 @@ clean :
 	rm -rf yappi.* __pycache__ **/run
 
 machines :
-	$(MAKE) -C 3-2
-	$(MAKE) -C 2-3
-	$(MAKE) -C 4-2
-	$(MAKE) -C 2-4
-	$(MAKE) -C 5-2
+	$(MAKE) -C machines
