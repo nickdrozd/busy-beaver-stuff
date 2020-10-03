@@ -188,9 +188,14 @@ CANDIDATES = [
     # "1LB 0RC 1RD 0RA 1LC 1LD 1RA 0RD",
 
 
+    "1RB 0LB 0LB 1LA",
+    "1RB 0LB 1LB 1LA",
+    "1RB 1LB 0LB 1LA",
+    "1RB 1LB 1LB 1LA",
+    "1RB 1LB 1LA 1RH",
 ]
 
-STEPS = None
+STEPS = 6
 PRINT = True
 
 if __name__ == '__main__':
