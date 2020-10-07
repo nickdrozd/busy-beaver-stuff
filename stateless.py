@@ -92,7 +92,8 @@ def print_results(machine):
 
 def print_tape(tape, pos):
     squares = [
-        '_' if square == 0 else square
+        '_' if square == 0
+        else str(square)
         for square in tape
     ]
 
@@ -118,7 +119,7 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
 CANDIDATES = [
     '1RH',
     '1R1 1RH',
-    # '1R2 2RH 2L1',
+    '1R2 2RH 2L1',
 ]
 
 STEPS = None
