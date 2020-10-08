@@ -1,7 +1,24 @@
 import sys
+from itertools import product
+
+########################################
+
+class ParseError(Exception):
+    pass
+
 
 def parse(program_string):
     actions = program_string.split()
+
+    action_count = len(actions)
+
+    for m1, _, m2 in actions:
+        for m in (m1, m2):
+            try:
+                if action_count < int(m):
+                    raise ParseError(program_string)
+            except ValueError:
+                pass
 
     return tuple(
         tuple(
@@ -119,16 +136,30 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
 CANDIDATES = [
     '1RH',
     '1R1 1RH',
-    '1R2 2RH 2L1',
 ]
 
-STEPS = None
-PRINT = True
+COLOR = '0', '1', '2', 'H',
+SHIFT = 'L', 'R'
+
+ACTIONS = (
+    ''.join(instr)
+    for instr in product(COLOR, SHIFT, COLOR)
+)
+
+PROGRAMS = [
+    ' '.join(actions)
+    for actions in product(ACTIONS, repeat=3)
+]
+
+STEPS = 20
+PRINT = False
 
 if __name__ == '__main__':
     for i, program in enumerate(CANDIDATES):
-        print_results(
-            run_bb(
-                program,
-                x_limit = STEPS,
-                watch_tape = PRINT))
+        machine = run_bb(
+            program,
+            x_limit = STEPS,
+            watch_tape = PRINT)
+
+        print(program)
+        print_results(machine)
