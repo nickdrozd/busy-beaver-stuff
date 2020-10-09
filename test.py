@@ -35,6 +35,12 @@ HALTING = {
 
 
 QUASIHALTING = {
+    # 2_2 (not better than BB)
+    "1RB 1LB 1LB 1LA": (3, 6),
+    "1RB 1LB 0LB 1LA": (2, 6),
+    "1RB 0LB 1LB 1LA": (2, 6),
+    "1RB 0LB 0LB 1LA": (1, 6),
+
     # BBB_2_3_sigma
     "1RB 2LB 1RA 2LB 2LA 0RA": (10, 43),
     # BBB_2_3_shift
