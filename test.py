@@ -14,8 +14,10 @@ HALTING = {
     # BB_2_3
     "1RB 2LB 1RH 2LA 2RB 1LB": (9, 38),
 
-    # BB_4_2
+    # BB_4_2 shift
     "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA": (13, 107),
+    # BB_4_4 sigma
+    "1RB 0RC 1LA 1RA 1RH 1RD 1LD 0LB": (13, 96),
 
     # SIAB_3_3
     "1RB 2LB 1LC 1LA 2RB 1RB 1RH 2LA 0LC": (31, 2315619),
@@ -47,6 +49,7 @@ QUASIHALTING = {
     "1RB 2LB 1LA 2LB 2RA 0RA": (8, 59),
     "1RB 0LB 1RA 1LB 2LA 2RA": (3, 45),
     "1RB 2RA 2LB 2LB 2LA 0LA": (5, 40),
+    "1RB 1LA 2RA 2LA 2LB 2RB": (8, 17),
 
     # BBB_3_2 shift
     "1RB 0LB 1LA 0RC 1LC 1LA": (6, 55),
