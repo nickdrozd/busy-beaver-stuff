@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define X_LIMIT 134217728
+#define X_LIMIT 134217728  // 2^27
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
 #define BB5_STEPS 47176870
-#define UPPER_BOUND 100000000
+#define UPPER_BOUND 100663296  // 2^27 - 2^25
 
 #define IN_RANGE(COUNT) (BB5_STEPS < COUNT && COUNT < UPPER_BOUND)
 
