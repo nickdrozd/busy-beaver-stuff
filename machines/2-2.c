@@ -27,9 +27,9 @@ unsigned int TAPE[TAPE_LEN];
 #define R POS++;
 
 #define ACTION(c, s, t) {                       \
-    TAPE[POS] = c - 48;                         \
-    if (s - 76) { R } else { L };               \
-    goto *dispatch[t - 65];                     \
+    TAPE[POS] = c;                              \
+    if (s) { R } else { L };                    \
+    goto *dispatch[t];                          \
   }
 
 #define INSTRUCTION(c0, s0, t0, c1, s1, t1)     \
@@ -47,7 +47,15 @@ int a0c, a0s, a0t, a1c, a1s, a1t, b0c, b0s, b0t, b1c, b1s, b1t;
 
 #define READ(VAR) if ((VAR = getc(stdin)) == EOF) goto EXIT;
 
-#define READ_ACTION(C, S, T) READ(C); READ(S); READ(T);
+#define COLOR_CONV '0'
+#define SHIFT_CONV 'L'
+#define TRANS_CONV 'A'
+
+#define READ_ACTION(C, S, T) {                  \
+    READ(C); C -= COLOR_CONV;                   \
+    READ(S); S -= SHIFT_CONV;                   \
+    READ(T); T -= TRANS_CONV;                   \
+  }
 
 #define LOAD_PROGRAM                            \
   READ_ACTION(a0c, a0s, a0t);                   \
@@ -55,6 +63,9 @@ int a0c, a0s, a0t, a1c, a1s, a1t, b0c, b0s, b0t, b1c, b1s, b1t;
   READ_ACTION(b0c, b0s, b0t);                   \
   READ_ACTION(b1c, b1s, b1t);                   \
   getc(stdin);
+
+#define FORMAT_INSTR(C, S, T)                       \
+  C + COLOR_CONV, S + SHIFT_CONV, T + TRANS_CONV
 
 int main (void) {
   static void* dispatch[] = { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };
@@ -77,8 +88,10 @@ int main (void) {
     if (IN_RANGE(AA) || IN_RANGE(BB))
       printf("%d | %c%c%c %c%c%c %c%c%c %c%c%c | %d %d\n",
              PP,
-             a0c, a0s, a0t, a1c, a1s, a1t,
-             b0c, b0s, b0t, b1c, b1s, b1t,
+             FORMAT_INSTR(a0c, a0s, a0t),
+             FORMAT_INSTR(a1c, a1s, a1t),
+             FORMAT_INSTR(b0c, b0s, b0t),
+             FORMAT_INSTR(b1c, b1s, b1t),
              AA, BB);
 
   goto INITIALIZE;
