@@ -46,7 +46,7 @@ class Machine:
     def ones_count(self):
         total = 0
         for square in self._tape:
-            if square != 0 and square != 'H':
+            if square not in (0, 'H'):
                 total += 1
         return total
 
@@ -138,7 +138,7 @@ CANDIDATES = [
     '1R1 1RH',
 ]
 
-COLOR = '0', '1', '2', 'H',
+COLOR = '0', '1', '2', 'H'
 SHIFT = 'L', 'R'
 
 ACTIONS = (
@@ -156,10 +156,10 @@ PRINT = False
 
 if __name__ == '__main__':
     for i, program in enumerate(CANDIDATES):
-        machine = run_bb(
+        MACHINE = run_bb(
             program,
             x_limit = STEPS,
             watch_tape = PRINT)
 
         print(program)
-        print_results(machine)
+        print_results(MACHINE)
