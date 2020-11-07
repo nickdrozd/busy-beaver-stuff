@@ -16,7 +16,7 @@ HALTING = {
 
     # BB_4_2 shift
     "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA": (13, 107),
-    # BB_4_4 sigma
+    # BB_4_2 sigma
     "1RB 0RC 1LA 1RA 1RH 1RD 1LD 0LB": (13, 96),
 
     # SIAB_3_3
