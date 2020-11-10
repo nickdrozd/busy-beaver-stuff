@@ -67,7 +67,7 @@ def convert_bin_instr(bin_instr):
 
     return '{}{}{}'.format(
         pr,
-        'L' if sh == 0 else 'R',
+        'L' if int(sh) == 0 else 'R',
         'H' if tr == 0 else chr(tr + 64),
     )
 
