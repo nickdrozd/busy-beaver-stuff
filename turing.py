@@ -78,7 +78,9 @@ class Machine:
             reverse=True)
 
     def run_to_halt(self, tape, x_limit=None, watch_tape=False):
+        init = 0
         pos = 0
+
         state = 0
 
         exec_count = 0
@@ -96,7 +98,7 @@ class Machine:
                 break
 
             if watch_tape:
-                print_tape(tape, pos)
+                print_tape(tape, pos, init)
 
             old_state = state
 
@@ -114,6 +116,7 @@ class Machine:
             else:
                 if pos == 0:
                     tape.insert(0, 0)
+                    init += 1
                 else:
                     pos -= 1
 
@@ -137,7 +140,7 @@ def print_results(machine):
         ]))
 
 
-def print_tape(tape, pos):
+def print_tape(tape, pos, init):
     squares = [
         '!' if square == 1 else
         '@' if square == 2 else
@@ -147,7 +150,9 @@ def print_tape(tape, pos):
     ]
 
     with_pos = ''.join([
-        f'[{square}]' if i == pos else square
+        (f'[{square}]' if i != init else f'[<{square}>]')
+        if i == pos else
+        (square if i != init else f'<{square}>')
         for i, square in enumerate(squares)
     ])
 
