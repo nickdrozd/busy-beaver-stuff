@@ -91,18 +91,29 @@ class Machine:
             x_limit = sys.maxsize
 
         while True:
+
+            # Halt conditions ######################
+
             if state == HALT:
                 break
 
             if exec_count >= x_limit:
                 break
 
+            # Output ###############################
+
             if watch_tape:
                 print_tape(tape, pos, init)
 
-            old_state = state
+            # Bookkeeping ##########################
+
+            exec_count += 1
+            beep_count[state] = exec_count
+
+            # Machine operation ####################
 
             color, shift, state = prog[state][tape[pos]]
+
             tape[pos] = color
 
             if shift:
@@ -120,8 +131,7 @@ class Machine:
                 else:
                     pos -= 1
 
-            exec_count += 1
-            beep_count[old_state] = exec_count
+            # End of main loop #####################
 
         self._pos = pos
         self._tape = tape
