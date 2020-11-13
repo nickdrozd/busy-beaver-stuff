@@ -92,6 +92,11 @@ class Machine:
 
         while True:
 
+            # Output ###############################
+
+            if watch_tape:
+                print_tape(tape, pos, init)
+
             # Halt conditions ######################
 
             if state == HALT:
@@ -99,11 +104,6 @@ class Machine:
 
             if exec_count >= x_limit:
                 break
-
-            # Output ###############################
-
-            if watch_tape:
-                print_tape(tape, pos, init)
 
             # Bookkeeping ##########################
 
