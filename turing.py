@@ -181,49 +181,12 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
 ########################################
 
 CANDIDATES = [
-    '1RB 1RH 0LC 1RB 1LA 1LC',
-    '1RB 1RH 1LC 1RB 1LA 1LC',
-    '1RB 1RH 1LC 1RB 0RA 0LC',
-    '1RB 1RH 1LC 1RA 0RA 0LC',
-    '1RB 1RH 1LC 0RB 1LC 1LA',
-    '1RB 1RH 1LC 0RB 1LB 1LA',
-    '1RB 1RH 1LC 0RA 1RB 0LB',
-    '1RB 1RH 1LC 0RA 0RB 0LB',
-    '1RB 1RH 0LC 0RA 0RA 1LB',
-    '1RB 1RH 0LC 0RA 1LA 1LB',
-    '1RB 1RH 0LC 0RB 0RA 1LB',
-    '1RB 1RH 0LC 0RB 1LC 1LA',
-    '1RB 1RH 0RC 0RB 1LC 1LA',
-    '1RB 1RH 0RC 1LB 1LA 0LA',
-    '1RB 1RC 0RC 1RH 1LC 0LA',
-    '1RB 1RC 1LC 1RH 0RA 0LB',
-    '1RB 0RB 1LC 1RH 0LA 1RC',
-    '1RB 1RA 1LC 1RH 1RA 1LC',
-    '1RB 0RC 0RC 1RH 1LC 0LA',
-    '1RB 1RA 1LC 1RH 0RA 1LC',
-    '1RB 1RA 0LC 1RH 1RA 1LC',
-    '1RB 1RA 0LC 1RH 0RA 1LC',
-    '1RB 0LB 1LC 1RB 1RH 1LA',
-    '1RB 0LC 0LC 1RA 1RH 1LA',
-    '1RB 0LC 1LB 1RA 1RH 1LA',
-    '1RB 1LC 1LC 1RB 1RH 1LA',
-    '1RB 0RC 1LA 1RB 1RH 1LB',
-    '1RB 1LA 0LA 0LC 1RH 1RA',
-    '1RB 1LA 0LC 1RB 1RH 1LA',
-    '1RB 1LA 1LA 0LC 1RH 1RA',
-    '1RB 1LA 1LA 1RC 1RH 1RB',
-    '1RB 1LA 1LC 0LC 1RH 1RA',
-    '1RB 1LA 1LC 1RB 1RH 1LA',
-    '1RB 1LA 1LC 1RB 1RH 1RA',
-    '1RB 0LB 1LA 0RC 1RB 1RH',
-    '1RB 0LC 0LA 0RA 1LA 1RH',
-    '1RB 0LC 1LA 0RA 1LA 1RH',
-    '1RB 1LA 1RC 1RB 0LA 1RH',
-    '1RB 1LA 1RC 1RB 1LA 1RH',
-    '1RB 1LC 0LA 0RB 1LA 1RH',
+    '1RB 1RH 0RC 1LB 1LA 0RB',  # total recurrence
+    '1RB 1RH 1LB 0LC 1LA 1RA',  # partial, left barrier
+    '1RB 1RH 1LC 1RA 1LA 0LC',  # partial, right barrier
 ]
 
-STEPS = 300
+STEPS = 60
 PRINT = True
 STDIN = False
 
