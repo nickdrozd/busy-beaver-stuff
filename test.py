@@ -83,11 +83,11 @@ class TuringTest(unittest.TestCase):
 
             self.assertEqual(
                 sigma,
-                machine.ones_count)
+                machine.marks)
 
             self.assertEqual(
                 shift,
-                machine.exec_count)
+                machine.steps)
 
     def test_quasihalting(self):
         for prog, (sigma, shift) in QUASIHALTING.items():
@@ -96,4 +96,4 @@ class TuringTest(unittest.TestCase):
 
             self.assertEqual(
                 sigma,
-                machine.ones_count)
+                machine.marks)

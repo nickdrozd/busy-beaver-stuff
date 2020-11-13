@@ -52,15 +52,15 @@ class Machine:
         self._tape = None
         self._pos = None
         self._state = None
-        self._exec_count = None
-        self._beep_count = None
+        self._steps = None
+        self._beeps = None
 
     @property
-    def exec_count(self):
-        return self._exec_count
+    def steps(self):
+        return self._steps
 
     @property
-    def ones_count(self):
+    def marks(self):
         total = 0
         for square in self._tape:
             if square != 0:
@@ -68,12 +68,12 @@ class Machine:
         return total
 
     @property
-    def beep_count(self):
+    def beeps(self):
         return sorted(
             tuple(
                 (key, val)
                 for key, val in
-                self._beep_count.items()),
+                self._beeps.items()),
             key=lambda x: x[1],
             reverse=True)
 
@@ -83,8 +83,8 @@ class Machine:
 
         state = 0
 
-        exec_count = 0
-        beep_count = defaultdict(lambda: 0)
+        step = 0
+        beeps = defaultdict(lambda: 0)
         prog = self._prog
 
         if x_limit is None:
@@ -102,13 +102,13 @@ class Machine:
             if state == HALT:
                 break
 
-            if exec_count >= x_limit:
+            if step >= x_limit:
                 break
 
             # Bookkeeping ##########################
 
-            exec_count += 1
-            beep_count[state] = exec_count
+            step += 1
+            beeps[state] = step
 
             # Machine operation ####################
 
@@ -135,17 +135,17 @@ class Machine:
 
         self._pos = pos
         self._tape = tape
-        self._exec_count = exec_count
+        self._steps = step
 
-        self._beep_count = dict(beep_count)
+        self._beeps = dict(beeps)
 
 
 def print_results(machine):
     print(
         '\n'.join([
-            f'ones: {machine.ones_count}',
-            f'exec: {machine.exec_count}',
-            f'beep: {machine.beep_count}',
+            f'marks: {machine.marks}',
+            f'steps: {machine.steps}',
+            f'beeps: {machine.beeps}',
             '',
         ]))
 
