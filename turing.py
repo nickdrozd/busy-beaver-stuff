@@ -225,9 +225,12 @@ CANDIDATES = [
 
 STEPS = 300
 PRINT = True
+STDIN = False
 
 if __name__ == '__main__':
-    for i, program in enumerate(CANDIDATES):
+    source = sys.stdin if STDIN else CANDIDATES
+
+    for i, program in enumerate(source):
         print_results(
             run_bb(
                 program,
