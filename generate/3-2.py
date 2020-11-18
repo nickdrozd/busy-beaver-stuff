@@ -1,22 +1,45 @@
-from itertools import product
+from itertools import filterfalse, product
+import re
 
-COLOR = '0', '1'
-SHIFT = 'L', 'R'
-STATE = 'A', 'B', 'C'
+COLORS = '0', '1'
+SHIFTS = R, L = 'R', 'L'
+STATES = A, B, C, H = 'A', 'B', 'C', 'H'
 
-def main():
-    actions = product(COLOR, SHIFT, STATE)
+
+def yield_all_programs():
+    actions = (
+        ''.join(prod) for prod
+        in product(COLORS, SHIFTS, STATES))
+
     for prog in product(actions, repeat=5):
-        print(
-            ''.join([
-                instr
-                for action in prog
-                for instr in action
-            ])
-        )
+        yield '1RB ' + ' '.join(prog)
+
+
+REJECTS = [
+    '^[^H]+$',
+    '.*H.*H.*',
+    '.*0.H.*',
+    '.*.LH.*',
+    '^1RB ... ..H',
+
+    '^1RB ..H ..[BC] ..[BC] ..[BC] ..[BC]',
+    '^1RB ..[AB] ..[AB] ..[AB] ..H ...',
+    '^1RB ..[AB] ..[AB] ..[AB] ... ..H',
+]
+
+def reject(prog):
+    for regex in REJECTS:
+        if re.match(regex, prog):
+            return True
+
+    return False
+
 
 if __name__ == '__main__':
     try:
-        main()
+        for prog in yield_all_programs():
+            if not reject(prog):
+                print(prog)
+                # print(prog[4:].replace(' ', ''))
     except BrokenPipeError:
         pass
