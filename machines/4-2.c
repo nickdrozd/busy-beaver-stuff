@@ -33,7 +33,7 @@ int a1c, a1s, a1t,
   READ_ACTION(c1c, c1s, c1t);                   \
   READ_ACTION(d0c, d0s, d0t);                   \
   READ_ACTION(d1c, d1s, d1t);                   \
-  getc(stdin);
+  READ_BOUND;
 
 int main (void) {
   static void* dispatch[] = { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };

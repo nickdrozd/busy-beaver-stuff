@@ -21,7 +21,7 @@
     goto *dispatch[t];                          \
   }
 
-#define READ(VAR) if ((VAR = getc(stdin)) == EOF) goto EXIT;
+#define NEXT getc(stdin)
 
 #define COLOR_CONV '0'
 #define SHIFT_CONV 'L'
@@ -30,9 +30,10 @@
 #define L -1
 #define R 1
 
-#define READ_COLOR(C) READ(C); C -= COLOR_CONV;
-#define READ_SHIFT(S) READ(S); S = S == SHIFT_CONV ? L : R;
-#define READ_TRANS(T) READ(T); T -= TRANS_CONV;
+#define READ_BOUND    if (NEXT == EOF) goto EXIT;
+#define READ_COLOR(C) C = NEXT - COLOR_CONV;
+#define READ_SHIFT(S) S = NEXT == SHIFT_CONV ? L : R;
+#define READ_TRANS(T) T = NEXT - TRANS_CONV;
 
 #define READ_ACTION(C, S, T) {                  \
     READ_COLOR(C);                              \
