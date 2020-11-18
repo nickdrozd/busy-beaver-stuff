@@ -15,6 +15,8 @@
     TAPE[i] = 0;                                \
   }
 
+#define SCAN(COLOR) TAPE[POS] == COLOR
+
 #define ACTION(c, s, t) {                       \
     TAPE[POS] = c;                              \
     POS += s;                                   \
