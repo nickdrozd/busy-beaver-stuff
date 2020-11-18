@@ -11,12 +11,6 @@
 unsigned int POS;
 unsigned int TAPE[TAPE_LEN];
 
-#define INSTRUCTION(c0, s0, t0, c1, s1, t1)     \
-  if (SCAN(1))                                  \
-    ACTION(c1, s1, t1)                          \
-    else                                        \
-      ACTION(c0, s0, t0)
-
 unsigned int XX, AA, BB, CC, DD, EE;
 unsigned int PP = 0;
 

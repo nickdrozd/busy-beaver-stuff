@@ -11,6 +11,7 @@
 unsigned int POS;
 unsigned int TAPE[TAPE_LEN];
 
+#undef INSTRUCTION
 #define INSTRUCTION(c0, s0, t0,                 \
                     c1, s1, t1,                 \
                     c2, s2, t2)                 \
