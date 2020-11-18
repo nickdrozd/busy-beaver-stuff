@@ -15,12 +15,9 @@
     TAPE[i] = 0;                                \
   }
 
-#define L POS--;
-#define R POS++;
-
 #define ACTION(c, s, t) {                       \
     TAPE[POS] = c;                              \
-    if (s) { R } else { L };                    \
+    POS += s;                                   \
     goto *dispatch[t];                          \
   }
 
@@ -30,8 +27,11 @@
 #define SHIFT_CONV 'L'
 #define TRANS_CONV 'A'
 
+#define L -1
+#define R 1
+
 #define READ_COLOR(C) READ(C); C -= COLOR_CONV;
-#define READ_SHIFT(S) READ(S); S -= SHIFT_CONV;
+#define READ_SHIFT(S) READ(S); S = S == SHIFT_CONV ? L : R;
 #define READ_TRANS(T) READ(T); T -= TRANS_CONV;
 
 #define READ_ACTION(C, S, T) {                  \
@@ -41,8 +41,8 @@
   }
 
 #define FORMAT_INSTR(C, S, T)                       \
-  C + COLOR_CONV, S + SHIFT_CONV, T + TRANS_CONV
+  C + COLOR_CONV, S == R ? 'R' : 'L', T + TRANS_CONV
 
 #define A0C '1' - COLOR_CONV
-#define A0S 'R' - SHIFT_CONV
+#define A0S 'R' - SHIFT_CONV - 5;
 #define A0T 'B' - TRANS_CONV
