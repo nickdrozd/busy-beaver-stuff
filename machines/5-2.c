@@ -1,36 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "machine.h"
 
 #define X_LIMIT 134217728  // 2^27
 #define TAPE_LEN ((X_LIMIT * 2) + 10)
 #define BB5_STEPS 47176870
 #define UPPER_BOUND 100663296  // 2^27 - 2^25
 
+#undef IN_RANGE
 #define IN_RANGE(COUNT) (COUNT < UPPER_BOUND)
-
-#define CHECK_X(COUNT) {                        \
-    XX++;                                       \
-    if (XX > X_LIMIT) {goto H;};                \
-    COUNT = XX;                                 \
-  }
 
 unsigned int POS;
 unsigned int TAPE[TAPE_LEN];
-
-#define RESET_TAPE                              \
-  POS = TAPE_LEN / 2;                           \
-  for (int i = 0; i < TAPE_LEN; i++) {          \
-    TAPE[i] = 0;                                \
-  }
-
-#define L POS--;
-#define R POS++;
-
-#define ACTION(c, s, t) {                       \
-    TAPE[POS] = c;                              \
-    if (s) { R } else { L };                    \
-    goto *dispatch[t];                          \
-  }
 
 #define INSTRUCTION(c0, s0, t0, c1, s1, t1)     \
   if (TAPE[POS])                                \
@@ -49,18 +28,6 @@ int a1c, a1s, a1t,
   d0c, d0s, d0t, d1c, d1s, d1t,
   e0c, e0s, e0t, e1c, e1s, e1t;
 
-#define READ(VAR) if ((VAR = getc(stdin)) == EOF) goto EXIT;
-
-#define COLOR_CONV '0'
-#define SHIFT_CONV 'L'
-#define TRANS_CONV 'A'
-
-#define READ_ACTION(C, S, T) {                  \
-    READ(C); C -= COLOR_CONV;                   \
-    READ(S); S -= SHIFT_CONV;                   \
-    READ(T); T -= TRANS_CONV;                   \
-  }
-
 #define LOAD_PROGRAM                            \
   READ_ACTION(a1c, a1s, a1t);                   \
   READ_ACTION(b0c, b0s, b0t);                   \
@@ -72,13 +39,6 @@ int a1c, a1s, a1t,
   READ_ACTION(e0c, e0s, e0t);                   \
   READ_ACTION(e1c, e1s, e1t);                   \
   getc(stdin);
-
-#define A0C '1' - COLOR_CONV
-#define A0S 'R' - SHIFT_CONV
-#define A0T 'B' - TRANS_CONV
-
-#define FORMAT_INSTR(C, S, T)                       \
-  C + COLOR_CONV, S + SHIFT_CONV, T + TRANS_CONV
 
 int main (void) {
   static void* dispatch[] = { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };
