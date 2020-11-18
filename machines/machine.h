@@ -30,10 +30,14 @@
 #define SHIFT_CONV 'L'
 #define TRANS_CONV 'A'
 
+#define READ_COLOR(C) READ(C); C -= COLOR_CONV;
+#define READ_SHIFT(S) READ(S); S -= SHIFT_CONV;
+#define READ_TRANS(T) READ(T); T -= TRANS_CONV;
+
 #define READ_ACTION(C, S, T) {                  \
-    READ(C); C -= COLOR_CONV;                   \
-    READ(S); S -= SHIFT_CONV;                   \
-    READ(T); T -= TRANS_CONV;                   \
+    READ_COLOR(C);                              \
+    READ_SHIFT(S);                              \
+    READ_TRANS(T);                              \
   }
 
 #define FORMAT_INSTR(C, S, T)                       \
