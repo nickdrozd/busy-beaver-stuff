@@ -272,7 +272,7 @@ STDIN = 1
 if __name__ == '__main__':
     source = sys.stdin if STDIN else CANDIDATES
 
-    for i, program in enumerate(source):
+    for _, program in enumerate(source):
         if run_bb(
                 program,
                 x_limit = STEPS,
