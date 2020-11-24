@@ -1,41 +1,10 @@
-from itertools import filterfalse, product
-import re
+from generate import yield_programs, print_programs
 
-COLORS = '0', '1'
-SHIFTS = R, L = 'R', 'L'
-STATES = A, B, H = 'A', 'B', 'H'
-
-
-def yield_all_programs():
-    actions = (
-        ''.join(prod) for prod
-        in product(COLORS, SHIFTS, STATES))
-
-    for prog in product(actions, repeat=3):
-        yield '1RB ' + ' '.join(prog)
-
-
-REJECTS = [
-    '^[^H]+$',
-    '.*H.*H.*',
-    '.*0.H.*',
-    '.*.LH.*',
-    '^1RB ... ..H',
-]
-
-def reject(prog):
-    for regex in REJECTS:
-        if re.match(regex, prog):
-            return True
-
-    return False
-
+HALT = 1
 
 if __name__ == '__main__':
-    try:
-        for prog in yield_all_programs():
-            if not reject(prog):
-                print(prog)
-                # print(prog[4:].replace(' ', ''))
-    except BrokenPipeError:
-        pass
+    print_programs(
+        yield_programs(
+            2,
+            2,
+            halt=HALT))
