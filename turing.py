@@ -132,8 +132,8 @@ class Machine:
                         if dev < pdev:
                             dmax = max(deviations[pstep:]) + 1
 
-                            prev = ptape[ : pinit + dmax]
-                            curr = tape[ : init + dmax + dev - pdev]
+                            prev = ptape[ : pinit + dmax              ]
+                            curr =  tape[ :  init + dmax + dev - pdev ]
 
                             for i in range(len(prev)):
                                 try:
@@ -144,8 +144,8 @@ class Machine:
                         elif pdev < dev:
                             dmin = min(deviations[pstep:])
 
-                            prev = ptape[ pinit + dmin : ]
-                            curr = tape[ init + dmin + dev - pdev : ]
+                            prev = ptape[ pinit + dmin              : ]
+                            curr =  tape[  init + dmin + dev - pdev : ]
 
                             for i in range(len(prev)):
                                 try:
@@ -157,8 +157,8 @@ class Machine:
                             dmax = max(deviations[pstep:]) + 1
                             dmin = min(deviations[pstep:])
 
-                            prev = ptape[pinit + dmin : pinit + dmax]
-                            curr =  tape[init  + dmin : init  + dmax]
+                            prev = ptape[ pinit + dmin : pinit + dmax ]
+                            curr =  tape[  init + dmin :  init + dmax ]
 
                         if prev == curr:
                             raise BreakLoop(pstep, step)
