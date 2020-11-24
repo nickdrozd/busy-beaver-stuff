@@ -1,4 +1,4 @@
-import unittest
+from unittest import TestCase
 
 from turing import run_bb
 
@@ -94,42 +94,47 @@ RECURRENCE = {
 }
 
 
-class TuringTest(unittest.TestCase):
+class TuringTest(TestCase):
+    def assert_marks(self, marks):
+        self.assertEqual(
+            self.machine.marks,
+            marks)
+
+    def assert_steps(self, steps):
+        self.assertEqual(
+            self.machine.steps,
+            steps)
+
+    def assert_status(self, status):
+        self.assertEqual(
+            self.machine.status,
+            status)
+
+    def run_bb(self, prog, **opts):
+        print(prog)
+
+        # pylint: disable = attribute-defined-outside-init
+        self.machine = run_bb(prog, **opts)
+
     def test_halting(self):
-        for prog, (sigma, shift) in HALTING.items():
-            print(prog)
-            machine = run_bb(prog)
+        for prog, (marks, steps) in HALTING.items():
+            self.run_bb(prog)
 
-            self.assertEqual(
-                sigma,
-                machine.marks)
+            self.assert_marks(marks)
+            self.assert_steps(steps)
 
-            self.assertEqual(
-                shift,
-                machine.steps)
-
-            self.assertEqual(
-                machine.status,
-                'HALTED')
+            self.assert_status('HALTED')
 
     def test_quasihalting(self):
-        for prog, (sigma, shift) in QUASIHALTING.items():
-            print(prog)
-            machine = run_bb(prog, x_limit=shift)
+        for prog, (marks, steps) in QUASIHALTING.items():
+            self.run_bb(prog, x_limit=steps)
 
-            self.assertEqual(
-                sigma,
-                machine.marks)
+            self.assert_marks(marks)
 
-            self.assertEqual(
-                machine.status,
-                'XLIMIT')
+            self.assert_status('XLIMIT')
 
     def test_recurrence(self):
         for prog, status in RECURRENCE.items():
-            print(prog)
-            machine = run_bb(prog, check_rec=True)
+            self.run_bb(prog, check_rec=True)
 
-            self.assertEqual(
-                machine.status,
-                status)
+            self.assert_status(status)
