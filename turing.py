@@ -141,10 +141,6 @@ class Machine:
                                 except IndexError:
                                     curr.insert(0, 0)
 
-                            if prev == curr:
-                                # print('L', pstep, step)
-                                raise BreakLoop
-
                         elif pdev < dev:
                             dmin = min(deviations[pstep:])
 
@@ -157,10 +153,6 @@ class Machine:
                                 except IndexError:
                                     curr.append(0)
 
-                            if prev == curr:
-                                # print('R', pstep, step)
-                                raise BreakLoop
-
                         elif pdev == dev:
                             dmax = max(deviations[pstep:]) + 1
                             dmin = min(deviations[pstep:])
@@ -168,12 +160,12 @@ class Machine:
                             prev = ptape[pinit + dmin : pinit + dmax]
                             curr =  tape[init  + dmin : init  + dmax]
 
-                            if prev == curr:
-                                # print('C', pstep, step)
-                                raise BreakLoop
+                        if prev == curr:
+                            raise BreakLoop(pstep, step)
 
-                except BreakLoop:
-                    self._status = 'RECURR'
+                except BreakLoop as breakloop:
+                    pstep, step = breakloop.args
+                    self._status = 'RECURR', pstep, step
                     break
 
                 snapshots[action].append((
@@ -251,7 +243,7 @@ def print_tape(tape, pos, init):
 
 def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=False):
     if tape is None:
-        tape = [0]
+        tape = [0] * 36 if check_rec else [0]
 
     machine = Machine(prog)
     machine.run_to_halt(tape, x_limit, watch_tape, check_rec)
@@ -267,7 +259,6 @@ STEPS = 70
 PRINT = 1
 RCRNC = 1
 STDIN = 1
-FTAPE = 1
 
 if __name__ == '__main__':
     source = sys.stdin if STDIN else CANDIDATES
@@ -277,6 +268,5 @@ if __name__ == '__main__':
                 program,
                 x_limit = STEPS,
                 watch_tape = PRINT,
-                check_rec = RCRNC,
-                tape = [0] * 36 if FTAPE else None):
+                check_rec = RCRNC):
             print(program.strip())

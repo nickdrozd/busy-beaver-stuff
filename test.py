@@ -77,16 +77,20 @@ QUASIHALTING = {
 
 RECURRENCE = {
     # Lin-Rado examples
-    "1RB 1RH 0RC 1LB 1LA 0RB",  # total recurrence
-    "1RB 1RH 1LB 0LC 1LA 1RA",  # left barrier
-    "1RB 1RH 1LC 1RA 1LA 0LC",  # right barrier
+
+    "1RB 1RH 0RC 1LB 1LA 0RB": (9, 19),   # total recurrence
+    "1RB 1RH 1LB 0LC 1LA 1RA": (12, 19),  # left barrier
+    "1RB 1RH 1LC 1RA 1LA 0LC": (12, 20),  # right barrier
 
     # quasihalting champs
-    "1RB 1LB 1LB 1LA",
-    "1RB 2LB 1RA 2LB 2LA 0RA",
-    "1RB 2LB 1LA 2LB 2RA 0RA",
-    "1RB 0LB 1LA 0RC 1LC 1LA",
-    "1RB 1RC 1LC 1RA 1RA 1LA",
+
+    "1RB 1LB 1LB 1LA":         (6, 7),    # 2-2
+
+    "1RB 2LB 1LA 2LB 2RA 0RA": (59, 60),  # 2-3 shift
+    "1RB 2LB 1RA 2LB 2LA 0RA": (43, 44),  # 2-3 sigma
+
+    "1RB 1RC 1LC 1RA 1RA 1LA": (9, 11),    # 3-2 sigma
+    "1RB 0LB 1LA 0RC 1LC 1LA": (55, 56),  # 3-2 shift
 }
 
 
@@ -122,10 +126,10 @@ class TuringTest(unittest.TestCase):
                 'XLIMIT')
 
     def test_recurrence(self):
-        for prog in RECURRENCE:
+        for prog, (pstep, step) in RECURRENCE.items():
             print(prog)
             machine = run_bb(prog, check_rec=True)
 
             self.assertEqual(
                 machine.status,
-                'RECURR')
+                ('RECURR', pstep, step))
