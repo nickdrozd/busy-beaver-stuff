@@ -161,11 +161,20 @@ class Machine:
                             curr =  tape[  init + dmin :  init + dmax ]
 
                         if prev == curr:
-                            raise BreakLoop(pstep, step)
+                            raise BreakLoop(pstep, step, pbeeps)
 
                 except BreakLoop as breakloop:
-                    pstep, step = breakloop.args
-                    self._status = 'RECURR', pstep, step
+                    # pylint: disable = unbalanced-tuple-unpacking
+                    pstep, step, pbeeps = breakloop.args
+
+                    status = (
+                        'RECURR'
+                        if all(beeps[state] > pbeeps[state]
+                               for state in pbeeps) else
+                        'QSIHLT'
+                    )
+
+                    self._status = status, pstep, step
                     break
 
                 snapshots[action].append((
