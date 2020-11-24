@@ -9,7 +9,7 @@ lint :
 	pylint *.py **/*.py
 
 test :
-	python3 -m unittest test.py
+	python3 -m unittest discover test
 
 time : test
 
@@ -17,7 +17,7 @@ profile :
 	python3 -m cProfile turing.py
 
 clean :
-	rm -rf yappi.* __pycache__ **/run
+	rm -rf yappi.* __pycache__ **/__pycache__ **/run
 
 machines :
 	$(MAKE) -C machines
