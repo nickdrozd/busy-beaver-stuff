@@ -54,6 +54,7 @@ class Machine:
         self._state = None
         self._steps = None
         self._beeps = None
+        self._status = None
 
     @property
     def steps(self):
@@ -77,9 +78,13 @@ class Machine:
             key=lambda x: x[1],
             reverse=True)
 
-    def run_to_halt(self, tape, x_limit=None, watch_tape=False):
-        init = 0
-        pos = 0
+    @property
+    def status(self):
+        return self._status
+
+    def run_to_halt(self, tape, x_limit=None, watch_tape=False, check_rec=False):
+        pos = len(tape) // 2
+        init = pos
 
         state = 0
 
@@ -90,20 +95,94 @@ class Machine:
         if x_limit is None:
             x_limit = sys.maxsize
 
+        if check_rec:
+            deviations = []
+            snapshots = defaultdict(lambda: [])
+
         while True:
 
             # Output ###############################
 
             if watch_tape:
+                print(f'{step} {state} ', end='')
                 print_tape(tape, pos, init)
 
             # Halt conditions ######################
 
             if state == HALT:
+                self._status = 'HALTED'
                 break
 
             if step >= x_limit:
+                self._status = 'XLIMIT'
                 break
+
+            if check_rec:
+                dev = pos - init
+                deviations.append(dev)
+
+                action = state, tape[pos]
+
+                class BreakLoop(Exception):
+                    '''This is control flow, not exception handling.'''
+
+                try:
+                    for pstep, pinit, pdev, ptape, pbeeps in snapshots[action]:
+
+                        if dev < pdev:
+                            dmax = max(deviations[pstep:]) + 1
+
+                            prev = ptape[ : pinit + dmax]
+                            curr = tape[ : init + dmax + dev - pdev]
+
+                            for i in range(len(prev)):
+                                try:
+                                    curr[i]
+                                except IndexError:
+                                    curr.insert(0, 0)
+
+                            if prev == curr:
+                                # print('L', pstep, step)
+                                raise BreakLoop
+
+                        elif pdev < dev:
+                            dmin = min(deviations[pstep:])
+
+                            prev = ptape[ pinit + dmin : ]
+                            curr = tape[ init + dmin + dev - pdev : ]
+
+                            for i in range(len(prev)):
+                                try:
+                                    curr[i]
+                                except IndexError:
+                                    curr.append(0)
+
+                            if prev == curr:
+                                # print('R', pstep, step)
+                                raise BreakLoop
+
+                        elif pdev == dev:
+                            dmax = max(deviations[pstep:]) + 1
+                            dmin = min(deviations[pstep:])
+
+                            prev = ptape[pinit + dmin : pinit + dmax]
+                            curr =  tape[init  + dmin : init  + dmax]
+
+                            if prev == curr:
+                                # print('C', pstep, step)
+                                raise BreakLoop
+
+                except BreakLoop:
+                    self._status = 'RECURR'
+                    break
+
+                snapshots[action].append((
+                    step,
+                    init,
+                    dev,
+                    tape.copy(),
+                    beeps.copy(),
+                ))
 
             # Bookkeeping ##########################
 
@@ -170,32 +249,34 @@ def print_tape(tape, pos, init):
 
 ########################################
 
-def run_bb(prog, tape=None, x_limit=None, watch_tape=False):
+def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=False):
     if tape is None:
         tape = [0]
 
     machine = Machine(prog)
-    machine.run_to_halt(tape, x_limit, watch_tape)
+    machine.run_to_halt(tape, x_limit, watch_tape, check_rec)
     return machine
 
 ########################################
 
 CANDIDATES = [
-    '1RB 1RH 0RC 1LB 1LA 0RB',  # total recurrence
-    '1RB 1RH 1LB 0LC 1LA 1RA',  # partial, left barrier
-    '1RB 1RH 1LC 1RA 1LA 0LC',  # partial, right barrier
+
 ]
 
-STEPS = 60
-PRINT = True
-STDIN = False
+STEPS = 70
+PRINT = 1
+RCRNC = 1
+STDIN = 1
+FTAPE = 1
 
 if __name__ == '__main__':
     source = sys.stdin if STDIN else CANDIDATES
 
     for i, program in enumerate(source):
-        print_results(
-            run_bb(
+        if run_bb(
                 program,
                 x_limit = STEPS,
-                watch_tape = PRINT))
+                watch_tape = PRINT,
+                check_rec = RCRNC,
+                tape = [0] * 36 if FTAPE else None):
+            print(program.strip())
