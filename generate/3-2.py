@@ -1,6 +1,6 @@
 from generate import yield_programs, print_programs
 
-HALT = 1
+HALT = 0
 
 REJECTS = [
     '^1RB ... ..[BC] ..[BC] ..[BC] ..[BC]',

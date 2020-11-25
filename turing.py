@@ -265,7 +265,7 @@ CANDIDATES = [
 ]
 
 STEPS = 70
-PRINT = 1
+PRINT = 0
 RCRNC = 1
 STDIN = 1
 
@@ -273,9 +273,11 @@ if __name__ == '__main__':
     source = sys.stdin if STDIN else CANDIDATES
 
     for _, program in enumerate(source):
-        if run_bb(
-                program,
-                x_limit = STEPS,
-                watch_tape = PRINT,
-                check_rec = RCRNC):
-            print(program.strip())
+        machine = run_bb(
+            program,
+            x_limit = STEPS,
+            watch_tape = PRINT,
+            check_rec = RCRNC)
+
+        if machine.status == 'XLIMIT':
+            print(machine._prog)
