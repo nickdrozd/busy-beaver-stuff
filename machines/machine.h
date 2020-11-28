@@ -5,7 +5,11 @@
 
 #define SETUP_TAPE                              \
   unsigned int POS;                             \
-  unsigned int TAPE[TAPE_LEN];
+  unsigned int PMIN;                            \
+  unsigned int PMAX;                            \
+  unsigned int TAPE[TAPE_LEN];                  \
+  unsigned int i;
+
 
 #define IN_RANGE(COUNT) (LOWER_BOUND <= COUNT && COUNT < UPPER_BOUND)
 
@@ -16,16 +20,20 @@
   }
 
 #define RESET_TAPE                              \
-  POS = TAPE_LEN / 2;                           \
-  for (int i = 0; i < TAPE_LEN; i++) {          \
+  for (i = PMIN; i < PMAX; i++) {               \
     TAPE[i] = 0;                                \
-  }
+  }                                             \
+  POS = TAPE_LEN / 2;                           \
+  PMIN = POS;                                   \
+  PMAX = POS + 1;
 
 #define SCAN(COLOR) TAPE[POS] == COLOR
 
 #define ACTION(c, s, t) {                       \
     TAPE[POS] = c;                              \
     POS += s;                                   \
+    if (POS < PMIN) { PMIN--; }                 \
+    else if (POS >= PMAX) { PMAX++; }           \
     goto *dispatch[t];                          \
   }
 
