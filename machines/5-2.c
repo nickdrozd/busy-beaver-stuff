@@ -1,5 +1,8 @@
 #include "machine.h"
 
+#define STATES 5
+#define COLORS 2
+
 #define X_LIMIT 134217728  // 2^27
 #define BB5_STEPS 47176870
 #define UPPER_BOUND 100663296  // 2^27 - 2^25

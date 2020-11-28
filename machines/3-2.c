@@ -1,5 +1,8 @@
 #include "machine.h"
 
+#define STATES 3
+#define COLORS 2
+
 #define X_LIMIT 65536
 #define LOWER_BOUND 20
 #define UPPER_BOUND (X_LIMIT - 1000)

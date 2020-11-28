@@ -1,5 +1,8 @@
 #include "machine.h"
 
+#define STATES 4
+#define COLORS 2
+
 #define X_LIMIT 2097152
 #define BB4 107
 #define LOWER_BOUND BB4
