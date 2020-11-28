@@ -11,11 +11,7 @@
 #define IN_RANGE(COUNT) (COUNT < UPPER_BOUND)
 
 SETUP_TAPE;
-
-unsigned int XX, AA, BB, CC, DD, EE;
-unsigned int PP = 0;
-
-#define RESET_COUNTS XX = AA = BB = CC = DD = EE = 0; PP++;
+SETUP_COUNTS;
 
 int a1c, a1s, a1t,
   b0c, b0s, b0t, b1c, b1s, b1t,

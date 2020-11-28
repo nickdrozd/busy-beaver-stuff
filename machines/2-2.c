@@ -8,11 +8,7 @@
 #define LOWER_BOUND 2
 
 SETUP_TAPE;
-
-unsigned int XX, AA, BB;
-unsigned int PP = 0;
-
-#define RESET_COUNTS XX = AA = BB = 0; PP++;
+SETUP_COUNTS;
 
 int a0c, a0s, a0t, a1c, a1s, a1t, b0c, b0s, b0t, b1c, b1s, b1t;
 

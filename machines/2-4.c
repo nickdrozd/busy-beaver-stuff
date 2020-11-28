@@ -9,6 +9,7 @@
 #define UPPER_BOUND 16777216
 
 SETUP_TAPE;
+SETUP_COUNTS;
 
 #undef INSTRUCTION
 #define INSTRUCTION(c0, s0, t0,                 \
@@ -19,11 +20,6 @@ SETUP_TAPE;
     else if (SCAN(2)) ACTION(c2, s2, t2)        \
       else if (SCAN(1)) ACTION(c1, s1, t1)      \
         else ACTION(c0, s0, t0)
-
-unsigned int XX, AA, BB;
-unsigned int PP = 0;
-
-#define RESET_COUNTS XX = AA = BB = 0; PP++;
 
 int a1c, a1s, a1t, a2c, a2s, a2t, a3c, a3s, a3t,
   b0c, b0s, b0t, b1c, b1s, b1t, b2c, b2s, b2t, b3c, b3s, b3t;

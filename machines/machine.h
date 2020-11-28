@@ -14,6 +14,24 @@
   static void* dispatch[] =                     \
     { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };
 
+#define SETUP_COUNTS                            \
+  unsigned int COUNTS[STATES];                  \
+  unsigned int XX;                              \
+  unsigned int PP = 0;
+
+#define RESET_COUNTS                            \
+  XX = 0;                                       \
+  PP++;                                         \
+  for (i = 0; i < STATES; i++) {                \
+    COUNTS[i] = 0;                              \
+  }
+
+#define AA COUNTS[0]
+#define BB COUNTS[1]
+#define CC COUNTS[2]
+#define DD COUNTS[3]
+#define EE COUNTS[4]
+
 #define IN_RANGE(COUNT) (LOWER_BOUND <= COUNT && COUNT < UPPER_BOUND)
 
 #define CHECK_X(COUNT) {                        \

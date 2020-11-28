@@ -8,11 +8,7 @@
 #define UPPER_BOUND (X_LIMIT - 1000)
 
 SETUP_TAPE;
-
-unsigned int XX, AA, BB, CC;
-unsigned int PP = 0;
-
-#define RESET_COUNTS XX = AA = BB = CC = 0; PP++;
+SETUP_COUNTS;
 
 int a1c, a1s, a1t,
   b0c, b0s, b0t, b1c, b1s, b1t,
