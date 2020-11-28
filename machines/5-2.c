@@ -33,7 +33,7 @@ int a1c, a1s, a1t,
   READ_BOUND;
 
 int main (void) {
-  static void* dispatch[] = { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };
+  DISPATCH_TABLE;
 
  INITIALIZE:
   RESET_COUNTS;

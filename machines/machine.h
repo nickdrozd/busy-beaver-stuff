@@ -10,6 +10,9 @@
   unsigned int TAPE[TAPE_LEN];                  \
   unsigned int i;
 
+#define DISPATCH_TABLE                          \
+  static void* dispatch[] =                     \
+    { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };
 
 #define IN_RANGE(COUNT) (LOWER_BOUND <= COUNT && COUNT < UPPER_BOUND)
 
