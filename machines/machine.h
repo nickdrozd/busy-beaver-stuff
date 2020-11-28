@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define TAPE_LEN (X_LIMIT * 2)
+
+#define SETUP_TAPE                              \
+  unsigned int POS;                             \
+  unsigned int TAPE[TAPE_LEN];
+
 #define IN_RANGE(COUNT) (LOWER_BOUND <= COUNT && COUNT < UPPER_BOUND)
 
 #define CHECK_X(COUNT) {                        \

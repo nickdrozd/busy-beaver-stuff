@@ -1,15 +1,13 @@
 #include "machine.h"
 
 #define X_LIMIT 300
-#define TAPE_LEN ((X_LIMIT * 2) + 10)
 #define LOWER_BOUND 30
 #define UPPER_BOUND 100
 
 #undef IN_RANGE
 #define IN_RANGE(COUNT) (COUNT < UPPER_BOUND)
 
-unsigned int POS;
-unsigned int TAPE[TAPE_LEN];
+SETUP_TAPE;
 
 #undef INSTRUCTION
 #define INSTRUCTION(c0, s0, t0,                 \

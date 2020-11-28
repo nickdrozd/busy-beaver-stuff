@@ -3,10 +3,8 @@
 #define X_LIMIT 40
 #define UPPER_BOUND (X_LIMIT / 2)
 #define LOWER_BOUND 2
-#define TAPE_LEN ((X_LIMIT * 2) + 10)
 
-unsigned int POS;
-unsigned int TAPE[TAPE_LEN];
+SETUP_TAPE;
 
 unsigned int XX, AA, BB;
 unsigned int PP = 0;

@@ -1,12 +1,10 @@
 #include "machine.h"
 
 #define X_LIMIT 65536
-#define TAPE_LEN ((X_LIMIT * 2) + 10)
 #define LOWER_BOUND 20
 #define UPPER_BOUND (X_LIMIT - 1000)
 
-unsigned int POS;
-unsigned int TAPE[TAPE_LEN];
+SETUP_TAPE;
 
 unsigned int XX, AA, BB, CC;
 unsigned int PP = 0;

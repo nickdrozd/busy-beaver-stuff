@@ -1,15 +1,13 @@
 #include "machine.h"
 
 #define X_LIMIT 134217728  // 2^27
-#define TAPE_LEN ((X_LIMIT * 2) + 10)
 #define BB5_STEPS 47176870
 #define UPPER_BOUND 100663296  // 2^27 - 2^25
 
 #undef IN_RANGE
 #define IN_RANGE(COUNT) (COUNT < UPPER_BOUND)
 
-unsigned int POS;
-unsigned int TAPE[TAPE_LEN];
+SETUP_TAPE;
 
 unsigned int XX, AA, BB, CC, DD, EE;
 unsigned int PP = 0;
