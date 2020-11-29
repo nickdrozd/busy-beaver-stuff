@@ -18,6 +18,7 @@ profile :
 
 clean :
 	rm -rf yappi.* __pycache__ **/__pycache__ **/run
+	$(MAKE) -C machines clean
 
 machines :
 	$(MAKE) -C machines
