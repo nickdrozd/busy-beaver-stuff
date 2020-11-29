@@ -27,7 +27,6 @@ int main (void) {
 
  INITIALIZE:
   RESET_COUNTS;
-  RESET_TAPE;
   LOAD_PROGRAM;
 
  A:
@@ -43,6 +42,8 @@ int main (void) {
   INSTRUCTION(c0c, c0s, c0t, c1c, c1s, c1t);
 
  H:
+  RESET_TAPE;
+
   if (IN_RANGE(AA) || IN_RANGE(BB) || IN_RANGE(CC))
     printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d\n",
            PP,

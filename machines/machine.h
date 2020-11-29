@@ -3,11 +3,13 @@
 
 #define TAPE_LEN (X_LIMIT * 2)
 
+#define CENTER_SQUARE (TAPE_LEN / 2)
+
 #define SETUP_TAPE                              \
-  unsigned int POS;                             \
-  unsigned int PMIN;                            \
-  unsigned int PMAX;                            \
-  unsigned int TAPE[TAPE_LEN];                  \
+  unsigned int POS = CENTER_SQUARE;             \
+  unsigned int PMIN = CENTER_SQUARE;            \
+  unsigned int PMAX = CENTER_SQUARE + 1;        \
+  unsigned int TAPE[TAPE_LEN] = { 0 };          \
   unsigned int i;
 
 #define DISPATCH_TABLE                          \
@@ -43,9 +45,9 @@
   for (i = PMIN; i < PMAX; i++) {               \
     TAPE[i] = 0;                                \
   }                                             \
-  POS = TAPE_LEN / 2;                           \
-  PMIN = POS;                                   \
-  PMAX = POS + 1;
+  POS = CENTER_SQUARE;                          \
+  PMIN = CENTER_SQUARE;                         \
+  PMAX = CENTER_SQUARE + 1;
 
 #define SCAN(COLOR) TAPE[POS] == COLOR
 

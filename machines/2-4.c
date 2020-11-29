@@ -39,7 +39,6 @@ int main (void) {
 
  INITIALIZE:
   RESET_COUNTS;
-  RESET_TAPE;
   LOAD_PROGRAM;
 
  A:
@@ -57,6 +56,8 @@ int main (void) {
               b3c, b3s, b3t);
 
  H:
+  RESET_TAPE;
+
   if (AA && BB)
     /* if (IN_RANGE(AA) || IN_RANGE(BB)) */
       printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d\n",
