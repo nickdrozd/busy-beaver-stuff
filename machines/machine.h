@@ -35,8 +35,7 @@
 #define IN_RANGE(COUNT) (LOWER_BOUND <= COUNT && COUNT < UPPER_BOUND)
 
 #define CHECK_X(COUNT) {                        \
-    XX++;                                       \
-    if (XX > X_LIMIT) {goto H;};                \
+    if (++XX > X_LIMIT) {goto H;};              \
     COUNT = XX;                                 \
   }
 
