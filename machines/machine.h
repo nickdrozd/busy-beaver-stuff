@@ -17,12 +17,13 @@
     { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };
 
 #define SETUP_COUNTS                            \
+  unsigned int MARKS = 0;                       \
   unsigned int COUNTS[STATES];                  \
   unsigned int XX;                              \
   unsigned int PP = 0;
 
 #define RESET_COUNTS                            \
-  XX = 0;                                       \
+  XX = MARKS = 0;                               \
   PP++;                                         \
   for (i = 0; i < STATES; i++) {                \
     COUNTS[i] = 0;                              \
@@ -41,8 +42,9 @@
     COUNT = XX;                                 \
   }
 
-#define RESET_TAPE                              \
+#define WIPE_AND_SCORE                          \
   for (i = PMIN; i < PMAX; i++) {               \
+    if (TAPE[i]) { MARKS++; }                   \
     TAPE[i] = 0;                                \
   }                                             \
   POS = CENTER_SQUARE;                          \

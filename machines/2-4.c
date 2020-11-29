@@ -56,11 +56,11 @@ int main (void) {
               b3c, b3s, b3t);
 
  H:
-  RESET_TAPE;
+  WIPE_AND_SCORE;
 
   if (AA && BB)
     /* if (IN_RANGE(AA) || IN_RANGE(BB)) */
-      printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d\n",
+      printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d | %d\n",
              PP,
              FORMAT_INSTR(a1c, a1s, a1t),
              FORMAT_INSTR(a2c, a2s, a2t),
@@ -69,7 +69,8 @@ int main (void) {
              FORMAT_INSTR(b1c, b1s, b1t),
              FORMAT_INSTR(b2c, b2s, b2t),
              FORMAT_INSTR(b3c, b3s, b3t),
-             AA, BB);
+             AA, BB,
+             MARKS);
 
   goto INITIALIZE;
 
