@@ -7,9 +7,6 @@
 #define LOWER_BOUND 20
 #define UPPER_BOUND (X_LIMIT - 1000)
 
-SETUP_TAPE;
-SETUP_COUNTS;
-
 int a1c, a1s, a1t,
   b0c, b0s, b0t, b1c, b1s, b1t,
   c0c, c0s, c0t, c1c, c1s, c1t;
@@ -21,6 +18,8 @@ int a1c, a1s, a1t,
   READ_ACTION(c0c, c0s, c0t);                   \
   READ_ACTION(c1c, c1s, c1t);                   \
   READ_BOUND;
+
+SETUP;
 
 int main (void) {
   DISPATCH_TABLE;

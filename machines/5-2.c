@@ -10,9 +10,6 @@
 #undef IN_RANGE
 #define IN_RANGE(COUNT) (COUNT < UPPER_BOUND)
 
-SETUP_TAPE;
-SETUP_COUNTS;
-
 int a1c, a1s, a1t,
   b0c, b0s, b0t, b1c, b1s, b1t,
   c0c, c0s, c0t, c1c, c1s, c1t,
@@ -30,6 +27,8 @@ int a1c, a1s, a1t,
   READ_ACTION(e0c, e0s, e0t);                   \
   READ_ACTION(e1c, e1s, e1t);                   \
   READ_BOUND;
+
+SETUP;
 
 int main (void) {
   DISPATCH_TABLE;

@@ -8,9 +8,6 @@
 #define LOWER_BOUND BB_2_4
 #define UPPER_BOUND 16777216
 
-SETUP_TAPE;
-SETUP_COUNTS;
-
 #undef INSTRUCTION
 #define INSTRUCTION(c0, s0, t0,                 \
                     c1, s1, t1,                 \
@@ -33,6 +30,8 @@ int a1c, a1s, a1t, a2c, a2s, a2t, a3c, a3s, a3t,
   READ_ACTION(b2c, b2s, b2t);                   \
   READ_ACTION(b3c, b3s, b3t);                   \
   READ_BOUND;
+
+SETUP;
 
 int main (void) {
   DISPATCH_TABLE;

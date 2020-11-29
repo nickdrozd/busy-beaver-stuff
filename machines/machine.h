@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define SETUP                                   \
+  SETUP_TAPE;                                   \
+  SETUP_COUNTS;                                 \
+
 #define TAPE_LEN (X_LIMIT * 2)
 
 #define CENTER_SQUARE (TAPE_LEN / 2)
