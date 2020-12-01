@@ -28,7 +28,7 @@ int a1c, a1s, a1t,
   READ_ACTION(e1c, e1s, e1t);                   \
   READ_BOUND;
 
-SETUP;
+SETUP
 
 int main (void) {
   DISPATCH_TABLE;

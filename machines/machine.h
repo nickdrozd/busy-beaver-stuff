@@ -2,8 +2,8 @@
 #include <stdlib.h>
 
 #define SETUP                                   \
-  SETUP_TAPE;                                   \
-  SETUP_COUNTS;                                 \
+  SETUP_TAPE                                    \
+  SETUP_COUNTS
 
 #define TAPE_LEN (X_LIMIT * 2)
 

@@ -8,7 +8,7 @@ CFLAGS += -Wall -Wextra -O3
 test : $(MACHINES)
 
 % : %.c
-	$(CC) $(CFLAGS) $< machine.h -o $@.run
+	$(CC) $(CFLAGS) $< -o $@.run
 	./$@.run < $@.test
 
 clean :
