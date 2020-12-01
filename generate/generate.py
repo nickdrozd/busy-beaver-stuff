@@ -23,10 +23,10 @@ def yield_all_programs(state_count, color_count, halt=False):
 
 
 HALT_NORMAL = [
-    '^[^H]+$',
-    '.*H.*H.*',
-    '.*0.H.*',
-    '.*.LH.*',
+    re.compile('^[^H]+$'),
+    re.compile('.*H.*H.*'),
+    re.compile('.*0.H.*'),
+    re.compile('.*.LH.*'),
 ]
 
 
@@ -41,14 +41,16 @@ def R_on_0(states, colors):
 
 
 def reject(rejects, states, colors, halt=False):
-    rejects = [R_on_0(states, colors)] + rejects
+    rejects = [re.compile(regex) for regex in rejects]
+    rejects.insert(0, re.compile(R_on_0(states, colors)))
 
     if halt:
-        rejects = HALT_NORMAL + [B0_halt(colors)] + rejects
+        rejects.insert(0, re.compile(B0_halt(colors)))
+        rejects = HALT_NORMAL + rejects
 
     def reject_prog(prog):
         return any(
-            re.match(regex, prog)
+            regex.match(prog)
             for regex in rejects
         )
 
