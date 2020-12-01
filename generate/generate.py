@@ -49,10 +49,11 @@ def reject(rejects, states, colors, halt=False):
         rejects = HALT_NORMAL + rejects
 
     def reject_prog(prog):
-        return any(
-            regex.match(prog)
-            for regex in rejects
-        )
+        for regex in rejects:
+            if regex.match(prog):
+                return True
+
+        return False
 
     return reject_prog
 
