@@ -1,4 +1,4 @@
-from itertools import product, filterfalse
+from itertools import product
 import re
 
 SHIFTS = 'R', 'L'
@@ -66,10 +66,11 @@ def yield_programs(states, colors, rejects=None, halt=False):
     if rejects is None:
         rejects = []
 
-    all_progs = yield_all_programs(states, colors, halt)
-    reject_filter = reject(rejects, states, colors, halt)
+    reject_prog = reject(rejects, states, colors, halt)
 
-    yield from filterfalse(reject_filter, all_progs)
+    for prog in yield_all_programs(states, colors, halt):
+        if not reject_prog(prog):
+            yield prog
 
 
 def print_programs(progs, full=True):
