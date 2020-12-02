@@ -18,16 +18,24 @@ def yield_all_programs(state_count, color_count, halt=False):
 
     transitions = len(colors) * len(states)
 
-    for prog in product(actions, repeat = transitions - 1):
-        yield '1RB ' + ' '.join(prog)
+    if halt:
+        actions = (
+            action
+            for action in actions
+            if action[2] != HALT or action == '1RH'
+        )
 
+    progs = product(actions, repeat = transitions - 1)
 
-HALT_NORMAL = [
-    re.compile('^[^H]+$'),
-    re.compile('.*H.*H.*'),
-    re.compile('.*[^1].H.*'),
-    re.compile('.*.[^R]H.*'),
-]
+    if not halt:
+        for prog in progs:
+            yield '1RB ' + ' '.join(prog)
+
+    else:
+        for prog in progs:
+            prog = ' '.join(prog)
+            if prog.count(HALT) == 1:
+                yield '1RB ' + prog
 
 
 def B0_halt(colors):
@@ -46,7 +54,6 @@ def reject(rejects, states, colors, halt=False):
 
     if halt:
         rejects.insert(0, re.compile(B0_halt(colors)))
-        rejects = HALT_NORMAL + rejects
 
     def reject_prog(prog):
         for regex in rejects:
