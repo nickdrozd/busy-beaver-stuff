@@ -25,8 +25,8 @@ def yield_all_programs(state_count, color_count, halt=False):
 HALT_NORMAL = [
     re.compile('^[^H]+$'),
     re.compile('.*H.*H.*'),
-    re.compile('.*0.H.*'),
-    re.compile('.*.LH.*'),
+    re.compile('.*[^1].H.*'),
+    re.compile('.*.[^R]H.*'),
 ]
 
 
