@@ -54,7 +54,7 @@ class Machine:
         self._state = None
         self._steps = None
         self._beeps = None
-        self._status = None
+        self._final = None
 
     @property
     def steps(self):
@@ -79,8 +79,8 @@ class Machine:
             reverse=True)
 
     @property
-    def status(self):
-        return self._status
+    def final(self):
+        return self._final
 
     def run_to_halt(self, tape, x_limit=None, watch_tape=False, check_rec=False):
         pos = len(tape) // 2
@@ -110,11 +110,11 @@ class Machine:
             # Halt conditions ######################
 
             if state == HALT:
-                self._status = 'HALTED'
+                self._final = 'HALTED'
                 break
 
             if step >= x_limit:
-                self._status = 'XLIMIT'
+                self._final = 'XLIMIT'
                 break
 
             if check_rec:
@@ -167,14 +167,14 @@ class Machine:
                     # pylint: disable = unbalanced-tuple-unpacking
                     pstep, step, pbeeps = breakloop.args
 
-                    status = (
+                    final = (
                         'RECURR'
                         if all(beeps[state] > pbeeps[state]
                                for state in pbeeps) else
                         'QSIHLT'
                     )
 
-                    self._status = status, pstep, step
+                    self._final = final, pstep, step
                     break
 
                 snapshots[action].append((

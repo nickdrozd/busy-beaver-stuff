@@ -109,10 +109,10 @@ class TuringTest(TestCase):
             self.machine.steps,
             steps)
 
-    def assert_status(self, status):
+    def assert_final(self, final):
         self.assertEqual(
-            self.machine.status,
-            status)
+            self.machine.final,
+            final)
 
     def run_bb(self, prog, **opts):
         print(prog)
@@ -127,7 +127,7 @@ class TuringTest(TestCase):
             self.assert_marks(marks)
             self.assert_steps(steps)
 
-            self.assert_status('HALTED')
+            self.assert_final('HALTED')
 
     def test_quasihalting(self):
         for prog, (marks, steps) in QUASIHALTING.items():
@@ -135,10 +135,10 @@ class TuringTest(TestCase):
 
             self.assert_marks(marks)
 
-            self.assert_status('XLIMIT')
+            self.assert_final('XLIMIT')
 
     def test_recurrence(self):
-        for prog, status in RECURRENCE.items():
+        for prog, final in RECURRENCE.items():
             self.run_bb(prog, check_rec=True)
 
-            self.assert_status(status)
+            self.assert_final(final)
