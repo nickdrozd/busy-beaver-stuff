@@ -1,4 +1,4 @@
-HOLDOUTS = [
+HOLDOUTS = {
     # Lot 1
     0o73037233,
     0o73137233,
@@ -43,7 +43,7 @@ HOLDOUTS = [
     0o72377034,
     0o72377234,
     0o72613234,
-]
+}
 
 
 def oct_to_bin(oct_string):
