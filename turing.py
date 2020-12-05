@@ -226,6 +226,7 @@ def print_results(machine):
             f'marks: {machine.marks}',
             f'steps: {machine.steps}',
             f'beeps: {machine.beeps}',
+            f'final: {machine.final}',
             '',
         ]))
 
