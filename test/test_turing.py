@@ -139,6 +139,6 @@ class TuringTest(TestCase):
 
     def test_recurrence(self):
         for prog, final in RECURRENCE.items():
-            self.run_bb(prog, check_rec=True)
+            self.run_bb(prog, check_rec=0)
 
             self.assert_final(final)

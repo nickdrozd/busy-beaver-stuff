@@ -82,7 +82,7 @@ class Machine:
     def final(self):
         return self._final
 
-    def run_to_halt(self, tape, x_limit=None, watch_tape=False, check_rec=False):
+    def run_to_halt(self, tape, x_limit=None, watch_tape=False, check_rec=None):
         pos = len(tape) // 2
         init = pos
 
@@ -95,7 +95,7 @@ class Machine:
         if x_limit is None:
             x_limit = sys.maxsize
 
-        if check_rec:
+        if check_rec is not None:
             deviations = []
             snapshots = defaultdict(lambda: [])
 
@@ -117,10 +117,11 @@ class Machine:
                 self._final = 'XLIMIT'
                 break
 
-            if check_rec:
+            if check_rec is not None:
                 dev = pos - init
                 deviations.append(dev)
 
+            if check_rec is not None and step >= check_rec:
                 action = state, tape[pos]
 
                 class BreakLoop(Exception):
@@ -251,9 +252,9 @@ def print_tape(tape, pos, init):
 
 ########################################
 
-def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=False):
+def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=None):
     if tape is None:
-        tape = [0] * 36 if check_rec else [0]
+        tape = [0] * 36 if check_rec is not None else [0]
 
     machine = Machine(prog)
     machine.run_to_halt(tape, x_limit, watch_tape, check_rec)
