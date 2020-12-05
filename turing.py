@@ -261,13 +261,13 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=False):
 ########################################
 
 CANDIDATES = [
-
+    "1RB 1LC 1LC 1RA 1LB 0LD 1LA 0RE 1RD 1RE",
 ]
 
-STEPS = 70
+STEPS = 222_000
 PRINT = 0
 RCRNC = 1
-STDIN = 1
+STDIN = 0
 
 if __name__ == '__main__':
     source = sys.stdin if STDIN else CANDIDATES
@@ -279,5 +279,4 @@ if __name__ == '__main__':
             watch_tape = PRINT,
             check_rec = RCRNC)
 
-        if machine.status == 'XLIMIT':
-            print(machine._prog)
+        print_results(machine)
