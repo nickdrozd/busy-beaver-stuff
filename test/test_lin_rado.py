@@ -73,7 +73,7 @@ class TestLinRado(TestCase):
 
     def test_32q(self):
         self.run_lin_rado(
-            3, 2, 0, 150, NOT_CONNECTED_32 + [
+            3, 2, 0, 126, NOT_CONNECTED_32 + [
                 prog.replace('1RH', '...')
                 for prog in HOLDOUTS_32H
             ],
