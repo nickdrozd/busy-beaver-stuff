@@ -4,11 +4,15 @@ score=no
 
 [MESSAGES CONTROL]
 disable=
+  import-error,
   invalid-name,
   duplicate-code,
   too-many-locals,
+  no-name-in-module,
   too-many-branches,
+  too-many-arguments,
   too-many-statements,
+  redefined-outer-name,
   too-many-nested-blocks,
   missing-class-docstring,
   missing-module-docstring,

@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-# pylint: disable = import-error, no-name-in-module
 from generate.generate import yield_programs
 
 EXPECTED = {
