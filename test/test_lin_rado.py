@@ -60,14 +60,10 @@ class TestLinRado(TestCase):
 
     def test_32h(self):
         self.run_lin_rado(
-            states=3,
-            colors=2,
-            halt=1,
-            x_limit=50,
-            rejects=[
+            3, 2, 1, 50, [
                 '^1RB ... ..[BC] ..[BC] ..[BC] ..[BC]',
                 '^1RB ..[AB] ..[AB] ..[AB] ... ...',
-            ]
+            ],
         )
 
         self.assert_progs_equal(
@@ -78,11 +74,7 @@ class TestLinRado(TestCase):
 
     def test_32q(self):
         self.run_lin_rado(
-            states=3,
-            colors=2,
-            halt=0,
-            x_limit=150,
-            rejects=[
+            3, 2, 0, 150, [
                 # '^1RB ... ..[BC] ..[BC] ..[BC] ..[BC]',
                 # '^1RB ..[AB] ..[AB] ..[AB] ... ...',
             ] + [
