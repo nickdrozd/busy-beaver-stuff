@@ -1,6 +1,6 @@
 .PHONY : all run lint test time profile clean machines
 
-all : lint test machines
+all : machines lint test
 
 run :
 	python3 turing.py
