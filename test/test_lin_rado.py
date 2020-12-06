@@ -40,7 +40,7 @@ class TestLinRado(TestCase):
             ).final == 'XLIMIT'
         }
 
-    def test_lin_rado_32h(self):
+    def test_32h(self):
         self.run_lin_rado(
             states=3,
             colors=2,
@@ -58,7 +58,7 @@ class TestLinRado(TestCase):
         self.assert_progs_count(
             40)
 
-    def test_lin_rado_32q(self):
+    def test_32q(self):
         self.run_lin_rado(
             states=3,
             colors=2,
