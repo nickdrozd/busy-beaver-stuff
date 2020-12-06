@@ -17,6 +17,11 @@ HOLDOUTS_32H = {
     for prog in lin_rado.HOLDOUTS
 }
 
+NOT_CONNECTED_32 = [
+    '^1RB ... ..[BC] ..[BC] ..[BC] ..[BC]',
+    '^1RB ..[AB] ..[AB] ..[AB] ... ...',
+]
+
 
 class TestLinRado(TestCase):
     def assert_progs_equal(self, other):
@@ -59,29 +64,19 @@ class TestLinRado(TestCase):
             HOLDOUTS_22Q)
 
     def test_32h(self):
-        self.run_lin_rado(
-            3, 2, 1, 50, [
-                '^1RB ... ..[BC] ..[BC] ..[BC] ..[BC]',
-                '^1RB ..[AB] ..[AB] ..[AB] ... ...',
-            ],
-        )
+        self.run_lin_rado(3, 2, 1, 50, NOT_CONNECTED_32)
+
+        self.assert_progs_count(40)
 
         self.assert_progs_equal(
             HOLDOUTS_32H)
 
-        self.assert_progs_count(
-            40)
-
     def test_32q(self):
         self.run_lin_rado(
-            3, 2, 0, 150, [
-                # '^1RB ... ..[BC] ..[BC] ..[BC] ..[BC]',
-                # '^1RB ..[AB] ..[AB] ..[AB] ... ...',
-            ] + [
+            3, 2, 0, 150, NOT_CONNECTED_32 + [
                 prog.replace('1RH', '...')
                 for prog in HOLDOUTS_32H
             ],
         )
 
-        self.assert_progs_count(
-            1413)
+        self.assert_progs_count(609)
