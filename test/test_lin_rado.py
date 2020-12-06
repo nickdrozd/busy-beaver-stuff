@@ -1,13 +1,13 @@
 from unittest import TestCase
 
-from rado import convert_rado, HOLDOUTS
+import lin_rado
 from turing import run_bb
 from generate.generate import yield_programs
 
 
 CONVERTED_HOLDOUTS = {
-    convert_rado(prog)
-    for prog in HOLDOUTS
+    lin_rado.convert(prog)
+    for prog in lin_rado.HOLDOUTS
 }
 
 

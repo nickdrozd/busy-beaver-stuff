@@ -72,7 +72,7 @@ def convert_bin_instr(bin_instr):
     )
 
 
-def convert_rado(rado_string):
+def convert(rado_string):
     return bin_to_prog(
         oct_to_bin(
             rado_string))
