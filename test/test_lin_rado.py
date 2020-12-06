@@ -5,7 +5,14 @@ from turing import run_bb
 from generate.generate import yield_programs
 
 
-CONVERTED_HOLDOUTS = {
+HOLDOUTS_22Q = {
+    "1RB 0LB 1LA 0RA",
+    "1RB 1LA 0LA 0RB",
+    "1RB 1LA 0LA 1RB",
+    "1RB 1LA 1LA 1RB",
+}
+
+HOLDOUTS_32H = {
     lin_rado.convert(prog)
     for prog in lin_rado.HOLDOUTS
 }
@@ -40,6 +47,17 @@ class TestLinRado(TestCase):
             ).final == 'XLIMIT'
         }
 
+    def test_22h(self):
+        self.run_lin_rado(2, 2, 1, 50)
+
+        self.assert_progs_count(0)
+
+    def test_22q(self):
+        self.run_lin_rado(2, 2, 0, 50)
+
+        self.assert_progs_equal(
+            HOLDOUTS_22Q)
+
     def test_32h(self):
         self.run_lin_rado(
             states=3,
@@ -53,7 +71,7 @@ class TestLinRado(TestCase):
         )
 
         self.assert_progs_equal(
-            CONVERTED_HOLDOUTS)
+            HOLDOUTS_32H)
 
         self.assert_progs_count(
             40)
@@ -69,7 +87,7 @@ class TestLinRado(TestCase):
                 # '^1RB ..[AB] ..[AB] ..[AB] ... ...',
             ] + [
                 prog.replace('1RH', '...')
-                for prog in CONVERTED_HOLDOUTS
+                for prog in HOLDOUTS_32H
             ],
         )
 
