@@ -126,7 +126,7 @@ class TuringTest(TestCase):
                 check_rec=(
                     0
                     if steps < 256 else
-                    steps - 32))
+                    steps))
 
             self.assert_final(('QSIHLT', steps, steps + repeat))
 
