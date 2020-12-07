@@ -1,3 +1,5 @@
+# pylint: disable = attribute-defined-outside-init
+
 from unittest import TestCase
 
 from turing import run_bb
@@ -107,7 +109,6 @@ class TuringTest(TestCase):
         if print_prog:
             print(prog)
 
-        # pylint: disable = attribute-defined-outside-init
         self.machine = run_bb(prog, **opts)
 
     def test_halting(self):

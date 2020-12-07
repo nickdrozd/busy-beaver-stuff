@@ -1,3 +1,5 @@
+# pylint: disable = attribute-defined-outside-init
+
 from unittest import TestCase
 
 import lin_rado
@@ -35,7 +37,6 @@ class TestLinRado(TestCase):
             count)
 
     def run_lin_rado(self, states, colors, halt, x_limit, rejects=None):
-        # pylint: disable=attribute-defined-outside-init
         self.progs = {
             prog
             for prog in

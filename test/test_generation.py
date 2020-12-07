@@ -1,3 +1,5 @@
+# pylint: disable = attribute-defined-outside-init
+
 from unittest import TestCase
 
 from generate.generate import yield_programs
@@ -16,7 +18,6 @@ EXPECTED = {
 
 class TestGeneration(TestCase):
     def yield_programs(self, states, colors, halt):
-        # pylint: disable = attribute-defined-outside-init
         self.progs = tuple(
             yield_programs(
                 states,
