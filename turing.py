@@ -263,12 +263,12 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=None):
 ########################################
 
 CANDIDATES = [
-    "1RB 1LC 1LC 1RA 1LB 0LD 1LA 0RE 1RD 1RE",
+    "1RB 1LB 0RC 0LA 1LC 0LA",
 ]
 
-STEPS = 222_000
-PRINT = 0
-RCRNC = 1
+STEPS = 130
+PRINT = 1
+RCRNC = 0
 STDIN = 0
 
 if __name__ == '__main__':
