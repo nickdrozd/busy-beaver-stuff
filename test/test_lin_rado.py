@@ -37,6 +37,8 @@ class TestLinRado(TestCase):
             count)
 
     def run_lin_rado(self, states, colors, halt, x_limit, rejects=None):
+        print(f'{states} {colors} {halt}')
+
         self.progs = {
             prog
             for prog in
