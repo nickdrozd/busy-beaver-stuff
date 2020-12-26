@@ -69,7 +69,7 @@ def compress(prog_string):
     return prog_string[4:].replace(' ', '')
 
 
-def yield_programs(states, colors, rejects=None, halt=False):
+def yield_programs(states, colors, halt, rejects=None):
     if rejects is None:
         rejects = []
 

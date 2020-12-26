@@ -45,8 +45,8 @@ class TestLinRado(TestCase):
             yield_programs(
                 states,
                 colors,
-                rejects=rejects,
-                halt=halt)
+                halt,
+                rejects=rejects)
             if
             run_bb(
                 prog,

@@ -7,4 +7,4 @@ if __name__ == '__main__':
         yield_programs(
             2,
             3,
-            halt=HALT))
+            HALT))

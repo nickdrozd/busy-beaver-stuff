@@ -22,7 +22,7 @@ class TestGeneration(TestCase):
             yield_programs(
                 states,
                 colors,
-                halt=halt))
+                halt))
 
     def assert_count(self, count):
         self.assertEqual(

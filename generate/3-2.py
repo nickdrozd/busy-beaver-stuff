@@ -12,5 +12,5 @@ if __name__ == '__main__':
         yield_programs(
             3,
             2,
-            rejects=REJECTS,
-            halt=HALT))
+            HALT,
+            rejects=REJECTS))
