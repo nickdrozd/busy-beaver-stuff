@@ -7,7 +7,10 @@ STATES = {A, B, C, D}
 
 def parse_arrows(prog_string):
     states = iter(
-        prog_string.split())
+        action[2]
+        for action in
+        prog_string.split()
+    )
 
     connections = zip(states, states)
 
