@@ -87,7 +87,11 @@ RECURRENCE = {
     "1RB 1RH 1LB 0LC 1LA 1RA": (12, 19),  # left barrier
     "1RB 1RH 1LC 1RA 1LA 0LC": (12, 20),  # right barrier
 
-    # longest halt-free recurrence
+    # longest recurrences
+    "1RB 0LB 1LA 0RB": (9, 12),
+    "1RB 1LA 0LA 1RA": (7, 12),
+    "1RB 1LB 1LA 0RB": (7, 10),
+
     "1RB 1LB 0RC 0LA 1LC 0LA": (101, 125),
 }
 
