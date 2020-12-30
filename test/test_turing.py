@@ -87,12 +87,28 @@ RECURRENCE = {
     "1RB 1RH 1LB 0LC 1LA 1RA": (12, 19),  # left barrier
     "1RB 1RH 1LC 1RA 1LA 0LC": (12, 20),  # right barrier
 
-    # longest recurrences
+    # 2-2 (champion)
     "1RB 0LB 1LA 0RB": (9, 12),
     "1RB 1LA 0LA 1RA": (7, 12),
     "1RB 1LB 1LA 0RB": (7, 10),
 
+    # 3-2 (champion?)
     "1RB 1LB 0RC 0LA 1LC 0LA": (101, 125),
+
+    # 4-2
+    "1RB 0RA 0LB 0LC 1RD 1LC 1RA 1LB": ( 868, 1272),
+    "1RB 1RA 1LB 0LC 1RC 1LD 0LA 0RA": ( 434,  614),  # 180
+    "1RB 0RA 1LC 1RA 0LD 0LC 1RD 1LB": ( 294,  684),
+    "1RB 1LA 1LC 0RA 1LA 0LD 1LC 0LC": ( 150,  372),  # 222
+    "1RB 1LA 1RC 0RC 1LD 0RD 0LA 1LA": (  66,  350),  # 284
+    "1RB 1RC 0RC 1RA 1LD 0RB 0LD 1LA": (  50,  647),  # 597
+    "1RB 1RA 1LC 0RB 1RC 0LD 1LA 1LD": (  45,  273),  # 228
+    "1RB 1LA 1LC 0RA 1LD 0LC 1RA 0LA": (   5,  390),
+    "1RB 0RA 1LC 1RA 1LD 0LC 1LA 0RB": (   5,  249),  # 244
+    "1RB 1RC 0LD 1RA 1LB 0RD 1LA 0RC": (   2,  296),  # 294
+    "1RB 0LC 1LD 1LC 1RD 0LA 0RA 1LB": (   0,  294),  # 294
+    "1RB 1LA 1LB 0RC 1LC 1LD 0RA 0LD": (   0,  238),  # 238
+    "1RB 0LA 1LB 0RC 1RD 1RC 1LA 1LD": (   0,  228),  # 228
 }
 
 
