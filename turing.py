@@ -175,7 +175,7 @@ class Machine:
                         'QSIHLT'
                     )
 
-                    self._final = final, pstep, step
+                    self._final = final, pstep, step - pstep
                     break
 
                 snapshots[action].append((

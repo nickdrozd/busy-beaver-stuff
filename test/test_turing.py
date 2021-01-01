@@ -83,32 +83,32 @@ QUASIHALTING = {
 
 RECURRENCE = {
     # Lin-Rado examples
-    "1RB 1RH 0RC 1LB 1LA 0RB": (9, 19),   # total recurrence
-    "1RB 1RH 1LB 0LC 1LA 1RA": (12, 19),  # left barrier
-    "1RB 1RH 1LC 1RA 1LA 0LC": (12, 20),  # right barrier
+    "1RB 1RH 0RC 1LB 1LA 0RB": ( 9, 10),  # total recurrence
+    "1RB 1RH 1LB 0LC 1LA 1RA": (12,  7),  # left barrier
+    "1RB 1RH 1LC 1RA 1LA 0LC": (12,  8),  # right barrier
 
     # 2-2 (champion)
-    "1RB 0LB 1LA 0RB": (9, 12),
-    "1RB 1LA 0LA 1RA": (7, 12),
-    "1RB 1LB 1LA 0RB": (7, 10),
+    "1RB 0LB 1LA 0RB": (9, 3),
+    "1RB 1LA 0LA 1RA": (7, 5),
+    "1RB 1LB 1LA 0RB": (7, 3),
 
     # 3-2 (champion?)
-    "1RB 1LB 0RC 0LA 1LC 0LA": (101, 125),
+    "1RB 1LB 0RC 0LA 1LC 0LA": (101, 24),
 
     # 4-2
-    "1RB 0RA 0LB 0LC 1RD 1LC 1RA 1LB": ( 868, 1272),
-    "1RB 1RA 1LB 0LC 1RC 1LD 0LA 0RA": ( 434,  614),  # 180
-    "1RB 0RA 1LC 1RA 0LD 0LC 1RD 1LB": ( 294,  684),
-    "1RB 1LA 1LC 0RA 1LA 0LD 1LC 0LC": ( 150,  372),  # 222
-    "1RB 1LA 1RC 0RC 1LD 0RD 0LA 1LA": (  66,  350),  # 284
-    "1RB 1RC 0RC 1RA 1LD 0RB 0LD 1LA": (  50,  647),  # 597
-    "1RB 1RA 1LC 0RB 1RC 0LD 1LA 1LD": (  45,  273),  # 228
-    "1RB 1LA 1LC 0RA 1LD 0LC 1RA 0LA": (   5,  390),
-    "1RB 0RA 1LC 1RA 1LD 0LC 1LA 0RB": (   5,  249),  # 244
-    "1RB 1RC 0LD 1RA 1LB 0RD 1LA 0RC": (   2,  296),  # 294
-    "1RB 0LC 1LD 1LC 1RD 0LA 0RA 1LB": (   0,  294),  # 294
-    "1RB 1LA 1LB 0RC 1LC 1LD 0RA 0LD": (   0,  238),  # 238
-    "1RB 0LA 1LB 0RC 1RD 1RC 1LA 1LD": (   0,  228),  # 228
+    "1RB 0RA 0LB 0LC 1RD 1LC 1RA 1LB": (868, 404),
+    "1RB 1RA 1LB 0LC 1RC 1LD 0LA 0RA": (434, 180),
+    "1RB 0RA 1LC 1RA 0LD 0LC 1RD 1LB": (294, 390),
+    "1RB 1LA 1LC 0RA 1LA 0LD 1LC 0LC": (150, 222),
+    "1RB 1LA 1RC 0RC 1LD 0RD 0LA 1LA": ( 66, 284),
+    "1RB 1RC 0RC 1RA 1LD 0RB 0LD 1LA": ( 50, 597),
+    "1RB 1RA 1LC 0RB 1RC 0LD 1LA 1LD": ( 45, 228),
+    "1RB 1LA 1LC 0RA 1LD 0LC 1RA 0LA": (  5, 385),
+    "1RB 0RA 1LC 1RA 1LD 0LC 1LA 0RB": (  5, 244),
+    "1RB 1RC 0LD 1RA 1LB 0RD 1LA 0RC": (  2, 294),
+    "1RB 0LC 1LD 1LC 1RD 0LA 0RA 1LB": (  0, 294),
+    "1RB 1LA 1LB 0RC 1LC 1LD 0RA 0LD": (  0, 238),
+    "1RB 0LA 1LB 0RC 1RD 1RC 1LA 1LD": (  0, 228),
 }
 
 
@@ -144,7 +144,7 @@ class TuringTest(TestCase):
             self.assert_final('HALTED')
 
     def test_quasihalting(self):
-        for prog, (marks, steps, repeat) in QUASIHALTING.items():
+        for prog, (marks, steps, period) in QUASIHALTING.items():
             self.run_bb(
                 prog,
                 check_rec=(
@@ -152,7 +152,7 @@ class TuringTest(TestCase):
                     if steps < 256 else
                     steps))
 
-            self.assert_final(('QSIHLT', steps, steps + repeat))
+            self.assert_final(('QSIHLT', steps, period))
 
             self.run_bb(
                 prog,
@@ -164,7 +164,7 @@ class TuringTest(TestCase):
             self.assert_final('XLIMIT')
 
     def test_recurrence(self):
-        for prog, (first, repeat) in RECURRENCE.items():
+        for prog, (start, period) in RECURRENCE.items():
             self.run_bb(prog, check_rec=0)
 
-            self.assert_final(('RECURR', first, repeat))
+            self.assert_final(('RECURR', start, period))
