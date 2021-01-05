@@ -254,7 +254,7 @@ def print_tape(tape, pos, init):
 
 def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=None):
     if tape is None:
-        tape = [0] * 64
+        tape = [0] * 128
 
     machine = Machine(prog)
     machine.run_to_halt(tape, x_limit, watch_tape, check_rec)
@@ -263,22 +263,26 @@ def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=None):
 ########################################
 
 CANDIDATES = [
-    "1RB 1LB 0RC 0LA 1LC 0LA",
+
 ]
 
-STEPS = 130
-PRINT = 1
 RCRNC = 0
-STDIN = 0
+STEPS = 2000
+PRINT = 0
+STDIN = 1
 
 if __name__ == '__main__':
     source = sys.stdin if STDIN else CANDIDATES
 
-    for _, program in enumerate(source):
+    for i, program in enumerate(source):
         machine = run_bb(
             program,
             x_limit = STEPS,
             watch_tape = PRINT,
             check_rec = RCRNC)
 
-        print_results(machine)
+        if machine.final != 'XLIMIT':
+            _, step, period = machine.final
+
+            if step > 50:
+                print(f'{i} | {machine._prog} | {machine.final}')
