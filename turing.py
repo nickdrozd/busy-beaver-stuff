@@ -57,6 +57,10 @@ class Machine:
         self._final = None
 
     @property
+    def program(self):
+        return self._prog
+
+    @property
     def steps(self):
         return self._steps
 
@@ -285,4 +289,4 @@ if __name__ == '__main__':
             _, step, period = machine.final
 
             if step > 50:
-                print(f'{i} | {machine._prog} | {machine.final}')
+                print(f'{i} | {machine.program} | {machine.final}')
