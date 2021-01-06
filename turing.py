@@ -258,7 +258,7 @@ def print_tape(tape, pos, init):
 
 def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=None):
     if tape is None:
-        tape = [0] * 128
+        tape = [0] * 187
 
     machine = Machine(prog)
     machine.run_to_halt(tape, x_limit, watch_tape, check_rec)
