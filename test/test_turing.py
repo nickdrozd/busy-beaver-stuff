@@ -222,6 +222,11 @@ class TuringTest(TestCase):
 
     def test_recurrence(self):
         for prog, (start, period) in RECURRENCE.items():
-            self.run_bb(prog, check_rec=0)
+            self.run_bb(
+                prog,
+                check_rec=(
+                    0
+                    if start < 256 else
+                    start))
 
             self.assert_final(('RECURR', start, period))
