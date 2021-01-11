@@ -35,6 +35,36 @@ HALTING = {
 
     # BB_5_2
     "1RB 1LC 1RC 1RB 1RD 0LE 1LA 1LD 1RH 0LA": (4098, 47176870),
+
+    # Milton Green (1964)
+    "1RB 1LA 0LH 1RB": (1, 2),
+    "1RB 1LH 0RC 1RC 0RD 0RC 1RE 1LA 0RF 0RE 1LF 1LD": (35, 436),
+
+    # Lynn (1971)
+    "1RB 1RA 1LC 0LD 0RA 1LB 1RH 0LE 1RC 1RB": (15, 435),
+    "1RB 1RC 1LC 1LD 0RA 1LB 1RE 0LB 1RH 1RD": (22, 292),
+    "1RB 0RC 1LC 0LB 1RD 1LB 1RE 0RA 0RB 1RH": (22, 217),
+    # Lynn reports 522 steps
+    "1RB 0LB 1LC 1RH 0LD 0LC 1LE 0RA 0LF 0LE 1RF 1RD": (42, 521),
+
+    # Uwe (1981)
+
+    # Castor diligentissimus et primus et perpetuus (Castor schultis)
+    "1RB 0LC 1RC 1RD 1LA 0RB 0RE 1RH 1LC 1RA": (501, 134467),
+
+    # Castor ministerialis: the Civil Servant Beaver, who cares most
+    # for his progress, but does not produce anything.
+    "1RB 1RA 1RC 0RE 1LD 0RA 1LB 1LD 0RH 0RB": (0, 52),
+
+    # Castor scientificus: the Scientific Beaver, who does not produce
+    # anything either, but with more effort and less effect on his
+    # position.
+    "0RB 0LA 0RC 0RH 1RD 1LE 1LA 0LD 1RC 1RE": (0, 187),
+
+    # Castor exflippus: the Beaver Freak, who tries to survive as long
+    # as possible without producing anything, moving on the tape, and
+    # changing his state.
+    "0RB 0LA 1RC 0RH 0LC 1RD 0LD 1RE 1LA 0LE": (0, 67),
 }
 
 
