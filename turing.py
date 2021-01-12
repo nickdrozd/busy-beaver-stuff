@@ -239,8 +239,8 @@ def print_results(machine):
 def print_tape(tape, pos, init):
     squares = [
         '#' if square == 1 else
-        '@' if square == 2 else
-        '!' if square == 3 else
+        '!' if square == 2 else
+        '@' if square == 3 else
         '_' # if square == 0
         for square in tape
     ]
