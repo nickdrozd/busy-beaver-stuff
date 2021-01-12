@@ -108,7 +108,7 @@ class Machine:
             # Output ###############################
 
             if watch_tape:
-                print(f'{step} {state} ', end='')
+                print(f'{step : 5d} {chr(state + 65)} ', end='')
                 print_tape(tape, pos, init)
 
             # Halt conditions ######################
