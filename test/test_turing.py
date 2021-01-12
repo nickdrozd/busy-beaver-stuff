@@ -226,7 +226,7 @@ class TuringTest(TestCase):
             self.assert_marks(marks)
             self.assert_steps(steps)
 
-            self.assert_final('HALTED')
+            self.assert_final(('HALTED', steps, None))
 
     def test_halting_fast(self):
         self._test_halting(HALTING_FAST)
@@ -252,7 +252,7 @@ class TuringTest(TestCase):
 
             self.assert_marks(marks)
 
-            self.assert_final('XLIMIT')
+            self.assert_final(('XLIMIT', steps, None))
 
     def test_recurrence(self):
         for prog, (start, period) in RECURRENCE.items():

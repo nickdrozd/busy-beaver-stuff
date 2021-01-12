@@ -114,11 +114,11 @@ class Machine:
             # Halt conditions ######################
 
             if state == HALT:
-                self._final = 'HALTED'
+                self._final = ('HALTED', step, None)
                 break
 
             if step >= x_limit:
-                self._final = 'XLIMIT'
+                self._final = ('XLIMIT', step, None)
                 break
 
             if check_rec is not None:

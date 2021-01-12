@@ -33,7 +33,7 @@ class TestLinRado(TestCase):
                 prog,
                 x_limit=x_limit,
                 check_rec=0
-            ).final == 'XLIMIT'
+            ).final[0] == 'XLIMIT'
         }
 
     def test_22h(self):
