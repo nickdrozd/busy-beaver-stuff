@@ -37,12 +37,12 @@ class TestLinRado(TestCase):
         }
 
     def test_22h(self):
-        self.run_lin_rado(2, 2, 1, 50)
+        self.run_lin_rado(2, 2, 1, 6)
 
         self.assert_progs_count(0)
 
     def test_22q(self):
-        self.run_lin_rado(2, 2, 0, 50)
+        self.run_lin_rado(2, 2, 0, 13)
 
         self.assert_progs_count(4)
 
@@ -51,7 +51,7 @@ class TestLinRado(TestCase):
 
     def test_32h(self):
         self.run_lin_rado(
-            3, 2, 1, 50,
+            3, 2, 1, 29,
             NOT_CONNECTED_32)
 
         self.assert_progs_count(40)
