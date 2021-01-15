@@ -1,4 +1,4 @@
-# pylint: disable = attribute-defined-outside-init
+# pylint: disable = attribute-defined-outside-init, too-many-lines
 
 from unittest import TestCase
 
@@ -37,40 +37,51 @@ class TestLinRado(TestCase):
         }
 
     def test_22h(self):
-        self.run_lin_rado(2, 2, 1, 6)
+        self.run_lin_rado(
+            2, 2, 1,
+            6)
 
-        self.assert_progs_count(0)
+        self.assert_progs_count(
+            0)
 
     def test_22q(self):
-        self.run_lin_rado(2, 2, 0, 13)
-
-        self.assert_progs_count(4)
+        self.run_lin_rado(
+            2, 2, 0,
+            13)
 
         self.assert_progs_equal(
             HOLDOUTS_22Q)
 
+        self.assert_progs_count(
+            4)
+
     def test_32h(self):
         self.run_lin_rado(
-            3, 2, 1, 29,
+            3, 2, 1,
+            29,
             NOT_CONNECTED_32)
-
-        self.assert_progs_count(40)
 
         self.assert_progs_equal(
             HOLDOUTS_32H)
 
+        self.assert_progs_count(
+            40)
+
     def test_23h(self):
         self.run_lin_rado(
-            2, 3, 1, 44)
+            2, 3, 1,
+            44)
 
         self.assert_progs_equal(
             HOLDOUTS_23H)
 
-        self.assert_progs_count(305)
+        self.assert_progs_count(
+            305)
 
     def test_32q(self):
         self.run_lin_rado(
-            3, 2, 0, 126,
+            3, 2, 0,
+            126,
             [AB_LOOP] + [
                 prog.replace('1RH', '...')
                 for prog in HOLDOUTS_32H
@@ -79,7 +90,8 @@ class TestLinRado(TestCase):
         self.assert_progs_equal(
             HOLDOUTS_32Q)
 
-        self.assert_progs_count(837)
+        self.assert_progs_count(
+            837)
 
 
 HOLDOUTS_22Q = {
