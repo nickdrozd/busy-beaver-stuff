@@ -70,13 +70,13 @@ class TestLinRado(TestCase):
     def test_23h(self):
         self.run_lin_rado(
             2, 3, 1,
-            44)
+            220)
 
         self.assert_progs_equal(
             HOLDOUTS_23H)
 
         self.assert_progs_count(
-            305)
+            304)
 
     def test_32q(self):
         self.run_lin_rado(
@@ -274,7 +274,6 @@ HOLDOUTS_23H = {
     '1RB 1LB 0RA 1LA 2RB 1RH',
     '1RB 2LB 1RB 2LA 1RH 0RA',
     '1RB 2LB 1RH 2LB 2LA 0RB',
-    '1RB 0LA 1RH 1LB 2LA 0RB',
     '1RB 1RH 1LB 2LB 1RB 0RB',
     '1RB 2LA 2RB 0LA 1RH 1RB',
     '1RB 2LA 1RH 0LA 2RB 0RB',
