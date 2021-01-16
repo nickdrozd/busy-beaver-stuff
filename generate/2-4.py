@@ -1,5 +1,4 @@
-import re
-from itertools import filterfalse, product
+from itertools import product
 
 COLORS = 1, 2, 3
 SHIFTS = L, R = 'L', 'R'
@@ -44,6 +43,9 @@ def yield_progs():
             for shifts in product(SHIFTS, repeat=7):
                 s2, s3, s4, s5, s6, s7, s8 = shifts
 
+                if s5 == R:
+                    continue
+
                 if s2 == s3 == s4 or s5 == s6 == s7 == s8:
                     continue
 
@@ -51,27 +53,12 @@ def yield_progs():
                 yield f'1RB {c2}{s2}{t2} {c3}{s3}{t3} {c4}{s4}{t4} {c5}{s5}{t5} {c6}{s6}{t6} {c7}{s7}{t7} {c8}{s8}{t8}'
 
 
-regexps = (
-    '^1RB ... ... ... 1R.',
-    '^1RB ... ... ... 1LB 1.B',
-)
-
-compiled_regexps = [re.compile(regexp) for regexp in regexps]
-
-def is_obviously_stupid(prog_string):
-    for regexp in compiled_regexps:
-        if regexp.match(prog_string):
-            return True
-
-    return False
-
-
 def compress(prog_string):
     return prog_string[4:].replace(' ', '')
 
 
 def main():
-    for prog in filterfalse(is_obviously_stupid, yield_progs()):
+    for prog in yield_progs():
         print(compress(prog))
 
 
