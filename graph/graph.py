@@ -11,10 +11,11 @@ class Graph:
             colors = 2
 
         if isinstance(prog, str):
-            if ' ' in prog:
-                prog = prog.split()
-            else:
-                prog = tuple(prog)
+            prog = (
+                prog.split()
+                if ' ' in prog else
+                tuple(prog)
+            )
 
             try:
                 colors = max(int(action[0]) for action in prog) + 1
@@ -33,6 +34,8 @@ class Graph:
             for i, connection in enumerate(connections)
         }
 
+        self.prog = prog
+
     def __str__(self):
         return self.flatten()
 
@@ -46,11 +49,17 @@ class Graph:
 
     @property
     def dot(self):
-        return 'digraph NAME {{\n{}\n}}'.format('\n'.join([
+        prog = ' '.join(self.prog)
+
+        title = f'labelloc="t"; label="{prog}";'
+
+        edges = '\n'.join([
             f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
             for node, targets in self.arrows.items()
             for i, target in enumerate(targets)
-        ]))
+        ])
+
+        return f'digraph NAME {{{title}\n{edges}\n}}'
 
     def flatten(self, sep=' '):
         return sep.join(
