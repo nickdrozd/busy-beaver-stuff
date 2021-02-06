@@ -17,9 +17,6 @@ import Data.Vect
 Color : Type
 Color = Nat
 
-blank : Color
-blank = 0
-
 data Shift = L | R
 
 data State = H | -- the halt state
@@ -48,11 +45,11 @@ applyAction (len ** (inputTape, pos)) color shift =
       -- on the leftmost square
       FZ => case shift of
          -- moving further left; add a blank to the left and go there
-         L => (S len ** ([blank] ++ tape, FZ))
+         L => (S len ** ([0] ++ tape, FZ))
          R => case len of
            -- there is just one square; leftmost is also rightmost,
            -- so add a blank to the right and go there
-           Z   => (S len ** (tape ++ [blank], FS FZ))
+           Z   => (S len ** (tape ++ [0], FS FZ))
            -- move to one right of leftmost
            S _ => (len ** (tape, FS FZ))
 
@@ -67,7 +64,7 @@ applyAction (len ** (inputTape, pos)) color shift =
              -- yes; add a blank square to the right and go there
              Left _ =>
                let prf = sym $ plusCommutative len 1 in
-                 (S len ** (rewrite prf in tape ++ [blank], FS pos))
+                 (S len ** (rewrite prf in tape ++ [0], FS pos))
 
 exec : Program -> State -> Tape -> (Tape, State)
 exec prog state (len ** (tape, pos)) =
@@ -92,7 +89,7 @@ runToHalt count prog state tape =
 
 partial
 runOnBlankTape : Program -> IO MachineResult
-runOnBlankTape prog = runToHalt 1 prog A (Z ** ([blank], FZ))
+runOnBlankTape prog = runToHalt 1 prog A (Z ** ([0], FZ))
 
 ----------------------------------------
 
@@ -315,7 +312,7 @@ bb5 = makeProgram [
 ----------------------------------------
 
 ones : Vect k Color -> Nat
-ones xs = let (n ** _) = filter ((/=) blank) xs in n
+ones xs = let (n ** _) = filter ((/=) 0) xs in n
 
 Show Tape where
   show (_ ** (tape, _)) = show (length tape, ones tape)
