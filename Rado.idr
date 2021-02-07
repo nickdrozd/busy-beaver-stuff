@@ -33,34 +33,34 @@ Program : Type
 Program = State -> Instruction
 
 Tape : Type
-Tape = (len : Nat ** (Vect (S len) Color, Fin (S len)))
+Tape = (posmax : Nat ** (Vect (S posmax) Color, Fin (S posmax)))
 
 ----------------------------------------
 
 shiftHead : Tape -> Shift -> Tape
-shiftHead (len ** (tape, pos)) shift =
+shiftHead (posmax ** (tape, pos)) shift =
   case shift of
     L => case pos of
-      FZ   => (S len ** ([0] ++ tape, FZ))
-      FS p => (  len ** (tape, weaken p))
+      FZ   => (S posmax ** ([0] ++ tape, FZ))
+      FS p => (  posmax ** (tape, weaken p))
     R => case pos of
-      FZ   => case len of
-           Z   => (S len ** (tape ++ [0], FS FZ))
-           S _ => (  len ** (tape, FS FZ))
+      FZ   => case posmax of
+           Z   => (S posmax ** (tape ++ [0], FS FZ))
+           S _ => (  posmax ** (tape, FS FZ))
       FS _ => case strengthen pos of
-           Right bound => (len ** (tape, FS bound))
+           Right bound => (posmax ** (tape, FS bound))
            Left      _ =>
-             let prf = sym $ plusCommutative len 1 in
-               (S len ** (rewrite prf in tape ++ [0], FS pos))
+             let prf = sym $ plusCommutative posmax 1 in
+               (S posmax ** (rewrite prf in tape ++ [0], FS pos))
 
 exec : Program -> State -> Tape -> (Tape, State)
-exec prog state (len ** (tape, pos)) =
+exec prog state (posmax ** (tape, pos)) =
   let
     currColor = index pos tape
     (color, shift, nextState) = prog state currColor
     colorChanged = replaceAt pos color tape
   in
-  (shiftHead (len ** (colorChanged, pos)) shift, nextState)
+  (shiftHead (posmax ** (colorChanged, pos)) shift, nextState)
 
 MachineResult : Type
 MachineResult = (Nat, Tape)
