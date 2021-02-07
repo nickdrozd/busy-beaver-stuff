@@ -48,8 +48,8 @@ shiftHead (posmax ** (tape, pos)) shift =
            Z   => (S posmax ** (tape ++ [0], FS FZ))
            S _ => (  posmax ** (tape, FS FZ))
       FS _ => case strengthen pos of
-           Right bound => (posmax ** (tape, FS bound))
-           Left      _ =>
+           Right p => (  posmax ** (tape, FS p))
+           Left  _ =>
              let prf = sym $ plusCommutative posmax 1 in
                (S posmax ** (rewrite prf in tape ++ [0], FS pos))
 
