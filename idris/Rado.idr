@@ -37,11 +37,9 @@ Tape = (len : Nat ** (Vect (S len) Color, Fin (S len)))
 
 ----------------------------------------
 
-applyAction : Tape -> Color -> Shift -> Tape
-applyAction (len ** (inputTape, pos)) color shift =
-  let tape = replaceAt pos color inputTape in
+shiftHead : Tape -> Shift -> Tape
+shiftHead (len ** (tape, pos)) shift =
     case pos of
-
       -- on the leftmost square
       FZ => case shift of
          -- moving further left; add a blank to the left and go there
@@ -52,7 +50,6 @@ applyAction (len ** (inputTape, pos)) color shift =
            Z   => (S len ** (tape ++ [0], FS FZ))
            -- move to one right of leftmost
            S _ => (len ** (tape, FS FZ))
-
       -- some square to the left of the leftmost
       FS p => case shift of
            -- somewhere inside the bounds of the tape; just go left
@@ -71,8 +68,9 @@ exec prog state (len ** (tape, pos)) =
   let
     currColor = index pos tape
     (color, shift, nextState) = prog state currColor
+    colorChanged = replaceAt pos color tape
   in
-  (applyAction (len ** (tape, pos)) color shift, nextState)
+  (shiftHead (len ** (colorChanged, pos)) shift, nextState)
 
 MachineResult : Type
 MachineResult = (Nat, Tape)
