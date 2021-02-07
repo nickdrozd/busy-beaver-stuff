@@ -311,11 +311,11 @@ bb5 = makeProgram [
 
 ----------------------------------------
 
-ones : Vect k Color -> Nat
-ones xs = let (n ** _) = filter ((/=) 0) xs in n
+marks : Vect k Color -> Nat
+marks xs = let (n ** _) = filter ((/=) 0) xs in n
 
 Show Tape where
-  show (_ ** (tape, _)) = show (length tape, ones tape)
+  show (_ ** (tape, _)) = show (length tape, marks tape)
 
 partial
 main : IO ()
