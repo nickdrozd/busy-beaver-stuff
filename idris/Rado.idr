@@ -318,7 +318,7 @@ ones : Vect k Color -> Nat
 ones xs = let (n ** _) = filter ((/=) blank) xs in n
 
 Show Tape where
-  show (len ** (tape, _)) = show (len, ones tape)
+  show (_ ** (tape, _)) = show (length tape, ones tape)
 
 partial
 main : IO ()
