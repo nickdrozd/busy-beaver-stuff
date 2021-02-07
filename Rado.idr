@@ -39,29 +39,19 @@ Tape = (len : Nat ** (Vect (S len) Color, Fin (S len)))
 
 shiftHead : Tape -> Shift -> Tape
 shiftHead (len ** (tape, pos)) shift =
-    case pos of
-      -- on the leftmost square
-      FZ => case shift of
-         -- moving further left; add a blank to the left and go there
-         L => (S len ** ([0] ++ tape, FZ))
-         R => case len of
-           -- there is just one square; leftmost is also rightmost,
-           -- so add a blank to the right and go there
+  case shift of
+    L => case pos of
+      FZ   => (S len ** ([0] ++ tape, FZ))
+      FS p => (  len ** (tape, weaken p))
+    R => case pos of
+      FZ   => case len of
            Z   => (S len ** (tape ++ [0], FS FZ))
-           -- move to one right of leftmost
-           S _ => (len ** (tape, FS FZ))
-      -- some square to the left of the leftmost
-      FS p => case shift of
-           -- somewhere inside the bounds of the tape; just go left
-           L => (len ** (tape, weaken p))
-           -- are we at the rightmost square?
-           R => case strengthen pos of
-             -- no; just move right
-             Right bound => (len ** (tape, FS bound))
-             -- yes; add a blank square to the right and go there
-             Left _ =>
-               let prf = sym $ plusCommutative len 1 in
-                 (S len ** (rewrite prf in tape ++ [0], FS pos))
+           S _ => (  len ** (tape, FS FZ))
+      FS _ => case strengthen pos of
+           Right bound => (len ** (tape, FS bound))
+           Left      _ =>
+             let prf = sym $ plusCommutative len 1 in
+               (S len ** (rewrite prf in tape ++ [0], FS pos))
 
 exec : Program -> State -> Tape -> (Tape, State)
 exec prog state (len ** (tape, pos)) =
