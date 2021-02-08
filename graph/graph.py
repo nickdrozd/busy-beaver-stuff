@@ -39,6 +39,9 @@ class Graph:
     def __str__(self):
         return self.flatten()
 
+    def __repr__(self):
+        return self.flatten()
+
     @property
     def states(self):
         return tuple(self.arrows)
