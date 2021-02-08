@@ -140,3 +140,25 @@ class Graph:
             state not in connections
             for state, connections in self.arrows.items()
         )
+
+    @property
+    def entries_dispersed(self):
+        color_count = len(self.colors)
+
+        return all(
+            len(entries) == color_count
+            for entries in self.entry_points.values()
+        )
+
+    @property
+    def exits_dispersed(self):
+        color_count = len(self.colors)
+
+        return all(
+            len(exits) == color_count
+            for exits in self.exit_points.values()
+        )
+
+    @property
+    def is_dispersed(self):
+        return self.entries_dispersed and self.exits_dispersed
