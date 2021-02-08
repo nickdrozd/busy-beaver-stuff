@@ -48,6 +48,25 @@ class Graph:
         return tuple(range(len(self.arrows['A'])))
 
     @property
+    def exit_points(self):
+        return {
+            state: set(connections).difference('H')
+            for state, connections in self.arrows.items()
+        }
+
+    @property
+    def entry_points(self):
+        entries = {state: set() for state in self.states}
+
+        for state, exits in self.arrows.items():
+            for exit_point in exits:
+                if exit_point == 'H':
+                    continue
+                entries[exit_point].add(state)
+
+        return entries
+
+    @property
     def dot(self):
         prog = ' '.join(self.prog)
 
