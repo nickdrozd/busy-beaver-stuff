@@ -133,3 +133,10 @@ class Graph:
                 return False
 
         return True
+
+    @property
+    def is_irreflexive(self):
+        return all(
+            state not in connections
+            for state, connections in self.arrows.items()
+        )
