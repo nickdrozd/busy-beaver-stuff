@@ -88,6 +88,7 @@ class Graph:
             for dst in conn
         )
 
+    @property
     def is_normal(self):
         flat_graph = self.flatten('')
 
@@ -101,6 +102,7 @@ class Graph:
 
         return tuple(sorted(positions)) == positions
 
+    @property
     def is_strongly_connected(self):
         states = set(self.states)
 
