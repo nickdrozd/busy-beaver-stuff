@@ -94,6 +94,9 @@ QUASIHALTING = {
     "1RB 0LC 0LC 0RC 1LC 1LA": (5, 51, 1),
     "1RB 0LC 1LA 0RC 1RC 1RB": (5, 49, 1),
     "1RB 0LC 0RC 0RC 1LC 1LA": (5, 48, 1),
+    "1RB 1LB 1LA 1LC 1RC 0LC": (0, 34, 1),
+    "1RB 1LC 1LB 1LA 1RC 0LC": (0, 27, 1),
+    "1RB 1LB 1LA 1RC 1LC 0RC": (0, 26, 1),
     "1RB 1RC 1LC 0LB 1RA 1LA": (5, 22, 2),
 
     # 4/2
@@ -130,6 +133,11 @@ RECURRENCE = {
     "1RB 0LB 1LA 0RB": (3, 9, 3),
     "1RB 1LA 0LA 1RA": (3, 7, 5),
     "1RB 1LB 1LA 0RB": (2, 7, 3),
+    "1RB 0RA 1LB 1LA": (0, 0, 8),
+    "1RB 0RA 0LB 1LA": (0, 0, 7),
+    "1RB 1LA 0LA 0LB": (0, 0, 7),
+    "1RB 0LA 1LB 1RA": (0, 0, 5),
+    "1RB 1RB 1LA 0LB": (2, 3, 4),
 
     # 3/2
     "1RB 1LB 0RC 0LA 1LC 0LA": ( 9, 101, 24),
@@ -138,7 +146,9 @@ RECURRENCE = {
     "1RB 0LC 1LC 1RB 1RA 1LA": ( 9,  50, 16),
     "1RB 0LC 1LC 1RB 1RB 1LA": ( 9,  50, 12),
     "1RB 0LB 1LC 0RC 1RA 1LA": ( 6,  38, 21),
+    "1RB 1LB 1LA 1RC 0RB 0LC": ( 0,  22,  4),
     "1RB 1LA 0RC 0RA 1LC 0LA": ( 4,  17, 36),
+    "1RB 0RB 1LC 1RC 0LA 1LA": ( 3,  16, 15),
     "1RB 1LB 0RC 0RB 1LC 0LA": ( 3,   4, 38),
     "1RB 0LA 0RC 1LA 1LC 0RB": ( 0,   0, 92),
     "1RB 0LA 0RC 0RC 1LC 1LA": ( 0,   0, 48),
