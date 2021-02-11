@@ -9,7 +9,7 @@ lint :
 	pylint *.py **/*.py
 
 test :
-	python3 -m unittest discover test
+	python3 -m unittest discover -v test
 
 time : test
 
