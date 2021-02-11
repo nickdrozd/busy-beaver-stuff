@@ -292,8 +292,8 @@ if __name__ == '__main__':
             check_rec = RCRNC,
             check_blanks = BLANK)
 
-        if machine.final != 'XLIMIT':
-            _, step, period = machine.final
+        status, step, period = machine.final
 
+        if status != 'XLIMIT':
             if step > 50:
                 print(f'{i} | {machine.program} | {machine.final}')
