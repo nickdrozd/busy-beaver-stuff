@@ -55,6 +55,13 @@
   PMIN = CENTER_SQUARE;                         \
   PMAX = CENTER_SQUARE + 1;
 
+#define HALT_IF_BLANK                           \
+  int blank = 1;                                \
+  for (i = PMIN; i < PMAX; i++) {               \
+    if (TAPE[i]) { blank = 0; break; }          \
+  }                                             \
+  if (blank) { goto H; };
+
 #define SCAN(COLOR) TAPE[POS] == COLOR
 
 #define ACTION(c, s, t) {                       \
@@ -62,6 +69,7 @@
     POS += s;                                   \
     if (POS < PMIN) { PMIN--; }                 \
     else if (POS >= PMAX) { PMAX++; }           \
+    HALT_IF_BLANK;                              \
     goto *dispatch[t];                          \
   }
 
