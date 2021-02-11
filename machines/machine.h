@@ -14,7 +14,7 @@
   unsigned int PMIN = CENTER_SQUARE;            \
   unsigned int PMAX = CENTER_SQUARE + 1;        \
   unsigned int TAPE[TAPE_LEN] = { 0 };          \
-  unsigned int i;
+  unsigned int i, j, blank;
 
 #define DISPATCH_TABLE                          \
   static void* dispatch[] =                     \
@@ -56,9 +56,12 @@
   PMAX = CENTER_SQUARE + 1;
 
 #define HALT_IF_BLANK                           \
-  int blank = 1;                                \
-  for (i = PMIN; i < PMAX; i++) {               \
-    if (TAPE[i]) { blank = 0; break; }          \
+  blank = 1;                                    \
+  for (i = PMIN, j = PMAX;                      \
+       i < PMAX || j >= PMIN;                   \
+       i++, j--) {                              \
+    if (TAPE[i] || TAPE[j])                     \
+      { blank = 0; break; }                     \
   }                                             \
   if (blank) { goto H; };
 
