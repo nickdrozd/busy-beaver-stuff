@@ -1,6 +1,6 @@
 from generate import yield_programs, print_programs
 
-HALT = 1
+HALT = 0
 
 if __name__ == '__main__':
     print_programs(
