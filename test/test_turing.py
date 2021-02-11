@@ -208,6 +208,27 @@ RECURRENCE = {
     "1RB 0LA 1LB 0RC 1RD 1RC 1LA 1LD": ( 0,    0, 228),
 }
 
+BLANK_TAPE = {
+    # 3/2
+    "1RB 1RC 1LC 0LB 1RA 1LA": 16,
+    "1RB 1RH 0RC 1LB 1LA 0RB": 15,
+    "1RB 1LB 0LC 0RB 1RA 1LA": 14,
+
+    # 2/3
+    "1RB 2LA 0RB 1LA 0LB 1RA": 77,
+    "1RB 0RB 1LA 2LA 2RA 0LB":  4,
+
+    # 4/2
+    "1RB 0LC 1LD 0LA 1RC 1RD 1LA 0LD": 66345,
+    "1RB 1RA 0RC 0RB 0RD 1RA 1LD 1LB":  2566,
+    "1RB 1RA 0RC 1LA 1LC 1LD 0RB 0RD":  2510,
+    "1RB 0RA 0LB 0LC 1RD 1LC 1RA 1LB":     3,
+    "1RB 1RC 0LD 1RA 1LB 0RD 1LA 0RC":     3,
+
+    # 5/2
+    "1RB 1RA 1RC 0RE 1LD 0RA 1LB 1LD 0RH 0RB": 28,
+}
+
 
 class TuringTest(TestCase):
     def assert_marks(self, marks):
@@ -253,14 +274,16 @@ class TuringTest(TestCase):
                 check_rec=(
                     0
                     if steps < 256 else
-                    steps))
+                    steps),
+                check_blanks=False)
 
             self.assert_final((final, steps, period))
 
             self.run_bb(
                 prog,
                 x_limit=steps,
-                print_prog=False)
+                print_prog=False,
+                check_blanks=False)
 
             self.assert_marks(marks)
 
@@ -271,3 +294,10 @@ class TuringTest(TestCase):
 
     def test_recurrence(self):
         self._test_recurrence(RECURRENCE, 'RECURR')
+
+    def test_blank_tape(self):
+        for prog, steps in BLANK_TAPE.items():
+            self.run_bb(prog)
+
+            self.assert_steps(steps)
+            self.assert_final(('BLANKS', steps, None))

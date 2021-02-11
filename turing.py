@@ -86,7 +86,7 @@ class Machine:
     def final(self):
         return self._final
 
-    def run_to_halt(self, tape, x_limit=None, watch_tape=False, check_rec=None):
+    def run_to_halt(self, tape, x_limit=None, watch_tape=False, check_rec=None, check_blanks=True):
         pos = len(tape) // 2
         init = pos
 
@@ -120,6 +120,11 @@ class Machine:
             if step >= x_limit:
                 self._final = ('XLIMIT', step, None)
                 break
+
+            if check_blanks and step != 0:
+                if all(square == 0 for square in tape):
+                    self._final = ('BLANKS', step, None)
+                    break
 
             if check_rec is not None:
                 dev = pos - init
@@ -256,12 +261,12 @@ def print_tape(tape, pos, init):
 
 ########################################
 
-def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=None):
+def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=None, check_blanks=True):
     if tape is None:
         tape = [0] * 187
 
     machine = Machine(prog)
-    machine.run_to_halt(tape, x_limit, watch_tape, check_rec)
+    machine.run_to_halt(tape, x_limit, watch_tape, check_rec, check_blanks)
     return machine
 
 ########################################
@@ -271,9 +276,10 @@ CANDIDATES = [
 ]
 
 RCRNC = 0
-STEPS = 2000
-PRINT = 0
-STDIN = 1
+STEPS = 100
+BLANK = 0
+PRINT = 1
+STDIN = 0
 
 if __name__ == '__main__':
     source = sys.stdin if STDIN else CANDIDATES
@@ -283,7 +289,8 @@ if __name__ == '__main__':
             program,
             x_limit = STEPS,
             watch_tape = PRINT,
-            check_rec = RCRNC)
+            check_rec = RCRNC,
+            check_blanks = BLANK)
 
         if machine.final != 'XLIMIT':
             _, step, period = machine.final
