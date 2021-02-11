@@ -281,7 +281,7 @@ class TuringTest(TestCase):
 
     def _test_halting(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
-            self.run_bb(prog)
+            self.run_bb(prog, check_blanks=False)
 
             self.assert_marks(marks)
             self.assert_steps(steps)
