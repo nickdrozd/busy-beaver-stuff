@@ -298,6 +298,7 @@ class TuringTest(TestCase):
         for prog, (marks, steps, period) in prog_data.items():
             self.run_bb(
                 prog,
+                tape=[0] * 183,
                 check_rec=(
                     0
                     if steps < 256 else
