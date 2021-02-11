@@ -210,6 +210,13 @@ RECURRENCE = {
 }
 
 BLANK_TAPE = {
+    # 2/2
+    "1RB 0RA 1LB 1LA": 8,
+    "1RB 0RA 0LB 1LA": 7,
+    "1RB 1LA 0LA 0LB": 6,
+    "1RB 0LA 1LB 1RA": 5,
+    "1RB 1RB 1LA 0LB": 5,
+
     # 3/2
     "1RB 1LB 1LA 1LC 1RC 0LC": 34,
     "1RB 1LC 1LB 1LA 1RC 0LC": 27,
