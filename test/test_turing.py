@@ -260,6 +260,10 @@ BLANK_TAPE = {
     "1RB 1LC 0RC 1RB 0RD 0RC 1LD 1LA":   455,
     "1RB 1RA 0RC 0RB 1LC 1LD 1RA 1LB":   426,
     "1RB 1RA 1LC 0RD 1LB 1LD 1RA 0RB":   319,
+    # constructed from BB(3) sigma champ
+    "1RB 1LC 1RC 1LD 1LA 0LB 1RD 0LD":    77,
+    # constructed from BB(3) shift champ
+    "1RB 1LD 1LB 0RC 1LC 1LA 1RD 0LD":    66,
     "1RB 0RA 0LB 0LC 1RD 1LC 1RA 1LB":     3,
     "1RB 1RC 0LD 1RA 1LB 0RD 1LA 0RC":     3,
 
