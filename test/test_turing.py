@@ -324,7 +324,7 @@ class TuringTest(TestCase):
 
     def _test_halting(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
-            self.run_bb(prog, check_blanks=False)
+            self.run_bb(prog)
 
             self.assert_marks(marks)
             self.assert_steps(steps)
@@ -346,7 +346,7 @@ class TuringTest(TestCase):
                     0
                     if steps < 256 else
                     steps),
-                check_blanks=False)
+            )
 
             self.assert_final((final, steps, period))
 
@@ -354,7 +354,7 @@ class TuringTest(TestCase):
                 prog,
                 x_limit=steps,
                 print_prog=False,
-                check_blanks=False)
+            )
 
             self.assert_marks(marks)
 
@@ -372,7 +372,7 @@ class TuringTest(TestCase):
 
     def test_blank_tape(self):
         for prog, steps in BLANK_TAPE.items():
-            self.run_bb(prog)
+            self.run_bb(prog, check_blanks=True)
 
             self.assert_steps(steps)
             self.assert_final(('BLANKS', steps, None))

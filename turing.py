@@ -92,7 +92,7 @@ class Machine:
             x_limit=None,
             watch_tape=False,
             check_rec=None,
-            check_blanks=True,
+            check_blanks=False,
     ):
         pos = len(tape) // 2
         init = pos
@@ -274,7 +274,7 @@ def run_bb(
         x_limit=None,
         watch_tape=False,
         check_rec=None,
-        check_blanks=True,
+        check_blanks=False,
 ):
     if tape is None:
         tape = [0] * 50
