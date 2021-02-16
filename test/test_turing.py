@@ -1,6 +1,6 @@
 # pylint: disable = attribute-defined-outside-init
 
-from unittest import TestCase
+from unittest import TestCase, skip
 
 from turing import run_bb
 
@@ -124,7 +124,7 @@ QUASIHALTING = {
 }
 
 
-RECURRENCE = {
+RECURRENCE_FAST = {
     # Lin-Rado examples
     "1RB 1RH 0RC 1LB 1LA 0RB": (2,  9, 10),  # total recurrence
     "1RB 1RH 1LB 0LC 1LA 1RA": (4, 12,  7),  # left barrier
@@ -198,26 +198,45 @@ RECURRENCE = {
     "1RB 2LA 1LB 0LA 0RB 1RA": ( 0,   0, 47),
 
     # 4/2
-    "1RB 1RC 1LC 0RB 1LD 0RA 1RA 0LB": (51, 1727, 622),
-    "1RB 0LC 1RD 0RD 1LA 0RC 1LB 1RC": (39, 1527, 522),
-    "1RB 0LC 1RC 1RD 1LD 0RC 1LA 0RB": (45, 1301, 622),
-    "1RB 1LC 1RD 0RB 0LC 1LA 1RC 0RA": (33, 1111, 131),
-    "1RB 1RC 1LB 1LC 1RD 0LB 1RA 0RD": (30, 1033, 174),
-    "1RB 0LC 1RD 0RB 1LC 1LA 1RC 1RA": (30, 1004, 174),
-    "1RB 1LA 1RC 0RD 0LA 0RC 1RC 1LC": (29,  979, 144),
-    "1RB 1RC 1LC 0LD 0RA 1LB 1RD 0LA": (24,  928, 128),
-    "1RB 0RA 0LB 0LC 1RD 1LC 1RA 1LB": (19,  868, 404),
-    "1RB 0RC 0LD 1RA 0LA 0RD 1LC 1LA": (12,  383, 200),
-    "1RB 0LA 1LC 1LD 1RD 1LB 1RA 0RD": (12,   79, 481),
-    "1RB 1LA 1RC 0RC 1LD 0RD 0LA 1LA": ( 7,   66, 284),
-    "1RB 1RC 0RC 1RA 1LD 0RB 0LD 1LA": ( 7,   50, 597),
-    "1RB 1RA 1LC 0RB 1RC 0LD 1LA 1LD": ( 8,   45, 228),
-    "1RB 1LA 1LC 0RA 1LD 0LC 1RA 0LA": ( 3,    5, 385),
-    "1RB 0RA 1LC 1RA 1LD 0LC 1LA 0RB": ( 3,    5, 244),
-    "1RB 1RC 0LD 1RA 1LB 0RD 1LA 0RC": ( 1,    2, 294),
-    "1RB 0LC 1LD 1LC 1RD 0LA 0RA 1LB": ( 0,    0, 294),
-    "1RB 1LA 1LB 0RC 1LC 1LD 0RA 0LD": ( 0,    0, 238),
-    "1RB 0LA 1LB 0RC 1RD 1RC 1LA 1LD": ( 0,    0, 228),
+    "1RB 0LA 0RC 0RD 1LC 1LA 0RB 1RD": (70, 3957,  265),
+    "1RB 0RA 1RC 0LD 0LB 1RA 0LA 1LD": (32, 3115,  860),
+    "1RB 1RC 1LC 0RB 1LD 0RA 1RA 0LB": (51, 1727,  622),
+    "1RB 0LC 1RD 0RD 1LA 0RC 1LB 1RC": (39, 1527,  522),
+    "1RB 0LC 1RC 1RD 1LD 0RC 1LA 0RB": (45, 1301,  622),
+    "1RB 1LC 1RD 0RB 0LC 1LA 1RC 0RA": (33, 1111,  131),
+    "1RB 1RC 1LB 1LC 1RD 0LB 1RA 0RD": (30, 1033,  174),
+    "1RB 0LC 1RD 0RB 1LC 1LA 1RC 1RA": (30, 1004,  174),
+    "1RB 1LA 1RC 0RD 0LA 0RC 1RC 1LC": (29,  979,  144),
+    "1RB 1RC 1LC 0LD 0RA 1LB 1RD 0LA": (24,  928,  128),
+    "1RB 0RA 0LB 0LC 1RD 1LC 1RA 1LB": (19,  868,  404),
+    "1RB 0RC 1LB 1RC 1RA 0LD 1LA 1LC": (23,  845,  842),
+    "1RB 1RC 1LC 0RB 1RA 0LD 0LC 1LD": (22,  600, 1374),
+    "1RB 1LA 1LC 0RA 1LD 0LC 1RB 0LA": (25,  497,  816),
+    "1RB 0RC 0LD 1RA 0LA 0RD 1LC 1LA": (12,  383,  200),
+    "1RB 0LA 1LC 1LD 1RD 1LB 1RA 0RD": (12,   79,  481),
+    "1RB 0LC 0RD 0RC 1LD 0RB 1LA 0LC": ( 8,   74,  945),
+    "1RB 0LC 1RD 0RA 0LB 0LA 1LC 0RA": ( 9,   67,  945),
+    "1RB 1LA 1RC 0RC 1LD 0RD 0LA 1LA": ( 7,   66,  284),
+    "1RB 1RC 0RC 1RA 1LD 0RB 0LD 1LA": ( 7,   50,  597),
+    "1RB 1RA 1LC 0RB 1RC 0LD 1LA 1LD": ( 8,   45,  228),
+    "1RB 1LA 1LC 0RA 1LD 0LC 1RA 0LA": ( 3,    5,  385),
+    "1RB 0RA 1LC 1RA 1LD 0LC 1LA 0RB": ( 3,    5,  244),
+    "1RB 1RC 0LD 1RA 1LB 0RD 1LA 0RC": ( 1,    2,  294),
+    "1RB 0LA 0RC 1LA 1RD 1RC 1LD 1LB": ( 0,    0,  714),
+    "1RB 0LC 1LD 1LC 1RD 0LA 0RA 1LB": ( 0,    0,  294),
+    "1RB 1LA 1LB 0RC 1LC 1LD 0RA 0LD": ( 0,    0,  238),
+    "1RB 0LA 1LB 0RC 1RD 1RC 1LA 1LD": ( 0,    0,  228),
+}
+
+RECURRENCE_SLOW = {
+    # unverified
+    "1RB 0RC 1LB 1LD 0RA 0LD 1LA 1RC": (503, 158492, 17620),
+
+    # verified in three minutes
+    "1RB 1RA 0RC 0LB 0RD 0RA 1LD 0LA": (203,  28812,  5588),
+
+    # verified in three hours
+    "1RB 0RA 1RC 0RB 1LD 1LC 1RA 0LC": (102,   7170, 29117),
 }
 
 BLANK_TAPE = {
@@ -344,8 +363,12 @@ class TuringTest(TestCase):
     def test_quasihalting(self):
         self._test_recurrence(QUASIHALTING, 'QSIHLT')
 
-    def test_recurrence(self):
-        self._test_recurrence(RECURRENCE, 'RECURR')
+    def test_recurrence_fast(self):
+        self._test_recurrence(RECURRENCE_FAST, 'RECURR')
+
+    @skip
+    def test_recurrence_slow(self):
+        self._test_recurrence(RECURRENCE_SLOW, 'RECURR')
 
     def test_blank_tape(self):
         for prog, steps in BLANK_TAPE.items():
