@@ -83,6 +83,10 @@ class Machine:
             reverse=True)
 
     @property
+    def tapes(self):
+        return self._tapes
+
+    @property
     def final(self):
         return self._final
 
@@ -93,6 +97,7 @@ class Machine:
             watch_tape=False,
             check_rec=None,
             check_blanks=False,
+            collect_tapes=False,
     ):
         pos = len(tape) // 2
         init = pos
@@ -110,6 +115,10 @@ class Machine:
             deviations = []
             snapshots = defaultdict(lambda: [])
 
+        tapes = None
+        if collect_tapes:
+            tapes = []
+
         while True:
 
             # Output ###############################
@@ -117,6 +126,13 @@ class Machine:
             if watch_tape:
                 print(f'{step : 5d} {chr(state + 65)} ', end='')
                 print_tape(tape, pos, init)
+
+            if tapes is not None:
+                tapes.append((
+                    state,
+                    pos,
+                    tape.copy(),
+                ))
 
             # Halt conditions ######################
 
@@ -236,6 +252,8 @@ class Machine:
 
         self._beeps = dict(beeps)
 
+        self._tapes = tapes
+
 
 def print_results(machine):
     print(
@@ -275,6 +293,7 @@ def run_bb(
         watch_tape=False,
         check_rec=None,
         check_blanks=False,
+        collect_tapes=False,
 ):
     if tape is None:
         tape = [0] * 50
@@ -286,6 +305,7 @@ def run_bb(
         watch_tape,
         check_rec,
         check_blanks,
+        collect_tapes,
     )
 
     return machine
