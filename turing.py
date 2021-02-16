@@ -86,7 +86,14 @@ class Machine:
     def final(self):
         return self._final
 
-    def run_to_halt(self, tape, x_limit=None, watch_tape=False, check_rec=None, check_blanks=True):
+    def run_to_halt(
+            self,
+            tape,
+            x_limit=None,
+            watch_tape=False,
+            check_rec=None,
+            check_blanks=True,
+    ):
         pos = len(tape) // 2
         init = pos
 
@@ -261,12 +268,26 @@ def print_tape(tape, pos, init):
 
 ########################################
 
-def run_bb(prog, tape=None, x_limit=None, watch_tape=False, check_rec=None, check_blanks=True):
+def run_bb(
+        prog,
+        tape=None,
+        x_limit=None,
+        watch_tape=False,
+        check_rec=None,
+        check_blanks=True,
+):
     if tape is None:
         tape = [0] * 50
 
     machine = Machine(prog)
-    machine.run_to_halt(tape, x_limit, watch_tape, check_rec, check_blanks)
+    machine.run_to_halt(
+        tape,
+        x_limit,
+        watch_tape,
+        check_rec,
+        check_blanks,
+    )
+
     return machine
 
 ########################################
@@ -290,7 +311,8 @@ if __name__ == '__main__':
             x_limit = STEPS,
             watch_tape = PRINT,
             check_rec = RCRNC,
-            check_blanks = BLANK)
+            check_blanks = BLANK,
+        )
 
         status, step, period = machine.final
 
