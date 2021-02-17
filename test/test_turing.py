@@ -229,14 +229,14 @@ RECURRENCE_FAST = {
 }
 
 RECURRENCE_SLOW = {
-    # unverified
-    "1RB 0RC 1LB 1LD 0RA 0LD 1LA 1RC": (503, 158492, 17620),
-
-    # verified in three minutes
+    # verified by lin algorithm in three minutes
     "1RB 1RA 0RC 0LB 0RD 0RA 1LD 0LA": (203,  28812,  5588),
 
-    # verified in three hours
+    # verified by lin algorithm in three hours
     "1RB 0RA 1RC 0RB 1LD 1LC 1RA 0LC": (102,   7170, 29117),
+
+    # unverified by lin algorithm
+    "1RB 0RC 1LB 1LD 0RA 0LD 1LA 1RC": (503, 158491, 17620),
 }
 
 BLANK_TAPE = {
