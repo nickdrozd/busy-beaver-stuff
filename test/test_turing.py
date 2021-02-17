@@ -1,8 +1,8 @@
 # pylint: disable = attribute-defined-outside-init
 
-from unittest import TestCase, skip
+from unittest import TestCase
 
-from turing import run_bb
+from turing import run_bb, verify_lin_recurrence
 
 HALTING_FAST = {
     # 2/2 BB
@@ -337,8 +337,31 @@ class TuringTest(TestCase):
     def test_halting_slow(self):
         self._test_halting(HALTING_SLOW)
 
-    def _test_recurrence(self, prog_data, final):
+    def _test_recurrence(self, prog_data, final, quick):
         for prog, (marks, steps, period) in prog_data.items():
+            print(prog)
+
+            if steps < 2 ** 19:
+                runtime = steps + (2 * period)
+
+                self.run_bb(
+                    prog,
+                    tape=[0] * 202,
+                    x_limit=runtime,
+                    collect_tapes=True,
+                    print_prog=False,
+                )
+
+                self.assertTrue(
+                    verify_lin_recurrence(
+                        steps,
+                        period,
+                        self.machine.tapes,
+                    ))
+
+            if not quick:
+                continue
+
             self.run_bb(
                 prog,
                 tape=[0] * 183,
@@ -346,6 +369,7 @@ class TuringTest(TestCase):
                     0
                     if steps < 256 else
                     steps),
+                print_prog=False,
             )
 
             self.assert_final((final, steps, period))
@@ -361,14 +385,13 @@ class TuringTest(TestCase):
             self.assert_final(('XLIMIT', steps, None))
 
     def test_quasihalting(self):
-        self._test_recurrence(QUASIHALTING, 'QSIHLT')
+        self._test_recurrence(QUASIHALTING, 'QSIHLT', True)
 
     def test_recurrence_fast(self):
-        self._test_recurrence(RECURRENCE_FAST, 'RECURR')
+        self._test_recurrence(RECURRENCE_FAST, 'RECURR', True)
 
-    @skip
     def test_recurrence_slow(self):
-        self._test_recurrence(RECURRENCE_SLOW, 'RECURR')
+        self._test_recurrence(RECURRENCE_SLOW, 'RECURR', False)
 
     def test_blank_tape(self):
         for prog, steps in BLANK_TAPE.items():
