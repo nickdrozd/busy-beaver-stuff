@@ -331,12 +331,6 @@ class TuringTest(TestCase):
 
             self.assert_final(('HALTED', steps, None))
 
-    def test_halting_fast(self):
-        self._test_halting(HALTING_FAST)
-
-    def test_halting_slow(self):
-        self._test_halting(HALTING_SLOW)
-
     def _test_recurrence(self, prog_data, final, quick):
         for prog, (marks, steps, period) in prog_data.items():
             print(prog)
@@ -384,14 +378,16 @@ class TuringTest(TestCase):
 
             self.assert_final(('XLIMIT', steps, None))
 
-    def test_quasihalting(self):
-        self._test_recurrence(QUASIHALTING, 'QSIHLT', True)
 
-    def test_recurrence_fast(self):
+class Fast(TuringTest):
+    def test_halting(self):
+        self._test_halting(HALTING_FAST)
+
+    def test_recurrence(self):
         self._test_recurrence(RECURRENCE_FAST, 'RECURR', True)
 
-    def test_recurrence_slow(self):
-        self._test_recurrence(RECURRENCE_SLOW, 'RECURR', False)
+    def test_quasihalting(self):
+        self._test_recurrence(QUASIHALTING, 'QSIHLT', True)
 
     def test_blank_tape(self):
         for prog, steps in BLANK_TAPE.items():
@@ -399,3 +395,11 @@ class TuringTest(TestCase):
 
             self.assert_steps(steps)
             self.assert_final(('BLANKS', steps, None))
+
+
+class Slow(TuringTest):
+    def test_halting(self):
+        self._test_halting(HALTING_SLOW)
+
+    def test_recurrence(self):
+        self._test_recurrence(RECURRENCE_SLOW, 'RECURR', False)
