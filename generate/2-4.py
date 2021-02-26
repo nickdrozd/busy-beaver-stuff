@@ -1,6 +1,6 @@
 from itertools import product
 
-COLORS = 1, 2, 3
+COLORS = 0, 1, 2, 3
 SHIFTS = L, R = 'L', 'R'
 STATES = A, B = 'A', 'B'
 
@@ -22,20 +22,22 @@ def yield_progs():
             or 3 not in colors):
             continue
 
+        if 0 not in colors:
+            continue
+
         if not is_normal(colors):
             continue
 
         c2, c3, c4, c5, c6, c7, c8 = colors
 
-        if (c2 == 1
-            or c2 == c3 == c4
+        if (c2 == c3 == c4 == 1
             or c5 == c6 == c7 == c8):
             continue
 
         for states in product(STATES, repeat=7):
             t2, t3, t4, t5, t6, t7, t8 = states
 
-            if (A not in  (t2, t3, t4)
+            if (A not in (t2, t3, t4)
                 or A not in (t5, t6, t7, t8)
                 or B not in (t5, t6, t7, t8)):
                 continue
@@ -59,7 +61,7 @@ def compress(prog_string):
 
 def main():
     for prog in yield_progs():
-        print(compress(prog))
+        print((prog))
 
 
 if __name__ == '__main__':
