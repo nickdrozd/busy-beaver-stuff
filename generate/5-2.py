@@ -20,17 +20,13 @@ def yield_graphs():
             for d in permutations(STATES, r=2):
                 for e in permutations(STATES, r=2):
                     graph = Graph((*a, b0, b1, *c, *d, *e))
-                    if graph.is_normal and graph.is_strongly_connected:
-                        if only_d_self_connected(graph):
-                            yield graph
-
-
-def only_d_self_connected(graph):
-    if D not in graph.arrows[D]:
-        return False
-
-    return all(state not in graph.arrows[state]
-               for state in set(STATES).difference(D))
+                    if (
+                            graph.is_normal
+                            and graph.is_strongly_connected
+                            and graph.is_dispersed
+                            and graph.is_irreflexive
+                    ):
+                        yield graph
 
 
 def decorate(graph):
