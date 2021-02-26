@@ -17,3 +17,4 @@ disable=
   missing-class-docstring,
   missing-module-docstring,
   missing-function-docstring,
+  too-many-instance-attributes,
