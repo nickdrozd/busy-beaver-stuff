@@ -29,7 +29,7 @@ class TestGeneration(TestCase):
             len(self.progs),
             count)
 
-    def test_general(self):
+    def test_generation(self):
         for (states, colors, halt), count in EXPECTED.items():
             print(states, colors, halt)
             self.yield_programs(states, colors, halt)
