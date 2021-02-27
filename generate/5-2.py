@@ -40,14 +40,14 @@ def decorate(graph):
 
         s2, s3, s4, s5, s6, s7, s8, s9, s10 = shifts
 
-        for colors in product(COLORS, repeat=8):
+        for colors in product(COLORS, repeat=9):
             if colors.count(1) < 5:
                 continue
 
-            c3, c4, c5, c6, c7, c8, c9, c10 = colors
+            c2, c3, c4, c5, c6, c7, c8, c9, c10 = colors
 
             # pylint: disable=line-too-long
-            yield f'1RB 1{s2}C {c3}{s3}{n3} {c4}{s4}{n4} {c5}{s5}{n5} {c6}{s6}{n6} {c7}{s7}{n7} {c8}{s8}{n8} {c9}{s9}{n9} {c10}{s10}{n10}'
+            yield f'1RB {c2}{s2}C {c3}{s3}{n3} {c4}{s4}{n4} {c5}{s5}{n5} {c6}{s6}{n6} {c7}{s7}{n7} {c8}{s8}{n8} {c9}{s9}{n9} {c10}{s10}{n10}'
 
 
 regexps = (
