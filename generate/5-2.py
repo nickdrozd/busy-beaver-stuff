@@ -35,13 +35,13 @@ def decorate(graph):
     for shifts in product(SHIFTS, repeat=9):
         L_count = shifts.count(L)
 
-        if L_count > 7 or L_count < 3:
+        if L_count > 7 or L_count < 4:
             continue
 
         s2, s3, s4, s5, s6, s7, s8, s9, s10 = shifts
 
         for colors in product(COLORS, repeat=8):
-            if colors.count(1) != 5:
+            if colors.count(1) < 5:
                 continue
 
             c3, c4, c5, c6, c7, c8, c9, c10 = colors
