@@ -54,6 +54,14 @@ HALTING_FAST = {
     # as possible without producing anything, moving on the tape, and
     # changing his state.
     "0RB 0LA 1RC 0RH 0LC 1RD 0LD 1RE 1LA 0LE": (0, 67),
+
+    # 3/3
+
+    # R. Blodgett
+    "1RB 1LB 2LB 1RC 1LA 0RA 1LA 2RA 1RH": (9, 57),
+
+    # David Jefferson
+    "1RB 1RA 1RH 1LC 1LC 2LA 2RA 1LB 1LA": (12, 44),
 }
 
 
@@ -69,6 +77,9 @@ HALTING_SLOW = {
 
     # 5/2 BB
     "1RB 1LC 1RC 1RB 1RD 0LE 1LA 1LD 1RH 0LA": (4098, 47176870),
+
+    # 3/3 Brady 2004 (not BB)
+    "1RB 1RH 2LC 1LC 2RB 1LB 1LA 0RB 2LA": (13949, 92649163),
 }
 
 
