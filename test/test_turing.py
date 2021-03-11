@@ -344,6 +344,55 @@ BLANK_TAPE = {
 }
 
 
+UNDEFINED_FAST = {
+    # 4/2 BBQ
+    "... ... ... ... ... ... ... ...": ( 1, 'A0'),
+    "1RB ... ... ... ... ... ... ...": ( 2, 'B0'),
+    "1RB ... 1LD ... ... ... ... ...": ( 3, 'D1'),
+    "1RB ... 1LD ... ... ... ... 0LD": ( 4, 'D0'),
+    "1RB ... 1LD ... ... ... 1LA 0LD": ( 6, 'B1'),
+    "1RB ... 1LD 0LA ... ... 1LA 0LD": ( 7, 'A1'),
+    "1RB 0LC 1LD 0LA ... ... 1LA 0LD": ( 8, 'C0'),
+    "1RB 0LC 1LD 0LA 1RC ... 1LA 0LD": (12, 'C1'),
+
+    # 4/2 BBR
+    "1RB ... 1LB ... ... ... ... ...": ( 3, 'B1'),
+    "1RB ... 1LB 1LD ... ... ... ...": ( 4, 'D0'),
+    "1RB ... 1LB 1LD ... ... 1LA ...": ( 7, 'D1'),
+    "1RB ... 1LB 1LD ... ... 1LA 1RC": ( 8, 'C1'),
+    "1RB ... 1LB 1LD ... 0LD 1LA 1RC": (10, 'C0'),
+    "1RB ... 1LB 1LD 0RA 0LD 1LA 1RC": (11, 'A1'),
+
+    # 2/4 BBH
+    "... ... ... ... ... ... ... 3..": ( 1, 'A0'),
+    "1RB ... ... ... ... ... ... 3..": ( 2, 'B0'),
+    "1RB ... ... ... 1LB ... ... 3..": ( 3, 'B1'),
+    "1RB ... ... ... 1LB 1LA ... 3..": ( 6, 'A1'),
+    "1RB 2LA ... ... 1LB 1LA ... 3..": ( 8, 'B2'),
+    "1RB 2LA ... ... 1LB 1LA 3RB 3..": (10, 'A3'),
+    "1RB 2LA ... 1RA 1LB 1LA 3RB 3..": (23, 'A2'),
+
+    # 5/2 BBH
+    "... ... ... ... ... ... ... ... ... ...": ( 1, 'A0'),
+    "1RB ... ... ... ... ... ... ... ... ...": ( 2, 'B0'),
+    "1RB ... 1RC ... ... ... ... ... ... ...": ( 3, 'C0'),
+    "1RB ... 1RC ... 1RD ... ... ... ... ...": ( 4, 'D0'),
+    "1RB ... 1RC ... 1RD ... 1LA ... ... ...": ( 5, 'A1'),
+    "1RB 1LC 1RC ... 1RD ... 1LA ... ... ...": ( 6, 'C1'),
+    "1RB 1LC 1RC ... 1RD 0LE 1LA ... ... ...": ( 7, 'E1'),
+    "1RB 1LC 1RC ... 1RD 0LE 1LA ... ... 0LA": (11, 'D1'),
+    "1RB 1LC 1RC ... 1RD 0LE 1LA 1LD ... 0LA": (17, 'B1'),
+}
+
+UNDEFINED_SLOW = {
+    # 2/4 BBH last
+    "1RB 2LA 1RA 1RA 1LB 1LA 3RB 3..": (3932964, 'B3'),
+
+    # 5/2 BBH last
+    "1RB 1LC 1RC 1RB 1RD 0LE 1LA 1LD ... 0LA": (47176870, 'E0'),
+}
+
+
 class TuringTest(TestCase):
     def assert_marks(self, marks):
         self.assertEqual(
@@ -422,6 +471,13 @@ class TuringTest(TestCase):
 
             self.assert_final(('XLIMIT', steps, None))
 
+    def _test_undefined(self, prog_data):
+        for prog, (steps, instr) in prog_data.items():
+            self.run_bb(prog)
+
+            self.assert_steps(steps)
+            self.assert_final(('UNDFND', steps, instr))
+
 
 class Fast(TuringTest):
     def test_halting(self):
@@ -440,6 +496,9 @@ class Fast(TuringTest):
             self.assert_steps(steps)
             self.assert_final(('BLANKS', steps, None))
 
+    def test_undefined(self):
+        self._test_undefined(UNDEFINED_FAST)
+
 
 class Slow(TuringTest):
     def test_halting(self):
@@ -447,3 +506,6 @@ class Slow(TuringTest):
 
     def test_recurrence(self):
         self._test_recurrence(RECURRENCE_SLOW, 'RECURR', False)
+
+    def test_undefined(self):
+        self._test_undefined(UNDEFINED_SLOW)

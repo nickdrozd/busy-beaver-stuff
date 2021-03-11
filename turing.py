@@ -10,6 +10,7 @@ STATE_MAP = {
     'F': '5',
     'G': '6',
     'H': '7',
+    '.': '.',
 }
 
 HALT = 7
@@ -38,10 +39,15 @@ def parse(program_string):
 
     return tuple(
         tuple(
-            (int(action[0]), int(SHIFT_MAP[action[1]]), int(action[2]))
-            for action in instr)
-        for instr in
-        zipped
+            (
+                int(action[0]),
+                SHIFT_MAP[action[1]],
+                int(action[2])
+            )
+            if '.' not in action else None
+            for action in instr
+        )
+        for instr in zipped
     )
 
 ########################################
@@ -226,7 +232,15 @@ class Machine:
 
             # Machine operation ####################
 
-            color, shift, state = prog[state][tape[pos]]
+            try:
+                color, shift, state = prog[state][tape[pos]]
+            except TypeError:
+                self._final = (
+                    'UNDFND',
+                    step,
+                    chr(state + 65) + str(tape[pos]),
+                )
+                break
 
             tape[pos] = color
 
