@@ -29,7 +29,7 @@ def parse(program_string):
         program_string.split()
     ])
 
-    zipped = (
+    return tuple(
         zip(instructions, instructions, instructions, instructions)
         if '3' in program_string else
         zip(instructions, instructions, instructions)
@@ -37,6 +37,7 @@ def parse(program_string):
         zip(instructions, instructions)
     )
 
+def tcompile(parsed):
     return tuple(
         tuple(
             (
@@ -47,7 +48,7 @@ def parse(program_string):
             if '.' not in action else None
             for action in instr
         )
-        for instr in zipped
+        for instr in parsed
     )
 
 ########################################
@@ -55,7 +56,7 @@ def parse(program_string):
 class Machine:
     def __init__(self, prog):
         self._prog = prog.strip()
-        self._comp = parse(prog)
+        self._comp = tcompile(parse(prog))
         self._tape = None
         self._pos = None
         self._state = None
