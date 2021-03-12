@@ -385,5 +385,4 @@ if __name__ == '__main__':
         status, step, period = machine.final
 
         if status != 'XLIMIT':
-            if step > 50:
-                print(f'{i} | {machine.program} | {machine.final}')
+            print(f'{i} | {machine.program} | {machine.final}')
