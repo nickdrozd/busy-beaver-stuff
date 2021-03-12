@@ -30,7 +30,8 @@ def tcompile(parsed):
 
 class Machine:
     def __init__(self, prog):
-        self._prog = prog.strip()
+        prog = prog.strip() if isinstance(prog, str) else str(prog)
+        self._prog = prog
         self._comp = tcompile(parse(prog))
         self._tape = None
         self._pos = None
