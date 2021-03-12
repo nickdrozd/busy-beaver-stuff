@@ -1,33 +1,10 @@
 import sys
 from collections import defaultdict
 
-STATE_MAP = {
-    'A': '0',
-    'B': '1',
-    'C': '2',
-    'D': '3',
-    'E': '4',
-    'F': '5',
-    'G': '6',
-    'H': '7',
-    '.': '.',
-}
-
 HALT = 7
 
-SHIFT_MAP = {
-    'L': 0,
-    'R': 1,
-}
-
 def parse(program_string):
-    instructions = iter([
-        instr.replace(
-            instr[2],
-            STATE_MAP[instr[2]])
-        for instr in
-        program_string.split()
-    ])
+    instructions = iter(program_string.split())
 
     return tuple(
         zip(instructions, instructions, instructions, instructions)
@@ -42,8 +19,8 @@ def tcompile(parsed):
         tuple(
             (
                 int(action[0]),
-                SHIFT_MAP[action[1]],
-                int(action[2])
+                0 if action[1] == 'L' else 1,
+                ord(action[2]) - 65,
             )
             if '.' not in action else None
             for action in instr
