@@ -55,6 +55,7 @@ def parse(program_string):
 class Machine:
     def __init__(self, prog):
         self._prog = prog.strip()
+        self._comp = parse(prog)
         self._tape = None
         self._pos = None
         self._state = None
@@ -113,7 +114,7 @@ class Machine:
 
         step = 0
         beeps = defaultdict(lambda: 0)
-        prog = parse(self._prog)
+        prog = self._comp
 
         if x_limit is None:
             x_limit = sys.maxsize
