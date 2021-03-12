@@ -90,13 +90,6 @@ QUASIHALTING = {
     "1RB 0LB 1LB 1LA": (2, 6, 1),
     "1RB 0LB 0LB 1LA": (1, 6, 1),
 
-    # 2/3
-    "1RB 2LB 1RA 2LB 2LA 0RA": (10, 43, 1),  # BBB sigma
-    "1RB 2LB 1LA 2LB 2RA 0RA":  (8, 59, 1),  # BBB shift
-    "1RB 0LB 1RA 1LB 2LA 2RA":  (3, 45, 1),
-    "1RB 2RA 2LB 2LB 2LA 0LA":  (5, 40, 1),
-    "1RB 1LA 2RA 2LA 2LB 2RB":  (8, 17, 2),
-
     # 3/2
     "1RB 0LB 1LA 0RC 1LC 1LA": (6, 55, 1),  # BBB shift
     "1RB 1RC 1LC 1RA 1RA 1LA": (6,  9, 2),  # BBB sigma
@@ -109,6 +102,13 @@ QUASIHALTING = {
     "1RB 1LC 1LB 1LA 1RC 0LC": (0, 27, 1),
     "1RB 1LB 1LA 1RC 1LC 0RC": (0, 26, 1),
     "1RB 1RC 1LC 0LB 1RA 1LA": (5, 22, 2),
+
+    # 2/3
+    "1RB 2LB 1LA 2LB 2RA 0RA": ( 8, 59, 1),  # BBB shift
+    "1RB 0LB 1RA 1LB 2LA 2RA": ( 3, 45, 1),
+    "1RB 2LB 1RA 2LB 2LA 0RA": (10, 43, 1),  # BBB sigma
+    "1RB 2RA 2LB 2LB 2LA 0LA": ( 5, 40, 1),
+    "1RB 1LA 2RA 2LA 2LB 2RB": ( 8, 17, 2),
 
     # 4/2
     "1RB 0LC 1LD 0LA 1RC 1RD 1LA 0LD": (0, 66349, 1),  # BBB shift
