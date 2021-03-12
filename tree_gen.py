@@ -46,14 +46,11 @@ class Program:
 
 
 def tree_gen(steps):
-    output = {
-        'BLANKS': defaultdict(set),
-        'HALTED': defaultdict(set),
-        'QSIHLT': defaultdict(set),
-        'RECURR': defaultdict(set),
-        'XLIMIT': defaultdict(set),
-    }
     progs = ['1RB ... ... ... ... ...']
+
+    categories = 'BLANKS', 'HALTED', 'QSIHLT', 'RECURR', 'XLIMIT'
+
+    output = {cat: defaultdict(set) for cat in categories}
 
     while progs:
         prog, *progs = progs
