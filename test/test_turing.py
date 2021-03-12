@@ -7,6 +7,9 @@ from turing import run_bb, verify_lin_recurrence
 HALTING_FAST = {
     # 2/2 BB
     "1RB 1LB 1LA 1RH": (4, 6),
+    "1RB 0LB 1LA 1RH": (3, 6),
+    "1RB 1RH 1LB 1LA": (3, 6),
+    "1RB 1RH 0LB 1LA": (2, 6),
 
     # 3/2 BB
     "1RB 1RH 1LB 0RC 1LC 1LA": (5, 21),  # shift
@@ -99,6 +102,7 @@ QUASIHALTING = {
     "1RB 0LC 1LA 0RC 1RC 1RB": (5, 49, 1),
     "1RB 0LC 0RC 0RC 1LC 1LA": (5, 48, 1),
     "1RB 1LB 1LA 1LC 1RC 0LC": (0, 34, 1),
+    "1RB 1LC 0RC ... 1LC 0LA": (5, 27, 1),
     "1RB 1LC 1LB 1LA 1RC 0LC": (0, 27, 1),
     "1RB 1LB 1LA 1RC 1LC 0RC": (0, 26, 1),
     "1RB 1RC 1LC 0LB 1RA 1LA": (5, 22, 2),
@@ -108,7 +112,10 @@ QUASIHALTING = {
     "1RB 0LB 1RA 1LB 2LA 2RA": ( 3, 45, 1),
     "1RB 2LB 1RA 2LB 2LA 0RA": (10, 43, 1),  # BBB sigma
     "1RB 2RA 2LB 2LB 2LA 0LA": ( 5, 40, 1),
+    "1RB 1LB 1RA 2LB 2LA 0RA": ( 6, 23, 1),
+    "1RB 2RA 2LB 0LB 1LA 1RA": ( 4, 23, 1),
     "1RB 1LA 2RA 2LA 2LB 2RB": ( 8, 17, 2),
+    "1RB 2LB ... 1LB 2LA 1RB": ( 5, 17, 1),
 
     # 4/2
     "1RB 0LC 1LD 0LA 1RC 1RD 1LA 0LD": (0, 66349, 1),  # BBB shift
@@ -152,19 +159,21 @@ QUASIHALTING = {
 
 RECURRENCE_FAST = {
     # Lin-Rado examples
-    "1RB 1RH 0RC 1LB 1LA 0RB": (2,  9, 10),  # total recurrence
-    "1RB 1RH 1LB 0LC 1LA 1RA": (4, 12,  7),  # left barrier
-    "1RB 1RH 1LC 1RA 1LA 0LC": (4, 12,  8),  # right barrier
+    "1RB ... 0RC 1LB 1LA 0RB": (2,  9, 10),  # total recurrence
+    "1RB ... 1LB 0LC 1LA 1RA": (4, 12,  7),  # left barrier
+    "1RB ... 1LC 1RA 1LA 0LC": (4, 12,  8),  # right barrier
 
     # 2/2
     "1RB 0LB 1LA 0RB": (3, 9, 3),
     "1RB 1LA 0LA 1RA": (3, 7, 5),
     "1RB 1LB 1LA 0RB": (2, 7, 3),
+    "1RB 1RB 1LA 0LB": (2, 3, 4),
+    "1RB 0RB 1LB 1RA": (0, 0, 9),
     "1RB 0RA 1LB 1LA": (0, 0, 8),
     "1RB 0RA 0LB 1LA": (0, 0, 7),
     "1RB 1LA 0LA 0LB": (0, 0, 7),
+    "1RB 1LA 1LB 0RA": (0, 0, 6),
     "1RB 0LA 1LB 1RA": (0, 0, 5),
-    "1RB 1RB 1LA 0LB": (2, 3, 4),
 
     # 3/2
     "1RB 1LB 0RC 0LA 1LC 0LA": ( 9, 101, 24),
@@ -176,29 +185,14 @@ RECURRENCE_FAST = {
     "1RB 1LB 1LA 1RC 0RB 0LC": ( 0,  22,  4),
     "1RB 1LA 0RC 0RA 1LC 0LA": ( 4,  17, 36),
     "1RB 0RB 1LC 1RC 0LA 1LA": ( 3,  16, 15),
+    "1RB ... 1LC 0RC 1RA 0LC": ( 4,  16,  5),
     "1RB 1LB 0RC 0RB 1LC 0LA": ( 3,   4, 38),
     "1RB 0LA 0RC 1LA 1LC 0RB": ( 0,   0, 92),
     "1RB 0LA 0RC 0RC 1LC 1LA": ( 0,   0, 48),
     "1RB 1LB 0RC 1LA 1LA 0RA": ( 0,   0, 21),
 
     # 2/3
-    "1RB 0LA 0RH 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 0LH 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 1RH 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 1LH 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 0RA 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 0RB 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 0LA 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 0LB 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 1RA 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 1RB 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 1LA 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 1LB 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 2RA 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 2RB 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 2LA 1LB 2LA 0RB": (15, 165, 54),
-    "1RB 0LA 2LB 1LB 2LA 0RB": (15, 165, 54),
-
+    "1RB 0LA ... 1LB 2LA 0RB": (15, 165, 54),
     "1RB 1LB 2LA 1LA 2RB 0RA": (12, 101, 26),
     "1RB 2RB 1LB 1LA 2RB 0LA": (13,  97, 14),
     "1RB 2LA 0RB 1LA 1RB 1RA": (13,  94, 20),
@@ -214,6 +208,7 @@ RECURRENCE_FAST = {
     "1RB 1LA 2LB 2LA 2RA 0LB": ( 6,  57, 30),
     "1RB 2LA 0RB 1LB 1RA 1RA": ( 6,  55, 10),
     "1RB 0RB 0LB 2LA 2RA 1LB": ( 7,  54, 40),
+    "1RB 2LA 0RB 2LA ... 1RA": ( 8,  35,  8),
     "1RB 2LA 1RB 1LB 1LA 2RA": ( 7,  24, 46),
     "1RB 1LA 2LB 1LA 2RA 0LB": ( 7,  20, 48),
     "1RB 2RB 2LA 1LB 1RA 0LA": ( 4,  14, 54),
@@ -275,6 +270,8 @@ BLANK_TAPE = {
     "1RB 1LA 0LA 0LB": 6,
     "1RB 0LA 1LB 1RA": 5,
     "1RB 1RB 1LA 0LB": 5,
+    "1RB ... 1LB 0RB": 4,
+    "1RB 0RA 1LA ...": 4,
 
     # 3/2
     "1RB 1LB 1LA 1LC 1RC 0LC": 34,
@@ -291,11 +288,15 @@ BLANK_TAPE = {
     "1RB 0LC 1LB 1LA 1RC 0LC": 20,
     "1RB 0LB 1LA 1LC 0RC 0RB": 20,
     "1RB 1RC 1LC 0LB 1RA 1LA": 16,
-    "1RB 1RH 0RC 1LB 1LA 0RB": 15,
+    "1RB ... 0RC 1LB 1LA 0RB": 15,
     "1RB 1LB 0LC 0RB 1RA 1LA": 14,
 
     # 2/3
     "1RB 2LA 0RB 1LA 0LB 1RA": 77,
+    "1RB 2RA 2RB 2LB 1LA 0RB": 29,
+    "1RB 2RB 0RA 2LA 1LA 1LB": 27,
+    "1RB 2RB 2RA 2LB 1LA 0RB": 24,
+    "1RB 1LA 2RB 2LA 2RA 0LB": 24,
     "1RB 0RB 1LA 2LA 2RA 0LB":  4,
 
     # 4/2
@@ -321,12 +322,12 @@ BLANK_TAPE = {
     "1RB 1RC 1LD 0RA 0RB 1RA 1LE 1LD 1RA 0RE":   725,
     "1RB 1LC 1RC 1LD 1RE 1RD 0RE 0LA 1LB 0LE":   362,
     "1RB 1RC 0RC 1LD 1LE 1RD 0LE 1RA 1LB 0LC":   277,
-    "1RB 1LC 1LD 0LB 1RA 1RC 0RE 0LD 0RA 0RH":   182,
+    "1RB 1LC 1LD 0LB 1RA 1RC 0RE 0LD 0RA ...":   182,
     "1RB 1LC 1LC 0LD 1LE 1LD 1RE 0RA 0RB 1LA":   134,
     "1RB 1LC 1LD 1RA 0LB 1LE 0LE 1LC 1RA 0RE":   127,
     "1RB 1LC 1RD 0RE 1LA 1LE 1RC 0LE 1RE 0LD":   123,
-    "1RB 0RH 0LB 1RC 0LC 1RD 1LE 0LD 0RA 0LE":    63,
-    "1RB 1RA 1RC 0RE 1LD 0RA 1LB 1LD 0RH 0RB":    28,
+    "1RB ... 0LB 1RC 0LC 1RD 1LE 0LD 0RA 0LE":    63,
+    "1RB 1RA 1RC 0RE 1LD 0RA 1LB 1LD ... 0RB":    28,
 
     # 2/4
     "1RB 2RA 3LA 2RB 2LB 1LA 0RB 0RA": 2501,
