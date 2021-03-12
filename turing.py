@@ -1,8 +1,6 @@
 import sys
 from collections import defaultdict
 
-HALT = 7
-
 def parse(program_string):
     instructions = iter(program_string.split())
 
@@ -122,7 +120,7 @@ class Machine:
 
             # Halt conditions ######################
 
-            if state == HALT:
+            if state == 7:  # ord('H') - 65
                 self._final = ('HALTED', step, None)
                 break
 
