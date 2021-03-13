@@ -1,6 +1,6 @@
 import json
 from itertools import product
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from turing import parse, run_bb
 
@@ -76,14 +76,14 @@ class Program:
 
 
 def tree_gen(steps):
-    progs = ['1RB ... ... ... ... ...']
+    progs = deque(['1RB ... ... ... ... ...'])
 
     categories = 'BLANKS', 'HALTED', 'QSIHLT', 'RECURR', 'XLIMIT'
 
     output = {cat: defaultdict(list) for cat in categories}
 
     while progs:
-        prog, *progs = progs
+        prog = progs.popleft()
 
         if '.' not in prog:
             if 'H' in prog and '1RH' not in prog:
