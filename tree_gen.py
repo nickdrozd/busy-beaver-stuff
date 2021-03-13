@@ -23,10 +23,31 @@ class Program:
             for instr in
             sorted(self.prog.items()))
 
+    @property
+    def used_states(self):
+        return {
+            action[2]
+            for action in self.prog.values() if
+            '.' not in action
+        }
+
+    @property
+    def available_states(self):
+        used = self.used_states.union('A')
+        diff = sorted(self.states.difference(used))
+
+        try:
+            return used.union(diff[0])
+        except IndexError:
+            return used
+
     def branch(self, instr):
         actions = (
             ''.join(prod) for prod in
-            product(self.colors, SHIFTS, self.states.union('H'))
+            product(
+                self.colors,
+                SHIFTS,
+                self.available_states.union('H'))
         )
 
         output = []
