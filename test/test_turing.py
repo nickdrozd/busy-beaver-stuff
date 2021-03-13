@@ -13,14 +13,25 @@ HALTING_FAST = {
 
     # 3/2 BB
     "1RB 1RH 1LB 0RC 1LC 1LA": (5, 21),  # shift
+    "1RB 1RH 0LC 0RC 1LC 1LA": (5, 20),
+    "1RB 1LA 0RC 1RH 1LC 0LA": (5, 20),
+    "1RB 1RA 0RC 1RH 1LC 0LA": (5, 19),
+    "1RB 0RA 0RC 1RH 1LC 0LA": (4, 19),
     "1RB 1LC 1RC 1RH 1LA 0LB": (6, 11),  # sigma
 
     # 2/3 BB
     "1RB 2LB 1RH 2LA 2RB 1LB": (9, 38),
+    "1RB 0LB 1RH 2LA 1RB 1RA": (8, 29),
+    "0LB 2RB 1RH 1RA 1LB 1LA": (6, 27),
+    "1RB 1LA 1LB 0LA 2RA 1RH": (6, 26),
+    "1RB 2LA 1RH 1LB 1LA 0RA": (6, 26),
 
     # 4/2 BB
     "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA": (13, 107),  # shift
+    "1RB 1LD 1LC 0RB 1RA 1LA 1RH 0LC": ( 9,  97),
     "1RB 0RC 1LA 1RA 1RH 1RD 1LD 0LB": (13,  96),  # sigma
+    "1RB 1LB 0LC 0RD 1RH 1LA 1RA 0LA": ( 6,  96),
+    "1RB 1LD 0LC 0RC 1LC 1LA 1RH 0LA": (11,  84),
 
     # 2/4 Runners-up
     "1RB 3LA 1LA 1RA 2LA 1RH 3RA 3RB": (90, 7195),
@@ -288,6 +299,7 @@ BLANK_TAPE = {
     "1RB 0LC 1LB 1LA 1RC 0LC": 20,
     "1RB 0LB 1LA 1LC 0RC 0RB": 20,
     "1RB 1RC 1LC 0LB 1RA 1LA": 16,
+    "1RB ... 1LC 0LC 1RC 0LB": 16,
     "1RB ... 0RC 1LB 1LA 0RB": 15,
     "1RB 1LB 0LC 0RB 1RA 1LA": 14,
 
