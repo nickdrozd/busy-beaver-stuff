@@ -59,18 +59,15 @@ class Program:
                 self.available_states)
         )
 
+        orig = self.prog[instr]
+
         output = []
 
         for action in actions:
-            prog = self.prog.copy()
-            prog[instr] = action
+            self.prog[instr] = action
+            output.append(str(self))
 
-            output.append(
-                ' '.join(
-                    x[1] for x in
-                    sorted(prog.items())
-                )
-            )
+        self.prog[instr] = orig
 
         return output
 
