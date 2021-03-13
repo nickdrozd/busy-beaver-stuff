@@ -24,6 +24,14 @@ class Program:
             sorted(self.prog.items()))
 
     @property
+    def last_slot(self):
+        return 1 == len(
+            tuple(
+                instr
+                for instr in self.prog.values()
+                if '.' in instr))
+
+    @property
     def used_states(self):
         return {
             action[2]
@@ -36,10 +44,10 @@ class Program:
         used = self.used_states.union('A')
         diff = sorted(self.states.difference(used))
 
-        try:
-            return used.union(diff[0])
-        except IndexError:
-            return used
+        if self.last_slot:
+            used.add('H')
+
+        return used.union(diff[0]) if diff else used
 
     def branch(self, instr):
         actions = (
@@ -47,7 +55,7 @@ class Program:
             product(
                 self.colors,
                 SHIFTS,
-                self.available_states.union('H'))
+                self.available_states)
         )
 
         output = []
