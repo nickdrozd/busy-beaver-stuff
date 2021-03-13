@@ -1,4 +1,4 @@
-from pprint import pprint
+import json
 from itertools import product
 from collections import defaultdict
 
@@ -79,7 +79,7 @@ def tree_gen(steps):
 
     categories = 'BLANKS', 'HALTED', 'QSIHLT', 'RECURR', 'XLIMIT'
 
-    output = {cat: defaultdict(set) for cat in categories}
+    output = {cat: defaultdict(list) for cat in categories}
 
     while progs:
         prog, *progs = progs
@@ -106,7 +106,7 @@ def tree_gen(steps):
             if step < 15:
                 continue
 
-            output[status][step].add(str(program))
+            output[status][step].append(str(program))
             continue
 
         progs.extend(
@@ -123,5 +123,12 @@ def tree_gen(steps):
 
 
 if __name__ == '__main__':
-    output = tree_gen(200)
-    pprint(output)
+    output = tree_gen(126)
+
+    print(
+        json.dumps(
+            output,
+            sort_keys = True,
+            indent = 4,
+        )
+    )
