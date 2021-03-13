@@ -50,8 +50,9 @@ class Program:
 
         return used.union(diff[0]) if diff else used
 
-    def branch(self, instr):
-        actions = (
+    @property
+    def actions(self):
+        return (
             ''.join(prod) for prod in
             product(
                 self.colors,
@@ -59,11 +60,12 @@ class Program:
                 self.available_states)
         )
 
+    def branch(self, instr):
         orig = self.prog[instr]
 
         output = []
 
-        for action in actions:
+        for action in self.actions:
             self.prog[instr] = action
             output.append(str(self))
 
