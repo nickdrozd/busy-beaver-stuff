@@ -25,6 +25,7 @@ class Program:
 
     @property
     def last_slot(self):
+        # pylint: disable = misplaced-comparison-constant
         return 1 == len(
             tuple(
                 instr
