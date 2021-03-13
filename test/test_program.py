@@ -38,22 +38,26 @@ class TestProgram(TestCase):
             (self.assertTrue if last else self.assertFalse)(last)
 
     def test_branch(self):
-        prog = Program("1RB ... 1LC ... ... ...")
+        prog = Program("1RB ... 1LC ... ... ... ... ...")
 
         self.assertEqual(
             set(prog.branch('D0')),
             {
-                '1RB ... 1LC ... ... ... 0LB',
-                '1RB ... 1LC ... ... ... 0LA',
-                '1RB ... 1LC ... ... ... 0LC',
-                '1RB ... 1LC ... ... ... 0RB',
-                '1RB ... 1LC ... ... ... 0RA',
-                '1RB ... 1LC ... ... ... 0RC',
-                '1RB ... 1LC ... ... ... 1LB',
-                '1RB ... 1LC ... ... ... 1LA',
-                '1RB ... 1LC ... ... ... 1LC',
-                '1RB ... 1LC ... ... ... 1RB',
-                '1RB ... 1LC ... ... ... 1RA',
-                '1RB ... 1LC ... ... ... 1RC',
+                '1RB ... 1LC ... ... ... 0LA ...',
+                '1RB ... 1LC ... ... ... 0LB ...',
+                '1RB ... 1LC ... ... ... 0LC ...',
+                '1RB ... 1LC ... ... ... 0LD ...',
+                '1RB ... 1LC ... ... ... 0RA ...',
+                '1RB ... 1LC ... ... ... 0RB ...',
+                '1RB ... 1LC ... ... ... 0RC ...',
+                '1RB ... 1LC ... ... ... 0RD ...',
+                '1RB ... 1LC ... ... ... 1LA ...',
+                '1RB ... 1LC ... ... ... 1LB ...',
+                '1RB ... 1LC ... ... ... 1LC ...',
+                '1RB ... 1LC ... ... ... 1LD ...',
+                '1RB ... 1LC ... ... ... 1RA ...',
+                '1RB ... 1LC ... ... ... 1RB ...',
+                '1RB ... 1LC ... ... ... 1RC ...',
+                '1RB ... 1LC ... ... ... 1RD ...',
             }
         )
