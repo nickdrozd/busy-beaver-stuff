@@ -87,18 +87,14 @@ def tree_gen(steps):
 
     complete, xlimit = [], []
 
-    output = {
-        'CMPLTE': complete,
-        'XLIMIT': xlimit,
-        'FINSHD': {
-            cat: defaultdict(list)
-            for cat in (
-                'BLANKS',
-                'HALTED',
-                'QSIHLT',
-                'RECURR',
-            )
-        },
+    terminated = {
+        cat: defaultdict(list)
+        for cat in (
+            'BLANKS',
+            'HALTED',
+            'QSIHLT',
+            'RECURR',
+        )
     }
 
     while progs:
@@ -130,7 +126,7 @@ def tree_gen(steps):
             if step < 15:
                 continue
 
-            output['FINSHD'][status][step].append(prog)
+            terminated[status][step].append(prog)
             continue
 
         target = complete if program.last_slot else progs
@@ -142,8 +138,12 @@ def tree_gen(steps):
         )
 
     return {
-        key: dict(val) if not isinstance(val, list) else val
-        for key, val in output.items()
+        'CMPLTE': complete,
+        'XLIMIT': xlimit,
+        'TRMNTD': {
+            key: dict(val)
+            for key, val in terminated.items()
+        },
     }
 
 
