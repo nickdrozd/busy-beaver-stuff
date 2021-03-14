@@ -88,13 +88,10 @@ def tree_gen(steps):
     xlimit = []
 
     terminated = {
-        cat: defaultdict(list)
-        for cat in (
-            'BLANKS',
-            'HALTED',
-            'QSIHLT',
-            'RECURR',
-        )
+        'BLANKS': defaultdict(list),
+        'HALTED': defaultdict(list),
+        'QSIHLT': defaultdict(lambda: defaultdict(list)),
+        'RECURR': defaultdict(lambda: defaultdict(list)),
     }
 
     while progs:
@@ -126,7 +123,13 @@ def tree_gen(steps):
             if step < 15:
                 continue
 
-            terminated[status][step].append(prog)
+            target = terminated[status][step]
+
+            if instr is not None:
+                target = target[instr]
+
+            target.append(prog)
+
             continue
 
         target = progs
