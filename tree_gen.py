@@ -72,6 +72,8 @@ class Program:
         output = []
 
         for action in self.actions:
+            if 'H' in action and '1RH' not in action:
+                continue
             self.prog[instr] = action
             output.append(str(self))
 
