@@ -14,7 +14,7 @@
   unsigned int PMIN = CENTER_SQUARE;            \
   unsigned int PMAX = CENTER_SQUARE + 1;        \
   unsigned int TAPE[TAPE_LEN] = { 0 };          \
-  unsigned int i, j, blank;
+  unsigned int i;
 
 #define DISPATCH_TABLE                          \
   static void* dispatch[] =                     \
@@ -48,7 +48,6 @@
 
 #define WIPE_AND_SCORE                          \
   for (i = PMIN; i < PMAX; i++) {               \
-    if (TAPE[i]) { MARKS++; }                   \
     TAPE[i] = 0;                                \
   }                                             \
   POS = CENTER_SQUARE;                          \
@@ -56,18 +55,13 @@
   PMAX = CENTER_SQUARE + 1;
 
 #define HALT_IF_BLANK                           \
-  blank = 1;                                    \
-  for (i = PMIN, j = PMAX;                      \
-       i < PMAX || j >= PMIN;                   \
-       i++, j--) {                              \
-    if (TAPE[i] || TAPE[j])                     \
-      { blank = 0; break; }                     \
-  }                                             \
-  if (blank) { goto H; };
+  if (!MARKS) { goto H; };
 
 #define SCAN(COLOR) TAPE[POS] == COLOR
 
 #define ACTION(c, s, t) {                       \
+    if (c && !TAPE[POS]) { MARKS++; }           \
+    else if (!c && TAPE[POS]) { MARKS--; }      \
     TAPE[POS] = c;                              \
     POS += s;                                   \
     if (POS < PMIN) { PMIN--; }                 \

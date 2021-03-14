@@ -104,6 +104,10 @@ class Machine:
         if collect_tapes:
             tapes = []
 
+        marks = None
+        if check_blanks:
+            marks = 0
+
         while True:
 
             # Output ###############################
@@ -130,7 +134,7 @@ class Machine:
                 break
 
             if check_blanks and step != 0:
-                if all(square == 0 for square in tape):
+                if marks == 0:
                     self._final = ('BLANKS', step, None)
                     break
 
@@ -219,6 +223,12 @@ class Machine:
                     chr(state + 65) + str(tape[pos]),
                 )
                 break
+
+            if check_blanks:
+                if color and not tape[pos]:
+                    marks += 1
+                elif not color and tape[pos]:
+                    marks -= 1
 
             tape[pos] = color
 
