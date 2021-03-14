@@ -85,7 +85,7 @@ class Program:
 def tree_gen(steps):
     progs = deque(['1RB ... ... ... ... ...'])
 
-    complete, xlimit = [], []
+    xlimit = []
 
     terminated = {
         cat: defaultdict(list)
@@ -129,7 +129,7 @@ def tree_gen(steps):
             terminated[status][step].append(prog)
             continue
 
-        target = complete if program.last_slot else progs
+        target = progs
 
         target.extend(
             program.branch(
@@ -138,7 +138,6 @@ def tree_gen(steps):
         )
 
     return {
-        'CMPLTE': complete,
         'XLIMIT': xlimit,
         'TRMNTD': {
             key: dict(val)
@@ -150,7 +149,6 @@ def tree_gen(steps):
 if __name__ == '__main__':
     output = tree_gen(126)
 
-    print(len(output['CMPLTE']))
     print(len(output['XLIMIT']))
 
     print(
