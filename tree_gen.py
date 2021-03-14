@@ -24,13 +24,19 @@ class Program:
             sorted(self.prog.items()))
 
     @property
+    def slots(self):
+        return tuple(
+            instr
+            for instr in self.prog.values()
+            if '.' in instr)
+
+    @property
     def last_slot(self):
-        # pylint: disable = misplaced-comparison-constant
-        return 1 == len(
-            tuple(
-                instr
-                for instr in self.prog.values()
-                if '.' in instr))
+        return len(self.slots) == 1
+
+    @property
+    def is_complete(self):
+        return len(self.slots) == 0
 
     @property
     def used_states(self):
@@ -80,6 +86,8 @@ def tree_gen(steps):
     categories = 'BLANKS', 'HALTED', 'QSIHLT', 'RECURR', 'XLIMIT'
 
     output = {cat: defaultdict(list) for cat in categories}
+    complete = []
+    output['CMPLTE'] = complete
 
     while progs:
         prog = progs.popleft()
@@ -109,16 +117,17 @@ def tree_gen(steps):
             output[status][step].append(str(program))
             continue
 
-        progs.extend(
+        target = complete if program.last_slot else progs
+
+        target.extend(
             program.branch(
                 instr
             )
         )
 
     return {
-        key: dict(val)
-        for key, val in
-        output.items()
+        key: dict(val) if not isinstance(val, list) else val
+        for key, val in output.items()
     }
 
 
