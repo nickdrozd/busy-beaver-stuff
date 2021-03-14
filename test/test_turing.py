@@ -117,6 +117,10 @@ QUASIHALTING = {
     "1RB 1LC 1LB 1LA 1RC 0LC": (0, 27, 1),
     "1RB 1LB 1LA 1RC 1LC 0RC": (0, 26, 1),
     "1RB 1RC 1LC 0LB 1RA 1LA": (5, 22, 2),
+    "1RB ... 1LB 0LC 1RC 1RB": (3, 5, 13),
+    "1RB ... 1LB 1RC 0LC 0RB": (2, 2, 14),
+    "1RB ... 1LB 1LC 1RC 0RB": (2, 2, 13),
+    "1RB ... 1LC 0RB 1LB 1RC": (2, 2, 10),
 
     # 2/3
     "1RB 2LB 1LA 2LB 2RA 0RA": ( 8, 59, 1),  # BBB shift
@@ -127,6 +131,8 @@ QUASIHALTING = {
     "1RB 2RA 2LB 0LB 1LA 1RA": ( 4, 23, 1),
     "1RB 1LA 2RA 2LA 2LB 2RB": ( 8, 17, 2),
     "1RB 2LB ... 1LB 2LA 1RB": ( 5, 17, 1),
+    "1RB 2LA 1RA 2LB 1LA 2RB": ( 7, 16, 3),
+    "1RB ... ... 2LB 1RB 1LB": ( 5,  1, 5),
 
     # 4/2
     "1RB 0LC 1LD 0LA 1RC 1RD 1LA 0LD": (0, 66349, 1),  # BBB shift
@@ -191,6 +197,7 @@ RECURRENCE_FAST = {
     "1RB 1LA 1LC 1RC 1LA 0RB": (10,  69, 16),
     "1RB 1LB 1RC 0LA 1LA 1RC": (10,  65, 16),
     "1RB 0LC 1LC 1RB 1RA 1LA": ( 9,  50, 16),
+    "1RB 1LC 1LA 1RB 1RB 0LA": ( 9,  50, 12),
     "1RB 0LC 1LC 1RB 1RB 1LA": ( 9,  50, 12),
     "1RB 0LB 1LC 0RC 1RA 1LA": ( 6,  38, 21),
     "1RB 1LB 1LA 1RC 0RB 0LC": ( 0,  22,  4),
@@ -198,7 +205,9 @@ RECURRENCE_FAST = {
     "1RB 0RB 1LC 1RC 0LA 1LA": ( 3,  16, 15),
     "1RB ... 1LC 0RC 1RA 0LC": ( 4,  16,  5),
     "1RB 1LB 0RC 0RB 1LC 0LA": ( 3,   4, 38),
+    "1RB 0RB 1LC 0RC 0LA 1RA": ( 2,   2, 30),
     "1RB 0LA 0RC 1LA 1LC 0RB": ( 0,   0, 92),
+    "1RB 0LA 1LB 0RC 1LC 1LA": ( 0,   0, 56),
     "1RB 0LA 0RC 0RC 1LC 1LA": ( 0,   0, 48),
     "1RB 1LB 0RC 1LA 1LA 0RA": ( 0,   0, 21),
 
@@ -224,9 +233,16 @@ RECURRENCE_FAST = {
     "1RB 1LA 2LB 1LA 2RA 0LB": ( 7,  20, 48),
     "1RB 2RB 2LA 1LB 1RA 0LA": ( 4,  14, 54),
     "1RB 0RB 1LA 2LA 2RA 0LB": ( 3,  10, 48),
+    "1RB 2LA 1RB 1LB 1LA 0RA": ( 4,   7, 46),
     "1RB 0RA 1LB 2LA 2RB 0LA": ( 3,   6, 48),
+    "1RB 0RA 2LB 2LA 0LA 1RA": ( 3,   5, 28),
+    "1RB 1RA 0RB 2LB 1LA 1LB": ( 3,   4, 23),
+    "1RB 2LA 0LB 1LA 2RA 2RB": ( 2,   3, 35),
     "1RB 2LA 0RB 0LB 1LA 0RA": ( 1,   2, 57),
+    "1RB 0RB 0LB 1LB 2RA 1LA": ( 1,   2, 30),
+    "1RB 2LB 2LA 1LA 2RB 0RA": ( 1,   1, 35),
     "1RB 2LB 0RA 1LA 2RB 2RA": ( 0,   0, 60),
+    "1RB 2LB 0RA 1LA 1RB 2RA": ( 0,   0, 48),
     "1RB 2LA 1LB 0LA 0RB 1RA": ( 0,   0, 47),
 
     # 4/2
