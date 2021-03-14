@@ -130,7 +130,7 @@ def tree_gen(steps):
             if step < 15:
                 continue
 
-            output['FINSHD'][status][step].append(str(program))
+            output['FINSHD'][status][step].append(prog)
             continue
 
         target = complete if program.last_slot else progs
