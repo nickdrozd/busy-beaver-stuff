@@ -60,7 +60,7 @@ class TestProgram(TestCase):
             self.assert_available_colors(avail_co)
             (self.assertTrue if last else self.assertFalse)(last)
 
-    def test_branch(self):
+    def test_branch_1(self):
         prog = Program("1RB ... 1LC ... ... ... ... ...")
 
         self.assertEqual(
@@ -82,5 +82,30 @@ class TestProgram(TestCase):
                 '1RB ... 1LC ... ... ... 1RB ...',
                 '1RB ... 1LC ... ... ... 1RC ...',
                 '1RB ... 1LC ... ... ... 1RD ...',
+            }
+        )
+
+    def test_branch_2(self):
+        prog = Program("1RB ... ... ... 1LB 1LA ... 3..")
+
+        self.assertEqual(
+            set(prog.branch('A1')),
+            {
+                '1RB 0LA ... ... 1LB 1LA ... 3..',
+                '1RB 0LB ... ... 1LB 1LA ... 3..',
+                '1RB 0RA ... ... 1LB 1LA ... 3..',
+                '1RB 0RB ... ... 1LB 1LA ... 3..',
+                '1RB 1LA ... ... 1LB 1LA ... 3..',
+                '1RB 1LB ... ... 1LB 1LA ... 3..',
+                '1RB 1RA ... ... 1LB 1LA ... 3..',
+                '1RB 1RB ... ... 1LB 1LA ... 3..',
+                '1RB 2LA ... ... 1LB 1LA ... 3..',
+                '1RB 2LB ... ... 1LB 1LA ... 3..',
+                '1RB 2RA ... ... 1LB 1LA ... 3..',
+                '1RB 2RB ... ... 1LB 1LA ... 3..',
+                '1RB 3LA ... ... 1LB 1LA ... 3..',
+                '1RB 3LB ... ... 1LB 1LA ... 3..',
+                '1RB 3RA ... ... 1LB 1LA ... 3..',
+                '1RB 3RB ... ... 1LB 1LA ... 3..',
             }
         )
