@@ -7,14 +7,25 @@ from tree_gen import Program
 PROGS = {
     "1RB ... 1LB 0RC 1LC 1LA": (
         {'A', 'B', 'C'},
+        {0, 1},
         {'A', 'B', 'C', 'H'},
+        {0, 1},
         True,
     ),
     "1RB ... 1RC ... ... ... ... ... ... ...": (
         {'B', 'C'},
+        {1},
         {'A', 'B', 'C', 'D'},
+        {0, 1},
         False,
     ),
+    "1RB ... ... ... 1LB 1LA ... 3..": (
+        {'A', 'B'},
+        {1},
+        {'A', 'B'},
+        {0, 1, 2},
+        False,
+    )
 }
 
 
@@ -29,12 +40,24 @@ class TestProgram(TestCase):
             states,
             self.prog.available_states)
 
-    def test_states(self):
-        for prog, (used, avail, last) in PROGS.items():
+    def assert_used_colors(self, colors):
+        self.assertEqual(
+            colors,
+            set(map(int, self.prog.used_colors)))
+
+    def assert_available_colors(self, colors):
+        self.assertEqual(
+            colors,
+            set(map(int, self.prog.available_colors)))
+
+    def test_used_available(self):
+        for prog, (used_st, used_co, avail_st, avail_co, last) in PROGS.items():
             self.prog = Program(prog)
 
-            self.assert_used_states(used)
-            self.assert_available_states(avail)
+            self.assert_used_states(used_st)
+            self.assert_used_colors(used_co)
+            self.assert_available_states(avail_st)
+            self.assert_available_colors(avail_co)
             (self.assertTrue if last else self.assertFalse)(last)
 
     def test_branch(self):

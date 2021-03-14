@@ -57,6 +57,21 @@ class Program:
         return used.union(diff[0]) if diff else used
 
     @property
+    def used_colors(self):
+        return {
+            action[0]
+            for action in self.prog.values() if
+            '.' not in action
+        }
+
+    @property
+    def available_colors(self):
+        used = self.used_colors.union('0')
+        diff = sorted(self.colors.difference(used))
+
+        return used.union(diff[0]) if diff else used
+
+    @property
     def actions(self):
         return (
             ''.join(prod) for prod in
