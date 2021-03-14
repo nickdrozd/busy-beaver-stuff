@@ -83,11 +83,21 @@ class Program:
 def tree_gen(steps):
     progs = deque(['1RB ... ... ... ... ...'])
 
-    categories = 'BLANKS', 'HALTED', 'QSIHLT', 'RECURR', 'XLIMIT'
+    complete, xlimit = [], []
 
-    output = {cat: defaultdict(list) for cat in categories}
-    complete = []
-    output['CMPLTE'] = complete
+    output = {
+        'CMPLTE': complete,
+        'XLIMIT': xlimit,
+        'FINSHD': {
+            cat: defaultdict(list)
+            for cat in (
+                'BLANKS',
+                'HALTED',
+                'QSIHLT',
+                'RECURR',
+            )
+        },
+    }
 
     while progs:
         prog = progs.popleft()
@@ -110,11 +120,15 @@ def tree_gen(steps):
 
         status, step, instr = machine.final
 
+        if status == 'XLIMIT':
+            xlimit.append(prog)
+            continue
+
         if status != 'UNDFND':
             if step < 15:
                 continue
 
-            output[status][step].append(str(program))
+            output['FINSHD'][status][step].append(str(program))
             continue
 
         target = complete if program.last_slot else progs
@@ -133,6 +147,9 @@ def tree_gen(steps):
 
 if __name__ == '__main__':
     output = tree_gen(126)
+
+    print(len(output['CMPLTE']))
+    print(len(output['XLIMIT']))
 
     print(
         json.dumps(
