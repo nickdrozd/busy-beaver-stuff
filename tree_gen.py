@@ -82,9 +82,9 @@ class Program:
         )
 
     def branch(self, instr):
-        orig = self.prog[instr]
-
         output = []
+
+        orig = self.prog[instr]
 
         for action in self.actions:
             if 'H' in action and '1RH' not in action:
