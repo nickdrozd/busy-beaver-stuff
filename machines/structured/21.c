@@ -28,9 +28,7 @@ int main(void)
   // B1
   ERASE;
   RIGHT;
-  goto C;
 
- C:
   // C0
   while (BLANK) {
       PRINT;
