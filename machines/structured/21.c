@@ -31,18 +31,16 @@ int main(void)
   goto C;
 
  C:
-  if (BLANK)
-    {
+  // C0
+  while (BLANK) {
       PRINT;
       LEFT;
-      goto C;
     }
-  else
-    {
-      PRINT;
-      LEFT;
-      goto A;
-    }
+
+  // C1
+  PRINT;
+  LEFT;
+  goto A;
 
  H:
   PRINT_TAPE;
