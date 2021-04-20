@@ -19,18 +19,16 @@ int main(void)
     }
 
  B:
-  if (BLANK)
-    {
-      PRINT;
-      LEFT;
-      goto B;
-    }
-  else
-    {
-      ERASE;
-      RIGHT;
-      goto C;
-    }
+  // B0
+  while (BLANK) {
+    PRINT;
+    LEFT;
+  }
+
+  // B1
+  ERASE;
+  RIGHT;
+  goto C;
 
  C:
   if (BLANK)
