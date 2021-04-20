@@ -11,28 +11,16 @@ int main(void)
         PRINT;
         RIGHT;
 
-        if (!BLANK)
-          {
-            // B1
-            ERASE;
-            LEFT;
-          }
-        else
-          {
-            // B0
-            PRINT;
-            LEFT;
+        if (!BLANK) {
+          // B1
+          ERASE;
+          LEFT;
+          continue;
+        }
 
-            // D1
-            while (!BLANK) {
-              ERASE;
-              LEFT;
-            }
-
-            // D0
-            PRINT;
-            LEFT;
-          }
+        // B0
+        PRINT;
+        LEFT;
       }
     else
       {
@@ -49,17 +37,17 @@ int main(void)
         // C1
         PRINT;
         RIGHT;
-
-        // D1
-        while (!BLANK) {
-          ERASE;
-          LEFT;
-        }
-
-        // D0
-        PRINT;
-        LEFT;
       }
+
+    // D1
+    while (!BLANK) {
+      ERASE;
+      LEFT;
+    }
+
+    // D0
+    PRINT;
+    LEFT;
   }
 
  H:
