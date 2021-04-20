@@ -4,65 +4,63 @@
 
 int main(void)
 {
- A:
-  if (BLANK)
-    {
-      // A0
-      PRINT;
-      RIGHT;
+  while (1) {
+    if (BLANK)
+      {
+        // A0
+        PRINT;
+        RIGHT;
 
-      if (!BLANK)
-        {
-          // B1
-          ERASE;
-          LEFT;
-          goto A;
-        }
-      else
-        {
-          // B0
-          PRINT;
-          LEFT;
-
-          // D1
-          while (!BLANK) {
+        if (!BLANK)
+          {
+            // B1
             ERASE;
             LEFT;
           }
+        else
+          {
+            // B0
+            PRINT;
+            LEFT;
 
-          // D0
-          PRINT;
-          LEFT;
-          goto A;
-        }
-    }
-  else
-    {
-      // A1
-      ERASE;
-      LEFT;
+            // D1
+            while (!BLANK) {
+              ERASE;
+              LEFT;
+            }
 
-      // C0
-      while (BLANK) {
-        PRINT;
-        RIGHT;
+            // D0
+            PRINT;
+            LEFT;
+          }
       }
-
-      // C1
-      PRINT;
-      RIGHT;
-
-      // D1
-      while (!BLANK) {
+    else
+      {
+        // A1
         ERASE;
         LEFT;
-      }
 
-      // D0
-      PRINT;
-      LEFT;
-      goto A;
-    }
+        // C0
+        while (BLANK) {
+          PRINT;
+          RIGHT;
+        }
+
+        // C1
+        PRINT;
+        RIGHT;
+
+        // D1
+        while (!BLANK) {
+          ERASE;
+          LEFT;
+        }
+
+        // D0
+        PRINT;
+        LEFT;
+      }
+  }
 
  H:
   PRINT_STEPS;
