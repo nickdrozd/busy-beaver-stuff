@@ -26,12 +26,10 @@ int main(void)
     }
 
     // C1
-    PRINT;
     LEFT;
   }
 
   // A1
-  PRINT;
   LEFT;
 
   PRINT_TAPE;
