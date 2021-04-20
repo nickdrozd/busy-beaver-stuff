@@ -11,17 +11,27 @@ int main(void)
       PRINT;
       RIGHT;
 
-      if (BLANK)
+      if (!BLANK)
+        {
+          // B1
+          ERASE;
+          LEFT;
+          goto A;
+        }
+      else
         {
           // B0
           PRINT;
           LEFT;
-          goto D;
-        }
-      else
-        {
-          // B1
-          ERASE;
+
+          // D1
+          while (!BLANK) {
+            ERASE;
+            LEFT;
+          }
+
+          // D0
+          PRINT;
           LEFT;
           goto A;
         }
@@ -41,20 +51,18 @@ int main(void)
       // C1
       PRINT;
       RIGHT;
-      goto D;
+
+      // D1
+      while (!BLANK) {
+        ERASE;
+        LEFT;
+      }
+
+      // D0
+      PRINT;
+      LEFT;
+      goto A;
     }
-
- D:
-  // D1
-  while (!BLANK) {
-    ERASE;
-    LEFT;
-  }
-
-  // D0
-  PRINT;
-  LEFT;
-  goto A;
 
  H:
   PRINT_STEPS;
