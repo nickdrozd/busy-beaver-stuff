@@ -7,12 +7,14 @@ int main(void)
  A:
   if (BLANK)
     {
+      // A0
       PRINT;
       RIGHT;
       goto B;
     }
   else
     {
+      // A1
       ERASE;
       LEFT;
       goto C;
@@ -21,44 +23,42 @@ int main(void)
  B:
   if (BLANK)
     {
+      // B0
       PRINT;
       LEFT;
       goto D;
     }
   else
     {
+      // B1
       ERASE;
       LEFT;
       goto A;
     }
 
  C:
-  if (BLANK)
-    {
-      PRINT;
-      RIGHT;
-      goto C;
-    }
-  else
-    {
-      PRINT;
-      RIGHT;
-      goto D;
-    }
+  // C0
+  while (BLANK) {
+    PRINT;
+    RIGHT;
+  }
+
+  // C1
+  PRINT;
+  RIGHT;
+  goto D;
 
  D:
-  if (BLANK)
-    {
-      PRINT;
-      LEFT;
-      goto A;
-    }
-  else
-    {
-      ERASE;
-      LEFT;
-      goto D;
-    }
+  // D1
+  while (!BLANK) {
+    ERASE;
+    LEFT;
+  }
+
+  // D0
+  PRINT;
+  LEFT;
+  goto A;
 
  H:
   PRINT_STEPS;
