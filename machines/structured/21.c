@@ -5,17 +5,19 @@
 int main(void)
 {
  A:
-  if (BLANK)
+  if (!BLANK)
     {
-      PRINT;
-      RIGHT;
-      goto B;
-    }
-  else
-    {
+      // A1
       PRINT;
       LEFT;
       goto H;
+    }
+  else
+    {
+      // A0
+      PRINT;
+      RIGHT;
+      goto B;
     }
 
  B:
