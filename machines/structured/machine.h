@@ -22,10 +22,16 @@ short STORE;
 long STEPS = 0;
 #define CHECK_LIMIT if (STEPS > XLIMIT) return 0;
 
-#define TCOB CHECK_LIMIT; //PRINT_TAPE;
+long MARKS = 0;
+#define HALT_IF_BLANK if (!MARKS && STEPS > 0) goto H;
 
 #define SCAN(COLOR) (TAPE[POS] == COLOR)
-#define WRITE(COLOR) TAPE[POS] = COLOR;
+#define WRITE(COLOR) do {                       \
+    HALT_IF_BLANK;                              \
+    if (COLOR && !TAPE[POS]) MARKS++;           \
+    if (!COLOR && TAPE[POS]) MARKS--;           \
+    TAPE[POS] = COLOR;                          \
+  } while (0)
 
 #define BLANK !TAPE[POS]
 #define PRINT WRITE(1)

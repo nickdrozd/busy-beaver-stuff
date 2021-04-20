@@ -32,6 +32,7 @@ int main(void)
   // A1
   LEFT;
 
+ H:
   PRINT_TAPE;
   PRINT_STEPS;
 }
