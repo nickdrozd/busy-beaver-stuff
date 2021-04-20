@@ -10,43 +10,39 @@ int main(void)
       // A0
       PRINT;
       RIGHT;
-      goto B;
+
+      if (BLANK)
+        {
+          // B0
+          PRINT;
+          LEFT;
+          goto D;
+        }
+      else
+        {
+          // B1
+          ERASE;
+          LEFT;
+          goto A;
+        }
     }
   else
     {
       // A1
       ERASE;
       LEFT;
-      goto C;
-    }
 
- B:
-  if (BLANK)
-    {
-      // B0
+      // C0
+      while (BLANK) {
+        PRINT;
+        RIGHT;
+      }
+
+      // C1
       PRINT;
-      LEFT;
+      RIGHT;
       goto D;
     }
-  else
-    {
-      // B1
-      ERASE;
-      LEFT;
-      goto A;
-    }
-
- C:
-  // C0
-  while (BLANK) {
-    PRINT;
-    RIGHT;
-  }
-
-  // C1
-  PRINT;
-  RIGHT;
-  goto D;
 
  D:
   // D1
