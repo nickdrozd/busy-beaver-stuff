@@ -17,30 +17,28 @@ int main(void)
       // A0
       PRINT;
       RIGHT;
-      goto B;
-    }
 
- B:
-  // B0
-  while (BLANK) {
-    PRINT;
-    LEFT;
-  }
+      // B0
+      while (BLANK) {
+        PRINT;
+        LEFT;
+      }
 
-  // B1
-  ERASE;
-  RIGHT;
+      // B1
+      ERASE;
+      RIGHT;
 
-  // C0
-  while (BLANK) {
+      // C0
+      while (BLANK) {
+        PRINT;
+        LEFT;
+      }
+
+      // C1
       PRINT;
       LEFT;
+      goto A;
     }
-
-  // C1
-  PRINT;
-  LEFT;
-  goto A;
 
  H:
   PRINT_TAPE;
