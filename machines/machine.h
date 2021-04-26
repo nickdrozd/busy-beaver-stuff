@@ -74,8 +74,8 @@
 
 #define ACTION(c, s, t) {                       \
     DO_COLOR(c);                                \
-    DO_SHIFT(s);                                \
     HALT_IF_BLANK;                              \
+    DO_SHIFT(s);                                \
     DO_TRANS(t);                                \
   }
 
