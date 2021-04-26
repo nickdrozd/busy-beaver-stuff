@@ -59,15 +59,24 @@
 
 #define SCAN(COLOR) TAPE[POS] == COLOR
 
+#define DO_COLOR(c)                             \
+  if (c && !TAPE[POS]) { MARKS++; }             \
+  else if (!c && TAPE[POS]) { MARKS--; }        \
+  TAPE[POS] = c;
+
+#define DO_SHIFT(s)                             \
+  POS += s;                                     \
+  if (POS < PMIN) { PMIN--; }                   \
+  else if (POS >= PMAX) { PMAX++; }
+
+#define DO_TRANS(t)                             \
+  goto *dispatch[t];
+
 #define ACTION(c, s, t) {                       \
-    if (c && !TAPE[POS]) { MARKS++; }           \
-    else if (!c && TAPE[POS]) { MARKS--; }      \
-    TAPE[POS] = c;                              \
-    POS += s;                                   \
-    if (POS < PMIN) { PMIN--; }                 \
-    else if (POS >= PMAX) { PMAX++; }           \
+    DO_COLOR(c);                                \
+    DO_SHIFT(s);                                \
     HALT_IF_BLANK;                              \
-    goto *dispatch[t];                          \
+    DO_TRANS(t);                                \
   }
 
 #define INSTRUCTION(c0, s0, t0, c1, s1, t1)     \
