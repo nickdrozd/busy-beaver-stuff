@@ -51,9 +51,6 @@ class Program:
         used = self.used_states.union('A')
         diff = sorted(self.states.difference(used))
 
-        if self.last_slot:
-            used.add('H')
-
         return used.union(diff[0]) if diff else used
 
     @property
@@ -87,8 +84,6 @@ class Program:
         orig = self.prog[instr]
 
         for action in self.actions:
-            if 'H' in action and '1RH' not in action:
-                continue
             self.prog[instr] = action
             output.append(str(self))
 
@@ -97,18 +92,9 @@ class Program:
         return output
 
 
-def tree_gen(steps):
-    progs = deque(['1RB ... ... ... ... ...'])
-
+def tree_gen(steps, progs):
     while progs:
         prog = progs.popleft()
-
-        if '.' not in prog:
-            if 'H' in prog and '1RH' not in prog:
-                continue
-
-            if prog.count('H') > 1:
-                continue
 
         program = Program(prog)
 
@@ -136,4 +122,6 @@ def tree_gen(steps):
 
 
 if __name__ == '__main__':
-    tree_gen(126)
+    progs = deque(['1RB ... ... ... ... ...'])
+
+    tree_gen(126, progs)
