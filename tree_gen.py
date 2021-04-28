@@ -100,15 +100,6 @@ class Program:
 def tree_gen(steps):
     progs = deque(['1RB ... ... ... ... ...'])
 
-    xlimit = []
-
-    terminated = {
-        'BLANKS': defaultdict(list),
-        'HALTED': defaultdict(list),
-        'QSIHLT': defaultdict(lambda: defaultdict(list)),
-        'RECURR': defaultdict(lambda: defaultdict(list)),
-    }
-
     while progs:
         prog = progs.popleft()
 
@@ -131,48 +122,18 @@ def tree_gen(steps):
         status, step, instr = machine.final
 
         if status == 'XLIMIT':
-            xlimit.append(prog)
+            print(prog)
             continue
 
         if status != 'UNDFND':
-            if step < 15:
-                continue
-
-            target = terminated[status][step]
-
-            if instr is not None:
-                target = target[instr]
-
-            target.append(prog)
-
             continue
 
-        target = progs
-
-        target.extend(
+        progs.extend(
             program.branch(
                 instr
             )
         )
 
-    return {
-        'XLIMIT': xlimit,
-        'TRMNTD': {
-            key: dict(val)
-            for key, val in terminated.items()
-        },
-    }
-
 
 if __name__ == '__main__':
-    output = tree_gen(126)
-
-    print(len(output['XLIMIT']))
-
-    print(
-        json.dumps(
-            output,
-            sort_keys = True,
-            indent = 4,
-        )
-    )
+    tree_gen(126)
