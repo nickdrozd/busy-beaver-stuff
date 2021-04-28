@@ -93,8 +93,11 @@ class Program:
 
 
 def tree_gen(steps, progs):
-    while progs:
-        prog = progs.popleft()
+    while True:
+        try:
+            prog = progs.popleft()
+        except IndexError:
+            break
 
         program = Program(prog)
 
