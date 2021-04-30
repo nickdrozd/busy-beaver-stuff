@@ -1,7 +1,7 @@
 import json
 from itertools import product
 from collections import defaultdict
-from multiprocessing import Manager, Pool
+from multiprocessing import cpu_count, Manager, Process
 from queue import Empty
 
 from turing import parse, run_bb
@@ -127,5 +127,13 @@ if __name__ == '__main__':
     progs = Manager().Queue()
     progs.put('1RB ... ... ... ... ...')
 
-    with Pool() as pool:
-        pool.apply(tree_gen, (126, progs))
+    processes = [
+        Process(target=tree_gen, args=(126, progs))
+        for _ in range(cpu_count())
+    ]
+
+    for process in processes:
+        process.start()
+
+    for process in processes:
+        process.join()
