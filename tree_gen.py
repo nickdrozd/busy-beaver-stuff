@@ -1,6 +1,8 @@
 import json
 from itertools import product
-from collections import defaultdict, deque
+from collections import defaultdict
+from multiprocessing import Queue
+from queue import Empty
 
 from turing import parse, run_bb
 
@@ -95,8 +97,8 @@ class Program:
 def tree_gen(steps, progs):
     while True:
         try:
-            prog = progs.popleft()
-        except IndexError:
+            prog = progs.get(timeout=10)
+        except Empty:
             break
 
         program = Program(prog)
@@ -117,14 +119,12 @@ def tree_gen(steps, progs):
         if status != 'UNDFND':
             continue
 
-        progs.extend(
-            program.branch(
-                instr
-            )
-        )
+        for ext in program.branch(instr):
+            progs.put(ext)
 
 
 if __name__ == '__main__':
-    progs = deque(['1RB ... ... ... ... ...'])
+    progs = Queue()
+    progs.put('1RB ... ... ... ... ...')
 
     tree_gen(126, progs)
