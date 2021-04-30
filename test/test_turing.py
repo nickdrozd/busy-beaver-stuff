@@ -108,7 +108,7 @@ QUASIHALTING = {
     "1RB 0LB 1LA 0RC 1LC 1LA": (6, 55, 1),  # BBB shift
     "1RB 1RC 1LC 1RA 1RA 1LA": (6,  9, 2),  # BBB sigma
     "1RB 0LB 1RC 0RC 1LC 1LA": (6, 54, 1),
-    "1RB 0LC 1LB 0RC 1LC 1LA": (5, 52, 1),
+    "1RB 0LC 1LB 0RC 1LC 1LA": (5, 52, 1),  # BB extension
     "1RB 0LC 0LC 0RC 1LC 1LA": (5, 51, 1),
     "1RB 0LC 1LA 0RC 1RC 1RB": (5, 49, 1),
     "1RB 0LC 0RC 0RC 1LC 1LA": (5, 48, 1),
@@ -422,6 +422,26 @@ UNDEFINED_SLOW = {
     "1RB 1LC 1RC 1RB 1RD 0LE 1LA 1LD ... 0LA": (47176870, 'E0'),
 }
 
+BB4_EXTENSIONS = {
+    "1RB 1LB 1LA 0LC 0LB 1LD 1RD 0RA": ('RECURR', 24, 96),
+    "1RB 1LB 1LA 0LC 1RA 1LD 1RD 0RA": ('RECURR', 85, 23),
+    "1RB 1LB 1LA 0LC 1LB 1LD 1RD 0RA": ('RECURR', 89, 18),
+    "1RB 1LB 1LA 0LC 1RD 1LD 1RD 0RA": ('RECURR', 102, 7),
+    "1RB 1LB 1LA 0LC 0LC 1LD 1RD 0RA": ('QSIHLT', 106, 1),
+    "1RB 1LB 1LA 0LC 1LC 1LD 1RD 0RA": ('QSIHLT', 106, 1),
+    "1RB 1LB 1LA 0LC 1RH 1LD 1RD 0RA": ('HALTED', 107, None),
+    "1RB 1LB 1LA 0LC 1LD 1LD 1RD 0RA": ('RECURR', 305, 70),
+    "1RB 1LB 1LA 0LC 0RB 1LD 1RD 0RA": ('RECURR', 313, 74),
+    "1RB 1LB 1LA 0LC 1RB 1LD 1RD 0RA": ('RECURR', 341, 46),
+    "1RB 1LB 1LA 0LC 1RC 1LD 1RD 0RA": ('RECURR', 349, 50),
+    "1RB 1LB 1LA 0LC 1LA 1LD 1RD 0RA": ('RECURR', 379, 110),
+    "1RB 1LB 1LA 0LC 0RA 1LD 1RD 0RA": ('RECURR', 381, 118),
+    "1RB 1LB 1LA 0LC 0LD 1LD 1RD 0RA": ('RECURR', 397, 142),
+    "1RB 1LB 1LA 0LC 0RD 1LD 1RD 0RA": ('RECURR', 397, 142),
+    "1RB 1LB 1LA 0LC 0LA 1LD 1RD 0RA": ('RECURR', 403, 122),
+    "1RB 1LB 1LA 0LC 0RC 1LD 1RD 0RA": ('RECURR', 403, 144),
+}
+
 
 class TuringTest(TestCase):
     def assert_marks(self, marks):
@@ -508,6 +528,11 @@ class TuringTest(TestCase):
             self.assert_steps(steps)
             self.assert_final(('UNDFND', steps, instr))
 
+    def _test_extensions(self, prog_data):
+        for prog, final in prog_data.items():
+            self.run_bb(prog, check_rec=0)
+            self.assert_final(final)
+
 
 class Fast(TuringTest):
     def test_halting(self):
@@ -528,6 +553,9 @@ class Fast(TuringTest):
 
     def test_undefined(self):
         self._test_undefined(UNDEFINED_FAST)
+
+    def test_bb4_extensions(self):
+        self._test_extensions(BB4_EXTENSIONS)
 
 
 class Slow(TuringTest):
