@@ -1,7 +1,7 @@
 import json
 from itertools import product
 from collections import defaultdict
-from multiprocessing import Queue
+from multiprocessing import Manager, Pool
 from queue import Empty
 
 from turing import parse, run_bb
@@ -97,7 +97,7 @@ class Program:
 def tree_gen(steps, progs):
     while True:
         try:
-            prog = progs.get(timeout=10)
+            prog = progs.get(timeout=2)
         except Empty:
             break
 
@@ -124,7 +124,8 @@ def tree_gen(steps, progs):
 
 
 if __name__ == '__main__':
-    progs = Queue()
+    progs = Manager().Queue()
     progs.put('1RB ... ... ... ... ...')
 
-    tree_gen(126, progs)
+    with Pool() as pool:
+        pool.apply(tree_gen, (126, progs))
