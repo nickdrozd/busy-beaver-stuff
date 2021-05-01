@@ -112,11 +112,10 @@ def tree_gen(steps, progs):
 
         status, step, instr = machine.final
 
-        if status == 'XLIMIT':
-            print(prog)
-            continue
-
         if status != 'UNDFND':
+            if status == 'XLIMIT':
+                print(prog)
+
             continue
 
         for ext in program.branch(instr):
