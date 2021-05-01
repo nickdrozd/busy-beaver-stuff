@@ -97,7 +97,7 @@ class Program:
 def tree_gen(steps, progs):
     while True:
         try:
-            prog = progs.get(timeout=2)
+            prog = progs.get(timeout=.5)
         except Empty:
             break
 
