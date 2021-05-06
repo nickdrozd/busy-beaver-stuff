@@ -154,14 +154,14 @@ QUASIHALTING = {
     "1RB 2LB 3RA 2LA 3LB 3RA 0RB 1RB": (2747, 2501552, 1),
     "1RB 2RB 1LB 1LA 1LB 3RA 3LA 2RB": (3340, 2333909, 1),
     "1RB 2RB 1LA 0LB 2LB 3RB 0RB 1LA": ( 190,   32849, 1),
-    "1RB 2RB 3LA 2RA 1LB 1LA 1LB 3RB": (  63,   22465, 1),  # QH 22402
+    "1RB 2RB 3LA 2RA 1LB 1LA 1LB 3RB": (  62,   22464, 1),  # QH 22402
     "1RB 2LB 2RA 3LA 1LA 3RA 3LB 0LB": ( 142,   21485, 2),
     "1RB 2RA 3LA 0LB 1LB 1LA 0RB 1RB": (  99,   16634, 1),
-    "1RB 2LA 1RA 1LA 2LB 3LA 2RB 2RA": ( 107,   10459, 3),  # QH 10353
+    "1RB 2LA 1RA 1LA 2LB 3LA 2RB 2RA": ( 106,   10456, 3),  # QH 10353
     "1RB 2LA 1RA 1LA 0LB 3LA 2RB 3RA": (  77,    9698, 2),  # QH 9623
     "1RB 2LA 1RA 1LA 3LA 1LB 2RB 2RA": (  90,    7193, 2),  # QH 7106
     "1RB 2LA 1RA 1LA 3LA 1LB 2RB 2LA": (  84,    6443, 2),  # QH 6362
-    "1RB 2RB 1LA 1LA 2LB 2RA 3LB 1LA": (  63,    4068, 1),  # QH 4005
+    "1RB 2RB 1LA 1LA 2LB 2RA 3LB 1LA": (  62,    4067, 1),  # QH 4005
     "1RB 2LB 3RA 0LA 1LB 2RB 2LA 1LA": (  31,    2872, 1),
     "1RB 0LA 1RA 0LB 2LB 3LA 2RB 0RA": (  57,    2859, 3),
     "1RB 2RA 3LA 1LB 0LB 2LA 3RA 1RB": (  31,    2476, 1),
@@ -505,9 +505,8 @@ class TuringTest(TestCase):
                 self.assert_lin_recurrence(steps, period)
                 self.assert_lin_recurrence(steps + 1, period)
 
-                self.deny_lin_recurrence(steps, period + 1)
-
-                if period - 1 > 0:
+                if period > 1:
+                    self.deny_lin_recurrence(steps, period + 1)
                     self.deny_lin_recurrence(steps, period - 1)
 
                 if steps - 1 >= 0:
