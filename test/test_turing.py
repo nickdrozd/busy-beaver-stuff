@@ -274,9 +274,6 @@ RECURRENCE_FAST = {
     "1RB 0LC 1LD 1LC 1RD 0LA 0RA 1LB": ( 0,    0,  294),
     "1RB 1LA 1LB 0RC 1LC 1LD 0RA 0LD": ( 0,    0,  238),
     "1RB 0LA 1LB 0RC 1RD 1RC 1LA 1LD": ( 0,    0,  228),
-
-    # 2/4
-    "1RB 0LA 1RB 2LB 3LB 3RA 2LA 1LA": (159, 1405, 9),
 }
 
 RECURRENCE_SLOW = {
@@ -495,6 +492,36 @@ class TuringTest(TestCase):
                         period,
                         self.machine.tapes,
                     ))
+
+                self.assertTrue(
+                    verify_lin_recurrence(
+                        steps + 1,
+                        period,
+                        self.machine.tapes,
+                    ))
+
+                if period - 1 > 0:
+                    self.assertFalse(
+                        verify_lin_recurrence(
+                            steps,
+                            period - 1,
+                            self.machine.tapes,
+                        ))
+
+                self.assertFalse(
+                    verify_lin_recurrence(
+                        steps,
+                        period + 1,
+                        self.machine.tapes,
+                    ))
+
+                if steps - 1 >= 0:
+                    self.assertFalse(
+                        verify_lin_recurrence(
+                            steps - 1,
+                            period,
+                            self.machine.tapes,
+                        ))
 
             if not quick:
                 continue
