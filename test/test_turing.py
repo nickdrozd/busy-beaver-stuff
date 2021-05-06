@@ -456,6 +456,22 @@ class TuringTest(TestCase):
             self.machine.final,
             final)
 
+    def assert_lin_recurrence(self, steps, period):
+        self.assertTrue(
+            verify_lin_recurrence(
+                steps,
+                period,
+                self.machine.tapes
+            ))
+
+    def deny_lin_recurrence(self, steps, period):
+        self.assertFalse(
+            verify_lin_recurrence(
+                steps,
+                period,
+                self.machine.tapes
+            ))
+
     def run_bb(self, prog, print_prog=True, **opts):
         if print_prog:
             print(prog)
@@ -486,42 +502,16 @@ class TuringTest(TestCase):
                     print_prog=False,
                 )
 
-                self.assertTrue(
-                    verify_lin_recurrence(
-                        steps,
-                        period,
-                        self.machine.tapes,
-                    ))
+                self.assert_lin_recurrence(steps, period)
+                self.assert_lin_recurrence(steps + 1, period)
 
-                self.assertTrue(
-                    verify_lin_recurrence(
-                        steps + 1,
-                        period,
-                        self.machine.tapes,
-                    ))
+                self.deny_lin_recurrence(steps, period + 1)
 
                 if period - 1 > 0:
-                    self.assertFalse(
-                        verify_lin_recurrence(
-                            steps,
-                            period - 1,
-                            self.machine.tapes,
-                        ))
-
-                self.assertFalse(
-                    verify_lin_recurrence(
-                        steps,
-                        period + 1,
-                        self.machine.tapes,
-                    ))
+                    self.deny_lin_recurrence(steps, period - 1)
 
                 if steps - 1 >= 0:
-                    self.assertFalse(
-                        verify_lin_recurrence(
-                            steps - 1,
-                            period,
-                            self.machine.tapes,
-                        ))
+                    self.deny_lin_recurrence(steps - 1, period)
 
             if not quick:
                 continue
