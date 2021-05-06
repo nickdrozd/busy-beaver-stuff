@@ -1,6 +1,4 @@
-import json
 from itertools import product
-from collections import defaultdict
 from multiprocessing import cpu_count, Manager, Process
 from queue import Empty
 
@@ -110,7 +108,7 @@ def tree_gen(steps, progs):
             check_blanks = True,
         )
 
-        status, step, instr = machine.final
+        status, _step, instr = machine.final
 
         if status != 'UNDFND':
             if status == 'XLIMIT':
