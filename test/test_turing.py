@@ -505,6 +505,12 @@ class TuringTest(TestCase):
                 self.assert_lin_recurrence(steps, period)
                 self.assert_lin_recurrence(steps + 1, period)
 
+                for i in range(5):
+                    try:
+                        self.assert_lin_recurrence(steps, period * i)
+                    except IndexError:
+                        pass
+
                 if period > 1:
                     self.deny_lin_recurrence(steps, period + 1)
                     self.deny_lin_recurrence(steps, period - 1)
