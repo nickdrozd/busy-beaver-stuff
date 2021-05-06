@@ -552,7 +552,11 @@ class TuringTest(TestCase):
 
     def _test_extensions(self, prog_data):
         for prog, final in prog_data.items():
-            self.run_bb(prog, check_rec=0)
+            self.run_bb(
+                prog,
+                check_rec=0,
+                tape=[0] * 58,
+            )
             self.assert_final(final)
 
 

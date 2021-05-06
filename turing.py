@@ -97,11 +97,10 @@ class Machine:
             x_limit = sys.maxsize
 
         if check_rec is not None:
-            deviations = []
             snapshots = defaultdict(lambda: [])
 
         tapes = None
-        if collect_tapes:
+        if collect_tapes or check_rec is not None:
             tapes = ([], [])
 
         marks = None
@@ -138,10 +137,6 @@ class Machine:
                     self._final = ('BLANKS', step, None)
                     break
 
-            if check_rec is not None:
-                dev = pos - init
-                deviations.append(dev)
-
             if check_rec is not None and step >= check_rec:
                 action = state, tape[pos]
 
@@ -149,40 +144,8 @@ class Machine:
                     '''This is control flow, not exception handling.'''
 
                 try:
-                    for pstep, pinit, pdev, ptape, pbeeps in snapshots[action]:
-
-                        if dev < pdev:
-                            dmax = max(deviations[pstep:]) + 1
-
-                            prev = ptape[ : pinit + dmax              ]
-                            curr =  tape[ :  init + dmax + dev - pdev ]
-
-                            for i in range(len(prev)):
-                                try:
-                                    curr[i]
-                                except IndexError:
-                                    curr.insert(0, 0)
-
-                        elif pdev < dev:
-                            dmin = min(deviations[pstep:])
-
-                            prev = ptape[ pinit + dmin              : ]
-                            curr =  tape[  init + dmin + dev - pdev : ]
-
-                            for i in range(len(prev)):
-                                try:
-                                    curr[i]
-                                except IndexError:
-                                    curr.append(0)
-
-                        elif pdev == dev:
-                            dmax = max(deviations[pstep:]) + 1
-                            dmin = min(deviations[pstep:])
-
-                            prev = ptape[ pinit + dmin : pinit + dmax ]
-                            curr =  tape[  init + dmin :  init + dmax ]
-
-                        if prev == curr:
+                    for pstep, pbeeps in snapshots[action]:
+                        if verify_lin_recurrence(pstep, step - pstep, tapes):
                             raise BreakLoop(pstep, step, pbeeps)
 
                 except BreakLoop as breakloop:
@@ -201,9 +164,6 @@ class Machine:
 
                 snapshots[action].append((
                     step,
-                    init,
-                    dev,
-                    tape.copy(),
                     beeps.copy(),
                 ))
 
