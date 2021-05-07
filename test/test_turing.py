@@ -491,37 +491,36 @@ class TuringTest(TestCase):
         for prog, (marks, steps, period) in prog_data.items():
             print(prog)
 
-            if steps < 2 ** 19:
-                runtime = steps + (2 * period)
+            runtime = steps + (2 * period)
 
-                samples = {
-                    steps - 1             : None,
-                    steps                 : None,
-                    steps + 1             : None,
-                    steps     + period    : None,
-                    steps + 1 + period    : None,
-                    steps - 1 + period    : None,
-                    steps     + period * 2: None,
-                }
+            samples = {
+                steps - 1             : None,
+                steps                 : None,
+                steps + 1             : None,
+                steps     + period    : None,
+                steps + 1 + period    : None,
+                steps - 1 + period    : None,
+                steps     + period * 2: None,
+            }
 
-                self.run_bb(
-                    prog,
-                    tape=202,
-                    x_limit=runtime,
-                    samples=samples,
-                    print_prog=False,
-                )
+            self.run_bb(
+                prog,
+                tape=202,
+                x_limit=runtime,
+                samples=samples,
+                print_prog=False,
+            )
 
-                self.assert_lin_recurrence(steps, period)
-                self.assert_lin_recurrence(steps + 1, period)
-                self.assert_lin_recurrence(steps, 2 * period)
+            self.assert_lin_recurrence(steps, period)
+            self.assert_lin_recurrence(steps + 1, period)
+            self.assert_lin_recurrence(steps, 2 * period)
 
-                if period > 1:
-                    self.deny_lin_recurrence(steps, period + 1)
-                    self.deny_lin_recurrence(steps, period - 1)
+            if period > 1:
+                self.deny_lin_recurrence(steps, period + 1)
+                self.deny_lin_recurrence(steps, period - 1)
 
-                if steps >= 1:
-                    self.deny_lin_recurrence(steps - 1, period)
+            if steps >= 1:
+                self.deny_lin_recurrence(steps - 1, period)
 
             if not quick:
                 continue
