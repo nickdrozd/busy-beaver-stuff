@@ -248,15 +248,12 @@ def verify_lin_recurrence(steps, period, tapes):
     positions, tapes = tapes
 
     recurrence = steps + period
-    runtime    = steps + (2 * period)
 
-    period1 = tapes[      steps : recurrence ]
-    period2 = tapes[ recurrence : runtime    ]
+    st1, tape1 = tapes[steps]
+    st2, tape2 = tapes[recurrence]
 
     pos1 = positions[steps]
     pos2 = positions[recurrence]
-
-    (st1, tape1), (st2, tape2) = period1[0], period2[0]
 
     if st1 != st2:
         return False
