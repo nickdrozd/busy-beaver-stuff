@@ -296,50 +296,49 @@ def verify_lin_recurrence(steps, period, tapes):
     period1 = tapes[      steps : recurrence ]
     period2 = tapes[ recurrence : runtime    ]
 
-    (_, start1, _), (_, start2, _) = period1[0], period2[0]
+    (st1, pos1, tape1), (st2, pos2, tape2) = period1[0], period2[0]
+
+    if st1 != st2:
+        return False
 
     diff, offset = (
         (
-            start2 - start1,
+            pos2 - pos1,
             min(pos for _, pos, _ in period1),
         )
-        if start1 < start2 else
+        if pos1 < pos2 else
         (
-            start1 - start2,
+            pos1 - pos2,
             max(pos for _, pos, _ in period1),
         )
     )
 
-    for (st1, pos1, tape1), (st2, pos2, tape2) in zip(period1, period2):
-        if st1 != st2:
-            return False
+    if pos1 < pos2:
+        slice1 = tape1[        offset : ]
+        slice2 = tape2[ diff + offset : ]
 
-        if pos1 < pos2:
-            slice1 = tape1[        offset : ]
-            slice2 = tape2[ diff + offset : ]
+        for i in range(len(slice1)):
+            try:
+                slice2[i]
+            except IndexError:
+                slice2.append(0)
 
-            for i in range(len(slice1)):
-                try:
-                    slice2[i]
-                except IndexError:
-                    slice2.append(0)
+    elif pos1 > pos2:
+        slice1 = tape1[ : offset + 1        ]
+        slice2 = tape2[ : offset + 1 - diff ]
 
-        elif pos1 > pos2:
-            slice1 = tape1[ : offset + 1        ]
-            slice2 = tape2[ : offset + 1 - diff ]
+        for i in range(len(slice1)):
+            try:
+                slice2[i]
+            except IndexError:
+                slice2.insert(0, 0)
 
-            for i in range(len(slice1)):
-                try:
-                    slice2[i]
-                except IndexError:
-                    slice2.insert(0, 0)
+    else:
+        assert pos1 == pos2
+        slice1, slice2 = tape1, tape2
 
-        else:
-            assert pos1 == pos2
-            slice1, slice2 = tape1, tape2
-
-        if slice1 != slice2:
-            return False
+    if slice1 != slice2:
+        return False
 
     return True
 
