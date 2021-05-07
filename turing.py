@@ -151,26 +151,15 @@ class Machine:
             if check_rec is not None and step >= check_rec:
                 action = state, tape[pos]
 
-                class BreakLoop(Exception):
-                    '''This is control flow, not exception handling.'''
+                rec = check_for_recurrence(
+                    step,
+                    tapes,
+                    snapshots[action],
+                    beeps,
+                )
 
-                try:
-                    for pstep, pbeeps in snapshots[action]:
-                        if verify_lin_recurrence(pstep, step - pstep, tapes):
-                            raise BreakLoop(pstep, step, pbeeps)
-
-                except BreakLoop as breakloop:
-                    # pylint: disable = unbalanced-tuple-unpacking
-                    pstep, step, pbeeps = breakloop.args
-
-                    final = (
-                        'RECURR'
-                        if all(beeps[state] > pbeeps[state]
-                               for state in pbeeps) else
-                        'QSIHLT'
-                    )
-
-                    self._final = final, pstep, step - pstep
+                if rec is not None:
+                    self._final = rec
                     break
 
                 snapshots[action].append((
@@ -259,6 +248,21 @@ def print_tape(tape, pos, init):
     print(with_pos)
 
 ########################################
+
+def check_for_recurrence(step, tapes, snapshots, beeps):
+    for pstep, pbeeps in snapshots:
+        if verify_lin_recurrence(pstep, step - pstep, tapes):
+            final = (
+                'RECURR'
+                if all(beeps[state] > pbeeps[state]
+                       for state in pbeeps) else
+                'QSIHLT'
+            )
+
+            return final, pstep, step - pstep
+
+    return None
+
 
 def verify_lin_recurrence(steps, period, tapes):
     positions, tapes = tapes
