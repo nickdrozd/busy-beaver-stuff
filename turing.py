@@ -306,6 +306,8 @@ def run_bb(
 ):
     if tape is None:
         tape = [0] * 50
+    elif isinstance(tape, int):
+        tape = [0] * tape
 
     machine = Machine(prog)
     machine.run_to_halt(
@@ -330,6 +332,7 @@ STEPS = 100
 BLANK = 0
 PRINT = 1
 STDIN = 0
+TAPE  = 50
 
 if __name__ == '__main__':
     source = sys.stdin if STDIN else CANDIDATES
@@ -337,6 +340,7 @@ if __name__ == '__main__':
     for i, program in enumerate(source):
         machine = run_bb(
             program,
+            tape = TAPE,
             x_limit = STEPS,
             watch_tape = PRINT,
             check_rec = RCRNC,

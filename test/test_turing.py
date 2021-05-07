@@ -496,7 +496,7 @@ class TuringTest(TestCase):
 
                 self.run_bb(
                     prog,
-                    tape=[0] * 202,
+                    tape=202,
                     x_limit=runtime,
                     collect_tapes=True,
                     print_prog=False,
@@ -523,7 +523,7 @@ class TuringTest(TestCase):
 
             self.run_bb(
                 prog,
-                tape=[0] * 183,
+                tape=183,
                 check_rec=(
                     0
                     if steps < 256 else
@@ -555,7 +555,7 @@ class TuringTest(TestCase):
             self.run_bb(
                 prog,
                 check_rec=0,
-                tape=[0] * 58,
+                tape=58,
             )
             self.assert_final(final)
 
