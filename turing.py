@@ -331,10 +331,7 @@ def verify_lin_recurrence(steps, period, tapes):
         assert pos1 == pos2
         slice1, slice2 = tape1, tape2
 
-    if slice1 != slice2:
-        return False
-
-    return True
+    return slice1 == slice2
 
 ########################################
 
