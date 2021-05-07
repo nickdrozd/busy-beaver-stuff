@@ -79,7 +79,7 @@ class Machine:
             watch_tape=False,
             check_rec=None,
             check_blanks=False,
-            collect_tapes=False,
+            samples=None,
     ):
         pos = len(tape) // 2
         init = pos
@@ -97,8 +97,12 @@ class Machine:
             snapshots = defaultdict(lambda: [])
 
         tapes = None
-        if collect_tapes or check_rec is not None:
-            tapes = ([], [])
+
+        if samples is not None or check_rec is not None:
+            tapes = (
+                [],
+                samples if samples is not None else []
+            )
 
         marks = 0
 
@@ -112,10 +116,22 @@ class Machine:
 
             if tapes is not None:
                 tapes[0].append(pos)
-                tapes[1].append((
-                    state,
-                    tape.copy(),
-                ))
+
+                if samples is not None:
+                    if step in samples:
+                        samples[step] = (
+                            state,
+                            tape.copy(),
+                        )
+                else:
+                    tapes[1].append(
+                        (
+                            state,
+                            tape.copy(),
+                        )
+                        if check_rec is not None and step >= check_rec else
+                        None
+                    )
 
             # Halt conditions ######################
 
@@ -299,7 +315,7 @@ def run_bb(
         watch_tape=False,
         check_rec=None,
         check_blanks=False,
-        collect_tapes=False,
+        samples=None,
 ):
     if tape is None:
         tape = [0] * 50
@@ -313,7 +329,7 @@ def run_bb(
         watch_tape,
         check_rec,
         check_blanks,
-        collect_tapes,
+        samples,
     )
 
     return machine

@@ -151,8 +151,8 @@ QUASIHALTING = {
     "1RB 1LC 1RD 1RA 1LB 0LA 1RE 0RC 1RC 0LE": (  2,   3247, 3),
 
     # 2/4
-    # "1RB 2LB 3RA 2LA 3LB 3RA 0RB 1RB": (2747, 2501552, 1),
-    # "1RB 2RB 1LB 1LA 1LB 3RA 3LA 2RB": (3340, 2333909, 1),
+    "1RB 2LB 3RA 2LA 3LB 3RA 0RB 1RB": (2747, 2501552, 1),
+    "1RB 2RB 1LB 1LA 1LB 3RA 3LA 2RB": (3340, 2333909, 1),
     "1RB 2RB 1LA 0LB 2LB 3RB 0RB 1LA": ( 190,   32849, 1),
     "1RB 2RB 3LA 2RA 1LB 1LA 1LB 3RB": (  62,   22464, 1),  # QH 22402
     "1RB 2LB 2RA 3LA 1LA 3RA 3LB 0LB": ( 142,   21485, 2),
@@ -494,11 +494,21 @@ class TuringTest(TestCase):
             if steps < 2 ** 19:
                 runtime = steps + (2 * period)
 
+                samples = {
+                    steps - 1             : None,
+                    steps                 : None,
+                    steps + 1             : None,
+                    steps     + period    : None,
+                    steps + 1 + period    : None,
+                    steps - 1 + period    : None,
+                    steps     + period * 2: None,
+                }
+
                 self.run_bb(
                     prog,
                     tape=202,
                     x_limit=runtime,
-                    collect_tapes=True,
+                    samples=samples,
                     print_prog=False,
                 )
 
@@ -510,7 +520,7 @@ class TuringTest(TestCase):
                     self.deny_lin_recurrence(steps, period + 1)
                     self.deny_lin_recurrence(steps, period - 1)
 
-                if steps - 1 >= 0:
+                if steps >= 1:
                     self.deny_lin_recurrence(steps - 1, period)
 
             if not quick:
