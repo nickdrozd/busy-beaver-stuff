@@ -37,6 +37,7 @@ class Machine:
         self._pos = None
         self._state = None
         self._steps = None
+        self._marks = None
         self._beeps = None
         self._final = None
         self._tapes = None
@@ -51,11 +52,7 @@ class Machine:
 
     @property
     def marks(self):
-        total = 0
-        for square in self._tape:
-            if square != 0:
-                total += 1
-        return total
+        return self._marks
 
     @property
     def beeps(self):
@@ -103,9 +100,7 @@ class Machine:
         if collect_tapes or check_rec is not None:
             tapes = ([], [])
 
-        marks = None
-        if check_blanks:
-            marks = 0
+        marks = 0
 
         while True:
 
@@ -184,11 +179,10 @@ class Machine:
                 )
                 break
 
-            if check_blanks:
-                if color and not tape[pos]:
-                    marks += 1
-                elif not color and tape[pos]:
-                    marks -= 1
+            if color and not tape[pos]:
+                marks += 1
+            elif not color and tape[pos]:
+                marks -= 1
 
             tape[pos] = color
 
@@ -214,6 +208,7 @@ class Machine:
         self._steps = step
 
         self._beeps = dict(beeps)
+        self._marks = marks
 
         self._tapes = tapes
 
