@@ -102,7 +102,7 @@ class Machine:
 
         tapes = None
         if collect_tapes:
-            tapes = []
+            tapes = ([], [])
 
         marks = None
         if check_blanks:
@@ -117,9 +117,9 @@ class Machine:
                 print_tape(tape, pos, init)
 
             if tapes is not None:
-                tapes.append((
+                tapes[0].append(pos)
+                tapes[1].append((
                     state,
-                    pos,
                     tape.copy(),
                 ))
 
@@ -290,20 +290,25 @@ def print_tape(tape, pos, init):
 ########################################
 
 def verify_lin_recurrence(steps, period, tapes):
+    positions, tapes = tapes
+
     recurrence = steps + period
     runtime    = steps + (2 * period)
 
     period1 = tapes[      steps : recurrence ]
     period2 = tapes[ recurrence : runtime    ]
 
-    (st1, pos1, tape1), (st2, pos2, tape2) = period1[0], period2[0]
+    pos1 = positions[steps]
+    pos2 = positions[recurrence]
+
+    (st1, tape1), (st2, tape2) = period1[0], period2[0]
 
     if st1 != st2:
         return False
 
     if pos1 < pos2:
         diff = pos2 - pos1
-        offset = min(pos for _, pos, _ in period1)
+        offset = min(positions[steps:])
 
         slice1 = tape1[        offset : ]
         slice2 = tape2[ diff + offset : ]
@@ -316,7 +321,7 @@ def verify_lin_recurrence(steps, period, tapes):
 
     elif pos1 > pos2:
         diff = pos1 - pos2
-        offset = max(pos for _, pos, _ in period1) + 1
+        offset = max(positions[steps:]) + 1
 
         slice1 = tape1[ : offset        ]
         slice2 = tape2[ : offset - diff ]
