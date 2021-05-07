@@ -301,19 +301,10 @@ def verify_lin_recurrence(steps, period, tapes):
     if st1 != st2:
         return False
 
-    diff, offset = (
-        (
-            pos2 - pos1,
-            min(pos for _, pos, _ in period1),
-        )
-        if pos1 < pos2 else
-        (
-            pos1 - pos2,
-            max(pos for _, pos, _ in period1),
-        )
-    )
-
     if pos1 < pos2:
+        diff = pos2 - pos1
+        offset = min(pos for _, pos, _ in period1)
+
         slice1 = tape1[        offset : ]
         slice2 = tape2[ diff + offset : ]
 
@@ -324,6 +315,9 @@ def verify_lin_recurrence(steps, period, tapes):
                 slice2.append(0)
 
     elif pos1 > pos2:
+        diff = pos1 - pos2
+        offset = max(pos for _, pos, _ in period1)
+
         slice1 = tape1[ : offset + 1        ]
         slice2 = tape2[ : offset + 1 - diff ]
 
