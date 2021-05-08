@@ -72,7 +72,7 @@ class Machine:
     def final(self):
         return self._final
 
-    def run_to_halt(
+    def run(
             self,
             tape,
             x_limit=None,
@@ -327,7 +327,7 @@ def run_bb(
         tape = [0] * tape
 
     machine = Machine(prog)
-    machine.run_to_halt(
+    machine.run(
         tape,
         x_limit,
         watch_tape,
