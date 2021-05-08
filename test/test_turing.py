@@ -151,8 +151,6 @@ QUASIHALTING = {
     "1RB 1LC 1RD 1RA 1LB 0LA 1RE 0RC 1RC 0LE": (  2,   3247, 3),
 
     # 2/4
-    "1RB 2LB 3RA 2LA 3LB 3RA 0RB 1RB": (2747, 2501552, 1),
-    "1RB 2RB 1LB 1LA 1LB 3RA 3LA 2RB": (3340, 2333909, 1),
     "1RB 2RB 1LA 0LB 2LB 3RB 0RB 1LA": ( 190,   32849, 1),
     "1RB 2RB 3LA 2RA 1LB 1LA 1LB 3RB": (  62,   22464, 1),  # QH 22402
     "1RB 2LB 2RA 3LA 1LA 3RA 3LB 0LB": ( 142,   21485, 2),
@@ -171,6 +169,12 @@ QUASIHALTING = {
     "1RB 0LA 0RB 2LB 3LB 3RA 1RB 1LA": (  35,    1458, 1),
 
     # "1RB 2LA 2RB 1LA 3LB 3RA 2RB 0RB" -- QH 14, no recurrence!
+}
+
+
+QUASIHALTING_SLOW = {
+    "1RB 2LB 3RA 2LA 3LB 3RA 0RB 1RB": (2747, 2501552, 1),
+    "1RB 2RB 1LB 1LA 1LB 3RA 3LA 2RB": (3340, 2333909, 1),
 }
 
 
@@ -599,6 +603,9 @@ class Slow(TuringTest):
 
     def test_recurrence(self):
         self._test_recurrence(RECURRENCE_SLOW, 'RECURR', False)
+
+    def test_quasihalting(self):
+        self._test_recurrence(QUASIHALTING_SLOW, 'QSIHLT', False)
 
     def test_undefined(self):
         self._test_undefined(UNDEFINED_SLOW)
