@@ -151,15 +151,27 @@ class Machine:
             if check_rec is not None and step >= check_rec:
                 action = state, tape[pos]
 
-                rec = check_for_recurrence(
+                result = check_for_recurrence(
                     step,
                     tapes,
                     snapshots[action],
                     beeps,
                 )
 
-                if rec is not None:
-                    self._final = rec
+                if result is not None:
+                    pbeeps, step, rec = result
+
+                    self._final = (
+                        (
+                            'RECURR'
+                            if all(beeps[state] > pbeeps[state]
+                               for state in pbeeps) else
+                            'QSIHLT'
+                        ),
+                        step,
+                        rec,
+                    )
+
                     break
 
                 snapshots[action].append((
@@ -252,14 +264,7 @@ def print_tape(tape, pos, init):
 def check_for_recurrence(step, tapes, snapshots, beeps):
     for pstep, pbeeps in snapshots:
         if verify_lin_recurrence(pstep, step - pstep, tapes):
-            final = (
-                'RECURR'
-                if all(beeps[state] > pbeeps[state]
-                       for state in pbeeps) else
-                'QSIHLT'
-            )
-
-            return final, pstep, step - pstep
+            return pbeeps, pstep, step - pstep
 
     return None
 
