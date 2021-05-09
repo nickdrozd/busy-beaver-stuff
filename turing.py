@@ -234,7 +234,6 @@ class Machine:
                     step,
                     tapes,
                     snapshots[action],
-                    beeps,
                 )
 
                 if result is not None:
@@ -314,7 +313,7 @@ def print_results(machine):
 
 ########################################
 
-def check_for_recurrence(step, tapes, snapshots, beeps):
+def check_for_recurrence(step, tapes, snapshots):
     for pstep, pbeeps in snapshots:
         if verify_lin_recurrence(pstep, step - pstep, tapes):
             return pbeeps, pstep, step - pstep
