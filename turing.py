@@ -33,6 +33,7 @@ class Tape:
         self._list = underlying_list
         self._init = len(self) // 2
         self._head = 0
+        self._pos  = self._head + self._init
 
     def __repr__(self):
         squares = [
@@ -63,16 +64,17 @@ class Tape:
         self._list[index + self._init] = value
 
     def read(self):
-        return self._list[self._head + self._init]
+        return self._list[self._pos]
 
     def print(self, color):
-        self._list[self._head + self._init] = color
+        self._list[self._pos] = color
 
     def right(self):
         self._head += 1
+        self._pos  += 1
 
         try:
-            self._list[self._head + self._init]
+            self._list[self._pos]
         except IndexError:
             self._list.append(0)
 
@@ -80,8 +82,10 @@ class Tape:
         if self._head + self._init == 0:
             self._list.insert(0, 0)
             self._init += 1
+            self._pos  += 1
 
         self._head -= 1
+        self._pos  -= 1
 
 
 class Machine:
