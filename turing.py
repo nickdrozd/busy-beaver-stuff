@@ -29,11 +29,18 @@ def tcompile(parsed):
 ########################################
 
 class Tape:
-    def __init__(self, underlying_list):
-        self._list = underlying_list
-        self._init = len(self) // 2
-        self._head = 0
+    def __init__(self, underlying_list=None, init=None, head=None):
+        self._list = underlying_list or [0]
+        self._init = init or len(self) // 2
+        self._head = head or 0
         self._pos  = self._head + self._init
+
+    def copy(self):
+        return Tape(
+            self._list.copy(),
+            self._init,
+            self._head,
+        )
 
     def __repr__(self):
         squares = [
