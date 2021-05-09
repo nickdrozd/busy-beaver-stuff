@@ -28,6 +28,66 @@ def tcompile(parsed):
 
 ########################################
 
+class Tape:
+    def __init__(self, underlying_list):
+        self._list = underlying_list
+        self._init = len(self) // 2
+        self._head = 0
+
+    def __repr__(self):
+        squares = [
+            '#' if square == 1 else
+            '!' if square == 2 else
+            '@' if square == 3 else
+            '_' # if square == 0
+            for square in self._list
+        ]
+
+        return ''.join([
+            (f'[{square}]' if i != self._init else f'[<{square}>]')
+            if i == self._pos else
+            (square if i != self._init else f'<{square}>')
+            for i, square in enumerate(squares)
+        ])
+
+    def __len__(self):
+        return len(self._list)
+
+    @property
+    def _pos(self):
+        return self._head + self._init
+
+    def __getitem__(self, index):
+        try:
+            return self._list[index + self._init]
+        except IndexError:
+            return 0
+
+    def __setitem__(self, index, value):
+        self._list[index + self._init] = value
+
+    def read(self):
+        return self._list[self._pos]
+
+    def print(self, color):
+        self._list[self._pos] = color
+
+    def right(self):
+        self._head += 1
+
+        try:
+            self._list[self._pos]
+        except IndexError:
+            self._list.append(0)
+
+    def left(self):
+        if self._pos == 0:
+            self._list.insert(0, 0)
+            self._init += 1
+
+        self._head -= 1
+
+
 class Machine:
     def __init__(self, prog):
         prog = prog.strip() if isinstance(prog, str) else str(prog)
@@ -81,9 +141,6 @@ class Machine:
             check_blanks=False,
             samples=None,
     ):
-        pos = len(tape) // 2
-        init = pos
-
         state = 0
 
         step = 0
@@ -112,7 +169,7 @@ class Machine:
 
             if watch_tape:
                 print(f'{step : 5d} {chr(state + 65)} ', end='')
-                print_tape(tape, pos, init)
+                print(tape)
 
             if tapes is not None:
                 tapes[0].append(pos)
@@ -187,7 +244,7 @@ class Machine:
             # Machine operation ####################
 
             try:
-                color, shift, state = prog[state][tape[pos]]
+                color, shift, state = prog[state][tape.read()]
             except TypeError:
                 self._final = (
                     'UNDFND',
@@ -196,31 +253,20 @@ class Machine:
                 )
                 break
 
-            if color and not tape[pos]:
+            if color and not tape.read():
                 marks += 1
-            elif not color and tape[pos]:
+            elif not color and tape.read():
                 marks -= 1
 
-            tape[pos] = color
+            tape.print(color)
 
             if shift:
-                pos += 1
-
-                try:
-                    tape[pos]
-                except IndexError:
-                    tape.append(0)
-
+                tape.right()
             else:
-                if pos == 0:
-                    tape.insert(0, 0)
-                    init += 1
-                else:
-                    pos -= 1
+                tape.left()
 
             # End of main loop #####################
 
-        self._pos = pos
         self._tape = tape
         self._steps = step
 
@@ -239,29 +285,6 @@ def print_results(machine):
             f'final: {machine.final}',
             '',
         ]))
-
-
-def print_tape(tape, pos=None, init=None):
-    squares = [
-        '#' if square == 1 else
-        '!' if square == 2 else
-        '@' if square == 3 else
-        '_' # if square == 0
-        for square in tape
-    ]
-
-    if pos is None or init is None:
-        print(''.join(squares))
-        return
-
-    with_pos = ''.join([
-        (f'[{square}]' if i != init else f'[<{square}>]')
-        if i == pos else
-        (square if i != init else f'<{square}>')
-        for i, square in enumerate(squares)
-    ])
-
-    print(with_pos)
 
 ########################################
 
@@ -337,7 +360,7 @@ def run_bb(
 
     machine = Machine(prog)
     machine.run(
-        tape,
+        Tape(tape),
         x_limit,
         watch_tape,
         check_rec,
