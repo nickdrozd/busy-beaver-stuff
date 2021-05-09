@@ -243,8 +243,10 @@ class Machine:
 
             # Machine operation ####################
 
+            scan = tape.read()
+
             try:
-                color, shift, state = prog[state][tape.read()]
+                color, shift, state = prog[state][scan]
             except TypeError:
                 self._final = (
                     'UNDFND',
@@ -253,9 +255,9 @@ class Machine:
                 )
                 break
 
-            if color and not tape.read():
+            if color and not scan:
                 marks += 1
-            elif not color and tape.read():
+            elif not color and scan:
                 marks -= 1
 
             tape.print(color)
