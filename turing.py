@@ -45,17 +45,13 @@ class Tape:
 
         return ''.join([
             (f'[{square}]' if i != self._init else f'[<{square}>]')
-            if i == self._pos else
+            if i == self._head + self._init else
             (square if i != self._init else f'<{square}>')
             for i, square in enumerate(squares)
         ])
 
     def __len__(self):
         return len(self._list)
-
-    @property
-    def _pos(self):
-        return self._head + self._init
 
     def __getitem__(self, index):
         try:
@@ -67,21 +63,21 @@ class Tape:
         self._list[index + self._init] = value
 
     def read(self):
-        return self._list[self._pos]
+        return self._list[self._head + self._init]
 
     def print(self, color):
-        self._list[self._pos] = color
+        self._list[self._head + self._init] = color
 
     def right(self):
         self._head += 1
 
         try:
-            self._list[self._pos]
+            self._list[self._head + self._init]
         except IndexError:
             self._list.append(0)
 
     def left(self):
-        if self._pos == 0:
+        if self._head + self._init == 0:
             self._list.insert(0, 0)
             self._init += 1
 
