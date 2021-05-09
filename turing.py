@@ -62,10 +62,25 @@ class Tape:
         return len(self._list)
 
     def __getitem__(self, index):
-        try:
-            return self._list[index + self._init]
-        except IndexError:
-            return 0
+        if isinstance(index, int):
+            try:
+                return self._list[index + self._init]
+            except IndexError:
+                return 0
+
+        start = (
+            None
+            if index.start is None else
+            index.start + self._init
+        )
+
+        stop = (
+            None
+            if index.stop is None else
+            index.stop + self._init
+        )
+
+        return self._list[ start : stop ]
 
     def __setitem__(self, index, value):
         self._list[index + self._init] = value
