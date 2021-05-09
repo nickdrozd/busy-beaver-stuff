@@ -194,7 +194,7 @@ class Machine:
                 print(tape)
 
             if tapes is not None:
-                tapes[0].append(pos)
+                tapes[0].append(tape._head)
 
                 if samples is not None:
                     if step in samples:
@@ -228,7 +228,7 @@ class Machine:
                     break
 
             if check_rec is not None and step >= check_rec:
-                action = state, tape[pos]
+                action = state, tape.read()
 
                 result = check_for_recurrence(
                     step,
@@ -273,7 +273,7 @@ class Machine:
                 self._final = (
                     'UNDFND',
                     step,
-                    chr(state + 65) + str(tape[pos]),
+                    chr(state + 65) + str(scan),
                 )
                 break
 
