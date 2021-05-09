@@ -363,7 +363,12 @@ def verify_lin_recurrence(steps, period, tapes):
 
     else:
         assert pos1 == pos2
-        slice1, slice2 = tape1, tape2
+
+        left  = min(positions[steps:])
+        right = max(positions[steps:]) + 1
+
+        slice1 = tape1[ left : right ]
+        slice2 = tape2[ left : right ]
 
     return slice1 == slice2
 
