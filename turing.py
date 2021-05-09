@@ -241,7 +241,7 @@ def print_results(machine):
         ]))
 
 
-def print_tape(tape, pos, init):
+def print_tape(tape, pos=None, init=None):
     squares = [
         '#' if square == 1 else
         '!' if square == 2 else
@@ -249,6 +249,10 @@ def print_tape(tape, pos, init):
         '_' # if square == 0
         for square in tape
     ]
+
+    if pos is None or init is None:
+        print(''.join(squares))
+        return
 
     with_pos = ''.join([
         (f'[{square}]' if i != init else f'[<{square}>]')
