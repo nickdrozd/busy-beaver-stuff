@@ -255,10 +255,12 @@ class Machine:
                 )
                 break
 
-            if color and not scan:
-                marks += 1
-            elif not color and scan:
-                marks -= 1
+            if color:
+                if not scan:
+                    marks += 1
+            else:
+                if scan:
+                    marks -= 1
 
             tape.print(color)
 
