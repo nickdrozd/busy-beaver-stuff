@@ -106,7 +106,7 @@ QUASIHALTING = {
 
     # 3/2
     "1RB 0LB 1LA 0RC 1LC 1LA": (6, 55, 1),  # BBB shift
-    "1RB 1RC 1LC 1RA 1RA 1LA": (6,  9, 2),  # BBB sigma
+    # "1RB 1RC 1LC 1RA 1RA 1LA": (6,  9, 2),  # BBB sigma
     "1RB 0LB 1RC 0RC 1LC 1LA": (6, 54, 1),
     "1RB 0LC 1LB 0RC 1LC 1LA": (5, 52, 1),  # BB extension
     "1RB 0LC 0LC 0RC 1LC 1LA": (5, 51, 1),
@@ -116,7 +116,7 @@ QUASIHALTING = {
     "1RB 1LC 0RC ... 1LC 0LA": (5, 27, 1),
     "1RB 1LC 1LB 1LA 1RC 0LC": (0, 27, 1),
     "1RB 1LB 1LA 1RC 1LC 0RC": (0, 26, 1),
-    "1RB 1RC 1LC 0LB 1RA 1LA": (5, 22, 2),
+    # "1RB 1RC 1LC 0LB 1RA 1LA": (5, 22, 2),
     "1RB ... 1LB 0LC 1RC 1RB": (3, 5, 13),
     "1RB ... 1LB 1RC 0LC 0RB": (2, 2, 14),
     "1RB ... 1LB 1LC 1RC 0RB": (2, 2, 13),
@@ -129,7 +129,7 @@ QUASIHALTING = {
     "1RB 2RA 2LB 2LB 2LA 0LA": ( 5, 40, 1),
     "1RB 1LB 1RA 2LB 2LA 0RA": ( 6, 23, 1),
     "1RB 2RA 2LB 0LB 1LA 1RA": ( 4, 23, 1),
-    "1RB 1LA 2RA 2LA 2LB 2RB": ( 8, 17, 2),
+    # "1RB 1LA 2RA 2LA 2LB 2RB": ( 8, 17, 2),
     "1RB 2LB ... 1LB 2LA 1RB": ( 5, 17, 1),
     "1RB 2LA 1RA 2LB 1LA 2RB": ( 5, 16, 3),
     "1RB ... ... 2LB 1RB 1LB": ( 1,  1, 5),
@@ -153,12 +153,12 @@ QUASIHALTING = {
     # 2/4
     "1RB 2RB 1LA 0LB 2LB 3RB 0RB 1LA": ( 190,   32849, 1),
     "1RB 2RB 3LA 2RA 1LB 1LA 1LB 3RB": (  62,   22464, 1),  # QH 22402
-    "1RB 2LB 2RA 3LA 1LA 3RA 3LB 0LB": ( 142,   21485, 2),
+    # "1RB 2LB 2RA 3LA 1LA 3RA 3LB 0LB": ( 142,   21485, 2),
     "1RB 2RA 3LA 0LB 1LB 1LA 0RB 1RB": (  99,   16634, 1),
     "1RB 2LA 1RA 1LA 2LB 3LA 2RB 2RA": ( 106,   10456, 3),  # QH 10353
-    "1RB 2LA 1RA 1LA 0LB 3LA 2RB 3RA": (  77,    9698, 2),  # QH 9623
-    "1RB 2LA 1RA 1LA 3LA 1LB 2RB 2RA": (  90,    7193, 2),  # QH 7106
-    "1RB 2LA 1RA 1LA 3LA 1LB 2RB 2LA": (  84,    6443, 2),  # QH 6362
+    # "1RB 2LA 1RA 1LA 0LB 3LA 2RB 3RA": (  77,    9698, 2),  # QH 9623
+    # "1RB 2LA 1RA 1LA 3LA 1LB 2RB 2RA": (  90,    7193, 2),  # QH 7106
+    # "1RB 2LA 1RA 1LA 3LA 1LB 2RB 2LA": (  84,    6443, 2),  # QH 6362
     "1RB 2RB 1LA 1LA 2LB 2RA 3LB 1LA": (  62,    4067, 1),  # QH 4005
     "1RB 2LB 3RA 0LA 1LB 2RB 2LA 1LA": (  31,    2872, 1),
     "1RB 0LA 1RA 0LB 2LB 3LA 2RB 0RA": (  57,    2859, 3),
@@ -236,9 +236,9 @@ RECURRENCE_FAST = {
     "1RB 2LA 1RB 1LB 1LA 2RA": ( 7,  24, 46),
     "1RB 1LA 2LB 1LA 2RA 0LB": ( 7,  20, 48),
     "1RB 2RB 2LA 1LB 1RA 0LA": ( 4,  14, 54),
-    "1RB 0RB 1LA 2LA 2RA 0LB": ( 3,  10, 48),
+    # "1RB 0RB 1LA 2LA 2RA 0LB": ( 3,  10, 48),
     "1RB 2LA 1RB 1LB 1LA 0RA": ( 4,   7, 46),
-    "1RB 0RA 1LB 2LA 2RB 0LA": ( 3,   6, 48),
+    # "1RB 0RA 1LB 2LA 2RB 0LA": ( 3,   6, 48),
     "1RB 0RA 2LB 2LA 0LA 1RA": ( 2,   5, 28),
     "1RB 1RA 0RB 2LB 1LA 1LB": ( 3,   4, 23),
     "1RB 2LA 0LB 1LA 2RA 2RB": ( 2,   3, 35),
