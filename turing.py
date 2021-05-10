@@ -61,29 +61,39 @@ class Tape:
     def __len__(self):
         return len(self._list)
 
-    def __getitem__(self, index):
-        if isinstance(index, int):
+    def __getitem__(self, tape_index):
+        if isinstance(tape_index, int):
             try:
-                return self._list[index + self._init]
-            except IndexError:
+                return self._list[tape_index + self._init]
+            except Tape_IndexError:
                 return 0
 
-        start = (
-            None
-            if index.start is None else
-            index.start + self._init
-        )
+        if tape_index.stop is None:
+            right = None
+        else:
+            right = tape_index.stop + self._init
 
-        stop = (
-            None
-            if index.stop is None else
-            index.stop + self._init
-        )
+            for _ in range(right - len(self._list)):
+                self._list.append(0)
 
-        return self._list[ start : stop ]
+            right = tape_index.stop + self._init
 
-    def __setitem__(self, index, value):
-        self._list[index + self._init] = value
+        if tape_index.start is None:
+            left = None
+        else:
+            left = tape_index.start + self._init
+
+            for _ in range(0 - left):
+                self._list.insert(0, 0)
+                self._init += 1
+                self._pos  += 1
+
+            left = tape_index.start + self._init
+
+        return self._list[ left : right ]
+
+    def __setitem__(self, tape_index, value):
+        self._list[tape_index + self._init] = value
 
     def read(self):
         return self._list[self._pos]
