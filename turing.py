@@ -388,7 +388,7 @@ def run_bb(
         samples=None,
 ):
     if tape is None:
-        tape = [0] * 50
+        tape = [0] * 30
     elif isinstance(tape, int):
         tape = [0] * tape
 
