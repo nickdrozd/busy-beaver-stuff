@@ -465,7 +465,7 @@ class TuringTest(TestCase):
             verify_lin_recurrence(
                 steps,
                 period,
-                self.machine.tapes
+                self.machine.history
             ))
 
     def deny_lin_recurrence(self, steps, period):
@@ -473,7 +473,7 @@ class TuringTest(TestCase):
             verify_lin_recurrence(
                 steps,
                 period,
-                self.machine.tapes
+                self.machine.history
             ))
 
     def verify_lin_recurrence(self, prog, steps, period):

@@ -120,6 +120,14 @@ class Tape:
         self._pos  -= 1
 
 
+class OperatingHistory:
+    def __init__(self, tapes=None):
+        self.tapes = [] if tapes is None else tapes
+        self.beeps = []
+        self.states = []
+        self.positions = []
+
+
 class Machine:
     def __init__(self, prog):
         prog = prog.strip() if isinstance(prog, str) else str(prog)
@@ -157,8 +165,8 @@ class Machine:
             reverse=True)
 
     @property
-    def tapes(self):
-        return self._tapes
+    def history(self):
+        return self._history
 
     @property
     def final(self):
@@ -185,13 +193,10 @@ class Machine:
         if check_rec is not None:
             snapshots = defaultdict(lambda: [])
 
-        tapes = None
+        history = None
 
         if samples is not None or check_rec is not None:
-            tapes = (
-                [],
-                samples if samples is not None else []
-            )
+            history = OperatingHistory(tapes=samples)
 
         marks = 0
 
@@ -203,23 +208,18 @@ class Machine:
                 print(f'{step : 5d} {chr(state + 65)} ', end='')
                 print(tape)
 
-            if tapes is not None:
-                tapes[0].append(tape._head)
+            if history is not None:
+                history.positions.append(tape._head)
+                history.states.append(state)
 
                 if samples is not None:
-                    if step in samples:
-                        samples[step] = (
-                            state,
-                            tape.copy(),
-                        )
+                    if step in history.tapes:
+                        history.tapes[step] = tape.copy()
                 else:
-                    tapes[1].append(
-                        (
-                            state,
-                            tape.copy(),
-                        )
-                        if check_rec is not None and step >= check_rec else
+                    history.tapes.append(
                         None
+                        if check_rec is None or step < check_rec else
+                        tape.copy()
                     )
 
             # Halt conditions ######################
@@ -242,7 +242,7 @@ class Machine:
 
                 result = check_for_recurrence(
                     step,
-                    tapes,
+                    history,
                     snapshots[action],
                 )
 
@@ -308,7 +308,7 @@ class Machine:
         self._beeps = dict(beeps)
         self._marks = marks
 
-        self._tapes = tapes
+        self._history = history
 
 
 def print_results(machine):
@@ -323,21 +323,26 @@ def print_results(machine):
 
 ########################################
 
-def check_for_recurrence(step, tapes, snapshots):
+def check_for_recurrence(step, history, snapshots):
     for pstep, pbeeps in snapshots:
-        if verify_lin_recurrence(pstep, step - pstep, tapes):
+        if verify_lin_recurrence(pstep, step - pstep, history):
             return pbeeps, pstep, step - pstep
 
     return None
 
 
-def verify_lin_recurrence(steps, period, tapes):
-    positions, tapes = tapes
+def verify_lin_recurrence(steps, period, history):
+    tapes     = history.tapes
+    states    = history.states
+    positions = history.positions
 
     recurrence = steps + period
 
-    st1, tape1 = tapes[steps]
-    st2, tape2 = tapes[recurrence]
+    st1 = states[steps]
+    st2 = states[recurrence]
+
+    tape1 = tapes[steps]
+    tape2 = tapes[recurrence]
 
     pos1 = positions[steps]
     pos2 = positions[recurrence]
