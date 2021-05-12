@@ -280,7 +280,9 @@ class Machine:
 
             # Machine operation ####################
 
-            scan = tape.read()
+            # pylint: disable = protected-access
+
+            scan = tape._list[tape._pos]
 
             try:
                 color, shift, state = prog[state][scan]
@@ -299,12 +301,26 @@ class Machine:
                 if scan:
                     marks -= 1
 
-            tape.print(color)
+            tape._list[tape._pos] = color
 
             if shift:
-                tape.right()
+                tape._head += 1
+                tape._pos  += 1
+
+                try:
+                    tape._list[tape._pos]
+                except IndexError:
+                    tape._list.append(0)
             else:
-                tape.left()
+                if tape._head + tape._init == 0:
+                    tape._list.insert(0, 0)
+                    tape._init += 1
+                    tape._pos  += 1
+
+                tape._head -= 1
+                tape._pos  -= 1
+
+            # pylint: enable = protected-access
 
             # End of main loop #####################
 
