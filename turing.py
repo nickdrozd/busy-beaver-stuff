@@ -65,7 +65,7 @@ class Tape:
         if isinstance(tape_index, int):
             try:
                 return self._list[tape_index + self._init]
-            except Tape_IndexError:
+            except IndexError:
                 return 0
 
         if tape_index.stop is None:
@@ -155,7 +155,7 @@ class Machine:
         self._steps = None
         self._marks = None
         self._final = None
-        self._tapes = None
+        self._history = None
 
     @property
     def program(self):
