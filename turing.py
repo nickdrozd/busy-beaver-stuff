@@ -198,10 +198,11 @@ class Machine:
         if x_limit is None:
             x_limit = sys.maxsize
 
-        history = None
-
-        if samples is not None or check_rec is not None:
-            history = OperatingHistory(tapes=samples)
+        history = (
+            None
+            if samples is None and check_rec is None else
+            OperatingHistory(tapes=samples)
+        )
 
         marks = 0
 
@@ -212,6 +213,8 @@ class Machine:
             if watch_tape:
                 print(f'{step : 5d} {chr(state + 65)} ', end='')
                 print(tape)
+
+            # Bookkeeping ##########################
 
             if history is not None:
                 history.positions.append(tape._head)
