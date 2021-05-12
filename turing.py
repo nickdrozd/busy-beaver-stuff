@@ -32,14 +32,14 @@ class Tape:
     def __init__(self, underlying_list=None, init=None, head=None):
         self._list = underlying_list or [0]
         self._init = init or len(self) // 2
-        self._head = head or 0
-        self._pos  = self._head + self._init
+        self.head = head or 0
+        self._pos  = self.head + self._init
 
     def copy(self):
         return Tape(
             self._list.copy(),
             self._init,
-            self._head,
+            self.head,
         )
 
     def __repr__(self):
@@ -53,7 +53,7 @@ class Tape:
 
         return ''.join([
             (f'[{square}]' if i != self._init else f'[<{square}>]')
-            if i == self._head + self._init else
+            if i == self.head + self._init else
             (square if i != self._init else f'<{square}>')
             for i, square in enumerate(squares)
         ])
@@ -102,7 +102,7 @@ class Tape:
         self._list[self._pos] = color
 
     def right(self):
-        self._head += 1
+        self.head += 1
         self._pos  += 1
 
         try:
@@ -111,12 +111,12 @@ class Tape:
             self._list.append(0)
 
     def left(self):
-        if self._head + self._init == 0:
+        if self.head + self._init == 0:
             self._list.insert(0, 0)
             self._init += 1
             self._pos  += 1
 
-        self._head -= 1
+        self.head -= 1
         self._pos  -= 1
 
 
@@ -216,7 +216,7 @@ class Machine:
             # Bookkeeping ##########################
 
             if history is not None:
-                history.positions.append(tape._head)
+                history.positions.append(tape.head)
                 history.states.append(state)
 
                 if samples is not None:
@@ -304,7 +304,7 @@ class Machine:
             tape._list[tape._pos] = color
 
             if shift:
-                tape._head += 1
+                tape.head += 1
                 tape._pos  += 1
 
                 try:
@@ -312,12 +312,12 @@ class Machine:
                 except IndexError:
                     tape._list.append(0)
             else:
-                if tape._head + tape._init == 0:
+                if tape.head + tape._init == 0:
                     tape._list.insert(0, 0)
                     tape._init += 1
                     tape._pos  += 1
 
-                tape._head -= 1
+                tape.head -= 1
                 tape._pos  -= 1
 
             # pylint: enable = protected-access
