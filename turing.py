@@ -125,7 +125,23 @@ class OperatingHistory:
         self.tapes = [] if tapes is None else tapes
         self.beeps = []
         self.states = []
+        self.actions = defaultdict(lambda: [])
         self.positions = []
+
+    def calculate_beeps(self, through=None):
+        states = (
+            self.states
+            if through is None else
+            self.states[:through]
+        )
+
+        steps = len(states)
+        rev   = list(reversed(states))
+
+        return {
+            state: steps - 1 - rev.index(state)
+            for state in set(states)
+        }
 
 
 class Machine:
@@ -138,7 +154,6 @@ class Machine:
         self._state = None
         self._steps = None
         self._marks = None
-        self._beeps = None
         self._final = None
         self._tapes = None
 
@@ -156,13 +171,7 @@ class Machine:
 
     @property
     def beeps(self):
-        return sorted(
-            tuple(
-                (key, val)
-                for key, val in
-                self._beeps.items()),
-            key=lambda x: x[1],
-            reverse=True)
+        return self._history.calculate_beeps()
 
     @property
     def history(self):
@@ -184,14 +193,10 @@ class Machine:
         state = 0
 
         step = 0
-        beeps = defaultdict(lambda: 0)
         prog = self._comp
 
         if x_limit is None:
             x_limit = sys.maxsize
-
-        if check_rec is not None:
-            snapshots = defaultdict(lambda: [])
 
         history = None
 
@@ -242,18 +247,21 @@ class Machine:
 
                 result = check_for_recurrence(
                     step,
+                    action,
                     history,
-                    snapshots[action],
                 )
 
                 if result is not None:
-                    pbeeps, step, rec = result
+                    step, rec = result
+
+                    hp_beeps = history.calculate_beeps(step)
+                    hc_beeps = history.calculate_beeps()
 
                     self._final = (
                         (
                             'RECURR'
-                            if all(beeps[state] > pbeeps[state]
-                               for state in pbeeps) else
+                            if all(hc_beeps[state] > hp_beeps[state]
+                                   for state in hp_beeps) else
                             'QSIHLT'
                         ),
                         step,
@@ -262,15 +270,11 @@ class Machine:
 
                     break
 
-                snapshots[action].append((
-                    step,
-                    beeps.copy(),
-                ))
+                history.actions[action].append(step)
 
             # Bookkeeping ##########################
 
             step += 1
-            beeps[state] = step
 
             # Machine operation ####################
 
@@ -305,7 +309,6 @@ class Machine:
         self._tape = tape
         self._steps = step
 
-        self._beeps = dict(beeps)
         self._marks = marks
 
         self._history = history
@@ -323,10 +326,10 @@ def print_results(machine):
 
 ########################################
 
-def check_for_recurrence(step, history, snapshots):
-    for pstep, pbeeps in snapshots:
+def check_for_recurrence(step, action, history):
+    for pstep in history.actions[action]:
         if verify_lin_recurrence(pstep, step - pstep, history):
-            return pbeeps, pstep, step - pstep
+            return pstep, step - pstep
 
     return None
 
