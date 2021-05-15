@@ -278,17 +278,11 @@ RECURRENCE_FAST = {
     "1RB 0LC 1LD 1LC 1RD 0LA 0RA 1LB": ( 0,    0,  294),
     "1RB 1LA 1LB 0RC 1LC 1LD 0RA 0LD": ( 0,    0,  238),
     "1RB 0LA 1LB 0RC 1RD 1RC 1LA 1LD": ( 0,    0,  228),
-}
 
-RECURRENCE_SLOW = {
-    # verified by lin algorithm in three minutes
+    "1RB 0RC 1LB 1LD 0RA 0LD 1LA 1RC": (503, 158491, 17620),
+    "1RB 0RA 1RC 0RB 1LD 1LC 1RA 0LC": (102,   7170, 29117),
     "1RB 1RA 0RC 0LB 0RD 0RA 1LD 0LA": (203,  28812,  5588),
 
-    # verified by lin algorithm in three hours
-    "1RB 0RA 1RC 0RB 1LD 1LC 1RA 0LC": (102,   7170, 29117),
-
-    # unverified by lin algorithm
-    "1RB 0RC 1LB 1LD 0RA 0LD 1LA 1RC": (503, 158491, 17620),
 }
 
 BLANK_TAPE = {
@@ -530,7 +524,7 @@ class TuringTest(TestCase):
                 period,
             )
 
-            if not quick:
+            if not quick or period > 2000:
                 continue
 
             self.run_bb(
@@ -597,9 +591,6 @@ class Fast(TuringTest):
 class Slow(TuringTest):
     def test_halting(self):
         self._test_halting(HALTING_SLOW)
-
-    def test_recurrence(self):
-        self._test_recurrence(RECURRENCE_SLOW, 'RECURR', False)
 
     def test_quasihalting(self):
         self._test_recurrence(QUASIHALTING_SLOW, 'QSIHLT', False)
