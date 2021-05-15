@@ -371,7 +371,6 @@ def verify_lin_recurrence(steps, period, history):
     tape1 = tapes[steps]
     tape2 = tapes[recurrence]
 
-    tape2.extend_to(tape1.span())
     tape1.extend_to(tape2.span())
 
     pos1 = positions[steps]
