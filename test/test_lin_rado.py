@@ -17,7 +17,7 @@ class TestLinRado(TestCase):
             len(self.progs),
             count)
 
-    def run_lin_rado(self, states, colors, halt, x_limit, tape_len, rejects=None):
+    def run_lin_rado(self, states, colors, halt, x_limit, rejects=None):
         print(f'{states} {colors} {halt}')
 
         self.progs = {
@@ -31,7 +31,6 @@ class TestLinRado(TestCase):
             if
             run_bb(
                 prog,
-                tape=[0] * tape_len,
                 x_limit=x_limit,
                 check_rec=0,
                 check_blanks=False,
@@ -42,7 +41,6 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             2, 2, 1,
             6,
-            1,
         )
 
         self.assert_progs_count(
@@ -52,7 +50,6 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             2, 2, 0,
             13,
-            5,
         )
 
         self.assert_progs_equal(
@@ -65,7 +62,6 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             3, 2, 1,
             29,
-            9,
             rejects=NOT_CONNECTED_32,
         )
 
@@ -84,7 +80,6 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             2, 3, 1,
             220,
-            29,
         )
 
         self.assert_progs_equal(
@@ -97,7 +92,6 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             3, 2, 0,
             126,
-            31,
             rejects=[AB_LOOP] + [
                 prog.replace('1RH', '...')
                 for prog in HOLDOUTS_32H
@@ -114,7 +108,6 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             2, 3, 0,
             220,
-            35,
             rejects=[
                 prog.replace('1RH', '...')
                 for prog in HOLDOUTS_23H
