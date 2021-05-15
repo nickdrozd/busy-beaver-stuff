@@ -29,10 +29,10 @@ def tcompile(parsed):
 ########################################
 
 class Tape:
-    def __init__(self, underlying_list=None, init=None, head=None):
-        self._list = underlying_list or [0]
-        self._init = init or len(self) // 2
-        self.head = head or 0
+    def __init__(self, underlying_list, init, head):
+        self._list = underlying_list
+        self._init = init
+        self.head = head
         self._pos  = self.head + self._init
 
     def copy(self):
@@ -423,13 +423,15 @@ def run_bb(
         samples=None,
 ):
     if tape is None:
-        tape = [0] * 30
+        tape = [0]
     elif isinstance(tape, int):
         tape = [0] * tape
 
+    init = len(tape) // 2
+
     machine = Machine(prog)
     machine.run(
-        Tape(tape),
+        Tape(tape, init = init, head = init),
         x_limit,
         watch_tape,
         check_rec,
