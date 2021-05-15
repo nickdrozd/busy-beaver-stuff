@@ -61,6 +61,12 @@ class Tape:
     def __len__(self):
         return len(self._list)
 
+    def span(self):
+        return 0 - self._init, len(self._list) - self._init
+
+    def extend_to(self, span):
+        self[ span[0] : span[1] ]
+
     def __getitem__(self, tape_index):
         if isinstance(tape_index, int):
             try:
@@ -364,6 +370,9 @@ def verify_lin_recurrence(steps, period, history):
 
     tape1 = tapes[steps]
     tape2 = tapes[recurrence]
+
+    tape2.extend_to(tape1.span())
+    tape1.extend_to(tape2.span())
 
     pos1 = positions[steps]
     pos2 = positions[recurrence]
