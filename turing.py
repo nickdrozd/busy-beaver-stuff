@@ -35,6 +35,9 @@ class Tape:
         self.head = head
         self._pos  = self.head + self._init
 
+        self.lspan =               0 - self._init
+        self.rspan = len(self._list) - self._init
+
     def copy(self):
         return Tape(
             self._list.copy(),
@@ -61,8 +64,9 @@ class Tape:
     def __len__(self):
         return len(self._list)
 
+    @property
     def span(self):
-        return 0 - self._init, len(self._list) - self._init
+        return self.lspan, self.rspan
 
     def extend_to(self, span):
         self[ span[0] : span[1] ]
@@ -75,6 +79,7 @@ class Tape:
 
             for _ in range(right - len(self._list)):
                 self._list.append(0)
+                self.rspan += 1
 
             right = tape_index.stop + self._init
 
@@ -87,6 +92,7 @@ class Tape:
                 self._list.insert(0, 0)
                 self._init += 1
                 self._pos  += 1
+                self.lspan -= 1
 
             left = tape_index.start + self._init
 
@@ -109,12 +115,14 @@ class Tape:
             self._list[self._pos]
         except IndexError:
             self._list.append(0)
+            self.rspan += 1
 
     def left(self):
         if self.head + self._init == 0:
             self._list.insert(0, 0)
             self._init += 1
             self._pos  += 1
+            self.lspan -= 1
 
         self.head -= 1
         self._pos  -= 1
@@ -311,11 +319,13 @@ class Machine:
                     tape._list[tape._pos]
                 except IndexError:
                     tape._list.append(0)
+                    tape.rspan += 1
             else:
                 if tape.head + tape._init == 0:
                     tape._list.insert(0, 0)
                     tape._init += 1
                     tape._pos  += 1
+                    tape.lspan -= 1
 
                 tape.head -= 1
                 tape._pos  -= 1
@@ -365,7 +375,7 @@ def verify_lin_recurrence(steps, period, history):
     tape1 = tapes[steps]
     tape2 = tapes[recurrence]
 
-    tape1.extend_to(tape2.span())
+    tape1[ tape2.lspan : tape2.rspan ]
 
     pos1 = positions[steps]
     pos2 = positions[recurrence]
