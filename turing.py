@@ -75,24 +75,24 @@ class Tape:
         if tape_index.stop is None:
             right = None
         else:
-            right = tape_index.stop + self._init
+            right = tape_index.stop + self._init - len(self._list)
 
-            for _ in range(right - len(self._list)):
-                self._list.append(0)
-                self.rspan += 1
+            if right > 0:
+                self._list = self._list + [0] * right
+                self.rspan += right
 
             right = tape_index.stop + self._init
 
         if tape_index.start is None:
             left = None
         else:
-            left = tape_index.start + self._init
+            left = 0 - (tape_index.start + self._init)
 
-            for _ in range(0 - left):
-                self._list.insert(0, 0)
-                self._init += 1
-                self._pos  += 1
-                self.lspan -= 1
+            if left > 0:
+                self._list = [0] * left + self._list
+                self._init += left
+                self._pos  += left
+                self.lspan -= left
 
             left = tape_index.start + self._init
 
@@ -390,8 +390,10 @@ def verify_lin_recurrence(steps, period, history):
         slice1 = tape1[        offset : ]
         slice2 = tape2[ diff + offset : ]
 
-        for _ in range(len(slice1) - len(slice2)):
-            slice2.append(0)
+        slice_diff = len(slice1) - len(slice2)
+
+        if slice_diff > 0:
+            slice2 = slice2 + [0] * slice_diff
 
     elif pos1 > pos2:
         diff = pos1 - pos2
@@ -400,8 +402,10 @@ def verify_lin_recurrence(steps, period, history):
         slice1 = tape1[ : offset        ]
         slice2 = tape2[ : offset - diff ]
 
-        for _ in range(len(slice1) - len(slice2)):
-            slice2.insert(0, 0)
+        slice_diff = len(slice1) - len(slice2)
+
+        if slice_diff > 0:
+            slice2 = [0] * slice_diff + slice2
 
     else:
         assert pos1 == pos2
