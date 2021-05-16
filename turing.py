@@ -385,10 +385,10 @@ def verify_lin_recurrence(steps, period, history):
 
     if pos1 < pos2:
         diff = pos2 - pos1
-        offset = min(positions[steps:])
+        leftmost = min(positions[steps:])
 
-        slice1 = tape1[        offset : ]
-        slice2 = tape2[ diff + offset : ]
+        slice1 = tape1[        leftmost : ]
+        slice2 = tape2[ diff + leftmost : ]
 
         slice_diff = len(slice1) - len(slice2)
 
@@ -397,10 +397,10 @@ def verify_lin_recurrence(steps, period, history):
 
     elif pos1 > pos2:
         diff = pos1 - pos2
-        offset = max(positions[steps:]) + 1
+        rightmost = max(positions[steps:]) + 1
 
-        slice1 = tape1[ : offset        ]
-        slice2 = tape2[ : offset - diff ]
+        slice1 = tape1[ : rightmost        ]
+        slice2 = tape2[ : rightmost - diff ]
 
         slice_diff = len(slice1) - len(slice2)
 
@@ -410,11 +410,11 @@ def verify_lin_recurrence(steps, period, history):
     else:
         assert pos1 == pos2
 
-        left  = min(positions[steps:])
-        right = max(positions[steps:]) + 1
+        leftmost  = min(positions[steps:])
+        rightmost = max(positions[steps:]) + 1
 
-        slice1 = tape1[ left : right ]
-        slice2 = tape2[ left : right ]
+        slice1 = tape1[ leftmost : rightmost ]
+        slice2 = tape2[ leftmost : rightmost ]
 
     return slice1 == slice2
 
