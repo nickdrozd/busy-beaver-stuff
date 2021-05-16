@@ -68,12 +68,6 @@ class Tape:
         self[ span[0] : span[1] ]
 
     def __getitem__(self, tape_index):
-        if isinstance(tape_index, int):
-            try:
-                return self._list[tape_index + self._init]
-            except IndexError:
-                return 0
-
         if tape_index.stop is None:
             right = None
         else:
