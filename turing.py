@@ -29,7 +29,7 @@ def tcompile(parsed):
 ########################################
 
 class Tape:
-    def __init__(self, underlying_list, init, head):
+    def __init__(self, underlying_list, init, head = 0):
         self._list = underlying_list
         self._init = init
         self.head = head
@@ -42,7 +42,7 @@ class Tape:
         return Tape(
             self._list.copy(),
             self._init,
-            self.head,
+            head = self.head,
         )
 
     def __repr__(self):
@@ -434,11 +434,9 @@ def run_bb(
     elif isinstance(tape, int):
         tape = [0] * tape
 
-    init = len(tape) // 2
-
     machine = Machine(prog)
     machine.run(
-        Tape(tape, init = init, head = init),
+        Tape(tape, init = len(tape) // 2),
         x_limit,
         watch_tape,
         check_rec,
