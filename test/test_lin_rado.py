@@ -122,10 +122,10 @@ class TestLinRado(TestCase):
 
 
 HOLDOUTS_22Q = {
-    "1RB 0LB 1LA 0RA",
-    "1RB 1LA 0LA 0RB",
-    "1RB 1LA 0LA 1RB",
-    "1RB 1LA 1LA 1RB",
+    "1RB 1LA 1LA 1RB",  # xmas classic
+    "1RB 1LA 0LA 1RB",  # xmas one-side
+    "1RB 0LB 1LA 0RA",  # xmas spaces
+    "1RB 1LA 0LA 0RB",  # counter
 }
 
 LR_HOLDOUTS = {
