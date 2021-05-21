@@ -2,7 +2,8 @@ from itertools import product
 from multiprocessing import cpu_count, Manager, Process
 from queue import Empty
 
-from turing import parse, run_bb
+from turing import run_bb
+from tm.parse import parse
 
 SHIFTS = 'L', 'R'
 
