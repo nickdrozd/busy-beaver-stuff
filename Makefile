@@ -3,7 +3,7 @@
 all : machines lint test
 
 run :
-	python3 turing.py
+	python3 run.py
 
 lint :
 	pylint *.py **/*.py
