@@ -166,6 +166,16 @@ class Machine:
     def final(self):
         return self._final
 
+    def print_results(self):
+        print(
+            '\n'.join([
+                f'marks: {self.marks}',
+                f'steps: {self.steps}',
+                f'beeps: {self.beeps}',
+                f'final: {self.final}',
+                '',
+            ]))
+
     def run(
             self,
             tape,
@@ -317,17 +327,6 @@ class Machine:
         self._marks = marks
 
         self._history = history
-
-
-def print_results(machine):
-    print(
-        '\n'.join([
-            f'marks: {machine.marks}',
-            f'steps: {machine.steps}',
-            f'beeps: {machine.beeps}',
-            f'final: {machine.final}',
-            '',
-        ]))
 
 ########################################
 
