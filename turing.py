@@ -1,5 +1,3 @@
-import sys
-
 from tm.tape import Tape
 from tm.parse import tcompile
 from tm.history import History
@@ -55,7 +53,7 @@ class Machine:
     def run(
             self,
             tape,
-            x_limit=None,
+            x_limit=100_000_000,
             watch_tape=False,
             check_rec=None,
             check_blanks=False,
@@ -65,9 +63,6 @@ class Machine:
 
         step = 0
         prog = self._comp
-
-        if x_limit is None:
-            x_limit = sys.maxsize
 
         history = (
             None
@@ -276,7 +271,7 @@ def verify_lin_recurrence(steps, period, history):
 def run_bb(
         prog,
         tape=None,
-        x_limit=None,
+        x_limit=100_000_000,
         watch_tape=False,
         check_rec=None,
         check_blanks=False,
