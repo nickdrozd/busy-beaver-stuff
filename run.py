@@ -1,6 +1,6 @@
 import sys
 
-from turing import run_bb
+from tm.run_bb import run_bb
 
 CANDIDATES = [
     "1RB 1LA 1LA 1RB"

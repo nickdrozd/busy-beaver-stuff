@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from turing import run_bb
+from tm.run_bb import run_bb
 from tm.recurrence import verify_lin_recurrence
 
 HALTING_FAST = {

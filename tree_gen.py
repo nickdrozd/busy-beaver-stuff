@@ -5,7 +5,7 @@ from multiprocessing import (
     Process,
 )
 
-from turing import run_bb
+from tm.run_bb import run_bb
 from tm.program import Program
 
 
