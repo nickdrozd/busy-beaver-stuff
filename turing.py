@@ -1,32 +1,8 @@
 import sys
-from collections import defaultdict
 
 from tm.tape import Tape
 from tm.parse import tcompile
-
-
-class OperatingHistory:
-    def __init__(self, tapes=None):
-        self.tapes = [] if tapes is None else tapes
-        self.beeps = []
-        self.states = []
-        self.actions = defaultdict(lambda: [])
-        self.positions = []
-
-    def calculate_beeps(self, through=None):
-        states = (
-            self.states
-            if through is None else
-            self.states[:through]
-        )
-
-        steps = len(states)
-        rev   = list(reversed(states))
-
-        return {
-            state: steps - 1 - rev.index(state)
-            for state in set(states)
-        }
+from tm.history import History
 
 
 class Machine:
@@ -96,7 +72,7 @@ class Machine:
         history = (
             None
             if samples is None and check_rec is None else
-            OperatingHistory(tapes=samples)
+            History(tapes=samples)
         )
 
         marks = 0
