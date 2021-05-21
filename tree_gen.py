@@ -73,7 +73,7 @@ class Program:
         return (
             ''.join(prod) for prod in
             product(
-                self.colors,
+                self.available_colors,
                 SHIFTS,
                 self.available_states)
         )
