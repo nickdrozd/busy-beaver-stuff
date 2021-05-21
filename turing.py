@@ -69,6 +69,7 @@ class Tape:
         return self.lspan, self.rspan
 
     def extend_to(self, span):
+        # pylint: disable = pointless-statement
         self[ span[0] : span[1] ]
 
     def __getitem__(self, tape_index):
@@ -375,6 +376,7 @@ def verify_lin_recurrence(steps, period, history):
     tape1 = tapes[steps]
     tape2 = tapes[recurrence]
 
+    # pylint: disable = pointless-statement
     tape1[ tape2.lspan : tape2.rspan ]
 
     pos1 = positions[steps]
