@@ -10,7 +10,9 @@ def parse(program_string):
     )
 
 
-def tcompile(parsed):
+def tcompile(program_string):
+    parsed = parse(program_string)
+
     return tuple(
         tuple(
             (

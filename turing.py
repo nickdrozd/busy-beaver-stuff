@@ -1,7 +1,7 @@
 import sys
 from collections import defaultdict
 
-from tm.parse import parse, tcompile
+from tm.parse import tcompile
 
 
 class Tape:
@@ -133,7 +133,7 @@ class Machine:
     def __init__(self, prog):
         prog = prog.strip() if isinstance(prog, str) else str(prog)
         self._prog = prog
-        self._comp = tcompile(parse(prog))
+        self._comp = tcompile(prog)
         self._tape = None
         self._pos = None
         self._state = None
