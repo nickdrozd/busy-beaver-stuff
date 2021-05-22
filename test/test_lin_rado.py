@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from turing import run_bb
+from tm.run_bb import run_bb
 from generate.generate import yield_programs
 
 
