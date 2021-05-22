@@ -103,10 +103,6 @@ class TestProgram(TestCase):
                 '1RB 2LB ... ... 1LB 1LA ... 3..',
                 '1RB 2RA ... ... 1LB 1LA ... 3..',
                 '1RB 2RB ... ... 1LB 1LA ... 3..',
-                '1RB 3LA ... ... 1LB 1LA ... 3..',
-                '1RB 3LB ... ... 1LB 1LA ... 3..',
-                '1RB 3RA ... ... 1LB 1LA ... 3..',
-                '1RB 3RB ... ... 1LB 1LA ... 3..',
             }
         )
 
