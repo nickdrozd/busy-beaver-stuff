@@ -5,30 +5,12 @@ import Data.List
 import Data.Vect
 import Data.Strings
 -------------------
+import Machine
 import Program
 import Tape
 -------------------
 
 %default total
-
-----------------------------------------
-
-exec : Tape t => Program -> State -> t -> (t, State)
-exec prog state tape =
-  let (color, shift, nextState) = prog state $ readColor tape in
-    (shiftHead (printColor tape color) shift, nextState)
-
-partial
-runToHalt : Tape t => Nat -> Program -> State -> t -> (Nat, t)
-runToHalt count prog state tape =
-  let (nextTape, nextState) = exec prog state tape in
-    case nextState of
-      H => (count, nextTape)
-      _ => runToHalt (S count) prog nextState nextTape
-
-partial
-runOnBlankTape : Tape t => Program -> t -> (Nat, t)
-runOnBlankTape prog tape = runToHalt 1 prog A tape
 
 ----------------------------------------
 
@@ -253,6 +235,6 @@ bb5 = makeProgram [
 partial
 main : IO ()
 main = do
-  let result = runOnBlankTape tm5 (the MicroTape blank)
-  putStrLn $ "\n*** " ++ show result
+  let result = runOnBlankTape tm5
+  putStrLn $ "\n*** " ++ show (the (Nat, MicroTape) result)
   pure ()
