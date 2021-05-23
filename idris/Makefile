@@ -1,5 +1,5 @@
 all :
-	idris2 Rado.idr -o prog
+	idris2 Main.idr -o prog
 	./build/exec/prog
 
 clean :
