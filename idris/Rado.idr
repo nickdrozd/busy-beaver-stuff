@@ -1,14 +1,11 @@
 -- Turing machine, along with some Busy Beaver programs
 
--- works in Idris 2
-
--- comment out these lines in Idris 1
 -------------------
 import Data.Nat
-import Data.Strings
--------------------
 import Data.List
 import Data.Vect
+import Data.Strings
+-------------------
 
 %default total
 
