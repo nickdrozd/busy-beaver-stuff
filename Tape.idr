@@ -23,6 +23,7 @@ public export
 MicroTape : Type
 MicroTape = (posmax : Nat ** (Vect (S posmax) Color, Fin (S posmax)))
 
+public export
 Show MicroTape where
   show (_ ** (tape, _)) = show (length tape, marks tape) where
     marks : Vect k Color -> Nat
