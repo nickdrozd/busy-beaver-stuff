@@ -2,7 +2,7 @@ module Machine
 
 import Data.Vect
 
-import Tape
+import public Tape
 import Program
 
 %default total
@@ -28,4 +28,4 @@ interface Tape t => Machine t where
 
 
 public export
-Machine MicroTape where
+[MicroMachine] Machine MicroTape where
