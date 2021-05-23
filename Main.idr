@@ -1,11 +1,22 @@
 import BB
 import Machine
+import Program
 
 %default total
 
 partial
+runBB : Program -> IO()
+runBB prog = do
+  let result = runOnBlankTape @{MicroMachine} prog
+  putStrLn $ "*** " ++ show result
+  pure()
+
+partial
 main : IO ()
 main = do
-  let result = runOnBlankTape @{MicroMachine} tm5
-  putStrLn $ "\n*** " ++ show result
-  pure ()
+  runBB BB2
+  runBB BB3
+  runBB bb3
+  runBB BB4
+  runBB bb4
+  runBB tm5
