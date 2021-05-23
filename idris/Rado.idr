@@ -250,18 +250,9 @@ bb5 = makeProgram [
 
 ----------------------------------------
 
-marks : Vect k Color -> Nat
-marks xs = let (n ** _) = filter ((/=) 0) xs in n
-
-Show MicroTape where
-  show (_ ** (tape, _)) = show (length tape, marks tape)
-
-blankMicroTape : MicroTape
-blankMicroTape = (Z ** ([0], FZ))
-
 partial
 main : IO ()
 main = do
-  let result = runOnBlankTape tm5 blankMicroTape
+  let result = runOnBlankTape tm5 (the MicroTape blank)
   putStrLn $ "\n*** " ++ show result
   pure ()
