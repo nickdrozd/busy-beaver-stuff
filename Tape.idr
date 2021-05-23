@@ -5,20 +5,33 @@ import Data.Vect
 
 import Program
 
+----------------------------------------
+
 %default total
 
 public export
-interface Tape tape where
+interface Show tape => Tape tape where
+  blank : tape
+
   readColor  : tape -> Color
   printColor : tape -> Color -> tape
   shiftHead  : tape -> Shift -> tape
+
+----------------------------------------
 
 public export
 MicroTape : Type
 MicroTape = (posmax : Nat ** (Vect (S posmax) Color, Fin (S posmax)))
 
+Show MicroTape where
+  show (_ ** (tape, _)) = show (length tape, marks tape) where
+    marks : Vect k Color -> Nat
+    marks xs = let (n ** _) = filter ((/=) 0) xs in n
+
 public export
 Tape MicroTape where
+  blank = (Z ** ([0], FZ))
+
   readColor (_ ** (tape, pos)) =
     index pos tape
 
