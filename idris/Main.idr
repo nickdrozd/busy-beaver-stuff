@@ -1,5 +1,3 @@
-import Data.Vect
-
 import Machine
 import Parse
 

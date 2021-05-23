@@ -1,9 +1,7 @@
 module Machine
 
-import Data.Vect
-
-import public Tape
 import Program
+import public Tape
 
 %default total
 
