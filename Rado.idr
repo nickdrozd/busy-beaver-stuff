@@ -22,17 +22,15 @@ MachineResult : Type
 MachineResult = (Nat, MicroTape)
 
 partial
-runToHalt : Nat -> Program -> State -> MicroTape -> IO MachineResult
+runToHalt : Nat -> Program -> State -> MicroTape -> MachineResult
 runToHalt count prog state tape =
   let (nextTape, nextState) = exec prog state tape in
     case nextState of
-      H => pure (count, nextTape)
-      _ => do
-        putStrLn $ "-> " ++ show count
-        runToHalt (S count) prog nextState nextTape
+      H => (count, nextTape)
+      _ => runToHalt (S count) prog nextState nextTape
 
 partial
-runOnBlankTape : Program -> IO MachineResult
+runOnBlankTape : Program -> MachineResult
 runOnBlankTape prog = runToHalt 1 prog A (Z ** ([0], FZ))
 
 ----------------------------------------
@@ -264,6 +262,6 @@ Show MicroTape where
 partial
 main : IO ()
 main = do
-  result <- runOnBlankTape tm5
+  let result = runOnBlankTape tm5
   putStrLn $ "\n*** " ++ show result
   pure ()
