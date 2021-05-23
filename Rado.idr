@@ -18,11 +18,8 @@ exec prog state tape =
   let (color, shift, nextState) = prog state $ readColor tape in
     (shiftHead (printColor tape color) shift, nextState)
 
-MachineResult : Type
-MachineResult = (Nat, MicroTape)
-
 partial
-runToHalt : Nat -> Program -> State -> MicroTape -> MachineResult
+runToHalt : Tape t => Nat -> Program -> State -> t -> (Nat, t)
 runToHalt count prog state tape =
   let (nextTape, nextState) = exec prog state tape in
     case nextState of
@@ -30,8 +27,8 @@ runToHalt count prog state tape =
       _ => runToHalt (S count) prog nextState nextTape
 
 partial
-runOnBlankTape : Program -> MachineResult
-runOnBlankTape prog = runToHalt 1 prog A (Z ** ([0], FZ))
+runOnBlankTape : Tape t => Program -> t -> (Nat, t)
+runOnBlankTape prog tape = runToHalt 1 prog A tape
 
 ----------------------------------------
 
@@ -259,9 +256,12 @@ marks xs = let (n ** _) = filter ((/=) 0) xs in n
 Show MicroTape where
   show (_ ** (tape, _)) = show (length tape, marks tape)
 
+blankMicroTape : MicroTape
+blankMicroTape = (Z ** ([0], FZ))
+
 partial
 main : IO ()
 main = do
-  let result = runOnBlankTape tm5
+  let result = runOnBlankTape tm5 blankMicroTape
   putStrLn $ "\n*** " ++ show result
   pure ()
