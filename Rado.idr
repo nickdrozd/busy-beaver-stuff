@@ -1,54 +1,17 @@
 -- Turing machine, along with some Busy Beaver programs
 
 -------------------
-import Data.Nat
 import Data.List
 import Data.Vect
 import Data.Strings
+-------------------
+import Program
+import Tape
 -------------------
 
 %default total
 
 ----------------------------------------
-
-Color : Type
-Color = Nat
-
-data Shift = L | R
-
-data State = H | -- the halt state
-  A | B | C | -- operational states
-  D | E | F
-
-Action : Type
-Action = (Color, Shift, State)
-
-Instruction : Type
-Instruction = Color -> Action
-
-Program : Type
-Program = State -> Instruction
-
-Tape : Type
-Tape = (posmax : Nat ** (Vect (S posmax) Color, Fin (S posmax)))
-
-----------------------------------------
-
-shiftHead : Tape -> Shift -> Tape
-shiftHead (posmax ** (tape, pos)) shift =
-  case shift of
-    L => case pos of
-      FZ   => (S posmax ** ([0] ++ tape, FZ))
-      FS p => (  posmax ** (tape, weaken p))
-    R => case pos of
-      FZ   => case posmax of
-           Z   => (S posmax ** (tape ++ [0], FS FZ))
-           S _ => (  posmax ** (tape, FS FZ))
-      FS _ => case strengthen pos of
-           Right p => (  posmax ** (tape, FS p))
-           Left  _ =>
-             let prf = sym $ plusCommutative posmax 1 in
-               (S posmax ** (rewrite prf in tape ++ [0], FS pos))
 
 exec : Program -> State -> Tape -> (Tape, State)
 exec prog state (posmax ** (tape, pos)) =
