@@ -7,15 +7,15 @@ import public Tape
 
 public export
 interface Tape t => Machine t where
-  exec : Program -> State -> t -> (t, State)
+  exec : Program -> State -> t -> (State, t)
   exec prog state tape =
     let (color, shift, nextState) = prog state $ readColor tape in
-      (shiftHead (printColor tape color) shift, nextState)
+      (nextState, shiftHead shift $ printColor color tape)
 
   partial
   runToHalt : Nat -> Program -> State -> t -> (Nat, t)
   runToHalt count prog state tape =
-    let (nextTape, nextState) = exec prog state tape in
+    let (nextState, nextTape) = exec prog state tape in
       case nextState of
         H => (count, nextTape)
         _ => runToHalt (S count) prog nextState nextTape
