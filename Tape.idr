@@ -12,6 +12,15 @@ Tape : Type
 Tape = (posmax : Nat ** (Vect (S posmax) Color, Fin (S posmax)))
 
 public export
+readColor : Tape -> Color
+readColor (_ ** (tape, pos)) = index pos tape
+
+public export
+printColor : Tape -> Color -> Tape
+printColor (posmax ** (tape, pos)) color =
+  (posmax ** (replaceAt pos color tape, pos))
+
+public export
 shiftHead : Tape -> Shift -> Tape
 shiftHead (posmax ** (tape, pos)) shift =
   case shift of
