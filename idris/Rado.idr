@@ -14,13 +14,9 @@ import Tape
 ----------------------------------------
 
 exec : Program -> State -> Tape -> (Tape, State)
-exec prog state (posmax ** (tape, pos)) =
-  let
-    currColor = index pos tape
-    (color, shift, nextState) = prog state currColor
-    colorChanged = replaceAt pos color tape
-  in
-  (shiftHead (posmax ** (colorChanged, pos)) shift, nextState)
+exec prog state tape =
+  let (color, shift, nextState) = prog state $ readColor tape in
+    (shiftHead (printColor tape color) shift, nextState)
 
 MachineResult : Type
 MachineResult = (Nat, Tape)
