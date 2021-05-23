@@ -13,16 +13,16 @@ import Tape
 
 ----------------------------------------
 
-exec : Program -> State -> Tape -> (Tape, State)
+exec : Tape t => Program -> State -> t -> (t, State)
 exec prog state tape =
   let (color, shift, nextState) = prog state $ readColor tape in
     (shiftHead (printColor tape color) shift, nextState)
 
 MachineResult : Type
-MachineResult = (Nat, Tape)
+MachineResult = (Nat, MicroTape)
 
 partial
-runToHalt : Nat -> Program -> State -> Tape -> IO MachineResult
+runToHalt : Nat -> Program -> State -> MicroTape -> IO MachineResult
 runToHalt count prog state tape =
   let (nextTape, nextState) = exec prog state tape in
     case nextState of
@@ -258,7 +258,7 @@ bb5 = makeProgram [
 marks : Vect k Color -> Nat
 marks xs = let (n ** _) = filter ((/=) 0) xs in n
 
-Show Tape where
+Show MicroTape where
   show (_ ** (tape, _)) = show (length tape, marks tape)
 
 partial
