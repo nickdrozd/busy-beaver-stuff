@@ -1,11 +1,9 @@
 module Tape
 
 import Data.Nat
-import Data.Vect
+import public Data.Vect
 
 import Program
-
-----------------------------------------
 
 %default total
 
