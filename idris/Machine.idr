@@ -9,8 +9,8 @@ public export
 interface Tape t => Machine t where
   exec : Program -> State -> t -> (State, t)
   exec prog state tape =
-    let (color, shift, nextState) = prog state $ readColor tape in
-      (nextState, shiftHead shift $ printColor color tape)
+    let (color, dir, nextState) = prog state $ read tape in
+      (nextState, shift dir $ print color tape)
 
   partial
   runToHalt : Nat -> Program -> State -> t -> (Nat, t)
