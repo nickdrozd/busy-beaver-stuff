@@ -83,3 +83,29 @@ bb5 = makeProgram [
   [(1, (R, D)), (0, (L, E))],
   [(1, (L, A)), (1, (L, D))],
   [(1, (R, H)), (0, (L, A))]]
+
+-- 2/4
+
+public export
+tm24 : Program
+tm24 A 0 = (1, R, B)
+tm24 A 1 = (3, L, A)
+tm24 A 2 = (1, L, A)
+tm24 A 3 = (1, R, A)
+tm24 B 0 = (2, L, A)
+tm24 B 1 = (1, R, H)
+tm24 B 2 = (3, R, A)
+tm24 B 3 = (3, R, B)
+tm24 _ c = (c, L, H)
+
+public export
+bb24 : Program
+bb24 A 0 = (1, R, B)
+bb24 A 1 = (2, L, A)
+bb24 A 2 = (1, R, A)
+bb24 A 3 = (1, R, A)
+bb24 B 0 = (1, L, B)
+bb24 B 1 = (1, L, A)
+bb24 B 2 = (3, R, B)
+bb24 B 3 = (1, R, H)
+bb24 _ c = (c, L, H)

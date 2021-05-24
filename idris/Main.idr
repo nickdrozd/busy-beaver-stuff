@@ -20,3 +20,5 @@ main = do
   runBB BB4
   runBB bb4
   runBB tm5
+  runBB tm24
+  runBB bb24
