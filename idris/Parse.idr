@@ -81,6 +81,8 @@ partwayParse input = pairUp $ mapMaybe parseAction $ words input
 
 ----------------------------------------
 
+%hide Data.Fin.cast
+
 export
 Cast State (Fin 1) where
   cast A = FZ
