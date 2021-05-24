@@ -11,9 +11,9 @@ public export
 interface Show tape => Tape tape where
   blank : tape
 
-  readColor  :          tape -> Color
-  printColor : Color -> tape -> tape
-  shiftHead  : Shift -> tape -> tape
+  read  :          tape -> Color
+  print : Color -> tape -> tape
+  shift : Shift -> tape -> tape
 
 ----------------------------------------
 
@@ -31,14 +31,14 @@ public export
 Tape MicroTape where
   blank = (Z ** ([0], FZ))
 
-  readColor (_ ** (tape, pos)) =
+  read (_ ** (tape, pos)) =
     index pos tape
 
-  printColor color (posmax ** (tape, pos)) =
+  print color (posmax ** (tape, pos)) =
     (posmax ** (replaceAt pos color tape, pos))
 
-  shiftHead shift (posmax ** (tape, pos)) =
-    case shift of
+  shift dir (posmax ** (tape, pos)) =
+    case dir of
       L => case pos of
         FZ   => (S posmax ** ([0] ++ tape, FZ))
         FS p => (  posmax ** (tape, weaken p))
