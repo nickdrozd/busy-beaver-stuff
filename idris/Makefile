@@ -1,4 +1,4 @@
-all :
+all : clean
 	idris2 Main.idr -o prog
 	time -p ./build/exec/prog
 
