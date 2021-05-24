@@ -1,6 +1,6 @@
 all :
 	idris2 Main.idr -o prog
-	./build/exec/prog
+	time -p ./build/exec/prog
 
 clean :
 	rm -rf build/
