@@ -46,12 +46,9 @@ Tape MicroTape where
   left (i ** (FZ,   tape)) = (S i ** (FZ, [0] ++ tape))
   left (i ** (FS p, tape)) = (  i ** ( weaken p, tape))
 
-  right (  Z ** (FZ, tape)) = (S Z ** (FS FZ, tape ++ [0]))
-  right (S i ** (FZ, tape)) = (S i ** (FS FZ, tape       ))
-
-  right (i ** (FS p, tape)) =
-    case strengthen $ FS p of
+  right (i ** (pos, tape)) =
+    case strengthen pos of
       Right p => (  i ** (FS p, tape))
       Left  _ =>
         let prf = sym $ plusCommutative i 1 in
-          (S i ** (FS $ FS p, rewrite prf in tape ++ [0]))
+          (S i ** (FS pos, rewrite prf in tape ++ [0]))
