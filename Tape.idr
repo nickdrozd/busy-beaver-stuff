@@ -13,13 +13,19 @@ interface Show tape => Tape tape where
 
   read  :          tape -> Color
   print : Color -> tape -> tape
+
   shift : Shift -> tape -> tape
+  shift L tape =  left tape
+  shift R tape = right tape
+
+  left  :          tape -> tape
+  right :          tape -> tape
 
 ----------------------------------------
 
 public export
 MicroTape : Type
-MicroTape = (posmax : Nat ** (Vect (S posmax) Color, Fin (S posmax)))
+MicroTape = (i : Nat ** (Vect (S i) Color, Fin (S i)))
 
 public export
 Show MicroTape where
@@ -34,20 +40,18 @@ Tape MicroTape where
   read (_ ** (tape, pos)) =
     index pos tape
 
-  print color (posmax ** (tape, pos)) =
-    (posmax ** (replaceAt pos color tape, pos))
+  print color (i ** (tape, pos)) =
+    (i ** (replaceAt pos color tape, pos))
 
-  shift dir (posmax ** (tape, pos)) =
-    case dir of
-      L => case pos of
-        FZ   => (S posmax ** ([0] ++ tape, FZ))
-        FS p => (  posmax ** (tape, weaken p))
-      R => case pos of
-        FZ   => case posmax of
-             Z   => (S posmax ** (tape ++ [0], FS FZ))
-             S _ => (  posmax ** (tape, FS FZ))
-        FS _ => case strengthen pos of
-             Right p => (  posmax ** (tape, FS p))
-             Left  _ =>
-               let prf = sym $ plusCommutative posmax 1 in
-                 (S posmax ** (rewrite prf in tape ++ [0], FS pos))
+  left (i ** (tape,   FZ)) = (S i ** ([0] ++ tape, FZ))
+  left (i ** (tape, FS p)) = (  i ** (tape, weaken p))
+
+  right (  Z ** (tape,   FZ)) = (S Z ** (tape ++ [0], FS FZ))
+  right (S i ** (tape,   FZ)) = (S i ** (tape       , FS FZ))
+
+  right (i ** (tape, FS p)) =
+    case strengthen $ FS p of
+      Right p => (  i ** (tape, FS p))
+      Left  _ =>
+        let prf = sym $ plusCommutative i 1 in
+          (S i ** (rewrite prf in tape ++ [0], FS $ FS p))
