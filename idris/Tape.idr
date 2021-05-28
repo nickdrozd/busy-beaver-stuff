@@ -8,7 +8,10 @@ import Program
 %default total
 
 public export
-interface Show tape => Tape tape where
+interface Tape tape where
+  marks : tape -> Nat
+  cells : tape -> Nat
+
   blank : tape
 
   read  :          tape -> Color
@@ -21,6 +24,10 @@ interface Show tape => Tape tape where
   left  :          tape -> tape
   right :          tape -> tape
 
+public export
+Tape tape => Show tape where
+  show tape = show (cells tape, marks tape)
+
 ----------------------------------------
 
 public export
@@ -28,13 +35,10 @@ MicroTape : Type
 MicroTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
 
 public export
-Show MicroTape where
-  show (_ ** (_, tape)) = show (length tape, marks tape) where
-    marks : Vect k Color -> Nat
-    marks xs = let (n ** _) = filter ((/=) 0) xs in n
-
-public export
 Tape MicroTape where
+  marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
+  cells (_ ** (_, tape))  = length tape
+
   blank = (Z ** (FZ, [0]))
 
   read (_ ** (pos, tape)) =
