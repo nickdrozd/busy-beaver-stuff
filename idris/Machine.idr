@@ -7,22 +7,22 @@ import public Tape
 
 public export
 interface Tape tape => Machine tape where
-  exec : Program -> State -> tape -> (State, tape)
-  exec prog state tape =
+  exec : Program -> State -> tape -> Nat -> (State, tape, Nat)
+  exec prog state tape count =
     let (color, dir, nextState) = prog state $ read tape in
-      (nextState, shift dir $ print color tape)
+      (nextState, shift dir $ print color tape, S count)
 
   partial
-  run : Nat -> Program -> State -> tape -> (Nat, tape)
-  run count prog state tape =
-    let (nextState, nextTape) = exec prog state tape in
+  run : Program -> State -> tape -> Nat -> (Nat, tape)
+  run prog state tape count =
+    let (nextState, nextTape, nextCount) = exec prog state tape count in
       case nextState of
         H => (count, nextTape)
-        _ => run (S count) prog nextState nextTape
+        _ => run prog nextState nextTape nextCount
 
   partial
   runOnBlankTape : Program -> (Nat, tape)
-  runOnBlankTape prog = run 1 prog A (the tape blank)
+  runOnBlankTape prog = run prog A (the tape blank) 1
 
 
 public export
