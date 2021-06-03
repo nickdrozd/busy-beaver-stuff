@@ -13,16 +13,16 @@ interface Tape t => Machine t where
       (nextState, shift dir $ print color tape)
 
   partial
-  runToHalt : Nat -> Program -> State -> t -> (Nat, t)
-  runToHalt count prog state tape =
+  run : Nat -> Program -> State -> t -> (Nat, t)
+  run count prog state tape =
     let (nextState, nextTape) = exec prog state tape in
       case nextState of
         H => (count, nextTape)
-        _ => runToHalt (S count) prog nextState nextTape
+        _ => run (S count) prog nextState nextTape
 
   partial
   runOnBlankTape : Program -> (Nat, t)
-  runOnBlankTape prog = runToHalt 1 prog A (the t blank)
+  runOnBlankTape prog = run 1 prog A (the t blank)
 
 
 public export
