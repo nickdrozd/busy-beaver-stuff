@@ -104,10 +104,11 @@ QUASIHALTING = {
     "1RB 1LB 0LB 1LA": (2, 6, 1),
     "1RB 0LB 1LB 1LA": (2, 6, 1),
     "1RB 0LB 0LB 1LA": (1, 6, 1),
+    "1RB 1LB 1LA 1RA": (3, 5, 1),  # center
 
     # 3/2
     "1RB 0LB 1LA 0RC 1LC 1LA": (6, 55, 1),  # BBB shift
-    "1RB 1RC 1LC 1RA 1RA 1LA": (6,  9, 2),  # BBB sigma
+    "1RB 1RC 1LC 1RA 1RA 1LA": (6,  9, 2),  # BBB sigma, center
     "1RB 0LB 1RC 0RC 1LC 1LA": (6, 54, 1),
     "1RB 0LC 1LB 0RC 1LC 1LA": (5, 52, 1),  # BB extension
     "1RB 0LC 0LC 0RC 1LC 1LA": (5, 51, 1),
@@ -117,7 +118,7 @@ QUASIHALTING = {
     "1RB 1LC 0RC ... 1LC 0LA": (5, 27, 1),
     "1RB 1LC 1LB 1LA 1RC 0LC": (0, 27, 1),
     "1RB 1LB 1LA 1RC 1LC 0RC": (0, 26, 1),
-    "1RB 1RC 1LC 0LB 1RA 1LA": (5, 22, 2),
+    "1RB 1RC 1LC 0LB 1RA 1LA": (5, 22, 2),  # center, >BB
     "1RB ... 1LB 0LC 1RC 1RB": (3, 5, 13),
     "1RB ... 1LB 1RC 0LC 0RB": (2, 2, 14),
     "1RB ... 1LB 1LC 1RC 0RB": (2, 2, 13),
@@ -233,6 +234,7 @@ RECURRENCE_FAST = {
     "1RB 1LA 2LB 2LA 2RA 0LB": ( 6,  57, 30),
     "1RB 2LA 0RB 1LB 1RA 1RA": ( 6,  55, 10),
     "1RB 0RB 0LB 2LA 2RA 1LB": ( 7,  54, 40),
+    "1RB 2LA 2RB 1LB 1LA 1RA": ( 8,  39,  2),  # center, >BB
     "1RB 2LA 0RB 2LA ... 1RA": ( 8,  35,  8),
     "1RB 2LA 1RB 1LB 1LA 2RA": ( 7,  24, 46),
     "1RB 1LA 2LB 1LA 2RA 0LB": ( 7,  20, 48),
