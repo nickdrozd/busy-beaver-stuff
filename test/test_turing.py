@@ -104,7 +104,6 @@ QUASIHALTING = {
     "1RB 1LB 0LB 1LA": (2, 6, 1),
     "1RB 0LB 1LB 1LA": (2, 6, 1),
     "1RB 0LB 0LB 1LA": (1, 6, 1),
-    "1RB 1LB 1LA 1RA": (3, 5, 1),  # center
 
     # 3/2
     "1RB 0LB 1LA 0RC 1LC 1LA": (6, 55, 1),  # BBB shift
@@ -190,6 +189,7 @@ RECURRENCE_FAST = {
     "1RB 0LB 1LA 0RB": (3, 9, 3),
     "1RB 1LA 0LA 1RA": (3, 7, 5),
     "1RB 1LB 1LA 0RB": (2, 7, 3),
+    "1RB 1LB 1LA 1RA": (4, 5, 2),  # center
     "1RB 1RB 1LA 0LB": (2, 3, 4),
     "1RB 0RB 1LB 1RA": (0, 0, 9),
     "1RB 0RA 1LB 1LA": (0, 0, 8),
