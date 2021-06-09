@@ -9,8 +9,15 @@ public export
 interface Tape tape => Machine tape where
   exec : Program -> State -> tape -> Nat -> (State, tape, Nat)
   exec prog state tape count =
-    let (color, dir, nextState) = prog state $ read tape in
-      (nextState, shift dir $ print color tape, S count)
+    let
+      scan = read tape
+      (color, dir, nextState) = prog state scan
+      printed =
+        if color == scan
+          then tape
+          else print color tape
+    in
+      (nextState, shift dir printed, S count)
 
   partial
   run : Program -> State -> tape -> Nat -> (Nat, tape)
