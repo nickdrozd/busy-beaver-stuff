@@ -8,7 +8,11 @@ partial
 runBB : Program -> IO()
 runBB prog = do
   let result = runOnBlankTape @{MicroMachine} prog
-  putStrLn $ "*** " ++ show result
+  putStrLn $ "*** Micro: " ++ show result
+
+  let result = runOnBlankTape @{MacroMachine} prog
+  putStrLn $ "*** Macro: " ++ show result
+
   pure()
 
 partial
