@@ -56,3 +56,12 @@ Tape MicroTape where
       Left  _ =>
         let prf = sym $ plusCommutative i 1 in
           (S i ** (FS pos, rewrite prf in tape ++ [0]))
+
+----------------------------------------
+
+MacroBlock : Type
+MacroBlock = (Color, (j : Nat ** Fin (S j)))
+
+public export
+MacroTape : Type
+MacroTape = (i : Nat ** (Fin (S i), Vect (S i) MacroBlock))
