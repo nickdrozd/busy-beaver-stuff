@@ -9,8 +9,8 @@ import Program
 
 public export
 interface Tape tape where
-  marks : tape -> Nat
   cells : tape -> Nat
+  marks : tape -> Nat
 
   blank : tape
 
@@ -36,8 +36,8 @@ MicroTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
 
 public export
 Tape MicroTape where
-  marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
   cells (_ ** (_, tape))  = length tape
+  marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
 
   blank = (Z ** (FZ, [0]))
 
