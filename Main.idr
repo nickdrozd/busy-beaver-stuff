@@ -16,9 +16,7 @@ main : IO ()
 main = do
   runBB BB2
   runBB BB3
-  runBB bb3
   runBB BB4
-  runBB bb4
   runBB tm5
-  runBB tm24
-  runBB bb24
+  runBB TM24
+  runBB BB24
