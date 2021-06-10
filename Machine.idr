@@ -31,6 +31,8 @@ interface Tape tape => Machine tape where
   runOnBlankTape : Program -> (Nat, tape)
   runOnBlankTape prog = run prog A (the tape blank) 1
 
-
 public export
 [MicroMachine] Machine MicroTape where
+
+public export
+[MacroMachine] Machine MacroTape where
