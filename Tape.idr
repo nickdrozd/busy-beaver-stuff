@@ -252,10 +252,8 @@ Tape MacroTape where
   left (S i ** (FZ, (c, (j ** FS p)) :: rest)) =
     (S i ** (FZ, (c, (j ** weaken p)) :: rest))
 
-  left (S i ** (FS FZ, b0@(c, (j ** _)) :: b1@(_, (_ ** FZ)) :: rest)) =
-    -- check what's inside b0?
-    -- yes, figure out how to get max pos for j
-    (S i ** (FZ, b0 :: b1 :: rest))
+  left (S i ** (FS FZ, (c, (j ** _)) :: b1@(_, (_ ** FZ)) :: rest)) =
+    (S i ** (FZ, (c, (j ** last)) :: b1 :: rest))
 
   left (S i ** (FS FZ, b0 :: (c, (j ** FS p)) :: rest)) =
     (S i ** (FS FZ, b0 :: (c, (j ** weaken p)) :: rest))
