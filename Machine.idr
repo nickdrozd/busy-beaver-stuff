@@ -34,5 +34,5 @@ interface Tape tape => Machine tape where
 public export
 [MicroMachine] Machine MicroTape where
 
-public export
-[MacroMachine] Machine MacroTape where
+-- public export
+-- [MacroMachine] Machine MacroTape where
