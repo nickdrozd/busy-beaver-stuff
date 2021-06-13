@@ -30,29 +30,34 @@ Tape tape => Show tape where
 
 ----------------------------------------
 
+TapeSpan : Type
+TapeSpan = (n : Nat ** Vect n Color)
+
 public export
 MicroTape : Type
-MicroTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
+MicroTape = (TapeSpan, Color, TapeSpan)
 
 public export
 Tape MicroTape where
-  cells (_ ** (_, tape))  = length tape
-  marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
+  cells ((l ** _), _, (r ** _)) = l + 1 + r
 
-  blank = (Z ** (FZ, [0]))
+  marks ((_ ** l), c, (_ ** r)) =
+    let (n ** _) = filter ((/=) 0) (l ++ [c] ++ r) in n
 
-  read (_ ** (pos, tape)) =
-    index pos tape
+  blank = ((0 ** []), 0, (0 ** []))
 
-  print color (i ** (pos, tape)) =
-    (i ** (pos, replaceAt pos color tape))
+  read (_, c, _) = c
 
-  left (i ** (FZ,   tape)) = (S i ** (FZ, [0] ++ tape))
-  left (i ** (FS p, tape)) = (  i ** ( weaken p, tape))
+  left  ((0 ** []), c, (r ** rs)) =
+    ((0 ** []), 0, (S r ** c :: rs))
 
-  right (i ** (pos, tape)) =
-    case strengthen pos of
-      Right p => (  i ** (FS p, tape))
-      Left  _ =>
-        let prf = sym $ plusCommutative i 1 in
-          (S i ** (FS pos, rewrite prf in tape ++ [0]))
+  left  ((S k ** h :: t), c, (r ** rs)) =
+    ((k ** t), h, (S r ** c :: rs))
+
+  right ((l ** ls), c, (0 ** [])) =
+    ((S l ** c :: ls), 0, (0 ** []))
+
+  right ((l ** ls), c, (S k ** h :: t)) =
+    ((S l ** c :: ls), h, (k ** t))
+
+  print cx (l, _, r) = (l, cx, r)
