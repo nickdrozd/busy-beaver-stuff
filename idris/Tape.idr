@@ -1,7 +1,7 @@
 module Tape
 
 import Data.Nat
-import public Data.Vect
+import Data.List
 
 import Program
 
@@ -31,7 +31,7 @@ Tape tape => Show tape where
 ----------------------------------------
 
 TapeSpan : Type
-TapeSpan = (n : Nat ** Vect n Color)
+TapeSpan = List Color
 
 public export
 MicroTape : Type
@@ -39,25 +39,21 @@ MicroTape = (TapeSpan, Color, TapeSpan)
 
 public export
 Tape MicroTape where
-  cells ((l ** _), _, (r ** _)) = l + 1 + r
+  cells (l, _, r) = length l + 1 + length r
 
-  marks ((_ ** l), c, (_ ** r)) =
-    let (n ** _) = filter ((/=) 0) (l ++ [c] ++ r) in n
+  marks (l, c, r) =
+      length (filter (/= 0) l)
+    + (if c == 0 then 0 else 1)
+    + length (filter (/= 0) r)
 
-  blank = ((0 ** []), 0, (0 ** []))
+  blank = ([], 0, [])
 
   read (_, c, _) = c
 
-  left  ((0 ** []), c, (r ** rs)) =
-    ((0 ** []), 0, (S r ** c :: rs))
+  left  (    [], c, rs) = ([], 0, c :: rs)
+  left  (h :: t, c, rs) = ( t, h, c :: rs)
 
-  left  ((S k ** h :: t), c, (r ** rs)) =
-    ((k ** t), h, (S r ** c :: rs))
-
-  right ((l ** ls), c, (0 ** [])) =
-    ((S l ** c :: ls), 0, (0 ** []))
-
-  right ((l ** ls), c, (S k ** h :: t)) =
-    ((S l ** c :: ls), h, (k ** t))
+  right (ls, c, []    ) = (c :: ls, 0, [])
+  right (ls, c, h :: t) = (c :: ls, h,  t)
 
   print cx (l, _, r) = (l, cx, r)
