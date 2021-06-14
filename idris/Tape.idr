@@ -37,6 +37,13 @@ public export
 MicroTape : Type
 MicroTape = (TapeSpan, Color, TapeSpan)
 
+pullNext : TapeSpan -> (Color, TapeSpan)
+pullNext [] = (0, [])
+pullNext (x :: xs) = (x, xs)
+
+pushCurr : Color -> TapeSpan -> TapeSpan
+pushCurr = (::)
+
 public export
 Tape MicroTape where
   cells (l, _, r) = length l + 1 + length r
@@ -50,10 +57,12 @@ Tape MicroTape where
 
   read (_, c, _) = c
 
-  left  (    [], c, rs) = ([], 0, c :: rs)
-  left  (h :: t, c, rs) = ( t, h, c :: rs)
+  left (l, c, r) =
+    let (x, k) = pullNext l in
+      (k, x, pushCurr c r)
 
-  right (ls, c, []    ) = (c :: ls, 0, [])
-  right (ls, c, h :: t) = (c :: ls, h,  t)
+  right (l, c, r) =
+    let (k, x, e) = left (r, c, l) in
+      (e, x, k)
 
   print cx (l, _, r) = (l, cx, r)
