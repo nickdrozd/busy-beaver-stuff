@@ -48,10 +48,7 @@ public export
 Tape MicroTape where
   cells (l, _, r) = length l + 1 + length r
 
-  marks (l, c, r) =
-      length (filter (/= 0) l)
-    + (if c == 0 then 0 else 1)
-    + length (filter (/= 0) r)
+  marks (l, c, r) = length $ filter (/= 0) $ l ++ [c] ++ r
 
   blank = ([], 0, [])
 
