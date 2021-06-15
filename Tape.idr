@@ -1,6 +1,5 @@
 module Tape
 
-import Data.Nat
 import Data.List
 
 import Program
