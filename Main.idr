@@ -10,8 +10,8 @@ runBB prog = do
   let result = runOnBlankTape @{MicroMachine} prog
   putStrLn $ "*** Micro: " ++ show result
 
-  -- let result = runOnBlankTape @{MacroMachine} prog
-  -- putStrLn $ "*** Macro: " ++ show result
+  let result = runOnBlankTape @{MacroMachine} prog
+  putStrLn $ "*** Macro: " ++ show result
 
   pure()
 
