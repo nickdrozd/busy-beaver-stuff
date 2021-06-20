@@ -79,25 +79,26 @@ pullNextBlock : BlockSpan -> (Color, BlockSpan)
 pullNextBlock [] = (0, [])
 pullNextBlock ((c, n) :: xs) =
   (c, case n of
-    0   => xs
-    S k => (c, k) :: xs)
+    0       => xs
+    1       => xs
+    S $ S k => (c, S k) :: xs)
 
 pushCurrBlock : Block -> BlockSpan -> BlockSpan
 pushCurrBlock block [] = [block]
 pushCurrBlock block@(c, k) ((q, n) :: xs) =
   if c == q
-    then (q, k + 1 + n) :: xs
+    then (q, k + n) :: xs
     else block :: (q, n) :: xs
 
 public export
 Tape MacroTape where
   cells (l, _, r) =
-    S $ foldl (\a, (_, n) => a + 1 + n) 0 $ l ++ r
+    S $ foldl (\a, (_, n) => a + n) 0 $ l ++ r
 
   marks (l, c, r) =
     (+) (if c == 0 then 0 else 1) $
         foldl (\a, (q, n) =>
-                   (+) a $ if q == 0 then 0 else 1 + n)
+                   (+) a $ if q == 0 then 0 else n)
               0
               (l ++ r)
 
@@ -110,11 +111,11 @@ Tape MacroTape where
   left tape@(((bc, bn) :: l), c, r) True =
     if bc /= c then assert_total $ left tape False else
       let (x, k) = pullNextBlock l in
-        (2 + bn, (k, x, pushCurrBlock (bc, 1 + bn) r))
+        (1 + bn, (k, x, pushCurrBlock (bc, 1 + bn) r))
 
   left (l, c, r) _ =
     let (x, k) = pullNextBlock l in
-      (1, (k, x, pushCurrBlock (c, 0) r))
+      (1, (k, x, pushCurrBlock (c, 1) r))
 
   right (l, c, r) skip =
     let (s, (k, x, e)) = left (r, c, l) skip in
