@@ -16,12 +16,12 @@ interface Tape tape where
   read  :          tape -> Color
   print : Color -> tape -> tape
 
-  shift : Shift -> tape -> (Nat, tape)
-  shift L tape =  left tape
-  shift R tape = right tape
+  shift : Shift -> tape -> Bool -> (Nat, tape)
+  shift L =  left
+  shift R = right
 
-  left  :          tape -> (Nat, tape)
-  right :          tape -> (Nat, tape)
+  left  :          tape -> Bool -> (Nat, tape)
+  right :          tape -> Bool -> (Nat, tape)
 
 public export
 Tape tape => Show tape where
@@ -53,12 +53,12 @@ Tape MicroTape where
 
   read (_, c, _) = c
 
-  left (l, c, r) =
+  left (l, c, r) _ =
     let (x, k) = pullNext l in
       (1, (k, x, pushCurr c r))
 
-  right (l, c, r) =
-    let (s, (k, x, e)) = left (r, c, l) in
+  right (l, c, r) skip =
+    let (s, (k, x, e)) = left (r, c, l) skip in
       (s, (e, x, k))
 
   print cx (l, _, r) = (l, cx, r)
@@ -107,10 +107,10 @@ Tape MacroTape where
 
   print cx (l, _, r) = (l, cx, r)
 
-  left (l, c, r) =
+  left (l, c, r) _ =
     let (x, k) = pullNextBlock l in
       (1, (k, x, pushCurrBlock c r))
 
-  right (l, c, r) =
-    let (s, (k, x, e)) = left (r, c, l) in
+  right (l, c, r) skip =
+    let (s, (k, x, e)) = left (r, c, l) skip in
       (s, (e, x, k))

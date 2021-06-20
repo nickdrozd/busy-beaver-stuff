@@ -16,7 +16,7 @@ interface Tape tape => Machine tape where
         if color == scan
           then tape
           else print color tape
-      (steps, shifted) = shift dir printed
+      (steps, shifted) = shift dir printed $ state == nextState
     in
       (nextState, shifted, steps + count)
 
