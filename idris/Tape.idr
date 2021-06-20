@@ -107,9 +107,16 @@ Tape MacroTape where
 
   print cx (l, _, r) = (l, cx, r)
 
-  left (l, c, r) _ =
+  left ([], c, r) _ = (1, ([], 0, pushCurrBlock (c, 0) r))
+
+  left (l, c, r) False =
     let (x, k) = pullNextBlock l in
       (1, (k, x, pushCurrBlock (c, 0) r))
+
+  left tape@(((bc, bn) :: l), c, r) True =
+    if bc /= c then assert_total $ left tape False else
+      let (x, k) = pullNextBlock l in
+        (2 + bn, (k, x, pushCurrBlock (bc, 1 + bn) r))
 
   right (l, c, r) skip =
     let (s, (k, x, e)) = left (r, c, l) skip in
