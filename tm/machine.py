@@ -1,6 +1,5 @@
 from tm.parse import tcompile
-from tm.history import History
-from tm.recurrence import verify_lin_recurrence
+from tm.recurrence import History
 
 class Machine:
     def __init__(self, prog):
@@ -112,11 +111,7 @@ class Machine:
             if check_rec is not None and step >= check_rec:
                 action = state, tape.read()
 
-                result = check_for_recurrence(
-                    step,
-                    action,
-                    history,
-                )
+                result = history.check_for_recurrence(step, action)
 
                 if result is not None:
                     step, rec = result
@@ -197,12 +192,3 @@ class Machine:
         self._marks = marks
 
         self._history = history
-
-########################################
-
-def check_for_recurrence(step, action, history):
-    for pstep in history.actions[action]:
-        if verify_lin_recurrence(pstep, step - pstep, history):
-            return pstep, step - pstep
-
-    return None
