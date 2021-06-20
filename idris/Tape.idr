@@ -82,12 +82,12 @@ pullNextBlock ((c, n) :: xs) =
     0   => xs
     S k => (c, k) :: xs)
 
-pushCurrBlock : Color -> BlockSpan -> BlockSpan
-pushCurrBlock c [] = [(c, 0)]
-pushCurrBlock c ((q, n) :: xs) =
+pushCurrBlock : Block -> BlockSpan -> BlockSpan
+pushCurrBlock block [] = [block]
+pushCurrBlock block@(c, k) ((q, n) :: xs) =
   if c == q
-    then (q, S n) :: xs
-    else (c, 0) :: (q, n) :: xs
+    then (q, k + 1 + n) :: xs
+    else block :: (q, n) :: xs
 
 public export
 Tape MacroTape where
@@ -109,7 +109,7 @@ Tape MacroTape where
 
   left (l, c, r) _ =
     let (x, k) = pullNextBlock l in
-      (1, (k, x, pushCurrBlock c r))
+      (1, (k, x, pushCurrBlock (c, 0) r))
 
   right (l, c, r) skip =
     let (s, (k, x, e)) = left (r, c, l) skip in
