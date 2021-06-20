@@ -20,7 +20,8 @@ def tcompile(program_string):
                 0 if action[1] == 'L' else 1,
                 ord(action[2]) - 65,
             )
-            if '.' not in action else None
+            if '.' not in action and '-' not in action
+            else None
             for action in instr
         )
         for instr in parsed
