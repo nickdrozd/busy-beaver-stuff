@@ -16,8 +16,9 @@ interface Tape tape => Machine tape where
         if color == scan
           then tape
           else print color tape
+      (steps, shifted) = shift dir printed
     in
-      (nextState, shift dir printed, S count)
+      (nextState, shifted, steps + count)
 
   partial
   run : Program -> State -> tape -> Nat -> (Nat, tape)
