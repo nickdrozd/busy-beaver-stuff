@@ -1,3 +1,4 @@
+from tm.tape import Tape
 from tm.parse import tcompile
 from tm.recurrence import History
 
@@ -68,6 +69,9 @@ class Machine:
             History(tapes=samples)
         )
 
+        lspan, scan, rspan = tape
+        head, init = 0, 0
+
         marks = 0
 
         while True:
@@ -80,17 +84,18 @@ class Machine:
             # Bookkeeping ##########################
 
             if history is not None:
-                history.positions.append(tape.head)
+                history.positions.append(head)
                 history.states.append(state)
 
                 if samples is not None:
                     if step in history.tapes:
-                        history.tapes[step] = tape.copy()
+                        history.tapes[step] = \
+                            Tape(lspan + [scan] + list(reversed(rspan)), init, head)
                 else:
                     history.tapes.append(
                         None
                         if check_rec is None or step < check_rec else
-                        tape.copy()
+                        Tape(lspan + [scan] + list(reversed(rspan)), init, head)
                     )
 
             # Halt conditions ######################
@@ -109,7 +114,7 @@ class Machine:
                     break
 
             if check_rec is not None and step >= check_rec:
-                action = state, tape.read()
+                action = state, scan
 
                 result = history.check_for_recurrence(step, action)
 
@@ -140,10 +145,6 @@ class Machine:
 
             # Machine operation ####################
 
-            # pylint: disable = protected-access
-
-            scan = tape._list[tape._pos]
-
             try:
                 color, shift, state = prog[state][scan]
             except TypeError:
@@ -161,32 +162,36 @@ class Machine:
                 if scan:
                     marks -= 1
 
-            tape._list[tape._pos] = color
-
             if shift:
-                tape.head += 1
-                tape._pos  += 1
+                # push new color to the left
+                lspan.append(color)
 
+                # pull next color from the right
                 try:
-                    tape._list[tape._pos]
+                    scan = rspan.pop()
                 except IndexError:
-                    tape._list.append(0)
-                    tape.rspan += 1
+                    scan = 0
+
+                head += 1
+
             else:
-                if tape.head + tape._init == 0:
-                    tape._list.insert(0, 0)
-                    tape._init += 1
-                    tape._pos  += 1
-                    tape.lspan -= 1
+                # push new color to the right
+                rspan.append(color)
 
-                tape.head -= 1
-                tape._pos  -= 1
+                # pull next color from the left
+                try:
+                    scan = lspan.pop()
+                except IndexError:
+                    scan = 0
 
-            # pylint: enable = protected-access
+                if head + init == 0:
+                    init += 1
+
+                head -= 1
 
             # End of main loop #####################
 
-        self._tape = tape
+        self._tape = lspan, scan, rspan
         self._steps = step
 
         self._marks = marks

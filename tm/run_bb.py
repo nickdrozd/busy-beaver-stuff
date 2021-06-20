@@ -1,4 +1,3 @@
-from tm.tape import Tape
 from tm.machine import Machine
 
 def run_bb(
@@ -11,13 +10,13 @@ def run_bb(
         samples=None,
 ):
     if tape is None:
-        tape = [0]
+        tape = [], 0, []
     elif isinstance(tape, int):
-        tape = [0] * tape
+        tape = [0] * (tape // 2), 0, [0] * (tape // 2)
 
     machine = Machine(prog)
     machine.run(
-        Tape(tape, init = len(tape) // 2),
+        tape,
         x_limit,
         watch_tape,
         check_rec,
