@@ -6,19 +6,6 @@ import Data.Strings
 
 import Program
 
-Show Shift where
-  show L = "L"
-  show R = "R"
-
-Show State where
-  show H = "H"
-  show A = "A"
-  show B = "B"
-  show C = "C"
-  show D = "D"
-  show E = "E"
-  show F = "F"
-
 [ShowAction] Show Action where
   show (color, shift, state) =
     show color ++ show shift ++ show state
