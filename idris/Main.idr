@@ -25,4 +25,4 @@ main = do
   runBB TM24
   runBB BB24
   runBB bb5
-  runBB TM33
+  runBB TM33F
