@@ -109,3 +109,16 @@ BB24 B 1 = (1, L, A)
 BB24 B 2 = (3, R, B)
 BB24 B 3 = (1, R, H)
 BB24 _ c = (c, L, H)
+
+public export
+TM33 : Program
+TM33 A 0 = (1, R, B)
+TM33 A 1 = (1, R, H)
+TM33 A 2 = (2, R, B)
+TM33 B 0 = (1, L, C)
+TM33 B 1 = (0, L, B)
+TM33 B 2 = (1, R, A)
+TM33 C 0 = (1, R, A)
+TM33 C 1 = (2, L, C)
+TM33 C 2 = (1, R, C)
+TM33 _ c = (c, L, H)
