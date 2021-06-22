@@ -19,9 +19,9 @@ partial
 main : IO ()
 main = do
   runBB BB2
-  -- runBB BB3
-  -- runBB BB4
+  runBB BB3
+  runBB BB4
   runBB tm5
-  -- runBB TM24
-  -- runBB BB24
+  runBB TM24
+  runBB BB24
   runBB bb5
