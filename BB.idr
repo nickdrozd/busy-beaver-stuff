@@ -111,14 +111,27 @@ BB24 B 3 = (1, R, H)
 BB24 _ c = (c, L, H)
 
 public export
-TM33 : Program
-TM33 A 0 = (1, R, B)
-TM33 A 1 = (1, R, H)
-TM33 A 2 = (2, R, B)
-TM33 B 0 = (1, L, C)
-TM33 B 1 = (0, L, B)
-TM33 B 2 = (1, R, A)
-TM33 C 0 = (1, R, A)
-TM33 C 1 = (2, L, C)
-TM33 C 2 = (1, R, C)
-TM33 _ c = (c, L, H)
+TM33F : Program
+TM33F A 0 = (1, R, B)
+TM33F A 1 = (2, R, A)
+TM33F A 2 = (2, R, C)
+TM33F B 0 = (1, L, C)
+TM33F B 1 = (1, R, H)
+TM33F B 2 = (1, L, A)
+TM33F C 0 = (1, R, A)
+TM33F C 1 = (2, L, B)
+TM33F C 2 = (1, L, C)
+TM33F _ c = (c, L, H)
+
+public export
+TM33S : Program
+TM33S A 0 = (1, R, B)
+TM33S A 1 = (1, R, H)
+TM33S A 2 = (2, R, B)
+TM33S B 0 = (1, L, C)
+TM33S B 1 = (0, L, B)
+TM33S B 2 = (1, R, A)
+TM33S C 0 = (1, R, A)
+TM33S C 1 = (2, L, C)
+TM33S C 2 = (1, R, C)
+TM33S _ c = (c, L, H)
