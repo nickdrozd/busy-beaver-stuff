@@ -16,12 +16,12 @@ interface Tape tape where
   read  :          tape -> Color
   print : Color -> tape -> tape
 
-  shift : Shift -> tape -> Maybe (Color, Color) -> (Nat, tape)
+  shift : Shift -> tape -> Maybe Color -> (Nat, tape)
   shift L =  left
   shift R = right
 
-  left  :          tape -> Maybe (Color, Color) -> (Nat, tape)
-  right :          tape -> Maybe (Color, Color) -> (Nat, tape)
+  left  :          tape -> Maybe Color -> (Nat, tape)
+  right :          tape -> Maybe Color -> (Nat, tape)
 
 public export
 Tape tape => Show tape where
@@ -108,12 +108,15 @@ Tape MacroTape where
 
   print cx (l, _, r) = (l, cx, r)
 
-  left tape@(((bc, bn) :: l), c, r) (Just (scan, cx)) =
-    if bc /= scan then assert_total $ left tape Nothing else
+  left tape@(((bc, bn) :: l), c, r) (Just cx) =
+    if bc /= c then assert_total $ left (print cx tape) Nothing else
       let (x, k) = pullNextBlock l in
         (1 + bn, (k, x, pushCurrBlock (cx, 1 + bn) r))
 
-  left (l, c, r) _ =
+  left tape@([], _, _) (Just cx) =
+    assert_total $ left (print cx tape) Nothing
+
+  left (l, c, r) Nothing =
     let (x, k) = pullNextBlock l in
       (1, (k, x, pushCurrBlock (c, 1) r))
 
