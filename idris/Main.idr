@@ -4,27 +4,34 @@ import Program
 
 %default total
 
+FastPrograms : List Program
+FastPrograms = [BB2, BB3, BB4, tm5, TM24, BB24, bb5]
+
+SlowPrograms : List Program
+SlowPrograms = [TM33F, TM33S, TM33Q]
+
+runPrograms : Machine _ -> List Program -> IO ()
+runPrograms _ [] = do putStrLn ""
+runPrograms machine (prog :: rest) = do
+  let result = runOnBlankTape @{machine} prog
+  putStrLn $ "    " ++ show result
+  runPrograms machine rest
+
 partial
-runBB : Program -> IO()
-runBB prog = do
-  -- let result = runOnBlankTape @{MicroMachine} prog
-  -- putStrLn $ "*** Micro: " ++ show result
+runMicro : IO ()
+runMicro = do
+  putStrLn "  Micro"
+  runPrograms MicroMachine FastPrograms
 
-  let result = runOnBlankTape @{MacroMachine} prog
-  putStrLn $ "*** Macro: " ++ show result
-
-  pure()
+partial
+runMacro : IO ()
+runMacro = do
+  putStrLn "  Macro"
+  runPrograms MacroMachine FastPrograms
+  runPrograms MacroMachine SlowPrograms
 
 partial
 main : IO ()
 main = do
-  runBB BB2
-  runBB BB3
-  runBB BB4
-  runBB tm5
-  runBB TM24
-  runBB BB24
-  runBB bb5
-  runBB TM33F
-  runBB TM33S
-  runBB TM33Q
+  runMicro
+  runMacro
