@@ -36,12 +36,12 @@ public export
 MicroTape : Type
 MicroTape = (TapeSpan, Color, TapeSpan)
 
-pullNext : TapeSpan -> (Color, TapeSpan)
-pullNext [] = (0, [])
-pullNext (x :: xs) = (x, xs)
+pullNextSquare : TapeSpan -> (Color, TapeSpan)
+pullNextSquare [] = (0, [])
+pullNextSquare (x :: xs) = (x, xs)
 
-pushCurr : Color -> TapeSpan -> TapeSpan
-pushCurr = (::)
+pushCurrSquare : Color -> TapeSpan -> TapeSpan
+pushCurrSquare = (::)
 
 public export
 Tape MicroTape where
@@ -54,8 +54,8 @@ Tape MicroTape where
   read (_, c, _) = c
 
   left (l, c, r) _ =
-    let (x, k) = pullNext l in
-      (1, (k, x, pushCurr c r))
+    let (x, k) = pullNextSquare l in
+      (1, (k, x, pushCurrSquare c r))
 
   right (l, c, r) skip =
     let (s, (k, x, e)) = left (r, c, l) skip in
