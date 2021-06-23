@@ -135,3 +135,16 @@ TM33S C 0 = (1, R, A)
 TM33S C 1 = (2, L, C)
 TM33S C 2 = (1, R, C)
 TM33S _ c = (c, L, H)
+
+public export
+TM33Q : Program
+TM33Q A 0 = (1, R, B)
+TM33Q A 1 = (1, R, H)
+TM33Q A 2 = (2, L, C)
+TM33Q B 0 = (1, L, C)
+TM33Q B 1 = (2, R, B)
+TM33Q B 2 = (1, L, B)
+TM33Q C 0 = (1, L, A)
+TM33Q C 1 = (2, R, C)
+TM33Q C 2 = (2, L, A)
+TM33Q _ c = (c, L, H)

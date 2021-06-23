@@ -27,3 +27,4 @@ main = do
   runBB bb5
   runBB TM33F
   runBB TM33S
+  runBB TM33Q
