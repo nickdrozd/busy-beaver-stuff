@@ -14,14 +14,13 @@ interface Tape tape where
   blank : tape
 
   read  :          tape -> Color
-  print : Color -> tape -> tape
 
-  shift : Shift -> tape -> Maybe Color -> (Nat, tape)
+  shift : Shift -> tape -> Color -> Bool -> (Nat, tape)
   shift L =  left
   shift R = right
 
-  left  :          tape -> Maybe Color -> (Nat, tape)
-  right :          tape -> Maybe Color -> (Nat, tape)
+  left  :          tape -> Color -> Bool -> (Nat, tape)
+  right :          tape -> Color -> Bool -> (Nat, tape)
 
 public export
 Tape tape => Show tape where
@@ -53,18 +52,13 @@ Tape MicroTape where
 
   read (_, c, _) = c
 
-  left tape (Just cx) =
-    assert_total $ left (print cx tape) Nothing
-
-  left (l, c, r) _ =
+  left (l, _, r) cx _ =
     let (x, k) = pullNextSquare l in
-      (1, (k, x, pushCurrSquare c r))
+      (1, (k, x, pushCurrSquare cx r))
 
-  right (l, c, r) skip =
-    let (s, (k, x, e)) = left (r, c, l) skip in
+  right (l, c, r) cx skip =
+    let (s, (k, x, e)) = left (r, c, l) cx skip in
       (s, (e, x, k))
-
-  print cx (l, _, r) = (l, cx, r)
 
 ----------------------------------------
 
@@ -109,20 +103,15 @@ Tape MacroTape where
 
   read (_, c, _) = c
 
-  print cx (l, _, r) = (l, cx, r)
-
-  left tape@(((bc, bn) :: l), c, r) (Just cx) =
-    if bc /= c then assert_total $ left (print cx tape) Nothing else
+  left tape@(((bc, bn) :: l), c, r) cx True =
+    if bc /= c then assert_total $ left tape cx False else
       let (x, k) = pullNextBlock l in
         (1 + bn, (k, x, pushCurrBlock (cx, 1 + bn) r))
 
-  left tape@([], _, _) (Just cx) =
-    assert_total $ left (print cx tape) Nothing
-
-  left (l, c, r) Nothing =
+  left (l, _, r) cx _ =
     let (x, k) = pullNextBlock l in
-      (1, (k, x, pushCurrBlock (c, 1) r))
+      (1, (k, x, pushCurrBlock (cx, 1) r))
 
-  right (l, c, r) skip =
-    let (s, (k, x, e)) = left (r, c, l) skip in
+  right (l, c, r) cx skip =
+    let (s, (k, x, e)) = left (r, c, l) cx skip in
       (s, (e, x, k))

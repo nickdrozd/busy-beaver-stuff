@@ -12,11 +12,8 @@ interface Tape tape => Machine tape where
     let
       scan = read tape
       (cx, dir, nextState) = prog state scan
-      (skip, printed) =
-        if state /= nextState
-          then (Nothing, print cx tape)
-          else (Just cx, tape)
-      (stepped, shifted) = shift dir printed skip
+      skip = state == nextState
+      (stepped, shifted) = shift dir tape cx skip
     in
       (nextState, shifted, stepped + steps)
 
