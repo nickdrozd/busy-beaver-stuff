@@ -53,6 +53,9 @@ Tape MicroTape where
 
   read (_, c, _) = c
 
+  left tape (Just cx) =
+    assert_total $ left (print cx tape) Nothing
+
   left (l, c, r) _ =
     let (x, k) = pullNextSquare l in
       (1, (k, x, pushCurrSquare c r))
