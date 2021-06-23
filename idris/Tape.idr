@@ -52,6 +52,14 @@ Tape MicroTape where
 
   read (_, c, _) = c
 
+  left tape@(cn :: l, c, r) cx True =
+    if cn /= c then assert_total $ left tape cx False else
+      let
+        nextTape = (l, cn, cx :: r)
+        (steps, shifted) = assert_total $ left nextTape cx True
+      in
+        (S steps, shifted)
+
   left (l, _, r) cx _ =
     let (x, k) = pullNextSquare l in
       (1, (k, x, pushCurrSquare cx r))
