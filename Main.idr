@@ -10,6 +10,9 @@ FastPrograms = [BB2, BB3, BB4, tm5, TM24, BB24, bb5]
 SlowPrograms : List Program
 SlowPrograms = [TM33F, TM33S, TM33Q]
 
+Blankers : List Program
+Blankers = [BL2, BL3, BL4]
+
 runPrograms : Machine _ -> List Program -> IO ()
 runPrograms _ [] = do putStrLn ""
 runPrograms machine (prog :: rest) = do
