@@ -28,6 +28,7 @@ runMicro : IO ()
 runMicro = do
   putStrLn "  Micro"
   runPrograms MicroMachine FastHalt
+  runPrograms MicroMachine Blankers
 
 partial
 runMacro : IO ()
@@ -35,6 +36,7 @@ runMacro = do
   putStrLn "  Macro"
   runPrograms MacroMachine FastHalt
   runPrograms MacroMachine SlowHalt
+  runPrograms MacroMachine Blankers
 
 partial
 main : IO ()
