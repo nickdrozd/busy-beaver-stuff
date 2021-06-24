@@ -10,10 +10,8 @@ interface Tape tape => Machine tape where
   exec : Program -> State -> tape -> (State, tape, Nat)
   exec prog state tape =
     let
-      scan = read tape
-      (cx, dir, nextState) = prog state scan
-      skip = state == nextState
-      (stepped, shifted) = shift dir tape cx skip
+      (cx, dir, nextState) = prog state $ read tape
+      (stepped, shifted) = shift dir tape cx $ state == nextState
     in
       (nextState, shifted, stepped)
 
