@@ -41,13 +41,13 @@ parseState 'E' = Just E
 parseState 'F' = Just F
 parseState _   = Nothing
 
-partial
 parseAction : String -> Maybe Action
-parseAction action = let actionIndex = strIndex action in do
-  color <- parseColor $ actionIndex 0
-  shift <- parseShift $ actionIndex 1
-  state <- parseState $ actionIndex 2
-  Just (color, shift, state)
+parseAction action =
+  let actionIndex = assert_total $ strIndex action in do
+    color <- parseColor $ actionIndex 0
+    shift <- parseShift $ actionIndex 1
+    state <- parseState $ actionIndex 2
+    Just (color, shift, state)
 
 -- n is 2; needs to be changed for more colors
 public export
@@ -61,8 +61,6 @@ pairUp (x1 :: x2 :: xs) = do
   rest <- pairUp xs
   Just $ [x1, x2] :: rest
 
--- This gets about halfway.
-partial
 partwayParse : String -> Maybe (List BWAction)
 partwayParse input = pairUp $ mapMaybe parseAction $ words input
 
@@ -115,7 +113,6 @@ makeProgram actions state = cast $ index (cast state) actions
 bb3input : String
 bb3input = "1RB   1RH   1LB   0RC   1LC   1LA"
 
-partial
 bb3parsed : Maybe (List BWAction)
 bb3parsed = partwayParse bb3input
 
@@ -124,18 +121,15 @@ bb3parsed = partwayParse bb3input
 bb4input : String
 bb4input = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
 
-partial
 bb4parsed : Maybe (List BWAction)
 bb4parsed = partwayParse bb4input
 
 ----------------------------------------
 
-partial
 tm5parse : Maybe $ List BWAction
 tm5parse = partwayParse
   "1RB   0LC   1RC   1RD   1LA   0RB   0RE   1RH   1LC   1RA"
 
-partial
 bb5parse : Maybe $ List BWAction
 bb5parse = partwayParse
   "1RB   1LC   1RC   1RB   1RD   0LE   1LA   1LD   1RH   0LA"
