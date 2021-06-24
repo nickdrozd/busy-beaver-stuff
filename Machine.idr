@@ -16,18 +16,18 @@ interface Tape tape => Machine tape where
       (nextState, shifted, stepped)
 
   partial
-  run : Program -> State -> tape -> Nat -> (Nat, tape)
+  run : Program -> State -> tape -> Nat -> IO (Nat, tape)
   run prog state tape steps =
     let
       (nextState, nextTape, stepped) = exec prog state tape
       nextSteps = stepped + steps
     in
       case nextState of
-        H => (nextSteps, nextTape)
+        H => pure (nextSteps, nextTape)
         _ => run prog nextState nextTape nextSteps
 
   partial
-  runOnBlankTape : Program -> (Nat, tape)
+  runOnBlankTape : Program -> IO (Nat, tape)
   runOnBlankTape prog = run prog A blank 0
 
 public export

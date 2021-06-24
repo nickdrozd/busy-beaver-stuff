@@ -19,7 +19,7 @@ Blankers = [BL2, BL3, BL4]
 runPrograms : Machine _ -> Programs -> IO ()
 runPrograms _ [] = do putStrLn ""
 runPrograms machine (prog :: rest) = do
-  let result = runOnBlankTape @{machine} prog
+  result <- runOnBlankTape @{machine} prog
   putStrLn $ "    " ++ show result
   runPrograms machine rest
 
