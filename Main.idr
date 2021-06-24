@@ -23,20 +23,28 @@ runPrograms machine (prog :: rest) = do
   putStrLn $ "    " ++ show result
   runPrograms machine rest
 
+runProgramSets : Machine _ -> List Programs -> IO ()
+runProgramSets _ [] = pure ()
+runProgramSets machine (progs :: rest) = do
+  runPrograms machine progs
+  runProgramSets machine rest
+
 partial
 runMicro : IO ()
 runMicro = do
   putStrLn "  Micro"
-  runPrograms MicroMachine FastHalt
-  runPrograms MicroMachine Blankers
+  runProgramSets MicroMachine [
+    FastHalt,
+    Blankers]
 
 partial
 runMacro : IO ()
 runMacro = do
   putStrLn "  Macro"
-  runPrograms MacroMachine FastHalt
-  runPrograms MacroMachine SlowHalt
-  runPrograms MacroMachine Blankers
+  runProgramSets MacroMachine [
+    FastHalt,
+    SlowHalt,
+    Blankers]
 
 partial
 main : IO ()
