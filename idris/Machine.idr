@@ -30,7 +30,7 @@ interface Tape tape => Machine tape where
 
   partial
   runOnBlankTape : Program -> (Nat, tape)
-  runOnBlankTape prog = run prog A (the tape blank) 0
+  runOnBlankTape prog = run prog A blank 0
 
 public export
 [MicroMachine] Machine MicroTape where
