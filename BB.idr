@@ -149,6 +149,19 @@ TM33Q C 1 = (2, R, C)
 TM33Q C 2 = (2, L, A)
 TM33Q _ c = (c, L, H)
 
+public export
+BB33  : Program
+BB33  A 0 = (1, R, B)
+BB33  A 1 = (2, L, A)
+BB33  A 2 = (1, L, C)
+BB33  B 0 = (0, L, A)
+BB33  B 1 = (2, R, B)
+BB33  B 2 = (1, L, B)
+BB33  C 0 = (1, R, H)
+BB33  C 1 = (1, R, A)
+BB33  C 2 = (1, R, C)
+BB33  _ c = (c, L, H)
+
 -- Blanking Beavers
 
 public export
