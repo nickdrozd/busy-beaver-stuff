@@ -14,8 +14,8 @@ interface Tape tape => Machine tape where
       (cx, dir, nextState) = prog state scan
       (stepped, shifted) = shift dir tape cx $ state == nextState
       marked = case (scan, cx) of
-        (Z, S _) =>  1
-        (S _, Z) => -1
+        (Z, S _) =>  cast stepped
+        (S _, Z) => -1 * cast stepped
         _        =>  0
     in
       (nextState, shifted, stepped, marked)
@@ -27,7 +27,7 @@ interface Tape tape => Machine tape where
     let
       (nextState, nextTape, stepped, marked) = exec prog state tape
       nextSteps = stepped + steps
-      nextMarks = (marked * cast stepped) + marks
+      nextMarks = marked + marks
     in
       if nextState == H || nextMarks == 0
         then pure (nextSteps, nextTape)
