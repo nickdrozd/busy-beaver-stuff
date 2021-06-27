@@ -20,9 +20,10 @@ interface Tape tape => Machine tape where
     in
       (nextState, shifted, stepped, marked)
 
-  partial
-  run : Program -> State -> tape -> Nat -> Int -> IO (Nat, tape)
-  run prog state tape steps marks =
+  run : Nat -> Program -> State -> tape -> Nat -> Int
+      -> IO (Nat, tape)
+  run 0     _    _     tape steps _     = pure (steps, tape)
+  run (S k) prog state tape steps marks =
     let
       (nextState, nextTape, stepped, marked) = exec prog state tape
       nextSteps = stepped + steps
@@ -30,11 +31,12 @@ interface Tape tape => Machine tape where
     in
       if nextState == H || nextMarks == 0
         then pure (nextSteps, nextTape)
-        else run prog nextState nextTape nextSteps nextMarks
+        else run k prog nextState nextTape nextSteps nextMarks
 
-  partial
   runOnBlankTape : Program -> IO (Nat, tape)
-  runOnBlankTape prog = run prog A blank 0 0
+  runOnBlankTape prog = run limit prog A blank 0 0 where
+    limit : Nat
+    limit = 5_000_000_000_000
 
 public export
 [MicroMachine] Machine MicroTape where
