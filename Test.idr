@@ -29,7 +29,6 @@ runProgramSets machine (progs :: rest) = do
   runPrograms machine progs
   runProgramSets machine rest
 
-partial
 runMicro : IO ()
 runMicro = do
   putStrLn "  Micro"
@@ -37,7 +36,6 @@ runMicro = do
     FastHalt,
     Blankers]
 
-partial
 runMacro : IO ()
 runMacro = do
   putStrLn "  Macro"
@@ -46,7 +44,6 @@ runMacro = do
     SlowHalt,
     Blankers]
 
-partial
 main : IO ()
 main = do
   runMicro
