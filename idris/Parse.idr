@@ -2,7 +2,7 @@ module Parse
 
 import Data.List
 import Data.Vect
-import Data.Strings
+import Data.String
 
 import Program
 
