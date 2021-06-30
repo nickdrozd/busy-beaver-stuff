@@ -4,7 +4,7 @@ module Program
 
 public export
 Color : Type
-Color = Nat
+Color = Int
 
 public export
 data Shift = L | R
