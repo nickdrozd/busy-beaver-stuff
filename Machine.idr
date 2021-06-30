@@ -14,8 +14,8 @@ interface Tape tape => Machine tape where
       (cx, dir, nextState) = prog state scan
       (stepped, shifted) = shift dir tape cx $ state == nextState
       marked = case (scan, cx) of
-        (Z, S _) =>  cast stepped
-        (S _, Z) => -1 * cast stepped
+        (0, _) =>  cast stepped
+        (_, 0) => -1 * cast stepped
         _        =>  0
     in
       (nextState, shifted, stepped, marked)
