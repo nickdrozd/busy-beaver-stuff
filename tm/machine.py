@@ -100,18 +100,9 @@ class Machine:
 
             # Halt conditions ######################
 
-            if state == 7:  # ord('H') - 65
-                self._final = ('HALTED', step, None)
-                break
-
             if step >= x_limit:
                 self._final = ('XLIMIT', step, None)
                 break
-
-            if check_blanks and step != 0:
-                if marks == 0:
-                    self._final = ('BLANKS', step, None)
-                    break
 
             if check_rec is not None and step >= check_rec:
                 action = state, scan
@@ -196,6 +187,17 @@ class Machine:
             step += 1
 
             marks += (1 * marked)
+
+            # Halt conditions ######################
+
+            if state == 7:  # ord('H') - 65
+                self._final = ('HALTED', step, None)
+                break
+
+            if check_blanks and step != 0:
+                if marks == 0:
+                    self._final = ('BLANKS', step, None)
+                    break
 
             # End of main loop #####################
 
