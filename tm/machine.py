@@ -139,10 +139,6 @@ class Machine:
 
                 history.actions[action].append(step)
 
-            # Bookkeeping ##########################
-
-            step += 1
-
             # Machine operation ####################
 
             try:
@@ -157,10 +153,14 @@ class Machine:
 
             if color:
                 if not scan:
-                    marks += 1
+                    marked = 1
+                else:
+                    marked = 0
             else:
                 if scan:
-                    marks -= 1
+                    marked = -1
+                else:
+                    marked = 0
 
             if shift:
                 # push new color to the left
@@ -190,6 +190,12 @@ class Machine:
                 head -= 1
 
             state = next_state
+
+            # Bookkeeping ##########################
+
+            step += 1
+
+            marks += (1 * marked)
 
             # End of main loop #####################
 
