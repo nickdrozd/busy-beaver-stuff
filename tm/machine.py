@@ -146,7 +146,7 @@ class Machine:
             # Machine operation ####################
 
             try:
-                color, shift, state = prog[state][scan]
+                color, shift, next_state = prog[state][scan]
             except TypeError:
                 self._final = (
                     'UNDFND',
@@ -188,6 +188,8 @@ class Machine:
                     init += 1
 
                 head -= 1
+
+            state = next_state
 
             # End of main loop #####################
 
