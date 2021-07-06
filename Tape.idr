@@ -1,6 +1,7 @@
 module Tape
 
 import Data.List
+import Data.Nat
 
 import Program
 
@@ -67,6 +68,17 @@ Tape MicroTape where
   right (l, c, r) cx skip =
     let (s, (k, x, e)) = left (r, c, l) cx skip in
       (s, (e, x, k))
+
+tapeLengthMonotone : {x : Color} -> (tape : MicroTape) ->
+  LTE (cells tape)
+      (let (_, tp) = left tape x False in cells tp)
+tapeLengthMonotone (    [], c, r) =
+  LTESucc $ lteSuccRight $ reflexive {rel = LTE}
+tapeLengthMonotone (h :: t, c, r) =
+  rewrite plusCommutative (length t) 1 in
+    rewrite plusCommutative (length t) (S $ length r) in
+      rewrite plusCommutative (length r) (length t) in
+        LTESucc $ LTESucc $ reflexive {x = length t + length r}
 
 ----------------------------------------
 
