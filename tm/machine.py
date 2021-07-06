@@ -70,7 +70,7 @@ class Machine:
         )
 
         lspan, scan, rspan = tape
-        head, init = 0, 0
+        head, init = 0, len(lspan)
 
         marks = 0
 
@@ -79,7 +79,8 @@ class Machine:
             # Output ###############################
 
             if watch_tape:
-                print(f'{step : 5d} {chr(state + 65)} ', tape)
+                print(f'{step : 5d} {chr(state + 65)} ',
+                      Tape(lspan + [scan] + list(reversed(rspan)), init, head))
 
             # Bookkeeping ##########################
 
