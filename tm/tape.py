@@ -1,19 +1,12 @@
 class Tape:
-    def __init__(self, underlying_list, init, head = 0):
-        self._list = underlying_list
+    def __init__(self, lspan, scan, rspan, init, head = 0):
+        self._list = lspan + [scan] + list(reversed(rspan))
         self._init = init
         self.head = head
         self._pos  = self.head + self._init
 
         self.lspan =               0 - self._init
         self.rspan = len(self._list) - self._init
-
-    def copy(self):
-        return Tape(
-            self._list.copy(),
-            self._init,
-            head = self.head,
-        )
 
     def __repr__(self):
         squares = [
