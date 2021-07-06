@@ -80,7 +80,7 @@ class Machine:
 
             if watch_tape:
                 print(f'{step : 5d} {chr(state + 65)} ',
-                      Tape(lspan + [scan] + list(reversed(rspan)), init, head))
+                      Tape(lspan, scan, rspan, init, head))
 
             # Bookkeeping ##########################
 
@@ -91,12 +91,12 @@ class Machine:
                 if samples is not None:
                     if step in history.tapes:
                         history.tapes[step] = \
-                            Tape(lspan + [scan] + list(reversed(rspan)), init, head)
+                            Tape(lspan, scan, rspan, init, head)
                 else:
                     history.tapes.append(
                         None
                         if check_rec is None or step < check_rec else
-                        Tape(lspan + [scan] + list(reversed(rspan)), init, head)
+                        Tape(lspan, scan, rspan, init, head)
                     )
 
             # Halt conditions ######################
