@@ -5,8 +5,20 @@ class History:
         self.tapes = [] if tapes is None else tapes
         self.beeps = []
         self.states = []
-        self.actions = defaultdict(lambda: [])
         self.positions = []
+        self.actions = defaultdict(lambda: [])
+
+    def add_position_at_step(self, pos, step):
+        self.positions += [pos] * (step - len(self.positions))
+        self.positions.append(pos)
+
+    def add_state_at_step(self, state, step):
+        self.states += [state] * (step - len(self.states))
+        self.states.append(state)
+
+    def add_tape_at_step(self, tape, step):
+        self.tapes += [tape] * (step - len(self.tapes))
+        self.tapes.append(tape)
 
     def calculate_beeps(self, through=None):
         states = (
@@ -43,6 +55,9 @@ def verify_lin_recurrence(steps, period, history):
 
     tape1 = tapes[steps]
     tape2 = tapes[recurrence]
+
+    if tape1 is None or tape2 is None:
+        return False
 
     # pylint: disable = pointless-statement
     tape1[ tape2.lspan : tape2.rspan ]
