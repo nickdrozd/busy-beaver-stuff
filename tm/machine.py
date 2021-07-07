@@ -155,40 +155,60 @@ class Machine:
                 else:
                     marked = 0
 
-            if shift:
-                # push new color to the left
-                lspan.append(color)
+            stepped = 0
 
-                # pull next color from the right
+            init_scan = scan
+
+            side = rspan if shift else lspan
+
+            while scan == init_scan:
+                if shift:
+                    # push new color to the left
+                    lspan.append(color)
+
+                    # pull next color from the right
+                    try:
+                        scan = rspan.pop()
+                    except IndexError:
+                        scan = 0
+
+                    head += 1
+
+                else:
+                    # push new color to the right
+                    rspan.append(color)
+
+                    # pull next color from the left
+                    try:
+                        scan = lspan.pop()
+                    except IndexError:
+                        scan = 0
+
+                    if head + init == 0:
+                        init += 1
+
+                    head -= 1
+
+                stepped += 1
+
+                if state != next_state:
+                    break
+
                 try:
-                    scan = rspan.pop()
+                    next_square = side[-1]
                 except IndexError:
-                    scan = 0
+                    break
 
-                head += 1
-
-            else:
-                # push new color to the right
-                rspan.append(color)
-
-                # pull next color from the left
-                try:
-                    scan = lspan.pop()
-                except IndexError:
-                    scan = 0
-
-                if head + init == 0:
-                    init += 1
-
-                head -= 1
+                if next_square != init_scan:
+                    break
 
             state = next_state
 
             # Bookkeeping ##########################
 
-            step += 1
+            step += stepped
 
-            marks += (1 * marked)
+            marks += (marked * stepped)
 
             # Halt conditions ######################
 
