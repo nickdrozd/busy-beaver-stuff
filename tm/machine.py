@@ -85,18 +85,19 @@ class Machine:
             # Bookkeeping ##########################
 
             if history is not None:
-                history.positions.append(head)
-                history.states.append(state)
+                history.add_position_at_step(head, step)
+                history.add_state_at_step(state, step)
 
                 if samples is not None:
                     if step in history.tapes:
                         history.tapes[step] = \
                             Tape(lspan, scan, rspan, init, head)
                 else:
-                    history.tapes.append(
+                    history.add_tape_at_step(
                         None
                         if check_rec is None or step < check_rec else
-                        Tape(lspan, scan, rspan, init, head)
+                        Tape(lspan, scan, rspan, init, head),
+                        step,
                     )
 
             # Halt conditions ######################
