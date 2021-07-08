@@ -14,7 +14,7 @@ SlowHalt : Programs
 SlowHalt = [TM33F, TM33S, TM33Q]
 
 Blankers : Programs
-Blankers = [BL2, BL3, BL4]
+Blankers = [BL2, BL3, BL4, BLB4]
 
 runPrograms : Machine _ -> Programs -> IO ()
 runPrograms _ [] = do putStrLn ""
