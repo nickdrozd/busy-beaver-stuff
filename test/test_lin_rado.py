@@ -1,6 +1,6 @@
 # pylint: disable = attribute-defined-outside-init, too-many-lines
 
-from unittest import TestCase
+from unittest import TestCase, skip
 
 from tm.run_bb import run_bb
 from generate.generate import yield_programs
@@ -37,6 +37,7 @@ class TestLinRado(TestCase):
             ).final[0] == 'XLIMIT'
         }
 
+    @skip
     def test_22h(self):
         self.run_lin_rado(
             2, 2, 1,
@@ -76,6 +77,7 @@ class TestLinRado(TestCase):
                 prog,
                 HOLDOUTS_32H)
 
+    @skip
     def test_23h(self):
         self.run_lin_rado(
             2, 3, 1,
@@ -104,6 +106,7 @@ class TestLinRado(TestCase):
         self.assert_progs_count(
             837)
 
+    @skip
     def test_23q(self):
         self.run_lin_rado(
             2, 3, 0,

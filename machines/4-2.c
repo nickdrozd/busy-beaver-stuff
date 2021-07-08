@@ -3,7 +3,7 @@
 #define STATES 4
 #define COLORS 2
 
-#define X_LIMIT 2097152
+#define X_LIMIT 35000000
 #define BB4 107
 #define LOWER_BOUND BB4
 #define UPPER_BOUND (X_LIMIT / 2)
