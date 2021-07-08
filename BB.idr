@@ -193,3 +193,15 @@ BL4 C 1 = (1, R, D)
 BL4 D 0 = (1, L, A)
 BL4 D 1 = (0, L, D)
 BL4 _ c = (c, L, H)
+
+public export
+BLB4 : Program
+BLB4 A 0 = (1, R, B)
+BLB4 A 1 = (1, L, D)
+BLB4 B 0 = (1, R, C)
+BLB4 B 1 = (1, R, B)
+BLB4 C 0 = (1, L, C)
+BLB4 C 1 = (1, L, A)
+BLB4 D 0 = (0, R, C)
+BLB4 D 1 = (0, R, D)
+BLB4 _ c = (c, L, H)
