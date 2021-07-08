@@ -288,7 +288,7 @@ RECURRENCE_FAST = {
 
 }
 
-BLANK_TAPE = {
+BLANK_FAST = {
     # 2/2
     "1RB 0RA  1LB 1LA": 8,
     "1RB 0RA  0LB 1LA": 7,
@@ -376,6 +376,13 @@ BLANK_TAPE = {
 }
 
 
+BLANK_SLOW = {
+    # 4/2
+    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779477,
+    # TNF: "1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD"
+}
+
+
 UNDEFINED_FAST = {
     # 4/2 BBQ
     "... ...  ... ...  ... ...  ... ...": ( 0, 'A0'),
@@ -394,6 +401,14 @@ UNDEFINED_FAST = {
     "1RB ...  1LB 1LC  1LA 1RD  ... ...": ( 7, 'D1'),
     "1RB ...  1LB 1LC  1LA 1RD  ... 0LC": ( 9, 'D0'),
     "1RB ...  1LB 1LC  1LA 1RD  0RA 0LC": (10, 'A1'),
+
+    # 4/2 BLB
+    "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
+    "1RB ...  1RC ...  1LC ...  ... ...": ( 3, 'C1'),
+    "1RB ...  1RC ...  1LC 1LA  ... ...": ( 4, 'A1'),
+    "1RB 1LD  1RC ...  1LC 1LA  ... ...": ( 5, 'D0'),
+    "1RB 1LD  1RC ...  1LC 1LA  0RC ...": ( 8, 'B1'),
+    "1RB 1LD  1RC 1RB  1LC 1LA  0RC ...": (15, 'D1'),
 
     # 2/4 BBH
     "... ... ... ...  ... ... ... 3..": ( 0, 'A0'),
@@ -570,6 +585,13 @@ class TuringTest(TestCase):
             )
             self.assert_final(final)
 
+    def _test_blank(self, prog_data):
+        for prog, steps in prog_data.items():
+            self.run_bb(prog, check_blanks=True)
+
+            self.assert_steps(steps)
+            self.assert_final(('BLANKS', steps, None))
+
 
 class Fast(TuringTest):
     def test_halting(self):
@@ -581,12 +603,8 @@ class Fast(TuringTest):
     def test_quasihalting(self):
         self._test_recurrence(QUASIHALTING, 'QSIHLT', True)
 
-    def test_blank_tape(self):
-        for prog, steps in BLANK_TAPE.items():
-            self.run_bb(prog, check_blanks=True)
-
-            self.assert_steps(steps)
-            self.assert_final(('BLANKS', steps, None))
+    def test_blank(self):
+        self._test_blank(BLANK_FAST)
 
     def test_undefined(self):
         self._test_undefined(UNDEFINED_FAST)
@@ -601,6 +619,9 @@ class Slow(TuringTest):
 
     def test_quasihalting(self):
         self._test_recurrence(QUASIHALTING_SLOW, 'QSIHLT', False)
+
+    def test_blank(self):
+        self._test_blank(BLANK_SLOW)
 
     def test_undefined(self):
         self._test_undefined(UNDEFINED_SLOW)
