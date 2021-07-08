@@ -1,6 +1,6 @@
 # pylint: disable = attribute-defined-outside-init
 
-from unittest import TestCase
+from unittest import TestCase, skip
 
 from tm.run_bb import run_bb
 from tm.recurrence import verify_lin_recurrence
@@ -597,9 +597,11 @@ class Fast(TuringTest):
     def test_halting(self):
         self._test_halting(HALTING_FAST)
 
+    @skip
     def test_recurrence(self):
         self._test_recurrence(RECURRENCE_FAST, 'RECURR', True)
 
+    @skip
     def test_quasihalting(self):
         self._test_recurrence(QUASIHALTING, 'QSIHLT', True)
 
@@ -617,6 +619,7 @@ class Slow(TuringTest):
     def test_halting(self):
         self._test_halting(HALTING_SLOW)
 
+    @skip
     def test_quasihalting(self):
         self._test_recurrence(QUASIHALTING_SLOW, 'QSIHLT', False)
 
