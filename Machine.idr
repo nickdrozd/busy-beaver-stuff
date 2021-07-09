@@ -7,16 +7,16 @@ import public Tape
 
 public export
 interface Tape tape => Machine tape where
-  exec : Program -> State -> tape -> (State, tape, Nat, Int)
+  exec : Program -> State -> tape -> (State, tape, Nat, Maybe Int)
   exec prog state tape =
     let
       scan = read tape
       (cx, dir, nextState) = prog state scan
       (stepped, shifted) = shift dir tape cx $ state == nextState
       marked = case (scan, cx) of
-        (Z, S _) =>  cast stepped
-        (S _, Z) => -1 * cast stepped
-        _        =>  0
+        (Z, S _) => Just $      cast stepped
+        (S _, Z) => Just $ -1 * cast stepped
+        _        => Nothing
     in
       (nextState, shifted, stepped, marked)
 
@@ -27,7 +27,9 @@ interface Tape tape => Machine tape where
     let
       (nextState, nextTape, stepped, marked) = exec prog state tape
       nextSteps = stepped + steps
-      nextMarks = marked + marks
+      nextMarks = case marked of
+                       Just ms => marks + ms
+                       Nothing => marks
     in
       if nextState == H || nextMarks == 0
         then pure (nextSteps, nextTape)
