@@ -191,8 +191,6 @@ class Machine:
 
                 stepped += 1
 
-                break
-
                 if state != next_state:
                     break
 
