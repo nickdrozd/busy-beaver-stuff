@@ -38,11 +38,11 @@ def tree_gen(steps, progs):
 
 
 if __name__ == '__main__':
-    progs = Manager().Queue()
-    progs.put('1RB ... ... ... ... ...')
+    PROGS = Manager().Queue()
+    PROGS.put('1RB ... ... ... ... ...')
 
     processes = [
-        Process(target=tree_gen, args=(126, progs))
+        Process(target=tree_gen, args=(126, PROGS))
         for _ in range(cpu_count())
     ]
 

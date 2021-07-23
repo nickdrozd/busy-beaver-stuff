@@ -6,6 +6,7 @@ run :
 	python3 run.py
 
 lint :
+	pylint --version
 	pylint *.py **/*.py
 
 test :

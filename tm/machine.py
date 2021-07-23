@@ -8,7 +8,6 @@ class Machine:
         self._prog = prog
         self._comp = tcompile(prog)
         self._tape = None
-        self._pos = None
         self._state = None
         self._steps = None
         self._marks = None
