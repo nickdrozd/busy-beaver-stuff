@@ -3,7 +3,6 @@
 from unittest import TestCase, skip
 
 from tm.run_bb import run_bb
-from tm.recurrence import verify_lin_recurrence
 
 HALTING_FAST = {
     # 2/2 BB
@@ -482,18 +481,16 @@ class TuringTest(TestCase):
 
     def assert_lin_recurrence(self, steps, period):
         self.assertTrue(
-            verify_lin_recurrence(
+            self.history.verify_lin_recurrence(
                 steps,
                 period,
-                self.machine.history
             ))
 
     def deny_lin_recurrence(self, steps, period):
         self.assertFalse(
-            verify_lin_recurrence(
+            self.history.verify_lin_recurrence(
                 steps,
                 period,
-                self.machine.history
             ))
 
     def verify_lin_recurrence(self, prog, steps, period):
@@ -530,6 +527,7 @@ class TuringTest(TestCase):
             print(prog)
 
         self.machine = run_bb(prog, **opts)
+        self.history = self.machine.history
 
     def _test_halting(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
