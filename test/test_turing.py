@@ -383,6 +383,12 @@ BLANK_SLOW = {
     # 4/2
     "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779477,
     # TNF: "1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD"
+
+    # 5/2 constructed form 4/2
+    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE": 32810047,
+
+    # 6/2 constructed from 4/2
+    "1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC": 65538549,
 }
 
 
