@@ -53,7 +53,7 @@ class Graph:
     @property
     def exit_points(self):
         return {
-            state: set(connections).difference('H')
+            state: set(connections).difference('H').difference('.')
             for state, connections in self.arrows.items()
         }
 
@@ -65,7 +65,11 @@ class Graph:
             for exit_point in exits:
                 if exit_point == 'H':
                     continue
-                entries[exit_point].add(state)
+
+                try:
+                    entries[exit_point].add(state)
+                except KeyError:
+                    pass
 
         return entries
 
@@ -124,6 +128,7 @@ class Graph:
                 reachable = {
                     node
                     for connection in reachable_from_x
+                    if connection in self.arrows
                     for node in self.arrows[connection]
                 }
 
