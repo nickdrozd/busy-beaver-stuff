@@ -16,10 +16,8 @@ def tree_gen(steps, progs):
         except Empty:
             break
 
-        program = Program(prog)
-
         machine = run_bb(
-            program,
+            prog,
             x_limit = steps,
             check_rec = 0,
             check_blanks = True,
@@ -33,7 +31,7 @@ def tree_gen(steps, progs):
 
             continue
 
-        for ext in program.branch(instr):
+        for ext in Program(prog).branch(instr):
             progs.put(ext)
 
 
