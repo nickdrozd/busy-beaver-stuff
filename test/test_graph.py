@@ -6,6 +6,7 @@ from generate.graph import Graph
 
 A, B, C, D, E = "A", "B", "C", "D", "E"
 
+# flat, norm, conn, irr, entries, exits
 
 GRAPHS = {
     # 2 2
@@ -23,6 +24,24 @@ GRAPHS = {
     ),
 
     # 3 2
+    "1RB 0LB 1LA 0RA ... ...": (
+        'B B A A . .',
+        0, 0, 1,
+        {A: {B}, B: {A}, C: set()},
+        {A: {B}, B: {A}, C: set()},
+    ),
+    "1RB 1LA 0LA 0RB ... ...": (
+        'B A A B . .',
+        0, 0, 0,
+        {A : {A, B}, B: {A, B}, C: set()},
+        {A : {A, B}, B: {A, B}, C: set()},
+    ),
+    "1RB ... 0LB 1RC 1LB 0RC": (
+        'B . B C B C',
+        0, 0, 0,
+        {A: set(), B: {A, B, C}, C: {B, C}},
+        {A: {B}, B: {B, C}, C: {B, C}},
+    ),
     "1RB 1RH 1LB 0RC 1LC 1LA": (
         "B H B C C A",
         1, 1, 0,
