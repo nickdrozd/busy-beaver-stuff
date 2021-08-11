@@ -23,16 +23,16 @@ def tree_gen(steps, progs):
             check_blanks = True,
         )
 
-        status, _step, instr = machine.final
+        if machine.final.undfnd is not None:
+            _step, instr = machine.final.undfnd
 
-        if status != 'UNDFND':
-            if status == 'XLIMIT':
-                print(prog)
+            for ext in Program(prog).branch(instr):
+                progs.put(ext)
 
             continue
 
-        for ext in Program(prog).branch(instr):
-            progs.put(ext)
+        if machine.final.xlimit is not None:
+            print(prog)
 
 
 if __name__ == '__main__':
