@@ -215,10 +215,9 @@ class Machine:
                 self._final = ('HALTED', step, None)
                 break
 
-            if check_blanks and step != 0:
-                if marks == 0:
-                    self._final = ('BLANKS', step, None)
-                    break
+            if check_blanks and marks == 0:
+                self._final = ('BLANKS', step, None)
+                break
 
             # End of main loop #####################
 
