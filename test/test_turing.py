@@ -449,23 +449,23 @@ UNDEFINED_SLOW = {
 }
 
 BB4_EXTENSIONS = {
-    "1RB 1LB  1LA 0LC  0LB 1LD  1RD 0RA": ('RECURR', 24, 96),
-    "1RB 1LB  1LA 0LC  1RA 1LD  1RD 0RA": ('RECURR', 85, 23),
-    "1RB 1LB  1LA 0LC  1LB 1LD  1RD 0RA": ('RECURR', 89, 18),
-    "1RB 1LB  1LA 0LC  1RD 1LD  1RD 0RA": ('RECURR', 102, 7),
-    "1RB 1LB  1LA 0LC  0LC 1LD  1RD 0RA": ('QSIHLT', 106, 1),
-    "1RB 1LB  1LA 0LC  1LC 1LD  1RD 0RA": ('QSIHLT', 106, 1),
-    "1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA": ('HALTED', 107, None),
-    "1RB 1LB  1LA 0LC  1LD 1LD  1RD 0RA": ('RECURR', 305, 70),
-    "1RB 1LB  1LA 0LC  0RB 1LD  1RD 0RA": ('RECURR', 313, 74),
-    "1RB 1LB  1LA 0LC  1RB 1LD  1RD 0RA": ('RECURR', 341, 46),
-    "1RB 1LB  1LA 0LC  1RC 1LD  1RD 0RA": ('RECURR', 349, 50),
-    "1RB 1LB  1LA 0LC  1LA 1LD  1RD 0RA": ('RECURR', 379, 110),
-    "1RB 1LB  1LA 0LC  0RA 1LD  1RD 0RA": ('RECURR', 381, 118),
-    "1RB 1LB  1LA 0LC  0LD 1LD  1RD 0RA": ('RECURR', 397, 142),
-    "1RB 1LB  1LA 0LC  0RD 1LD  1RD 0RA": ('RECURR', 397, 142),
-    "1RB 1LB  1LA 0LC  0LA 1LD  1RD 0RA": ('RECURR', 403, 122),
-    "1RB 1LB  1LA 0LC  0RC 1LD  1RD 0RA": ('RECURR', 403, 144),
+    "1RB 1LB  1LA 0LC  0LB 1LD  1RD 0RA": ('LINREC', (24, 96)),
+    "1RB 1LB  1LA 0LC  1RA 1LD  1RD 0RA": ('LINREC', (85, 23)),
+    "1RB 1LB  1LA 0LC  1LB 1LD  1RD 0RA": ('LINREC', (89, 18)),
+    "1RB 1LB  1LA 0LC  1RD 1LD  1RD 0RA": ('LINREC', (102, 7)),
+    "1RB 1LB  1LA 0LC  0LC 1LD  1RD 0RA": ('QSIHLT', (106, 1)),
+    "1RB 1LB  1LA 0LC  1LC 1LD  1RD 0RA": ('QSIHLT', (106, 1)),
+    "1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA": ('HALTED', 107),
+    "1RB 1LB  1LA 0LC  1LD 1LD  1RD 0RA": ('LINREC', (305, 70)),
+    "1RB 1LB  1LA 0LC  0RB 1LD  1RD 0RA": ('LINREC', (313, 74)),
+    "1RB 1LB  1LA 0LC  1RB 1LD  1RD 0RA": ('LINREC', (341, 46)),
+    "1RB 1LB  1LA 0LC  1RC 1LD  1RD 0RA": ('LINREC', (349, 50)),
+    "1RB 1LB  1LA 0LC  1LA 1LD  1RD 0RA": ('LINREC', (379, 110)),
+    "1RB 1LB  1LA 0LC  0RA 1LD  1RD 0RA": ('LINREC', (381, 118)),
+    "1RB 1LB  1LA 0LC  0LD 1LD  1RD 0RA": ('LINREC', (397, 142)),
+    "1RB 1LB  1LA 0LC  0RD 1LD  1RD 0RA": ('LINREC', (397, 142)),
+    "1RB 1LB  1LA 0LC  0LA 1LD  1RD 0RA": ('LINREC', (403, 122)),
+    "1RB 1LB  1LA 0LC  0RC 1LD  1RD 0RA": ('LINREC', (403, 144)),
 }
 
 
@@ -482,7 +482,7 @@ class TuringTest(TestCase):
 
     def assert_final(self, final):
         self.assertEqual(
-            self.machine.final,
+            self.final.blanks,
             final)
 
     def assert_lin_recurrence(self, steps, period):
@@ -534,6 +534,7 @@ class TuringTest(TestCase):
 
         self.machine = run_bb(prog, **opts)
         self.history = self.machine.history
+        self.final  = self.machine.final
 
     def _test_halting(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
@@ -542,9 +543,11 @@ class TuringTest(TestCase):
             self.assert_marks(marks)
             self.assert_steps(steps)
 
-            self.assert_final(('HALTED', steps, None))
+            self.assertEqual(
+                steps,
+                self.final.halted)
 
-    def _test_recurrence(self, prog_data, final, quick):
+    def _test_recurrence(self, prog_data, quick, quasihalt=False):
         for prog, (marks, steps, period) in prog_data.items():
             print(prog)
 
@@ -566,7 +569,13 @@ class TuringTest(TestCase):
                 print_prog=False,
             )
 
-            self.assert_final((final, steps, period))
+            self.assertEqual(
+                (steps, period),
+                self.final.linrec)
+
+            self.assertEqual(
+                self.final.qsihlt,
+                self.final.linrec if quasihalt else None)
 
             self.run_bb(
                 prog,
@@ -576,29 +585,40 @@ class TuringTest(TestCase):
 
             self.assert_marks(marks)
 
-            self.assert_final(('XLIMIT', steps, None))
+            self.assertEqual(
+                steps,
+                self.final.xlimit)
 
     def _test_undefined(self, prog_data):
         for prog, (steps, instr) in prog_data.items():
             self.run_bb(prog)
 
             self.assert_steps(steps)
-            self.assert_final(('UNDFND', steps, instr))
+
+            self.assertEqual(
+                (steps, instr),
+                self.final.undfnd)
 
     def _test_extensions(self, prog_data):
-        for prog, final in prog_data.items():
+        for prog, (status, data) in prog_data.items():
             self.run_bb(
                 prog,
                 check_rec=0,
             )
-            self.assert_final(final)
+
+            self.assertEqual(
+                data,
+                getattr(self.final, status.lower()))
 
     def _test_blank(self, prog_data):
         for prog, steps in prog_data.items():
             self.run_bb(prog, check_blanks=True)
 
             self.assert_steps(steps)
-            self.assert_final(('BLANKS', steps, None))
+
+            self.assertEqual(
+                steps,
+                self.final.blanks)
 
 
 class Fast(TuringTest):
@@ -607,11 +627,11 @@ class Fast(TuringTest):
 
     @skip
     def test_recurrence(self):
-        self._test_recurrence(RECURRENCE_FAST, 'RECURR', True)
+        self._test_recurrence(RECURRENCE_FAST, True)
 
     @skip
     def test_quasihalting(self):
-        self._test_recurrence(QUASIHALTING, 'QSIHLT', True)
+        self._test_recurrence(QUASIHALTING, True, quasihalt=True)
 
     def test_blank(self):
         self._test_blank(BLANK_FAST)
@@ -629,7 +649,7 @@ class Slow(TuringTest):
 
     @skip
     def test_quasihalting(self):
-        self._test_recurrence(QUASIHALTING_SLOW, 'QSIHLT', False)
+        self._test_recurrence(QUASIHALTING_SLOW, False, quasihalt=True)
 
     def test_blank(self):
         self._test_blank(BLANK_SLOW)

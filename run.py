@@ -3,7 +3,7 @@ import sys
 from tm.run_bb import run_bb
 
 CANDIDATES = [
-    "1RB 1LA 1LA 1RB"
+    "1RB 1LB  1LB 1LA"
 ]
 
 RCRNC = 0
@@ -26,7 +26,19 @@ if __name__ == '__main__':
             check_blanks = BLANK,
         )
 
-        status, step, period = machine.final
+        res = machine.final
 
-        if status != 'XLIMIT':
-            print(f'{i} | {machine.program} | {machine.final}')
+        reasons = [
+            f'{reason}: {data}'
+            for reason, data in
+            {
+                'BLANKS': res.blanks,
+                'HALTED': res.halted,
+                'LINREC': res.linrec,
+                'QSIHLT': res.qsihlt,
+            }.items()
+            if data is not None
+        ]
+
+        if not res.xlimit:
+            print(f'{i} | {res.prog} | {reasons}')

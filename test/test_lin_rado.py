@@ -34,7 +34,7 @@ class TestLinRado(TestCase):
                 x_limit=x_limit,
                 check_rec=0,
                 check_blanks=False,
-            ).final[0] == 'XLIMIT'
+            ).final.xlimit is not None
         }
 
     @skip

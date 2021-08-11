@@ -2,6 +2,20 @@ from tm.tape import Tape
 from tm.parse import tcompile
 from tm.recurrence import History
 
+
+class MachineResult:
+    # pylint: disable = too-few-public-methods
+    def __init__(self, prog):
+        self.prog = prog
+
+        self.blanks = None
+        self.halted = None
+        self.linrec = None
+        self.qsihlt = None
+        self.undfnd = None
+        self.xlimit = None
+
+
 class Machine:
     def __init__(self, prog):
         prog = prog.strip() if isinstance(prog, str) else str(prog)
@@ -11,7 +25,7 @@ class Machine:
         self._state = None
         self._steps = None
         self._marks = None
-        self._final = None
+        self._final = MachineResult(prog)
         self._history = None
 
     @property
@@ -102,7 +116,7 @@ class Machine:
             # Halt conditions ######################
 
             if step >= x_limit:
-                self._final = ('XLIMIT', step, None)
+                self._final.xlimit = step
                 break
 
             if check_rec is not None and step >= check_rec:
@@ -111,21 +125,14 @@ class Machine:
                 result = history.check_for_recurrence(step, action)
 
                 if result is not None:
-                    step, rec = result
+                    self._final.linrec = start, _rec = result
 
-                    hp_beeps = history.calculate_beeps(step)
+                    hp_beeps = history.calculate_beeps(start)
                     hc_beeps = history.calculate_beeps()
 
-                    self._final = (
-                        (
-                            'RECURR'
-                            if all(hc_beeps[state] > hp_beeps[state]
-                                   for state in hp_beeps) else
-                            'QSIHLT'
-                        ),
-                        step,
-                        rec,
-                    )
+                    if any(hc_beeps[state] <= hp_beeps[state]
+                           for state in hp_beeps):
+                        self._final.qsihlt = result
 
                     break
 
@@ -136,11 +143,7 @@ class Machine:
             try:
                 color, shift, next_state = prog[state][scan]
             except TypeError:
-                self._final = (
-                    'UNDFND',
-                    step,
-                    chr(state + 65) + str(scan),
-                )
+                self._final.undfnd = step, chr(state + 65) + str(scan)
                 break
 
             if color:
@@ -212,14 +215,18 @@ class Machine:
             # Halt conditions ######################
 
             if state == 7:  # ord('H') - 65
-                self._final = ('HALTED', step, None)
                 break
 
             if check_blanks and marks == 0:
-                self._final = ('BLANKS', step, None)
                 break
 
             # End of main loop #####################
+
+        if state == 7:  # ord('H') - 65
+            self._final.halted = step
+
+        if check_blanks and marks == 0:
+            self._final.blanks = step
 
         self._tape = lspan, scan, rspan
         self._steps = step
