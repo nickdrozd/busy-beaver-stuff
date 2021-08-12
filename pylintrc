@@ -12,6 +12,7 @@ disable=
   too-many-branches,
   too-many-arguments,
   too-many-statements,
+  unspecified-encoding,
   missing-class-docstring,
   missing-module-docstring,
   missing-function-docstring,
