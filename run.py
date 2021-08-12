@@ -33,11 +33,12 @@ if __name__ == '__main__':
             for reason, data in
             {
                 'BLANKS': res.blanks,
+                'FIXDTP': res.fixdtp,
                 'HALTED': res.halted,
                 'LINREC': res.linrec,
                 'QSIHLT': res.qsihlt,
             }.items()
-            if data is not None
+            if data
         ]
 
         if not res.xlimit:

@@ -100,13 +100,10 @@ HALTING_SLOW = {
 QUASIHALTING = {
     # 2/2 (not better than BB)
     "1RB 1LB  1LB 1LA": (3, 6, 1),
-    "1RB 1LB  0LB 1LA": (2, 6, 1),
     "1RB 0LB  1LB 1LA": (2, 6, 1),
-    "1RB 0LB  0LB 1LA": (1, 6, 1),
 
     # 3/2
     "1RB 0LB  1LA 0RC  1LC 1LA": (6, 55, 1),  # BBB shift
-    "1RB 1RC  1LC 1RA  1RA 1LA": (6,  9, 2),  # BBB sigma, center
     "1RB 0LB  1RC 0RC  1LC 1LA": (6, 54, 1),
     "1RB 0LC  1LB 0RC  1LC 1LA": (5, 52, 1),  # BB extension
     "1RB 0LC  0LC 0RC  1LC 1LA": (5, 51, 1),
@@ -116,7 +113,6 @@ QUASIHALTING = {
     "1RB 1LC  0RC ...  1LC 0LA": (5, 27, 1),
     "1RB 1LC  1LB 1LA  1RC 0LC": (0, 27, 1),
     "1RB 1LB  1LA 1RC  1LC 0RC": (0, 26, 1),
-    "1RB 1RC  1LC 0LB  1RA 1LA": (5, 22, 2),  # center, >BB
     "1RB ...  1LB 0LC  1RC 1RB": (3, 5, 13),
     "1RB ...  1LB 1RC  0LC 0RB": (2, 2, 14),
     "1RB ...  1LB 1LC  1RC 0RB": (2, 2, 13),
@@ -128,20 +124,16 @@ QUASIHALTING = {
     "1RB 2LB 1RA  2LB 2LA 0RA": (10, 43, 1),  # BBB sigma
     "1RB 2RA 2LB  2LB 2LA 0LA": ( 5, 40, 1),
     "1RB 1LB 1RA  2LB 2LA 0RA": ( 6, 23, 1),
-    "1RB 2RA 2LB  0LB 1LA 1RA": ( 4, 23, 1),
-    "1RB 1LA 2RA  2LA 2LB 2RB": ( 8, 17, 2),
     "1RB 2LB ...  1LB 2LA 1RB": ( 5, 17, 1),
     "1RB 2LA 1RA  2LB 1LA 2RB": ( 5, 16, 3),
     "1RB ... ...  2LB 1RB 1LB": ( 1,  1, 5),
 
     # 4/2
-    "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": (0, 66349, 1),  # BBB shift
-    "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819, 1),  # BBB sigma
+    "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": (0, 66349, 1),
     "1RB 1RA  0RC 0RB  0RD 1RA  1LD 1LB": ( 0, 2568, 1),
     "1RB 1RA  0RC 1LA  1LC 1LD  0RB 0RD": ( 0, 2512, 1),
     "1RB 1RC  1RD 0LC  1LD 0LD  1LB 0RA": (56, 2332, 3),
     "1RB 0LC  1RC 1LD  1RD 0RB  0LB 1LA": (35, 1460, 3),  # QH 1459
-    "1RB 0LD  1LC 0RD  0LC 1LA  1RA 0RB": (25, 1459, 1),
     "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA": (39, 1164, 1),
     "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA": (20, 1153, 1),
 
@@ -153,22 +145,43 @@ QUASIHALTING = {
     # 2/4
     "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA": ( 190,   32849, 1),
     "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RB": (  62,   22464, 1),  # QH 22402
-    "1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB": ( 142,   21485, 2),
     "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB": (  99,   16634, 1),
     "1RB 2LA 1RA 1LA  2LB 3LA 2RB 2RA": ( 106,   10456, 3),  # QH 10353
-    "1RB 2LA 1RA 1LA  0LB 3LA 2RB 3RA": (  77,    9698, 2),  # QH 9623
-    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA": (  90,    7193, 2),  # QH 7106
-    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA": (  84,    6443, 2),  # QH 6362
     "1RB 2RB 1LA 1LA  2LB 2RA 3LB 1LA": (  62,    4067, 1),  # QH 4005
     "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA": (  31,    2872, 1),
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA": (  57,    2859, 3),
-    "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB": (  31,    2476, 1),
-    "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": (  30,    1854, 1),
     "1RB 0RB 0LA 2LB  1LB 2LA 3RB 1RA": (  32,    1769, 1),
     "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA": (  36,    1525, 1),
     "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA": (  35,    1458, 1),
 
     # "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB" -- QH 14, no recurrence!
+}
+
+
+QUASIHALTING_FIXED = {
+    # 2/2
+    "1RB 1LB  0LB 1LA": (2, 6, 1),
+    "1RB 0LB  0LB 1LA": (1, 6, 1),
+
+    # 3/2
+    "1RB 1RC  1LC 0LB  1RA 1LA": (5, 22, 2),  # center, >BB
+    "1RB 1RC  1LC 1RA  1RA 1LA": (6,  9, 2),  # center, >BB sigma
+
+    # 2/3
+    "1RB 2RA 2LB  0LB 1LA 1RA": ( 4, 23, 1),
+    "1RB 1LA 2RA  2LA 2LB 2RB": ( 8, 17, 2),
+
+    # 4/2
+    "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819, 1),  # BBB sigma
+    "1RB 0LD  1LC 0RD  0LC 1LA  1RA 0RB": (25, 1459, 1),
+
+    # 2/4
+    "1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB": (142, 21485, 2),
+    "1RB 2LA 1RA 1LA  0LB 3LA 2RB 3RA": ( 77,  9698, 2),  # QH 9623
+    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA": ( 90,  7193, 2),  # QH 7106
+    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA": ( 84,  6443, 2),  # QH 6362
+    "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB": ( 31,  2476, 1),
+    "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": ( 30,  1854, 1),
 }
 
 
@@ -192,7 +205,6 @@ RECURRENCE_FAST = {
     "1RB 0LB  1LA 0RB": (3, 9, 3),
     "1RB 1LA  0LA 1RA": (3, 7, 5),
     "1RB 1LB  1LA 0RB": (2, 7, 3),
-    "1RB 1LB  1LA 1RA": (4, 5, 2),  # center
     "1RB 1RB  1LA 0LB": (2, 3, 4),
     "1RB 0RB  1LB 1RA": (0, 0, 9),
     "1RB 0RA  1LB 1LA": (0, 0, 8),
@@ -237,7 +249,6 @@ RECURRENCE_FAST = {
     "1RB 1LA 2LB  2LA 2RA 0LB": ( 6,  57, 30),
     "1RB 2LA 0RB  1LB 1RA 1RA": ( 6,  55, 10),
     "1RB 0RB 0LB  2LA 2RA 1LB": ( 7,  54, 40),
-    "1RB 2LA 2RB  1LB 1LA 1RA": ( 8,  39,  2),  # center, >BB
     "1RB 2LA 0RB  2LA ... 1RA": ( 8,  35,  8),
     "1RB 2LA 1RB  1LB 1LA 2RA": ( 7,  24, 46),
     "1RB 1LA 2LB  1LA 2RA 0LB": ( 7,  20, 48),
@@ -288,8 +299,17 @@ RECURRENCE_FAST = {
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": (503, 158491, 17620),
     "1RB 0RA  1RC 0RB  1LD 1LC  1RA 0LC": (102,   7170, 29117),
     "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA": (203,  28812,  5588),
-
 }
+
+
+RECURRENCE_FAST_FIXED = {
+    # 2/2
+    "1RB 1LB  1LA 1RA": (4, 5, 2),  # center
+
+    # 2/3
+    "1RB 2LA 2RB  1LB 1LA 1RA": (8, 39, 2),  # center, >BB
+}
+
 
 BLANK_FAST = {
     # 2/2
@@ -547,7 +567,9 @@ class TuringTest(TestCase):
                 steps,
                 self.final.halted)
 
-    def _test_recurrence(self, prog_data, quick, quasihalt=False):
+    def _test_recurrence(self, prog_data, quick,
+                         qsihlt=False,
+                         fixdtp=False):
         for prog, (marks, steps, period) in prog_data.items():
             print(prog)
 
@@ -575,7 +597,11 @@ class TuringTest(TestCase):
 
             self.assertEqual(
                 self.final.qsihlt,
-                self.final.linrec if quasihalt else None)
+                self.final.linrec if qsihlt else None)
+
+            self.assertEqual(
+                fixdtp,
+                self.final.fixdtp)
 
             self.run_bb(
                 prog,
@@ -630,8 +656,23 @@ class Fast(TuringTest):
         self._test_recurrence(RECURRENCE_FAST, True)
 
     @skip
+    def test_recurrence_fixed(self):
+        self._test_recurrence(
+            RECURRENCE_FAST_FIXED, True,
+            fixdtp=True)
+
+    @skip
     def test_quasihalting(self):
-        self._test_recurrence(QUASIHALTING, True, quasihalt=True)
+        self._test_recurrence(
+            QUASIHALTING, True,
+            qsihlt=True)
+
+    @skip
+    def test_quasihalting_fixed(self):
+        self._test_recurrence(
+            QUASIHALTING_FIXED, True,
+            qsihlt=True,
+            fixdtp=True)
 
     def test_blank(self):
         self._test_blank(BLANK_FAST)
@@ -649,7 +690,9 @@ class Slow(TuringTest):
 
     @skip
     def test_quasihalting(self):
-        self._test_recurrence(QUASIHALTING_SLOW, False, quasihalt=True)
+        self._test_recurrence(
+            QUASIHALTING_SLOW, False,
+            qsihlt=True)
 
     def test_blank(self):
         self._test_blank(BLANK_SLOW)
