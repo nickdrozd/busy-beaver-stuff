@@ -9,6 +9,7 @@ class MachineResult:
         self.prog = prog
 
         self.blanks = None
+        self.fixdtp = None
         self.halted = None
         self.linrec = None
         self.qsihlt = None
@@ -133,6 +134,8 @@ class Machine:
                     if any(hc_beeps[state] <= hp_beeps[state]
                            for state in hp_beeps):
                         self._final.qsihlt = result
+
+                    self._final.fixdtp = history.tape_is_fixed(start)
 
                     break
 

@@ -42,6 +42,17 @@ class History:
 
         return None
 
+    def tape_is_fixed(self, start):
+        for tape1 in self.tapes[start:]:
+            for tape2 in self.tapes[start:]:
+                # pylint: disable = pointless-statement
+                tape1[ tape2.lspan : tape2.rspan ]
+
+                if tape1[:] != tape2[:]:
+                    return False
+
+        return True
+
     def verify_lin_recurrence(self, steps, period):
         tapes     = self.tapes
         states    = self.states
