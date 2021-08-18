@@ -60,8 +60,8 @@ class History:
 
         recurrence = steps + period
 
-        st1 = states[steps]
-        st2 = states[recurrence]
+        if states[steps] != states[recurrence]:
+            return False
 
         tape1 = tapes[steps]
         tape2 = tapes[recurrence]
@@ -74,9 +74,6 @@ class History:
 
         pos1 = positions[steps]
         pos2 = positions[recurrence]
-
-        if st1 != st2:
-            return False
 
         if pos1 < pos2:
             diff = pos2 - pos1
