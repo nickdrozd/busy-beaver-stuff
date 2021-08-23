@@ -21,52 +21,40 @@ int main(void)
     }
 
  B:
-  if (BLANK)
-    {
-      // B0
-      PRINT;
-      RIGHT;
-      goto D;
-    }
-  else
-    {
-      // B1
-      PRINT;
-      RIGHT;
-      goto B;
-    }
+  while (!BLANK) {
+    // B1
+    PRINT;
+    RIGHT;
+  }
+
+  // B0
+  PRINT;
+  RIGHT;
+  goto D;
 
  C:
-  if (BLANK)
-    {
-      // C0
-      ERASE;
-      RIGHT;
-      goto D;
-    }
-  else
-    {
-      // C1
-      ERASE;
-      RIGHT;
-      goto C;
-    }
+  while (!BLANK) {
+    // C1
+    ERASE;
+    RIGHT;
+  }
+
+  // C0
+  ERASE;
+  RIGHT;
+  goto D;
 
  D:
-  if (BLANK)
-    {
-      // D0
-      PRINT;
-      LEFT;
-      goto D;
-    }
-  else
-    {
-      // D1
-      PRINT;
-      LEFT;
-      goto A;
-    }
+  while (BLANK) {
+    // D0
+    PRINT;
+    LEFT;
+  }
+
+  // D1
+  PRINT;
+  LEFT;
+  goto A;
 
  H:
   PRINT_STEPS;
