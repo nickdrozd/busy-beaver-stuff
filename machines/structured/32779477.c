@@ -13,18 +13,15 @@ int main(void)
 
         while (!BLANK) {
           // B1
-          PRINT;
           RIGHT;
         }
 
         // B0
         PRINT;
-        RIGHT;
       }
     else
       {
         // A1
-        PRINT;
         LEFT;
 
         while (!BLANK) {
@@ -32,11 +29,10 @@ int main(void)
           ERASE;
           RIGHT;
         }
-
-        // C0
-        ERASE;
-        RIGHT;
       }
+
+    // B0, C0
+    RIGHT;
 
     while (BLANK) {
       // D0
@@ -45,7 +41,6 @@ int main(void)
     }
 
     // D1
-    PRINT;
     LEFT;
   }
 
