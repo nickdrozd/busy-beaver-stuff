@@ -4,50 +4,50 @@
 
 int main(void)
 {
- A:
-  if (BLANK)
-    {
-      // A0
-      PRINT;
-      RIGHT;
+  while (1) {
+    if (BLANK)
+      {
+        // A0
+        PRINT;
+        RIGHT;
 
-      while (!BLANK) {
-        // B1
+        while (!BLANK) {
+          // B1
+          PRINT;
+          RIGHT;
+        }
+
+        // B0
         PRINT;
         RIGHT;
       }
+    else
+      {
+        // A1
+        PRINT;
+        LEFT;
 
-      // B0
-      PRINT;
-      RIGHT;
-    }
-  else
-    {
-      // A1
-      PRINT;
-      LEFT;
+        while (!BLANK) {
+          // C1
+          ERASE;
+          RIGHT;
+        }
 
-      while (!BLANK) {
-        // C1
+        // C0
         ERASE;
         RIGHT;
       }
 
-      // C0
-      ERASE;
-      RIGHT;
+    while (BLANK) {
+      // D0
+      PRINT;
+      LEFT;
     }
 
-  while (BLANK) {
-    // D0
+    // D1
     PRINT;
     LEFT;
   }
-
-  // D1
-  PRINT;
-  LEFT;
-  goto A;
 
  H:
   PRINT_STEPS;
