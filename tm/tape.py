@@ -50,9 +50,7 @@ class Tape:
         if tape_index.start is None:
             left = None
         else:
-            left = 0 - (tape_index.start + self._init)
-
-            if left > 0:
+            if (left := 0 - (tape_index.start + self._init)) > 0:
                 self._list = [0] * left + self._list
                 self._init += left
                 self._pos  += left

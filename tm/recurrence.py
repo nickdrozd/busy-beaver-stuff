@@ -82,9 +82,7 @@ class History:
             slice1 = tape1[        leftmost : ]
             slice2 = tape2[ diff + leftmost : ]
 
-            slice_diff = len(slice1) - len(slice2)
-
-            if slice_diff > 0:
+            if (slice_diff := len(slice1) - len(slice2)) > 0:
                 slice2 = slice2 + [0] * slice_diff
 
         elif pos1 > pos2:
@@ -94,9 +92,7 @@ class History:
             slice1 = tape1[ : rightmost        ]
             slice2 = tape2[ : rightmost - diff ]
 
-            slice_diff = len(slice1) - len(slice2)
-
-            if slice_diff > 0:
+            if (slice_diff := len(slice1) - len(slice2)) > 0:
                 slice2 = [0] * slice_diff + slice2
 
         else:

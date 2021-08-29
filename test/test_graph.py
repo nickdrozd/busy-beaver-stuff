@@ -240,6 +240,7 @@ class TestGraph(TestCase):
             self.graph.exit_points)
 
     def test_graph(self):
+        # pylint: disable = line-too-long
         for prog, (flat, norm, conn, irr, entries, exits) in GRAPHS.items():
             self.graph = Graph(prog)
 
