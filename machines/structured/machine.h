@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -18,6 +19,7 @@ short STORE;
   printf("\n");
 
 #define PRINT_STEPS printf("%ld\n", STEPS);
+#define CHECK_STEPS assert(STEPS == XLIMIT);
 
 long STEPS = 0;
 #define CHECK_LIMIT if (STEPS > XLIMIT) return 0;
