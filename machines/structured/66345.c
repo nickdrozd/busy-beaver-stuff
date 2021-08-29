@@ -35,7 +35,6 @@ int main(void)
         }
 
         // C1
-        PRINT;
         RIGHT;
       }
 
