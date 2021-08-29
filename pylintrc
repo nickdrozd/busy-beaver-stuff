@@ -17,3 +17,13 @@ disable=
   missing-module-docstring,
   missing-function-docstring,
   too-many-instance-attributes,
+  consider-using-namedtuple-or-dataclass,
+
+[MASTER]
+load-plugins=
+  pylint.extensions.code_style,
+  pylint.extensions.overlapping_exceptions,
+  pylint.extensions.redefined_variable_type,
+
+[FORMAT]
+max-line-length=72

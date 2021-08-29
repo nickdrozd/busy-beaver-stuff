@@ -51,6 +51,7 @@ class TestProgram(TestCase):
             set(map(int, self.prog.available_colors)))
 
     def test_used_available(self):
+        # pylint: disable = line-too-long
         for prog, (used_st, used_co, avail_st, avail_co, last) in PROGS.items():
             self.prog = Program(prog)
 
