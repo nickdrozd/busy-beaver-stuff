@@ -33,6 +33,5 @@ int main(void)
   LEFT;
 
  H:
-  PRINT_TAPE;
-  PRINT_STEPS;
+  CHECK_STEPS;
 }

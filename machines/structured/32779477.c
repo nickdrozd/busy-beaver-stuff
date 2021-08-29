@@ -45,5 +45,5 @@ int main(void)
   }
 
  H:
-  PRINT_STEPS;
+  CHECK_STEPS;
 }
