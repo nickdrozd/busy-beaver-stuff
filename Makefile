@@ -1,6 +1,6 @@
 .PHONY : all run lint test time profile clean machines
 
-all : machines lint test
+all : machines structured lint test
 
 run :
 	python3 run.py
@@ -23,3 +23,6 @@ clean :
 
 machines :
 	$(MAKE) -C machines
+
+structured :
+	$(MAKE) -C machines/structured
