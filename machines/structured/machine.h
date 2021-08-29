@@ -27,7 +27,6 @@ long MARKS = 0;
 
 #define SCAN(COLOR) (TAPE[POS] == COLOR)
 #define WRITE(COLOR) do {                       \
-    HALT_IF_BLANK;                              \
     if (COLOR && !TAPE[POS]) MARKS++;           \
     if (!COLOR && TAPE[POS]) MARKS--;           \
     TAPE[POS] = COLOR;                          \
@@ -37,5 +36,7 @@ long MARKS = 0;
 #define PRINT WRITE(1)
 #define ERASE WRITE(0)
 
-#define LEFT  {POS--; STEPS++;}
-#define RIGHT {POS++; STEPS++;}
+#define STEP {STEPS++; HALT_IF_BLANK;}
+
+#define LEFT  {POS--; STEP;}
+#define RIGHT {POS++; STEP;}
