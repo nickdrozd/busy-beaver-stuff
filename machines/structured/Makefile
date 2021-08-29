@@ -1,11 +1,11 @@
 C_FILES := $(wildcard *.c)
 MACHINES := ${C_FILES:.c=}
 
-.PHONY : clean
+.PHONY : clean test
 
 CFLAGS += -Wall -Wextra -O3
 
-test : $(MACHINES)
+test : clean $(MACHINES)
 
 % : %.c
 	$(CC) $(CFLAGS) $< -o $@.run -D XLIMIT=$@

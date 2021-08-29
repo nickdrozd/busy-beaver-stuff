@@ -5,7 +5,8 @@ MACHINES := ${C_FILES:.c=}
 
 CFLAGS += -Wall -Wextra -O3
 
-test : $(MACHINES)
+test : clean $(MACHINES)
+	$(MAKE) -C structured
 
 % : %.c
 	$(CC) $(CFLAGS) $< -o $@.run
@@ -13,3 +14,4 @@ test : $(MACHINES)
 
 clean :
 	$(RM) ${C_FILES:.c=.run}
+	$(MAKE) -C structured clean
