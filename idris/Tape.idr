@@ -96,9 +96,8 @@ pullNextBlock : BlockSpan -> (Color, BlockSpan)
 pullNextBlock [] = (0, [])
 pullNextBlock ((c, n) :: xs) =
   (c, case n of
-    0       => xs
-    1       => xs
-    S $ S k => (c, S k) :: xs)
+           (S $ S k) => (c, S k) :: xs
+           _         => xs)
 
 pushCurrBlock : Block -> BlockSpan -> BlockSpan
 pushCurrBlock block [] = [block]
