@@ -77,7 +77,11 @@ class Graph:
     def dot(self):
         prog = ' '.join(self.prog)
 
-        title = f'labelloc="t"; label="{prog}";'
+        title = '\n'.join([
+            '  labelloc="t";',
+            f'  label="{prog}";',
+            '  fontname="courier"',
+        ])
 
         edges = '\n'.join([
             f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
@@ -85,7 +89,7 @@ class Graph:
             for i, target in enumerate(targets)
         ])
 
-        return f'digraph NAME {{{title}\n{edges}\n}}'
+        return f'digraph NAME {{\n{title}\n\n{edges}\n}}'
 
     def flatten(self, sep=' '):
         return sep.join(
