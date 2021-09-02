@@ -296,6 +296,9 @@ RECURRENCE_FAST = {
     "1RB 1LA  1LB 0RC  1LC 1LD  0RA 0LD": ( 0,    0,  238),
     "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD": ( 0,    0,  228),
 
+    # D-initial version of BLB(4) champ
+    "1LA 1LB  1RC 1LD  1RA 1RC  0RA 0RD": ( 0,    0,    1),
+
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": (503, 158491, 17620),
     "1RB 0RA  1RC 0RB  1LD 1LC  1RA 0LC": (102,   7170, 29117),
     "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA": (203,  28812,  5588),
@@ -415,6 +418,9 @@ BLANK_SLOW = {
 
     # 6/2 constructed from 4/2
     "1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC": 65538549,
+
+    # 6/2 inverted from 4/2
+    "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": 32779477,
 }
 
 

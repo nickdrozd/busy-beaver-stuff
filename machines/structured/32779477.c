@@ -4,7 +4,24 @@
 
 int main(void)
 {
+  // (A0)
+  PRINT;
+  RIGHT;
+
+  // (B0)
+  PRINT;
+  RIGHT;
+
   while (1) {
+    while (BLANK) {
+      // D0
+      PRINT;
+      LEFT;
+    }
+
+    // D1
+    LEFT;
+
     if (BLANK)
       {
         // A0
@@ -33,15 +50,6 @@ int main(void)
 
     // B0, C0
     RIGHT;
-
-    while (BLANK) {
-      // D0
-      PRINT;
-      LEFT;
-    }
-
-    // D1
-    LEFT;
   }
 
  H:
