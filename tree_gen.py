@@ -10,7 +10,7 @@ from tm.program import Program
 
 
 def tree_gen(steps, progs):
-    while True:
+    while True:  # pylint: disable = while-used
         try:
             prog = progs.get(timeout=.5)
         except Empty:

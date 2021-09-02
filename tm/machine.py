@@ -88,7 +88,7 @@ class Machine:
 
         marks = 0
 
-        while True:
+        while True:  # pylint: disable = while-used
 
             # Output ###############################
 
@@ -166,7 +166,7 @@ class Machine:
 
             side = rspan if shift else lspan
 
-            while scan == init_scan:
+            while scan == init_scan:  # pylint: disable=while-used
                 if shift:
                     # push new color to the left
                     lspan.append(color)
