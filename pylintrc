@@ -22,8 +22,10 @@ disable=
 [MASTER]
 load-plugins=
   pylint.extensions.code_style,
+  pylint.extensions.while_used,
   pylint.extensions.overlapping_exceptions,
   pylint.extensions.redefined_variable_type,
+  pylint.extensions.consider_ternary_expression,
 
 [FORMAT]
 max-line-length=72
