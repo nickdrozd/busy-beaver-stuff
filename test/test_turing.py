@@ -136,6 +136,8 @@ QUASIHALTING = {
     "1RB 0LC  1RC 1LD  1RD 0RB  0LB 1LA": (35, 1460, 3),  # QH 1459
     "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA": (39, 1164, 1),
     "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA": (20, 1153, 1),
+    # D-initial version of BLB(4) champ
+    "1LA 1LB  1RC 1LD  1RA 1RC  0RA 0RD": ( 0,    0, 1),
 
     # 5/2
     "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE": (504, 221032, 2),
@@ -295,9 +297,6 @@ RECURRENCE_FAST = {
     "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB": ( 0,    0,  294),
     "1RB 1LA  1LB 0RC  1LC 1LD  0RA 0LD": ( 0,    0,  238),
     "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD": ( 0,    0,  228),
-
-    # D-initial version of BLB(4) champ
-    "1LA 1LB  1RC 1LD  1RA 1RC  0RA 0RD": ( 0,    0,    1),
 
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": (503, 158491, 17620),
     "1RB 0RA  1RC 0RB  1LD 1LC  1RA 0LC": (102,   7170, 29117),
