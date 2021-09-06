@@ -415,6 +415,7 @@ BLANK_SLOW = {
 
     # 5/2 constructed form 4/2
     "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE": 32810047,
+    "1RB 1LC  0LE 1RB  0RD 0RC  1LD 1LA  1RD 1RE": 32779507,
 
     # 6/2 constructed from 4/2
     "1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC": 65538549,
