@@ -128,12 +128,17 @@ class Machine:
                 if result is not None:
                     self._final.linrec = start, _rec = result
 
-                    hp_beeps = history.calculate_beeps(start)
                     hc_beeps = history.calculate_beeps()
 
-                    if any(hc_beeps[state] <= hp_beeps[state]
-                           for state in hp_beeps):
+                    if any(st not in hc_beeps
+                           for st in range(len(prog))):
                         self._final.qsihlt = result
+                    else:
+                        hp_beeps = history.calculate_beeps(start)
+
+                        if any(hc_beeps[st] <= hp_beeps[st]
+                               for st in hp_beeps):
+                            self._final.qsihlt = result
 
                     self._final.fixdtp = history.tape_is_fixed(start)
 
