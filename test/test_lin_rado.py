@@ -181,7 +181,7 @@ LR_HOLDOUTS = {
 
 def lr_convert(rado_string):
     def oct_to_bin(oct_string):
-        return '{0:b}'.format(oct_string)
+        return f'{oct_string:b}'
 
     def bin_to_prog(bin_string):
         instrs = [
@@ -194,13 +194,14 @@ def lr_convert(rado_string):
     def convert_bin_instr(bin_instr):
         pr, sh, *tr =  bin_instr
 
-        tr = int(''.join(tr), 2)
+        v_sh = 'L' if int(sh) == 0 else 'R'
 
-        return '{}{}{}'.format(
-            pr,
-            'L' if int(sh) == 0 else 'R',
-            'H' if tr == 0 else chr(tr + 64),
+        v_tr = (
+            'H' if (tr := int(''.join(tr), 2)) == 0
+            else chr(tr + 64)
         )
+
+        return f'{pr}{v_sh}{v_tr}'
 
     return bin_to_prog(
         oct_to_bin(
