@@ -1,4 +1,4 @@
-.PHONY : all run lint test time profile clean machines
+.PHONY : all run lint test time profile clean machines idris
 
 all : machines structured lint test
 
@@ -26,3 +26,6 @@ machines :
 
 structured :
 	$(MAKE) -C machines/structured
+
+idris :
+	$(MAKE) -C idris
