@@ -16,6 +16,21 @@ class MachineResult:
         self.undfnd = None
         self.xlimit = None
 
+    def __str__(self):
+        return ' | '.join([
+            f'{reason}: {data}'
+            for reason, data in
+            {
+                'BLANKS': self.blanks,
+                'FIXDTP': self.fixdtp,
+                'HALTED': self.halted,
+                'LINREC': self.linrec,
+                'QSIHLT': self.qsihlt,
+                'XLIMIT': self.xlimit,
+            }.items()
+            if data is not None
+        ])
+
 
 class Machine:
     def __init__(self, prog):

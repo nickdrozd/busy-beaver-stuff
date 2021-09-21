@@ -28,18 +28,5 @@ if __name__ == '__main__':
 
         res = machine.final
 
-        reasons = [
-            f'{reason}: {data}'
-            for reason, data in
-            {
-                'BLANKS': res.blanks,
-                'FIXDTP': res.fixdtp,
-                'HALTED': res.halted,
-                'LINREC': res.linrec,
-                'QSIHLT': res.qsihlt,
-            }.items()
-            if data
-        ]
-
         if not res.xlimit:
-            print(f'{i} | {res.prog} | {reasons}')
+            print(f'{i} | {res.prog} | {res}')
