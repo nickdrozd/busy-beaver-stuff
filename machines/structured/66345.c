@@ -1,4 +1,4 @@
-#define TAPELEN 1000
+#define TAPELEN 1008
 
 #include "machine.h"
 

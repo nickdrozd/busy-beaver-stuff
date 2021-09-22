@@ -39,6 +39,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Test C
+        run: |
+          cc --version
+          make machines
+
       - name: Install Idris
         run: |
           brew --version
