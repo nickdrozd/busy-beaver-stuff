@@ -44,6 +44,9 @@ class Machine:
         self._final = MachineResult(prog)
         self._history = None
 
+    def __str__(self):
+        return f'{self._prog} || {self._final}'
+
     @property
     def program(self):
         return self._prog

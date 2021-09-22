@@ -26,7 +26,4 @@ if __name__ == '__main__':
             check_blanks = BLANK,
         )
 
-        res = machine.final
-
-        if not res.xlimit:
-            print(f'{i} | {res.prog} | {res}')
+        print(f'{i} | {machine}')
