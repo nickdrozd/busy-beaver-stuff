@@ -3,8 +3,11 @@ from tm.parse import tcompile
 from tm.recurrence import History
 
 
+class ValidationError(Exception):
+    pass
+
+
 class MachineResult:
-    # pylint: disable = too-few-public-methods
     def __init__(self, prog):
         self.prog = prog
 
@@ -30,6 +33,19 @@ class MachineResult:
             }.items()
             if data is not None
         ])
+
+    nonhalt = 'fixdtp', 'linrec', 'qsihlt', 'undfnd', 'xlimit'
+
+    def validate_results(self):
+        if self.halted is not None:
+            for cat in self.nonhalt:
+                if getattr(self, cat) is not None:
+                    raise ValidationError(
+                        f'{self.prog} || {cat} | {self}')
+
+        if self.fixdtp and self.linrec is None:
+            raise ValidationError(
+                f'{self.prog} || {self}')
 
 
 class Machine:
@@ -260,3 +276,5 @@ class Machine:
         self._marks = marks
 
         self._history = history
+
+        self._final.validate_results()
