@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  Ubuntu-Python:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Test C
+        run: |
+          cc --version
+          make machines
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+
+      - name: Lint and test Python
+        run: |
+          make lint
+          make test
+
+  Mac-Idris:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Idris
+        run: |
+          brew --version
+          brew update
+          brew upgrade
+          brew --version
+          brew install coreutils
+          brew install idris2
+
+      - name: Test Idris
+        run: make idris
