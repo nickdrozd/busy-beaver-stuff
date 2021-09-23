@@ -78,14 +78,10 @@ class Program:
         )
 
     def branch(self, instr):
-        output = []
-
         orig = self.prog[instr]
 
         for action in self.actions:
             self.prog[instr] = action
-            output.append(str(self))
+            yield str(self)
 
         self.prog[instr] = orig
-
-        return output
