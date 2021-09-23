@@ -78,6 +78,9 @@ class Program:
         )
 
     def branch(self, instr):
+        # if self.last_slot:
+        #     return
+
         orig = self.prog[instr]
 
         for action in self.actions:
