@@ -26,12 +26,11 @@ int main(void)
       {
         // A0
         PRINT;
-        RIGHT;
 
-        while (!BLANK) {
+        do {
           // B1
           RIGHT;
-        }
+        } while (!BLANK);
 
         // B0
         PRINT;
