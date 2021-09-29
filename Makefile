@@ -15,7 +15,7 @@ test :
 time : test
 
 profile :
-	python3 -m cProfile turing.py
+	python3 -m cProfile run.py
 
 clean :
 	rm -rf yappi.* __pycache__ **/__pycache__ **/run
