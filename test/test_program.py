@@ -127,3 +127,20 @@ class TestProgram(TestCase):
                 '1RB ... ... ... 2RB ... ... ..3',
             }
         )
+
+    def test_branch_4(self):
+        prog = Program("1RB 1LB  1LB 1LA")
+
+        self.assertEqual(
+            set(prog.branch('A1')),
+            {
+                '1RB 0LA 1LB 1LA',
+                '1RB 0LB 1LB 1LA',
+                '1RB 0RA 1LB 1LA',
+                '1RB 0RB 1LB 1LA',
+                '1RB 1LA 1LB 1LA',
+                '1RB 1LB 1LB 1LA',
+                '1RB 1RA 1LB 1LA',
+                '1RB 1RB 1LB 1LA',
+            }
+        )
