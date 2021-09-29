@@ -1,4 +1,4 @@
-.PHONY : all run lint test time profile clean machines idris tree
+.PHONY : all run lint test test-all time profile clean machines idris tree
 
 all : machines structured lint test
 
@@ -9,8 +9,13 @@ lint :
 	pylint --version
 	pylint *.py **/*.py
 
+PYTEST = python3 -m unittest
+
 test :
-	python3 -m unittest discover -v test
+	$(PYTEST) -v test.test_turing.Fast
+
+test-all :
+	$(PYTEST) discover -v
 
 time : test
 
