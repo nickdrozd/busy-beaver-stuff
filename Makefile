@@ -1,6 +1,11 @@
-.PHONY : all run lint test test-all profile clean machines idris tree
+.PHONY : all clean run lint test test-all profile machines idris tree
 
 all : machines lint test
+
+clean :
+	rm -rf yappi.* __pycache__ **/__pycache__
+	$(MAKE) -C machines clean
+	$(MAKE) -C idris clean
 
 run :
 	python3 run.py
@@ -19,10 +24,6 @@ test-all :
 
 profile :
 	python3 -m cProfile run.py
-
-clean :
-	rm -rf yappi.* __pycache__ **/__pycache__ **/run
-	$(MAKE) -C machines clean
 
 machines :
 	$(MAKE) -C machines
