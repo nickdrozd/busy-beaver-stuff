@@ -1,6 +1,6 @@
-.PHONY : all run lint test test-all time profile clean machines idris tree
+.PHONY : all run lint test test-all profile clean machines idris tree
 
-all : machines structured lint test
+all : machines lint test
 
 run :
 	python3 run.py
@@ -17,8 +17,6 @@ test :
 test-all :
 	$(PYTEST) discover -v
 
-time : test
-
 profile :
 	python3 -m cProfile run.py
 
@@ -28,9 +26,6 @@ clean :
 
 machines :
 	$(MAKE) -C machines
-
-structured :
-	$(MAKE) -C machines/structured
 
 idris :
 	$(MAKE) -C idris
