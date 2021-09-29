@@ -1,4 +1,4 @@
-.PHONY : all clean run lint test test-all profile machines idris tree
+.PHONY : all clean  machines idris lint test test-all run profile tree
 
 all : machines lint test
 
@@ -7,8 +7,15 @@ clean :
 	$(MAKE) -C machines clean
 	$(MAKE) -C idris clean
 
-run :
-	python3 run.py
+## Non-Python ##########################
+
+machines :
+	$(MAKE) -C machines
+
+idris :
+	$(MAKE) -C idris
+
+## Python ##############################
 
 lint :
 	pylint --version
@@ -22,14 +29,11 @@ test :
 test-all :
 	$(PYTEST) discover -v
 
+run :
+	python3 run.py
+
 profile :
 	python3 -m cProfile run.py
-
-machines :
-	$(MAKE) -C machines
-
-idris :
-	$(MAKE) -C idris
 
 tree :
 	time -p python3 tree_gen.py
