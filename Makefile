@@ -1,4 +1,4 @@
-.PHONY : all run lint test time profile clean machines idris
+.PHONY : all run lint test time profile clean machines idris tree
 
 all : machines structured lint test
 
@@ -29,3 +29,6 @@ structured :
 
 idris :
 	$(MAKE) -C idris
+
+tree :
+	time -p python3 tree_gen.py
