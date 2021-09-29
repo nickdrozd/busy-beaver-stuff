@@ -1,4 +1,4 @@
-all : test
+.PHONY : test clean
 
 test : clean
 	idris2 --version
