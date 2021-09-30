@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from generate.generate import yield_programs
+from generate.naive import yield_programs
 
 EXPECTED = {
     (2, 2, 1): 64,

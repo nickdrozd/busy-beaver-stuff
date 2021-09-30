@@ -6,7 +6,7 @@ from multiprocessing import Queue
 from unittest import TestCase, skip
 
 from tm.run_bb import run_bb
-from generate.generate import yield_programs
+from generate.naive import yield_programs
 from generate.tree import run_tree_gen
 
 
