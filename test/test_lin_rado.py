@@ -5,7 +5,7 @@ from queue import Empty
 from multiprocessing import Queue
 from unittest import TestCase, skip
 
-from tm.run_bb import run_bb
+from tm import run_bb
 from generate.naive import yield_programs
 from generate.tree import run_tree_gen
 

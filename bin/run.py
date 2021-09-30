@@ -1,6 +1,6 @@
 import sys
 
-from tm.run_bb import run_bb
+from tm import run_bb
 
 CANDIDATES = [
     "1RB 1LB  1LB 1LA"

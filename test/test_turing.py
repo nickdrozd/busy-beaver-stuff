@@ -2,7 +2,7 @@
 
 from unittest import TestCase, skip
 
-from tm.run_bb import run_bb
+from tm import run_bb
 
 HALTING_FAST = {
     # 2/2 BB

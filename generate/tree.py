@@ -5,7 +5,7 @@ from multiprocessing import (
     Process,
 )
 
-from tm.run_bb import run_bb
+from tm import run_bb
 from generate.program import Program
 
 
