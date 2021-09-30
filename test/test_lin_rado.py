@@ -128,7 +128,7 @@ class TestLinRado(TestCase):
 
 
 class TestTree(TestCase):
-    def run_tree_gen(self):
+    def run_tree_gen(self, states):
         self.q22 = Queue()
         self.h32 = Queue()
         self.q32 = Queue()
@@ -142,7 +142,10 @@ class TestTree(TestCase):
             else:
                 self.q32.put(prog)
 
-        run_tree_gen(output=capture)
+        run_tree_gen(
+            states,
+            output = capture,
+        )
 
         def queue_to_set(queue):
             out = set()
@@ -162,7 +165,7 @@ class TestTree(TestCase):
         self.q32 = queue_to_set(self.q32)
 
     def test_tree(self):
-        self.run_tree_gen()
+        self.run_tree_gen(3)
 
         expected = {
              4: self.q22,

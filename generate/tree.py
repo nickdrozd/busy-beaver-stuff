@@ -34,9 +34,12 @@ def tree_worker(steps, progs, output):
             output(prog)
 
 
-def run_tree_gen(output=print):
+def run_tree_gen(states, output=print):
     PROGS = Manager().Queue()
-    PROGS.put('1RB ... ... ... ... ...')
+
+    init_prog = '1RB' + ' ...' * (states * 2 - 1)
+
+    PROGS.put(init_prog)
 
     processes = [
         Process(target=tree_worker, args=(126, PROGS, output))
