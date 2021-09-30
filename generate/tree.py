@@ -9,7 +9,7 @@ from tm.run_bb import run_bb
 from tm.program import Program
 
 
-def tree_worker(steps, progs):
+def tree_worker(steps, progs, output):
     while True:  # pylint: disable = while-used
         try:
             prog = progs.get(timeout=.5)
@@ -32,15 +32,15 @@ def tree_worker(steps, progs):
             continue
 
         if machine.final.xlimit is not None:
-            print(prog)
+            output(prog)
 
 
-def run_tree_gen():
+def run_tree_gen(output=print):
     PROGS = Manager().Queue()
     PROGS.put('1RB ... ... ... ... ...')
 
     processes = [
-        Process(target=tree_worker, args=(126, PROGS))
+        Process(target=tree_worker, args=(126, PROGS, output))
         for _ in range(cpu_count())
     ]
 
