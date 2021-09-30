@@ -4,7 +4,6 @@ score=no
 
 [MESSAGES CONTROL]
 disable=
-  import-error,
   invalid-name,
   duplicate-code,
   too-many-locals,
