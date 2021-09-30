@@ -1,4 +1,4 @@
-.PHONY : all clean  machines idris lint test test-all run profile
+.PHONY : all clean  machines idris lint test test-all run profile generate
 
 all : machines lint test
 
@@ -37,3 +37,12 @@ run :
 profile :
 	$(PYPATH) python3 -m cProfile bin/run.py
 
+## Program files (non-phony) ###########
+
+3-2.prog :
+	$(PYPATH) time -p python3 bin/tree_gen.py 3 > $@
+
+4-2.prog :
+	$(PYPATH) time -p python3 bin/tree_gen.py 4 > $@
+
+generate : 3-2.prog 4-2.prog

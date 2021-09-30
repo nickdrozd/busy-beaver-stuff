@@ -9,6 +9,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    def print_complete(prog):
+        if '.' not in prog:
+            print(prog)
+
     run_tree_gen(
         states = args.states,
+        output = print_complete,
     )
