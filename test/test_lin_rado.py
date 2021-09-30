@@ -1,9 +1,13 @@
 # pylint: disable = attribute-defined-outside-init, too-many-lines
 
+import re
+from queue import Empty
+from multiprocessing import Queue
 from unittest import TestCase, skip
 
 from tm.run_bb import run_bb
 from generate.generate import yield_programs
+from generate.tree import run_tree_gen
 
 
 class TestLinRado(TestCase):
@@ -72,10 +76,9 @@ class TestLinRado(TestCase):
         self.assert_progs_count(
             40)
 
-        for prog in BRADY_HOLDOUTS:
-            self.assertIn(
-                prog,
-                HOLDOUTS_32H)
+        self.assertTrue(
+            BRADY_HOLDOUTS <= HOLDOUTS_32H
+        )
 
     @skip
     def test_23h(self):
@@ -122,6 +125,70 @@ class TestLinRado(TestCase):
 
         self.assert_progs_count(
             906)
+
+
+class TestTree(TestCase):
+    def run_tree_gen(self):
+        self.q22 = Queue()
+        self.h32 = Queue()
+        self.q32 = Queue()
+
+        def capture(prog):
+            if (dots := prog.count('...')) == 2:
+                self.q22.put(prog[:15])
+            elif dots == 1:
+                if not re.match(BC_LOOP, prog):
+                    self.h32.put(prog)
+            else:
+                self.q32.put(prog)
+
+        run_tree_gen(output=capture)
+
+        def queue_to_set(queue):
+            out = set()
+
+            while True:  # yuck -- pylint: disable = while-used
+                try:
+                    prog = queue.get(timeout=.5)
+                    out.add(prog.replace('...', '1RH'))
+                except Empty:
+                    break
+
+            return out
+
+        # pylint: disable = redefined-variable-type
+        self.q22 = queue_to_set(self.q22)
+        self.h32 = queue_to_set(self.h32)
+        self.q32 = queue_to_set(self.q32)
+
+    def test_tree(self):
+        self.run_tree_gen()
+
+        expected = {
+             4: self.q22,
+             39: self.h32,
+             582: self.q32,
+        }
+
+        for count, cat in expected.items():
+            self.assertEqual(len(cat), count)
+
+        self.assertEqual(
+            self.q22,
+            HOLDOUTS_22Q)
+
+        self.assertTrue(
+            self.h32 <= HOLDOUTS_32H
+        )
+
+        self.assertTrue(
+            BRADY_HOLDOUTS <= self.h32.union(
+                {"1RB 0LC 0LA 0RA 1LA 1RH"})
+        )
+
+        self.assertTrue(
+            self.q32 <= HOLDOUTS_32Q
+        )
 
 
 HOLDOUTS_22Q = {
