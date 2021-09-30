@@ -5,7 +5,6 @@ score=no
 [MESSAGES CONTROL]
 disable=
   duplicate-code,
-  no-name-in-module,
   unspecified-encoding,
   missing-class-docstring,
   missing-module-docstring,
