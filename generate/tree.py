@@ -6,7 +6,7 @@ from multiprocessing import (
 )
 
 from tm.run_bb import run_bb
-from tm.program import Program
+from generate.program import Program
 
 
 def tree_worker(steps, progs, output):
