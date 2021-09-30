@@ -38,4 +38,4 @@ profile :
 	$(PYPATH) python3 -m cProfile bin/run.py
 
 tree :
-	time -p python3 tree_gen.py
+	$(PYPATH) time -p python3 generate/tree.py
