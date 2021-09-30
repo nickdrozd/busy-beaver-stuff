@@ -31,7 +31,7 @@ jobs:
       - name: Lint and test Python
         run: |
           make lint
-          make test
+          make test-all
 
   Mac-Idris:
     runs-on: macos-latest
