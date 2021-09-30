@@ -262,6 +262,7 @@ def lr_convert(rado_string):
         return ' '.join(map(convert_bin_instr, instrs))
 
     def convert_bin_instr(bin_instr):
+        # pylint: disable = invalid-name
         pr, sh, *tr =  bin_instr
 
         v_sh = 'L' if int(sh) == 0 else 'R'

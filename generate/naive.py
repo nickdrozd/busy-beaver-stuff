@@ -1,3 +1,5 @@
+# pylint: disable = invalid-name
+
 from itertools import product
 import re
 

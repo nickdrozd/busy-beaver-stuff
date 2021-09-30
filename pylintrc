@@ -4,7 +4,6 @@ score=no
 
 [MESSAGES CONTROL]
 disable=
-  invalid-name,
   duplicate-code,
   too-many-locals,
   no-name-in-module,
