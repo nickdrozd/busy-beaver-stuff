@@ -17,6 +17,8 @@ idris :
 
 ## Python ##############################
 
+PYPATH = PYTHONPATH=.:$PYTHONPATH
+
 lint :
 	pylint --version
 	pylint *.py **/*.py
@@ -30,10 +32,10 @@ test-all :
 	$(PYTEST) discover -v
 
 run :
-	python3 run.py
+	$(PYPATH) python3 bin/run.py
 
 profile :
-	python3 -m cProfile run.py
+	$(PYPATH) python3 -m cProfile bin/run.py
 
 tree :
 	time -p python3 tree_gen.py
