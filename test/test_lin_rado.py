@@ -166,8 +166,8 @@ class TestTree(TestCase):
 
         expected = {
              4: self.q22,
-             39: self.h32,
-             582: self.q32,
+             40: self.h32,
+             609: self.q32,
         }
 
         for count, cat in expected.items():
@@ -177,13 +177,13 @@ class TestTree(TestCase):
             self.q22,
             HOLDOUTS_22Q)
 
-        self.assertTrue(
-            self.h32 <= HOLDOUTS_32H
+        self.assertEqual(
+            self.h32,
+            HOLDOUTS_32H
         )
 
         self.assertTrue(
-            BRADY_HOLDOUTS <= self.h32.union(
-                {"1RB 0LC 0LA 0RA 1LA 1RH"})
+            BRADY_HOLDOUTS <= self.h32
         )
 
         self.assertTrue(

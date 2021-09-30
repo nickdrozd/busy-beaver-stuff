@@ -20,7 +20,6 @@ def tree_worker(steps, progs, output):
             prog,
             x_limit = steps,
             check_rec = 0,
-            check_blanks = True,
         )
 
         if machine.final.undfnd is not None:
