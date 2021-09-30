@@ -17,7 +17,7 @@ idris :
 
 ## Python ##############################
 
-PYPATH = PYTHONPATH=.:$PYTHONPATH
+PYPATH = PYTHONPATH=.:$(PYTHONPATH)
 
 lint :
 	pylint --version
