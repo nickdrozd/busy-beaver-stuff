@@ -40,9 +40,9 @@ profile :
 ## Program files (non-phony) ###########
 
 3-2.prog :
-	$(PYPATH) time -p python3 bin/tree_gen.py 3 > $@
+	$(PYPATH) time -p python3 bin/tree_gen.py 3 | sort > $@
 
 4-2.prog :
-	$(PYPATH) time -p python3 bin/tree_gen.py 4 > $@
+	$(PYPATH) time -p python3 bin/tree_gen.py 4 | sort > $@
 
 generate : 3-2.prog 4-2.prog
