@@ -6,7 +6,8 @@ from multiprocessing import Queue
 from unittest import TestCase, skip
 
 from tm import run_bb
-from generate.tree import run_tree_gen
+from generate.graph import Graph
+from generate.tree  import run_tree_gen
 from generate.naive import yield_programs
 
 
@@ -195,17 +196,29 @@ class TestTree(TestCase):
         self.h32 = queue_to_set(self.h32)
         self.q32 = queue_to_set(self.q32)
 
+    def assert_sconn_count(self, cat, count):
+        sconn = {
+            prog
+            for prog in cat
+            if Graph(prog).is_strongly_connected
+        }
+
+        self.assertEqual(
+            count,
+            len(sconn))
+
     def test_tree(self):
         self.run_tree_gen(3)
 
         expected = {
-             4: self.q22,
-             40: self.h32,
-             609: self.q32,
+             (4, 4): self.q22,
+             (40, 40): self.h32,
+             (609, 609): self.q32,
         }
 
-        for count, cat in expected.items():
+        for (count, sconn), cat in expected.items():
             self.assertEqual(len(cat), count)
+            self.assert_sconn_count(cat, sconn)
 
         self.assertEqual(
             self.q22,
@@ -213,8 +226,7 @@ class TestTree(TestCase):
 
         self.assertEqual(
             self.h32,
-            HOLDOUTS_32H
-        )
+            HOLDOUTS_32H)
 
         self.assertTrue(
             BRADY_HOLDOUTS <= self.h32
