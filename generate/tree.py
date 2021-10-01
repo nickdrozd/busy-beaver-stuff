@@ -34,6 +34,13 @@ def tree_worker(steps, progs, output):
             output(prog)
 
 
+DEFAULT_STEPS = {
+    2: 40,
+    3: 126,
+    4: 107,
+}
+
+
 def run_tree_gen(states, output=print):
     progs = Manager().Queue()
 
@@ -42,7 +49,14 @@ def run_tree_gen(states, output=print):
     progs.put(init_prog)
 
     processes = [
-        Process(target=tree_worker, args=(126, progs, output))
+        Process(
+            target = tree_worker,
+            args = (
+                DEFAULT_STEPS[states],
+                progs,
+                output,
+            )
+        )
         for _ in range(cpu_count())
     ]
 
