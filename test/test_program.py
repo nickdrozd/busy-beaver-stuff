@@ -61,86 +61,71 @@ class TestProgram(TestCase):
             self.assert_available_colors(avail_co)
             (self.assertTrue if last else self.assertFalse)(last)
 
-    def test_branch_1(self):
-        prog = Program("1RB ... 1LC ... ... ... ... ...")
+    def test_branch(self):
+        for (prog, loc), extensions in BRANCH.items():
+            self.assertEqual(
+                set(Program(prog).branch(loc)),
+                extensions)
 
-        self.assertEqual(
-            set(prog.branch('D0')),
-            {
-                '1RB ... 1LC ... ... ... 0LA ...',
-                '1RB ... 1LC ... ... ... 0LB ...',
-                '1RB ... 1LC ... ... ... 0LC ...',
-                '1RB ... 1LC ... ... ... 0LD ...',
-                '1RB ... 1LC ... ... ... 0RA ...',
-                '1RB ... 1LC ... ... ... 0RB ...',
-                '1RB ... 1LC ... ... ... 0RC ...',
-                '1RB ... 1LC ... ... ... 0RD ...',
-                '1RB ... 1LC ... ... ... 1LA ...',
-                '1RB ... 1LC ... ... ... 1LB ...',
-                '1RB ... 1LC ... ... ... 1LC ...',
-                '1RB ... 1LC ... ... ... 1LD ...',
-                '1RB ... 1LC ... ... ... 1RA ...',
-                '1RB ... 1LC ... ... ... 1RB ...',
-                '1RB ... 1LC ... ... ... 1RC ...',
-                '1RB ... 1LC ... ... ... 1RD ...',
-            }
-        )
 
-    def test_branch_2(self):
-        prog = Program("1RB ... ... ... 1LB 1LA ... 3..")
+BRANCH = {
+    ("1RB 1LB  1LB 1LA", 'A1'): {
+        '1RB 0LA 1LB 1LA',
+        '1RB 0LB 1LB 1LA',
+        '1RB 0RA 1LB 1LA',
+        '1RB 0RB 1LB 1LA',
+        '1RB 1LA 1LB 1LA',
+        '1RB 1LB 1LB 1LA',
+        '1RB 1RA 1LB 1LA',
+        '1RB 1RB 1LB 1LA',
+    },
 
-        self.assertEqual(
-            set(prog.branch('A1')),
-            {
-                '1RB 0LA ... ... 1LB 1LA ... 3..',
-                '1RB 0LB ... ... 1LB 1LA ... 3..',
-                '1RB 0RA ... ... 1LB 1LA ... 3..',
-                '1RB 0RB ... ... 1LB 1LA ... 3..',
-                '1RB 1LA ... ... 1LB 1LA ... 3..',
-                '1RB 1LB ... ... 1LB 1LA ... 3..',
-                '1RB 1RA ... ... 1LB 1LA ... 3..',
-                '1RB 1RB ... ... 1LB 1LA ... 3..',
-                '1RB 2LA ... ... 1LB 1LA ... 3..',
-                '1RB 2LB ... ... 1LB 1LA ... 3..',
-                '1RB 2RA ... ... 1LB 1LA ... 3..',
-                '1RB 2RB ... ... 1LB 1LA ... 3..',
-            }
-        )
+    ("1RB ... 1LC ... ... ... ... ...", 'D0'): {
+        '1RB ... 1LC ... ... ... 0LA ...',
+        '1RB ... 1LC ... ... ... 0LB ...',
+        '1RB ... 1LC ... ... ... 0LC ...',
+        '1RB ... 1LC ... ... ... 0LD ...',
+        '1RB ... 1LC ... ... ... 0RA ...',
+        '1RB ... 1LC ... ... ... 0RB ...',
+        '1RB ... 1LC ... ... ... 0RC ...',
+        '1RB ... 1LC ... ... ... 0RD ...',
+        '1RB ... 1LC ... ... ... 1LA ...',
+        '1RB ... 1LC ... ... ... 1LB ...',
+        '1RB ... 1LC ... ... ... 1LC ...',
+        '1RB ... 1LC ... ... ... 1LD ...',
+        '1RB ... 1LC ... ... ... 1RA ...',
+        '1RB ... 1LC ... ... ... 1RB ...',
+        '1RB ... 1LC ... ... ... 1RC ...',
+        '1RB ... 1LC ... ... ... 1RD ...',
+    },
 
-    def test_branch_3(self):
-        prog = Program("1RB ... ... ... ... ... ... ..3")
+    ("1RB ... ... ... 1LB 1LA ... 3..", 'A1'): {
+        '1RB 0LA ... ... 1LB 1LA ... 3..',
+        '1RB 0LB ... ... 1LB 1LA ... 3..',
+        '1RB 0RA ... ... 1LB 1LA ... 3..',
+        '1RB 0RB ... ... 1LB 1LA ... 3..',
+        '1RB 1LA ... ... 1LB 1LA ... 3..',
+        '1RB 1LB ... ... 1LB 1LA ... 3..',
+        '1RB 1RA ... ... 1LB 1LA ... 3..',
+        '1RB 1RB ... ... 1LB 1LA ... 3..',
+        '1RB 2LA ... ... 1LB 1LA ... 3..',
+        '1RB 2LB ... ... 1LB 1LA ... 3..',
+        '1RB 2RA ... ... 1LB 1LA ... 3..',
+        '1RB 2RB ... ... 1LB 1LA ... 3..',
+    },
 
-        self.assertEqual(
-            set(prog.branch('B0')),
-            {
-                '1RB ... ... ... 0LA ... ... ..3',
-                '1RB ... ... ... 0LB ... ... ..3',
-                '1RB ... ... ... 0RA ... ... ..3',
-                '1RB ... ... ... 0RB ... ... ..3',
-                '1RB ... ... ... 1LA ... ... ..3',
-                '1RB ... ... ... 1LB ... ... ..3',
-                '1RB ... ... ... 1RA ... ... ..3',
-                '1RB ... ... ... 1RB ... ... ..3',
-                '1RB ... ... ... 2LA ... ... ..3',
-                '1RB ... ... ... 2LB ... ... ..3',
-                '1RB ... ... ... 2RA ... ... ..3',
-                '1RB ... ... ... 2RB ... ... ..3',
-            }
-        )
-
-    def test_branch_4(self):
-        prog = Program("1RB 1LB  1LB 1LA")
-
-        self.assertEqual(
-            set(prog.branch('A1')),
-            {
-                '1RB 0LA 1LB 1LA',
-                '1RB 0LB 1LB 1LA',
-                '1RB 0RA 1LB 1LA',
-                '1RB 0RB 1LB 1LA',
-                '1RB 1LA 1LB 1LA',
-                '1RB 1LB 1LB 1LA',
-                '1RB 1RA 1LB 1LA',
-                '1RB 1RB 1LB 1LA',
-            }
-        )
+    ("1RB ... ... ... ... ... ... ..3", 'B0'): {
+        '1RB ... ... ... 0LA ... ... ..3',
+        '1RB ... ... ... 0LB ... ... ..3',
+        '1RB ... ... ... 0RA ... ... ..3',
+        '1RB ... ... ... 0RB ... ... ..3',
+        '1RB ... ... ... 1LA ... ... ..3',
+        '1RB ... ... ... 1LB ... ... ..3',
+        '1RB ... ... ... 1RA ... ... ..3',
+        '1RB ... ... ... 1RB ... ... ..3',
+        '1RB ... ... ... 2LA ... ... ..3',
+        '1RB ... ... ... 2LB ... ... ..3',
+        '1RB ... ... ... 2RA ... ... ..3',
+        '1RB ... ... ... 2RB ... ... ..3',
+    },
+}
