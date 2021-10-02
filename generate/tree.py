@@ -49,7 +49,7 @@ def run_tree_gen(states, output=print):
         re.sub(
             r'^\.\.\.',
             '1RB',
-            ' '.join([
+            '  '.join([
                 ' '.join(
                     ['...'] * 2)
             ] * states)))

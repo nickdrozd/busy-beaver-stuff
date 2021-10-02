@@ -1,18 +1,11 @@
 def parse(program_string):
-    instructions = iter(program_string.split())
-
     return tuple(
-        zip(instructions, instructions, instructions, instructions)
-        if '3' in program_string else
-        zip(instructions, instructions, instructions)
-        if '2' in program_string else
-        zip(instructions, instructions)
+        tuple(state.split(' '))
+        for state in program_string.split('  ')
     )
 
 
 def tcompile(program_string):
-    parsed = parse(program_string)
-
     return tuple(
         tuple(
             (
@@ -24,5 +17,5 @@ def tcompile(program_string):
             else None
             for action in instr
         )
-        for instr in parsed
+        for instr in parse(program_string)
     )

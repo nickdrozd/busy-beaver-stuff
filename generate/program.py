@@ -17,7 +17,7 @@ class Program:
         self.colors = {key[1] for key in self.prog}
 
     def __str__(self):
-        return ' '.join(
+        return '  '.join(
             entry[1]
             for entry in
             sorted(

@@ -24,7 +24,7 @@ def yield_all_programs(state_count, color_count, halt=False):
     )
 
     progs = (
-        ' '.join(state)
+        '  '.join(state)
         for state in
         product(
             (
@@ -49,14 +49,14 @@ def yield_all_programs(state_count, color_count, halt=False):
 
 
 def b0_halt(colors):
-    return ' '.join([
+    return '  '.join([
         ' '.join(('...' for _ in range(colors))),
         '..H',
     ])
 
 
 def r_on_0(states, colors):
-    prog = ' '.join(
+    prog = '  '.join(
         ' '.join(['.R.'] + ['...' for _ in range(colors - 1)])
         for _ in range(states)
     )

@@ -165,7 +165,7 @@ class TestTree(TestCase):
 
         def capture(prog):
             if (dots := prog.count('...')) == 2:
-                self.q22.put(prog[:15])
+                self.q22.put(prog[:16])
             elif dots == 1:
                 if not re.match(BC_LOOP, prog):
                     self.h32.put(prog)
@@ -236,10 +236,10 @@ class TestTree(TestCase):
 
 
 HOLDOUTS_22Q = {
-    "1RB 1LA 1LA 1RB",  # xmas classic
-    "1RB 1LA 0LA 1RB",  # xmas one-side
-    "1RB 0LB 1LA 0RA",  # xmas spaces
-    "1RB 1LA 0LA 0RB",  # counter
+    "1RB 1LA  1LA 1RB",  # xmas classic
+    "1RB 1LA  0LA 1RB",  # xmas one-side
+    "1RB 0LB  1LA 0RA",  # xmas spaces
+    "1RB 1LA  0LA 0RB",  # counter
 }
 
 LR_HOLDOUTS = {
@@ -300,7 +300,7 @@ def lr_convert(rado_string):
             (bin_string[i : i + 4]
              for i in range(0, len(bin_string), 4)))
 
-        return f'{a0} {a1} {b0} {b1} {c0} {c1}'
+        return f'{a0} {a1}  {b0} {b1}  {c0} {c1}'
 
     def convert_bin_instr(bin_instr):
         pr, sh, *tr =  bin_instr
@@ -320,8 +320,8 @@ def lr_convert(rado_string):
 
 HOLDOUTS_32H = set(map(lr_convert, LR_HOLDOUTS))
 
-AB_LOOP = '^1RB ..[AB] ..[AB] ..[AB] ... ...'
-BC_LOOP = '^1RB ... ..[BC] ..[BC] ..[BC] ..[BC]'
+AB_LOOP = '^1RB ..[AB]  ..[AB] ..[AB]  ... ...'
+BC_LOOP = '^1RB ...  ..[BC] ..[BC]  ..[BC] ..[BC]'
 
 NOT_CONNECTED_32 = [
     AB_LOOP,
