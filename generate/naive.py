@@ -1,5 +1,3 @@
-# pylint: disable = invalid-name
-
 from itertools import product
 import re
 
@@ -10,52 +8,65 @@ def yield_all_programs(state_count, color_count, halt=False):
     states = tuple(map(chr, range(65, 65 + state_count)))
     colors = tuple(map(str, range(color_count)))
 
-    actions = (
-        ''.join(prod) for prod
-        in product(
-            colors,
-            SHIFTS,
-            states + ((HALT,) if halt else ()))
+    actions = filter(
+        (
+            lambda action: action[2] != HALT or action == '1RH'
+            if halt else
+            lambda action: action
+        ),
+        (
+            ''.join(prod) for prod
+            in product(
+                colors,
+                SHIFTS,
+                states + ((HALT,) if halt else ()))
+        )
     )
 
-    transitions = len(colors) * len(states)
+    progs = (
+        ' '.join(state)
+        for state in
+        product(
+            (
+                ' '.join(state)
+                for state in
+                product(actions, repeat = color_count)
+            ),
+            repeat = state_count))
 
-    if halt:
-        actions = (
-            action
-            for action in actions
-            if action[2] != HALT or action == '1RH'
-        )
+    for prog in progs:
+        if prog[:3] != '1RB':
+            continue
 
-    progs = product(actions, repeat = transitions - 1)
+        if halt and prog.count(HALT) != 1:
+            continue
 
-    if not halt:
-        for prog in progs:
-            yield '1RB ' + ' '.join(prog)
-
-    else:
-        for prog in progs:
-            prog = ' '.join(prog)
-            if prog.count(HALT) == 1:
-                yield '1RB ' + prog
-
-
-def B0_halt(colors):
-    dots = ' '.join(('...' for _ in range(colors)))
-    return f'^{dots} ..H'
+        yield prog
 
 
-def R_on_0(states, colors):
-    r0 = ' '.join(['.R.'] + ['...' for _ in range(colors - 1)])
-    return f"^{' '.join(r0 for _ in range(states))}"
+
+def b0_halt(colors):
+    return ' '.join([
+        ' '.join(('...' for _ in range(colors))),
+        '..H',
+    ])
+
+
+def r_on_0(states, colors):
+    prog = ' '.join(
+        ' '.join(['.R.'] + ['...' for _ in range(colors - 1)])
+        for _ in range(states)
+    )
+
+    return '^' + prog
 
 
 def reject(rejects, states, colors, halt=False):
     rejects = [re.compile(regex) for regex in rejects]
-    rejects.insert(0, re.compile(R_on_0(states, colors)))
+    rejects.insert(0, re.compile(r_on_0(states, colors)))
 
     if halt:
-        rejects.insert(0, re.compile(B0_halt(colors)))
+        rejects.insert(0, re.compile(b0_halt(colors)))
 
     def reject_prog(prog):
         for regex in rejects:
