@@ -41,6 +41,9 @@ def yield_all_programs(state_count, color_count, halt=False):
         if halt and prog.count(HALT) != 1:
             continue
 
+        if max(colors) not in prog:
+            continue
+
         yield prog
 
 
