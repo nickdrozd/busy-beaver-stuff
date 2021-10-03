@@ -38,7 +38,6 @@ class TestNaive(TestCase):
         }
 
         for (states, colors, halt), count in expected.items():
-            print(states, colors, halt)
             self.yield_programs(states, colors, halt)
             self.assert_count(count)
 
