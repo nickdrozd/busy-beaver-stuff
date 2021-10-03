@@ -290,19 +290,19 @@ LR_HOLDOUTS = {
 }
 
 def lr_convert(rado_string):
+    # pylint: disable = invalid-name
     def oct_to_bin(oct_string):
         return f'{oct_string:b}'
 
     def bin_to_prog(bin_string):
-        instrs = [
-            bin_string[i : i + 4]
-            for i in range(0, len(bin_string), 4)
-        ]
+        a0, a1, b0, b1, c0, c1 = map(
+            convert_bin_instr,
+            (bin_string[i : i + 4]
+             for i in range(0, len(bin_string), 4)))
 
-        return ' '.join(map(convert_bin_instr, instrs))
+        return f'{a0} {a1} {b0} {b1} {c0} {c1}'
 
     def convert_bin_instr(bin_instr):
-        # pylint: disable = invalid-name
         pr, sh, *tr =  bin_instr
 
         v_sh = 'L' if int(sh) == 0 else 'R'
