@@ -18,9 +18,23 @@ class Program:
 
     def __str__(self):
         return ' '.join(
-            instr[1]
-            for instr in
-            sorted(self.prog.items()))
+            entry[1]
+            for entry in
+            sorted(
+                {
+                    state: ' '.join(
+                        quint[1]
+                        for quint in
+                        sorted(
+                            instr
+                            for instr in self.prog.items()
+                            if instr[0].startswith(state)
+                        )
+                    )
+                    for state in self.states
+                }.items()
+            )
+        )
 
     @property
     def slots(self):
