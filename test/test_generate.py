@@ -3,7 +3,7 @@
 import re
 from queue import Empty
 from multiprocessing import Queue
-from unittest import TestCase, skip
+from unittest import TestCase
 
 from tm import run_bb
 from generate.graph import Graph
@@ -73,11 +73,10 @@ class TestLinRado(TestCase):
             ).final.xlimit is not None
         }
 
-    @skip
     def test_22h(self):
         self.run_lin_rado(
             2, 2, 1,
-            6,
+            7,  # 6
         )
 
         self.assert_progs_count(
@@ -112,11 +111,10 @@ class TestLinRado(TestCase):
             BRADY_HOLDOUTS <= HOLDOUTS_32H
         )
 
-    @skip
     def test_23h(self):
         self.run_lin_rado(
             2, 3, 1,
-            220,
+            223,  # 220
         )
 
         self.assert_progs_equal(
@@ -141,11 +139,10 @@ class TestLinRado(TestCase):
         self.assert_progs_count(
             837)
 
-    @skip
     def test_23q(self):
         self.run_lin_rado(
             2, 3, 0,
-            220,
+            223,  # 220
             rejects=[
                 prog.replace('1RH', '...')
                 for prog in HOLDOUTS_23H
