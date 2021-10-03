@@ -1,3 +1,4 @@
+import re
 from queue import Empty
 from multiprocessing import (
     cpu_count,
@@ -44,9 +45,14 @@ DEFAULT_STEPS = {
 def run_tree_gen(states, output=print):
     progs = Manager().Queue()
 
-    init_prog = '1RB' + ' ...' * (states * 2 - 1)
-
-    progs.put(init_prog)
+    progs.put(
+        re.sub(
+            r'^\.\.\.',
+            '1RB',
+            ' '.join([
+                ' '.join(
+                    ['...'] * 2)
+            ] * states)))
 
     processes = [
         Process(
