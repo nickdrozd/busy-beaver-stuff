@@ -108,9 +108,10 @@ class TestLinRado(TestCase):
         self.assert_progs_count(
             40)
 
-        self.assertTrue(
-            BRADY_HOLDOUTS <= HOLDOUTS_32H
-        )
+        self.assertEqual(
+            HOLDOUTS_32H,
+            BRADY_HOLDOUTS.union(
+                LR_NOT_BRADY))
 
     def test_23h(self):
         self.run_lin_rado(
@@ -320,52 +321,6 @@ def lr_convert(rado_string):
 
 HOLDOUTS_32H = set(map(lr_convert, LR_HOLDOUTS))
 
-BRADY_HOLDOUTS = {
-    "1RB 0LC 0LA 0RA 1LA 1RH",
-    "1RB 1LC 0LA 0RB 1LA 1RH",
-    "1RB 1LA 1LA 1RC 1RH 1RB",
-    "1RB 0LB 1LA 0RC 1RB 1RH",
-    "1RB 0LC 1LA 0RA 1LA 1RH",
-    "1RB 0LC 1LB 1RA 1RH 1LA",
-    "1RB 0LC 0LC 1RA 1RH 1LA",
-    "1RB 1RH 0LC 0RB 1LC 1LA",
-    "1RB 1RH 0LC 0RA 1LA 1LB",
-    "1RB 1RH 0LC 0RA 0RA 1LB",
-    "1RB 1RH 0LC 1RB 1LA 1LC",
-    "1RB 1RA 0LC 1RH 0RA 1LC",
-    "1RB 1RA 0LC 1RH 1RA 1LC",
-    "1RB 1RH 1LC 0RB 1LB 1LA",
-    "1RB 1RH 1LC 0RB 1LC 1LA",
-    "1RB 0LB 1LC 1RB 1RH 1LA",
-    "1RB 1LC 1LC 1RB 1RH 1LA",
-    "1RB 1RC 1LC 1RH 0RA 0LB",
-    "1RB 1RH 1LC 0RA 0RB 0LB",
-    "1RB 1RH 1LC 0RA 1RB 0LB",
-    "1RB 1RH 1LC 1RA 0RA 0LC",
-    "1RB 1RH 1LC 1RB 1LA 1LC",
-    "1RB 1RA 1LC 1RH 0RA 1LC",
-    "1RB 1RA 1LC 1RH 1RA 1LC",
-    "1RB 1RH 0RC 0RB 1LC 1LA",
-    "1RB 1LA 1RC 1RB 0LA 1RH",
-    "1RB 1LA 1RC 1RB 1LA 1RH",
-}
-
-NON_BRADY = {
-    "1RB 1LA 1LC 1RB 1RH 1RA",
-    "1RB 1LA 1LC 0LC 1RH 1RA",
-    "1RB 1RH 0LC 0RB 0RA 1LB",
-    "1RB 1RC 0RC 1RH 1LC 0LA",
-    "1RB 0RB 1LC 1RH 0LA 1RC",
-    "1RB 0RC 0RC 1RH 1LC 0LA",
-    "1RB 1RH 1LC 1RB 0RA 0LC",
-    "1RB 1RH 0RC 1LB 1LA 0LA",
-    "1RB 1LA 1LC 1RB 1RH 1LA",
-    "1RB 1LA 0LA 0LC 1RH 1RA",
-    "1RB 1LA 0LC 1RB 1RH 1LA",
-    "1RB 0RC 1LA 1RB 1RH 1LB",
-    "1RB 1LA 1LA 0LC 1RH 1RA",
-}
-
 AB_LOOP = '^1RB ..[AB] ..[AB] ..[AB] ... ...'
 BC_LOOP = '^1RB ... ..[BC] ..[BC] ..[BC] ..[BC]'
 
@@ -381,3 +336,6 @@ def read_progs(name):
 HOLDOUTS_23H = read_progs('holdouts_23h')
 HOLDOUTS_32Q = read_progs('holdouts_32q')
 HOLDOUTS_23Q = read_progs('holdouts_23q')
+
+LR_NOT_BRADY = read_progs('lr_not_brady')
+BRADY_HOLDOUTS = read_progs('brady_holdouts')
