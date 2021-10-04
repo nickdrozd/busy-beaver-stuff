@@ -36,13 +36,13 @@ def tree_worker(steps, progs, output):
 
 
 DEFAULT_STEPS = {
-    2: 40,
-    3: 126,
-    4: 107,
+    (2, 2): 40,
+    (3, 2): 126,
+    (4, 2): 107,
 }
 
 
-def run_tree_gen(states, output=print):
+def run_tree_gen(states, colors, output=print):
     progs = Manager().Queue()
 
     progs.put(
@@ -51,14 +51,15 @@ def run_tree_gen(states, output=print):
             '1RB',
             '  '.join([
                 ' '.join(
-                    ['...'] * 2)
+                    ['...'] * colors)
             ] * states)))
 
     processes = [
         Process(
             target = tree_worker,
             args = (
-                DEFAULT_STEPS[states],
+                DEFAULT_STEPS[
+                    (states, colors)],
                 progs,
                 output,
             )

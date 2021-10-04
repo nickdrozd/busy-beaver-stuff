@@ -46,10 +46,10 @@ TIME = time -p
 TREE = python3 bin/tree_gen.py
 
 3-2.prog :
-	$(PYPATH) $(TIME) $(TREE) 3 | sort > $@
+	$(PYPATH) $(TIME) $(TREE) 3 2 | sort > $@
 
 4-2.prog :
-	$(PYPATH) $(TIME) $(TREE) 4 | sort > $@
+	$(PYPATH) $(TIME) $(TREE) 4 2 | sort > $@
 
 generate : 3-2.prog 4-2.prog
 	wc -l *.prog

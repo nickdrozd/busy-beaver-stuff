@@ -192,6 +192,7 @@ class TestTree(TestCase):
 
         run_tree_gen(
             states = 3,
+            colors = 2,
             output = capture,
         )
 
