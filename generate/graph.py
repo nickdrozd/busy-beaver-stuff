@@ -1,3 +1,5 @@
+from tm.parse import parse
+
 COLORS = (
     'blue',
     'red',
@@ -6,35 +8,17 @@ COLORS = (
 )
 
 class Graph:
-    def __init__(self, prog, colors=None):
-        if colors is None:
-            colors = 2
-
-        if isinstance(prog, str):
-            prog = (
-                prog.split()
-                if ' ' in prog else
-                tuple(prog)
-            )
-
-            try:
-                colors = max(int(action[0]) for action in prog) + 1
-            except ValueError:
-                pass
-
-        trans = iter(
-            action[2] if len(action) == 3 else action
-            for action in prog
-        )
-
-        connections = zip(*(trans for _ in range(colors)))
+    def __init__(self, program):
+        self.program = program
 
         self.arrows = {
             chr(65 + i): connection
-            for i, connection in enumerate(connections)
+            for i, connection in
+            enumerate((
+                tuple(instr[2] for instr in state)
+                for state in parse(program)
+            ))
         }
-
-        self.prog = prog
 
     def __str__(self):
         return self.flatten()
@@ -75,11 +59,9 @@ class Graph:
 
     @property
     def dot(self):
-        prog = ' '.join(self.prog)
-
         title = '\n'.join([
             '  labelloc="t";',
-            f'  label="{prog}";',
+            f'  label="{self.program}";',
             '  fontname="courier"',
         ])
 
