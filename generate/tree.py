@@ -38,6 +38,7 @@ def tree_worker(steps, progs, output):
 DEFAULT_STEPS = {
     (2, 2): 40,
     (3, 2): 126,
+    (2, 3): 223,  # 220
     (4, 2): 107,
 }
 

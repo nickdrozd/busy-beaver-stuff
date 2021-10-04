@@ -222,6 +222,38 @@ class TestTree(TestCase):
             q32 <= HOLDOUTS_32Q
         )
 
+    def test_tree_2_3(self):
+        h23, q23 = Queue(), Queue()
+
+        def capture(prog):
+            if (dots := prog.count('...')) == 0:
+                q23.put(prog)
+            elif dots == 1:
+                h23.put(prog.replace('...', '1RH'))
+
+        run_tree_gen(
+            states = 2,
+            colors = 3,
+            output = capture,
+        )
+
+        h23, q23 = map(
+            self.queue_to_set,
+            (h23, q23))
+
+        self.assert_counts({
+            128: h23,
+            906: q23,
+        })
+
+        self.assertTrue(
+            h23 <= HOLDOUTS_23H
+        )
+
+        self.assertTrue(
+            q23 <= HOLDOUTS_23Q
+        )
+
 
 HOLDOUTS_22Q = {
     "1RB 1LA  1LA 1RB",  # xmas classic

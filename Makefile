@@ -48,8 +48,11 @@ TREE = python3 bin/tree_gen.py
 3-2.prog :
 	$(PYPATH) $(TIME) $(TREE) 3 2 | sort > $@
 
+2-3.prog :
+	$(PYPATH) $(TIME) $(TREE) 2 3 | sort > $@
+
 4-2.prog :
 	$(PYPATH) $(TIME) $(TREE) 4 2 | sort > $@
 
-generate : 3-2.prog 4-2.prog
+generate : 3-2.prog 2-3.prog 4-2.prog
 	wc -l *.prog
