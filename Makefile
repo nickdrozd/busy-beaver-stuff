@@ -52,3 +52,4 @@ TREE = python3 bin/tree_gen.py
 	$(PYPATH) $(TIME) $(TREE) 4 | sort > $@
 
 generate : 3-2.prog 4-2.prog
+	wc -l *.prog
