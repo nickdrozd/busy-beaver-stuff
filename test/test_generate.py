@@ -158,80 +158,67 @@ class TestLinRado(TestCase):
 
 
 class TestTree(TestCase):
-    def run_tree_gen(self, states):
-        self.q22 = Queue()
-        self.h32 = Queue()
-        self.q32 = Queue()
+    def assert_counts(self, expected):
+        for count, cat in expected.items():
+            self.assertEqual(len(cat), count)
+            self.assertTrue((
+                all(Graph(prog).is_strongly_connected
+                    for prog in cat)))
+
+    @staticmethod
+    def queue_to_set(queue):
+        out = set()
+
+        while True:  # yuck -- pylint: disable = while-used
+            try:
+                prog = queue.get(timeout=.5)
+                out.add(prog.replace('...', '1RH'))
+            except Empty:
+                break
+
+        return out
+
+    def test_tree_3_2(self):
+        q22, h32, q32 = Queue(), Queue(), Queue()
 
         def capture(prog):
             if (dots := prog.count('...')) == 2:
-                self.q22.put(prog[:16])
+                q22.put(prog[:16])
             elif dots == 1:
                 if not re.match(BC_LOOP, prog):
-                    self.h32.put(prog)
+                    h32.put(prog)
             else:
-                self.q32.put(prog)
+                q32.put(prog)
 
         run_tree_gen(
-            states,
+            states = 3,
             output = capture,
         )
 
-        def queue_to_set(queue):
-            out = set()
+        q22, h32, q32 = map(
+            self.queue_to_set,
+            (q22, h32, q32))
 
-            while True:  # yuck -- pylint: disable = while-used
-                try:
-                    prog = queue.get(timeout=.5)
-                    out.add(prog.replace('...', '1RH'))
-                except Empty:
-                    break
-
-            return out
-
-        # pylint: disable = redefined-variable-type
-        self.q22 = queue_to_set(self.q22)
-        self.h32 = queue_to_set(self.h32)
-        self.q32 = queue_to_set(self.q32)
-
-    def assert_sconn_count(self, cat, count):
-        sconn = {
-            prog
-            for prog in cat
-            if Graph(prog).is_strongly_connected
-        }
+        self.assert_counts({
+              4: q22,
+             40: h32,
+            609: q32,
+        })
 
         self.assertEqual(
-            count,
-            len(sconn))
-
-    def test_tree(self):
-        self.run_tree_gen(3)
-
-        expected = {
-             (4, 4): self.q22,
-             (40, 40): self.h32,
-             (609, 609): self.q32,
-        }
-
-        for (count, sconn), cat in expected.items():
-            self.assertEqual(len(cat), count)
-            self.assert_sconn_count(cat, sconn)
-
-        self.assertEqual(
-            self.q22,
+            q22,
             HOLDOUTS_22Q)
 
         self.assertEqual(
-            self.h32,
+            h32,
             HOLDOUTS_32H)
 
         self.assertTrue(
-            BRADY_HOLDOUTS <= self.h32
+            BRADY_HOLDOUTS <= h32
         )
 
         self.assertTrue(
-            self.q32 <= HOLDOUTS_32Q
+            q32 <= HOLDOUTS_32Q
         )
 
 
