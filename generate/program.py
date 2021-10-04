@@ -1,6 +1,6 @@
 from itertools import product
 
-from tm.parse import parse
+from tm import parse
 
 
 SHIFTS = 'L', 'R'

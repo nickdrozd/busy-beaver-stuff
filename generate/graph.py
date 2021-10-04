@@ -1,4 +1,4 @@
-from tm.parse import parse
+from tm import parse
 
 COLORS = (
     'blue',

@@ -1,3 +1,4 @@
+from tm.parse import parse
 from tm.machine import Machine
 
 def run_bb(
