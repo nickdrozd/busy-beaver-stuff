@@ -37,19 +37,18 @@ class Program:
         )
 
     @property
-    def slots(self):
+    def open_slots(self):
         return tuple(
-            instr
-            for instr in self.prog.values()
+            slot
+            for slot, instr in self.prog.items()
             if '.' in instr)
 
     @property
     def last_slot(self):
-        return len(self.slots) == 1
+        if len((slots := self.open_slots)) != 1:
+            return None
 
-    @property
-    def is_complete(self):
-        return len(self.slots) == 0
+        return slots[0]
 
     @property
     def used_states(self):

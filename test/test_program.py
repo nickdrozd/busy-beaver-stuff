@@ -10,21 +10,21 @@ PROGS = {
         {0, 1},
         {'A', 'B', 'C'},
         {0, 1},
-        True,
+        'A1',
     ),
     "1RB ...  1RC ...  ... ...  ... ...  ... ...": (
         {'B', 'C'},
         {1},
         {'A', 'B', 'C', 'D'},
         {0, 1},
-        False,
+        None,
     ),
     "1RB ... ... ...  1LB 1LA ... ...": (
         {'A', 'B'},
         {1},
         {'A', 'B'},
         {0, 1, 2},
-        False,
+        None,
     )
 }
 
@@ -50,6 +50,11 @@ class TestProgram(TestCase):
             colors,
             set(map(int, self.prog.available_colors)))
 
+    def assert_last_slot(self, slot):
+        self.assertEqual(
+            slot,
+            self.prog.last_slot)
+
     def test_used_available(self):
         # pylint: disable = line-too-long
         for prog, (used_st, used_co, avail_st, avail_co, last) in PROGS.items():
@@ -59,7 +64,7 @@ class TestProgram(TestCase):
             self.assert_used_colors(used_co)
             self.assert_available_states(avail_st)
             self.assert_available_colors(avail_co)
-            (self.assertTrue if last else self.assertFalse)(last)
+            self.assert_last_slot(last)
 
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
