@@ -33,42 +33,38 @@ int main(void)
       // C0
       PRINT;
       RIGHT;
-      goto D;
+
+      while (!BLANK) {
+        // D1
+        PRINT;
+        LEFT;
+      }
+
+      // D0
+      PRINT;
+      LEFT;
+      goto A;
     }
   else
     {
       // C1
       ERASE;
       LEFT;
-      goto E;
-    }
 
- D:
-  while (!BLANK) {
-    // D1
-    PRINT;
-    LEFT;
-  }
-
-  // D0
-  PRINT;
-  LEFT;
-  goto A;
-
- E:
-  if (BLANK)
-    {
-      // E0
-      PRINT;
-      RIGHT;
-      goto H;
-    }
-  else
-    {
-      // E1
-      ERASE;
-      LEFT;
-      goto A;
+      if (BLANK)
+        {
+          // E0
+          PRINT;
+          RIGHT;
+          goto H;
+        }
+      else
+        {
+          // E1
+          ERASE;
+          LEFT;
+          goto A;
+        }
     }
 
  H:
