@@ -8,7 +8,6 @@ int main(void)
     if (!BLANK)
       {
         // A1
-        PRINT;
         LEFT;
       }
     else
@@ -19,7 +18,6 @@ int main(void)
 
         while (!BLANK) {
           // B1
-          PRINT;
           RIGHT;
         }
 
@@ -36,7 +34,6 @@ int main(void)
 
         while (!BLANK) {
           // D1
-          PRINT;
           LEFT;
         }
 
