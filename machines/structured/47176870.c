@@ -5,33 +5,29 @@
 int main(void)
 {
  A:
-  if (BLANK)
-    {
-      // A0
-      PRINT;
-      RIGHT;
-      goto B;
-    }
-  else
+  if (!BLANK)
     {
       // A1
       PRINT;
       LEFT;
-      goto C;
+    }
+  else
+    {
+      // A0
+      PRINT;
+      RIGHT;
+
+      while (!BLANK) {
+        // B1
+        PRINT;
+        RIGHT;
+      }
+
+      // B0
+      PRINT;
+      RIGHT;
     }
 
- B:
-  while (!BLANK) {
-    // B1
-    PRINT;
-    RIGHT;
-  }
-
-  // B0
-  PRINT;
-  RIGHT;
-
- C:
   if (BLANK)
     {
       // C0
