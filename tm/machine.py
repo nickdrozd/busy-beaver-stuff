@@ -127,7 +127,7 @@ class Machine:
             # Output ###############################
 
             if watch_tape:
-                print(f'{step : 5d} {chr(state + 65)} ',
+                print(f'{step : 5d} {chr(state + 65)}{scan} ',
                       Tape(lspan, scan, rspan, init, head))
 
             # Bookkeeping ##########################
