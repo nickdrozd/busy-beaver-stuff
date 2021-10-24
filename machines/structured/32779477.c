@@ -22,7 +22,18 @@ int main(void)
     // D1
     LEFT;
 
-    if (BLANK)
+    if (!BLANK)
+      {
+        // A1
+        LEFT;
+
+        while (!BLANK) {
+          // C1
+          ERASE;
+          RIGHT;
+        }
+      }
+    else
       {
         // A0
         PRINT;
@@ -34,17 +45,6 @@ int main(void)
 
         // B0
         PRINT;
-      }
-    else
-      {
-        // A1
-        LEFT;
-
-        while (!BLANK) {
-          // C1
-          ERASE;
-          RIGHT;
-        }
       }
 
     // B0, C0
