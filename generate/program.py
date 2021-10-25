@@ -16,7 +16,7 @@ class Program:
         self.states = {key[0] for key in self.prog}
         self.colors = {key[1] for key in self.prog}
 
-    def __str__(self):
+    def __repr__(self):
         return '  '.join(
             entry[1]
             for entry in
