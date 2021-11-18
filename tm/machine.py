@@ -1,3 +1,5 @@
+from typing import Any, Dict, Optional, Tuple
+
 from tm.tape import Tape
 from tm.parse import tcompile
 from tm.recurrence import History
@@ -8,7 +10,7 @@ class ValidationError(Exception):
 
 
 class MachineResult:
-    def __init__(self, prog):
+    def __init__(self, prog: str):
         self.prog = prog
 
         self.blanks = None
@@ -100,27 +102,29 @@ class Machine:
     def run(
             self,
             tape,
-            x_limit=100_000_000,
-            watch_tape=False,
-            check_rec=None,
-            check_blanks=False,
-            samples=None,
+            x_limit: int = 100_000_000,
+            watch_tape: bool = False,
+            check_rec: Optional[int] = None,
+            check_blanks: bool = False,
+            samples: Optional[Dict[int, Any]] = None,
     ):
-        state = 0
+        state: int = 0
 
-        step = 0
+        step: int = 0
         prog = self._comp
 
-        history = (
+        history: Optional[History] = (
             None
             if samples is None and check_rec is None else
             History(tapes=samples)
         )
 
         lspan, scan, rspan = tape
-        head, init = 0, len(lspan)
 
-        marks = 0
+        head: int = 0
+        init: int = len(lspan)
+
+        marks: int = 0
 
         while True:  # pylint: disable = while-used
 
@@ -155,9 +159,12 @@ class Machine:
                 break
 
             if check_rec is not None and step >= check_rec:
-                action = state, scan
+                assert history is not None
 
-                result = history.check_for_recurrence(step, action)
+                action: Tuple[int, int] = state, scan
+
+                result: Optional[Tuple[int, int]] = \
+                    history.check_for_recurrence(step, action)
 
                 if result is not None:
                     self._final.linrec = start, _rec = result

@@ -1,11 +1,16 @@
-def parse(program_string):
+from typing import Optional, Tuple
+
+
+def parse(program: str) -> Tuple[Tuple[str, ...], ...]:
     return tuple(
         tuple(state.split(' '))
-        for state in program_string.split('  ')
+        for state in program.split('  ')
     )
 
 
-def tcompile(program_string):
+CompInstr = Optional[Tuple[int, int, int]]
+
+def tcompile(program: str) -> Tuple[Tuple[CompInstr, ...], ...]:
     return tuple(
         tuple(
             (
@@ -17,5 +22,5 @@ def tcompile(program_string):
             else None
             for action in instr
         )
-        for instr in parse(program_string)
+        for instr in parse(program)
     )

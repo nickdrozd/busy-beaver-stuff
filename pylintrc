@@ -27,4 +27,4 @@ max-args = 7
 max-locals = 31
 max-branches = 31
 max-attributes = 8
-max-statements = 94
+max-statements = 96

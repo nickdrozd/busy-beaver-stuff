@@ -1,26 +1,30 @@
 from collections import defaultdict
+from typing import Dict, List, Optional, Tuple
 
 class History:
     def __init__(self, tapes=None):
         self.tapes = [] if tapes is None else tapes
         self.beeps = []
-        self.states = []
-        self.positions = []
+        self.states: List[int] = []
+        self.positions: List[int] = []
         self.actions = defaultdict(lambda: [])
 
-    def add_position_at_step(self, pos, step):
+    def add_position_at_step(self, pos: int, step: int):
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
 
-    def add_state_at_step(self, state, step):
+    def add_state_at_step(self, state: int, step: int):
         self.states += [state] * (step - len(self.states))
         self.states.append(state)
 
-    def add_tape_at_step(self, tape, step):
+    def add_tape_at_step(self, tape, step: int):
         self.tapes += [tape] * (step - len(self.tapes))
         self.tapes.append(tape)
 
-    def calculate_beeps(self, through=None):
+    def calculate_beeps(
+            self,
+            through: Optional[int] = None,
+    ) -> Dict[int, int]:
         states = (
             self.states
             if through is None else
@@ -35,14 +39,18 @@ class History:
             for state in set(states)
         }
 
-    def check_for_recurrence(self, step, action):
+    def check_for_recurrence(
+            self,
+            step: int,
+            action: Tuple[int, int]
+    ) -> Optional[Tuple[int, int]]:
         for pstep in self.actions[action]:
             if self.verify_lin_recurrence(pstep, step - pstep):
                 return pstep, step - pstep
 
         return None
 
-    def tape_is_fixed(self, start):
+    def tape_is_fixed(self, start: int) -> bool:
         for tape1 in self.tapes[start:]:
             for tape2 in self.tapes[start + 1:]:
                 # pylint: disable = pointless-statement
@@ -53,7 +61,7 @@ class History:
 
         return True
 
-    def verify_lin_recurrence(self, steps, period):
+    def verify_lin_recurrence(self, steps: int, period: int) -> bool:
         tapes     = self.tapes
         states    = self.states
         positions = self.positions
