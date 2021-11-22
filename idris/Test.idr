@@ -7,13 +7,13 @@ import Program
 
 runPrograms : Machine _ -> Programs -> IO ()
 runPrograms _ (_, _, []) = do putStrLn ""
-runPrograms machine (n, k, (prog :: rest)) =
+runPrograms machine (n, k, prog :: rest) =
   case parse prog n k of
     Nothing => pure ()
     Just parsed => do
       result <- runOnBlankTape @{machine} parsed
       putStrLn $ "    " ++ prog ++ " | " ++ show result
-      runPrograms machine (n, k, rest)
+      runPrograms machine $ assert_smaller rest (n, k, rest)
 
 runProgramSets : Machine _ -> List Programs -> IO ()
 runProgramSets _ [] = pure ()
