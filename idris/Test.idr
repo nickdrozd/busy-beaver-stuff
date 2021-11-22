@@ -1,27 +1,19 @@
 import BB
+import Parse
 import Machine
 import Program
 
 %default total
 
-Programs : Type
-Programs = List Program
-
-FastHalt : Programs
-FastHalt = [BB2, BB3, BB4, tm5, TM24, BB24, bb5]
-
-SlowHalt : Programs
-SlowHalt = [TM33F, TM33S, TM33Q]
-
-Blankers : Programs
-Blankers = [BL2, BL3, BL4, BLB4]
-
 runPrograms : Machine _ -> Programs -> IO ()
-runPrograms _ [] = do putStrLn ""
-runPrograms machine (prog :: rest) = do
-  result <- runOnBlankTape @{machine} prog
-  putStrLn $ "    " ++ show result
-  runPrograms machine rest
+runPrograms _ (_, _, []) = do putStrLn ""
+runPrograms machine (n, k, (prog :: rest)) =
+  case parse prog n k of
+    Nothing => pure ()
+    Just parsed => do
+      result <- runOnBlankTape @{machine} parsed
+      putStrLn $ "    " ++ prog ++ " | " ++ show result
+      runPrograms machine (n, k, rest)
 
 runProgramSets : Machine _ -> List Programs -> IO ()
 runProgramSets _ [] = pure ()
@@ -29,20 +21,21 @@ runProgramSets machine (progs :: rest) = do
   runPrograms machine progs
   runProgramSets machine rest
 
+Fast : List Programs
+Fast = [p2_2, p3_2, p2_3, p4_2, p2_4, p5_2]
+
+Slow : List Programs
+Slow = [p3_3]
+
 runMicro : IO ()
 runMicro = do
   putStrLn "  Micro"
-  runProgramSets MicroMachine [
-    FastHalt,
-    Blankers]
+  runProgramSets MicroMachine Fast
 
 runMacro : IO ()
 runMacro = do
   putStrLn "  Macro"
-  runProgramSets MacroMachine [
-    FastHalt,
-    SlowHalt,
-    Blankers]
+  runProgramSets MacroMachine $ Fast ++ Slow
 
 main : IO ()
 main = do

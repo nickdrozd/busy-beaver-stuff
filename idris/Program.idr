@@ -10,6 +10,12 @@ public export
 data Shift = L | R
 
 public export
+Cast Char Shift where
+  cast 'L' = L
+  cast 'R' = R
+  cast  _  = R
+
+public export
 Show Shift where
   show L = "L"
   show R = "R"
@@ -18,6 +24,16 @@ public export
 data State = H | -- the halt state
   A | B | C | -- operational states
   D | E | F
+
+public export
+Cast Char State where
+  cast 'A' = A
+  cast 'B' = B
+  cast 'C' = C
+  cast 'D' = D
+  cast 'E' = E
+  cast 'F' = F
+  cast  _  = H
 
 public export
 Eq State where

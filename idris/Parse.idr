@@ -1,135 +1,164 @@
 module Parse
 
-import Data.List
 import Data.Vect
 import Data.String
 
 import Program
 
-[ShowAction] Show Action where
-  show (color, shift, state) =
-    show color ++ show shift ++ show state
+%default total
 
--- show @{ShowAction} $ bb4 A 0
+-- https://timmyjose.github.io/docs/2020-09-19-parser-combinator-library-idris.html
+
+data Parser : Type -> Type where
+  MkParser : (String -> List (a, String)) -> Parser a
+
+Functor Parser where
+  map f (MkParser p) = MkParser $ \inp =>
+    case p inp of
+      [(v, out)] => [(f v, out)]
+      _          => []
+
+Applicative Parser where
+  pure v = MkParser $ \inp => [(v, inp)]
+
+  (MkParser pf) <*> p = MkParser $ \inp =>
+    case pf inp of
+      [(f, out)] => let (MkParser fp) = (map f p) in fp out
+      _          => []
+
+Monad Parser where
+  (MkParser p) >>= f = MkParser $ \inp =>
+    case p inp of
+      [(v, out)] => let (MkParser fv) = f v in fv out
+      _          => []
+
+Alternative Parser where
+  empty = MkParser $ \_ => []
+
+  (MkParser p) <|> (MkParser q) = MkParser $ \inp =>
+    case p inp of
+      [(v, out)] => [(v, out)]
+      _          => q inp
+
+runParser : Parser a -> String -> Maybe a
+runParser (MkParser p) inp =
+  case p inp of
+    [(res, "")] => Just res
+    _           => Nothing
 
 ----------------------------------------
 
--- λΠ> runOnBlankTape BB2
--- (6, MkDPair 3 ([1, 1, 1, 1], FS (FS FZ)))
+item : Parser Char
+item = MkParser (\inp =>
+  case (unpack inp) of
+    [] => []
+    (c :: cs) => [(c, pack cs)])
 
-----------------------------------------
+sat : (Char -> Bool) -> Parser Char
+sat p = do
+  x <- item
+  if p x then pure x else empty
 
--- For parse format, see http://www.logique.jussieu.fr/~michel/ha.html
+state : Parser State
+state = do
+  s <- sat $ \x =>
+           x == 'A' || x == 'B' || x == 'C' ||
+           x == 'D' || x == 'E' || x == 'F' ||
+           x == 'H'
+  pure $ cast s
 
-parseColor : Char -> Maybe Color
-parseColor '0' = Just 0
-parseColor '1' = Just 1
-parseColor _   = Nothing
+shift : Parser Shift
+shift = do
+  s <- sat $ \x => x == 'L' || x == 'R'
+  pure $ cast s
 
-parseShift : Char -> Maybe Shift
-parseShift 'L' = Just L
-parseShift 'R' = Just R
-parseShift _   = Nothing
+color : Parser Color
+color = do
+  c <- sat isDigit
+  pure $ stringToNatOrZ $ pack [c]
 
-parseState : Char -> Maybe State
-parseState 'H' = Just H
-parseState 'A' = Just A
-parseState 'B' = Just B
-parseState 'C' = Just C
-parseState 'D' = Just D
-parseState 'E' = Just E
-parseState 'F' = Just F
-parseState _   = Nothing
+action : Parser Action
+action = do
+  co <- color
+  sh <- shift
+  st <- state
+  pure (co, sh, st)
 
-parseAction : String -> Maybe Action
-parseAction action =
-  let actionIndex = assert_total $ strIndex action in do
-    color <- parseColor $ actionIndex 0
-    shift <- parseShift $ actionIndex 1
-    state <- parseState $ actionIndex 2
-    Just (color, shift, state)
+space : Parser ()
+space = do
+  _ <- sat isSpace
+  pure ()
 
--- n is 2; needs to be changed for more colors
+actions : (k : Nat) -> Parser $ Vect k Action
+actions 0 = pure []
+actions 1 = do i <- action; pure [i]
+actions (S k) = do
+  i  <- action
+  _  <- space
+  is <- actions k
+  pure $ i :: is
+
+program : (n, k : Nat) -> Parser $ Vect n $ Vect k Action
+program 0 _ = pure []
+program 1 c = do i <- actions c; pure [i]
+program (S k) c = do
+  i  <- actions c
+  _  <- space
+  _  <- space
+  is <- program k c
+  pure $ i :: is
+
+colorIndex : Color -> Vect k Action -> Action
+colorIndex _ [] = (1, R, H)
+colorIndex 0 (i :: _) = i
+colorIndex (S c) (_ :: is) = colorIndex c is
+
+{n : Nat} -> Cast (Vect n $ Vect k Action) Program where
+  cast prog state color =
+    case n of
+      1 =>
+        case state of
+          A => colorIndex color (index FZ prog)
+          _ => (1, R, H)
+      2 =>
+        case state of
+          A => colorIndex color $ index FZ prog
+          B => colorIndex color $ index (FS FZ) prog
+          _ => (1, R, H)
+      3 =>
+        case state of
+          A => colorIndex color $ index FZ prog
+          B => colorIndex color $ index (FS FZ) prog
+          C => colorIndex color $ index (FS $ FS FZ) prog
+          _ => (1, R, H)
+      4 =>
+        case state of
+          A => colorIndex color $ index FZ prog
+          B => colorIndex color $ index (FS FZ) prog
+          C => colorIndex color $ index (FS $ FS FZ) prog
+          D => colorIndex color $ index (FS $ FS $ FS FZ) prog
+          _ => (1, R, H)
+      5 =>
+        case state of
+          A => colorIndex color $ index FZ prog
+          B => colorIndex color $ index (FS FZ) prog
+          C => colorIndex color $ index (FS $ FS FZ) prog
+          D => colorIndex color $ index (FS $ FS $ FS FZ) prog
+          E => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
+          _ => (1, R, H)
+      6 =>
+        case state of
+          A => colorIndex color $ index FZ prog
+          B => colorIndex color $ index (FS FZ) prog
+          C => colorIndex color $ index (FS $ FS FZ) prog
+          D => colorIndex color $ index (FS $ FS $ FS FZ) prog
+          E => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
+          F => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
+          _ => (1, R, H)
+      _ => (1, R, H)
+
 public export
-BWAction : Type
-BWAction = Vect 2 Action
-
-pairUp : List ty -> Maybe (List (Vect 2 ty))
-pairUp [ ] = Just []
-pairUp [_] = Nothing
-pairUp (x1 :: x2 :: xs) = do
-  rest <- pairUp xs
-  Just $ [x1, x2] :: rest
-
-partwayParse : String -> Maybe (List BWAction)
-partwayParse input = pairUp $ mapMaybe parseAction $ words input
-
-----------------------------------------
-
-export
-Cast State (Fin 1) where
-  cast A = FZ
-  cast _  = FZ
-
-export
-Cast State (Fin 2) where
-  cast B = FS FZ
-  cast x  = weaken $ cast x
-
-export
-Cast State (Fin 3) where
-  cast C = FS $ FS FZ
-  cast x  = weaken $ cast x
-
-export
-Cast State (Fin 4) where
-  cast D = FS $ FS $ FS FZ
-  cast x  = weaken $ cast x
-
-export
-Cast State (Fin 5) where
-  cast E = FS $ FS $ FS $ FS FZ
-  cast x  = weaken $ cast x
-
-export
-Cast State (Fin 6) where
-  cast F = FS $ FS $ FS $ FS $ FS FZ
-  cast x  = weaken $ cast x
-
-export
-Cast BWAction Instruction where
-  cast [w, b] color =
-    case color of
-      0 => w
-      1 => b
-      _  => b
-
-export
-makeProgram : (Cast State $ Fin n) => (Vect n BWAction) -> Program
-makeProgram actions state = cast $ index (cast state) actions
-
-----------------------------------------
-
-bb3input : String
-bb3input = "1RB   1RH   1LB   0RC   1LC   1LA"
-
-bb3parsed : Maybe (List BWAction)
-bb3parsed = partwayParse bb3input
-
-----------------------------------------
-
-bb4input : String
-bb4input = "1RB   1LB   1LA   0LC   1RH   1LD   1RD   0RA"
-
-bb4parsed : Maybe (List BWAction)
-bb4parsed = partwayParse bb4input
-
-----------------------------------------
-
-tm5parse : Maybe $ List BWAction
-tm5parse = partwayParse
-  "1RB   0LC   1RC   1RD   1LA   0RB   0RE   1RH   1LC   1RA"
-
-bb5parse : Maybe $ List BWAction
-bb5parse = partwayParse
-  "1RB   1LC   1RC   1RB   1RD   0LE   1LA   1LD   1RH   0LA"
+parse : String -> (n, k : Nat) -> Maybe Program
+parse prog n k = do
+  parsed <- runParser (program n k) prog
+  Just $ cast parsed
