@@ -4,8 +4,6 @@
 #define COLORS 2
 
 #define X_LIMIT 65536
-#define LOWER_BOUND 20
-#define UPPER_BOUND (X_LIMIT - 1000)
 
 int a1c, a1s, a1t,
   b0c, b0s, b0t, b1c, b1s, b1t,
@@ -43,16 +41,15 @@ int main (void) {
  H:
   WIPE_AND_SCORE;
 
-  if (IN_RANGE(AA) || IN_RANGE(BB) || IN_RANGE(CC))
-    printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d | %d\n",
-           PP,
-           FORMAT_INSTR(a1c, a1s, a1t),
-           FORMAT_INSTR(b0c, b0s, b0t),
-           FORMAT_INSTR(b1c, b1s, b1t),
-           FORMAT_INSTR(c0c, c0s, c0t),
-           FORMAT_INSTR(c1c, c1s, c1t),
-           AA, BB, CC,
-           MARKS);
+  printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d %d | %d\n",
+         PP,
+         FORMAT_INSTR(a1c, a1s, a1t),
+         FORMAT_INSTR(b0c, b0s, b0t),
+         FORMAT_INSTR(b1c, b1s, b1t),
+         FORMAT_INSTR(c0c, c0s, c0t),
+         FORMAT_INSTR(c1c, c1s, c1t),
+         AA, BB, CC,
+         MARKS);
 
   goto INITIALIZE;
 

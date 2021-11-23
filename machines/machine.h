@@ -39,8 +39,6 @@
 #define DD COUNTS[3]
 #define EE COUNTS[4]
 
-#define IN_RANGE(COUNT) (LOWER_BOUND <= COUNT && COUNT < UPPER_BOUND)
-
 #define CHECK_X(COUNT) {                        \
     if (++XX > X_LIMIT) {goto H;};              \
     COUNT = XX;                                 \

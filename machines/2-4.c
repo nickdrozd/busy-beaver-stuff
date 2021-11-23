@@ -4,9 +4,6 @@
 #define COLORS 4
 
 #define X_LIMIT 33554432
-#define BB_2_4 3932964
-#define LOWER_BOUND BB_2_4
-#define UPPER_BOUND 16777216
 
 #undef INSTRUCTION
 #define INSTRUCTION(c0, s0, t0,                 \
@@ -57,19 +54,17 @@ int main (void) {
  H:
   WIPE_AND_SCORE;
 
-  if (AA && BB)
-    /* if (IN_RANGE(AA) || IN_RANGE(BB)) */
-      printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d | %d\n",
-             PP,
-             FORMAT_INSTR(a1c, a1s, a1t),
-             FORMAT_INSTR(a2c, a2s, a2t),
-             FORMAT_INSTR(a3c, a3s, a3t),
-             FORMAT_INSTR(b0c, b0s, b0t),
-             FORMAT_INSTR(b1c, b1s, b1t),
-             FORMAT_INSTR(b2c, b2s, b2t),
-             FORMAT_INSTR(b3c, b3s, b3t),
-             AA, BB,
-             MARKS);
+  printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d | %d\n",
+         PP,
+         FORMAT_INSTR(a1c, a1s, a1t),
+         FORMAT_INSTR(a2c, a2s, a2t),
+         FORMAT_INSTR(a3c, a3s, a3t),
+         FORMAT_INSTR(b0c, b0s, b0t),
+         FORMAT_INSTR(b1c, b1s, b1t),
+         FORMAT_INSTR(b2c, b2s, b2t),
+         FORMAT_INSTR(b3c, b3s, b3t),
+         AA, BB,
+         MARKS);
 
   goto INITIALIZE;
 
