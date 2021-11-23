@@ -54,7 +54,7 @@ int main (void) {
  H:
   WIPE_AND_SCORE;
 
-  printf("%d | 1RB %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c %c%c%c | %d %d | %d\n",
+  printf("%d | 1RB %c%c%c %c%c%c %c%c%c  %c%c%c %c%c%c %c%c%c %c%c%c | %d %d | %d\n",
          PP,
          FORMAT_INSTR(a1c, a1s, a1t),
          FORMAT_INSTR(a2c, a2s, a2t),
