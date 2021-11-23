@@ -7,6 +7,7 @@ from multiprocessing import (
 )
 
 from tm import run_bb
+# from py_lin_rado_turing.tools import run_bb
 from generate.program import Program
 
 
