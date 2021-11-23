@@ -9,9 +9,9 @@ runPrograms : Machine _ -> Programs -> IO ()
 runPrograms _ (_, _, []) = do putStrLn ""
 runPrograms machine (n, k, prog :: rest) = do
   let Just parsed = parse prog n k
-    | Nothing => pure ()
+    | Nothing => putStrLn #"    Failed to parse: \#{prog}"#
   result <- runOnBlankTape @{machine} parsed
-  putStrLn $ "    " ++ prog ++ " | " ++ show result
+  putStrLn #"    \#{prog} | \#{show result}"#
   runPrograms machine $ assert_smaller rest (n, k, rest)
 
 runProgramSets : Machine _ -> List Programs -> IO ()
