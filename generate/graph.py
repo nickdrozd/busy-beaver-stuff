@@ -1,3 +1,5 @@
+from typing import Dict, Set, Tuple
+
 from tm import parse
 
 COLORS = (
@@ -8,7 +10,7 @@ COLORS = (
 )
 
 class Graph:
-    def __init__(self, program):
+    def __init__(self, program: str):
         self.program = program
 
         self.arrows = {
@@ -27,23 +29,26 @@ class Graph:
         return self.flatten()
 
     @property
-    def states(self):
+    def states(self) -> Tuple[str, ...]:
         return tuple(self.arrows)
 
     @property
-    def colors(self):
+    def colors(self) -> Tuple[int, ...]:
         return tuple(range(len(self.arrows['A'])))
 
     @property
-    def exit_points(self):
+    def exit_points(self) -> Dict[str, Set[str]]:
         return {
             state: set(connections).difference('H').difference('.')
             for state, connections in self.arrows.items()
         }
 
     @property
-    def entry_points(self):
-        entries = {state: set() for state in self.states}
+    def entry_points(self) -> Dict[str, Set[str]]:
+        entries: Dict[str, Set[str]] = {
+            state: set()
+            for state in self.states
+        }
 
         for state, exits in self.arrows.items():
             for exit_point in exits:
@@ -58,7 +63,7 @@ class Graph:
         return entries
 
     @property
-    def dot(self):
+    def dot(self) -> str:
         title = '\n'.join([
             '  labelloc="t";',
             f'  label="{self.program}";',
@@ -73,7 +78,7 @@ class Graph:
 
         return f'digraph NAME {{\n{title}\n\n{edges}\n}}'
 
-    def flatten(self, sep=' '):
+    def flatten(self, sep=' ') -> str:
         return sep.join(
             dst
             for state in self.states
@@ -82,7 +87,7 @@ class Graph:
         )
 
     @property
-    def is_normal(self):
+    def is_normal(self) -> bool:
         flat_graph = self.flatten('')
 
         if any(state not in flat_graph for state in self.states):
@@ -96,7 +101,7 @@ class Graph:
         return tuple(sorted(positions)) == positions
 
     @property
-    def is_strongly_connected(self):
+    def is_strongly_connected(self) -> bool:
         states = set(self.states)
 
         for state in self.states:
@@ -126,14 +131,14 @@ class Graph:
         return True
 
     @property
-    def is_irreflexive(self):
+    def is_irreflexive(self) -> bool:
         return all(
             state not in connections
             for state, connections in self.arrows.items()
         )
 
     @property
-    def entries_dispersed(self):
+    def entries_dispersed(self) -> bool:
         color_count = len(self.colors)
 
         return all(
@@ -142,7 +147,7 @@ class Graph:
         )
 
     @property
-    def exits_dispersed(self):
+    def exits_dispersed(self) -> bool:
         color_count = len(self.colors)
 
         return all(
@@ -151,5 +156,5 @@ class Graph:
         )
 
     @property
-    def is_dispersed(self):
+    def is_dispersed(self) -> bool:
         return self.entries_dispersed and self.exits_dispersed

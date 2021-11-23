@@ -1,15 +1,17 @@
+from typing import Optional
+
 from tm.parse import parse
 from tm.machine import Machine
 
 def run_bb(
         prog,
-        tape=None,
-        x_limit=100_000_000,
-        watch_tape=False,
-        check_rec=None,
-        check_blanks=False,
-        samples=None,
-):
+        tape = None,
+        x_limit: int = 100_000_000,
+        watch_tape: bool = False,
+        check_rec: Optional[int] = None,
+        check_blanks: bool = False,
+        samples = None,
+) -> Machine:
     if tape is None:
         tape = [], 0, []
     elif isinstance(tape, int):

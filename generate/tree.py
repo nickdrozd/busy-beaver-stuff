@@ -5,13 +5,14 @@ from multiprocessing import (
     Manager,
     Process,
 )
+from typing import Callable
 
 from tm import run_bb
 # from py_lin_rado_turing.tools import run_bb
-from generate.program import Program
+from generate.program import Program  # type: ignore
 
 
-def tree_worker(steps, progs, output):
+def tree_worker(steps: int, progs, output: Callable):
     while True:  # pylint: disable = while-used
         try:
             prog = progs.get(timeout=.5)
@@ -44,7 +45,7 @@ DEFAULT_STEPS = {
 }
 
 
-def run_tree_gen(states, colors, output=print):
+def run_tree_gen(states: int, colors: int, output: Callable = print):
     progs = Manager().Queue()
 
     progs.put(
