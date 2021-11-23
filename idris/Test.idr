@@ -24,7 +24,7 @@ Fast : List Programs
 Fast = [p2_2, p3_2, p2_3, p4_2, p2_4, p5_2]
 
 Slow : List Programs
-Slow = [p3_3]
+Slow = [p6_2, p3_3]
 
 runMicro : IO ()
 runMicro = do

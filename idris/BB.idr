@@ -43,6 +43,11 @@ p5_2 = (5, 2, [
   "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1RH 0LA"])
 
 public export
+p6_2 : Programs
+p6_2 = (6, 2, [
+  "1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC"])
+
+public export
 p3_3 : Programs
 p3_3 = (3, 3, [
   "1RB 2RA 2RC  1LC 1RH 1LA  1RA 2LB 1LC",
