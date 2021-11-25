@@ -12,11 +12,11 @@ interface BasicTape tape where
   blank : tape
   read  : tape -> Color
 
-public export
-interface BasicTape tape => Tape tape where
   cells : tape -> Nat
   marks : tape -> Nat
 
+public export
+interface BasicTape tape => Tape tape where
   shift : Shift -> tape -> Color -> Bool -> (Nat, tape)
   shift L =  left
   shift R = right
@@ -25,7 +25,7 @@ interface BasicTape tape => Tape tape where
   right :          tape -> Color -> Bool -> (Nat, tape)
 
 public export
-Tape tape => Show tape where
+BasicTape tape => Show tape where
   show tape = show (cells tape, marks tape)
 
 ----------------------------------------
@@ -34,10 +34,16 @@ interface ScanNSpan unit where
   pullNext : List unit -> (Color, List unit)
   pushCurr : unit -> List unit -> List unit
 
+  spanCells : List unit -> Nat
+  spanMarks : List unit -> Nat
+
 ScanNSpan unit => BasicTape (List unit, Color, List unit) where
   blank = ([], 0, [])
 
   read (_, c, _) = c
+
+  cells (l, _, r) = spanCells l + 1 + spanCells r
+  marks (l, c, r) = spanMarks l + (if c == 0 then 0 else 1) + spanMarks r
 
 ----------------------------------------
 
@@ -54,12 +60,11 @@ ScanNSpan Color where
 
   pushCurr = (::)
 
+  spanCells = length
+  spanMarks = length . filter (/= 0)
+
 public export
 Tape MicroTape where
-  cells (l, _, r) = length l + 1 + length r
-
-  marks (l, c, r) = length $ filter (/= 0) $ l ++ [c] ++ r
-
   left tape@(cn :: l, c, r) cx True =
     if cn /= c then assert_total $ left tape cx False else
       let
@@ -105,6 +110,9 @@ ScanNSpan Block where
       then (q, k + n) :: xs
       else block :: (q, n) :: xs
 
+  spanCells = foldl (\a, (_, n) => a + n) 0
+  spanMarks = foldl (\a, (q, n) => (+) a $ if q == 0 then 0 else n) 0
+
 BlockSpan : Type
 BlockSpan = List Block
 
@@ -114,16 +122,6 @@ MacroTape = (BlockSpan, Color, BlockSpan)
 
 public export
 Tape MacroTape where
-  cells (l, _, r) =
-    S $ foldl (\a, (_, n) => a + n) 0 $ l ++ r
-
-  marks (l, c, r) =
-    (+) (if c == 0 then 0 else 1) $
-        foldl (\a, (q, n) =>
-                   (+) a $ if q == 0 then 0 else n)
-              0
-              (l ++ r)
-
   left tape@(((bc, bn) :: l), c, r) cx True =
     if bc /= c then assert_total $ left tape cx False else
       let (x, k) = pullNext l in
