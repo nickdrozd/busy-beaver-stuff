@@ -7,7 +7,7 @@ import public Tape
 
 public export
 interface Tape tape => Machine tape where
-  exec : Program -> State -> tape -> (State, tape, Nat, Maybe Int)
+  exec : Program -> State -> tape -> (State, tape, Nat, Maybe Integer)
   exec prog state tape =
     let
       scan = read tape
@@ -20,7 +20,7 @@ interface Tape tape => Machine tape where
     in
       (nextState, shifted, stepped, marked)
 
-  run : Nat -> Program -> State -> tape -> Nat -> Int
+  run : Nat -> Program -> State -> tape -> Nat -> Integer
       -> IO (Nat, tape)
   run 0     _    _     tape steps _     = pure (steps, tape)
   run (S k) prog state tape steps marks =
