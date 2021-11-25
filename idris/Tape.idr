@@ -47,12 +47,11 @@ ScanNSpan unit => BasicTape (List unit, Color, List unit) where
 
 ----------------------------------------
 
-TapeSpan : Type
-TapeSpan = List Color
-
 public export
 MicroTape : Type
-MicroTape = (TapeSpan, Color, TapeSpan)
+MicroTape = (TapeSpan, Color, TapeSpan) where
+  TapeSpan : Type
+  TapeSpan = List Color
 
 ScanNSpan Color where
   pullNext [] = (0, [])
@@ -113,12 +112,11 @@ ScanNSpan Block where
   spanCells = foldl (\a, (_, n) => a + n) 0
   spanMarks = foldl (\a, (q, n) => (+) a $ if q == 0 then 0 else n) 0
 
-BlockSpan : Type
-BlockSpan = List Block
-
 public export
 MacroTape : Type
-MacroTape = (BlockSpan, Color, BlockSpan)
+MacroTape = (BlockSpan, Color, BlockSpan) where
+  BlockSpan : Type
+  BlockSpan = List Block
 
 public export
 Tape MacroTape where
