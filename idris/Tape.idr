@@ -2,6 +2,8 @@ module Tape
 
 import Data.List
 import Data.Nat
+import public Data.Vect
+import public Data.Fin
 
 import Program
 
@@ -132,3 +134,42 @@ Tape MacroTape where
   right (l, c, r) cx skip =
     let (s, (k, x, e)) = left (r, c, l) cx skip in
       (s, (e, x, k))
+
+----------------------------------------
+
+public export
+VLenTape : Type
+VLenTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
+
+public export
+BasicTape VLenTape where
+  cells (_ ** (_, tape))  = length tape
+  marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
+
+  blank = (Z ** (FZ, [0]))
+
+  read (_ ** (pos, tape)) = index pos tape
+
+public export
+Tape VLenTape where
+  left (i ** (pos, tape)) cx _ =
+    let
+      printed = replaceAt pos cx tape
+      shifted =
+        case pos of
+          FZ   => (S i ** (FZ, [0] ++ printed))
+          FS p => (  i ** ( weaken p, printed))
+    in
+      (1, shifted)
+
+  right (i ** (pos, tape)) cx _ =
+    let
+      printed = replaceAt pos cx tape
+      shifted =
+        case strengthen pos of
+          Just p => (  i ** (FS p, printed))
+          _      =>
+            let prf = sym $ plusCommutative i 1 in
+              (S i ** (FS pos, rewrite prf in printed ++ [0]))
+    in
+      (1, shifted)

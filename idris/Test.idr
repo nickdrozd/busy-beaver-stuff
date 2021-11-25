@@ -34,23 +34,32 @@ runProgramSets machine (progs :: rest) = do
   _ <- runPrograms machine progs
   runProgramSets machine rest
 
-Fast : List Programs
-Fast = [p2_2, p3_2, p2_3, p4_2, p2_4, p5_2]
+Short : List Programs
+Short = [p2_2, p3_2, p2_3]
 
-Slow : List Programs
-Slow = [p6_2, p3_3]
+Mid : List Programs
+Mid = [p4_2, p2_4, p5_2]
+
+Long : List Programs
+Long = [p6_2, p3_3]
+
+runVLen : IO ()
+runVLen = do
+  putStrLn "  VLen"
+  runProgramSets VLenMachine Short
 
 runMicro : IO ()
 runMicro = do
   putStrLn "  Micro"
-  runProgramSets MicroMachine Fast
+  runProgramSets MicroMachine $ Short ++ Mid
 
 runMacro : IO ()
 runMacro = do
   putStrLn "  Macro"
-  runProgramSets MacroMachine $ Fast ++ Slow
+  runProgramSets MacroMachine $ Short ++ Mid ++ Long
 
 main : IO ()
 main = do
+  runVLen
   runMicro
   runMacro

@@ -45,3 +45,6 @@ public export
 
 public export
 [MacroMachine] Machine MacroTape where
+
+public export
+[VLenMachine] Machine VLenTape where
