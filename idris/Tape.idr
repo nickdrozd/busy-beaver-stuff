@@ -8,13 +8,14 @@ import Program
 %default total
 
 public export
-interface Tape tape where
+interface BasicTape tape where
+  blank : tape
+  read  : tape -> Color
+
+public export
+interface BasicTape tape => Tape tape where
   cells : tape -> Nat
   marks : tape -> Nat
-
-  blank : tape
-
-  read  :          tape -> Color
 
   shift : Shift -> tape -> Color -> Bool -> (Nat, tape)
   shift L =  left
@@ -32,6 +33,11 @@ Tape tape => Show tape where
 interface ScanNSpan unit where
   pullNext : List unit -> (Color, List unit)
   pushCurr : unit -> List unit -> List unit
+
+ScanNSpan unit => BasicTape (List unit, Color, List unit) where
+  blank = ([], 0, [])
+
+  read (_, c, _) = c
 
 ----------------------------------------
 
@@ -53,10 +59,6 @@ Tape MicroTape where
   cells (l, _, r) = length l + 1 + length r
 
   marks (l, c, r) = length $ filter (/= 0) $ l ++ [c] ++ r
-
-  blank = ([], 0, [])
-
-  read (_, c, _) = c
 
   left tape@(cn :: l, c, r) cx True =
     if cn /= c then assert_total $ left tape cx False else
@@ -121,10 +123,6 @@ Tape MacroTape where
                    (+) a $ if q == 0 then 0 else n)
               0
               (l ++ r)
-
-  blank = ([], 0, [])
-
-  read (_, c, _) = c
 
   left tape@(((bc, bn) :: l), c, r) cx True =
     if bc /= c then assert_total $ left tape cx False else
