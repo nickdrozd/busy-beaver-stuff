@@ -5,19 +5,33 @@ import Program
 
 %default total
 
-runPrograms : Machine _ -> Programs -> IO ()
-runPrograms _ (_, _, []) = do putStrLn ""
-runPrograms machine (n, k, prog :: rest) = do
+checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool
+checkResult (es, el, em) (gs, gl, gm) =
+  es == gs && el == gl && em == gm
+
+runPrograms : Machine _ -> Programs -> IO Bool
+runPrograms _ (_, _, []) = do putStrLn ""; pure False
+runPrograms machine (n, k, (prog, expected) :: rest) = do
   let Just parsed = parse prog n k
-    | Nothing => putStrLn #"    Failed to parse: \#{prog}"#
-  result <- runOnBlankTape @{machine} parsed
-  putStrLn #"    \#{prog} | \#{show result}"#
+    | Nothing => do
+        putStrLn #"    Failed to parse: \#{prog}"#
+        pure False
+
+  (steps, tape) <- runOnBlankTape @{machine} parsed
+
+  let True = checkResult expected (steps, cells tape, marks tape)
+    | _ => do
+        putStrLn #"    Whoops! \#{prog} | should be \#{show (steps, tape)}"#
+        pure False
+
+  putStrLn #"    \#{prog} | \#{show steps}"#
+
   runPrograms machine $ assert_smaller rest (n, k, rest)
 
 runProgramSets : Machine _ -> List Programs -> IO ()
 runProgramSets _ [] = pure ()
 runProgramSets machine (progs :: rest) = do
-  runPrograms machine progs
+  _ <- runPrograms machine progs
   runProgramSets machine rest
 
 Fast : List Programs

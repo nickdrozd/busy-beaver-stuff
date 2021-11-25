@@ -2,55 +2,55 @@ module BB
 
 public export
 Programs : Type
-Programs = (Nat, Nat, List String)
+Programs = (Nat, Nat, List (String, (Nat, Nat, Nat)))
 
 public export
 p2_2 : Programs
 p2_2 = (2, 2, [
-  "1RB 1LB  1LA 1RH",
-  "1RB 0RA  1LB 1LA"])
+  ("1RB 1LB  1LA 1RH", (6, 4, 4)),
+  ("1RB 0RA  1LB 1LA", (8, 4, 0))])
 
 public export
 p3_2 : Programs
 p3_2 = (3, 2, [
-  "1RB 1RH  1LB 0RC  1LC 1LA",
-  "1RB 1LB  1LA 1LC  1RC 0LC"])
+  ("1RB 1RH  1LB 0RC  1LC 1LA", (21, 5, 5)),
+  ("1RB 1LB  1LA 1LC  1RC 0LC", (34, 8, 0))])
 
 public export
 p2_3 : Programs
 p2_3 = (2, 3, [
-  "1RB 2LB 1RH  2LA 2RB 1LB",
-  "1RB 2LA 0RB  1LA 0LB 1RA"])
+  ("1RB 2LB 1RH  2LA 2RB 1LB", (38, 9, 9)),
+  ("1RB 2LA 0RB  1LA 0LB 1RA", (77, 9, 0))])
 
 public export
 p4_2 : Programs
 p4_2 = (4, 2, [
-  "1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA",
-  "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD",
-  "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA"])
+  ("1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA", (107, 14, 13)),
+  ("1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD", (66345, 520, 0)),
+  ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", (32779477, 10240, 0))])
 
 public export
 p2_4 : Programs
 p2_4 = (2, 4, [
-  "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA",
-  "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1RH"])
+  ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA", (190524, 518, 0)),
+  ("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1RH", (3932964, 2050, 2050))])
 
 public export
 p5_2 : Programs
 p5_2 = (5, 2, [
-  "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB",
-  "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE",
-  "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1RH 0LA"])
+  ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", (31315, 142, 0)),
+  ("1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE", (32810047, 10240, 0)),
+  ("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1RH 0LA", (47176870, 12289, 4098))])
 
 public export
 p6_2 : Programs
 p6_2 = (6, 2, [
-  "1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC"])
+  ("1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC", (65538549, 10240, 0))])
 
 public export
 p3_3 : Programs
 p3_3 = (3, 3, [
-  "1RB 2RA 2RC  1LC 1RH 1LA  1RA 2LB 1LC",
-  "1RB 1RH 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
-  "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1RH 1LA",
-  "1RB 1RH 2LC  1LC 2RB 1LB  1LA 2RC 2LA"])
+  ("1RB 2RA 2RC  1LC 1RH 1LA  1RA 2LB 1LC", (310341163, 36089, 36089)),
+  ("1RB 1RH 2RB  1LC 0LB 1RA  1RA 2LC 1RC", (4939345068, 107901, 107900)),
+  ("1RB 2LA 1RA  1RC 2RB 0RC  1LA 1RH 1LA", (987522842126, 1525690, 1525688)),
+  ("1RB 1RH 2LC  1LC 2RB 1LB  1LA 2RC 2LA", (4144465135614, 2950149, 2950149))])
