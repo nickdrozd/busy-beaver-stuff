@@ -173,3 +173,20 @@ Tape VLenTape where
               (S i ** (FS pos, rewrite prf in printed ++ [0]))
     in
       (1, shifted)
+
+tapeLengthMonotoneV : {x : Color} -> (tape : VLenTape) ->
+  LTE (cells tape)
+      (let (_, tp) = left tape x False in cells tp)
+tapeLengthMonotoneV (_ ** (FZ, _ :: _)) =
+  lteSuccRight $ reflexive {rel = LTE}
+tapeLengthMonotoneV (S k ** (pos@(FS _), tape)) =
+  rewrite replaceAtPresLen pos x tape in
+    reflexive {rel = LTE}where
+  replaceAtPresLen :
+    (p : Fin len) -> (e : ty) -> (v : Vect len ty)
+    -> length (replaceAt p e v) = length v
+  replaceAtPresLen _ _ [] impossible
+  replaceAtPresLen FZ _ (_ :: _) = Refl
+  replaceAtPresLen (FS p) e (_ :: ys) =
+    rewrite replaceAtPresLen p e ys in
+      Refl
