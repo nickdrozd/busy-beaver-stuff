@@ -83,8 +83,8 @@ Tape MicroTape where
       (s, (e, x, k))
 
 tapeLengthMonotone : {x : Color} -> (tape : MicroTape) ->
-  LTE (cells tape)
-      (let (_, tp) = left tape x False in cells tp)
+  let (_, shifted) = left tape x False in
+    LTE (cells tape) (cells shifted)
 tapeLengthMonotone (    [], c, r) =
   LTESucc $ lteSuccRight $ reflexive {rel = LTE}
 tapeLengthMonotone (h :: t, c, r) =
@@ -175,8 +175,8 @@ Tape VLenTape where
       (1, shifted)
 
 tapeLengthMonotoneV : {x : Color} -> (tape : VLenTape) ->
-  LTE (cells tape)
-      (let (_, tp) = left tape x False in cells tp)
+  let (_, shifted) = left tape x False in
+    LTE (cells tape) (cells shifted)
 tapeLengthMonotoneV (_ ** (FZ, _ :: _)) =
   lteSuccRight $ reflexive {rel = LTE}
 tapeLengthMonotoneV (S k ** (pos@(FS _), tape)) =
