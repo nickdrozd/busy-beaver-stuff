@@ -8,48 +8,40 @@ SHIFTS = 'L', 'R'
 
 class Program:
     def __init__(self, program: str):
-        self.prog: Dict[str, str] = {
-            chr(state + 65) + str(color): action
+        prog: Dict[str, Dict[int, str]] = {
+            chr(state + 65): dict(enumerate(instructions))
             for state, instructions in enumerate(parse(program))
-            for color, action in enumerate(instructions)
         }
 
-        self.states: Set[str] = {key[0] for key in self.prog}
-        self.colors: Set[str] = {key[1] for key in self.prog}
+        self.states: Set[str] = set(prog.keys())
+        self.colors: Set[str] = set(map(str, range(len(prog['A']))))
+
+        self.prog = prog
 
     def __repr__(self):
-        return '  '.join(
-            entry[1]
-            for entry in
-            sorted(
-                {
-                    state: ' '.join(
-                        quint[1]
-                        for quint in
-                        sorted(
-                            instr
-                            for instr in self.prog.items()
-                            if instr[0].startswith(state)
-                        )
-                    )
-                    for state in self.states
-                }.items()
-            )
-        )
+        return '  '.join([
+            ' '.join(instrs.values())
+            for instrs in self.prog.values()
+        ])
 
-    def __getitem__(self, slot):
-        return self.prog[slot]
+    def __getitem__(self, slot: str):
+        state, color = slot
+        return self.prog[state][int(color)]
 
-    def __setitem__(self, slot, instr):
-        self.prog[slot] = instr
+    def __setitem__(self, slot: str, instr: str):
+        state, color = slot
+        self.prog[state][int(color)] = instr
 
     @property
     def instructions(self):
-        return self.prog.items()
+        for state, instrs in self.prog.items():
+            for color, instr in instrs.items():
+                yield state + str(color), instr
 
     @property
     def actions(self):
-        return self.prog.values()
+        for instrs in self.prog.values():
+            yield from instrs.values()
 
     @property
     def open_slots(self) -> Tuple[str, ...]:
