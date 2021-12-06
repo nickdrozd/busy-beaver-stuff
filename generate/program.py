@@ -37,11 +37,25 @@ class Program:
             )
         )
 
+    def __getitem__(self, slot):
+        return self.prog[slot]
+
+    def __setitem__(self, slot, instr):
+        self.prog[slot] = instr
+
+    @property
+    def instructions(self):
+        return self.prog.items()
+
+    @property
+    def actions(self):
+        return self.prog.values()
+
     @property
     def open_slots(self) -> Tuple[str, ...]:
         return tuple(
             slot
-            for slot, instr in self.prog.items()
+            for slot, instr in self.instructions
             if '.' in instr)
 
     @property
@@ -55,7 +69,7 @@ class Program:
     def used_states(self) -> Set[str]:
         return {
             action[2]
-            for action in self.prog.values() if
+            for action in self.actions if
             '.' not in action
         }
 
@@ -70,7 +84,7 @@ class Program:
     def used_colors(self) -> Set[str]:
         return {
             action[0]
-            for action in self.prog.values() if
+            for action in self.actions if
             '.' not in action
         }
 
@@ -82,7 +96,7 @@ class Program:
         return used.union(diff[0]) if diff else used
 
     @property
-    def actions(self) -> Iterator[str]:
+    def available_actions(self) -> Iterator[str]:
         return (
             ''.join(prod) for prod in
             product(
@@ -95,10 +109,10 @@ class Program:
         # if self.last_slot:
         #     return
 
-        orig = self.prog[instr]
+        orig = self[instr]
 
-        for action in self.actions:
-            self.prog[instr] = action
+        for action in self.available_actions:
+            self[instr] = action
             yield str(self)
 
-        self.prog[instr] = orig
+        self[instr] = orig
