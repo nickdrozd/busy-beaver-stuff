@@ -1,5 +1,6 @@
+import re
 from itertools import product
-from typing import Dict, Iterator, Optional, Set, Tuple
+from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 from tm import parse
 
@@ -13,9 +14,6 @@ class Program:
             for state, instructions in enumerate(parse(program))
         }
 
-        self.states: Set[str] = set(prog.keys())
-        self.colors: Set[str] = set(map(str, range(len(prog['A']))))
-
         self.prog = prog
 
     def __repr__(self):
@@ -25,12 +23,35 @@ class Program:
         ])
 
     def __getitem__(self, slot: str):
+        if len(slot) == 1:
+            return self.prog[slot]
+
         state, color = slot
         return self.prog[state][int(color)]
 
     def __setitem__(self, slot: str, instr: str):
+        if len(slot) == 1:
+            self.prog[slot] = instr
+            return
+
         state, color = slot
         self.prog[state][int(color)] = instr
+
+    @property
+    def states(self) -> Set[str]:
+        return set(self.prog.keys())
+
+    @property
+    def non_start_states(self) -> List[str]:
+        return sorted(self.states)[1:]
+
+    @property
+    def colors(self) -> Set[str]:
+        return set(map(str, range(len(self.prog['A']))))
+
+    @property
+    def non_blank_colors(self) -> List[str]:
+        return sorted(self.colors)[1:]
 
     @property
     def instructions(self):
@@ -58,31 +79,31 @@ class Program:
         return slots[0]
 
     @property
-    def used_states(self) -> Set[str]:
-        return {
+    def used_states(self) -> Iterator[str]:
+        yield from (
             action[2]
             for action in self.actions if
             '.' not in action
-        }
+        )
 
     @property
     def available_states(self) -> Set[str]:
-        used = self.used_states.union('A')
+        used = set(self.used_states).union('A')
         diff = sorted(self.states.difference(used))
 
         return used.union(diff[0]) if diff else used
 
     @property
-    def used_colors(self) -> Set[str]:
-        return {
+    def used_colors(self) -> Iterator[str]:
+        yield from (
             action[0]
             for action in self.actions if
             '.' not in action
-        }
+        )
 
     @property
     def available_colors(self) -> Set[str]:
-        used = self.used_colors.union('0')
+        used = set(self.used_colors).union('0')
         diff = sorted(self.colors.difference(used))
 
         return used.union(diff[0]) if diff else used
@@ -97,7 +118,7 @@ class Program:
                 self.available_states)
         )
 
-    def branch(self, instr: str):
+    def branch(self, instr: str) -> Iterator[str]:
         # if self.last_slot:
         #     return
 
@@ -108,3 +129,74 @@ class Program:
             yield str(self)
 
         self[instr] = orig
+
+    def swap_states(self, st1: str, st2: str) -> str:
+        self[st1], self[st2] = self[st2], self[st1]
+
+        for slot, action in self.instructions:
+            if st1 in action:
+                self[slot] = re.sub(st1, st2, action)
+            elif st2 in action:
+                self[slot] = re.sub(st2, st1, action)
+
+        return str(self)
+
+    def swap_colors(self, co1: str, co2: str) -> str:
+        ic1, ic2 = int(co1), int(co2)
+
+        for state_str in self.states:
+            state = self[state_str]
+            state[ic1], state[ic2] = state[ic2], state[ic1]
+
+        for slot, action in self.instructions:
+            if co1 in action:
+                self[slot] = re.sub(co1, co2, action)
+            elif co2 in action:
+                self[slot] = re.sub(co2, co1, action)
+
+        return str(self)
+
+    def normalize_states(self) -> str:
+        for _ in self.states:
+            todo = self.non_start_states
+
+            for action in self.actions:
+                if (state := action[2]) not in todo:
+                    continue
+
+                norm, *rest = todo
+
+                if state != norm:
+                    self.swap_states(state, norm)
+                    break
+
+                todo = rest
+            else:
+                break
+
+        return str(self)
+
+    def normalize_colors(self) -> str:
+        for _ in self.colors:
+            todo = self.non_blank_colors
+
+            for action in self.actions:
+                if (color := action[0]) not in todo:
+                    continue
+
+                norm, *rest = todo
+
+                if color != norm:
+                    self.swap_colors(color, norm)
+
+                todo = rest
+            else:
+                break
+
+        return str(self)
+
+    def normalize(self) -> str:
+        self.normalize_states()
+        self.normalize_colors()
+
+        return str(self)

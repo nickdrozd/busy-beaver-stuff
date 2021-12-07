@@ -33,12 +33,12 @@ class TestProgram(TestCase):
     def assert_used_states(self, states):
         self.assertEqual(
             states,
-            self.prog.used_states)
+            set(self.prog.used_states))
 
     def assert_available_states(self, states):
         self.assertEqual(
             states,
-            self.prog.available_states)
+            set(self.prog.available_states))
 
     def assert_used_colors(self, colors):
         self.assertEqual(
@@ -71,6 +71,13 @@ class TestProgram(TestCase):
             self.assertEqual(
                 set(Program(prog).branch(loc)),
                 extensions)
+
+    def test_normalize(self):
+        for norm, devs in NORMALIZE.items():
+            for dev in devs:
+                self.assertEqual(
+                    norm,
+                    Program(dev).normalize())
 
 
 BRANCH = {
@@ -133,4 +140,16 @@ BRANCH = {
         '1RB ... ... ...  2RA ... ... ...',
         '1RB ... ... ...  2RB ... ... ...',
     },
+}
+
+
+NORMALIZE = {
+    '1RB 2LA 1RA 1LA  3LA 1RH 2RB 2RA': {
+        '1RB 3LA 1LA 1RA  2LA 1RH 3RA 3RB',
+        '2RB 2RA 1LA 2LA  3LA 1RB 2RH 1RA',
+    },
+    '1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC': {
+        '1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC',
+        '1RB 1LD  1RE 1RB  0RE 0RD  0RF 1RF  1LE 1LA  0LC 1LC',
+    }
 }
