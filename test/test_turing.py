@@ -3,6 +3,7 @@
 from unittest import TestCase, skip
 
 from tm import run_bb
+from generate.program import Program
 
 HALTING_FAST = {
     # 2/2 BB
@@ -28,15 +29,15 @@ HALTING_FAST = {
 
     # 4/2 BB
     "1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA": (13, 107),  # shift
-    "1RB 1LD  1LC 0RB  1RA 1LA  1RH 0LC": ( 9,  97),
+    "1RB 1LC  1LD 0RB  1RH 0LD  1RA 1LA": ( 9,  97),
     "1RB 0RC  1LA 1RA  1RH 1RD  1LD 0LB": (13,  96),  # sigma
     "1RB 1LB  0LC 0RD  1RH 1LA  1RA 0LA": ( 6,  96),
-    "1RB 1LD  0LC 0RC  1LC 1LA  1RH 0LA": (11,  84),
+    "1RB 1LC  0LD 0RD  1RH 0LA  1LD 1LA": (11,  84),
 
     # 2/4 Runners-up
-    "1RB 3LA 1LA 1RA  2LA 1RH 3RA 3RB": (90, 7195),
-    "1RB 3LA 1LA 1RA  2LA 1RH 3LA 3RB": (84, 6445),
-    "1RB 3LA 1LA 1RA  2LA 1RH 2RA 3RB": (84, 6445),
+    "1RB 2LA 1RA 1LA  3LA 1RH 2RB 2RA": (90, 7195),
+    "1RB 2LA 1RA 1LA  3LA 1RH 2RB 2LA": (84, 6445),
+    "1RB 2LA 1RA 1LA  3LA 1RH 2RB 3RA": (84, 6445),
     "1RB 2RB 3LA 2RA  1LA 3RB 1RH 1LB": (60, 2351),
 
     # Milton Green (1964)
@@ -57,7 +58,7 @@ HALTING_FAST = {
 
     # Castor ministerialis: the Civil Servant Beaver, who cares most
     # for his progress, but does not produce anything.
-    "1RB 1RA  1RC 0RE  1LD 0RA  1LB 1LD  0RH 0RB": (0, 52),
+    "1RB 1RA  1RC 0RD  1LE 0RA  0RH 0RB  1LB 1LE": (0, 52),
 
     # Castor scientificus: the Scientific Beaver, who does not produce
     # anything either, but with more effort and less effect on his
@@ -137,10 +138,10 @@ QUASIHALTING = {
     "1RB 0LC  1RC 1LD  1RD 0RB  0LB 1LA": (35, 1460, 3),  # QH 1459
     "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA": (39, 1164, 1),
     "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA": (20, 1153, 1),
-    "1RB 0RD  0RC 1RA  1LD 1LA  0LC 0LA": ( 8,  334, 2),
+    "1RB 0RC  0RD 1RA  0LD 0LA  1LC 1LA": ( 8,  334, 2),
     "1RB 0RB  1LC 1RA  0LD 1LB  1RD 0LB": ( 8,  119, 6),
-    "1RB 1LD  1LC 0RA  0LD 1LA  1RD 0LC": (10,  108, 8),
-    "1RB 0LD  0RC 1RD  1LC 0RB  1LA 1RC": (10,  105, 8),
+    "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA": (10,  108, 8),
+    "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB": (10,  105, 8),
     "1RB 1LA  1RC 1LD  1RD 0RC  1LB 0LA": ( 7,  101, 8),
     # D-initial version of BLB(4) champ
     "1LA 1LB  1RC 1LD  1RA 1RC  0RA 0RD": ( 0,    0, 1),
@@ -182,7 +183,7 @@ QUASIHALTING_FIXED = {
 
     # 4/2
     "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819, 1),  # BBB sigma
-    "1RB 0LD  1LC 0RD  0LC 1LA  1RA 0RB": (25, 1459, 1),
+    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA": (25, 1459, 1),
 
     # 2/4
     "1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB": (142, 21485, 2),
@@ -280,10 +281,10 @@ RECURRENCE_FAST = {
     "1RB 1LC  0RC 0RD  1LA 0LA  0LC 1RB": (73, 7002,  225),
     "1RB 0RA  1RC 0LB  1LD 0RD  1RA 1LB": (85, 6836,  382),
     "1RB 0LC  0RC 1RC  1LA 0RD  1LC 0LA": (106, 6825, 342),
-    "1RB 0LD  1RC 1LC  1LD 0RC  0LA 1LB": (52, 6455,   23),
-    "1RB 0LD  0RC 1RC  1LA 0RA  0LA 1LD": (69, 5252,    9),
+    "1RB 0LC  1RD 1LD  0LA 1LB  1LC 0RD": (52, 6455,   23),
+    "1RB 0LC  0RD 1RD  0LA 1LC  1LA 0RA": (69, 5252,    9),
     "1RB 0LA  0RC 0RD  1LC 1LA  0RB 1RD": (70, 3957,  265),
-    "1RB 0LD  0RC 1RC  1RD 0RB  1LA 1LD": (49, 3316,  208),
+    "1RB 0LC  0RD 1RD  1LA 1LC  1RC 0RB": (49, 3316,  208),
     "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD": (32, 3115,  860),
     "1RB 0LB  1LA 0LC  1LB 0RD  1RC 0RB": (40, 2374,  359),
     "1RB 1RC  1LC 0RB  1LD 0RA  1RA 0LB": (51, 1727,  622),
@@ -371,7 +372,7 @@ BLANK_FAST = {
     "1RB 1RA  0RC 1LA  1LC 1LD  0RB 0RD":  2510,
     "1RB 0RB  1LC 0LC  1RA 0LD  1LB 0LB":   976,
     "1RB 1LC  1LA 0RD  0RD 0RC  1LD 1LA":   711,
-    "1RB 1LD  1LC 0RC  1LC 1LA  0RC 0RD":   709,
+    "1RB 1LC  1LD 0RD  0RD 0RC  1LD 1LA":   709,
     "1RB 1LC  1RC 0RD  0RD 0RC  1LD 1LA":   704,
     "1RB 1LC  0RC 0RD  0RD 0RC  1LD 1LA":   702,
     "1RB 1LC  1LA 1RB  0RD 0RC  1LD 1LA":   534,
@@ -382,7 +383,7 @@ BLANK_FAST = {
     # constructed from BB(3) sigma champ
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD":    77,
     # constructed from BB(3) shift champ
-    "1RB 1LD  1LB 0RC  1LC 1LA  1RD 0LD":    66,
+    "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA":    66,
     "1RB 0RA  0LB 0LC  1RD 1LC  1RA 1LB":     3,
     "1RB 1RC  0LD 1RA  1LB 0RD  1LA 0RC":     3,
 
@@ -397,7 +398,7 @@ BLANK_FAST = {
     "1RB 1LC  1LD 1RA  0LB 1LE  0LE 1LC  1RA 0RE":   127,
     "1RB 1LC  1RD 0RE  1LA 1LE  1RC 0LE  1RE 0LD":   123,
     "1RB ...  0LB 1RC  0LC 1RD  1LE 0LD  0RA 0LE":    63,
-    "1RB 1RA  1RC 0RE  1LD 0RA  1LB 1LD  ... 0RB":    28,
+    "1RB 1RA  1RC 0RD  1LE 0RA  ... 0RB  1LB 1LE":    28,
 
     # 2/4
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA": 190524,
@@ -405,7 +406,7 @@ BLANK_FAST = {
     "1RB 2RA 3LA 2RB  2LB 1LA 0RB 0RA":   2501,
     "1RB 2RA 1RA 2LB  2LB 3LA 0RB 0RA":   1612,
     "1RB 0RA 1RA 0RB  2LB 3LA 0RB 0RA":   1538,
-    "1RB 3RB 2RA 2RB  2LB 3LA 0RB 1RA":   1065,
+    "1RB 2RB 3RB 3RA  3LB 2LA 1RA 0RB":   1065,
     "1RB 2RB 1LA 0LA  2LB 3LA 0RB 1RA":    888,
     "1RB 2RA 1RA 2LB  2LB 3LA 0RB 2LA":    759,
     "1RB 0RA 1RA 0RB  2LB 3LA 1LA 2RA":    697,
@@ -420,7 +421,7 @@ BLANK_FAST = {
     "1RB 1LA 2RB 1LB  3LA 0LB 1RA 2RA":     91,
     "1RB 1LA 2RB 3LB  2LA 3RA 0LB 0RB":     30,
     "1RB 1LA 0LB 2RB  2LA 3RA 1LB 0LA":     27,
-    "1RB 1LA 0LB 3LB  2LA 3RA 0LB 0RB":     22,
+    "1RB 1LA 2LB 0LB  3LA 2RA 0RB 0LB":     22,
 }
 
 
@@ -431,10 +432,10 @@ BLANK_SLOW = {
 
     # 5/2 constructed form 4/2
     "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE": 32810047,
-    "1RB 1LC  0LE 1RB  0RD 0RC  1LD 1LA  1RD 1RE": 32779507,
+    "1RB 1LC  0LD 1RB  0RE 0RC  1RE 1RD  1LE 1LA": 32779507,
 
     # 6/2 constructed from 4/2
-    "1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC": 65538549,
+    "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC": 65538549,
 
     # 6/2 inverted from 4/2
     "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": 32779477,
@@ -550,6 +551,12 @@ BB4_EXTENSIONS = {
 
 
 class TuringTest(TestCase):
+    def assert_normal(self, prog):
+        if not prog.startswith('0'):
+            self.assertEqual(
+                prog,
+                Program(prog).normalize())
+
     def assert_marks(self, marks):
         self.assertEqual(
             self.machine.marks,
@@ -608,7 +615,10 @@ class TuringTest(TestCase):
         if steps >= 1:
             self.deny_lin_recurrence(steps - 1, period)
 
-    def run_bb(self, prog, print_prog=True, **opts):
+    def run_bb(self, prog, print_prog=True, normal=True, **opts):
+        if normal:
+            self.assert_normal(prog)
+
         if print_prog:
             print(prog)
 
@@ -677,7 +687,7 @@ class TuringTest(TestCase):
 
     def _test_undefined(self, prog_data):
         for prog, (steps, instr) in prog_data.items():
-            self.run_bb(prog)
+            self.run_bb(prog, normal=False)
 
             self.assert_steps(steps)
 
