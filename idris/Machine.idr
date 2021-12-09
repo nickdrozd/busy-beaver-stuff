@@ -14,7 +14,8 @@ Tape tape => Machine tape where
     let
       scan = read tape
       (cx, dir, nextState) = prog state scan
-      (stepped, shifted) = shift dir tape cx $ state == nextState
+      shifter = if state == nextState then skipShift else stepShift
+      (stepped, shifted) = shifter dir tape cx
       marked = case (scan, cx) of
         (Z, S _) => Just $      cast stepped
         (S _, Z) => Just $ -1 * cast stepped

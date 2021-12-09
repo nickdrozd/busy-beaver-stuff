@@ -21,12 +21,22 @@ BasicTape tape where
 public export
 interface
 BasicTape tape => Tape tape where
-  shift : Shift -> tape -> Color -> Bool -> (Nat, tape)
-  shift L =  left
-  shift R = right
+  stepShift : Shift -> tape -> Color -> (Nat, tape)
+  stepShift L = stepLeft
+  stepShift R = stepRight
 
-  left  :          tape -> Color -> Bool -> (Nat, tape)
-  right :          tape -> Color -> Bool -> (Nat, tape)
+  stepLeft  : tape -> Color -> (Nat, tape)
+  stepRight : tape -> Color -> (Nat, tape)
+
+  skipShift : Shift -> tape -> Color -> (Nat, tape)
+  skipShift L = skipLeft
+  skipShift R = skipRight
+
+  skipLeft  : tape -> Color -> (Nat, tape)
+  skipLeft  = stepLeft
+
+  skipRight : tape -> Color -> (Nat, tape)
+  skipRight = stepRight
 
 public export
 implementation
@@ -73,24 +83,30 @@ ScanNSpan Color where
 public export
 implementation
 Tape MicroTape where
-  left tape@(cn :: l, c, r) cx True =
-    if cn /= c then assert_total $ left tape cx False else
+  skipLeft tape@([], _, _) cx = stepLeft tape cx
+
+  skipLeft tape@(cn :: l, c, r) cx =
+    if cn /= c then stepLeft tape cx else
       let
         nextTape = (l, cn, cx :: r)
-        (steps, shifted) = assert_total $ left nextTape cx True
+        (steps, shifted) = assert_total $ skipLeft nextTape cx
       in
         (S steps, shifted)
 
-  left (l, _, r) cx _ =
+  skipRight (l, c, r) cx =
+    let (s, (k, x, e)) = skipLeft (r, c, l) cx in
+      (s, (e, x, k))
+
+  stepLeft (l, _, r) cx =
     let (x, k) = pullNext l in
       (1, (k, x, pushCurr cx r))
 
-  right (l, c, r) cx skip =
-    let (s, (k, x, e)) = left (r, c, l) cx skip in
+  stepRight (l, c, r) cx =
+    let (s, (k, x, e)) = stepLeft (r, c, l) cx in
       (s, (e, x, k))
 
 tapeLengthMonotone : {x : Color} -> (tape : MicroTape) ->
-  let (_, shifted) = left tape x False in
+  let (_, shifted) = stepLeft tape x in
     LTE (cells tape) (cells shifted)
 tapeLengthMonotone (    [], c, r) =
   LTESucc $ lteSuccRight $ reflexive {rel = LTE}
@@ -131,17 +147,23 @@ MacroTape = (BlockSpan, Color, BlockSpan) where
 public export
 implementation
 Tape MacroTape where
-  left tape@(((bc, bn) :: l), c, r) cx True =
-    if bc /= c then assert_total $ left tape cx False else
+  skipLeft tape@([], _, _) cx = stepLeft tape cx
+
+  skipLeft tape@(((bc, bn) :: l), c, r) cx =
+    if bc /= c then stepLeft tape cx else
       let (x, k) = pullNext l in
         (1 + bn, (k, x, pushCurr (cx, 1 + bn) r))
 
-  left (l, _, r) cx _ =
+  skipRight (l, c, r) cx =
+    let (s, (k, x, e)) = skipLeft (r, c, l) cx in
+      (s, (e, x, k))
+
+  stepLeft (l, _, r) cx =
     let (x, k) = pullNext l in
       (1, (k, x, pushCurr (cx, 1) r))
 
-  right (l, c, r) cx skip =
-    let (s, (k, x, e)) = left (r, c, l) cx skip in
+  stepRight (l, c, r) cx =
+    let (s, (k, x, e)) = stepLeft (r, c, l) cx in
       (s, (e, x, k))
 
 ----------------------------------------
@@ -163,7 +185,7 @@ BasicTape VLenTape where
 public export
 implementation
 Tape VLenTape where
-  left (i ** (pos, tape)) cx _ =
+  stepLeft (i ** (pos, tape)) cx =
     let
       printed = replaceAt pos cx tape
       shifted =
@@ -173,7 +195,7 @@ Tape VLenTape where
     in
       (1, shifted)
 
-  right (i ** (pos, tape)) cx _ =
+  stepRight (i ** (pos, tape)) cx =
     let
       printed = replaceAt pos cx tape
       shifted =
@@ -186,7 +208,7 @@ Tape VLenTape where
       (1, shifted)
 
 tapeLengthMonotoneV : {x : Color} -> (tape : VLenTape) ->
-  let (_, shifted) = left tape x False in
+  let (_, shifted) = stepLeft tape x in
     LTE (cells tape) (cells shifted)
 tapeLengthMonotoneV (_ ** (FZ, _ :: _)) =
   lteSuccRight $ reflexive {rel = LTE}
