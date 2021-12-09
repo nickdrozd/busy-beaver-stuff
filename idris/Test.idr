@@ -17,7 +17,8 @@ runPrograms machine (n, k, (prog, expected) :: rest) = do
         putStrLn #"    Failed to parse: \#{prog}"#
         pure False
 
-  (steps, tape) <- runOnBlankTape @{machine} parsed
+  Just (steps, tape) <- runOnBlankTape @{machine} parsed
+    | Nothing => pure False
 
   let True = checkResult expected (steps, cells tape, marks tape)
     | _ => do

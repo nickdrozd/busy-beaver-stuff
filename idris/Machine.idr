@@ -21,8 +21,8 @@ interface Tape tape => Machine tape where
       (nextState, shifted, stepped, marked)
 
   run : Nat -> Program -> State -> tape -> Nat -> Integer
-      -> IO (Nat, tape)
-  run 0     _    _     tape steps _     = pure (steps, tape)
+        -> IO (Maybe (Nat, tape))
+  run 0     _    _     tape steps _     = pure Nothing
   run (S k) prog state tape steps marks =
     let
       (nextState, nextTape, stepped, marked) = exec prog state tape
@@ -32,10 +32,10 @@ interface Tape tape => Machine tape where
                        Nothing => marks
     in
       if nextState == H || nextMarks == 0
-        then pure (nextSteps, nextTape)
+        then pure $ Just (nextSteps, nextTape)
         else run k prog nextState nextTape nextSteps nextMarks
 
-  runOnBlankTape : Program -> IO (Nat, tape)
+  runOnBlankTape : Program -> IO (Maybe (Nat, tape))
   runOnBlankTape prog = run limit prog A blank 0 0 where
     limit : Nat
     limit = 5_000_000_000_000
