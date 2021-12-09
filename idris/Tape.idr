@@ -10,7 +10,8 @@ import Program
 %default total
 
 public export
-interface BasicTape tape where
+interface
+BasicTape tape where
   blank : tape
   read  : tape -> Color
 
@@ -18,7 +19,8 @@ interface BasicTape tape where
   marks : tape -> Nat
 
 public export
-interface BasicTape tape => Tape tape where
+interface
+BasicTape tape => Tape tape where
   shift : Shift -> tape -> Color -> Bool -> (Nat, tape)
   shift L =  left
   shift R = right
@@ -27,18 +29,21 @@ interface BasicTape tape => Tape tape where
   right :          tape -> Color -> Bool -> (Nat, tape)
 
 public export
+implementation
 BasicTape tape => Show tape where
   show tape = show (cells tape, marks tape)
 
 ----------------------------------------
 
-interface ScanNSpan unit where
+interface
+ScanNSpan unit where
   pullNext : List unit -> (Color, List unit)
   pushCurr : unit -> List unit -> List unit
 
   spanCells : List unit -> Nat
   spanMarks : List unit -> Nat
 
+implementation
 ScanNSpan unit => BasicTape (List unit, Color, List unit) where
   blank = ([], 0, [])
 
@@ -55,6 +60,7 @@ MicroTape = (TapeSpan, Color, TapeSpan) where
   TapeSpan : Type
   TapeSpan = List Color
 
+implementation
 ScanNSpan Color where
   pullNext [] = (0, [])
   pullNext (x :: xs) = (x, xs)
@@ -65,6 +71,7 @@ ScanNSpan Color where
   spanMarks = length . filter (/= 0)
 
 public export
+implementation
 Tape MicroTape where
   left tape@(cn :: l, c, r) cx True =
     if cn /= c then assert_total $ left tape cx False else
@@ -98,6 +105,7 @@ tapeLengthMonotone (h :: t, c, r) =
 Block : Type
 Block = (Color, Nat)
 
+implementation
 ScanNSpan Block where
   pullNext [] = (0, [])
   pullNext ((c, n) :: xs) =
@@ -121,6 +129,7 @@ MacroTape = (BlockSpan, Color, BlockSpan) where
   BlockSpan = List Block
 
 public export
+implementation
 Tape MacroTape where
   left tape@(((bc, bn) :: l), c, r) cx True =
     if bc /= c then assert_total $ left tape cx False else
@@ -142,6 +151,7 @@ VLenTape : Type
 VLenTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
 
 public export
+implementation
 BasicTape VLenTape where
   cells (_ ** (_, tape))  = length tape
   marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
@@ -151,6 +161,7 @@ BasicTape VLenTape where
   read (_ ** (pos, tape)) = index pos tape
 
 public export
+implementation
 Tape VLenTape where
   left (i ** (pos, tape)) cx _ =
     let

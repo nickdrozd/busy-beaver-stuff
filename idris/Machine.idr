@@ -6,7 +6,8 @@ import public Tape
 %default total
 
 public export
-interface Tape tape => Machine tape where
+interface
+Tape tape => Machine tape where
   exec : Program -> State -> tape
          -> (State, tape, Nat, Maybe Integer)
   exec prog state tape =
@@ -43,10 +44,13 @@ interface Tape tape => Machine tape where
     limit = 1_000_000_000
 
 public export
+implementation
 [MicroMachine] Machine MicroTape where
 
 public export
+implementation
 [MacroMachine] Machine MacroTape where
 
 public export
+implementation
 [VLenMachine] Machine VLenTape where
