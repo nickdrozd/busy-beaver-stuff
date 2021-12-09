@@ -202,13 +202,15 @@ class TestTree(TestCase):
 
         self.assert_counts({
               4: q22,
-             40: h32,
-            609: q32,
+             39: h32,
+            582: q32,
         })
 
         self.assertEqual(
             q22,
             HOLDOUTS_22Q)
+
+        h32.add('1RB 0LC  0LA 0RA  1LA 1RH')
 
         self.assertEqual(
             h32,
@@ -243,7 +245,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
             128: h23,
-            906: q23,
+            897: q23,
         })
 
         self.assertTrue(
