@@ -38,7 +38,7 @@ interface Tape tape => Machine tape where
   runOnBlankTape : Program -> IO (Maybe (Nat, tape))
   runOnBlankTape prog = run limit prog A blank 0 0 where
     limit : Nat
-    limit = 5_000_000_000_000
+    limit = 1_000_000_000
 
 public export
 [MicroMachine] Machine MicroTape where
