@@ -10,6 +10,14 @@ import Program
 %default total
 
 public export
+Stepper : Type -> Type
+Stepper tape = tape -> Color -> (Nat, tape)
+
+public export
+Shifter : Type -> Type
+Shifter tape = Shift -> Stepper tape
+
+public export
 interface
 BasicTape tape where
   blank : tape
@@ -18,24 +26,24 @@ BasicTape tape where
   cells : tape -> Nat
   marks : tape -> Nat
 
-  stepShift : Shift -> tape -> Color -> (Nat, tape)
+  stepShift : Shifter tape
   stepShift L = stepLeft
   stepShift R = stepRight
 
-  stepLeft  : tape -> Color -> (Nat, tape)
-  stepRight : tape -> Color -> (Nat, tape)
+  stepLeft  : Stepper tape
+  stepRight : Stepper tape
 
 public export
 interface
 BasicTape tape => Tape tape where
-  skipShift : Shift -> tape -> Color -> (Nat, tape)
+  skipShift : Shifter tape
   skipShift L = skipLeft
   skipShift R = skipRight
 
-  skipLeft  : tape -> Color -> (Nat, tape)
+  skipLeft  : Stepper tape
   skipLeft  = stepLeft
 
-  skipRight : tape -> Color -> (Nat, tape)
+  skipRight : Stepper tape
   skipRight = stepRight
 
 public export
