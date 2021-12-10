@@ -18,9 +18,6 @@ BasicTape tape where
   cells : tape -> Nat
   marks : tape -> Nat
 
-public export
-interface
-BasicTape tape => Tape tape where
   stepShift : Shift -> tape -> Color -> (Nat, tape)
   stepShift L = stepLeft
   stepShift R = stepRight
@@ -28,6 +25,9 @@ BasicTape tape => Tape tape where
   stepLeft  : tape -> Color -> (Nat, tape)
   stepRight : tape -> Color -> (Nat, tape)
 
+public export
+interface
+BasicTape tape => Tape tape where
   skipShift : Shift -> tape -> Color -> (Nat, tape)
   skipShift L = skipLeft
   skipShift R = skipRight
@@ -62,6 +62,14 @@ ScanNSpan unit => BasicTape (List unit, Color, List unit) where
   cells (l, _, r) = spanCells l + 1 + spanCells r
   marks (l, c, r) = spanMarks l + (if c == 0 then 0 else 1) + spanMarks r
 
+  stepLeft (l, _, r) cx =
+    let (x, k) = pullNext l in
+      (1, (k, x, pushCurr (cast cx) r))
+
+  stepRight (l, c, r) cx =
+    let (s, (k, x, e)) = stepLeft (r, c, l) cx in
+      (s, (e, x, k))
+
 ----------------------------------------
 
 public export
@@ -95,14 +103,6 @@ Tape MicroTape where
 
   skipRight (l, c, r) cx =
     let (s, (k, x, e)) = skipLeft (r, c, l) cx in
-      (s, (e, x, k))
-
-  stepLeft (l, _, r) cx =
-    let (x, k) = pullNext l in
-      (1, (k, x, pushCurr cx r))
-
-  stepRight (l, c, r) cx =
-    let (s, (k, x, e)) = stepLeft (r, c, l) cx in
       (s, (e, x, k))
 
 tapeLengthMonotone : {x : Color} -> (tape : MicroTape) ->
@@ -161,14 +161,6 @@ Tape MacroTape where
     let (s, (k, x, e)) = skipLeft (r, c, l) cx in
       (s, (e, x, k))
 
-  stepLeft (l, _, r) cx =
-    let (x, k) = pullNext l in
-      (1, (k, x, pushCurr (cx, 1) r))
-
-  stepRight (l, c, r) cx =
-    let (s, (k, x, e)) = stepLeft (r, c, l) cx in
-      (s, (e, x, k))
-
 ----------------------------------------
 
 public export
@@ -185,9 +177,6 @@ BasicTape VLenTape where
 
   read (_ ** (pos, tape)) = index pos tape
 
-public export
-implementation
-Tape VLenTape where
   stepLeft (i ** (pos, tape)) cx =
     let
       printed = replaceAt pos cx tape
@@ -209,6 +198,10 @@ Tape VLenTape where
               (S i ** (FS pos, rewrite prf in printed ++ [0]))
     in
       (1, shifted)
+
+public export
+implementation
+Tape VLenTape where
 
 tapeLengthMonotoneV : {x : Color} -> (tape : VLenTape) ->
   let (_, shifted) = stepLeft tape x in
