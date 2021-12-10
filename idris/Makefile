@@ -8,7 +8,7 @@ clean :
 run : clean
 	idris2 --version
 	idris2 Run.idr -o run
-	echo "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA" | ./build/exec/run
+	echo "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA\n1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB" | ./build/exec/run
 	time -p ./build/exec/run < ../2-4-with-blank.prog
 
 test : clean

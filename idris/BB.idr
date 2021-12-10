@@ -7,32 +7,45 @@ Programs = (Nat, Nat, List (String, (Nat, Nat, Nat)))
 public export
 p2_2 : Programs
 p2_2 = (2, 2, [
+  ("1RB 0LB  1LB 1LA", (7, 5, 3)),
   ("1RB 1LB  1LA 1RH", (6, 4, 4)),
+  ("1RB 1LB  0LB 1LA", (7, 5, 2)),
   ("1RB 0RA  1LB 1LA", (8, 4, 0))])
 
 public export
 p3_2 : Programs
 p3_2 = (3, 2, [
   ("1RB 1RH  1LB 0RC  1LC 1LA", (21, 5, 5)),
+  -- * gives different answers for skip and step
+  -- ("1RB 0LB  1LA 0RC  1LC 1LA", (57, 9, 8)),
   ("1RB 1LB  1LA 1LC  1RC 0LC", (34, 8, 0))])
 
 public export
 p2_3 : Programs
 p2_3 = (2, 3, [
+  ("1RB 2RA 2LB  0LB 1LA 1RA", (24, 7, 4)),
   ("1RB 2LB 1RH  2LA 2RB 1LB", (38, 9, 9)),
+  ("1RB 2LB 1LA  2LB 2RA 0RA", (60, 10, 9)),
+  ("1LB 2RB 1RA  2RB 2LA 0LA", (60, 10, 9)),
   ("1RB 2LA 0RB  1LA 0LB 1RA", (77, 9, 0))])
 
 public export
 p4_2 : Programs
 p4_2 = (4, 2, [
   ("1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA", (107, 14, 13)),
+  ("1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA", (1460, 45, 25)),
+  ("1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB", (2820, 71, 69)),
   ("1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD", (66345, 520, 0)),
   ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", (32779477, 10240, 0))])
 
 public export
 p2_4 : Programs
 p2_4 = (2, 4, [
+  ("1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB", (2477, 34, 31)),
+  ("1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA", (32852, 195, 193)),
   ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA", (190524, 518, 0)),
+  ("1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB", (2333910, 3342, 3341)),
+  ("1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB", (2501553, 2749, 2748)),
   ("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1RH", (3932964, 2050, 2050))])
 
 public export
