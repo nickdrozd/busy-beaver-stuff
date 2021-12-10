@@ -16,6 +16,12 @@ Cast Char Shift where
   cast  _  = R
 
 public export
+Eq Shift where
+  L == L = True
+  R == R = True
+  _ == _ = False
+
+public export
 Show Shift where
   show L = "L"
   show R = "R"
