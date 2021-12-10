@@ -34,6 +34,11 @@ BasicTape tape where
   stepRight : Stepper tape
 
 public export
+implementation
+BasicTape tape => Show tape where
+  show tape = show (cells tape, marks tape)
+
+public export
 interface
 BasicTape tape => Tape tape where
   skipShift : Shifter tape
@@ -45,11 +50,6 @@ BasicTape tape => Tape tape where
 
   skipRight : Stepper tape
   skipRight = stepRight
-
-public export
-implementation
-BasicTape tape => Show tape where
-  show tape = show (cells tape, marks tape)
 
 ----------------------------------------
 
