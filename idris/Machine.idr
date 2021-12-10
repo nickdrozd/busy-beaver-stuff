@@ -12,7 +12,7 @@ Tape tape => Machine tape where
          -> (State, tape, Nat, Maybe Integer)
   exec prog state tape =
     let
-      scan = read tape
+      (scan, _) = read tape
       (cx, dir, nextState) = prog state scan
       shifter = if state == nextState then skipShift else stepShift
       (stepped, shifted) = shifter dir tape cx

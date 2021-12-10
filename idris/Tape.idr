@@ -21,7 +21,7 @@ public export
 interface
 BasicTape tape where
   blank : tape
-  read  : tape -> Color
+  read  : tape -> (Color, Maybe Shift)
 
   cells : tape -> Nat
   marks : tape -> Nat
@@ -71,7 +71,9 @@ implementation
 ScanNSpan unit => BasicTape (List unit, Color, List unit) where
   blank = ([], 0, [])
 
-  read (_, c, _) = c
+  read ([], c,  _) = (c,  Just L)
+  read ( _, c, []) = (c,  Just R)
+  read ( _, c,  _) = (c, Nothing)
 
   cells (l, _, r) = spanCells l + 1 + spanCells r
   marks (l, c, r) = spanMarks l + (if c == 0 then 0 else 1) + spanMarks r
@@ -188,7 +190,12 @@ BasicTape VLenTape where
 
   blank = (Z ** (FZ, [0]))
 
-  read (_ ** (pos, tape)) = index pos tape
+  read (_ ** ( FZ, c :: _)) = (c, Just L)
+  read (_ ** (pos,  tape )) =
+    (index pos tape,
+      case strengthen pos of
+        Just _ => Nothing
+        _      =>  Just R)
 
   stepLeft (i ** (pos, tape)) cx =
     let
