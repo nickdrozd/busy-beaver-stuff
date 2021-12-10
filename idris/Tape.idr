@@ -46,7 +46,7 @@ BasicTape tape => Show tape where
 ----------------------------------------
 
 interface
-ScanNSpan unit where
+Cast Color unit => ScanNSpan unit where
   pullNext : List unit -> (Color, List unit)
   pushCurr : unit -> List unit -> List unit
 
@@ -120,6 +120,9 @@ tapeLengthMonotone (h :: t, c, r) =
 
 Block : Type
 Block = (Color, Nat)
+
+Cast Color Block where
+  cast c = (c, 1)
 
 implementation
 ScanNSpan Block where
