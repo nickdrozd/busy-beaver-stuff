@@ -38,6 +38,12 @@ implementation
 BasicTape tape => Show tape where
   show tape = show (cells tape, marks tape)
 
+interface
+BasicTape tape => MonotoneTape tape where
+  tapeLengthMonotone : (cx : Color) -> (tp : tape) ->
+    let (_, shifted) = stepLeft tp cx in
+      LTE (cells tp) (cells shifted)
+
 public export
 interface
 BasicTape tape => Tape tape where
@@ -113,16 +119,15 @@ Tape MicroTape where
     let (s, (k, x, e)) = skipLeft (r, c, l) cx in
       (s, (e, x, k))
 
-tapeLengthMonotone : {x : Color} -> (tape : MicroTape) ->
-  let (_, shifted) = stepLeft tape x in
-    LTE (cells tape) (cells shifted)
-tapeLengthMonotone (    [], c, r) =
-  LTESucc $ lteSuccRight $ reflexive {rel = LTE}
-tapeLengthMonotone (h :: t, c, r) =
-  rewrite plusCommutative (length t) 1 in
-    rewrite plusCommutative (length t) (S $ length r) in
-      rewrite plusCommutative (length r) (length t) in
-        LTESucc $ LTESucc $ reflexive {x = length t + length r}
+implementation
+MonotoneTape MicroTape where
+  tapeLengthMonotone _ (    [], _, _) =
+    LTESucc $ lteSuccRight $ reflexive {rel = LTE}
+  tapeLengthMonotone _ (_ :: t, _, r) =
+    rewrite plusCommutative (length t) 1 in
+      rewrite plusCommutative (length t) (S $ length r) in
+        rewrite plusCommutative (length r) (length t) in
+          LTESucc $ LTESucc $ reflexive {x = length t + length r}
 
 ----------------------------------------
 
@@ -211,19 +216,18 @@ public export
 implementation
 Tape VLenTape where
 
-tapeLengthMonotoneV : {x : Color} -> (tape : VLenTape) ->
-  let (_, shifted) = stepLeft tape x in
-    LTE (cells tape) (cells shifted)
-tapeLengthMonotoneV (_ ** (FZ, _ :: _)) =
-  lteSuccRight $ reflexive {rel = LTE}
-tapeLengthMonotoneV (S k ** (pos@(FS _), tape)) =
-  rewrite replaceAtPresLen pos x tape in
-    reflexive {rel = LTE}where
-  replaceAtPresLen :
-    (p : Fin len) -> (e : ty) -> (v : Vect len ty)
-    -> length (replaceAt p e v) = length v
-  replaceAtPresLen _ _ [] impossible
-  replaceAtPresLen FZ _ (_ :: _) = Refl
-  replaceAtPresLen (FS p) e (_ :: ys) =
-    rewrite replaceAtPresLen p e ys in
-      Refl
+implementation
+MonotoneTape VLenTape where
+  tapeLengthMonotone _ (_ ** (FZ, _ :: _)) =
+    lteSuccRight $ reflexive {rel = LTE}
+  tapeLengthMonotone cx (S k ** (pos@(FS _), tape)) =
+    rewrite replaceAtPresLen pos cx tape in
+      reflexive {rel = LTE} where
+    replaceAtPresLen :
+      (p : Fin len) -> (e : ty) -> (v : Vect len ty)
+      -> length (replaceAt p e v) = length v
+    replaceAtPresLen _ _ [] impossible
+    replaceAtPresLen FZ _ (_ :: _) = Refl
+    replaceAtPresLen (FS p) e (_ :: ys) =
+      rewrite replaceAtPresLen p e ys in
+        Refl
