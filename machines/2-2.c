@@ -24,11 +24,11 @@ int main (void) {
   LOAD_PROGRAM;
 
  A:
-  CHECK_X(AA);
+  CHECK_LIMIT(AA);
   INSTRUCTION(a0c, a0s, a0t, a1c, a1s, a1t);
 
  B:
-  CHECK_X(BB);
+  CHECK_LIMIT(BB);
   INSTRUCTION(b0c, b0s, b0t, b1c, b1s, b1t);
 
  H:

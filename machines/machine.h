@@ -39,7 +39,7 @@
 #define DD COUNTS[3]
 #define EE COUNTS[4]
 
-#define CHECK_X(COUNT) {                        \
+#define CHECK_LIMIT(COUNT) {                    \
     if (++XX > X_LIMIT) {goto H;};              \
     COUNT = XX;                                 \
   }
