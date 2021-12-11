@@ -10,7 +10,7 @@ test : clean $(MACHINES)
 
 % : %.c
 	$(CC) $(CFLAGS) $< -o $@.run
-	./$@.run < $@.test
+	sed 's/^1RB// ; s/ //g' $@.test | ./$@.run
 
 clean :
 	$(RM) ${C_FILES:.c=.run}
