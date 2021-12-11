@@ -44,6 +44,21 @@
     COUNT = XX;                                 \
   }
 
+#define L -1
+#define R 1
+
+#define SHIFT_INTO_EDGE(SH)                     \
+  ((POS == PMIN && SH == L) ||                  \
+   (POS + 1 == PMAX && SH == R))
+
+#define IS_RECUR(SH, TR, LABEL)                 \
+  (SCAN(0) &&                                   \
+   TR == LABEL &&                               \
+   SHIFT_INTO_EDGE(SH))
+
+#define CHECK_RECUR(SH, TR, LABEL)              \
+  if (IS_RECUR(SH, TR, LABEL)) { goto H; };
+
 #define WIPE_AND_SCORE                          \
   for (i = PMIN; i < PMAX; i++) {               \
     TAPE[i] = 0;                                \
@@ -88,9 +103,6 @@
 #define COLOR_CONV '0'
 #define SHIFT_CONV 'L'
 #define TRANS_CONV 'A'
-
-#define L -1
-#define R 1
 
 #define READ_BOUND    if (NEXT == EOF) goto EXIT;
 #define READ_COLOR(C) C = NEXT - COLOR_CONV;

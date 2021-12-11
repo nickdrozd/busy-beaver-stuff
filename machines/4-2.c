@@ -35,14 +35,17 @@ int main (void) {
 
  B:
   CHECK_LIMIT(BB);
+  CHECK_RECUR(b0s, b0t, 1);
   INSTRUCTION(b0c, b0s, b0t, b1c, b1s, b1t);
 
  C:
   CHECK_LIMIT(CC);
+  CHECK_RECUR(c0s, c0t, 2);
   INSTRUCTION(c0c, c0s, c0t, c1c, c1s, c1t);
 
  D:
   CHECK_LIMIT(DD);
+  CHECK_RECUR(d0s, d0t, 3);
   INSTRUCTION(d0c, d0s, d0t, d1c, d1s, d1t);
 
  H:

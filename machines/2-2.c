@@ -28,6 +28,7 @@ int main (void) {
 
  B:
   CHECK_LIMIT(BB);
+  CHECK_RECUR(b0s, b0t, 1);
   INSTRUCTION(b0c, b0s, b0t, b1c, b1s, b1t);
 
  H:
