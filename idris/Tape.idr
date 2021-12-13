@@ -19,37 +19,37 @@ Shifter tape = Shift -> Stepper tape
 
 public export
 interface
-BasicTape tape where
+Tape tape where
   blank : tape
   read  : tape -> (Color, Maybe Shift)
 
   cells : tape -> Nat
   marks : tape -> Nat
 
-  stepShift : Shifter tape
-  stepShift L = stepLeft
-  stepShift R = stepRight
+  step : Shifter tape
+  step L = stepLeft
+  step R = stepRight
 
   stepLeft  : Stepper tape
   stepRight : Stepper tape
 
 public export
 implementation
-BasicTape tape => Show tape where
+Tape tape => Show tape where
   show tape = show (cells tape, marks tape)
 
 interface
-BasicTape tape => MonotoneTape tape where
+Tape tape => MonotoneTape tape where
   tapeLengthMonotone : (cx : Color) -> (tp : tape) ->
     let (_, shifted) = stepLeft tp cx in
       LTE (cells tp) (cells shifted)
 
 public export
 interface
-BasicTape tape => Tape tape where
-  skipShift : Shifter tape
-  skipShift L = skipLeft
-  skipShift R = skipRight
+Tape tape => SkipTape tape where
+  skip : Shifter tape
+  skip L = skipLeft
+  skip R = skipRight
 
   skipLeft  : Stepper tape
   skipLeft  = stepLeft
@@ -68,7 +68,7 @@ Cast Color unit => ScanNSpan unit where
   spanMarks : List unit -> Nat
 
 implementation
-ScanNSpan unit => BasicTape (List unit, Color, List unit) where
+ScanNSpan unit => Tape (List unit, Color, List unit) where
   blank = ([], 0, [])
 
   read ([], c,  _) = (c,  Just L)
@@ -106,7 +106,7 @@ ScanNSpan Color where
 
 public export
 implementation
-Tape MicroTape where
+SkipTape MicroTape where
   skipLeft tape@([], _, _) cx = stepLeft tape cx
 
   skipLeft tape@(cn :: l, c, r) cx =
@@ -164,7 +164,7 @@ MacroTape = (BlockSpan, Color, BlockSpan) where
 
 public export
 implementation
-Tape MacroTape where
+SkipTape MacroTape where
   skipLeft tape@([], _, _) cx = stepLeft tape cx
 
   skipLeft tape@(((bc, bn) :: l), c, r) cx =
@@ -179,12 +179,12 @@ Tape MacroTape where
 ----------------------------------------
 
 public export
-VLenTape : Type
-VLenTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
+PtrTape : Type
+PtrTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
 
 public export
 implementation
-BasicTape VLenTape where
+Tape PtrTape where
   cells (_ ** (_, tape))  = length tape
   marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
 
@@ -221,10 +221,10 @@ BasicTape VLenTape where
 
 public export
 implementation
-Tape VLenTape where
+SkipTape PtrTape where
 
 implementation
-MonotoneTape VLenTape where
+MonotoneTape PtrTape where
   tapeLengthMonotone _ (_ ** (FZ, _ :: _)) =
     lteSuccRight $ reflexive {rel = LTE}
   tapeLengthMonotone cx (S k ** (pos@(FS _), tape)) =

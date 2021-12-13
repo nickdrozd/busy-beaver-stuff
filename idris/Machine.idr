@@ -7,7 +7,7 @@ import public Tape
 
 public export
 interface
-Tape tape => Machine tape where
+SkipTape tape => Machine tape where
   exec : Program -> State -> tape
          -> (State, tape, Nat, Maybe Integer, Bool)
   exec prog state tape =
@@ -19,8 +19,8 @@ Tape tape => Machine tape where
         then (nextState, tape, 0, Nothing, True)
       else
     let
-      shifter = if state == nextState then skipShift else stepShift
-      (stepped, shifted) = shifter dir tape cx
+      shift = if state == nextState then skip else step
+      (stepped, shifted) = shift dir tape cx
       marked = case (scan, cx) of
         (Z, S _) => Just $      cast stepped
         (S _, Z) => Just $ -1 * cast stepped
@@ -63,4 +63,4 @@ implementation
 
 public export
 implementation
-[VLenMachine] Machine VLenTape where
+[PtrMachine] Machine PtrTape where

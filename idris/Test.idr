@@ -44,10 +44,10 @@ Mid = [p4_2, p2_4, p5_2]
 Long : List Programs
 Long = [p6_2, p3_3]
 
-runVLen : IO ()
-runVLen = do
-  putStrLn "  VLen"
-  runProgramSets VLenMachine Short
+runPtr : IO ()
+runPtr = do
+  putStrLn "  Ptr"
+  runProgramSets PtrMachine Short
 
 runMicro : IO ()
 runMicro = do
@@ -61,6 +61,6 @@ runMacro = do
 
 main : IO ()
 main = do
-  runVLen
+  runPtr
   runMicro
   runMacro
