@@ -15,7 +15,7 @@ Tape tape => Machine tape where
       (scan, edge) = read tape
       (cx, dir, nextState) = prog state scan
     in
-      if state == nextState && scan == 0 && checkEdge dir edge
+      if checkEdge dir edge && state == nextState && scan == 0
         then (nextState, tape, 0, Nothing, True)
       else
     let
