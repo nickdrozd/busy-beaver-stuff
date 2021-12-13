@@ -14,15 +14,19 @@ Tape tape => Machine tape where
     let
       (scan, edge) = read tape
       (cx, dir, nextState) = prog state scan
+    in
+      if state == nextState && scan == 0 && checkEdge dir edge
+        then (nextState, tape, 0, Nothing, True)
+      else
+    let
       shifter = if state == nextState then skipShift else stepShift
       (stepped, shifted) = shifter dir tape cx
       marked = case (scan, cx) of
         (Z, S _) => Just $      cast stepped
         (S _, Z) => Just $ -1 * cast stepped
         _        => Nothing
-      recurr = state == nextState && scan == 0 && checkEdge dir edge
     in
-      (nextState, shifted, stepped, marked, recurr)
+      (nextState, shifted, stepped, marked, False)
     where
       checkEdge : Shift -> (Maybe Shift) -> Bool
       checkEdge sh (Just dir) = sh == dir
