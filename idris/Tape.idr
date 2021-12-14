@@ -60,15 +60,15 @@ Tape tape => SkipTape tape where
 ----------------------------------------
 
 interface
-Spannable unit where
-  pullNext : List unit -> (Color, List unit)
-  pushCurr : Color -> Nat -> List unit -> List unit
+Spannable span where
+  pullNext : span -> (Color, span)
+  pushCurr : Color -> Nat -> span -> span
 
-  spanCells : List unit -> Nat
-  spanMarks : List unit -> Nat
+  spanCells : span -> Nat
+  spanMarks : span -> Nat
 
 implementation
-Spannable unit => Tape (List unit, Color, List unit) where
+Spannable (List unit) => Tape (List unit, Color, List unit) where
   blank = ([], 0, [])
 
   read ([], c,  _) = (c,  Just L)
@@ -95,7 +95,7 @@ MicroTape = (TapeSpan, Color, TapeSpan) where
   TapeSpan = List Color
 
 implementation
-Spannable Color where
+Spannable (List Color) where
   pullNext [] = (0, [])
   pullNext (x :: xs) = (x, xs)
 
@@ -140,7 +140,7 @@ Cast Color Block where
   cast c = (c, 1)
 
 implementation
-Spannable Block where
+Spannable (List Block) where
   pullNext [] = (0, [])
   pullNext ((c, n) :: xs) =
     (c, case n of
