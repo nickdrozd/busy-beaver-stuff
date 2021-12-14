@@ -245,17 +245,17 @@ MonotoneTape PtrTape where
 ----------------------------------------
 
 implementation
-Spannable Nat where
+Spannable Integer where
   spanCells = length . show
   spanMarks = length . filter ((/=) '0') . unpack . show
 
-  pushCurr cx _ n = (10 * n) + cx
+  pushCurr cx _ n = cast cx + (10 * n)
 
-  pullNext n = (mod n 10, div n 10)
+  pullNext n = (cast $ mod n 10, div n 10)
 
 public export
 NumTape : Type
-NumTape = ScanNSpan Nat
+NumTape = ScanNSpan Integer
 
 public export
 implementation
