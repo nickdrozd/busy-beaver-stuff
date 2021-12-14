@@ -67,8 +67,11 @@ Spannable span where
   spanCells : span -> Nat
   spanMarks : span -> Nat
 
+ScanNSpan : Type -> Type
+ScanNSpan span = (span, Color, span)
+
 implementation
-Spannable (List unit) => Tape (List unit, Color, List unit) where
+Spannable (List unit) => Tape (ScanNSpan (List unit)) where
   blank = ([], 0, [])
 
   read ([], c,  _) = (c,  Just L)
