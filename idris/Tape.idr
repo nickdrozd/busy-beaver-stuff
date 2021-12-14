@@ -60,9 +60,9 @@ Tape tape => SkipTape tape where
 ----------------------------------------
 
 interface
-Cast Color unit => Spannable unit where
+Spannable unit where
   pullNext : List unit -> (Color, List unit)
-  pushCurr : unit -> List unit -> List unit
+  pushCurr : Color -> Nat -> List unit -> List unit
 
   spanCells : List unit -> Nat
   spanMarks : List unit -> Nat
@@ -80,7 +80,7 @@ Spannable unit => Tape (List unit, Color, List unit) where
 
   stepLeft (l, _, r) cx =
     let (x, k) = pullNext l in
-      (1, (k, x, pushCurr (cast cx) r))
+      (1, (k, x, pushCurr cx 1 r))
 
   stepRight (l, c, r) cx =
     let (s, (k, x, e)) = stepLeft (r, c, l) cx in
@@ -99,7 +99,7 @@ Spannable Color where
   pullNext [] = (0, [])
   pullNext (x :: xs) = (x, xs)
 
-  pushCurr = (::)
+  pushCurr cx _ xs = cx :: xs
 
   spanCells = length
   spanMarks = length . filter (/= 0)
@@ -147,11 +147,11 @@ Spannable Block where
              (S $ S k) => (c, S k) :: xs
              _         => xs)
 
-  pushCurr block [] = [block]
-  pushCurr block@(c, k) ((q, n) :: xs) =
+  pushCurr c k [] = [(c, k)]
+  pushCurr c k ((q, n) :: xs) =
     if c == q
       then (q, k + n) :: xs
-      else block :: (q, n) :: xs
+      else (c, k) :: (q, n) :: xs
 
   spanCells = foldl (\a, (_, n) => a + n) 0
   spanMarks = foldl (\a, (q, n) => (+) a $ if q == 0 then 0 else n) 0
@@ -170,7 +170,7 @@ SkipTape MacroTape where
   skipLeft tape@(((bc, bn) :: l), c, r) cx =
     if bc /= c then stepLeft tape cx else
       let (x, k) = pullNext l in
-        (1 + bn, (k, x, pushCurr (cx, 1 + bn) r))
+        (1 + bn, (k, x, pushCurr cx (1 + bn) r))
 
   skipRight (l, c, r) cx =
     let (s, (k, x, e)) = skipLeft (r, c, l) cx in
