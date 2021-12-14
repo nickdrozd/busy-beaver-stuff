@@ -6,8 +6,8 @@ import Program
 %default total
 
 checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool
-checkResult (es, el, em) (gs, gl, gm) =
-  es == gs && el == gl && em == gm
+checkResult (es, _, em) (gs, _, gm) =
+  es == gs && em == gm
 
 runPrograms : Machine _ -> Programs -> IO Bool
 runPrograms _ (_, _, []) = do putStrLn ""; pure False
