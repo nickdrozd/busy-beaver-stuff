@@ -241,3 +241,42 @@ MonotoneTape PtrTape where
     replaceAtPresLen (FS p) e (_ :: ys) =
       rewrite replaceAtPresLen p e ys in
         Refl
+
+----------------------------------------
+
+implementation
+Spannable Nat where
+  spanCells = length . show
+  spanMarks = length . filter ((/=) '0') . unpack . show
+
+  pushCurr cx _ n = (10 * n) + cx
+
+  pullNext n = (mod n 10, div n 10)
+
+public export
+NumTape : Type
+NumTape = ScanNSpan Nat
+
+public export
+implementation
+Tape NumTape where
+  cells (l, _, r) = spanCells l + 1 + spanCells r
+  marks (l, c, r) = spanMarks l + (if c == 0 then 0 else 1) + spanMarks r
+
+  blank = (0, 0, 0)
+
+  read (0, c, _) = (c,  Just L)
+  read (_, c, 0) = (c,  Just R)
+  read (_, c, _) = (c, Nothing)
+
+  stepLeft (l, _, r) cx =
+    let (x, k) = pullNext l in
+      (1, (k, x, pushCurr cx 1 r))
+
+  stepRight (l, c, r) cx =
+    let (s, (k, x, e)) = stepLeft (r, c, l) cx in
+      (s, (e, x, k))
+
+public export
+implementation
+SkipTape NumTape where

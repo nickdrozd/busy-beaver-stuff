@@ -64,3 +64,7 @@ implementation
 public export
 implementation
 [PtrMachine] Machine PtrTape where
+
+public export
+implementation
+[NumMachine] Machine NumTape where

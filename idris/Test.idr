@@ -49,6 +49,11 @@ runPtr = do
   putStrLn "  Ptr"
   runProgramSets PtrMachine Short
 
+runNum : IO ()
+runNum = do
+  putStrLn "  Num"
+  runProgramSets NumMachine Short
+
 runMicro : IO ()
 runMicro = do
   putStrLn "  Micro"
@@ -62,5 +67,6 @@ runMacro = do
 main : IO ()
 main = do
   runPtr
+  runNum
   runMicro
   runMacro
