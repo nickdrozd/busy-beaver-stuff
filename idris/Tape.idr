@@ -225,6 +225,27 @@ Tape PtrTape where
 public export
 implementation
 SkipTape PtrTape where
+  skipLeft tape@(_ ** (FZ  , _)) cx = stepLeft tape cx
+
+  skipLeft tape@(_ ** (FS _, _)) cx =
+    let
+      currScan = read tape
+      oneStep@(_, stepped) = stepLeft tape cx
+      nextScan = read stepped
+    in
+      if nextScan /= currScan then oneStep else
+        let (steps, skipped) = assert_total $ skipLeft stepped cx in
+          (S steps, skipped)
+
+  skipRight tape cx =
+    let
+      currScan = read tape
+      oneStep@(_, stepped) = stepRight tape cx
+      nextScan = read stepped
+    in
+      if nextScan /= currScan then oneStep else
+        let (steps, skipped) = assert_total $ skipRight stepped cx in
+          (S steps, skipped)
 
 implementation
 MonotoneTape PtrTape where
