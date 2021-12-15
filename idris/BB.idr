@@ -30,27 +30,40 @@ p2_3 = (2, 3, [
   ("1RB 2LA 0RB  1LA 0LB 1RA", (77, 9, 0))])
 
 public export
-p4_2 : Programs
-p4_2 = (4, 2, [
+s4_2 : Programs
+s4_2 = (4, 2, [
   ("1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA", (107, 14, 13)),
   ("1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA", (1459, 44, 25)),
   ("1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB", (2819, 70, 69)),
-  ("1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD", (66345, 520, 0)),
+  ("1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD", (66345, 520, 0))])
+
+public export
+l4_2 : Programs
+l4_2 = (4, 2, [
   ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", (32779477, 10240, 0))])
 
 public export
-p2_4 : Programs
-p2_4 = (2, 4, [
+s2_4 : Programs
+s2_4 = (2, 4, [
   ("1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB", (2476, 33, 31)),
   ("1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA", (32851, 194, 192)),
-  ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA", (190524, 518, 0)),
+  ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA", (190524, 518, 0))])
+
+public export
+l2_4 : Programs
+l2_4 = (2, 4, [
   ("1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB", (2333909, 3341, 3340)),
   ("1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB", (2501552, 2748, 2747)),
   ("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1RH", (3932964, 2050, 2050))])
 
 public export
-p5_2 : Programs
-p5_2 = (5, 2, [
+s5_2 : Programs
+s5_2 = (5, 2, [
+  ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", (31315, 142, 0))])
+
+public export
+l5_2 : Programs
+l5_2 = (5, 2, [
   ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", (31315, 142, 0)),
   ("1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE", (32810047, 10240, 0)),
   ("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1RH 0LA", (47176870, 12289, 4098))])

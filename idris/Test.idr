@@ -36,10 +36,10 @@ runProgramSets machine (progs :: rest) = do
   runProgramSets machine rest
 
 Short : List Programs
-Short = [p2_2, p3_2, p2_3]
+Short = [p2_2, p3_2, p2_3, s4_2, s2_4, s5_2]
 
 Mid : List Programs
-Mid = [p4_2, p2_4, p5_2]
+Mid = [l4_2, l2_4, l5_2]
 
 Long : List Programs
 Long = [p6_2, p3_3]
