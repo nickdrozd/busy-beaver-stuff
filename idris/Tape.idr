@@ -280,3 +280,17 @@ Tape NumTape where
 public export
 implementation
 SkipTape NumTape where
+  skipLeft tape@(0, _, _) cx = stepLeft tape cx
+
+  skipLeft tape@(l, c, r) cx =
+    let (cn, nl) = pullNext l in
+      if c /= cn then stepLeft tape cx else
+        let
+          nextTape = (nl, cn, pushCurr cx 1 r)
+          (steps, shifted) = assert_total $ skipLeft nextTape cx
+        in
+          (S steps, shifted)
+
+  skipRight (l, c, r) cx =
+    let (s, (k, x, e)) = skipLeft (r, c, l) cx in
+      (s, (e, x, k))
