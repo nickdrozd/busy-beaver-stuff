@@ -6,29 +6,9 @@
 
 int main(void)
 {
- A:
-  switch (SCAN) {
-    case 0:
-      // A0
-      WRITE(1);
-      RIGHT;
-      goto B;
-    case 1:
-      // A1
-      WRITE(2);
-      RIGHT;
-      goto B;
-    case 2:
-      // A2
-      WRITE(1);
-      LEFT;
-      goto B;
-    case 3:
-      // A3
-      WRITE(1);
-      LEFT;
-      goto A;
-  }
+  // A0
+  WRITE(1);
+  RIGHT;
 
  B:
   switch (SCAN) {
@@ -53,6 +33,30 @@ int main(void)
       WRITE(2);
       RIGHT;
       goto B;
+  }
+
+ A:
+  switch (SCAN) {
+    case 0:
+      // A0
+      WRITE(1);
+      RIGHT;
+      goto B;
+    case 1:
+      // A1
+      WRITE(2);
+      RIGHT;
+      goto B;
+    case 2:
+      // A2
+      WRITE(1);
+      LEFT;
+      goto B;
+    case 3:
+      // A3
+      WRITE(1);
+      LEFT;
+      goto A;
   }
 
  H:
