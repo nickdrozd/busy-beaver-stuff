@@ -6,20 +6,9 @@
 
 int main(void)
 {
- A:
-  if (BLANK)
-    {
-      // A0
-      PRINT;
-      RIGHT;
-      goto B;
-    }
-  else
-    {
-      // A1
-      RIGHT;
-      goto C;
-    }
+  // A0
+  PRINT;
+  RIGHT;
 
  B:
   if (BLANK)
@@ -52,7 +41,20 @@ int main(void)
       // C0
       PRINT;
       RIGHT;
-      goto A;
+
+      if (BLANK)
+        {
+          // A0
+          PRINT;
+          RIGHT;
+          goto B;
+        }
+      else
+        {
+          // A1
+          RIGHT;
+          goto C;
+        }
     }
   else
     {
