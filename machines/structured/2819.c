@@ -33,7 +33,17 @@ int main(void)
     {
       // B1
       RIGHT;
-      goto D;
+
+      while (BLANK) {
+        // D0
+        CHECK_RECUR(R);
+        RIGHT;
+      }
+
+      // D1
+      ERASE;
+      LEFT;
+      goto B;
     }
 
  C:
@@ -48,20 +58,18 @@ int main(void)
     {
       // C1
       LEFT;
-      goto D;
+
+      while (BLANK) {
+        // D0
+        CHECK_RECUR(R);
+        RIGHT;
+      }
+
+      // D1
+      ERASE;
+      LEFT;
+      goto B;
     }
-
- D:
-  while (BLANK) {
-    // D0
-    CHECK_RECUR(R);
-    RIGHT;
-  }
-
-  // D1
-  ERASE;
-  LEFT;
-  goto B;
 
  H:
   CHECK_STEPS;
