@@ -49,7 +49,6 @@ int main(void)
           // A0
           PRINT;
           RIGHT;
-          goto B;
         }
     }
   else
@@ -66,8 +65,9 @@ int main(void)
       // D1
       ERASE;
       LEFT;
-      goto B;
     }
+
+  goto B;
 
  H:
   CHECK_STEPS;
