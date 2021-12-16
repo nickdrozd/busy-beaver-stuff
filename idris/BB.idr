@@ -16,8 +16,7 @@ public export
 p3_2 : Programs
 p3_2 = (3, 2, [
   ("1RB 1RH  1LB 0RC  1LC 1LA", (21, 5, 5)),
-  -- * gives different answers for skip and step
-  -- ("1RB 0LB  1LA 0RC  1LC 1LA", (57, 9, 8)),
+  -- ("1RB 0LB  1LA 0RC  1LC 1LA", (57, 9, 8)), -- skip
   ("1RB 1LB  1LA 1LC  1RC 0LC", (34, 8, 0))])
 
 public export
@@ -46,7 +45,7 @@ public export
 s2_4 : Programs
 s2_4 = (2, 4, [
   ("1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB", (2476, 33, 31)),
-  ("1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA", (32851, 194, 192)),
+  -- ("1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA", (32851, 194, 192)), -- skip
   ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA", (190524, 518, 0))])
 
 public export
