@@ -38,7 +38,6 @@ int main(void)
 
         while (BLANK) {
           // D0
-          CHECK_RECUR(R);
           RIGHT;
         }
 
