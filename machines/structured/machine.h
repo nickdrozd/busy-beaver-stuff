@@ -3,7 +3,11 @@
 #include <stdlib.h>
 
 short TAPE[TAPELEN];
-short POS = TAPELEN / 2;
+#define CENTER_SQUARE (TAPELEN / 2)
+
+short  POS = CENTER_SQUARE;
+short PMIN = CENTER_SQUARE;
+short PMAX = CENTER_SQUARE + 1;
 
 #define SQUARE_CHAR(square) square ? '#' : '_'
 
@@ -37,5 +41,23 @@ long MARKS = 0;
 
 #define STEP {STEPS++; HALT_IF_BLANK;}
 
-#define LEFT  {POS--; STEP;}
-#define RIGHT {POS++; STEP;}
+#define SHIFT_EDGE                              \
+  if (POS < PMIN) { PMIN--; }                   \
+  else if (POS >= PMAX) { PMAX++; }
+
+#define LEFT  { POS--; SHIFT_EDGE; STEP; }
+#define RIGHT { POS++; SHIFT_EDGE; STEP; }
+
+#define L -1
+#define R 1
+
+#define SHIFT_INTO_EDGE(SH)                     \
+  ((POS == PMIN && SH == L) ||                  \
+   (POS + 1 == PMAX && SH == R))
+
+#define IS_RECUR(SH)                            \
+  (SCAN == 0 &&                                 \
+   SHIFT_INTO_EDGE(SH))
+
+#define CHECK_RECUR(SH)                         \
+  if (IS_RECUR(SH)) { goto H; };
