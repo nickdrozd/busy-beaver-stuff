@@ -10,26 +10,9 @@ int main(void)
   PRINT;
   RIGHT;
 
- B:
-  while (!BLANK) {
-    // B1
-    RIGHT;
-
-    while (BLANK) {
-      // D0
-      CHECK_RECUR(R);
-      RIGHT;
-    }
-
-    // D1
-    ERASE;
-    LEFT;
-  }
-
   // B0
   PRINT;
   LEFT;
-  goto C;
 
  C:
   if (BLANK)
@@ -67,7 +50,25 @@ int main(void)
       LEFT;
     }
 
-  goto B;
+  while (!BLANK) {
+    // B1
+    RIGHT;
+
+    while (BLANK) {
+      // D0
+      CHECK_RECUR(R);
+      RIGHT;
+    }
+
+    // D1
+    ERASE;
+    LEFT;
+  }
+
+  // B0
+  PRINT;
+  LEFT;
+  goto C;
 
  H:
   CHECK_STEPS;
