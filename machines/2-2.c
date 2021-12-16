@@ -24,12 +24,11 @@ int main (void) {
 
  A:
   CHECK_LIMIT(AA);
-  INSTRUCTION(A0C, A0S, A0T, a1c, a1s, a1t);
+  INSTRUCTION(0, A0C, A0S, A0T, a1c, a1s, a1t);
 
  B:
   CHECK_LIMIT(BB);
-  CHECK_RECUR(b0s, b0t, 1);
-  INSTRUCTION(b0c, b0s, b0t, b1c, b1s, b1t);
+  INSTRUCTION(1, b0c, b0s, b0t, b1c, b1s, b1t);
 
  H:
   WIPE_AND_SCORE;

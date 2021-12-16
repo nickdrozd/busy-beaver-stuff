@@ -55,9 +55,5 @@ long MARKS = 0;
   ((POS == PMIN && SH == L) ||                  \
    (POS + 1 == PMAX && SH == R))
 
-#define IS_RECUR(SH)                            \
-  (SCAN == 0 &&                                 \
-   SHIFT_INTO_EDGE(SH))
-
 #define CHECK_RECUR(SH)                         \
-  if (IS_RECUR(SH)) { goto H; };
+  if (SHIFT_INTO_EDGE(SH)) { goto H; };

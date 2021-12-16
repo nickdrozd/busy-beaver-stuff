@@ -34,23 +34,23 @@ int main (void) {
 
  A:
   CHECK_LIMIT(AA);
-  INSTRUCTION(A0C, A0S, A0T, a1c, a1s, a1t);
+  INSTRUCTION(0, A0C, A0S, A0T, a1c, a1s, a1t);
 
  B:
   CHECK_LIMIT(BB);
-  INSTRUCTION(b0c, b0s, b0t, b1c, b1s, b1t);
+  INSTRUCTION(1, b0c, b0s, b0t, b1c, b1s, b1t);
 
  C:
   CHECK_LIMIT(CC);
-  INSTRUCTION(c0c, c0s, c0t, c1c, c1s, c1t);
+  INSTRUCTION(2, c0c, c0s, c0t, c1c, c1s, c1t);
 
  D:
   CHECK_LIMIT(DD);
-  INSTRUCTION(d0c, d0s, d0t, d1c, d1s, d1t);
+  INSTRUCTION(3, d0c, d0s, d0t, d1c, d1s, d1t);
 
  E:
   CHECK_LIMIT(EE);
-  INSTRUCTION(e0c, e0s, e0t, e1c, e1s, e1t);
+  INSTRUCTION(4, e0c, e0s, e0t, e1c, e1s, e1t);
 
  H:
   WIPE_AND_SCORE;

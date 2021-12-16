@@ -6,12 +6,12 @@
 #define X_LIMIT 300
 
 #undef INSTRUCTION
-#define INSTRUCTION(c0, s0, t0,                 \
+#define INSTRUCTION(l, c0, s0, t0,              \
                     c1, s1, t1,                 \
                     c2, s2, t2)                 \
   if (SCAN(2)) ACTION(c2, s2, t2)               \
     else if (SCAN(1)) ACTION(c1, s1, t1)        \
-      else ACTION(c0, s0, t0)
+      else { CHECK_RECUR(s0, t0, l); ACTION(c0, s0, t0); }
 
 int a1c, a1s, a1t, a2c, a2s, a2t,
   b0c, b0s, b0t, b1c, b1s, b1t, b2c, b2s, b2t;
@@ -35,12 +35,11 @@ int main (void) {
 
  A:
   CHECK_LIMIT(AA);
-  INSTRUCTION(A0C, A0S, A0T, a1c, a1s, a1t, a2c, a2s, a2t);
+  INSTRUCTION(0, A0C, A0S, A0T, a1c, a1s, a1t, a2c, a2s, a2t);
 
  B:
   CHECK_LIMIT(BB);
-  CHECK_RECUR(b0s, b0t, 1);
-  INSTRUCTION(b0c, b0s, b0t, b1c, b1s, b1t, b2c, b2s, b2t);
+  INSTRUCTION(1, b0c, b0s, b0t, b1c, b1s, b1t, b2c, b2s, b2t);
 
  H:
   WIPE_AND_SCORE;

@@ -46,9 +46,9 @@ int main(void)
     }
 
  D:
-  CHECK_RECUR(R);
   if (BLANK)
     {
+      CHECK_RECUR(R);
       RIGHT;
       goto D;
     }

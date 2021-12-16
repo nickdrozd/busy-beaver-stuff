@@ -92,11 +92,13 @@
     DO_TRANS(t);                                \
   }
 
-#define INSTRUCTION(c0, s0, t0, c1, s1, t1)     \
+#define INSTRUCTION(l, c0, s0, t0, c1, s1, t1)  \
   if (SCAN(1))                                  \
-    ACTION(c1, s1, t1)                          \
-    else                                        \
-      ACTION(c0, s0, t0)
+    { ACTION(c1, s1, t1); }                     \
+  else {                                        \
+    CHECK_RECUR(s0, t0, l);                     \
+    ACTION(c0, s0, t0);                         \
+  }
 
 #define NEXT getc(stdin)
 
@@ -118,6 +120,6 @@
 #define FORMAT_INSTR(C, S, T)                       \
   C + COLOR_CONV, S == R ? 'R' : 'L', T + TRANS_CONV
 
-#define A0C '1' - COLOR_CONV
-#define A0S 'R' - SHIFT_CONV - 5;
-#define A0T 'B' - TRANS_CONV
+#define A0C ('1' - COLOR_CONV)
+#define A0S ('R' - SHIFT_CONV - 5)
+#define A0T ('B' - TRANS_CONV)
