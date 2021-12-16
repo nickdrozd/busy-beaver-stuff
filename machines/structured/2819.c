@@ -11,29 +11,25 @@ int main(void)
   RIGHT;
 
  B:
-  if (BLANK)
-    {
-      // B0
-      PRINT;
-      LEFT;
-      goto C;
-    }
-  else
-    {
-      // B1
+  while (!BLANK) {
+    // B1
+    RIGHT;
+
+    while (BLANK) {
+      // D0
+      CHECK_RECUR(R);
       RIGHT;
-
-      while (BLANK) {
-        // D0
-        CHECK_RECUR(R);
-        RIGHT;
-      }
-
-      // D1
-      ERASE;
-      LEFT;
-      goto B;
     }
+
+    // D1
+    ERASE;
+    LEFT;
+  }
+
+  // B0
+  PRINT;
+  LEFT;
+  goto C;
 
  C:
   if (BLANK)
