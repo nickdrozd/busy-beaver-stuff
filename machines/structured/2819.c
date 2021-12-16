@@ -14,30 +14,42 @@ int main(void)
   PRINT;
   LEFT;
 
- C:
-  if (BLANK)
-    {
-      // C0
-      PRINT;
-      RIGHT;
+  while (1) {
+    if (BLANK)
+      {
+        // C0
+        PRINT;
+        RIGHT;
 
-      if (!BLANK)
-        {
+        if (!BLANK) {
           // A1
           RIGHT;
-          goto C;
+          continue;
         }
-      else
-        {
-          // A0
-          PRINT;
+
+        // A0
+        PRINT;
+        RIGHT;
+      }
+    else
+      {
+        // C1
+        LEFT;
+
+        while (BLANK) {
+          // D0
+          CHECK_RECUR(R);
           RIGHT;
         }
-    }
-  else
-    {
-      // C1
-      LEFT;
+
+        // D1
+        ERASE;
+        LEFT;
+      }
+
+    while (!BLANK) {
+      // B1
+      RIGHT;
 
       while (BLANK) {
         // D0
@@ -50,25 +62,10 @@ int main(void)
       LEFT;
     }
 
-  while (!BLANK) {
-    // B1
-    RIGHT;
-
-    while (BLANK) {
-      // D0
-      CHECK_RECUR(R);
-      RIGHT;
-    }
-
-    // D1
-    ERASE;
+    // B0
+    PRINT;
     LEFT;
   }
-
-  // B0
-  PRINT;
-  LEFT;
-  goto C;
 
  H:
   CHECK_STEPS;
