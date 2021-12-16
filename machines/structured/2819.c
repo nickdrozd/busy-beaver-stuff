@@ -38,18 +38,18 @@ int main(void)
       PRINT;
       RIGHT;
 
-      if (BLANK)
+      if (!BLANK)
+        {
+          // A1
+          RIGHT;
+          goto C;
+        }
+      else
         {
           // A0
           PRINT;
           RIGHT;
           goto B;
-        }
-      else
-        {
-          // A1
-          RIGHT;
-          goto C;
         }
     }
   else
