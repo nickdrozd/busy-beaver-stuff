@@ -36,6 +36,12 @@ int main(void)
   }
 
  A:
+  while (SCAN == 3) {
+    // A3
+    WRITE(1);
+    LEFT;
+  }
+
   switch (SCAN) {
     case 0:
       // A0
@@ -52,11 +58,6 @@ int main(void)
       WRITE(1);
       LEFT;
       goto B;
-    case 3:
-      // A3
-      WRITE(1);
-      LEFT;
-      goto A;
   }
 
  H:
