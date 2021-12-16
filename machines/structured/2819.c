@@ -52,20 +52,16 @@ int main(void)
     }
 
  D:
-  if (BLANK)
-    {
-      // D0
-      CHECK_RECUR(R);
-      RIGHT;
-      goto D;
-    }
-  else
-    {
-      // D1
-      ERASE;
-      LEFT;
-      goto B;
-    }
+  while (BLANK) {
+    // D0
+    CHECK_RECUR(R);
+    RIGHT;
+  }
+
+  // D1
+  ERASE;
+  LEFT;
+  goto B;
 
  H:
   CHECK_STEPS;
