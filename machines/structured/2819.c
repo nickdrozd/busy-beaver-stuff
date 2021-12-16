@@ -9,12 +9,14 @@ int main(void)
  A:
   if (BLANK)
     {
+      // A0
       PRINT;
       RIGHT;
       goto B;
     }
   else
     {
+      // A1
       RIGHT;
       goto C;
     }
@@ -22,12 +24,14 @@ int main(void)
  B:
   if (BLANK)
     {
+      // B0
       PRINT;
       LEFT;
       goto C;
     }
   else
     {
+      // B1
       RIGHT;
       goto D;
     }
@@ -35,12 +39,14 @@ int main(void)
  C:
   if (BLANK)
     {
+      // C0
       PRINT;
       RIGHT;
       goto A;
     }
   else
     {
+      // C1
       LEFT;
       goto D;
     }
@@ -48,12 +54,14 @@ int main(void)
  D:
   if (BLANK)
     {
+      // D0
       CHECK_RECUR(R);
       RIGHT;
       goto D;
     }
   else
     {
+      // D1
       ERASE;
       LEFT;
       goto B;

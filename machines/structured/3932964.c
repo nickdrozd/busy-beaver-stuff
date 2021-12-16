@@ -9,18 +9,22 @@ int main(void)
  A:
   switch (SCAN) {
     case 0:
+      // A0
       WRITE(1);
       RIGHT;
       goto B;
     case 1:
+      // A1
       WRITE(2);
       LEFT;
       goto A;
     case 2:
+      // A2
       WRITE(1);
       RIGHT;
       goto A;
     case 3:
+      // A3
       WRITE(1);
       RIGHT;
       goto A;
@@ -29,18 +33,22 @@ int main(void)
  B:
   switch (SCAN) {
     case 0:
+      // B0
       WRITE(1);
       LEFT;
       goto B;
     case 1:
+      // B1
       WRITE(1);
       LEFT;
       goto A;
     case 2:
+      // B2
       WRITE(3);
       RIGHT;
       goto B;
     case 3:
+      // B3
       WRITE(1);
       RIGHT;
       goto H;
