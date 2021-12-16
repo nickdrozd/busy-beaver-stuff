@@ -5,8 +5,6 @@
 short TAPE[TAPELEN];
 short POS = TAPELEN / 2;
 
-short STORE;
-
 #define SQUARE_CHAR(square) square ? '#' : '_'
 
 #define PRINT_TAPE                              \
@@ -18,11 +16,9 @@ short STORE;
     }                                           \
   printf("\n");
 
-#define PRINT_STEPS printf("%ld\n", STEPS);
 #define CHECK_STEPS assert(STEPS == XLIMIT);
 
 long STEPS = 0;
-#define CHECK_LIMIT if (STEPS > XLIMIT) return 0;
 
 long MARKS = 0;
 #define HALT_IF_BLANK if (!MARKS && STEPS > 0) goto H;
