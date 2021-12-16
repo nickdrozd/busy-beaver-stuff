@@ -19,6 +19,12 @@ int main(void)
         LEFT;
         continue;
 
+      case 3:
+        // B3
+        WRITE(2);
+        RIGHT;
+        continue;
+
       case 1:
         // B1
         WRITE(3);
@@ -76,12 +82,6 @@ int main(void)
             LEFT;
             continue;
         }
-
-      case 3:
-        // B3
-        WRITE(2);
-        RIGHT;
-        continue;
     }
   }
 
