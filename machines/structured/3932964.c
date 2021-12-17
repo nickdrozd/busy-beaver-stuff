@@ -10,55 +10,56 @@ int main(void)
   WRITE(1);
   RIGHT;
 
- B:
-  switch (SCAN) {
-    case 0:
-      // B0
-      WRITE(1);
-      LEFT;
-      goto B;
+  while (1) {
+    switch (SCAN) {
+      case 0:
+        // B0
+        WRITE(1);
+        LEFT;
+        break;
 
-    case 2:
-      // B2
-      WRITE(3);
-      RIGHT;
-      goto B;
+      case 2:
+        // B2
+        WRITE(3);
+        RIGHT;
+        break;
 
-    case 3:
-      // B3
-      WRITE(1);
-      RIGHT;
-      goto H;
+      case 3:
+        // B3
+        WRITE(1);
+        RIGHT;
+        goto H;
 
-    case 1:
-      // B1
-      WRITE(1);
-      LEFT;
+      case 1:
+        // B1
+        WRITE(1);
+        LEFT;
 
-      while (!BLANK) {
-        switch (SCAN) {
-          case 1:
-            // A1
-            WRITE(2);
-            LEFT;
-            break;
-          case 2:
-            // A2
-            WRITE(1);
-            RIGHT;
-            break;
-          case 3:
-            // A3
-            WRITE(1);
-            RIGHT;
-            break;
+        while (!BLANK) {
+          switch (SCAN) {
+            case 1:
+              // A1
+              WRITE(2);
+              LEFT;
+              break;
+            case 2:
+              // A2
+              WRITE(1);
+              RIGHT;
+              break;
+            case 3:
+              // A3
+              WRITE(1);
+              RIGHT;
+              break;
+          }
         }
-      }
 
-      // A0
-      WRITE(1);
-      RIGHT;
-      goto B;
+        // A0
+        WRITE(1);
+        RIGHT;
+        break;
+    }
   }
 
  H:
