@@ -29,59 +29,37 @@ int main(void)
         // B1
         WRITE(3);
         RIGHT;
-
-        while (SCAN == 3) {
-          // A3
-          WRITE(1);
-          LEFT;
-        }
-
-        switch (SCAN) {
-          case 0:
-            // A0
-            WRITE(1);
-            RIGHT;
-            continue;
-          case 1:
-            // A1
-            WRITE(2);
-            RIGHT;
-            continue;
-          case 2:
-            // A2
-            WRITE(1);
-            LEFT;
-            continue;
-        }
+        break;
 
       case 2:
         // B2
         WRITE(3);
         LEFT;
+        break;
+    }
 
-        while (SCAN == 3) {
-          // A3
-          WRITE(1);
-          LEFT;
-        }
+    while (SCAN == 3) {
+      // A3
+      WRITE(1);
+      LEFT;
+    }
 
-        switch (SCAN) {
-          case 0:
-            // A0
-            WRITE(1);
-            RIGHT;
-            continue;
-          case 1:
-            // A1
-            WRITE(2);
-            RIGHT;
-            continue;
-          case 2:
-            // A2
-            WRITE(1);
-            LEFT;
-            continue;
-        }
+    switch (SCAN) {
+      case 0:
+        // A0
+        WRITE(1);
+        RIGHT;
+        continue;
+      case 1:
+        // A1
+        WRITE(2);
+        RIGHT;
+        continue;
+      case 2:
+        // A2
+        WRITE(1);
+        LEFT;
+        continue;
     }
   }
 
