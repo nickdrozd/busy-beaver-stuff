@@ -6,31 +6,9 @@
 
 int main(void)
 {
- A:
-  while (!BLANK) {
-    switch (SCAN) {
-      case 1:
-        // A1
-        WRITE(2);
-        LEFT;
-        break;
-      case 2:
-        // A2
-        WRITE(1);
-        RIGHT;
-        break;
-      case 3:
-        // A3
-        WRITE(1);
-        RIGHT;
-        break;
-    }
-  }
-
   // A0
   WRITE(1);
   RIGHT;
-  goto B;
 
  B:
   switch (SCAN) {
@@ -39,21 +17,48 @@ int main(void)
       WRITE(1);
       LEFT;
       goto B;
-    case 1:
-      // B1
-      WRITE(1);
-      LEFT;
-      goto A;
+
     case 2:
       // B2
       WRITE(3);
       RIGHT;
       goto B;
+
     case 3:
       // B3
       WRITE(1);
       RIGHT;
       goto H;
+
+    case 1:
+      // B1
+      WRITE(1);
+      LEFT;
+
+      while (!BLANK) {
+        switch (SCAN) {
+          case 1:
+            // A1
+            WRITE(2);
+            LEFT;
+            break;
+          case 2:
+            // A2
+            WRITE(1);
+            RIGHT;
+            break;
+          case 3:
+            // A3
+            WRITE(1);
+            RIGHT;
+            break;
+        }
+      }
+
+      // A0
+      WRITE(1);
+      RIGHT;
+      goto B;
   }
 
  H:
