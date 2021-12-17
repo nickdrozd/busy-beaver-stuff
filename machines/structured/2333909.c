@@ -49,17 +49,17 @@ int main(void)
         // A0
         WRITE(1);
         RIGHT;
-        continue;
+        break;
       case 1:
         // A1
         WRITE(2);
         RIGHT;
-        continue;
+        break;
       case 2:
         // A2
         WRITE(1);
         LEFT;
-        continue;
+        break;
     }
   }
 
