@@ -26,7 +26,6 @@ int main(void)
 
       case 1:
         // B1
-        WRITE(1);
         LEFT;
 
         while (!BLANK) {
@@ -57,7 +56,6 @@ int main(void)
   }
 
   // B3
-  WRITE(1);
   RIGHT;
 
  H:
