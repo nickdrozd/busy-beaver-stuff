@@ -10,7 +10,7 @@ int main(void)
   WRITE(1);
   RIGHT;
 
-  while (1) {
+  while (SCAN != 3) {
     switch (SCAN) {
       case 0:
         // B0
@@ -23,12 +23,6 @@ int main(void)
         WRITE(3);
         RIGHT;
         break;
-
-      case 3:
-        // B3
-        WRITE(1);
-        RIGHT;
-        goto H;
 
       case 1:
         // B1
@@ -61,6 +55,10 @@ int main(void)
         break;
     }
   }
+
+  // B3
+  WRITE(1);
+  RIGHT;
 
  H:
   CHECK_STEPS;
