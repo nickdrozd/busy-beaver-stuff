@@ -10,6 +10,12 @@ import Program
 %default total
 
 public export
+interface
+TapeMeasure tape where
+  cells : tape -> Nat
+  marks : tape -> Nat
+
+public export
 Stepper : Type -> Type
 Stepper tape = tape -> Color -> (Nat, tape)
 
@@ -19,12 +25,9 @@ Shifter tape = Shift -> Stepper tape
 
 public export
 interface
-Tape tape where
+TapeMeasure tape => Tape tape where
   blank : tape
   read  : tape -> (Color, Maybe Shift)
-
-  cells : tape -> Nat
-  marks : tape -> Nat
 
   step : Shifter tape
   step L = stepLeft
@@ -35,7 +38,7 @@ Tape tape where
 
 public export
 implementation
-Tape tape => Show tape where
+TapeMeasure tape => Show tape where
   show tape = show (cells tape, marks tape)
 
 interface
@@ -71,15 +74,17 @@ ScanNSpan : Type -> Type
 ScanNSpan span = (span, Color, span)
 
 implementation
+Spannable span => TapeMeasure (ScanNSpan span) where
+  cells (l, _, r) = spanCells l + 1 + spanCells r
+  marks (l, c, r) = spanMarks l + (if c == 0 then 0 else 1) + spanMarks r
+
+implementation
 Spannable (List unit) => Tape (ScanNSpan (List unit)) where
   blank = ([], 0, [])
 
   read ([], c,  _) = (c,  Just L)
   read ( _, c, []) = (c,  Just R)
   read ( _, c,  _) = (c, Nothing)
-
-  cells (l, _, r) = spanCells l + 1 + spanCells r
-  marks (l, c, r) = spanMarks l + (if c == 0 then 0 else 1) + spanMarks r
 
   stepLeft (l, _, r) cx =
     let (x, k) = pullNext l in
@@ -185,12 +190,14 @@ public export
 PtrTape : Type
 PtrTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
 
-public export
 implementation
-Tape PtrTape where
+TapeMeasure PtrTape where
   cells (_ ** (_, tape))  = length tape
   marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
 
+public export
+implementation
+Tape PtrTape where
   blank = (Z ** (FZ, [0]))
 
   read (_ ** ( FZ, c :: _)) = (c, Just L)
@@ -281,9 +288,6 @@ NumTape = ScanNSpan Integer
 public export
 implementation
 Tape NumTape where
-  cells (l, _, r) = spanCells l + 1 + spanCells r
-  marks (l, c, r) = spanMarks l + (if c == 0 then 0 else 1) + spanMarks r
-
   blank = (0, 0, 0)
 
   read (0, c, _) = (c,  Just L)
