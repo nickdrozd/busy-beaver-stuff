@@ -98,9 +98,7 @@ Spannable (List unit) => Tape (ScanNSpan (List unit)) where
 
 public export
 MicroTape : Type
-MicroTape = (TapeSpan, Color, TapeSpan) where
-  TapeSpan : Type
-  TapeSpan = List Color
+MicroTape = ScanNSpan $ List Color
 
 implementation
 Spannable (List Color) where
@@ -166,9 +164,7 @@ Spannable (List Block) where
 
 public export
 MacroTape : Type
-MacroTape = (BlockSpan, Color, BlockSpan) where
-  BlockSpan : Type
-  BlockSpan = List Block
+MacroTape = ScanNSpan $ List Block
 
 public export
 implementation
