@@ -142,9 +142,6 @@ MonotoneTape MicroTape where
 Block : Type
 Block = (Color, Nat)
 
-Cast Color Block where
-  cast c = (c, 1)
-
 implementation
 Spannable (List Block) where
   pullNext [] = (0, [])
@@ -315,3 +312,39 @@ SkipTape NumTape where
   skipRight (l, c, r) cx =
     let (s, (k, x, e)) = skipLeft (r, c, l) cx in
       (s, (e, x, k))
+
+----------------------------------------
+
+Cast sp1 sp2 => Cast (ScanNSpan sp1) (ScanNSpan sp2) where
+  cast (l, c, r) = (cast l, c, cast r)
+
+Cast Block (List Color) where
+  cast (c, n) = replicate n c
+
+Cast (List Block) (List Color) where
+  cast = concat . map cast
+
+Cast (List Color) (List Block) where
+  cast [] = []
+  cast (c :: cs) =
+    let
+      block = (c, S $ length $ takeWhile (== c) cs)
+      rest = assert_smaller cs $ dropWhile (== c) cs
+    in
+      block :: cast rest
+
+Cast (List Color) Integer where
+  cast [] = 0
+  cast (c :: cs) = cast c + (10 * cast cs)
+
+Cast Integer (List Color) where
+  cast 0 = []
+  cast n =
+    let t = assert_smaller n $ div n 10 in
+      cast (mod n 10) :: cast t
+
+Cast Integer (List Block) where
+  cast = cast . the (List Color) . cast
+
+Cast (List Block) Integer where
+  cast = cast . the (List Color) . cast
