@@ -12,7 +12,7 @@ checkResult (es, _, em) (gs, _, gm) =
 runPrograms : Machine _ -> Programs -> IO Bool
 runPrograms _ (_, _, []) = do putStrLn ""; pure False
 runPrograms machine (n, k, (prog, expected) :: rest) = do
-  let Just parsed = parse prog n k
+  let Just parsed = parse n k prog
     | Nothing => do
         putStrLn #"    Failed to parse: \#{prog}"#
         pure False

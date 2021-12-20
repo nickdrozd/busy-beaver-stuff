@@ -15,7 +15,7 @@ main = loop 1 where
     if prog == ""
       then putStrLn "done"
       else do
-        let Just parsed = parse prog 2 4
+        let Just parsed = parse 2 4 prog
           | Nothing => do
             putStrLn #"    Failed to parse: \#{prog}"#
             pure ()

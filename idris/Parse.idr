@@ -158,7 +158,7 @@ colorIndex (S c) (_ :: is) = colorIndex c is
       _ => (1, R, H)
 
 public export
-parse : String -> (n, k : Nat) -> Maybe Program
-parse prog n k = do
+parse : (n, k : Nat) -> String -> Maybe Program
+parse n k prog = do
   parsed <- runParser (program n k) prog
   Just $ cast parsed
