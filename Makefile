@@ -3,7 +3,7 @@
 all : machines lint test
 
 clean :
-	rm -rf yappi.* __pycache__ **/__pycache__
+	rm -rf yappi.* __pycache__ **/__pycache__ .mypy_cache
 	$(MAKE) -C machines clean
 	$(MAKE) -C idris clean
 
