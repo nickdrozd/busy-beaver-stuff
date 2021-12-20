@@ -94,6 +94,22 @@ Spannable (List unit) => Tape (ScanNSpan (List unit)) where
     let (s, (k, x, e)) = stepLeft (r, c, l) cx in
       (s, (e, x, k))
 
+implementation
+Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) where
+  blank = ((0 ** []), 0, (0 ** []))
+
+  read ((_ ** []), c,         _) = (c,  Just L)
+  read (        _, c, (_ ** [])) = (c,  Just R)
+  read (        _, c,         _) = (c, Nothing)
+
+  stepLeft (l, _, r) cx =
+    let (x, k) = pullNext l in
+      (1, (k, x, pushCurr cx 1 r))
+
+  stepRight (l, c, r) cx =
+    let (s, (k, x, e)) = stepLeft (r, c, l) cx in
+      (s, (e, x, k))
+
 ----------------------------------------
 
 public export
@@ -308,6 +324,42 @@ SkipTape NumTape where
           (steps, shifted) = assert_total $ skipLeft nextTape cx
         in
           (S steps, shifted)
+
+  skipRight (l, c, r) cx =
+    let (s, (k, x, e)) = skipLeft (r, c, l) cx in
+      (s, (e, x, k))
+
+----------------------------------------
+
+VectSpan : Type -> Type
+VectSpan unit = (k : Nat ** Vect k unit)
+
+implementation
+Spannable (VectSpan Color) where
+  pullNext (S k ** c :: cs) = (c, (k ** cs))
+  pullNext tape = (0, tape)
+
+  pushCurr cx _ (k ** tape) = (S k ** cx :: tape)
+
+  spanCells (_ ** tape) = length tape
+  spanMarks (_ ** tape) = length $ filter (/= 0) $ toList tape
+
+public export
+MicroVectTape : Type
+MicroVectTape = ScanNSpan $ VectSpan Color
+
+public export
+implementation
+SkipTape MicroVectTape where
+  skipLeft tape@((0 ** _), _, _) cx = stepLeft tape cx
+
+  skipLeft tape@((S k ** cn :: l), c, (j ** r)) cx =
+    if cn /= c then stepLeft tape cx else
+      let
+        nextTape = ((k ** l), cn, (S j ** cx :: r))
+        (steps, shifted) = assert_total $ skipLeft nextTape cx
+      in
+        (S steps, shifted)
 
   skipRight (l, c, r) cx =
     let (s, (k, x, e)) = skipLeft (r, c, l) cx in

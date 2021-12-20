@@ -64,9 +64,15 @@ runMacro = do
   putStrLn "  Macro"
   runProgramSets MacroMachine $ Short ++ Mid ++ Long
 
+runMicroVect : IO ()
+runMicroVect = do
+  putStrLn "  MicroVect"
+  runProgramSets MicroVectMachine $ Short ++ Mid
+
 main : IO ()
 main = do
   runPtr
   runNum
   runMicro
   runMacro
+  runMicroVect

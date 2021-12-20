@@ -68,3 +68,7 @@ implementation
 public export
 implementation
 [NumMachine] Machine NumTape where
+
+public export
+implementation
+[MicroVectMachine] Machine MicroVectTape where
