@@ -44,30 +44,25 @@ Mid = [l4_2, l2_4, l5_2]
 Long : List Programs
 Long = [p6_2, p3_3]
 
+runMachine : String -> Machine _ -> List Programs -> IO ()
+runMachine name machine programs = do
+  putStrLn $ "  " ++ name
+  runProgramSets machine programs
+
 runPtr : IO ()
-runPtr = do
-  putStrLn "  Ptr"
-  runProgramSets PtrMachine Short
+runPtr = runMachine "Ptr" PtrMachine Short
 
 runNum : IO ()
-runNum = do
-  putStrLn "  Num"
-  runProgramSets NumMachine Short
+runNum = runMachine "Num" NumMachine Short
 
 runMicro : IO ()
-runMicro = do
-  putStrLn "  Micro"
-  runProgramSets MicroMachine $ Short ++ Mid
+runMicro = runMachine "Micro" MicroMachine $ Short ++ Mid
 
 runMacro : IO ()
-runMacro = do
-  putStrLn "  Macro"
-  runProgramSets MacroMachine $ Short ++ Mid ++ Long
+runMacro = runMachine "Macro" MacroMachine $ Short ++ Mid ++ Long
 
 runMicroVect : IO ()
-runMicroVect = do
-  putStrLn "  MicroVect"
-  runProgramSets MicroVectMachine $ Short ++ Mid
+runMicroVect = runMachine "MicroVect" MicroVectMachine $ Short ++ Mid
 
 main : IO ()
 main = do
