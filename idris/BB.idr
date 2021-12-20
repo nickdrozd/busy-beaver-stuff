@@ -63,7 +63,6 @@ s5_2 = (5, 2, [
 public export
 l5_2 : Programs
 l5_2 = (5, 2, [
-  ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", (31315, 142, 0)),
   ("1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE", (32810047, 10240, 0)),
   ("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1RH 0LA", (47176870, 12289, 4098))])
 
