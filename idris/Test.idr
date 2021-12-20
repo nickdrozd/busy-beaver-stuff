@@ -64,6 +64,9 @@ runMacro = runMachine "Macro" MacroMachine $ Short ++ Mid ++ Long
 runMicroVect : IO ()
 runMicroVect = runMachine "MicroVect" MicroVectMachine $ Short ++ Mid
 
+runMacroVect : IO ()
+runMacroVect = runMachine "MacroVect" MacroVectMachine $ Short ++ Mid ++ Long
+
 main : IO ()
 main = do
   runPtr
@@ -71,3 +74,4 @@ main = do
   runMicro
   runMacro
   runMicroVect
+  runMacroVect

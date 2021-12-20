@@ -365,6 +365,40 @@ SkipTape MicroVectTape where
     let (s, (k, x, e)) = skipLeft (r, c, l) cx in
       (s, (e, x, k))
 
+implementation
+Spannable (VectSpan Block) where
+  pullNext tape@(_ ** []) = (0, tape)
+  pullNext (S j ** (c, n) :: xs) =
+    (c, case n of
+             (S $ S k) => (S j ** (c, S k) :: xs)
+             _         => (j ** xs))
+
+  pushCurr c k (0 ** []) = (1 ** [(c, k)])
+  pushCurr c k (S j ** (q, n) :: xs) =
+    if c == q
+      then (S j ** (q, k + n) :: xs)
+      else (S $ S j ** (c, k) :: (q, n) :: xs)
+
+  spanCells (_ ** tape) = foldl (\a, (_, n) => a + n) 0 tape
+  spanMarks (_ ** tape) = foldl (\a, (q, n) => (+) a $ if q == 0 then 0 else n) 0 tape
+
+public export
+MacroVectTape : Type
+MacroVectTape = ScanNSpan $ VectSpan Block
+
+public export
+implementation
+SkipTape MacroVectTape where
+  skipLeft tape@((0 ** _), _, _) cx = stepLeft tape cx
+
+  skipLeft tape@((S j ** ((bc, bn) :: l)), c, r) cx =
+    if bc /= c then stepLeft tape cx else
+      let (x, k) = pullNext $ the (VectSpan Block) (j ** l) in
+        (1 + bn, (k, x, pushCurr cx (1 + bn) r))
+
+  skipRight (l, c, r) cx =
+    let (s, (k, x, e)) = skipLeft (r, c, l) cx in
+      (s, (e, x, k))
 ----------------------------------------
 
 Cast sp1 sp2 => Cast (ScanNSpan sp1) (ScanNSpan sp2) where

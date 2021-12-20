@@ -72,3 +72,7 @@ implementation
 public export
 implementation
 [MicroVectMachine] Machine MicroVectTape where
+
+public export
+implementation
+[MacroVectMachine] Machine MacroVectTape where
