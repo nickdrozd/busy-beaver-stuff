@@ -3,7 +3,7 @@
 #define STATES 2
 #define COLORS 3
 
-#define X_LIMIT 300
+#define XLIMIT 300
 
 #undef INSTRUCTION
 #define INSTRUCTION(l, c0, s0, t0,              \

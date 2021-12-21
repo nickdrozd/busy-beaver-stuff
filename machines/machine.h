@@ -5,7 +5,7 @@
   SETUP_TAPE                                    \
   SETUP_COUNTS
 
-#define TAPE_LEN (X_LIMIT * 2)
+#define TAPE_LEN (XLIMIT * 2)
 
 #define CENTER_SQUARE (TAPE_LEN / 2)
 
@@ -40,7 +40,7 @@
 #define EE COUNTS[4]
 
 #define CHECK_LIMIT(COUNT) {                    \
-    if (++XX > X_LIMIT) {goto H;};              \
+    if (++XX > XLIMIT) {goto H;};              \
     COUNT = XX;                                 \
   }
 

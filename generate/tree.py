@@ -21,7 +21,7 @@ def tree_worker(steps: int, progs, output: Callable):
 
         machine = run_bb(
             prog,
-            x_limit = steps,
+            xlimit = steps,
             check_rec = 0,
             check_blanks = True,
         )

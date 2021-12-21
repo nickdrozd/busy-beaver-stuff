@@ -20,7 +20,7 @@ if __name__ == '__main__':
         machine = run_bb(
             program,
             tape = TAPE,
-            x_limit = STEPS,
+            xlimit = STEPS,
             watch_tape = PRINT,
             check_rec = RCRNC,
             check_blanks = BLANK,

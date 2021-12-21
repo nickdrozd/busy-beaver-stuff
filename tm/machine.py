@@ -102,7 +102,7 @@ class Machine:
     def run(
             self,
             tape,
-            x_limit: int = 100_000_000,
+            xlimit: int = 100_000_000,
             watch_tape: bool = False,
             check_rec: Optional[int] = None,
             check_blanks: bool = False,
@@ -154,7 +154,7 @@ class Machine:
 
             # Halt conditions ######################
 
-            if step >= x_limit:
+            if step >= xlimit:
                 self._final.xlimit = step
                 break
 

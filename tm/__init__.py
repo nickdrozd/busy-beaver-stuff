@@ -6,7 +6,7 @@ from tm.machine import Machine
 def run_bb(
         prog,
         tape = None,
-        x_limit: int = 100_000_000,
+        xlimit: int = 100_000_000,
         watch_tape: bool = False,
         check_rec: Optional[int] = None,
         check_blanks: bool = False,
@@ -20,7 +20,7 @@ def run_bb(
     machine = Machine(prog)
     machine.run(
         tape,
-        x_limit,
+        xlimit,
         watch_tape,
         check_rec,
         check_blanks,

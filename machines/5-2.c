@@ -3,7 +3,7 @@
 #define STATES 5
 #define COLORS 2
 
-#define X_LIMIT 134217728  // 2^27
+#define XLIMIT 134217728  // 2^27
 
 int a1c, a1s, a1t,
   b0c, b0s, b0t, b1c, b1s, b1t,

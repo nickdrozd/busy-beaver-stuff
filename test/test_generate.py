@@ -53,7 +53,7 @@ class TestLinRado(TestCase):
             len(self.progs),
             count)
 
-    def run_lin_rado(self, states, colors, halt, x_limit, rejects=None):
+    def run_lin_rado(self, states, colors, halt, xlimit, rejects=None):
         print(f'{states} {colors} {halt}')
 
         self.progs = {
@@ -67,7 +67,7 @@ class TestLinRado(TestCase):
             if
             run_bb(
                 prog,
-                x_limit=x_limit,
+                xlimit=xlimit,
                 check_rec=0,
                 check_blanks=False,
             ).final.xlimit is not None

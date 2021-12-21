@@ -3,7 +3,7 @@
 #define STATES 2
 #define COLORS 2
 
-#define X_LIMIT 40
+#define XLIMIT 40
 
 int a1c, a1s, a1t, b0c, b0s, b0t, b1c, b1s, b1t;
 
