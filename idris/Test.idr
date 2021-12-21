@@ -5,6 +5,9 @@ import Program
 
 %default total
 
+xlimit : Nat
+xlimit = 1_000_000_000
+
 checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool
 checkResult (es, _, em) (gs, _, gm) =
   es == gs && em == gm
@@ -17,7 +20,7 @@ runPrograms machine (n, k, (prog, expected) :: rest) = do
         putStrLn #"    Failed to parse: \#{prog}"#
         pure False
 
-  Just (steps, tape) <- runOnBlankTape @{machine} parsed
+  Just (steps, tape) <- runOnBlankTape @{machine} xlimit parsed
     | Nothing => pure False
 
   let True = checkResult expected (steps, cells tape, marks tape)

@@ -48,10 +48,8 @@ SkipTape tape => Machine tape where
         then pure $ Just (nextSteps, nextTape)
         else run k prog nextState nextTape nextSteps nextMarks
 
-  runOnBlankTape : Program -> IO (Maybe (Nat, tape))
-  runOnBlankTape prog = run limit prog A blank 0 0 where
-    limit : Nat
-    limit = 1_000_000_000
+  runOnBlankTape : (limit : Nat) -> Program -> IO (Maybe (Nat, tape))
+  runOnBlankTape limit prog = run limit prog A blank 0 0
 
 public export
 implementation
