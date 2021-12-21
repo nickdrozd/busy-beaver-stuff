@@ -1,6 +1,6 @@
 .PHONY : all clean run test
 
-all : test
+all : run test
 
 clean :
 	rm -rf build/
@@ -8,7 +8,12 @@ clean :
 run : clean
 	idris2 --version
 	idris2 Run.idr -o run
-	echo "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA\n1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB" | ./build/exec/run 2 4
+	./build/exec/run 2 2 < ../machines/2-2.test
+	./build/exec/run 3 2 < ../machines/3-2.test
+	./build/exec/run 2 3 < ../machines/2-3.test
+	./build/exec/run 2 4 < ../machines/2-4.test
+	./build/exec/run 4 2 < ../machines/4-2.test
+	./build/exec/run 5 2 < ../machines/5-2.test
 
 test : clean
 	idris2 --version
