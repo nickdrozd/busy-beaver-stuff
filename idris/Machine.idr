@@ -44,12 +44,12 @@ SkipTape tape => Machine tape where
                        Just ms => marks + ms
                        Nothing => marks
     in
-      if nextState == H || nextMarks == 0 || recurr
+      if nextState == halt || nextMarks == 0 || recurr
         then pure $ Just (nextSteps, nextTape)
         else run k prog nextState nextTape nextSteps nextMarks
 
   runOnBlankTape : (limit : Nat) -> Program -> IO (Maybe (Nat, tape))
-  runOnBlankTape limit prog = run limit prog A blank 0 0
+  runOnBlankTape limit prog = run limit prog 1 blank 0 0
 
 public export
 implementation

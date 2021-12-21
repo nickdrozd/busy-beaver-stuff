@@ -61,11 +61,8 @@ sat p = do
 
 state : Parser State
 state = do
-  s <- sat $ \x =>
-           x == 'A' || x == 'B' || x == 'C' ||
-           x == 'D' || x == 'E' || x == 'F' ||
-           x == 'H'
-  pure $ cast s
+  s <- sat isUpper
+  pure $ cast @{CastState} s
 
 shift : Parser Shift
 shift = do
@@ -109,7 +106,7 @@ program (S k) c = do
   pure $ i :: is
 
 colorIndex : Color -> Vect k Action -> Action
-colorIndex _ [] = (1, R, H)
+colorIndex _ [] = (1, R, halt)
 colorIndex 0 (i :: _) = i
 colorIndex (S c) (_ :: is) = colorIndex c is
 
@@ -118,44 +115,44 @@ colorIndex (S c) (_ :: is) = colorIndex c is
     case n of
       1 =>
         case state of
-          A => colorIndex color (index FZ prog)
-          _ => (1, R, H)
+          1 => colorIndex color (index FZ prog)
+          _ => (1, R, halt)
       2 =>
         case state of
-          A => colorIndex color $ index FZ prog
-          B => colorIndex color $ index (FS FZ) prog
-          _ => (1, R, H)
+          1 => colorIndex color $ index FZ prog
+          2 => colorIndex color $ index (FS FZ) prog
+          _ => (1, R, halt)
       3 =>
         case state of
-          A => colorIndex color $ index FZ prog
-          B => colorIndex color $ index (FS FZ) prog
-          C => colorIndex color $ index (FS $ FS FZ) prog
-          _ => (1, R, H)
+          1 => colorIndex color $ index FZ prog
+          2 => colorIndex color $ index (FS FZ) prog
+          3 => colorIndex color $ index (FS $ FS FZ) prog
+          _ => (1, R, halt)
       4 =>
         case state of
-          A => colorIndex color $ index FZ prog
-          B => colorIndex color $ index (FS FZ) prog
-          C => colorIndex color $ index (FS $ FS FZ) prog
-          D => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          _ => (1, R, H)
+          1 => colorIndex color $ index FZ prog
+          2 => colorIndex color $ index (FS FZ) prog
+          3 => colorIndex color $ index (FS $ FS FZ) prog
+          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
+          _ => (1, R, halt)
       5 =>
         case state of
-          A => colorIndex color $ index FZ prog
-          B => colorIndex color $ index (FS FZ) prog
-          C => colorIndex color $ index (FS $ FS FZ) prog
-          D => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          E => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, H)
+          1 => colorIndex color $ index FZ prog
+          2 => colorIndex color $ index (FS FZ) prog
+          3 => colorIndex color $ index (FS $ FS FZ) prog
+          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
+          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
+          _ => (1, R, halt)
       6 =>
         case state of
-          A => colorIndex color $ index FZ prog
-          B => colorIndex color $ index (FS FZ) prog
-          C => colorIndex color $ index (FS $ FS FZ) prog
-          D => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          E => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          F => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, H)
-      _ => (1, R, H)
+          1 => colorIndex color $ index FZ prog
+          2 => colorIndex color $ index (FS FZ) prog
+          3 => colorIndex color $ index (FS $ FS FZ) prog
+          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
+          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
+          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
+          _ => (1, R, halt)
+      _ => (1, R, halt)
 
 public export
 parse : (n, k : Nat) -> String -> Maybe Program

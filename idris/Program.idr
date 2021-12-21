@@ -27,40 +27,24 @@ Show Shift where
   show R = "R"
 
 public export
-data State = H | -- the halt state
-  A | B | C | -- operational states
-  D | E | F
+State : Type
+State = Nat
 
 public export
+halt : State
+halt = 0
+
+public export
+[CastState]
 Cast Char State where
-  cast 'A' = A
-  cast 'B' = B
-  cast 'C' = C
-  cast 'D' = D
-  cast 'E' = E
-  cast 'F' = F
-  cast  _  = H
-
-public export
-Eq State where
-  A == A = True
-  B == B = True
-  C == C = True
-  D == D = True
-  E == E = True
-  F == F = True
-  H == H = True
-  _ == _ = False
-
-public export
-Show State where
-  show H = "H"
-  show A = "A"
-  show B = "B"
-  show C = "C"
-  show D = "D"
-  show E = "E"
-  show F = "F"
+  cast 'A' = 1
+  cast 'B' = 2
+  cast 'C' = 3
+  cast 'D' = 4
+  cast 'E' = 5
+  cast 'F' = 6
+  cast 'H' = 0
+  cast  _  = 0
 
 public export
 Action : Type
