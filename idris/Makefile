@@ -1,21 +1,29 @@
-.PHONY : all clean run test
+.PHONY : all clean run test version
 
-all : run test
+all : clean version run test
 
 clean :
 	rm -rf build/
 
-run : clean
-	idris2 --version
-	idris2 Run.idr -o run
-	./build/exec/run 2 2 < ../machines/2-2.test
-	./build/exec/run 3 2 < ../machines/3-2.test
-	./build/exec/run 2 3 < ../machines/2-3.test
-	./build/exec/run 2 4 < ../machines/2-4.test
-	./build/exec/run 4 2 < ../machines/4-2.test
-	./build/exec/run 5 2 < ../machines/5-2.test
+IDRIS = idris2
 
-test : clean
-	idris2 --version
-	idris2 Test.idr -o test
-	time -p ./build/exec/test
+version :
+	$(IDRIS) --version
+
+% : %.idr
+	$(IDRIS) $< -o $@
+
+MACHINES = ../machines
+
+BUILD = build/exec
+
+run : Run
+	$(BUILD)/Run 2 2 < $(MACHINES)/2-2.test
+	$(BUILD)/Run 3 2 < $(MACHINES)/3-2.test
+	$(BUILD)/Run 2 3 < $(MACHINES)/2-3.test
+	$(BUILD)/Run 2 4 < $(MACHINES)/2-4.test
+	$(BUILD)/Run 4 2 < $(MACHINES)/4-2.test
+	$(BUILD)/Run 5 2 < $(MACHINES)/5-2.test
+
+test : Test
+	time -p $(BUILD)/Test
