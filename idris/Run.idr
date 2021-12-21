@@ -1,5 +1,8 @@
 module Run
 
+import System
+import Data.String
+
 import Parse
 import Machine
 import Program
@@ -8,9 +11,13 @@ xlimit : Nat
 xlimit = 1_000_000_000
 
 main : IO ()
-main = loop 1 where
-  loop : Nat -> IO ()
-  loop i = do
+main = do
+  let [_, states, colors] = stringToNatOrZ <$> !getArgs
+    | _ => do putStrLn "Couldn't parse args"; exitFailure
+  loop 1 (states, colors)
+    where
+  loop : Nat -> (Nat, Nat) -> IO ()
+  loop i params@(states, colors) = do
     putStrLn $ show i
 
     prog <- getLine
@@ -18,14 +25,14 @@ main = loop 1 where
     if prog == ""
       then putStrLn "done"
       else do
-        let Just parsed = parse 2 4 prog
+        let Just parsed = parse states colors prog
           | Nothing => do
-            putStrLn #"    Failed to parse: \#{prog}"#
+            putStrLn #"    Failed to parse: \#{prog} (\#{show states}, \#{show colors})"#
             pure ()
 
         Just (steps, _) <- runOnBlankTape @{MacroMachine} xlimit parsed
-                    | Nothing => loop $ S i
+                    | Nothing => loop (S i) params
 
         putStrLn #"    \#{prog} | \#{show steps}"#
 
-        loop $ S i
+        loop (S i) params
