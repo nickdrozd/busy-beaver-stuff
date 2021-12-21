@@ -32,11 +32,10 @@ SkipTape tape => Machine tape where
       checkEdge sh (Just dir) = sh == dir
       checkEdge  _          _ = False
 
-  run : (countdown : Nat) -> Program -> State -> tape
-        -> (steps : Nat) -> (marks : Integer)
+  run : (countdown : Nat) -> Program -> State -> tape -> (Nat, Integer)
         -> IO (Maybe (Nat, tape))
-  run 0     _    _     tape steps _     = pure Nothing
-  run (S k) prog state tape steps marks =
+  run 0     _    _     _    _              = pure Nothing
+  run (S k) prog state tape (steps, marks) =
     let
       (nextState, nextTape, stepped, marked, recurr) = exec prog state tape
       nextSteps = stepped + steps
@@ -46,10 +45,10 @@ SkipTape tape => Machine tape where
     in
       if nextState == halt || nextMarks == 0 || recurr
         then pure $ Just (nextSteps, nextTape)
-        else run k prog nextState nextTape nextSteps nextMarks
+        else run k prog nextState nextTape (nextSteps, nextMarks)
 
   runOnBlankTape : (limit : Nat) -> Program -> IO (Maybe (Nat, tape))
-  runOnBlankTape limit prog = run limit prog 1 blank 0 0
+  runOnBlankTape limit prog = run limit prog 1 blank (0, 0)
 
 public export
 implementation
