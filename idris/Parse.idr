@@ -86,7 +86,13 @@ space = do
   _ <- sat isSpace
   pure ()
 
-actions : (k : Nat) -> Parser $ Vect k Action
+ColorVect : Nat -> Type
+ColorVect k = Vect k Action
+
+ProgVect : (n, k : Nat) -> Type
+ProgVect n k = Vect n $ ColorVect k
+
+actions : (k : Nat) -> Parser $ ColorVect k
 actions 0 = pure []
 actions 1 = do i <- action; pure [i]
 actions (S k) = do
@@ -95,7 +101,7 @@ actions (S k) = do
   is <- actions k
   pure $ i :: is
 
-program : (n, k : Nat) -> Parser $ Vect n $ Vect k Action
+program : (n, k : Nat) -> Parser $ ProgVect n k
 program 0 _ = pure []
 program 1 c = do i <- actions c; pure [i]
 program (S k) c = do
@@ -105,12 +111,12 @@ program (S k) c = do
   is <- program k c
   pure $ i :: is
 
-colorIndex : Color -> Vect k Action -> Action
+colorIndex : Color -> ColorVect k -> Action
 colorIndex _ [] = (1, R, halt)
 colorIndex 0 (i :: _) = i
 colorIndex (S c) (_ :: is) = colorIndex c is
 
-{n : Nat} -> Cast (Vect n $ Vect k Action) Program where
+{n : Nat} -> Cast (ProgVect n k) Program where
   cast prog state color =
     case n of
       1 =>
