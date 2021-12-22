@@ -23,8 +23,8 @@ failWhenWrong prog expected actual =
     failWithMessage $ #"    Whoops!: \#{prog} | \#{show actual}"#
 
 runPrograms : Machine _ -> Programs -> IO ()
-runPrograms _ (_, _, []) = putStrLn ""
-runPrograms machine (n, k, (prog, expected) :: rest) = do
+runPrograms _ (_, _, _, []) = putStrLn ""
+runPrograms machine (n, k, rt, (prog, expected) :: rest) = do
   let Just parsed = parse n k prog
     | Nothing => failWithMessage $ "    Failed to parse: " ++ prog
 
@@ -35,7 +35,7 @@ runPrograms machine (n, k, (prog, expected) :: rest) = do
 
   putStrLn #"    \#{prog} | \#{show steps}"#
 
-  runPrograms machine $ assert_smaller rest (n, k, rest)
+  runPrograms machine $ assert_smaller rest (n, k, rt, rest)
 
 runProgramSets : Machine _ -> List Programs -> IO ()
 runProgramSets _ [] = pure ()
