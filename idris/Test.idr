@@ -14,23 +14,20 @@ checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool
 checkResult (es, _, em) (gs, _, gm) =
   es == gs && em == gm
 
+failWithMessage : String -> IO ()
+failWithMessage msg = do putStrLn msg; exitFailure
+
 runPrograms : Machine _ -> Programs -> IO ()
 runPrograms _ (_, _, []) = putStrLn ""
 runPrograms machine (n, k, (prog, expected) :: rest) = do
   let Just parsed = parse n k prog
-    | Nothing => do
-        putStrLn #"    Failed to parse: \#{prog}"#
-        exitFailure
+    | Nothing => failWithMessage $ "    Failed to parse: " ++ prog
 
   Just (steps, tape) <- runOnBlankTape @{machine} xlimit parsed
-    | Nothing => do
-        putStrLn #"    Hit unexpected limit: \#{prog}"#
-        exitFailure
+    | Nothing => failWithMessage $ "    Hit limit: " ++ prog
 
   let True = checkResult expected (steps, cells tape, marks tape)
-    | _ => do
-        putStrLn #"    Whoops! \#{prog} | should be \#{show (steps, tape)}"#
-        exitFailure
+    | _ => failWithMessage $ "    Whoops!: " ++ prog
 
   putStrLn #"    \#{prog} | \#{show steps}"#
 
