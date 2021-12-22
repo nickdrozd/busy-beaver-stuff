@@ -50,6 +50,23 @@ SkipTape tape => Machine tape where
   runOnBlankTape : (limit : Nat) -> Program -> IO (Maybe (Nat, tape))
   runOnBlankTape limit prog = run limit prog 1 blank (0, 0)
 
+  runDouble : Nat -> Program -> (State, State) -> (tape, tape)
+              -> (Nat, Nat) -> IO (Maybe (Nat, tape))
+  runDouble 0 _ _ _ _ = pure Nothing
+  runDouble (S k) prog (st1, st2) (tp1, tp2) (sp1, sp2) =
+    let
+      (nst1, ntp1, nsp1, _, _) = exec prog  st1  tp1
+      (nst2, ntp2, nsp2, _, _) = exec prog  st2  tp2
+      (nst3, ntp3, nsp3, _, _) = exec prog nst2 ntp2
+    in
+      if nst1 == nst3 && ntp1 == ntp3
+        then pure $ Just (sp1, tp1) else
+      runDouble k prog (nst1, nst3) (ntp1, ntp3) (sp1 + nsp1, sp2 + nsp2 + nsp3)
+
+  runDoubleOnBlank : (limit : Nat) -> Program -> IO (Maybe (Nat, tape))
+  runDoubleOnBlank lim prog = do
+    runDouble lim prog (1, 1) (blank, blank) (0, 0)
+
 public export
 implementation
 [MicroMachine] Machine MicroTape where

@@ -22,13 +22,19 @@ failWhenWrong prog expected actual =
   unless (checkResult expected actual) $ do
     failWithMessage $ #"    Whoops!: \#{prog} | \#{show actual}"#
 
+runProgram : Machine tp -> Program -> RunType -> IO $ Maybe (Nat, tp)
+runProgram machine prog Single =
+  runOnBlankTape @{machine} xlimit prog
+runProgram machine prog DoubleRec =
+  runDoubleOnBlank @{machine} xlimit prog
+
 runPrograms : Machine _ -> Programs -> IO ()
 runPrograms _ (_, _, _, []) = putStrLn ""
 runPrograms machine (n, k, rt, (prog, expected) :: rest) = do
   let Just parsed = parse n k prog
     | Nothing => failWithMessage $ "    Failed to parse: " ++ prog
 
-  Just (steps, tape) <- runOnBlankTape @{machine} xlimit parsed
+  Just (steps, tape) <- runProgram machine parsed rt
     | Nothing => failWithMessage $ "    Hit limit: " ++ prog
 
   failWhenWrong prog expected (steps, cells tape, marks tape)
@@ -46,6 +52,9 @@ runProgramSets machine (progs :: rest) = do
 Short : List Programs
 Short = [p2_2, p3_2, p2_3, s4_2, s2_4, s5_2]
 
+Rec : List Programs
+Rec = [d3_2, d2_3, d2_4]
+
 Mid : List Programs
 Mid = [l4_2, l2_4, l5_2]
 
@@ -61,19 +70,19 @@ runPtr : IO ()
 runPtr = runMachine "Ptr" PtrMachine Short
 
 runNum : IO ()
-runNum = runMachine "Num" NumMachine Short
+runNum = runMachine "Num" NumMachine $ Short ++ Rec
 
 runMicro : IO ()
-runMicro = runMachine "Micro" MicroMachine $ Short ++ Mid
+runMicro = runMachine "Micro" MicroMachine $ Short ++ Rec ++ Mid
 
 runMacro : IO ()
-runMacro = runMachine "Macro" MacroMachine $ Short ++ Mid ++ Long
+runMacro = runMachine "Macro" MacroMachine $ Short ++ Rec ++ Mid ++ Long
 
 runMicroVect : IO ()
-runMicroVect = runMachine "MicroVect" MicroVectMachine $ Short ++ Mid
+runMicroVect = runMachine "MicroVect" MicroVectMachine $ Short ++ Rec ++ Mid
 
 runMacroVect : IO ()
-runMacroVect = runMachine "MacroVect" MacroVectMachine $ Short ++ Mid ++ Long
+runMacroVect = runMachine "MacroVect" MacroVectMachine $ Short ++ Rec ++ Mid ++ Long
 
 main : IO ()
 main = do

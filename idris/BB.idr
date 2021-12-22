@@ -1,6 +1,7 @@
 module BB
 
-data RunType = Single
+public export
+data RunType = Single | DoubleRec
 
 public export
 Programs : Type
@@ -22,6 +23,12 @@ p3_2 = (3, 2, Single, [
   ("1RB 1LB  1LA 1LC  1RC 0LC", (34, 8, 0))])
 
 public export
+d3_2 : Programs
+d3_2 = (3, 2, DoubleRec, [
+  ("1RB 1RC  1LC 1RA  1RA 1LA", ( 9, 6, 6)),
+  ("1RB 1RC  1LC 0LB  1RA 1LA", (22, 7, 5))])
+
+public export
 p2_3 : Programs
 p2_3 = (2, 3, Single, [
   ("1RB 2RA 2LB  0LB 1LA 1RA", (23, 6, 4)),
@@ -29,6 +36,11 @@ p2_3 = (2, 3, Single, [
   ("1RB 2LB 1LA  2LB 2RA 0RA", (59, 9, 8)),
   ("1LB 2RB 1RA  2RB 2LA 0LA", (59, 9, 8)),
   ("1RB 2LA 0RB  1LA 0LB 1RA", (77, 9, 0))])
+
+public export
+d2_3 : Programs
+d2_3 = (2, 3, DoubleRec, [
+  ("1RB 1LA 2RA  2LA 2LB 2RB", (16, 8, 7))])
 
 public export
 s4_2 : Programs
@@ -49,6 +61,14 @@ s2_4 = (2, 4, Single, [
   ("1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB", (2476, 33, 31)),
   -- ("1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA", (32851, 194, 192)), -- skip
   ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA", (190524, 518, 0))])
+
+public export
+d2_4 : Programs
+d2_4 = (2, 4, DoubleRec, [
+  ("1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA", (6362, 84, 84)),
+  ("1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA", (7106, 90, 90)),
+  ("1RB 2LA 1RA 1LA  0LB 3LA 2RB 3RA", (9699, 79, 77)),
+  ("1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB", (21485, 142, 142))])
 
 public export
 l2_4 : Programs
