@@ -1,3 +1,5 @@
+import System
+
 import BB
 import Parse
 import Machine
@@ -12,21 +14,23 @@ checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool
 checkResult (es, _, em) (gs, _, gm) =
   es == gs && em == gm
 
-runPrograms : Machine _ -> Programs -> IO Bool
-runPrograms _ (_, _, []) = do putStrLn ""; pure False
+runPrograms : Machine _ -> Programs -> IO ()
+runPrograms _ (_, _, []) = putStrLn ""
 runPrograms machine (n, k, (prog, expected) :: rest) = do
   let Just parsed = parse n k prog
     | Nothing => do
         putStrLn #"    Failed to parse: \#{prog}"#
-        pure False
+        exitFailure
 
   Just (steps, tape) <- runOnBlankTape @{machine} xlimit parsed
-    | Nothing => pure False
+    | Nothing => do
+        putStrLn #"    Hit unexpected limit: \#{prog}"#
+        exitFailure
 
   let True = checkResult expected (steps, cells tape, marks tape)
     | _ => do
         putStrLn #"    Whoops! \#{prog} | should be \#{show (steps, tape)}"#
-        pure False
+        exitFailure
 
   putStrLn #"    \#{prog} | \#{show steps}"#
 
@@ -35,7 +39,7 @@ runPrograms machine (n, k, (prog, expected) :: rest) = do
 runProgramSets : Machine _ -> List Programs -> IO ()
 runProgramSets _ [] = pure ()
 runProgramSets machine (progs :: rest) = do
-  _ <- runPrograms machine progs
+  runPrograms machine progs
   runProgramSets machine rest
 
 Short : List Programs
