@@ -25,7 +25,7 @@ Shifter tape = Shift -> Stepper tape
 
 public export
 interface
-TapeMeasure tape => Tape tape where
+Eq tape => TapeMeasure tape => Tape tape where
   blank : tape
   read  : tape -> (Color, Maybe Shift)
 
@@ -63,7 +63,7 @@ Tape tape => SkipTape tape where
 ----------------------------------------
 
 interface
-Spannable span where
+Eq span => Spannable span where
   pullNext : span -> (Color, span)
   pushCurr : Color -> Nat -> span -> span
 
@@ -200,6 +200,12 @@ PtrTape : Type
 PtrTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
 
 implementation
+Eq PtrTape where
+  (i1 ** (p1, t1)) == (i2 ** (p2, t2)) =
+    (the Nat $ cast p1) == (the Nat $ cast p2)
+      && toList t1 == toList t2
+
+implementation
 TapeMeasure PtrTape where
   cells (_ ** (_, tape))  = length tape
   marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
@@ -333,6 +339,10 @@ SkipTape NumTape where
 
 VectSpan : Type -> Type
 VectSpan unit = (k : Nat ** Vect k unit)
+
+implementation
+Eq ty => Eq (VectSpan ty) where
+  (_ ** v1) == (_ ** v2) = toList v1 == toList v2
 
 implementation
 Spannable (VectSpan Color) where
