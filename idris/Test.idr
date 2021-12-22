@@ -17,6 +17,11 @@ checkResult (es, _, em) (gs, _, gm) =
 failWithMessage : String -> IO ()
 failWithMessage msg = do putStrLn msg; exitFailure
 
+failWhenWrong : String -> (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> IO ()
+failWhenWrong prog expected actual =
+  unless (checkResult expected actual) $ do
+    failWithMessage $ #"    Whoops!: \#{prog} | \#{show actual}"#
+
 runPrograms : Machine _ -> Programs -> IO ()
 runPrograms _ (_, _, []) = putStrLn ""
 runPrograms machine (n, k, (prog, expected) :: rest) = do
@@ -26,8 +31,7 @@ runPrograms machine (n, k, (prog, expected) :: rest) = do
   Just (steps, tape) <- runOnBlankTape @{machine} xlimit parsed
     | Nothing => failWithMessage $ "    Hit limit: " ++ prog
 
-  let True = checkResult expected (steps, cells tape, marks tape)
-    | _ => failWithMessage $ "    Whoops!: " ++ prog
+  failWhenWrong prog expected (steps, cells tape, marks tape)
 
   putStrLn #"    \#{prog} | \#{show steps}"#
 
