@@ -79,7 +79,6 @@ HALTING_FAST = {
     "1RB 1RA 1RH  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 }
 
-
 HALTING_SLOW = {
     # 3/3 Surprise-in-a-box
     "1RB 2LB 1LC  1LA 2RB 1RB  1RH 2LA 0LC": (31, 2315619),
@@ -96,7 +95,6 @@ HALTING_SLOW = {
     # # 3/3 Brady 2004 (not BB)
     # "1RB 1RH 2LC  1LC 2RB 1LB  1LA 0RB 2LA": (13949, 92649163),
 }
-
 
 QUASIHALTING = {
     # 2/2 (not better than BB)
@@ -175,7 +173,6 @@ QUASIHALTING = {
     # "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB" -- QH 14, xmas
 }
 
-
 QUASIHALTING_FIXED = {
     # 2/2
     "1RB 1LB  0LB 1LA": (2, 6, 1),
@@ -203,7 +200,6 @@ QUASIHALTING_FIXED = {
     "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": ( 30,  1854, 1),
 }
 
-
 QUASIHALTING_SLOW = {
     # 4/2
     "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": (0, 32779478, 1),
@@ -212,7 +208,6 @@ QUASIHALTING_SLOW = {
     "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB": (2747, 2501552, 1),
     "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340, 2333909, 1),
 }
-
 
 RECURRENCE_FAST = {
     # Lin-Rado examples
@@ -328,7 +323,6 @@ RECURRENCE_FAST = {
     "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA": (203,  28812,  5588),
 }
 
-
 RECURRENCE_FAST_FIXED = {
     # 2/2
     "1RB 1LB  1LA 1RA": (4, 5, 2),  # center
@@ -336,7 +330,6 @@ RECURRENCE_FAST_FIXED = {
     # 2/3
     "1RB 2LA 2RB  1LB 1LA 1RA": (8, 39, 2),  # center, >BB
 }
-
 
 BLANK_FAST = {
     # 2/2
@@ -433,7 +426,6 @@ BLANK_FAST = {
     "1RB 1LA 2LB 0LB  3LA 2RA 0RB 0LB":     22,
 }
 
-
 BLANK_SLOW = {
     # 4/2
     "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779477,
@@ -449,7 +441,6 @@ BLANK_SLOW = {
     # 6/2 inverted from 4/2
     "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": 32779477,
 }
-
 
 UNDEFINED_FAST = {
     # 4/2 BBQ
@@ -556,8 +547,6 @@ BB4_EXTENSIONS = {
     "1RB 0RC  1LA 1RA  0LC 1RD  1LD 0LB": ('LINREC', (392, 144)),
     "1RB 0RC  1LA 1RA  0RB 1RD  1LD 0LB": ('LINREC', (392, 122)),
 }
-
-
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):

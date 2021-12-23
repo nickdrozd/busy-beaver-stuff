@@ -1,12 +1,10 @@
 from typing import Optional, Tuple
 
-
 def parse(program: str) -> Tuple[Tuple[str, ...], ...]:
     return tuple(
         tuple(state.split(' '))
         for state in program.split('  ')
     )
-
 
 CompInstr = Optional[Tuple[int, int, int]]
 

@@ -4,10 +4,8 @@ from tm.tape import Tape
 from tm.parse import tcompile
 from tm.recurrence import History
 
-
 class ValidationError(Exception):
     pass
-
 
 class MachineResult:
     def __init__(self, prog: str):

@@ -11,7 +11,6 @@ from generate.graph import Graph
 from generate.tree  import run_tree_gen
 from generate.naive import yield_programs
 
-
 class TestNaive(TestCase):
     def yield_programs(self, states, colors, halt):
         self.progs = tuple(

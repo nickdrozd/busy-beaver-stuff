@@ -28,7 +28,6 @@ PROGS = {
     )
 }
 
-
 class TestProgram(TestCase):
     def assert_used_states(self, states):
         self.assertEqual(
@@ -78,7 +77,6 @@ class TestProgram(TestCase):
                 self.assertEqual(
                     norm,
                     Program(dev).normalize())
-
 
 BRANCH = {
     ("1RB 1LB  1LB 1LA", 'A1'): {
@@ -141,7 +139,6 @@ BRANCH = {
         '1RB ... ... ...  2RB ... ... ...',
     },
 }
-
 
 NORMALIZE = {
     '1RB 2LA 1RA 1LA  3LA 1RH 2RB 2RA': {

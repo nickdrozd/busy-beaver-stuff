@@ -204,7 +204,6 @@ GRAPHS = {
     ),
 }
 
-
 class TestGraph(TestCase):
     def assert_flat(self, flat):
         self.assertEqual(
