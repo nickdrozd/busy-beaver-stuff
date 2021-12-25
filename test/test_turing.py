@@ -3,6 +3,7 @@
 from unittest import TestCase, skip
 
 from tm import run_bb
+from tm.parse import tcompile, dcompile
 from generate.program import Program
 
 HALTING_FAST = {
@@ -555,6 +556,12 @@ class TuringTest(TestCase):
                 prog,
                 Program(prog).normalize())
 
+    def assert_comp(self, prog):
+        if '.' not in prog:
+            self.assertEqual(
+                prog,
+                dcompile(tcompile(prog)))
+
     def assert_marks(self, marks):
         self.assertEqual(
             self.machine.marks,
@@ -616,6 +623,8 @@ class TuringTest(TestCase):
     def run_bb(self, prog, print_prog=True, normal=True, **opts):
         if normal:
             self.assert_normal(prog)
+
+        self.assert_comp(prog)
 
         if print_prog:
             print(prog)

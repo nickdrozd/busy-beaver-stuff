@@ -6,9 +6,9 @@ def parse(program: str) -> Tuple[Tuple[str, ...], ...]:
         for state in program.split('  ')
     )
 
-CompInstr = Optional[Tuple[int, int, int]]
+Instr = Tuple[int, int, int]
 
-def tcompile(program: str) -> Tuple[Tuple[CompInstr, ...], ...]:
+def tcompile(program: str) -> Tuple[Tuple[Optional[Instr], ...], ...]:
     return tuple(
         tuple(
             (
@@ -21,4 +21,16 @@ def tcompile(program: str) -> Tuple[Tuple[CompInstr, ...], ...]:
             for action in instr
         )
         for instr in parse(program)
+    )
+
+def dcompile(comp: Tuple[Tuple[Instr]]) -> str:
+    def convert_instr(instr: Instr) -> str:
+        # pylint: disable = invalid-name
+        pr, sh, tr = instr
+
+        return str(pr) + ('R' if sh else 'L') + chr(65 + tr)
+
+    return '  '.join(
+        ' '.join(map(convert_instr, instrs))
+        for instrs in comp
     )
