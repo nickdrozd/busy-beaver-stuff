@@ -56,10 +56,13 @@ Rec : List Programs
 Rec = [d3_2, d2_3, d2_4]
 
 Mid : List Programs
-Mid = [l4_2, l2_4, l5_2]
+Mid = [l4_2, l2_4, l5_2, p10_4, p10_8]
 
 Long : List Programs
 Long = [p6_2, p3_3]
+
+LongLong : List Programs
+LongLong = [p6_9]
 
 runMachine : String -> Machine _ -> List Programs -> IO ()
 runMachine name machine programs = do

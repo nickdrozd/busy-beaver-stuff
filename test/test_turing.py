@@ -1,4 +1,4 @@
-# pylint: disable = attribute-defined-outside-init
+# pylint: disable = attribute-defined-outside-init, line-too-long
 
 from unittest import TestCase, skip
 
@@ -93,8 +93,11 @@ HALTING_SLOW = {
     # 5/2 BB
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (4098, 47176870),
 
-    # # 3/3 Brady 2004 (not BB)
-    # "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 0RB 2LA": (13949, 92649163),
+    # 10/4 derived from 5/2 BB
+    "1RB 1LC 2LC 1RD  1LC 3LE 0LE 1LF  3RG 0LH 1RG 2R_  1RG 1RD 1RB 0LH  3R_ 2LC 1R_ 1RB  1RD 1LF 1LC 1LH  2LH 1LF 2LF 1LH  3RD 3LE 1RD 1LF  2R_ 3LH 0LH 1R_  3RB 1RD 1RB 3RD": (4097, 23587667),
+
+    # 10/8 derived from 5/2 BB
+    "1RB 1LC 2LC 3LC 4LC 2LC 1RD 1RE  2LF 1LG 2LG 3LG 4LG 3LF 4LF 1LF  5RB 2LC 3RB 4R_ 1RB 6R_ 7RB 1RB  4LC 7LH 0LH 5LH 6LH 1LC 4LG 1LG  7LH 1RE 1RB 2LC 1RD 1LG 0LF 5LF  5RE 5LF 3RE 1LG 1RE 1LF 7RE 3R_  7RE 1LG 1RE 1LC 7LH 1RE 1LG 1LF  5R_ 6LH 3R_ 1RD 1R_ 7RD 7R_ 4LG  2R_ 7LF 0LF 5LF 6LF 3R_ 4R_ 1R_  5RD 1RE 3RD 3RE 1RD 5RE 7RD 7RE": (4097, 15721562),
 }
 
 QUASIHALTING = {
@@ -172,6 +175,10 @@ QUASIHALTING = {
 
     # "1RB 3LA 1LA 1RA  2LB 2RA 0RB 3RB" -- QH 77, xmas
     # "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB" -- QH 14, xmas
+
+    # 6/8 derived from 3/2-rec champ
+    "1LB ... ... ... ... ... ... ...  2RC ... 3RD 1RC ... 4LE 5RC ...  6LF 6RD 5LF 1LB ... ... ... ...  7LF 5LF ... 6LF 2LB 1LB 3LB 0LB  0RD 1LB 3RD ... ... 3LB ... ...  ... 1LB 3RD 6RD ... 3LB 4LE ...": (5, 33, 24),
+
 }
 
 QUASIHALTING_FIXED = {
@@ -199,6 +206,9 @@ QUASIHALTING_FIXED = {
     "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA": ( 84,  6443, 2),  # QH 6362
     "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB": ( 31,  2476, 1),
     "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": ( 30,  1854, 1),
+
+    # 7/8 derived from 4/2-2819
+    "1LB 2LC 1RD ... ... 3RE 3LB 3RF  0RD ... ... 1RD 2RD ... 3RA ...  4RE 4LC 5LG 3RD 4RD ... 6RD ...  0RD 2LC 7LG ... 5LG 6LC ... 0LC  4LC ... 3RA ... 1LB 5LB 3RD ...  7LG ... ... ... ... 1LB ... ...  6RA ... 4RA 1LB 5LG ... 3RA ...": (24, 944, 1),
 }
 
 QUASIHALTING_SLOW = {
