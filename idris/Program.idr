@@ -44,8 +44,12 @@ Cast Char State where
   cast 'D' = 4
   cast 'E' = 5
   cast 'F' = 6
-  cast 'G' = 6
-  cast 'H' = 7
+  cast 'G' = 7
+  cast 'H' = 8
+  cast 'I' = 9
+  cast 'J' = 10
+  cast 'K' = 11
+  cast 'L' = 12
   cast  _  = 0
 
 public export
