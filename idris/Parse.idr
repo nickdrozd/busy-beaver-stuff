@@ -158,6 +158,27 @@ colorIndex (S c) (_ :: is) = colorIndex c is
           5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
           6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
           _ => (1, R, halt)
+      7 =>
+        case state of
+          1 => colorIndex color $ index FZ prog
+          2 => colorIndex color $ index (FS FZ) prog
+          3 => colorIndex color $ index (FS $ FS FZ) prog
+          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
+          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
+          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
+          7 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS FZ) prog
+          _ => (1, R, halt)
+      8 =>
+        case state of
+          1 => colorIndex color $ index FZ prog
+          2 => colorIndex color $ index (FS FZ) prog
+          3 => colorIndex color $ index (FS $ FS FZ) prog
+          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
+          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
+          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
+          7 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS FZ) prog
+          8 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
+          _ => (1, R, halt)
       _ => (1, R, halt)
 
 public export
