@@ -196,7 +196,8 @@ class Program:
         return str(self)
 
     def normalize(self) -> str:
-        self.normalize_states()
-        self.normalize_colors()
+        for _ in self.colors:
+            self.normalize_states()
+            self.normalize_colors()
 
         return str(self)
