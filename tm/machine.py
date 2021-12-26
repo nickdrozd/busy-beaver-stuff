@@ -50,9 +50,12 @@ class MachineResult:
 
 class Machine:
     def __init__(self, prog):
-        prog = prog.strip() if isinstance(prog, str) else str(prog)
+        prog = (
+            prog.strip() if isinstance(prog, str) else
+            prog if isinstance(prog, tuple) else str(prog)
+        )
         self._prog = prog
-        self._comp = tcompile(prog)
+        self._comp = tcompile(prog) if isinstance(prog, str) else prog
         self._tape = None
         self._state = None
         self._steps = None

@@ -4,6 +4,7 @@ from unittest import TestCase, skip
 
 from tm import run_bb
 from tm.parse import tcompile, dcompile
+from generate.macro import MacroConverter
 from generate.program import Program
 
 HALTING_FAST = {
@@ -86,6 +87,9 @@ HALTING_SLOW = {
 
     # 2/4 BB
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (2050, 3932964),
+
+    # 4/16 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(2): (1026, 1965975),
 
     # 3/3 copy of 2/4 BB
     "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
@@ -564,13 +568,13 @@ BB4_EXTENSIONS = {
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
-        if not prog.startswith('0'):
+        if isinstance(prog, str) and not prog.startswith('0'):
             self.assertEqual(
                 prog,
                 Program(prog).normalize())
 
     def assert_comp(self, prog):
-        if '.' not in prog:
+        if isinstance(prog, str) and '.' not in prog:
             self.assertEqual(
                 prog,
                 dcompile(tcompile(prog)))
