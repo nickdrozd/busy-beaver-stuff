@@ -10,10 +10,7 @@ class Tape:
 
     def __repr__(self):
         squares = [
-            '#' if square == 1 else
-            '!' if square == 2 else
-            '@' if square == 3 else
-            '_' # if square == 0
+            '_' if square == 0 else str(square)
             for square in self._list
         ]
 
