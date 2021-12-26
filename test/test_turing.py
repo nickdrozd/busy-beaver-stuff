@@ -218,6 +218,9 @@ QUASIHALTING_SLOW = {
     # 2/4
     "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB": (2747, 2501552, 1),
     "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340, 2333909, 1),
+
+    # 7/7 from 4/2 QH
+    "1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...": (0, 10925753, 1),
 }
 
 RECURRENCE_FAST = {
