@@ -56,7 +56,7 @@ Rec : List Programs
 Rec = [d3_2, d2_3, d2_4]
 
 Mid : List Programs
-Mid = [l4_2, l2_4, l5_2, p10_4, p10_8]
+Mid = [l4_2, l2_4, l5_2, p8_4, p5_5]
 
 Long : List Programs
 Long = [p6_2, p3_3]
