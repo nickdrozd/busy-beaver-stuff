@@ -128,7 +128,7 @@ class TestLinRado(TestCase):
             3, 2, 0,
             126,
             rejects=[AB_LOOP] + [
-                prog.replace('1RH', '...')
+                prog.replace('1R_', '...')
                 for prog in HOLDOUTS_32H
             ],
         )
@@ -144,7 +144,7 @@ class TestLinRado(TestCase):
             2, 3, 0,
             223,  # 220
             rejects=[
-                prog.replace('1RH', '...')
+                prog.replace('1R_', '...')
                 for prog in HOLDOUTS_23H
             ],
         )
@@ -171,7 +171,7 @@ class TestTree(TestCase):
         while True:  # yuck -- pylint: disable = while-used
             try:
                 prog = queue.get(timeout=.5)
-                out.add(prog.replace('...', '1RH'))
+                out.add(prog.replace('...', '1R_'))
             except Empty:
                 break
 
@@ -209,7 +209,7 @@ class TestTree(TestCase):
             q22,
             HOLDOUTS_22Q)
 
-        h32.add('1RB 0LC  0LA 0RA  1LA 1RH')
+        h32.add('1RB 0LC  0LA 0RA  1LA 1R_')
 
         self.assertEqual(
             h32,
@@ -230,7 +230,7 @@ class TestTree(TestCase):
             if (dots := prog.count('...')) == 0:
                 q23.put(prog)
             elif dots == 1:
-                h23.put(prog.replace('...', '1RH'))
+                h23.put(prog.replace('...', '1R_'))
 
         run_tree_gen(
             states = 2,
@@ -329,7 +329,7 @@ def lr_convert(rado_string):
         v_sh = 'L' if int(sh) == 0 else 'R'
 
         v_tr = (
-            'H' if (tr := int(''.join(tr), 2)) == 0
+            '_' if (tr := int(''.join(tr), 2)) == 0
             else chr(tr + 64)
         )
 

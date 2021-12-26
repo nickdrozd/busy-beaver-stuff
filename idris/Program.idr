@@ -37,13 +37,15 @@ halt = 0
 public export
 [CastState]
 Cast Char State where
+  cast '_' = 0
   cast 'A' = 1
   cast 'B' = 2
   cast 'C' = 3
   cast 'D' = 4
   cast 'E' = 5
   cast 'F' = 6
-  cast 'H' = 0
+  cast 'G' = 6
+  cast 'H' = 7
   cast  _  = 0
 
 public export

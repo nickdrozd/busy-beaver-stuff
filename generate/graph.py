@@ -9,6 +9,8 @@ COLORS = (
     'black',
 )
 
+HALT = '_'
+
 class Graph:
     def __init__(self, program: str):
         self.program = program
@@ -39,7 +41,7 @@ class Graph:
     @property
     def exit_points(self) -> Dict[str, Set[str]]:
         return {
-            state: set(connections).difference('H').difference('.')
+            state: set(connections).difference(HALT).difference('.')
             for state, connections in self.arrows.items()
         }
 
@@ -52,7 +54,7 @@ class Graph:
 
         for state, exits in self.arrows.items():
             for exit_point in exits:
-                if exit_point == 'H':
+                if exit_point == HALT:
                     continue
 
                 try:
@@ -114,7 +116,7 @@ class Graph:
             reachable_from_x = set(self.arrows[state]).difference(state)
 
             for _ in range(len(states.difference(state))):
-                reachable_from_x.discard('H')
+                reachable_from_x.discard(HALT)
 
                 reachable = {
                     node

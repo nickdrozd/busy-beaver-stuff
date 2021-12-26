@@ -61,7 +61,7 @@ sat p = do
 
 state : Parser State
 state = do
-  s <- sat isUpper
+  s <- sat $ \x => isUpper x || x == '_'
   pure $ cast @{CastState} s
 
 shift : Parser Shift

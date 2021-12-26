@@ -261,7 +261,7 @@ class Machine:
 
             # Halt conditions ######################
 
-            if state == 7:  # ord('H') - 65
+            if state == 30:  # ord('_') - 65
                 break
 
             if check_blanks and marks == 0:
@@ -269,7 +269,7 @@ class Machine:
 
             # End of main loop #####################
 
-        if state == 7:  # ord('H') - 65
+        if state == 30:  # ord('_') - 65
             self._final.halted = step
 
         if check_blanks and marks == 0:

@@ -2,7 +2,7 @@ from itertools import product
 import re
 
 SHIFTS = 'R', 'L'
-HALT   = 'H'
+HALT   = '_'
 
 def yield_all_programs(state_count, color_count, halt=False):
     states = tuple(map(chr, range(65, 65 + state_count)))
@@ -10,7 +10,7 @@ def yield_all_programs(state_count, color_count, halt=False):
 
     actions = filter(
         (
-            lambda action: action[2] != HALT or action == '1RH'
+            lambda action: action[2] != HALT or action == '1R_'
             if halt else
             lambda action: action
         ),
@@ -51,7 +51,7 @@ def yield_all_programs(state_count, color_count, halt=False):
 def b0_halt(colors):
     return '  '.join([
         ' '.join(('...' for _ in range(colors))),
-        '..H',
+        '.._',
     ])
 
 

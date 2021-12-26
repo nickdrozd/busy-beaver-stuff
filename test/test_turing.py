@@ -7,93 +7,93 @@ from generate.program import Program
 
 HALTING_FAST = {
     # 2/2 BB
-    "1RB 1LB  1LA 1RH": (4, 6),
-    "1RB 0LB  1LA 1RH": (3, 6),
-    "1RB 1RH  1LB 1LA": (3, 6),
-    "1RB 1RH  0LB 1LA": (2, 6),
+    "1RB 1LB  1LA 1R_": (4, 6),
+    "1RB 0LB  1LA 1R_": (3, 6),
+    "1RB 1R_  1LB 1LA": (3, 6),
+    "1RB 1R_  0LB 1LA": (2, 6),
 
     # 3/2 BB
-    "1RB 1RH  1LB 0RC  1LC 1LA": (5, 21),  # shift
-    "1RB 1RH  0LC 0RC  1LC 1LA": (5, 20),
-    "1RB 1LA  0RC 1RH  1LC 0LA": (5, 20),
-    "1RB 1RA  0RC 1RH  1LC 0LA": (5, 19),
-    "1RB 0RA  0RC 1RH  1LC 0LA": (4, 19),
-    "1RB 1LC  1RC 1RH  1LA 0LB": (6, 11),  # sigma
+    "1RB 1R_  1LB 0RC  1LC 1LA": (5, 21),  # shift
+    "1RB 1R_  0LC 0RC  1LC 1LA": (5, 20),
+    "1RB 1LA  0RC 1R_  1LC 0LA": (5, 20),
+    "1RB 1RA  0RC 1R_  1LC 0LA": (5, 19),
+    "1RB 0RA  0RC 1R_  1LC 0LA": (4, 19),
+    "1RB 1LC  1RC 1R_  1LA 0LB": (6, 11),  # sigma
 
     # 2/3 BB
-    "1RB 2LB 1RH  2LA 2RB 1LB": (9, 38),
-    "1RB 0LB 1RH  2LA 1RB 1RA": (8, 29),
-    "0LB 2RB 1RH  1RA 1LB 1LA": (6, 27),
-    "1RB 1LA 1LB  0LA 2RA 1RH": (6, 26),
-    "1RB 2LA 1RH  1LB 1LA 0RA": (6, 26),
+    "1RB 2LB 1R_  2LA 2RB 1LB": (9, 38),
+    "1RB 0LB 1R_  2LA 1RB 1RA": (8, 29),
+    "0LB 2RB 1R_  1RA 1LB 1LA": (6, 27),
+    "1RB 1LA 1LB  0LA 2RA 1R_": (6, 26),
+    "1RB 2LA 1R_  1LB 1LA 0RA": (6, 26),
 
     # 4/2 BB
-    "1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA": (13, 107),  # shift
-    "1RB 1LC  1LD 0RB  1RH 0LD  1RA 1LA": ( 9,  97),
-    "1RB 0RC  1LA 1RA  1RH 1RD  1LD 0LB": (13,  96),  # sigma
-    "1RB 1LB  0LC 0RD  1RH 1LA  1RA 0LA": ( 6,  96),
-    "1RB 1LC  0LD 0RD  1RH 0LA  1LD 1LA": (11,  84),
+    "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": (13, 107),  # shift
+    "1RB 1LC  1LD 0RB  1R_ 0LD  1RA 1LA": ( 9,  97),
+    "1RB 0RC  1LA 1RA  1R_ 1RD  1LD 0LB": (13,  96),  # sigma
+    "1RB 1LB  0LC 0RD  1R_ 1LA  1RA 0LA": ( 6,  96),
+    "1RB 1LC  0LD 0RD  1R_ 0LA  1LD 1LA": (11,  84),
 
     # 2/4 Runners-up
-    "1RB 2LA 1RA 1LA  3LA 1RH 2RB 2RA": (90, 7195),
-    "1RB 2LA 1RA 1LA  3LA 1RH 2RB 2LA": (84, 6445),
-    "1RB 2LA 1RA 1LA  3LA 1RH 2RB 3RA": (84, 6445),
-    "1RB 2RB 3LA 2RA  1LA 3RB 1RH 1LB": (60, 2351),
+    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2RA": (90, 7195),
+    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2LA": (84, 6445),
+    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 3RA": (84, 6445),
+    "1RB 2RB 3LA 2RA  1LA 3RB 1R_ 1LB": (60, 2351),
 
     # Milton Green (1964)
-    "1RB 1LA  0LH 1RB": (1, 2),
-    "1RB 1LH  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": (35, 436),
+    "1RB 1LA  0L_ 1RB": (1, 2),
+    "1RB 1L_  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": (35, 436),
 
     # Lynn (1971)
-    "1RB 1RA  1LC 0LD  0RA 1LB  1RH 0LE  1RC 1RB": (15, 435),
-    "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  1RH 1RD": (22, 292),
-    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB 1RH": (22, 217),
+    "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB": (15, 435),
+    "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  1R_ 1RD": (22, 292),
+    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB 1R_": (22, 217),
     # Lynn reports 522 steps
-    "1RB 0LB  1LC 1RH  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD": (42, 521),
+    "1RB 0LB  1LC 1R_  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD": (42, 521),
 
     # Uwe (1981)
 
     # Castor diligentissimus et primus et perpetuus (Castor schultis)
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1RH  1LC 1RA": (501, 134467),
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": (501, 134467),
 
     # Castor ministerialis: the Civil Servant Beaver, who cares most
     # for his progress, but does not produce anything.
-    "1RB 1RA  1RC 0RD  1LE 0RA  0RH 0RB  1LB 1LE": (0, 52),
+    "1RB 1RA  1RC 0RD  1LE 0RA  0R_ 0RB  1LB 1LE": (0, 52),
 
     # Castor scientificus: the Scientific Beaver, who does not produce
     # anything either, but with more effort and less effect on his
     # position.
-    "0RB 0LA  0RC 0RH  1RD 1LE  1LA 0LD  1RC 1RE": (0, 187),
+    "0RB 0LA  0RC 0R_  1RD 1LE  1LA 0LD  1RC 1RE": (0, 187),
 
     # Castor exflippus: the Beaver Freak, who tries to survive as long
     # as possible without producing anything, moving on the tape, and
     # changing his state.
-    "0RB 0LA  1RC 0RH  0LC 1RD  0LD 1RE  1LA 0LE": (0, 67),
+    "0RB 0LA  1RC 0R_  0LC 1RD  0LD 1RE  1LA 0LE": (0, 67),
 
     # 3/3
 
     # R. Blodgett
-    "1RB 1LB 2LB  1RC 1LA 0RA  1LA 2RA 1RH": (9, 57),
+    "1RB 1LB 2LB  1RC 1LA 0RA  1LA 2RA 1R_": (9, 57),
 
     # David Jefferson
-    "1RB 1RA 1RH  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
+    "1RB 1RA 1R_  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 }
 
 HALTING_SLOW = {
     # 3/3 Surprise-in-a-box
-    "1RB 2LB 1LC  1LA 2RB 1RB  1RH 2LA 0LC": (31, 2315619),
+    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (31, 2315619),
 
     # 2/4 BB
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1RH": (2050, 3932964),
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (2050, 3932964),
 
     # 3/3 copy of 2/4 BB
-    "1RB 1LC 1RH  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
+    "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
 
     # 5/2 BB
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1RH 0LA": (4098, 47176870),
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (4098, 47176870),
 
     # # 3/3 Brady 2004 (not BB)
-    # "1RB 1RH 2LC  1LC 2RB 1LB  1LA 0RB 2LA": (13949, 92649163),
+    # "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 0RB 2LA": (13949, 92649163),
 }
 
 QUASIHALTING = {
@@ -511,7 +511,7 @@ UNDEFINED_SLOW = {
 }
 
 BB4_EXTENSIONS = {
-    "1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA": ('HALTED', 107),
+    "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": ('HALTED', 107),
     "1RB 1LB  1LA 0LC  0LC 1LD  1RD 0RA": ('QSIHLT', (106, 1)),
     "1RB 1LB  1LA 0LC  1LC 1LD  1RD 0RA": ('QSIHLT', (106, 1)),
     "1RB 1LB  1LA 0LC  0LB 1LD  1RD 0RA": ('LINREC', (24, 96)),
@@ -529,7 +529,7 @@ BB4_EXTENSIONS = {
     "1RB 1LB  1LA 0LC  0LA 1LD  1RD 0RA": ('LINREC', (403, 122)),
     "1RB 1LB  1LA 0LC  0RC 1LD  1RD 0RA": ('LINREC', (403, 144)),
 
-    "1RB 0RC  1LA 1RA  1RH 1RD  1LD 0LB": ('HALTED', 96),
+    "1RB 0RC  1LA 1RA  1R_ 1RD  1LD 0LB": ('HALTED', 96),
     "1RB 0RC  1LA 1RA  1RC 1RD  1LD 0LB": ('QSIHLT', (95, 1)),
     "1RB 0RC  1LA 1RA  0RC 1RD  1LD 0LB": ('QSIHLT', (95, 1)),
     "1RB 0RC  1LA 1RA  0RA 1RD  1LD 0LB": ('LINREC', (0, 96)),

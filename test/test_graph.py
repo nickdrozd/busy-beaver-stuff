@@ -10,8 +10,8 @@ A, B, C, D, E = "A", "B", "C", "D", "E"
 
 GRAPHS = {
     # 2 2
-    "1RB 1LB  1LA 1RH": (
-        "B B A H",
+    "1RB 1LB  1LA 1R_": (
+        "B B A _",
         1, 1, 1,
         {A: {B}, B: {A}},
         {A: {B}, B: {A}},
@@ -42,14 +42,14 @@ GRAPHS = {
         {A: set(), B: {A, B, C}, C: {B, C}},
         {A: {B}, B: {B, C}, C: {B, C}},
     ),
-    "1RB 1RH  1LB 0RC  1LC 1LA": (
-        "B H B C C A",
+    "1RB 1R_  1LB 0RC  1LC 1LA": (
+        "B _ B C C A",
         1, 1, 0,
         {A: {C}, B: {A, B}, C: {B, C}},
         {A: {B}, B: {B, C}, C: {A, C}},
     ),
-    "1RC 1RH  1LB 0RC  1LB 1LA": (
-        "C H B C B A",
+    "1RC 1R_  1LB 0RC  1LB 1LA": (
+        "C _ B C B A",
         0, 1, 0,
         {A: {C}, B: {B, C}, C: {A, B}},
         {A: {C}, B: {B, C}, C: {A, B}},
@@ -68,8 +68,8 @@ GRAPHS = {
     ),
 
     # 2 3
-    "1RB 2LB 1RH  2LA 2RB 1LB": (
-        "B B H A B B",
+    "1RB 2LB 1R_  2LA 2RB 1LB": (
+        "B B _ A B B",
         1, 1, 0,
         {A: {B}, B: {A, B}},
         {A: {B}, B: {A, B}},
@@ -88,26 +88,26 @@ GRAPHS = {
     ),
 
     # 4 2
-    "1RB 1LB  1LA 0LC  1RH 1LD  1RD 0RA": (
-        "B B A C H D D A",
+    "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": (
+        "B B A C _ D D A",
         1, 1, 0,
         {A: {B, D}, B: {A}, C: {B}, D: {C, D}},
         {A: {B}, B: {A, C}, C: {D}, D: {A, D}},
     ),
-    "1RC 1LB  1LA 0LC  1RH 1LD  1RC 0RA": (
-        "C B A C H D C A",
+    "1RC 1LB  1LA 0LC  1R_ 1LD  1RC 0RA": (
+        "C B A C _ D C A",
         0, 1, 1,
         {A: {B, D}, B: {A}, C: {A, B, D}, D: {C}},
         {A: {B, C}, B: {A, C}, C: {D}, D: {A, C}},
     ),
-    "1RB 1LB  1LA 0LB  1RH 1LC  1RD 0RA": (
-        "B B A B H C D A",
+    "1RB 1LB  1LA 0LB  1R_ 1LC  1RD 0RA": (
+        "B B A B _ C D A",
         1, 0, 0,
         {A: {B, D}, B: {A, B}, C: {C}, D: {D}},
         {A: {B}, B: {A, B}, C: {C}, D: {A, D}},
     ),
-    "1RC 1LB  1LA 0LC  1RH 1LD  1RD 0RD": (
-        "C B A C H D D D",
+    "1RC 1LB  1LA 0LC  1R_ 1LD  1RD 0RD": (
+        "C B A C _ D D D",
         0, 0, 0,
         {A: {B}, B: {A}, C: {A, B}, D: {C, D}},
         {A: {B, C}, B: {A, C}, C: {D}, D: {D}},
@@ -138,60 +138,60 @@ GRAPHS = {
     ),
 
     # 2 4
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1RH": (
-        "B A A A B A B H",
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
+        "B A A A B A B _",
         1, 1, 0,
         {A: {A, B}, B: {A, B}},
         {A: {A, B}, B: {A, B}},
     ),
-    "1RA 2LA 1RA 1RA  1LB 1LA 3RB 1RH": (
-        "A A A A B A B H",
+    "1RA 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
+        "A A A A B A B _",
         1, 0, 0,
         {A: {A, B}, B: {B}},
         {A: {A}, B: {A, B}},
     ),
 
     # 3 3
-    "1RB 2LB 1LC  1LA 2RB 1RB  1RH 2LA 0LC": (
-        "B B C A B B H A C",
+    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (
+        "B B C A B B _ A C",
         1, 1, 0,
         {A: {B, C}, B: {A, B}, C: {A, C}},
         {A: {B, C}, B: {A, B}, C: {A, C}},
     ),
-    "1RB 2LB 1LA  1LA 2RB 1RB  1RH 2LA 0LC": (
-        "B B A A B B H A C",
+    "1RB 2LB 1LA  1LA 2RB 1RB  1R_ 2LA 0LC": (
+        "B B A A B B _ A C",
         1, 0, 0,
         {A: {A, B, C}, B: {A, B}, C: {C}},
         {A: {A, B}, B: {A, B}, C: {A, C}},
     ),
-    "1RC 2LB 1LC  1LA 2RB 1RB  1RH 2LA 0LC": (
-        "C B C A B B H A C",
+    "1RC 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (
+        "C B C A B B _ A C",
         0, 1, 0,
         {A: {B, C}, B: {A, B}, C: {A, C}},
         {A: {B, C}, B: {A, B}, C: {A, C}},
     ),
-    "1RB 1LC 1RH  1LA 1LC 2RB  1RB 2LC 1RC": (
-        "B C H A C B B C C",
+    "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (
+        "B C _ A C B B C C",
         1, 1, 0,
         {A: {B}, B: {A, B, C}, C: {A, B, C}},
         {A: {B, C}, B: {A, B, C}, C: {B, C}},
     ),
 
     # 5 2
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1RH 0LA": (
-        "B C C B D E A D H A",
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (
+        "B C C B D E A D _ A",
         1, 1, 0,
         {A: {D, E}, B: {A, B}, C: {A, B}, D: {C, D}, E: {C}},
         {A: {B, C}, B: {B, C}, C: {D, E}, D: {A, D}, E: {A}},
     ),
-    "1RB 1LC  1RC 1RB  0LE 1RD  1LA 1LD  1RH 0LA": (
-        "B C C B E D A D H A",
+    "1RB 1LC  1RC 1RB  0LE 1RD  1LA 1LD  1R_ 0LA": (
+        "B C C B E D A D _ A",
         0, 1, 0,
         {A: {D, E}, B: {A, B}, C: {A, B}, D: {C, D}, E: {C}},
         {A: {B, C}, B: {B, C}, C: {E, D}, D: {A, D}, E: {A}},
     ),
-    "1RB 1LC  1RC 1RB  1RD 0LC  1LA 1LD  1RH 0LE": (
-        "B C C B D C A D H E",
+    "1RB 1LC  1RC 1RB  1RD 0LC  1LA 1LD  1R_ 0LE": (
+        "B C C B D C A D _ E",
         1, 0, 0,
         {A: {D}, B: {A, B}, C: {A, B, C}, D: {C, D}, E: {E}},
         {A: {B, C}, B: {B, C}, C: {C, D}, D: {A, D}, E: {E}},
