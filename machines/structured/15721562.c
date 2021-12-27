@@ -10,11 +10,9 @@ int main(void)
   WRITE(1);
   RIGHT;
 
- B:
   // B0
   WRITE(2);
   LEFT;
-  goto C;
 
  C:
   switch (SCAN) {
@@ -51,7 +49,10 @@ int main(void)
       // D2
       WRITE(1);
       RIGHT;
-      goto B;
+      // B0
+      WRITE(2);
+      LEFT;
+      goto C;
     case 3:
       // D3
       WRITE(1);
