@@ -16,11 +16,6 @@ int main(void)
 
  C:
   switch (SCAN) {
-    case 0:
-      // C0
-      WRITE(3);
-      RIGHT;
-      goto D;
     case 1:
       // C1
       WRITE(3);
@@ -38,50 +33,54 @@ int main(void)
       goto H;
   }
 
- D:
-  while (SCAN == 1) {
-    // D1
-    WRITE(1);
-    RIGHT;
-  }
-
-  if (SCAN == 2) {
-    // D2
-    WRITE(1);
-    RIGHT;
-
-    // B0
-    WRITE(2);
-    LEFT;
-    goto C;
-  }
-
-  // D3
-  WRITE(1);
-  LEFT;
-
-  while (SCAN == 1) {
-    // E1
-    WRITE(1);
-    LEFT;
-  }
-
-  if (SCAN == 4) {
-    // E4
-    WRITE(1);
-    LEFT;
-    goto C;
-  }
-
-  if (SCAN == 0)
-    // E0
-    WRITE(4);
-  else
-    // E3
-    WRITE(1);
-
+  // C0
+  WRITE(3);
   RIGHT;
-  goto D;
+
+  while (1) {
+    while (SCAN == 1) {
+      // D1
+      WRITE(1);
+      RIGHT;
+    }
+
+    if (SCAN == 2) {
+      // D2
+      WRITE(1);
+      RIGHT;
+
+      // B0
+      WRITE(2);
+      LEFT;
+      goto C;
+    }
+
+    // D3
+    WRITE(1);
+    LEFT;
+
+    while (SCAN == 1) {
+      // E1
+      WRITE(1);
+      LEFT;
+    }
+
+    if (SCAN == 4) {
+      // E4
+      WRITE(1);
+      LEFT;
+      goto C;
+    }
+
+    if (SCAN == 0)
+      // E0
+      WRITE(4);
+    else
+      // E3
+      WRITE(1);
+
+    RIGHT;
+  }
 
  H:
   CHECK_STEPS;
