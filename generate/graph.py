@@ -80,6 +80,7 @@ class Graph:
             f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
             for node, targets in self.arrows.items()
             for i, target in enumerate(targets)
+            if target != '.'
         ])
 
         title = prog_format if len(prog_format) < 50 else ''
