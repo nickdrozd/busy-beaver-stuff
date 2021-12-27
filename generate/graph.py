@@ -5,8 +5,12 @@ from tm import parse
 COLORS = (
     'blue',
     'red',
-    'green',
+    'forestgreen',
+    'purple',
+    'goldenrod',
     'black',
+    'brown',
+    'deeppink',
 )
 
 HALT = '_'
