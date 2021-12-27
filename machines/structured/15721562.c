@@ -45,23 +45,21 @@ int main(void)
     RIGHT;
   }
 
-  switch (SCAN) {
-    case 2:
-      // D2
-      WRITE(1);
-      RIGHT;
-      // B0
-      WRITE(2);
-      LEFT;
-      goto C;
-    case 3:
-      // D3
-      WRITE(1);
-      LEFT;
-      goto E;
+  if (SCAN == 2) {
+    // D2
+    WRITE(1);
+    RIGHT;
+
+    // B0
+    WRITE(2);
+    LEFT;
+    goto C;
   }
 
- E:
+  // D3
+  WRITE(1);
+  LEFT;
+
   while (SCAN == 1) {
     // E1
     WRITE(1);
