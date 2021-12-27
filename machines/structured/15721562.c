@@ -39,12 +39,13 @@ int main(void)
   }
 
  D:
+  while (SCAN == 1) {
+    // D1
+    WRITE(1);
+    RIGHT;
+  }
+
   switch (SCAN) {
-    case 1:
-      // D1
-      WRITE(1);
-      RIGHT;
-      goto D;
     case 2:
       // D2
       WRITE(1);
@@ -61,17 +62,18 @@ int main(void)
   }
 
  E:
+  while (SCAN == 1) {
+    // E1
+    WRITE(1);
+    LEFT;
+  }
+
   switch (SCAN) {
     case 0:
       // E0
       WRITE(4);
       RIGHT;
       goto D;
-    case 1:
-      // E1
-      WRITE(1);
-      LEFT;
-      goto E;
     case 3:
       // E3
       WRITE(1);
