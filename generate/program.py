@@ -26,15 +26,17 @@ class Program:
         if len(slot) == 1:
             return self.prog[slot]
 
-        state, color = slot
+        state: str = slot[0]
+        color: str = slot[1]
         return self.prog[state][int(color)]
 
     def __setitem__(self, slot: str, instr: str):
         if len(slot) == 1:
-            self.prog[slot] = instr
+            self.prog[slot] = instr  # type: ignore
             return
 
-        state, color = slot
+        state: str = slot[0]
+        color: str = slot[1]
         self.prog[state][int(color)] = instr
 
     @property

@@ -1,5 +1,5 @@
 from itertools import product
-from typing import List
+from typing import List, Tuple
 
 from tm.parse import tcompile, dcompile
 from generate.program import Program
@@ -11,7 +11,7 @@ class MacroConverter:
         self.states = len(self.prog)
         self.colors = len(self.prog[0])
 
-    def macro_length(self, cells: int) -> int:
+    def macro_length(self, cells: int) -> Tuple[int, int]:
         return 2 * self.states, self.colors ** cells
 
     def macro_prog(self, cells: int) -> str:
@@ -40,7 +40,9 @@ class MacroConverter:
         for _ in range(max_config):
             scan = tape[pos]
 
-            color, shift, next_state = self.prog[state][scan]
+            assert (instr := self.prog[state][scan]) is not None
+
+            color, shift, next_state = instr
 
             tape[pos] = color
 

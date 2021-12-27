@@ -24,7 +24,7 @@ lint :
 	pylint *.py **/*.py
 
 	mypy --version
-	mypy tm
+	mypy tm generate test
 
 PYTEST = python3 -m unittest
 
