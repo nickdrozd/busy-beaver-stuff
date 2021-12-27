@@ -14,27 +14,9 @@ int main(void)
   WRITE(2);
   LEFT;
 
- C:
-  while (1) {
-    if (SCAN == 0)
-      break;
-
-    if (SCAN == 4) {
-      // C4
-      WRITE(1);
-      RIGHT;
-      goto H;
-    }
-
-    if (SCAN == 1)
-      // C1
-      WRITE(3);
-    else if (SCAN == 3)
-      // C3
-      WRITE(1);
-
-    LEFT;
-  }
+  // C1
+  WRITE(3);
+  LEFT;
 
   // C0
   WRITE(3);
@@ -55,7 +37,33 @@ int main(void)
       // B0
       WRITE(2);
       LEFT;
-      goto C;
+
+      while (1) {
+        if (SCAN == 0)
+          break;
+
+        if (SCAN == 4) {
+          // C4
+          WRITE(1);
+          RIGHT;
+          goto H;
+        }
+
+        if (SCAN == 1)
+          // C1
+          WRITE(3);
+        else if (SCAN == 3)
+          // C3
+          WRITE(1);
+
+        LEFT;
+      }
+
+      // C0
+      WRITE(3);
+      RIGHT;
+
+      continue;
     }
 
     // D3
@@ -72,7 +80,33 @@ int main(void)
       // E4
       WRITE(1);
       LEFT;
-      goto C;
+
+      while (1) {
+        if (SCAN == 0)
+          break;
+
+        if (SCAN == 4) {
+          // C4
+          WRITE(1);
+          RIGHT;
+          goto H;
+        }
+
+        if (SCAN == 1)
+          // C1
+          WRITE(3);
+        else if (SCAN == 3)
+          // C3
+          WRITE(1);
+
+        LEFT;
+      }
+
+      // C0
+      WRITE(3);
+      RIGHT;
+
+      continue;
     }
 
     if (SCAN == 0)
