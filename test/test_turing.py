@@ -656,7 +656,7 @@ class TuringTest(TestCase):
         self.assert_comp(prog)
 
         if print_prog:
-            print(prog)
+            print(prog if isinstance(prog, str) else 'COMPILED')
 
         self.machine = run_bb(prog, **opts)
         self.history = self.machine.history
@@ -681,7 +681,8 @@ class TuringTest(TestCase):
                          qsihlt=False,
                          fixdtp=False):
         for prog, (marks, steps, period) in prog_data.items():
-            print(prog)
+            if isinstance(prog, str):
+                print(prog)
 
             self.verify_lin_recurrence(
                 prog,
