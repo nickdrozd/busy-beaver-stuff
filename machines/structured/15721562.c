@@ -68,23 +68,22 @@ int main(void)
     LEFT;
   }
 
-  switch (SCAN) {
-    case 0:
-      // E0
-      WRITE(4);
-      RIGHT;
-      goto D;
-    case 3:
-      // E3
-      WRITE(1);
-      RIGHT;
-      goto D;
-    case 4:
-      // E4
-      WRITE(1);
-      LEFT;
-      goto C;
+  if (SCAN == 4) {
+    // E4
+    WRITE(1);
+    LEFT;
+    goto C;
   }
+
+  if (SCAN == 0)
+    // E0
+    WRITE(4);
+  else
+    // E3
+    WRITE(1);
+
+  RIGHT;
+  goto D;
 
  H:
   CHECK_STEPS;
