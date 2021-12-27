@@ -15,22 +15,25 @@ int main(void)
   LEFT;
 
  C:
-  switch (SCAN) {
-    case 1:
-      // C1
-      WRITE(3);
-      LEFT;
-      goto C;
-    case 3:
-      // C3
-      WRITE(1);
-      LEFT;
-      goto C;
-    case 4:
+  while (1) {
+    if (SCAN == 0)
+      break;
+
+    if (SCAN == 4) {
       // C4
       WRITE(1);
       RIGHT;
       goto H;
+    }
+
+    if (SCAN == 1)
+      // C1
+      WRITE(3);
+    else if (SCAN == 3)
+      // C3
+      WRITE(1);
+
+    LEFT;
   }
 
   // C0
