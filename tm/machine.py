@@ -108,6 +108,7 @@ class Machine:
     def run(
             self,
             tape,
+            skip = True,
             xlimit: int = 100_000_000,
             watch_tape: bool = False,
             check_rec: Optional[int] = None,
@@ -251,6 +252,9 @@ class Machine:
                     head -= 1
 
                 stepped += 1
+
+                if not skip:
+                    break
 
                 if state != next_state:
                     break

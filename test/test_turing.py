@@ -1,6 +1,6 @@
 # pylint: disable = attribute-defined-outside-init, line-too-long
 
-from unittest import TestCase, skip
+from unittest import TestCase
 
 from tm import run_bb
 from tm.parse import tcompile, dcompile
@@ -625,6 +625,7 @@ class TuringTest(TestCase):
         self.run_bb(
             prog,
             xlimit=runtime,
+            skip = False,
             samples={
                 steps - 1             : None,
                 steps                 : None,
@@ -698,6 +699,7 @@ class TuringTest(TestCase):
                     if steps < 256 else
                     steps),
                 print_prog=False,
+                skip = False,
             )
 
             self.assertEqual(
@@ -717,6 +719,7 @@ class TuringTest(TestCase):
                 xlimit=steps,
                 print_prog=False,
                 reached=False,
+                skip = False,
             )
 
             self.assert_marks(marks)
@@ -761,23 +764,19 @@ class Fast(TuringTest):
     def test_halting(self):
         self._test_halting(HALTING_FAST)
 
-    @skip
     def test_recurrence(self):
         self._test_recurrence(RECURRENCE_FAST, True)
 
-    @skip
     def test_recurrence_fixed(self):
         self._test_recurrence(
             RECURRENCE_FAST_FIXED, True,
             fixdtp=True)
 
-    @skip
     def test_quasihalting(self):
         self._test_recurrence(
             QUASIHALTING, True,
             qsihlt=True)
 
-    @skip
     def test_quasihalting_fixed(self):
         self._test_recurrence(
             QUASIHALTING_FIXED, True,
@@ -798,7 +797,6 @@ class Slow(TuringTest):
     def test_halting(self):
         self._test_halting(HALTING_SLOW)
 
-    @skip
     def test_quasihalting(self):
         self._test_recurrence(
             QUASIHALTING_SLOW, False,
