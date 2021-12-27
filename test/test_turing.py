@@ -43,7 +43,7 @@ HALTING_FAST = {
     "1RB 2RB 3LA 2RA  1LA 3RB 1R_ 1LB": (60, 2351),
 
     # Milton Green (1964)
-    "1RB 1LA  0L_ 1RB": (1, 2),
+    "1RB ...  0L_ ...": (1, 2),
     "1RB 1L_  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": (35, 436),
 
     # Lynn (1971)
@@ -153,8 +153,6 @@ QUASIHALTING = {
     "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA": (10,  108, 8),
     "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB": (10,  105, 8),
     "1RB 1LA  1RC 1LD  1RD 0RC  1LB 0LA": ( 7,  101, 8),
-    # D-initial version of BLB(4) champ
-    "1LA 1LB  1RC 1LD  1RA 1RC  0RA 0RD": ( 0,    0, 1),
 
     # 5/2
     "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE": (504, 221032, 2),
@@ -212,7 +210,7 @@ QUASIHALTING_FIXED = {
     "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": ( 30,  1854, 1),
 
     # 7/8 derived from 4/2-2819
-    "1LB 2LC 1RD ... ... 3RE 3LB 3RF  0RD ... ... 1RD 2RD ... 3RA ...  4RE 4LC 5LG 3RD 4RD ... 6RD ...  0RD 2LC 7LG ... 5LG 6LC ... 0LC  4LC ... 3RA ... 1LB 5LB 3RD ...  7LG ... ... ... ... 1LB ... ...  6RA ... 4RA 1LB 5LG ... 3RA ...": (24, 944, 1),
+    "1LB 2LC 1RD ... ... 3RE ... 3RF  0RD ... ... 1RD 2RD ... 3RA ...  4RE 4LC 5LG 3RD 4RD ... 6RD ...  0RD 2LC 7LG ... 5LG 6LC ... 0LC  4LC ... 3RA ... 1LB 5LB 3RD ...  7LG ... ... ... ... 1LB ... ...  6RA ... ... 1LB 5LG ... 3RA ...": (24, 944, 1),
 }
 
 QUASIHALTING_SLOW = {
@@ -384,7 +382,7 @@ BLANK_FAST = {
     "1RB 2RB 0RA  2LA 1LA 1LB": 27,
     "1RB 2RB 2RA  2LB 1LA 0RB": 24,
     "1RB 1LA 2RB  2LA 2RA 0LB": 24,
-    "1RB 0RB 1LA  2LA 2RA 0LB":  4,
+    "1RB 0RB ...  2LA ... 0LB":  4,
 
     # 4/2
     "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": 66345,
@@ -404,13 +402,13 @@ BLANK_FAST = {
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD":    77,
     # constructed from BB(3) shift champ
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA":    66,
-    "1RB 0RA  0LB 0LC  1RD 1LC  1RA 1LB":     3,
-    "1RB 1RC  0LD 1RA  1LB 0RD  1LA 0RC":     3,
+    "1RB ...  0LB 0LC  ... ...  ... ...":     3,
+    "1RB ...  0LC ...  ... 0RD  ... ...":     3,
 
     # 5/2
     "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB": 31315,
     "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE":  3241,
-    "1RB 1RC  1LD 0RA  0RB 1RA  1LE 1LD  1RA 0RE":   725,
+    "1RB 1RC  1LD ...  0RB 1RA  1LE 1LD  1RA 0RE":   725,
     "1RB 1LC  1RC 1LD  1RE 1RD  0RE 0LA  1LB 0LE":   362,
     "1RB 1RC  0RC 1LD  1LE 1RD  0LE 1RA  1LB 0LC":   277,
     "1RB 1LC  1LD 0LB  1RA 1RC  0RE 0LD  0RA ...":   182,
@@ -440,7 +438,7 @@ BLANK_FAST = {
     "1RB 2RB 1LA 1LB  2LB 3LA 0RB 2RA":    158,
     "1RB 1LA 2RB 1LB  3LA 0LB 1RA 2RA":     91,
     "1RB 1LA 2RB 3LB  2LA 3RA 0LB 0RB":     30,
-    "1RB 1LA 0LB 2RB  2LA 3RA 1LB 0LA":     27,
+    "1RB 1LA 0LB 2RB  2LA 3RA ... 0LA":     27,
     "1RB 1LA 2LB 0LB  3LA 2RA 0RB 0LB":     22,
 }
 
@@ -579,6 +577,19 @@ class TuringTest(TestCase):
                 prog,
                 dcompile(tcompile(prog)))
 
+    def assert_reached(self, prog):
+        if not isinstance(prog, str):
+            return
+
+        def dimension(prog):
+            comp = tcompile(prog)
+            return len(comp) * len(comp[0])
+
+        self.assertEqual(
+            dimension(prog) - len(self.reached),
+            prog.count('...'),
+            (prog, self.reached))
+
     def assert_marks(self, marks):
         self.assertEqual(
             self.machine.marks,
@@ -637,7 +648,7 @@ class TuringTest(TestCase):
         if steps >= 1:
             self.deny_lin_recurrence(steps - 1, period)
 
-    def run_bb(self, prog, print_prog=True, normal=True, **opts):
+    def run_bb(self, prog, print_prog=True, normal=True, reached=True, **opts):
         if normal:
             self.assert_normal(prog)
 
@@ -648,7 +659,11 @@ class TuringTest(TestCase):
 
         self.machine = run_bb(prog, **opts)
         self.history = self.machine.history
+        self.reached = self.machine.reached
         self.final  = self.machine.final
+
+        if reached:
+            self.assert_reached(prog)
 
     def _test_halting(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
@@ -701,6 +716,7 @@ class TuringTest(TestCase):
                 prog,
                 xlimit=steps,
                 print_prog=False,
+                reached=False,
             )
 
             self.assert_marks(marks)

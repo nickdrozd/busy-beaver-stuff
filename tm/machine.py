@@ -62,6 +62,7 @@ class Machine:
         self._marks = None
         self._final = MachineResult(prog)
         self._history = None
+        self._reached = None
 
     def __str__(self):
         return f'{self._prog} || {self._final}'
@@ -89,6 +90,10 @@ class Machine:
     @property
     def final(self):
         return self._final
+
+    @property
+    def reached(self):
+        return self._reached
 
     def print_results(self):
         print(
@@ -127,6 +132,8 @@ class Machine:
 
         marks: int = 0
 
+        reached = set()
+
         while True:  # pylint: disable = while-used
 
             # Output ###############################
@@ -136,6 +143,8 @@ class Machine:
                       Tape(lspan, scan, rspan, init, head))
 
             # Bookkeeping ##########################
+
+            action: Tuple[int, int] = state, scan
 
             if history is not None:
                 history.add_position_at_step(head, step)
@@ -161,8 +170,6 @@ class Machine:
 
             if check_rec is not None and step >= check_rec:
                 assert history is not None
-
-                action: Tuple[int, int] = state, scan
 
                 result: Optional[Tuple[int, int]] = \
                     history.check_for_recurrence(step, action)
@@ -195,6 +202,8 @@ class Machine:
             except TypeError:
                 self._final.undfnd = step, chr(state + 65) + str(scan)
                 break
+            else:
+                reached.add(action)
 
             if color:
                 if not scan:
@@ -286,3 +295,7 @@ class Machine:
         self._history = history
 
         self._final.validate_results()
+
+        self._reached = sorted(
+            chr(s + 65) + str(c)
+            for (s, c) in reached)
