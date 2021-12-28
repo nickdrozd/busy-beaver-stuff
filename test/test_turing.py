@@ -91,6 +91,18 @@ HALTING_SLOW = {
     # 4/16 from 2/4 BB
     MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(2): (1026, 1965975),
 
+    # 4/64 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(3): (684, 1310990),
+
+    # 4/256 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(4): (513, 982987),
+
+    # 4/1024 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(5): (410, 786595),
+
+    # 4/4096 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(6): (343, 655327),
+
     # 3/3 copy of 2/4 BB
     "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
 
@@ -102,6 +114,9 @@ HALTING_SLOW = {
 
     # 5/5 derived from 5/2 BB
     "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC 1R_  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721562),
+
+    # 10/4096 from 5/2 BB
+    MacroConverter("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA").macro_comp(12): (1025, 3930266),
 }
 
 QUASIHALTING = {
