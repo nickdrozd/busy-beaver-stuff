@@ -22,7 +22,7 @@ main = do
 
     prog <- getLine
 
-    if prog == ""
+    if null prog
       then putStrLn "done"
       else do
         let Just parsed = parse states colors prog
