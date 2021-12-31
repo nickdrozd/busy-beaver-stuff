@@ -22,17 +22,18 @@ main = do
 
     prog <- getLine
 
-    if null prog
-      then putStrLn "done"
-      else do
-        let Just parsed = parse states colors prog
-          | Nothing => do
-            putStrLn #"    Failed to parse: \#{prog} (\#{show states}, \#{show colors})"#
-            pure ()
+    when (null prog) $ do
+      putStrLn "done"
+      exitSuccess
 
-        Just (steps, _) <- runOnBlankTape @{MacroMachine} simLim parsed
-                    | Nothing => loop (S i) params
+    let Just parsed = parse states colors prog
+      | Nothing => do
+        putStrLn #"    Failed to parse: \#{prog} (\#{show states}, \#{show colors})"#
+        pure ()
 
-        putStrLn #"    \#{prog} | \#{show steps}"#
+    Just (steps, _) <- runOnBlankTape @{MacroMachine} simLim parsed
+      | Nothing => loop (S i) params
 
-        loop (S i) params
+    putStrLn #"    \#{prog} | \#{show steps}"#
+
+    loop (S i) params
