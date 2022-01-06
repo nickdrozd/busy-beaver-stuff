@@ -1,6 +1,6 @@
 .PHONY : all clean  machines idris lint test test-all run profile generate
 
-all : machines lint test
+all : machines idris lint test generate
 
 clean :
 	rm -rf yappi.* __pycache__ **/__pycache__ .mypy_cache
