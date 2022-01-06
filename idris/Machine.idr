@@ -23,7 +23,7 @@ SkipTape tape => Machine tape where
       (stepped, shifted) = shift dir tape cx
       marked = case (scan, cx) of
         (Z, S _) => Just $      cast stepped
-        (S _, Z) => Just $ -1 * cast stepped
+        (S _, Z) => Just $ -1 * (the Integer $ cast stepped)
         _        => Nothing
     in
       (nextState, shifted, stepped, marked, False)
