@@ -59,7 +59,7 @@ Mid : List Programs
 Mid = [l4_2, l2_4, l5_2, p8_4, p5_5, p7_7]
 
 Long : List Programs
-Long = [p6_2, p3_3]
+Long = [p6_2, p3_3, ll2_4]
 
 LongLong : List Programs
 LongLong = [p6_9]
