@@ -45,28 +45,27 @@ int main(void)
   }
 
  B:
-  switch (SCAN) {
-    case 0:
-      // B0
-      WRITE(1);
-      RIGHT;
-      goto A;
-    case 1:
+  while (SCAN == 1 || SCAN == 2) {
+    if (SCAN == 1)
       // B1
       WRITE(2);
-      RIGHT;
-      goto B;
-    case 2:
+    else if (SCAN == 2)
       // B2
       WRITE(1);
-      RIGHT;
-      goto B;
-    case 3:
-      // B3
-      WRITE(2);
-      RIGHT;
-      goto A;
+
+    RIGHT;
   }
+
+  if (SCAN == 0)
+    // B0
+    WRITE(1);
+  else if (SCAN == 3)
+    // B3
+    WRITE(2);
+
+  RIGHT;
+
+  goto A;
 
  H:
   CHECK_STEPS;
