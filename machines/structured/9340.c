@@ -20,52 +20,49 @@ int main(void)
   WRITE(1);
   RIGHT;
 
- A:
-  switch (SCAN) {
-    case 0:
-      // A0
-      WRITE(2);
-      LEFT;
-      goto A;
-    case 1:
+  while (1) {
+    while (SCAN == 0 || SCAN == 2) {
+      if (SCAN == 0) {
+        // A0
+        WRITE(2);
+        LEFT;
+      } else if (SCAN == 2) {
+        // A2
+        WRITE(0);
+        RIGHT;
+      }
+    }
+
+    if (SCAN == 1) {
       // A1
       WRITE(3);
       LEFT;
-      goto B;
-    case 2:
-      // A2
-      WRITE(0);
-      RIGHT;
-      goto A;
-    case 3:
+    } else if (SCAN == 3) {
       // A3
       WRITE(0);
       RIGHT;
-      goto B;
-  }
+    }
 
- B:
-  while (SCAN == 1 || SCAN == 2) {
-    if (SCAN == 1)
-      // B1
-      WRITE(2);
-    else if (SCAN == 2)
-      // B2
+    while (SCAN == 1 || SCAN == 2) {
+      if (SCAN == 1)
+        // B1
+        WRITE(2);
+      else if (SCAN == 2)
+        // B2
+        WRITE(1);
+
+      RIGHT;
+    }
+
+    if (SCAN == 0)
+      // B0
       WRITE(1);
+    else if (SCAN == 3)
+      // B3
+      WRITE(2);
 
     RIGHT;
   }
-
-  if (SCAN == 0)
-    // B0
-    WRITE(1);
-  else if (SCAN == 3)
-    // B3
-    WRITE(2);
-
-  RIGHT;
-
-  goto A;
 
  H:
   CHECK_STEPS;
