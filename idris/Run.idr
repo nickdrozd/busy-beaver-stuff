@@ -7,8 +7,8 @@ import Parse
 import Machine
 import Program
 
-xlimit : Nat
-xlimit = 1_000_000_000
+simLim : Nat
+simLim = 100_000_000
 
 main : IO ()
 main = do
@@ -30,7 +30,7 @@ main = do
             putStrLn #"    Failed to parse: \#{prog} (\#{show states}, \#{show colors})"#
             pure ()
 
-        Just (steps, _) <- runOnBlankTape @{MacroMachine} xlimit parsed
+        Just (steps, _) <- runOnBlankTape @{MacroMachine} simLim parsed
                     | Nothing => loop (S i) params
 
         putStrLn #"    \#{prog} | \#{show steps}"#

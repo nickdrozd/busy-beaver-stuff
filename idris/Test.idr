@@ -7,8 +7,8 @@ import Program
 
 %default total
 
-xlimit : Nat
-xlimit = 1_000_000_000
+simLim : Nat
+simLim = 50_000_000
 
 checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool
 checkResult (es, _, em) (gs, _, gm) =
@@ -24,9 +24,9 @@ failWhenWrong prog expected actual =
 
 runProgram : Machine tp -> Program -> RunType -> IO $ Maybe (Nat, tp)
 runProgram machine prog Single =
-  runOnBlankTape @{machine} xlimit prog
+  runOnBlankTape @{machine} simLim prog
 runProgram machine prog DoubleRec =
-  runDoubleOnBlank @{machine} xlimit prog
+  runDoubleOnBlank @{machine} simLim prog
 
 runPrograms : Machine _ -> Programs -> IO ()
 runPrograms _ (_, _, _, []) = putStrLn ""

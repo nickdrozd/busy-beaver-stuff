@@ -32,7 +32,7 @@ SkipTape tape => Machine tape where
       checkEdge sh (Just dir) = sh == dir
       checkEdge  _          _ = False
 
-  run : (countdown : Nat) -> Program -> State -> tape -> (Nat, Integer)
+  run : (simLim : Nat) -> Program -> State -> tape -> (Nat, Integer)
         -> IO (Maybe (Nat, tape))
   run 0     _    _     _    _              = pure Nothing
   run (S k) prog state tape (steps, marks) =
@@ -47,8 +47,8 @@ SkipTape tape => Machine tape where
         then pure $ Just (nextSteps, nextTape)
         else run k prog nextState nextTape (nextSteps, nextMarks)
 
-  runOnBlankTape : (limit : Nat) -> Program -> IO (Maybe (Nat, tape))
-  runOnBlankTape limit prog = run limit prog 1 blank (0, 0)
+  runOnBlankTape : (simLim : Nat) -> Program -> IO (Maybe (Nat, tape))
+  runOnBlankTape simLim prog = run simLim prog 1 blank (0, 0)
 
   runDouble : Nat -> Program -> (State, State) -> (tape, tape)
               -> (Nat, Nat) -> IO (Maybe (Nat, tape))
@@ -63,9 +63,9 @@ SkipTape tape => Machine tape where
         then pure $ Just (sp1, tp1) else
       runDouble k prog (nst1, nst3) (ntp1, ntp3) (sp1 + nsp1, sp2 + nsp2 + nsp3)
 
-  runDoubleOnBlank : (limit : Nat) -> Program -> IO (Maybe (Nat, tape))
-  runDoubleOnBlank lim prog = do
-    runDouble lim prog (1, 1) (blank, blank) (0, 0)
+  runDoubleOnBlank : (simLim : Nat) -> Program -> IO (Maybe (Nat, tape))
+  runDoubleOnBlank simLim prog = do
+    runDouble simLim prog (1, 1) (blank, blank) (0, 0)
 
 public export
 implementation
