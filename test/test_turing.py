@@ -625,14 +625,18 @@ class TuringTest(TestCase):
             self.history.verify_lin_recurrence(
                 steps,
                 period,
-            ))
+            ),
+            self.prog,
+        )
 
     def deny_lin_recurrence(self, steps, period):
         self.assertFalse(
             self.history.verify_lin_recurrence(
                 steps,
                 period,
-            ))
+            ),
+            self.prog,
+        )
 
     def verify_lin_recurrence(self, prog, steps, period):
         runtime = steps + (2 * period)
@@ -696,6 +700,8 @@ class TuringTest(TestCase):
                          qsihlt=False,
                          fixdtp=False):
         for prog, (marks, steps, period) in prog_data.items():
+            self.prog = prog
+
             if isinstance(prog, str):
                 print(prog)
 
