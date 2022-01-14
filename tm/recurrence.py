@@ -54,8 +54,11 @@ class History:
                 continue
 
             period = step - pstep
+            tape1 = self.tapes[pstep]
+            tape2 = self.tapes[pstep + period]
 
-            if self.verify_lin_recurrence(pstep, period):
+            if self.verify_lin_recurrence(
+                    pstep, period, tape1, tape2):
                 return pstep, period
 
         return None
@@ -63,20 +66,26 @@ class History:
     def tape_is_fixed(self, start: int) -> bool:
         return not any(self.changes[start:])
 
-    def verify_lin_recurrence(self, steps: int, period: int) -> bool:
-        tapes     = self.tapes
-        positions = self.positions
-
+    def verify_lin_recurrence(
+            self,
+            steps: int,
+            period: int,
+            tape1 = None,
+            tape2 = None,
+    ) -> bool:
         recurrence = steps + period
 
-        tape1 = tapes[steps]
-        tape2 = tapes[recurrence]
+        if tape1 is None or tape2 is None:
+            tape1 = self.tapes[steps]
+            tape2 = self.tapes[recurrence]
 
         if tape1 is None or tape2 is None:
             return False
 
         # pylint: disable = pointless-statement
         tape1[ tape2.lspan : tape2.rspan ]
+
+        positions = self.positions
 
         pos1 = positions[steps]
         pos2 = positions[recurrence]
