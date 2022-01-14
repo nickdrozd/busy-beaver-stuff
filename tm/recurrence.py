@@ -45,6 +45,9 @@ class History:
             action: Tuple[int, int]
     ) -> Optional[Tuple[int, int]]:
         for pstep in self.actions[action]:
+            if self.states[pstep] != self.states[step]:
+                continue
+
             if self.verify_lin_recurrence(pstep, step - pstep):
                 return pstep, step - pstep
 
@@ -63,13 +66,9 @@ class History:
 
     def verify_lin_recurrence(self, steps: int, period: int) -> bool:
         tapes     = self.tapes
-        states    = self.states
         positions = self.positions
 
         recurrence = steps + period
-
-        if states[steps] != states[recurrence]:
-            return False
 
         tape1 = tapes[steps]
         tape2 = tapes[recurrence]

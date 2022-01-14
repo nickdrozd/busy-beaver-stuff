@@ -621,6 +621,11 @@ class TuringTest(TestCase):
             final)
 
     def assert_lin_recurrence(self, steps, period):
+        self.assertEqual(
+            self.history.states[steps],
+            self.history.states[steps + period],
+        )
+
         self.assertTrue(
             self.history.verify_lin_recurrence(
                 steps,
@@ -630,13 +635,16 @@ class TuringTest(TestCase):
         )
 
     def deny_lin_recurrence(self, steps, period):
-        self.assertFalse(
-            self.history.verify_lin_recurrence(
-                steps,
-                period,
-            ),
-            self.prog,
-        )
+        states = self.history.states
+
+        if states[steps] == states[steps + period]:
+            self.assertFalse(
+                self.history.verify_lin_recurrence(
+                    steps,
+                    period,
+                ),
+                self.prog,
+            )
 
     def verify_lin_recurrence(self, prog, steps, period):
         runtime = steps + (2 * period)
