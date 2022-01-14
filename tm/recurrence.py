@@ -6,6 +6,7 @@ class History:
         self.tapes = [] if tapes is None else tapes
         self.beeps = []
         self.states: List[int] = []
+        self.changes: List[bool] = []
         self.positions: List[int] = []
         self.actions = defaultdict(lambda: [])
 
@@ -20,6 +21,10 @@ class History:
     def add_tape_at_step(self, tape, step: int):
         self.tapes += [tape] * (step - len(self.tapes))
         self.tapes.append(tape)
+
+    def add_change_at_step(self, change: bool, step: int):
+        self.changes += [change] * (step - len(self.changes))
+        self.changes.append(change)
 
     def calculate_beeps(
             self,

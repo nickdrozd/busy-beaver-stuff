@@ -182,6 +182,9 @@ class Machine:
             else:
                 reached.add(action)
 
+            if history is not None:
+                history.add_change_at_step(color != scan, step)
+
             if color:
                 if not scan:
                     marked = 1
