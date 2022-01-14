@@ -76,8 +76,8 @@ class History:
             tape1 = self.tapes[steps]
             tape2 = self.tapes[recurrence]
 
-        if tape1 is None or tape2 is None:
-            return False
+            if tape1 is None or tape2 is None:
+                return False
 
         # pylint: disable = pointless-statement
         tape1[ tape2.lspan : tape2.rspan ]
