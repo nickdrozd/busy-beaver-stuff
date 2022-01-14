@@ -54,46 +54,22 @@ class Machine:
             prog.strip() if isinstance(prog, str) else
             prog if isinstance(prog, tuple) else str(prog)
         )
-        self._prog = prog
+        self.program = prog
         self._comp = tcompile(prog) if isinstance(prog, str) else prog
-        self._tape = None
-        self._state = None
-        self._steps = None
-        self._marks = None
-        self._final = MachineResult(prog)
-        self._history = None
-        self._reached = None
+        self.tape    = None
+        self.state   = None
+        self.steps   = None
+        self.marks   = None
+        self.final   = MachineResult(prog)
+        self.history = None
+        self.reached = None
 
     def __str__(self):
-        return f'{self._prog} || {self._final}'
-
-    @property
-    def program(self):
-        return self._prog
-
-    @property
-    def steps(self):
-        return self._steps
-
-    @property
-    def marks(self):
-        return self._marks
+        return f'{self.program} || {self.final}'
 
     @property
     def beeps(self):
-        return self._history.calculate_beeps()
-
-    @property
-    def history(self):
-        return self._history
-
-    @property
-    def final(self):
-        return self._final
-
-    @property
-    def reached(self):
-        return self._reached
+        return self.history.calculate_beeps()
 
     def print_results(self):
         print(
@@ -166,7 +142,7 @@ class Machine:
             # Halt conditions ######################
 
             if step >= xlimit:
-                self._final.xlimit = step
+                self.final.xlimit = step
                 break
 
             if check_rec is not None and step >= check_rec:
@@ -176,21 +152,21 @@ class Machine:
                     history.check_for_recurrence(step, action)
 
                 if result is not None:
-                    self._final.linrec = start, _rec = result
+                    self.final.linrec = start, _rec = result
 
                     hc_beeps = history.calculate_beeps()
 
                     if any(st not in hc_beeps
                            for st in range(len(prog))):
-                        self._final.qsihlt = result
+                        self.final.qsihlt = result
                     else:
                         hp_beeps = history.calculate_beeps(start)
 
                         if any(hc_beeps[st] <= hp_beeps[st]
                                for st in hp_beeps):
-                            self._final.qsihlt = result
+                            self.final.qsihlt = result
 
-                    self._final.fixdtp = history.tape_is_fixed(start)
+                    self.final.fixdtp = history.tape_is_fixed(start)
 
                     break
 
@@ -201,7 +177,7 @@ class Machine:
             try:
                 color, shift, next_state = prog[state][scan]
             except TypeError:
-                self._final.undfnd = step, chr(state + 65) + str(scan)
+                self.final.undfnd = step, chr(state + 65) + str(scan)
                 break
             else:
                 reached.add(action)
@@ -286,20 +262,20 @@ class Machine:
             # End of main loop #####################
 
         if state == 30:  # ord('_') - 65
-            self._final.halted = step
+            self.final.halted = step
 
         if check_blanks and marks == 0:
-            self._final.blanks = step
+            self.final.blanks = step
 
-        self._tape = lspan, scan, rspan
-        self._steps = step
+        self.tape = lspan, scan, rspan
+        self.steps = step
 
-        self._marks = marks
+        self.marks = marks
 
-        self._history = history
+        self.history = history
 
-        self._final.validate_results()
+        self.final.validate_results()
 
-        self._reached = sorted(
+        self.reached = sorted(
             chr(s + 65) + str(c)
             for (s, c) in reached)
