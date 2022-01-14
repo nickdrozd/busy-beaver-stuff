@@ -620,61 +620,62 @@ class TuringTest(TestCase):
             self.final.blanks,
             final)
 
-    def assert_lin_recurrence(self, steps, period):
+    def assert_lin_recurrence(self, steps, recurrence):
         self.assertEqual(
             self.history.states[steps],
-            self.history.states[steps + period],
+            self.history.states[recurrence],
         )
 
         self.assertTrue(
             self.history.verify_lin_recurrence(
                 steps,
-                period,
+                recurrence,
             ),
             self.prog,
         )
 
-    def deny_lin_recurrence(self, steps, period):
+    def deny_lin_recurrence(self, steps, recurrence):
         states = self.history.states
 
-        if states[steps] == states[steps + period]:
+        if states[steps] == states[recurrence]:
             self.assertFalse(
                 self.history.verify_lin_recurrence(
                     steps,
-                    period,
+                    recurrence,
                 ),
                 self.prog,
             )
 
     def verify_lin_recurrence(self, prog, steps, period):
-        runtime = steps + (2 * period)
+        recurrence = period + steps
+        runtime    = period + recurrence
 
         self.run_bb(
             prog,
             xlimit=runtime,
             skip = False,
             samples={
-                steps - 1             : None,
-                steps                 : None,
-                steps + 1             : None,
-                steps     + period    : None,
-                steps + 1 + period    : None,
-                steps - 1 + period    : None,
-                steps     + period * 2: None,
+                steps - 1           : None,
+                steps               : None,
+                steps + 1           : None,
+                recurrence - 1      : None,
+                recurrence          : None,
+                recurrence + 1      : None,
+                recurrence + period : None,
             },
             print_prog=False,
         )
 
-        self.assert_lin_recurrence(steps, period)
-        self.assert_lin_recurrence(steps + 1, period)
-        self.assert_lin_recurrence(steps, 2 * period)
+        self.assert_lin_recurrence(    steps,     recurrence)
+        self.assert_lin_recurrence(1 + steps, 1 + recurrence)
+        self.assert_lin_recurrence(steps, period + recurrence)
 
         if period > 1:
-            self.deny_lin_recurrence(steps, period + 1)
-            self.deny_lin_recurrence(steps, period - 1)
+            self.deny_lin_recurrence(steps, 1 + recurrence)
+            self.deny_lin_recurrence(steps, recurrence - 1)
 
         if steps >= 1:
-            self.deny_lin_recurrence(steps - 1, period)
+            self.deny_lin_recurrence(steps - 1, recurrence)
 
     def run_bb(self, prog, print_prog=True, normal=True, reached=True, **opts):
         if normal:

@@ -53,13 +53,12 @@ class History:
             if self.states[pstep] != self.states[step]:
                 continue
 
-            period = step - pstep
             tape1 = self.tapes[pstep]
-            tape2 = self.tapes[pstep + period]
+            tape2 = self.tapes[step]
 
             if self.verify_lin_recurrence(
-                    pstep, period, tape1, tape2):
-                return pstep, period
+                    pstep, step, tape1, tape2):
+                return pstep, (period := step - pstep)
 
         return None
 
@@ -69,12 +68,10 @@ class History:
     def verify_lin_recurrence(
             self,
             steps: int,
-            period: int,
+            recurrence: int,
             tape1 = None,
             tape2 = None,
     ) -> bool:
-        recurrence = steps + period
-
         if tape1 is None or tape2 is None:
             tape1 = self.tapes[steps]
             tape2 = self.tapes[recurrence]
