@@ -53,8 +53,10 @@ class History:
             if self.states[pstep] != self.states[step]:
                 continue
 
-            if self.verify_lin_recurrence(pstep, step - pstep):
-                return pstep, step - pstep
+            period = step - pstep
+
+            if self.verify_lin_recurrence(pstep, period):
+                return pstep, period
 
         return None
 
