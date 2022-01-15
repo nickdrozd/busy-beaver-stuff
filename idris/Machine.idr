@@ -5,6 +5,12 @@ import public Tape
 
 %default total
 
+SimLim : Type
+SimLim = Nat
+
+Steps : Type
+Steps = Nat
+
 public export
 interface
 SkipTape tape => Machine tape where
@@ -27,8 +33,8 @@ SkipTape tape => Machine tape where
       checkEdge sh (Just dir) = sh == dir
       checkEdge  _          _ = False
 
-  run : (simLim : Nat) -> Program -> State -> tape -> Nat
-        -> IO (Maybe (Nat, tape))
+  run : SimLim -> Program -> State -> tape -> Steps
+        -> IO (Maybe (Steps, tape))
   run 0     _    _     _    _     = pure Nothing
   run (S k) prog state tape steps =
     let
@@ -39,11 +45,11 @@ SkipTape tape => Machine tape where
         then pure $ Just (nextSteps, nextTape)
         else run k prog nextState nextTape nextSteps
 
-  runOnBlankTape : (simLim : Nat) -> Program -> IO (Maybe (Nat, tape))
+  runOnBlankTape : SimLim -> Program -> IO (Maybe (Steps, tape))
   runOnBlankTape simLim prog = run simLim prog 1 blankInit 0
 
-  runDouble : Nat -> Program -> (State, State) -> (tape, tape)
-              -> (Nat, Nat) -> IO (Maybe (Nat, tape))
+  runDouble : SimLim -> Program -> (State, State) -> (tape, tape)
+              -> (Steps, Steps) -> IO (Maybe (Steps, tape))
   runDouble 0 _ _ _ _ = pure Nothing
   runDouble (S k) prog (st1, st2) (tp1, tp2) (sp1, sp2) =
     let
@@ -55,7 +61,7 @@ SkipTape tape => Machine tape where
         then pure $ Just (sp1, tp1) else
       runDouble k prog (nst1, nst3) (ntp1, ntp3) (sp1 + nsp1, sp2 + nsp2 + nsp3)
 
-  runDoubleOnBlank : (simLim : Nat) -> Program -> IO (Maybe (Nat, tape))
+  runDoubleOnBlank : SimLim -> Program -> IO (Maybe (Steps, tape))
   runDoubleOnBlank simLim prog = do
     runDouble simLim prog (1, 1) (blankInit, blankInit) (0, 0)
 
