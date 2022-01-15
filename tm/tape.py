@@ -46,6 +46,26 @@ class MicroTape:
 
         return 1
 
+    def skip(self, shift: int, color: int) -> int:
+        stepped = 0
+
+        init_scan = self.scan
+
+        side = self.rspan if shift else self.lspan
+
+        while self.scan == init_scan:  # pylint: disable=while-used
+            stepped += self.step(shift, color)
+
+            try:
+                next_square = side[-1]
+            except IndexError:
+                break
+
+            if next_square != init_scan:
+                break
+
+        return stepped
+
     def to_ptr(self):
         return PtrTape(
             self.lspan,

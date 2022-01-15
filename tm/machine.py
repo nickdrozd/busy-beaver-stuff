@@ -180,25 +180,13 @@ class Machine:
             if history is not None:
                 history.add_change_at_step(color != tape.scan, step)
 
-            stepped = 0
+            shifter = (
+                tape.skip
+                if skip and (state == next_state) else
+                tape.step
+            )
 
-            init_scan = tape.scan
-
-            side = tape.rspan if shift else tape.lspan
-
-            if (state != next_state) or not skip:
-                stepped += tape.step(shift, color)
-            else:
-                while tape.scan == init_scan:  # pylint: disable=while-used
-                    stepped += tape.step(shift, color)
-
-                    try:
-                        next_square = side[-1]
-                    except IndexError:
-                        break
-
-                    if next_square != init_scan:
-                        break
+            stepped = shifter(shift, color)
 
             state = next_state
 
