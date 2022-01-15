@@ -58,7 +58,7 @@ class History:
 
             if self.verify_lin_recurrence(
                     pstep, step, tape1, tape2):
-                return pstep, (period := step - pstep)
+                return pstep, (_period := step - pstep)
 
         return None
 
