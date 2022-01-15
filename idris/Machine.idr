@@ -48,7 +48,7 @@ SkipTape tape => Machine tape where
         else run k prog nextState nextTape (nextSteps, nextMarks)
 
   runOnBlankTape : (simLim : Nat) -> Program -> IO (Maybe (Nat, tape))
-  runOnBlankTape simLim prog = run simLim prog 1 blank (0, 0)
+  runOnBlankTape simLim prog = run simLim prog 1 blankInit (0, 0)
 
   runDouble : Nat -> Program -> (State, State) -> (tape, tape)
               -> (Nat, Nat) -> IO (Maybe (Nat, tape))
@@ -65,7 +65,7 @@ SkipTape tape => Machine tape where
 
   runDoubleOnBlank : (simLim : Nat) -> Program -> IO (Maybe (Nat, tape))
   runDoubleOnBlank simLim prog = do
-    runDouble simLim prog (1, 1) (blank, blank) (0, 0)
+    runDouble simLim prog (1, 1) (blankInit, blankInit) (0, 0)
 
 public export
 implementation

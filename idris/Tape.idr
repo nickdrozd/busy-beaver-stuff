@@ -26,8 +26,9 @@ Shifter tape = Shift -> Stepper tape
 public export
 interface
 Eq tape => TapeMeasure tape => Tape tape where
-  blank : tape
-  read  : tape -> (Color, Maybe Shift)
+  blankInit : tape
+
+  read : tape -> (Color, Maybe Shift)
 
   step : Shifter tape
   step L = stepLeft
@@ -82,7 +83,7 @@ Spannable span => TapeMeasure (ScanNSpan span) where
 
 implementation
 Spannable (List unit) => Tape (ScanNSpan (List unit)) where
-  blank = ([], 0, [])
+  blankInit = ([], 0, [])
 
   read ([], c,  _) = (c,  Just L)
   read ( _, c, []) = (c,  Just R)
@@ -98,7 +99,7 @@ Spannable (List unit) => Tape (ScanNSpan (List unit)) where
 
 implementation
 Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) where
-  blank = ((0 ** []), 0, (0 ** []))
+  blankInit = ((0 ** []), 0, (0 ** []))
 
   read ((_ ** []), c,         _) = (c,  Just L)
   read (        _, c, (_ ** [])) = (c,  Just R)
@@ -215,7 +216,7 @@ TapeMeasure PtrTape where
 public export
 implementation
 Tape PtrTape where
-  blank = (Z ** (FZ, [0]))
+  blankInit = (Z ** (FZ, [0]))
 
   read (_ ** ( FZ, c :: _)) = (c, Just L)
   read (_ ** (pos,  tape )) =
@@ -305,7 +306,7 @@ NumTape = ScanNSpan Integer
 public export
 implementation
 Tape NumTape where
-  blank = (0, 0, 0)
+  blankInit = (0, 0, 0)
 
   read (0, c, _) = (c,  Just L)
   read (_, c, 0) = (c,  Just R)
