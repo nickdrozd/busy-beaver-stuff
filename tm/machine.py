@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Tuple
 
-from tm.tape import Tape
+from tm.tape import PtrTape
 from tm.parse import tcompile
 from tm.recurrence import History
 
@@ -117,7 +117,7 @@ class Machine:
 
             if watch_tape:
                 print(f'{step : 5d} {chr(state + 65)}{scan} ',
-                      Tape(lspan, scan, rspan, init, head))
+                      PtrTape(lspan, scan, rspan, init, head))
 
             # Bookkeeping ##########################
 
@@ -130,12 +130,12 @@ class Machine:
                 if samples is not None:
                     if step in history.tapes:
                         history.tapes[step] = \
-                            Tape(lspan, scan, rspan, init, head)
+                            PtrTape(lspan, scan, rspan, init, head)
                 else:
                     history.add_tape_at_step(
                         None
                         if check_rec is None or step < check_rec else
-                        Tape(lspan, scan, rspan, init, head),
+                        PtrTape(lspan, scan, rspan, init, head),
                         step,
                     )
 

@@ -1,4 +1,4 @@
-class Tape:
+class PtrTape:
     def __init__(self, lspan, scan, rspan, init, head = 0):
         self._list = lspan + [scan] + list(reversed(rspan))
         self._init = init
