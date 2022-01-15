@@ -7,6 +7,20 @@ class MicroTape:
         self.head = 0
         self.init = len(lspan)
 
+    def blank(self) -> bool:
+        return (
+            self.scan == 0
+            and all(s == 0 for s in self.lspan)
+            and all(s == 0 for s in self.rspan)
+        )
+
+    def marks(self) -> int:
+        return (
+            (1 if self.scan != 0 else 0)
+            + sum(1 for s in self.lspan if s != 0)
+            + sum(1 for s in self.rspan if s != 0)
+        )
+
     def right(self, color):
         self.lspan.append(color)
 

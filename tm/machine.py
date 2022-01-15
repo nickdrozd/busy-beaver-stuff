@@ -58,13 +58,16 @@ class Machine:
         self.tape    = None
         self.state   = None
         self.steps   = None
-        self.marks   = None
         self.final   = MachineResult(prog)
         self.history = None
         self.reached = None
 
     def __str__(self):
         return f'{self.program} || {self.final}'
+
+    @property
+    def marks(self):
+        return self.tape.marks()
 
     @property
     def beeps(self):
@@ -102,8 +105,6 @@ class Machine:
 
         state: int = 0
         step: int = 0
-
-        marks: int = 0
 
         while True:  # pylint: disable = while-used
 
@@ -179,17 +180,6 @@ class Machine:
             if history is not None:
                 history.add_change_at_step(color != tape.scan, step)
 
-            if color:
-                if not tape.scan:
-                    marked = 1
-                else:
-                    marked = 0
-            else:
-                if tape.scan:
-                    marked = -1
-                else:
-                    marked = 0
-
             stepped = 0
 
             init_scan = tape.scan
@@ -224,14 +214,12 @@ class Machine:
 
             step += stepped
 
-            marks += (marked * stepped)
-
             # Halt conditions ######################
 
             if state == 30:  # ord('_') - 65
                 break
 
-            if check_blanks and marks == 0:
+            if check_blanks and tape.blank():
                 break
 
             # End of main loop #####################
@@ -239,13 +227,11 @@ class Machine:
         if state == 30:  # ord('_') - 65
             self.final.halted = step
 
-        if check_blanks and marks == 0:
+        if check_blanks and tape.blank():
             self.final.blanks = step
 
         self.tape = tape
         self.steps = step
-
-        self.marks = marks
 
         self.history = history
 
