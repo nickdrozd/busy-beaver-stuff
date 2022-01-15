@@ -62,6 +62,8 @@ Tape tape => SkipTape tape where
 
 ----------------------------------------
 
+%hide span
+
 interface
 Eq span => Spannable span where
   pullNext : span -> (Color, span)
