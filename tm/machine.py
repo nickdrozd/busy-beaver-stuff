@@ -187,13 +187,10 @@ class Machine:
             side = tape.rspan if shift else tape.lspan
 
             if state != next_state:
-                tape.step(shift, color)
-                stepped += 1
+                stepped += tape.step(shift, color)
             else:
                 while tape.scan == init_scan:  # pylint: disable=while-used
-                    tape.step(shift, color)
-
-                    stepped += 1
+                    stepped += tape.step(shift, color)
 
                     if not skip:
                         break
