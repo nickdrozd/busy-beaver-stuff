@@ -30,6 +30,15 @@ class MicroTape:
 
         self.head -= 1
 
+    def to_ptr(self):
+        return PtrTape(
+            self.lspan,
+            self.scan,
+            self.rspan,
+            self.init,
+            self.head,
+        )
+
 
 class PtrTape:
     def __init__(self, lspan, scan, rspan, init, head = 0):
