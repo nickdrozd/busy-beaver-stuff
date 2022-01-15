@@ -8,56 +8,48 @@ import public Tape
 public export
 interface
 SkipTape tape => Machine tape where
-  exec : Program -> State -> tape
-         -> (State, tape, Nat, Maybe Integer, Bool)
+  exec : Program -> State -> tape -> (State, tape, Nat, Bool)
   exec prog state tape =
     let
       (scan, edge) = read tape
       (cx, dir, nextState) = prog state scan
     in
       if checkEdge dir edge && state == nextState && scan == 0
-        then (nextState, tape, 0, Nothing, True)
+        then (nextState, tape, 0, True)
       else
     let
       shift = if state == nextState then skip else step
       (stepped, shifted) = shift dir tape cx
-      marked = case (scan, cx) of
-        (Z, S _) => Just $      cast stepped
-        (S _, Z) => Just $ -1 * (the Integer $ cast stepped)
-        _        => Nothing
     in
-      (nextState, shifted, stepped, marked, False)
+      (nextState, shifted, stepped, False)
     where
       checkEdge : Shift -> (Maybe Shift) -> Bool
       checkEdge sh (Just dir) = sh == dir
       checkEdge  _          _ = False
 
-  run : (simLim : Nat) -> Program -> State -> tape -> (Nat, Integer)
+  run : (simLim : Nat) -> Program -> State -> tape -> Nat
         -> IO (Maybe (Nat, tape))
-  run 0     _    _     _    _              = pure Nothing
-  run (S k) prog state tape (steps, marks) =
+  run 0     _    _     _    _     = pure Nothing
+  run (S k) prog state tape steps =
     let
-      (nextState, nextTape, stepped, marked, recurr) = exec prog state tape
+      (nextState, nextTape, stepped, recurr) = exec prog state tape
       nextSteps = stepped + steps
-      nextMarks = case marked of
-                       Just ms => marks + ms
-                       Nothing => marks
     in
-      if nextState == halt || nextMarks == 0 || recurr
+      if nextState == halt || blank nextTape || recurr
         then pure $ Just (nextSteps, nextTape)
-        else run k prog nextState nextTape (nextSteps, nextMarks)
+        else run k prog nextState nextTape nextSteps
 
   runOnBlankTape : (simLim : Nat) -> Program -> IO (Maybe (Nat, tape))
-  runOnBlankTape simLim prog = run simLim prog 1 blankInit (0, 0)
+  runOnBlankTape simLim prog = run simLim prog 1 blankInit 0
 
   runDouble : Nat -> Program -> (State, State) -> (tape, tape)
               -> (Nat, Nat) -> IO (Maybe (Nat, tape))
   runDouble 0 _ _ _ _ = pure Nothing
   runDouble (S k) prog (st1, st2) (tp1, tp2) (sp1, sp2) =
     let
-      (nst1, ntp1, nsp1, _, _) = exec prog  st1  tp1
-      (nst2, ntp2, nsp2, _, _) = exec prog  st2  tp2
-      (nst3, ntp3, nsp3, _, _) = exec prog nst2 ntp2
+      (nst1, ntp1, nsp1, _) = exec prog  st1  tp1
+      (nst2, ntp2, nsp2, _) = exec prog  st2  tp2
+      (nst3, ntp3, nsp3, _) = exec prog nst2 ntp2
     in
       if nst1 == nst3 && ntp1 == ntp3
         then pure $ Just (sp1, tp1) else
