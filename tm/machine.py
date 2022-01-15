@@ -101,13 +101,8 @@ class Machine:
 
         reached = set()
 
-        lspan, scan, rspan = tape
-
         state: int = 0
         step: int = 0
-
-        head: int = 0
-        init: int = len(lspan)
 
         marks: int = 0
 
@@ -116,26 +111,26 @@ class Machine:
             # Output ###############################
 
             if watch_tape:
-                print(f'{step : 5d} {chr(state + 65)}{scan} ',
-                      PtrTape(lspan, scan, rspan, init, head))
+                print(f'{step : 5d} {chr(state + 65)}{tape.scan} ',
+                      PtrTape(tape.lspan, tape.scan, tape.rspan, tape.init, tape.head))  # pylint: disable = line-too-long
 
             # Bookkeeping ##########################
 
-            action: Tuple[int, int] = state, scan
+            action: Tuple[int, int] = state, tape.scan
 
             if history is not None:
-                history.add_position_at_step(head, step)
+                history.add_position_at_step(tape.head, step)
                 history.add_state_at_step(state, step)
 
                 if samples is not None:
                     if step in history.tapes:
                         history.tapes[step] = \
-                            PtrTape(lspan, scan, rspan, init, head)
+                            PtrTape(tape.lspan, tape.scan, tape.rspan, tape.init, tape.head)  # pylint: disable = line-too-long
                 else:
                     history.add_tape_at_step(
                         None
                         if check_rec is None or step < check_rec else
-                        PtrTape(lspan, scan, rspan, init, head),
+                        PtrTape(tape.lspan, tape.scan, tape.rspan, tape.init, tape.head),  # pylint: disable = line-too-long
                         step,
                     )
 
@@ -175,60 +170,39 @@ class Machine:
             # Machine operation ####################
 
             try:
-                color, shift, next_state = prog[state][scan]
+                color, shift, next_state = prog[state][tape.scan]
             except TypeError:
-                self.final.undfnd = step, chr(state + 65) + str(scan)
+                instr = chr(state + 65) + str(tape.scan)
+                self.final.undfnd = step, instr
                 break
             else:
                 reached.add(action)
 
             if history is not None:
-                history.add_change_at_step(color != scan, step)
+                history.add_change_at_step(color != tape.scan, step)
 
             if color:
-                if not scan:
+                if not tape.scan:
                     marked = 1
                 else:
                     marked = 0
             else:
-                if scan:
+                if tape.scan:
                     marked = -1
                 else:
                     marked = 0
 
             stepped = 0
 
-            init_scan = scan
+            init_scan = tape.scan
 
-            side = rspan if shift else lspan
+            side = tape.rspan if shift else tape.lspan
 
-            while scan == init_scan:  # pylint: disable=while-used
+            while tape.scan == init_scan:  # pylint: disable=while-used
                 if shift:
-                    # push new color to the left
-                    lspan.append(color)
-
-                    # pull next color from the right
-                    try:
-                        scan = rspan.pop()
-                    except IndexError:
-                        scan = 0
-
-                    head += 1
-
+                    tape.right(color)
                 else:
-                    # push new color to the right
-                    rspan.append(color)
-
-                    # pull next color from the left
-                    try:
-                        scan = lspan.pop()
-                    except IndexError:
-                        scan = 0
-
-                    if head + init == 0:
-                        init += 1
-
-                    head -= 1
+                    tape.left(color)
 
                 stepped += 1
 
@@ -270,7 +244,7 @@ class Machine:
         if check_blanks and marks == 0:
             self.final.blanks = step
 
-        self.tape = lspan, scan, rspan
+        self.tape = tape
         self.steps = step
 
         self.marks = marks

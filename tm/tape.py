@@ -1,3 +1,36 @@
+class MicroTape:
+    def __init__(self, lspan, scan, rspan):
+        self.lspan = lspan
+        self.scan = scan
+        self.rspan = rspan
+
+        self.head = 0
+        self.init = len(lspan)
+
+    def right(self, color):
+        self.lspan.append(color)
+
+        try:
+            self.scan = self.rspan.pop()
+        except IndexError:
+            self.scan = 0
+
+        self.head += 1
+
+    def left(self, color):
+        self.rspan.append(color)
+
+        try:
+            self.scan = self.lspan.pop()
+        except IndexError:
+            self.scan = 0
+
+        if self.head + self.init == 0:
+            self.init += 1
+
+        self.head -= 1
+
+
 class PtrTape:
     def __init__(self, lspan, scan, rspan, init, head = 0):
         self._list = lspan + [scan] + list(reversed(rspan))

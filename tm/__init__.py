@@ -1,6 +1,7 @@
 from typing import Optional
 
 from tm.parse import parse
+from tm.tape import MicroTape
 from tm.machine import Machine
 
 def run_bb(
@@ -14,9 +15,9 @@ def run_bb(
         samples = None,
 ) -> Machine:
     if tape is None:
-        tape = [], 0, []
+        tape = MicroTape([], 0, [])
     elif isinstance(tape, int):
-        tape = [0] * (tape // 2), 0, [0] * (tape // 2)
+        tape = MicroTape([0] * (tape // 2), 0, [0] * (tape // 2))
 
     machine = Machine(prog)
     machine.run(
