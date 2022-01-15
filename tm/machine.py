@@ -91,9 +91,6 @@ class Machine:
             check_blanks: bool = False,
             samples: Optional[Dict[int, Any]] = None,
     ):
-        state: int = 0
-
-        step: int = 0
         prog = self._comp
 
         history: Optional[History] = (
@@ -102,14 +99,17 @@ class Machine:
             History(tapes=samples)
         )
 
+        reached = set()
+
         lspan, scan, rspan = tape
+
+        state: int = 0
+        step: int = 0
 
         head: int = 0
         init: int = len(lspan)
 
         marks: int = 0
-
-        reached = set()
 
         while True:  # pylint: disable = while-used
 
