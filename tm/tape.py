@@ -21,28 +21,30 @@ class MicroTape:
             + sum(1 for s in self.rspan if s != 0)
         )
 
-    def right(self, color):
-        self.lspan.append(color)
+    def step(self, shift: int, color: int) -> int:
+        if shift:
+            self.lspan.append(color)
 
-        try:
-            self.scan = self.rspan.pop()
-        except IndexError:
-            self.scan = 0
+            try:
+                self.scan = self.rspan.pop()
+            except IndexError:
+                self.scan = 0
 
-        self.head += 1
+            self.head += 1
+        else:
+            self.rspan.append(color)
 
-    def left(self, color):
-        self.rspan.append(color)
+            try:
+                self.scan = self.lspan.pop()
+            except IndexError:
+                self.scan = 0
 
-        try:
-            self.scan = self.lspan.pop()
-        except IndexError:
-            self.scan = 0
+            if self.head + self.init == 0:
+                self.init += 1
 
-        if self.head + self.init == 0:
-            self.init += 1
+            self.head -= 1
 
-        self.head -= 1
+        return 1
 
     def to_ptr(self):
         return PtrTape(
