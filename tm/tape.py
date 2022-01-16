@@ -1,14 +1,14 @@
-class MicroTape:
+class MacroTape:
     def __init__(self, lspan, scan, rspan):
         self.lspan = lspan
         self.scan = scan
         self.rspan = rspan
 
         self.head = 0
-        self.init = len(lspan)
+        self.init = sum(q for (_, q) in self.lspan)
 
     def copy(self):
-        return MicroTape(
+        return MacroTape(
             self.lspan.copy(),
             self.scan,
             self.rspan.copy(),
@@ -17,15 +17,15 @@ class MicroTape:
     def blank(self) -> bool:
         return (
             self.scan == 0
-            and all(s == 0 for s in self.lspan)
-            and all(s == 0 for s in self.rspan)
+            and all(c == 0 for (c, _) in self.lspan)
+            and all(c == 0 for (c, _) in self.rspan)
         )
 
     def marks(self) -> int:
         return (
             (1 if self.scan != 0 else 0)
-            + sum(1 for s in self.lspan if s != 0)
-            + sum(1 for s in self.rspan if s != 0)
+            + sum(q for (c, q) in self.lspan if c != 0)
+            + sum(q for (c, q) in self.rspan if c != 0)
         )
 
     def step(self, shift: int, color: int) -> int:
@@ -36,11 +36,26 @@ class MicroTape:
         )
 
         try:
-            self.scan = pull.pop()
+            block = push[-1]
+        except IndexError:
+            push.append([color, 1])
+        else:
+            if block[0] == color:
+                block[1] += 1
+            else:
+                push.append([color, 1])
+
+        try:
+            block = pull[-1]
         except IndexError:
             self.scan = 0
+        else:
+            self.scan = block[0]
 
-        push.append(color)
+            if block[1] < 2:
+                pull.pop()
+            else:
+                block[1] -= 1
 
         if shift:
             self.head += 1
@@ -63,7 +78,7 @@ class MicroTape:
             stepped += self.step(shift, color)
 
             try:
-                next_square = side[-1]
+                next_square, _ = side[-1]
             except IndexError:
                 break
 
@@ -73,10 +88,18 @@ class MicroTape:
         return stepped
 
     def to_ptr(self):
+        lspan, rspan = [], []
+
+        for color, count in self.lspan:
+            lspan += [color] * count
+
+        for color, count in self.rspan:
+            rspan += [color] * count
+
         return PtrTape(
-            self.lspan,
+            lspan,
             self.scan,
-            self.rspan,
+            rspan,
             self.init,
             self.head,
         )
