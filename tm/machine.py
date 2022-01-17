@@ -100,7 +100,7 @@ class Machine:
         if samples is not None or check_rec is not None:
             self.history = History(tapes=samples)
 
-        reached = set()
+        self.reached = set()
 
         state: int = 0
         step: int = 0
@@ -141,7 +141,7 @@ class Machine:
                 self.final.undfnd = step, instr
                 break
             else:
-                reached.add(action)
+                self.reached.add(action)
 
             if self.history is not None:
                 self.history.add_change_at_step(
@@ -170,7 +170,7 @@ class Machine:
 
             # End of main loop #####################
 
-        self.finalize(step, state, reached)
+        self.finalize(step, state)
 
     def check_rec(self, step, action):
         result: Optional[Tuple[int, int]] = \
@@ -209,7 +209,7 @@ class Machine:
                 tape.to_ptr(),
             )
 
-    def finalize(self, step, state, reached):
+    def finalize(self, step, state):
         if state == 30:  # ord('_') - 65
             self.final.halted = step
 
@@ -223,4 +223,4 @@ class Machine:
 
         self.reached = sorted(
             chr(s + 65) + str(c)
-            for (s, c) in reached)
+            for (s, c) in self.reached)
