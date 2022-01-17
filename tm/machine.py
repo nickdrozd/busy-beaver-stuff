@@ -100,8 +100,6 @@ class Machine:
         if samples is not None or check_rec is not None:
             self.history = History(tapes=samples)
 
-        history = self.history
-
         reached = set()
 
         state: int = 0
@@ -119,15 +117,15 @@ class Machine:
 
             action: Tuple[int, int] = state, tape.scan
 
-            if history is not None:
-                history.add_position_at_step(tape.head, step)
-                history.add_state_at_step(state, step)
+            if self.history is not None:
+                self.history.add_position_at_step(tape.head, step)
+                self.history.add_state_at_step(state, step)
 
                 if samples is not None:
-                    if step in history.tapes:
-                        history.tapes[step] = tape.to_ptr()
+                    if step in self.history.tapes:
+                        self.history.tapes[step] = tape.to_ptr()
                 else:
-                    history.add_tape_at_step(
+                    self.history.add_tape_at_step(
                         None
                         if check_rec is None or step < check_rec else
                         tape.to_ptr(),
@@ -157,8 +155,10 @@ class Machine:
             else:
                 reached.add(action)
 
-            if history is not None:
-                history.add_change_at_step(color != tape.scan, step)
+            if self.history is not None:
+                self.history.add_change_at_step(
+                    color != tape.scan,
+                    step)
 
             shifter = (
                 tape.skip
