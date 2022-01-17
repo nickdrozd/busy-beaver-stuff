@@ -7,6 +7,13 @@ class MicroTape:
         self.head = 0
         self.init = len(lspan)
 
+    def copy(self):
+        return MicroTape(
+            self.lspan.copy(),
+            self.scan,
+            self.rspan.copy(),
+        )
+
     def blank(self) -> bool:
         return (
             self.scan == 0
