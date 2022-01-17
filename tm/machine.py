@@ -115,24 +115,12 @@ class Machine:
 
             # Bookkeeping ##########################
 
-            action: Tuple[int, int] = state, tape.scan
-
-            if self.history is not None:
-                self.history.add_position_at_step(tape.head, step)
-                self.history.add_state_at_step(state, step)
-
-                if samples is not None:
-                    if step in self.history.tapes:
-                        self.history.tapes[step] = tape.to_ptr()
-                else:
-                    self.history.add_tape_at_step(
-                        None
-                        if check_rec is None or step < check_rec else
-                        tape.to_ptr(),
-                        step,
-                    )
+            self.take_measurements(
+                step, state, tape, samples, check_rec)
 
             # Halt conditions ######################
+
+            action: Tuple[int, int] = state, tape.scan
 
             if step >= xlimit:
                 self.final.xlimit = step
@@ -216,3 +204,21 @@ class Machine:
         self.final.fixdtp = self.history.tape_is_fixed(start)
 
         return result
+
+    def take_measurements(self, step, state, tape, samples, check_rec):
+        if self.history is None:
+            return
+
+        self.history.add_position_at_step(tape.head, step)
+        self.history.add_state_at_step(state, step)
+
+        if samples is not None:
+            if step in self.history.tapes:
+                self.history.tapes[step] = tape.to_ptr()
+        else:
+            self.history.add_tape_at_step(
+                None
+                if check_rec is None or step < check_rec else
+                tape.to_ptr(),
+                step,
+            )
