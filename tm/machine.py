@@ -95,11 +95,12 @@ class Machine:
     ):
         prog = self._comp
 
-        history: Optional[History] = (
-            None
-            if samples is None and check_rec is None else
-            History(tapes=samples)
-        )
+        self.tape = tape
+
+        if samples is not None or check_rec is not None:
+            self.history = History(tapes=samples)
+
+        history = self.history
 
         reached = set()
 
@@ -210,10 +211,7 @@ class Machine:
         if check_blanks and tape.blank():
             self.final.blanks = step
 
-        self.tape = tape
         self.steps = step
-
-        self.history = history
 
         self.final.validate_results()
 
