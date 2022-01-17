@@ -170,19 +170,7 @@ class Machine:
 
             # End of main loop #####################
 
-        if state == 30:  # ord('_') - 65
-            self.final.halted = step
-
-        if check_blanks and tape.blank():
-            self.final.blanks = step
-
-        self.steps = step
-
-        self.final.validate_results()
-
-        self.reached = sorted(
-            chr(s + 65) + str(c)
-            for (s, c) in reached)
+        self.finalize(step, state, reached)
 
     def check_rec(self, step, action):
         result: Optional[Tuple[int, int]] = \
@@ -220,3 +208,19 @@ class Machine:
                 if check_rec is None or step < check_rec else
                 tape.to_ptr(),
             )
+
+    def finalize(self, step, state, reached):
+        if state == 30:  # ord('_') - 65
+            self.final.halted = step
+
+        if self.tape.blank():
+            self.final.blanks = step
+
+        self.steps = step
+        self.state = state
+
+        self.final.validate_results()
+
+        self.reached = sorted(
+            chr(s + 65) + str(c)
+            for (s, c) in reached)
