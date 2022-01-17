@@ -150,16 +150,10 @@ class Machine:
                     self.final.linrec = start, _rec = result
 
                     hc_beeps = history.calculate_beeps()
+                    hp_beeps = history.calculate_beeps(start)
 
-                    if any(st not in hc_beeps
-                           for st in range(len(prog))):
+                    if any(hc_beeps[st] <= hp_beeps[st] for st in hp_beeps):
                         self.final.qsihlt = result
-                    else:
-                        hp_beeps = history.calculate_beeps(start)
-
-                        if any(hc_beeps[st] <= hp_beeps[st]
-                               for st in hp_beeps):
-                            self.final.qsihlt = result
 
                     self.final.fixdtp = history.tape_is_fixed(start)
 
