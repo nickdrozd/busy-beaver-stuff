@@ -141,25 +141,10 @@ class Machine:
                 break
 
             if check_rec is not None and step >= check_rec:
-                assert history is not None
-
-                result: Optional[Tuple[int, int]] = \
-                    history.check_for_recurrence(step, action)
-
-                if result is not None:
-                    self.final.linrec = start, _rec = result
-
-                    hc_beeps = history.calculate_beeps()
-                    hp_beeps = history.calculate_beeps(start)
-
-                    if any(hc_beeps[st] <= hp_beeps[st] for st in hp_beeps):
-                        self.final.qsihlt = result
-
-                    self.final.fixdtp = history.tape_is_fixed(start)
-
+                if self.check_rec(step, action) is not None:
                     break
 
-                history.actions[action].append(step)
+                self.history.actions[action].append(step)
 
             # Machine operation ####################
 
@@ -212,3 +197,22 @@ class Machine:
         self.reached = sorted(
             chr(s + 65) + str(c)
             for (s, c) in reached)
+
+    def check_rec(self, step, action):
+        result: Optional[Tuple[int, int]] = \
+            self.history.check_for_recurrence(step, action)
+
+        if result is None:
+            return None
+
+        self.final.linrec = start, _rec = result
+
+        hc_beeps = self.history.calculate_beeps()
+        hp_beeps = self.history.calculate_beeps(start)
+
+        if any(hc_beeps[st] <= hp_beeps[st] for st in hp_beeps):
+            self.final.qsihlt = result
+
+        self.final.fixdtp = self.history.tape_is_fixed(start)
+
+        return result
