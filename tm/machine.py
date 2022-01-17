@@ -145,8 +145,8 @@ class Machine:
 
             if self.history is not None:
                 self.history.add_change_at_step(
-                    color != tape.scan,
-                    step)
+                    step,
+                    color != tape.scan)
 
             shifter = (
                 tape.skip
@@ -209,16 +209,16 @@ class Machine:
         if self.history is None:
             return
 
-        self.history.add_position_at_step(tape.head, step)
-        self.history.add_state_at_step(state, step)
+        self.history.add_position_at_step(step, tape.head)
+        self.history.add_state_at_step(step, state)
 
         if samples is not None:
             if step in self.history.tapes:
                 self.history.tapes[step] = tape.to_ptr()
         else:
             self.history.add_tape_at_step(
+                step,
                 None
                 if check_rec is None or step < check_rec else
                 tape.to_ptr(),
-                step,
             )

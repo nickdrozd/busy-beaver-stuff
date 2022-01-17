@@ -10,19 +10,19 @@ class History:
         self.positions: List[int] = []
         self.actions = defaultdict(lambda: [])
 
-    def add_position_at_step(self, pos: int, step: int):
+    def add_position_at_step(self, step: int, pos: int):
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
 
-    def add_state_at_step(self, state: int, step: int):
+    def add_state_at_step(self, step: int, state: int):
         self.states += [state] * (step - len(self.states))
         self.states.append(state)
 
-    def add_tape_at_step(self, tape, step: int):
+    def add_tape_at_step(self, step: int, tape):
         self.tapes += [tape] * (step - len(self.tapes))
         self.tapes.append(tape)
 
-    def add_change_at_step(self, change: bool, step: int):
+    def add_change_at_step(self, step: int, change: bool):
         self.changes += [change] * (step - len(self.changes))
         self.changes.append(change)
 
