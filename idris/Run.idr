@@ -7,7 +7,7 @@ import Parse
 import Machine
 import Program
 
-simLim : Nat
+simLim : SimLim
 simLim = 100_000_000
 
 main : IO ()

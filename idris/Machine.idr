@@ -5,9 +5,11 @@ import public Tape
 
 %default total
 
+public export
 SimLim : Type
 SimLim = Nat
 
+public export
 Steps : Type
 Steps = Nat
 
