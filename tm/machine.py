@@ -148,13 +148,11 @@ class Machine:
                     step,
                     color != tape.scan)
 
-            shifter = (
+            stepped = (
                 tape.skip
                 if skip and (state == next_state) else
                 tape.step
-            )
-
-            stepped = shifter(shift, color)
+            )(shift, color)
 
             state = next_state
 
