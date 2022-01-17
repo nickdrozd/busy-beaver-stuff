@@ -22,23 +22,22 @@ class MicroTape:
         )
 
     def step(self, shift: int, color: int) -> int:
+        pull, push = (
+            (self.rspan, self.lspan)
+            if shift else
+            (self.lspan, self.rspan)
+        )
+
+        try:
+            self.scan = pull.pop()
+        except IndexError:
+            self.scan = 0
+
+        push.append(color)
+
         if shift:
-            self.lspan.append(color)
-
-            try:
-                self.scan = self.rspan.pop()
-            except IndexError:
-                self.scan = 0
-
             self.head += 1
         else:
-            self.rspan.append(color)
-
-            try:
-                self.scan = self.lspan.pop()
-            except IndexError:
-                self.scan = 0
-
             if self.head + self.init == 0:
                 self.init += 1
 
