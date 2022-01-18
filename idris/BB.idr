@@ -26,7 +26,7 @@ public export
 d3_2 : Programs
 d3_2 = (3, 2, DoubleRec, [
   ("1RB 1RC  1LC 1RA  1RA 1LA", ( 9, 6, 6)),
-  ("1RB 1RC  1LC 0LB  1RA 1LA", (22, 7, 5))])
+  ("1RB 1RC  1LC 0LB  1RA 1LA", (21, 6, 4))])
 
 public export
 p2_3 : Programs
@@ -40,7 +40,7 @@ p2_3 = (2, 3, Single, [
 public export
 d2_3 : Programs
 d2_3 = (2, 3, DoubleRec, [
-  ("1RB 1LA 2RA  2LA 2LB 2RB", (16, 8, 7))])
+  ("1RB 1LA 2RA  2LA 2LB 2RB", (17, 8, 8))])
 
 public export
 s4_2 : Programs

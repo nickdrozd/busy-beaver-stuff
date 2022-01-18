@@ -55,17 +55,19 @@ SkipTape tape => Machine tape where
               -> (State, tape, Steps)
               -> IO (Maybe (Steps, tape))
   runDouble 0 _ _ _ = pure Nothing
-  runDouble (S k) prog (st1, tp1, sp1) (st2, tp2, sp2) =
+  runDouble (S k) prog (st1, tp1, step) (st2, tp2, slow) =
     let
-      (nst1, ntp1, nsp1, _) = exec prog  st1  tp1
-      (nst2, ntp2, nsp2, _) = exec prog  st2  tp2
-      (nst3, ntp3, nsp3, _) = exec prog nst2 ntp2
+      (nst1, ntp1, nstep, _) = exec prog st1 tp1
+      (nst2, ntp2, nslow, _) =
+        if mod step 2 == 0
+          then (st2, tp2, Z, False)
+          else exec prog st2 tp2
     in
-      if nst1 == nst3 && ntp1 == ntp3
-        then pure $ Just (sp1, tp1) else
+      if nst1 == nst2 && ntp1 == ntp2
+        then pure $ Just (slow, tp2) else
       runDouble k prog
-        (nst1, ntp1, sp1 + nsp1)
-        (nst3, ntp3, sp2 + nsp2 + nsp3)
+        (nst1, ntp1, nstep + step)
+        (nst2, ntp2, nslow + slow)
 
   runDoubleOnBlank : SimLim -> Program -> IO (Maybe (Steps, tape))
   runDoubleOnBlank simLim prog = do
