@@ -626,11 +626,12 @@ class TuringTest(TestCase):
             self.history.states[recurrence],
         )
 
-        self.assertTrue(
+        self.assertEqual(
             self.history.verify_lin_recurrence(
                 steps,
                 recurrence,
             ),
+            (steps, recurrence - steps),
             self.prog,
         )
 
@@ -638,7 +639,7 @@ class TuringTest(TestCase):
         states = self.history.states
 
         if states[steps] == states[recurrence]:
-            self.assertFalse(
+            self.assertIsNone(
                 self.history.verify_lin_recurrence(
                     steps,
                     recurrence,
