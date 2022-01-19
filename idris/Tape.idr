@@ -1,7 +1,7 @@
 module Tape
 
 import Data.List
-import Data.Nat
+import public Data.Nat
 import public Data.Vect
 import public Data.Fin
 
