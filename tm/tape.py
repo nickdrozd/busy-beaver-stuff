@@ -68,22 +68,45 @@ class MacroTape:
         return 1
 
     def skip(self, shift: int, color: int) -> int:
-        stepped = 0
+        pull, push = (
+            (self.rspan, self.lspan)
+            if shift else
+            (self.lspan, self.rspan)
+        )
 
-        init_scan = self.scan
+        try:
+            block_color, block_count = pull[-1]
+        except IndexError:
+            return self.step(shift, color)
 
-        side = self.rspan if shift else self.lspan
+        if block_color != self.scan:
+            return self.step(shift, color)
 
-        while self.scan == init_scan:  # pylint: disable=while-used
-            stepped += self.step(shift, color)
+        pull.pop()
 
-            try:
-                next_square, _ = side[-1]
-            except IndexError:
-                break
+        try:
+            next_block = next_color, next_count = pull[-1]
+        except IndexError:
+            next_color = 0
+        else:
+            if next_count <= 1:
+                pull.pop()
+            else:
+                next_block[1] -= 1
 
-            if next_square != init_scan:
-                break
+        self.scan = next_color
+
+        stepped = 1 + block_count
+
+        push.append([color, stepped])
+
+        if shift:
+            self.head += stepped
+        else:
+            if self.head + self.init == 0:
+                self.init += stepped
+
+            self.head -= stepped
 
         return stepped
 
