@@ -66,6 +66,7 @@ class TestLinRado(TestCase):
             if
             run_bb(
                 prog,
+                skip=False,  # !!! Macro skip bug !!!
                 xlimit=xlimit,
                 check_rec=0,
                 check_blanks=False,

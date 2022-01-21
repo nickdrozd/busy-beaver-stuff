@@ -24,6 +24,7 @@ def tree_worker(steps: int, progs, output: Callable):
             xlimit = steps,
             check_rec = 0,
             check_blanks = True,
+            skip = False,  # !!! Macro skip bug !!!
         )
 
         if machine.final.undfnd is not None:
