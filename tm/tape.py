@@ -28,6 +28,17 @@ class MacroTape:
             + sum(q for (c, q) in self.rspan if c != 0)
         )
 
+    def shift_head(self, shift, stepped):
+        if shift:
+            self.head += stepped
+        else:
+            if self.head + self.init == 0:
+                self.init += stepped
+
+            self.head -= stepped
+
+        return stepped
+
     def step(self, shift: int, color: int) -> int:
         pull, push = (
             (self.rspan, self.lspan)
@@ -56,15 +67,7 @@ class MacroTape:
 
         self.scan = next_color
 
-        if shift:
-            self.head += 1
-        else:
-            if self.head + self.init == 0:
-                self.init += 1
-
-            self.head -= 1
-
-        return 1
+        return self.shift_head(shift, 1)
 
     def skip(self, shift: int, color: int) -> int:
         pull, push = (
@@ -97,15 +100,7 @@ class MacroTape:
 
         push.append([color, stepped])
 
-        if shift:
-            self.head += stepped
-        else:
-            if self.head + self.init == 0:
-                self.init += stepped
-
-            self.head -= stepped
-
-        return stepped
+        return self.shift_head(shift, stepped)
 
     def to_ptr(self):
         lspan, rspan = [], []
