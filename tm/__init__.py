@@ -17,7 +17,7 @@ def run_bb(
     if tape is None:
         tape = MacroTape([], 0, [])
     elif isinstance(tape, int):
-        tape = MacroTape([[0, tape // 2]], 0, [[0, tape // 2]])
+        tape = MacroTape([(0, tape // 2)], 0, [(0, tape // 2)])
 
     machine = Machine(prog)
     machine.run(

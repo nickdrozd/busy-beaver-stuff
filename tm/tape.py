@@ -36,26 +36,25 @@ class MacroTape:
         )
 
         try:
-            block = push[-1]
+            next_color, next_count = push.pop()
         except IndexError:
             push.append([color, 1])
         else:
-            if block[0] == color:
-                block[1] += 1
+            if next_color == color:
+                push.append((color, 1 + next_count))
             else:
-                push.append([color, 1])
+                push.append((next_color, next_count))
+                push.append((color, 1))
 
         try:
-            block = pull[-1]
+            next_color, next_count = pull.pop()
         except IndexError:
-            self.scan = 0
+            next_color = 0
         else:
-            self.scan = block[0]
+            if next_count > 1:
+                pull.append((next_color, next_count - 1))
 
-            if block[1] < 2:
-                pull.pop()
-            else:
-                block[1] -= 1
+        self.scan = next_color
 
         if shift:
             self.head += 1
@@ -85,14 +84,12 @@ class MacroTape:
         pull.pop()
 
         try:
-            next_block = next_color, next_count = pull[-1]
+            next_color, next_count = pull.pop()
         except IndexError:
             next_color = 0
         else:
-            if next_count <= 1:
-                pull.pop()
-            else:
-                next_block[1] -= 1
+            if next_count > 1:
+                pull.append((next_color, next_count - 1))
 
         self.scan = next_color
 
