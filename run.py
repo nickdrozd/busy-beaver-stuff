@@ -8,9 +8,9 @@ CANDIDATES = [
 
 RCRNC = 0
 STEPS = 100
-BLANK = 0
+BLANK = 1
 PRINT = 1
-STDIN = 0
+STDIN = 1
 TAPE  = 50
 
 if __name__ == '__main__':
