@@ -4,7 +4,7 @@ import re
 SHIFTS = 'R', 'L'
 HALT   = '_'
 
-def yield_all_programs(state_count, color_count, halt=False):
+def yield_all_programs(state_count, color_count, halt = False):
     states = tuple(map(chr, range(65, 65 + state_count)))
     colors = tuple(map(str, range(color_count)))
 
@@ -64,7 +64,7 @@ def r_on_0(states, colors):
     return '^' + prog
 
 
-def reject(rejects, states, colors, halt=False):
+def reject(rejects, states, colors, halt = False):
     rejects = [re.compile(regex) for regex in rejects]
     rejects.insert(0, re.compile(r_on_0(states, colors)))
 
@@ -85,7 +85,7 @@ def compress(prog_string):
     return prog_string[4:].replace(' ', '')
 
 
-def yield_programs(states, colors, halt, rejects=None):
+def yield_programs(states, colors, halt, rejects = None):
     if rejects is None:
         rejects = []
 
@@ -96,7 +96,7 @@ def yield_programs(states, colors, halt, rejects=None):
             yield prog
 
 
-def print_programs(progs, full=True):
+def print_programs(progs, full = True):
     try:
         for prog in progs:
             print(prog if full else compress(prog))

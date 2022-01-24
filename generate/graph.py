@@ -87,7 +87,7 @@ class Graph:
 
         return f'digraph NAME {{\n{title}\n\n{edges}\n}}'
 
-    def flatten(self, sep=' ') -> str:
+    def flatten(self, sep = ' ') -> str:
         return sep.join(
             dst
             for state in self.states

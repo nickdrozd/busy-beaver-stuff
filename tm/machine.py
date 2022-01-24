@@ -98,7 +98,7 @@ class Machine:
         self.tape = tape
 
         if samples is not None or check_rec is not None:
-            self.history = History(tapes=samples)
+            self.history = History(tapes = samples)
 
         self.reached = set()
 

@@ -662,9 +662,10 @@ class TuringTest(TestCase):
 
         self.run_bb(
             prog,
-            xlimit=runtime,
+            xlimit = runtime,
             skip = False,
-            samples={
+            print_prog = False,
+            samples = {
                 steps - 1           : None,
                 steps               : None,
                 steps + 1           : None,
@@ -673,7 +674,6 @@ class TuringTest(TestCase):
                 recurrence + 1      : None,
                 recurrence + period : None,
             },
-            print_prog=False,
         )
 
         self.assert_lin_recurrence(    steps,     recurrence)
@@ -687,7 +687,12 @@ class TuringTest(TestCase):
         if steps >= 1:
             self.deny_lin_recurrence(steps - 1, recurrence)
 
-    def run_bb(self, prog, print_prog=True, normal=True, reached=True, **opts):
+    def run_bb(
+            self, prog,
+            print_prog = True,
+            normal = True,
+            reached = True,
+            **opts):
         if normal:
             self.assert_normal(prog)
 
@@ -715,9 +720,10 @@ class TuringTest(TestCase):
                 steps,
                 self.final.halted)
 
-    def _test_recurrence(self, prog_data, quick,
-                         qsihlt=False,
-                         fixdtp=False):
+    def _test_recurrence(
+            self, prog_data, quick,
+            qsihlt = False,
+            fixdtp = False):
         for prog, (marks, steps, period) in prog_data.items():
             self.prog = prog
 
@@ -735,12 +741,13 @@ class TuringTest(TestCase):
 
             self.run_bb(
                 prog,
-                check_rec=(
+                print_prog = False,
+                skip = False,
+                check_rec = (
                     0
                     if steps < 256 else
-                    steps),
-                print_prog=False,
-                skip = False,
+                    steps
+                ),
             )
 
             self.assertEqual(
@@ -757,9 +764,9 @@ class TuringTest(TestCase):
 
             self.run_bb(
                 prog,
-                xlimit=steps,
-                print_prog=False,
-                reached=False,
+                xlimit = steps,
+                print_prog = False,
+                reached = False,
                 skip = False,
             )
 
@@ -771,7 +778,7 @@ class TuringTest(TestCase):
 
     def _test_undefined(self, prog_data):
         for prog, (steps, instr) in prog_data.items():
-            self.run_bb(prog, normal=False)
+            self.run_bb(prog, normal = False)
 
             self.assert_steps(steps)
 
@@ -783,7 +790,7 @@ class TuringTest(TestCase):
         for prog, (status, data) in prog_data.items():
             self.run_bb(
                 prog,
-                check_rec=0,
+                check_rec = 0,
             )
 
             self.assertEqual(
@@ -792,7 +799,7 @@ class TuringTest(TestCase):
 
     def _test_blank(self, prog_data):
         for prog, steps in prog_data.items():
-            self.run_bb(prog, check_blanks=True)
+            self.run_bb(prog, check_blanks = True)
 
             self.assert_steps(steps)
 
@@ -811,18 +818,18 @@ class Fast(TuringTest):
     def test_recurrence_fixed(self):
         self._test_recurrence(
             RECURRENCE_FAST_FIXED, True,
-            fixdtp=True)
+            fixdtp = True)
 
     def test_quasihalting(self):
         self._test_recurrence(
             QUASIHALTING, True,
-            qsihlt=True)
+            qsihlt = True)
 
     def test_quasihalting_fixed(self):
         self._test_recurrence(
             QUASIHALTING_FIXED, True,
-            qsihlt=True,
-            fixdtp=True)
+            qsihlt = True,
+            fixdtp = True)
 
     def test_blank(self):
         self._test_blank(BLANK_FAST)
@@ -841,7 +848,7 @@ class Slow(TuringTest):
     def test_quasihalting(self):
         self._test_recurrence(
             QUASIHALTING_SLOW, False,
-            qsihlt=True)
+            qsihlt = True)
 
     def test_blank(self):
         self._test_blank(BLANK_SLOW)

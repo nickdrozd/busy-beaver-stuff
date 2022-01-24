@@ -15,7 +15,7 @@ from generate.program import Program  # type: ignore
 def tree_worker(steps: int, progs, output: Callable):
     while True:  # pylint: disable = while-used
         try:
-            prog = progs.get(timeout=.5)
+            prog = progs.get(timeout = .5)
         except Empty:
             break
 

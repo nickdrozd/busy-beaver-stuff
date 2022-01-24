@@ -52,7 +52,11 @@ class TestLinRado(TestCase):
             len(self.progs),
             count)
 
-    def run_lin_rado(self, states, colors, halt, xlimit, rejects=None):
+    def run_lin_rado(
+            self,
+            states, colors,
+            halt, xlimit,
+            rejects = None):
         print(f'{states} {colors} {halt}')
 
         self.progs = {
@@ -62,14 +66,14 @@ class TestLinRado(TestCase):
                 states,
                 colors,
                 halt,
-                rejects=rejects)
+                rejects)
             if
             run_bb(
                 prog,
-                skip=False,  # !!! Macro skip bug !!!
-                xlimit=xlimit,
-                check_rec=0,
-                check_blanks=False,
+                skip = False,  # !!! Macro skip bug !!!
+                xlimit = xlimit,
+                check_rec = 0,
+                check_blanks = False,
             ).final.xlimit is not None
         }
 
@@ -98,7 +102,7 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             3, 2, 1,
             29,
-            rejects=NOT_CONNECTED_32,
+            rejects = NOT_CONNECTED_32,
         )
 
         self.assert_progs_equal(
@@ -128,7 +132,7 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             3, 2, 0,
             126,
-            rejects=[AB_LOOP] + [
+            rejects = [AB_LOOP] + [
                 prog.replace('1R_', '...')
                 for prog in HOLDOUTS_32H
             ],
@@ -144,7 +148,7 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             2, 3, 0,
             223,  # 220
-            rejects=[
+            rejects = [
                 prog.replace('1R_', '...')
                 for prog in HOLDOUTS_23H
             ],
@@ -171,7 +175,7 @@ class TestTree(TestCase):
 
         while True:  # yuck -- pylint: disable = while-used
             try:
-                prog = queue.get(timeout=.5)
+                prog = queue.get(timeout = .5)
                 out.add(prog.replace('...', '1R_'))
             except Empty:
                 break

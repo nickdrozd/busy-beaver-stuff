@@ -5,8 +5,8 @@ from generate.tree import run_tree_gen
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('states', type=int)
-    parser.add_argument('colors', type=int)
+    parser.add_argument('states', type = int)
+    parser.add_argument('colors', type = int)
 
     args = parser.parse_args()
 

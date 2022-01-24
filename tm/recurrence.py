@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 class History:
-    def __init__(self, tapes=None):
+    def __init__(self, tapes = None):
         self.tapes = [] if tapes is None else tapes
         self.beeps = []
         self.states: List[int] = []
