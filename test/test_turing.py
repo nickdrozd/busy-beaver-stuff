@@ -662,7 +662,7 @@ class TuringTest(TestCase):
 
         self.run_bb(
             prog,
-            xlimit = runtime,
+            step_lim = runtime,
             skip = False,
             print_prog = False,
             samples = {
@@ -764,7 +764,7 @@ class TuringTest(TestCase):
 
             self.run_bb(
                 prog,
-                xlimit = steps,
+                step_lim = steps,
                 print_prog = False,
                 reached = False,
                 skip = False,

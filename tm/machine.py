@@ -87,7 +87,8 @@ class Machine:
             self,
             tape,
             skip = True,
-            xlimit: int = 100_000_000,
+            step_lim = None,
+            sim_lim: int = 100_000_000,
             watch_tape: bool = False,
             check_rec: Optional[int] = None,
             check_blanks: bool = False,
@@ -105,7 +106,7 @@ class Machine:
         state: int = 0
         step: int = 0
 
-        while True:  # pylint: disable = while-used
+        for _ in range(sim_lim):
 
             # Output ###############################
 
@@ -122,7 +123,7 @@ class Machine:
 
             action: Tuple[int, int] = state, tape.scan
 
-            if step >= xlimit:
+            if step_lim is not None and step >= step_lim:
                 self.final.xlimit = step
                 break
 

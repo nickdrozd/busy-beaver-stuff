@@ -7,8 +7,9 @@ from tm.machine import Machine
 def run_bb(
         prog,
         tape = None,
+        step_lim = None,
         skip: bool = True,
-        xlimit: int = 100_000_000,
+        sim_lim: int = 100_000_000,
         watch_tape: bool = False,
         check_rec: Optional[int] = None,
         check_blanks: bool = False,
@@ -23,7 +24,8 @@ def run_bb(
     machine.run(
         tape,
         skip,
-        xlimit,
+        step_lim,
+        sim_lim,
         watch_tape,
         check_rec,
         check_blanks,

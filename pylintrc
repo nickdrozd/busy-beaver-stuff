@@ -22,8 +22,8 @@ load-plugins=
 max-line-length = 72
 
 [DESIGN]
-max-args	= 8
-max-locals	= 18
+max-args	= 9
+max-locals	= 19
 max-branches	= 11
 max-attributes	= 8
 max-statements	= 37
