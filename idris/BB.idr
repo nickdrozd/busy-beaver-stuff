@@ -84,6 +84,11 @@ ll2_4 = (2, 4, Single, [
   ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA", (1367361263049, 1383587, 0))])
 
 public export
+lll2_4 : Programs
+lll2_4 = (2, 4, Single, [
+  ("1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA", (67093892759901295, 530843046, 530843045))])
+
+public export
 s5_2 : Programs
 s5_2 = (5, 2, Single, [
   ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", (31315, 142, 0))])
