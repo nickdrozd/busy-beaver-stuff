@@ -28,9 +28,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install pylint mypy
 
-      - name: Lint and test Python
+      - name: Lint Python
         run: |
           make lint
+
+      - name: Test Python
+        run: |
           make test-all
 
       - name: Tree Gen
