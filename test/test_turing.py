@@ -780,11 +780,12 @@ class TuringTest(TestCase):
         for prog, (steps, instr) in prog_data.items():
             self.run_bb(prog, normal = False)
 
-            self.assert_steps(steps)
-
             self.assertEqual(
                 (steps, instr),
-                self.final.undfnd)
+                self.final.undfnd,
+                f'"{prog}": {self.final.undfnd},')
+
+            self.assert_steps(steps)
 
     def _test_extensions(self, prog_data):
         for prog, (status, data) in prog_data.items():
