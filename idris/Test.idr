@@ -1,4 +1,5 @@
 import System
+import Data.String
 
 import BB
 import Parse
@@ -8,7 +9,7 @@ import Program
 %default total
 
 simLim : Nat
-simLim = 50_000_000
+simLim = 400_000_000
 
 checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool
 checkResult (es, _, em) (gs, _, gm) =
@@ -87,6 +88,9 @@ runMicroVect = runMachine "MicroVect" MicroVectMachine $ Short ++ Rec ++ Mid
 runMacroVect : IO ()
 runMacroVect = runMachine "MacroVect" MacroVectMachine $ Short ++ Rec ++ Mid ++ Long
 
+runSlow : IO ()
+runSlow = runMachine "Slow (Macro)" MacroMachine LongLong
+
 main : IO ()
 main = do
   runPtr
@@ -95,3 +99,8 @@ main = do
   runMacro
   runMicroVect
   runMacroVect
+
+  let [_, _] = stringToNatOrZ <$> !getArgs
+    | _ => do putStrLn "Skipping slow tests...\n"; exitSuccess
+
+  runSlow

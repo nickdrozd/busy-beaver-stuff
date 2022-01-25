@@ -1,6 +1,6 @@
 .PHONY : all clean run test version
 
-all : clean version run test
+all : clean version run test-all
 
 clean :
 	rm -rf build/
@@ -27,3 +27,6 @@ run : Run
 
 test : Test
 	time -p $(BUILD)/Test
+
+test-all : Test
+	time -p $(BUILD)/Test --slow-fake-arg
