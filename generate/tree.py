@@ -74,7 +74,6 @@ DEFAULT_STEPS = {
     (2, 2): 40,
     (3, 2): 126,
     (2, 3): 223,  # 220
-    (4, 2): 107,
 }
 
 
@@ -91,15 +90,15 @@ def run_tree_gen(states: int, colors: int, output: Callable = print):
 
     progs.put((0, init_prog))
 
+    try:
+        steps = DEFAULT_STEPS[(states, colors)]
+    except KeyError:
+        steps = 500
+
     processes = [
         Process(
             target = tree_worker,
-            args = (
-                DEFAULT_STEPS[
-                    (states, colors)],
-                progs,
-                output,
-            )
+            args = (steps, progs, output)
         )
         for _ in range(cpu_count())
     ]
