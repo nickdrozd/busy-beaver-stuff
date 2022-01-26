@@ -53,7 +53,13 @@ TREE = python3 tree_gen.py
 	$(TIME) $(TREE) 2 3 | sort > $@
 
 4-2.prog :
-	# $(TIME) $(TREE) 4 2 | sort > $@
+	$(TIME) $(TREE) 4 2 | sort > $@
+
+2-4.prog :
+	$(TIME) $(TREE) 2 4 | sort > $@
+
+5-2.prog :
+	$(TIME) $(TREE) 5 2 | sort > $@
 
 generate : 3-2.prog 2-3.prog
 	wc -l *.prog
