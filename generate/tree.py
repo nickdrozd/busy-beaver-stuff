@@ -24,14 +24,14 @@ def tree_worker(steps: int, progs, output: Callable):
 
         machine = run_bb(
             prog,
-            step_lim = steps,
+            sim_lim = steps,
             check_blanks = True,
         )
 
         if machine.final.xlimit is not None:
             check_rec = run_bb(
                 prog,
-                step_lim = steps,
+                sim_lim = steps,
                 check_rec = 0,
                 skip = False,  # !!! Macro skip bug !!!
             )
