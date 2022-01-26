@@ -18,7 +18,7 @@ else:
     rust = None  # pylint: disable = invalid-name
 
 
-def tree_worker(steps: int, progs, output: Callable):
+def tree_worker(steps: int, progs, halt: bool, output: Callable):
     prog = None
 
     while True:  # pylint: disable = while-used
@@ -63,7 +63,7 @@ def tree_worker(steps: int, progs, output: Callable):
 
         _step, instr = machine.final.undfnd
 
-        branches = Program(prog).branch(instr)
+        branches = Program(prog).branch(instr, halt = halt)
 
         for _ in range(count):
             _ = next(branches)
@@ -91,7 +91,11 @@ DEFAULT_STEPS = {
 }
 
 
-def run_tree_gen(states: int, colors: int, output: Callable = print):
+def run_tree_gen(
+        states: int,
+        colors: int,
+        halt: bool = False,
+        output: Callable = print):
     progs = Manager().Queue()
 
     init_prog = re.sub(
@@ -112,7 +116,7 @@ def run_tree_gen(states: int, colors: int, output: Callable = print):
     processes = [
         Process(
             target = tree_worker,
-            args = (steps, progs, output)
+            args = (steps, progs, halt, output)
         )
         for _ in range(cpu_count())
     ]

@@ -120,9 +120,9 @@ class Program:
                 self.available_states)
         )
 
-    def branch(self, instr: str) -> Iterator[str]:
-        # if self.last_slot:
-        #     return
+    def branch(self, instr: str, halt: bool = False) -> Iterator[str]:
+        if halt and self.last_slot:
+            return
 
         orig = self[instr]
 
