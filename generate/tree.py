@@ -8,8 +8,14 @@ from multiprocessing import (
 from typing import Callable
 
 from tm import run_bb
-# from py_lin_rado_turing.tools import run_bb
 from generate.program import Program  # type: ignore
+
+
+if (USE_RUST := 0):
+    # pylint: disable = import-error
+    import py_lin_rado_turing.tools as rust  # type: ignore
+else:
+    rust = None  # pylint: disable = invalid-name
 
 
 def tree_worker(steps: int, progs, output: Callable):
@@ -29,11 +35,19 @@ def tree_worker(steps: int, progs, output: Callable):
         )
 
         if machine.final.xlimit is not None:
-            check_rec = run_bb(
-                prog,
-                sim_lim = steps,
-                check_rec = 0,
-                skip = False,  # !!! Macro skip bug !!!
+            check_rec = (
+                run_bb(
+                    prog,
+                    sim_lim = steps,
+                    check_rec = 0,
+                    skip = False,  # !!! Macro skip bug !!!
+                )
+                if rust is None else
+                rust.run_bb(
+                    prog,
+                    x_limit = steps,
+                    check_rec = 0,
+                )
             )
 
             if check_rec.final.xlimit is not None:
