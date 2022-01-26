@@ -170,6 +170,8 @@ class Machine:
                 break
 
             # End of main loop #####################
+        else:
+            self.final.xlimit = step
 
         self.finalize(step, state)
 
