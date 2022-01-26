@@ -67,7 +67,7 @@ class Machine:
 
     @property
     def marks(self):
-        return self.tape.marks()
+        return self.tape.marks
 
     @property
     def beeps(self):
@@ -145,7 +145,7 @@ class Machine:
                 self.reached.add(action)
 
             if self.history is None:
-                if (state == next_state and shift == tape.edge()):
+                if (state == next_state and shift == tape.edge):
                     self.final.qsihlt = self.final.linrec = step, 1
                     self.final.fixdtp = color == 0
                     break
@@ -171,7 +171,7 @@ class Machine:
             if state == 30:  # ord('_') - 65
                 break
 
-            if check_blanks and tape.blank():
+            if check_blanks and tape.blank:
                 break
 
             # End of main loop #####################
@@ -221,7 +221,7 @@ class Machine:
         if state == 30:  # ord('_') - 65
             self.final.halted = step
 
-        if self.tape.blank():
+        if self.tape.blank:
             self.final.blanks = step
 
         self.steps = step

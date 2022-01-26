@@ -16,6 +16,7 @@ class MacroTape:
             self.rspan.copy(),
         )
 
+    @property
     def blank(self) -> bool:
         return (
             self.scan == 0
@@ -23,6 +24,7 @@ class MacroTape:
             and all(c == 0 for (c, _) in self.rspan)
         )
 
+    @property
     def marks(self) -> int:
         return (
             (1 if self.scan != 0 else 0)
@@ -30,6 +32,7 @@ class MacroTape:
             + sum(q for (c, q) in self.rspan if c != 0)
         )
 
+    @property
     def edge(self) -> Optional[int]:
         if self.scan != 0:
             return None
