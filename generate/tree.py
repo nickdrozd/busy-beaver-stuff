@@ -27,32 +27,33 @@ def tree_worker(steps: int, progs, output: Callable):
             skip = False,  # !!! Macro skip bug !!!
         )
 
-        if machine.final.undfnd is not None:
-            _step, instr = machine.final.undfnd
-
-            branches = Program(prog).branch(instr)
-
-            for _ in range(count):
-                _ = next(branches)
-
-            try:
-                ext = next(branches)
-            except StopIteration:
-                continue
-
-            progs.put((0, ext))
-
-            try:
-                _ = next(branches)
-            except StopIteration:
-                pass
-            else:
-                progs.put((1 + count, prog))
-
-            continue
-
         if machine.final.xlimit is not None:
             output(prog)
+            continue
+
+        if machine.final.undfnd is None:
+            continue
+
+        _step, instr = machine.final.undfnd
+
+        branches = Program(prog).branch(instr)
+
+        for _ in range(count):
+            _ = next(branches)
+
+        try:
+            ext = next(branches)
+        except StopIteration:
+            continue
+
+        progs.put((0, ext))
+
+        try:
+            _ = next(branches)
+        except StopIteration:
+            pass
+        else:
+            progs.put((1 + count, prog))
 
 
 DEFAULT_STEPS = {
