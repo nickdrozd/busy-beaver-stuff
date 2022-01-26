@@ -749,20 +749,36 @@ class TuringTest(TestCase):
             if not quick or period > 2000:
                 continue
 
-            self.run_bb(
-                prog,
-                print_prog = False,
-                skip = False,
-                check_rec = (
-                    0
-                    if steps < 256 else
-                    steps
-                ),
-            )
+            if period == 1:
+                self.run_bb(
+                    prog,
+                    print_prog = False,
+                    skip = False,
+                )
+            else:
+                self.run_bb(
+                    prog,
+                    print_prog = False,
+                    skip = False,
+                    check_rec = (
+                        0
+                        if steps < 256 else
+                        steps
+                    ),
+                )
 
-            self.assertEqual(
-                (steps, period),
-                self.final.linrec)
+            if period > 1:
+                self.assertEqual(
+                    (steps, period),
+                    self.final.linrec)
+            else:
+                r_steps, r_period = self.final.linrec
+
+                self.assertEqual(r_period, period)
+
+                self.assertIn(
+                    r_steps,
+                    (steps - 1, steps, steps + 1))
 
             self.assertEqual(
                 self.final.qsihlt,

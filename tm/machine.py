@@ -144,7 +144,12 @@ class Machine:
             else:
                 self.reached.add(action)
 
-            if self.history is not None:
+            if self.history is None:
+                if (state == next_state and shift == tape.edge()):
+                    self.final.qsihlt = self.final.linrec = step, 1
+                    self.final.fixdtp = color == 0
+                    break
+            else:
                 self.history.add_change_at_step(
                     step,
                     color != tape.scan)

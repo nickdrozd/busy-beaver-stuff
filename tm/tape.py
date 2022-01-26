@@ -1,3 +1,5 @@
+from typing import Optional
+
 class MacroTape:
     def __init__(self, lspan, scan, rspan):
         self.lspan = lspan
@@ -27,6 +29,18 @@ class MacroTape:
             + sum(q for (c, q) in self.lspan if c != 0)
             + sum(q for (c, q) in self.rspan if c != 0)
         )
+
+    def edge(self) -> Optional[int]:
+        if self.scan != 0:
+            return None
+
+        if all(c == 0 for (c, _) in self.lspan):
+            return 0
+
+        if all(c == 0 for (c, _) in self.rspan):
+            return 1
+
+        return None
 
     def shift_head(self, shift, stepped):
         if shift:
