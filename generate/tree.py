@@ -13,11 +13,14 @@ from generate.program import Program  # type: ignore
 
 
 def tree_worker(steps: int, progs, output: Callable):
+    prog = None
+
     while True:  # pylint: disable = while-used
-        try:
-            count, prog = progs.get(timeout = .5)
-        except Empty:
-            break
+        if prog is None:
+            try:
+                count, prog = progs.get(timeout = .5)
+            except Empty:
+                break
 
         machine = run_bb(
             prog,
@@ -29,9 +32,11 @@ def tree_worker(steps: int, progs, output: Callable):
 
         if machine.final.xlimit is not None:
             output(prog)
+            prog = None
             continue
 
         if machine.final.undfnd is None:
+            prog = None
             continue
 
         _step, instr = machine.final.undfnd
@@ -44,9 +49,8 @@ def tree_worker(steps: int, progs, output: Callable):
         try:
             ext = next(branches)
         except StopIteration:
+            prog = None
             continue
-
-        progs.put((0, ext))
 
         try:
             _ = next(branches)
@@ -54,6 +58,8 @@ def tree_worker(steps: int, progs, output: Callable):
             pass
         else:
             progs.put((1 + count, prog))
+
+        count, prog = 0, ext
 
 
 DEFAULT_STEPS = {
