@@ -22,7 +22,7 @@ SkipTape tape => Machine tape where
       (scan, edge) = read tape
       (cx, dir, nextState) = prog state scan
     in
-      if checkEdge dir edge && state == nextState && scan == 0
+      if state == nextState && checkEdge dir edge
         then (nextState, tape, 0, True)
       else
     let

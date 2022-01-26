@@ -92,8 +92,8 @@ Spannable (List unit) => Tape (ScanNSpan (List unit)) where
   blank (l, 0, r) = spanBlank l && spanBlank r
   blank _ = False
 
-  read ([], c,  _) = (c,  Just L)
-  read ( _, c, []) = (c,  Just R)
+  read ([], 0,  _) = (0,  Just L)
+  read ( _, 0, []) = (0,  Just R)
   read ( _, c,  _) = (c, Nothing)
 
   stepLeft (l, _, r) cx =
@@ -111,8 +111,8 @@ Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) 
   blank (l, 0, r) = spanBlank l && spanBlank r
   blank _ = False
 
-  read ((_ ** []), c,         _) = (c,  Just L)
-  read (        _, c, (_ ** [])) = (c,  Just R)
+  read ((_ ** []), 0,         _) = (0,  Just L)
+  read (        _, 0, (_ ** [])) = (0,  Just R)
   read (        _, c,         _) = (c, Nothing)
 
   stepLeft (l, _, r) cx =
@@ -242,12 +242,12 @@ Tape PtrTape where
     allZ (0 :: xs) = allZ xs
     allZ _ = False
 
-  read (_ ** ( FZ, c :: _)) = (c, Just L)
+  read (_ ** ( FZ, 0 :: _)) = (0,  Just L)
+  read (_ ** ( FZ, c :: _)) = (c, Nothing)
   read (_ ** (pos,  tape )) =
-    (index pos tape,
-      case strengthen pos of
-        Just _ => Nothing
-        _      =>  Just R)
+    case (index pos tape, strengthen pos) of
+      (0, Nothing) => (0,  Just R)
+      (c,       _) => (c, Nothing)
 
   stepLeft (i ** (pos, tape)) cx =
     let
@@ -338,8 +338,8 @@ Tape NumTape where
   blank (l, 0, r) = spanBlank l && spanBlank r
   blank _ = False
 
-  read (0, c, _) = (c,  Just L)
-  read (_, c, 0) = (c,  Just R)
+  read (0, 0, _) = (0,  Just L)
+  read (_, 0, 0) = (0,  Just R)
   read (_, c, _) = (c, Nothing)
 
   stepLeft (l, _, r) cx =
