@@ -121,17 +121,17 @@ p2_5 = (2, 5, Single, [
 public export
 p8_4 : Programs
 p8_4 = (8, 4, Single, [
-  ("1RB 0R_ 0R_ 0R_  1LC 0R_ 1LD 0R_  2RE 0LF 0R_ 0R_  1RG 1LD 1LF 0R_  3LF 1LD 0R_ 3LD  2RG 2LH 1LD 0R_  1RE 1RG 0R_ 1RB  1R_ 3LC 1RB 0R_", (23587667, 6145, 4097))])
+  ("1RB ... ... ...  1LC ... 1LD ...  2RE 0LF ... ...  1RG 1LD 1LF ...  3LF 1LD ... 3LD  2RG 2LH 1LD ...  1RE 1RG ... 1RB  1R_ 3LC 1RB ...", (23587667, 6145, 4097))])
 
 public export
 p5_5 : Programs
 p5_5 = (5, 5, Single, [
-  ("1RB 0R_ 0R_ 0R_ 0R_  2LC 0R_ 0R_ 0R_ 0R_  3RD 3LC 0R_ 1LC 1R_  0R_ 1RD 1RB 1LE 0R_  4RD 1LE 0R_ 1RD 1LC", (15721562, 4097, 4097))])
+  ("1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC 1R_  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC", (15721562, 4097, 4097))])
 
 public export
 p7_7 : Programs
 p7_7 = (7, 7, Single, [
-  ("1RB 0R_ 0R_ 0R_ 0R_ 0R_ 0R_  0LC 2LD 0R_ 0R_ 0R_ 3LD 0R_  4RE 1RF 0R_ 0R_ 0R_ 0R_ 0R_  2RE 0LD 0LC 0R_ 1RE 0R_ 0R_  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD 0R_ 0R_ 0R_ 0LD 5LG  2RF 1LG 1LC 0R_ 1RB 0R_ 0R_", (10929166, 3415, 3414))])
+  ("1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...", (10929166, 3415, 3414))])
 
 public export
 p6_9 : Programs

@@ -61,17 +61,17 @@ sat p = do
 
 state : Parser State
 state = do
-  s <- sat $ \x => isUpper x || x == '_'
+  s <- sat $ \x => isUpper x || x == '_' || x == '.'
   pure $ cast @{CastState} s
 
 shift : Parser Shift
 shift = do
-  s <- sat $ \x => x == 'L' || x == 'R'
+  s <- sat $ \x => x == 'L' || x == 'R' || x == '.'
   pure $ cast s
 
 color : Parser Color
 color = do
-  c <- sat isDigit
+  c <- sat $ \x => isDigit x || x == '.'
   pure $ stringToNatOrZ $ pack [c]
 
 action : Parser Action
