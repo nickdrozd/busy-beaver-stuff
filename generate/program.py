@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from itertools import product
 from typing import Dict, Iterator, List, Optional, Set, Tuple
@@ -38,6 +40,9 @@ class Program:
         state: str = slot[0]
         color: str = slot[1]
         self.prog[state][int(color)] = instr
+
+    def __eq__(self, other) -> bool:
+        return str(self) == str(other)
 
     @property
     def states(self) -> Set[str]:
@@ -132,7 +137,7 @@ class Program:
 
         self[instr] = orig
 
-    def swap_states(self, st1: str, st2: str) -> str:
+    def swap_states(self, st1: str, st2: str,) -> Program:
         self[st1], self[st2] = self[st2], self[st1]
 
         for slot, action in self.instructions:
@@ -141,9 +146,9 @@ class Program:
             elif st2 in action:
                 self[slot] = re.sub(st2, st1, action)
 
-        return str(self)
+        return self
 
-    def swap_colors(self, co1: str, co2: str) -> str:
+    def swap_colors(self, co1: str, co2: str) -> Program:
         ic1, ic2 = int(co1), int(co2)
 
         for state_str in self.states:
@@ -156,9 +161,9 @@ class Program:
             elif co2 in action:
                 self[slot] = re.sub(co2, co1, action)
 
-        return str(self)
+        return self
 
-    def normalize_states(self) -> str:
+    def normalize_states(self) -> Program:
         for _ in self.states:
             todo = self.non_start_states
 
@@ -176,9 +181,9 @@ class Program:
             else:
                 break
 
-        return str(self)
+        return self
 
-    def normalize_colors(self) -> str:
+    def normalize_colors(self) -> Program:
         for _ in self.colors:
             todo = self.non_blank_colors
 
@@ -195,11 +200,11 @@ class Program:
             else:
                 break
 
-        return str(self)
+        return self
 
-    def normalize(self) -> str:
+    def normalize(self) -> Program:
         for _ in self.colors:
             self.normalize_states()
             self.normalize_colors()
 
-        return str(self)
+        return self

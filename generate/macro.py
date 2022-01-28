@@ -14,7 +14,7 @@ class MacroConverter:
     def macro_length(self, cells: int) -> Tuple[int, int]:
         return 2 * self.states, self.colors ** cells
 
-    def macro_prog(self, cells: int) -> str:
+    def macro_prog(self, cells: int) -> Program:
         return Program(
             dcompile(
                 self.macro_comp(
