@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 
 from generate.tree import run_tree_gen
+from generate.program import Program
 
 
 if __name__ == '__main__':
@@ -13,18 +14,15 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if halt := args.halt:
-        def print_complete(prog):
-            if prog.count('...') <= 1:
-                print(prog.replace('...', '1RH'))
-    else:
-        def print_complete(prog):
-            if '.' not in prog:
-                print(prog)
+    states = args.states
+
+    def print_complete(prog):
+        if len(set((program := Program(prog)).used_states)) == states:
+            print(program.normalize())
 
     run_tree_gen(
-        states = args.states,
+        states = states,
         colors = args.colors,
-        halt   = halt,
+        halt   = args.halt,
         output = print_complete,
     )
