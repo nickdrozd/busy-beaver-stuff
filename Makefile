@@ -61,8 +61,7 @@ TREE = python3 tree_gen.py
 	sort -o $@ $@
 
 5-2.prog :
-	$(TIME) $(TREE) 5 2 | tee $@
-	sort -o $@ $@
+	$(TIME) $(TREE) 5 2 > $@
 
 generate : 3-2.prog 2-3.prog
 	wc -l *.prog
