@@ -93,14 +93,15 @@ runSlow = runMachine "Slow (Macro)" MacroMachine LongLong
 
 main : IO ()
 main = do
-  runPtr
-  runNum
-  runMicro
   runMacro
-  runMicroVect
-  runMacroVect
 
   let [_, _] = stringToNatOrZ <$> !getArgs
     | _ => do putStrLn "Skipping slow tests...\n"; exitSuccess
+
+  runPtr
+  runNum
+  runMicro
+  runMicroVect
+  runMacroVect
 
   runSlow
