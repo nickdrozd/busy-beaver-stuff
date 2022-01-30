@@ -9,7 +9,7 @@ import Program
 %default total
 
 simLim : Nat
-simLim = 8_000_000_000
+simLim = 128_000_000_000
 
 checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool
 checkResult (es, _, em) (gs, _, gm) =
@@ -63,7 +63,7 @@ Long : List Programs
 Long = [p6_2, p3_3, ll2_4, ll5_2]
 
 LongLong : List Programs
-LongLong = [p6_9, lll2_4]
+LongLong = [p6_9, lll2_4, ll10_8]
 
 runMachine : String -> Machine _ -> List Programs -> IO ()
 runMachine name machine programs = do
