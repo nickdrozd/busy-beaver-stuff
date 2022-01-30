@@ -100,6 +100,11 @@ l5_2 = (5, 2, Single, [
   ("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA", (47176870, 12289, 4098))])
 
 public export
+ll5_2 : Programs
+ll5_2 = (5, 2, Single, [
+  ("1RB ...  0LC 0LB  0LD 1LC  1RD 0RE  1LB 1LA", (455790469746, (1383586, 0)))])
+
+public export
 p6_2 : Programs
 p6_2 = (6, 2, Single, [
   ("1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC", (65538549, 10240, 0))])
