@@ -18,13 +18,13 @@ main = do
     where
   loop : Nat -> (Nat, Nat) -> IO ()
   loop i params@(states, colors) = do
-    putStrLn $ show i
-
     prog <- getLine
 
     when (null prog) $ do
       putStrLn "done"
       exitSuccess
+
+    putStrLn $ show i
 
     let Just parsed = parse states colors prog
       | Nothing => do
