@@ -550,6 +550,14 @@ UNDEFINED_FAST = {
     "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... ...": ( 6, 'E1'),
     "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... 0LA": (10, 'D1'),
     "1RB 1LC  1RC ...  1RD 0LE  1LA 1LD  ... 0LA": (16, 'B1'),
+
+    # 5/2 BLB (?)
+    "1RB ...  1RC ...  1RD ...  0RE ...  ... ...": ( 4, 'E0'),
+    "1RB ...  1RC ...  1RD ...  0RE ...  1LE ...": ( 6, 'E1'),
+    "1RB ...  1RC ...  1RD ...  0RE ...  1LE 0LA": ( 7, 'A1'),
+    "1RB 0LC  1RC ...  1RD ...  0RE ...  1LE 0LA": ( 8, 'C1'),
+    "1RB 0LC  1RC ...  1RD 0RB  0RE ...  1LE 0LA": (11, 'D1'),
+    "1RB 0LC  1RC ...  1RD 0RB  0RE 0RD  1LE 0LA": (28, 'B1'),
 }
 
 UNDEFINED_SLOW = {
