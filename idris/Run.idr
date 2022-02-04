@@ -31,7 +31,7 @@ main = do
         putStrLn #"    Failed to parse: \#{prog} (\#{show states}, \#{show colors})"#
         pure ()
 
-    Just (steps, _) <- runOnBlankTape @{MacroMachine} simLim parsed
+    Just (steps, _) <- runOnBlankTape @{BlockMachine} simLim parsed
       | Nothing => loop (S i) params
 
     putStrLn #"    \#{prog} | \#{show steps}"#

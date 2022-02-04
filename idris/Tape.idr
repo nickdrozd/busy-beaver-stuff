@@ -45,8 +45,8 @@ TapeMeasure tape => Show tape where
   show tape = show (cells tape, marks tape)
 
 interface
-Tape tape => MonotoneTape tape where
-  tapeLengthMonotone : (cx : Color) -> (tp : tape) ->
+Tape tape => NonContractingTape tape where
+  tapeNonContracting : (cx : Color) -> (tp : tape) ->
     let (_, shifted) = stepLeft tp cx in
       LTE (cells tp) (cells shifted)
 
@@ -126,8 +126,8 @@ Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) 
 ----------------------------------------
 
 public export
-MicroTape : Type
-MicroTape = ScanNSpan $ List Color
+CellTape : Type
+CellTape = ScanNSpan $ List Color
 
 implementation
 Spannable (List Color) where
@@ -145,7 +145,7 @@ Spannable (List Color) where
 
 public export
 implementation
-SkipTape MicroTape where
+SkipTape CellTape where
   skipLeft tape@([], _, _) cx = stepLeft tape cx
 
   skipLeft tape@(cn :: l, c, r) cx =
@@ -161,10 +161,10 @@ SkipTape MicroTape where
       (s, (e, x, k))
 
 implementation
-MonotoneTape MicroTape where
-  tapeLengthMonotone _ (    [], _, _) =
+NonContractingTape CellTape where
+  tapeNonContracting _ (    [], _, _) =
     LTESucc $ lteSuccRight $ reflexive {rel = LTE}
-  tapeLengthMonotone _ (_ :: t, _, r) =
+  tapeNonContracting _ (_ :: t, _, r) =
     rewrite plusCommutative (length t) 1 in
       rewrite plusCommutative (length t) (S $ length r) in
         rewrite plusCommutative (length r) (length t) in
@@ -197,12 +197,12 @@ Spannable (List Block) where
   spanMarks = foldl (\a, (q, n) => (+) a $ if q == 0 then 0 else n) 0
 
 public export
-MacroTape : Type
-MacroTape = ScanNSpan $ List Block
+BlockTape : Type
+BlockTape = ScanNSpan $ List Block
 
 public export
 implementation
-SkipTape MacroTape where
+SkipTape BlockTape where
   skipLeft tape@([], _, _) cx = stepLeft tape cx
 
   skipLeft tape@(((bc, bn) :: l), c, r) cx =
@@ -297,10 +297,10 @@ SkipTape PtrTape where
           (S steps, skipped)
 
 implementation
-MonotoneTape PtrTape where
-  tapeLengthMonotone _ (_ ** (FZ, _ :: _)) =
+NonContractingTape PtrTape where
+  tapeNonContracting _ (_ ** (FZ, _ :: _)) =
     lteSuccRight $ reflexive {rel = LTE}
-  tapeLengthMonotone cx (S k ** (pos@(FS _), tape)) =
+  tapeNonContracting cx (S k ** (pos@(FS _), tape)) =
     rewrite replaceAtPresLen pos cx tape in
       reflexive {rel = LTE} where
     replaceAtPresLen :
@@ -394,12 +394,12 @@ Spannable (VectSpan Color) where
   spanMarks (_ ** tape) = length $ filter (/= 0) $ toList tape
 
 public export
-MicroVectTape : Type
-MicroVectTape = ScanNSpan $ VectSpan Color
+CellVectTape : Type
+CellVectTape = ScanNSpan $ VectSpan Color
 
 public export
 implementation
-SkipTape MicroVectTape where
+SkipTape CellVectTape where
   skipLeft tape@((0 ** _), _, _) cx = stepLeft tape cx
 
   skipLeft tape@((S k ** cn :: l), c, (j ** r)) cx =
@@ -438,12 +438,12 @@ Spannable (VectSpan Block) where
   spanMarks (_ ** tape) = foldl (\a, (q, n) => (+) a $ if q == 0 then 0 else n) 0 tape
 
 public export
-MacroVectTape : Type
-MacroVectTape = ScanNSpan $ VectSpan Block
+BlockVectTape : Type
+BlockVectTape = ScanNSpan $ VectSpan Block
 
 public export
 implementation
-SkipTape MacroVectTape where
+SkipTape BlockVectTape where
   skipLeft tape@((0 ** _), _, _) cx = stepLeft tape cx
 
   skipLeft tape@((S j ** ((bc, bn) :: l)), c, r) cx =

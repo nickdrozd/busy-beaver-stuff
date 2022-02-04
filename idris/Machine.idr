@@ -77,11 +77,11 @@ SkipTape tape => Machine tape where
 
 public export
 implementation
-[MicroMachine] Machine MicroTape where
+[CellMachine] Machine CellTape where
 
 public export
 implementation
-[MacroMachine] Machine MacroTape where
+[BlockMachine] Machine BlockTape where
 
 public export
 implementation
@@ -93,8 +93,8 @@ implementation
 
 public export
 implementation
-[MicroVectMachine] Machine MicroVectTape where
+[CellVectMachine] Machine CellVectTape where
 
 public export
 implementation
-[MacroVectMachine] Machine MacroVectTape where
+[BlockVectMachine] Machine BlockVectTape where

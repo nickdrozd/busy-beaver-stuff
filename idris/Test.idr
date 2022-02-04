@@ -76,32 +76,32 @@ runPtr = runMachine "Ptr" PtrMachine Short
 runNum : IO ()
 runNum = runMachine "Num" NumMachine $ Short ++ Rec
 
-runMicro : IO ()
-runMicro = runMachine "Micro" MicroMachine $ Short ++ Rec ++ Mid
+runCell : IO ()
+runCell = runMachine "Cell" CellMachine $ Short ++ Rec ++ Mid
 
-runMacro : IO ()
-runMacro = runMachine "Macro" MacroMachine $ Short ++ Rec ++ Mid ++ Long
+runBlock : IO ()
+runBlock = runMachine "Block" BlockMachine $ Short ++ Rec ++ Mid ++ Long
 
-runMicroVect : IO ()
-runMicroVect = runMachine "MicroVect" MicroVectMachine $ Short ++ Rec ++ Mid
+runCellVect : IO ()
+runCellVect = runMachine "CellVect" CellVectMachine $ Short ++ Rec ++ Mid
 
-runMacroVect : IO ()
-runMacroVect = runMachine "MacroVect" MacroVectMachine $ Short ++ Rec ++ Mid ++ Long
+runBlockVect : IO ()
+runBlockVect = runMachine "BlockVect" BlockVectMachine $ Short ++ Rec ++ Mid ++ Long
 
 runSlow : IO ()
-runSlow = runMachine "Slow (Macro)" MacroMachine LongLong
+runSlow = runMachine "Slow (Block)" BlockMachine LongLong
 
 main : IO ()
 main = do
-  runMacro
+  runBlock
 
   let [_, _] = stringToNatOrZ <$> !getArgs
     | _ => do putStrLn "Skipping slow tests...\n"; exitSuccess
 
   runPtr
   runNum
-  runMicro
-  runMicroVect
-  runMacroVect
+  runCell
+  runCellVect
+  runBlockVect
 
   runSlow
