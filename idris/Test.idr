@@ -11,14 +11,14 @@ import Program
 simLim : Nat
 simLim = 128_000_000_000
 
-checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool
-checkResult (es, _, em) (gs, _, gm) =
+checkResult : (Nat, Nat) -> (Nat, Nat) -> Bool
+checkResult (es, em) (gs, gm) =
   es == gs && em == gm
 
 failWithMessage : String -> IO ()
 failWithMessage msg = do putStrLn msg; exitFailure
 
-failWhenWrong : String -> (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> IO ()
+failWhenWrong : String -> (Nat, Nat) -> (Nat, Nat) -> IO ()
 failWhenWrong prog expected actual =
   unless (checkResult expected actual) $ do
     failWithMessage $ #"    Whoops!: \#{prog} | \#{show actual}"#
@@ -38,7 +38,7 @@ runPrograms machine (n, k, rt, (prog, expected) :: rest) = do
   Just (steps, tape) <- runProgram machine parsed rt
     | Nothing => failWithMessage $ "    Hit limit: " ++ prog
 
-  failWhenWrong prog expected (steps, cells tape, marks tape)
+  failWhenWrong prog expected (steps, marks tape)
 
   putStrLn #"    \#{prog} | \#{show steps}"#
 
