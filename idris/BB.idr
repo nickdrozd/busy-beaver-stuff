@@ -19,7 +19,7 @@ public export
 p3_2 : Programs
 p3_2 = (3, 2, Single, [
   ("1RB 1R_  1LB 0RC  1LC 1LA", (21, 5)),
-  -- ("1RB 0LB  1LA 0RC  1LC 1LA", (57, 8)), -- skip
+  ("1RB 0LB  1LA 0RC  1LC 1LA", (55, 6)),
   ("1RB 1LB  1LA 1LC  1RC 0LC", (34, 0))])
 
 public export
@@ -59,7 +59,7 @@ public export
 s2_4 : Programs
 s2_4 = (2, 4, Single, [
   ("1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB", (2476, 31)),
-  -- ("1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA", (32851, 192)), -- skip
+  ("1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA", (32849, 190)),
   ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA", (190524, 0))])
 
 public export
@@ -136,7 +136,7 @@ p5_5 = (5, 5, Single, [
 public export
 p7_7 : Programs
 p7_7 = (7, 7, Single, [
-  ("1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...", (10929166, 3414))])
+  ("1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...", (10925753, 1))])
 
 public export
 p6_9 : Programs

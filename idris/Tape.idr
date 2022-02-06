@@ -94,6 +94,12 @@ Spannable (List unit) => Tape (ScanNSpan (List unit)) where
 
   read ([], 0,  _) = (0,  Just L)
   read ( _, 0, []) = (0,  Just R)
+  read ( l, 0,  r) =
+    (0, if spanBlank l
+           then Just L else
+        if spanBlank r
+          then Just R else
+        Nothing)
   read ( _, c,  _) = (c, Nothing)
 
   stepLeft (l, _, r) cx =
@@ -113,6 +119,12 @@ Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) 
 
   read ((_ ** []), 0,         _) = (0,  Just L)
   read (        _, 0, (_ ** [])) = (0,  Just R)
+  read (        l, 0,         r) =
+    (0, if spanBlank l
+           then Just L else
+        if spanBlank r
+          then Just R else
+        Nothing)
   read (        _, c,         _) = (c, Nothing)
 
   stepLeft (l, _, r) cx =
@@ -244,10 +256,17 @@ Tape PtrTape where
 
   read (_ ** ( FZ, 0 :: _)) = (0,  Just L)
   read (_ ** ( FZ, c :: _)) = (c, Nothing)
+
+  read tape@(S i ** (FS pos, 0 :: rest)) =
+    read $ assert_smaller tape $
+      the PtrTape (i ** (pos, rest))
+
   read (_ ** (pos,  tape )) =
-    case (index pos tape, strengthen pos) of
-      (0, Nothing) => (0,  Just R)
-      (c,       _) => (c, Nothing)
+    case index pos tape of
+      0 => case strengthen pos of
+        Just _ => (0, Nothing)
+        _      => (0,  Just R)
+      c => (c, Nothing)
 
   stepLeft (i ** (pos, tape)) cx =
     let
