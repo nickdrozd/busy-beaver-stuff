@@ -761,7 +761,6 @@ class TuringTest(TestCase):
                 self.run_bb(
                     prog,
                     print_prog = False,
-                    skip = False,
                 )
             else:
                 self.run_bb(
