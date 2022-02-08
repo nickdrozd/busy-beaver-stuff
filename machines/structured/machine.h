@@ -5,9 +5,9 @@
 short TAPE[TAPELEN];
 #define CENTER_SQUARE (TAPELEN / 2)
 
-short  POS = CENTER_SQUARE;
-short PMIN = CENTER_SQUARE;
-short PMAX = CENTER_SQUARE + 1;
+unsigned int  POS = CENTER_SQUARE;
+unsigned int PMIN = CENTER_SQUARE;
+unsigned int PMAX = CENTER_SQUARE + 1;
 
 #define SQUARE_CHAR(square) square ? '#' : '_'
 
