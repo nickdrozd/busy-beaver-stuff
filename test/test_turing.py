@@ -418,6 +418,7 @@ BLANK_FAST = {
     "1RB 1LC  0RC 1RB  0RD 0RC  1LD 1LA":   455,
     "1RB 1RA  0RC 0RB  1LC 1LD  1RA 1LB":   426,
     "1RB 1RA  1LC 0RD  1LB 1LD  1RA 0RB":   319,
+    "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD":   169,
     # constructed from BB(3) sigma champ
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD":    77,
     # constructed from BB(3) shift champ
