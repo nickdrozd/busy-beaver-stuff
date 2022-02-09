@@ -70,7 +70,7 @@ class Graph:
 
     @property
     def dot(self) -> str:
-        prog_format = '\n'.join([
+        title = '\n'.join([
             '  labelloc="t";',
             f'  label="{self.program}";',
             '  fontname="courier"',
@@ -82,8 +82,6 @@ class Graph:
             for i, target in enumerate(targets)
             if target != '.'
         ])
-
-        title = prog_format if len(prog_format) < 50 else ''
 
         return f'digraph NAME {{\n{title}\n\n{edges}\n}}'
 
