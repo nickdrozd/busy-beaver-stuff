@@ -129,17 +129,15 @@ class MacroTape:
             rspan += [color] * count
 
         return PtrTape(
-            lspan,
-            self.scan,
-            rspan,
+            lspan + [self.scan] + list(reversed(rspan)),
             self.init,
             self.head,
         )
 
 
 class PtrTape:
-    def __init__(self, lspan, scan, rspan, init, head = 0):
-        self._list = lspan + [scan] + list(reversed(rspan))
+    def __init__(self, tape, init, head = 0):
+        self._list = tape
         self._init = init
         self.head = head
         self._pos  = self.head + self._init
