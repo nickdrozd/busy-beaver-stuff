@@ -136,7 +136,7 @@ class MacroTape:
 
 
 class PtrTape:
-    def __init__(self, tape, init, head = 0):
+    def __init__(self, tape, init, head):
         self._list = tape
         self._init = init
         self.head = head
