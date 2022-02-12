@@ -1,4 +1,6 @@
-from typing import Optional
+from __future__ import annotations
+
+from typing import List, Optional, Tuple
 
 class MacroTape:
     def __init__(self, lspan, scan, rspan):
@@ -9,7 +11,7 @@ class MacroTape:
         self.head = 0
         self.init = sum(q for (_, q) in self.lspan)
 
-    def copy(self):
+    def copy(self) -> MacroTape:
         return MacroTape(
             self.lspan.copy(),
             self.scan,
@@ -45,7 +47,7 @@ class MacroTape:
 
         return None
 
-    def shift_head(self, shift, stepped):
+    def shift_head(self, shift, stepped) -> int:
         if shift:
             self.head += stepped
         else:
@@ -119,7 +121,7 @@ class MacroTape:
 
         return self.shift_head(shift, stepped)
 
-    def to_ptr(self):
+    def to_ptr(self) -> PtrTape:
         lspan, rspan = [], []
 
         for color, count in self.lspan:
@@ -145,7 +147,7 @@ class PtrTape:
         self.lspan =               0 - self._init
         self.rspan = len(self._list) - self._init
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         squares = [
             '_' if square == 0 else str(square)
             for square in self._list
@@ -158,18 +160,18 @@ class PtrTape:
             for i, square in enumerate(squares)
         ])
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._list)
 
     @property
-    def span(self):
+    def span(self) -> Tuple[int, int]:
         return self.lspan, self.rspan
 
     def extend_to(self, span):
         # pylint: disable = pointless-statement
         self[ span[0] : span[1] ]
 
-    def __getitem__(self, tape_index):
+    def __getitem__(self, tape_index) -> List[int]:
         if tape_index.stop is None:
             right = None
         else:
