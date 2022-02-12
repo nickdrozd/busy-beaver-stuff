@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 class MacroTape:
     def __init__(self, lspan, scan, rspan):
@@ -142,7 +142,6 @@ class PtrTape:
         self._list = tape
         self._init = init
         self.head = head
-        self._pos  = self.head + self._init
 
         self.lspan =               0 - self._init
         self.rspan = len(self._list) - self._init
@@ -159,17 +158,6 @@ class PtrTape:
             (square if i != self._init else f'<{square}>')
             for i, square in enumerate(squares)
         ])
-
-    def __len__(self) -> int:
-        return len(self._list)
-
-    @property
-    def span(self) -> Tuple[int, int]:
-        return self.lspan, self.rspan
-
-    def extend_to(self, span):
-        # pylint: disable = pointless-statement
-        self[ span[0] : span[1] ]
 
     def __getitem__(self, tape_index) -> List[int]:
         if tape_index.stop is None:
@@ -189,38 +177,8 @@ class PtrTape:
             if (left := 0 - (tape_index.start + self._init)) > 0:
                 self._list = [0] * left + self._list
                 self._init += left
-                self._pos  += left
                 self.lspan -= left
 
             left = tape_index.start + self._init
 
         return self._list[ left : right ]
-
-    def __setitem__(self, tape_index, value):
-        self._list[tape_index + self._init] = value
-
-    def read(self):
-        return self._list[self._pos]
-
-    def print(self, color):
-        self._list[self._pos] = color
-
-    def right(self):
-        self.head += 1
-        self._pos  += 1
-
-        try:
-            self._list[self._pos]
-        except IndexError:
-            self._list.append(0)
-            self.rspan += 1
-
-    def left(self):
-        if self.head + self._init == 0:
-            self._list.insert(0, 0)
-            self._init += 1
-            self._pos  += 1
-            self.lspan -= 1
-
-        self.head -= 1
-        self._pos  -= 1
