@@ -164,7 +164,7 @@ class PtrTape:
             right = None
         else:
             if (right := stop + self._init - len(self._list)) > 0:
-                self._list = self._list + [0] * right
+                self._list.extend([0] * right)
                 self.rspan += right
 
             right = stop + self._init
