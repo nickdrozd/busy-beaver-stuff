@@ -80,9 +80,6 @@ class History:
             if tape1 is None or tape2 is None:
                 return None
 
-        # pylint: disable = pointless-statement
-        tape1[ tape2.lspan : tape2.rspan ]
-
         positions = self.positions
 
         pos1 = positions[steps]
@@ -91,6 +88,10 @@ class History:
         if pos1 < pos2:
             diff = pos2 - pos1
             leftmost = min(positions[steps:])
+
+            if tape2.rspan > tape1.rspan:
+                # pylint: disable = pointless-statement
+                tape1[ : tape2.rspan ]
 
             slice1 = tape1[        leftmost : ]
             slice2 = tape2[ diff + leftmost : ]
@@ -101,6 +102,10 @@ class History:
         elif pos1 > pos2:
             diff = pos1 - pos2
             rightmost = max(positions[steps:]) + 1
+
+            if tape2.lspan < tape1.lspan:
+                # pylint: disable = pointless-statement
+                tape1[ tape2.lspan : ]
 
             slice1 = tape1[ : rightmost        ]
             slice2 = tape2[ : rightmost - diff ]
