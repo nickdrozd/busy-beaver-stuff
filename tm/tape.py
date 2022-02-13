@@ -160,25 +160,23 @@ class PtrTape:
         ])
 
     def __getitem__(self, tape_index) -> List[int]:
-        if tape_index.stop is None:
+        if (stop := tape_index.stop) is None:
             right = None
         else:
-            right = tape_index.stop + self._init - len(self._list)
-
-            if right > 0:
+            if (right := stop + self._init - len(self._list)) > 0:
                 self._list = self._list + [0] * right
                 self.rspan += right
 
-            right = tape_index.stop + self._init
+            right = stop + self._init
 
-        if tape_index.start is None:
+        if (start := tape_index.start) is None:
             left = None
         else:
-            if (left := 0 - (tape_index.start + self._init)) > 0:
+            if (left := 0 - (start + self._init)) > 0:
                 self._list = [0] * left + self._list
                 self._init += left
                 self.lspan -= left
 
-            left = tape_index.start + self._init
+            left = start + self._init
 
         return self._list[ left : right ]
