@@ -3,13 +3,17 @@ from __future__ import annotations
 from typing import List, Optional
 
 class MacroTape:
-    def __init__(self, lspan, scan, rspan):
+    def __init__(self, lspan, scan, rspan, head = None, init = None):
         self.lspan = lspan
         self.scan = scan
         self.rspan = rspan
 
-        self.head = 0
-        self.init = sum(q for (_, q) in self.lspan)
+        self.head = 0 if head is None else head
+        self.init = (
+            sum(q for (_, q) in self.lspan)
+            if init is None else
+            init
+        )
 
     def listify(self) -> List[int]:
         lspan, rspan = [], []
@@ -27,6 +31,8 @@ class MacroTape:
             self.lspan.copy(),
             self.scan,
             self.rspan.copy(),
+            head = self.head,
+            init = self.init,
         )
 
     def to_ptr(self) -> PtrTape:
