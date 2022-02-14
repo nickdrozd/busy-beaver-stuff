@@ -11,11 +11,29 @@ class MacroTape:
         self.head = 0
         self.init = sum(q for (_, q) in self.lspan)
 
+    def listify(self) -> List[int]:
+        lspan, rspan = [], []
+
+        for color, count in self.lspan:
+            lspan += [color] * count
+
+        for color, count in self.rspan:
+            rspan += [color] * count
+
+        return lspan + [self.scan] + list(reversed(rspan))
+
     def copy(self) -> MacroTape:
         return MacroTape(
             self.lspan.copy(),
             self.scan,
             self.rspan.copy(),
+        )
+
+    def to_ptr(self) -> PtrTape:
+        return PtrTape(
+            self.listify(),
+            self.init,
+            self.head,
         )
 
     @property
@@ -120,21 +138,6 @@ class MacroTape:
         push.append([color, stepped])
 
         return self.shift_head(shift, stepped)
-
-    def to_ptr(self) -> PtrTape:
-        lspan, rspan = [], []
-
-        for color, count in self.lspan:
-            lspan += [color] * count
-
-        for color, count in self.rspan:
-            rspan += [color] * count
-
-        return PtrTape(
-            lspan + [self.scan] + list(reversed(rspan)),
-            self.init,
-            self.head,
-        )
 
 
 class PtrTape:
