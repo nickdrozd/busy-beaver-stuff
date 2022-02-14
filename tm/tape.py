@@ -1,15 +1,22 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 class MacroTape:
-    def __init__(self, lspan, scan, rspan, head = None, init = None):
+    def __init__(
+            self,
+            lspan: List[Tuple[int, int]],
+            scan: int,
+            rspan: List[Tuple[int, int]],
+            head: Optional[int] = None,
+            init: Optional[int] = None,
+    ):
         self.lspan = lspan
         self.scan = scan
         self.rspan = rspan
 
-        self.head = 0 if head is None else head
-        self.init = (
+        self.head: int = 0 if head is None else head
+        self.init: int = (
             sum(q for (_, q) in self.lspan)
             if init is None else
             init
@@ -71,7 +78,7 @@ class MacroTape:
 
         return None
 
-    def shift_head(self, shift, stepped) -> int:
+    def shift_head(self, shift: int, stepped: int) -> int:
         if shift:
             self.head += stepped
         else:
@@ -92,7 +99,7 @@ class MacroTape:
         try:
             next_color, next_count = push.pop()
         except IndexError:
-            push.append([color, 1])
+            push.append((color, 1))
         else:
             if next_color == color:
                 push.append((color, 1 + next_count))
@@ -141,51 +148,51 @@ class MacroTape:
 
         stepped = 1 + block_count
 
-        push.append([color, stepped])
+        push.append((color, stepped))
 
         return self.shift_head(shift, stepped)
 
 
 class PtrTape:
     def __init__(self, tape, init, head):
-        self._list = tape
-        self._init = init
+        self.tape = tape
+        self.init = init
         self.head = head
 
-        self.lspan =               0 - self._init
-        self.rspan = len(self._list) - self._init
+        self.lspan: int =              0 - self.init
+        self.rspan: int = len(self.tape) - self.init
 
     def __repr__(self) -> str:
         squares = [
             '_' if square == 0 else str(square)
-            for square in self._list
+            for square in self.tape
         ]
 
         return ''.join([
-            (f'[{square}]' if i != self._init else f'[<{square}>]')
-            if i == self.head + self._init else
-            (square if i != self._init else f'<{square}>')
+            (f'[{square}]' if i != self.init else f'[<{square}>]')
+            if i == self.head + self.init else
+            (square if i != self.init else f'<{square}>')
             for i, square in enumerate(squares)
         ])
 
-    def __getitem__(self, tape_index) -> List[int]:
+    def __getitem__(self, tape_index: slice) -> List[int]:
         if (stop := tape_index.stop) is None:
             right = None
         else:
-            if (right := stop + self._init - len(self._list)) > 0:
-                self._list.extend([0] * right)
+            if (right := stop + self.init - len(self.tape)) > 0:
+                self.tape.extend([0] * right)
                 self.rspan += right
 
-            right = stop + self._init
+            right = stop + self.init
 
         if (start := tape_index.start) is None:
             left = None
         else:
-            if (left := 0 - (start + self._init)) > 0:
-                self._list = [0] * left + self._list
-                self._init += left
+            if (left := 0 - (start + self.init)) > 0:
+                self.tape = [0] * left + self.tape
+                self.init += left
                 self.lspan -= left
 
-            left = start + self._init
+            left = start + self.init
 
-        return self._list[ left : right ]
+        return self.tape[ left : right ]
