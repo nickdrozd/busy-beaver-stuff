@@ -10,6 +10,7 @@ class MacroTape:
             rspan: List[Tuple[int, int]],
             head: Optional[int] = None,
             init: Optional[int] = None,
+            extend_to: Optional[int] = None,
     ):
         self.lspan = lspan
         self.scan = scan
@@ -22,7 +23,9 @@ class MacroTape:
             init
         )
 
-    def listify(self) -> List[int]:
+        self.extend_to = extend_to
+
+    def listify(self) -> Tuple[int, List[int]]:
         lspan, rspan = [], []
 
         for color, count in self.lspan:
@@ -31,7 +34,16 @@ class MacroTape:
         for color, count in self.rspan:
             rspan += [color] * count
 
-        return lspan + [self.scan] + list(reversed(rspan))
+        if (extend_to := self.extend_to) is None:
+            ldiff = 0
+        else:
+            ldiff = (extend_to // 2) - len(lspan) + self.head
+            lspan = [0] * ldiff + lspan
+
+            rdiff = (extend_to // 2) - len(rspan) - self.head
+            rspan = [0] * rdiff + rspan
+
+        return ldiff, lspan + [self.scan] + list(reversed(rspan))
 
     def copy(self) -> MacroTape:
         return MacroTape(
@@ -43,9 +55,11 @@ class MacroTape:
         )
 
     def to_ptr(self) -> PtrTape:
+        ldiff, listified = self.listify()
+
         return PtrTape(
-            self.listify(),
-            self.init,
+            listified,
+            self.init + ldiff,
             self.head,
         )
 

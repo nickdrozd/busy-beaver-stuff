@@ -15,14 +15,9 @@ def run_bb(
         check_blanks: bool = False,
         samples = None,
 ) -> Machine:
-    if tape is None:
-        tape = MacroTape([], 0, [])
-    elif isinstance(tape, int):
-        tape = MacroTape([(0, tape // 2)], 0, [(0, tape // 2)])
-
     machine = Machine(prog)
     machine.run(
-        tape,
+        MacroTape([], 0, [], extend_to = tape),
         skip,
         step_lim,
         sim_lim,
