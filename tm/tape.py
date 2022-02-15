@@ -182,7 +182,16 @@ class BlockTape:
 
         stepped = 1 + block_count
 
-        push.append((color, stepped))
+        try:
+            next_push_color, next_push_count= push[-1]
+        except IndexError:
+            push.append((color, stepped))
+        else:
+            if next_push_color != color:
+                push.append((color, stepped))
+            else:
+                push.pop()
+                push.append((color, stepped + next_push_count))
 
         self.shift_head(shift, stepped)
 
