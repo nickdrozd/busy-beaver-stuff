@@ -36,11 +36,42 @@ HALTING_FAST = {
     "1RB 1LB  0LC 0RD  1R_ 1LA  1RA 0LA": ( 6,  96),
     "1RB 1LC  0LD 0RD  1R_ 0LA  1LD 1LA": (11,  84),
 
-    # 2/4 Runners-up
+    # 2/4
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (2050, 3932964),  # BB
     "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2RA": (90, 7195),
     "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2LA": (84, 6445),
     "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 3RA": (84, 6445),
     "1RB 2RB 3LA 2RA  1LA 3RB 1R_ 1LB": (60, 2351),
+
+    # 4/16 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(2): (1026, 1965975),
+
+    # 4/64 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(3): (684, 1310990),
+
+    # 4/256 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(4): (513, 982987),
+
+    # 4/1024 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(5): (410, 786595),
+
+    # 4/4096 from 2/4 BB
+    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(6): (343, 655327),
+
+    # 3/3 copy of 2/4 BB
+    "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
+
+    # 5/2 BB
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (4098, 47176870),
+
+    # 8/4 derived from 5/2 BB
+    "1RB ... ... ...  1LC ... 1LD ...  2RE 0LF ... ...  1RG 1LD 1LF ...  3LF 1LD ... 3LD  2RG 2LH 1LD ...  1RE 1RG ... 1RB  1R_ 3LC 1RB ...": (4097, 23587667),
+
+    # 5/5 derived from 5/2 BB
+    "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC 1R_  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721562),
+
+    # 10/4096 from 5/2 BB
+    MacroConverter("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA").macro_comp(12): (1025, 3930266),
 
     # Milton Green (1964)
     "1RB ...  0L_ ...": (1, 2),
@@ -82,9 +113,6 @@ HALTING_FAST = {
 }
 
 HALTING_SLOW = {
-    # 2/4 BB
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (2050, 3932964),
-
     # 3/3
     # Surprise-in-a-box
     "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (31, 2315619),
@@ -92,36 +120,6 @@ HALTING_SLOW = {
     "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
     "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA": (1525688, 987522842126),
     "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
-
-    # 4/16 from 2/4 BB
-    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(2): (1026, 1965975),
-
-    # 4/64 from 2/4 BB
-    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(3): (684, 1310990),
-
-    # 4/256 from 2/4 BB
-    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(4): (513, 982987),
-
-    # 4/1024 from 2/4 BB
-    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(5): (410, 786595),
-
-    # 4/4096 from 2/4 BB
-    MacroConverter("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_").macro_comp(6): (343, 655327),
-
-    # 3/3 copy of 2/4 BB
-    "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
-
-    # 5/2 BB
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (4098, 47176870),
-
-    # 8/4 derived from 5/2 BB
-    "1RB ... ... ...  1LC ... 1LD ...  2RE 0LF ... ...  1RG 1LD 1LF ...  3LF 1LD ... 3LD  2RG 2LH 1LD ...  1RE 1RG ... 1RB  1R_ 3LC 1RB ...": (4097, 23587667),
-
-    # 5/5 derived from 5/2 BB
-    "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC 1R_  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721562),
-
-    # 10/4096 from 5/2 BB
-    MacroConverter("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA").macro_comp(12): (1025, 3930266),
 }
 
 QUASIHALTING = {
@@ -475,6 +473,7 @@ BLANK_FAST = {
     "1RB 0RB ...  2LA ... 0LB":  4,
 
     # 4/2
+    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779477,
     "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": 66345,
     "1RB 1RA  0RC 0RB  0RD 1RA  1LD 1LB":  2566,
     "1RB 1RA  0RC 1LA  1LC 1LD  0RB 0RD":  2510,
@@ -510,6 +509,7 @@ BLANK_FAST = {
     "1RB 1RA  1RC 0RD  1LE 0RA  ... 0RB  1LB 1LE":    28,
 
     # 2/4
+    "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": 1012664081,
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA": 190524,
     "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA":   4078,
     "1RB 2RA 3LA 2RB  2LB 1LA 0RB 0RA":   2501,
@@ -534,12 +534,7 @@ BLANK_FAST = {
 }
 
 BLANK_SLOW = {
-    # 4/2
-    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779477,
-    # TNF: "1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD"
-
     # 2/4
-    "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": 1012664081,
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA": 1367361263049,
 
     # 5/2 blb
