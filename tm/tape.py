@@ -26,7 +26,7 @@ class MacroTape:
         self.extend_to = extend_to
 
     def __repr__(self) -> str:
-        diff, listified = self.listify()
+        diff, listified = self.listify(self.extend_to)
 
         init = self.init + diff
 
@@ -42,7 +42,7 @@ class MacroTape:
             for i, square in enumerate(squares)
         ])
 
-    def listify(self) -> Tuple[int, List[int]]:
+    def listify(self, ext: Optional[int]) -> Tuple[int, List[int]]:
         lspan, rspan = [], []
 
         for color, count in self.lspan:
@@ -51,13 +51,13 @@ class MacroTape:
         for color, count in self.rspan:
             rspan += [color] * count
 
-        if (extend_to := self.extend_to) is None:
+        if ext is None:
             ldiff = 0
         else:
-            ldiff = (extend_to // 2) - len(lspan) + self.head
+            ldiff = (ext // 2) - len(lspan) + self.head
             lspan = [0] * ldiff + lspan
 
-            rdiff = (extend_to // 2) - len(rspan) - self.head
+            rdiff = (ext // 2) - len(rspan) - self.head
             rspan = [0] * rdiff + rspan
 
         return ldiff, lspan + [self.scan] + list(reversed(rspan))
@@ -72,7 +72,7 @@ class MacroTape:
         )
 
     def to_ptr(self) -> PtrTape:
-        ldiff, listified = self.listify()
+        ldiff, listified = self.listify(None)
 
         return PtrTape(
             listified,
