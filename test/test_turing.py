@@ -7,7 +7,7 @@ from tm.parse import tcompile, dcompile
 from generate.macro import MacroConverter
 from generate.program import Program
 
-HALTING_FAST = {
+HALT_FAST = {
     # 2/2 BB
     "1RB 1LB  1LA 1R_": (4, 6),
     "1RB 0LB  1LA 1R_": (3, 6),
@@ -94,7 +94,7 @@ HALTING_FAST = {
     "1RB 1RA 1R_  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 }
 
-HALTING_SLOW = {
+HALT_SLOW = {
     # 3/3
     # Surprise-in-a-box
     "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (31, 2315619),
@@ -120,7 +120,7 @@ MACRO_HALT_FAST = {
     },
 }
 
-QUASIHALTING = {
+QUASIHALT = {
     # 2/2 (not better than BB)
     "1RB 1LB  1LB 1LA": (3, 6, 1),
     "1RB 0LB  1LB 1LA": (2, 6, 1),
@@ -199,7 +199,7 @@ QUASIHALTING = {
 
 }
 
-QUASIHALTING_FIXED = {
+QUASIHALT_FIXED = {
     # 2/2
     "1RB 1LB  0LB 1LA": (2, 6, 1),
     "1RB 0LB  0LB 1LA": (1, 6, 1),
@@ -229,7 +229,7 @@ QUASIHALTING_FIXED = {
     "1LB 2LC 1RD ... ... 3RE ... 3RF  0RD ... ... 1RD 2RD ... 3RA ...  4RE 4LC 5LG 3RD 4RD ... 6RD ...  0RD 2LC 7LG ... 5LG 6LC ... 0LC  4LC ... 3RA ... 1LB 5LB 3RD ...  7LG ... ... ... ... 1LB ... ...  6RA ... ... 1LB 5LG ... 3RA ...": (24, 944, 1),
 }
 
-QUASIHALTING_SLOW = {
+QUASIHALT_SLOW = {
     # 4/2
     "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": (0, 32779478, 1),
 
@@ -241,7 +241,7 @@ QUASIHALTING_SLOW = {
     "1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...": (0, 10925753, 1),
 }
 
-RECURRENCE_FAST = {
+RECUR_FAST = {
     # Lin-Rado examples
     "1RB ...  0RC 1LB  1LA 0RB": (2,  9, 10),  # total recurrence
     "1RB ...  1LB 0LC  1LA 1RA": (4, 12,  7),  # left barrier
@@ -422,7 +422,7 @@ RECURRENCE_FAST = {
     # "1RB 2RA 3LB 2RB  3LA 0LB 0LA 1RA": (25, 2396, 68),
 }
 
-RECURRENCE_FAST_FIXED = {
+RECUR_FAST_FIXED = {
     # 2/2
     "1RB 1LB  1LA 1RA": (4, 5, 2),  # center
 
@@ -802,7 +802,7 @@ class TuringTest(TestCase):
         if reached:
             self.assert_reached(prog)
 
-    def _test_halting(self, prog_data):
+    def _test_halt(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
             self.run_bb(prog)
 
@@ -814,13 +814,13 @@ class TuringTest(TestCase):
                 self.final.halted)
 
     def _test_macro_halt(self, prog_data):
-        self._test_halting({
+        self._test_halt({
             MacroConverter(prog).macro_comp(cells): expected
             for prog, params in prog_data.items()
             for cells, expected in params.items()
         })
 
-    def _test_recurrence(
+    def _test_recur(
             self, prog_data, quick,
             qsihlt = False,
             fixdtp = False):
@@ -924,28 +924,28 @@ class TuringTest(TestCase):
 
 
 class Fast(TuringTest):
-    def test_halting(self):
-        self._test_halting(HALTING_FAST)
+    def test_halt(self):
+        self._test_halt(HALT_FAST)
 
     def test_macro_halt(self):
         self._test_macro_halt(MACRO_HALT_FAST)
 
-    def test_recurrence(self):
-        self._test_recurrence(RECURRENCE_FAST, True)
+    def test_recur(self):
+        self._test_recur(RECUR_FAST, True)
 
-    def test_recurrence_fixed(self):
-        self._test_recurrence(
-            RECURRENCE_FAST_FIXED, True,
+    def test_recur_fixed(self):
+        self._test_recur(
+            RECUR_FAST_FIXED, True,
             fixdtp = True)
 
-    def test_quasihalting(self):
-        self._test_recurrence(
-            QUASIHALTING, True,
+    def test_quasihalt(self):
+        self._test_recur(
+            QUASIHALT, True,
             qsihlt = True)
 
-    def test_quasihalting_fixed(self):
-        self._test_recurrence(
-            QUASIHALTING_FIXED, True,
+    def test_quasihalt_fixed(self):
+        self._test_recur(
+            QUASIHALT_FIXED, True,
             qsihlt = True,
             fixdtp = True)
 
@@ -960,12 +960,12 @@ class Fast(TuringTest):
 
 
 class Slow(TuringTest):
-    def test_halting(self):
-        self._test_halting(HALTING_SLOW)
+    def test_halt(self):
+        self._test_halt(HALT_SLOW)
 
-    def test_quasihalting(self):
-        self._test_recurrence(
-            QUASIHALTING_SLOW, False,
+    def test_quasihalt(self):
+        self._test_recur(
+            QUASIHALT_SLOW, False,
             qsihlt = True)
 
     def test_blank(self):
