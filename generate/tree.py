@@ -40,7 +40,6 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
                     prog,
                     sim_lim = steps,
                     check_rec = 0,
-                    skip = False,  # !!! Macro skip bug !!!
                 )
                 if rust is None else
                 rust.run_bb(

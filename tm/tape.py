@@ -87,6 +87,9 @@ class MacroTape:
 
             self.head -= stepped
 
+            if self.head + self.init < 0:
+                self.init -= (self.head + self.init)
+
     def step(self, shift: int, color: int) -> int:
         pull, push = (
             (self.rspan, self.lspan)

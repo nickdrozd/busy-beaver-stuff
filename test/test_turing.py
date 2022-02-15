@@ -848,7 +848,6 @@ class TuringTest(TestCase):
                 self.run_bb(
                     prog,
                     print_prog = False,
-                    skip = False,
                     check_rec = (
                         0
                         if steps < 256 else
@@ -858,8 +857,8 @@ class TuringTest(TestCase):
 
             if period > 1:
                 self.assertEqual(
-                    (steps, period),
-                    self.final.linrec)
+                    period,
+                    self.final.linrec[1])
             else:
                 r_steps, r_period = self.final.linrec
 

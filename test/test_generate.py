@@ -70,8 +70,7 @@ class TestLinRado(TestCase):
             if
             run_bb(
                 prog,
-                skip = False,  # !!! Macro skip bug !!!
-                step_lim = xlimit,
+                sim_lim = xlimit,
                 check_rec = 0,
                 check_blanks = False,
             ).final.xlimit is not None
