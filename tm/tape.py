@@ -25,6 +25,23 @@ class MacroTape:
 
         self.extend_to = extend_to
 
+    def __repr__(self) -> str:
+        diff, listified = self.listify()
+
+        init = self.init + diff
+
+        squares = [
+            '_' if square == 0 else str(square)
+            for square in listified
+        ]
+
+        return ''.join([
+            (f'[{square}]' if i != init else f'[<{square}>]')
+            if i == self.head + init else
+            (square if i != init else f'<{square}>')
+            for i, square in enumerate(squares)
+        ])
+
     def listify(self) -> Tuple[int, List[int]]:
         lspan, rspan = [], []
 
@@ -173,6 +190,7 @@ class MacroTape:
 
 
 class PtrTape:
+    # pylint: disable = too-few-public-methods
     def __init__(self, tape, init, head):
         self.tape = tape
         self.init = init
@@ -180,19 +198,6 @@ class PtrTape:
 
         self.lspan: int =              0 - self.init
         self.rspan: int = len(self.tape) - self.init
-
-    def __repr__(self) -> str:
-        squares = [
-            '_' if square == 0 else str(square)
-            for square in self.tape
-        ]
-
-        return ''.join([
-            (f'[{square}]' if i != self.init else f'[<{square}>]')
-            if i == self.head + self.init else
-            (square if i != self.init else f'<{square}>')
-            for i, square in enumerate(squares)
-        ])
 
     def __getitem__(self, tape_index: slice) -> List[int]:
         if (stop := tape_index.stop) is None:

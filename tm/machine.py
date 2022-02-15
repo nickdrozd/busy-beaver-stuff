@@ -109,7 +109,7 @@ class Machine:
 
             if watch_tape:
                 print(f'{step : 5d} {chr(state + 65)}{tape.scan} ',
-                      tape.to_ptr())
+                      tape)
 
             # Bookkeeping ##########################
 
