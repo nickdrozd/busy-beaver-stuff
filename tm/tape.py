@@ -78,7 +78,7 @@ class MacroTape:
 
         return None
 
-    def shift_head(self, shift: int, stepped: int) -> int:
+    def shift_head(self, shift: int, stepped: int):
         if shift:
             self.head += stepped
         else:
@@ -86,8 +86,6 @@ class MacroTape:
                 self.init += stepped
 
             self.head -= stepped
-
-        return stepped
 
     def step(self, shift: int, color: int) -> int:
         pull, push = (
@@ -117,7 +115,9 @@ class MacroTape:
 
         self.scan = next_color
 
-        return self.shift_head(shift, 1)
+        self.shift_head(shift, 1)
+
+        return 1
 
     def skip(self, shift: int, color: int) -> int:
         pull, push = (
@@ -150,7 +150,9 @@ class MacroTape:
 
         push.append((color, stepped))
 
-        return self.shift_head(shift, stepped)
+        self.shift_head(shift, stepped)
+
+        return stepped
 
 
 class PtrTape:
