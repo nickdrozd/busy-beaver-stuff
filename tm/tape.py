@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Tuple
 
-class MacroTape:
+class BlockTape:
     def __init__(
             self,
             lspan: List[Tuple[int, int]],
@@ -62,8 +62,8 @@ class MacroTape:
 
         return ldiff, lspan + [self.scan] + list(reversed(rspan))
 
-    def copy(self) -> MacroTape:
-        return MacroTape(
+    def copy(self) -> BlockTape:
+        return BlockTape(
             self.lspan.copy(),
             self.scan,
             self.rspan.copy(),

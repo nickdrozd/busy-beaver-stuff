@@ -1,7 +1,7 @@
 from typing import Optional
 
 from tm.parse import parse
-from tm.tape import MacroTape
+from tm.tape import BlockTape
 from tm.machine import Machine
 
 def run_bb(
@@ -17,7 +17,7 @@ def run_bb(
 ) -> Machine:
     machine = Machine(prog)
     machine.run(
-        MacroTape([], 0, [], extend_to = tape),
+        BlockTape([], 0, [], extend_to = tape),
         skip,
         step_lim,
         sim_lim,
