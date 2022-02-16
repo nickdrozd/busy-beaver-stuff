@@ -81,6 +81,13 @@ class BlockTape:
         )
 
     @property
+    def signature(self) -> str:
+        l_sig = ''.join([str(c) for c, _ in self.lspan])
+        r_sig = ''.join(reversed([str(c) for c, _ in self.rspan]))
+
+        return f'{l_sig}[{self.scan}]{r_sig}'
+
+    @property
     def blank(self) -> bool:
         return (
             self.scan == 0
