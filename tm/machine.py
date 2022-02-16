@@ -57,7 +57,8 @@ class Machine:
         self.steps   = None
         self.final   = MachineResult(prog)
         self.history = None
-        self.reached = None
+
+        self.reached = set()
 
     def __str__(self):
         return f'{self.program} || {self.final}'
@@ -97,8 +98,6 @@ class Machine:
 
         if samples is not None or check_rec is not None:
             self.history = History(tapes = samples)
-
-        self.reached = set()
 
         state: int = 0
         step: int = 0
