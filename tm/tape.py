@@ -5,9 +5,9 @@ from typing import List, Optional, Tuple
 class BlockTape:
     def __init__(
             self,
-            lspan: List[Tuple[int, int]],
+            lspan: List[List[int]],
             scan: int,
-            rspan: List[Tuple[int, int]],
+            rspan: List[List[int]],
             head: Optional[int] = None,
             init: Optional[int] = None,
             extend_to: Optional[int] = None,
@@ -136,23 +136,24 @@ class BlockTape:
         )
 
         try:
-            next_color, next_count = push.pop()
+            next_color, next_count = push[-1]
         except IndexError:
-            push.append((color, 1))
+            push.append([color, 1])
         else:
             if next_color == color:
-                push.append((color, 1 + next_count))
+                push[-1][1] += 1
             else:
-                push.append((next_color, next_count))
-                push.append((color, 1))
+                push.append([color, 1])
 
         try:
-            next_color, next_count = pull.pop()
+            next_color, next_count = pull[-1]
         except IndexError:
             next_color = 0
         else:
             if next_count > 1:
-                pull.append((next_color, next_count - 1))
+                pull[-1][1] -= 1
+            else:
+                pull.pop()
 
         self.scan = next_color
 
@@ -178,27 +179,28 @@ class BlockTape:
         pull.pop()
 
         try:
-            next_color, next_count = pull.pop()
+            next_color, next_count = pull[-1]
         except IndexError:
             next_color = 0
         else:
             if next_count > 1:
-                pull.append((next_color, next_count - 1))
+                pull[-1][1] -= 1
+            else:
+                pull.pop()
 
         self.scan = next_color
 
         stepped = 1 + block_count
 
         try:
-            next_push_color, next_push_count= push[-1]
+            next_push_color, _ = push[-1]
         except IndexError:
-            push.append((color, stepped))
+            push.append([color, stepped])
         else:
             if next_push_color != color:
-                push.append((color, stepped))
+                push.append([color, stepped])
             else:
-                push.pop()
-                push.append((color, stepped + next_push_count))
+                push[-1][1] += stepped
 
         self.shift_head(shift, stepped)
 
