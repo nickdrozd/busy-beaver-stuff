@@ -145,6 +145,13 @@ class Graph:
         )
 
     @property
+    def is_zero_reflexive(self) -> bool:
+        return any(
+            connections[0] == state
+            for state, connections in self.arrows.items()
+        )
+
+    @property
     def entries_dispersed(self) -> bool:
         color_count = len(self.colors)
 
