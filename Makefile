@@ -30,6 +30,7 @@ test :
 	$(PYTEST) -v test.test_turing.Fast
 	$(PYTEST) -v test.test_program
 	$(PYTEST) -v test.test_graph
+	$(PYTEST) -v test.test_generate.TestTree.test_tree_2_2
 	$(PYTEST) -v test.test_generate.TestLinRado.test_22h
 
 test-all :

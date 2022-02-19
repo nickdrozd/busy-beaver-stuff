@@ -181,17 +181,36 @@ class TestTree(TestCase):
 
         return out
 
+    def test_tree_2_2(self):
+        q22 = Queue()
+
+        run_tree_gen(
+            states = 2,
+            colors = 2,
+            output = q22.put,
+        )
+
+        s22 = self.queue_to_set(q22)
+
+        self.assert_counts({
+            4: s22,
+        })
+
+        self.assertEqual(
+            s22,
+            HOLDOUTS_22Q)
+
     def test_tree_3_2(self):
-        q22, h32, q32 = Queue(), Queue(), Queue()
+        h32, q32 = Queue(), Queue()
 
         def capture(prog):
-            if (dots := prog.count('...')) == 2:
-                q22.put(prog[:16])
+            if (dots := prog.count('...')) == 0:
+                q32.put(prog)
             elif dots == 1:
                 if not re.match(BC_LOOP, prog):
                     h32.put(prog)
             else:
-                q32.put(prog)
+                pass
 
         run_tree_gen(
             states = 3,
@@ -199,19 +218,14 @@ class TestTree(TestCase):
             output = capture,
         )
 
-        q22, h32, q32 = map(
+        h32, q32 = map(
             self.queue_to_set,
-            (q22, h32, q32))
+            (h32, q32))
 
         self.assert_counts({
-              4: q22,
              39: h32,
             582: q32,
         })
-
-        self.assertEqual(
-            q22,
-            HOLDOUTS_22Q)
 
         h32.add('1RB 0LC  0LA 0RA  1LA 1R_')
 
