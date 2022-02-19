@@ -655,13 +655,29 @@ UNDEFINED_FAST = {
     "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... 0LA": (10, 'D1'),
     "1RB 1LC  1RC ...  1RD 0LE  1LA 1LD  ... 0LA": (16, 'B1'),
 
-    # 5/2 BLB (?)
+    # 5/2 blank 2190942280098521917
     "1RB ...  1RC ...  1RD ...  0RE ...  ... ...": ( 4, 'E0'),
     "1RB ...  1RC ...  1RD ...  0RE ...  1LE ...": ( 6, 'E1'),
     "1RB ...  1RC ...  1RD ...  0RE ...  1LE 0LA": ( 7, 'A1'),
     "1RB 0LC  1RC ...  1RD ...  0RE ...  1LE 0LA": ( 8, 'C1'),
     "1RB 0LC  1RC ...  1RD 0RB  0RE ...  1LE 0LA": (11, 'D1'),
     "1RB 0LC  1RC ...  1RD 0RB  0RE 0RD  1LE 0LA": (28, 'B1'),
+
+    # 5/2 BLB (?)
+    "1RB ...  1RC ...  1RD ...  0RE ...  1LE 1LA": ( 7, 'A1'),
+    "1RB 1LC  1RC ...  1RD ...  0RE ...  1LE 1LA": ( 8, 'C1'),
+    "1RB 1LC  1RC ...  1RD 0RC  0RE ...  1LE 1LA": (19, 'B1'),
+    "1RB 1LC  1RC 0RD  1RD 0RC  0RE ...  1LE 1LA": (20, 'D1'),
+
+    # 5/2 QH xmas
+    "1RB ...  1LD ...  ... ...  ... ...  ... ...": (2, 'D1'),
+    "1RB ...  1LD ...  ... ...  ... 1RA  ... ...": (3, 'A1'),
+    "1RB 1RC  1LD ...  ... ...  ... 1RA  ... ...": (4, 'C0'),
+    "1RB 1RC  1LD ...  0RE ...  ... 1RA  ... ...": (5, 'E0'),
+    "1RB 1RC  1LD ...  0RE ...  ... 1RA  1LB ...": (9, 'C1'),
+    "1RB 1RC  1LD ...  0RE 0RC  ... 1RA  1LB ...": (13, 'D0'),
+    "1RB 1RC  1LD ...  0RE 0RC  1LC 1RA  1LB ...": (23, 'E1'),
+    "1RB 1RC  1LD ...  0RE 0RC  1LC 1RA  1LB 1RE": (27, 'B1'),
 }
 
 UNDEFINED_SLOW = {
