@@ -176,3 +176,55 @@ class Graph:
     @property
     def is_dispersed(self) -> bool:
         return self.entries_dispersed and self.exits_dispersed
+
+    def simplified(self) -> Dict[str, Set[str]]:
+        graph = self.colorless
+
+        for state, connections in graph.items():
+            connections.discard(HALT)
+            connections.discard('.')
+
+        for _ in range(len(self.states) * len(self.colors)):
+            to_cut = {
+                state
+                for state, connections in graph.items()
+                if not connections
+            }
+
+            for state in to_cut:
+                for connections in graph.values():
+                    connections.discard(state)
+
+                del graph[state]
+
+            for state, connections in graph.items():
+                if state in connections:
+                    connections.remove(state)
+                    break
+
+                if not connections:
+                    continue
+
+                if len(connections) > 1:
+                    continue
+
+                exit_point = connections.pop()
+
+                for con_rep in graph.values():
+                    if state in con_rep:
+                        con_rep.remove(state)
+                        con_rep.add(exit_point)
+
+                break
+            else:
+                break
+
+        return {
+            state: connections
+            for state, connections in graph.items()
+            if connections
+        }
+
+    @property
+    def is_simple(self) -> bool:
+        return not bool(self.simplified())

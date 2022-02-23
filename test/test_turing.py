@@ -5,6 +5,7 @@ from unittest import TestCase
 from tm import run_bb
 from tm.parse import tcompile, dcompile
 from generate.macro import MacroConverter
+from generate.graph import Graph
 from generate.program import Program
 
 HALT_FAST = {
@@ -726,6 +727,40 @@ BB4_EXTENSIONS = {
     "1RB 0RC  1LA 1RA  0RB 1RD  1LD 0LB": ('LINREC', (392, 122)),
 }
 
+COMPLEX = {
+    # Halt
+    "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",  # 310341163
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA",  # 134467 (Uwe)
+
+    # Blank
+    "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB",  # 31317, 3
+    "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE",
+
+    # Quasihalt
+    "1RB 0LC  1RC 1LD  1RD 0RB  0LB 1LA",
+    "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA",
+    "1RB 0RC  0RD 1RA  0LD 0LA  1LC 1LA",
+
+    "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE",  # 221032, 2
+
+    # Quasihalt Fixed
+    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA",  # 1459, 1
+    "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB",
+
+    # Recur
+    "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC",  # 158491, 17620 (Boyd)
+    "1RB 1RC  1LC 0LD  1RA 0LB  0RA 0RC",  #  14008,    24
+    "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB",  #      0,   294
+    "1RB 0LC  0RD 0RC  1LD 0RB  1LA 0LC",  #     74,   945
+    "1RB 0RC  1LD 0RA  0LD 0LB  1LA 1LB",
+    "1RB 0LC  1RD 1RA  1LA 1LD  1LC 0RA",
+    "1RB 1RC  1LC 0LD  0RA 1LB  1RD 0LA",
+    "1RB 0RC  0LD 1RA  0LA 0RD  1LC 1LA",
+    "1RB 0LC  1RD 0RA  0LB 0LA  1LC 0RA",
+    "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA",
+    "1RB 1RC  0LD 1RA  1LB 0RD  1LA 0RC",
+}
+
 class TuringTest(TestCase):
     def assert_normal(self, prog):
         if isinstance(prog, str) and not prog.startswith('0'):
@@ -738,6 +773,15 @@ class TuringTest(TestCase):
             self.assertEqual(
                 prog,
                 dcompile(tcompile(prog)))
+
+    def assert_simple(self, prog):
+        if not isinstance(prog, str):
+            return
+
+        if prog not in COMPLEX and len(prog) < 50:
+            self.assertTrue(
+                Graph(prog).is_simple,
+                prog)
 
     def assert_reached(self, prog):
         if not isinstance(prog, str):
@@ -846,6 +890,8 @@ class TuringTest(TestCase):
 
         if reached:
             self.assert_reached(prog)
+
+        self.assert_simple(prog)
 
     def _test_halt(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
