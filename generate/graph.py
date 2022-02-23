@@ -19,7 +19,7 @@ class Graph:
     def __init__(self, program: str):
         self.program = program
 
-        self.arrows = {
+        self.arrows: Dict[str, Tuple[str, ...]] = {
             chr(65 + i): connection
             for i, connection in
             enumerate((
