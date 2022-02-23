@@ -28,11 +28,33 @@ class Graph:
             ))
         }
 
-    def __str__(self):
+    def __repr__(self) -> str:
         return self.flatten()
 
-    def __repr__(self):
-        return self.flatten()
+    def flatten(self, sep: str = ' ') -> str:
+        return sep.join(
+            dst
+            for state in self.states
+            for conn in self.arrows[state]
+            for dst in conn
+        )
+
+    @property
+    def dot(self) -> str:
+        title = '\n'.join([
+            '  labelloc="t";',
+            f'  label="{self.program}";',
+            '  fontname="courier"',
+        ])
+
+        edges = '\n'.join([
+            f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
+            for node, targets in self.arrows.items()
+            for i, target in enumerate(targets)
+            if target != '.'
+        ])
+
+        return f'digraph NAME {{\n{title}\n\n{edges}\n}}'
 
     @property
     def states(self) -> Tuple[str, ...]:
@@ -67,31 +89,6 @@ class Graph:
                     pass
 
         return entries
-
-    @property
-    def dot(self) -> str:
-        title = '\n'.join([
-            '  labelloc="t";',
-            f'  label="{self.program}";',
-            '  fontname="courier"',
-        ])
-
-        edges = '\n'.join([
-            f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
-            for node, targets in self.arrows.items()
-            for i, target in enumerate(targets)
-            if target != '.'
-        ])
-
-        return f'digraph NAME {{\n{title}\n\n{edges}\n}}'
-
-    def flatten(self, sep = ' ') -> str:
-        return sep.join(
-            dst
-            for state in self.states
-            for conn in self.arrows[state]
-            for dst in conn
-        )
 
     @property
     def is_normal(self) -> bool:
