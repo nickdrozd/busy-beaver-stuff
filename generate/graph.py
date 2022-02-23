@@ -65,10 +65,17 @@ class Graph:
         return tuple(range(len(self.arrows['A'])))
 
     @property
+    def colorless(self) -> Dict[str, Set[str]]:
+        return {
+            state: set(connections)
+            for state, connections in self.arrows.items()
+        }
+
+    @property
     def exit_points(self) -> Dict[str, Set[str]]:
         return {
-            state: set(connections).difference(HALT).difference('.')
-            for state, connections in self.arrows.items()
+            state: connections.difference(HALT).difference('.')
+            for state, connections in self.colorless.items()
         }
 
     @property
@@ -78,7 +85,7 @@ class Graph:
             for state in self.states
         }
 
-        for state, exits in self.arrows.items():
+        for state, exits in self.colorless.items():
             for exit_point in exits:
                 if exit_point == HALT:
                     continue
