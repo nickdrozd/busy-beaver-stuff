@@ -727,7 +727,7 @@ BB4_EXTENSIONS = {
     "1RB 0RC  1LA 1RA  0RB 1RD  1LD 0LB": ('LINREC', (392, 122)),
 }
 
-COMPLEX = {
+SPAGHETTI = {
     # Halt
     "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",  # 310341163
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA",  # 134467 (Uwe)
@@ -761,6 +761,7 @@ COMPLEX = {
     "1RB 1RC  0LD 1RA  1LB 0RD  1LA 0RC",
 }
 
+
 class TuringTest(TestCase):
     def assert_normal(self, prog):
         if isinstance(prog, str) and not prog.startswith('0'):
@@ -778,15 +779,15 @@ class TuringTest(TestCase):
         if not isinstance(prog, str):
             return
 
-        if prog in COMPLEX:
-            self.assertFalse(
-                Graph(prog).is_simple,
-                prog)
-        else:
-            if len(prog) < 50:
-                self.assertTrue(
-                    Graph(prog).is_simple,
-                    prog)
+        if prog in SPAGHETTI:
+            return
+
+        if len(prog) > 50:
+            return
+
+        self.assertTrue(
+            Graph(prog).is_simple,
+            prog)
 
     def assert_reached(self, prog):
         if not isinstance(prog, str):
@@ -1053,6 +1054,12 @@ class Fast(TuringTest):
 
     def test_bb4_extensions(self):
         self._test_extensions(BB4_EXTENSIONS)
+
+    def test_spaghetti(self):
+        for prog in SPAGHETTI:
+            self.assertFalse(
+                Graph(prog).is_simple,
+                prog)
 
 
 class Slow(TuringTest):
