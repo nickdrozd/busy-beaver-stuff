@@ -730,35 +730,41 @@ BB4_EXTENSIONS = {
 SPAGHETTI = {
     # Halt
     "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",  # 310341163
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA",  # 134467 (Uwe)
-
-    # Blank
-    "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB",  # 31317, 3
-    "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE",
 
     # Quasihalt
-    "1RB 0LC  1RC 1LD  1RD 0RB  0LB 1LA",
-    "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA",
-    "1RB 0RC  0RD 1RA  0LD 0LA  1LC 1LA",
-
-    "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE",  # 221032, 2
-
-    # Quasihalt Fixed
-    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA",  # 1459, 1
-    "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB",
+    "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB",  # 31317, 3
 
     # Recur
-    "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC",  # 158491, 17620 (Boyd)
-    "1RB 1RC  1LC 0LD  1RA 0LB  0RA 0RC",  #  14008,    24
-    "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB",  #      0,   294
-    "1RB 0LC  0RD 0RC  1LD 0RB  1LA 0LC",  #     74,   945
-    "1RB 0RC  1LD 0RA  0LD 0LB  1LA 1LB",
-    "1RB 0LC  1RD 1RA  1LA 1LD  1LC 0RA",
-    "1RB 1RC  1LC 0LD  0RA 1LB  1RD 0LA",
-    "1RB 0RC  0LD 1RA  0LA 0RD  1LC 1LA",
-    "1RB 0LC  1RD 0RA  0LB 0LA  1LC 0RA",
-    "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA",
-    "1RB 1RC  0LD 1RA  1LB 0RD  1LA 0RC",
+    "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB",  # 0, 294
+    "1RB 1RC  0LD 1RA  1LB 0RD  1LA 0RC",  # 2, 294
+}
+
+KERNEL = {
+    # Halt
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": 4,  # 134467 Uwe
+
+    # Recur
+    "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": 3, # 158491, 17620 Boyd
+    "1RB 1RC  1LC 0LD  1RA 0LB  0RA 0RC": 3, #  14008,    24
+    "1RB 0LC  0RD 0RC  1LD 0RB  1LA 0LC": 3,
+    "1RB 0RC  1LD 0RA  0LD 0LB  1LA 1LB": 3,
+    "1RB 0RC  0LD 1RA  0LA 0RD  1LC 1LA": 3,
+    "1RB 0LC  1RD 1RA  1LA 1LD  1LC 0RA": 3,
+    "1RB 1RC  1LC 0LD  0RA 1LB  1RD 0LA": 3,
+    "1RB 0LC  1RD 0RA  0LB 0LA  1LC 0RA": 3,
+    "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA": 3,
+
+    # Quasihalt
+    "1RB 0LC  1RC 1LD  1RD 0RB  0LB 1LA": 3,
+    "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA": 3,
+    "1RB 0RC  0RD 1RA  0LD 0LA  1LC 1LA": 3,
+
+    "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE": 3,  # 221032, 2
+    "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE": 3,
+
+    # Quasihalt Fixed
+    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA": 3,  # 1459, 1
+    "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": 3,
 }
 
 
@@ -779,7 +785,7 @@ class TuringTest(TestCase):
         if not isinstance(prog, str):
             return
 
-        if prog in SPAGHETTI:
+        if prog in SPAGHETTI or prog in KERNEL:
             return
 
         if len(prog) > 50:
@@ -1057,8 +1063,27 @@ class Fast(TuringTest):
 
     def test_spaghetti(self):
         for prog in SPAGHETTI:
+            graph = Graph(prog)
+
+            self.assertEqual(
+                len(graph.simplified()),
+                len(graph.states),
+                prog)
+
+            self.assertTrue(
+                graph.is_dispersed or '_' in prog,
+                prog)
+
+        for prog, kernel in KERNEL.items():
+            graph = Graph(prog)
+
+            self.assertEqual(
+                len(graph.simplified()),
+                kernel,
+                prog)
+
             self.assertFalse(
-                Graph(prog).is_simple,
+                graph.is_dispersed and graph.is_irreflexive,
                 prog)
 
 
