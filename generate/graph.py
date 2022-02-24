@@ -197,6 +197,26 @@ class Graph:
 
                 del graph[state]
 
+            for dst in graph:
+                reachable = {
+                    src
+                    for src in graph
+                    if dst in graph[src]
+                }
+
+                if len(reachable) != 1:
+                    continue
+
+                entry_point = reachable.pop()
+
+                for out in graph[dst]:
+                    graph[entry_point].add(out)
+
+                graph[entry_point].remove(dst)
+                del graph[dst]
+
+                break
+
             for state, connections in graph.items():
                 if state in connections:
                     connections.remove(state)

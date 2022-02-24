@@ -778,10 +778,15 @@ class TuringTest(TestCase):
         if not isinstance(prog, str):
             return
 
-        if prog not in COMPLEX and len(prog) < 50:
-            self.assertTrue(
+        if prog in COMPLEX:
+            self.assertFalse(
                 Graph(prog).is_simple,
                 prog)
+        else:
+            if len(prog) < 50:
+                self.assertTrue(
+                    Graph(prog).is_simple,
+                    prog)
 
     def assert_reached(self, prog):
         if not isinstance(prog, str):
