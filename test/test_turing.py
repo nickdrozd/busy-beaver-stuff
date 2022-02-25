@@ -741,7 +741,7 @@ SPAGHETTI = {
 
 KERNEL = {
     # Halt
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": 4,  # 134467 Uwe
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": 3,  # 134467 Uwe
 
     # Recur
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": 3, # 158491, 17620 Boyd
@@ -1066,7 +1066,7 @@ class Fast(TuringTest):
             graph = Graph(prog)
 
             self.assertEqual(
-                len(graph.simplified()),
+                len(graph.reduced()),
                 len(graph.states),
                 prog)
 
@@ -1078,7 +1078,7 @@ class Fast(TuringTest):
             graph = Graph(prog)
 
             self.assertEqual(
-                len(graph.simplified()),
+                len(graph.reduced()),
                 kernel,
                 prog)
 

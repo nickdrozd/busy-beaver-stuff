@@ -148,19 +148,15 @@ class Graph:
 
     @property
     def entries_dispersed(self) -> bool:
-        color_count = len(self.colors)
-
         return all(
-            len(entries) == color_count
+            len(entries) == len(self.colors)
             for entries in self.entry_points.values()
         )
 
     @property
     def exits_dispersed(self) -> bool:
-        color_count = len(self.colors)
-
         return all(
-            len(exits) == color_count
+            len(exits) == len(self.colors)
             for exits in self.exit_points.values()
         )
 
@@ -168,63 +164,14 @@ class Graph:
     def is_dispersed(self) -> bool:
         return self.entries_dispersed and self.exits_dispersed
 
-    def simplified(self) -> Dict[str, Set[str]]:
+    def reduced(self) -> Dict[str, Set[str]]:
         graph = self.exit_points
 
         for _ in range(len(self.states) * len(self.colors)):
-            to_cut = {
-                state
-                for state, connections in graph.items()
-                if not connections
-            }
-
-            for state in to_cut:
-                for connections in graph.values():
-                    connections.discard(state)
-
-                del graph[state]
-
-            for dst in graph:
-                reachable = {
-                    src
-                    for src in graph
-                    if dst in graph[src]
-                }
-
-                if len(reachable) != 1:
-                    continue
-
-                entry_point = reachable.pop()
-
-                for out in graph[dst]:
-                    graph[entry_point].add(out)
-
-                graph[entry_point].remove(dst)
-                del graph[dst]
-
-                break
-
-            for state, connections in graph.items():
-                if state in connections:
-                    connections.remove(state)
-                    break
-
-                if not connections:
-                    continue
-
-                if len(connections) > 1:
-                    continue
-
-                exit_point = connections.pop()
-
-                for con_rep in graph.values():
-                    if state in con_rep:
-                        con_rep.remove(state)
-                        con_rep.add(exit_point)
-
-                break
-            else:
-                break
+            purge_dead_ends(graph)
+            cut_reflexive_arrows(graph)
+            inline_single_exit(graph)
+            inline_single_entry(graph)
 
         return {
             state: connections
@@ -234,4 +181,69 @@ class Graph:
 
     @property
     def is_simple(self) -> bool:
-        return not bool(self.simplified())
+        return not bool(self.reduced())
+
+
+def purge_dead_ends(graph):
+    to_cut = {
+        state
+        for state, connections in graph.items()
+        if not connections
+    }
+
+    for state in to_cut:
+        for connections in graph.values():
+            connections.discard(state)
+
+        del graph[state]
+
+
+def inline_single_entry(graph):
+    for _ in range(len(graph)):
+        for dst in set(graph.keys()):
+            entries = {
+                src
+                for src in graph
+                if dst in graph[src]
+            }
+
+            if len(entries) != 1:
+                continue
+
+            entry_point = entries.pop()
+
+            for out in graph[dst]:
+                graph[entry_point].add(out)
+
+            graph[entry_point].remove(dst)
+            del graph[dst]
+
+            break
+        else:
+            break
+
+
+def cut_reflexive_arrows(graph):
+    for state, connections in graph.items():
+        if state in connections:
+            connections.remove(state)
+
+
+def inline_single_exit(graph):
+    for state, connections in graph.items():
+        if state in connections:
+            connections.remove(state)
+            break
+
+        if not connections:
+            continue
+
+        if len(connections) > 1:
+            continue
+
+        exit_point = connections.pop()
+
+        for con_rep in graph.values():
+            if state in con_rep:
+                con_rep.remove(state)
+                con_rep.add(exit_point)
