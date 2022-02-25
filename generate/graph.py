@@ -29,8 +29,11 @@ class Graph:
             ))
         }
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return self.flatten()
+
+    def __repr__(self) -> str:
+        return repr(self.arrows)
 
     def flatten(self, sep: str = ' ') -> str:
         return sep.join(
