@@ -487,9 +487,7 @@ BLANK_FAST = {
     "1RB 1RA  0RC 0RB  1LC 1LD  1RA 1LB":   426,
     "1RB 1RA  1LC 0RD  1LB 1LD  1RA 0RB":   319,
     "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD":   169,
-    # constructed from BB(3) sigma champ
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD":    77,
-    # constructed from BB(3) shift champ
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA":    66,
     "1RB ...  0LB 0LC  ... ...  ... ...":     3,
     "1RB ...  0LC ...  ... 0RD  ... ...":     3,
@@ -767,6 +765,22 @@ KERNEL = {
     "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": 3,
 }
 
+MODULAR = {
+    "1RB 1LB  1LA 1LC  1RC 0LC",  # BLB(3) | 34
+    "1RB 1LB  1LA 1RC  1LC 0RC",
+    "1RB 1LB  1LA 0LC  1RC 0LC",
+    "1RB 0LB  1LA 1LC  1RC 0LC",
+    "1RB 1LC  1LB 1LA  1RC 0LC",
+    "1RB 1LA  1LA 1RC  1LC 0RC",
+    "1RB 1LA  1LA 1LC  1RC 0LC",
+    "1RB 0LC  1LB 1LA  1RC 0LC",
+
+    # constructed from BB(3) sigma champ
+    "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD",
+    # constructed from BB(3) shift champ
+    "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
+}
+
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
@@ -780,6 +794,20 @@ class TuringTest(TestCase):
             self.assertEqual(
                 prog,
                 dcompile(tcompile(prog)))
+
+    def assert_connected(self, prog):
+        if not isinstance(prog, str):
+            return
+
+        if prog in MODULAR:
+            return
+
+        if 'A' not in prog or '...' in prog:
+            return
+
+        self.assertTrue(
+            Graph(prog).is_strongly_connected,
+            prog)
 
     def assert_simple(self, prog):
         if not isinstance(prog, str):
@@ -904,6 +932,7 @@ class TuringTest(TestCase):
             self.assert_reached(prog)
 
         self.assert_simple(prog)
+        self.assert_connected(prog)
 
     def _test_halt(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
