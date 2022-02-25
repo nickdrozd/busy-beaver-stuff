@@ -65,17 +65,10 @@ class Graph:
         return tuple(range(len(self.arrows['A'])))
 
     @property
-    def colorless(self) -> Dict[str, Set[str]]:
-        return {
-            state: set(connections)
-            for state, connections in self.arrows.items()
-        }
-
-    @property
     def exit_points(self) -> Dict[str, Set[str]]:
         return {
-            state: connections.difference(HALT).difference('.')
-            for state, connections in self.colorless.items()
+            state: set(connections).difference(HALT).difference('.')
+            for state, connections in self.arrows.items()
         }
 
     @property
@@ -85,11 +78,8 @@ class Graph:
             for state in self.states
         }
 
-        for state, exits in self.colorless.items():
+        for state, exits in self.exit_points.items():
             for exit_point in exits:
-                if exit_point == HALT:
-                    continue
-
                 try:
                     entries[exit_point].add(state)
                 except KeyError:
@@ -178,11 +168,7 @@ class Graph:
         return self.entries_dispersed and self.exits_dispersed
 
     def simplified(self) -> Dict[str, Set[str]]:
-        graph = self.colorless
-
-        for state, connections in graph.items():
-            connections.discard(HALT)
-            connections.discard('.')
+        graph = self.exit_points
 
         for _ in range(len(self.states) * len(self.colors)):
             to_cut = {
