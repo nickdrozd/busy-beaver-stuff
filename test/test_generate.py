@@ -112,8 +112,7 @@ class TestLinRado(TestCase):
 
         self.assertEqual(
             HOLDOUTS_32H,
-            BRADY_HOLDOUTS.union(
-                LR_NOT_BRADY))
+            BRADY_HOLDOUTS | LR_NOT_BRADY)
 
     def test_23h(self):
         self.run_lin_rado(

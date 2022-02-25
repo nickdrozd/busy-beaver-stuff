@@ -6,7 +6,8 @@ from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 from tm import parse
 
-
+INIT = 'A'
+BLANK = '0'
 SHIFTS = 'L', 'R'
 
 class Program:
@@ -95,10 +96,10 @@ class Program:
 
     @property
     def available_states(self) -> Set[str]:
-        used = set(self.used_states).union('A')
+        used = set(self.used_states) | { INIT }
         diff = sorted(self.states.difference(used))
 
-        return used.union(diff[0]) if diff else used
+        return used | { diff[0] } if diff else used
 
     @property
     def used_colors(self) -> Iterator[str]:
@@ -110,10 +111,10 @@ class Program:
 
     @property
     def available_colors(self) -> Set[str]:
-        used = set(self.used_colors).union('0')
+        used = set(self.used_colors) | { BLANK }
         diff = sorted(self.colors.difference(used))
 
-        return used.union(diff[0]) if diff else used
+        return used | { diff[0] } if diff else used
 
     @property
     def available_actions(self) -> Iterator[str]:

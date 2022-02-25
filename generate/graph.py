@@ -14,6 +14,7 @@ COLORS = (
 )
 
 HALT = '_'
+UNDEFINED = '.'
 
 class Graph:
     def __init__(self, program: str):
@@ -51,7 +52,7 @@ class Graph:
             f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
             for node, targets in self.arrows.items()
             for i, target in enumerate(targets)
-            if target != '.'
+            if target != UNDEFINED
         ])
 
         return f'digraph NAME {{\n{title}\n\n{edges}\n}}'
@@ -67,7 +68,7 @@ class Graph:
     @property
     def exit_points(self) -> Dict[str, Set[str]]:
         return {
-            state: set(connections).difference(HALT).difference('.')
+            state: set(connections) - { HALT, UNDEFINED }
             for state, connections in self.arrows.items()
         }
 
@@ -108,13 +109,13 @@ class Graph:
         for state in self.states:
             if not any(state in self.arrows[dst]
                        for dst in
-                       states.difference(state)):
+                       states - { state }):
                 return False
 
         for state in self.states:
-            reachable_from_x = set(self.arrows[state]).difference(state)
+            reachable_from_x = set(self.arrows[state]) - { state }
 
-            for _ in range(len(states.difference(state))):
+            for _ in range(len(states - { state })):
                 reachable_from_x.discard(HALT)
 
                 reachable = {
@@ -126,7 +127,7 @@ class Graph:
 
                 reachable_from_x.update(reachable)
 
-            if not reachable_from_x.issuperset(states):
+            if not reachable_from_x >= states:
                 return False
 
         return True
