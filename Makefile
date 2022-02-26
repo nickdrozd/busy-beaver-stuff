@@ -1,9 +1,9 @@
-.PHONY : all clean  machines idris lint test test-all run profile generate
+.PHONY : all clean coverage machines idris lint test test-all run profile generate
 
 all : machines idris lint test generate
 
 clean :
-	rm -rf yappi.* __pycache__ **/__pycache__ .mypy_cache
+	rm -rf yappi.* __pycache__ **/__pycache__ .mypy_cache .coverage htmlcov
 	$(MAKE) -C machines clean
 	$(MAKE) -C idris clean
 
@@ -25,6 +25,7 @@ lint :
 	mypy tm generate test
 
 PYTEST = python3 -m unittest
+COVERAGE = coverage run -m unittest
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
@@ -37,6 +38,12 @@ test :
 
 test-all :
 	$(PYTEST) discover -v
+
+coverage :
+	$(COVERAGE) -v $(PROG) $(GRAPH) $(QTREE) $(LR) $(TUR)
+
+	coverage combine --quiet
+	coverage html
 
 run :
 	$(PYPATH) python3 run.py

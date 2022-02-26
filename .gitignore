@@ -1,7 +1,8 @@
 __pycache__
 .mypy_cache
 *yappi*
-*/run
 **/*.run
 *.pdf
 *.prog
+.coverage*
+htmlcov
