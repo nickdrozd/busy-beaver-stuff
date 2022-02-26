@@ -72,11 +72,7 @@ def reject(rejects, states, colors, halt = False):
         rejects.insert(0, re.compile(b0_halt(colors)))
 
     def reject_prog(prog):
-        for regex in rejects:
-            if regex.match(prog):
-                return True
-
-        return False
+        return any(regex.match(prog) for regex in rejects)
 
     return reject_prog
 

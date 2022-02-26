@@ -16,6 +16,7 @@ load-plugins=
   pylint.extensions.while_used,
   pylint.extensions.overlapping_exceptions,
   pylint.extensions.redefined_variable_type,
+  pylint.extensions.for_any_all,
   pylint.extensions.consider_ternary_expression,
 
 [FORMAT]
