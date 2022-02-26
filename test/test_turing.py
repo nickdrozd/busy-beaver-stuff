@@ -844,11 +844,6 @@ class TuringTest(TestCase):
             self.machine.steps,
             steps)
 
-    def assert_final(self, final):
-        self.assertEqual(
-            self.final.blanks,
-            final)
-
     def assert_lin_recurrence(self, steps, recurrence):
         self.assertEqual(
             self.history.states[steps],
@@ -1131,6 +1126,8 @@ class Fast(TuringTest):
             "1RB 2LA 1R_  1LB 1LA 0RA",
             tape = 50,
             watch_tape = True)
+
+        print(self.machine)
 
         tape_copy = self.tape.copy()
 

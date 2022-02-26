@@ -250,6 +250,9 @@ class TestGraph(TestCase):
         for prog, (flat, norm, conn, irr, zrefl, entries, exits) in GRAPHS.items():
             self.graph = Graph(prog)
 
+            print(self.graph)
+            _ = self.graph.dot
+
             self.assert_flat(flat)
             self.assert_normal(norm)
             self.assert_connected(conn)

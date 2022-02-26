@@ -84,10 +84,7 @@ class Graph:
 
         for state, exits in self.exit_points.items():
             for exit_point in exits:
-                try:
-                    entries[exit_point].add(state)
-                except KeyError:
-                    pass
+                entries[exit_point].add(state)
 
         return entries
 

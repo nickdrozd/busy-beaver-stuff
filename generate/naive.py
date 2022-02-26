@@ -81,10 +81,6 @@ def reject(rejects, states, colors, halt = False):
     return reject_prog
 
 
-def compress(prog_string):
-    return prog_string[4:].replace(' ', '')
-
-
 def yield_programs(states, colors, halt, rejects = None):
     if rejects is None:
         rejects = []
@@ -94,11 +90,3 @@ def yield_programs(states, colors, halt, rejects = None):
     for prog in yield_all_programs(states, colors, halt):
         if not reject_prog(prog):
             yield prog
-
-
-def print_programs(progs, full = True):
-    try:
-        for prog in progs:
-            print(prog if full else compress(prog))
-    except BrokenPipeError:
-        pass
