@@ -21,6 +21,7 @@ class MacroConverter:
                     cells))
         ).normalize()
 
+    # pylint: disable = line-too-long
     def macro_comp(self, cells: int):
         return tuple(
             tuple(
@@ -30,7 +31,7 @@ class MacroConverter:
             for st_sh in range(2 * self.states)
         )
 
-    def run(self, st_sh: int, tape: List[int]):
+    def run(self, st_sh: int, tape: List[int]) -> Tuple[int, int, int]:
         state, edge = divmod(st_sh, 2)
 
         pos = 0 if edge == 0 else len(tape) - 1
@@ -71,7 +72,9 @@ class MacroConverter:
                 out_state,
             )
 
-    def tape_to_color(self, tape):
+        return 0, 0, 0
+
+    def tape_to_color(self, tape) -> int:
         return int(
             ''.join(map(str, tape)),
             self.colors)

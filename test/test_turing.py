@@ -932,6 +932,9 @@ class TuringTest(TestCase):
         self.assert_simple(prog)
         self.assert_connected(prog)
 
+        if '.' not in prog:
+            _ = MacroConverter(prog).macro_prog(2)
+
     def run_comp(self, prog, print_prog = True, **opts):
         if print_prog:
             print('COMPILED')
