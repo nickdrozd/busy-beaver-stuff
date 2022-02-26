@@ -26,12 +26,14 @@ lint :
 
 PYTEST = python3 -m unittest
 
+TUR = test.test_turing.Fast
+PROG = test.test_program
+GRAPH = test.test_graph
+QTREE = test.test_generate.TestTree.test_tree_2_2
+LR = test.test_generate.TestLinRado.test_22h
+
 test :
-	$(PYTEST) -v test.test_turing.Fast
-	$(PYTEST) -v test.test_program
-	$(PYTEST) -v test.test_graph
-	$(PYTEST) -v test.test_generate.TestTree.test_tree_2_2
-	$(PYTEST) -v test.test_generate.TestLinRado.test_22h
+	$(PYTEST) -v $(PROG) $(GRAPH) $(QTREE) $(LR) $(TUR)
 
 test-all :
 	$(PYTEST) discover -v
