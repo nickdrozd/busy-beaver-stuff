@@ -929,6 +929,7 @@ class TuringTest(TestCase):
         self.history = self.machine.history
         self.reached = self.machine.reached
         self.final  = self.machine.final
+        self.tape = self.machine.tape
 
         if reached:
             self.assert_reached(prog)
@@ -1124,6 +1125,24 @@ class Fast(TuringTest):
             self.assertFalse(
                 graph.is_dispersed and graph.is_irreflexive,
                 prog)
+
+    def test_tape(self):
+        self.run_bb(
+            "1RB 2LA 1R_  1LB 1LA 0RA",
+            tape = 50,
+            watch_tape = True)
+
+        tape_copy = self.tape.copy()
+
+        _ = tape_copy.step(0, 1)
+
+        self.assertEqual(
+            self.machine.tape.signature,
+            '101[2]21')
+
+        self.assertEqual(
+            tape_copy.signature,
+            '10[1]121')
 
 
 class Slow(TuringTest):
