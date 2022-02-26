@@ -784,21 +784,22 @@ MODULAR = {
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
-        if isinstance(prog, str) and not prog.startswith('0'):
-            self.assertEqual(
-                prog,
-                Program(prog).normalize())
-
-    def assert_comp(self, prog):
-        if isinstance(prog, str) and '.' not in prog:
-            self.assertEqual(
-                prog,
-                dcompile(tcompile(prog)))
-
-    def assert_connected(self, prog):
-        if not isinstance(prog, str):
+        if prog.startswith('0'):
             return
 
+        self.assertEqual(
+            prog,
+            Program(prog).normalize())
+
+    def assert_comp(self, prog):
+        if '.' in prog:
+            return
+
+        self.assertEqual(
+            prog,
+            dcompile(tcompile(prog)))
+
+    def assert_connected(self, prog):
         if prog in MODULAR:
             return
 
@@ -810,9 +811,6 @@ class TuringTest(TestCase):
             prog)
 
     def assert_simple(self, prog):
-        if not isinstance(prog, str):
-            return
-
         if prog in SPAGHETTI or prog in KERNEL:
             return
 
@@ -824,9 +822,6 @@ class TuringTest(TestCase):
             prog)
 
     def assert_reached(self, prog):
-        if not isinstance(prog, str):
-            return
-
         def dimension(prog):
             comp = tcompile(prog)
             return len(comp) * len(comp[0])
@@ -915,13 +910,17 @@ class TuringTest(TestCase):
             normal = True,
             reached = True,
             **opts):
+        if not isinstance(prog, str):
+            self.run_comp(prog, print_prog, **opts)
+            return
+
         if normal:
             self.assert_normal(prog)
 
         self.assert_comp(prog)
 
         if print_prog:
-            print(prog if isinstance(prog, str) else 'COMPILED')
+            print(prog)
 
         self.machine = run_bb(prog, **opts)
         self.history = self.machine.history
@@ -933,6 +932,14 @@ class TuringTest(TestCase):
 
         self.assert_simple(prog)
         self.assert_connected(prog)
+
+    def run_comp(self, prog, print_prog = True, **opts):
+        if print_prog:
+            print('COMPILED')
+
+        self.machine = run_bb(prog, **opts)
+        self.history = self.machine.history
+        self.final  = self.machine.final
 
     def _test_halt(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
