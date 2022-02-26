@@ -95,15 +95,15 @@ class Graph:
     def is_normal(self) -> bool:
         flat_graph = self.flatten('')
 
-        if any(state not in flat_graph for state in self.states):
+        if any(state not in flat_graph for state in self.states[1:]):
             return False
 
-        positions = tuple(
-            flat_graph.find(state)
-            for state in self.states[1:]
-        )
-
-        return tuple(sorted(positions)) == positions
+        return (
+            positions := tuple(
+                flat_graph.find(state)
+                for state in self.states[1:]
+            )
+        ) == tuple(sorted(positions))
 
     @property
     def is_strongly_connected(self) -> bool:

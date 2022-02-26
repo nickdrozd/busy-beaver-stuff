@@ -38,7 +38,7 @@ GRAPHS = {
     ),
     "1RB ...  0LB 1RC  1LB 0RC": (
         'B . B C B C',
-        0, 0, 0, 1,
+        1, 0, 0, 1,
         {A: set(), B: {A, B, C}, C: {B, C}},
         {A: {B}, B: {B, C}, C: {B, C}},
     ),
@@ -214,7 +214,8 @@ class TestGraph(TestCase):
         (self.assertTrue
          if self.graph.is_normal else
          self.assertFalse)(
-             bool(norm))
+             bool(norm),
+             self.graph.program)
 
     def assert_connected(self, conn):
         (self.assertTrue

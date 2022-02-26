@@ -489,7 +489,6 @@ BLANK_FAST = {
     "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD":   169,
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD":    77,
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA":    66,
-    "1RB ...  0LB 0LC  ... ...  ... ...":     3,
     "1RB ...  0LC ...  ... 0RD  ... ...":     3,
 
     # 2/4
@@ -784,6 +783,10 @@ MODULAR = {
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
+        self.assertTrue(
+            Graph(prog).is_normal,
+            prog)
+
         if prog.startswith('0'):
             return
 
