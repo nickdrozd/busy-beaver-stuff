@@ -107,30 +107,18 @@ class Graph:
 
     @property
     def is_strongly_connected(self) -> bool:
-        states = set(self.states)
-
         for state in self.states:
-            if not any(state in self.arrows[dst]
-                       for dst in
-                       states - { state }):
-                return False
+            reachable_from_x = set(self.arrows[state])
 
-        for state in self.states:
-            reachable_from_x = set(self.arrows[state]) - { state }
-
-            for _ in range(len(states - { state })):
-                reachable_from_x.discard(HALT)
-
-                reachable = {
+            for _ in self.states:
+                reachable_from_x |= {
                     node
                     for connection in reachable_from_x
                     if connection in self.arrows
                     for node in self.arrows[connection]
                 }
 
-                reachable_from_x.update(reachable)
-
-            if not reachable_from_x >= states:
+            if not reachable_from_x >= set(self.states):
                 return False
 
         return True
