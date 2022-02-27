@@ -5,6 +5,7 @@ from itertools import product
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 from tm import parse
+from generate.graph import Graph
 
 INIT = 'A'
 BLANK = '0'
@@ -12,12 +13,12 @@ SHIFTS = 'L', 'R'
 
 class Program:
     def __init__(self, program: str):
-        prog: Dict[str, Dict[int, str]] = {
+        self.prog: Dict[str, Dict[int, str]] = {
             chr(state + 65): dict(enumerate(instructions))
             for state, instructions in enumerate(parse(program))
         }
 
-        self.prog = prog
+        self.graph = Graph(program)
 
     def __repr__(self):
         return '  '.join([
@@ -209,3 +210,25 @@ class Program:
             self.normalize_colors()
 
         return self
+
+    @property
+    def can_spin_out(self) -> bool:
+        if not self.graph.is_zero_reflexive:
+            return False
+
+        for zref in self.graph.zero_reflexive_states:
+            for entry in self.graph.entry_points[zref]:
+                for branch, instr in self[entry].items():
+                    if entry == zref and branch == 0:
+                        continue
+
+                    if instr[2] != zref:
+                        continue
+
+                    if instr[1] == self[zref][0][1]:
+                        return True
+
+                    if instr[0] == '0':
+                        return True
+
+        return False

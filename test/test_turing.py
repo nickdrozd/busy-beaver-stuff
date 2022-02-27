@@ -969,7 +969,11 @@ class TuringTest(TestCase):
             self.prog = prog
 
             if period == 1:
+                self.assertTrue(
+                    Program(prog).can_spin_out)
+
                 self.run_bb(prog)
+
             else:
                 self.verify_lin_recurrence(
                     prog,
