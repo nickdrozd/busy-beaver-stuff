@@ -121,18 +121,28 @@ class Graph:
         return True
 
     @property
-    def is_irreflexive(self) -> bool:
-        return all(
-            state not in connections
+    def reflexive_states(self) -> Set[str]:
+        return {
+            state
             for state, connections in self.arrows.items()
-        )
+            if state in connections
+        }
+
+    @property
+    def zero_reflexive_states(self) -> Set[str]:
+        return {
+            state
+            for state, connections in self.arrows.items()
+            if connections[0] == state
+        }
+
+    @property
+    def is_irreflexive(self) -> bool:
+        return not bool(self.reflexive_states)
 
     @property
     def is_zero_reflexive(self) -> bool:
-        return any(
-            connections[0] == state
-            for state, connections in self.arrows.items()
-        )
+        return bool(self.zero_reflexive_states)
 
     @property
     def entries_dispersed(self) -> bool:

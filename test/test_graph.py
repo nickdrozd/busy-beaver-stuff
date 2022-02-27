@@ -260,3 +260,8 @@ class TestGraph(TestCase):
             self.assert_zero_reflexive(zrefl)
             self.assert_entry_points(entries)
             self.assert_exit_points(exits)
+
+            self.assertTrue((
+                self.graph.zero_reflexive_states
+                <= self.graph.reflexive_states
+            ))
