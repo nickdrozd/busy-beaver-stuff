@@ -1007,6 +1007,14 @@ class TuringTest(TestCase):
 
                 self.run_bb(prog)
 
+                r_steps, r_period = self.final.linrec
+
+                self.assertEqual(r_period, period)
+
+                self.assertIn(
+                    r_steps,
+                    (steps - 1, steps, steps + 1))
+
             else:
                 if prog not in CANT_SAY_CANT_SPIN_OUT:
                     self.assertFalse(
@@ -1032,18 +1040,9 @@ class TuringTest(TestCase):
                     ),
                 )
 
-            if period > 1:
                 self.assertEqual(
                     period,
                     self.final.linrec[1])
-            else:
-                r_steps, r_period = self.final.linrec
-
-                self.assertEqual(r_period, period)
-
-                self.assertIn(
-                    r_steps,
-                    (steps - 1, steps, steps + 1))
 
             self.assertEqual(
                 self.final.qsihlt,
@@ -1052,6 +1051,9 @@ class TuringTest(TestCase):
             self.assertEqual(
                 fixdtp,
                 self.final.fixdtp)
+
+            if not quick:
+                continue
 
             self.run_bb(
                 prog,
@@ -1187,7 +1189,8 @@ class Slow(TuringTest):
 
     def test_quasihalt(self):
         self._test_recur(
-            QUASIHALT_SLOW, False,
+            QUASIHALT_SLOW,
+            quick = False,
             qsihlt = True)
 
     def test_blank(self):
