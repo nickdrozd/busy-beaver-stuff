@@ -219,16 +219,29 @@ class Program:
         for zref in self.graph.zero_reflexive_states:
             for entry in self.graph.entry_points[zref]:
                 for branch, instr in self[entry].items():
+                    color, shift, trans = instr
+
                     if entry == zref and branch == 0:
                         continue
 
-                    if instr[2] != zref:
+                    if trans != zref:
                         continue
 
-                    if instr[1] == self[zref][0][1]:
+                    if shift == (zref_shift := self[zref][0][1]):
                         return True
 
-                    if instr[0] == '0':
+                    if color != '0':
+                        continue
+
+                    assert color == '0'
+                    assert shift != zref_shift
+                    assert trans == zref
+
+                    if any(
+                        trns == entry and prnt == '0'
+                        for pentry in self.graph.entry_points[entry]
+                        for prnt, _, trns in self[pentry].values()
+                    ):
                         return True
 
         return False
