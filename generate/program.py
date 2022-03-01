@@ -227,14 +227,17 @@ class Program:
                     if trans != zref:
                         continue
 
-                    if shift == (zref_shift := self[zref][0][1]):
+                    if shift == (zr_sh := self[zref][0][1]) and any(
+                            tr == entry and (pr == '0' or sh == zr_sh)
+                            for pentry in self.graph.entry_points[entry]
+                            for pr, sh, tr in self[pentry].values()
+                    ):
                         return True
 
                     if color != '0':
                         continue
 
                     assert color == '0'
-                    assert shift != zref_shift
                     assert trans == zref
 
                     if any(

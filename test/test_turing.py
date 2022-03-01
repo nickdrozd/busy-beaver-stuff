@@ -797,7 +797,6 @@ CANT_SAY_CANT_SPIN_OUT = {
     "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA",
     "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD",
     "1RB 0LC  1RD 0RB  1LC 1LA  1RC 1RA",
-    "1RB 0RA  0LB 0LC  1RD 1LC  1RA 1LB",
     "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA",
     "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
 
@@ -1181,6 +1180,12 @@ class Fast(TuringTest):
         self.assertEqual(
             tape_copy.signature,
             '10[1]121')
+
+    def test_spin_out(self):
+        for prog in CANT_SAY_CANT_SPIN_OUT:
+            self.assertTrue(
+                Program(prog).can_spin_out,
+                prog)
 
 
 class Slow(TuringTest):
