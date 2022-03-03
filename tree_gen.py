@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 
+from generate import Program
 from generate.tree import run_tree_gen
-from generate.program import Program
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ from multiprocessing import (
 from typing import Callable
 
 from tm import Machine
-from generate.program import Program  # type: ignore
+from generate import Program  # type: ignore
 
 
 if (USE_RUST := 0):
