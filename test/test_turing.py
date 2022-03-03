@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from tm import run_bb
+from tm import Machine
 from tm.parse import tcompile, dcompile
 from generate.macro import MacroConverter
 from generate.graph import Graph
@@ -952,7 +952,7 @@ class TuringTest(TestCase):
         if print_prog:
             print(prog)
 
-        self.machine = run_bb(prog, **opts)
+        self.machine = Machine(prog).run(**opts)
         self.history = self.machine.history
         self.reached = self.machine.reached
         self.final  = self.machine.final
@@ -971,7 +971,7 @@ class TuringTest(TestCase):
         if print_prog:
             print('COMPILED')
 
-        self.machine = run_bb(prog, **opts)
+        self.machine = Machine(prog).run(**opts)
         self.history = self.machine.history
         self.final  = self.machine.final
 

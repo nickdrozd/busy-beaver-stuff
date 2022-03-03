@@ -1,6 +1,6 @@
 import sys
 
-from tm import run_bb
+from tm import Machine
 
 CANDIDATES = [
     "1RB 1LB  1LB 1LA"
@@ -17,8 +17,7 @@ if __name__ == '__main__':
     source = sys.stdin if STDIN else CANDIDATES
 
     for i, program in enumerate(source):
-        machine = run_bb(
-            program,
+        machine = Machine(program).run(
             tape = TAPE,
             sim_lim = STEPS,
             watch_tape = PRINT,

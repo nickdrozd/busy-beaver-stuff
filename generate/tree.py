@@ -7,7 +7,7 @@ from multiprocessing import (
 )
 from typing import Callable
 
-from tm import run_bb
+from tm import Machine
 from generate.program import Program  # type: ignore
 
 
@@ -28,16 +28,14 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
             except Empty:
                 break
 
-        machine = run_bb(
-            prog,
+        machine = Machine(prog).run(
             sim_lim = steps,
             check_blanks = True,
         )
 
         if machine.final.xlimit is not None:
             check_rec = (
-                run_bb(
-                    prog,
+                Machine(prog).run(
                     sim_lim = steps,
                     check_rec = 0,
                 )

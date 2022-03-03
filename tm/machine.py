@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from typing import Any, Dict, Optional, Tuple
 
+from tm.tape import BlockTape
 from tm.parse import tcompile
 from tm.recurrence import History
 
@@ -81,9 +84,8 @@ class Machine:
                 '',
             ]))
 
-    def run(
-            self,
-            tape,
+    def run(self,
+            tape = None,
             skip = True,
             step_lim = None,
             sim_lim: int = 100_000_000,
@@ -91,10 +93,14 @@ class Machine:
             check_rec: Optional[int] = None,
             check_blanks: bool = False,
             samples: Optional[Dict[int, Any]] = None,
-    ):
+    ) -> Machine:
         prog = self._comp
 
-        self.tape = tape
+        self.tape = tape = (
+            tape
+            if isinstance(tape, BlockTape) else
+            BlockTape([], 0, [], extend_to = tape)
+        )
 
         if samples is not None or check_rec is not None:
             self.history = History(tapes = samples)
@@ -176,6 +182,8 @@ class Machine:
             self.final.xlimit = step
 
         self.finalize(step, state)
+
+        return self
 
     def check_rec(self, step, action):
         result: Optional[Tuple[int, int]] = \

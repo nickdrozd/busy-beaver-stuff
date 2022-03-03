@@ -6,7 +6,7 @@ from queue import Empty
 from multiprocessing import Queue
 from unittest import TestCase
 
-from tm import run_bb
+from tm import Machine
 from generate.graph import Graph
 from generate.tree  import run_tree_gen
 from generate.naive import yield_programs
@@ -68,7 +68,7 @@ class TestLinRado(TestCase):
                 halt,
                 rejects)
             if
-            run_bb(
+            Machine(prog).run (
                 prog,
                 sim_lim = xlimit,
                 check_rec = 0,
