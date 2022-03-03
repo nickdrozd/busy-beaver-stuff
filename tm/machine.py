@@ -88,6 +88,7 @@ class Machine:
             tape = None,
             skip = True,
             step_lim = None,
+            state: int = 0,
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
             check_rec: Optional[int] = None,
@@ -105,7 +106,6 @@ class Machine:
         if samples is not None or check_rec is not None:
             self.history = History(tapes = samples)
 
-        state: int = 0
         step: int = 0
 
         for _ in range(sim_lim):
