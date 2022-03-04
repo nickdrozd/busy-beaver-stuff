@@ -175,6 +175,27 @@ SPINOUT_FAST = {
     "1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...": (1, 10925753),
 }
 
+SPINOUT_FAST_FIXED = {
+    # 2/2
+    "1RB 1LB  0LB 1LA": (2, 6),
+    "1RB 0LB  0LB 1LA": (1, 6),
+
+    # 2/3
+    "1RB 2RA 2LB  0LB 1LA 1RA": (4, 23),
+
+    # 4/2
+    "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819),  # BBB sigma
+    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA": (25, 1459),
+    "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": (32,  581),
+
+    # 2/4
+    "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB": ( 31,  2476),
+    "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": ( 30,  1854),
+
+    # 7/8 derived from 4/2-2819
+    "1LB 2LC 1RD ... ... 3RE ... 3RF  0RD ... ... 1RD 2RD ... 3RA ...  4RE 4LC 5LG 3RD 4RD ... 6RD ...  0RD 2LC 7LG ... 5LG 6LC ... 0LC  4LC ... 3RA ... 1LB 5LB 3RD ...  7LG ... ... ... ... 1LB ... ...  6RA ... ... 1LB 5LG ... 3RA ...": (24, 944),
+}
+
 SPINOUT_SLOW = {
     # 2/4
     "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340, 2333909),
@@ -218,33 +239,18 @@ QUASIHALT = {
 }
 
 QUASIHALT_FIXED = {
-    # 2/2
-    "1RB 1LB  0LB 1LA": (2, 6, 1),
-    "1RB 0LB  0LB 1LA": (1, 6, 1),
-
     # 3/2
     "1RB 1RC  1LC 0LB  1RA 1LA": (5, 22, 2),  # center, >BB
     "1RB 1RC  1LC 1RA  1RA 1LA": (6,  9, 2),  # center, >BB sigma
 
     # 2/3
-    "1RB 2RA 2LB  0LB 1LA 1RA": ( 4, 23, 1),
     "1RB 1LA 2RA  2LA 2LB 2RB": ( 8, 17, 2),
-
-    # 4/2
-    "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819, 1),  # BBB sigma
-    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA": (25, 1459, 1),
-    "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": (32,  581, 1),
 
     # 2/4
     "1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB": (142, 21485, 2),
     "1RB 2LA 1RA 1LA  0LB 3LA 2RB 3RA": ( 77,  9698, 2),  # QH 9623
     "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA": ( 90,  7193, 2),  # QH 7106
     "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA": ( 84,  6443, 2),  # QH 6362
-    "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB": ( 31,  2476, 1),
-    "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": ( 30,  1854, 1),
-
-    # 7/8 derived from 4/2-2819
-    "1LB 2LC 1RD ... ... 3RE ... 3RF  0RD ... ... 1RD 2RD ... 3RA ...  4RE 4LC 5LG 3RD 4RD ... 6RD ...  0RD 2LC 7LG ... 5LG 6LC ... 0LC  4LC ... 3RA ... 1LB 5LB 3RD ...  7LG ... ... ... ... 1LB ... ...  6RA ... ... 1LB 5LG ... 3RA ...": (24, 944, 1),
 }
 
 RECUR_FAST = {
@@ -992,7 +998,7 @@ class TuringTest(TestCase):
             for cells, expected in params.items()
         })
 
-    def _test_spinout(self, prog_data):
+    def _test_spinout(self, prog_data, fixed: bool):
         for prog, (marks, steps) in prog_data.items():
             self.run_bb(prog)
 
@@ -1002,6 +1008,8 @@ class TuringTest(TestCase):
             self.assertEqual(
                 steps,
                 self.final.spnout)
+
+            (self.assertTrue if fixed else self.assertFalse)(fixed)
 
     def _test_recur(
             self, prog_data, quick,
@@ -1119,7 +1127,13 @@ class Fast(TuringTest):
         self._test_macro_halt(MACRO_HALT_FAST)
 
     def test_spinout(self):
-        self._test_spinout(SPINOUT_FAST)
+        self._test_spinout(SPINOUT_FAST, fixed = False)
+        self._test_spinout(SPINOUT_FAST_FIXED, fixed = True)
+
+        for prog in CANT_SAY_CANT_SPIN_OUT:
+            self.assertTrue(
+                Program(prog).can_spin_out,
+                prog)
 
     def test_recur(self):
         self._test_recur(RECUR_FAST, True)
@@ -1204,19 +1218,13 @@ class Fast(TuringTest):
             copy_2.signature,
             '101[2]1')
 
-    def test_spin_out(self):
-        for prog in CANT_SAY_CANT_SPIN_OUT:
-            self.assertTrue(
-                Program(prog).can_spin_out,
-                prog)
-
 
 class Slow(TuringTest):
     def test_halt(self):
         self._test_halt(HALT_SLOW)
 
     def test_spinout(self):
-        self._test_spinout(SPINOUT_SLOW)
+        self._test_spinout(SPINOUT_SLOW, fixed = False)
 
     def test_blank(self):
         self._test_blank(BLANK_SLOW)
