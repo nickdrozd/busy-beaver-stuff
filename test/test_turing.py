@@ -623,6 +623,7 @@ UNDEFINED_FAST = {
     "1RB 2LA ... ...  1LB 1LA ... ...": ( 7, 'B2'),
     "1RB 2LA ... ...  1LB 1LA 3RB ...": ( 9, 'A3'),
     "1RB 2LA ... 1RA  1LB 1LA 3RB ...": (22, 'A2'),
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (3932963, 'B3'),
 
     # 2/4 BLB
     "1RB ... ... ...  2LB ... ... ...": ( 2, 'B1'),
@@ -657,6 +658,7 @@ UNDEFINED_FAST = {
     "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... ...": ( 6, 'E1'),
     "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... 0LA": (10, 'D1'),
     "1RB 1LC  1RC ...  1RD 0LE  1LA 1LD  ... 0LA": (16, 'B1'),
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (47176869, 'E0'),
 
     # 5/2 blank 2190942280098521917
     "1RB ...  1RC ...  1RD ...  0RE ...  ... ...": ( 4, 'E0'),
@@ -681,14 +683,6 @@ UNDEFINED_FAST = {
     "1RB 1RC  1LD ...  0RE 0RC  ... 1RA  1LB ...": (13, 'D0'),
     "1RB 1RC  1LD ...  0RE 0RC  1LC 1RA  1LB ...": (23, 'E1'),
     "1RB 1RC  1LD ...  0RE 0RC  1LC 1RA  1LB 1RE": (27, 'B1'),
-}
-
-UNDEFINED_SLOW = {
-    # 2/4 BBH last
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (3932963, 'B3'),
-
-    # 5/2 BBH last
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (47176869, 'E0'),
 }
 
 BB4_EXTENSIONS = {
@@ -1226,6 +1220,3 @@ class Slow(TuringTest):
 
     def test_blank(self):
         self._test_blank(BLANK_SLOW)
-
-    def test_undefined(self):
-        self._test_undefined(UNDEFINED_SLOW)
