@@ -1,6 +1,6 @@
 # pylint: disable = attribute-defined-outside-init, line-too-long, too-many-lines
 
-from unittest import TestCase
+from unittest import TestCase, expectedFailure
 
 from tm import Machine
 from tm.parse import tcompile, dcompile
@@ -1159,25 +1159,36 @@ class Fast(TuringTest):
                 graph.is_dispersed and graph.is_irreflexive,
                 prog)
 
+    @expectedFailure
     def test_tape(self):
         self.run_bb(
             "1RB 2LA 1R_  1LB 1LA 0RA",
             tape = 50,
             watch_tape = True)
 
+        self.assertEqual(
+            self.machine.tape.signature,
+            '101[2]21')
+
         print(self.machine)
 
-        tape_copy = self.tape.copy()
+        copy_1 = self.tape.copy()
+        copy_2 = self.tape.copy()
 
-        _ = tape_copy.step(0, 1)
+        _ = copy_1.step(0, 2)
+        _ = copy_2.step(1, 1)
 
         self.assertEqual(
             self.machine.tape.signature,
             '101[2]21')
 
         self.assertEqual(
-            tape_copy.signature,
-            '10[1]121')
+            copy_1.signature,
+            '10[1]21')
+
+        self.assertEqual(
+            copy_2.signature,
+            '101[2]1')
 
     def test_spin_out(self):
         for prog in CANT_SAY_CANT_SPIN_OUT:
