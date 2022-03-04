@@ -1,6 +1,6 @@
 # pylint: disable = attribute-defined-outside-init, line-too-long, too-many-lines
 
-from unittest import TestCase, expectedFailure
+from unittest import TestCase
 
 from tm import Machine
 from tm.parse import tcompile, dcompile
@@ -1159,7 +1159,6 @@ class Fast(TuringTest):
                 graph.is_dispersed and graph.is_irreflexive,
                 prog)
 
-    @expectedFailure
     def test_tape(self):
         self.run_bb(
             "1RB 2LA 1R_  1LB 1LA 0RA",
