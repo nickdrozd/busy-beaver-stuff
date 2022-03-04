@@ -37,16 +37,25 @@ HALT_FAST = {
 
     # 2/4
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (2050, 3932964),  # BB
-    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2RA": (90, 7195),
-    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2LA": (84, 6445),
-    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 3RA": (84, 6445),
-    "1RB 2RB 3LA 2RA  1LA 3RB 1R_ 1LB": (60, 2351),
-
-    # 3/3 copy of 2/4 BB
-    "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
+    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2RA": (  90,    7195),
+    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2LA": (  84,    6445),
+    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 3RA": (  84,    6445),
+    "1RB 2RB 3LA 2RA  1LA 3RB 1R_ 1LB": (  60,    2351),
 
     # 5/2 BB
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (4098, 47176870),
+    # 3/3
+    "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC": (36089, 310341163),
+    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
+
+    # Copy of 2/4 BB
+    "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
+    # Surprise-in-a-box
+    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (31, 2315619),
+    # R. Blodgett
+    "1RB 1LB 2LB  1RC 1LA 0RA  1LA 2RA 1R_": (9, 57),
+    # David Jefferson
+    "1RB 1RA 1R_  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 
     # 8/4 derived from 5/2 BB
     "1RB ... ... ...  1LC ... 1LD ...  2RE 0LF ... ...  1RG 1LD 1LF ...  3LF 1LD ... 3LD  2RG 2LH 1LD ...  1RE 1RG ... 1RB  1R_ 3LC 1RB ...": (4097, 23587667),
@@ -70,35 +79,23 @@ HALT_FAST = {
     # Castor diligentissimus et primus et perpetuus (Castor schultis)
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": (501, 134467),
 
-    # Castor ministerialis: the Civil Servant Beaver, who cares most
-    # for his progress, but does not produce anything.
+    # Castor ministerialis: the Civil Servant Beaver, who
+    # cares most for his progress, but does not produce anything.
     "1RB 1RA  1RC 0RD  1LE 0RA  0R_ 0RB  1LB 1LE": (0, 52),
 
-    # Castor scientificus: the Scientific Beaver, who does not produce
-    # anything either, but with more effort and less effect on his
-    # position.
+    # Castor scientificus: the Scientific Beaver, who does
+    # not produce anything either, but with more effort and
+    # less effect on his position.
     "0RB 0LA  0RC 0R_  1RD 1LE  1LA 0LD  1RC 1RE": (0, 187),
 
-    # Castor exflippus: the Beaver Freak, who tries to survive as long
-    # as possible without producing anything, moving on the tape, and
-    # changing his state.
+    # Castor exflippus: the Beaver Freak, who tries to
+    # survive as long as possible without producing
+    # anything, moving on the tape, and changing his state.
     "0RB 0LA  1RC 0R_  0LC 1RD  0LD 1RE  1LA 0LE": (0, 67),
-
-    # 3/3
-
-    # R. Blodgett
-    "1RB 1LB 2LB  1RC 1LA 0RA  1LA 2RA 1R_": (9, 57),
-
-    # David Jefferson
-    "1RB 1RA 1R_  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 }
 
 HALT_SLOW = {
     # 3/3
-    # Surprise-in-a-box
-    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (31, 2315619),
-    "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC": (36089, 310341163),
-    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
     "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA": (1525688, 987522842126),
     "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
 }
