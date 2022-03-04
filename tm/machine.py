@@ -18,6 +18,7 @@ class MachineResult:
         self.halted = None
         self.linrec = None
         self.qsihlt = None
+        self.spnout = None
         self.undfnd = None
         self.xlimit = None
 
@@ -31,12 +32,13 @@ class MachineResult:
                 'HALTED': self.halted,
                 'LINREC': self.linrec,
                 'QSIHLT': self.qsihlt,
+                'SPNOUT': self.spnout,
                 'XLIMIT': self.xlimit,
             }.items()
             if data is not None
         ])
 
-    nonhalt = 'fixdtp', 'linrec', 'qsihlt', 'undfnd', 'xlimit'
+    nonhalt = 'fixdtp', 'linrec', 'qsihlt', 'spnout', 'undfnd', 'xlimit'
 
     def validate_results(self):
         if self.halted is not None:
@@ -44,6 +46,13 @@ class MachineResult:
                 if getattr(self, cat) is not None:
                     raise ValidationError(
                         f'{self.prog} || {cat} | {self}')
+
+        if (spnout := self.spnout) is not None:
+            lstep, _ = self.linrec
+            assert lstep == spnout
+
+            qstep, _ = self.qsihlt
+            assert qstep == spnout
 
         if self.fixdtp and self.linrec is None:
             raise ValidationError(
@@ -148,8 +157,8 @@ class Machine:
 
             if self.history is None:
                 if (state == next_state
-                    and (shift == tape.edge or tape.blank)):
-                    self.final.qsihlt = self.final.linrec = step, 1
+                        and (shift == tape.edge or tape.blank)):
+                    self.final.spnout = step
                     self.final.fixdtp = color == 0
                     break
             else:
@@ -228,6 +237,9 @@ class Machine:
 
         if self.tape.blank:
             self.final.blanks = step
+
+        if self.final.spnout is not None:
+            self.final.qsihlt = self.final.linrec = step, 1
 
         self.steps = step
         self.state = state

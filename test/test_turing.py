@@ -119,50 +119,81 @@ MACRO_HALT_FAST = {
     },
 }
 
-QUASIHALT = {
-    # 2/2 (not better than BB)
-    "1RB 1LB  1LB 1LA": (3, 6, 1),
-    "1RB 0LB  1LB 1LA": (2, 6, 1),
+SPINOUT_FAST = {
+    # 2/2
+    "1RB 1LB  1LB 1LA": (3, 6),
+    "1RB 0LB  1LB 1LA": (2, 6),
 
     # 3/2
-    "1RB 0LB  1LA 0RC  1LC 1LA": (6, 55, 1),  # BBB shift
-    "1RB 0LB  1RC 0RC  1LC 1LA": (6, 54, 1),
-    "1RB 0LC  1LB 0RC  1LC 1LA": (5, 52, 1),  # BB extension
-    "1RB 0LC  0LC 0RC  1LC 1LA": (5, 51, 1),
-    "1RB 0LC  1LA 0RC  1RC 1RB": (5, 49, 1),
-    "1RB 0LC  0RC 0RC  1LC 1LA": (5, 48, 1),
-    "1RB 1LB  1LA 1LC  1RC 0LC": (0, 34, 1),
-    "1RB 1LC  0RC ...  1LC 0LA": (5, 27, 1),
-    "1RB 1LC  1LB 1LA  1RC 0LC": (0, 27, 1),
-    "1RB 1LB  1LA 1RC  1LC 0RC": (0, 26, 1),
+    "1RB 0LB  1LA 0RC  1LC 1LA": (6, 55),  # BBB(3, 2)
+    "1RB 0LB  1RC 0RC  1LC 1LA": (6, 54),
+    "1RB 0LC  1LB 0RC  1LC 1LA": (5, 52),  # BB extension
+    "1RB 0LC  0LC 0RC  1LC 1LA": (5, 51),
+    "1RB 0LC  1LA 0RC  1RC 1RB": (5, 49),
+    "1RB 0LC  0RC 0RC  1LC 1LA": (5, 48),
+    "1RB 1LB  1LA 1LC  1RC 0LC": (0, 34),
+    "1RB 1LC  0RC ...  1LC 0LA": (5, 27),
+    "1RB 1LC  1LB 1LA  1RC 0LC": (0, 27),
+    "1RB 1LB  1LA 1RC  1LC 0RC": (0, 26),
+
+    # 2/3
+    "1RB 2LB 1LA  2LB 2RA 0RA": ( 8, 59),  # BBB(2, 3)
+    "1RB 0LB 1RA  1LB 2LA 2RA": ( 3, 45),
+    "1RB 2LB 1RA  2LB 2LA 0RA": (10, 43),
+    "1RB 2RA 2LB  2LB 2LA 0LA": ( 5, 40),
+    "1RB 1LB 1RA  2LB 2LA 0RA": ( 6, 23),
+    "1RB 2LB ...  1LB 2LA 1RB": ( 5, 17),
+
+    # 4/2
+    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": ( 0, 32779478),
+    "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": ( 0,    66349),
+    "1RB 1RA  0RC 0RB  0RD 1RA  1LD 1LB": ( 0,     2568),
+    "1RB 1RA  0RC 1LA  1LC 1LD  0RB 0RD": ( 0,     2512),
+    "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA": (39,     1164),
+    "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA": (20,     1153),
+    "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA": (19,      673),
+    "1RB 0LC  1LD 0RA  1RC 1RB  1LA 0LB": (31,      651),
+    "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,      536),
+    "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,      444),
+
+    # 2/4
+    "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB": (2747, 2501552),
+    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA": (   0,  190524),
+    "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA": ( 190,   32849),
+    "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RB": (  62,   22464), # QH 22402
+    "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB": (  99,   16634),
+    "1RB 2RB 1LA 1LA  2LB 2RA 3LB 1LA": (  62,    4067), # QH 4005
+    "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RA": (  42,    3247),
+    "1RB 2RB 3LA 2RA  1LB 1LA 2LB 3RA": (  42,    3057),
+    "1RB 2RA 3LB 2LA  1LB 3LA 3RA 1RB": (  44,    3054),
+    "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA": (  31,    2872),
+    "1RB 0RB 0LA 2LB  1LB 2LA 3RB 1RA": (  32,    1769),
+    "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA": (  36,    1525),
+    "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA": (  35,    1458),
+
+    # 7/7 from 4/2 QH
+    "1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...": (1, 10925753),
+}
+
+SPINOUT_SLOW = {
+    # 2/4
+    "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340, 2333909),
+}
+
+QUASIHALT = {
+    # 3/2
     "1RB ...  1LB 0LC  1RC 1RB": (3, 5, 13),
     "1RB ...  1LB 1RC  0LC 0RB": (2, 2, 14),
     "1RB ...  1LB 1LC  1RC 0RB": (2, 2, 13),
     "1RB ...  1LC 0RB  1LB 1RC": (2, 2, 10),
 
     # 2/3
-    "1RB 2LB 1LA  2LB 2RA 0RA": ( 8, 59, 1),  # BBB shift
-    "1RB 0LB 1RA  1LB 2LA 2RA": ( 3, 45, 1),
-    "1RB 2LB 1RA  2LB 2LA 0RA": (10, 43, 1),  # BBB sigma
-    "1RB 2RA 2LB  2LB 2LA 0LA": ( 5, 40, 1),
-    "1RB 1LB 1RA  2LB 2LA 0RA": ( 6, 23, 1),
-    "1RB 2LB ...  1LB 2LA 1RB": ( 5, 17, 1),
     "1RB 2LA 1RA  2LB 1LA 2RB": ( 5, 16, 3),
     "1RB ... ...  2LB 1RB 1LB": ( 1,  1, 5),
 
     # 4/2
-    "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": (0, 66349, 1),
-    # TNF: "1RB 0LD  1LC 0LA  1LA 0LC  1RD 1RC"
-    "1RB 1RA  0RC 0RB  0RD 1RA  1LD 1LB": ( 0, 2568, 1),
-    "1RB 1RA  0RC 1LA  1LC 1LD  0RB 0RD": ( 0, 2512, 1),
     "1RB 1RC  1RD 0LC  1LD 0LD  1LB 0RA": (56, 2332, 3),
     "1RB 0LC  1RC 1LD  1RD 0RB  0LB 1LA": (35, 1460, 3),  # QH 1459
-    "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA": (39, 1164, 1),
-    "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA": (20, 1153, 1),
-    "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA": (19,  673, 1),
-    "1RB 0LC  1LD 0RA  1RC 1RB  1LA 0LB": (31,  651, 1),
-    "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,  536, 1),
-    "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,  444, 1),
     "1RB 0RC  0RD 1RA  0LD 0LA  1LC 1LA": ( 8,  334, 2),
     "1RB 0RB  1LC 1RA  0LD 1LB  1RD 0LB": ( 8,  119, 6),
     "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA": (10,  108, 8),
@@ -175,20 +206,8 @@ QUASIHALT = {
     "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE": (  2,   3247, 3),
 
     # 2/4
-    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA": (   0,  190524, 1),
-    "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA": ( 190,   32849, 1),
-    "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RB": (  62,   22464, 1),  # QH 22402
-    "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB": (  99,   16634, 1),
     "1RB 2LA 1RA 1LA  2LB 3LA 2RB 2RA": ( 106,   10456, 3),  # QH 10353
-    "1RB 2RB 1LA 1LA  2LB 2RA 3LB 1LA": (  62,    4067, 1),  # QH 4005
-    "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RA": (  42,    3247, 1),
-    "1RB 2RB 3LA 2RA  1LB 1LA 2LB 3RA": (  42,    3057, 1),
-    "1RB 2RA 3LB 2LA  1LB 3LA 3RA 1RB": (  44,    3054, 1),
-    "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA": (  31,    2872, 1),
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA": (  57,    2859, 3),
-    "1RB 0RB 0LA 2LB  1LB 2LA 3RB 1RA": (  32,    1769, 1),
-    "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA": (  36,    1525, 1),
-    "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA": (  35,    1458, 1),
 
     # "1RB 3LA 1LA 1RA  2LB 2RA 0RB 3RB" -- QH 77, xmas
     # "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB" -- QH 14, xmas
@@ -226,18 +245,6 @@ QUASIHALT_FIXED = {
 
     # 7/8 derived from 4/2-2819
     "1LB 2LC 1RD ... ... 3RE ... 3RF  0RD ... ... 1RD 2RD ... 3RA ...  4RE 4LC 5LG 3RD 4RD ... 6RD ...  0RD 2LC 7LG ... 5LG 6LC ... 0LC  4LC ... 3RA ... 1LB 5LB 3RD ...  7LG ... ... ... ... 1LB ... ...  6RA ... ... 1LB 5LG ... 3RA ...": (24, 944, 1),
-}
-
-QUASIHALT_SLOW = {
-    # 4/2
-    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": (0, 32779478, 1),
-
-    # 2/4
-    "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB": (2747, 2501552, 1),
-    "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340, 2333909, 1),
-
-    # 7/7 from 4/2 QH
-    "1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...": (0, 10925753, 1),
 }
 
 RECUR_FAST = {
@@ -991,6 +998,17 @@ class TuringTest(TestCase):
             for cells, expected in params.items()
         })
 
+    def _test_spinout(self, prog_data):
+        for prog, (marks, steps) in prog_data.items():
+            self.run_bb(prog)
+
+            self.assert_marks(marks)
+            self.assert_steps(steps)
+
+            self.assertEqual(
+                steps,
+                self.final.spnout)
+
     def _test_recur(
             self, prog_data, quick,
             qsihlt = False,
@@ -1106,6 +1124,9 @@ class Fast(TuringTest):
     def test_macro_halt(self):
         self._test_macro_halt(MACRO_HALT_FAST)
 
+    def test_spinout(self):
+        self._test_spinout(SPINOUT_FAST)
+
     def test_recur(self):
         self._test_recur(RECUR_FAST, True)
 
@@ -1200,11 +1221,8 @@ class Slow(TuringTest):
     def test_halt(self):
         self._test_halt(HALT_SLOW)
 
-    def test_quasihalt(self):
-        self._test_recur(
-            QUASIHALT_SLOW,
-            quick = False,
-            qsihlt = True)
+    def test_spinout(self):
+        self._test_spinout(SPINOUT_SLOW)
 
     def test_blank(self):
         self._test_blank(BLANK_SLOW)
