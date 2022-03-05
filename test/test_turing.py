@@ -977,8 +977,8 @@ class TuringTest(TestCase):
             self.prog = prog
 
             if period == 1:
-                self.assertTrue(
-                    Program(prog).can_spin_out)
+                self.assertFalse(
+                    Program(prog).cant_spin_out)
 
                 self.run_bb(prog)
 
@@ -992,8 +992,8 @@ class TuringTest(TestCase):
 
             else:
                 if prog not in CANT_SAY_CANT_SPIN_OUT:
-                    self.assertFalse(
-                        Program(prog).can_spin_out)
+                    self.assertTrue(
+                        Program(prog).cant_spin_out)
 
                 self.verify_lin_recurrence(
                     prog,
@@ -1089,8 +1089,8 @@ class Fast(TuringTest):
         self._test_spinout(SPINOUT_FAST_FIXED, fixed = True)
 
         for prog in CANT_SAY_CANT_SPIN_OUT:
-            self.assertTrue(
-                Program(prog).can_spin_out,
+            self.assertFalse(
+                Program(prog).cant_spin_out,
                 prog)
 
     def test_recur(self):

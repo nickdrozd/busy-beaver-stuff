@@ -212,9 +212,9 @@ class Program:
         return self
 
     @property
-    def can_spin_out(self) -> bool:
+    def cant_spin_out(self) -> bool:
         if not self.graph.is_zero_reflexive:
-            return False
+            return True
 
         for zref in self.graph.zero_reflexive_states:
             for entry in self.graph.entry_points[zref]:
@@ -232,7 +232,7 @@ class Program:
                             for pentry in self.graph.entry_points[entry]
                             for pr, sh, tr in self[pentry].values()
                     ):
-                        return True
+                        return False
 
                     if color != '0':
                         continue
@@ -245,6 +245,6 @@ class Program:
                         for pentry in self.graph.entry_points[entry]
                         for prnt, _, trns in self[pentry].values()
                     ):
-                        return True
+                        return False
 
-        return False
+        return True
