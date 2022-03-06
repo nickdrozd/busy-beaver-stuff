@@ -4,7 +4,7 @@ import re
 from itertools import product
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
-from tm import parse
+from tm import parse, BlockTape, Machine
 from generate.graph import Graph
 
 INIT = 'A'
@@ -213,38 +213,49 @@ class Program:
 
     @property
     def cant_spin_out(self) -> bool:
-        if not self.graph.is_zero_reflexive:
-            return True
+        max_attempts = 50
 
-        for zref in self.graph.zero_reflexive_states:
-            for entry in self.graph.entry_points[zref]:
-                for branch, instr in self[entry].items():
-                    color, shift, trans = instr
+        configs = [
+            (1, state, BlockTape([], 0, []))
+            for state in self.graph.zero_reflexive_states
+        ]
 
-                    if entry == zref and branch == 0:
+        while configs:  # pylint: disable = while-used
+            step, state, tape = configs.pop()
+
+            if step > max_attempts:
+                return False
+
+            run = Machine(self).run(
+                step_lim = step,
+                tape = tape.copy(),
+                state = ord(state) - 65,
+            )
+
+            if run.final.spnout is None:
+                continue
+
+            for entry in self.graph.entry_points[state]:
+                if entry == state:
+                    continue
+
+                for branch, (_, shift, trans) in self[entry].items():
+                    if trans != state:
                         continue
 
-                    if trans != zref:
-                        continue
+                    next_tape = tape.copy()
 
-                    if shift == (zr_sh := self[zref][0][1]) and any(
-                            tr == entry and (pr == '0' or sh == zr_sh)
-                            for pentry in self.graph.entry_points[entry]
-                            for pr, sh, tr in self[pentry].values()
-                    ):
-                        return False
+                    _ = next_tape.step(
+                        not (0 if shift == 'L' else 1),
+                        next_tape.scan,
+                    )
 
-                    if color != '0':
-                        continue
+                    next_tape.scan = branch
 
-                    assert color == '0'
-                    assert trans == zref
-
-                    if any(
-                        trns == entry and prnt == '0'
-                        for pentry in self.graph.entry_points[entry]
-                        for prnt, _, trns in self[pentry].values()
-                    ):
-                        return False
+                    configs.append((
+                        step + 1,
+                        entry,
+                        next_tape,
+                    ))
 
         return True
