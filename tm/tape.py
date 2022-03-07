@@ -70,6 +70,7 @@ class BlockTape:
             deepcopy(self.rspan),
             head = self.head,
             init = self.init,
+            extend_to = self.extend_to,
         )
 
     def to_ptr(self) -> PtrTape:
