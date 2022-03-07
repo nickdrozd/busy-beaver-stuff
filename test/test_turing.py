@@ -195,7 +195,16 @@ SPINOUT_FAST_FIXED = {
 
 SPINOUT_SLOW = {
     # 2/4
-    "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340, 2333909),
+    "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340,       2333909),
+    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA": (   0, 1367361263049),
+
+    # 5/2 blb
+    "1RB 1RA  0RC 0RB  1LC 1LD  1RE 1LB  ... 0RA": (0, 348098678511),
+    "1RB ...  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB": (0, 455790469746),
+    "1RB ...  0LC 0LB  0LD 1LC  1RD 0RE  1LB 1LA": (0, 455790469748),
+
+    # 6/2 constructed from 4/2
+    "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC": (0, 65538552),
 }
 
 QUASIHALT = {
@@ -530,19 +539,6 @@ BLANK_FAST = {
 
     # 6/2 inverted from 4/2 BLB
     "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": 32779477,
-}
-
-BLANK_SLOW = {
-    # 2/4
-    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA": 1367361263049,
-
-    # 5/2 blb
-    "1RB ...  0LC 0LB  0LD 1LC  1RD 0RE  1LB 1LA": 455790469746,
-    "1RB ...  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB": 455790469742,
-    "1RB 1RA  0RC 0RB  1LC 1LD  1RE 1LB  ... 0RA": 348098678510,
-
-    # 6/2 constructed from 4/2
-    "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC": 65538549,
 }
 
 UNDEFINED_FAST = {
@@ -1179,6 +1175,3 @@ class Slow(TuringTest):
 
     def test_spinout(self):
         self._test_spinout(SPINOUT_SLOW, fixed = False)
-
-    def test_blank(self):
-        self._test_blank(BLANK_SLOW)
