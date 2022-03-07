@@ -767,6 +767,12 @@ CANT_SAY_CANT_SPIN_OUT = {
     "1RB 1RA 0RB 2LB  1LB 2LA 3RB 0LA",
 }
 
+CANT_SPIN_OUT_FALSE_POSITIVES = {
+    "1RB 0LB  1RC 0RC  1LC 1LA",
+    "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA",
+    "1RB ...  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB",
+}
+
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
@@ -960,6 +966,10 @@ class TuringTest(TestCase):
                 self.final.spnout)
 
             (self.assertTrue if fixed else self.assertFalse)(fixed)
+
+            if prog not in CANT_SPIN_OUT_FALSE_POSITIVES:
+                self.assertFalse(
+                    Program(prog).cant_spin_out)
 
     def _test_recur(
             self, prog_data, quick,
