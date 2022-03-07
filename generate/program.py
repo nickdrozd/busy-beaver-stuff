@@ -236,10 +236,10 @@ class Program:
                 continue
 
             for entry in self.graph.entry_points[state]:
-                if entry == state:
-                    continue
-
                 for branch, (_, shift, trans) in self[entry].items():
+                    if entry == state and branch == 0:
+                        continue
+
                     if trans != state:
                         continue
 
