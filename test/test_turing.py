@@ -739,7 +739,7 @@ MODULAR = {
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
 }
 
-CANT_SAY_CANT_SPIN_OUT = {
+CANT_SPIN_OUT_FALSE_NEGATIVES = {
     "1RB 1LB  0RC 0RB  1LC 0LA",
     "1RB 0LA  0RC 1LA  1LC 0RB",
 
@@ -967,9 +967,13 @@ class TuringTest(TestCase):
 
             (self.assertTrue if fixed else self.assertFalse)(fixed)
 
-            if prog not in CANT_SPIN_OUT_FALSE_POSITIVES:
+            try:
                 self.assertFalse(
                     Program(prog).cant_spin_out)
+            except AssertionError:
+                self.assertIn(
+                    prog,
+                    CANT_SPIN_OUT_FALSE_POSITIVES)
 
     def _test_recur(
             self, prog_data, quick,
@@ -993,9 +997,13 @@ class TuringTest(TestCase):
                     (steps - 1, steps, steps + 1))
 
             else:
-                if prog not in CANT_SAY_CANT_SPIN_OUT:
+                try:
                     self.assertTrue(
                         Program(prog).cant_spin_out)
+                except AssertionError:
+                    self.assertIn(
+                        prog,
+                        CANT_SPIN_OUT_FALSE_NEGATIVES)
 
                 self.verify_lin_recurrence(
                     prog,
@@ -1090,10 +1098,13 @@ class Fast(TuringTest):
         self._test_spinout(SPINOUT_FAST, fixed = False)
         self._test_spinout(SPINOUT_FAST_FIXED, fixed = True)
 
-        for prog in CANT_SAY_CANT_SPIN_OUT:
+        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
             self.assertFalse(
-                Program(prog).cant_spin_out,
-                prog)
+                Program(prog).cant_spin_out)
+
+        for prog in CANT_SPIN_OUT_FALSE_POSITIVES:
+            self.assertTrue(
+                Program(prog).cant_spin_out)
 
     def test_recur(self):
         self._test_recur(RECUR_FAST, True)
