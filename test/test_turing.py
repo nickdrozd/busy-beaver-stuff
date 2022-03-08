@@ -771,6 +771,17 @@ CANT_SPIN_OUT_FALSE_POSITIVES = {
     "1RB 0LB  1RC 0RC  1LC 1LA",
 }
 
+DO_SPIN_OUT = {
+    "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",  # 10^16
+    "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",  # 10^23
+
+    "1RB 0LB 1LA  2LC 2LB 2LB  2RC 2RA 0LC",  # 10^62
+
+    "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA",  # 10^18
+    "1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA",  # 10^502
+    "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",  # 10^502
+}
+
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
@@ -1102,6 +1113,10 @@ class Fast(TuringTest):
 
         for prog in CANT_SPIN_OUT_FALSE_POSITIVES:
             self.assertTrue(
+                Program(prog).cant_spin_out)
+
+        for prog in DO_SPIN_OUT:
+            self.assertFalse(
                 Program(prog).cant_spin_out)
 
     def test_recur(self):
