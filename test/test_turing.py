@@ -739,6 +739,14 @@ MODULAR = {
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
 }
 
+CANT_HALT_FALSE_POSITIVES = {
+    "1RB ...  0L_ ...",
+
+    "1RB 1R_  1LB 0RC  1LC 1LA",
+
+    "1RB 1L_  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
+}
+
 CANT_SPIN_OUT_FALSE_NEGATIVES = {
     "1RB 0RB  1LB 1RA",
 
@@ -963,6 +971,17 @@ class TuringTest(TestCase):
                 steps,
                 self.final.halted)
 
+            if not isinstance(prog, str):
+                continue
+
+            try:
+                self.assertFalse(
+                    Program(prog).cant_halt)
+            except AssertionError:
+                self.assertIn(
+                    prog,
+                    CANT_HALT_FALSE_POSITIVES)
+
     def _test_macro_halt(self, prog_data):
         self._test_halt({
             MacroConverter(prog).macro_comp(cells): expected
@@ -985,6 +1004,9 @@ class TuringTest(TestCase):
 
             self.assertFalse(
                 Program(prog).cant_spin_out)
+
+            self.assertTrue(
+                Program(prog).cant_halt)
 
     def _test_recur(
             self, prog_data, quick,
@@ -1015,6 +1037,9 @@ class TuringTest(TestCase):
                     self.assertIn(
                         prog,
                         CANT_SPIN_OUT_FALSE_NEGATIVES)
+
+                    self.assertTrue(
+                        Program(prog).cant_halt)
 
                 self.verify_lin_recurrence(
                     prog,

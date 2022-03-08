@@ -88,6 +88,14 @@ class Program:
         return slots[0]
 
     @property
+    def halt_slots(self) -> Iterator[str]:
+        yield from (
+            slot
+            for slot, instr in self.instructions
+            if instr[2] in ('.', '_')
+        )
+
+    @property
     def used_states(self) -> Iterator[str]:
         yield from (
             action[2]
@@ -212,13 +220,31 @@ class Program:
         return self
 
     @property
-    def cant_spin_out(self) -> bool:
-        max_attempts = 10
+    def cant_halt(self) -> bool:
+        return self._cant_reach(
+            'halted',
+            [
+                (1, slot[0], BlockTape([], int(slot[1]), []))
+                for slot in self.halt_slots
+            ],
+        )
 
-        configs = [
-            (1, state, BlockTape([], 0, []))
-            for state in self.graph.zero_reflexive_states
-        ]
+    @property
+    def cant_spin_out(self) -> bool:
+        return self._cant_reach(
+            'spnout',
+            [
+                (1, state, BlockTape([], 0, []))
+                for state in self.graph.zero_reflexive_states
+            ],
+        )
+
+    def _cant_reach(
+            self,
+            final_prop: str,
+            configs: List[Tuple[int, str, BlockTape]],
+    ):
+        max_attempts = 10
 
         while configs:  # pylint: disable = while-used
             step, state, tape = configs.pop()
@@ -230,9 +256,10 @@ class Program:
                 step_lim = step ** 2,
                 tape = tape.copy(),
                 state = ord(state) - 65,
+                # watch_tape = True,
             )
 
-            if run.final.spnout is None:
+            if getattr(run.final, final_prop) is None:
                 continue
 
             for entry in self.graph.entry_points[state]:
