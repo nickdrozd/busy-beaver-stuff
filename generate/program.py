@@ -243,19 +243,20 @@ class Program:
                     if trans != state:
                         continue
 
-                    next_tape = tape.copy()
+                    for color in map(int, self.colors):
+                        next_tape = tape.copy()
 
-                    _ = next_tape.step(
-                        not (0 if shift == 'L' else 1),
-                        next_tape.scan,
-                    )
+                        _ = next_tape.step(
+                            not (0 if shift == 'L' else 1),
+                            next_tape.scan,
+                        )
 
-                    next_tape.scan = branch
+                        next_tape.scan = color
 
-                    configs.append((
-                        step + 1,
-                        entry,
-                        next_tape,
-                    ))
+                        configs.append((
+                            step + 1,
+                            entry,
+                            next_tape,
+                        ))
 
         return True

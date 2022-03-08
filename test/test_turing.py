@@ -740,35 +740,42 @@ MODULAR = {
 }
 
 CANT_SPIN_OUT_FALSE_NEGATIVES = {
-    "1RB 1LB  0RC 0RB  1LC 0LA",
+    "1RB 0RB  1LB 1RA",
+
+    "1RB ...  1LB 0LC  1RC 1RB",
+    "1RB ...  1LB 1LC  1RC 0RB",
+    "1RB ...  1LB 1RC  0LC 0RB",
     "1RB 0LA  0RC 1LA  1LC 0RB",
+    "1RB 1LB  0RC 0RB  1LC 0LA",
 
-    "1RB 0LA ...  1LB 2LA 0RB",
-    "1RB 1RA 0RB  2LB 1LA 1LB",
     "1RB ... ...  2LB 1RB 1LB",
-    "1RB 2LA 0RB  0LB 1LA 0RA",
+    "1RB 0LA ...  1LB 2LA 0RB",
     "1RB 0RB 0LB  1LB 2RA 1LA",
+    "1RB 1RA 0RB  2LB 1LA 1LB",
+    "1RB 2LA 0RB  0LB 1LA 0RA",
+    "1RB 2LA 0RB  1LB 1RA 1RA",
+    "1RB 2LA 0RB  1LB 2LA 1RA",
+    "1RB 2LA 1RA  2LB 1LA 2RB",
 
-    "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
-    "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA",
-    "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB",
     "1RB 0LA  0RC 0RD  1LC 1LA  0RB 1RD",
-    "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA",
-    "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD",
+    "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB",
     "1RB 0LC  1RD 0RB  1LC 1LA  1RC 1RA",
+    "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA",
+    "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA",
+    "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
     "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA",
+    "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD",
 
-    "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA",
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA",
-    "1RB 2LA 0LB 1RA  1LB 3LA 3RB 3RB",
-    "1RB 2LA 3RA 0LB  1LB 1LA 0RA 2LB",
-    "1RB 2LA 0RA 3LB  0LB 2LA 3RB 1RA",
-    "1RB 2LA 3LB 0RB  3LB 3LA 0RA 1RB",
+    "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA",
     "1RB 1RA 0RB 2LB  1LB 2LA 3RB 0LA",
-}
-
-CANT_SPIN_OUT_FALSE_POSITIVES = {
-    "1RB 0LB  1RC 0RC  1LC 1LA",
+    "1RB 2LA 0LB 1RA  1LB 3LA 3RB 3RB",
+    "1RB 2LA 0RA 3LB  0LB 2LA 3RB 1RA",
+    "1RB 2LA 1RA 1LA  0LB 3LA 2RB 3RA",
+    "1RB 2LA 1RA 1LA  2LB 3LA 2RB 2RA",
+    "1RB 2LA 3LA 1LA  2LB 3RA 0RA 2RB",
+    "1RB 2LA 3LB 0RB  3LB 3LA 0RA 1RB",
+    "1RB 2LA 3RA 0LB  1LB 1LA 0RA 2LB",
 }
 
 DO_SPIN_OUT = {
@@ -976,13 +983,8 @@ class TuringTest(TestCase):
 
             (self.assertTrue if fixed else self.assertFalse)(fixed)
 
-            try:
-                self.assertFalse(
-                    Program(prog).cant_spin_out)
-            except AssertionError:
-                self.assertIn(
-                    prog,
-                    CANT_SPIN_OUT_FALSE_POSITIVES)
+            self.assertFalse(
+                Program(prog).cant_spin_out)
 
     def _test_recur(
             self, prog_data, quick,
@@ -1109,10 +1111,6 @@ class Fast(TuringTest):
 
         for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
             self.assertFalse(
-                Program(prog).cant_spin_out)
-
-        for prog in CANT_SPIN_OUT_FALSE_POSITIVES:
-            self.assertTrue(
                 Program(prog).cant_spin_out)
 
         for prog in DO_SPIN_OUT:
