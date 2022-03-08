@@ -213,7 +213,7 @@ class Program:
 
     @property
     def cant_spin_out(self) -> bool:
-        max_attempts = 50
+        max_attempts = 10
 
         configs = [
             (1, state, BlockTape([], 0, []))
