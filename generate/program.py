@@ -227,7 +227,7 @@ class Program:
                 return False
 
             run = Machine(self).run(
-                step_lim = step,
+                step_lim = step ** 2,
                 tape = tape.copy(),
                 state = ord(state) - 65,
             )
