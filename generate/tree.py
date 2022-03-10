@@ -11,13 +11,6 @@ from tm import Machine
 from generate import Program  # type: ignore
 
 
-if (USE_RUST := 0):
-    # pylint: disable = import-error
-    import py_lin_rado_turing.tools as rust  # type: ignore
-else:
-    rust = None  # pylint: disable = invalid-name
-
-
 def tree_worker(steps: int, progs, halt: bool, output: Callable):
     prog = None
 
@@ -34,24 +27,8 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
         )
 
         if machine.final.xlimit is not None:
-            check_rec = (
-                Machine(prog).run(
-                    sim_lim = steps,
-                    check_rec = 0,
-                )
-                if rust is None else
-                rust.run_bb(
-                    prog,
-                    x_limit = steps,
-                    check_rec = 0,
-                )
-            )
-
-            if check_rec.final.xlimit is not None:
-                output(prog)
-
+            output(prog)
             prog = None
-
             continue
 
         if machine.final.undfnd is None:

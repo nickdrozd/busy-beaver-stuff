@@ -183,10 +183,18 @@ class TestTree(TestCase):
     def test_tree_2_2(self):
         q22 = Queue()
 
+        def capture(prog):
+            run = Machine(prog).run(check_rec = 0, sim_lim = 13)
+
+            if run.final.xlimit is None:
+                return
+
+            q22.put(prog)
+
         run_tree_gen(
             states = 2,
             colors = 2,
-            output = q22.put,
+            output = capture,
         )
 
         s22 = self.queue_to_set(q22)
@@ -203,6 +211,11 @@ class TestTree(TestCase):
         h32, q32 = Queue(), Queue()
 
         def capture(prog):
+            run = Machine(prog).run(check_rec = 0, sim_lim = 116)
+
+            if run.final.xlimit is None:
+                return
+
             if (dots := prog.count('...')) == 0:
                 q32.put(prog)
             elif dots == 1:
@@ -244,6 +257,11 @@ class TestTree(TestCase):
         h23, q23 = Queue(), Queue()
 
         def capture(prog):
+            run = Machine(prog).run(check_rec = 0, sim_lim = 192)
+
+            if run.final.xlimit is None:
+                return
+
             if (dots := prog.count('...')) == 0:
                 q23.put(prog)
             elif dots == 1:
