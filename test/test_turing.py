@@ -643,6 +643,19 @@ UNDEFINED_FAST = {
     "1RB 1RC  1LD ...  0RE 0RC  ... 1RA  1LB ...": (13, 'D0'),
     "1RB 1RC  1LD ...  0RE 0RC  1LC 1RA  1LB ...": (23, 'E1'),
     "1RB 1RC  1LD ...  0RE 0RC  1LC 1RA  1LB 1RE": (27, 'B1'),
+
+    # 5/2 BBB / SB / BLB
+
+    "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
+    "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
+    "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
+    "1RB ...  0LD ...  ... ...  0LE 1LD  1RE ...": ( 6, 'E1'),
+    "1RB ...  0LD ...  ... ...  0LE 1LD  1RE 1RA": (17, 'A1'),
+    "1RB 1LC  0LD ...  ... ...  0LE 1LD  1RE 1RA": (18, 'C1'),
+    "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
+    "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
+
+    # 1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA
 }
 
 BB4_EXTENSIONS = {
