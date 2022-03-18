@@ -51,6 +51,8 @@ class Graph:
             '  fontname="courier"',
         ])
 
+        header = title if len(title) < 50 else ''
+
         edges = '\n'.join([
             f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
             for node, targets in self.arrows.items()
@@ -58,7 +60,7 @@ class Graph:
             if target != UNDEFINED
         ])
 
-        return f'digraph NAME {{\n{title}\n\n{edges}\n}}'
+        return f'digraph NAME {{\n{header}\n\n{edges}\n}}'
 
     @property
     def states(self) -> Tuple[str, ...]:
