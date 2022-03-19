@@ -541,7 +541,7 @@ BLANK_FAST = {
     "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": 32779477,
 }
 
-UNDEFINED_FAST = {
+UNDEFINED_FAST = {  # pylint: disable = duplicate-key
     # 4/2 BBQ
     "... ...  ... ...  ... ...  ... ...": ( 0, 'A0'),
     "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
@@ -620,32 +620,8 @@ UNDEFINED_FAST = {
     "1RB 1LC  1RC ...  1RD 0LE  1LA 1LD  ... 0LA": (16, 'B1'),
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (47176869, 'E0'),
 
-    # 5/2 blank 2190942280098521917
-    "1RB ...  1RC ...  1RD ...  0RE ...  ... ...": ( 4, 'E0'),
-    "1RB ...  1RC ...  1RD ...  0RE ...  1LE ...": ( 6, 'E1'),
-    "1RB ...  1RC ...  1RD ...  0RE ...  1LE 0LA": ( 7, 'A1'),
-    "1RB 0LC  1RC ...  1RD ...  0RE ...  1LE 0LA": ( 8, 'C1'),
-    "1RB 0LC  1RC ...  1RD 0RB  0RE ...  1LE 0LA": (11, 'D1'),
-    "1RB 0LC  1RC ...  1RD 0RB  0RE 0RD  1LE 0LA": (28, 'B1'),
-
-    # 5/2 BLB (?)
-    "1RB ...  1RC ...  1RD ...  0RE ...  1LE 1LA": ( 7, 'A1'),
-    "1RB 1LC  1RC ...  1RD ...  0RE ...  1LE 1LA": ( 8, 'C1'),
-    "1RB 1LC  1RC ...  1RD 0RC  0RE ...  1LE 1LA": (19, 'B1'),
-    "1RB 1LC  1RC 0RD  1RD 0RC  0RE ...  1LE 1LA": (20, 'D1'),
-
-    # 5/2 QH xmas
-    "1RB ...  1LD ...  ... ...  ... ...  ... ...": (2, 'D1'),
-    "1RB ...  1LD ...  ... ...  ... 1RA  ... ...": (3, 'A1'),
-    "1RB 1RC  1LD ...  ... ...  ... 1RA  ... ...": (4, 'C0'),
-    "1RB 1RC  1LD ...  0RE ...  ... 1RA  ... ...": (5, 'E0'),
-    "1RB 1RC  1LD ...  0RE ...  ... 1RA  1LB ...": (9, 'C1'),
-    "1RB 1RC  1LD ...  0RE 0RC  ... 1RA  1LB ...": (13, 'D0'),
-    "1RB 1RC  1LD ...  0RE 0RC  1LC 1RA  1LB ...": (23, 'E1'),
-    "1RB 1RC  1LD ...  0RE 0RC  1LC 1RA  1LB 1RE": (27, 'B1'),
-
-    # 5/2 BBB / SB / BLB
-
+    # 5/2 BBB / SB / BLB || 10^4079
+    # 1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA
     "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
     "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
     "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
@@ -655,7 +631,41 @@ UNDEFINED_FAST = {
     "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
     "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
 
-    # 1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA
+    # 10^502
+    # 1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA
+    "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+    "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
+    "1RB ...  1RC ...  0LB ...  ... ...  ... ...": ( 3, 'B1'),
+    "1RB ...  1RC 0RD  0LB ...  ... ...  ... ...": ( 4, 'D0'),
+    "1RB ...  1RC 0RD  0LB ...  0RE ...  ... ...": ( 5, 'E0'),
+    "1RB ...  1RC 0RD  0LB ...  0RE ...  1LE ...": ( 8, 'E1'),
+    "1RB ...  1RC 0RD  0LB ...  0RE ...  1LE 1LA": (11, 'D1'),
+    "1RB ...  1RC 0RD  0LB ...  0RE 1RD  1LE 1LA": (18, 'A1'),
+    "1RB 1LC  1RC 0RD  0LB ...  0RE 1RD  1LE 1LA": (19, 'C1'),
+
+    # 10^83
+    # 1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  1RA 1LD
+    "1RB ...  ... ...  ... ...  ... ...  ... ...": (  1, 'B0'),
+    "1RB ...  0LC ...  ... ...  ... ...  ... ...": (  2, 'C1'),
+    "1RB ...  0LC ...  ... 1RD  ... ...  ... ...": (  3, 'D0'),
+    "1RB ...  0LC ...  ... 1RD  1LA ...  ... ...": (  4, 'A1'),
+    "1RB 0RE  0LC ...  ... 1RD  1LA ...  ... ...": (  5, 'E1'),
+    "1RB 0RE  0LC ...  ... 1RD  1LA ...  ... 1LD": (  8, 'B1'),
+    "1RB 0RE  0LC 0LB  ... 1RD  1LA ...  ... 1LD": ( 11, 'C0'),
+    "1RB 0RE  0LC 0LB  1RC 1RD  1LA ...  ... 1LD": ( 41, 'D1'),
+    "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  ... 1LD": (310, 'E0'),
+
+    # QH Xmas, 10^28
+    # 1RB 1RD  1LC 1LB  1LD 1RA  0RE 0RD  1LB 1RE
+    "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+    "1RB ...  1LC ...  ... ...  ... ...  ... ...": ( 2, 'C1'),
+    "1RB ...  1LC ...  ... 1RA  ... ...  ... ...": ( 3, 'A1'),
+    "1RB 1RD  1LC ...  ... 1RA  ... ...  ... ...": ( 4, 'D0'),
+    "1RB 1RD  1LC ...  ... 1RA  0RE ...  ... ...": ( 5, 'E0'),
+    "1RB 1RD  1LC ...  ... 1RA  0RE ...  1LB ...": ( 9, 'D1'),
+    "1RB 1RD  1LC ...  ... 1RA  0RE 0RD  1LB ...": (13, 'C0'),
+    "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB ...": (23, 'E1'),
+    "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB 1RE": (27, 'B1'),
 }
 
 BB4_EXTENSIONS = {

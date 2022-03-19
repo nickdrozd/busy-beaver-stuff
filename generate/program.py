@@ -135,6 +135,27 @@ class Program:
                 self.available_states)
         )
 
+    @property
+    def instruction_sequence(self) -> Iterator[Tuple[str, int, str]]:
+        partial = Program(
+            re.sub(
+                r'^\.\.\.',
+                '1RB',
+                '  '.join([
+                    ' '.join(
+                        ['...'] * len(self.colors))
+                ] * len(self.states))))
+
+        for _ in range(len(self.states) * len(self.colors) - 1):
+            if (result := Machine(partial).run().final.undfnd) is None:
+                return
+
+            step, instr = result
+
+            yield str(partial), step, instr
+
+            partial[instr] = self[instr]
+
     def branch(self, instr: str, halt: bool = False) -> Iterator[str]:
         if halt and self.last_slot:
             return
