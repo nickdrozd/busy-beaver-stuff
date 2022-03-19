@@ -2,13 +2,7 @@ from argparse import ArgumentParser
 
 from generate import Program
 from generate.tree import run_tree_gen
-
-if (USE_RUST := 0):
-    # pylint: disable = import-error
-    import py_lin_rado_turing.tools as rust
-else:
-    from tm import Machine
-    rust = None  # pylint: disable = invalid-name
+from tm import Machine
 
 
 def prune_print(prog: str):
@@ -38,17 +32,9 @@ def print_complete(prog: str):
 
 
 def run_and_print(program: Program):
-    check_rec = (
-        Machine(program).run(
-            sim_lim = 100,
-            check_rec = 0,
-        )
-        if rust is None else
-        rust.run_bb(
-            str(program),
-            x_limit = 100,
-            check_rec = 0,
-        )
+    check_rec = Machine(program).run(
+        sim_lim = 100,
+        check_rec = 0,
     )
 
     if check_rec.final.xlimit is None:
