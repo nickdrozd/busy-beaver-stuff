@@ -96,6 +96,14 @@ class Program:
         )
 
     @property
+    def blank_slots(self) -> Iterator[str]:
+        yield from (
+            slot
+            for slot, instr in self.instructions
+            if instr[0] == '0'
+        )
+
+    @property
     def used_states(self) -> Iterator[str]:
         yield from (
             action[2]
@@ -251,6 +259,17 @@ class Program:
         )
 
     @property
+    def cant_blank(self) -> bool:
+        return self._cant_reach(
+            'blanks',
+            [
+                (1, slot[0], BlockTape([], int(slot[1]), []))
+                for slot in self.blank_slots
+            ],
+            **{'check_blanks': True},
+        )
+
+    @property
     def cant_spin_out(self) -> bool:
         return self._cant_reach(
             'spnout',
@@ -264,6 +283,7 @@ class Program:
             self,
             final_prop: str,
             configs: List[Tuple[int, str, BlockTape]],
+            **run_args,
     ):
         max_attempts = 10
 
@@ -277,7 +297,7 @@ class Program:
                 step_lim = step ** 2,
                 tape = tape.copy(),
                 state = ord(state) - 65,
-                # watch_tape = True,
+                **run_args,
             )
 
             if getattr(run.final, final_prop) is None:

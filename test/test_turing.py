@@ -471,7 +471,6 @@ BLANK_FAST = {
     "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD":   169,
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD":    77,
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA":    66,
-    "1RB ...  0LC ...  ... 0RD  ... ...":     3,
 
     # 2/4
     "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": 1012664081,
@@ -770,6 +769,35 @@ CANT_HALT_FALSE_POSITIVES = {
     "1RB 1L_  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
 }
 
+CANT_BLANK_FALSE_NEGATIVES = {
+    "1RB 0RA  0RC 1R_  1LC 0LA",
+
+    "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA",
+    "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA",
+    "1RB 0RB 0LA 2LB  1LB 2LA 3RB 1RA",
+    "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA",
+    "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB",
+    "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA",
+    "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB",
+    "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB",
+    "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA",
+
+    "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA",
+    "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD",
+    "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB",
+    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA",
+    "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA",
+    "1RB 1LC  1LD 0RB  1R_ 0LD  1RA 1LA",
+
+    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
+    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC",
+
+    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB 1R_",
+
+    "1RB 0LB  1LC 1R_  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
+    "1RB 1L_  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
+}
+
 CANT_SPIN_OUT_FALSE_NEGATIVES = {
     "1RB 0RB  1LB 1RA",
 
@@ -1005,6 +1033,15 @@ class TuringTest(TestCase):
                     prog,
                     CANT_HALT_FALSE_POSITIVES)
 
+            try:
+                self.assertTrue(
+                    Program(prog).cant_blank,
+                    prog)
+            except AssertionError:
+                self.assertTrue(
+                    marks == 0
+                    or prog in CANT_BLANK_FALSE_NEGATIVES)
+
     def _test_macro_halt(self, prog_data):
         self._test_halt({
             MacroConverter(prog).macro_comp(cells): expected
@@ -1030,6 +1067,15 @@ class TuringTest(TestCase):
 
             self.assertTrue(
                 Program(prog).cant_halt)
+
+            try:
+                (self.assertFalse if marks == 0 else self.assertTrue)(
+                    Program(prog).cant_blank)
+            except AssertionError:
+                if len(prog) < 50:
+                    self.assertIn(
+                        prog,
+                        CANT_BLANK_FALSE_NEGATIVES)
 
     def _test_recur(
             self, prog_data, quick,
@@ -1144,6 +1190,9 @@ class TuringTest(TestCase):
             self.assertEqual(
                 steps,
                 self.final.blanks)
+
+            self.assertFalse(
+                Program(prog).cant_blank)
 
 
 class Fast(TuringTest):
