@@ -8,7 +8,7 @@ from multiprocessing import (
 from typing import Callable
 
 from tm import Machine
-from generate import Program  # type: ignore
+from generate import Program
 
 
 def tree_worker(steps: int, progs, halt: bool, output: Callable):

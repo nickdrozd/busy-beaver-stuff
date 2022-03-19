@@ -5,7 +5,7 @@ from generate.tree import run_tree_gen
 
 if (USE_RUST := 0):
     # pylint: disable = import-error
-    import py_lin_rado_turing.tools as rust  # type: ignore
+    import py_lin_rado_turing.tools as rust
 else:
     from tm import Machine
     rust = None  # pylint: disable = invalid-name
