@@ -771,10 +771,6 @@ MODULAR = {
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
 }
 
-CANT_HALT_FALSE_POSITIVES = {
-    "1RB ...  0L_ ...",
-}
-
 CANT_BLANK_FALSE_NEGATIVES = {
     "1RB 0RA  0RC 1R_  1LC 0LA",
 
@@ -1037,9 +1033,9 @@ class TuringTest(TestCase):
                 self.assertFalse(
                     Program(prog).cant_halt)
             except AssertionError:
-                self.assertIn(
+                self.assertEqual(
                     prog,
-                    CANT_HALT_FALSE_POSITIVES)
+                    "1RB ...  0L_ ...")
 
             try:
                 self.assertTrue(
@@ -1206,10 +1202,6 @@ class TuringTest(TestCase):
 class Fast(TuringTest):
     def test_halt(self):
         self._test_halt(HALT_FAST)
-
-        for prog in CANT_HALT_FALSE_POSITIVES:
-            self.assertTrue(
-                Program(prog).cant_halt)
 
     def test_macro_halt(self):
         self._test_macro_halt(MACRO_HALT_FAST)
