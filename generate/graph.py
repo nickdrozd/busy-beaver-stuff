@@ -51,7 +51,7 @@ class Graph:
             '  fontname="courier"',
         ])
 
-        header = title if len(title) < 50 else ''
+        header = title if len(self.program) < 50 else ''
 
         edges = '\n'.join([
             f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
