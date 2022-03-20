@@ -253,7 +253,7 @@ class Program:
         return self._cant_reach(
             'halted',
             [
-                (1, slot[0], BlockTape([], int(slot[1]), []))
+                (1, slot[0], BlockTape([], slot[1], []))
                 for slot in self.halt_slots
             ],
         )
@@ -263,7 +263,7 @@ class Program:
         return self._cant_reach(
             'blanks',
             [
-                (1, slot[0], BlockTape([], int(slot[1]), []))
+                (1, slot[0], BlockTape([], slot[1], []))
                 for slot in self.blank_slots
             ],
             **{'check_blanks': True},

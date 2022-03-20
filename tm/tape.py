@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 class BlockTape:
     def __init__(
             self,
             lspan: List[List[int]],
-            scan: int,
+            scan: Union[int, str],
             rspan: List[List[int]],
             head: Optional[int] = None,
             init: Optional[int] = None,
             extend_to: Optional[int] = None,
     ):
         self.lspan = lspan
-        self.scan = scan
+        self.scan = int(scan)
         self.rspan = rspan
 
         self.head: int = 0 if head is None else head
