@@ -1199,6 +1199,10 @@ class Fast(TuringTest):
     def test_halt(self):
         self._test_halt(HALT_FAST)
 
+        for prog in CANT_HALT_FALSE_POSITIVES:
+            self.assertTrue(
+                Program(prog).cant_halt)
+
     def test_macro_halt(self):
         self._test_macro_halt(MACRO_HALT_FAST)
 
@@ -1235,6 +1239,10 @@ class Fast(TuringTest):
 
     def test_blank(self):
         self._test_blank(BLANK_FAST)
+
+        for prog in CANT_BLANK_FALSE_NEGATIVES:
+            self.assertFalse(
+                Program(prog).cant_blank)
 
     def test_undefined(self):
         self._test_undefined(UNDEFINED_FAST)
