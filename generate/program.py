@@ -256,6 +256,7 @@ class Program:
                 (1, slot[0], BlockTape([], slot[1], []))
                 for slot in self.halt_slots
             ],
+            step_exp = 3,
         )
 
     @property
@@ -266,6 +267,7 @@ class Program:
                 (1, slot[0], BlockTape([], slot[1], []))
                 for slot in self.blank_slots
             ],
+            step_exp = 2,
             **{'check_blanks': True},
         )
 
@@ -283,6 +285,7 @@ class Program:
             self,
             final_prop: str,
             configs: List[Tuple[int, str, BlockTape]],
+            step_exp: int = 1,
             **run_args,
     ):
         max_attempts = 10
@@ -294,7 +297,7 @@ class Program:
                 return False
 
             run = Machine(self).run(
-                step_lim = step ** 2,
+                step_lim = step ** step_exp,
                 tape = tape.copy(),
                 state = ord(state) - 65,
                 **run_args,
