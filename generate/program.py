@@ -252,10 +252,7 @@ class Program:
     def cant_halt(self) -> bool:
         return self._cant_reach(
             'halted',
-            [
-                (1, slot[0], BlockTape([], slot[1], []))
-                for slot in self.halt_slots
-            ],
+            self.halt_slots,
             step_exp = 3,
         )
 
@@ -263,10 +260,7 @@ class Program:
     def cant_blank(self) -> bool:
         return self._cant_reach(
             'blanks',
-            [
-                (1, slot[0], BlockTape([], slot[1], []))
-                for slot in self.blank_slots
-            ],
+            self.blank_slots,
             step_exp = 2,
             **{'check_blanks': True},
         )
@@ -275,20 +269,23 @@ class Program:
     def cant_spin_out(self) -> bool:
         return self._cant_reach(
             'spnout',
-            [
-                (1, state, BlockTape([], 0, []))
-                for state in self.graph.zero_reflexive_states
-            ],
+            (state + str(0) for state in
+             self.graph.zero_reflexive_states),
         )
 
     def _cant_reach(
             self,
             final_prop: str,
-            configs: List[Tuple[int, str, BlockTape]],
+            slots: Iterator[str],
             step_exp: int = 1,
             **run_args,
     ):
         max_attempts = 10
+
+        configs: List[Tuple[int, str, BlockTape]] = [# type: ignore
+            (1, state, BlockTape([], color, []))     # type: ignore
+            for state, color in slots
+        ]
 
         while configs:  # pylint: disable = while-used
             step, state, tape = configs.pop()
