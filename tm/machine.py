@@ -133,7 +133,7 @@ class Machine:
                 if self.check_rec(step, action) is not None:
                     break
 
-                self.history.actions[action].append(step)
+                self.history.add_action_at_step(step, action)
 
             # Machine operation ####################
 

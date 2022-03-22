@@ -7,7 +7,10 @@ class History:
         self.states: List[int] = []
         self.changes: List[bool] = []
         self.positions: List[int] = []
-        self.actions = defaultdict(lambda: [])
+        self.actions = defaultdict(list)
+
+    def add_action_at_step(self, step: int, action: Tuple[int, int]):
+        self.actions[action].append(step)
 
     def add_position_at_step(self, step: int, pos: int):
         self.positions += [pos] * (step - len(self.positions))
