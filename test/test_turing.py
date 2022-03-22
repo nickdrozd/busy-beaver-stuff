@@ -916,6 +916,49 @@ class TuringTest(TestCase):
             self.machine.steps,
             steps)
 
+    def assert_could_halt(self, prog):
+        self.assertFalse(
+            Program(prog).cant_halt,
+            f'halt false positive: {prog}')
+
+    def assert_cant_halt(self, prog):
+        self.assertTrue(
+            Program(prog).cant_halt,
+            f'halt false negative: {prog}')
+
+    def assert_could_blank(self, prog):
+        self.assertFalse(
+            Program(prog).cant_blank,
+            f'blank false positive: {prog}')
+
+    def assert_cant_blank(self, prog):
+        try:
+            self.assertTrue(
+                Program(prog).cant_blank)
+        except AssertionError:
+            if len(prog) > 50:
+                return
+
+            self.assertIn(
+                prog,
+                CANT_BLANK_FALSE_NEGATIVES,
+                f'blank false negative: {prog}')
+
+    def assert_could_spin_out(self, prog):
+        self.assertFalse(
+            Program(prog).cant_spin_out,
+            f'spin out false positive: {prog}')
+
+    def assert_cant_spin_out(self, prog):
+        try:
+            self.assertTrue(
+                Program(prog).cant_spin_out)
+        except AssertionError:
+            self.assertIn(
+                prog,
+                CANT_SPIN_OUT_FALSE_NEGATIVES,
+                f'spin out false negative: {prog}')
+
     def assert_lin_recurrence(self, steps, recurrence):
         self.assertEqual(
             self.history.states[steps],
@@ -1030,21 +1073,16 @@ class TuringTest(TestCase):
                 continue
 
             try:
-                self.assertFalse(
-                    Program(prog).cant_halt)
+                self.assert_could_halt(prog)
             except AssertionError:
                 self.assertEqual(
                     prog,
                     "1RB ...  0L_ ...")
 
-            try:
-                self.assertTrue(
-                    Program(prog).cant_blank,
-                    prog)
-            except AssertionError:
-                self.assertTrue(
-                    marks == 0
-                    or prog in CANT_BLANK_FALSE_NEGATIVES)
+            if marks != 0:
+                self.assert_cant_blank(prog)
+            else:
+                self.assert_could_blank(prog)
 
     def _test_macro_halt(self, prog_data):
         self._test_halt({
@@ -1066,20 +1104,14 @@ class TuringTest(TestCase):
 
             (self.assertTrue if fixed else self.assertFalse)(fixed)
 
-            self.assertFalse(
-                Program(prog).cant_spin_out)
+            self.assert_could_spin_out(prog)
 
-            self.assertTrue(
-                Program(prog).cant_halt)
+            self.assert_cant_halt(prog)
 
-            try:
-                (self.assertFalse if marks == 0 else self.assertTrue)(
-                    Program(prog).cant_blank)
-            except AssertionError:
-                if len(prog) < 50:
-                    self.assertIn(
-                        prog,
-                        CANT_BLANK_FALSE_NEGATIVES)
+            if marks != 0:
+                self.assert_cant_blank(prog)
+            else:
+                self.assert_could_blank(prog)
 
     def _test_recur(
             self, prog_data, quick,
@@ -1089,8 +1121,7 @@ class TuringTest(TestCase):
             self.prog = prog
 
             if period == 1:
-                self.assertFalse(
-                    Program(prog).cant_spin_out)
+                self.assert_could_spin_out(prog)
 
                 self.run_bb(prog)
 
@@ -1103,16 +1134,9 @@ class TuringTest(TestCase):
                     (steps - 1, steps, steps + 1))
 
             else:
-                try:
-                    self.assertTrue(
-                        Program(prog).cant_spin_out)
-                except AssertionError:
-                    self.assertIn(
-                        prog,
-                        CANT_SPIN_OUT_FALSE_NEGATIVES)
+                self.assert_cant_spin_out(prog)
 
-                    self.assertTrue(
-                        Program(prog).cant_halt)
+                self.assert_cant_halt(prog)
 
                 self.verify_lin_recurrence(
                     prog,
@@ -1195,8 +1219,7 @@ class TuringTest(TestCase):
                 steps,
                 self.final.blanks)
 
-            self.assertFalse(
-                Program(prog).cant_blank)
+            self.assert_could_blank(prog)
 
 
 class Fast(TuringTest):
@@ -1211,12 +1234,10 @@ class Fast(TuringTest):
         self._test_spinout(SPINOUT_FAST_FIXED, fixed = True)
 
         for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
-            self.assertFalse(
-                Program(prog).cant_spin_out)
+            self.assert_could_spin_out(prog)
 
         for prog in DO_SPIN_OUT:
-            self.assertFalse(
-                Program(prog).cant_spin_out)
+            self.assert_could_spin_out(prog)
 
     def test_recur(self):
         self._test_recur(RECUR_FAST, True)
@@ -1241,8 +1262,7 @@ class Fast(TuringTest):
         self._test_blank(BLANK_FAST)
 
         for prog in CANT_BLANK_FALSE_NEGATIVES:
-            self.assertFalse(
-                Program(prog).cant_blank)
+            self.assert_could_blank(prog)
 
     def test_undefined(self):
         self._test_undefined(UNDEFINED_FAST)
