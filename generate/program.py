@@ -96,11 +96,11 @@ class Program:
         )
 
     @property
-    def blank_slots(self) -> Iterator[str]:
+    def erase_slots(self) -> Iterator[str]:
         yield from (
             slot
             for slot, instr in self.instructions
-            if instr[0] == '0'
+            if instr[0] == '0' and slot[1] != '0'
         )
 
     @property
@@ -260,7 +260,7 @@ class Program:
     def cant_blank(self) -> bool:
         return self._cant_reach(
             'blanks',
-            self.blank_slots,
+            self.erase_slots,
             step_exp = 2,
             **{'check_blanks': True},
         )
@@ -302,19 +302,22 @@ class Program:
             if getattr(run.final, final_prop) is None:
                 continue
 
+            # print(step, state, tape)
+
             for entry in self.graph.entry_points[state]:
-                for branch, (_, shift, trans) in self[entry].items():
-                    if entry == state and branch == 0:
+                # pylint: disable = invalid-name
+                for branch, (pr, sh, tr) in self[entry].items():
+                    if entry == state and branch == pr:
                         continue
 
-                    if trans != state:
+                    if tr != state:
                         continue
 
                     for color in map(int, self.colors):
                         next_tape = tape.copy()
 
                         _ = next_tape.step(
-                            not (0 if shift == 'L' else 1),
+                            not (0 if sh == 'L' else 1),
                             next_tape.scan,
                         )
 
