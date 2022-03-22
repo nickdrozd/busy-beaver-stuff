@@ -271,6 +271,7 @@ class Program:
             'spnout',
             (state + str(0) for state in
              self.graph.zero_reflexive_states),
+            spinout = True,
         )
 
     def _cant_reach(
@@ -280,6 +281,7 @@ class Program:
             step_exp: int = 1,
             max_attempts: int = 10,
             blank: bool = False,
+            spinout: bool = False,
     ):
         configs: List[Tuple[int, str, BlockTape]] = [# type: ignore
             (1, state, BlockTape([], color, []))     # type: ignore
@@ -307,11 +309,15 @@ class Program:
             for entry in self.graph.entry_points[state]:
                 # pylint: disable = invalid-name
                 for branch, (pr, sh, tr) in self[entry].items():
-                    if entry == state and branch == pr:
-                        continue
-
                     if tr != state:
                         continue
+
+                    if entry == state:
+                        if branch == pr:
+                            continue
+
+                        if spinout and branch == 0:
+                            continue
 
                     for color in map(int, self.colors):
                         next_tape = tape.copy()
