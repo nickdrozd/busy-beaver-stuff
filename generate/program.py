@@ -276,7 +276,7 @@ class Program:
             self,
             final_prop: str,
             slots: Iterator[str],
-            max_attempts: int = 10,
+            max_attempts: int = 6,
             blank: bool = False,
             spinout: bool = False,
     ):
