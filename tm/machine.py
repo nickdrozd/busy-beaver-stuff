@@ -83,16 +83,6 @@ class Machine:
     def beeps(self):
         return self.history.calculate_beeps()
 
-    def print_results(self):
-        print(
-            '\n'.join([
-                f'marks: {self.marks}',
-                f'steps: {self.steps}',
-                f'beeps: {self.beeps}',
-                f'final: {self.final}',
-                '',
-            ]))
-
     def run(self,
             tape = None,
             skip = True,
