@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Any, Dict, Optional, Tuple
 
 from tm.tape import BlockTape
@@ -70,7 +71,7 @@ class Machine:
         self.final   = MachineResult(prog)
         self.history = None
 
-        self.reached = set()
+        self.reached = defaultdict(lambda: 0)
 
     def __str__(self):
         return f'{self.program} || {self.final}'
@@ -142,8 +143,8 @@ class Machine:
                 instr = chr(state + 65) + str(tape.scan)
                 self.final.undfnd = step, instr
                 break
-            else:
-                self.reached.add(action)
+
+            self.reached[action] += 1
 
             if self.history is None:
                 if (state == next_state
@@ -235,7 +236,3 @@ class Machine:
         self.state = state
 
         self.final.validate_results()
-
-        self.reached = sorted(
-            chr(s + 65) + str(c)
-            for (s, c) in self.reached)
