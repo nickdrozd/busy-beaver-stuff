@@ -262,7 +262,7 @@ class Program:
             'blanks',
             self.erase_slots,
             step_exp = 2,
-            **{'check_blanks': True},
+            blank = True,
         )
 
     @property
@@ -279,7 +279,7 @@ class Program:
             slots: Iterator[str],
             step_exp: int = 1,
             max_attempts: int = 10,
-            **run_args,
+            blank: bool = False,
     ):
         configs: List[Tuple[int, str, BlockTape]] = [# type: ignore
             (1, state, BlockTape([], color, []))     # type: ignore
@@ -296,7 +296,7 @@ class Program:
                 step_lim = step ** step_exp,
                 tape = tape.copy(),
                 state = ord(state) - 65,
-                **run_args,
+                check_blanks = blank,
             )
 
             if getattr(run.final, final_prop) is None:
