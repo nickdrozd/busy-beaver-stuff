@@ -253,7 +253,6 @@ class Program:
         return self._cant_reach(
             'halted',
             self.halt_slots,
-            step_exp = 3,
         )
 
     @property
@@ -261,7 +260,6 @@ class Program:
         return self._cant_reach(
             'blanks',
             self.erase_slots,
-            step_exp = 2,
             blank = True,
         )
 
@@ -278,7 +276,6 @@ class Program:
             self,
             final_prop: str,
             slots: Iterator[str],
-            step_exp: int = 1,
             max_attempts: int = 10,
             blank: bool = False,
             spinout: bool = False,
@@ -295,7 +292,7 @@ class Program:
                 return False
 
             run = Machine(self).run(
-                step_lim = step ** step_exp,
+                step_lim = step,
                 tape = tape.copy(),
                 state = ord(state) - 65,
                 check_blanks = blank,
