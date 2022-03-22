@@ -278,10 +278,9 @@ class Program:
             final_prop: str,
             slots: Iterator[str],
             step_exp: int = 1,
+            max_attempts: int = 10,
             **run_args,
     ):
-        max_attempts = 10
-
         configs: List[Tuple[int, str, BlockTape]] = [# type: ignore
             (1, state, BlockTape([], color, []))     # type: ignore
             for state, color in slots
