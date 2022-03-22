@@ -240,3 +240,10 @@ class PtrTape:
             left = start + self.init
 
         return self.tape[ left : right ]
+
+    def copy(self) -> PtrTape:
+        return PtrTape(
+            tape = deepcopy(self.tape),
+            init = self.init,
+            head = self.head,
+        )
