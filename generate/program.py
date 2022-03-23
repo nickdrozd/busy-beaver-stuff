@@ -289,6 +289,9 @@ class Program:
             if step > max_attempts:
                 return False
 
+            if state == 'A' and tape.blank:
+                return False
+
             # print(step, state, tape)
 
             for entry in self.graph.entry_points[state]:

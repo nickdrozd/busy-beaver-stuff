@@ -1085,12 +1085,7 @@ class TuringTest(TestCase):
             if not isinstance(prog, str):
                 continue
 
-            try:
-                self.assert_could_halt(prog)
-            except AssertionError:
-                self.assertEqual(
-                    prog,
-                    "1RB ...  0L_ ...")
+            self.assert_could_halt(prog)
 
             if marks != 0:
                 self.assert_cant_blank(prog)
