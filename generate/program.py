@@ -291,16 +291,6 @@ class Program:
             if step > max_attempts:
                 return False
 
-            run = Machine(self).run(
-                step_lim = step,
-                tape = tape.copy(),
-                state = ord(state) - 65,
-                check_blanks = blank,
-            )
-
-            if getattr(run.final, final_prop) is None:
-                continue
-
             # print(step, state, tape)
 
             for entry in self.graph.entry_points[state]:
@@ -325,6 +315,16 @@ class Program:
                         )
 
                         next_tape.scan = color
+
+                        run = Machine(self).run(
+                            step_lim = step + 1,
+                            tape = next_tape.copy(),
+                            state = ord(entry) - 65,
+                            check_blanks = blank,
+                        )
+
+                        if getattr(run.final, final_prop) is None:
+                            continue
 
                         configs.append((
                             step + 1,
