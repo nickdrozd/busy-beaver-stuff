@@ -179,7 +179,7 @@ class TestTree(TestCase):
 
         return out
 
-    def test_tree_2_2(self):
+    def test_22(self):
         q22 = Queue()
 
         def capture(prog):
@@ -206,7 +206,7 @@ class TestTree(TestCase):
             s22,
             HOLDOUTS_22Q)
 
-    def test_tree_3_2(self):
+    def test_32(self):
         h32, q32 = Queue(), Queue()
 
         def capture(prog):
@@ -252,7 +252,7 @@ class TestTree(TestCase):
             q32 <= HOLDOUTS_32Q
         )
 
-    def test_tree_2_3(self):
+    def test_23(self):
         h23, q23 = Queue(), Queue()
 
         def capture(prog):
