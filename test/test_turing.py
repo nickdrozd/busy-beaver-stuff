@@ -838,6 +838,21 @@ CANT_SPIN_OUT_FALSE_NEGATIVES = {
     "1RB 2LA 3LA 1LA  2LB 3RA 0RA 2RB",
 }
 
+DO_HALT = {
+    "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1L_ 1RC",  # 10^36534
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1L_  1LA 0RB  0RC 0RE",  # 10^21132
+    "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE 1R_",  # 10^2879
+    "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE",  # 10^1762
+    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_",  # 10^1730
+}
+
+DO_BLANK = {
+    "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",  # 10^16
+
+    "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",  # 10^502
+    "1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA",  # 10^4079
+}
+
 DO_SPIN_OUT = {
     "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",  # 10^16
     "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",  # 10^23
@@ -845,8 +860,11 @@ DO_SPIN_OUT = {
     "1RB 0LB 1LA  2LC 2LB 2LB  2RC 2RA 0LC",  # 10^62
 
     "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA",  # 10^18
+    "1RB 0LC  0LD 0LB  1RA 1LA  1RE 1LD  1RE 1RA",  # 10^315
     "1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA",  # 10^502
     "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",  # 10^502
+    "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB",  # 10^1089
+    "1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA",  # 10^4079
 }
 
 
@@ -1223,6 +1241,9 @@ class Fast(TuringTest):
     def test_halt(self):
         self._test_halt(HALT_FAST)
 
+        for prog in DO_HALT:
+            self.assert_could_halt(prog)
+
     def test_macro_halt(self):
         self._test_macro_halt(MACRO_HALT_FAST)
 
@@ -1259,6 +1280,9 @@ class Fast(TuringTest):
         self._test_blank(BLANK_FAST)
 
         for prog in CANT_BLANK_FALSE_NEGATIVES:
+            self.assert_could_blank(prog)
+
+        for prog in DO_BLANK:
             self.assert_could_blank(prog)
 
     def test_undefined(self):
