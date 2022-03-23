@@ -1,7 +1,6 @@
 # pylint: disable = attribute-defined-outside-init
 
 import re
-import json
 from queue import Empty
 from multiprocessing import Queue
 from unittest import TestCase
@@ -386,7 +385,10 @@ NOT_CONNECTED_32 = [
 
 def read_progs(name):
     with open(f'test/data/{name}') as holdouts:
-        return set(json.loads(holdouts.read()))
+        return set(
+            prog.strip()
+            for prog in holdouts.readlines()
+        )
 
 HOLDOUTS_23H = read_progs('holdouts_23h')
 HOLDOUTS_32Q = read_progs('holdouts_32q')
