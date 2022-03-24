@@ -1059,7 +1059,7 @@ class TuringTest(TestCase):
 
     def _test_halt(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
-            self.run_bb(prog)
+            self.run_bb(prog, check_blanks = marks != 0 and prog[0] == 0)
 
             self.assert_marks(marks)
             self.assert_steps(steps)
@@ -1087,7 +1087,7 @@ class TuringTest(TestCase):
 
     def _test_spinout(self, prog_data, fixed: bool):
         for prog, (marks, steps) in prog_data.items():
-            self.run_bb(prog)
+            self.run_bb(prog, check_blanks = marks != 0)
 
             self.assert_marks(marks)
             self.assert_steps(steps)
