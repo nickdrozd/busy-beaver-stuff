@@ -320,7 +320,12 @@ class Program:
                             check_blanks = blank,
                         )
 
-                        if getattr(run.final, final_prop) is None:
+                        result = getattr(run.final, final_prop)
+
+                        if result is None:
+                            continue
+
+                        if abs(result - step) > 1:
                             continue
 
                         configs.append((
