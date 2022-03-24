@@ -269,24 +269,30 @@ class Program:
             'spnout',
             (state + str(0) for state in
              self.graph.zero_reflexive_states),
-            spinout = True,
         )
 
     def _cant_reach(
             self,
             final_prop: str,
             slots: Iterator[str],
-            max_attempts: int = 7,
+            max_attempts: int = 20,
+            max_repeats: int = 10,
             blank: bool = False,
-            spinout: bool = False,
     ):
-        configs: List[Tuple[int, str, BlockTape]] = [# type: ignore
-            (1, state, BlockTape([], color, []))     # type: ignore
+        configs: List[
+            Tuple[int, str, BlockTape, int],
+        ] = [                              # type: ignore
+            (
+                1,
+                state,                     # type: ignore
+                BlockTape([], color, []),  # type: ignore
+                0,
+            )
             for state, color in slots
         ]
 
         while configs:  # pylint: disable = while-used
-            step, state, tape = configs.pop()
+            step, state, tape, repeat = configs.pop()
 
             if step > max_attempts:
                 return False
@@ -297,20 +303,24 @@ class Program:
             # print(step, state, tape)
 
             for entry in self.graph.entry_points[state]:
-                # pylint: disable = invalid-name
-                for br, (_, sh, tr) in self[entry].items():
-                    if tr != state:
+                for _, (_, shift, trans) in self[entry].items():
+                    if trans != state:
                         continue
 
-                    if entry == state and br == 0 and tape.scan == 0:
-                        if blank or spinout:
+                    for color in map(int, self.colors):
+                        next_repeat = (
+                            repeat + 1
+                            if entry == state and color == tape.scan
+                            else 0
+                        )
+
+                        if next_repeat > max_repeats:
                             continue
 
-                    for color in map(int, self.colors):
                         next_tape = tape.copy()
 
                         _ = next_tape.step(
-                            not (0 if sh == 'L' else 1),
+                            not (0 if shift == 'L' else 1),
                             next_tape.scan,
                         )
 
@@ -335,6 +345,7 @@ class Program:
                             step + 1,
                             entry,
                             next_tape,
+                            next_repeat,
                         ))
 
         return True
