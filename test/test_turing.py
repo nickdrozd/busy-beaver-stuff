@@ -138,6 +138,7 @@ SPINOUT_FAST = {
     "1RB 0LB 1RA  1LB 2LA 2RA": ( 3, 45),
     "1RB 2LB 1RA  2LB 2LA 0RA": (10, 43),
     "1RB 2RA 2LB  2LB 2LA 0LA": ( 5, 40),
+    "1RB 2RA 2RB  2LB 1LA 0RB": ( 0, 29),
     "1RB 1LB 1RA  2LB 2LA 0RA": ( 6, 23),
     "1RB 2LB ...  1LB 2LA 1RB": ( 5, 17),
 
@@ -154,6 +155,7 @@ SPINOUT_FAST = {
     "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,      444),
 
     # 2/4
+    "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": (   0, 1012664081),
     "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB": (2747, 2501552),
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA": (   0,  190524),
     "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA": ( 190,   32849),
@@ -170,6 +172,11 @@ SPINOUT_FAST = {
 
     # 5/2
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": (19670, 193023636),
+    "1RB 1RA  1RC ...  0RD 0RC  1LD 1LE  1RA 1LC": (0, 32738607),
+    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC": (0, 32738620),
+    "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA": (0, 32748802),
+    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE": (0, 32810048),
+    "1RB 1LC  0LD 1RB  0RE 0RC  1RE 1RD  1LE 1LA": (0, 32779508),
 
     # 7/7 from 4/2 QH
     "1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...": (1, 10925753),
