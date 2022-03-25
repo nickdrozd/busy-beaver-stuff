@@ -1,13 +1,14 @@
 import sys
+from multiprocessing import Pool
 
 from generate import Program
 
-if __name__ == '__main__':
-    for prog in map(Program, sys.stdin):
-        if prog.cant_spin_out:
-            continue
+def worker(prog):
+    if (program := Program(prog)).cant_spin_out:
+        return
 
-        try:
-            print(prog)
-        except BrokenPipeError:
-            sys.exit()
+    print(program)
+
+if __name__ == '__main__':
+    with Pool() as pool:
+        pool.map(worker, sys.stdin)
