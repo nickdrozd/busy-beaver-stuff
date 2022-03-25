@@ -275,8 +275,7 @@ class Program:
             self,
             final_prop: str,
             slots: Iterator[str],
-            max_attempts: int = 20,
-            max_repeats: int = 10,
+            max_attempts: int = 11,
             blank: bool = False,
     ):
         configs: List[
@@ -290,6 +289,8 @@ class Program:
             )
             for state, color in slots
         ]
+
+        max_repeats = max_attempts // 2
 
         while configs:  # pylint: disable = while-used
             step, state, tape, repeat = configs.pop()
