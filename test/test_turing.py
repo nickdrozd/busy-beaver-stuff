@@ -249,9 +249,6 @@ QUASIHALT = {
     "1RB 2LA 1RA 1LA  2LB 3LA 2RB 2RA": ( 106,   10456, 3),  # QH 10353
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA": (  57,    2859, 3),
 
-    # "1RB 3LA 1LA 1RA  2LB 2RA 0RB 3RB" -- QH 77, xmas
-    # "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB" -- QH 14, xmas
-
     # 6/8 derived from 3/2-rec champ
     "1LB ... ... ... ... ... ... ...  2RC ... 3RD 1RC ... 4LE 5RC ...  6LF 6RD 5LF 1LB ... ... ... ...  7LF 5LF ... 6LF 2LB 1LB 3LB 0LB  0RD 1LB 3RD ... ... 3LB ... ...  ... 1LB 3RD 6RD ... 3LB 4LE ...": (5, 33, 24),
 
@@ -814,6 +811,9 @@ CANT_SPIN_OUT_FALSE_NEGATIVES = {
     "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA",
     "1RB 2LA 0LB 1RA  1LB 3LA 3RB 3RB",
     "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA",
+
+    "1RB 3LA 1LA 1RA  2LB 2RA 0RB 3RB",  # QH 77, xmas
+    "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB",  # QH 14, xmas
 }
 
 DO_HALT = {
@@ -843,6 +843,10 @@ DO_SPIN_OUT = {
     "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",  # 10^502
     "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB",  # 10^1089
     "1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA",  # 10^4079
+}
+
+DONT_SPIN_OUT = {
+    "1RB 1RD  1LC 1LB  1LD 1RA  0RE 0RD  1LB 1RE",  # 10^28, xmas
 }
 
 
@@ -1217,6 +1221,9 @@ class Fast(TuringTest):
         for prog in DO_HALT:
             self.assert_could_halt(prog)
 
+        for prog in HALT_SLOW:
+            self.assert_could_halt(prog)
+
     def test_macro_halt(self):
         self._test_macro_halt(MACRO_HALT_FAST)
 
@@ -1229,6 +1236,12 @@ class Fast(TuringTest):
 
         for prog in DO_SPIN_OUT:
             self.assert_could_spin_out(prog)
+
+        for prog in SPINOUT_SLOW:
+            self.assert_could_spin_out(prog)
+
+        for prog in DONT_SPIN_OUT:
+            self.assert_cant_spin_out(prog)
 
     def test_recur(self):
         self._test_recur(RECUR_FAST, True)
