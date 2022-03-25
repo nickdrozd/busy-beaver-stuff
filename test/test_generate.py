@@ -384,7 +384,7 @@ NOT_CONNECTED_32 = [
 ]
 
 def read_progs(name):
-    with open(f'test/data/{name}') as holdouts:
+    with open(f'test/data/{name}.prog') as holdouts:
         return set(
             prog.strip()
             for prog in holdouts.readlines()
