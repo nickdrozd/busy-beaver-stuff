@@ -1005,12 +1005,12 @@ class TuringTest(TestCase):
     def assert_cant_halt(self, prog):
         self.assertTrue(
             Program(prog).cant_halt,
-            f'halt false negative: {prog}')
+            f'halt false negative: "{prog}"')
 
     def assert_could_blank(self, prog):
         self.assertFalse(
             Program(prog).cant_blank,
-            f'blank false positive: {prog}')
+            f'blank false positive: "{prog}"')
 
     def assert_cant_blank(self, prog):
         try:
@@ -1023,12 +1023,12 @@ class TuringTest(TestCase):
             self.assertIn(
                 prog,
                 CANT_BLANK_FALSE_NEGATIVES,
-                f'blank false negative: {prog}')
+                f'blank false negative: "{prog}"')
 
     def assert_could_spin_out(self, prog):
         self.assertFalse(
             Program(prog).cant_spin_out,
-            f'spin out false positive: {prog}')
+            f'spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog):
         try:
@@ -1038,7 +1038,7 @@ class TuringTest(TestCase):
             self.assertIn(
                 prog,
                 CANT_SPIN_OUT_FALSE_NEGATIVES,
-                f'spin out false negative: {prog}')
+                f'spin out false negative: "{prog}"')
 
     def assert_lin_recurrence(self, steps, recurrence):
         self.assertEqual(
