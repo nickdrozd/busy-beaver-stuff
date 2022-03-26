@@ -550,131 +550,185 @@ BLANK_FAST = {
     "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": 32779477,
 }
 
-UNDEFINED_FAST = {  # pylint: disable = duplicate-key
-    # 4/2 BBQ
-    "... ...  ... ...  ... ...  ... ...": ( 0, 'A0'),
-    "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-    "1RB ...  1LC ...  ... ...  ... ...": ( 2, 'C1'),
-    "1RB ...  1LC ...  ... 0LC  ... ...": ( 3, 'C0'),
-    "1RB ...  1LC ...  1LA 0LC  ... ...": ( 5, 'B1'),
-    "1RB ...  1LC 0LA  1LA 0LC  ... ...": ( 6, 'A1'),
-    "1RB 0LD  1LC 0LA  1LA 0LC  ... ...": ( 7, 'D0'),
-    "1RB 0LD  1LC 0LA  1LA 0LC  1RD ...": (11, 'D1'),
+UNDEFINED = {
+    # 4/2 BBH
+    "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": {
+        "1RB ...  ... ...  ... ...  ... ...": (  1, 'B0'),
+        "1RB ...  1LA ...  ... ...  ... ...": (  2, 'A1'),
+        "1RB 1LB  1LA ...  ... ...  ... ...": (  5, 'B1'),
+        "1RB 1LB  1LA 0LC  ... ...  ... ...": (  6, 'C1'),
+        "1RB 1LB  1LA 0LC  ... 1LD  ... ...": (  7, 'D0'),
+        "1RB 1LB  1LA 0LC  ... 1LD  1RD ...": (  8, 'D1'),
+        "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": (106, 'C0'),
+    },
 
-    # 4/2 BBR
-    "1RB ...  1LB ...  ... ...  ... ...": ( 2, 'B1'),
-    "1RB ...  1LB 1LC  ... ...  ... ...": ( 3, 'C0'),
-    "1RB ...  1LB 1LC  1LA ...  ... ...": ( 6, 'C1'),
-    "1RB ...  1LB 1LC  1LA 1RD  ... ...": ( 7, 'D1'),
-    "1RB ...  1LB 1LC  1LA 1RD  ... 0LC": ( 9, 'D0'),
-    "1RB ...  1LB 1LC  1LA 1RD  0RA 0LC": (10, 'A1'),
+    # 4/2 BBB / BLB / SB
+    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1RD ...  ... ...  ... ...": ( 2, 'D0'),
+        "1RB ...  1RD ...  ... ...  1LD ...": ( 3, 'D1'),
+        "1RB ...  1RD ...  ... ...  1LD 1LA": ( 4, 'A1'),
+        "1RB 1LC  1RD ...  ... ...  1LD 1LA": ( 5, 'C0'),
+        "1RB 1LC  1RD ...  0RD ...  1LD 1LA": ( 8, 'B1'),
+        "1RB 1LC  1RD 1RB  0RD ...  1LD 1LA": (15, 'C1'),
+    },
+
+    # 4/2 sigma
+    "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1LC ...  ... ...  ... ...": ( 2, 'C1'),
+        "1RB ...  1LC ...  ... 1LD  ... ...": ( 3, 'D0'),
+        "1RB ...  1LC ...  ... 1LD  0RD ...": ( 4, 'D1'),
+        "1RB ...  1LC ...  ... 1LD  0RD 0LB": ( 6, 'C0'),
+        "1RB ...  1LC ...  1RA 1LD  0RD 0LB": ( 7, 'A1'),
+        "1RB 1RC  1LC ...  1RA 1LD  0RD 0LB": (15, 'B1'),
+    },
 
     # 4/2 BBP
-    "1RB ...  1RC ...  1LD ...  ... ...": ( 3, 'D1'),
-    "1RB ...  1RC ...  1LD ...  ... 0LC": ( 4, 'C1'),
-    "1RB ...  1RC ...  1LD 1LC  ... 0LC": ( 6, 'D0'),
-    "1RB ...  1RC ...  1LD 1LC  1RA 0LC": ( 7, 'A1'),
-    "1RB 0RA  1RC ...  1LD 1LC  1RA 0LC": (10, 'B1'),
+    "1RB 0RA  1RC 0RB  1LD 1LC  1RA 0LC": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
+        "1RB ...  1RC ...  1LD ...  ... ...": ( 3, 'D1'),
+        "1RB ...  1RC ...  1LD ...  ... 0LC": ( 4, 'C1'),
+        "1RB ...  1RC ...  1LD 1LC  ... 0LC": ( 6, 'D0'),
+        "1RB ...  1RC ...  1LD 1LC  1RA 0LC": ( 7, 'A1'),
+        "1RB 0RA  1RC ...  1LD 1LC  1RA 0LC": (10, 'B1'),
+    },
 
-    # 4/2 BLB
-    "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
-    "1RB ...  1RC ...  1LC ...  ... ...": ( 3, 'C1'),
-    "1RB ...  1RC ...  1LC 1LA  ... ...": ( 4, 'A1'),
-    "1RB 1LD  1RC ...  1LC 1LA  ... ...": ( 5, 'D0'),
-    "1RB 1LD  1RC ...  1LC 1LA  0RC ...": ( 8, 'B1'),
-    "1RB 1LD  1RC 1RB  1LC 1LA  0RC ...": (15, 'D1'),
+    # 4/2 Boyd
+    "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1LB ...  ... ...  ... ...": ( 2, 'B1'),
+        "1RB ...  1LB 1LD  ... ...  ... ...": ( 3, 'D0'),
+        "1RB ...  1LB 1LD  ... ...  1LA ...": ( 6, 'D1'),
+        "1RB ...  1LB 1LD  ... ...  1LA 1RC": ( 7, 'C1'),
+        "1RB ...  1LB 1LD  ... 0LD  1LA 1RC": ( 9, 'C0'),
+        "1RB ...  1LB 1LD  0RA 0LD  1LA 1RC": (10, 'A1'),
+    },
 
     # 2/4 BBH
-    "... ... ... ...  ... ... ... ...": ( 0, 'A0'),
-    "1RB ... ... ...  ... ... ... ...": ( 1, 'B0'),
-    "1RB ... ... ...  1LB ... ... ...": ( 2, 'B1'),
-    "1RB ... ... ...  1LB 1LA ... ...": ( 5, 'A1'),
-    "1RB 2LA ... ...  1LB 1LA ... ...": ( 7, 'B2'),
-    "1RB 2LA ... ...  1LB 1LA 3RB ...": ( 9, 'A3'),
-    "1RB 2LA ... 1RA  1LB 1LA 3RB ...": (22, 'A2'),
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (3932963, 'B3'),
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": {
+        "1RB ... ... ...  ... ... ... ...": ( 1, 'B0'),
+        "1RB ... ... ...  1LB ... ... ...": ( 2, 'B1'),
+        "1RB ... ... ...  1LB 1LA ... ...": ( 5, 'A1'),
+        "1RB 2LA ... ...  1LB 1LA ... ...": ( 7, 'B2'),
+        "1RB 2LA ... ...  1LB 1LA 3RB ...": ( 9, 'A3'),
+        "1RB 2LA ... 1RA  1LB 1LA 3RB ...": (22, 'A2'),
+        "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (3932963, 'B3'),
+    },
 
     # 2/4 BLB
-    "1RB ... ... ...  2LB ... ... ...": ( 2, 'B1'),
-    "1RB ... ... ...  2LB 3LA ... ...": ( 4, 'B3'),
-    "1RB ... ... ...  2LB 3LA ... 0RA": ( 5, 'A2'),
-    "1RB ... 1RA ...  2LB 3LA ... 0RA": ( 9, 'A1'),
-    "1RB 2RA 1RA ...  2LB 3LA ... 0RA": (10, 'A3'),
-    "1RB 2RA 1RA 2RB  2LB 3LA ... 0RA": (11, 'B2'),
+    "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": {
+        "1RB ... ... ...  ... ... ... ...": ( 1, 'B0'),
+        "1RB ... ... ...  2LB ... ... ...": ( 2, 'B1'),
+        "1RB ... ... ...  2LB 1LA ... ...": ( 5, 'A1'),
+        "1RB 2RB ... ...  2LB 1LA ... ...": ( 7, 'A2'),
+        "1RB 2RB 3LA ...  2LB 1LA ... ...": ( 9, 'B3'),
+        "1RB 2RB 3LA ...  2LB 1LA ... 3RA": (11, 'B2'),
+        "1RB 2RB 3LA ...  2LB 1LA 0RB 3RA": (23, 'A3'),
+    },
 
-    # 2/4 former BBB
-    "1RB ... ... ...  2LB 3RB ... ...": ( 3, 'B2'),
-    "1RB ... ... ...  2LB 3RB 0RB ...": ( 6, 'B3'),
-    "1RB ... ... ...  2LB 3RB 0RB 1RA": ( 7, 'A2'),
-    "1RB ... 1LA ...  2LB 3RB 0RB 1RA": ( 8, 'A1'),
-    "1RB 2RA 1LA ...  2LB 3RB 0RB 1RA": (37, 'A3'),
-
-    # 2/4 BBB
-    "1RB ... ... ...  0LB ... ... ...": ( 2, 'B1'),
-    "1RB ... ... ...  0LB 2RB ... ...": ( 4, 'B2'),
-    "1RB ... ... ...  0LB 2RB 3RB ...": ( 6, 'B3'),
-    "1RB ... ... ...  0LB 2RB 3RB 1LA": (13, 'A1'),
-    "1RB 2LA ... ...  0LB 2RB 3RB 1LA": (21, 'A3'),
-    "1RB 2LA ... 1LB  0LB 2RB 3RB 1LA": (29, 'A2'),
+    # 2/4 BBB / SB 10^23
+    "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": {
+        "1RB ... ... ...  ... ... ... ...": ( 1, 'B0'),
+        "1RB ... ... ...  0LB ... ... ...": ( 2, 'B1'),
+        "1RB ... ... ...  0LB 2RB ... ...": ( 4, 'B2'),
+        "1RB ... ... ...  0LB 2RB 3RB ...": ( 6, 'B3'),
+        "1RB ... ... ...  0LB 2RB 3RB 1LA": (13, 'A1'),
+        "1RB 2LA ... ...  0LB 2RB 3RB 1LA": (21, 'A3'),
+        "1RB 2LA ... 1LB  0LB 2RB 3RB 1LA": (29, 'A2'),
+    },
 
     # 5/2 BBH
-    "... ...  ... ...  ... ...  ... ...  ... ...": ( 0, 'A0'),
-    "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-    "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
-    "1RB ...  1RC ...  1RD ...  ... ...  ... ...": ( 3, 'D0'),
-    "1RB ...  1RC ...  1RD ...  1LA ...  ... ...": ( 4, 'A1'),
-    "1RB 1LC  1RC ...  1RD ...  1LA ...  ... ...": ( 5, 'C1'),
-    "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... ...": ( 6, 'E1'),
-    "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... 0LA": (10, 'D1'),
-    "1RB 1LC  1RC ...  1RD 0LE  1LA 1LD  ... 0LA": (16, 'B1'),
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (47176869, 'E0'),
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
+        "1RB ...  1RC ...  1RD ...  ... ...  ... ...": ( 3, 'D0'),
+        "1RB ...  1RC ...  1RD ...  1LA ...  ... ...": ( 4, 'A1'),
+        "1RB 1LC  1RC ...  1RD ...  1LA ...  ... ...": ( 5, 'C1'),
+        "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... ...": ( 6, 'E1'),
+        "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... 0LA": (10, 'D1'),
+        "1RB 1LC  1RC ...  1RD 0LE  1LA 1LD  ... 0LA": (16, 'B1'),
+        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (47176869, 'E0'),
+    },
+
+    # 5/2 Uwe
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
+        "1RB ...  1RC ...  1LA ...  ... ...  ... ...": ( 3, 'A1'),
+        "1RB 0LC  1RC ...  1LA ...  ... ...  ... ...": ( 4, 'C1'),
+        "1RB 0LC  1RC ...  1LA 0RB  ... ...  ... ...": (14, 'B1'),
+        "1RB 0LC  1RC 1RD  1LA 0RB  ... ...  ... ...": (15, 'D0'),
+        "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... ...": (16, 'E1'),
+        "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": (20, 'E0'),
+        "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": (134466, 'D1'),
+    },
 
     # 5/2 BBB / SB / BLB || 10^4079
-    # 1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA
-    "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
-    "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
-    "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
-    "1RB ...  0LD ...  ... ...  0LE 1LD  1RE ...": ( 6, 'E1'),
-    "1RB ...  0LD ...  ... ...  0LE 1LD  1RE 1RA": (17, 'A1'),
-    "1RB 1LC  0LD ...  ... ...  0LE 1LD  1RE 1RA": (18, 'C1'),
-    "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
-    "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
+    "1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
+        "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
+        "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
+        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE ...": ( 6, 'E1'),
+        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE 1RA": (17, 'A1'),
+        "1RB 1LC  0LD ...  ... ...  0LE 1LD  1RE 1RA": (18, 'C1'),
+        "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
+        "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
+    },
 
-    # 10^502
-    # 1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA
-    "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-    "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
-    "1RB ...  1RC ...  0LB ...  ... ...  ... ...": ( 3, 'B1'),
-    "1RB ...  1RC 0RD  0LB ...  ... ...  ... ...": ( 4, 'D0'),
-    "1RB ...  1RC 0RD  0LB ...  0RE ...  ... ...": ( 5, 'E0'),
-    "1RB ...  1RC 0RD  0LB ...  0RE ...  1LE ...": ( 8, 'E1'),
-    "1RB ...  1RC 0RD  0LB ...  0RE ...  1LE 1LA": (11, 'D1'),
-    "1RB ...  1RC 0RD  0LB ...  0RE 1RD  1LE 1LA": (18, 'A1'),
-    "1RB 1LC  1RC 0RD  0LB ...  0RE 1RD  1LE 1LA": (19, 'C1'),
+    # 5/2 10^1089, complex
+    "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1RD ...  ... ...  ... ...  ... ...": ( 2, 'D0'),
+        "1RB ...  1RD ...  ... ...  1LA ...  ... ...": ( 3, 'A1'),
+        "1RB 1LC  1RD ...  ... ...  1LA ...  ... ...": ( 4, 'C1'),
+        "1RB 1LC  1RD ...  ... 1LE  1LA ...  ... ...": ( 5, 'E0'),
+        "1RB 1LC  1RD ...  ... 1LE  1LA ...  0LA ...": ( 8, 'D1'),
+        "1RB 1LC  1RD ...  ... 1LE  1LA 0RE  0LA ...": ( 9, 'E1'),
+        "1RB 1LC  1RD ...  ... 1LE  1LA 0RE  0LA 1RB": (10, 'B1'),
+        "1RB 1LC  1RD 0RA  ... 1LE  1LA 0RE  0LA 1RB": (18, 'C0'),
+    },
 
-    # 10^83
-    # 1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  1RA 1LD
-    "1RB ...  ... ...  ... ...  ... ...  ... ...": (  1, 'B0'),
-    "1RB ...  0LC ...  ... ...  ... ...  ... ...": (  2, 'C1'),
-    "1RB ...  0LC ...  ... 1RD  ... ...  ... ...": (  3, 'D0'),
-    "1RB ...  0LC ...  ... 1RD  1LA ...  ... ...": (  4, 'A1'),
-    "1RB 0RE  0LC ...  ... 1RD  1LA ...  ... ...": (  5, 'E1'),
-    "1RB 0RE  0LC ...  ... 1RD  1LA ...  ... 1LD": (  8, 'B1'),
-    "1RB 0RE  0LC 0LB  ... 1RD  1LA ...  ... 1LD": ( 11, 'C0'),
-    "1RB 0RE  0LC 0LB  1RC 1RD  1LA ...  ... 1LD": ( 41, 'D1'),
-    "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  ... 1LD": (310, 'E0'),
+    # 5/2 shawn 10^502
+    "1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
+        "1RB ...  1RC ...  0LB ...  ... ...  ... ...": ( 3, 'B1'),
+        "1RB ...  1RC 0RD  0LB ...  ... ...  ... ...": ( 4, 'D0'),
+        "1RB ...  1RC 0RD  0LB ...  0RE ...  ... ...": ( 5, 'E0'),
+        "1RB ...  1RC 0RD  0LB ...  0RE ...  1LE ...": ( 8, 'E1'),
+        "1RB ...  1RC 0RD  0LB ...  0RE ...  1LE 1LA": (11, 'D1'),
+        "1RB ...  1RC 0RD  0LB ...  0RE 1RD  1LE 1LA": (18, 'A1'),
+        "1RB 1LC  1RC 0RD  0LB ...  0RE 1RD  1LE 1LA": (19, 'C1'),
+    },
 
-    # QH Xmas, 10^28
-    # 1RB 1RD  1LC 1LB  1LD 1RA  0RE 0RD  1LB 1RE
-    "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-    "1RB ...  1LC ...  ... ...  ... ...  ... ...": ( 2, 'C1'),
-    "1RB ...  1LC ...  ... 1RA  ... ...  ... ...": ( 3, 'A1'),
-    "1RB 1RD  1LC ...  ... 1RA  ... ...  ... ...": ( 4, 'D0'),
-    "1RB 1RD  1LC ...  ... 1RA  0RE ...  ... ...": ( 5, 'E0'),
-    "1RB 1RD  1LC ...  ... 1RA  0RE ...  1LB ...": ( 9, 'D1'),
-    "1RB 1RD  1LC ...  ... 1RA  0RE 0RD  1LB ...": (13, 'C0'),
-    "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB ...": (23, 'E1'),
-    "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB 1RE": (27, 'B1'),
+    # 5/2 10^83
+    "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  1RA 1LD": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": (  1, 'B0'),
+        "1RB ...  0LC ...  ... ...  ... ...  ... ...": (  2, 'C1'),
+        "1RB ...  0LC ...  ... 1RD  ... ...  ... ...": (  3, 'D0'),
+        "1RB ...  0LC ...  ... 1RD  1LA ...  ... ...": (  4, 'A1'),
+        "1RB 0RE  0LC ...  ... 1RD  1LA ...  ... ...": (  5, 'E1'),
+        "1RB 0RE  0LC ...  ... 1RD  1LA ...  ... 1LD": (  8, 'B1'),
+        "1RB 0RE  0LC 0LB  ... 1RD  1LA ...  ... 1LD": ( 11, 'C0'),
+        "1RB 0RE  0LC 0LB  1RC 1RD  1LA ...  ... 1LD": ( 41, 'D1'),
+        "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  ... 1LD": (310, 'E0'),
+    },
+
+    # 5/2 QH Xmas 10^28
+    "1RB 1RD  1LC 1LB  1LD 1RA  0RE 0RD  1LB 1RE": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1LC ...  ... ...  ... ...  ... ...": ( 2, 'C1'),
+        "1RB ...  1LC ...  ... 1RA  ... ...  ... ...": ( 3, 'A1'),
+        "1RB 1RD  1LC ...  ... 1RA  ... ...  ... ...": ( 4, 'D0'),
+        "1RB 1RD  1LC ...  ... 1RA  0RE ...  ... ...": ( 5, 'E0'),
+        "1RB 1RD  1LC ...  ... 1RA  0RE ...  1LB ...": ( 9, 'D1'),
+        "1RB 1RD  1LC ...  ... 1RA  0RE 0RD  1LB ...": ( 13, 'C0'),
+        "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB ...": ( 23, 'E1'),
+        "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB 1RE": ( 27, 'B1'),
+    },
 }
 
 BB4_EXTENSIONS = {
@@ -730,11 +784,15 @@ SPAGHETTI = {
 KERNEL = {
     # Halt
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": 3,  # 134467 Uwe
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": 3,  # partial
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 3,  # partial
 
     # Spinout
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,
     "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA": 3,
     "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB": 3,  # 10^1089
+    "1RB 1LC  1RD ...  ... 1LE  1LA 0RE  0LA 1RB": 3,  # partial
+    "1RB 1LC  1RD 0RA  ... 1LE  1LA 0RE  0LA 1RB": 3,  # partial
 
     # Recur
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": 3, # 158491, 17620 Boyd
@@ -1206,17 +1264,6 @@ class TuringTest(TestCase):
                 steps,
                 self.final.xlimit)
 
-    def _test_undefined(self, prog_data):
-        for prog, (steps, instr) in prog_data.items():
-            self.run_bb(prog, normal = False)
-
-            self.assertEqual(
-                (steps, instr),
-                self.final.undfnd,
-                f'"{prog}": {self.final.undfnd},')
-
-            self.assert_steps(steps)
-
     def _test_extensions(self, prog_data):
         for prog, (status, data) in prog_data.items():
             self.run_bb(
@@ -1298,11 +1345,26 @@ class Fast(TuringTest):
         for prog in DO_BLANK:
             self.assert_could_blank(prog)
 
-    def test_undefined(self):
-        self._test_undefined(UNDEFINED_FAST)
-
     def test_bb4_extensions(self):
         self._test_extensions(BB4_EXTENSIONS)
+
+    def test_undefined(self):
+        for prog, sequence in UNDEFINED.items():
+            self.assertEqual(
+                sequence,
+                {
+                    partial: (step, slot)
+                    for partial, step, slot in
+                    Program(prog).instruction_sequence
+                },
+            )
+
+            for partial, (step, slot) in sequence.items():
+                self.run_bb(partial, normal = False)
+
+                self.assertEqual(
+                    (step, slot),
+                    self.final.undfnd)
 
     def test_spaghetti(self):
         for prog in SPAGHETTI:
