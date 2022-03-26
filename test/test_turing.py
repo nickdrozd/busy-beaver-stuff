@@ -839,8 +839,6 @@ CANT_BLANK_FALSE_NEGATIVES = {
     "1RB 0LA  0RC 1LA  1LC 0RB",
     "1RB 0LB  1LC 0RC  1RA 1LA",
     "1RB 1LB  0RC 1RC  1LA 0LA",
-    "1RB 1LB  1LA 1RC  0RB 0LC",
-    "1RB 1RC  1LC 0LB  1RA 1LA",
 
     "1RB 0RA 1LB  2LA 2RB 0LA",
     "1RB 0RA 2LB  2LA 0LA 1RA",
@@ -876,14 +874,11 @@ CANT_BLANK_FALSE_NEGATIVES = {
     "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA",
     "1RB 2LB 3RA 1RA  3LA 0LB 1RA 0RA",
     "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB",
-    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA",
     "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA",
 
     "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
 
     "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA",
-    "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB",
-    "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE",
 }
 
 CANT_SPIN_OUT_FALSE_NEGATIVES = {
@@ -896,19 +891,16 @@ CANT_SPIN_OUT_FALSE_NEGATIVES = {
 
     "1RB 0LA  0RC 0RD  1LC 1LA  0RB 1RD",
     "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB",
-    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA",
     "1RB 0LC  1RD 0RB  1LC 1LA  1RC 1RA",
     "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA",
     "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA",
     "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
     "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA",
     "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD",
-    "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB",
 
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA",
     "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA",
     "1RB 2LA 0LB 1RA  1LB 3LA 3RB 3RB",
-    "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA",
 
     "1RB 3LA 1LA 1RA  2LB 2RA 0RB 3RB",  # QH 77, xmas
     "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB",  # QH 14, xmas
@@ -1334,6 +1326,11 @@ class Fast(TuringTest):
 
     def test_spinout(self):
         for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
+            self.assertNotIn(
+                prog,
+                (set(SPINOUT_FAST)
+                 | set(SPINOUT_SLOW)
+                 | set(SPINOUT_FAST_FIXED)))
             self.assert_could_spin_out(prog)
 
         for prog in DO_SPIN_OUT:
@@ -1369,6 +1366,7 @@ class Fast(TuringTest):
 
     def test_blank(self):
         for prog in CANT_BLANK_FALSE_NEGATIVES:
+            self.assertNotIn(prog, BLANKERS)
             self.assert_could_blank(prog)
 
         for prog in DO_BLANK:
