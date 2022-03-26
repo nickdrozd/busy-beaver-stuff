@@ -1320,21 +1320,18 @@ class TuringTest(TestCase):
 
 class Fast(TuringTest):
     def test_halt(self):
-        self._test_halt(HALT_FAST)
-
         for prog in DO_HALT:
             self.assert_could_halt(prog)
 
         for prog in HALT_SLOW:
             self.assert_could_halt(prog)
 
+        self._test_halt(HALT_FAST)
+
     def test_macro_halt(self):
         self._test_macro_halt(MACRO_HALT_FAST)
 
     def test_spinout(self):
-        self._test_spinout(SPINOUT_FAST, fixed = False)
-        self._test_spinout(SPINOUT_FAST_FIXED, fixed = True)
-
         for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
             self.assert_could_spin_out(prog)
 
@@ -1346,6 +1343,9 @@ class Fast(TuringTest):
 
         for prog in DONT_SPIN_OUT:
             self.assert_cant_spin_out(prog)
+
+        self._test_spinout(SPINOUT_FAST, fixed = False)
+        self._test_spinout(SPINOUT_FAST_FIXED, fixed = True)
 
     def test_recur(self):
         self._test_recur(RECUR_FAST, True)
@@ -1367,13 +1367,13 @@ class Fast(TuringTest):
             fixdtp = True)
 
     def test_blank(self):
-        self._test_blank(BLANKERS)
-
         for prog in CANT_BLANK_FALSE_NEGATIVES:
             self.assert_could_blank(prog)
 
         for prog in DO_BLANK:
             self.assert_could_blank(prog)
+
+        self._test_blank(BLANKERS)
 
     def test_bb4_extensions(self):
         self._test_extensions(BB4_EXTENSIONS)
