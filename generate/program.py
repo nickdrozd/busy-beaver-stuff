@@ -46,6 +46,17 @@ class Program:
     def __eq__(self, other) -> bool:
         return str(self) == str(other)
 
+    @staticmethod
+    def empty(states: int, colors: int) -> Program:
+        return Program(
+            re.sub(
+                r'^\.\.\.',
+                '1RB',
+                '  '.join([
+                    ' '.join(
+                        ['...'] * colors)
+                ] * states)))
+
     @property
     def states(self) -> Set[str]:
         return set(self.prog.keys())
@@ -145,14 +156,7 @@ class Program:
 
     @property
     def instruction_sequence(self) -> Iterator[Tuple[str, int, str]]:
-        partial = Program(
-            re.sub(
-                r'^\.\.\.',
-                '1RB',
-                '  '.join([
-                    ' '.join(
-                        ['...'] * len(self.colors))
-                ] * len(self.states))))
+        partial = Program.empty(len(self.states), len(self.colors))
 
         for _ in range(len(self.states) * len(self.colors) - 1):
             if (result := Machine(partial).run().final.undfnd) is None:
