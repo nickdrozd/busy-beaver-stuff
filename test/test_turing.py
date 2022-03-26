@@ -1197,47 +1197,34 @@ class TuringTest(TestCase):
         for prog, (marks, steps, period) in prog_data.items():
             self.prog = prog
 
-            if period == 1:
-                self.assert_could_spin_out(prog)
+            self.assertGreater(period, 1)
 
-                self.run_bb(prog)
+            self.assert_cant_spin_out(prog)
 
-                r_steps, r_period = self.final.linrec
+            self.assert_cant_halt(prog)
 
-                self.assertEqual(r_period, period)
+            self.verify_lin_recurrence(
+                prog,
+                steps,
+                period,
+            )
 
-                self.assertIn(
-                    r_steps,
-                    (steps - 1, steps, steps + 1))
+            if not quick or period > 2000:
+                print(prog)
+                continue
 
-            else:
-                self.assert_cant_spin_out(prog)
+            self.run_bb(
+                prog,
+                check_rec = (
+                    0
+                    if steps < 256 else
+                    steps
+                ),
+            )
 
-                self.assert_cant_halt(prog)
-
-                self.verify_lin_recurrence(
-                    prog,
-                    steps,
-                    period,
-                )
-
-                if not quick or period > 2000:
-                    if isinstance(prog, str):
-                        print(prog)
-                    continue
-
-                self.run_bb(
-                    prog,
-                    check_rec = (
-                        0
-                        if steps < 256 else
-                        steps
-                    ),
-                )
-
-                self.assertEqual(
-                    period,
-                    self.final.linrec[1])
+            self.assertEqual(
+                period,
+                self.final.linrec[1])
 
             self.assertEqual(
                 self.final.qsihlt,
@@ -1246,9 +1233,6 @@ class TuringTest(TestCase):
             self.assertEqual(
                 fixdtp,
                 self.final.fixdtp)
-
-            if not quick:
-                continue
 
             self.run_bb(
                 prog,
