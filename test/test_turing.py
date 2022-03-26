@@ -271,7 +271,7 @@ QUASIHALT_FIXED = {
 
 RECUR_FAST = {
     # Lin-Rado examples
-    "1RB ...  0RC 1LB  1LA 0RB": (2,  9, 10),  # total recurrence
+    # "1RB ...  0RC 1LB  1LA 0RB": (2,  9, 10),  # total recurrence
     "1RB ...  1LB 0LC  1LA 1RA": (4, 12,  7),  # left barrier
     "1RB ...  1LC 1RA  1LA 0LC": (4, 12,  8),  # right barrier
 
@@ -279,7 +279,6 @@ RECUR_FAST = {
     "1RB 0LB  1LA 0RB": (3, 9, 3),
     "1RB 1LA  0LA 1RA": (3, 7, 5),
     "1RB 1LB  1LA 0RB": (2, 7, 3),
-    "1RB 1RB  1LA 0LB": (2, 3, 4),
     "1RB 0RB  1LB 1RA": (0, 0, 9),
     "1RB 0RA  1LB 1LA": (0, 0, 8),
     "1RB 0RA  0LB 1LA": (0, 0, 7),
@@ -297,7 +296,6 @@ RECUR_FAST = {
     "1RB 0LB  1LC 0RC  1RA 1LA": ( 6,  38, 21),
     "1RB 1LB  1LA 1RC  0RB 0LC": ( 0,  22,  4),
     "1RB 1LA  0RC 0RA  1LC 0LA": ( 4,  17, 36),
-    "1RB 0RB  1LC 1RC  0LA 1LA": ( 3,  16, 15),
     "1RB ...  1LC 0RC  1RA 0LC": ( 4,  16,  5),
     "1RB 1LB  0RC 0RB  1LC 0LA": ( 3,   4, 38),
     "1RB 0RB  1LC 0RC  0LA 1RA": ( 2,   2, 30),
@@ -305,6 +303,7 @@ RECUR_FAST = {
     "1RB 0LA  1LB 0RC  1LC 1LA": ( 0,   0, 56),
     "1RB 0LA  0RC 0RC  1LC 1LA": ( 0,   0, 48),
     "1RB 1LB  0RC 1LA  1LA 0RA": ( 0,   0, 21),
+    "1RB 1LB  0RC 1RC  1LA 0LA": ( 0,   0, 15),
 
     # 2/3
     "1RB 0LA ...  1LB 2LA 0RB": (15, 165, 54),
@@ -315,7 +314,7 @@ RECUR_FAST = {
     "1RB 1LA 1LB  1LA 2RB 0LA": (12,  80, 20),
     "1RB 2LA 0RB  1LA 2LA 1RA": (12,  78, 14),
     "1RB 2LA 0RB  1LB 2LA 1RA": (10,  76, 14),
-    "1RB 2LA 0RB  1LA 0LB 1RA": ( 2,  75,  4),
+    # "1RB 2LA 0RB  1LA 0LB 1RA": ( 2,  75,  4),
     "1RB 2LB 2LA  2LA 0LB 0RA": ( 8,  63, 32),
     "1RB 0RA 2LB  2LA 2RA 0LB": ( 6,  59, 32),
     "1RB 1LB 1LB  1LA 2RB 0LA": ( 9,  58,  8),
@@ -365,7 +364,7 @@ RECUR_FAST = {
     "1RB 0LC  1RD 0RB  1LC 1LA  1RC 1RA": (30, 1004,  174),
     "1RB 1LA  1RC 0RD  0LA 0RC  1RC 1LC": (29,  979,  144),
     "1RB 1RC  1LC 0LD  0RA 1LB  1RD 0LA": (24,  928,  128),
-    "1RB 0RA  0LB 0LC  1RD 1LC  1RA 1LB": (19,  868,  404),
+    # "1RB 0RA  0LB 0LC  1RD 1LC  1RA 1LB": (19,  868,  404),
     "1RB 0RC  1LB 1RC  1RA 0LD  1LA 1LC": (23,  845,  842),
     "1RB 1RC  1LC 0RB  1RA 0LD  0LC 1LD": (22,  600, 1374),
     "1RB 1LA  1LC 0RA  1LD 0LC  1RB 0LA": (25,  497,  816),
@@ -378,7 +377,7 @@ RECUR_FAST = {
     "1RB 1RA  1LC 0RB  1RC 0LD  1LA 1LD": ( 8,   45,  228),
     "1RB 1LA  1LC 0RA  1LD 0LC  1RA 0LA": ( 3,    5,  385),
     "1RB 0RA  1LC 1RA  1LD 0LC  1LA 0RB": ( 3,    5,  244),
-    "1RB 1RC  0LD 1RA  1LB 0RD  1LA 0RC": ( 1,    2,  294),
+    "1RB 0LC  0RC 1LD  1RD 0LA  1LB 1LA": ( 0,    0,  294),
     "1RB 0LA  0RC 1LA  1RD 1RC  1LD 1LB": ( 0,    0,  714),
     "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB": ( 0,    0,  294),
     "1RB 1LA  1LB 0RC  1LC 1LD  0RA 0LD": ( 0,    0,  238),
@@ -426,7 +425,7 @@ RECUR_FAST_FIXED = {
     "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB": (33, 1089, 2),
 }
 
-BLANK_FAST = {
+BLANKERS = {
     # 2/2
     "1RB 0RA  1LB 1LA": 8,
     "1RB 0RA  0LB 1LA": 7,
@@ -778,7 +777,7 @@ SPAGHETTI = {
 
     # Recur
     "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB",  # 0, 294
-    "1RB 1RC  0LD 1RA  1LB 0RD  1LA 0RC",  # 2, 294
+    "1RB 0LC  0RC 1LD  1RD 0LA  1LB 1LA",  # 0, 294
 }
 
 KERNEL = {
@@ -1220,6 +1219,7 @@ class TuringTest(TestCase):
                     if steps < 256 else
                     steps
                 ),
+                check_blanks = marks != 0 and prog not in BLANKERS,
             )
 
             self.assertEqual(
@@ -1321,7 +1321,7 @@ class Fast(TuringTest):
             fixdtp = True)
 
     def test_blank(self):
-        self._test_blank(BLANK_FAST)
+        self._test_blank(BLANKERS)
 
         for prog in CANT_BLANK_FALSE_NEGATIVES:
             self.assert_could_blank(prog)
