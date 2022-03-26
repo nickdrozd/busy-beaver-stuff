@@ -275,7 +275,7 @@ class Program:
             self,
             final_prop: str,
             slots: Iterator[str],
-            max_attempts: int = 11,
+            max_attempts: int = 25,
             blank: bool = False,
     ):
         configs: List[
