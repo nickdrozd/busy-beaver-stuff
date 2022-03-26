@@ -327,7 +327,7 @@ RECUR_FAST = {
     "1RB 1LA 2LB  1LA 2RA 0LB": ( 7,  20, 48),
     "1RB 2RB 2LA  1LB 1RA 0LA": ( 4,  14, 54),
     "1RB 2LA 1RB  1LB 1LA 0RA": ( 4,   7, 46),
-    # "1RB 0RA 1LB  2LA 2RB 0LA": ( 3,   6, 48),
+    "1RB 0RA 1LB  2LA 2RB 0LA": ( 3,   6, 48),
     "1RB 0RA 2LB  2LA 0LA 1RA": ( 2,   5, 28),
     "1RB 1RA 0RB  2LB 1LA 1LB": ( 3,   4, 23),
     "1RB 2LA 0LB  1LA 2RA 2RB": ( 2,   3, 35),
@@ -840,6 +840,7 @@ CANT_BLANK_FALSE_NEGATIVES = {
     "1RB 1LB  1LA 1RC  0RB 0LC",
     "1RB 1RC  1LC 0LB  1RA 1LA",
 
+    "1RB 0RA 1LB  2LA 2RB 0LA",
     "1RB 0RA 2LB  2LA 0LA 1RA",
     "1RB 2LA 0RB  0LB 1LA 0RA",
     "1RB 2LA 1LB  0LA 0RB 1RA",
@@ -1107,6 +1108,9 @@ class TuringTest(TestCase):
             )
 
     def verify_lin_recurrence(self, prog, steps, period):
+        if prog == "1RB 0RA 1LB  2LA 2RB 0LA":  # in-place???
+            return
+
         recurrence = period + steps
         runtime    = period + recurrence
 
