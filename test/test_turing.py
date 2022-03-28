@@ -200,7 +200,7 @@ SPINOUT_FAST_FIXED = {
     "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": ( 30,  1854),
 
     # 7/8 derived from 4/2-2819
-    "1LB 2LC 1RD ... ... 3RE ... 3RF  0RD ... ... 1RD 2RD ... 3RA ...  4RE 4LC 5LG 3RD 4RD ... 6RD ...  0RD 2LC 7LG ... 5LG 6LC ... 0LC  4LC ... 3RA ... 1LB 5LB 3RD ...  7LG ... ... ... ... 1LB ... ...  6RA ... ... 1LB 5LG ... 3RA ...": (24, 944),
+    "1RB 2RC 1LD ... ... 3LE ... 3LF  0LD ... ... 1LD 2LD ... 3LA ...  4LE 4RC 5RG 3LD 4LD ... 6LD ...  0LD 2RC 7RG ... 5RG 6RC ... 0RC  4RC ... 3LA ... 1RB 5RB 3LD ...  7RG ... ... ... ... 1RB ... ...  6LA ... ... 1RB 5RG ... 3LA ...": (24, 944),
 }
 
 SPINOUT_SLOW = {
@@ -250,7 +250,7 @@ QUASIHALT = {
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA": (  57,    2859, 3),
 
     # 6/8 derived from 3/2-rec champ
-    "1LB ... ... ... ... ... ... ...  2RC ... 3RD 1RC ... 4LE 5RC ...  6LF 6RD 5LF 1LB ... ... ... ...  7LF 5LF ... 6LF 2LB 1LB 3LB 0LB  0RD 1LB 3RD ... ... 3LB ... ...  ... 1LB 3RD 6RD ... 3LB 4LE ...": (5, 33, 24),
+    "1RB ... ... ... ... ... ... ...  2LC ... 3LD 1LC ... 4RE 5LC ...  6RF 6LD 5RF 1RB ... ... ... ...  7RF 5RF ... 6RF 2RB 1RB 3RB 0RB  0LD 1RB 3LD ... ... 3RB ... ...  ... 1RB 3LD 6LD ... 3RB 4RE ...": (5, 33, 24),
 
 }
 

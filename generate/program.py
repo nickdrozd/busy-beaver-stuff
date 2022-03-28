@@ -245,12 +245,24 @@ class Program:
 
         return self
 
+    def normalize_directions(self) -> Program:
+        if self['A0'][1] == 'R':
+            return self
+
+        for slot, action in self.instructions:
+            if (shift := action[1]) == 'R':
+                self[slot] = re.sub('R', 'L', action)
+            elif shift == 'L':
+                self[slot] = re.sub('L', 'R', action)
+
+        return self
+
     def normalize(self) -> Program:
         for _ in self.colors:
             self.normalize_states()
             self.normalize_colors()
 
-        return self
+        return self.normalize_directions()
 
     @property
     def cant_halt(self) -> bool:
