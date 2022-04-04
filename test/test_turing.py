@@ -717,7 +717,33 @@ UNDEFINED = {
         "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": (134466, 'D1'),
     },
 
-    # 5/2 BBB / SB / BLB || 10^4079
+    # 5/2 BBB / SB / BLB || 10^14006
+    "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
+        "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
+        "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
+        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE ...": ( 6, 'E1'),
+        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE 1RA": (17, 'A1'),
+        "1RB 1LC  0LD ...  ... ...  0LE 1LD  1RE 1RA": (18, 'C1'),
+        "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
+        "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
+    },
+
+    # 5/2 10^14006
+    "1RB 1LC  0LD 0LB  0LE 0LA  0LE 1LD  1RE 1RA": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
+        "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
+        "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
+        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE ...": ( 6, 'E1'),
+        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE 1RA": (17, 'A1'),
+        "1RB 1LC  0LD ...  ... ...  0LE 1LD  1RE 1RA": (18, 'C1'),
+        "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
+        "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
+    },
+
+    # 5/2 10^4079
     "1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA": {
         "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
         "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
@@ -1007,8 +1033,14 @@ DO_BLANK = {
     "1RB 0RE  0RC 0RB  0RD 0RE  1LD 0LA  0RB 1RE",  # 10^66
     "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0RB 0RD",  # 10^137
     "1RB 1LA  0LC 0LB  0LD 1LC  1RE 0LA  1RE 0RA",  # 10^183
+    "1RB 0LC  0LD 0LB  1RA 1LA  1RE 1LD  1RE 1RA",  # 10^315
     "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",  # 10^502
     "1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA",  # 10^4079
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RD 0LA",  # 10^4079 TNF
+    "1RB 1LC  0LD 0LB  0LE 0LA  0LE 1LD  1RE 1RA",  # 10^14006
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0LD 0LA",  # 10^14006 TNF
+    "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA",  # 10^14006
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA",  # 10^14006 TNF
 }
 
 DO_SPIN_OUT = {
@@ -1033,6 +1065,11 @@ DO_SPIN_OUT = {
     "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",  # 10^502
     "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB",  # 10^1089
     "1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA",  # 10^4079
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RD 0LA",  # 10^4079 TNF
+    "1RB 1LC  0LD 0LB  0LE 0LA  0LE 1LD  1RE 1RA",  # 10^14006
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0LD 0LA",  # 10^14006 TNF
+    "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA",  # 10^14006
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA",  # 10^14006 TNF
 }
 
 DONT_SPIN_OUT = {
