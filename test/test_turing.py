@@ -1445,10 +1445,7 @@ class TuringTest(TestCase):
 
 class Fast(TuringTest):
     def test_halt(self):
-        for prog in DO_HALT:
-            self.assert_could_halt(prog)
-
-        for prog in HALT_SLOW:
+        for prog in DO_HALT | set(HALT_SLOW):
             self.assert_could_halt(prog)
 
         self._test_halt(HALT_FAST)
@@ -1457,18 +1454,7 @@ class Fast(TuringTest):
         self._test_macro_halt(MACRO_HALT_FAST)
 
     def test_spinout(self):
-        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
-            self.assertNotIn(
-                prog,
-                (set(SPINOUT_FAST)
-                 | set(SPINOUT_SLOW)
-                 | set(SPINOUT_FAST_FIXED)))
-            self.assert_could_spin_out(prog)
-
-        for prog in DO_SPIN_OUT:
-            self.assert_could_spin_out(prog)
-
-        for prog in SPINOUT_SLOW:
+        for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
             self.assert_could_spin_out(prog)
 
         for prog in DONT_SPIN_OUT:
@@ -1497,14 +1483,23 @@ class Fast(TuringTest):
             fixdtp = True)
 
     def test_blank(self):
-        for prog in CANT_BLANK_FALSE_NEGATIVES:
-            self.assertNotIn(prog, BLANKERS)
-            self.assert_could_blank(prog)
-
         for prog in DO_BLANK:
             self.assert_could_blank(prog)
 
         self._test_blank(BLANKERS)
+
+    def test_false_negatives(self):
+        for prog in CANT_BLANK_FALSE_NEGATIVES:
+            self.assertNotIn(prog, BLANKERS)
+            self.assert_could_blank(prog)
+
+        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
+            self.assertNotIn(
+                prog,
+                (set(SPINOUT_FAST)
+                 | set(SPINOUT_SLOW)
+                 | set(SPINOUT_FAST_FIXED)))
+            self.assert_could_spin_out(prog)
 
     def test_bb4_extensions(self):
         self._test_extensions(BB4_EXTENSIONS)
