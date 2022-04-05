@@ -5,6 +5,7 @@ from itertools import product
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 from tm import parse, BlockTape, Machine
+from tm.recurrence import History
 from generate.graph import Graph
 
 INIT = 'A'
@@ -295,17 +296,18 @@ class Program:
             self,
             final_prop: str,
             slots: Iterator[str],
-            max_attempts: int = 11,
+            max_attempts: int = 16,
             blank: bool = False,
     ):
         configs: List[
-            Tuple[int, str, BlockTape, int],
+            Tuple[int, str, BlockTape, int, History]
         ] = [                              # type: ignore
             (
                 1,
                 state,                     # type: ignore
                 BlockTape([], color, []),  # type: ignore
                 0,
+                History(),
             )
             for state, color in slots
         ]
@@ -313,13 +315,31 @@ class Program:
         max_repeats = max_attempts // 2
 
         while configs:  # pylint: disable = while-used
-            step, state, tape, repeat = configs.pop()
+            step, state, tape, repeat, history = configs.pop()
 
             if step > max_attempts:
                 return False
 
             if state == 'A' and tape.blank:
                 return False
+
+            history.add_state_at_step(step, state)  # type: ignore
+            history.add_position_at_step(step, tape.head)
+            history.add_tape_at_step(step, tape.to_ptr())
+
+            if history.check_for_recurrence(
+                    step,
+                    (state, tape.scan)) is None:  # type: ignore
+                repeat = 0
+            else:
+                repeat += 1
+
+                if repeat > max_repeats:
+                    continue
+
+            history.add_action_at_step(
+                step,
+                (state, tape.scan)) # type: ignore
 
             # print(step, state, tape)
 
@@ -329,15 +349,6 @@ class Program:
                         continue
 
                     for color in map(int, self.colors):
-                        next_repeat = (
-                            repeat + 1
-                            if entry == state and color == tape.scan
-                            else 0
-                        )
-
-                        if next_repeat > max_repeats:
-                            continue
-
                         next_tape = tape.copy()
 
                         _ = next_tape.step(
@@ -366,7 +377,8 @@ class Program:
                             step + 1,
                             entry,
                             next_tape,
-                            next_repeat,
+                            repeat,
+                            history.copy(),
                         ))
 
         return True
