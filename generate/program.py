@@ -85,6 +85,10 @@ class Program:
             yield from instrs.values()
 
     @property
+    def slots(self) -> Tuple[str, ...]:
+        return tuple(slot for slot, _ in self.instructions)
+
+    @property
     def open_slots(self) -> Tuple[str, ...]:
         return tuple(
             slot
