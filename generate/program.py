@@ -309,7 +309,7 @@ class Program:
                 0,
                 History(),
             )
-            for state, color in slots
+            for state, color in sorted(slots)
         ]
 
         max_repeats = max_attempts // 2
@@ -343,12 +343,12 @@ class Program:
 
             # print(step, state, tape)
 
-            for entry in self.graph.entry_points[state]:
+            for entry in sorted(self.graph.entry_points[state]):
                 for _, (_, shift, trans) in self[entry].items():
                     if trans != state:
                         continue
 
-                    for color in map(int, self.colors):
+                    for color in sorted(map(int, self.colors)):
                         next_tape = tape.copy()
 
                         _ = next_tape.step(
