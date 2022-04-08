@@ -6,6 +6,7 @@ from collections import defaultdict
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 from tm import parse, BlockTape, Machine
+from tm.parse import tcompile
 from tm.recurrence import History
 from generate.graph import Graph
 
@@ -313,6 +314,8 @@ class Program:
             for state, color in sorted(slots)
         ]
 
+        comp = tcompile(str(self))
+
         max_repeats = max_attempts // 2
 
         seen: Dict[str, Set[str]] = defaultdict(set)
@@ -366,7 +369,7 @@ class Program:
 
                         next_tape.scan = color
 
-                        run = Machine(self).run(
+                        run = Machine(comp).run(
                             step_lim = step + 1,
                             tape = next_tape.copy(),
                             state = ord(entry) - 65,
