@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from itertools import product
+from collections import defaultdict
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 from tm import parse, BlockTape, Machine
@@ -314,6 +315,8 @@ class Program:
 
         max_repeats = max_attempts // 2
 
+        seen: Dict[str, Set[str]] = defaultdict(set)
+
         while configs:  # pylint: disable = while-used
             step, state, tape, repeat, history = configs.pop()
 
@@ -322,6 +325,11 @@ class Program:
 
             if state == 'A' and tape.blank:
                 return False
+
+            if (tape_hash := str(tape)) in seen[state]:
+                continue
+
+            seen[state].add(tape_hash)
 
             history.add_state_at_step(step, state)  # type: ignore
             history.add_position_at_step(step, tape.head)
