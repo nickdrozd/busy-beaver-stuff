@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from copy import deepcopy
+from copy import copy
 from typing import List, Optional, Tuple, Union
 
 class BlockTape:
@@ -65,9 +65,9 @@ class BlockTape:
 
     def copy(self) -> BlockTape:
         return BlockTape(
-            deepcopy(self.lspan),
+            [[color, count] for color, count in self.lspan],
             self.scan,
-            deepcopy(self.rspan),
+            [[color, count] for color, count in self.rspan],
             head = self.head,
             init = self.init,
             extend_to = self.extend_to,
@@ -243,7 +243,7 @@ class PtrTape:
 
     def copy(self) -> PtrTape:
         return PtrTape(
-            tape = deepcopy(self.tape),
+            tape = copy(self.tape),
             init = self.init,
             head = self.head,
         )

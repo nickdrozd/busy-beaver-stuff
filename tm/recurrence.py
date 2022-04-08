@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from copy import deepcopy
+from copy import copy
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
@@ -13,17 +13,22 @@ class History:
         self.actions = defaultdict(list)
 
     def copy(self) -> History:
-        copy = History(
+        new_copy = History(
             tapes = [
                 tape.copy()
                 for tape in self.tapes
             ]
         )
 
-        for attr in ('states', 'changes', 'positions', 'actions'):
-            setattr(copy, attr, deepcopy(getattr(self, attr)))
+        for attr in ('states', 'changes', 'positions'):
+            setattr(new_copy, attr, copy(getattr(self, attr)))
 
-        return copy
+        new_copy.actions = defaultdict(list)
+
+        for action, steps in self.actions.items():
+            new_copy.actions[action] = copy(steps)
+
+        return new_copy
 
     def add_action_at_step(self, step: int, action: Tuple[int, int]):
         self.actions[action].append(step)
