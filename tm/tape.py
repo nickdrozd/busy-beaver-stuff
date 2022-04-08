@@ -137,21 +137,21 @@ class BlockTape:
             (self.lspan, self.rspan)
         )
 
-        try:
-            next_color, next_count = push[-1]
-        except IndexError:
+        if not push:
             push.append([color, 1])
         else:
+            next_color, next_count = push[-1]
+
             if next_color == color:
                 push[-1][1] += 1
             else:
                 push.append([color, 1])
 
-        try:
-            next_color, next_count = pull[-1]
-        except IndexError:
+        if not pull:
             next_color = 0
         else:
+            next_color, next_count = pull[-1]
+
             if next_count > 1:
                 pull[-1][1] -= 1
             else:
@@ -170,21 +170,21 @@ class BlockTape:
             (self.lspan, self.rspan)
         )
 
-        try:
-            block_color, block_count = pull[-1]
-        except IndexError:
+        if not pull:
             return self.step(shift, color)
+
+        block_color, block_count = pull[-1]
 
         if block_color != self.scan:
             return self.step(shift, color)
 
         pull.pop()
 
-        try:
-            next_color, next_count = pull[-1]
-        except IndexError:
+        if not pull:
             next_color = 0
         else:
+            next_color, next_count = pull[-1]
+
             if next_count > 1:
                 pull[-1][1] -= 1
             else:
@@ -194,11 +194,11 @@ class BlockTape:
 
         stepped = 1 + block_count
 
-        try:
-            next_push_color, _ = push[-1]
-        except IndexError:
+        if not push:
             push.append([color, stepped])
         else:
+            next_push_color, _ = push[-1]
+
             if next_push_color != color:
                 push.append([color, stepped])
             else:
