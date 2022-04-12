@@ -40,16 +40,16 @@ class History:
     def add_action_at_step(self, step: int, action: Tuple[int, int]):
         self.actions[action].append(step)
 
-    def add_position_at_step(self, step: int, pos: int):
-        self.positions += [pos] * (step - len(self.positions))
-        self.positions.append(pos)
-
     def add_state_at_step(self, step: int, state: int):
         self.states += [state] * (step - len(self.states))
         self.states.append(state)
 
     def add_tape_at_step(self, step: int, tape):
         self.tapes[step] = tape.to_ptr()
+
+        pos = tape.head
+        self.positions += [pos] * (step - len(self.positions))
+        self.positions.append(pos)
 
     def add_change_at_step(self, step: int, change: bool):
         self.changes += [change] * (step - len(self.changes))

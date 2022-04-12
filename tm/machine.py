@@ -208,7 +208,6 @@ class Machine:
         if self.history is None:
             return
 
-        self.history.add_position_at_step(step, tape.head)
         self.history.add_state_at_step(step, state)
 
         if ((check_rec is not None and step >= check_rec)

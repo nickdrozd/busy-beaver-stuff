@@ -335,7 +335,6 @@ class Program:
             seen[state].add(tape_hash)
 
             history.add_state_at_step(step, state)  # type: ignore
-            history.add_position_at_step(step, tape.head)
             history.add_tape_at_step(step, tape)
 
             if history.check_for_recurrence(
