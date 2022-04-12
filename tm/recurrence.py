@@ -4,9 +4,16 @@ from copy import copy
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
+from tm.tape import PtrTape
+
 class History:
     def __init__(self, tapes = None):
-        self.tapes = [] if tapes is None else tapes
+        self.tapes: Dict[int, PtrTape] = (
+            {}
+            if tapes is None else
+            tapes
+        )
+
         self.states: List[int] = []
         self.changes: List[bool] = []
         self.positions: List[int] = []
@@ -14,10 +21,10 @@ class History:
 
     def copy(self) -> History:
         new_copy = History(
-            tapes = [
-                tape.copy()
-                for tape in self.tapes
-            ]
+            tapes = {
+                step: tape.copy()
+                for step, tape in self.tapes.items()
+            }
         )
 
         for attr in ('states', 'changes', 'positions'):
@@ -42,8 +49,7 @@ class History:
         self.states.append(state)
 
     def add_tape_at_step(self, step: int, tape):
-        self.tapes += [tape] * (step - len(self.tapes))
-        self.tapes.append(tape)
+        self.tapes[step] = tape.to_ptr()
 
     def add_change_at_step(self, step: int, change: bool):
         self.changes += [change] * (step - len(self.changes))

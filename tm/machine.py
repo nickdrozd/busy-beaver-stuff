@@ -211,16 +211,9 @@ class Machine:
         self.history.add_position_at_step(step, tape.head)
         self.history.add_state_at_step(step, state)
 
-        if samples is not None:
-            if step in self.history.tapes:
-                self.history.tapes[step] = tape.to_ptr()
-        else:
-            self.history.add_tape_at_step(
-                step,
-                None
-                if check_rec is None or step < check_rec else
-                tape.to_ptr(),
-            )
+        if ((check_rec is not None and step >= check_rec)
+            or (samples is not None and step in self.history.tapes)):
+            self.history.add_tape_at_step(step, tape)
 
     def finalize(self, step, state):
         if state == 30:  # ord('_') - 65
