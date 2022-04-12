@@ -20,12 +20,7 @@ class History:
         self.actions = defaultdict(list)
 
     def copy(self) -> History:
-        new_copy = History(
-            tapes = {
-                step: tape.copy()
-                for step, tape in self.tapes.items()
-            }
-        )
+        new_copy = History(tapes = dict(self.tapes.items()))
 
         for attr in ('states', 'changes', 'positions'):
             setattr(new_copy, attr, copy(getattr(self, attr)))
