@@ -26,6 +26,6 @@ max-line-length = 72
 [DESIGN]
 max-args	   = 10
 max-locals	   = 23
-max-branches	   = 14
+max-branches	   = 15
 max-attributes	   = 9
-max-statements	   = 41
+max-statements	   = 43

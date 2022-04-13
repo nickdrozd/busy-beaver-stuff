@@ -118,8 +118,13 @@ class Machine:
 
             # Bookkeeping ##########################
 
-            self.take_measurements(
-                step, state, tape, samples, check_rec)
+            if self.history is not None:
+                self.history.add_state_at_step(step, state)
+
+                if ((check_rec is not None and step >= check_rec)
+                    or (samples is not None
+                       and step in self.history.tapes)):
+                    self.history.add_tape_at_step(step, tape)
 
             # Halt conditions ######################
 
@@ -203,16 +208,6 @@ class Machine:
         self.final.fixdtp = self.history.tape_is_fixed(start)
 
         return result
-
-    def take_measurements(self, step, state, tape, samples, check_rec):
-        if self.history is None:
-            return
-
-        self.history.add_state_at_step(step, state)
-
-        if ((check_rec is not None and step >= check_rec)
-            or (samples is not None and step in self.history.tapes)):
-            self.history.add_tape_at_step(step, tape)
 
     def finalize(self, step, state):
         if state == 30:  # ord('_') - 65
