@@ -208,9 +208,6 @@ SPINOUT_SLOW = {
     "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340,       2333909),
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA": (   0, 1367361263049),
 
-    # 5/2
-    "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA": (4843, 26181502),
-
     # 5/2 blank
     "1RB 1RA  0RC 0RB  1LC 1LD  1RE 1LB  ... 0RA": (0, 348098678511),
     "1RB ...  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB": (0, 455790469746),
@@ -218,6 +215,11 @@ SPINOUT_SLOW = {
 
     # 6/2 constructed from 4/2
     "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC": (0, 65538552),
+}
+
+SPINOUT_SLOW_FIXED = {
+    # 5/2
+   "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA": (4843, 26181502),
 }
 
 QUASIHALT = {
@@ -1321,7 +1323,8 @@ class TuringTest(TestCase):
                 steps,
                 self.final.spnout)
 
-            (self.assertTrue if fixed else self.assertFalse)(fixed)
+            (self.assertTrue if fixed else self.assertFalse)(
+                self.final.fixdtp)
 
             self.assert_could_spin_out(prog)
 
@@ -1551,6 +1554,7 @@ class Slow(TuringTest):
 
     def test_spinout(self):
         self._test_spinout(SPINOUT_SLOW, fixed = False)
+        self._test_spinout(SPINOUT_SLOW_FIXED, fixed = True)
 
     def test_recur(self):
         self._test_recur(RECUR_SLOW, quick = False)
