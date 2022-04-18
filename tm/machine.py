@@ -108,6 +108,9 @@ class Machine:
 
         step: int = 0
 
+        if step_lim:
+            sim_lim = step_lim + 1
+
         for _ in range(sim_lim):
 
             # Output ###############################
