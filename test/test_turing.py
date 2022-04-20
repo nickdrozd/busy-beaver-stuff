@@ -168,7 +168,7 @@ SPINOUT_FAST = {
     "1RB 2RA 3LB 2LA  1LB 3LA 3RA 1RB": (  44,    3054),
     "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA": (  31,    2872),
     "1RB 0RB 0LA 2LB  1LB 2LA 3RB 1RA": (  32,    1769),
-    # "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA": (  36,    1525),
+    "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA": (  36,    1525),
     "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA": (  35,    1458),
 
     # 5/2
@@ -274,7 +274,7 @@ QUASIHALT_FIXED = {
 
 RECUR_FAST = {
     # Lin-Rado examples
-    # "1RB ...  0RC 1LB  1LA 0RB": (9, 10),  # total recurrence
+    "1RB ...  0RC 1LB  1LA 0RB": (9, 10),  # total recurrence
     "1RB ...  1LB 0LC  1LA 1RA": (12,  7),  # left barrier
     "1RB ...  1LC 1RA  1LA 0LC": (12,  8),  # right barrier
 
