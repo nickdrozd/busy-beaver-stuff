@@ -153,6 +153,7 @@ SPINOUT_FAST = {
     "1RB 0LC  1LD 0RA  1RC 1RB  1LA 0LB": (31,      651),
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,      536),
     "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,      444),
+    "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": ( 0,      171),
 
     # 2/4
     "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": (   0, 1012664081),
