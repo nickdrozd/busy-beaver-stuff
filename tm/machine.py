@@ -111,6 +111,8 @@ class Machine:
         if step_lim:
             sim_lim = step_lim + 1
 
+        marks: int = tape.marks
+
         for _ in range(sim_lim):
 
             # Output ###############################
@@ -156,7 +158,7 @@ class Machine:
 
             if self.history is None:
                 if (state == next_state
-                        and (shift == tape.edge or tape.blank)):
+                        and (shift == tape.edge or marks == 0)):
                     self.final.spnout = step
                     self.final.fixdtp = color == 0
                     break
@@ -164,6 +166,14 @@ class Machine:
                 self.history.add_change_at_step(
                     step,
                     color != tape.scan)
+
+            change = (
+                True
+                if tape.scan == 0 and color != 0 else
+                False
+                if tape.scan != 0 and color == 0 else
+                None
+            )
 
             stepped = (
                 tape.skip
@@ -177,12 +187,18 @@ class Machine:
 
             step += stepped
 
+            if change is not None:
+                if change:
+                    marks += stepped
+                else:
+                    marks -= stepped
+
             # Halt conditions ######################
 
             if state == 30:  # ord('_') - 65
                 break
 
-            if check_blanks and tape.blank:
+            if check_blanks and marks == 0:
                 break
 
             # End of main loop #####################
