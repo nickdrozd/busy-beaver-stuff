@@ -898,12 +898,15 @@ KERNEL = {
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": 3,  # partial
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 3,  # partial
 
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1L_  1LA 0RB  0RC 0RE": 3,  # Pavel 2nd
+
     # Spinout
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,
     "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA": 3,
     "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB": 3,  # 10^1089
     "1RB 1LC  1RD ...  ... 1LE  1LA 0RE  0LA 1RB": 3,  # partial
     "1RB 1LC  1RD 0RA  ... 1LE  1LA 0RE  0LA 1RB": 3,  # partial
+    "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA": 3,  # 10^18
 
     # Recur
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": 3, # 158491, 17620 Boyd
@@ -1116,7 +1119,7 @@ class TuringTest(TestCase):
         if prog in SPAGHETTI or prog in KERNEL:
             return
 
-        if len(prog) > 50:
+        if len(prog) > 70:
             return
 
         self.assertTrue(
@@ -1163,7 +1166,7 @@ class TuringTest(TestCase):
             self.assertTrue(
                 Program(prog).cant_blank)
         except AssertionError:
-            if len(prog) > 50:
+            if len(prog) > 70:
                 return
 
             self.assertIn(
@@ -1413,6 +1416,7 @@ class TuringTest(TestCase):
 class Fast(TuringTest):
     def test_halt(self):
         for prog in DO_HALT | set(HALT_SLOW):
+            self.assert_simple(prog)
             self.assert_could_halt(prog)
 
         self._test_halt(HALT_FAST)
@@ -1422,6 +1426,7 @@ class Fast(TuringTest):
 
     def test_spinout(self):
         for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
+            self.assert_simple(prog)
             self.assert_could_spin_out(prog)
 
         for prog in DONT_SPIN_OUT:
@@ -1451,6 +1456,7 @@ class Fast(TuringTest):
 
     def test_blank(self):
         for prog in DO_BLANK:
+            self.assert_simple(prog)
             self.assert_could_blank(prog)
 
         self._test_blank(BLANKERS)
