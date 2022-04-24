@@ -181,7 +181,7 @@ class Program:
 
         orig = self[instr]
 
-        for action in sorted(self.available_actions):
+        for action in sorted(self.available_actions, reverse = True):
             self[instr] = action
             yield str(self)
 
