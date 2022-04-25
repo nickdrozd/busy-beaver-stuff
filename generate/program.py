@@ -106,16 +106,16 @@ class Program:
         return slots[0]
 
     @property
-    def halt_slots(self) -> Iterator[str]:
-        yield from (
+    def halt_slots(self) -> Tuple[str, ...]:
+        return tuple(
             slot
             for slot, instr in self.instructions
             if instr[2] in ('.', '_')
         )
 
     @property
-    def erase_slots(self) -> Iterator[str]:
-        yield from (
+    def erase_slots(self) -> Tuple[str, ...]:
+        return tuple(
             slot
             for slot, instr in self.instructions
             if instr[0] == '0' and slot[1] != '0'
@@ -290,14 +290,15 @@ class Program:
     def cant_spin_out(self) -> bool:
         return self._cant_reach(
             'spnout',
-            (state + str(0) for state in
-             self.graph.zero_reflexive_states),
+            tuple(
+                state + str(0) for state in
+                self.graph.zero_reflexive_states),
         )
 
     def _cant_reach(
             self,
             final_prop: str,
-            slots: Iterator[str],
+            slots: Tuple[str, ...],
             max_attempts: int = 24,
             blank: bool = False,
     ):
