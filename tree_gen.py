@@ -6,7 +6,7 @@ from tm import Machine
 
 
 def prune_print(prog: str):
-    if '.' in prog:
+    if not HALT and '.' in prog:
         return
 
     if COLORS == 2 and prog.count('0') < 2:
