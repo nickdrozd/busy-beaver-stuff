@@ -182,6 +182,8 @@ class Program:
         orig = self[instr]
 
         for action in sorted(self.available_actions, reverse = True):
+            if action >= orig and '.' not in orig:
+                continue
             self[instr] = action
             yield str(self)
 

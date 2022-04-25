@@ -16,9 +16,17 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
     while True:  # pylint: disable = while-used
         if prog is None:
             try:
-                count, prog = progs.get(timeout = .5)
+                instr, prog = progs.get(timeout = .5)
             except Empty:
                 break
+
+        try:
+            prog = next(Program(prog).branch(instr, halt = halt))
+        except StopIteration:
+            prog = None
+            continue
+
+        progs.put((instr, prog))
 
         machine = Machine(prog).run(
             sim_lim = steps,
@@ -36,26 +44,6 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
 
         _step, instr = machine.final.undfnd
 
-        branches = Program(prog).branch(instr, halt = halt)
-
-        for _ in range(count):
-            _ = next(branches)
-
-        try:
-            ext = next(branches)
-        except StopIteration:
-            prog = None
-            continue
-
-        try:
-            _ = next(branches)
-        except StopIteration:
-            pass
-        else:
-            progs.put((1 + count, prog))
-
-        count, prog = 0, ext
-
 
 DEFAULT_STEPS = {
     (2, 2): 40,
@@ -71,7 +59,7 @@ def run_tree_gen(
         output: Callable = print):
     progs = Manager().Queue()
 
-    progs.put((0, str(Program.empty(states, colors))))
+    progs.put(('B0', str(Program.empty(states, colors))))
 
     try:
         steps = DEFAULT_STEPS[(states, colors)]
