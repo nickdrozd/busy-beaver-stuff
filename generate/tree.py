@@ -48,13 +48,6 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
             progs.put(ext)
 
 
-DEFAULT_STEPS = {
-    (2, 2): 40,
-    (3, 2): 126,
-    (2, 3): 223,  # 220
-}
-
-
 def run_tree_gen(
         states: int,
         colors: int,
@@ -65,7 +58,11 @@ def run_tree_gen(
     progs.put(str(Program.empty(states, colors)))
 
     try:
-        steps = DEFAULT_STEPS[(states, colors)]
+        steps = {
+            (2, 2): 40,
+            (3, 2): 126,
+            (2, 3): 223,  # 220
+        }[(states, colors)]
     except KeyError:
         steps = 500
 
