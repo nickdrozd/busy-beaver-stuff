@@ -20,21 +20,28 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
             except Empty:
                 break
 
+        branches = Program(prog).branch(instr, halt = halt)
+
         try:
-            prog = next(Program(prog).branch(instr, halt = halt))
+            ext = next(branches)
         except StopIteration:
             prog = None
             continue
 
-        progs.put((instr, prog))
+        try:
+            _ = next(branches)
+        except StopIteration:
+            pass
+        else:
+            progs.put((instr, ext))
 
-        machine = Machine(prog).run(
+        machine = Machine(ext).run(
             sim_lim = steps,
             check_blanks = True,
         )
 
         if machine.final.xlimit is not None:
-            output(prog)
+            output(ext)
             prog = None
             continue
 
@@ -42,6 +49,7 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
             prog = None
             continue
 
+        prog = ext
         _step, instr = machine.final.undfnd
 
 
