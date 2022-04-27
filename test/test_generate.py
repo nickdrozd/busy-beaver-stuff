@@ -235,7 +235,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              39: h32,
-            582: q32,
+            585: q32,
         })
 
         h32.add('1RB 0LC  0LA 0RA  1LA 1R_')

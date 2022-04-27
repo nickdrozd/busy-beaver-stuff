@@ -36,7 +36,13 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
 
         _step, instr = machine.final.undfnd
 
-        branches = Program(prog).branch(instr, halt = halt)
+        branches = (program := Program(prog)).branch(instr, halt)
+
+        if len(program.open_slots) == (2 if halt else 1):
+            for ext in branches:
+                output(ext)
+            prog = None
+            continue
 
         try:
             prog = next(branches)
