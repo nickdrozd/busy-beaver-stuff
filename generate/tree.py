@@ -10,14 +10,16 @@ from tm import Machine
 from generate import Program
 
 
-def tree_worker(steps: int, progs, halt: bool, output: Callable):
+def stacker(steps: int, halt: bool, run_pile, init_prog: str):
+    stack = [ init_prog ]
+
     prog = None
 
     while True:  # pylint: disable = while-used
         if prog is None:
             try:
-                prog = progs.get(timeout = .5)
-            except Empty:
+                prog = stack.pop()
+            except IndexError:
                 break
 
         machine = Machine(prog).run(
@@ -26,7 +28,7 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
         )
 
         if machine.final.xlimit is not None:
-            output(prog)
+            run_pile.put(prog)
             prog = None
             continue
 
@@ -39,19 +41,34 @@ def tree_worker(steps: int, progs, halt: bool, output: Callable):
         branches = (program := Program(prog)).branch(instr, halt)
 
         if len(program.open_slots) == (2 if halt else 1):
-            for ext in branches:
-                output(ext)
+            run_pile.put((instr, prog))
             prog = None
             continue
 
         try:
-            prog = next(branches)
+            prog = next(branches := program.branch(instr, halt))
         except StopIteration:
             prog = None
             continue
 
         for ext in branches:
-            progs.put(ext)
+            stack.append(ext)
+
+
+def runner(run_pile, output: Callable):
+    while True:  # pylint: disable = while-used
+        try:
+            prog = run_pile.get(timeout = 1)
+        except Empty:
+            break
+
+        if isinstance(prog, str):
+            output(prog)
+        else:
+            slot, prog = prog
+
+            for ext in Program(prog).branch(slot):
+                output(ext)
 
 
 def run_tree_gen(
@@ -59,10 +76,6 @@ def run_tree_gen(
         colors: int,
         halt: bool = False,
         output: Callable = print):
-    progs = Manager().Queue()
-
-    progs.put(str(Program.empty(states, colors)))
-
     try:
         steps = {
             (2, 2): 40,
@@ -72,10 +85,24 @@ def run_tree_gen(
     except KeyError:
         steps = 500
 
+    run_pile = Manager().Queue()
+
     processes = [
         Process(
-            target = tree_worker,
-            args = (steps, progs, halt, output)
+            target = stacker,
+            args = (
+                steps,
+                halt,
+                run_pile,
+                str(Program.empty(states, colors)),
+            ),
+        )
+    ]
+
+    processes += [
+        Process(
+            target = runner,
+            args = (run_pile, output)
         )
         for _ in range(cpu_count())
     ]
