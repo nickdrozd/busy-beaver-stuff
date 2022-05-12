@@ -4,15 +4,13 @@ from multiprocessing import (
     Manager,
     Process,
 )
-from typing import Callable
+from typing import Callable, List
 
 from tm import Machine
 from generate import Program
 
 
-def stacker(steps: int, halt: bool, run_pile, init_prog: str):
-    stack = [ init_prog ]
-
+def stacker(steps: int, halt: bool, run_pile, stack: List[str]):
     prog = None
 
     while True:  # pylint: disable = while-used
@@ -94,7 +92,7 @@ def run_tree_gen(
                 steps,
                 halt,
                 run_pile,
-                str(Program.empty(states, colors)),
+                [str(Program.empty(states, colors))],
             ),
         )
     ]
