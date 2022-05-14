@@ -1510,7 +1510,7 @@ class Fast(TuringTest):
             graph = Graph(prog)
 
             self.assertEqual(
-                len(graph.reduced()),
+                len(graph.reduced),
                 len(graph.states),
                 prog)
 
@@ -1522,7 +1522,7 @@ class Fast(TuringTest):
             graph = Graph(prog)
 
             self.assertEqual(
-                len(graph.reduced()),
+                len(graph.reduced),
                 kernel,
                 prog)
 

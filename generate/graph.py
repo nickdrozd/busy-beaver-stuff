@@ -164,6 +164,7 @@ class Graph:
     def is_dispersed(self) -> bool:
         return self.entries_dispersed and self.exits_dispersed
 
+    @property
     def reduced(self) -> Dict[str, Set[str]]:
         graph = self.exit_points
 
@@ -181,7 +182,7 @@ class Graph:
 
     @property
     def is_simple(self) -> bool:
-        return not bool(self.reduced())
+        return not bool(self.reduced)
 
 
 def purge_dead_ends(graph):
