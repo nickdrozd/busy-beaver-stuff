@@ -169,6 +169,9 @@ class Graph:
         graph = self.exit_points
 
         for _ in range(len(self.states) * len(self.colors)):
+            if not graph:
+                break
+
             cut_reflexive_arrows(graph)
             inline_single_exit(graph)
             inline_single_entry(graph)
