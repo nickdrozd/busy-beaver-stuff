@@ -169,7 +169,6 @@ class Graph:
         graph = self.exit_points
 
         for _ in range(len(self.states) * len(self.colors)):
-            purge_dead_ends(graph)
             cut_reflexive_arrows(graph)
             inline_single_exit(graph)
             inline_single_entry(graph)
@@ -223,6 +222,8 @@ def inline_single_entry(graph):
         else:
             break
 
+    purge_dead_ends(graph)
+
 
 def cut_reflexive_arrows(graph):
     for state, connections in graph.items():
@@ -248,3 +249,5 @@ def inline_single_exit(graph):
             if state in con_rep:
                 con_rep.remove(state)
                 con_rep.add(exit_point)
+
+    purge_dead_ends(graph)
