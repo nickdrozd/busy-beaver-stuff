@@ -1010,10 +1010,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES = {
 
 DO_HALT = {
     "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA",  # 10^197282
-
-    # false positive :(
-    # "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_",  # 10^78913
-
+    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_",  # 10^78913
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC",  # 10^36534
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE",  # 10^21132
     "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE 1R_",  # 10^2879
@@ -1421,7 +1418,6 @@ class TuringTest(TestCase):
 class Fast(TuringTest):
     def test_halt(self):
         for prog in DO_HALT | set(HALT_SLOW):
-            self.assert_simple(prog)
             self.assert_could_halt(prog)
 
         self._test_halt(HALT_FAST)
