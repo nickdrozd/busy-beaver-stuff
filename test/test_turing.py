@@ -1026,6 +1026,10 @@ DO_HALT = {
     "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA 1R_",  # 10^61
 }
 
+DONT_BLANK = {
+    "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
+}
+
 DO_BLANK = {
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
     "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE",  # 10^30
@@ -1086,6 +1090,8 @@ DO_SPIN_OUT = {
 }
 
 DONT_SPIN_OUT = {
+    "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
+
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
     "1RB 1RD  1LC 1LB  1LD 1RA  0RE 0RD  1LB 1RE",  # 10^28, xmas
     "1RB 1RA  1LC 0RB  1LE 0LD  1RA 1RE  1LB 0RA",  # 10^31
@@ -1464,6 +1470,9 @@ class Fast(TuringTest):
             fixdtp = True)
 
     def test_blank(self):
+        for prog in DONT_BLANK:
+            self.assert_cant_blank(prog)
+
         for prog in DO_BLANK:
             self.assert_simple(prog)
             self.assert_could_blank(prog)
