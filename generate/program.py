@@ -110,7 +110,7 @@ class Program:
         return tuple(
             slot
             for slot, instr in self.instructions
-            if instr[2] in ('.', '_')
+            if instr[2] in {'.', '_'}
         )
 
     @property

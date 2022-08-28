@@ -173,9 +173,10 @@ class TestTree(TestCase):
         while True:  # yuck -- pylint: disable = while-used
             try:
                 prog = queue.get(timeout = .5)
-                out.add(prog.replace('...', '1R_'))
             except Empty:
                 break
+
+            out.add(prog.replace('...', '1R_'))
 
         return out
 

@@ -21,7 +21,6 @@ class MacroConverter:
                     cells))
         ).normalize()
 
-    # pylint: disable = line-too-long
     def macro_comp(self, cells: int):
         return tuple(
             tuple(
@@ -49,10 +48,7 @@ class MacroConverter:
 
             pos += 1 if shift else -1
 
-            state = next_state
-
-            # pylint: disable = consider-using-assignment-expr
-            if state == 30:
+            if (state := next_state) == 30:
                 return (
                     self.tape_to_color(tape),
                     1,
