@@ -4,6 +4,7 @@ from typing import List, Tuple
 from tm.parse import tcompile, dcompile, CompProg, Instr
 from generate.program import Program
 
+Tape = List[int]
 
 class MacroConverter:
     def __init__(self, program: str):
@@ -30,7 +31,7 @@ class MacroConverter:
             for st_sh in range(2 * self.states)
         )
 
-    def run(self, st_sh: int, tape: List[int]) -> Instr:
+    def run(self, st_sh: int, tape: Tape) -> Instr:
         state, edge = divmod(st_sh, 2)
 
         pos = 0 if edge == 0 else len(tape) - 1
@@ -70,7 +71,7 @@ class MacroConverter:
 
         return 0, 0, 0
 
-    def tape_to_color(self, tape) -> int:
+    def tape_to_color(self, tape: Tape) -> int:
         return int(
             ''.join(map(str, tape)),
             self.colors)
