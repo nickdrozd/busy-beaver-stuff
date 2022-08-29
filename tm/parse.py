@@ -23,7 +23,7 @@ def tcompile(program: str) -> Tuple[Tuple[Optional[Instr], ...], ...]:
         for instr in parse(program)
     )
 
-def dcompile(comp: Tuple[Tuple[Instr]]) -> str:
+def dcompile(comp: Tuple[Tuple[Instr, ...], ...]) -> str:
     def convert_instr(instr: Instr) -> str:
         # pylint: disable = invalid-name
         pr, sh, tr = instr

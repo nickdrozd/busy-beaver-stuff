@@ -1,7 +1,7 @@
 from itertools import product
 from typing import List, Tuple
 
-from tm.parse import tcompile, dcompile
+from tm.parse import tcompile, dcompile, Instr
 from generate.program import Program
 
 
@@ -21,7 +21,7 @@ class MacroConverter:
                     cells))
         ).normalize()
 
-    def macro_comp(self, cells: int):
+    def macro_comp(self, cells: int,) -> Tuple[Tuple[Instr, ...], ...]:
         return tuple(
             tuple(
                 self.run(st_sh, list(tape))
