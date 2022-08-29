@@ -24,7 +24,7 @@ main = do
       putStrLn "done"
       exitSuccess
 
-    putStrLn $ show i
+    putStr $ show i
 
     let Just parsed = parse states colors prog
       | Nothing => do
