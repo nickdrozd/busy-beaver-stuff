@@ -1,14 +1,15 @@
 from typing import Optional, Tuple
 
+Instr = Tuple[int, int, int]
+CompProg = Tuple[Tuple[Optional[Instr], ...], ...]
+
 def parse(program: str) -> Tuple[Tuple[str, ...], ...]:
     return tuple(
         tuple(state.split(' '))
         for state in program.strip().split('  ')
     )
 
-Instr = Tuple[int, int, int]
-
-def tcompile(program: str) -> Tuple[Tuple[Optional[Instr], ...], ...]:
+def tcompile(program: str) -> CompProg:
     return tuple(
         tuple(
             (
@@ -23,8 +24,11 @@ def tcompile(program: str) -> Tuple[Tuple[Optional[Instr], ...], ...]:
         for instr in parse(program)
     )
 
-def dcompile(comp: Tuple[Tuple[Instr, ...], ...]) -> str:
-    def convert_instr(instr: Instr) -> str:
+def dcompile(comp: CompProg) -> str:
+    def convert_instr(instr: Optional[Instr]) -> str:
+        if instr is None:
+            return '...'
+
         # pylint: disable = invalid-name
         pr, sh, tr = instr
 
