@@ -51,7 +51,7 @@ class MacroConverter:
 
             if (state := next_state) == 30:
                 return (
-                    self.tape_to_color(tape),
+                    _tape_to_color(tape, self.colors),
                     1,
                     state,
                 )
@@ -64,14 +64,15 @@ class MacroConverter:
             out_state = (2 * state) + edge_diff
 
             return (
-                self.tape_to_color(tape),
+                _tape_to_color(tape, self.colors),
                 next_edge,
                 out_state,
             )
 
         return 0, 0, 0
 
-    def tape_to_color(self, tape: Tape) -> int:
-        return int(
-            ''.join(map(str, tape)),
-            self.colors)
+
+def _tape_to_color(tape: Tape, colors: int) -> int:
+    return int(
+        ''.join(map(str, tape)),
+        colors)
