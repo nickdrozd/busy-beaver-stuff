@@ -32,7 +32,9 @@ class MacroConverter:
                     self.states,
                     self.colors,
                 )
-                for tape in product(range(self.colors), repeat = cells)
+                for tape in product(
+                        range(self.colors),
+                        repeat = cells)
             )
             for st_sh in range(2 * self.states)
         )
@@ -42,16 +44,16 @@ def run_macro_simulator(
         st_sh: int,
         tape: Tape,
         prog,
-        state_count: int,
-        color_count: int,
+        states: int,
+        colors: int,
 ) -> Instr:
     state, edge = divmod(st_sh, 2)
 
-    pos = 0 if edge == 0 else len(tape) - 1
+    cells = len(tape)
 
-    max_config = state_count * len(tape) * color_count ** len(tape)
+    pos = 0 if edge == 0 else cells - 1
 
-    for _ in range(max_config):
+    for _ in range((states * cells) * (colors ** cells)):
         scan = tape[pos]
 
         assert (instr := prog[state][scan]) is not None
@@ -64,12 +66,12 @@ def run_macro_simulator(
 
         if (state := next_state) == 30:
             return (
-                tape_to_color(tape, color_count),
+                tape_to_color(tape, colors),
                 1,
                 state,
             )
 
-        if 0 <= pos < len(tape):
+        if 0 <= pos < cells:
             continue
 
         next_edge = 0 if pos < 0 else 1
@@ -77,7 +79,7 @@ def run_macro_simulator(
         out_state = (2 * state) + edge_diff
 
         return (
-            tape_to_color(tape, color_count),
+            tape_to_color(tape, colors),
             next_edge,
             out_state,
         )
