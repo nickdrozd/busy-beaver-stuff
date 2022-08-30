@@ -1,5 +1,6 @@
+# pylint: disable = too-few-public-methods
 from itertools import product
-from typing import List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 from tm.parse import tcompile, dcompile, CompProg, Instr
 from generate.program import Program
@@ -7,6 +8,8 @@ from generate.program import Program
 Color = int
 State = int
 Tape = List[Color]
+
+########################################
 
 class MacroCompiler:
     def __init__(self, program: str):
@@ -42,6 +45,67 @@ class MacroCompiler:
             for st_sh in range(2 * self.states)
         )
 
+########################################
+
+class MacroState:
+    def __init__(self, calculate: Callable[[Color], Instr]):
+        self.instrs: Dict[Color, Instr] = {}
+        self.calculate = calculate
+
+    def __getitem__(self, color: Color) -> Instr:
+        try:
+            return self.instrs[color]
+        except KeyError:
+            instr = self.calculate(color)
+            self.instrs[color] = instr
+            return instr
+
+
+class DynamicMacroProg:
+    def __init__(self, prog: str, cells: int):
+        self.progstr = prog
+
+        self.prog: CompProg = tcompile(prog)
+
+        self.states: int = len(self.prog)
+        self.colors: int = len(self.prog[0])
+
+        self.cells: int = cells
+
+        self.macro: Dict[State, MacroState] = {}
+
+    def __str__(self) -> str:
+        return f'{self.progstr} ({self.cells}-cell macro)'
+
+    def __getitem__(self, state: State) -> MacroState:
+        try:
+            return self.macro[state]
+        except KeyError:
+            macro_state = MacroState(
+                self.make_instr_calculator(state))
+            self.macro[state] = macro_state
+            return macro_state
+
+    def make_instr_calculator(
+            self,
+            state: State,
+    ) -> Callable[[Color], Instr]:
+
+        def calculate_instr(color: Color) -> Instr:
+            return run_macro_simulator(
+                state,
+                color_to_tape(
+                    color,
+                    self.colors,
+                    self.cells),
+                self.prog,
+                self.states,
+                self.colors,
+            )
+
+        return calculate_instr
+
+########################################
 
 def run_macro_simulator(
         st_sh: State,
@@ -100,3 +164,22 @@ def tape_to_color(tape: Tape, colors: int) -> Color:
     return int(
         ''.join(map(str, tape)),
         colors)
+
+
+def color_to_tape(
+        color: Color,
+        colors: int,
+        cells: int,
+) -> Tape:
+    tape: Tape = []
+
+    num = color
+
+    while num > 0:  # pylint: disable = while-used
+        num, rem = divmod(num, colors)
+        tape.insert(0, rem)
+
+    for _ in range(cells - len(tape)):
+        tape.insert(0, 0)
+
+    return tape

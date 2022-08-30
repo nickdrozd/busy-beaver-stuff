@@ -62,8 +62,11 @@ class MachineResult:
 
 class Machine:
     def __init__(self, prog):
-        prog = prog if isinstance(prog, tuple) else str(prog)
         self.program = prog
+
+        if type(prog).__name__ == 'Program':
+            prog = str(prog)
+
         self._comp = tcompile(prog) if isinstance(prog, str) else prog
         self.tape    = None
         self.state   = None
