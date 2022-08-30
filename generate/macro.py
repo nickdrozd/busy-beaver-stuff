@@ -4,13 +4,16 @@ from typing import List, Tuple
 from tm.parse import tcompile, dcompile, CompProg, Instr
 from generate.program import Program
 
-Tape = List[int]
+Color = int
+State = int
+Tape = List[Color]
 
 class MacroConverter:
     def __init__(self, program: str):
-        self.prog = tcompile(program)
-        self.states = len(self.prog)
-        self.colors = len(self.prog[0])
+        self.prog: CompProg = tcompile(program)
+
+        self.states: int = len(self.prog)
+        self.colors: int = len(self.prog[0])
 
     def macro_length(self, cells: int) -> Tuple[int, int]:
         return 2 * self.states, self.colors ** cells
@@ -41,22 +44,28 @@ class MacroConverter:
 
 
 def run_macro_simulator(
-        st_sh: int,
+        st_sh: State,
         tape: Tape,
-        prog,
+        prog: CompProg,
         states: int,
         colors: int,
 ) -> Instr:
+    state: State
+    edge: int
     state, edge = divmod(st_sh, 2)
 
-    cells = len(tape)
+    cells: int = len(tape)
 
-    pos = 0 if edge == 0 else cells - 1
+    pos: int = 0 if edge == 0 else cells - 1
 
     for _ in range((states * cells) * (colors ** cells)):
-        scan = tape[pos]
+        scan: Color = tape[pos]
 
         assert (instr := prog[state][scan]) is not None
+
+        color: Color
+        shift: int
+        next_state: State
 
         color, shift, next_state = instr
 
@@ -74,9 +83,9 @@ def run_macro_simulator(
         if 0 <= pos < cells:
             continue
 
-        next_edge = 0 if pos < 0 else 1
-        edge_diff = 1 if pos < 0 else 0
-        out_state = (2 * state) + edge_diff
+        next_edge: int = 0 if pos < 0 else 1
+        edge_diff: int = 1 if pos < 0 else 0
+        out_state: State = (2 * state) + edge_diff
 
         return (
             tape_to_color(tape, colors),
@@ -87,7 +96,7 @@ def run_macro_simulator(
     return 0, 0, 0
 
 
-def tape_to_color(tape: Tape, colors: int) -> int:
+def tape_to_color(tape: Tape, colors: int) -> Color:
     return int(
         ''.join(map(str, tape)),
         colors)
