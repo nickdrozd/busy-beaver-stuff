@@ -8,7 +8,7 @@ Color = int
 State = int
 Tape = List[Color]
 
-class MacroConverter:
+class MacroCompiler:
     def __init__(self, program: str):
         self.prog: CompProg = tcompile(program)
 
