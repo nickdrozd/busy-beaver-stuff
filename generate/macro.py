@@ -161,10 +161,17 @@ def run_macro_simulator(
     return 0, 0, 0
 
 
+TAPE_COLORS: Dict[Color, Tape] = {}
+
+
 def tape_to_color(tape: Tape, colors: int) -> Color:
-    return int(
+    color = int(
         ''.join(map(str, tape)),
         colors)
+
+    TAPE_COLORS[color] = tuple(tape)
+
+    return color
 
 
 def color_to_tape(
@@ -174,6 +181,9 @@ def color_to_tape(
 ) -> Tape:
     if color == 0:
         return [0] * cells
+
+    if color in TAPE_COLORS:
+        return list(TAPE_COLORS[color])
 
     tape: Tape = []
 
@@ -189,5 +199,7 @@ def color_to_tape(
 
     for _ in range(cells - len(tape)):
         tape.insert(0, 0)
+
+    TAPE_COLORS[color] = tuple(tape)
 
     return tape
