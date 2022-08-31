@@ -1,7 +1,6 @@
 # pylint: disable = too-few-public-methods
 from itertools import product
 from typing import Callable, Dict, List, Tuple
-from math import log, ceil
 
 from tm.parse import tcompile, dcompile, CompProg, Instr
 from generate.program import Program
@@ -95,10 +94,7 @@ class DynamicMacroProg:
         def calculate_instr(color: Color) -> Instr:
             return run_macro_simulator(
                 state,
-                color_to_tape(
-                    color,
-                    self.colors,
-                    self.cells),
+                color_to_tape(color, self.cells),
                 self.prog,
                 self.states,
                 self.colors,
@@ -161,7 +157,7 @@ def run_macro_simulator(
     return 0, 0, 0
 
 
-TAPE_COLORS: Dict[Color, Tape] = {}
+TAPE_COLORS: Dict[Color, Tuple[Color, ...]] = {}
 
 
 def tape_to_color(tape: Tape, colors: int) -> Color:
@@ -174,32 +170,8 @@ def tape_to_color(tape: Tape, colors: int) -> Color:
     return color
 
 
-def color_to_tape(
-        color: Color,
-        colors: int,
-        cells: int,
-) -> Tape:
+def color_to_tape(color: Color, cells: int) -> Tape:
     if color == 0:
         return [0] * cells
 
-    if color in TAPE_COLORS:
-        return list(TAPE_COLORS[color])
-
-    tape: Tape = []
-
-    num = color
-
-    for _ in range(ceil(log(color, colors)) + 1):
-        num, rem = divmod(num, colors)
-
-        tape.insert(0, rem)
-
-        if num == 0:
-            break
-
-    for _ in range(cells - len(tape)):
-        tape.insert(0, 0)
-
-    TAPE_COLORS[color] = tuple(tape)
-
-    return tape
+    return list(TAPE_COLORS[color])
