@@ -1,6 +1,7 @@
 # pylint: disable = too-few-public-methods
 from itertools import product
 from typing import Callable, Dict, List, Tuple
+from math import log, ceil
 
 from tm.parse import tcompile, dcompile, CompProg, Instr
 from generate.program import Program
@@ -171,13 +172,20 @@ def color_to_tape(
         colors: int,
         cells: int,
 ) -> Tape:
+    if color == 0:
+        return [0] * cells
+
     tape: Tape = []
 
     num = color
 
-    while num > 0:  # pylint: disable = while-used
+    for _ in range(ceil(log(color, colors)) + 1):
         num, rem = divmod(num, colors)
+
         tape.insert(0, rem)
+
+        if num == 0:
+            break
 
     for _ in range(cells - len(tape)):
         tape.insert(0, 0)
