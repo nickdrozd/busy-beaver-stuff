@@ -1,4 +1,3 @@
-# pylint: disable = too-few-public-methods
 from itertools import product
 from typing import Callable, Dict, List, Tuple
 
@@ -11,13 +10,73 @@ Tape = List[Color]
 
 ########################################
 
-class MacroCompiler:
+class MacroRunner:
     def __init__(self, program: str):
-        self.prog: CompProg = tcompile(program)
+        self.program: str = program
 
-        self.states: int = len(self.prog)
-        self.colors: int = len(self.prog[0])
+        self.comp: CompProg = tcompile(program)
 
+        self.states: int = len(self.comp)
+        self.colors: int = len(self.comp[0])
+
+    def run_macro_simulator(
+            self,
+            st_sh: State,
+            tape: Tape,
+    ) -> Instr:
+        state: State
+        edge: int
+        state, edge = divmod(st_sh, 2)
+
+        cells: int = len(tape)
+
+        pos: int = 0 if edge == 0 else cells - 1
+
+        for _ in range((self.states * cells) * (self.colors ** cells)):
+            scan: Color = tape[pos]
+
+            assert (instr := self.comp[state][scan]) is not None
+
+            color: Color
+            shift: int
+            next_state: State
+
+            color, shift, next_state = instr
+
+            tape[pos] = color
+
+            pos += 1 if shift else -1
+
+            if (state := next_state) == 30:
+                return (
+                    self.tape_to_color(tape),
+                    1,
+                    state,
+                )
+
+            if 0 <= pos < cells:
+                continue
+
+            next_edge: int = 0 if pos < 0 else 1
+            edge_diff: int = 1 if pos < 0 else 0
+            out_state: State = (2 * state) + edge_diff
+
+            return (
+                self.tape_to_color(tape),
+                next_edge,
+                out_state,
+            )
+
+        return 0, 0, 0
+
+    def tape_to_color(self, tape: Tape) -> Color:
+        return int(
+            ''.join(map(str, tape)),
+            self.colors)
+
+########################################
+
+class MacroCompiler(MacroRunner):
     def macro_length(self, cells: int) -> Tuple[int, int]:
         return 2 * self.states, self.colors ** cells
 
@@ -31,12 +90,9 @@ class MacroCompiler:
     def macro_comp(self, cells: int) -> CompProg:
         return tuple(
             tuple(
-                run_macro_simulator(
+                self.run_macro_simulator(
                     st_sh,
                     list(tape),
-                    self.prog,
-                    self.states,
-                    self.colors,
                 )
                 for tape in product(
                         range(self.colors),
@@ -48,6 +104,7 @@ class MacroCompiler:
 ########################################
 
 class MacroState:
+    # pylint: disable = too-few-public-methods
     def __init__(self, calculate: Callable[[Color], Instr]):
         self.instrs: Dict[Color, Instr] = {}
         self.calculate = calculate
@@ -61,21 +118,18 @@ class MacroState:
             return instr
 
 
-class DynamicMacroProg:
-    def __init__(self, prog: str, cells: int):
-        self.progstr = prog
-
-        self.prog: CompProg = tcompile(prog)
-
-        self.states: int = len(self.prog)
-        self.colors: int = len(self.prog[0])
+class DynamicMacroProg(MacroRunner):
+    def __init__(self, program: str, cells: int):
+        super().__init__(program)
 
         self.cells: int = cells
 
         self.macro: Dict[State, MacroState] = {}
 
+        self.tape_colors: Dict[Color, Tuple[Color, ...]] = {}
+
     def __str__(self) -> str:
-        return f'{self.progstr} ({self.cells}-cell macro)'
+        return f'{self.program} ({self.cells}-cell macro)'
 
     def __getitem__(self, state: State) -> MacroState:
         try:
@@ -92,86 +146,22 @@ class DynamicMacroProg:
     ) -> Callable[[Color], Instr]:
 
         def calculate_instr(color: Color) -> Instr:
-            return run_macro_simulator(
+            return self.run_macro_simulator(
                 state,
-                color_to_tape(color, self.cells),
-                self.prog,
-                self.states,
-                self.colors,
+                self.color_to_tape(color),
             )
 
         return calculate_instr
 
-########################################
+    def tape_to_color(self, tape: Tape) -> Color:
+        color = super().tape_to_color(tape)
 
-def run_macro_simulator(
-        st_sh: State,
-        tape: Tape,
-        prog: CompProg,
-        states: int,
-        colors: int,
-) -> Instr:
-    state: State
-    edge: int
-    state, edge = divmod(st_sh, 2)
+        self.tape_colors[color] = tuple(tape)
 
-    cells: int = len(tape)
+        return color
 
-    pos: int = 0 if edge == 0 else cells - 1
+    def color_to_tape(self, color: Color) -> Tape:
+        if color == 0:
+            return [0] * self.cells
 
-    for _ in range((states * cells) * (colors ** cells)):
-        scan: Color = tape[pos]
-
-        assert (instr := prog[state][scan]) is not None
-
-        color: Color
-        shift: int
-        next_state: State
-
-        color, shift, next_state = instr
-
-        tape[pos] = color
-
-        pos += 1 if shift else -1
-
-        if (state := next_state) == 30:
-            return (
-                tape_to_color(tape, colors),
-                1,
-                state,
-            )
-
-        if 0 <= pos < cells:
-            continue
-
-        next_edge: int = 0 if pos < 0 else 1
-        edge_diff: int = 1 if pos < 0 else 0
-        out_state: State = (2 * state) + edge_diff
-
-        return (
-            tape_to_color(tape, colors),
-            next_edge,
-            out_state,
-        )
-
-    return 0, 0, 0
-
-
-TAPE_COLORS: Dict[Color, Tuple[Color, ...]] = {}
-
-
-def tape_to_color(tape: Tape, colors: int) -> Color:
-    color = int(
-        ''.join(map(str, tape)),
-        colors)
-
-    TAPE_COLORS[color] = tuple(tape)
-
-    return color
-
-
-def color_to_tape(color: Color, cells: int) -> Tape:
-    if color == 0:
-        return [0] * cells
-
-    return list(TAPE_COLORS[color])
+        return list(self.tape_colors[color])
