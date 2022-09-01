@@ -1,13 +1,16 @@
 from typing import Optional, Tuple
 
+
 Instr = Tuple[int, int, int]
 CompProg = Tuple[Tuple[Optional[Instr], ...], ...]
+
 
 def parse(program: str) -> Tuple[Tuple[str, ...], ...]:
     return tuple(
         tuple(state.split(' '))
         for state in program.strip().split('  ')
     )
+
 
 def tcompile(program: str) -> CompProg:
     return tuple(
@@ -24,17 +27,19 @@ def tcompile(program: str) -> CompProg:
         for instr in parse(program)
     )
 
+
 def dcompile(comp: CompProg) -> str:
-    def convert_instr(instr: Optional[Instr]) -> str:
-        if instr is None:
-            return '...'
-
-        # pylint: disable = invalid-name
-        pr, sh, tr = instr
-
-        return str(pr) + ('R' if sh else 'L') + chr(65 + tr)
-
     return '  '.join(
         ' '.join(map(convert_instr, instrs))
         for instrs in comp
     )
+
+
+def convert_instr(instr: Optional[Instr]) -> str:
+    if instr is None:
+        return '...'
+
+    # pylint: disable = invalid-name
+    pr, sh, tr = instr
+
+    return str(pr) + ('R' if sh else 'L') + chr(65 + tr)
