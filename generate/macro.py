@@ -24,22 +24,14 @@ class MacroRunner:
             st_sh: State,
             tape: Tape,
     ) -> Instr:
-        state: State
-        edge: int
         state, edge = divmod(st_sh, 2)
 
-        cells: int = len(tape)
+        cells = len(tape)
 
-        pos: int = 0 if edge == 0 else cells - 1
+        pos = 0 if edge == 0 else cells - 1
 
         for _ in range((self.states * cells) * (self.colors ** cells)):
-            scan: Color = tape[pos]
-
-            assert (instr := self.comp[state][scan]) is not None
-
-            color: Color
-            shift: int
-            next_state: State
+            assert (instr := self.comp[state][tape[pos]]) is not None
 
             color, shift, next_state = instr
 
@@ -57,9 +49,9 @@ class MacroRunner:
             if 0 <= pos < cells:
                 continue
 
-            next_edge: int = 0 if pos < 0 else 1
-            edge_diff: int = 1 if pos < 0 else 0
-            out_state: State = (2 * state) + edge_diff
+            next_edge = 0 if pos < 0 else 1
+            edge_diff = 1 if pos < 0 else 0
+            out_state = (2 * state) + edge_diff
 
             return (
                 self.tape_to_color(tape),
