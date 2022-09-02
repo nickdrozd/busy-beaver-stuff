@@ -9,7 +9,16 @@ RCRNC = None
 SKIP  = 1
 TAPE  = 50
 
+PROFILE = 0
+
 if __name__ == '__main__':
+    if PROFILE:
+        # pylint: disable = import-error
+        import yappi
+
+        yappi.set_clock_type('cpu')
+        yappi.start()
+
     for i, program in enumerate(sys.stdin):
         machine = Machine(program).run(
             tape = TAPE,
@@ -21,3 +30,7 @@ if __name__ == '__main__':
         )
 
         print(f'{i} | {machine}')
+
+    if PROFILE:
+        stats = yappi.get_func_stats()
+        stats.save('yappi.callgrind', type = 'callgrind')
