@@ -1,3 +1,4 @@
+# pylint: disable = attribute-defined-outside-init
 from __future__ import annotations
 
 from collections import defaultdict
@@ -10,40 +11,37 @@ from tm.recurrence import History
 class ValidationError(Exception):
     pass
 
+NONHALT = (
+    'fixdtp',
+    'linrec',
+    'qsihlt',
+    'spnout',
+    'undfnd',
+    'xlimit',
+)
+
+REASONS = NONHALT + (
+    'blanks',
+    'halted',
+)
+
 class MachineResult:
     def __init__(self, prog: str):
         self.prog = prog
 
-        self.blanks = None
-        self.fixdtp = None
-        self.halted = None
-        self.linrec = None
-        self.qsihlt = None
-        self.spnout = None
-        self.undfnd = None
-        self.xlimit = None
+        for reason in REASONS:
+            setattr(self, reason, None)
 
     def __str__(self):
         return ' | '.join([
-            f'{reason}: {data}'
-            for reason, data in
-            {
-                'BLANKS': self.blanks,
-                'FIXDTP': self.fixdtp,
-                'HALTED': self.halted,
-                'LINREC': self.linrec,
-                'QSIHLT': self.qsihlt,
-                'SPNOUT': self.spnout,
-                'XLIMIT': self.xlimit,
-            }.items()
-            if data is not None
+            f'{reason.upper()}: {data}'
+            for reason in REASONS
+            if (data := getattr(self, reason)) is not None
         ])
-
-    nonhalt = 'fixdtp', 'linrec', 'qsihlt', 'spnout', 'undfnd', 'xlimit'
 
     def validate_results(self):
         if self.halted is not None:
-            for cat in self.nonhalt:
+            for cat in NONHALT:
                 if getattr(self, cat) is not None:
                     raise ValidationError(
                         f'{self.prog} || {cat} | {self}')
