@@ -2,23 +2,18 @@ import sys
 
 from tm import Machine
 
-CANDIDATES = [
-    "1RB 1LB  1LB 1LA"
-]
-
-RCRNC = 0
-STEPS = 100
-BLANK = 1
 PRINT = 1
-STDIN = 1
+STEPS = 10 ** 10
+BLANK = 1
+RCRNC = None
+SKIP  = 1
 TAPE  = 50
 
 if __name__ == '__main__':
-    source = sys.stdin if STDIN else CANDIDATES
-
-    for i, program in enumerate(source):
+    for i, program in enumerate(sys.stdin):
         machine = Machine(program).run(
             tape = TAPE,
+            skip = SKIP,
             sim_lim = STEPS,
             watch_tape = PRINT,
             check_rec = RCRNC,
