@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Callable, Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from tm.parse import tcompile, dcompile, CompProg, Instr
 from generate.program import Program
@@ -103,55 +103,40 @@ class MacroCompiler(MacroRunner):
 
 ########################################
 
-class MacroState:
-    # pylint: disable = too-few-public-methods
-    def __init__(self, calculate: Callable[[Color], Instr]):
-        self.instrs: Dict[Color, Instr] = {}
-        self.calculate = calculate
-
-    def __getitem__(self, color: Color) -> Instr:
-        try:
-            return self.instrs[color]
-        except KeyError:
-            instr = self.calculate(color)
-            self.instrs[color] = instr
-            return instr
-
-
 class DynamicMacroProg(MacroRunner):
     def __init__(self, program: str, cells: int):
         super().__init__(program)
 
         self.cells: int = cells
 
-        self.macro: Dict[State, MacroState] = {}
+        self.instrs: Dict[Tuple[State, Color], Instr] = {}
 
         self.tape_colors: Dict[Color, Tuple[Color, ...]] = {}
+
+        self._state: Optional[State] = None
 
     def __str__(self) -> str:
         return f'{self.program} ({self.cells}-cell macro)'
 
-    def __getitem__(self, state: State) -> MacroState:
+    def __getitem__(self, stco: Union[State, Color]) -> Instr:
+        if self._state is None:
+            self._state = stco
+            return self  # type: ignore
+
+        state, color = self._state, stco
+        self._state = None
+
         try:
-            return self.macro[state]
+            return self.instrs[(state, color)]
         except KeyError:
-            macro_state = MacroState(
-                self.make_instr_calculator(state))
-            self.macro[state] = macro_state
-            return macro_state
-
-    def make_instr_calculator(
-            self,
-            state: State,
-    ) -> Callable[[Color], Instr]:
-
-        def calculate_instr(color: Color) -> Instr:
-            return self.run_macro_simulator(
+            instr = self.run_macro_simulator(
                 state,
                 self.color_to_tape(color),
             )
 
-        return calculate_instr
+            self.instrs[(state, color)] = instr
+
+            return instr
 
     def tape_to_color(self, tape: Tape) -> Color:
         color = super().tape_to_color(tape)

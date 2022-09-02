@@ -67,6 +67,10 @@ class Machine:
         if type(prog).__name__ == 'Program':
             prog = str(prog)
 
+        if type(prog).__name__ == 'DynamicMacroProg':
+            # pylint: disable = pointless-statement
+            prog[0][0]
+
         self._comp = tcompile(prog) if isinstance(prog, str) else prog
         self.tape    = None
         self.state   = None
