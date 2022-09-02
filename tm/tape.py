@@ -110,11 +110,13 @@ class BlockTape:
         if self.scan != 0:
             return None
 
-        if all(c == 0 for (c, _) in self.lspan):
-            return 0
+        if len(self.lspan) <= 1:
+            if not self.lspan or self.lspan[0][0] == 0:
+                return 0
 
-        if all(c == 0 for (c, _) in self.rspan):
-            return 1
+        if len(self.rspan) <= 1:
+            if not self.rspan or self.rspan[0][0] == 0:
+                return 1
 
         return None
 
