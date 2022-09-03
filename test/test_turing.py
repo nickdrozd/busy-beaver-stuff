@@ -1369,7 +1369,11 @@ class TuringTest(TestCase):
 
     def run_comp(self, prog, print_prog = True, **opts):
         if print_prog:
-            print('COMPILED')
+            print(
+                'COMPILED'
+                if isinstance(prog, tuple) else
+                prog
+            )
 
         self.machine = Machine(prog).run(**opts)
         self.history = self.machine.history
