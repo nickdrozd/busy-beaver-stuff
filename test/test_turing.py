@@ -44,6 +44,7 @@ HALT_FAST = {
 
     # 5/2 BB
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (4098, 47176870),
+
     # 3/3
     "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC": (36089, 310341163),
     "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
@@ -58,10 +59,25 @@ HALT_FAST = {
     "1RB 1RA 1R_  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 
     # 8/4 derived from 5/2 BB
-    "1RB ... ... ...  1LC ... 1LD ...  2RE 0LF ... ...  1RG 1LD 1LF ...  3LF 1LD ... 3LD  2RG 2LH 1LD ...  1RE 1RG ... 1RB  1R_ 3LC 1RB ...": (4097, 23587667),
+    '  '.join([
+        "1RB ... ... ...",
+        "1LC ... 1LD ...",
+        "2RE 0LF ... ...",
+        "1RG 1LD 1LF ...",
+        "3LF 1LD ... 3LD",
+        "2RG 2LH 1LD ...",
+        "1RE 1RG ... 1RB",
+        "1R_ 3LC 1RB ...",
+    ]): (4097, 23587667),
 
     # 5/5 derived from 5/2 BB
-    "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC 1R_  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721562),
+    '  '.join([
+        "1RB ... ... ... ...",
+        "2LC ... ... ... ...",
+        "3RD 3LC ... 1LC 1R_",
+        "... 1RD 1RB 1LE ...",
+        "4RD 1LE ... 1RD 1LC",
+    ]): (4097, 15721562),
 
     # Milton Green (1964)
     "1RB ...  0L_ ...": (1, 2),
@@ -243,7 +259,15 @@ SPINOUT_FAST = {
     "1RB 1LC  0LD 1RB  0RE 0RC  1RE 1RD  1LE 1LA": (0, 32779508),
 
     # 7/7 from 4/2 QH
-    "1RB ... ... ... ... ... ...  0LC 2LD ... ... ... 3LD ...  4RE 1RF ... ... ... ... ...  2RE 0LD 0LC ... 1RE ... ...  1RE 0LD 1RB 1LG 1RF 1LG 5LG  6LG 4LD ... ... ... 0LD 5LG  2RF 1LG 1LC ... 1RB ... ...": (1, 10925753),
+    '  '.join([
+        "1RB ... ... ... ... ... ...",
+        "0LC 2LD ... ... ... 3LD ...",
+        "4RE 1RF ... ... ... ... ...",
+        "2RE 0LD 0LC ... 1RE ... ...",
+        "1RE 0LD 1RB 1LG 1RF 1LG 5LG",
+        "6LG 4LD ... ... ... 0LD 5LG",
+        "2RF 1LG 1LC ... 1RB ... ...",
+    ]): (1, 10925753),
 }
 
 SPINOUT_FAST_FIXED = {
@@ -264,7 +288,15 @@ SPINOUT_FAST_FIXED = {
     "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": ( 30,  1854),
 
     # 7/8 derived from 4/2-2819
-    "1RB 2RC 1LD ... ... 3LE ... 3LF  0LD ... ... 1LD 2LD ... 3LA ...  4LE 4RC 5RG 3LD 4LD ... 6LD ...  0LD 2RC 7RG ... 5RG 6RC ... 0RC  4RC ... 3LA ... 1RB 5RB 3LD ...  7RG ... ... ... ... 1RB ... ...  6LA ... ... 1RB 5RG ... 3LA ...": (24, 944),
+    '  '.join([
+        "1RB 2RC 1LD ... ... 3LE ... 3LF",
+        "0LD ... ... 1LD 2LD ... 3LA ...",
+        "4LE 4RC 5RG 3LD 4LD ... 6LD ...",
+        "0LD 2RC 7RG ... 5RG 6RC ... 0RC",
+        "4RC ... 3LA ... 1RB 5RB 3LD ...",
+        "7RG ... ... ... ... 1RB ... ...",
+        "6LA ... ... 1RB 5RG ... 3LA ...",
+    ]): (24, 944),
 }
 
 SPINOUT_SLOW = {
@@ -316,7 +348,14 @@ QUASIHALT = {
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA": ( 2859, 3),
 
     # 6/8 derived from 3/2-rec champ
-    "1RB ... ... ... ... ... ... ...  2LC ... 3LD 1LC ... 4RE 5LC ...  6RF 6LD 5RF 1RB ... ... ... ...  7RF 5RF ... 6RF 2RB 1RB 3RB 0RB  0LD 1RB 3LD ... ... 3RB ... ...  ... 1RB 3LD 6LD ... 3RB 4RE ...": (33, 24),
+    '  '.join([
+        "1RB ... ... ... ... ... ... ...",
+        "2LC ... 3LD 1LC ... 4RE 5LC ...",
+        "6RF 6LD 5RF 1RB ... ... ... ...",
+        "7RF 5RF ... 6RF 2RB 1RB 3RB 0RB",
+        "0LD 1RB 3LD ... ... 3RB ... ...",
+        "... 1RB 3LD 6LD ... 3RB 4RE ...",
+    ]): (33, 24),
 
 }
 
@@ -961,7 +1000,7 @@ KERNEL = {
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": 3,  # partial
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 3,  # partial
 
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": 3,  # Pavel 2nd
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": 3,
 
     # Spinout
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,
@@ -1381,7 +1420,13 @@ class TuringTest(TestCase):
 
     def _test_halt(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
-            self.run_bb(prog, check_blanks = marks != 0 and prog[0] == 0)
+            self.run_bb(
+                prog,
+                check_blanks = (
+                    marks != 0
+                    and prog[0] == 0
+                ),
+            )
 
             self.assert_marks(marks)
             self.assert_steps(steps)
