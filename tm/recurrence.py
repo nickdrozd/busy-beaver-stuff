@@ -94,15 +94,13 @@ class History:
             tape1 = None,
             tape2 = None,
     ) -> Optional[Tuple[int, int]]:
-        if self.states[steps] != self.states[recurrence]:
-            return None
+        assert self.states[steps] == self.states[recurrence]
 
         if tape1 is None or tape2 is None:
             tape1 = self.tapes[steps]
             tape2 = self.tapes[recurrence]
 
-            if tape1 is None or tape2 is None:
-                return None
+            assert tape1 is not None and tape2 is not None
 
         positions = self.positions
 
