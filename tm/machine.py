@@ -85,10 +85,6 @@ class Machine:
     def marks(self):
         return self.tape.marks
 
-    @property
-    def beeps(self):
-        return self.history.calculate_beeps()
-
     def run(self,
             tape = None,
             skip = True,
