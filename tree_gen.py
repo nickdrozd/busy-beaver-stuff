@@ -58,10 +58,20 @@ if __name__ == '__main__':
     COLORS = args.colors
     STATES = args.states
 
+    try:
+        STEPS = {
+            (2, 2): 40,
+            (3, 2): 126,
+            (2, 3): 223,  # 220
+        }[(STATES, COLORS)]
+    except KeyError:
+        STEPS = 500
+
     run_tree_gen(
         states = STATES,
         colors = COLORS,
         halt   = HALT,
+        steps = STEPS,
         output = (
             prune_print
             if args.aggressive else

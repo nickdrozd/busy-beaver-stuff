@@ -73,15 +73,8 @@ def run_tree_gen(
         states: int,
         colors: int,
         halt: bool = False,
+        steps: int = 500,
         output: Callable = print):
-    try:
-        steps = {
-            (2, 2): 40,
-            (3, 2): 126,
-            (2, 3): 223,  # 220
-        }[(states, colors)]
-    except KeyError:
-        steps = 500
 
     run_pile = Manager().Queue()
 

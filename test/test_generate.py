@@ -194,6 +194,7 @@ class TestTree(TestCase):
         run_tree_gen(
             states = 2,
             colors = 2,
+            steps = 40,
             output = capture,
         )
 
@@ -227,6 +228,7 @@ class TestTree(TestCase):
         run_tree_gen(
             states = 3,
             colors = 2,
+            steps = 126,
             output = capture,
         )
 
@@ -270,6 +272,7 @@ class TestTree(TestCase):
         run_tree_gen(
             states = 2,
             colors = 3,
+            steps = 223,
             output = capture,
         )
 
