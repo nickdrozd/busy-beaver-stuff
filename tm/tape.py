@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from copy import copy
 from typing import List, Optional, Tuple, Union
 
 class BlockTape:
@@ -242,10 +241,3 @@ class PtrTape:
             left = start + self.init
 
         return self.tape[ left : right ]
-
-    def copy(self) -> PtrTape:
-        return PtrTape(
-            tape = copy(self.tape),
-            init = self.init,
-            head = self.head,
-        )
