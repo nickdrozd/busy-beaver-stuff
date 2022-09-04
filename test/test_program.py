@@ -11,6 +11,7 @@ PROGS = {
         {'A', 'B', 'C'},
         {0, 1},
         'A1',
+        ('A0', 'A1', 'B0', 'B1', 'C0', 'C1'),
     ),
     "1RB ...  1RC ...  ... ...  ... ...  ... ...": (
         {'B', 'C'},
@@ -18,6 +19,7 @@ PROGS = {
         {'A', 'B', 'C', 'D'},
         {0, 1},
         None,
+        ('A0', 'A1', 'B0', 'B1', 'C0', 'C1', 'D0', 'D1', 'E0', 'E1'),
     ),
     "1RB ... ... ...  1LB 1LA ... ...": (
         {'A', 'B'},
@@ -25,6 +27,7 @@ PROGS = {
         {'A', 'B'},
         {0, 1, 2},
         None,
+        ('A0', 'A1', 'A2', 'A3', 'B0', 'B1', 'B2', 'B3')
     )
 }
 
@@ -54,9 +57,14 @@ class TestProgram(TestCase):
             slot,
             self.prog.last_slot)
 
+    def assert_slots(self, slots):
+        self.assertEqual(
+            slots,
+            self.prog.slots)
+
     def test_used_available(self):
         # pylint: disable = line-too-long
-        for prog, (used_st, used_co, avail_st, avail_co, last) in PROGS.items():
+        for prog, (used_st, used_co, avail_st, avail_co, last, slots) in PROGS.items():
             self.prog = Program(prog)
 
             self.assert_used_states(used_st)
@@ -64,6 +72,7 @@ class TestProgram(TestCase):
             self.assert_available_states(avail_st)
             self.assert_available_colors(avail_co)
             self.assert_last_slot(last)
+            self.assert_slots(slots)
 
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
