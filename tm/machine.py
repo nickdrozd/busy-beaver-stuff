@@ -210,7 +210,10 @@ class Machine:
         else:
             self.final.xlimit = step
 
-        self.finalize(step, state)
+        show = self.finalize(step, state)
+
+        if watch_tape and show:
+            print(f'{step : 5d} {chr(state + 65)}{tape.scan} ', tape)
 
         return self
 
@@ -233,7 +236,7 @@ class Machine:
 
         return result
 
-    def finalize(self, step, state):
+    def finalize(self, step, state) -> bool:
         if state == 30:  # ord('_') - 65
             self.final.halted = step
 
@@ -247,3 +250,5 @@ class Machine:
         self.state = state
 
         self.final.validate_results()
+
+        return self.final.halted or self.final.blanks
