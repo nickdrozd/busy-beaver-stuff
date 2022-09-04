@@ -80,6 +80,13 @@ class TestProgram(TestCase):
                 set(Program(prog).branch(loc)),
                 extensions)
 
+        self.assertFalse(
+            tuple(
+                Program(
+                    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA").branch(
+                        'C0',
+                        halt = True)))
+
     def test_normalize(self):
         for norm, devs in NORMALIZE.items():
             for dev in devs:
