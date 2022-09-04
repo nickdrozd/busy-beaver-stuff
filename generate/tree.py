@@ -43,11 +43,7 @@ def stacker(steps: int, halt: bool, run_pile, stack: List[str]):
             prog = None
             continue
 
-        try:
-            prog = next(branches := program.branch(instr, halt))
-        except StopIteration:
-            prog = None
-            continue
+        prog = next(branches := program.branch(instr, halt))
 
         for ext in branches:
             stack.append(ext)
