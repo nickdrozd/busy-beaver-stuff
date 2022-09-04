@@ -1220,9 +1220,6 @@ class TuringTest(TestCase):
             Program(prog).normalize())
 
     def assert_comp(self, prog):
-        if '.' in prog:
-            return
-
         self.assertEqual(
             prog,
             dcompile(tcompile(prog)))
