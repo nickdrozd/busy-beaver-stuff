@@ -252,6 +252,7 @@ class TestGraph(TestCase):
 
             print(self.graph)
             _ = self.graph.dot
+            _ = repr(self.graph)
 
             self.assert_flat(flat)
             self.assert_normal(norm)
