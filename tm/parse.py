@@ -18,7 +18,9 @@ def tcompile(program: str) -> CompProg:
             (
                 int(action[0]),
                 0 if action[1] == 'L' else 1,
-                ord(action[2]) - 65,
+                ord(state) - 65
+                    if (state := action[2]) != '_'
+                    else -1,
             )
             if '.' not in action and '-' not in action
             else None
@@ -42,4 +44,8 @@ def convert_instr(instr: Optional[Instr]) -> str:
     # pylint: disable = invalid-name
     pr, sh, tr = instr
 
-    return str(pr) + ('R' if sh else 'L') + chr(65 + tr)
+    return (
+        str(pr)
+        + ('R' if sh else 'L')
+        + (chr(65 + tr) if tr != -1 else '_')
+    )

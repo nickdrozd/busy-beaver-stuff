@@ -39,7 +39,7 @@ class MacroRunner:
 
             pos += 1 if shift else -1
 
-            if (state := next_state) == 30:
+            if (state := next_state) == -1:
                 return (
                     self.tape_to_color(tape),
                     1,

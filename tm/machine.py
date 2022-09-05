@@ -196,7 +196,7 @@ class Machine:
 
             # Halt conditions ######################
 
-            if state == 30:  # ord('_') - 65
+            if state == -1:
                 break
 
             if check_blanks and marks == 0:
@@ -233,7 +233,7 @@ class Machine:
         return result
 
     def finalize(self, step, state) -> bool:
-        if state == 30:  # ord('_') - 65
+        if state == -1:
             self.final.halted = step
 
         if self.tape.blank:
