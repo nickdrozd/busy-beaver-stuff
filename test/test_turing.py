@@ -1490,6 +1490,11 @@ class TuringTest(TestCase):
             else:
                 self.assert_could_blank(prog)
 
+            self.assertTrue(
+                (graph := Graph(prog)).is_zero_reflexive
+                and not graph.is_irreflexive
+            )
+
     def _test_recur(
             self, prog_data, quick,
             qsihlt = False,
