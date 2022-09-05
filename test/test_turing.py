@@ -1373,9 +1373,10 @@ class TuringTest(TestCase):
         self.assert_lin_recurrence(1 + steps, 1 + recurrence)
         self.assert_lin_recurrence(steps, period + recurrence)
 
-        if period > 1:
-            self.deny_lin_recurrence(steps, 1 + recurrence)
-            self.deny_lin_recurrence(steps, recurrence - 1)
+        assert period > 1
+
+        self.deny_lin_recurrence(steps, 1 + recurrence)
+        self.deny_lin_recurrence(steps, recurrence - 1)
 
         if steps >= 1:
             self.deny_lin_recurrence(steps - 1, recurrence)
@@ -1384,10 +1385,9 @@ class TuringTest(TestCase):
             self, prog,
             print_prog = True,
             normal = True,
-            reached = True,
             **opts):
         if not isinstance(prog, str):
-            self.run_comp(prog, print_prog, **opts)
+            self.run_comp(prog, **opts)
             return
 
         if normal:
@@ -1404,8 +1404,7 @@ class TuringTest(TestCase):
         self.final  = self.machine.final
         self.tape = self.machine.tape
 
-        if reached:
-            self.assert_reached(prog)
+        self.assert_reached(prog)
 
         self.assert_simple(prog)
         self.assert_connected(prog)
@@ -1413,13 +1412,12 @@ class TuringTest(TestCase):
         if '.' not in prog:
             _ = MacroCompiler(prog).macro_prog(2)
 
-    def run_comp(self, prog, print_prog = True, **opts):
-        if print_prog:
-            print(
-                'COMPILED'
-                if isinstance(prog, tuple) else
-                prog
-            )
+    def run_comp(self, prog, **opts):
+        print(
+            'COMPILED'
+            if isinstance(prog, tuple) else
+            prog
+        )
 
         self.machine = Machine(prog).run(**opts)
         self.history = self.machine.history
