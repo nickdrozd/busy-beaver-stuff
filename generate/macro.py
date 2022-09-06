@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from tm.parse import tcompile, dcompile, CompProg, Instr
 from generate.program import Program
@@ -79,16 +79,18 @@ class MacroCompiler(MacroRunner):
     def macro_comp(self, cells: int) -> CompProg:
         return tuple(
             tuple(
-                self.run_macro_simulator(
-                    st_sh,
-                    list(tape),
-                )
-                for tape in product(
-                        range(self.colors),
-                        repeat = cells)
+                self.run_macro_simulator(st_sh, tape)
+                for tape in self.all_tapes(cells)
             )
             for st_sh in range(2 * self.states)
         )
+
+    def all_tapes(self, cells: int) -> Iterator[Tape]:
+        return map(
+            list,
+            product(
+                range(self.colors),
+                repeat = cells))
 
 ########################################
 
