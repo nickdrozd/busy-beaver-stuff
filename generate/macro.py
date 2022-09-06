@@ -1,3 +1,5 @@
+# pylint: disable = too-few-public-methods
+
 from itertools import product
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
@@ -48,6 +50,9 @@ class MacroRunner:
 
         return tape, pos, -1
 
+########################################
+
+class BlockMacroRunner(MacroRunner):
     def calculate_instr(self, st_sh: State, in_tape: Tape) -> Instr:
         in_state, in_edge = divmod(st_sh, 2)
 
@@ -78,7 +83,7 @@ class MacroRunner:
 
 ########################################
 
-class MacroCompiler(MacroRunner):
+class BlockMacroCompiler(BlockMacroRunner):
     def macro_prog(self, cells: int) -> Program:
         return Program(
             dcompile(
@@ -104,7 +109,7 @@ class MacroCompiler(MacroRunner):
 
 ########################################
 
-class DynamicMacroProg(MacroRunner):
+class BlockMacroProg(BlockMacroRunner):
     def __init__(self, program: str, cells: int):
         super().__init__(program)
 

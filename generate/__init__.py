@@ -1,10 +1,10 @@
 from generate.graph import Graph
 from generate.program import Program
-from generate.macro import MacroCompiler, DynamicMacroProg
+from generate.macro import BlockMacroCompiler, BlockMacroProg
 
 __all__ = [
     'Graph',
     'Program',
-    'MacroCompiler',
-    'DynamicMacroProg',
+    'BlockMacroProg',
+    'BlockMacroCompiler',
 ]
