@@ -19,16 +19,15 @@ class MacroRunner:
         self.states: int = len(self.comp)
         self.colors: int = len(self.comp[0])
 
-    def run_macro_simulator(
+    def run_simulator(
             self,
-            st_sh: State,
+            state: State,
+            edge: bool,
             tape: Tape,
-    ) -> Instr:
-        state, edge = divmod(st_sh, 2)
-
+    ) -> Tuple[Tape, int, State]:
         cells = len(tape)
 
-        pos = 0 if edge == 0 else cells - 1
+        pos = cells - 1 if edge else 0
 
         for _ in range((self.states * cells) * (self.colors ** cells)):
             assert (instr := self.comp[state][tape[pos]]) is not None
@@ -40,26 +39,37 @@ class MacroRunner:
             pos += 1 if shift else -1
 
             if (state := next_state) == -1:
-                return (
-                    self.tape_to_color(tape),
-                    1,
-                    state,
-                )
+                return tape, pos, -1
 
             if 0 <= pos < cells:
                 continue
 
-            next_edge = 0 if pos < 0 else 1
-            edge_diff = 1 if pos < 0 else 0
-            out_state = (2 * state) + edge_diff
+            return tape, pos, state
 
-            return (
-                self.tape_to_color(tape),
-                next_edge,
-                out_state,
-            )
+        return tape, pos, -1
 
-        return 0, 0, 0
+    def calculate_instr(self, st_sh: State, in_tape: Tape) -> Instr:
+        in_state, in_edge = divmod(st_sh, 2)
+
+        tape, pos, state = self.run_simulator(
+            in_state,
+            in_edge == 1,
+            in_tape,
+        )
+
+        next_edge = 0 if pos < 0 else 1
+        edge_diff = 1 if pos < 0 else 0
+        out_state = (
+            (2 * state) + edge_diff
+            if state != -1 else
+            -1
+        )
+
+        return (
+            self.tape_to_color(tape),
+            next_edge,
+            out_state,
+        )
 
     def tape_to_color(self, tape: Tape) -> Color:
         return int(
@@ -79,7 +89,7 @@ class MacroCompiler(MacroRunner):
     def macro_comp(self, cells: int) -> CompProg:
         return tuple(
             tuple(
-                self.run_macro_simulator(st_sh, tape)
+                self.calculate_instr(st_sh, tape)
                 for tape in self.all_tapes(cells)
             )
             for st_sh in range(2 * self.states)
@@ -120,7 +130,7 @@ class DynamicMacroProg(MacroRunner):
         try:
             return self.instrs[(state, color)]
         except KeyError:
-            instr = self.run_macro_simulator(
+            instr = self.calculate_instr(
                 state,
                 self.color_to_tape(color),
             )
