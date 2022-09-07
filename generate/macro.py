@@ -24,12 +24,12 @@ class MacroRunner:
     def run_simulator(
             self,
             state: State,
-            edge: bool,
+            right_edge: bool,
             tape: Tape,
     ) -> Tuple[Tape, int, State]:
         cells = len(tape)
 
-        pos = cells - 1 if edge else 0
+        pos = cells - 1 if right_edge else 0
 
         for _ in range((self.states * cells) * (self.colors ** cells)):
             assert (instr := self.comp[state][tape[pos]]) is not None
@@ -54,26 +54,22 @@ class MacroRunner:
 
 class BlockMacroRunner(MacroRunner):
     def calculate_instr(self, st_sh: State, in_tape: Tape) -> Instr:
-        in_state, in_edge = divmod(st_sh, 2)
+        in_state, right_edge = divmod(st_sh, 2)
 
         tape, pos, state = self.run_simulator(
             in_state,
-            in_edge == 1,
+            right_edge == 1,
             in_tape,
-        )
-
-        next_edge = 0 if pos < 0 else 1
-        edge_diff = 1 if pos < 0 else 0
-        out_state = (
-            (2 * state) + edge_diff
-            if state != -1 else
-            -1
         )
 
         return (
             self.tape_to_color(tape),
-            next_edge,
-            out_state,
+            int(0 <= pos),
+            (
+                (2 * state) + int(pos < 0)
+                if state != -1 else
+                -1
+            ),
         )
 
     def tape_to_color(self, tape: Tape) -> Color:
