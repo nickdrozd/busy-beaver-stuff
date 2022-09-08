@@ -3,7 +3,7 @@
 from itertools import product
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
-from tm.parse import tcompile, dcompile, CompProg, Instr
+from tm.parse import tcompile, dcompile, Instr, CompProg
 
 Color = int
 State = int
@@ -12,13 +12,25 @@ Tape = List[Color]
 ########################################
 
 class MacroRunner:
-    def __init__(self, program: str):
-        self.program: str = program
+    def __init__(self, program):
+        self.program = program
 
-        self.comp: CompProg = tcompile(program)
+        self.comp: CompProg
+        self.base_states: int
+        self.base_colors: int
 
-        self.states: int = len(self.comp)
-        self.colors: int = len(self.comp[0])
+        if isinstance(program, str):
+            self.comp = tcompile(program)
+
+            self.base_states = len(self.comp)
+            self.base_colors = len(self.comp[0])
+        else:
+            self.comp = program
+
+            self.base_states = program.macro_states
+            self.base_colors = program.macro_colors
+
+        self.sim_lim: int = 0
 
     def run_simulator(
             self,
@@ -30,7 +42,7 @@ class MacroRunner:
 
         pos = cells - 1 if right_edge else 0
 
-        for _ in range((self.states * cells) * (self.colors ** cells)):
+        for _ in range(self.sim_lim):
             assert (instr := self.comp[state][tape[pos]]) is not None
 
             color, shift, next_state = instr
@@ -53,7 +65,16 @@ class BlockMacro(MacroRunner):
     def __init__(self, program: str, cells: int):
         super().__init__(program)
 
+        self.macro_states: int = self.base_states * 2
+        self.macro_colors: int = self.base_colors ** cells
+
         self.cells: int = cells
+
+        self.sim_lim: int = (
+            self.base_states
+            * self.cells
+            * self.macro_colors
+        )
 
         self.instrs: Dict[Tuple[State, Color], Instr] = {}
 
@@ -106,7 +127,7 @@ class BlockMacro(MacroRunner):
     def tape_to_color(self, tape: Tape) -> Color:
         color = int(
             ''.join(map(str, tape)),
-            self.colors)
+            self.base_colors)
 
         self.tape_colors[color] = tuple(tape)
 
@@ -123,7 +144,7 @@ class BlockMacro(MacroRunner):
         return map(
             list,
             product(
-                range(self.colors),
+                range(self.base_colors),
                 repeat = self.cells))
 
     @property
@@ -134,6 +155,6 @@ class BlockMacro(MacroRunner):
                     self.calculate_instr(st_sh, tape)
                     for tape in self.all_tapes
                 )
-                for st_sh in range(2 * self.states)
+                for st_sh in range(self.macro_states)
             )
         )
