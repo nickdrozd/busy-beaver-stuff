@@ -65,7 +65,7 @@ class Machine:
         if type(prog).__name__ == 'Program':
             prog = str(prog)
 
-        if type(prog).__name__ == 'BlockMacroProg':
+        if type(prog).__name__ == 'BlockMacro':
             # pylint: disable = pointless-statement
             prog[0][0]
 

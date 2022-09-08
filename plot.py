@@ -4,7 +4,7 @@ import sys
 import matplotlib.pyplot as plt
 
 from tm import Machine
-from generate.macro import BlockMacroProg
+from generate.macro import BlockMacro
 
 
 if __name__ == '__main__':
@@ -14,10 +14,7 @@ if __name__ == '__main__':
         data = {
             cells: getattr(
                 Machine(
-                    BlockMacroProg(
-                        program,
-                        cells,
-                    )
+                    BlockMacro(program, cells)
                 ).run().final,
                 'halted' if '_' in program else 'spnout',
             )

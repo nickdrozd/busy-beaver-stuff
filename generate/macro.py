@@ -52,60 +52,7 @@ class MacroRunner:
 
 ########################################
 
-class BlockMacroRunner(MacroRunner):
-    def calculate_instr(self, st_sh: State, in_tape: Tape) -> Instr:
-        in_state, right_edge = divmod(st_sh, 2)
-
-        tape, pos, state = self.run_simulator(
-            in_state,
-            right_edge == 1,
-            in_tape,
-        )
-
-        return (
-            self.tape_to_color(tape),
-            int(0 <= pos),
-            (
-                (2 * state) + int(pos < 0)
-                if state != -1 else
-                -1
-            ),
-        )
-
-    def tape_to_color(self, tape: Tape) -> Color:
-        return int(
-            ''.join(map(str, tape)),
-            self.colors)
-
-########################################
-
-class BlockMacroCompiler(BlockMacroRunner):
-    def macro_prog(self, cells: int) -> Program:
-        return Program(
-            dcompile(
-                self.macro_comp(
-                    cells))
-        ).normalize()
-
-    def macro_comp(self, cells: int) -> CompProg:
-        return tuple(
-            tuple(
-                self.calculate_instr(st_sh, tape)
-                for tape in self.all_tapes(cells)
-            )
-            for st_sh in range(2 * self.states)
-        )
-
-    def all_tapes(self, cells: int) -> Iterator[Tape]:
-        return map(
-            list,
-            product(
-                range(self.colors),
-                repeat = cells))
-
-########################################
-
-class BlockMacroProg(BlockMacroRunner):
+class BlockMacro(MacroRunner):
     def __init__(self, program: str, cells: int):
         super().__init__(program)
 
@@ -140,8 +87,29 @@ class BlockMacroProg(BlockMacroRunner):
 
             return instr
 
+    def calculate_instr(self, st_sh: State, in_tape: Tape) -> Instr:
+        in_state, right_edge = divmod(st_sh, 2)
+
+        tape, pos, state = self.run_simulator(
+            in_state,
+            right_edge == 1,
+            in_tape,
+        )
+
+        return (
+            self.tape_to_color(tape),
+            int(0 <= pos),
+            (
+                (2 * state) + int(pos < 0)
+                if state != -1 else
+                -1
+            ),
+        )
+
     def tape_to_color(self, tape: Tape) -> Color:
-        color = super().tape_to_color(tape)
+        color = int(
+            ''.join(map(str, tape)),
+            self.colors)
 
         self.tape_colors[color] = tuple(tape)
 
@@ -152,3 +120,28 @@ class BlockMacroProg(BlockMacroRunner):
             return [0] * self.cells
 
         return list(self.tape_colors[color])
+
+    @property
+    def all_tapes(self) -> Iterator[Tape]:
+        return map(
+            list,
+            product(
+                range(self.colors),
+                repeat = self.cells))
+
+    @property
+    def fully_specified(self) -> CompProg:
+        return tuple(
+            tuple(
+                self.calculate_instr(st_sh, tape)
+                for tape in self.all_tapes
+            )
+            for st_sh in range(2 * self.states)
+        )
+
+    @property
+    def dump_program(self) -> Program:
+        return Program(
+            dcompile(
+                self.fully_specified)
+        ).normalize()

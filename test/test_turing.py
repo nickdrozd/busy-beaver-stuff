@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from tm import Machine
 from tm.parse import tcompile, dcompile
-from generate import Graph, Program, BlockMacroCompiler, BlockMacroProg
+from generate import Graph, Program, BlockMacro
 
 HALT_FAST = {
     # 2/2 BB
@@ -1410,7 +1410,7 @@ class TuringTest(TestCase):
         self.assert_connected(prog)
 
         if '.' not in prog:
-            _ = BlockMacroCompiler(prog).macro_prog(2)
+            _ = BlockMacro(prog, 2).dump_program
 
     def run_comp(self, prog, **opts):
         print(
@@ -1452,7 +1452,7 @@ class TuringTest(TestCase):
 
     def _test_macro_halt(self, prog_data, quick):
         self._test_halt({
-            BlockMacroProg(prog, cells): expected
+            BlockMacro(prog, cells): expected
             for prog, params in prog_data.items()
             for cells, expected in params.items()
         })
@@ -1461,7 +1461,7 @@ class TuringTest(TestCase):
             return
 
         self._test_halt({
-            BlockMacroCompiler(prog).macro_comp(cells): expected
+            BlockMacro(prog, cells).fully_specified: expected
             for prog, params in prog_data.items()
             for cells, expected in params.items()
         })
