@@ -135,9 +135,15 @@ class BlockMacro(MacroRunner):
         )
 
     def tape_to_color(self, tape: Tape) -> Color:
-        color = int(
-            ''.join(map(str, tape)),
-            self.base_colors)
+        try:
+            color = int(
+                ''.join(map(str, tape)),
+                self.base_colors)
+        except ValueError:
+            color = sum(
+                value * self.base_colors ** place
+                for place, value in enumerate(reversed(tape))
+            )
 
         self.tape_colors[color] = tuple(tape)
 
