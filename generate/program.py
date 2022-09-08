@@ -261,7 +261,8 @@ class Program:
         for slot, action in self.instructions:
             if (shift := action[1]) == 'R':
                 self[slot] = re.sub('R', 'L', action)
-            elif shift == 'L':
+            else:
+                assert shift == 'L'
                 self[slot] = re.sub('L', 'R', action)
 
         return self
