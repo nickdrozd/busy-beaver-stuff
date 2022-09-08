@@ -37,13 +37,14 @@ class MacroRunner:
             state: State,
             right_edge: bool,
             tape: Tape,
-    ) -> Tuple[Tape, int, State]:
+    ) -> Optional[Tuple[Tape, int, State]]:
         cells = len(tape)
 
         pos = cells - 1 if right_edge else 0
 
         for _ in range(self.sim_lim):
-            assert (instr := self.comp[state][tape[pos]]) is not None
+            if (instr := self.comp[state][tape[pos]]) is None:
+                return None
 
             color, shift, next_state = instr
 
@@ -76,7 +77,7 @@ class BlockMacro(MacroRunner):
             * self.macro_colors
         )
 
-        self.instrs: Dict[Tuple[State, Color], Instr] = {}
+        self.instrs: Dict[Tuple[State, Color], Optional[Instr]] = {}
 
         self.tape_colors: Dict[Color, Tuple[Color, ...]] = {}
 
@@ -85,7 +86,7 @@ class BlockMacro(MacroRunner):
     def __str__(self) -> str:
         return f'{self.program} ({self.cells}-cell macro)'
 
-    def __getitem__(self, stco: Union[State, Color]) -> Instr:
+    def __getitem__(self, stco: Union[State, Color]) -> Optional[Instr]:
         if self._state is None:
             self._state = stco
             return self  # type: ignore
@@ -105,14 +106,23 @@ class BlockMacro(MacroRunner):
 
             return instr
 
-    def calculate_instr(self, st_sh: State, in_tape: Tape) -> Instr:
+    def calculate_instr(
+            self,
+            st_sh: State,
+            in_tape: Tape,
+    ) -> Optional[Instr]:
         in_state, right_edge = divmod(st_sh, 2)
 
-        tape, pos, state = self.run_simulator(
+        result = self.run_simulator(
             in_state,
             right_edge == 1,
             in_tape,
         )
+
+        if result is None:
+            return None
+
+        tape, pos, state = result
 
         return (
             self.tape_to_color(tape),

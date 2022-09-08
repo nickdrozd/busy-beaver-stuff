@@ -1398,7 +1398,7 @@ class TuringTest(TestCase):
         self.assert_simple(prog)
         self.assert_connected(prog)
 
-        if '.' not in prog:
+        if len(prog) < 70:
             _ = BlockMacro(prog, 2).fully_specified
 
     def run_comp(self, prog, **opts):
