@@ -40,14 +40,12 @@ class MacroRunner:
             pos += 1 if shift else -1
 
             if (state := next_state) == -1:
-                return tape, pos, -1
+                return tape, pos, state
 
-            if 0 <= pos < cells:
-                continue
+            if not 0 <= pos < cells:
+                return tape, pos, state
 
-            return tape, pos, state
-
-        return tape, pos, -1
+        return tape, pos, state
 
 ########################################
 
