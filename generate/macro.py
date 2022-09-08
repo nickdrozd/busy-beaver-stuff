@@ -4,7 +4,6 @@ from itertools import product
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from tm.parse import tcompile, dcompile, CompProg, Instr
-from generate.program import Program
 
 Color = int
 State = int
@@ -130,18 +129,13 @@ class BlockMacro(MacroRunner):
                 repeat = self.cells))
 
     @property
-    def fully_specified(self) -> CompProg:
-        return tuple(
+    def fully_specified(self) -> str:
+        return dcompile(
             tuple(
-                self.calculate_instr(st_sh, tape)
-                for tape in self.all_tapes
+                tuple(
+                    self.calculate_instr(st_sh, tape)
+                    for tape in self.all_tapes
+                )
+                for st_sh in range(2 * self.states)
             )
-            for st_sh in range(2 * self.states)
         )
-
-    @property
-    def dump_program(self) -> Program:
-        return Program(
-            dcompile(
-                self.fully_specified)
-        ).normalize()

@@ -116,34 +116,23 @@ HALT_SLOW = {
     "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
 }
 
-MACRO_HALT_COMPILED = {
+MACRO_HALT = {
     # 2/4 BB
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": {
-        2: (1026, 1965975),
-        3: ( 684, 1310990),
-        4: ( 513,  982987),
-        5: ( 410,  786595),
-        6: ( 343,  655327),
-    },
-
-    # 5/2 BB
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": {
-        12: (1025, 3930266),
-    },
-}
-
-MACRO_HALT_DYNAMIC = {
-    # 2/4 BB
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": {
-        7:   (294, 561863),
-        8:   (257, 491497),
-        9:   (229, 437004),
-        10:  (206, 393202),
-        11:  (187, 357547),
-        12:  (172, 327676),
-        13:  (159, 302547),
-        14:  (148, 280868),
-        15:  (137, 262216),
+        2:  (1026, 1965975),
+        3:  ( 684, 1310990),
+        4:  ( 513,  982987),
+        5:  ( 410,  786595),
+        6:  ( 343,  655327),
+        7:  ( 294,  561863),
+        8:  ( 257,  491497),
+        9:  ( 229,  437004),
+        10: ( 206,  393202),
+        11: ( 187,  357547),
+        12: ( 172,  327676),
+        13: ( 159,  302547),
+        14: ( 148,  280868),
+        15: ( 137,  262216),
 
         251:  (10, 15495),
         252:  (10, 15413),
@@ -1410,14 +1399,10 @@ class TuringTest(TestCase):
         self.assert_connected(prog)
 
         if '.' not in prog:
-            _ = BlockMacro(prog, 2).dump_program
+            _ = BlockMacro(prog, 2).fully_specified
 
     def run_comp(self, prog, **opts):
-        print(
-            'COMPILED'
-            if isinstance(prog, tuple) else
-            prog
-        )
+        print(prog)
 
         self.machine = Machine(prog).run(**opts)
         self.history = self.machine.history
@@ -1450,22 +1435,12 @@ class TuringTest(TestCase):
             else:
                 self.assert_could_blank(prog)
 
-    def _test_macro_halt(self, prog_data, quick):
+    def _test_macro_halt(self, prog_data):
         self._test_halt({
             BlockMacro(prog, cells): expected
             for prog, params in prog_data.items()
             for cells, expected in params.items()
         })
-
-        if not quick:
-            return
-
-        self._test_halt({
-            BlockMacro(prog, cells).fully_specified: expected
-            for prog, params in prog_data.items()
-            for cells, expected in params.items()
-        })
-
 
     def _test_spinout(self, prog_data, fixed: bool):
         for prog, (marks, steps) in prog_data.items():
@@ -1574,8 +1549,7 @@ class Fast(TuringTest):
         self._test_halt(HALT_FAST)
 
     def test_macro_halt(self):
-        self._test_macro_halt(MACRO_HALT_COMPILED, quick = True)
-        self._test_macro_halt(MACRO_HALT_DYNAMIC, quick = False)
+        self._test_macro_halt(MACRO_HALT)
 
     def test_spinout(self):
         for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
