@@ -1,5 +1,6 @@
 # pylint: disable = attribute-defined-outside-init, line-too-long, too-many-lines
 
+from math import isclose
 from unittest import TestCase
 
 from tm import Machine
@@ -114,74 +115,6 @@ HALT_SLOW = {
     # 3/3
     "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA": (1525688, 987522842126),
     "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
-}
-
-MACRO_HALT = {
-    # 2/4 BB
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": {
-        2:  (1026, 1965975),
-        3:  ( 684, 1310990),
-        4:  ( 513,  982987),
-        5:  ( 410,  786595),
-        6:  ( 343,  655327),
-        7:  ( 294,  561863),
-        8:  ( 257,  491497),
-        9:  ( 229,  437004),
-        10: ( 206,  393202),
-        11: ( 187,  357547),
-        12: ( 172,  327676),
-        13: ( 159,  302547),
-        14: ( 148,  280868),
-        15: ( 137,  262216),
-
-        251:  (10, 15495),
-        252:  (10, 15413),
-        253:  (10, 15339),
-        254:  (10, 15257),
-        255:  ( 9, 15196),
-
-        505:  (6, 7215),
-        506:  (6, 7191),
-        507:  (6, 7171),
-        508:  (6, 7147),
-        509:  (5, 7132),
-    },
-
-    # 5/2 BB
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": {
-        1:   (4098, 47176870),
-        2:   (4097, 23587667),
-        3:   (4097, 15721562),
-        4:   (3073, 11793832),
-        5:   (2459,  9435374),
-        6:   (2049,  7860526),
-        7:   (1756,  6739558),
-        8:   (1537,  5896916),
-        9:   (1367,  5240526),
-        10:  (1230,  4717534),
-        11:  (1118,  4288808),
-        12:  (1025,  3930266),
-        13:  ( 946,   3628993),
-        14:  ( 879,   3369670),
-        15:  ( 821,   3144318),
-        16:  ( 769,   2948459),
-
-        100:  (124,    471782),
-
-        505: (  26,     93298),
-        506: (  26,     93102),
-        507: (  26,     92892),
-        508: (  26,     92722),
-        509: (  26,     92534),
-        510: (  26,     92316),
-        511: (  25,     92175),
-        512: (  25,     92003),
-        513: (  25,     91817),
-        514: (  25,     91671),
-        515: (  25,     91507),
-        516: (  25,     91313),
-
-    },
 }
 
 SPINOUT_FAST = {
@@ -1204,6 +1137,17 @@ DONT_SPIN_OUT = {
     "1RB 1LE  0RC 1LD  1RD 0RD  1RE 1RC  0LA 1LB",  # 10^46
 }
 
+MACRO = {
+    # 2/4
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": 3932964,
+
+    # 4/2
+    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779478,
+
+    # 5/2
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": 47176870,
+}
+
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
@@ -1375,10 +1319,6 @@ class TuringTest(TestCase):
             print_prog = True,
             normal = True,
             **opts):
-        if not isinstance(prog, str):
-            self.run_comp(prog, **opts)
-            return
-
         if normal:
             self.assert_normal(prog)
 
@@ -1400,13 +1340,6 @@ class TuringTest(TestCase):
 
         if len(prog) < 70:
             _ = BlockMacro(prog, 2).fully_specified
-
-    def run_comp(self, prog, **opts):
-        print(prog)
-
-        self.machine = Machine(prog).run(**opts)
-        self.history = self.machine.history
-        self.final  = self.machine.final
 
     def _test_halt(self, prog_data):
         for prog, (marks, steps) in prog_data.items():
@@ -1434,13 +1367,6 @@ class TuringTest(TestCase):
                 self.assert_cant_blank(prog)
             else:
                 self.assert_could_blank(prog)
-
-    def _test_macro_halt(self, prog_data):
-        self._test_halt({
-            BlockMacro(prog, cells): expected
-            for prog, params in prog_data.items()
-            for cells, expected in params.items()
-        })
 
     def _test_spinout(self, prog_data, fixed: bool):
         for prog, (marks, steps) in prog_data.items():
@@ -1548,9 +1474,6 @@ class Fast(TuringTest):
 
         self._test_halt(HALT_FAST)
 
-    def test_macro_halt(self):
-        self._test_macro_halt(MACRO_HALT)
-
     def test_spinout(self):
         for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
             self.assert_simple(prog)
@@ -1613,6 +1536,25 @@ class Fast(TuringTest):
         for prog in Program(mother).branch('E0'):
             self.assert_could_blank(prog)
             self.assert_could_spin_out(prog)
+
+    def test_macro(self):
+        for prog, steps in MACRO.items():
+            for cells in range(1, 20):
+                macro = BlockMacro(prog, cells)
+
+                print(macro)
+
+                result = getattr(
+                    Machine(macro).run().final,
+                    'halted' if '_' in prog else 'spnout')
+
+                self.assertTrue(
+                    isclose(
+                        result,
+                        steps / cells,
+                        rel_tol = .01,
+                    )
+                )
 
     def test_undefined(self):
         for prog, sequence in UNDEFINED.items():
