@@ -1139,13 +1139,16 @@ DONT_SPIN_OUT = {
 
 MACRO = {
     # 2/4
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": 3932964,
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
+        3932964,
+        {(5, 3), (4, 4), (5, 4)},
+    ),
 
     # 4/2
-    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779478,
+    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": (32779478, {(5, 4)}),
 
     # 5/2
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": 47176870,
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (47176870, {(5, 4)}),
 }
 
 
@@ -1538,9 +1541,12 @@ class Fast(TuringTest):
             self.assert_could_spin_out(prog)
 
     def test_macro(self):
-        for prog, steps in MACRO.items():
+        for prog, (steps, exceptions) in MACRO.items():
             for wraps in range(1, 5):
                 for cells in range(1, 6):
+                    if (cells, wraps) in exceptions:
+                        continue
+
                     macro = prog
 
                     for _ in range(wraps):
@@ -1556,7 +1562,7 @@ class Fast(TuringTest):
                         isclose(
                             result,
                             steps / (cells ** wraps),
-                            rel_tol = .0625,
+                            rel_tol = .001,
                         )
                     )
 
