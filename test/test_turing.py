@@ -1539,22 +1539,26 @@ class Fast(TuringTest):
 
     def test_macro(self):
         for prog, steps in MACRO.items():
-            for cells in range(1, 20):
-                macro = BlockMacro(prog, cells)
+            for wraps in range(1, 5):
+                for cells in range(1, 6):
+                    macro = prog
 
-                print(macro)
+                    for _ in range(wraps):
+                        macro = BlockMacro(macro, cells)
 
-                result = getattr(
-                    Machine(macro).run().final,
-                    'halted' if '_' in prog else 'spnout')
+                    print(macro)
 
-                self.assertTrue(
-                    isclose(
-                        result,
-                        steps / cells,
-                        rel_tol = .01,
+                    result = getattr(
+                        Machine(macro).run().final,
+                        'halted' if '_' in prog else 'spnout')
+
+                    self.assertTrue(
+                        isclose(
+                            result,
+                            steps / (cells ** wraps),
+                            rel_tol = .0625,
+                        )
                     )
-                )
 
     def test_undefined(self):
         for prog, sequence in UNDEFINED.items():
