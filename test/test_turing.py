@@ -1137,7 +1137,7 @@ DONT_SPIN_OUT = {
     "1RB 1LE  0RC 1LD  1RD 0RD  1RE 1RC  0LA 1LB",  # 10^46
 }
 
-MACRO = {
+MACRO_FAST = {
     # 2/4
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
         3932964,
@@ -1149,6 +1149,21 @@ MACRO = {
 
     # 5/2
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (47176870, {(5, 4)}),
+
+    # 3/3
+    "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC": (310341163, ()),
+}
+
+MACRO_SLOW = {
+    # 2/4
+    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA": (
+        1367361263049,
+        {(2, 2), (2, 3), (2, 4)}),
+
+    # 3/3
+    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (4939345068, ()),
+    "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA": (987522842126, ()),
+    "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (4144465135614, ()),
 }
 
 
@@ -1446,6 +1461,35 @@ class TuringTest(TestCase):
                 fixdtp,
                 self.final.fixdtp)
 
+    def _test_macro(self, prog_data, quick: bool):
+        low = 1 if quick else 2
+
+        for prog, (steps, exceptions) in prog_data.items():
+            for wraps in range(low, 5):
+                for cells in range(low, 6):
+                    if (cells, wraps) in exceptions:
+                        continue
+
+                    macro = prog
+
+                    for _ in range(wraps):
+                        macro = BlockMacro(macro, cells)
+
+                    print(macro)
+
+                    result = getattr(
+                        Machine(macro).run().final,
+                        'halted' if '_' in prog else 'spnout')
+
+                    self.assertTrue(
+                        isclose(
+                            result,
+                            steps / (cells ** wraps),
+                            rel_tol = .001,
+                        )
+                    )
+
+
     def _test_extensions(self, prog_data):
         for prog, (status, data) in prog_data.items():
             self.run_bb(
@@ -1541,30 +1585,7 @@ class Fast(TuringTest):
             self.assert_could_spin_out(prog)
 
     def test_macro(self):
-        for prog, (steps, exceptions) in MACRO.items():
-            for wraps in range(1, 5):
-                for cells in range(1, 6):
-                    if (cells, wraps) in exceptions:
-                        continue
-
-                    macro = prog
-
-                    for _ in range(wraps):
-                        macro = BlockMacro(macro, cells)
-
-                    print(macro)
-
-                    result = getattr(
-                        Machine(macro).run().final,
-                        'halted' if '_' in prog else 'spnout')
-
-                    self.assertTrue(
-                        isclose(
-                            result,
-                            steps / (cells ** wraps),
-                            rel_tol = .001,
-                        )
-                    )
+        self._test_macro(MACRO_FAST, quick = True)
 
     def test_undefined(self):
         for prog, sequence in UNDEFINED.items():
@@ -1650,3 +1671,6 @@ class Slow(TuringTest):
 
     def test_recur(self):
         self._test_recur(RECUR_SLOW, quick = False)
+
+    def test_macro(self):
+        self._test_macro(MACRO_SLOW, quick = False)
