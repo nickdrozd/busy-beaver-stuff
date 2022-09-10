@@ -73,6 +73,7 @@ class Machine:
         self.tape    = None
         self.state   = None
         self.steps   = None
+        self.cycles  = None
         self.final   = MachineResult(prog)
         self.history = None
 
@@ -114,7 +115,7 @@ class Machine:
 
         marks: int = tape.marks
 
-        for _ in range(sim_lim):
+        for cycle in range(sim_lim):
 
             # Output ###############################
 
@@ -206,7 +207,7 @@ class Machine:
         else:
             self.final.xlimit = step
 
-        show = self.finalize(step, state)
+        show = self.finalize(step, cycle, state)
 
         if watch_tape and show:
             print(f'{step : 5d} {chr(state + 65)}{tape.scan} ', tape)
@@ -232,7 +233,7 @@ class Machine:
 
         return result
 
-    def finalize(self, step, state) -> bool:
+    def finalize(self, step, cycle, state) -> bool:
         if state == -1:
             self.final.halted = step
 
@@ -244,6 +245,7 @@ class Machine:
 
         self.steps = step
         self.state = state
+        self.cycles = cycle
 
         self.final.validate_results()
 
