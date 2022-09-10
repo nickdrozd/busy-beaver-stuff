@@ -95,28 +95,29 @@ class BlockMacro(MacroRunner):
         self._state = None
 
         try:
-            return self.instrs[(state, color)]
+            instr = self.instrs[(state, color)]
         except KeyError:
-            instr = self.calculate_instr(
-                state,
-                self.color_to_tape(color),
-            )
+            instr = self.calculate_instr(state, color)
 
             self.instrs[(state, color)] = instr
 
-            return instr
+        return instr
 
     def calculate_instr(
             self,
-            st_sh: State,
-            in_tape: Tape,
+            macro_state: State,
+            macro_color: Color,
+            tape: Optional[Tape] = None,
     ) -> Optional[Instr]:
-        in_state, right_edge = divmod(st_sh, 2)
+        in_state, right_edge = divmod(macro_state, 2)
 
         result = self.run_simulator(
             in_state,
             right_edge == 1,
-            in_tape,
+            (
+                self.color_to_tape(macro_color)
+                if tape is None else tape
+            ),
         )
 
         if result is None:
@@ -168,7 +169,8 @@ class BlockMacro(MacroRunner):
         return dcompile(
             tuple(
                 tuple(
-                    self.calculate_instr(st_sh, tape)
+                    self.calculate_instr(
+                        st_sh, 0, tape = tape)
                     for tape in self.all_tapes
                 )
                 for st_sh in range(self.macro_states)
