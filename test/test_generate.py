@@ -89,7 +89,8 @@ class TestLinRado(TestCase):
             ).final.xlimit is not None
         }
 
-    def test_22h(self):
+    def test_22(self):
+        # h
         self.run_lin_rado(
             2, 2, 1,
             7,  # 6
@@ -98,7 +99,7 @@ class TestLinRado(TestCase):
         self.assert_progs_count(
             0)
 
-    def test_22q(self):
+        # q
         self.run_lin_rado(
             2, 2, 0,
             13,
