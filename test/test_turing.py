@@ -1427,7 +1427,7 @@ class TuringTest(TestCase):
                 period,
             )
 
-            if not quick or period > 2000:
+            if not quick or period > 2000:  # no-coverage
                 print(prog)
                 continue
 
@@ -1652,7 +1652,7 @@ class Fast(TuringTest):
             '101[2]1')
 
 
-class Slow(TuringTest):
+class Slow(TuringTest):  # no-coverage
     def test_halt(self):
         self._test_halt(HALT_SLOW)
 

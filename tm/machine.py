@@ -42,7 +42,7 @@ class MachineResult:
     def validate_results(self):
         if self.halted is not None:
             for cat in NONHALT:
-                if getattr(self, cat) is not None:
+                if getattr(self, cat) is not None:  # no-coverage
                     raise ValidationError(
                         f'{self.prog} || {cat} | {self}')
 
