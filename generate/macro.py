@@ -1,5 +1,3 @@
-# pylint: disable = too-few-public-methods
-
 from itertools import product
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
@@ -11,7 +9,7 @@ Tape = List[Color]
 
 ########################################
 
-class MacroRunner:
+class MacroProg:
     def __init__(self, program):
         self.program = program
 
@@ -31,6 +29,37 @@ class MacroRunner:
             self.base_colors = program.macro_colors
 
         self.sim_lim: int = 0
+
+        self.instrs: Dict[Tuple[State, Color], Optional[Instr]] = {}
+
+        self.tape_colors: Dict[Color, Tuple[Color, ...]] = {}
+
+        self._state: Optional[State] = None
+
+    def __getitem__(self, stco: Union[State, Color]) -> Optional[Instr]:
+        if self._state is None:
+            self._state = stco
+            return self  # type: ignore
+
+        state, color = self._state, stco
+        self._state = None
+
+        try:
+            instr = self.instrs[(state, color)]
+        except KeyError:
+            instr = self.calculate_instr(state, color)
+
+            self.instrs[(state, color)] = instr
+
+        return instr
+
+    def calculate_instr(
+            self,
+            macro_state: State,
+            macro_color: Color,
+            tape: Optional[Tape] = None,
+    ) -> Optional[Instr]:
+        raise NotImplementedError()
 
     def run_simulator(
             self,
@@ -62,7 +91,7 @@ class MacroRunner:
 
 ########################################
 
-class BlockMacro(MacroRunner):
+class BlockMacro(MacroProg):
     def __init__(self, program: str, cells: int):
         super().__init__(program)
 
@@ -77,31 +106,8 @@ class BlockMacro(MacroRunner):
             * self.macro_colors
         )
 
-        self.instrs: Dict[Tuple[State, Color], Optional[Instr]] = {}
-
-        self.tape_colors: Dict[Color, Tuple[Color, ...]] = {}
-
-        self._state: Optional[State] = None
-
     def __str__(self) -> str:
         return f'{self.program} ({self.cells}-cell macro)'
-
-    def __getitem__(self, stco: Union[State, Color]) -> Optional[Instr]:
-        if self._state is None:
-            self._state = stco
-            return self  # type: ignore
-
-        state, color = self._state, stco
-        self._state = None
-
-        try:
-            instr = self.instrs[(state, color)]
-        except KeyError:
-            instr = self.calculate_instr(state, color)
-
-            self.instrs[(state, color)] = instr
-
-        return instr
 
     def calculate_instr(
             self,
