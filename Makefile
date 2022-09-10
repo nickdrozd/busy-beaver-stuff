@@ -33,23 +33,19 @@ GRAPH = test.test_graph
 QTREE = test.test_generate.TestTree.test_22
 LR = test.test_generate.TestLinRado.test_22h
 
+TEST = $(PROG) $(GRAPH) $(QTREE) $(LR) $(TUR)
+
 test :
-	$(PYTEST) -v $(PROG) $(GRAPH) $(QTREE) $(LR) $(TUR)
+	$(PYTEST) -v $(TEST)
 
 test-all :
 	$(PYTEST) discover -v
 
 coverage :
-	$(COVERAGE) -v $(PROG) $(GRAPH) $(QTREE) $(LR) $(TUR)
+	$(COVERAGE) -v $(TEST)
 
 	coverage combine --quiet
 	coverage html
-
-run :
-	$(PYPATH) python3 run.py
-
-profile :
-	python3 -m cProfile run.py
 
 ## Program files (non-phony) ###########
 
