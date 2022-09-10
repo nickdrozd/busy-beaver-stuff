@@ -12,7 +12,6 @@ class ValidationError(Exception):
     pass
 
 NONHALT = (
-    'fixdtp',
     'linrec',
     'qsihlt',
     'spnout',
@@ -22,6 +21,7 @@ NONHALT = (
 
 REASONS = NONHALT + (
     'blanks',
+    'fixdtp',
     'halted',
 )
 
@@ -52,10 +52,6 @@ class MachineResult:
 
             qstep, _ = self.qsihlt
             assert qstep == spnout
-
-        if self.fixdtp and self.linrec is None:
-            raise ValidationError(
-                f'{self.prog} || {self}')
 
 
 class Machine:
@@ -236,6 +232,7 @@ class Machine:
     def finalize(self, step, cycle, state) -> bool:
         if state == -1:
             self.final.halted = step
+            self.final.fixdtp = True
 
         if self.tape.blank:
             self.final.blanks = step

@@ -1384,6 +1384,9 @@ class TuringTest(TestCase):
                 self.assert_could_blank
             )(prog)
 
+            (self.assertTrue if fixed else self.assertFalse)(
+                self.final.fixdtp)
+
             if '_' in prog:
                 self.assert_could_halt(prog)
                 self.assert_cant_spin_out(prog)
@@ -1391,9 +1394,6 @@ class TuringTest(TestCase):
             else:
                 self.assert_could_spin_out(prog)
                 self.assert_cant_halt(prog)
-
-                (self.assertTrue if fixed else self.assertFalse)(
-                    self.final.fixdtp)
 
                 self.assertTrue(
                     (graph := Graph(prog)).is_zero_reflexive
