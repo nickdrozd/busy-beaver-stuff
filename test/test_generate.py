@@ -10,6 +10,7 @@ from generate import Graph
 from generate.tree  import run_tree_gen
 from generate.naive import yield_programs
 
+
 class TestNaive(TestCase):
     def yield_programs(self, states, colors, halt):
         self.progs = tuple(
@@ -23,21 +24,34 @@ class TestNaive(TestCase):
             len(self.progs),
             count)
 
-    def test_naive(self):
-        expected = {
-            (2, 2, 1): 64,
-            (2, 2, 0): 256,
-
-            (2, 3, 1): 33280,
-            (2, 3, 0): 108032,
-
-            (3, 2, 1): 57024,
-            (3, 2, 0): 186624,
-        }
-
-        for (states, colors, halt), count in expected.items():
+    def assert_expected(self, states, colors):
+        for halt, count in NAIVE_EXPECTED[(states, colors)].items():
             self.yield_programs(states, colors, halt)
             self.assert_count(count)
+
+    def test_22(self):
+        self.assert_expected(2, 2)
+
+    def test_32(self):
+        self.assert_expected(3, 2)
+
+    def test_23(self):
+        self.assert_expected(2, 3)
+
+NAIVE_EXPECTED = {
+    (2, 2): {
+        1: 64,
+        0: 256,
+    },
+    (2, 3): {
+        1: 33280,
+        0: 108032,
+    },
+    (3, 2): {
+        1: 57024,
+        0: 186624,
+    },
+}
 
 
 class TestLinRado(TestCase):

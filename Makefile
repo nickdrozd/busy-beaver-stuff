@@ -32,8 +32,9 @@ PROG = test.test_program
 GRAPH = test.test_graph
 QTREE = test.test_generate.TestTree.test_22
 LR = test.test_generate.TestLinRado.test_22h
+NV = test.test_generate.TestNaive.test_22
 
-TEST = $(PROG) $(GRAPH) $(QTREE) $(LR) $(TUR)
+TEST = $(PROG) $(GRAPH) $(QTREE) $(LR) $(NV) $(TUR)
 
 test :
 	$(PYTEST) -v $(TEST)
