@@ -1359,7 +1359,7 @@ class TuringTest(TestCase):
         if len(prog) < 70:
             _ = BlockMacro(prog, 2).fully_specified
 
-    def _test_halt(self, prog_data):
+    def _test_simple_terminate(self, prog_data, fixed: bool):
         for prog, (marks, steps) in prog_data.items():
             self.run_bb(
                 prog,
@@ -1374,45 +1374,37 @@ class TuringTest(TestCase):
 
             self.assertEqual(
                 steps,
-                self.final.halted)
+                getattr(
+                    self.final,
+                    'halted' if '_' in prog else 'spnout'))
 
-            if not isinstance(prog, str):
-                continue
+            (
+                self.assert_cant_blank
+                if marks != 0 else
+                self.assert_could_blank
+            )(prog)
 
-            self.assert_could_halt(prog)
+            if '_' in prog:
+                self.assert_could_halt(prog)
+                self.assert_cant_spin_out(prog)
 
-            if marks != 0:
-                self.assert_cant_blank(prog)
             else:
-                self.assert_could_blank(prog)
+                self.assert_could_spin_out(prog)
+                self.assert_cant_halt(prog)
+
+                (self.assertTrue if fixed else self.assertFalse)(
+                    self.final.fixdtp)
+
+                self.assertTrue(
+                    (graph := Graph(prog)).is_zero_reflexive
+                    and not graph.is_irreflexive
+                )
+
+    def _test_halt(self, prog_data):
+        self._test_simple_terminate(prog_data, fixed = True)
 
     def _test_spinout(self, prog_data, fixed: bool):
-        for prog, (marks, steps) in prog_data.items():
-            self.run_bb(prog, check_blanks = marks != 0)
-
-            self.assert_marks(marks)
-            self.assert_steps(steps)
-
-            self.assertEqual(
-                steps,
-                self.final.spnout)
-
-            (self.assertTrue if fixed else self.assertFalse)(
-                self.final.fixdtp)
-
-            self.assert_could_spin_out(prog)
-
-            self.assert_cant_halt(prog)
-
-            if marks != 0:
-                self.assert_cant_blank(prog)
-            else:
-                self.assert_could_blank(prog)
-
-            self.assertTrue(
-                (graph := Graph(prog)).is_zero_reflexive
-                and not graph.is_irreflexive
-            )
+        self._test_simple_terminate(prog_data, fixed = fixed)
 
     def _test_recur(
             self, prog_data, quick,
@@ -1488,7 +1480,6 @@ class TuringTest(TestCase):
                             rel_tol = .001,
                         )
                     )
-
 
     def _test_extensions(self, prog_data):
         for prog, (status, data) in prog_data.items():
