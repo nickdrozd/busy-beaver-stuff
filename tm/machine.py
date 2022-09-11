@@ -8,8 +8,6 @@ from tm.tape import BlockTape
 from tm.parse import tcompile
 from tm.recurrence import History
 
-class ValidationError(Exception):
-    pass
 
 NONHALT = (
     'linrec',
@@ -42,9 +40,7 @@ class MachineResult:
     def validate_results(self):
         if self.halted is not None:
             for cat in NONHALT:
-                if getattr(self, cat) is not None:  # no-coverage
-                    raise ValidationError(
-                        f'{self.prog} || {cat} | {self}')
+                assert getattr(self, cat) is None
 
         if (spnout := self.spnout) is not None:
             lstep, _ = self.linrec
