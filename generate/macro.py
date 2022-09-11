@@ -92,7 +92,10 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
-    def __init__(self, program: str, cells: int):
+    def __init__(self, program, cells: int, wraps: int = 0):
+        for _ in range(wraps - 1):
+            program = BlockMacro(program, cells)
+
         super().__init__(program)
 
         self.macro_states: int = self.base_states * 2

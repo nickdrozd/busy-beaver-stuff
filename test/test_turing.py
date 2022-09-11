@@ -1462,10 +1462,7 @@ class TuringTest(TestCase):
                     if (cells, wraps) in exceptions:
                         continue
 
-                    macro = prog
-
-                    for _ in range(wraps):
-                        macro = BlockMacro(macro, cells)
+                    macro = BlockMacro(prog, cells, wraps)
 
                     print(macro)
 
