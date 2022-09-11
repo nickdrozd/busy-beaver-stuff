@@ -24,9 +24,6 @@ lint :
 	mypy --version
 	mypy tm generate test
 
-PYTEST = python3 -m unittest
-COVERAGE = coverage run -m unittest
-
 TUR = test.test_turing.Fast
 PROG = test.test_program
 GRAPH = test.test_graph
@@ -34,19 +31,23 @@ QTREE = test.test_generate.TestTree.test_22
 LR = test.test_generate.TestLinRado.test_22
 NV = test.test_generate.TestNaive.test_22
 
-TEST = $(PROG) $(GRAPH) $(QTREE) $(LR) $(NV) $(TUR)
+MODULES = $(PROG) $(GRAPH) $(QTREE) $(LR) $(NV) $(TUR)
+
+PYTEST = python3 -m unittest
 
 test :
-	$(PYTEST) -v $(TEST)
+	$(PYTEST) -v $(MODULES)
 
 test-all :
 	$(PYTEST) discover -v
 
-coverage :
-	$(COVERAGE) -v $(TEST)
+COVERAGE = coverage
 
-	coverage combine --quiet
-	coverage html
+coverage :
+	$(COVERAGE) run -m unittest -v $(MODULES)
+
+	$(COVERAGE) combine --quiet
+	$(COVERAGE) html
 
 ## Program files (non-phony) ###########
 
