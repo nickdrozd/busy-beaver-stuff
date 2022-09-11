@@ -35,13 +35,13 @@ def yield_all_programs(state_count, color_count, halt = False):
             repeat = state_count))
 
     for prog in progs:
+        if max(colors) not in prog:
+            continue
+
         if prog[:3] != '1RB':
             continue
 
         if halt and prog.count(HALT) != 1:
-            continue
-
-        if max(colors) not in prog:
             continue
 
         yield prog

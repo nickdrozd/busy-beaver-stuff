@@ -103,6 +103,7 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             2, 2, 0,
             13,
+            rejects = [],
         )
 
         self.assert_progs_equal(
