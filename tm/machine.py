@@ -109,12 +109,6 @@ class Machine:
 
         for cycle in range(sim_lim):
 
-            # Output ###############################
-
-            if watch_tape:
-                print(f'{step : 5d} {chr(state + 65)}{tape.scan} ',
-                      tape)
-
             # Bookkeeping ##########################
 
             if self.history is not None:
@@ -125,9 +119,14 @@ class Machine:
                        and step in self.history.tapes)):
                     self.history.add_tape_at_step(step, tape)
 
-            # Halt conditions ######################
+            action: Tuple[int, int] = state, (scan := tape.scan)
 
-            action: Tuple[int, int] = state, tape.scan
+            # Output ###############################
+
+            if watch_tape:
+                print(f'{step : 5d} {chr(state + 65)}{scan} ', tape)
+
+            # Halt conditions ######################
 
             if step_lim is not None and step >= step_lim:
                 self.final.xlimit = step
@@ -142,9 +141,9 @@ class Machine:
             # Machine operation ####################
 
             try:
-                color, shift, next_state = prog[state][tape.scan]
+                color, shift, next_state = prog[state][scan]
             except TypeError:
-                instr = chr(state + 65) + str(tape.scan)
+                instr = chr(state + 65) + str(scan)
                 self.final.undfnd = step, instr
                 break
 
@@ -159,13 +158,13 @@ class Machine:
             else:
                 self.history.add_change_at_step(
                     step,
-                    color != tape.scan)
+                    color != scan)
 
             change = (
                 True
-                if tape.scan == 0 and color != 0 else
+                if scan == 0 and color != 0 else
                 False
-                if tape.scan != 0 and color == 0 else
+                if scan != 0 and color == 0 else
                 None
             )
 
@@ -202,7 +201,7 @@ class Machine:
         show = self.finalize(step, cycle, state)
 
         if watch_tape and show:
-            print(f'{step : 5d} {chr(state + 65)}{tape.scan} ', tape)
+            print(f'{step : 5d} {chr(state + 65)}{scan} ', tape)
 
         return self
 
