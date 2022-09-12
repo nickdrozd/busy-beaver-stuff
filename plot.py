@@ -18,11 +18,9 @@ if __name__ == '__main__':
 
         for wraps in range(1, WRAPS + 1):
             for cells in range(1, CELLS + 1):
-                macro = BlockMacro(program, [cells] * wraps)
-
-                macro_data[wraps][cells] = getattr(
-                    Machine(macro).run().final,
-                    'halted' if '_' in program else 'spnout')
+                macro_data[wraps][cells] = Machine(
+                    BlockMacro(program, [cells] * wraps)
+                ).run().final.simple_termination
 
         fig, ax = plt.subplots()
 

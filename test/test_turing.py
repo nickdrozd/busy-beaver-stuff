@@ -1374,9 +1374,7 @@ class TuringTest(TestCase):
 
             self.assertEqual(
                 steps,
-                getattr(
-                    self.final,
-                    'halted' if '_' in prog else 'spnout'))
+                self.final.simple_termination)
 
             (
                 self.assert_cant_blank
@@ -1466,13 +1464,11 @@ class TuringTest(TestCase):
 
                     print(macro)
 
-                    result = getattr(
-                        Machine(macro).run().final,
-                        'halted' if '_' in prog else 'spnout')
-
                     self.assertTrue(
                         isclose(
-                            result,
+                            Machine(
+                                macro
+                            ).run().final.simple_termination,
                             steps / (cells ** wraps),
                             rel_tol = .001,
                         )

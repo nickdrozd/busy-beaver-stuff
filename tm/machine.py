@@ -51,6 +51,14 @@ class MachineResult:
             qstep, _ = self.qsihlt
             assert qstep == spnout
 
+    @property
+    def simple_termination(self):
+        if self.halted is None:
+            assert self.spnout is not None
+            return self.spnout
+
+        return self.halted
+
 
 class Machine:
     def __init__(self, prog):
