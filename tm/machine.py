@@ -225,6 +225,8 @@ class Machine:
         return result
 
     def finalize(self, step, cycle, state) -> bool:
+        assert cycle <= step
+
         if state == -1:
             self.final.halted = step
             self.final.fixdtp = True
