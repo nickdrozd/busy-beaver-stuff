@@ -1173,12 +1173,10 @@ class TuringTest(TestCase):
             Graph(prog).is_normal,
             prog)
 
-        if prog.startswith('0'):
-            return
-
-        self.assertEqual(
-            prog,
-            Program(prog).normalize())
+        self.assertTrue(
+            prog == Program(prog).normalize()
+            or prog.startswith('0')
+        )
 
     def assert_comp(self, prog):
         self.assertEqual(
@@ -1186,26 +1184,20 @@ class TuringTest(TestCase):
             dcompile(tcompile(prog)))
 
     def assert_connected(self, prog):
-        if prog in MODULAR:
-            return
-
-        if 'A' not in prog or '...' in prog:
-            return
-
         self.assertTrue(
-            Graph(prog).is_strongly_connected,
-            prog)
+            Graph(prog).is_strongly_connected
+            or prog in MODULAR
+            or 'A' not in prog
+            or '...' in prog
+        )
 
     def assert_simple(self, prog):
-        if prog in SPAGHETTI or prog in KERNEL:
-            return
-
-        if len(prog) > 70:
-            return
-
         self.assertTrue(
-            Graph(prog).is_simple,
-            prog)
+            Graph(prog).is_simple
+            or prog in SPAGHETTI
+            or prog in KERNEL
+            or len(prog) > 70
+        )
 
     def assert_reached(self, prog):
         def dimension(prog):
