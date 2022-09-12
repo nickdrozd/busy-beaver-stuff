@@ -1219,6 +1219,11 @@ class TuringTest(TestCase):
             self.machine.steps,
             steps)
 
+    def assert_fixed_tape(self, fixed):
+        self.assertEqual(
+            self.final.fixdtp,
+            fixed)
+
     def assert_could_halt(self, prog):
         self.assertFalse(
             Program(prog).cant_halt,
@@ -1378,8 +1383,7 @@ class TuringTest(TestCase):
                 self.assert_could_blank
             )(prog)
 
-            (self.assertTrue if fixed else self.assertFalse)(
-                self.final.fixdtp)
+            self.assert_fixed_tape(fixed)
 
             if '_' in prog:
                 self.assert_could_halt(prog)
@@ -1443,9 +1447,7 @@ class TuringTest(TestCase):
                 self.final.qsihlt,
                 self.final.linrec if qsihlt else None)
 
-            self.assertEqual(
-                fixdtp,
-                self.final.fixdtp)
+            self.assert_fixed_tape(fixdtp)
 
     def _test_macro(self, prog_data, quick: bool):
         low = 1 if quick else 2
