@@ -42,6 +42,8 @@ class MachineResult:
             for cat in NONHALT:
                 assert getattr(self, cat) is None
 
+            assert self.fixdtp is not None
+
         if (spnout := self.spnout) is not None:
             lstep, _ = self.linrec
             assert lstep == spnout
