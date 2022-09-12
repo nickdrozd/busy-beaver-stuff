@@ -92,9 +92,11 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
-    def __init__(self, program, cells: int, wraps: int = 0):
-        for _ in range(wraps - 1):
-            program = BlockMacro(program, cells)
+    def __init__(self, program, cell_seq: List[int]):
+        *seq, cells = cell_seq
+
+        if seq:
+            program = BlockMacro(program, seq)
 
         super().__init__(program)
 

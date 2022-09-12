@@ -18,10 +18,7 @@ if __name__ == '__main__':
 
         for wraps in range(1, WRAPS + 1):
             for cells in range(1, CELLS + 1):
-                macro = program
-
-                for _ in range(wraps):
-                    macro = BlockMacro(macro, cells)
+                macro = BlockMacro(program, [cells] * wraps)
 
                 macro_data[wraps][cells] = getattr(
                     Machine(macro).run().final,

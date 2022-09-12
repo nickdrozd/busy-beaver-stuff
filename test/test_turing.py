@@ -1357,7 +1357,7 @@ class TuringTest(TestCase):
         self.assert_connected(prog)
 
         if len(prog) < 70:
-            _ = BlockMacro(prog, 2).fully_specified
+            _ = BlockMacro(prog, [2]).fully_specified
 
     def _test_simple_terminate(self, prog_data, fixed: bool):
         for prog, (marks, steps) in prog_data.items():
@@ -1462,7 +1462,7 @@ class TuringTest(TestCase):
                     if (cells, wraps) in exceptions:
                         continue
 
-                    macro = BlockMacro(prog, cells, wraps)
+                    macro = BlockMacro(prog, [cells] * wraps)
 
                     print(macro)
 
