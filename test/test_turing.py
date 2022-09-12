@@ -1333,15 +1333,13 @@ class TuringTest(TestCase):
             self.deny_lin_recurrence(steps - 1, recurrence)
 
     def run_bb(
-            self, prog,
+            self,
+            prog,
             print_prog = True,
+            analyze = True,
             normal = True,
-            **opts):
-        if normal:
-            self.assert_normal(prog)
-
-        self.assert_comp(prog)
-
+            **opts,
+    ):
         if print_prog:
             print(prog)
 
@@ -1351,8 +1349,14 @@ class TuringTest(TestCase):
         self.final  = self.machine.final
         self.tape = self.machine.tape
 
-        self.assert_reached(prog)
+        if not analyze:
+            return
 
+        if normal:
+            self.assert_normal(prog)
+
+        self.assert_comp(prog)
+        self.assert_reached(prog)
         self.assert_simple(prog)
         self.assert_connected(prog)
 
@@ -1460,15 +1464,14 @@ class TuringTest(TestCase):
                     if (cells, wraps) in exceptions:
                         continue
 
-                    macro = BlockMacro(prog, [cells] * wraps)
-
-                    print(macro)
+                    self.run_bb(
+                        BlockMacro(prog, [cells] * wraps),
+                        analyze = False,
+                    )
 
                     self.assertTrue(
                         isclose(
-                            Machine(
-                                macro
-                            ).run().final.simple_termination,
+                            self.final.simple_termination,
                             steps / (cells ** wraps),
                             rel_tol = .001,
                         )
