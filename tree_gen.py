@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from generate import Program
+from analyze import Program
 from generate.tree import run_tree_gen
 from tm import Machine
 

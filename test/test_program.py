@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from generate import Program
+from analyze import Program
 
 PROGS = {
     "1RB ...  1LB 0RC  1LC 1LA": (

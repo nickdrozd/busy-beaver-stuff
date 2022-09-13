@@ -1,7 +1,7 @@
 import sys
 from multiprocessing import Pool
 
-from generate import Program
+from analyze import Program
 
 def worker(prog):
     if (program := Program(prog)).cant_spin_out:

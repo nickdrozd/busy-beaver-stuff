@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from generate import Graph
+from analyze import Graph
 
 A, B, C, D, E = "A", "B", "C", "D", "E"
 

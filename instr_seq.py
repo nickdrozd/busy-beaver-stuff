@@ -1,6 +1,6 @@
 import sys
 
-from generate import Program
+from analyze import Program
 
 def format_sequence(prog):
     print(f'    "{prog}": {{')

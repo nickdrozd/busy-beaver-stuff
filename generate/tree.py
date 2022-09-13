@@ -7,7 +7,7 @@ from multiprocessing import (
 from typing import Callable, List
 
 from tm import Machine
-from generate import Program
+from analyze import Program
 
 
 def stacker(steps: int, halt: bool, run_pile, stack: List[str]):

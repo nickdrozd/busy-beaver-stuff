@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from tm import Machine
 from tm.parse import tcompile, dcompile
-from generate import Graph, Program, BlockMacro
+from analyze import Graph, Program, BlockMacro
 
 HALT_FAST = {
     # 2/2 BB

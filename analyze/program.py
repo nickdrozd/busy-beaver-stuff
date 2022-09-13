@@ -8,7 +8,7 @@ from typing import Dict, Iterator, List, Optional, Set, Tuple
 from tm import parse, BlockTape, Machine
 from tm.parse import tcompile
 from tm.recurrence import History
-from generate.graph import Graph
+from analyze.graph import Graph
 
 INIT = 'A'
 BLANK = '0'

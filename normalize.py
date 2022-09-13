@@ -1,6 +1,6 @@
 import sys
 
-from generate import Program
+from analyze import Program
 
 if __name__ == '__main__':
     for prog in sys.stdin:

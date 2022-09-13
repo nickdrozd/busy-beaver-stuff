@@ -6,7 +6,7 @@ from multiprocessing import Queue
 from unittest import TestCase
 
 from tm import Machine
-from generate import Graph
+from analyze import Graph
 from generate.tree  import run_tree_gen
 from generate.naive import yield_programs
 

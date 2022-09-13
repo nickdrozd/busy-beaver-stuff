@@ -3,7 +3,7 @@ import shlex
 import tempfile
 import subprocess
 
-from generate import Graph
+from analyze import Graph
 
 
 if __name__ == '__main__':

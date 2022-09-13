@@ -5,7 +5,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 from tm import Machine
-from generate.macro import BlockMacro
+from analyze import BlockMacro
 
 WRAPS = 5
 CELLS = 20
