@@ -5,14 +5,14 @@ def make_shift(shift):
     return 'RIGHT' if shift == 'R' else 'LEFT'
 
 
-def make_branch(state, color, pr, sh, tr, indent):
+def make_branch(st, co, pr, sh, tr, indent):
     lines = [
-        f'// {state}{color}',
+        f'// {st}{co}',
         f'{make_shift(sh)};',
         f'goto {tr};',
     ]
 
-    if color != (spr := int(pr)):
+    if co != (spr := int(pr)):
         lines.insert(
             1,
             'PRINT;' if spr == 1 else 'ERASE;')
@@ -20,12 +20,12 @@ def make_branch(state, color, pr, sh, tr, indent):
     return ('\n' + (' ' * indent)).join(lines)
 
 
-def make_if_else(state, instrs):
+def make_if_else(st, instrs):
     (pr0, sh0, tr0), (pr1, sh1, tr1) = instrs
 
     return IF_TEMPLATE.format(
-        make_branch(state, 0, pr0, sh0, tr0, 6),
-        make_branch(state, 1, pr1, sh1, tr1, 6),
+        make_branch(st, 0, pr0, sh0, tr0, 6),
+        make_branch(st, 1, pr1, sh1, tr1, 6),
     )
 
 
@@ -59,12 +59,12 @@ SWITCH_TEMPLATE = \
 '''
 
 
-def make_case(state, color, instr):
+def make_case(st, co, instr):
     pr, sh, tr = instr
 
     return CASE_TEMPLATE.format(
-        color,
-        f'// {state}{color}',
+        co,
+        f'// {st}{co}',
         pr,
         make_shift(sh),
         tr,
