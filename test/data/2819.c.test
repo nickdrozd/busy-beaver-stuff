@@ -17,7 +17,6 @@ int main(void)
   else
     {
       // A1
-      
       RIGHT;
       goto C;
     }
@@ -33,7 +32,6 @@ int main(void)
   else
     {
       // B1
-      
       RIGHT;
       goto D;
     }
@@ -49,7 +47,6 @@ int main(void)
   else
     {
       // C1
-      
       LEFT;
       goto D;
     }
@@ -58,7 +55,6 @@ int main(void)
   if (BLANK)
     {
       // D0
-      
       RIGHT;
       goto D;
     }

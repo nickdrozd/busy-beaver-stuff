@@ -1,3 +1,5 @@
+# pylint: disable = invalid-name
+
 from tm import parse
 
 
@@ -5,19 +7,27 @@ def make_shift(shift):
     return 'RIGHT' if shift == 'R' else 'LEFT'
 
 
+def make_branch(state, color, pr, sh, tr, indent):
+    lines = [
+        f'// {state}{color}',
+        f'{make_shift(sh)};',
+        f'goto {tr};',
+    ]
+
+    if color != (spr := int(pr)):
+        lines.insert(
+            1,
+            'PRINT;' if spr == 1 else 'ERASE;')
+
+    return ('\n' + (' ' * indent)).join(lines)
+
+
 def make_if_else(state, instrs):
     (pr0, sh0, tr0), (pr1, sh1, tr1) = instrs
 
     return IF_TEMPLATE.format(
-        f'// {state}0',
-        'PRINT;' if pr0 == '1' else '',
-        make_shift(sh0),
-        tr0,
-
-        f'// {state}1',
-        'ERASE;' if pr1 == '0' else '',
-        make_shift(sh1),
-        tr1,
+        make_branch(state, 0, pr0, sh0, tr0, 6),
+        make_branch(state, 1, pr1, sh1, tr1, 6),
     )
 
 
@@ -26,16 +36,10 @@ IF_TEMPLATE = \
   if (BLANK)
     {{
       {}
-      {}
-      {};
-      goto {};
     }}
   else
     {{
       {}
-      {}
-      {};
-      goto {};
     }}
 '''
 
