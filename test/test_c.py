@@ -21,4 +21,5 @@ class TestC(TestCase):
             with open(f'test/data/{name}.c.test') as test:
                 self.assertEqual(
                     test.read(),
-                    make_c(prog))
+                    make_c(prog) + '\n',
+                )
