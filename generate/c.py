@@ -1,5 +1,3 @@
-# pylint: disable = invalid-name
-
 from tm import parse
 
 
@@ -62,7 +60,6 @@ SWITCH_TEMPLATE = \
 
 
 def make_case(state, color, instr):
-    # pylint: disable = invalid-name
     pr, sh, tr = instr
 
     return CASE_TEMPLATE.format(

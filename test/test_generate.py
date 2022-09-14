@@ -365,11 +365,11 @@ LR_HOLDOUTS = {
 }
 
 def lr_convert(rado_string):
-    # pylint: disable = invalid-name
     def oct_to_bin(oct_string):
         return f'{oct_string:b}'
 
     def bin_to_prog(bin_string):
+        # pylint: disable = invalid-name
         a0, a1, b0, b1, c0, c1 = map(
             convert_bin_instr,
             (bin_string[i : i + 4]

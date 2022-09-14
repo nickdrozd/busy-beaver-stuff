@@ -41,7 +41,6 @@ def convert_instr(instr: Optional[Instr]) -> str:
     if instr is None:
         return '...'
 
-    # pylint: disable = invalid-name
     pr, sh, tr = instr
 
     return (

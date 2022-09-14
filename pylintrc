@@ -28,6 +28,7 @@ load-plugins=
 
 [FORMAT]
 max-line-length = 72
+good-names = pr, sh, tr, maxDiff
 
 [DESIGN]
 max-args	   = 10
