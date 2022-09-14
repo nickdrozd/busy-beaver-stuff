@@ -5,7 +5,7 @@ def make_shift(shift):
     return 'RIGHT' if shift == 'R' else 'LEFT'
 
 
-def make_binary_branch(state, instrs):
+def make_if_else(state, instrs):
     (pr0, sh0, tr0), (pr1, sh1, tr1) = instrs
 
     return IF_TEMPLATE.format(
@@ -40,7 +40,7 @@ IF_TEMPLATE = \
 '''
 
 
-def make_n_ary_branch(state, instrs):
+def make_n_way_switch(state, instrs):
     return SWITCH_TEMPLATE.format(
         '\n'.join([
             make_case(state, color, instr)
@@ -78,17 +78,17 @@ CASE_TEMPLATE = \
       goto {};'''
 
 
-def make_branch(state, instrs):
+def make_switch(state, instrs):
     return (
-        make_binary_branch
+        make_if_else
         if len(instrs) == 2 else
-        make_n_ary_branch
+        make_n_way_switch
     )(state, instrs)
 
 
 def make_labels(prog):
     return '\n'.join([
-        f' {chr(i + 65)}:' + make_branch(chr(i + 65), instrs)
+        f' {chr(i + 65)}:' + make_switch(chr(i + 65), instrs)
         for i, instrs in
         enumerate(parse(prog))
     ])
