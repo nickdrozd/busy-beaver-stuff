@@ -1,21 +1,41 @@
 from tm import parse
 
 
-def make_shift(shift):
-    return 'RIGHT' if shift == 'R' else 'LEFT'
+def make_comment(st, co):
+    return f'// {st}{co}'
+
+
+def make_shift(sh):
+    return (
+        'RIGHT'
+        if sh == 'R' else
+        'LEFT'
+    ) + ';'
+
+
+def make_trans(tr):
+    return f'goto {tr};'
+
+
+def make_binary_write(pr):
+    return (
+        'PRINT'
+        if pr == 1 else
+        'ERASE'
+    ) + ';'
 
 
 def make_branch(st, co, pr, sh, tr, indent):
     lines = [
-        f'// {st}{co}',
-        f'{make_shift(sh)};',
-        f'goto {tr};',
+        make_comment(st, co),
+        make_shift(sh),
+        make_trans(tr),
     ]
 
-    if co != (spr := int(pr)):
+    if co != (pr := int(pr)):
         lines.insert(
             1,
-            'PRINT;' if spr == 1 else 'ERASE;')
+            make_binary_write(pr))
 
     return ('\n' + (' ' * indent)).join(lines)
 
@@ -58,25 +78,28 @@ SWITCH_TEMPLATE = \
   }}
 '''
 
+def make_n_way_write(pr):
+    return f'WRITE({pr});'
+
 
 def make_case(st, co, instr):
     pr, sh, tr = instr
 
     return CASE_TEMPLATE.format(
         co,
-        f'// {st}{co}',
-        pr,
+        make_comment(st, co),
+        make_n_way_write(pr),
         make_shift(sh),
-        tr,
+        make_trans(tr),
     )
 
 
 CASE_TEMPLATE = \
 '''    case {}:
       {}
-      WRITE({});
-      {};
-      goto {};'''
+      {}
+      {}
+      {}'''
 
 
 def make_switch(state, instrs):
