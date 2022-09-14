@@ -63,14 +63,14 @@ def make_instruction(
 
 
 def make_if_else(st, instrs):
-    (pr0, sh0, tr0), (pr1, sh1, tr1) = instrs
+    (_, _, tr0), (_, _, tr1) = in0, in1 = instrs
 
     if st in (tr0, tr1):
         return make_while(st, instrs)
 
     return IF_TEMPLATE.format(
-        make_instruction(st, 0, pr0, sh0, tr0, 6, True),
-        make_instruction(st, 1, pr1, sh1, tr1, 6, True),
+        make_instruction(st, 0, *in0, 6, True),
+        make_instruction(st, 1, *in1, 6, True),
     )
 
 
@@ -130,11 +130,9 @@ SWITCH_TEMPLATE = \
 
 
 def make_case(st, co, instr):
-    pr, sh, tr = instr
-
     return CASE_TEMPLATE.format(
         co,
-        make_instruction(st, co, pr, sh, tr, 6, False),
+        make_instruction(st, co, *instr, 6, False),
     )
 
 
