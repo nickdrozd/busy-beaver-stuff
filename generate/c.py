@@ -17,7 +17,7 @@ def make_trans(tr):
     return f'goto {tr};'
 
 
-def make_binary_write(pr):
+def make_binary_write(pr: int):
     return (
         'PRINT'
         if pr == 1 else
@@ -25,17 +25,26 @@ def make_binary_write(pr):
     ) + ';'
 
 
-def make_branch(st, co, pr, sh, tr, indent):
+def make_n_way_write(pr):
+    return f'WRITE({pr});'
+
+
+def make_instruction(st, co, pr, sh, tr, indent, binary):
     lines = [
         make_comment(st, co),
         make_shift(sh),
         make_trans(tr),
     ]
 
-    if co != (pr := int(pr)):
+    if co != (ipr := int(pr)):
         lines.insert(
             1,
-            make_binary_write(pr))
+            (
+                make_binary_write
+                if binary else
+                make_n_way_write
+            )(ipr)
+        )
 
     return ('\n' + (' ' * indent)).join(lines)
 
@@ -44,8 +53,8 @@ def make_if_else(st, instrs):
     (pr0, sh0, tr0), (pr1, sh1, tr1) = instrs
 
     return IF_TEMPLATE.format(
-        make_branch(st, 0, pr0, sh0, tr0, 6),
-        make_branch(st, 1, pr1, sh1, tr1, 6),
+        make_instruction(st, 0, pr0, sh0, tr0, 6, True),
+        make_instruction(st, 1, pr1, sh1, tr1, 6, True),
     )
 
 
@@ -78,27 +87,18 @@ SWITCH_TEMPLATE = \
   }}
 '''
 
-def make_n_way_write(pr):
-    return f'WRITE({pr});'
-
 
 def make_case(st, co, instr):
     pr, sh, tr = instr
 
     return CASE_TEMPLATE.format(
         co,
-        make_comment(st, co),
-        make_n_way_write(pr),
-        make_shift(sh),
-        make_trans(tr),
+        make_instruction(st, co, pr, sh, tr, 6, False),
     )
 
 
 CASE_TEMPLATE = \
 '''    case {}:
-      {}
-      {}
-      {}
       {}'''
 
 

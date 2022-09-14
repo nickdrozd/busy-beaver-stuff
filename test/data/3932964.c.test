@@ -39,7 +39,6 @@ int main(void)
       goto B;
     case 1:
       // B1
-      WRITE(1);
       LEFT;
       goto A;
     case 2:
