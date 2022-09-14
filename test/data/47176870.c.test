@@ -22,19 +22,15 @@ int main(void)
     }
 
  B:
-  if (BLANK)
-    {
-      // B0
-      PRINT;
-      RIGHT;
-      goto C;
-    }
-  else
-    {
-      // B1
-      RIGHT;
-      goto B;
-    }
+  while (!BLANK) {
+    // B1
+    RIGHT;
+  }
+
+  // B0
+  PRINT;
+  RIGHT;
+  goto C;
 
  C:
   if (BLANK)
@@ -53,19 +49,15 @@ int main(void)
     }
 
  D:
-  if (BLANK)
-    {
-      // D0
-      PRINT;
-      LEFT;
-      goto A;
-    }
-  else
-    {
-      // D1
-      LEFT;
-      goto D;
-    }
+  while (!BLANK) {
+    // D1
+    LEFT;
+  }
+
+  // D0
+  PRINT;
+  LEFT;
+  goto A;
 
  E:
   if (BLANK)

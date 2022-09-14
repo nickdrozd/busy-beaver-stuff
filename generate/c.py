@@ -1,3 +1,5 @@
+from typing import Optional
+
 from tm import parse
 
 
@@ -29,11 +31,18 @@ def make_n_way_write(pr):
     return f'WRITE({pr});'
 
 
-def make_instruction(st, co, pr, sh, tr, indent, binary):
+def make_instruction(
+        st: str,
+        co: int,
+        pr: str,
+        sh: str,
+        tr: Optional[str],
+        indent: int,
+        binary: bool,
+):
     lines = [
         make_comment(st, co),
         make_shift(sh),
-        make_trans(tr),
     ]
 
     if co != (ipr := int(pr)):
@@ -46,11 +55,18 @@ def make_instruction(st, co, pr, sh, tr, indent, binary):
             )(ipr)
         )
 
+    if tr is not None:
+        lines.append(
+            make_trans(tr))
+
     return ('\n' + (' ' * indent)).join(lines)
 
 
 def make_if_else(st, instrs):
     (pr0, sh0, tr0), (pr1, sh1, tr1) = instrs
+
+    if st in (tr0, tr1):
+        return make_while(st, instrs)
 
     return IF_TEMPLATE.format(
         make_instruction(st, 0, pr0, sh0, tr0, 6, True),
@@ -68,6 +84,31 @@ IF_TEMPLATE = \
     {{
       {}
     }}
+'''
+
+
+def make_while(st, instrs):
+    (pr0, sh0, tr0), (pr1, sh1, _) = in0, in1 = instrs
+
+    if tr0 == st:
+        test = 'BLANK'
+        loop = make_instruction(st, 0, pr0, sh0, None, 4, True)
+        rest = make_instruction(st, 1, *in1, 2, True)
+    else:
+        test = '!BLANK'
+        loop = make_instruction(st, 1, pr1, sh1, None, 4, True)
+        rest = make_instruction(st, 0, *in0, 2, True)
+
+    return WHILE_TEMPLATE.format(test, loop, rest)
+
+
+WHILE_TEMPLATE = \
+'''
+  while ({}) {{
+    {}
+  }}
+
+  {}
 '''
 
 
