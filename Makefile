@@ -27,11 +27,12 @@ lint :
 TUR = test.test_turing.Fast
 PROG = test.test_program
 GRAPH = test.test_graph
+CG = test.test_c
 QTREE = test.test_generate.TestTree.test_22
 LR = test.test_generate.TestLinRado.test_22
 NV = test.test_generate.TestNaive.test_22
 
-MODULES = $(PROG) $(GRAPH) $(QTREE) $(LR) $(NV) $(TUR)
+MODULES = $(PROG) $(GRAPH) $(CG) $(QTREE) $(LR) $(NV) $(TUR)
 
 PYTEST = python3 -m unittest
 
