@@ -12,6 +12,8 @@ TEST_FILES = {
 
 class TestC(TestCase):
     def test_c(self):
+        self.maxDiff = None
+
         for prog, name in TEST_FILES.items():
             print(prog)
 
