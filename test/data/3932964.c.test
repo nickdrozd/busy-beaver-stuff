@@ -51,7 +51,7 @@ int main(void)
       // B3
       WRITE(1);
       RIGHT;
-      goto _;
+      goto H;
   }
 
  H:

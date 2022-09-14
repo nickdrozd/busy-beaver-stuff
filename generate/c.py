@@ -97,7 +97,8 @@ def make_labels(prog):
 def make_c(prog):
     return PROG_TEMPLATE.format(
         prog,
-        make_labels(prog))
+        make_labels(
+            prog.replace('_', 'H')))
 
 
 PROG_TEMPLATE = \
