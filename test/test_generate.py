@@ -82,7 +82,6 @@ class TestLinRado(TestCase):
                 rejects)
             if
             Machine(prog).run (
-                prog,
                 sim_lim = xlimit,
                 check_rec = 0,
                 check_blanks = False,

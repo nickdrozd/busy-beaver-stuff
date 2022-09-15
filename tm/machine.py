@@ -89,7 +89,6 @@ class Machine:
         return self.tape.marks
 
     def run(self,
-            tape = None,
             skip = True,
             step_lim = None,
             state: int = 0,
@@ -98,13 +97,14 @@ class Machine:
             check_rec: Optional[int] = None,
             check_blanks: bool = False,
             samples: Optional[Dict[int, Any]] = None,
+            tape: Optional[BlockTape] = None,
     ) -> Machine:
         prog = self._comp
 
         self.tape = tape = (
             tape
-            if isinstance(tape, BlockTape) else
-            BlockTape([], 0, [], extend_to = tape)
+            if tape is not None else
+            BlockTape([], 0, [])
         )
 
         if samples is not None or check_rec is not None:

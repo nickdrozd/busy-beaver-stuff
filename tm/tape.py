@@ -26,23 +26,18 @@ class BlockTape:
         self.extend_to = extend_to
 
     def __repr__(self) -> str:
-        diff, listified = self.listify(self.extend_to)
-
-        init = self.init + diff
-
-        squares = [
-            '_' if square == 0 else str(square)
-            for square in listified
-        ]
-
-        return ''.join([
-            (f'[{square}]' if i != init else f'[<{square}>]')
-            if i == self.head + init else
-            (square if i != init else f'<{square}>')
-            for i, square in enumerate(squares)
+        return ' '.join([
+            f'{color}^{count}'
+            for color, count in self.lspan
+        ] + [
+            f'[{self.scan}]'
+        ] + [
+            f'{color}^{count}'
+            for color, count in reversed(self.rspan)
         ])
 
-    def listify(self, ext: Optional[int]) -> Tuple[int, List[int]]:
+    @property
+    def listify(self) -> Tuple[int, List[int]]:
         lspan, rspan = [], []
 
         for color, count in self.lspan:
@@ -51,16 +46,7 @@ class BlockTape:
         for color, count in self.rspan:
             rspan += [color] * count
 
-        if ext is None:
-            ldiff = 0
-        else:
-            ldiff = (ext // 2) - len(lspan) + self.head
-            lspan = [0] * ldiff + lspan
-
-            rdiff = (ext // 2) - len(rspan) - self.head
-            rspan = [0] * rdiff + rspan
-
-        return ldiff, lspan + [self.scan] + list(reversed(rspan))
+        return 0, lspan + [self.scan] + list(reversed(rspan))
 
     def copy(self) -> BlockTape:
         return BlockTape(
@@ -73,7 +59,7 @@ class BlockTape:
         )
 
     def to_ptr(self) -> PtrTape:
-        ldiff, listified = self.listify(None)
+        ldiff, listified = self.listify
 
         return PtrTape(
             listified,

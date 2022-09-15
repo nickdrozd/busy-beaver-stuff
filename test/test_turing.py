@@ -1614,7 +1614,6 @@ class Fast(TuringTest):
     def test_tape(self):
         self.run_bb(
             "1RB 2LA 1R_  1LB 1LA 0RA",
-            tape = 50,
             watch_tape = True)
 
         self.assertEqual(
