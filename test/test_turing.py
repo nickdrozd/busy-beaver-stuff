@@ -7,7 +7,7 @@ from tm import Machine
 from tm.parse import tcompile, dcompile
 from analyze import Graph, Program, BlockMacro
 
-HALT_FAST = {
+HALT = {
     # 2/2 BB
     "1RB 1LB  1LA 1R_": (4, 6),
     "1RB 0LB  1LA 1R_": (3, 6),
@@ -117,7 +117,7 @@ HALT_SLOW = {
     "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
 }
 
-SPINOUT_FAST = {
+SPINOUT = {
     # 2/2
     "1RB 1LB  1LB 1LA": (3, 6),
     "1RB 0LB  1LB 1LA": (2, 6),
@@ -176,7 +176,7 @@ SPINOUT_FAST = {
     ]): (1, 10925753),
 }
 
-SPINOUT_FAST_BLANK = {
+SPINOUT_BLANK = {
     # 2/2
     "1RB ...  1LB 0RB": ({'B'}, 4),
 
@@ -276,7 +276,7 @@ SPINOUT_FAST_BLANK = {
 
 }
 
-SPINOUT_FAST_FIXED = {
+SPINOUT_FIXED = {
     # 2/2
     "1RB 1LB  0LB 1LA": (2, 6),
     "1RB 0LB  0LB 1LA": (1, 6),
@@ -310,7 +310,7 @@ SPINOUT_SLOW = {
     "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340, 2333909),
 }
 
-SPINOUT_SLOW_BLANK = {
+SPINOUT_BLANK_SLOW = {
     # 2/4
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA": ({'B'}, 1367361263049),
 
@@ -327,7 +327,7 @@ SPINOUT_SLOW_BLANK = {
         {'C', 'E', 'F', 'D'}, 65538552),
 }
 
-SPINOUT_SLOW_FIXED = {
+SPINOUT_FIXED_SLOW = {
     # 5/2
    "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA": (4843, 26181502),
 }
@@ -399,7 +399,7 @@ RECUR_BLANK = {
     "1RB 1LB  0RC 1LA  1LA 0RA": (0, 21),
 }
 
-RECUR_FAST = {
+RECUR = {
     # Lin-Rado examples
     "1RB ...  0RC 1LB  1LA 0RB": ( 9, 10),  # total recurrence
     "1RB ...  1LB 0LC  1LA 1RA": (12,  7),  # left barrier
@@ -596,7 +596,7 @@ RECUR_SLOW = {
     "1RB 2LA 0LB 1RA  3LA 2RA 0RA 0LB": ( 49741, 298438),
 }
 
-RECUR_FAST_FIXED = {
+RECUR_FIXED = {
     # 2/2
     "1RB 1LB  1LA 1RA": (5, 2),  # center
 
@@ -1144,7 +1144,7 @@ DONT_SPIN_OUT = {
     "1RB 1LE  0RC 1LD  1RD 0RD  1RE 1RC  0LA 1LB",  # 10^46
 }
 
-MACRO_FAST = {
+MACRO = {
     # 2/4
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
         3932964,
@@ -1520,7 +1520,7 @@ class Fast(TuringTest):
         for prog in DO_HALT | set(HALT_SLOW):
             self.assert_could_halt(prog)
 
-        self._test_halt(HALT_FAST)
+        self._test_halt(HALT)
 
     def test_spinout(self):
         for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
@@ -1530,14 +1530,14 @@ class Fast(TuringTest):
         for prog in DONT_SPIN_OUT:
             self.assert_cant_spin_out(prog)
 
-        self._test_spinout(SPINOUT_FAST)
-        self._test_spinout(SPINOUT_FAST_FIXED, fixed = True)
-        self._test_spinout(SPINOUT_FAST_BLANK, blank = True)
+        self._test_spinout(SPINOUT)
+        self._test_spinout(SPINOUT_FIXED, fixed = True)
+        self._test_spinout(SPINOUT_BLANK, blank = True)
 
     def test_recur(self):
-        self._test_recur(RECUR_FAST)
+        self._test_recur(RECUR)
         self._test_recur(RECUR_BLANK, blank = True)
-        self._test_recur(RECUR_FAST_FIXED, fixdtp = True)
+        self._test_recur(RECUR_FIXED, fixdtp = True)
 
         self._test_recur(QUASIHALT, qsihlt = True)
         self._test_recur(QUASIHALT_FIXED, qsihlt = True, fixdtp = True)
@@ -1567,11 +1567,11 @@ class Fast(TuringTest):
         for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
             self.assertNotIn(
                 prog,
-                (set(SPINOUT_FAST)
+                (set(SPINOUT)
                  | set(SPINOUT_SLOW)
-                 | set(SPINOUT_FAST_FIXED)
-                 | set(SPINOUT_FAST_BLANK)
-                 | set(SPINOUT_SLOW_BLANK)))
+                 | set(SPINOUT_FIXED)
+                 | set(SPINOUT_BLANK)
+                 | set(SPINOUT_BLANK_SLOW)))
             self.assert_could_spin_out(prog)
 
     def test_bb4_extensions(self):
@@ -1585,7 +1585,7 @@ class Fast(TuringTest):
             self.assert_could_spin_out(prog)
 
     def test_macro(self):
-        self._test_macro(MACRO_FAST, quick = True)
+        self._test_macro(MACRO, quick = True)
 
     def test_undefined(self):
         for prog, sequence in UNDEFINED.items():
@@ -1666,8 +1666,8 @@ class Slow(TuringTest):  # no-coverage
 
     def test_spinout(self):
         self._test_spinout(SPINOUT_SLOW)
-        self._test_spinout(SPINOUT_SLOW_BLANK, blank = True)
-        self._test_spinout(SPINOUT_SLOW_FIXED, fixed = True)
+        self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
+        self._test_spinout(SPINOUT_FIXED_SLOW, fixed = True)
 
     def test_recur(self):
         self._test_recur(RECUR_SLOW, quick = False)
