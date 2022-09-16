@@ -209,11 +209,13 @@ class Machine:
             # Halt conditions ######################
 
             if marks == 0:
-                st = st_str(state)
+                if check_rec is None and samples is None:
+                    if state in self.final.blanks:
+                        break
 
-                self.final.blanks[st] = step
+                self.final.blanks[state] = step
 
-                if st == 'A':
+                if state == 0:
                     break
 
             if state == -1:
@@ -249,16 +251,29 @@ class Machine:
     def finalize(self, step, cycle, state) -> bool:
         assert cycle <= step
 
-        show = bool(self.final.halted)
+        show = (
+            bool(self.final.halted)
+            or bool(self.final.blanks)
+        )
 
         if state == -1:
             self.final.halted = step
             self.final.fixdtp = True
 
-        if 'A' in self.final.blanks:
-            self.final.linrec = 0, step
-            self.final.fixdtp = False
-            show = True
+        if self.tape.blank:
+            if 0 in self.final.blanks:
+                self.final.linrec = 0, step
+                self.final.fixdtp = False
+            elif (blanks := self.final.blanks):
+                if (period := step - blanks[state]):
+                    self.final.linrec = None, period
+                    self.final.fixdtp = False
+                    self.final.xlimit = None
+
+        self.final.blanks = blanks = {
+            st_str(stt): stp
+            for stt, stp in self.final.blanks.items()
+        }
 
         self.steps = step
         self.state = state

@@ -388,20 +388,9 @@ QUASIHALT_FIXED = {
     "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA": ( 6443, 2),  # QH 6362
 }
 
-RECUR_BLANK = {
-    # 2/2
-    "1RB 0RA  1LB 1LA": (0, 8),
-    "1RB 0RA  0LB 1LA": (0, 7),
-    "1RB 1LA  0LA 0LB": (0, 7),
-    "1RB 0LA  1LB 1RA": (0, 5),
-
-    # 3/2
-    "1RB 1LB  0RC 1LA  1LA 0RA": (0, 21),
-}
-
 RECUR = {
     # Lin-Rado examples
-    "1RB ...  0RC 1LB  1LA 0RB": ( 9, 10),  # total recurrence
+    "1RB ...  0RC 1LB  1LA 0RB": ( 9, 10),  # total recurrence (blank)
     "1RB ...  1LB 0LC  1LA 1RA": (12,  7),  # left barrier
     "1RB ...  1LC 1RA  1LA 0LC": (12,  8),  # right barrier
 
@@ -439,7 +428,7 @@ RECUR = {
     "1RB 1LA 1LB  1LA 2RB 0LA": ( 80, 20),
     "1RB 2LA 0RB  1LA 2LA 1RA": ( 78, 14),
     "1RB 2LA 0RB  1LB 2LA 1RA": ( 76, 14),
-    "1RB 2LA 0RB  1LA 0LB 1RA": ( 75,  4),
+    # "1RB 2LA 0RB  1LA 0LB 1RA": ( 75,  4),
     "1RB 2LB 2LA  2LA 0LB 0RA": ( 63, 32),
     "1RB 0RA 2LB  2LA 2RA 0LB": ( 59, 32),
     "1RB 1LB 1LB  1LA 2RB 0LA": ( 58,  8),
@@ -533,6 +522,61 @@ RECUR = {
     "1RB 2LB 0RA 2LB  2LA 3LA 0LB 0RA": ( 2190, 272),
 }
 
+RECUR_BLANK_IN_PERIOD = {
+    # 2/2
+    "1RB 0RA  1LB 1LA": (0, 8),
+    "1RB 0RA  0LB 1LA": (0, 7),
+    "1RB 1LA  0LA 0LB": (0, 7),
+    "1RB 0LA  1LB 1RA": (0, 5),
+    "1RB 0RA  1LA ...": (0, 4),
+    "1RB 1RB  1LA 0LB": (None, 4),
+
+    # 3/2
+    "1RB 1LB  0RC 1LA  1LA 0RA": (0, 21),
+    "1RB ...  0RC 1LB  1LA 0RB": (None, 10),
+    "1RB 0LB  1LA 1LC  0RC 0RB": (None,  7),
+
+    # 2/3
+    "1RB 2RB 0RA  2LA 1LA 1LB": (0, 27),
+    "1RB 1LA 2RB  2LA 2RA 0LB": (None, 16),
+    "1RB 2LA 0RB  1LA 0LB 1RA": (None,  4),
+
+    # 2/4
+    "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA": (0, 224),
+    "1RB 2LA 0RA 1LA  3LA 0LB 1RA 2LA": (None, 52),
+}
+
+RECUR_BLANK_BEFORE_PERIOD = {
+    # 3/2
+    "1RB 0RB  1LC 1RC  0LA 1LA",
+    "1RB 0RB  1LC 0LC  1LA 1RA",
+    "1RB 1LB  1LA 1RC  0RB 0LC",
+    "1RB 1RC  1LC 0LB  1RA 1LA",
+    "1RB 1LB  0LC 0RB  1RA 1LA",
+
+    # 2/3
+    "1RB 0RB ...  2LA ... 0LB",
+
+    # 4/2
+    "1RB 0RB  1LC 0LC  1RA 0LD  1LB 0LB",
+    "1RB 1RA  1LC 0RD  1LB 1LD  1RA 0RB",
+
+    # 5/2
+    "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB",
+    "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE",
+}
+
+RECUR_FIXED = {
+    # 2/2
+    "1RB 1LB  1LA 1RA": (5, 2),  # center
+
+    # 2/3
+    "1RB 2LA 2RB  1LB 1LA 1RA": (39, 2),  # center, >BB
+
+    # 2/4
+    "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB": (1089, 2),
+}
+
 RECUR_SLOW = {
     "1RB 0LC  1LC 0RD  1LA 1LC  1RA 0RA": ( 10796,  1082),
     "1RB 0RA  1LC 1RD  1LD 0LC  0RB 0LA": ( 10346,  3333),
@@ -594,50 +638,6 @@ RECUR_SLOW = {
     "1RB 1LB 0RA 2RB  1LA 2RA 3LB 3LA": (173436, 271169),
     "1RB 2LB 3RA 3RB  1LA 1RA 0LB 2LA": (173435, 271169),
     "1RB 2LA 0LB 1RA  3LA 2RA 0RA 0LB": ( 49741, 298438),
-}
-
-RECUR_FIXED = {
-    # 2/2
-    "1RB 1LB  1LA 1RA": (5, 2),  # center
-
-    # 2/3
-    "1RB 2LA 2RB  1LB 1LA 1RA": (39, 2),  # center, >BB
-
-    # 2/4
-    "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB": (1089, 2),
-}
-
-BLANKERS = {
-    # 2/2
-    "1RB 1RB  1LA 0LB": 5,
-    "1RB 0RA  1LA ...": 4,
-
-    # 3/2
-    "1RB 0RB  1LC 1RC  0LA 1LA": 25,
-    "1RB 0RB  1LC 0LC  1LA 1RA": 23,
-    "1RB 1LB  1LA 1RC  0RB 0LC": 22,
-    "1RB 0LB  1LA 1LC  0RC 0RB": 20,
-    "1RB 1RC  1LC 0LB  1RA 1LA": 16,
-    "1RB ...  0RC 1LB  1LA 0RB": 15,
-    "1RB 1LB  0LC 0RB  1RA 1LA": 14,
-
-    # 2/3
-    "1RB 2LA 0RB  1LA 0LB 1RA": 77,
-    "1RB 2RB 0RA  2LA 1LA 1LB": 27,
-    "1RB 1LA 2RB  2LA 2RA 0LB": 24,
-    "1RB 0RB ...  2LA ... 0LB": 4,
-
-    # 4/2
-    "1RB 0RB  1LC 0LC  1RA 0LD  1LB 0LB": 976,
-    "1RB 1RA  1LC 0RD  1LB 1LD  1RA 0RB": 319,
-
-    # 2/4
-    "1RB 2LA 0RA 1LA  3LA 0LB 1RA 2LA": 239,
-    "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA": 224,
-
-    # 5/2
-    "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB": 31315,
-    "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE":  3241,
 }
 
 UNDEFINED = {
@@ -1173,6 +1173,14 @@ MACRO_SLOW = {
     "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (4144465135614, ()),
 }
 
+BLANKERS = (
+    set(DO_BLANK)
+    | set(SPINOUT_BLANK)
+    | set(SPINOUT_BLANK_SLOW)
+    | set(RECUR_BLANK_IN_PERIOD)
+    | set(RECUR_BLANK_BEFORE_PERIOD)
+)
+
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
@@ -1504,16 +1512,6 @@ class TuringTest(TestCase):
                 data,
                 getattr(self.final, status.lower()))
 
-    def _test_blank(self, prog_data):
-        for prog, steps in prog_data.items():
-            self.run_bb(prog, step_lim = steps)
-
-            self.assertIn(
-                steps,
-                self.final.blanks.values())
-
-            self.assert_could_blank(prog)
-
 
 class Fast(TuringTest):
     def test_halt(self):
@@ -1536,8 +1534,8 @@ class Fast(TuringTest):
 
     def test_recur(self):
         self._test_recur(RECUR)
-        self._test_recur(RECUR_BLANK, blank = True)
         self._test_recur(RECUR_FIXED, fixdtp = True)
+        self._test_recur(RECUR_BLANK_IN_PERIOD, blank = True)
 
         self._test_recur(QUASIHALT, qsihlt = True)
         self._test_recur(QUASIHALT_FIXED, qsihlt = True, fixdtp = True)
@@ -1546,18 +1544,9 @@ class Fast(TuringTest):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)
 
-        for prog in DO_BLANK:
+        for prog in BLANKERS:
             self.assert_simple(prog)
             self.assert_could_blank(prog)
-
-        for prog in BLANKERS:
-            self.assertNotIn(
-                prog,
-                set(SPINOUT_BLANK)
-                | set(SPINOUT_BLANK_SLOW)
-                | set(RECUR_BLANK))
-
-        self._test_blank(BLANKERS)
 
     def test_false_negatives(self):
         for prog in CANT_BLANK_FALSE_NEGATIVES:
