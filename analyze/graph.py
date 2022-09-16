@@ -1,6 +1,7 @@
 from typing import Dict, Set, Tuple
 
 from tm import parse
+from tm.parse import st_str
 
 COLORS = (
     'blue',
@@ -21,7 +22,7 @@ class Graph:
         self.program = program
 
         self.arrows: Dict[str, Tuple[str, ...]] = {
-            chr(65 + i): connection
+            st_str(i): connection
             for i, connection in
             enumerate((
                 tuple(instr[2] for instr in state)

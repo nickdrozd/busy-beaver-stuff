@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Any, Dict, Optional, Tuple
 
 from tm.tape import BlockTape
-from tm.parse import tcompile
+from tm.parse import tcompile, st_str
 from tm.recurrence import History
 
 
@@ -95,7 +95,7 @@ class Machine:
     def show_tape(self, step, state):
         print(' '.join([
             f'{step : 5d}',
-            f'{chr(state + 65)}{self.tape.scan}',
+            f'{st_str(state)}{self.tape.scan}',
             str(self.tape),
         ]))
 
@@ -163,7 +163,7 @@ class Machine:
             try:
                 color, shift, next_state = prog[state][scan]
             except TypeError:
-                instr = chr(state + 65) + str(scan)
+                instr = f'{st_str(state)}{scan}'
                 self.final.undfnd = step, instr
                 break
 
@@ -209,7 +209,7 @@ class Machine:
             # Halt conditions ######################
 
             if marks == 0:
-                st = '_' if state == -1 else chr(state + 65)
+                st = st_str(state)
 
                 self.final.blanks[st] = step
 

@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 from tm import parse, BlockTape, Machine
-from tm.parse import tcompile
+from tm.parse import tcompile, st_str
 from tm.recurrence import History
 from analyze.graph import Graph
 
@@ -17,7 +17,7 @@ SHIFTS = 'L', 'R'
 class Program:
     def __init__(self, program: str):
         self.prog: Dict[str, Dict[int, str]] = {
-            chr(state + 65): dict(enumerate(instructions))
+            st_str(state): dict(enumerate(instructions))
             for state, instructions in enumerate(parse(program))
         }
 

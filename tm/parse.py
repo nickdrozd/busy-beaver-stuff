@@ -48,3 +48,7 @@ def convert_instr(instr: Optional[Instr]) -> str:
         + ('R' if sh else 'L')
         + (chr(65 + tr) if tr != -1 else '_')
     )
+
+
+def st_str(state: int) -> str:
+    return '_' if state == -1 else chr(state + 65)

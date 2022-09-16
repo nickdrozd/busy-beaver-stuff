@@ -1,6 +1,7 @@
 from typing import Optional
 
 from tm import parse
+from tm.parse import st_str
 
 
 def make_comment(st, co):
@@ -151,7 +152,7 @@ def make_switch(state, instrs):
 
 def make_labels(prog):
     return '\n'.join([
-        f' {chr(i + 65)}:' + make_switch(chr(i + 65), instrs)
+        f' {st_str(i)}:' + make_switch(st_str(i), instrs)
         for i, instrs in
         enumerate(parse(prog))
     ])
