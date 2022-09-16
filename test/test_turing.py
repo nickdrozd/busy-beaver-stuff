@@ -1415,7 +1415,12 @@ class TuringTest(TestCase):
             blank = False,
         )
 
-    def _test_spinout(self, prog_data, fixed = False, blank = False):
+    def _test_spinout(
+            self,
+            prog_data,
+            fixed = False,
+            blank = False,
+    ):
         self._test_simple_terminate(
             prog_data,
             fixed = fixed,
@@ -1425,7 +1430,7 @@ class TuringTest(TestCase):
     def _test_recur(
             self,
             prog_data,
-            quick,
+            quick = True,
             blank = False,
             qsihlt = False,
             fixdtp = False,
@@ -1530,29 +1535,12 @@ class Fast(TuringTest):
         self._test_spinout(SPINOUT_FAST_BLANK, blank = True)
 
     def test_recur(self):
-        self._test_recur(RECUR_FAST, True)
+        self._test_recur(RECUR_FAST)
+        self._test_recur(RECUR_BLANK, blank = True)
+        self._test_recur(RECUR_FAST_FIXED, fixdtp = True)
 
-    def test_recur_blank(self):
-        self._test_recur(
-            RECUR_BLANK,
-            quick = True,
-            blank = True)
-
-    def test_recur_fixed(self):
-        self._test_recur(
-            RECUR_FAST_FIXED, True,
-            fixdtp = True)
-
-    def test_quasihalt(self):
-        self._test_recur(
-            QUASIHALT, True,
-            qsihlt = True)
-
-    def test_quasihalt_fixed(self):
-        self._test_recur(
-            QUASIHALT_FIXED, True,
-            qsihlt = True,
-            fixdtp = True)
+        self._test_recur(QUASIHALT, qsihlt = True)
+        self._test_recur(QUASIHALT_FIXED, qsihlt = True, fixdtp = True)
 
     def test_blank(self):
         for prog in DONT_BLANK:
