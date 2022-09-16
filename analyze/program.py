@@ -376,10 +376,17 @@ class Program:
                             step_lim = step + 1,
                             tape = next_tape.copy(),
                             state = ord(entry) - 65,
-                            check_blanks = blank,
                         )
 
-                        result = getattr(run.final, final_prop)
+                        result = (
+                            getattr(run.final, final_prop)
+                            if not blank else
+                            (
+                                min(run.final.blanks.values())
+                                if run.final.blanks else
+                                None
+                            )
+                        )
 
                         if result is None:
                             continue

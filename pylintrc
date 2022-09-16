@@ -31,8 +31,8 @@ max-line-length = 72
 good-names = maxDiff, pr, sh, tr, st, co
 
 [DESIGN]
-max-args	   = 10
+max-args	   = 9
 max-locals	   = 23
-max-branches	   = 20
+max-branches	   = 21
 max-attributes	   = 9
-max-statements	   = 54
+max-statements	   = 57

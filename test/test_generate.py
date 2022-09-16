@@ -84,7 +84,6 @@ class TestLinRado(TestCase):
             Machine(prog).run (
                 sim_lim = xlimit,
                 check_rec = 0,
-                check_blanks = False,
             ).final.xlimit is not None
         }
 

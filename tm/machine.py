@@ -18,7 +18,6 @@ NONHALT = (
 )
 
 REASONS = NONHALT + (
-    'blanks',
     'fixdtp',
     'halted',
 )
@@ -26,6 +25,8 @@ REASONS = NONHALT + (
 class MachineResult:
     def __init__(self, prog: str):
         self.prog = prog
+
+        self.blanks: Dict[str, int] = {}
 
         for reason in REASONS:
             setattr(self, reason, None)
@@ -95,7 +96,6 @@ class Machine:
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
             check_rec: Optional[int] = None,
-            check_blanks: bool = False,
             samples: Optional[Dict[int, Any]] = None,
             tape: Optional[BlockTape] = None,
     ) -> Machine:
@@ -198,10 +198,15 @@ class Machine:
 
             # Halt conditions ######################
 
-            if state == -1:
-                break
+            if marks == 0:
+                st = '_' if state == -1 else chr(state + 65)
 
-            if check_blanks and marks == 0:
+                self.final.blanks[st] = step
+
+                if st == 'A':
+                    break
+
+            if state == -1:
                 break
 
             # End of main loop #####################
@@ -237,15 +242,19 @@ class Machine:
     def finalize(self, step, cycle, state) -> bool:
         assert cycle <= step
 
+        show = bool(self.final.halted)
+
         if state == -1:
             self.final.halted = step
             self.final.fixdtp = True
 
-        if self.tape.blank:
-            self.final.blanks = step
-
         if self.final.spnout is not None:
             self.final.qsihlt = self.final.linrec = step, 1
+
+        if 'A' in self.final.blanks:
+            self.final.linrec = 0, step
+            self.final.fixdtp = False
+            show = True
 
         self.steps = step
         self.state = state
@@ -253,4 +262,4 @@ class Machine:
 
         self.final.validate_results()
 
-        return self.final.halted or self.final.blanks
+        return show

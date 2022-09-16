@@ -22,7 +22,6 @@ def stacker(steps: int, halt: bool, run_pile, stack: List[str]):
 
         machine = Machine(prog).run(
             sim_lim = steps,
-            check_blanks = True,
         )
 
         if machine.final.xlimit is not None:

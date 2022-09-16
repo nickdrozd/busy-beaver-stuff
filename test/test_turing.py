@@ -129,37 +129,26 @@ SPINOUT_FAST = {
     "1RB 0LC  0LC 0RC  1LC 1LA": (5, 51),
     "1RB 0LC  1LA 0RC  1RC 1RB": (5, 49),
     "1RB 0LC  0RC 0RC  1LC 1LA": (5, 48),
-    "1RB 1LB  1LA 1LC  1RC 0LC": (0, 34),
     "1RB 1LC  0RC ...  1LC 0LA": (5, 27),
-    "1RB 1LC  1LB 1LA  1RC 0LC": (0, 27),
-    "1RB 1LB  1LA 1RC  1LC 0RC": (0, 26),
 
     # 2/3
     "1RB 2LB 1LA  2LB 2RA 0RA": ( 8, 59),  # BBB(2, 3)
     "1RB 0LB 1RA  1LB 2LA 2RA": ( 3, 45),
     "1RB 2LB 1RA  2LB 2LA 0RA": (10, 43),
     "1RB 2RA 2LB  2LB 2LA 0LA": ( 5, 40),
-    "1RB 2RA 2RB  2LB 1LA 0RB": ( 0, 29),
     "1RB 1LB 1RA  2LB 2LA 0RA": ( 6, 23),
     "1RB 2LB ...  1LB 2LA 1RB": ( 5, 17),
 
     # 4/2
-    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": ( 0, 32779478),
-    "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": ( 0,    66349),
-    "1RB 1RA  0RC 0RB  0RD 1RA  1LD 1LB": ( 0,     2568),
-    "1RB 1RA  0RC 1LA  1LC 1LD  0RB 0RD": ( 0,     2512),
-    "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA": (39,     1164),
-    "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA": (20,     1153),
-    "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA": (19,      673),
-    "1RB 0LC  1LD 0RA  1RC 1RB  1LA 0LB": (31,      651),
-    "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,      536),
-    "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,      444),
-    "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": ( 0,      171),
+    "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA": (39, 1164),
+    "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA": (20, 1153),
+    "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA": (19,  673),
+    "1RB 0LC  1LD 0RA  1RC 1RB  1LA 0LB": (31,  651),
+    "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,  536),
+    "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,  444),
 
     # 2/4
-    "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": (   0, 1012664081),
     "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB": (2747, 2501552),
-    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA": (   0,  190524),
     "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA": ( 190,   32849),
     "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RB": (  62,   22464), # QH 22402
     "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB": (  99,   16634),
@@ -174,11 +163,6 @@ SPINOUT_FAST = {
 
     # 5/2
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": (19670, 193023636),
-    "1RB 1RA  1RC ...  0RD 0RC  1LD 1LE  1RA 1LC": (0, 32738607),
-    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC": (0, 32738620),
-    "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA": (0, 32748802),
-    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE": (0, 32810048),
-    "1RB 1LC  0LD 1RB  0RE 0RC  1RE 1RD  1LE 1LA": (0, 32779508),
 
     # 7/7 from 4/2 QH
     '  '.join([
@@ -190,6 +174,106 @@ SPINOUT_FAST = {
         "6LG 4LD ... ... ... 0LD 5LG",
         "2RF 1LG 1LC ... 1RB ... ...",
     ]): (1, 10925753),
+}
+
+SPINOUT_FAST_BLANK = {
+    # 2/2
+    "1RB ...  1LB 0RB": ({'B'}, 4),
+
+    # 3/2
+    "1RB 1LB  1LA 1LC  1RC 0LC": ({'C'}, 34),
+    "1RB 1LC  1LB 1LA  1RC 0LC": ({'C'}, 27),
+    "1RB 1LB  1LA 1RC  1LC 0RC": ({'C'}, 26),
+    "1RB 1LB  1LA 0LC  1RC 0LC": ({'C'}, 25),
+    "1RB 0LB  1LA 1LC  1RC 0LC": ({'C'}, 23),
+    "1RB 1LA  1LA 1RC  1LC 0RC": ({'C'}, 20),
+    "1RB 1LA  1LA 1LC  1RC 0LC": ({'C'}, 20),
+    "1RB 0LC  1LB 1LA  1RC 0LC": ({'C'}, 20),
+    "1RB ...  1LC 0LC  1RC 0LB": ({'B', 'C'}, 20),
+
+    # 2/3
+    "1RB 2RA 2RB  2LB 1LA 0RB": ({'B'}, 29),
+    "1RB 2RB 2RA  2LB 1LA 0RB": ({'B'}, 24),
+
+    # 4/2
+    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": ({'C','D'}, 32779478),
+    "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": ({'D','C'},    66349),
+    "1RB 1RA  0RC 0RB  0RD 1RA  1LD 1LB": ({'B','C','D'}, 2568),
+    "1RB 1RA  0RC 1LA  1LC 1LD  0RB 0RD": ({'B','C','D'}, 2512),
+    "1RB 1LC  1LA 0RD  0RD 0RC  1LD 1LA": ({'C','D'},      712),
+    "1RB 1LC  1LD 0RD  0RD 0RC  1LD 1LA": ({'C','D'},      710),
+    "1RB 1LC  1RC 0RD  0RD 0RC  1LD 1LA": ({'C','D'},      705),
+    "1RB 1LC  0RC 0RD  0RD 0RC  1LD 1LA": ({'C','D'},      703),
+    "1RB 1LC  1LA 1RB  0RD 0RC  1LD 1LA": ({'C','D'},      535),
+    "1RB 1LA  0LC 0LB  1RC 1RD  1LA 1RB": ({'B','C'},      496),
+    "1RB 1LC  0RC 1RB  0RD 0RC  1LD 1LA": ({'C','D'},      456),
+    "1RB 1RA  0RC 0RB  1LC 1LD  1RA 1LB": ({'B','C'},      427),
+    "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": ({'B','C','D'},  171),
+    "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD": ({'D'},           77),
+    "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA": ({'C'},           66),
+
+    # 2/4
+    "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": ({'B'}, 1012664081),
+    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA": ({'B'},     190524),
+    "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA": ({'B'},       4078),
+    "1RB 2RA 3LA 2RB  2LB 1LA 0RB 0RA": ({'B'},       2501),
+    "1RB 2RA 1RA 2LB  2LB 3LA 0RB 0RA": ({'B'},       1612),
+    "1RB 0RA 1RA 0RB  2LB 3LA 0RB 0RA": ({'B'},       1538),
+    "1RB 2RB 3RB 3RA  3LB 2LA 1RA 0RB": ({'B'},       1065),
+    "1RB 2RB 1LA 0LA  2LB 3LA 0RB 1RA": ({'B'},        888),
+    "1RB 2RA 1RA 2LB  2LB 3LA 0RB 2LA": ({'B'},        759),
+    "1RB 0RA 1RA 0RB  2LB 3LA 1LA 2RA": ({'B'},        697),
+    "1RB 0RA 1RA 2RB  2LB 3LA 0RB 0RA": ({'B'},        673),
+    "1RB 2RA 1LA 0RB  2LB 3LA 0RB 2RA": ({'B'},        604),
+    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2RA": ({'B'},        562),
+    "1RB 2RA 1LA 2LB  2LB 3LA 0RB 2RA": ({'B'},        301),
+    "1RB 2RB 2RA 1LA  2LB 3LA 0RB 1RA": ({'B'},        281),
+    "1RB 2RB 1LA 1LB  2LB 3LA 0RB 2RA": ({'B'},        158),
+
+    # 5/2
+    "1RB 1RA  1RC ...  0RD 0RC  1LD 1LE  1RA 1LC": ({'C', 'D'}, 32738607),
+    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC": ({'C', 'D'}, 32738620),
+    "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA": ({'C', 'E'}, 32748802),
+    "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA": ({'E', 'C'}, 32748816),
+    "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE": ({'B', 'C'}, 32759028),
+    "1RB 1LA  0LC 0LB  1RC 1RD  1RE 1RB  1LA ...": ({'B', 'C'}, 32759042),
+    "1RB 1RA  1LC ...  1RA 1LD  0RE 0RD  1LE 1LC": ({'E', 'D'}, 32769253),
+    "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC": ({'E', 'D'}, 32769267),
+    "1RB ...  0RC 0RB  1LC 1LD  1RE 1LB  1RC 1RE": ({'B', 'C'}, 32779476),
+    "1RB ...  1RC 1RB  1LC 1LD  1RB 1LE  0RC 0RE": ({'E', 'C'}, 32779478),
+    "1RB 1RA  1RC ...  1LC 1LD  0RA 1LE  0RC 0RE": ({'E', 'C'}, 32779492),
+    "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA": ({'E', 'C'}, 32779493),
+    "1RB 1RC  0LD ...  0LE 0LC  1LE 1LD  1RE 1RA": ({'E', 'C'}, 32779508),
+    "1RB ...  1RC 1LD  0RE 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32789703),
+    "1RB ...  1LC 1RD  0LE 1LC  0LE 0LD  1RE 1RB": ({'E', 'D'}, 32789704),
+    "1RB ...  0LC 1LB  1RC 1RD  1LB 1RE  0LC 0LE": ({'E', 'C'}, 32789706),
+    "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  0LC 1LE": ({'B', 'C'}, 32789706),
+    "1RB ...  1LC 1LB  0LD 0LC  1RD 1RE  0LB 1RC": ({'C', 'D'}, 32789716),
+    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  0RB 1LC": ({'C', 'D'}, 32789717),
+    "1RB ...  0LC 1RD  1LD 1LC  0LE 0LD  1RE 1RB": ({'E', 'D'}, 32789719),
+    "1RB ...  0LC 0LB  1RC 1RD  0LE 1RB  1LB 1LE": ({'B', 'C'}, 32789721),
+    "1RB ...  0RC 1LD  0RD 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32799940),
+    "1RB ...  1LB 1LC  0RD 1LE  0RE 1RD  0RB 0RE": ({'E', 'B'}, 32799946),
+    "1RB ...  1LB 1LC  1RD 1LE  0LE 1RD  0RB 0RE": ({'E', 'B'}, 32799961),
+    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  ... 1RA": ({'C', 'D'}, 32810048),
+    "1RB ...  0RC 1LD  1LD 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32810199),
+    "1RB ...  0RC 0RB  1LC 1LD  0RE 1LB  1LB 1RE": ({'B', 'C'}, 32810203),
+    "1RB ...  0RC 0RB  1LC 1LD  1RE 1LB  0LD 1RE": ({'B', 'C'}, 32810218),
+    "1RB ...  0RC 1LD  1LB 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32820458),
+    "1RB ...  1LB 1LC  1RD 1LE  1LE 0RC  0RB 0RE": ({'E', 'B'}, 32830251),
+    "1RB ...  1RC 1LB  1LD 1RD  0LE 0LD  1RE 0RB": ({'E', 'D'}, 32871346),
+    "1RB ...  1LB 0LC  1LD 1RC  1RE 1LE  0RB 0RE": ({'E', 'B'}, 32871356),
+    "1RB ...  1LC 1RB  1RD 1LD  0RE 0RD  1LE 0LB": ({'E', 'D'}, 32871358),
+    "1RB 1LC  1RD 0LB  0RE 0RC  0RC ...  1LE 1LA": ({'E', 'C'}, 32891764),
+    "1RB ...  1LB 1LC  0LD 1LE  1RD 0LE  0RB 0RE": ({'E', 'B'}, 32891776),
+
+    # 5/2 constructed from 4/2 BLB
+    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE": ({'C', 'D'}, 32810048),
+    "1RB 1LC  0LD 1RB  0RE 0RC  1RE 1RD  1LE 1LA": ({'C', 'E'}, 32779508),
+
+    # 6/2 inverted from 4/2 BLB
+    "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": ({'C', 'F'}, 32779478),
+
 }
 
 SPINOUT_FAST_FIXED = {
@@ -223,16 +307,24 @@ SPINOUT_FAST_FIXED = {
 
 SPINOUT_SLOW = {
     # 2/4
-    "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340,       2333909),
-    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA": (   0, 1367361263049),
+    "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340, 2333909),
+}
+
+SPINOUT_SLOW_BLANK = {
+    # 2/4
+    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA": ({'B'}, 1367361263049),
 
     # 5/2 blank
-    "1RB 1RA  0RC 0RB  1LC 1LD  1RE 1LB  ... 0RA": (0, 348098678511),
-    "1RB ...  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB": (0, 455790469746),
-    "1RB ...  0LC 0LB  0LD 1LC  1RD 0RE  1LB 1LA": (0, 455790469748),
+    "1RB 1RA  0RC 0RB  1LC 1LD  1RE 1LB  ... 0RA": (
+        {'B', 'C'}, 348098678511),
+    "1RB ...  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB": (
+        {'D', 'B', 'C'}, 455790469746),
+    "1RB ...  0LC 0LB  0LD 1LC  1RD 0RE  1LB 1LA": (
+        {'B', 'C', 'D'}, 455790469748),
 
     # 6/2 constructed from 4/2
-    "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC": (0, 65538552),
+    "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC": (
+        {'C', 'E', 'F', 'D'}, 65538552),
 }
 
 SPINOUT_SLOW_FIXED = {
@@ -296,9 +388,20 @@ QUASIHALT_FIXED = {
     "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA": ( 6443, 2),  # QH 6362
 }
 
+RECUR_BLANK = {
+    # 2/2
+    "1RB 0RA  1LB 1LA": (0, 8),
+    "1RB 0RA  0LB 1LA": (0, 7),
+    "1RB 1LA  0LA 0LB": (0, 7),
+    "1RB 0LA  1LB 1RA": (0, 5),
+
+    # 3/2
+    "1RB 1LB  0RC 1LA  1LA 0RA": (0, 21),
+}
+
 RECUR_FAST = {
     # Lin-Rado examples
-    "1RB ...  0RC 1LB  1LA 0RB": (9, 10),  # total recurrence
+    "1RB ...  0RC 1LB  1LA 0RB": ( 9, 10),  # total recurrence
     "1RB ...  1LB 0LC  1LA 1RA": (12,  7),  # left barrier
     "1RB ...  1LC 1RA  1LA 0LC": (12,  8),  # right barrier
 
@@ -307,11 +410,7 @@ RECUR_FAST = {
     "1RB 1LA  0LA 1RA": (7, 5),
     "1RB 1LB  1LA 0RB": (7, 3),
     "1RB 0RB  1LB 1RA": (0, 9),
-    "1RB 0RA  1LB 1LA": (0, 8),
-    "1RB 0RA  0LB 1LA": (0, 7),
-    "1RB 1LA  0LA 0LB": (0, 7),
     "1RB 1LA  1LB 0RA": (0, 6),
-    "1RB 0LA  1LB 1RA": (0, 5),
 
     # 3/2
     "1RB 1LB  0RC 0LA  1LC 0LA": (101, 24),
@@ -329,7 +428,6 @@ RECUR_FAST = {
     "1RB 0LA  0RC 1LA  1LC 0RB": (  0, 92),
     "1RB 0LA  1LB 0RC  1LC 1LA": (  0, 56),
     "1RB 0LA  0RC 0RC  1LC 1LA": (  0, 48),
-    "1RB 1LB  0RC 1LA  1LA 0RA": (  0, 21),
     "1RB 1LB  0RC 1RC  1LA 0LA": (  0, 15),
 
     # 2/3
@@ -511,126 +609,35 @@ RECUR_FAST_FIXED = {
 
 BLANKERS = {
     # 2/2
-    "1RB 0RA  1LB 1LA": 8,
-    "1RB 0RA  0LB 1LA": 7,
-    "1RB 1LA  0LA 0LB": 6,
-    "1RB 0LA  1LB 1RA": 5,
     "1RB 1RB  1LA 0LB": 5,
-    "1RB ...  1LB 0RB": 4,
     "1RB 0RA  1LA ...": 4,
 
     # 3/2
-    "1RB 1LB  1LA 1LC  1RC 0LC": 34,
-    "1RB 1LC  1LB 1LA  1RC 0LC": 27,
-    "1RB 1LB  1LA 1RC  1LC 0RC": 26,
-    "1RB 1LB  1LA 0LC  1RC 0LC": 25,
     "1RB 0RB  1LC 1RC  0LA 1LA": 25,
     "1RB 0RB  1LC 0LC  1LA 1RA": 23,
-    "1RB 0LB  1LA 1LC  1RC 0LC": 23,
     "1RB 1LB  1LA 1RC  0RB 0LC": 22,
-    "1RB 1LB  0RC 1LA  1LA 0RA": 21,
-    "1RB 1LA  1LA 1RC  1LC 0RC": 20,
-    "1RB 1LA  1LA 1LC  1RC 0LC": 20,
-    "1RB 0LC  1LB 1LA  1RC 0LC": 20,
     "1RB 0LB  1LA 1LC  0RC 0RB": 20,
     "1RB 1RC  1LC 0LB  1RA 1LA": 16,
-    "1RB ...  1LC 0LC  1RC 0LB": 16,
     "1RB ...  0RC 1LB  1LA 0RB": 15,
     "1RB 1LB  0LC 0RB  1RA 1LA": 14,
 
     # 2/3
     "1RB 2LA 0RB  1LA 0LB 1RA": 77,
-    "1RB 2RA 2RB  2LB 1LA 0RB": 29,
     "1RB 2RB 0RA  2LA 1LA 1LB": 27,
-    "1RB 2RB 2RA  2LB 1LA 0RB": 24,
     "1RB 1LA 2RB  2LA 2RA 0LB": 24,
-    "1RB 0RB ...  2LA ... 0LB":  4,
+    "1RB 0RB ...  2LA ... 0LB": 4,
 
     # 4/2
-    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779477,
-    "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": 66345,
-    "1RB 1RA  0RC 0RB  0RD 1RA  1LD 1LB":  2566,
-    "1RB 1RA  0RC 1LA  1LC 1LD  0RB 0RD":  2510,
-    "1RB 0RB  1LC 0LC  1RA 0LD  1LB 0LB":   976,
-    "1RB 1LC  1LA 0RD  0RD 0RC  1LD 1LA":   711,
-    "1RB 1LC  1LD 0RD  0RD 0RC  1LD 1LA":   709,
-    "1RB 1LC  1RC 0RD  0RD 0RC  1LD 1LA":   704,
-    "1RB 1LC  0RC 0RD  0RD 0RC  1LD 1LA":   702,
-    "1RB 1LC  1LA 1RB  0RD 0RC  1LD 1LA":   534,
-    "1RB 1LA  0LC 0LB  1RC 1RD  1LA 1RB":   495,
-    "1RB 1LC  0RC 1RB  0RD 0RC  1LD 1LA":   455,
-    "1RB 1RA  0RC 0RB  1LC 1LD  1RA 1LB":   426,
-    "1RB 1RA  1LC 0RD  1LB 1LD  1RA 0RB":   319,
-    "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD":   169,
-    "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD":    77,
-    "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA":    66,
+    "1RB 0RB  1LC 0LC  1RA 0LD  1LB 0LB": 976,
+    "1RB 1RA  1LC 0RD  1LB 1LD  1RA 0RB": 319,
 
     # 2/4
-    "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": 1012664081,
-    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA": 190524,
-    "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA":   4078,
-    "1RB 2RA 3LA 2RB  2LB 1LA 0RB 0RA":   2501,
-    "1RB 2RA 1RA 2LB  2LB 3LA 0RB 0RA":   1612,
-    "1RB 0RA 1RA 0RB  2LB 3LA 0RB 0RA":   1538,
-    "1RB 2RB 3RB 3RA  3LB 2LA 1RA 0RB":   1065,
-    "1RB 2RB 1LA 0LA  2LB 3LA 0RB 1RA":    888,
-    "1RB 2RA 1RA 2LB  2LB 3LA 0RB 2LA":    759,
-    "1RB 0RA 1RA 0RB  2LB 3LA 1LA 2RA":    697,
-    "1RB 0RA 1RA 2RB  2LB 3LA 0RB 0RA":    673,
-    "1RB 2RA 1LA 0RB  2LB 3LA 0RB 2RA":    604,
-    "1RB 2RA 1RA 2RB  2LB 3LA 0RB 2RA":    562,
-    "1RB 2RA 1LA 2LB  2LB 3LA 0RB 2RA":    301,
-    "1RB 2RB 2RA 1LA  2LB 3LA 0RB 1RA":    281,
-    "1RB 2LA 0RA 1LA  3LA 0LB 1RA 2LA":    239,
-    "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA":    224,
-    "1RB 2RB 1LA 1LB  2LB 3LA 0RB 2RA":    158,
+    "1RB 2LA 0RA 1LA  3LA 0LB 1RA 2LA": 239,
+    "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA": 224,
 
     # 5/2
-    "1RB 1RA  1RC ...  0RD 0RC  1LD 1LE  1RA 1LC": 32738606,
-    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC": 32738619,
-    "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA": 32748801,
-    "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA": 32748815,
-    "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE": 32759027,
-    "1RB 1LA  0LC 0LB  1RC 1RD  1RE 1RB  1LA ...": 32759041,
-    "1RB 1RA  1LC ...  1RA 1LD  0RE 0RD  1LE 1LC": 32769252,
-    "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC": 32769266,
-    "1RB ...  0RC 0RB  1LC 1LD  1RE 1LB  1RC 1RE": 32779475,
-    "1RB ...  1RC 1RB  1LC 1LD  1RB 1LE  0RC 0RE": 32779477,
-    "1RB 1RA  1RC ...  1LC 1LD  0RA 1LE  0RC 0RE": 32779491,
-    "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA": 32779492,
-    "1RB 1RC  0LD ...  0LE 0LC  1LE 1LD  1RE 1RA": 32779507,
-    "1RB ...  1RC 1LD  0RE 1RC  0RE 0RD  1LE 1LB": 32789702,
-    "1RB ...  1LC 1RD  0LE 1LC  0LE 0LD  1RE 1RB": 32789703,
-    "1RB ...  0LC 1LB  1RC 1RD  1LB 1RE  0LC 0LE": 32789705,
-    "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  0LC 1LE": 32789705,
-    "1RB ...  1LC 1LB  0LD 0LC  1RD 1RE  0LB 1RC": 32789715,
-    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  0RB 1LC": 32789716,
-    "1RB ...  0LC 1RD  1LD 1LC  0LE 0LD  1RE 1RB": 32789718,
-    "1RB ...  0LC 0LB  1RC 1RD  0LE 1RB  1LB 1LE": 32789720,
-    "1RB ...  0RC 1LD  0RD 1RC  0RE 0RD  1LE 1LB": 32799939,
-    "1RB ...  1LB 1LC  0RD 1LE  0RE 1RD  0RB 0RE": 32799945,
-    "1RB ...  1LB 1LC  1RD 1LE  0LE 1RD  0RB 0RE": 32799960,
-    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  ... 1RA": 32810047,
-    "1RB ...  0RC 1LD  1LD 1RC  0RE 0RD  1LE 1LB": 32810198,
-    "1RB ...  0RC 0RB  1LC 1LD  0RE 1LB  1LB 1RE": 32810202,
-    "1RB ...  0RC 0RB  1LC 1LD  1RE 1LB  0LD 1RE": 32810217,
-    "1RB ...  0RC 1LD  1LB 1RC  0RE 0RD  1LE 1LB": 32820457,
-    "1RB ...  1LB 1LC  1RD 1LE  1LE 0RC  0RB 0RE": 32830250,
-    "1RB ...  1RC 1LB  1LD 1RD  0LE 0LD  1RE 0RB": 32871345,
-    "1RB ...  1LB 0LC  1LD 1RC  1RE 1LE  0RB 0RE": 32871355,
-    "1RB ...  1LC 1RB  1RD 1LD  0RE 0RD  1LE 0LB": 32871357,
-    "1RB 1LC  1RD 0LB  0RE 0RC  0RC ...  1LE 1LA": 32891763,
-    "1RB ...  1LB 1LC  0LD 1LE  1RD 0LE  0RB 0RE": 32891775,
-
-    # constructed from 4/2 BLB
-    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE": 32810047,
-    "1RB 1LC  0LD 1RB  0RE 0RC  1RE 1RD  1LE 1LA": 32779507,
-
     "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB": 31315,
     "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE":  3241,
-
-    # 6/2 inverted from 4/2 BLB
-    "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": 32779477,
 }
 
 UNDEFINED = {
@@ -1360,28 +1367,31 @@ class TuringTest(TestCase):
         if len(prog) < 70:
             _ = BlockMacro(prog, [2]).fully_specified
 
-    def _test_simple_terminate(self, prog_data, fixed: bool):
+    def _test_simple_terminate(self, prog_data, fixed: bool, blank: bool):
         for prog, (marks, steps) in prog_data.items():
-            self.run_bb(
-                prog,
-                check_blanks = (
-                    marks != 0
-                    and prog[0] == 0
-                ),
-            )
+            self.run_bb(prog)
 
-            self.assert_marks(marks)
             self.assert_steps(steps)
 
             self.assertEqual(
                 steps,
                 self.final.simple_termination)
 
-            (
-                self.assert_cant_blank
-                if marks != 0 else
-                self.assert_could_blank
-            )(prog)
+            blanks = self.final.blanks
+
+            if not blank and marks > 0:
+                self.assert_marks(marks)
+
+                if prog[0] != '0':
+                    self.assertEqual(blanks, {})
+                    self.assert_cant_blank(prog)
+
+            else:
+                self.assert_marks(0)
+                self.assertEqual(steps, max(blanks.values()))
+                if blank:
+                    self.assertEqual(marks, set(blanks))
+                self.assert_could_blank(prog)
 
             self.assert_fixed_tape(fixed)
 
@@ -1399,15 +1409,27 @@ class TuringTest(TestCase):
                 )
 
     def _test_halt(self, prog_data):
-        self._test_simple_terminate(prog_data, fixed = True)
+        self._test_simple_terminate(
+            prog_data,
+            fixed = True,
+            blank = False,
+        )
 
-    def _test_spinout(self, prog_data, fixed: bool):
-        self._test_simple_terminate(prog_data, fixed = fixed)
+    def _test_spinout(self, prog_data, fixed = False, blank = False):
+        self._test_simple_terminate(
+            prog_data,
+            fixed = fixed,
+            blank = blank,
+        )
 
     def _test_recur(
-            self, prog_data, quick,
+            self,
+            prog_data,
+            quick,
+            blank = False,
             qsihlt = False,
-            fixdtp = False):
+            fixdtp = False,
+    ):
         for prog, (steps, period) in prog_data.items():
             self.prog = prog
 
@@ -1416,14 +1438,12 @@ class TuringTest(TestCase):
             self.assert_cant_halt(prog)
             self.assert_cant_spin_out(prog)
 
-            if prog not in BLANKERS:
-                self.assert_cant_blank(prog)
-
-            self.verify_lin_recurrence(
-                prog,
-                steps,
-                period,
-            )
+            if blank:
+                self.assert_could_blank(prog)
+            else:
+                if prog not in BLANKERS:
+                    self.assert_cant_blank(prog)
+                self.verify_lin_recurrence(prog, steps, period)
 
             if not quick or period > 2000:  # no-coverage
                 print(prog)
@@ -1432,11 +1452,8 @@ class TuringTest(TestCase):
             self.run_bb(
                 prog,
                 check_rec = (
-                    0
-                    if steps < 256 else
-                    steps
-                ),
-                check_blanks = prog not in BLANKERS,
+                    None if blank and not qsihlt else
+                    (0 if steps < 256 else steps)),
             )
 
             self.assertEqual(
@@ -1447,7 +1464,7 @@ class TuringTest(TestCase):
                 self.final.qsihlt,
                 self.final.linrec if qsihlt else None)
 
-            self.assert_fixed_tape(fixdtp)
+            self.assert_fixed_tape(False if blank else fixdtp)
 
     def _test_macro(self, prog_data, quick: bool):
         low = 1 if quick else 2
@@ -1484,13 +1501,11 @@ class TuringTest(TestCase):
 
     def _test_blank(self, prog_data):
         for prog, steps in prog_data.items():
-            self.run_bb(prog, check_blanks = True)
+            self.run_bb(prog, step_lim = steps)
 
-            self.assert_steps(steps)
-
-            self.assertEqual(
+            self.assertIn(
                 steps,
-                self.final.blanks)
+                self.final.blanks.values())
 
             self.assert_could_blank(prog)
 
@@ -1510,11 +1525,18 @@ class Fast(TuringTest):
         for prog in DONT_SPIN_OUT:
             self.assert_cant_spin_out(prog)
 
-        self._test_spinout(SPINOUT_FAST, fixed = False)
+        self._test_spinout(SPINOUT_FAST)
         self._test_spinout(SPINOUT_FAST_FIXED, fixed = True)
+        self._test_spinout(SPINOUT_FAST_BLANK, blank = True)
 
     def test_recur(self):
         self._test_recur(RECUR_FAST, True)
+
+    def test_recur_blank(self):
+        self._test_recur(
+            RECUR_BLANK,
+            quick = True,
+            blank = True)
 
     def test_recur_fixed(self):
         self._test_recur(
@@ -1540,6 +1562,13 @@ class Fast(TuringTest):
             self.assert_simple(prog)
             self.assert_could_blank(prog)
 
+        for prog in BLANKERS:
+            self.assertNotIn(
+                prog,
+                set(SPINOUT_BLANK)
+                | set(SPINOUT_BLANK_SLOW)
+                | set(RECUR_BLANK))
+
         self._test_blank(BLANKERS)
 
     def test_false_negatives(self):
@@ -1552,7 +1581,9 @@ class Fast(TuringTest):
                 prog,
                 (set(SPINOUT_FAST)
                  | set(SPINOUT_SLOW)
-                 | set(SPINOUT_FAST_FIXED)))
+                 | set(SPINOUT_FAST_FIXED)
+                 | set(SPINOUT_FAST_BLANK)
+                 | set(SPINOUT_SLOW_BLANK)))
             self.assert_could_spin_out(prog)
 
     def test_bb4_extensions(self):
@@ -1646,7 +1677,8 @@ class Slow(TuringTest):  # no-coverage
         self._test_halt(HALT_SLOW)
 
     def test_spinout(self):
-        self._test_spinout(SPINOUT_SLOW, fixed = False)
+        self._test_spinout(SPINOUT_SLOW)
+        self._test_spinout(SPINOUT_SLOW_BLANK, blank = True)
         self._test_spinout(SPINOUT_SLOW_FIXED, fixed = True)
 
     def test_recur(self):
