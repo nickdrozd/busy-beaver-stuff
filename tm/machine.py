@@ -1,4 +1,3 @@
-# pylint: disable = attribute-defined-outside-init
 from __future__ import annotations
 
 from collections import defaultdict
@@ -9,17 +8,12 @@ from tm.parse import tcompile
 from tm.recurrence import History
 
 
-NONHALT = (
+TERM_CATS = (
+    'halted',
     'linrec',
-    'qsihlt',
     'spnout',
     'undfnd',
     'xlimit',
-)
-
-REASONS = NONHALT + (
-    'fixdtp',
-    'halted',
 )
 
 class MachineResult:
@@ -28,34 +22,43 @@ class MachineResult:
 
         self.blanks: Dict[str, int] = {}
 
-        for reason in REASONS:
-            setattr(self, reason, None)
+        self.fixdtp: Optional[bool] = None
+
+        self.halted: Optional[int] = None
+        self.spnout: Optional[int] = None
+        self.xlimit: Optional[int] = None
+
+        self.linrec: Optional[Tuple[int, int]] = None
+        self.qsihlt: Optional[Tuple[int, int]] = None
+
+        self.undfnd: Optional[Tuple[int, str]] = None
 
     def __str__(self):
-        return ' | '.join([
-            f'{reason.upper()}: {data}'
-            for reason in REASONS
-            if (data := getattr(self, reason)) is not None
-        ])
+        info = [
+            f'{cat.upper()}: {data}'
+            for cat in TERM_CATS
+            if (data := getattr(self, cat)) is not None
+        ]
+
+        if self.blanks:
+            info.append(
+                f'BLANKS: {self.blanks}')
+
+        return ' | '.join(info)
 
     def validate_results(self):
-        if self.halted is not None:
-            for cat in NONHALT:
-                assert getattr(self, cat) is None
+        assert len(results := [
+            (cat, data)
+            for cat in TERM_CATS
+            if (data := getattr(self, cat)) is not None
+        ]) == 1, results
 
+        if self.simple_termination is not None:
             assert self.fixdtp is not None
 
-        if (spnout := self.spnout) is not None:
-            lstep, _ = self.linrec
-            assert lstep == spnout
-
-            qstep, _ = self.qsihlt
-            assert qstep == spnout
-
     @property
-    def simple_termination(self):
+    def simple_termination(self) -> Optional[int]:
         if self.halted is None:
-            assert self.spnout is not None
             return self.spnout
 
         return self.halted
@@ -254,9 +257,6 @@ class Machine:
         if state == -1:
             self.final.halted = step
             self.final.fixdtp = True
-
-        if self.final.spnout is not None:
-            self.final.qsihlt = self.final.linrec = step, 1
 
         if 'A' in self.final.blanks:
             self.final.linrec = 0, step
