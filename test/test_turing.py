@@ -1632,6 +1632,12 @@ class Fast(TuringTest):
 
     def test_tape(self):
         self.run_bb(
+            "1RB 1LB  1LA 1LC  1RC 0LC",
+            watch_tape = True)
+
+        print(self.machine)
+
+        self.run_bb(
             "1RB 2LA 1R_  1LB 1LA 0RA",
             watch_tape = True)
 
