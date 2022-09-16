@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from tm.tape import BlockTape
 from tm.parse import tcompile, st_str
-from tm.recurrence import History
+from tm.recurrence import History, Action, RecRes
 
 
 TERM_CATS = (
@@ -139,7 +139,7 @@ class Machine:
                        and step in self.history.tapes)):
                     self.history.add_tape_at_step(step, tape)
 
-            action: Tuple[int, int] = state, (scan := tape.scan)
+            action: Action = state, (scan := tape.scan)
 
             # Output ###############################
 
@@ -230,11 +230,8 @@ class Machine:
 
         return self
 
-    def check_rec(self, step, action):
-        result: Optional[Tuple[int, int]] = \
-            self.history.check_for_recurrence(step, action)
-
-        if result is None:
+    def check_rec(self, step: int, action: Action) -> RecRes:
+        if (result := self.history.check_rec(step, action)) is None:
             return None
 
         self.final.linrec = start, _rec = result

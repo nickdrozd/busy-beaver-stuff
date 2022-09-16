@@ -338,12 +338,12 @@ class Program:
 
             seen[state].add(tape_hash)
 
-            history.add_state_at_step(step, state)  # type: ignore
+            history.add_state_at_step(step, state)
             history.add_tape_at_step(step, tape)
 
-            if history.check_for_recurrence(
+            if history.check_rec(
                     step,
-                    (state, tape.scan)) is None:  # type: ignore
+                    (state, tape.scan)) is None:
                 repeat = 0
             else:
                 repeat += 1
@@ -353,7 +353,7 @@ class Program:
 
             history.add_action_at_step(
                 step,
-                (state, tape.scan)) # type: ignore
+                (state, tape.scan))
 
             # print(step, state, tape)
 

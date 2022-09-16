@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from copy import copy
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from tm.tape import PtrTape
+
+State = Union[int, str]
+Color = int
+Action = Tuple[State, Color]
+RecRes = Optional[Action]
 
 class History:
     def __init__(self, tapes = None):
@@ -14,7 +19,7 @@ class History:
             tapes
         )
 
-        self.states: List[int] = []
+        self.states: List[State] = []
         self.changes: List[bool] = []
         self.positions: List[int] = []
         self.actions = defaultdict(list)
@@ -32,10 +37,10 @@ class History:
 
         return new_copy
 
-    def add_action_at_step(self, step: int, action: Tuple[int, int]):
+    def add_action_at_step(self, step: int, action: Action):
         self.actions[action].append(step)
 
-    def add_state_at_step(self, step: int, state: int):
+    def add_state_at_step(self, step: int, state: State):
         self.states += [state] * (step - len(self.states))
         self.states.append(state)
 
@@ -53,7 +58,7 @@ class History:
     def calculate_beeps(
             self,
             through: Optional[int] = None,
-    ) -> Dict[int, int]:
+    ) -> Dict[State, int]:
         states = (
             self.states
             if through is None else
@@ -68,11 +73,7 @@ class History:
             for state in set(states)
         }
 
-    def check_for_recurrence(
-            self,
-            step: int,
-            action: Tuple[int, int]
-    ) -> Optional[Tuple[int, int]]:
+    def check_rec(self, step: int, action: Action) -> RecRes:
         for pstep in self.actions[action]:
             if (result := self.verify_lin_recurrence(
                     pstep,
@@ -93,7 +94,7 @@ class History:
             recurrence: int,
             tape1 = None,
             tape2 = None,
-    ) -> Optional[Tuple[int, int]]:
+    ) -> RecRes:
         assert self.states[steps] == self.states[recurrence]
 
         if tape1 is None or tape2 is None:
