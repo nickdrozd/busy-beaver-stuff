@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from tm.tape import BlockTape
 from tm.parse import tcompile, st_str
-from tm.recurrence import History, Action, RecRes
+from tm.recurrence import History, Action, RecRes, State
 
 
 TERM_CATS = (
@@ -15,54 +15,6 @@ TERM_CATS = (
     'undfnd',
     'xlimit',
 )
-
-class MachineResult:
-    def __init__(self, prog: str):
-        self.prog = prog
-
-        self.blanks: Dict[str, int] = {}
-
-        self.fixdtp: Optional[bool] = None
-
-        self.halted: Optional[int] = None
-        self.spnout: Optional[int] = None
-        self.xlimit: Optional[int] = None
-
-        self.linrec: Optional[Tuple[int, int]] = None
-        self.qsihlt: Optional[Tuple[int, int]] = None
-
-        self.undfnd: Optional[Tuple[int, str]] = None
-
-    def __str__(self):
-        info = [
-            f'{cat.upper()}: {data}'
-            for cat in TERM_CATS
-            if (data := getattr(self, cat)) is not None
-        ]
-
-        if self.blanks:
-            info.append(
-                f'BLANKS: {self.blanks}')
-
-        return ' | '.join(info)
-
-    def validate_results(self):
-        assert len(results := [
-            (cat, data)
-            for cat in TERM_CATS
-            if (data := getattr(self, cat)) is not None
-        ]) == 1, results
-
-        if self.simple_termination is not None:
-            assert self.fixdtp is not None
-
-    @property
-    def simple_termination(self) -> Optional[int]:
-        if self.halted is None:
-            return self.spnout
-
-        return self.halted
-
 
 class Machine:
     def __init__(self, prog):
@@ -80,13 +32,39 @@ class Machine:
         self.state   = None
         self.steps   = None
         self.cycles  = None
-        self.final   = MachineResult(prog)
         self.history = None
 
         self.reached = defaultdict(lambda: 0)
 
+        self.blanks: Dict[State, int] = {}
+
+        self.fixdtp: Optional[bool] = None
+
+        self.halted: Optional[int] = None
+        self.spnout: Optional[int] = None
+        self.xlimit: Optional[int] = None
+
+        self.linrec: Optional[Tuple[Optional[int], int]] = None
+        self.qsihlt: Optional[Tuple[Optional[int], int]] = None
+
+        self.undfnd: Optional[Tuple[int, str]] = None
+
     def __str__(self):
-        return f'{self.program} || {self.final}'
+        info = [
+            f'{cat.upper()}: {data}'
+            for cat in TERM_CATS
+            if (data := getattr(self, cat)) is not None
+        ]
+
+        if self.blanks:
+            info.append(
+                f'BLANKS: {self.blanks}')
+
+        return f"{self.program} || {' | '.join(info)}"
+
+    @property
+    def simple_termination(self) -> Optional[int]:
+        return self.spnout if self.halted is None else self.halted
 
     @property
     def marks(self):
@@ -147,7 +125,7 @@ class Machine:
             # Halt conditions ######################
 
             if step_lim is not None and step >= step_lim:
-                self.final.xlimit = step
+                self.xlimit = step
                 break
 
             if check_rec is not None and step >= check_rec:
@@ -162,7 +140,7 @@ class Machine:
                 color, shift, next_state = self._comp[state][scan]
             except TypeError:
                 instr = f'{st_str(state)}{scan}'
-                self.final.undfnd = step, instr
+                self.undfnd = step, instr
                 break
 
             self.reached[action] += 1
@@ -170,8 +148,8 @@ class Machine:
             if self.history is None:
                 if (state == next_state
                         and (shift == tape.edge or marks == 0)):
-                    self.final.spnout = step
-                    self.final.fixdtp = color == 0
+                    self.spnout = step
+                    self.fixdtp = color == 0
                     break
             else:
                 self.history.add_change_at_step(
@@ -208,10 +186,10 @@ class Machine:
 
             if marks == 0:
                 if check_rec is None and samples is None:
-                    if state in self.final.blanks:
+                    if state in self.blanks:
                         break
 
-                self.final.blanks[state] = step
+                self.blanks[state] = step
 
                 if state == 0:
                     break
@@ -221,7 +199,7 @@ class Machine:
 
             # End of main loop #####################
         else:
-            self.final.xlimit = step
+            self.xlimit = step
 
         if self.finalize(step, cycle, state) and watch_tape:
             self.show_tape(step, state)
@@ -232,15 +210,15 @@ class Machine:
         if (result := self.history.check_rec(step, action)) is None:
             return None
 
-        self.final.linrec = start, _rec = result
+        self.linrec = start, _rec = result
 
         hc_beeps = self.history.calculate_beeps()
         hp_beeps = self.history.calculate_beeps(start)
 
         if any(hc_beeps[st] <= hp_beeps[st] for st in hp_beeps):
-            self.final.qsihlt = result
+            self.qsihlt = result
 
-        self.final.fixdtp = self.history.tape_is_fixed(start)
+        self.fixdtp = self.history.tape_is_fixed(start)
 
         return result
 
@@ -248,33 +226,43 @@ class Machine:
         assert cycle <= step
 
         show = (
-            bool(self.final.halted)
-            or bool(self.final.blanks)
+            bool(self.halted)
+            or bool(self.blanks)
         )
 
         if state == -1:
-            self.final.halted = step
-            self.final.fixdtp = True
+            self.halted = step
+            self.fixdtp = True
 
         if self.tape.blank:
-            if 0 in self.final.blanks:
-                self.final.linrec = 0, step
-                self.final.fixdtp = False
-            elif (blanks := self.final.blanks):
+            if 0 in self.blanks:
+                self.linrec = 0, step
+                self.fixdtp = False
+            elif (blanks := self.blanks):
                 if (period := step - blanks[state]):
-                    self.final.linrec = None, period
-                    self.final.fixdtp = False
-                    self.final.xlimit = None
+                    self.linrec = None, period
+                    self.fixdtp = False
+                    self.xlimit = None
 
-        self.final.blanks = blanks = {
-            st_str(stt): stp
-            for stt, stp in self.final.blanks.items()
+        self.blanks = blanks = {
+            st_str(stt): stp   # type: ignore
+            for stt, stp in self.blanks.items()
         }
 
         self.steps = step
         self.state = state
         self.cycles = cycle
 
-        self.final.validate_results()
+        self.validate_results()
 
         return show
+
+    def validate_results(self):
+        assert len(results := [
+            (cat, data)
+            for cat in TERM_CATS
+            if (data := getattr(self, cat)) is not None
+        ]) == 1, results
+
+        if self.simple_termination is not None:
+            assert self.fixdtp is not None

@@ -37,7 +37,7 @@ def run_and_print(program: Program):
         check_rec = 0,
     )
 
-    if check_rec.final.xlimit is None:
+    if check_rec.xlimit is None:
         return
 
     print(program.normalize())

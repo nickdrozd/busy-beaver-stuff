@@ -30,20 +30,20 @@ def stacker(
             sim_lim = steps,
         )
 
-        if blank and machine.final.blanks:
+        if blank and machine.blanks:
             prog = None
             continue
 
-        if machine.final.xlimit is not None:
+        if machine.xlimit is not None:
             run_pile.put(prog)
             prog = None
             continue
 
-        if machine.final.undfnd is None:
+        if machine.undfnd is None:
             prog = None
             continue
 
-        _step, instr = machine.final.undfnd
+        _step, instr = machine.undfnd
 
         branches = (program := Program(prog)).branch(instr, halt)
 

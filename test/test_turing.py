@@ -1236,7 +1236,7 @@ class TuringTest(TestCase):
 
     def assert_fixed_tape(self, fixed):
         self.assertEqual(
-            self.final.fixdtp,
+            self.machine.fixdtp,
             fixed)
 
     def assert_could_halt(self, prog):
@@ -1358,7 +1358,6 @@ class TuringTest(TestCase):
         self.machine = Machine(prog).run(**opts)
         self.history = self.machine.history
         self.reached = self.machine.reached
-        self.final  = self.machine.final
         self.tape = self.machine.tape
 
         if not analyze:
@@ -1383,9 +1382,9 @@ class TuringTest(TestCase):
 
             self.assertEqual(
                 steps,
-                self.final.simple_termination)
+                self.machine.simple_termination)
 
-            blanks = self.final.blanks
+            blanks = self.machine.blanks
 
             if not blank and marks > 0:
                 self.assert_marks(marks)
@@ -1471,11 +1470,11 @@ class TuringTest(TestCase):
 
             self.assertEqual(
                 period,
-                self.final.linrec[1])
+                self.machine.linrec[1])
 
             self.assertEqual(
-                self.final.qsihlt,
-                self.final.linrec if qsihlt else None)
+                self.machine.qsihlt,
+                self.machine.linrec if qsihlt else None)
 
             self.assert_fixed_tape(False if blank else fixdtp)
 
@@ -1495,7 +1494,7 @@ class TuringTest(TestCase):
 
                     self.assertTrue(
                         isclose(
-                            self.final.simple_termination,
+                            self.machine.simple_termination,
                             steps / (cells ** wraps),
                             rel_tol = .001,
                         )
@@ -1510,7 +1509,7 @@ class TuringTest(TestCase):
 
             self.assertEqual(
                 data,
-                getattr(self.final, status.lower()))
+                getattr(self.machine, status.lower()))
 
 
 class Fast(TuringTest):
@@ -1592,7 +1591,7 @@ class Fast(TuringTest):
 
                 self.assertEqual(
                     (step, slot),
-                    self.final.undfnd)
+                    self.machine.undfnd)
 
     def test_spaghetti(self):
         for prog in SPAGHETTI:

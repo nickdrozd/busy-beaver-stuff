@@ -20,7 +20,7 @@ if __name__ == '__main__':
             for cells in range(1, CELLS + 1):
                 macro_data[wraps][cells] = Machine(
                     BlockMacro(program, [cells] * wraps)
-                ).run().final.simple_termination
+                ).run().simple_termination
 
         fig, ax = plt.subplots()
 

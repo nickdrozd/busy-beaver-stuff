@@ -14,7 +14,7 @@ def shear(prog):
         x_limit = STEPS + PERIOD,
     )
 
-    if result.final.xlimit is not None:
+    if result.xlimit is not None:
         print(prog.strip())
 
 if __name__ == '__main__':

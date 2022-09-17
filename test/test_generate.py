@@ -84,7 +84,7 @@ class TestLinRado(TestCase):
             Machine(prog).run (
                 sim_lim = xlimit,
                 check_rec = 0,
-            ).final.xlimit is not None
+            ).xlimit is not None
         }
 
     def test_22(self):
@@ -200,7 +200,7 @@ class TestTree(TestCase):
         def capture(prog):
             run = Machine(prog).run(check_rec = 0, sim_lim = 13)
 
-            if run.final.xlimit is None:
+            if run.xlimit is None:
                 return
 
             q22.put(prog)
@@ -228,7 +228,7 @@ class TestTree(TestCase):
         def capture(prog):
             run = Machine(prog).run(check_rec = 0, sim_lim = 116)
 
-            if run.final.xlimit is None:
+            if run.xlimit is None:
                 return
 
             if (dots := prog.count('...')) == 0:
@@ -276,7 +276,7 @@ class TestTree(TestCase):
         def capture(prog):
             run = Machine(prog).run(check_rec = 0, sim_lim = 192)
 
-            if run.final.xlimit is None:
+            if run.xlimit is None:
                 return
 
             if (dots := prog.count('...')) == 0:

@@ -166,7 +166,7 @@ class Program:
         partial = Program.empty(len(self.states), len(self.colors))
 
         for _ in range(len(self.states) * len(self.colors) - 1):
-            if (result := Machine(partial).run().final.undfnd) is None:
+            if (result := Machine(partial).run().undfnd) is None:
                 return
 
             step, instr = result
@@ -379,11 +379,11 @@ class Program:
                         )
 
                         result = (
-                            getattr(run.final, final_prop)
+                            getattr(run, final_prop)
                             if not blank else
                             (
-                                min(run.final.blanks.values())
-                                if run.final.blanks else
+                                min(run.blanks.values())
+                                if run.blanks else
                                 None
                             )
                         )
