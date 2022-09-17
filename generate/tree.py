@@ -10,7 +10,13 @@ from tm import Machine
 from analyze import Program
 
 
-def stacker(steps: int, halt: bool, run_pile, stack: List[str]):
+def stacker(
+        steps: int,
+        halt: bool,
+        blank: bool,
+        run_pile,
+        stack: List[str],
+):
     prog = None
 
     while True:  # pylint: disable = while-used
@@ -23,6 +29,10 @@ def stacker(steps: int, halt: bool, run_pile, stack: List[str]):
         machine = Machine(prog).run(
             sim_lim = steps,
         )
+
+        if blank and machine.final.blanks:
+            prog = None
+            continue
 
         if machine.final.xlimit is not None:
             run_pile.put(prog)
@@ -67,8 +77,9 @@ def runner(run_pile, output: Callable):
 def run_tree_gen(
         states: int,
         colors: int,
-        halt: bool = False,
         steps: int = 500,
+        halt: bool = False,
+        blank: bool = False,
         output: Callable = print):
 
     run_pile = Manager().Queue()
@@ -79,6 +90,7 @@ def run_tree_gen(
             args = (
                 steps,
                 halt,
+                blank,
                 run_pile,
                 [str(Program.empty(states, colors))],
             ),

@@ -243,6 +243,7 @@ class TestTree(TestCase):
             states = 3,
             colors = 2,
             steps = 126,
+            blank = True,
             output = capture,
         )
 
@@ -287,6 +288,7 @@ class TestTree(TestCase):
             states = 2,
             colors = 3,
             steps = 223,
+            blank = True,
             output = capture,
         )
 
