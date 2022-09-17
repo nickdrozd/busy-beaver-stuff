@@ -5,7 +5,6 @@ score=no
 [MESSAGES CONTROL]
 disable=
   unspecified-encoding,
-  too-many-public-methods,
   missing-class-docstring,
   missing-module-docstring,
   missing-function-docstring,
@@ -32,7 +31,8 @@ good-names = maxDiff, pr, sh, tr, st, co
 
 [DESIGN]
 max-args	   = 9
-max-locals	   = 23
+max-locals	   = 22
 max-branches	   = 23
 max-attributes	   = 9
 max-statements	   = 59
+max-public-methods = 28
