@@ -109,8 +109,6 @@ class Machine:
             samples: Optional[Dict[int, Any]] = None,
             tape: Optional[BlockTape] = None,
     ) -> Machine:
-        prog = self._comp
-
         self.tape = tape = (
             tape
             if tape is not None else
@@ -161,7 +159,7 @@ class Machine:
             # Machine operation ####################
 
             try:
-                color, shift, next_state = prog[state][scan]
+                color, shift, next_state = self._comp[state][scan]
             except TypeError:
                 instr = f'{st_str(state)}{scan}'
                 self.final.undfnd = step, instr
@@ -225,9 +223,7 @@ class Machine:
         else:
             self.final.xlimit = step
 
-        show = self.finalize(step, cycle, state)
-
-        if watch_tape and show:
+        if self.finalize(step, cycle, state) and watch_tape:
             self.show_tape(step, state)
 
         return self
