@@ -341,7 +341,7 @@ QUASIHALT = {
 
     # 2/3
     "1RB 2LA 1RA  2LB 1LA 2RB": (16, 3),
-    # "1RB ... ...  2LB 1RB 1LB": ( 1, 5),
+    "1RB ... ...  2LB 1RB 1LB": ( 1, 5),
 
     # 4/2
     "1RB 1RC  1RD 0LC  1LD 0LD  1LB 0RA": (2332, 3),
@@ -428,7 +428,7 @@ RECUR = {
     "1RB 1LA 1LB  1LA 2RB 0LA": ( 80, 20),
     "1RB 2LA 0RB  1LA 2LA 1RA": ( 78, 14),
     "1RB 2LA 0RB  1LB 2LA 1RA": ( 76, 14),
-    # "1RB 2LA 0RB  1LA 0LB 1RA": ( 75,  4),
+    "1RB 2LA 0RB  1LA 0LB 1RA": ( 75,  4),
     "1RB 2LB 2LA  2LA 0LB 0RA": ( 63, 32),
     "1RB 0RA 2LB  2LA 2RA 0LB": ( 59, 32),
     "1RB 1LB 1LB  1LA 2RB 0LA": ( 58,  8),
@@ -443,7 +443,7 @@ RECUR = {
     "1RB 2LA 1RB  1LB 1LA 0RA": (  7, 46),
     "1RB 0RA 1LB  2LA 2RB 0LA": (  6, 48),
     "1RB 0RA 2LB  2LA 0LA 1RA": (  5, 28),
-    # "1RB 1RA 0RB  2LB 1LA 1LB": (  4, 23),
+    "1RB 1RA 0RB  2LB 1LA 1LB": (  4, 23),
     "1RB 2LA 0LB  1LA 2RA 2RB": (  3, 35),
     "1RB 2LA 0RB  0LB 1LA 0RA": (  2, 57),
     "1RB 0RB 0LB  1LB 2RA 1LA": (  2, 30),
@@ -607,7 +607,6 @@ RECUR_SLOW = {
     "1RB 0LA  0RC 1RD  1LA 0LD  1LC 0RD": ( 73906, 88381),
     "1RB 0LA  0RC 0RD  1LA 0RA  0LC 1RA": ( 22269896, 2353542),
     "1RB 0LA  0RC 1LA  1RD 0RD  1LB 1RB": ( 24378294, 2575984),
-    # "1RB 0LC  1RD 1LC  0LA 1LB  1LC 0RD": (309086174, 7129704),
 
     "1RB 2LB 0LA 1LB  3LA 0RA 3RA 2RB": (244262,      7),
     "1RB 2LB 3RB 0LB  1LA 2RA 0LB 2LB": (417770,     10),
@@ -638,6 +637,10 @@ RECUR_SLOW = {
     "1RB 1LB 0RA 2RB  1LA 2RA 3LB 3LA": (173436, 271169),
     "1RB 2LB 3RA 3RB  1LA 1RA 0LB 2LA": (173435, 271169),
     "1RB 2LA 0LB 1RA  3LA 2RA 0RA 0LB": ( 49741, 298438),
+}
+
+RECUR_TOO_SLOW = {
+    "1RB 0LC  1RD 1LC  0LA 1LB  1LC 0RD": (309086174, 7129704),
 }
 
 UNDEFINED = {
@@ -1049,6 +1052,11 @@ CANT_SPIN_OUT_FALSE_NEGATIVES = {
     "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB",  # QH 14, xmas
 }
 
+CANT_SPIN_OUT_SLOW = {
+    "1RB ... ...  2LB 1RB 1LB",
+    "1RB 1RA 0RB  2LB 1LA 1LB",
+}
+
 DO_HALT = {
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",  # 10^^15
     "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",  # 10^^5
@@ -1273,6 +1281,9 @@ class TuringTest(TestCase):
             f'spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog):
+        if prog in CANT_SPIN_OUT_SLOW:
+            return
+
         try:
             self.assertTrue(
                 Program(prog).cant_spin_out)
@@ -1310,9 +1321,6 @@ class TuringTest(TestCase):
             )
 
     def verify_lin_recurrence(self, prog, steps, period):
-        if prog == "1RB 0RA 1LB  2LA 2RB 0LA":  # in-place???
-            return
-
         recurrence = period + steps
         runtime    = period + recurrence
 
@@ -1532,6 +1540,11 @@ class Fast(TuringTest):
         self._test_spinout(SPINOUT_BLANK, blank = True)
 
     def test_recur(self):
+        for prog in RECUR_TOO_SLOW:
+            self.assert_cant_halt(prog)
+            self.assert_cant_blank(prog)
+            self.assert_cant_spin_out(prog)
+
         self._test_recur(RECUR)
         self._test_recur(RECUR_FIXED, fixdtp = True)
         self._test_recur(RECUR_BLANK_IN_PERIOD, blank = True)
@@ -1659,6 +1672,9 @@ class Slow(TuringTest):  # no-coverage
         self._test_halt(HALT_SLOW)
 
     def test_spinout(self):
+        for prog in CANT_SPIN_OUT_SLOW:
+            self.assert_cant_spin_out(prog)
+
         self._test_spinout(SPINOUT_SLOW)
         self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
         self._test_spinout(SPINOUT_FIXED_SLOW, fixed = True)
