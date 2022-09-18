@@ -1,14 +1,16 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 from tm import parse
 from tm.parse import st_str
 
+Instr = Tuple[str, str, str]
 
-def make_comment(st, co):
+
+def make_comment(st: str, co: int) -> str:
     return f'// {st}{co}'
 
 
-def make_shift(sh):
+def make_shift(sh: str) -> str:
     return (
         'RIGHT'
         if sh == 'R' else
@@ -16,11 +18,11 @@ def make_shift(sh):
     ) + ';'
 
 
-def make_trans(tr):
+def make_trans(tr: str) -> str:
     return f'goto {tr};'
 
 
-def make_binary_write(pr: int):
+def make_binary_write(pr: int) -> str:
     return (
         'PRINT'
         if pr == 1 else
@@ -28,7 +30,7 @@ def make_binary_write(pr: int):
     ) + ';'
 
 
-def make_n_way_write(pr):
+def make_n_way_write(pr: int) -> str:
     return f'WRITE({pr});'
 
 
@@ -40,7 +42,7 @@ def make_instruction(
         tr: Optional[str],
         indent: int,
         binary: bool,
-):
+) -> str:
     lines = [
         make_comment(st, co),
         make_shift(sh),
@@ -63,11 +65,12 @@ def make_instruction(
     return ('\n' + (' ' * indent)).join(lines)
 
 
-def make_if_else(st, instrs):
-    (_, _, tr0), (_, _, tr1) = in0, in1 = instrs
+def make_if_else(st: str, in0: Instr, in1: Instr) -> str:
+    _, _, tr0 = in0
+    _, _, tr1 = in1
 
     if st in (tr0, tr1):
-        return make_while(st, instrs)
+        return make_while(st, in0, in1)
 
     return IF_TEMPLATE.format(
         make_instruction(st, 0, *in0, 6, True),
@@ -88,8 +91,9 @@ IF_TEMPLATE = \
 '''
 
 
-def make_while(st, instrs):
-    (pr0, sh0, tr0), (pr1, sh1, _) = in0, in1 = instrs
+def make_while(st: str, in0: Instr, in1: Instr) -> str:
+    pr0, sh0, tr0 = in0
+    pr1, sh1,   _ = in1
 
     if tr0 == st:
         test = 'BLANK'
@@ -113,7 +117,7 @@ WHILE_TEMPLATE = \
 '''
 
 
-def make_n_way_switch(state, instrs):
+def make_n_way_switch(state: str, instrs: Tuple[Instr, ...]) -> str:
     return SWITCH_TEMPLATE.format(
         '\n'.join([
             make_case(state, color, instr)
@@ -130,7 +134,7 @@ SWITCH_TEMPLATE = \
 '''
 
 
-def make_case(st, co, instr):
+def make_case(st: str, co: int, instr: Instr) -> str:
     return CASE_TEMPLATE.format(
         co,
         make_instruction(st, co, *instr, 6, False),
@@ -142,23 +146,27 @@ CASE_TEMPLATE = \
       {}'''
 
 
-def make_switch(state, instrs):
-    return (
-        make_if_else
-        if len(instrs) == 2 else
-        make_n_way_switch
-    )(state, instrs)
+def make_switch(state: str, instrs: Tuple[Instr, ...]) -> str:
+    try:
+        in0, in1 = instrs
+    except ValueError:
+        return make_n_way_switch(state, instrs)
+    else:
+        return make_if_else(state, in0, in1)
 
 
-def make_labels(prog):
+def make_labels(prog: str) -> str:
     return '\n'.join([
-        f' {st_str(i)}:' + make_switch(st_str(i), instrs)
+        (
+            f' {st_str(i)}:'
+            + make_switch(st_str(i), instrs)  # type: ignore
+        )
         for i, instrs in
         enumerate(parse(prog))
     ])
 
 
-def make_c(prog):
+def make_c(prog: str) -> str:
     return PROG_TEMPLATE.format(
         prog,
         make_labels(

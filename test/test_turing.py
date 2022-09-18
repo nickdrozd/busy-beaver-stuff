@@ -1223,7 +1223,7 @@ class TuringTest(TestCase):
         )
 
     def assert_reached(self, prog):
-        def dimension(prog):
+        def dimension(prog: str) -> int:
             comp = tcompile(prog)
             return len(comp) * len(comp[0])
 

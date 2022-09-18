@@ -32,7 +32,7 @@ good-names = maxDiff, pr, sh, tr, st, co
 [DESIGN]
 max-args           =  9
 max-locals         = 22
-max-branches       = 23
+max-branches       = 24
 max-attributes     = 16
-max-statements     = 57
+max-statements     = 58
 max-public-methods = 28

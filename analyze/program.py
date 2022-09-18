@@ -23,13 +23,13 @@ class Program:
 
         self.graph = Graph(program)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '  '.join([
             ' '.join(instrs.values())
             for instrs in self.prog.values()
         ])
 
-    def __getitem__(self, slot: str):
+    def __getitem__(self, slot: str):  # type: ignore
         if len(slot) == 1:
             return self.prog[slot]
 
@@ -37,7 +37,7 @@ class Program:
         color: str = slot[1]
         return self.prog[state][int(color)]
 
-    def __setitem__(self, slot: str, instr: str):
+    def __setitem__(self, slot: str, instr: str) -> None:
         if len(slot) == 1:
             self.prog[slot] = instr  # type: ignore
             return
@@ -46,7 +46,7 @@ class Program:
         color: str = slot[1]
         self.prog[state][int(color)] = instr
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other) -> bool:  # type: ignore
         return str(self) == str(other)
 
     @staticmethod
@@ -77,13 +77,13 @@ class Program:
         return sorted(self.colors)[1:]
 
     @property
-    def instructions(self):
+    def instructions(self) -> Iterator[Tuple[str, str]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
                 yield state + str(color), instr
 
     @property
-    def actions(self):
+    def actions(self) -> Iterator[str]:
         for instrs in self.prog.values():
             yield from instrs.values()
 
@@ -304,7 +304,7 @@ class Program:
             slots: Tuple[str, ...],
             max_attempts: int = 24,
             blank: bool = False,
-    ):
+    ) -> bool:
         configs: List[
             Tuple[int, str, BlockTape, int, History]
         ] = [                              # type: ignore

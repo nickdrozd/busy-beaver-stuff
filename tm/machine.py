@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 from tm.tape import BlockTape
-from tm.parse import tcompile, st_str
-from tm.recurrence import History, Action, RecRes, State
+from tm.parse import tcompile, st_str, ProgLike
+from tm.recurrence import History, Action, RecRes, State, Tapes
 
 
 TERM_CATS = (
@@ -17,7 +17,7 @@ TERM_CATS = (
 )
 
 class Machine:
-    def __init__(self, prog):
+    def __init__(self, prog: ProgLike):
         self.program = prog
 
         if type(prog).__name__ == 'Program':
@@ -28,13 +28,15 @@ class Machine:
             prog[0][0]
 
         self._comp = tcompile(prog) if isinstance(prog, str) else prog
-        self.tape    = None
-        self.state   = None
-        self.steps   = None
-        self.cycles  = None
-        self.history = None
 
-        self.reached = defaultdict(lambda: 0)
+        self.tape: BlockTape
+        self.state: State
+        self.steps: int
+        self.cycles: int
+
+        self.history: Optional[History] = None
+
+        self.reached: Dict[Action, int] = defaultdict(lambda: 0)
 
         self.blanks: Dict[State, int] = {}
 
@@ -44,12 +46,12 @@ class Machine:
         self.spnout: Optional[int] = None
         self.xlimit: Optional[int] = None
 
-        self.linrec: Optional[Tuple[Optional[int], int]] = None
-        self.qsihlt: Optional[Tuple[Optional[int], int]] = None
+        self.linrec: Optional[RecRes] = None
+        self.qsihlt: Optional[RecRes] = None
 
         self.undfnd: Optional[Tuple[int, str]] = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         info = [
             f'{cat.upper()}: {data}'
             for cat in TERM_CATS
@@ -67,10 +69,10 @@ class Machine:
         return self.spnout if self.halted is None else self.halted
 
     @property
-    def marks(self):
+    def marks(self) -> int:
         return self.tape.marks
 
-    def show_tape(self, step, state):
+    def show_tape(self, step: int, state: int) -> None:
         print(' '.join([
             f'{step : 5d}',
             f'{st_str(state)}{self.tape.scan}',
@@ -78,13 +80,13 @@ class Machine:
         ]))
 
     def run(self,
-            skip = True,
-            step_lim = None,
+            skip: bool = True,
+            step_lim: Optional[int] = None,
             state: int = 0,
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
             check_rec: Optional[int] = None,
-            samples: Optional[Dict[int, Any]] = None,
+            samples: Optional[Tapes] = None,
             tape: Optional[BlockTape] = None,
     ) -> Machine:
         self.tape = tape = (
@@ -132,7 +134,8 @@ class Machine:
                 if self.check_rec(step, action) is not None:
                     break
 
-                self.history.add_action_at_step(step, action)
+                if self.history is not None:
+                    self.history.add_action_at_step(step, action)
 
             # Machine operation ####################
 
@@ -207,6 +210,9 @@ class Machine:
         return self
 
     def check_rec(self, step: int, action: Action) -> RecRes:
+        if self.history is None:
+            return None
+
         if (result := self.history.check_rec(step, action)) is None:
             return None
 
@@ -218,11 +224,12 @@ class Machine:
         if any(hc_beeps[st] <= hp_beeps[st] for st in hp_beeps):
             self.qsihlt = result
 
-        self.fixdtp = self.history.tape_is_fixed(start)
+        if start is not None:
+            self.fixdtp = self.history.tape_is_fixed(start)
 
         return result
 
-    def finalize(self, step, cycle, state) -> bool:
+    def finalize(self, step: int, cycle: int, state: int) -> bool:
         assert cycle <= step
 
         show = (
@@ -257,7 +264,7 @@ class Machine:
 
         return show
 
-    def validate_results(self):
+    def validate_results(self) -> None:
         assert len(results := [
             (cat, data)
             for cat in TERM_CATS

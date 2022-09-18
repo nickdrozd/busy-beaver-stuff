@@ -22,7 +22,7 @@ lint :
 	pylint *.py **/*.py
 
 	mypy --version
-	mypy tm generate test analyze
+	mypy tm generate analyze
 
 TUR = test.test_turing.Fast
 PROG = test.test_program

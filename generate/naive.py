@@ -1,10 +1,17 @@
-from itertools import product
 import re
+from itertools import product
+from typing import Callable, Iterator, List, Optional, Pattern
 
 SHIFTS = 'R', 'L'
 HALT   = '_'
 
-def yield_all_programs(state_count, color_count, halt = False):
+Rejects = List[Pattern[str]]
+
+def yield_all_programs(
+        state_count: int,
+        color_count: int,
+        halt: bool = False,
+) -> Iterator[str]:
     states = tuple(map(chr, range(65, 65 + state_count)))
     colors = tuple(map(str, range(color_count)))
 
@@ -48,36 +55,44 @@ def yield_all_programs(state_count, color_count, halt = False):
 
 
 
-def b0_halt(colors):
+def b0_halt(colors: int) -> str:
     return '  '.join([
         ' '.join(('...' for _ in range(colors))),
         '.._',
     ])
 
 
-def r_on_0(states, colors):
-    prog = '  '.join(
+def r_on_0(states: int, colors: int) -> str:
+    return '^' + '  '.join(
         ' '.join(['.R.'] + ['...' for _ in range(colors - 1)])
         for _ in range(states)
     )
 
-    return '^' + prog
 
-
-def reject(rejects, states, colors, halt = False):
+def reject(
+        rejects: Rejects,
+        states: int,
+        colors: int,
+        halt: bool = False,
+) -> Callable[[str], bool]:
     rejects = [re.compile(regex) for regex in rejects]
     rejects.insert(0, re.compile(r_on_0(states, colors)))
 
     if halt:
         rejects.insert(0, re.compile(b0_halt(colors)))
 
-    def reject_prog(prog):
+    def reject_prog(prog: str) -> bool:
         return any(regex.match(prog) for regex in rejects)
 
     return reject_prog
 
 
-def yield_programs(states, colors, halt, rejects = None):
+def yield_programs(
+        states: int,
+        colors: int,
+        halt: bool,
+        rejects: Optional[Rejects] = None,
+) -> Iterator[str]:
     if rejects is None:
         rejects = []
 

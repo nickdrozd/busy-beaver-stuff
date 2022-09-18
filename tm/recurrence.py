@@ -4,25 +4,22 @@ from copy import copy
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 
-from tm.tape import PtrTape
+from tm.tape import PtrTape, BlockTape
 
 State = Union[int, str]
 Color = int
 Action = Tuple[State, Color]
-RecRes = Optional[Action]
+RecRes = Optional[Tuple[Optional[int], int]]
+Tapes = Dict[int, PtrTape]
 
 class History:
-    def __init__(self, tapes = None):
-        self.tapes: Dict[int, PtrTape] = (
-            {}
-            if tapes is None else
-            tapes
-        )
+    def __init__(self, tapes: Optional[Tapes] = None):
+        self.tapes: Tapes = {} if tapes is None else tapes
 
         self.states: List[State] = []
         self.changes: List[bool] = []
         self.positions: List[int] = []
-        self.actions = defaultdict(list)
+        self.actions: Dict[Action, List[int]] = defaultdict(list)
 
     def copy(self) -> History:
         new_copy = History(tapes = dict(self.tapes.items()))
@@ -37,21 +34,21 @@ class History:
 
         return new_copy
 
-    def add_action_at_step(self, step: int, action: Action):
+    def add_action_at_step(self, step: int, action: Action) -> None:
         self.actions[action].append(step)
 
-    def add_state_at_step(self, step: int, state: State):
+    def add_state_at_step(self, step: int, state: State) -> None:
         self.states += [state] * (step - len(self.states))
         self.states.append(state)
 
-    def add_tape_at_step(self, step: int, tape):
+    def add_tape_at_step(self, step: int, tape: BlockTape) -> None:
         self.tapes[step] = tape.to_ptr()
 
         pos = tape.head
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
 
-    def add_change_at_step(self, step: int, change: bool):
+    def add_change_at_step(self, step: int, change: bool) -> None:
         self.changes += [change] * (step - len(self.changes))
         self.changes.append(change)
 
@@ -92,8 +89,8 @@ class History:
             self,
             steps: int,
             recurrence: int,
-            tape1 = None,
-            tape2 = None,
+            tape1: Optional[PtrTape] = None,
+            tape2: Optional[PtrTape] = None,
     ) -> RecRes:
         assert self.states[steps] == self.states[recurrence]
 

@@ -105,7 +105,7 @@ class BlockTape:
 
         return None
 
-    def shift_head(self, shift: int, stepped: int):
+    def shift_head(self, shift: int, stepped: int) -> None:
         if shift:
             self.head += stepped
         else:
@@ -198,7 +198,7 @@ class BlockTape:
 
 class PtrTape:
     # pylint: disable = too-few-public-methods
-    def __init__(self, tape, init, head):
+    def __init__(self, tape: List[int], init: int, head: int):
         self.tape = tape
         self.init = init
         self.head = head

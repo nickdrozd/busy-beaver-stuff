@@ -1,7 +1,7 @@
 from itertools import product
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
-from tm.parse import tcompile, dcompile, Instr, CompProg
+from tm.parse import tcompile, dcompile, Instr, CompProg, ProgLike
 
 Color = int
 State = int
@@ -10,7 +10,7 @@ Tape = List[Color]
 ########################################
 
 class MacroProg:
-    def __init__(self, program):
+    def __init__(self, program: ProgLike):
         self.program = program
 
         self.comp: CompProg
@@ -92,7 +92,7 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
-    def __init__(self, program, cell_seq: List[int]):
+    def __init__(self, program: ProgLike, cell_seq: List[int]):
         *seq, cells = cell_seq
 
         if seq:

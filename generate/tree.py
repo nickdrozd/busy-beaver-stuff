@@ -1,22 +1,23 @@
-from queue import Empty
+from queue import Empty, Queue
 from multiprocessing import (
     cpu_count,
     Manager,
     Process,
 )
-from typing import Callable, List
+from typing import Any, Callable, List
 
 from tm import Machine
 from analyze import Program
 
+RunPile = Queue[Any]
 
 def stacker(
         steps: int,
         halt: bool,
         blank: bool,
-        run_pile,
+        run_pile: RunPile,
         stack: List[str],
-):
+) -> None:
     prog = None
 
     while True:  # pylint: disable = while-used
@@ -58,7 +59,10 @@ def stacker(
             stack.append(ext)
 
 
-def runner(run_pile, output: Callable):
+def runner(
+        run_pile: RunPile,
+        output: Callable[[str], None],
+) -> None:
     while True:  # pylint: disable = while-used
         try:
             prog = run_pile.get(timeout = 1)
@@ -80,9 +84,9 @@ def run_tree_gen(
         steps: int = 500,
         halt: bool = False,
         blank: bool = False,
-        output: Callable = print):
-
-    run_pile = Manager().Queue()
+        output: Callable[[str], None] = print,
+) -> None:
+    run_pile: RunPile = Manager().Queue()
 
     processes = [
         Process(

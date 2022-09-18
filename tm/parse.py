@@ -1,9 +1,10 @@
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 
 Instr = Tuple[int, int, int]
 CompProg = Tuple[Tuple[Optional[Instr], ...], ...]
 
+ProgLike = Any
 
 def parse(program: str) -> Tuple[Tuple[str, ...], ...]:
     return tuple(

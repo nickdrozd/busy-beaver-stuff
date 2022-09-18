@@ -17,6 +17,8 @@ COLORS = (
 HALT = '_'
 UNDEFINED = '.'
 
+ConGraph = Dict[str, Set[str]]
+
 class Graph:
     def __init__(self, program: str):
         self.program = program
@@ -188,7 +190,7 @@ class Graph:
         return not bool(self.reduced)
 
 
-def purge_dead_ends(graph):
+def purge_dead_ends(graph: ConGraph) -> None:
     to_cut = {
         state
         for state, connections in graph.items()
@@ -202,7 +204,7 @@ def purge_dead_ends(graph):
         del graph[state]
 
 
-def inline_single_entry(graph):
+def inline_single_entry(graph: ConGraph) -> None:
     for _ in range(len(graph)):
         for dst in set(graph.keys()):
             entries = {
@@ -229,13 +231,13 @@ def inline_single_entry(graph):
     purge_dead_ends(graph)
 
 
-def cut_reflexive_arrows(graph):
+def cut_reflexive_arrows(graph: ConGraph) -> None:
     for state, connections in graph.items():
         if state in connections:
             connections.remove(state)
 
 
-def inline_single_exit(graph):
+def inline_single_exit(graph: ConGraph) -> None:
     for state, connections in graph.items():
         if state in connections:
             connections.remove(state)
