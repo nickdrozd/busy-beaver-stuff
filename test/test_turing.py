@@ -1638,13 +1638,17 @@ class Fast(TuringTest):
 
         print(self.machine)
 
+        self.assertEqual(
+            self.machine.tape.signature,
+            '[0]0')
+
         self.run_bb(
             "1RB 2LA 1R_  1LB 1LA 0RA",
             watch_tape = True)
 
         self.assertEqual(
             self.machine.tape.signature,
-            '101[2]21')
+            '1|0|1[2]2|1')
 
         print(self.machine)
 
@@ -1656,15 +1660,15 @@ class Fast(TuringTest):
 
         self.assertEqual(
             self.machine.tape.signature,
-            '101[2]21')
+            '1|0|1[2]2|1')
 
         self.assertEqual(
             copy_1.signature,
-            '10[1]21')
+            '1|0[1]2|1')
 
         self.assertEqual(
             copy_2.signature,
-            '101[2]1')
+            '1|0|1[2]1')
 
 
 class Slow(TuringTest):  # no-coverage
