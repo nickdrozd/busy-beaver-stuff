@@ -1,11 +1,12 @@
 import sys
 
 from tm import Machine
+from analyze import BlockMacro
 
 PRINT = 1
 STEPS = 10 ** 10
 RCRNC = None
-SKIP  = 1
+MACRO = None
 
 PROFILE = 0
 
@@ -18,8 +19,13 @@ if __name__ == '__main__':
         yappi.start()
 
     for i, program in enumerate(sys.stdin):
+        # pylint: disable = redefined-loop-name
+        program = program.strip()
+
+        if MACRO is not None:
+            program = BlockMacro(program, MACRO)
+
         machine = Machine(program).run(
-            skip = SKIP,
             sim_lim = STEPS,
             watch_tape = PRINT,
             check_rec = RCRNC,
