@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 class BlockTape:
     def __init__(
@@ -10,7 +10,6 @@ class BlockTape:
             rspan: List[List[int]],
             head: Optional[int] = None,
             init: Optional[int] = None,
-            extend_to: Optional[int] = None,
     ):
         self.lspan = lspan
         self.scan = int(scan)
@@ -23,8 +22,6 @@ class BlockTape:
             init
         )
 
-        self.extend_to = extend_to
-
     def __repr__(self) -> str:
         return ' '.join([
             f'{color}^{count}'
@@ -36,8 +33,16 @@ class BlockTape:
             for color, count in reversed(self.rspan)
         ])
 
-    @property
-    def listify(self) -> Tuple[int, List[int]]:
+    def copy(self) -> BlockTape:
+        return BlockTape(
+            [[color, count] for color, count in self.lspan],
+            self.scan,
+            [[color, count] for color, count in self.rspan],
+            head = self.head,
+            init = self.init,
+        )
+
+    def to_ptr(self) -> PtrTape:
         lspan, rspan = [], []
 
         for color, count in self.lspan:
@@ -46,24 +51,9 @@ class BlockTape:
         for color, count in self.rspan:
             rspan += [color] * count
 
-        return 0, lspan + [self.scan] + list(reversed(rspan))
-
-    def copy(self) -> BlockTape:
-        return BlockTape(
-            [[color, count] for color, count in self.lspan],
-            self.scan,
-            [[color, count] for color, count in self.rspan],
-            head = self.head,
-            init = self.init,
-            extend_to = self.extend_to,
-        )
-
-    def to_ptr(self) -> PtrTape:
-        ldiff, listified = self.listify
-
         return PtrTape(
-            listified,
-            self.init + ldiff,
+            lspan + [self.scan] + list(reversed(rspan)),
+            self.init,
             self.head,
         )
 
