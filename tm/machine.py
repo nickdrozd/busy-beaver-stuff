@@ -205,8 +205,10 @@ class Machine:
         else:
             self.xlimit = step
 
-        if self.finalize(step, cycle, state) and watch_tape:
-            self.show_tape(step, cycle, state)
+        self.finalize(step, cycle, state)
+
+        if watch_tape and bool(self.halted):
+            self.show_tape(step, 1 + cycle, state)
 
         return self
 
@@ -230,13 +232,8 @@ class Machine:
 
         return result
 
-    def finalize(self, step: int, cycle: int, state: int) -> bool:
+    def finalize(self, step: int, cycle: int, state: int) -> None:
         assert cycle <= step
-
-        show = (
-            bool(self.halted)
-            or bool(self.blanks)
-        )
 
         if state == -1:
             self.halted = step
@@ -262,8 +259,6 @@ class Machine:
         self.cycles = cycle
 
         self.validate_results()
-
-        return show
 
     def validate_results(self) -> None:
         assert len(results := [

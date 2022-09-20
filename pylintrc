@@ -34,5 +34,5 @@ max-args           =  9
 max-locals         = 22
 max-branches       = 24
 max-attributes     = 16
-max-statements     = 58
+max-statements     = 59
 max-public-methods = 28
