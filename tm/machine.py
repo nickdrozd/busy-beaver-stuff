@@ -132,11 +132,12 @@ class Machine:
                 break
 
             if check_rec is not None and step >= check_rec:
+                assert self.history is not None
+
                 if self.check_rec(step, action) is not None:
                     break
 
-                if self.history is not None:
-                    self.history.add_action_at_step(step, action)
+                self.history.add_action_at_step(step, action)
 
             # Machine operation ####################
 
@@ -213,8 +214,7 @@ class Machine:
         return self
 
     def check_rec(self, step: int, action: Action) -> RecRes:
-        if self.history is None:
-            return None
+        assert self.history is not None
 
         if (result := self.history.check_rec(step, action)) is None:
             return None
