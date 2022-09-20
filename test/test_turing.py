@@ -889,8 +889,8 @@ UNDEFINED = {
 
 BB4_EXTENSIONS = {
     "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": ('HALTED', 107),
-    "1RB 1LB  1LA 0LC  0LC 1LD  1RD 0RA": ('LINREC', (106, 1)),
-    "1RB 1LB  1LA 0LC  1LC 1LD  1RD 0RA": ('LINREC', (106, 1)),
+    "1RB 1LB  1LA 0LC  0LC 1LD  1RD 0RA": ('SPNOUT', 106),
+    "1RB 1LB  1LA 0LC  1LC 1LD  1RD 0RA": ('SPNOUT', 106),
     "1RB 1LB  1LA 0LC  0LB 1LD  1RD 0RA": ('LINREC', (24, 96)),
     "1RB 1LB  1LA 0LC  1RA 1LD  1RD 0RA": ('LINREC', (85, 23)),
     "1RB 1LB  1LA 0LC  1LB 1LD  1RD 0RA": ('LINREC', (89, 18)),
@@ -907,8 +907,8 @@ BB4_EXTENSIONS = {
     "1RB 1LB  1LA 0LC  0RC 1LD  1RD 0RA": ('LINREC', (403, 144)),
 
     "1RB 0RC  1LA 1RA  1R_ 1RD  1LD 0LB": ('HALTED', 96),
-    "1RB 0RC  1LA 1RA  1RC 1RD  1LD 0LB": ('LINREC', (95, 1)),
-    "1RB 0RC  1LA 1RA  0RC 1RD  1LD 0LB": ('LINREC', (95, 1)),
+    "1RB 0RC  1LA 1RA  1RC 1RD  1LD 0LB": ('SPNOUT', 95),
+    "1RB 0RC  1LA 1RA  0RC 1RD  1LD 0LB": ('SPNOUT', 95),
     "1RB 0RC  1LA 1RA  0RA 1RD  1LD 0LB": ('LINREC', (0, 96)),
     "1RB 0RC  1LA 1RA  1LB 1RD  1LD 0LB": ('LINREC', (74, 23)),
     "1RB 0RC  1LA 1RA  1RA 1RD  1LD 0LB": ('LINREC', (78, 18)),
@@ -1497,7 +1497,7 @@ class TuringTest(TestCase):
         for prog, (status, data) in prog_data.items():
             self.run_bb(
                 prog,
-                check_rec = 0,
+                check_rec = 0 if status == 'LINREC' else None,
             )
 
             self.assertEqual(
