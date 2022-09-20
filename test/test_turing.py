@@ -889,8 +889,8 @@ UNDEFINED = {
 
 BB4_EXTENSIONS = {
     "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": ('HALTED', 107),
-    "1RB 1LB  1LA 0LC  0LC 1LD  1RD 0RA": ('QSIHLT', (106, 1)),
-    "1RB 1LB  1LA 0LC  1LC 1LD  1RD 0RA": ('QSIHLT', (106, 1)),
+    "1RB 1LB  1LA 0LC  0LC 1LD  1RD 0RA": ('LINREC', (106, 1)),
+    "1RB 1LB  1LA 0LC  1LC 1LD  1RD 0RA": ('LINREC', (106, 1)),
     "1RB 1LB  1LA 0LC  0LB 1LD  1RD 0RA": ('LINREC', (24, 96)),
     "1RB 1LB  1LA 0LC  1RA 1LD  1RD 0RA": ('LINREC', (85, 23)),
     "1RB 1LB  1LA 0LC  1LB 1LD  1RD 0RA": ('LINREC', (89, 18)),
@@ -907,8 +907,8 @@ BB4_EXTENSIONS = {
     "1RB 1LB  1LA 0LC  0RC 1LD  1RD 0RA": ('LINREC', (403, 144)),
 
     "1RB 0RC  1LA 1RA  1R_ 1RD  1LD 0LB": ('HALTED', 96),
-    "1RB 0RC  1LA 1RA  1RC 1RD  1LD 0LB": ('QSIHLT', (95, 1)),
-    "1RB 0RC  1LA 1RA  0RC 1RD  1LD 0LB": ('QSIHLT', (95, 1)),
+    "1RB 0RC  1LA 1RA  1RC 1RD  1LD 0LB": ('LINREC', (95, 1)),
+    "1RB 0RC  1LA 1RA  0RC 1RD  1LD 0LB": ('LINREC', (95, 1)),
     "1RB 0RC  1LA 1RA  0RA 1RD  1LD 0LB": ('LINREC', (0, 96)),
     "1RB 0RC  1LA 1RA  1LB 1RD  1LD 0LB": ('LINREC', (74, 23)),
     "1RB 0RC  1LA 1RA  1RA 1RD  1LD 0LB": ('LINREC', (78, 18)),
@@ -1233,6 +1233,11 @@ class TuringTest(TestCase):
             self.machine.fixdtp,
             fixed)
 
+    def assert_quasihalt(self, qsihlt):
+        self.assertEqual(
+            self.machine.qsihlt,
+            qsihlt)
+
     def assert_could_halt(self, prog):
         self.assertFalse(
             Program(prog).cant_halt,
@@ -1396,6 +1401,8 @@ class TuringTest(TestCase):
 
             self.assert_fixed_tape(fixed)
 
+            self.assert_quasihalt(True)
+
             if '_' in prog:
                 self.assert_could_halt(prog)
                 self.assert_cant_spin_out(prog)
@@ -1466,11 +1473,9 @@ class TuringTest(TestCase):
                 period,
                 self.machine.linrec[1])
 
-            self.assertEqual(
-                self.machine.qsihlt,
-                self.machine.linrec if qsihlt else None)
-
             self.assert_fixed_tape(False if blank else fixdtp)
+
+            self.assert_quasihalt(qsihlt)
 
     def _test_macro(self, prog_data):
         for prog, steps in prog_data.items():
@@ -1527,7 +1532,7 @@ class Fast(TuringTest):
 
         self._test_recur(RECUR)
         self._test_recur(RECUR_FIXED, fixdtp = True)
-        self._test_recur(RECUR_BLANK_IN_PERIOD, blank = True)
+        self._test_recur(RECUR_BLANK_IN_PERIOD, blank = True, qsihlt = None)
 
         self._test_recur(QUASIHALT, qsihlt = True)
         self._test_recur(QUASIHALT_FIXED, qsihlt = True, fixdtp = True)

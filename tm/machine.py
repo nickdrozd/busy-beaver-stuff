@@ -48,7 +48,8 @@ class Machine:
         self.xlimit: Optional[int] = None
 
         self.linrec: Optional[LinRec] = None
-        self.qsihlt: Optional[LinRec] = None
+
+        self.qsihlt: Optional[bool] = None
 
         self.undfnd: Optional[Tuple[int, str]] = None
 
@@ -225,8 +226,10 @@ class Machine:
         hc_beeps = self.history.calculate_beeps()
         hp_beeps = self.history.calculate_beeps(start)
 
-        if any(hc_beeps[st] <= hp_beeps[st] for st in hp_beeps):
-            self.qsihlt = result
+        self.qsihlt = any(
+            hc_beeps[st] <= hp_beeps[st]
+            for st in hp_beeps
+        )
 
         self.fixdtp = self.history.tape_is_fixed(start)
 
@@ -238,6 +241,10 @@ class Machine:
         if state == -1:
             self.halted = step
             self.fixdtp = True
+            self.qsihlt = True
+
+        if self.spnout is not None:
+            self.qsihlt = True
 
         if self.tape.blank:
             if 0 in self.blanks:
