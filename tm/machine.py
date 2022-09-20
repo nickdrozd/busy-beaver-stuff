@@ -72,8 +72,9 @@ class Machine:
     def marks(self) -> int:
         return self.tape.marks
 
-    def show_tape(self, step: int, state: int) -> None:
-        print(' '.join([
+    def show_tape(self, step: int, cycle: int, state: int) -> None:
+        print(' | '.join([
+            f'{cycle: 5d}',
             f'{step : 5d}',
             f'{st_str(state)}{self.tape.scan}',
             str(self.tape),
@@ -122,7 +123,7 @@ class Machine:
             # Output ###############################
 
             if watch_tape:
-                self.show_tape(step, state)
+                self.show_tape(step, cycle, state)
 
             # Halt conditions ######################
 
@@ -205,7 +206,7 @@ class Machine:
             self.xlimit = step
 
         if self.finalize(step, cycle, state) and watch_tape:
-            self.show_tape(step, state)
+            self.show_tape(step, cycle, state)
 
         return self
 
