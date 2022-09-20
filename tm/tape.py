@@ -9,18 +9,12 @@ class BlockTape:
             scan: Union[int, str],
             rspan: List[List[int]],
             head: Optional[int] = None,
-            init: Optional[int] = None,
     ):
         self.lspan = lspan
         self.scan = int(scan)
         self.rspan = rspan
 
         self.head: int = 0 if head is None else head
-        self.init: int = (
-            sum(q for (_, q) in self.lspan)
-            if init is None else
-            init
-        )
 
     def __repr__(self) -> str:
         return ' '.join([
@@ -33,13 +27,16 @@ class BlockTape:
             for color, count in reversed(self.rspan)
         ])
 
+    @property
+    def init(self) -> int:
+        return sum(q for (_, q) in self.lspan) - self.head
+
     def copy(self) -> BlockTape:
         return BlockTape(
             [[color, count] for color, count in self.lspan],
             self.scan,
             [[color, count] for color, count in self.rspan],
             head = self.head,
-            init = self.init,
         )
 
     def to_ptr(self) -> PtrTape:
@@ -52,9 +49,8 @@ class BlockTape:
             rspan += [color] * count
 
         return PtrTape(
-            lspan + [self.scan] + list(reversed(rspan)),
             self.init,
-            self.head,
+            lspan + [self.scan] + list(reversed(rspan)),
         )
 
     @property
@@ -95,18 +91,6 @@ class BlockTape:
 
         return None
 
-    def shift_head(self, shift: int, stepped: int) -> None:
-        if shift:
-            self.head += stepped
-        else:
-            if self.head + self.init == 0:
-                self.init += stepped
-
-            self.head -= stepped
-
-            if self.head + self.init < 0:
-                self.init += 1
-
     def step(self, shift: int, color: int) -> int:
         pull, push = (
             (self.rspan, self.lspan)
@@ -136,7 +120,10 @@ class BlockTape:
 
         self.scan = next_color
 
-        self.shift_head(shift, 1)
+        if shift:
+            self.head += 1
+        else:
+            self.head -= 1
 
         return 1
 
@@ -181,17 +168,19 @@ class BlockTape:
             else:
                 push[-1][1] += stepped
 
-        self.shift_head(shift, stepped)
+        if shift:
+            self.head += stepped
+        else:
+            self.head -= stepped
 
         return stepped
 
 
 class PtrTape:
     # pylint: disable = too-few-public-methods
-    def __init__(self, tape: List[int], init: int, head: int):
+    def __init__(self, init: int, tape: List[int]):
         self.tape = tape
         self.init = init
-        self.head = head
 
         self.lspan: int =              0 - self.init
         self.rspan: int = len(self.tape) - self.init
