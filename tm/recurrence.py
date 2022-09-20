@@ -9,7 +9,7 @@ from tm.tape import PtrTape, BlockTape
 State = Union[int, str]
 Color = int
 Action = Tuple[State, Color]
-RecRes = Optional[Tuple[Optional[int], int]]
+RecRes = Optional[Tuple[int, int]]
 Tapes = Dict[int, PtrTape]
 
 class History:

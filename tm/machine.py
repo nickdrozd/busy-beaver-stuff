@@ -7,6 +7,7 @@ from tm.tape import BlockTape
 from tm.parse import tcompile, st_str, ProgLike
 from tm.recurrence import History, Action, RecRes, State, Tapes
 
+LinRec = Tuple[Optional[int], int]
 
 TERM_CATS = (
     'halted',
@@ -46,8 +47,8 @@ class Machine:
         self.spnout: Optional[int] = None
         self.xlimit: Optional[int] = None
 
-        self.linrec: Optional[RecRes] = None
-        self.qsihlt: Optional[RecRes] = None
+        self.linrec: Optional[LinRec] = None
+        self.qsihlt: Optional[LinRec] = None
 
         self.undfnd: Optional[Tuple[int, str]] = None
 
@@ -227,8 +228,7 @@ class Machine:
         if any(hc_beeps[st] <= hp_beeps[st] for st in hp_beeps):
             self.qsihlt = result
 
-        if start is not None:
-            self.fixdtp = self.history.tape_is_fixed(start)
+        self.fixdtp = self.history.tape_is_fixed(start)
 
         return result
 
