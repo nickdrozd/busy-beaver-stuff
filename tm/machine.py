@@ -144,8 +144,7 @@ class Machine:
             try:
                 color, shift, next_state = self._comp[state][scan]
             except TypeError:
-                instr = f'{st_str(state)}{scan}'
-                self.undfnd = step, instr
+                self.undfnd = step, f'{st_str(state)}{scan}'
                 break
 
             self.reached[action] += 1
