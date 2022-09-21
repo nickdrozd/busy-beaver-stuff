@@ -149,11 +149,10 @@ class Machine:
 
             self.reached[action] += 1
 
-            if self.history is None:
-                if (state == next_state
-                        and (shift == tape.edge or marks == 0)):
-                    self.spnout = step
-                    break
+            if (state == next_state
+                    and (shift == tape.edge or marks == 0)):
+                self.spnout = step
+                break
 
             change = (
                 True
