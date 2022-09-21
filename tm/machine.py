@@ -41,8 +41,6 @@ class Machine:
 
         self.blanks: Dict[State, int] = {}
 
-        self.fixdtp: Optional[bool] = None
-
         self.halted: Optional[int] = None
         self.spnout: Optional[int] = None
         self.xlimit: Optional[int] = None
@@ -156,12 +154,7 @@ class Machine:
                 if (state == next_state
                         and (shift == tape.edge or marks == 0)):
                     self.spnout = step
-                    self.fixdtp = color == 0
                     break
-            else:
-                self.history.add_change_at_step(
-                    step,
-                    color != scan)
 
             change = (
                 True
@@ -231,8 +224,6 @@ class Machine:
             for st in hp_beeps
         )
 
-        self.fixdtp = self.history.tape_is_fixed(start)
-
         return result
 
     def finalize(self, step: int, cycle: int, state: int) -> None:
@@ -240,7 +231,6 @@ class Machine:
 
         if state == -1:
             self.halted = step
-            self.fixdtp = True
             self.qsihlt = True
 
         if self.spnout is not None:
@@ -249,11 +239,9 @@ class Machine:
         if self.tape.blank:
             if 0 in self.blanks:
                 self.linrec = 0, step
-                self.fixdtp = False
             elif (blanks := self.blanks):
                 if (period := step - blanks[state]):
                     self.linrec = None, period
-                    self.fixdtp = False
                     self.xlimit = None
 
         self.blanks = blanks = {
@@ -273,6 +261,3 @@ class Machine:
             for cat in TERM_CATS
             if (data := getattr(self, cat)) is not None
         ]) == 1, results
-
-        if self.simple_termination is not None:
-            assert self.fixdtp is not None

@@ -122,6 +122,8 @@ SPINOUT = {
     # 2/2
     "1RB 1LB  1LB 1LA": (3, 6),
     "1RB 0LB  1LB 1LA": (2, 6),
+    "1RB 1LB  0LB 1LA": (2, 6),
+    "1RB 0LB  0LB 1LA": (1, 6),
 
     # 3/2
     "1RB 0LB  1LA 0RC  1LC 1LA": (6, 55),  # BBB(3, 2)
@@ -138,13 +140,17 @@ SPINOUT = {
     "1RB 2LB 1RA  2LB 2LA 0RA": (10, 43),
     "1RB 2RA 2LB  2LB 2LA 0LA": ( 5, 40),
     "1RB 1LB 1RA  2LB 2LA 0RA": ( 6, 23),
+    "1RB 2RA 2LB  0LB 1LA 1RA": ( 4, 23),
     "1RB 2LB ...  1LB 2LA 1RB": ( 5, 17),
 
     # 4/2
+    "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819),  # BBB sigma
+    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA": (25, 1459),
     "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA": (39, 1164),
     "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA": (20, 1153),
     "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA": (19,  673),
     "1RB 0LC  1LD 0RA  1RC 1RB  1LA 0LB": (31,  651),
+    "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": (32,  581),
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,  536),
     "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,  444),
 
@@ -158,6 +164,8 @@ SPINOUT = {
     "1RB 2RB 3LA 2RA  1LB 1LA 2LB 3RA": (  42,    3057),
     "1RB 2RA 3LB 2LA  1LB 3LA 3RA 1RB": (  44,    3054),
     "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA": (  31,    2872),
+    "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB": (  31,    2476),
+    "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": (  30,    1854),
     "1RB 0RB 0LA 2LB  1LB 2LA 3RB 1RA": (  32,    1769),
     "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA": (  36,    1525),
     "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA": (  35,    1458),
@@ -175,6 +183,17 @@ SPINOUT = {
         "6LG 4LD ... ... ... 0LD 5LG",
         "2RF 1LG 1LC ... 1RB ... ...",
     ]): (1, 10925753),
+
+    # 7/8 derived from 4/2-2819
+    '  '.join([
+        "1RB 2RC 1LD ... ... 3LE ... 3LF",
+        "0LD ... ... 1LD 2LD ... 3LA ...",
+        "4LE 4RC 5RG 3LD 4LD ... 6LD ...",
+        "0LD 2RC 7RG ... 5RG 6RC ... 0RC",
+        "4RC ... 3LA ... 1RB 5RB 3LD ...",
+        "7RG ... ... ... ... 1RB ... ...",
+        "6LA ... ... 1RB 5RG ... 3LA ...",
+    ]): (24, 944),
 }
 
 SPINOUT_BLANK = {
@@ -277,38 +296,12 @@ SPINOUT_BLANK = {
 
 }
 
-SPINOUT_FIXED = {
-    # 2/2
-    "1RB 1LB  0LB 1LA": (2, 6),
-    "1RB 0LB  0LB 1LA": (1, 6),
-
-    # 2/3
-    "1RB 2RA 2LB  0LB 1LA 1RA": (4, 23),
-
-    # 4/2
-    "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819),  # BBB sigma
-    "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA": (25, 1459),
-    "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": (32,  581),
-
-    # 2/4
-    "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB": ( 31,  2476),
-    "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": ( 30,  1854),
-
-    # 7/8 derived from 4/2-2819
-    '  '.join([
-        "1RB 2RC 1LD ... ... 3LE ... 3LF",
-        "0LD ... ... 1LD 2LD ... 3LA ...",
-        "4LE 4RC 5RG 3LD 4LD ... 6LD ...",
-        "0LD 2RC 7RG ... 5RG 6RC ... 0RC",
-        "4RC ... 3LA ... 1RB 5RB 3LD ...",
-        "7RG ... ... ... ... 1RB ... ...",
-        "6LA ... ... 1RB 5RG ... 3LA ...",
-    ]): (24, 944),
-}
-
 SPINOUT_SLOW = {
     # 2/4
     "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (3340, 2333909),
+
+    # 5/2
+   "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA": (4843, 26181502),
 }
 
 SPINOUT_BLANK_SLOW = {
@@ -328,19 +321,17 @@ SPINOUT_BLANK_SLOW = {
         {'C', 'E', 'F', 'D'}, 65538552),
 }
 
-SPINOUT_FIXED_SLOW = {
-    # 5/2
-   "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA": (4843, 26181502),
-}
-
 QUASIHALT = {
     # 3/2
-    "1RB ...  1LB 0LC  1RC 1RB": (5, 13),
-    "1RB ...  1LB 1RC  0LC 0RB": (2, 14),
-    "1RB ...  1LB 1LC  1RC 0RB": (2, 13),
-    "1RB ...  1LC 0RB  1LB 1RC": (2, 10),
+    "1RB 1RC  1LC 0LB  1RA 1LA": (22,  2),  # center, >BB
+    "1RB 1RC  1LC 1RA  1RA 1LA": ( 9,  2),  # center, >BB sigma
+    "1RB ...  1LB 0LC  1RC 1RB": ( 5, 13),
+    "1RB ...  1LB 1RC  0LC 0RB": ( 2, 14),
+    "1RB ...  1LB 1LC  1RC 0RB": ( 2, 13),
+    "1RB ...  1LC 0RB  1LB 1RC": ( 2, 10),
 
     # 2/3
+    "1RB 1LA 2RA  2LA 2LB 2RB": (17, 2),
     "1RB 2LA 1RA  2LB 1LA 2RB": (16, 3),
     "1RB ... ...  2LB 1RB 1LB": ( 1, 5),
 
@@ -359,7 +350,11 @@ QUASIHALT = {
     "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE": (  3247, 3),
 
     # 2/4
+    "1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB": (21485, 2),
     "1RB 2LA 1RA 1LA  2LB 3LA 2RB 2RA": (10456, 3),  # QH 10353
+    "1RB 2LA 1RA 1LA  0LB 3LA 2RB 3RA": ( 9698, 2),  # QH 9623
+    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA": ( 7193, 2),  # QH 7106
+    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA": ( 6443, 2),  # QH 6362
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA": ( 2859, 3),
 
     # 6/8 derived from 3/2-rec champ
@@ -374,21 +369,6 @@ QUASIHALT = {
 
 }
 
-QUASIHALT_FIXED = {
-    # 3/2
-    "1RB 1RC  1LC 0LB  1RA 1LA": (22, 2),  # center, >BB
-    "1RB 1RC  1LC 1RA  1RA 1LA": ( 9, 2),  # center, >BB sigma
-
-    # 2/3
-    "1RB 1LA 2RA  2LA 2LB 2RB": (17, 2),
-
-    # 2/4
-    "1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB": (21485, 2),
-    "1RB 2LA 1RA 1LA  0LB 3LA 2RB 3RA": ( 9698, 2),  # QH 9623
-    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA": ( 7193, 2),  # QH 7106
-    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA": ( 6443, 2),  # QH 6362
-}
-
 RECUR = {
     # Lin-Rado examples
     "1RB ...  0RC 1LB  1LA 0RB": ( 9, 10),  # total recurrence (blank)
@@ -399,6 +379,7 @@ RECUR = {
     "1RB 0LB  1LA 0RB": (9, 3),
     "1RB 1LA  0LA 1RA": (7, 5),
     "1RB 1LB  1LA 0RB": (7, 3),
+    "1RB 1LB  1LA 1RA": (5, 2),  # center
     "1RB 0RB  1LB 1RA": (0, 9),
     "1RB 1LA  1LB 0RA": (0, 6),
 
@@ -437,6 +418,7 @@ RECUR = {
     "1RB 1LA 2LB  2LA 2RA 0LB": ( 57, 30),
     "1RB 2LA 0RB  1LB 1RA 1RA": ( 55, 10),
     "1RB 0RB 0LB  2LA 2RA 1LB": ( 54, 40),
+    "1RB 2LA 2RB  1LB 1LA 1RA": ( 39,  2),  # center, >BB
     "1RB 2LA 0RB  2LA ... 1RA": ( 35,  8),
     "1RB 2LA 1RB  1LB 1LA 2RA": ( 24, 46),
     "1RB 1LA 2LB  1LA 2RA 0LB": ( 20, 48),
@@ -521,6 +503,7 @@ RECUR = {
     "1RB 0RA 0LB 2RB  3LA 3RB 0LA 2RA": ( 2583, 291),
     "1RB 2LA 1RB 0LB  1LA 3RA 3RB 1LB": ( 2380, 294),
     "1RB 2LB 0RA 2LB  2LA 3LA 0LB 0RA": ( 2190, 272),
+    "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB": ( 1089,   2),
 }
 
 RECUR_BLANK_IN_PERIOD = {
@@ -565,17 +548,6 @@ RECUR_BLANK_BEFORE_PERIOD = {
     # 5/2
     "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB",
     "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE",
-}
-
-RECUR_FIXED = {
-    # 2/2
-    "1RB 1LB  1LA 1RA": (5, 2),  # center
-
-    # 2/3
-    "1RB 2LA 2RB  1LB 1LA 1RA": (39, 2),  # center, >BB
-
-    # 2/4
-    "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB": (1089, 2),
 }
 
 RECUR_SLOW = {
@@ -1230,11 +1202,6 @@ class TuringTest(TestCase):
             self.machine.steps,
             steps)
 
-    def assert_fixed_tape(self, fixed):
-        self.assertEqual(
-            self.machine.fixdtp,
-            fixed)
-
     def assert_quasihalt(self, qsihlt):
         self.assertEqual(
             self.machine.qsihlt,
@@ -1375,7 +1342,7 @@ class TuringTest(TestCase):
         if len(prog) < 70:
             _ = BlockMacro(prog, [2]).fully_specified
 
-    def _test_simple_terminate(self, prog_data, fixed: bool, blank: bool):
+    def _test_simple_terminate(self, prog_data, blank: bool):
         for prog, (marks, steps) in prog_data.items():
             self.run_bb(prog)
 
@@ -1401,8 +1368,6 @@ class TuringTest(TestCase):
                     self.assertEqual(marks, set(blanks))
                 self.assert_could_blank(prog)
 
-            self.assert_fixed_tape(fixed)
-
             self.assert_quasihalt(True)
 
             if '_' in prog:
@@ -1421,19 +1386,16 @@ class TuringTest(TestCase):
     def _test_halt(self, prog_data):
         self._test_simple_terminate(
             prog_data,
-            fixed = True,
             blank = False,
         )
 
     def _test_spinout(
             self,
             prog_data,
-            fixed = False,
             blank = False,
     ):
         self._test_simple_terminate(
             prog_data,
-            fixed = fixed,
             blank = blank,
         )
 
@@ -1443,7 +1405,6 @@ class TuringTest(TestCase):
             quick = True,
             blank = False,
             qsihlt = False,
-            fixdtp = False,
     ):
         for prog, (steps, period) in prog_data.items():
             self.prog = prog
@@ -1474,8 +1435,6 @@ class TuringTest(TestCase):
             self.assertEqual(
                 period,
                 self.machine.linrec[1])
-
-            self.assert_fixed_tape(False if blank else fixdtp)
 
             self.assert_quasihalt(qsihlt)
 
@@ -1523,7 +1482,6 @@ class Fast(TuringTest):
             self.assert_cant_spin_out(prog)
 
         self._test_spinout(SPINOUT)
-        self._test_spinout(SPINOUT_FIXED, fixed = True)
         self._test_spinout(SPINOUT_BLANK, blank = True)
 
     def test_recur(self):
@@ -1533,11 +1491,9 @@ class Fast(TuringTest):
             self.assert_cant_spin_out(prog)
 
         self._test_recur(RECUR)
-        self._test_recur(RECUR_FIXED, fixdtp = True)
         self._test_recur(RECUR_BLANK_IN_PERIOD, blank = True, qsihlt = None)
 
         self._test_recur(QUASIHALT, qsihlt = True)
-        self._test_recur(QUASIHALT_FIXED, qsihlt = True, fixdtp = True)
 
     def test_blank(self):
         for prog in DONT_BLANK:
@@ -1557,7 +1513,6 @@ class Fast(TuringTest):
                 prog,
                 (set(SPINOUT)
                  | set(SPINOUT_SLOW)
-                 | set(SPINOUT_FIXED)
                  | set(SPINOUT_BLANK)
                  | set(SPINOUT_BLANK_SLOW)))
             self.assert_could_spin_out(prog)
@@ -1668,7 +1623,6 @@ class Slow(TuringTest):  # no-coverage
 
         self._test_spinout(SPINOUT_SLOW)
         self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
-        self._test_spinout(SPINOUT_FIXED_SLOW, fixed = True)
 
     def test_recur(self):
         self._test_recur(RECUR_SLOW, quick = False)

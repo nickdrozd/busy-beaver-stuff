@@ -17,14 +17,13 @@ class History:
         self.tapes: Tapes = {} if tapes is None else tapes
 
         self.states: List[State] = []
-        self.changes: List[bool] = []
         self.positions: List[int] = []
         self.actions: Dict[Action, List[int]] = defaultdict(list)
 
     def copy(self) -> History:
         new_copy = History(tapes = dict(self.tapes.items()))
 
-        for attr in ('states', 'changes', 'positions'):
+        for attr in ('states', 'positions'):
             setattr(new_copy, attr, copy(getattr(self, attr)))
 
         new_copy.actions = defaultdict(list)
@@ -47,10 +46,6 @@ class History:
         pos = tape.head
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
-
-    def add_change_at_step(self, step: int, change: bool) -> None:
-        self.changes += [change] * (step - len(self.changes))
-        self.changes.append(change)
 
     def calculate_beeps(
             self,
@@ -81,9 +76,6 @@ class History:
                 return result
 
         return None
-
-    def tape_is_fixed(self, start: int) -> bool:
-        return not any(self.changes[start:])
 
     def verify_lin_recurrence(
             self,
