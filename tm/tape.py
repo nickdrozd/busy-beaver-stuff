@@ -187,22 +187,18 @@ class PtrTape:
 
     def __getitem__(self, tape_index: slice) -> List[int]:
         if (stop := tape_index.stop) is None:
-            right = None
+            stop = self.r_end + 1
         else:
-            if (right := stop + self.init - len(self.tape)) > 0:
-                self.tape.extend([0] * right)
-                self.r_end += right
-
-            right = stop + self.init
+            if (rdiff := stop + self.init - self.r_end) > 0:
+                self.tape.extend([0] * rdiff)
+                self.r_end += rdiff
 
         if (start := tape_index.start) is None:
-            left = None
+            start = self.l_end
         else:
-            if (left := 0 - (start + self.init)) > 0:
-                self.tape = [0] * left + self.tape
-                self.init += left
-                self.l_end -= left
+            if (ldiff := 0 - (start + self.init)) > 0:
+                self.tape = [0] * ldiff + self.tape
+                self.init += ldiff
+                self.l_end -= ldiff
 
-            left = start + self.init
-
-        return self.tape[ left : right ]
+        return self.tape[ start + self.init : stop + self.init ]
