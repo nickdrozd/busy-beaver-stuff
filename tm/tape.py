@@ -177,7 +177,6 @@ class BlockTape:
 
 
 class PtrTape:
-    # pylint: disable = too-few-public-methods
     def __init__(self, init: int, tape: List[int]):
         self.tape = tape
         self.init = init
@@ -189,16 +188,22 @@ class PtrTape:
         if (stop := tape_index.stop) is None:
             stop = self.r_end + 1
         else:
-            if (rdiff := stop + self.init - self.r_end) > 0:
-                self.tape.extend([0] * rdiff)
-                self.r_end += rdiff
+            self.extend_to_bound_right(stop)
 
         if (start := tape_index.start) is None:
             start = self.l_end
         else:
-            if (ldiff := 0 - (start + self.init)) > 0:
-                self.tape = [0] * ldiff + self.tape
-                self.init += ldiff
-                self.l_end -= ldiff
+            self.extend_to_bound_left(start)
 
         return self.tape[ start + self.init : stop + self.init ]
+
+    def extend_to_bound_right(self, stop: int) -> None:
+        if (rdiff := stop + self.init - self.r_end) > 0:
+            self.tape.extend([0] * rdiff)
+            self.r_end += rdiff
+
+    def extend_to_bound_left(self, start: int) -> None:
+        if (ldiff := 0 - (start + self.init)) > 0:
+            self.tape = [0] * ldiff + self.tape
+            self.l_end -= ldiff
+            self.init += ldiff
