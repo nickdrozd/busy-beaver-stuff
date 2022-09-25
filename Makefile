@@ -31,8 +31,9 @@ CG = test.test_c
 QTREE = test.test_generate.TestTree.test_22
 LR = test.test_generate.TestLinRado.test_22
 NV = test.test_generate.TestNaive.test_22
+TP = test.test_tape
 
-MODULES = $(PROG) $(GRAPH) $(CG) $(QTREE) $(LR) $(NV) $(TUR)
+MODULES = $(PROG) $(GRAPH) $(CG) $(QTREE) $(LR) $(NV) $(TP) $(TUR)
 
 PYTEST = python3 -m unittest
 

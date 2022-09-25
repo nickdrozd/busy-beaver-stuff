@@ -1573,45 +1573,6 @@ class Fast(TuringTest):
                 graph.is_dispersed and graph.is_irreflexive,
                 prog)
 
-    def test_tape(self):
-        self.run_bb(
-            "1RB 1LB  1LA 1LC  1RC 0LC",
-            watch_tape = True)
-
-        print(self.machine)
-
-        self.assertEqual(
-            self.machine.tape.signature,
-            '[0]0')
-
-        self.run_bb(
-            "1RB 2LA 1R_  1LB 1LA 0RA",
-            watch_tape = True)
-
-        self.assertEqual(
-            self.machine.tape.signature,
-            '1|0|1[2]2|1')
-
-        print(self.machine)
-
-        copy_1 = self.tape.copy()
-        copy_2 = self.tape.copy()
-
-        _ = copy_1.step(0, 2)
-        _ = copy_2.step(1, 1)
-
-        self.assertEqual(
-            self.machine.tape.signature,
-            '1|0|1[2]2|1')
-
-        self.assertEqual(
-            copy_1.signature,
-            '1|0[1]2|1')
-
-        self.assertEqual(
-            copy_2.signature,
-            '1|0|1[2]1')
-
 
 class Slow(TuringTest):  # no-coverage
     def test_halt(self):
