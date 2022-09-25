@@ -1,5 +1,6 @@
 # pylint: disable = attribute-defined-outside-init
 from unittest import TestCase
+from typing import Tuple
 
 from tm import Machine
 
@@ -13,20 +14,38 @@ class TestTape(TestCase):
 
         self.tape = self.machine.tape
 
+    def assert_signature(self, expected: str, tape = None):
+        self.assertEqual(
+            (tape or self.tape).signature,
+            expected)
+
+    def assert_string(self, expected: str, tape = None):
+        self.assertEqual(
+            str(tape or self.tape),
+            expected)
+
+    def assert_head(self, expected: int, tape = None):
+        self.assertEqual(
+            (tape or self.tape).head,
+            expected)
+
+    def assert_ptr_positions(self, expected: Tuple[int, int, int]):
+        self.assertEqual(
+            (self.ptr.l_end, self.ptr.init, self.ptr.r_end),
+            expected)
+
     def test_blank(self):
         self.run_bb(
             "1RB 1LB  1LA 1LC  1RC 0LC")
 
-        self.assertEqual(
-            self.tape.signature,
+        self.assert_signature(
             '[0]0')
 
     def test_copy(self):
         self.run_bb(
             "1RB 2LA 1R_  1LB 1LA 0RA")
 
-        self.assertEqual(
-            self.tape.signature,
+        self.assert_signature(
             '1|0|1[2]2|1')
 
         copy_1 = self.tape.copy()
@@ -35,75 +54,66 @@ class TestTape(TestCase):
         _ = copy_1.step(0, 2)
         _ = copy_2.step(1, 1)
 
-        self.assertEqual(
-            self.tape.signature,
+        self.assert_signature(
             '1|0|1[2]2|1')
 
-        self.assertEqual(
-            copy_1.signature,
-            '1|0[1]2|1')
+        self.assert_signature(
+            '1|0[1]2|1',
+            tape = copy_1)
 
-        self.assertEqual(
-            copy_2.signature,
-            '1|0|1[2]1')
+        self.assert_signature(
+            '1|0|1[2]1',
+            tape = copy_2)
 
     def test_slice(self):
         self.run_bb("1RB 2LB 1LA  2LB 2RA 0RA")
 
-        self.assertEqual(
-            str(self.tape),
+        self.assert_string(
             "[0] 2^1 1^7")
 
-        self.assertEqual(
-            self.tape.head,
+        self.assert_head(
             -3)
 
-        ptr = self.tape.to_ptr()
+        self.ptr = ptr = self.tape.to_ptr()
 
         self.assertEqual(
             ptr.tape,
             [0, 2, 1, 1, 1, 1, 1, 1, 1])
 
-        self.assertEqual(
-            (ptr.l_end, ptr.init, ptr.r_end),
+        self.assert_ptr_positions(
             (-3, 3, 6))
 
         self.assertEqual(
             ptr[-3:0],
             [0, 2, 1])
 
-        self.assertEqual(
-            (ptr.l_end, ptr.init, ptr.r_end),
+        self.assert_ptr_positions(
             (-3, 3, 6))
 
         self.assertEqual(
             ptr[-3:3],
             [0, 2, 1, 1, 1, 1])
 
-        self.assertEqual(
-            (ptr.l_end, ptr.init, ptr.r_end),
+        self.assert_ptr_positions(
             (-3, 3, 6))
 
         self.assertEqual(
             ptr[-3:4],
             [0, 2, 1, 1, 1, 1, 1])
 
-        self.assertEqual(
-            (ptr.l_end, ptr.init, ptr.r_end),
+        self.assert_ptr_positions(
             (-3, 3, 7))
 
         self.assertEqual(
             ptr[-3:6],
             [0, 2, 1, 1, 1, 1, 1, 1, 1])
 
-        self.assertEqual(
-            (ptr.l_end, ptr.init, ptr.r_end),
+        self.assert_ptr_positions(
             (-3, 3, 9))
 
         self.assertEqual(
             ptr[-5:10],
             [0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0])
 
-        self.assertEqual(
-            (ptr.l_end, ptr.init, ptr.r_end),
+        self.assert_ptr_positions(
             (-5, 5, 13))
