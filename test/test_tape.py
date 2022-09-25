@@ -5,15 +5,17 @@ from tm import Machine
 
 class TestTape(TestCase):
     def run_bb(self, prog, **opts):
-        self.machine = Machine(prog).run(**opts)
+        self.machine = Machine(prog).run(
+            watch_tape = True,
+            **opts)
+
+        print(self.machine)
+
         self.tape = self.machine.tape
 
     def test_blank(self):
         self.run_bb(
-            "1RB 1LB  1LA 1LC  1RC 0LC",
-            watch_tape = True)
-
-        print(self.machine)
+            "1RB 1LB  1LA 1LC  1RC 0LC")
 
         self.assertEqual(
             self.tape.signature,
@@ -21,14 +23,11 @@ class TestTape(TestCase):
 
     def test_copy(self):
         self.run_bb(
-            "1RB 2LA 1R_  1LB 1LA 0RA",
-            watch_tape = True)
+            "1RB 2LA 1R_  1LB 1LA 0RA")
 
         self.assertEqual(
             self.tape.signature,
             '1|0|1[2]2|1')
-
-        print(self.machine)
 
         copy_1 = self.tape.copy()
         copy_2 = self.tape.copy()
