@@ -34,6 +34,10 @@ class TestTape(TestCase):
             (self.ptr.l_end, self.ptr.init, self.ptr.r_end),
             expected)
 
+        self.assertEqual(
+            abs(self.ptr.l_end) + self.ptr.r_end,
+            len(self.ptr.tape))
+
     def test_blank(self):
         self.run_bb(
             "1RB 1LB  1LA 1LC  1RC 0LC")
