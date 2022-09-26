@@ -94,11 +94,7 @@ class History:
 
         positions = self.positions
 
-        pos1 = positions[steps]
-        pos2 = positions[recurrence]
-
-        if pos1 < pos2:
-            diff = pos2 - pos1
+        if 0 < (diff := positions[recurrence] - positions[steps]):
             leftmost = min(positions[steps:])
 
             if tape2.r_end > tape1.r_end:
@@ -110,8 +106,7 @@ class History:
 
             slice2 = slice2 + [0] * (len(slice1) - len(slice2))
 
-        elif pos1 > pos2:
-            diff = pos1 - pos2
+        elif diff < 0:
             rightmost = max(positions[steps:]) + 1
 
             if tape2.l_end < tape1.l_end:
@@ -119,12 +114,12 @@ class History:
                 tape1[ tape2.l_end : ]
 
             slice1 = tape1[ : rightmost        ]
-            slice2 = tape2[ : rightmost - diff ]
+            slice2 = tape2[ : rightmost + diff ]
 
             slice2 = [0] * (len(slice1) - len(slice2)) + slice2
 
         else:
-            assert pos1 == pos2
+            assert diff == 0
 
             leftmost  = min(positions[steps:])
             rightmost = max(positions[steps:]) + 1
