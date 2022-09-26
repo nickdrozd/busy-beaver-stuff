@@ -1188,9 +1188,9 @@ class TuringTest(TestCase):
             return len(comp) * len(comp[0])
 
         self.assertEqual(
-            dimension(prog) - len(self.reached),
+            dimension(prog) - len(self.machine.reached),
             prog.count('...'),
-            (prog, self.reached))
+            (prog, dict(self.machine.reached)))
 
     def assert_marks(self, marks):
         self.assertEqual(
@@ -1325,7 +1325,6 @@ class TuringTest(TestCase):
 
         self.machine = Machine(prog).run(**opts)
         self.history = self.machine.history
-        self.reached = self.machine.reached
         self.tape = self.machine.tape
 
         if not analyze:
