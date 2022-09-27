@@ -2,6 +2,7 @@ import sys
 
 from tm import Machine
 from analyze import BlockMacro
+from perf import profile
 
 PRINT = 1
 STEPS = 10 ** 10
@@ -10,14 +11,7 @@ MACRO = None
 
 PROFILE = 0
 
-if __name__ == '__main__':
-    if bool(PROFILE):
-        # pylint: disable = import-error
-        import yappi  # type: ignore
-
-        yappi.set_clock_type('cpu')
-        yappi.start()
-
+def main() -> None:
     for i, program in enumerate(sys.stdin):
         # pylint: disable = redefined-loop-name
         program = program.strip()
@@ -33,6 +27,9 @@ if __name__ == '__main__':
 
         print(f'{i} | {machine}')
 
-    if bool(PROFILE):
-        stats = yappi.get_func_stats()
-        stats.save('yappi.callgrind', type = 'callgrind')
+if __name__ == '__main__':
+    if PROFILE:
+        PRINT = 0
+        main = profile(main)
+
+    main()
