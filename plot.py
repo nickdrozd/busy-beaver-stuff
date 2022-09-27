@@ -2,7 +2,7 @@ import sys
 from collections import defaultdict
 
 # pylint: disable = import-error
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 
 from tm import Machine
 from analyze import BlockMacro
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     for i, prog in enumerate(sys.stdin):
         program = prog.strip()
 
-        macro_data = defaultdict(dict)
+        macro_data = defaultdict(dict)  # type: ignore
 
         for wraps in range(1, WRAPS + 1):
             for cells in range(1, CELLS + 1):

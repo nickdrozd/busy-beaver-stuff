@@ -1254,6 +1254,8 @@ class TuringTest(TestCase):
                 f'spin out false negative: "{prog}"')
 
     def assert_lin_recurrence(self, steps, recurrence):
+        assert self.history is not None
+
         self.assertEqual(
             self.history.states[steps],
             self.history.states[recurrence],
@@ -1269,6 +1271,8 @@ class TuringTest(TestCase):
         )
 
     def deny_lin_recurrence(self, steps, recurrence):
+        assert self.history is not None
+
         states = self.history.states
 
         if states[steps] == states[recurrence]:
@@ -1431,6 +1435,8 @@ class TuringTest(TestCase):
                     (0 if steps < 256 else steps)),
             )
 
+            assert self.machine.linrec is not None
+
             self.assertEqual(
                 period,
                 self.machine.linrec[1])
@@ -1444,6 +1450,8 @@ class TuringTest(TestCase):
                     BlockMacro(prog, [cells] * wraps),
                     analyze = False,
                 )
+
+                assert self.machine.simple_termination is not None
 
                 self.assertTrue(
                     isclose(

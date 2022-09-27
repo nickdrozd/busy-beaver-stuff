@@ -5,7 +5,7 @@ from generate.tree import run_tree_gen
 from tm import Machine
 
 
-def prune_print(prog: str):
+def prune_print(prog: str) -> None:
     if not HALT and '.' in prog:
         return
 
@@ -24,14 +24,14 @@ def prune_print(prog: str):
     run_and_print(program)
 
 
-def print_complete(prog: str):
+def print_complete(prog: str) -> None:
     if len(set((program := Program(prog)).used_states)) != STATES:
         return
 
     run_and_print(program)
 
 
-def run_and_print(program: Program):
+def run_and_print(program: Program) -> None:
     check_rec = Machine(program).run(
         sim_lim = 100,
         check_rec = 0,

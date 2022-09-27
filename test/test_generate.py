@@ -195,7 +195,7 @@ class TestTree(TestCase):
         return out
 
     def test_22(self):
-        q22 = Queue()
+        q22 = Queue()  # type: ignore
 
         def capture(prog):
             run = Machine(prog).run(check_rec = 0, sim_lim = 13)
@@ -223,7 +223,7 @@ class TestTree(TestCase):
             HOLDOUTS_22Q)
 
     def test_32(self):
-        h32, q32 = Queue(), Queue()
+        h32, q32 = Queue(), Queue()  # type: ignore
 
         def capture(prog):
             run = Machine(prog).run(check_rec = 0, sim_lim = 116)
@@ -256,7 +256,7 @@ class TestTree(TestCase):
             585: q32,
         })
 
-        h32.add('1RB 0LC  0LA 0RA  1LA 1R_')
+        h32.add('1RB 0LC  0LA 0RA  1LA 1R_')  # type: ignore
 
         self.assertEqual(
             h32,
@@ -271,7 +271,7 @@ class TestTree(TestCase):
         )
 
     def test_23(self):
-        h23, q23 = Queue(), Queue()
+        h23, q23 = Queue(), Queue()  # type: ignore
 
         def capture(prog):
             run = Machine(prog).run(check_rec = 0, sim_lim = 192)

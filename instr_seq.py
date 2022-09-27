@@ -2,7 +2,7 @@ import sys
 
 from analyze import Program
 
-def format_sequence(prog):
+def format_sequence(prog: Program) -> None:
     print(f'    "{prog}": {{')
 
     for partial, step, slot in prog.instruction_sequence:

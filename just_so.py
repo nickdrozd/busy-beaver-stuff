@@ -3,7 +3,7 @@ from multiprocessing import Pool
 
 from analyze import Program
 
-def worker(prog):
+def worker(prog: str) -> None:
     if (program := Program(prog)).cant_spin_out:
         return
 

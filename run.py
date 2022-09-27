@@ -11,9 +11,9 @@ MACRO = None
 PROFILE = 0
 
 if __name__ == '__main__':
-    if PROFILE:
+    if bool(PROFILE):
         # pylint: disable = import-error
-        import yappi
+        import yappi  # type: ignore
 
         yappi.set_clock_type('cpu')
         yappi.start()
@@ -27,12 +27,12 @@ if __name__ == '__main__':
 
         machine = Machine(program).run(
             sim_lim = STEPS,
-            watch_tape = PRINT,
+            watch_tape = bool(PRINT),
             check_rec = RCRNC,
         )
 
         print(f'{i} | {machine}')
 
-    if PROFILE:
+    if bool(PROFILE):
         stats = yappi.get_func_stats()
         stats.save('yappi.callgrind', type = 'callgrind')
