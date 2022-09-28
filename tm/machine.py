@@ -5,7 +5,8 @@ from typing import Dict, Optional, Tuple
 
 from tm.tape import BlockTape
 from tm.parse import tcompile, st_str, ProgLike
-from tm.recurrence import History, Action, RecRes, State, Tapes
+from tm.types import Action, State
+from tm.recurrence import History, RecRes, Tapes
 
 LinRec = Tuple[Optional[int], int]
 

@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from copy import copy
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 from tm.tape import PtrTape, BlockTape
+from tm.types import Action, State
 
-State = Union[int, str]
-Color = int
-Action = Tuple[State, Color]
 RecRes = Optional[Tuple[int, int]]
 Tapes = Dict[int, PtrTape]
 

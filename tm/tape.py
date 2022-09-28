@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import List, Optional, Union
+from typing import List, Optional
+
+from tm.types import Color
 
 class BlockTape:
     def __init__(
             self,
             lspan: List[List[int]],
-            scan: Union[int, str],
+            scan: Color,
             rspan: List[List[int]],
             head: Optional[int] = None,
     ):
