@@ -1,7 +1,6 @@
 from typing import Optional, Tuple
 
-from tm import parse
-from tm.parse import st_str
+from tm.parse import parse, st_str
 
 Instr = Tuple[str, str, str]
 

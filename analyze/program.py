@@ -5,8 +5,8 @@ from itertools import product
 from collections import defaultdict
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
-from tm import parse, BlockTape, Machine
-from tm.parse import tcompile, st_str
+from tm import BlockTape, Machine
+from tm.parse import parse, st_str, tcompile
 from tm.recurrence import History
 from analyze.graph import Graph
 
