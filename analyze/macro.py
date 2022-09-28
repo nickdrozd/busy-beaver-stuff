@@ -88,10 +88,10 @@ class MacroProg:
             pos += 1 if shift else -1
 
             if (state := next_state) == -1:
-                return tape, pos, state
+                break
 
             if not 0 <= pos < cells:
-                return tape, pos, state
+                break
 
         return tape, pos, state
 
