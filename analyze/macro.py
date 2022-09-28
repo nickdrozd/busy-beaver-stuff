@@ -1,7 +1,9 @@
-from itertools import product
-from typing import Dict, Iterator, List, Optional, Tuple, Union
+from __future__ import annotations
 
-from tm.parse import tcompile, dcompile, Instr, CompProg, ProgLike
+from itertools import product
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+
+from tm.parse import tcompile, dcompile, Instr, ProgLike
 
 Color = int
 State = int
@@ -13,7 +15,8 @@ class MacroProg:
     def __init__(self, program: ProgLike):
         self.program = program
 
-        self.comp: CompProg
+        self.comp: Any
+
         self.base_states: int
         self.base_colors: int
 
@@ -36,10 +39,13 @@ class MacroProg:
 
         self._state: Optional[State] = None
 
-    def __getitem__(self, stco: Union[State, Color]) -> Optional[Instr]:
+    def __getitem__(
+            self,
+            stco: Union[State, Color],
+    ) -> Union[MacroProg, Optional[Instr]]:
         if self._state is None:
             self._state = stco
-            return self  # type: ignore
+            return self
 
         state, color = self._state, stco
         self._state = None

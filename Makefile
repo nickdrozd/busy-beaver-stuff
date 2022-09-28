@@ -27,7 +27,7 @@ lint :
 	mypy $(MODULES)
 
 compile :
-	mypyc tm
+	mypyc tm analyze generate/c.py generate/naive.py
 
 TUR = test.test_turing.Fast
 PROG = test.test_program

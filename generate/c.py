@@ -157,8 +157,14 @@ def make_switch(state: str, instrs: Tuple[Instr, ...]) -> str:
 def make_labels(prog: str) -> str:
     return '\n'.join([
         (
-            f' {st_str(i)}:'
-            + make_switch(st_str(i), instrs)  # type: ignore
+            f' {(st := st_str(i))}:'
+            + make_switch(
+                st,
+                tuple(
+                    (instr[0], instr[1], instr[2])
+                    for instr in instrs
+                ),
+            )
         )
         for i, instrs in
         enumerate(parse(prog))

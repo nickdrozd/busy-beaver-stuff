@@ -17,7 +17,7 @@ class TestNaive(TestCase):
             yield_programs(
                 states,
                 colors,
-                halt))
+                bool(halt)))
 
     def assert_count(self, count):
         self.assertEqual(
@@ -78,7 +78,7 @@ class TestLinRado(TestCase):
             yield_programs(
                 states,
                 colors,
-                halt,
+                bool(halt),
                 rejects)
             if
             Machine(prog).run (

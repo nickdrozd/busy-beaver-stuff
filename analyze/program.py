@@ -189,8 +189,8 @@ class Program:
 
         self[instr] = orig
 
-    def swap_states(self, st1: str, st2: str,) -> Program:
-        self[st1], self[st2] = self[st2], self[st1]
+    def swap_states(self, st1: str, st2: str) -> Program:
+        self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
         for slot, action in self.instructions:
             if st1 in action:
