@@ -17,12 +17,14 @@ idris :
 
 ## Python ##############################
 
+MODULES = tm generate analyze test *.py
+
 lint :
 	pylint --version
-	pylint *.py **/*.py
+	pylint $(MODULES)
 
 	mypy --version
-	mypy tm generate analyze test *.py
+	mypy $(MODULES)
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
@@ -33,12 +35,12 @@ LR = test.test_generate.TestLinRado.test_22
 NV = test.test_generate.TestNaive.test_22
 TP = test.test_tape
 
-MODULES = $(PROG) $(GRAPH) $(CG) $(QTREE) $(LR) $(NV) $(TP) $(TUR)
+SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(QTREE) $(LR) $(NV) $(TP) $(TUR)
 
 PYTEST = python3 -m unittest
 
 test :
-	$(PYTEST) -v $(MODULES)
+	$(PYTEST) -v $(SHORT_TESTS)
 
 test-all :
 	$(PYTEST) discover -v
@@ -46,7 +48,7 @@ test-all :
 COVERAGE = coverage
 
 coverage :
-	$(COVERAGE) run -m unittest -v $(MODULES)
+	$(COVERAGE) run -m unittest -v $(SHORT_TESTS)
 
 	$(COVERAGE) combine --quiet
 	$(COVERAGE) html
