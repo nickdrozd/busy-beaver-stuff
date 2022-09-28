@@ -35,10 +35,9 @@ GRAPH = test.test_graph
 CG = test.test_c
 QTREE = test.test_generate.TestTree.test_22
 LR = test.test_generate.TestLinRado.test_22
-NV = test.test_generate.TestNaive.test_22
 TP = test.test_tape
 
-SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(QTREE) $(LR) $(NV) $(TP) $(TUR)
+SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(QTREE) $(LR) $(TP) $(TUR)
 
 PYTEST = python3 -m unittest
 
