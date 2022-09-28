@@ -6,3 +6,5 @@ __pycache__
 *.prog
 .coverage*
 htmlcov
+*.so
+build/
