@@ -53,7 +53,9 @@ class Machine:
         self.undfnd: Optional[Tuple[int, str]] = None
 
     def __str__(self) -> str:
-        info = [
+        info = [ f'CYCLES: {self.cycles}' ]
+
+        info += [
             f'{cat.upper()}: {data}'
             for cat in TERM_CATS
             if (data := getattr(self, cat)) is not None
