@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from itertools import product
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from tm.parse import tcompile, dcompile, Instr, ProgLike
+from tm.parse import tcompile, Instr, ProgLike
 
 Color = int
 State = int
@@ -63,7 +62,6 @@ class MacroProg:
             self,
             macro_state: State,
             macro_color: Color,
-            tape: Optional[Tape] = None,
     ) -> Optional[Instr]:
         raise NotImplementedError()
 
@@ -124,17 +122,13 @@ class BlockMacro(MacroProg):
             self,
             macro_state: State,
             macro_color: Color,
-            tape: Optional[Tape] = None,
     ) -> Optional[Instr]:
         in_state, right_edge = divmod(macro_state, 2)
 
         result = self.run_simulator(
             in_state,
             right_edge == 1,
-            (
-                self.color_to_tape(macro_color)
-                if tape is None else tape
-            ),
+            self.color_to_tape(macro_color),
         )
 
         if result is None:
@@ -172,24 +166,3 @@ class BlockMacro(MacroProg):
             return [0] * self.cells
 
         return list(self.tape_colors[color])
-
-    @property
-    def all_tapes(self) -> Iterator[Tape]:
-        return map(
-            list,
-            product(
-                range(self.base_colors),
-                repeat = self.cells))
-
-    @property
-    def fully_specified(self) -> str:
-        return dcompile(
-            tuple(
-                tuple(
-                    self.calculate_instr(
-                        st_sh, 0, tape = tape)
-                    for tape in self.all_tapes
-                )
-                for st_sh in range(self.macro_states)
-            )
-        )

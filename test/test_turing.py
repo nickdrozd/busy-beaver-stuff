@@ -1132,6 +1132,7 @@ MACRO = {
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": 3932964,
 
     # 4/2
+    "1RB 1LC  1RD 1RB  0RD ...  1LD 1LA": None,
     "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779478,
 
     # 5/2
@@ -1339,9 +1340,6 @@ class TuringTest(TestCase):
         self.assert_simple(prog)
         self.assert_connected(prog)
 
-        if len(prog) < 70:
-            _ = BlockMacro(prog, [2]).fully_specified
-
     def _test_simple_terminate(self, prog_data, blank: bool):
         for prog, (marks, steps) in prog_data.items():
             self.run_bb(prog)
@@ -1447,6 +1445,9 @@ class TuringTest(TestCase):
                     BlockMacro(prog, [cells] * wraps),
                     analyze = False,
                 )
+
+                if steps is None:
+                    continue
 
                 assert self.machine.simple_termination is not None
 
