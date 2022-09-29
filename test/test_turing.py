@@ -1127,7 +1127,7 @@ DONT_SPIN_OUT = {
     "1RB 1LE  0RC 1LD  1RD 0RD  1RE 1RC  0LA 1LB",  # 10^46
 }
 
-MACRO = {
+BLOCK_MACRO_STEPS = {
     # 2/4
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": 3932964,
 
@@ -1438,27 +1438,6 @@ class TuringTest(TestCase):
 
             self.assert_quasihalt(qsihlt)
 
-    def _test_macro(self, prog_data):
-        for prog, steps in prog_data.items():
-            for wraps, cells in product(range(1, 4), range(1, 5)):
-                self.run_bb(
-                    BlockMacro(prog, [cells] * wraps),
-                    analyze = False,
-                )
-
-                if steps is None:
-                    continue
-
-                assert self.machine.simple_termination is not None
-
-                self.assertTrue(
-                    isclose(
-                        self.machine.simple_termination,
-                        steps / (cells ** wraps),
-                        rel_tol = .001,
-                    )
-                )
-
     def _test_extensions(self, prog_data):
         for prog, (status, data) in prog_data.items():
             self.run_bb(
@@ -1532,9 +1511,6 @@ class Fast(TuringTest):
             self.assert_could_blank(prog)
             self.assert_could_spin_out(prog)
 
-    def test_macro(self):
-        self._test_macro(MACRO)
-
     def test_undefined(self):
         for prog, sequence in UNDEFINED.items():
             self.assertEqual(
@@ -1577,6 +1553,27 @@ class Fast(TuringTest):
             self.assertFalse(
                 graph.is_dispersed and graph.is_irreflexive,
                 prog)
+
+    def test_block_macro_steps(self):
+        for prog, steps in BLOCK_MACRO_STEPS.items():
+            for wraps, cells in product(range(1, 4), range(1, 5)):
+                self.run_bb(
+                    BlockMacro(prog, [cells] * wraps),
+                    analyze = False,
+                )
+
+                if steps is None:
+                    continue
+
+                assert self.machine.simple_termination is not None
+
+                self.assertTrue(
+                    isclose(
+                        self.machine.simple_termination,
+                        steps / (cells ** wraps),
+                        rel_tol = .001,
+                    )
+                )
 
 
 class Slow(TuringTest):  # no-coverage
