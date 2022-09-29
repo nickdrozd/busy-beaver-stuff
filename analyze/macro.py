@@ -166,3 +166,65 @@ class BlockMacro(MacroProg):
             return [0] * self.cells
 
         return list(self.tape_colors[color])
+
+########################################
+
+class BacksymbolMacro(MacroProg):
+    def __init__(self, program: ProgLike):
+        super().__init__(program)
+
+        self.macro_states: int = self.base_states * self.base_colors * 2
+        self.macro_colors: int = self.base_colors
+
+        self.sim_lim: int = self.macro_states * self.macro_colors
+
+    def __str__(self) -> str:
+        return f'{self.program} (backsymbol macro)'
+
+    def decompose(self, state: State) -> Tuple[State, Color, bool]:
+        st_co, backsymbol_to_right = divmod(state, 2)
+
+        in_state, backsymbol = divmod(st_co, self.base_colors)
+
+        return in_state, backsymbol, bool(backsymbol_to_right)
+
+    def recompose(self, state: State, back: Color, side: bool) -> State:
+        return int(side) + (2 * (back + (state * self.base_colors)))
+
+    def calculate_instr(
+            self,
+            macro_state: State,
+            macro_color: Color,
+    ) -> Optional[Instr]:
+        in_state, backsymbol, at_right = self.decompose(macro_state)
+
+        tape = (
+            [macro_color, backsymbol]
+            if at_right else
+            [backsymbol, macro_color]
+        )
+
+        result = self.run_simulator(
+            in_state,
+            not at_right,
+            tape,
+        )
+
+        if result is None:
+            return None
+
+        tape, pos, out_state = result
+
+        shift = pos >= len(tape)
+
+        out_back, out_color = (
+            tape
+            if not shift else
+            reversed(tape)
+        )
+
+        return (
+            out_color,
+            shift,
+            self.recompose(out_state, out_back, not shift),
+        )
