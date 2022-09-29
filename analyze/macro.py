@@ -196,35 +196,40 @@ class BacksymbolMacro(MacroProg):
             macro_state: State,
             macro_color: Color,
     ) -> Optional[Instr]:
-        in_state, backsymbol, at_right = self.decompose(macro_state)
+        in_mini_state, in_backsymbol, at_right = \
+            self.decompose(macro_state)
 
-        tape = (
-            [macro_color, backsymbol]
+        in_tape = (
+            [macro_color, in_backsymbol]
             if at_right else
-            [backsymbol, macro_color]
+            [in_backsymbol, macro_color]
         )
 
         result = self.run_simulator(
-            in_state,
+            in_mini_state,
             not at_right,
-            tape,
+            in_tape,
         )
 
         if result is None:
             return None
 
-        tape, pos, out_state = result
+        out_tape, pos, out_mini_state = result
 
-        shift = pos >= len(tape)
+        symbol_to_right = pos < 0
 
-        out_back, out_color = (
-            tape
-            if not shift else
-            reversed(tape)
+        out_color, out_backsymbol = (
+            reversed(out_tape)
+            if symbol_to_right else
+            out_tape
         )
 
         return (
             out_color,
-            shift,
-            self.recompose(out_state, out_back, not shift),
+            symbol_to_right,
+            self.recompose(
+                out_mini_state,
+                out_backsymbol,
+                symbol_to_right,
+            ),
         )
