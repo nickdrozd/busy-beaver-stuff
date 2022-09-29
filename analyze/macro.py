@@ -227,9 +227,12 @@ class BacksymbolMacro(MacroProg):
         return (
             out_color,
             symbol_to_right,
-            self.recompose(
-                out_mini_state,
-                out_backsymbol,
-                symbol_to_right,
+            (
+                self.recompose(
+                    out_mini_state,
+                    out_backsymbol,
+                    symbol_to_right,
+                ) if out_mini_state != -1 else
+                -1
             ),
         )
