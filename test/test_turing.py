@@ -6,7 +6,7 @@ from itertools import product
 
 from tm import Machine
 from tm.parse import tcompile, dcompile
-from analyze import Graph, Program, BlockMacro
+from analyze import Graph, Program, BlockMacro, BacksymbolMacro
 
 HALT = {
     # 2/2 BB
@@ -1139,6 +1139,140 @@ BLOCK_MACRO_STEPS = {
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": 47176870,
 }
 
+MACRO_CYCLES_FAST = {
+    # 2/4 BB
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
+        12233,  # base
+        12200,  # 2-cell
+        12845,  # 3-cell
+        14224,  # back
+        12138,  # 2-cell back
+        12756,  # 3-cell back
+        14196,  # back back
+        14190,  # back 2-cell
+        12810,  # back 3-cell
+    ),
+
+    # 4/2 BLB, SB, BBB
+    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA" : (
+        25583,  # base
+        30663,  # 2-cell
+        25377,  # 3-cell
+        35750,  # back
+        30625,  # 2-cell back
+        25329,  # 3-cell back
+        35734,  # back back
+        25528,  # back 2-cell
+        25359,  # back 3-cell
+    ),
+
+    # 4/2 SB sig, BBB sig
+    "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (
+        2819,  # base
+        1161,  # 2-cell
+        944,   # 3-cell
+        2076,  # back
+        156,   # 2-cell back
+        443,   # 3-cell back
+        1382,  # back back
+        253,   # back 2-cell
+        695,   # back 3-cell
+    ),
+
+    # 4/2 boyd
+    ("1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC", 20_000): (
+        20000,  # base
+        20194,  # 2-cell
+        20000,  # 3-cell
+        22917,  # back
+        21104,  # 2-cell back
+        24127,  # 3-cell back
+        21336,  # back back
+        20285,  # back 2-cell
+        21402,  # back 3-cell
+    ),
+
+    # 4/2 LR start, period
+    ("1RB 0LC  1RD 1LC  0LA 1LB  1LC 0RD", 20_000): (
+        23855,  # base
+        21932,  # 2-cell
+        20540,  # 3-cell
+        22981,  # back
+        22589,  # 2-cell back
+        20403,  # 3-cell back
+        22388,  # back back
+        22232,  # back 2-cell
+        20593,  # back 3-cell
+    ),
+
+    # 5/2 BB
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (
+        67345,  # base
+        48182,  # 2-cell
+        26527,  # 3-cell
+        73423,  # back
+        48140,  # 2-cell back
+        26491,  # 3-cell back
+        73400,  # back back
+        48158,  # back 2-cell
+        32599,  # back 3-cell
+    ),
+
+    # 5/2 Uwe
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": (
+        134466,  # base
+        2415,    # 2-cell
+        44822,   # 3-cell
+        133806,  # back
+        2373,    # 2-cell back
+        44172,   # 3-cell back
+        133151,  # back back
+        2382,    # back 2-cell
+        44607,   # back 3-cell
+    ),
+
+    # 3/3
+    "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC": (
+        276588,  # base
+        195229,  # 2-cell
+        142455,  # 3-cell
+        180399,  # back
+        99035,   # 2-cell back
+        64126,   # 3-cell back
+        144319,  # back back
+        117455,  # back 2-cell
+        81409,   # back 3-cell
+    ),
+}
+
+MACRO_CYCLES_SLOW = {
+    # 2/4
+    "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (
+        2329499,  # base
+        1162389,  # 2-cell
+        20520,    # 3-cell
+        2322228,  # back
+        1153855,  # 2-cell back
+        11399,    # 3-cell back
+        2312445,  # back back
+        1157869,  # back 2-cell
+        17966,    # back 3-cell
+    ),
+
+    # 3/3
+    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (
+        503496,  # base
+        323669,  # 2-cell
+        388079,  # 3-cell
+        611312,  # back
+        323611,  # 2-cell back
+        387985,  # 3-cell back
+        611277,  # back back
+        323643,  # back 2-cell
+        402084,  # back 3-cell
+    ),
+}
+
 BLANKERS = (
     set(DO_BLANK)
     | set(SPINOUT_BLANK)
@@ -1449,6 +1583,47 @@ class TuringTest(TestCase):
                 data,
                 getattr(self.machine, status.lower()))
 
+    def _test_macro_cycles(self, prog_data):
+        def macro_variations(base: str):
+            # pylint: disable = invalid-name
+            return (
+                base,
+                (k2 := BlockMacro(base, [2])),
+                (k3 := BlockMacro(base, [3])),
+                (bk := BacksymbolMacro(base)),
+                BacksymbolMacro(k2),
+                BacksymbolMacro(k3),
+                BacksymbolMacro(bk),
+                BlockMacro(bk, [2]),
+                BlockMacro(bk, [3]),
+            )
+
+        for prog, cycleses in prog_data.items():
+            prog, sim_lim = (  # pylint: disable = redefined-loop-name
+                (prog, None)
+                if isinstance(prog, str) else
+                prog
+            )
+
+            self.assertEqual(
+                len(cycleses),
+                len(macros := macro_variations(prog)))
+
+            for cycles, macro in zip(cycleses, macros):
+                self.run_bb(
+                    macro,
+                    analyze = False,
+                    sim_lim = (
+                        sim_lim  if sim_lim is not None else
+                        10 ** 10),
+                )
+
+                self.assertEqual(
+                    cycles,
+                    self.machine.cycles
+                    if sim_lim is None else
+                    self.machine.steps)
+
 
 class Fast(TuringTest):
     def test_halt(self):
@@ -1575,6 +1750,9 @@ class Fast(TuringTest):
                     )
                 )
 
+    def test_macro_cycles(self):
+        self._test_macro_cycles(MACRO_CYCLES_FAST)
+
 
 class Slow(TuringTest):  # no-coverage
     def test_halt(self):
@@ -1589,3 +1767,6 @@ class Slow(TuringTest):  # no-coverage
 
     def test_recur(self):
         self._test_recur(RECUR_SLOW, quick = False)
+
+    def test_macro_cycles(self):
+        self._test_macro_cycles(MACRO_CYCLES_SLOW)
