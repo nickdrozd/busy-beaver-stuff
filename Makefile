@@ -1,4 +1,4 @@
-.PHONY : all clean compile coverage generate idris lint machines profile test test-all
+.PHONY : all clean compile coverage generate idris lint machines profile test test-all type
 
 all : machines idris lint test generate
 
@@ -22,7 +22,9 @@ MODULES = tm generate analyze test *.py
 lint :
 	pylint --version
 	pylint $(MODULES)
+	$(MAKE) type
 
+type :
 	mypy --version
 	mypy $(MODULES)
 
