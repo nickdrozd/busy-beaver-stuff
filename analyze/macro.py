@@ -65,11 +65,17 @@ class MacroProg:
             macro_state: State,
             macro_color: Color,
     ) -> Optional[Instr]:
-        return self.reconstruct_outputs(
-            self.run_simulator(
-                *self.deconstruct_inputs(
-                    macro_state,
-                    macro_color)))
+        return (
+            self.reconstruct_outputs(
+                result
+            ) if (
+                result :=
+                self.run_simulator(
+                    *self.deconstruct_inputs(
+                        macro_state,
+                        macro_color))
+            ) is not None else None
+        )
 
     def deconstruct_inputs(
             self,
@@ -78,10 +84,7 @@ class MacroProg:
     ) -> SimInput:
         raise NotImplementedError()
 
-    def reconstruct_outputs(
-            self,
-            sim_output: Optional[SimOutput],
-    ) -> Optional[Instr]:
+    def reconstruct_outputs(self, sim_output: SimOutput) -> Instr:
         raise NotImplementedError()
 
     def run_simulator(
@@ -150,13 +153,7 @@ class BlockMacro(MacroProg):
             self.color_to_tape(macro_color),
         )
 
-    def reconstruct_outputs(
-            self,
-            sim_output: Optional[SimOutput],
-    ) -> Optional[Instr]:
-        if sim_output is None:
-            return None
-
+    def reconstruct_outputs(self, sim_output: SimOutput) -> Instr:
         tape, pos, state = sim_output
 
         return (
@@ -230,13 +227,7 @@ class BacksymbolMacro(MacroProg):
             ),
         )
 
-    def reconstruct_outputs(
-            self,
-            sim_output: Optional[SimOutput],
-    ) -> Optional[Instr]:
-        if sim_output is None:
-            return None
-
+    def reconstruct_outputs(self, sim_output: SimOutput) -> Instr:
         out_tape, pos, out_mini_state = sim_output
 
         symbol_to_right = pos < 0
