@@ -170,7 +170,12 @@ class BlockMacro(MacroProg):
 ########################################
 
 class BacksymbolMacro(MacroProg):
-    def __init__(self, program: ProgLike):
+    def __init__(self, program: ProgLike, cell_seq: List[int]):
+        *seq, _ = cell_seq
+
+        if seq:
+            program = BacksymbolMacro(program, seq)
+
         super().__init__(program)
 
         self.macro_states: int = self.base_states * self.base_colors * 2
