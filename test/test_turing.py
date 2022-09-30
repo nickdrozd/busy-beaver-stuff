@@ -1271,6 +1271,32 @@ MACRO_CYCLES_SLOW = {
         323643,  # back 2-cell
         402084,  # back 3-cell
     ),
+
+    # 3/3 surprise-in-a-box
+    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (
+        1691774,  # base
+        1061760,  # 2-cell
+        824186,   # 3-cell
+        1616856,  # back
+        622359,   # 2-cell back
+        360281,   # 3-cell back
+        1201808,  # back back
+        881136,   # back 2-cell
+        768963,   # back 3-cell
+    ),
+
+    # 6/2 pessimized from 4/2
+    "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC": (
+        49153991,  # base
+        24588500,  # 2-cell
+        16391915,  # 3-cell
+        35750,     # back
+        30625,     # 2-cell back
+        25329,     # 3-cell back
+        35734,     # back back
+        25528,     # back 2-cell
+        25359,     # back 3-cell
+    ),
 }
 
 BLANKERS = (
@@ -1613,6 +1639,9 @@ class TuringTest(TestCase):
                 len(macros := macro_variations(prog)))
 
             for cycles, macro in zip(cycleses, macros):
+                if cycles > 10_000_000:
+                    continue
+
                 self.run_bb(
                     macro,
                     analyze = False,
