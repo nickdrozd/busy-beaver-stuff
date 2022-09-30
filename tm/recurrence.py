@@ -21,8 +21,8 @@ class History:
     def copy(self) -> History:
         new_copy = History(tapes = dict(self.tapes.items()))
 
-        for attr in ('states', 'positions'):
-            setattr(new_copy, attr, copy(getattr(self, attr)))
+        new_copy.states = copy(self.states)
+        new_copy.positions = copy(self.positions)
 
         new_copy.actions = defaultdict(list)
 

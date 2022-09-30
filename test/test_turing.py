@@ -1623,6 +1623,7 @@ class TuringTest(TestCase):
 
             self.assertEqual(
                 data,
+                # pylint: disable = bad-builtin
                 getattr(self.machine, status.lower()))
 
     def _test_macro_cycles(self, prog_data):

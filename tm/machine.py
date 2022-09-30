@@ -58,6 +58,7 @@ class Machine:
         info += [
             f'{cat.upper()}: {data}'
             for cat in TERM_CATS
+            # pylint: disable = bad-builtin
             if (data := getattr(self, cat)) is not None
         ]
 
@@ -260,5 +261,6 @@ class Machine:
         assert len(results := [
             (cat, data)
             for cat in TERM_CATS
+            # pylint: disable = bad-builtin
             if (data := getattr(self, cat)) is not None
         ]) == 1, results

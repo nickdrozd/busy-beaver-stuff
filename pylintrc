@@ -12,6 +12,7 @@ disable=
 
 [MASTER]
 load-plugins=
+  pylint.extensions.bad_builtin,
   pylint.extensions.broad_try_clause,
   pylint.extensions.code_style,
   pylint.extensions.consider_ternary_expression,
@@ -36,3 +37,9 @@ max-branches       = 21
 max-attributes     = 15
 max-statements     = 54
 max-public-methods = 28
+
+[DEPRECATED_BUILTINS]
+
+bad-functions =
+  getattr,
+  setattr,

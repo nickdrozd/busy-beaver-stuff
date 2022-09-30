@@ -379,6 +379,7 @@ class Program:
                         )
 
                         result = (
+                            # pylint: disable = bad-builtin
                             getattr(run, final_prop)
                             if not blank else
                             (
