@@ -1459,6 +1459,9 @@ class TuringTest(TestCase):
         if print_prog:
             print(prog)
 
+        for macro in (BacksymbolMacro, lambda p: BlockMacro(p, [2])):
+            _ = Machine(macro).run(sim_lim = 100)
+
         self.machine = Machine(prog).run(**opts)
         self.history = self.machine.history
         self.tape = self.machine.tape
