@@ -81,9 +81,9 @@ class MacroProg:
 
     def reconstruct_outputs(
             self,
-            tape: Tape,
-            pos: int,
             state: State,
+            tape: Tape,
+            right_edge: bool,
     ) -> Instr:
         raise NotImplementedError()
 
@@ -92,7 +92,7 @@ class MacroProg:
             state: State,
             right_edge: bool,
             tape: Tape,
-    ) -> Optional[Tuple[Tape, int, State]]:
+    ) -> Optional[Tuple[State, Tape, bool]]:
         cells = len(tape)
 
         pos = cells - 1 if right_edge else 0
@@ -113,7 +113,7 @@ class MacroProg:
             if not 0 <= pos < cells:
                 break
 
-        return tape, pos, state
+        return state, tape, cells <= pos
 
 ########################################
 
@@ -155,15 +155,15 @@ class BlockMacro(MacroProg):
 
     def reconstruct_outputs(
             self,
-            tape: Tape,
-            pos: int,
             state: State,
+            tape: Tape,
+            right_edge: bool,
     ) -> Instr:
         return (
             self.tape_to_color(tape),
-            int(0 <= pos),
+            int(right_edge),
             (
-                (2 * state) + int(pos < 0)
+                (2 * state) + int(not right_edge)
                 if state != -1 else
                 -1
             ),
@@ -232,23 +232,21 @@ class BacksymbolMacro(MacroProg):
 
     def reconstruct_outputs(
             self,
-            tape: Tape,
-            pos: int,
             state: State,
+            tape: Tape,
+            right_edge: bool,
     ) -> Instr:
-        symbol_to_right = pos < 0
-
         out_color, backsymbol = (
-            reversed(tape)
-            if symbol_to_right else
             tape
+            if right_edge else
+            reversed(tape)
         )
 
         return (
             out_color,
-            symbol_to_right,
+            not right_edge,
             (
-                int(symbol_to_right)
+                int(not right_edge)
                 + (2
                    * (backsymbol
                       + (state
