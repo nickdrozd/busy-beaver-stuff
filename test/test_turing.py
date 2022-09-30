@@ -1231,6 +1231,19 @@ MACRO_CYCLES_FAST = {
         44607,   # back 3-cell
     ),
 
+    # 5/2 total spaghetti
+    ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", None): (
+        None,
+        None,
+        None,
+        10677,
+        5219,
+        3453,
+        10446,
+        5333,
+        3609,
+    ),
+
     # 3/3
     "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC": (
         276588,  # base
@@ -1627,31 +1640,34 @@ class TuringTest(TestCase):
                 BlockMacro(bk, [3]),
             )
 
-        for prog, cycleses in prog_data.items():
-            prog, sim_lim = (  # pylint: disable = redefined-loop-name
-                (prog, None)
-                if isinstance(prog, str) else
-                prog
-            )
+        for program, cycleses in prog_data.items():
+            if isinstance(program, tuple):
+                prog, opt = program
+                sim_lim = opt
+            elif isinstance(program, str):
+                prog, opt, sim_lim = program, 0, None
 
             self.assertEqual(
                 len(cycleses),
                 len(macros := macro_variations(prog)))
 
             for cycles, macro in zip(cycleses, macros):
-                if cycles > 10_000_000:
+                if cycles is not None and cycles > 10_000_000:
                     continue
 
                 self.run_bb(
                     macro,
                     analyze = False,
                     sim_lim = (
+                        20_000 if opt is None else
                         sim_lim  if sim_lim is not None else
                         10 ** 10),
                 )
 
                 self.assertEqual(
                     cycles,
+                    self.machine.simple_termination
+                    if opt is None else
                     self.machine.cycles
                     if sim_lim is None else
                     self.machine.steps)
