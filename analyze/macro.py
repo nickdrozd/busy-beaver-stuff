@@ -7,6 +7,8 @@ from tm.parse import tcompile, Instr, ProgLike
 Color = int
 State = int
 Tape = List[Color]
+SimInput  = Tuple[State, bool, Tape]
+SimOutput = Tuple[Tape, int, State]
 
 ########################################
 
@@ -63,6 +65,23 @@ class MacroProg:
             macro_state: State,
             macro_color: Color,
     ) -> Optional[Instr]:
+        return self.reconstruct_outputs(
+            self.run_simulator(
+                *self.deconstruct_inputs(
+                    macro_state,
+                    macro_color)))
+
+    def deconstruct_inputs(
+            self,
+            macro_state: State,
+            macro_color: Color,
+    ) -> SimInput:
+        raise NotImplementedError()
+
+    def reconstruct_outputs(
+            self,
+            sim_output: Optional[SimOutput],
+    ) -> Optional[Instr]:
         raise NotImplementedError()
 
     def run_simulator(
@@ -70,7 +89,7 @@ class MacroProg:
             state: State,
             right_edge: bool,
             tape: Tape,
-    ) -> Optional[Tuple[Tape, int, State]]:
+    ) -> Optional[SimOutput]:
         cells = len(tape)
 
         pos = cells - 1 if right_edge else 0
@@ -118,23 +137,27 @@ class BlockMacro(MacroProg):
     def __str__(self) -> str:
         return f'{self.program} ({self.cells}-cell macro)'
 
-    def calculate_instr(
+    def deconstruct_inputs(
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> Optional[Instr]:
+    ) -> SimInput:
         in_state, right_edge = divmod(macro_state, 2)
 
-        result = self.run_simulator(
+        return (
             in_state,
             right_edge == 1,
             self.color_to_tape(macro_color),
         )
 
-        if result is None:
+    def reconstruct_outputs(
+            self,
+            sim_output: Optional[SimOutput],
+    ) -> Optional[Instr]:
+        if sim_output is None:
             return None
 
-        tape, pos, state = result
+        tape, pos, state = sim_output
 
         return (
             self.tape_to_color(tape),
@@ -186,44 +209,39 @@ class BacksymbolMacro(MacroProg):
     def __str__(self) -> str:
         return f'{self.program} (backsymbol macro)'
 
-    def decompose(self, state: State) -> Tuple[State, Color, bool]:
-        st_co, backsymbol_to_right = divmod(state, 2)
-
-        in_state, backsymbol = divmod(st_co, self.base_colors)
-
-        return in_state, backsymbol, bool(backsymbol_to_right)
-
-    def recompose(self, state: State, back: Color, side: bool) -> State:
-        return int(side) + (2 * (back + (state * self.base_colors)))
-
-    def calculate_instr(
+    def deconstruct_inputs(
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> Optional[Instr]:
-        in_mini_state, in_backsymbol, at_right = \
-            self.decompose(macro_state)
+    ) -> SimInput:
+        st_co, backsymbol_to_right = divmod(macro_state, 2)
 
-        in_tape = (
-            [macro_color, in_backsymbol]
-            if at_right else
-            [in_backsymbol, macro_color]
-        )
+        in_mini_state, in_backsymbol = divmod(st_co, self.base_colors)
 
-        result = self.run_simulator(
+        at_right = bool(backsymbol_to_right)
+
+        return (
             in_mini_state,
             not at_right,
-            in_tape,
+            (
+                [macro_color, in_backsymbol]
+                if at_right else
+                [in_backsymbol, macro_color]
+            ),
         )
 
-        if result is None:
+    def reconstruct_outputs(
+            self,
+            sim_output: Optional[SimOutput],
+    ) -> Optional[Instr]:
+        if sim_output is None:
             return None
 
-        out_tape, pos, out_mini_state = result
+        out_tape, pos, out_mini_state = sim_output
 
         symbol_to_right = pos < 0
 
-        out_color, out_backsymbol = (
+        out_color, backsymbol = (
             reversed(out_tape)
             if symbol_to_right else
             out_tape
@@ -233,11 +251,12 @@ class BacksymbolMacro(MacroProg):
             out_color,
             symbol_to_right,
             (
-                self.recompose(
-                    out_mini_state,
-                    out_backsymbol,
-                    symbol_to_right,
-                ) if out_mini_state != -1 else
+                int(symbol_to_right)
+                + (2
+                   * (backsymbol
+                      + (out_mini_state
+                         * self.base_colors)))
+                if out_mini_state != -1 else
                 -1
             ),
         )
