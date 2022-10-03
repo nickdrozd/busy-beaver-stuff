@@ -162,22 +162,24 @@ class TestTree(TestCase):
 
             q22.put(prog)
 
-        run_tree_gen(
-            states = 2,
-            colors = 2,
-            steps = 40,
-            output = capture,
-        )
+        for blank in (True, False):
+            run_tree_gen(
+                states = 2,
+                colors = 2,
+                steps = 40,
+                blank = blank,
+                output = capture,
+            )
 
-        s22 = self.queue_to_set(q22)
+            s22 = self.queue_to_set(q22)
 
-        self.assert_counts({
-            4: s22,
-        })
+            self.assert_counts({
+                4: s22,
+            })
 
-        self.assertEqual(
-            s22,
-            HOLDOUTS_22Q)
+            self.assertEqual(
+                s22,
+                HOLDOUTS_22Q)
 
     def test_32(self):
         h32, q32 = Queue(), Queue()  # type: ignore
