@@ -1686,6 +1686,15 @@ class TuringTest(TestCase):
                     if sim_lim is None else
                     self.machine.steps)
 
+                if sim_lim is None and not isinstance(macro, str):
+                    self.assertTrue(
+                        len(macro) <= 60,
+                        (len(macro), str(macro)))
+
+                    self.assertEqual(
+                        len(macro),
+                        len(self.machine.reached))
+
 
 class Fast(TuringTest):
     def test_halt(self):
