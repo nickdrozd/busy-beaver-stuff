@@ -1,16 +1,16 @@
-from queue import Empty
+from queue import Empty, Queue
 from multiprocessing import (
     cpu_count,
     Manager,
     Process,
 )
-from typing import Any, Callable, List, Optional
+from typing import Callable, List, Optional, Tuple, Union
 
 from tm import Machine
 from analyze import Program
 
 Output  = Callable[[str], None]
-RunPile = Any  # ???
+RunPile = Queue[Union[str, Tuple[str, str]]]
 
 def stacker(
         steps: int,
