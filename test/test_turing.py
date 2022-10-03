@@ -1179,6 +1179,19 @@ MACRO_CYCLES_FAST = {
         695,   # back 3-cell
     ),
 
+    # 4/2 former BLB, SB, BBB
+    "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": (
+        2221,  # base
+        1687,  # 2-cell
+        1448,  # 3-cell
+        1208,  # back
+        1005,  # 2-cell back
+        882,   # 3-cell back
+        1201,  # back back
+        879,   # back 2-cell
+        896,   # back 3-cell
+    ),
+
     # 4/2 boyd
     ("1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC", 20_000): (
         20000,  # base
@@ -1233,15 +1246,15 @@ MACRO_CYCLES_FAST = {
 
     # 5/2 total spaghetti
     ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", None): (
-        None,
-        None,
-        None,
-        10677,
-        5219,
-        3453,
-        10446,
-        5333,
-        3609,
+        None,   # base
+        None,   # 2-cell
+        None,   # 3-cell
+        10677,  # back
+        5219,   # 2-cell back
+        3453,   # 3-cell back
+        10446,  # back back
+        5333,   # back 2-cell
+        3609,   # back 3-cell
     ),
 
     # 3/3
