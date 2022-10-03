@@ -7,7 +7,6 @@ from tm.parse import tcompile, Instr, ProgLike
 Color = int
 State = int
 Tape = List[Color]
-SimInput  = Tuple[State, bool, Tape]
 
 ########################################
 
@@ -79,7 +78,7 @@ class MacroProg:
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> SimInput:
+    ) -> Tuple[State, bool, Tape]:
         raise NotImplementedError()
 
     def reconstruct_outputs(
@@ -147,7 +146,7 @@ class BlockMacro(MacroProg):
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> SimInput:
+    ) -> Tuple[State, bool, Tape]:
         in_state, right_edge = divmod(macro_state, 2)
 
         return (
@@ -216,7 +215,7 @@ class BacksymbolMacro(MacroProg):
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> SimInput:
+    ) -> Tuple[State, bool, Tape]:
         st_co, backsymbol_to_right = divmod(macro_state, 2)
 
         in_mini_state, in_backsymbol = divmod(st_co, self.base_colors)
