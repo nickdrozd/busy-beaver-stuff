@@ -1132,7 +1132,6 @@ BLOCK_MACRO_STEPS = {
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": 3932964,
 
     # 4/2
-    "1RB 1LC  1RD 1RB  0RD ...  1LD 1LA": None,
     "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": 32779478,
 
     # 5/2
@@ -1511,9 +1510,6 @@ class TuringTest(TestCase):
         if print_prog:
             print(prog)
 
-        for macro in (BacksymbolMacro, lambda p: BlockMacro(p, [2])):
-            _ = Machine(macro).run(sim_lim = 100)
-
         self.machine = Machine(prog).run(**opts)
         self.history = self.machine.history
         self.tape = self.machine.tape
@@ -1528,6 +1524,13 @@ class TuringTest(TestCase):
         self.assert_reached(prog)
         self.assert_simple(prog)
         self.assert_connected(prog)
+
+        _ = Machine(
+            BlockMacro(prog, [2])
+        ).run(sim_lim = 10)
+        _ = Machine(
+            BacksymbolMacro(prog, [1])
+        ).run(sim_lim = 10)
 
     def _test_simple_terminate(self, prog_data, blank: bool):
         for prog, (marks, steps) in prog_data.items():
@@ -1808,9 +1811,6 @@ class Fast(TuringTest):
                     BlockMacro(prog, [cells] * wraps),
                     analyze = False,
                 )
-
-                if steps is None:
-                    continue
 
                 assert self.machine.simple_termination is not None
 
