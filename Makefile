@@ -1,9 +1,11 @@
-.PHONY : all clean compile coverage generate idris lint machines profile test test-all type
+.PHONY : all clean clean-python compile coverage generate idris lint machines profile test test-all type
 
 all : machines idris lint test generate
 
-clean :
-	rm -rf yappi.* __pycache__ **/__pycache__ .mypy_cache .coverage htmlcov build/ *.so **/*.so
+clean-python :
+	rm -rf __pycache__ **/__pycache__ .mypy_cache .coverage htmlcov build/ *.so **/*.so
+
+clean : clean-python
 	$(MAKE) -C machines clean
 	$(MAKE) -C idris clean
 
@@ -28,7 +30,7 @@ type :
 	mypy --version
 	mypy $(MODULES)
 
-compile :
+compile : clean-python
 	mypyc tm analyze generate/c.py generate/naive.py
 
 TUR = test.test_turing.Fast
@@ -51,7 +53,7 @@ test-all : compile
 
 COVERAGE = coverage
 
-coverage :
+coverage : clean-python
 	$(COVERAGE) run -m unittest -v $(SHORT_TESTS)
 
 	$(COVERAGE) combine --quiet
