@@ -1658,7 +1658,8 @@ class TuringTest(TestCase):
             if isinstance(program, tuple):
                 prog, opt = program
                 sim_lim = opt
-            elif isinstance(program, str):
+            else:
+                assert isinstance(program, str)
                 prog, opt, sim_lim = program, 0, None
 
             self.assertEqual(
@@ -1666,7 +1667,7 @@ class TuringTest(TestCase):
                 len(macros := macro_variations(prog)))
 
             for cycles, macro in zip(cycleses, macros):
-                if cycles is not None and cycles > 10_000_000:
+                if cycles is not None and cycles > 10_000_000:  # no-coverage
                     continue
 
                 self.run_bb(
