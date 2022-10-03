@@ -38,9 +38,7 @@ class Program:
         return self.prog[state][int(color)]
 
     def __setitem__(self, slot: str, instr: str) -> None:
-        if len(slot) == 1:
-            self.prog[slot] = instr  # type: ignore
-            return
+        assert len(slot) == 2
 
         state: str = slot[0]
         color: str = slot[1]
