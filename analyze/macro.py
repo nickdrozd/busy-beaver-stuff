@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from tm.parse import tcompile, Instr, ProgLike
+from tm.types import Instr
+from tm.parse import tcompile, ProgLike
 
 Color = int
 State = int

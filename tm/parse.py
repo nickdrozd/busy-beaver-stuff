@@ -1,7 +1,7 @@
 from typing import Any, Optional, Tuple
 
+from tm.types import Instr
 
-Instr = Tuple[int, int, int]
 CompProg = Tuple[Tuple[Optional[Instr], ...], ...]
 
 ProgLike = Any
