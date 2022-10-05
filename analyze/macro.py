@@ -115,6 +115,8 @@ class MacroProg:
 
             if not 0 <= pos < cells:
                 break
+        else:
+            return None
 
         return state, tape, cells <= pos
 
