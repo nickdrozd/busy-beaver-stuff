@@ -11,44 +11,44 @@ import Program
 simLim : Nat
 simLim = 128_000_000_000
 
-checkResult : (Nat, Nat) -> (Nat, Nat) -> Bool
-checkResult (es, em) (gs, gm) =
-  es == gs && em == gm
+checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool -> Bool
+checkResult (es, ec, em) (gs, gc, gm) checkCycles =
+  es == gs && em == gm && (ec == gc || True)
 
 failWithMessage : String -> IO ()
 failWithMessage msg = do putStrLn msg; exitFailure
 
-failWhenWrong : String -> (Nat, Nat) -> (Nat, Nat) -> IO ()
-failWhenWrong prog expected actual =
-  unless (checkResult expected actual) $ do
-    failWithMessage $ #"    Whoops!: \#{prog} | \#{show actual}"#
+failWhenWrong : String -> (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool -> IO ()
+failWhenWrong prog expected actual checkCycles =
+  unless (checkResult expected actual checkCycles) $ do
+    putStrLn $ #"    Whoops!: \#{prog} | \#{show actual}"#
 
-runProgram : Machine tp -> Program -> RunType -> IO $ Maybe (Nat, tp)
+runProgram : Machine tp -> Program -> RunType -> IO $ Maybe (Steps, Cycles, tp)
 runProgram machine prog Single =
   runOnBlankTape @{machine} simLim prog
 runProgram machine prog DoubleRec =
   runDoubleOnBlank @{machine} simLim prog
 
-runPrograms : Machine _ -> Programs -> IO ()
-runPrograms _ (_, _, _, []) = putStrLn ""
-runPrograms machine (n, k, rt, (prog, expected) :: rest) = do
+runPrograms : Machine _ -> Programs -> Bool -> IO ()
+runPrograms _ (_, _, _, []) _ = putStrLn ""
+runPrograms machine (n, k, rt, (prog, expected) :: rest) checkCycles = do
   let Just parsed = parse n k prog
     | Nothing => failWithMessage $ "    Failed to parse: " ++ prog
 
-  Just (steps, tape) <- runProgram machine parsed rt
+  Just (steps, cycles, tape) <- runProgram machine parsed rt
     | Nothing => failWithMessage $ "    Hit limit: " ++ prog
 
-  failWhenWrong prog expected (steps, marks tape)
+  failWhenWrong prog expected (steps, cycles, marks tape) checkCycles
 
   putStrLn #"    \#{prog} | \#{show steps}"#
 
-  runPrograms machine $ assert_smaller rest (n, k, rt, rest)
+  runPrograms machine (assert_smaller rest (n, k, rt, rest)) checkCycles
 
-runProgramSets : Machine _ -> List Programs -> IO ()
-runProgramSets _ [] = pure ()
-runProgramSets machine (progs :: rest) = do
-  runPrograms machine progs
-  runProgramSets machine rest
+runProgramSets : Machine _ -> List Programs -> Bool -> IO ()
+runProgramSets _ [] _ = pure ()
+runProgramSets machine (progs :: rest) checkCycles = do
+  runPrograms machine progs checkCycles
+  runProgramSets machine rest checkCycles
 
 Short : List Programs
 Short = [p2_2, p3_2, p2_3, s4_2, s2_4, s5_2]
@@ -68,7 +68,7 @@ LongLong = [lll5_2, p6_9, lll2_4, ll9_8]
 runMachine : String -> Machine _ -> List Programs -> IO ()
 runMachine name machine programs = do
   putStrLn $ "  " ++ name
-  runProgramSets machine programs
+  runProgramSets machine programs $ name /= "Ptr"
 
 runPtr : IO ()
 runPtr = runMachine "Ptr" PtrMachine Short

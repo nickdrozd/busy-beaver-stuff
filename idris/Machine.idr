@@ -6,8 +6,8 @@ import public Tape
 %default total
 
 public export
-SimLim : Type
-SimLim = Nat
+Cycles : Type
+Cycles = Nat
 
 public export
 Steps : Type
@@ -35,25 +35,29 @@ SkipTape tape => Machine tape where
       checkEdge sh (Just dir) = sh == dir
       checkEdge  _          _ = False
 
-  run : SimLim -> Program -> State -> tape -> Steps
-        -> IO (Maybe (Steps, tape))
-  run 0     _    _     _    _     = pure Nothing
-  run (S k) prog state tape steps =
+  run : Cycles -> Program -> State -> tape -> Steps
+        -> IO (Maybe (Steps, Cycles, tape))
+  run 0 _ _ _ _ = pure Nothing
+  run (S cyclesLeft) prog state tape steps =
     let
       (nextState, nextTape, stepped, recurr) = exec prog state tape
       nextSteps = stepped + steps
     in
       if nextState == halt || blank nextTape || recurr
-        then pure $ Just (nextSteps, nextTape)
-        else run k prog nextState nextTape nextSteps
+        then pure $ Just (nextSteps, cyclesLeft, nextTape)
+        else run cyclesLeft prog nextState nextTape nextSteps
 
-  runOnBlankTape : SimLim -> Program -> IO (Maybe (Steps, tape))
-  runOnBlankTape simLim prog = run simLim prog 1 blankInit 0
+  runOnBlankTape : Cycles -> Program -> IO (Maybe (Steps, Cycles, tape))
+  runOnBlankTape simLim prog = do
+    Just (steps, cyclesLeft, tape) <- run simLim prog 1 blankInit 0
+      | Nothing => pure Nothing
+    pure $ Just (steps, minus simLim cyclesLeft, tape)
 
-  runDouble : SimLim -> Program
-              -> (State, tape, Steps)
-              -> (State, tape, Steps)
-              -> IO (Maybe (Steps, tape))
+  runDouble :
+    Cycles -> Program
+    -> (State, tape, Steps)
+    -> (State, tape, Steps)
+    -> IO (Maybe (Steps, Cycles, tape))
   runDouble 0 _ _ _ = pure Nothing
   runDouble (S k) prog (st1, tp1, step) (st2, tp2, slow) =
     let
@@ -64,12 +68,14 @@ SkipTape tape => Machine tape where
           else exec prog st2 tp2
     in
       if nst1 == nst2 && ntp1 == ntp2
-        then pure $ Just (slow, tp2) else
+        then pure $ Just (slow, 0, tp2) else
       runDouble k prog
         (nst1, ntp1, nstep + step)
         (nst2, ntp2, nslow + slow)
 
-  runDoubleOnBlank : SimLim -> Program -> IO (Maybe (Steps, tape))
+  runDoubleOnBlank :
+    Cycles -> Program ->
+    IO (Maybe (Steps, Cycles, tape))
   runDoubleOnBlank simLim prog = do
     runDouble simLim prog
       (1, blankInit, 0)
