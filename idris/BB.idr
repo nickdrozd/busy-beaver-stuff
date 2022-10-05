@@ -4,8 +4,12 @@ public export
 data RunType = Single | DoubleRec
 
 public export
+ProgData : Type
+ProgData = (Nat, Nat, Nat)
+
+public export
 Programs : Type
-Programs = (Nat, Nat, RunType, List (String, (Nat, Nat, Nat)))
+Programs = (Nat, Nat, RunType, List (String, ProgData))
 
 public export
 p2_2 : Programs

@@ -11,14 +11,14 @@ import Program
 simLim : Nat
 simLim = 128_000_000_000
 
-checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool -> Bool
+checkResult : ProgData -> ProgData -> Bool -> Bool
 checkResult (es, ec, em) (gs, gc, gm) checkCycles =
   es == gs && em == gm && (ec == gc || not checkCycles)
 
 failWithMessage : String -> IO ()
 failWithMessage msg = do putStrLn msg; exitFailure
 
-failWhenWrong : String -> (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool -> IO ()
+failWhenWrong : String -> ProgData -> ProgData -> Bool -> IO ()
 failWhenWrong prog expected actual checkCycles =
   unless (checkResult expected actual checkCycles) $ do
     putStrLn $ #"    Whoops!: \#{prog} | \#{show actual}"#
