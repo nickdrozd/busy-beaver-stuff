@@ -54,6 +54,7 @@ test-all : compile
 COVERAGE = coverage
 
 coverage : clean-python
+	$(COVERAGE) --version
 	$(COVERAGE) run -m unittest -v $(SHORT_TESTS)
 
 	$(COVERAGE) combine --quiet
