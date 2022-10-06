@@ -68,7 +68,7 @@ SkipTape tape => Machine tape where
           else exec prog st2 tp2
     in
       if nst1 == nst2 && ntp1 == ntp2
-        then pure $ Just (slow, 0, tp2) else
+        then pure $ Just (slow, k, tp2) else
       runDouble k prog
         (nst1, ntp1, nstep + step)
         (nst2, ntp2, nslow + slow)
@@ -77,9 +77,10 @@ SkipTape tape => Machine tape where
     Cycles -> Program ->
     IO (Maybe (Steps, Cycles, tape))
   runDoubleOnBlank simLim prog = do
-    runDouble simLim prog
-      (1, blankInit, 0)
-      (1, blankInit, 0)
+    Just (steps, cycles, tape) <- runDouble simLim prog (1, blankInit, 0) (1, blankInit, 0)
+      | Nothing => pure Nothing
+
+    pure $ Just (steps, minus simLim cycles, tape)
 
 public export
 implementation

@@ -25,8 +25,8 @@ p3_2 = (3, 2, Single, [
 public export
 d3_2 : Programs
 d3_2 = (3, 2, DoubleRec, [
-  ("1RB 1RC  1LC 1RA  1RA 1LA", ( 9, 0, 6)),
-  ("1RB 1RC  1LC 0LB  1RA 1LA", (21, 0, 4))])
+  ("1RB 1RC  1LC 1RA  1RA 1LA", ( 9, 19, 6)),
+  ("1RB 1RC  1LC 0LB  1RA 1LA", (21, 35, 4))])
 
 public export
 p2_3 : Programs
@@ -40,7 +40,7 @@ p2_3 = (2, 3, Single, [
 public export
 d2_3 : Programs
 d2_3 = (2, 3, DoubleRec, [
-  ("1RB 1LA 2RA  2LA 2LB 2RB", (17, 0, 8))])
+  ("1RB 1LA 2RA  2LA 2LB 2RB", (17, 26, 8))])
 
 public export
 s4_2 : Programs
@@ -65,10 +65,10 @@ s2_4 = (2, 4, Single, [
 public export
 d2_4 : Programs
 d2_4 = (2, 4, DoubleRec, [
-  ("1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA", ( 6362, 0,  84)),
-  ("1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA", ( 7106, 0,  90)),
-  ("1RB 2LA 1RA 1LA  0LB 3LA 2RB 3RA", ( 9699, 0,  77)),
-  ("1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB", (21485, 0, 142))])
+  ("1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA", ( 6362,   702,  84)),
+  ("1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA", ( 7106,   748,  90)),
+  ("1RB 2LA 1RA 1LA  0LB 3LA 2RB 3RA", ( 9699,  1365,  77)),
+  ("1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB", (21485, 32721, 142))])
 
 public export
 l2_4 : Programs
