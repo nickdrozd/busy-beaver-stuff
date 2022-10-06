@@ -138,7 +138,7 @@ p3_3 = (3, 3, Single, [
 public export
 p2_5 : Programs
 p2_5 = (2, 5, Single, [
-  ("1RB 2RA 1LA 1LB 3LB  2LA 3RB 1R_ 4RA 1LA", (417310842648366, 0, 36543045))
+  ("1RB 2RA 1LA 1LB 3LB  2LA 3RB 1R_ 4RA 1LA", (417310842648366, 200986702, 36543045))
 ])
 
 public export
