@@ -67,29 +67,29 @@ runNum = runMachine "Num" NumMachine
 runCell : Nat -> IO ()
 runCell = runMachine "Cell" CellMachine
 
-runBlock : Nat -> IO ()
-runBlock = runMachine "Block" BlockMachine
+runFast : Nat -> IO ()
+runFast = runMachine "Block (Fast)" BlockMachine
 
-runCellVect : Nat -> IO ()
-runCellVect = runMachine "CellVect" CellVectMachine
+runCV : Nat -> IO ()
+runCV = runMachine "CellVect" CellVectMachine
 
-runBlockVect : Nat -> IO ()
-runBlockVect = runMachine "BlockVect" BlockVectMachine
+runBV : Nat -> IO ()
+runBV = runMachine "BlockVect" BlockVectMachine
 
 runSlow : Nat -> IO ()
-runSlow = runMachine "Slow (Block)" BlockMachine
+runSlow = runMachine "Block (Slow)" BlockMachine
 
 main : IO ()
 main = do
-  runBlock      100_000_000
+  runFast     100_000_000
 
   let [_, _] = stringToNatOrZ <$> !getArgs
     | _ => do putStrLn "Skipping slow tests...\n"; exitSuccess
 
-  runPtr        40_000
-  runNum        40_000
+  runPtr           40_000
+  runNum           40_000
   runCell       3_000_000
-  runCellVect   3_000_000
-  runBlockVect  100_000_000
+  runCV         3_000_000
+  runBV       100_000_000
 
-  runSlow       3_000_000_000
+  runSlow   3_000_000_000
