@@ -30,37 +30,26 @@ runProg machine prog DoubleRec =
   runDoubleOnBlank @{machine} simLim prog
 
 runProgGroup : Machine _ -> Cycles -> Bool -> ProgramGroup -> IO ()
-runProgGroup _ _ _ (_, _, _, []) = putStrLn ""
-runProgGroup machine maxCy chkCy
-             (n, k, rt, (prog, exp@(_, expCy, _)) :: rest) =
-  if expCy > maxCy
-    then runProgGroup machine maxCy chkCy $
-      assert_smaller rest (n, k, rt, rest)
-    else do
+runProgGroup machine maxCy chkCy (n, k, rt, progs) =
+  do traverse_ readAndRun progs; putStrLn ""
+    where
+  readAndRun : (String, ProgData) -> IO ()
+  readAndRun (prog, exp@(_, expCy, _)) =
+    when (maxCy > expCy) $ do
+      let Just parsed = parse n k prog
+        | Nothing => failWithMessage $ "    Failed to parse: " ++ prog
 
-  let Just parsed = parse n k prog
-    | Nothing => failWithMessage $ "    Failed to parse: " ++ prog
+      Just (steps, cycles, tape) <- runProg machine parsed rt
+        | Nothing => failWithMessage $ "    Hit limit: " ++ prog
 
-  Just (steps, cycles, tape) <- runProg machine parsed rt
-    | Nothing => failWithMessage $ "    Hit limit: " ++ prog
+      failWhenWrong prog exp (steps, cycles, marks tape) chkCy
 
-  failWhenWrong prog exp (steps, cycles, marks tape) chkCy
-
-  putStrLn #"    \#{prog} | \#{show steps}"#
-
-  runProgGroup machine maxCy chkCy $
-    assert_smaller rest (n, k, rt, rest)
-
-runProgGroups : Machine _ -> Cycles -> Bool -> List ProgramGroup -> IO ()
-runProgGroups _ _ _ [] = pure ()
-runProgGroups machine maxCy chkCy (progs :: rest) = do
-  runProgGroup  machine maxCy chkCy progs
-  runProgGroups machine maxCy chkCy  rest
+      putStrLn #"    \#{prog} | \#{show steps}"#
 
 runMachine : String -> Machine _ -> Cycles -> IO ()
 runMachine name machine maxCy = do
   putStrLn $ "  " ++ name
-  runProgGroups machine maxCy (name /= "Ptr") testProgs
+  traverse_ (runProgGroup machine maxCy (name /= "Ptr")) testProgs
 
 runPtr : Cycles -> IO ()
 runPtr = runMachine "Ptr" PtrMachine
