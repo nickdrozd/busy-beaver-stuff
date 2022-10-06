@@ -1,6 +1,6 @@
 .PHONY : all clean run test version
 
-all : clean version run test
+all : clean version run test-all
 
 clean :
 	rm -rf build/
