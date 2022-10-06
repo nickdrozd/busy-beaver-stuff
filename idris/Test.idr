@@ -13,7 +13,7 @@ simLim = 128_000_000_000
 
 checkResult : (Nat, Nat, Nat) -> (Nat, Nat, Nat) -> Bool -> Bool
 checkResult (es, ec, em) (gs, gc, gm) checkCycles =
-  es == gs && em == gm && (ec == gc || True)
+  es == gs && em == gm && (ec == gc || not checkCycles)
 
 failWithMessage : String -> IO ()
 failWithMessage msg = do putStrLn msg; exitFailure
