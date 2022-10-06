@@ -8,7 +8,7 @@ import Program
 
 %default total
 
-simLim : Nat
+simLim : Cycles
 simLim = 128_000_000_000
 
 checkResult : ProgData -> ProgData -> Bool -> Bool
@@ -29,7 +29,7 @@ runProgram machine prog Single =
 runProgram machine prog DoubleRec =
   runDoubleOnBlank @{machine} simLim prog
 
-runProgramGroup : Machine _ -> ProgramGroup -> Nat -> Bool -> IO ()
+runProgramGroup : Machine _ -> ProgramGroup -> Cycles -> Bool -> IO ()
 runProgramGroup _ (_, _, _, []) _ _ = putStrLn ""
 runProgramGroup machine (n, k, rt, (prog, exp@(_, expCy, _)) :: rest) maxCycles checkCycles =
   if expCy > maxCycles
@@ -47,36 +47,36 @@ runProgramGroup machine (n, k, rt, (prog, exp@(_, expCy, _)) :: rest) maxCycles 
 
   runProgramGroup machine (assert_smaller rest (n, k, rt, rest)) maxCycles checkCycles
 
-runProgramGroups : Machine _ -> List ProgramGroup -> Nat -> Bool -> IO ()
+runProgramGroups : Machine _ -> List ProgramGroup -> Cycles -> Bool -> IO ()
 runProgramGroups _ [] _ _ = pure ()
 runProgramGroups machine (progs :: rest) maxCycles checkCycles = do
   runProgramGroup machine progs maxCycles checkCycles
   runProgramGroups machine rest maxCycles checkCycles
 
-runMachine : String -> Machine _ -> Nat -> IO ()
+runMachine : String -> Machine _ -> Cycles -> IO ()
 runMachine name machine maxCycles = do
   putStrLn $ "  " ++ name
   runProgramGroups machine testProgs maxCycles $ name /= "Ptr"
 
-runPtr : Nat -> IO ()
+runPtr : Cycles -> IO ()
 runPtr = runMachine "Ptr" PtrMachine
 
-runNum : Nat -> IO ()
+runNum : Cycles -> IO ()
 runNum = runMachine "Num" NumMachine
 
-runCell : Nat -> IO ()
+runCell : Cycles -> IO ()
 runCell = runMachine "Cell" CellMachine
 
-runFast : Nat -> IO ()
+runFast : Cycles -> IO ()
 runFast = runMachine "Block (Fast)" BlockMachine
 
-runCV : Nat -> IO ()
+runCV : Cycles -> IO ()
 runCV = runMachine "CellVect" CellVectMachine
 
-runBV : Nat -> IO ()
+runBV : Cycles -> IO ()
 runBV = runMachine "BlockVect" BlockVectMachine
 
-runSlow : Nat -> IO ()
+runSlow : Cycles -> IO ()
 runSlow = runMachine "Block (Slow)" BlockMachine
 
 main : IO ()
