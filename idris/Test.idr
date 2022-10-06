@@ -29,11 +29,14 @@ runProg machine prog Single =
 runProg machine prog DoubleRec =
   runDoubleOnBlank @{machine} simLim prog
 
-runProgGroup : Machine _ -> ProgramGroup -> Cycles -> Bool -> IO ()
-runProgGroup _ (_, _, _, []) _ _ = putStrLn ""
-runProgGroup machine (n, k, rt, (prog, exp@(_, expCy, _)) :: rest) maxCy chkCy =
+runProgGroup : Machine _ -> Cycles -> Bool -> ProgramGroup -> IO ()
+runProgGroup _ _ _ (_, _, _, []) = putStrLn ""
+runProgGroup machine maxCy chkCy
+             (n, k, rt, (prog, exp@(_, expCy, _)) :: rest) =
   if expCy > maxCy
-    then runProgGroup machine (assert_smaller rest (n, k, rt, rest)) maxCy chkCy else do
+    then runProgGroup machine maxCy chkCy $
+      assert_smaller rest (n, k, rt, rest)
+    else do
 
   let Just parsed = parse n k prog
     | Nothing => failWithMessage $ "    Failed to parse: " ++ prog
@@ -45,18 +48,19 @@ runProgGroup machine (n, k, rt, (prog, exp@(_, expCy, _)) :: rest) maxCy chkCy =
 
   putStrLn #"    \#{prog} | \#{show steps}"#
 
-  runProgGroup machine (assert_smaller rest (n, k, rt, rest)) maxCy chkCy
+  runProgGroup machine maxCy chkCy $
+    assert_smaller rest (n, k, rt, rest)
 
-runProgGroups : Machine _ -> List ProgramGroup -> Cycles -> Bool -> IO ()
-runProgGroups _ [] _ _ = pure ()
-runProgGroups machine (progs :: rest) maxCy chkCy = do
-  runProgGroup machine progs maxCy chkCy
-  runProgGroups machine rest maxCy chkCy
+runProgGroups : Machine _ -> Cycles -> Bool -> List ProgramGroup -> IO ()
+runProgGroups _ _ _ [] = pure ()
+runProgGroups machine maxCy chkCy (progs :: rest) = do
+  runProgGroup  machine maxCy chkCy progs
+  runProgGroups machine maxCy chkCy  rest
 
 runMachine : String -> Machine _ -> Cycles -> IO ()
 runMachine name machine maxCy = do
   putStrLn $ "  " ++ name
-  runProgGroups machine testProgs maxCy $ name /= "Ptr"
+  runProgGroups machine maxCy (name /= "Ptr") testProgs
 
 runPtr : Cycles -> IO ()
 runPtr = runMachine "Ptr" PtrMachine
