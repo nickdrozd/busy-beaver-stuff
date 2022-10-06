@@ -42,18 +42,18 @@ testProgs = [
   (4, 2, Single, [
     ("1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA", (     107,   107, 13)),
     ("1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA", (    1459,  1347, 25)),
-    ("1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB", (    2819,  2820, 69)),
     ("1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD", (   66345,  2217,  0)),
+    ("1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB", (    2819,  2820, 69)),
     ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", (32779477, 25582,  0))]),
 
   (2, 4, Single, [
-    ("1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB", (             2476,       2216,        31)),
-    ("1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA", (            32849,       1883,       190)),
     ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 2LA", (           190524,       1542,         0)),
-    ("1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB", (          2333909,    2329500,      3340)),
+    ("1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA", (            32849,       1883,       190)),
+    ("1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB", (             2476,       2216,        31)),
     ("1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB", (          2501552,       9714,      2747)),
     ("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_", (          3932964,      12234,      2050)),
     ("1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA", (       1012664081,     127771,         0)),
+    ("1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB", (          2333909,    2329500,      3340)),
     ("1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA", (    1367361263049,    4150741,         0)),
     ("1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA", (67093892759901295, 2300319753, 530843045))]),
 
@@ -65,8 +65,8 @@ testProgs = [
 
   (5, 2, Single, [
     ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", (       31315,      31315,     0)),
-    ("1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE", (    32810047,      71423,     0)),
     ("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA", (    47176870,      67346,  4098)),
+    ("1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE", (    32810047,      71423,     0)),
     ("1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE", (   193023636,     219014, 19670)),
     ("1RB 1RC  0LC 1RD  0RA 1LE  1RD 0LA  1LA 0LE", (   193049080,     244458, 19670)),
     ("1RB 1RC  1LD 0RE  0RB 0RC  0LB 1RC  1LE 1LA", (    67968449,    1042807,   946)),
