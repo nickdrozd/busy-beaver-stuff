@@ -58,38 +58,38 @@ runMachine name machine maxCycles = do
   putStrLn $ "  " ++ name
   runProgramGroups machine testProgs maxCycles $ name /= "Ptr"
 
-runPtr : IO ()
-runPtr = runMachine "Ptr" PtrMachine 40_000
+runPtr : Nat -> IO ()
+runPtr = runMachine "Ptr" PtrMachine
 
-runNum : IO ()
-runNum = runMachine "Num" NumMachine 40_000
+runNum : Nat -> IO ()
+runNum = runMachine "Num" NumMachine
 
-runCell : IO ()
-runCell = runMachine "Cell" CellMachine 3_000_000
+runCell : Nat -> IO ()
+runCell = runMachine "Cell" CellMachine
 
-runBlock : IO ()
-runBlock = runMachine "Block" BlockMachine 100_000_000
+runBlock : Nat -> IO ()
+runBlock = runMachine "Block" BlockMachine
 
-runCellVect : IO ()
-runCellVect = runMachine "CellVect" CellVectMachine 3_000_000
+runCellVect : Nat -> IO ()
+runCellVect = runMachine "CellVect" CellVectMachine
 
-runBlockVect : IO ()
-runBlockVect = runMachine "BlockVect" BlockVectMachine 100_000_000
+runBlockVect : Nat -> IO ()
+runBlockVect = runMachine "BlockVect" BlockVectMachine
 
-runSlow : IO ()
-runSlow = runMachine "Slow (Block)" BlockMachine 3_000_000_000
+runSlow : Nat -> IO ()
+runSlow = runMachine "Slow (Block)" BlockMachine
 
 main : IO ()
 main = do
-  runBlock
+  runBlock      100_000_000
 
   let [_, _] = stringToNatOrZ <$> !getArgs
     | _ => do putStrLn "Skipping slow tests...\n"; exitSuccess
 
-  runPtr
-  runNum
-  runCell
-  runCellVect
-  runBlockVect
+  runPtr        40_000
+  runNum        40_000
+  runCell       3_000_000
+  runCellVect   3_000_000
+  runBlockVect  100_000_000
 
-  runSlow
+  runSlow       3_000_000_000
