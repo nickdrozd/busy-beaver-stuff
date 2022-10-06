@@ -81,15 +81,15 @@ runSlow = runMachine "Block (Slow)" BlockMachine
 
 main : IO ()
 main = do
-  runFast     100_000_000
+  runFast      10_000_000
 
   let [_, _] = stringToNatOrZ <$> !getArgs
     | _ => do putStrLn "Skipping slow tests...\n"; exitSuccess
 
-  runPtr           40_000
-  runNum           40_000
-  runCell       3_000_000
-  runCV         3_000_000
-  runBV       100_000_000
+  runPtr            5_000
+  runNum            5_000
+  runCell         100_000
+  runCV           100_000
+  runBV        50_000_000
 
   runSlow   3_000_000_000
