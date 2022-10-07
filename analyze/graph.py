@@ -2,17 +2,6 @@ from typing import Dict, Set, Tuple
 
 from tm.parse import parse, st_str
 
-COLORS = (
-    'blue',
-    'red',
-    'forestgreen',
-    'purple',
-    'goldenrod',
-    'black',
-    'brown',
-    'deeppink',
-)
-
 HALT = '_'
 UNDEFINED = '.'
 
@@ -44,25 +33,6 @@ class Graph:
             for conn in self.arrows[state]
             for dst in conn
         )
-
-    @property
-    def dot(self) -> str:
-        title = '\n'.join([
-            '  labelloc="t";',
-            f'  label="{self.program}";',
-            '  fontname="courier"',
-        ])
-
-        header = title if len(self.program) < 50 else ''
-
-        edges = '\n'.join([
-            f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
-            for node, targets in self.arrows.items()
-            for i, target in enumerate(targets)
-            if target != UNDEFINED
-        ])
-
-        return f'digraph NAME {{\n{header}\n\n{edges}\n}}'
 
     @property
     def states(self) -> Tuple[str, ...]:

@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from analyze import Graph
 from generate.c import make_c
+from generate.dot import make_dot
 
 TEST_FILES = {
     "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": 2819,
@@ -25,4 +26,4 @@ class TestCode(TestCase):
             with open(f'test/data/dot/{name}.dot') as test:
                 self.assertEqual(
                     test.read(),
-                    Graph(prog).dot + '\n')
+                    make_dot(prog, Graph(prog).arrows) + '\n')
