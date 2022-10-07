@@ -36,7 +36,7 @@ compile : clean-python
 TUR = test.test_turing.Fast
 PROG = test.test_program
 GRAPH = test.test_graph
-CG = test.test_c
+CG = test.test_code
 QTREE = test.test_generate.TestTree.test_22
 LR = test.test_generate.TestLinRado.test_22
 TP = test.test_tape

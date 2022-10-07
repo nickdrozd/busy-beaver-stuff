@@ -11,14 +11,14 @@ TEST_FILES = {
 }
 
 
-class TestC(TestCase):
+class TestCode(TestCase):
     def test_c(self):
         self.maxDiff = None
 
         for prog, name in TEST_FILES.items():
             print(prog)
 
-            with open(f'test/data/{name}.c.test') as test:
+            with open(f'test/data/c/{name}.c.test') as test:
                 self.assertEqual(
                     test.read(),
                     make_c(prog) + '\n',
