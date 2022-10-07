@@ -17,15 +17,13 @@ def make_dot(
         name: str,
         arrows: Dict[str, Tuple[str, ...]],
 ) -> str:
-    title = '\n'.join([
+    header: str = '\n'.join([
         '  labelloc="t";',
         f'  label="{name}";',
         '  fontname="courier"',
-    ])
+    ]) if len(name) < 50 else ''
 
-    header = title if len(name) < 50 else ''
-
-    edges = '\n'.join([
+    edges: str = '\n'.join([
         f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
         for node, targets in arrows.items()
         for i, target in enumerate(targets)
