@@ -1,7 +1,7 @@
 from unittest import TestCase
 
+from analyze import Graph
 from generate.c import make_c
-
 
 TEST_FILES = {
     "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": 2819,
@@ -10,9 +10,8 @@ TEST_FILES = {
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": 47176870,
 }
 
-
 class TestCode(TestCase):
-    def test_c(self):
+    def test_code(self):
         self.maxDiff = None
 
         for prog, name in TEST_FILES.items():
@@ -21,5 +20,9 @@ class TestCode(TestCase):
             with open(f'test/data/c/{name}.c.test') as test:
                 self.assertEqual(
                     test.read(),
-                    make_c(prog) + '\n',
-                )
+                    make_c(prog) + '\n')
+
+            with open(f'test/data/dot/{name}.dot') as test:
+                self.assertEqual(
+                    test.read(),
+                    Graph(prog).dot + '\n')

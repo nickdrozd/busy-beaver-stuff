@@ -251,7 +251,6 @@ class TestGraph(TestCase):
             self.graph = Graph(prog)
 
             print(self.graph)
-            _ = self.graph.dot
             _ = repr(self.graph)
 
             self.assert_flat(flat)

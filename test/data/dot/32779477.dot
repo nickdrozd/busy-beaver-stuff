@@ -1,0 +1,14 @@
+digraph NAME {
+  labelloc="t";
+  label="1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA";
+  fontname="courier"
+
+  A -> B [ color=" blue" ];
+  A -> C [ color=" red" ];
+  B -> D [ color=" blue" ];
+  B -> B [ color=" red" ];
+  C -> D [ color=" blue" ];
+  C -> C [ color=" red" ];
+  D -> D [ color=" blue" ];
+  D -> A [ color=" red" ];
+}
