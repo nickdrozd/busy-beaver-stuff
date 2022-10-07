@@ -14,10 +14,10 @@ class Graph:
         self.arrows: Dict[str, Tuple[str, ...]] = {
             st_str(i): connection
             for i, connection in
-            enumerate((
+            enumerate(
                 tuple(instr[2] for instr in state)
                 for state in parse(program)
-            ))
+            )
         }
 
     def __str__(self) -> str:
