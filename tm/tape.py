@@ -10,13 +10,13 @@ class BlockTape:
             lspan: List[List[int]],
             scan: Color,
             rspan: List[List[int]],
-            head: Optional[int] = None,
+            head: int = 0,
     ):
         self.lspan = lspan
         self.scan = int(scan)
         self.rspan = rspan
 
-        self.head: int = 0 if head is None else head
+        self.head = head
 
     def __repr__(self) -> str:
         return ' '.join([
