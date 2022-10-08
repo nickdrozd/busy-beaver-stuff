@@ -183,8 +183,13 @@ class PtrTape:
         self.tape = tape
         self.init = init
 
-        self.l_end: int =              0 - self.init
-        self.r_end: int = len(self.tape) - self.init
+    @property
+    def r_end(self) -> int:
+        return len(self.tape) - self.init
+
+    @property
+    def l_end(self) -> int:
+        return 0 - self.init
 
     def __getitem__(self, tape_index: slice) -> List[int]:
         if (stop := tape_index.stop) is None:
@@ -202,10 +207,8 @@ class PtrTape:
     def extend_to_bound_right(self, stop: int) -> None:
         if (rdiff := stop + self.init - self.r_end) > 0:
             self.tape.extend([0] * rdiff)
-            self.r_end += rdiff
 
     def extend_to_bound_left(self, start: int) -> None:
         if (ldiff := 0 - (start + self.init)) > 0:
             self.tape = [0] * ldiff + self.tape
-            self.l_end -= ldiff
             self.init += ldiff
