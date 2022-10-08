@@ -305,11 +305,11 @@ class Program:
     ) -> bool:
         configs: List[
             Tuple[int, str, BlockTape, int, History]
-        ] = [                              # type: ignore
+        ] = [                                   # type: ignore
             (
                 1,
-                state,                     # type: ignore
-                BlockTape([], color, []),  # type: ignore
+                state,                          # type: ignore
+                BlockTape([], int(color), []),  # type: ignore
                 0,
                 History(),
             )

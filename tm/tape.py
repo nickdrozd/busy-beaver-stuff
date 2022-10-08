@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from tm.types import Color
+Color = int
 
 class BlockTape:
     def __init__(
@@ -13,7 +13,7 @@ class BlockTape:
             head: int = 0,
     ):
         self.lspan = lspan
-        self.scan = int(scan)
+        self.scan = scan
         self.rspan = rspan
 
         self.head = head
@@ -179,7 +179,7 @@ class BlockTape:
 
 
 class PtrTape:
-    def __init__(self, init: int, tape: List[int]):
+    def __init__(self, init: int, tape: List[Color]):
         self.tape = tape
         self.init = init
 
