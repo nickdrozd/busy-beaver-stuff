@@ -1,22 +1,16 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import List, Optional
 
 Color = int
 
+@dataclass
 class BlockTape:
-    def __init__(
-            self,
-            lspan: List[List[int]],
-            scan: Color,
-            rspan: List[List[int]],
-            head: int = 0,
-    ):
-        self.lspan = lspan
-        self.scan = scan
-        self.rspan = rspan
-
-        self.head = head
+    lspan: List[List[int]]
+    scan: Color
+    rspan: List[List[int]]
+    head: int = 0
 
     def __repr__(self) -> str:
         return ' '.join([
@@ -178,10 +172,10 @@ class BlockTape:
         return stepped
 
 
+@dataclass
 class PtrTape:
-    def __init__(self, init: int, tape: List[Color]):
-        self.tape = tape
-        self.init = init
+    init: int
+    tape: List[Color]
 
     @property
     def r_end(self) -> int:
