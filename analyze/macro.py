@@ -8,6 +8,7 @@ from tm.parse import tcompile, ProgLike
 Color = int
 State = int
 Tape = List[Color]
+Config = Tuple[State, Tuple[bool, Tape]]
 
 ########################################
 
@@ -67,10 +68,10 @@ class MacroProg:
             macro_state: State,
             macro_color: Color,
     ) -> Optional[Instr]:
-        return self.reconstruct_outputs(*result) if (
+        return self.reconstruct_outputs(result) if (
             result :=
             self.run_simulator(
-                *self.deconstruct_inputs(
+                self.deconstruct_inputs(
                     macro_state,
                     macro_color))
         ) is not None else None
@@ -79,23 +80,15 @@ class MacroProg:
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> Tuple[State, bool, Tape]:
+    ) -> Config:
         raise NotImplementedError()
 
-    def reconstruct_outputs(
-            self,
-            state: State,
-            tape: Tape,
-            right_edge: bool,
-    ) -> Instr:
+    def reconstruct_outputs(self, config: Config) -> Instr:
         raise NotImplementedError()
 
-    def run_simulator(
-            self,
-            state: State,
-            right_edge: bool,
-            tape: Tape,
-    ) -> Optional[Tuple[State, Tape, bool]]:
+    def run_simulator(self, config: Config) -> Optional[Config]:
+        state, (right_edge, tape) = config
+
         cells = len(tape)
 
         pos = cells - 1 if right_edge else 0
@@ -118,7 +111,7 @@ class MacroProg:
         else:
             return None
 
-        return state, tape, cells <= pos
+        return state, (cells <= pos, tape)
 
 ########################################
 
@@ -149,21 +142,17 @@ class BlockMacro(MacroProg):
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> Tuple[State, bool, Tape]:
+    ) -> Config:
         in_state, right_edge = divmod(macro_state, 2)
 
-        return (
-            in_state,
+        return in_state, (
             right_edge == 1,
             self.color_to_tape(macro_color),
         )
 
-    def reconstruct_outputs(
-            self,
-            state: State,
-            tape: Tape,
-            right_edge: bool,
-    ) -> Instr:
+    def reconstruct_outputs(self, config: Config) -> Instr:
+        state, (right_edge, tape) = config
+
         return (
             self.tape_to_color(tape),
             int(right_edge),
@@ -218,29 +207,23 @@ class BacksymbolMacro(MacroProg):
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> Tuple[State, bool, Tape]:
+    ) -> Config:
         st_co, backsymbol_to_right = divmod(macro_state, 2)
 
         in_mini_state, in_backsymbol = divmod(st_co, self.base_colors)
 
         at_right = bool(backsymbol_to_right)
 
-        return (
-            in_mini_state,
+        return in_mini_state, (
             not at_right,
-            (
-                [macro_color, in_backsymbol]
-                if at_right else
-                [in_backsymbol, macro_color]
-            ),
+            [macro_color, in_backsymbol]
+            if at_right else
+            [in_backsymbol, macro_color],
         )
 
-    def reconstruct_outputs(
-            self,
-            state: State,
-            tape: Tape,
-            right_edge: bool,
-    ) -> Instr:
+    def reconstruct_outputs(self, config: Config) -> Instr:
+        state, (right_edge, tape) = config
+
         out_color, backsymbol = (
             tape
             if right_edge else
