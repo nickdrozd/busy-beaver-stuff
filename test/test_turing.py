@@ -1191,15 +1191,15 @@ MACRO_CYCLES_FAST = {
 
     # 5/2 total spaghetti
     ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", None): (
-        None,   # base
-        None,   # 2-cell
-        None,   # 3-cell
-        10677,  # back
-        5219,   # 2-cell back
-        3453,   # 3-cell back
-        10446,  # back back
-        5333,   # back 2-cell
-        3609,   # back 3-cell
+        None,  # base
+        None,  # 2-cell
+        None,  # 3-cell
+        695,   # back
+        551,   # 2-cell back
+        525,   # 3-cell back
+        678,   # back back
+        558,   # back 2-cell
+        550,   # back 3-cell
     ),
 
     # 3/3
@@ -1630,8 +1630,9 @@ class TuringTest(TestCase):
 
                 self.assertEqual(
                     cycles,
-                    self.machine.simple_termination
-                    if opt is None else
+                    None
+                    if (self.machine.simple_termination is None
+                        and opt is None) else
                     self.machine.cycles
                     if sim_lim is None else
                     self.machine.steps)
