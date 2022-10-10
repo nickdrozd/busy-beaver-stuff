@@ -85,4 +85,4 @@ main = do
   runCV           100_000
   runBV        50_000_000
 
-  runSlow   3_000_000_000
+  runSlow   1_000_000_000
