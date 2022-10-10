@@ -1,23 +1,27 @@
+# pylint: disable = redefined-loop-name, redefined-variable-type
 import sys
 
 from tm import Machine
-from analyze import BlockMacro
+from analyze import BlockMacro, BacksymbolMacro
 from perf import profile
 
 PRINT = 1
 STEPS = 10 ** 10
 RCRNC = None
-MACRO = None
+BLOCK = None
+BACKS = None
 
 PROFILE = 0
 
 def main() -> None:
     for i, program in enumerate(sys.stdin):
-        # pylint: disable = redefined-loop-name
         program = program.strip()
 
-        if MACRO is not None:
-            program = BlockMacro(program, MACRO)
+        if BLOCK is not None:
+            program = BlockMacro(program, BLOCK)
+
+        if BACKS is not None:
+            program = BacksymbolMacro(program, BACKS)
 
         machine = Machine(program).run(
             sim_lim = STEPS,
