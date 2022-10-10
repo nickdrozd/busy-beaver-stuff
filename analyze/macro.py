@@ -159,7 +159,7 @@ class BlockMacro(MacroProg):
             (
                 (2 * state) + int(not right_edge)
                 if state != -1 else
-                -1
+                state
             ),
         )
 
@@ -240,6 +240,6 @@ class BacksymbolMacro(MacroProg):
                       + (state
                          * self.base_colors)))
                 if state != -1 else
-                -1
+                state
             ),
         )
