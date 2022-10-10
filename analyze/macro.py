@@ -143,9 +143,9 @@ class BlockMacro(MacroProg):
             macro_state: State,
             macro_color: Color,
     ) -> Config:
-        in_state, right_edge = divmod(macro_state, 2)
+        state, right_edge = divmod(macro_state, 2)
 
-        return in_state, (
+        return state, (
             right_edge == 1,
             self.color_to_tape(macro_color),
         )
@@ -208,17 +208,15 @@ class BacksymbolMacro(MacroProg):
             macro_state: State,
             macro_color: Color,
     ) -> Config:
-        st_co, backsymbol_to_right = divmod(macro_state, 2)
+        st_co, at_right = divmod(macro_state, 2)
 
-        in_mini_state, in_backsymbol = divmod(st_co, self.base_colors)
+        state, backsymbol = divmod(st_co, self.base_colors)
 
-        at_right = bool(backsymbol_to_right)
-
-        return in_mini_state, (
+        return state, (
             not at_right,
-            [macro_color, in_backsymbol]
+            [macro_color, backsymbol]
             if at_right else
-            [in_backsymbol, macro_color],
+            [backsymbol, macro_color],
         )
 
     def reconstruct_outputs(self, config: Config) -> Instr:
