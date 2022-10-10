@@ -74,8 +74,8 @@ color = do
   c <- sat $ \x => isDigit x || x == '.'
   pure $ stringToNatOrZ $ pack [c]
 
-action : Parser Action
-action = do
+instruction : Parser Instruction
+instruction = do
   co <- color
   sh <- shift
   st <- state
@@ -87,31 +87,31 @@ space = do
   pure ()
 
 ColorVect : Nat -> Type
-ColorVect k = Vect k Action
+ColorVect k = Vect k Instruction
 
 ProgVect : (n, k : Nat) -> Type
 ProgVect n k = Vect n $ ColorVect k
 
-actions : (k : Nat) -> Parser $ ColorVect k
-actions 0 = pure []
-actions 1 = do i <- action; pure [i]
-actions (S k) = do
-  i  <- action
+instructions : (k : Nat) -> Parser $ ColorVect k
+instructions 0 = pure []
+instructions 1 = do i <- instruction; pure [i]
+instructions (S k) = do
+  i  <- instruction
   _  <- space
-  is <- actions k
+  is <- instructions k
   pure $ i :: is
 
 program : (n, k : Nat) -> Parser $ ProgVect n k
 program 0 _ = pure []
-program 1 c = do i <- actions c; pure [i]
+program 1 c = do i <- instructions c; pure [i]
 program (S k) c = do
-  i  <- actions c
+  i  <- instructions c
   _  <- space
   _  <- space
   is <- program k c
   pure $ i :: is
 
-colorIndex : Color -> ColorVect k -> Action
+colorIndex : Color -> ColorVect k -> Instruction
 colorIndex _ [] = (1, R, halt)
 colorIndex 0 (i :: _) = i
 colorIndex (S c) (_ :: is) = colorIndex c is

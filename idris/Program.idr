@@ -53,13 +53,9 @@ Cast Char State where
   cast  _  = 0
 
 public export
-Action : Type
-Action = (Color, Shift, State)
-
-public export
 Instruction : Type
-Instruction = Color -> Action
+Instruction = (Color, Shift, State)
 
 public export
 Program : Type
-Program = State -> Instruction
+Program = State -> Color -> Instruction
