@@ -11,6 +11,12 @@ import Program
 simLim : Cycles
 simLim = 128_000_000_000
 
+truncateProg : String -> String
+truncateProg prog =
+  if length prog < 50
+    then prog
+    else #"<... \#{show $ length prog} ...>"#
+
 checkResult : ProgData -> ProgData -> Bool -> Bool
 checkResult (es, ec, em) (gs, gc, gm) chkCy =
   es == gs && em == gm && (ec == gc || not chkCy)
@@ -44,7 +50,7 @@ runProgGroup machine maxCy chkCy (n, k, rt, progs) =
 
       failWhenWrong prog exp (steps, cycles, marks tape) chkCy
 
-      putStrLn #"    \#{prog} | \#{show steps}"#
+      putStrLn #"    \#{truncateProg prog} | \#{show steps}"#
 
 runMachine : String -> Machine _ -> Cycles -> IO ()
 runMachine name machine maxCy = do
