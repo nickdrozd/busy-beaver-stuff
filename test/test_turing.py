@@ -1308,7 +1308,6 @@ class TuringTest(TestCase):
             Graph(prog).is_simple
             or prog in SPAGHETTI
             or prog in KERNEL
-            or len(prog) > 70
         )
 
     def assert_reached(self, prog):
@@ -1356,9 +1355,6 @@ class TuringTest(TestCase):
             self.assertTrue(
                 Program(prog).cant_blank)
         except AssertionError:
-            if len(prog) > 70:
-                return
-
             self.assertIn(
                 prog,
                 CANT_BLANK_FALSE_NEGATIVES,
