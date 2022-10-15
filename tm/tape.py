@@ -94,15 +94,10 @@ class BlockTape:
             (self.lspan, self.rspan)
         )
 
-        if not push:
-            push.append([color, 1])
+        if push and (block := push[-1])[0] == color:
+            block[1] += 1
         else:
-            next_color, next_count = push[-1]
-
-            if next_color == color:
-                push[-1][1] += 1
-            else:
-                push.append([color, 1])
+            push.append([color, 1])
 
         if not pull:
             next_color = 0
@@ -154,15 +149,10 @@ class BlockTape:
 
         stepped = 1 + block_count
 
-        if not push:
-            push.append([color, stepped])
+        if push and (block := push[-1])[0] == color:
+            block[1] += stepped
         else:
-            next_push_color, _ = push[-1]
-
-            if next_push_color != color:
-                push.append([color, stepped])
-            else:
-                push[-1][1] += stepped
+            push.append([color, stepped])
 
         if shift:
             self.head += stepped
