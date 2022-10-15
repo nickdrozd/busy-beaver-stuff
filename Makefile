@@ -3,7 +3,7 @@
 all : machines idris lint test generate
 
 clean-python :
-	rm -rf __pycache__ **/__pycache__ .mypy_cache .coverage htmlcov build/ *.so **/*.so
+	rm -rf __pycache__ **/__pycache__ .mypy_cache .coverage.* htmlcov build/ *.so **/*.so
 
 clean : clean-python
 	$(MAKE) -C machines clean
