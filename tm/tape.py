@@ -94,11 +94,6 @@ class BlockTape:
             (self.lspan, self.rspan)
         )
 
-        if push and (block := push[-1])[0] == color:
-            block[1] += 1
-        else:
-            push.append([color, 1])
-
         if not pull:
             next_color = 0
         else:
@@ -110,6 +105,11 @@ class BlockTape:
                 pull.pop()
 
         self.scan = next_color
+
+        if push and (block := push[-1])[0] == color:
+            block[1] += 1
+        else:
+            push.append([color, 1])
 
         if shift:
             self.head += 1
