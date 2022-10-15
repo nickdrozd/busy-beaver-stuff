@@ -95,16 +95,16 @@ class BlockTape:
         )
 
         if not pull:
-            next_color = 0
+            self.scan = 0
         else:
             next_color, next_count = pull[-1]
 
             if next_count > 1:
                 pull[-1][1] -= 1
             else:
-                pull.pop()
+                _ = pull.pop()
 
-        self.scan = next_color
+            self.scan = next_color
 
         if push and (block := push[-1])[0] == color:
             block[1] += 1
@@ -136,7 +136,7 @@ class BlockTape:
         pull.pop()
 
         if not pull:
-            next_color = 0
+            self.scan = 0
         else:
             next_color, next_count = pull[-1]
 
@@ -145,7 +145,7 @@ class BlockTape:
             else:
                 pull.pop()
 
-        self.scan = next_color
+            self.scan = next_color
 
         stepped = 1 + block_count
 
