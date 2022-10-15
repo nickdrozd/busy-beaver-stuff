@@ -147,7 +147,9 @@ class BlockTape:
         if push and (block := push[-1])[0] == color:
             block[1] += stepped
         else:
-            push.append([color, stepped])
+            pull_block[0] = color
+            pull_block[1] += 1
+            push.append(pull_block)
 
         if shift:
             self.head += stepped
