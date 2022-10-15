@@ -125,10 +125,10 @@ class BlockTape:
             (self.lspan, self.rspan)
         )
 
-        if not pull or (pull_block := pull[-1])[0] != self.scan:
+        if not pull or pull[-1][0]!= self.scan:
             return self.step(shift, color)
 
-        pull.pop()
+        pull_block = pull.pop()
 
         if not pull:
             self.scan = 0
