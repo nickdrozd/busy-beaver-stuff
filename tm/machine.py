@@ -149,7 +149,7 @@ class Machine:
 
             self.reached[action] += 1
 
-            if (state == next_state
+            if ((same_state := state == next_state)
                     and (shift == tape.edge or marks == 0)):
                 self.spnout = step
                 break
@@ -162,11 +162,7 @@ class Machine:
                 None
             )
 
-            stepped = tape.step(
-                shift,
-                color,
-                skip and (state == next_state),
-            )
+            stepped = tape.step(shift, color, skip and same_state)
 
             state = next_state
 
