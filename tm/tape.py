@@ -87,46 +87,18 @@ class BlockTape:
 
         return None
 
-    def step(self, shift: int, color: int) -> int:
+    def step(self, shift: int, color: int, skip: bool) -> int:
         pull, push = (
             (self.rspan, self.lspan)
             if shift else
             (self.lspan, self.rspan)
         )
 
-        if not pull:
-            self.scan = 0
-        else:
-            self.scan = (next_pull := pull[-1])[0]
-
-            if next_pull[1] > 1:
-                next_pull[1] -= 1
-            else:
-                _ = pull.pop()
-
-        if push and (block := push[-1])[0] == color:
-            block[1] += 1
-        else:
-            push.append([color, 1])
-
-        if shift:
-            self.head += 1
-        else:
-            self.head -= 1
-
-        return 1
-
-    def skip(self, shift: int, color: int) -> int:
-        pull, push = (
-            (self.rspan, self.lspan)
-            if shift else
-            (self.lspan, self.rspan)
+        push_block = (
+            pull.pop()
+            if skip and pull and pull[-1][0] == self.scan else
+            None
         )
-
-        if not pull or pull[-1][0]!= self.scan:
-            return self.step(shift, color)
-
-        pull_block = pull.pop()
 
         if not pull:
             self.scan = 0
@@ -138,14 +110,17 @@ class BlockTape:
             else:
                 pull.pop()
 
-        stepped = 1 + pull_block[1]
+        stepped = 1 if push_block is None else 1 + push_block[1]
 
         if push and (block := push[-1])[0] == color:
             block[1] += stepped
         else:
-            pull_block[0] = color
-            pull_block[1] += 1
-            push.append(pull_block)
+            if push_block is None:
+                push_block = [color, 1]
+            else:
+                push_block[0] = color
+                push_block[1] += 1
+            push.append(push_block)
 
         if shift:
             self.head += stepped

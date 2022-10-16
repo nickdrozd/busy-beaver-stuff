@@ -60,8 +60,8 @@ class TestTape(TestCase):
         copy_1 = self.tape.copy()
         copy_2 = self.tape.copy()
 
-        _ = copy_1.step(0, 2)
-        _ = copy_2.step(1, 1)
+        _ = copy_1.step(0, 2, False)
+        _ = copy_2.step(1, 1, False)
 
         self.assert_signature(
             '1|0|1[2]2|1')

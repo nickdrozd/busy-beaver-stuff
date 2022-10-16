@@ -366,6 +366,7 @@ class Program:
                         _ = next_tape.step(
                             not (0 if shift == 'L' else 1),
                             next_tape.scan,
+                            False,
                         )
 
                         next_tape.scan = color

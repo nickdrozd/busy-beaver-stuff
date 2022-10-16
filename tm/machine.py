@@ -162,11 +162,11 @@ class Machine:
                 None
             )
 
-            stepped = (
-                tape.skip
-                if skip and (state == next_state) else
-                tape.step
-            )(shift, color)
+            stepped = tape.step(
+                shift,
+                color,
+                skip and (state == next_state),
+            )
 
             state = next_state
 
