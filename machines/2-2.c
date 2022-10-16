@@ -33,13 +33,14 @@ int main (void) {
  H:
   WIPE_AND_SCORE;
 
-  printf("%d | 1RB %c%c%c  %c%c%c %c%c%c | %d | %d\n",
-         PROG_NUM,
-         FORMAT_INSTR(a1c, a1s, a1t),
-         FORMAT_INSTR(b0c, b0s, b0t),
-         FORMAT_INSTR(b1c, b1s, b1t),
-         STEPS,
-         MARKS);
+  if (STEPS < XLIMIT)
+    printf("%d | 1RB %c%c%c  %c%c%c %c%c%c | %d | %d\n",
+           PROG_NUM,
+           FORMAT_INSTR(a1c, a1s, a1t),
+           FORMAT_INSTR(b0c, b0s, b0t),
+           FORMAT_INSTR(b1c, b1s, b1t),
+           STEPS,
+           MARKS);
 
   goto INITIALIZE;
 
