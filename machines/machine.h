@@ -4,8 +4,8 @@
 #define SETUP                                   \
   SETUP_TAPE                                    \
   unsigned int MARKS = 0;                       \
-  unsigned int XX;                              \
-  unsigned int PP = 0;
+  unsigned int STEPS;                           \
+  unsigned int PROG_NUM = 0;
 
 #define TAPE_LEN (XLIMIT * 2)
 
@@ -22,9 +22,10 @@
   static void* dispatch[] =                     \
     { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };
 
-#define RESET XX = MARKS = 0; PP++;
+#define RESET STEPS = MARKS = 0; PROG_NUM++;
 
-#define CHECK_LIMIT if (++XX > XLIMIT) {goto H;};
+#define CHECK_LIMIT                             \
+  if (++STEPS > XLIMIT) {goto H;};
 
 #define L -1
 #define R 1
