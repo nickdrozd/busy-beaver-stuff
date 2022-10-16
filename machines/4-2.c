@@ -48,7 +48,7 @@ int main (void) {
  H:
   WIPE_AND_SCORE;
 
-  printf("%d | 1RB %c%c%c  %c%c%c %c%c%c  %c%c%c %c%c%c  %c%c%c %c%c%c | %d\n",
+  printf("%d | 1RB %c%c%c  %c%c%c %c%c%c  %c%c%c %c%c%c  %c%c%c %c%c%c | %d | %d\n",
          PROG_NUM,
          FORMAT_INSTR(a1c, a1s, a1t),
          FORMAT_INSTR(b0c, b0s, b0t),
@@ -57,6 +57,7 @@ int main (void) {
          FORMAT_INSTR(c1c, c1s, c1t),
          FORMAT_INSTR(d0c, d0s, d0t),
          FORMAT_INSTR(d1c, d1s, d1t),
+         STEPS,
          MARKS);
 
   goto INITIALIZE;
