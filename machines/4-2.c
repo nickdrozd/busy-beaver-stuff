@@ -30,19 +30,15 @@ int main (void) {
   LOAD_PROGRAM;
 
  A:
-  CHECK_LIMIT;
   INSTRUCTION(0, A0C, A0S, A0T, a1c, a1s, a1t);
 
  B:
-  CHECK_LIMIT;
   INSTRUCTION(1, b0c, b0s, b0t, b1c, b1s, b1t);
 
  C:
-  CHECK_LIMIT;
   INSTRUCTION(2, c0c, c0s, c0t, c1c, c1s, c1t);
 
  D:
-  CHECK_LIMIT;
   INSTRUCTION(3, d0c, d0s, d0t, d1c, d1s, d1t);
 
  H:

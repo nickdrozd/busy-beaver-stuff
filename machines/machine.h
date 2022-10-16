@@ -76,6 +76,7 @@
   }
 
 #define INSTRUCTION(l, c0, s0, t0, c1, s1, t1)  \
+  CHECK_LIMIT;                                  \
   if (SCAN(1))                                  \
     { ACTION(c1, s1, t1); }                     \
   else {                                        \

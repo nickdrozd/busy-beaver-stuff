@@ -38,14 +38,12 @@ int main (void) {
   LOAD_PROGRAM;
 
  A:
-  CHECK_LIMIT;
   INSTRUCTION(0, A0C, A0S, A0T,
               a1c, a1s, a1t,
               a2c, a2s, a2t,
               a3c, a3s, a3t);
 
  B:
-  CHECK_LIMIT;
   CHECK_RECUR(b0s, b0t, 1);
   INSTRUCTION(1, b0c, b0s, b0t,
               b1c, b1s, b1t,
