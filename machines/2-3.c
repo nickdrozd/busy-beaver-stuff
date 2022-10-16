@@ -30,28 +30,27 @@ int main (void) {
   DISPATCH_TABLE;
 
  INITIALIZE:
-  RESET_COUNTS;
+  RESET;
   LOAD_PROGRAM;
 
  A:
-  CHECK_LIMIT(AA);
+  CHECK_LIMIT;
   INSTRUCTION(0, A0C, A0S, A0T, a1c, a1s, a1t, a2c, a2s, a2t);
 
  B:
-  CHECK_LIMIT(BB);
+  CHECK_LIMIT;
   INSTRUCTION(1, b0c, b0s, b0t, b1c, b1s, b1t, b2c, b2s, b2t);
 
  H:
   WIPE_AND_SCORE;
 
-  printf("%d | 1RB %c%c%c %c%c%c  %c%c%c %c%c%c %c%c%c | %d %d | %d\n",
+  printf("%d | 1RB %c%c%c %c%c%c  %c%c%c %c%c%c %c%c%c | %d\n",
          PP,
          FORMAT_INSTR(a1c, a1s, a1t),
          FORMAT_INSTR(a2c, a2s, a2t),
          FORMAT_INSTR(b0c, b0s, b0t),
          FORMAT_INSTR(b1c, b1s, b1t),
          FORMAT_INSTR(b2c, b2s, b2t),
-         AA, BB,
          MARKS);
 
   goto INITIALIZE;

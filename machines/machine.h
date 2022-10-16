@@ -3,7 +3,9 @@
 
 #define SETUP                                   \
   SETUP_TAPE                                    \
-  SETUP_COUNTS
+  unsigned int MARKS = 0;                       \
+  unsigned int XX;                              \
+  unsigned int PP = 0;
 
 #define TAPE_LEN (XLIMIT * 2)
 
@@ -20,29 +22,9 @@
   static void* dispatch[] =                     \
     { &&A, &&B, &&C, &&D, &&E, &&F, &&G, &&H };
 
-#define SETUP_COUNTS                            \
-  unsigned int MARKS = 0;                       \
-  unsigned int COUNTS[STATES];                  \
-  unsigned int XX;                              \
-  unsigned int PP = 0;
+#define RESET XX = MARKS = 0; PP++;
 
-#define RESET_COUNTS                            \
-  XX = MARKS = 0;                               \
-  PP++;                                         \
-  for (i = 0; i < STATES; i++) {                \
-    COUNTS[i] = 0;                              \
-  }
-
-#define AA COUNTS[0]
-#define BB COUNTS[1]
-#define CC COUNTS[2]
-#define DD COUNTS[3]
-#define EE COUNTS[4]
-
-#define CHECK_LIMIT(COUNT) {                    \
-    if (++XX > XLIMIT) {goto H;};              \
-    COUNT = XX;                                 \
-  }
+#define CHECK_LIMIT if (++XX > XLIMIT) {goto H;};
 
 #define L -1
 #define R 1
