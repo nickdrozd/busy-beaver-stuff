@@ -3,6 +3,7 @@ from unittest import TestCase
 from typing import List, Tuple
 
 from tm import Machine
+from tm.tape import BlockTape
 
 class TestTape(TestCase):
     def run_bb(self, prog, **opts):
@@ -171,3 +172,35 @@ class TestTape(TestCase):
 
         self.assert_ptr_positions(
             (-5, 5, 13))
+
+    def test_trace_blocks(self):
+        # 1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA : BBB(4, 2)
+        #    49 |   144 | D1 | 1^15 [1] 1^6
+        #    54 |   167 | D1 | 1^12 [1] 1^11
+
+        tape = BlockTape([[1, 15]], 1, [[1, 6]])
+
+        self.assertEqual(
+            [1, 15],
+            tape.lspan[0])
+
+        self.assertEqual(
+            [1, 6],
+            tape.rspan[0])
+
+        tape.lspan[0].append(0)
+        tape.rspan[0].append(0)
+
+        tape.step(0, 1, False)
+        tape.step(0, 1, False)
+        tape.step(1, 0, True)
+        tape.step(1, 0, False)
+        tape.step(0, 1, True)
+
+        self.assertEqual(
+            [1, 12, 0],
+            tape.lspan[0])
+
+        self.assertEqual(
+            [1, 11, 0],
+            tape.rspan[0])
