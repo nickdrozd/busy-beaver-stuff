@@ -333,7 +333,7 @@ RECUR_COMPACT = {
     "1RB 0LB  1LC 0RC  1RA 1LA": ( 38, 21),
     "1RB 1LA  0RC 0RA  1LC 0LA": ( 17, 36),
     "1RB ...  1LC 0RC  1RA 0LC": ( 16,  5),
-    # "1RB 1LB  0RC 0RB  1LC 0LA": (  4, 38),
+    "1RB 1LB  0RC 0RB  1LC 0LA": (  4, 38),
     "1RB 1LB  0RC 1RC  1LA 0LA": (  0, 15),
 
     # 2/3
@@ -344,7 +344,7 @@ RECUR_COMPACT = {
     "1RB 1LA 1LB  1LA 2RB 0LA": ( 80, 20),
     "1RB 2LA 0RB  1LA 2LA 1RA": ( 78, 14),
     "1RB 2LA 0RB  1LB 2LA 1RA": ( 76, 14),
-    # "1RB 2LB 2LA  2LA 0LB 0RA": ( 63, 32),
+    "1RB 2LB 2LA  2LA 0LB 0RA": ( 63, 32),
     "1RB 1LB 1LB  1LA 2RB 0LA": ( 58,  8),
     "1RB 2LA 0RB  1LB 1RA 1RA": ( 55, 10),
     "1RB 2LA 2RB  1LB 1LA 1RA": ( 39,  2),
@@ -358,15 +358,15 @@ RECUR_COMPACT = {
     # 4/2
     "1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA": (586388, 104),
     "1RB 1RC  1LC 0LD  1RA 0LB  0RA 0RC": ( 14008,  24),
-    # "1RB 1LC  0RC 0RD  1LA 0LA  0LC 1RB": (  7002, 225),
+    "1RB 1LC  0RC 0RD  1LA 0LA  0LC 1RB": (  7002, 225),
     "1RB 0RA  1RC 0LB  1LD 0RD  1RA 1LB": (  6836, 382),
     "1RB 0LC  0RD 1RD  0LA 1LC  1LA 0RA": (  5252,   9),
     "1RB 0RC  1LD 0RA  0LD 0LB  1LA 1LB": (  4391,  24),
-    # "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD": (  3115, 860),
+    "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD": (  3115, 860),
     "1RB 0LA  0RC 1RD  1LD 0RB  1LA 1RD": (  1709,  13),
     "1RB 0RC  1LB 0LC  0RD 0LD  1RA 0LA": (  1680,   5),
-    # "1RB 0RC  0LD 1RA  0LA 0RD  1LC 1LA": (   383, 200),
-    # "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD": (     0, 228),
+    "1RB 0RC  0LD 1RA  0LA 0RD  1LC 1LA": (   383, 200),
+    "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD": (     0, 228),
 
     # 2/4
     "1RB 2LA 3LA 1LA  2LB 3RA 0RA 2RB": (28284,  5),
@@ -1299,6 +1299,14 @@ PROVER_EXCEPTIONS = {
     "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA",
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB",
     "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA",
+
+    # recur
+    "1RB 1LB  0RC 0RB  1LC 0LA",
+    "1RB 2LB 2LA  2LA 0LB 0RA",
+    "1RB 1LC  0RC 0RD  1LA 0LA  0LC 1RB",
+    "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD",
+    "1RB 0RC  0LD 1RA  0LA 0RD  1LC 1LA",
+    "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD",
 }
 
 
@@ -1611,6 +1619,9 @@ class TuringTest(TestCase):
 
     def _test_prover_rec(self, prog_data):
         for prog in prog_data:
+            if prog in PROVER_EXCEPTIONS:
+                continue
+
             self.run_bb(
                 prog,
                 prover = True,
