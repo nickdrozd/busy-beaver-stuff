@@ -1293,6 +1293,7 @@ PROVER_EXCEPTIONS = {
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA",
     "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
     "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC",
+    "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA",
     "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB",
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA",
 
@@ -1739,9 +1740,16 @@ class Fast(TuringTest):
         self._test_recur(QUASIHALT, qsihlt = True)
 
     def test_prover(self):
-        self._test_prover_term(HALT)
-        self._test_prover_term(SPINOUT)
-        self._test_prover_term(SPINOUT_BLANK, blank = True)
+        self._test_prover_term(
+            HALT
+            | HALT_SLOW
+            | SPINOUT
+        )
+
+        self._test_prover_term(
+            SPINOUT_BLANK,
+            blank = True,
+        )
 
         self._test_prover_rec(RECUR_COMPACT)
 
