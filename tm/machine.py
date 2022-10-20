@@ -150,7 +150,8 @@ class Machine:
 
             if self.prover:
                 try:
-                    rule_steps = self.prover.try_rule(cycle, state, tape)
+                    rule_steps = self.prover.try_rule(
+                        cycle, state, tape)
                 except InfiniteRule:
                     self.infrul = True
                     break

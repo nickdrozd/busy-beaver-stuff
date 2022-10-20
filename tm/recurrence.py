@@ -183,18 +183,16 @@ class Prover:
         if (config := (state, tape.signature)) in self.rules:
             rule = self.rules[config]
 
-            if any(diff < 0 and abs(diff) >= block[1]
-                   for diff, block in zip(rule[0], tape.lspan)):
-                return None
+            diffs, blocks = (
+                rule[0] + rule[1],
+                tape.lspan + tape.rspan,
+            )
 
             if any(diff < 0 and abs(diff) >= block[1]
-                   for diff, block in zip(rule[1], tape.rspan)):
+                   for diff, block in zip(diffs, blocks)):
                 return None
 
-            for diff, block in zip(rule[0], tape.lspan):
-                block[1] += diff
-
-            for diff, block in zip(rule[1], tape.rspan):
+            for diff, block in zip(diffs, blocks):
                 block[1] += diff
 
             return 1
