@@ -75,13 +75,13 @@ class TestLinRado(TestCase):
         )
 
         self.assert_progs_equal(
-            HOLDOUTS_32H)
+            LIN_HOLDOUTS)
 
         self.assert_progs_count(
             40)
 
         self.assertEqual(
-            HOLDOUTS_32H,
+            LIN_HOLDOUTS,
             BRADY_HOLDOUTS | LR_NOT_BRADY)
 
     def test_23h(self):
@@ -102,7 +102,7 @@ class TestLinRado(TestCase):
             126,
             rejects = [AB_LOOP] + [
                 prog.replace('1R_', '...')
-                for prog in HOLDOUTS_32H
+                for prog in LIN_HOLDOUTS
             ],
         )
 
@@ -221,7 +221,7 @@ class TestTree(TestCase):
 
         self.assertEqual(
             h32,
-            HOLDOUTS_32H)
+            LIN_HOLDOUTS)
 
         self.assertTrue(
             BRADY_HOLDOUTS <= h32
@@ -355,7 +355,7 @@ def lr_convert(rado_string):
         oct_to_bin(
             rado_string))
 
-HOLDOUTS_32H = set(map(lr_convert, LR_HOLDOUTS))
+LIN_HOLDOUTS = set(map(lr_convert, LR_HOLDOUTS))
 
 AB_LOOP = '^1RB ..[AB]  ..[AB] ..[AB]  ... ...'
 BC_LOOP = '^1RB ...  ..[BC] ..[BC]  ..[BC] ..[BC]'
