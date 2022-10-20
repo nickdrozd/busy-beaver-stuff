@@ -272,6 +272,11 @@ class TestTree(TestCase):
             q23 <= HOLDOUTS_23Q
         )
 
+        self.assertIn(
+            "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
+            q23,  # type: ignore
+        )
+
 
 HOLDOUTS_22Q = {
     "1RB 0LB  1LA 0RA",  # xmas spaces
