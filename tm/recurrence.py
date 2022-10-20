@@ -269,7 +269,12 @@ class Prover:
 
                     new.pop()
 
-        if config != (state_copy, tape_copy.signature):
+        try:
+            copy_sig = tape_copy.signature
+        except ValueError:
+            return None
+
+        if config != (state_copy, copy_sig):
             return None
 
         self.rules[config] = block_diffs
