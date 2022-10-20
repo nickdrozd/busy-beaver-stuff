@@ -315,21 +315,15 @@ QUASIHALT = {
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA": ( 2859, 3),
 }
 
-RECUR = {
-    # Lin-Rado examples
-    "1RB ...  0RC 1LB  1LA 0RB": ( 9, 10),  # total recurrence (blank)
-    "1RB ...  1LB 0LC  1LA 1RA": (12,  7),  # left barrier
-    "1RB ...  1LC 1RA  1LA 0LC": (12,  8),  # right barrier
-
+RECUR_COMPACT = {
     # 2/2
     "1RB 0LB  1LA 0RB": (9, 3),
     "1RB 1LA  0LA 1RA": (7, 5),
     "1RB 1LB  1LA 0RB": (7, 3),
-    "1RB 1LB  1LA 1RA": (5, 2),  # center
-    "1RB 0RB  1LB 1RA": (0, 9),
-    "1RB 1LA  1LB 0RA": (0, 6),
+    "1RB 1LB  1LA 1RA": (5, 2),
 
     # 3/2
+    "1RB ...  1LB 0LC  1LA 1RA": ( 12,  7),
     "1RB 1LB  0RC 0LA  1LC 0LA": (101, 24),
     "1RB 1LA  1LC 1RC  1LA 0RB": ( 69, 16),
     "1RB 1LB  1RC 0LA  1LA 1RC": ( 65, 16),
@@ -337,18 +331,12 @@ RECUR = {
     "1RB 1LC  1LA 1RB  1RB 0LA": ( 50, 12),
     "1RB 0LC  1LC 1RB  1RB 1LA": ( 50, 12),
     "1RB 0LB  1LC 0RC  1RA 1LA": ( 38, 21),
-    "1RB 1LB  1LA 1RC  0RB 0LC": ( 22,  4),
     "1RB 1LA  0RC 0RA  1LC 0LA": ( 17, 36),
     "1RB ...  1LC 0RC  1RA 0LC": ( 16,  5),
     "1RB 1LB  0RC 0RB  1LC 0LA": (  4, 38),
-    "1RB 0RB  1LC 0RC  0LA 1RA": (  2, 30),
-    "1RB 0LA  0RC 1LA  1LC 0RB": (  0, 92),
-    "1RB 0LA  1LB 0RC  1LC 1LA": (  0, 56),
-    "1RB 0LA  0RC 0RC  1LC 1LA": (  0, 48),
     "1RB 1LB  0RC 1RC  1LA 0LA": (  0, 15),
 
     # 2/3
-    "1RB 0LA ...  1LB 2LA 0RB": (165, 54),
     "1RB 1LB 2LA  1LA 2RB 0RA": (101, 26),
     "1RB 2RB 1LB  1LA 2RB 0LA": ( 97, 14),
     "1RB 2LA 0RB  1LA 1RB 1RA": ( 94, 20),
@@ -356,100 +344,121 @@ RECUR = {
     "1RB 1LA 1LB  1LA 2RB 0LA": ( 80, 20),
     "1RB 2LA 0RB  1LA 2LA 1RA": ( 78, 14),
     "1RB 2LA 0RB  1LB 2LA 1RA": ( 76, 14),
-    "1RB 2LA 0RB  1LA 0LB 1RA": ( 75,  4),
     "1RB 2LB 2LA  2LA 0LB 0RA": ( 63, 32),
-    "1RB 0RA 2LB  2LA 2RA 0LB": ( 59, 32),
     "1RB 1LB 1LB  1LA 2RB 0LA": ( 58,  8),
-    "1RB 2LA 2LB  1LA 2RA 0LB": ( 57, 60),
-    "1RB 1LA 2LB  2LA 2RA 0LB": ( 57, 30),
     "1RB 2LA 0RB  1LB 1RA 1RA": ( 55, 10),
-    "1RB 0RB 0LB  2LA 2RA 1LB": ( 54, 40),
-    "1RB 2LA 2RB  1LB 1LA 1RA": ( 39,  2),  # center, >BB
+    "1RB 2LA 2RB  1LB 1LA 1RA": ( 39,  2),
     "1RB 2LA 0RB  2LA ... 1RA": ( 35,  8),
-    "1RB 2LA 1RB  1LB 1LA 2RA": ( 24, 46),
-    "1RB 1LA 2LB  1LA 2RA 0LB": ( 20, 48),
-    "1RB 2RB 2LA  1LB 1RA 0LA": ( 14, 54),
-    "1RB 2LA 1RB  1LB 1LA 0RA": (  7, 46),
     "1RB 0RA 1LB  2LA 2RB 0LA": (  6, 48),
     "1RB 0RA 2LB  2LA 0LA 1RA": (  5, 28),
     "1RB 1RA 0RB  2LB 1LA 1LB": (  4, 23),
     "1RB 2LA 0LB  1LA 2RA 2RB": (  3, 35),
+    "1RB 2LB 2LA  1LA 2RB 0RA": (  1, 35),
+
+    # 4/2
+    "1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA": (586388, 104),
+    "1RB 1RC  1LC 0LD  1RA 0LB  0RA 0RC": ( 14008,  24),
+    "1RB 1LC  0RC 0RD  1LA 0LA  0LC 1RB": (  7002, 225),
+    "1RB 0RA  1RC 0LB  1LD 0RD  1RA 1LB": (  6836, 382),
+    "1RB 0LC  0RD 1RD  0LA 1LC  1LA 0RA": (  5252,   9),
+    "1RB 0RC  1LD 0RA  0LD 0LB  1LA 1LB": (  4391,  24),
+    "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD": (  3115, 860),
+    "1RB 0LA  0RC 1RD  1LD 0RB  1LA 1RD": (  1709,  13),
+    "1RB 0RC  1LB 0LC  0RD 0LD  1RA 0LA": (  1680,   5),
+    "1RB 0RC  0LD 1RA  0LA 0RD  1LC 1LA": (   383, 200),
+    "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD": (     0, 228),
+
+    # 2/4
+    "1RB 2LA 3LA 1LA  2LB 3RA 0RA 2RB": (28284,  5),
+    "1RB 2LB 0LA 1LA  2LA 3RA 1RB 0LB": ( 5632, 13),
+    "1RB 1LB 2LA 3LA  1LA 2RB 3LB 0RA": ( 5281,  7),
+    "1RB 0LB 1LB 1LB  2LA 3RB 1RA 0RA": ( 4632, 92),
+    "1RB 2RB 3LB 0RA  1LA 3RB 2LA 2RA": ( 4000, 40),
+    "1RB 2LB 3RA 0LB  1LA 3RA 3RB 2LA": ( 3010, 26),
+    "1RB 2LA 3RA 2LB  2LA 2RA 3RB 0LA": ( 2991, 41),
+    "1RB 2LB 1RA 2LA  1LA 3RB 0RA 3LB": ( 2931,  8),
+    "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB": ( 1089,  2),
+}
+
+RECUR_DIFFUSE = {
+    # 2/2
+    "1RB 0RB  1LB 1RA": (0, 9),
+    "1RB 1LA  1LB 0RA": (0, 6),
+
+    # 3/2
+    "1RB ...  1LC 1RA  1LA 0LC": (12,  8),
+    "1RB 0RB  1LC 0RC  0LA 1RA": ( 2, 30),
+    "1RB 0LA  0RC 1LA  1LC 0RB": ( 0, 92),
+    "1RB 0LA  1LB 0RC  1LC 1LA": ( 0, 56),
+    "1RB 0LA  0RC 0RC  1LC 1LA": ( 0, 48),
+
+    # 2/3
+    "1RB 0LA ...  1LB 2LA 0RB": (165, 54),
+    "1RB 0RA 2LB  2LA 2RA 0LB": ( 59, 32),
+    "1RB 2LA 2LB  1LA 2RA 0LB": ( 57, 60),
+    "1RB 1LA 2LB  2LA 2RA 0LB": ( 57, 30),
+    "1RB 0RB 0LB  2LA 2RA 1LB": ( 54, 40),
+    "1RB 2LA 1RB  1LB 1LA 2RA": ( 24, 46),
+    "1RB 1LA 2LB  1LA 2RA 0LB": ( 20, 48),
+    "1RB 2RB 2LA  1LB 1RA 0LA": ( 14, 54),
+    "1RB 2LA 1RB  1LB 1LA 0RA": (  7, 46),
     "1RB 2LA 0RB  0LB 1LA 0RA": (  2, 57),
     "1RB 0RB 0LB  1LB 2RA 1LA": (  2, 30),
-    "1RB 2LB 2LA  1LA 2RB 0RA": (  1, 35),
     "1RB 2LB 0RA  1LA 2RB 2RA": (  0, 60),
     "1RB 2LB 0RA  1LA 1RB 2RA": (  0, 48),
     "1RB 2LA 1LB  0LA 0RB 1RA": (  0, 47),
 
-    "1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA": (586388, 104),
-    "1RB 1RC  1LC 0LD  1RA 0LB  0RA 0RC": (14008,   24),
-    "1RB 1LC  0RC 0RD  1LA 0LA  0LC 1RB": ( 7002,  225),
-    "1RB 0RA  1RC 0LB  1LD 0RD  1RA 1LB": ( 6836,  382),
-    "1RB 0LC  0RC 1RC  1LA 0RD  1LC 0LA": ( 6825,  342),
-    "1RB 0LC  1RD 1LD  0LA 1LB  1LC 0RD": ( 6455,   23),
-    "1RB 0LC  0RD 1RD  0LA 1LC  1LA 0RA": ( 5252,    9),
-    "1RB 0RC  1LD 0RA  0LD 0LB  1LA 1LB": ( 4391,   24),
-    "1RB 0LA  0RC 0RD  1LC 1LA  0RB 1RD": ( 3957,  265),
-    "1RB 0LC  0RD 1RD  1LA 1LC  1RC 0RB": ( 3316,  208),
-    "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD": ( 3115,  860),
-    "1RB 0LB  1LA 0LC  1LB 0RD  1RC 0RB": ( 2374,  359),
-    "1RB 0LA  1LC 0RA  0LD 1RD  1LA 0RB": ( 2110,   36),
-    "1RB 0LC  1RC 0RD  1LA 1LC  1RA 0RB": ( 1978,    8),
-    "1RB 1RC  1LC 0RB  1LD 0RA  1RA 0LB": ( 1727,  622),
-    "1RB 0LC  1RD 1RA  1LA 1LD  1LC 0RA": ( 1709,   32),
-    "1RB 0LA  0RC 1RD  1LD 0RB  1LA 1RD": ( 1709,   13),
-    "1RB 0RC  1LB 0LC  0RD 0LD  1RA 0LA": ( 1680,    5),
-    "1RB 0LC  1RD 0RD  1LA 0RC  1LB 1RC": ( 1527,  522),
-    "1RB 0LC  1RC 1RD  1LD 0RC  1LA 0RB": ( 1301,  622),
-    "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA": ( 1111,  131),
-    "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD": ( 1033,  174),
-    "1RB 0LC  1RD 0RB  1LC 1LA  1RC 1RA": ( 1004,  174),
-    "1RB 1LA  1RC 0RD  0LA 0RC  1RC 1LC": (  979,  144),
-    "1RB 1RC  1LC 0LD  0RA 1LB  1RD 0LA": (  928,  128),
-    "1RB 1LA  1RC 1LD  1RD 0RC  0LD 0LA": (  869,  404),
-    "1RB 0RC  1LB 1RC  1RA 0LD  1LA 1LC": (  845,  842),
-    "1RB 1RC  1LC 0RB  1RA 0LD  0LC 1LD": (  600, 1374),
-    "1RB 1LA  1LC 0RA  1LD 0LC  1RB 0LA": (  497,  816),
-    "1RB 0RC  0LD 1RA  0LA 0RD  1LC 1LA": (  383,  200),
-    "1RB 0LA  1LC 1LD  1RD 1LB  1RA 0RD": (   79,  481),
-    "1RB 0LC  0RD 0RC  1LD 0RB  1LA 0LC": (   74,  945),
-    "1RB 0LC  1RD 0RA  0LB 0LA  1LC 0RA": (   67,  945),
-    "1RB 1LA  1RC 0RC  1LD 0RD  0LA 1LA": (   66,  284),
-    "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA": (   50,  597),
-    "1RB 1RA  1LC 0RB  1RC 0LD  1LA 1LD": (   45,  228),
-    "1RB 1LA  1LC 0RA  1LD 0LC  1RA 0LA": (    5,  385),
-    "1RB 0RA  1LC 1RA  1LD 0LC  1LA 0RB": (    5,  244),
-    "1RB 0LC  0RC 1LD  1RD 0LA  1LB 1LA": (    0,  294),
-    "1RB 0LA  0RC 1LA  1RD 1RC  1LD 1LB": (    0,  714),
-    "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB": (    0,  294),
-    "1RB 1LA  1LB 0RC  1LC 1LD  0RA 0LD": (    0,  238),
-    "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD": (    0,  228),
+    # 4/2
+    "1RB 0LC  0RC 1RC  1LA 0RD  1LC 0LA": (6825,  342),
+    "1RB 0LC  1RD 1LD  0LA 1LB  1LC 0RD": (6455,   23),
+    "1RB 0LA  0RC 0RD  1LC 1LA  0RB 1RD": (3957,  265),
+    "1RB 0LC  0RD 1RD  1LA 1LC  1RC 0RB": (3316,  208),
+    "1RB 0LB  1LA 0LC  1LB 0RD  1RC 0RB": (2374,  359),
+    "1RB 0LA  1LC 0RA  0LD 1RD  1LA 0RB": (2110,   36),
+    "1RB 0LC  1RC 0RD  1LA 1LC  1RA 0RB": (1978,    8),
+    "1RB 1RC  1LC 0RB  1LD 0RA  1RA 0LB": (1727,  622),
+    "1RB 0LC  1RD 1RA  1LA 1LD  1LC 0RA": (1709,   32),
+    "1RB 0LC  1RD 0RD  1LA 0RC  1LB 1RC": (1527,  522),
+    "1RB 0LC  1RC 1RD  1LD 0RC  1LA 0RB": (1301,  622),
+    "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA": (1111,  131),
+    "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD": (1033,  174),
+    "1RB 0LC  1RD 0RB  1LC 1LA  1RC 1RA": (1004,  174),
+    "1RB 1LA  1RC 0RD  0LA 0RC  1RC 1LC": ( 979,  144),
+    "1RB 1RC  1LC 0LD  0RA 1LB  1RD 0LA": ( 928,  128),
+    "1RB 1LA  1RC 1LD  1RD 0RC  0LD 0LA": ( 869,  404),
+    "1RB 0RC  1LB 1RC  1RA 0LD  1LA 1LC": ( 845,  842),
+    "1RB 1RC  1LC 0RB  1RA 0LD  0LC 1LD": ( 600, 1374),
+    "1RB 1LA  1LC 0RA  1LD 0LC  1RB 0LA": ( 497,  816),
+    "1RB 0LA  1LC 1LD  1RD 1LB  1RA 0RD": (  79,  481),
+    "1RB 0LC  0RD 0RC  1LD 0RB  1LA 0LC": (  74,  945),
+    "1RB 0LC  1RD 0RA  0LB 0LA  1LC 0RA": (  67,  945),
+    "1RB 1LA  1RC 0RC  1LD 0RD  0LA 1LA": (  66,  284),
+    "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA": (  50,  597),
+    "1RB 1RA  1LC 0RB  1RC 0LD  1LA 1LD": (  45,  228),
+    "1RB 1LA  1LC 0RA  1LD 0LC  1RA 0LA": (   5,  385),
+    "1RB 0RA  1LC 1RA  1LD 0LC  1LA 0RB": (   5,  244),
+    "1RB 0LC  0RC 1LD  1RD 0LA  1LB 1LA": (   0,  294),
+    "1RB 0LA  0RC 1LA  1RD 1RC  1LD 1LB": (   0,  714),
+    "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB": (   0,  294),
+    "1RB 1LA  1LB 0RC  1LC 1LD  0RA 0LD": (   0,  238),
 
-    "1RB 2LA 3LA 1LA  2LB 3RA 0RA 2RB": (28284,   5),
-    "1RB 2LA 0LB 1RA  1LB 3LA 3RB 3RB": ( 6697,  87),
-    "1RB 2LB 0LA 1LA  2LA 3RA 1RB 0LB": ( 5632,  13),
-    "1RB 1LB 2LA 3LA  1LA 2RB 3LB 0RA": ( 5281,   7),
-    "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA": ( 4996,  81),
-    "1RB 2RA 0LB 1LA  3LA 2RB 1LA 1RA": ( 4702,  39),
-    "1RB 0LB 1LB 1LB  2LA 3RB 1RA 0RA": ( 4632,  92),
-    "1RB 2LA 3RB 2RB  3LA 3RA 0LB 1RA": ( 4325, 199),
-    "1RB 2LB 1LA 0LB  3LA 3RA 1RB 0RA": ( 4300, 196),
-    "1RB 2LB 1LA 0RB  3LA 2RA 3LB 1RB": ( 4111,  49),
-    "1RB 0LB 1LB 2LA  2LA 0RA 3RA 2RB": ( 4050, 280),
-    "1RB 2RB 3LB 0RA  1LA 3RB 2LA 2RA": ( 4000,  40),
-    "1RB 2LB 1RA 3LA  2LA 0LA 3RB 1RA": ( 3665, 223),
-    "1RB 2RB 0LB 1LA  3LA 3RA 1LA 1LB": ( 3439,  77),
-    "1RB 2LB 3RA 1RA  3LA 0LB 1RA 0RA": ( 3294, 240),
-    "1RB 2LB 3LA 0RB  2LA 1RA 1RB 2RA": ( 3231, 246),
-    "1RB 2LB 3RA 0LB  1LA 3RA 3RB 2LA": ( 3010,  26),
-    "1RB 2LA 3RA 2LB  2LA 2RA 3RB 0LA": ( 2991,  41),
-    "1RB 2RA 1LB 2RB  2LA 2RB 3LA 0RA": ( 2983,  77),
-    "1RB 2LB 0RA 2LB  2LA 3LA 0LB 3RA": ( 2973, 290),
-    "1RB 2LB 1RA 2LA  1LA 3RB 0RA 3LB": ( 2931,   8),
-    "1RB 0RA 0LB 2RB  3LA 3RB 0LA 2RA": ( 2583, 291),
-    "1RB 2LA 1RB 0LB  1LA 3RA 3RB 1LB": ( 2380, 294),
-    "1RB 2LB 0RA 2LB  2LA 3LA 0LB 0RA": ( 2190, 272),
-    "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB": ( 1089,   2),
+    # 2/4
+    "1RB 2LA 0LB 1RA  1LB 3LA 3RB 3RB": (6697,  87),
+    "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA": (4996,  81),
+    "1RB 2RA 0LB 1LA  3LA 2RB 1LA 1RA": (4702,  39),
+    "1RB 2LA 3RB 2RB  3LA 3RA 0LB 1RA": (4325, 199),
+    "1RB 2LB 1LA 0LB  3LA 3RA 1RB 0RA": (4300, 196),
+    "1RB 2LB 1LA 0RB  3LA 2RA 3LB 1RB": (4111,  49),
+    "1RB 0LB 1LB 2LA  2LA 0RA 3RA 2RB": (4050, 280),
+    "1RB 2LB 1RA 3LA  2LA 0LA 3RB 1RA": (3665, 223),
+    "1RB 2RB 0LB 1LA  3LA 3RA 1LA 1LB": (3439,  77),
+    "1RB 2LB 3RA 1RA  3LA 0LB 1RA 0RA": (3294, 240),
+    "1RB 2LB 3LA 0RB  2LA 1RA 1RB 2RA": (3231, 246),
+    "1RB 2RA 1LB 2RB  2LA 2RB 3LA 0RA": (2983,  77),
+    "1RB 2LB 0RA 2LB  2LA 3LA 0LB 3RA": (2973, 290),
+    "1RB 0RA 0LB 2RB  3LA 3RB 0LA 2RA": (2583, 291),
+    "1RB 2LA 1RB 0LB  1LA 3RA 3RB 1LB": (2380, 294),
+    "1RB 2LB 0RA 2LB  2LA 3LA 0LB 0RA": (2190, 272),
 }
 
 RECUR_BLANK_IN_PERIOD = {
@@ -1610,6 +1619,18 @@ class TuringTest(TestCase):
 
             self.assert_quasihalt(qsihlt)
 
+    def _test_prover(self, prog_data):
+        for prog, (steps, period) in prog_data.items():
+            self.run_bb(
+                prog,
+                sim_lim = 3 * (steps + period),
+                prover = True,
+                analyze = False,
+            )
+
+            self.assertTrue(
+                self.machine.infrul)
+
     def _test_extensions(self, prog_data):
         for prog, (status, data) in prog_data.items():
             self.run_bb(
@@ -1705,10 +1726,14 @@ class Fast(TuringTest):
             self.assert_cant_blank(prog)
             self.assert_cant_spin_out(prog)
 
-        self._test_recur(RECUR)
+        self._test_recur(RECUR_COMPACT)
+        self._test_recur(RECUR_DIFFUSE)
         self._test_recur(RECUR_BLANK_IN_PERIOD, blank = True, qsihlt = None)
 
         self._test_recur(QUASIHALT, qsihlt = True)
+
+    def test_prover(self):
+        self._test_prover(RECUR_COMPACT)
 
     def test_blank(self):
         for prog in DONT_BLANK:
