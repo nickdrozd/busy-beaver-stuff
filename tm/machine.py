@@ -111,8 +111,6 @@ class Machine:
         if step_lim:
             sim_lim = step_lim + 1
 
-        marks: int = tape.marks
-
         for cycle in range(sim_lim):
 
             # Bookkeeping ##########################
@@ -168,17 +166,9 @@ class Machine:
             self.reached[action] += 1
 
             if ((same_state := state == next_state)
-                    and (shift == tape.edge or marks == 0)):
+                    and (shift == tape.edge or tape.blank)):
                 self.spnout = step
                 break
-
-            change = (
-                True
-                if scan == 0 and color != 0 else
-                False
-                if scan != 0 and color == 0 else
-                None
-            )
 
             stepped = tape.step(shift, color, skip and same_state)
 
@@ -188,15 +178,9 @@ class Machine:
 
             step += stepped
 
-            if change is not None:
-                if change:
-                    marks += stepped
-                else:
-                    marks -= stepped
-
             # Halt conditions ######################
 
-            if marks == 0:
+            if tape.blank:
                 if check_rec is None and samples is None:
                     if state in self.blanks:
                         break
