@@ -165,13 +165,27 @@ class InfiniteRule(Exception):
     pass
 
 class Prover:
-    # pylint: disable = too-few-public-methods
-
     def __init__(self, prog: Any):
         self.prog: Any = prog
 
         self.configs: Dict[Config, PastConfig] = defaultdict(PastConfig)
         self.rules: Dict[Config, Rule] = {}
+
+    @staticmethod
+    def apply_rule(tape: BlockTape, rule: Rule) -> Optional[int]:
+        diffs, blocks = (
+            rule[0] + rule[1],
+            tape.lspan + tape.rspan,
+        )
+
+        if any(diff < 0 and abs(diff) >= block[1]
+               for diff, block in zip(diffs, blocks)):
+            return None
+
+        for diff, block in zip(diffs, blocks):
+            block[1] += diff
+
+        return 1
 
     def try_rule(
             self,
@@ -181,21 +195,7 @@ class Prover:
     ) -> Optional[int]:
         # If we already have a rule, apply it
         if (config := (state, tape.signature)) in self.rules:
-            rule = self.rules[config]
-
-            diffs, blocks = (
-                rule[0] + rule[1],
-                tape.lspan + tape.rspan,
-            )
-
-            if any(diff < 0 and abs(diff) >= block[1]
-                   for diff, block in zip(diffs, blocks)):
-                return None
-
-            for diff, block in zip(diffs, blocks):
-                block[1] += diff
-
-            return 1
+            return self.apply_rule(tape, self.rules[config])
 
         # If this is a new config, record it
         if not (past_config := self.configs[config]).check(cycle, tape):
