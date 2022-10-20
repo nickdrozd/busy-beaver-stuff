@@ -217,9 +217,6 @@ class Prover:
 
         block_diffs = ldiffs, rdiffs
 
-        if all(diff >= 0 for span in block_diffs for diff in span):
-            raise InfiniteRule()
-
         # pylint: disable = bad-builtin
         for span in ('lspan', 'rspan'):
             curr_span = getattr(tape, span)
@@ -276,6 +273,9 @@ class Prover:
 
         if config != (state_copy, copy_sig):
             return None
+
+        if all(diff >= 0 for span in block_diffs for diff in span):
+            raise InfiniteRule()
 
         self.rules[config] = block_diffs
 

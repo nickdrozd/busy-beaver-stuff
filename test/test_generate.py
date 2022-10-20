@@ -224,7 +224,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              25: h32,
-            403: q32,
+            432: q32,
         })
 
         self.assertTrue(
@@ -260,8 +260,8 @@ class TestTree(TestCase):
             (h23, q23))
 
         self.assert_counts({
-            64: h23,
-            526: q23,
+            67: h23,
+            595: q23,
         })
 
         self.assertTrue(
