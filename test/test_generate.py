@@ -382,3 +382,9 @@ HOLDOUTS_23Q = read_progs('holdouts_23q')
 
 LR_NOT_BRADY = read_progs('lr_not_brady')
 BRADY_HOLDOUTS = read_progs('brady_holdouts')
+
+LIN_EXAMPLES = {
+    "1RB ...  0RC 1LB  1LA 0RB",  # total recurrence (blank)
+    "1RB ...  1LB 0LC  1LA 1RA",  # left barrier
+    "1RB ...  1LC 1RA  1LA 0LC",  # right barrier
+}
