@@ -6,12 +6,13 @@ from typing import Dict, Optional, Tuple
 from tm.tape import BlockTape
 from tm.parse import tcompile, st_str, ProgLike
 from tm.types import Action, State
-from tm.recurrence import History, RecRes, Tapes
+from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
 LinRec = Tuple[Optional[int], int]
 
 TERM_CATS = (
     'halted',
+    'infrul',
     'linrec',
     'spnout',
     'undfnd',
@@ -33,6 +34,7 @@ class Machine:
         self.cycles: int
 
         self.history: Optional[History] = None
+        self.prover: Optional[Prover] = None
 
         self.reached: Dict[Action, int] = defaultdict(lambda: 0)
 
@@ -45,6 +47,7 @@ class Machine:
         self.linrec: Optional[LinRec] = None
 
         self.qsihlt: Optional[bool] = None
+        self.infrul: Optional[bool] = None
 
         self.undfnd: Optional[Tuple[int, str]] = None
 
@@ -89,6 +92,7 @@ class Machine:
             check_rec: Optional[int] = None,
             samples: Optional[Tapes] = None,
             tape: Optional[BlockTape] = None,
+            prover: bool = False,
     ) -> Machine:
         self.tape = tape = (
             tape
@@ -98,6 +102,9 @@ class Machine:
 
         if samples is not None or check_rec is not None:
             self.history = History(tapes = samples)
+
+        if prover:
+            self.prover = Prover(self._comp)
 
         step: int = 0
 
@@ -140,6 +147,17 @@ class Machine:
                 self.history.add_action_at_step(step, action)
 
             # Machine operation ####################
+
+            if self.prover:
+                try:
+                    rule_steps = self.prover.try_rule(cycle, state, tape)
+                except InfiniteRule:
+                    self.infrul = True
+                    break
+
+                if rule_steps is not None:
+                    step += rule_steps
+                    continue
 
             try:
                 color, shift, next_state = self._comp[state][scan]

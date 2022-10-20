@@ -1278,6 +1278,33 @@ BLANKERS = (
     | set(RECUR_BLANK_BEFORE_PERIOD)
 )
 
+PROVER_EXCEPTIONS = {
+    # halt
+    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2RA",
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA",
+    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
+    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC",
+    "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB",
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA",
+    "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA",
+
+    # spinout
+    "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA",
+    "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB",
+    "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RB",
+    "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RA",
+    "1RB 2RB 3LA 2RA  1LB 1LA 2LB 3RA",
+    "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA",
+    "1RB ...  1RC 1LB  1LD 1RD  0LE 0LD  1RE 0RB",
+    "1RB ...  1LB 0LC  1LD 1RC  1RE 1LE  0RB 0RE",
+    "1RB ...  1LC 1RB  1RD 1LD  0RE 0RD  1LE 0LB",
+    "1RB 1LC  1RD 0LB  0RE 0RC  0RC ...  1LE 1LA",
+    "1RB ...  1LB 1LC  0LD 1LE  1RD 0LE  0RB 0RE",
+    "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB",
+    "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA",
+    "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC",
+}
+
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
@@ -1514,6 +1541,17 @@ class TuringTest(TestCase):
                     (graph := Graph(prog)).is_zero_reflexive
                     and not graph.is_irreflexive
                 )
+
+            if prog not in PROVER_EXCEPTIONS:
+                self.run_bb(
+                    prog,
+                    prover = True,
+                    analyze = False,
+                    print_prog = False,
+                )
+
+                self.assertIsNotNone(
+                    self.machine.simple_termination)
 
     def _test_halt(self, prog_data):
         self._test_simple_terminate(

@@ -114,6 +114,9 @@ class BlockTape:
 
         if push and (block := push[-1])[0] == color:
             block[1] += stepped
+
+            if push_block is not None:
+                block += push_block[2:]
         else:
             if push_block is None:
                 push_block = [color, 1]
