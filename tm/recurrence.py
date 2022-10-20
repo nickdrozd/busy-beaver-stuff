@@ -182,8 +182,17 @@ class Prover:
                for diff, block in zip(diffs, blocks)):
             return None
 
+        divs = []
+
         for diff, block in zip(diffs, blocks):
-            block[1] += diff
+            if diff < 0:
+                div, rem = divmod(block[1], abs(diff))
+                divs.append(div if rem > 0 else div - 1)
+
+        times = min(divs)
+
+        for diff, block in zip(diffs, blocks):
+            block[1] += diff * times
 
         return 1
 
