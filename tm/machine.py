@@ -150,14 +150,13 @@ class Machine:
 
             if self.prover:
                 try:
-                    rule_steps = self.prover.try_rule(
-                        cycle, state, tape)
+                    result = self.prover.try_rule(cycle, state, tape)
                 except InfiniteRule:
                     self.infrul = True
                     break
 
-                if rule_steps is not None:
-                    step += rule_steps
+                if result is not None:
+                    step += 1
                     continue
 
             try:
