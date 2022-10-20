@@ -32,6 +32,14 @@ def print_complete(prog: str) -> None:
 
 
 def run_and_print(program: Program) -> None:
+    run_proof = Machine(program).run(
+        sim_lim = 200,
+        prover = True,
+    )
+
+    if run_proof.xlimit is None:
+        return
+
     check_rec = Machine(program).run(
         sim_lim = 100,
         check_rec = 0,
