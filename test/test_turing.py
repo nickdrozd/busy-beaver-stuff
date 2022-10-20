@@ -1623,10 +1623,9 @@ class TuringTest(TestCase):
                 self.machine.simple_termination)
 
     def _test_prover_rec(self, prog_data):
-        for prog, (steps, period) in prog_data.items():
+        for prog in prog_data:
             self.run_bb(
                 prog,
-                sim_lim = 3 * (steps + period),
                 prover = True,
                 analyze = False,
             )
