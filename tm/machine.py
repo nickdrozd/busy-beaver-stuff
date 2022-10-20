@@ -61,6 +61,9 @@ class Machine:
             if (data := getattr(self, cat)) is not None
         ]
 
+        info.append(
+            f'MARKS: {self.marks}')
+
         if self.blanks:
             info.append(
                 f'BLANKS: {self.blanks}')
