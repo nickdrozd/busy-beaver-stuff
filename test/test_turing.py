@@ -1289,6 +1289,7 @@ BLANKERS = (
 
 PROVER_EXCEPTIONS = {
     # halt
+    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB 1R_",
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA",
     "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
     "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC",
@@ -1296,9 +1297,11 @@ PROVER_EXCEPTIONS = {
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA",
 
     # spinout
+    "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA",
     "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA",
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB",
     "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA",
+    "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB",
 
     # recur
     "1RB 1LB  0RC 0RB  1LC 0LA",
@@ -1603,7 +1606,7 @@ class TuringTest(TestCase):
 
             self.assert_quasihalt(qsihlt)
 
-    def _test_prover_term(self, prog_data):
+    def _test_prover_term(self, prog_data, blank: bool = False):
         for prog in prog_data:
             if prog in PROVER_EXCEPTIONS:
                 continue
@@ -1616,6 +1619,9 @@ class TuringTest(TestCase):
 
             self.assertIsNotNone(
                 self.machine.simple_termination)
+
+            self.assert_marks(
+                0 if blank else prog_data[prog][0])
 
     def _test_prover_rec(self, prog_data):
         for prog in prog_data:
@@ -1735,7 +1741,7 @@ class Fast(TuringTest):
     def test_prover(self):
         self._test_prover_term(HALT)
         self._test_prover_term(SPINOUT)
-        self._test_prover_term(SPINOUT_BLANK)
+        self._test_prover_term(SPINOUT_BLANK, blank = True)
 
         self._test_prover_rec(RECUR_COMPACT)
 
