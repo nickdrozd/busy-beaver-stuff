@@ -1280,11 +1280,11 @@ MACRO_CYCLES_SLOW = {
 }
 
 BLANKERS = (
-    set(DO_BLANK)
-    | set(SPINOUT_BLANK)
-    | set(SPINOUT_BLANK_SLOW)
-    | set(RECUR_BLANK_IN_PERIOD)
-    | set(RECUR_BLANK_BEFORE_PERIOD)
+    {prog: None for prog in DO_BLANK}
+    | SPINOUT_BLANK
+    | SPINOUT_BLANK_SLOW
+    | RECUR_BLANK_IN_PERIOD
+    | {prog: None for prog in RECUR_BLANK_BEFORE_PERIOD}
 )
 
 PROVER_EXCEPTIONS = {
@@ -1733,11 +1733,20 @@ class Fast(TuringTest):
             self.assert_cant_blank(prog)
             self.assert_cant_spin_out(prog)
 
-        self._test_recur(RECUR_COMPACT)
-        self._test_recur(RECUR_DIFFUSE)
-        self._test_recur(RECUR_BLANK_IN_PERIOD, blank = True, qsihlt = None)
+        self._test_recur(
+            RECUR_COMPACT
+            | RECUR_DIFFUSE
+        )
+        self._test_recur(
+            RECUR_BLANK_IN_PERIOD,
+            blank = True,
+            qsihlt = None,
+        )
 
-        self._test_recur(QUASIHALT, qsihlt = True)
+        self._test_recur(
+            QUASIHALT,
+            qsihlt = True,
+        )
 
     def test_prover(self):
         self._test_prover_term(
@@ -1769,10 +1778,11 @@ class Fast(TuringTest):
         for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
             self.assertNotIn(
                 prog,
-                (set(SPINOUT)
-                 | set(SPINOUT_SLOW)
-                 | set(SPINOUT_BLANK)
-                 | set(SPINOUT_BLANK_SLOW)))
+                SPINOUT
+                 | SPINOUT_SLOW
+                 | SPINOUT_BLANK
+                 | SPINOUT_BLANK_SLOW)
+
             self.assert_could_spin_out(prog)
 
     def test_bb4_extensions(self):
