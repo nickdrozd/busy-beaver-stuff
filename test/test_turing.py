@@ -1551,17 +1551,6 @@ class TuringTest(TestCase):
                     and not graph.is_irreflexive
                 )
 
-            if prog not in PROVER_EXCEPTIONS:
-                self.run_bb(
-                    prog,
-                    prover = True,
-                    analyze = False,
-                    print_prog = False,
-                )
-
-                self.assertIsNotNone(
-                    self.machine.simple_termination)
-
     def _test_halt(self, prog_data):
         self._test_simple_terminate(
             prog_data,
@@ -1619,7 +1608,21 @@ class TuringTest(TestCase):
 
             self.assert_quasihalt(qsihlt)
 
-    def _test_prover(self, prog_data):
+    def _test_prover_term(self, prog_data):
+        for prog in prog_data:
+            if prog in PROVER_EXCEPTIONS:
+                continue
+
+            self.run_bb(
+                prog,
+                prover = True,
+                analyze = False,
+            )
+
+            self.assertIsNotNone(
+                self.machine.simple_termination)
+
+    def _test_prover_rec(self, prog_data):
         for prog, (steps, period) in prog_data.items():
             self.run_bb(
                 prog,
@@ -1733,7 +1736,11 @@ class Fast(TuringTest):
         self._test_recur(QUASIHALT, qsihlt = True)
 
     def test_prover(self):
-        self._test_prover(RECUR_COMPACT)
+        self._test_prover_term(HALT)
+        self._test_prover_term(SPINOUT)
+        self._test_prover_term(SPINOUT_BLANK)
+
+        self._test_prover_rec(RECUR_COMPACT)
 
     def test_blank(self):
         for prog in DONT_BLANK:
