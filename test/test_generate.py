@@ -155,9 +155,10 @@ class TestTree(TestCase):
         q22 = Queue()  # type: ignore
 
         def capture(prog):
-            run = Machine(prog).run(check_rec = 0, sim_lim = 13)
-
-            if run.xlimit is None:
+            if Machine(prog).run(
+                    sim_lim = 13,
+                    check_rec = 0,
+            ).xlimit is None:
                 return
 
             q22.put(prog)
@@ -185,9 +186,10 @@ class TestTree(TestCase):
         h32, q32 = Queue(), Queue()  # type: ignore
 
         def capture(prog):
-            run = Machine(prog).run(check_rec = 0, sim_lim = 116)
-
-            if run.xlimit is None:
+            if Machine(prog).run(
+                    sim_lim = 116,
+                    check_rec = 0,
+            ).xlimit is None:
                 return
 
             if (dots := prog.count('...')) == 0:
@@ -233,9 +235,10 @@ class TestTree(TestCase):
         h23, q23 = Queue(), Queue()  # type: ignore
 
         def capture(prog):
-            run = Machine(prog).run(check_rec = 0, sim_lim = 192)
-
-            if run.xlimit is None:
+            if Machine(prog).run(
+                    sim_lim = 192,
+                    check_rec = 0,
+            ).xlimit is None:
                 return
 
             if (dots := prog.count('...')) == 0:
