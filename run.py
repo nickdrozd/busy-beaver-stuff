@@ -8,7 +8,7 @@ from perf import profile
 PRINT = 1
 STEPS = 10 ** 10
 RCRNC = None
-PROVE = True
+PROVE = 1
 BLOCK = None
 BACKS = None
 
@@ -28,7 +28,7 @@ def main() -> None:
             sim_lim = STEPS,
             watch_tape = bool(PRINT),
             check_rec = RCRNC,
-            prover = PROVE,
+            prover = bool(PROVE),
         )
 
         print(f'{i} | {machine}')
