@@ -62,7 +62,10 @@ class TestLinRado(TestCase):
         )
 
         self.assert_progs_equal(
-            HOLDOUTS_22Q)
+            HOLDOUTS_22Q | {
+                "1RB 1LA  1LA 1RB",  # xmas classic
+                "1RB 1LA  0LA 1RB",  # xmas one-side
+            })
 
         self.assert_progs_count(
             4)
@@ -128,6 +131,19 @@ class TestLinRado(TestCase):
         self.assert_progs_count(
             906)
 
+REC_OPTS = (
+    {"prover": True},
+    {"check_rec": 0},
+)
+
+def run_for_none(prog, sim_lim):
+    yield from (
+        Machine(prog).run(  # type: ignore
+            sim_lim = sim_lim,
+            **rec_opt,
+        ).xlimit is None
+        for rec_opt in REC_OPTS
+    )
 
 class TestTree(TestCase):
     def assert_counts(self, expected):
@@ -155,10 +171,7 @@ class TestTree(TestCase):
         q22 = Queue()  # type: ignore
 
         def capture(prog):
-            if Machine(prog).run(
-                    sim_lim = 13,
-                    check_rec = 0,
-            ).xlimit is None:
+            if any(run_for_none(prog, 13)):
                 return
 
             q22.put(prog)
@@ -175,7 +188,7 @@ class TestTree(TestCase):
             s22 = self.queue_to_set(q22)
 
             self.assert_counts({
-                4: s22,
+                2: s22,
             })
 
             self.assertEqual(
@@ -186,10 +199,7 @@ class TestTree(TestCase):
         h32, q32 = Queue(), Queue()  # type: ignore
 
         def capture(prog):
-            if Machine(prog).run(
-                    sim_lim = 116,
-                    check_rec = 0,
-            ).xlimit is None:
+            if any(run_for_none(prog, 116)):
                 return
 
             if (dots := prog.count('...')) == 0:
@@ -213,18 +223,12 @@ class TestTree(TestCase):
             (h32, q32))
 
         self.assert_counts({
-             39: h32,
-            585: q32,
+             25: h32,
+            403: q32,
         })
 
-        h32.add('1RB 0LC  0LA 0RA  1LA 1R_')  # type: ignore
-
-        self.assertEqual(
-            h32,
-            LIN_HOLDOUTS)
-
         self.assertTrue(
-            BRADY_HOLDOUTS <= h32
+            h32 <= LIN_HOLDOUTS  # type: ignore
         )
 
         self.assertTrue(
@@ -235,10 +239,7 @@ class TestTree(TestCase):
         h23, q23 = Queue(), Queue()  # type: ignore
 
         def capture(prog):
-            if Machine(prog).run(
-                    sim_lim = 192,
-                    check_rec = 0,
-            ).xlimit is None:
+            if any(run_for_none(prog, 192)):
                 return
 
             if (dots := prog.count('...')) == 0:
@@ -259,8 +260,8 @@ class TestTree(TestCase):
             (h23, q23))
 
         self.assert_counts({
-            128: h23,
-            897: q23,
+            64: h23,
+            526: q23,
         })
 
         self.assertTrue(
@@ -273,8 +274,6 @@ class TestTree(TestCase):
 
 
 HOLDOUTS_22Q = {
-    "1RB 1LA  1LA 1RB",  # xmas classic
-    "1RB 1LA  0LA 1RB",  # xmas one-side
     "1RB 0LB  1LA 0RA",  # xmas spaces
     "1RB 1LA  0LA 0RB",  # counter
 }
