@@ -52,13 +52,13 @@ class TestTree(TestCase):
                     for prog in cat)))
 
     def test_22(self):
-        q22 = Queue()  # type: ignore
+        s22q = Queue()  # type: ignore
 
         def capture(prog):
             if any(run_for_none(prog, 13)):
                 return
 
-            q22.put(prog)
+            s22q.put(prog)
 
         for blank in (True, False):
             run_tree_gen(
@@ -69,7 +69,7 @@ class TestTree(TestCase):
                 output = capture,
             )
 
-            s22 = queue_to_set(q22)
+            s22 = queue_to_set(s22q)
 
             self.assert_counts({
                 2: s22,
@@ -80,17 +80,18 @@ class TestTree(TestCase):
                 HOLDOUTS_22Q)
 
     def test_32(self):
-        h32, q32 = Queue(), Queue()  # type: ignore
+        h32q = Queue()  # type: ignore
+        q32q = Queue()  # type: ignore
 
         def capture(prog):
             if any(run_for_none(prog, 116)):
                 return
 
             if (dots := prog.count('...')) == 0:
-                q32.put(prog)
+                q32q.put(prog)
             elif dots == 1:
                 if not re.match(BC_LOOP, prog):
-                    h32.put(prog)
+                    h32q.put(prog)
             else:
                 pass
 
@@ -102,9 +103,8 @@ class TestTree(TestCase):
             output = capture,
         )
 
-        h32, q32 = map(
-            queue_to_set,
-            (h32, q32))
+        h32 = queue_to_set(h32q)
+        q32 = queue_to_set(q32q)
 
         self.assert_counts({
              25: h32,
@@ -112,7 +112,7 @@ class TestTree(TestCase):
         })
 
         self.assertTrue(
-            h32 <= LIN_HOLDOUTS  # type: ignore
+            h32 <= LIN_HOLDOUTS
         )
 
         self.assertTrue(
@@ -120,16 +120,17 @@ class TestTree(TestCase):
         )
 
     def test_23(self):
-        h23, q23 = Queue(), Queue()  # type: ignore
+        h23q = Queue()  # type: ignore
+        q23q = Queue()  # type: ignore
 
         def capture(prog):
             if any(run_for_none(prog, 192)):
                 return
 
             if (dots := prog.count('...')) == 0:
-                q23.put(prog)
+                q23q.put(prog)
             elif dots == 1:
-                h23.put(prog.replace('...', '1R_'))
+                h23q.put(prog.replace('...', '1R_'))
 
         run_tree_gen(
             states = 2,
@@ -139,9 +140,8 @@ class TestTree(TestCase):
             output = capture,
         )
 
-        h23, q23 = map(
-            queue_to_set,
-            (h23, q23))
+        h23 = queue_to_set(h23q)
+        q23 = queue_to_set(q23q)
 
         self.assert_counts({
             67: h23,
@@ -158,8 +158,7 @@ class TestTree(TestCase):
 
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
-            q23,  # type: ignore
-        )
+            q23)
 
 
 class TestLinRado(TestCase):
