@@ -194,7 +194,7 @@ class Prover:
         for diff, block in zip(diffs, blocks):
             block[1] += diff * times
 
-        return 1
+        return times
 
     def try_rule(
             self,

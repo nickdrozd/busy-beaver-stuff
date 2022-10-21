@@ -49,6 +49,8 @@ class Machine:
         self.qsihlt: Optional[bool] = None
         self.infrul: Optional[bool] = None
 
+        self.rulapp: int = 0
+
         self.undfnd: Optional[Tuple[int, str]] = None
 
     def __str__(self) -> str:
@@ -151,13 +153,14 @@ class Machine:
 
             if self.prover:
                 try:
-                    result = self.prover.try_rule(cycle, state, tape)
+                    times = self.prover.try_rule(cycle, state, tape)
                 except InfiniteRule:
                     self.infrul = True
                     break
 
-                if result is not None:
-                    step += 1
+                if times is not None:
+                    step += times
+                    self.rulapp += times
                     continue
 
             try:
