@@ -17,25 +17,20 @@ HOLDOUTS_22Q = {
 
 def macro_variations(prog):
     yield prog
-    yield (block_2 := BlockMacro(prog, [2]))
-    yield (block_3 := BlockMacro(prog, [3]))
-    yield BacksymbolMacro(prog, [1])
-    yield BacksymbolMacro(block_2, [1])
-    yield BacksymbolMacro(block_3, [1])
+
+    yield BlockMacro(prog, [6])
+    yield BlockMacro(prog, [7])
+
+    yield BacksymbolMacro(BlockMacro(prog, [2]), [1])
+    yield BacksymbolMacro(BlockMacro(prog, [3]), [1])
+    yield BacksymbolMacro(BlockMacro(prog, [4]), [1])
+    yield BacksymbolMacro(BlockMacro(prog, [5]), [1])
 
 def run_for_none(prog, sim_lim):
     yield from (
         Machine(macro).run(
             sim_lim = sim_lim,
             prover = True,
-        ).xlimit is None
-        for macro in macro_variations(prog)
-    )
-
-    yield from (
-        Machine(macro).run(
-            sim_lim = sim_lim,
-            check_rec = 0,
         ).xlimit is None
         for macro in macro_variations(prog)
     )
@@ -118,7 +113,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              3: h32,
-            91: q32,
+            87: q32,
         })
 
         self.assertTrue(
@@ -155,7 +150,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              25: h23,
-            171: q23,
+            161: q23,
         })
 
         self.assertEqual(
