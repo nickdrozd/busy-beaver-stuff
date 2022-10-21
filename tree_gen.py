@@ -1,8 +1,10 @@
 from argparse import ArgumentParser
+from typing import Iterator, Union
 
-from analyze import Program
-from generate.tree import run_tree_gen
 from tm import Machine
+from generate.tree import run_tree_gen
+from analyze.macro import MacroProg
+from analyze import Program, BlockMacro, BacksymbolMacro
 
 
 def prune_print(prog: str) -> None:
@@ -21,34 +23,36 @@ def prune_print(prog: str) -> None:
     if not HALT and program.cant_spin_out:
         return
 
-    run_and_print(program)
+    run_and_print(prog)
 
 
 def print_complete(prog: str) -> None:
-    if len(set((program := Program(prog)).used_states)) != STATES:
+    if len(set(Program(prog).used_states)) != STATES:
         return
 
-    run_and_print(program)
+    run_and_print(prog)
 
 
-def run_and_print(program: Program) -> None:
-    run_proof = Machine(program).run(
-        sim_lim = 200,
-        prover = True,
-    )
+def macro_variations(base: str) -> Iterator[Union[str, MacroProg]]:
+    yield base
 
-    if run_proof.xlimit is None:
-        return
+    for block in range(2, 8):
+        yield (block_mac := BlockMacro(base, [block]))
+        yield BacksymbolMacro(block_mac, [1])
 
-    check_rec = Machine(program).run(
-        sim_lim = 100,
-        check_rec = 0,
-    )
+    yield (back_1 := BacksymbolMacro(base, [1]))
+    yield BacksymbolMacro(back_1, [1])
 
-    if check_rec.xlimit is None:
-        return
 
-    print(program.normalize())
+def run_and_print(prog: str) -> None:
+    for macro in macro_variations(prog):
+        if Machine(macro).run(
+                sim_lim = 200,
+                prover = True,
+        ).xlimit is None:
+            return
+
+    print(Program(prog).normalize())
 
 
 if __name__ == '__main__':
