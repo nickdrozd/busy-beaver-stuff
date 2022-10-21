@@ -115,9 +115,9 @@ class TestTree(TestCase):
             h32 <= LIN_HOLDOUTS
         )
 
-        self.assertTrue(
-            q32 <= HOLDOUTS_32Q
-        )
+        self.assertEqual(
+            q32,
+            HOLDOUTS_32Q)
 
     def test_23(self):
         h23q = Queue()  # type: ignore
@@ -148,13 +148,13 @@ class TestTree(TestCase):
             595: q23,
         })
 
-        self.assertTrue(
-            h23 <= HOLDOUTS_23H
-        )
+        self.assertEqual(
+            h23,
+            HOLDOUTS_23H)
 
-        self.assertTrue(
-            q23 <= HOLDOUTS_23Q
-        )
+        self.assertEqual(
+            q23,
+            HOLDOUTS_23Q)
 
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
