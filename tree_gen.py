@@ -61,23 +61,17 @@ if __name__ == '__main__':
     parser.add_argument('states', type = int)
     parser.add_argument('colors', type = int)
 
+    parser.add_argument('--steps', type = int, default = 200)
+
     parser.add_argument('--halt', action = 'store_true')
     parser.add_argument('--aggressive', action = 'store_true')
 
     args = parser.parse_args()
 
-    HALT = args.halt
+    HALT   = args.halt
+    STEPS  = args.steps
     COLORS = args.colors
     STATES = args.states
-
-    try:
-        STEPS = {
-            (2, 2): 40,
-            (3, 2): 126,
-            (2, 3): 223,  # 220
-        }[(STATES, COLORS)]
-    except KeyError:
-        STEPS = 500
 
     run_tree_gen(
         states = STATES,
