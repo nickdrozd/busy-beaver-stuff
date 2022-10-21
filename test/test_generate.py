@@ -11,125 +11,10 @@ from generate.tree  import run_tree_gen
 from generate.naive import yield_programs
 
 
-class TestLinRado(TestCase):
-    def assert_progs_equal(self, other):
-        self.assertEqual(
-            self.progs,
-            other)
-
-    def assert_progs_count(self, count):
-        self.assertEqual(
-            len(self.progs),
-            count)
-
-    def run_lin_rado(
-            self,
-            states, colors,
-            halt, xlimit,
-            rejects = None):
-        print(f'{states} {colors} {halt}')
-
-        self.progs = {
-            prog
-            for prog in
-            yield_programs(
-                states,
-                colors,
-                bool(halt),
-                rejects)
-            if
-            Machine(prog).run (
-                sim_lim = xlimit,
-                check_rec = 0,
-            ).xlimit is not None
-        }
-
-    def test_22(self):
-        # h
-        self.run_lin_rado(
-            2, 2, 1,
-            7,  # 6
-        )
-
-        self.assert_progs_count(
-            0)
-
-        # q
-        self.run_lin_rado(
-            2, 2, 0,
-            13,
-            rejects = [],
-        )
-
-        self.assert_progs_equal(
-            HOLDOUTS_22Q | {
-                "1RB 1LA  1LA 1RB",  # xmas classic
-                "1RB 1LA  0LA 1RB",  # xmas one-side
-            })
-
-        self.assert_progs_count(
-            4)
-
-    def test_32h(self):
-        self.run_lin_rado(
-            3, 2, 1,
-            29,
-            rejects = NOT_CONNECTED_32,
-        )
-
-        self.assert_progs_equal(
-            LIN_HOLDOUTS)
-
-        self.assert_progs_count(
-            40)
-
-        self.assertEqual(
-            LIN_HOLDOUTS,
-            BRADY_HOLDOUTS | LR_NOT_BRADY)
-
-    def test_23h(self):
-        self.run_lin_rado(
-            2, 3, 1,
-            223,  # 220
-        )
-
-        self.assert_progs_equal(
-            HOLDOUTS_23H)
-
-        self.assert_progs_count(
-            304)
-
-    def test_32q(self):
-        self.run_lin_rado(
-            3, 2, 0,
-            126,
-            rejects = [AB_LOOP] + [
-                prog.replace('1R_', '...')
-                for prog in LIN_HOLDOUTS
-            ],
-        )
-
-        self.assert_progs_equal(
-            HOLDOUTS_32Q)
-
-        self.assert_progs_count(
-            837)
-
-    def test_23q(self):
-        self.run_lin_rado(
-            2, 3, 0,
-            223,  # 220
-            rejects = [
-                prog.replace('1R_', '...')
-                for prog in HOLDOUTS_23H
-            ],
-        )
-
-        self.assert_progs_equal(
-            HOLDOUTS_23Q)
-
-        self.assert_progs_count(
-            906)
+HOLDOUTS_22Q = {
+    "1RB 0LB  1LA 0RA",  # xmas spaces
+    "1RB 1LA  0LA 0RB",  # counter
+}
 
 REC_OPTS = (
     {"prover": True},
@@ -278,10 +163,82 @@ class TestTree(TestCase):
         )
 
 
-HOLDOUTS_22Q = {
-    "1RB 0LB  1LA 0RA",  # xmas spaces
-    "1RB 1LA  0LA 0RB",  # counter
-}
+class TestLinRado(TestCase):
+    def assert_progs_equal(self, other):
+        self.assertEqual(
+            self.progs,
+            other)
+
+    def assert_progs_count(self, count):
+        self.assertEqual(
+            len(self.progs),
+            count)
+
+    def run_lin_rado(
+            self,
+            states, colors,
+            halt, xlimit,
+            rejects = None):
+        print(f'{states} {colors} {halt}')
+
+        self.progs = {
+            prog
+            for prog in
+            yield_programs(
+                states,
+                colors,
+                bool(halt),
+                rejects)
+            if
+            Machine(prog).run (
+                sim_lim = xlimit,
+                check_rec = 0,
+            ).xlimit is not None
+        }
+
+    def test_22(self):
+        # h
+        self.run_lin_rado(
+            2, 2, 1,
+            7,  # 6
+        )
+
+        self.assert_progs_count(
+            0)
+
+        # q
+        self.run_lin_rado(
+            2, 2, 0,
+            13,
+            rejects = [],
+        )
+
+        self.assert_progs_equal(
+            HOLDOUTS_22Q | {
+                "1RB 1LA  1LA 1RB",  # xmas classic
+                "1RB 1LA  0LA 1RB",  # xmas one-side
+            })
+
+        self.assert_progs_count(
+            4)
+
+    def test_32h(self):
+        self.run_lin_rado(
+            3, 2, 1,
+            29,
+            rejects = NOT_CONNECTED_32,
+        )
+
+        self.assert_progs_equal(
+            LIN_HOLDOUTS)
+
+        self.assert_progs_count(
+            40)
+
+        self.assertEqual(
+            LIN_HOLDOUTS,
+            BRADY_HOLDOUTS | LR_NOT_BRADY)
+
 
 LR_HOLDOUTS = {
     # Lot 1
