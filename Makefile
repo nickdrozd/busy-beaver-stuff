@@ -37,8 +37,8 @@ TUR = test.test_turing.Fast
 PROG = test.test_program
 GRAPH = test.test_graph
 CG = test.test_code
-QTREE = test.test_generate.TestTree.test_22
-LR = test.test_generate.TestLinRado.test_22
+QTREE = test.test_generate.TestTree
+LR = test.test_generate.TestLinRado
 TP = test.test_tape
 
 SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(QTREE) $(LR) $(TP) $(TUR)
