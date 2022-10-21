@@ -30,6 +30,19 @@ def run_for_none(prog, sim_lim):
         for rec_opt in REC_OPTS
     )
 
+def queue_to_set(queue):
+    out = set()
+
+    while True:  # yuck -- pylint: disable = while-used
+        try:
+            prog = queue.get(timeout = .5)
+        except Empty:
+            break
+
+        out.add(prog.replace('...', '1R_'))
+
+    return out
+
 class TestTree(TestCase):
     def assert_counts(self, expected):
         for count, cat in expected.items():
@@ -37,20 +50,6 @@ class TestTree(TestCase):
             self.assertTrue((
                 all(Graph(prog).is_strongly_connected
                     for prog in cat)))
-
-    @staticmethod
-    def queue_to_set(queue):
-        out = set()
-
-        while True:  # yuck -- pylint: disable = while-used
-            try:
-                prog = queue.get(timeout = .5)
-            except Empty:
-                break
-
-            out.add(prog.replace('...', '1R_'))
-
-        return out
 
     def test_22(self):
         q22 = Queue()  # type: ignore
@@ -70,7 +69,7 @@ class TestTree(TestCase):
                 output = capture,
             )
 
-            s22 = self.queue_to_set(q22)
+            s22 = queue_to_set(q22)
 
             self.assert_counts({
                 2: s22,
@@ -104,7 +103,7 @@ class TestTree(TestCase):
         )
 
         h32, q32 = map(
-            self.queue_to_set,
+            queue_to_set,
             (h32, q32))
 
         self.assert_counts({
@@ -141,7 +140,7 @@ class TestTree(TestCase):
         )
 
         h23, q23 = map(
-            self.queue_to_set,
+            queue_to_set,
             (h23, q23))
 
         self.assert_counts({
