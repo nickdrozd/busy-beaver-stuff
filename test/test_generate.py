@@ -6,28 +6,38 @@ from multiprocessing import Queue
 from unittest import TestCase
 
 from tm import Machine
-from analyze import Graph
 from generate.tree  import run_tree_gen
 from generate.naive import yield_programs
+from analyze import Graph, BlockMacro, BacksymbolMacro
 
 
 HOLDOUTS_22Q = {
-    "1RB 0LB  1LA 0RA",  # xmas spaces
     "1RB 1LA  0LA 0RB",  # counter
 }
 
-REC_OPTS = (
-    {"prover": True},
-    {"check_rec": 0},
-)
+def macro_variations(prog):
+    yield prog
+    yield (block_2 := BlockMacro(prog, [2]))
+    yield (block_3 := BlockMacro(prog, [3]))
+    yield BacksymbolMacro(prog, [1])
+    yield BacksymbolMacro(block_2, [1])
+    yield BacksymbolMacro(block_3, [1])
 
 def run_for_none(prog, sim_lim):
     yield from (
-        Machine(prog).run(  # type: ignore
+        Machine(macro).run(
             sim_lim = sim_lim,
-            **rec_opt,
+            prover = True,
         ).xlimit is None
-        for rec_opt in REC_OPTS
+        for macro in macro_variations(prog)
+    )
+
+    yield from (
+        Machine(macro).run(
+            sim_lim = sim_lim,
+            check_rec = 0,
+        ).xlimit is None
+        for macro in macro_variations(prog)
     )
 
 def queue_to_set(queue):
@@ -72,7 +82,7 @@ class TestTree(TestCase):
             s22 = queue_to_set(s22q)
 
             self.assert_counts({
-                2: s22,
+                1: s22,
             })
 
             self.assertEqual(
@@ -107,8 +117,8 @@ class TestTree(TestCase):
         q32 = queue_to_set(q32q)
 
         self.assert_counts({
-             25: h32,
-            432: q32,
+             3: h32,
+            91: q32,
         })
 
         self.assertTrue(
@@ -144,8 +154,8 @@ class TestTree(TestCase):
         q23 = queue_to_set(q23q)
 
         self.assert_counts({
-            67: h23,
-            595: q23,
+             25: h23,
+            171: q23,
         })
 
         self.assertEqual(
@@ -215,6 +225,7 @@ class TestLinRado(TestCase):
             HOLDOUTS_22Q | {
                 "1RB 1LA  1LA 1RB",  # xmas classic
                 "1RB 1LA  0LA 1RB",  # xmas one-side
+                "1RB 0LB  1LA 0RA",  # xmas spaces
             })
 
         self.assert_progs_count(
