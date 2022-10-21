@@ -1288,6 +1288,7 @@ BLANKERS = (
 )
 
 DIFFUSE = {
+    # 5/2
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA",  # BB(5)
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA",  # uwe
 
@@ -1295,6 +1296,15 @@ DIFFUSE = {
     "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
     "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC",  # SIAB
     "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA",
+
+    # QH
+    "1RB ...  1LB 1RC  0LC 0RB",
+    "1RB 0RC  0RD 1RA  0LD 0LA  1LC 1LA",
+    "1RB 0RB  1LC 1RA  0LD 1LB  1RD 0LB",
+    "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA",
+    "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB",
+    "1RB 1LA  1RC 1LD  1RD 0RC  1LB 0LA",
+    "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE",
 }
 
 PROVER_EXCEPTIONS = DIFFUSE | {
@@ -1765,7 +1775,10 @@ class Fast(TuringTest):
             blank = True,
         )
 
-        self._test_prover_rec(RECUR_COMPACT)
+        self._test_prover_rec(
+            RECUR_COMPACT
+            | QUASIHALT
+        )
 
     def test_blank(self):
         for prog in DONT_BLANK:
