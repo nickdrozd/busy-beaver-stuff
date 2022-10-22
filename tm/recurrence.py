@@ -211,13 +211,6 @@ class Prover:
 
         assert (past_tape := past_config.tape) is not None
 
-        block_diffs = tuple(
-            tuple(
-                old[1] - new[1]
-                for old, new in zip(*spans)
-            ) for spans in zip(tape.spans, past_tape.spans)
-        )
-
         for curr_span, prev_span in zip(tape.spans, past_tape.spans):
             assert len(curr_span) == len(prev_span)
 
@@ -267,6 +260,13 @@ class Prover:
 
         if config != (state_copy, copy_sig):
             return None
+
+        block_diffs = tuple(
+            tuple(
+                old[1] - new[1]
+                for old, new in zip(*spans)
+            ) for spans in zip(tape.spans, past_tape.spans)
+        )
 
         if all(diff >= 0 for span in block_diffs for diff in span):
             raise InfiniteRule()
