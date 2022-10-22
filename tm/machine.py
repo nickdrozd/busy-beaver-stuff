@@ -66,10 +66,6 @@ class Machine:
         info.append(
             f'MARKS: {self.marks}')
 
-        if self.blanks:
-            info.append(
-                f'BLANKS: {self.blanks}')
-
         if self.rulapp > 0:
             info.append(
                 f'RULAPP: {self.rulapp}')
