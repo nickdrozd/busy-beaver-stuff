@@ -1289,28 +1289,31 @@ BLANKERS = (
 
 DIFFUSE = {
     # 5/2
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA",  # BB(5)
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA",  # uwe
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": 3,  # BB(5)
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": 2,  # uwe
 
     # 3/3
-    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
-    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC",  # SIAB
-    "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA",
+    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": 2,
+    "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA": 2,
 
     # QH
-    "1RB ...  1LB 1RC  0LC 0RB",
-    "1RB 0RC  0RD 1RA  0LD 0LA  1LC 1LA",
-    "1RB 0RB  1LC 1RA  0LD 1LB  1RD 0LB",
-    "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA",
-    "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB",
-    "1RB 1LA  1RC 1LD  1RD 0RC  1LB 0LA",
-    "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE",
+    "1RB ...  1LB 1RC  0LC 0RB": 2,
+
+    "1RB 0RC  0RD 1RA  0LD 0LA  1LC 1LA": 2,
+    "1RB 0RB  1LC 1RA  0LD 1LB  1RD 0LB": 2,
+    "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA": 2,
+    "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB": 2,
+    "1RB 1LA  1RC 1LD  1RD 0RC  1LB 0LA": 2,
+
+    "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE": 3,
 }
 
-PROVER_EXCEPTIONS = DIFFUSE | {
+PROVER_EXCEPTIONS = {
     # halt
     "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB 1R_",  # lynn
     "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB",  # lynn
+
+    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC",  # SIAB  # just slow
 
     # spinout
     "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA",
@@ -1627,14 +1630,23 @@ class TuringTest(TestCase):
             if prog in PROVER_EXCEPTIONS:
                 continue
 
+            program = (
+                prog
+                if (block := DIFFUSE.get(prog)) is None else
+                BlockMacro(prog, [block])
+            )
+
             self.run_bb(
-                prog,
+                program,
                 prover = True,
                 analyze = False,
             )
 
             self.assertIsNotNone(
                 self.machine.simple_termination)
+
+            if block is not None:
+                continue
 
             self.assert_marks(
                 0 if blank else prog_data[prog][0])
@@ -1644,14 +1656,21 @@ class TuringTest(TestCase):
             if prog in PROVER_EXCEPTIONS:
                 continue
 
+            program = (
+                prog
+                if (block := DIFFUSE.get(prog)) is None else
+                BlockMacro(prog, [block])
+            )
+
             self.run_bb(
-                prog,
+                program,
                 prover = True,
                 analyze = False,
             )
 
             self.assertTrue(
-                self.machine.infrul)
+                self.machine.infrul
+                or bool(self.machine.spnout))
 
     def _test_extensions(self, prog_data):
         for prog, (status, data) in prog_data.items():
