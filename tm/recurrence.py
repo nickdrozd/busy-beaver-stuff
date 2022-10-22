@@ -5,13 +5,13 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from tm.tape import PtrTape, BlockTape
+from tm.tape import PtrTape, BlockTape, Signature
 from tm.types import Action, State
 
 RecRes = Optional[Tuple[int, int]]
 Tapes = Dict[int, PtrTape]
 
-Config = Tuple[State, str]
+Config = Tuple[State, Signature]
 Rule = Tuple[Tuple[int, ...], ...]
 
 class History:

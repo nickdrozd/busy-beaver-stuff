@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 Color = int
+Signature = Tuple[Tuple[int, ...], Color, Tuple[int, ...]]
 
 @dataclass
 class BlockTape:
@@ -50,11 +51,12 @@ class BlockTape:
         )
 
     @property
-    def signature(self) -> str:
-        l_sig = '|'.join([str(c) for c, _ in self.lspan])
-        r_sig = '|'.join(reversed([str(c) for c, _ in self.rspan]))
-
-        return f'{l_sig}[{self.scan}]{r_sig}'
+    def signature(self) -> Signature:
+        return (
+            tuple(c for c, _ in self.lspan),
+            self.scan,
+            tuple(c for c, _ in self.rspan),
+        )
 
     @property
     def blank(self) -> bool:

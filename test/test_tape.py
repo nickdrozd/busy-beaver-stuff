@@ -3,7 +3,16 @@ from unittest import TestCase
 from typing import List, Tuple
 
 from tm import Machine
-from tm.tape import BlockTape
+from tm.tape import BlockTape, Signature
+
+def stringify_sig(sig: Signature) -> str:
+    lspan, scan, rspan = sig
+
+    l_sig = '|'.join(str(c) for c in lspan)
+    r_sig = '|'.join(reversed([str(c) for c in rspan]))
+
+    return f'{l_sig}[{scan}]{r_sig}'
+
 
 class TestTape(TestCase):
     def run_bb(self, prog, **opts):
@@ -17,7 +26,7 @@ class TestTape(TestCase):
 
     def assert_signature(self, expected: str, tape = None):
         self.assertEqual(
-            (tape or self.tape).signature,
+            stringify_sig((tape or self.tape).signature),
             expected)
 
     def assert_string(self, expected: str, tape = None):
