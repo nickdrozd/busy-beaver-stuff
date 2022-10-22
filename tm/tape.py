@@ -4,13 +4,17 @@ from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 Color = int
+
+Block = List[int]
+Span  = List[Block]
+
 Signature = Tuple[Tuple[int, ...], Color, Tuple[int, ...]]
 
 @dataclass
 class BlockTape:
-    lspan: List[List[int]]
+    lspan: Span
     scan: Color
-    rspan: List[List[int]]
+    rspan: Span
     head: int = 0
 
     def __repr__(self) -> str:
@@ -57,6 +61,10 @@ class BlockTape:
             self.scan,
             tuple(c for c, _ in self.rspan),
         )
+
+    @property
+    def spans(self) -> Tuple[Span, Span]:
+        return self.lspan, self.rspan
 
     @property
     def blank(self) -> bool:

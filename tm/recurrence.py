@@ -211,24 +211,14 @@ class Prover:
 
         assert (past_tape := past_config.tape) is not None
 
-        ldiffs = tuple(
-            old[1] - new[1]
-            for old, new in
-            zip(tape.lspan, past_tape.lspan)
+        block_diffs = tuple(
+            tuple(
+                old[1] - new[1]
+                for old, new in zip(*spans)
+            ) for spans in zip(tape.spans, past_tape.spans)
         )
 
-        rdiffs = tuple(
-            old[1] - new[1]
-            for old, new in
-            zip(tape.rspan, past_tape.rspan)
-        )
-
-        block_diffs = ldiffs, rdiffs
-
-        # pylint: disable = bad-builtin
-        for span in ('lspan', 'rspan'):
-            curr_span = getattr(tape, span)
-            prev_span = getattr(past_tape, span)
+        for curr_span, prev_span in zip(tape.spans, past_tape.spans):
             assert len(curr_span) == len(prev_span)
 
             for old, new in zip(prev_span, curr_span):
@@ -239,10 +229,9 @@ class Prover:
 
         tape_copy = tape.copy()
 
-        for span in ('lspan', 'rspan'):
-            curr_span = getattr(tape_copy, span)
-            prev_span = getattr(past_tape, span)
+        spans = tuple(zip(tape_copy.spans, past_tape.spans))
 
+        for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
                 if old[1] != new[1]:
                     new.append(num)
@@ -262,10 +251,7 @@ class Prover:
 
             state_copy = next_state
 
-        for span in ('lspan', 'rspan'):
-            curr_span = getattr(tape_copy, span)
-            prev_span = getattr(past_tape, span)
-
+        for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
                 if old[1] != new[1]:
 
