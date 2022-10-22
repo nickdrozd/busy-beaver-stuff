@@ -70,6 +70,10 @@ class Machine:
             info.append(
                 f'BLANKS: {self.blanks}')
 
+        if self.rulapp > 0:
+            info.append(
+                f'RULAPP: {self.rulapp}')
+
         return f"{self.program} || {' | '.join(info)}"
 
     @property
