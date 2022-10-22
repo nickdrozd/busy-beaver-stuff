@@ -178,15 +178,14 @@ class Prover:
             tape.lspan + tape.rspan,
         )
 
-        if any(diff < 0 and abs(diff) >= block[1]
-               for diff, block in zip(diffs, blocks)):
-            return None
-
         divs = []
 
         for diff, block in zip(diffs, blocks):
             if diff < 0:
-                div, rem = divmod(block[1], abs(diff))
+                if (abs_diff := abs(diff)) >= block[1]:
+                    return None
+
+                div, rem = divmod(block[1], abs_diff)
                 divs.append(div if rem > 0 else div - 1)
 
         times = min(divs)
