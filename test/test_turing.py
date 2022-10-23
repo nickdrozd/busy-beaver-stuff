@@ -1314,6 +1314,10 @@ DIFFUSE = {
     "1RB 1LA  1RC 1LD  1RD 0RC  1LB 0LA": 2,
 
     "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE": 3,
+
+    # 4/2
+    "1RB 0LC  1RD 1LC  0LA 1LB  1LC 0RD": (5, 2),  # BBLR
+    "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC":    708,  # boyd
 }
 
 PROVER_EXCEPTIONS = {
@@ -1679,7 +1683,7 @@ class TuringTest(TestCase):
             program = (
                 prog
                 if (block := DIFFUSE.get(prog)) is None else
-                BlockMacro(prog, [block])
+                BlockMacro(prog, [block])  # type: ignore
             )
 
             self.run_bb(
