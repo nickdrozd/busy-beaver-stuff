@@ -1709,7 +1709,7 @@ class TuringTest(TestCase):
             self.assert_close(
                 marks / 10 ** exp,
                 digits,
-                rel_tol = 1,
+                rel_tol = .54,
             )
 
     def _test_extensions(self, prog_data):
