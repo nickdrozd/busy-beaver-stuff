@@ -927,6 +927,14 @@ MODULAR = {
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
 }
 
+FUNNY_MACRO = {
+    # 3/3
+    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (3, 1, 3),  # SIAB
+
+    # 2/5
+    "1RB 4LA 1LA 1R_ 2RB  2LB 3LA 1LB 2RA 0RB": (2, 1, 2),
+}
+
 CANT_BLANK_FALSE_NEGATIVES = {
     "1RB 1LB  1LA 0RB",
 
@@ -1313,8 +1321,6 @@ PROVER_EXCEPTIONS = {
     "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB 1R_",  # lynn
     "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB",  # lynn
 
-    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC",  # SIAB  # just slow
-
     # spinout
     "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA",
     "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA",
@@ -1667,7 +1673,7 @@ class TuringTest(TestCase):
             simple_term: bool = True,
     ):
         for prog in prog_data:
-            if prog in PROVER_EXCEPTIONS:
+            if prog in PROVER_EXCEPTIONS or prog in FUNNY_MACRO:
                 continue
 
             program = (
@@ -1941,6 +1947,21 @@ class Fast(TuringTest):
 
     def test_macro_cycles(self):
         self._test_macro_cycles(MACRO_CYCLES_FAST)
+
+    def test_funny_macro(self):
+        # pylint: disable = redefined-loop-name
+        for prog, seq in FUNNY_MACRO.items():
+            for alt, count in enumerate(seq):
+                prog = (  # type: ignore
+                    BlockMacro
+                    if alt % 2 == 0 else
+                    BacksymbolMacro
+                )(prog, [count])
+
+            self.run_bb(prog)
+
+            self.assertIsNotNone(
+                self.machine.simple_termination)
 
 
 class Slow(TuringTest):  # no-coverage
