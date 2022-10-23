@@ -1538,7 +1538,7 @@ class TuringTest(TestCase):
         self.history = self.machine.history
         self.tape = self.machine.tape
 
-        if not analyze:
+        if not analyze or not isinstance(prog, str):
             return
 
         if normal:
@@ -1668,7 +1668,6 @@ class TuringTest(TestCase):
             self.run_bb(
                 program,
                 prover = True,
-                analyze = False,
             )
 
             self.assertIsNotNone(
@@ -1694,7 +1693,6 @@ class TuringTest(TestCase):
             self.run_bb(
                 program,
                 prover = True,
-                analyze = False,
             )
 
             self.assertTrue(
@@ -1713,7 +1711,6 @@ class TuringTest(TestCase):
             self.run_bb(
                 prog,
                 prover = True,
-                analyze = False,
             )
 
             marks = self.machine.marks * (
@@ -1770,7 +1767,6 @@ class TuringTest(TestCase):
 
                 self.run_bb(
                     macro,
-                    analyze = False,
                     sim_lim = (
                         20_000 if opt is None else
                         sim_lim  if sim_lim is not None else
@@ -1935,7 +1931,6 @@ class Fast(TuringTest):
             for wraps, cells in product(range(1, 4), range(1, 5)):
                 self.run_bb(
                     BlockMacro(prog, [cells] * wraps),
-                    analyze = False,
                 )
 
                 assert self.machine.simple_termination is not None
