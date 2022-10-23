@@ -1331,6 +1331,26 @@ PROVER_EXCEPTIONS = {
     "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD",
 }
 
+PROVER_FAST = {
+    # 6/2
+    "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE 1R_": (8, 1, 4.6, 1439),
+    "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE": (2, 0, 2.5,  881),
+    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_": (4, 1, 1.2,  865),
+    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (3, 1, 6.4,  462),
+    "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF 1R_  1RA 1RE": (2, 0, 1.4,   60),
+    "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE 1R_": (4, 0, 6.9,   49),
+    "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE 1R_": (4, 0, 1.1,   49),
+    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (2, 1, 6.7,   47),
+    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (2, 1, 6.7,   47),
+    "1RB 0RC  0LA 0RD  1RD 1R_  1LE 0LD  1RF 1LB  1RA 1RE": (2, 1, 2.5,   21),
+}
+
+PROVER_SLOW = {
+    # 6/2
+    "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (6, 1, 3.5, 18267),
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": (3, 1, 3.1, 10566),
+}
+
 
 class TuringTest(TestCase):
     def assert_normal(self, prog):
@@ -1672,6 +1692,32 @@ class TuringTest(TestCase):
                 self.machine.infrul
                 or bool(self.machine.spnout))
 
+    def _test_prover_est(self, prog_data):
+        # pylint: disable = redefined-loop-name, redefined-variable-type
+        for prog, (block, back, digits, exp) in prog_data.items():
+            if block > 1:
+                prog = BlockMacro(prog, [block])
+
+            if back > 0:
+                prog = BacksymbolMacro(prog, [back])
+
+            self.run_bb(
+                prog,
+                prover = True,
+                analyze = False,
+            )
+
+            marks = self.machine.marks * (
+                block if block is not None else 1)
+
+            self.assertTrue(
+                isclose(
+                    marks / 10 ** exp,
+                    digits,
+                    rel_tol = 1,
+                )
+            )
+
     def _test_extensions(self, prog_data):
         for prog, (status, data) in prog_data.items():
             self.run_bb(
@@ -1799,6 +1845,8 @@ class Fast(TuringTest):
             | QUASIHALT
         )
 
+        self._test_prover_est(PROVER_FAST)
+
     def test_blank(self):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)
@@ -1913,3 +1961,6 @@ class Slow(TuringTest):  # no-coverage
 
     def test_macro_cycles(self):
         self._test_macro_cycles(MACRO_CYCLES_SLOW)
+
+    def test_prover(self):
+        self._test_prover_est(PROVER_SLOW)
