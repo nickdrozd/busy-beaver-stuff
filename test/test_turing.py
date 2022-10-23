@@ -1654,7 +1654,12 @@ class TuringTest(TestCase):
 
             self.assert_quasihalt(qsihlt)
 
-    def _test_prover_term(self, prog_data, blank: bool = False):
+    def _test_prover(
+            self,
+            prog_data,
+            blank: bool = False,
+            simple_term: bool = True,
+    ):
         for prog in prog_data:
             if prog in PROVER_EXCEPTIONS:
                 continue
@@ -1670,34 +1675,19 @@ class TuringTest(TestCase):
                 prover = True,
             )
 
-            self.assertIsNotNone(
-                self.machine.simple_termination)
+            if simple_term:
+                self.assertIsNotNone(
+                    self.machine.simple_termination)
 
-            if block is not None:
-                continue
+                if block is not None:
+                    continue
 
-            self.assert_marks(
-                0 if blank else prog_data[prog][0])
-
-    def _test_prover_rec(self, prog_data):
-        for prog in prog_data:
-            if prog in PROVER_EXCEPTIONS:
-                continue
-
-            program = (
-                prog
-                if (block := DIFFUSE.get(prog)) is None else
-                BlockMacro(prog, [block])
-            )
-
-            self.run_bb(
-                program,
-                prover = True,
-            )
-
-            self.assertTrue(
-                self.machine.infrul
-                or bool(self.machine.spnout))
+                self.assert_marks(
+                    0 if blank else prog_data[prog][0])
+            else:
+                self.assertTrue(
+                    self.machine.infrul
+                    or bool(self.machine.spnout))
 
     def _test_prover_est(self, prog_data):
         # pylint: disable = redefined-loop-name, redefined-variable-type
@@ -1832,20 +1822,21 @@ class Fast(TuringTest):
         )
 
     def test_prover(self):
-        self._test_prover_term(
+        self._test_prover(
             HALT
             | HALT_SLOW
             | SPINOUT
         )
 
-        self._test_prover_term(
+        self._test_prover(
             SPINOUT_BLANK,
             blank = True,
         )
 
-        self._test_prover_rec(
+        self._test_prover(
             RECUR_COMPACT
-            | QUASIHALT
+            | QUASIHALT,
+            simple_term = False,
         )
 
         self._test_prover_est(PROVER_FAST)
