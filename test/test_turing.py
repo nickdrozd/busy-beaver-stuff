@@ -1408,6 +1408,15 @@ class TuringTest(TestCase):
             self.machine.qsihlt,
             qsihlt)
 
+    def assert_close(self, this, that, rel_tol):
+        self.assertTrue(
+            isclose(
+                this,
+                that,
+                rel_tol = rel_tol,
+            )
+        )
+
     def assert_could_halt(self, prog):
         self.assertFalse(
             Program(prog).cant_halt,
@@ -1710,12 +1719,10 @@ class TuringTest(TestCase):
             marks = self.machine.marks * (
                 block if block is not None else 1)
 
-            self.assertTrue(
-                isclose(
-                    marks / 10 ** exp,
-                    digits,
-                    rel_tol = 1,
-                )
+            self.assert_close(
+                marks / 10 ** exp,
+                digits,
+                rel_tol = 1,
             )
 
     def _test_extensions(self, prog_data):
@@ -1933,12 +1940,10 @@ class Fast(TuringTest):
 
                 assert self.machine.simple_termination is not None
 
-                self.assertTrue(
-                    isclose(
-                        self.machine.simple_termination,
-                        steps / (cells ** wraps),
-                        rel_tol = .001,
-                    )
+                self.assert_close(
+                    self.machine.simple_termination,
+                    steps / (cells ** wraps),
+                    rel_tol = .001,
                 )
 
     def test_macro_cycles(self):
