@@ -1332,6 +1332,12 @@ PROVER_EXCEPTIONS = {
 }
 
 PROVER_FAST = {
+    # 2/5
+    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (1, 0, 1.7, 352),
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (1, 0, 5.2, 105),
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA 1R_": (1, 0, 5.2, 105),
+    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA 1R_": (1, 0, 9.3,  30),
+
     # 6/2
     "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE 1R_": (8, 1, 4.6, 1439),
     "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE": (2, 0, 2.5,  881),
@@ -1701,6 +1707,7 @@ class TuringTest(TestCase):
             self.run_bb(
                 prog,
                 prover = True,
+                normal = False,
             )
 
             marks = self.machine.marks * (
