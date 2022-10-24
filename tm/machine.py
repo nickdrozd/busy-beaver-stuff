@@ -31,9 +31,9 @@ class Machine:
         self.history: Optional[History] = None
         self.prover: Optional[Prover] = None
 
-        self.reached: Dict[Action, int] = defaultdict(lambda: 0)
+        self.blanks: Dict[State, int]
 
-        self.blanks: Dict[State, int] = {}
+        self.reached: Dict[Action, int]
 
         self.halted: Optional[int] = None
         self.spnout: Optional[int] = None
@@ -108,6 +108,9 @@ class Machine:
             BlockTape([], 0, [])
         )
 
+        blanks: Dict[State, int] = {}
+        reached: Dict[Action, int] = defaultdict(lambda: 0)
+
         if samples is not None or check_rec is not None:
             self.history = History(tapes = samples)
 
@@ -172,7 +175,7 @@ class Machine:
                 self.undfnd = step, f'{st_str(state)}{scan}'
                 break
 
-            self.reached[action] += 1
+            reached[action] += 1
 
             if ((same_state := state == next_state)
                     and (shift == tape.edge or tape.blank)):
@@ -191,10 +194,10 @@ class Machine:
 
             if tape.blank:
                 if check_rec is None and samples is None:
-                    if state in self.blanks:
+                    if state in blanks:
                         break
 
-                self.blanks[state] = step
+                blanks[state] = step
 
                 if state == 0:
                     break
@@ -206,7 +209,7 @@ class Machine:
         else:
             self.xlimit = step
 
-        self.finalize(step, cycle, state)
+        self.finalize(step, cycle, state, blanks, reached)
 
         if watch_tape and bool(self.halted):
             self.show_tape(step, 1 + cycle, state)
@@ -231,8 +234,18 @@ class Machine:
 
         return result
 
-    def finalize(self, step: int, cycle: int, state: int) -> None:
+    def finalize(
+            self,
+            step: int,
+            cycle: int,
+            state: int,
+            blanks: Dict[State, int],
+            reached: Dict[Action, int],
+    ) -> None:
         assert cycle <= step
+
+        self.blanks = blanks
+        self.reached = reached
 
         if state == -1:
             self.halted = step
