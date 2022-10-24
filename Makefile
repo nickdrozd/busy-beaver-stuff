@@ -36,12 +36,11 @@ compile : clean-python
 TUR = test.test_turing.Fast
 PROG = test.test_program
 GRAPH = test.test_graph
+GEN = test.test_generate
 CG = test.test_code
-QTREE = test.test_generate.TestTree
-LR = test.test_generate.TestLinRado
 TP = test.test_tape
 
-SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(QTREE) $(LR) $(TP) $(TUR)
+SHORT_TESTS = $(PROG) $(GRAPH) $(GEN) $(CG) $(TP) $(TUR)
 
 PYTEST = python3 -m unittest
 
