@@ -23,11 +23,6 @@ class Machine:
     def __init__(self, prog: ProgLike):
         self.program = prog
 
-        if type(prog).__name__ == 'Program':
-            prog = str(prog)
-
-        self._comp = tcompile(prog) if isinstance(prog, str) else prog
-
         self.tape: BlockTape
         self.state: State
         self.steps: int
@@ -99,6 +94,14 @@ class Machine:
             tape: Optional[BlockTape] = None,
             prover: bool = False,
     ) -> Machine:
+        comp = (
+            tcompile(self.program)
+            if isinstance(self.program, str) else
+            tcompile(str(self.program))
+            if type(self.program).__name__ == 'Program' else
+            self.program
+        )
+
         self.tape = tape = (
             tape
             if tape is not None else
@@ -109,7 +112,7 @@ class Machine:
             self.history = History(tapes = samples)
 
         if prover:
-            self.prover = Prover(self._comp)
+            self.prover = Prover(comp)
 
         step: int = 0
 
@@ -164,7 +167,7 @@ class Machine:
                     continue
 
             try:
-                color, shift, next_state = self._comp[state][scan]
+                color, shift, next_state = comp[state][scan]
             except TypeError:
                 self.undfnd = step, f'{st_str(state)}{scan}'
                 break
