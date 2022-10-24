@@ -814,44 +814,6 @@ UNDEFINED = {
     },
 }
 
-BB4_EXTENSIONS = {
-    "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": ('HALTED', 107),
-    "1RB 1LB  1LA 0LC  0LC 1LD  1RD 0RA": ('SPNOUT', 106),
-    "1RB 1LB  1LA 0LC  1LC 1LD  1RD 0RA": ('SPNOUT', 106),
-    "1RB 1LB  1LA 0LC  0LB 1LD  1RD 0RA": ('LINREC', (24, 96)),
-    "1RB 1LB  1LA 0LC  1RA 1LD  1RD 0RA": ('LINREC', (85, 23)),
-    "1RB 1LB  1LA 0LC  1LB 1LD  1RD 0RA": ('LINREC', (89, 18)),
-    "1RB 1LB  1LA 0LC  1RD 1LD  1RD 0RA": ('LINREC', (102, 7)),
-    "1RB 1LB  1LA 0LC  1LD 1LD  1RD 0RA": ('LINREC', (305, 70)),
-    "1RB 1LB  1LA 0LC  0RB 1LD  1RD 0RA": ('LINREC', (313, 74)),
-    "1RB 1LB  1LA 0LC  1RB 1LD  1RD 0RA": ('LINREC', (341, 46)),
-    "1RB 1LB  1LA 0LC  1RC 1LD  1RD 0RA": ('LINREC', (349, 50)),
-    "1RB 1LB  1LA 0LC  1LA 1LD  1RD 0RA": ('LINREC', (379, 110)),
-    "1RB 1LB  1LA 0LC  0RA 1LD  1RD 0RA": ('LINREC', (381, 118)),
-    "1RB 1LB  1LA 0LC  0LD 1LD  1RD 0RA": ('LINREC', (397, 142)),
-    "1RB 1LB  1LA 0LC  0RD 1LD  1RD 0RA": ('LINREC', (397, 142)),
-    "1RB 1LB  1LA 0LC  0LA 1LD  1RD 0RA": ('LINREC', (403, 122)),
-    "1RB 1LB  1LA 0LC  0RC 1LD  1RD 0RA": ('LINREC', (403, 144)),
-
-    "1RB 0RC  1LA 1RA  1R_ 1RD  1LD 0LB": ('HALTED', 96),
-    "1RB 0RC  1LA 1RA  1RC 1RD  1LD 0LB": ('SPNOUT', 95),
-    "1RB 0RC  1LA 1RA  0RC 1RD  1LD 0LB": ('SPNOUT', 95),
-    "1RB 0RC  1LA 1RA  0RA 1RD  1LD 0LB": ('LINREC', (0, 96)),
-    "1RB 0RC  1LA 1RA  1LB 1RD  1LD 0LB": ('LINREC', (74, 23)),
-    "1RB 0RC  1LA 1RA  1RA 1RD  1LD 0LB": ('LINREC', (78, 18)),
-    "1RB 0RC  1LA 1RA  1LD 1RD  1LD 0LB": ('LINREC', (91, 7)),
-    "1RB 0RC  1LA 1RA  1RD 1RD  1LD 0LB": ('LINREC', (294, 70)),
-    "1RB 0RC  1LA 1RA  0LA 1RD  1LD 0LB": ('LINREC', (302, 74)),
-    "1RB 0RC  1LA 1RA  1LA 1RD  1LD 0LB": ('LINREC', (330, 46)),
-    "1RB 0RC  1LA 1RA  1LC 1RD  1LD 0LB": ('LINREC', (338, 50)),
-    "1RB 0RC  1LA 1RA  1RB 1RD  1LD 0LB": ('LINREC', (368, 110)),
-    "1RB 0RC  1LA 1RA  0LB 1RD  1LD 0LB": ('LINREC', (370, 118)),
-    "1RB 0RC  1LA 1RA  0LD 1RD  1LD 0LB": ('LINREC', (386, 142)),
-    "1RB 0RC  1LA 1RA  0RD 1RD  1LD 0LB": ('LINREC', (386, 142)),
-    "1RB 0RC  1LA 1RA  0LC 1RD  1LD 0LB": ('LINREC', (392, 144)),
-    "1RB 0RC  1LA 1RA  0RB 1RD  1LD 0LB": ('LINREC', (392, 122)),
-}
-
 SPAGHETTI = {
     # Halt
     "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",  # 310341163
@@ -1729,18 +1691,6 @@ class TuringTest(TestCase):
                 rel_tol = .54,
             )
 
-    def _test_extensions(self, prog_data):
-        for prog, (status, data) in prog_data.items():
-            self.run_bb(
-                prog,
-                check_rec = 0 if status == 'LINREC' else None,
-            )
-
-            self.assertEqual(
-                data,
-                # pylint: disable = bad-builtin
-                getattr(self.machine, status.lower()))
-
     def _test_macro_cycles(self, prog_data):
         def macro_variations(base: str):
             # pylint: disable = invalid-name
@@ -1880,9 +1830,6 @@ class Fast(TuringTest):
                  | SPINOUT_BLANK_SLOW)
 
             self.assert_could_spin_out(prog)
-
-    def test_bb4_extensions(self):
-        self._test_extensions(BB4_EXTENSIONS)
 
     def test_mother_of_giants(self):
         mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
