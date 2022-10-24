@@ -1279,7 +1279,7 @@ DIFFUSE = {
 
     # 4/2
     "1RB 0LC  1RD 1LC  0LA 1LB  1LC 0RD": (5, 2),  # BBLR
-    "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC":    708,  # boyd
+    "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC":    118,  # boyd
 }
 
 PROVER_EXCEPTIONS = {
