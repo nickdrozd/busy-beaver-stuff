@@ -84,7 +84,6 @@ class Machine:
         ]))
 
     def run(self,
-            skip: bool = True,
             step_lim: Optional[int] = None,
             state: int = 0,
             sim_lim: int = 100_000_000,
@@ -161,7 +160,7 @@ class Machine:
                 self.spnout = step
                 break
 
-            stepped = tape.step(shift, color, skip and same_state)
+            stepped = tape.step(shift, color, same_state)
 
             state = next_state
 
