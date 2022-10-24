@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from collections import defaultdict
 from typing import Dict, Optional, Tuple
 
@@ -28,7 +29,6 @@ class Machine:
         self.steps: int
         self.cycles: int
 
-        self.history: Optional[History] = None
         self.prover: Optional[Prover] = None
 
         self.blanks: Dict[State, int]
@@ -89,8 +89,6 @@ class Machine:
             state: int = 0,
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
-            check_rec: Optional[int] = None,
-            samples: Optional[Tapes] = None,
             tape: Optional[BlockTape] = None,
             prover: bool = False,
     ) -> Machine:
@@ -111,9 +109,6 @@ class Machine:
         blanks: Dict[State, int] = {}
         reached: Dict[Action, int] = defaultdict(lambda: 0)
 
-        if samples is not None or check_rec is not None:
-            self.history = History(tapes = samples)
-
         if prover:
             self.prover = Prover(comp)
 
@@ -125,14 +120,6 @@ class Machine:
         for cycle in range(sim_lim):
 
             # Bookkeeping ##########################
-
-            if self.history is not None:
-                self.history.add_state_at_step(step, state)
-
-                if ((check_rec is not None and step >= check_rec)
-                    or (samples is not None
-                       and step in self.history.tapes)):
-                    self.history.add_tape_at_step(step, tape)
 
             action: Action = state, (scan := tape.scan)
 
@@ -146,14 +133,6 @@ class Machine:
             if step_lim is not None and step >= step_lim:
                 self.xlimit = step
                 break
-
-            if check_rec is not None and step >= check_rec:
-                assert self.history is not None
-
-                if self.check_rec(step, action) is not None:
-                    break
-
-                self.history.add_action_at_step(step, action)
 
             # Machine operation ####################
 
@@ -193,9 +172,8 @@ class Machine:
             # Halt conditions ######################
 
             if tape.blank:
-                if check_rec is None and samples is None:
-                    if state in blanks:
-                        break
+                if state in blanks:
+                    break
 
                 blanks[state] = step
 
@@ -215,24 +193,6 @@ class Machine:
             self.show_tape(step, 1 + cycle, state)
 
         return self
-
-    def check_rec(self, step: int, action: Action) -> RecRes:
-        assert self.history is not None
-
-        if (result := self.history.check_rec(step, action)) is None:
-            return None
-
-        self.linrec = start, _rec = result
-
-        hc_beeps = self.history.calculate_beeps()
-        hp_beeps = self.history.calculate_beeps(start)
-
-        self.qsihlt = any(
-            hc_beeps[st] <= hp_beeps[st]
-            for st in hp_beeps
-        )
-
-        return result
 
     def finalize(
             self,
@@ -280,3 +240,87 @@ class Machine:
             # pylint: disable = bad-builtin
             if (data := getattr(self, cat)) is not None
         ]) == 1, results
+
+########################################
+
+@dataclass
+class LinRecMachine:
+    prog: str
+
+    tape: Optional[BlockTape] = None
+    history: Optional[History] = None
+
+    halted: Optional[int] = None
+    xlimit: Optional[int] = None
+    qsihlt: Optional[bool] = None
+    linrec: Optional[LinRec] = None
+
+    def run(
+        self,
+        step_lim: Optional[int] = None,
+        check_rec: Optional[int] = None,
+        samples: Optional[Tapes] = None,
+    ) -> LinRecMachine:
+        assert (
+            check_rec is not None
+            or samples is not None)
+
+        comp = tcompile(self.prog)
+
+        self.tape = tape = BlockTape([], 0, [])
+
+        self.history = History(tapes = samples)
+
+        step: int = 0
+        state: State = 0
+
+        for _ in range(step_lim or 1_000_000):
+            self.history.add_state_at_step(step, state)
+
+            action: Action = state, (scan := tape.scan)
+
+            if ((check_rec is not None and step >= check_rec)
+                or (samples is not None
+                   and step in self.history.tapes)):
+                self.history.add_tape_at_step(step, tape)
+
+            if check_rec is not None and step >= check_rec:
+                if self.check_rec(step, action) is not None:
+                    break
+
+                self.history.add_action_at_step(step, action)
+
+            color, shift, next_state = comp[state][scan]  # type: ignore
+
+            _ = tape.step(shift, color, False)
+
+            state = next_state
+
+            step += 1
+
+            if state == -1:
+                self.halted = step
+                break
+
+        else:
+            self.xlimit = step
+
+        return self
+
+    def check_rec(self, step: int, action: Action) -> RecRes:
+        assert self.history is not None
+
+        if (result := self.history.check_rec(step, action)) is None:
+            return None
+
+        self.linrec = start, _rec = result
+
+        hc_beeps = self.history.calculate_beeps()
+        hp_beeps = self.history.calculate_beeps(start)
+
+        self.qsihlt = any(
+            hc_beeps[st] <= hp_beeps[st]
+            for st in hp_beeps
+        )
+
+        return result

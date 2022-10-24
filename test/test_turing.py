@@ -4,7 +4,7 @@ from math import isclose
 from unittest import TestCase
 from itertools import product
 
-from tm import Machine
+from tm import Machine, LinRecMachine
 from tm.parse import tcompile, dcompile
 from analyze import Graph, Program, BlockMacro, BacksymbolMacro
 
@@ -1439,15 +1439,16 @@ class TuringTest(TestCase):
                 f'spin out false negative: "{prog}"')
 
     def assert_lin_recurrence(self, steps, recurrence):
-        assert self.history is not None
+        # pylint: disable = no-member
+        assert (history := self.machine.history) is not None
 
         self.assertEqual(
-            self.history.states[steps],
-            self.history.states[recurrence],
+            history.states[steps],
+            history.states[recurrence],
         )
 
         self.assertEqual(
-            self.history.verify_lin_recurrence(
+            history.verify_lin_recurrence(
                 steps,
                 recurrence,
             ),
@@ -1456,13 +1457,14 @@ class TuringTest(TestCase):
         )
 
     def deny_lin_recurrence(self, steps, recurrence):
-        assert self.history is not None
+        # pylint: disable = no-member
+        assert (history := self.machine.history) is not None
 
-        states = self.history.states
+        states = history.states
 
         if states[steps] == states[recurrence]:
             self.assertIsNone(
-                self.history.verify_lin_recurrence(
+                history.verify_lin_recurrence(
                     steps,
                     recurrence,
                 ),
@@ -1475,9 +1477,9 @@ class TuringTest(TestCase):
 
         self.run_bb(
             prog,
-            step_lim = runtime,
-            skip = False,
             print_prog = False,
+            lin_rec = True,
+            step_lim = 1 + runtime,
             samples = {
                 steps - 1           : None,
                 steps               : None,
@@ -1507,13 +1509,18 @@ class TuringTest(TestCase):
             print_prog = True,
             analyze = True,
             normal = True,
+            lin_rec = False,
             **opts,
     ):
         if print_prog:
             print(prog)
 
-        self.machine = Machine(prog).run(**opts)
-        self.history = self.machine.history
+        self.machine = (
+            Machine
+            if not lin_rec else
+            LinRecMachine
+        )(prog).run(**opts)
+
         self.tape = self.machine.tape
 
         if not analyze or not isinstance(prog, str):
@@ -1523,9 +1530,11 @@ class TuringTest(TestCase):
             self.assert_normal(prog)
 
         self.assert_comp(prog)
-        self.assert_reached(prog)
         self.assert_simple(prog)
         self.assert_connected(prog)
+
+        if not lin_rec:
+            self.assert_reached(prog)
 
         _ = Machine(
             BlockMacro(prog, [2])
@@ -1617,12 +1626,14 @@ class TuringTest(TestCase):
                 print(prog)
                 continue
 
-            self.run_bb(
-                prog,
-                check_rec = (
-                    None if blank and not qsihlt else
-                    (0 if steps < 256 else steps)),
-            )
+            if blank:
+                self.run_bb(prog)
+            else:
+                self.run_bb(
+                    prog,
+                    lin_rec = True,
+                    check_rec = 0 if steps < 256 else steps,
+                )
 
             assert self.machine.linrec is not None
 
@@ -1777,6 +1788,7 @@ class Fast(TuringTest):
             RECUR_COMPACT
             | RECUR_DIFFUSE
         )
+
         self._test_recur(
             RECUR_BLANK_IN_PERIOD,
             blank = True,

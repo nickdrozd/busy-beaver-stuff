@@ -7,7 +7,6 @@ from perf import profile
 
 PRINT = 1
 STEPS = 10 ** 10
-RCRNC = None
 PROVE = 1
 BLOCK = None
 BACKS = None
@@ -27,7 +26,6 @@ def main() -> None:
         machine = Machine(program).run(
             sim_lim = STEPS,
             watch_tape = bool(PRINT),
-            check_rec = RCRNC,
             prover = bool(PROVE),
         )
 

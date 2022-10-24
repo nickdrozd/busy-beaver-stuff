@@ -5,7 +5,7 @@ from queue import Empty
 from multiprocessing import Queue
 from unittest import TestCase
 
-from tm import Machine
+from tm import Machine, LinRecMachine
 from generate.tree  import run_tree_gen
 from generate.naive import yield_programs
 from analyze import Graph, BlockMacro, BacksymbolMacro
@@ -190,8 +190,8 @@ class TestLinRado(TestCase):
                 bool(halt),
                 rejects)
             if
-            Machine(prog).run (
-                sim_lim = xlimit,
+            LinRecMachine(prog).run(
+                step_lim = xlimit,
                 check_rec = 0,
             ).xlimit is not None
         }
@@ -200,7 +200,7 @@ class TestLinRado(TestCase):
         # h
         self.run_lin_rado(
             2, 2, 1,
-            7,  # 6
+            10,
         )
 
         self.assert_progs_count(
@@ -230,11 +230,11 @@ class TestLinRado(TestCase):
             rejects = NOT_CONNECTED_32,
         )
 
-        self.assert_progs_equal(
-            LIN_HOLDOUTS)
-
         self.assert_progs_count(
             40)
+
+        self.assert_progs_equal(
+            LIN_HOLDOUTS)
 
         self.assertEqual(
             LIN_HOLDOUTS,
