@@ -19,33 +19,32 @@ TERM_CATS = (
     'xlimit',
 )
 
+@dataclass
 class Machine:
-    def __init__(self, prog: ProgLike):
-        self.program = prog
+    program: ProgLike
 
-        self.tape: BlockTape
-        self.state: State
-        self.steps: int
-        self.cycles: int
+    tape: BlockTape | None = None
+    state: State | None = None
+    steps: int | None = None
+    cycles: int | None = None
 
-        self.prover: Prover | None = None
+    prover: Prover | None = None
 
-        self.blanks: dict[State, int]
+    blanks: dict[State, int] | None = None
+    reached: dict[Action, int] | None = None
 
-        self.reached: dict[Action, int]
+    halted: int | None = None
+    spnout: int | None = None
+    xlimit: int | None = None
 
-        self.halted: int | None = None
-        self.spnout: int | None = None
-        self.xlimit: int | None = None
+    linrec: LinRec | None = None
 
-        self.linrec: LinRec | None = None
+    qsihlt: bool | None = None
+    infrul: bool | None = None
 
-        self.qsihlt: bool | None = None
-        self.infrul: bool | None = None
+    rulapp: int = 0
 
-        self.rulapp: int = 0
-
-        self.undfnd: tuple[int, str] | None = None
+    undfnd: tuple[int, str] | None = None
 
     def __str__(self) -> str:
         info = [ f'CYCLES: {self.cycles}' ]
@@ -72,9 +71,11 @@ class Machine:
 
     @property
     def marks(self) -> int:
+        assert self.tape is not None
         return self.tape.marks
 
     def show_tape(self, step: int, cycle: int, state: int) -> None:
+        assert self.tape is not None
         print(' | '.join([
             f'{cycle: 5d}',
             f'{step : 5d}',
@@ -211,6 +212,8 @@ class Machine:
 
         if self.spnout is not None:
             self.qsihlt = True
+
+        assert self.tape is not None
 
         if self.tape.blank:
             if 0 in self.blanks:

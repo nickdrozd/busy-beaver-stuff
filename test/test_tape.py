@@ -25,7 +25,8 @@ class TestTape(TestCase):
 
     def assert_signature(self, expected: str, tape = None):
         self.assertEqual(
-            stringify_sig((tape or self.tape).signature),
+            stringify_sig(
+                (tape or self.tape).signature),  # type: ignore
             expected)
 
     def test_blank(self):
@@ -43,6 +44,7 @@ class TestTape(TestCase):
         self.assert_signature(
             '1|0|1[2]2|1')
 
+        assert self.tape is not None
         copy_1 = self.tape.copy()
         copy_2 = self.tape.copy()
 
