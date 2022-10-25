@@ -1,11 +1,7 @@
 from queue import Empty, Queue
-from multiprocessing import (
-    cpu_count,
-    Manager,
-    Process,
-)
 from typing import Optional, Union
 from collections.abc import Callable
+from multiprocessing import cpu_count, Manager, Process
 
 from tm import Machine
 from analyze import Program
