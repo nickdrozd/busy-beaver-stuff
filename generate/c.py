@@ -1,8 +1,8 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 from tm.parse import parse, st_str
 
-Instr = Tuple[str, str, str]
+Instr = tuple[str, str, str]
 
 
 def make_comment(st: str, co: int) -> str:
@@ -116,7 +116,7 @@ WHILE_TEMPLATE = \
 '''
 
 
-def make_n_way_switch(state: str, instrs: Tuple[Instr, ...]) -> str:
+def make_n_way_switch(state: str, instrs: tuple[Instr, ...]) -> str:
     return SWITCH_TEMPLATE.format(
         '\n'.join([
             make_case(state, color, instr)
@@ -145,7 +145,7 @@ CASE_TEMPLATE = \
       {}'''
 
 
-def make_switch(state: str, instrs: Tuple[Instr, ...]) -> str:
+def make_switch(state: str, instrs: tuple[Instr, ...]) -> str:
     try:
         in0, in1 = instrs
     except ValueError:

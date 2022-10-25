@@ -1,17 +1,15 @@
-from typing import Dict, Set, Tuple
-
 from tm.parse import parse, st_str
 
 HALT = '_'
 UNDEFINED = '.'
 
-ConGraph = Dict[str, Set[str]]
+ConGraph = dict[str, set[str]]
 
 class Graph:
     def __init__(self, program: str):
         self.program = program
 
-        self.arrows: Dict[str, Tuple[str, ...]] = {
+        self.arrows: dict[str, tuple[str, ...]] = {
             st_str(i): connection
             for i, connection in
             enumerate(
@@ -35,23 +33,23 @@ class Graph:
         )
 
     @property
-    def states(self) -> Tuple[str, ...]:
+    def states(self) -> tuple[str, ...]:
         return tuple(self.arrows)
 
     @property
-    def colors(self) -> Tuple[int, ...]:
+    def colors(self) -> tuple[int, ...]:
         return tuple(range(len(self.arrows['A'])))
 
     @property
-    def exit_points(self) -> Dict[str, Set[str]]:
+    def exit_points(self) -> dict[str, set[str]]:
         return {
             state: set(connections) - { HALT, UNDEFINED }
             for state, connections in self.arrows.items()
         }
 
     @property
-    def entry_points(self) -> Dict[str, Set[str]]:
-        entries: Dict[str, Set[str]] = {
+    def entry_points(self) -> dict[str, set[str]]:
+        entries: dict[str, set[str]] = {
             state: set()
             for state in self.states
         }
@@ -95,7 +93,7 @@ class Graph:
         return True
 
     @property
-    def reflexive_states(self) -> Set[str]:
+    def reflexive_states(self) -> set[str]:
         return {
             state
             for state, connections in self.arrows.items()
@@ -103,7 +101,7 @@ class Graph:
         }
 
     @property
-    def zero_reflexive_states(self) -> Set[str]:
+    def zero_reflexive_states(self) -> set[str]:
         return {
             state
             for state, connections in self.arrows.items()
@@ -137,7 +135,7 @@ class Graph:
         return self.entries_dispersed and self.exits_dispersed
 
     @property
-    def reduced(self) -> Dict[str, Set[str]]:
+    def reduced(self) -> dict[str, set[str]]:
         graph = self.exit_points
 
         for _ in range(len(self.states) * len(self.colors)):

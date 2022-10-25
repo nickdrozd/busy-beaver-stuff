@@ -4,20 +4,21 @@ from multiprocessing import (
     Manager,
     Process,
 )
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Optional, Union
+from collections.abc import Callable
 
 from tm import Machine
 from analyze import Program
 
 Output  = Callable[[str], None]
-RunPile = Queue[Union[str, Tuple[str, str]]]
+RunPile = Queue[Union[str, tuple[str, str]]]
 
 def stacker(
         steps: int,
         halt: bool,
         blank: bool,
         run_pile: RunPile,
-        stack: List[str],
+        stack: list[str],
 ) -> None:
     prog: Optional[str] = None
 

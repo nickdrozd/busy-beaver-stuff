@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
-from typing import Iterator, Union
+from typing import Union
+from collections.abc import Iterator
 
 from tm import Machine
 from generate.tree import run_tree_gen

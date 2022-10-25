@@ -1,5 +1,3 @@
-from typing import Dict, Tuple
-
 COLORS = (
     'blue',
     'red',
@@ -15,7 +13,7 @@ UNDEFINED = '.'
 
 def make_dot(
         name: str,
-        arrows: Dict[str, Tuple[str, ...]],
+        arrows: dict[str, tuple[str, ...]],
 ) -> str:
     header: str = '\n'.join([
         '  labelloc="t";',

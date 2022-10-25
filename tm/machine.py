@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from collections import defaultdict
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 from tm.tape import BlockTape
 from tm.parse import tcompile, st_str, ProgLike
 from tm.types import Action, State
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
-LinRec = Tuple[Optional[int], int]
+LinRec = tuple[Optional[int], int]
 
 TERM_CATS = (
     'halted',
@@ -31,9 +31,9 @@ class Machine:
 
         self.prover: Optional[Prover] = None
 
-        self.blanks: Dict[State, int]
+        self.blanks: dict[State, int]
 
-        self.reached: Dict[Action, int]
+        self.reached: dict[Action, int]
 
         self.halted: Optional[int] = None
         self.spnout: Optional[int] = None
@@ -46,7 +46,7 @@ class Machine:
 
         self.rulapp: int = 0
 
-        self.undfnd: Optional[Tuple[int, str]] = None
+        self.undfnd: Optional[tuple[int, str]] = None
 
     def __str__(self) -> str:
         info = [ f'CYCLES: {self.cycles}' ]
@@ -105,8 +105,8 @@ class Machine:
             BlockTape([], 0, [])
         )
 
-        blanks: Dict[State, int] = {}
-        reached: Dict[Action, int] = defaultdict(lambda: 0)
+        blanks: dict[State, int] = {}
+        reached: dict[Action, int] = defaultdict(lambda: 0)
 
         if prover:
             self.prover = Prover(comp)
@@ -198,8 +198,8 @@ class Machine:
             step: int,
             cycle: int,
             state: int,
-            blanks: Dict[State, int],
-            reached: Dict[Action, int],
+            blanks: dict[State, int],
+            reached: dict[Action, int],
     ) -> None:
         assert cycle <= step
 

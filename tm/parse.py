@@ -1,12 +1,12 @@
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 from tm.types import Instr
 
-CompProg = Tuple[Tuple[Optional[Instr], ...], ...]
+CompProg = tuple[tuple[Optional[Instr], ...], ...]
 
 ProgLike = Any
 
-def parse(program: str) -> Tuple[Tuple[str, ...], ...]:
+def parse(program: str) -> tuple[tuple[str, ...], ...]:
     return tuple(
         tuple(state.split(' '))
         for state in program.strip().split('  ')

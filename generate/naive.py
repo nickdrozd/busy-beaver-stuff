@@ -1,11 +1,12 @@
 import re
 from itertools import product
-from typing import Callable, Iterator, List, Optional, Pattern
+from typing import Optional
+from collections.abc import Callable, Iterator
 
 SHIFTS = 'R', 'L'
 HALT   = '_'
 
-Rejects = List[Pattern[str]]
+Rejects = list[re.Pattern[str]]
 
 def yield_all_programs(
         state_count: int,

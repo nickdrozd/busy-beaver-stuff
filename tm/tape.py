@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Optional
 
 Color = int
 
-Block = List[int]
-Span  = List[Block]
+Block = list[int]
+Span  = list[Block]
 
-Signature = Tuple[Tuple[int, ...], Color, Tuple[int, ...]]
+Signature = tuple[tuple[int, ...], Color, tuple[int, ...]]
 
 @dataclass
 class BlockTape:
@@ -63,7 +63,7 @@ class BlockTape:
         )
 
     @property
-    def spans(self) -> Tuple[Span, Span]:
+    def spans(self) -> tuple[Span, Span]:
         return self.lspan, self.rspan
 
     @property
@@ -146,7 +146,7 @@ class BlockTape:
 @dataclass
 class PtrTape:
     init: int
-    tape: List[Color]
+    tape: list[Color]
 
     @property
     def r_end(self) -> int:
@@ -156,7 +156,7 @@ class PtrTape:
     def l_end(self) -> int:
         return 0 - self.init
 
-    def __getitem__(self, tape_index: slice) -> List[int]:
+    def __getitem__(self, tape_index: slice) -> list[int]:
         if (stop := tape_index.stop) is None:
             stop = self.r_end + 1
         else:

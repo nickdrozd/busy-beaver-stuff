@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from tm.types import Instr
 from tm.parse import tcompile, ProgLike
 
 Color = int
 State = int
-Tape = List[Color]
-Config = Tuple[State, Tuple[bool, Tape]]
+Tape = list[Color]
+Config = tuple[State, tuple[bool, Tape]]
 
 ########################################
 
@@ -34,9 +34,9 @@ class MacroProg:
 
         self.sim_lim: int = 0
 
-        self.instrs: Dict[Tuple[State, Color], Optional[Instr]] = {}
+        self.instrs: dict[tuple[State, Color], Optional[Instr]] = {}
 
-        self.tape_colors: Dict[Color, Tuple[Color, ...]] = {}
+        self.tape_colors: dict[Color, tuple[Color, ...]] = {}
 
         self._state: Optional[State] = None
 
@@ -116,7 +116,7 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
-    def __init__(self, program: ProgLike, cell_seq: List[int]):
+    def __init__(self, program: ProgLike, cell_seq: list[int]):
         *seq, cells = cell_seq
 
         if seq:
@@ -187,7 +187,7 @@ class BlockMacro(MacroProg):
 ########################################
 
 class BacksymbolMacro(MacroProg):
-    def __init__(self, program: ProgLike, cell_seq: List[int]):
+    def __init__(self, program: ProgLike, cell_seq: list[int]):
         *seq, _ = cell_seq
 
         if seq:

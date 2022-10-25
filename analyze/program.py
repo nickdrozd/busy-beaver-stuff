@@ -3,7 +3,8 @@ from __future__ import annotations
 import re
 from itertools import product
 from collections import defaultdict
-from typing import Dict, Iterator, List, Optional, Set, Tuple
+from collections.abc import Iterator
+from typing import Optional
 
 from tm import BlockTape, Machine
 from tm.parse import parse, st_str, tcompile
@@ -16,7 +17,7 @@ SHIFTS = 'L', 'R'
 
 class Program:
     def __init__(self, program: str):
-        self.prog: Dict[str, Dict[int, str]] = {
+        self.prog: dict[str, dict[int, str]] = {
             st_str(state): dict(enumerate(instructions))
             for state, instructions in enumerate(parse(program))
         }
@@ -59,23 +60,23 @@ class Program:
                 ] * states)))
 
     @property
-    def states(self) -> Set[str]:
+    def states(self) -> set[str]:
         return set(self.prog.keys())
 
     @property
-    def non_start_states(self) -> List[str]:
+    def non_start_states(self) -> list[str]:
         return sorted(self.states)[1:]
 
     @property
-    def colors(self) -> Set[str]:
+    def colors(self) -> set[str]:
         return set(map(str, range(len(self.prog['A']))))
 
     @property
-    def non_blank_colors(self) -> List[str]:
+    def non_blank_colors(self) -> list[str]:
         return sorted(self.colors)[1:]
 
     @property
-    def instructions(self) -> Iterator[Tuple[str, str]]:
+    def instructions(self) -> Iterator[tuple[str, str]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
                 yield state + str(color), instr
@@ -86,11 +87,11 @@ class Program:
             yield from instrs.values()
 
     @property
-    def slots(self) -> Tuple[str, ...]:
+    def slots(self) -> tuple[str, ...]:
         return tuple(slot for slot, _ in self.instructions)
 
     @property
-    def open_slots(self) -> Tuple[str, ...]:
+    def open_slots(self) -> tuple[str, ...]:
         return tuple(
             slot
             for slot, instr in self.instructions
@@ -104,7 +105,7 @@ class Program:
         return slots[0]
 
     @property
-    def halt_slots(self) -> Tuple[str, ...]:
+    def halt_slots(self) -> tuple[str, ...]:
         return tuple(
             slot
             for slot, instr in self.instructions
@@ -112,7 +113,7 @@ class Program:
         )
 
     @property
-    def erase_slots(self) -> Tuple[str, ...]:
+    def erase_slots(self) -> tuple[str, ...]:
         return tuple(
             slot
             for slot, instr in self.instructions
@@ -128,7 +129,7 @@ class Program:
         )
 
     @property
-    def available_states(self) -> Set[str]:
+    def available_states(self) -> set[str]:
         used = set(self.used_states) | { INIT }
         diff = sorted(self.states.difference(used))
 
@@ -143,7 +144,7 @@ class Program:
         )
 
     @property
-    def available_colors(self) -> Set[str]:
+    def available_colors(self) -> set[str]:
         used = set(self.used_colors) | { BLANK }
         diff = sorted(self.colors.difference(used))
 
@@ -160,7 +161,7 @@ class Program:
         )
 
     @property
-    def instruction_sequence(self) -> Iterator[Tuple[str, int, str]]:
+    def instruction_sequence(self) -> Iterator[tuple[str, int, str]]:
         partial = Program.empty(len(self.states), len(self.colors))
 
         for _ in range(len(self.states) * len(self.colors) - 1):
@@ -299,12 +300,12 @@ class Program:
     def _cant_reach(
             self,
             final_prop: str,
-            slots: Tuple[str, ...],
+            slots: tuple[str, ...],
             max_attempts: int = 24,
             blank: bool = False,
     ) -> bool:
-        configs: List[
-            Tuple[int, str, BlockTape, int, History]
+        configs: list[
+            tuple[int, str, BlockTape, int, History]
         ] = [                                   # type: ignore
             (
                 1,
@@ -320,7 +321,7 @@ class Program:
 
         max_repeats = max_attempts // 2
 
-        seen: Dict[str, Set[str]] = defaultdict(set)
+        seen: dict[str, set[str]] = defaultdict(set)
 
         while configs:  # pylint: disable = while-used
             step, state, tape, repeat, history = configs.pop()

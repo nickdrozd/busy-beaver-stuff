@@ -1,7 +1,7 @@
-from typing import Tuple, Union
+from typing import Union
 
 State = Union[int, str]
 Color = Union[int, str]
-Action = Tuple[State, Color]
+Action = tuple[State, Color]
 
-Instr = Tuple[int, int, int]
+Instr = tuple[int, int, int]

@@ -3,24 +3,24 @@ from __future__ import annotations
 from copy import copy
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from tm.tape import PtrTape, BlockTape, Signature
 from tm.types import Action, State
 
-RecRes = Optional[Tuple[int, int]]
-Tapes = Dict[int, PtrTape]
+RecRes = Optional[tuple[int, int]]
+Tapes = dict[int, PtrTape]
 
-Config = Tuple[State, Signature]
-Rule = Tuple[Tuple[int, ...], ...]
+Config = tuple[State, Signature]
+Rule = tuple[tuple[int, ...], ...]
 
 class History:
     def __init__(self, tapes: Optional[Tapes] = None):
         self.tapes: Tapes = {} if tapes is None else tapes
 
-        self.states: List[State] = []
-        self.positions: List[int] = []
-        self.actions: Dict[Action, List[int]] = defaultdict(list)
+        self.states: list[State] = []
+        self.positions: list[int] = []
+        self.actions: dict[Action, list[int]] = defaultdict(list)
 
     def copy(self) -> History:
         new_copy = History(tapes = dict(self.tapes.items()))
@@ -52,7 +52,7 @@ class History:
     def calculate_beeps(
             self,
             through: Optional[int] = None,
-    ) -> Dict[State, int]:
+    ) -> dict[State, int]:
         states = (
             self.states
             if through is None else
@@ -168,8 +168,8 @@ class Prover:
     def __init__(self, prog: Any):
         self.prog: Any = prog
 
-        self.configs: Dict[Config, PastConfig] = defaultdict(PastConfig)
-        self.rules: Dict[Config, Rule] = {}
+        self.configs: dict[Config, PastConfig] = defaultdict(PastConfig)
+        self.rules: dict[Config, Rule] = {}
 
     @staticmethod
     def apply_rule(tape: BlockTape, rule: Rule) -> Optional[int]:
