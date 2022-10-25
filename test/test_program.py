@@ -4,7 +4,17 @@ from unittest import TestCase
 
 from analyze import Program
 
-PROGS = {
+PROGS: dict[
+    str,
+    tuple[
+        set[str],
+        set[int],
+        set[str],
+        set[int],
+        str | None,
+        tuple[str, ...],
+    ],
+] = {
     "1RB ...  1LB 0RC  1LC 1LA": (
         {'A', 'B', 'C'},
         {0, 1},
@@ -32,32 +42,32 @@ PROGS = {
 }
 
 class TestProgram(TestCase):
-    def assert_used_states(self, states):
+    def assert_used_states(self, states: set[str]):
         self.assertEqual(
             states,
             set(self.prog.used_states))
 
-    def assert_available_states(self, states):
+    def assert_available_states(self, states: set[str]):
         self.assertEqual(
             states,
             set(self.prog.available_states))
 
-    def assert_used_colors(self, colors):
+    def assert_used_colors(self, colors: set[int]):
         self.assertEqual(
             colors,
             set(map(int, self.prog.used_colors)))
 
-    def assert_available_colors(self, colors):
+    def assert_available_colors(self, colors: set[int]):
         self.assertEqual(
             colors,
             set(map(int, self.prog.available_colors)))
 
-    def assert_last_slot(self, slot):
+    def assert_last_slot(self, slot: str | None):
         self.assertEqual(
             slot,
             self.prog.last_slot)
 
-    def assert_slots(self, slots):
+    def assert_slots(self, slots: tuple[str, ...]):
         self.assertEqual(
             slots,
             self.prog.slots)

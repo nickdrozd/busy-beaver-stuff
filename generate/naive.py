@@ -1,11 +1,11 @@
 import re
 from itertools import product
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 
 SHIFTS = 'R', 'L'
 HALT   = '_'
 
-Rejects = list[re.Pattern[str]]
+Rejects = Sequence[str | re.Pattern[str]]
 
 def yield_all_programs(
         state_count: int,
@@ -75,14 +75,23 @@ def reject(
         colors: int,
         halt: bool = False,
 ) -> Callable[[str], bool]:
-    rejects = [re.compile(regex) for regex in rejects]
+    rejects = list(rejects)
+
+    if any(isinstance(rej, str) for rej in rejects):
+        rejects = [re.compile(regex) for regex in rejects]
+
     rejects.insert(0, re.compile(r_on_0(states, colors)))
 
     if halt:
         rejects.insert(0, re.compile(b0_halt(colors)))
 
     def reject_prog(prog: str) -> bool:
-        return any(regex.match(prog) for regex in rejects)
+        return any(
+            re.compile(regex).match(prog)
+            if isinstance(regex, str) else
+            regex.match(prog)
+            for regex in rejects
+        )
 
     return reject_prog
 

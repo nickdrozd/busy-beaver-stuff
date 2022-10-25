@@ -1,21 +1,23 @@
 # pylint: disable = attribute-defined-outside-init
 
 import re
-from queue import Empty
-from multiprocessing import Queue
+from queue import Empty, Queue as Q
 from unittest import TestCase
+from multiprocessing import Queue
+from collections.abc import Iterator
 
 from tm import Machine, LinRecMachine
 from generate.tree  import run_tree_gen
-from generate.naive import yield_programs
+from generate.naive import yield_programs, Rejects
 from analyze import Graph, BlockMacro, BacksymbolMacro
+from analyze.macro import MacroProg
 
 
 HOLDOUTS_22Q = {
     "1RB 1LA  0LA 0RB",  # counter
 }
 
-def macro_variations(prog):
+def macro_variations(prog: str) -> Iterator[str | MacroProg]:
     yield prog
 
     yield BlockMacro(prog, [6])
@@ -26,7 +28,7 @@ def macro_variations(prog):
     yield BacksymbolMacro(BlockMacro(prog, [4]), [1])
     yield BacksymbolMacro(BlockMacro(prog, [5]), [1])
 
-def run_for_none(prog, sim_lim):
+def run_for_none(prog: str, sim_lim: int) -> Iterator[bool]:
     yield from (
         Machine(macro).run(
             sim_lim = sim_lim,
@@ -35,7 +37,7 @@ def run_for_none(prog, sim_lim):
         for macro in macro_variations(prog)
     )
 
-def queue_to_set(queue):
+def queue_to_set(queue: Q[str]) -> set[str]:
     out = set()
 
     while True:  # yuck -- pylint: disable = while-used
@@ -49,7 +51,7 @@ def queue_to_set(queue):
     return out
 
 class TestTree(TestCase):
-    def assert_counts(self, expected):
+    def assert_counts(self, expected: dict[int, set[str]]):
         for count, cat in expected.items():
             self.assertEqual(len(cat), count)
             self.assertTrue((
@@ -57,7 +59,7 @@ class TestTree(TestCase):
                     for prog in cat)))
 
     def test_22(self):
-        s22q = Queue()  # type: ignore
+        s22q: Q[str] = Queue()
 
         def capture(prog):
             if any(run_for_none(prog, 13)):
@@ -72,7 +74,7 @@ class TestTree(TestCase):
             output = capture,
         )
 
-        s22 = queue_to_set(s22q)
+        s22: set[str] = queue_to_set(s22q)
 
         self.assert_counts({
             1: s22,
@@ -83,8 +85,8 @@ class TestTree(TestCase):
             HOLDOUTS_22Q)
 
     def test_32(self):
-        h32q = Queue()  # type: ignore
-        q32q = Queue()  # type: ignore
+        h32q: Q[str] = Queue()
+        q32q: Q[str] = Queue()
 
         def capture(prog):
             if any(run_for_none(prog, 116)):
@@ -123,10 +125,10 @@ class TestTree(TestCase):
             HOLDOUTS_32Q)
 
     def test_23(self):
-        h23q = Queue()  # type: ignore
-        q23q = Queue()  # type: ignore
+        h23q: Q[str] = Queue()
+        q23q: Q[str] = Queue()
 
-        def capture(prog):
+        def capture(prog: str):
             if any(run_for_none(prog, 192)):
                 return
 
@@ -164,21 +166,24 @@ class TestTree(TestCase):
 
 
 class TestLinRado(TestCase):
-    def assert_progs_equal(self, other):
+    def assert_progs_equal(self, other: set[str]):
         self.assertEqual(
             self.progs,
             other)
 
-    def assert_progs_count(self, count):
+    def assert_progs_count(self, count: int):
         self.assertEqual(
             len(self.progs),
             count)
 
     def run_lin_rado(
             self,
-            states, colors,
-            halt, xlimit,
-            rejects = None):
+            states: int,
+            colors: int,
+            halt: int,
+            xlimit: int,
+            rejects: Rejects | None = None,
+    ):
         print(f'{states} {colors} {halt}')
 
         self.progs = {
@@ -288,11 +293,11 @@ LR_HOLDOUTS = {
     0o72613234,
 }
 
-def lr_convert(rado_string):
-    def oct_to_bin(oct_string):
+def lr_convert(rado_string: int) -> str:
+    def oct_to_bin(oct_string: int) -> str:
         return f'{oct_string:b}'
 
-    def bin_to_prog(bin_string):
+    def bin_to_prog(bin_string: str) -> str:
         # pylint: disable = invalid-name
         a0, a1, b0, b1, c0, c1 = map(
             convert_bin_instr,
@@ -301,13 +306,16 @@ def lr_convert(rado_string):
 
         return f'{a0} {a1}  {b0} {b1}  {c0} {c1}'
 
-    def convert_bin_instr(bin_instr):
-        pr, sh, *tr =  bin_instr
+    def convert_bin_instr(bin_instr: str) -> str:
+        pr: str
+        sh: str
+
+        pr, sh, *tr =  bin_instr  # type: ignore
 
         v_sh = 'L' if int(sh) == 0 else 'R'
 
         v_tr = (
-            '_' if (tr := int(''.join(tr), 2)) == 0
+            '_' if (tr := int(''.join(tr), 2)) == 0  # type: ignore
             else chr(tr + 64)
         )
 
@@ -327,7 +335,7 @@ NOT_CONNECTED_32 = [
     BC_LOOP,
 ]
 
-def read_progs(name):
+def read_progs(name: str) -> set[str]:
     with open(f'test/data/{name}.prog') as holdouts:
         return set(
             prog.strip()

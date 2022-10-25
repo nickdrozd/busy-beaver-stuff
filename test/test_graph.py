@@ -8,7 +8,15 @@ A, B, C, D, E = "A", "B", "C", "D", "E"
 
 # flat, norm, conn, irr, zrefl, entries, exits
 
-GRAPHS = {
+GRAPHS: dict[
+    str,
+    tuple[
+        str,
+        int, int, int, int,
+        dict[str, set[str]],
+        dict[str, set[str]],
+    ],
+] = {
     # 2 2
     "1RB 1LB  1LA 1R_": (
         "B B A _",
@@ -205,42 +213,42 @@ GRAPHS = {
 }
 
 class TestGraph(TestCase):
-    def assert_flat(self, flat):
+    def assert_flat(self, flat: str):
         self.assertEqual(
             flat,
             self.graph.flatten())
 
-    def assert_normal(self, norm):
+    def assert_normal(self, norm: int):
         (self.assertTrue
          if self.graph.is_normal else
          self.assertFalse)(
              bool(norm),
              self.graph.program)
 
-    def assert_connected(self, conn):
+    def assert_connected(self, conn: int):
         (self.assertTrue
          if self.graph.is_strongly_connected else
          self.assertFalse)(
              bool(conn))
 
-    def assert_irreflexive(self, irr):
+    def assert_irreflexive(self, irr: int):
         (self.assertTrue
          if self.graph.is_irreflexive else
          self.assertFalse)(
              bool(irr))
 
-    def assert_zero_reflexive(self, zrefl):
+    def assert_zero_reflexive(self, zrefl: int):
         (self.assertTrue
          if self.graph.is_zero_reflexive else
          self.assertFalse)(
              bool(zrefl))
 
-    def assert_entry_points(self, entries):
+    def assert_entry_points(self, entries: dict[str, set[str]]):
         self.assertEqual(
             entries,
             self.graph.entry_points)
 
-    def assert_exit_points(self, exits):
+    def assert_exit_points(self, exits: dict[str, set[str]]):
         self.assertEqual(
             exits,
             self.graph.exit_points)

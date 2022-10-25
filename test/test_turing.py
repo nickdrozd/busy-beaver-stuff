@@ -1,14 +1,19 @@
 # pylint: disable = attribute-defined-outside-init, line-too-long, too-many-lines
 
 from math import isclose
+from typing import Any
 from unittest import TestCase
 from itertools import product
+from collections.abc import Mapping
 
 from tm import Machine, LinRecMachine
 from tm.parse import tcompile, dcompile
 from analyze import Graph, Program, BlockMacro, BacksymbolMacro
+from analyze.macro import MacroProg
 
-HALT = {
+BasicTermData = Mapping[str, tuple[int, int]]
+
+HALT: BasicTermData = {
     # 2/2 BB
     "1RB 1LB  1LA 1R_": (4, 6),
     "1RB 0LB  1LA 1R_": (3, 6),
@@ -97,7 +102,7 @@ HALT_SLOW = {
     "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
 }
 
-SPINOUT = {
+SPINOUT: dict[str, tuple[int, int]] = {
     # 2/2
     "1RB 1LB  1LB 1LA": (3, 6),
     "1RB 0LB  1LB 1LA": (2, 6),
@@ -897,7 +902,7 @@ FUNNY_MACRO = {
     "1RB 4LA 1LA 1R_ 2RB  2LB 3LA 1LB 2RA 0RB": (2, 1, 2),
 }
 
-CANT_BLANK_FALSE_NEGATIVES = {
+CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1LB  1LA 0RB",
 
     "1RB ...  1LC 0RB  1LB 1RC",
@@ -932,7 +937,7 @@ CANT_BLANK_FALSE_NEGATIVES = {
     "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA",
 }
 
-CANT_SPIN_OUT_FALSE_NEGATIVES = {
+CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     "1RB 0RB 0LB  1LB 2RA 1LA",
     "1RB 2LA 0RB  0LB 1LA 0RA",
 
@@ -952,12 +957,12 @@ CANT_SPIN_OUT_FALSE_NEGATIVES = {
     "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB",  # QH 14, xmas
 }
 
-CANT_SPIN_OUT_SLOW = {
+CANT_SPIN_OUT_SLOW: set[str] = {
     "1RB ... ...  2LB 1RB 1LB",
     "1RB 1RA 0RB  2LB 1LA 1LB",
 }
 
-DO_HALT = {
+DO_HALT: set[str] = {
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",  # 10^^15
     "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",  # 10^^5
     "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",  # 10^1292913985
@@ -980,11 +985,11 @@ DO_HALT = {
     "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA 1R_",  # 10^52
 }
 
-DONT_BLANK = {
+DONT_BLANK: set[str] = {
     "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
 }
 
-DO_BLANK = {
+DO_BLANK: set[str] = {
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
     "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE",  # 10^30
     "1RB 1RA  1LC 0RB  1LE 0LD  1RA 1RE  1LB 0RA",  # 10^31
@@ -1010,7 +1015,7 @@ DO_BLANK = {
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA",  # 10^14006 TNF
 }
 
-DO_SPIN_OUT = {
+DO_SPIN_OUT: set[str] = {
     "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",  # 10^16
     "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",  # 10^23
 
@@ -1043,7 +1048,7 @@ DO_SPIN_OUT = {
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA",  # 10^14006 TNF
 }
 
-DONT_SPIN_OUT = {
+DONT_SPIN_OUT: set[str] = {
     "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
 
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
@@ -1063,7 +1068,12 @@ BLOCK_MACRO_STEPS = {
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": 47176870,
 }
 
-MACRO_CYCLES_FAST = {
+MacroCycles = Mapping[
+    str | tuple[str, int | None],
+    tuple[int | None, ...],
+]
+
+MACRO_CYCLES_FAST: MacroCycles = {
     # 2/4 BB
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
         12233,  # base
@@ -1195,7 +1205,7 @@ MACRO_CYCLES_FAST = {
     ),
 }
 
-MACRO_CYCLES_SLOW = {
+MACRO_CYCLES_SLOW: MacroCycles = {
     # 2/4
     "1RB 2RB 1LB 1LA  1LB 3RA 3LA 2RB": (
         2329499,  # base
@@ -1331,7 +1341,7 @@ PROVER_SLOW = {
 
 
 class TuringTest(TestCase):
-    def assert_normal(self, prog):
+    def assert_normal(self, prog: str):
         self.assertTrue(
             Graph(prog).is_normal,
             prog)
@@ -1341,12 +1351,12 @@ class TuringTest(TestCase):
             or prog.startswith('0')
         )
 
-    def assert_comp(self, prog):
+    def assert_comp(self, prog: str):
         self.assertEqual(
             prog,
             dcompile(tcompile(prog)))
 
-    def assert_connected(self, prog):
+    def assert_connected(self, prog: str):
         self.assertTrue(
             Graph(prog).is_strongly_connected
             or prog in MODULAR
@@ -1354,14 +1364,14 @@ class TuringTest(TestCase):
             or '...' in prog
         )
 
-    def assert_simple(self, prog):
+    def assert_simple(self, prog: str):
         self.assertTrue(
             Graph(prog).is_simple
             or prog in SPAGHETTI
             or prog in KERNEL
         )
 
-    def assert_reached(self, prog):
+    def assert_reached(self, prog: str):
         def dimension(prog: str) -> int:
             comp = tcompile(prog)
             return len(comp) * len(comp[0])
@@ -1371,22 +1381,27 @@ class TuringTest(TestCase):
             prog.count('...'),
             (prog, dict(self.machine.reached)))
 
-    def assert_marks(self, marks):
+    def assert_marks(self, marks: int):
         self.assertEqual(
             self.machine.marks,
             marks)
 
-    def assert_steps(self, steps):
+    def assert_steps(self, steps: int):
         self.assertEqual(
             self.machine.steps,
             steps)
 
-    def assert_quasihalt(self, qsihlt):
+    def assert_quasihalt(self, qsihlt: bool | None):
         self.assertEqual(
             self.machine.qsihlt,
             qsihlt)
 
-    def assert_close(self, this, that, rel_tol):
+    def assert_close(
+            self,
+            this: int,
+            that: int | float,
+            rel_tol: float,
+    ):
         self.assertTrue(
             isclose(
                 this,
@@ -1395,22 +1410,22 @@ class TuringTest(TestCase):
             )
         )
 
-    def assert_could_halt(self, prog):
+    def assert_could_halt(self, prog: str):
         self.assertFalse(
             Program(prog).cant_halt,
             f'halt false positive: {prog}')
 
-    def assert_cant_halt(self, prog):
+    def assert_cant_halt(self, prog: str):
         self.assertTrue(
             Program(prog).cant_halt,
             f'halt false negative: "{prog}"')
 
-    def assert_could_blank(self, prog):
+    def assert_could_blank(self, prog: str):
         self.assertFalse(
             Program(prog).cant_blank,
             f'blank false positive: "{prog}"')
 
-    def assert_cant_blank(self, prog):
+    def assert_cant_blank(self, prog: str):
         try:
             self.assertTrue(
                 Program(prog).cant_blank)
@@ -1420,12 +1435,12 @@ class TuringTest(TestCase):
                 CANT_BLANK_FALSE_NEGATIVES,
                 f'blank false negative: "{prog}"')
 
-    def assert_could_spin_out(self, prog):
+    def assert_could_spin_out(self, prog: str):
         self.assertFalse(
             Program(prog).cant_spin_out,
             f'spin out false positive: "{prog}"')
 
-    def assert_cant_spin_out(self, prog):
+    def assert_cant_spin_out(self, prog: str):
         if prog in CANT_SPIN_OUT_SLOW:
             return
 
@@ -1438,7 +1453,7 @@ class TuringTest(TestCase):
                 CANT_SPIN_OUT_FALSE_NEGATIVES,
                 f'spin out false negative: "{prog}"')
 
-    def assert_lin_recurrence(self, steps, recurrence):
+    def assert_lin_recurrence(self, steps: int, recurrence: int):
         # pylint: disable = no-member
         assert (history := self.machine.history) is not None
 
@@ -1456,7 +1471,7 @@ class TuringTest(TestCase):
             self.prog,
         )
 
-    def deny_lin_recurrence(self, steps, recurrence):
+    def deny_lin_recurrence(self, steps: int, recurrence: int):
         # pylint: disable = no-member
         assert (history := self.machine.history) is not None
 
@@ -1471,7 +1486,7 @@ class TuringTest(TestCase):
                 self.prog,
             )
 
-    def verify_lin_recurrence(self, prog, steps, period):
+    def verify_lin_recurrence(self, prog: str, steps: int, period: int):
         recurrence = period + steps
         runtime    = period + recurrence
 
@@ -1505,12 +1520,12 @@ class TuringTest(TestCase):
 
     def run_bb(
             self,
-            prog,
-            print_prog = True,
-            analyze = True,
-            normal = True,
-            lin_rec = False,
-            **opts,
+            prog: str | MacroProg | Program,
+            print_prog: bool = True,
+            analyze: bool = True,
+            normal: bool = True,
+            lin_rec: bool = False,
+            **opts: Any,
     ):
         if print_prog:
             print(prog)
@@ -1543,7 +1558,11 @@ class TuringTest(TestCase):
             BacksymbolMacro(prog, [1])
         ).run(sim_lim = 10)
 
-    def _test_simple_terminate(self, prog_data, blank: bool):
+    def _test_simple_terminate(
+            self,
+            prog_data: BasicTermData,
+            blank: bool,
+    ):
         for prog, (marks, steps) in prog_data.items():
             self.run_bb(prog)
 
@@ -1584,7 +1603,7 @@ class TuringTest(TestCase):
                     and not graph.is_irreflexive
                 )
 
-    def _test_halt(self, prog_data):
+    def _test_halt(self, prog_data: BasicTermData):
         self._test_simple_terminate(
             prog_data,
             blank = False,
@@ -1592,8 +1611,8 @@ class TuringTest(TestCase):
 
     def _test_spinout(
             self,
-            prog_data,
-            blank = False,
+            prog_data: Mapping[str, Any],
+            blank: bool = False,
     ):
         self._test_simple_terminate(
             prog_data,
@@ -1602,10 +1621,10 @@ class TuringTest(TestCase):
 
     def _test_recur(
             self,
-            prog_data,
-            quick = True,
-            blank = False,
-            qsihlt = False,
+            prog_data: Mapping[str, Any],
+            quick: bool = True,
+            blank: bool = False,
+            qsihlt: bool | None = False,
     ):
         for prog, (steps, period) in prog_data.items():
             self.prog = prog
@@ -1645,7 +1664,7 @@ class TuringTest(TestCase):
 
     def _test_prover(
             self,
-            prog_data,
+            prog_data: Mapping[str, Any],
             blank: bool = False,
             simple_term: bool = True,
     ):
@@ -1653,7 +1672,7 @@ class TuringTest(TestCase):
             if prog in PROVER_EXCEPTIONS or prog in FUNNY_MACRO:
                 continue
 
-            program = (
+            program: str | MacroProg = (
                 prog
                 if (block := DIFFUSE.get(prog)) is None else
                 BlockMacro(prog, [block])  # type: ignore
@@ -1678,17 +1697,24 @@ class TuringTest(TestCase):
                     self.machine.infrul
                     or bool(self.machine.spnout))
 
-    def _test_prover_est(self, prog_data):
+    def _test_prover_est(
+        self,
+        prog_data: dict[
+            str,
+            tuple[int, int, float, int]],
+    ):
         # pylint: disable = redefined-loop-name, redefined-variable-type
         for prog, (block, back, digits, exp) in prog_data.items():
+            program: str | MacroProg = prog
+
             if block > 1:
-                prog = BlockMacro(prog, [block])
+                program = BlockMacro(program, [block])
 
             if back > 0:
-                prog = BacksymbolMacro(prog, [back])
+                program = BacksymbolMacro(program, [back])
 
             self.run_bb(
-                prog,
+                program,
                 prover = True,
                 normal = False,
             )
@@ -1702,7 +1728,7 @@ class TuringTest(TestCase):
                 rel_tol = .54,
             )
 
-    def _test_macro_cycles(self, prog_data):
+    def _test_macro_cycles(self, prog_data: MacroCycles):
         def macro_variations(base: str):
             # pylint: disable = invalid-name
             return (
