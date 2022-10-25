@@ -203,7 +203,6 @@ class Machine:
     ) -> None:
         assert cycle <= step
 
-        self.blanks = blanks
         self.reached = reached
 
         if state == -1:
@@ -216,16 +215,16 @@ class Machine:
         assert self.tape is not None
 
         if self.tape.blank:
-            if 0 in self.blanks:
+            if 0 in blanks:
                 self.linrec = 0, step
-            elif (blanks := self.blanks):
+            elif blanks:
                 if (period := step - blanks[state]):
                     self.linrec = None, period
                     self.xlimit = None
 
-        self.blanks = blanks = {
-            st_str(stt): stp   # type: ignore
-            for stt, stp in self.blanks.items()
+        self.blanks = {
+            st_str(int(stt)): stp
+            for stt, stp in blanks.items()
         }
 
         self.steps = step
