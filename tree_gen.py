@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-from typing import Union
 from collections.abc import Iterator
 
 from tm import Machine
@@ -34,7 +33,7 @@ def print_complete(prog: str) -> None:
     run_and_print(prog)
 
 
-def macro_variations(base: str) -> Iterator[Union[str, MacroProg]]:
+def macro_variations(base: str) -> Iterator[str | MacroProg]:
     yield base
 
     for block in range(2, 8):

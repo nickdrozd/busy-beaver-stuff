@@ -1,5 +1,4 @@
 from queue import Empty, Queue
-from typing import Optional, Union
 from collections.abc import Callable
 from multiprocessing import cpu_count, Manager, Process
 
@@ -7,7 +6,7 @@ from tm import Machine
 from analyze import Program
 
 Output  = Callable[[str], None]
-RunPile = Queue[Union[str, tuple[str, str]]]
+RunPile = Queue[str | tuple[str, str]]
 
 def stacker(
         steps: int,
@@ -16,7 +15,7 @@ def stacker(
         run_pile: RunPile,
         stack: list[str],
 ) -> None:
-    prog: Optional[str] = None
+    prog: str | None = None
 
     while True:  # pylint: disable = while-used
         if prog is None:

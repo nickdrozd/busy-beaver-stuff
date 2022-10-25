@@ -4,7 +4,6 @@ import re
 from itertools import product
 from collections import defaultdict
 from collections.abc import Iterator
-from typing import Optional
 
 from tm import BlockTape, Machine
 from tm.parse import parse, st_str, tcompile
@@ -98,7 +97,7 @@ class Program:
             if '.' in instr)
 
     @property
-    def last_slot(self) -> Optional[str]:
+    def last_slot(self) -> str | None:
         if len((slots := self.open_slots)) != 1:
             return None
 

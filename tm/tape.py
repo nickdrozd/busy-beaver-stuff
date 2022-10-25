@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 Color = int
 
@@ -83,7 +82,7 @@ class BlockTape:
         )
 
     @property
-    def edge(self) -> Optional[int]:
+    def edge(self) -> int | None:
         if self.scan != 0:
             return None
 

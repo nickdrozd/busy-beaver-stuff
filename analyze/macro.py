@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any
 
 from tm.types import Instr
 from tm.parse import tcompile, ProgLike
@@ -34,16 +34,16 @@ class MacroProg:
 
         self.sim_lim: int = 0
 
-        self.instrs: dict[tuple[State, Color], Optional[Instr]] = {}
+        self.instrs: dict[tuple[State, Color], Instr | None] = {}
 
         self.tape_colors: dict[Color, tuple[Color, ...]] = {}
 
-        self._state: Optional[State] = None
+        self._state: State | None = None
 
     def __getitem__(
             self,
-            stco: Union[State, Color],
-    ) -> Union[MacroProg, Optional[Instr]]:
+            stco: State | Color,
+    ) -> MacroProg | Instr | None:
         if self._state is None:
             self._state = stco
             return self
@@ -67,7 +67,7 @@ class MacroProg:
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> Optional[Instr]:
+    ) -> Instr | None:
         return self.reconstruct_outputs(result) if (
             result :=
             self.run_simulator(
@@ -86,7 +86,7 @@ class MacroProg:
     def reconstruct_outputs(self, config: Config) -> Instr:
         raise NotImplementedError()
 
-    def run_simulator(self, config: Config) -> Optional[Config]:
+    def run_simulator(self, config: Config) -> Config | None:
         state, (right_edge, tape) = config
 
         cells = len(tape)

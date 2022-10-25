@@ -1,6 +1,5 @@
 import re
 from itertools import product
-from typing import Optional
 from collections.abc import Callable, Iterator
 
 SHIFTS = 'R', 'L'
@@ -92,7 +91,7 @@ def yield_programs(
         states: int,
         colors: int,
         halt: bool,
-        rejects: Optional[Rejects] = None,
+        rejects: Rejects | None = None,
 ) -> Iterator[str]:
     if rejects is None:
         rejects = []

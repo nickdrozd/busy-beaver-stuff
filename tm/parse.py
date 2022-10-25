@@ -1,8 +1,8 @@
-from typing import Any, Optional
+from typing import Any
 
 from tm.types import Instr
 
-CompProg = tuple[tuple[Optional[Instr], ...], ...]
+CompProg = tuple[tuple[Instr | None, ...], ...]
 
 ProgLike = Any
 
@@ -38,7 +38,7 @@ def dcompile(comp: CompProg) -> str:
     )
 
 
-def convert_instr(instr: Optional[Instr]) -> str:
+def convert_instr(instr: Instr | None) -> str:
     if instr is None:
         return '...'
 

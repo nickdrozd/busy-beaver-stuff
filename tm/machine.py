@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from collections import defaultdict
-from typing import Optional
 
 from tm.tape import BlockTape
 from tm.parse import tcompile, st_str, ProgLike
 from tm.types import Action, State
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
-LinRec = tuple[Optional[int], int]
+LinRec = tuple[int | None, int]
 
 TERM_CATS = (
     'halted',
@@ -29,24 +28,24 @@ class Machine:
         self.steps: int
         self.cycles: int
 
-        self.prover: Optional[Prover] = None
+        self.prover: Prover | None = None
 
         self.blanks: dict[State, int]
 
         self.reached: dict[Action, int]
 
-        self.halted: Optional[int] = None
-        self.spnout: Optional[int] = None
-        self.xlimit: Optional[int] = None
+        self.halted: int | None = None
+        self.spnout: int | None = None
+        self.xlimit: int | None = None
 
-        self.linrec: Optional[LinRec] = None
+        self.linrec: LinRec | None = None
 
-        self.qsihlt: Optional[bool] = None
-        self.infrul: Optional[bool] = None
+        self.qsihlt: bool | None = None
+        self.infrul: bool | None = None
 
         self.rulapp: int = 0
 
-        self.undfnd: Optional[tuple[int, str]] = None
+        self.undfnd: tuple[int, str] | None = None
 
     def __str__(self) -> str:
         info = [ f'CYCLES: {self.cycles}' ]
@@ -68,7 +67,7 @@ class Machine:
         return f"{self.program} || {' | '.join(info)}"
 
     @property
-    def simple_termination(self) -> Optional[int]:
+    def simple_termination(self) -> int | None:
         return self.spnout if self.halted is None else self.halted
 
     @property
@@ -84,11 +83,11 @@ class Machine:
         ]))
 
     def run(self,
-            step_lim: Optional[int] = None,
+            step_lim: int | None = None,
             state: int = 0,
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
-            tape: Optional[BlockTape] = None,
+            tape: BlockTape | None = None,
             prover: bool = False,
     ) -> Machine:
         comp = (
@@ -246,19 +245,19 @@ class Machine:
 class LinRecMachine:
     prog: str
 
-    tape: Optional[BlockTape] = None
-    history: Optional[History] = None
+    tape: BlockTape | None = None
+    history: History | None = None
 
-    halted: Optional[int] = None
-    xlimit: Optional[int] = None
-    qsihlt: Optional[bool] = None
-    linrec: Optional[LinRec] = None
+    halted: int | None = None
+    xlimit: int | None = None
+    qsihlt: bool | None = None
+    linrec: LinRec | None = None
 
     def run(
         self,
-        step_lim: Optional[int] = None,
-        check_rec: Optional[int] = None,
-        samples: Optional[Tapes] = None,
+        step_lim: int | None = None,
+        check_rec: int | None = None,
+        samples: Tapes | None = None,
     ) -> LinRecMachine:
         assert (
             check_rec is not None

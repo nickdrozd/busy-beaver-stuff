@@ -1,5 +1,3 @@
-from typing import Optional
-
 from tm.parse import parse, st_str
 
 Instr = tuple[str, str, str]
@@ -38,7 +36,7 @@ def make_instruction(
         co: int,
         pr: str,
         sh: str,
-        tr: Optional[str],
+        tr: str | None,
         indent: int,
         binary: bool,
 ) -> str:

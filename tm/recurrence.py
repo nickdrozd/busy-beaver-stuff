@@ -3,19 +3,19 @@ from __future__ import annotations
 from copy import copy
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from tm.tape import PtrTape, BlockTape, Signature
 from tm.types import Action, State
 
-RecRes = Optional[tuple[int, int]]
+RecRes = tuple[int, int] | None  # type: ignore
 Tapes = dict[int, PtrTape]
 
 Config = tuple[State, Signature]
 Rule = tuple[tuple[int, ...], ...]
 
 class History:
-    def __init__(self, tapes: Optional[Tapes] = None):
+    def __init__(self, tapes: Tapes | None = None):
         self.tapes: Tapes = {} if tapes is None else tapes
 
         self.states: list[State] = []
@@ -51,7 +51,7 @@ class History:
 
     def calculate_beeps(
             self,
-            through: Optional[int] = None,
+            through: int | None = None,
     ) -> dict[State, int]:
         states = (
             self.states
@@ -83,8 +83,8 @@ class History:
             self,
             steps: int,
             recurrence: int,
-            tape1: Optional[PtrTape] = None,
-            tape2: Optional[PtrTape] = None,
+            tape1: PtrTape | None = None,
+            tape2: PtrTape | None = None,
     ) -> RecRes:
         assert self.states[steps] == self.states[recurrence]
 
@@ -140,9 +140,9 @@ class History:
 @dataclass
 class PastConfig:
     times_seen: int = 0
-    last_cycle: Optional[int] = None
-    last_delta: Optional[int] = None
-    tape: Optional[BlockTape] = None
+    last_cycle: int | None = None
+    last_delta: int | None = None
+    tape: BlockTape | None = None
 
     def check(self, cycle: int, tape: BlockTape) -> bool:
         self.times_seen += 1
@@ -172,7 +172,7 @@ class Prover:
         self.rules: dict[Config, Rule] = {}
 
     @staticmethod
-    def apply_rule(tape: BlockTape, rule: Rule) -> Optional[int]:
+    def apply_rule(tape: BlockTape, rule: Rule) -> int | None:
         diffs, blocks = (
             rule[0] + rule[1],
             tape.lspan + tape.rspan,
@@ -200,7 +200,7 @@ class Prover:
             cycle: int,
             state: State,
             tape: BlockTape,
-    ) -> Optional[int]:
+    ) -> int | None:
         # If we already have a rule, apply it
         if (config := (state, tape.signature)) in self.rules:
             return self.apply_rule(tape, self.rules[config])
