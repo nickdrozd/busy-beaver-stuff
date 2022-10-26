@@ -1316,7 +1316,7 @@ PROVER_EXCEPTIONS = {
     "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD",
 }
 
-PROVER_FAST = {
+PROVER_HALT = {
     # 2/5
     "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (1, 0, 1.7, 352),
     "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (1, 0, 5.2, 105),
@@ -1336,7 +1336,36 @@ PROVER_FAST = {
     "1RB 0RC  0LA 0RD  1RD 1R_  1LE 0LD  1RF 1LB  1RA 1RE": (2, 1, 2.5,   21),
 }
 
-PROVER_SLOW = {
+PROVER_SPINOUT = {
+    # 2/4
+    "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA": (1, 0, 530843045, 0),
+    # "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA"  # incorrect
+
+    # 3/3
+    "1RB 0LB 1LA  2LC 2LB 2LB  2RC 2RA 0LC": (1, 0, 0, 0),
+
+    # 5/2
+    "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA": (1, 0, 0, 0),
+    "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE": (1, 0, 0, 0),
+    "1RB 0RB  0RC 0RB  0RD 0RE  1LD 0LE  1LA 1RE": (1, 0, 0, 0),
+    "1RB 1LE  0RC 0RB  0RD 0RE  1LD 0LA  1LB 1RE": (1, 0, 0, 0),
+    "1RB 1LA  1LC 1RC  0LD 0LC  1RE 0LA  1RE 0RA": (1, 0, 1, 0),
+    "1RB 0RE  0RC 0RB  1LC 0LD  1RD 1LA  1LB 1RE": (1, 0, 0, 0),
+    "1RB 0RE  0RC 0RB  0RD 0RE  1LD 0LA  0RB 1RE": (1, 0, 0, 0),
+    # "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  1RA 1LD": (1, 0, 7.0, 41),  # ???
+    "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0RB 0RD": (2, 1, 2, 0),
+    "1RB 1LA  0LC 0LB  0LD 1LC  1RE 0LA  1RE 0RA": (1, 0, 1, 0),
+    "1RB 0LC  0LD 0LB  1RA 1LA  1RE 1LD  1RE 1RA": (2, 0, 2, 0),
+    "1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA": (1, 0, 0, 0),
+    "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA": (1, 0, 0, 0),
+    "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB": (4, 0, 3.2, 544),
+    "1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA": (2, 0, 2, 0),
+    "1RB 1LC  0LD 0LB  1RE 0LA  0LC 1LD  1RE 1RA": (2, 0, 2, 0),
+    "1RB 1LC  0LD 0LB  0LE 0LA  0LE 1LD  1RE 1RA": (2, 0, 2, 0),
+    "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA": (2, 0, 2, 0),
+}
+
+PROVER_HALT_SLOW = {
     # 6/2
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (6, 1, 3.5, 18267),
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": (3, 1, 3.1, 10566),
@@ -1704,7 +1733,7 @@ class TuringTest(TestCase):
         self,
         prog_data: dict[
             str,
-            tuple[int, int, float, int]],
+            tuple[int, int, int | float, int]],
     ):
         # pylint: disable = redefined-variable-type
         for prog, (block, back, digits, exp) in prog_data.items():
@@ -1728,11 +1757,17 @@ class TuringTest(TestCase):
             marks = self.machine.marks * (
                 block if block is not None else 1)
 
-            self.assert_close(
-                marks / 10 ** exp,
-                digits,
-                rel_tol = .54,
-            )
+            if exp == 0:
+                self.assertEqual(
+                    marks,
+                    digits,
+                    prog)
+            else:
+                self.assert_close(
+                    marks / 10 ** exp,
+                    digits,
+                    rel_tol = .54,
+                )
 
     def _test_macro_cycles(self, prog_data: MacroCycles):
         def macro_variations(base: str):
@@ -1850,7 +1885,10 @@ class Fast(TuringTest):
             simple_term = False,
         )
 
-        self._test_prover_est(PROVER_FAST)
+        self._test_prover_est(
+            PROVER_HALT
+            | PROVER_SPINOUT
+        )
 
     def test_blank(self):
         for prog in DONT_BLANK:
@@ -1988,4 +2026,4 @@ class Slow(TuringTest):  # no-coverage
         self._test_macro_cycles(MACRO_CYCLES_SLOW)
 
     def test_prover(self):
-        self._test_prover_est(PROVER_SLOW)
+        self._test_prover_est(PROVER_HALT_SLOW)
