@@ -118,22 +118,12 @@ class Machine:
 
         for cycle in range(sim_lim):
 
-            # Bookkeeping ##########################
-
-            action: Action = state, (scan := tape.scan)
-
-            # Output ###############################
-
             if watch_tape:
                 self.show_tape(step, cycle, state)
-
-            # Halt conditions ######################
 
             if step_lim is not None and step >= step_lim:
                 self.xlimit = step
                 break
-
-            # Machine operation ####################
 
             if self.prover:
                 try:
@@ -148,27 +138,21 @@ class Machine:
                     continue
 
             try:
-                color, shift, next_state = comp[state][scan]
+                color, shift, next_state = comp[state][tape.scan]
             except TypeError:
-                self.undfnd = step, f'{st_str(state)}{scan}'
+                self.undfnd = step, f'{st_str(state)}{tape.scan}'
                 break
 
-            reached[action] += 1
+            reached[(state, tape.scan)] += 1
 
             if ((same_state := state == next_state)
                     and (shift == tape.edge or tape.blank)):
                 self.spnout = step
                 break
 
-            stepped = tape.step(shift, color, same_state)
+            step += tape.step(shift, color, same_state)
 
             state = next_state
-
-            # Bookkeeping ##########################
-
-            step += stepped
-
-            # Halt conditions ######################
 
             if tape.blank:
                 if state in blanks:
@@ -182,7 +166,6 @@ class Machine:
             if state == -1:
                 break
 
-            # End of main loop #####################
         else:
             self.xlimit = step
 
