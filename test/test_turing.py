@@ -1462,9 +1462,9 @@ class TuringTest(TestCase):
             self.assertTrue(
                 Program(prog).cant_blank)
         except AssertionError:
-            self.assertIn(
-                prog,
-                CANT_BLANK_FALSE_NEGATIVES,
+            self.assertTrue(
+                prog in CANT_BLANK_FALSE_NEGATIVES
+                or Machine(prog).run(sim_lim = 10).blanks,
                 f'blank false negative: "{prog}"')
 
     def assert_could_spin_out(self, prog: str):
