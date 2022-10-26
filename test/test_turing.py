@@ -895,6 +895,9 @@ MODULAR = {
 }
 
 FUNNY_MACRO = {
+    # 4/2
+    "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": (118, 1),  # boyd
+
     # 3/3
     "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (3, 1, 3),  # SIAB
 
