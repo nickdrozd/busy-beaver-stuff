@@ -1769,6 +1769,18 @@ class TuringTest(TestCase):
                     rel_tol = .54,
                 )
 
+            if marks < 5:
+                self.assert_could_blank(prog)
+            else:
+                self.assert_cant_blank(prog)
+
+            if '_' in prog:
+                self.assert_cant_spin_out(prog)
+                self.assert_could_halt(prog)
+            else:
+                self.assert_cant_halt(prog)
+                self.assert_could_spin_out(prog)
+
     def _test_macro_cycles(self, prog_data: MacroCycles):
         def macro_variations(base: str):
             # pylint: disable = invalid-name
