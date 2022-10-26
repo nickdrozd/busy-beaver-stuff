@@ -44,7 +44,7 @@ class Program:
         color: str = slot[1]
         self.prog[state][int(color)] = instr
 
-    def __eq__(self, other) -> bool:  # type: ignore
+    def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
 
     @staticmethod
@@ -276,14 +276,18 @@ class Program:
     def cant_halt(self) -> bool:
         return self._cant_reach(
             'halted',
-            self.halt_slots,
+            tuple(
+                (slot[0], slot[1])
+                for slot in self.halt_slots),
         )
 
     @property
     def cant_blank(self) -> bool:
         return self._cant_reach(
             'blanks',
-            self.erase_slots,
+            tuple(
+                (slot[0], slot[1])
+                for slot in self.erase_slots),
             blank = True,
         )
 
@@ -292,24 +296,24 @@ class Program:
         return self._cant_reach(
             'spnout',
             tuple(
-                state + str(0) for state in
-                self.graph.zero_reflexive_states),
+                (state, str(0))
+                for state in self.graph.zero_reflexive_states),
         )
 
     def _cant_reach(
             self,
             final_prop: str,
-            slots: tuple[str, ...],
+            slots: tuple[tuple[str, str], ...],
             max_attempts: int = 24,
             blank: bool = False,
     ) -> bool:
         configs: list[
             tuple[int, str, BlockTape, int, History]
-        ] = [                                   # type: ignore
+        ] = [
             (
                 1,
-                state,                          # type: ignore
-                BlockTape([], int(color), []),  # type: ignore
+                state,
+                BlockTape([], int(color), []),
                 0,
                 History(),
             )
