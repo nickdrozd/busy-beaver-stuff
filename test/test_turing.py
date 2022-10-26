@@ -1962,6 +1962,10 @@ class Fast(TuringTest):
 
             self.run_bb(program)
 
+            self.assertLess(
+                self.machine.cycles,
+                100)
+
             self.assertIsNotNone(
                 self.machine.simple_termination)
 
