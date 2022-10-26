@@ -1944,16 +1944,23 @@ class Fast(TuringTest):
         self._test_macro_cycles(MACRO_CYCLES_FAST)
 
     def test_funny_macro(self):
-        # pylint: disable = redefined-loop-name
         for prog, seq in FUNNY_MACRO.items():
-            for alt, count in enumerate(seq):
-                prog = (  # type: ignore
-                    BlockMacro
-                    if alt % 2 == 0 else
-                    BacksymbolMacro
-                )(prog, [count])
+            program: str | MacroProg = prog
 
-            self.run_bb(prog)
+            for alt, count in enumerate(seq):
+                if (even := alt % 2 == 0) and count < 2:
+                    continue
+
+                if not even and count < 1:
+                    continue
+
+                program = (
+                    BlockMacro
+                    if even else
+                    BacksymbolMacro
+                )(program, [count])
+
+            self.run_bb(program)
 
             self.assertIsNotNone(
                 self.machine.simple_termination)
