@@ -1703,7 +1703,7 @@ class TuringTest(TestCase):
             str,
             tuple[int, int, float, int]],
     ):
-        # pylint: disable = redefined-loop-name, redefined-variable-type
+        # pylint: disable = redefined-variable-type
         for prog, (block, back, digits, exp) in prog_data.items():
             program: str | MacroProg = prog
 
@@ -1718,6 +1718,9 @@ class TuringTest(TestCase):
                 prover = True,
                 normal = False,
             )
+
+            self.assertIsNotNone(
+                self.machine.simple_termination)
 
             marks = self.machine.marks * (
                 block if block is not None else 1)
