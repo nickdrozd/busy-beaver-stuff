@@ -4,8 +4,11 @@ from dataclasses import dataclass
 
 from tm.tape import BlockTape
 from tm.parse import tcompile, st_str, ProgLike
-from tm.types import Action, State
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
+
+State = int | str
+Color = int | str
+Action = tuple[State, Color]
 
 LinRec = tuple[int | None, int]
 

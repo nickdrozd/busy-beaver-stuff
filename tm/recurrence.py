@@ -6,7 +6,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from tm.tape import PtrTape, BlockTape, Signature
-from tm.types import Action, State
+
+State = int | str
+Color = int | str
+Action = tuple[State, Color]
 
 RecRes = tuple[int, int] | None  # type: ignore
 Tapes = dict[int, PtrTape]

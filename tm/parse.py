@@ -1,6 +1,6 @@
 from typing import Any
 
-from tm.types import Instr
+Instr = tuple[int, int, int]
 
 CompProg = tuple[tuple[Instr | None, ...], ...]
 

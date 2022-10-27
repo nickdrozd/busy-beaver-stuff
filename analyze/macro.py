@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from tm.types import Instr
 from tm.parse import tcompile, ProgLike
 
 Color = int
 State = int
 Tape = list[Color]
 Config = tuple[State, tuple[bool, Tape]]
+
+Instr = tuple[int, int, int]
 
 ########################################
 
