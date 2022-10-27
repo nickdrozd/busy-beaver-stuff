@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from collections import defaultdict
 
 from tm.tape import BlockTape
 from tm.parse import tcompile, st_str, ProgLike
@@ -31,7 +30,6 @@ class Machine:
     prover: Prover | None = None
 
     blanks: dict[State, int] | None = None
-    reached: dict[Action, int] | None = None
 
     halted: int | None = None
     spnout: int | None = None
@@ -106,7 +104,6 @@ class Machine:
         )
 
         blanks: dict[State, int] = {}
-        reached: dict[Action, int] = defaultdict(lambda: 0)
 
         if prover:
             self.prover = Prover(comp)
@@ -143,8 +140,6 @@ class Machine:
                 self.undfnd = step, f'{st_str(state)}{tape.scan}'
                 break
 
-            reached[(state, tape.scan)] += 1
-
             if ((same_state := state == next_state)
                     and (shift == tape.edge or tape.blank)):
                 self.spnout = step
@@ -169,7 +164,7 @@ class Machine:
         else:
             self.xlimit = step
 
-        self.finalize(step, cycle, state, blanks, reached)
+        self.finalize(step, cycle, state, blanks)
 
         if watch_tape and bool(self.halted):
             self.show_tape(step, 1 + cycle, state)
@@ -182,11 +177,8 @@ class Machine:
             cycle: int,
             state: int,
             blanks: dict[State, int],
-            reached: dict[Action, int],
     ) -> None:
         assert cycle <= step
-
-        self.reached = reached
 
         if state == -1:
             self.halted = step

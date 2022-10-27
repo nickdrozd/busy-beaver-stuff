@@ -1403,16 +1403,6 @@ class TuringTest(TestCase):
             or prog in KERNEL
         )
 
-    def assert_reached(self, prog: str):
-        def dimension(prog: str) -> int:
-            comp = tcompile(prog)
-            return len(comp) * len(comp[0])
-
-        self.assertEqual(
-            dimension(prog) - len(self.machine.reached),
-            prog.count('...'),
-            (prog, dict(self.machine.reached)))
-
     def assert_marks(self, marks: int):
         self.assertEqual(
             self.machine.marks,
@@ -1579,9 +1569,6 @@ class TuringTest(TestCase):
         self.assert_comp(prog)
         self.assert_simple(prog)
         self.assert_connected(prog)
-
-        if not lin_rec:
-            self.assert_reached(prog)
 
         _ = Machine(
             BlockMacro(prog, [2])
@@ -1833,10 +1820,6 @@ class TuringTest(TestCase):
                     self.assertTrue(
                         len(macro) <= 60,
                         (len(macro), str(macro)))
-
-                    self.assertEqual(
-                        len(macro),
-                        len(self.machine.reached))
 
 
 class Fast(TuringTest):
