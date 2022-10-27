@@ -94,14 +94,21 @@ class MacroProg:
         pos = cells - 1 if right_edge else 0
 
         for _ in range(self.sim_lim):
-            if (instr := self.comp[state][tape[pos]]) is None:
+            if (instr := self.comp[state][scan := tape[pos]]) is None:
                 return None
 
             color, shift, next_state = instr
 
-            tape[pos] = color
+            if next_state != state:
+                tape[pos] = color
+                pos += 1 if shift else -1
+            else:
+                while tape[pos] == scan:  # pylint: disable = while-used
+                    tape[pos] = color
+                    pos += 1 if shift else -1
 
-            pos += 1 if shift else -1
+                    if not 0 <= pos < cells:
+                        break
 
             if (state := next_state) == -1:
                 break
