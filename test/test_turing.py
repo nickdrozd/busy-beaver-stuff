@@ -2,7 +2,7 @@
 
 from math import isclose
 from typing import Any
-from unittest import TestCase
+from unittest import TestCase, expectedFailure
 from itertools import product
 from collections.abc import Mapping
 
@@ -2001,6 +2001,19 @@ class Fast(TuringTest):
 
             self.assertIsNotNone(
                 self.machine.simple_termination)
+
+    @expectedFailure
+    def test_macro_nested(self):
+        self.run_bb(
+            BacksymbolMacro(
+                BlockMacro(
+                    BacksymbolMacro(
+                        BlockMacro(
+                            "1RB 4LA 1LA 1R_ 2RB  2LB 3LA 1LB 2RA 0RB",
+                            [2]),
+                        [1]),
+                    [2]),
+                [1]))
 
 
 class Slow(TuringTest):  # no-coverage
