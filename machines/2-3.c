@@ -9,6 +9,7 @@
 #define INSTRUCTION(l, c0, s0, t0,              \
                     c1, s1, t1,                 \
                     c2, s2, t2)                 \
+  CHECK_LIMIT;                                  \
   if (SCAN(2)) ACTION(c2, s2, t2)               \
     else if (SCAN(1)) ACTION(c1, s1, t1)        \
       else { CHECK_RECUR(s0, t0, l); ACTION(c0, s0, t0); }

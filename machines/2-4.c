@@ -10,6 +10,7 @@
                     c1, s1, t1,                 \
                     c2, s2, t2,                 \
                     c3, s3, t3)                 \
+  CHECK_LIMIT;                                  \
   if (SCAN(3)) ACTION(c3, s3, t3)               \
     else if (SCAN(2)) ACTION(c2, s2, t2)        \
       else if (SCAN(1)) ACTION(c1, s1, t1)      \
