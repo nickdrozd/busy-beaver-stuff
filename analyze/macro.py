@@ -36,7 +36,8 @@ class MacroProg:
 
         self.instrs: dict[tuple[State, Color], Instr | None] = {}
 
-        self.tape_colors: dict[Color, tuple[Color, ...]] = {}
+        self.color_to_tape_cache: dict[Color, tuple[Color, ...]] = {}
+        self.tape_to_color_cache: dict[tuple[Color, ...], Color] = {}
 
         self._state: State | None = None
 
@@ -171,6 +172,10 @@ class BlockMacro(MacroProg):
         )
 
     def tape_to_color(self, tape: Tape) -> Color:
+        if (cached := self.tape_to_color_cache.get(
+                tuple_tape := tuple(tape))) is not None:
+            return cached
+
         try:
             color = int(
                 ''.join(map(str, tape)),
@@ -181,7 +186,8 @@ class BlockMacro(MacroProg):
                 for place, value in enumerate(reversed(tape))
             )
 
-        self.tape_colors[color] = tuple(tape)
+        self.tape_to_color_cache[tuple_tape] = color
+        self.color_to_tape_cache[color] = tuple_tape
 
         return color
 
@@ -189,7 +195,7 @@ class BlockMacro(MacroProg):
         if color == 0:
             return [0] * self.cells
 
-        return list(self.tape_colors[color])
+        return list(self.color_to_tape_cache[color])
 
 ########################################
 
