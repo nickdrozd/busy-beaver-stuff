@@ -202,8 +202,9 @@ class Prover:
             tape: BlockTape,
     ) -> int | None:
         # If we already have a rule, apply it
-        if (config := (state, tape.signature)) in self.rules:
-            return self.apply_rule(tape, self.rules[config])
+        if (rule := self.rules.get(
+                config := (state, tape.signature))) is not None:
+            return self.apply_rule(tape, rule)
 
         # If this is a new config, record it
         if not (past_config := self.configs[config]).check(cycle, tape):
