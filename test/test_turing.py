@@ -2040,6 +2040,12 @@ class Fast(TuringTest):
                     [2]),
                 [1]))
 
+    @expectedFailure
+    def test_rule_failure(self):
+        self._test_prover_est({
+            "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": (1, 0, 530843045, 0),
+        })
+
 
 class Slow(TuringTest):  # no-coverage
     def test_halt(self):
