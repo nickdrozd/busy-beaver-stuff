@@ -1,4 +1,4 @@
-.PHONY : all clean clean-python compile coverage generate idris lint machines profile test test-all type
+.PHONY : all clean clean-python compile coverage generate idris lint machines profile special test test-all type
 
 all : machines idris lint test generate
 
@@ -58,6 +58,10 @@ coverage : clean-python
 
 	$(COVERAGE) combine --quiet
 	$(COVERAGE) html
+
+# PYTHONPATH=$PYTHONPATH:tm:analyze make special target=tm/tape.py
+special :
+	specialist --target $(target) -m unittest $(TUR)
 
 ## Program files (non-phony) ###########
 
