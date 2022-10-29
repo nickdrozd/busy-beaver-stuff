@@ -903,6 +903,7 @@ FUNNY_MACRO = {
 
     # 2/5
     "1RB 4LA 1LA 1R_ 2RB  2LB 3LA 1LB 2RA 0RB": (2, 1, 2),
+    "1RB 3LA 1LA 4LA 1RA  2LB 2RA 1R_ 0RA 0RB": (2, 1, 2),
 }
 
 CANT_BLANK_FALSE_NEGATIVES: set[str] = {
@@ -2025,7 +2026,7 @@ class Fast(TuringTest):
 
             self.assertLess(
                 self.machine.cycles,
-                100)
+                3000)
 
             self.assertIsNotNone(
                 self.machine.simple_termination)
