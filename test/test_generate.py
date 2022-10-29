@@ -184,8 +184,6 @@ class TestLinRado(TestCase):
             xlimit: int,
             rejects: Rejects | None = None,
     ):
-        print(f'{states} {colors} {halt}')
-
         self.progs = {
             prog
             for prog in
