@@ -196,6 +196,7 @@ class TestLinRado(TestCase):
             LinRecMachine(prog).run(
                 step_lim = xlimit,
                 check_rec = 0,
+                skip = True,
             ).xlimit is not None
         }
 

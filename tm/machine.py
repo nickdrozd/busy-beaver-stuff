@@ -236,6 +236,7 @@ class LinRecMachine:
     def run(
         self,
         step_lim: int | None = None,
+        skip: bool = False,
         check_rec: int | None = None,
         samples: Tapes | None = None,
     ) -> LinRecMachine:
@@ -270,7 +271,7 @@ class LinRecMachine:
 
             color, shift, next_state = comp[state][scan]  # type: ignore
 
-            _ = tape.step(shift, color, False)
+            _ = tape.step(shift, color, skip and state == next_state)
 
             state = next_state
 
