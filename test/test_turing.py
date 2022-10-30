@@ -1942,6 +1942,10 @@ class Fast(TuringTest):
             | PROVER_SPINOUT
         )
 
+        self.run_bb(
+            "1RB 2LA 3RA 2LB  0LA ... 2RA 1LA",
+            prover = True)
+
     def test_blank(self):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)

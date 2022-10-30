@@ -238,8 +238,11 @@ class Prover:
         assert past_config.last_delta is not None
 
         for _ in range(past_config.last_delta):
-            color, shift, next_state = \
-                self.prog[state_copy][tape_copy.scan]
+            try:
+                color, shift, next_state = \
+                    self.prog[state_copy][tape_copy.scan]
+            except TypeError:
+                return None
 
             _ = tape_copy.step(
                 shift,
