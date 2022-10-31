@@ -1862,10 +1862,10 @@ class TuringTest(TestCase):
                     rel_tol = rel_tol,
                 )
 
-            if jump is None:
+            if jump is None:                        # no-coverage
                 continue
 
-            for cell in range(jump, jump + cells):
+            for cell in range(jump, jump + cells):  # no-coverage
                 self.run_bb(
                     BlockMacro(prog, [cell]),
                 )
@@ -2030,10 +2030,10 @@ class Fast(TuringTest):
             program: str | MacroProg = prog
 
             for alt, count in enumerate(seq):
-                if (even := alt % 2 == 0) and count < 2:
+                if (even := alt % 2 == 0) and count < 2:  # no-coverage
                     continue
 
-                if not even and count < 1:
+                if not even and count < 1:                # no-coverage
                     continue
 
                 program = (
