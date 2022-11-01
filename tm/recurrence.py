@@ -259,6 +259,9 @@ class Prover:
 
             state_copy = next_state
 
+        if state_copy != state:
+            return None
+
         for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
                 if old[1] != new[1]:
@@ -273,7 +276,7 @@ class Prover:
         except ValueError:
             return None
 
-        if (state, sig) != (state_copy, copy_sig):
+        if copy_sig != sig:
             return None
 
         block_diffs = tuple(
