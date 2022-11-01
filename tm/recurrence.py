@@ -14,7 +14,6 @@ Action = tuple[State, Color]
 RecRes = tuple[int, int] | None  # type: ignore
 Tapes = dict[int, PtrTape]
 
-Config = tuple[State, Signature]
 Rule = tuple[tuple[int, ...], ...]
 
 class History:
@@ -171,8 +170,15 @@ class Prover:
     def __init__(self, prog: Any):
         self.prog: Any = prog
 
-        self.configs: dict[Config, PastConfig] = defaultdict(PastConfig)
-        self.rules: dict[Config, Rule] = {}
+        self.rules: dict[
+            Signature,
+            dict[State, Rule],
+        ] = defaultdict(dict)
+
+        self.configs: dict[
+            Signature,
+            dict[State, PastConfig],
+        ] = defaultdict(lambda: defaultdict(PastConfig))
 
     @staticmethod
     def apply_rule(tape: BlockTape, rule: Rule) -> int | None:
@@ -205,12 +211,14 @@ class Prover:
             tape: BlockTape,
     ) -> int | None:
         # If we already have a rule, apply it
-        if (rule := self.rules.get(
-                config := (state, tape.signature))) is not None:
+        if (rule := self.rules[
+                sig := tape.signature
+        ].get(state)) is not None:
             return self.apply_rule(tape, rule)
 
         # If this is a new config, record it
-        if not (past_config := self.configs[config]).check(cycle, tape):
+        if not (past_config := self.configs[sig][state]
+                ).check(cycle, tape):
             return None
 
         assert (past_tape := past_config.tape) is not None
@@ -265,7 +273,7 @@ class Prover:
         except ValueError:
             return None
 
-        if config != (state_copy, copy_sig):
+        if (state, sig) != (state_copy, copy_sig):
             return None
 
         block_diffs = tuple(
@@ -278,6 +286,6 @@ class Prover:
         if all(diff >= 0 for span in block_diffs for diff in span):
             raise InfiniteRule()
 
-        self.rules[config] = block_diffs
+        self.rules[sig][state] = block_diffs
 
         return None
