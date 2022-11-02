@@ -7,7 +7,7 @@ Color = int
 Block = list[int]
 Span  = list[Block]
 
-Signature = tuple[tuple[int, ...], Color, tuple[int, ...]]
+Signature = tuple[Color, tuple[Color, ...], tuple[Color, ...]]
 
 @dataclass
 class BlockTape:
@@ -59,8 +59,8 @@ class BlockTape:
     @property
     def signature(self) -> Signature:
         return (
-            tuple(c for c, _ in self.lspan),
             self.scan,
+            tuple(c for c, _ in self.lspan),
             tuple(c for c, _ in self.rspan),
         )
 

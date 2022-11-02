@@ -6,7 +6,7 @@ from tm import Machine
 from tm.tape import BlockTape, Signature
 
 def stringify_sig(sig: Signature) -> str:
-    lspan, scan, rspan = sig
+    scan, lspan, rspan = sig
 
     l_sig = '|'.join(str(c) for c in lspan)
     r_sig = '|'.join(reversed([str(c) for c in rspan]))
