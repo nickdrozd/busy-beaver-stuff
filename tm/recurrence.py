@@ -176,10 +176,7 @@ class Prover:
 
         self.diff_lim: int | None = diff_lim
 
-        self.rules: dict[
-            Signature,
-            dict[State, Rule],
-        ] = defaultdict(dict)
+        self.rules: dict[tuple[State, Signature], Rule] = {}
 
         self.configs: dict[
             Signature,
@@ -217,9 +214,8 @@ class Prover:
             tape: BlockTape,
     ) -> int | None:
         # If we already have a rule, apply it
-        if (rule := self.rules[
-                sig := tape.signature
-        ].get(state)) is not None:
+        if (rule := self.rules.get(
+                (state, sig := tape.signature))) is not None:
             return self.apply_rule(tape, rule)
 
         # If this is a new config, record it
@@ -301,6 +297,6 @@ class Prover:
         if all(diff >= 0 for span in block_diffs for diff in span):
             raise InfiniteRule()
 
-        self.rules[sig][state] = block_diffs
+        self.rules[(state, sig)] = block_diffs
 
         return None
