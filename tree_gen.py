@@ -48,7 +48,7 @@ def run_and_print(prog: str) -> None:
     for macro in macro_variations(prog):
         if Machine(macro).run(
                 sim_lim = 200,
-                prover = True,
+                prover = 100,
         ).xlimit is None:
             return
 

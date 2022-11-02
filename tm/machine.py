@@ -90,7 +90,7 @@ class Machine:
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
             tape: BlockTape | None = None,
-            prover: bool = False,
+            prover: int | None = None,
     ) -> Machine:
         comp = (
             tcompile(self.program)
@@ -108,8 +108,8 @@ class Machine:
 
         blanks: dict[State, int] = {}
 
-        if prover:
-            self.prover = Prover(comp)
+        if prover is not None:
+            self.prover = Prover(comp, diff_lim = prover)
 
         step: int = 0
 

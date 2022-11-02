@@ -167,8 +167,14 @@ class InfiniteRule(Exception):
     pass
 
 class Prover:
-    def __init__(self, prog: Any):
+    def __init__(
+            self,
+            prog: Any,
+            diff_lim: int | None = None,
+    ):
         self.prog: Any = prog
+
+        self.diff_lim: int | None = diff_lim
 
         self.rules: dict[
             Signature,
@@ -243,9 +249,12 @@ class Prover:
 
         state_copy = state
 
-        assert past_config.last_delta is not None
+        assert (last_delta := past_config.last_delta) is not None
 
-        for _ in range(past_config.last_delta):
+        if self.diff_lim is not None and last_delta > self.diff_lim:
+            return None
+
+        for _ in range(last_delta):
             try:
                 color, shift, next_state = \
                     self.prog[state_copy][tape_copy.scan]

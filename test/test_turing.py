@@ -1704,6 +1704,7 @@ class TuringTest(TestCase):
     def _test_prover(
             self,
             prog_data: Mapping[str, Any],
+            diff_lim: int,
             blank: bool = False,
             simple_term: bool = True,
     ):
@@ -1719,7 +1720,7 @@ class TuringTest(TestCase):
 
             self.run_bb(
                 program,
-                prover = True,
+                prover = diff_lim,
             )
 
             if simple_term:
@@ -1741,6 +1742,7 @@ class TuringTest(TestCase):
         prog_data: dict[
             str,
             tuple[int, int, int | float, int]],
+        diff_lim: int | None = None,
     ):
         # pylint: disable = redefined-variable-type
         for prog, (block, back, digits, exp) in prog_data.items():
@@ -1754,7 +1756,7 @@ class TuringTest(TestCase):
 
             self.run_bb(
                 program,
-                prover = True,
+                prover = diff_lim,
                 normal = False,
             )
 
@@ -1923,28 +1925,32 @@ class Fast(TuringTest):
         self._test_prover(
             HALT
             | HALT_SLOW
-            | SPINOUT
+            | SPINOUT,
+            diff_lim = 20,
         )
 
         self._test_prover(
             SPINOUT_BLANK,
+            diff_lim = 20,
             blank = True,
         )
 
         self._test_prover(
             RECUR_COMPACT
             | QUASIHALT,
+            diff_lim = 320,
             simple_term = False,
         )
 
         self._test_prover_est(
             PROVER_HALT
-            | PROVER_SPINOUT
+            | PROVER_SPINOUT,
+            diff_lim = 300,
         )
 
         self.run_bb(
             "1RB 2LA 3RA 2LB  0LA ... 2RA 1LA",
-            prover = True)
+            prover = 10)
 
     def test_blank(self):
         for prog in DONT_BLANK:
@@ -2066,9 +2072,12 @@ class Fast(TuringTest):
 
     @expectedFailure
     def test_rule_failure(self):
-        self._test_prover_est({
-            "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": (1, 0, 530843045, 0),
-        })
+        self._test_prover_est(
+            {
+                "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": (1, 0, 530843045, 0),
+            },
+            diff_lim = 20,
+        )
 
 
 class Slow(TuringTest):  # no-coverage
@@ -2097,4 +2106,7 @@ class Slow(TuringTest):  # no-coverage
         self._test_macro_cycles(MACRO_CYCLES_SLOW)
 
     def test_prover(self):
-        self._test_prover_est(PROVER_HALT_SLOW)
+        self._test_prover_est(
+            PROVER_HALT_SLOW,
+            diff_lim = 40,
+        )

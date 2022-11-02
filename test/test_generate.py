@@ -32,7 +32,7 @@ def run_for_none(prog: str, sim_lim: int) -> Iterator[bool]:
     yield from (
         Machine(macro).run(
             sim_lim = sim_lim,
-            prover = True,
+            prover = 49,
         ).xlimit is None
         for macro in macro_variations(prog)
     )

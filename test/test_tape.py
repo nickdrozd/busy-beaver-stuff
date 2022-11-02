@@ -37,7 +37,7 @@ class TestTape(TestCase):
     def test_blank(self):
         self.run_bb(
             "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD",
-            prover = True)
+            prover = 10)
 
         self.assert_signature(
             '[0]0')
