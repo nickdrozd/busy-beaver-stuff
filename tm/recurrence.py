@@ -223,6 +223,11 @@ class Prover:
                 ).check(cycle, tape):
             return None
 
+        assert (last_delta := past_config.last_delta) is not None
+
+        if self.diff_lim is not None and last_delta > self.diff_lim:
+            return None
+
         assert (past_tape := past_config.tape) is not None
 
         for curr_span, prev_span in zip(tape.spans, past_tape.spans):
@@ -244,11 +249,6 @@ class Prover:
                     new.append(num)
 
         state_copy = state
-
-        assert (last_delta := past_config.last_delta) is not None
-
-        if self.diff_lim is not None and last_delta > self.diff_lim:
-            return None
 
         for _ in range(last_delta):
             try:
