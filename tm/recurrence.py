@@ -271,6 +271,9 @@ class Prover:
         if state_copy != state:
             return None
 
+        if tape_copy.scan != sig[0]:
+            return None
+
         for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
                 if old[1] != new[1]:
