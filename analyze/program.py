@@ -5,10 +5,8 @@ from itertools import product
 from collections import defaultdict
 from collections.abc import Iterator
 
-from tm import Machine
 from tm.tape import BlockTape
 from tm.parse import parse, st_str, tcompile
-from tm.recurrence import History
 from analyze.graph import Graph
 
 INIT = 'A'
@@ -162,6 +160,9 @@ class Program:
 
     @property
     def instruction_sequence(self) -> Iterator[tuple[str, int, str]]:
+        # pylint: disable = import-outside-toplevel
+        from tm import Machine
+
         partial = Program.empty(len(self.states), len(self.colors))
 
         for _ in range(len(self.states) * len(self.colors) - 1):
@@ -308,6 +309,10 @@ class Program:
             max_attempts: int = 24,
             blank: bool = False,
     ) -> bool:
+        # pylint: disable = import-outside-toplevel
+        from tm import Machine
+        from tm.recurrence import History
+
         configs: list[
             tuple[int, str, BlockTape, int, History]
         ] = [
