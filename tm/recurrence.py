@@ -3,9 +3,10 @@ from __future__ import annotations
 from copy import copy
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any
 
+from tm.parse import CompProg
 from tm.tape import PtrTape, BlockTape, Signature
+from analyze.macro import MacroProg
 
 State = int | str
 Color = int | str
@@ -169,10 +170,10 @@ class InfiniteRule(Exception):
 class Prover:
     def __init__(
             self,
-            prog: Any,
+            prog: CompProg | MacroProg,
             diff_lim: int | None = None,
     ):
-        self.prog: Any = prog
+        self.prog: CompProg | MacroProg = prog
 
         self.diff_lim: int | None = diff_lim
 
@@ -253,7 +254,7 @@ class Prover:
         for _ in range(last_delta):
             try:
                 color, shift, next_state = \
-                    self.prog[state_copy][tape_copy.scan]
+                    self.prog[state_copy][tape_copy.scan] # type: ignore
             except TypeError:
                 return None
 

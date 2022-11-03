@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from math import ceil, log
-from typing import Any
 
-from tm.parse import tcompile, ProgLike
+from tm.parse import tcompile, CompProg
 
 Color = int
 State = int
@@ -15,13 +14,16 @@ Instr = tuple[int, int, int]
 ########################################
 
 class MacroProg:
-    def __init__(self, program: ProgLike):
+    def __init__(self, program: str | MacroProg):
         self.program = program
 
-        self.comp: Any
+        self.comp: CompProg | MacroProg
 
         self.base_states: int
         self.base_colors: int
+
+        self.macro_states: int
+        self.macro_colors: int
 
         if isinstance(program, str):
             self.comp = tcompile(program)
@@ -97,10 +99,12 @@ class MacroProg:
         pos = cells - 1 if right_edge else 0
 
         for _ in range(self.sim_lim):
-            if (instr := self.comp[state][scan := tape[pos]]) is None:
+            instr = self.comp[state][scan := tape[pos]]  # type: ignore
+
+            if instr is None:  # pylint: disable = consider-using-assignment-expr
                 return None
 
-            color, shift, next_state = instr
+            color, shift, next_state = instr  # type: ignore
 
             if next_state != state:
                 tape[pos] = color
@@ -126,7 +130,7 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
-    def __init__(self, program: ProgLike, cell_seq: list[int]):
+    def __init__(self, program: str | MacroProg, cell_seq: list[int]):
         *seq, cells = cell_seq
 
         if seq:
@@ -217,7 +221,7 @@ class BlockMacro(MacroProg):
 ########################################
 
 class BacksymbolMacro(MacroProg):
-    def __init__(self, program: ProgLike, cell_seq: list[int]):
+    def __init__(self, program: str | MacroProg, cell_seq: list[int]):
         *seq, _ = cell_seq
 
         if seq:

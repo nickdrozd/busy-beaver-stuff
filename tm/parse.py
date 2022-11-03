@@ -1,10 +1,6 @@
-from typing import Any
-
 Instr = tuple[int, int, int]
 
 CompProg = tuple[tuple[Instr | None, ...], ...]
-
-ProgLike = Any
 
 def parse(program: str) -> tuple[tuple[str, ...], ...]:
     return tuple(

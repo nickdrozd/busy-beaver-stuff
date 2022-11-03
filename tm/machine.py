@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from typing import Any
 from dataclasses import dataclass
 
 from tm.tape import BlockTape
-from tm.parse import tcompile, st_str, ProgLike
+from tm.parse import tcompile, st_str
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
 State = int | str
@@ -23,7 +24,7 @@ TERM_CATS = (
 
 @dataclass
 class Machine:
-    program: ProgLike
+    program: Any
 
     tape: BlockTape | None = None
     state: State | None = None
