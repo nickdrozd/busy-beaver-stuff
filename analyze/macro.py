@@ -177,15 +177,10 @@ class BlockMacro(MacroProg):
                 tuple_tape := tuple(tape))) is not None:
             return cached
 
-        try:
-            color = int(
-                ''.join(map(str, tape)),
-                self.base_colors)
-        except ValueError:
-            color = sum(
-                value * self.base_colors ** place
-                for place, value in enumerate(reversed(tape))
-            )
+        color: Color = sum(
+            value * self.base_colors ** place
+            for place, value in enumerate(reversed(tape))
+        )
 
         self.tape_to_color_cache[tuple_tape] = color
         self.color_to_tape_cache[color] = tuple_tape

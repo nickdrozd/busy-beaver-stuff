@@ -900,10 +900,6 @@ FUNNY_MACRO = {
 
     # 3/3
     "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (3, 1, 3),  # SIAB
-
-    # 2/5
-    "1RB 4LA 1LA 1R_ 2RB  2LB 3LA 1LB 2RA 0RB": (2, 1, 2),
-    "1RB 3LA 1LA 4LA 1RA  2LB 2RA 1R_ 0RA 0RB": (2, 1, 2),
 }
 
 CANT_BLANK_FALSE_NEGATIVES: set[str] = {
@@ -1300,7 +1296,6 @@ DIFFUSE = {
     "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE": 3,
 
     # 4/2
-    "1RB 0LC  1RD 1LC  0LA 1LB  1LC 0RD": (5, 2),  # BBLR
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC":    118,  # boyd
 }
 
@@ -1717,7 +1712,7 @@ class TuringTest(TestCase):
             program: str | MacroProg = (
                 prog
                 if (block := DIFFUSE.get(prog)) is None else
-                BlockMacro(prog, [block])  # type: ignore
+                BlockMacro(prog, [block])
             )
 
             self.run_bb(
@@ -2032,45 +2027,6 @@ class Fast(TuringTest):
 
     def test_macro_cycles(self):
         self._test_macro_cycles(MACRO_CYCLES_FAST)
-
-    def test_funny_macro(self):
-        for prog, seq in FUNNY_MACRO.items():
-            program: str | MacroProg = prog
-
-            for alt, count in enumerate(seq):
-                if (even := alt % 2 == 0) and count < 2:  # no-coverage
-                    continue
-
-                if not even and count < 1:                # no-coverage
-                    continue
-
-                program = (
-                    BlockMacro
-                    if even else
-                    BacksymbolMacro
-                )(program, [count])
-
-            self.run_bb(program)
-
-            self.assertLess(
-                self.machine.cycles,
-                3000)
-
-            self.assertIsNotNone(
-                self.machine.simple_termination)
-
-    @expectedFailure
-    def test_macro_nested(self):
-        self.run_bb(
-            BacksymbolMacro(
-                BlockMacro(
-                    BacksymbolMacro(
-                        BlockMacro(
-                            "1RB 4LA 1LA 1R_ 2RB  2LB 3LA 1LB 2RA 0RB",
-                            [2]),
-                        [1]),
-                    [2]),
-                [1]))
 
     @expectedFailure
     def test_rule_failure(self):
