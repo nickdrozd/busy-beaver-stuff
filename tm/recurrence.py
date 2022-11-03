@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import copy
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from tm.parse import CompProg
 from tm.tape import PtrTape, BlockTape, Signature
@@ -167,22 +167,19 @@ class PastConfig:
 class InfiniteRule(Exception):
     pass
 
+@dataclass
 class Prover:
-    def __init__(
-            self,
-            prog: CompProg | MacroProg,
-            diff_lim: int | None = None,
-    ):
-        self.prog: CompProg | MacroProg = prog
+    prog: CompProg | MacroProg
 
-        self.diff_lim: int | None = diff_lim
+    diff_lim: int | None
 
-        self.rules: dict[tuple[State, Signature], Rule] = {}
+    rules: dict[tuple[State, Signature], Rule] = field(
+        default_factory = dict)
 
-        self.configs: dict[
-            Signature,
-            dict[State, PastConfig],
-        ] = defaultdict(lambda: defaultdict(PastConfig))
+    configs: dict[Signature, dict[State, PastConfig]] = field(
+        default_factory = lambda:
+        defaultdict(lambda: defaultdict(PastConfig))
+    )
 
     @staticmethod
     def apply_rule(tape: BlockTape, rule: Rule) -> int | None:
