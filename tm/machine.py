@@ -22,9 +22,11 @@ TERM_CATS = (
     'xlimit',
 )
 
+ProgLike = Any  # type: ignore
+
 @dataclass
 class Machine:
-    program: Any
+    program: ProgLike
 
     tape: BlockTape | None = None
     state: State | None = None

@@ -1557,7 +1557,7 @@ class TuringTest(TestCase):
         if steps >= 1:
             self.deny_lin_recurrence(steps - 1, recurrence)
 
-    def run_bb(
+    def run_bb(  # type: ignore
             self,
             prog: str | MacroProg | Program,
             print_prog: bool = True,
@@ -1645,7 +1645,7 @@ class TuringTest(TestCase):
             blank = False,
         )
 
-    def _test_spinout(
+    def _test_spinout(  # type: ignore
             self,
             prog_data: Mapping[str, Any],
             blank: bool = False,
@@ -1655,7 +1655,7 @@ class TuringTest(TestCase):
             blank = blank,
         )
 
-    def _test_recur(
+    def _test_recur(  # type: ignore
             self,
             prog_data: Mapping[str, Any],
             quick: bool = True,
@@ -1698,7 +1698,7 @@ class TuringTest(TestCase):
 
             self.assert_quasihalt(qsihlt)
 
-    def _test_prover(
+    def _test_prover(  # type: ignore
             self,
             prog_data: Mapping[str, Any],
             diff_lim: int,

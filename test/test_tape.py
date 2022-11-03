@@ -15,7 +15,7 @@ def stringify_sig(sig: Signature) -> str:
 
 
 class TestTape(TestCase):
-    def run_bb(self, prog: str, **opts: Any) -> None:
+    def run_bb(self, prog: str, **opts: Any) -> None:  # type: ignore
         self.machine = Machine(prog).run(
             watch_tape = True,
             **opts)
