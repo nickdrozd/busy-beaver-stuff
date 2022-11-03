@@ -171,17 +171,21 @@ class InfiniteRule(Exception):
 
 @dataclass
 class Prover:
-    prog: CompProg | MacroProg
+    def __init__(
+            self,
+            prog: CompProg | MacroProg,
+            diff_lim: int | None,
+    ):
+        self.prog: CompProg | MacroProg = prog
 
-    diff_lim: int | None
+        self.diff_lim: int | None = diff_lim
 
-    rules: dict[tuple[State, Signature], Rule] = field(
-        default_factory = dict)
+        self.rules: dict[tuple[State, Signature], Rule] = {}
 
-    configs: dict[Signature, dict[State, PastConfig]] = field(
-        default_factory = lambda:
-        defaultdict(lambda: defaultdict(PastConfig))
-    )
+        self.configs: dict[
+            Signature,
+            dict[State, PastConfig],
+        ] = defaultdict(lambda: defaultdict(PastConfig))
 
     @staticmethod
     def apply_rule(tape: BlockTape, rule: Rule) -> int | None:
