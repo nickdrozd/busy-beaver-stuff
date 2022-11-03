@@ -242,21 +242,20 @@ class BacksymbolMacro(MacroProg):
 
         state, backsymbol = divmod(st_co, self.base_colors)
 
-        return state, (
-            not at_right,
-            [macro_color, backsymbol]
-            if at_right else
-            [backsymbol, macro_color],
-        )
+        tape = [macro_color, backsymbol]
+
+        if not at_right:
+            tape.reverse()
+
+        return state, (not at_right, tape)
 
     def reconstruct_outputs(self, config: Config) -> Instr:
         state, (right_edge, tape) = config
 
-        out_color, backsymbol = (
-            tape
-            if right_edge else
-            reversed(tape)
-        )
+        if not right_edge:
+            tape.reverse()
+
+        out_color, backsymbol = tape
 
         return (
             out_color,
