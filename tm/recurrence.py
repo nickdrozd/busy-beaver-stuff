@@ -17,13 +17,15 @@ Tapes = dict[int, PtrTape]
 
 Rule = tuple[tuple[int, ...], ...]
 
+@dataclass
 class History:
-    def __init__(self, tapes: Tapes | None = None):
-        self.tapes: Tapes = {} if tapes is None else tapes
+    tapes: Tapes
 
-        self.states: list[State] = []
-        self.positions: list[int] = []
-        self.actions: dict[Action, list[int]] = defaultdict(list)
+    states: list[State] = field(default_factory = list)
+    positions: list[int] = field(default_factory = list)
+
+    actions: dict[Action, list[int]] = field(
+        default_factory = lambda: defaultdict(list))
 
     def copy(self) -> History:
         new_copy = History(tapes = dict(self.tapes.items()))

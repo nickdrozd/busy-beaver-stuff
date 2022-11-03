@@ -249,7 +249,7 @@ class LinRecMachine:
 
         self.tape = tape = BlockTape([], 0, [])
 
-        self.history = History(tapes = samples)
+        self.history = History(tapes = samples or {})
 
         step: int = 0
         state: State = 0

@@ -315,7 +315,7 @@ class Program:
                 state,
                 BlockTape([], int(color), []),
                 0,
-                History(),
+                History(tapes = {}),
             )
             for state, color in sorted(slots)
         ]
