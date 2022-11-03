@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import ceil, log
 from typing import Any
 
 from tm.parse import tcompile, ProgLike
@@ -191,7 +192,27 @@ class BlockMacro(MacroProg):
         if color == 0:
             return [0] * self.cells
 
-        return list(self.color_to_tape_cache[color])
+        if (prev := self.color_to_tape_cache.get(color)) is not None:
+            return list(prev)
+
+        tape: Tape = []
+
+        num = color
+
+        for _ in range(ceil(log(color, self.base_colors)) + 1):
+            num, rem = divmod(num, self.base_colors)
+
+            tape.insert(0, rem)
+
+            if num == 0:
+                break
+
+        for _ in range(self.cells - len(tape)):
+            tape.insert(0, 0)
+
+        self.color_to_tape_cache[color] = tuple(tape)
+
+        return tape
 
 ########################################
 
