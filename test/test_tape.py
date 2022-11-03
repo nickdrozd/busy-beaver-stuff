@@ -29,9 +29,13 @@ class TestTape(TestCase):
             expected: str,
             tape: BlockTape | None = None,
     ) -> None:
+        if tape is None:
+            assert self.tape is not None
+            tape = self.tape
+
         self.assertEqual(
             stringify_sig(
-                (tape or self.tape).signature),  # type: ignore
+                tape.signature),
             expected)
 
     def test_blank(self):

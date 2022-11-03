@@ -308,14 +308,15 @@ def lr_convert(rado_string: int) -> str:
     def convert_bin_instr(bin_instr: str) -> str:
         pr: str
         sh: str
+        tr: list[str]
 
         pr, sh, *tr =  bin_instr  # type: ignore
 
         v_sh = 'L' if int(sh) == 0 else 'R'
 
         v_tr = (
-            '_' if (tr := int(''.join(tr), 2)) == 0  # type: ignore
-            else chr(tr + 64)
+            '_' if (vtr := int(''.join(tr), 2)) == 0
+            else chr(vtr + 64)
         )
 
         return f'{pr}{v_sh}{v_tr}'
