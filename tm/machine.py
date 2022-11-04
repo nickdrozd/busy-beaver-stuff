@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
 from dataclasses import dataclass
 
 from tm.tape import BlockTape
-from tm.parse import tcompile, st_str
+from tm.parse import tcompile, st_str, CompProg
+from tm.macro import MacroProg
+from tm.program import Program
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
 State = int | str
@@ -22,11 +23,9 @@ TERM_CATS = (
     'xlimit',
 )
 
-ProgLike = Any  # type: ignore
-
 @dataclass
 class Machine:
-    program: ProgLike
+    program: str | Program | MacroProg | CompProg
 
     tape: BlockTape | None = None
     state: State | None = None
@@ -95,11 +94,11 @@ class Machine:
             tape: BlockTape | None = None,
             prover: int | None = None,
     ) -> Machine:
-        comp = (
+        comp: MacroProg | CompProg = (
             tcompile(self.program)
             if isinstance(self.program, str) else
             tcompile(str(self.program))
-            if type(self.program).__name__ == 'Program' else
+            if isinstance(self.program, Program) else
             self.program
         )
 
@@ -141,7 +140,8 @@ class Machine:
                     continue
 
             try:
-                color, shift, next_state = comp[state][tape.scan]
+                color, shift, next_state = \
+                    comp[state][tape.scan]  # type: ignore
             except TypeError:
                 self.undfnd = step, f'{st_str(state)}{tape.scan}'
                 break
