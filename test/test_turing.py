@@ -2,7 +2,7 @@
 
 from math import isclose
 from typing import Any
-from unittest import TestCase, expectedFailure
+from unittest import TestCase, expectedFailure, skip
 from itertools import product
 from collections.abc import Mapping
 
@@ -1382,10 +1382,13 @@ PROVER_HALT_SLOW = {
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC": (2, 0, 2.2, 2372),
 
     # 6/2
-    "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2, 1, 2.0, 98641),
-    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (4, 1, 6.0, 39456),
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (6, 1, 3.5, 18267),
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": (3, 1, 3.1, 10566),
+}
+
+PROVER_HALT_KILLS_COMPILER = {
+    "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2, 1, 2.0, 98641),
+    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (4, 1, 6.0, 39456),
 }
 
 
@@ -2070,5 +2073,12 @@ class Slow(TuringTest):  # no-coverage
     def test_prover(self):
         self._test_prover_est(
             PROVER_HALT_SLOW,
+            diff_lim = 40,
+        )
+
+    @skip('')
+    def test_prover_kills_compiler(self):
+        self._test_prover_est(
+            PROVER_HALT_KILLS_COMPILER,
             diff_lim = 40,
         )
