@@ -1,5 +1,4 @@
 # pylint: disable = attribute-defined-outside-init
-from typing import Any
 from unittest import TestCase
 
 from tm import Machine
@@ -15,7 +14,7 @@ def stringify_sig(sig: Signature) -> str:
 
 
 class TestTape(TestCase):
-    def run_bb(self, prog: str, **opts: Any) -> None:  # type: ignore
+    def run_bb(self, prog: str, **opts) -> None:
         self.machine = Machine(prog).run(
             watch_tape = True,
             **opts)

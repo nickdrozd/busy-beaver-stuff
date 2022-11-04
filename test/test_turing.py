@@ -1557,14 +1557,14 @@ class TuringTest(TestCase):
         if steps >= 1:
             self.deny_lin_recurrence(steps - 1, recurrence)
 
-    def run_bb(  # type: ignore
+    def run_bb(
             self,
             prog: str | MacroProg | Program,
             print_prog: bool = True,
             analyze: bool = True,
             normal: bool = True,
             lin_rec: bool = False,
-            **opts: Any,
+            **opts,
     ):
         if print_prog:
             print(prog)
@@ -1596,7 +1596,7 @@ class TuringTest(TestCase):
 
     def _test_simple_terminate(
             self,
-            prog_data: BasicTermData,
+            prog_data: Mapping[str, tuple[int | set[str], int]],
             blank: bool,
     ):
         for prog, (marks, steps) in prog_data.items():
@@ -1610,12 +1610,15 @@ class TuringTest(TestCase):
 
             blanks = self.machine.blanks
 
-            if not blank and marks > 0:
-                self.assert_marks(marks)
+            if not blank:
+                assert isinstance(marks, int)
 
-                if prog[0] != '0':
-                    self.assertEqual(blanks, {})
-                    self.assert_cant_blank(prog)
+                if marks > 0:
+                    self.assert_marks(marks)
+
+                    if prog[0] != '0':
+                        self.assertEqual(blanks, {})
+                        self.assert_cant_blank(prog)
 
             else:
                 self.assert_marks(0)
@@ -1645,9 +1648,9 @@ class TuringTest(TestCase):
             blank = False,
         )
 
-    def _test_spinout(  # type: ignore
+    def _test_spinout(
             self,
-            prog_data: Mapping[str, Any],
+            prog_data: Mapping[str, tuple[int | set[str], int]],
             blank: bool = False,
     ):
         self._test_simple_terminate(
@@ -1655,9 +1658,9 @@ class TuringTest(TestCase):
             blank = blank,
         )
 
-    def _test_recur(  # type: ignore
+    def _test_recur(
             self,
-            prog_data: Mapping[str, Any],
+            prog_data: Mapping[str, tuple[int | None, int]],
             quick: bool = True,
             blank: bool = False,
             qsihlt: bool | None = False,
@@ -1675,6 +1678,7 @@ class TuringTest(TestCase):
             else:
                 if prog not in BLANKERS:
                     self.assert_cant_blank(prog)
+                assert steps is not None
                 self.verify_lin_recurrence(prog, steps, period)
 
             if not quick or period > 2000:  # no-coverage
@@ -1684,6 +1688,7 @@ class TuringTest(TestCase):
             if blank:
                 self.run_bb(prog)
             else:
+                assert steps is not None
                 self.run_bb(
                     prog,
                     lin_rec = True,
