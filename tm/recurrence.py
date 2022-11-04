@@ -222,14 +222,10 @@ class Prover:
 
         # If this is a new config, record it
         if (temp := self.configs.get(sig)) is None:
-            temp = {}
+            temp = defaultdict(PastConfig)
             self.configs[sig] = temp
 
-        if (past_config := temp.get(state)) is None:
-            past_config = PastConfig()
-            temp[state] = past_config
-
-        if not past_config.check(cycle, tape):
+        if not (past_config := temp[state]).check(cycle, tape):
             return None
 
         assert (last_delta := past_config.last_delta) is not None
