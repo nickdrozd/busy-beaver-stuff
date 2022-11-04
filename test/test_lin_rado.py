@@ -2,7 +2,7 @@
 from unittest import TestCase
 
 from tm import LinRecMachine
-from generate.naive import yield_programs, Rejects
+from generate.naive import yield_programs
 
 
 class TestLinRado(TestCase):
@@ -22,7 +22,7 @@ class TestLinRado(TestCase):
             colors: int,
             halt: int,
             xlimit: int,
-            rejects: Rejects | None = None,
+            rejects: list[str] | None = None,
     ):
         self.progs = {
             prog

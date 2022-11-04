@@ -1,11 +1,9 @@
 import re
 from itertools import product
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator
 
 SHIFTS = 'R', 'L'
 HALT   = '_'
-
-Rejects = Sequence[str | re.Pattern[str]]
 
 def yield_actions(
         states: int,
@@ -34,13 +32,11 @@ def yield_programs(
         states: int,
         colors: int,
         halt: bool,
-        rejects: Rejects | None = None,
+        rejects: list[str] | None = None,
 ) -> Iterator[str]:
     yield from filter(
         lambda prog: not any(
             re.compile(regex).match(prog)
-            if isinstance(regex, str) else
-            regex.match(prog)
             for regex in rejects or []
         ),
         (
