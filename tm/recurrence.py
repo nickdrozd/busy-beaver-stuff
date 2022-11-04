@@ -171,21 +171,19 @@ class InfiniteRule(Exception):
 
 @dataclass
 class Prover:
-    def __init__(
-            self,
-            prog: CompProg | MacroProg,
-            diff_lim: int | None,
-    ):
-        self.prog: CompProg | MacroProg = prog
+    prog: CompProg | MacroProg
 
-        self.diff_lim: int | None = diff_lim
+    diff_lim: int | None
 
-        self.rules: dict[tuple[State, Signature], Rule] = {}
+    rules: dict[
+        tuple[State, Signature],
+        Rule,
+    ] = field(default_factory = dict)
 
-        self.configs: dict[
-            Signature,
-            dict[State, PastConfig],
-        ] = defaultdict(lambda: defaultdict(PastConfig))
+    configs: dict[
+        Signature,
+        dict[State, PastConfig],
+    ] = field(default_factory = dict)
 
     @staticmethod
     def apply_rule(tape: BlockTape, rule: Rule) -> int | None:
@@ -223,8 +221,15 @@ class Prover:
             return self.apply_rule(tape, rule)
 
         # If this is a new config, record it
-        if not (past_config := self.configs[sig][state]
-                ).check(cycle, tape):
+        if (temp := self.configs.get(sig)) is None:
+            temp = {}
+            self.configs[sig] = temp
+
+        if (past_config := temp.get(state)) is None:
+            past_config = PastConfig()
+            temp[state] = past_config
+
+        if not past_config.check(cycle, tape):
             return None
 
         assert (last_delta := past_config.last_delta) is not None
