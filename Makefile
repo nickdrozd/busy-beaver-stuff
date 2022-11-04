@@ -31,7 +31,7 @@ type :
 	mypy $(MODULES)
 
 compile : clean-python
-	mypyc tm generate/c.py generate/naive.py
+	mypyc tm generate --exclude tree
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
