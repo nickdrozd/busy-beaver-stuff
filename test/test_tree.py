@@ -65,7 +65,7 @@ class TestTree(TestCase):
     def test_22(self):
         s22q: Q[str] = Queue()
 
-        def capture(prog):
+        def capture(prog: str) -> None:
             if any(run_for_none(prog, 13)):
                 return
 
@@ -92,7 +92,7 @@ class TestTree(TestCase):
         h32q: Q[str] = Queue()
         q32q: Q[str] = Queue()
 
-        def capture(prog):
+        def capture(prog: str) -> None:
             if any(run_for_none(prog, 116)):
                 return
 
@@ -101,8 +101,6 @@ class TestTree(TestCase):
             elif dots == 1:
                 if not re.match(BC_LOOP, prog):
                     h32q.put(prog)
-            else:
-                pass
 
         run_tree_gen(
             states = 3,
@@ -132,7 +130,7 @@ class TestTree(TestCase):
         h23q: Q[str] = Queue()
         q23q: Q[str] = Queue()
 
-        def capture(prog: str):
+        def capture(prog: str) -> None:
             if any(run_for_none(prog, 192)):
                 return
 
