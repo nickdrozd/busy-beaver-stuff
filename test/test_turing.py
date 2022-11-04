@@ -1623,8 +1623,7 @@ class TuringTest(TestCase):
             else:
                 self.assert_marks(0)
                 self.assertEqual(steps, max(blanks.values()))
-                if blank:
-                    self.assertEqual(marks, set(blanks))
+                self.assertEqual(marks, set(blanks))
                 self.assert_could_blank(prog)
 
             self.assert_quasihalt(True)
