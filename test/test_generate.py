@@ -7,10 +7,10 @@ from multiprocessing import Queue
 from collections.abc import Iterator
 
 from tm import Machine, LinRecMachine
+from tm import Graph, BlockMacro, BacksymbolMacro
+from tm.macro import MacroProg
 from generate.tree  import run_tree_gen
 from generate.naive import yield_programs, Rejects
-from analyze import Graph, BlockMacro, BacksymbolMacro
-from analyze.macro import MacroProg
 
 
 HOLDOUTS_22Q = {

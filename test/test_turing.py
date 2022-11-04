@@ -6,10 +6,10 @@ from unittest import TestCase, expectedFailure
 from itertools import product
 from collections.abc import Mapping
 
-from tm import Machine, LinRecMachine
+from tm.macro import MacroProg
 from tm.parse import tcompile, dcompile
-from analyze import Graph, Program, BlockMacro, BacksymbolMacro
-from analyze.macro import MacroProg
+from tm import Machine, LinRecMachine
+from tm import Graph, Program, BlockMacro, BacksymbolMacro
 
 BasicTermData = Mapping[str, tuple[int, int]]
 

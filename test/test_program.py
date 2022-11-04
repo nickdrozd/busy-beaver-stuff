@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from analyze import Program
+from tm import Program
 
 PROGS: dict[
     str,

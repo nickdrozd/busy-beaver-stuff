@@ -19,7 +19,7 @@ idris :
 
 ## Python ##############################
 
-MODULES = tm generate analyze test *.py
+MODULES = tm generate test *.py
 
 lint :
 	pylint --version
@@ -31,7 +31,7 @@ type :
 	mypy $(MODULES)
 
 compile : clean-python
-	mypyc tm analyze generate/c.py generate/naive.py
+	mypyc tm generate/c.py generate/naive.py
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
@@ -59,7 +59,7 @@ coverage : clean-python
 	$(COVERAGE) combine --quiet
 	$(COVERAGE) html
 
-# PYTHONPATH=$PYTHONPATH:tm:analyze make special target=tm/tape.py
+# PYTHONPATH=$PYTHONPATH:tm make special target=tm/tape.py
 special :
 	specialist --target $(target) -m unittest $(TUR)
 

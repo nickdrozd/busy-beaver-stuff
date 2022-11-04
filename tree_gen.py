@@ -1,10 +1,10 @@
 from argparse import ArgumentParser
 from collections.abc import Iterator
 
-from tm import Machine
 from generate.tree import run_tree_gen
-from analyze.macro import MacroProg
-from analyze import Program, BlockMacro, BacksymbolMacro
+from tm.macro import MacroProg
+from tm import Machine
+from tm import Program, BlockMacro, BacksymbolMacro
 
 
 def prune_print(prog: str) -> None:

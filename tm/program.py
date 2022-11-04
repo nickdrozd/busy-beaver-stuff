@@ -5,9 +5,9 @@ from itertools import product
 from collections import defaultdict
 from collections.abc import Iterator
 
+from tm import Graph
 from tm.tape import BlockTape
 from tm.parse import parse, st_str, tcompile
-from analyze.graph import Graph
 
 INIT = 'A'
 BLANK = '0'

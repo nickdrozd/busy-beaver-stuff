@@ -3,7 +3,7 @@ import shlex
 import tempfile
 import subprocess
 
-from analyze import Graph
+from tm import Graph
 from generate.dot import make_dot
 
 if __name__ == '__main__':

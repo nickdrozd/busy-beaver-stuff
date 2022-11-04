@@ -2,7 +2,7 @@
 import sys
 
 from tm import Machine
-from analyze import BlockMacro, BacksymbolMacro
+from tm import BlockMacro, BacksymbolMacro
 from perf import profile
 
 PRINT = 1

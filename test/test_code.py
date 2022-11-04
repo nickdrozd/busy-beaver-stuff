@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from analyze import Graph
+from tm import Graph
 from generate.c import make_c
 from generate.dot import make_dot
 

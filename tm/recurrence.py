@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from tm.parse import CompProg
 from tm.tape import PtrTape, BlockTape, Signature
-from analyze.macro import MacroProg
+from tm.macro import MacroProg
 
 State = int | str
 Color = int | str

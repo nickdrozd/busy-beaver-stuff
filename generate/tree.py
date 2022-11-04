@@ -2,8 +2,7 @@ from queue import Empty, Queue
 from collections.abc import Callable
 from multiprocessing import cpu_count, Manager, Process
 
-from tm import Machine
-from analyze import Program
+from tm import Machine, Program
 
 Output  = Callable[[str], None]
 RunPile = Queue[str | tuple[str, str]]

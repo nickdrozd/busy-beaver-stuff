@@ -1,6 +1,6 @@
 import sys
 
-from analyze import Program
+from tm import Program
 
 def format_sequence(prog: Program) -> None:
     print(f'    "{prog}": {{')
