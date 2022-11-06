@@ -147,8 +147,8 @@ class TestTape(TestCase):
 
         tape.step(0, 0, False)
 
-        self.assert_tape_contents(tape, [[1, 4]], 0, [[0, 1]])
+        self.assert_tape_contents(tape, [[1, 4]], 0, [[0, 1, 0]])
 
         tape.step(1, 1, False)
 
-        self.assert_tape_contents(tape, [[1, 5]], 0, [])
+        self.assert_tape_contents(tape, [[1, 5, 0]], 0, [])

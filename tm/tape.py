@@ -120,7 +120,11 @@ class BlockTape:
             if next_pull[1] > 1:
                 next_pull[1] -= 1
             else:
-                pull.pop()
+                popped = pull.pop()
+
+                if push_block is None:
+                    push_block = popped
+                    push_block[1] = 0
 
         stepped = 1 if push_block is None else 1 + push_block[1]
 
