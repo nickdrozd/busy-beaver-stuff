@@ -209,6 +209,28 @@ class Prover:
 
         return times
 
+    def run_simulator(
+            self,
+            steps: int,
+            state: State,
+            tape: BlockTape,
+    ) -> State | None:
+        for _ in range(steps):
+            try:
+                color, shift, next_state = \
+                    self.prog[state][tape.scan] # type: ignore
+            except TypeError:
+                return None
+
+            _ = tape.step(
+                shift,
+                color,
+                state == next_state)
+
+            state = next_state
+
+        return state
+
     def try_rule(
             self,
             cycle: int,
@@ -253,23 +275,9 @@ class Prover:
                 if old[1] != new[1]:
                     new.append(num)
 
-        state_copy = state
+        end_state = self.run_simulator(last_delta, state, tape_copy)
 
-        for _ in range(last_delta):
-            try:
-                color, shift, next_state = \
-                    self.prog[state_copy][tape_copy.scan] # type: ignore
-            except TypeError:
-                return None
-
-            _ = tape_copy.step(
-                shift,
-                color,
-                state_copy == next_state)
-
-            state_copy = next_state
-
-        if state_copy != state:
+        if end_state != state:
             return None
 
         if tape_copy.scan != sig[0]:
