@@ -60,8 +60,8 @@ class BlockTape:
     def signature(self) -> Signature:
         return (
             self.scan,
-            tuple(c for c, _ in self.lspan),
-            tuple(c for c, _ in self.rspan),
+            tuple(block[0] for block in self.lspan),
+            tuple(block[0] for block in self.rspan),
         )
 
     @property

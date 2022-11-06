@@ -284,12 +284,7 @@ class Prover:
 
                     new.pop()
 
-        try:
-            copy_sig = tape_copy.signature
-        except ValueError:
-            return None
-
-        if copy_sig != sig:
+        if tape_copy.signature != sig:
             return None
 
         block_diffs = tuple(
