@@ -2,7 +2,7 @@
 from unittest import TestCase
 
 from tm import Machine
-from tm.tape import BlockTape, Signature
+from tm.tape import BlockTape, Signature, Color, Span
 
 def stringify_sig(sig: Signature) -> str:
     scan, lspan, rspan = sig
@@ -37,6 +37,17 @@ class TestTape(TestCase):
                 tape.signature),
             expected)
 
+    def assert_tape_contents(
+            self,
+            tape: BlockTape,
+            lspan: Span,
+            scan: Color,
+            rspan: Span,
+    ):
+        self.assertEqual(tape.lspan, lspan)
+        self.assertEqual(tape.scan, scan)
+        self.assertEqual(tape.rspan, rspan)
+
     def test_blank(self):
         self.run_bb(
             "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD",
@@ -70,7 +81,7 @@ class TestTape(TestCase):
             '1|0|1[2]1',
             tape = copy_2)
 
-    def test_trace_blocks(self):
+    def test_trace_blocks_1(self):
         # 1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA : BBB(4, 2)
         #    49 |   144 | D1 | 1^15 [1] 1^6
         #    54 |   167 | D1 | 1^12 [1] 1^11
@@ -101,3 +112,43 @@ class TestTape(TestCase):
         self.assertEqual(
             [1, 11, 0],
             tape.rspan[0])
+
+    def test_trace_blocks_2(self):
+        # 1RB 1LA  0LA 0RB: counter
+        #    43 |    51 | B0 | 1^4 [0]
+        #    44 |    52 | A1 | 1^3 [1] 0^1
+        #    45 |    56 | A0 | [0] 1^4 0^1
+        #    46 |    57 | B1 | 1^1 [1] 1^3 0^1
+        #    47 |    61 | B0 | 1^1 0^4 [0]
+        #    Applying 3 times: ((1, -1), ())
+        #    48 |    64 | B0 | 1^4 0^1 [0]
+        #    49 |    65 | A0 | 1^4 [0] 0^1
+        #    50 |    66 | B0 | 1^5 [0]
+
+        tape = BlockTape([[1, 4]], 0, [])
+
+        self.assert_tape_contents(tape, [[1, 4]], 0, [])
+
+        tape.lspan[0].append(0)
+
+        self.assert_tape_contents(tape, [[1, 4, 0]], 0, [])
+
+        tape.step(0, 0, False)
+        tape.step(0, 1, True)
+        tape.step(1, 1, False)
+        tape.step(1, 0, True)
+
+        self.assert_tape_contents(tape, [[1, 1], [0, 4, 0]], 0, [])
+
+        tape.lspan[0][1] += 3
+        tape.lspan[1][1] -= 3
+
+        self.assert_tape_contents(tape, [[1, 4], [0, 1, 0]], 0, [])
+
+        tape.step(0, 0, False)
+
+        self.assert_tape_contents(tape, [[1, 4]], 0, [[0, 1]])
+
+        tape.step(1, 1, False)
+
+        self.assert_tape_contents(tape, [[1, 5]], 0, [])
