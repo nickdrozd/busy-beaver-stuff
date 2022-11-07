@@ -319,7 +319,7 @@ class Prover:
             if not rec_rule:
                 raise InfiniteRule()
 
-            for _ in range(last_delta ** 2):
+            for _ in range(last_delta):
                 if (result := self.run_simulator(
                         last_delta, state, tape_copy)) is None:
                     return None
