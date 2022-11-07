@@ -346,16 +346,6 @@ class Prover:
                 if end_state != state:
                     return None
 
-                next_block_diffs = tuple(
-                    tuple(
-                        old[1] - new[1]
-                        for old, new in zip(*spans)
-                    ) for spans in zip(tape.spans, past_tape.spans)
-                )
-
-                if block_diffs != next_block_diffs:
-                    return None
-
                 if tape_copy.signature != sig:
                     return None
 
