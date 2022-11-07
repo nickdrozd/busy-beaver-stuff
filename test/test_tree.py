@@ -136,8 +136,8 @@ class TestTree(TestCase):
         q23 = queue_to_set(q23q)
 
         self.assert_counts({
-             11: h23,
-            119: q23,
+             10: h23,
+            103: q23,
         })
 
         self.assertEqual(

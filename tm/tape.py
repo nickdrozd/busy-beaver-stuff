@@ -16,6 +16,8 @@ class BlockTape:
     rspan: Span
     head: int = 0
 
+    scan_info: int | None = None
+
     def __repr__(self) -> str:
         return ' '.join([
             f'{color}^{count}'
@@ -112,6 +114,8 @@ class BlockTape:
             None
         )
 
+        scan_info: int | None = None
+
         if not pull:
             self.scan = 0
         else:
@@ -126,6 +130,9 @@ class BlockTape:
                     push_block = popped
                     push_block[1] = 0
 
+                if popped[2:]:
+                    scan_info = popped[2]
+
         stepped = 1 if push_block is None else 1 + push_block[1]
 
         if push and (block := push[-1])[0] == color:
@@ -139,7 +146,11 @@ class BlockTape:
             else:
                 push_block[0] = color
                 push_block[1] += 1
+                if self.scan_info is not None and not push_block[2:]:
+                    push_block.append(self.scan_info)
             push.append(push_block)
+
+        self.scan_info = scan_info
 
         if shift:
             self.head += stepped

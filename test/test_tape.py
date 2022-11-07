@@ -209,6 +209,8 @@ class TestTape(TestCase):
 
         self.assert_tape([[1, 1], [2, 60]], 2, [[1, 1]])
 
+        self.assertEqual(self.tape.scan_info, 0)
+
         self.step(0, 1, 1)
 
         self.assert_tape([], 1, [[1, 62]])
