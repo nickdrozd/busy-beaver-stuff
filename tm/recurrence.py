@@ -214,8 +214,17 @@ class Prover:
             steps: int,
             state: State,
             tape: BlockTape,
-    ) -> State | None:
+    ) -> tuple[bool, State] | None:
+        rec_rule = False
+
         for _ in range(steps):
+            if (rule := self.rules.get(
+                    (state, tape.signature)
+            )) is not None:
+                if self.apply_rule(tape, rule) is not None:
+                    rec_rule = True
+                    continue
+
             try:
                 color, shift, next_state = \
                     self.prog[state][tape.scan] # type: ignore
@@ -229,7 +238,7 @@ class Prover:
 
             state = next_state
 
-        return state
+        return rec_rule, state
 
     def try_rule(
             self,
@@ -275,7 +284,11 @@ class Prover:
                 if old[1] != new[1]:
                     new.append(num)
 
-        end_state = self.run_simulator(last_delta, state, tape_copy)
+        if (result := self.run_simulator(
+                last_delta, state, tape_copy)) is None:
+            return None
+
+        rec_rule, end_state = result
 
         if end_state != state:
             return None
@@ -303,6 +316,32 @@ class Prover:
         )
 
         if all(diff >= 0 for span in block_diffs for diff in span):
+            if not rec_rule:
+                raise InfiniteRule()
+
+            for _ in range(last_delta ** 2):
+                if (result := self.run_simulator(
+                        last_delta, state, tape_copy)) is None:
+                    return None
+
+                rec_rule, end_state = result
+
+                if end_state != state:
+                    return None
+
+                next_block_diffs = tuple(
+                    tuple(
+                        old[1] - new[1]
+                        for old, new in zip(*spans)
+                    ) for spans in zip(tape.spans, past_tape.spans)
+                )
+
+                if block_diffs != next_block_diffs:
+                    return None
+
+                if tape_copy.signature != sig:
+                    return None
+
             raise InfiniteRule()
 
         self.rules[(state, sig)] = block_diffs
