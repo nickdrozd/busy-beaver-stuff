@@ -24,6 +24,8 @@ HOLDOUTS_23Q = read_progs('holdouts_23q')
 def macro_variations(prog: str) -> Iterator[str | MacroProg]:
     yield prog
 
+    yield BacksymbolMacro(prog, [1])
+
     for block in range(2, 9):
         yield BacksymbolMacro(BlockMacro(prog, [block]), [1])
 
@@ -82,7 +84,7 @@ class TestTree(TestCase):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 225)):
+            if any(run_for_none(prog, 189)):
                 return
 
             if prog.count('...') == 0:
@@ -103,7 +105,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              0: h32,
-            40: q32,
+            36: q32,
         })
 
         self.assertEqual(
@@ -135,7 +137,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              11: h23,
-            123: q23,
+            119: q23,
         })
 
         self.assertEqual(
