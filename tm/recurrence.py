@@ -185,6 +185,24 @@ class Prover:
         dict[State, PastConfig],
     ] = field(default_factory = dict)
 
+    def get_rule(self, state: State, tape: BlockTape) -> Rule | None:
+        if (temp := self.rules.get((state, tape.scan))) is None:
+            return None
+
+        return temp.get(tape.signature)
+
+    def add_rule(
+            self,
+            state: State,
+            sig: Signature,
+            tape: BlockTape,
+            diffs: tuple[tuple[int, ...], ...],
+    ) -> None:
+        if (action := (state, tape.scan)) not in self.rules:
+            self.rules[action] = {}
+
+        self.rules[action][sig] = diffs
+
     @staticmethod
     def apply_rule(tape: BlockTape, rule: Rule) -> int | None:
         diffs, blocks = (
@@ -218,11 +236,10 @@ class Prover:
         rec_rule = False
 
         for _ in range(steps):
-            if (temp := self.rules.get((state, tape.scan))) is not None:
-                if (rule := temp.get(tape.signature)) is not None:
-                    if self.apply_rule(tape, rule) is not None:
-                        rec_rule = True
-                        continue
+            if (rule := self.get_rule(state, tape)) is not None:
+                if self.apply_rule(tape, rule) is not None:
+                    rec_rule = True
+                    continue
 
             try:
                 color, shift, next_state = \
@@ -248,18 +265,15 @@ class Prover:
         sig = tape.signature
 
         # If we already have a rule, apply it
-        if (temp1 := self.rules.get(
-                action := (state, tape.scan)
-        )) is not None:
-            if (rule := temp1.get(sig)) is not None:
-                return self.apply_rule(tape, rule)
+        if (rule := self.get_rule(state, tape)) is not None:
+            return self.apply_rule(tape, rule)
 
         # If this is a new config, record it
-        if (temp2 := self.configs.get(sig)) is None:
-            temp2 = defaultdict(PastConfig)
-            self.configs[sig] = temp2
+        if (temp := self.configs.get(sig)) is None:
+            temp = defaultdict(PastConfig)
+            self.configs[sig] = temp
 
-        if not (past_config := temp2[state]).check(cycle, tape):
+        if not (past_config := temp[state]).check(cycle, tape):
             return None
 
         assert (last_delta := past_config.last_delta) is not None
@@ -347,9 +361,6 @@ class Prover:
 
             raise InfiniteRule()
 
-        if action not in self.rules:
-            self.rules[action] = {}
-
-        self.rules[action][sig] = block_diffs
+        self.add_rule(state, sig, tape, block_diffs)
 
         return None
