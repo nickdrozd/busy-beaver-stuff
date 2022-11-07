@@ -1,6 +1,8 @@
 # pylint: disable = attribute-defined-outside-init
 from unittest import TestCase
 
+from test.test_tree import read_progs
+
 from tm import LinRecMachine
 from generate.naive import yield_programs
 
@@ -175,13 +177,6 @@ NOT_CONNECTED_32 = [
     AB_LOOP,
     BC_LOOP,
 ]
-
-def read_progs(name: str) -> set[str]:
-    with open(f'test/data/{name}.prog') as holdouts:
-        return set(
-            prog.strip()
-            for prog in holdouts.readlines()
-        )
 
 LR_NOT_BRADY = read_progs('lr_not_brady')
 BRADY_HOLDOUTS = read_progs('brady_holdouts')

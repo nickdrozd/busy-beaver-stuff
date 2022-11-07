@@ -4,13 +4,18 @@ from unittest import TestCase
 from multiprocessing import Queue
 from collections.abc import Iterator
 
-from test.test_lin_rado import read_progs
-
 from tm import Machine
 from tm import Graph, BlockMacro, BacksymbolMacro
 from tm.macro import MacroProg
 from generate.tree  import run_tree_gen
 
+
+def read_progs(name: str) -> set[str]:
+    with open(f'test/data/{name}.prog') as holdouts:
+        return set(
+            prog.strip()
+            for prog in holdouts.readlines()
+        )
 
 HOLDOUTS_23H = read_progs('holdouts_23h')
 HOLDOUTS_32Q = read_progs('holdouts_32q')
