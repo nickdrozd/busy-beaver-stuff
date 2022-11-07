@@ -1,21 +1,16 @@
 # pylint: disable = attribute-defined-outside-init
-import re
 from queue import Empty, Queue as Q
 from unittest import TestCase
 from multiprocessing import Queue
 from collections.abc import Iterator
 
-from test.test_lin_rado import read_progs, BC_LOOP, LIN_HOLDOUTS
+from test.test_lin_rado import read_progs
 
 from tm import Machine
 from tm import Graph, BlockMacro, BacksymbolMacro
 from tm.macro import MacroProg
 from generate.tree  import run_tree_gen
 
-
-HOLDOUTS_22Q = {
-    "1RB 1LA  0LA 0RB",  # counter
-}
 
 HOLDOUTS_23H = read_progs('holdouts_23h')
 HOLDOUTS_32Q = read_progs('holdouts_32q')
@@ -24,13 +19,8 @@ HOLDOUTS_23Q = read_progs('holdouts_23q')
 def macro_variations(prog: str) -> Iterator[str | MacroProg]:
     yield prog
 
-    yield BlockMacro(prog, [6])
-    yield BlockMacro(prog, [7])
-
-    yield BacksymbolMacro(BlockMacro(prog, [2]), [1])
-    yield BacksymbolMacro(BlockMacro(prog, [3]), [1])
-    yield BacksymbolMacro(BlockMacro(prog, [4]), [1])
-    yield BacksymbolMacro(BlockMacro(prog, [5]), [1])
+    for block in range(2, 9):
+        yield BacksymbolMacro(BlockMacro(prog, [block]), [1])
 
 def run_for_none(prog: str, sim_lim: int) -> Iterator[bool]:
     yield from (
@@ -66,7 +56,7 @@ class TestTree(TestCase):
         s22q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 13)):
+            if any(run_for_none(prog, 115)):
                 return
 
             s22q.put(prog)
@@ -80,27 +70,20 @@ class TestTree(TestCase):
 
         s22: set[str] = queue_to_set(s22q)
 
-        self.assert_counts({
-            1: s22,
-        })
-
-        self.assertEqual(
-            s22,
-            HOLDOUTS_22Q)
+        self.assert_counts({0: s22})
 
     def test_32(self):
         h32q: Q[str] = Queue()
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 116)):
+            if any(run_for_none(prog, 225)):
                 return
 
             if (dots := prog.count('...')) == 0:
                 q32q.put(prog)
             elif dots == 1:
-                if not re.match(BC_LOOP, prog):
-                    h32q.put(prog)
+                h32q.put(prog)
 
         run_tree_gen(
             states = 3,
@@ -114,13 +97,9 @@ class TestTree(TestCase):
         q32 = queue_to_set(q32q)
 
         self.assert_counts({
-             1: h32,
-            60: q32,
+             0: h32,
+            40: q32,
         })
-
-        self.assertTrue(
-            h32 <= LIN_HOLDOUTS
-        )
 
         self.assertEqual(
             q32,
@@ -151,7 +130,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              11: h23,
-            125: q23,
+            123: q23,
         })
 
         self.assertEqual(
