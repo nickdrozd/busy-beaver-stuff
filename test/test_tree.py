@@ -64,7 +64,7 @@ class TestTree(TestCase):
             if any(run_for_none(prog, 115)):
                 return
 
-            s22q.put(prog)
+            s22q.put(prog)  # no-coverage
 
         run_tree_gen(
             states = 2,
@@ -85,9 +85,9 @@ class TestTree(TestCase):
             if any(run_for_none(prog, 225)):
                 return
 
-            if (dots := prog.count('...')) == 0:
+            if prog.count('...') == 0:
                 q32q.put(prog)
-            elif dots == 1:
+            else:  # no-coverage
                 h32q.put(prog)
 
         run_tree_gen(
@@ -118,9 +118,9 @@ class TestTree(TestCase):
             if any(run_for_none(prog, 192)):
                 return
 
-            if (dots := prog.count('...')) == 0:
+            if prog.count('...') == 0:
                 q23q.put(prog)
-            elif dots == 1:
+            else:
                 h23q.put(prog.replace('...', '1R_'))
 
         run_tree_gen(
