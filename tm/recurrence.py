@@ -176,8 +176,8 @@ class Prover:
     diff_lim: int | None
 
     rules: dict[
-        tuple[State, Signature],
-        Rule,
+        Action,
+        dict[Signature, Rule],
     ] = field(default_factory = dict)
 
     configs: dict[
@@ -218,12 +218,11 @@ class Prover:
         rec_rule = False
 
         for _ in range(steps):
-            if (rule := self.rules.get(
-                    (state, tape.signature)
-            )) is not None:
-                if self.apply_rule(tape, rule) is not None:
-                    rec_rule = True
-                    continue
+            if (temp := self.rules.get((state, tape.scan))) is not None:
+                if (rule := temp.get(tape.signature)) is not None:
+                    if self.apply_rule(tape, rule) is not None:
+                        rec_rule = True
+                        continue
 
             try:
                 color, shift, next_state = \
@@ -246,17 +245,21 @@ class Prover:
             state: State,
             tape: BlockTape,
     ) -> int | None:
+        sig = tape.signature
+
         # If we already have a rule, apply it
-        if (rule := self.rules.get(
-                (state, sig := tape.signature))) is not None:
-            return self.apply_rule(tape, rule)
+        if (temp1 := self.rules.get(
+                action := (state, tape.scan)
+        )) is not None:
+            if (rule := temp1.get(sig)) is not None:
+                return self.apply_rule(tape, rule)
 
         # If this is a new config, record it
-        if (temp := self.configs.get(sig)) is None:
-            temp = defaultdict(PastConfig)
-            self.configs[sig] = temp
+        if (temp2 := self.configs.get(sig)) is None:
+            temp2 = defaultdict(PastConfig)
+            self.configs[sig] = temp2
 
-        if not (past_config := temp[state]).check(cycle, tape):
+        if not (past_config := temp2[state]).check(cycle, tape):
             return None
 
         assert (last_delta := past_config.last_delta) is not None
@@ -344,6 +347,9 @@ class Prover:
 
             raise InfiniteRule()
 
-        self.rules[(state, sig)] = block_diffs
+        if action not in self.rules:
+            self.rules[action] = {}
+
+        self.rules[action][sig] = block_diffs
 
         return None
