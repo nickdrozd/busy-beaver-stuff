@@ -45,7 +45,7 @@ class TestTape(TestCase):
     ):
         self.assertEqual(self.lspan, lspan)
         self.assertEqual(self.scan, scan)
-        self.assertEqual(self.rspan, rspan)
+        self.assertEqual(self.rspan, list(reversed(rspan)))
 
     @property
     def scan(self) -> Color:
@@ -158,3 +158,61 @@ class TestTape(TestCase):
         self.step(1, 1, 0)
 
         self.assert_tape([[1, 5, 0]], 0, [])
+
+    def test_trace_blocks_3(self):
+        # 1RB 0RB 2LA  1LA 2RB 1LB: counter
+        #    73 |   421 | B0 | 2^31 [0]
+        #    74 |   422 | A2 | 2^30 [2] 1^1
+        #    75 |   453 | A0 | [0] 2^31 1^1
+        #    76 |   454 | B2 | 1^1 [2] 2^30 1^1
+        #    77 |   455 | B1 | [1] 1^1 2^30 1^1
+        # Applying 14 times: ((), (0, -2, 4))
+        #    78 |   469 | B1 | [1] 1^57 2^2 1^1
+        #    79 |   527 | B2 | 2^58 [2] 2^1 1^1
+        #    80 |   586 | B0 | [0] 1^59 2^1 1^1
+        #    81 |   587 | A0 | [0] 1^60 2^1 1^1
+        #    82 |   588 | B1 | 1^1 [1] 1^59 2^1 1^1
+
+        #    83 |   648 | B2 | 1^1 2^60 [2] 1^1
+
+        #    84 |   709 | B1 | [1] 1^62
+        #    85 |   772 | B0 | 2^63 [0]
+
+        self.tape = BlockTape([[2, 31, 0]], 0, [])
+
+        self.step(0, 1, 0)
+        self.step(0, 2, 1)
+
+        self.assert_tape([], 0, [[2, 31, 0], [1, 1]])
+
+        self.step(1, 1, 0)
+        self.step(0, 1, 0)
+
+        self.assert_tape([], 1, [[1, 1], [2, 30, 0], [1, 1]])
+
+        self.rspan[2][1] = 57
+        self.rspan[1][1] = 2
+
+        self.assert_tape([], 1, [[1, 57], [2, 2, 0], [1, 1]])
+
+        self.step(1, 2, 1)
+        self.step(0, 1, 1)
+
+        self.assert_tape([], 0, [[1, 59], [2, 1, 0], [1, 1]])
+
+        self.step(0, 1, 0)
+        self.step(1, 1, 0)
+
+        self.assert_tape([[1, 1]], 1, [[1, 59], [2, 1, 0], [1, 1]])
+
+        self.step(1, 2, 1)
+
+        self.assert_tape([[1, 1], [2, 60]], 2, [[1, 1]])
+
+        self.step(0, 1, 1)
+
+        self.assert_tape([], 1, [[1, 62]])
+
+        self.step(1, 2, 1)
+
+        self.assert_tape([[2, 63]], 0, [])
