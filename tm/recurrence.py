@@ -337,9 +337,9 @@ class Prover:
                 raise InfiniteRule()
 
             for _ in range(last_delta):
-                if (result := self.run_simulator(
-                        last_delta, state, tape_copy)) is None:
-                    return None
+                result = self.run_simulator(
+                    last_delta, state, tape_copy)
+                assert result is not None
 
                 rec_rule, end_state = result
 
