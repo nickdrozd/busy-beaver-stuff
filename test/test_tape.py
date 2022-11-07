@@ -37,16 +37,34 @@ class TestTape(TestCase):
                 tape.signature),
             expected)
 
-    def assert_tape_contents(
+    def assert_tape(
             self,
-            tape: BlockTape,
             lspan: Span,
             scan: Color,
             rspan: Span,
     ):
-        self.assertEqual(tape.lspan, lspan)
-        self.assertEqual(tape.scan, scan)
-        self.assertEqual(tape.rspan, rspan)
+        self.assertEqual(self.lspan, lspan)
+        self.assertEqual(self.scan, scan)
+        self.assertEqual(self.rspan, rspan)
+
+    @property
+    def scan(self) -> Color:
+        assert self.tape is not None
+        return self.tape.scan
+
+    @property
+    def lspan(self) -> Span:
+        assert self.tape is not None
+        return self.tape.lspan
+
+    @property
+    def rspan(self) -> Span:
+        assert self.tape is not None
+        return self.tape.rspan
+
+    def step(self, shift: int, color: int, skip: int) -> None:
+        assert self.tape is not None
+        self.tape.step(shift, color, bool(skip))
 
     def test_blank(self):
         self.run_bb(
@@ -86,32 +104,20 @@ class TestTape(TestCase):
         #    49 |   144 | D1 | 1^15 [1] 1^6
         #    54 |   167 | D1 | 1^12 [1] 1^11
 
-        tape = BlockTape([[1, 15]], 1, [[1, 6]])
+        self.tape = BlockTape([[1, 15]], 1, [[1, 6]])
 
-        self.assertEqual(
-            [1, 15],
-            tape.lspan[0])
+        self.assert_tape([[1, 15]], 1, [[1,  6]])
 
-        self.assertEqual(
-            [1, 6],
-            tape.rspan[0])
+        self.lspan[0].append(0)
+        self.rspan[0].append(0)
 
-        tape.lspan[0].append(0)
-        tape.rspan[0].append(0)
+        self.step(0, 1, 0)
+        self.step(0, 1, 0)
+        self.step(1, 0, 1)
+        self.step(1, 0, 0)
+        self.step(0, 1, 1)
 
-        tape.step(0, 1, False)
-        tape.step(0, 1, False)
-        tape.step(1, 0, True)
-        tape.step(1, 0, False)
-        tape.step(0, 1, True)
-
-        self.assertEqual(
-            [1, 12, 0],
-            tape.lspan[0])
-
-        self.assertEqual(
-            [1, 11, 0],
-            tape.rspan[0])
+        self.assert_tape([[1, 12, 0]], 1, [[1, 11, 0]])
 
     def test_trace_blocks_2(self):
         # 1RB 1LA  0LA 0RB: counter
@@ -125,30 +131,30 @@ class TestTape(TestCase):
         #    49 |    65 | A0 | 1^4 [0] 0^1
         #    50 |    66 | B0 | 1^5 [0]
 
-        tape = BlockTape([[1, 4]], 0, [])
+        self.tape = BlockTape([[1, 4]], 0, [])
 
-        self.assert_tape_contents(tape, [[1, 4]], 0, [])
+        self.assert_tape([[1, 4]], 0, [])
 
-        tape.lspan[0].append(0)
+        self.lspan[0].append(0)
 
-        self.assert_tape_contents(tape, [[1, 4, 0]], 0, [])
+        self.assert_tape([[1, 4, 0]], 0, [])
 
-        tape.step(0, 0, False)
-        tape.step(0, 1, True)
-        tape.step(1, 1, False)
-        tape.step(1, 0, True)
+        self.step(0, 0, 0)
+        self.step(0, 1, 1)
+        self.step(1, 1, 0)
+        self.step(1, 0, 1)
 
-        self.assert_tape_contents(tape, [[1, 1], [0, 4, 0]], 0, [])
+        self.assert_tape([[1, 1], [0, 4, 0]], 0, [])
 
-        tape.lspan[0][1] += 3
-        tape.lspan[1][1] -= 3
+        self.lspan[0][1] += 3
+        self.lspan[1][1] -= 3
 
-        self.assert_tape_contents(tape, [[1, 4], [0, 1, 0]], 0, [])
+        self.assert_tape([[1, 4], [0, 1, 0]], 0, [])
 
-        tape.step(0, 0, False)
+        self.step(0, 0, 0)
 
-        self.assert_tape_contents(tape, [[1, 4]], 0, [[0, 1, 0]])
+        self.assert_tape([[1, 4]], 0, [[0, 1, 0]])
 
-        tape.step(1, 1, False)
+        self.step(1, 1, 0)
 
-        self.assert_tape_contents(tape, [[1, 5, 0]], 0, [])
+        self.assert_tape([[1, 5, 0]], 0, [])
