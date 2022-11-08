@@ -218,3 +218,43 @@ class TestTape(TestCase):
         self.step(1, 2, 1)
 
         self.assert_tape([[2, 63]], 0, [])
+
+    def test_trace_blocks_4(self):
+        # Lynn exception
+        # 1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB
+        #    50 | 54 | C0 | 1^2 [0] 0^1 1^4
+        #    51 | 55 | A0 | 1^2 0^1 [0] 1^4
+        #    52 | 56 | B1 | 1^2 0^1 1^1 [1] 1^3
+        #    53 | 57 | D1 | 1^2 0^1 [1] 0^1 1^3
+        #    54 | 58 | E0 | 1^2 [0] 0^2 1^3
+        #    55 | 59 | C0 | 1^3 [0] 0^1 1^3
+
+        self.tape = BlockTape(
+            [[1, 2, 0]], 0, [[1, 4, 0], [0, 1]])
+
+        self.step(1, 0, 0)
+        self.step(1, 1, 0)
+        self.step(0, 0, 0)
+        self.step(0, 0, 0)
+        self.step(1, 1, 0)
+
+        self.assert_tape(
+            [[1, 3, 0]], 0, [[0, 1], [1, 3, 0]])
+
+        self.step(1, 0, 0)
+        self.step(1, 1, 0)
+        self.step(0, 0, 0)
+        self.step(0, 0, 0)
+        self.step(1, 1, 0)
+
+        self.assert_tape(
+            [[1, 4, 0]], 0, [[0, 1], [1, 2, 0]])
+
+        self.step(1, 0, 0)
+        self.step(1, 1, 0)
+        self.step(0, 0, 0)
+        self.step(0, 0, 0)
+        self.step(1, 1, 0)
+
+        self.assert_tape(
+            [[1, 5, 0]], 0, [[0, 1], [1, 1, 0]])
