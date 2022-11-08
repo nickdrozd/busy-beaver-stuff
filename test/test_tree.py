@@ -1,4 +1,3 @@
-# pylint: disable = attribute-defined-outside-init
 from queue import Queue as Q
 from unittest import TestCase
 from multiprocessing import Queue
@@ -17,6 +16,7 @@ def read_progs(name: str) -> set[str]:
             for prog in holdouts.readlines()
         )
 
+
 def macro_variations(prog: str) -> Iterator[str | MacroProg]:
     yield prog
 
@@ -24,6 +24,7 @@ def macro_variations(prog: str) -> Iterator[str | MacroProg]:
 
     for block in range(2, 9):
         yield BacksymbolMacro(BlockMacro(prog, [block]), [1])
+
 
 def run_for_none(prog: str, sim_lim: int, depth: int) -> Iterator[bool]:
     yield from (
@@ -34,6 +35,7 @@ def run_for_none(prog: str, sim_lim: int, depth: int) -> Iterator[bool]:
         for macro in macro_variations(prog)
     )
 
+
 def queue_to_set(queue: Q[str]) -> set[str]:
     out = set()
 
@@ -41,6 +43,7 @@ def queue_to_set(queue: Q[str]) -> set[str]:
         out.add(queue.get().replace('...', '1R_'))
 
     return out
+
 
 class TestTree(TestCase):
     def assert_counts(self, expected: dict[int, set[str]]):
