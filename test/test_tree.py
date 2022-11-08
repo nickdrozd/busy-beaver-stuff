@@ -86,10 +86,7 @@ class TestTree(TestCase):
             if any(run_for_none(prog, 189, 40)):
                 return
 
-            if prog.count('...') == 0:
-                q32q.put(prog)
-            else:  # no-coverage
-                h32q.put(prog)
+            (q32q if not prog.count('...') else h32q).put(prog)
 
         run_tree_gen(
             states = 3,
