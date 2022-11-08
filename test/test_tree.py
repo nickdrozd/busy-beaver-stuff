@@ -20,10 +20,10 @@ def read_progs(name: str) -> set[str]:
 def macro_variations(prog: str) -> Iterator[str | MacroProg]:
     yield prog
 
-    yield BacksymbolMacro(prog, [1])
-
     for block in range(2, 9):
         yield BacksymbolMacro(BlockMacro(prog, [block]), [1])
+
+    yield BacksymbolMacro(prog, [1])
 
 
 def run_for_none(prog: str, sim_lim: int, depth: int) -> Iterator[bool]:
