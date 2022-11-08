@@ -116,7 +116,7 @@ class TestTree(TestCase):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 192, 49)):
+            if any(run_for_none(prog, 212, 49)):
                 return
 
             if prog.count('...') == 0:
@@ -136,7 +136,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              7: h23,
-            82: q23,
+            80: q23,
         })
 
         self.assert_connected(h23, q23)
