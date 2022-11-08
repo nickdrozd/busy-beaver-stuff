@@ -351,6 +351,7 @@ class Prover:
 
             raise InfiniteRule()
 
-        self.add_rule(state, sig, tape, block_diffs)
+        if not rec_rule:
+            self.add_rule(state, sig, tape, block_diffs)
 
         return None
