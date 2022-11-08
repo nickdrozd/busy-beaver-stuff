@@ -55,9 +55,12 @@ class TestTree(TestCase):
     def assert_counts(self, expected: dict[int, set[str]]):
         for count, cat in expected.items():
             self.assertEqual(len(cat), count)
+
+    def assert_connected(self, *prog_sets: set[str]):
+        for progs in prog_sets:
             self.assertTrue((
                 all(Graph(prog).is_strongly_connected
-                    for prog in cat)))
+                    for prog in progs)))
 
     def test_22(self):
         s22q: Q[str] = Queue()
@@ -108,6 +111,8 @@ class TestTree(TestCase):
             36: q32,
         })
 
+        self.assert_connected(q32)
+
         self.assertEqual(
             q32,
             HOLDOUTS_32Q)
@@ -139,6 +144,8 @@ class TestTree(TestCase):
              10: h23,
             103: q23,
         })
+
+        self.assert_connected(h23, q23)
 
         self.assertEqual(
             h23,
