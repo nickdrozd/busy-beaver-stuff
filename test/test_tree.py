@@ -17,10 +17,6 @@ def read_progs(name: str) -> set[str]:
             for prog in holdouts.readlines()
         )
 
-HOLDOUTS_23H = read_progs('holdouts_23h')
-HOLDOUTS_32Q = read_progs('holdouts_32q')
-HOLDOUTS_23Q = read_progs('holdouts_23q')
-
 def macro_variations(prog: str) -> Iterator[str | MacroProg]:
     yield prog
 
@@ -50,6 +46,11 @@ class TestTree(TestCase):
     def assert_counts(self, expected: dict[int, set[str]]):
         for count, cat in expected.items():
             self.assertEqual(len(cat), count)
+
+    def assert_progs(self, progs: set[str], progfile: str):
+        self.assertEqual(
+            progs,
+            read_progs(progfile))
 
     def assert_connected(self, *prog_sets: set[str]):
         for progs in prog_sets:
@@ -108,7 +109,7 @@ class TestTree(TestCase):
 
         self.assert_connected(q32)
 
-        self.assertEqual(q32, HOLDOUTS_32Q)
+        self.assert_progs(q32, 'holdouts_32q')
 
     def test_23(self):
         h23q: Q[str] = Queue()
@@ -140,8 +141,8 @@ class TestTree(TestCase):
 
         self.assert_connected(h23, q23)
 
-        self.assertEqual(h23, HOLDOUTS_23H)
-        self.assertEqual(q23, HOLDOUTS_23Q)
+        self.assert_progs(h23, 'holdouts_23h')
+        self.assert_progs(q23, 'holdouts_23q')
 
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
