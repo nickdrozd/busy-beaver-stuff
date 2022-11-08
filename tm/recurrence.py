@@ -195,10 +195,9 @@ class Prover:
             self,
             state: State,
             sig: Signature,
-            tape: BlockTape,
             rule: Rule,
     ) -> None:
-        if (action := (state, tape.scan)) not in self.rules:
+        if (action := (state, sig[0])) not in self.rules:
             self.rules[action] = {}
 
         self.rules[action][sig] = rule
@@ -352,6 +351,6 @@ class Prover:
             raise InfiniteRule()
 
         if not rec_rule:
-            self.add_rule(state, sig, tape, block_diffs)
+            self.add_rule(state, sig, block_diffs)
 
         return None
