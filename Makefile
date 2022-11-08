@@ -23,7 +23,7 @@ MODULES = tm generate test *.py
 
 lint :
 	pylint --version
-	pylint $(MODULES)
+	pylint --enable-all-extensions $(MODULES)
 	$(MAKE) type
 
 type :
