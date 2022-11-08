@@ -36,6 +36,6 @@ if __name__ == '__main__':
         PRINT = 0
         main = profile(main)
 
-    sys.set_int_max_str_digits(100_000)  # type: ignore
+    sys.set_int_max_str_digits(100_000)
 
     main()
