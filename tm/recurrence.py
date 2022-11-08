@@ -196,12 +196,12 @@ class Prover:
             state: State,
             sig: Signature,
             tape: BlockTape,
-            diffs: tuple[tuple[int, ...], ...],
+            rule: Rule,
     ) -> None:
         if (action := (state, tape.scan)) not in self.rules:
             self.rules[action] = {}
 
-        self.rules[action][sig] = diffs
+        self.rules[action][sig] = rule
 
     @staticmethod
     def apply_rule(tape: BlockTape, rule: Rule) -> int | None:
