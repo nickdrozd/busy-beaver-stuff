@@ -24,6 +24,9 @@ def macro_variations(prog: str) -> Iterator[str | MacroProg]:
         yield BacksymbolMacro(BlockMacro(prog, [block]), [1])
 
     yield BacksymbolMacro(prog, [1])
+    yield BacksymbolMacro(BacksymbolMacro(prog, [1]), [1])
+
+    yield BlockMacro(BacksymbolMacro(BlockMacro(prog, [2]), [1]), [2])
 
 
 def run_for_none(prog: str, sim_lim: int, depth: int) -> Iterator[bool]:
@@ -61,6 +64,8 @@ class TestTree(TestCase):
                 all(Graph(prog).is_strongly_connected
                     for prog in progs)))
 
+
+class Fast(TestTree):
     def test_22(self):
         s22q: Q[str] = Queue()
 
@@ -147,3 +152,37 @@ class TestTree(TestCase):
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
             q23)
+
+
+class Slow(TestTree):
+    def test_42(self):
+        hc42q: Q[str] = Queue()
+        hd42q: Q[str] = Queue()
+
+        def capture(prog: str) -> None:
+            if any(run_for_none(prog, 714, 166)):
+                return
+
+            # pylint: disable = line-too-long
+            (hc42q if Graph(prog).is_strongly_connected else hd42q).put(prog)
+
+        run_tree_gen(
+            states = 4,
+            colors = 2,
+            steps = 35,
+            halt = True,
+            output = capture,
+        )
+
+        hc42 = queue_to_set(hc42q)
+        hd42 = queue_to_set(hd42q)
+
+        self.assert_counts({
+            214: hd42,
+            267: hc42,
+        })
+
+        self.assert_connected(hc42)
+
+        self.assert_progs(hd42, 'holdouts_42hd')
+        self.assert_progs(hc42, 'holdouts_42hc')
