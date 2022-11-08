@@ -150,6 +150,10 @@ class BlockTape:
                     push_block.append(self.scan_info)
             push.append(push_block)
 
+        if self.scan_info is not None:
+            if not push[-1][2:]:
+                push[-1].append(self.scan_info)
+
         self.scan_info = scan_info
 
         if shift:

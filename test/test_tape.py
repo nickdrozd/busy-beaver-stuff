@@ -213,11 +213,11 @@ class TestTape(TestCase):
 
         self.step(0, 1, 1)
 
-        self.assert_tape([], 1, [[1, 62]])
+        self.assert_tape([], 1, [[1, 62, 0]])
 
         self.step(1, 2, 1)
 
-        self.assert_tape([[2, 63]], 0, [])
+        self.assert_tape([[2, 63, 0]], 0, [])
 
     def test_trace_blocks_4(self):
         # Lynn exception

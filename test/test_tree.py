@@ -104,7 +104,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              0: h32,
-            36: q32,
+            33: q32,
         })
 
         self.assert_connected(q32)
@@ -135,8 +135,8 @@ class TestTree(TestCase):
         q23 = queue_to_set(q23q)
 
         self.assert_counts({
-             10: h23,
-            103: q23,
+             7: h23,
+            82: q23,
         })
 
         self.assert_connected(h23, q23)
