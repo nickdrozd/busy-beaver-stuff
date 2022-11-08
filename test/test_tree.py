@@ -29,11 +29,11 @@ def macro_variations(prog: str) -> Iterator[str | MacroProg]:
     for block in range(2, 9):
         yield BacksymbolMacro(BlockMacro(prog, [block]), [1])
 
-def run_for_none(prog: str, sim_lim: int) -> Iterator[bool]:
+def run_for_none(prog: str, sim_lim: int, depth: int) -> Iterator[bool]:
     yield from (
         Machine(macro).run(
             sim_lim = sim_lim,
-            prover = 49,
+            prover = depth,
         ).xlimit is None
         for macro in macro_variations(prog)
     )
@@ -61,7 +61,7 @@ class TestTree(TestCase):
         s22q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 115)):
+            if any(run_for_none(prog, 115, 24)):
                 return
 
             s22q.put(prog)  # no-coverage
@@ -82,7 +82,7 @@ class TestTree(TestCase):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 189)):
+            if any(run_for_none(prog, 189, 40)):
                 return
 
             if prog.count('...') == 0:
@@ -115,7 +115,7 @@ class TestTree(TestCase):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 192)):
+            if any(run_for_none(prog, 192, 49)):
                 return
 
             if prog.count('...') == 0:
