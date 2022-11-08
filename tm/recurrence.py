@@ -331,26 +331,26 @@ class Prover:
             ) for spans in zip(tape.spans, past_tape.spans)
         )
 
-        if all(diff >= 0 for span in block_diffs for diff in span):
+        if any(diff < 0 for span in block_diffs for diff in span):
             if not rec_rule:
-                raise InfiniteRule()
+                self.add_rule(state, sig, block_diffs)
 
-            for _ in range(last_delta):
-                result = self.run_simulator(
-                    last_delta, state, tape_copy)
-                assert result is not None
-
-                rec_rule, end_state = result
-
-                if end_state != state:
-                    return None
-
-                if tape_copy.signature != sig:
-                    return None
-
-            raise InfiniteRule()
+            return None
 
         if not rec_rule:
-            self.add_rule(state, sig, block_diffs)
+            raise InfiniteRule()
 
-        return None
+        for _ in range(last_delta):
+            result = self.run_simulator(
+                last_delta, state, tape_copy)
+            assert result is not None
+
+            rec_rule, end_state = result
+
+            if end_state != state:
+                return None
+
+            if tape_copy.signature != sig:
+                return None
+
+        raise InfiniteRule()
