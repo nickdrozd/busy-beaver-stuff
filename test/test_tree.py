@@ -1,5 +1,5 @@
 # pylint: disable = attribute-defined-outside-init
-from queue import Empty, Queue as Q
+from queue import Queue as Q
 from unittest import TestCase
 from multiprocessing import Queue
 from collections.abc import Iterator
@@ -41,13 +41,8 @@ def run_for_none(prog: str, sim_lim: int) -> Iterator[bool]:
 def queue_to_set(queue: Q[str]) -> set[str]:
     out = set()
 
-    while True:  # yuck -- pylint: disable = while-used
-        try:
-            prog = queue.get(timeout = .5)
-        except Empty:
-            break
-
-        out.add(prog.replace('...', '1R_'))
+    while not queue.empty():  # yuck -- pylint: disable = while-used
+        out.add(queue.get().replace('...', '1R_'))
 
     return out
 
