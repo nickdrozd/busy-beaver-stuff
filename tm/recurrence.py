@@ -332,8 +332,7 @@ class Prover:
         )
 
         if any(diff < 0 for span in block_diffs for diff in span):
-            if not rec_rule:
-                self.add_rule(state, sig, block_diffs)
+            self.add_rule(state, sig, block_diffs)
 
             return None
 
