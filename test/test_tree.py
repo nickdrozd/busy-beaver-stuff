@@ -113,9 +113,7 @@ class TestTree(TestCase):
 
         self.assert_connected(q32)
 
-        self.assertEqual(
-            q32,
-            HOLDOUTS_32Q)
+        self.assertEqual(q32, HOLDOUTS_32Q)
 
     def test_23(self):
         h23q: Q[str] = Queue()
@@ -147,13 +145,8 @@ class TestTree(TestCase):
 
         self.assert_connected(h23, q23)
 
-        self.assertEqual(
-            h23,
-            HOLDOUTS_23H)
-
-        self.assertEqual(
-            q23,
-            HOLDOUTS_23Q)
+        self.assertEqual(h23, HOLDOUTS_23H)
+        self.assertEqual(q23, HOLDOUTS_23Q)
 
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
