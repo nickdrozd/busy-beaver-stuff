@@ -324,15 +324,15 @@ class Prover:
         if tape_copy.signature != sig:
             return None
 
-        block_diffs = tuple(
+        rule = tuple(
             tuple(
                 old[1] - new[1]
                 for old, new in zip(*spans)
             ) for spans in zip(tape.spans, past_tape.spans)
         )
 
-        if any(diff < 0 for span in block_diffs for diff in span):
-            self.add_rule(state, sig, block_diffs)
+        if any(diff < 0 for span in rule for diff in span):
+            self.add_rule(state, sig, rule)
 
             return None
 
