@@ -334,7 +334,7 @@ class Prover:
         if any(diff < 0 for span in rule for diff in span):
             self.add_rule(state, sig, rule)
 
-            return None
+            return self.apply_rule(tape, rule)
 
         if not rec_rule:
             raise InfiniteRule()
