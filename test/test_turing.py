@@ -1279,6 +1279,7 @@ DIFFUSE = {
     # 5/2
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": 3,  # BB(5)
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": 2,  # uwe
+    "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,  # high mark SO
 
     # 3/3
     "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": 2,
