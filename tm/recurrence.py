@@ -261,14 +261,12 @@ class Prover:
             state: State,
             tape: BlockTape,
     ) -> int | None:
-        sig = tape.signature
-
         # If we already have a rule, apply it
         if (rule := self.get_rule(state, tape)) is not None:
             return self.apply_rule(tape, rule)
 
         # If this is a new config, record it
-        if (temp := self.configs.get(sig)) is None:
+        if (temp := self.configs.get(sig := tape.signature)) is None:
             temp = defaultdict(PastConfig)
             self.configs[sig] = temp
 
