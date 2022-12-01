@@ -23,7 +23,7 @@ class TestTape(TestCase):
 
         print(self.machine)
 
-        self.tape = self.machine.tape  # type: ignore[assignment]
+        self.tape = self.machine.tape
 
     def assert_signature(
             self,

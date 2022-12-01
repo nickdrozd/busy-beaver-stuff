@@ -14,6 +14,8 @@ Action = tuple[State, Color]
 
 LinRec = tuple[int | None, int]
 
+ProgLike = str | Program | MacroProg | CompProg
+
 TERM_CATS = (
     'halted',
     'infrul',
@@ -25,16 +27,16 @@ TERM_CATS = (
 
 @dataclass
 class Machine:
-    program: str | Program | MacroProg | CompProg
+    program: ProgLike
 
-    tape: BlockTape | None = None
-    state: State | None = None
-    steps: int | None = None
-    cycles: int | None = None
+    tape: BlockTape
+    state: State
+    steps: int
+    cycles: int
+
+    blanks: dict[State, int]
 
     prover: Prover | None = None
-
-    blanks: dict[State, int] | None = None
 
     halted: int | None = None
     spnout: int | None = None
@@ -48,6 +50,9 @@ class Machine:
     rulapp: int = 0
 
     undfnd: tuple[int, str] | None = None
+
+    def __init__(self, program: ProgLike):
+        self.program = program
 
     def __str__(self) -> str:
         info = [ f'CYCLES: {self.cycles}' ]
@@ -226,15 +231,18 @@ class Machine:
 
 @dataclass
 class LinRecMachine:
-    prog: str
+    program: str
 
-    tape: BlockTape | None = None
-    history: History | None = None
+    tape: BlockTape
+    history: History
 
     halted: int | None = None
     xlimit: int | None = None
     qsihlt: bool | None = None
     linrec: LinRec | None = None
+
+    def __init__(self, program: str):
+        self.program = program
 
     def run(
         self,
@@ -247,7 +255,7 @@ class LinRecMachine:
             check_rec is not None
             or samples is not None)
 
-        comp = tcompile(self.prog)
+        comp = tcompile(self.program)
 
         self.tape = tape = BlockTape([], 0, [])
 

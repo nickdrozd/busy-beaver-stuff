@@ -1571,13 +1571,13 @@ class TuringTest(TestCase):
         if print_prog:
             print(prog)
 
-        self.machine = (
+        self.machine = (  # type: ignore[attr-defined]
             Machine
             if not lin_rec else
             LinRecMachine
-        )(prog).run(**opts)
+        )(prog).run(**opts)  # type: ignore[arg-type]
 
-        self.tape = self.machine.tape  # type: ignore[assignment]
+        self.tape = self.machine.tape
 
         if not analyze or not isinstance(prog, str):
             return
