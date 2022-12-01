@@ -6,24 +6,35 @@ from tm.parse import tcompile, CompProg
 
 Color = int
 State = int
+Slot = tuple[Color, State]
+Instr = tuple[int, int, int]
+
 Tape = list[Color]
 Config = tuple[State, tuple[bool, Tape]]
-
-Instr = tuple[int, int, int]
 
 ########################################
 
 class MacroProg:
+    program: str | MacroProg
+    comp: CompProg | MacroProg
+
+    base_states: int
+    base_colors: int
+
+    macro_states: int
+    macro_colors: int
+
+    sim_lim: int
+
+    instrs: dict[Slot, Instr | None]
+
+    color_to_tape_cache: dict[Color, tuple[Color, ...]]
+    tape_to_color_cache: dict[tuple[Color, ...], Color]
+
+    _state: State | None = None
+
     def __init__(self, program: str | MacroProg):
         self.program = program
-
-        self.comp: CompProg | MacroProg
-
-        self.base_states: int
-        self.base_colors: int
-
-        self.macro_states: int
-        self.macro_colors: int
 
         if isinstance(program, str):
             self.comp = tcompile(program)
@@ -36,14 +47,10 @@ class MacroProg:
             self.base_states = program.macro_states
             self.base_colors = program.macro_colors
 
-        self.sim_lim: int = 0
+        self.instrs = {}
 
-        self.instrs: dict[tuple[State, Color], Instr | None] = {}
-
-        self.color_to_tape_cache: dict[Color, tuple[Color, ...]] = {}
-        self.tape_to_color_cache: dict[tuple[Color, ...], Color] = {}
-
-        self._state: State | None = None
+        self.color_to_tape_cache = {}
+        self.tape_to_color_cache = {}
 
     def __getitem__(
             self,
@@ -132,6 +139,8 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
+    cells: int
+
     def __init__(self, program: str | MacroProg, cell_seq: list[int]):
         *seq, cells = cell_seq
 
@@ -140,12 +149,12 @@ class BlockMacro(MacroProg):
 
         super().__init__(program)
 
-        self.macro_states: int = self.base_states * 2
-        self.macro_colors: int = self.base_colors ** cells
+        self.macro_states = self.base_states * 2
+        self.macro_colors = self.base_colors ** cells
 
-        self.cells: int = cells
+        self.cells = cells
 
-        self.sim_lim: int = (
+        self.sim_lim = (
             self.base_states
             * self.cells
             * self.macro_colors
@@ -231,10 +240,10 @@ class BacksymbolMacro(MacroProg):
 
         super().__init__(program)
 
-        self.macro_states: int = self.base_states * self.base_colors * 2
-        self.macro_colors: int = self.base_colors
+        self.macro_states = self.base_states * self.base_colors * 2
+        self.macro_colors = self.base_colors
 
-        self.sim_lim: int = self.macro_states * self.macro_colors
+        self.sim_lim = self.macro_states * self.macro_colors
 
     def __str__(self) -> str:
         return f'{self.program} (backsymbol macro)'
