@@ -1387,6 +1387,7 @@ class TuringTest(TestCase):
     prog: str
     tape: BlockTape
     machine: Machine
+    lr_machine: LinRecMachine
 
     def assert_normal(self, prog: str):
         self.assertTrue(
@@ -1428,9 +1429,15 @@ class TuringTest(TestCase):
             self.machine.steps,
             steps)
 
-    def assert_quasihalt(self, qsihlt: bool | None):
+    def assert_quasihalt(self, qsihlt: bool | None, linrec: bool = False):
+        machine: Machine | LinRecMachine = (
+            self.machine
+            if not linrec else
+            self.lr_machine
+        )
+
         self.assertEqual(
-            self.machine.qsihlt,
+            machine.qsihlt,
             qsihlt)
 
     def assert_close(
@@ -1491,10 +1498,7 @@ class TuringTest(TestCase):
                 f'spin out false negative: "{prog}"')
 
     def assert_lin_recurrence(self, steps: int, recurrence: int):
-        # pylint: disable = no-member
-        assert (
-            history := self.machine.history  # type: ignore[attr-defined]
-        ) is not None
+        assert (history := self.lr_machine.history) is not None
 
         self.assertEqual(
             history.states[steps],
@@ -1511,10 +1515,7 @@ class TuringTest(TestCase):
         )
 
     def deny_lin_recurrence(self, steps: int, recurrence: int):
-        # pylint: disable = no-member
-        assert (
-            history := self.machine.history  # type: ignore[attr-defined]
-        ) is not None
+        assert (history := self.lr_machine.history) is not None
 
         states = history.states
 
@@ -1571,13 +1572,17 @@ class TuringTest(TestCase):
         if print_prog:
             print(prog)
 
-        self.machine = (  # type: ignore[attr-defined]
-            Machine
-            if not lin_rec else
-            LinRecMachine
-        )(prog).run(**opts)  # type: ignore[arg-type]
+        machine: Machine | LinRecMachine
 
-        self.tape = self.machine.tape
+        if lin_rec:
+            assert isinstance(prog, str)
+            machine = LinRecMachine(prog).run(**opts)
+            self.lr_machine = machine
+        else:
+            machine = Machine(prog).run(**opts)
+            self.machine = machine
+
+        self.tape = machine.tape
 
         if not analyze or not isinstance(prog, str):
             return
@@ -1685,6 +1690,11 @@ class TuringTest(TestCase):
 
             if blank:
                 self.run_bb(prog)
+                assert self.machine.linrec is not None
+                self.assertEqual(
+                    period,
+                    self.machine.linrec[1])
+                self.assert_quasihalt(qsihlt)
             else:
                 assert steps is not None
                 self.run_bb(
@@ -1693,13 +1703,12 @@ class TuringTest(TestCase):
                     check_rec = 0 if steps < 256 else steps,
                 )
 
-            assert self.machine.linrec is not None
+                assert self.lr_machine.linrec is not None
+                self.assertEqual(
+                    period,
+                    self.lr_machine.linrec[1])
 
-            self.assertEqual(
-                period,
-                self.machine.linrec[1])
-
-            self.assert_quasihalt(qsihlt)
+                self.assert_quasihalt(qsihlt, linrec = True)
 
     def _test_prover(  # type: ignore[misc]
             self,
