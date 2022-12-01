@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from math import ceil, log
+from dataclasses import dataclass
 
 from tm.parse import tcompile, CompProg
 
@@ -14,6 +15,7 @@ Config = tuple[State, tuple[bool, Tape]]
 
 ########################################
 
+@dataclass
 class MacroProg:
     program: str | MacroProg
     comp: CompProg | MacroProg
@@ -31,7 +33,7 @@ class MacroProg:
     color_to_tape_cache: dict[Color, tuple[Color, ...]]
     tape_to_color_cache: dict[tuple[Color, ...], Color]
 
-    _state: State | None = None
+    _state: State | None
 
     def __init__(self, program: str | MacroProg):
         self.program = program
@@ -51,6 +53,8 @@ class MacroProg:
 
         self.color_to_tape_cache = {}
         self.tape_to_color_cache = {}
+
+        self._state = None
 
     def __getitem__(
             self,
@@ -138,6 +142,7 @@ class MacroProg:
 
 ########################################
 
+@dataclass
 class BlockMacro(MacroProg):
     cells: int
 
@@ -231,6 +236,7 @@ class BlockMacro(MacroProg):
 
 ########################################
 
+@dataclass
 class BacksymbolMacro(MacroProg):
     def __init__(self, program: str | MacroProg, cell_seq: list[int]):
         *seq, _ = cell_seq
