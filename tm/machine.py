@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from tm.tape import BlockTape
 from tm.parse import tcompile, st_str, CompProg
 from tm.macro import MacroProg
@@ -25,7 +23,6 @@ TERM_CATS = (
     'xlimit',
 )
 
-@dataclass
 class Machine:
     program: ProgLike
 
@@ -229,7 +226,6 @@ class Machine:
 
 ########################################
 
-@dataclass
 class LinRecMachine:
     program: str
 
