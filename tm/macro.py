@@ -99,10 +99,11 @@ class MacroProg:
         pos = cells - 1 if right_edge else 0
 
         for _ in range(self.sim_lim):
-            instr = self.comp[state][
-                scan := tape[pos]]  # type: ignore[index]
-
-            if instr is None:  # pylint: disable = consider-using-assignment-expr
+            if (instr :=
+                    self.comp[state][  # type: ignore[index]
+                        scan := tape[pos]
+                    ]
+            ) is None:
                 return None
 
             color, shift, next_state = instr  # type: ignore[misc]
