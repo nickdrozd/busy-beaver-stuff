@@ -1,5 +1,3 @@
-# pylint: disable = attribute-defined-outside-init
-
 from unittest import TestCase
 
 from tm import Graph
@@ -213,6 +211,8 @@ GRAPHS: dict[
 }
 
 class TestGraph(TestCase):
+    graph: Graph
+
     def assert_flat(self, flat: str):
         self.assertEqual(
             flat,

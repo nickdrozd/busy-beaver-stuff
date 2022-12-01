@@ -1,4 +1,3 @@
-# pylint: disable = attribute-defined-outside-init
 from unittest import TestCase
 
 from tm import Machine
@@ -14,6 +13,9 @@ def stringify_sig(sig: Signature) -> str:
 
 
 class TestTape(TestCase):
+    tape: BlockTape
+    machine: Machine
+
     def run_bb(self, prog: str, **opts) -> None:
         self.machine = Machine(prog).run(
             watch_tape = True,
@@ -21,7 +23,7 @@ class TestTape(TestCase):
 
         print(self.machine)
 
-        self.tape = self.machine.tape
+        self.tape = self.machine.tape  # type: ignore[assignment]
 
     def assert_signature(
             self,

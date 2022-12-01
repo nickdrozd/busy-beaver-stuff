@@ -1,4 +1,4 @@
-# pylint: disable = attribute-defined-outside-init, line-too-long, too-many-lines
+# pylint: disable = line-too-long, too-many-lines
 
 from math import isclose
 from typing import Any
@@ -6,6 +6,7 @@ from unittest import TestCase, skip
 from itertools import product
 from collections.abc import Mapping
 
+from tm.tape import BlockTape
 from tm.macro import MacroProg
 from tm.parse import tcompile, dcompile
 from tm import Machine, LinRecMachine
@@ -1383,6 +1384,10 @@ PROVER_HALT_KILLS_COMPILER = {
 
 
 class TuringTest(TestCase):
+    prog: str
+    tape: BlockTape
+    machine: Machine
+
     def assert_normal(self, prog: str):
         self.assertTrue(
             Graph(prog).is_normal,
@@ -1487,7 +1492,9 @@ class TuringTest(TestCase):
 
     def assert_lin_recurrence(self, steps: int, recurrence: int):
         # pylint: disable = no-member
-        assert (history := self.machine.history) is not None
+        assert (
+            history := self.machine.history  # type: ignore[attr-defined]
+        ) is not None
 
         self.assertEqual(
             history.states[steps],
@@ -1505,7 +1512,9 @@ class TuringTest(TestCase):
 
     def deny_lin_recurrence(self, steps: int, recurrence: int):
         # pylint: disable = no-member
-        assert (history := self.machine.history) is not None
+        assert (
+            history := self.machine.history  # type: ignore[attr-defined]
+        ) is not None
 
         states = history.states
 
@@ -1568,7 +1577,7 @@ class TuringTest(TestCase):
             LinRecMachine
         )(prog).run(**opts)
 
-        self.tape = self.machine.tape
+        self.tape = self.machine.tape  # type: ignore[assignment]
 
         if not analyze or not isinstance(prog, str):
             return
@@ -1615,6 +1624,7 @@ class TuringTest(TestCase):
 
             else:
                 self.assert_marks(0)
+                assert blanks is not None
                 self.assertEqual(steps, max(blanks.values()))
                 self.assertEqual(marks, set(blanks))
                 self.assert_could_blank(prog)

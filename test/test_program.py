@@ -1,5 +1,3 @@
-# pylint: disable = attribute-defined-outside-init
-
 from unittest import TestCase
 
 from tm import Program
@@ -42,6 +40,8 @@ PROGS: dict[
 }
 
 class TestProgram(TestCase):
+    prog: Program
+
     def assert_used_states(self, states: set[str]):
         self.assertEqual(
             states,

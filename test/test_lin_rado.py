@@ -1,4 +1,3 @@
-# pylint: disable = attribute-defined-outside-init
 from unittest import TestCase
 
 from test.test_tree import read_progs
@@ -8,6 +7,8 @@ from generate.naive import yield_programs
 
 
 class TestLinRado(TestCase):
+    progs: set[str]
+
     def assert_progs_equal(self, other: set[str]):
         self.assertEqual(
             self.progs,
