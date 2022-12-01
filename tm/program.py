@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import overload
 from itertools import product
 from collections import defaultdict
 from collections.abc import Iterator
@@ -15,10 +16,12 @@ SHIFTS = 'L', 'R'
 
 State = str
 Color = int
+Slot = tuple[State, Color]
+Instr = str
 
 class Program:
     def __init__(self, program: str):
-        self.prog: dict[str, dict[int, str]] = {
+        self.prog: dict[State, dict[Color, Instr]] = {
             st_str(state): dict(enumerate(instructions))
             for state, instructions in enumerate(parse(program))
         }
@@ -31,20 +34,23 @@ class Program:
             for instrs in self.prog.values()
         ])
 
-    def __getitem__(self, slot: str):  # type: ignore[no-untyped-def]
-        if len(slot) == 1:
+    @overload
+    def __getitem__(self, slot: State) -> dict[Color, Instr]: ...
+
+    @overload
+    def __getitem__(self, slot: Slot) -> str: ...
+
+    def __getitem__(
+            self,
+            slot: State | Slot,
+    ) -> dict[Color, Instr] | Instr:
+        if isinstance(slot, str):
             return self.prog[slot]
 
-        state: str = slot[0]
-        color: str = slot[1]
-        return self.prog[state][int(color)]
+        return self.prog[slot[0]][slot[1]]
 
-    def __setitem__(self, slot: str, instr: str) -> None:
-        assert len(slot) == 2
-
-        state: str = slot[0]
-        color: str = slot[1]
-        self.prog[state][int(color)] = instr
+    def __setitem__(self, slot: Slot, instr: Instr) -> None:
+        self.prog[slot[0]][slot[1]] = instr
 
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
@@ -77,10 +83,10 @@ class Program:
         return sorted(self.colors)[1:]
 
     @property
-    def instructions(self) -> Iterator[tuple[str, str]]:
+    def instructions(self) -> Iterator[tuple[Slot, Instr]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
-                yield state + str(color), instr
+                yield (state, color), instr
 
     @property
     def actions(self) -> Iterator[str]:
@@ -88,25 +94,26 @@ class Program:
             yield from instrs.values()
 
     @property
-    def slots(self) -> tuple[str, ...]:
+    def slots(self) -> tuple[Slot, ...]:
         return tuple(slot for slot, _ in self.instructions)
 
     @property
-    def open_slots(self) -> tuple[str, ...]:
+    def open_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
             for slot, instr in self.instructions
-            if '.' in instr)
+            if '.' in instr
+        )
 
     @property
-    def last_slot(self) -> str | None:
+    def last_slot(self) -> Slot | None:
         if len((slots := self.open_slots)) != 1:
             return None
 
         return slots[0]
 
     @property
-    def halt_slots(self) -> tuple[str, ...]:
+    def halt_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
             for slot, instr in self.instructions
@@ -114,11 +121,11 @@ class Program:
         )
 
     @property
-    def erase_slots(self) -> tuple[str, ...]:
+    def erase_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
             for slot, instr in self.instructions
-            if instr[0] == '0' and slot[1] != '0'
+            if slot[1] != 0 and instr[0] == '0'
         )
 
     @property
@@ -172,33 +179,29 @@ class Program:
             if (result := Machine(partial).run().undfnd) is None:
                 return
 
-            step, instr = result
+            step, slot = result
 
-            st_co = instr[0] + str(instr[1])
+            yield str(partial), step, slot[0] + str(slot[1])
 
-            yield str(partial), step, st_co
-
-            partial[st_co] = self[st_co]
+            partial[slot] = self[slot]
 
     def branch(
             self,
-            instr: tuple[State, Color],
+            slot: Slot,
             halt: bool = False,
     ) -> Iterator[str]:
         if halt and self.last_slot:
             return
 
-        instr_str = instr[0] + str(instr[1])
-
-        orig = self[instr_str]
+        orig = self[slot]
 
         for action in sorted(self.available_actions, reverse = True):
             if action >= orig and '.' not in orig:
                 continue
-            self[instr_str] = action
+            self[slot] = action
             yield str(self)
 
-        self[instr_str] = orig
+        self[slot] = orig
 
     def swap_states(self, st1: str, st2: str) -> Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
@@ -266,7 +269,8 @@ class Program:
         return self
 
     def normalize_directions(self) -> Program:
-        if self['A0'][1] == 'R':
+        # pylint: disable = unsubscriptable-object
+        if self[('A', 0)][1] == 'R':
             return self
 
         for slot, action in self.instructions:
@@ -289,9 +293,7 @@ class Program:
     def cant_halt(self) -> bool:
         return self._cant_reach(
             'halted',
-            tuple(
-                (slot[0], slot[1])
-                for slot in self.halt_slots),
+            self.halt_slots,
         )
 
     @property
@@ -309,14 +311,14 @@ class Program:
         return self._cant_reach(
             'spnout',
             tuple(
-                (state, str(0))
+                (state, 0)
                 for state in self.graph.zero_reflexive_states),
         )
 
     def _cant_reach(
             self,
             final_prop: str,
-            slots: tuple[tuple[str, str], ...],
+            slots: tuple[Slot, ...],
             max_attempts: int = 24,
             blank: bool = False,
     ) -> bool:
@@ -377,7 +379,10 @@ class Program:
             # print(step, state, tape)
 
             for entry in sorted(self.graph.entry_points[state]):
-                for _, (_, shift, trans) in self[entry].items():
+                for _, instr in self[entry].items():
+                    trans: str = instr[2]
+                    shift: str = instr[1]
+
                     if trans != state:
                         continue
 

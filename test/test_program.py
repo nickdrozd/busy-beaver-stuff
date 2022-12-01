@@ -64,12 +64,12 @@ class TestProgram(TestCase):
 
     def assert_last_slot(self, slot: str | None):
         self.assertEqual(
-            slot,
+            (slot[0], int(slot[1])) if slot is not None else None,
             self.prog.last_slot)
 
     def assert_slots(self, slots: tuple[str, ...]):
         self.assertEqual(
-            slots,
+            tuple((slot[0], int(slot[1])) for slot in slots),
             self.prog.slots)
 
     def test_used_available(self):

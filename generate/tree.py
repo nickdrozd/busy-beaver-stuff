@@ -41,16 +41,16 @@ def stacker(
             prog = None
             continue
 
-        _, instr = machine.undfnd
+        _, slot = machine.undfnd
 
-        branches = (program := Program(prog)).branch(instr, halt)
+        branches = (program := Program(prog)).branch(slot, halt)
 
         if len(program.open_slots) == (2 if halt else 1):
-            run_pile.put((instr, prog))
+            run_pile.put((slot, prog))
             prog = None
             continue
 
-        prog = next(branches := program.branch(instr, halt))
+        prog = next(branches := program.branch(slot, halt))
 
         for ext in branches:
             stack.append(ext)
@@ -68,7 +68,7 @@ def runner(run_pile: RunPile, output: Output) -> None:
         else:
             slot, prog = prog
 
-            for ext in Program(prog).branch((slot[0], int(slot[1]))):
+            for ext in Program(prog).branch(slot):
                 output(ext)
 
 
