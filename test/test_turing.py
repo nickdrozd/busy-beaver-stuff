@@ -1589,12 +1589,8 @@ class TuringTest(TestCase):
         self.assert_simple(prog)
         self.assert_connected(prog)
 
-        _ = Machine(
-            BlockMacro(prog, [2])
-        ).run(sim_lim = 10)
-        _ = Machine(
-            BacksymbolMacro(prog, [1])
-        ).run(sim_lim = 10)
+        _ = Machine(     BlockMacro(prog, [2])).run(sim_lim = 10)
+        _ = Machine(BacksymbolMacro(prog, [1])).run(sim_lim = 10)
 
     def _test_simple_terminate(
             self,
