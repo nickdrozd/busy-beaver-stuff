@@ -68,11 +68,11 @@ class MacroProg:
         self._state = None
 
         try:
-            instr = self.instrs[(state, color)]
+            instr = self.instrs[state, color]
         except KeyError:
             instr = self.calculate_instr(state, color)
 
-            self.instrs[(state, color)] = instr
+            self.instrs[state, color] = instr
 
         return instr
 

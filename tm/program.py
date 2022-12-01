@@ -270,7 +270,7 @@ class Program:
 
     def normalize_directions(self) -> Program:
         # pylint: disable = unsubscriptable-object
-        if self[('A', 0)][1] == 'R':
+        if self['A', 0][1] == 'R':
             return self
 
         for slot, action in self.instructions:
