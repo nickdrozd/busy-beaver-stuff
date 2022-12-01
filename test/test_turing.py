@@ -1987,7 +1987,7 @@ class Fast(TuringTest):
     def test_mother_of_giants(self):
         mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
 
-        for prog in Program(mother).branch('E0'):
+        for prog in Program(mother).branch(('E', 0)):
             self.assert_could_blank(prog)
             self.assert_could_spin_out(prog)
 
@@ -2006,7 +2006,7 @@ class Fast(TuringTest):
                 self.run_bb(partial, normal = False)
 
                 self.assertEqual(
-                    (step, slot),
+                    (step, (slot[0], int(slot[1]))),
                     self.machine.undfnd)
 
     def test_spaghetti(self):

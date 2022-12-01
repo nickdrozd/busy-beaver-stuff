@@ -13,6 +13,9 @@ INIT = 'A'
 BLANK = '0'
 SHIFTS = 'L', 'R'
 
+State = str
+Color = int
+
 class Program:
     def __init__(self, program: str):
         self.prog: dict[str, dict[int, str]] = {
@@ -171,23 +174,31 @@ class Program:
 
             step, instr = result
 
-            yield str(partial), step, instr
+            st_co = instr[0] + str(instr[1])
 
-            partial[instr] = self[instr]
+            yield str(partial), step, st_co
 
-    def branch(self, instr: str, halt: bool = False) -> Iterator[str]:
+            partial[st_co] = self[st_co]
+
+    def branch(
+            self,
+            instr: tuple[State, Color],
+            halt: bool = False,
+    ) -> Iterator[str]:
         if halt and self.last_slot:
             return
 
-        orig = self[instr]
+        instr_str = instr[0] + str(instr[1])
+
+        orig = self[instr_str]
 
         for action in sorted(self.available_actions, reverse = True):
             if action >= orig and '.' not in orig:
                 continue
-            self[instr] = action
+            self[instr_str] = action
             yield str(self)
 
-        self[instr] = orig
+        self[instr_str] = orig
 
     def swap_states(self, st1: str, st2: str) -> Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]

@@ -87,14 +87,14 @@ class TestProgram(TestCase):
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
             self.assertEqual(
-                set(Program(prog).branch(loc)),
+                set(Program(prog).branch((loc[0], int(loc[1])))),
                 extensions)
 
         self.assertFalse(
             tuple(
                 Program(
                     "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA").branch(
-                        'C0',
+                        ('C', 0),
                         halt = True)))
 
     def test_normalize(self):

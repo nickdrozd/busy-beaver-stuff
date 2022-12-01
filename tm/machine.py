@@ -49,7 +49,7 @@ class Machine:
 
     rulapp: int = 0
 
-    undfnd: tuple[int, str] | None = None
+    undfnd: tuple[int, tuple[str, int]] | None = None
 
     def __init__(self, program: ProgLike):
         self.program = program
@@ -148,7 +148,7 @@ class Machine:
                 color, shift, next_state = \
                     comp[state][tape.scan]  # type: ignore[index, misc]
             except TypeError:
-                self.undfnd = step, f'{st_str(state)}{tape.scan}'
+                self.undfnd = step, (st_str(state), tape.scan)
                 break
 
             if ((same_state := state == next_state)

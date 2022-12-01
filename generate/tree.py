@@ -5,7 +5,7 @@ from multiprocessing import cpu_count, Manager, Process
 from tm import Machine, Program
 
 Output  = Callable[[str], None]
-RunPile = Queue[str | tuple[str, str]]
+RunPile = Queue[str | tuple[tuple[str, int], str]]
 
 def stacker(
         steps: int,
@@ -41,7 +41,7 @@ def stacker(
             prog = None
             continue
 
-        _step, instr = machine.undfnd
+        _, instr = machine.undfnd
 
         branches = (program := Program(prog)).branch(instr, halt)
 
@@ -68,7 +68,7 @@ def runner(run_pile: RunPile, output: Output) -> None:
         else:
             slot, prog = prog
 
-            for ext in Program(prog).branch(slot):
+            for ext in Program(prog).branch((slot[0], int(slot[1]))):
                 output(ext)
 
 
