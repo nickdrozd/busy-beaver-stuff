@@ -5,7 +5,7 @@ Null = Callable[[], None]
 def profile(function: Null) -> Null:
     def wrapper() -> None:
         # pylint: disable = import-error, import-outside-toplevel
-        import yappi  # type: ignore
+        import yappi  # type: ignore[import]
 
         yappi.set_clock_type('cpu')
         yappi.start()

@@ -28,7 +28,7 @@ class Program:
             for instrs in self.prog.values()
         ])
 
-    def __getitem__(self, slot: str):  # type: ignore
+    def __getitem__(self, slot: str):  # type: ignore[no-untyped-def]
         if len(slot) == 1:
             return self.prog[slot]
 

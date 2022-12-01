@@ -1701,7 +1701,7 @@ class TuringTest(TestCase):
 
             self.assert_quasihalt(qsihlt)
 
-    def _test_prover(  # type: ignore
+    def _test_prover(  # type: ignore[misc]
             self,
             prog_data: Mapping[str, Any],
             diff_lim: int,

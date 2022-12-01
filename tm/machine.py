@@ -146,7 +146,7 @@ class Machine:
 
             try:
                 color, shift, next_state = \
-                    comp[state][tape.scan]  # type: ignore
+                    comp[state][tape.scan]  # type: ignore[index, misc]
             except TypeError:
                 self.undfnd = step, f'{st_str(state)}{tape.scan}'
                 break
@@ -280,7 +280,8 @@ class LinRecMachine:
 
                 self.history.add_action_at_step(step, action)
 
-            color, shift, next_state = comp[state][scan]  # type: ignore
+            color, shift, next_state = \
+                comp[state][scan]  # type: ignore[index, misc]
 
             _ = tape.step(shift, color, skip and state == next_state)
 

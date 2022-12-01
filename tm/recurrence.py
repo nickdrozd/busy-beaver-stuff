@@ -12,7 +12,7 @@ State = int | str
 Color = int | str
 Action = tuple[State, Color]
 
-RecRes = tuple[int, int] | None  # type: ignore
+RecRes = tuple[int, int] | None  # type: ignore[misc]
 Tapes = dict[int, PtrTape]
 
 Rule = tuple[tuple[int, ...], ...]

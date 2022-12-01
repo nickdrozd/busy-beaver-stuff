@@ -154,7 +154,7 @@ def lr_convert(rado_string: int) -> str:
         sh: str
         tr: list[str]
 
-        pr, sh, *tr =  bin_instr  # type: ignore
+        pr, sh, *tr =  bin_instr  # type: ignore[misc]
 
         v_sh = 'L' if int(sh) == 0 else 'R'
 
