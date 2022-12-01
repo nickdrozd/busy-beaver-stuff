@@ -2,7 +2,7 @@
 
 from math import isclose
 from typing import Any
-from unittest import TestCase, expectedFailure, skip
+from unittest import TestCase, skip
 from itertools import product
 from collections.abc import Mapping
 
@@ -1333,7 +1333,7 @@ PROVER_HALT = {
 PROVER_SPINOUT = {
     # 2/4
     "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA": (1, 0, 530843045, 0),
-    # "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA"  # incorrect
+    "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": (1, 0, 414095476548, 0),
 
     # 3/3
     "1RB 0LB 1LA  2LC 2LB 2LB  2RC 2RA 0LC": (1, 0, 0, 0),
@@ -2024,15 +2024,6 @@ class Fast(TuringTest):
 
     def test_macro_cycles(self):
         self._test_macro_cycles(MACRO_CYCLES_FAST)
-
-    @expectedFailure
-    def test_rule_failure(self):
-        self._test_prover_est(
-            {
-                "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": (1, 0, 530843045, 0),
-            },
-            diff_lim = 20,
-        )
 
 
 class Slow(TuringTest):  # no-coverage
