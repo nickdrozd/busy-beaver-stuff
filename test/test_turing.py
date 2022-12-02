@@ -2,7 +2,7 @@
 
 from math import isclose
 from typing import Any
-from unittest import TestCase, skip
+from unittest import TestCase, skip, expectedFailure
 from itertools import product
 from collections.abc import Mapping
 
@@ -1959,6 +1959,17 @@ class Fast(TuringTest):
         self.run_bb(
             "1RB 2LA 3RA 2LB  0LA ... 2RA 1LA",
             prover = 10)
+
+    @expectedFailure
+    def test_lynn_exception(self):
+        lynn = "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB"
+
+        self.assertIsNone(
+            Machine(lynn).run(
+                sim_lim = 1000,
+                prover = 100,
+            ).xlimit
+        )
 
     def test_blank(self):
         for prog in DONT_BLANK:
