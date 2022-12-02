@@ -135,19 +135,21 @@ class BlockTape:
 
         stepped = 1 if push_block is None else 1 + push_block[1]
 
-        if push and (block := push[-1])[0] == color:
-            block[1] += stepped
+        if push and (top_block := push[-1])[0] == color:
+            top_block[1] += stepped
 
             if push_block is not None:
-                block += push_block[2:]
+                top_block += push_block[2:]
         else:
             if push_block is None:
                 push_block = [color, 1]
             else:
                 push_block[0] = color
                 push_block[1] += 1
+
                 if self.scan_info is not None and not push_block[2:]:
                     push_block.append(self.scan_info)
+
             push.append(push_block)
 
         if self.scan_info is not None:
