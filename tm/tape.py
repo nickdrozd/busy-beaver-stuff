@@ -114,6 +114,8 @@ class BlockTape:
             None
         )
 
+        stepped = 1 if push_block is None else 1 + push_block[1]
+
         scan_info: int | None = None
 
         if not pull:
@@ -132,8 +134,6 @@ class BlockTape:
 
                 if popped[2:]:
                     scan_info = popped[2]
-
-        stepped = 1 if push_block is None else 1 + push_block[1]
 
         if push and (top_block := push[-1])[0] == color:
             top_block[1] += stepped
