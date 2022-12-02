@@ -148,8 +148,8 @@ def make_switch(state: str, instrs: tuple[Instr, ...]) -> str:
         in0, in1 = instrs
     except ValueError:
         return make_n_way_switch(state, instrs)
-    else:
-        return make_if_else(state, in0, in1)
+
+    return make_if_else(state, in0, in1)
 
 
 def make_labels(prog: str) -> str:
