@@ -16,6 +16,8 @@ class TestTape(TestCase):
     tape: BlockTape
     machine: Machine
 
+    init_tags: int
+
     def run_bb(self, prog: str, **opts) -> None:
         self.machine = Machine(prog).run(
             watch_tape = True,
@@ -38,8 +40,30 @@ class TestTape(TestCase):
                 tape.signature),
             expected)
 
-    def set_tape(self, lspan: Span, scan: Color, rspan: Span):
+    def count_tags(self) -> int:
+        return (
+            (1 if self.scan_info is not None else 0)
+            + sum(1 for block in self.lspan if len(block) > 2)
+            + sum(1 for block in self.rspan if len(block) > 2)
+        )
+
+    def set_tape(
+            self,
+            lspan: Span,
+            scan: Color | tuple[Color, int],
+            rspan: Span,
+    ):
+        if isinstance(scan, tuple):
+            scan, scan_info = scan
+        else:
+            scan_info = None
+
         self.tape = BlockTape(lspan, scan, list(reversed(rspan)))
+
+        if scan_info is not None:
+            self.tape.scan_info = scan_info
+
+        self.init_tags = self.count_tags()
 
     def assert_tape(
             self,
@@ -60,6 +84,10 @@ class TestTape(TestCase):
                     self.scan,
                     self.scan_info,
                 ))
+
+        self.assertEqual(
+            self.count_tags(),
+            self.init_tags)
 
     @property
     def scan(self) -> Color:
@@ -117,12 +145,7 @@ class TestTape(TestCase):
         #    49 |   144 | D1 | 1^15 [1] 1^6
         #    54 |   167 | D1 | 1^12 [1] 1^11
 
-        self.set_tape([[1, 15]], 1, [[1, 6]])
-
-        self.assert_tape([[1, 15]], 1, [[1,  6]])
-
-        self.lspan[0].append(0)
-        self.rspan[0].append(0)
+        self.set_tape([[1, 15, 0]], 1, [[1, 6, 0]])
 
         self.step(0, 1, 0)
         self.step(0, 1, 0)
@@ -144,13 +167,7 @@ class TestTape(TestCase):
         #    49 |    65 | A0 | 1^4 [0] 0^1
         #    50 |    66 | B0 | 1^5 [0]
 
-        self.set_tape([[1, 4]], 0, [])
-
-        self.assert_tape([[1, 4]], 0, [])
-
-        self.lspan[0].append(0)
-
-        self.assert_tape([[1, 4, 0]], 0, [])
+        self.set_tape([[1, 4, 0]], 0, [])
 
         self.step(0, 0, 0)
         self.step(0, 1, 1)
