@@ -76,11 +76,9 @@ class Machine:
 
     @property
     def marks(self) -> int:
-        assert self.tape is not None
         return self.tape.marks
 
     def show_tape(self, step: int, cycle: int, state: int) -> None:
-        assert self.tape is not None
         print(' | '.join([
             f'{cycle: 5d}',
             f'{step : 5d}',
@@ -195,8 +193,6 @@ class Machine:
         if self.spnout is not None:
             self.qsihlt = True
 
-        assert self.tape is not None
-
         if self.tape.blank:
             if 0 in blanks:
                 self.linrec = 0, step
@@ -295,8 +291,6 @@ class LinRecMachine:
         return self
 
     def check_rec(self, step: int, action: Action) -> RecRes:
-        assert self.history is not None
-
         if (result := self.history.check_rec(step, action)) is None:
             return None
 

@@ -1498,7 +1498,7 @@ class TuringTest(TestCase):
                 f'spin out false negative: "{prog}"')
 
     def assert_lin_recurrence(self, steps: int, recurrence: int):
-        assert (history := self.lr_machine.history) is not None
+        history = self.lr_machine.history
 
         self.assertEqual(
             history.states[steps],
@@ -1515,7 +1515,7 @@ class TuringTest(TestCase):
         )
 
     def deny_lin_recurrence(self, steps: int, recurrence: int):
-        assert (history := self.lr_machine.history) is not None
+        history = self.lr_machine.history
 
         states = history.states
 
@@ -1625,7 +1625,6 @@ class TuringTest(TestCase):
 
             else:
                 self.assert_marks(0)
-                assert blanks is not None
                 self.assertEqual(steps, max(blanks.values()))
                 self.assertEqual(marks, set(blanks))
                 self.assert_could_blank(prog)

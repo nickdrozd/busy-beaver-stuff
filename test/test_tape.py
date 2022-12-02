@@ -31,7 +31,6 @@ class TestTape(TestCase):
             tape: BlockTape | None = None,
     ) -> None:
         if tape is None:
-            assert self.tape is not None
             tape = self.tape
 
         self.assertEqual(
@@ -51,21 +50,17 @@ class TestTape(TestCase):
 
     @property
     def scan(self) -> Color:
-        assert self.tape is not None
         return self.tape.scan
 
     @property
     def lspan(self) -> Span:
-        assert self.tape is not None
         return self.tape.lspan
 
     @property
     def rspan(self) -> Span:
-        assert self.tape is not None
         return self.tape.rspan
 
     def step(self, shift: int, color: int, skip: int) -> None:
-        assert self.tape is not None
         self.tape.step(shift, color, bool(skip))
 
     def test_blank(self):
@@ -83,7 +78,6 @@ class TestTape(TestCase):
         self.assert_signature(
             '1|0|1[2]2|1')
 
-        assert self.tape is not None
         copy_1 = self.tape.copy()
         copy_2 = self.tape.copy()
 
