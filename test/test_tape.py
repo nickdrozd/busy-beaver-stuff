@@ -51,19 +51,23 @@ class TestTape(TestCase):
         self.assertEqual(self.rspan, list(reversed(rspan)))
 
         if isinstance(scan, Color):
-            self.assertIsNone(self.tape.scan_info)
+            self.assertIsNone(self.scan_info)
             self.assertEqual(scan, self.scan)
         else:
             self.assertEqual(
                 scan,
                 (
                     self.scan,
-                    self.tape.scan_info,
+                    self.scan_info,
                 ))
 
     @property
     def scan(self) -> Color:
         return self.tape.scan
+
+    @property
+    def scan_info(self) -> Color | None:
+        return self.tape.scan_info
 
     @property
     def lspan(self) -> Span:
