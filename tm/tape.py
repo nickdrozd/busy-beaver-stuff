@@ -134,6 +134,7 @@ class BlockTape:
 
                 if popped[2:]:
                     scan_info = popped[2]
+                    push_block = push_block[:2]
 
         if push and (top_block := push[-1])[0] == color:
             top_block[1] += stepped

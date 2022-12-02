@@ -162,11 +162,11 @@ class TestTape(TestCase):
 
         self.step(0, 0, 0)
 
-        self.assert_tape([[1, 4]], (0, 0), [[0, 1, 0]])
+        self.assert_tape([[1, 4]], (0, 0), [[0, 1]])
 
         self.step(1, 1, 0)
 
-        self.assert_tape([[1, 5, 0]], (0, 0), [])
+        self.assert_tape([[1, 5, 0]], 0, [])
 
     def test_trace_blocks_3(self):
         # 1RB 0RB 2LA  1LA 2RB 1LB: counter
@@ -241,22 +241,22 @@ class TestTape(TestCase):
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 0], [0, 1, 0]], (0, 0), [[1, 4, 0]])
+            [[1, 2, 0], [0, 1]], (0, 0), [[1, 4, 0]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 2, 0], [0, 1, 0], [1, 1, 0]], 1, [[1, 3, 0]])
+            [[1, 2, 0], [0, 1], [1, 1, 0]], 1, [[1, 3, 0]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 0], [0, 1, 0]], (1, 0), [[0, 1, 0], [1, 3, 0]])
+            [[1, 2, 0], [0, 1]], (1, 0), [[0, 1], [1, 3, 0]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 0]], (0, 0), [[0, 2, 0], [1, 3, 0]])
+            [[1, 2, 0]], 0, [[0, 2, 0], [1, 3, 0]])
 
         self.step(1, 1, 0)
 
