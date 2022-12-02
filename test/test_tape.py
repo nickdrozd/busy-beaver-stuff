@@ -44,12 +44,22 @@ class TestTape(TestCase):
     def assert_tape(
             self,
             lspan: Span,
-            scan: Color,
+            scan: Color | tuple[Color, int],
             rspan: Span,
     ):
         self.assertEqual(self.lspan, lspan)
-        self.assertEqual(self.scan, scan)
         self.assertEqual(self.rspan, list(reversed(rspan)))
+
+        if isinstance(scan, Color):
+            self.assertIsNone(self.tape.scan_info)
+            self.assertEqual(scan, self.scan)
+        else:
+            self.assertEqual(
+                scan,
+                (
+                    self.scan,
+                    self.tape.scan_info,
+                ))
 
     @property
     def scan(self) -> Color:
@@ -152,11 +162,11 @@ class TestTape(TestCase):
 
         self.step(0, 0, 0)
 
-        self.assert_tape([[1, 4]], 0, [[0, 1, 0]])
+        self.assert_tape([[1, 4]], (0, 0), [[0, 1, 0]])
 
         self.step(1, 1, 0)
 
-        self.assert_tape([[1, 5, 0]], 0, [])
+        self.assert_tape([[1, 5, 0]], (0, 0), [])
 
     def test_trace_blocks_3(self):
         # 1RB 0RB 2LA  1LA 2RB 1LB: counter
@@ -206,9 +216,7 @@ class TestTape(TestCase):
 
         self.step(1, 2, 1)
 
-        self.assert_tape([[1, 1], [2, 60]], 2, [[1, 1]])
-
-        self.assertEqual(self.tape.scan_info, 0)
+        self.assert_tape([[1, 1], [2, 60]], (2, 0), [[1, 1]])
 
         self.step(0, 1, 1)
 
