@@ -256,12 +256,12 @@ class TestTape(TestCase):
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 0]], (0, 0), [[0, 2, 0, 0], [1, 3, 0]])
+            [[1, 2, 0]], (0, 0), [[0, 2, 0], [1, 3, 0]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0]], 0, [[0, 1, 0, 0], [1, 3, 0]])
+            [[1, 3, 0]], 0, [[0, 1, 0], [1, 3, 0]])
 
         self.step(1, 0, 0)
         self.step(1, 1, 0)
@@ -270,7 +270,7 @@ class TestTape(TestCase):
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 4, 0]], 0, [[0, 1, 0, 0, 0], [1, 2, 0]])
+            [[1, 4, 0]], 0, [[0, 1, 0], [1, 2, 0]])
 
         self.step(1, 0, 0)
         self.step(1, 1, 0)
@@ -279,4 +279,4 @@ class TestTape(TestCase):
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 5, 0]], 0, [[0, 1, 0, 0, 0, 0], [1, 1, 0]])
+            [[1, 5, 0]], 0, [[0, 1, 0], [1, 1, 0]])

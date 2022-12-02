@@ -136,7 +136,7 @@ class TestTree(TestCase):
 
         self.assert_counts({
              7: h23,
-            80: q23,
+            78: q23,
         })
 
         self.assert_connected(h23, q23)
