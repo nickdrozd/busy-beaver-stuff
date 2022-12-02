@@ -146,6 +146,9 @@ class BlockTape:
         else:
             if push_block is None:
                 push_block = [color, 1]
+                scan_info = None
+                if color != self.scan:
+                    self.scan_info = None
             else:
                 push_block[0] = color
                 push_block[1] += 1

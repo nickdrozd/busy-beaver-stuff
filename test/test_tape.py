@@ -85,9 +85,9 @@ class TestTape(TestCase):
                     self.scan_info,
                 ))
 
-        self.assertEqual(
-            self.count_tags(),
-            self.init_tags)
+        self.assertGreaterEqual(
+            self.init_tags,
+            self.count_tags())
 
     @property
     def scan(self) -> Color:
@@ -267,28 +267,30 @@ class TestTape(TestCase):
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 2, 0], [0, 1], [1, 1, 0]], 1, [[1, 3, 0]])
+            [[1, 2, 0], [0, 1], [1, 1]], 1, [[1, 3, 0]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 0], [0, 1]], (1, 0), [[0, 1], [1, 3, 0]])
+            [[1, 2, 0], [0, 1]], 1, [[0, 1], [1, 3, 0]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 0]], 0, [[0, 2, 0], [1, 3, 0]])
+            [[1, 2, 0]], 0, [[0, 2], [1, 3, 0]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0]], 0, [[0, 1, 0], [1, 3, 0]])
+            [[1, 3, 0]], 0, [[0, 1], [1, 3, 0]])
 
         self.step(1, 0, 0)
         self.step(1, 1, 0)
         self.step(0, 0, 0)
         self.step(0, 0, 0)
         self.step(1, 1, 0)
+
+        self.rspan[-1].append(0)
 
         self.assert_tape(
             [[1, 4, 0]], 0, [[0, 1, 0], [1, 2, 0]])
@@ -301,19 +303,19 @@ class TestTape(TestCase):
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 4, 0], [0, 1], [1, 1, 0]], 1, [[1, 1, 0]])
+            [[1, 4, 0], [0, 1], [1, 1]], 1, [[1, 1, 0]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 4, 0], [0, 1]], (1, 0), [[0, 1], [1, 1, 0]])
+            [[1, 4, 0], [0, 1]], 1, [[0, 1], [1, 1, 0]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 4, 0]], 0, [[0, 2, 0], [1, 1, 0]])
+            [[1, 4, 0]], 0, [[0, 2], [1, 1, 0]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 5, 0]], 0, [[0, 1, 0], [1, 1, 0]])
+            [[1, 5, 0]], 0, [[0, 1], [1, 1, 0]])
