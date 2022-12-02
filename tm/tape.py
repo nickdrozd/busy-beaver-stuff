@@ -118,10 +118,12 @@ class BlockTape:
 
         scan_info: int | None = None
 
+        next_scan: int
+
         if not pull:
-            self.scan = 0
+            next_scan = 0
         else:
-            self.scan = (next_pull := pull[-1])[0]
+            next_scan = (next_pull := pull[-1])[0]
 
             if next_pull[1] > 1:
                 next_pull[1] -= 1
@@ -158,6 +160,8 @@ class BlockTape:
                 push[-1].append(self.scan_info)
 
         self.scan_info = scan_info
+
+        self.scan = next_scan
 
         if shift:
             self.head += stepped
