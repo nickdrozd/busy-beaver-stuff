@@ -38,6 +38,9 @@ class TestTape(TestCase):
                 tape.signature),
             expected)
 
+    def set_tape(self, lspan: Span, scan: Color, rspan: Span):
+        self.tape = BlockTape(lspan, scan, list(reversed(rspan)))
+
     def assert_tape(
             self,
             lspan: Span,
@@ -100,7 +103,7 @@ class TestTape(TestCase):
         #    49 |   144 | D1 | 1^15 [1] 1^6
         #    54 |   167 | D1 | 1^12 [1] 1^11
 
-        self.tape = BlockTape([[1, 15]], 1, [[1, 6]])
+        self.set_tape([[1, 15]], 1, [[1, 6]])
 
         self.assert_tape([[1, 15]], 1, [[1,  6]])
 
@@ -127,7 +130,7 @@ class TestTape(TestCase):
         #    49 |    65 | A0 | 1^4 [0] 0^1
         #    50 |    66 | B0 | 1^5 [0]
 
-        self.tape = BlockTape([[1, 4]], 0, [])
+        self.set_tape([[1, 4]], 0, [])
 
         self.assert_tape([[1, 4]], 0, [])
 
@@ -174,7 +177,7 @@ class TestTape(TestCase):
         #    84 |   709 | B1 | [1] 1^62
         #    85 |   772 | B0 | 2^63 [0]
 
-        self.tape = BlockTape([[2, 31, 0]], 0, [])
+        self.set_tape([[2, 31, 0]], 0, [])
 
         self.step(0, 1, 0)
         self.step(0, 2, 1)
@@ -225,8 +228,7 @@ class TestTape(TestCase):
         #    54 | 58 | E0 | 1^2 [0] 0^2 1^3
         #    55 | 59 | C0 | 1^3 [0] 0^1 1^3
 
-        self.tape = BlockTape(
-            [[1, 2, 0]], 0, [[1, 4, 0], [0, 1]])
+        self.set_tape([[1, 2, 0]], 0, [[0, 1], [1, 4, 0]])
 
         self.step(1, 0, 0)
         self.step(1, 1, 0)
