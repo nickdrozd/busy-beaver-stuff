@@ -239,9 +239,25 @@ class TestTape(TestCase):
         self.set_tape([[1, 2, 0]], 0, [[0, 1], [1, 4, 0]])
 
         self.step(1, 0, 0)
+
+        self.assert_tape(
+            [[1, 2, 0], [0, 1]], 0, [[1, 4, 0]])
+
         self.step(1, 1, 0)
+
+        self.assert_tape(
+            [[1, 2, 0], [0, 1], [1, 1]], 1, [[1, 3, 0]])
+
         self.step(0, 0, 0)
+
+        self.assert_tape(
+            [[1, 2, 0], [0, 1]], 1, [[0, 1], [1, 3, 0]])
+
         self.step(0, 0, 0)
+
+        self.assert_tape(
+            [[1, 2, 0]], 0, [[0, 2], [1, 3, 0]])
+
         self.step(1, 1, 0)
 
         self.assert_tape(
