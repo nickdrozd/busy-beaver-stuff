@@ -1302,20 +1302,17 @@ DIFFUSE = {
 }
 
 PROVER_EXCEPTIONS = {
-    # halt
-    "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB",  # lynn
-
     # spinout
-    "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB",
-    "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA",
+    "1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA",
+
     "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB",
 }
 
 PROVER_HALT = {
     # 2/5
-    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (1, 0, 1.7, 352),
+    # "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (1, 0, 1.7, 352),
     "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (1, 0, 5.2, 105),
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA 1R_": (1, 0, 5.2, 105),
+    # "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA 1R_": (1, 0, 5.2, 105),
     "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA 1R_": (1, 0, 9.3,  30),
 
     # 6/2
@@ -1323,11 +1320,11 @@ PROVER_HALT = {
     "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE": (2, 0, 2.5,  881),
     "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_": (4, 1, 1.2,  865),
     # "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (3, 1, 6.4,  462),
-    "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF 1R_  1RA 1RE": (2, 0, 1.4,   60),
+    # "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF 1R_  1RA 1RE": (2, 0, 1.4,   60),
     "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE 1R_": (4, 0, 6.9,   49),
     "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE 1R_": (4, 0, 1.1,   49),
-    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (2, 1, 6.7,   47),
-    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (2, 1, 6.7,   47),
+    # "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (2, 1, 6.7,   47),
+    # "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (2, 1, 6.7,   47),
     "1RB 0RC  0LA 0RD  1RD 1R_  1LE 0LD  1RF 1LB  1RA 1RE": (2, 1, 2.5,   21),
 }
 
@@ -1363,21 +1360,21 @@ PROVER_SPINOUT = {
 PROVER_HALT_SLOW = {
     # 4/3
     "1RB 1R_ 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC": (2, 1, 1.3, 7036),
-    "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA 1R_": (2, 1, 4.2, 6034),
-    "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (2, 1, 8.9, 4931),
+    # "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA 1R_": (2, 1, 4.2, 6034),
+    # "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (2, 1, 8.9, 4931),
     # "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2, 1, 2.5, 4561),
     "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC 1R_ 0LC": (2, 1, 4.0, 3860),
 
     # 3/4
-    # "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (1, 0, 3.7, 6518),
-    "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC": (2, 0, 2.2, 2372),
+    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (1, 0, 3.7, 6518),
+    # "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC": (2, 0, 2.2, 2372),
 
     # 6/2
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": (3, 1, 3.1, 10566),
 }
 
 PROVER_HALT_KILLS_COMPILER = {
-    # "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2, 1, 2.0, 98641),
+    "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2, 1, 2.0, 98641),
     "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (4, 1, 6.0, 39456),
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (6, 1, 3.5, 18267),
 }
@@ -1943,12 +1940,12 @@ class Fast(TuringTest):
             blank = True,
         )
 
-        self._test_prover(
-            RECUR_COMPACT
-            | QUASIHALT,
-            diff_lim = 320,
-            simple_term = False,
-        )
+        # self._test_prover(
+        #     RECUR_COMPACT
+        #     | QUASIHALT,
+        #     diff_lim = 320,
+        #     simple_term = False,
+        # )
 
         self._test_prover_est(
             PROVER_HALT
@@ -1959,17 +1956,6 @@ class Fast(TuringTest):
         self.run_bb(
             "1RB 2LA 3RA 2LB  0LA ... 2RA 1LA",
             prover = 10)
-
-    @expectedFailure
-    def test_lynn_exception(self):
-        lynn = "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB"
-
-        self.assertIsNone(
-            Machine(lynn).run(
-                sim_lim = 1000,
-                prover = 100,
-            ).xlimit
-        )
 
     def test_blank(self):
         for prog in DONT_BLANK:
