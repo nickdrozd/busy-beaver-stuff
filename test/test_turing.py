@@ -2,7 +2,7 @@
 
 from math import isclose
 from typing import Any
-from unittest import TestCase, skip, expectedFailure
+from unittest import TestCase, skip
 from itertools import product
 from collections.abc import Mapping
 
@@ -142,7 +142,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     # 2/4
     "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB": (2747, 2501552),
     "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA": ( 190,   32849),
-    # "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RB": (  62,   22464), # QH 22402
+    "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RB": (  62,   22464), # QH 22402
     "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB": (  99,   16634),
     "1RB 2RB 1LA 1LA  2LB 2RA 3LB 1LA": (  62,    4067), # QH 4005
     "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RA": (  42,    3247),
@@ -1302,13 +1302,11 @@ DIFFUSE = {
 }
 
 PROVER_EXCEPTIONS = {
-    # halt
-    "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB",  # lynn
-
     # spinout
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB",
-    "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA",
-    "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB",
+
+    # recur
+    "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD",
 }
 
 PROVER_HALT = {
@@ -1365,11 +1363,11 @@ PROVER_HALT_SLOW = {
     "1RB 1R_ 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC": (2, 1, 1.3, 7036),
     "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA 1R_": (2, 1, 4.2, 6034),
     "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (2, 1, 8.9, 4931),
-    # "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2, 1, 2.5, 4561),
+    "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2, 1, 2.5, 4561),
     "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC 1R_ 0LC": (2, 1, 4.0, 3860),
 
     # 3/4
-    # "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (1, 0, 3.7, 6518),
+    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (1, 0, 3.7, 6518),
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC": (2, 0, 2.2, 2372),
 
     # 6/2
@@ -1377,7 +1375,7 @@ PROVER_HALT_SLOW = {
 }
 
 PROVER_HALT_KILLS_COMPILER = {
-    # "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2, 1, 2.0, 98641),
+    "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2, 1, 2.0, 98641),
     "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (4, 1, 6.0, 39456),
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (6, 1, 3.5, 18267),
 }
@@ -1959,17 +1957,6 @@ class Fast(TuringTest):
         self.run_bb(
             "1RB 2LA 3RA 2LB  0LA ... 2RA 1LA",
             prover = 10)
-
-    @expectedFailure
-    def test_lynn_exception(self):
-        lynn = "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB"
-
-        self.assertIsNone(
-            Machine(lynn).run(
-                sim_lim = 1000,
-                prover = 100,
-            ).xlimit
-        )
 
     def test_blank(self):
         for prog in DONT_BLANK:

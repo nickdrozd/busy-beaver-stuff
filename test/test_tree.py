@@ -78,13 +78,15 @@ class Fast(TestTree):
         run_tree_gen(
             states = 2,
             colors = 2,
-            steps = 1,
+            steps = 5,
             output = capture,
         )
 
         s22: set[str] = queue_to_set(s22q)
 
-        self.assert_counts({0: s22})
+        self.assert_counts({1: s22})
+
+        self.assertEqual(s22, {"1RB 1LA  0LA 0RB"})
 
     def test_32(self):
         h32q: Q[str] = Queue()
@@ -108,12 +110,13 @@ class Fast(TestTree):
         q32 = queue_to_set(q32q)
 
         self.assert_counts({
-             0: h32,
-            36: q32,
+            10: h32,
+            74: q32,
         })
 
         self.assert_connected(q32)
 
+        self.assert_progs(h32, 'holdouts_32h')
         self.assert_progs(q32, 'holdouts_32q')
 
     def test_23(self):
@@ -132,7 +135,7 @@ class Fast(TestTree):
         run_tree_gen(
             states = 2,
             colors = 3,
-            steps = 18,
+            steps = 23,
             output = capture,
         )
 
@@ -140,8 +143,8 @@ class Fast(TestTree):
         q23 = queue_to_set(q23q)
 
         self.assert_counts({
-             7: h23,
-            84: q23,
+             23: h23,
+            122: q23,
         })
 
         self.assert_connected(h23, q23)
