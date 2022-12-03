@@ -295,7 +295,8 @@ class Prover:
 
         for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
-                new.append(num)
+                if old[1] != new[1]:
+                    new.append(num)
 
         if (result := self.run_simulator(
                 last_delta, state, tape_copy)) is None:
@@ -311,8 +312,9 @@ class Prover:
 
         for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
-                if len(new) != 3:
-                    return None
+                if old[1] != new[1]:
+                    if len(new) != 3:
+                        return None
 
         if tape_copy.signature != sig:
             return None

@@ -108,13 +108,13 @@ class Fast(TestTree):
         q32 = queue_to_set(q32q)
 
         self.assert_counts({
-            12: h32,
-            84: q32,
+             0: h32,
+            36: q32,
         })
 
         self.assert_connected(q32)
 
-        # self.assert_progs(q32, 'holdouts_32q')
+        self.assert_progs(q32, 'holdouts_32q')
 
     def test_23(self):
         h23q: Q[str] = Queue()
@@ -140,14 +140,14 @@ class Fast(TestTree):
         q23 = queue_to_set(q23q)
 
         self.assert_counts({
-             27: h23,
-            189: q23,
+             7: h23,
+            84: q23,
         })
 
         self.assert_connected(h23, q23)
 
-        # self.assert_progs(h23, 'holdouts_23h')
-        # self.assert_progs(q23, 'holdouts_23q')
+        self.assert_progs(h23, 'holdouts_23h')
+        self.assert_progs(q23, 'holdouts_23q')
 
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
