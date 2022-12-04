@@ -96,6 +96,11 @@ class Fast(TestTree):
             if any(run_for_none(prog, 189, 40)):
                 return
 
+            exits = Graph(prog).exit_points
+
+            if 'C' not in exits['A'] | exits['B']:
+                return
+
             (q32q if not prog.count('...') else h32q).put(prog)
 
         run_tree_gen(
@@ -110,7 +115,7 @@ class Fast(TestTree):
         q32 = queue_to_set(q32q)
 
         self.assert_counts({
-            10: h32,
+             9: h32,
             74: q32,
         })
 
