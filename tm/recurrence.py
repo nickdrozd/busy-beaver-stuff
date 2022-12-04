@@ -185,11 +185,16 @@ class Prover:
         dict[State, PastConfig],
     ] = field(default_factory = dict)
 
-    def get_rule(self, state: State, tape: BlockTape) -> Rule | None:
+    def get_rule(
+            self,
+            state: State,
+            tape: BlockTape,
+            sig: Signature | None = None,
+    ) -> Rule | None:
         if (temp := self.rules.get((state, tape.scan))) is None:
             return None
 
-        return temp.get(tape.signature)
+        return temp.get(sig or tape.signature)
 
     def add_rule(
             self,
@@ -262,11 +267,12 @@ class Prover:
             tape: BlockTape,
     ) -> int | None:
         # If we already have a rule, apply it
-        if (rule := self.get_rule(state, tape)) is not None:
+        if (rule := self.get_rule(
+                state, tape, sig := tape.signature)) is not None:
             return self.apply_rule(tape, rule)
 
         # If this is a new config, record it
-        if (temp := self.configs.get(sig := tape.signature)) is None:
+        if (temp := self.configs.get(sig)) is None:
             temp = defaultdict(PastConfig)
             self.configs[sig] = temp
 
