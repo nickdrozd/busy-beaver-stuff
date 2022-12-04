@@ -363,8 +363,6 @@ RECUR_COMPACT = {
 
     # 4/2
     "1RB 1RC  1LC 0LD  1RA 0LB  0RA 0RC": ( 14008,  24),
-    "1RB 1LC  0RC 0RD  1LA 0LA  0LC 1RB": (  7002, 225),
-    "1RB 0RA  1RC 0LB  1LD 0RD  1RA 1LB": (  6836, 382),
     "1RB 0LC  0RD 1RD  0LA 1LC  1LA 0RA": (  5252,   9),
     "1RB 0RC  1LD 0RA  0LD 0LB  1LA 1LB": (  4391,  24),
     "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD": (  3115, 860),
@@ -413,6 +411,8 @@ RECUR_DIFFUSE = {
 
     # 4/2
     "1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA": (586388,104),
+    "1RB 1LC  0RC 0RD  1LA 0LA  0LC 1RB": (7002,  225),
+    "1RB 0RA  1RC 0LB  1LD 0RD  1RA 1LB": (6836,  382),
     "1RB 0LC  0RC 1RC  1LA 0RD  1LC 0LA": (6825,  342),
     "1RB 0LC  1RD 1LD  0LA 1LB  1LC 0RD": (6455,   23),
     "1RB 0LA  0RC 0RD  1LC 1LA  0RB 1RD": (3957,  265),
@@ -1944,7 +1944,7 @@ class Fast(TuringTest):
         self._test_prover(
             RECUR_COMPACT
             | QUASIHALT,
-            diff_lim = 320,
+            diff_lim = 83,
             simple_term = False,
         )
 
