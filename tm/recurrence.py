@@ -301,7 +301,7 @@ class Prover:
 
         for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
-                if old[1] != new[1]:
+                if new[1] > 1:
                     new.append(num)
 
         if (result := self.run_simulator(
@@ -318,7 +318,7 @@ class Prover:
 
         for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
-                if old[1] != new[1]:
+                if new[1] > 1:
                     if len(new) != 3:
                         return None
 

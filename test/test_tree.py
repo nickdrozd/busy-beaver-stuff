@@ -116,7 +116,7 @@ class Fast(TestTree):
 
         self.assert_counts({
              9: h32,
-            74: q32,
+            75: q32,
         })
 
         self.assert_connected(q32)
@@ -149,7 +149,7 @@ class Fast(TestTree):
 
         self.assert_counts({
              23: h23,
-            122: q23,
+            126: q23,
         })
 
         self.assert_connected(h23, q23)
