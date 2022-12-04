@@ -54,15 +54,15 @@ class Machine:
     def __str__(self) -> str:
         info = [ f'CYCLES: {self.cycles}' ]
 
+        info.append(
+            f'MARKS: {self.marks}')
+
         info += [
             f'{cat.upper()}: {data if self.rulapp == 0 else "..."}'
             for cat in TERM_CATS
             # pylint: disable = bad-builtin
             if (data := getattr(self, cat)) is not None
         ]
-
-        info.append(
-            f'MARKS: {self.marks}')
 
         if self.rulapp > 0:
             info.append(
