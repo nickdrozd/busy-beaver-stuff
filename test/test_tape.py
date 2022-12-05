@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from tm import Machine
-from tm.tape import Tape, Signature, Color, Span
+from tm.tape import Tape, TagTape, Signature, Color, Span
 
 def stringify_sig(sig: Signature) -> str:
     scan, lspan, rspan = sig
@@ -75,7 +75,7 @@ class TestTape(TestCase):
 
 
 class TestBlocks(TestCase):
-    tape: Tape
+    tape: TagTape
 
     init_tags: int
 
@@ -97,7 +97,7 @@ class TestBlocks(TestCase):
         else:
             scan_info = None
 
-        self.tape = Tape(lspan, scan, list(reversed(rspan)))
+        self.tape = TagTape(lspan, scan, list(reversed(rspan)))
 
         if scan_info is not None:
             self.tape.scan_info = scan_info

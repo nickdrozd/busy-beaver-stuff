@@ -20,8 +20,6 @@ class Tape:
     rspan: Span
     head: int = 0
 
-    scan_info: int | None = None
-
     def __repr__(self) -> str:
         return ' '.join([
             f'{color}^{count}'
@@ -41,12 +39,19 @@ class Tape:
             head = self.head,
         )
 
+    def to_tag(self) -> TagTape:
+        return TagTape(
+            [[color, count] for color, count in self.lspan],
+            self.scan,
+            [[color, count] for color, count in self.rspan],
+        )
+
     @property
     def signature(self) -> Signature:
         return (
             self.scan,
-            tuple(c if q != 1 else (c,) for (c, q, *_) in self.lspan),
-            tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
+            tuple(c if q != 1 else (c,) for (c, q) in self.lspan),
+            tuple(c if q != 1 else (c,) for (c, q) in self.rspan),
         )
 
     @property
@@ -85,6 +90,78 @@ class Tape:
         return None
 
     def step(self, shift: int, color: int, skip: bool) -> int:
+        pull, push = (
+            (self.rspan, self.lspan)
+            if shift else
+            (self.lspan, self.rspan)
+        )
+
+        push_block = (
+            pull.pop()
+            if skip and pull and pull[-1][0] == self.scan else
+            None
+        )
+
+        stepped = 1 if push_block is None else 1 + push_block[1]
+
+        next_scan: int
+
+        if not pull:
+            next_scan = 0
+        else:
+            next_scan = (next_pull := pull[-1])[0]
+
+            if next_pull[1] > 1:
+                next_pull[1] -= 1
+            else:
+                popped = pull.pop()
+
+                if push_block is None:
+                    push_block = popped
+                    push_block[1] = 0
+
+        if push and (top_block := push[-1])[0] == color:
+            top_block[1] += stepped
+        else:
+            if push_block is None:
+                push_block = [color, 1]
+            else:
+                push_block[0] = color
+                push_block[1] += 1
+
+            push.append(push_block)
+
+        self.scan = next_scan
+
+        if shift:
+            self.head += stepped
+        else:
+            self.head -= stepped
+
+        return stepped
+
+
+@dataclass
+class TagTape:
+    lspan: Span
+    scan: Color
+    rspan: Span
+
+    scan_info: int | None = None
+
+    @property
+    def signature(self) -> Signature:
+        return (
+            self.scan,
+            tuple(c if q != 1 else (c,) for (c, q, *_) in self.lspan),
+            tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
+        )
+
+    @property
+    def spans(self) -> tuple[Span, Span]:
+        return self.lspan, self.rspan
+
+    def step(self, shift: int, color: int, skip: bool) -> None:
         pull, push = (
             (self.rspan, self.lspan)
             if shift else
@@ -148,13 +225,6 @@ class Tape:
         self.scan_info = scan_info
 
         self.scan = next_scan
-
-        if shift:
-            self.head += stepped
-        else:
-            self.head -= stepped
-
-        return stepped
 
 
 @dataclass

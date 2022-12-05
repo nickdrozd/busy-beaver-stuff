@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.parse import CompProg
-from tm.tape import PtrTape, Tape, Signature
+from tm.tape import PtrTape, Tape, TagTape, Signature
 from tm.macro import MacroProg
 
 State = int | str
@@ -199,7 +199,7 @@ class Prover:
     def get_rule(
             self,
             state: State,
-            tape: Tape,
+            tape: Tape | TagTape,
             sig: Signature | None = None,
     ) -> Rule | None:
         if (temp := self.rules.get((state, tape.scan))) is None:
@@ -219,7 +219,7 @@ class Prover:
         self.rules[action][sig] = rule
 
     @staticmethod
-    def apply_rule(tape: Tape, rule: Rule) -> int | None:
+    def apply_rule(tape: Tape | TagTape, rule: Rule) -> int | None:
         diffs, blocks = (
             rule[0] + rule[1],
             tape.lspan + tape.rspan,
@@ -246,7 +246,7 @@ class Prover:
             self,
             steps: int,
             state: State,
-            tape: Tape,
+            tape: TagTape,
     ) -> tuple[bool, State] | None:
         rec_rule = False
 
@@ -262,7 +262,7 @@ class Prover:
             except TypeError:
                 return None
 
-            _ = tape.step(
+            tape.step(
                 shift,
                 color,
                 state == next_state)
@@ -306,9 +306,9 @@ class Prover:
                 if (diff := old[1] - new[1]) > 0 and new[1] <= diff:
                     return None
 
-        tape_copy = tape.copy()
+        tag_tape = tape.to_tag()
 
-        spans = tuple(zip(tape_copy.spans, past_tape.spans))
+        spans = tuple(zip(tag_tape.spans, past_tape.spans))
 
         for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
@@ -316,7 +316,7 @@ class Prover:
                     new.append(num)
 
         if (result := self.run_simulator(
-                last_delta, state, tape_copy)) is None:
+                last_delta, state, tag_tape)) is None:
             return None
 
         rec_rule, end_state = result
@@ -324,7 +324,7 @@ class Prover:
         if end_state != state:
             return None
 
-        if tape_copy.scan != sig[0]:
+        if tag_tape.scan != sig[0]:
             return None
 
         for curr_span, prev_span in spans:
@@ -333,7 +333,7 @@ class Prover:
                     if len(new) != 3:
                         return None
 
-        if tape_copy.signature != sig:
+        if tag_tape.signature != sig:
             return None
 
         rule = tuple(
@@ -353,7 +353,7 @@ class Prover:
 
         for _ in range(last_delta):
             result = self.run_simulator(
-                last_delta, state, tape_copy)
+                last_delta, state, tag_tape)
             assert result is not None
 
             rec_rule, end_state = result
@@ -361,7 +361,7 @@ class Prover:
             if end_state != state:
                 return None
 
-            if tape_copy.signature != sig:
+            if tag_tape.signature != sig:
                 return None
 
         raise InfiniteRule()
