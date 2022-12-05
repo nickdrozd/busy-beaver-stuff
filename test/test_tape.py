@@ -19,8 +19,6 @@ def stringify_sig(sig: Signature) -> str:
 class TestTape(TestCase):
     tape: BlockTape
 
-    init_tags: int
-
     def run_bb(self, prog: str, **opts) -> None:
         machine = Machine(prog).run(
             watch_tape = True,
@@ -42,6 +40,44 @@ class TestTape(TestCase):
             stringify_sig(
                 tape.signature),
             expected)
+
+    def test_blank(self):
+        self.run_bb(
+            "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD",
+            prover = 10)
+
+        self.assert_signature(
+            '[0]0')
+
+    def test_copy(self):
+        self.run_bb(
+            "1RB 2LA 1R_  1LB 1LA 0RA")
+
+        self.assert_signature(
+            '1|0|1[2]2|1')
+
+        copy_1 = self.tape.copy()
+        copy_2 = self.tape.copy()
+
+        _ = copy_1.step(0, 2, False)
+        _ = copy_2.step(1, 1, False)
+
+        self.assert_signature(
+            '1|0|1[2]2|1')
+
+        self.assert_signature(
+            '1|0[1]2|1',
+            tape = copy_1)
+
+        self.assert_signature(
+            '1|0|1[2]1',
+            tape = copy_2)
+
+
+class TestBlocks(TestCase):
+    tape: BlockTape
+
+    init_tags: int
 
     def count_tags(self) -> int:
         return (
@@ -104,39 +140,7 @@ class TestTape(TestCase):
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(shift, color, bool(skip))
 
-    def test_blank(self):
-        self.run_bb(
-            "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD",
-            prover = 10)
-
-        self.assert_signature(
-            '[0]0')
-
-    def test_copy(self):
-        self.run_bb(
-            "1RB 2LA 1R_  1LB 1LA 0RA")
-
-        self.assert_signature(
-            '1|0|1[2]2|1')
-
-        copy_1 = self.tape.copy()
-        copy_2 = self.tape.copy()
-
-        _ = copy_1.step(0, 2, False)
-        _ = copy_2.step(1, 1, False)
-
-        self.assert_signature(
-            '1|0|1[2]2|1')
-
-        self.assert_signature(
-            '1|0[1]2|1',
-            tape = copy_1)
-
-        self.assert_signature(
-            '1|0|1[2]1',
-            tape = copy_2)
-
-    def test_trace_blocks_1(self):
+    def test_trace_1(self):
         # 1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA : BBB(4, 2)
         #    49 |   144 | D1 | 1^15 [1] 1^6
         #    54 |   167 | D1 | 1^12 [1] 1^11
@@ -151,7 +155,7 @@ class TestTape(TestCase):
 
         self.assert_tape([[1, 12, 1]], 1, [[1, 11, 2]])
 
-    def test_trace_blocks_2(self):
+    def test_trace_2(self):
         # 1RB 1LA  0LA 0RB: counter
         #    43 |    51 | B0 | 1^4 [0]
         #    44 |    52 | A1 | 1^3 [1] 0^1
@@ -185,7 +189,7 @@ class TestTape(TestCase):
 
         self.assert_tape([[1, 5, 0]], 0, [])
 
-    def test_trace_blocks_3(self):
+    def test_trace_3(self):
         # 1RB 0RB 2LA  1LA 2RB 1LB: counter
         #    73 |   421 | B0 | 2^31 [0]
         #    74 |   422 | A2 | 2^30 [2] 1^1
@@ -243,7 +247,7 @@ class TestTape(TestCase):
 
         self.assert_tape([[2, 63, 0]], 0, [])
 
-    def test_trace_blocks_4(self):
+    def test_trace_4(self):
         # Lynn exception
         # 1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB
         #    50 | 54 | C0 | 1^2 [0] 0^1 1^4
@@ -280,7 +284,7 @@ class TestTape(TestCase):
         self.assert_tape(
             [[1, 3, 1]], 0, [[0, 1], [1, 3, 3]])
 
-    def test_trace_blocks_5(self):
+    def test_trace_5(self):
         # 1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA
 
         # A0 | 1^2 [0] 1^17 0^1 1^3 0^1 1^1
@@ -300,7 +304,7 @@ class TestTape(TestCase):
 
         self.assert_tape([[1, 3, 1]], 0, [[1, 16, 2]])
 
-    def test_trace_blocks_6(self):
+    def test_trace_6(self):
         # 1RB 0LB  1LC 0RC  1RA 1LA
 
         #   46 | B1 | 0^1 1^3 0^2 1^3 [1]
