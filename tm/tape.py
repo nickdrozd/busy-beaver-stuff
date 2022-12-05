@@ -208,6 +208,13 @@ class TagTape:
         else:
             if push_block is None:
                 push_block = [color, 1]
+
+                if push and color != self.scan:
+                    top_block = push[-1]
+                    if len(top_block) > 3:
+                        push_block.append(
+                            top_block.pop())
+
                 scan_info.clear()
                 if color != self.scan:
                     self.scan_info.clear()
@@ -215,8 +222,11 @@ class TagTape:
                 push_block[0] = color
                 push_block[1] += 1
 
-                if self.scan_info is not None and not push_block[2:]:
-                    push_block.extend(self.scan_info)
+                if push:
+                    top_block = push[-1]
+                    if len(top_block) > 3:
+                        push_block.append(
+                            top_block.pop())
 
             push.append(push_block)
 
