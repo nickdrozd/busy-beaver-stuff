@@ -370,18 +370,77 @@ class TestBlocks(TestCase):
             [[1, 2], [0, 1], [1, 2]])
 
         self.step(1, 1, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 3, 1], [1, 1]],
+            1,
+            [[1, 1], [0, 1], [1, 2]])
+
         self.step(0, 0, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 3, 1]],
+            1,
+            [[0, 1], [1, 1], [0, 1], [1, 2]])
+
         self.step(1, 0, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 4, 1]],
+            0,
+            [[1, 1], [0, 1], [1, 2]])
+
         self.step(1, 1, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 4, 1], [1, 1]],
+            1,
+            [[0, 1], [1, 2]])
+
         self.step(0, 0, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 4, 1]],
+            1,
+            [[0, 2], [1, 2]])
+
         self.step(1, 0, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 5, 1]],
+            0,
+            [[0, 1], [1, 2]])
+
         self.step(1, 1, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 5, 1], [1, 1]],
+            0,
+            [[1, 2]])
+
         self.step(1, 1, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 5, 1], [1, 2]],
+            1,
+            [[1, 1]])
+
         self.step(1, 0, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 5, 1], [1, 2], [0, 1]],
+            1,
+            [])
+
         self.step(0, 1, 0)
+
+        self.assert_tape(
+            [[1, 3, 0], [0, 5, 1], [1, 2]],
+            0,
+            [[1, 1]])
+
         self.step(1, 1, 0)
 
         self.assert_tape(
             [[1, 3, 0], [0, 5, 1], [1, 3]], 1, [])
-        #                               ^
-        #                     should be 2
+                                    #   ^ should be 2
