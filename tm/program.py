@@ -7,7 +7,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 
 from tm import Graph
-from tm.tape import BlockTape
+from tm.tape import Tape
 from tm.parse import parse, st_str, tcompile
 
 INIT = 'A'
@@ -327,12 +327,12 @@ class Program:
         from tm.recurrence import History
 
         configs: list[
-            tuple[int, str, BlockTape, int, History]
+            tuple[int, str, Tape, int, History]
         ] = [
             (
                 1,
                 state,
-                BlockTape([], int(color), []),
+                Tape([], int(color), []),
                 0,
                 History(tapes = {}),
             )

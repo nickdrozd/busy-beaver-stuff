@@ -6,7 +6,7 @@ from unittest import TestCase, skip
 from itertools import product
 from collections.abc import Mapping
 
-from tm.tape import BlockTape
+from tm.tape import Tape
 from tm.macro import MacroProg
 from tm.parse import tcompile, dcompile
 from tm import Machine, LinRecMachine
@@ -1388,7 +1388,7 @@ PROVER_HALT_KILLS_COMPILER = {
 
 class TuringTest(TestCase):
     prog: str
-    tape: BlockTape
+    tape: Tape
     machine: Machine
     lr_machine: LinRecMachine
 

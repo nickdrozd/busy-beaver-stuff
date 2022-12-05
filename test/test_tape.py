@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from tm import Machine
-from tm.tape import BlockTape, Signature, Color, Span
+from tm.tape import Tape, Signature, Color, Span
 
 def stringify_sig(sig: Signature) -> str:
     scan, lspan, rspan = sig
@@ -17,7 +17,7 @@ def stringify_sig(sig: Signature) -> str:
 
 
 class TestTape(TestCase):
-    tape: BlockTape
+    tape: Tape
 
     def run_bb(self, prog: str, **opts) -> None:
         machine = Machine(prog).run(
@@ -31,7 +31,7 @@ class TestTape(TestCase):
     def assert_signature(
             self,
             expected: str,
-            tape: BlockTape | None = None,
+            tape: Tape | None = None,
     ) -> None:
         if tape is None:
             tape = self.tape
@@ -75,7 +75,7 @@ class TestTape(TestCase):
 
 
 class TestBlocks(TestCase):
-    tape: BlockTape
+    tape: Tape
 
     init_tags: int
 
@@ -97,7 +97,7 @@ class TestBlocks(TestCase):
         else:
             scan_info = None
 
-        self.tape = BlockTape(lspan, scan, list(reversed(rspan)))
+        self.tape = Tape(lspan, scan, list(reversed(rspan)))
 
         if scan_info is not None:
             self.tape.scan_info = scan_info

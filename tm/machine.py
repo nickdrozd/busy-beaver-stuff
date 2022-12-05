@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tm.tape import BlockTape
+from tm.tape import Tape
 from tm.parse import tcompile, st_str, CompProg
 from tm.macro import MacroProg
 from tm.program import Program
@@ -26,7 +26,7 @@ TERM_CATS = (
 class Machine:
     program: ProgLike
 
-    tape: BlockTape
+    tape: Tape
     state: State
     steps: int
     cycles: int
@@ -91,7 +91,7 @@ class Machine:
             state: int = 0,
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
-            tape: BlockTape | None = None,
+            tape: Tape | None = None,
             prover: int | None = None,
     ) -> Machine:
         comp: MacroProg | CompProg = (
@@ -105,7 +105,7 @@ class Machine:
         self.tape = tape = (
             tape
             if tape is not None else
-            BlockTape([], 0, [])
+            Tape([], 0, [])
         )
 
         blanks: dict[State, int] = {}
@@ -225,7 +225,7 @@ class Machine:
 class LinRecMachine:
     program: str
 
-    tape: BlockTape
+    tape: Tape
     history: History
 
     halted: int | None = None
@@ -249,7 +249,7 @@ class LinRecMachine:
 
         comp = tcompile(self.program)
 
-        self.tape = tape = BlockTape([], 0, [])
+        self.tape = tape = Tape([], 0, [])
 
         self.history = History(tapes = samples or {})
 

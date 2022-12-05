@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.parse import CompProg
-from tm.tape import PtrTape, BlockTape, Signature
+from tm.tape import PtrTape, Tape, Signature
 from tm.macro import MacroProg
 
 State = int | str
@@ -47,7 +47,7 @@ class History:
         self.states += [state] * (step - len(self.states))
         self.states.append(state)
 
-    def add_tape_at_step(self, step: int, tape: BlockTape) -> None:
+    def add_tape_at_step(self, step: int, tape: Tape) -> None:
         self.tapes[step] = tape.to_ptr()
 
         pos = tape.head
@@ -147,9 +147,9 @@ class PastConfig:
     times_seen: int = 0
     last_cycle: int | None = None
     last_delta: int | None = None
-    tape: BlockTape | None = None
+    tape: Tape | None = None
 
-    def check(self, cycle: int, tape: BlockTape) -> bool:
+    def check(self, cycle: int, tape: Tape) -> bool:
         self.times_seen += 1
 
         if self.last_cycle is None:
@@ -188,7 +188,7 @@ class Prover:
     def get_rule(
             self,
             state: State,
-            tape: BlockTape,
+            tape: Tape,
             sig: Signature | None = None,
     ) -> Rule | None:
         if (temp := self.rules.get((state, tape.scan))) is None:
@@ -208,7 +208,7 @@ class Prover:
         self.rules[action][sig] = rule
 
     @staticmethod
-    def apply_rule(tape: BlockTape, rule: Rule) -> int | None:
+    def apply_rule(tape: Tape, rule: Rule) -> int | None:
         diffs, blocks = (
             rule[0] + rule[1],
             tape.lspan + tape.rspan,
@@ -235,7 +235,7 @@ class Prover:
             self,
             steps: int,
             state: State,
-            tape: BlockTape,
+            tape: Tape,
     ) -> tuple[bool, State] | None:
         rec_rule = False
 
@@ -264,7 +264,7 @@ class Prover:
             self,
             cycle: int,
             state: State,
-            tape: BlockTape,
+            tape: Tape,
     ) -> int | None:
         # If we already have a rule, apply it
         if (rule := self.get_rule(

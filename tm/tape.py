@@ -14,7 +14,7 @@ Signature = tuple[
 ]
 
 @dataclass
-class BlockTape:
+class Tape:
     lspan: Span
     scan: Color
     rspan: Span
@@ -37,8 +37,8 @@ class BlockTape:
     def init(self) -> int:
         return sum(q for (_, q) in self.lspan) - self.head
 
-    def copy(self) -> BlockTape:
-        return BlockTape(
+    def copy(self) -> Tape:
+        return Tape(
             [[color, count] for color, count in self.lspan],
             self.scan,
             [[color, count] for color, count in self.rspan],
