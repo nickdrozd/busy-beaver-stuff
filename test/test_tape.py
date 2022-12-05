@@ -18,18 +18,17 @@ def stringify_sig(sig: Signature) -> str:
 
 class TestTape(TestCase):
     tape: BlockTape
-    machine: Machine
 
     init_tags: int
 
     def run_bb(self, prog: str, **opts) -> None:
-        self.machine = Machine(prog).run(
+        machine = Machine(prog).run(
             watch_tape = True,
             **opts)
 
-        print(self.machine)
+        print(machine)
 
-        self.tape = self.machine.tape
+        self.tape = machine.tape
 
     def assert_signature(
             self,
