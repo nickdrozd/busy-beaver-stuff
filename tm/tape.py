@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 Color = int
 
@@ -147,7 +147,8 @@ class TagTape:
     scan: Color
     rspan: Span
 
-    scan_info: int | None = None
+    scan_info: list[int] = field(
+        default_factory = list)
 
     @property
     def signature(self) -> Signature:
@@ -176,7 +177,7 @@ class TagTape:
 
         stepped = 1 if push_block is None else 1 + push_block[1]
 
-        scan_info: int | None = None
+        scan_info: list[int] = []
 
         next_scan: int
 
@@ -194,8 +195,8 @@ class TagTape:
                     push_block = popped
                     push_block[1] = 0
 
-                if popped[2:]:
-                    scan_info = popped[2]
+                if (extra := popped[2:]):
+                    scan_info += extra
                     push_block = push_block[:2]
 
         if push and (top_block := push[-1])[0] == color:
@@ -206,21 +207,21 @@ class TagTape:
         else:
             if push_block is None:
                 push_block = [color, 1]
-                scan_info = None
+                scan_info.clear()
                 if color != self.scan:
-                    self.scan_info = None
+                    self.scan_info.clear()
             else:
                 push_block[0] = color
                 push_block[1] += 1
 
                 if self.scan_info is not None and not push_block[2:]:
-                    push_block.append(self.scan_info)
+                    push_block.extend(self.scan_info)
 
             push.append(push_block)
 
         if self.scan_info is not None:
             if not push[-1][2:]:
-                push[-1].append(self.scan_info)
+                push[-1].extend(self.scan_info)
 
         self.scan_info = scan_info
 

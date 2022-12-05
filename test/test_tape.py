@@ -89,25 +89,24 @@ class TestBlocks(TestCase):
     def set_tape(
             self,
             lspan: Span,
-            scan: Color | tuple[Color, int],
+            scan: Color | tuple[Color, tuple[int, ...]],
             rspan: Span,
     ):
         if isinstance(scan, tuple):
             scan, scan_info = scan
         else:
-            scan_info = None
+            scan_info = ()
 
         self.tape = TagTape(lspan, scan, list(reversed(rspan)))
 
-        if scan_info is not None:
-            self.tape.scan_info = scan_info
+        self.tape.scan_info = list(scan_info)
 
         self.init_tags = self.count_tags()
 
     def assert_tape(
             self,
             lspan: Span,
-            scan: Color | tuple[Color, int],
+            scan: Color | tuple[Color, list[int]],
             rspan: Span,
     ):
         self.assertEqual(self.lspan, lspan)
@@ -115,7 +114,7 @@ class TestBlocks(TestCase):
 
         self.assertEqual(
             (self.scan, self.scan_info),
-            ((scan, None) if isinstance(scan, Color) else scan))
+            ((scan, []) if isinstance(scan, Color) else scan))
 
         self.assertGreaterEqual(
             self.init_tags,
@@ -126,7 +125,7 @@ class TestBlocks(TestCase):
         return self.tape.scan
 
     @property
-    def scan_info(self) -> Color | None:
+    def scan_info(self) -> list[int] | None:
         return self.tape.scan_info
 
     @property
@@ -183,7 +182,7 @@ class TestBlocks(TestCase):
 
         self.step(0, 0, 0)
 
-        self.assert_tape([[1, 4]], (0, 0), [[0, 1]])
+        self.assert_tape([[1, 4]], (0, [0]), [[0, 1]])
 
         self.step(1, 1, 0)
 
@@ -237,7 +236,7 @@ class TestBlocks(TestCase):
 
         self.step(1, 2, 1)
 
-        self.assert_tape([[1, 1], [2, 60]], (2, 0), [[1, 1]])
+        self.assert_tape([[1, 1], [2, 60]], (2, [0]), [[1, 1]])
 
         self.step(0, 1, 1)
 
@@ -262,7 +261,7 @@ class TestBlocks(TestCase):
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 1], [0, 1]], (0, 2), [[1, 4, 3]])
+            [[1, 2, 1], [0, 1]], (0, [2]), [[1, 4, 3]])
 
         self.step(1, 1, 0)
 
@@ -359,7 +358,7 @@ class TestBlocks(TestCase):
 
         self.assert_tape(
             [[1, 3, 0], [0, 2, 1]],
-            (1, 2),
+            (1, [2]),
             [[0, 1], [1, 2], [0, 1], [1, 2]])
 
         self.step(1, 0, 0)
