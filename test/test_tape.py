@@ -43,11 +43,11 @@ class TestTape(TestCase):
 
     def test_blank(self):
         self.run_bb(
-            "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD",
+            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD",
             prover = 10)
 
         self.assert_signature(
-            '[0]0')
+            '0[0]')
 
     def test_copy(self):
         self.run_bb(

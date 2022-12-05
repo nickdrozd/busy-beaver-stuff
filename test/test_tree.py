@@ -164,7 +164,7 @@ class Fast(TestTree):
 
 class Slow(TestTree):
     @skip('')
-    def test_42(self):
+    def test_42(self):  # no-coverage
         hc42q: Q[str] = Queue()
         hd42q: Q[str] = Queue()
 
