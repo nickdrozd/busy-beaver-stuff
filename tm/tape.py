@@ -201,6 +201,7 @@ class TagTape:
 
         if push and (top_block := push[-1])[0] == color:
             top_block[1] += stepped
+            top_block += self.scan_info
 
             if push_block is not None and not top_block[2:]:
                 top_block += push_block[2:]
