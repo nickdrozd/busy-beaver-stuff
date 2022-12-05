@@ -215,9 +215,9 @@ class TagTape:
                         push_block.append(
                             top_block.pop())
 
-                scan_info.clear()
                 if color != self.scan:
                     self.scan_info.clear()
+                    assert not scan_info
             else:
                 push_block[0] = color
                 push_block[1] += 1
