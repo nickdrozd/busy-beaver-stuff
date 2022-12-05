@@ -288,42 +288,6 @@ class TestTape(TestCase):
         self.assert_tape(
             [[1, 3, 0]], 0, [[0, 1], [1, 3, 0]])
 
-        self.step(1, 0, 0)
-        self.step(1, 1, 0)
-        self.step(0, 0, 0)
-        self.step(0, 0, 0)
-        self.step(1, 1, 0)
-
-        self.rspan[-1].append(0)
-
-        self.assert_tape(
-            [[1, 4, 0]], 0, [[0, 1, 0], [1, 2, 0]])
-
-        self.step(1, 0, 0)
-
-        self.assert_tape(
-            [[1, 4, 0], [0, 1]], (0, 0), [[1, 2, 0]])
-
-        self.step(1, 1, 0)
-
-        self.assert_tape(
-            [[1, 4, 0], [0, 1], [1, 1]], 1, [[1, 1, 0]])
-
-        self.step(0, 0, 0)
-
-        self.assert_tape(
-            [[1, 4, 0], [0, 1]], 1, [[0, 1], [1, 1, 0]])
-
-        self.step(0, 0, 0)
-
-        self.assert_tape(
-            [[1, 4, 0]], 0, [[0, 2], [1, 1, 0]])
-
-        self.step(1, 1, 0)
-
-        self.assert_tape(
-            [[1, 5, 0]], 0, [[0, 1], [1, 1, 0]])
-
     def test_trace_blocks_5(self):
         # 1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA
 
