@@ -78,16 +78,9 @@ class TestTape(TestCase):
         self.assertEqual(self.lspan, lspan)
         self.assertEqual(self.rspan, list(reversed(rspan)))
 
-        if isinstance(scan, Color):
-            self.assertIsNone(self.scan_info)
-            self.assertEqual(scan, self.scan)
-        else:
-            self.assertEqual(
-                scan,
-                (
-                    self.scan,
-                    self.scan_info,
-                ))
+        self.assertEqual(
+            (self.scan, self.scan_info),
+            ((scan, None) if isinstance(scan, Color) else scan))
 
         self.assertGreaterEqual(
             self.init_tags,
