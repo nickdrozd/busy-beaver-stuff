@@ -48,11 +48,22 @@ class History:
         self.states.append(state)
 
     def add_tape_at_step(self, step: int, tape: Tape) -> None:
-        self.tapes[step] = tape.to_ptr()
-
         pos = tape.head
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
+
+        self.tapes[step] = PtrTape(
+            sum(q for (_, q) in tape.lspan) - tape.head,
+            [
+                color
+                for color, count in tape.lspan
+                for _ in range(count)
+            ] + [tape.scan] + [
+                color
+                for color, count in reversed(tape.rspan)
+                for _ in range(count)
+            ]
+        )
 
     def calculate_beeps(
             self,

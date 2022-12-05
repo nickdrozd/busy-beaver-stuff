@@ -33,10 +33,6 @@ class Tape:
             for color, count in reversed(self.rspan)
         ])
 
-    @property
-    def init(self) -> int:
-        return sum(q for (_, q) in self.lspan) - self.head
-
     def copy(self) -> Tape:
         return Tape(
             [[color, count] for color, count in self.lspan],
@@ -44,23 +40,6 @@ class Tape:
             [[color, count] for color, count in self.rspan],
             head = self.head,
         )
-
-    def to_ptr(self) -> PtrTape:
-        tape = [
-            color
-            for color, count in self.lspan
-            for _ in range(count)
-        ]
-
-        tape.append(self.scan)
-
-        tape += [
-            color
-            for color, count in reversed(self.rspan)
-            for _ in range(count)
-        ]
-
-        return PtrTape(self.init, tape)
 
     @property
     def signature(self) -> Signature:
