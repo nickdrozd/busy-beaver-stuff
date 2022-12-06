@@ -365,7 +365,6 @@ RECUR_COMPACT = {
     "1RB 1RC  1LC 0LD  1RA 0LB  0RA 0RC": ( 14008,  24),
     "1RB 0LC  0RD 1RD  0LA 1LC  1LA 0RA": (  5252,   9),
     "1RB 0RC  1LD 0RA  0LD 0LB  1LA 1LB": (  4391,  24),
-    "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD": (  3115, 860),
     "1RB 0LA  0RC 1RD  1LD 0RB  1LA 1RD": (  1709,  13),
     "1RB 0RC  1LB 0LC  0RD 0LD  1RA 0LA": (  1680,   5),
 
@@ -373,10 +372,7 @@ RECUR_COMPACT = {
     "1RB 2LA 3LA 1LA  2LB 3RA 0RA 2RB": (28284,  5),
     "1RB 2LB 0LA 1LA  2LA 3RA 1RB 0LB": ( 5632, 13),
     "1RB 1LB 2LA 3LA  1LA 2RB 3LB 0RA": ( 5281,  7),
-    "1RB 0LB 1LB 1LB  2LA 3RB 1RA 0RA": ( 4632, 92),
     "1RB 2RB 3LB 0RA  1LA 3RB 2LA 2RA": ( 4000, 40),
-    "1RB 2LB 3RA 0LB  1LA 3RA 3RB 2LA": ( 3010, 26),
-    "1RB 2LA 3RA 2LB  2LA 2RA 3RB 0LA": ( 2991, 41),
     "1RB 2LB 1RA 2LA  1LA 3RB 0RA 3LB": ( 2931,  8),
     "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB": ( 1089,  2),
 }
@@ -417,6 +413,7 @@ RECUR_DIFFUSE = {
     "1RB 0LC  1RD 1LD  0LA 1LB  1LC 0RD": (6455,   23),
     "1RB 0LA  0RC 0RD  1LC 1LA  0RB 1RD": (3957,  265),
     "1RB 0LC  0RD 1RD  1LA 1LC  1RC 0RB": (3316,  208),
+    "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD": (3115,  860),
     "1RB 0LB  1LA 0LC  1LB 0RD  1RC 0RB": (2374,  359),
     "1RB 0LA  1LC 0RA  0LD 1RD  1LA 0RB": (2110,   36),
     "1RB 0LC  1RC 0RD  1LA 1LC  1RA 0RB": (1978,    8),
@@ -452,6 +449,7 @@ RECUR_DIFFUSE = {
     "1RB 2LA 0LB 1RA  1LB 3LA 3RB 3RB": (6697,  87),
     "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA": (4996,  81),
     "1RB 2RA 0LB 1LA  3LA 2RB 1LA 1RA": (4702,  39),
+    "1RB 0LB 1LB 1LB  2LA 3RB 1RA 0RA": (4632,  92),
     "1RB 2LA 3RB 2RB  3LA 3RA 0LB 1RA": (4325, 199),
     "1RB 2LB 1LA 0LB  3LA 3RA 1RB 0RA": (4300, 196),
     "1RB 2LB 1LA 0RB  3LA 2RA 3LB 1RB": (4111,  49),
@@ -460,6 +458,8 @@ RECUR_DIFFUSE = {
     "1RB 2RB 0LB 1LA  3LA 3RA 1LA 1LB": (3439,  77),
     "1RB 2LB 3RA 1RA  3LA 0LB 1RA 0RA": (3294, 240),
     "1RB 2LB 3LA 0RB  2LA 1RA 1RB 2RA": (3231, 246),
+    "1RB 2LB 3RA 0LB  1LA 3RA 3RB 2LA": (3010,  26),
+    "1RB 2LA 3RA 2LB  2LA 2RA 3RB 0LA": (2991,  41),
     "1RB 2RA 1LB 2RB  2LA 2RB 3LA 0RA": (2983,  77),
     "1RB 2LB 0RA 2LB  2LA 3LA 0LB 3RA": (2973, 290),
     "1RB 0RA 0LB 2RB  3LA 3RB 0LA 2RA": (2583, 291),
@@ -895,14 +895,6 @@ MODULAR = {
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
 }
 
-FUNNY_MACRO = {
-    # 4/2
-    "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": (118, 1),  # boyd
-
-    # 3/3
-    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (3, 1, 3),  # SIAB
-}
-
 CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1LB  1LA 0RB",
 
@@ -1302,12 +1294,8 @@ DIFFUSE = {
 }
 
 PROVER_EXCEPTIONS = {
-    # recur
-    "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD",
-
-    "1RB 0LB 1LB 1LB  2LA 3RB 1RA 0RA",
-    "1RB 2LB 3RA 0LB  1LA 3RA 3RB 2LA",
-    "1RB 2LA 3RA 2LB  2LA 2RA 3RB 0LA",
+    # halt
+    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE",
 }
 
 PROVER_HALT = {
@@ -1321,7 +1309,7 @@ PROVER_HALT = {
     "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE 1R_": (8, 1, 4.6, 1439),
     "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE": (2, 0, 2.5,  881),
     "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_": (4, 1, 1.2,  865),
-    # "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (3, 1, 6.4,  462),
+    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (3, 1, 6.4,  462),
     "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF 1R_  1RA 1RE": (2, 0, 1.4,   60),
     "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE 1R_": (4, 0, 6.9,   49),
     "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE 1R_": (4, 0, 1.1,   49),
@@ -1716,7 +1704,7 @@ class TuringTest(TestCase):
             simple_term: bool = True,
     ):
         for prog in prog_data:
-            if prog in PROVER_EXCEPTIONS or prog in FUNNY_MACRO:
+            if prog == "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC":  # SIAB
                 continue
 
             program: str | MacroProg = (
@@ -1753,6 +1741,9 @@ class TuringTest(TestCase):
     ):
         # pylint: disable = redefined-variable-type
         for prog, (block, back, digits, exp) in prog_data.items():
+            if prog in PROVER_EXCEPTIONS:
+                continue
+
             program: str | MacroProg = prog
 
             if block > 1:
