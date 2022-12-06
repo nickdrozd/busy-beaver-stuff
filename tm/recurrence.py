@@ -205,11 +205,13 @@ class Prover:
             state: State,
             sig: Signature,
             rule: Rule,
-    ) -> None:
+    ) -> Rule:
         if (action := (state, sig[0])) not in self.rules:
             self.rules[action] = {}
 
         self.rules[action][sig] = rule
+
+        return rule
 
     def run_simulator(
             self,
@@ -245,13 +247,11 @@ class Prover:
             cycle: int,
             state: State,
             tape: Tape,
-    ) -> int | None:
-        # If we already have a rule, apply it
-        if (rule := self.get_rule(
+    ) -> Rule | None:
+        if (known_rule := self.get_rule(
                 state, tape, sig := tape.signature)) is not None:
-            return tape.apply_rule(rule)
+            return known_rule
 
-        # If this is a new config, record it
         if (temp := self.configs.get(sig)) is None:
             temp = defaultdict(PastConfig)
             self.configs[sig] = temp
@@ -297,9 +297,7 @@ class Prover:
         )
 
         if any(diff < 0 for span in rule for diff in span):
-            self.add_rule(state, sig, rule)
-
-            return tape.apply_rule(rule)
+            return self.add_rule(state, sig, rule)
 
         if not rec_rule:
             raise InfiniteRule()

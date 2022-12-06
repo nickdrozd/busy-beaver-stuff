@@ -129,15 +129,16 @@ class Machine:
 
             if self.prover:
                 try:
-                    times = self.prover.try_rule(cycle, state, tape)
+                    rule = self.prover.try_rule(cycle, state, tape)
                 except InfiniteRule:
                     self.infrul = True
                     break
 
-                if times is not None:
-                    step += times
-                    self.rulapp += times
-                    continue
+                if rule is not None:
+                    if (times := tape.apply_rule(rule)) is not None:
+                        step += times
+                        self.rulapp += times
+                        continue
 
             try:
                 color, shift, next_state = \
