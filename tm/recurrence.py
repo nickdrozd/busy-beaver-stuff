@@ -155,21 +155,16 @@ class History:
 class PastConfig:
     cycles: list[int] = field(default_factory = list)
 
-    last_delta: int | None = None
-
     def next_delta(self, cycle: int) -> int | None:
-        if not self.cycles:
-            self.cycles.append(cycle)
+        (cycles := self.cycles).append(cycle)
+
+        if len(cycles) < 3:
             return None
 
-        delta = cycle - self.cycles[-1]
+        curr_delta = cycles[-1] - (second := cycles[-2])
+        prev_delta = second - cycles[-3]
 
-        if self.last_delta is None or self.last_delta != delta:
-            self.last_delta = delta
-            self.cycles.append(cycle)
-            return None
-
-        return delta
+        return curr_delta if curr_delta == prev_delta else None
 
 class InfiniteRule(Exception):
     pass
