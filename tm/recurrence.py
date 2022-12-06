@@ -159,10 +159,10 @@ class PastConfig:
     last_delta: int | None = None
     tape: Tape | None = None
 
-    def check(self, cycle: int, tape: Tape) -> bool:
+    def check(self, cycle: int, tape: Tape) -> int | None:
         if self.last_cycle is None:
             self.last_cycle = cycle
-            return False
+            return None
 
         delta = cycle - self.last_cycle
 
@@ -170,9 +170,9 @@ class PastConfig:
             self.last_delta = delta
             self.last_cycle = cycle
             self.tape = tape.copy()
-            return False
+            return None
 
-        return True
+        return delta
 
 class InfiniteRule(Exception):
     pass
@@ -284,10 +284,10 @@ class Prover:
             temp = defaultdict(PastConfig)
             self.configs[sig] = temp
 
-        if not (past_config := temp[state]).check(cycle, tape):
+        if (last_delta := (
+                past_config := temp[state]
+        ).check(cycle, tape)) is None:
             return None
-
-        assert (last_delta := past_config.last_delta) is not None
 
         if self.diff_lim is not None and last_delta > self.diff_lim:
             return None
