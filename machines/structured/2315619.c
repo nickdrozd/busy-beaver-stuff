@@ -28,25 +28,21 @@ int main(void)
   }
 
  B:
-  switch (SCAN) {
-    case 0:
-      // B0
-      WRITE(1);
-      LEFT;
-      goto A;
-
-    case 1:
+  while (!BLANK) {
+    if (SCAN == 1)
       // B1
       WRITE(2);
-      RIGHT;
-      goto B;
-
-    case 2:
+    else
       // B2
       WRITE(1);
-      RIGHT;
-      goto B;
+
+    RIGHT;
   }
+
+  // B0
+  WRITE(1);
+  LEFT;
+  goto A;
 
  C:
   switch (SCAN) {
