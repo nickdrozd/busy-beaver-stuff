@@ -155,14 +155,11 @@ class History:
 
 @dataclass
 class PastConfig:
-    times_seen: int = 0
     last_cycle: int | None = None
     last_delta: int | None = None
     tape: Tape | None = None
 
     def check(self, cycle: int, tape: Tape) -> bool:
-        self.times_seen += 1
-
         if self.last_cycle is None:
             self.last_cycle = cycle
             return False
