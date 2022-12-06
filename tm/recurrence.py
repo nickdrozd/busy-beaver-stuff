@@ -157,9 +157,8 @@ class History:
 class PastConfig:
     last_cycle: int | None = None
     last_delta: int | None = None
-    tape: Tape | None = None
 
-    def check(self, cycle: int, tape: Tape) -> int | None:
+    def check(self, cycle: int) -> int | None:
         if self.last_cycle is None:
             self.last_cycle = cycle
             return None
@@ -169,7 +168,6 @@ class PastConfig:
         if self.last_delta is None or self.last_delta != delta:
             self.last_delta = delta
             self.last_cycle = cycle
-            self.tape = tape.copy()
             return None
 
         return delta
@@ -284,19 +282,15 @@ class Prover:
             temp = defaultdict(PastConfig)
             self.configs[sig] = temp
 
-        if (last_delta := (
-                past_config := temp[state]
-        ).check(cycle, tape)) is None:
+        if (last_delta := temp[state].check(cycle)) is None:
             return None
 
         if self.diff_lim is not None and last_delta > self.diff_lim:
             return None
 
-        assert (past_tape := past_config.tape) is not None
-
         tag_tape = tape.to_tag()
 
-        spans = tuple(zip(tag_tape.spans, past_tape.spans))
+        spans = tuple(zip(tag_tape.spans, tape.spans))
 
         for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
@@ -328,7 +322,7 @@ class Prover:
             tuple(
                 old[1] - new[1]
                 for old, new in zip(*spans)
-            ) for spans in zip(tape.spans, past_tape.spans)
+            ) for spans in zip(tag_tape.spans, tape.spans)
         )
 
         if any(diff < 0 for span in rule for diff in span):
