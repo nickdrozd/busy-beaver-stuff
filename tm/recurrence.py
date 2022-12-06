@@ -309,11 +309,12 @@ class Prover:
         if tag_tape.scan != sig[0]:
             return None
 
-        for curr_span, prev_span in spans:
-            for num, (old, new) in enumerate(zip(prev_span, curr_span)):
-                if new[1] > 1:
-                    if len(new) != 3:
-                        return None
+        if any(
+            new[1] > 1 and len(new) != 3
+            for curr_span, prev_span in spans
+            for num, (old, new) in enumerate(zip(prev_span, curr_span))
+        ):
+            return None
 
         if tag_tape.signature != sig:
             return None
