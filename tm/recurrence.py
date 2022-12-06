@@ -294,15 +294,6 @@ class Prover:
 
         assert (past_tape := past_config.tape) is not None
 
-        for curr_span, prev_span in zip(tape.spans, past_tape.spans):
-            assert len(curr_span) == len(prev_span)
-
-            for old, new in zip(prev_span, curr_span):
-                assert old[0] == new[0]
-
-                if (diff := old[1] - new[1]) > 0 and new[1] <= diff:
-                    return None
-
         tag_tape = tape.to_tag()
 
         spans = tuple(zip(tag_tape.spans, past_tape.spans))
