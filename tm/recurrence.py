@@ -303,20 +303,16 @@ class Prover:
 
         rec_rule, end_state = result
 
-        if end_state != state:
-            return None
-
-        if tag_tape.scan != sig[0]:
-            return None
-
-        if any(
-            new[1] > 1 and len(new) != 3
-            for curr_span, prev_span in spans
-            for num, (old, new) in enumerate(zip(prev_span, curr_span))
+        if (
+            end_state != state
+            or tag_tape.scan != sig[0]
+            or any(
+                new[1] > 1 and len(new) != 3
+                for curr_span, prev_span in spans
+                for num, (old, new) in
+                    enumerate(zip(prev_span, curr_span)))
+            or tag_tape.signature != sig
         ):
-            return None
-
-        if tag_tape.signature != sig:
             return None
 
         rule = tuple(
@@ -342,13 +338,11 @@ class Prover:
 
             rec_rule, end_state = result
 
-            if end_state != state:
-                return None
-
-            if tag_tape.scan != tape.scan:
-                return None
-
-            if tag_tape.signature != sig:
+            if (
+                end_state != state
+                or tag_tape.scan != tape.scan
+                or tag_tape.signature != sig
+            ):
                 return None
 
         raise InfiniteRule()
