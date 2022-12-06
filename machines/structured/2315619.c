@@ -13,13 +13,6 @@ int main(void)
       LEFT;
 
       while (1) {
-        if (SCAN == 2) {
-          // C2
-          WRITE(0);
-          LEFT;
-          continue;
-        }
-
         if (SCAN == 0) {
           // C0
           WRITE(1);
@@ -33,6 +26,10 @@ int main(void)
           LEFT;
           break;
         }
+
+        // C2
+        WRITE(0);
+        LEFT;
       }
     }
 
