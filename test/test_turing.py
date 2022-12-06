@@ -1946,6 +1946,14 @@ class Fast(TuringTest):
             diff_lim = 300,
         )
 
+    def test_prover_false_positive(self):
+        self._test_prover_est(
+            {
+                "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_": (4, 1, 1.2,  865),
+            },
+            diff_lim = 300,
+        )
+
     def test_blank(self):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)
