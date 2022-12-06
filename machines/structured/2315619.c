@@ -7,27 +7,23 @@
 int main(void)
 {
  A:
-  switch (SCAN) {
-    case 0:
-      // A0
-      WRITE(1);
-      RIGHT;
-      goto B;
-
-    case 1:
-      // A1
-      WRITE(2);
-      LEFT;
-      goto B;
-
-    case 2:
-      // A2
-      WRITE(1);
-      LEFT;
-      goto C;
+  if (SCAN == 2) {
+    // A2
+    WRITE(1);
+    LEFT;
+    goto C;
   }
 
- B:
+  if (BLANK) {
+    // A0
+    WRITE(1);
+    RIGHT;
+  } else {
+    // A1
+    WRITE(2);
+    LEFT;
+  }
+
   while (!BLANK) {
     if (SCAN == 1)
       // B1
