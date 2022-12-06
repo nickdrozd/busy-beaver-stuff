@@ -116,7 +116,7 @@ WHILE_TEMPLATE = \
 
 def make_n_way_switch(state: str, instrs: tuple[Instr, ...]) -> str:
     return SWITCH_TEMPLATE.format(
-        '\n'.join([
+        '\n\n'.join([
             make_case(state, color, instr)
             for color, instr in enumerate(instrs)
         ])
