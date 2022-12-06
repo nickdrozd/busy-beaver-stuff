@@ -153,19 +153,20 @@ class History:
 
 @dataclass
 class PastConfig:
-    last_cycle: int | None = None
+    cycles: list[int] = field(default_factory = list)
+
     last_delta: int | None = None
 
-    def check(self, cycle: int) -> int | None:
-        if self.last_cycle is None:
-            self.last_cycle = cycle
+    def next_delta(self, cycle: int) -> int | None:
+        if not self.cycles:
+            self.cycles.append(cycle)
             return None
 
-        delta = cycle - self.last_cycle
+        delta = cycle - self.cycles[-1]
 
         if self.last_delta is None or self.last_delta != delta:
             self.last_delta = delta
-            self.last_cycle = cycle
+            self.cycles.append(cycle)
             return None
 
         return delta
@@ -243,8 +244,8 @@ class Prover:
             temp = defaultdict(PastConfig)
             self.configs[sig] = temp
 
-        if ((last_delta := temp[state].check(cycle)) is None
-                or last_delta > (self.diff_lim or 0)):
+        if ((delta := temp[state].next_delta(cycle)) is None
+                or delta > (self.diff_lim or 0)):
             return None
 
         tag_tape = tape.to_tag()
@@ -257,7 +258,7 @@ class Prover:
                     new.append(num)
 
         if (result := self.run_simulator(
-                last_delta, state, tag_tape)) is None:
+                delta, state, tag_tape)) is None:
             return None
 
         rec_rule, end_state = result
@@ -292,9 +293,8 @@ class Prover:
         if not rec_rule:
             raise InfiniteRule()
 
-        for _ in range(last_delta):
-            result = self.run_simulator(
-                last_delta, state, tag_tape)
+        for _ in range(delta):
+            result = self.run_simulator(delta, state, tag_tape)
 
             assert result is not None
 
