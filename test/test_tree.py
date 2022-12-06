@@ -93,7 +93,7 @@ class Fast(TestTree):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 189, 40)):
+            if any(run_for_none(prog, 224, 40)):
                 return
 
             exits = Graph(prog).exit_points
@@ -116,7 +116,7 @@ class Fast(TestTree):
 
         self.assert_counts({
              9: h32,
-            75: q32,
+            74: q32,
         })
 
         self.assert_connected(q32)
@@ -129,7 +129,7 @@ class Fast(TestTree):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 212, 49)):
+            if any(run_for_none(prog, 282, 52)):
                 return
 
             if prog.count('...') == 0:
@@ -149,7 +149,7 @@ class Fast(TestTree):
 
         self.assert_counts({
              23: h23,
-            126: q23,
+            118: q23,
         })
 
         self.assert_connected(h23, q23)
