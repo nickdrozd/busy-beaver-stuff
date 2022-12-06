@@ -337,11 +337,15 @@ class Prover:
         for _ in range(last_delta):
             result = self.run_simulator(
                 last_delta, state, tag_tape)
+
             assert result is not None
 
             rec_rule, end_state = result
 
             if end_state != state:
+                return None
+
+            if tag_tape.scan != tape.scan:
                 return None
 
             if tag_tape.signature != sig:
