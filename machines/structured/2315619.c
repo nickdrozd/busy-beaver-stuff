@@ -41,24 +41,27 @@ int main(void)
   goto A;
 
  C:
-  switch (SCAN) {
-    case 0:
+  while (1) {
+    if (SCAN == 2) {
+      // C2
+      WRITE(0);
+      LEFT;
+      continue;
+    }
+
+    if (SCAN == 0) {
       // C0
       WRITE(1);
       RIGHT;
       goto H;
+    }
 
-    case 1:
+    if (SCAN == 1) {
       // C1
       WRITE(2);
       LEFT;
       goto A;
-
-    case 2:
-      // C2
-      WRITE(0);
-      LEFT;
-      goto C;
+    }
   }
 
  H:
