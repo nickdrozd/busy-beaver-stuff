@@ -13,11 +13,20 @@ Signature = tuple[
     tuple[Color | tuple[Color], ...],
 ]
 
+
 @dataclass
-class Tape:
+class BlockTape:
     lspan: Span
     scan: Color
     rspan: Span
+
+    @property
+    def spans(self) -> tuple[Span, Span]:
+        return self.lspan, self.rspan
+
+
+@dataclass
+class Tape(BlockTape):
     head: int = 0
 
     def __repr__(self) -> str:
@@ -53,10 +62,6 @@ class Tape:
             tuple(c if q != 1 else (c,) for (c, q) in self.lspan),
             tuple(c if q != 1 else (c,) for (c, q) in self.rspan),
         )
-
-    @property
-    def spans(self) -> tuple[Span, Span]:
-        return self.lspan, self.rspan
 
     @property
     def blank(self) -> bool:
@@ -142,7 +147,7 @@ class Tape:
 
 
 @dataclass
-class TagTape:
+class TagTape(BlockTape):
     lspan: Span
     scan: Color
     rspan: Span
@@ -158,9 +163,6 @@ class TagTape:
             tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
         )
 
-    @property
-    def spans(self) -> tuple[Span, Span]:
-        return self.lspan, self.rspan
 
     def step(self, shift: int, color: int, skip: bool) -> None:
         pull, push = (
