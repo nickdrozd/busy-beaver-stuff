@@ -13,6 +13,7 @@ Signature = tuple[
     tuple[Color | tuple[Color], ...],
 ]
 
+Rule = tuple[tuple[int, ...], ...]
 
 @dataclass
 class BlockTape:
@@ -23,6 +24,29 @@ class BlockTape:
     @property
     def spans(self) -> tuple[Span, Span]:
         return self.lspan, self.rspan
+
+    def apply_rule(self, rule: Rule) -> int | None:
+        diffs, blocks = (
+            rule[0] + rule[1],
+            self.lspan + self.rspan,
+        )
+
+        divs = []
+
+        for diff, block in zip(diffs, blocks):
+            if diff < 0:
+                if (abs_diff := abs(diff)) >= block[1]:
+                    return None
+
+                div, rem = divmod(block[1], abs_diff)
+                divs.append(div if rem > 0 else div - 1)
+
+        times = min(divs)
+
+        for diff, block in zip(diffs, blocks):
+            block[1] += diff * times
+
+        return times
 
 
 @dataclass

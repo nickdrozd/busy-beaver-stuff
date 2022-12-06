@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.parse import CompProg
-from tm.tape import PtrTape, Tape, TagTape, Signature
+from tm.tape import PtrTape, Tape, TagTape, Signature, Rule
 from tm.macro import MacroProg
 
 State = int | str
@@ -14,8 +14,6 @@ Action = tuple[State, Color]
 
 RecRes = tuple[int, int] | None  # type: ignore[misc]
 Tapes = dict[int, PtrTape]
-
-Rule = tuple[tuple[int, ...], ...]
 
 @dataclass
 class History:
@@ -213,30 +211,6 @@ class Prover:
 
         self.rules[action][sig] = rule
 
-    @staticmethod
-    def apply_rule(tape: Tape | TagTape, rule: Rule) -> int | None:
-        diffs, blocks = (
-            rule[0] + rule[1],
-            tape.lspan + tape.rspan,
-        )
-
-        divs = []
-
-        for diff, block in zip(diffs, blocks):
-            if diff < 0:
-                if (abs_diff := abs(diff)) >= block[1]:
-                    return None
-
-                div, rem = divmod(block[1], abs_diff)
-                divs.append(div if rem > 0 else div - 1)
-
-        times = min(divs)
-
-        for diff, block in zip(diffs, blocks):
-            block[1] += diff * times
-
-        return times
-
     def run_simulator(
             self,
             steps: int,
@@ -247,7 +221,7 @@ class Prover:
 
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
-                if self.apply_rule(tape, rule) is not None:
+                if tape.apply_rule(rule) is not None:
                     rec_rule = True
                     continue
 
@@ -275,7 +249,7 @@ class Prover:
         # If we already have a rule, apply it
         if (rule := self.get_rule(
                 state, tape, sig := tape.signature)) is not None:
-            return self.apply_rule(tape, rule)
+            return tape.apply_rule(rule)
 
         # If this is a new config, record it
         if (temp := self.configs.get(sig)) is None:
@@ -325,7 +299,7 @@ class Prover:
         if any(diff < 0 for span in rule for diff in span):
             self.add_rule(state, sig, rule)
 
-            return self.apply_rule(tape, rule)
+            return tape.apply_rule(rule)
 
         if not rec_rule:
             raise InfiniteRule()
