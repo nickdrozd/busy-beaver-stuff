@@ -161,11 +161,15 @@ class PastConfig:
         if len(cycles) < 3:
             return None
 
-        curr_delta = cycles[-1] - (second := cycles[-2])
-        prev_delta = second - cycles[-3]
+        # pylint: disable = invalid-name
 
-        if curr_delta == prev_delta:
-            return curr_delta, curr_delta
+        *cycles, c, b, a = cycles
+
+        curr = a - b
+        prev = b - c
+
+        if curr == prev:
+            return curr, curr
 
         return None
 
