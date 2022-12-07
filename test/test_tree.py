@@ -70,7 +70,7 @@ class Fast(TestTree):
         s22q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 115, 24)):
+            if any(run_for_none(prog, 44, 48)):
                 return
 
             s22q.put(prog)  # no-coverage
@@ -78,27 +78,20 @@ class Fast(TestTree):
         run_tree_gen(
             states = 2,
             colors = 2,
-            steps = 5,
+            steps = 20,
             output = capture,
         )
 
         s22: set[str] = queue_to_set(s22q)
 
-        self.assert_counts({1: s22})
-
-        self.assertEqual(s22, {"1RB 1LA  0LA 0RB"})
+        self.assert_counts({0: s22})
 
     def test_32(self):
         h32q: Q[str] = Queue()
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 224, 40)):
-                return
-
-            exits = Graph(prog).exit_points
-
-            if 'C' not in exits['A'] | exits['B']:
+            if any(run_for_none(prog, 175, 144)):
                 return
 
             (q32q if not prog.count('...') else h32q).put(prog)
@@ -115,13 +108,12 @@ class Fast(TestTree):
         q32 = queue_to_set(q32q)
 
         self.assert_counts({
-             9: h32,
-            74: q32,
+             0: h32,
+            29: q32,
         })
 
         self.assert_connected(q32)
 
-        self.assert_progs(h32, 'holdouts_32h')
         self.assert_progs(q32, 'holdouts_32q')
 
     def test_23(self):
@@ -129,7 +121,7 @@ class Fast(TestTree):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 282, 52)):
+            if any(run_for_none(prog, 500, 200)):
                 return
 
             if prog.count('...') == 0:
@@ -148,8 +140,8 @@ class Fast(TestTree):
         q23 = queue_to_set(q23q)
 
         self.assert_counts({
-             23: h23,
-            118: q23,
+             7: h23,
+            75: q23,
         })
 
         self.assert_connected(h23, q23)

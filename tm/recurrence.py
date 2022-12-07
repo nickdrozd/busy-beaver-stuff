@@ -165,7 +165,7 @@ class PastConfig:
 
         *cycles, c, b, a = cycles
 
-        for i in range(1, 2):
+        for i in range(1, 3):
             curr = a - (b * i)
             prev = b - (c * i)
 
