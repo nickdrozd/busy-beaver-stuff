@@ -165,11 +165,13 @@ class PastConfig:
 
         *cycles, c, b, a = cycles
 
-        curr = a - b
-        prev = b - c
+        for i in range(1, 2):
+            curr = a - (b * i)
+            prev = b - (c * i)
 
-        if curr == prev:
-            return curr, curr
+            if curr == prev:
+                nxt = a * i + curr
+                return nxt - cycle, nxt * i + curr - nxt
 
         return None
 
