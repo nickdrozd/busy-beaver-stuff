@@ -239,8 +239,10 @@ class Prover:
             temp = defaultdict(PastConfig)
             self.configs[sig] = temp
 
-        if ((delta := temp[state].next_delta(cycle)) is None
-                or delta > (self.diff_lim or 0)):
+        if (delta := temp[state].next_delta(cycle)) is None:
+            return None
+
+        if delta > (self.diff_lim or 0):
             return None
 
         tag_tape = tape.to_tag()
