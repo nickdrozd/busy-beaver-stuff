@@ -168,12 +168,17 @@ class PastConfig:
         cycles.pop(0)
 
         for i in range(1, 3):
-            curr = a - (b * i)
-            prev = b - (c * i)
+            p1 = a - (b * i)
+            p2 = b - (c * i)
 
-            if curr == prev:
-                nxt = a * i + curr
-                return nxt - cycle, nxt * i + curr - nxt
+            if p1 == p2:
+                nxt = a * i + p2
+                nxxt = nxt * i + p1
+
+                return (
+                    nxt - cycle,
+                    nxxt - nxt,
+                )
 
         return None
 
