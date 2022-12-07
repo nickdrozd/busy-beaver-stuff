@@ -1,5 +1,5 @@
 from queue import Queue as Q
-from unittest import TestCase, skip
+from unittest import TestCase
 from multiprocessing import Queue
 from collections.abc import Iterator
 
@@ -155,13 +155,12 @@ class Fast(TestTree):
 
 
 class Slow(TestTree):
-    @skip('')
     def test_42(self):  # no-coverage
         hc42q: Q[str] = Queue()
         hd42q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 714, 166)):
+            if any(run_for_none(prog, 200, 50)):
                 return
 
             # pylint: disable = line-too-long
@@ -179,8 +178,8 @@ class Slow(TestTree):
         hd42 = queue_to_set(hd42q)
 
         self.assert_counts({
-            214: hd42,
-            267: hc42,
+            237: hd42,
+            334: hc42,
         })
 
         self.assert_connected(hc42)
