@@ -163,7 +163,9 @@ class PastConfig:
 
         # pylint: disable = invalid-name
 
-        *cycles, c, b, a = cycles
+        *_, c, b, a = cycles
+
+        cycles.pop(0)
 
         for i in range(1, 3):
             curr = a - (b * i)
