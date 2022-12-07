@@ -155,7 +155,7 @@ class History:
 class PastConfig:
     cycles: list[int] = field(default_factory = list)
 
-    def next_delta(self, cycle: int) -> int | None:
+    def next_deltas(self, cycle: int) -> tuple[int, int] | None:
         (cycles := self.cycles).append(cycle)
 
         if len(cycles) < 3:
@@ -164,7 +164,10 @@ class PastConfig:
         curr_delta = cycles[-1] - (second := cycles[-2])
         prev_delta = second - cycles[-3]
 
-        return curr_delta if curr_delta == prev_delta else None
+        if curr_delta == prev_delta:
+            return curr_delta, curr_delta
+
+        return None
 
 class InfiniteRule(Exception):
     pass
@@ -239,8 +242,10 @@ class Prover:
             temp = defaultdict(PastConfig)
             self.configs[sig] = temp
 
-        if (delta := temp[state].next_delta(cycle)) is None:
+        if (deltas := temp[state].next_deltas(cycle)) is None:
             return None
+
+        delta, next_delta = deltas
 
         if delta > (self.diff_lim or 0):
             return None
@@ -290,7 +295,7 @@ class Prover:
         if not rec_rule:
             raise InfiniteRule()
 
-        for _ in range(delta):
+        for _ in range(next_delta):
             result = self.run_simulator(delta, state, tag_tape)
 
             assert result is not None
