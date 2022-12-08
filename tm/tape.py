@@ -262,8 +262,7 @@ class TagTape(BlockTape):
 
             push.append(push_block)
 
-        if self.scan_info is not None:
-            if not push[-1][2:]:
+            if self.scan_info and not push[-1][2:]:
                 push[-1].extend(self.scan_info)
 
         self.scan_info = scan_info
