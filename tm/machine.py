@@ -79,12 +79,16 @@ class Machine:
         return self.tape.marks
 
     def show_tape(self, step: int, cycle: int, state: int) -> None:
-        print(' | '.join([
+        info = [
             f'{cycle: 5d}',
-            f'{step : 5d}',
             f'{st_str(state)}{self.tape.scan}',
             str(self.tape),
-        ]))
+        ]
+
+        if not self.rulapp:
+            info.insert(1, f'{step : 3d}')
+
+        print(' | '.join(info))
 
     def run(self,
             step_lim: int | None = None,
