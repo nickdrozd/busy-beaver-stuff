@@ -109,12 +109,12 @@ class Fast(TestTree):
 
         q32 -= {
             prog for prog in q32
-            if any(run_for_none(prog, 1250, 350))
+            if any(run_for_none(prog, 2130, 100))
         }
 
         self.assert_counts({
             0: h32,
-            6: q32,
+            3: q32,
         })
 
         self.assert_connected(q32)
@@ -151,12 +151,12 @@ class Fast(TestTree):
 
         q23 -= {
             prog for prog in q23
-            if any(run_for_none(prog, 1800, 450))
+            if any(run_for_none(prog, 2350, 450))
         }
 
         self.assert_counts({
              0: h23,
-            16: q23,
+            15: q23,
         })
 
         self.assert_connected(h23, q23)
