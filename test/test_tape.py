@@ -89,17 +89,17 @@ class TestBlocks(TestCase):
     def set_tape(
             self,
             lspan: Span,
-            scan: Color | tuple[Color, tuple[int, ...]],
+            scan: Color | tuple[Color, list[int]],
             rspan: Span,
     ):
         if isinstance(scan, tuple):
             scan, scan_info = scan
         else:
-            scan_info = ()
+            scan_info = []
 
         self.tape = TagTape(lspan, scan, list(reversed(rspan)))
 
-        self.tape.scan_info = list(scan_info)
+        self.tape.scan_info = scan_info
 
         self.init_tags = self.count_tags()
 
@@ -266,22 +266,22 @@ class TestBlocks(TestCase):
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 2, 1], [0, 1], [1, 1]], 1, [[1, 3, 3]])
+            [[1, 2, 1], [0, 1], [1, 1, 2]], 1, [[1, 3, 3]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 1], [0, 1]], 1, [[0, 1], [1, 3, 3]])
+            [[1, 2, 1], [0, 1]], (1, [2]), [[0, 1], [1, 3, 3]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 1]], 0, [[0, 2], [1, 3, 3]])
+            [[1, 2, 1]], 0, [[0, 2, 2], [1, 3, 3]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 1]], 0, [[0, 1], [1, 3, 3]])
+            [[1, 3, 1]], 0, [[0, 1, 2], [1, 3, 3]])
 
     def test_trace_5(self):
         # 1RB 1LC  1LC 0RD  1LA 0LB  1LD 0RA
@@ -447,9 +447,11 @@ class TestBlocks(TestCase):
         # 1RB 1LA 0RB  0LA 2RB ...
 
         self.set_tape(
-            [[1, 1]], (2, [0]), [[1, 2], [0, 1]])
+            [[1, 1]],
+            (2, [0]),
+            [[1, 2], [0, 1]])
 
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 1], [0, 1]], 1, [[1, 1], [0, 1]])
+            [[1, 1], [0, 1, 0]], 1, [[1, 1], [0, 1]])
