@@ -188,12 +188,22 @@ class Slow(TestTree):
             output = capture,
         )
 
-        hc42 = queue_to_set(hc42q)
         hd42 = queue_to_set(hd42q)
+        hc42 = queue_to_set(hc42q)
+
+        hd42 -= {
+            prog for prog in hd42
+            if any(run_for_none(prog, 2000, 400))
+        }
+
+        hc42 -= {
+            prog for prog in hc42
+            if any(run_for_none(prog, 2000, 500))
+        }
 
         self.assert_counts({
-            163: hd42,
-            255: hc42,
+            38: hd42,
+            76: hc42,
         })
 
         self.assert_connected(hc42)
