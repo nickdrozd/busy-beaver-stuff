@@ -43,7 +43,7 @@ def queue_to_set(queue: Q[str]) -> set[str]:
     out = set()
 
     while not queue.empty():  # yuck -- pylint: disable = while-used
-        out.add(queue.get().replace('...', '1R_'))
+        out.add(queue.get())
 
     return out
 
