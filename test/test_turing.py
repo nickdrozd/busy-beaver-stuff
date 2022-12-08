@@ -2,7 +2,7 @@
 
 from math import isclose
 from typing import Any
-from unittest import TestCase, skip
+from unittest import TestCase, skip, expectedFailure
 from itertools import product
 from collections.abc import Mapping
 
@@ -1293,15 +1293,6 @@ DIFFUSE = {
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC":    118,  # boyd
 }
 
-PROVER_EXCEPTIONS = {
-    # halt
-    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC",
-
-    "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
-
-    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE",
-}
-
 PROVER_HALT = {
     # 2/5
     "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (1, 0, 1.7, 352),
@@ -1313,7 +1304,6 @@ PROVER_HALT = {
     "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE 1R_": (8, 1, 4.6, 1439),
     "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE": (2, 0, 2.5,  881),
     "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_": (4, 1, 1.2,  865),
-    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (3, 1, 6.4,  462),
     "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF 1R_  1RA 1RE": (2, 0, 1.4,   60),
     "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE 1R_": (4, 0, 6.9,   49),
     "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE 1R_": (4, 0, 1.1,   49),
@@ -1356,11 +1346,9 @@ PROVER_HALT_SLOW = {
     "1RB 1R_ 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC": (2, 1, 1.3, 7036),
     "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA 1R_": (2, 1, 4.2, 6034),
     "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (2, 1, 8.9, 4931),
-    "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2, 1, 2.5, 4561),
     "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC 1R_ 0LC": (2, 1, 4.0, 3860),
 
     # 3/4
-    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (1, 0, 3.7, 6518),
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC": (2, 0, 2.2, 2372),
 
     # 6/2
@@ -1745,9 +1733,6 @@ class TuringTest(TestCase):
     ):
         # pylint: disable = redefined-variable-type
         for prog, (block, back, digits, exp) in prog_data.items():
-            if prog in PROVER_EXCEPTIONS:
-                continue
-
             program: str | MacroProg = prog
 
             if block > 1:
@@ -1950,12 +1935,11 @@ class Fast(TuringTest):
             diff_lim = 300,
         )
 
-    def test_prover_false_positive(self):
         self._test_prover_est(
             {
-                "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_": (4, 1, 1.2,  865),
+                "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (3, 1, 6.4,  462),
             },
-            diff_lim = 300,
+            diff_lim = 40,
         )
 
     def test_blank(self):
@@ -2036,6 +2020,19 @@ class Fast(TuringTest):
 
     def test_macro_cycles(self):
         self._test_macro_cycles(MACRO_CYCLES_FAST)
+
+    @expectedFailure
+    def test_prover_false_positive_1(self):
+        self._test_prover_est({
+            "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (1, 0, 3.7, 6518),
+
+        }, diff_lim = 40)
+
+    @expectedFailure
+    def test_prover_false_positive_2(self):
+        self._test_prover_est({
+            "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2, 1, 2.5, 4561),
+        }, diff_lim = 40)
 
 
 class Slow(TuringTest):  # no-coverage
