@@ -151,12 +151,12 @@ class Fast(TestTree):
 
         q23 -= {
             prog for prog in q23
-            if any(run_for_none(prog, 2350, 450))
+            if any(run_for_none(prog, 2350, 1400))
         }
 
         self.assert_counts({
              0: h23,
-            15: q23,
+            11: q23,
         })
 
         self.assert_connected(h23, q23)

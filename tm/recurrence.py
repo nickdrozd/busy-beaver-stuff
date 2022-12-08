@@ -167,7 +167,7 @@ class PastConfig:
 
         cycles.pop(0)
 
-        for i in range(1, 4):
+        for i in range(1, 5):
             p1 = a - (b * i)
             p2 = b - (c * i)
 
