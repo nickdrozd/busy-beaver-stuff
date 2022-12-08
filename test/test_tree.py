@@ -174,6 +174,9 @@ class Slow(TestTree):
             if any(run_for_none(prog, 200, 50)):
                 return
 
+            if 'D' not in prog:
+                return
+
             # pylint: disable = line-too-long
             (hc42q if Graph(prog).is_strongly_connected else hd42q).put(prog)
 
@@ -189,7 +192,7 @@ class Slow(TestTree):
         hd42 = queue_to_set(hd42q)
 
         self.assert_counts({
-            194: hd42,
+            163: hd42,
             255: hc42,
         })
 
