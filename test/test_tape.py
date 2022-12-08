@@ -442,3 +442,14 @@ class TestBlocks(TestCase):
 
         self.assert_tape(
             [[1, 3, 0], [0, 5, 1], [1, 3, 2]], 1, [])
+
+    def test_trace_7(self):
+        # 1RB 1LA 0RB  0LA 2RB ...
+
+        self.set_tape(
+            [[1, 1]], (2, [0]), [[1, 2], [0, 1]])
+
+        self.step(1, 0, 0)
+
+        self.assert_tape(
+            [[1, 1], [0, 1]], 1, [[1, 1], [0, 1]])
