@@ -91,7 +91,7 @@ class Fast(TestTree):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 175, 144)):
+            if any(run_for_none(prog, 500, 200)):
                 return
 
             (q32q if not prog.count('...') else h32q).put(prog)
@@ -109,7 +109,7 @@ class Fast(TestTree):
 
         self.assert_counts({
              0: h32,
-            20: q32,
+            19: q32,
         })
 
         self.assert_connected(q32)
@@ -121,7 +121,7 @@ class Fast(TestTree):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 500, 200)):
+            if any(run_for_none(prog, 500, 440)):
                 return
 
             if prog.count('...') == 0:
@@ -140,8 +140,8 @@ class Fast(TestTree):
         q23 = queue_to_set(q23q)
 
         self.assert_counts({
-             5: h23,
-            54: q23,
+             1: h23,
+            28: q23,
         })
 
         self.assert_connected(h23, q23)
