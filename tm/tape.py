@@ -248,7 +248,6 @@ class TagTape(BlockTape):
                     push_block.extend(
                         self.scan_info)
 
-                if color != self.scan:
                     self.scan_info.clear()
                     assert not scan_info
             else:

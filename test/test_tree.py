@@ -155,8 +155,8 @@ class Fast(TestTree):
         }
 
         self.assert_counts({
-             0: h23,
-            11: q23,
+            0: h23,
+            9: q23,
         })
 
         self.assert_connected(h23, q23)
@@ -192,8 +192,8 @@ class Slow(TestTree):
         hd42 = queue_to_set(hd42q)
 
         self.assert_counts({
-            199: hd42,
-            261: hc42,
+            194: hd42,
+            255: hc42,
         })
 
         self.assert_connected(hc42)
