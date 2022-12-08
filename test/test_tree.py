@@ -94,7 +94,7 @@ class Fast(TestTree):
             if any(run_for_none(prog, 200, 200)):
                 return
 
-            (q32q if not prog.count('...') else h32q).put(prog)
+            (q32q if prog.count('...') == 0 else h32q).put(prog)
 
         run_tree_gen(
             states = 3,
@@ -129,10 +129,7 @@ class Fast(TestTree):
             if any(run_for_none(prog, 200, 200)):
                 return
 
-            if prog.count('...') == 0:
-                q23q.put(prog)
-            else:
-                h23q.put(prog.replace('...', '1R_'))
+            (q23q if prog.count('...') == 0 else h23q).put(prog)
 
         run_tree_gen(
             states = 2,
