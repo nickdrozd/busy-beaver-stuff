@@ -1942,6 +1942,12 @@ class Fast(TuringTest):
             diff_lim = 40,
         )
 
+        self.run_bb(
+            "1RB 0LC  1RD 1RA  ... 0LD  1LA 0LB",
+            prover = 10,
+            analyze = False,
+        )
+
     def test_blank(self):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)
