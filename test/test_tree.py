@@ -91,7 +91,7 @@ class Fast(TestTree):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 1250, 350)):
+            if any(run_for_none(prog, 200, 200)):
                 return
 
             (q32q if not prog.count('...') else h32q).put(prog)
@@ -107,6 +107,11 @@ class Fast(TestTree):
         h32 = queue_to_set(h32q)
         q32 = queue_to_set(q32q)
 
+        q32 -= {
+            prog for prog in q32
+            if any(run_for_none(prog, 1250, 350))
+        }
+
         self.assert_counts({
             0: h32,
             6: q32,
@@ -121,7 +126,7 @@ class Fast(TestTree):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 1800, 450)):
+            if any(run_for_none(prog, 200, 200)):
                 return
 
             if prog.count('...') == 0:
@@ -138,6 +143,16 @@ class Fast(TestTree):
 
         h23 = queue_to_set(h23q)
         q23 = queue_to_set(q23q)
+
+        h23 -= {
+            prog for prog in h23
+            if any(run_for_none(prog, 1200, 300))
+        }
+
+        q23 -= {
+            prog for prog in q23
+            if any(run_for_none(prog, 1800, 450))
+        }
 
         self.assert_counts({
              0: h23,
