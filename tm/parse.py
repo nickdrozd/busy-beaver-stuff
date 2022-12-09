@@ -43,7 +43,7 @@ def convert_instr(instr: Instr | None) -> str:
     return (
         str(pr)
         + ('R' if sh else 'L')
-        + (chr(65 + tr) if tr != -1 else '_')
+        + st_str(tr)
     )
 
 
