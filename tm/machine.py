@@ -7,7 +7,7 @@ from tm.program import Program
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
 State = int
-Color = int | str
+Color = int
 Action = tuple[State, Color]
 
 LinRec = tuple[int | None, int]

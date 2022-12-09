@@ -9,7 +9,7 @@ from tm.tape import PtrTape, Tape, TagTape, Signature, Rule
 from tm.macro import MacroProg
 
 State = int | str
-Color = int | str
+Color = int
 Action = tuple[State, Color]
 
 RecRes = tuple[int, int] | None  # type: ignore[misc]
