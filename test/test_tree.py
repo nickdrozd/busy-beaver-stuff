@@ -32,11 +32,6 @@ def macro_variations(
     yield BacksymbolMacro(prog, [1])
     yield BacksymbolMacro(prog, [1, 1])
 
-    yield BlockMacro(
-        BacksymbolMacro(
-            BlockMacro(
-                prog, [2]), [1]), [2])
-
 
 def run_for_none(
         prog: str,
@@ -95,7 +90,7 @@ class Fast(TestTree):
         s22q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 45, 48, None)):
+            if any(run_for_none(prog, 45, 48, 2)):
                 return
 
             s22q.put(prog)  # no-coverage
@@ -196,7 +191,7 @@ class Slow(TestTree):
         hd42q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 200, 63, 8)):
+            if any(run_for_none(prog, 400, 100, 8)):
                 return
 
             if 'D' not in prog:
