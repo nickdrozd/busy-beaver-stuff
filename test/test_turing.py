@@ -8,7 +8,7 @@ from collections.abc import Mapping
 
 from tm.tape import Tape
 from tm.macro import MacroProg
-from tm.parse import tcompile, dcompile
+from tm.parse import tcompile, dcompile, st_str
 from tm import Machine, LinRecMachine
 from tm import Graph, Program, BlockMacro, BacksymbolMacro
 
@@ -1605,7 +1605,7 @@ class TuringTest(TestCase):
             else:
                 self.assert_marks(0)
                 self.assertEqual(steps, max(blanks.values()))
-                self.assertEqual(marks, set(blanks))
+                self.assertEqual(marks, {st_str(blank) for blank in blanks})
                 self.assert_could_blank(prog)
 
             self.assert_quasihalt(True)

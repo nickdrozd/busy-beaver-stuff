@@ -6,7 +6,7 @@ from tm.macro import MacroProg
 from tm.program import Program
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
-State = int | str
+State = int
 Color = int | str
 Action = tuple[State, Color]
 
@@ -112,10 +112,10 @@ class Machine:
             Tape([], 0, [])
         )
 
-        blanks: dict[State, int] = {}
-
         if prover is not None:
             self.prover = Prover(comp, diff_lim = prover)
+
+        self.blanks = {}
 
         step: int = 0
 
@@ -161,10 +161,10 @@ class Machine:
             state = next_state
 
             if tape.blank:
-                if state in blanks:
+                if state in self.blanks:
                     break
 
-                blanks[state] = step
+                self.blanks[state] = step
 
                 if state == 0:
                     break
@@ -175,20 +175,14 @@ class Machine:
         else:
             self.xlimit = step
 
-        self.finalize(step, cycle, state, blanks)
+        self.finalize(step, cycle, state)
 
         if watch_tape and bool(self.halted):
             self.show_tape(step, 1 + cycle, state)
 
         return self
 
-    def finalize(
-            self,
-            step: int,
-            cycle: int,
-            state: int,
-            blanks: dict[State, int],
-    ) -> None:
+    def finalize(self, step: int, cycle: int, state: int) -> None:
         assert cycle <= step
 
         if state == -1:
@@ -199,17 +193,12 @@ class Machine:
             self.qsihlt = True
 
         if self.tape.blank:
-            if 0 in blanks:
+            if 0 in self.blanks:
                 self.linrec = 0, step
-            elif blanks:
-                if (period := step - blanks[state]):
+            elif self.blanks:
+                if (period := step - self.blanks[state]):
                     self.linrec = None, period
                     self.xlimit = None
-
-        self.blanks = {
-            st_str(int(stt)): stp
-            for stt, stp in blanks.items()
-        }
 
         self.steps = step
         self.state = state
@@ -279,7 +268,7 @@ class LinRecMachine:
 
             try:
                 color, shift, next_state = \
-                    comp[state][scan]  # type: ignore[index, misc]
+                    comp[state][scan]  # type: ignore[misc]
             except TypeError:
                 break
 
