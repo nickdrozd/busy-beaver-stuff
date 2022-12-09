@@ -20,16 +20,17 @@ def read_progs(name: str) -> set[str]:
 def macro_variations(
         prog: str,
         max_block: int,
+        back_wrap: int,
 ) -> Iterator[str | MacroProg]:
     yield prog
 
-    for block in range(2, max_block + 1):
+    for block in range(2, 1 + max_block):
         yield BacksymbolMacro(
             BlockMacro(
                 prog, [block]), [1])
 
-    yield BacksymbolMacro(prog, [1])
-    yield BacksymbolMacro(prog, [1, 1])
+    for wrap in range(1, 1 + back_wrap):
+        yield BacksymbolMacro(prog, [1] * wrap)
 
 
 def run_for_none(
@@ -37,6 +38,7 @@ def run_for_none(
         sim_lim: int,
         depth: int,
         max_block: int = 1,
+        back_wrap: int = 0,
 ) -> Iterator[bool]:
     yield LinRecMachine(prog).run(
         step_lim = 50,
@@ -49,7 +51,8 @@ def run_for_none(
             sim_lim = sim_lim,
             prover = depth,
         ).xlimit is None
-        for macro in macro_variations(prog, max_block)
+        for macro in macro_variations(
+                prog, max_block, back_wrap)
     )
 
 
@@ -110,7 +113,7 @@ class Fast(TestTree):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 200, 200, 3)):
+            if any(run_for_none(prog, 200, 200, 3, 1)):
                 return
 
             (q32q if prog.count('...') == 0 else h32q).put(prog)
@@ -145,7 +148,7 @@ class Fast(TestTree):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 200, 200, 8)):
+            if any(run_for_none(prog, 200, 200, 8, 1)):
                 return
 
             (q23q if prog.count('...') == 0 else h23q).put(prog)
@@ -162,12 +165,12 @@ class Fast(TestTree):
 
         h23 -= {
             prog for prog in h23
-            if any(run_for_none(prog, 1200, 300, 2))
+            if any(run_for_none(prog, 1200, 300, 2, 1))
         }
 
         q23 -= {
             prog for prog in q23
-            if any(run_for_none(prog, 2350, 1400, 2))
+            if any(run_for_none(prog, 2350, 1400, 2, 1))
         }
 
         self.assert_counts({
@@ -190,7 +193,7 @@ class Slow(TestTree):
         hd42q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 400, 100, 8)):
+            if any(run_for_none(prog, 400, 100, 8, 1)):
                 return
 
             if 'D' not in prog:
@@ -212,12 +215,12 @@ class Slow(TestTree):
 
         hd42 -= {
             prog for prog in hd42
-            if any(run_for_none(prog, 1700, 300, 3))
+            if any(run_for_none(prog, 1700, 300, 3, 2))
         }
 
         hc42 -= {
             prog for prog in hc42
-            if any(run_for_none(prog, 2000, 500, 3))
+            if any(run_for_none(prog, 2000, 500, 3, 2))
         }
 
         self.assert_counts({
