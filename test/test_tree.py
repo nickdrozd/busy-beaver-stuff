@@ -69,9 +69,14 @@ def queue_to_set(queue: Q[str]) -> set[str]:
 
 
 class TestTree(TestCase):
-    def assert_counts(self, expected: dict[int, set[str]]):
-        for count, cat in expected.items():
-            self.assertEqual(len(cat), count)
+    @staticmethod
+    def assert_counts(expected: dict[int, set[str]]):
+        if (failed := {
+                count: len(cat)
+                for count, cat in expected.items()
+                if len(cat) != count
+        }):
+            raise AssertionError(failed)
 
     def assert_progs(self, progs: set[str], progfile: str):
         self.assertEqual(
