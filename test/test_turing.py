@@ -1935,12 +1935,14 @@ class Fast(TuringTest):
             diff_lim = 300,
         )
 
-        self._test_prover_est(
-            {
-                "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (3, 1, 6.4,  462),
-            },
-            diff_lim = 40,
-        )
+        self._test_prover_est({
+            "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (3, 1, 6.4,  462),
+            }, diff_lim = 40)
+
+        self._test_prover_est({
+            "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (1, 0, 3.7, 6518),
+            }, diff_lim = 21)
+
 
         self.run_bb(
             "1RB 0LC  1RD 1RA  ... 0LD  1LA 0LB",
@@ -2039,6 +2041,12 @@ class Fast(TuringTest):
         self._test_prover_est({
             "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2, 1, 2.5, 4561),
         }, diff_lim = 40)
+
+    @expectedFailure
+    def test_prover_false_positive_3(self):
+        self._test_prover_est({
+            "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (3, 1, 6.4,  462),
+        }, diff_lim = 49)
 
 
 class Slow(TuringTest):  # no-coverage
