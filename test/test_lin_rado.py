@@ -3,6 +3,7 @@ from unittest import TestCase
 from test.test_tree import read_progs
 
 from tm import LinRecMachine
+from tm.parse import st_str
 from generate.naive import yield_programs
 
 
@@ -158,10 +159,7 @@ def lr_convert(rado_string: int) -> str:
 
         v_sh = 'L' if int(sh) == 0 else 'R'
 
-        v_tr = (
-            '_' if (vtr := int(''.join(tr), 2)) == 0
-            else chr(vtr + 64)
-        )
+        v_tr = st_str(int(''.join(tr), 2) - 1)
 
         return f'{pr}{v_sh}{v_tr}'
 

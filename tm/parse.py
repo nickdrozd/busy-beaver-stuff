@@ -15,9 +15,7 @@ def tcompile(program: str) -> CompProg:
             (
                 int(action[0]),
                 0 if action[1] == 'L' else 1,
-                ord(state) - 65
-                    if (state := action[2]) != '_'
-                    else -1,
+                str_st(action[2]),
             )
             if '.' not in action and '-' not in action
             else None
@@ -49,3 +47,7 @@ def convert_instr(instr: Instr | None) -> str:
 
 def st_str(state: int) -> str:
     return '_' if state == -1 else chr(state + 65)
+
+
+def str_st(state: str) -> int:
+    return -1 if state == '_' else ord(state) - 65
