@@ -193,10 +193,10 @@ class Slow(TestTree):
         hd42q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 400, 100, 10, 1)):
+            if 'D' not in prog:
                 return
 
-            if 'D' not in prog:
+            if any(run_for_none(prog, 400, 100, 10, 1)):
                 return
 
             # pylint: disable = line-too-long
