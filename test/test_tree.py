@@ -19,15 +19,14 @@ def read_progs(name: str) -> set[str]:
 
 def macro_variations(
         prog: str,
-        max_block: int | None,
+        max_block: int,
 ) -> Iterator[str | MacroProg]:
     yield prog
 
-    if max_block is not None:
-        for block in range(2, max_block + 1):
-            yield BacksymbolMacro(
-                BlockMacro(
-                    prog, [block]), [1])
+    for block in range(2, max_block + 1):
+        yield BacksymbolMacro(
+            BlockMacro(
+                prog, [block]), [1])
 
     yield BacksymbolMacro(prog, [1])
     yield BacksymbolMacro(prog, [1, 1])
@@ -37,7 +36,7 @@ def run_for_none(
         prog: str,
         sim_lim: int,
         depth: int,
-        max_block: int | None,
+        max_block: int = 1,
 ) -> Iterator[bool]:
     yield LinRecMachine(prog).run(
         step_lim = 50,
