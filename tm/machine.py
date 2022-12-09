@@ -277,8 +277,11 @@ class LinRecMachine:
 
                 self.history.add_action_at_step(step, action)
 
-            color, shift, next_state = \
-                comp[state][scan]  # type: ignore[index, misc]
+            try:
+                color, shift, next_state = \
+                    comp[state][scan]  # type: ignore[index, misc]
+            except TypeError:
+                break
 
             _ = tape.step(shift, color, skip and state == next_state)
 
