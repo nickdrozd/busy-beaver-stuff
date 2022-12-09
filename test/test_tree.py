@@ -215,17 +215,17 @@ class Slow(TestTree):
 
         hd42 -= {
             prog for prog in hd42
-            if any(run_for_none(prog, 1700, 300, 3, 2))
+            if any(run_for_none(prog, 2150, 300, 3, 2))
         }
 
         hc42 -= {
             prog for prog in hc42
-            if any(run_for_none(prog, 2000, 500, 3, 2))
+            if any(run_for_none(prog, 2150, 500, 3, 2))
         }
 
         self.assert_counts({
-            38: hd42,
-            76: hc42,
+            28: hd42,
+            62: hc42,
         })
 
         self.assert_connected(hc42)
