@@ -3,7 +3,7 @@ from unittest import TestCase
 from multiprocessing import Queue
 from collections.abc import Iterator
 
-from tm import Machine
+from tm import Machine, LinRecMachine
 from tm import Graph, BlockMacro, BacksymbolMacro
 from tm.macro import MacroProg
 from generate.tree  import run_tree_gen
@@ -30,6 +30,15 @@ def macro_variations(prog: str) -> Iterator[str | MacroProg]:
 
 
 def run_for_none(prog: str, sim_lim: int, depth: int) -> Iterator[bool]:
+    try:
+        yield LinRecMachine(prog).run(
+            step_lim = 50,
+            check_rec = 0,
+            skip = True,
+        ).xlimit is None
+    except TypeError:
+        pass
+
     yield from (
         Machine(macro).run(
             sim_lim = sim_lim,
