@@ -191,7 +191,7 @@ class Slow(TestTree):
         hd42q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 200, 50, 8)):
+            if any(run_for_none(prog, 200, 63, 8)):
                 return
 
             if 'D' not in prog:
@@ -218,7 +218,7 @@ class Slow(TestTree):
 
         hc42 -= {
             prog for prog in hc42
-            if any(run_for_none(prog, 2000, 500, 7))
+            if any(run_for_none(prog, 2000, 500, 3))
         }
 
         self.assert_counts({
