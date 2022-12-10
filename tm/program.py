@@ -20,10 +20,10 @@ SHIFTS: tuple[Shift, Shift] = 'L', 'R'
 
 class Program:
     def __init__(self, program: ProgStr):
-        self.prog: dict[State, dict[Color, Instr]] = {
+        self.prog: dict[State, dict[Color, Instr | None]] = {
             st_str(state): {
                 color: ''.join(map(str, instr))
-                if instr is not None else '...'
+                if instr is not None else None
                 for color, instr in enumerate(instrs)
             }
             for state, instrs in enumerate(parse(program))
@@ -33,20 +33,23 @@ class Program:
 
     def __repr__(self) -> ProgStr:
         return '  '.join([
-            ' '.join(instrs.values())
+            ' '.join(
+                instr if instr else '...'
+                for instr in instrs.values()
+            )
             for instrs in self.prog.values()
         ])
 
     @overload
-    def __getitem__(self, slot: State) -> dict[Color, Instr]: ...
+    def __getitem__(self, slot: State) -> dict[Color, Instr | None]: ...
 
     @overload
-    def __getitem__(self, slot: Slot) -> Instr: ...
+    def __getitem__(self, slot: Slot) -> Instr | None: ...
 
     def __getitem__(
             self,
             slot: State | Slot,
-    ) -> dict[Color, Instr] | Instr:
+    ) -> dict[Color, Instr | None] | Instr | None:
         if isinstance(slot, State):
             return self.prog[slot]
 
@@ -54,7 +57,7 @@ class Program:
 
         return self.prog[state][color]
 
-    def __setitem__(self, slot: Slot, instr: Instr) -> None:
+    def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
         state, color = slot
 
         self.prog[state][color] = instr
@@ -90,13 +93,13 @@ class Program:
         return sorted(self.colors)[1:]
 
     @property
-    def instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
+    def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
                 yield (state, color), instr
 
     @property
-    def instructions(self) -> Iterator[Instr]:
+    def instructions(self) -> Iterator[Instr | None]:
         for instrs in self.prog.values():
             yield from instrs.values()
 
@@ -109,7 +112,7 @@ class Program:
         return tuple(
             slot
             for slot, instr in self.instr_slots
-            if '.' in instr
+            if instr is None
         )
 
     @property
@@ -124,7 +127,7 @@ class Program:
         return tuple(
             slot
             for slot, instr in self.instr_slots
-            if instr[2] in {'.', '_'}
+            if instr is None or instr[2] == '_'
         )
 
     @property
@@ -132,15 +135,15 @@ class Program:
         return tuple(
             slot
             for slot, instr in self.instr_slots
-            if slot[1] != 0 and instr[0] == '0'
+            if slot[1] != 0 and instr and instr[0] == '0'
         )
 
     @property
     def used_states(self) -> Iterator[State]:
         yield from (
             instr[2]
-            for instr in self.instructions if
-            '.' not in instr
+            for instr in self.instructions
+            if instr
         )
 
     @property
@@ -154,8 +157,8 @@ class Program:
     def used_colors(self) -> Iterator[Color]:
         yield from (
             int(instr[0])
-            for instr in self.instructions if
-            '.' not in instr
+            for instr in self.instructions
+            if instr
         )
 
     @property
@@ -200,22 +203,30 @@ class Program:
         orig_instr = self[slot]
 
         orig = (
-            int(orig_instr[0])
-            if orig_instr[0] != '.' else -1
-        ), orig_instr[1], orig_instr[2]
+            int(orig_instr[0]),
+            orig_instr[1],
+            orig_instr[2],
+        ) if orig_instr is not None else None
 
         for instr in sorted(self.available_instrs, reverse = True):
-            if instr >= orig and '.' not in orig:
+            if orig is not None and instr >= orig:
                 continue
+
             self[slot] = ''.join(map(str, instr))
+
             yield str(self)
 
-        self[slot] = ''.join(map(str, orig))
+        self[slot] = (
+            ''.join(map(str, orig))
+            if orig is not None else None)
 
     def swap_states(self, st1: State, st2: State) -> Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
         for slot, instr in self.instr_slots:
+            if instr is None:
+                continue
+
             self[slot] = (
                 re.sub(st1, st2, instr)
                 if st1 in instr else
@@ -232,6 +243,9 @@ class Program:
             state[co1], state[co2] = state[co2], state[co1]
 
         for slot, instr in self.instr_slots:
+            if instr is None:
+                continue
+
             self[slot] = (
                 re.sub(sc1, sc2, instr)
                 if sc1 in instr else
@@ -245,7 +259,7 @@ class Program:
             todo = self.non_start_states
 
             for instr in self.instructions:
-                if (state := instr[2]) not in todo:
+                if not instr or  (state := instr[2]) not in todo:
                     continue
 
                 norm, *rest = todo
@@ -265,6 +279,9 @@ class Program:
             todo = self.non_blank_colors
 
             for instr in self.instructions:
+                if instr is None:
+                    continue
+
                 try:
                     color = int(instr[0])
                 except ValueError:
@@ -286,10 +303,13 @@ class Program:
 
     def normalize_directions(self) -> Program:
         # pylint: disable = unsubscriptable-object
-        if self['A', 0][1] == 'R':
+        if (index := self['A', 0]) is None or index[1] == 'R':
             return self
 
         for slot, instr in self.instr_slots:
+            if instr is None:
+                continue
+
             self[slot] = (
                 re.sub('R', 'L', instr)
                 if instr[1] == 'R' else
@@ -396,6 +416,9 @@ class Program:
 
             for entry in sorted(self.graph.entry_points[st_str(state)]):
                 for _, instr in self[entry].items():
+                    if instr is None:
+                        continue
+
                     trans: State = instr[2]
                     shift: Shift = instr[1]
 
