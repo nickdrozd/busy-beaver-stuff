@@ -80,16 +80,16 @@ class TestTree(TestCase):
             progs,
             read_progs(progfile))
 
+    def assert_complete(self, prog: str):
+        self.assertNotIn('...', prog, f'"{prog}"')
+
 
 class Fast(TestTree):
     def test_22(self):
-        s22q: Q[str] = Queue()
-
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 45, 48, 2)):
-                return
-
-            s22q.put(prog)  # no-coverage
+            self.assertTrue(
+                any(run_for_none(prog, 45, 48, 2))
+            )
 
         run_tree_gen(
             states = 2,
@@ -98,21 +98,14 @@ class Fast(TestTree):
             output = capture,
         )
 
-        s22: set[str] = queue_to_set(s22q)
-
-        self.assert_counts({0: s22})
-
     def test_32(self):
-        h32q: Q[str] = Queue()
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
             if any(run_for_none(prog, 200, 200, 3, 1)):
                 return
 
-            if prog.count('...'):
-                h32q.put(prog)
-                return
+            self.assert_complete(prog)
 
             if any(run_for_none(prog, 2130, 100, 2)):
                 return
@@ -127,35 +120,27 @@ class Fast(TestTree):
             output = capture,
         )
 
-        h32 = queue_to_set(h32q)
         q32 = queue_to_set(q32q)
 
         self.assert_counts({
-            0: h32,
             3: q32,
         })
 
         self.assert_progs(q32, 'holdouts_32q')
 
     def test_23(self):
-        h23q: Q[str] = Queue()
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
             if any(run_for_none(prog, 200, 200, 8, 1)):
                 return
 
-            if prog.count('...'):
-                if any(run_for_none(prog, 1200, 300, 2, 1)):
-                    return
+            if any(run_for_none(prog, 2350, 1400, 2, 1)):
+                return
 
-                h23q.put(prog)
+            self.assert_complete(prog)
 
-            else:
-                if any(run_for_none(prog, 2350, 1400, 2, 1)):
-                    return
-
-                q23q.put(prog)
+            q23q.put(prog)
 
         run_tree_gen(
             states = 2,
@@ -164,11 +149,9 @@ class Fast(TestTree):
             output = capture,
         )
 
-        h23 = queue_to_set(h23q)
         q23 = queue_to_set(q23q)
 
         self.assert_counts({
-            0: h23,
             9: q23,
         })
 
