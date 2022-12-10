@@ -1,6 +1,4 @@
-from tm.parse import parse, st_str
-
-Instr = tuple[str, str, str]
+from tm.parse import parse, st_str, Instr
 
 
 def make_comment(st: str, co: int) -> str:
@@ -34,7 +32,7 @@ def make_n_way_write(pr: int) -> str:
 def make_instruction(
         st: str,
         co: int,
-        pr: str,
+        pr: int,
         sh: str,
         tr: str | None,
         indent: int,
@@ -45,14 +43,14 @@ def make_instruction(
         make_shift(sh),
     ]
 
-    if co != (ipr := int(pr)):
+    if co != pr:
         lines.insert(
             1,
             (
                 make_binary_write
                 if binary else
                 make_n_way_write
-            )(ipr)
+            )(pr)
         )
 
     if tr is not None:
@@ -159,7 +157,8 @@ def make_labels(prog: str) -> str:
             + make_switch(
                 st,
                 tuple(
-                    (instr[0], instr[1], instr[2])
+                    instr
+                    if instr is not None else (1, 'R', '_')
                     for instr in instrs
                 ),
             )

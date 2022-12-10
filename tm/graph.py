@@ -13,8 +13,11 @@ class Graph:
             st_str(i): connection
             for i, connection in
             enumerate(
-                tuple(instr[2] for instr in state)
-                for state in parse(program)
+                tuple(
+                    instr[2] if instr is not None else '.'
+                    for instr in instrs
+                )
+                for instrs in parse(program)
             )
         }
 

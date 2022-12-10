@@ -24,8 +24,12 @@ SHIFTS: tuple[Shift, Shift] = 'L', 'R'
 class Program:
     def __init__(self, program: ProgStr):
         self.prog: dict[State, dict[Color, Instr]] = {
-            st_str(state): dict(enumerate(instructions))
-            for state, instructions in enumerate(parse(program))
+            st_str(state): {
+                color: ''.join(map(str, instr))
+                if instr is not None else '...'
+                for color, instr in enumerate(instrs)
+            }
+            for state, instrs in enumerate(parse(program))
         }
 
         self.graph = Graph(program)
