@@ -19,8 +19,10 @@ Color = int
 Slot = tuple[State, Color]
 Instr = str
 
+ProgStr = str
+
 class Program:
-    def __init__(self, program: str):
+    def __init__(self, program: ProgStr):
         self.prog: dict[State, dict[Color, Instr]] = {
             st_str(state): dict(enumerate(instructions))
             for state, instructions in enumerate(parse(program))
@@ -28,7 +30,7 @@ class Program:
 
         self.graph = Graph(program)
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> ProgStr:
         return '  '.join([
             ' '.join(instrs.values())
             for instrs in self.prog.values()
@@ -169,7 +171,7 @@ class Program:
         )
 
     @property
-    def instruction_sequence(self) -> Iterator[tuple[str, int, str]]:
+    def instruction_sequence(self) -> Iterator[tuple[ProgStr, int, str]]:
         # pylint: disable = import-outside-toplevel
         from tm import Machine
 
@@ -189,7 +191,7 @@ class Program:
             self,
             slot: Slot,
             halt: bool = False,
-    ) -> Iterator[str]:
+    ) -> Iterator[ProgStr]:
         if halt and self.last_slot:
             return
 
