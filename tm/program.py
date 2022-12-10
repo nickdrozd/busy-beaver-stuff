@@ -50,10 +50,14 @@ class Program:
         if isinstance(slot, State):
             return self.prog[slot]
 
-        return self.prog[slot[0]][slot[1]]
+        state, color = slot
+
+        return self.prog[state][color]
 
     def __setitem__(self, slot: Slot, instr: Instr) -> None:
-        self.prog[slot[0]][slot[1]] = instr
+        state, color = slot
+
+        self.prog[state][color] = instr
 
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
