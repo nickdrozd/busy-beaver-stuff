@@ -1,4 +1,9 @@
-Instr = tuple[int, str, str]
+Color = int
+Shift = str
+State = str
+
+Instr = tuple[Color, Shift, State]
+
 CompInstr = tuple[int, int, int]
 CompProg = tuple[tuple[CompInstr | None, ...], ...]
 

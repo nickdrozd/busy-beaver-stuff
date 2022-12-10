@@ -1,11 +1,12 @@
-from tm.parse import parse, st_str, Instr
+from tm.parse import parse, st_str
+from tm.parse import Color, Shift, State, Instr
 
 
-def make_comment(st: str, co: int) -> str:
+def make_comment(st: State, co: Color) -> str:
     return f'// {st}{co}'
 
 
-def make_shift(sh: str) -> str:
+def make_shift(sh: Shift) -> str:
     return (
         'RIGHT'
         if sh == 'R' else
@@ -13,11 +14,11 @@ def make_shift(sh: str) -> str:
     ) + ';'
 
 
-def make_trans(tr: str) -> str:
+def make_trans(tr: State) -> str:
     return f'goto {tr};'
 
 
-def make_binary_write(pr: int) -> str:
+def make_binary_write(pr: Color) -> str:
     return (
         'PRINT'
         if pr == 1 else
@@ -25,16 +26,16 @@ def make_binary_write(pr: int) -> str:
     ) + ';'
 
 
-def make_n_way_write(pr: int) -> str:
+def make_n_way_write(pr: Color) -> str:
     return f'WRITE({pr});'
 
 
 def make_instruction(
-        st: str,
-        co: int,
-        pr: int,
-        sh: str,
-        tr: str | None,
+        st: State,
+        co: Color,
+        pr: Color,
+        sh: Shift,
+        tr: State | None,
         indent: int,
         binary: bool,
 ) -> str:
@@ -60,7 +61,7 @@ def make_instruction(
     return ('\n' + (' ' * indent)).join(lines)
 
 
-def make_if_else(st: str, in0: Instr, in1: Instr) -> str:
+def make_if_else(st: State, in0: Instr, in1: Instr) -> str:
     _, _, tr0 = in0
     _, _, tr1 = in1
 
@@ -86,7 +87,7 @@ IF_TEMPLATE = \
 '''
 
 
-def make_while(st: str, in0: Instr, in1: Instr) -> str:
+def make_while(st: State, in0: Instr, in1: Instr) -> str:
     pr0, sh0, tr0 = in0
     pr1, sh1,   _ = in1
 
@@ -112,7 +113,7 @@ WHILE_TEMPLATE = \
 '''
 
 
-def make_n_way_switch(state: str, instrs: tuple[Instr, ...]) -> str:
+def make_n_way_switch(state: State, instrs: tuple[Instr, ...]) -> str:
     return SWITCH_TEMPLATE.format(
         '\n\n'.join([
             make_case(state, color, instr)
@@ -141,7 +142,7 @@ CASE_TEMPLATE = \
       {}'''
 
 
-def make_switch(state: str, instrs: tuple[Instr, ...]) -> str:
+def make_switch(state: State, instrs: tuple[Instr, ...]) -> str:
     try:
         in0, in1 = instrs
     except ValueError:

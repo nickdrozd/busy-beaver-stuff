@@ -9,10 +9,7 @@ from collections.abc import Iterator
 from tm import Graph
 from tm.tape import Tape
 from tm.parse import parse, st_str, str_st, tcompile
-
-Color = int
-Shift = str
-State = str
+from tm.parse import Color, Shift, State
 
 Slot = tuple[State, Color]
 Instr = str

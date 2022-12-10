@@ -1,15 +1,16 @@
 from tm.parse import parse, st_str
+from tm.parse import Color, State
 
 HALT = '_'
 UNDEFINED = '.'
 
-ConGraph = dict[str, set[str]]
+ConGraph = dict[State, set[State]]
 
 class Graph:
     def __init__(self, program: str):
         self.program = program
 
-        self.arrows: dict[str, tuple[str, ...]] = {
+        self.arrows: dict[State, tuple[State, ...]] = {
             st_str(i): connection
             for i, connection in
             enumerate(
@@ -36,22 +37,22 @@ class Graph:
         )
 
     @property
-    def states(self) -> tuple[str, ...]:
+    def states(self) -> tuple[State, ...]:
         return tuple(self.arrows)
 
     @property
-    def colors(self) -> tuple[int, ...]:
+    def colors(self) -> tuple[Color, ...]:
         return tuple(range(len(self.arrows['A'])))
 
     @property
-    def exit_points(self) -> dict[str, set[str]]:
+    def exit_points(self) -> dict[State, set[State]]:
         return {
             state: set(connections) - { HALT, UNDEFINED }
             for state, connections in self.arrows.items()
         }
 
     @property
-    def entry_points(self) -> dict[str, set[str]]:
+    def entry_points(self) -> dict[State, set[State]]:
         entries: dict[str, set[str]] = {
             state: set()
             for state in self.states
@@ -96,7 +97,7 @@ class Graph:
         return True
 
     @property
-    def reflexive_states(self) -> set[str]:
+    def reflexive_states(self) -> set[State]:
         return {
             state
             for state, connections in self.arrows.items()
@@ -104,7 +105,7 @@ class Graph:
         }
 
     @property
-    def zero_reflexive_states(self) -> set[str]:
+    def zero_reflexive_states(self) -> set[State]:
         return {
             state
             for state, connections in self.arrows.items()
@@ -138,7 +139,7 @@ class Graph:
         return self.entries_dispersed and self.exits_dispersed
 
     @property
-    def reduced(self) -> dict[str, set[str]]:
+    def reduced(self) -> dict[State, set[State]]:
         graph = self.exit_points
 
         for _ in range(len(self.states) * len(self.colors)):
