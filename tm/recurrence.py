@@ -8,7 +8,7 @@ from tm.parse import CompProg
 from tm.tape import PtrTape, Tape, TagTape, Signature, Rule
 from tm.macro import MacroProg
 
-State = int | str
+State = int
 Color = int
 Action = tuple[State, Color]
 

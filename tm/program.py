@@ -8,7 +8,7 @@ from collections.abc import Iterator
 
 from tm import Graph
 from tm.tape import Tape
-from tm.parse import parse, st_str, tcompile
+from tm.parse import parse, st_str, str_st, tcompile
 
 INIT = 'A'
 BLANK = '0'
@@ -327,11 +327,11 @@ class Program:
         from tm.recurrence import History
 
         configs: list[
-            tuple[int, str, Tape, int, History]
+            tuple[int, int, Tape, int, History]
         ] = [
             (
                 1,
-                state,
+                str_st(state),
                 Tape([], int(color), []),
                 0,
                 History(tapes = {}),
@@ -343,7 +343,7 @@ class Program:
 
         max_repeats = max_attempts // 2
 
-        seen: dict[str, set[str]] = defaultdict(set)
+        seen: dict[int, set[str]] = defaultdict(set)
 
         while configs:  # pylint: disable = while-used
             step, state, tape, repeat, history = configs.pop()
@@ -351,7 +351,7 @@ class Program:
             if step > max_attempts:
                 return False
 
-            if state == 'A' and tape.blank:
+            if state == 0 and tape.blank:
                 return False
 
             if (tape_hash := str(tape)) in seen[state]:
@@ -378,12 +378,12 @@ class Program:
 
             # print(step, state, tape)
 
-            for entry in sorted(self.graph.entry_points[state]):
+            for entry in sorted(self.graph.entry_points[st_str(state)]):
                 for _, instr in self[entry].items():
                     trans: str = instr[2]
                     shift: str = instr[1]
 
-                    if trans != state:
+                    if str_st(trans) != state:
                         continue
 
                     for color in sorted(map(int, self.colors)):
@@ -422,7 +422,7 @@ class Program:
 
                         configs.append((
                             step + 1,
-                            entry,
+                            str_st(entry),
                             next_tape,
                             repeat,
                             history.copy(),
