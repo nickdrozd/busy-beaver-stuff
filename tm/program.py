@@ -14,8 +14,10 @@ INIT = 'A'
 BLANK = 0
 SHIFTS = 'L', 'R'
 
-State = str
 Color = int
+Shift = str
+State = str
+
 Slot = tuple[State, Color]
 Instr = str
 
@@ -388,7 +390,7 @@ class Program:
             for entry in sorted(self.graph.entry_points[st_str(state)]):
                 for _, instr in self[entry].items():
                     trans: State = instr[2]
-                    shift: str = instr[1]
+                    shift: Shift = instr[1]
 
                     if str_st(trans) != state:
                         continue
