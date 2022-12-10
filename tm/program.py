@@ -85,25 +85,25 @@ class Program:
         return sorted(self.colors)[1:]
 
     @property
-    def instructions(self) -> Iterator[tuple[Slot, Instr]]:
+    def instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
                 yield (state, color), instr
 
     @property
-    def actions(self) -> Iterator[str]:
+    def instructions(self) -> Iterator[Instr]:
         for instrs in self.prog.values():
             yield from instrs.values()
 
     @property
     def slots(self) -> tuple[Slot, ...]:
-        return tuple(slot for slot, _ in self.instructions)
+        return tuple(slot for slot, _ in self.instr_slots)
 
     @property
     def open_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
-            for slot, instr in self.instructions
+            for slot, instr in self.instr_slots
             if '.' in instr
         )
 
@@ -118,7 +118,7 @@ class Program:
     def halt_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
-            for slot, instr in self.instructions
+            for slot, instr in self.instr_slots
             if instr[2] in {'.', '_'}
         )
 
@@ -126,16 +126,16 @@ class Program:
     def erase_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
-            for slot, instr in self.instructions
+            for slot, instr in self.instr_slots
             if slot[1] != 0 and instr[0] == '0'
         )
 
     @property
     def used_states(self) -> Iterator[State]:
         yield from (
-            action[2]
-            for action in self.actions if
-            '.' not in action
+            instr[2]
+            for instr in self.instructions if
+            '.' not in instr
         )
 
     @property
@@ -148,9 +148,9 @@ class Program:
     @property
     def used_colors(self) -> Iterator[Color]:
         yield from (
-            int(action[0])
-            for action in self.actions if
-            '.' not in action
+            int(instr[0])
+            for instr in self.instructions if
+            '.' not in instr
         )
 
     @property
@@ -161,7 +161,7 @@ class Program:
         return used | { diff[0] } if diff else used
 
     @property
-    def available_actions(self) -> Iterator[str]:
+    def available_instrs(self) -> Iterator[str]:
         return (
             ''.join(prod) for prod in
             product(
@@ -197,10 +197,10 @@ class Program:
 
         orig = self[slot]
 
-        for action in sorted(self.available_actions, reverse = True):
-            if action >= orig and '.' not in orig:
+        for instr in sorted(self.available_instrs, reverse = True):
+            if instr >= orig and '.' not in orig:
                 continue
-            self[slot] = action
+            self[slot] = instr
             yield str(self)
 
         self[slot] = orig
@@ -208,11 +208,11 @@ class Program:
     def swap_states(self, st1: State, st2: State) -> Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
-        for slot, action in self.instructions:
+        for slot, instr in self.instr_slots:
             self[slot] = (
-                re.sub(st1, st2, action)
-                if st1 in action else
-                re.sub(st2, st1, action)
+                re.sub(st1, st2, instr)
+                if st1 in instr else
+                re.sub(st2, st1, instr)
             )
 
         return self
@@ -224,11 +224,11 @@ class Program:
             state = self[state_str]
             state[co1], state[co2] = state[co2], state[co1]
 
-        for slot, action in self.instructions:
+        for slot, instr in self.instr_slots:
             self[slot] = (
-                re.sub(sc1, sc2, action)
-                if sc1 in action else
-                re.sub(sc2, sc1, action)
+                re.sub(sc1, sc2, instr)
+                if sc1 in instr else
+                re.sub(sc2, sc1, instr)
             )
 
         return self
@@ -237,8 +237,8 @@ class Program:
         for _ in self.states:
             todo = self.non_start_states
 
-            for action in self.actions:
-                if (state := action[2]) not in todo:
+            for instr in self.instructions:
+                if (state := instr[2]) not in todo:
                     continue
 
                 norm, *rest = todo
@@ -257,9 +257,9 @@ class Program:
         for _ in self.colors:
             todo = self.non_blank_colors
 
-            for action in self.actions:
+            for instr in self.instructions:
                 try:
-                    color = int(action[0])
+                    color = int(instr[0])
                 except ValueError:
                     continue
 
@@ -282,11 +282,11 @@ class Program:
         if self['A', 0][1] == 'R':
             return self
 
-        for slot, action in self.instructions:
+        for slot, instr in self.instr_slots:
             self[slot] = (
-                re.sub('R', 'L', action)
-                if action[1] == 'R' else
-                re.sub('L', 'R', action)
+                re.sub('R', 'L', instr)
+                if instr[1] == 'R' else
+                re.sub('L', 'R', instr)
             )
 
         return self
