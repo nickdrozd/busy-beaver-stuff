@@ -38,13 +38,13 @@ class Program:
     def __getitem__(self, slot: State) -> dict[Color, Instr]: ...
 
     @overload
-    def __getitem__(self, slot: Slot) -> str: ...
+    def __getitem__(self, slot: Slot) -> Instr: ...
 
     def __getitem__(
             self,
             slot: State | Slot,
     ) -> dict[Color, Instr] | Instr:
-        if isinstance(slot, str):
+        if isinstance(slot, State):
             return self.prog[slot]
 
         return self.prog[slot[0]][slot[1]]
@@ -67,11 +67,11 @@ class Program:
                 ] * states)))
 
     @property
-    def states(self) -> set[str]:
+    def states(self) -> set[State]:
         return set(self.prog.keys())
 
     @property
-    def non_start_states(self) -> list[str]:
+    def non_start_states(self) -> list[State]:
         return sorted(self.states)[1:]
 
     @property
@@ -129,7 +129,7 @@ class Program:
         )
 
     @property
-    def used_states(self) -> Iterator[str]:
+    def used_states(self) -> Iterator[State]:
         yield from (
             action[2]
             for action in self.actions if
@@ -137,7 +137,7 @@ class Program:
         )
 
     @property
-    def available_states(self) -> set[str]:
+    def available_states(self) -> set[State]:
         used = set(self.used_states) | { INIT }
         diff = sorted(self.states.difference(used))
 
@@ -203,7 +203,7 @@ class Program:
 
         self[slot] = orig
 
-    def swap_states(self, st1: str, st2: str) -> Program:
+    def swap_states(self, st1: State, st2: State) -> Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
         for slot, action in self.instructions:
@@ -380,7 +380,7 @@ class Program:
 
             for entry in sorted(self.graph.entry_points[st_str(state)]):
                 for _, instr in self[entry].items():
-                    trans: str = instr[2]
+                    trans: State = instr[2]
                     shift: str = instr[1]
 
                     if str_st(trans) != state:
