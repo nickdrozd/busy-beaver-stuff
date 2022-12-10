@@ -189,8 +189,7 @@ class Fast(TestTree):
 
 class Slow(TestTree):
     def test_42(self):  # no-coverage
-        hc42q: Q[str] = Queue()
-        hd42q: Q[str] = Queue()
+        h42q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
             if 'D' not in prog:
@@ -199,8 +198,10 @@ class Slow(TestTree):
             if any(run_for_none(prog, 400, 100, 10, 1)):
                 return
 
-            # pylint: disable = line-too-long
-            (hc42q if Graph(prog).is_strongly_connected else hd42q).put(prog)
+            if any(run_for_none(prog, 2150, 500, 3, 2)):
+                return
+
+            h42q.put(prog)
 
         run_tree_gen(
             states = 4,
@@ -210,25 +211,10 @@ class Slow(TestTree):
             output = capture,
         )
 
-        hd42 = queue_to_set(hd42q)
-        hc42 = queue_to_set(hc42q)
-
-        hd42 -= {
-            prog for prog in hd42
-            if any(run_for_none(prog, 2150, 300, 3, 2))
-        }
-
-        hc42 -= {
-            prog for prog in hc42
-            if any(run_for_none(prog, 2150, 500, 3, 2))
-        }
+        h42 = queue_to_set(h42q)
 
         self.assert_counts({
-            28: hd42,
-            42: hc42,
+            70: h42,
         })
 
-        self.assert_connected(hc42)
-
-        self.assert_progs(hd42, 'holdouts_42hd')
-        self.assert_progs(hc42, 'holdouts_42hc')
+        self.assert_progs(h42, 'holdouts_42h')
