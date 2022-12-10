@@ -10,10 +10,6 @@ from tm import Graph
 from tm.tape import Tape
 from tm.parse import parse, st_str, str_st, tcompile
 
-INIT = 'A'
-BLANK = 0
-SHIFTS = 'L', 'R'
-
 Color = int
 Shift = str
 State = str
@@ -22,6 +18,8 @@ Slot = tuple[State, Color]
 Instr = str
 
 ProgStr = str
+
+SHIFTS: tuple[Shift, Shift] = 'L', 'R'
 
 class Program:
     def __init__(self, program: ProgStr):
@@ -142,7 +140,7 @@ class Program:
 
     @property
     def available_states(self) -> set[State]:
-        used = set(self.used_states) | { INIT }
+        used = set(self.used_states) | { 'A' }
         diff = sorted(self.states.difference(used))
 
         return used | { diff[0] } if diff else used
@@ -157,7 +155,7 @@ class Program:
 
     @property
     def available_colors(self) -> set[Color]:
-        used = set(self.used_colors) | { BLANK }
+        used = set(self.used_colors) | { 0 }
         diff = sorted(self.colors.difference(used))
 
         return used | { diff[0] } if diff else used
