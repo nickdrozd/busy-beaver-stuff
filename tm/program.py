@@ -209,10 +209,11 @@ class Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
         for slot, action in self.instructions:
-            if st1 in action:
-                self[slot] = re.sub(st1, st2, action)
-            elif st2 in action:
-                self[slot] = re.sub(st2, st1, action)
+            self[slot] = (
+                re.sub(st1, st2, action)
+                if st1 in action else
+                re.sub(st2, st1, action)
+            )
 
         return self
 
@@ -224,10 +225,11 @@ class Program:
             state[co1], state[co2] = state[co2], state[co1]
 
         for slot, action in self.instructions:
-            if sc1 in action:
-                self[slot] = re.sub(sc1, sc2, action)
-            elif sc2 in action:
-                self[slot] = re.sub(sc2, sc1, action)
+            self[slot] = (
+                re.sub(sc1, sc2, action)
+                if sc1 in action else
+                re.sub(sc2, sc1, action)
+            )
 
         return self
 
@@ -281,11 +283,11 @@ class Program:
             return self
 
         for slot, action in self.instructions:
-            if (shift := action[1]) == 'R':
-                self[slot] = re.sub('R', 'L', action)
-            else:
-                assert shift == 'L'
-                self[slot] = re.sub('L', 'R', action)
+            self[slot] = (
+                re.sub('R', 'L', action)
+                if action[1] == 'R' else
+                re.sub('L', 'R', action)
+            )
 
         return self
 
