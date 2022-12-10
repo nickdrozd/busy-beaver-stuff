@@ -66,19 +66,19 @@ def queue_to_set(queue: Q[str]) -> set[str]:
 
 
 class TestTree(TestCase):
-    @staticmethod
-    def assert_counts(expected: dict[int, set[str]]):
-        if (failed := {
-                count: len(cat)
-                for count, cat in expected.items()
-                if len(cat) != count
-        }):
-            raise AssertionError(failed)
-
-    def assert_progs(self, progs: set[str], progfile: str):
+    def assert_progs(
+            self,
+            count: int,
+            progs: set[str],
+            progfile: str,
+    ):
         self.assertEqual(
             progs,
             read_progs(progfile))
+
+        self.assertEqual(
+            count,
+            len(progs))
 
     def assert_complete(self, prog: str):
         self.assertNotIn('...', prog, f'"{prog}"')
@@ -120,13 +120,10 @@ class Fast(TestTree):
             output = capture,
         )
 
-        q32 = queue_to_set(q32q)
-
-        self.assert_counts({
-            3: q32,
-        })
-
-        self.assert_progs(q32, 'holdouts_32q')
+        self.assert_progs(
+            3,
+            queue_to_set(q32q),
+            'holdouts_32q')
 
     def test_23(self):
         q23q: Q[str] = Queue()
@@ -149,13 +146,10 @@ class Fast(TestTree):
             output = capture,
         )
 
-        q23 = queue_to_set(q23q)
-
-        self.assert_counts({
-            9: q23,
-        })
-
-        self.assert_progs(q23, 'holdouts_23q')
+        self.assert_progs(
+            9,
+            (q23 := queue_to_set(q23q)),
+            'holdouts_23q')
 
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
@@ -186,10 +180,7 @@ class Slow(TestTree):
             output = capture,
         )
 
-        h42 = queue_to_set(h42q)
-
-        self.assert_counts({
-            70: h42,
-        })
-
-        self.assert_progs(h42, 'holdouts_42h')
+        self.assert_progs(
+            70,
+            queue_to_set(h42q),
+            'holdouts_42h')
