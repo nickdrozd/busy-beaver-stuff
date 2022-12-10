@@ -116,7 +116,14 @@ class Fast(TestTree):
             if any(run_for_none(prog, 200, 200, 3, 1)):
                 return
 
-            (q32q if prog.count('...') == 0 else h32q).put(prog)
+            if prog.count('...'):
+                h32q.put(prog)
+                return
+
+            if any(run_for_none(prog, 2130, 100, 2)):
+                return
+
+            q32q.put(prog)
 
         run_tree_gen(
             states = 3,
@@ -128,11 +135,6 @@ class Fast(TestTree):
 
         h32 = queue_to_set(h32q)
         q32 = queue_to_set(q32q)
-
-        q32 -= {
-            prog for prog in q32
-            if any(run_for_none(prog, 2130, 100, 2))
-        }
 
         self.assert_counts({
             0: h32,
@@ -151,7 +153,17 @@ class Fast(TestTree):
             if any(run_for_none(prog, 200, 200, 8, 1)):
                 return
 
-            (q23q if prog.count('...') == 0 else h23q).put(prog)
+            if prog.count('...'):
+                if any(run_for_none(prog, 1200, 300, 2, 1)):
+                    return
+
+                h23q.put(prog)
+
+            else:
+                if any(run_for_none(prog, 2350, 1400, 2, 1)):
+                    return
+
+                q23q.put(prog)
 
         run_tree_gen(
             states = 2,
@@ -162,16 +174,6 @@ class Fast(TestTree):
 
         h23 = queue_to_set(h23q)
         q23 = queue_to_set(q23q)
-
-        h23 -= {
-            prog for prog in h23
-            if any(run_for_none(prog, 1200, 300, 2, 1))
-        }
-
-        q23 -= {
-            prog for prog in q23
-            if any(run_for_none(prog, 2350, 1400, 2, 1))
-        }
 
         self.assert_counts({
             0: h23,
