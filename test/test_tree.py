@@ -4,7 +4,7 @@ from multiprocessing import Queue
 from collections.abc import Iterator
 
 from tm import Machine, LinRecMachine
-from tm import Graph, BlockMacro, BacksymbolMacro
+from tm import BlockMacro, BacksymbolMacro
 from tm.macro import MacroProg
 from generate.tree  import run_tree_gen
 
@@ -80,12 +80,6 @@ class TestTree(TestCase):
             progs,
             read_progs(progfile))
 
-    def assert_connected(self, *prog_sets: set[str]):
-        for progs in prog_sets:
-            self.assertTrue((
-                all(Graph(prog).is_strongly_connected
-                    for prog in progs)))
-
 
 class Fast(TestTree):
     def test_22(self):
@@ -141,8 +135,6 @@ class Fast(TestTree):
             3: q32,
         })
 
-        self.assert_connected(q32)
-
         self.assert_progs(q32, 'holdouts_32q')
 
     def test_23(self):
@@ -179,8 +171,6 @@ class Fast(TestTree):
             0: h23,
             9: q23,
         })
-
-        self.assert_connected(h23, q23)
 
         self.assert_progs(q23, 'holdouts_23q')
 
