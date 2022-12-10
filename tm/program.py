@@ -11,7 +11,7 @@ from tm.tape import Tape
 from tm.parse import parse, st_str, str_st, tcompile
 
 INIT = 'A'
-BLANK = '0'
+BLANK = 0
 SHIFTS = 'L', 'R'
 
 State = str
@@ -75,11 +75,11 @@ class Program:
         return sorted(self.states)[1:]
 
     @property
-    def colors(self) -> set[str]:
-        return set(map(str, range(len(self.prog['A']))))
+    def colors(self) -> set[Color]:
+        return set(range(len(self.prog['A'])))
 
     @property
-    def non_blank_colors(self) -> list[str]:
+    def non_blank_colors(self) -> list[Color]:
         return sorted(self.colors)[1:]
 
     @property
@@ -144,15 +144,15 @@ class Program:
         return used | { diff[0] } if diff else used
 
     @property
-    def used_colors(self) -> Iterator[str]:
+    def used_colors(self) -> Iterator[Color]:
         yield from (
-            action[0]
+            int(action[0])
             for action in self.actions if
             '.' not in action
         )
 
     @property
-    def available_colors(self) -> set[str]:
+    def available_colors(self) -> set[Color]:
         used = set(self.used_colors) | { BLANK }
         diff = sorted(self.colors.difference(used))
 
@@ -163,7 +163,7 @@ class Program:
         return (
             ''.join(prod) for prod in
             product(
-                self.available_colors,
+                map(str, self.available_colors),
                 SHIFTS,
                 self.available_states)
         )
@@ -214,18 +214,18 @@ class Program:
 
         return self
 
-    def swap_colors(self, co1: str, co2: str) -> Program:
-        ic1, ic2 = int(co1), int(co2)
+    def swap_colors(self, co1: Color, co2: Color) -> Program:
+        sc1, sc2 = str(co1), str(co2)
 
         for state_str in self.states:
             state = self[state_str]
-            state[ic1], state[ic2] = state[ic2], state[ic1]
+            state[co1], state[co2] = state[co2], state[co1]
 
         for slot, action in self.instructions:
-            if co1 in action:
-                self[slot] = re.sub(co1, co2, action)
-            elif co2 in action:
-                self[slot] = re.sub(co2, co1, action)
+            if sc1 in action:
+                self[slot] = re.sub(sc1, sc2, action)
+            elif sc2 in action:
+                self[slot] = re.sub(sc2, sc1, action)
 
         return self
 
@@ -254,7 +254,12 @@ class Program:
             todo = self.non_blank_colors
 
             for action in self.actions:
-                if (color := action[0]) not in todo:
+                try:
+                    color = int(action[0])
+                except ValueError:
+                    continue
+
+                if color not in todo:
                     continue
 
                 norm, *rest = todo
