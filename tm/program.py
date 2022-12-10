@@ -171,7 +171,7 @@ class Program:
         )
 
     @property
-    def instruction_sequence(self) -> Iterator[tuple[ProgStr, int, Slot]]:
+    def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
         # pylint: disable = import-outside-toplevel
         from tm import Machine
 

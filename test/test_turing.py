@@ -1987,7 +1987,7 @@ class Fast(TuringTest):
                 {
                     partial: (step, state + str(color))
                     for partial, step, (state, color) in
-                    Program(prog).instruction_sequence
+                    Program(prog).instr_seq
                 },
             )
 
