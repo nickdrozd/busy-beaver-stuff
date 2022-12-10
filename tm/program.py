@@ -9,10 +9,9 @@ from collections.abc import Iterator
 from tm import Graph
 from tm.tape import Tape
 from tm.parse import parse, st_str, str_st, tcompile
-from tm.parse import Color, Shift, State
+from tm.parse import Color, Shift, State, Instr
 
 Slot = tuple[State, Color]
-Instr = str
 
 ProgStr = str
 
@@ -21,11 +20,7 @@ SHIFTS: tuple[Shift, Shift] = 'L', 'R'
 class Program:
     def __init__(self, program: ProgStr):
         self.prog: dict[State, dict[Color, Instr | None]] = {
-            st_str(state): {
-                color: ''.join(map(str, instr))
-                if instr is not None else None
-                for color, instr in enumerate(instrs)
-            }
+            st_str(state): dict(enumerate(instrs))
             for state, instrs in enumerate(parse(program))
         }
 
@@ -34,7 +29,7 @@ class Program:
     def __repr__(self) -> ProgStr:
         return '  '.join([
             ' '.join(
-                instr if instr else '...'
+                ''.join(map(str, instr)) if instr else '...'
                 for instr in instrs.values()
             )
             for instrs in self.prog.values()
@@ -135,7 +130,7 @@ class Program:
         return tuple(
             slot
             for slot, instr in self.instr_slots
-            if slot[1] != 0 and instr and instr[0] == '0'
+            if slot[1] != 0 and instr and instr[0] == 0
         )
 
     @property
@@ -200,25 +195,17 @@ class Program:
         if halt and self.last_slot:
             return
 
-        orig_instr = self[slot]
-
-        orig = (
-            int(orig_instr[0]),
-            orig_instr[1],
-            orig_instr[2],
-        ) if orig_instr is not None else None
+        orig = self[slot]
 
         for instr in sorted(self.available_instrs, reverse = True):
             if orig is not None and instr >= orig:
                 continue
 
-            self[slot] = ''.join(map(str, instr))
+            self[slot] = instr
 
             yield str(self)
 
-        self[slot] = (
-            ''.join(map(str, orig))
-            if orig is not None else None)
+        self[slot] = orig
 
     def swap_states(self, st1: State, st2: State) -> Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
@@ -227,30 +214,24 @@ class Program:
             if instr is None:
                 continue
 
-            self[slot] = (
-                re.sub(st1, st2, instr)
-                if st1 in instr else
-                re.sub(st2, st1, instr)
-            )
+            color, shift, state = instr
+
+            self[slot] = color, shift, (st1 if state == st2 else st2)
 
         return self
 
     def swap_colors(self, co1: Color, co2: Color) -> Program:
-        sc1, sc2 = str(co1), str(co2)
-
         for state_str in self.states:
-            state = self[state_str]
-            state[co1], state[co2] = state[co2], state[co1]
+            st_key = self[state_str]
+            st_key[co1], st_key[co2] = st_key[co2], st_key[co1]
 
         for slot, instr in self.instr_slots:
             if instr is None:
                 continue
 
-            self[slot] = (
-                re.sub(sc1, sc2, instr)
-                if sc1 in instr else
-                re.sub(sc2, sc1, instr)
-            )
+            color, shift, state = instr
+
+            self[slot] = (co1 if color == co2 else co2), shift, state
 
         return self
 
@@ -310,11 +291,9 @@ class Program:
             if instr is None:
                 continue
 
-            self[slot] = (
-                re.sub('R', 'L', instr)
-                if instr[1] == 'R' else
-                re.sub('L', 'R', instr)
-            )
+            color, shift, state = instr
+
+            self[slot] = color, ('L' if shift == 'R' else 'R'), state
 
         return self
 
