@@ -161,14 +161,11 @@ class Program:
         return used | { diff[0] } if diff else used
 
     @property
-    def available_instrs(self) -> Iterator[str]:
-        return (
-            ''.join(prod) for prod in
-            product(
-                map(str, self.available_colors),
-                SHIFTS,
-                self.available_states)
-        )
+    def available_instrs(self) -> Iterator[tuple[Color, Shift, State]]:
+        return product(
+            self.available_colors,
+            SHIFTS,
+            self.available_states)
 
     @property
     def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
@@ -195,15 +192,20 @@ class Program:
         if halt and self.last_slot:
             return
 
-        orig = self[slot]
+        orig_instr = self[slot]
+
+        orig = (
+            int(orig_instr[0])
+            if orig_instr[0] != '.' else -1
+        ), orig_instr[1], orig_instr[2]
 
         for instr in sorted(self.available_instrs, reverse = True):
             if instr >= orig and '.' not in orig:
                 continue
-            self[slot] = instr
+            self[slot] = ''.join(map(str, instr))
             yield str(self)
 
-        self[slot] = orig
+        self[slot] = ''.join(map(str, orig))
 
     def swap_states(self, st1: State, st2: State) -> Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
