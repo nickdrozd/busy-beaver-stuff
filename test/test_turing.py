@@ -1985,8 +1985,8 @@ class Fast(TuringTest):
             self.assertEqual(
                 sequence,
                 {
-                    partial: (step, slot)
-                    for partial, step, slot in
+                    partial: (step, state + str(color))
+                    for partial, step, (state, color) in
                     Program(prog).instruction_sequence
                 },
             )

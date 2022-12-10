@@ -171,7 +171,7 @@ class Program:
         )
 
     @property
-    def instruction_sequence(self) -> Iterator[tuple[ProgStr, int, str]]:
+    def instruction_sequence(self) -> Iterator[tuple[ProgStr, int, Slot]]:
         # pylint: disable = import-outside-toplevel
         from tm import Machine
 
@@ -183,7 +183,7 @@ class Program:
 
             step, slot = result
 
-            yield str(partial), step, slot[0] + str(slot[1])
+            yield str(partial), step, slot
 
             partial[slot] = self[slot]
 
