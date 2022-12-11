@@ -145,17 +145,16 @@ def lr_convert(rado_string: int) -> str:
         # pylint: disable = invalid-name
         a0, a1, b0, b1, c0, c1 = map(
             convert_bin_instr,
-            (bin_string[i : i + 4]
-             for i in range(0, len(bin_string), 4)))
+            (
+                tuple(bin_string[i : i + 4])
+                for i in range(0, len(bin_string), 4)
+            ),
+        )
 
         return f'{a0} {a1}  {b0} {b1}  {c0} {c1}'
 
-    def convert_bin_instr(bin_instr: str) -> str:
-        pr: str
-        sh: str
-        tr: list[str]
-
-        pr, sh, *tr =  bin_instr  # type: ignore[misc]
+    def convert_bin_instr(bin_instr: tuple[str, ...]) -> str:
+        pr, sh, *tr =  bin_instr
 
         v_sh = 'L' if int(sh) == 0 else 'R'
 
