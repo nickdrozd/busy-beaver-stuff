@@ -1,4 +1,4 @@
-from unittest import TestCase, expectedFailure
+from unittest import TestCase
 
 from tm import Program
 
@@ -97,7 +97,6 @@ class TestProgram(TestCase):
                         ('C', 0),
                         halt = True)))
 
-    @expectedFailure
     def test_normalize(self):
         for norm, devs in NORMALIZE.items():
             for dev in devs:

@@ -215,7 +215,11 @@ class Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
         for slot, (color, shift, state) in self.used_instr_slots:
-            self[slot] = color, shift, (st1 if state == st2 else st2)
+            self[slot] = color, shift, (
+                st1 if state == st2 else
+                st2 if state == st1 else
+                state
+            )
 
         return self
 
@@ -225,7 +229,11 @@ class Program:
             st_key[co1], st_key[co2] = st_key[co2], st_key[co1]
 
         for slot, (color, shift, state) in self.used_instr_slots:
-            self[slot] = (co1 if color == co2 else co2), shift, state
+            self[slot] = (
+                co1 if color == co2 else
+                co2 if color == co1 else
+                color
+            ), shift, state
 
         return self
 
