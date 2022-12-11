@@ -94,9 +94,21 @@ class Program:
                 yield (state, color), instr
 
     @property
+    def used_instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
+        yield from (
+            (slot, instr)
+            for slot, instr in self.instr_slots
+            if instr is not None
+        )
+
+    @property
     def instructions(self) -> Iterator[Instr | None]:
         for instrs in self.prog.values():
             yield from instrs.values()
+
+    @property
+    def used_instructions(self) -> Iterator[Instr]:
+        yield from(instr for instr in self.instructions if instr)
 
     @property
     def slots(self) -> tuple[Slot, ...]:
@@ -129,17 +141,13 @@ class Program:
     def erase_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
-            for slot, instr in self.instr_slots
-            if slot[1] != 0 and instr and instr[0] == 0
+            for slot, instr in self.used_instr_slots
+            if slot[1] != 0 and instr[0] == 0
         )
 
     @property
     def used_states(self) -> Iterator[State]:
-        yield from (
-            instr[2]
-            for instr in self.instructions
-            if instr
-        )
+        yield from (state for _, _, state in self.used_instructions)
 
     @property
     def available_states(self) -> set[State]:
@@ -150,11 +158,7 @@ class Program:
 
     @property
     def used_colors(self) -> Iterator[Color]:
-        yield from (
-            int(instr[0])
-            for instr in self.instructions
-            if instr
-        )
+        yield from (color for color, _, _ in self.used_instructions)
 
     @property
     def available_colors(self) -> set[Color]:
@@ -210,12 +214,7 @@ class Program:
     def swap_states(self, st1: State, st2: State) -> Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
-        for slot, instr in self.instr_slots:
-            if instr is None:
-                continue
-
-            color, shift, state = instr
-
+        for slot, (color, shift, state) in self.used_instr_slots:
             self[slot] = color, shift, (st1 if state == st2 else st2)
 
         return self
@@ -225,12 +224,7 @@ class Program:
             st_key = self[state_str]
             st_key[co1], st_key[co2] = st_key[co2], st_key[co1]
 
-        for slot, instr in self.instr_slots:
-            if instr is None:
-                continue
-
-            color, shift, state = instr
-
+        for slot, (color, shift, state) in self.used_instr_slots:
             self[slot] = (co1 if color == co2 else co2), shift, state
 
         return self
@@ -239,8 +233,8 @@ class Program:
         for _ in self.states:
             todo = self.non_start_states
 
-            for instr in self.instructions:
-                if not instr or  (state := instr[2]) not in todo:
+            for _, _, state in self.used_instructions:
+                if state not in todo:
                     continue
 
                 norm, *rest = todo
@@ -259,15 +253,7 @@ class Program:
         for _ in self.colors:
             todo = self.non_blank_colors
 
-            for instr in self.instructions:
-                if instr is None:
-                    continue
-
-                try:
-                    color = int(instr[0])
-                except ValueError:
-                    continue
-
+            for color, _, _ in self.used_instructions:
                 if color not in todo:
                     continue
 
@@ -287,12 +273,7 @@ class Program:
         if (index := self['A', 0]) is None or index[1] == 'R':
             return self
 
-        for slot, instr in self.instr_slots:
-            if instr is None:
-                continue
-
-            color, shift, state = instr
-
+        for slot, (color, shift, state) in self.used_instr_slots:
             self[slot] = color, ('L' if shift == 'R' else 'R'), state
 
         return self
