@@ -226,11 +226,10 @@ class Prover:
                     rec_rule = True
                     continue
 
-            try:
-                color, shift, next_state = \
-                    self.prog[state][tape.scan] # type: ignore
-            except TypeError:
+            if (instr := self.prog[state][tape.scan]) is None:  # type: ignore[index]  # pylint: disable = line-too-long
                 return None
+
+            color, shift, next_state = instr  # type: ignore[misc]
 
             tape.step(
                 shift,

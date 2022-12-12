@@ -144,12 +144,11 @@ class Machine:
                         self.rulapp += times
                         continue
 
-            try:
-                color, shift, next_state = \
-                    comp[state][tape.scan]  # type: ignore[index, misc]
-            except TypeError:
+            if (instr := comp[state][tape.scan]) is None:  # type: ignore[index]  # pylint: disable= line-too-long
                 self.undfnd = step, (st_str(state), tape.scan)
                 break
+
+            color, shift, next_state = instr  # type: ignore[misc]
 
             if ((same_state := state == next_state)
                     and (shift == tape.edge or tape.blank)):
@@ -266,11 +265,10 @@ class LinRecMachine:
 
                 self.history.add_action_at_step(step, action)
 
-            try:
-                color, shift, next_state = \
-                    comp[state][scan]  # type: ignore[misc]
-            except TypeError:
+            if (instr := comp[state][scan]) is None:
                 break
+
+            color, shift, next_state = instr
 
             _ = tape.step(shift, color, skip and state == next_state)
 
