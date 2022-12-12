@@ -4,8 +4,9 @@ State = str
 
 Instr = tuple[Color, Shift, State]
 
+CompSlot = tuple[int, int]
 CompInstr = tuple[int, int, int]
-CompProg = tuple[tuple[CompInstr | None, ...], ...]
+CompProg = dict[CompSlot, CompInstr | None]
 
 
 def parse(program: str) -> tuple[tuple[Instr | None, ...], ...]:
@@ -19,43 +20,20 @@ def parse(program: str) -> tuple[tuple[Instr | None, ...], ...]:
     )
 
 
-def comp_instr(instr: Instr) -> CompInstr:
+def comp_instr(instr: Instr | None) -> CompInstr | None:
     return (
         instr[0],
         0 if instr[1] == 'L' else 1,
         str_st(instr[2]),
-    )
+    ) if instr else None
 
 
 def tcompile(program: str) -> CompProg:
-    return tuple(
-        tuple(
-            comp_instr(instr)
-            if instr is not None else None
-            for instr in instrs
-        )
-        for instrs in parse(program)
-    )
-
-
-def dcompile(comp: CompProg) -> str:
-    return '  '.join(
-        ' '.join(map(convert_comp_instr, instrs))
-        for instrs in comp
-    )
-
-
-def convert_comp_instr(instr: CompInstr | None) -> str:
-    if instr is None:
-        return '...'
-
-    pr, sh, tr = instr
-
-    return (
-        str(pr)
-        + ('R' if sh else 'L')
-        + st_str(tr)
-    )
+    return {
+        (state, color): comp_instr(instr)
+        for state, instrs in enumerate(parse(program))
+        for color, instr in enumerate(instrs)
+    }
 
 
 def st_str(state: int) -> str:

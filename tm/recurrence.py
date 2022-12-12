@@ -226,10 +226,10 @@ class Prover:
                     rec_rule = True
                     continue
 
-            if (instr := self.prog[state][tape.scan]) is None:  # type: ignore[index]  # pylint: disable = line-too-long
+            if (instr := self.prog[state, tape.scan]) is None:
                 return None
 
-            color, shift, next_state = instr  # type: ignore[misc]
+            color, shift, next_state = instr
 
             tape.step(
                 shift,

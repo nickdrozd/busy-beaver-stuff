@@ -41,8 +41,8 @@ class MacroProg:
         if isinstance(program, str):
             self.comp = tcompile(program)
 
-            self.base_states = len(self.comp)
-            self.base_colors = len(self.comp[0])
+            self.base_states = len(set(map(lambda s: s[0], self.comp)))
+            self.base_colors = len(set(map(lambda s: s[1], self.comp)))
         else:
             self.comp = program
 
@@ -56,23 +56,13 @@ class MacroProg:
 
         self._state = None
 
-    def __getitem__(
-            self,
-            stco: State | Color,
-    ) -> MacroProg | Instr | None:
-        if self._state is None:
-            self._state = stco
-            return self
-
-        state, color = self._state, stco
-        self._state = None
-
+    def __getitem__(self, slot: Slot) -> Instr | None:
         try:
-            instr = self.instrs[state, color]
+            instr = self.instrs[slot]
         except KeyError:
-            instr = self.calculate_instr(state, color)
+            instr = self.calculate_instr(*slot)
 
-            self.instrs[state, color] = instr
+            self.instrs[slot] = instr
 
         return instr
 
@@ -110,14 +100,11 @@ class MacroProg:
         pos = cells - 1 if right_edge else 0
 
         for _ in range(self.sim_lim):
-            if (instr :=
-                    self.comp[state][  # type: ignore[index]
-                        scan := tape[pos]
-                    ]
-            ) is None:
+            if (instr := self.comp[
+                    state, scan := tape[pos]]) is None:
                 return None
 
-            color, shift, next_state = instr  # type: ignore[misc]
+            color, shift, next_state = instr
 
             if next_state != state:
                 tape[pos] = color

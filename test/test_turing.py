@@ -8,7 +8,7 @@ from collections.abc import Mapping
 
 from tm.tape import Tape
 from tm.macro import MacroProg
-from tm.parse import tcompile, dcompile, st_str
+from tm.parse import st_str
 from tm import Machine, LinRecMachine
 from tm import Graph, Program, BlockMacro, BacksymbolMacro
 
@@ -1378,11 +1378,6 @@ class TuringTest(TestCase):
             or prog.startswith('0')
         )
 
-    def assert_comp(self, prog: str):
-        self.assertEqual(
-            prog,
-            dcompile(tcompile(prog)))
-
     def assert_connected(self, prog: str):
         self.assertTrue(
             Graph(prog).is_strongly_connected
@@ -1569,7 +1564,6 @@ class TuringTest(TestCase):
         if normal:
             self.assert_normal(prog)
 
-        self.assert_comp(prog)
         self.assert_simple(prog)
         self.assert_connected(prog)
 
