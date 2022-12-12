@@ -287,7 +287,7 @@ class LinRecMachine:
 
         return self
 
-    def check_rec(self, step: int, action: Action) -> RecRes:
+    def check_rec(self, step: int, action: Action) -> RecRes | None:
         if (result := self.history.check_rec(step, action)) is None:
             return None
 

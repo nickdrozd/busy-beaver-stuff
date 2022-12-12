@@ -12,7 +12,7 @@ State = int
 Color = int
 Action = tuple[State, Color]
 
-RecRes = tuple[int, int] | None  # type: ignore[misc]
+RecRes = tuple[int, int]
 Tapes = dict[int, PtrTape]
 
 @dataclass
@@ -81,7 +81,7 @@ class History:
             for state in set(states)
         }
 
-    def check_rec(self, step: int, action: Action) -> RecRes:
+    def check_rec(self, step: int, action: Action) -> RecRes | None:
         for pstep in self.actions[action]:
             if (result := self.verify_lin_recurrence(
                     pstep,
@@ -99,7 +99,7 @@ class History:
             recurrence: int,
             tape1: PtrTape | None = None,
             tape2: PtrTape | None = None,
-    ) -> RecRes:
+    ) -> RecRes | None:
         assert self.states[steps] == self.states[recurrence]
 
         if tape1 is None or tape2 is None:
