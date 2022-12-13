@@ -80,16 +80,16 @@ class TestTree(TestCase):
             count,
             len(progs))
 
-    def assert_complete(self, prog: str):
-        self.assertNotIn('...', prog, f'"{prog}"')
-
 
 class Fast(TestTree):
     def test_22(self):
+        q22q: Q[str] = Queue()
+
         def capture(prog: str) -> None:
-            self.assertTrue(
-                any(run_for_none(prog, 45, 48, 2))
-            )
+            if any(run_for_none(prog, 45, 48, 2)):
+                return
+
+            q22q.put(prog)
 
         run_tree_gen(
             states = 2,
@@ -98,14 +98,14 @@ class Fast(TestTree):
             output = capture,
         )
 
+        self.assertFalse(queue_to_set(q22q))
+
     def test_32(self):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
             if any(run_for_none(prog, 200, 200, 3, 1)):
                 return
-
-            self.assert_complete(prog)
 
             if any(run_for_none(prog, 2130, 100, 2)):
                 return
@@ -134,8 +134,6 @@ class Fast(TestTree):
 
             if any(run_for_none(prog, 2350, 1400, 2, 1)):
                 return
-
-            self.assert_complete(prog)
 
             q23q.put(prog)
 
