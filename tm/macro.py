@@ -30,6 +30,8 @@ class MacroProg:
 
     instrs: dict[Slot, Instr | None]
 
+    cells: int
+
     color_to_tape_cache: dict[Color, tuple[Color, ...]]
     tape_to_color_cache: dict[tuple[Color, ...], Color]
 
@@ -127,12 +129,51 @@ class MacroProg:
 
         return state, (cells <= pos, tape)
 
+    def tape_to_color(self, tape: Tape) -> Color:
+        if (cached := self.tape_to_color_cache.get(
+                tuple_tape := tuple(tape))) is not None:
+            return cached
+
+        color: Color = sum(
+            value * self.base_colors ** place
+            for place, value in enumerate(reversed(tape))
+        )
+
+        self.tape_to_color_cache[tuple_tape] = color
+        self.color_to_tape_cache[color] = tuple_tape
+
+        return color
+
+    def color_to_tape(self, color: Color) -> Tape:
+        if color == 0:
+            return [0] * self.cells
+
+        if (prev := self.color_to_tape_cache.get(color)) is not None:
+            return list(prev)
+
+        tape: Tape = []
+
+        num = color
+
+        for _ in range(ceil(log(color, self.base_colors)) + 1):
+            num, rem = divmod(num, self.base_colors)
+
+            tape.insert(0, rem)
+
+            if num == 0:
+                break
+
+        for _ in range(self.cells - len(tape)):
+            tape.insert(0, 0)
+
+        self.color_to_tape_cache[color] = tuple(tape)
+
+        return tape
+
 ########################################
 
 @dataclass
 class BlockMacro(MacroProg):
-    cells: int
-
     def __init__(self, program: str | MacroProg, cell_seq: list[int]):
         *seq, cells = cell_seq
 
@@ -179,47 +220,6 @@ class BlockMacro(MacroProg):
                 state
             ),
         )
-
-    def tape_to_color(self, tape: Tape) -> Color:
-        if (cached := self.tape_to_color_cache.get(
-                tuple_tape := tuple(tape))) is not None:
-            return cached
-
-        color: Color = sum(
-            value * self.base_colors ** place
-            for place, value in enumerate(reversed(tape))
-        )
-
-        self.tape_to_color_cache[tuple_tape] = color
-        self.color_to_tape_cache[color] = tuple_tape
-
-        return color
-
-    def color_to_tape(self, color: Color) -> Tape:
-        if color == 0:
-            return [0] * self.cells
-
-        if (prev := self.color_to_tape_cache.get(color)) is not None:
-            return list(prev)
-
-        tape: Tape = []
-
-        num = color
-
-        for _ in range(ceil(log(color, self.base_colors)) + 1):
-            num, rem = divmod(num, self.base_colors)
-
-            tape.insert(0, rem)
-
-            if num == 0:
-                break
-
-        for _ in range(self.cells - len(tape)):
-            tape.insert(0, 0)
-
-        self.color_to_tape_cache[color] = tuple(tape)
-
-        return tape
 
 ########################################
 
