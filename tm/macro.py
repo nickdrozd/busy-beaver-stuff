@@ -194,7 +194,7 @@ class BlockMacro(MacroProg):
         )
 
     def __str__(self) -> str:
-        return f'{self.program} ({self.cells}-cell macro)'
+        return f'{self.program} ({self.cells}-cell block macro)'
 
     def deconstruct_inputs(
             self,
@@ -225,21 +225,28 @@ class BlockMacro(MacroProg):
 
 @dataclass
 class BacksymbolMacro(MacroProg):
+    backsymbols: int
+
     def __init__(self, program: str | MacroProg, cell_seq: list[int]):
-        *seq, _ = cell_seq
+        *seq, cells = cell_seq
 
         if seq:
             program = BacksymbolMacro(program, seq)
 
         super().__init__(program)
 
-        self.macro_states = self.base_states * self.base_colors * 2
         self.macro_colors = self.base_colors
+
+        self.cells = cells
+
+        self.backsymbols = self.base_colors ** self.cells
+
+        self.macro_states = 2 * self.base_states * self.backsymbols
 
         self.sim_lim = self.macro_states * self.macro_colors
 
     def __str__(self) -> str:
-        return f'{self.program} (backsymbol macro)'
+        return f'{self.program} ({self.cells}-cell backsymbol macro)'
 
     def deconstruct_inputs(
             self,
@@ -248,12 +255,12 @@ class BacksymbolMacro(MacroProg):
     ) -> Config:
         st_co, at_right = divmod(macro_state, 2)
 
-        state, backsymbol = divmod(st_co, self.base_colors)
+        state, backsymbol = divmod(st_co, self.backsymbols)
 
         tape = (
-            [macro_color, backsymbol]
+            [macro_color] + self.color_to_tape(backsymbol)
             if at_right else
-            [backsymbol, macro_color]
+            self.color_to_tape(backsymbol) + [macro_color]
         )
 
         return state, (not at_right, tape)
@@ -262,9 +269,9 @@ class BacksymbolMacro(MacroProg):
         state, (right_edge, tape) = config
 
         out_color, backsymbol = (
-            (tape[0], tape[1])
+            (tape[0], tape[1:])
             if right_edge else
-            (tape[-1], tape[0])
+            (tape[-1], tape[:-1])
         )
 
         return (
@@ -273,9 +280,9 @@ class BacksymbolMacro(MacroProg):
             (
                 int(not right_edge)
                 + (2
-                   * (backsymbol
+                   * (self.tape_to_color(backsymbol)
                       + (state
-                         * self.base_colors)))
+                         * self.backsymbols)))
                 if state != -1 else
                 state
             ),

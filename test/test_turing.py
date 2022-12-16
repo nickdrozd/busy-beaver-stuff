@@ -2027,6 +2027,18 @@ class Fast(TuringTest):
     def test_macro_cycles(self):
         self._test_macro_cycles(MACRO_CYCLES_FAST)
 
+    def test_macro_multi_backsymbol(self):
+        for prog in HALT | SPINOUT:
+            if len(prog) > 35:
+                continue
+
+            for back in range(2, 5):
+                self.run_bb(
+                    BacksymbolMacro(prog, [back]))
+
+                self.assertIsNotNone(
+                    self.machine.simple_termination)
+
     @expectedFailure
     def test_prover_false_positive_1(self):
         self._test_prover_est({
