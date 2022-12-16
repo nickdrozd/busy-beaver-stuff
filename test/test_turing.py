@@ -1937,11 +1937,17 @@ class Fast(TuringTest):
             "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (1, 0, 3.7, 6518),
             }, diff_lim = 21)
 
-
         self.run_bb(
             "1RB 0LC  1RD 1RA  ... 0LD  1LA 0LB",
             prover = 10,
             analyze = False,
+        )
+
+    @expectedFailure
+    def test_prover_halt(self):
+        self.run_bb(
+            "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",
+            prover = 40,
         )
 
     def test_blank(self):
