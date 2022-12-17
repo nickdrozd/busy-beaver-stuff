@@ -1948,6 +1948,13 @@ class Fast(TuringTest):
             prover = 40,
         )
 
+    @expectedFailure
+    def test_prover_exception(self):
+        self.run_bb(
+            BacksymbolMacro("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_", [2]),
+            prover = 104,
+        )
+
     def test_blank(self):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)
