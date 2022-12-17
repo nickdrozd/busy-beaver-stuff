@@ -1943,8 +1943,6 @@ class Fast(TuringTest):
             analyze = False,
         )
 
-    @expectedFailure
-    def test_prover_halt(self):
         self.run_bb(
             "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",
             prover = 40,

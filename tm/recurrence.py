@@ -236,7 +236,8 @@ class Prover:
                 color,
                 state == next_state)
 
-            state = next_state
+            if (state := next_state) == -1:
+                return None
 
         return rec_rule, state
 
