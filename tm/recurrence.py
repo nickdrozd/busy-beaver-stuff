@@ -311,7 +311,8 @@ class Prover:
         for _ in range(next_delta):
             result = self.run_simulator(delta, state, tag_tape)
 
-            assert result is not None
+            if result is None:
+                return None
 
             rec_rule, end_state = result
 
