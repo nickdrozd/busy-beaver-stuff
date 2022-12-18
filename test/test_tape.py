@@ -47,7 +47,7 @@ class TestTape(TestCase):
             prover = 10)
 
         self.assert_signature(
-            '0[0]')
+            '[0]')
 
     def test_copy(self):
         self.run_bb(
@@ -182,7 +182,7 @@ class TestBlocks(TestCase):
 
         self.step(0, 0, 0)
 
-        self.assert_tape([[1, 4]], (0, [0]), [[0, 1]])
+        self.assert_tape([[1, 4]], (0, [0]), [])
 
         self.step(1, 1, 0)
 
