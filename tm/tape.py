@@ -89,11 +89,7 @@ class Tape(BlockTape):
 
     @property
     def blank(self) -> bool:
-        return (
-            self.scan == 0
-            and all(c == 0 for (c, _) in self.lspan)
-            and all(c == 0 for (c, _) in self.rspan)
-        )
+        return self.scan == 0 and not self.lspan and not self.rspan
 
     @property
     def marks(self) -> int:
