@@ -40,25 +40,25 @@ jobs:
         run: |
           make generate
 
-  Mac-Idris:
-    runs-on: macos-latest
+  # Mac-Idris:
+  #   runs-on: macos-latest
 
-    steps:
-      - uses: actions/checkout@v2
+  #   steps:
+  #     - uses: actions/checkout@v2
 
-      - name: Test C
-        run: |
-          cc --version
-          make machines
+  #     - name: Test C
+  #       run: |
+  #         cc --version
+  #         make machines
 
-      - name: Install Idris
-        run: |
-          brew --version
-          brew update
-          brew upgrade
-          brew --version
-          brew install coreutils
-          brew install idris2
+  #     - name: Install Idris
+  #       run: |
+  #         brew --version
+  #         brew update
+  #         brew upgrade
+  #         brew --version
+  #         brew install coreutils
+  #         brew install idris2
 
-      - name: Test Idris
-        run: make idris
+  #     - name: Test Idris
+  #       run: make idris
