@@ -2037,9 +2037,9 @@ class Fast(TuringTest):
             if len(prog) > 35:
                 continue
 
-            for back in range(2, 5):
+            for back in range(1, 5):
                 self.run_bb(
-                    BacksymbolMacro(prog, [back]))
+                    BacksymbolMacro(prog, [back] * back))
 
                 self.assertIsNotNone(
                     self.machine.simple_termination)
