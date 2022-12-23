@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from tm.tape import Tape
 from tm.parse import tcompile, st_str, GetCompInstr
-from tm.program import Program
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
 State = int
@@ -10,8 +9,6 @@ Color = int
 Action = tuple[State, Color]
 
 LinRec = tuple[int | None, int]
-
-ProgLike = str | Program | GetCompInstr
 
 TERM_CATS = (
     'halted',
@@ -23,7 +20,7 @@ TERM_CATS = (
 )
 
 class Machine:
-    program: ProgLike
+    program: str | GetCompInstr
 
     tape: Tape
     state: State
@@ -47,7 +44,7 @@ class Machine:
 
     undfnd: tuple[int, tuple[str, int]] | None = None
 
-    def __init__(self, program: ProgLike):
+    def __init__(self, program: str | GetCompInstr):
         self.program = program
 
     def __str__(self) -> str:
@@ -100,8 +97,6 @@ class Machine:
         comp: GetCompInstr = (
             tcompile(self.program)
             if isinstance(self.program, str) else
-            tcompile(str(self.program))
-            if isinstance(self.program, Program) else
             self.program
         )
 

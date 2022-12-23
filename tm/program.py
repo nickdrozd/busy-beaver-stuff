@@ -8,8 +8,8 @@ from collections.abc import Iterator
 
 from tm import Graph
 from tm.tape import Tape
-from tm.parse import parse, st_str, str_st, tcompile
-from tm.parse import Color, Shift, State, Instr
+from tm.parse import parse, st_str, str_st, tcompile, comp_instr
+from tm.parse import Color, Shift, State, Instr, CompSlot, CompInstr
 
 Slot = tuple[State, Color]
 
@@ -41,16 +41,24 @@ class Program:
     @overload
     def __getitem__(self, slot: Slot) -> Instr | None: ...
 
+    @overload
+    def __getitem__(self, slot: CompSlot) -> CompInstr | None: ...
+
     def __getitem__(
             self,
-            slot: State | Slot,
-    ) -> dict[Color, Instr | None] | Instr | None:
+            slot: State | Slot | CompSlot,
+    ) -> dict[Color, Instr | None] | Instr | CompInstr | None:
         if isinstance(slot, State):
             return self.prog[slot]
 
         state, color = slot
 
-        return self.prog[state][color]
+        if isinstance(state, State):
+            return self.prog[state][color]
+
+        return comp_instr(
+            self.prog[st_str(state)][color]
+        )
 
     def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
         state, color = slot
