@@ -393,8 +393,7 @@ class Program:
                     if instr is None:
                         continue
 
-                    trans: State = instr[2]
-                    shift: Shift = instr[1]
+                    _, shift, trans = instr
 
                     if trans != state:
                         continue
