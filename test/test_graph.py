@@ -276,6 +276,10 @@ class TestGraph(TestCase):
                 <= self.graph.reflexive_states
             ))
 
+            if len(self.graph.states) == 2:
+                self.assertTrue(
+                    self.graph.is_simple)
+
     def test_spaghetti(self):
         for prog in SPAGHETTI:
             graph = Graph(prog)
