@@ -39,71 +39,6 @@ PROGS: dict[
     )
 }
 
-class TestProgram(TestCase):
-    prog: Program
-
-    def assert_used_states(self, states: set[str]):
-        self.assertEqual(
-            states,
-            set(self.prog.used_states))
-
-    def assert_available_states(self, states: set[str]):
-        self.assertEqual(
-            states,
-            set(self.prog.available_states))
-
-    def assert_used_colors(self, colors: set[int]):
-        self.assertEqual(
-            colors,
-            set(map(int, self.prog.used_colors)))
-
-    def assert_available_colors(self, colors: set[int]):
-        self.assertEqual(
-            colors,
-            set(map(int, self.prog.available_colors)))
-
-    def assert_last_slot(self, slot: str | None):
-        self.assertEqual(
-            (slot[0], int(slot[1])) if slot is not None else None,
-            self.prog.last_slot)
-
-    def assert_slots(self, slots: tuple[str, ...]):
-        self.assertEqual(
-            tuple((slot[0], int(slot[1])) for slot in slots),
-            self.prog.slots)
-
-    def test_used_available(self):
-        # pylint: disable = line-too-long
-        for prog, (used_st, used_co, avail_st, avail_co, last, slots) in PROGS.items():
-            self.prog = Program(prog)
-
-            self.assert_used_states(used_st)
-            self.assert_used_colors(used_co)
-            self.assert_available_states(avail_st)
-            self.assert_available_colors(avail_co)
-            self.assert_last_slot(last)
-            self.assert_slots(slots)
-
-    def test_branch(self):
-        for (prog, loc), extensions in BRANCH.items():
-            self.assertEqual(
-                set(Program(prog).branch((loc[0], int(loc[1])))),
-                extensions)
-
-        self.assertFalse(
-            tuple(
-                Program(
-                    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA").branch(
-                        ('C', 0),
-                        halt = True)))
-
-    def test_normalize(self):
-        for norm, devs in NORMALIZE.items():
-            for dev in devs:
-                self.assertEqual(
-                    norm,
-                    Program(dev).normalize())
-
 BRANCH = {
     ("1RB 1LB  1LB 1LA", 'A1'): {
         '1RB 0LA  1LB 1LA',
@@ -182,3 +117,68 @@ NORMALIZE = {
         '1LB 1RD  1LE 1LB  0LE 0LD  0LF 1LF  1RE 1RA  0RC 1RC',
     },
 }
+
+class TestProgram(TestCase):
+    prog: Program
+
+    def assert_used_states(self, states: set[str]):
+        self.assertEqual(
+            states,
+            set(self.prog.used_states))
+
+    def assert_available_states(self, states: set[str]):
+        self.assertEqual(
+            states,
+            set(self.prog.available_states))
+
+    def assert_used_colors(self, colors: set[int]):
+        self.assertEqual(
+            colors,
+            set(map(int, self.prog.used_colors)))
+
+    def assert_available_colors(self, colors: set[int]):
+        self.assertEqual(
+            colors,
+            set(map(int, self.prog.available_colors)))
+
+    def assert_last_slot(self, slot: str | None):
+        self.assertEqual(
+            (slot[0], int(slot[1])) if slot is not None else None,
+            self.prog.last_slot)
+
+    def assert_slots(self, slots: tuple[str, ...]):
+        self.assertEqual(
+            tuple((slot[0], int(slot[1])) for slot in slots),
+            self.prog.slots)
+
+    def test_used_available(self):
+        # pylint: disable = line-too-long
+        for prog, (used_st, used_co, avail_st, avail_co, last, slots) in PROGS.items():
+            self.prog = Program(prog)
+
+            self.assert_used_states(used_st)
+            self.assert_used_colors(used_co)
+            self.assert_available_states(avail_st)
+            self.assert_available_colors(avail_co)
+            self.assert_last_slot(last)
+            self.assert_slots(slots)
+
+    def test_branch(self):
+        for (prog, loc), extensions in BRANCH.items():
+            self.assertEqual(
+                set(Program(prog).branch((loc[0], int(loc[1])))),
+                extensions)
+
+        self.assertFalse(
+            tuple(
+                Program(
+                    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA").branch(
+                        ('C', 0),
+                        halt = True)))
+
+    def test_normalize(self):
+        for norm, devs in NORMALIZE.items():
+            for dev in devs:
+                self.assertEqual(
+                    norm,
+                    Program(dev).normalize())
