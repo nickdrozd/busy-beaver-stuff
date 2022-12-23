@@ -19,19 +19,21 @@ idris :
 
 ## Python ##############################
 
+PYTHON = python3
+
 MODULES = tm generate test *.py
 
 lint :
-	pylint --version
-	pylint --enable-all-extensions $(MODULES)
+	$(PYTHON) -m pylint --version
+	$(PYTHON) -m pylint --enable-all-extensions $(MODULES)
 	$(MAKE) type
 
 type :
-	mypy --version
-	mypy $(MODULES)
+	$(PYTHON) -m mypy --version
+	$(PYTHON) -m mypy $(MODULES)
 
 compile : clean-python
-	mypyc tm generate --exclude tree
+	$(PYTHON) -m mypyc tm generate --exclude tree
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
@@ -43,7 +45,7 @@ TP = test.test_tape
 
 SHORT_TESTS = $(PROG) $(GRAPH) $(LR) $(TREEF) $(CG) $(TP) $(TUR)
 
-PYTEST = python3 -m unittest
+PYTEST = $(PYTHON) -m unittest
 
 test :
 	$(PYTEST) -v $(SHORT_TESTS)
@@ -51,7 +53,7 @@ test :
 test-all : compile
 	$(PYTEST) discover -v
 
-COVERAGE = coverage
+COVERAGE = $(PYTHON) -m coverage
 
 coverage : clean-python
 	$(COVERAGE) --version
@@ -67,7 +69,7 @@ special :
 ## Program files (non-phony) ###########
 
 TIME = time -p
-TREE = python3 tree_gen.py
+TREE = $(PYTHON) tree_gen.py
 
 3-2.prog :
 	$(TIME) $(TREE) 3 2 | sort > $@
