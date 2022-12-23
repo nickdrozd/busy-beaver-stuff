@@ -2001,31 +2001,6 @@ class Fast(TuringTest):
                     (step, (slot[0], int(slot[1]))),
                     self.machine.undfnd)
 
-    def test_spaghetti(self):
-        for prog in SPAGHETTI:
-            graph = Graph(prog)
-
-            self.assertEqual(
-                len(graph.reduced),
-                len(graph.states),
-                prog)
-
-            self.assertTrue(
-                graph.is_dispersed or '_' in prog,
-                prog)
-
-        for prog, kernel in KERNEL.items():
-            graph = Graph(prog)
-
-            self.assertEqual(
-                len(graph.reduced),
-                kernel,
-                prog)
-
-            self.assertFalse(
-                graph.is_dispersed and graph.is_irreflexive,
-                prog)
-
     def test_block_macro_steps(self):
         self._test_block_macro_steps(4, 5)
 

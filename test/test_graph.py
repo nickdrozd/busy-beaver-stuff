@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from test.test_turing import SPAGHETTI, KERNEL
+
 from tm import Graph
 
 A, B, C, D, E = "A", "B", "C", "D", "E"
@@ -273,3 +275,28 @@ class TestGraph(TestCase):
                 self.graph.zero_reflexive_states
                 <= self.graph.reflexive_states
             ))
+
+    def test_spaghetti(self):
+        for prog in SPAGHETTI:
+            graph = Graph(prog)
+
+            self.assertEqual(
+                len(graph.reduced),
+                len(graph.states),
+                prog)
+
+            self.assertTrue(
+                graph.is_dispersed or '_' in prog,
+                prog)
+
+        for prog, kernel in KERNEL.items():
+            graph = Graph(prog)
+
+            self.assertEqual(
+                len(graph.reduced),
+                kernel,
+                prog)
+
+            self.assertFalse(
+                graph.is_dispersed and graph.is_irreflexive,
+                prog)
