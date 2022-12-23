@@ -398,7 +398,7 @@ class Program:
                     if trans != state:
                         continue
 
-                    for color in sorted(self.colors):
+                    for color in self.colors:
                         next_tape = tape.copy()
 
                         _ = next_tape.step(
