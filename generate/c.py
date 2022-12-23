@@ -157,11 +157,7 @@ def make_labels(prog: str) -> str:
             f' {(st := st_str(i))}:'
             + make_switch(
                 st,
-                tuple(
-                    instr
-                    if instr is not None else (1, 'R', '_')
-                    for instr in instrs
-                ),
+                tuple(instr or (1, 'R', '_') for instr in instrs),
             )
         )
         for i, instrs in
