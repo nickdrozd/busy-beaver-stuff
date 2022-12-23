@@ -344,7 +344,7 @@ class Program:
             (
                 1,
                 str_st(state),
-                Tape([], int(color), []),
+                Tape([], color, []),
                 0,
                 History(tapes = {}),
             )
@@ -399,7 +399,7 @@ class Program:
                     if str_st(trans) != state:
                         continue
 
-                    for color in sorted(map(int, self.colors)):
+                    for color in sorted(self.colors):
                         next_tape = tape.copy()
 
                         _ = next_tape.step(
