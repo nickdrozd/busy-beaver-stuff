@@ -7,11 +7,7 @@ def make_comment(st: State, co: Color) -> str:
 
 
 def make_shift(sh: Shift) -> str:
-    return (
-        'RIGHT'
-        if sh == 'R' else
-        'LEFT'
-    ) + ';'
+    return ('RIGHT' if sh == 'R' else 'LEFT') + ';'
 
 
 def make_trans(tr: State) -> str:
@@ -19,11 +15,7 @@ def make_trans(tr: State) -> str:
 
 
 def make_binary_write(pr: Color) -> str:
-    return (
-        'PRINT'
-        if pr == 1 else
-        'ERASE'
-    ) + ';'
+    return ('PRINT' if pr == 1 else 'ERASE') + ';'
 
 
 def make_n_way_write(pr: Color) -> str:
@@ -160,8 +152,7 @@ def make_labels(prog: str) -> str:
                 tuple(instr or (1, 'R', '_') for instr in instrs),
             )
         )
-        for i, instrs in
-        enumerate(parse(prog))
+        for i, instrs in enumerate(parse(prog))
     ])
 
 
