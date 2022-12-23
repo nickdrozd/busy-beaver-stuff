@@ -1,8 +1,22 @@
-from unittest import TestCase
+from tm import Program  # pylint: disable = wrong-import-order
 
-from test.test_turing import UNDEFINED
-
-from tm import Program
+from test.test_turing import (
+    BackwardReasoning,
+    BLANKERS,
+    CANT_BLANK_FALSE_NEGATIVES,
+    CANT_SPIN_OUT_FALSE_NEGATIVES,
+    DONT_BLANK,
+    DONT_SPIN_OUT,
+    DO_HALT,
+    DO_SPIN_OUT,
+    HALT_SLOW,
+    SPINOUT,
+    SPINOUT_BLANK,
+    SPINOUT_BLANK_SLOW,
+    SPINOUT_SLOW,
+    RECUR_TOO_SLOW,
+    UNDEFINED,
+)
 
 PROGS: dict[
     str,
@@ -120,7 +134,7 @@ NORMALIZE = {
     },
 }
 
-class TestProgram(TestCase):
+class TestProgram(BackwardReasoning):
     prog: Program
 
     def assert_used_states(self, states: set[str]):
@@ -195,3 +209,51 @@ class TestProgram(TestCase):
                     Program(prog).instr_seq
                 },
             )
+
+    def test_mother_of_giants(self):
+        mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
+
+        for prog in Program(mother).branch(('E', 0)):
+            self.assert_could_blank(prog)
+            self.assert_could_spin_out(prog)
+
+    def test_blank(self):
+        for prog in DONT_BLANK:
+            self.assert_cant_blank(prog)
+
+        for prog in BLANKERS:
+            self.assert_simple(prog)
+            self.assert_could_blank(prog)
+
+    def test_false_negatives(self):
+        for prog in CANT_BLANK_FALSE_NEGATIVES:
+            self.assertNotIn(prog, BLANKERS)
+            self.assert_could_blank(prog)
+
+        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
+            self.assertNotIn(
+                prog,
+                SPINOUT
+                 | SPINOUT_SLOW
+                 | SPINOUT_BLANK
+                 | SPINOUT_BLANK_SLOW)
+
+            self.assert_could_spin_out(prog)
+
+    def test_halt(self):
+        for prog in DO_HALT | set(HALT_SLOW):
+            self.assert_could_halt(prog)
+
+    def test_spinout(self):
+        for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
+            self.assert_simple(prog)
+            self.assert_could_spin_out(prog)
+
+        for prog in DONT_SPIN_OUT:
+            self.assert_cant_spin_out(prog)
+
+    def test_recur(self):
+        for prog in RECUR_TOO_SLOW:
+            self.assert_cant_halt(prog)
+            self.assert_cant_blank(prog)
+            self.assert_cant_spin_out(prog)

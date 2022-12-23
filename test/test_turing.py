@@ -1406,6 +1406,13 @@ class BackwardReasoning(TestCase):
                 CANT_SPIN_OUT_FALSE_NEGATIVES,
                 f'spin out false negative: "{prog}"')
 
+    def assert_simple(self, prog: str):
+        self.assertTrue(
+            Graph(prog).is_simple
+            or prog in SPAGHETTI
+            or prog in KERNEL
+        )
+
 
 class TuringTest(BackwardReasoning):
     prog: str
@@ -1429,13 +1436,6 @@ class TuringTest(BackwardReasoning):
             or prog in MODULAR
             or 'A' not in prog
             or '...' in prog
-        )
-
-    def assert_simple(self, prog: str):
-        self.assertTrue(
-            Graph(prog).is_simple
-            or prog in SPAGHETTI
-            or prog in KERNEL
         )
 
     def assert_marks(self, marks: int):
@@ -1866,28 +1866,13 @@ class TuringTest(BackwardReasoning):
 
 class Fast(TuringTest):
     def test_halt(self):
-        for prog in DO_HALT | set(HALT_SLOW):
-            self.assert_could_halt(prog)
-
         self._test_halt(HALT)
 
     def test_spinout(self):
-        for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
-            self.assert_simple(prog)
-            self.assert_could_spin_out(prog)
-
-        for prog in DONT_SPIN_OUT:
-            self.assert_cant_spin_out(prog)
-
         self._test_spinout(SPINOUT)
         self._test_spinout(SPINOUT_BLANK, blank = True)
 
     def test_recur(self):
-        for prog in RECUR_TOO_SLOW:
-            self.assert_cant_halt(prog)
-            self.assert_cant_blank(prog)
-            self.assert_cant_spin_out(prog)
-
         self._test_recur(
             RECUR_COMPACT
             | RECUR_DIFFUSE
@@ -1954,36 +1939,6 @@ class Fast(TuringTest):
             BacksymbolMacro("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_", [2]),
             prover = 104,
         )
-
-    def test_blank(self):
-        for prog in DONT_BLANK:
-            self.assert_cant_blank(prog)
-
-        for prog in BLANKERS:
-            self.assert_simple(prog)
-            self.assert_could_blank(prog)
-
-    def test_false_negatives(self):
-        for prog in CANT_BLANK_FALSE_NEGATIVES:
-            self.assertNotIn(prog, BLANKERS)
-            self.assert_could_blank(prog)
-
-        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
-            self.assertNotIn(
-                prog,
-                SPINOUT
-                 | SPINOUT_SLOW
-                 | SPINOUT_BLANK
-                 | SPINOUT_BLANK_SLOW)
-
-            self.assert_could_spin_out(prog)
-
-    def test_mother_of_giants(self):
-        mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
-
-        for prog in Program(mother).branch(('E', 0)):
-            self.assert_could_blank(prog)
-            self.assert_could_spin_out(prog)
 
     def test_undefined(self):
         for sequence in UNDEFINED.values():
