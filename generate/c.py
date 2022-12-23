@@ -1,5 +1,5 @@
 from tm.parse import parse, st_str
-from tm.parse import Color, Shift, State, Instr
+from tm.instrs import Color, Shift, State, Instr
 
 
 def make_comment(st: State, co: Color) -> str:

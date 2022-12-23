@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from tm.parse import tcompile, GetCompInstr
+from tm.parse import tcompile
+from tm.instrs import GetCompInstr
 
 Color = int
 State = int

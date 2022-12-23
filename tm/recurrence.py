@@ -4,7 +4,7 @@ from copy import copy
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from tm.parse import GetCompInstr
+from tm.instrs import GetCompInstr
 from tm.tape import PtrTape, Tape, TagTape, Signature, Rule
 
 State = int

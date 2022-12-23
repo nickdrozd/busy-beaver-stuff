@@ -1,5 +1,5 @@
 from tm.parse import parse, st_str
-from tm.parse import Color, State
+from tm.instrs import Color, State
 
 HALT = '_'
 UNDEFINED = '.'

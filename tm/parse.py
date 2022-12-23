@@ -1,15 +1,4 @@
-from typing import Protocol
-from abc import abstractmethod
-
-Color = int
-Shift = str
-State = str
-
-Instr = tuple[Color, Shift, State]
-
-CompSlot = tuple[int, int]
-CompInstr = tuple[int, int, int]
-CompProg = dict[CompSlot, CompInstr | None]
+from tm.instrs import Instr, CompInstr, CompProg
 
 
 def parse(program: str) -> tuple[tuple[Instr | None, ...], ...]:
@@ -45,9 +34,3 @@ def st_str(state: int) -> str:
 
 def str_st(state: str) -> int:
     return -1 if state == '_' else ord(state) - 65
-
-
-class GetCompInstr(Protocol):
-    @abstractmethod
-    def __getitem__(self, slot: CompSlot) -> CompInstr | None:
-        ...

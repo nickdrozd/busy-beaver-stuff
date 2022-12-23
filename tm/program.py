@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from tm import Graph
 from tm.tape import Tape
 from tm.parse import parse, st_str, str_st, tcompile, comp_instr
-from tm.parse import Color, Shift, State, Instr, CompSlot, CompInstr
+from tm.instrs import Color, Shift, State, Instr, CompSlot, CompInstr
 
 Slot = tuple[State, Color]
 

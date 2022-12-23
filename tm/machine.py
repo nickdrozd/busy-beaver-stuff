@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from tm.tape import Tape
-from tm.parse import tcompile, st_str, GetCompInstr
+from tm.parse import tcompile, st_str
+from tm.instrs import GetCompInstr
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
 State = int
