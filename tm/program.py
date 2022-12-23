@@ -8,6 +8,8 @@ from collections.abc import Iterator
 
 from tm import Graph
 from tm.tape import Tape
+from tm.machine import Machine
+from tm.recurrence import History
 from tm.parse import parse, st_str, str_st, tcompile, comp_instr
 from tm.instrs import Color, Shift, State, Instr, CompSlot, CompInstr
 
@@ -176,9 +178,6 @@ class Program:
 
     @property
     def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
-        # pylint: disable = import-outside-toplevel
-        from tm import Machine
-
         partial = Program.empty(len(self.states), len(self.colors))
 
         for _ in range(len(self.states) * len(self.colors) - 1):
@@ -326,10 +325,6 @@ class Program:
             max_attempts: int = 24,
             blank: bool = False,
     ) -> bool:
-        # pylint: disable = import-outside-toplevel
-        from tm import Machine
-        from tm.recurrence import History
-
         configs: list[
             tuple[int, State, Tape, int, History]
         ] = [
