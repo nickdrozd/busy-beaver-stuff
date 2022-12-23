@@ -260,7 +260,7 @@ class TestGraph(TestCase):
         for prog, (flat, norm, conn, irr, zrefl, entries, exits) in GRAPHS.items():
             self.graph = Graph(prog)
 
-            print(self.graph)
+            _ =  str(self.graph)
             _ = repr(self.graph)
 
             self.assert_flat(flat)
