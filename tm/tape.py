@@ -64,6 +64,9 @@ class Tape(BlockTape):
             for color, count in reversed(self.rspan)
         ])
 
+    def __hash__(self) -> int:
+        return hash(str(self))
+
     def copy(self) -> Tape:
         return Tape(
             [[color, count] for color, count in self.lspan],

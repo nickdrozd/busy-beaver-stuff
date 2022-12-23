@@ -347,7 +347,7 @@ class Program:
 
         max_repeats = max_attempts // 2
 
-        seen: dict[State, set[str]] = defaultdict(set)
+        seen: dict[State, set[Tape]] = defaultdict(set)
 
         while configs:  # pylint: disable = while-used
             step, state, tape, repeat, history = configs.pop()
@@ -358,10 +358,10 @@ class Program:
             if state == 'A' and tape.blank:
                 return False
 
-            if (tape_hash := str(tape)) in seen[state]:
+            if tape in seen[state]:
                 continue
 
-            seen[state].add(tape_hash)
+            seen[state].add(tape)
 
             history.add_state_at_step(step, str_st(state))
             history.add_tape_at_step(step, tape)
