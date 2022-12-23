@@ -93,10 +93,8 @@ class Fast(TestTree):
         q22q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 45, 48, 2)):
-                return
-
-            q22q.put(prog)
+            if not any(run_for_none(prog, 45, 48, 2)):  # no-coverage
+                q22q.put(prog)
 
         run_tree_gen(
             states = 2,
