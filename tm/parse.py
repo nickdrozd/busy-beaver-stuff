@@ -1,3 +1,6 @@
+from typing import Protocol
+from abc import abstractmethod
+
 Color = int
 Shift = str
 State = str
@@ -42,3 +45,9 @@ def st_str(state: int) -> str:
 
 def str_st(state: str) -> int:
     return -1 if state == '_' else ord(state) - 65
+
+
+class GetCompInstr(Protocol):
+    @abstractmethod
+    def __getitem__(self, slot: CompSlot) -> CompInstr | None:
+        ...

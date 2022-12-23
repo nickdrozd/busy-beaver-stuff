@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from tm.tape import Tape
-from tm.parse import tcompile, st_str, CompProg
-from tm.macro import MacroProg
+from tm.parse import tcompile, st_str, GetCompInstr
 from tm.program import Program
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
@@ -12,7 +11,7 @@ Action = tuple[State, Color]
 
 LinRec = tuple[int | None, int]
 
-ProgLike = str | Program | MacroProg | CompProg
+ProgLike = str | Program | GetCompInstr
 
 TERM_CATS = (
     'halted',
@@ -98,7 +97,7 @@ class Machine:
             tape: Tape | None = None,
             prover: int | None = None,
     ) -> Machine:
-        comp: MacroProg | CompProg = (
+        comp: GetCompInstr = (
             tcompile(self.program)
             if isinstance(self.program, str) else
             tcompile(str(self.program))

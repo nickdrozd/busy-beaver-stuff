@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from tm.parse import tcompile, CompProg
+from tm.parse import tcompile, GetCompInstr
 
 Color = int
 State = int
@@ -17,7 +17,7 @@ Config = tuple[State, tuple[bool, Tape]]
 @dataclass
 class MacroProg:
     program: str | MacroProg
-    comp: CompProg | MacroProg
+    comp: GetCompInstr
 
     base_states: int
     base_colors: int

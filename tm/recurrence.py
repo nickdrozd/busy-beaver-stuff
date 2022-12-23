@@ -4,9 +4,8 @@ from copy import copy
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from tm.parse import CompProg
+from tm.parse import GetCompInstr
 from tm.tape import PtrTape, Tape, TagTape, Signature, Rule
-from tm.macro import MacroProg
 
 State = int
 Color = int
@@ -187,7 +186,7 @@ class InfiniteRule(Exception):
 
 @dataclass
 class Prover:
-    prog: CompProg | MacroProg
+    prog: GetCompInstr
 
     diff_lim: int | None
 
