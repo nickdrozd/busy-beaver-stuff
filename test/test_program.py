@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from test.test_turing import UNDEFINED
+
 from tm import Program
 
 PROGS: dict[
@@ -182,3 +184,14 @@ class TestProgram(TestCase):
                 self.assertEqual(
                     norm,
                     Program(dev).normalize())
+
+    def test_undefined(self):
+        for prog, sequence in UNDEFINED.items():
+            self.assertEqual(
+                sequence,
+                {
+                    partial: (step, state + str(color))
+                    for partial, step, (state, color) in
+                    Program(prog).instr_seq
+                },
+            )

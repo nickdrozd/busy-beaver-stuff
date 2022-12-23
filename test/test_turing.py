@@ -1984,16 +1984,7 @@ class Fast(TuringTest):
             self.assert_could_spin_out(prog)
 
     def test_undefined(self):
-        for prog, sequence in UNDEFINED.items():
-            self.assertEqual(
-                sequence,
-                {
-                    partial: (step, state + str(color))
-                    for partial, step, (state, color) in
-                    Program(prog).instr_seq
-                },
-            )
-
+        for sequence in UNDEFINED.values():
             for partial, (step, slot) in sequence.items():
                 self.run_bb(partial, normal = False)
 
