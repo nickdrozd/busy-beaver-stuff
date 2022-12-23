@@ -339,11 +339,11 @@ class Program:
         from tm.recurrence import History
 
         configs: list[
-            tuple[int, int, Tape, int, History]
+            tuple[int, State, Tape, int, History]
         ] = [
             (
                 1,
-                str_st(state),
+                state,
                 Tape([], color, []),
                 0,
                 History(tapes = {}),
@@ -355,7 +355,7 @@ class Program:
 
         max_repeats = max_attempts // 2
 
-        seen: dict[int, set[str]] = defaultdict(set)
+        seen: dict[State, set[str]] = defaultdict(set)
 
         while configs:  # pylint: disable = while-used
             step, state, tape, repeat, history = configs.pop()
@@ -363,7 +363,7 @@ class Program:
             if step > max_attempts:
                 return False
 
-            if state == 0 and tape.blank:
+            if state == 'A' and tape.blank:
                 return False
 
             if (tape_hash := str(tape)) in seen[state]:
@@ -371,12 +371,12 @@ class Program:
 
             seen[state].add(tape_hash)
 
-            history.add_state_at_step(step, state)
+            history.add_state_at_step(step, str_st(state))
             history.add_tape_at_step(step, tape)
 
             if history.check_rec(
                     step,
-                    action := (state, tape.scan)) is None:
+                    action := (str_st(state), tape.scan)) is None:
                 repeat = 0
             else:
                 repeat += 1
@@ -388,7 +388,7 @@ class Program:
 
             # print(step, state, tape)
 
-            for entry in sorted(self.graph.entry_points[st_str(state)]):
+            for entry in sorted(self.graph.entry_points[state]):
                 for _, instr in self[entry].items():
                     if instr is None:
                         continue
@@ -396,7 +396,7 @@ class Program:
                     trans: State = instr[2]
                     shift: Shift = instr[1]
 
-                    if str_st(trans) != state:
+                    if trans != state:
                         continue
 
                     for color in sorted(self.colors):
@@ -413,7 +413,7 @@ class Program:
                         run = Machine(comp).run(
                             step_lim = step + 1,
                             tape = next_tape.copy(),
-                            state = ord(entry) - 65,
+                            state = str_st(entry),
                         )
 
                         result = (
@@ -435,7 +435,7 @@ class Program:
 
                         configs.append((
                             step + 1,
-                            str_st(entry),
+                            entry,
                             next_tape,
                             repeat,
                             history.copy(),
