@@ -4,7 +4,7 @@ from multiprocessing import Queue
 from collections.abc import Iterator
 
 from tm import Machine, LinRecMachine
-from tm import BlockMacro, BacksymbolMacro
+from tm import BlockMacro, BacksymbolMacro, Program
 from tm.macro import MacroProg
 from generate.tree  import run_tree_gen
 
@@ -80,6 +80,13 @@ class TestTree(TestCase):
             count,
             len(progs))
 
+    def assert_cant_terminate(self, progs: set[str]):
+        for prog in map(Program, progs):
+            self.assertTrue(
+                prog.cant_halt
+                and prog.cant_blank
+                and prog.cant_spin_out)
+
 
 class Fast(TestTree):
     def test_22(self):
@@ -122,8 +129,10 @@ class Fast(TestTree):
 
         self.assert_progs(
             3,
-            queue_to_set(q32q),
+            q32 := queue_to_set(q32q),
             'holdouts_32q')
+
+        self.assert_cant_terminate(q32)
 
     def test_23(self):
         q23q: Q[str] = Queue()
@@ -152,6 +161,8 @@ class Fast(TestTree):
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
             q23)
+
+        self.assert_cant_terminate(q23)
 
 
 class Slow(TestTree):
