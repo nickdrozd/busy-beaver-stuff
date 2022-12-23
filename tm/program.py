@@ -84,16 +84,8 @@ class Program:
         return set(self.prog.keys())
 
     @property
-    def non_start_states(self) -> list[State]:
-        return sorted(self.states)[1:]
-
-    @property
     def colors(self) -> set[Color]:
         return set(range(len(self.prog['A'])))
-
-    @property
-    def non_blank_colors(self) -> list[Color]:
-        return sorted(self.colors)[1:]
 
     @property
     def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
@@ -247,7 +239,7 @@ class Program:
 
     def normalize_states(self) -> Program:
         for _ in self.states:
-            todo = self.non_start_states
+            todo = sorted(self.states)[1:]
 
             for _, _, state in self.used_instructions:
                 if state not in todo:
@@ -267,7 +259,7 @@ class Program:
 
     def normalize_colors(self) -> Program:
         for _ in self.colors:
-            todo = self.non_blank_colors
+            todo = sorted(self.colors)[1:]
 
             for color, _, _ in self.used_instructions:
                 if color not in todo:
