@@ -402,19 +402,12 @@ class Program:
                             state = str_st(entry),
                         )
 
-                        result = (
-                            # pylint: disable = bad-builtin
-                            getattr(run, final_prop)
-                            if not blank else
-                            (
-                                min(run.blanks.values())
-                                if run.blanks else
-                                None
-                            )
-                        )
-
-                        if result is None:
+                        # pylint: disable = bad-builtin
+                        if not (result := getattr(run, final_prop)):
                             continue
+
+                        if blank:
+                            result = min(run.blanks.values())
 
                         if abs(result - step) > 1:
                             continue
