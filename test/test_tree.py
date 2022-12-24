@@ -4,7 +4,7 @@ from multiprocessing import Queue
 from collections.abc import Iterator
 
 from tm import Machine, LinRecMachine
-from tm import BlockMacro, BacksymbolMacro, Program
+from tm import BlockMacro, BacksymbolMacro, Program, Graph
 from tm.macro import MacroProg
 from generate.tree  import run_tree_gen
 
@@ -87,6 +87,12 @@ class TestTree(TestCase):
                 and prog.cant_blank
                 and prog.cant_spin_out)
 
+    def assert_simple_and_connected(self, progs: set[str]):
+        for graph in map(Graph, progs):
+            self.assertTrue(
+                graph.is_simple
+                and graph.is_strongly_connected)
+
 
 class Fast(TestTree):
     def test_22(self):
@@ -131,6 +137,7 @@ class Fast(TestTree):
             'holdouts_32q')
 
         self.assert_cant_terminate(q32)
+        self.assert_simple_and_connected(q32)
 
     def test_23(self):
         q23q: Q[str] = Queue()
@@ -161,6 +168,7 @@ class Fast(TestTree):
             q23)
 
         self.assert_cant_terminate(q23)
+        self.assert_simple_and_connected(q23)
 
 
 class Slow(TestTree):
