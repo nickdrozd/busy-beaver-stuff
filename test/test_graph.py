@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from test.test_turing import SPAGHETTI, KERNEL
+from test.prog_data import SPAGHETTI, KERNEL
 
 from tm import Graph
 

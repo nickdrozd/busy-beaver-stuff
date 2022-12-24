@@ -1,7 +1,9 @@
-from tm import Program  # pylint: disable = wrong-import-order
+from tm import Program
 
-from test.test_turing import (
-    BackwardReasoning,
+# pylint: disable = wrong-import-order
+from test.test_turing import BackwardReasoning
+
+from test.prog_data import (
     BLANKERS,
     CANT_BLANK_FALSE_NEGATIVES,
     CANT_SPIN_OUT_FALSE_NEGATIVES,
@@ -10,11 +12,11 @@ from test.test_turing import (
     DO_HALT,
     DO_SPIN_OUT,
     HALT_SLOW,
+    RECUR_TOO_SLOW,
     SPINOUT,
     SPINOUT_BLANK,
     SPINOUT_BLANK_SLOW,
     SPINOUT_SLOW,
-    RECUR_TOO_SLOW,
     UNDEFINED,
 )
 
