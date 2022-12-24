@@ -2,69 +2,18 @@
 
 from math import isclose
 from typing import Any
-from unittest import TestCase, skip, expectedFailure
+from unittest import skip, expectedFailure
 from itertools import product
 from collections.abc import Mapping
 
 from test.prog_data import *
+from test.test_program import BackwardReasoning
 
 from tm.tape import Tape
 from tm.macro import MacroProg
 from tm.parse import st_str
 from tm import Machine, LinRecMachine
 from tm import Graph, Program, BlockMacro, BacksymbolMacro
-
-
-class BackwardReasoning(TestCase):
-    def assert_could_halt(self, prog: str):
-        self.assertFalse(
-            Program(prog).cant_halt,
-            f'halt false positive: {prog}')
-
-    def assert_cant_halt(self, prog: str):
-        self.assertTrue(
-            Program(prog).cant_halt,
-            f'halt false negative: "{prog}"')
-
-    def assert_could_blank(self, prog: str):
-        self.assertFalse(
-            Program(prog).cant_blank,
-            f'blank false positive: "{prog}"')
-
-    def assert_cant_blank(self, prog: str):
-        try:
-            self.assertTrue(
-                Program(prog).cant_blank)
-        except AssertionError:
-            self.assertTrue(
-                prog in CANT_BLANK_FALSE_NEGATIVES
-                or Machine(prog).run(sim_lim = 10).blanks,
-                f'blank false negative: "{prog}"')
-
-    def assert_could_spin_out(self, prog: str):
-        self.assertFalse(
-            Program(prog).cant_spin_out,
-            f'spin out false positive: "{prog}"')
-
-    def assert_cant_spin_out(self, prog: str):
-        if prog in CANT_SPIN_OUT_SLOW:
-            return
-
-        try:
-            self.assertTrue(
-                Program(prog).cant_spin_out)
-        except AssertionError:
-            self.assertIn(
-                prog,
-                CANT_SPIN_OUT_FALSE_NEGATIVES,
-                f'spin out false negative: "{prog}"')
-
-    def assert_simple(self, prog: str):
-        self.assertTrue(
-            Graph(prog).is_simple
-            or prog in SPAGHETTI
-            or prog in KERNEL
-        )
 
 
 class TuringTest(BackwardReasoning):
