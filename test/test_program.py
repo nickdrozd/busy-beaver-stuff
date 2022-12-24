@@ -1,27 +1,9 @@
 from unittest import TestCase
 
-from tm import Program, Machine, Graph
+# pylint: disable = wildcard-import, unused-wildcard-import
+from test.prog_data import *
 
-# pylint: disable = wrong-import-order
-from test.prog_data import (
-    BLANKERS,
-    CANT_BLANK_FALSE_NEGATIVES,
-    CANT_SPIN_OUT_FALSE_NEGATIVES,
-    CANT_SPIN_OUT_SLOW,
-    DONT_BLANK,
-    DONT_SPIN_OUT,
-    DO_HALT,
-    DO_SPIN_OUT,
-    HALT_SLOW,
-    KERNEL,
-    RECUR_TOO_SLOW,
-    SPAGHETTI,
-    SPINOUT,
-    SPINOUT_BLANK,
-    SPINOUT_BLANK_SLOW,
-    SPINOUT_SLOW,
-    UNDEFINED,
-)
+from tm import Program, Machine, Graph
 
 PROGS: dict[
     str,
