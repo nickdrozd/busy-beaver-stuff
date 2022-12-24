@@ -306,7 +306,6 @@ class Program:
             tuple(
                 (slot[0], slot[1])
                 for slot in self.erase_slots),
-            blank = True,
         )
 
     @property
@@ -323,7 +322,6 @@ class Program:
             final_prop: str,
             slots: tuple[Slot, ...],
             max_attempts: int = 24,
-            blank: bool = False,
     ) -> bool:
         configs: list[
             tuple[int, State, Tape, int, History]
@@ -406,7 +404,7 @@ class Program:
                         if not (result := getattr(run, final_prop)):
                             continue
 
-                        if blank:
+                        if final_prop == 'blanks':
                             result = min(run.blanks.values())
 
                         if abs(result - step) > 1:
