@@ -7,8 +7,8 @@ from functools import cached_property
 from collections import defaultdict
 from collections.abc import Iterator
 
-from tm import Graph
 from tm.tape import Tape
+from tm.graph import Graph
 from tm.machine import Machine
 from tm.recurrence import History
 from tm.parse import parse, st_str, str_st, tcompile, comp_instr
