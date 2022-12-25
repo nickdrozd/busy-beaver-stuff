@@ -1,10 +1,16 @@
 from unittest import TestCase
 
-from test.test_tree import read_progs
-
 from tm.parse import st_str
 from tm.machine import LinRecMachine
 from generate.naive import yield_programs
+
+
+def read_progs(name: str) -> set[str]:
+    with open(f'test/data/{name}.prog') as holdouts:
+        return set(
+            prog.strip()
+            for prog in holdouts.readlines()
+        )
 
 
 class TestLinRado(TestCase):
