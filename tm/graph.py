@@ -1,3 +1,5 @@
+from functools import cached_property
+
 from tm.parse import parse, st_str
 from tm.instrs import Color, State
 
@@ -36,22 +38,22 @@ class Graph:
             for dst in conn
         )
 
-    @property
+    @cached_property
     def states(self) -> tuple[State, ...]:
         return tuple(self.arrows)
 
-    @property
+    @cached_property
     def colors(self) -> tuple[Color, ...]:
         return tuple(range(len(self.arrows['A'])))
 
-    @property
+    @cached_property
     def exit_points(self) -> dict[State, set[State]]:
         return {
             state: set(connections) - { HALT, UNDEFINED }
             for state, connections in self.arrows.items()
         }
 
-    @property
+    @cached_property
     def entry_points(self) -> dict[State, set[State]]:
         entries: dict[str, set[str]] = {
             state: set()
@@ -64,7 +66,7 @@ class Graph:
 
         return entries
 
-    @property
+    @cached_property
     def is_normal(self) -> bool:
         flat_graph = self.flatten('')
 
@@ -78,7 +80,7 @@ class Graph:
             )
         ) == tuple(sorted(positions))
 
-    @property
+    @cached_property
     def is_strongly_connected(self) -> bool:
         for state in self.states:
             reachable_from_x = set(self.arrows[state])
@@ -96,7 +98,7 @@ class Graph:
 
         return True
 
-    @property
+    @cached_property
     def reflexive_states(self) -> set[State]:
         return {
             state
@@ -104,7 +106,7 @@ class Graph:
             if state in connections
         }
 
-    @property
+    @cached_property
     def zero_reflexive_states(self) -> set[State]:
         return {
             state
@@ -112,33 +114,33 @@ class Graph:
             if connections[0] == state
         }
 
-    @property
+    @cached_property
     def is_irreflexive(self) -> bool:
         return not bool(self.reflexive_states)
 
-    @property
+    @cached_property
     def is_zero_reflexive(self) -> bool:
         return bool(self.zero_reflexive_states)
 
-    @property
+    @cached_property
     def entries_dispersed(self) -> bool:
         return all(
             len(entries) == len(self.colors)
             for entries in self.entry_points.values()
         )
 
-    @property
+    @cached_property
     def exits_dispersed(self) -> bool:
         return all(
             len(exits) == len(self.colors)
             for exits in self.exit_points.values()
         )
 
-    @property
+    @cached_property
     def is_dispersed(self) -> bool:
         return self.entries_dispersed and self.exits_dispersed
 
-    @property
+    @cached_property
     def reduced(self) -> dict[State, set[State]]:
         graph = self.exit_points
 
@@ -156,7 +158,7 @@ class Graph:
             if connections
         }
 
-    @property
+    @cached_property
     def is_simple(self) -> bool:
         return not bool(self.reduced)
 
