@@ -62,6 +62,9 @@ coverage : clean-python
 	$(COVERAGE) combine --quiet
 	$(COVERAGE) html
 
+diagrams :
+	pyreverse -o png tm generate test
+
 # PYTHONPATH=$PYTHONPATH:tm make special target=tm/tape.py
 special :
 	specialist --target $(target) -m unittest $(TUR)

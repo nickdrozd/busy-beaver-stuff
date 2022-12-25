@@ -8,3 +8,5 @@ __pycache__
 htmlcov
 *.so
 build/
+classes.png
+packages.png
