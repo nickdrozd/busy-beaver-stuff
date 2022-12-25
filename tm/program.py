@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import overload
 from itertools import product
+from functools import cached_property
 from collections import defaultdict
 from collections.abc import Iterator
 
@@ -81,11 +82,11 @@ class Program:
                         ['...'] * colors)
                 ] * states)))
 
-    @property
+    @cached_property
     def states(self) -> set[State]:
         return set(self.prog.keys())
 
-    @property
+    @cached_property
     def colors(self) -> set[Color]:
         return set(range(len(self.prog['A'])))
 
