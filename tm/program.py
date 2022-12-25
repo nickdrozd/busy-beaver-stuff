@@ -12,9 +12,8 @@ from tm.graph import Graph
 from tm.machine import Machine
 from tm.recurrence import History
 from tm.parse import parse, st_str, str_st, tcompile, comp_instr
-from tm.instrs import Color, Shift, State, Instr, CompSlot, CompInstr
-
-Slot = tuple[State, Color]
+from tm.instrs import (
+    Color, Shift, State, Slot, Instr, CompSlot, CompInstr)
 
 ProgStr = str
 

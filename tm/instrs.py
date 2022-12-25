@@ -5,6 +5,7 @@ Color = int
 Shift = str
 State = str
 
+Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
 
 CompSlot = tuple[int, int]
