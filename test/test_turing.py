@@ -10,10 +10,11 @@ from test.prog_data import *
 from test.test_program import BackwardReasoning
 
 from tm.tape import Tape
-from tm.macro import MacroProg
+from tm.graph import Graph
 from tm.parse import st_str
-from tm import Machine, LinRecMachine
-from tm import Graph, Program, BlockMacro, BacksymbolMacro
+from tm.program import Program
+from tm.machine import Machine, LinRecMachine
+from tm.macro import MacroProg, BlockMacro, BacksymbolMacro
 
 
 class TuringTest(BackwardReasoning):

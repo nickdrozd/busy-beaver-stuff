@@ -2,8 +2,8 @@ from unittest import TestCase
 
 from test.test_tree import read_progs
 
-from tm import LinRecMachine
 from tm.parse import st_str
+from tm.machine import LinRecMachine
 from generate.naive import yield_programs
 
 

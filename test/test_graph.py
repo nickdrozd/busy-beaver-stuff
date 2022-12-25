@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from test.prog_data import GRAPHS, SPAGHETTI, KERNEL
 
-from tm import Graph
+from tm.graph import Graph
 
 
 class TestGraph(TestCase):

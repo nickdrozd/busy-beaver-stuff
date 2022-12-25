@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from tm import Machine
+from tm.machine import Machine
 from tm.tape import Tape, TagTape, Signature, Color, Span
 
 def stringify_sig(sig: Signature) -> str:

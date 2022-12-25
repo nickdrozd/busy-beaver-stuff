@@ -3,10 +3,11 @@ from unittest import TestCase
 from multiprocessing import Queue
 from collections.abc import Iterator
 
-from tm import Machine, LinRecMachine
-from tm import BlockMacro, BacksymbolMacro, Program, Graph
-from tm.macro import MacroProg
-from generate.tree  import run_tree_gen
+from tm.graph import Graph
+from tm.program import Program
+from tm.machine import Machine, LinRecMachine
+from tm.macro import BlockMacro, BacksymbolMacro, MacroProg
+from generate.tree import run_tree_gen
 
 
 def read_progs(name: str) -> set[str]:

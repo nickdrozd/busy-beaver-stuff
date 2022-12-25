@@ -3,7 +3,9 @@ from unittest import TestCase
 # pylint: disable = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 
-from tm import Program, Machine, Graph
+from tm.graph import Graph
+from tm.program import Program
+from tm.machine import Machine
 
 
 class BackwardReasoning(TestCase):
