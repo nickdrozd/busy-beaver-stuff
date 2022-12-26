@@ -1,12 +1,10 @@
 from queue import Queue as Q
 from unittest import TestCase
 from multiprocessing import Queue
-from collections.abc import Iterator
 
+from tm import run_variations
 from tm.graph import Graph
 from tm.program import Program
-from tm.macro import macro_variations
-from tm.machine import Machine, LinRecMachine
 from generate.tree import run_tree_gen
 
 
@@ -16,29 +14,6 @@ def read_progs(name: str) -> set[str]:
             prog.strip()
             for prog in holdouts.readlines()
         )
-
-
-def run_for_none(
-        prog: str,
-        sim_lim: int,
-        depth: int,
-        max_block: int = 1,
-        back_wrap: int = 0,
-) -> Iterator[bool]:
-    yield LinRecMachine(prog).run(
-        step_lim = 50,
-        check_rec = 0,
-        skip = True,
-    ).xlimit is None
-
-    yield from (
-        Machine(macro).run(
-            sim_lim = sim_lim,
-            prover = depth,
-        ).xlimit is None
-        for macro in macro_variations(
-                prog, max_block, back_wrap)
-    )
 
 
 def queue_to_set(queue: Q[str]) -> set[str]:
@@ -84,7 +59,7 @@ class Fast(TestTree):
         q22q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if not any(run_for_none(prog, 45, 48, 2)):  # no-coverage
+            if not any(run_variations(prog, 45, 48, 2)):  # no-coverage
                 q22q.put(prog)
 
         run_tree_gen(
@@ -100,10 +75,10 @@ class Fast(TestTree):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 200, 200, 3, 1)):
+            if any(run_variations(prog, 200, 200, 3, 1)):
                 return
 
-            if any(run_for_none(prog, 2130, 100, 2)):
+            if any(run_variations(prog, 2130, 100, 2)):
                 return
 
             q32q.put(prog)
@@ -128,10 +103,10 @@ class Fast(TestTree):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_for_none(prog, 200, 200, 8, 1)):
+            if any(run_variations(prog, 200, 200, 8, 1)):
                 return
 
-            if any(run_for_none(prog, 2350, 1400, 2, 1)):
+            if any(run_variations(prog, 2350, 1400, 2, 1)):
                 return
 
             q23q.put(prog)
@@ -164,10 +139,10 @@ class Slow(TestTree):
             if 'D' not in prog:
                 return
 
-            if any(run_for_none(prog, 400, 100, 10, 1)):
+            if any(run_variations(prog, 400, 100, 10, 1)):
                 return
 
-            if any(run_for_none(prog, 2150, 500, 3, 2)):
+            if any(run_variations(prog, 2150, 500, 3, 2)):
                 return
 
             h42q.put(prog)

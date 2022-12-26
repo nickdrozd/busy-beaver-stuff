@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from tm import Machine, Program, macro_variations
+from tm import Program, run_variations
 from generate.tree import run_tree_gen
 
 
@@ -31,12 +31,8 @@ def print_complete(prog: str) -> None:
 
 
 def run_and_print(prog: str) -> None:
-    for macro in macro_variations(prog, 8, 2):
-        if Machine(macro).run(
-                sim_lim = 200,
-                prover = 100,
-        ).xlimit is None:
-            return
+    if any(run_variations(prog, 200, 200, 8, 1)):
+        return
 
     print(Program(prog).normalize())
 
