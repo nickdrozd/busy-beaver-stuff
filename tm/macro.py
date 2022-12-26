@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Iterator
 
 from tm.parse import tcompile
 from tm.instrs import GetCompInstr
@@ -269,3 +270,20 @@ class BacksymbolMacro(MacroProg):
                 state
             ),
         )
+
+########################################
+
+def macro_variations(
+        prog: str,
+        max_block: int,
+        back_wrap: int,
+) -> Iterator[str | MacroProg]:
+    yield prog
+
+    for block in range(2, 1 + max_block):
+        yield BacksymbolMacro(
+            BlockMacro(
+                prog, [block]), [1])
+
+    for wrap in range(1, 1 + back_wrap):
+        yield BacksymbolMacro(prog, [1] * wrap)

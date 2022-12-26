@@ -5,8 +5,8 @@ from collections.abc import Iterator
 
 from tm.graph import Graph
 from tm.program import Program
+from tm.macro import macro_variations
 from tm.machine import Machine, LinRecMachine
-from tm.macro import BlockMacro, BacksymbolMacro, MacroProg
 from generate.tree import run_tree_gen
 
 
@@ -16,22 +16,6 @@ def read_progs(name: str) -> set[str]:
             prog.strip()
             for prog in holdouts.readlines()
         )
-
-
-def macro_variations(
-        prog: str,
-        max_block: int,
-        back_wrap: int,
-) -> Iterator[str | MacroProg]:
-    yield prog
-
-    for block in range(2, 1 + max_block):
-        yield BacksymbolMacro(
-            BlockMacro(
-                prog, [block]), [1])
-
-    for wrap in range(1, 1 + back_wrap):
-        yield BacksymbolMacro(prog, [1] * wrap)
 
 
 def run_for_none(

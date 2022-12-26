@@ -1,10 +1,7 @@
 from argparse import ArgumentParser
-from collections.abc import Iterator
 
+from tm import Machine, Program, macro_variations
 from generate.tree import run_tree_gen
-from tm.macro import MacroProg
-from tm import Machine
-from tm import Program, BlockMacro, BacksymbolMacro
 
 
 def prune_print(prog: str) -> None:
@@ -33,19 +30,8 @@ def print_complete(prog: str) -> None:
     run_and_print(prog)
 
 
-def macro_variations(base: str) -> Iterator[str | MacroProg]:
-    yield base
-
-    for block in range(2, 8):
-        yield (block_mac := BlockMacro(base, [block]))
-        yield BacksymbolMacro(block_mac, [1])
-
-    yield (back_1 := BacksymbolMacro(base, [1]))
-    yield BacksymbolMacro(back_1, [1])
-
-
 def run_and_print(prog: str) -> None:
-    for macro in macro_variations(prog):
+    for macro in macro_variations(prog, 8, 2):
         if Machine(macro).run(
                 sim_lim = 200,
                 prover = 100,
