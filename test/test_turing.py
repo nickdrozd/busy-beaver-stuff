@@ -11,7 +11,6 @@ from test.test_program import BackwardReasoning
 
 from tm.tape import Tape
 from tm.graph import Graph
-from tm.parse import st_str
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine
 from tm.macro import MacroProg, BlockMacro, BacksymbolMacro
@@ -204,7 +203,8 @@ class TuringTest(BackwardReasoning):
             else:
                 self.assert_marks(0)
                 self.assertEqual(steps, max(blanks.values()))
-                self.assertEqual(marks, {st_str(blank) for blank in blanks})
+                self.assertEqual(
+                    marks, {chr(blank + 65) for blank in blanks})
                 self.assert_could_blank(prog)
 
             self.assert_quasihalt(True)
