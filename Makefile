@@ -43,12 +43,12 @@ LR = test.test_lin_rado
 CG = test.test_code
 TP = test.test_tape
 
-SHORT_TESTS = $(PROG) $(GRAPH) $(LR) $(TREEF) $(CG) $(TP) $(TUR)
+SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(TP) $(TREEF)
 
 PYTEST = $(PYTHON) -m unittest
 
 test :
-	$(PYTEST) -v $(SHORT_TESTS)
+	$(PYTEST) -v $(SHORT_TESTS) $(LR) $(TUR)
 
 test-all : compile
 	$(PYTEST) discover -v
