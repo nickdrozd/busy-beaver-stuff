@@ -28,6 +28,10 @@ class TestTape(TestCase):
             stringify_sig(
                 (tape or self.tape).signature))
 
+    def test_marks(self):
+        self.assertFalse(
+            Tape([], 0, []).marks)
+
     def test_copy(self):
         self.tape = Tape(
             [[1, 1], [0, 1], [1, 1]],
