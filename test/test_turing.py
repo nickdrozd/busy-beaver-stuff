@@ -570,6 +570,20 @@ class Fast(TuringTest):
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
+    def test_display(self):
+        self.run_bb(
+            "1RB 2LA 1R_  1LB 1LA 0RA",
+            watch_tape = True)
+
+        print(self.machine)
+
+        self.run_bb(
+            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD",
+            prover = 10,
+            watch_tape = True)
+
+        print(self.machine)
+
     @expectedFailure
     def test_prover_false_positive_1(self):
         self._test_prover_est({

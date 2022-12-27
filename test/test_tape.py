@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-from tm.machine import Machine
 from tm.tape import Tape, TagTape, Signature, Color, Span
 
 def stringify_sig(sig: Signature) -> str:
@@ -19,39 +18,22 @@ def stringify_sig(sig: Signature) -> str:
 class TestTape(TestCase):
     tape: Tape
 
-    def run_bb(self, prog: str, **opts) -> None:
-        machine = Machine(prog).run(
-            watch_tape = True,
-            **opts)
-
-        print(machine)
-
-        self.tape = machine.tape
-
     def assert_signature(
             self,
             expected: str,
             tape: Tape | None = None,
     ) -> None:
-        if tape is None:
-            tape = self.tape
-
         self.assertEqual(
+            expected,
             stringify_sig(
-                tape.signature),
-            expected)
-
-    def test_blank(self):
-        self.run_bb(
-            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD",
-            prover = 10)
-
-        self.assert_signature(
-            '[0]')
+                (tape or self.tape).signature))
 
     def test_copy(self):
-        self.run_bb(
-            "1RB 2LA 1R_  1LB 1LA 0RA")
+        self.tape = Tape(
+            [[1, 1], [0, 1], [1, 1]],
+            2,
+            list(reversed([[2, 1], [1, 2]]))
+        )
 
         self.assert_signature(
             '1|0|1[2]2|1')
