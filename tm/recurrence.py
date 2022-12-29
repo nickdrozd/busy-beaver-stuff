@@ -262,9 +262,9 @@ class Prover:
         if delta > (self.diff_lim or 0):
             return None
 
-        tag_tape = tape.to_tag()
+        tags: TagTape = tape.to_tag()
 
-        spans = tuple(zip(tag_tape.spans, tape.spans))
+        spans = tuple(zip(tags.spans, tape.spans))
 
         for curr_span, prev_span in spans:
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
@@ -272,20 +272,20 @@ class Prover:
                     new.append(num)
 
         if (result := self.run_simulator(
-                delta, state, tag_tape)) is None:
+                delta, state, tags)) is None:
             return None
 
         rec_rule, end_state = result
 
         if (
             end_state != state
-            or tag_tape.scan != sig[0]
+            or tags.scan != sig[0]
             or any(
                 new[1] > 1 and len(new) != 3
                 for curr_span, prev_span in spans
                 for num, (old, new) in
                     enumerate(zip(prev_span, curr_span)))
-            or tag_tape.signature != sig
+            or tags.signature != sig
         ):
             return None
 
@@ -293,7 +293,7 @@ class Prover:
             tuple(
                 old[1] - new[1]
                 for old, new in zip(*spans)
-            ) for spans in zip(tag_tape.spans, tape.spans)
+            ) for spans in zip(tags.spans, tape.spans)
         )
 
         if any(diff < 0 for span in rule for diff in span):
@@ -309,15 +309,15 @@ class Prover:
 
         for _ in range(next_delta):
             if (result := self.run_simulator(
-                    delta, state, tag_tape)) is None:
+                    delta, state, tags)) is None:
                 return None
 
             rec_rule, end_state = result
 
             if (
                 end_state != state
-                or tag_tape.scan != tape.scan
-                or tag_tape.signature != sig
+                or tags.scan != tape.scan
+                or tags.signature != sig
             ):
                 return None
 
