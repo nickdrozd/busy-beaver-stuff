@@ -264,9 +264,7 @@ class Prover:
 
         tags: TagTape = tape.to_tag()
 
-        spans = tuple(zip(tags.spans, tape.spans))
-
-        for curr_span, prev_span in spans:
+        for curr_span, prev_span in zip(tags.spans, tape.spans):
             for num, (old, new) in enumerate(zip(prev_span, curr_span)):
                 if new[1] > 1:
                     new.append(num)
@@ -282,7 +280,7 @@ class Prover:
             or tags.scan != sig[0]
             or any(
                 new[1] > 1 and len(new) != 3
-                for curr_span, prev_span in spans
+                for curr_span, prev_span in zip(tags.spans, tape.spans)
                 for num, (old, new) in
                     enumerate(zip(prev_span, curr_span)))
             or tags.signature != sig
