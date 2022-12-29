@@ -47,14 +47,14 @@ class Graph:
         return tuple(range(len(self.arrows['A'])))
 
     @cached_property
-    def exit_points(self) -> dict[State, set[State]]:
+    def exit_points(self) -> ConGraph:
         return {
             state: set(connections) - { HALT, UNDEFINED }
             for state, connections in self.arrows.items()
         }
 
     @cached_property
-    def entry_points(self) -> dict[State, set[State]]:
+    def entry_points(self) -> ConGraph:
         entries: dict[str, set[str]] = {
             state: set()
             for state in self.states
@@ -141,7 +141,7 @@ class Graph:
         return self.entries_dispersed and self.exits_dispersed
 
     @cached_property
-    def reduced(self) -> dict[State, set[State]]:
+    def reduced(self) -> ConGraph:
         graph = self.exit_points
 
         for _ in range(len(self.states) * len(self.colors)):
