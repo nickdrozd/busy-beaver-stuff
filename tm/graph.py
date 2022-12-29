@@ -3,9 +3,6 @@ from functools import cached_property
 from tm.parse import parse, st_str
 from tm.instrs import Color, State
 
-HALT = '_'
-UNDEFINED = '.'
-
 ConGraph = dict[State, set[State]]
 
 class Graph:
@@ -49,7 +46,7 @@ class Graph:
     @cached_property
     def exit_points(self) -> ConGraph:
         return {
-            state: set(connections) - { HALT, UNDEFINED }
+            state: set(connections) - { '_', '.' }
             for state, connections in self.arrows.items()
         }
 

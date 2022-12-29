@@ -17,8 +17,6 @@ from tm.instrs import (
 
 ProgStr = str
 
-SHIFTS: tuple[Shift, Shift] = 'L', 'R'
-
 class Program:
     def __init__(self, program: ProgStr):
         self.prog: dict[State, dict[Color, Instr | None]] = {
@@ -173,7 +171,7 @@ class Program:
     def available_instrs(self) -> Iterator[tuple[Color, Shift, State]]:
         return product(
             self.available_colors,
-            SHIFTS,
+            ('L', 'R'),
             self.available_states)
 
     @property
