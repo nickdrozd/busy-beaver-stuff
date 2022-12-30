@@ -1,4 +1,4 @@
-# pylint: disable = line-too-long, too-many-lines
+# pylint: disable = line-too-long, too-many-lines, consider-using-namedtuple-or-dataclass
 
 from collections.abc import Mapping
 
