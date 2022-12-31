@@ -92,12 +92,11 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            3,
+            6,
             q32 := queue_to_set(q32q),
             'holdouts_32q')
 
         self.assert_cant_terminate(q32)
-        self.assert_simple_and_connected(q32)
 
     def test_23(self):
         q23q: Q[str] = Queue()
@@ -119,7 +118,7 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            9,
+            53,
             (q23 := queue_to_set(q23q)),
             'holdouts_23q')
 
@@ -127,7 +126,6 @@ class Fast(TestTree):
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
             q23)
 
-        self.assert_cant_terminate(q23)
         self.assert_simple_and_connected(q23)
 
 
@@ -156,6 +154,6 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            70,
+            168,
             queue_to_set(h42q),
             'holdouts_42h')

@@ -294,6 +294,9 @@ class Prover:
             ) for spans in zip(tags.spans, tape.spans)
         )
 
+        if any(diff > delta for span in rule for diff in span):
+            return None
+
         if any(diff < 0 for span in rule for diff in span):
             if (action := (state, sig[0])) not in self.rules:
                 self.rules[action] = {}
