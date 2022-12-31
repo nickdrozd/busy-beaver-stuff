@@ -216,13 +216,10 @@ class Prover:
             steps: int,
             state: State,
             tape: TagTape,
-    ) -> tuple[bool, State] | None:
-        rec_rule = False
-
+    ) -> State | None:
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
                 if tape.apply_rule(rule) is not None:
-                    rec_rule = True
                     continue
 
             if (instr := self.prog[state, tape.scan]) is None:
@@ -238,7 +235,7 @@ class Prover:
             if (state := next_state) == -1:
                 return None
 
-        return rec_rule, state
+        return state
 
     def try_rule(
             self,
@@ -257,7 +254,7 @@ class Prover:
         if (deltas := temp[state].next_deltas(cycle)) is None:
             return None
 
-        delta, next_delta = deltas
+        delta, _next_delta = deltas
 
         if delta > (self.diff_lim or 0):
             return None
@@ -269,11 +266,9 @@ class Prover:
                 if new[1] > 1:
                     new.append(num)
 
-        if (result := self.run_simulator(
+        if (end_state := self.run_simulator(
                 delta, state, tags)) is None:
             return None
-
-        rec_rule, end_state = result
 
         if (
             end_state != state
@@ -297,29 +292,12 @@ class Prover:
         if any(diff > delta for span in rule for diff in span):
             return None
 
-        if any(diff < 0 for span in rule for diff in span):
-            if (action := (state, sig[0])) not in self.rules:
-                self.rules[action] = {}
-
-            self.rules[action][sig] = rule
-
-            return rule
-
-        if not rec_rule:
+        if all(diff >= 0 for span in rule for diff in span):
             raise InfiniteRule()
 
-        for _ in range(next_delta):
-            if (result := self.run_simulator(
-                    delta, state, tags)) is None:
-                return None
+        if (action := (state, sig[0])) not in self.rules:
+            self.rules[action] = {}
 
-            rec_rule, end_state = result
+        self.rules[action][sig] = rule
 
-            if (
-                end_state != state
-                or tags.scan != tape.scan
-                or tags.signature != sig
-            ):
-                return None
-
-        raise InfiniteRule()
+        return rule
