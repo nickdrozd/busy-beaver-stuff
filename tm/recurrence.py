@@ -216,7 +216,9 @@ class Prover:
             steps: int,
             state: State,
             tape: TagTape,
-    ) -> State | None:
+    ) -> tuple[bool, State] | None:
+        rec_rule = False
+
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
                 marks = tape.marks
@@ -224,6 +226,8 @@ class Prover:
                 if tape.apply_rule(rule) is not None:
                     if abs(tape.marks - marks) > steps:
                         return None
+
+                    rec_rule = True
 
                     continue
 
@@ -240,7 +244,7 @@ class Prover:
             if (state := next_state) == -1:
                 return None
 
-        return state
+        return rec_rule, state
 
     def try_rule(
             self,
@@ -271,9 +275,10 @@ class Prover:
                 if new[1] > 1:
                     new.append(num)
 
-        if (end_state := self.run_simulator(
-                delta, state, tags)) is None:
+        if (result := self.run_simulator(delta, state, tags)) is None:
             return None
+
+        _rec_rule, end_state = result
 
         if (
             end_state != state
