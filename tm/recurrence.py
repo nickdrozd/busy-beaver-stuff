@@ -219,7 +219,12 @@ class Prover:
     ) -> State | None:
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
+                marks = tape.marks
+
                 if tape.apply_rule(rule) is not None:
+                    if abs(tape.marks - marks) > steps:
+                        return None
+
                     continue
 
             if (instr := self.prog[state, tape.scan]) is None:
@@ -288,9 +293,6 @@ class Prover:
                 for old, new in zip(*spans)
             ) for spans in zip(tags.spans, tape.spans)
         )
-
-        if any(diff > delta for span in rule for diff in span):
-            return None
 
         if all(diff >= 0 for span in rule for diff in span):
             raise InfiniteRule()

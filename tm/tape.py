@@ -187,6 +187,13 @@ class TagTape(BlockTape):
             tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
         )
 
+    @property
+    def marks(self) -> int:
+        return (
+            (1 if self.scan != 0 else 0)
+            + sum(q for (c, q, *_) in self.lspan if c != 0)
+            + sum(q for (c, q, *_) in self.rspan if c != 0)
+        )
 
     def step(self, shift: int, color: int, skip: bool) -> None:
         pull, push = (
