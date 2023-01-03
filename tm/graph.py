@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from tm.parse import parse, st_str
-from tm.instrs import Color, State
+from tm.instrs import Color, State, INIT, HALT, UNDF
 
 ConGraph = dict[State, set[State]]
 
@@ -14,7 +14,7 @@ class Graph:
             for i, connection in
             enumerate(
                 tuple(
-                    instr[2] if instr is not None else '.'
+                    instr[2] if instr is not None else UNDF
                     for instr in instrs
                 )
                 for instrs in parse(program)
@@ -41,12 +41,12 @@ class Graph:
 
     @cached_property
     def colors(self) -> tuple[Color, ...]:
-        return tuple(range(len(self.arrows['A'])))
+        return tuple(range(len(self.arrows[INIT])))
 
     @cached_property
     def exit_points(self) -> ConGraph:
         return {
-            state: set(connections) - { '_', '.' }
+            state: set(connections) - { HALT, UNDF }
             for state, connections in self.arrows.items()
         }
 

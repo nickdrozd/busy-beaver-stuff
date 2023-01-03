@@ -16,6 +16,14 @@ CompInstr = tuple[Color, CompShift, CompState]
 CompProg = dict[CompSlot, CompInstr | None]
 
 
+INIT: State = "A"
+HALT: State = "_"
+UNDF: State = "."
+LEFT: Shift = "L"
+RIGHT: Shift = "R"
+BLANK: Color = 0
+
+
 class GetCompInstr(Protocol):
     @abstractmethod
     def __getitem__(self, slot: CompSlot) -> CompInstr | None: ...

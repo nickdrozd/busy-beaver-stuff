@@ -13,7 +13,9 @@ from tm.machine import Machine
 from tm.recurrence import History
 from tm.parse import parse, st_str, str_st, tcompile, comp_instr
 from tm.instrs import (
-    Color, Shift, State, Slot, Instr, CompSlot, CompInstr)
+    Color, Shift, State, Slot, Instr, CompSlot, CompInstr,
+    INIT, HALT, LEFT, RIGHT, BLANK
+)
 
 ProgStr = str
 
@@ -85,7 +87,7 @@ class Program:
 
     @cached_property
     def colors(self) -> set[Color]:
-        return set(range(len(self.prog['A'])))
+        return set(range(len(self.prog[INIT])))
 
     @property
     def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
@@ -134,7 +136,7 @@ class Program:
         return tuple(
             slot
             for slot, instr in self.instr_slots
-            if instr is None or instr[2] == '_'
+            if instr is None or instr[2] == HALT
         )
 
     @property
@@ -142,7 +144,7 @@ class Program:
         return tuple(
             slot
             for slot, instr in self.used_instr_slots
-            if slot[1] != 0 and instr[0] == 0
+            if slot[1] != BLANK and instr[0] == BLANK
         )
 
     @property
@@ -151,7 +153,7 @@ class Program:
 
     @property
     def available_states(self) -> set[State]:
-        used = set(self.used_states) | { 'A' }
+        used = set(self.used_states) | { INIT }
         diff = sorted(self.states.difference(used))
 
         return used | { diff[0] } if diff else used
@@ -162,7 +164,7 @@ class Program:
 
     @property
     def available_colors(self) -> set[Color]:
-        used = set(self.used_colors) | { 0 }
+        used = set(self.used_colors) | { BLANK }
         diff = sorted(self.colors.difference(used))
 
         return used | { diff[0] } if diff else used
@@ -171,7 +173,7 @@ class Program:
     def available_instrs(self) -> Iterator[tuple[Color, Shift, State]]:
         return product(
             self.available_colors,
-            ('L', 'R'),
+            (LEFT, RIGHT),
             self.available_states)
 
     @property
@@ -275,11 +277,12 @@ class Program:
 
     def normalize_directions(self) -> Program:
         # pylint: disable = unsubscriptable-object
-        if (index := self['A', 0]) is None or index[1] == 'R':
+        if (index := self[INIT, 0]) is None or index[1] == RIGHT:
             return self
 
         for slot, (color, shift, state) in self.used_instr_slots:
-            self[slot] = color, ('L' if shift == 'R' else 'R'), state
+            self[slot] = (
+                color, (LEFT if shift == RIGHT else RIGHT), state)
 
         return self
 
@@ -346,7 +349,7 @@ class Program:
             if step > max_attempts:
                 return False
 
-            if state == 'A' and tape.blank:
+            if state == INIT and tape.blank:
                 return False
 
             if tape in seen[state]:
@@ -385,7 +388,7 @@ class Program:
                         next_tape = tape.copy()
 
                         _ = next_tape.step(
-                            not (0 if shift == 'L' else 1),
+                            not (0 if shift == LEFT else 1),
                             next_tape.scan,
                             False,
                         )

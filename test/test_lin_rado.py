@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 from tm.parse import st_str
+from tm.instrs import LEFT, RIGHT
 from tm.machine import LinRecMachine
 from generate.naive import yield_programs
 
@@ -162,7 +163,7 @@ def lr_convert(rado_string: int) -> str:
     def convert_bin_instr(bin_instr: tuple[str, ...]) -> str:
         pr, sh, *tr =  bin_instr
 
-        v_sh = 'L' if int(sh) == 0 else 'R'
+        v_sh = LEFT if int(sh) == 0 else RIGHT
 
         v_tr = st_str(int(''.join(tr), 2) - 1)
 
