@@ -2,28 +2,28 @@ from typing import Protocol
 from abc import abstractmethod
 
 Color = int
-Shift = str
-State = str
+LetterShift = str
+LetterState = str
+
+LetterSlot = tuple[LetterState, Color]
+LetterInstr = tuple[Color, LetterShift, LetterState]
+
+State = int
+Shift = int
 
 Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
-
-CompState = int
-CompShift = int
-
-CompSlot = tuple[CompState, Color]
-CompInstr = tuple[Color, CompShift, CompState]
-CompProg = dict[CompSlot, CompInstr | None]
+Prog = dict[Slot, Instr | None]
 
 
-INIT: State = "A"
-HALT: State = "_"
-UNDF: State = "."
-LEFT: Shift = "L"
-RIGHT: Shift = "R"
+INIT: LetterState = "A"
+HALT: LetterState = "_"
+UNDF: LetterState = "."
+LEFT: LetterShift = "L"
+RIGHT: LetterShift = "R"
 BLANK: Color = 0
 
 
-class GetCompInstr(Protocol):
+class GetInstr(Protocol):
     @abstractmethod
-    def __getitem__(self, slot: CompSlot) -> CompInstr | None: ...
+    def __getitem__(self, slot: Slot) -> Instr | None: ...

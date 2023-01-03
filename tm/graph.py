@@ -1,7 +1,9 @@
 from functools import cached_property
 
 from tm.parse import parse, st_str
-from tm.instrs import Color, State, INIT, HALT, UNDF
+from tm.instrs import Color, LetterState, INIT, HALT, UNDF
+
+State = LetterState
 
 ConGraph = dict[State, set[State]]
 

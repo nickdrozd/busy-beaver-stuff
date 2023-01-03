@@ -4,11 +4,8 @@ from copy import copy
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from tm.instrs import CompState, CompSlot, GetCompInstr
+from tm.instrs import State, Slot, GetInstr
 from tm.tape import PtrTape, Tape, TagTape, Signature, Rule
-
-State = CompState
-Slot = CompSlot
 
 RecRes = tuple[int, int]
 Tapes = dict[int, PtrTape]
@@ -185,7 +182,7 @@ class InfiniteRule(Exception):
 
 @dataclass
 class Prover:
-    prog: GetCompInstr
+    prog: GetInstr
 
     diff_lim: int | None
 

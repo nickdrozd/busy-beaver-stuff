@@ -13,8 +13,14 @@ from tm.machine import Machine
 from tm.recurrence import History
 from tm.parse import parse, st_str, str_st, tcompile, comp_instr
 from tm.instrs import (
-    Color, Shift, State, Slot, Instr, CompSlot, CompInstr,
-    INIT, HALT, LEFT, RIGHT, BLANK
+    Color,
+    LetterShift as Shift,
+    LetterState as State,
+    LetterSlot as Slot,
+    LetterInstr as Instr,
+    Slot as CompSlot,
+    Instr as CompInstr,
+    INIT, HALT, LEFT, RIGHT, BLANK,
 )
 
 ProgStr = str

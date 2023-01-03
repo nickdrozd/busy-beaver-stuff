@@ -1,10 +1,10 @@
 from tm.instrs import (
     LEFT, HALT, UNDF,
-    State, CompState, Instr, CompInstr, CompProg,
+    State, LetterState, Instr, LetterInstr, Prog
 )
 
 
-def parse(program: str) -> tuple[tuple[Instr | None, ...], ...]:
+def parse(program: str) -> tuple[tuple[LetterInstr | None, ...], ...]:
     return tuple(
         tuple(
             (int(instr[0]), instr[1], instr[2])
@@ -15,7 +15,7 @@ def parse(program: str) -> tuple[tuple[Instr | None, ...], ...]:
     )
 
 
-def comp_instr(instr: Instr | None) -> CompInstr | None:
+def comp_instr(instr: LetterInstr | None) -> Instr | None:
     return (
         instr[0],
         0 if instr[1] == LEFT else 1,
@@ -23,7 +23,7 @@ def comp_instr(instr: Instr | None) -> CompInstr | None:
     ) if instr else None
 
 
-def tcompile(program: str) -> CompProg:
+def tcompile(program: str) -> Prog:
     return {
         (state, color): comp_instr(instr)
         for state, instrs in enumerate(parse(program))
@@ -31,9 +31,9 @@ def tcompile(program: str) -> CompProg:
     }
 
 
-def st_str(state: CompState) -> State:
+def st_str(state: State) -> LetterState:
     return HALT if state == -1 else chr(state + 65)
 
 
-def str_st(state: State) -> CompState:
+def str_st(state: LetterState) -> State:
     return -1 if state == HALT else ord(state) - 65
