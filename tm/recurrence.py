@@ -8,7 +8,7 @@ from tm.instrs import CompState, CompSlot, GetCompInstr
 from tm.tape import PtrTape, Tape, TagTape, Signature, Rule
 
 State = CompState
-Action = CompSlot
+Slot = CompSlot
 
 RecRes = tuple[int, int]
 Tapes = dict[int, PtrTape]
@@ -20,7 +20,7 @@ class History:
     states: list[State] = field(default_factory = list)
     positions: list[int] = field(default_factory = list)
 
-    actions: dict[Action, list[int]] = field(
+    slots: dict[Slot, list[int]] = field(
         default_factory = lambda: defaultdict(list))
 
     def copy(self) -> History:
@@ -29,15 +29,15 @@ class History:
         new_copy.states = copy(self.states)
         new_copy.positions = copy(self.positions)
 
-        new_copy.actions = defaultdict(list)
+        new_copy.slots = defaultdict(list)
 
-        for action, steps in self.actions.items():
-            new_copy.actions[action] = copy(steps)
+        for slot, steps in self.slots.items():
+            new_copy.slots[slot] = copy(steps)
 
         return new_copy
 
-    def add_action_at_step(self, step: int, action: Action) -> None:
-        self.actions[action].append(step)
+    def add_slot_at_step(self, step: int, slot: Slot) -> None:
+        self.slots[slot].append(step)
 
     def add_state_at_step(self, step: int, state: State) -> None:
         self.states += [state] * (step - len(self.states))
@@ -79,8 +79,8 @@ class History:
             for state in set(states)
         }
 
-    def check_rec(self, step: int, action: Action) -> RecRes | None:
-        for pstep in self.actions[action]:
+    def check_rec(self, step: int, slot: Slot) -> RecRes | None:
+        for pstep in self.slots[slot]:
             if (result := self.verify_lin_recurrence(
                     pstep,
                     step,
@@ -190,7 +190,7 @@ class Prover:
     diff_lim: int | None
 
     rules: dict[
-        Action,
+        Slot,
         dict[Signature, Rule],
     ] = field(default_factory = dict)
 
@@ -301,9 +301,9 @@ class Prover:
         if all(diff >= 0 for span in rule for diff in span):
             raise InfiniteRule()
 
-        if (action := (state, sig[0])) not in self.rules:
-            self.rules[action] = {}
+        if (slot := (state, sig[0])) not in self.rules:
+            self.rules[slot] = {}
 
-        self.rules[action][sig] = rule
+        self.rules[slot][sig] = rule
 
         return rule

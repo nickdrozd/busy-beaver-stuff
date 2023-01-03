@@ -6,7 +6,7 @@ from tm.instrs import CompState, CompSlot, GetCompInstr
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
 State = CompState
-Action = CompSlot
+Slot = CompSlot
 
 LinRec = tuple[int | None, int]
 
@@ -246,7 +246,7 @@ class LinRecMachine:
         for _ in range(step_lim or 1_000_000):
             self.history.add_state_at_step(step, state)
 
-            action: Action = state, (scan := tape.scan)
+            slot: Slot = state, (scan := tape.scan)
 
             if ((check_rec is not None and step >= check_rec)
                 or (samples is not None
@@ -254,10 +254,10 @@ class LinRecMachine:
                 self.history.add_tape_at_step(step, tape)
 
             if check_rec is not None and step >= check_rec:
-                if self.check_rec(step, action) is not None:
+                if self.check_rec(step, slot) is not None:
                     break
 
-                self.history.add_action_at_step(step, action)
+                self.history.add_slot_at_step(step, slot)
 
             if (instr := comp[state, scan]) is None:
                 break
@@ -279,8 +279,8 @@ class LinRecMachine:
 
         return self
 
-    def check_rec(self, step: int, action: Action) -> RecRes | None:
-        if (result := self.history.check_rec(step, action)) is None:
+    def check_rec(self, step: int, slot: Slot) -> RecRes | None:
+        if (result := self.history.check_rec(step, slot)) is None:
             return None
 
         self.linrec = start, _rec = result

@@ -359,7 +359,7 @@ class Program:
 
             if history.check_rec(
                     step,
-                    action := (str_st(state), tape.scan)) is None:
+                    slot := (str_st(state), tape.scan)) is None:
                 repeat = 0
             else:
                 repeat += 1
@@ -367,7 +367,7 @@ class Program:
                 if repeat > max_repeats:
                     continue
 
-            history.add_action_at_step(step, action)
+            history.add_slot_at_step(step, slot)
 
             # print(step, state, tape)
 
