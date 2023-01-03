@@ -1,4 +1,7 @@
-from tm.instrs import Instr, CompInstr, CompProg, LEFT, HALT, UNDF
+from tm.instrs import (
+    LEFT, HALT, UNDF,
+    State, CompState, Instr, CompInstr, CompProg,
+)
 
 
 def parse(program: str) -> tuple[tuple[Instr | None, ...], ...]:
@@ -28,9 +31,9 @@ def tcompile(program: str) -> CompProg:
     }
 
 
-def st_str(state: int) -> str:
+def st_str(state: CompState) -> State:
     return HALT if state == -1 else chr(state + 65)
 
 
-def str_st(state: str) -> int:
+def str_st(state: State) -> CompState:
     return -1 if state == HALT else ord(state) - 65
