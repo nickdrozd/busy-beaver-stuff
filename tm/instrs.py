@@ -8,8 +8,11 @@ State = str
 Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
 
-CompSlot = tuple[int, int]
-CompInstr = tuple[int, int, int]
+CompState = int
+CompShift = int
+
+CompSlot = tuple[CompState, Color]
+CompInstr = tuple[Color, CompShift, CompState]
 CompProg = dict[CompSlot, CompInstr | None]
 
 

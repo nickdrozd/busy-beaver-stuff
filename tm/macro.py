@@ -4,12 +4,11 @@ from dataclasses import dataclass
 from collections.abc import Iterator
 
 from tm.parse import tcompile
-from tm.instrs import GetCompInstr
+from tm.instrs import Color, CompState, CompSlot, CompInstr,GetCompInstr
 
-Color = int
-State = int
-Slot = tuple[Color, State]
-Instr = tuple[int, int, int]
+State = CompState
+Slot = CompSlot
+Instr = CompInstr
 
 Tape = list[Color]
 Config = tuple[State, tuple[bool, Tape]]

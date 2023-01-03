@@ -4,12 +4,11 @@ from copy import copy
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from tm.instrs import GetCompInstr
+from tm.instrs import CompState, CompSlot, GetCompInstr
 from tm.tape import PtrTape, Tape, TagTape, Signature, Rule
 
-State = int
-Color = int
-Action = tuple[State, Color]
+State = CompState
+Action = CompSlot
 
 RecRes = tuple[int, int]
 Tapes = dict[int, PtrTape]
