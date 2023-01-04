@@ -13,7 +13,7 @@ UNDEFINED = '.'
 
 def make_dot(
         name: str,
-        arrows: dict[str, tuple[str, ...]],
+        arrows: dict[str, tuple[str | None, ...]],
 ) -> str:
     header: str = '\n'.join([
         '  labelloc="t";',
@@ -25,7 +25,7 @@ def make_dot(
         f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
         for node, targets in arrows.items()
         for i, target in enumerate(targets)
-        if target != UNDEFINED
+        if target != UNDEFINED and target is not None
     ])
 
     return f'digraph NAME {{\n{header}\n\n{edges}\n}}'

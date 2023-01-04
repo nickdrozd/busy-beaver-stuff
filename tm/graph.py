@@ -11,12 +11,12 @@ class Graph:
     def __init__(self, program: str):
         self.program = program
 
-        self.arrows: dict[State, tuple[State, ...]] = {
+        self.arrows: dict[State, tuple[State | None, ...]] = {
             st_str(i): connection
             for i, connection in
             enumerate(
                 tuple(
-                    instr[2] if instr is not None else UNDF
+                    instr[2] if instr is not None else None
                     for instr in instrs
                 )
                 for instrs in parse(program)
@@ -31,7 +31,7 @@ class Graph:
 
     def flatten(self, sep: str = ' ') -> str:
         return sep.join(
-            dst
+            dst if dst is not None else UNDF
             for conn in self.arrows.values()
             for dst in conn
         )
@@ -47,7 +47,11 @@ class Graph:
     @cached_property
     def exit_points(self) -> ConGraph:
         return {
-            state: set(connections) - { HALT, UNDF }
+            state: set(
+                conn
+                for conn in connections
+                if conn is not None and conn != HALT
+            )
             for state, connections in self.arrows.items()
         }
 

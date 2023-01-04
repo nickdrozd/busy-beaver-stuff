@@ -31,8 +31,12 @@ def tcompile(program: str) -> Prog:
     }
 
 
-def st_str(state: State) -> LetterState:
-    return HALT if state == -1 else chr(state + 65)
+def st_str(state: State | None) -> LetterState:
+    return (
+        HALT if state == -1 else
+        UNDF if state is None else
+        chr(state + 65)
+    )
 
 
 def str_st(state: LetterState) -> State:
