@@ -9,7 +9,7 @@ LetterSlot = tuple[LetterState, Color]
 LetterInstr = tuple[Color, LetterShift, LetterState]
 
 State = int
-Shift = int
+Shift = bool
 
 Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]

@@ -1,5 +1,5 @@
 from tm.instrs import (
-    LEFT, HALT, UNDF,
+    RIGHT, HALT, UNDF,
     State, LetterState, Instr, LetterInstr, Prog
 )
 
@@ -18,7 +18,7 @@ def parse(program: str) -> tuple[tuple[LetterInstr | None, ...], ...]:
 def comp_instr(instr: LetterInstr | None) -> Instr | None:
     return (
         instr[0],
-        0 if instr[1] == LEFT else 1,
+        instr[1] == RIGHT,
         str_st(instr[2]),
     ) if instr else None
 

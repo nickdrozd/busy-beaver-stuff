@@ -191,7 +191,7 @@ class BlockMacro(MacroProg):
 
         return (
             self.tape_to_color(tape),
-            int(right_edge),
+            right_edge,
             (
                 (2 * state) + int(not right_edge)
                 if state != -1 else

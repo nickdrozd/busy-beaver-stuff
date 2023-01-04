@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from tm.instrs import Color
+from tm.instrs import Color, Shift
 
 Block = list[int]
 Span  = list[Block]
@@ -103,19 +103,19 @@ class Tape(BlockTape):
         )
 
     @property
-    def edge(self) -> int | None:
+    def edge(self) -> Shift | None:
         if self.scan != 0:
             return None
 
         if not self.lspan:
-            return 0
+            return False
 
         if not self.rspan:
-            return 1
+            return True
 
         return None
 
-    def step(self, shift: int, color: Color, skip: bool) -> int:
+    def step(self, shift: Shift, color: Color, skip: bool) -> int:
         pull, push = (
             (self.rspan, self.lspan)
             if shift else
@@ -193,7 +193,7 @@ class TagTape(BlockTape):
             + sum(q for (c, q, *_) in self.rspan if c != 0)
         )
 
-    def step(self, shift: int, color: Color, skip: bool) -> None:
+    def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
             (self.rspan, self.lspan)
             if shift else

@@ -46,8 +46,8 @@ class TestTape(TestCase):
         copy_1 = self.tape.copy()
         copy_2 = self.tape.copy()
 
-        _ = copy_1.step(0, 2, False)
-        _ = copy_2.step(1, 1, False)
+        _ = copy_1.step(False, 2, False)
+        _ = copy_2.step( True, 1, False)
 
         self.assert_signature(
             '1|0|1[2]2|1')
@@ -124,7 +124,7 @@ class TestBlocks(TestCase):
         return self.tape.rspan
 
     def step(self, shift: int, color: int, skip: int) -> None:
-        self.tape.step(shift, color, bool(skip))
+        self.tape.step(bool(shift), color, bool(skip))
 
     def test_trace_1(self):
         # 1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA : BBB(4, 2)
