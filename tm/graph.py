@@ -32,8 +32,7 @@ class Graph:
     def flatten(self, sep: str = ' ') -> str:
         return sep.join(
             dst
-            for state in self.states
-            for conn in self.arrows[state]
+            for conn in self.arrows.values()
             for dst in conn
         )
 
