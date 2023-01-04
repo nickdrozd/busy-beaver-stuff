@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-from tm.graph import Graph
 from generate.c import make_c
 from generate.dot import make_dot
 
@@ -26,4 +25,4 @@ class TestCode(TestCase):
             with open(f'test/data/dot/{name}.dot') as test:
                 self.assertEqual(
                     test.read(),
-                    make_dot(prog, Graph(prog).arrows) + '\n')
+                    make_dot(prog) + '\n')

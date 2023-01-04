@@ -1,3 +1,5 @@
+from tm import Graph
+
 COLORS = (
     'blue',
     'red',
@@ -11,19 +13,16 @@ COLORS = (
 
 UNDEFINED = '.'
 
-def make_dot(
-        name: str,
-        arrows: dict[str, tuple[str | None, ...]],
-) -> str:
+def make_dot(prog: str) -> str:
     header: str = '\n'.join([
         '  labelloc="t";',
-        f'  label="{name}";',
+        f'  label="{prog}";',
         '  fontname="courier"',
-    ]) if len(name) < 50 else ''
+    ]) if len(prog) < 50 else ''
 
     edges: str = '\n'.join([
         f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
-        for node, targets in arrows.items()
+        for node, targets in Graph(prog).arrows.items()
         for i, target in enumerate(targets)
         if target != UNDEFINED and target is not None
     ])
