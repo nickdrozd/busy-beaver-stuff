@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-Color = int
+from tm.instrs import Color
 
 Block = list[int]
 Span  = list[Block]
