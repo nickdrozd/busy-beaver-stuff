@@ -115,7 +115,7 @@ class Tape(BlockTape):
 
         return None
 
-    def step(self, shift: int, color: int, skip: bool) -> int:
+    def step(self, shift: int, color: Color, skip: bool) -> int:
         pull, push = (
             (self.rspan, self.lspan)
             if shift else
@@ -130,7 +130,7 @@ class Tape(BlockTape):
 
         stepped = 1 if push_block is None else 1 + push_block[1]
 
-        next_scan: int
+        next_scan: Color
 
         if not pull:
             next_scan = 0
@@ -193,7 +193,7 @@ class TagTape(BlockTape):
             + sum(q for (c, q, *_) in self.rspan if c != 0)
         )
 
-    def step(self, shift: int, color: int, skip: bool) -> None:
+    def step(self, shift: int, color: Color, skip: bool) -> None:
         pull, push = (
             (self.rspan, self.lspan)
             if shift else
@@ -210,7 +210,7 @@ class TagTape(BlockTape):
 
         scan_info: list[int] = []
 
-        next_scan: int
+        next_scan: Color
 
         dec_pull: bool = False
 
