@@ -3,7 +3,6 @@ from unittest import TestCase
 # pylint: disable = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 
-from tm.graph import Graph
 from tm.program import Program
 from tm.machine import Machine
 
@@ -54,7 +53,7 @@ class BackwardReasoning(TestCase):
 
     def assert_simple(self, prog: str):
         self.assertTrue(
-            Graph(prog).is_simple
+            Program(prog).graph.is_simple
             or prog in SPAGHETTI
             or prog in KERNEL
         )

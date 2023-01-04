@@ -3,7 +3,6 @@ from unittest import TestCase
 from multiprocessing import Queue
 
 from tm import run_variations
-from tm.graph import Graph
 from tm.program import Program
 from generate.tree import run_tree_gen
 
@@ -48,10 +47,10 @@ class TestTree(TestCase):
                 and prog.cant_spin_out)
 
     def assert_simple_and_connected(self, progs: set[str]):
-        for graph in map(Graph, progs):
+        for prog in map(Program, progs):
             self.assertTrue(
-                graph.is_simple
-                and graph.is_strongly_connected)
+                prog.graph.is_simple
+                and prog.graph.is_strongly_connected)
 
 
 class Fast(TestTree):

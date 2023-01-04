@@ -10,7 +10,6 @@ from test.prog_data import *
 from test.test_program import BackwardReasoning
 
 from tm.tape import Tape
-from tm.graph import Graph
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine
 from tm.macro import MacroProg, BlockMacro, BacksymbolMacro
@@ -24,7 +23,7 @@ class TuringTest(BackwardReasoning):
 
     def assert_normal(self, prog: str):
         self.assertTrue(
-            Graph(prog).is_normal,
+            Program(prog).graph.is_normal,
             prog)
 
         self.assertTrue(
@@ -34,7 +33,7 @@ class TuringTest(BackwardReasoning):
 
     def assert_connected(self, prog: str):
         self.assertTrue(
-            Graph(prog).is_strongly_connected
+            Program(prog).graph.is_strongly_connected
             or prog in MODULAR
             or 'A' not in prog
             or '...' in prog
@@ -218,7 +217,7 @@ class TuringTest(BackwardReasoning):
                 self.assert_cant_halt(prog)
 
                 self.assertTrue(
-                    (graph := Graph(prog)).is_zero_reflexive
+                    (graph := Program(prog).graph).is_zero_reflexive
                     and not graph.is_irreflexive
                 )
 
