@@ -1,5 +1,5 @@
-from typing import Protocol
 from abc import abstractmethod
+from typing import Final, Protocol
 
 Color = int
 LetterShift = str
@@ -16,12 +16,14 @@ Instr = tuple[Color, Shift, State]
 Prog = dict[Slot, Instr | None]
 
 
-INIT: LetterState = "A"
-HALT: LetterState = "_"
-UNDF: LetterState = "."
-LEFT: LetterShift = "L"
-RIGHT: LetterShift = "R"
-BLANK: Color = 0
+BLANK: Final[Color] = 0
+
+INIT: Final[LetterState] = "A"
+HALT: Final[LetterState] = "_"
+UNDF: Final[LetterState] = "."
+
+LEFT: Final[LetterShift] = "L"
+RIGHT: Final[LetterShift] = "R"
 
 
 class GetInstr(Protocol):
