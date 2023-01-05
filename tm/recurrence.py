@@ -288,12 +288,7 @@ class Prover:
         ):
             return None
 
-        rule = tuple(
-            tuple(
-                old[1] - new[1]
-                for old, new in zip(*spans)
-            ) for spans in zip(tags.spans, tape.spans)
-        )
+        rule = tape.make_rule(tags)
 
         if all(diff >= 0 for span in rule for diff in span):
             raise InfiniteRule()

@@ -25,6 +25,15 @@ class BlockTape:
     def spans(self) -> tuple[Span, Span]:
         return self.lspan, self.rspan
 
+    def make_rule(self, new_tape: BlockTape) -> Rule:
+        return tuple(
+            tuple(
+                new_block[1] - old_block[1]
+                for new_block, old_block in zip(*spans)
+            ) for spans in zip(new_tape.spans, self.spans)
+        )
+
+
     def apply_rule(self, rule: Rule) -> int | None:
         diffs, blocks = (
             rule[0] + rule[1],
