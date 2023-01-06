@@ -1,10 +1,4 @@
-from tm.program import Program
-from tm.instrs import (
-    Color,
-    LetterShift as Shift,
-    LetterState as State,
-    LetterInstr as Instr,
-)
+from tm.program import Program, Color, Shift, State, Instr
 
 
 def make_comment(st: State, co: Color) -> str:
