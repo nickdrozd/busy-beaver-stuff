@@ -25,9 +25,13 @@ from tm.instrs import (
 
 ProgStr = str
 
+Switch = dict[Color, Instr | None]
+
 class Program:
+    prog: dict[State, Switch]
+
     def __init__(self, program: ProgStr):
-        self.prog: dict[State, dict[Color, Instr | None]] = {
+        self.prog = {
             st_str(state): dict(enumerate(instrs))
             for state, instrs in enumerate(parse(program))
         }
@@ -44,7 +48,7 @@ class Program:
         ])
 
     @overload
-    def __getitem__(self, slot: State) -> dict[Color, Instr | None]: ...
+    def __getitem__(self, slot: State) -> Switch: ...
 
     @overload
     def __getitem__(self, slot: Slot) -> Instr | None: ...
@@ -55,7 +59,7 @@ class Program:
     def __getitem__(
             self,
             slot: State | Slot | CompSlot,
-    ) -> dict[Color, Instr | None] | Instr | CompInstr | None:
+    ) -> Switch | Instr | CompInstr | None:
         if isinstance(slot, State):
             return self.prog[slot]
 
@@ -94,6 +98,10 @@ class Program:
     @cached_property
     def colors(self) -> set[Color]:
         return set(range(len(self.prog[INIT])))
+
+    @property
+    def state_switches(self) -> Iterator[tuple[State, Switch]]:
+        yield from self.prog.items()
 
     @property
     def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
