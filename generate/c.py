@@ -1,4 +1,4 @@
-from tm.parse import parse, st_str
+from tm.program import Program
 from tm.instrs import (
     Color,
     LetterShift as Shift,
@@ -150,14 +150,11 @@ def make_switch(state: State, instrs: tuple[Instr, ...]) -> str:
 
 def make_labels(prog: str) -> str:
     return '\n'.join([
-        (
-            f' {(st := st_str(i))}:'
-            + make_switch(
-                st,
-                tuple(instr or (1, 'R', '_') for instr in instrs),
-            )
+        f' {state}:' + make_switch(
+            state,
+            tuple(instr or (1, 'R', '_') for instr in switch.values()),
         )
-        for i, instrs in enumerate(parse(prog))
+        for state, switch in Program(prog).state_switches
     ])
 
 
