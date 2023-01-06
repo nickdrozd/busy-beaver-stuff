@@ -1,0 +1,14 @@
+digraph NAME {
+
+
+  A -> B [ color=" blue" ];
+  B -> C [ color=" blue" ];
+  C -> C [ color=" blue" ];
+  C -> D [ color=" red" ];
+  D -> E [ color=" blue" ];
+  D -> F [ color=" red" ];
+  E -> C [ color=" blue" ];
+  E -> E [ color=" red" ];
+  F -> C [ color=" blue" ];
+  F -> F [ color=" red" ];
+}

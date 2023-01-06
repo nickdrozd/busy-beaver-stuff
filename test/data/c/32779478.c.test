@@ -1,0 +1,89 @@
+#define PROGRAM "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF"
+
+#define TAPELEN 100
+
+#include "machine.h"
+
+int main(void)
+{
+ A:
+  if (BLANK)
+    {
+      // A0
+      PRINT;
+      RIGHT;
+      goto B;
+    }
+  else
+    {
+      // A1
+      RIGHT;
+      goto H;
+    }
+
+ B:
+  if (BLANK)
+    {
+      // B0
+      PRINT;
+      RIGHT;
+      goto C;
+    }
+  else
+    {
+      // B1
+      RIGHT;
+      goto H;
+    }
+
+ C:
+  while (BLANK) {
+    // C0
+    PRINT;
+    LEFT;
+  }
+
+  // C1
+  LEFT;
+  goto D;
+
+ D:
+  if (BLANK)
+    {
+      // D0
+      PRINT;
+      RIGHT;
+      goto E;
+    }
+  else
+    {
+      // D1
+      LEFT;
+      goto F;
+    }
+
+ E:
+  while (!BLANK) {
+    // E1
+    RIGHT;
+  }
+
+  // E0
+  PRINT;
+  RIGHT;
+  goto C;
+
+ F:
+  while (!BLANK) {
+    // F1
+    ERASE;
+    RIGHT;
+  }
+
+  // F0
+  RIGHT;
+  goto C;
+
+ H:
+  CHECK_STEPS;
+}
