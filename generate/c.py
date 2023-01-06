@@ -164,8 +164,8 @@ def make_labels(prog: str) -> str:
 def make_c(prog: str) -> str:
     return PROG_TEMPLATE.format(
         prog,
-        make_labels(
-            prog.replace('_', 'H')))
+        make_labels(prog),
+    ).replace(' _', ' H')
 
 
 PROG_TEMPLATE = \
