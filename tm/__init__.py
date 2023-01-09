@@ -12,7 +12,7 @@ def run_variations(
         depth: int,
         max_block: int = 1,
         back_wrap: int = 0,
-        lin_rec: int = 60,
+        lin_rec: int = 50,
 ) -> Iterator[bool]:
     yield LinRecMachine(prog).run(
         step_lim = lin_rec,
