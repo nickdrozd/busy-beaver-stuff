@@ -561,6 +561,14 @@ class Fast(TuringTest):
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
+    def test_macro_loop(self):
+        self.run_bb(
+            BacksymbolMacro(
+                BlockMacro(
+                    "1RB 0RA 1LB  2LA 2RB 0LA",
+                    [8]),
+            [1]))
+
     def test_display(self):
         self.run_bb(
             "1RB 2LA 1R_  1LB 1LA 0RA",
