@@ -20,14 +20,11 @@ def run_variations(
         skip = True,
     ).xlimit is None
 
-    yield from (
-        Machine(macro).run(
+    for macro in macro_variations(prog, max_block, back_wrap):
+        yield Machine(macro).run(
             sim_lim = sim_lim,
             prover = depth,
         ).xlimit is None
-        for macro in macro_variations(
-                prog, max_block, back_wrap)
-    )
 
 
 __all__ = [
