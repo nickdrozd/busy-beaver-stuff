@@ -97,6 +97,8 @@ class MacroProg:
 
         pos = cells - 1 if right_edge else 0
 
+        seen: set[tuple[State, int, tuple[Color, ...]]] = set()
+
         for _ in range(self.sim_lim):
             if (instr := self.comp[
                     state, scan := tape[pos]]) is None:
@@ -120,6 +122,12 @@ class MacroProg:
 
             if not 0 <= pos < cells:
                 break
+
+            if (curr := (state, pos, tuple(tape))) in seen:
+                return None
+
+            seen.add(curr)
+
         else:
             return None
 
