@@ -111,18 +111,11 @@ class Tape(BlockTape):
             + sum(q for (c, q) in self.rspan if c != 0)
         )
 
-    @property
-    def edge(self) -> Shift | None:
-        if self.scan != 0:
-            return None
-
-        if not self.lspan:
-            return False
-
-        if not self.rspan:
-            return True
-
-        return None
+    def at_edge(self, edge: Shift) -> bool:
+        return (
+            self.scan == 0
+            and not (self.rspan if edge else self.lspan)
+        )
 
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
         pull, push = (

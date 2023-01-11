@@ -142,7 +142,7 @@ class Machine:
             color, shift, next_state = instr
 
             if ((same_state := state == next_state)
-                    and (shift == tape.edge or tape.blank)):
+                    and tape.at_edge(shift)):
                 self.spnout = step
                 break
 
