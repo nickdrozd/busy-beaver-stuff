@@ -34,12 +34,12 @@ class BlockTape:
     def spans(self) -> tuple[Span, Span]:
         return self.lspan, self.rspan
 
-    def make_rule(self, new_tape: BlockTape) -> Rule:
+    def make_rule(self, new_counts: Counts) -> Rule:
         return tuple(
             tuple(
                 new_count - old_count
                 for new_count, old_count in zip(*counts)
-            ) for counts in zip(new_tape.counts, self.counts)
+            ) for counts in zip(new_counts, self.counts)
         )
 
 

@@ -288,7 +288,7 @@ class Prover:
         ):
             return None
 
-        rule = tape.make_rule(tags)
+        rule = tape.make_rule(tags.counts)
 
         if all(diff >= 0 for span in rule for diff in span):
             raise InfiniteRule()
