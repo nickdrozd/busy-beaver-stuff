@@ -13,6 +13,8 @@ Signature = tuple[
     tuple[Color | tuple[Color], ...],
 ]
 
+Counts = tuple[tuple[int, ...], tuple[int, ...]]
+
 Rule = tuple[tuple[int, ...], ...]
 
 @dataclass
@@ -22,15 +24,22 @@ class BlockTape:
     rspan: Span
 
     @property
+    def counts(self) -> Counts:
+        return (
+            tuple(block[1] for block in self.lspan),
+            tuple(block[1] for block in self.rspan),
+        )
+
+    @property
     def spans(self) -> tuple[Span, Span]:
         return self.lspan, self.rspan
 
     def make_rule(self, new_tape: BlockTape) -> Rule:
         return tuple(
             tuple(
-                new_block[1] - old_block[1]
-                for new_block, old_block in zip(*spans)
-            ) for spans in zip(new_tape.spans, self.spans)
+                new_count - old_count
+                for new_count, old_count in zip(*counts)
+            ) for counts in zip(new_tape.counts, self.counts)
         )
 
 
