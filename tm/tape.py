@@ -15,7 +15,11 @@ Signature = tuple[
 
 Counts = tuple[tuple[int, ...], tuple[int, ...]]
 
-Rule = dict[tuple[int, int], int]
+Plus = int
+
+Op = Plus
+
+Rule = dict[tuple[int, int], Op]
 
 @dataclass
 class BlockTape:
