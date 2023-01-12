@@ -51,6 +51,9 @@ class BlockTape:
             cnt2: int,
             cnt3: int,
     ) -> Op | None:
+        if cnt1 == cnt2:
+            return None
+
         if (plus := cnt2 - cnt1) == cnt3 - cnt2:
             return plus
 
