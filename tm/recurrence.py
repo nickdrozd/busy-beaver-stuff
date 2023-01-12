@@ -257,9 +257,7 @@ class Prover:
         if (deltas := temp[state].next_deltas(cycle)) is None:
             return None
 
-        delta, _next_delta = deltas
-
-        if delta > (self.diff_lim or 0):
+        if deltas[0] > (self.diff_lim or 0):
             return None
 
         tags: TagTape = tape.to_tag()
@@ -273,7 +271,7 @@ class Prover:
 
         implausible = False
 
-        for _ in range(2):
+        for delta in deltas:
             if (result := self.run_simulator(
                     delta, state, tags)) is None:
                 return None

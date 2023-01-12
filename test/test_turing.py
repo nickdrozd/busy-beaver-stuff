@@ -4,6 +4,7 @@ from math import isclose
 from typing import Any
 from itertools import product
 from collections.abc import Mapping
+from unittest import expectedFailure
 
 from test.prog_data import *
 from test.test_program import BackwardReasoning
@@ -532,6 +533,12 @@ class Fast(TuringTest):
             BacksymbolMacro("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_", [2]),
             prover = 104,
         )
+
+    @expectedFailure
+    def test_prover_false(self):
+        self._test_prover_est(
+            {"1RB 0RE  0RC 0RB  1LC 0LD  1RD 1LA  1LB 1RE": (1, 0, 0, 0)},
+            diff_lim = 300)
 
     def test_undefined(self):
         for sequence in UNDEFINED.values():

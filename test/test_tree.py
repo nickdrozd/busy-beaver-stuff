@@ -68,9 +68,8 @@ class Fast(TestTree):
             output = capture,
         )
 
-        self.assertEqual(
-            queue_to_set(q22q),
-            {"1RB 1LA  0LA 0RB"})
+        self.assertFalse(
+            queue_to_set(q22q))
 
     def test_32(self):
         q32q: Q[str] = Queue()
@@ -93,11 +92,11 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            81,
+            6,
             q32 := queue_to_set(q32q),
             'holdouts_32q')
 
-        # self.assert_cant_terminate(q32)
+        self.assert_cant_terminate(q32)
 
     def test_23(self):
         q23q: Q[str] = Queue()
@@ -119,7 +118,7 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            134,
+            13,
             (q23 := queue_to_set(q23q)),
             'holdouts_23q')
 
