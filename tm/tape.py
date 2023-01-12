@@ -15,7 +15,7 @@ Signature = tuple[
 
 Counts = tuple[tuple[int, ...], tuple[int, ...]]
 
-Rule = tuple[tuple[int, ...], ...]
+Rule = dict[tuple[int, int], int]
 
 @dataclass
 class BlockTape:
@@ -35,34 +35,31 @@ class BlockTape:
         return self.lspan, self.rspan
 
     def make_rule(self, new_counts: Counts) -> Rule:
-        return tuple(
-            tuple(
-                new_count - old_count
-                for new_count, old_count in zip(*counts)
-            ) for counts in zip(new_counts, self.counts)
-        )
+        return {
+            (s, i): new - old
+            for s, counts in enumerate(zip(new_counts, self.counts))
+            for i, (new, old) in enumerate(zip(*counts))
+        }
 
     def apply_rule(self, rule: Rule) -> int | None:
         divs: list[int] = []
 
-        for s, diffs in enumerate(rule):
-            for i, diff in enumerate(diffs):
-                if diff >= 0:
-                    continue
+        for (s, i), diff in rule.items():
+            if diff >= 0:
+                continue
 
-                if ((abs_diff := abs(diff))
-                        >= (count := self.spans[s][i][1])):
-                    return None
+            if ((abs_diff := abs(diff))
+                    >= (count := self.spans[s][i][1])):
+                return None
 
-                div, rem = divmod(count, abs_diff)
-                divs.append(div if rem > 0 else div - 1)
+            div, rem = divmod(count, abs_diff)
+            divs.append(div if rem > 0 else div - 1)
 
         times: int = min(divs)
 
-        for s, diffs in enumerate(rule):
-            for i, diff in enumerate(diffs):
-                if diff != 0:
-                    self.spans[s][i][1] += diff * times
+        for (s, i), diff in rule.items():
+            if diff != 0:
+                self.spans[s][i][1] += diff * times
 
         return times
 

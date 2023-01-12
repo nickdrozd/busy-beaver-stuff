@@ -290,7 +290,7 @@ class Prover:
 
         rule = tape.make_rule(tags.counts)
 
-        if all(diff >= 0 for span in rule for diff in span):
+        if all(diff >= 0 for diff in rule.values()):
             raise InfiniteRule()
 
         if (slot := (state, sig[0])) not in self.rules:
