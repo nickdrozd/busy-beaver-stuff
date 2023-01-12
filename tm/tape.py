@@ -106,9 +106,8 @@ class BlockTape:
 
             div, mod = diff
 
-            for _ in range(times):
-                self.spans[s][i][1] *= div
-                self.spans[s][i][1] += mod
+            self.spans[s][i][1] *= (term := div ** times)
+            self.spans[s][i][1] += mod * (1 + ((term - div) // (div-1)))
 
         return times
 
