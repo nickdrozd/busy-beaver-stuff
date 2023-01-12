@@ -43,28 +43,26 @@ class BlockTape:
         )
 
     def apply_rule(self, rule: Rule) -> int | None:
-        diffs, blocks = (
-            rule[0] + rule[1],
-            self.lspan + self.rspan,
-        )
-
         divs: list[int] = []
 
-        for diff, block in zip(diffs, blocks):
-            if diff >= 0:
-                continue
+        for s, diffs in enumerate(rule):
+            for i, diff in enumerate(diffs):
+                if diff >= 0:
+                    continue
 
-            if (abs_diff := abs(diff)) >= (count := block[1]):
-                return None
+                if ((abs_diff := abs(diff))
+                        >= (count := self.spans[s][i][1])):
+                    return None
 
-            div, rem = divmod(count, abs_diff)
-            divs.append(div if rem > 0 else div - 1)
+                div, rem = divmod(count, abs_diff)
+                divs.append(div if rem > 0 else div - 1)
 
         times: int = min(divs)
 
-        for diff, block in zip(diffs, blocks):
-            if diff != 0:
-                block[1] += diff * times
+        for s, diffs in enumerate(rule):
+            for i, diff in enumerate(diffs):
+                if diff != 0:
+                    self.spans[s][i][1] += diff * times
 
         return times
 
