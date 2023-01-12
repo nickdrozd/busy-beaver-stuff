@@ -1,5 +1,5 @@
 from queue import Queue as Q
-from unittest import TestCase, skip
+from unittest import TestCase
 from multiprocessing import Queue
 
 from tm import run_variations
@@ -130,7 +130,6 @@ class Fast(TestTree):
 
 
 class Slow(TestTree):
-    @skip('')
     def test_42(self):  # no-coverage
         h42q: Q[str] = Queue()
 
@@ -155,6 +154,6 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            168,
+            100,
             queue_to_set(h42q),
             'holdouts_42h')
