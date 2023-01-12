@@ -34,11 +34,19 @@ class BlockTape:
     def spans(self) -> tuple[Span, Span]:
         return self.lspan, self.rspan
 
+    @staticmethod
+    def calculate_diff(old: int, new: int) -> int | None:
+        if old == new:
+            return None
+
+        return new - old
+
     def make_rule(self, new_counts: Counts) -> Rule:
         return {
-            (s, i): new - old
-            for s, counts in enumerate(zip(new_counts, self.counts))
-            for i, (new, old) in enumerate(zip(*counts))
+            (s, i): diff
+            for s, spans in enumerate(zip(self.counts, new_counts))
+            for i, counts in enumerate(zip(*spans))
+            if (diff := self.calculate_diff(*counts)) is not None
         }
 
     def apply_rule(self, rule: Rule) -> int | None:
@@ -58,8 +66,7 @@ class BlockTape:
         times: int = min(divs)
 
         for (s, i), diff in rule.items():
-            if diff != 0:
-                self.spans[s][i][1] += diff * times
+            self.spans[s][i][1] += diff * times
 
         return times
 
