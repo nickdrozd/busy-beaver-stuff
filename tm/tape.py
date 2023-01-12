@@ -54,10 +54,10 @@ class BlockTape:
             if diff >= 0:
                 continue
 
-            if (abs_diff := abs(diff)) >= block[1]:
+            if (abs_diff := abs(diff)) >= (count := block[1]):
                 return None
 
-            div, rem = divmod(block[1], abs_diff)
+            div, rem = divmod(count, abs_diff)
             divs.append(div if rem > 0 else div - 1)
 
         times: int = min(divs)
