@@ -2,7 +2,6 @@
 
 from math import isclose
 from typing import Any
-from unittest import skip
 from itertools import product
 from collections.abc import Mapping
 
@@ -612,12 +611,5 @@ class Slow(TuringTest):  # no-coverage
     def test_prover(self):
         self._test_prover_est(
             PROVER_HALT_SLOW,
-            diff_lim = 40,
-        )
-
-    @skip('')
-    def test_prover_kills_compiler(self):
-        self._test_prover_est(
-            PROVER_HALT_KILLS_COMPILER,
             diff_lim = 40,
         )

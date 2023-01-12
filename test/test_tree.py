@@ -93,7 +93,7 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            84,
+            81,
             q32 := queue_to_set(q32q),
             'holdouts_32q')
 
@@ -119,7 +119,7 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            181,
+            134,
             (q23 := queue_to_set(q23q)),
             'holdouts_23q')
 

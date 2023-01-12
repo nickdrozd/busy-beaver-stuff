@@ -213,7 +213,7 @@ class Prover:
             state: State,
             tape: TagTape,
     ) -> tuple[bool, State] | None:
-        rec_rule = False
+        implausible = False
 
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
@@ -221,9 +221,7 @@ class Prover:
 
                 if tape.apply_rule(rule) is not None:
                     if abs(tape.marks - marks) > steps:
-                        return None
-
-                    rec_rule = True
+                        implausible = True
 
                     continue
 
@@ -240,7 +238,7 @@ class Prover:
             if (state := next_state) == -1:
                 return None
 
-        return rec_rule, state
+        return implausible, state
 
     def try_rule(
             self,
@@ -273,12 +271,17 @@ class Prover:
 
         counts = []
 
+        implausible = False
+
         for _ in range(2):
             if (result := self.run_simulator(
                     delta, state, tags)) is None:
                 return None
 
-            _rec_rule, end_state = result
+            imp, end_state = result
+
+            if imp:
+                implausible = True
 
             if (
                 end_state != state
@@ -295,9 +298,12 @@ class Prover:
 
             counts.append(tags.counts)
 
-        rule = tape.make_rule(*counts)
+        if (rule := tape.make_rule(implausible, *counts)) is None:
+            return None
 
-        if all(diff >= 0 for diff in rule.values()):
+        if all(diff >= 0
+               for diff in rule.values()
+               if isinstance(diff, int)):
             raise InfiniteRule()
 
         if (slot := (state, sig[0])) not in self.rules:

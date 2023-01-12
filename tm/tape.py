@@ -16,10 +16,16 @@ Signature = tuple[
 Counts = tuple[tuple[int, ...], tuple[int, ...]]
 
 Plus = int
+Mult = tuple[int, int]
 
-Op = Plus
+Op = Plus | Mult
 
 Rule = dict[tuple[int, int], Op]
+
+
+class ImplausibleRule(Exception):
+    pass
+
 
 @dataclass
 class BlockTape:
@@ -39,28 +45,46 @@ class BlockTape:
         return self.lspan, self.rspan
 
     @staticmethod
-    def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> int | None:
-        diff1, diff2 = cnt2 - cnt1, cnt3 - cnt2
+    def calculate_diff(
+            implausible: bool,
+            cnt1: int,
+            cnt2: int,
+            cnt3: int,
+    ) -> Op | None:
+        if (plus := cnt2 - cnt1) == cnt3 - cnt2:
+            return plus
 
-        if diff1 == diff2:
-            return diff1
+        if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
+            return mult
+
+        if implausible:
+            raise ImplausibleRule()
 
         return None
 
-    def make_rule(self, counts1: Counts, counts2: Counts) -> Rule:
-        return {
-            (s, i): diff
-            for s, spans in enumerate(
-                    zip(self.counts, counts1, counts2))
-            for i, counts in enumerate(zip(*spans))
-            if (diff := self.calculate_diff(*counts)) is not None
-        }
+    def make_rule(
+            self,
+            implausible: bool,
+            counts1: Counts,
+            counts2: Counts,
+    ) -> Rule | None:
+        try:
+            return {
+                (s, i): diff
+                for s, spans in enumerate(
+                        zip(self.counts, counts1, counts2))
+                for i, counts in enumerate(zip(*spans))
+                if (diff := self.calculate_diff(
+                        implausible, *counts)) is not None
+            }
+        except ImplausibleRule:
+            return None
 
     def apply_rule(self, rule: Rule) -> int | None:
         divs: list[int] = []
 
         for (s, i), diff in rule.items():
-            if diff >= 0:
+            if not isinstance(diff, Plus) or diff >= 0:
                 continue
 
             if ((abs_diff := abs(diff))
@@ -73,7 +97,15 @@ class BlockTape:
         times: int = min(divs)
 
         for (s, i), diff in rule.items():
-            self.spans[s][i][1] += diff * times
+            if isinstance(diff, Plus):
+                self.spans[s][i][1] += diff * times
+                continue
+
+            div, mod = diff
+
+            for _ in range(times):
+                self.spans[s][i][1] *= div
+                self.spans[s][i][1] += mod
 
         return times
 
