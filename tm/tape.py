@@ -51,12 +51,14 @@ class BlockTape:
         divs: list[int] = []
 
         for diff, block in zip(diffs, blocks):
-            if diff < 0:
-                if (abs_diff := abs(diff)) >= block[1]:
-                    return None
+            if diff >= 0:
+                continue
 
-                div, rem = divmod(block[1], abs_diff)
-                divs.append(div if rem > 0 else div - 1)
+            if (abs_diff := abs(diff)) >= block[1]:
+                return None
+
+            div, rem = divmod(block[1], abs_diff)
+            divs.append(div if rem > 0 else div - 1)
 
         times: int = min(divs)
 
