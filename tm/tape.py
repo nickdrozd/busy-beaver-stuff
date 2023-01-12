@@ -63,7 +63,8 @@ class BlockTape:
         times: int = min(divs)
 
         for diff, block in zip(diffs, blocks):
-            block[1] += diff * times
+            if diff != 0:
+                block[1] += diff * times
 
         return times
 
