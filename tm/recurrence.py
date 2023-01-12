@@ -271,24 +271,31 @@ class Prover:
                 if new[1] > 1:
                     new.append(num)
 
-        if (result := self.run_simulator(delta, state, tags)) is None:
-            return None
+        counts = []
 
-        _rec_rule, end_state = result
+        for _ in range(2):
+            if (result := self.run_simulator(
+                    delta, state, tags)) is None:
+                return None
 
-        if (
-            end_state != state
-            or tags.scan != sig[0]
-            or any(
-                new[1] > 1 and len(new) != 3
-                for curr_span, prev_span in zip(tags.spans, tape.spans)
-                for num, (old, new) in
-                    enumerate(zip(prev_span, curr_span)))
-            or tags.signature != sig
-        ):
-            return None
+            _rec_rule, end_state = result
 
-        rule = tape.make_rule(tags.counts)
+            if (
+                end_state != state
+                or tags.scan != sig[0]
+                or any(
+                    new[1] > 1 and len(new) != 3
+                    for curr_span, prev_span in
+                        zip(tags.spans, tape.spans)
+                    for num, (old, new) in
+                        enumerate(zip(prev_span, curr_span)))
+                or tags.signature != sig
+            ):
+                return None
+
+            counts.append(tags.counts)
+
+        rule = tape.make_rule(*counts)
 
         if all(diff >= 0 for diff in rule.values()):
             raise InfiniteRule()

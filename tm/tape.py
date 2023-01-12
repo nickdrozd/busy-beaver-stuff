@@ -39,16 +39,19 @@ class BlockTape:
         return self.lspan, self.rspan
 
     @staticmethod
-    def calculate_diff(old: int, new: int) -> int | None:
-        if old == new:
-            return None
+    def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> int | None:
+        diff1, diff2 = cnt2 - cnt1, cnt3 - cnt2
 
-        return new - old
+        if diff1 == diff2:
+            return diff1
 
-    def make_rule(self, new_counts: Counts) -> Rule:
+        return None
+
+    def make_rule(self, counts1: Counts, counts2: Counts) -> Rule:
         return {
             (s, i): diff
-            for s, spans in enumerate(zip(self.counts, new_counts))
+            for s, spans in enumerate(
+                    zip(self.counts, counts1, counts2))
             for i, counts in enumerate(zip(*spans))
             if (diff := self.calculate_diff(*counts)) is not None
         }
