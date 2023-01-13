@@ -29,7 +29,7 @@ def stacker(
 
         machine = Machine(prog).run(
             sim_lim = steps,
-            prover = 100,
+            prover = True,
         )
 
         if blank and machine.blanks:

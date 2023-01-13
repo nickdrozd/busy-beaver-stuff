@@ -289,7 +289,6 @@ class TuringTest(BackwardReasoning):
     def _test_prover(  # type: ignore[misc]
             self,
             prog_data: Mapping[str, Any],
-            diff_lim: int,
             blank: bool = False,
             simple_term: bool = True,
     ):
@@ -305,7 +304,7 @@ class TuringTest(BackwardReasoning):
 
             self.run_bb(
                 program,
-                prover = diff_lim,
+                prover = True,
             )
 
             if simple_term:
@@ -327,7 +326,6 @@ class TuringTest(BackwardReasoning):
         prog_data: dict[
             str,
             tuple[int, int, int | float, int]],
-        diff_lim: int | None = None,
     ):
         # pylint: disable = redefined-variable-type
         for prog, (block, back, digits, exp) in prog_data.items():
@@ -341,7 +339,7 @@ class TuringTest(BackwardReasoning):
 
             self.run_bb(
                 program,
-                prover = diff_lim,
+                prover = True,
                 normal = False,
             )
 
@@ -495,43 +493,39 @@ class Fast(TuringTest):
         self._test_prover(
             HALT
             | HALT_SLOW
-            | SPINOUT,
-            diff_lim = 20,
+            | SPINOUT
         )
 
         self._test_prover(
             SPINOUT_BLANK,
-            diff_lim = 20,
             blank = True,
         )
 
         self._test_prover(
             RECUR_COMPACT
             | QUASIHALT,
-            diff_lim = 83,
             simple_term = False,
         )
 
         self._test_prover_est(
             PROVER_HALT
-            | PROVER_SPINOUT,
-            diff_lim = 300,
+            | PROVER_SPINOUT
         )
 
         self.run_bb(
             "1RB 0LC  1RD 1RA  ... 0LD  1LA 0LB",
-            prover = 10,
+            prover = True,
             analyze = False,
         )
 
         self.run_bb(
             "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",
-            prover = 40,
+            prover = True,
         )
 
         self.run_bb(
             BacksymbolMacro("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_", [2]),
-            prover = 104,
+            prover = True,
         )
 
     def test_undefined(self):
@@ -578,7 +572,7 @@ class Fast(TuringTest):
 
         self.run_bb(
             "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD",
-            prover = 10,
+            prover = True,
             watch_tape = True)
 
         print(self.machine)
@@ -611,6 +605,4 @@ class Slow(TuringTest):  # no-coverage
 
     def test_prover(self):
         self._test_prover_est(
-            PROVER_HALT_SLOW,
-            diff_lim = 40,
-        )
+            PROVER_HALT_SLOW)

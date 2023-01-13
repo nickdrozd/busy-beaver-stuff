@@ -9,7 +9,6 @@ from tm.macro import BlockMacro, BacksymbolMacro, macro_variations
 def run_variations(
         prog: str,
         sim_lim: int,
-        depth: int,
         max_block: int = 1,
         back_wrap: int = 0,
         lin_rec: int = 50,
@@ -23,7 +22,7 @@ def run_variations(
     for macro in macro_variations(prog, max_block, back_wrap):
         yield Machine(macro).run(
             sim_lim = sim_lim,
-            prover = depth,
+            prover = True,
         ).xlimit is None
 
 

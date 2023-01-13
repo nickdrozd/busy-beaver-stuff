@@ -89,7 +89,7 @@ class Machine:
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
             tape: Tape | None = None,
-            prover: int | None = None,
+            prover: bool = False,
     ) -> Machine:
         comp: GetInstr = (
             tcompile(self.program)
@@ -103,8 +103,8 @@ class Machine:
             Tape([], 0, [])
         )
 
-        if prover is not None:
-            self.prover = Prover(comp, diff_lim = prover)
+        if prover:
+            self.prover = Prover(comp)
 
         self.blanks = {}
 

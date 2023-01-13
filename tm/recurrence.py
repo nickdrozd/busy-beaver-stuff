@@ -186,8 +186,6 @@ class InfiniteRule(Exception):
 class Prover:
     prog: GetInstr
 
-    diff_lim: int | None
-
     rules: dict[
         Slot,
         dict[Signature, Rule],
@@ -257,9 +255,6 @@ class Prover:
             self.configs[sig] = temp
 
         if (deltas := temp[state].next_deltas(cycle)) is None:
-            return None
-
-        if deltas[0] > (self.diff_lim or 0):
             return None
 
         tags: TagTape = tape.to_tag()
