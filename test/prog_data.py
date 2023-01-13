@@ -1353,6 +1353,10 @@ PROVER_HALT_SLOW = {
     "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2, 1, 2.0, 98641),
 }
 
+OUT_OF_REACH = {
+    "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (2, 1, 1.7, 646_456_993),
+}
+
 ## test program ######################################################
 
 PROGS: dict[
