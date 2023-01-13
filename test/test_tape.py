@@ -5,12 +5,12 @@ from tm.tape import Color, Tape, TagTape, Signature, Span
 def stringify_sig(sig: Signature) -> str:
     scan, lspan, rspan = sig
 
-    l_sig = '|'.join(
-        str(c if isinstance(c, int) else c[0])
-        for c in lspan)
-    r_sig = '|'.join(reversed(
+    l_sig = '|'.join(reversed(
         [str(c if isinstance(c, int) else c[0])
-         for c in rspan]))
+         for c in lspan]))
+    r_sig = '|'.join(
+        str(c if isinstance(c, int) else c[0])
+        for c in rspan)
 
     return f'{l_sig}[{scan}]{r_sig}'
 
@@ -34,9 +34,9 @@ class TestTape(TestCase):
 
     def test_copy(self):
         self.tape = Tape(
-            [[1, 1], [0, 1], [1, 1]],
+            list(reversed([[1, 1], [0, 1], [1, 1]])),
             2,
-            list(reversed([[2, 1], [1, 2]]))
+            [[2, 1], [1, 2]]
         )
 
         self.assert_signature(
@@ -83,7 +83,7 @@ class TestBlocks(TestCase):
         else:
             scan_info = []
 
-        self.tape = TagTape(lspan, scan, list(reversed(rspan)))
+        self.tape = TagTape(list(reversed(lspan)), scan, rspan)
 
         self.tape.scan_info = scan_info
 
@@ -95,8 +95,8 @@ class TestBlocks(TestCase):
             scan: Color | tuple[Color, list[int]],
             rspan: Span,
     ):
-        self.assertEqual(self.lspan, lspan)
-        self.assertEqual(self.rspan, list(reversed(rspan)))
+        self.assertEqual(self.lspan, list(reversed(lspan)))
+        self.assertEqual(self.rspan, rspan)
 
         self.assertEqual(
             (self.scan, self.scan_info),
@@ -161,8 +161,8 @@ class TestBlocks(TestCase):
 
         self.assert_tape([[1, 1], [0, 4, 0]], 0, [])
 
-        self.lspan[0][1] += 3
-        self.lspan[1][1] -= 3
+        self.lspan[0][1] -= 3
+        self.lspan[1][1] += 3
 
         self.assert_tape([[1, 4], [0, 1, 0]], 0, [])
 
@@ -205,7 +205,7 @@ class TestBlocks(TestCase):
 
         self.assert_tape([], 1, [[1, 1], [2, 30, 0], [1, 1]])
 
-        self.rspan[2][1] = 57
+        self.rspan[0][1] = 57
         self.rspan[1][1] = 2
 
         self.assert_tape([], 1, [[1, 57], [2, 2, 0], [1, 1]])

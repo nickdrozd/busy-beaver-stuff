@@ -49,11 +49,11 @@ class History:
             sum(q for (_, q) in tape.lspan) - tape.head,
             [
                 color
-                for color, count in tape.lspan
+                for color, count in reversed(tape.lspan)
                 for _ in range(count)
             ] + [tape.scan] + [
                 color
-                for color, count in reversed(tape.rspan)
+                for color, count in tape.rspan
                 for _ in range(count)
             ]
         )

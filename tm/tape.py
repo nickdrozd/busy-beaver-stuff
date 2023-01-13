@@ -119,12 +119,12 @@ class Tape(BlockTape):
     def __repr__(self) -> str:
         return ' '.join([
             f'{color}^{count}'
-            for color, count in self.lspan
+            for color, count in reversed(self.lspan)
         ] + [
             f'[{self.scan}]'
         ] + [
             f'{color}^{count}'
-            for color, count in reversed(self.rspan)
+            for color, count in self.rspan
         ])
 
     def __hash__(self) -> int:
@@ -179,8 +179,8 @@ class Tape(BlockTape):
         )
 
         push_block = (
-            pull.pop()
-            if skip and pull and pull[-1][0] == self.scan else
+            pull.pop(0)
+            if skip and pull and pull[0][0] == self.scan else
             None
         )
 
@@ -191,18 +191,18 @@ class Tape(BlockTape):
         if not pull:
             next_scan = 0
         else:
-            next_scan = (next_pull := pull[-1])[0]
+            next_scan = (next_pull := pull[0])[0]
 
             if next_pull[1] > 1:
                 next_pull[1] -= 1
             else:
-                popped = pull.pop()
+                popped = pull.pop(0)
 
                 if push_block is None:
                     push_block = popped
                     push_block[1] = 0
 
-        if push and (top_block := push[-1])[0] == color:
+        if push and (top_block := push[0])[0] == color:
             top_block[1] += stepped
         else:
             if push_block is None:
@@ -212,7 +212,7 @@ class Tape(BlockTape):
                 push_block[1] += 1
 
             if  push or color != 0:
-                push.append(push_block)
+                push.insert(0, push_block)
 
         self.scan = next_scan
 
@@ -257,8 +257,8 @@ class TagTape(BlockTape):
         )
 
         push_block = (
-            pull.pop()
-            if skip and pull and pull[-1][0] == self.scan else
+            pull.pop(0)
+            if skip and pull and pull[0][0] == self.scan else
             None
         )
 
@@ -273,13 +273,13 @@ class TagTape(BlockTape):
         if not pull:
             next_scan = 0
         else:
-            next_scan = (next_pull := pull[-1])[0]
+            next_scan = (next_pull := pull[0])[0]
 
             if next_pull[1] > 1:
                 next_pull[1] -= 1
                 dec_pull = True
             else:
-                popped = pull.pop()
+                popped = pull.pop(0)
 
                 if push_block is None:
                     push_block = popped
@@ -289,7 +289,7 @@ class TagTape(BlockTape):
                     scan_info += extra
                     push_block = push_block[:2]
 
-        if push and (top_block := push[-1])[0] == color:
+        if push and (top_block := push[0])[0] == color:
             top_block[1] += stepped
             top_block += self.scan_info
 
@@ -300,7 +300,7 @@ class TagTape(BlockTape):
                 push_block = [color, 1]
 
                 if push and color != self.scan:
-                    top_block = push[-1]
+                    top_block = push[0]
                     if len(top_block) > 3:
                         push_block.append(
                             top_block.pop())
@@ -315,14 +315,14 @@ class TagTape(BlockTape):
                 push_block[0] = color
                 push_block[1] += 1
 
-                if push and len(top_block := push[-1]) > 3:
+                if push and len(top_block := push[0]) > 3:
                     push_block.append(
                         top_block.pop())
 
             if push or color != 0:
-                push.append(push_block)
+                push.insert(0, push_block)
 
-                if self.scan_info and not (top_block := push[-1])[2:]:
+                if self.scan_info and not (top_block := push[0])[2:]:
                     top_block.extend(
                         self.scan_info)
 
