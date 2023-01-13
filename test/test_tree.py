@@ -58,7 +58,7 @@ class Fast(TestTree):
         q22q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if not any(run_variations(prog, 45, 48, 2)):  # no-coverage
+            if not any(run_variations(prog, 92, 96, 2)):  # no-coverage
                 q22q.put(prog)
 
         run_tree_gen(
@@ -68,15 +68,14 @@ class Fast(TestTree):
             output = capture,
         )
 
-        self.assertEqual(
-            queue_to_set(q22q),
-            {"1RB 1LA  0LA 0RB"})
+        self.assertFalse(
+            queue_to_set(q22q))
 
     def test_32(self):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_variations(prog, 200, 200, 3, 1)):
+            if any(run_variations(prog, 224, 224, 3, 1)):
                 return
 
             if any(run_variations(prog, 2130, 100, 2)):
@@ -93,7 +92,7 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            20,
+            19,
             q32 := queue_to_set(q32q),
             'holdouts_32q')
 
@@ -106,7 +105,7 @@ class Fast(TestTree):
             if any(run_variations(prog, 200, 200, 8, 1)):
                 return
 
-            if any(run_variations(prog, 2350, 1400, 2, 1)):
+            if any(run_variations(prog, 4000, 4400, 2, 1)):
                 return
 
             q23q.put(prog)
@@ -119,7 +118,7 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            26,
+            14,
             (q23 := queue_to_set(q23q)),
             'holdouts_23q')
 
