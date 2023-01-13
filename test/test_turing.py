@@ -490,6 +490,11 @@ class Fast(TuringTest):
         )
 
     def test_prover(self):
+        self._test_prover_est(
+            PROVER_HALT
+            | PROVER_SPINOUT
+        )
+
         self._test_prover(
             HALT
             | HALT_SLOW
@@ -505,11 +510,6 @@ class Fast(TuringTest):
             RECUR_COMPACT
             | QUASIHALT,
             simple_term = False,
-        )
-
-        self._test_prover_est(
-            PROVER_HALT
-            | PROVER_SPINOUT
         )
 
         self.run_bb(
