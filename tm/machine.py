@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from tm.tape import Tape
 from tm.parse import tcompile, st_str
-from tm.instrs import State, Slot, GetInstr
+from tm.instrs import State, Slot, GetInstr, LetterSlot
 from tm.recurrence import History, RecRes, Tapes, Prover, InfiniteRule
 
 LinRec = tuple[int | None, int]
@@ -39,7 +39,7 @@ class Machine:
 
     rulapp: int = 0
 
-    undfnd: tuple[int, tuple[str, int]] | None = None
+    undfnd: tuple[int, LetterSlot] | None = None
 
     def __init__(self, program: str | GetInstr):
         self.program = program
