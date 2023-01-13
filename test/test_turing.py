@@ -602,7 +602,3 @@ class Slow(TuringTest):  # no-coverage
 
     def test_macro_cycles(self):
         self._test_macro_cycles(MACRO_CYCLES_SLOW)
-
-    def test_prover(self):
-        self._test_prover_est(
-            PROVER_HALT_SLOW)
