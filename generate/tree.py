@@ -5,17 +5,20 @@ from multiprocessing import cpu_count, Manager, Process
 from tm import Machine, Program
 from tm.parse import st_str
 
-Output  = Callable[[str], None]
-RunPile = Queue[str | tuple[tuple[str, int], str]]
+Prog = str
+Slot = tuple[str, int]
+
+Output  = Callable[[Prog], None]
+RunPile = Queue[Prog | tuple[Slot, Prog]]
 
 def stacker(
         steps: int,
         halt: bool,
         blank: bool,
         run_pile: RunPile,
-        stack: list[str],
+        stack: list[Prog],
 ) -> None:
-    prog: str | None = None
+    prog: Prog | None = None
 
     while True:  # pylint: disable = while-used
         if prog is None:
@@ -66,7 +69,7 @@ def runner(run_pile: RunPile, output: Output) -> None:
         except Empty:
             break
 
-        if isinstance(prog, str):
+        if isinstance(prog, Prog):
             output(prog)
         else:
             slot, prog = prog
