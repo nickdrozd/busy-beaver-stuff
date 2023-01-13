@@ -58,7 +58,7 @@ class Fast(TestTree):
         q22q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if not any(run_variations(prog, 92, 96, 2)):  # no-coverage
+            if not any(run_variations(prog, 190, 192, 2)): # no-coverage
                 q22q.put(prog)
 
         run_tree_gen(
@@ -75,7 +75,7 @@ class Fast(TestTree):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_variations(prog, 224, 224, 3, 1)):
+            if any(run_variations(prog, 340, 340, 3, 1)):
                 return
 
             if any(run_variations(prog, 2130, 100, 2)):
@@ -92,7 +92,7 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            19,
+            3,
             q32 := queue_to_set(q32q),
             'holdouts_32q')
 
@@ -102,10 +102,10 @@ class Fast(TestTree):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_variations(prog, 200, 200, 8, 1)):
+            if any(run_variations(prog, 500, 500, 8, 1)):
                 return
 
-            if any(run_variations(prog, 4000, 4400, 2, 1)):
+            if any(run_variations(prog, 18_000, 18_000, 2, 1)):
                 return
 
             q23q.put(prog)
@@ -118,7 +118,7 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            14,
+            10,
             (q23 := queue_to_set(q23q)),
             'holdouts_23q')
 
@@ -137,10 +137,10 @@ class Slow(TestTree):
             if 'D' not in prog:
                 return
 
-            if any(run_variations(prog, 400, 100, 10, 1)):
+            if any(run_variations(prog, 1000, 500, 10, 1)):
                 return
 
-            if any(run_variations(prog, 2150, 500, 3, 2)):
+            if any(run_variations(prog, 5000, 5000, 3, 2)):
                 return
 
             h42q.put(prog)
@@ -154,6 +154,6 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            227,
+            78,
             queue_to_set(h42q),
             'holdouts_42h')
