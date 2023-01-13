@@ -153,20 +153,21 @@ class PastConfig:
     def next_deltas(self, cycle: int) -> tuple[int, int] | None:
         (cycles := self.cycles).append(cycle)
 
-        if len(cycles) < 3:
+        if len(cycles) < 4:
             return None
 
         # pylint: disable = invalid-name
 
-        *_, c, b, a = cycles
+        *_, d, c, b, a = cycles
 
         cycles.pop(0)
 
         for i in range(1, 5):
             p1 = a - (b * i)
             p2 = b - (c * i)
+            p3 = c - (d * i)
 
-            if p1 == p2:
+            if p1 == p2 == p3:
                 nxt = a * i + p2
                 nxxt = nxt * i + p1
 
