@@ -198,7 +198,9 @@ class Program:
             if (result := Machine(partial).run().undfnd) is None:
                 return
 
-            step, slot = result
+            step, (state, color) = result
+
+            slot = st_str(state), color
 
             yield str(partial), step, slot
 

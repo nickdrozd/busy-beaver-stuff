@@ -9,6 +9,7 @@ from test.prog_data import *
 from test.test_program import BackwardReasoning
 
 from tm.tape import Tape
+from tm.parse import str_st
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine
 from tm.macro import MacroProg, BlockMacro, BacksymbolMacro
@@ -539,7 +540,7 @@ class Fast(TuringTest):
                 self.run_bb(partial, normal = False)
 
                 self.assertEqual(
-                    (step, (slot[0], int(slot[1]))),
+                    (step, (str_st(slot[0]), int(slot[1]))),
                     self.machine.undfnd)
 
     def test_block_macro_steps(self):
