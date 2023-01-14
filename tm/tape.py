@@ -142,6 +142,13 @@ class Tape(BlockTape):
             [[color, count] for color, count in self.rspan],
         )
 
+    def to_enum(self) -> EnumTape:
+        return EnumTape(
+            [[color, count] for color, count in self.lspan],
+            self.scan,
+            [[color, count] for color, count in self.rspan],
+        )
+
     @property
     def signature(self) -> Signature:
         return (
@@ -327,6 +334,48 @@ class TagTape(BlockTape):
 
         self.scan = next_scan
 
+
+@dataclass
+class EnumTape(Tape):
+    offsets: list[int] = field(
+        default_factory = lambda: [0, 0])
+
+    def __post_init__(self) -> None:
+        for s, span in enumerate(self.spans):
+            for i, block in enumerate(span, start = 1):
+                block.append(s)
+                block.append(i)
+
+    def step(  # type: ignore[override]
+            self,
+            shift: Shift,
+            color: Color,
+            skip: bool,
+    ) -> None:
+        if (span := self.rspan if shift else self.lspan):
+            if (near_block := span[0])[2:]:
+                _, _, ind, offset = near_block
+
+                if offset > self.offsets[ind]:
+                    self.offsets[ind] = offset
+
+            if (skip and near_block[0] == self.scan
+                    and span[1:]
+                    and (next_block := span[1])[2:]):
+                _, _, ind, offset = next_block
+
+                if offset > self.offsets[ind]:
+                    self.offsets[ind] = offset
+
+        _ = super().step(shift, color, skip)
+
+    @property
+    def signature(self) -> Signature:
+        return (
+            self.scan,
+            tuple(c if q != 1 else (c,) for (c, q, *_) in self.lspan),
+            tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
+        )
 
 @dataclass
 class PtrTape:
