@@ -208,6 +208,17 @@ class Prover:
 
         return temp.get(sig or tape.signature)
 
+    def set_rule(
+            self,
+            rule: Rule,
+            state: State,
+            sig: Signature,
+    ) -> None:
+        if (slot := (state, sig[0])) not in self.rules:
+            self.rules[slot] = {}
+
+        self.rules[slot][sig] = rule
+
     def run_simulator(
             self,
             steps: int,
@@ -304,9 +315,6 @@ class Prover:
                if isinstance(diff, int)):
             raise InfiniteRule()
 
-        if (slot := (state, sig[0])) not in self.rules:
-            self.rules[slot] = {}
-
-        self.rules[slot][sig] = rule
+        self.set_rule(rule, state, sig)
 
         return rule
