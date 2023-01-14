@@ -5,7 +5,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.instrs import State, Slot, GetInstr
-from tm.tape import PtrTape, Tape, TagTape, Signature, Rule
+from tm.tape import (
+    PtrTape, Tape, TagTape, Signature, Rule, ImplausibleRule)
 
 RecRes = tuple[int, int]
 Tapes = dict[int, PtrTape]
@@ -293,7 +294,9 @@ class Prover:
 
             counts.append(tags.counts)
 
-        if (rule := tape.make_rule(implausible, *counts)) is None:
+        try:
+            rule = tape.make_rule(implausible, *counts)
+        except ImplausibleRule:
             return None
 
         if all(diff >= 0

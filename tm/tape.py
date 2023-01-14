@@ -70,18 +70,15 @@ class BlockTape:
             implausible: bool,
             counts1: Counts,
             counts2: Counts,
-    ) -> Rule | None:
-        try:
-            return {
-                (s, i): diff
-                for s, spans in enumerate(
-                        zip(self.counts, counts1, counts2))
-                for i, counts in enumerate(zip(*spans))
-                if (diff := self.calculate_diff(
-                        implausible, *counts)) is not None
-            }
-        except ImplausibleRule:
-            return None
+    ) -> Rule:
+        return {
+            (s, i): diff
+            for s, spans in enumerate(
+                    zip(self.counts, counts1, counts2))
+            for i, counts in enumerate(zip(*spans))
+            if (diff := self.calculate_diff(
+                    implausible, *counts)) is not None
+        }
 
     def apply_rule(self, rule: Rule) -> int | None:
         divs: list[int] = []
