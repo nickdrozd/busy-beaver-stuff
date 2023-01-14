@@ -206,7 +206,10 @@ class Prover:
         if (temp := self.rules.get((state, tape.scan))) is None:
             return None
 
-        return temp.get(sig or tape.signature)
+        if sig is None:
+            sig = tape.signature
+
+        return temp.get(sig)
 
     def set_rule(
             self,
