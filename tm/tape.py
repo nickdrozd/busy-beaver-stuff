@@ -340,6 +340,9 @@ class EnumTape(Tape):
     offsets: list[int] = field(
         default_factory = lambda: [0, 0])
 
+    edges: list[bool] = field(
+        default_factory = lambda: [False, False])
+
     def __post_init__(self) -> None:
         for s, span in enumerate(self.spans):
             for i, block in enumerate(span, start = 1):
@@ -352,20 +355,23 @@ class EnumTape(Tape):
             color: Color,
             skip: bool,
     ) -> None:
-        if (span := self.rspan if shift else self.lspan):
+        if not (span := self.rspan if shift else self.lspan):
+            self.edges[bool(shift)] = True
+        else:
             if (near_block := span[0])[2:]:
                 _, _, ind, offset = near_block
 
                 if offset > self.offsets[ind]:
                     self.offsets[ind] = offset
 
-            if (skip and near_block[0] == self.scan
-                    and span[1:]
-                    and (next_block := span[1])[2:]):
-                _, _, ind, offset = next_block
+            if skip and near_block[0] == self.scan:
+                if not span[1:]:
+                    self.edges[bool(shift)] = True
+                elif (next_block := span[1])[2:]:
+                    _, _, ind, offset = next_block
 
-                if offset > self.offsets[ind]:
-                    self.offsets[ind] = offset
+                    if offset > self.offsets[ind]:
+                        self.offsets[ind] = offset
 
         _ = super().step(shift, color, skip)
 

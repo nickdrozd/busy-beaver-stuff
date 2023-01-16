@@ -454,6 +454,11 @@ class TestEnum(TestCase):
             offsets,
             self.tape.offsets)
 
+    def assert_edges(self, edges: list[bool]):
+        self.assertEqual(
+            edges,
+            self.tape.edges)
+
     def assert_tape(self, lspan: Span, scan: Color, rspan: Span):
         self.assertEqual(
             (lspan, scan, rspan),
@@ -543,3 +548,15 @@ class TestEnum(TestCase):
 
         self.assert_tape(
             [[2, 414422567], [3, 5]], 0, [])
+
+    def test_edges_1(self):
+        self.tape = EnumTape([], 0, [])
+        self.step(0, 1, 0)
+        self.assert_tape([], 0, [[1, 1]])
+        self.assert_edges([True, False])
+
+    def test_edges_2(self):
+        self.tape = EnumTape([[1, 3]], 1, [])
+        self.step(0, 2, 1)
+        self.assert_tape([], 0, [[2, 4]])
+        self.assert_edges([True, False])
