@@ -22,6 +22,8 @@ Op = Plus | Mult
 
 Rule = dict[tuple[int, int], Op]
 
+MinSig = tuple[Signature, tuple[bool, bool]]
+
 
 class ImplausibleRule(Exception):
     pass

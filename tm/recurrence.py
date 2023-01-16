@@ -6,7 +6,10 @@ from dataclasses import dataclass, field
 
 from tm.instrs import State, Slot, GetInstr
 from tm.tape import (
-    PtrTape, Tape, TagTape, Signature, Rule, ImplausibleRule)
+    PtrTape, Tape, TagTape, EnumTape,
+    Rule, ImplausibleRule,
+    Signature, MinSig,
+)
 
 RecRes = tuple[int, int]
 Tapes = dict[int, PtrTape]
@@ -189,7 +192,7 @@ class Prover:
 
     rules: dict[
         Slot,
-        dict[Signature, Rule],
+        dict[MinSig, Rule],
     ] = field(default_factory = dict)
 
     configs: dict[
@@ -209,15 +212,21 @@ class Prover:
         if sig is None:
             sig = tape.signature
 
-        return temp.get(sig)
+        for ((scan, lspan, rspan), (lex, rex)), rule in temp.items():
+            if (scan == sig[0]
+                and lspan == (sig[1] if lex else sig[1][:len(lspan)])
+                and rspan == (sig[2] if rex else sig[2][:len(rspan)])):
+                return rule
+
+        return None
 
     def set_rule(
             self,
             rule: Rule,
             state: State,
-            sig: Signature,
+            sig: MinSig,
     ) -> None:
-        if (slot := (state, sig[0])) not in self.rules:
+        if (slot := (state, sig[0][0])) not in self.rules:
             self.rules[slot] = {}
 
         self.rules[slot][sig] = rule
@@ -254,6 +263,33 @@ class Prover:
                 return None
 
         return implausible, state
+
+    def get_min_sig(
+            self,
+            steps: int,
+            state: State,
+            tape: EnumTape,
+            sig: Signature,
+    ) -> Signature:
+        for _ in range(steps):
+            if (rule := self.get_rule(state, tape)) is not None:
+                if tape.apply_rule(rule) is not None:
+                    continue
+
+            assert (instr := self.prog[state, tape.scan]) is not None
+
+            color, shift, next_state = instr
+
+            tape.step(
+                shift,
+                color,
+                state == next_state)
+
+            state = next_state
+
+        lmax, rmax = tape.offsets
+
+        return sig[0], sig[1][:lmax], sig[2][:rmax]
 
     def try_rule(
             self,
@@ -318,6 +354,17 @@ class Prover:
                if isinstance(diff, int)):
             raise InfiniteRule()
 
-        self.set_rule(rule, state, sig)
+        min_sig = self.get_min_sig(
+            deltas[0],
+            state,
+            (etap := tape.to_enum()),
+            sig,
+        )
+
+        self.set_rule(
+            rule,
+            state,
+            (min_sig, (etap.edges[0], etap.edges[1])),
+        )
 
         return rule
