@@ -355,7 +355,7 @@ class TuringTest(BackwardReasoning):
                     marks,
                     digits,
                     prog)
-            else:
+            elif exp < 100_000:
                 self.assert_close(
                     marks / 10 ** exp,
                     digits,

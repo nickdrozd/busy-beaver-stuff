@@ -1304,6 +1304,7 @@ PROVER_HALT = {
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC": (2, 0, 2.2, 2372),
 
     # 6/2
+    "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (2, 1, 1.7, 646_456_993),
     "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2, 1, 2.0, 98641),
     "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (4, 1, 6.0, 39456),
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (6, 1, 3.5, 18267),
@@ -1347,10 +1348,6 @@ PROVER_SPINOUT = {
     "1RB 1LC  0LD 0LB  1RE 0LA  0LC 1LD  1RE 1RA": (2, 0, 2, 0),
     "1RB 1LC  0LD 0LB  0LE 0LA  0LE 1LD  1RE 1RA": (2, 0, 2, 0),
     "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA": (2, 0, 2, 0),
-}
-
-OUT_OF_REACH = {
-    "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (2, 1, 1.7, 646_456_993),
 }
 
 ## test program ######################################################

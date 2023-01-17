@@ -166,7 +166,7 @@ class TestProgram(BackwardReasoning):
             self.assert_could_spin_out(prog)
 
     def test_halt(self):
-        for prog in DO_HALT | set(HALT_SLOW) | set(OUT_OF_REACH):
+        for prog in DO_HALT | set(HALT_SLOW):
             self.assert_could_halt(prog)
 
     def test_spinout(self):
