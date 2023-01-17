@@ -373,6 +373,13 @@ class EnumTape(Tape):
                     if offset > self.offsets[ind]:
                         self.offsets[ind] = offset
 
+        if opp_span := (self.lspan if shift else self.rspan):
+            if (opp_block := opp_span[0])[2:] and color == opp_block[0]:
+                _, _, ind, offset = opp_block
+
+                if offset > self.offsets[ind]:
+                    self.offsets[ind] = offset
+
         _ = super().step(shift, color, skip)
 
     @property

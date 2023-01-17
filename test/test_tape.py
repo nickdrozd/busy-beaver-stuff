@@ -549,6 +549,14 @@ class TestEnum(TestCase):
         self.assert_tape(
             [[2, 414422567], [3, 5]], 0, [])
 
+    def test_offsets_3(self):
+        # 1^1 2^2 3^9 [3] 1^10
+
+        self.tape = EnumTape([[3, 9]], 3, [[1, 10]])
+        self.step(0, 1, 0)
+        self.assert_tape([[3, 8]], 3, [[1, 11]])
+        self.assert_offsets([1, 1])
+
     def test_edges_1(self):
         self.tape = EnumTape([], 0, [])
         self.step(0, 1, 0)
