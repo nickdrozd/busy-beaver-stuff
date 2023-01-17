@@ -241,12 +241,8 @@ class Prover:
 
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
-                marks = tape.marks
-
                 if tape.apply_rule(rule) is not None:
-                    if abs(tape.marks - marks) > steps:
-                        implausible = True
-
+                    implausible = True
                     continue
 
             if (instr := self.prog[state, tape.scan]) is None:
