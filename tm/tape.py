@@ -48,7 +48,7 @@ class BlockTape:
 
     @staticmethod
     def calculate_diff(
-            implausible: bool,
+            rec_rule: int,
             cnt1: int,
             cnt2: int,
             cnt3: int,
@@ -62,14 +62,14 @@ class BlockTape:
         if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
             return mult
 
-        if implausible:
+        if rec_rule:
             raise ImplausibleRule()
 
         return None
 
     def make_rule(
             self,
-            implausible: bool,
+            rec_rule: int,
             counts1: Counts,
             counts2: Counts,
     ) -> Rule:
@@ -79,7 +79,7 @@ class BlockTape:
                     zip(self.counts, counts1, counts2))
             for i, counts in enumerate(zip(*spans))
             if (diff := self.calculate_diff(
-                    implausible, *counts)) is not None
+                    rec_rule, *counts)) is not None
         }
 
     def apply_rule(self, rule: Rule) -> int | None:

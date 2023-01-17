@@ -236,13 +236,13 @@ class Prover:
             steps: int,
             state: State,
             tape: TagTape,
-    ) -> tuple[bool, State] | None:
-        implausible = False
+    ) -> tuple[int, State] | None:
+        rec_rule = 0
 
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
                 if tape.apply_rule(rule) is not None:
-                    implausible = True
+                    rec_rule += 1
                     continue
 
             if (instr := self.prog[state, tape.scan]) is None:
@@ -258,7 +258,7 @@ class Prover:
             if (state := next_state) == -1:
                 return None
 
-        return implausible, state
+        return rec_rule, state
 
     def get_min_sig(
             self,
@@ -313,17 +313,17 @@ class Prover:
 
         counts = []
 
-        implausible = False
+        rec_rule = 0
 
         for delta in deltas:
             if (result := self.run_simulator(
                     delta, state, tags)) is None:
                 return None
 
-            imp, end_state = result
+            rec, end_state = result
 
-            if imp:
-                implausible = True
+            if rec:
+                rec_rule = rec
 
             if (
                 end_state != state
@@ -341,7 +341,7 @@ class Prover:
             counts.append(tags.counts)
 
         try:
-            rule = tape.make_rule(implausible, *counts)
+            rule = tape.make_rule(rec_rule, *counts)
         except ImplausibleRule:
             return None
 
