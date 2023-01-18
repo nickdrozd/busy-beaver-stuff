@@ -54,6 +54,7 @@ class BlockTape:
             cnt3: int,
     ) -> Op | None:
         if cnt1 == cnt2:
+            assert cnt3 == cnt1
             return None
 
         if (plus := cnt2 - cnt1) == cnt3 - cnt2:
