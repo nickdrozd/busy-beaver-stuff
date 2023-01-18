@@ -1,9 +1,9 @@
 # pylint: disable = redefined-loop-name, redefined-variable-type
 import sys
 
-from tm import Machine
-from tm import BlockMacro, BacksymbolMacro
 from perf import profile
+from tm.machine import Machine
+from tm.macro import BlockMacro, BacksymbolMacro
 
 PRINT = 1
 STEPS = 10 ** 10

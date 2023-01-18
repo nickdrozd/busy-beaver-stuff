@@ -1,4 +1,4 @@
-from tm import Graph
+from tm.graph import Graph
 
 COLORS = (
     'blue',

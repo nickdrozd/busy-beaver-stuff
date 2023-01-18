@@ -2,8 +2,8 @@ from queue import Queue as Q
 from unittest import TestCase
 from multiprocessing import Queue
 
-from tm import run_variations
 from tm.program import Program
+from tm.utils import run_variations
 from generate.tree import run_tree_gen
 
 

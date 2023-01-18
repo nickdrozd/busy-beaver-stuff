@@ -1,7 +1,7 @@
 import sys
 from multiprocessing import Pool
 
-from tm import Program
+from tm.program import Program
 
 def worker(prog: str) -> None:
     if (program := Program(prog)).cant_spin_out:
