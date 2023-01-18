@@ -18,6 +18,7 @@ from tm.instrs import (
     LetterState as State,
     LetterSlot as Slot,
     LetterInstr as Instr,
+    State as CompState,
     Slot as CompSlot,
     Instr as CompInstr,
     INIT, HALT, LEFT, RIGHT, BLANK,
@@ -208,9 +209,12 @@ class Program:
 
     def branch(
             self,
-            slot: Slot,
+            slot: Slot | CompSlot,
             halt: bool = False,
     ) -> Iterator[ProgStr]:
+        if isinstance(slot[0], CompState):
+            slot = st_str(slot[0]), slot[1]
+
         if halt and self.last_slot:
             return
 

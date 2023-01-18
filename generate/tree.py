@@ -3,10 +3,9 @@ from collections.abc import Callable
 from multiprocessing import cpu_count, Manager, Process
 
 from tm import Machine, Program
-from tm.parse import st_str
 
 Prog = str
-Slot = tuple[str, int]
+Slot = tuple[int, int]
 
 Output  = Callable[[Prog], None]
 RunPile = Queue[Prog | tuple[Slot, Prog]]
@@ -45,9 +44,7 @@ def stacker(
             prog = None
             continue
 
-        _, (state, color) = machine.undfnd
-
-        slot = st_str(state), color
+        _, slot = machine.undfnd
 
         branches = (program := Program(prog)).branch(slot, halt)
 
