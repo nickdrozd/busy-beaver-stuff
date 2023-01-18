@@ -152,9 +152,13 @@ class History:
 
 @dataclass
 class PastConfig:
+    times_seen: int = 0
+
     cycles: list[int] = field(default_factory = list)
 
     def next_deltas(self, cycle: int) -> tuple[int, int] | None:
+        self.times_seen += 1
+
         (cycles := self.cycles).append(cycle)
 
         if len(cycles) < 5:
