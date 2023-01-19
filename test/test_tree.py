@@ -75,10 +75,7 @@ class Fast(TestTree):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_variations(prog, 340, 3, 1)):
-                return
-
-            if any(run_variations(prog, 2130, 2)):
+            if any(run_variations(prog, 400, 3, 1)):
                 return
 
             q32q.put(prog)
@@ -102,10 +99,10 @@ class Fast(TestTree):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_variations(prog, 500, 8, 1)):
+            if any(run_variations(prog, 400, 8)):
                 return
 
-            if any(run_variations(prog, 18_000, 2, 1)):
+            if any(run_variations(prog, 9_600, 2)):
                 return
 
             q23q.put(prog)
