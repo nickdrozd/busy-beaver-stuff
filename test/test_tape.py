@@ -458,6 +458,15 @@ class TestTags(TestCase):
         self.assert_tape(
             [[1, 5]], 1, [[0, 1, 0]])
 
+    def test_trace_9(self):
+        self.set_tape(
+            [[1, 1], [0, 1, 0]], 1, [[1, 6]])
+
+        self.step(0, 1, 0)
+
+        self.assert_tape(
+            [[1, 1]], (0, [0]), [[1, 7]])
+
 
 class TestEnum(TestCase):
     tape: EnumTape
