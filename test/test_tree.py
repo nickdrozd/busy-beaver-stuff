@@ -101,7 +101,7 @@ class Fast(TestTree):
         self.assert_cant_terminate(q32)
 
         self.assert_progs(
-            6,
+            4,
             queue_to_set(tags_q),
             'tag_bug')
 
@@ -144,10 +144,10 @@ class Slow(TestTree):
             if 'D' not in prog:
                 return
 
-            if any(run_variations(prog, 1000, 10, 1)):
+            if any(run_variations(prog, 1000, 10)):
                 return
 
-            if any(run_variations(prog, 5000, 3, 2)):
+            if any(run_variations(prog, 5000, 3)):
                 return
 
             h42q.put(prog)
@@ -161,6 +161,6 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            68,
+            67,
             queue_to_set(h42q),
             'holdouts_42h')
