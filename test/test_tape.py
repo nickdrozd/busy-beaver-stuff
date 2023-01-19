@@ -386,21 +386,21 @@ class TestTags(TestCase):
 
         self.assert_tape(
             [[1, 3, 0], [0, 4, 1]],
-            (1, [2]),
-            [[0, 2], [1, 2]])
+            1,
+            [[0, 2, 2], [1, 2]])
 
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 5, 1, 2]],
+            [[1, 3, 0], [0, 5, 1]],
             0,
-            [[0, 1], [1, 2]])
+            [[0, 1, 2], [1, 2]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 5, 1], [1, 1, 2]],
-            0,
+            [[1, 3, 0], [0, 5, 1], [1, 1]],
+            (0, [2]),
             [[1, 2]])
 
         self.step(1, 1, 0)
@@ -451,12 +451,12 @@ class TestTags(TestCase):
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 6]], (1, [0]), [])
+            [[1, 6, 0]], 1, [])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 5]], 1, [[0, 1, 0]])
+            [[1, 5, 0]], 1, [])
 
     def test_trace_9(self):
         self.set_tape(
@@ -465,7 +465,7 @@ class TestTags(TestCase):
         self.step(0, 1, 0)
 
         self.assert_tape(
-            [[1, 1]], (0, [0]), [[1, 7]])
+            [[1, 1]], 0, [[1, 7, 0]])
 
 
 class TestEnum(TestCase):

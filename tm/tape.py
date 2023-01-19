@@ -276,6 +276,7 @@ class TagTape(BlockTape):
         next_scan: Color
 
         dec_pull: bool = False
+        inc_push: bool = False
 
         if not pull:
             next_scan = 0
@@ -297,6 +298,7 @@ class TagTape(BlockTape):
                     push_block = push_block[:2]
 
         if push and (top_block := push[0])[0] == color:
+            inc_push = True
             top_block[1] += stepped
             top_block += self.scan_info
 
@@ -333,7 +335,10 @@ class TagTape(BlockTape):
                     top_block.extend(
                         self.scan_info)
 
-        self.scan_info = scan_info
+        if inc_push and not (top_block := push[0])[2:]:
+            top_block.extend(scan_info)
+        else:
+            self.scan_info = scan_info
 
         self.scan = next_scan
 

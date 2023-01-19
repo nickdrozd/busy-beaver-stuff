@@ -76,7 +76,7 @@ class Fast(TestTree):
         tags_q : Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_variations(prog, 400, 3)):
+            if any(run_variations(prog, 800, 3)):
                 return
 
             if any(run_variations(prog, 400, 0, 1)):
@@ -101,7 +101,7 @@ class Fast(TestTree):
         self.assert_cant_terminate(q32)
 
         self.assert_progs(
-            4,
+            3,
             queue_to_set(tags_q),
             'tag_bug')
 
@@ -147,7 +147,7 @@ class Slow(TestTree):
             if any(run_variations(prog, 1000, 10)):
                 return
 
-            if any(run_variations(prog, 5000, 3)):
+            if any(run_variations(prog, 5300, 3)):
                 return
 
             h42q.put(prog)
@@ -161,6 +161,6 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            67,
+            66,
             queue_to_set(h42q),
             'holdouts_42h')
