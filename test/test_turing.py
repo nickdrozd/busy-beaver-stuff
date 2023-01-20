@@ -578,6 +578,21 @@ class Fast(TuringTest):
 
         print(self.machine)
 
+        self.run_bb(
+            "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB")
+
+        self.assertEqual(
+            str(self.machine.tape),
+            "[0] 3^97 1^2")
+
+        self.run_bb(
+            "1LB 2LA 3RA 0RB  1RB 1RA 0LB 1LB",
+            analyze = False)
+
+        self.assertEqual(
+            str(self.machine.tape),
+            "1^2 3^97 [0]")
+
 
 class Slow(TuringTest):  # no-coverage
     @skip('')
