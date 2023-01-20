@@ -83,6 +83,16 @@ class BlockTape:
                     rec_rule, *counts)) is not None
         }
 
+    def __getitem__(self, index: tuple[int, int]) -> Block:
+        side, pos = index
+
+        if side == 0:
+            span = self.lspan
+        elif side == 1:
+            span = self.rspan
+
+        return span[pos]
+
     def apply_rule(self, rule: Rule) -> int | None:
         divs: list[int] = []
 
@@ -91,7 +101,7 @@ class BlockTape:
                 continue
 
             if ((abs_diff := abs(diff))
-                    >= (count := self.spans[s][i][1])):
+                    >= (count := self[s, i][1])):
                 return None
 
             div, rem = divmod(count, abs_diff)
@@ -101,13 +111,13 @@ class BlockTape:
 
         for (s, i), diff in rule.items():
             if isinstance(diff, Plus):
-                self.spans[s][i][1] += diff * times
+                self[s, i][1] += diff * times
                 continue
 
             div, mod = diff
 
-            self.spans[s][i][1] *= (term := div ** times)
-            self.spans[s][i][1] += mod * (1 + ((term - div) // (div-1)))
+            self[s, i][1] *= (term := div ** times)
+            self[s, i][1] += mod * (1 + ((term - div) // (div-1)))
 
         return times
 
