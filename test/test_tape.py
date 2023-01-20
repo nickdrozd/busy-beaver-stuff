@@ -492,7 +492,7 @@ class TestTags(TestCase):
         self.step(0, 2, 1)
 
         self.assert_tape(
-            [[1, 1]], 0, [[2, 4, 0]])
+            [[1, 1]], 0, [[2, 4, 0, 1]])
 
 
 class TestEnum(TestCase):

@@ -303,7 +303,7 @@ class TagTape(BlockTape):
             top_block[1] += stepped
             top_block += self.scan_info
 
-            if push_block is not None and not top_block[2:]:
+            if push_block is not None:
                 top_block += push_block[2:]
         else:
             if push_block is None:
