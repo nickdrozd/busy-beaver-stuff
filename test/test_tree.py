@@ -137,7 +137,10 @@ class Slow(TestTree):
             if any(run_variations(prog, 1000, 10)):
                 return
 
-            if any(run_variations(prog, 5300, 3)):
+            if any(run_variations(prog, 10_275)):
+                return
+
+            if any(run_variations(prog, 6_000, 2)):
                 return
 
             h42q.put(prog)
