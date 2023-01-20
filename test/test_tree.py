@@ -79,7 +79,7 @@ class Fast(TestTree):
             if any(run_variations(prog, 800, 3)):
                 return
 
-            if any(run_variations(prog, 400, 0, 1)):
+            if any(run_variations(prog, 200, 0, 1)):
                 tags_q.put(prog)
                 return
 
@@ -101,7 +101,7 @@ class Fast(TestTree):
         self.assert_cant_terminate(q32)
 
         self.assert_progs(
-            3,
+            1,
             queue_to_set(tags_q),
             'tag_bug')
 

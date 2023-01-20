@@ -469,17 +469,12 @@ class TestTags(TestCase):
 
     def test_trace_a(self):
         self.set_tape(
-            [[0, 1, 0]], 1, [[1, 5]])
-
-        self.step(0, 0, 0)
-
-        self.assert_tape(
             [], (0, [0]), [[0, 1], [1, 5]])
 
         self.step(1, 0, 1)
 
         self.assert_tape(
-            [], 1, [[1, 4]])
+            [[0, 1, 0]], 1, [[1, 4]])
 
 
 class TestEnum(TestCase):
