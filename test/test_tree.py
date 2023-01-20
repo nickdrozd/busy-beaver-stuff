@@ -101,7 +101,7 @@ class Fast(TestTree):
         self.assert_cant_terminate(q32)
 
         self.assert_progs(
-            1,
+            0,
             queue_to_set(tags_q),
             'tag_bug')
 

@@ -329,6 +329,10 @@ class TagTape(BlockTape):
                     push_block.append(
                         top_block.pop())
 
+                if self.scan_info:
+                    push_block.extend(
+                        self.scan_info)
+
             if push or color != 0 or push_block[2:] or skip:
                 if color == 0 and not push:
                     push_block[1] = 1
