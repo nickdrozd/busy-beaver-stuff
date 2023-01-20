@@ -335,10 +335,8 @@ class Prover:
                 or tags.signature != sig
                 or any(
                     new[1] > 1 and len(new) != 3
-                    for curr_span, prev_span in
-                        zip(tags.spans, tape.spans)
-                    for num, (old, new) in
-                        enumerate(zip(prev_span, curr_span)))
+                    for prev, curr in zip(tape.spans, tags.spans)
+                    for num, (old, new) in enumerate(zip(prev, curr)))
             ):
                 return None
 
