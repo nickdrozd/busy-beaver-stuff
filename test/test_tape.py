@@ -18,10 +18,8 @@ def stringify_sig(sig: Signature) -> str:
 class TestTape(TestCase):
     tape: Tape
 
-    def assert_tape(self, lspan: Span, scan: Color, rspan: Span):
-        self.assertEqual(
-            (lspan, scan, rspan),
-            (self.tape.lspan, self.tape.scan, self.tape.rspan))
+    def assert_tape(self, tape: str):
+        self.assertEqual(tape, str(self.tape))
 
     def assert_signature(
             self,
@@ -70,15 +68,16 @@ class TestTape(TestCase):
             3,
             [[4, 15], [5, 2], [6, 2]])
 
+        self.assert_tape(
+            "2^3 1^12 [3] 4^15 5^2 6^2")
+
         self.tape.apply_rule({
             (0, 1): 3,
             (1, 0): -2,
         })
 
         self.assert_tape(
-            [[1, 12], [2, 24]],
-            3,
-            [[4, 1], [5, 2], [6, 2]])
+            "2^24 1^12 [3] 4^1 5^2 6^2")
 
         self.tape.apply_rule({
             (0, 0): -2,
@@ -86,9 +85,7 @@ class TestTape(TestCase):
         })
 
         self.assert_tape(
-        [[1, 2], [2, 24]],
-         3,
-         [[4, 1], [5, 2], [6, 157]])
+            "2^24 1^2 [3] 4^1 5^2 6^157")
 
 
 class TestTags(TestCase):
