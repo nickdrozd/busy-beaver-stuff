@@ -18,6 +18,11 @@ def stringify_sig(sig: Signature) -> str:
 class TestTape(TestCase):
     tape: Tape
 
+    def assert_tape(self, lspan: Span, scan: Color, rspan: Span):
+        self.assertEqual(
+            (lspan, scan, rspan),
+            (self.tape.lspan, self.tape.scan, self.tape.rspan))
+
     def assert_signature(
             self,
             expected: str,
@@ -58,6 +63,32 @@ class TestTape(TestCase):
         self.assert_signature(
             '1|0|1[2]1',
             tape = copy_2)
+
+    def test_rule(self):
+        self.tape = Tape(
+            [[1, 12], [2, 3]],
+            3,
+            [[4, 15], [5, 2], [6, 2]])
+
+        self.tape.apply_rule({
+            (0, 1): 3,
+            (1, 0): -2,
+        })
+
+        self.assert_tape(
+            [[1, 12], [2, 24]],
+            3,
+            [[4, 1], [5, 2], [6, 2]])
+
+        self.tape.apply_rule({
+            (0, 0): -2,
+            (1, 2): (2, 3),
+        })
+
+        self.assert_tape(
+        [[1, 2], [2, 24]],
+         3,
+         [[4, 1], [5, 2], [6, 157]])
 
 
 class TestTags(TestCase):
