@@ -144,13 +144,17 @@ Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) 
 
 ----------------------------------------
 
+ColorSpan : Type
+ColorSpan = List Color
+
+
 public export
 CellTape : Type
-CellTape = ScanNSpan $ List Color
+CellTape = ScanNSpan ColorSpan
 
 
 implementation
-Spannable (List Color) where
+Spannable ColorSpan where
   pullNext [] = (0, [])
   pullNext (x :: xs) = (x, xs)
 
@@ -200,8 +204,12 @@ Block : Type
 Block = (Color, Nat)
 
 
+BlockSpan : Type
+BlockSpan = List Block
+
+
 implementation
-Spannable (List Block) where
+Spannable BlockSpan where
   pullNext [] = (0, [])
   pullNext ((c, n) :: xs) =
     (c, case n of
@@ -226,7 +234,7 @@ Spannable (List Block) where
 
 public export
 BlockTape : Type
-BlockTape = ScanNSpan $ List Block
+BlockTape = ScanNSpan BlockSpan
 
 
 public export
@@ -511,13 +519,13 @@ SkipTape BlockVectTape where
 Cast sp1 sp2 => Cast (ScanNSpan sp1) (ScanNSpan sp2) where
   cast (l, c, r) = (cast l, c, cast r)
 
-Cast Block (List Color) where
+Cast Block ColorSpan where
   cast (c, n) = replicate n c
 
-Cast (List Block) (List Color) where
+Cast BlockSpan ColorSpan where
   cast = concat . map cast
 
-Cast (List Color) (List Block) where
+Cast ColorSpan BlockSpan where
   cast [] = []
   cast (c :: cs) =
     let
@@ -526,18 +534,18 @@ Cast (List Color) (List Block) where
     in
       block :: cast rest
 
-Cast (List Color) Integer where
+Cast ColorSpan Integer where
   cast [] = 0
   cast (c :: cs) = cast c + (10 * cast cs)
 
-Cast Integer (List Color) where
+Cast Integer ColorSpan where
   cast 0 = []
   cast n =
     let t = assert_smaller n $ div n 10 in
       cast (mod n 10) :: cast t
 
-Cast Integer (List Block) where
-  cast = cast . the (List Color) . cast
+Cast Integer BlockSpan where
+  cast = cast . the ColorSpan . cast
 
-Cast (List Block) Integer where
-  cast = cast . the (List Color) . cast
+Cast BlockSpan Integer where
+  cast = cast . the ColorSpan . cast
