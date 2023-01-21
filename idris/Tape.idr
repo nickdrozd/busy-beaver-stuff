@@ -230,6 +230,60 @@ SkipTape BlockTape where
 
 ----------------------------------------
 
+SplitSpan : Type
+SplitSpan = (List Color, List Nat)
+
+
+Spannable SplitSpan where
+  blankSpan = ([], [])
+
+  spanBlank (colors, _) = all (== 0) colors
+
+  spanCells (_, counts) = sum counts
+
+  spanMarks (colors, counts) =
+    foldl
+      (\a, (q, n) => (+) a $ if q == 0 then 0 else n)
+      0
+      (zip colors counts)
+
+  pullNext (co :: colors, 1 :: counts) =
+    (co, (colors, counts))
+
+  pullNext (colors@(co :: _), (S $ S cn) :: counts) =
+    (co, (colors, S cn :: counts))
+
+  pullNext _ = (0, blankSpan)
+
+  pushCurr cx nx (colors@(co :: _), cn :: counts) =
+    if cx == co
+      then (colors, nx + cn :: counts)
+      else (cx :: colors, nx :: cn :: counts)
+
+  pushCurr cx nx _ = ([cx], [nx])
+
+
+public export
+SplitTape : Type
+SplitTape = ScanNSpan SplitSpan
+
+
+public export
+implementation
+SkipTape SplitTape where
+  skipLeft tape@((bc :: lcol, bn :: lcnt), c, r) cx =
+    if bc /= c then stepLeft tape cx else
+      let (x, k) = pullNext (lcol, lcnt) in
+        (1 + bn, (k, x, pushCurr cx (1 + bn) r))
+
+  skipLeft tape cx = stepLeft tape cx
+
+  skipRight (l, c, r) cx =
+    let (s, (k, x, e)) = skipLeft (r, c, l) cx in
+      (s, (e, x, k))
+
+----------------------------------------
+
 public export
 PtrTape : Type
 PtrTape = (i : Nat ** (Fin (S i), Vect (S i) Color))

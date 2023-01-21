@@ -69,6 +69,9 @@ runCell = runMachine "Cell" CellMachine
 runFast : Cycles -> IO ()
 runFast = runMachine "Block (Fast)" BlockMachine
 
+runSplit : Cycles -> IO ()
+runSplit = runMachine "Split" SplitMachine
+
 runCV : Cycles -> IO ()
 runCV = runMachine "CellVect" CellVectMachine
 
@@ -89,6 +92,7 @@ main = do
   runNum            5_000
   runCell         100_000
   runCV           100_000
+  runSplit        100_000
   runBV        50_000_000
 
   runSlow   1_000_000_000

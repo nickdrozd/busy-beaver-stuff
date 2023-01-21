@@ -92,6 +92,10 @@ implementation
 
 public export
 implementation
+[SplitMachine] Machine SplitTape where
+
+public export
+implementation
 [PtrMachine] Machine PtrTape where
 
 public export
