@@ -110,18 +110,7 @@ Spannable span => TapeMeasure (ScanNSpan span) where
 
 
 implementation
-Spannable (List unit) => Tape (ScanNSpan (List unit)) where
-  stepLeft (l, _, r) cx =
-    let (x, k) = pullNext l in
-      (1, (k, x, pushCurr cx 1 r))
-
-  stepRight (l, c, r) cx =
-    let (s, (k, x, e)) = stepLeft (r, c, l) cx in
-      (s, (e, x, k))
-
-
-implementation
-Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) where
+Spannable span => Tape (ScanNSpan span) where
   stepLeft (l, _, r) cx =
     let (x, k) = pullNext l in
       (1, (k, x, pushCurr cx 1 r))
@@ -369,18 +358,6 @@ Spannable Integer where
 public export
 NumTape : Type
 NumTape = ScanNSpan Integer
-
-
-public export
-implementation
-Tape NumTape where
-  stepLeft (l, _, r) cx =
-    let (x, k) = pullNext l in
-      (1, (k, x, pushCurr cx 1 r))
-
-  stepRight (l, c, r) cx =
-    let (s, (k, x, e)) = stepLeft (r, c, l) cx in
-      (s, (e, x, k))
 
 
 public export
