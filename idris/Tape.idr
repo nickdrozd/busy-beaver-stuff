@@ -17,6 +17,8 @@ TapeMeasure tape where
 
   blank : tape -> Bool
 
+  blankInit : tape
+
 
 public export
 Stepper : Type -> Type
@@ -31,8 +33,6 @@ Shifter tape = Shift -> Stepper tape
 public export
 interface
 Eq tape => TapeMeasure tape => Tape tape where
-  blankInit : tape
-
   read : tape -> (Color, Maybe Shift)
 
   step : Shifter tape
@@ -78,6 +78,8 @@ Eq span => Spannable span where
   pullNext : span -> (Color, span)
   pushCurr : Color -> Nat -> span -> span
 
+  blankSpan : span
+
   spanBlank : span -> Bool
 
   spanCells : span -> Nat
@@ -96,11 +98,11 @@ Spannable span => TapeMeasure (ScanNSpan span) where
   blank (l, 0, r) = spanBlank l && spanBlank r
   blank _ = False
 
+  blankInit = (blankSpan, 0, blankSpan)
+
 
 implementation
 Spannable (List unit) => Tape (ScanNSpan (List unit)) where
-  blankInit = ([], 0, [])
-
   read ([], 0,  _) = (0,  Just L)
   read ( _, 0, []) = (0,  Just R)
   read ( l, 0,  r) =
@@ -122,8 +124,6 @@ Spannable (List unit) => Tape (ScanNSpan (List unit)) where
 
 implementation
 Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) where
-  blankInit = ((0 ** []), 0, (0 ** []))
-
   read ((_ ** []), 0,         _) = (0,  Just L)
   read (        _, 0, (_ ** [])) = (0,  Just R)
   read (        l, 0,         r) =
@@ -159,6 +159,8 @@ Spannable (List Color) where
   spanBlank (0 :: xs) = spanBlank xs
   spanBlank [] = True
   spanBlank _ = False
+
+  blankSpan = []
 
   spanCells = length
   spanMarks = length . filter (/= 0)
@@ -212,6 +214,8 @@ Spannable (List Block) where
       then (q, k + n) :: xs
       else (c, k) :: (q, n) :: xs
 
+  blankSpan = []
+
   spanBlank ((0, _) :: xs) = spanBlank xs
   spanBlank [] = True
   spanBlank _ = False
@@ -264,12 +268,12 @@ TapeMeasure PtrTape where
     allZ (0 :: xs) = allZ xs
     allZ _ = False
 
+  blankInit = (0 ** (FZ, [0]))
+
 
 public export
 implementation
 Tape PtrTape where
-  blankInit = (Z ** (FZ, [0]))
-
   read (_ ** ( FZ, 0 :: _)) = (0,  Just L)
   read (_ ** ( FZ, c :: _)) = (c, Nothing)
 
@@ -359,6 +363,8 @@ Spannable Integer where
   spanBlank 0 = True
   spanBlank _ = False
 
+  blankSpan = 0
+
   pushCurr cx _ n = cast cx + (10 * n)
 
   pullNext n = (cast $ mod n 10, div n 10)
@@ -372,8 +378,6 @@ NumTape = ScanNSpan Integer
 public export
 implementation
 Tape NumTape where
-  blankInit = (0, 0, 0)
-
   read (0, 0, _) = (0,  Just L)
   read (_, 0, 0) = (0,  Just R)
   read (_, c, _) = (c, Nothing)
@@ -429,6 +433,8 @@ Spannable (VectSpan Color) where
     allZ (0 :: xs) = allZ xs
     allZ _ = False
 
+  blankSpan = (0 ** [])
+
   spanCells (_ ** tape) = length tape
   spanMarks (_ ** tape) = length $ filter (/= 0) $ toList tape
 
@@ -475,6 +481,8 @@ Spannable (VectSpan Block) where
     allZ [] = True
     allZ ((0, _) :: xs) = allZ xs
     allZ _ = False
+
+  blankSpan = (0 ** [])
 
   spanCells (_ ** tape) = foldl (\a, (_, n) => a + n) 0 tape
   spanMarks (_ ** tape) = foldl (\a, (q, n) => (+) a $ if q == 0 then 0 else n) 0 tape
