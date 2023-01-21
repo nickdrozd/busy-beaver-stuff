@@ -15,6 +15,8 @@ TapeMeasure tape where
   cells : tape -> Nat
   marks : tape -> Nat
 
+  blank : tape -> Bool
+
 
 public export
 Stepper : Type -> Type
@@ -30,8 +32,6 @@ public export
 interface
 Eq tape => TapeMeasure tape => Tape tape where
   blankInit : tape
-
-  blank : tape -> Bool
 
   read : tape -> (Color, Maybe Shift)
 
@@ -93,13 +93,13 @@ Spannable span => TapeMeasure (ScanNSpan span) where
   cells (l, _, r) = spanCells l + 1 + spanCells r
   marks (l, c, r) = spanMarks l + (if c == 0 then 0 else 1) + spanMarks r
 
+  blank (l, 0, r) = spanBlank l && spanBlank r
+  blank _ = False
+
 
 implementation
 Spannable (List unit) => Tape (ScanNSpan (List unit)) where
   blankInit = ([], 0, [])
-
-  blank (l, 0, r) = spanBlank l && spanBlank r
-  blank _ = False
 
   read ([], 0,  _) = (0,  Just L)
   read ( _, 0, []) = (0,  Just R)
@@ -123,9 +123,6 @@ Spannable (List unit) => Tape (ScanNSpan (List unit)) where
 implementation
 Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) where
   blankInit = ((0 ** []), 0, (0 ** []))
-
-  blank (l, 0, r) = spanBlank l && spanBlank r
-  blank _ = False
 
   read ((_ ** []), 0,         _) = (0,  Just L)
   read (        _, 0, (_ ** [])) = (0,  Just R)
@@ -261,17 +258,17 @@ TapeMeasure PtrTape where
   cells (_ ** (_, tape))  = length tape
   marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
 
-
-public export
-implementation
-Tape PtrTape where
-  blankInit = (Z ** (FZ, [0]))
-
   blank (_ ** (_, cs)) = allZ cs where
     allZ : Vect _ Color -> Bool
     allZ [] = True
     allZ (0 :: xs) = allZ xs
     allZ _ = False
+
+
+public export
+implementation
+Tape PtrTape where
+  blankInit = (Z ** (FZ, [0]))
 
   read (_ ** ( FZ, 0 :: _)) = (0,  Just L)
   read (_ ** ( FZ, c :: _)) = (c, Nothing)
@@ -376,9 +373,6 @@ public export
 implementation
 Tape NumTape where
   blankInit = (0, 0, 0)
-
-  blank (l, 0, r) = spanBlank l && spanBlank r
-  blank _ = False
 
   read (0, 0, _) = (0,  Just L)
   read (_, 0, 0) = (0,  Just R)
