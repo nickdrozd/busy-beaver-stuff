@@ -15,13 +15,16 @@ TapeMeasure tape where
   cells : tape -> Nat
   marks : tape -> Nat
 
+
 public export
 Stepper : Type -> Type
 Stepper tape = tape -> Color -> (Nat, tape)
 
+
 public export
 Shifter : Type -> Type
 Shifter tape = Shift -> Stepper tape
+
 
 public export
 interface
@@ -39,16 +42,19 @@ Eq tape => TapeMeasure tape => Tape tape where
   stepLeft  : Stepper tape
   stepRight : Stepper tape
 
+
 public export
 implementation
 TapeMeasure tape => Show tape where
   show tape = show (cells tape, marks tape)
+
 
 interface
 Tape tape => NonContractingTape tape where
   tapeNonContracting : (cx : Color) -> (tp : tape) ->
     let (_, shifted) = stepLeft tp cx in
       LTE (cells tp) (cells shifted)
+
 
 public export
 interface
@@ -77,13 +83,16 @@ Eq span => Spannable span where
   spanCells : span -> Nat
   spanMarks : span -> Nat
 
+
 ScanNSpan : Type -> Type
 ScanNSpan span = (span, Color, span)
+
 
 implementation
 Spannable span => TapeMeasure (ScanNSpan span) where
   cells (l, _, r) = spanCells l + 1 + spanCells r
   marks (l, c, r) = spanMarks l + (if c == 0 then 0 else 1) + spanMarks r
+
 
 implementation
 Spannable (List unit) => Tape (ScanNSpan (List unit)) where
@@ -109,6 +118,7 @@ Spannable (List unit) => Tape (ScanNSpan (List unit)) where
   stepRight (l, c, r) cx =
     let (s, (k, x, e)) = stepLeft (r, c, l) cx in
       (s, (e, x, k))
+
 
 implementation
 Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) where
@@ -141,6 +151,7 @@ public export
 CellTape : Type
 CellTape = ScanNSpan $ List Color
 
+
 implementation
 Spannable (List Color) where
   pullNext [] = (0, [])
@@ -154,6 +165,7 @@ Spannable (List Color) where
 
   spanCells = length
   spanMarks = length . filter (/= 0)
+
 
 public export
 implementation
@@ -172,6 +184,7 @@ SkipTape CellTape where
     let (s, (k, x, e)) = skipLeft (r, c, l) cx in
       (s, (e, x, k))
 
+
 implementation
 NonContractingTape CellTape where
   tapeNonContracting _ (    [], _, _) =
@@ -186,6 +199,7 @@ NonContractingTape CellTape where
 
 Block : Type
 Block = (Color, Nat)
+
 
 implementation
 Spannable (List Block) where
@@ -208,9 +222,11 @@ Spannable (List Block) where
   spanCells = foldl (\a, (_, n) => a + n) 0
   spanMarks = foldl (\a, (q, n) => (+) a $ if q == 0 then 0 else n) 0
 
+
 public export
 BlockTape : Type
 BlockTape = ScanNSpan $ List Block
+
 
 public export
 implementation
@@ -232,16 +248,19 @@ public export
 PtrTape : Type
 PtrTape = (i : Nat ** (Fin (S i), Vect (S i) Color))
 
+
 implementation
 Eq PtrTape where
   (i1 ** (p1, t1)) == (i2 ** (p2, t2)) =
     (the Nat $ cast p1) == (the Nat $ cast p2)
       && toList t1 == toList t2
 
+
 implementation
 TapeMeasure PtrTape where
   cells (_ ** (_, tape))  = length tape
   marks (_ ** (_, tape)) = let (n ** _) = filter ((/=) 0) tape in n
+
 
 public export
 implementation
@@ -290,6 +309,7 @@ Tape PtrTape where
     in
       (1, shifted)
 
+
 public export
 implementation
 SkipTape PtrTape where
@@ -314,6 +334,7 @@ SkipTape PtrTape where
       if nextScan /= currScan then oneStep else
         let (steps, skipped) = assert_total $ skipRight stepped cx in
           (S steps, skipped)
+
 
 implementation
 NonContractingTape PtrTape where
@@ -345,9 +366,11 @@ Spannable Integer where
 
   pullNext n = (cast $ mod n 10, div n 10)
 
+
 public export
 NumTape : Type
 NumTape = ScanNSpan Integer
+
 
 public export
 implementation
@@ -368,6 +391,7 @@ Tape NumTape where
   stepRight (l, c, r) cx =
     let (s, (k, x, e)) = stepLeft (r, c, l) cx in
       (s, (e, x, k))
+
 
 public export
 implementation
@@ -392,9 +416,11 @@ SkipTape NumTape where
 VectSpan : Type -> Type
 VectSpan unit = (k : Nat ** Vect k unit)
 
+
 implementation
 Eq ty => Eq (VectSpan ty) where
   (_ ** v1) == (_ ** v2) = toList v1 == toList v2
+
 
 implementation
 Spannable (VectSpan Color) where
@@ -412,9 +438,11 @@ Spannable (VectSpan Color) where
   spanCells (_ ** tape) = length tape
   spanMarks (_ ** tape) = length $ filter (/= 0) $ toList tape
 
+
 public export
 CellVectTape : Type
 CellVectTape = ScanNSpan $ VectSpan Color
+
 
 public export
 implementation
@@ -432,6 +460,7 @@ SkipTape CellVectTape where
   skipRight (l, c, r) cx =
     let (s, (k, x, e)) = skipLeft (r, c, l) cx in
       (s, (e, x, k))
+
 
 implementation
 Spannable (VectSpan Block) where
@@ -456,9 +485,11 @@ Spannable (VectSpan Block) where
   spanCells (_ ** tape) = foldl (\a, (_, n) => a + n) 0 tape
   spanMarks (_ ** tape) = foldl (\a, (q, n) => (+) a $ if q == 0 then 0 else n) 0 tape
 
+
 public export
 BlockVectTape : Type
 BlockVectTape = ScanNSpan $ VectSpan Block
+
 
 public export
 implementation
