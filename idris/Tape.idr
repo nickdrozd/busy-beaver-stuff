@@ -19,6 +19,8 @@ TapeMeasure tape where
 
   blankInit : tape
 
+  read : tape -> (Color, Maybe Shift)
+
 
 public export
 Stepper : Type -> Type
@@ -33,8 +35,6 @@ Shifter tape = Shift -> Stepper tape
 public export
 interface
 Eq tape => TapeMeasure tape => Tape tape where
-  read : tape -> (Color, Maybe Shift)
-
   step : Shifter tape
   step L = stepLeft
   step R = stepRight
@@ -100,19 +100,17 @@ Spannable span => TapeMeasure (ScanNSpan span) where
 
   blankInit = (blankSpan, 0, blankSpan)
 
-
-implementation
-Spannable (List unit) => Tape (ScanNSpan (List unit)) where
-  read ([], 0,  _) = (0,  Just L)
-  read ( _, 0, []) = (0,  Just R)
-  read ( l, 0,  r) =
+  read (l, 0, r) =
     (0, if spanBlank l
            then Just L else
         if spanBlank r
           then Just R else
         Nothing)
-  read ( _, c,  _) = (c, Nothing)
+  read (_, c, _) = (c, Nothing)
 
+
+implementation
+Spannable (List unit) => Tape (ScanNSpan (List unit)) where
   stepLeft (l, _, r) cx =
     let (x, k) = pullNext l in
       (1, (k, x, pushCurr cx 1 r))
@@ -124,16 +122,6 @@ Spannable (List unit) => Tape (ScanNSpan (List unit)) where
 
 implementation
 Spannable (j : Nat ** Vect j unit) => Tape (ScanNSpan (k : Nat ** Vect k unit)) where
-  read ((_ ** []), 0,         _) = (0,  Just L)
-  read (        _, 0, (_ ** [])) = (0,  Just R)
-  read (        l, 0,         r) =
-    (0, if spanBlank l
-           then Just L else
-        if spanBlank r
-          then Just R else
-        Nothing)
-  read (        _, c,         _) = (c, Nothing)
-
   stepLeft (l, _, r) cx =
     let (x, k) = pullNext l in
       (1, (k, x, pushCurr cx 1 r))
@@ -278,10 +266,6 @@ TapeMeasure PtrTape where
 
   blankInit = (0 ** (FZ, [0]))
 
-
-public export
-implementation
-Tape PtrTape where
   read (_ ** ( FZ, 0 :: _)) = (0,  Just L)
   read (_ ** ( FZ, c :: _)) = (c, Nothing)
 
@@ -296,6 +280,10 @@ Tape PtrTape where
         _      => (0,  Just R)
       c => (c, Nothing)
 
+
+public export
+implementation
+Tape PtrTape where
   stepLeft (i ** (pos, tape)) cx =
     let
       printed = replaceAt pos cx tape
@@ -386,10 +374,6 @@ NumTape = ScanNSpan Integer
 public export
 implementation
 Tape NumTape where
-  read (0, 0, _) = (0,  Just L)
-  read (_, 0, 0) = (0,  Just R)
-  read (_, c, _) = (c, Nothing)
-
   stepLeft (l, _, r) cx =
     let (x, k) = pullNext l in
       (1, (k, x, pushCurr cx 1 r))
