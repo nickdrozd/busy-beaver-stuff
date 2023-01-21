@@ -62,7 +62,7 @@ class TestTape(TestCase):
             '1|0|1[2]1',
             tape = copy_2)
 
-    def test_rule(self):
+    def test_rule_1(self):
         self.tape = Tape(
             [[1, 12], [2, 3]],
             3,
@@ -86,6 +86,23 @@ class TestTape(TestCase):
 
         self.assert_tape(
             "2^24 1^2 [3] 4^1 5^2 6^157")
+
+    def test_rule_2(self):
+        self.tape = Tape(
+            [[4, 2]],
+            4,
+            [[5, 60], [2, 1], [4, 1], [5, 7], [1, 1]])
+
+        self.assert_tape(
+            "4^2 [4] 5^60 2^1 4^1 5^7 1^1")
+
+        self.tape.apply_rule({
+            (0, 0): 4,
+            (1, 0): -2,
+        })
+
+        self.assert_tape(
+            "4^118 [4] 5^2 2^1 4^1 5^7 1^1")
 
 
 class TestTags(TestCase):
