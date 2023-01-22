@@ -167,7 +167,7 @@ class Machine:
 
         self.finalize(step, cycle, state)
 
-        if watch_tape and bool(self.halted):
+        if watch_tape and (bool(self.halted) or bool(self.blanks)):
             self.show_tape(step, 1 + cycle, state)
 
         return self
