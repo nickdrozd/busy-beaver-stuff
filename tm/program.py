@@ -416,7 +416,7 @@ class Program:
                         next_tape.scan = color
 
                         run = Machine(comp).run(
-                            step_lim = step + 1,
+                            sim_lim = step + 1,
                             tape = next_tape.copy(),
                             state = str_st(entry),
                         )

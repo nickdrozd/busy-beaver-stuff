@@ -84,7 +84,6 @@ class Machine:
         print(' | '.join(info))
 
     def run(self,
-            step_lim: int | None = None,
             state: int = 0,
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
@@ -110,17 +109,10 @@ class Machine:
 
         step: int = 0
 
-        if step_lim:
-            sim_lim = step_lim + 1
-
         for cycle in range(sim_lim):
 
             if watch_tape:
                 self.show_tape(step, cycle, state)
-
-            if step_lim is not None and step >= step_lim:
-                self.xlimit = step
-                break
 
             if self.prover:
                 try:
