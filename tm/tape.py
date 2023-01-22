@@ -374,12 +374,7 @@ class EnumTape(Tape):
                 block.append(s)
                 block.append(i)
 
-    def step(  # type: ignore[override]
-            self,
-            shift: Shift,
-            color: Color,
-            skip: bool,
-    ) -> None:
+    def step(self, shift: Shift, color: Color, skip: bool) -> int:
         if not (span := self.rspan if shift else self.lspan):
             self.edges[bool(shift)] = True
         else:
@@ -405,7 +400,7 @@ class EnumTape(Tape):
                 if offset > self.offsets[ind]:
                     self.offsets[ind] = offset
 
-        _ = super().step(shift, color, skip)
+        return super().step(shift, color, skip)
 
     @property
     def signature(self) -> Signature:
