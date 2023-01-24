@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from tm.instrs import Color, Shift
+from tm.rules import Rule, Plus, Counts
 
 Block = list[int]
 Span  = list[Block]
@@ -13,20 +14,7 @@ Signature = tuple[
     tuple[Color | tuple[Color], ...],
 ]
 
-Counts = tuple[tuple[int, ...], tuple[int, ...]]
-
-Plus = int
-Mult = tuple[int, int]
-
-Op = Plus | Mult
-
-Rule = dict[tuple[int, int], Op]
-
 MinSig = tuple[Signature, tuple[bool, bool]]
-
-
-class ImplausibleRule(Exception):
-    pass
 
 
 @dataclass
@@ -45,43 +33,6 @@ class BlockTape:
     @property
     def spans(self) -> tuple[Span, Span]:
         return self.lspan, self.rspan
-
-    @staticmethod
-    def calculate_diff(
-            rec_rule: int,
-            cnt1: int,
-            cnt2: int,
-            cnt3: int,
-    ) -> Op | None:
-        if cnt1 == cnt2:
-            assert cnt3 == cnt1
-            return None
-
-        if (plus := cnt2 - cnt1) == cnt3 - cnt2:
-            return plus
-
-        if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
-            return mult
-
-        if rec_rule:
-            raise ImplausibleRule()
-
-        return None
-
-    def make_rule(
-            self,
-            rec_rule: int,
-            counts1: Counts,
-            counts2: Counts,
-    ) -> Rule:
-        return {
-            (s, i): diff
-            for s, spans in enumerate(
-                    zip(self.counts, counts1, counts2))
-            for i, counts in enumerate(zip(*spans))
-            if (diff := self.calculate_diff(
-                    rec_rule, *counts)) is not None
-        }
 
     def __getitem__(self, index: tuple[int, int]) -> Block:
         side, pos = index

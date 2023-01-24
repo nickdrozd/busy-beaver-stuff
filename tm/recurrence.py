@@ -5,11 +5,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.instrs import State, Slot, GetInstr
-from tm.tape import (
-    PtrTape, Tape, TagTape, EnumTape,
-    Rule, ImplausibleRule,
-    Signature, MinSig,
-)
+from tm.rules import make_rule, Rule, ImplausibleRule, InfiniteRule
+from tm.tape import PtrTape, Tape, TagTape, EnumTape, Signature, MinSig
 
 RecRes = tuple[int, int]
 Tapes = dict[int, PtrTape]
@@ -187,8 +184,6 @@ class PastConfig:
 
         return None
 
-class InfiniteRule(Exception):
-    pass
 
 @dataclass
 class Prover:
@@ -343,7 +338,8 @@ class Prover:
             counts.append(tags.counts)
 
         try:
-            rule = tape.make_rule(rec_rule, *counts)
+            # pylint: disable = no-value-for-parameter
+            rule = make_rule(rec_rule, tape.counts, *counts)
         except ImplausibleRule:
             return None
 
