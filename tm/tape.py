@@ -357,7 +357,51 @@ class EnumTape(Tape):
                 if offset > self.offsets[ind]:
                     self.offsets[ind] = offset
 
-        return super().step(shift, color, skip)
+        pull, push = (
+            (self.rspan, self.lspan)
+            if shift else
+            (self.lspan, self.rspan)
+        )
+
+        push_block = (
+            pull.pop(0)
+            if skip and pull and pull[0][0] == self.scan else
+            None
+        )
+
+        stepped = 1 if push_block is None else 1 + push_block[1]
+
+        next_scan: Color
+
+        if not pull:
+            next_scan = 0
+        else:
+            next_scan = (next_pull := pull[0])[0]
+
+            if next_pull[1] > 1:
+                next_pull[1] -= 1
+            else:
+                popped = pull.pop(0)
+
+                if push_block is None:
+                    push_block = popped
+                    push_block[1] = 0
+
+        if push and (top_block := push[0])[0] == color:
+            top_block[1] += stepped
+        else:
+            if push_block is None:
+                push_block = [color, 1]
+            else:
+                push_block[0] = color
+                push_block[1] += 1
+
+            if  push or color != 0:
+                push.insert(0, push_block)
+
+        self.scan = next_scan
+
+        return stepped
 
     @property
     def signature(self) -> Signature:
