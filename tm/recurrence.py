@@ -46,18 +46,7 @@ class History:
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
 
-        self.tapes[step] = PtrTape(
-            sum(q for (_, q) in tape.lspan) - tape.head,
-            [
-                color
-                for color, count in reversed(tape.lspan)
-                for _ in range(count)
-            ] + [tape.scan] + [
-                color
-                for color, count in tape.rspan
-                for _ in range(count)
-            ]
-        )
+        self.tapes[step] = tape.to_ptr()
 
     def calculate_beeps(
             self,

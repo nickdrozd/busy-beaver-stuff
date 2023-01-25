@@ -113,6 +113,20 @@ class Tape(BlockTape):
             [[color, count] for color, count in self.rspan],
         )
 
+    def to_ptr(self) -> PtrTape:
+        return PtrTape(
+            sum(q for (_, q) in self.lspan) - self.head,
+            [
+                color
+                for color, count in reversed(self.lspan)
+                for _ in range(count)
+            ] + [self.scan] + [
+                color
+                for color, count in self.rspan
+                for _ in range(count)
+            ]
+        )
+
     @property
     def signature(self) -> Signature:
         return (
