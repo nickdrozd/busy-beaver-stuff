@@ -23,6 +23,17 @@ class BlockTape:
     scan: Color
     rspan: Span
 
+    def __str__(self) -> str:
+        return ' '.join([
+            f'{color}^{count}'
+            for color, count, *_ in reversed(self.lspan)
+        ] + [
+            f'[{self.scan}]'
+        ] + [
+            f'{color}^{count}'
+            for color, count, *_ in self.rspan
+        ])
+
     @property
     def counts(self) -> Counts:
         return (
@@ -84,17 +95,6 @@ class BlockTape:
 @dataclass
 class Tape(BlockTape):
     head: int = 0
-
-    def __repr__(self) -> str:
-        return ' '.join([
-            f'{color}^{count}'
-            for color, count in reversed(self.lspan)
-        ] + [
-            f'[{self.scan}]'
-        ] + [
-            f'{color}^{count}'
-            for color, count in self.rspan
-        ])
 
     def __hash__(self) -> int:
         return hash(str(self))
