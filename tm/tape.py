@@ -216,10 +216,6 @@ class Tape(BlockTape):
 
 @dataclass
 class TagTape(BlockTape):
-    lspan: Span
-    scan: Color
-    rspan: Span
-
     scan_info: list[int] = field(
         default_factory = list)
 
