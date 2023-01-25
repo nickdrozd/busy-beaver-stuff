@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.instrs import State, Slot, GetInstr
-from tm.rules import make_rule, Rule, ImplausibleRule, InfiniteRule
+from tm.rules import make_rule, Rule, ImplausibleRule
 from tm.tape import PtrTape, Tape, TagTape, EnumTape, Signature, MinSig
 
 RecRes = tuple[int, int]
@@ -342,11 +342,6 @@ class Prover:
             rule = make_rule(rec_rule, tape.counts, *counts)
         except ImplausibleRule:
             return None
-
-        if all(diff >= 0
-               for diff in rule.values()
-               if isinstance(diff, int)):
-            raise InfiniteRule()
 
         min_sig = self.get_min_sig(
             deltas[0],

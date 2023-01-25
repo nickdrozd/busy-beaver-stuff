@@ -44,7 +44,7 @@ def make_rule(
         counts1: Counts,
         counts2: Counts,
 ) -> Rule:
-    return {
+    rule = {
         (s, i): diff
         for s, spans in enumerate(
                 zip(counts0, counts1, counts2))
@@ -52,3 +52,10 @@ def make_rule(
         if (diff := calculate_diff(
                 rec_rule, *counts)) is not None
     }
+
+    if all(diff >= 0
+           for diff in rule.values()
+           if isinstance(diff, Plus)):
+        raise InfiniteRule()
+
+    return rule
