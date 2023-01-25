@@ -34,6 +34,14 @@ class BlockTape:
     def spans(self) -> tuple[Span, Span]:
         return self.lspan, self.rspan
 
+    @property
+    def signature(self) -> Signature:
+        return (
+            self.scan,
+            tuple(c if q != 1 else (c,) for (c, q, *_) in self.lspan),
+            tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
+        )
+
     def __getitem__(self, index: tuple[int, int]) -> Block:
         side, pos = index
 
@@ -215,14 +223,6 @@ class TagTape(BlockTape):
     scan_info: list[int] = field(
         default_factory = list)
 
-    @property
-    def signature(self) -> Signature:
-        return (
-            self.scan,
-            tuple(c if q != 1 else (c,) for (c, q, *_) in self.lspan),
-            tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
-        )
-
     def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
             (self.rspan, self.lspan)
@@ -318,7 +318,7 @@ class TagTape(BlockTape):
 
 
 @dataclass
-class EnumTape(Tape):
+class EnumTape(BlockTape):
     offsets: list[int] = field(
         default_factory = lambda: [0, 0])
 
@@ -403,13 +403,6 @@ class EnumTape(Tape):
 
         return stepped
 
-    @property
-    def signature(self) -> Signature:
-        return (
-            self.scan,
-            tuple(c if q != 1 else (c,) for (c, q, *_) in self.lspan),
-            tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
-        )
 
 @dataclass
 class PtrTape:

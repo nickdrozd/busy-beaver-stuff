@@ -6,7 +6,10 @@ from dataclasses import dataclass, field
 
 from tm.instrs import State, Slot, GetInstr
 from tm.rules import make_rule, Rule, ImplausibleRule
-from tm.tape import PtrTape, Tape, TagTape, EnumTape, Signature, MinSig
+from tm.tape import (
+    Signature, MinSig,
+    Tape, BlockTape, TagTape, EnumTape, PtrTape,
+)
 
 RecRes = tuple[int, int]
 Tapes = dict[int, PtrTape]
@@ -191,7 +194,7 @@ class Prover:
     def get_rule(
             self,
             state: State,
-            tape: Tape | TagTape,
+            tape: BlockTape,
             sig: Signature | None = None,
     ) -> Rule | None:
         if (temp := self.rules.get((state, tape.scan))) is None:
