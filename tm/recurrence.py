@@ -320,10 +320,7 @@ class Prover:
                 end_state != state
                 or tags.scan != sig[0]
                 or tags.signature != sig
-                or any(
-                    block[1] > 1 and len(block) != 3
-                    for span in tags.spans
-                    for num, block in enumerate(span))
+                or tags.missing_tags()
             ):
                 return None
 

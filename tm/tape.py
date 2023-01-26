@@ -219,6 +219,12 @@ class TagTape(BlockTape):
     scan_info: list[int] = field(
         default_factory = list)
 
+    def missing_tags(self) -> bool:
+        return any(
+            block[1] > 1 and len(block) != 3
+            for span in self.spans
+            for num, block in enumerate(span))
+
     def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
             (self.rspan, self.lspan)
