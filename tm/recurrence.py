@@ -297,10 +297,10 @@ class Prover:
 
         tags: TagTape = tape.to_tag()
 
-        for curr_span, prev_span in zip(tags.spans, tape.spans):
-            for num, (old, new) in enumerate(zip(prev_span, curr_span)):
-                if new[1] > 1:
-                    new.append(num)
+        for span in tags.spans:
+            for num, block in enumerate(span):
+                if block[1] > 1:
+                    block.append(num)
 
         counts = []
 
@@ -321,9 +321,9 @@ class Prover:
                 or tags.scan != sig[0]
                 or tags.signature != sig
                 or any(
-                    new[1] > 1 and len(new) != 3
-                    for prev, curr in zip(tape.spans, tags.spans)
-                    for num, (old, new) in enumerate(zip(prev, curr)))
+                    block[1] > 1 and len(block) != 3
+                    for span in tags.spans
+                    for num, block in enumerate(span))
             ):
                 return None
 
