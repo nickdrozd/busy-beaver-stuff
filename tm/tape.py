@@ -53,7 +53,7 @@ class BlockTape:
             tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
         )
 
-    def __getitem__(self, index: tuple[int, int]) -> Block:
+    def __getitem__(self, index: tuple[int, int]) -> int:
         side, pos = index
 
         if side == 0:
@@ -61,7 +61,17 @@ class BlockTape:
         elif side == 1:
             span = self.rspan
 
-        return span[pos]
+        return span[pos][1]
+
+    def __setitem__(self, index: tuple[int, int], val: int) -> None:
+        side, pos = index
+
+        if side == 0:
+            span = self.lspan
+        elif side == 1:
+            span = self.rspan
+
+        span[pos][1] = val
 
     def apply_rule(self, rule: Rule) -> int | None:
         divs: list[int] = []
@@ -70,7 +80,7 @@ class BlockTape:
             if not isinstance(diff, Plus) or diff >= 0:
                 continue
 
-            if (abs_diff := abs(diff)) >= (count := self[pos][1]):
+            if (abs_diff := abs(diff)) >= (count := self[pos]):
                 return None
 
             div, rem = divmod(count, abs_diff)
@@ -80,13 +90,13 @@ class BlockTape:
 
         for pos, diff in rule.items():
             if isinstance(diff, Plus):
-                self[pos][1] += diff * times
+                self[pos] += diff * times
                 continue
 
             div, mod = diff
 
-            self[pos][1] *= (term := div ** times)
-            self[pos][1] += mod * (1 + ((term - div) // (div-1)))
+            self[pos] *= (term := div ** times)
+            self[pos] += mod * (1 + ((term - div) // (div-1)))
 
         return times
 
