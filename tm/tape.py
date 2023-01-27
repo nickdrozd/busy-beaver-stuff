@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from tm.instrs import Color, Shift
 from tm.rules import Rule, Plus, Counts
 
-Block = list[int]
-Span  = list[Block]
+Block     = list[int]
+BlockSpan = list[Block]
 
 Signature = tuple[
     Color,
@@ -19,9 +19,9 @@ MinSig = tuple[Signature, tuple[bool, bool]]
 
 @dataclass
 class BlockTape:
-    lspan: Span
+    lspan: BlockSpan
     scan: Color
-    rspan: Span
+    rspan: BlockSpan
 
     def __str__(self) -> str:
         return ' '.join([
@@ -42,7 +42,7 @@ class BlockTape:
         )
 
     @property
-    def spans(self) -> tuple[Span, Span]:
+    def spans(self) -> tuple[BlockSpan, BlockSpan]:
         return self.lspan, self.rspan
 
     @property

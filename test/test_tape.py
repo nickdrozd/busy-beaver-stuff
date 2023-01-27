@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from tm.tape import Color, Tape, TagTape, EnumTape, Signature, Span
+from tm.tape import Color, Tape, TagTape, EnumTape, Signature, BlockSpan
 
 def stringify_sig(sig: Signature) -> str:
     scan, lspan, rspan = sig
@@ -119,9 +119,9 @@ class TestTags(TestCase):
 
     def set_tape(
             self,
-            lspan: Span,
+            lspan: BlockSpan,
             scan: Color | tuple[Color, list[int]],
-            rspan: Span,
+            rspan: BlockSpan,
     ):
         if isinstance(scan, tuple):
             scan, scan_info = scan
@@ -136,9 +136,9 @@ class TestTags(TestCase):
 
     def assert_tape(
             self,
-            lspan: Span,
+            lspan: BlockSpan,
             scan: Color | tuple[Color, list[int]],
-            rspan: Span,
+            rspan: BlockSpan,
     ):
         self.assertEqual(self.lspan, list(reversed(lspan)))
         self.assertEqual(self.rspan, rspan)
@@ -160,11 +160,11 @@ class TestTags(TestCase):
         return self.tape.scan_info
 
     @property
-    def lspan(self) -> Span:
+    def lspan(self) -> BlockSpan:
         return self.tape.lspan
 
     @property
-    def rspan(self) -> Span:
+    def rspan(self) -> BlockSpan:
         return self.tape.rspan
 
     def step(self, shift: int, color: int, skip: int) -> None:
@@ -556,7 +556,12 @@ class TestEnum(TestCase):
             edges,
             self.tape.edges)
 
-    def assert_tape(self, lspan: Span, scan: Color, rspan: Span):
+    def assert_tape(
+            self,
+            lspan: BlockSpan,
+            scan: Color,
+            rspan: BlockSpan,
+    ):
         self.assertEqual(
             (lspan, scan, rspan),
             (
