@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 Plus = int
 Mult = tuple[int, int]
 
@@ -59,3 +61,38 @@ def make_rule(
         raise InfiniteRule()
 
     return rule
+
+
+class ApplyRule:
+    @abstractmethod
+    def __getitem__(self, index: tuple[int, int]) -> int: ...
+
+    @abstractmethod
+    def __setitem__(self, index: tuple[int, int], val: int) -> None: ...
+
+    def apply_rule(self, rule: Rule) -> int | None:
+        divs: list[int] = []
+
+        for pos, diff in rule.items():
+            if not isinstance(diff, Plus) or diff >= 0:
+                continue
+
+            if (abs_diff := abs(diff)) >= (count := self[pos]):
+                return None
+
+            div, rem = divmod(count, abs_diff)
+            divs.append(div if rem > 0 else div - 1)
+
+        times: int = min(divs)
+
+        for pos, diff in rule.items():
+            if isinstance(diff, Plus):
+                self[pos] += diff * times
+                continue
+
+            div, mod = diff
+
+            self[pos] *= (term := div ** times)
+            self[pos] += mod * (1 + ((term - div) // (div-1)))
+
+        return times

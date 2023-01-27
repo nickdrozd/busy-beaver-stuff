@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from tm.instrs import Color, Shift
-from tm.rules import Rule, Plus, Counts
+from tm.rules import Counts, ApplyRule
 
 Block     = list[int]
 BlockSpan = list[Block]
@@ -18,7 +18,7 @@ MinSig = tuple[Signature, tuple[bool, bool]]
 
 
 @dataclass
-class BlockTape:
+class BlockTape(ApplyRule):
     lspan: BlockSpan
     scan: Color
     rspan: BlockSpan
@@ -72,33 +72,6 @@ class BlockTape:
             span = self.rspan
 
         span[pos][1] = val
-
-    def apply_rule(self, rule: Rule) -> int | None:
-        divs: list[int] = []
-
-        for pos, diff in rule.items():
-            if not isinstance(diff, Plus) or diff >= 0:
-                continue
-
-            if (abs_diff := abs(diff)) >= (count := self[pos]):
-                return None
-
-            div, rem = divmod(count, abs_diff)
-            divs.append(div if rem > 0 else div - 1)
-
-        times: int = min(divs)
-
-        for pos, diff in rule.items():
-            if isinstance(diff, Plus):
-                self[pos] += diff * times
-                continue
-
-            div, mod = diff
-
-            self[pos] *= (term := div ** times)
-            self[pos] += mod * (1 + ((term - div) // (div-1)))
-
-        return times
 
 
 @dataclass
