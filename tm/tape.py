@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from tm.instrs import Color, Shift
-from tm.rules import Counts, ApplyRule
+from tm.rules import Counts, Index, ApplyRule
 
 Block     = list[int]
 BlockSpan = list[Block]
@@ -53,7 +53,7 @@ class BlockTape(ApplyRule):
             tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
         )
 
-    def __getitem__(self, index: tuple[int, int]) -> int:
+    def __getitem__(self, index: Index) -> int:
         side, pos = index
 
         if side == 0:
@@ -63,7 +63,7 @@ class BlockTape(ApplyRule):
 
         return span[pos][1]
 
-    def __setitem__(self, index: tuple[int, int], val: int) -> None:
+    def __setitem__(self, index: Index, val: int) -> None:
         side, pos = index
 
         if side == 0:

@@ -5,7 +5,9 @@ Mult = tuple[int, int]
 
 Op = Plus | Mult
 
-Rule = dict[tuple[int, int], Op]
+Index = tuple[int, int]
+
+Rule = dict[Index, Op]
 
 Counts = tuple[tuple[int, ...], tuple[int, ...]]
 
@@ -65,10 +67,10 @@ def make_rule(
 
 class ApplyRule:
     @abstractmethod
-    def __getitem__(self, index: tuple[int, int]) -> int: ...
+    def __getitem__(self, index: Index) -> int: ...
 
     @abstractmethod
-    def __setitem__(self, index: tuple[int, int], val: int) -> None: ...
+    def __setitem__(self, index: Index, val: int) -> None: ...
 
     def apply_rule(self, rule: Rule) -> int | None:
         divs: list[int] = []
