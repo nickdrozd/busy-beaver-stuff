@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from dataclasses import dataclass
 from collections.abc import Iterator
 
@@ -80,15 +81,15 @@ class MacroProg:
                     macro_color))
         ) is not None else None
 
+    @abstractmethod
     def deconstruct_inputs(
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> Config:
-        raise NotImplementedError()
+    ) -> Config: ...
 
-    def reconstruct_outputs(self, config: Config) -> Instr:
-        raise NotImplementedError()
+    @abstractmethod
+    def reconstruct_outputs(self, config: Config) -> Instr: ...
 
     def run_simulator(self, config: Config) -> Config | None:
         state, (right_edge, tape) = config
