@@ -66,12 +66,11 @@ class BlockTape:
     def apply_rule(self, rule: Rule) -> int | None:
         divs: list[int] = []
 
-        for (s, i), diff in rule.items():
+        for pos, diff in rule.items():
             if not isinstance(diff, Plus) or diff >= 0:
                 continue
 
-            if ((abs_diff := abs(diff))
-                    >= (count := self[s, i][1])):
+            if (abs_diff := abs(diff)) >= (count := self[pos][1]):
                 return None
 
             div, rem = divmod(count, abs_diff)
@@ -79,15 +78,15 @@ class BlockTape:
 
         times: int = min(divs)
 
-        for (s, i), diff in rule.items():
+        for pos, diff in rule.items():
             if isinstance(diff, Plus):
-                self[s, i][1] += diff * times
+                self[pos][1] += diff * times
                 continue
 
             div, mod = diff
 
-            self[s, i][1] *= (term := div ** times)
-            self[s, i][1] += mod * (1 + ((term - div) // (div-1)))
+            self[pos][1] *= (term := div ** times)
+            self[pos][1] += mod * (1 + ((term - div) // (div-1)))
 
         return times
 
