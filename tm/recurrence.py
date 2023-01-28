@@ -241,10 +241,7 @@ class Prover:
 
             color, shift, next_state = instr
 
-            tape.step(
-                shift,
-                color,
-                state == next_state)
+            tape.step(shift, color, state == next_state)
 
             if (state := next_state) == -1:
                 return None
@@ -267,10 +264,7 @@ class Prover:
 
             color, shift, next_state = instr
 
-            tape.step(
-                shift,
-                color,
-                state == next_state)
+            tape.step(shift, color, state == next_state)
 
             state = next_state
 

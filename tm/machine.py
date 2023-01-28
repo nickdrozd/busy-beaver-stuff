@@ -134,12 +134,11 @@ class Machine:
 
             color, shift, next_state = instr
 
-            if ((same_state := state == next_state)
-                    and tape.at_edge(shift)):
+            if (same := state == next_state) and tape.at_edge(shift):
                 self.spnout = step
                 break
 
-            step += tape.step(shift, color, same_state)
+            step += tape.step(shift, color, same)
 
             state = next_state
 
