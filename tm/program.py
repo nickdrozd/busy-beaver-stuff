@@ -27,6 +27,7 @@ from tm.instrs import (
 ProgStr = str
 
 Switch = dict[Color, Instr | None]
+CompSwitch = dict[Color, CompInstr | None]
 
 class Program:
     prog: dict[State, Switch]
@@ -52,6 +53,9 @@ class Program:
     def __getitem__(self, slot: State) -> Switch: ...
 
     @overload
+    def __getitem__(self, slot: CompState) -> CompSwitch: ...
+
+    @overload
     def __getitem__(self, slot: Slot) -> Instr | None: ...
 
     @overload
@@ -59,10 +63,16 @@ class Program:
 
     def __getitem__(
             self,
-            slot: State | Slot | CompSlot,
-    ) -> Switch | Instr | CompInstr | None:
+            slot: State | CompState | Slot | CompSlot,
+    ) -> Switch | CompSwitch | Instr | CompInstr | None:
         if isinstance(slot, State):
             return self.prog[slot]
+
+        if isinstance(slot, CompState):
+            return {
+                color: comp_instr(instr)
+                for color, instr in self.prog[st_str(slot)].items()
+            }
 
         state, color = slot
 
@@ -393,20 +403,20 @@ class Program:
             # print(step, state, tape)
 
             for entry in sorted(self.graph.entry_points[state]):
-                for _, instr in self[st_str(entry)].items():
+                for _, instr in self[entry].items():
                     if instr is None:
                         continue
 
                     _, shift, trans = instr
 
-                    if trans != st_str(state):
+                    if trans != state:
                         continue
 
                     for color in self.colors:
                         next_tape = tape.copy()
 
                         _ = next_tape.step(
-                            not (0 if shift == LEFT else 1),
+                            not shift,
                             next_tape.scan,
                             False,
                         )
