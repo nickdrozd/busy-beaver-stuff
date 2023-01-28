@@ -140,7 +140,8 @@ class Machine:
 
             step += tape.step(shift, color, same)
 
-            state = next_state
+            if (state := next_state) == -1:
+                break
 
             if tape.blank:
                 if state in self.blanks:
@@ -150,9 +151,6 @@ class Machine:
 
                 if state == 0:
                     break
-
-            if state == -1:
-                break
 
         else:
             self.xlimit = step
@@ -175,6 +173,9 @@ class Machine:
             self.qsihlt = True
 
         if self.tape.blank:
+            if state == -1:
+                self.blanks[-1] = step
+
             if 0 in self.blanks:
                 self.linrec = 0, step
             elif self.blanks:
@@ -255,11 +256,9 @@ class LinRecMachine:
 
             _ = tape.step(shift, color, skip and state == next_state)
 
-            state = next_state
-
             step += 1
 
-            if state == -1:
+            if (state := next_state) == -1:
                 self.halted = step
                 break
 
