@@ -254,7 +254,7 @@ class Prover:
             state: State,
             tape: EnumTape,
             sig: Signature,
-    ) -> Signature:
+    ) -> MinSig:
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
                 if tape.apply_rule(rule) is not None:
@@ -269,8 +269,9 @@ class Prover:
             state = next_state
 
         lmax, rmax = tape.offsets
+        ledge, redge = tape.edges
 
-        return sig[0], sig[1][:lmax], sig[2][:rmax]
+        return (sig[0], sig[1][:lmax], sig[2][:rmax]), (ledge, redge)
 
     def try_rule(
             self,
@@ -326,17 +327,15 @@ class Prover:
         except ImplausibleRule:
             return None
 
-        min_sig = self.get_min_sig(
-            deltas[0],
-            state,
-            (etap := tape.to_enum()),
-            sig,
-        )
-
         self.set_rule(
             rule,
             state,
-            (min_sig, (etap.edges[0], etap.edges[1])),
+            self.get_min_sig(
+                deltas[0],
+                state,
+                tape.to_enum(),
+                sig,
+            ),
         )
 
         return rule
