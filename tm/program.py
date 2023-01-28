@@ -317,7 +317,9 @@ class Program:
     def cant_halt(self) -> bool:
         return self._cant_reach(
             'halted',
-            self.halt_slots,
+            tuple(
+                (str_st(state), color)
+                for state, color in self.halt_slots),
         )
 
     @property
@@ -325,8 +327,8 @@ class Program:
         return self._cant_reach(
             'blanks',
             tuple(
-                (slot[0], slot[1])
-                for slot in self.erase_slots),
+                (str_st(state), color)
+                for state, color in self.erase_slots),
         )
 
     @property
@@ -334,18 +336,18 @@ class Program:
         return self._cant_reach(
             'spnout',
             tuple(
-                (st_str(state), 0)
+                (state, 0)
                 for state in self.graph.zero_reflexive_states),
         )
 
     def _cant_reach(
             self,
             final_prop: str,
-            slots: tuple[Slot, ...],
+            slots: tuple[CompSlot, ...],
             max_attempts: int = 24,
     ) -> bool:
         configs: list[
-            tuple[int, State, Tape, int, History]
+            tuple[int, CompState, Tape, int, History]
         ] = [
             (
                 1,
@@ -361,7 +363,7 @@ class Program:
 
         max_repeats = max_attempts // 2
 
-        seen: dict[State, set[Tape]] = defaultdict(set)
+        seen: dict[CompState, set[Tape]] = defaultdict(set)
 
         while configs:  # pylint: disable = while-used
             step, state, tape, repeat, history = configs.pop()
@@ -369,7 +371,7 @@ class Program:
             if step > max_attempts:
                 return False
 
-            if state == INIT and tape.blank:
+            if state == 0 and tape.blank:
                 return False
 
             if tape in seen[state]:
@@ -377,12 +379,12 @@ class Program:
 
             seen[state].add(tape)
 
-            history.add_state_at_step(step, str_st(state))
+            history.add_state_at_step(step, state)
             history.add_tape_at_step(step, tape)
 
             if history.check_rec(
                     step,
-                    slot := (str_st(state), tape.scan)) is None:
+                    slot := (state, tape.scan)) is None:
                 repeat = 0
             else:
                 repeat += 1
@@ -394,14 +396,14 @@ class Program:
 
             # print(step, state, tape)
 
-            for entry in sorted(self.graph.entry_points[str_st(state)]):
+            for entry in sorted(self.graph.entry_points[state]):
                 for _, instr in self[st_str(entry)].items():
                     if instr is None:
                         continue
 
                     _, shift, trans = instr
 
-                    if trans != state:
+                    if trans != st_str(state):
                         continue
 
                     for color in self.colors:
@@ -433,7 +435,7 @@ class Program:
 
                         configs.append((
                             step + 1,
-                            st_str(entry),
+                            entry,
                             next_tape,
                             repeat,
                             history.copy(),
