@@ -30,11 +30,11 @@ Switch = dict[Color, Instr | None]
 CompSwitch = dict[Color, CompInstr | None]
 
 class Program:
-    prog: dict[State, Switch]
+    prog: dict[CompState, Switch]
 
     def __init__(self, program: ProgStr):
         self.prog = {
-            st_str(state): dict(enumerate(instrs))
+            state: dict(enumerate(instrs))
             for state, instrs in enumerate(parse(program))
         }
 
@@ -66,27 +66,27 @@ class Program:
             slot: State | CompState | Slot | CompSlot,
     ) -> Switch | CompSwitch | Instr | CompInstr | None:
         if isinstance(slot, State):
-            return self.prog[slot]
+            return self.prog[str_st(slot)]
 
         if isinstance(slot, CompState):
             return {
                 color: comp_instr(instr)
-                for color, instr in self.prog[st_str(slot)].items()
+                for color, instr in self.prog[slot].items()
             }
 
         state, color = slot
 
         if isinstance(state, State):
-            return self.prog[state][color]
+            return self.prog[str_st(state)][color]
 
         return comp_instr(
-            self.prog[st_str(state)][color]
+            self.prog[state][color]
         )
 
     def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
         state, color = slot
 
-        self.prog[state][color] = instr
+        self.prog[str_st(state)][color] = instr
 
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
@@ -104,21 +104,22 @@ class Program:
 
     @cached_property
     def states(self) -> set[State]:
-        return set(self.prog.keys())
+        return set(map(st_str, self.prog.keys()))
 
     @cached_property
     def colors(self) -> set[Color]:
-        return set(range(len(self.prog[INIT])))
+        return set(range(len(self.prog[0])))
 
     @property
     def state_switches(self) -> Iterator[tuple[State, Switch]]:
-        yield from self.prog.items()
+        for state, switch in self.prog.items():
+            yield st_str(state), switch
 
     @property
     def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
-                yield (state, color), instr
+                yield (st_str(state), color), instr
 
     @property
     def used_instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
@@ -241,7 +242,8 @@ class Program:
         self[slot] = orig
 
     def swap_states(self, st1: State, st2: State) -> Program:
-        self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
+        self.prog[str_st(st1)], self.prog[str_st(st2)] = \
+            self.prog[str_st(st2)], self.prog[str_st(st1)]
 
         for slot, (color, shift, state) in self.used_instr_slots:
             self[slot] = color, shift, (
