@@ -1,9 +1,7 @@
 from functools import cached_property
 
-from tm.parse import parse, st_str
-from tm.instrs import Color, LetterState, INIT, HALT, UNDF
-
-State = LetterState
+from tm.parse import parse, st_str, str_st
+from tm.instrs import Color, State
 
 ConGraph = dict[State, set[State]]
 
@@ -11,27 +9,28 @@ class Graph:
     def __init__(self, program: str):
         self.program = program
 
-        self.arrows: dict[State, tuple[State | None, ...]] = {
-            st_str(i): connection
-            for i, connection in
+        self.arrows: dict[State, tuple[State | None, ...]] = dict(
             enumerate(
                 tuple(
-                    instr[2] if instr is not None else None
+                    str_st(instr[2]) if instr is not None else None
                     for instr in instrs
                 )
                 for instrs in parse(program)
             )
-        }
+        )
 
     def __str__(self) -> str:
         return self.flatten()
 
     def __repr__(self) -> str:
-        return repr(self.arrows)
+        return repr({
+            st_str(state): tuple(map(st_str, conns))
+            for state, conns in self.arrows.items()
+        })
 
     def flatten(self, sep: str = ' ') -> str:
         return sep.join(
-            dst if dst is not None else UNDF
+            st_str(dst)
             for conn in self.arrows.values()
             for dst in conn
         )
@@ -42,7 +41,7 @@ class Graph:
 
     @cached_property
     def colors(self) -> tuple[Color, ...]:
-        return tuple(range(len(self.arrows[INIT])))
+        return tuple(range(len(self.arrows[0])))
 
     @cached_property
     def exit_points(self) -> ConGraph:
@@ -50,14 +49,14 @@ class Graph:
             state: set(
                 conn
                 for conn in connections
-                if conn is not None and conn != HALT
+                if conn is not None and conn != -1
             )
             for state, connections in self.arrows.items()
         }
 
     @cached_property
     def entry_points(self) -> ConGraph:
-        entries: dict[str, set[str]] = {
+        entries: ConGraph = {
             state: set()
             for state in self.states
         }
@@ -72,12 +71,13 @@ class Graph:
     def is_normal(self) -> bool:
         flat_graph = self.flatten('')
 
-        if any(state not in flat_graph for state in self.states[1:]):
+        if any(st_str(state) not in flat_graph
+               for state in self.states[1:]):
             return False
 
         return (
             positions := tuple(
-                flat_graph.find(state)
+                flat_graph.find(st_str(state))
                 for state in self.states[1:]
             )
         ) == tuple(sorted(positions))

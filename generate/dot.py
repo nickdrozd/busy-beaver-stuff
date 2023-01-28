@@ -1,4 +1,5 @@
 from tm.graph import Graph
+from tm.parse import st_str as conv
 
 COLORS = (
     'blue',
@@ -21,10 +22,10 @@ def make_dot(prog: str) -> str:
     ]) if len(prog) < 50 else ''
 
     edges: str = '\n'.join([
-        f'  {node} -> {target} [ color=" {COLORS[i]}" ];'
+        f'  {conv(node)} -> {conv(target)} [ color=" {COLORS[i]}" ];'
         for node, targets in Graph(prog).arrows.items()
         for i, target in enumerate(targets)
-        if target != UNDEFINED and target is not None
+        if target is not None
     ])
 
     return f'digraph NAME {{\n{header}\n\n{edges}\n}}'

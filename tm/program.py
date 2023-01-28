@@ -334,7 +334,7 @@ class Program:
         return self._cant_reach(
             'spnout',
             tuple(
-                (state, 0)
+                (st_str(state), 0)
                 for state in self.graph.zero_reflexive_states),
         )
 
@@ -394,8 +394,8 @@ class Program:
 
             # print(step, state, tape)
 
-            for entry in sorted(self.graph.entry_points[state]):
-                for _, instr in self[entry].items():
+            for entry in sorted(self.graph.entry_points[str_st(state)]):
+                for _, instr in self[st_str(entry)].items():
                     if instr is None:
                         continue
 
@@ -418,7 +418,7 @@ class Program:
                         run = Machine(comp).run(
                             sim_lim = step + 1,
                             tape = next_tape.copy(),
-                            state = str_st(entry),
+                            state = entry,
                         )
 
                         # pylint: disable = bad-builtin
@@ -433,7 +433,7 @@ class Program:
 
                         configs.append((
                             step + 1,
-                            entry,
+                            st_str(entry),
                             next_tape,
                             repeat,
                             history.copy(),

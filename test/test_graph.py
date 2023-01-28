@@ -3,6 +3,7 @@ from unittest import TestCase
 from test.prog_data import GRAPHS, SPAGHETTI, KERNEL
 
 from tm.graph import Graph
+from tm.parse import st_str
 
 
 class TestGraph(TestCase):
@@ -41,12 +42,20 @@ class TestGraph(TestCase):
     def assert_entry_points(self, entries: dict[str, set[str]]):
         self.assertEqual(
             entries,
-            self.graph.entry_points)
+            {
+                st_str(state): set(map(st_str, entries))
+                for state, entries in self.graph.entry_points.items()
+            },
+        )
 
     def assert_exit_points(self, exits: dict[str, set[str]]):
         self.assertEqual(
             exits,
-            self.graph.exit_points)
+            {
+                st_str(state): set(map(st_str, entries))
+                for state, entries in self.graph.exit_points.items()
+            },
+        )
 
     def test_graph(self):
         # pylint: disable = line-too-long
