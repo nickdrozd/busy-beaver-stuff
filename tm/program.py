@@ -147,19 +147,19 @@ class Program:
         return slots[0]
 
     @property
-    def halt_slots(self) -> tuple[Slot, ...]:
+    def halt_slots(self) -> tuple[CompSlot, ...]:
         return tuple(
-            slot
-            for slot, instr in self.instr_slots
+            (str_st(state), color)
+            for (state, color), instr in self.instr_slots
             if instr is None or instr[2] == HALT
         )
 
     @property
-    def erase_slots(self) -> tuple[Slot, ...]:
+    def erase_slots(self) -> tuple[CompSlot, ...]:
         return tuple(
-            slot
-            for slot, instr in self.used_instr_slots
-            if slot[1] != BLANK and instr[0] == BLANK
+            (str_st(state), color)
+            for (state, color), instr in self.used_instr_slots
+            if color != BLANK and instr[0] == BLANK
         )
 
     @property
@@ -317,18 +317,14 @@ class Program:
     def cant_halt(self) -> bool:
         return self._cant_reach(
             'halted',
-            tuple(
-                (str_st(state), color)
-                for state, color in self.halt_slots),
+            self.halt_slots,
         )
 
     @property
     def cant_blank(self) -> bool:
         return self._cant_reach(
             'blanks',
-            tuple(
-                (str_st(state), color)
-                for state, color in self.erase_slots),
+            self.erase_slots,
         )
 
     @property
