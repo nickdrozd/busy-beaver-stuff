@@ -116,10 +116,12 @@ class Program:
         return set(range(len(self.prog[0])))
 
     @property
-    def state_switches(self) -> Iterator[
-            tuple[LetterState, LetterSwitch]]:
+    def state_switches(self) -> Iterator[tuple[State, Switch]]:
         for state, switch in self.prog.items():
-            yield st_str(state), switch
+            yield state, {
+                color: comp_instr(instr)
+                for color, instr in switch.items()
+            }
 
     @property
     def instr_slots(self) -> Iterator[tuple[Slot, LetterInstr | None]]:
