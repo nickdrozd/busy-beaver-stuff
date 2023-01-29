@@ -263,16 +263,18 @@ class Program:
 
     def swap_states(
             self,
-            st1: LetterState,
-            st2: LetterState,
+            ist1: LetterState,
+            ist2: LetterState,
     ) -> Program:
-        self.prog[str_st(st1)], self.prog[str_st(st2)] = \
-            self.prog[str_st(st2)], self.prog[str_st(st1)]
+        st1: State = str_st(ist1)
+        st2: State = str_st(ist2)
+
+        self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
         for slot, (color, shift, state) in self.used_instr_slots:
             self[slot] = color, shift, (
-                st1 if state == st2 else
-                st2 if state == st1 else
+                ist1 if state == ist2 else
+                ist2 if state == ist1 else
                 state
             )
 
