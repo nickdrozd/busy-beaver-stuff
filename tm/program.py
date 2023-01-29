@@ -16,10 +16,10 @@ from tm.instrs import (
     Color,
     LetterShift as Shift,
     LetterState as State,
-    LetterSlot as Slot,
+    LetterSlot,
     LetterInstr as Instr,
     State as CompState,
-    Slot as CompSlot,
+    Slot,
     Instr as CompInstr,
     INIT, HALT, LEFT, RIGHT, BLANK,
 )
@@ -56,14 +56,14 @@ class Program:
     def __getitem__(self, slot: CompState) -> CompSwitch: ...
 
     @overload
-    def __getitem__(self, slot: Slot) -> Instr | None: ...
+    def __getitem__(self, slot: LetterSlot) -> Instr | None: ...
 
     @overload
-    def __getitem__(self, slot: CompSlot) -> CompInstr | None: ...
+    def __getitem__(self, slot: Slot) -> CompInstr | None: ...
 
     def __getitem__(
             self,
-            slot: State | CompState | Slot | CompSlot,
+            slot: State | CompState | LetterSlot | Slot,
     ) -> Switch | CompSwitch | Instr | CompInstr | None:
         if isinstance(slot, State):
             return self.prog[str_st(slot)]
@@ -85,7 +85,7 @@ class Program:
 
     def __setitem__(
             self,
-            slot: Slot | CompSlot,
+            slot: LetterSlot | Slot,
             instr: Instr | None,
     ) -> None:
         state, color = slot
@@ -122,13 +122,13 @@ class Program:
             yield st_str(state), switch
 
     @property
-    def instr_slots(self) -> Iterator[tuple[CompSlot, Instr | None]]:
+    def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
                 yield (state, color), instr
 
     @property
-    def used_instr_slots(self) -> Iterator[tuple[CompSlot, Instr]]:
+    def used_instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
         yield from (
             (slot, instr)
             for slot, instr in self.instr_slots
@@ -145,11 +145,11 @@ class Program:
         yield from(instr for instr in self.instructions if instr)
 
     @property
-    def slots(self) -> tuple[CompSlot, ...]:
+    def slots(self) -> tuple[Slot, ...]:
         return tuple(slot for slot, _ in self.instr_slots)
 
     @property
-    def open_slots(self) -> tuple[CompSlot, ...]:
+    def open_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
             for slot, instr in self.instr_slots
@@ -157,14 +157,14 @@ class Program:
         )
 
     @property
-    def last_slot(self) -> CompSlot | None:
+    def last_slot(self) -> Slot | None:
         if len((slots := self.open_slots)) != 1:
             return None
 
         return slots[0]
 
     @property
-    def halt_slots(self) -> tuple[CompSlot, ...]:
+    def halt_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
             for slot, instr in self.instr_slots
@@ -172,7 +172,7 @@ class Program:
         )
 
     @property
-    def erase_slots(self) -> tuple[CompSlot, ...]:
+    def erase_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
             for slot, instr in self.used_instr_slots
@@ -212,7 +212,7 @@ class Program:
             self.available_states)
 
     @property
-    def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
+    def instr_seq(self) -> Iterator[tuple[ProgStr, int, LetterSlot]]:
         partial = Program.empty(len(self.states), len(self.colors))
 
         for _ in range(len(self.states) * len(self.colors) - 1):
@@ -229,7 +229,7 @@ class Program:
 
     def branch(
             self,
-            slot: Slot | CompSlot,
+            slot: LetterSlot | Slot,
             halt: bool = False,
     ) -> Iterator[ProgStr]:
         if isinstance(slot[0], CompState):
@@ -360,7 +360,7 @@ class Program:
     def _cant_reach(
             self,
             final_prop: str,
-            slots: tuple[CompSlot, ...],
+            slots: tuple[Slot, ...],
             max_attempts: int = 24,
     ) -> bool:
         configs: list[
