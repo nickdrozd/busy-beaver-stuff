@@ -1,22 +1,18 @@
+from tm.parse import st_str, str_st, comp_instr
 from tm.program import Program
-from tm.instrs import (
-    Color,
-    LetterShift as Shift,
-    LetterState as State,
-    LetterInstr as Instr,
-)
+from tm.instrs import Color, Shift, State, Instr
 
 
 def make_comment(st: State, co: Color) -> str:
-    return f'// {st}{co}'
+    return f'// {st_str(st)}{co}'
 
 
 def make_shift(sh: Shift) -> str:
-    return ('RIGHT' if sh == 'R' else 'LEFT') + ';'
+    return ('RIGHT' if sh else 'LEFT') + ';'
 
 
 def make_trans(tr: State) -> str:
-    return f'goto {tr};'
+    return f'goto {st_str(tr)};'
 
 
 def make_binary_write(pr: Color) -> str:
@@ -151,8 +147,9 @@ def make_switch(state: State, instrs: tuple[Instr, ...]) -> str:
 def make_labels(prog: str) -> str:
     return '\n'.join([
         f' {state}:' + make_switch(
-            state,
-            tuple(instr or (1, 'R', '_') for instr in switch.values()),
+            str_st(state),
+            tuple(comp_instr(instr) or (1, True, -1)
+                  for instr in switch.values()),
         )
         for state, switch in Program(prog).state_switches
     ])
