@@ -449,7 +449,7 @@ class Program:
                             continue
 
                         if final_prop == 'blanks':
-                            result = min(run.blanks.values())
+                            result = min(result.values())
 
                         if abs(result - step) > 1:
                             continue
