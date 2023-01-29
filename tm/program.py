@@ -130,12 +130,12 @@ class Program:
         )
 
     @property
-    def instructions(self) -> Iterator[Instr | None]:
+    def instructions(self) -> Iterator[CompInstr | None]:
         for instrs in self.prog.values():
-            yield from instrs.values()
+            yield from map(comp_instr, instrs.values())
 
     @property
-    def used_instructions(self) -> Iterator[Instr]:
+    def used_instructions(self) -> Iterator[CompInstr]:
         yield from(instr for instr in self.instructions if instr)
 
     @property
@@ -175,7 +175,7 @@ class Program:
 
     @property
     def used_states(self) -> Iterator[State]:
-        yield from (state for _, _, state in self.used_instructions)
+        yield from (st_str(state) for _, _, state in self.used_instructions)
 
     @property
     def available_states(self) -> set[State]:
@@ -270,7 +270,7 @@ class Program:
 
     def normalize_states(self) -> Program:
         for _ in self.states:
-            todo = sorted(self.states)[1:]
+            todo = list(map(str_st, sorted(self.states)[1:]))
 
             for _, _, state in self.used_instructions:
                 if state not in todo:
@@ -279,7 +279,7 @@ class Program:
                 norm, *rest = todo
 
                 if state != norm:
-                    self.swap_states(state, norm)
+                    self.swap_states(st_str(state), st_str(norm))
                     break
 
                 todo = rest
