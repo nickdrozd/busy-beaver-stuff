@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from tm.parse import parse, st_str, str_st
+from tm.parse import parse, st_str
 from tm.instrs import Color, State
 
 ConGraph = dict[State, set[State]]
@@ -12,7 +12,7 @@ class Graph:
         self.arrows: dict[State, tuple[State | None, ...]] = dict(
             enumerate(
                 tuple(
-                    str_st(instr[2]) if instr is not None else None
+                    instr[2] if instr is not None else None
                     for instr in instrs
                 )
                 for instrs in parse(program)

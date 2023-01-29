@@ -28,12 +28,21 @@ ProgStr = str
 Switch = dict[Color, Instr | None]
 LetterSwitch = dict[Color, LetterInstr | None]
 
+
+def dcomp_instr(instr: Instr | None) -> LetterInstr | None:
+    return None if instr is None else (
+        instr[0],
+        RIGHT if instr[1] else LEFT,
+        st_str(instr[2]),
+    )
+
+
 class Program:
     prog: dict[State, LetterSwitch]
 
     def __init__(self, program: ProgStr):
         self.prog = {
-            state: dict(enumerate(instrs))
+            state: dict(enumerate(map(dcomp_instr, instrs)))
             for state, instrs in enumerate(parse(program))
         }
 

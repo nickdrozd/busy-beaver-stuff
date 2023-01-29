@@ -4,10 +4,14 @@ from tm.instrs import (
 )
 
 
-def parse(program: str) -> tuple[tuple[LetterInstr | None, ...], ...]:
+def parse(program: str) -> tuple[tuple[Instr | None, ...], ...]:
     return tuple(
         tuple(
-            (int(instr[0]), instr[1], instr[2])
+            (
+                int(instr[0]),
+                instr[1] == RIGHT,
+                str_st(instr[2]),
+            )
             if UNDF not in instr else None
             for instr in instrs.split(' ')
         )
@@ -25,7 +29,7 @@ def comp_instr(instr: LetterInstr | None) -> Instr | None:
 
 def tcompile(program: str) -> Prog:
     return {
-        (state, color): comp_instr(instr)
+        (state, color): instr
         for state, instrs in enumerate(parse(program))
         for color, instr in enumerate(instrs)
     }
