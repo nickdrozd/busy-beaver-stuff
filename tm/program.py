@@ -17,17 +17,17 @@ from tm.instrs import (
     LetterShift as Shift,
     LetterState as State,
     LetterSlot,
-    LetterInstr as Instr,
+    LetterInstr,
     State as CompState,
     Slot,
-    Instr as CompInstr,
+    Instr,
     INIT, HALT, LEFT, RIGHT, BLANK,
 )
 
 ProgStr = str
 
-Switch = dict[Color, Instr | None]
-CompSwitch = dict[Color, CompInstr | None]
+Switch = dict[Color, LetterInstr | None]
+CompSwitch = dict[Color, Instr | None]
 
 class Program:
     prog: dict[CompState, Switch]
@@ -56,15 +56,15 @@ class Program:
     def __getitem__(self, slot: CompState) -> CompSwitch: ...
 
     @overload
-    def __getitem__(self, slot: LetterSlot) -> Instr | None: ...
+    def __getitem__(self, slot: LetterSlot) -> LetterInstr | None: ...
 
     @overload
-    def __getitem__(self, slot: Slot) -> CompInstr | None: ...
+    def __getitem__(self, slot: Slot) -> Instr | None: ...
 
     def __getitem__(
             self,
             slot: State | CompState | LetterSlot | Slot,
-    ) -> Switch | CompSwitch | Instr | CompInstr | None:
+    ) -> Switch | CompSwitch | LetterInstr | Instr | None:
         if isinstance(slot, State):
             return self.prog[str_st(slot)]
 
@@ -86,7 +86,7 @@ class Program:
     def __setitem__(
             self,
             slot: LetterSlot | Slot,
-            instr: Instr | None,
+            instr: LetterInstr | None,
     ) -> None:
         state, color = slot
 
@@ -122,13 +122,13 @@ class Program:
             yield st_str(state), switch
 
     @property
-    def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
+    def instr_slots(self) -> Iterator[tuple[Slot, LetterInstr | None]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
                 yield (state, color), instr
 
     @property
-    def used_instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
+    def used_instr_slots(self) -> Iterator[tuple[Slot, LetterInstr]]:
         yield from (
             (slot, instr)
             for slot, instr in self.instr_slots
@@ -136,12 +136,12 @@ class Program:
         )
 
     @property
-    def instructions(self) -> Iterator[CompInstr | None]:
+    def instructions(self) -> Iterator[Instr | None]:
         for instrs in self.prog.values():
             yield from map(comp_instr, instrs.values())
 
     @property
-    def used_instructions(self) -> Iterator[CompInstr]:
+    def used_instructions(self) -> Iterator[Instr]:
         yield from(instr for instr in self.instructions if instr)
 
     @property
