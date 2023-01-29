@@ -1,5 +1,5 @@
 from tm.program import (
-    Program, Color, Shift, State, LetterInstr as Instr)
+    Program, Color, Shift, LetterState as State, LetterInstr as Instr)
 
 
 def make_comment(st: State, co: Color) -> str:

@@ -15,10 +15,10 @@ from tm.parse import parse, st_str, str_st, tcompile, comp_instr
 from tm.instrs import (
     Color,
     LetterShift as Shift,
-    LetterState as State,
+    LetterState,
     LetterSlot,
     LetterInstr,
-    State as CompState,
+    State,
     Slot,
     Instr,
     INIT, HALT, LEFT, RIGHT, BLANK,
@@ -30,7 +30,7 @@ Switch = dict[Color, LetterInstr | None]
 CompSwitch = dict[Color, Instr | None]
 
 class Program:
-    prog: dict[CompState, Switch]
+    prog: dict[State, Switch]
 
     def __init__(self, program: ProgStr):
         self.prog = {
@@ -50,10 +50,10 @@ class Program:
         ])
 
     @overload
-    def __getitem__(self, slot: State) -> Switch: ...
+    def __getitem__(self, slot: LetterState) -> Switch: ...
 
     @overload
-    def __getitem__(self, slot: CompState) -> CompSwitch: ...
+    def __getitem__(self, slot: State) -> CompSwitch: ...
 
     @overload
     def __getitem__(self, slot: LetterSlot) -> LetterInstr | None: ...
@@ -63,12 +63,12 @@ class Program:
 
     def __getitem__(
             self,
-            slot: State | CompState | LetterSlot | Slot,
+            slot: LetterState | State | LetterSlot | Slot,
     ) -> Switch | CompSwitch | LetterInstr | Instr | None:
-        if isinstance(slot, State):
+        if isinstance(slot, LetterState):
             return self.prog[str_st(slot)]
 
-        if isinstance(slot, CompState):
+        if isinstance(slot, State):
             return {
                 color: comp_instr(instr)
                 for color, instr in self.prog[slot].items()
@@ -76,7 +76,7 @@ class Program:
 
         state, color = slot
 
-        if isinstance(state, State):
+        if isinstance(state, LetterState):
             return self.prog[str_st(state)][color]
 
         return comp_instr(
@@ -91,7 +91,7 @@ class Program:
         state, color = slot
 
         self.prog[
-            str_st(state) if isinstance(state, State) else state
+            str_st(state) if isinstance(state, LetterState) else state
         ][color] = instr
 
     def __eq__(self, other: object) -> bool:
@@ -109,7 +109,7 @@ class Program:
                 ] * states)))
 
     @cached_property
-    def states(self) -> set[State]:
+    def states(self) -> set[LetterState]:
         return set(map(st_str, self.prog.keys()))
 
     @cached_property
@@ -117,7 +117,7 @@ class Program:
         return set(range(len(self.prog[0])))
 
     @property
-    def state_switches(self) -> Iterator[tuple[State, Switch]]:
+    def state_switches(self) -> Iterator[tuple[LetterState, Switch]]:
         for state, switch in self.prog.items():
             yield st_str(state), switch
 
@@ -180,14 +180,14 @@ class Program:
         )
 
     @property
-    def used_states(self) -> Iterator[State]:
+    def used_states(self) -> Iterator[LetterState]:
         yield from (
             st_str(state)
             for _, _, state in self.used_instructions
         )
 
     @property
-    def available_states(self) -> set[State]:
+    def available_states(self) -> set[LetterState]:
         used = set(self.used_states) | { INIT }
         diff = sorted(self.states.difference(used))
 
@@ -205,7 +205,7 @@ class Program:
         return used | { diff[0] } if diff else used
 
     @property
-    def available_instrs(self) -> Iterator[tuple[Color, Shift, State]]:
+    def available_instrs(self) -> Iterator[tuple[Color, Shift, LetterState]]:  # pylint: disable = line-too-long
         return product(
             self.available_colors,
             (LEFT, RIGHT),
@@ -232,7 +232,7 @@ class Program:
             slot: LetterSlot | Slot,
             halt: bool = False,
     ) -> Iterator[ProgStr]:
-        if isinstance(slot[0], CompState):
+        if isinstance(slot[0], State):
             slot = st_str(slot[0]), slot[1]
 
         if halt and self.last_slot:
@@ -250,7 +250,11 @@ class Program:
 
         self[slot] = orig
 
-    def swap_states(self, st1: State, st2: State) -> Program:
+    def swap_states(
+            self,
+            st1: LetterState,
+            st2: LetterState,
+    ) -> Program:
         self.prog[str_st(st1)], self.prog[str_st(st2)] = \
             self.prog[str_st(st2)], self.prog[str_st(st1)]
 
@@ -364,7 +368,7 @@ class Program:
             max_attempts: int = 24,
     ) -> bool:
         configs: list[
-            tuple[int, CompState, Tape, int, History]
+            tuple[int, State, Tape, int, History]
         ] = [
             (
                 1,
@@ -380,7 +384,7 @@ class Program:
 
         max_repeats = max_attempts // 2
 
-        seen: dict[CompState, set[Tape]] = defaultdict(set)
+        seen: dict[State, set[Tape]] = defaultdict(set)
 
         while configs:  # pylint: disable = while-used
             step, state, tape, repeat, history = configs.pop()
