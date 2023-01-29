@@ -322,7 +322,7 @@ class Program:
 
     def normalize_directions(self) -> Program:
         # pylint: disable = unsubscriptable-object
-        if (index := self[INIT, 0]) is None or index[1] == RIGHT:
+        if (index := self[0, 0]) is None or index[1]:
             return self
 
         for slot, (color, shift, state) in self.used_instr_slots:
