@@ -14,7 +14,6 @@ from tm.recurrence import History
 from tm.parse import parse, st_str, str_st, tcompile, comp_instr
 from tm.instrs import (
     Color,
-    LetterShift as Shift,
     LetterState,
     LetterSlot,
     LetterInstr,
@@ -205,7 +204,7 @@ class Program:
         return used | { diff[0] } if diff else used
 
     @property
-    def available_instrs(self) -> Iterator[tuple[Color, Shift, LetterState]]:  # pylint: disable = line-too-long
+    def available_instrs(self) -> Iterator[LetterInstr]:
         return product(
             self.available_colors,
             (LEFT, RIGHT),
