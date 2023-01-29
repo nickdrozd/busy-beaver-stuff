@@ -25,11 +25,11 @@ from tm.instrs import (
 
 ProgStr = str
 
-Switch = dict[Color, LetterInstr | None]
-CompSwitch = dict[Color, Instr | None]
+Switch = dict[Color, Instr | None]
+LetterSwitch = dict[Color, LetterInstr | None]
 
 class Program:
-    prog: dict[State, Switch]
+    prog: dict[State, LetterSwitch]
 
     def __init__(self, program: ProgStr):
         self.prog = {
@@ -49,10 +49,10 @@ class Program:
         ])
 
     @overload
-    def __getitem__(self, slot: LetterState) -> Switch: ...
+    def __getitem__(self, slot: LetterState) -> LetterSwitch: ...
 
     @overload
-    def __getitem__(self, slot: State) -> CompSwitch: ...
+    def __getitem__(self, slot: State) -> Switch: ...
 
     @overload
     def __getitem__(self, slot: LetterSlot) -> LetterInstr | None: ...
@@ -63,7 +63,7 @@ class Program:
     def __getitem__(
             self,
             slot: LetterState | State | LetterSlot | Slot,
-    ) -> Switch | CompSwitch | LetterInstr | Instr | None:
+    ) -> LetterSwitch | Switch | LetterInstr | Instr | None:
         if isinstance(slot, LetterState):
             return self.prog[str_st(slot)]
 
@@ -116,7 +116,8 @@ class Program:
         return set(range(len(self.prog[0])))
 
     @property
-    def state_switches(self) -> Iterator[tuple[LetterState, Switch]]:
+    def state_switches(self) -> Iterator[
+            tuple[LetterState, LetterSwitch]]:
         for state, switch in self.prog.items():
             yield st_str(state), switch
 
