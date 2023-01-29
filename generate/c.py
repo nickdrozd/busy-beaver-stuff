@@ -127,7 +127,7 @@ SWITCH_TEMPLATE = \
 '''
 
 
-def make_case(st: str, co: int, instr: Instr) -> str:
+def make_case(st: State, co: Color, instr: Instr) -> str:
     return CASE_TEMPLATE.format(
         co,
         make_instruction(st, co, *instr, 6, False),
