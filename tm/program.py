@@ -83,10 +83,16 @@ class Program:
             self.prog[state][color]
         )
 
-    def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
+    def __setitem__(
+            self,
+            slot: Slot | CompSlot,
+            instr: Instr | None,
+    ) -> None:
         state, color = slot
 
-        self.prog[str_st(state)][color] = instr
+        self.prog[
+            str_st(state) if isinstance(state, State) else state
+        ][color] = instr
 
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
@@ -116,13 +122,13 @@ class Program:
             yield st_str(state), switch
 
     @property
-    def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
+    def instr_slots(self) -> Iterator[tuple[CompSlot, Instr | None]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
-                yield (st_str(state), color), instr
+                yield (state, color), instr
 
     @property
-    def used_instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
+    def used_instr_slots(self) -> Iterator[tuple[CompSlot, Instr]]:
         yield from (
             (slot, instr)
             for slot, instr in self.instr_slots
@@ -139,11 +145,11 @@ class Program:
         yield from(instr for instr in self.instructions if instr)
 
     @property
-    def slots(self) -> tuple[Slot, ...]:
+    def slots(self) -> tuple[CompSlot, ...]:
         return tuple(slot for slot, _ in self.instr_slots)
 
     @property
-    def open_slots(self) -> tuple[Slot, ...]:
+    def open_slots(self) -> tuple[CompSlot, ...]:
         return tuple(
             slot
             for slot, instr in self.instr_slots
@@ -151,7 +157,7 @@ class Program:
         )
 
     @property
-    def last_slot(self) -> Slot | None:
+    def last_slot(self) -> CompSlot | None:
         if len((slots := self.open_slots)) != 1:
             return None
 
@@ -160,22 +166,25 @@ class Program:
     @property
     def halt_slots(self) -> tuple[CompSlot, ...]:
         return tuple(
-            (str_st(state), color)
-            for (state, color), instr in self.instr_slots
+            slot
+            for slot, instr in self.instr_slots
             if instr is None or instr[2] == HALT
         )
 
     @property
     def erase_slots(self) -> tuple[CompSlot, ...]:
         return tuple(
-            (str_st(state), color)
-            for (state, color), instr in self.used_instr_slots
-            if color != BLANK and instr[0] == BLANK
+            slot
+            for slot, instr in self.used_instr_slots
+            if slot[1] != BLANK and instr[0] == BLANK
         )
 
     @property
     def used_states(self) -> Iterator[State]:
-        yield from (st_str(state) for _, _, state in self.used_instructions)
+        yield from (
+            st_str(state)
+            for _, _, state in self.used_instructions
+        )
 
     @property
     def available_states(self) -> set[State]:
