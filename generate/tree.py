@@ -2,11 +2,11 @@ from queue import Empty, Queue
 from collections.abc import Callable
 from multiprocessing import cpu_count, Manager, Process
 
+from tm.instrs import Slot
 from tm.machine import Machine
 from tm.program import Program
 
 Prog = str
-Slot = tuple[int, int]
 
 Output  = Callable[[Prog], None]
 RunPile = Queue[Prog | tuple[Slot, Prog]]
