@@ -144,9 +144,13 @@ def make_switch(state: State, instrs: tuple[Instr, ...]) -> str:
     return make_if_else(state, in0, in1)
 
 
+def make_label(state: State) -> str:
+    return f' {st_str(state)}:'
+
+
 def make_labels(prog: str) -> str:
     return '\n'.join([
-        f' {st_str(state)}:' + make_switch(
+        make_label(state) + make_switch(
             state,
             tuple(
                 instr or (1, True, -1)
