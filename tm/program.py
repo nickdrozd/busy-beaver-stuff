@@ -11,8 +11,8 @@ from tm.tape import Tape
 from tm.graph import Graph
 from tm.machine import Machine
 from tm.recurrence import History
-from tm.parse import parse, tcompile, dcomp_instr, str_st
-from tm.instrs import Color, State, Slot, Instr, BLANK, LetterState
+from tm.instrs import Color, State, Slot, Instr
+from tm.parse import parse, tcompile, dcomp_instr, str_st, LetterState
 
 ProgStr = str
 
@@ -142,7 +142,7 @@ class Program:
         return tuple(
             slot
             for slot, instr in self.used_instr_slots
-            if slot[1] != BLANK and instr[0] == BLANK
+            if slot[1] != 0 and instr[0] == 0
         )
 
     @property
@@ -162,7 +162,7 @@ class Program:
 
     @property
     def available_colors(self) -> set[Color]:
-        used = set(self.used_colors) | { BLANK }
+        used = set(self.used_colors) | { 0 }
         diff = sorted(self.colors.difference(used))
 
         return used | { diff[0] } if diff else used

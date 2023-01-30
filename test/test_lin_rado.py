@@ -1,7 +1,6 @@
 from unittest import TestCase
 
-from tm.parse import st_str
-from tm.instrs import LEFT, RIGHT
+from tm.parse import st_str, LEFT, RIGHT
 from tm.machine import LinRecMachine
 from generate.naive import yield_programs
 

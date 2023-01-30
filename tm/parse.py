@@ -1,8 +1,12 @@
-from tm.instrs import (
-    RIGHT, LEFT, HALT, UNDF,
-    State, LetterState, Instr, Prog
-)
+from tm.instrs import State, Instr, Prog
 
+LetterState = str
+
+HALT = '_'
+UNDF = '.'
+
+LEFT  = 'L'
+RIGHT = 'R'
 
 def parse(program: str) -> tuple[tuple[Instr | None, ...], ...]:
     return tuple(
