@@ -11,38 +11,20 @@ from tm.tape import Tape
 from tm.graph import Graph
 from tm.machine import Machine
 from tm.recurrence import History
-from tm.parse import parse, st_str, str_st, tcompile, comp_instr
-from tm.instrs import (
-    Color,
-    LetterState,
-    LetterSlot,
-    LetterInstr,
-    State,
-    Slot,
-    Instr,
-    INIT, HALT, LEFT, RIGHT, BLANK,
-)
+from tm.parse import parse, tcompile, dcomp_instr, str_st
+from tm.instrs import Color, State, Slot, Instr, BLANK, LetterState
 
 ProgStr = str
 
 Switch = dict[Color, Instr | None]
-LetterSwitch = dict[Color, LetterInstr | None]
-
-
-def dcomp_instr(instr: Instr | None) -> LetterInstr | None:
-    return None if instr is None else (
-        instr[0],
-        RIGHT if instr[1] else LEFT,
-        st_str(instr[2]),
-    )
 
 
 class Program:
-    prog: dict[State, LetterSwitch]
+    prog: dict[State, Switch]
 
     def __init__(self, program: ProgStr):
         self.prog = {
-            state: dict(enumerate(map(dcomp_instr, instrs)))
+            state: dict(enumerate(instrs))
             for state, instrs in enumerate(parse(program))
         }
 
@@ -51,56 +33,33 @@ class Program:
     def __repr__(self) -> ProgStr:
         return '  '.join([
             ' '.join(
-                ''.join(map(str, instr)) if instr else '...'
+                dcomp_instr(instr)
                 for instr in instrs.values()
             )
             for instrs in self.prog.values()
         ])
 
     @overload
-    def __getitem__(self, slot: LetterState) -> LetterSwitch: ...
-
-    @overload
     def __getitem__(self, slot: State) -> Switch: ...
-
-    @overload
-    def __getitem__(self, slot: LetterSlot) -> LetterInstr | None: ...
 
     @overload
     def __getitem__(self, slot: Slot) -> Instr | None: ...
 
     def __getitem__(
             self,
-            slot: LetterState | State | LetterSlot | Slot,
-    ) -> LetterSwitch | Switch | LetterInstr | Instr | None:
-        if isinstance(slot, LetterState):
-            return self.prog[str_st(slot)]
-
+            slot: State | Slot,
+    ) -> Switch | Instr | None:
         if isinstance(slot, State):
-            return {
-                color: comp_instr(instr)
-                for color, instr in self.prog[slot].items()
-            }
+            return self.prog[slot]
 
         state, color = slot
 
-        if isinstance(state, LetterState):
-            return self.prog[str_st(state)][color]
+        return self.prog[state][color]
 
-        return comp_instr(
-            self.prog[state][color]
-        )
-
-    def __setitem__(
-            self,
-            slot: LetterSlot | Slot,
-            instr: LetterInstr | None,
-    ) -> None:
+    def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
         state, color = slot
 
-        self.prog[
-            str_st(state) if isinstance(state, LetterState) else state
-        ][color] = instr
+        self.prog[state][color] = instr
 
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
@@ -117,8 +76,8 @@ class Program:
                 ] * states)))
 
     @cached_property
-    def states(self) -> set[LetterState]:
-        return set(map(st_str, self.prog.keys()))
+    def states(self) -> set[State]:
+        return set(self.prog.keys())
 
     @cached_property
     def colors(self) -> set[Color]:
@@ -126,20 +85,16 @@ class Program:
 
     @property
     def state_switches(self) -> Iterator[tuple[State, Switch]]:
-        for state, switch in self.prog.items():
-            yield state, {
-                color: comp_instr(instr)
-                for color, instr in switch.items()
-            }
+        yield from self.prog.items()
 
     @property
-    def instr_slots(self) -> Iterator[tuple[Slot, LetterInstr | None]]:
+    def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
         for state, instrs in self.prog.items():
             for color, instr in instrs.items():
                 yield (state, color), instr
 
     @property
-    def used_instr_slots(self) -> Iterator[tuple[Slot, LetterInstr]]:
+    def used_instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
         yield from (
             (slot, instr)
             for slot, instr in self.instr_slots
@@ -149,7 +104,7 @@ class Program:
     @property
     def instructions(self) -> Iterator[Instr | None]:
         for instrs in self.prog.values():
-            yield from map(comp_instr, instrs.values())
+            yield from instrs.values()
 
     @property
     def used_instructions(self) -> Iterator[Instr]:
@@ -179,7 +134,7 @@ class Program:
         return tuple(
             slot
             for slot, instr in self.instr_slots
-            if instr is None or instr[2] == HALT
+            if instr is None or instr[2] == -1
         )
 
     @property
@@ -191,15 +146,12 @@ class Program:
         )
 
     @property
-    def used_states(self) -> Iterator[LetterState]:
-        yield from (
-            st_str(state)
-            for _, _, state in self.used_instructions
-        )
+    def used_states(self) -> Iterator[State]:
+        yield from (state for _, _, state in self.used_instructions)
 
     @property
-    def available_states(self) -> set[LetterState]:
-        used = set(self.used_states) | { INIT }
+    def available_states(self) -> set[State]:
+        used = set(self.used_states) | { 0 }
         diff = sorted(self.states.difference(used))
 
         return used | { diff[0] } if diff else used
@@ -216,23 +168,21 @@ class Program:
         return used | { diff[0] } if diff else used
 
     @property
-    def available_instrs(self) -> Iterator[LetterInstr]:
+    def available_instrs(self) -> Iterator[Instr]:
         return product(
             self.available_colors,
-            (LEFT, RIGHT),
+            (False, True),
             self.available_states)
 
     @property
-    def instr_seq(self) -> Iterator[tuple[ProgStr, int, LetterSlot]]:
+    def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
         partial = Program.empty(len(self.states), len(self.colors))
 
         for _ in range(len(self.states) * len(self.colors) - 1):
             if (result := Machine(partial).run().undfnd) is None:
                 return
 
-            step, (state, color) = result
-
-            slot = st_str(state), color
+            step, slot = result
 
             yield str(partial), step, slot
 
@@ -240,12 +190,9 @@ class Program:
 
     def branch(
             self,
-            slot: LetterSlot | Slot,
+            slot: Slot,
             halt: bool = False,
     ) -> Iterator[ProgStr]:
-        if isinstance(slot[0], State):
-            slot = st_str(slot[0]), slot[1]
-
         if halt and self.last_slot:
             return
 
@@ -263,18 +210,18 @@ class Program:
 
     def swap_states(
             self,
-            ist1: LetterState,
-            ist2: LetterState,
+            ist1: State | LetterState,
+            ist2: State | LetterState,
     ) -> Program:
-        st1: State = str_st(ist1)
-        st2: State = str_st(ist2)
+        st1: State = ist1 if isinstance(ist1, State) else str_st(ist1)
+        st2: State = ist2 if isinstance(ist2, State) else str_st(ist2)
 
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
         for slot, (color, shift, state) in self.used_instr_slots:
             self[slot] = color, shift, (
-                ist1 if state == ist2 else
-                ist2 if state == ist1 else
+                st1 if state == st2 else
+                st2 if state == st1 else
                 state
             )
 
@@ -296,7 +243,7 @@ class Program:
 
     def normalize_states(self) -> Program:
         for _ in self.states:
-            todo = list(map(str_st, sorted(self.states)[1:]))
+            todo = sorted(self.states)[1:]
 
             for _, _, state in self.used_instructions:
                 if state not in todo:
@@ -305,7 +252,7 @@ class Program:
                 norm, *rest = todo
 
                 if state != norm:
-                    self.swap_states(st_str(state), st_str(norm))
+                    self.swap_states(state, norm)
                     break
 
                 todo = rest
@@ -339,8 +286,7 @@ class Program:
             return self
 
         for slot, (color, shift, state) in self.used_instr_slots:
-            self[slot] = (
-                color, (LEFT if shift == RIGHT else RIGHT), state)
+            self[slot] = color, not shift, state
 
         return self
 

@@ -5,9 +5,6 @@ Color = int
 LetterShift = str
 LetterState = str
 
-LetterSlot = tuple[LetterState, Color]
-LetterInstr = tuple[Color, LetterShift, LetterState]
-
 State = int
 Shift = bool
 
