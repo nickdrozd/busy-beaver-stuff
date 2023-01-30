@@ -12,7 +12,7 @@ from tm.graph import Graph
 from tm.machine import Machine
 from tm.recurrence import History
 from tm.instrs import Color, State, Slot, Instr
-from tm.parse import parse, tcompile, dcomp_instr, str_st, LetterState
+from tm.parse import parse, tcompile, dcomp_instr
 
 ProgStr = str
 
@@ -208,14 +208,7 @@ class Program:
 
         self[slot] = orig
 
-    def swap_states(
-            self,
-            ist1: State | LetterState,
-            ist2: State | LetterState,
-    ) -> Program:
-        st1: State = ist1 if isinstance(ist1, State) else str_st(ist1)
-        st2: State = ist2 if isinstance(ist2, State) else str_st(ist2)
-
+    def swap_states(self, st1: State, st2: State) -> Program:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
         for slot, (color, shift, state) in self.used_instr_slots:
