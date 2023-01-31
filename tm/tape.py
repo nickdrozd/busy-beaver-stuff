@@ -81,6 +81,10 @@ class Tape(BlockTape):
     def __hash__(self) -> int:
         return hash(str(self))
 
+    @staticmethod
+    def init(scan: Color = 0) -> Tape:
+        return Tape([], scan, [])
+
     def lblocks(self) -> BlockSpan:
         return [[color, count] for color, count in self.lspan]
 

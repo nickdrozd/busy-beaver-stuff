@@ -100,7 +100,7 @@ class Machine:
         self.tape = tape = (
             tape
             if tape is not None else
-            Tape([], 0, [])
+            Tape.init()
         )
 
         if prover:
@@ -226,7 +226,7 @@ class LinRecMachine:
 
         comp = tcompile(self.program)
 
-        self.tape = tape = Tape([], 0, [])
+        self.tape = tape = Tape.init()
 
         self.history = History(tapes = samples or {})
 

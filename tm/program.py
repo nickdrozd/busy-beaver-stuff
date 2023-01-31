@@ -325,7 +325,7 @@ class Program:
             (
                 1,
                 state,
-                Tape([], color, []),
+                Tape.init(color),
                 0,
                 History(tapes = {}),
             )

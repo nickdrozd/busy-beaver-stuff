@@ -34,7 +34,7 @@ class TestTape(TestCase):
 
     def test_marks(self):
         self.assertFalse(
-            Tape([], 0, []).marks)
+            Tape.init().marks)
 
     def test_copy(self):
         self.tape = Tape(
