@@ -19,6 +19,14 @@ def stringify_sig(sig: Signature) -> str:
 class TestTape(TestCase):
     tape: Tape
 
+    def set_tape(
+            self,
+            lspan: BlockSpan,
+            scan: Color,
+            rspan: BlockSpan,
+    ) -> None:
+        self.tape = Tape(lspan, scan, rspan)
+
     def assert_tape(self, tape: str):
         self.assertEqual(tape, str(self.tape))
 
@@ -37,11 +45,14 @@ class TestTape(TestCase):
             Tape.init().marks)
 
     def test_copy(self):
-        self.tape = Tape(
-            list(reversed([[1, 1], [0, 1], [1, 1]])),
+        self.set_tape(
+            [[1, 1], [0, 1], [1, 1]],
             2,
             [[2, 1], [1, 2]]
         )
+
+        self.assert_tape(
+            '1^1 0^1 1^1 [2] 2^1 1^2')
 
         self.assert_signature(
             '1|0|1[2]2|1')
@@ -64,7 +75,7 @@ class TestTape(TestCase):
             tape = copy_2)
 
     def test_rule_1(self):
-        self.tape = Tape(
+        self.set_tape(
             [[1, 12], [2, 3]],
             3,
             [[4, 15], [5, 2], [6, 2]])
@@ -89,7 +100,7 @@ class TestTape(TestCase):
             "2^24 1^2 [3] 4^1 5^2 6^157")
 
     def test_rule_2(self):
-        self.tape = Tape(
+        self.set_tape(
             [[4, 2]],
             4,
             [[5, 60], [2, 1], [4, 1], [5, 7], [1, 1]])
