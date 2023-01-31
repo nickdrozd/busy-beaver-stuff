@@ -15,6 +15,8 @@ Counts = tuple[tuple[int, ...], tuple[int, ...]]
 class RecursiveRule(Exception):
     pass
 
+class UnknownRule(Exception):
+    pass
 
 class InfiniteRule(Exception):
     pass
@@ -36,10 +38,7 @@ def calculate_diff(
     if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
         return mult
 
-    if rec_rules:
-        raise RecursiveRule()
-
-    return None
+    raise (RecursiveRule if rec_rules else UnknownRule)()
 
 
 def make_rule(
