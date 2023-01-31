@@ -21,7 +21,7 @@ class InfiniteRule(Exception):
 
 
 def calculate_diff(
-        rec_rule: int,
+        rec_rules: list[Rule],
         cnt1: int,
         cnt2: int,
         cnt3: int,
@@ -36,14 +36,14 @@ def calculate_diff(
     if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
         return mult
 
-    if rec_rule:
+    if rec_rules:
         raise RecursiveRule()
 
     return None
 
 
 def make_rule(
-        rec_rule: int,
+        rec_rules: list[Rule],
         counts0: Counts,
         counts1: Counts,
         counts2: Counts,
@@ -54,7 +54,7 @@ def make_rule(
                 zip(counts0, counts1, counts2))
         for i, counts in enumerate(zip(*spans))
         if (diff := calculate_diff(
-                rec_rule, *counts)) is not None
+                rec_rules, *counts)) is not None
     }
 
     if all(diff >= 0
