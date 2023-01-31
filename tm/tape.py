@@ -81,27 +81,22 @@ class Tape(BlockTape):
     def __hash__(self) -> int:
         return hash(str(self))
 
+    def lblocks(self) -> BlockSpan:
+        return [[color, count] for color, count in self.lspan]
+
+    def rblocks(self) -> BlockSpan:
+        return [[color, count] for color, count in self.rspan]
+
     def copy(self) -> Tape:
-        return Tape(
-            [[color, count] for color, count in self.lspan],
-            self.scan,
-            [[color, count] for color, count in self.rspan],
-            head = self.head,
-        )
+        tape = Tape(self.lblocks(), self.scan, self.rblocks())
+        tape.head = self.head
+        return tape
 
     def to_tag(self) -> TagTape:
-        return TagTape(
-            [[color, count] for color, count in self.lspan],
-            self.scan,
-            [[color, count] for color, count in self.rspan],
-        )
+        return TagTape(self.lblocks(), self.scan, self.rblocks())
 
     def to_enum(self) -> EnumTape:
-        return EnumTape(
-            [[color, count] for color, count in self.lspan],
-            self.scan,
-            [[color, count] for color, count in self.rspan],
-        )
+        return EnumTape(self.lblocks(), self.scan, self.rblocks())
 
     def to_ptr(self) -> PtrTape:
         return PtrTape(
