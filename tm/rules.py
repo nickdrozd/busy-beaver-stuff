@@ -12,7 +12,7 @@ Rule = dict[Index, Op]
 Counts = tuple[tuple[int, ...], tuple[int, ...]]
 
 
-class ImplausibleRule(Exception):
+class RecursiveRule(Exception):
     pass
 
 
@@ -37,7 +37,7 @@ def calculate_diff(
         return mult
 
     if rec_rule:
-        raise ImplausibleRule()
+        raise RecursiveRule()
 
     return None
 
