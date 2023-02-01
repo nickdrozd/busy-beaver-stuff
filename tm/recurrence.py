@@ -283,11 +283,11 @@ class Prover:
                 state, tape, sig := tape.signature)) is not None:
             return known_rule
 
-        if (temp := self.configs.get(sig)) is None:
-            temp = defaultdict(PastConfig)
-            self.configs[sig] = temp
+        if (states := self.configs.get(sig)) is None:
+            states = defaultdict(PastConfig)
+            self.configs[sig] = states
 
-        if (deltas := temp[state].next_deltas(cycle)) is None:
+        if (deltas := states[state].next_deltas(cycle)) is None:
             return None
 
         tags: TagTape = tape.to_tag()
@@ -321,6 +321,8 @@ class Prover:
             rule = make_rule(rec_rules, tape.counts, *counts)
         except RecursiveRule:
             return None
+
+        del states[state]
 
         self.set_rule(
             rule,
