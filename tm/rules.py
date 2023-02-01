@@ -56,7 +56,7 @@ class ApplyRule:
     @abstractmethod
     def __setitem__(self, index: Index, val: int) -> None: ...
 
-    def apply_rule(self, rule: Rule) -> int | None:
+    def count_apps(self, rule: Rule) -> int | None:
         divs: list[int] = []
 
         for pos, diff in rule.items():
@@ -69,7 +69,11 @@ class ApplyRule:
             div, rem = divmod(count, abs_diff)
             divs.append(div if rem > 0 else div - 1)
 
-        times: int = min(divs)
+        return min(divs)
+
+    def apply_rule(self, rule: Rule) -> int | None:
+        if (times := self.count_apps(rule)) is None:
+            return None
 
         for pos, diff in rule.items():
             if isinstance(diff, Plus):
