@@ -12,9 +12,6 @@ Rule = dict[Index, Op]
 Counts = tuple[tuple[int, ...], tuple[int, ...]]
 
 
-class RecursiveRule(Exception):
-    pass
-
 class UnknownRule(Exception):
     pass
 
@@ -22,12 +19,7 @@ class InfiniteRule(Exception):
     pass
 
 
-def calculate_diff(
-        rec_rules: list[Rule],
-        cnt1: int,
-        cnt2: int,
-        cnt3: int,
-) -> Op | None:
+def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> Op | None:
     if cnt1 == cnt2:
         assert cnt3 == cnt1
         return None
@@ -38,22 +30,15 @@ def calculate_diff(
     if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
         return mult
 
-    raise (RecursiveRule if rec_rules else UnknownRule)()
+    raise UnknownRule()
 
 
-def make_rule(
-        rec_rules: list[Rule],
-        counts0: Counts,
-        counts1: Counts,
-        counts2: Counts,
-) -> Rule:
+def make_rule(cnts1: Counts, cnts2: Counts, cnts3: Counts) -> Rule:
     rule = {
         (s, i): diff
-        for s, spans in enumerate(
-                zip(counts0, counts1, counts2))
+        for s, spans in enumerate(zip(cnts1, cnts2, cnts3))
         for i, counts in enumerate(zip(*spans))
-        if (diff := calculate_diff(
-                rec_rules, *counts)) is not None
+        if (diff := calculate_diff(*counts)) is not None
     }
 
     if all(diff >= 0

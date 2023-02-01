@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.instrs import State, Slot, GetInstr
-from tm.rules import make_rule, Rule, RecursiveRule
+from tm.rules import make_rule, Rule, UnknownRule
 from tm.tape import (
     Signature, MinSig,
     Tape, BlockTape, TagTape, EnumTape, PtrTape,
@@ -318,8 +318,11 @@ class Prover:
 
         try:
             # pylint: disable = no-value-for-parameter
-            rule = make_rule(rec_rules, tape.counts, *counts)
-        except RecursiveRule:
+            rule = make_rule(tape.counts, *counts)
+        except UnknownRule:
+            if not rec_rules:
+                raise
+
             return None
 
         del states[state]
