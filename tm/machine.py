@@ -127,6 +127,7 @@ class Machine:
 
                 if rule is not None:
                     if (times := tape.apply_rule(rule)) is not None:
+                        # print(f'--> applied rule: {rule}')
                         step += times
                         self.rulapp += times
                         continue

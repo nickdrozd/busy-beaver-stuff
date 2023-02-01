@@ -333,4 +333,6 @@ class Prover:
             ),
         )
 
+        # print(f'--> proved rule: {rule}')
+
         return rule
