@@ -101,13 +101,10 @@ class Prover:
             steps: int,
             state: State,
             tape: TagTape,
-    ) -> tuple[State, list[Rule]] | None:
-        rec_rules = []
-
+    ) -> State | None:
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
                 if tape.apply_rule(rule) is not None:
-                    rec_rules.append(rule)
                     continue
 
             if (instr := self.prog[state, tape.scan]) is None:
@@ -120,7 +117,7 @@ class Prover:
             if (state := next_state) == -1:
                 return None
 
-        return state, rec_rules
+        return state
 
     def get_min_sig(
             self,
@@ -174,14 +171,8 @@ class Prover:
         counts = []
 
         for delta in deltas:
-            if (result := self.run_simulator(
-                    delta, state, tags)) is None:
-                return None
-
-            end_state, rec_rules = result
-
             if (
-                end_state != state
+                self.run_simulator(delta, state, tags) != state
                 or tags.scan != sig[0]
                 or tags.signature != sig
                 or tags.missing_tags()
@@ -194,9 +185,6 @@ class Prover:
             # pylint: disable = no-value-for-parameter
             rule = make_rule(tape.counts, *counts)
         except UnknownRule:
-            if not rec_rules:
-                raise
-
             return None
 
         del states[state]
