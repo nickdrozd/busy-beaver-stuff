@@ -181,9 +181,10 @@ class Prover:
 
             counts.append(tags.counts)
 
+        assert len(counts) == 2
+
         try:
-            # pylint: disable = no-value-for-parameter
-            rule = make_rule(tape.counts, *counts)
+            rule = make_rule(tape.counts, counts[0], counts[1])
         except UnknownRule:
             return None
 
