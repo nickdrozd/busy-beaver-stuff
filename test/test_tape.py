@@ -555,6 +555,14 @@ class TestTags(TestCase):
 class TestEnum(TestCase):
     tape: EnumTape
 
+    def set_tape(
+            self,
+            lspan: BlockSpan,
+            scan: Color,
+            rspan: BlockSpan,
+    ) -> None:
+        self.tape = EnumTape(lspan, scan, rspan)
+
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
 
@@ -594,7 +602,7 @@ class TestEnum(TestCase):
         #  164 | A0 | 2^1 3^9 4^1 1^13 [0]
         #  165 | B0 | 2^1 3^9 4^1 1^14 [0]
 
-        self.tape = EnumTape(
+        self.set_tape(
             [[1, 11], [4, 1], [3, 11], [2, 1]], 0, [])
 
         self.assert_offsets([0, 0])
@@ -642,7 +650,7 @@ class TestEnum(TestCase):
         #  930 | |5 | 3^5 2^1 [5] 5^414422565
         #  931 | |0 | 3^5 2^414422567 [0]
 
-        self.tape = EnumTape(
+        self.set_tape(
             [[2, 414422565], [3, 6]], 0, [])
 
         self.assert_offsets([0, 0])
@@ -666,19 +674,19 @@ class TestEnum(TestCase):
     def test_offsets_3(self):
         # 1^1 2^2 3^9 [3] 1^10
 
-        self.tape = EnumTape([[3, 9]], 3, [[1, 10]])
+        self.set_tape([[3, 9]], 3, [[1, 10]])
         self.step(0, 1, 0)
         self.assert_tape([[3, 8]], 3, [[1, 11]])
         self.assert_offsets([1, 1])
 
     def test_edges_1(self):
-        self.tape = EnumTape([], 0, [])
+        self.set_tape([], 0, [])
         self.step(0, 1, 0)
         self.assert_tape([], 0, [[1, 1]])
         self.assert_edges((True, False))
 
     def test_edges_2(self):
-        self.tape = EnumTape([[1, 3]], 1, [])
+        self.set_tape([[1, 3]], 1, [])
         self.step(0, 2, 1)
         self.assert_tape([], 0, [[2, 4]])
         self.assert_edges((True, False))
