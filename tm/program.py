@@ -10,7 +10,7 @@ from collections.abc import Iterator
 from tm.tape import Tape
 from tm.graph import Graph
 from tm.machine import Machine
-from tm.recurrence import History
+from tm.lin_rec import History
 from tm.instrs import Color, State, Slot, Instr
 from tm.parse import parse, tcompile, dcomp_instr
 

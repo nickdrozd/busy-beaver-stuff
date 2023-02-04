@@ -4,7 +4,8 @@ from tm.tape import Tape
 from tm.rules import InfiniteRule, UnknownRule
 from tm.parse import tcompile, st_str
 from tm.instrs import State, Slot, GetInstr
-from tm.recurrence import History, RecRes, Tapes, Prover
+from tm.prover import Prover
+from tm.lin_rec import History, RecRes, Tapes
 
 LinRec = tuple[int | None, int]
 
