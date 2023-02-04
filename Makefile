@@ -63,7 +63,7 @@ coverage : clean-python
 	$(COVERAGE) html
 
 diagrams :
-	pyreverse --only-classnames -o png tm generate test
+	pyreverse --only-classnames --colorized -o png tm generate test
 
 # PYTHONPATH=$PYTHONPATH:tm make special target=tm/tape.py
 special :
