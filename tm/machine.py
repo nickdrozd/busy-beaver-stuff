@@ -46,6 +46,15 @@ class Machine:
     def __init__(self, program: str | GetInstr):
         self.program = program
 
+    @property
+    def term_results(self) -> tuple[tuple[str, str | int], ...]:
+        return tuple(
+            (cat, data)
+            for cat in TERM_CATS
+            # pylint: disable = bad-builtin
+            if (data := getattr(self, cat)) is not None
+        )
+
     def __str__(self) -> str:
         info = [ f'CYCLES: {self.cycles}' ]
 
@@ -54,9 +63,7 @@ class Machine:
 
         info += [
             f'{cat.upper()}: {data if self.rulapp == 0 else "..."}'
-            for cat in TERM_CATS
-            # pylint: disable = bad-builtin
-            if (data := getattr(self, cat)) is not None
+            for cat, data in self.term_results
         ]
 
         if self.rulapp > 0:
@@ -192,15 +199,7 @@ class Machine:
         self.state = state
         self.cycles = cycle
 
-        self.validate_results()
-
-    def validate_results(self) -> None:
-        assert len(results := [
-            (cat, data)
-            for cat in TERM_CATS
-            # pylint: disable = bad-builtin
-            if (data := getattr(self, cat)) is not None
-        ]) == 1, results
+        assert len(results := self.term_results) == 1, results
 
 ########################################
 
