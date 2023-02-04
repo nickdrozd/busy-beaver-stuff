@@ -303,7 +303,7 @@ class EnumTape(BlockTape):
     offsets: list[int] = field(
         default_factory = lambda: [0, 0])
 
-    edges: list[bool] = field(
+    _edges: list[bool] = field(
         default_factory = lambda: [False, False])
 
     def __post_init__(self) -> None:
@@ -312,9 +312,13 @@ class EnumTape(BlockTape):
                 block.append(s)
                 block.append(i)
 
+    @property
+    def edges(self) -> tuple[bool, bool]:
+        return self._edges[0], self._edges[1]
+
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
         if not (span := self.rspan if shift else self.lspan):
-            self.edges[bool(shift)] = True
+            self._edges[bool(shift)] = True
         else:
             if (near_block := span[0])[2:]:
                 _, _, ind, offset = near_block
@@ -324,7 +328,7 @@ class EnumTape(BlockTape):
 
             if skip and near_block[0] == self.scan:
                 if not span[1:]:
-                    self.edges[bool(shift)] = True
+                    self._edges[bool(shift)] = True
                 elif (next_block := span[1])[2:]:
                     _, _, ind, offset = next_block
 

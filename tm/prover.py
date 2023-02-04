@@ -139,9 +139,8 @@ class Prover:
             state = next_state
 
         lmax, rmax = tape.offsets
-        ledge, redge = tape.edges
 
-        return (sig[0], sig[1][:lmax], sig[2][:rmax]), (ledge, redge)
+        return (sig[0], sig[1][:lmax], sig[2][:rmax]), tape.edges
 
     def try_rule(
             self,
