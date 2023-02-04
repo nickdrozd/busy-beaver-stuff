@@ -14,8 +14,6 @@ Signature = tuple[
     tuple[Color | tuple[Color], ...],
 ]
 
-MinSig = tuple[Signature, tuple[bool, bool]]
-
 
 @dataclass
 class BlockTape(ApplyRule):
