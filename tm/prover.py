@@ -55,12 +55,14 @@ class Prover:
 
     rules: dict[
         Slot,
-        dict[MinSig, Rule],
+        list[tuple[MinSig, Rule]],
     ] = field(default_factory = dict)
 
     configs: dict[
-        Signature,
-        dict[State, PastConfig],
+        Signature, dict[
+            State,
+            PastConfig,
+        ],
     ] = field(default_factory = dict)
 
     def get_rule(
@@ -75,7 +77,7 @@ class Prover:
         if sig is None:
             sig = tape.signature
 
-        for ((scan, lspan, rspan), (lex, rex)), rule in temp.items():
+        for ((scan, lspan, rspan), (lex, rex)), rule in temp:
             if (scan == sig[0]
                 and lspan == (sig[1] if lex else sig[1][:len(lspan)])
                 and rspan == (sig[2] if rex else sig[2][:len(rspan)])):
@@ -90,9 +92,9 @@ class Prover:
             sig: MinSig,
     ) -> None:
         if (slot := (state, sig[0][0])) not in self.rules:
-            self.rules[slot] = {}
+            self.rules[slot] = []
 
-        self.rules[slot][sig] = rule
+        self.rules[slot].append((sig, rule))
 
     def run_simulator(
             self,
