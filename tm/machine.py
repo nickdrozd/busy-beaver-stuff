@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tm.tape import Tape
-from tm.rules import InfiniteRule, UnknownRule
+from tm.rules import InfiniteRule
 from tm.parse import tcompile, st_str
 from tm.instrs import State, Slot, GetInstr
 from tm.prover import Prover
@@ -129,9 +129,6 @@ class Machine:
                 except InfiniteRule:
                     self.infrul = True
                     break
-
-                except UnknownRule:
-                    rule = None
 
                 if rule is not None:
                     if (times := tape.apply_rule(rule)) is not None:
