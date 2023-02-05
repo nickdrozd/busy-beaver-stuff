@@ -54,20 +54,14 @@ class BlockTape(ApplyRule):
     def __getitem__(self, index: Index) -> int:
         side, pos = index
 
-        if side == 0:
-            span = self.lspan
-        elif side == 1:
-            span = self.rspan
+        span = self.rspan if side else self.lspan
 
         return span[pos][1]
 
     def __setitem__(self, index: Index, val: int) -> None:
         side, pos = index
 
-        if side == 0:
-            span = self.lspan
-        elif side == 1:
-            span = self.rspan
+        span = self.rspan if side else self.lspan
 
         span[pos][1] = val
 
