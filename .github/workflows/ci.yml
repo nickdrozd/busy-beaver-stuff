@@ -34,6 +34,7 @@ jobs:
 
       - name: Test Python
         run: |
+          make coverage
           make test-all
 
       - name: Tree Gen
