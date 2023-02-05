@@ -572,7 +572,7 @@ class Fast(TuringTest):
         print(self.machine)
 
         self.run_bb(
-            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD",
+            "1RB 1RA  0RC 0RB  1LC 1LD  1RA 1LB",
             prover = True,
             watch_tape = True)
 
