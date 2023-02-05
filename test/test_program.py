@@ -183,7 +183,7 @@ class TestProgram(BackwardReasoning):
             self.assert_cant_spin_out(prog)
 
     def test_recur(self):
-        for prog in RECUR_TOO_SLOW:
+        for prog in RECUR_COMPACT | RECUR_DIFFUSE | RECUR_TOO_SLOW:
             self.assert_cant_halt(prog)
             self.assert_cant_blank(prog)
             self.assert_cant_spin_out(prog)
