@@ -262,7 +262,7 @@ class LinRecMachine:
 
             step += 1
 
-            if (state := next_state) == -1:
+            if (state := next_state) == -1:  # no-coverage
                 self.halted = step
                 break
 

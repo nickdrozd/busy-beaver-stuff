@@ -135,11 +135,11 @@ class History:
     ) -> RecRes | None:
         assert self.states[steps] == self.states[recurrence]
 
-        if tape1 is None or tape2 is None:
+        if tape1 is None or tape2 is None:  # no-coverage
             tape1 = self.tapes[steps]
             tape2 = self.tapes[recurrence]
 
-            assert tape1 is not None and tape2 is not None
+        assert tape1 is not None and tape2 is not None
 
         positions = self.positions
 

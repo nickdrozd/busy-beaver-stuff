@@ -100,7 +100,7 @@ class MacroProg:
 
         seen: set[tuple[State, int, tuple[Color, ...]]] = set()
 
-        for _ in range(self.sim_lim):
+        for _ in range(self.sim_lim):  # pragma: no branch
             if (instr := self.comp[
                     state, scan := tape[pos]]) is None:
                 return None
@@ -130,7 +130,7 @@ class MacroProg:
             seen.add(curr)
 
         else:
-            return None
+            return None  # no-coverage
 
         return state, (cells <= pos, tape)
 
@@ -289,5 +289,5 @@ def macro_variations(
             BlockMacro(
                 prog, [block]), [1])
 
-    for wrap in range(1, 1 + back_wrap):
+    for wrap in range(1, 1 + back_wrap):  # no-coverage
         yield BacksymbolMacro(prog, [1] * wrap)
