@@ -556,43 +556,6 @@ class Fast(TuringTest):
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
-    def test_macro_loop(self):
-        self.run_bb(
-            BacksymbolMacro(
-                BlockMacro(
-                    "1RB 0RA 1LB  2LA 2RB 0LA",
-                    [8]),
-            [1]))
-
-    def test_display(self):
-        self.run_bb(
-            "1RB 2LA 1R_  1LB 1LA 0RA",
-            watch_tape = True)
-
-        print(self.machine)
-
-        self.run_bb(
-            "1RB 1RA  0RC 0RB  1LC 1LD  1RA 1LB",
-            prover = True,
-            watch_tape = True)
-
-        print(self.machine)
-
-        self.run_bb(
-            "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB")
-
-        self.assertEqual(
-            str(self.machine.tape),
-            "[0] 3^97 1^2")
-
-        self.run_bb(
-            "1LB 2LA 3RA 0RB  1RB 1RA 0LB 1LB",
-            analyze = False)
-
-        self.assertEqual(
-            str(self.machine.tape),
-            "1^2 3^97 [0]")
-
 
 class Slow(TuringTest):  # no-coverage
     @skip('')

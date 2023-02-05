@@ -39,11 +39,12 @@ TUR = test.test_turing.Fast
 PROG = test.test_program
 GRAPH = test.test_graph
 TREEF = test.test_tree.Fast
+COV = test.test_coverage
 LR = test.test_lin_rado
 CG = test.test_code
 TP = test.test_tape
 
-SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(TP) $(TREEF)
+SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(TP) $(TREEF) $(COV)
 
 PYTEST = $(PYTHON) -m unittest
 
