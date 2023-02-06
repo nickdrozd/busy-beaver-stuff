@@ -95,11 +95,9 @@ class Program:
 
     @property
     def used_instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
-        yield from (
-            (slot, instr)
-            for slot, instr in self.instr_slots
-            if instr is not None
-        )
+        for slot, instr in self.instr_slots:
+            if instr is not None:
+                yield (slot, instr)
 
     @property
     def instructions(self) -> Iterator[Instr | None]:
@@ -108,7 +106,9 @@ class Program:
 
     @property
     def used_instructions(self) -> Iterator[Instr]:
-        yield from(instr for instr in self.instructions if instr)
+        for instr in self.instructions:
+            if instr:
+                yield instr
 
     @property
     def slots(self) -> tuple[Slot, ...]:
@@ -147,7 +147,8 @@ class Program:
 
     @property
     def used_states(self) -> Iterator[State]:
-        yield from (state for _, _, state in self.used_instructions)
+        for _, _, state in self.used_instructions:
+            yield state
 
     @property
     def available_states(self) -> set[State]:
@@ -158,7 +159,8 @@ class Program:
 
     @property
     def used_colors(self) -> Iterator[Color]:
-        yield from (color for color, _, _ in self.used_instructions)
+        for color, _, _ in self.used_instructions:
+            yield color
 
     @property
     def available_colors(self) -> set[Color]:
