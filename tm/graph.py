@@ -7,8 +7,6 @@ ConGraph = dict[State, set[State]]
 
 class Graph:
     def __init__(self, program: str):
-        self.program = program
-
         self.arrows: dict[State, tuple[State | None, ...]] = dict(
             enumerate(
                 tuple(

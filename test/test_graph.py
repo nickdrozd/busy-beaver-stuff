@@ -18,8 +18,7 @@ class TestGraph(TestCase):
         (self.assertTrue
          if self.graph.is_normal else
          self.assertFalse)(
-             bool(norm),
-             self.graph.program)
+             bool(norm))
 
     def assert_connected(self, conn: int):
         (self.assertTrue
