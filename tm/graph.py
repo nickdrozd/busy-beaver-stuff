@@ -6,8 +6,10 @@ from tm.instrs import Color, State
 ConGraph = dict[State, set[State]]
 
 class Graph:
+    arrows: dict[State, tuple[State | None, ...]]
+
     def __init__(self, program: str):
-        self.arrows: dict[State, tuple[State | None, ...]] = dict(
+        self.arrows  = dict(
             enumerate(
                 tuple(
                     instr[2] if instr is not None else None
