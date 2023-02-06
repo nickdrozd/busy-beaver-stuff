@@ -23,17 +23,23 @@ PYTHON = python3
 
 MODULES = tm generate test *.py
 
+PYLINT = $(PYTHON) -m pylint
+
 lint :
-	$(PYTHON) -m pylint --version
-	$(PYTHON) -m pylint --enable-all-extensions $(MODULES)
+	$(PYLINT) --version
+	$(PYLINT) --enable-all-extensions $(MODULES)
 	$(MAKE) type
 
+MYPY = $(PYTHON) -m mypy
+
 type :
-	$(PYTHON) -m mypy --version
-	$(PYTHON) -m mypy $(MODULES)
+	$(MYPY) --version
+	$(MYPY) $(MODULES)
+
+MYPYC = $(PYTHON) -m mypyc
 
 compile : clean-python
-	$(PYTHON) -m mypyc tm generate --exclude tree
+	$(MYPYC) tm generate --exclude tree
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
