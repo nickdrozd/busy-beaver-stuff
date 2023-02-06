@@ -39,6 +39,7 @@ type :
 MYPYC = $(PYTHON) -m mypyc
 
 compile : clean-python
+	$(MYPYC) --version
 	$(MYPYC) tm generate --exclude tree
 
 TUR = test.test_turing.Fast
