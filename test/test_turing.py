@@ -20,7 +20,6 @@ class TuringTest(BackwardReasoning):
     prog: str
     tape: Tape
     machine: Machine
-    lr_machine: LinRecMachine
 
     def assert_normal(self, prog: str):
         self.assertTrue(
@@ -50,15 +49,9 @@ class TuringTest(BackwardReasoning):
             self.machine.steps,
             steps)
 
-    def assert_quasihalt(self, qsihlt: bool | None, linrec: bool = False):
-        machine: Machine | LinRecMachine = (
-            self.machine
-            if not linrec else
-            self.lr_machine
-        )
-
+    def assert_quasihalt(self, qsihlt: bool | None):
         self.assertEqual(
-            machine.qsihlt,
+            self.machine.qsihlt,
             qsihlt)
 
     def assert_close(
@@ -76,7 +69,8 @@ class TuringTest(BackwardReasoning):
         )
 
     def assert_lin_recurrence(self, steps: int, recurrence: int):
-        history = self.lr_machine.history
+        assert isinstance(self.machine, LinRecMachine)
+        history = self.machine.history
 
         self.assertEqual(
             history.states[steps],
@@ -93,7 +87,8 @@ class TuringTest(BackwardReasoning):
         )
 
     def deny_lin_recurrence(self, steps: int, recurrence: int):
-        history = self.lr_machine.history
+        assert isinstance(self.machine, LinRecMachine)
+        history = self.machine.history
 
         states = history.states
 
@@ -150,17 +145,13 @@ class TuringTest(BackwardReasoning):
         if print_prog:
             print(prog)
 
-        machine: Machine | LinRecMachine
-
         if lin_rec:
             assert isinstance(prog, str)
-            machine = LinRecMachine(prog).run(**opts)
-            self.lr_machine = machine
+            self.machine = LinRecMachine(prog).run(**opts)
         else:
-            machine = Machine(prog).run(**opts)
-            self.machine = machine
+            self.machine = Machine(prog).run(**opts)
 
-        self.tape = machine.tape
+        self.tape = self.machine.tape
 
         if not analyze or not isinstance(prog, str):
             return
@@ -280,12 +271,12 @@ class TuringTest(BackwardReasoning):
                     check_rec = 0 if steps < 256 else steps,
                 )
 
-                assert self.lr_machine.linrec is not None
+                assert self.machine.linrec is not None
                 self.assertEqual(
                     period,
-                    self.lr_machine.linrec[1])
+                    self.machine.linrec[1])
 
-                self.assert_quasihalt(qsihlt, linrec = True)
+                self.assert_quasihalt(qsihlt)
 
     def _test_prover(  # type: ignore[misc]
             self,

@@ -200,21 +200,10 @@ class Machine:
 
 ########################################
 
-class LinRecMachine:
-    program: str
-
-    tape: Tape
+class LinRecMachine(Machine):
     history: History
 
-    halted: int | None = None
-    xlimit: int | None = None
-    qsihlt: bool | None = None
-    linrec: LinRec | None = None
-
-    def __init__(self, program: str):
-        self.program = program
-
-    def run(
+    def run(  # type: ignore[override]  # pylint: disable = arguments-differ
         self,
         step_lim: int | None = None,
         skip: bool = False,
@@ -225,7 +214,13 @@ class LinRecMachine:
             check_rec is not None
             or samples is not None)
 
-        comp = tcompile(self.program)
+        self.blanks = {}
+
+        comp: GetInstr = (
+            tcompile(self.program)
+            if isinstance(self.program, str) else
+            self.program
+        )
 
         self.tape = tape = Tape.init()
 
@@ -234,7 +229,7 @@ class LinRecMachine:
         step: int = 0
         state: State = 0
 
-        for _ in range(step_lim or 1_000_000):
+        for cycle in range(step_lim or 1_000_000):
             self.history.add_state_at_step(step, state)
 
             slot: Slot = state, (scan := tape.scan)
@@ -255,16 +250,20 @@ class LinRecMachine:
 
             color, shift, next_state = instr
 
-            _ = tape.step(shift, color, skip and state == next_state)
-
-            step += 1
+            step += tape.step(
+                shift, color, skip and state == next_state)
 
             if (state := next_state) == -1:  # no-coverage
                 self.halted = step
                 break
 
+            if tape.blank and state not in self.blanks:
+                self.blanks[state] = step
+
         else:
             self.xlimit = step
+
+        self.cycles = cycle
 
         return self
 
@@ -272,7 +271,10 @@ class LinRecMachine:
         if (result := self.history.check_rec(step, slot)) is None:
             return None
 
-        self.linrec = start, _rec = result
+        self.linrec = start, rec = result
+
+        if rec == 1:
+            self.spnout = step - 1
 
         hc_beeps = self.history.calculate_beeps()
         hp_beeps = self.history.calculate_beeps(start)
