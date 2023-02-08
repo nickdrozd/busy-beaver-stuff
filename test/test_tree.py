@@ -58,8 +58,11 @@ class Fast(TestTree):
         q22q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if not any(run_variations(prog, 190, 2)):  # no-coverage
-                q22q.put(prog)
+            for machine in run_variations(prog, 190, 2):
+                if machine.xlimit is None:  # pragma: no branch
+                    return
+
+            q22q.put(prog)  # no-coverage
 
         run_tree_gen(
             states = 2,
@@ -75,8 +78,9 @@ class Fast(TestTree):
         q32q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_variations(prog, 800, 3)):
-                return
+            for machine in run_variations(prog, 800, 3):
+                if machine.xlimit is None:
+                    return
 
             q32q.put(prog)
 
@@ -99,11 +103,13 @@ class Fast(TestTree):
         q23q: Q[str] = Queue()
 
         def capture(prog: str) -> None:
-            if any(run_variations(prog, 400, 8)):
-                return
+            for machine in run_variations(prog, 400, 8):
+                if machine.xlimit is None:
+                    return
 
-            if any(run_variations(prog, 9_600, 2)):
-                return
+            for machine in run_variations(prog, 9_600, 2):
+                if machine.xlimit is None:
+                    return
 
             q23q.put(prog)
 
@@ -134,14 +140,17 @@ class Slow(TestTree):
             if 'D' not in prog:
                 return
 
-            if any(run_variations(prog, 1000, 10)):
-                return
+            for machine in run_variations(prog, 1000, 10):
+                if machine.xlimit is None:
+                    return
 
-            if any(run_variations(prog, 10_275)):
-                return
+            for machine in run_variations(prog, 10_275):
+                if machine.xlimit is None:
+                    return
 
-            if any(run_variations(prog, 6_000, 2)):
-                return
+            for machine in run_variations(prog, 6_000, 2):
+                if machine.xlimit is None:
+                    return
 
             h42q.put(prog)
 

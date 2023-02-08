@@ -32,7 +32,8 @@ def print_complete(prog: str) -> None:
 
 
 def run_and_print(prog: str) -> None:
-    if any(run_variations(prog, 200, 8, 1)):
+    if any(machine.xlimit is None for machine in
+           run_variations(prog, 200, 8, 1)):
         return
 
     print(Program(prog).normalize())
