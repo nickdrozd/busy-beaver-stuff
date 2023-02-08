@@ -468,6 +468,7 @@ RECUR_BLANK_IN_PERIOD = {
     "1RB 1LA  0LA 0LB": (0, 7),
     "1RB 0LA  1LB 1RA": (0, 5),
     "1RB 0RA  1LA ...": (0, 4),
+    "1RB 0RB  1LA 0LB": (None, 4),
     "1RB 1RB  1LA 0LB": (None, 4),
 
     # 3/2
