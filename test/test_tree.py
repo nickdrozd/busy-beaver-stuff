@@ -1,6 +1,6 @@
 from queue import Queue as Q
 from unittest import TestCase
-from multiprocessing import Queue
+from multiprocessing import Queue, Manager
 
 from tm.program import Program
 from tm.utils import run_variations
@@ -39,6 +39,15 @@ class TestTree(TestCase):
             count,
             len(progs))
 
+    def assert_records(
+            self,
+            actual,
+            expected: dict[str, tuple[int, str]],
+    ):
+        for cat, res in expected.items():
+            self.assertEqual(
+                actual[cat], res)
+
     def assert_cant_terminate(self, progs: set[str]):
         for prog in map(Program, progs):
             self.assertTrue(
@@ -55,14 +64,30 @@ class TestTree(TestCase):
 
 class Fast(TestTree):
     def test_22(self):
-        q22q: Q[str] = Queue()
-
         def capture(prog: str) -> None:
             for machine in run_variations(prog, 190, 2):
-                if machine.xlimit is None:  # pragma: no branch
-                    return
+                if machine.xlimit is not None:
+                    continue
+
+                if ((res := machine.spnout)
+                        and res > results['spnout'][0]):
+                    results['spnout'] = res, prog
+
+                if ((blanks := machine.blanks)
+                        and (res := min(blanks.values()))
+                        and  res > results['blanks'][0]):
+                    results['blanks'] = res, prog
+
+                return
 
             q22q.put(prog)  # no-coverage
+
+        q22q: Q[str] = Queue()
+
+        results = Manager().dict(
+            blanks = (0, ""),
+            spnout = (0, ""),
+        )
 
         run_tree_gen(
             states = 2,
@@ -73,6 +98,13 @@ class Fast(TestTree):
 
         self.assertFalse(
             queue_to_set(q22q))
+
+        self.assert_records(
+            results,
+            {
+                'blanks': (8, "1RB 0RA  1LB 1LA"),
+                'spnout': (6, "1RB 1LB  0LB 1LA"),
+            })
 
     def test_32(self):
         q32q: Q[str] = Queue()
