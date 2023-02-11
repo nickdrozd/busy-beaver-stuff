@@ -1,6 +1,7 @@
 from queue import Queue as Q
 from unittest import TestCase
 from multiprocessing import Queue, Manager
+from multiprocessing.managers import DictProxy
 
 from tm.program import Program
 from tm.utils import run_variations
@@ -25,6 +26,8 @@ def queue_to_set(queue: Q[str]) -> set[str]:
 
 
 class TestTree(TestCase):
+    results: DictProxy[str, tuple[int, str]]
+
     def assert_progs(
             self,
             count: int,
@@ -41,12 +44,11 @@ class TestTree(TestCase):
 
     def assert_records(
             self,
-            actual,
             expected: dict[str, tuple[int, str]],
     ):
         for cat, res in expected.items():
             self.assertEqual(
-                actual[cat], res)
+                self.results[cat], res)
 
     def assert_cant_terminate(self, progs: set[str]):
         for prog in map(Program, progs):
@@ -61,6 +63,16 @@ class TestTree(TestCase):
                 prog.graph.is_simple
                 and prog.graph.is_strongly_connected)
 
+    def add_result(self, prog: str, machine) -> None:
+        if ((res := machine.spnout)
+                and res > self.results['spnout'][0]):
+            self.results['spnout'] = res, prog
+
+        if ((blanks := machine.blanks)
+                and (res := min(blanks.values()))
+                and  res > self.results['blanks'][0]):
+            self.results['blanks'] = res, prog
+
 
 class Fast(TestTree):
     def test_22(self):
@@ -69,14 +81,7 @@ class Fast(TestTree):
                 if machine.xlimit is not None:
                     continue
 
-                if ((res := machine.spnout)
-                        and res > results['spnout'][0]):
-                    results['spnout'] = res, prog
-
-                if ((blanks := machine.blanks)
-                        and (res := min(blanks.values()))
-                        and  res > results['blanks'][0]):
-                    results['blanks'] = res, prog
+                self.add_result(prog, machine)
 
                 return
 
@@ -84,7 +89,7 @@ class Fast(TestTree):
 
         q22q: Q[str] = Queue()
 
-        results = Manager().dict(
+        self.results = Manager().dict(
             blanks = (0, ""),
             spnout = (0, ""),
         )
@@ -99,12 +104,10 @@ class Fast(TestTree):
         self.assertFalse(
             queue_to_set(q22q))
 
-        self.assert_records(
-            results,
-            {
-                'blanks': (8, "1RB 0RA  1LB 1LA"),
-                'spnout': (6, "1RB 1LB  0LB 1LA"),
-            })
+        self.assert_records({
+            'blanks': (8, "1RB 0RA  1LB 1LA"),
+            'spnout': (6, "1RB 1LB  0LB 1LA"),
+        })
 
     def test_32(self):
         q32q: Q[str] = Queue()
