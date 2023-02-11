@@ -1,7 +1,7 @@
 from queue import Queue as Q
+from typing import Any
 from unittest import TestCase
 from multiprocessing import Queue, Manager
-from multiprocessing.managers import DictProxy
 
 from tm.program import Program
 from tm.utils import run_variations
@@ -30,7 +30,7 @@ class TestTree(TestCase):
 
     progs: set[str]
 
-    results: DictProxy[str, tuple[int, str]]
+    results: Any  # type: ignore[misc]
 
     def setUp(self):
         self.queue = Queue()
