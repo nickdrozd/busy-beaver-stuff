@@ -547,6 +547,26 @@ class Fast(TuringTest):
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
+    def test_prover_false_positive(self):
+        self.run_bb(
+            "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC",
+            prover = True,
+            normal = False,
+        )
+
+        self.assertEqual(
+            self.machine.halted,
+            159)
+
+        self.run_bb(
+            BacksymbolMacro(
+                "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC", [1]),
+            prover = True,
+        )
+
+        self.assertIsNone(
+            self.machine.halted)
+
 
 class Slow(TuringTest):  # no-coverage
     @skip('')

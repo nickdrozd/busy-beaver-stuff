@@ -872,6 +872,9 @@ KERNEL = {
     # Quasihalt Fixed
     "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA": 3,  # 1459, 1
     "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": 3,
+
+    # Prover false positive
+    "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC": 3,
 }
 
 MODULAR = {
