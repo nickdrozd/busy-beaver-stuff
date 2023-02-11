@@ -26,7 +26,17 @@ def queue_to_set(queue: Q[str]) -> set[str]:
 
 
 class TestTree(TestCase):
+    queue: Q[str]
+
     results: DictProxy[str, tuple[int, str]]
+
+    def setUp(self):
+        self.queue = Queue()
+
+        self.results = Manager().dict(
+            blanks = (0, ""),
+            spnout = (0, ""),
+        )
 
     def assert_progs(
             self,
@@ -85,14 +95,7 @@ class Fast(TestTree):
 
                 return
 
-            q22q.put(prog)  # no-coverage
-
-        q22q: Q[str] = Queue()
-
-        self.results = Manager().dict(
-            blanks = (0, ""),
-            spnout = (0, ""),
-        )
+            self.queue.put(prog)  # no-coverage
 
         run_tree_gen(
             states = 2,
@@ -102,7 +105,7 @@ class Fast(TestTree):
         )
 
         self.assertFalse(
-            queue_to_set(q22q))
+            queue_to_set(self.queue))
 
         self.assert_records({
             'blanks': (8, "1RB 0RA  1LB 1LA"),
@@ -110,14 +113,12 @@ class Fast(TestTree):
         })
 
     def test_32(self):
-        q32q: Q[str] = Queue()
-
         def capture(prog: str) -> None:
             for machine in run_variations(prog, 800, 3):
                 if machine.xlimit is None:
                     return
 
-            q32q.put(prog)
+            self.queue.put(prog)
 
         run_tree_gen(
             states = 3,
@@ -129,14 +130,12 @@ class Fast(TestTree):
 
         self.assert_progs(
             3,
-            q32 := queue_to_set(q32q),
+            q32 := queue_to_set(self.queue),
             'holdouts_32q')
 
         self.assert_cant_terminate(q32)
 
     def test_23(self):
-        q23q: Q[str] = Queue()
-
         def capture(prog: str) -> None:
             for machine in run_variations(prog, 400, 8):
                 if machine.xlimit is None:
@@ -146,7 +145,7 @@ class Fast(TestTree):
                 if machine.xlimit is None:
                     return
 
-            q23q.put(prog)
+            self.queue.put(prog)
 
         run_tree_gen(
             states = 2,
@@ -157,7 +156,7 @@ class Fast(TestTree):
 
         self.assert_progs(
             9,
-            (q23 := queue_to_set(q23q)),
+            (q23 := queue_to_set(self.queue)),
             'holdouts_23q')
 
         self.assertIn(
@@ -169,8 +168,6 @@ class Fast(TestTree):
 
 class Slow(TestTree):
     def test_42(self):  # no-coverage
-        h42q: Q[str] = Queue()
-
         def capture(prog: str) -> None:
             if 'D' not in prog:
                 return
@@ -187,7 +184,7 @@ class Slow(TestTree):
                 if machine.xlimit is None:
                     return
 
-            h42q.put(prog)
+            self.queue.put(prog)
 
         run_tree_gen(
             states = 4,
@@ -199,5 +196,5 @@ class Slow(TestTree):
 
         self.assert_progs(
             66,
-            queue_to_set(h42q),
+            queue_to_set(self.queue),
             'holdouts_42h')
