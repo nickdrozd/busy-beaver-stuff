@@ -88,7 +88,6 @@ class Fast(TestTree):
                     continue
 
                 self.add_result(prog, machine)
-
                 return
 
             self.queue.put(prog)  # no-coverage
@@ -111,8 +110,11 @@ class Fast(TestTree):
     def test_32(self):
         def capture(prog: str) -> None:
             for machine in run_variations(prog, 800, 3):
-                if machine.xlimit is None:
-                    return
+                if machine.xlimit is not None:
+                    continue
+
+                self.add_result(prog, machine)
+                return
 
             self.queue.put(prog)
 
@@ -128,13 +130,21 @@ class Fast(TestTree):
             3,
             'holdouts_32q')
 
+        self.assert_records({
+            'blanks': (34, "1RB 1LB  1LA 1LC  1RC 0LC"),
+            'spnout': (55, "1RB 0LB  1LA 0RC  1LC 1LA"),
+        })
+
         self.assert_cant_terminate()
 
     def test_23(self):
         def capture(prog: str) -> None:
             for machine in run_variations(prog, 400, 8):
-                if machine.xlimit is None:
-                    return
+                if machine.xlimit is not None:
+                    continue
+
+                self.add_result(prog, machine)
+                return
 
             for machine in run_variations(prog, 9_600, 2):
                 if machine.xlimit is None:
@@ -153,6 +163,11 @@ class Fast(TestTree):
             9,
             'holdouts_23q')
 
+        self.assert_records({
+            'blanks': (77, "1RB 2LA 0RB  1LA 0LB 1RA"),
+            'spnout': (59, "1RB 2LB 1LA  2LB 2RA 0RA"),
+        })
+
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
             self.progs)
@@ -167,8 +182,11 @@ class Slow(TestTree):
                 return
 
             for machine in run_variations(prog, 1000, 10):
-                if machine.xlimit is None:
-                    return
+                if machine.xlimit is not None:
+                    continue
+
+                self.add_result(prog, machine)
+                return
 
             for machine in run_variations(prog, 10_275):
                 if machine.xlimit is None:
@@ -191,3 +209,8 @@ class Slow(TestTree):
         self.assert_progs(
             66,
             'holdouts_42h')
+
+        self.assert_records({
+            'blanks': (169, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
+            'spnout': (171, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
+        })
