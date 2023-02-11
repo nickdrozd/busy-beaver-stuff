@@ -37,6 +37,7 @@ class TestTree(TestCase):
 
         self.results = Manager().dict(
             blanks = (0, ""),
+            halted = (0, ""),
             spnout = (0, ""),
         )
 
@@ -70,14 +71,20 @@ class TestTree(TestCase):
                 and prog.graph.is_strongly_connected)
 
     def add_result(self, prog: str, machine) -> None:
-        if ((res := machine.spnout)
-                and res > self.results['spnout'][0]):
-            self.results['spnout'] = res, prog
-
         if ((blanks := machine.blanks)
                 and (res := min(blanks.values()))
                 and  res > self.results['blanks'][0]):
             self.results['blanks'] = res, prog
+
+        if ((res := machine.spnout)
+                and res > self.results['spnout'][0]):
+            self.results['spnout'] = res, prog
+            return
+
+        if ((res := machine.undfnd)
+                and (step := res[0] + 1) > self.results['halted'][0]):
+            self.results['halted'] = step, prog.replace('...', '1R_')
+            return
 
 
 class Fast(TestTree):
@@ -213,4 +220,5 @@ class Slow(TestTree):
         self.assert_records({
             'blanks': (169, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'spnout': (171, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
+            'halted': (159, "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC"),
         })
