@@ -28,6 +28,8 @@ def queue_to_set(queue: Q[str]) -> set[str]:
 class TestTree(TestCase):
     queue: Q[str]
 
+    progs: set[str]
+
     results: DictProxy[str, tuple[int, str]]
 
     def setUp(self):
@@ -38,37 +40,31 @@ class TestTree(TestCase):
             spnout = (0, ""),
         )
 
-    def assert_progs(
-            self,
-            count: int,
-            progs: set[str],
-            progfile: str,
-    ):
+    def assert_progs(self, count: int, progfile: str):
+        self.progs = queue_to_set(self.queue)
+
         self.assertEqual(
-            progs,
+            self.progs,
             read_progs(progfile))
 
         self.assertEqual(
             count,
-            len(progs))
+            len(self.progs))
 
-    def assert_records(
-            self,
-            expected: dict[str, tuple[int, str]],
-    ):
+    def assert_records(self, expected: dict[str, tuple[int, str]]):
         for cat, res in expected.items():
             self.assertEqual(
                 self.results[cat], res)
 
-    def assert_cant_terminate(self, progs: set[str]):
-        for prog in map(Program, progs):
+    def assert_cant_terminate(self) -> None:
+        for prog in map(Program, self.progs):
             self.assertTrue(
                 prog.cant_halt
                 and prog.cant_blank
                 and prog.cant_spin_out)
 
-    def assert_simple_and_connected(self, progs: set[str]):
-        for prog in map(Program, progs):
+    def assert_simple_and_connected(self) -> None:
+        for prog in map(Program, self.progs):
             self.assertTrue(
                 prog.graph.is_simple
                 and prog.graph.is_strongly_connected)
@@ -130,10 +126,9 @@ class Fast(TestTree):
 
         self.assert_progs(
             3,
-            q32 := queue_to_set(self.queue),
             'holdouts_32q')
 
-        self.assert_cant_terminate(q32)
+        self.assert_cant_terminate()
 
     def test_23(self):
         def capture(prog: str) -> None:
@@ -156,14 +151,13 @@ class Fast(TestTree):
 
         self.assert_progs(
             9,
-            (q23 := queue_to_set(self.queue)),
             'holdouts_23q')
 
         self.assertIn(
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
-            q23)
+            self.progs)
 
-        self.assert_simple_and_connected(q23)
+        self.assert_simple_and_connected()
 
 
 class Slow(TestTree):
@@ -196,5 +190,4 @@ class Slow(TestTree):
 
         self.assert_progs(
             66,
-            queue_to_set(self.queue),
             'holdouts_42h')
