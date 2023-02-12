@@ -297,36 +297,36 @@ class EnumTape(BlockTape):
         return self._edges[0], self._edges[1]
 
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
-        if not (span := self.rspan if shift else self.lspan):
+        pull, push = (
+            (self.rspan, self.lspan)
+            if shift else
+            (self.lspan, self.rspan)
+        )
+
+        if not pull:
             self._edges[bool(shift)] = True
         else:
-            if (near_block := span[0])[2:]:
+            if (near_block := pull[0])[2:]:
                 _, _, ind, offset = near_block
 
                 if offset > self.offsets[ind]:
                     self.offsets[ind] = offset
 
             if skip and near_block[0] == self.scan:
-                if not span[1:]:
+                if not pull[1:]:
                     self._edges[bool(shift)] = True
-                elif (next_block := span[1])[2:]:
+                elif (next_block := pull[1])[2:]:
                     _, _, ind, offset = next_block
 
                     if offset > self.offsets[ind]:
                         self.offsets[ind] = offset
 
-        if opp_span := (self.lspan if shift else self.rspan):
-            if (opp_block := opp_span[0])[2:] and color == opp_block[0]:
+        if push:
+            if (opp_block := push[0])[2:] and color == opp_block[0]:
                 _, _, ind, offset = opp_block
 
                 if offset > self.offsets[ind]:
                     self.offsets[ind] = offset
-
-        pull, push = (
-            (self.rspan, self.lspan)
-            if shift else
-            (self.lspan, self.rspan)
-        )
 
         push_block = (
             pull.pop(0)
