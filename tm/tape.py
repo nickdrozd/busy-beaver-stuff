@@ -321,12 +321,11 @@ class EnumTape(BlockTape):
                     if offset > self.offsets[ind]:
                         self.offsets[ind] = offset
 
-        if push:
-            if (opp_block := push[0])[2:] and color == opp_block[0]:
-                _, _, ind, offset = opp_block
+        if push and (opp := push[0])[2:] and color == opp[0]:
+            _, _, ind, offset = opp
 
-                if offset > self.offsets[ind]:
-                    self.offsets[ind] = offset
+            if offset > self.offsets[ind]:
+                self.offsets[ind] = offset
 
         push_block = (
             pull.pop(0)
