@@ -82,7 +82,8 @@ class TestTree(TestCase):
             return
 
         if ((res := machine.undfnd)
-                and (step := res[0] + 1) > self.results['halted'][0]):
+                and ((step := res[0] + 1)
+                       > self.results['halted'][0])):  # no-coverage
             self.results['halted'] = step, prog.replace('...', '1R_')
             return
 
