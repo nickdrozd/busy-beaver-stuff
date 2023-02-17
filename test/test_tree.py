@@ -154,7 +154,7 @@ class Fast(TestTree):
                 self.add_result(prog, machine)
                 return
 
-            for machine in run_variations(prog, 9_600, 2):
+            for machine in run_variations(prog, 9_600):
                 if machine.xlimit is None:
                     return
 
@@ -196,11 +196,7 @@ class Slow(TestTree):
                 self.add_result(prog, machine)
                 return
 
-            for machine in run_variations(prog, 10_275):
-                if machine.xlimit is None:
-                    return
-
-            for machine in run_variations(prog, 6_000, 2):
+            for machine in run_variations(prog, 7_000, 2):
                 if machine.xlimit is None:
                     return
 
