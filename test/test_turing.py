@@ -547,6 +547,27 @@ class Fast(TuringTest):
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
+    def test_backsymbol_required(self):
+        prog = "1RB 0LC  1LC 0RC  1LA 0LC"
+
+        self.run_bb(
+            prog,
+            sim_lim = 100,
+            prover = True,
+        )
+
+        self.assertIsNone(
+            self.machine.infrul)
+
+        self.run_bb(
+            BacksymbolMacro(prog, [1]),
+            sim_lim = 100,
+            prover = True,
+        )
+
+        self.assertIsNotNone(
+            self.machine.infrul)
+
     def test_prover_false_positive(self):
         self.run_bb(
             "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC",
