@@ -91,7 +91,7 @@ class TestTree(TestCase):
 class Fast(TestTree):
     def test_22(self):
         def capture(prog: str) -> None:
-            for machine in run_variations(prog, 190, 2):
+            for machine in run_variations(prog, 190):
                 if machine.xlimit is not None:
                     continue
 
@@ -117,7 +117,7 @@ class Fast(TestTree):
 
     def test_32(self):
         def capture(prog: str) -> None:
-            for machine in run_variations(prog, 800, 3):
+            for machine in run_variations(prog, 800):
                 if machine.xlimit is not None:
                     continue
 
@@ -147,7 +147,7 @@ class Fast(TestTree):
 
     def test_23(self):
         def capture(prog: str) -> None:
-            for machine in run_variations(prog, 400, 8):
+            for machine in run_variations(prog, 400):
                 if machine.xlimit is not None:
                     continue
 
@@ -189,12 +189,13 @@ class Slow(TestTree):
             if 'D' not in prog:
                 return
 
-            for machine in run_variations(prog, 1000, 10):
+            for machine in run_variations(prog, 1000):
                 if machine.xlimit is None:
                     self.add_result(prog, machine)
                     return
 
-            for machine in run_variations(prog, 7_000, 2):
+            for machine in run_variations(
+                    prog, 7_000, block_steps = 6_000):
                 if machine.xlimit is None:
                     return
 
@@ -209,7 +210,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            66,
+            67,
             'holdouts_42h')
 
         self.assert_records({

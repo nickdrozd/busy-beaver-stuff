@@ -2,14 +2,14 @@
 import sys
 
 from perf import profile
+from tm.utils import opt_block
 from tm.machine import Machine
 from tm.macro import BlockMacro, BacksymbolMacro
 
 PRINT = 1
 STEPS = 10 ** 10
 PROVE = 1
-BLOCK = None
-BACKS = None
+BACKS = 0
 
 PROFILE = 0
 
@@ -17,11 +17,14 @@ def main() -> None:
     for i, program in enumerate(sys.stdin):
         program = program.strip()
 
-        if BLOCK is not None:
-            program = BlockMacro(program, BLOCK)
+        if (block := opt_block(program, steps = 8_000)) > 1:
+            print(f'block size: {block}')
+            program = BlockMacro(
+                program, [block])  # type: ignore[assignment]
 
-        if BACKS is not None:
-            program = BacksymbolMacro(program, BACKS)
+        if BACKS > 0:
+            program = BacksymbolMacro(
+                program, [BACKS])  # type: ignore[assignment]
 
         machine = Machine(program).run(
             sim_lim = STEPS,

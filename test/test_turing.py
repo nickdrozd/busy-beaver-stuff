@@ -11,6 +11,7 @@ from test.test_program import BackwardReasoning
 
 from tm.tape import Tape
 from tm.parse import str_st
+from tm.utils import opt_block
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine
 from tm.macro import MacroProg, BlockMacro, BacksymbolMacro
@@ -587,6 +588,45 @@ class Fast(TuringTest):
 
         self.assertIsNone(
             self.machine.halted)
+
+    def test_wrong_block(self):
+        prog = "1RB 0LA  1RC ...  1LD 0RC  0LA 1LD"
+
+        self.run_bb(
+            BlockMacro(prog, [2]),
+            prover = True,
+        )
+
+        self.assertIsNotNone(
+            self.machine.infrul)
+
+        blocks = {
+            7_130: 1,
+            7_131: 4,
+        }
+
+        for steps, block in blocks.items():
+            self.assertEqual(
+                block,
+                opt_block(prog, steps))
+
+            self.run_bb(
+                BlockMacro(prog, [block]),
+                prover = True,
+                sim_lim = 8806,
+            )
+
+            self.assertIsNotNone(
+                self.machine.xlimit)
+
+        self.run_bb(
+            BlockMacro(prog, [4]),
+            prover = True,
+            sim_lim = 8807,
+        )
+
+        self.assertIsNotNone(
+            self.machine.infrul)
 
 
 class Slow(TuringTest):  # no-coverage
