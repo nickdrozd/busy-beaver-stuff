@@ -94,6 +94,20 @@ class Tape(BlockTape):
     def to_enum(self) -> EnumTape:
         return EnumTape(self.lblocks(), self.scan, self.rblocks())
 
+    def to_ptr(self) -> PtrTape:
+        return PtrTape(
+            sum(q for (_, q) in self.lspan) - self.head,
+            [
+                color
+                for color, count in reversed(self.lspan)
+                for _ in range(count)
+            ] + [self.scan] + [
+                color
+                for color, count in self.rspan
+                for _ in range(count)
+            ]
+        )
+
     @property
     def signature(self) -> Signature:
         return (
@@ -366,3 +380,40 @@ class EnumTape(BlockTape):
         self.scan = next_scan
 
         return stepped
+
+##################################################
+
+@dataclass
+class PtrTape:
+    init: int
+    tape: list[Color]
+
+    @property
+    def r_end(self) -> int:
+        return len(self.tape) - self.init
+
+    @property
+    def l_end(self) -> int:
+        return 0 - self.init
+
+    def __getitem__(self, tape_index: slice) -> list[int]:
+        if (stop := tape_index.stop) is None:
+            stop = self.r_end + 1
+        else:
+            self.extend_to_bound_right(stop)
+
+        if (start := tape_index.start) is None:
+            start = self.l_end
+        else:
+            self.extend_to_bound_left(start)
+
+        return self.tape[ start + self.init : stop + self.init ]
+
+    def extend_to_bound_right(self, stop: int) -> None:
+        if (rdiff := stop + self.init - self.r_end) > 0:
+            self.tape.extend([0] * rdiff)
+
+    def extend_to_bound_left(self, start: int) -> None:
+        if (ldiff := 0 - (start + self.init)) > 0:
+            self.tape = [0] * ldiff + self.tape
+            self.init += ldiff
