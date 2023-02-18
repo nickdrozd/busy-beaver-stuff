@@ -190,11 +190,9 @@ class Slow(TestTree):
                 return
 
             for machine in run_variations(prog, 1000, 10):
-                if machine.xlimit is not None:
-                    continue
-
-                self.add_result(prog, machine)
-                return
+                if machine.xlimit is None:
+                    self.add_result(prog, machine)
+                    return
 
             for machine in run_variations(prog, 7_000, 2):
                 if machine.xlimit is None:
