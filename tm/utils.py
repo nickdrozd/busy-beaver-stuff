@@ -17,11 +17,12 @@ def macro_variations(
     )
 
     yield opt_prog
-    yield BacksymbolMacro(opt_prog, [1])
+
+    for i in range(1, 3):
+        yield BacksymbolMacro(opt_prog, [i])
 
     if not isinstance(opt_prog, str):
         yield prog
-        yield BacksymbolMacro(prog, [1])
 
 
 def run_variations(
