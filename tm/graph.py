@@ -43,7 +43,7 @@ class Graph:
     def colors(self) -> tuple[Color, ...]:
         return tuple(range(len(self.arrows[0])))
 
-    @cached_property
+    @property
     def exit_points(self) -> ConGraph:
         return {
             state: set(
