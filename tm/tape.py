@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 from tm.instrs import Color, Shift
@@ -15,6 +16,21 @@ Signature = tuple[
 ]
 
 
+TRUNCATE_COUNT = 10 ** 12
+
+def show_number(num: int) -> str:
+    return (
+        str(num)
+        if num < TRUNCATE_COUNT else
+        f"(~10^{math.log10(num):.0f})"
+    )
+
+def show_block(block: Block) -> str:
+    color, count, *_ = block
+
+    return f"{color}^{show_number(count)}"
+
+
 @dataclass
 class BlockTape(ApplyRule):
     lspan: BlockSpan
@@ -22,15 +38,10 @@ class BlockTape(ApplyRule):
     rspan: BlockSpan
 
     def __str__(self) -> str:
-        return ' '.join([
-            f'{color}^{count}'
-            for color, count, *_ in reversed(self.lspan)
-        ] + [
-            f'[{self.scan}]'
-        ] + [
-            f'{color}^{count}'
-            for color, count, *_ in self.rspan
-        ])
+        return ' '.join(
+            list(map(show_block, reversed(self.lspan)))
+            + [f'[{self.scan}]']
+            + list(map(show_block, self.rspan)))
 
     @property
     def counts(self) -> Counts:

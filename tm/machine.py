@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tm.tape import Tape
+from tm.tape import Tape, show_number
 from tm.rules import InfiniteRule
 from tm.parse import tcompile, st_str
 from tm.instrs import State, Slot, GetInstr
@@ -59,7 +59,7 @@ class Machine:
         info = [ f'CYCLES: {self.cycles}' ]
 
         info.append(
-            f'MARKS: {self.marks}')
+            f'MARKS: {show_number(self.marks)}')
 
         info += [
             f'{cat.upper()}: {data if self.rulapp == 0 else "..."}'
@@ -68,7 +68,7 @@ class Machine:
 
         if self.rulapp > 0:
             info.append(
-                f'RULAPP: {self.rulapp}')
+                f'RULAPP: {show_number(self.rulapp)}')
 
         return f"{self.program} || {' | '.join(info)}"
 
