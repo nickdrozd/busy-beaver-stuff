@@ -12,9 +12,10 @@ from test.test_program import BackwardReasoning
 from tm.tape import Tape
 from tm.parse import str_st
 from tm.utils import opt_block
+from tm.instrs import GetInstr
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine
-from tm.macro import MacroProg, BlockMacro, BacksymbolMacro
+from tm.macro import BlockMacro, BacksymbolMacro
 
 
 class TuringTest(BackwardReasoning):
@@ -136,7 +137,7 @@ class TuringTest(BackwardReasoning):
 
     def run_bb(
             self,
-            prog: str | MacroProg | Program,
+            prog: str | GetInstr,
             print_prog: bool = True,
             analyze: bool = True,
             normal: bool = True,
@@ -289,7 +290,7 @@ class TuringTest(BackwardReasoning):
             if prog == "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC":  # SIAB
                 continue
 
-            program: str | MacroProg = (
+            program: str | BlockMacro = (
                 prog
                 if (block := DIFFUSE.get(prog)) is None else
                 BlockMacro(prog, [block])
@@ -318,20 +319,18 @@ class TuringTest(BackwardReasoning):
         self,
         prog_data: dict[
             str,
-            tuple[int, int, int | float, int]],
+            tuple[int | float, int]],
     ):
         # pylint: disable = redefined-variable-type
-        for prog, (block, back, digits, exp) in prog_data.items():
-            program: str | MacroProg = prog
+        for prog, (digits, exp) in prog_data.items():
+            program: str | BlockMacro = prog
 
-            if block > 1:
-                program = BlockMacro(program, [block])
-
-            if back > 0:
-                program = BacksymbolMacro(program, [back])
+            if (opt := opt_block(prog, steps = 1_000)) > 1:
+                program = BlockMacro(prog, [opt])
 
             self.run_bb(
                 program,
+                sim_lim = 10 ** 8,
                 prover = True,
                 normal = False,
             )
@@ -339,8 +338,7 @@ class TuringTest(BackwardReasoning):
             self.assertIsNotNone(
                 self.machine.simple_termination)
 
-            marks = self.machine.marks * (
-                block if block is not None else 1)
+            marks = self.machine.marks * opt
 
             if exp == 0:
                 self.assertEqual(
