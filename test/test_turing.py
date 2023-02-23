@@ -292,8 +292,8 @@ class TuringTest(BackwardReasoning):
 
             program: str | BlockMacro = (
                 prog
-                if (block := DIFFUSE.get(prog)) is None else
-                BlockMacro(prog, [block])
+                if (opt := opt_block(prog, steps = 1_000)) == 1 else
+                BlockMacro(prog, [opt])
             )
 
             self.run_bb(
@@ -305,7 +305,7 @@ class TuringTest(BackwardReasoning):
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
-                if block is not None:
+                if not isinstance(program, str):
                     continue
 
                 self.assert_marks(
@@ -313,7 +313,7 @@ class TuringTest(BackwardReasoning):
             else:
                 self.assertTrue(
                     self.machine.infrul
-                    or bool(self.machine.spnout))
+                    or self.machine.spnout is not None)
 
     def _test_prover_est(
         self,
