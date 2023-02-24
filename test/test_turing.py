@@ -315,14 +315,9 @@ class TuringTest(BackwardReasoning):
                     self.machine.infrul
                     or self.machine.spnout is not None)
 
-    def _test_prover_est(
-        self,
-        prog_data: dict[
-            str,
-            tuple[int | float, int]],
-    ):
+    def _test_prover_est(self, prog_data: ProverEst):
         # pylint: disable = redefined-variable-type
-        for prog, (digits, exp) in prog_data.items():
+        for prog, marks in prog_data.items():
             program: str | BlockMacro = prog
 
             if (opt := opt_block(prog, steps = 1_000)) > 1:
@@ -338,21 +333,21 @@ class TuringTest(BackwardReasoning):
             self.assertIsNotNone(
                 self.machine.simple_termination)
 
-            marks = self.machine.marks * opt
+            result: int = self.machine.marks * opt
 
-            if exp == 0:
-                self.assertEqual(
-                    marks,
-                    digits,
-                    prog)
-            elif exp < 100_000:
-                self.assert_close(
-                    marks / 10 ** exp,
-                    digits,
-                    rel_tol = .54,
-                )
+            if isinstance(marks, int):
+                self.assertEqual(result, marks)
+            else:
+                digits, exp = marks
 
-            if marks < 5:
+                if exp < 100_000:
+                    self.assert_close(
+                        result / 10 ** exp,
+                        digits,
+                        rel_tol = .54,
+                    )
+
+            if result < 5:
                 self.assert_could_blank(prog)
             else:
                 self.assert_cant_blank(prog)
