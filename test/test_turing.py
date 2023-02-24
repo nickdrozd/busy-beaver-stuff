@@ -292,7 +292,7 @@ class TuringTest(BackwardReasoning):
 
             program: str | BlockMacro = (
                 prog
-                if (opt := opt_block(prog, steps = 1_000)) == 1 else
+                if (opt := opt_block(prog, steps = 10_000)) == 1 else
                 BlockMacro(prog, [opt])
             )
 
