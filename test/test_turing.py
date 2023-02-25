@@ -1,6 +1,6 @@
 # pylint: disable = line-too-long, wildcard-import, unused-wildcard-import
 
-from math import isclose
+from math import isclose, log10
 from typing import Any
 from unittest import skip
 from itertools import product
@@ -346,6 +346,10 @@ class TuringTest(BackwardReasoning):
                         digits,
                         rel_tol = .54,
                     )
+                else:
+                    self.assertEqual(
+                        exp,
+                        int(log10(result)))
 
             if result < 5:
                 self.assert_could_blank(prog)
