@@ -320,7 +320,7 @@ class TuringTest(BackwardReasoning):
         for prog, marks in prog_data.items():
             program: str | BlockMacro = prog
 
-            if (opt := opt_block(prog, steps = 1_000)) > 1:
+            if (opt := opt_block(prog, steps = 3_000)) > 1:
                 program = BlockMacro(prog, [opt])
 
             self.run_bb(
