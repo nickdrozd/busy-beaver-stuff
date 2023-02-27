@@ -130,7 +130,6 @@ class Fast(TestTree):
             states = 3,
             colors = 2,
             steps = 15,
-            blank = True,
             output = capture,
         )
 
@@ -210,7 +209,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            66,
+            64,
             'holdouts_42h')
 
         self.assert_records({

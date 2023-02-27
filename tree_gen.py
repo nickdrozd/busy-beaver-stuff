@@ -62,7 +62,6 @@ if __name__ == '__main__':
         colors = COLORS,
         halt   = HALT,
         steps = STEPS,
-        blank = True,
         output = (
             prune_print
             if args.aggressive else

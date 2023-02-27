@@ -14,7 +14,6 @@ RunPile = Queue[Prog | tuple[Slot, Prog]]
 def stacker(
         steps: int,
         halt: bool,
-        blank: bool,
         run_pile: RunPile,
         stack: list[Prog],
 ) -> None:
@@ -32,11 +31,7 @@ def stacker(
             prover = True,
         )
 
-        if blank and machine.blanks:
-            prog = None
-            continue
-
-        if machine.xlimit is not None:
+        if machine.xlimit is not None or machine.blanks:
             run_pile.put(prog)
             prog = None
             continue
@@ -81,7 +76,6 @@ def run_tree_gen(
         colors: int,
         steps: int = 500,
         halt: bool = False,
-        blank: bool = False,
         output: Output = print,
 ) -> None:
     run_pile: RunPile = Manager().Queue()
@@ -92,7 +86,6 @@ def run_tree_gen(
             args = (
                 steps,
                 halt,
-                blank,
                 run_pile,
                 [str(Program.empty(states, colors))],
             ),
