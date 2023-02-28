@@ -1,4 +1,3 @@
-# pylint: disable = redefined-loop-name, redefined-variable-type
 import sys
 
 from perf import profile
@@ -14,8 +13,9 @@ BACKS = 0
 PROFILE = 0
 
 def main() -> None:
-    for i, program in enumerate(sys.stdin):
-        program = program.strip()
+    for i, prog in enumerate(sys.stdin):
+        # pylint: disable = redefined-variable-type
+        program = prog.strip()
 
         if (block := opt_block(program, steps = 8_000)) > 1:
             print(f'block size: {block}')
