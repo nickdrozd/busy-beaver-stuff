@@ -19,6 +19,8 @@ def stacker(
 ) -> None:
     prog: Prog | None = None
 
+    open_slot_lim = 2 if halt else 1
+
     while True:  # pylint: disable = while-used
         if prog is None:
             try:
@@ -42,9 +44,7 @@ def stacker(
 
         _, slot = machine.undfnd
 
-        branches = (program := Program(prog)).branch(slot, halt)
-
-        if len(program.open_slots) == (2 if halt else 1):
+        if len((program := Program(prog)).open_slots) == open_slot_lim:
             run_pile.put((slot, prog))
             prog = None
             continue
