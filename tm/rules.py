@@ -20,8 +20,7 @@ class InfiniteRule(Exception):
 
 
 def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> Op | None:
-    if cnt1 == cnt2:
-        assert cnt3 == cnt1
+    if cnt1 == cnt2 == cnt3:
         return None
 
     if (plus := cnt2 - cnt1) == cnt3 - cnt2:
