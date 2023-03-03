@@ -34,6 +34,10 @@ class TestDisplay(TestCase):
             str(machine.tape),
             "1^2 3^97 [0]")
 
+        print(Machine("1RB ...  ... ...").run(watch_tape = True))
+
+        print(LinRecMachine("1RB 0LB  1LA 0RB").run(check_rec = 0))
+
 
 class TestFloss(TestCase):
     # pylint: disable = no-self-use

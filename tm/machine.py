@@ -7,7 +7,11 @@ from tm.instrs import State, Slot, GetInstr
 from tm.prover import Prover
 from tm.lin_rec import History, RecRes, Tapes
 
+
 LinRec = tuple[int | None, int]
+Undfnd = tuple[int, Slot]
+
+Result = str | int | LinRec | Undfnd
 
 TERM_CATS = (
     'halted',
@@ -17,6 +21,7 @@ TERM_CATS = (
     'undfnd',
     'xlimit',
 )
+
 
 class Machine:
     program: str | GetInstr
@@ -41,13 +46,13 @@ class Machine:
 
     rulapp: int = 0
 
-    undfnd: tuple[int, Slot] | None = None
+    undfnd: Undfnd | None = None
 
     def __init__(self, program: str | GetInstr):
         self.program = program
 
     @property
-    def term_results(self) -> tuple[tuple[str, str | int], ...]:
+    def term_results(self) -> tuple[tuple[str, Result], ...]:
         return tuple(
             (cat, data)
             for cat in TERM_CATS
