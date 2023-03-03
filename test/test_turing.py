@@ -545,6 +545,21 @@ class Fast(TuringTest):
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
+    def test_rule_limit(self):
+        for prog in RULE_LIMIT:
+            self.run_bb(
+                (
+                    prog
+                    if (opt := opt_block(prog, steps = 100)) == 1 else
+                    BlockMacro(prog, [opt])
+                ),
+                prover = True,
+                normal = False,
+            )
+
+            self.assertIsNotNone(
+                self.machine.limrul)
+
     def test_backsymbol_required(self):
         prog = "1RB 0LC  1LC 0RC  1LA 0LC"
 

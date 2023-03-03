@@ -1,3 +1,4 @@
+from math import log10
 from abc import abstractmethod
 
 Plus = int
@@ -16,6 +17,11 @@ class UnknownRule(Exception):
     pass
 
 class InfiniteRule(Exception):
+    pass
+
+RULE_APP_LOG_LIMIT = 10
+
+class RuleLimit(Exception):
     pass
 
 
@@ -73,6 +79,10 @@ class ApplyRule:
     def apply_rule(self, rule: Rule) -> int | None:
         if (times := self.count_apps(rule)) is None:
             return None
+
+        if (any(not isinstance(op, Plus) for op in rule.values())
+                and log10(times) > RULE_APP_LOG_LIMIT):
+            raise RuleLimit()
 
         for pos, diff in rule.items():
             if isinstance(diff, Plus):

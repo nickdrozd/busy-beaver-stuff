@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tm.tape import Tape, show_number
-from tm.rules import InfiniteRule
+from tm.rules import InfiniteRule, RuleLimit
 from tm.parse import tcompile, st_str
 from tm.instrs import State, Slot, GetInstr
 from tm.prover import Prover
@@ -16,6 +16,7 @@ Result = str | int | LinRec | Undfnd
 TERM_CATS = (
     'halted',
     'infrul',
+    'limrul',
     'linrec',
     'spnout',
     'undfnd',
@@ -43,6 +44,7 @@ class Machine:
 
     qsihlt: bool | None = None
     infrul: bool | None = None
+    limrul: bool | None = None
 
     rulapp: int = 0
 
@@ -136,7 +138,13 @@ class Machine:
                     break
 
                 if rule is not None:
-                    if (times := tape.apply_rule(rule)) is not None:
+                    try:
+                        times = tape.apply_rule(rule)
+                    except RuleLimit:
+                        self.limrul = True
+                        break
+
+                    if times is not None:
                         # print(f'--> applied rule: {rule}')
                         step += times
                         self.rulapp += times

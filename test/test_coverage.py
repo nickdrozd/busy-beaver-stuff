@@ -72,3 +72,10 @@ class TestFloss(TestCase):
         _ = Machine(
             "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA"
         ).run(prover = True)
+
+    def test_rule_limit(self):
+        _ = Machine(
+            "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
+        ).run(
+            prover = True,
+        ).limrul
