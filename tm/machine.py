@@ -245,7 +245,7 @@ class LinRecMachine(Machine):
         for cycle in range(step_lim or 1_000_000):
             self.history.add_state_at_step(step, state)
 
-            slot: Slot = state, (scan := tape.scan)
+            slot: Slot = state, tape.scan
 
             if ((check_rec is not None and step >= check_rec)
                 or (samples is not None
@@ -258,7 +258,8 @@ class LinRecMachine(Machine):
 
                 self.history.add_slot_at_step(step, slot)
 
-            if (instr := comp[state, scan]) is None:
+            if (instr := comp[slot]) is None:
+                self.undfnd = step, slot
                 break
 
             color, shift, next_state = instr
