@@ -890,6 +890,38 @@ MODULAR = {
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
 }
 
+CANT_HALT_FALSE_NEGATIVES: set[str] = {
+    "1RB 0RA  1LA ...",
+
+    "1RB ...  0RC 1LB  1LA 0RB",
+    "1RB ...  1LC 1RA  1LA 0LC",
+    "1RB ...  1LC 0RC  1RA 0LC",
+    "1RB ...  1LB 0LC  1LA 1RA",
+    "1RB 1LC  0RC ...  1LC 0LA",
+
+    "1RB 2LB ...  1LB 2LA 1RB",
+    "1RB 0LA ...  1LB 2LA 0RB",
+    "1RB 2LA 0RB  2LA ... 1RA",
+
+    "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD",
+
+    "1RB 1RA  1RC ...  0RD 0RC  1LD 1LE  1RA 1LC",
+    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
+    "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA",
+    "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA",
+    "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE",
+    "1RB 1LA  0LC 0LB  1RC 1RD  1RE 1RB  1LA ...",
+    "1RB 1RA  1LC ...  1RA 1LD  0RE 0RD  1LE 1LC",
+    "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC",
+    "1RB 1RA  1RC ...  1LC 1LD  0RA 1LE  0RC 0RE",
+    "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA",
+    "1RB 1RC  0LD ...  0LE 0LC  1LE 1LD  1RE 1RA",
+    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  ... 1RA",
+    "1RB 1LC  1RD 0LB  0RE 0RC  0RC ...  1LE 1LA",
+
+    "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF",
+}
+
 CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1LB  1LA 0RB",
 

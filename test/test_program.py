@@ -16,7 +16,8 @@ class BackwardReasoning(TestCase):
 
     def assert_cant_halt(self, prog: str):
         self.assertTrue(
-            Program(prog).cant_halt,
+            Program(prog).cant_halt
+                or prog in CANT_HALT_FALSE_NEGATIVES,
             f'halt false negative: "{prog}"')
 
     def assert_could_blank(self, prog: str):
@@ -156,6 +157,9 @@ class TestProgram(BackwardReasoning):
             self.assert_could_blank(prog)
 
     def test_false_negatives(self):
+        for prog in CANT_HALT_FALSE_NEGATIVES:
+            self.assert_could_halt(prog)
+
         for prog in CANT_BLANK_FALSE_NEGATIVES:
             self.assertNotIn(prog, BLANKERS)
             self.assert_could_blank(prog)

@@ -398,6 +398,9 @@ class Program:
                             state = entry,
                         )
 
+                        if final_prop == 'halted' and run.undfnd:
+                            return False
+
                         # pylint: disable = bad-builtin
                         if not (result := getattr(run, final_prop)):
                             continue
