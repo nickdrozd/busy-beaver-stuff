@@ -33,7 +33,11 @@ def stacker(
             prover = True,
         )
 
-        if machine.xlimit or machine.blanks or machine.rulapp:
+        if any(blank < 10 for blank in machine.blanks.values()):
+            prog = None
+            continue
+
+        if machine.xlimit or machine.rulapp:
             run_pile.put(prog)
             prog = None
             continue
