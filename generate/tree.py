@@ -3,8 +3,8 @@ from collections.abc import Callable
 from multiprocessing import cpu_count, Manager, Process
 
 from tm.instrs import Slot
-from tm.machine import Machine
 from tm.program import Program
+from tm.machine import Machine, LinRecMachine
 
 Prog = str
 
@@ -41,8 +41,17 @@ def stacker(
             prog = None
             continue
 
-        if machine.xlimit or machine.rulapp:
+        if machine.rulapp:  # no-coverage
             run_pile.put(prog)
+            prog = None
+            continue
+
+        if machine.xlimit:
+            if LinRecMachine(prog).run(
+                    step_lim = 50,
+                    check_rec = 0,
+                    skip = True).xlimit:
+                run_pile.put(prog)
             prog = None
             continue
 
