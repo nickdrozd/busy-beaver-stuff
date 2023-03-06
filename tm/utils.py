@@ -10,19 +10,14 @@ def macro_variations(
         prog: str,
         block_steps: int,
 ) -> Iterator[str | MacroProg]:
-    opt_prog: str | MacroProg = (
+    yield (
         prog
         if (opt := opt_block(prog, block_steps)) == 1 else
         BlockMacro(prog, [opt])
     )
 
-    yield opt_prog
-
     for i in range(1, 3):
-        yield BacksymbolMacro(opt_prog, [i])
-
-    if not isinstance(opt_prog, str):
-        yield prog
+        yield BacksymbolMacro(prog, [i])
 
 
 def run_variations(
