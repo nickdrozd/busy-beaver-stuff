@@ -33,6 +33,10 @@ def stacker(
             prover = True,
         )
 
+        if machine.infrul:
+            prog = None
+            continue
+
         if any(blank < 10 for blank in machine.blanks.values()):
             prog = None
             continue
