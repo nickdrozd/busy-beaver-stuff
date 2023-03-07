@@ -14,14 +14,19 @@ RunPile = Queue[Prog | tuple[Slot, Prog]]
 def stacker(
         steps: int,
         halt: bool,
-        run_pile: RunPile,
         stack: list[Prog],
+        run_pile: RunPile,
+        output: Output,
+        pile_max: int,
 ) -> None:
     prog: Prog | None = None
 
     open_slot_lim = 2 if halt else 1
 
     while True:  # pylint: disable = while-used
+        for _ in range(run_pile.qsize() - pile_max):
+            run(run_pile, output)
+
         if prog is None:
             try:
                 prog = stack.pop()
@@ -75,23 +80,28 @@ def stacker(
 def runner(run_pile: RunPile, output: Output) -> None:
     while True:  # pylint: disable = while-used
         try:
-            prog = run_pile.get(timeout = 1)
+            run(run_pile, output)
         except Empty:
             break
 
-        if isinstance(prog, Prog):
-            output(prog)
-        else:
-            slot, prog = prog
 
-            for ext in Program(prog).branch(slot):
-                output(ext)
+def run(run_pile: RunPile, output: Output) -> None:
+    prog = run_pile.get(timeout = 1)
+
+    if isinstance(prog, Prog):
+        output(prog)
+    else:
+        slot, prog = prog
+
+        for ext in Program(prog).branch(slot):
+            output(ext)
 
 
 def run_tree_gen(
         states: int,
         colors: int,
         steps: int = 500,
+        pile_max: int = 10 ** 4,
         halt: bool = False,
         output: Output = print,
 ) -> None:
@@ -103,8 +113,10 @@ def run_tree_gen(
             args = (
                 steps,
                 halt,
-                run_pile,
                 [str(Program.empty(states, colors))],
+                run_pile,
+                output,
+                pile_max,
             ),
         )
     ]

@@ -163,6 +163,7 @@ class Fast(TestTree):
             states = 2,
             colors = 3,
             steps = 23,
+            pile_max = 100,
             output = capture,
         )
 
