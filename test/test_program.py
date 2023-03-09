@@ -159,6 +159,7 @@ class TestProgram(BackwardReasoning):
     def test_false_negatives(self):
         for prog in CANT_HALT_FALSE_NEGATIVES:
             self.assert_could_halt(prog)
+            self.assert_could_halt(prog.replace('...', '1R_'))
 
         for prog in CANT_BLANK_FALSE_NEGATIVES:
             self.assertNotIn(prog, BLANKERS)

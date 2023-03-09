@@ -398,15 +398,24 @@ class Program:
                             state = entry,
                         )
 
-                        if final_prop == 'halted' and run.undfnd:
-                            return False
+                        match final_prop:
+                            case 'spnout':
+                                result = run.spnout
+                            case 'blanks':
+                                result = (
+                                    min(blanks.values())
+                                    if (blanks := run.blanks) else
+                                    None
+                                )
+                            case 'halted':
+                                result = (
+                                    und[0]
+                                    if (und := run.undfnd) else
+                                    run.halted
+                                )
 
-                        # pylint: disable = bad-builtin
-                        if not (result := getattr(run, final_prop)):
+                        if not result:
                             continue
-
-                        if final_prop == 'blanks':
-                            result = min(result.values())
 
                         if abs(result - step) > 1:
                             continue
