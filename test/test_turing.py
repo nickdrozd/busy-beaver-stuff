@@ -647,9 +647,6 @@ class Slow(TuringTest):  # no-coverage
         self._test_halt(HALT_SLOW)
 
     def test_spinout(self):
-        for prog in CANT_SPIN_OUT_SLOW:
-            self.assert_cant_spin_out(prog)
-
         self._test_spinout(SPINOUT_SLOW)
         self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
 

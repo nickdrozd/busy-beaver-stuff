@@ -957,6 +957,10 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     "1RB 0RB 0LB  1LB 2RA 1LA",
     "1RB 2LA 0RB  0LB 1LA 0RA",
 
+    # slow
+    "1RB ... ...  2LB 1RB 1LB",
+    "1RB 1RA 0RB  2LB 1LA 1LB",
+
     "1RB 0LC  1RD 0RB  1LC 1LA  1RC 1RA",
     "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA",
     "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
@@ -971,11 +975,6 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 
     "1RB 3LA 1LA 1RA  2LB 2RA 0RB 3RB",  # QH 77, xmas
     "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB",  # QH 14, xmas
-}
-
-CANT_SPIN_OUT_SLOW: set[str] = {
-    "1RB ... ...  2LB 1RB 1LB",
-    "1RB 1RA 0RB  2LB 1LA 1LB",
 }
 
 DO_HALT: set[str] = {

@@ -41,9 +41,6 @@ class BackwardReasoning(TestCase):
             f'spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog: str):
-        if prog in CANT_SPIN_OUT_SLOW:
-            return
-
         try:
             self.assertTrue(
                 Program(prog).cant_spin_out)

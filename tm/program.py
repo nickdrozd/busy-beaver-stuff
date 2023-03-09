@@ -319,7 +319,8 @@ class Program:
             self,
             final_prop: str,
             slots: tuple[Slot, ...],
-            max_attempts: int = 24,
+            max_steps: int = 24,
+            max_cycles: int = 1_000,
     ) -> bool:
         configs: list[
             tuple[int, State, Tape, int, History]
@@ -336,14 +337,17 @@ class Program:
 
         comp = tcompile(str(self))
 
-        max_repeats = max_attempts // 2
+        max_repeats = max_steps // 2
 
         seen: dict[State, set[Tape]] = defaultdict(set)
 
-        while configs:  # pylint: disable = while-used
-            step, state, tape, repeat, history = configs.pop()
+        for _ in range(max_cycles):
+            try:
+                step, state, tape, repeat, history = configs.pop()
+            except IndexError:
+                return True
 
-            if step > max_attempts:
+            if step > max_steps:
                 return False
 
             if state == 0 and tape.blank:
@@ -428,4 +432,4 @@ class Program:
                             history.copy(),
                         ))
 
-        return True
+        return False
