@@ -1,3 +1,5 @@
+# pylint: disable = while-used
+
 import time
 from queue import Empty, Queue
 from collections.abc import Callable
@@ -23,8 +25,8 @@ def stacker(
 
     open_slot_lim = 2 if halt else 1
 
-    while True:  # pylint: disable = while-used
-        while run_pile.qsize() > pile_max:  # pylint: disable = while-used
+    while True:
+        while run_pile.qsize() > pile_max:
             time.sleep(.1)
 
         if prog is None:
@@ -78,7 +80,7 @@ def stacker(
 
 
 def runner(run_pile: RunPile, output: Output) -> None:
-    while True:  # pylint: disable = while-used
+    while True:
         try:
             prog = run_pile.get(timeout = 1)
         except Empty:
