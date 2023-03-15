@@ -1,3 +1,4 @@
+import time
 from queue import Empty, Queue
 from collections.abc import Callable
 from multiprocessing import cpu_count, Manager, Process
@@ -14,18 +15,17 @@ RunPile = Queue[Prog | tuple[Slot, Prog]]
 def stacker(
         steps: int,
         halt: bool,
-        stack: list[Prog],
         run_pile: RunPile,
-        output: Output,
         pile_max: int,
+        stack: list[Prog],
 ) -> None:
     prog: Prog | None = None
 
     open_slot_lim = 2 if halt else 1
 
     while True:  # pylint: disable = while-used
-        for _ in range(run_pile.qsize() - pile_max):
-            run(run_pile, output)
+        while run_pile.qsize() > pile_max:  # pylint: disable = while-used
+            time.sleep(.1)
 
         if prog is None:
             try:
@@ -80,21 +80,17 @@ def stacker(
 def runner(run_pile: RunPile, output: Output) -> None:
     while True:  # pylint: disable = while-used
         try:
-            run(run_pile, output)
+            prog = run_pile.get(timeout = 1)
         except Empty:
             break
 
+        if isinstance(prog, Prog):
+            output(prog)
+        else:
+            slot, prog = prog
 
-def run(run_pile: RunPile, output: Output) -> None:
-    prog = run_pile.get(timeout = 1)
-
-    if isinstance(prog, Prog):
-        output(prog)
-    else:
-        slot, prog = prog
-
-        for ext in Program(prog).branch(slot):
-            output(ext)
+            for ext in Program(prog).branch(slot):
+                output(ext)
 
 
 def run_tree_gen(
@@ -113,10 +109,9 @@ def run_tree_gen(
             args = (
                 steps,
                 halt,
-                [str(Program.empty(states, colors))],
                 run_pile,
-                output,
                 pile_max,
+                [str(Program.empty(states, colors))],
             ),
         )
     ]
