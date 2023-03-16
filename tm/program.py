@@ -75,6 +75,10 @@ class Program:
                         ['...'] * colors)
                 ] * states)))
 
+    @classmethod
+    def branch_init(cls, states: int, colors: int) -> list[str]:
+        return list(cls.init(states, colors).branch((1, 0)))
+
     @cached_property
     def states(self) -> set[State]:
         return set(self.prog.keys())
