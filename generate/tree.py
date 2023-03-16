@@ -113,7 +113,7 @@ def run_tree_gen(
                 halt,
                 run_pile,
                 pile_max,
-                [str(Program.empty(states, colors))],
+                [str(Program.init(states, colors))],
             ),
         )
     ]

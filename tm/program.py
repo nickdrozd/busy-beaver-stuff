@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import overload
+from typing import overload, Self
 from itertools import product
 from functools import cached_property
 from collections import defaultdict
@@ -64,9 +64,9 @@ class Program:
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
 
-    @staticmethod
-    def empty(states: int, colors: int) -> Program:
-        return Program(
+    @classmethod
+    def init(cls, states: int, colors: int) -> Self:
+        return cls(
             re.sub(
                 r'^\.\.\.',
                 '1RB',
@@ -178,7 +178,7 @@ class Program:
 
     @property
     def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
-        partial = Program.empty(len(self.states), len(self.colors))
+        partial = Program.init(len(self.states), len(self.colors))
 
         for _ in range(len(self.states) * len(self.colors) - 1):
             if (result := Machine(partial).run().undfnd) is None:
