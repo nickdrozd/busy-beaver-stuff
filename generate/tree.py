@@ -48,11 +48,6 @@ def stacker(
             prog = None
             continue
 
-        if machine.rulapp:  # no-coverage
-            run_pile.put(prog)
-            prog = None
-            continue
-
         if machine.xlimit:
             if LinRecMachine(prog).run(
                     step_lim = 50,
@@ -63,6 +58,8 @@ def stacker(
             continue
 
         if machine.undfnd is None:
+            if machine.rulapp:  # no-coverage
+                run_pile.put(prog)
             prog = None
             continue
 
