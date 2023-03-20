@@ -345,6 +345,25 @@ class Program:
 
         seen: dict[State, set[Tape]] = defaultdict(set)
 
+        def final_value(machine: Machine) -> int | None:
+            match final_prop:
+                case 'spnout':
+                    return machine.spnout
+                case 'blanks':
+                    return (
+                        min(blanks.values())
+                        if (blanks := machine.blanks) else
+                        None
+                    )
+                case 'halted':
+                    return (
+                        und[0]
+                        if (und := machine.undfnd) else
+                        machine.halted
+                    )
+
+            return None  # no-coverage
+
         for _ in range(max_cycles):
             try:
                 step, state, tape, repeat, history = configs.pop()
@@ -406,23 +425,7 @@ class Program:
                             state = entry,
                         )
 
-                        match final_prop:
-                            case 'spnout':
-                                result = run.spnout
-                            case 'blanks':
-                                result = (
-                                    min(blanks.values())
-                                    if (blanks := run.blanks) else
-                                    None
-                                )
-                            case 'halted':
-                                result = (
-                                    und[0]
-                                    if (und := run.undfnd) else
-                                    run.halted
-                                )
-
-                        if not result:
+                        if not (result := final_value(run)):
                             continue
 
                         if abs(result - step) > 1:
