@@ -100,9 +100,9 @@ class Machine:
         print(' | '.join(info))
 
     def run(self,
-            state: int = 0,
             sim_lim: int = 100_000_000,
             watch_tape: bool = False,
+            state: State = 0,
             tape: Tape | None = None,
             prover: bool = False,
     ) -> Machine:
