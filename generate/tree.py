@@ -1,3 +1,6 @@
+import os
+import json
+
 from collections.abc import Callable
 from multiprocessing import cpu_count, Process
 
@@ -16,6 +19,8 @@ def worker(
         stack: list[Prog],
         output: Output,
 ) -> None:
+    print(f'{os.getpid()}: {json.dumps(stack, indent = 4)}')
+
     prog: Prog | None = None
 
     open_slot_lim = 2 if halt else 1
@@ -63,6 +68,8 @@ def worker(
 
         for ext in branches:
             stack.append(ext)
+
+    print(f'{os.getpid()}: done')
 
 
 def run_tree_gen(
