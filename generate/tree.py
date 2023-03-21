@@ -7,7 +7,7 @@ from multiprocessing import cpu_count, Manager, Process
 
 from tm.instrs import Slot
 from tm.program import Program
-from tm.machine import Machine, LinRecMachine
+from tm.machine import Machine
 
 Prog = str
 
@@ -49,11 +49,7 @@ def stacker(
             continue
 
         if machine.xlimit:
-            if LinRecMachine(prog).run(
-                    step_lim = 50,
-                    check_rec = 0,
-                    skip = True).xlimit:
-                run_pile.put(prog)
+            run_pile.put(prog)
             prog = None
             continue
 
