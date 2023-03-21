@@ -1,6 +1,5 @@
 # pylint: disable = while-used
 
-import time
 from queue import Empty, Queue
 from collections.abc import Callable
 from multiprocessing import cpu_count, Manager, Process
@@ -18,7 +17,6 @@ def stacker(
         steps: int,
         halt: bool,
         run_pile: RunPile,
-        pile_max: int,
         stack: list[Prog],
 ) -> None:
     prog: Prog | None = None
@@ -26,9 +24,6 @@ def stacker(
     open_slot_lim = 2 if halt else 1
 
     while True:
-        while run_pile.qsize() > pile_max:
-            time.sleep(.1)
-
         if prog is None:
             try:
                 prog = stack.pop()
@@ -94,7 +89,6 @@ def run_tree_gen(
         steps: int,
         halt: bool,
         output: Output,
-        pile_max: int = 10 ** 4,
 ) -> None:
     run_pile: RunPile = Manager().Queue()
 
@@ -105,7 +99,6 @@ def run_tree_gen(
                 steps,
                 halt,
                 run_pile,
-                pile_max,
                 Program.branch_init(states, colors),
             ),
         )

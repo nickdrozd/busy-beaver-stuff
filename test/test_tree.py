@@ -166,7 +166,6 @@ class Fast(TestTree):
             colors = 3,
             steps = 23,
             halt = False,
-            pile_max = 100,
             output = capture,
         )
 
