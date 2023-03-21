@@ -1,4 +1,5 @@
 import os
+import re
 import json
 
 from collections.abc import Callable
@@ -79,7 +80,11 @@ def run_tree_gen(
         halt: bool,
         output: Output,
 ) -> None:
-    branches = Program.branch_init(states, colors)
+    branches = [
+        prog
+        for prog in Program.branch_init(states, colors)
+        if re.search('  .[^R]', prog)
+    ]
 
     cpus = cpu_count()
 
