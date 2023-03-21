@@ -1,29 +1,26 @@
-# pylint: disable = while-used
-
-from queue import Empty, Queue
 from collections.abc import Callable
-from multiprocessing import cpu_count, Manager, Process
+from multiprocessing import cpu_count, Process
 
-from tm.instrs import Slot
 from tm.program import Program
 from tm.machine import Machine
+
 
 Prog = str
 
 Output  = Callable[[Prog], None]
-RunPile = Queue[Prog | tuple[Slot, Prog]]
 
-def stacker(
+
+def worker(
         steps: int,
         halt: bool,
-        run_pile: RunPile,
         stack: list[Prog],
+        output: Output,
 ) -> None:
     prog: Prog | None = None
 
     open_slot_lim = 2 if halt else 1
 
-    while True:
+    while True:  # pylint: disable = while-used
         if prog is None:
             try:
                 prog = stack.pop()
@@ -44,20 +41,21 @@ def stacker(
             continue
 
         if machine.xlimit:
-            run_pile.put(prog)
+            output(prog)
             prog = None
             continue
 
         if machine.undfnd is None:
             if machine.rulapp:  # no-coverage
-                run_pile.put(prog)
+                output(prog)
             prog = None
             continue
 
         _, slot = machine.undfnd
 
         if len((program := Program(prog)).open_slots) == open_slot_lim:
-            run_pile.put((slot, prog))
+            for ext in program.branch(slot):
+                output(ext)
             prog = None
             continue
 
@@ -67,22 +65,6 @@ def stacker(
             stack.append(ext)
 
 
-def runner(run_pile: RunPile, output: Output) -> None:
-    while True:
-        try:
-            prog = run_pile.get(timeout = 1)
-        except Empty:
-            break
-
-        if isinstance(prog, Prog):
-            output(prog)
-        else:
-            slot, prog = prog
-
-            for ext in Program(prog).branch(slot):
-                output(ext)
-
-
 def run_tree_gen(
         states: int,
         colors: int,
@@ -90,27 +72,24 @@ def run_tree_gen(
         halt: bool,
         output: Output,
 ) -> None:
-    run_pile: RunPile = Manager().Queue()
+    branches = Program.branch_init(states, colors)
+
+    cpus = cpu_count()
+
+    chunk = (len(branches) + cpus - 1) // cpus
+
+    branch_groups = [
+        branches[ i : i + chunk ]
+        for i in range(0, len(branches), chunk)
+     ]
 
     processes = [
-        Process(
-            target = stacker,
-            args = (
-                steps,
-                halt,
-                run_pile,
-                Program.branch_init(states, colors),
-            ),
-        )
-    ]
-
-    processes += [
-        Process(
-            target = runner,
-            args = (run_pile, output)
-        )
-        for _ in range(cpu_count())
-    ]
+         Process(
+            target = worker,
+            args = (steps, halt, group, output),
+         )
+        for group in branch_groups
+     ]
 
     for process in processes:
         process.start()
