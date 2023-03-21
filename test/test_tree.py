@@ -104,6 +104,7 @@ class Fast(TestTree):
             states = 2,
             colors = 2,
             steps = 20,
+            halt = False,
             output = capture,
         )
 
@@ -130,6 +131,7 @@ class Fast(TestTree):
             states = 3,
             colors = 2,
             steps = 15,
+            halt = False,
             output = capture,
         )
 
@@ -163,6 +165,7 @@ class Fast(TestTree):
             states = 2,
             colors = 3,
             steps = 23,
+            halt = False,
             pile_max = 100,
             output = capture,
         )

@@ -95,10 +95,10 @@ def runner(run_pile: RunPile, output: Output) -> None:
 def run_tree_gen(
         states: int,
         colors: int,
-        steps: int = 500,
+        steps: int,
+        halt: bool,
+        output: Output,
         pile_max: int = 10 ** 4,
-        halt: bool = False,
-        output: Output = print,
 ) -> None:
     run_pile: RunPile = Manager().Queue()
 
