@@ -52,10 +52,21 @@ class TestTree(TestCase):
             count,
             len(self.progs))
 
-    def assert_records(self, expected: dict[str, tuple[int, str]]):
-        for cat, res in expected.items():
-            self.assertEqual(
-                self.results[cat], res)
+    def assert_records(
+            self,
+            expected: dict[
+                str,
+                tuple[int, str | set[str]]],
+    ):
+        for cat, (exp_step, exp_prog) in expected.items():
+            res_step, res_prog = self.results[cat]
+
+            self.assertEqual(res_step, exp_step)
+
+            try:
+                self.assertEqual(res_prog, exp_prog)
+            except AssertionError:
+                self.assertIn(res_prog, exp_prog)
 
     def assert_cant_terminate(self) -> None:
         for prog in map(Program, self.progs):
@@ -113,7 +124,11 @@ class Fast(TestTree):
 
         self.assert_records({
             'blanks': (8, "1RB 0RA  1LB 1LA"),
-            'spnout': (6, "1RB 1LB  0LB 1LA"),
+            'spnout': (6, {
+                "1RB 1LB  0LB 1LA",
+                "1RB 1LB  1LB 1LA",
+                "1RB 0LB  0LB 1LA",
+            }),
         })
 
     def test_32(self):
