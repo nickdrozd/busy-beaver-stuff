@@ -16,8 +16,7 @@ def macro_variations(
         BlockMacro(prog, [opt])
     )
 
-    for i in range(1, 3):
-        yield BacksymbolMacro(prog, [i])
+    yield BacksymbolMacro(prog, [1])
 
 
 def run_variations(
