@@ -40,7 +40,7 @@ MYPYC = $(PYTHON) -m mypyc
 
 compile : clean-python
 	$(MYPYC) --version
-	$(MYPYC) tm generate --exclude tree
+	$(MYPYC) tm generate
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
