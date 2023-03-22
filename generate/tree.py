@@ -2,7 +2,7 @@ import os
 import re
 import json
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from multiprocessing import cpu_count, Process
 
 from tm.program import Program
@@ -14,14 +14,11 @@ Prog = str
 Output  = Callable[[Prog], None]
 
 
-def worker(
+def tree_gen(
         steps: int,
         halt: bool,
         stack: list[Prog],
-        output: Output,
-) -> None:
-    print(f'{os.getpid()}: {json.dumps(stack, indent = 4)}')
-
+) -> Iterator[Prog]:
     prog: Prog | None = None
 
     open_slot_lim = 2 if halt else 1
@@ -47,13 +44,13 @@ def worker(
             continue
 
         if machine.xlimit:
-            output(prog)
+            yield prog
             prog = None
             continue
 
         if machine.undfnd is None:
             if machine.rulapp:  # no-coverage
-                output(prog)
+                yield prog
             prog = None
             continue
 
@@ -61,14 +58,26 @@ def worker(
 
         if len((program := Program(prog)).open_slots) == open_slot_lim:
             for ext in program.branch(slot):
-                output(ext)
+                yield ext
             prog = None
             continue
 
-        prog = next(branches := program.branch(slot, halt))
+        prog = next(branches := program.branch(slot, halt), None)
 
         for ext in branches:
             stack.append(ext)
+
+
+def worker(
+        steps: int,
+        halt: bool,
+        stack: list[Prog],
+        output: Output,
+) -> None:
+    print(f'{os.getpid()}: {json.dumps(stack, indent = 4)}')
+
+    for prog in tree_gen(steps, halt, stack):
+        output(prog)
 
     print(f'{os.getpid()}: done')
 
