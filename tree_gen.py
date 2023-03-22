@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from generate.tree import run_tree_gen
+from generate.tree import run_tree_gen, filter_run_print
 
 
 if __name__ == '__main__':
@@ -20,5 +20,5 @@ if __name__ == '__main__':
         colors = args.colors,
         halt   = args.halt,
         steps  = args.steps,
-        output = print,
+        output = filter_run_print(args.halt),
     )

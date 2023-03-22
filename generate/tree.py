@@ -7,6 +7,7 @@ from multiprocessing import cpu_count, Process
 
 from tm.program import Program
 from tm.machine import Machine
+from tm.utils import run_variations
 
 
 Prog = str
@@ -117,3 +118,30 @@ def run_tree_gen(
 
     for process in processes:
         process.join()
+
+########################################
+
+def filter_run_print(halt: bool) -> Output:
+    def cant_halt(prog: Prog) -> bool:
+        return Program(prog).cant_halt
+
+    def cant_spin_out(prog: Prog) -> bool:
+        return Program(prog).cant_spin_out
+
+    cant_reach = cant_halt if halt else cant_spin_out
+
+    def drop(prog: Prog) -> None:
+        if cant_reach(prog):
+            return
+
+        for machine in run_variations(prog, 1_000):
+            if machine.simple_termination and machine.rulapp > 1_000:
+                print(machine)
+                return
+
+            if machine.xlimit is None:
+                return
+
+        print(prog)
+
+    return drop
