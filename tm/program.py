@@ -194,14 +194,7 @@ class Program:
 
             partial[slot] = self[slot]
 
-    def branch(
-            self,
-            slot: Slot,
-            halt: bool = False,
-    ) -> Iterator[ProgStr]:
-        if halt and self.last_slot:
-            return
-
+    def branch(self, slot: Slot) -> Iterator[ProgStr]:
         orig = self[slot]
 
         for instr in sorted(self.available_instrs, reverse = True):

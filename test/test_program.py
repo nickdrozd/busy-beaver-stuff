@@ -113,13 +113,6 @@ class TestProgram(BackwardReasoning):
                     (str_st(loc[0]), int(loc[1])))),
                 extensions)
 
-        self.assertFalse(
-            tuple(
-                Program(
-                    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA").branch(
-                        (str_st('C'), 0),
-                        halt = True)))
-
     def test_normalize(self):
         for norm, devs in NORMALIZE.items():
             for dev in devs:
