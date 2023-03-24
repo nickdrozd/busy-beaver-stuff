@@ -74,12 +74,17 @@ def worker(
         stack: list[Prog],
         output: Output,
 ) -> None:
-    print(f'{os.getpid()}: {json.dumps(stack, indent = 4)}')
+    pid: int = os.getpid()
+
+    def log(msg: str) -> None:
+        print(f'{pid}: {msg}')
+
+    log(json.dumps(stack, indent = 4))
 
     for prog in tree_gen(steps, halt, stack):
         output(prog)
 
-    print(f'{os.getpid()}: done')
+    log('done')
 
 
 def run_tree_gen(
