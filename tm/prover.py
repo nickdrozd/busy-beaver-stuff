@@ -64,6 +64,10 @@ class Prover:
         ],
     ] = field(default_factory = dict)
 
+    @property
+    def config_count(self) -> int:
+        return len(self.configs)
+
     def get_rule(
             self,
             state: State,

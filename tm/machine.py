@@ -77,6 +77,10 @@ class Machine:
             info.append(
                 f'RULAPP: {show_number(self.rulapp)}')
 
+        if prover := self.prover:
+            info.append(
+                f'TPCFGS: {prover.config_count}')
+
         return f"{self.program} || {' | '.join(info)}"
 
     @property
