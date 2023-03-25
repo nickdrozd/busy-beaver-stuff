@@ -313,6 +313,7 @@ class TuringTest(BackwardReasoning):
             else:
                 self.assertTrue(
                     self.machine.infrul
+                    or self.machine.cfglim
                     or self.machine.spnout is not None)
 
     def _test_prover_est(self, prog_data: ProverEst):

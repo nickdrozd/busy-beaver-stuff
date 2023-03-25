@@ -48,9 +48,15 @@ class PastConfig:
         return None
 
 
+class TooManyConfigs(Exception):
+    pass
+
+
 @dataclass
 class Prover:
     prog: GetInstr
+
+    config_limit: int
 
     rules: dict[
         Slot,
@@ -160,6 +166,8 @@ class Prover:
         if (states := self.configs.get(sig)) is None:
             states = defaultdict(PastConfig)
             self.configs[sig] = states
+        elif self.config_count > self.config_limit:
+            raise TooManyConfigs()
 
         if (deltas := states[state].next_deltas(cycle)) is None:
             return None

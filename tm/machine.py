@@ -4,7 +4,7 @@ from tm.tape import Tape, show_number
 from tm.rules import InfiniteRule, RuleLimit
 from tm.parse import tcompile, st_str
 from tm.instrs import State, Slot, GetInstr
-from tm.prover import Prover
+from tm.prover import Prover, TooManyConfigs
 from tm.lin_rec import History, RecRes, Tapes
 
 
@@ -14,6 +14,7 @@ Undfnd = tuple[int, Slot]
 Result = str | int | LinRec | Undfnd
 
 TERM_CATS = (
+    'cfglim',
     'halted',
     'infrul',
     'limrul',
@@ -44,6 +45,7 @@ class Machine:
 
     qsihlt: bool | None = None
     infrul: bool | None = None
+    cfglim: bool | None = None
     limrul: bool | None = None
 
     rulapp: int = 0
@@ -108,7 +110,7 @@ class Machine:
             watch_tape: bool = False,
             state: State = 0,
             tape: Tape | None = None,
-            prover: bool = False,
+            prover: bool | int = False,
     ) -> Machine:
         comp: GetInstr = (
             tcompile(self.program)
@@ -123,7 +125,14 @@ class Machine:
         )
 
         if prover:
-            self.prover = Prover(comp)
+            self.prover = Prover(
+                comp,
+                config_limit = (
+                    100_000
+                    if isinstance(prover, bool) else
+                    prover
+                ),
+            )
 
         self.blanks = {}
 
@@ -139,6 +148,9 @@ class Machine:
                     rule = self.prover.try_rule(cycle, state, tape)
                 except InfiniteRule:
                     self.infrul = True
+                    break
+                except TooManyConfigs:
+                    self.cfglim = True
                     break
 
                 if rule is not None:

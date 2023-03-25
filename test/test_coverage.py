@@ -79,3 +79,6 @@ class TestFloss(TestCase):
         ).run(
             prover = True,
         ).limrul
+
+    def test_config_limit(self):
+        _ = Machine("1RB 1LB  1LA ...").run(prover = 1).cfglim
