@@ -40,45 +40,50 @@ class TestDisplay(TestCase):
 
 
 class TestFloss(TestCase):
-    # pylint: disable = no-self-use
     def test_macro(self):
-        _ = Machine(
-            BlockMacro(
-                "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
-                [2])
-        ).run(prover = True)
-
-        _ = Machine(
-            macro := BacksymbolMacro(
+        self.assertIsNotNone(
+            Machine(
                 BlockMacro(
-                    "1RB 0RA 1LB  2LA 2RB 0LA",
-                    [3, 3]),
-                [1, 1])
-        ).run()
+                    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
+                    [2])
+            ).run(prover = True))
+
+        self.assertIsNotNone(
+            Machine(
+                macro := BacksymbolMacro(
+                    BlockMacro(
+                        "1RB 0RA 1LB  2LA 2RB 0LA",
+                        [3, 3]),
+                    [1, 1])
+            ).run())
 
         print(len(macro), macro)
 
     def test_machine(self):
-        _ = Machine(
-            "1RB 1RA  1RC 0RD  1LE 0RA  0R_ 0RB  1LB 1LE"
-        ).run().simple_termination
+        self.assertIsNotNone(
+            Machine(
+                "1RB 1RA  1RC 0RD  1LE 0RA  0R_ 0RB  1LB 1LE"
+            ).run().simple_termination)
 
-        # pylint: disable = redefined-variable-type
-        _ = LinRecMachine(
-            "1RB 0LB  1LA 0RB"
-        ).run(check_rec = 1)
+        self.assertIsNotNone(
+            LinRecMachine(
+                "1RB 0LB  1LA 0RB"
+            ).run(check_rec = 1))
 
     def test_prover(self):
-        _ = Machine(
-            "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA"
-        ).run(prover = True)
+        self.assertIsNotNone(
+            Machine(
+                "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA"
+            ).run(prover = True))
 
     def test_rule_limit(self):
-        _ = Machine(
-            "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
-        ).run(
-            prover = True,
-        ).limrul
+        self.assertIsNotNone(
+            Machine(
+                "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
+            ).run(
+                prover = True,
+            ).limrul)
 
     def test_config_limit(self):
-        _ = Machine("1RB 1LB  1LA ...").run(prover = 1).cfglim
+        self.assertIsNotNone(
+            Machine("1RB 1LB  1LA ...").run(prover = 1).cfglim)
