@@ -110,7 +110,7 @@ class Machine:
             watch_tape: bool = False,
             state: State = 0,
             tape: Tape | None = None,
-            prover: bool | int = False,
+            prover: bool = False,
     ) -> Machine:
         comp: GetInstr = (
             tcompile(self.program)
@@ -125,14 +125,7 @@ class Machine:
         )
 
         if prover:
-            self.prover = Prover(
-                comp,
-                config_limit = (
-                    100_000
-                    if isinstance(prover, bool) else
-                    prover
-                ),
-            )
+            self.prover = Prover(comp)
 
         self.blanks = {}
 

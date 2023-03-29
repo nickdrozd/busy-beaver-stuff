@@ -19,7 +19,7 @@ def filter_run_print(halt: bool) -> Output:
         if cant_reach(prog):
             return
 
-        for machine in run_variations(prog, 10_000, prover = 1_000):
+        for machine in run_variations(prog, 10_000):
             if machine.simple_termination and machine.rulapp > 1_000:
                 print(machine)
                 return

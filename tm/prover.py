@@ -56,8 +56,6 @@ class TooManyConfigs(Exception):
 class Prover:
     prog: GetInstr
 
-    config_limit: int
-
     rules: dict[
         Slot,
         list[tuple[MinSig, Rule]],
@@ -166,7 +164,7 @@ class Prover:
         if (states := self.configs.get(sig)) is None:
             states = defaultdict(PastConfig)
             self.configs[sig] = states
-        elif self.config_count > self.config_limit:
+        elif self.config_count > 100_000:
             raise TooManyConfigs()
 
         if (deltas := states[state].next_deltas(cycle)) is None:

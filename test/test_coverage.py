@@ -86,4 +86,9 @@ class TestFloss(TestCase):
 
     def test_config_limit(self):
         self.assertIsNotNone(
-            Machine("1RB 1LB  1LA ...").run(prover = 1).cfglim)
+            Machine(
+                BlockMacro("1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA", [4])
+            ).run(
+                prover = True
+            ).cfglim
+        )

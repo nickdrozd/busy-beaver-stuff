@@ -25,7 +25,6 @@ def run_variations(
         *,
         lin_rec: int = 50,
         block_steps: int = 1_000,
-        prover: int | None = None
 ) -> Iterator[Machine]:
     yield LinRecMachine(prog).run(
         step_lim = lin_rec,
@@ -36,7 +35,7 @@ def run_variations(
     for macro in macro_variations(prog, block_steps):
         yield Machine(macro).run(
             sim_lim = sim_lim,
-            prover = prover or sim_lim,
+            prover = True,
         )
 
 
