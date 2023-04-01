@@ -4,7 +4,7 @@ from tm.tape import Tape, show_number
 from tm.rules import InfiniteRule, RuleLimit
 from tm.parse import tcompile, st_str
 from tm.instrs import State, Slot, GetInstr
-from tm.prover import Prover, TooManyConfigs
+from tm.prover import Prover
 from tm.lin_rec import History, RecRes, Tapes
 
 
@@ -142,9 +142,6 @@ class Machine:
                 except InfiniteRule:
                     self.infrul = True
                     break
-                except TooManyConfigs:
-                    self.cfglim = True
-                    break
 
                 if rule is not None:
                     try:
@@ -158,6 +155,10 @@ class Machine:
                         step += times
                         self.rulapp += times
                         continue
+
+                if self.prover.config_count > 100_000:
+                    self.cfglim = True
+                    break
 
             if (instr := comp[state, tape.scan]) is None:
                 self.undfnd = step, (state, tape.scan)
