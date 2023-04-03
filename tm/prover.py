@@ -20,9 +20,9 @@ class PastConfig:
         if len(cycles) < 5:
             return None
 
-        # pylint: disable = invalid-name
+        # pylint: disable = invalid-name, unbalanced-tuple-unpacking
 
-        *_, e, d, c, b, a = cycles
+        e, d, c, b, a = cycles
 
         cycles.pop(0)
 
