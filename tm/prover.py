@@ -5,6 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.rules import make_rule, UnknownRule
+from tm.rust_stuff import PastConfig
 
 if TYPE_CHECKING:
     from tm.rules import Rule
@@ -12,40 +13,6 @@ if TYPE_CHECKING:
     from tm.tape import Signature, Tape, BlockTape, TagTape, EnumTape
 
     MinSig = tuple[Signature, tuple[bool, bool]]
-
-
-@dataclass
-class PastConfig:
-    cycles: list[int] = field(default_factory = list)
-
-    def next_deltas(self, cycle: int) -> tuple[int, int] | None:
-        (cycles := self.cycles).append(cycle)
-
-        if len(cycles) < 5:
-            return None
-
-        # pylint: disable = invalid-name, unbalanced-tuple-unpacking
-
-        e, d, c, b, a = cycles
-
-        cycles.pop(0)
-
-        for i in range(1, 5):
-            p1 = a - (b * i)
-            p2 = b - (c * i)
-            p3 = c - (d * i)
-            p4 = d - (e * i)
-
-            if (diff := p1 - p2) == p2 - p3 == p3 - p4:
-                nxt = a * i + p1 + diff
-                nxxt = nxt * i + p1 + 2 * diff
-
-                return (
-                    nxt - cycle,
-                    nxxt - nxt,
-                )
-
-        return None
 
 
 @dataclass

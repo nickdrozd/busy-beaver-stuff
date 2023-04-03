@@ -1,7 +1,13 @@
+mod prover;
+
 use pyo3::prelude::*;
 
-/// A Python module implemented in Rust.
+use prover::PastConfig;
+
 #[pymodule]
 fn rust_stuff(_py: Python, m: &PyModule) -> PyResult<()> {
+    // prover
+    m.add_class::<PastConfig>()?;
+
     Ok(())
 }
