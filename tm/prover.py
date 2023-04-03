@@ -7,7 +7,6 @@ from tm.instrs import State, Slot, GetInstr
 from tm.rules import make_rule, Rule, UnknownRule
 from tm.tape import Signature, Tape, BlockTape, TagTape, EnumTape
 
-# pylint: disable = no-name-in-module
 from tm.rust_stuff import PastConfig  # type: ignore[import]
 
 

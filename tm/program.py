@@ -7,11 +7,11 @@ from functools import cached_property
 from collections import defaultdict
 
 from tm.graph import Graph
-from tm.parse import parse, dcomp_instr
+from tm.rust_stuff import parse, dcomp_instr  # type: ignore[import]
 from tm.instrs import Color, State, Slot, Instr
 
 from tm.tape import Tape
-from tm.parse import tcompile
+from tm.rust_stuff import tcompile
 from tm.machine import Machine
 from tm.lin_rec import History
 

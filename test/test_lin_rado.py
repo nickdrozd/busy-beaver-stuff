@@ -1,7 +1,9 @@
 from unittest import TestCase
 
-from tm.parse import st_str, LEFT, RIGHT
 from tm.machine import LinRecMachine
+
+from tm.rust_stuff import st_str, LEFT, RIGHT  # type: ignore[import]
+
 from generate.naive import yield_programs
 
 

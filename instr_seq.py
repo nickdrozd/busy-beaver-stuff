@@ -1,7 +1,8 @@
 import sys
 
-from tm.parse import st_str
 from tm.program import Program
+
+from tm.rust_stuff import st_str  # type: ignore[import]
 
 def format_sequence(prog: Program) -> None:
     print(f'    "{prog}": {{')

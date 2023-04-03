@@ -10,12 +10,13 @@ from test.prog_data import *
 from test.test_program import BackwardReasoning
 
 from tm.tape import Tape
-from tm.parse import str_st
 from tm.utils import opt_block
 from tm.instrs import GetInstr
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine
 from tm.macro import BlockMacro, BacksymbolMacro
+
+from tm.rust_stuff import str_st  # type: ignore[import]
 
 
 class TuringTest(BackwardReasoning):

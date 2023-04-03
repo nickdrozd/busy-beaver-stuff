@@ -3,9 +3,10 @@ from unittest import TestCase
 # pylint: disable = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 
-from tm.parse import str_st, st_str
 from tm.program import Program
 from tm.machine import Machine
+
+from tm.rust_stuff import str_st, st_str  # type: ignore[import]
 
 
 class BackwardReasoning(TestCase):

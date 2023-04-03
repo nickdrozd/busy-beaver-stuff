@@ -3,8 +3,9 @@ from __future__ import annotations
 from abc import abstractmethod
 from dataclasses import dataclass
 
-from tm.parse import tcompile
 from tm.instrs import Color, State, Slot, Instr, GetInstr
+
+from tm.rust_stuff import tcompile  # type: ignore[import]
 
 Tape = list[Color]
 Config = tuple[State, tuple[bool, Tape]]
@@ -39,8 +40,9 @@ class MacroProg:
         if isinstance(program, str):
             self.comp = tcompile(program)
 
-            self.base_states = len(set(map(lambda s: s[0], self.comp)))
-            self.base_colors = len(set(map(lambda s: s[1], self.comp)))
+            # pylint: disable = line-too-long
+            self.base_states = len(set(map(lambda s: s[0], self.comp)))  # type: ignore[call-overload]
+            self.base_colors = len(set(map(lambda s: s[1], self.comp)))  # type: ignore[call-overload]
         else:
             self.comp = program
 

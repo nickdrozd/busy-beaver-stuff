@@ -1,5 +1,6 @@
 from tm.graph import Graph
-from tm.parse import st_str as conv
+
+from tm.rust_stuff import st_str as conv  # type: ignore[import]
 
 COLORS = (
     'blue',
