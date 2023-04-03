@@ -17,6 +17,10 @@ machines :
 idris :
 	$(MAKE) -C idris
 
+rust :
+	cargo build --release
+	cp target/release/librust_stuff.so tm/rust_stuff.so
+
 ## Python ##############################
 
 PYTHON = python3
@@ -40,7 +44,7 @@ MYPYC = $(PYTHON) -m mypyc
 
 compile :
 	$(MYPYC) --version
-	$(MYPYC) tm generate
+	$(MYPYC) tm generate --exclude rust_stuff
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
