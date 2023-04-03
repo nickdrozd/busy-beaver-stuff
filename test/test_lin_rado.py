@@ -1,9 +1,10 @@
 from unittest import TestCase
 
-from tm.parse import st_str, LEFT, RIGHT
+from tm.rust_stuff import st_str
 from tm.machine import LinRecMachine
 from generate.naive import yield_programs
 
+LEFT, RIGHT = 'L', 'R'
 
 def read_progs(name: str) -> set[str]:
     with open(f'test/data/{name}.prog') as holdouts:

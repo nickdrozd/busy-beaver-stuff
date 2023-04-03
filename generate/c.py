@@ -1,4 +1,4 @@
-from tm.parse import st_str
+from tm.rust_stuff import st_str
 from tm.program import Program
 from tm.instrs import Color, Shift, State, Instr
 

@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
-from tm.parse import tcompile
+from tm.rust_stuff import tcompile
 
 if TYPE_CHECKING:
     from tm.instrs import Color, State, Slot, Instr, GetInstr

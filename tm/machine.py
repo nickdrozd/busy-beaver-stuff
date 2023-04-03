@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from tm.tape import Tape, show_number
 from tm.rules import InfiniteRule, RuleLimit
-from tm.parse import tcompile, st_str
+from tm.rust_stuff import tcompile, st_str
 from tm.prover import Prover
 from tm.lin_rec import History
 

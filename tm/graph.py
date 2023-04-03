@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from functools import cached_property
 
-from tm.parse import parse, st_str
+from tm.rust_stuff import parse, st_str
 
 if TYPE_CHECKING:
     from tm.instrs import Color, State
