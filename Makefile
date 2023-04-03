@@ -17,6 +17,10 @@ machines :
 idris :
 	$(MAKE) -C idris
 
+rust :
+	cargo build --release
+	cp target/release/librust_stuff.so tm/rust_stuff.so
+
 ## Python ##############################
 
 PYTHON = python3
