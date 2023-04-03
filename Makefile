@@ -5,7 +5,7 @@ all : machines idris lint test generate
 clean-python :
 	rm -rf __pycache__ **/__pycache__ .mypy_cache .coverage* htmlcov build/ *.so **/*.so classes.png packages.png
 
-clean : clean-python
+clean : clean-python clean-rust
 	$(MAKE) -C machines clean
 	$(MAKE) -C idris clean
 
@@ -17,7 +17,14 @@ machines :
 idris :
 	$(MAKE) -C idris
 
-rust :
+## Rust ################################
+
+clean-rust :
+	cargo clean
+
+rust : rust_stuff.so
+
+rust_stuff.so :
 	cargo build --release
 	cp target/release/librust_stuff.so tm/rust_stuff.so
 
