@@ -143,26 +143,31 @@ class Graph:
         return self.entries_dispersed and self.exits_dispersed
 
     @cached_property
-    def reduced(self) -> ConGraph:
-        graph = self.exit_points
-
-        for _ in range(len(self.states) * len(self.colors)):
-            if not graph:
-                break
-
-            cut_reflexive_arrows(graph)
-            inline_single_exit(graph)
-            inline_single_entry(graph)
-
-        return {
-            state: connections
-            for state, connections in graph.items()
-            if connections
-        }
-
-    @cached_property
     def is_simple(self) -> bool:
         return not bool(self.reduced)
+
+    @cached_property
+    def reduced(self) -> ConGraph:
+        return reduce_graph(
+            self.exit_points,
+            len(self.states) * len(self.colors),
+        )
+
+
+def reduce_graph(graph: ConGraph, passes: int) -> ConGraph:
+    for _ in range(passes):
+        if not graph:
+            break
+
+        cut_reflexive_arrows(graph)
+        inline_single_exit(graph)
+        inline_single_entry(graph)
+
+    return {
+        state: connections
+        for state, connections in graph.items()
+        if connections
+    }
 
 
 def purge_dead_ends(graph: ConGraph) -> None:
