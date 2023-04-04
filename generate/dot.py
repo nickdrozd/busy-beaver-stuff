@@ -1,6 +1,4 @@
-from tm.graph import Graph
-
-from tm.rust_stuff import st_str as conv
+from tm.rust_stuff import st_str as conv, Graph
 
 COLORS = (
     'blue',

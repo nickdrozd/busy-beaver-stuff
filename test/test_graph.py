@@ -2,9 +2,7 @@ from unittest import TestCase
 
 from test.prog_data import GRAPHS, SPAGHETTI, KERNEL
 
-from tm.graph import Graph
-
-from tm.rust_stuff import st_str
+from tm.rust_stuff import st_str, Graph
 
 
 class TestGraph(TestCase):
@@ -61,9 +59,6 @@ class TestGraph(TestCase):
         # pylint: disable = line-too-long
         for prog, (flat, norm, conn, irr, zrefl, entries, exits) in GRAPHS.items():
             self.graph = Graph(prog)
-
-            _ =  str(self.graph)
-            _ = repr(self.graph)
 
             self.assert_flat(flat)
             self.assert_normal(norm)
