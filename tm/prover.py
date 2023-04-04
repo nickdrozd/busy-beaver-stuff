@@ -7,7 +7,7 @@ from tm.instrs import State, Slot, GetInstr
 from tm.rules import make_rule, Rule, UnknownRule
 from tm.tape import Signature, Tape, BlockTape, TagTape, EnumTape
 
-from tm.rust_stuff import PastConfig  # type: ignore[import]
+from tm.rust_stuff import PastConfig
 
 
 MinSig = tuple[Signature, tuple[bool, bool]]

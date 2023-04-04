@@ -16,7 +16,7 @@ from tm.program import Program
 from tm.machine import Machine, LinRecMachine
 from tm.macro import BlockMacro, BacksymbolMacro
 
-from tm.rust_stuff import str_st  # type: ignore[import]
+from tm.rust_stuff import str_st
 
 
 class TuringTest(BackwardReasoning):

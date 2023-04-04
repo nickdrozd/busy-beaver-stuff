@@ -4,7 +4,7 @@ from test.prog_data import GRAPHS, SPAGHETTI, KERNEL
 
 from tm.graph import Graph
 
-from tm.rust_stuff import st_str  # type: ignore[import]
+from tm.rust_stuff import st_str
 
 
 class TestGraph(TestCase):

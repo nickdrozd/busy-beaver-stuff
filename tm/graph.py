@@ -2,7 +2,7 @@ from functools import cached_property
 
 from tm.instrs import Color, State
 
-from tm.rust_stuff import parse, st_str  # type: ignore[import]
+from tm.rust_stuff import parse, st_str
 
 ConGraph = dict[State, set[State]]
 

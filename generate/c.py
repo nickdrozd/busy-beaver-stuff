@@ -1,7 +1,7 @@
 from tm.program import Program
 from tm.instrs import Color, Shift, State, Instr
 
-from tm.rust_stuff import st_str  # type: ignore[import]
+from tm.rust_stuff import st_str
 
 
 def make_comment(st: State, co: Color) -> str:

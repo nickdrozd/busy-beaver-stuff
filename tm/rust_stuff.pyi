@@ -1,0 +1,19 @@
+class PastConfig:
+    cycles: list[int]
+
+    def next_deltas(self, cycle: int) -> tuple[int, int] | None: ...
+
+
+from tm.instrs import State, Instr, Prog
+
+LetterState = str
+
+def parse(program: str) -> tuple[tuple[Instr | None, ...], ...]: ...
+
+def tcompile(program: str) -> Prog: ...
+
+def st_str(state: State | None) -> LetterState: ...
+
+def str_st(state: LetterState) -> State: ...
+
+def dcomp_instr(instr: Instr | None) -> str: ...

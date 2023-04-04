@@ -2,9 +2,12 @@ from unittest import TestCase
 
 from tm.machine import LinRecMachine
 
-from tm.rust_stuff import st_str, LEFT, RIGHT  # type: ignore[import]
+from tm.rust_stuff import st_str
 
 from generate.naive import yield_programs
+
+
+LEFT, RIGHT = 'L', 'R'
 
 
 def read_progs(name: str) -> set[str]:

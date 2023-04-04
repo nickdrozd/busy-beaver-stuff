@@ -6,7 +6,7 @@ from test.prog_data import *
 from tm.program import Program
 from tm.machine import Machine
 
-from tm.rust_stuff import str_st, st_str  # type: ignore[import]
+from tm.rust_stuff import str_st, st_str
 
 
 class BackwardReasoning(TestCase):
