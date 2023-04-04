@@ -20,7 +20,7 @@ class Graph:
         )
 
     def __str__(self) -> str:
-        return self.flatten()
+        return self.flatten(' ')
 
     def __repr__(self) -> str:
         return repr({
@@ -28,7 +28,7 @@ class Graph:
             for state, conns in self.arrows.items()
         })
 
-    def flatten(self, sep: str = ' ') -> str:
+    def flatten(self, sep: str) -> str:
         return sep.join(
             st_str(dst)
             for conn in self.arrows.values()
