@@ -2,7 +2,7 @@ from functools import cached_property
 
 from tm.instrs import Color, State
 
-from tm.rust_stuff import parse, st_str
+from tm.rust_stuff import parse, st_str, reduce_graph
 
 ConGraph = dict[State, set[State]]
 
@@ -150,88 +150,3 @@ class Graph:
             self.exit_points,
             len(self.states) * len(self.colors),
         )
-
-
-def reduce_graph(graph: ConGraph, passes: int) -> ConGraph:
-    for _ in range(passes):
-        if not graph:
-            break
-
-        cut_reflexive_arrows(graph)
-        inline_single_exit(graph)
-        inline_single_entry(graph)
-
-    return {
-        state: connections
-        for state, connections in graph.items()
-        if connections
-    }
-
-
-def purge_dead_ends(graph: ConGraph) -> None:
-    to_cut = {
-        state
-        for state, connections in graph.items()
-        if not connections
-    }
-
-    for state in to_cut:
-        for connections in graph.values():
-            connections.discard(state)
-
-        del graph[state]
-
-
-def inline_single_entry(graph: ConGraph) -> None:
-    for _ in range(len(graph)):
-        for dst in set(graph.keys()):
-            entries = {
-                src
-                for src in graph
-                if dst in graph[src]
-            }
-
-            if len(entries) != 1:
-                continue
-
-            entry_point = entries.pop()
-
-            for out in graph[dst]:
-                graph[entry_point].add(out)
-
-            graph[entry_point].remove(dst)
-            del graph[dst]
-
-            break
-        else:
-            break
-
-    purge_dead_ends(graph)
-
-
-def cut_reflexive_arrows(graph: ConGraph) -> None:
-    for state, connections in graph.items():
-        if state in connections:
-            connections.remove(state)
-
-
-def inline_single_exit(graph: ConGraph) -> None:
-    for state, connections in graph.items():
-        if state in connections:
-            connections.remove(state)
-            break
-
-        if not connections:
-            continue
-
-        if len(connections) > 1:
-            continue
-
-        exit_point = connections.pop()
-
-        for con_rep in graph.values():
-            if state in con_rep:
-                con_rep.remove(state)
-                con_rep.add(exit_point)
-
-    purge_dead_ends(graph)
