@@ -1,6 +1,8 @@
 from math import log10
 from abc import abstractmethod
 
+from tm.rust_stuff import UnknownRule, InfiniteRule, RuleLimit
+
 Plus = int
 Mult = tuple[int, int]
 
@@ -11,17 +13,6 @@ Index = tuple[int, int]
 Rule = dict[Index, Op]
 
 Counts = tuple[tuple[int, ...], tuple[int, ...]]
-
-
-class UnknownRule(Exception):
-    pass
-
-class InfiniteRule(Exception):
-    pass
-
-class RuleLimit(Exception):
-    pass
-
 
 def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> Op | None:
     if cnt1 == cnt2 == cnt3:
