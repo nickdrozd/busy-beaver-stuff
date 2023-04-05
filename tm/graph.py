@@ -20,20 +20,17 @@ class Graph:
         )
 
     def __str__(self) -> str:
-        return self.flatten(' ')
+        return ''.join(
+            st_str(dst)
+            for conn in self.arrows.values()
+            for dst in conn
+        )
 
     def __repr__(self) -> str:
         return repr({
             st_str(state): tuple(map(st_str, conns))
             for state, conns in self.arrows.items()
         })
-
-    def flatten(self, sep: str) -> str:
-        return sep.join(
-            st_str(dst)
-            for conn in self.arrows.values()
-            for dst in conn
-        )
 
     @cached_property
     def states(self) -> tuple[State, ...]:
@@ -69,7 +66,7 @@ class Graph:
 
     @cached_property
     def is_normal(self) -> bool:
-        flat_graph = self.flatten('')
+        flat_graph = str(self)
 
         if any(st_str(state) not in flat_graph
                for state in self.states[1:]):

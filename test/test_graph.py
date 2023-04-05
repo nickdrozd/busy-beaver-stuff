@@ -12,7 +12,7 @@ class TestGraph(TestCase):
     def assert_flat(self, flat: str):
         self.assertEqual(
             flat,
-            self.graph.flatten(' '))
+            str(self.graph))
 
     def assert_normal(self, norm: int):
         (self.assertTrue

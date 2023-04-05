@@ -1563,13 +1563,13 @@ GRAPHS: dict[
 ] = {
     # 2 2
     "1RB 1LB  1LA 1R_": (
-        "B B A _",
+        "BBA_",
         1, 1, 1, 0,
         {A: {B}, B: {A}},
         {A: {B}, B: {A}},
     ),
     "1RB 1LB  1LB 1LA": (
-        "B B B A",
+        "BBBA",
         1, 1, 0, 1,
         {A: {B}, B: {A, B}},
         {A: {B}, B: {A, B}},
@@ -1577,43 +1577,43 @@ GRAPHS: dict[
 
     # 3 2
     "1RB 0LB  1LA 0RA  ... ...": (
-        'B B A A . .',
+        "BBAA..",
         0, 0, 1, 0,
         {A: {B}, B: {A}, C: set()},
         {A: {B}, B: {A}, C: set()},
     ),
     "1RB 1LA  0LA 0RB  ... ...": (
-        'B A A B . .',
+        "BAAB..",
         0, 0, 0, 0,
         {A : {A, B}, B: {A, B}, C: set()},
         {A : {A, B}, B: {A, B}, C: set()},
     ),
     "1RB ...  0LB 1RC  1LB 0RC": (
-        'B . B C B C',
+        "B.BCBC",
         1, 0, 0, 1,
         {A: set(), B: {A, B, C}, C: {B, C}},
         {A: {B}, B: {B, C}, C: {B, C}},
     ),
     "1RB 1R_  1LB 0RC  1LC 1LA": (
-        "B _ B C C A",
+        "B_BCCA",
         1, 1, 0, 1,
         {A: {C}, B: {A, B}, C: {B, C}},
         {A: {B}, B: {B, C}, C: {A, C}},
     ),
     "1RC 1R_  1LB 0RC  1LB 1LA": (
-        "C _ B C B A",
+        "C_BCBA",
         0, 1, 0, 1,
         {A: {C}, B: {B, C}, C: {A, B}},
         {A: {C}, B: {B, C}, C: {A, B}},
     ),
     "1RB 0LB  1LA 0RC  1LC 1LA": (
-        "B B A C C A",
+        "BBACCA",
         1, 1, 0, 1,
         {A: {B, C}, B: {A}, C: {B, C}},
         {A: {B}, B: {A, C}, C: {A, C}},
     ),
     "1RB 0LA  1LB 0RC  1LC 1LB": (
-        "B A B C C B",
+        "BABCCB",
         1, 0, 0, 1,
         {A: {A}, B: {A, B, C}, C: {B, C}},
         {A: {A, B}, B: {B, C}, C: {B, C}},
@@ -1621,19 +1621,19 @@ GRAPHS: dict[
 
     # 2 3
     "1RB 2LB 1R_  2LA 2RB 1LB": (
-        "B B _ A B B",
+        "BB_ABB",
         1, 1, 0, 0,
         {A: {B}, B: {A, B}},
         {A: {B}, B: {A, B}},
     ),
     "1RB 2LB 1LA  2LB 2RA 0RA": (
-        "B B A B A A",
+        "BBABAA",
         1, 1, 0, 1,
         {A: {A, B}, B: {A, B}},
         {A: {A, B}, B: {A, B}},
     ),
     "1RB 2LB 1LA  2LB 2RB 0RB": (
-        "B B A B B B",
+        "BBABBB",
         1, 0, 0, 1,
         {A: {A}, B: {A, B}},
         {A: {A, B}, B: {B}},
@@ -1641,49 +1641,49 @@ GRAPHS: dict[
 
     # 4 2
     "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": (
-        "B B A C _ D D A",
+        "BBAC_DDA",
         1, 1, 0, 1,
         {A: {B, D}, B: {A}, C: {B}, D: {C, D}},
         {A: {B}, B: {A, C}, C: {D}, D: {A, D}},
     ),
     "1RC 1LB  1LA 0LC  1R_ 1LD  1RC 0RA": (
-        "C B A C _ D C A",
+        "CBAC_DCA",
         0, 1, 1, 0,
         {A: {B, D}, B: {A}, C: {A, B, D}, D: {C}},
         {A: {B, C}, B: {A, C}, C: {D}, D: {A, C}},
     ),
     "1RB 1LB  1LA 0LB  1R_ 1LC  1RD 0RA": (
-        "B B A B _ C D A",
+        "BBAB_CDA",
         1, 0, 0, 1,
         {A: {B, D}, B: {A, B}, C: {C}, D: {D}},
         {A: {B}, B: {A, B}, C: {C}, D: {A, D}},
     ),
     "1RC 1LB  1LA 0LC  1R_ 1LD  1RD 0RD": (
-        "C B A C _ D D D",
+        "CBAC_DDD",
         0, 0, 0, 1,
         {A: {B}, B: {A}, C: {A, B}, D: {C, D}},
         {A: {B, C}, B: {A, C}, C: {D}, D: {D}},
     ),
     "1RB 0LC  1LD 0LA  1RC 1RD  1LA 0LD": (
-        "B C D A C D A D",
+        "BCDACDAD",
         1, 1, 0, 1,
         {A: {B, D}, B: {A}, C: {A, C}, D: {B, C, D}},
         {A: {B, C}, B: {A, D}, C: {C, D}, D: {A, D}},
     ),
     "1RB 0LC  1LC 0LA  1RC 1RB  1LA 0LD": (
-        "B C C A C B A D",
+        "BCCACBAD",
         1, 0, 0, 1,
         {A: {B, D}, B: {A, C}, C: {A, B, C}, D: {D}},
         {A: {B, C}, B: {A, C}, C: {B, C}, D: {A, D}},
     ),
     "1RC 0LB  1LD 0LA  1RC 1RD  1LA 0LD": (
-        "C B D A C D A D",
+        "CBDACDAD",
         0, 1, 0, 1,
         {A: {B, D}, B: {A}, C: {A, C}, D: {B, C, D}},
         {A: {B, C}, B: {A, D}, C: {C, D}, D: {A, D}},
     ),
     "1RC 0LC  1LD 0LA  1RC 1RD  1LA 0LD": (
-        "C C D A C D A D",
+        "CCDACDAD",
         0, 0, 0, 1,
         {A: {B, D}, B: set(), C: {A, C}, D: {B, C, D}},
         {A: {C}, B: {A, D}, C: {C, D}, D: {A, D}},
@@ -1691,13 +1691,13 @@ GRAPHS: dict[
 
     # 2 4
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
-        "B A A A B A B _",
+        "BAAABAB_",
         1, 1, 0, 1,
         {A: {A, B}, B: {A, B}},
         {A: {A, B}, B: {A, B}},
     ),
     "1RA 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
-        "A A A A B A B _",
+        "AAAABAB_",
         1, 0, 0, 1,
         {A: {A, B}, B: {B}},
         {A: {A}, B: {A, B}},
@@ -1705,25 +1705,25 @@ GRAPHS: dict[
 
     # 3 3
     "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (
-        "B B C A B B _ A C",
+        "BBCABB_AC",
         1, 1, 0, 0,
         {A: {B, C}, B: {A, B}, C: {A, C}},
         {A: {B, C}, B: {A, B}, C: {A, C}},
     ),
     "1RB 2LB 1LA  1LA 2RB 1RB  1R_ 2LA 0LC": (
-        "B B A A B B _ A C",
+        "BBAABB_AC",
         1, 0, 0, 0,
         {A: {A, B, C}, B: {A, B}, C: {C}},
         {A: {A, B}, B: {A, B}, C: {A, C}},
     ),
     "1RC 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (
-        "C B C A B B _ A C",
+        "CBCABB_AC",
         0, 1, 0, 0,
         {A: {B, C}, B: {A, B}, C: {A, C}},
         {A: {B, C}, B: {A, B}, C: {A, C}},
     ),
     "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (
-        "B C _ A C B B C C",
+        "BC_ACBBCC",
         1, 1, 0, 0,
         {A: {B}, B: {A, B, C}, C: {A, B, C}},
         {A: {B, C}, B: {A, B, C}, C: {B, C}},
@@ -1731,25 +1731,25 @@ GRAPHS: dict[
 
     # 5 2
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (
-        "B C C B D E A D _ A",
+        "BCCBDEAD_A",
         1, 1, 0, 0,
         {A: {D, E}, B: {A, B}, C: {A, B}, D: {C, D}, E: {C}},
         {A: {B, C}, B: {B, C}, C: {D, E}, D: {A, D}, E: {A}},
     ),
     "1RB 1LC  1RC 1RB  0LE 1RD  1LA 1LD  1R_ 0LA": (
-        "B C C B E D A D _ A",
+        "BCCBEDAD_A",
         0, 1, 0, 0,
         {A: {D, E}, B: {A, B}, C: {A, B}, D: {C, D}, E: {C}},
         {A: {B, C}, B: {B, C}, C: {E, D}, D: {A, D}, E: {A}},
     ),
     "1RB 1LC  1RC 1RB  1RD 0LC  1LA 1LD  1R_ 0LE": (
-        "B C C B D C A D _ E",
+        "BCCBDCAD_E",
         1, 0, 0, 0,
         {A: {D}, B: {A, B}, C: {A, B, C}, D: {C, D}, E: {E}},
         {A: {B, C}, B: {B, C}, C: {C, D}, D: {A, D}, E: {E}},
     ),
     "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE": (
-        "B C C A B D A E D E",
+        "BCCABDAEDE",
         1, 1, 0, 0,
         {A: {B, D}, B: {A, C}, C: {A, B}, D: {C, E}, E: {D, E}},
         {A: {B, C}, B: {A, C}, C: {B, D}, D: {A, E}, E: {D, E}},
