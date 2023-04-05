@@ -54,7 +54,7 @@ pub fn tcompile(program: &str) -> Prog {
 }
 
 #[pyfunction]
-pub fn st_str(state: Option<State>) -> char {
+pub const fn st_str(state: Option<State>) -> char {
     match state {
         Some(-1) => HALT,
         None => UNDF,
@@ -63,11 +63,11 @@ pub fn st_str(state: Option<State>) -> char {
 }
 
 #[pyfunction]
-pub fn str_st(state: char) -> State {
+pub const fn str_st(state: char) -> State {
     if state == HALT {
         -1
     } else {
-        (state as u8 - 65) as State
+        (state as State) - 65
     }
 }
 

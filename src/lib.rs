@@ -1,3 +1,12 @@
+#![deny(clippy::all)]
+#![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::redundant_pub_crate)]
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_possible_truncation)]
+
 mod graph;
 mod parsemod;
 mod prover;
@@ -5,11 +14,11 @@ mod prover;
 use pyo3::prelude::*;
 
 use graph::Graph;
-use parsemod::*;
-use prover::*;
+use parsemod::{dcomp_instr, parse, st_str, str_st, tcompile};
+use prover::PastConfig;
 
 #[pymodule]
-fn rust_stuff(_py: Python, m: &PyModule) -> PyResult<()> {
+pub fn rust_stuff(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Graph>()?;
 
     m.add_function(wrap_pyfunction!(parse, m)?)?;

@@ -29,7 +29,7 @@ impl Graph {
             })
             .collect();
 
-        Graph { arrows }
+        Self { arrows }
     }
 
     fn __str__(&self) -> String {
@@ -47,8 +47,8 @@ impl Graph {
 
     #[getter]
     fn states(&self) -> Vec<State> {
-        let mut states: Vec<_> = self.arrows.keys().cloned().collect();
-        states.sort();
+        let mut states: Vec<_> = self.arrows.keys().copied().collect();
+        states.sort_unstable();
         states
     }
 
@@ -88,7 +88,7 @@ impl Graph {
             .map(|state| (*state, HashSet::new()))
             .collect();
 
-        for (state, exits) in self.exit_points().iter() {
+        for (state, exits) in &self.exit_points() {
             for exit_point in exits {
                 entries.get_mut(exit_point).unwrap().insert(*state);
             }
@@ -125,18 +125,15 @@ impl Graph {
     #[getter]
     fn is_strongly_connected(&self) -> bool {
         for state in self.states() {
-            let mut reachable_from_x: HashSet<i32> = self.arrows[&state]
-                .iter()
-                .cloned()
-                .flatten()
-                .collect();
+            let mut reachable_from_x: HashSet<i32> =
+                self.arrows[&state].iter().copied().flatten().collect();
 
             for _ in self.states() {
                 let new_reachable: HashSet<i32> = reachable_from_x
                     .iter()
                     .filter_map(|&connection| self.arrows.get(&connection))
                     .flat_map(|nodes| nodes.iter())
-                    .cloned()
+                    .copied()
                     .flatten()
                     .collect();
 
@@ -214,8 +211,7 @@ impl Graph {
     }
 }
 
-#[pyfunction]
-pub fn reduce_graph(mut graph: ConGraph, passes: usize) -> ConGraph {
+fn reduce_graph(mut graph: ConGraph, passes: usize) -> ConGraph {
     for _ in 0..passes {
         if graph.is_empty() {
             break;
