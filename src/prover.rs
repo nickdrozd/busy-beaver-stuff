@@ -8,6 +8,7 @@ pub struct PastConfig {
 #[pymethods]
 impl PastConfig {
     #[new]
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         PastConfig { cycles: Vec::new() }
     }

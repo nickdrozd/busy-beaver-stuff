@@ -31,6 +31,9 @@ rust_stuff.so : test-rust
 test-rust :
 	cargo test --release
 
+clippy :
+	cargo clippy
+
 ## Python ##############################
 
 PYTHON = python3
@@ -39,7 +42,7 @@ MODULES = tm generate test *.py
 
 PYLINT = $(PYTHON) -m pylint
 
-lint :
+lint : clippy
 	$(PYLINT) --version
 	$(PYLINT) --enable-all-extensions $(MODULES)
 	$(MAKE) type

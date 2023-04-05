@@ -39,7 +39,7 @@ impl Graph {
         let result: String = sorted_arrows
             .iter()
             .flat_map(|(_, conn)| conn.iter())
-            .map(|&dst| st_str(dst.map(|d| d as i32)))
+            .map(|&dst| st_str(dst))
             .collect();
 
         result
@@ -128,7 +128,7 @@ impl Graph {
             let mut reachable_from_x: HashSet<i32> = self.arrows[&state]
                 .iter()
                 .cloned()
-                .filter_map(|opt_state| opt_state)
+                .flatten()
                 .collect();
 
             for _ in self.states() {
@@ -137,7 +137,7 @@ impl Graph {
                     .filter_map(|&connection| self.arrows.get(&connection))
                     .flat_map(|nodes| nodes.iter())
                     .cloned()
-                    .filter_map(|opt_state| opt_state)
+                    .flatten()
                     .collect();
 
                 reachable_from_x.extend(new_reachable);
