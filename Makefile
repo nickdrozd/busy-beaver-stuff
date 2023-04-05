@@ -24,9 +24,12 @@ clean-rust :
 
 rust : rust_stuff.so
 
-rust_stuff.so :
+rust_stuff.so : test-rust
 	cargo build --release
 	cp target/release/librust_stuff.so tm/rust_stuff.so
+
+test-rust :
+	cargo test --release
 
 ## Python ##############################
 
@@ -66,10 +69,10 @@ SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(TP) $(TREEF) $(COV)
 
 PYTEST = $(PYTHON) -m unittest
 
-test :
+test : rust
 	$(PYTEST) -v $(SHORT_TESTS) $(LR) $(TUR)
 
-test-all : compile
+test-all : rust
 	$(PYTEST) discover -v
 
 COVERAGE = $(PYTHON) -m coverage
