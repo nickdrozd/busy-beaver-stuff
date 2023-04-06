@@ -1,6 +1,35 @@
-use pyo3::create_exception;
 use pyo3::exceptions::PyException;
+use pyo3::prelude::*;
 
-create_exception!(rules, UnknownRule, PyException);
-create_exception!(rules, InfiniteRule, PyException);
-create_exception!(rules, RuleLimit, PyException);
+#[pyclass(extends=PyException)]
+pub struct UnknownRule {}
+
+#[pymethods]
+impl UnknownRule {
+    #[new]
+    const fn new() -> Self {
+        Self {}
+    }
+}
+
+#[pyclass(extends=PyException)]
+pub struct InfiniteRule {}
+
+#[pymethods]
+impl InfiniteRule {
+    #[new]
+    const fn new() -> Self {
+        Self {}
+    }
+}
+
+#[pyclass(extends=PyException)]
+pub struct RuleLimit {}
+
+#[pymethods]
+impl RuleLimit {
+    #[new]
+    const fn new() -> Self {
+        Self {}
+    }
+}
