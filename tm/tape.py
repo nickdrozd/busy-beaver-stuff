@@ -407,13 +407,17 @@ class PtrTape:
     def l_end(self) -> int:
         return 0 - self.init
 
-    def __getitem__(self, tape_index: slice) -> list[int]:
-        if (stop := tape_index.stop) is None:
+    def get(
+            self,
+            start: int | None = None,
+            stop: int | None = None,
+    ) -> list[Color]:
+        if stop is None:
             stop = self.r_end + 1
         else:
             self.extend_to_bound_right(stop)
 
-        if (start := tape_index.start) is None:
+        if start is None:
             start = self.l_end
         else:
             self.extend_to_bound_left(start)

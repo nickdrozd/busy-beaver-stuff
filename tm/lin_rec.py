@@ -100,10 +100,10 @@ class History:
             leftmost = min(positions[steps:])
 
             if tape2.r_end > tape1.r_end:
-                _ = tape1[ : tape2.r_end ]
+                _ = tape1.get(start = None, stop = tape2.r_end)
 
-            slice1 = tape1[        leftmost : ]
-            slice2 = tape2[ diff + leftmost : ]
+            slice1 = tape1.get(start = leftmost, stop = None)
+            slice2 = tape2.get(start = diff + leftmost, stop = None)
 
             slice2 = slice2 + [0] * (len(slice1) - len(slice2))
 
@@ -111,10 +111,10 @@ class History:
             rightmost = max(positions[steps:]) + 1
 
             if tape2.l_end < tape1.l_end:
-                _ = tape1[ tape2.l_end : ]
+                _ = tape1.get(start = tape2.l_end, stop = None)
 
-            slice1 = tape1[ : rightmost        ]
-            slice2 = tape2[ : rightmost + diff ]
+            slice1 = tape1.get(start = None, stop = rightmost       )
+            slice2 = tape2.get(start = None, stop = rightmost + diff)
 
             slice2 = [0] * (len(slice1) - len(slice2)) + slice2
 
@@ -124,8 +124,8 @@ class History:
             leftmost  = min(positions[steps:])
             rightmost = max(positions[steps:]) + 1
 
-            slice1 = tape1[ leftmost : rightmost ]
-            slice2 = tape2[ leftmost : rightmost ]
+            slice1 = tape1.get(leftmost, rightmost)
+            slice2 = tape2.get(leftmost, rightmost)
 
         return (
             (steps, _period := recurrence - steps)
