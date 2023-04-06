@@ -100,8 +100,7 @@ class History:
             leftmost = min(positions[steps:])
 
             if tape2.r_end > tape1.r_end:
-                # pylint: disable = pointless-statement
-                tape1[ : tape2.r_end ]
+                _ = tape1[ : tape2.r_end ]
 
             slice1 = tape1[        leftmost : ]
             slice2 = tape2[ diff + leftmost : ]
@@ -112,8 +111,7 @@ class History:
             rightmost = max(positions[steps:]) + 1
 
             if tape2.l_end < tape1.l_end:
-                # pylint: disable = pointless-statement
-                tape1[ tape2.l_end : ]
+                _ = tape1[ tape2.l_end : ]
 
             slice1 = tape1[ : rightmost        ]
             slice2 = tape2[ : rightmost + diff ]
