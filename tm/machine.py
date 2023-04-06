@@ -3,12 +3,16 @@ from __future__ import annotations
 from typing import Self
 
 from tm.tape import Tape, show_number
-from tm.rules import InfiniteRule, RuleLimit
 from tm.instrs import State, Slot, GetInstr
 from tm.prover import Prover
 from tm.lin_rec import History, RecRes, Tapes
 
-from tm.rust_stuff import tcompile, st_str
+from tm.rust_stuff import (
+    st_str,
+    tcompile,
+    RuleLimit,
+    InfiniteRule,
+)
 
 
 LinRec = tuple[int | None, int]

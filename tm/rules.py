@@ -1,7 +1,11 @@
 from math import log10
 from abc import abstractmethod
 
-from tm.rust_stuff import UnknownRule, InfiniteRule, RuleLimit
+from tm.rust_stuff import (
+    calculate_diff,
+    InfiniteRule,
+    RuleLimit,
+)
 
 Plus = int
 Mult = tuple[int, int]
@@ -13,19 +17,6 @@ Index = tuple[int, int]
 Rule = dict[Index, Op]
 
 Counts = tuple[tuple[int, ...], tuple[int, ...]]
-
-
-def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> Op | None:
-    if cnt1 == cnt2 == cnt3:
-        return None
-
-    if (plus := cnt2 - cnt1) == cnt3 - cnt2:
-        return plus
-
-    if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
-        return mult
-
-    raise UnknownRule()
 
 
 def make_rule(cnts1: Counts, cnts2: Counts, cnts3: Counts) -> Rule:
