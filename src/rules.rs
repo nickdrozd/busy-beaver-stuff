@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use num_bigint::BigInt;
 use pyo3::create_exception;
 use pyo3::exceptions::PyException;
@@ -15,6 +17,12 @@ pub enum Op {
     Mult(Num, Num),
 }
 
+type Index = (usize, usize);
+
+type Rule = HashMap<Index, Op>;
+
+type Counts = (Vec<Num>, Vec<Num>);
+
 impl IntoPy<PyObject> for Op {
     fn into_py(self, py: Python) -> PyObject {
         match self {
@@ -25,6 +33,7 @@ impl IntoPy<PyObject> for Op {
 }
 
 #[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
 pub fn calculate_diff(cnt1: Num, cnt2: Num, cnt3: Num) -> PyResult<Option<Op>> {
     if cnt1 == cnt2 && cnt2 == cnt3 {
         return Ok(None);
@@ -46,4 +55,49 @@ pub fn calculate_diff(cnt1: Num, cnt2: Num, cnt3: Num) -> PyResult<Option<Op>> {
     }
 
     Err(UnknownRule::new_err(""))
+}
+
+#[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
+pub fn make_rule(counts1: Counts, counts2: Counts, counts3: Counts) -> PyResult<Rule> {
+    let mut rule = HashMap::new();
+
+    for i in 0..counts1.0.len() {
+        let diff = calculate_diff(
+            counts1.0[i].clone(),
+            counts2.0[i].clone(),
+            counts3.0[i].clone(),
+        );
+
+        if let Ok(Some(op)) = diff {
+            rule.insert((0, i), op);
+        } else if let Err(err) = diff {
+            return Err(err);
+        }
+    }
+
+    for i in 0..counts1.1.len() {
+        let diff = calculate_diff(
+            counts1.1[i].clone(),
+            counts2.1[i].clone(),
+            counts3.1[i].clone(),
+        );
+
+        if let Ok(Some(op)) = diff {
+            rule.insert((1, i), op);
+        } else if let Err(err) = diff {
+            return Err(err);
+        }
+    }
+
+    let all_plus_positive = rule.values().all(|op| match op {
+        Op::Plus(val) => val >= &BigInt::from(0),
+        Op::Mult(_, _) => true,
+    });
+
+    if all_plus_positive {
+        Err(InfiniteRule::new_err(""))
+    } else {
+        Ok(rule)
+    }
 }

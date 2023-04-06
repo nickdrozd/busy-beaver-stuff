@@ -17,7 +17,7 @@ use pyo3::prelude::*;
 use graph::Graph;
 use parsemod::{dcomp_instr, parse, st_str, str_st, tcompile};
 use prover::PastConfig;
-use rules::{calculate_diff, InfiniteRule, RuleLimit, UnknownRule};
+use rules::{calculate_diff, make_rule, InfiniteRule, RuleLimit, UnknownRule};
 
 #[pymodule]
 pub fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
@@ -35,6 +35,7 @@ pub fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("InfiniteRule", py.get_type::<InfiniteRule>())?;
     m.add("RuleLimit", py.get_type::<RuleLimit>())?;
     m.add_function(wrap_pyfunction!(calculate_diff, m)?)?;
+    m.add_function(wrap_pyfunction!(make_rule, m)?)?;
 
     Ok(())
 }

@@ -4,10 +4,14 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.instrs import State, Slot, GetInstr
-from tm.rules import make_rule, Rule
+from tm.rules import Rule
 from tm.tape import Signature, Tape, BlockTape, TagTape, EnumTape
 
-from tm.rust_stuff import PastConfig, UnknownRule
+from tm.rust_stuff import (
+    PastConfig,
+    make_rule,
+    UnknownRule,
+)
 
 
 MinSig = tuple[Signature, tuple[bool, bool]]

@@ -79,7 +79,15 @@ Mult = tuple[int, int]
 
 Op = Plus | Mult
 
+Index = tuple[int, int]
+
+Rule = dict[Index, Op]
+
+Counts = tuple[tuple[int, ...], tuple[int, ...]]
+
 def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> Op | None: ...
+
+def make_rule(cnts1: Counts, cnts2: Counts, cnts3: Counts) -> Rule: ...
 
 class InfiniteRule(Exception): ...
 class RuleLimit(Exception): ...
