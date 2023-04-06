@@ -10,15 +10,17 @@
 mod graph;
 mod parsemod;
 mod prover;
+mod rules;
 
 use pyo3::prelude::*;
 
 use graph::Graph;
 use parsemod::{dcomp_instr, parse, st_str, str_st, tcompile};
 use prover::PastConfig;
+use rules::*;
 
 #[pymodule]
-pub fn rust_stuff(_py: Python, m: &PyModule) -> PyResult<()> {
+pub fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Graph>()?;
 
     m.add_function(wrap_pyfunction!(parse, m)?)?;
@@ -28,6 +30,10 @@ pub fn rust_stuff(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(dcomp_instr, m)?)?;
 
     m.add_class::<PastConfig>()?;
+
+    m.add("UnknownRule", py.get_type::<UnknownRule>())?;
+    m.add("InfiniteRule", py.get_type::<InfiniteRule>())?;
+    m.add("RuleLimit", py.get_type::<RuleLimit>())?;
 
     Ok(())
 }
