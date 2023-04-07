@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use num_bigint::BigInt;
 use num_integer::Integer;
+use num_traits::sign::Signed;
 use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
@@ -97,4 +98,73 @@ pub fn make_rule(counts1: Counts, counts2: Counts, counts3: Counts) -> PyResult<
     } else {
         Ok(rule)
     }
+}
+
+pub trait ApplyRule {
+    fn __getitem__(&self, index: &Index) -> Num;
+
+    fn __setitem__(&self, index: &Index, val: Num);
+
+    fn count_apps(&self, rule: &Rule) -> Option<Num> {
+        let mut divs: Vec<Num> = vec![];
+
+        let zero = BigInt::from(0);
+
+        for (pos, diff) in rule {
+            if let Op::Plus(plus_diff) = diff {
+                if plus_diff >= &zero {
+                    continue;
+                }
+
+                let abs_diff = plus_diff.abs();
+
+                let count = self.__getitem__(pos);
+
+                if abs_diff >= count {
+                    return None;
+                }
+
+                let (div, rem) = count.div_rem(&abs_diff);
+                divs.push(if rem > zero { div } else { div - 1 });
+            }
+        }
+
+        Some(divs.iter().min()?.clone())
+    }
+
+    fn apply_rule(&mut self, rule: &Rule) -> PyResult<Option<Num>> {
+        let Some(times) = self.count_apps(rule) else { return Ok(None) };
+
+        if rule.values().any(|op| !matches!(op, Op::Plus(_))) && log10_limit(times.clone()) {
+            return Err(RuleLimit::new_err(""));
+        }
+
+        for (pos, diff) in rule {
+            match diff {
+                Op::Plus(plus_diff) => {
+                    let new_val = self.__getitem__(pos) + plus_diff * &times;
+                    self.__setitem__(pos, new_val);
+                }
+                Op::Mult((div, rem)) => {
+                    let term = &times * (1 + (&times - div) / (div - 1));
+                    let new_val = self.__getitem__(pos) * &times + rem * term;
+                    self.__setitem__(pos, new_val);
+                }
+            }
+        }
+
+        Ok(Some(times))
+    }
+}
+
+fn log10_limit(mut num: Num) -> bool {
+    for _ in 0..10 {
+        num /= 10;
+
+        if num == BigInt::from(0) {
+            return false;
+        }
+    }
+
+    true
 }
