@@ -19,8 +19,6 @@ class UnknownRule(Exception):
 class InfiniteRule(Exception):
     pass
 
-RULE_APP_LOG_LIMIT = 10
-
 class RuleLimit(Exception):
     pass
 
@@ -81,7 +79,7 @@ class ApplyRule:
             return None
 
         if (any(not isinstance(op, Plus) for op in rule.values())
-                and log10(times) > RULE_APP_LOG_LIMIT):
+                and log10(times) > 10):
             raise RuleLimit()
 
         for pos, diff in rule.items():
