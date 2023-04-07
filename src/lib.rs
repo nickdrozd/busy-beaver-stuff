@@ -8,14 +8,14 @@
 #![allow(clippy::cast_possible_truncation)]
 
 mod graph;
-mod parsemod;
+mod parse;
 mod prover;
 mod rules;
 
 use pyo3::prelude::*;
 
 use graph::Graph;
-use parsemod::{dcomp_instr, parse, st_str, str_st, tcompile};
+use parse::{dcomp_instr, parse as parse_fn, st_str, str_st, tcompile};
 use prover::PastConfig;
 use rules::{calculate_diff, make_rule, InfiniteRule, RuleLimit, UnknownRule};
 
@@ -23,7 +23,7 @@ use rules::{calculate_diff, make_rule, InfiniteRule, RuleLimit, UnknownRule};
 pub fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Graph>()?;
 
-    m.add_function(wrap_pyfunction!(parse, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_fn, m)?)?;
     m.add_function(wrap_pyfunction!(tcompile, m)?)?;
     m.add_function(wrap_pyfunction!(st_str, m)?)?;
     m.add_function(wrap_pyfunction!(str_st, m)?)?;

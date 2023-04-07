@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use pyo3::prelude::*;
 
-use crate::parsemod::{parse, st_str};
+use crate::parse::{parse, st_str};
 
 type Color = i32;
 type State = i32;
