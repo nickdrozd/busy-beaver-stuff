@@ -8,6 +8,7 @@
 #![allow(clippy::cast_possible_truncation)]
 
 mod graph;
+mod instrs;
 mod parse;
 mod prover;
 mod rules;

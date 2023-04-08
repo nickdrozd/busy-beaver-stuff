@@ -2,10 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use pyo3::prelude::*;
 
+use crate::instrs::{Color, State};
 use crate::parse::{parse, st_str};
-
-type Color = i32;
-type State = i32;
 
 type ConGraph = HashMap<State, HashSet<State>>;
 
