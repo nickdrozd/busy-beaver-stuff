@@ -331,8 +331,8 @@ class EnumTape(BlockTape):
         if not pull:
             self._edges[bool(shift)] = True
         else:
-            if (near_block := pull[0])[2:]:
-                _, _, ind, offset = near_block
+            if other := (near_block := pull[0])[2:]:
+                ind, offset = other
 
                 if offset > self.offsets[ind]:
                     self.offsets[ind] = offset
@@ -340,14 +340,14 @@ class EnumTape(BlockTape):
             if skip and near_block[0] == self.scan:
                 if not pull[1:]:
                     self._edges[bool(shift)] = True
-                elif (next_block := pull[1])[2:]:
-                    _, _, ind, offset = next_block
+                elif next_block := pull[1][2:]:
+                    ind, offset = next_block
 
                     if offset > self.offsets[ind]:
                         self.offsets[ind] = offset
 
-        if push and (opp := push[0])[2:] and color == opp[0]:
-            _, _, ind, offset = opp
+        if push and (other := (opp := push[0])[2:]) and color == opp[0]:
+            ind, offset = other
 
             if offset > self.offsets[ind]:
                 self.offsets[ind] = offset
