@@ -207,7 +207,7 @@ class Program:
 
         self[slot] = orig
 
-    def swap_states(self, st1: State, st2: State) -> Program:
+    def swap_states(self, st1: State, st2: State) -> Self:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 
         for slot, (color, shift, state) in self.used_instr_slots:
@@ -219,7 +219,7 @@ class Program:
 
         return self
 
-    def swap_colors(self, co1: Color, co2: Color) -> Program:
+    def swap_colors(self, co1: Color, co2: Color) -> Self:
         for state_str in self.states:
             st_key = self[state_str]
             st_key[co1], st_key[co2] = st_key[co2], st_key[co1]
@@ -233,7 +233,7 @@ class Program:
 
         return self
 
-    def normalize_states(self) -> Program:
+    def normalize_states(self) -> Self:
         for _ in self.states:  # pragma: no branch
             todo = sorted(self.states)[1:]
 
@@ -253,7 +253,7 @@ class Program:
 
         return self
 
-    def normalize_colors(self) -> Program:
+    def normalize_colors(self) -> Self:
         for _ in self.colors:  # pragma: no branch
             todo = sorted(self.colors)[1:]
 
@@ -272,7 +272,7 @@ class Program:
 
         return self
 
-    def normalize_directions(self) -> Program:
+    def normalize_directions(self) -> Self:
         # pylint: disable = unsubscriptable-object
         if (index := self[0, 0]) is None or index[1]:
             return self
@@ -282,7 +282,7 @@ class Program:
 
         return self
 
-    def normalize(self) -> Program:
+    def normalize(self) -> Self:
         for _ in self.colors:
             self.normalize_states()
             self.normalize_colors()

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from tm.tape import Tape, show_number
 from tm.rules import InfiniteRule, RuleLimit
 from tm.parse import tcompile, st_str
@@ -111,7 +113,7 @@ class Machine:
             state: State = 0,
             tape: Tape | None = None,
             prover: bool = False,
-    ) -> Machine:
+    ) -> Self:
         comp: GetInstr = (
             tcompile(self.program)
             if isinstance(self.program, str) else
@@ -232,7 +234,7 @@ class LinRecMachine(Machine):
         skip: bool = False,
         check_rec: int | None = None,
         samples: Tapes | None = None,
-    ) -> LinRecMachine:
+    ) -> Self:
         assert (
             check_rec is not None
             or samples is not None)
