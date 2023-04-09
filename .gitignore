@@ -10,3 +10,5 @@ htmlcov
 build/
 classes.png
 packages.png
+target/
+Cargo.lock
