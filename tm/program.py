@@ -7,19 +7,21 @@ from functools import cached_property
 from collections import defaultdict
 from collections.abc import Iterator
 
+from tm.parse import parse, dcomp_instr
+from tm.instrs import Color, State, Slot, Instr
+
 from tm.tape import Tape
 from tm.graph import Graph
+from tm.parse import tcompile
 from tm.machine import Machine
 from tm.lin_rec import History
-from tm.instrs import Color, State, Slot, Instr
-from tm.parse import parse, tcompile, dcomp_instr
 
 ProgStr = str
 
 Switch = dict[Color, Instr | None]
 
 
-class Program:
+class BasicProgram:
     prog: dict[State, Switch]
 
     def __init__(self, program: ProgStr):
@@ -27,8 +29,6 @@ class Program:
             state: dict(enumerate(instrs))
             for state, instrs in enumerate(parse(program))
         }
-
-        self.graph = Graph(program)
 
     def __repr__(self) -> ProgStr:
         return '  '.join([
@@ -180,20 +180,6 @@ class Program:
             (False, True),
             self.available_states)
 
-    @property
-    def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
-        partial = Program.init(len(self.states), len(self.colors))
-
-        for _ in range(len(self.states) * len(self.colors) - 1):
-            if (result := Machine(partial).run().undfnd) is None:
-                return
-
-            step, slot = result
-
-            yield str(partial), step, slot
-
-            partial[slot] = self[slot]
-
     def branch(self, slot: Slot) -> Iterator[ProgStr]:
         orig = self[slot]
 
@@ -288,6 +274,29 @@ class Program:
             self.normalize_colors()
 
         return self.normalize_directions()
+
+
+class Program(BasicProgram):
+    graph: Graph
+
+    def __init__(self, program: ProgStr):
+        self.graph = Graph(program)
+
+        super().__init__(program)
+
+    @property
+    def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
+        partial = Program.init(len(self.states), len(self.colors))
+
+        for _ in range(len(self.states) * len(self.colors) - 1):
+            if (result := Machine(partial).run().undfnd) is None:
+                return
+
+            step, slot = result
+
+            yield str(partial), step, slot
+
+            partial[slot] = self[slot]
 
     @property
     def cant_halt(self) -> bool:
