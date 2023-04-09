@@ -44,6 +44,24 @@ class BlockTape(ApplyRule):
             + list(map(show_block, self.rspan)))
 
     @property
+    def blank(self) -> bool:
+        return self.scan == 0 and not self.lspan and not self.rspan
+
+    @property
+    def marks(self) -> int:
+        return (
+            (1 if self.scan != 0 else 0)
+            + sum(q for (c, q, *_) in self.lspan if c != 0)
+            + sum(q for (c, q, *_) in self.rspan if c != 0)
+        )
+
+    def at_edge(self, edge: Shift) -> bool:
+        return (
+            self.scan == 0
+            and not (self.rspan if edge else self.lspan)
+        )
+
+    @property
     def counts(self) -> Counts:
         return (
             tuple(block[1] for block in self.lspan),
@@ -125,24 +143,6 @@ class Tape(BlockTape):
             self.scan,
             tuple(c if q != 1 else (c,) for (c, q) in self.lspan),
             tuple(c if q != 1 else (c,) for (c, q) in self.rspan),
-        )
-
-    @property
-    def blank(self) -> bool:
-        return self.scan == 0 and not self.lspan and not self.rspan
-
-    @property
-    def marks(self) -> int:
-        return (
-            (1 if self.scan != 0 else 0)
-            + sum(q for (c, q) in self.lspan if c != 0)
-            + sum(q for (c, q) in self.rspan if c != 0)
-        )
-
-    def at_edge(self, edge: Shift) -> bool:
-        return (
-            self.scan == 0
-            and not (self.rspan if edge else self.lspan)
         )
 
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
