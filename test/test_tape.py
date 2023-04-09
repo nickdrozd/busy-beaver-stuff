@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from tm.rules import Rule
 from tm.instrs import Color
 from tm.tape import Tape, TagTape, EnumTape, Signature, BlockSpan
 
@@ -182,6 +183,9 @@ class TestTags(TestCase):
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
 
+    def apply_rule(self, rule: Rule) -> None:
+        self.tape.apply_rule(rule)
+
     def test_trace_1(self):
         # 1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA : BBB(4, 2)
         #    49 |   144 | D1 | 1^15 [1] 1^6
@@ -218,8 +222,7 @@ class TestTags(TestCase):
 
         self.assert_tape([[1, 1], [0, 4, 0]], 0, [])
 
-        self.lspan[0][1] -= 3
-        self.lspan[1][1] += 3
+        self.apply_rule({(0, 0): -1, (0, 1): 1})
 
         self.assert_tape([[1, 4], [0, 1, 0]], 0, [])
 
@@ -262,12 +265,10 @@ class TestTags(TestCase):
 
         self.assert_tape([], 1, [[1, 1], [2, 30, 0], [1, 1]])
 
-        self.rspan[0][1] = 57
-        self.rspan[1][1] = 2
-
-        self.assert_tape([], 1, [[1, 57], [2, 2, 0], [1, 1]])
-
         self.step(1, 2, 1)
+
+        self.apply_rule({(0, 0): 4, (1, 0): -2})
+
         self.step(0, 1, 1)
 
         self.assert_tape([], 0, [[1, 59], [2, 1, 0], [1, 1]])
