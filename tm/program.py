@@ -7,11 +7,11 @@ from functools import cached_property
 from collections import defaultdict
 from collections.abc import Iterator
 
+from tm.graph import Graph
 from tm.parse import parse, dcomp_instr
 from tm.instrs import Color, State, Slot, Instr
 
 from tm.tape import Tape
-from tm.graph import Graph
 from tm.parse import tcompile
 from tm.machine import Machine
 from tm.lin_rec import History
@@ -24,11 +24,15 @@ Switch = dict[Color, Instr | None]
 class BasicProgram:
     prog: dict[State, Switch]
 
+    graph: Graph
+
     def __init__(self, program: ProgStr):
         self.prog = {
             state: dict(enumerate(instrs))
             for state, instrs in enumerate(parse(program))
         }
+
+        self.graph = Graph(program)
 
     def __repr__(self) -> ProgStr:
         return '  '.join([
@@ -147,6 +151,13 @@ class BasicProgram:
             slot
             for slot, instr in self.used_instr_slots
             if slot[1] != 0 and instr[0] == 0
+        )
+
+    @property
+    def spinout_slots(self) -> tuple[Slot, ...]:
+        return tuple(
+            (state, 0)
+            for state in self.graph.zero_reflexive_states
         )
 
     @property
@@ -277,13 +288,6 @@ class BasicProgram:
 
 
 class Program(BasicProgram):
-    graph: Graph
-
-    def __init__(self, program: ProgStr):
-        self.graph = Graph(program)
-
-        super().__init__(program)
-
     @property
     def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
         partial = Program.init(len(self.states), len(self.colors))
@@ -316,9 +320,7 @@ class Program(BasicProgram):
     def cant_spin_out(self) -> bool:
         return self._cant_reach(
             'spnout',
-            tuple(
-                (state, 0)
-                for state in self.graph.zero_reflexive_states),
+            self.spinout_slots,
         )
 
     def _cant_reach(
