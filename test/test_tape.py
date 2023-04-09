@@ -2,7 +2,9 @@ from unittest import TestCase
 
 from tm.rules import Rule
 from tm.instrs import Color
-from tm.tape import Tape, TagTape, EnumTape, Signature, BlockSpan
+from tm.tape import Tape, TagTape, EnumTape, Signature, Block
+
+BlockSpan = list[list[int]]
 
 def stringify_sig(sig: Signature) -> str:
     scan, lspan, rspan = sig
@@ -26,7 +28,10 @@ class TestTape(TestCase):
             scan: Color,
             rspan: BlockSpan,
     ) -> None:
-        self.tape = Tape(lspan, scan, rspan)
+        self.tape = Tape(
+            [Block(color, count) for color, count in lspan],
+            scan,
+            [Block(color, count) for color, count in rspan])
 
     def assert_tape(self, tape: str):
         self.assertEqual(tape, str(self.tape))
@@ -126,8 +131,8 @@ class TestTags(TestCase):
     def count_tags(self) -> int:
         return (
             (1 if self.scan_info else 0)
-            + sum(1 for block in self.lspan if len(block) > 2)
-            + sum(1 for block in self.rspan if len(block) > 2)
+            + sum(1 for block in self.tape.lspan if block.other)
+            + sum(1 for block in self.tape.rspan if block.other)
         )
 
     def set_tape(
@@ -141,7 +146,13 @@ class TestTags(TestCase):
         else:
             scan_info = []
 
-        self.tape = TagTape(list(reversed(lspan)), scan, rspan)
+        self.tape = TagTape(
+            [Block(color, count, other)
+                 for color, count, *other in reversed(lspan)],
+            scan,
+            [Block(color, count, other)
+                 for color, count, *other in rspan],
+        )
 
         self.tape.scan_info = scan_info
 
@@ -153,8 +164,15 @@ class TestTags(TestCase):
             scan: Color | tuple[Color, list[int]],
             rspan: BlockSpan,
     ):
-        self.assertEqual(self.lspan, list(reversed(lspan)))
-        self.assertEqual(self.rspan, rspan)
+        self.assertEqual(
+            self.tape.lspan,
+            [Block(color, count, other)
+                 for color, count, *other in reversed(lspan)])
+
+        self.assertEqual(
+            self.tape.rspan,
+            [Block(color, count, other)
+                 for color, count, *other in rspan])
 
         self.assertEqual(
             (self.scan, self.scan_info),
@@ -171,14 +189,6 @@ class TestTags(TestCase):
     @property
     def scan_info(self) -> list[int] | None:
         return self.tape.scan_info
-
-    @property
-    def lspan(self) -> BlockSpan:
-        return self.tape.lspan
-
-    @property
-    def rspan(self) -> BlockSpan:
-        return self.tape.rspan
 
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
@@ -510,7 +520,10 @@ class TestEnum(TestCase):
             scan: Color,
             rspan: BlockSpan,
     ) -> None:
-        self.tape = EnumTape(lspan, scan, rspan)
+        self.tape = EnumTape(
+            [Block(color, count) for color, count in lspan],
+            scan,
+            [Block(color, count) for color, count in rspan])
 
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
@@ -534,9 +547,11 @@ class TestEnum(TestCase):
         self.assertEqual(
             (lspan, scan, rspan),
             (
-                [block[:2] for block in self.tape.lspan],
+                [[block.color, block.count]
+                     for block in self.tape.lspan],
                 self.tape.scan,
-                [block[:2] for block in self.tape.rspan],
+                [[block.color, block.count]
+                     for block in self.tape.rspan],
             ))
 
     def test_offsets_1(self):

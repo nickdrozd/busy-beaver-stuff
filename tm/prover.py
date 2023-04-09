@@ -164,8 +164,8 @@ class Prover:
 
         for s, span in enumerate(tags.spans):
             for i, block in enumerate(span):
-                if block[1] > 1:
-                    block.append(2 * i + s)
+                if block.count > 1:
+                    block.other.append(2 * i + s)
 
         counts = []
 

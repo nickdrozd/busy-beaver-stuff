@@ -6,7 +6,24 @@ from dataclasses import dataclass, field
 from tm.instrs import Color, Shift
 from tm.rules import Counts, Index, ApplyRule
 
-Block     = list[int]
+
+@dataclass
+class Block:
+    color: Color
+    count: int
+
+    other: list[int] = field(
+        default_factory = list)
+
+    def __str__(self) -> str:
+        return f"{self.color}^{show_number(self.count)}"
+
+    def copy(self) -> Block:
+        return Block(
+            self.color,
+            self.count,
+            self.other.copy())
+
 BlockSpan = list[Block]
 
 Signature = tuple[
@@ -25,23 +42,18 @@ def show_number(num: int) -> str:
         f"(~10^{math.log10(num):.0f})"
     )
 
-def show_block(block: Block) -> str:
-    color, count, *_ = block
-
-    return f"{color}^{show_number(count)}"
-
 
 @dataclass
 class BlockTape(ApplyRule):
-    lspan: BlockSpan
+    lspan: list[Block]
     scan: Color
-    rspan: BlockSpan
+    rspan: list[Block]
 
     def __str__(self) -> str:
         return ' '.join(
-            list(map(show_block, reversed(self.lspan)))
+            list(map(str, reversed(self.lspan)))
             + [f'[{self.scan}]']
-            + list(map(show_block, self.rspan)))
+            + list(map(str, self.rspan)))
 
     @property
     def blank(self) -> bool:
@@ -51,8 +63,8 @@ class BlockTape(ApplyRule):
     def marks(self) -> int:
         return (
             (1 if self.scan != 0 else 0)
-            + sum(q for (c, q, *_) in self.lspan if c != 0)
-            + sum(q for (c, q, *_) in self.rspan if c != 0)
+            + sum(blk.count for blk in self.lspan if blk.color != 0)
+            + sum(blk.count for blk in self.rspan if blk.color != 0)
         )
 
     def at_edge(self, edge: Shift) -> bool:
@@ -64,20 +76,24 @@ class BlockTape(ApplyRule):
     @property
     def counts(self) -> Counts:
         return (
-            tuple(block[1] for block in self.lspan),
-            tuple(block[1] for block in self.rspan),
+            tuple(block.count for block in self.lspan),
+            tuple(block.count for block in self.rspan),
         )
 
     @property
-    def spans(self) -> tuple[BlockSpan, BlockSpan]:
+    def spans(self) -> tuple[list[Block], list[Block]]:
         return self.lspan, self.rspan
 
     @property
     def signature(self) -> Signature:
         return (
             self.scan,
-            tuple(c if q != 1 else (c,) for (c, q, *_) in self.lspan),
-            tuple(c if q != 1 else (c,) for (c, q, *_) in self.rspan),
+            tuple(
+                block.color if block.count != 1 else (block.color,)
+                for block in self.lspan),
+            tuple(
+                block.color if block.count != 1 else (block.color,)
+                for block in self.rspan),
         )
 
     def __getitem__(self, index: Index) -> int:
@@ -85,14 +101,14 @@ class BlockTape(ApplyRule):
 
         span = self.rspan if side else self.lspan
 
-        return span[pos][1]
+        return span[pos].count
 
     def __setitem__(self, index: Index, val: int) -> None:
         side, pos = index
 
         span = self.rspan if side else self.lspan
 
-        span[pos][1] = val
+        span[pos].count = val
 
 
 @dataclass
@@ -106,11 +122,11 @@ class Tape(BlockTape):
     def init(scan: Color = 0) -> Tape:
         return Tape([], scan, [])
 
-    def lblocks(self) -> BlockSpan:
-        return [[color, count] for color, count in self.lspan]
+    def lblocks(self) -> list[Block]:
+        return [block.copy() for block in self.lspan]
 
-    def rblocks(self) -> BlockSpan:
-        return [[color, count] for color, count in self.rspan]
+    def rblocks(self) -> list[Block]:
+        return [block.copy() for block in self.rspan]
 
     def copy(self) -> Tape:
         tape = Tape(self.lblocks(), self.scan, self.rblocks())
@@ -125,24 +141,16 @@ class Tape(BlockTape):
 
     def to_ptr(self) -> PtrTape:
         return PtrTape(
-            sum(q for (_, q) in self.lspan) - self.head,
+            sum(q.count for q in self.lspan) - self.head,
             [
-                color
-                for color, count in reversed(self.lspan)
-                for _ in range(count)
+                block.color
+                for block in reversed(self.lspan)
+                for _ in range(block.count)
             ] + [self.scan] + [
-                color
-                for color, count in self.rspan
-                for _ in range(count)
+                block.color
+                for block in self.rspan
+                for _ in range(block.count)
             ]
-        )
-
-    @property
-    def signature(self) -> Signature:
-        return (
-            self.scan,
-            tuple(c if q != 1 else (c,) for (c, q) in self.lspan),
-            tuple(c if q != 1 else (c,) for (c, q) in self.rspan),
         )
 
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
@@ -154,38 +162,40 @@ class Tape(BlockTape):
 
         push_block = (
             pull.pop(0)
-            if skip and pull and pull[0][0] == self.scan else
+            if skip and pull and pull[0].color == self.scan else
             None
         )
 
-        stepped = 1 if push_block is None else 1 + push_block[1]
+        stepped = 1 if push_block is None else 1 + push_block.count
 
         next_scan: Color
 
         if not pull:
             next_scan = 0
         else:
-            next_scan = (next_pull := pull[0])[0]
+            next_pull = pull[0]
 
-            if next_pull[1] > 1:
-                next_pull[1] -= 1
+            if next_pull.count > 1:
+                next_pull.count -= 1
             else:
                 popped = pull.pop(0)
 
                 if push_block is None:
                     push_block = popped
-                    push_block[1] = 0
+                    push_block.count = 0
 
-        if push and (top_block := push[0])[0] == color:
-            top_block[1] += stepped
+            next_scan = next_pull.color
+
+        if push and (top_block := push[0]).color == color:
+            top_block.count += stepped
         else:
             if push_block is None:
-                push_block = [color, 1]
+                push_block = Block(color, 1)
             else:
-                push_block[0] = color
-                push_block[1] += 1
+                push_block.color = color
+                push_block.count += 1
 
-            if  push or color != 0:
+            if push or color != 0:
                 push.insert(0, push_block)
 
         self.scan = next_scan
@@ -201,13 +211,13 @@ class Tape(BlockTape):
 @dataclass
 class TagTape(BlockTape):
     scan_info: list[int] = field(
-        default_factory = list)
+        default_factory=list)
 
     def missing_tags(self) -> bool:
         return any(
-            block[1] > 1 and len(block) != 3
+            block.count > 1 and len(block.other) != 1
             for span in self.spans
-            for num, block in enumerate(span))
+            for block in span)
 
     def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
@@ -218,12 +228,13 @@ class TagTape(BlockTape):
 
         push_block = (
             pull.pop(0)
-            if (skip :=
-                (skip and bool(pull) and pull[0][0] == self.scan)) else
+            if (skip := (skip and
+                         bool(pull) and
+                         pull[0].color == self.scan)) else
             None
         )
 
-        stepped = 1 if push_block is None else 1 + push_block[1]
+        stepped = 1 if push_block is None else 1 + push_block.count
 
         scan_info: list[int] = []
 
@@ -235,68 +246,63 @@ class TagTape(BlockTape):
         if not pull:
             next_scan = 0
         else:
-            next_scan = (next_pull := pull[0])[0]
+            next_scan = (next_pull := pull[0]).color
 
-            if next_pull[1] > 1:
-                next_pull[1] -= 1
+            if next_pull.count > 1:
+                next_pull.count -= 1
                 dec_pull = True
             else:
                 popped = pull.pop(0)
 
                 if push_block is None:
                     push_block = popped
-                    push_block[1] = 0
+                    push_block.count = 0
 
-                if (extra := popped[2:]):
+                if (extra := popped.other):
                     scan_info += extra
-                    push_block = push_block[:2]
+                    push_block.other = []
 
-        if push and (top_block := push[0])[0] == color:
+        if push and (top_block := push[0]).color == color:
             inc_push = True
-            top_block[1] += stepped
-            top_block += self.scan_info
+            top_block.count += stepped
+            top_block.other += self.scan_info
 
             if push_block is not None:
-                top_block += push_block[2:]
+                top_block.other += push_block.other
         else:
             if push_block is None:
-                push_block = [color, 1]
+                push_block = Block(color, 1)
 
                 if push and color != self.scan:
-                    if len(top_block := push[0]) > 3:
-                        push_block.append(
-                            top_block.pop())
+                    if len(other := push[0].other) > 1:
+                        push_block.other.append(other.pop())
 
                 if dec_pull:
-                    push_block.extend(
-                        self.scan_info)
+                    push_block.other.extend(self.scan_info)
 
                     self.scan_info.clear()
                     assert not scan_info
             else:
-                push_block[0] = color
-                push_block[1] += 1
+                push_block.color = color
+                push_block.count += 1
 
-                if push and len(top_block := push[0]) > 3:
-                    push_block.append(
-                        top_block.pop())
+                if push and len(other := push[0].other) > 1:
+                    push_block.other.append(other.pop())
 
                 if self.scan_info:
-                    push_block.extend(
-                        self.scan_info)
+                    push_block.other.extend(self.scan_info)
 
-            if push or color != 0 or push_block[2:] or skip:
+            if push or color != 0 or push_block.other or skip:
                 if color == 0 and not push:
-                    push_block[1] = 1
+                    push_block.count = 1
 
                 push.insert(0, push_block)
 
-                if self.scan_info and not (top_block := push[0])[2:]:
-                    top_block.extend(
-                        self.scan_info)
+                if self.scan_info and not (top_block := push[0]).other:
+                    top_block.other.extend(self.scan_info)
 
-        if inc_push and not (top_block := push[0])[2:]:
-            top_block.extend(scan_info)
+        if inc_push and not (top_block := push[0]).other:
+            top_block.other.extend(scan_info)
         else:
             self.scan_info = scan_info
 
@@ -306,16 +312,15 @@ class TagTape(BlockTape):
 @dataclass
 class EnumTape(BlockTape):
     offsets: list[int] = field(
-        default_factory = lambda: [0, 0])
+        default_factory=lambda: [0, 0])
 
     _edges: list[bool] = field(
-        default_factory = lambda: [False, False])
+        default_factory=lambda: [False, False])
 
     def __post_init__(self) -> None:
         for s, span in enumerate(self.spans):
-            for i, block in enumerate(span, start = 1):
-                block.append(s)
-                block.append(i)
+            for i, block in enumerate(span, start=1):
+                block.other.extend([s, i])
 
     @property
     def edges(self) -> tuple[bool, bool]:
@@ -331,22 +336,24 @@ class EnumTape(BlockTape):
         if not pull:
             self._edges[bool(shift)] = True
         else:
-            if other := (near_block := pull[0])[2:]:
+            if other := (near_block := pull[0]).other:
                 ind, offset = other
 
                 if offset > self.offsets[ind]:
                     self.offsets[ind] = offset
 
-            if skip and near_block[0] == self.scan:
+            if skip and near_block.color == self.scan:
                 if not pull[1:]:
                     self._edges[bool(shift)] = True
-                elif next_block := pull[1][2:]:
+                elif (next_block := pull[1].other):
                     ind, offset = next_block
 
                     if offset > self.offsets[ind]:
                         self.offsets[ind] = offset
 
-        if push and (other := (opp := push[0])[2:]) and color == opp[0]:
+        if (push
+                and (other := (opp := push[0]).other)
+                and color == opp.color):
             ind, offset = other
 
             if offset > self.offsets[ind]:
@@ -354,38 +361,38 @@ class EnumTape(BlockTape):
 
         push_block = (
             pull.pop(0)
-            if skip and pull and pull[0][0] == self.scan else
+            if skip and pull and pull[0].color == self.scan else
             None
         )
 
-        stepped = 1 if push_block is None else 1 + push_block[1]
+        stepped = 1 if push_block is None else 1 + push_block.count
 
         next_scan: Color
 
         if not pull:
             next_scan = 0
         else:
-            next_scan = (next_pull := pull[0])[0]
+            next_scan = (next_pull := pull[0]).color
 
-            if next_pull[1] > 1:
-                next_pull[1] -= 1
+            if next_pull.count > 1:
+                next_pull.count -= 1
             else:
                 popped = pull.pop(0)
 
                 if push_block is None:
                     push_block = popped
-                    push_block[1] = 0
+                    push_block.count = 0
 
-        if push and (top_block := push[0])[0] == color:
-            top_block[1] += stepped
+        if push and (top_block := push[0]).color == color:
+            top_block.count += stepped
         else:
             if push_block is None:
-                push_block = [color, 1]
+                push_block = Block(color, 1)
             else:
-                push_block[0] = color
-                push_block[1] += 1
+                push_block.color = color
+                push_block.count += 1
 
-            if  push or color != 0:
+            if push or color != 0:
                 push.insert(0, push_block)
 
         self.scan = next_scan
