@@ -157,6 +157,7 @@ pub trait ApplyRule {
     }
 }
 
+#[allow(dead_code)]
 fn log10_limit(mut num: Num) -> bool {
     for _ in 0..10 {
         num /= 10;
