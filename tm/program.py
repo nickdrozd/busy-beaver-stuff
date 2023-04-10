@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import overload, Self
+from typing import Self
 from itertools import product
 from functools import cached_property
 from collections import defaultdict
@@ -43,22 +43,13 @@ class BasicProgram:
             for instrs in self.prog.values()
         ])
 
-    @overload
-    def __getitem__(self, slot: State) -> Switch: ...
-
-    @overload
-    def __getitem__(self, slot: Slot) -> Instr | None: ...
-
-    def __getitem__(
-            self,
-            slot: State | Slot,
-    ) -> Switch | Instr | None:
-        if isinstance(slot, State):
-            return self.prog[slot]
-
+    def __getitem__(self, slot: Slot) -> Instr | None:
         state, color = slot
 
         return self.prog[state][color]
+
+    def get_switch(self, state: State) -> Switch:
+        return self.prog[state]
 
     def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
         state, color = slot
@@ -218,7 +209,7 @@ class BasicProgram:
 
     def swap_colors(self, co1: Color, co2: Color) -> Self:
         for state_str in self.states:
-            st_key = self[state_str]
+            st_key = self.get_switch(state_str)
             st_key[co1], st_key[co2] = st_key[co2], st_key[co1]
 
         for slot, (color, shift, state) in self.used_instr_slots:
@@ -403,7 +394,7 @@ class Program(BasicProgram):
             # print(step, state, tape)
 
             for entry in sorted(self.graph.entry_points[state]):
-                for _, instr in self[entry].items():
+                for _, instr in self.get_switch(entry).items():
                     if instr is None:
                         continue
 
