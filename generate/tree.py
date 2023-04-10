@@ -62,7 +62,7 @@ def tree_gen(
             prog = None
             continue
 
-        prog = next(branches := program.branch(slot), None)
+        prog, *branches = program.branch(slot)
 
         for ext in branches:
             stack.append(ext)

@@ -5,7 +5,6 @@ from typing import Self
 from itertools import product
 from functools import cached_property
 from collections import defaultdict
-from collections.abc import Iterator
 
 from tm.graph import Graph
 from tm.parse import parse, dcomp_instr
@@ -72,7 +71,7 @@ class BasicProgram:
 
     @classmethod
     def branch_init(cls, states: int, colors: int) -> list[str]:
-        return list(cls.init(states, colors).branch((1, 0)))
+        return cls.init(states, colors).branch((1, 0))
 
     @cached_property
     def states(self) -> set[State]:
@@ -83,31 +82,40 @@ class BasicProgram:
         return set(range(len(self.prog[0])))
 
     @property
-    def state_switches(self) -> Iterator[tuple[State, Switch]]:
-        yield from self.prog.items()
+    def state_switches(self) -> list[tuple[State, Switch]]:
+        return sorted(self.prog.items())
 
     @property
-    def instr_slots(self) -> Iterator[tuple[Slot, Instr | None]]:
-        for state, instrs in self.prog.items():
-            for color, instr in instrs.items():
-                yield (state, color), instr
+    def instr_slots(self) -> list[tuple[Slot, Instr | None]]:
+        return [
+            ((state, color), instr)
+            for state, instrs in self.prog.items()
+            for color, instr in instrs.items()
+        ]
 
     @property
-    def used_instr_slots(self) -> Iterator[tuple[Slot, Instr]]:
-        for slot, instr in self.instr_slots:
-            if instr is not None:
-                yield (slot, instr)
+    def used_instr_slots(self) -> list[tuple[Slot, Instr]]:
+        return [
+            (slot, instr)
+            for slot, instr in self.instr_slots
+            if instr is not None
+        ]
 
     @property
-    def instructions(self) -> Iterator[Instr | None]:
-        for instrs in self.prog.values():
-            yield from instrs.values()
+    def instructions(self) -> list[Instr | None]:
+        return [
+            instr
+            for instrs in self.prog.values()
+            for instr in instrs.values()
+        ]
 
     @property
-    def used_instructions(self) -> Iterator[Instr]:
-        for instr in self.instructions:
-            if instr:
-                yield instr
+    def used_instructions(self) -> list[Instr]:
+        return [
+            instr
+            for instr in self.instructions
+            if instr
+        ]
 
     @property
     def slots(self) -> tuple[Slot, ...]:
@@ -152,48 +160,59 @@ class BasicProgram:
         )
 
     @property
-    def used_states(self) -> Iterator[State]:
-        for _, _, state in self.used_instructions:
-            yield state
+    def used_states(self) -> set[State]:
+        return {
+            state
+            for _, _, state in self.used_instructions
+        }
 
     @property
     def available_states(self) -> set[State]:
-        used = set(self.used_states) | { 0 }
+        used = self.used_states | { 0 }
         diff = sorted(self.states.difference(used))
 
         return used | { diff[0] } if diff else used
 
     @property
-    def used_colors(self) -> Iterator[Color]:
-        for color, _, _ in self.used_instructions:
-            yield color
+    def used_colors(self) -> set[Color]:
+        return {
+            color
+            for color, _, _ in self.used_instructions
+        }
 
     @property
     def available_colors(self) -> set[Color]:
-        used = set(self.used_colors) | { 0 }
+        used = self.used_colors | { 0 }
         diff = sorted(self.colors.difference(used))
 
         return used | { diff[0] } if diff else used
 
     @property
-    def available_instrs(self) -> Iterator[Instr]:
-        return product(
-            self.available_colors,
-            (False, True),
-            self.available_states)
+    def available_instrs(self) -> list[Instr]:
+        return sorted(
+            product(
+                self.available_colors,
+                (False, True),
+                self.available_states),
+            reverse = True,
+        )
 
-    def branch(self, slot: Slot) -> Iterator[ProgStr]:
+    def branch(self, slot: Slot) -> list[ProgStr]:
+        branches = []
+
         orig = self[slot]
 
-        for instr in sorted(self.available_instrs, reverse = True):
+        for instr in self.available_instrs:
             if orig is not None and instr >= orig:
                 continue
 
             self[slot] = instr
 
-            yield str(self)
+            branches.append(str(self))
 
         self[slot] = orig
+
+        return branches
 
     def swap_states(self, st1: State, st2: State) -> Self:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
@@ -280,18 +299,22 @@ class BasicProgram:
 
 class Program(BasicProgram):
     @property
-    def instr_seq(self) -> Iterator[tuple[ProgStr, int, Slot]]:
+    def instr_seq(self) -> list[tuple[ProgStr, int, Slot]]:
+        seqs: list[tuple[ProgStr, int, Slot]] = []
+
         partial = Program.init(len(self.states), len(self.colors))
 
         for _ in range(len(self.states) * len(self.colors) - 1):
             if (result := Machine(partial).run().undfnd) is None:
-                return
+                return seqs
 
             step, slot = result
 
-            yield str(partial), step, slot
+            seqs.append((str(partial), step, slot))
 
             partial[slot] = self[slot]
+
+        return seqs
 
     @property
     def cant_halt(self) -> bool:
