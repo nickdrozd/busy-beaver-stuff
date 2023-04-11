@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import math
-from abc import abstractmethod
-from typing import Generic, TypeVar
 from dataclasses import dataclass, field
 
 from tm.instrs import Color, Shift
@@ -35,14 +33,11 @@ class BasicBlock:
         return f"{self.color}^{show_number(self.count)}"
 
 
-BlockType = TypeVar('BlockType', bound = BasicBlock)  # pylint: disable = invalid-name
-
-
 @dataclass
-class BlockTape(Generic[BlockType], ApplyRule):
-    lspan: list[BlockType]
+class BlockTape(ApplyRule):
+    lspan: list[BasicBlock]
     scan: Color
-    rspan: list[BlockType]
+    rspan: list[BasicBlock]
 
     def __str__(self) -> str:
         return ' '.join(
@@ -101,9 +96,6 @@ class BlockTape(Generic[BlockType], ApplyRule):
 
         span[pos].count = val
 
-    @abstractmethod
-    def step(self, shift: Shift, color: Color, skip: bool) -> int: ...
-
 
 @dataclass
 class Block(BasicBlock):
@@ -115,7 +107,11 @@ class Block(BasicBlock):
 
 
 @dataclass
-class Tape(BlockTape[Block]):
+class Tape(BlockTape):
+    lspan: list[Block]  # type: ignore[assignment]
+    scan: Color
+    rspan: list[Block]  # type: ignore[assignment]
+
     head: int = 0
 
     def __hash__(self) -> int:
@@ -228,7 +224,11 @@ class TagBlock(BasicBlock):
 
 
 @dataclass
-class TagTape(BlockTape[TagBlock]):
+class TagTape(BlockTape):
+    lspan: list[TagBlock]  # type: ignore[assignment]
+    scan: Color
+    rspan: list[TagBlock]  # type: ignore[assignment]
+
     scan_info: list[int] = field(
         default_factory=list)
 
@@ -242,7 +242,7 @@ class TagTape(BlockTape[TagBlock]):
             for span in self.spans
             for block in span)
 
-    def step(self, shift: Shift, color: Color, skip: bool) -> int:
+    def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
             (self.rspan, self.lspan)
             if shift else
@@ -331,8 +331,6 @@ class TagTape(BlockTape[TagBlock]):
 
         self.scan = next_scan
 
-        return 0
-
 
 @dataclass
 class EnumBlock(BasicBlock):
@@ -340,7 +338,11 @@ class EnumBlock(BasicBlock):
 
 
 @dataclass
-class EnumTape(BlockTape[EnumBlock]):
+class EnumTape(BlockTape):
+    lspan: list[EnumBlock]  # type: ignore[assignment]
+    scan: Color
+    rspan: list[EnumBlock]  # type: ignore[assignment]
+
     offsets: list[int] = field(
         default_factory=lambda: [0, 0])
 
