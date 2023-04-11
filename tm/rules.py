@@ -60,10 +60,10 @@ def make_rule(cnts1: Counts, cnts2: Counts, cnts3: Counts) -> Rule:
 
 class ApplyRule:
     @abstractmethod
-    def __getitem__(self, index: Index) -> int: ...
+    def get_count(self, index: Index) -> int: ...
 
     @abstractmethod
-    def __setitem__(self, index: Index, val: int) -> None: ...
+    def set_count(self, index: Index, val: int) -> None: ...
 
     def count_apps(self, rule: Rule) -> int | None:
         divs: list[int] = []
@@ -72,10 +72,10 @@ class ApplyRule:
             if not isinstance(diff, Plus) or diff >= 0:
                 continue
 
-            if (abs_diff := abs(diff)) >= (count := self[pos]):
+            if (absdiff := abs(diff)) >= (count := self.get_count(pos)):
                 return None
 
-            div, rem = divmod(count, abs_diff)
+            div, rem = divmod(count, absdiff)
             divs.append(div if rem > 0 else div - 1)
 
         return min(divs)
@@ -90,12 +90,12 @@ class ApplyRule:
 
         for pos, diff in rule.items():
             if isinstance(diff, Plus):
-                self[pos] += diff * times
+                self.set_count(pos, self.get_count(pos) + diff * times)
                 continue
 
             div, mod = diff
 
-            self[pos] *= (term := div ** times)
-            self[pos] += mod * (1 + ((term - div) // (div-1)))
+            self.set_count(pos, self.get_count(pos) * (term := div ** times))
+            self.set_count(pos, self.get_count(pos) + mod * (1 + ((term - div) // (div-1))))
 
         return times

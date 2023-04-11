@@ -85,14 +85,14 @@ class BlockTape(ApplyRule):
                 for block in self.rspan),
         )
 
-    def __getitem__(self, index: Index) -> int:
+    def get_count(self, index: Index) -> int:
         side, pos = index
 
         span = self.rspan if side else self.lspan
 
         return span[pos].count
 
-    def __setitem__(self, index: Index, val: int) -> None:
+    def set_count(self, index: Index, val: int) -> None:
         side, pos = index
 
         span = self.rspan if side else self.lspan
