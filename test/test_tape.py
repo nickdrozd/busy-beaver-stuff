@@ -1,6 +1,8 @@
-from unittest import TestCase
+from __future__ import annotations
 
-from tm.rules import Rule
+from unittest import TestCase
+from typing import TYPE_CHECKING
+
 from tm.instrs import Color
 from tm.tape import (
     Block,
@@ -9,10 +11,14 @@ from tm.tape import (
     TagTape,
     EnumBlock,
     EnumTape,
-    Signature,
 )
 
-BlockSpan = list[list[int]]
+if TYPE_CHECKING:
+    from tm.rules import Rule
+    from tm.tape import Signature
+
+    BlockSpan = list[list[int]]
+
 
 def stringify_sig(sig: Signature) -> str:
     scan, lspan, rspan = sig

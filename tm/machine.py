@@ -1,19 +1,25 @@
 from __future__ import annotations
 
-from typing import Self
+from typing import TYPE_CHECKING
 
 from tm.tape import Tape, show_number
 from tm.rules import InfiniteRule, RuleLimit
 from tm.parse import tcompile, st_str
-from tm.instrs import State, Slot, GetInstr
 from tm.prover import Prover
-from tm.lin_rec import History, RecRes, Tapes
+from tm.lin_rec import History
+
+if TYPE_CHECKING:
+    from typing import Self
+
+    from tm.instrs import State, Slot, GetInstr
+    from tm.lin_rec import RecRes, Tapes
 
 
-LinRec = tuple[int | None, int]
-Undfnd = tuple[int, Slot]
+    LinRec = tuple[int | None, int]
+    Undfnd = tuple[int, Slot]
 
-Result = str | int | LinRec | Undfnd
+    Result = str | int | LinRec | Undfnd
+
 
 TERM_CATS = (
     'cfglim',

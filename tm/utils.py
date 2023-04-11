@@ -1,9 +1,16 @@
-from collections.abc import Iterator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from tm.tape import Tape
-from tm.instrs import Color, Shift
 from tm.machine import Machine, LinRecMachine
-from tm.macro import BlockMacro, BacksymbolMacro, MacroProg
+from tm.macro import BlockMacro, BacksymbolMacro
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from tm.macro import MacroProg
+    from tm.instrs import Color, Shift
 
 
 def macro_variations(

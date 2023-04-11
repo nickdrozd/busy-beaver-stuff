@@ -1,10 +1,20 @@
 from __future__ import annotations
 
 import math
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
-from tm.instrs import Color, Shift
-from tm.rules import Counts, Index, ApplyRule
+from tm.rules import ApplyRule
+
+if TYPE_CHECKING:
+    from tm.instrs import Color, Shift
+    from tm.rules import Counts, Index
+
+    Signature = tuple[
+        Color,
+        tuple[Color | tuple[Color], ...],
+        tuple[Color | tuple[Color], ...],
+    ]
 
 
 TRUNCATE_COUNT = 10 ** 12
@@ -15,13 +25,6 @@ def show_number(num: int) -> str:
         if num < TRUNCATE_COUNT else
         f"(~10^{math.log10(num):.0f})"
     )
-
-
-Signature = tuple[
-    Color,
-    tuple[Color | tuple[Color], ...],
-    tuple[Color | tuple[Color], ...],
-]
 
 
 @dataclass

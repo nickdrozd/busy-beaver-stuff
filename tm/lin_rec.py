@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from copy import copy
+from typing import TYPE_CHECKING
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from tm.tape import Tape, PtrTape
-from tm.instrs import State, Slot
+if TYPE_CHECKING:
+    from tm.instrs import State, Slot
+    from tm.tape import Tape, PtrTape
 
-
-RecRes = tuple[int, int]
-Tapes = dict[int, PtrTape]
+    RecRes = tuple[int, int]
+    Tapes = dict[int, PtrTape]
 
 
 @dataclass

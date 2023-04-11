@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from functools import cached_property
 
 from tm.parse import parse, st_str
-from tm.instrs import Color, State
 
-ConGraph = dict[State, set[State]]
+if TYPE_CHECKING:
+    from tm.instrs import Color, State
+
+    ConGraph = dict[State, set[State]]
+
 
 class Graph:
     arrows: dict[State, tuple[State | None, ...]]

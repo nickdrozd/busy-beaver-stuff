@@ -1,16 +1,22 @@
+from __future__ import annotations
+
 from math import log10
 from abc import abstractmethod
+from typing import TYPE_CHECKING
+
 
 Plus = int
-Mult = tuple[int, int]
 
-Op = Plus | Mult
+if TYPE_CHECKING:
+    Mult = tuple[int, int]
 
-Index = tuple[int, int]
+    Op = Plus | Mult
 
-Rule = dict[Index, Op]
+    Index = tuple[int, int]
 
-Counts = tuple[tuple[int, ...], tuple[int, ...]]
+    Rule = dict[Index, Op]
+
+    Counts = tuple[tuple[int, ...], tuple[int, ...]]
 
 
 class UnknownRule(Exception):

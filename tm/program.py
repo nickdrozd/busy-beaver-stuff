@@ -1,23 +1,27 @@
 from __future__ import annotations
 
 import re
-from typing import Self
+from typing import TYPE_CHECKING
 from itertools import product
 from functools import cached_property
 from collections import defaultdict
 
 from tm.graph import Graph
 from tm.parse import parse, dcomp_instr
-from tm.instrs import Color, State, Slot, Instr
 
 from tm.tape import Tape
 from tm.parse import tcompile
 from tm.machine import Machine
 from tm.lin_rec import History
 
-ProgStr = str
+if TYPE_CHECKING:
+    from typing import Self
 
-Switch = dict[Color, Instr | None]
+    from tm.instrs import Color, State, Slot, Instr
+
+    ProgStr = str
+
+    Switch = dict[Color, Instr | None]
 
 
 class BasicProgram:
