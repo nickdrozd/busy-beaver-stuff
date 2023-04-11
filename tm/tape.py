@@ -41,7 +41,6 @@ class Block:
             self.count,
             self.other.copy())
 
-BlockSpan = list[Block]
 
 @dataclass
 class BlockTape(ApplyRule):
