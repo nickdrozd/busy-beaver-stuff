@@ -121,13 +121,12 @@ class Tape(BlockTape):
         return Tape([], scan, [])
 
     def copy(self) -> Tape:
-        tape = Tape(
+        return Tape(
             [Block(block.color, block.count) for block in self.lspan],
             self.scan,
             [Block(block.color, block.count) for block in self.rspan],
+            head = self.head
         )
-        tape.head = self.head
-        return tape
 
     def to_tag(self) -> TagTape:
         return TagTape(
