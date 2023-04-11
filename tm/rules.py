@@ -95,7 +95,13 @@ class ApplyRule:
 
             div, mod = diff
 
-            self.set_count(pos, self.get_count(pos) * (term := div ** times))
-            self.set_count(pos, self.get_count(pos) + mod * (1 + ((term - div) // (div-1))))
+            self.set_count(
+                pos,
+                (
+                    self.get_count(pos)
+                    * (term := div ** times)
+                    + mod * (1 + ((term - div) // (div-1)))
+                ),
+            )
 
         return times
