@@ -7,6 +7,23 @@ from tm.instrs import Color, Shift
 from tm.rules import Counts, Index, ApplyRule
 
 
+TRUNCATE_COUNT = 10 ** 12
+
+def show_number(num: int) -> str:
+    return (
+        str(num)
+        if num < TRUNCATE_COUNT else
+        f"(~10^{math.log10(num):.0f})"
+    )
+
+
+Signature = tuple[
+    Color,
+    tuple[Color | tuple[Color], ...],
+    tuple[Color | tuple[Color], ...],
+]
+
+
 @dataclass
 class Block:
     color: Color
@@ -25,23 +42,6 @@ class Block:
             self.other.copy())
 
 BlockSpan = list[Block]
-
-Signature = tuple[
-    Color,
-    tuple[Color | tuple[Color], ...],
-    tuple[Color | tuple[Color], ...],
-]
-
-
-TRUNCATE_COUNT = 10 ** 12
-
-def show_number(num: int) -> str:
-    return (
-        str(num)
-        if num < TRUNCATE_COUNT else
-        f"(~10^{math.log10(num):.0f})"
-    )
-
 
 @dataclass
 class BlockTape(ApplyRule):
