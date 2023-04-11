@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from tm.instrs import State, Slot, GetInstr
 from tm.rules import make_rule, Rule, UnknownRule
-from tm.tape import Signature, Tape, BlockTape, TagTape, EnumTape
+from tm.tape import Signature, Tape, TagTape, EnumTape
 
 MinSig = tuple[Signature, tuple[bool, bool]]
 
@@ -67,7 +67,7 @@ class Prover:
     def get_rule(
             self,
             state: State,
-            tape: BlockTape,
+            tape: Tape | TagTape | EnumTape,
             sig: Signature | None = None,
     ) -> Rule | None:
         if (temp := self.rules.get((state, tape.scan))) is None:
