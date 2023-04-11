@@ -121,18 +121,12 @@ class Tape(BlockTape):
     def init(scan: Color = 0) -> Tape:
         return Tape([], scan, [])
 
-    @property
-    def spans(self) -> tuple[list[Block], list[Block]]:
-        return self.lspan, self.rspan
-
-    def lblocks(self) -> list[Block]:
-        return [block.copy() for block in self.lspan]
-
-    def rblocks(self) -> list[Block]:
-        return [block.copy() for block in self.rspan]
-
     def copy(self) -> Tape:
-        tape = Tape(self.lblocks(), self.scan, self.rblocks())
+        tape = Tape(
+            [block.copy() for block in self.lspan],
+            self.scan,
+            [block.copy() for block in self.rspan],
+        )
         tape.head = self.head
         return tape
 
