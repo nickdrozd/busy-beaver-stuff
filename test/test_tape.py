@@ -2,7 +2,15 @@ from unittest import TestCase
 
 from tm.rules import Rule
 from tm.instrs import Color
-from tm.tape import Tape, TagTape, EnumTape, Signature, Block
+from tm.tape import (
+    Block,
+    Tape,
+    TagBlock,
+    TagTape,
+    EnumBlock,
+    EnumTape,
+    Signature,
+)
 
 BlockSpan = list[list[int]]
 
@@ -147,10 +155,10 @@ class TestTags(TestCase):
             scan_info = []
 
         self.tape = TagTape(
-            [Block(color, count, other)
+            [TagBlock(color, count, other)
                  for color, count, *other in reversed(lspan)],
             scan,
-            [Block(color, count, other)
+            [TagBlock(color, count, other)
                  for color, count, *other in rspan],
         )
 
@@ -166,12 +174,12 @@ class TestTags(TestCase):
     ):
         self.assertEqual(
             self.tape.lspan,
-            [Block(color, count, other)
+            [TagBlock(color, count, other)
                  for color, count, *other in reversed(lspan)])
 
         self.assertEqual(
             self.tape.rspan,
-            [Block(color, count, other)
+            [TagBlock(color, count, other)
                  for color, count, *other in rspan])
 
         self.assertEqual(
@@ -521,9 +529,9 @@ class TestEnum(TestCase):
             rspan: BlockSpan,
     ) -> None:
         self.tape = EnumTape(
-            [Block(color, count) for color, count in lspan],
+            [EnumBlock(color, count) for color, count in lspan],
             scan,
-            [Block(color, count) for color, count in rspan])
+            [EnumBlock(color, count) for color, count in rspan])
 
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
