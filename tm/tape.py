@@ -102,11 +102,7 @@ class BlockTape(ApplyRule):
 
 @dataclass
 class Block(BasicBlock):
-    def copy(self) -> Block:
-        return Block(
-            self.color,
-            self.count,
-        )
+    pass
 
 
 @dataclass
@@ -126,9 +122,9 @@ class Tape(BlockTape):
 
     def copy(self) -> Tape:
         tape = Tape(
-            [block.copy() for block in self.lspan],
+            [Block(block.color, block.count) for block in self.lspan],
             self.scan,
-            [block.copy() for block in self.rspan],
+            [Block(block.color, block.count) for block in self.rspan],
         )
         tape.head = self.head
         return tape
