@@ -38,7 +38,7 @@ type :
 
 MYPYC = $(PYTHON) -m mypyc
 
-compile : clean-python
+compile :
 	$(MYPYC) --version
 	$(MYPYC) tm generate
 
@@ -63,7 +63,7 @@ test-all : compile
 
 COVERAGE = $(PYTHON) -m coverage
 
-coverage : clean-python
+coverage :
 	$(COVERAGE) --version
 	$(COVERAGE) run -m unittest -v $(SHORT_TESTS)
 
