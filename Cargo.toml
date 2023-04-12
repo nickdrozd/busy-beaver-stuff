@@ -7,4 +7,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.18.1", features = ["extension-module"] }
+num-bigint = "*"
+num-integer = "*"
+pyo3 = { version = "0.18.1", features = ["extension-module", "num-bigint"] }
