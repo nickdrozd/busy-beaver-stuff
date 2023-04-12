@@ -21,6 +21,9 @@ rust :
 	cargo build --release
 	cp target/release/librust_stuff.so tm/rust_stuff.so
 
+clippy :
+	cargo clippy
+
 ## Python ##############################
 
 PYTHON = python3

@@ -22,7 +22,7 @@ pub fn parse(program: &str) -> Vec<Vec<Option<Instr>>> {
                         None
                     } else {
                         Some((
-                            instr.chars().nth(0).unwrap().to_digit(10).unwrap() as Color,
+                            instr.chars().next().unwrap().to_digit(10).unwrap() as Color,
                             instr.chars().nth(1).unwrap() == RIGHT,
                             str_st(instr.chars().nth(2).unwrap()),
                         ))
@@ -39,7 +39,7 @@ pub fn tcompile(program: &str) -> Prog {
 
     for (state, instrs) in parse(program).iter().enumerate() {
         for (color, instr) in instrs.iter().enumerate() {
-            prog.insert((state as State, color as Color), instr.clone());
+            prog.insert((state as State, color as Color), *instr);
         }
     }
 
@@ -47,7 +47,7 @@ pub fn tcompile(program: &str) -> Prog {
 }
 
 #[pyfunction]
-pub fn st_str(state: Option<State>) -> char {
+pub const fn st_str(state: Option<State>) -> char {
     match state {
         Some(-1) => HALT,
         None => UNDF,
@@ -60,7 +60,7 @@ pub fn str_st(state: char) -> State {
     if state == HALT {
         -1
     } else {
-        (state as u8 - 65) as State
+        State::from(state as u8 - 65)
     }
 }
 

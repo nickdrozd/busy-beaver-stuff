@@ -8,16 +8,19 @@ pub struct PastConfig {
 #[pymethods]
 impl PastConfig {
     #[new]
-    pub fn new() -> Self {
-        PastConfig { cycles: Vec::new() }
+    #[allow(clippy::new_without_default)]
+    const fn new() -> Self {
+        Self { cycles: Vec::new() }
     }
 
-    pub fn next_deltas(&mut self, cycle: u32) -> PyResult<Option<(u32, u32)>> {
+    #[allow(clippy::similar_names)]
+    #[allow(clippy::many_single_char_names)]
+    pub fn next_deltas(&mut self, cycle: u32) -> Option<(u32, u32)> {
         let cycles = &mut self.cycles;
         cycles.push(cycle);
 
         if cycles.len() < 5 {
-            return Ok(None);
+            return None;
         }
 
         let (e, d, c, b, a) = (cycles[0], cycles[1], cycles[2], cycles[3], cycles[4]);
@@ -35,10 +38,10 @@ impl PastConfig {
                 let nxt = a * i + p1 + diff;
                 let nxxt = nxt * i + p1 + 2 * diff;
 
-                return Ok(Some((nxt - cycle, nxxt - nxt)));
+                return Some((nxt - cycle, nxxt - nxt));
             }
         }
 
-        Ok(None)
+        None
     }
 }
