@@ -6,7 +6,7 @@ from itertools import product
 from functools import cached_property
 from collections import defaultdict
 
-from tm.graph import Graph
+from tm.rust_stuff import Graph
 from tm.rust_stuff import parse, dcomp_instr
 
 from tm.tape import Tape
