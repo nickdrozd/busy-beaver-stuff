@@ -23,7 +23,7 @@ def make_dot(prog: str) -> str:
 
     edges: str = '\n'.join([
         f'  {conv(node)} -> {conv(target)} [ color=" {COLORS[i]}" ];'
-        for node, targets in Graph(prog).arrows.items()
+        for node, targets in sorted(Graph(prog).arrows.items())
         for i, target in enumerate(targets)
         if target is not None
     ])
