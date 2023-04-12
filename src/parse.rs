@@ -1,13 +1,7 @@
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
-type Color = i32;
-type State = i32;
-type Shift = bool;
-
-type Slot = (State, Color);
-type Instr = (Color, Shift, State);
-type Prog = HashMap<Slot, Option<Instr>>;
+use crate::instrs::{Color, Instr, Prog, State};
 
 const HALT: char = '_';
 const UNDF: char = '.';

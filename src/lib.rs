@@ -1,3 +1,4 @@
+mod instrs;
 mod parse;
 mod prover;
 mod rules;
