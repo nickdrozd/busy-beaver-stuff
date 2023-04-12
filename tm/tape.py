@@ -217,7 +217,7 @@ class Tape(BlockTape):
 
 @dataclass
 class TagBlock(BasicBlock):
-    other: list[int] = field(
+    tags: list[int] = field(
         default_factory = list)
 
 
@@ -236,7 +236,7 @@ class TagTape(BlockTape):
 
     def missing_tags(self) -> bool:
         return any(
-            block.count > 1 and len(block.other) != 1
+            block.count > 1 and len(block.tags) != 1
             for span in self.spans
             for block in span)
 
@@ -279,27 +279,27 @@ class TagTape(BlockTape):
                     push_block = popped
                     push_block.count = 0
 
-                if (extra := popped.other):
+                if (extra := popped.tags):
                     scan_info += extra
-                    push_block.other = []
+                    push_block.tags = []
 
         if push and (top_block := push[0]).color == color:
             inc_push = True
             top_block.count += stepped
-            top_block.other += self.scan_info
+            top_block.tags += self.scan_info
 
             if push_block is not None:
-                top_block.other += push_block.other
+                top_block.tags += push_block.tags
         else:
             if push_block is None:
                 push_block = TagBlock(color, 1)
 
                 if push and color != self.scan:
-                    if len(other := push[0].other) > 1:
-                        push_block.other.append(other.pop())
+                    if len(tags := push[0].tags) > 1:
+                        push_block.tags.append(tags.pop())
 
                 if dec_pull:
-                    push_block.other.extend(self.scan_info)
+                    push_block.tags.extend(self.scan_info)
 
                     self.scan_info.clear()
                     assert not scan_info
@@ -307,23 +307,23 @@ class TagTape(BlockTape):
                 push_block.color = color
                 push_block.count += 1
 
-                if push and len(other := push[0].other) > 1:
-                    push_block.other.append(other.pop())
+                if push and len(tags := push[0].tags) > 1:
+                    push_block.tags.append(tags.pop())
 
                 if self.scan_info:
-                    push_block.other.extend(self.scan_info)
+                    push_block.tags.extend(self.scan_info)
 
-            if push or color != 0 or push_block.other or skip:
+            if push or color != 0 or push_block.tags or skip:
                 if color == 0 and not push:
                     push_block.count = 1
 
                 push.insert(0, push_block)
 
-                if self.scan_info and not (top_block := push[0]).other:
-                    top_block.other.extend(self.scan_info)
+                if self.scan_info and not (top_block := push[0]).tags:
+                    top_block.tags.extend(self.scan_info)
 
-        if inc_push and not (top_block := push[0]).other:
-            top_block.other.extend(scan_info)
+        if inc_push and not (top_block := push[0]).tags:
+            top_block.tags.extend(scan_info)
         else:
             self.scan_info = scan_info
 

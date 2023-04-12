@@ -145,8 +145,8 @@ class TestTags(TestCase):
     def count_tags(self) -> int:
         return (
             (1 if self.scan_info else 0)
-            + sum(1 for block in self.tape.lspan if block.other)
-            + sum(1 for block in self.tape.rspan if block.other)
+            + sum(1 for block in self.tape.lspan if block.tags)
+            + sum(1 for block in self.tape.rspan if block.tags)
         )
 
     def set_tape(
@@ -161,11 +161,11 @@ class TestTags(TestCase):
             scan_info = []
 
         self.tape = TagTape(
-            [TagBlock(color, count, other)
-                 for color, count, *other in reversed(lspan)],
+            [TagBlock(color, count, tags)
+                 for color, count, *tags in reversed(lspan)],
             scan,
-            [TagBlock(color, count, other)
-                 for color, count, *other in rspan],
+            [TagBlock(color, count, tags)
+                 for color, count, *tags in rspan],
         )
 
         self.tape.scan_info = scan_info
@@ -180,13 +180,13 @@ class TestTags(TestCase):
     ):
         self.assertEqual(
             self.tape.lspan,
-            [TagBlock(color, count, other)
-                 for color, count, *other in reversed(lspan)])
+            [TagBlock(color, count, tags)
+                 for color, count, *tags in reversed(lspan)])
 
         self.assertEqual(
             self.tape.rspan,
-            [TagBlock(color, count, other)
-                 for color, count, *other in rspan])
+            [TagBlock(color, count, tags)
+                 for color, count, *tags in rspan])
 
         self.assertEqual(
             (self.scan, self.scan_info),
