@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import TYPE_CHECKING
-from dataclasses import dataclass
 
 from tm.rust_stuff import tcompile
 
@@ -14,7 +13,6 @@ if TYPE_CHECKING:
 
 ########################################
 
-@dataclass
 class MacroProg:
     program: str | MacroProg
     comp: GetInstr
@@ -161,7 +159,6 @@ class MacroProg:
 
 ########################################
 
-@dataclass
 class BlockMacro(MacroProg):
     def __init__(self, program: str | MacroProg, cell_seq: list[int]):
         *seq, cells = cell_seq
@@ -212,7 +209,6 @@ class BlockMacro(MacroProg):
 
 ########################################
 
-@dataclass
 class BacksymbolMacro(MacroProg):
     backsymbols: int
 

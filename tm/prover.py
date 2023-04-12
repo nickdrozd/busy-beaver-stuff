@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from collections import defaultdict
-from dataclasses import dataclass, field
 
 from tm.rules import make_rule, UnknownRule
 from tm.rust_stuff import PastConfig
@@ -15,21 +14,25 @@ if TYPE_CHECKING:
     MinSig = tuple[Signature, tuple[bool, bool]]
 
 
-@dataclass
 class Prover:
     prog: GetInstr
 
     rules: dict[
         Slot,
         list[tuple[MinSig, Rule]],
-    ] = field(default_factory = dict)
+    ]
 
     configs: dict[
         Signature, dict[
             State,
             PastConfig,
         ],
-    ] = field(default_factory = dict)
+    ]
+
+    def __init__(self, prog: GetInstr):
+        self.prog = prog
+        self.rules = {}
+        self.configs = {}
 
     @property
     def config_count(self) -> int:
