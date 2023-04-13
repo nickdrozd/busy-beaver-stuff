@@ -1,4 +1,4 @@
-from tm.rust_stuff import Graph
+from tm.graph import Graph
 from tm.rust_stuff import st_str as conv
 
 COLORS = (
