@@ -5,11 +5,11 @@ all : machines idris lint test generate
 clean-python :
 	rm -rf __pycache__ **/__pycache__ .mypy_cache .coverage* htmlcov build/ *.so **/*.so classes.png packages.png
 
-clean : clean-python
+clean : clean-python clean-rust
 	$(MAKE) -C machines clean
 	$(MAKE) -C idris clean
 
-## Non-Python ##########################
+## Odd langs ###########################
 
 machines :
 	$(MAKE) -C machines
@@ -17,12 +17,26 @@ machines :
 idris :
 	$(MAKE) -C idris
 
-rust :
+## Rust ################################
+
+RUST_STUFF = tm/rust_stuff.so
+
+$(RUST_STUFF) :
 	cargo build --release
-	cp target/release/librust_stuff.so tm/rust_stuff.so
+	cp target/release/librust_stuff.so $(RUST_STUFF)
+
+rust : $(RUST_STUFF)
 
 clippy :
+	cargo --version
 	cargo clippy
+
+test-rust :
+	cargo --version
+	cargo test
+
+clean-rust :
+	cargo clean
 
 ## Python ##############################
 
@@ -32,7 +46,7 @@ MODULES = tm generate test *.py
 
 PYLINT = $(PYTHON) -m pylint
 
-lint :
+lint : clippy $(RUST_STUFF)
 	$(PYLINT) --version
 	$(PYLINT) --enable-all-extensions $(MODULES)
 	$(MAKE) type
@@ -45,7 +59,7 @@ type :
 
 MYPYC = $(PYTHON) -m mypyc
 
-compile :
+compile : rust
 	$(MYPYC) --version
 	$(MYPYC) tm generate --exclude rust_stuff
 
@@ -62,15 +76,15 @@ SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(TP) $(TREEF) $(COV)
 
 PYTEST = $(PYTHON) -m unittest
 
-test :
+test : compile
 	$(PYTEST) -v $(SHORT_TESTS) $(LR) $(TUR)
 
-test-all : compile
+test-all : test-rust compile
 	$(PYTEST) discover -v
 
 COVERAGE = $(PYTHON) -m coverage
 
-coverage :
+coverage : rust
 	$(COVERAGE) --version
 	$(COVERAGE) run -m unittest -v $(SHORT_TESTS)
 
