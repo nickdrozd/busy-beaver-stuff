@@ -54,9 +54,7 @@ class BlockMeasure(Tape):
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
         self.steps += 1
 
-        blocks = len(self.lspan) + len(self.rspan)
-
-        if blocks > self.max_blocks:
+        if (blocks := self.blocks) > self.max_blocks:
             self.max_blocks = blocks
             self.max_blocks_step = self.steps
 

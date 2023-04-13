@@ -60,6 +60,10 @@ class BlockTape(ApplyRule):
             + sum(blk.count for blk in self.rspan if blk.color != 0)
         )
 
+    @property
+    def blocks(self) -> int:
+        return len(self.lspan) + len(self.rspan)
+
     def at_edge(self, edge: Shift) -> bool:
         return (
             self.scan == 0
