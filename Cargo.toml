@@ -9,4 +9,4 @@ crate-type = ["cdylib"]
 [dependencies]
 num-bigint = "*"
 num-integer = "*"
-pyo3 = { version = "0.18.1", features = ["extension-module", "num-bigint"] }
+pyo3 = { version = "0.18", features = ["extension-module", "num-bigint"] }
