@@ -179,18 +179,18 @@ class TestTags(TestCase):
             rspan: BlockSpan,
     ):
         self.assertEqual(
-            self.tape.lspan,
-            [TagBlock(color, count, tags)
-                 for color, count, *tags in reversed(lspan)])
-
-        self.assertEqual(
-            self.tape.rspan,
-            [TagBlock(color, count, tags)
-                 for color, count, *tags in rspan])
-
-        self.assertEqual(
-            (self.scan, self.scan_info),
+            (self.tape.scan, self.tape.scan_info),
             ((scan, []) if isinstance(scan, Color) else scan))
+
+        self.assertEqual(
+            lspan,
+            [[block.color, block.count, *block.tags]
+                 for block in reversed(self.tape.lspan)])
+
+        self.assertEqual(
+            rspan,
+            [[block.color, block.count, *block.tags]
+                 for block in self.tape.rspan])
 
         self.assertGreaterEqual(
             self.init_tags,
