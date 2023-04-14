@@ -88,7 +88,7 @@ pub fn make_rule(counts1: Counts, counts2: Counts, counts3: Counts) -> PyResult<
     }
 
     let all_plus_positive = rule.values().all(|op| match op {
-        Op::Plus(val) => val >= &BigInt::from(0),
+        Op::Plus(val) => val >= &Num::from(0),
         Op::Mult(_) => true,
     });
 
@@ -104,7 +104,7 @@ fn log10_limit(mut num: Num) -> bool {
     for _ in 0..10 {
         num /= 10;
 
-        if num == BigInt::from(0) {
+        if num == Num::from(0) {
             return false;
         }
     }
