@@ -36,7 +36,6 @@ class BasicBlock:
         return f"{self.color}^{show_number(self.count)}"
 
 
-@dataclass
 class BlockTape(ApplyRule):
     lspan: list[BasicBlock]
     scan: Color
@@ -117,6 +116,19 @@ class Tape(BlockTape):
 
     head: int = 0
 
+    def __init__(
+            self,
+            lspan: list[tuple[int, int]],
+            scan: Color,
+            rspan: list[tuple[int, int]],
+            head: int = 0,
+    ):
+        self.lspan = [Block(color, count) for color, count in lspan]
+        self.scan = scan
+        self.rspan = [Block(color, count) for color, count in rspan]
+
+        self.head = head
+
     def __hash__(self) -> int:
         return hash(str(self))
 
@@ -126,28 +138,24 @@ class Tape(BlockTape):
 
     def copy(self) -> Tape:
         return Tape(
-            [Block(block.color, block.count) for block in self.lspan],
+            [(block.color, block.count) for block in self.lspan],
             self.scan,
-            [Block(block.color, block.count) for block in self.rspan],
+            [(block.color, block.count) for block in self.rspan],
             head = self.head
         )
 
     def to_tag(self) -> TagTape:
         return TagTape(
-            [TagBlock(block.color, block.count)
-                 for block in self.lspan],
+            [(block.color, block.count, []) for block in self.lspan],
             self.scan,
-            [TagBlock(block.color, block.count)
-                 for block in self.rspan],
+            [(block.color, block.count, []) for block in self.rspan],
         )
 
     def to_enum(self) -> EnumTape:
         return EnumTape(
-            [EnumBlock(block.color, block.count)
-                 for block in self.lspan],
+            [(block.color, block.count) for block in self.lspan],
             self.scan,
-            [EnumBlock(block.color, block.count)
-                 for block in self.rspan],
+            [(block.color, block.count) for block in self.rspan],
         )
 
     def to_ptr(self) -> PtrTape:
@@ -225,14 +233,32 @@ class TagBlock(BasicBlock):
         default_factory = list)
 
 
-@dataclass
 class TagTape(BlockTape):
     lspan: list[TagBlock]  # type: ignore[assignment]
     scan: Color
     rspan: list[TagBlock]  # type: ignore[assignment]
 
-    scan_info: list[int] = field(
-        default_factory=list)
+    scan_info: list[int]
+
+    def __init__(
+            self,
+            lspan: list[tuple[int, int, list[int]]],
+            scan: Color,
+            rspan: list[tuple[int, int, list[int]]],
+    ):
+        self.lspan = [
+            TagBlock(color, count, tags)
+            for color, count, tags in lspan
+        ]
+
+        self.scan = scan
+
+        self.rspan = [
+            TagBlock(color, count, tags)
+            for color, count, tags in rspan
+        ]
+
+        self.scan_info = []
 
     @property
     def spans(self) -> tuple[list[TagBlock], list[TagBlock]]:
@@ -339,19 +365,29 @@ class EnumBlock(BasicBlock):
     enums: tuple[int, int] | None = None
 
 
-@dataclass
 class EnumTape(BlockTape):
     lspan: list[EnumBlock]  # type: ignore[assignment]
     scan: Color
     rspan: list[EnumBlock]  # type: ignore[assignment]
 
-    offsets: list[int] = field(
-        default_factory=lambda: [0, 0])
+    offsets: list[int]
 
-    _edges: list[bool] = field(
-        default_factory=lambda: [False, False])
+    _edges: list[bool]
 
-    def __post_init__(self) -> None:
+    def __init__(
+            self,
+            lspan: list[tuple[int, int]],
+            scan: Color,
+            rspan: list[tuple[int, int]],
+    ):
+        self.lspan = [EnumBlock(color, count) for color, count in lspan]
+        self.scan = scan
+        self.rspan = [EnumBlock(color, count) for color, count in rspan]
+
+        self.offsets = [0, 0]
+
+        self._edges = [False, False]
+
         for s, span in enumerate(self.spans):
             for i, block in enumerate(span, start=1):
                 block.enums = (s, i)

@@ -4,14 +4,7 @@ from unittest import TestCase
 from typing import TYPE_CHECKING
 
 from tm.instrs import Color
-from tm.tape import (
-    Block,
-    Tape,
-    TagBlock,
-    TagTape,
-    EnumBlock,
-    EnumTape,
-)
+from tm.tape import Tape, TagTape, EnumTape
 
 if TYPE_CHECKING:
     from tm.rules import Rule
@@ -42,10 +35,11 @@ class TestTape(TestCase):
             scan: Color,
             rspan: BlockSpan,
     ) -> None:
+        # pylint: disable = unnecessary-comprehension
         self.tape = Tape(
-            [Block(color, count) for color, count in lspan],
+            [(color, count) for color, count in lspan],
             scan,
-            [Block(color, count) for color, count in rspan])
+            [(color, count) for color, count in rspan])
 
     def assert_tape(self, tape: str):
         self.assertEqual(tape, str(self.tape))
@@ -161,10 +155,10 @@ class TestTags(TestCase):
             scan_info = []
 
         self.tape = TagTape(
-            [TagBlock(color, count, tags)
+            [(color, count, tags)
                  for color, count, *tags in reversed(lspan)],
             scan,
-            [TagBlock(color, count, tags)
+            [(color, count, tags)
                  for color, count, *tags in rspan],
         )
 
@@ -526,10 +520,11 @@ class TestEnum(TestCase):
             scan: Color,
             rspan: BlockSpan,
     ) -> None:
+        # pylint: disable = unnecessary-comprehension
         self.tape = EnumTape(
-            [EnumBlock(color, count) for color, count in lspan],
+            [(color, count) for color, count in lspan],
             scan,
-            [EnumBlock(color, count) for color, count in rspan])
+            [(color, count) for color, count in rspan])
 
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
