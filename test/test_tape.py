@@ -144,7 +144,7 @@ class TestTags(TestCase):
 
     def count_tags(self) -> int:
         return (
-            (1 if self.scan_info else 0)
+            (1 if self.tape.scan_info else 0)
             + sum(1 for block in self.tape.lspan if block.tags)
             + sum(1 for block in self.tape.rspan if block.tags)
         )
@@ -195,14 +195,6 @@ class TestTags(TestCase):
         self.assertGreaterEqual(
             self.init_tags,
             self.count_tags())
-
-    @property
-    def scan(self) -> Color:
-        return self.tape.scan
-
-    @property
-    def scan_info(self) -> list[int] | None:
-        return self.tape.scan_info
 
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
