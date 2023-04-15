@@ -146,9 +146,23 @@ class Tape(BlockTape):
 
     def to_tag(self) -> TagTape:
         return TagTape(
-            [(block.color, block.count, []) for block in self.lspan],
+            [
+                (
+                    block.color,
+                    block.count,
+                    [2 * i] if block.count > 1 else [],
+                )
+                for i, block in enumerate(self.lspan)
+            ],
             self.scan,
-            [(block.color, block.count, []) for block in self.rspan],
+            [
+                (
+                    block.color,
+                    block.count,
+                    [2 * i + 1] if block.count > 1 else [],
+                )
+                for i, block in enumerate(self.rspan)
+            ],
         )
 
     def to_enum(self) -> EnumTape:
@@ -260,14 +274,10 @@ class TagTape(BlockTape):
 
         self.scan_info = []
 
-    @property
-    def spans(self) -> tuple[list[TagBlock], list[TagBlock]]:
-        return self.lspan, self.rspan
-
     def missing_tags(self) -> bool:
         return any(
             block.count > 1 and len(block.tags) != 1
-            for span in self.spans
+            for span in (self.lspan, self.rspan)
             for block in span)
 
     def step(self, shift: Shift, color: Color, skip: bool) -> None:

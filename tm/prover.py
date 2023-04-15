@@ -136,11 +136,6 @@ class Prover:
 
         tags: TagTape = tape.to_tag()
 
-        for s, span in enumerate(tags.spans):
-            for i, block in enumerate(span):
-                if block.count > 1:
-                    block.tags.append(2 * i + s)
-
         counts = []
 
         for delta in deltas:
