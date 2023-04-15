@@ -2,25 +2,28 @@ use std::collections::HashMap;
 
 use num_bigint::BigInt;
 use num_integer::Integer;
+use num_traits::sign::Signed;
 use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
+
+use crate::instrs::Shift;
 
 create_exception!(rules, UnknownRule, PyException);
 create_exception!(rules, InfiniteRule, PyException);
 create_exception!(rules, RuleLimit, PyException);
 
-type Count = BigInt;
+pub type Count = BigInt;
 
-#[derive(Debug)]
+#[derive(Debug, FromPyObject)]
 pub enum Op {
     Plus(Count),
     Mult((Count, Count)),
 }
 
-type Index = (usize, usize);
+pub type Index = (Shift, usize);
 
-type Rule = HashMap<Index, Op>;
+pub type Rule = HashMap<Index, Op>;
 
 type Counts = (Vec<Count>, Vec<Count>);
 
@@ -67,7 +70,7 @@ pub fn make_rule(counts1: Counts, counts2: Counts, counts3: Counts) -> PyResult<
         );
 
         if let Ok(Some(op)) = diff {
-            rule.insert((0, i), op);
+            rule.insert((false, i), op);
         } else if let Err(err) = diff {
             return Err(err);
         }
@@ -81,7 +84,7 @@ pub fn make_rule(counts1: Counts, counts2: Counts, counts3: Counts) -> PyResult<
         );
 
         if let Ok(Some(op)) = diff {
-            rule.insert((1, i), op);
+            rule.insert((true, i), op);
         } else if let Err(err) = diff {
             return Err(err);
         }
@@ -110,4 +113,61 @@ fn log10_limit(mut num: Count) -> bool {
     }
 
     true
+}
+
+pub trait ApplyRule {
+    fn __getitem__(&self, index: &Index) -> Count;
+
+    fn __setitem__(&mut self, index: &Index, val: Count);
+
+    fn count_apps(&self, rule: &Rule) -> Option<Count> {
+        let mut divs: Vec<Count> = vec![];
+
+        let zero = BigInt::from(0);
+
+        for (pos, diff) in rule {
+            if let Op::Plus(plus_diff) = diff {
+                if plus_diff >= &zero {
+                    continue;
+                }
+
+                let abs_diff = plus_diff.abs();
+
+                let count = self.__getitem__(pos);
+
+                if abs_diff >= count {
+                    return None;
+                }
+
+                let (div, rem) = count.div_rem(&abs_diff);
+                divs.push(if rem > zero { div } else { div - 1 });
+            }
+        }
+
+        Some(divs.iter().min()?.clone())
+    }
+
+    fn apply_rule_rs(&mut self, rule: &Rule) -> PyResult<Option<Count>> {
+        let Some(times) = self.count_apps(rule) else { return Ok(None) };
+
+        if rule.values().any(|op| !matches!(op, Op::Plus(_))) && log10_limit(times.clone()) {
+            return Err(RuleLimit::new_err(""));
+        }
+
+        for (pos, diff) in rule {
+            match diff {
+                Op::Plus(plus_diff) => {
+                    let new_val = self.__getitem__(pos) + plus_diff * &times;
+                    self.__setitem__(pos, new_val);
+                }
+                Op::Mult((div, rem)) => {
+                    let term = &times * (1 + (&times - div) / (div - 1));
+                    let new_val = self.__getitem__(pos) * &times + rem * term;
+                    self.__setitem__(pos, new_val);
+                }
+            }
+        }
+
+        Ok(Some(times))
+    }
 }

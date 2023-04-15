@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import math
 from typing import TYPE_CHECKING
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from tm.rules import ApplyRule
+from tm.rust_stuff import TagTape
 
 if TYPE_CHECKING:
     from tm.instrs import Color, Shift
@@ -240,136 +241,6 @@ class Tape(BlockTape):
             self.head -= stepped
 
         return stepped
-
-
-@dataclass
-class TagBlock(BasicBlock):
-    tags: list[int] = field(
-        default_factory = list)
-
-
-class TagTape(BlockTape):
-    lspan: list[TagBlock]  # type: ignore[assignment]
-    scan: Color
-    rspan: list[TagBlock]  # type: ignore[assignment]
-
-    scan_info: list[int]
-
-    def __init__(
-            self,
-            lspan: list[tuple[int, int, list[int]]],
-            scan: Color,
-            rspan: list[tuple[int, int, list[int]]],
-    ):
-        self.lspan = [
-            TagBlock(color, count, tags)
-            for color, count, tags in lspan
-        ]
-
-        self.scan = scan
-
-        self.rspan = [
-            TagBlock(color, count, tags)
-            for color, count, tags in rspan
-        ]
-
-        self.scan_info = []
-
-    @property
-    def missing_tags(self) -> bool:
-        return any(
-            block.count > 1 and len(block.tags) != 1
-            for span in (self.lspan, self.rspan)
-            for block in span)
-
-    def step(self, shift: Shift, color: Color, skip: bool) -> None:
-        pull, push = (
-            (self.rspan, self.lspan)
-            if shift else
-            (self.lspan, self.rspan)
-        )
-
-        push_block = (
-            pull.pop(0)
-            if (skip := (skip and
-                         bool(pull) and
-                         pull[0].color == self.scan)) else
-            None
-        )
-
-        stepped = 1 if push_block is None else 1 + push_block.count
-
-        scan_info: list[int] = []
-
-        next_scan: Color
-
-        dec_pull: bool = False
-        inc_push: bool = False
-
-        if not pull:
-            next_scan = 0
-        else:
-            next_scan = (next_pull := pull[0]).color
-
-            if next_pull.count > 1:
-                next_pull.count -= 1
-                dec_pull = True
-            else:
-                popped = pull.pop(0)
-
-                if push_block is None:
-                    push_block = popped
-                    push_block.count = 0
-
-                if (extra := popped.tags):
-                    scan_info += extra
-                    push_block.tags = []
-
-        if push and (top_block := push[0]).color == color:
-            inc_push = True
-            top_block.count += stepped
-            top_block.tags += self.scan_info
-
-            if push_block is not None:
-                top_block.tags += push_block.tags
-        else:
-            if push_block is None:
-                push_block = TagBlock(color, 1)
-
-                if push and color != self.scan:
-                    if len(tags := push[0].tags) > 1:
-                        push_block.tags.append(tags.pop())
-
-                if dec_pull:
-                    push_block.tags.extend(self.scan_info)
-
-                    self.scan_info.clear()
-                    assert not scan_info
-            else:
-                push_block.color = color
-                push_block.count += 1
-
-                if push and len(tags := push[0].tags) > 1:
-                    push_block.tags.append(tags.pop())
-
-                if self.scan_info:
-                    push_block.tags.extend(self.scan_info)
-
-            if push or color != 0 or push_block.tags or skip:
-                if color == 0 and not push:
-                    push_block.count = 1
-
-                push.insert(0, push_block)
-
-                if self.scan_info and not (top_block := push[0]).tags:
-                    top_block.tags.extend(self.scan_info)
-
-        if inc_push and not (top_block := push[0]).tags:
-            top_block.tags.extend(scan_info)
-        else:
-            self.scan_info = scan_info
-
-        self.scan = next_scan
 
 
 @dataclass

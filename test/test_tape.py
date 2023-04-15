@@ -4,7 +4,8 @@ from unittest import TestCase
 from typing import TYPE_CHECKING
 
 from tm.instrs import Color
-from tm.tape import Tape, TagTape, EnumTape
+from tm.tape import Tape, EnumTape
+from tm.rust_stuff import TagTape
 from tm.lin_rec import PtrTape
 
 if TYPE_CHECKING:
@@ -264,8 +265,8 @@ class TestTags(TestCase):
     def count_tags(self) -> int:
         return (
             (1 if self.tape.scan_info else 0)
-            + sum(1 for block in self.tape.lspan if block.tags)
-            + sum(1 for block in self.tape.rspan if block.tags)
+            + sum(1 for _, _, tags in self.tape.lspan if tags)
+            + sum(1 for _, _, tags in self.tape.rspan if tags)
         )
 
     def set_tape(
@@ -303,13 +304,13 @@ class TestTags(TestCase):
 
         self.assertEqual(
             lspan,
-            [[block.color, block.count, *block.tags]
-                 for block in reversed(self.tape.lspan)])
+            [[color, count, *tags]
+                 for color, count, tags in reversed(self.tape.lspan)])
 
         self.assertEqual(
             rspan,
-            [[block.color, block.count, *block.tags]
-                 for block in self.tape.rspan])
+            [[color, count, *tags]
+                 for color, count, tags in self.tape.rspan])
 
         self.assertGreaterEqual(
             self.init_tags,
@@ -319,7 +320,10 @@ class TestTags(TestCase):
         self.tape.step(bool(shift), color, bool(skip))
 
     def apply_rule(self, rule: Rule) -> None:
-        self.tape.apply_rule(rule)
+        self.tape.apply_rule({
+            (bool(side), offset): diff
+            for (side, offset), diff in rule.items()
+        })
 
     def test_trace_1(self):
         # 1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA : BBB(4, 2)
