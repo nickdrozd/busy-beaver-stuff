@@ -274,6 +274,7 @@ class TagTape(BlockTape):
 
         self.scan_info = []
 
+    @property
     def missing_tags(self) -> bool:
         return any(
             block.count > 1 and len(block.tags) != 1

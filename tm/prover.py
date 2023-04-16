@@ -143,7 +143,7 @@ class Prover:
                 self.run_simulator(delta, state, tags) != state
                 or tags.scan != sig[0]
                 or tags.signature != sig
-                or tags.missing_tags()
+                or tags.missing_tags
             ):
                 return None
 
