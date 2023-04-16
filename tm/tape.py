@@ -130,7 +130,11 @@ class Tape(BlockTape):
         self.head = head
 
     def __hash__(self) -> int:
-        return hash(str(self))
+        return hash((
+            self.scan,
+            tuple((block.color, block.count) for block in self.lspan),
+            tuple((block.color, block.count) for block in self.rspan),
+        ))
 
     @staticmethod
     def init(scan: Color = 0) -> Tape:
