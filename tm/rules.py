@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     Rule = dict[Index, Op]
 
-    Counts = tuple[tuple[int, ...], tuple[int, ...]]
+    Counts = tuple[list[int], list[int]]
 
 
 class ApplyRule:

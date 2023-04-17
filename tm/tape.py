@@ -72,8 +72,8 @@ class BlockTape(ApplyRule):
     @property
     def counts(self) -> Counts:
         return (
-            tuple(block.count for block in self.lspan),
-            tuple(block.count for block in self.rspan),
+            [block.count for block in self.lspan],
+            [block.count for block in self.rspan],
         )
 
     @property

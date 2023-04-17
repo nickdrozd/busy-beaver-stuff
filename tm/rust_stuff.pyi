@@ -1,4 +1,5 @@
 from tm.instrs import State, Instr, Prog
+from tm.rules import Counts
 
 ## prover ##############################
 
@@ -32,8 +33,6 @@ Op = Plus | Mult
 Index = tuple[int, int]
 
 Rule = dict[Index, Op]
-
-Counts = tuple[tuple[int, ...], tuple[int, ...]]
 
 def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> Op | None: ...
 
