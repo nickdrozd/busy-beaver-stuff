@@ -395,21 +395,21 @@ class EnumTape(BlockTape):
             scan: Color,
             rspan: list[tuple[int, int]],
     ):
-        self.lspan = [EnumBlock(color, count) for color, count in lspan]
+        self.lspan = [
+            EnumBlock(color, count, (0, i))
+            for i, (color, count) in enumerate(lspan, start = 1)
+        ]
+
         self.scan = scan
-        self.rspan = [EnumBlock(color, count) for color, count in rspan]
+
+        self.rspan = [
+            EnumBlock(color, count, (1, i))
+            for i, (color, count) in enumerate(rspan, start = 1)
+        ]
 
         self.offsets = [0, 0]
 
         self._edges = [False, False]
-
-        for s, span in enumerate(self.spans):
-            for i, block in enumerate(span, start=1):
-                block.enums = (s, i)
-
-    @property
-    def spans(self) -> tuple[list[EnumBlock], list[EnumBlock]]:
-        return self.lspan, self.rspan
 
     @property
     def edges(self) -> tuple[bool, bool]:
