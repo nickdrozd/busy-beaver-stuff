@@ -4,8 +4,8 @@ from unittest import TestCase
 from typing import TYPE_CHECKING
 
 from tm.instrs import Color
-from tm.tape import Tape, EnumTape
-from tm.rust_stuff import TagTape
+from tm.tape import Tape
+from tm.rust_stuff import TagTape, EnumTape
 from tm.lin_rec import PtrTape
 
 if TYPE_CHECKING:
@@ -660,7 +660,7 @@ class TestEnum(TestCase):
 
     def assert_offsets(self, offsets: list[int]):
         self.assertEqual(
-            offsets,
+            tuple(offsets),
             self.tape.offsets)
 
     def assert_edges(self, edges: tuple[bool, bool]):
@@ -677,11 +677,9 @@ class TestEnum(TestCase):
         self.assertEqual(
             (lspan, scan, rspan),
             (
-                [[block.color, block.count]
-                     for block in self.tape.lspan],
+                [list(block) for block in self.tape.lspan],
                 self.tape.scan,
-                [[block.color, block.count]
-                     for block in self.tape.rspan],
+                [list(block) for block in self.tape.rspan],
             ))
 
     def test_offsets_1(self):
