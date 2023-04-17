@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-pub type Color = i32;
+pub type Color = u64;
 pub type State = i32;
 pub type Shift = bool;
 

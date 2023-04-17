@@ -22,7 +22,7 @@ pub fn parse(program: &str) -> Vec<Vec<Option<Instr>>> {
                         None
                     } else {
                         Some((
-                            instr.chars().next().unwrap().to_digit(10).unwrap() as Color,
+                            Color::from(instr.chars().next().unwrap().to_digit(10).unwrap()),
                             instr.chars().nth(1).unwrap() == RIGHT,
                             str_st(instr.chars().nth(2).unwrap()),
                         ))
