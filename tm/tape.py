@@ -415,7 +415,7 @@ class EnumTape(BlockTape):
     def edges(self) -> tuple[bool, bool]:
         return self._edges[0], self._edges[1]
 
-    def step(self, shift: Shift, color: Color, skip: bool) -> int:
+    def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
             (self.rspan, self.lspan)
             if shift else
@@ -485,8 +485,6 @@ class EnumTape(BlockTape):
                 push.insert(0, push_block)
 
         self.scan = next_scan
-
-        return stepped
 
 ##################################################
 
