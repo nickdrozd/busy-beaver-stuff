@@ -10,19 +10,19 @@ create_exception!(rules, UnknownRule, PyException);
 create_exception!(rules, InfiniteRule, PyException);
 create_exception!(rules, RuleLimit, PyException);
 
-type Num = BigInt;
+type Count = BigInt;
 
 #[derive(Debug)]
 pub enum Op {
-    Plus(Num),
-    Mult((Num, Num)),
+    Plus(Count),
+    Mult((Count, Count)),
 }
 
 type Index = (usize, usize);
 
 type Rule = HashMap<Index, Op>;
 
-type Counts = (Vec<Num>, Vec<Num>);
+type Counts = (Vec<Count>, Vec<Count>);
 
 impl IntoPy<PyObject> for Op {
     fn into_py(self, py: Python) -> PyObject {
@@ -35,7 +35,7 @@ impl IntoPy<PyObject> for Op {
 
 #[pyfunction]
 #[allow(clippy::needless_pass_by_value)]
-pub fn calculate_diff(cnt1: Num, cnt2: Num, cnt3: Num) -> PyResult<Option<Op>> {
+pub fn calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> PyResult<Option<Op>> {
     if cnt1 == cnt2 && cnt2 == cnt3 {
         return Ok(None);
     }
@@ -88,7 +88,7 @@ pub fn make_rule(counts1: Counts, counts2: Counts, counts3: Counts) -> PyResult<
     }
 
     let all_plus_positive = rule.values().all(|op| match op {
-        Op::Plus(val) => val >= &Num::from(0),
+        Op::Plus(val) => val >= &Count::from(0),
         Op::Mult(_) => true,
     });
 
@@ -100,11 +100,11 @@ pub fn make_rule(counts1: Counts, counts2: Counts, counts3: Counts) -> PyResult<
 }
 
 #[allow(dead_code)]
-fn log10_limit(mut num: Num) -> bool {
+fn log10_limit(mut num: Count) -> bool {
     for _ in 0..10 {
         num /= 10;
 
-        if num == Num::from(0) {
+        if num == Count::from(0) {
             return false;
         }
     }
