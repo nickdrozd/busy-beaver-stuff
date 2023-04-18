@@ -8,7 +8,7 @@ from tm.tape import Tape, TagTape, EnumTape
 
 if TYPE_CHECKING:
     from tm.rules import Rule
-    from tm.tape import Signature
+    from tm.tape import Signature, PtrTape
 
     BlockSpan = list[list[int]]
 
@@ -28,18 +28,21 @@ def stringify_sig(sig: Signature) -> str:
 
 class TestTape(TestCase):
     tape: Tape
+    ptr: PtrTape
 
     def set_tape(
             self,
             lspan: BlockSpan,
             scan: Color,
             rspan: BlockSpan,
+            head: int | None = None,
     ) -> None:
         # pylint: disable = unnecessary-comprehension
         self.tape = Tape(
             [(color, count) for color, count in lspan],
             scan,
-            [(color, count) for color, count in rspan])
+            [(color, count) for color, count in rspan],
+            head = head or 0)
 
     def assert_tape(self, tape: str):
         self.assertEqual(tape, str(self.tape))
@@ -129,6 +132,131 @@ class TestTape(TestCase):
 
         self.assert_tape(
             "4^118 [4] 5^2 2^1 4^1 5^7 1^1")
+
+    def assert_head(self, expected: int, tape = None):
+        self.assertEqual(
+            (tape or self.tape).head,
+            expected)
+
+    def assert_ptr_tape(self, expected: list[int]):
+        self.assertEqual(
+            self.ptr.tape,
+            expected)
+
+    def assert_ptr_positions(self, expected: tuple[int, int, int]):
+        self.assertEqual(
+            (self.ptr.l_end, self.ptr.init, self.ptr.r_end),
+            expected)
+
+        self.assertEqual(
+            abs(self.ptr.l_end) + self.ptr.r_end,
+            len(self.ptr.tape))
+
+    def test_slice(self):
+        # "1RB 2LB 1LA  2LB 2RA 0RA"
+        self.set_tape([], 0, [[2, 1], [1, 7]], head = -3)
+
+        self.assert_tape(
+            "[0] 2^1 1^7")
+
+        self.assert_head(
+            -3)
+
+        self.ptr = ptr = self.tape.to_ptr()
+
+        init_tape = [0, 2, 1, 1, 1, 1, 1, 1, 1]
+
+        ########################################
+
+        self.assert_ptr_tape(
+            init_tape)
+
+        self.assert_ptr_positions(
+            (-3, 3, 6))
+
+        ########################################
+
+        self.assert_ptr_tape(
+            init_tape)
+
+        self.assert_ptr_positions(
+            (-3, 3, 6))
+
+        ########################################
+
+        self.assertEqual(
+            ptr.get(-3, 0),
+            [0, 2, 1])
+
+        self.assertEqual(
+            ptr.get(0, 3),
+            [1, 1, 1])
+
+        self.assert_ptr_tape(
+            init_tape)
+
+        self.assert_ptr_positions(
+            (-3, 3, 6))
+
+        ########################################
+
+        self.assertEqual(
+            ptr.get(-3, 3),
+            [0, 2, 1, 1, 1, 1])
+
+        self.assert_ptr_tape(
+            init_tape)
+
+        self.assert_ptr_positions(
+            (-3, 3, 6))
+
+        ########################################
+
+        self.assertEqual(
+            ptr.get(-3, 4),
+            [0, 2, 1, 1, 1, 1, 1])
+
+        self.assert_ptr_tape(
+            init_tape + [0])
+
+        self.assert_ptr_positions(
+            (-3, 3, 7))
+
+        ########################################
+
+        self.assertEqual(
+            ptr.get(-3, 6),
+            [0, 2, 1, 1, 1, 1, 1, 1, 1])
+
+        self.assert_ptr_tape(
+            init_tape + [0, 0, 0])
+
+        self.assert_ptr_positions(
+            (-3, 3, 9))
+
+        ########################################
+
+        self.assertEqual(
+            ptr.get(-3, 7),
+            [0, 2, 1, 1, 1, 1, 1, 1, 1, 0])
+
+        self.assert_ptr_tape(
+            init_tape + [0, 0, 0, 0])
+
+        self.assert_ptr_positions(
+            (-3, 3, 10))
+
+        ########################################
+
+        self.assertEqual(
+            ptr.get(-5, 10),
+            [0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0])
+
+        self.assert_ptr_tape(
+            [0, 0] + init_tape + [0, 0, 0, 0, 0, 0, 0])
+
+        self.assert_ptr_positions(
+            (-5, 5, 13))
 
 
 class TestTags(TestCase):
