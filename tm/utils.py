@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape
+from tm.rust_stuff import Tape
 from tm.machine import Machine, LinRecMachine
 from tm.macro import BlockMacro, BacksymbolMacro
 

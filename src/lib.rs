@@ -20,7 +20,7 @@ use pyo3::prelude::*;
 use parse::{dcomp_instr, parse as parse_fn, st_str, str_st, tcompile};
 use prover::PastConfig;
 use rules::{calculate_diff, make_rule, InfiniteRule, RuleLimit, UnknownRule};
-use tape::{EnumTape, TagTape};
+use tape::{EnumTape, TagTape, Tape};
 
 #[pymodule]
 fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
@@ -42,6 +42,7 @@ fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(make_rule, m)?)?;
 
     // tape
+    m.add_class::<Tape>()?;
     m.add_class::<TagTape>()?;
     m.add_class::<EnumTape>()?;
 

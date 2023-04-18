@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
     from tm.instrs import Color, State, Slot
-    from tm.tape import Tape
+    from tm.rust_stuff import Tape
 
     RecRes = tuple[int, int]
 
@@ -92,7 +92,7 @@ class History:
         self.positions.append(pos)
 
         self.tapes[step] = PtrTape(
-            sum(q.count for q in tape.lspan) - tape.head,
+            sum(count for _, count in tape.lspan) - tape.head,
             tape.unroll(),
         )
 

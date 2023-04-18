@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape, show_number
+from tm.tape import show_number
+from tm.rust_stuff import Tape
 from tm.rust_stuff import InfiniteRule, RuleLimit
 from tm.rust_stuff import tcompile, st_str
 from tm.prover import Prover

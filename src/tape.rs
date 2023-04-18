@@ -37,7 +37,320 @@ impl IntoPy<PyObject> for Signature {
 
 /*****************************************************************/
 
-type Tag = u8;
+type Tag = u16;
+
+struct Block {
+    color: Color,
+    count: Count,
+}
+
+#[pyclass(subclass)]
+pub struct Tape {
+    lspan: Vec<Block>,
+
+    #[pyo3(get, set)]
+    pub scan: Color,
+
+    rspan: Vec<Block>,
+
+    #[pyo3(get)]
+    pub head: i16,
+}
+
+#[pymethods]
+impl Tape {
+    #[new]
+    fn new(
+        lspan: Vec<(Color, Count)>,
+        scan: Color,
+        rspan: Vec<(Color, Count)>,
+        head: Option<i16>,
+    ) -> Self {
+        Self {
+            lspan: lspan
+                .into_iter()
+                .map(|(color, count)| Block { color, count })
+                .collect(),
+            scan,
+            rspan: rspan
+                .into_iter()
+                .map(|(color, count)| Block { color, count })
+                .collect(),
+            head: head.unwrap_or(0),
+        }
+    }
+
+    #[staticmethod]
+    fn init(scan: Option<Color>) -> Self {
+        Self::new(vec![], scan.unwrap_or(0), vec![], None)
+    }
+
+    #[getter]
+    fn lspan(&self) -> Vec<(Color, Count)> {
+        self.lspan
+            .iter()
+            .map(|block| (block.color, block.count.clone()))
+            .collect()
+    }
+
+    #[getter]
+    fn rspan(&self) -> Vec<(Color, Count)> {
+        self.rspan
+            .iter()
+            .map(|block| (block.color, block.count.clone()))
+            .collect()
+    }
+    pub fn copy(&self) -> Self {
+        Self {
+            lspan: self
+                .lspan
+                .iter()
+                .map(|block| Block {
+                    color: block.color,
+                    count: block.count.clone(),
+                })
+                .collect(),
+            scan: self.scan,
+            rspan: self
+                .rspan
+                .iter()
+                .map(|block| Block {
+                    color: block.color,
+                    count: block.count.clone(),
+                })
+                .collect(),
+            head: self.head,
+        }
+    }
+    pub fn to_tag(&self) -> TagTape {
+        TagTape {
+            lspan: self
+                .lspan
+                .iter()
+                .enumerate()
+                .map(|(i, block)| TagBlock {
+                    color: block.color,
+                    count: block.count.clone(),
+                    tags: if block.count > Count::from(1) {
+                        vec![2 * i as Tag]
+                    } else {
+                        vec![]
+                    },
+                })
+                .collect(),
+            scan: self.scan,
+            rspan: self
+                .rspan
+                .iter()
+                .enumerate()
+                .map(|(i, block)| TagBlock {
+                    color: block.color,
+                    count: block.count.clone(),
+                    tags: if block.count > Count::from(1) {
+                        vec![2 * i as Tag + 1]
+                    } else {
+                        vec![]
+                    },
+                })
+                .collect(),
+            scan_info: vec![],
+        }
+    }
+    pub fn to_enum(&self) -> EnumTape {
+        EnumTape::new(
+            self.lspan
+                .iter()
+                .map(|block| (block.color, block.count.clone()))
+                .collect(),
+            self.scan,
+            self.rspan
+                .iter()
+                .map(|block| (block.color, block.count.clone()))
+                .collect(),
+        )
+    }
+    pub fn unroll(&self) -> Vec<Color> {
+        let mut unrolled_tape = Vec::new();
+
+        // Unroll left span
+        for block in self.lspan.iter().rev() {
+            for _ in 0..block.count.to_u32_digits().1[0] {
+                unrolled_tape.push(block.color);
+            }
+        }
+
+        // Add current scanned cell
+        unrolled_tape.push(self.scan);
+
+        // Unroll right span
+        for block in &self.rspan {
+            for _ in 0..block.count.to_u32_digits().1[0] {
+                unrolled_tape.push(block.color);
+            }
+        }
+
+        unrolled_tape
+    }
+
+    #[getter]
+    pub fn blank(&self) -> bool {
+        self.scan == 0 && self.lspan.is_empty() && self.rspan.is_empty()
+    }
+
+    #[getter]
+    pub fn marks(&self) -> Count {
+        i32::from(self.scan != 0)
+            + self
+                .lspan
+                .iter()
+                .filter(|block| block.color != 0)
+                .map(|block| block.count.clone())
+                .sum::<Count>()
+            + self
+                .rspan
+                .iter()
+                .filter(|block| block.color != 0)
+                .map(|block| block.count.clone())
+                .sum::<Count>()
+    }
+
+    #[getter]
+    pub fn blocks(&self) -> usize {
+        self.lspan.len() + self.rspan.len()
+    }
+
+    pub fn at_edge(&self, edge: Shift) -> bool {
+        self.scan == 0 && (if edge { &self.rspan } else { &self.lspan }).is_empty()
+    }
+
+    #[getter]
+    pub fn counts(&self) -> (Vec<Count>, Vec<Count>) {
+        (
+            self.lspan.iter().map(|b| b.count.clone()).collect(),
+            self.rspan.iter().map(|b| b.count.clone()).collect(),
+        )
+    }
+
+    #[getter]
+    pub fn signature(&self) -> Signature {
+        Signature {
+            scan: self.scan,
+            lspan: self
+                .lspan
+                .iter()
+                .map(|block| {
+                    let cons = if block.count == Count::from(1) {
+                        ColorCount::Just
+                    } else {
+                        ColorCount::Mult
+                    };
+                    cons(block.color)
+                })
+                .collect(),
+            rspan: self
+                .rspan
+                .iter()
+                .map(|block| {
+                    let cons = if block.count == Count::from(1) {
+                        ColorCount::Just
+                    } else {
+                        ColorCount::Mult
+                    };
+                    cons(block.color)
+                })
+                .collect(),
+        }
+    }
+
+    pub fn step(&mut self, shift: bool, color: Color, skip: bool) -> Count {
+        let (pull, push) = if shift {
+            (&mut self.rspan, &mut self.lspan)
+        } else {
+            (&mut self.lspan, &mut self.rspan)
+        };
+
+        let mut push_block = if skip && !pull.is_empty() && pull[0].color == self.scan {
+            Some(pull.remove(0))
+        } else {
+            None
+        };
+
+        let stepped = push_block.as_ref().map_or_else(
+            || Count::from(1),
+            |block| Count::from(1) + block.count.clone(),
+        );
+
+        let next_scan: Color;
+
+        if pull.is_empty() {
+            next_scan = 0;
+        } else {
+            let next_pull = &mut pull[0];
+
+            next_scan = next_pull.color;
+
+            if next_pull.count > Count::from(1) {
+                next_pull.count -= 1;
+            } else {
+                let mut popped = pull.remove(0);
+
+                if push_block.is_none() {
+                    popped.count = Count::from(0);
+                    push_block = Some(popped);
+                }
+            }
+        }
+
+        if !push.is_empty() && push[0].color == color {
+            push[0].count += stepped.clone();
+        } else {
+            if let Some(block) = &mut push_block {
+                block.color = color;
+                block.count += 1;
+            } else {
+                push_block = Some(Block {
+                    color,
+                    count: Count::from(1),
+                });
+            }
+
+            if !push.is_empty() || color != 0 {
+                if let Some(block) = push_block {
+                    push.insert(0, block);
+                }
+            }
+        }
+
+        self.scan = next_scan;
+
+        stepped
+    }
+
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn apply_rule(&mut self, rule: Rule) -> PyResult<Option<Count>> {
+        self.apply_rule_rs(&rule)
+    }
+}
+
+impl ApplyRule for Tape {
+    fn __getitem__(&self, index: &Index) -> Count {
+        let (side, pos) = index;
+        let span = if *side { &self.rspan } else { &self.lspan };
+        span[*pos].count.clone()
+    }
+
+    fn __setitem__(&mut self, index: &Index, val: Count) {
+        let (side, pos) = index;
+        let span = if *side {
+            &mut self.rspan
+        } else {
+            &mut self.lspan
+        };
+        span[*pos].count = val;
+    }
+}
+
+/*****************************************************************/
 
 struct TagBlock {
     color: Color,

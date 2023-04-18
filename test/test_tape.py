@@ -4,8 +4,7 @@ from unittest import TestCase
 from typing import TYPE_CHECKING
 
 from tm.instrs import Color
-from tm.tape import Tape
-from tm.rust_stuff import TagTape, EnumTape
+from tm.rust_stuff import Tape, TagTape, EnumTape
 from tm.lin_rec import PtrTape
 
 if TYPE_CHECKING:
