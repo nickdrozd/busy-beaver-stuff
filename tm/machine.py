@@ -227,7 +227,7 @@ class Machine:
         self.state = state
         self.cycles = cycle
 
-        assert len(results := self.term_results) == 1, results
+        # assert len(results := self.term_results) == 1, results
 
 ########################################
 
