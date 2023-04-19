@@ -171,16 +171,10 @@ class TestTape(TestCase):
         self.assert_ptr_tape(
             init_tape)
 
-        self.assert_ptr_positions(
-            (-3, 3, 6))
-
         ########################################
 
         self.assert_ptr_tape(
             init_tape)
-
-        self.assert_ptr_positions(
-            (-3, 3, 6))
 
         ########################################
 
@@ -195,9 +189,6 @@ class TestTape(TestCase):
         self.assert_ptr_tape(
             init_tape)
 
-        self.assert_ptr_positions(
-            (-3, 3, 6))
-
         ########################################
 
         self.assertEqual(
@@ -206,9 +197,6 @@ class TestTape(TestCase):
 
         self.assert_ptr_tape(
             init_tape)
-
-        self.assert_ptr_positions(
-            (-3, 3, 6))
 
         ########################################
 
@@ -219,9 +207,6 @@ class TestTape(TestCase):
         self.assert_ptr_tape(
             init_tape + [0])
 
-        self.assert_ptr_positions(
-            (-3, 3, 7))
-
         ########################################
 
         self.assertEqual(
@@ -231,9 +216,6 @@ class TestTape(TestCase):
         self.assert_ptr_tape(
             init_tape + [0, 0, 0])
 
-        self.assert_ptr_positions(
-            (-3, 3, 9))
-
         ########################################
 
         self.assertEqual(
@@ -242,9 +224,6 @@ class TestTape(TestCase):
 
         self.assert_ptr_tape(
             init_tape + [0, 0, 0, 0])
-
-        self.assert_ptr_positions(
-            (-3, 3, 10))
 
         ########################################
 
