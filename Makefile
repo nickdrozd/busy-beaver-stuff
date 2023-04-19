@@ -25,7 +25,9 @@ $(RUST_STUFF) :
 	cargo build --release
 	cp target/release/librust_stuff.so $(RUST_STUFF)
 
-rust : $(RUST_STUFF)
+rust :
+	cargo build --release
+	cp target/release/librust_stuff.so $(RUST_STUFF)
 
 clippy :
 	cargo --version
@@ -46,7 +48,7 @@ MODULES = tm generate test *.py
 
 PYLINT = $(PYTHON) -m pylint
 
-lint : clippy $(RUST_STUFF)
+lint : clippy rust
 	$(PYLINT) --version
 	$(PYLINT) --enable-all-extensions $(MODULES)
 	$(MAKE) type
@@ -76,7 +78,7 @@ SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(TP) $(TREEF) $(COV)
 
 PYTEST = $(PYTHON) -m unittest
 
-test : compile
+test : rust
 	$(PYTEST) -v $(SHORT_TESTS) $(LR) $(TUR)
 
 test-all : test-rust compile
