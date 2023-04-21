@@ -176,18 +176,21 @@ class Tape(BlockTape):
             [(block.color, block.count) for block in self.rspan],
         )
 
+    def unroll(self) -> list[Color]:
+        return [
+            block.color
+            for block in reversed(self.lspan)
+            for _ in range(block.count)
+        ] + [self.scan] + [
+            block.color
+            for block in self.rspan
+            for _ in range(block.count)
+        ]
+
     def to_ptr(self) -> PtrTape:
         return PtrTape(
             sum(q.count for q in self.lspan) - self.head,
-            [
-                block.color
-                for block in reversed(self.lspan)
-                for _ in range(block.count)
-            ] + [self.scan] + [
-                block.color
-                for block in self.rspan
-                for _ in range(block.count)
-            ]
+            self.unroll(),
         )
 
     def step(self, shift: Shift, color: Color, skip: bool) -> int:

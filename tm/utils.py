@@ -72,7 +72,7 @@ def opt_block(prog: str, steps: int) -> int:
     tape = Machine(prog).run(
         # pylint: disable = line-too-long
         sim_lim = machine.tape.max_blocks_step,  # type: ignore[attr-defined]
-    ).tape.to_ptr().tape
+    ).tape.unroll()
 
     opt_size = 1
     min_comp = 1 + len(tape)
