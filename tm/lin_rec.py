@@ -6,10 +6,53 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from tm.instrs import State, Slot
-    from tm.tape import Tape, PtrTape
+    from tm.instrs import Color, State, Slot
+    from tm.tape import Tape
 
     RecRes = tuple[int, int]
+
+
+@dataclass
+class PtrTape:
+    init: int
+    tape: list[Color]
+
+    @property
+    def r_end(self) -> int:
+        return len(self.tape) - self.init
+
+    @property
+    def l_end(self) -> int:
+        return 0 - self.init
+
+    def get(
+            self,
+            start: int | None = None,
+            stop: int | None = None,
+    ) -> list[Color]:
+        if stop is None:
+            stop = self.r_end + 1
+        else:
+            self.extend_to_bound_right(stop)
+
+        if start is None:
+            start = self.l_end
+        else:
+            self.extend_to_bound_left(start)
+
+        return self.tape[ start + self.init : stop + self.init ]
+
+    def extend_to_bound_right(self, stop: int) -> None:
+        if (rdiff := stop + self.init - self.r_end) > 0:
+            self.tape.extend([0] * rdiff)
+
+    def extend_to_bound_left(self, start: int) -> None:
+        if (ldiff := 0 - (start + self.init)) > 0:
+            self.tape = [0] * ldiff + self.tape
+            self.init += ldiff
+
+
+if TYPE_CHECKING:
     Tapes = dict[int, PtrTape]
 
 
@@ -48,7 +91,10 @@ class History:
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
 
-        self.tapes[step] = tape.to_ptr()
+        self.tapes[step] = PtrTape(
+            sum(q.count for q in tape.lspan) - tape.head,
+            tape.unroll(),
+        )
 
     def calculate_beeps(
             self,

@@ -5,10 +5,11 @@ from typing import TYPE_CHECKING
 
 from tm.instrs import Color
 from tm.tape import Tape, TagTape, EnumTape
+from tm.lin_rec import PtrTape
 
 if TYPE_CHECKING:
     from tm.rules import Rule
-    from tm.tape import Signature, PtrTape
+    from tm.tape import Signature
 
     BlockSpan = list[list[int]]
 
@@ -162,7 +163,10 @@ class TestTape(TestCase):
         self.assert_head(
             -3)
 
-        self.ptr = ptr = self.tape.to_ptr()
+        self.ptr = ptr = PtrTape(
+            sum(q.count for q in self.tape.lspan) - self.tape.head,
+            self.tape.unroll(),
+        )
 
         init_tape = [0, 2, 1, 1, 1, 1, 1, 1, 1]
 
