@@ -134,6 +134,20 @@ class TestTape(TestCase):
         self.assert_tape(
             "4^118 [4] 5^2 2^1 4^1 5^7 1^1")
 
+    def test_rule_3(self):
+        self.set_tape([[1, 152], [2, 655345], [3, 1]], 0, [])
+
+        self.assert_tape(
+            "3^1 2^655345 1^152 [0]")
+
+        self.tape.apply_rule({
+            (0, 1): -2,
+            (0, 0): (2, 8),
+        })
+
+        self.assert_tape(
+            "3^1 2^1 1^(~10^98641) [0]")
+
     def assert_head(self, expected: int, tape = None):
         self.assertEqual(
             (tape or self.tape).head,
