@@ -979,6 +979,8 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 }
 
 DO_HALT: set[str] = {
+    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB 1R_ 3RB 4LA",  # 10^^70
+
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",  # 10^^15
     "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",  # 10^^5
     "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",  # 10^1292913985
@@ -1424,8 +1426,12 @@ PROVER_QUASIHALT = {
 }
 
 RULE_LIMIT = {
+    # 6/2
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",  # 10^^15
     "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",  # 10^^5
+
+    # 2/6
+    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB 1R_ 3RB 4LA",  # 10^^70
 }
 
 ## test program ######################################################
