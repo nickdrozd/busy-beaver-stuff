@@ -8,7 +8,7 @@ from tm.rules import ApplyRule
 
 if TYPE_CHECKING:
     from tm.instrs import Color, Shift
-    from tm.rules import Counts, Index
+    from tm.rules import Count, Counts, Index
 
     Signature = tuple[
         Color,
@@ -30,7 +30,7 @@ def show_number(num: int) -> str:
 @dataclass
 class BasicBlock:
     color: Color
-    count: int
+    count: Count
 
     def __str__(self) -> str:
         return f"{self.color}^{show_number(self.count)}"
@@ -88,14 +88,14 @@ class BlockTape(ApplyRule):
                 for block in self.rspan),
         )
 
-    def get_count(self, index: Index) -> int:
+    def get_count(self, index: Index) -> Count:
         side, pos = index
 
         span = self.rspan if side else self.lspan
 
         return span[pos].count
 
-    def set_count(self, index: Index, val: int) -> None:
+    def set_count(self, index: Index, val: Count) -> None:
         side, pos = index
 
         span = self.rspan if side else self.lspan

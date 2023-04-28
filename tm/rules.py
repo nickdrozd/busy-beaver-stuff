@@ -7,10 +7,12 @@ from typing import TYPE_CHECKING
 from tm.rust_stuff import RuleLimit
 
 
+Count = int
+
 Plus = int
 
 if TYPE_CHECKING:
-    Mult = tuple[int, int]
+    Mult = tuple[Count, Count]
 
     Op = Plus | Mult
 
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
 
     Rule = dict[Index, Op]
 
-    Counts = tuple[list[int], list[int]]
+    Counts = tuple[list[Count], list[Count]]
 
 
 class ApplyRule:
@@ -26,9 +28,9 @@ class ApplyRule:
     def get_count(self, index: Index) -> int: ...
 
     @abstractmethod
-    def set_count(self, index: Index, val: int) -> None: ...
+    def set_count(self, index: Index, val: Count) -> None: ...
 
-    def count_apps(self, rule: Rule) -> int | None:
+    def count_apps(self, rule: Rule) -> Count | None:
         divs: list[int] = []
 
         for pos, diff in rule.items():
