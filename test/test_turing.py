@@ -557,7 +557,7 @@ class Fast(TuringTest):
             self.run_bb(
                 (
                     prog
-                    if (opt := opt_block(prog, steps = 100)) == 1 else
+                    if (opt := opt_block(prog, steps = 120)) == 1 else
                     BlockMacro(prog, [opt])
                 ),
                 prover = True,
