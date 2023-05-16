@@ -55,18 +55,19 @@ class ApplyRule:
 
         for pos, diff in rule.items():
             if isinstance(diff, Plus):
-                self.set_count(pos, self.get_count(pos) + diff * times)
+                self.set_count(
+                    pos,
+                    self.get_count(pos) + diff * times
+                )
                 continue
 
             div, mod = diff
 
             self.set_count(
                 pos,
-                (
-                    self.get_count(pos)
+                self.get_count(pos)
                     * (term := div ** times)
-                    + mod * (1 + ((term - div) // (div-1)))
-                ),
+                    + mod * (1 + ((term - div) // (div - 1)))
             )
 
         return times
