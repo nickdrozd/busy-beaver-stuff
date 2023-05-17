@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
+from tm.num import show_number
 from tm.rules import ApplyRule
 
 if TYPE_CHECKING:
@@ -15,16 +15,6 @@ if TYPE_CHECKING:
         tuple[Color | tuple[Color], ...],
         tuple[Color | tuple[Color], ...],
     ]
-
-
-TRUNCATE_COUNT = 10 ** 12
-
-def show_number(num: int) -> str:
-    return (
-        str(num)
-        if num < TRUNCATE_COUNT else
-        f"(~10^{math.log10(num):.0f})"
-    )
 
 
 @dataclass
