@@ -58,6 +58,10 @@ class ApplyRule:
                 self.set_count(
                     pos,
                     self.get_count(pos) + diff * times
+                    if diff >= -1 else
+                    mod
+                    if (mod := self.get_count(pos) % -diff) > 0 else
+                    mod + -diff
                 )
                 continue
 
