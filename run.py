@@ -1,6 +1,5 @@
 import sys
 
-from perf import profile
 from tm.utils import opt_block
 from tm.machine import Machine
 from tm.macro import BlockMacro, BacksymbolMacro
@@ -36,6 +35,7 @@ def main() -> None:
 
 if __name__ == '__main__':
     if PROFILE:
+        from perf import profile
         PRINT = 0
         main = profile(main)
 
