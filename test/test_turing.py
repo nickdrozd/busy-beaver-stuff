@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from math import isclose, log10
 from typing import TYPE_CHECKING
-from unittest import skip
+from unittest import skip, expectedFailure
 from itertools import product
 
 from test.prog_data import *
@@ -566,6 +566,23 @@ class Fast(TuringTest):
 
             self.assertIsNotNone(
                 self.machine.limrul)
+
+    @expectedFailure
+    def test_rule_limit_fail(self):
+        prog = "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA"
+
+        self.run_bb(
+            (
+                prog
+                if (opt := opt_block(prog, steps = 120)) == 1 else
+                BlockMacro(prog, [opt])
+            ),
+            prover = True,
+            normal = False,
+        )
+
+        self.assertIsNotNone(
+            self.machine.limrul)
 
     def test_backsymbol_required(self):
         prog = "1RB 0LC  1LC 0RC  1LA 0LC"
