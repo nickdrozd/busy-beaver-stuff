@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
-from tm.rust_stuff import make_rule, UnknownRule
+from tm.rules import make_rule
+from tm.rust_stuff import UnknownRule
 from tm.rust_stuff import PastConfig
 
 if TYPE_CHECKING:
