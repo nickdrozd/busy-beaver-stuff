@@ -33,7 +33,7 @@ class TestTree(TestCase):
     results: Any  # type: ignore[misc]
 
     def setUp(self):
-        self.queue = Queue()
+        self.queue = Queue()  # type: ignore[assignment]
 
         self.results = Manager().dict(
             blanks = (0, ""),
