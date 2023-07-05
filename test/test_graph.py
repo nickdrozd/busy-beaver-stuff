@@ -1,9 +1,9 @@
 from unittest import TestCase
 
 from test.prog_data import GRAPHS, SPAGHETTI, KERNEL
+from test.test_utils import st_str  # type: ignore[attr-defined]
 
 from tm.graph import Graph
-from tm.rust_stuff import st_str
 
 
 class TestGraph(TestCase):

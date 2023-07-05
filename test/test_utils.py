@@ -3,6 +3,8 @@ from unittest import TestCase
 # pylint: disable = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 
+# pylint: disable-next = unused-import
+from tm.rust_stuff import str_st, st_str
 from tm.machine import Machine
 from tm.program import Program
 
