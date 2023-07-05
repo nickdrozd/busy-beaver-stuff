@@ -1,7 +1,8 @@
-from queue import Queue as Q
-from typing import Any
+from __future__ import annotations
+
 from unittest import TestCase
 from multiprocessing import Queue, Manager
+from typing import TYPE_CHECKING
 
 from tm.program import Program
 from tm.utils import run_variations
@@ -16,7 +17,11 @@ def read_progs(name: str) -> set[str]:
         )
 
 
-def queue_to_set(queue: Q[str]) -> set[str]:
+if TYPE_CHECKING:
+    Q = Queue[str]  # pylint: disable = unsubscriptable-object
+
+
+def queue_to_set(queue: Q) -> set[str]:
     out = set()
 
     while not queue.empty():  # yuck -- pylint: disable = while-used
@@ -26,16 +31,16 @@ def queue_to_set(queue: Q[str]) -> set[str]:
 
 
 class TestTree(TestCase):
-    queue: Q[str]
+    queue: Q
 
     progs: set[str]
 
-    results: Any  # type: ignore[misc]
+    results: dict[str, tuple[int, str]]
 
     def setUp(self):
-        self.queue = Queue()  # type: ignore[assignment]
+        self.queue = Queue()
 
-        self.results = Manager().dict(
+        self.results = Manager().dict(  # type: ignore[assignment]
             blanks = (0, ""),
             halted = (0, ""),
             spnout = (0, ""),
