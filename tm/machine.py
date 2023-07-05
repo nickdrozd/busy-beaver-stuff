@@ -127,11 +127,10 @@ class Machine:
             self.program
         )
 
-        self.tape = tape = (
-            tape
-            if tape is not None else
-            Tape.init()
-        )
+        if tape is None:
+            tape = Tape.init()
+
+        self.tape = tape
 
         if prover:
             self.prover = Prover(comp)
