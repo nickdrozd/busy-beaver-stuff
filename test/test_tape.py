@@ -3,12 +3,12 @@ from __future__ import annotations
 from unittest import TestCase
 from typing import TYPE_CHECKING
 
-from tm.instrs import Color
 from tm.tape import Tape, TagTape, EnumTape
 from tm.lin_rec import PtrTape
 
 if TYPE_CHECKING:
     from tm.rules import Rule
+    from tm.instrs import Color
     from tm.tape import Signature
 
     BlockSpan = list[list[int]]
@@ -299,7 +299,7 @@ class TestTags(TestCase):
     ):
         self.assertEqual(
             (self.tape.scan, self.tape.scan_info),
-            ((scan, []) if isinstance(scan, Color) else scan))
+            (scan if isinstance(scan, tuple) else (scan, [])))
 
         self.assertEqual(
             lspan,
