@@ -1,7 +1,12 @@
 from unittest import TestCase
 
-# pylint: disable = wildcard-import, unused-wildcard-import
-from test.prog_data import *
+from test.prog_data import (
+    KERNEL,
+    SPAGHETTI,
+    CANT_HALT_FALSE_NEGATIVES,
+    CANT_BLANK_FALSE_NEGATIVES,
+    CANT_SPIN_OUT_FALSE_NEGATIVES,
+)
 
 # pylint: disable-next = unused-import
 from tm.rust_stuff import str_st, st_str
