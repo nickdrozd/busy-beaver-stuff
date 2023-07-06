@@ -36,6 +36,7 @@ TERM_CATS = (
 
 class Machine:
     program: str | GetInstr
+    comp: GetInstr
 
     tape: Tape
     state: State
@@ -63,6 +64,12 @@ class Machine:
 
     def __init__(self, program: str | GetInstr):
         self.program = program
+
+        self.comp = (
+            tcompile(self.program)
+            if isinstance(self.program, str) else
+            self.program
+        )
 
     @property
     def term_results(self) -> tuple[tuple[str, Result], ...]:
@@ -121,11 +128,7 @@ class Machine:
             tape: Tape | None = None,
             prover: bool = False,
     ) -> Self:
-        comp: GetInstr = (
-            tcompile(self.program)
-            if isinstance(self.program, str) else
-            self.program
-        )
+        comp = self.comp
 
         if tape is None:
             tape = Tape.init()
@@ -247,11 +250,7 @@ class LinRecMachine(Machine):
 
         self.blanks = {}
 
-        comp: GetInstr = (
-            tcompile(self.program)
-            if isinstance(self.program, str) else
-            self.program
-        )
+        comp = self.comp
 
         self.tape = tape = Tape.init()
 
