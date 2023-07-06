@@ -1,6 +1,3 @@
-from tm.instrs import State, Instr, Prog
-from tm.rules import Counts
-
 ## prover ##############################
 
 class PastConfig:
@@ -9,6 +6,14 @@ class PastConfig:
     def next_deltas(self, cycle: int) -> tuple[int, int] | None: ...
 
 ## pasre ###############################
+
+Color = int
+State = int
+Shift = bool
+
+Slot = tuple[State, Color]
+Instr = tuple[Color, Shift, State]
+Prog = dict[Slot, Instr | None]
 
 LetterState = str
 
