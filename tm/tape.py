@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
-from tm.num import show_number
+from tm.show import show_number
 from tm.rules import ApplyRule
 
 if TYPE_CHECKING:
