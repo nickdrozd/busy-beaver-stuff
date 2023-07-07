@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.rust_stuff import st_str
+from tm.parse import st_str
 from tm.program import Program
 
 if TYPE_CHECKING:

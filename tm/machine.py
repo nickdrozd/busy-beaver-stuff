@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 
 from tm.show import show_number
 from tm.tape import Tape
-from tm.rust_stuff import InfiniteRule, RuleLimit
-from tm.rust_stuff import tcompile, st_str
 from tm.prover import Prover
 from tm.lin_rec import History
+from tm.parse import tcompile, st_str
+from tm.rules import InfiniteRule, RuleLimit
 
 if TYPE_CHECKING:
     from typing import Self

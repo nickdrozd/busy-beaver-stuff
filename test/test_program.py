@@ -1,9 +1,9 @@
 # pylint: disable = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 from test.test_utils import BackwardReasoning
-from test.test_utils import str_st, st_str  # type: ignore[attr-defined]
 
 from tm.program import Program
+from tm.parse import str_st, st_str
 
 
 class TestProgram(BackwardReasoning):

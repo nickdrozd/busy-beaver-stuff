@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from tm.rust_stuff import st_str
+from tm.parse import st_str
 from tm.machine import LinRecMachine
 from generate.naive import yield_programs
 

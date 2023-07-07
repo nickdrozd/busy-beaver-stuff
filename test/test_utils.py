@@ -8,8 +8,6 @@ from test.prog_data import (
     CANT_SPIN_OUT_FALSE_NEGATIVES,
 )
 
-# pylint: disable-next = unused-import
-from tm.rust_stuff import str_st, st_str
 from tm.machine import Machine
 from tm.program import Program
 

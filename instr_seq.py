@@ -1,6 +1,6 @@
 import sys
 
-from tm.rust_stuff import st_str
+from tm.parse import st_str
 from tm.program import Program
 
 def format_sequence(prog: Program) -> None:

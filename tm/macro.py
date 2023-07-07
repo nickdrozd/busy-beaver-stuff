@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from tm.rust_stuff import tcompile
+from tm.parse import tcompile
 
 if TYPE_CHECKING:
     from tm.instrs import Color, State, Slot, Instr, GetInstr
