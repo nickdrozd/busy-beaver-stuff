@@ -8,9 +8,8 @@ from unittest import skip, expectedFailure
 from itertools import product
 
 from test.prog_data import *
-from test.test_utils import BackwardReasoning
+from test.test_utils import BackwardReasoning, str_st
 
-from tm.parse import str_st
 from tm.utils import opt_block
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine
