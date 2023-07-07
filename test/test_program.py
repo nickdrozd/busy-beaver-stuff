@@ -1,9 +1,9 @@
 # pylint: disable = wildcard-import, unused-wildcard-import
 from test.prog_data import *
-from test.test_utils import BackwardReasoning, str_st
+from test.test_utils import BackwardReasoning, read_state
 
 from tm.program import Program
-from tm.parse import st_str
+from tm.show import show_state
 
 
 class TestProgram(BackwardReasoning):
@@ -11,12 +11,12 @@ class TestProgram(BackwardReasoning):
 
     def assert_used_states(self, states: set[str]):
         self.assertEqual(
-            set(map(str_st, states)),
+            set(map(read_state, states)),
             set(self.prog.used_states))
 
     def assert_available_states(self, states: set[str]):
         self.assertEqual(
-            set(map(str_st, states)),
+            set(map(read_state, states)),
             set(self.prog.available_states))
 
     def assert_used_colors(self, colors: set[int]):
@@ -31,14 +31,14 @@ class TestProgram(BackwardReasoning):
 
     def assert_last_slot(self, slot: str | None):
         self.assertEqual(
-            (str_st(slot[0]), int(slot[1]))
+            (read_state(slot[0]), int(slot[1]))
                 if slot is not None else None,
             self.prog.last_slot)
 
     def assert_slots(self, slots: tuple[str, ...]):
         self.assertEqual(
             tuple(
-                (str_st(slot[0]), int(slot[1]))
+                (read_state(slot[0]), int(slot[1]))
                 for slot in slots),
             self.prog.slots)
 
@@ -58,7 +58,7 @@ class TestProgram(BackwardReasoning):
         for (prog, loc), extensions in BRANCH.items():
             self.assertEqual(
                 set(Program(prog).branch(
-                    (str_st(loc[0]), int(loc[1])))),
+                    (read_state(loc[0]), int(loc[1])))),
                 extensions)
 
     def test_normalize(self):
@@ -73,7 +73,7 @@ class TestProgram(BackwardReasoning):
             self.assertEqual(
                 sequence,
                 {
-                    partial: (step, st_str(state) + str(color))
+                    partial: (step, show_state(state) + str(color))
                     for partial, step, (state, color) in
                     Program(prog).instr_seq
                 },
@@ -82,7 +82,7 @@ class TestProgram(BackwardReasoning):
     def test_mother_of_giants(self):
         mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
 
-        for prog in Program(mother).branch((str_st('E'), 0)):
+        for prog in Program(mother).branch((read_state('E'), 0)):
             self.assert_could_blank(prog)
             self.assert_could_spin_out(prog)
 

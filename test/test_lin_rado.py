@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from tm.machine import LinRecMachine, st_str
+from tm.machine import LinRecMachine, show_state
 from generate.naive import yield_programs
 
 LEFT, RIGHT = 'L', 'R'
@@ -164,7 +164,7 @@ def lr_convert(rado_string: int) -> str:
 
         v_sh = LEFT if int(sh) == 0 else RIGHT
 
-        v_tr = st_str(int(''.join(tr), 2) - 1)
+        v_tr = show_state(int(''.join(tr), 2) - 1)
 
         return f'{pr}{v_sh}{v_tr}'
 

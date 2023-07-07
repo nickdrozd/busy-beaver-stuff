@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from functools import cached_property
 
-from tm.parse import parse, st_str
+from tm.show import show_state
+from tm.parse import parse
 
 if TYPE_CHECKING:
     from tm.parse import Color, State
@@ -27,14 +28,14 @@ class Graph:
 
     def __str__(self) -> str:
         return ''.join(
-            st_str(dst)
+            show_state(dst)
             for conn in self.arrows.values()
             for dst in conn
         )
 
     def __repr__(self) -> str:
         return repr({
-            st_str(state): tuple(map(st_str, conns))
+            show_state(state): tuple(map(show_state, conns))
             for state, conns in self.arrows.items()
         })
 
@@ -74,13 +75,13 @@ class Graph:
     def is_normal(self) -> bool:
         flat_graph = str(self)
 
-        if any(st_str(state) not in flat_graph
+        if any(show_state(state) not in flat_graph
                for state in self.states[1:]):
             return False
 
         return (
             positions := tuple(
-                flat_graph.find(st_str(state))
+                flat_graph.find(show_state(state))
                 for state in self.states[1:]
             )
         ) == tuple(sorted(positions))

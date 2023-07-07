@@ -24,7 +24,7 @@ pub fn parse(program: &str) -> Vec<Vec<Option<Instr>>> {
                         Some((
                             Color::from(instr.chars().next().unwrap().to_digit(10).unwrap()),
                             instr.chars().nth(1).unwrap() == RIGHT,
-                            str_st(instr.chars().nth(2).unwrap()),
+                            read_state(instr.chars().nth(2).unwrap()),
                         ))
                     }
                 })
@@ -47,7 +47,7 @@ pub fn tcompile(program: &str) -> Prog {
 }
 
 #[pyfunction]
-pub const fn st_str(state: Option<State>) -> char {
+pub const fn show_state(state: Option<State>) -> char {
     match state {
         Some(-1) => HALT,
         None => UNDF,
@@ -56,7 +56,7 @@ pub const fn st_str(state: Option<State>) -> char {
 }
 
 #[pyfunction]
-pub fn str_st(state: char) -> State {
+pub fn read_state(state: char) -> State {
     if state == HALT {
         -1
     } else {
@@ -72,7 +72,7 @@ pub fn dcomp_instr(instr: Option<Instr>) -> String {
             "{}{}{}",
             color,
             if shift { RIGHT } else { LEFT },
-            st_str(Some(trans))
+            show_state(Some(trans))
         ),
     }
 }

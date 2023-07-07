@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.show import show_number
 from tm.tape import Tape
+from tm.parse import tcompile
 from tm.prover import Prover
 from tm.lin_rec import History
-from tm.parse import tcompile, st_str
+from tm.show import show_number, show_state
 from tm.rules import InfiniteRule, RuleLimit
 
 if TYPE_CHECKING:
@@ -111,7 +111,7 @@ class Machine:
     def show_tape(self, step: int, cycle: int, state: int) -> None:
         info = [
             f'{cycle: 5d}',
-            f'{st_str(state)}{self.tape.scan}',
+            f'{show_state(state)}{self.tape.scan}',
             str(self.tape),
         ]
 

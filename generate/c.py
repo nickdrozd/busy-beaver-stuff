@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.parse import st_str
+from tm.show import show_state
 from tm.program import Program
 
 if TYPE_CHECKING:
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 def make_comment(st: State, co: Color) -> str:
-    return f'// {st_str(st)}{co}'
+    return f'// {show_state(st)}{co}'
 
 
 def make_shift(sh: Shift) -> str:
@@ -18,7 +18,7 @@ def make_shift(sh: Shift) -> str:
 
 
 def make_trans(tr: State) -> str:
-    return f'goto {st_str(tr)};'
+    return f'goto {show_state(tr)};'
 
 
 def make_binary_write(pr: Color) -> str:
@@ -151,7 +151,7 @@ def make_switch(state: State, instrs: tuple[Instr, ...]) -> str:
 
 
 def make_label(state: State) -> str:
-    return f' {st_str(state)}:'
+    return f' {show_state(state)}:'
 
 
 def make_labels(prog: str) -> str:

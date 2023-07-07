@@ -4,7 +4,6 @@ from typing import Protocol
 # pylint: disable-next = unused-import
 from tm.rust_stuff import (
     parse,
-    st_str,
     tcompile,
     dcomp_instr,
 )

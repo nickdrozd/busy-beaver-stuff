@@ -8,7 +8,7 @@ from unittest import skip, expectedFailure
 from itertools import product
 
 from test.prog_data import *
-from test.test_utils import BackwardReasoning, str_st
+from test.test_utils import BackwardReasoning, read_state
 
 from tm.utils import opt_block
 from tm.program import Program
@@ -529,7 +529,7 @@ class Fast(TuringTest):
                 self.run_bb(partial, normal = False)
 
                 self.assertEqual(
-                    (step, (str_st(slot[0]), int(slot[1]))),
+                    (step, (read_state(slot[0]), int(slot[1]))),
                     self.machine.undfnd)
 
     def test_block_macro_steps(self):

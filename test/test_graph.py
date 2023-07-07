@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from test.prog_data import GRAPHS, SPAGHETTI, KERNEL
 
-from tm.graph import Graph, st_str
+from tm.graph import Graph, show_state
 
 
 class TestGraph(TestCase):
@@ -41,7 +41,7 @@ class TestGraph(TestCase):
         self.assertEqual(
             entries,
             {
-                st_str(state): set(map(st_str, entries))
+                show_state(state): set(map(show_state, entries))
                 for state, entries in self.graph.entry_points.items()
             },
         )
@@ -50,7 +50,7 @@ class TestGraph(TestCase):
         self.assertEqual(
             exits,
             {
-                st_str(state): set(map(st_str, entries))
+                show_state(state): set(map(show_state, entries))
                 for state, entries in self.graph.exit_points.items()
             },
         )

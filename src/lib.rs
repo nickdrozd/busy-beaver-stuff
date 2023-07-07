@@ -14,7 +14,7 @@ mod rules;
 
 use pyo3::prelude::*;
 
-use parse::{dcomp_instr, parse as parse_fn, st_str, str_st, tcompile};
+use parse::{dcomp_instr, parse as parse_fn, read_state, show_state, tcompile};
 use prover::PastConfig;
 use rules::{InfiniteRule, RuleLimit, UnknownRule};
 
@@ -23,8 +23,8 @@ fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     // parse
     m.add_function(wrap_pyfunction!(parse_fn, m)?)?;
     m.add_function(wrap_pyfunction!(tcompile, m)?)?;
-    m.add_function(wrap_pyfunction!(st_str, m)?)?;
-    m.add_function(wrap_pyfunction!(str_st, m)?)?;
+    m.add_function(wrap_pyfunction!(show_state, m)?)?;
+    m.add_function(wrap_pyfunction!(read_state, m)?)?;
     m.add_function(wrap_pyfunction!(dcomp_instr, m)?)?;
 
     // prover
