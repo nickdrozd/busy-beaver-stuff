@@ -12,7 +12,7 @@ from tm.rules import InfiniteRule, RuleLimit
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.instrs import State, Slot, GetInstr
+    from tm.parse import State, Slot, GetInstr
     from tm.lin_rec import RecRes, Tapes
 
     LinRec = tuple[int | None, int]

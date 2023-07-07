@@ -5,7 +5,7 @@ class PastConfig:
 
     def next_deltas(self, cycle: int) -> tuple[int, int] | None: ...
 
-## pasre ###############################
+## parse ###############################
 
 Color = int
 State = int

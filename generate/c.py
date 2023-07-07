@@ -6,7 +6,7 @@ from tm.parse import st_str
 from tm.program import Program
 
 if TYPE_CHECKING:
-    from tm.instrs import Color, Shift, State, Instr
+    from tm.parse import Color, Shift, State, Instr
 
 
 def make_comment(st: State, co: Color) -> str:

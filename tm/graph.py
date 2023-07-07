@@ -6,7 +6,7 @@ from functools import cached_property
 from tm.parse import parse, st_str
 
 if TYPE_CHECKING:
-    from tm.instrs import Color, State
+    from tm.parse import Color, State
 
     ConGraph = dict[State, set[State]]
 

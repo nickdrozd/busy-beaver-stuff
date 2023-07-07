@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from tm.instrs import Color, State, Slot
+    from tm.parse import Color, State, Slot
     from tm.tape import Tape
 
     RecRes = tuple[int, int]

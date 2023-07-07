@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from tm.parse import tcompile
 
 if TYPE_CHECKING:
-    from tm.instrs import Color, State, Slot, Instr, GetInstr
+    from tm.parse import Color, State, Slot, Instr, GetInstr
 
     Tape = list[Color]
     Config = tuple[State, tuple[bool, Tape]]

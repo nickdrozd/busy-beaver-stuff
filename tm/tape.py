@@ -7,7 +7,7 @@ from tm.show import show_number
 from tm.rules import ApplyRule
 
 if TYPE_CHECKING:
-    from tm.instrs import Color, Shift
+    from tm.parse import Color, Shift
     from tm.rules import Count, Counts, Index
 
     Signature = tuple[
