@@ -6,7 +6,7 @@ from tm.tape import Tape
 from tm.parse import tcompile
 from tm.prover import Prover
 from tm.lin_rec import History
-from tm.show import show_number, show_state
+from tm.show import show_number, show_slot
 from tm.rules import InfiniteRule, RuleLimit
 
 if TYPE_CHECKING:
@@ -111,7 +111,7 @@ class Machine:
     def show_tape(self, step: int, cycle: int, state: int) -> None:
         info = [
             f'{cycle: 5d}',
-            f'{show_state(state)}{self.tape.scan}',
+            show_slot((state, self.tape.scan)),
             str(self.tape),
         ]
 

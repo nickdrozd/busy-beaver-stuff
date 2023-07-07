@@ -1,14 +1,14 @@
 import sys
 
-from tm.show import show_state
+from tm.show import show_slot
 from tm.program import Program
 
 def format_sequence(prog: Program) -> None:
     print(f'    "{prog}": {{')
 
-    for partial, step, (state, color) in prog.instr_seq:
-        slot = show_state(state) + str(color)
-        print(f'        "{partial}": ({step : 2d}, \'{slot}\'),')
+    for partial, step, slot in prog.instr_seq:
+        # pylint: disable-next = line-too-long
+        print(f'        "{partial}": ({step : 2d}, \'{show_slot(slot)}\'),')
 
     print('    },')
 

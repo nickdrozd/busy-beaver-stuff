@@ -2,8 +2,8 @@
 from test.prog_data import *
 from test.test_utils import BackwardReasoning, read_state
 
+from tm.show import show_slot
 from tm.program import Program
-from tm.show import show_state
 
 
 class TestProgram(BackwardReasoning):
@@ -73,8 +73,8 @@ class TestProgram(BackwardReasoning):
             self.assertEqual(
                 sequence,
                 {
-                    partial: (step, show_state(state) + str(color))
-                    for partial, step, (state, color) in
+                    partial: (step, show_slot(slot))
+                    for partial, step, slot in
                     Program(prog).instr_seq
                 },
             )
