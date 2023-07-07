@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from tm.instrs import State, Slot, GetInstr
     from tm.lin_rec import RecRes, Tapes
 
-
     LinRec = tuple[int | None, int]
     Undfnd = tuple[int, Slot]
 
