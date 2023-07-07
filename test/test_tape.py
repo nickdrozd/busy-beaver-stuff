@@ -7,7 +7,6 @@ from tm.tape import Tape, TagTape, EnumTape
 from tm.lin_rec import PtrTape
 
 if TYPE_CHECKING:
-    from tm.rules import Rule
     from tm.tape import Color, Signature
 
     BlockSpan = list[list[int]]
@@ -317,9 +316,6 @@ class TestTags(TestCase):
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
 
-    def apply_rule(self, rule: Rule) -> None:
-        self.tape.apply_rule(rule)
-
     def test_trace_1(self):
         # 1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA : BBB(4, 2)
 
@@ -343,7 +339,7 @@ class TestTags(TestCase):
         self.step(1, 1, 0)
         self.step(1, 0, 1)
 
-        self.apply_rule({(0, 0): -1, (0, 1): 1})
+        self.tape.apply_rule({(0, 0): -1, (0, 1): 1})
 
         self.step(0, 0, 0)
         self.step(1, 1, 0)
@@ -361,7 +357,7 @@ class TestTags(TestCase):
         self.step(0, 1, 0)
         self.step(1, 2, 1)
 
-        self.apply_rule({(0, 0): 4, (1, 0): -2})
+        self.tape.apply_rule({(0, 0): 4, (1, 0): -2})
 
         self.step(0, 1, 1)
         self.step(0, 1, 0)
