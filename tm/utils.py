@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from tm.macro import MacroProg
-    from tm.instrs import Color, Shift
+    from tm.tape import Color, Shift
 
 
 def macro_variations(

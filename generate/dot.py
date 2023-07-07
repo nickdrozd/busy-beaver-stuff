@@ -1,5 +1,4 @@
-from tm.graph import Graph
-from tm.parse import st_str as conv
+from tm.graph import Graph, st_str as conv
 
 COLORS = (
     'blue',

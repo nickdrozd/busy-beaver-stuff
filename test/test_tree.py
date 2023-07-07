@@ -4,9 +4,8 @@ from unittest import TestCase
 from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
-from tm.program import Program
 from tm.utils import run_variations
-from generate.tree import run_tree_gen
+from generate.tree import run_tree_gen, Program
 
 
 def read_progs(name: str) -> set[str]:

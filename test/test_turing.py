@@ -19,8 +19,7 @@ if TYPE_CHECKING:
     from typing import Any
     from collections.abc import Mapping
 
-    from tm.tape import Tape
-    from tm.instrs import GetInstr
+    from tm.machine import Tape, GetInstr
 
 
 class TuringTest(BackwardReasoning):

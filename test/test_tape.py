@@ -8,8 +8,7 @@ from tm.lin_rec import PtrTape
 
 if TYPE_CHECKING:
     from tm.rules import Rule
-    from tm.instrs import Color
-    from tm.tape import Signature
+    from tm.tape import Color, Signature
 
     BlockSpan = list[list[int]]
 
