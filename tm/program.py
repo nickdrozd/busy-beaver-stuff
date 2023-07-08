@@ -17,7 +17,7 @@ from tm.lin_rec import History
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.parse import Color, State, Slot, Instr
+    from tm.parse import Color, Shift, State, Slot, Instr
 
     ProgStr = str
 
