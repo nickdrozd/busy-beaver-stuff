@@ -12,7 +12,7 @@ Count = int
 Plus = int
 
 if TYPE_CHECKING:
-    Mult = tuple[Count, Count]
+    Mult = tuple[int, int]
 
     Op = Plus | Mult
 
