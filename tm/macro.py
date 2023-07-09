@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 ########################################
 
 class MacroProg:
-    program: str | MacroProg
+    program: str | GetInstr
     comp: GetInstr
 
     base_states: int
@@ -34,19 +34,27 @@ class MacroProg:
 
     _state: State | None
 
-    def __init__(self, program: str | MacroProg):
+    def __init__(self, program: str | GetInstr):
         self.program = program
 
-        if isinstance(program, str):
-            self.comp = tcompile(program)
-
-            self.base_states = len(set(map(lambda s: s[0], self.comp)))
-            self.base_colors = len(set(map(lambda s: s[1], self.comp)))
-        else:
+        if isinstance(program, MacroProg):
             self.comp = program
 
             self.base_states = program.macro_states
             self.base_colors = program.macro_colors
+
+        elif isinstance(program, str):
+            self.comp = tcompile(program)
+
+            self.base_states = len(set(map(lambda s: s[0], self.comp)))
+            self.base_colors = len(set(map(lambda s: s[1], self.comp)))
+
+        else:
+            self.comp = program
+
+            # pylint: disable = line-too-long
+            self.base_states = len(program.states)  # type: ignore[attr-defined]
+            self.base_colors = len(program.colors)  # type: ignore[attr-defined]
 
         self.instrs = {}
 
@@ -160,7 +168,7 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
-    def __init__(self, program: str | MacroProg, cell_seq: list[int]):
+    def __init__(self, program: str | GetInstr, cell_seq: list[int]):
         *seq, cells = cell_seq
 
         if seq:
@@ -212,7 +220,7 @@ class BlockMacro(MacroProg):
 class BacksymbolMacro(MacroProg):
     backsymbols: int
 
-    def __init__(self, program: str | MacroProg, cell_seq: list[int]):
+    def __init__(self, program: str | GetInstr, cell_seq: list[int]):
         *seq, cells = cell_seq
 
         if seq:

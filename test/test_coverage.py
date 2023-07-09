@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from tm.program import Program
 from tm.machine import Machine, LinRecMachine
 from tm.macro import BlockMacro, BacksymbolMacro
 
@@ -58,6 +59,15 @@ class TestFloss(TestCase):
             ).run())
 
         print(len(macro), macro)
+
+        self.assertEqual(
+            Machine(
+                BlockMacro(
+                    Program(
+                        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA"),
+                    [3])
+            ).run().simple_termination,
+            15721562)
 
     def test_machine(self):
         self.assertIsNotNone(
