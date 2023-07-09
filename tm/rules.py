@@ -83,23 +83,25 @@ class ApplyRule:
             raise RuleLimit()
 
         for pos, diff in rule.items():
+            count = self.get_count(pos)
+
             if isinstance(diff, Plus):
-                count = (
-                    self.get_count(pos) + diff * times
+                result = (
+                    count + diff * times
                     if diff >= -1 else
                     mod
-                    if (mod := self.get_count(pos) % -diff) > 0 else
+                    if (mod := count % -diff) > 0 else
                     mod + -diff
                 )
             else:
                 div, mod = diff
 
-                count = (
-                    self.get_count(pos)
+                result = (
+                    count
                         * (term := div ** times)
                         + mod * (1 + ((term - div) // (div - 1)))
                     )
 
-            self.set_count(pos, count)
+            self.set_count(pos, result)
 
         return times
