@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
 
 
-Count = int
-
 Plus = int
 
 if TYPE_CHECKING:
@@ -19,6 +17,8 @@ if TYPE_CHECKING:
     Index = tuple[int, int]
 
     Rule = dict[Index, Op]
+
+    Count = int
 
     Counts = tuple[list[Count], list[Count]]
 
