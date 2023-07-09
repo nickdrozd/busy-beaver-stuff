@@ -85,12 +85,12 @@ class ApplyRule:
         for pos, diff in rule.items():
             count = self.get_count(pos)
 
-            if isinstance(diff, Plus):
-                result = apply_plus(count, times, diff)
-            else:
-                div, mod = diff
-
-                result = apply_mult(count, times, div, mod)
+            match diff:
+                case (div, mod):
+                    result = apply_mult(count, times, div, mod)
+                case _:
+                    assert isinstance(diff, Plus)
+                    result = apply_plus(count, times, diff)
 
             self.set_count(pos, result)
 
