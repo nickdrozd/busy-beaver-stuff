@@ -9,6 +9,7 @@ from tm.rust_stuff import (
 
 if TYPE_CHECKING:
     from typing import Protocol
+    from collections.abc import Sized
 
     Color = int
     State = int
@@ -18,5 +19,5 @@ if TYPE_CHECKING:
     Instr = tuple[Color, Shift, State]
     Prog = dict[Slot, Instr | None]
 
-    class GetInstr(Protocol):
+    class GetInstr(Protocol, Sized):
         def __getitem__(self, slot: Slot) -> Instr | None: ...

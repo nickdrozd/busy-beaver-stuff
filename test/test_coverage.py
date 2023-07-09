@@ -63,11 +63,15 @@ class TestFloss(TestCase):
         self.assertEqual(
             Machine(
                 BlockMacro(
-                    Program(
+                    program := Program(
                         "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA"),
                     [3])
             ).run().simple_termination,
             15721562)
+
+        self.assertEqual(
+            len(program),
+            10)
 
     def test_machine(self):
         self.assertIsNotNone(
