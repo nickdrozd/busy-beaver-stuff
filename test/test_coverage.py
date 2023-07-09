@@ -2,7 +2,6 @@ from unittest import TestCase
 
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine
-from tm.macro import BlockMacro, BacksymbolMacro
 
 
 class TestDisplay(TestCase):
@@ -44,28 +43,26 @@ class TestFloss(TestCase):
     def test_macro(self):
         self.assertIsNotNone(
             Machine(
-                BlockMacro(
-                    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
-                    [2])
+                "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
+                blocks = 2,
             ).run(prover = True))
 
         self.assertIsNotNone(
-            Machine(
-                macro := BacksymbolMacro(
-                    BlockMacro(
-                        "1RB 0RA 1LB  2LA 2RB 0LA",
-                        [3, 3]),
-                    [1, 1])
-            ).run())
+            macro := Machine(
+                "1RB 0RA 1LB  2LA 2RB 0LA",
+                blocks = [3, 3],
+                backsym = [1, 1],
+            ).run().comp)
 
-        print(len(macro), macro)
+        print(macro)
+
+        self.assertEqual(len(macro), 1)
 
         self.assertEqual(
             Machine(
-                BlockMacro(
-                    program := Program(
-                        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA"),
-                    [3])
+                program := Program(
+                    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA"),
+                blocks = 3,
             ).run().simple_termination,
             15721562)
 
@@ -101,7 +98,8 @@ class TestFloss(TestCase):
     def test_config_limit(self):
         self.assertIsNotNone(
             Machine(
-                BlockMacro("1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA", [4])
+                "1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA",
+                blocks = 4,
             ).run(
                 prover = True
             ).cfglim

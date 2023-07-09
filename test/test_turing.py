@@ -1,4 +1,4 @@
-# pylint: disable = line-too-long, wildcard-import, unused-wildcard-import
+# pylint: disable = line-too-long, wildcard-import, unused-wildcard-import, too-many-arguments
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ from test.test_utils import BackwardReasoning, read_state
 from tm.utils import opt_block
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine
-from tm.macro import BlockMacro, BacksymbolMacro
 
 if TYPE_CHECKING:
     from typing import Any
@@ -142,24 +141,33 @@ class TuringTest(BackwardReasoning):
     def run_bb(
             self,
             prog: str | GetInstr,
+            *,
             print_prog: bool = True,
             analyze: bool = True,
             normal: bool = True,
             lin_rec: bool = False,
+            blocks: int | list[int] | None = None,
+            backsym: int | list[int] | None = None,
             **opts,
     ):
-        if print_prog:
-            print(prog)
-
         if lin_rec:
             assert isinstance(prog, str)
-            self.machine = LinRecMachine(prog).run(**opts)
+            self.machine = LinRecMachine(prog)
         else:
-            self.machine = Machine(prog).run(**opts)
+            self.machine = Machine(
+                prog,
+                blocks = blocks,
+                backsym = backsym,
+            )
+
+        if print_prog:
+            print(self.machine.program)
+
+        self.machine.run(**opts)
 
         self.tape = self.machine.tape
 
-        if not analyze or not isinstance(prog, str):
+        if not analyze or not isinstance(prog, str) or blocks or backsym:
             return
 
         if normal:
@@ -168,8 +176,8 @@ class TuringTest(BackwardReasoning):
         self.assert_simple(prog)
         self.assert_connected(prog)
 
-        _ = Machine(     BlockMacro(prog, [2])).run(sim_lim = 10)
-        _ = Machine(BacksymbolMacro(prog, [1])).run(sim_lim = 10)
+        _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
+        _ = Machine(prog, backsym = 1).run(sim_lim = 10)
 
     def _test_simple_terminate(
             self,
@@ -294,22 +302,23 @@ class TuringTest(BackwardReasoning):
             if prog == "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC":  # SIAB
                 continue
 
-            program: str | BlockMacro = (
-                prog
+            blocks = (
+                None
                 if (opt := opt_block(prog, steps = 10_000)) == 1 else
-                BlockMacro(prog, [opt])
+                opt
             )
 
             self.run_bb(
-                program,
+                prog,
                 prover = True,
+                blocks = blocks,
             )
 
             if simple_term:
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
-                if not isinstance(program, str):
+                if blocks:
                     continue
 
                 self.assert_marks(
@@ -321,16 +330,17 @@ class TuringTest(BackwardReasoning):
                     or self.machine.spnout is not None)
 
     def _test_prover_est(self, prog_data: ProverEst):
-        # pylint: disable = redefined-variable-type
         for prog, marks in prog_data.items():
-            program: str | BlockMacro = prog
-
-            if (opt := opt_block(prog, steps = 3_000)) > 1:
-                program = BlockMacro(prog, [opt])
+            blocks = (
+                None
+                if (opt := opt_block(prog, steps = 3_000)) == 1 else
+                opt
+            )
 
             self.run_bb(
-                program,
+                prog,
                 sim_lim = 10 ** 8,
+                blocks = blocks,
                 prover = True,
                 normal = False,
             )
@@ -377,22 +387,21 @@ class TuringTest(BackwardReasoning):
                 assert isinstance(program, str)
                 prog, opt, sim_lim = program, 0, None
 
-            # pylint: disable = invalid-name
-            macros: tuple[str | BlockMacro | BacksymbolMacro, ...] = (
-                prog,
-                (k2 := BlockMacro(prog, [2])),
-                (k3 := BlockMacro(prog, [3])),
-                (bk := BacksymbolMacro(prog, [1])),
-                BacksymbolMacro(k2, [1]),
-                BacksymbolMacro(k3, [1]),
-                BacksymbolMacro(prog, [1, 1]),
-                BlockMacro(bk, [2]),
-                BlockMacro(bk, [3]),
+            macro_params = (
+                (None, None),
+                (2, None),
+                (3, None),
+                (None, 1),
+                (2, 1),
+                (3, 1),
+                (None, [1, 1]),
+                (None, 1, 2),
+                (None, 1, 3),
             )
 
             self.assertEqual(
                 len(cycleses),
-                len(macros))
+                len(macro_params))
 
             run_lim = (
                 20_000 if opt is None else
@@ -400,14 +409,25 @@ class TuringTest(BackwardReasoning):
                 10 ** 10
             )
 
-            for cycles, macro in zip(cycleses, macros):
+            for cycles, params in zip(cycleses, macro_params):
                 if cycles is not None and cycles > 10_000_000:  # no-coverage
                     continue
 
-                self.run_bb(
-                    macro,
-                    sim_lim = run_lim,
-                )
+                match params:
+                    case (blocks, backsym):
+                        self.run_bb(
+                            prog,
+                            blocks = blocks,
+                            backsym = backsym,
+                            sim_lim = run_lim,
+                        )
+
+                    case (_, backsym, blocks):
+                        self.run_bb(
+                            Machine(prog, backsym = backsym).program,
+                            blocks = blocks,
+                            sim_lim = run_lim,
+                        )
 
                 self.assertEqual(
                     cycles,
@@ -418,7 +438,7 @@ class TuringTest(BackwardReasoning):
                     if sim_lim is None else
                     self.machine.steps)
 
-                if sim_lim is None and not isinstance(macro, str):
+                if sim_lim is None and not isinstance(macro := self.machine.program, str):
                     self.assertTrue(
                         len(macro) <= 60,
                         (len(macro), str(macro)))
@@ -433,7 +453,8 @@ class TuringTest(BackwardReasoning):
         for prog, steps in BLOCK_MACRO_STEPS.items():
             for wrap, cell in product(range(1, wraps), range(1, cells)):
                 self.run_bb(
-                    BlockMacro(prog, [cell] * wrap),
+                    prog,
+                    blocks = [cell] * wrap,
                 )
 
                 assert self.machine.simple_termination is not None
@@ -449,7 +470,8 @@ class TuringTest(BackwardReasoning):
 
             for cell in range(jump, jump + cells):  # no-coverage
                 self.run_bb(
-                    BlockMacro(prog, [cell]),
+                    prog,
+                    blocks = cell,
                 )
 
                 assert self.machine.simple_termination is not None
@@ -521,7 +543,8 @@ class Fast(TuringTest):
         )
 
         self.run_bb(
-            BacksymbolMacro("1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_", [2]),
+            "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
+            backsym = 2,
             prover = True,
         )
 
@@ -547,7 +570,8 @@ class Fast(TuringTest):
 
             for back in range(1, 5):
                 self.run_bb(
-                    BacksymbolMacro(prog, [back] * back))
+                    prog,
+                    backsym = [back] * back)
 
                 self.assertIsNotNone(
                     self.machine.simple_termination)
@@ -555,13 +579,14 @@ class Fast(TuringTest):
     def test_rule_limit(self):
         for prog in RULE_LIMIT:
             self.run_bb(
-                (
-                    prog
-                    if (opt := opt_block(prog, steps = 120)) == 1 else
-                    BlockMacro(prog, [opt])
-                ),
+                prog,
                 prover = True,
                 normal = False,
+                blocks = (
+                    None
+                    if (opt := opt_block(prog, steps = 120)) == 1 else
+                    opt
+                ),
             )
 
             self.assertIsNotNone(
@@ -572,13 +597,14 @@ class Fast(TuringTest):
         prog = "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA"
 
         self.run_bb(
-            (
-                prog
-                if (opt := opt_block(prog, steps = 120)) == 1 else
-                BlockMacro(prog, [opt])
-            ),
-            prover = True,
-            normal = False,
+                prog,
+                prover = True,
+                normal = False,
+                blocks = (
+                    None
+                    if (opt := opt_block(prog, steps = 120)) == 1 else
+                    opt
+                ),
         )
 
         self.assertIsNotNone(
@@ -597,7 +623,8 @@ class Fast(TuringTest):
             self.machine.infrul)
 
         self.run_bb(
-            BacksymbolMacro(prog, [1]),
+            prog,
+            backsym = 1,
             sim_lim = 100,
             prover = True,
         )
@@ -606,8 +633,10 @@ class Fast(TuringTest):
             self.machine.infrul)
 
     def test_prover_false_positive(self):
+        prog = "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC"
+
         self.run_bb(
-            "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC",
+            prog,
             prover = True,
             normal = False,
         )
@@ -617,8 +646,8 @@ class Fast(TuringTest):
             159)
 
         self.run_bb(
-            BacksymbolMacro(
-                "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC", [1]),
+            prog,
+            backsym = 1,
             prover = True,
         )
 
@@ -629,7 +658,8 @@ class Fast(TuringTest):
         prog = "1RB 0LA  1RC ...  1LD 0RC  0LA 1LD"
 
         self.run_bb(
-            BlockMacro(prog, [2]),
+            prog,
+            blocks = 2,
             prover = True,
         )
 
@@ -647,7 +677,8 @@ class Fast(TuringTest):
                 opt_block(prog, steps))
 
             self.run_bb(
-                BlockMacro(prog, [block]),
+                prog,
+                blocks = block,
                 prover = True,
                 sim_lim = 8806,
             )
@@ -656,7 +687,8 @@ class Fast(TuringTest):
                 self.machine.xlimit)
 
         self.run_bb(
-            BlockMacro(prog, [4]),
+            prog,
+            blocks = 4,
             prover = True,
             sim_lim = 8807,
         )

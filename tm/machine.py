@@ -6,8 +6,9 @@ from tm.tape import Tape
 from tm.parse import tcompile
 from tm.prover import Prover
 from tm.lin_rec import History
-from tm.show import show_number, show_slot
-from tm.rules import InfiniteRule, RuleLimit
+from tm.show import show_slot, show_number
+from tm.rules import RuleLimit, InfiniteRule
+from tm.macro import BlockMacro, BacksymbolMacro
 
 if TYPE_CHECKING:
     from typing import Self
@@ -61,7 +62,26 @@ class Machine:
 
     undfnd: Undfnd | None = None
 
-    def __init__(self, program: str | GetInstr):
+    def __init__(
+            self,
+            program: str | GetInstr,
+            *,
+            blocks: int | list[int] | None = None,
+            backsym: int | list[int] | None = None,
+    ):
+        if blocks is not None:
+            if isinstance(blocks, int):
+                blocks = [blocks]
+
+            program = BlockMacro(program, blocks)
+
+        if backsym is not None:
+            if isinstance(backsym, int):
+                backsym = [backsym]
+
+            # pylint: disable = redefined-variable-type
+            program = BacksymbolMacro(program, backsym)
+
         self.program = program
 
         self.comp = (
