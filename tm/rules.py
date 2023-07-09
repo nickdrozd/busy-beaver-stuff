@@ -54,12 +54,12 @@ def make_rule(cnts1: Counts, cnts2: Counts, cnts3: Counts) -> Rule:
 
 class ApplyRule:
     @abstractmethod
-    def get_count(self, index: Index) -> int: ...
+    def get_count(self, index: Index) -> Count: ...
 
     @abstractmethod
     def set_count(self, index: Index, val: Count) -> None: ...
 
-    def count_apps(self, rule: Rule) -> Count | None:
+    def count_apps(self, rule: Rule) -> int | None:
         divs: list[int] = []
 
         for pos, diff in rule.items():

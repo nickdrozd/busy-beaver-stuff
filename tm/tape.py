@@ -108,9 +108,9 @@ class Tape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[int, int]],
+            lspan: list[tuple[int, Count]],
             scan: Color,
-            rspan: list[tuple[int, int]],
+            rspan: list[tuple[int, Count]],
             head: int = 0,
     ):
         self.lspan = [Block(color, count) for color, count in lspan]
@@ -247,9 +247,9 @@ class TagTape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[int, int, list[int]]],
+            lspan: list[tuple[int, Count, list[int]]],
             scan: Color,
-            rspan: list[tuple[int, int, list[int]]],
+            rspan: list[tuple[int, Count, list[int]]],
     ):
         self.lspan = [
             TagBlock(color, count, tags)
@@ -378,9 +378,9 @@ class EnumTape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[int, int]],
+            lspan: list[tuple[int, Count]],
             scan: Color,
-            rspan: list[tuple[int, int]],
+            rspan: list[tuple[int, Count]],
     ):
         self.lspan = [
             EnumBlock(color, count, (0, i))
