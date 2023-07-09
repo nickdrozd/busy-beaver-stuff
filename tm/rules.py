@@ -86,22 +86,32 @@ class ApplyRule:
             count = self.get_count(pos)
 
             if isinstance(diff, Plus):
-                result = (
-                    count + diff * times
-                    if diff >= -1 else
-                    mod
-                    if (mod := count % -diff) > 0 else
-                    mod + -diff
-                )
+                result = apply_plus(count, times, diff)
             else:
                 div, mod = diff
 
-                result = (
-                    count
-                        * (term := div ** times)
-                        + mod * (1 + ((term - div) // (div - 1)))
-                    )
+                result = apply_mult(count, times, div, mod)
 
             self.set_count(pos, result)
 
         return times
+
+
+def apply_plus(count: Count, times: int, diff: Plus) -> Count:
+    return (
+        count + diff * times
+        if diff >= -1 else
+        mod
+        if (mod := count % -diff) > 0 else
+        mod + -diff
+    )
+
+
+def apply_mult(count: Count, times: int, div: int, mod: int) -> Count:
+    result: Count = (
+        count
+        * (term := div ** times)
+        + mod * (1 + ((term - div) // (div - 1)))
+    )
+
+    return result
