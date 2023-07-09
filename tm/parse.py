@@ -1,5 +1,4 @@
-from abc import abstractmethod
-from typing import Protocol
+from typing import TYPE_CHECKING
 
 # pylint: disable-next = unused-import
 from tm.rust_stuff import (
@@ -8,14 +7,18 @@ from tm.rust_stuff import (
     dcomp_instr,
 )
 
-Color = int
-State = int
-Shift = bool
+if TYPE_CHECKING:
+    from abc import abstractmethod
+    from typing import Protocol
 
-Slot = tuple[State, Color]
-Instr = tuple[Color, Shift, State]
-Prog = dict[Slot, Instr | None]
+    Color = int
+    State = int
+    Shift = bool
 
-class GetInstr(Protocol):
-    @abstractmethod
-    def __getitem__(self, slot: Slot) -> Instr | None: ...
+    Slot = tuple[State, Color]
+    Instr = tuple[Color, Shift, State]
+    Prog = dict[Slot, Instr | None]
+
+    class GetInstr(Protocol):
+        @abstractmethod
+        def __getitem__(self, slot: Slot) -> Instr | None: ...
