@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     Switch = dict[Color, Instr | None]
 
 
-class BasicProgram:
+class Program:
     prog: dict[State, Switch]
 
     graph: Graph
@@ -308,7 +308,7 @@ class BasicProgram:
         return self.normalize_directions()
 
 
-class Program(BasicProgram):
+class BackwardReasoner(Program):
     @property
     def instr_seq(self) -> list[tuple[ProgStr, int, Slot]]:
         seqs: list[tuple[ProgStr, int, Slot]] = []

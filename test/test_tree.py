@@ -5,7 +5,8 @@ from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
 from tm.machine import run_variations
-from generate.tree import run_tree_gen, Program
+from tm.program import BackwardReasoner
+from generate.tree import run_tree_gen
 
 
 def read_progs(name: str) -> set[str]:
@@ -73,14 +74,14 @@ class TestTree(TestCase):
                 self.assertIn(res_prog, exp_prog)
 
     def assert_cant_terminate(self) -> None:
-        for prog in map(Program, self.progs):
+        for prog in map(BackwardReasoner, self.progs):
             self.assertTrue(
                 prog.cant_halt
                 and prog.cant_blank
                 and prog.cant_spin_out)
 
     def assert_simple_and_connected(self) -> None:
-        for prog in map(Program, self.progs):
+        for prog in map(BackwardReasoner, self.progs):
             self.assertTrue(
                 prog.graph.is_simple
                 and prog.graph.is_strongly_connected)

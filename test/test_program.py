@@ -3,7 +3,7 @@ from test.prog_data import *
 from test.test_utils import BackwardReasoning
 
 from tm.show import show_slot, show_state
-from tm.program import Program
+from tm.program import Program, BackwardReasoner
 
 
 class TestProgram(BackwardReasoning):
@@ -73,7 +73,7 @@ class TestProgram(BackwardReasoning):
                 {
                     partial: (step, show_slot(slot))
                     for partial, step, slot in
-                    Program(prog).instr_seq
+                    BackwardReasoner(prog).instr_seq
                 },
             )
 

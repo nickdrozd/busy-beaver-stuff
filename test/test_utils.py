@@ -9,30 +9,30 @@ from test.prog_data import (
 )
 
 from tm.machine import Machine
-from tm.program import Program
+from tm.program import BackwardReasoner
 
 
 class BackwardReasoning(TestCase):
     def assert_could_halt(self, prog: str):
         self.assertFalse(
-            Program(prog).cant_halt,
+            BackwardReasoner(prog).cant_halt,
             f'halt false positive: {prog}')
 
     def assert_cant_halt(self, prog: str):
         self.assertTrue(
-            Program(prog).cant_halt
+            BackwardReasoner(prog).cant_halt
                 or prog in CANT_HALT_FALSE_NEGATIVES,
             f'halt false negative: "{prog}"')
 
     def assert_could_blank(self, prog: str):
         self.assertFalse(
-            Program(prog).cant_blank,
+            BackwardReasoner(prog).cant_blank,
             f'blank false positive: "{prog}"')
 
     def assert_cant_blank(self, prog: str):
         try:
             self.assertTrue(
-                Program(prog).cant_blank)
+                BackwardReasoner(prog).cant_blank)
         except AssertionError:
             self.assertTrue(
                 prog in CANT_BLANK_FALSE_NEGATIVES
@@ -41,13 +41,13 @@ class BackwardReasoning(TestCase):
 
     def assert_could_spin_out(self, prog: str):
         self.assertFalse(
-            Program(prog).cant_spin_out,
+            BackwardReasoner(prog).cant_spin_out,
             f'spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog: str):
         try:
             self.assertTrue(
-                Program(prog).cant_spin_out)
+                BackwardReasoner(prog).cant_spin_out)
         except AssertionError:
             self.assertIn(
                 prog,
@@ -56,7 +56,7 @@ class BackwardReasoning(TestCase):
 
     def assert_simple(self, prog: str):
         self.assertTrue(
-            Program(prog).graph.is_simple
+            BackwardReasoner(prog).graph.is_simple
             or prog in SPAGHETTI
             or prog in KERNEL
         )

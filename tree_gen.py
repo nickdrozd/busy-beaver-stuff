@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from tm.program import Program
+from tm.program import BackwardReasoner
 from tm.machine import run_variations
 
 from generate.tree import run_tree_gen, Output, Prog
@@ -8,10 +8,10 @@ from generate.tree import run_tree_gen, Output, Prog
 
 def filter_run_print(halt: bool) -> Output:
     def cant_halt(prog: Prog) -> bool:
-        return Program(prog).cant_halt
+        return BackwardReasoner(prog).cant_halt
 
     def cant_spin_out(prog: Prog) -> bool:
-        return Program(prog).cant_spin_out
+        return BackwardReasoner(prog).cant_spin_out
 
     cant_reach = cant_halt if halt else cant_spin_out
 

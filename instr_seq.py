@@ -1,9 +1,9 @@
 import sys
 
 from tm.show import show_slot
-from tm.program import Program
+from tm.program import BackwardReasoner
 
-def format_sequence(prog: Program) -> None:
+def format_sequence(prog: BackwardReasoner) -> None:
     print(f'    "{prog}": {{')
 
     for partial, step, slot in prog.instr_seq:
@@ -13,5 +13,5 @@ def format_sequence(prog: Program) -> None:
     print('    },')
 
 if __name__ == '__main__':
-    for program in map(Program, sys.stdin):
+    for program in map(BackwardReasoner, sys.stdin):
         format_sequence(program)
