@@ -65,7 +65,7 @@ pub fn read_state(state: char) -> State {
 }
 
 #[pyfunction]
-pub fn dcomp_instr(instr: Option<Instr>) -> String {
+pub fn show_instr(instr: Option<Instr>) -> String {
     match instr {
         None => "...".to_string(),
         Some((color, shift, trans)) => format!(

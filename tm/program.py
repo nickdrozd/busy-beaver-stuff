@@ -7,7 +7,7 @@ from functools import cached_property
 from collections import defaultdict
 
 from tm.graph import Graph
-from tm.parse import parse, dcomp_instr
+from tm.parse import parse, show_instr
 
 from tm.tape import Tape
 from tm.parse import tcompile
@@ -40,7 +40,7 @@ class BasicProgram:
     def __repr__(self) -> ProgStr:
         return '  '.join([
             ' '.join(
-                dcomp_instr(instr)
+                show_instr(instr)
                 for instr in instrs.values()
             )
             for instrs in self.prog.values()
