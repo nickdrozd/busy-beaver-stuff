@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.parse import tcompile
 from tm.prover import Prover
 from tm.lin_rec import History
 from tm.tape import Tape, BlockMeasure, compr_eff
 from tm.show import show_slot, show_number
 from tm.rules import RuleLimit, InfiniteRule
-from tm.macro import BlockMacro, BacksymbolMacro
+from tm.macro import BlockMacro, BacksymbolMacro, tcompile
 
 if TYPE_CHECKING:
     from typing import Self

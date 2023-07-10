@@ -9,10 +9,8 @@ from unittest import TestCase, skip, expectedFailure
 
 from test.prog_data import *
 
-from tm.show import show_slot
-from tm.program import Program
-from tm.reason import BackwardReasoner
-from tm.machine import Machine, LinRecMachine, opt_block
+from tm.reason import Program, BackwardReasoner
+from tm.machine import Machine, LinRecMachine, opt_block, show_slot
 
 if TYPE_CHECKING:
     from typing import Any
