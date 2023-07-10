@@ -369,20 +369,6 @@ class TuringTest(BackwardReasoning):
                 self.assert_could_spin_out(prog)
 
     def _test_macro_cycles(self, prog_data: MacroCycles):
-        def macro_variations(base: str):
-            # pylint: disable = invalid-name
-            return (
-                base,
-                (k2 := BlockMacro(base, [2])),
-                (k3 := BlockMacro(base, [3])),
-                (bk := BacksymbolMacro(base, [1])),
-                BacksymbolMacro(k2, [1]),
-                BacksymbolMacro(k3, [1]),
-                BacksymbolMacro(base, [1, 1]),
-                BlockMacro(bk, [2]),
-                BlockMacro(bk, [3]),
-            )
-
         for program, cycleses in prog_data.items():
             if isinstance(program, tuple):
                 prog, opt = program
@@ -391,9 +377,28 @@ class TuringTest(BackwardReasoning):
                 assert isinstance(program, str)
                 prog, opt, sim_lim = program, 0, None
 
+            # pylint: disable = invalid-name
+            macros: tuple[str | BlockMacro | BacksymbolMacro, ...] = (
+                prog,
+                (k2 := BlockMacro(prog, [2])),
+                (k3 := BlockMacro(prog, [3])),
+                (bk := BacksymbolMacro(prog, [1])),
+                BacksymbolMacro(k2, [1]),
+                BacksymbolMacro(k3, [1]),
+                BacksymbolMacro(prog, [1, 1]),
+                BlockMacro(bk, [2]),
+                BlockMacro(bk, [3]),
+            )
+
             self.assertEqual(
                 len(cycleses),
-                len(macros := macro_variations(prog)))
+                len(macros))
+
+            run_lim = (
+                20_000 if opt is None else
+                sim_lim  if sim_lim is not None else
+                10 ** 10
+            )
 
             for cycles, macro in zip(cycleses, macros):
                 if cycles is not None and cycles > 10_000_000:  # no-coverage
@@ -401,10 +406,7 @@ class TuringTest(BackwardReasoning):
 
                 self.run_bb(
                     macro,
-                    sim_lim = (
-                        20_000 if opt is None else
-                        sim_lim  if sim_lim is not None else
-                        10 ** 10),
+                    sim_lim = run_lim,
                 )
 
                 self.assertEqual(
