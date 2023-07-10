@@ -7,7 +7,8 @@ from functools import cached_property
 from collections import defaultdict
 
 from tm.graph import Graph
-from tm.parse import parse, show_instr
+from tm.parse import parse
+from tm.show import show_instr
 
 from tm.tape import Tape
 from tm.parse import tcompile

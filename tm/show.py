@@ -4,6 +4,8 @@ import math
 from typing import TYPE_CHECKING
 
 from tm.rust_stuff import show_state
+# pylint: disable-next = unused-import
+from tm.rust_stuff import show_instr
 
 if TYPE_CHECKING:
     from tm.parse import Slot
