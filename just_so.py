@@ -1,7 +1,7 @@
 import sys
 from multiprocessing import Pool
 
-from tm.program import BackwardReasoner
+from tm.reason import BackwardReasoner
 
 def worker(prog: str) -> None:
     if (program := BackwardReasoner(prog)).cant_spin_out:

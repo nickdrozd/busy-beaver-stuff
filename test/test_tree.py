@@ -5,7 +5,7 @@ from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
 from tm.machine import run_variations
-from tm.program import BackwardReasoner
+from tm.reason import BackwardReasoner
 from generate.tree import run_tree_gen
 
 

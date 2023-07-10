@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from tm.program import BackwardReasoner
+from tm.reason import BackwardReasoner
 from tm.machine import run_variations
 
 from generate.tree import run_tree_gen, Output, Prog

@@ -3,7 +3,8 @@ from test.prog_data import *
 from test.test_utils import BackwardReasoning
 
 from tm.show import show_slot, show_state
-from tm.program import Program, BackwardReasoner
+from tm.program import Program
+from tm.reason import BackwardReasoner
 
 
 class TestProgram(BackwardReasoning):

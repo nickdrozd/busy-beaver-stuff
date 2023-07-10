@@ -9,7 +9,7 @@ from test.prog_data import (
 )
 
 from tm.machine import Machine
-from tm.program import BackwardReasoner
+from tm.reason import BackwardReasoner
 
 
 class BackwardReasoning(TestCase):

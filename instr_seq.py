@@ -1,7 +1,7 @@
 import sys
 
 from tm.show import show_slot
-from tm.program import BackwardReasoner
+from tm.reason import BackwardReasoner
 
 def format_sequence(prog: BackwardReasoner) -> None:
     print(f'    "{prog}": {{')
