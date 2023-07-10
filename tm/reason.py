@@ -3,11 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
-from tm.tape import Tape
-from tm.parse import tcompile
-from tm.lin_rec import History
-from tm.machine import Machine
 from tm.program import Program
+from tm.machine import (
+    Tape,
+    History,
+    Machine,
+    tcompile,
+)
 
 if TYPE_CHECKING:
     from tm.program import State, Slot
