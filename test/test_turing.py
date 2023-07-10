@@ -8,8 +8,9 @@ from unittest import skip, expectedFailure
 from itertools import product
 
 from test.prog_data import *
-from test.test_utils import BackwardReasoning, read_state
+from test.test_utils import BackwardReasoning
 
+from tm.show import show_slot
 from tm.program import Program
 from tm.machine import Machine, LinRecMachine, opt_block
 
@@ -549,12 +550,15 @@ class Fast(TuringTest):
 
     def test_undefined(self):
         for sequence in UNDEFINED.values():
-            for partial, (step, slot) in sequence.items():
+            for partial, expected in sequence.items():
                 self.run_bb(partial, normal = False)
 
+                assert (undfnd := self.machine.undfnd) is not None
+                step, slot = undfnd
+
                 self.assertEqual(
-                    (step, (read_state(slot[0]), int(slot[1]))),
-                    self.machine.undfnd)
+                    expected,
+                    (step, show_slot(slot)))
 
     def test_block_macro_steps(self):
         self._test_block_macro_steps(4, 5)
