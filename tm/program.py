@@ -7,8 +7,8 @@ from functools import cached_property
 from collections import defaultdict
 
 from tm.graph import Graph
-from tm.parse import parse
 from tm.show import show_instr
+from tm.parse import parse, read_slot
 
 from tm.tape import Tape
 from tm.parse import tcompile
@@ -79,7 +79,7 @@ class BasicProgram:
 
     @classmethod
     def branch_init(cls, states: int, colors: int) -> list[str]:
-        return cls.init(states, colors).branch((1, 0))
+        return cls.init(states, colors).branch_read('A1')
 
     @cached_property
     def states(self) -> set[State]:
@@ -221,6 +221,9 @@ class BasicProgram:
         self[slot] = orig
 
         return branches
+
+    def branch_read(self, slot: str) -> list[ProgStr]:
+        return self.branch(read_slot(slot))
 
     def swap_states(self, st1: State, st2: State) -> Self:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]

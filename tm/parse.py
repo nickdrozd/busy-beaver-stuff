@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from tm.rust_stuff import (
     parse,
     tcompile,
+    read_slot,
 )
 
 if TYPE_CHECKING:

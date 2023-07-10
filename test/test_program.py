@@ -1,6 +1,6 @@
 # pylint: disable = wildcard-import, unused-wildcard-import
 from test.prog_data import *
-from test.test_utils import BackwardReasoning, read_slot
+from test.test_utils import BackwardReasoning
 
 from tm.show import show_slot, show_state
 from tm.program import Program
@@ -56,7 +56,7 @@ class TestProgram(BackwardReasoning):
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
             self.assertEqual(
-                set(Program(prog).branch(read_slot(loc))),
+                set(Program(prog).branch_read(loc)),
                 extensions)
 
     def test_normalize(self):
@@ -80,7 +80,7 @@ class TestProgram(BackwardReasoning):
     def test_mother_of_giants(self):
         mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
 
-        for prog in Program(mother).branch(read_slot('E0')):
+        for prog in Program(mother).branch_read('E0'):
             self.assert_could_blank(prog)
             self.assert_could_spin_out(prog)
 

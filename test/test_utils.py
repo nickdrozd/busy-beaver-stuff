@@ -10,7 +10,6 @@ from test.prog_data import (
 
 from tm.machine import Machine
 from tm.program import Program
-from tm.rust_stuff import read_slot  # pylint: disable = unused-import
 
 
 class BackwardReasoning(TestCase):
