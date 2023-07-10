@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
-use crate::instrs::{Color, Instr, Prog, State};
+use crate::instrs::{Color, Instr, Prog, Slot, State};
 
 const HALT: char = '_';
 const UNDF: char = '.';
@@ -62,6 +62,12 @@ pub fn read_state(state: char) -> State {
     } else {
         State::from(state as u8 - 65)
     }
+}
+
+#[pyfunction]
+pub fn show_slot(slot: Slot) -> String {
+    let (state, color) = slot;
+    format!("{}{}", show_state(Some(state)), color)
 }
 
 #[pyfunction]
