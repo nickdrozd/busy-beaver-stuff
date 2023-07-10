@@ -80,7 +80,6 @@ class Machine:
             if isinstance(backsym, int):
                 backsym = [backsym]
 
-            # pylint: disable = redefined-variable-type
             program = BacksymbolMacro(program, backsym)
 
         self.program = program
