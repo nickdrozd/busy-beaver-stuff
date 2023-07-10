@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from typing import Self
     from collections.abc import Iterator
 
-    from tm.macro import MacroProg
     from tm.parse import State, Slot, GetInstr
     from tm.lin_rec import RecRes, Tapes
 
@@ -340,19 +339,6 @@ class LinRecMachine(Machine):
 
 ########################################
 
-def macro_variations(
-        prog: str,
-        block_steps: int,
-) -> Iterator[str | MacroProg]:
-    yield (
-        prog
-        if (opt := opt_block(prog, block_steps)) == 1 else
-        BlockMacro(prog, [opt])
-    )
-
-    yield BacksymbolMacro(prog, [1])
-
-
 def run_variations(
         prog: str,
         sim_lim: int,
@@ -366,11 +352,25 @@ def run_variations(
         skip = True,
     )
 
-    for macro in macro_variations(prog, block_steps):
-        yield Machine(macro).run(
-            sim_lim = sim_lim,
-            prover = True,
-        )
+    yield Machine(
+        prog,
+        blocks = (
+            None
+            if (opt := opt_block(prog, block_steps)) == 1 else
+            opt
+        ),
+    ).run(
+        sim_lim = sim_lim,
+        prover = True,
+    )
+
+    yield Machine(
+        prog,
+        backsym = 1,
+    ).run(
+        sim_lim = sim_lim,
+        prover = True,
+    )
 
 
 def opt_block(prog: str, steps: int) -> int:
