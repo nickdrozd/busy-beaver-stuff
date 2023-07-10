@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from math import isclose, log10
 from typing import TYPE_CHECKING
-from unittest import skip, expectedFailure
 from itertools import product
+from unittest import TestCase, skip, expectedFailure
 
 from test.prog_data import *
-from test.test_utils import BackwardReasoning
 
 from tm.show import show_slot
 from tm.program import Program
+from tm.reason import BackwardReasoner
 from tm.machine import Machine, LinRecMachine, opt_block
 
 if TYPE_CHECKING:
@@ -21,28 +21,10 @@ if TYPE_CHECKING:
     from tm.machine import Tape, GetInstr
 
 
-class TuringTest(BackwardReasoning):
+class TuringTest(TestCase):
     prog: str
     tape: Tape
     machine: Machine
-
-    def assert_normal(self, prog: str):
-        self.assertTrue(
-            Program(prog).graph.is_normal,
-            prog)
-
-        self.assertTrue(
-            prog == Program(prog).normalize()
-            or prog.startswith('0')
-        )
-
-    def assert_connected(self, prog: str):
-        self.assertTrue(
-            Program(prog).graph.is_strongly_connected
-            or prog in MODULAR
-            or 'A' not in prog
-            or '...' in prog
-        )
 
     def assert_marks(self, marks: int):
         self.assertEqual(
@@ -71,6 +53,72 @@ class TuringTest(BackwardReasoning):
                 that,
                 rel_tol = rel_tol,
             )
+        )
+
+    def assert_normal(self, prog: str):
+        self.assertTrue(
+            Program(prog).graph.is_normal,
+            prog)
+
+        self.assertTrue(
+            prog == Program(prog).normalize()
+            or prog.startswith('0')
+        )
+
+    def assert_connected(self, prog: str):
+        self.assertTrue(
+            Program(prog).graph.is_strongly_connected
+            or prog in MODULAR
+            or 'A' not in prog
+            or '...' in prog
+        )
+
+    def assert_could_halt(self, prog: str):
+        self.assertFalse(
+            BackwardReasoner(prog).cant_halt,
+            f'halt false positive: {prog}')
+
+    def assert_cant_halt(self, prog: str):
+        self.assertTrue(
+            BackwardReasoner(prog).cant_halt
+                or prog in CANT_HALT_FALSE_NEGATIVES,
+            f'halt false negative: "{prog}"')
+
+    def assert_could_blank(self, prog: str):
+        self.assertFalse(
+            BackwardReasoner(prog).cant_blank,
+            f'blank false positive: "{prog}"')
+
+    def assert_cant_blank(self, prog: str):
+        try:
+            self.assertTrue(
+                BackwardReasoner(prog).cant_blank)
+        except AssertionError:
+            self.assertTrue(
+                prog in CANT_BLANK_FALSE_NEGATIVES
+                or Machine(prog).run(sim_lim = 10).blanks,
+                f'blank false negative: "{prog}"')
+
+    def assert_could_spin_out(self, prog: str):
+        self.assertFalse(
+            BackwardReasoner(prog).cant_spin_out,
+            f'spin out false positive: "{prog}"')
+
+    def assert_cant_spin_out(self, prog: str):
+        try:
+            self.assertTrue(
+                BackwardReasoner(prog).cant_spin_out)
+        except AssertionError:
+            self.assertIn(
+                prog,
+                CANT_SPIN_OUT_FALSE_NEGATIVES,
+                f'spin out false negative: "{prog}"')
+
+    def assert_simple(self, prog: str):
+        self.assertTrue(
+            BackwardReasoner(prog).graph.is_simple
+            or prog in SPAGHETTI
+            or prog in KERNEL
         )
 
     def assert_lin_recurrence(self, steps: int, recurrence: int):
@@ -481,6 +529,71 @@ class TuringTest(BackwardReasoning):
                     steps / cell,
                     rel_tol = rel_tol,
                 )
+
+
+class Reasoner(TuringTest):
+    def test_undefined(self):
+        for prog, sequence in UNDEFINED.items():
+            self.assertEqual(
+                sequence,
+                {
+                    partial: (step, show_slot(slot))
+                    for partial, step, slot in
+                    BackwardReasoner(prog).instr_seq
+                },
+            )
+
+    def test_mother_of_giants(self):
+        mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
+
+        for prog in Program(mother).branch_read('E0'):
+            self.assert_could_blank(prog)
+            self.assert_could_spin_out(prog)
+
+    def test_blank(self):
+        for prog in DONT_BLANK:
+            self.assert_cant_blank(prog)
+
+        for prog in BLANKERS:
+            self.assert_simple(prog)
+            self.assert_could_blank(prog)
+
+    def test_false_negatives(self):
+        for prog in CANT_HALT_FALSE_NEGATIVES:
+            self.assert_could_halt(prog)
+            self.assert_could_halt(prog.replace('...', '1R_'))
+
+        for prog in CANT_BLANK_FALSE_NEGATIVES:
+            self.assertNotIn(prog, BLANKERS)
+            self.assert_could_blank(prog)
+
+        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
+            self.assertNotIn(
+                prog,
+                SPINOUT
+                 | SPINOUT_SLOW
+                 | SPINOUT_BLANK
+                 | SPINOUT_BLANK_SLOW)
+
+            self.assert_could_spin_out(prog)
+
+    def test_halt(self):
+        for prog in DO_HALT | set(HALT_SLOW):
+            self.assert_could_halt(prog)
+
+    def test_spinout(self):
+        for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
+            self.assert_simple(prog)
+            self.assert_could_spin_out(prog)
+
+        for prog in DONT_SPIN_OUT:
+            self.assert_cant_spin_out(prog)
+
+    def test_recur(self):
+        for prog in RECUR_COMPACT | RECUR_DIFFUSE | RECUR_TOO_SLOW:
+            self.assert_cant_halt(prog)
+            self.assert_cant_blank(prog)
+            self.assert_cant_spin_out(prog)
 
 
 class Fast(TuringTest):

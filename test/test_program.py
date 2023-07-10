@@ -1,13 +1,12 @@
-# pylint: disable = wildcard-import, unused-wildcard-import
-from test.prog_data import *
-from test.test_utils import BackwardReasoning
+from unittest import TestCase
 
-from tm.show import show_slot, show_state
+from test.prog_data import BRANCH, PROGS, NORMALIZE
+
 from tm.program import Program
-from tm.reason import BackwardReasoner
+from tm.show import show_slot, show_state
 
 
-class TestProgram(BackwardReasoning):
+class TestProgram(TestCase):
     prog: Program
 
     def assert_used_states(self, states: set[str]):
@@ -66,66 +65,3 @@ class TestProgram(BackwardReasoning):
                 self.assertEqual(
                     norm,
                     Program(dev).normalize())
-
-    def test_undefined(self):
-        for prog, sequence in UNDEFINED.items():
-            self.assertEqual(
-                sequence,
-                {
-                    partial: (step, show_slot(slot))
-                    for partial, step, slot in
-                    BackwardReasoner(prog).instr_seq
-                },
-            )
-
-    def test_mother_of_giants(self):
-        mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
-
-        for prog in Program(mother).branch_read('E0'):
-            self.assert_could_blank(prog)
-            self.assert_could_spin_out(prog)
-
-    def test_blank(self):
-        for prog in DONT_BLANK:
-            self.assert_cant_blank(prog)
-
-        for prog in BLANKERS:
-            self.assert_simple(prog)
-            self.assert_could_blank(prog)
-
-    def test_false_negatives(self):
-        for prog in CANT_HALT_FALSE_NEGATIVES:
-            self.assert_could_halt(prog)
-            self.assert_could_halt(prog.replace('...', '1R_'))
-
-        for prog in CANT_BLANK_FALSE_NEGATIVES:
-            self.assertNotIn(prog, BLANKERS)
-            self.assert_could_blank(prog)
-
-        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
-            self.assertNotIn(
-                prog,
-                SPINOUT
-                 | SPINOUT_SLOW
-                 | SPINOUT_BLANK
-                 | SPINOUT_BLANK_SLOW)
-
-            self.assert_could_spin_out(prog)
-
-    def test_halt(self):
-        for prog in DO_HALT | set(HALT_SLOW):
-            self.assert_could_halt(prog)
-
-    def test_spinout(self):
-        for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
-            self.assert_simple(prog)
-            self.assert_could_spin_out(prog)
-
-        for prog in DONT_SPIN_OUT:
-            self.assert_cant_spin_out(prog)
-
-    def test_recur(self):
-        for prog in RECUR_COMPACT | RECUR_DIFFUSE | RECUR_TOO_SLOW:
-            self.assert_cant_halt(prog)
-            self.assert_cant_blank(prog)
-            self.assert_cant_spin_out(prog)
