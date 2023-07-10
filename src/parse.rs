@@ -71,6 +71,15 @@ pub fn show_slot(slot: Slot) -> String {
 }
 
 #[pyfunction]
+pub fn read_slot(slot: &str) -> Slot {
+    let mut chars = slot.chars();
+    let state = chars.next().unwrap();
+    let color = chars.next().unwrap();
+
+    (read_state(state), color.to_digit(10).unwrap().into())
+}
+
+#[pyfunction]
 pub fn show_instr(instr: Option<Instr>) -> String {
     match instr {
         None => "...".to_string(),

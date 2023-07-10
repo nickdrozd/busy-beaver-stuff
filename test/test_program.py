@@ -1,6 +1,6 @@
 # pylint: disable = wildcard-import, unused-wildcard-import
 from test.prog_data import *
-from test.test_utils import BackwardReasoning, read_state
+from test.test_utils import BackwardReasoning, read_state, read_slot
 
 from tm.show import show_slot, show_state
 from tm.program import Program
@@ -56,8 +56,7 @@ class TestProgram(BackwardReasoning):
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
             self.assertEqual(
-                set(Program(prog).branch(
-                    (read_state(loc[0]), int(loc[1])))),
+                set(Program(prog).branch(read_slot(loc))),
                 extensions)
 
     def test_normalize(self):
