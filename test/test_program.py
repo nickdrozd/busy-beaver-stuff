@@ -2,7 +2,7 @@
 from test.prog_data import *
 from test.test_utils import BackwardReasoning, read_state
 
-from tm.show import show_slot
+from tm.show import show_slot, show_state
 from tm.program import Program
 
 
@@ -11,13 +11,13 @@ class TestProgram(BackwardReasoning):
 
     def assert_used_states(self, states: set[str]):
         self.assertEqual(
-            set(map(read_state, states)),
-            set(self.prog.used_states))
+            states,
+            set(map(show_state, self.prog.used_states)))
 
     def assert_available_states(self, states: set[str]):
         self.assertEqual(
-            set(map(read_state, states)),
-            set(self.prog.available_states))
+            states,
+            set(map(show_state, self.prog.available_states)))
 
     def assert_used_colors(self, colors: set[int]):
         self.assertEqual(
@@ -31,16 +31,15 @@ class TestProgram(BackwardReasoning):
 
     def assert_last_slot(self, slot: str | None):
         self.assertEqual(
-            (read_state(slot[0]), int(slot[1]))
-                if slot is not None else None,
-            self.prog.last_slot)
+            slot,
+            None
+            if (last := self.prog.last_slot) is None else
+            show_slot(last))
 
     def assert_slots(self, slots: tuple[str, ...]):
         self.assertEqual(
-            tuple(
-                (read_state(slot[0]), int(slot[1]))
-                for slot in slots),
-            self.prog.slots)
+            slots,
+            tuple(map(show_slot, self.prog.slots)))
 
     def test_used_available(self):
         # pylint: disable = line-too-long
