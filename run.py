@@ -1,7 +1,6 @@
 import sys
 
-from tm.utils import opt_block
-from tm.machine import Machine
+from tm.machine import Machine, opt_block
 
 PRINT = 1
 STEPS = 10 ** 10

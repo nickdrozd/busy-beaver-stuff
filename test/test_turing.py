@@ -10,9 +10,8 @@ from itertools import product
 from test.prog_data import *
 from test.test_utils import BackwardReasoning, read_state
 
-from tm.utils import opt_block
 from tm.program import Program
-from tm.machine import Machine, LinRecMachine
+from tm.machine import Machine, LinRecMachine, opt_block
 
 if TYPE_CHECKING:
     from typing import Any

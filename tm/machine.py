@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape
 from tm.parse import tcompile
 from tm.prover import Prover
 from tm.lin_rec import History
+from tm.tape import Tape, BlockMeasure, compr_eff
 from tm.show import show_slot, show_number
 from tm.rules import RuleLimit, InfiniteRule
 from tm.macro import BlockMacro, BacksymbolMacro
 
 if TYPE_CHECKING:
     from typing import Self
+    from collections.abc import Iterator
 
+    from tm.macro import MacroProg
     from tm.parse import State, Slot, GetInstr
     from tm.lin_rec import RecRes, Tapes
 
@@ -335,3 +337,61 @@ class LinRecMachine(Machine):
         )
 
         return result
+
+########################################
+
+def macro_variations(
+        prog: str,
+        block_steps: int,
+) -> Iterator[str | MacroProg]:
+    yield (
+        prog
+        if (opt := opt_block(prog, block_steps)) == 1 else
+        BlockMacro(prog, [opt])
+    )
+
+    yield BacksymbolMacro(prog, [1])
+
+
+def run_variations(
+        prog: str,
+        sim_lim: int,
+        *,
+        lin_rec: int = 50,
+        block_steps: int = 1_000,
+) -> Iterator[Machine]:
+    yield LinRecMachine(prog).run(
+        step_lim = lin_rec,
+        check_rec = 0,
+        skip = True,
+    )
+
+    for macro in macro_variations(prog, block_steps):
+        yield Machine(macro).run(
+            sim_lim = sim_lim,
+            prover = True,
+        )
+
+
+def opt_block(prog: str, steps: int) -> int:
+    machine = Machine(prog).run(
+        sim_lim = steps,
+        tape = BlockMeasure([], 0, []))
+
+    if machine.xlimit is None:
+        return 1
+
+    tape = Machine(prog).run(
+        # pylint: disable = line-too-long
+        sim_lim = machine.tape.max_blocks_step,  # type: ignore[attr-defined]
+    ).tape.unroll()
+
+    opt_size = 1
+    min_comp = 1 + len(tape)
+
+    for block_size in range(1, len(tape) // 2):
+        if (compr_size := compr_eff(tape, block_size)) < min_comp:
+            min_comp = compr_size
+            opt_size = block_size
+
+    return opt_size

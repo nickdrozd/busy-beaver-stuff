@@ -4,7 +4,7 @@ from unittest import TestCase
 from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
-from tm.utils import run_variations
+from tm.machine import run_variations
 from generate.tree import run_tree_gen, Program
 
 

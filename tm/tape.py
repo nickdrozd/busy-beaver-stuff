@@ -472,3 +472,29 @@ class EnumTape(BlockTape):
                 push.insert(0, push_block)
 
         self.scan = next_scan
+
+########################################
+
+class BlockMeasure(Tape):
+    steps: int = 0
+    max_blocks: int = 0
+    max_blocks_step: int = 0
+
+    def step(self, shift: Shift, color: Color, skip: bool) -> int:
+        self.steps += 1
+
+        if (blocks := self.blocks) > self.max_blocks:
+            self.max_blocks = blocks
+            self.max_blocks_step = self.steps
+
+        return super().step(shift, color, skip)
+
+
+def compr_eff(tape: list[Color], k: int) -> int:
+    compr_size = len(tape)
+
+    for i in range(0, len(tape) - 2 * k, k):
+        if tape[i : i + k] == tape[i + k : i + 2 * k]:
+            compr_size -= k
+
+    return compr_size

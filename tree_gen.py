@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 
 from tm.program import Program
-from tm.utils import run_variations
+from tm.machine import run_variations
 
 from generate.tree import run_tree_gen, Output, Prog
 
