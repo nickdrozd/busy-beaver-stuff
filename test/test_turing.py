@@ -1,5 +1,3 @@
-# pylint: disable = line-too-long, wildcard-import, unused-wildcard-import, too-many-arguments
-
 from __future__ import annotations
 
 from math import isclose, log10
@@ -7,6 +5,7 @@ from typing import TYPE_CHECKING
 from itertools import product
 from unittest import TestCase, skip, expectedFailure
 
+# pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 
 from tm.reason import Program, BackwardReasoner
@@ -184,7 +183,7 @@ class TuringTest(TestCase):
         if steps >= 1:
             self.deny_lin_recurrence(steps - 1, recurrence)
 
-    def run_bb(
+    def run_bb(  # pylint: disable = too-many-arguments
             self,
             prog: str | GetInstr,
             *,
@@ -213,7 +212,10 @@ class TuringTest(TestCase):
 
         self.tape = self.machine.tape
 
-        if not analyze or not isinstance(prog, str) or blocks or backsym:
+        if (not analyze
+                or not isinstance(prog, str)
+                or blocks
+                or backsym):
             return
 
         if normal:
@@ -452,7 +454,8 @@ class TuringTest(TestCase):
             )
 
             for cycles, params in zip(cycleses, macro_params):
-                if cycles is not None and cycles > 10_000_000:  # no-coverage
+                if (cycles is not None
+                        and cycles > 10_000_000):  # no-coverage
                     continue
 
                 match params:
@@ -480,7 +483,10 @@ class TuringTest(TestCase):
                     if sim_lim is None else
                     self.machine.steps)
 
-                if sim_lim is None and not isinstance(macro := self.machine.program, str):
+                if (sim_lim is None
+                        and not isinstance(
+                            macro := self.machine.program,
+                            str)):
                     self.assertTrue(
                         len(macro) <= 60,
                         (len(macro), str(macro)))
