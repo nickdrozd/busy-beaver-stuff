@@ -10,6 +10,13 @@ from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
 Plus = int
 
 if TYPE_CHECKING:
+    Count = int
+
+    Counts = tuple[
+        list[Count],
+        list[Count],
+    ]
+
     Mult = tuple[int, int]
 
     Op = Plus | Mult
@@ -17,10 +24,6 @@ if TYPE_CHECKING:
     Index = tuple[int, int]
 
     Rule = dict[Index, Op]
-
-    Count = int
-
-    Counts = tuple[list[Count], list[Count]]
 
 
 def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> Op | None:
