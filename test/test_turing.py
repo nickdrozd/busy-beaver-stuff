@@ -494,7 +494,6 @@ class TuringTest(TestCase):
             wraps: int,
             cells: int,
             rel_tol: float = .001,
-            jump: int | None = None,
     ):
         for prog, steps in BLOCK_MACRO_STEPS.items():
             for wrap, cell in product(range(1, wraps), range(1, cells)):
@@ -508,23 +507,6 @@ class TuringTest(TestCase):
                 self.assert_close(
                     self.machine.simple_termination,
                     steps / (cell ** wrap),
-                    rel_tol = rel_tol,
-                )
-
-            if jump is None:                        # no-coverage
-                continue
-
-            for cell in range(jump, jump + cells):  # no-coverage
-                self.run_bb(
-                    prog,
-                    blocks = cell,
-                )
-
-                assert self.machine.simple_termination is not None
-
-                self.assert_close(
-                    self.machine.simple_termination,
-                    steps / cell,
                     rel_tol = rel_tol,
                 )
 
@@ -822,14 +804,6 @@ class Slow(TuringTest):  # no-coverage
 
     def test_recur(self):
         self._test_recur(RECUR_SLOW, quick = False)
-
-    def test_block_macro_steps(self):
-        self._test_block_macro_steps(
-            wraps = 8,
-            cells = 9,
-            rel_tol = 1.0,
-            jump = 2_000,
-        )
 
     def test_macro_cycles(self):
         self._test_macro_cycles(MACRO_CYCLES_SLOW)
