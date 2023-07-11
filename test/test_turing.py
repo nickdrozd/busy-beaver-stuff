@@ -502,10 +502,12 @@ class TuringTest(TestCase):
                     blocks = [cell] * wrap,
                 )
 
-                assert self.machine.simple_termination is not None
+                assert isinstance(
+                    term := self.machine.simple_termination,
+                    int)
 
                 self.assert_close(
-                    self.machine.simple_termination,
+                    term,
                     steps / (cell ** wrap),
                     rel_tol = rel_tol,
                 )
