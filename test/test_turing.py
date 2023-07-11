@@ -318,11 +318,6 @@ class TuringTest(TestCase):
 
             if blank:
                 self.run_bb(prog)
-                assert self.machine.linrec is not None
-                self.assertEqual(
-                    period,
-                    self.machine.linrec[1])
-                self.assert_quasihalt(qsihlt)
             else:
                 assert steps is not None
                 self.run_bb(
@@ -331,12 +326,13 @@ class TuringTest(TestCase):
                     check_rec = 0 if steps < 256 else steps,
                 )
 
-                assert self.machine.linrec is not None
-                self.assertEqual(
-                    period,
-                    self.machine.linrec[1])
+            assert self.machine.linrec is not None
 
-                self.assert_quasihalt(qsihlt)
+            self.assertEqual(
+                period,
+                self.machine.linrec[1])
+
+            self.assert_quasihalt(qsihlt)
 
     def _test_prover(  # type: ignore[misc]
             self,
