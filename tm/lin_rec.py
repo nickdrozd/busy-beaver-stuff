@@ -88,11 +88,12 @@ class History:
 
     def add_tape_at_step(self, step: int, tape: Tape) -> None:
         pos = tape.head
+
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
 
         self.tapes[step] = PtrTape(
-            sum(q.count for q in tape.lspan) - tape.head,
+            sum(q.count for q in tape.lspan) - pos,
             tape.unroll(),
         )
 
