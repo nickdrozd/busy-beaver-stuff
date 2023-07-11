@@ -14,11 +14,13 @@ from tm.machine import (
 if TYPE_CHECKING:
     from tm.program import State, Slot
 
+    InstrSeq = list[tuple[str, int, Slot]]
+
 
 class BackwardReasoner(Program):
     @property
-    def instr_seq(self) -> list[tuple[str, int, Slot]]:
-        seqs: list[tuple[str, int, Slot]] = []
+    def instr_seq(self) -> InstrSeq:
+        seqs: InstrSeq = []
 
         partial = Program.init(len(self.states), len(self.colors))
 
