@@ -62,8 +62,8 @@ class ApplyRule:
     @abstractmethod
     def set_count(self, index: Index, val: Count) -> None: ...
 
-    def count_apps(self, rule: Rule) -> int | None:
-        divs: list[int] = []
+    def count_apps(self, rule: Rule) -> tuple[int, Index] | None:
+        divs: list[tuple[int, Index]] = []
 
         for pos, diff in rule.items():
             if not isinstance(diff, Plus) or diff >= 0:
@@ -73,13 +73,19 @@ class ApplyRule:
                 return None
 
             div, rem = divmod(count, absdiff)
-            divs.append(div if rem > 0 else div - 1)
 
-        return min(divs)
+            divs.append((
+                div if rem > 0 else div - 1,
+                pos,
+            ))
+
+        return min(divs, key = lambda p: p[0])
 
     def apply_rule(self, rule: Rule) -> int | None:
-        if (times := self.count_apps(rule)) is None:
+        if (apps := self.count_apps(rule)) is None:
             return None
+
+        times, min_pos = apps
 
         if (any(not isinstance(op, Plus) for op in rule.values())
                 and log10(times) > 10):
@@ -93,17 +99,27 @@ class ApplyRule:
                     result = apply_mult(count, times, div, mod)
                 case _:
                     assert isinstance(diff, Plus)
-                    result = apply_plus(count, times, diff)
+
+                    result = apply_plus(
+                        count,
+                        times,
+                        diff,
+                        pos == min_pos)
 
             self.set_count(pos, result)
 
         return times
 
 
-def apply_plus(count: Count, times: int, diff: Plus) -> Count:
+def apply_plus(
+        count: Count,
+        times: int,
+        diff: Plus,
+        is_min: bool,
+) -> Count:
     return (
         count + diff * times
-        if diff >= -1 else
+        if not is_min else
         mod
         if (mod := count % -diff) > 0 else
         -diff
