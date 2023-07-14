@@ -106,7 +106,7 @@ def apply_plus(count: Count, times: int, diff: Plus) -> Count:
         if diff >= -1 else
         mod
         if (mod := count % -diff) > 0 else
-        mod + -diff
+        -diff
     )
 
 
