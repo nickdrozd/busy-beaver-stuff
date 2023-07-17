@@ -5,11 +5,52 @@ from typing import TYPE_CHECKING
 from collections import defaultdict
 from dataclasses import dataclass, field
 
+from tm.tape import Tape
+
 if TYPE_CHECKING:
+    from tm.tape import Shift
     from tm.parse import Color, State, Slot
-    from tm.tape import Tape
 
     RecRes = tuple[int, int]
+
+
+class HeadTape(Tape):
+    head: int
+
+    def __init__(
+            self,
+            lspan: list[tuple[int, int]],
+            scan: Color,
+            rspan: list[tuple[int, int]],
+            head: int = 0,
+    ):
+        self.head = head
+
+        super().__init__(lspan, scan, rspan)
+
+    def copy(self) -> HeadTape:
+        return HeadTape(
+            [(block.color, block.count) for block in self.lspan],
+            self.scan,
+            [(block.color, block.count) for block in self.rspan],
+            head = self.head,
+        )
+
+    def to_ptr(self) -> PtrTape:
+        return PtrTape(
+            sum(q.count for q in self.lspan) - self.head,
+            self.unroll(),
+        )
+
+    def step(self, shift: Shift, color: Color, skip: bool) -> int:
+        stepped = super().step(shift, color, skip)
+
+        if shift:
+            self.head += stepped
+        else:
+            self.head -= stepped
+
+        return stepped
 
 
 @dataclass
@@ -86,16 +127,13 @@ class History:
         self.states += [state] * (step - len(self.states))
         self.states.append(state)
 
-    def add_tape_at_step(self, step: int, tape: Tape) -> None:
+    def add_tape_at_step(self, step: int, tape: HeadTape) -> None:
         pos = tape.head
 
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
 
-        self.tapes[step] = PtrTape(
-            sum(q.count for q in tape.lspan) - pos,
-            tape.unroll(),
-        )
+        self.tapes[step] = tape.to_ptr()
 
     def calculate_beeps(
             self,

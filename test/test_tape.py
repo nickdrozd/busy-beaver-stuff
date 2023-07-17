@@ -4,7 +4,7 @@ from unittest import TestCase
 from typing import TYPE_CHECKING
 
 from tm.tape import Tape, TagTape, EnumTape
-from tm.lin_rec import PtrTape
+from tm.lin_rec import PtrTape, HeadTape
 
 if TYPE_CHECKING:
     from tm.tape import Color, Signature
@@ -26,7 +26,7 @@ def stringify_sig(sig: Signature) -> str:
 
 
 class TestTape(TestCase):
-    tape: Tape
+    tape: HeadTape
     ptr: PtrTape
 
     def set_tape(
@@ -37,7 +37,7 @@ class TestTape(TestCase):
             head: int | None = None,
     ) -> None:
         # pylint: disable = unnecessary-comprehension
-        self.tape = Tape(
+        self.tape = HeadTape(
             [(color, count) for color, count in lspan],
             scan,
             [(color, count) for color, count in rspan],
@@ -175,10 +175,7 @@ class TestTape(TestCase):
         self.assert_head(
             -3)
 
-        self.ptr = ptr = PtrTape(
-            sum(q.count for q in self.tape.lspan) - self.tape.head,
-            self.tape.unroll(),
-        )
+        self.ptr = ptr = self.tape.to_ptr()
 
         init_tape = [0, 2, 1, 1, 1, 1, 1, 1, 1]
 

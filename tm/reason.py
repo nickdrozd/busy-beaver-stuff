@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from tm.program import Program
 from tm.machine import (
-    Tape,
+    HeadTape,
     History,
     Machine,
     tcompile,
@@ -65,12 +65,12 @@ class BackwardReasoner(Program):
             max_cycles: int = 1_000,
     ) -> bool:
         configs: list[
-            tuple[int, State, Tape, int, History]
+            tuple[int, State, HeadTape, int, History]
         ] = [
             (
                 1,
                 state,
-                Tape.init(color),
+                HeadTape.init(color),
                 0,
                 History(tapes = {}),
             )
@@ -81,7 +81,7 @@ class BackwardReasoner(Program):
 
         max_repeats = max_steps // 2
 
-        seen: dict[State, set[Tape]] = defaultdict(set)
+        seen: dict[State, set[HeadTape]] = defaultdict(set)
 
         def final_value(machine: Machine) -> int | None:
             match final_prop:

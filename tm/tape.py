@@ -106,20 +106,15 @@ class Tape(BlockTape):
     scan: Color
     rspan: list[Block]  # type: ignore[assignment]
 
-    head: int = 0
-
     def __init__(
             self,
             lspan: list[tuple[int, Count]],
             scan: Color,
             rspan: list[tuple[int, Count]],
-            head: int = 0,
     ):
         self.lspan = [Block(color, count) for color, count in lspan]
         self.scan = scan
         self.rspan = [Block(color, count) for color, count in rspan]
-
-        self.head = head
 
     def __hash__(self) -> int:
         return hash((
@@ -131,14 +126,6 @@ class Tape(BlockTape):
     @classmethod
     def init(cls, scan: Color = 0) -> Self:
         return cls([], scan, [])
-
-    def copy(self) -> Tape:
-        return Tape(
-            [(block.color, block.count) for block in self.lspan],
-            self.scan,
-            [(block.color, block.count) for block in self.rspan],
-            head = self.head
-        )
 
     def to_tag(self) -> TagTape:
         return TagTape(
@@ -225,11 +212,6 @@ class Tape(BlockTape):
                 push.insert(0, push_block)
 
         self.scan = next_scan
-
-        if shift:
-            self.head += stepped
-        else:
-            self.head -= stepped
 
         return stepped
 

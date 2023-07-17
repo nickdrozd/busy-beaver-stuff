@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tm.prover import Prover
-from tm.lin_rec import History
+from tm.lin_rec import History, HeadTape
 from tm.tape import Tape, BlockMeasure, compr_eff
 from tm.show import show_slot, show_number
 from tm.rules import RuleLimit, InfiniteRule
@@ -284,7 +284,7 @@ class LinRecMachine(Machine):
 
         comp = self.comp
 
-        self.tape = tape = Tape.init()
+        self.tape = tape = HeadTape.init()
 
         self.history = History(tapes = samples or {})
 
