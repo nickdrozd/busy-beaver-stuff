@@ -127,14 +127,19 @@ class Machine:
     def marks(self) -> int:
         return self.tape.marks
 
-    def show_tape(self, step: int, cycle: int, state: int) -> None:
+    def show_tape(
+            self,
+            step: int | None,
+            cycle: int,
+            state: int,
+    ) -> None:
         info = [
             f'{cycle: 5d}',
             show_slot((state, self.tape.scan)),
             str(self.tape),
         ]
 
-        if not self.rulapp:
+        if step is not None:
             info.insert(1, f'{step : 3d}')
 
         print(' | '.join(info))
@@ -158,7 +163,7 @@ class Machine:
 
         self.blanks = {}
 
-        step: int = 0
+        step: int | None = 0
 
         for cycle in range(sim_lim):
 
@@ -181,7 +186,7 @@ class Machine:
 
                     if times is not None:
                         # print(f'--> applied rule: {rule}')
-                        step += times
+                        step = None
                         self.rulapp += times
                         continue
 
@@ -190,16 +195,19 @@ class Machine:
                     break
 
             if (instr := comp[state, tape.scan]) is None:
-                self.undfnd = step, (state, tape.scan)
+                self.undfnd = step or -1, (state, tape.scan)
                 break
 
             color, shift, next_state = instr
 
             if (same := state == next_state) and tape.at_edge(shift):
-                self.spnout = step
+                self.spnout = step or -1
                 break
 
-            step += tape.step(shift, color, same)
+            stepped = tape.step(shift, color, same)
+
+            if step is not None:
+                step += stepped
 
             if (state := next_state) == -1:
                 break
@@ -208,13 +216,13 @@ class Machine:
                 if state in self.blanks:
                     break
 
-                self.blanks[state] = step
+                self.blanks[state] = step or -1
 
                 if state == 0:
                     break
 
         else:
-            self.xlimit = step
+            self.xlimit = step or -1
 
         self.finalize(step, cycle, state)
 
@@ -223,8 +231,14 @@ class Machine:
 
         return self
 
-    def finalize(self, step: int, cycle: int, state: int) -> None:
-        assert cycle <= step
+    def finalize(
+            self,
+            step: int | None,
+            cycle: int,
+            state: State,
+    ) -> None:
+        if step is None:
+            step = -1
 
         if state == -1:
             self.halted = step
