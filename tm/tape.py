@@ -7,6 +7,8 @@ from tm.show import show_number
 from tm.rules import ApplyRule
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from tm.parse import Color, Shift
     from tm.rules import Count, Counts, Index
 
@@ -126,9 +128,9 @@ class Tape(BlockTape):
             tuple((block.color, block.count) for block in self.rspan),
         ))
 
-    @staticmethod
-    def init(scan: Color = 0) -> Tape:
-        return Tape([], scan, [])
+    @classmethod
+    def init(cls, scan: Color = 0) -> Self:
+        return cls([], scan, [])
 
     def copy(self) -> Tape:
         return Tape(
