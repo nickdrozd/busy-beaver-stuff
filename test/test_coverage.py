@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from tm.program import Program
+from tm.reason import Program, BackwardReasoner
 from tm.machine import Machine, LinRecMachine
 
 
@@ -104,3 +104,14 @@ class TestFloss(TestCase):
                 prover = True
             ).cfglim
         )
+
+    def test_reasoner(self):
+        _ = BackwardReasoner("1RB 0RA  1LA 1R_").cant_halt
+        _ = BackwardReasoner("1RB ...  1LB 0RB").cant_blank
+        _ = BackwardReasoner("1RB 0RA  1LB 1LA").cant_blank
+        _ = BackwardReasoner("1RB 2LA 1LA  2LA 2RB 0RA").cant_blank
+        _ = BackwardReasoner("1RB 0RB 0LB  1LB 2RA 1LA").cant_spin_out
+
+        _ = BackwardReasoner("1RB 1LB  1LA 1R_").instr_seq
+        _ = BackwardReasoner(
+            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD").instr_seq
