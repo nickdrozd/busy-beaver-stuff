@@ -212,10 +212,7 @@ class TuringTest(TestCase):
 
         self.tape = self.machine.tape
 
-        if (not analyze
-                or not isinstance(prog, str)
-                or blocks
-                or backsym):
+        if not analyze or not isinstance(prog, str):
             return
 
         if normal:
@@ -748,6 +745,7 @@ class Fast(TuringTest):
             prog,
             backsym = 1,
             prover = True,
+            normal = False,
         )
 
         self.assertIsNone(
