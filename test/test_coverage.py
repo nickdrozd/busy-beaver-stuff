@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from tm.reason import Program, BackwardReasoner
-from tm.machine import Machine, LinRecMachine
+from tm.machine import Machine, LinRecMachine, run_variations
 
 
 class TestDisplay(TestCase):
@@ -77,8 +77,36 @@ class TestFloss(TestCase):
             ).run().simple_termination)
 
         self.assertIsNotNone(
+            Machine(
+                "1RB 1LA  1RC 0LB  0LB ..."
+            ).run().blanks)
+
+        self.assertIsNotNone(
             LinRecMachine(
                 "1RB 0LB  1LA 0RB"
+            ).run(check_rec = 1))
+
+        self.assertIsNotNone(
+            LinRecMachine(
+                "1RB 1LA  0RC ...  1LC 0LA"
+            ).run(check_rec = 1))
+
+        self.assertIsNotNone(
+            LinRecMachine(
+                "1RB 1RB  1RC 0LC  0LB 1RC"
+            ).run(check_rec = 1))
+
+        self.assertIsNotNone(
+            LinRecMachine(
+                "1RB 0LB  1LA 0RA"
+            ).run(
+                check_rec = 1,
+                step_lim = 50,
+            ))
+
+        self.assertIsNotNone(
+            LinRecMachine(
+                "1RB 1LA  0LB 1LB"
             ).run(check_rec = 1))
 
     def test_prover(self):
@@ -86,6 +114,19 @@ class TestFloss(TestCase):
             Machine(
                 "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA"
             ).run(prover = True))
+
+        self.assertTrue(
+            Machine(
+                "1RB 0RA  1RA ..."
+            ).run(prover = True))
+
+        self.assertIsNotNone(
+            Machine(
+                "1RB 2LA 1RA  1LB 1LA 2RB"
+            ).run(
+                prover = True,
+                sim_lim = 5739,
+            ).xlimit)
 
     def test_rule_limit(self):
         self.assertIsNotNone(
@@ -106,12 +147,56 @@ class TestFloss(TestCase):
         )
 
     def test_reasoner(self):
-        _ = BackwardReasoner("1RB 0RA  1LA 1R_").cant_halt
-        _ = BackwardReasoner("1RB ...  1LB 0RB").cant_blank
-        _ = BackwardReasoner("1RB 0RA  1LB 1LA").cant_blank
-        _ = BackwardReasoner("1RB 2LA 1LA  2LA 2RB 0RA").cant_blank
-        _ = BackwardReasoner("1RB 0RB 0LB  1LB 2RA 1LA").cant_spin_out
+        self.assertFalse(
+            BackwardReasoner("1RB 0RA  1LA 1R_").cant_halt)
+
+        self.assertFalse(
+            BackwardReasoner("1RB ...  1LB 0RB").cant_blank)
+
+        self.assertFalse(
+            BackwardReasoner("1RB 0RA  1LB 1LA").cant_blank)
+
+        self.assertTrue(
+            BackwardReasoner("1RB 2LA 1LA  2LA 2RB 0RA").cant_blank)
+
+        self.assertFalse(
+            BackwardReasoner("1RB 0RB 0LB  1LB 2RA 1LA").cant_spin_out)
 
         _ = BackwardReasoner("1RB 1LB  1LA 1R_").instr_seq
         _ = BackwardReasoner(
             "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD").instr_seq
+
+    def test_machine_macros(self):
+        self.assertIsNotNone(
+            Machine(
+                "1RB 1LB  1LA 1R_",
+                opt_blocks = 10,
+            ))
+
+        _ = Machine(
+            "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA",
+            opt_blocks = 100,
+            backsym = 1,
+        )
+
+    def test_run_variations(self):
+        self.assertEqual(
+            3,
+            len(
+                list(
+                    run_variations(
+                        "1RB 1LB  1LA 1R_",
+                        sim_lim = 10))))
+
+    def test_branch_init(self):
+        self.assertEqual(
+            8,
+            len(
+                Program.branch_init(
+                    2, 2)))
+
+    def test_tape(self):
+        self.assertIsNotNone(
+            Machine(
+                "1RB 0LB  1RC 0RC  1LB 1LA"
+            ).run(prover = True))
