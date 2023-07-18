@@ -68,7 +68,15 @@ class Machine:
             *,
             blocks: int | list[int] | None = None,
             backsym: int | list[int] | None = None,
+            opt_blocks: int | None = None,
     ):
+        if opt_blocks is not None:
+            blocks = (
+                opt
+                if (opt := opt_block(program, opt_blocks)) > 1 else
+                None
+            )
+
         if blocks is not None:
             if isinstance(blocks, int):
                 blocks = [blocks]
@@ -366,11 +374,7 @@ def run_variations(
 
     yield Machine(
         prog,
-        blocks = (
-            None
-            if (opt := opt_block(prog, block_steps)) == 1 else
-            opt
-        ),
+        opt_blocks = block_steps,
     ).run(
         sim_lim = sim_lim,
         prover = True,
@@ -385,7 +389,7 @@ def run_variations(
     )
 
 
-def opt_block(prog: str, steps: int) -> int:
+def opt_block(prog: str | GetInstr, steps: int) -> int:
     machine = Machine(prog).run(
         sim_lim = steps,
         tape = BlockMeasure([], 0, []))

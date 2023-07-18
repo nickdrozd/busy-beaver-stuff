@@ -1,6 +1,6 @@
 import sys
 
-from tm.machine import Machine, opt_block
+from tm.machine import Machine
 
 PRINT = 1
 STEPS = 10 ** 10
@@ -15,11 +15,7 @@ def main() -> None:
 
         machine = Machine(
             program,
-            blocks = (
-                opt
-                if (opt := opt_block(program, steps = 8_000)) > 1 else
-                None
-            ),
+            opt_blocks = 8_000,
             backsym = BACKS or None,
         ).run(
             sim_lim = STEPS,

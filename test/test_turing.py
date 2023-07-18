@@ -193,6 +193,7 @@ class TuringTest(TestCase):
             lin_rec: bool = False,
             blocks: int | list[int] | None = None,
             backsym: int | list[int] | None = None,
+            opt_blocks: int | None = None,
             **opts,
     ):
         if lin_rec:
@@ -203,6 +204,7 @@ class TuringTest(TestCase):
                 prog,
                 blocks = blocks,
                 backsym = backsym,
+                opt_blocks = opt_blocks,
             )
 
         if print_prog:
@@ -343,23 +345,17 @@ class TuringTest(TestCase):
             if prog == "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC":  # SIAB
                 continue
 
-            blocks = (
-                None
-                if (opt := opt_block(prog, steps = 10_000)) == 1 else
-                opt
-            )
-
             self.run_bb(
                 prog,
                 prover = True,
-                blocks = blocks,
+                opt_blocks = 10_000,
             )
 
             if simple_term:
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
-                if blocks:
+                if not isinstance(self.machine.program, str):
                     continue
 
                 self.assert_marks(
@@ -372,16 +368,10 @@ class TuringTest(TestCase):
 
     def _test_prover_est(self, prog_data: ProverEst):
         for prog, marks in prog_data.items():
-            blocks = (
-                None
-                if (opt := opt_block(prog, steps = 3_000)) == 1 else
-                opt
-            )
-
             self.run_bb(
                 prog,
                 sim_lim = 10 ** 8,
-                blocks = blocks,
+                opt_blocks = 3_000,
                 prover = True,
                 normal = False,
             )
@@ -389,7 +379,10 @@ class TuringTest(TestCase):
             self.assertIsNotNone(
                 self.machine.simple_termination)
 
-            result: int = self.machine.marks * opt
+            result: int = self.machine.marks
+
+            if not isinstance(macro := self.machine.program, str):
+                result *= macro.cells  # type: ignore[attr-defined]
 
             if isinstance(marks, int):
                 self.assertEqual(result, marks)
@@ -679,11 +672,7 @@ class Fast(TuringTest):
                 prog,
                 prover = True,
                 normal = False,
-                blocks = (
-                    None
-                    if (opt := opt_block(prog, steps = 120)) == 1 else
-                    opt
-                ),
+                opt_blocks = 120,
             )
 
             self.assertIsNotNone(
@@ -697,11 +686,7 @@ class Fast(TuringTest):
                 prog,
                 prover = True,
                 normal = False,
-                blocks = (
-                    None
-                    if (opt := opt_block(prog, steps = 120)) == 1 else
-                    opt
-                ),
+                opt_blocks = 120,
         )
 
         self.assertIsNotNone(
