@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class BasicBlock:
+class Block:
     color: Color
     count: Count
 
@@ -29,9 +29,9 @@ class BasicBlock:
 
 
 class BlockTape(ApplyRule):
-    lspan: list[BasicBlock]
+    lspan: list[Block]
     scan: Color
-    rspan: list[BasicBlock]
+    rspan: list[Block]
 
     def __str__(self) -> str:
         return ' '.join(
@@ -96,15 +96,10 @@ class BlockTape(ApplyRule):
 
 
 @dataclass
-class Block(BasicBlock):
-    pass
-
-
-@dataclass
 class Tape(BlockTape):
-    lspan: list[Block]  # type: ignore[assignment]
+    lspan: list[Block]
     scan: Color
-    rspan: list[Block]  # type: ignore[assignment]
+    rspan: list[Block]
 
     def __init__(
             self,
@@ -217,7 +212,7 @@ class Tape(BlockTape):
 
 
 @dataclass
-class TagBlock(BasicBlock):
+class TagBlock(Block):
     tags: list[int] = field(
         default_factory = list)
 
@@ -347,7 +342,7 @@ class TagTape(BlockTape):
 
 
 @dataclass
-class EnumBlock(BasicBlock):
+class EnumBlock(Block):
     enums: tuple[int, int] | None = None
 
 
