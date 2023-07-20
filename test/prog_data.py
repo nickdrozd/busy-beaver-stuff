@@ -1663,6 +1663,12 @@ GRAPHS: dict[
         {A: {A}, B: {A, B}},
         {A: {A, B}, B: {B}},
     ),
+    "1RB 0RA 2LB  2LA 0LA 1RA": (
+        "BABAAA",
+        1, 1, 0, 0,
+        {A: {A, B}, B: {A}},
+        {A: {A, B}, B: {A}},
+    ),
 
     # 4 2
     "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": (
