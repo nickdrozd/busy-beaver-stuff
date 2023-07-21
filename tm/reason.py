@@ -21,7 +21,11 @@ if TYPE_CHECKING:
     Config = tuple[int, State, HeadTape]
 
 
-Result = Enum('Result', ('halted', 'blanks', 'spnout'))
+class Result(Enum):
+    # pylint: disable = invalid-name
+    halted = 0
+    blanks = 1
+    spnout = 2
 
 
 class BackwardReasoner(Program):
