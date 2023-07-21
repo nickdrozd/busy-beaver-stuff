@@ -39,26 +39,26 @@ class BackwardReasoner(Program):
 
     @property
     def cant_halt(self) -> bool:
-        return self._cant_reach(
+        return self.cant_reach(
             'halted',
             self.halt_slots,
         )
 
     @property
     def cant_blank(self) -> bool:
-        return self._cant_reach(
+        return self.cant_reach(
             'blanks',
             self.erase_slots,
         )
 
     @property
     def cant_spin_out(self) -> bool:
-        return self._cant_reach(
+        return self.cant_reach(
             'spnout',
             self.spinout_slots,
         )
 
-    def _cant_reach(
+    def cant_reach(
             self,
             final_prop: str,
             slots: tuple[Slot, ...],
