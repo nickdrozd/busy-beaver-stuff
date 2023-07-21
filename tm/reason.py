@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
@@ -16,6 +17,9 @@ if TYPE_CHECKING:
     InstrSeq = list[tuple[str, int, Slot]]
 
     Config = tuple[int, State, HeadTape]
+
+
+Result = Enum('Result', ('halted', 'blanks', 'spnout'))
 
 
 class BackwardReasoner(Program):
@@ -40,27 +44,27 @@ class BackwardReasoner(Program):
     @property
     def cant_halt(self) -> bool:
         return self.cant_reach(
-            'halted',
+            Result.halted,
             self.halt_slots,
         )
 
     @property
     def cant_blank(self) -> bool:
         return self.cant_reach(
-            'blanks',
+            Result.blanks,
             self.erase_slots,
         )
 
     @property
     def cant_spin_out(self) -> bool:
         return self.cant_reach(
-            'spnout',
+            Result.spnout,
             self.spinout_slots,
         )
 
     def cant_reach(
             self,
-            final_prop: str,
+            final_prop: Result,
             slots: tuple[Slot, ...],
             max_steps: int = 24,
             max_cycles: int = 1_000,
@@ -164,21 +168,19 @@ class BackwardReasoner(Program):
         return False
 
 
-def final_value(final_prop: str, machine: Machine) -> int | None:
-    final = None
-
+def final_value(final_prop: Result, machine: Machine) -> int | None:
     match final_prop:
-        case 'spnout':
+        case Result.spnout:
             final = machine.spnout
             machine.spnout = None
-        case 'blanks':
+        case Result.blanks:
             final = (
                 min(blanks.values())
                 if (blanks := machine.blanks) else
                 None
             )
             machine.blanks = {}
-        case 'halted':
+        case Result.halted:
             if (und := machine.undfnd):
                 final = und[0]
                 machine.undfnd = None
