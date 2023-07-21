@@ -12,6 +12,8 @@ from tm.machine import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from tm.program import State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
@@ -88,6 +90,8 @@ class BackwardReasoner(Program):
 
         seen: dict[State, set[HeadTape]] = defaultdict(set)
 
+        get_result = final_value(final_prop)
+
         for _ in range(max_cycles):
             try:
                 (step, state, tape), repeat, history = configs.pop()
@@ -143,13 +147,13 @@ class BackwardReasoner(Program):
 
                         next_tape.scan = color
 
-                        run = machine.run(
+                        machine = machine.run(
                             sim_lim = step + 1,
                             tape = next_tape.copy(),
                             state = entry,
                         )
 
-                        if not (result := final_value(final_prop, run)):
+                        if not (result := get_result(machine)):
                             continue
 
                         if abs(result - step) > 1:
@@ -168,24 +172,32 @@ class BackwardReasoner(Program):
         return False
 
 
-def final_value(final_prop: Result, machine: Machine) -> int | None:
+def final_value(final_prop: Result) -> Callable[[Machine], int | None]:
+    # pylint: disable = function-redefined
     match final_prop:
         case Result.spnout:
-            final = machine.spnout
-            machine.spnout = None
+            def result(machine: Machine) -> int | None:
+                final = machine.spnout
+                machine.spnout = None
+                return final
         case Result.blanks:
-            final = (
-                min(blanks.values())
-                if (blanks := machine.blanks) else
-                None
-            )
-            machine.blanks = {}
+            def result(machine: Machine) -> int | None:
+                final = (
+                    min(blanks.values())
+                    if (blanks := machine.blanks) else
+                    None
+                )
+                machine.blanks = {}
+                return final
         case Result.halted:
-            if (und := machine.undfnd):
-                final = und[0]
-                machine.undfnd = None
-            else:
-                final = machine.halted
-                machine.halted = None
+            def result(machine: Machine) -> int | None:
+                final: int | None
+                if (und := machine.undfnd):
+                    final = und[0]
+                    machine.undfnd = None
+                else:
+                    final = machine.halted
+                    machine.halted = None
+                return final
 
-    return final
+    return result
