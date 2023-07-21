@@ -12,13 +12,15 @@ from tm.machine import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
     from tm.program import State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
 
     Config = tuple[int, State, HeadTape]
+
+    GetResult = Callable[[Machine], int | None]
 
 
 class Result(Enum):
@@ -130,53 +132,65 @@ class BackwardReasoner(Program):
 
             # print(step, state, tape)
 
-            for entry in sorted(self.graph.entry_points[state]):
-                for _, instr in self.get_switch(entry).items():
-                    if instr is None:
-                        continue
-
-                    _, shift, trans = instr
-
-                    if trans != state:
-                        continue
-
-                    for color in self.colors:
-                        next_tape = tape.copy()
-
-                        _ = next_tape.step(
-                            not shift,
-                            next_tape.scan,
-                            False,
-                        )
-
-                        next_tape.scan = color
-
-                        machine = machine.run(
-                            sim_lim = step + 1,
-                            tape = next_tape.copy(),
-                            state = entry,
-                        )
-
-                        if not (result := get_result(machine)):
-                            continue
-
-                        if abs(result - step) > 1:
-                            continue
-
-                        configs.append((
-                            (
-                                step + 1,
-                                entry,
-                                next_tape,
-                            ),
-                            repeat,
-                            history.copy(),
-                        ))
+            for config in self.branch_back(
+                    step, state, tape, machine, get_result):
+                configs.append((
+                    config,
+                    repeat,
+                    history.copy(),
+                ))
 
         return False
 
+    def branch_back(
+            self,
+            step: int,
+            state: State,
+            tape: HeadTape,
+            machine: Machine,
+            get_result: GetResult,
+    ) -> Iterator[Config]:
+        for entry in sorted(self.graph.entry_points[state]):
+            for _, instr in self.get_switch(entry).items():
+                if instr is None:
+                    continue
 
-def final_value(final_prop: Result) -> Callable[[Machine], int | None]:
+                _, shift, trans = instr
+
+                if trans != state:
+                    continue
+
+                for color in self.colors:
+                    next_tape = tape.copy()
+
+                    _ = next_tape.step(
+                        not shift,
+                        next_tape.scan,
+                        False,
+                    )
+
+                    next_tape.scan = color
+
+                    machine = machine.run(
+                        sim_lim = step + 1,
+                        tape = next_tape.copy(),
+                        state = entry,
+                    )
+
+                    if not (result := get_result(machine)):
+                        continue
+
+                    if abs(result - step) > 1:
+                        continue
+
+                    yield (
+                        step + 1,
+                        entry,
+                        next_tape,
+                    )
+
+
+def final_value(final_prop: Result) -> GetResult:
     # pylint: disable = function-redefined
     match final_prop:
         case Result.spnout:
