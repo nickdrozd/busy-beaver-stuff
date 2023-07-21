@@ -83,25 +83,6 @@ class BackwardReasoner(Program):
 
         seen: dict[State, set[HeadTape]] = defaultdict(set)
 
-        def final_value(machine: Machine) -> int | None:
-            match final_prop:
-                case 'spnout':
-                    return machine.spnout
-                case 'blanks':
-                    return (
-                        min(blanks.values())
-                        if (blanks := machine.blanks) else
-                        None
-                    )
-                case 'halted':
-                    return (
-                        und[0]
-                        if (und := machine.undfnd) else
-                        machine.halted
-                    )
-
-            return None  # no-coverage
-
         for _ in range(max_cycles):
             try:
                 step, state, tape, repeat, history = configs.pop()
@@ -163,7 +144,7 @@ class BackwardReasoner(Program):
                             state = entry,
                         )
 
-                        if not (result := final_value(run)):
+                        if not (result := final_value(final_prop, run)):
                             continue
 
                         if abs(result - step) > 1:
@@ -178,3 +159,23 @@ class BackwardReasoner(Program):
                         ))
 
         return False
+
+
+def final_value(final_prop: str, machine: Machine) -> int | None:
+    match final_prop:
+        case 'spnout':
+            return machine.spnout
+        case 'blanks':
+            return (
+                min(blanks.values())
+                if (blanks := machine.blanks) else
+                None
+            )
+        case 'halted':
+            return (
+                und[0]
+                if (und := machine.undfnd) else
+                machine.halted
+            )
+
+    return None  # no-coverage
