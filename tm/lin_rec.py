@@ -14,8 +14,9 @@ if TYPE_CHECKING:
     RecRes = tuple[int, int]
 
 
+@dataclass
 class HeadTape(Tape):
-    head: int
+    head: int = 0
 
     def __init__(
             self,
@@ -27,6 +28,13 @@ class HeadTape(Tape):
         self.head = head
 
         super().__init__(lspan, scan, rspan)
+
+    def __hash__(self) -> int:
+        return hash((
+            self.scan,
+            tuple((block.color, block.count) for block in self.lspan),
+            tuple((block.color, block.count) for block in self.rspan),
+        ))
 
     def copy(self) -> HeadTape:
         return HeadTape(
