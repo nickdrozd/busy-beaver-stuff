@@ -8,7 +8,6 @@ from tm.machine import (
     HeadTape,
     History,
     Machine,
-    tcompile,
 )
 
 if TYPE_CHECKING:
@@ -77,7 +76,7 @@ class BackwardReasoner(Program):
             for state, color in sorted(slots)
         ]
 
-        comp = tcompile(str(self))
+        machine = Machine(str(self))
 
         max_repeats = max_steps // 2
 
@@ -138,7 +137,7 @@ class BackwardReasoner(Program):
 
                         next_tape.scan = color
 
-                        run = Machine(comp).run(
+                        run = machine.run(
                             sim_lim = step + 1,
                             tape = next_tape.copy(),
                             state = entry,
@@ -162,20 +161,25 @@ class BackwardReasoner(Program):
 
 
 def final_value(final_prop: str, machine: Machine) -> int | None:
+    final = None
+
     match final_prop:
         case 'spnout':
-            return machine.spnout
+            final = machine.spnout
+            machine.spnout = None
         case 'blanks':
-            return (
+            final = (
                 min(blanks.values())
                 if (blanks := machine.blanks) else
                 None
             )
+            machine.blanks = {}
         case 'halted':
-            return (
-                und[0]
-                if (und := machine.undfnd) else
-                machine.halted
-            )
+            if (und := machine.undfnd):
+                final = und[0]
+                machine.undfnd = None
+            else:
+                final = machine.halted
+                machine.halted = None
 
-    return None  # no-coverage
+    return final
