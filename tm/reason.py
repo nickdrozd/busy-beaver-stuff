@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 
     InstrSeq = list[tuple[str, int, Slot]]
 
+    Config = tuple[int, State, HeadTape]
+
 
 class BackwardReasoner(Program):
     @property
@@ -63,13 +65,13 @@ class BackwardReasoner(Program):
             max_steps: int = 24,
             max_cycles: int = 1_000,
     ) -> bool:
-        configs: list[
-            tuple[int, State, HeadTape, int, History]
-        ] = [
+        configs: list[tuple[Config, int, History]] = [
             (
-                1,
-                state,
-                HeadTape.init(color),
+                (
+                    1,
+                    state,
+                    HeadTape.init(color),
+                ),
                 0,
                 History(tapes = {}),
             )
@@ -84,7 +86,7 @@ class BackwardReasoner(Program):
 
         for _ in range(max_cycles):
             try:
-                step, state, tape, repeat, history = configs.pop()
+                (step, state, tape), repeat, history = configs.pop()
             except IndexError:
                 return True
 
@@ -150,9 +152,11 @@ class BackwardReasoner(Program):
                             continue
 
                         configs.append((
-                            step + 1,
-                            entry,
-                            next_tape,
+                            (
+                                step + 1,
+                                entry,
+                                next_tape,
+                            ),
                             repeat,
                             history.copy(),
                         ))
