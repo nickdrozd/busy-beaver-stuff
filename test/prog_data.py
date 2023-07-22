@@ -1493,6 +1493,17 @@ PROGS: dict[
 }
 
 BRANCH = {
+    ("1RB ...  ... ...", 'B0'): {
+        '1RB ...  0LA ...',
+        '1RB ...  0LB ...',
+        '1RB ...  0RA ...',
+        '1RB ...  0RB ...',
+        '1RB ...  1LA ...',
+        '1RB ...  1LB ...',
+        '1RB ...  1RA ...',
+        '1RB ...  1RB ...',
+    },
+
     ("1RB 1LB  1LB 1LA", 'A1'): {
         '1RB 0LA  1LB 1LA',
         '1RB 0LB  1LB 1LA',

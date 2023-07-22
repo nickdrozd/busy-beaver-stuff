@@ -73,7 +73,7 @@ class Program:
 
     @classmethod
     def branch_init(cls, states: int, colors: int) -> list[str]:
-        return cls.init(states, colors).branch_read('A1')
+        return cls.init(states, colors).branch_read('B0')
 
     @cached_property
     def states(self) -> set[State]:

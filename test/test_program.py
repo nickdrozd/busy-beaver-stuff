@@ -65,3 +65,8 @@ class TestProgram(TestCase):
                 self.assertEqual(
                     norm,
                     Program(dev).normalize())
+
+    def test_branch_init(self):
+        self.assertEqual(
+            sorted(Program.branch_init(2, 2)),
+            sorted(BRANCH[("1RB ...  ... ...", 'B0')]))
