@@ -238,5 +238,5 @@ class Slow(TestTree):
         self.assert_records({
             'blanks': (169, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'spnout': (171, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
-            'halted': (159, "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC"),
+            'halted': (107, "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA"),
         })
