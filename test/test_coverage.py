@@ -162,6 +162,9 @@ class TestFloss(TestCase):
         self.assertFalse(
             BackwardReasoner("1RB 0RB 0LB  1LB 2RA 1LA").cant_spin_out)
 
+        self.assertFalse(
+            BackwardReasoner("1RB ...  1LC 0RC  1RA 0LC").cant_halt)
+
         _ = BackwardReasoner("1RB 1LB  1LA 1R_").instr_seq
         _ = BackwardReasoner(
             "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD").instr_seq
