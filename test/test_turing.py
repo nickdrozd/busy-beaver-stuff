@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from typing import Any
     from collections.abc import Mapping
 
-    from tm.machine import Tape, GetInstr
+    from tm.machine import Tape, GetInstr, Count
 
 
 class TuringTest(TestCase):
@@ -379,7 +379,7 @@ class TuringTest(TestCase):
             self.assertIsNotNone(
                 self.machine.simple_termination)
 
-            result: int = self.machine.marks
+            result: Count = self.machine.marks
 
             if not isinstance(macro := self.machine.program, str):
                 result *= macro.cells  # type: ignore[attr-defined]

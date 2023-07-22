@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from typing import Self
     from collections.abc import Iterator
 
+    from tm.tape import Count
     from tm.parse import State, Slot, GetInstr
     from tm.lin_rec import RecRes, Tapes
 
@@ -128,11 +129,11 @@ class Machine:
         return f"{self.program} || {' | '.join(info)}"
 
     @property
-    def simple_termination(self) -> int | None:
+    def simple_termination(self) -> Count | None:
         return self.spnout if self.halted is None else self.halted
 
     @property
-    def marks(self) -> int:
+    def marks(self) -> Count:
         return self.tape.marks
 
     def show_tape(

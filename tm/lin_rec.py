@@ -20,9 +20,9 @@ class HeadTape(Tape):
 
     def __init__(
             self,
-            lspan: list[tuple[int, int]],
+            lspan: list[tuple[Color, int]],
             scan: Color,
-            rspan: list[tuple[int, int]],
+            rspan: list[tuple[Color, int]],
             head: int = 0,
     ):
         self.head = head

@@ -44,7 +44,7 @@ class BlockTape(ApplyRule):
         return self.scan == 0 and not self.lspan and not self.rspan
 
     @property
-    def marks(self) -> int:
+    def marks(self) -> Count:
         return (
             (1 if self.scan != 0 else 0)
             + sum(blk.count for blk in self.lspan if blk.color != 0)
@@ -103,9 +103,9 @@ class Tape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[int, Count]],
+            lspan: list[tuple[Color, Count]],
             scan: Color,
-            rspan: list[tuple[int, Count]],
+            rspan: list[tuple[Color, Count]],
     ):
         self.lspan = [Block(color, count) for color, count in lspan]
         self.scan = scan
@@ -219,9 +219,9 @@ class TagTape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[int, Count, list[int]]],
+            lspan: list[tuple[Color, Count, list[int]]],
             scan: Color,
-            rspan: list[tuple[int, Count, list[int]]],
+            rspan: list[tuple[Color, Count, list[int]]],
     ):
         self.lspan = [
             TagBlock(color, count, tags)
@@ -350,9 +350,9 @@ class EnumTape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[int, Count]],
+            lspan: list[tuple[Color, Count]],
             scan: Color,
-            rspan: list[tuple[int, Count]],
+            rspan: list[tuple[Color, Count]],
     ):
         self.lspan = [
             EnumBlock(color, count, (0, i))
