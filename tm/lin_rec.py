@@ -53,10 +53,7 @@ class HeadTape(Tape):
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
         stepped = super().step(shift, color, skip)
 
-        if shift:
-            self.head += stepped
-        else:
-            self.head -= stepped
+        self.head += stepped if shift else -stepped
 
         return stepped
 
