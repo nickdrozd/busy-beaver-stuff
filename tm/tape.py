@@ -95,7 +95,6 @@ class BlockTape(ApplyRule):
         span[pos].count = val
 
 
-@dataclass
 class Tape(BlockTape):
     lspan: list[Block]
     scan: Color
