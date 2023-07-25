@@ -367,11 +367,18 @@ class TuringTest(TestCase):
                     or self.machine.spnout is not None)
 
     def _test_prover_est(self, prog_data: ProverEst):
+        champ_2_5 = "1RB 2LB 4LB 3LA 1R_  1LA 3RA 3LB 0LB 0RA"
+
         for prog, marks in prog_data.items():
             self.run_bb(
                 prog,
                 sim_lim = 10 ** 8,
                 opt_blocks = 3_000,
+                backsym = (
+                    2
+                    if prog == champ_2_5 else
+                    None
+                ),
                 prover = True,
                 normal = False,
             )
