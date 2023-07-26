@@ -203,3 +203,9 @@ class TestFloss(TestCase):
             Machine(
                 "1RB 0LB  1RC 0RC  1LB 1LA"
             ).run(prover = True))
+
+    def test_diff_lim(self):
+        self.assertIsNotNone(
+            Machine(
+                "1RB 1LA  1LC 0RD  ... 0RA  1LD 0LA"
+            ).run(prover = True))
