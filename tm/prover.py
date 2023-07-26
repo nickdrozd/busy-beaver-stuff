@@ -134,7 +134,7 @@ class Prover:
         if (deltas := states[state].next_deltas(cycle)) is None:
             return None
 
-        if any(delta > 10_000 for delta in deltas):
+        if any(delta > 90_000 for delta in deltas):
             return None
 
         tags: TagTape = tape.to_tag()
