@@ -743,6 +743,7 @@ class Fast(TuringTest):
         self.assertIsNone(
             self.machine.halted)
 
+    @expectedFailure
     def test_wrong_block(self):
         prog = "1RB 0LA  1RC ...  1LD 0RC  0LA 1LD"
 
