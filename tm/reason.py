@@ -37,8 +37,10 @@ class BackwardReasoner(Program):
 
         partial = Program.init(len(self.states), len(self.colors))
 
+        machine = Machine(partial)
+
         for _ in range(len(self.states) * len(self.colors) - 1):
-            if (result := Machine(partial).run().undfnd) is None:
+            if (result := machine.run().undfnd) is None:
                 return seqs
 
             step, slot = result
@@ -46,6 +48,8 @@ class BackwardReasoner(Program):
             seqs.append((str(partial), step, slot))
 
             partial[slot] = self[slot]
+
+            machine.undfnd = None
 
         return seqs
 
