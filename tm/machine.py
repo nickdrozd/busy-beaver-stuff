@@ -221,7 +221,7 @@ class Machine:
             if (state := next_state) == -1:
                 break
 
-            if tape.blank:
+            if not color and tape.blank:
                 if state in self.blanks:
                     break
 
@@ -329,7 +329,7 @@ class LinRecMachine(Machine):
                 self.halted = step
                 break
 
-            if tape.blank and state not in self.blanks:
+            if not color and tape.blank and state not in self.blanks:
                 self.blanks[state] = step
 
         else:
