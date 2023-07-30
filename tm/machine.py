@@ -357,38 +357,27 @@ class LinRecMachine(RecChecker):
     def run(  # type: ignore[override]  # pylint: disable = arguments-differ
         self,
         sim_lim: int | None = None,
-        *,
-        check_rec: int | None = None,
-        samples: Tapes | None = None,
+        check_rec: int = 0,
     ) -> Self:
-        assert (
-            check_rec is not None
-            or samples is not None)
-
         self.blanks = {}
 
         comp = self.comp
 
         self.tape = tape = HeadTape.init()
 
-        self.history = History(tapes = samples or {})
+        self.history = History(tapes = {})
 
         step: int = 0
         state: State = 0
-
-        skip = samples is None
 
         for cycle in range(sim_lim or 1_000_000):
             self.history.add_state_at_step(step, state)
 
             slot: Slot = state, tape.scan
 
-            if ((check_rec is not None and step >= check_rec)
-                or (not skip
-                   and step in self.history.tapes)):
+            if step >= check_rec:
                 self.history.add_tape_at_step(step, tape)
 
-            if check_rec is not None and step >= check_rec:
                 if self.check_rec(step, slot) is not None:
                     break
 
@@ -400,8 +389,7 @@ class LinRecMachine(RecChecker):
 
             color, shift, next_state = instr
 
-            step += tape.step(
-                shift, color, skip and state == next_state)
+            step += tape.step(shift, color, state == next_state)
 
             if (state := next_state) == -1:  # no-coverage
                 self.halted = step

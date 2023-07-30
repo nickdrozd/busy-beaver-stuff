@@ -63,7 +63,7 @@ MYPYC = $(PYTHON) -m mypyc
 
 compile : rust
 	$(MYPYC) --version
-	$(MYPYC) tm generate --exclude rust_stuff
+	$(MYPYC) tm generate test/test_utils.py --exclude rust_stuff
 
 TUR = test.test_turing.Fast
 PROG = test.test_program

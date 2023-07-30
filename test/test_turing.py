@@ -7,6 +7,7 @@ from unittest import TestCase, skip, expectedFailure
 
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
+from test.test_utils import LinRecSampler
 
 from tm.reason import Program, BackwardReasoner
 from tm.machine import (
@@ -125,7 +126,7 @@ class TuringTest(TestCase):
         )
 
     def assert_lin_recurrence(self, steps: int, recurrence: int):
-        assert isinstance(self.machine, LinRecMachine)
+        assert isinstance(self.machine, LinRecSampler)
         history = self.machine.history
 
         self.assertEqual(
@@ -143,7 +144,7 @@ class TuringTest(TestCase):
         )
 
     def deny_lin_recurrence(self, steps: int, recurrence: int):
-        assert isinstance(self.machine, LinRecMachine)
+        assert isinstance(self.machine, LinRecSampler)
         history = self.machine.history
 
         states = history.states
@@ -166,13 +167,13 @@ class TuringTest(TestCase):
             print_prog = False,
             sim_lim = 1 + runtime,
             samples = {
-                steps - 1           : None,
-                steps               : None,
-                steps + 1           : None,
-                recurrence - 1      : None,
-                recurrence          : None,
-                recurrence + 1      : None,
-                recurrence + period : None,
+                steps - 1           : None,  # type: ignore[dict-item]
+                steps               : None,  # type: ignore[dict-item]
+                steps + 1           : None,  # type: ignore[dict-item]
+                recurrence - 1      : None,  # type: ignore[dict-item]
+                recurrence          : None,  # type: ignore[dict-item]
+                recurrence + 1      : None,  # type: ignore[dict-item]
+                recurrence + period : None,  # type: ignore[dict-item]
             },
         )
 
@@ -203,11 +204,12 @@ class TuringTest(TestCase):
             samples: Tapes | None = None,
             **opts,
     ):
-        lin_rec = check_rec is not None or samples is not None
-
-        if lin_rec:
+        if check_rec is not None:
             assert isinstance(prog, str)
             self.machine = LinRecMachine(prog)
+        elif samples is not None:
+            assert isinstance(prog, str)
+            self.machine = LinRecSampler(prog)
         elif not prover:
             self.machine = BasicMachine(
                 prog
@@ -230,14 +232,15 @@ class TuringTest(TestCase):
         if print_prog:
             print(self.machine.program)
 
-        if not lin_rec:
-            self.machine.run(**opts)
+        # pylint: disable = unexpected-keyword-arg
+        if check_rec is not None:
+            assert isinstance(self.machine, LinRecMachine)
+            self.machine.run(check_rec = check_rec, **opts)
+        elif samples is not None:
+            assert isinstance(self.machine, LinRecSampler)
+            self.machine.run(samples = samples, **opts)
         else:
-            self.machine.run(
-                check_rec = check_rec,
-                samples = samples,
-                **opts,
-            )
+            self.machine.run(**opts)
 
         self.tape = self.machine.tape
 
