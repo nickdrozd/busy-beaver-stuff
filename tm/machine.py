@@ -35,7 +35,7 @@ TERM_CATS = (
 )
 
 
-class Machine:
+class BasicMachine:
     program: str | GetInstr
     comp: GetInstr
 
@@ -61,35 +61,7 @@ class Machine:
 
     rulapp: int = 0
 
-    prover: Prover | None = None
-
-    def __init__(
-            self,
-            program: str | GetInstr,
-            *,
-            blocks: int | list[int] | None = None,
-            backsym: int | list[int] | None = None,
-            opt_blocks: int | None = None,
-    ):
-        if opt_blocks is not None:
-            blocks = (
-                opt
-                if (opt := opt_block(program, opt_blocks)) > 1 else
-                None
-            )
-
-        if blocks is not None:
-            if isinstance(blocks, int):
-                blocks = [blocks]
-
-            program = BlockMacro(program, blocks)
-
-        if backsym is not None:
-            if isinstance(backsym, int):
-                backsym = [backsym]
-
-            program = BacksymbolMacro(program, backsym)
-
+    def __init__(self, program: str | GetInstr):
         self.program = program
 
         self.comp = (
@@ -122,10 +94,6 @@ class Machine:
             info.append(
                 f'RULAPP: {show_number(self.rulapp)}')
 
-        if prover := self.prover:
-            info.append(
-                f'TPCFGS: {prover.config_count}')
-
         return f"{self.program} || {' | '.join(info)}"
 
     @property
@@ -152,6 +120,47 @@ class Machine:
             info.insert(1, f'{step : 3d}')
 
         print(' | '.join(info))
+
+
+class Machine(BasicMachine):
+    prover: Prover | None = None
+
+    def __init__(
+            self,
+            program: str | GetInstr,
+            *,
+            blocks: int | list[int] | None = None,
+            backsym: int | list[int] | None = None,
+            opt_blocks: int | None = None,
+    ):
+        if opt_blocks is not None:
+            blocks = (
+                opt
+                if (opt := opt_block(program, opt_blocks)) > 1 else
+                None
+            )
+
+        if blocks is not None:
+            if isinstance(blocks, int):
+                blocks = [blocks]
+
+            program = BlockMacro(program, blocks)
+
+        if backsym is not None:
+            if isinstance(backsym, int):
+                backsym = [backsym]
+
+            program = BacksymbolMacro(program, backsym)
+
+        super().__init__(program)
+
+    def __str__(self) -> str:
+        info = super().__str__()
+
+        if prover := self.prover:
+            info = f'{info} | TPCFGS: {prover.config_count}'
+
+        return info
 
     def run(self,
             sim_lim: int = 100_000_000,
