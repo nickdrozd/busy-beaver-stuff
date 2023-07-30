@@ -163,8 +163,6 @@ class History:
             if (result := self.verify_lin_recurrence(
                     pstep,
                     step,
-                    self.tapes[pstep],
-                    self.tapes[step],
             )) is not None:
                 return result
 
@@ -174,12 +172,9 @@ class History:
             self,
             steps: int,
             recurrence: int,
-            tape1: PtrTape | None = None,
-            tape2: PtrTape | None = None,
     ) -> RecRes | None:
-        if tape1 is None or tape2 is None:  # no-coverage
-            tape1 = self.tapes[steps]
-            tape2 = self.tapes[recurrence]
+        tape1 = self.tapes[steps]
+        tape2 = self.tapes[recurrence]
 
         positions = self.positions
 
