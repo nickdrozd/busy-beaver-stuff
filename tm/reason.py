@@ -8,7 +8,7 @@ from tm.program import Program
 from tm.machine import (
     HeadTape,
     History,
-    Machine,
+    BasicMachine,
 )
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     Config = tuple[int, State, HeadTape]
 
-    GetResult = Callable[[Machine], int | None]
+    GetResult = Callable[[BasicMachine], int | None]
 
 
 class Result(Enum):
@@ -37,10 +37,10 @@ class BackwardReasoner(Program):
 
         partial = Program.init(len(self.states), len(self.colors))
 
-        machine = Machine(partial)
+        machine = BasicMachine(partial)
 
         for _ in range(len(self.states) * len(self.colors) - 1):
-            if (result := machine.run(prover = False).undfnd) is None:
+            if (result := machine.run().undfnd) is None:
                 return seqs
 
             step, slot = result
@@ -94,7 +94,7 @@ class BackwardReasoner(Program):
             for state, color in sorted(slots)
         ]
 
-        machine = Machine(str(self))
+        machine = BasicMachine(str(self))
 
         max_repeats = max_steps // 2
 
@@ -151,7 +151,7 @@ class BackwardReasoner(Program):
             step: int,
             state: State,
             tape: HeadTape,
-            machine: Machine,
+            machine: BasicMachine,
             get_result: GetResult,
     ) -> Iterator[Config]:
         for entry in sorted(self.graph.entry_points[state]):
@@ -198,12 +198,12 @@ def final_value(final_prop: Result) -> GetResult:
     # pylint: disable = function-redefined
     match final_prop:
         case Result.spnout:
-            def result(machine: Machine) -> int | None:
+            def result(machine: BasicMachine) -> int | None:
                 final = machine.spnout
                 machine.spnout = None
                 return final
         case Result.blanks:
-            def result(machine: Machine) -> int | None:
+            def result(machine: BasicMachine) -> int | None:
                 final = (
                     min(blanks.values())
                     if (blanks := machine.blanks) else
@@ -212,7 +212,7 @@ def final_value(final_prop: Result) -> GetResult:
                 machine.blanks = {}
                 return final
         case Result.halted:  # pragma: no branch
-            def result(machine: Machine) -> int | None:
+            def result(machine: BasicMachine) -> int | None:
                 final: int | None
                 if (und := machine.undfnd):
                     final = und[0]

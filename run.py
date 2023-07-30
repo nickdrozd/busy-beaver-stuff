@@ -4,7 +4,6 @@ from tm.machine import Machine
 
 PRINT = 1
 STEPS = 10 ** 10
-PROVE = 1
 BACKS = 0
 
 PROFILE = 0
@@ -20,7 +19,6 @@ def main() -> None:
         ).run(
             sim_lim = STEPS,
             watch_tape = bool(PRINT),
-            prover = bool(PROVE),
         )
 
         print(f'{i} | {machine}')

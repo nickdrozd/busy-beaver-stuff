@@ -9,7 +9,13 @@ from unittest import TestCase, skip, expectedFailure
 from test.prog_data import *
 
 from tm.reason import Program, BackwardReasoner
-from tm.machine import Machine, LinRecMachine, opt_block, show_slot
+from tm.machine import (
+    show_slot,
+    opt_block,
+    BasicMachine,
+    Machine,
+    LinRecMachine,
+)
 
 if TYPE_CHECKING:
     from typing import Any
@@ -21,7 +27,7 @@ if TYPE_CHECKING:
 class TuringTest(TestCase):
     prog: str
     tape: Tape
-    machine: Machine
+    machine: BasicMachine
 
     def assert_marks(self, marks: int):
         self.assertEqual(
@@ -194,11 +200,23 @@ class TuringTest(TestCase):
             blocks: int | list[int] | None = None,
             backsym: int | list[int] | None = None,
             opt_blocks: int | None = None,
+            prover: bool = True,
             **opts,
     ):
         if lin_rec:
             assert isinstance(prog, str)
-            self.machine = LinRecMachine(prog)# type: ignore[assignment]
+            self.machine = LinRecMachine(prog)
+        elif not prover:
+            self.machine = BasicMachine(
+                prog
+                if (not blocks and not opt_blocks and not backsym) else
+                Machine(
+                    prog,
+                    blocks = blocks,
+                    backsym = backsym,
+                    opt_blocks = opt_blocks,
+                ).program
+            )
         else:
             self.machine = Machine(
                 prog,

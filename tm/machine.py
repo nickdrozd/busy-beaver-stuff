@@ -121,9 +121,95 @@ class BasicMachine:
 
         print(' | '.join(info))
 
+    def run(self,
+            sim_lim: int = 100_000_000,
+            *,
+            state: State = 0,
+            tape: Tape | None = None,
+    ) -> Self:
+        comp = self.comp
+
+        if tape is None:
+            tape = Tape.init()
+
+        self.tape = tape
+
+        self.blanks = {}
+
+        step: int | None = 0
+
+        for cycle in range(sim_lim):
+
+            if (instr := comp[state, tape.scan]) is None:
+                self.undfnd = step or -1, (state, tape.scan)
+                break
+
+            color, shift, next_state = instr
+
+            if (same := state == next_state) and tape.at_edge(shift):
+                self.spnout = step or -1
+                break
+
+            stepped = tape.step(shift, color, same)
+
+            if step is not None:
+                step += stepped
+
+            if (state := next_state) == -1:
+                break
+
+            if not color and tape.blank:
+                if state in self.blanks:
+                    break
+
+                self.blanks[state] = step or -1
+
+                if state == 0:
+                    break
+
+        else:
+            self.xlimit = step or -1
+
+        self.finalize(step, cycle, state)
+
+        return self
+
+    def finalize(
+            self,
+            step: int | None,
+            cycle: int,
+            state: State,
+    ) -> None:
+        if step is None:
+            step = -1
+
+        if state == -1:
+            self.halted = step
+            self.qsihlt = True
+
+        if self.spnout is not None:
+            self.qsihlt = True
+
+        if self.tape.blank:
+            if state == -1:
+                self.blanks[-1] = step
+
+            if 0 in self.blanks:
+                self.linrec = 0, step
+            elif self.blanks:
+                if (period := step - self.blanks[state]):
+                    self.linrec = None, period
+                    self.xlimit = None
+
+        self.steps = step
+        self.state = state
+        self.cycles = cycle
+
+        # assert len(results := self.term_results) == 1, results
+
 
 class Machine(BasicMachine):
-    prover: Prover | None = None
+    prover: Prover
 
     def __init__(
             self,
@@ -155,12 +241,8 @@ class Machine(BasicMachine):
         super().__init__(program)
 
     def __str__(self) -> str:
-        info = super().__str__()
-
-        if prover := self.prover:
-            info = f'{info} | TPCFGS: {prover.config_count}'
-
-        return info
+        # pylint: disable = line-too-long
+        return f'{super().__str__()} | TPCFGS: {self.prover.config_count}'
 
     def run(self,
             sim_lim: int = 100_000_000,
@@ -168,7 +250,6 @@ class Machine(BasicMachine):
             watch_tape: bool = False,
             state: State = 0,
             tape: Tape | None = None,
-            prover: bool = True,
     ) -> Self:
         comp = self.comp
 
@@ -177,8 +258,7 @@ class Machine(BasicMachine):
 
         self.tape = tape
 
-        if prover:
-            self.prover = Prover(comp)
+        self.prover = Prover(comp)
 
         self.blanks = {}
 
@@ -189,29 +269,28 @@ class Machine(BasicMachine):
             if watch_tape:
                 self.show_tape(step, cycle, state)
 
-            if self.prover:
+            try:
+                rule = self.prover.try_rule(cycle, state, tape)
+            except InfiniteRule:
+                self.infrul = True
+                break
+
+            if rule is not None:
                 try:
-                    rule = self.prover.try_rule(cycle, state, tape)
-                except InfiniteRule:
-                    self.infrul = True
+                    times = tape.apply_rule(rule)
+                except RuleLimit:
+                    self.limrul = True
                     break
 
-                if rule is not None:
-                    try:
-                        times = tape.apply_rule(rule)
-                    except RuleLimit:
-                        self.limrul = True
-                        break
+                if times is not None:
+                    # print(f'--> applied rule: {rule}')
+                    step = None
+                    self.rulapp += times
+                    continue
 
-                    if times is not None:
-                        # print(f'--> applied rule: {rule}')
-                        step = None
-                        self.rulapp += times
-                        continue
-
-                if self.prover.config_count > 100_000:
-                    self.cfglim = True
-                    break
+            if self.prover.config_count > 100_000:
+                self.cfglim = True
+                break
 
             if (instr := comp[state, tape.scan]) is None:
                 self.undfnd = step or -1, (state, tape.scan)
@@ -250,45 +329,12 @@ class Machine(BasicMachine):
 
         return self
 
-    def finalize(
-            self,
-            step: int | None,
-            cycle: int,
-            state: State,
-    ) -> None:
-        if step is None:
-            step = -1
-
-        if state == -1:
-            self.halted = step
-            self.qsihlt = True
-
-        if self.spnout is not None:
-            self.qsihlt = True
-
-        if self.tape.blank:
-            if state == -1:
-                self.blanks[-1] = step
-
-            if 0 in self.blanks:
-                self.linrec = 0, step
-            elif self.blanks:
-                if (period := step - self.blanks[state]):
-                    self.linrec = None, period
-                    self.xlimit = None
-
-        self.steps = step
-        self.state = state
-        self.cycles = cycle
-
-        # assert len(results := self.term_results) == 1, results
-
 ########################################
 
 class LinRecMachine(BasicMachine):
     history: History
 
-    def run(
+    def run(  # type: ignore[override]  # pylint: disable = arguments-differ
         self,
         sim_lim: int | None = None,
         *,
@@ -400,9 +446,8 @@ def run_variations(
 
 
 def opt_block(prog: str | GetInstr, steps: int) -> int:
-    machine = Machine(prog).run(
+    machine = BasicMachine(prog).run(
         sim_lim = steps,
-        prover = False,
         tape = BlockMeasure.init())
 
     if machine.xlimit is None:
@@ -411,7 +456,6 @@ def opt_block(prog: str | GetInstr, steps: int) -> int:
     tape = machine.run(
         # pylint: disable = line-too-long
         sim_lim = machine.tape.max_blocks_step,  # type: ignore[attr-defined]
-        prover = False,
     ).tape.unroll()
 
     opt_size = 1

@@ -63,8 +63,8 @@ class TestFloss(TestCase):
                 program := Program(
                     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA"),
                 blocks = 3,
-            ).run(prover = False).simple_termination,
-            15721562)
+            ).run().simple_termination,
+            -1)
 
         self.assertEqual(
             len(program),
