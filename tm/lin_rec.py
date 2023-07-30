@@ -159,14 +159,13 @@ class History:
         }
 
     def check_rec(self, step: int, slot: Slot) -> RecRes | None:
-        for pstep in self.slots[slot]:
-            if (result := self.verify_lin_recurrence(
-                    pstep,
-                    step,
-            )) is not None:
-                return result
-
-        return None
+        return next((
+            result
+            for pstep in self.slots[slot]
+            if (result :=
+                self.verify_lin_recurrence(pstep, step)
+            ) is not None
+        ), None)
 
     def verify_lin_recurrence(
             self,
