@@ -398,7 +398,7 @@ def opt_block(prog: str | GetInstr, steps: int) -> int:
     if machine.xlimit is None:
         return 1
 
-    tape = Machine(prog).run(
+    tape = machine.run(
         # pylint: disable = line-too-long
         sim_lim = machine.tape.max_blocks_step,  # type: ignore[attr-defined]
     ).tape.unroll()
