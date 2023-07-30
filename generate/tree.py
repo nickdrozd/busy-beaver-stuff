@@ -32,7 +32,6 @@ def tree_gen(
 
         machine = Machine(prog).run(
             sim_lim = steps,
-            prover = True,
         )
 
         if machine.infrul:

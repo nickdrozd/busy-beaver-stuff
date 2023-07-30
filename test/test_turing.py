@@ -232,7 +232,7 @@ class TuringTest(TestCase):
             blank: bool,
     ):
         for prog, (marks, steps) in prog_data.items():
-            self.run_bb(prog)
+            self.run_bb(prog, prover = False)
 
             self.assert_steps(steps)
 
@@ -347,7 +347,6 @@ class TuringTest(TestCase):
 
             self.run_bb(
                 prog,
-                prover = True,
                 opt_blocks = 10_000,
             )
 
@@ -379,7 +378,6 @@ class TuringTest(TestCase):
                     if prog == champ_2_5 else
                     None
                 ),
-                prover = True,
                 normal = False,
             )
 
@@ -462,6 +460,7 @@ class TuringTest(TestCase):
                             blocks = blocks,
                             backsym = backsym,
                             sim_lim = run_lim,
+                            prover = False,
                         )
 
                     case (_, backsym, blocks):
@@ -469,6 +468,7 @@ class TuringTest(TestCase):
                             Machine(prog, backsym = backsym).program,
                             blocks = blocks,
                             sim_lim = run_lim,
+                            prover = False,
                         )
 
                 self.assertEqual(
@@ -499,6 +499,7 @@ class TuringTest(TestCase):
                 self.run_bb(
                     prog,
                     blocks = [cell] * wrap,
+                    prover = False,
                 )
 
                 assert isinstance(
@@ -627,25 +628,22 @@ class Fast(TuringTest):
 
         self.run_bb(
             "1RB 0LC  1RD 1RA  ... 0LD  1LA 0LB",
-            prover = True,
             analyze = False,
         )
 
         self.run_bb(
             "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",
-            prover = True,
         )
 
         self.run_bb(
             "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
             backsym = 2,
-            prover = True,
         )
 
     def test_undefined(self):
         for sequence in UNDEFINED.values():
             for partial, expected in sequence.items():
-                self.run_bb(partial, normal = False)
+                self.run_bb(partial, prover = False, normal = False)
 
                 assert (undfnd := self.machine.undfnd) is not None
                 step, slot = undfnd
@@ -677,7 +675,6 @@ class Fast(TuringTest):
         for prog in RULE_LIMIT:
             self.run_bb(
                 prog,
-                prover = True,
                 normal = False,
                 opt_blocks = 120,
             )
@@ -691,7 +688,6 @@ class Fast(TuringTest):
 
         self.run_bb(
                 prog,
-                prover = True,
                 normal = False,
                 opt_blocks = 120,
         )
@@ -705,7 +701,6 @@ class Fast(TuringTest):
         self.run_bb(
             prog,
             sim_lim = 100,
-            prover = True,
         )
 
         self.assertIsNone(
@@ -715,7 +710,6 @@ class Fast(TuringTest):
             prog,
             backsym = 1,
             sim_lim = 100,
-            prover = True,
         )
 
         self.assertIsNotNone(
@@ -726,7 +720,6 @@ class Fast(TuringTest):
 
         self.run_bb(
             prog,
-            prover = True,
             normal = False,
         )
 
@@ -736,7 +729,6 @@ class Fast(TuringTest):
         self.run_bb(
             prog,
             backsym = 1,
-            prover = True,
             normal = False,
         )
 
@@ -750,7 +742,6 @@ class Fast(TuringTest):
         self.run_bb(
             prog,
             blocks = 2,
-            prover = True,
         )
 
         self.assertIsNotNone(
@@ -769,7 +760,6 @@ class Fast(TuringTest):
             self.run_bb(
                 prog,
                 blocks = block,
-                prover = True,
                 sim_lim = 8806,
             )
 
@@ -779,7 +769,6 @@ class Fast(TuringTest):
         self.run_bb(
             prog,
             blocks = 4,
-            prover = True,
             sim_lim = 8807,
         )
 

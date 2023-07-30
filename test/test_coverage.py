@@ -14,7 +14,7 @@ class TestDisplay(TestCase):
 
         machine = Machine(
             "1RB 1RA  0RC 0RB  1LC 1LD  1RA 1LB"
-        ).run(prover = True, watch_tape = True)
+        ).run(watch_tape = True)
 
         print(machine)
 
@@ -45,7 +45,7 @@ class TestFloss(TestCase):
             Machine(
                 "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
                 blocks = 2,
-            ).run(prover = True))
+            ).run())
 
         self.assertIsNotNone(
             macro := Machine(
@@ -63,7 +63,7 @@ class TestFloss(TestCase):
                 program := Program(
                     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA"),
                 blocks = 3,
-            ).run().simple_termination,
+            ).run(prover = False).simple_termination,
             15721562)
 
         self.assertEqual(
@@ -113,18 +113,17 @@ class TestFloss(TestCase):
         self.assertIsNotNone(
             Machine(
                 "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA"
-            ).run(prover = True))
+            ).run())
 
         self.assertTrue(
             Machine(
                 "1RB 0RA  1RA ..."
-            ).run(prover = True))
+            ).run())
 
         self.assertIsNotNone(
             Machine(
                 "1RB 2LA 1RA  1LB 1LA 2RB"
             ).run(
-                prover = True,
                 sim_lim = 5739,
             ).xlimit)
 
@@ -132,18 +131,14 @@ class TestFloss(TestCase):
         self.assertIsNotNone(
             Machine(
                 "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
-            ).run(
-                prover = True,
-            ).limrul)
+            ).run().limrul)
 
     def test_config_limit(self):
         self.assertIsNotNone(
             Machine(
                 "1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA",
                 blocks = 4,
-            ).run(
-                prover = True
-            ).cfglim
+            ).run().cfglim
         )
 
     def test_reasoner(self):
@@ -202,10 +197,10 @@ class TestFloss(TestCase):
         self.assertIsNotNone(
             Machine(
                 "1RB 0LB  1RC 0RC  1LB 1LA"
-            ).run(prover = True))
+            ).run())
 
     def test_diff_lim(self):
         self.assertIsNotNone(
             Machine(
                 "1RB 1LA  1LC 0RD  ... 0RA  1LD 0LA"
-            ).run(prover = True))
+            ).run())

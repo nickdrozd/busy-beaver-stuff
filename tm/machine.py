@@ -158,7 +158,7 @@ class Machine:
             watch_tape: bool = False,
             state: State = 0,
             tape: Tape | None = None,
-            prover: bool = False,
+            prover: bool = True,
     ) -> Self:
         comp = self.comp
 
@@ -378,7 +378,6 @@ def run_variations(
         opt_blocks = block_steps,
     ).run(
         sim_lim = sim_lim,
-        prover = True,
     )
 
     yield Machine(
@@ -386,13 +385,13 @@ def run_variations(
         backsym = 1,
     ).run(
         sim_lim = sim_lim,
-        prover = True,
     )
 
 
 def opt_block(prog: str | GetInstr, steps: int) -> int:
     machine = Machine(prog).run(
         sim_lim = steps,
+        prover = False,
         tape = BlockMeasure.init())
 
     if machine.xlimit is None:
@@ -401,6 +400,7 @@ def opt_block(prog: str | GetInstr, steps: int) -> int:
     tape = machine.run(
         # pylint: disable = line-too-long
         sim_lim = machine.tape.max_blocks_step,  # type: ignore[attr-defined]
+        prover = False,
     ).tape.unroll()
 
     opt_size = 1

@@ -40,7 +40,7 @@ class BackwardReasoner(Program):
         machine = Machine(partial)
 
         for _ in range(len(self.states) * len(self.colors) - 1):
-            if (result := machine.run().undfnd) is None:
+            if (result := machine.run(prover = False).undfnd) is None:
                 return seqs
 
             step, slot = result
