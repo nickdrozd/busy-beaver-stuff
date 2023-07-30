@@ -687,9 +687,9 @@ class Fast(TuringTest):
         prog = "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA"
 
         self.run_bb(
-                prog,
-                normal = False,
-                opt_blocks = 120,
+            prog,
+            normal = False,
+            opt_blocks = 120,
         )
 
         self.assertIsNotNone(
