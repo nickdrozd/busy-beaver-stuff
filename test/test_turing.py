@@ -198,7 +198,7 @@ class TuringTest(TestCase):
     ):
         if lin_rec:
             assert isinstance(prog, str)
-            self.machine = LinRecMachine(prog)
+            self.machine = LinRecMachine(prog)# type: ignore[assignment]
         else:
             self.machine = Machine(
                 prog,

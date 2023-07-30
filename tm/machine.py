@@ -284,10 +284,10 @@ class Machine(BasicMachine):
 
 ########################################
 
-class LinRecMachine(Machine):
+class LinRecMachine(BasicMachine):
     history: History
 
-    def run(  # type: ignore[override]  # pylint: disable = arguments-differ
+    def run(
         self,
         sim_lim: int | None = None,
         skip: bool = False,
@@ -375,7 +375,7 @@ def run_variations(
         *,
         lin_rec: int = 50,
         block_steps: int = 1_000,
-) -> Iterator[Machine]:
+) -> Iterator[BasicMachine]:
     yield LinRecMachine(prog).run(
         sim_lim = lin_rec,
         check_rec = 0,
