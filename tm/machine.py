@@ -393,7 +393,7 @@ def run_variations(
 def opt_block(prog: str | GetInstr, steps: int) -> int:
     machine = Machine(prog).run(
         sim_lim = steps,
-        tape = BlockMeasure([], 0, []))
+        tape = BlockMeasure.init())
 
     if machine.xlimit is None:
         return 1
