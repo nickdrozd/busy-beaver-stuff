@@ -371,11 +371,10 @@ class LinRecMachine(RecChecker):
         state: State = 0
 
         for cycle in range(sim_lim or 1_000_000):
-            self.history.add_state_at_step(step, state)
-
             slot: Slot = state, tape.scan
 
             if step >= check_rec:
+                self.history.add_state_at_step(step, state)
                 self.history.add_tape_at_step(step, tape)
 
                 if self.check_rec(step, slot) is not None:

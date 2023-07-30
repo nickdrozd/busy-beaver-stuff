@@ -322,12 +322,22 @@ class TuringTest(TestCase):
 
     def _test_recur(
             self,
-            prog_data: Mapping[str, tuple[int | None, int]],
+            prog_data: Mapping[
+                str,
+                tuple[
+                    int | None,
+                    int | tuple[int, int]]],
             quick: bool = True,
             blank: bool = False,
             qsihlt: bool | None = False,
     ):
         for prog, (steps, period) in prog_data.items():
+            if isinstance(period, tuple):
+                # pylint: disable = redefined-loop-name
+                period, qsihlt_diff = period
+            else:
+                qsihlt_diff = 0
+
             self.prog = prog
 
             self.assertGreater(period, 1)
@@ -353,7 +363,11 @@ class TuringTest(TestCase):
                 assert steps is not None
                 self.run_bb(
                     prog,
-                    check_rec = 0 if steps < 256 else steps,
+                    check_rec = (
+                        0
+                        if steps < 256 else
+                        steps
+                    ) - qsihlt_diff,
                 )
 
             assert self.machine.linrec is not None
@@ -628,7 +642,7 @@ class Fast(TuringTest):
         )
 
         self._test_recur(
-            QUASIHALT,
+            QUASIHALT,  # type: ignore[arg-type]
             qsihlt = True,
         )
 
