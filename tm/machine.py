@@ -164,6 +164,7 @@ class Machine(BasicMachine):
 
     def run(self,
             sim_lim: int = 100_000_000,
+            *,
             watch_tape: bool = False,
             state: State = 0,
             tape: Tape | None = None,
@@ -290,6 +291,7 @@ class LinRecMachine(BasicMachine):
     def run(
         self,
         sim_lim: int | None = None,
+        *,
         skip: bool = False,
         check_rec: int | None = None,
         samples: Tapes | None = None,
