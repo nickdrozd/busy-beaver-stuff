@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from typing import Any
     from collections.abc import Mapping
 
-    from tm.machine import Tape, GetInstr, Count
+    from tm.machine import Tape, Tapes, GetInstr, Count
 
 
 class TuringTest(TestCase):
@@ -164,7 +164,6 @@ class TuringTest(TestCase):
         self.run_bb(
             prog,
             print_prog = False,
-            lin_rec = True,
             sim_lim = 1 + runtime,
             samples = {
                 steps - 1           : None,
@@ -196,13 +195,16 @@ class TuringTest(TestCase):
             print_prog: bool = True,
             analyze: bool = True,
             normal: bool = True,
-            lin_rec: bool = False,
             blocks: int | list[int] | None = None,
             backsym: int | list[int] | None = None,
             opt_blocks: int | None = None,
             prover: bool = True,
+            check_rec: int | None = None,
+            samples: Tapes | None = None,
             **opts,
     ):
+        lin_rec = check_rec is not None or samples is not None
+
         if lin_rec:
             assert isinstance(prog, str)
             self.machine = LinRecMachine(prog)
@@ -228,7 +230,14 @@ class TuringTest(TestCase):
         if print_prog:
             print(self.machine.program)
 
-        self.machine.run(**opts)
+        if not lin_rec:
+            self.machine.run(**opts)
+        else:
+            self.machine.run(
+                check_rec = check_rec,
+                samples = samples,
+                **opts,
+            )
 
         self.tape = self.machine.tape
 
@@ -341,7 +350,6 @@ class TuringTest(TestCase):
                 assert steps is not None
                 self.run_bb(
                     prog,
-                    lin_rec = True,
                     check_rec = 0 if steps < 256 else steps,
                 )
 
