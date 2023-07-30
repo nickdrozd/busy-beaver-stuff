@@ -46,22 +46,22 @@ class Machine:
 
     blanks: dict[State, int]
 
-    prover: Prover | None = None
-
     halted: int | None = None
     spnout: int | None = None
     xlimit: int | None = None
 
     linrec: LinRec | None = None
+    undfnd: Undfnd | None = None
 
     qsihlt: bool | None = None
+
     infrul: bool | None = None
     cfglim: bool | None = None
     limrul: bool | None = None
 
     rulapp: int = 0
 
-    undfnd: Undfnd | None = None
+    prover: Prover | None = None
 
     def __init__(
             self,
