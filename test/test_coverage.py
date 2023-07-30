@@ -101,7 +101,7 @@ class TestFloss(TestCase):
                 "1RB 0LB  1LA 0RA"
             ).run(
                 check_rec = 1,
-                step_lim = 50,
+                sim_lim = 50,
             ))
 
         self.assertIsNotNone(

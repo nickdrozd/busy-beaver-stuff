@@ -45,7 +45,7 @@ class TestLinRado(TestCase):
                 rejects)
             if
             LinRecMachine(prog).run(
-                step_lim = xlimit,
+                sim_lim = xlimit,
                 check_rec = 0,
                 skip = True,
             ).xlimit is not None

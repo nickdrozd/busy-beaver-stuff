@@ -280,7 +280,7 @@ class LinRecMachine(Machine):
 
     def run(  # type: ignore[override]  # pylint: disable = arguments-differ
         self,
-        step_lim: int | None = None,
+        sim_lim: int | None = None,
         skip: bool = False,
         check_rec: int | None = None,
         samples: Tapes | None = None,
@@ -300,7 +300,7 @@ class LinRecMachine(Machine):
         step: int = 0
         state: State = 0
 
-        for cycle in range(step_lim or 1_000_000):
+        for cycle in range(sim_lim or 1_000_000):
             self.history.add_state_at_step(step, state)
 
             slot: Slot = state, tape.scan
@@ -368,7 +368,7 @@ def run_variations(
         block_steps: int = 1_000,
 ) -> Iterator[Machine]:
     yield LinRecMachine(prog).run(
-        step_lim = lin_rec,
+        sim_lim = lin_rec,
         check_rec = 0,
         skip = True,
     )

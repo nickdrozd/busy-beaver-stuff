@@ -159,7 +159,7 @@ class TuringTest(TestCase):
             prog,
             print_prog = False,
             lin_rec = True,
-            step_lim = 1 + runtime,
+            sim_lim = 1 + runtime,
             samples = {
                 steps - 1           : None,
                 steps               : None,
