@@ -119,7 +119,6 @@ class BackwardReasoner(Program):
 
             seen[state].add(tape)
 
-            history.add_state_at_step(step, state)
             history.add_tape_at_step(step, tape)
 
             if history.check_rec(
