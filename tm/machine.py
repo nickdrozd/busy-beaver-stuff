@@ -338,7 +338,6 @@ class LinRecMachine(BasicMachine):
         self,
         sim_lim: int | None = None,
         *,
-        skip: bool = False,
         check_rec: int | None = None,
         samples: Tapes | None = None,
     ) -> Self:
@@ -357,13 +356,15 @@ class LinRecMachine(BasicMachine):
         step: int = 0
         state: State = 0
 
+        skip = samples is None
+
         for cycle in range(sim_lim or 1_000_000):
             self.history.add_state_at_step(step, state)
 
             slot: Slot = state, tape.scan
 
             if ((check_rec is not None and step >= check_rec)
-                or (samples is not None
+                or (not skip
                    and step in self.history.tapes)):
                 self.history.add_tape_at_step(step, tape)
 
@@ -427,7 +428,6 @@ def run_variations(
     yield LinRecMachine(prog).run(
         sim_lim = lin_rec,
         check_rec = 0,
-        skip = True,
     )
 
     yield Machine(
