@@ -68,10 +68,9 @@ class TestTree(TestCase):
 
             self.assertEqual(res_step, exp_step)
 
-            try:
-                self.assertEqual(res_prog, exp_prog)
-            except AssertionError:
-                self.assertIn(res_prog, exp_prog)
+            self.assertTrue(
+                res_prog == exp_prog
+                    or res_prog in exp_prog)
 
     def assert_cant_terminate(self) -> None:
         for prog in map(BackwardReasoner, self.progs):

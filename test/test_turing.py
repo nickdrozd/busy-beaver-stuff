@@ -94,14 +94,11 @@ class TuringTest(TestCase):
             f'blank false positive: "{prog}"')
 
     def assert_cant_blank(self, prog: str):
-        try:
-            self.assertTrue(
-                BackwardReasoner(prog).cant_blank)
-        except AssertionError:
-            self.assertTrue(
-                prog in CANT_BLANK_FALSE_NEGATIVES
+        self.assertTrue(
+            BackwardReasoner(prog).cant_blank
+                or prog in CANT_BLANK_FALSE_NEGATIVES
                 or Machine(prog).run(sim_lim = 10).blanks,
-                f'blank false negative: "{prog}"')
+            f'blank false negative: "{prog}"')
 
     def assert_could_spin_out(self, prog: str):
         self.assertFalse(
@@ -109,14 +106,10 @@ class TuringTest(TestCase):
             f'spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog: str):
-        try:
-            self.assertTrue(
-                BackwardReasoner(prog).cant_spin_out)
-        except AssertionError:
-            self.assertIn(
-                prog,
-                CANT_SPIN_OUT_FALSE_NEGATIVES,
-                f'spin out false negative: "{prog}"')
+        self.assertTrue(
+            BackwardReasoner(prog).cant_spin_out
+                or prog in CANT_SPIN_OUT_FALSE_NEGATIVES,
+            f'spin out false negative: "{prog}"')
 
     def assert_simple(self, prog: str):
         self.assertTrue(
