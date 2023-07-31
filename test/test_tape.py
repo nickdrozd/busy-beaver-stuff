@@ -3,7 +3,7 @@ from __future__ import annotations
 from unittest import TestCase
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape, TagTape, EnumTape
+from tm.tape import Tape, TagTape, EnumTape, Block
 from tm.lin_rec import PtrTape, HeadTape
 
 if TYPE_CHECKING:
@@ -38,9 +38,9 @@ class TestTape(TestCase):
     ) -> None:
         # pylint: disable = unnecessary-comprehension
         self.tape = HeadTape(
-            [(color, count) for color, count in lspan],
+            [Block(color, count) for color, count in lspan],
             scan,
-            [(color, count) for color, count in rspan],
+            [Block(color, count) for color, count in rspan],
             head = head or 0)
 
     def assert_tape(self, tape: str):
@@ -274,7 +274,7 @@ class TestTags(TestCase):
         else:
             scan_info = []
 
-        self.tape = TagTape(
+        self.tape = TagTape.from_tuples(
             [(color, count, tags)
                  for color, count, *tags in reversed(lspan)],
             scan,
@@ -639,9 +639,9 @@ class TestEnum(TestCase):
     ) -> None:
         # pylint: disable = unnecessary-comprehension
         self.tape = EnumTape(
-            [(color, count) for color, count in lspan],
+            [Block(color, count) for color, count in lspan],
             scan,
-            [(color, count) for color, count in rspan])
+            [Block(color, count) for color, count in rspan])
 
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))

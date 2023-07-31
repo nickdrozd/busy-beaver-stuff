@@ -102,45 +102,23 @@ class Tape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[Color, Count]],
+            lspan: list[Block],
             scan: Color,
-            rspan: list[tuple[Color, Count]],
+            rspan: list[Block],
     ):
-        self.lspan = [Block(color, count) for color, count in lspan]
+        self.lspan = lspan
         self.scan = scan
-        self.rspan = [Block(color, count) for color, count in rspan]
+        self.rspan = rspan
 
     @classmethod
     def init(cls, scan: Color = 0) -> Self:
         return cls([], scan, [])
 
     def to_tag(self) -> TagTape:
-        return TagTape(
-            [
-                (
-                    block.color,
-                    block.count,
-                    [2 * i] if block.count > 1 else [],
-                )
-                for i, block in enumerate(self.lspan)
-            ],
-            self.scan,
-            [
-                (
-                    block.color,
-                    block.count,
-                    [2 * i + 1] if block.count > 1 else [],
-                )
-                for i, block in enumerate(self.rspan)
-            ],
-        )
+        return TagTape(self.lspan, self.scan, self.rspan)
 
     def to_enum(self) -> EnumTape:
-        return EnumTape(
-            [(block.color, block.count) for block in self.lspan],
-            self.scan,
-            [(block.color, block.count) for block in self.rspan],
-        )
+        return EnumTape(self.lspan, self.scan, self.rspan)
 
     def unroll(self) -> list[Color]:
         return [
@@ -218,23 +196,50 @@ class TagTape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[Color, Count, list[int]]],
+            lspan: list[Block],
             scan: Color,
-            rspan: list[tuple[Color, Count, list[int]]],
+            rspan: list[Block],
     ):
         self.lspan = [
-            TagBlock(color, count, tags)
-            for color, count, tags in lspan
+            TagBlock(
+                block.color,
+                block.count,
+                [2 * i] if block.count > 1 else [])
+            for i, block in enumerate(lspan)
         ]
 
         self.scan = scan
 
         self.rspan = [
+            TagBlock(
+                block.color,
+                block.count,
+                [2 * i + 1] if block.count > 1 else [])
+            for i, block in enumerate(rspan)
+        ]
+
+        self.scan_info = []
+
+    @classmethod
+    def from_tuples(
+            cls,
+            lspan: list[tuple[Color, Count, list[int]]],
+            scan: Color,
+            rspan: list[tuple[Color, Count, list[int]]],
+    ) -> Self:
+        tape = cls([], scan, [])
+
+        tape.lspan = [
+            TagBlock(color, count, tags)
+            for color, count, tags in lspan
+        ]
+
+        tape.rspan = [
             TagBlock(color, count, tags)
             for color, count, tags in rspan
         ]
 
-        self.scan_info = []
+        return tape
 
     @property
     def missing_tags(self) -> bool:
@@ -349,20 +354,20 @@ class EnumTape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[Color, Count]],
+            lspan: list[Block],
             scan: Color,
-            rspan: list[tuple[Color, Count]],
+            rspan: list[Block],
     ):
         self.lspan = [
-            EnumBlock(color, count, (0, i))
-            for i, (color, count) in enumerate(lspan, start = 1)
+            EnumBlock(block.color, block.count, (0, i))
+            for i, block in enumerate(lspan, start = 1)
         ]
 
         self.scan = scan
 
         self.rspan = [
-            EnumBlock(color, count, (1, i))
-            for i, (color, count) in enumerate(rspan, start = 1)
+            EnumBlock(block.color, block.count, (1, i))
+            for i, block in enumerate(rspan, start = 1)
         ]
 
         self.offsets = [0, 0]

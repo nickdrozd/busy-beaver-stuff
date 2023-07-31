@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from tm.tape import Tape
+from tm.tape import Tape, Block
 
 if TYPE_CHECKING:
     from tm.tape import Shift
@@ -20,9 +20,9 @@ class HeadTape(Tape):
 
     def __init__(
             self,
-            lspan: list[tuple[Color, int]],
+            lspan: list[Block],
             scan: Color,
-            rspan: list[tuple[Color, int]],
+            rspan: list[Block],
             head: int = 0,
     ):
         self.head = head
@@ -38,9 +38,9 @@ class HeadTape(Tape):
 
     def copy(self) -> HeadTape:
         return HeadTape(
-            [(block.color, block.count) for block in self.lspan],
+            [Block(block.color, block.count) for block in self.lspan],
             self.scan,
-            [(block.color, block.count) for block in self.rspan],
+            [Block(block.color, block.count) for block in self.rspan],
             head = self.head,
         )
 
