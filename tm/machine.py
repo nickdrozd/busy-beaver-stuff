@@ -136,7 +136,7 @@ class BasicMachine:
 
         self.blanks = {}
 
-        step: int | None = 0
+        step: int = 0
 
         for cycle in range(sim_lim):
 
@@ -152,14 +152,13 @@ class BasicMachine:
 
             stepped = tape.step(shift, color, same)
 
-            if step is not None:
-                step += stepped
+            step += stepped
 
             if (state := next_state) == -1:
                 break
 
             if not color and tape.blank:
-                if state in self.blanks:
+                if state in self.blanks:  # no-coverage
                     break
 
                 self.blanks[state] = step or -1
@@ -313,7 +312,7 @@ class Machine(BasicMachine):
 
                 self.blanks[state] = step or -1
 
-                if state == 0:
+                if state == 0:  # no-coverage
                     break
 
         else:
