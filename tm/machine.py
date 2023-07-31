@@ -244,25 +244,22 @@ class Machine(BasicMachine):
         # pylint: disable = line-too-long
         return f'{super().__str__()} | TPCFGS: {self.prover.config_count}'
 
-    def run(self,
-            sim_lim: int = 100_000_000,
-            *,
-            watch_tape: bool = False,
-            state: State = 0,
-            tape: Tape | None = None,
+    def run(  # type: ignore[override]  # pylint: disable = arguments-differ
+        self,
+        sim_lim: int = 100_000_000,
+        watch_tape: bool = False,
     ) -> Self:
         comp = self.comp
 
-        if tape is None:
-            tape = Tape.init()
-
-        self.tape = tape
+        self.tape = tape = Tape.init()
 
         self.prover = Prover(comp)
 
         self.blanks = {}
 
         step: int | None = 0
+
+        state: State = 0
 
         for cycle in range(sim_lim):
 
