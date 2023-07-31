@@ -327,29 +327,9 @@ class Machine(BasicMachine):
 
 ########################################
 
-class RecChecker(BasicMachine):
+class LinRecMachine(BasicMachine):
     history: History
 
-    def check_rec(self, step: int, slot: Slot) -> RecRes | None:
-        if (result := self.history.check_rec(step, slot)) is None:
-            return None
-
-        self.linrec = start, rec = result
-
-        if rec == 1:
-            self.spnout = step - 1
-
-        hc_beeps = self.history.calculate_beeps()
-        hp_beeps = self.history.calculate_beeps(start)
-
-        self.qsihlt = any(
-            hc_beeps[st] <= hp_beeps[st]
-            for st in hp_beeps
-        )
-
-        return result
-
-class LinRecMachine(RecChecker):
     def run(  # type: ignore[override]  # pylint: disable = arguments-differ
         self,
         sim_lim: int | None = None,
@@ -399,6 +379,25 @@ class LinRecMachine(RecChecker):
         self.cycles = cycle
 
         return self
+
+    def check_rec(self, step: int, slot: Slot) -> RecRes | None:
+        if (result := self.history.check_rec(step, slot)) is None:
+            return None
+
+        self.linrec = start, rec = result
+
+        if rec == 1:
+            self.spnout = step - 1
+
+        hc_beeps = self.history.calculate_beeps()
+        hp_beeps = self.history.calculate_beeps(start)
+
+        self.qsihlt = any(
+            hc_beeps[st] <= hp_beeps[st]
+            for st in hp_beeps
+        )
+
+        return result
 
 ########################################
 

@@ -5,14 +5,16 @@ from typing import Self, TYPE_CHECKING
 from tm.machine import (
     History,
     HeadTape,
-    RecChecker,
+    BasicMachine,
 )
 
 if TYPE_CHECKING:
     from tm.machine import State, Slot, Tapes
 
 
-class LinRecSampler(RecChecker):
+class LinRecSampler(BasicMachine):
+    history: History
+
     def run(  # type: ignore[override]  # pylint: disable = arguments-differ
         self,
         sim_lim: int,
