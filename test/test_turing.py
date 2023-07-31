@@ -7,7 +7,7 @@ from unittest import TestCase, skip, expectedFailure
 
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
-from test.test_utils import LinRecSampler
+from test.utils import LinRecSampler
 
 from tm.reason import Program, BackwardReasoner
 from tm.machine import (
