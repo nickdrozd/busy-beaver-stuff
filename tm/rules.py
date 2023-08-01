@@ -100,11 +100,16 @@ class ApplyRule:
                 case _:
                     assert isinstance(diff, Plus)
 
-                    result = apply_plus(
-                        count,
-                        times,
-                        diff,
-                        pos == min_pos)
+                    if pos != min_pos:
+                        result = apply_plus(count, times, diff)
+                    else:
+                        assert diff < 0
+
+                        result = (
+                            mod
+                            if (mod := count % -diff) > 0 else
+                            -diff
+                        )
 
             self.set_count(pos, result)
 
@@ -115,15 +120,8 @@ def apply_plus(
         count: Count,
         times: int,
         diff: Plus,
-        is_min: bool,
 ) -> Count:
-    return (
-        count + diff * times
-        if not is_min else
-        mod
-        if (mod := count % -diff) > 0 else
-        -diff
-    )
+    return count + diff * times
 
 
 def apply_mult(count: Count, times: int, div: int, mod: int) -> Count:
