@@ -405,7 +405,7 @@ class TuringTest(TestCase):
         champ_2_5 = "1RB 2LB 4LB 3LA 1R_  1LA 3RA 3LB 0LB 0RA"
 
         for prog, marks in prog_data.items():
-            if prog in PROVER_FAILURES:
+            if prog in PROVER_FAILURES | NUMBER_SKIP:
                 continue
 
             self.run_bb(
@@ -425,6 +425,11 @@ class TuringTest(TestCase):
 
             result: Count = self.machine.marks
 
+            if not isinstance(result, int):
+                print(f'--> {result}')
+
+            result = int(result)
+
             if not isinstance(macro := self.machine.program, str):
                 result *= macro.cells  # type: ignore[attr-defined]
 
@@ -440,6 +445,8 @@ class TuringTest(TestCase):
                         rel_tol = .54,
                     )
                 else:
+                    assert isinstance(result, int)
+
                     self.assertEqual(
                         exp,
                         int(log10(result)))

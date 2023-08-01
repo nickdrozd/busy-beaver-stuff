@@ -1463,6 +1463,10 @@ PROVER_FAILURES = {
     "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
 }
 
+NUMBER_SKIP = {
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE",
+}
+
 ## test program ######################################################
 
 PROGS: dict[

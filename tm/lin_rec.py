@@ -46,12 +46,12 @@ class HeadTape(Tape):
 
     def to_ptr(self) -> PtrTape:
         return PtrTape(
-            sum(q.count for q in self.lspan) - self.head,
+            sum(int(q.count) for q in self.lspan) - self.head,
             self.unroll(),
         )
 
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
-        stepped = super().step(shift, color, skip)
+        stepped = int(super().step(shift, color, skip))
 
         self.head += stepped if shift else -stepped
 

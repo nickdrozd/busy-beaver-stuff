@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
+from tm.num import Num
 from tm.show import show_number
 from tm.rules import ApplyRule
 
@@ -27,6 +28,14 @@ class Block:
     def __str__(self) -> str:
         return f"{self.color}^{show_number(self.count)}"
 
+    def count_copy(self) -> Count:
+        count = self.count
+
+        if isinstance(count, Num):
+            return count.copy()
+
+        return count
+
 
 class BlockTape(ApplyRule):
     lspan: list[Block]
@@ -45,11 +54,14 @@ class BlockTape(ApplyRule):
 
     @property
     def marks(self) -> Count:
-        return (
-            (1 if self.scan != 0 else 0)
-            + sum(blk.count for blk in self.lspan if blk.color != 0)
-            + sum(blk.count for blk in self.rspan if blk.color != 0)
-        )
+        scan: int = 1 if self.scan != 0 else 0
+
+        lspan: Count = sum(
+            blk.count for blk in self.lspan if blk.color != 0)
+        rspan: Count = sum(
+            blk.count for blk in self.rspan if blk.color != 0)
+
+        return scan + lspan + rspan
 
     @property
     def blocks(self) -> int:
@@ -64,8 +76,8 @@ class BlockTape(ApplyRule):
     @property
     def counts(self) -> Counts:
         return (
-            [block.count for block in self.lspan],
-            [block.count for block in self.rspan],
+            [block.count_copy() for block in self.lspan],
+            [block.count_copy() for block in self.rspan],
         )
 
     @property
@@ -124,14 +136,14 @@ class Tape(BlockTape):
         return [
             block.color
             for block in reversed(self.lspan)
-            for _ in range(block.count)
+            for _ in range(int(block.count))
         ] + [self.scan] + [
             block.color
             for block in self.rspan
-            for _ in range(block.count)
+            for _ in range(int(block.count))
         ]
 
-    def step(self, shift: Shift, color: Color, skip: bool) -> int:
+    def step(self, shift: Shift, color: Color, skip: bool) -> Count:
         pull, push = (
             (self.rspan, self.lspan)
             if shift else
@@ -203,7 +215,7 @@ class TagTape(BlockTape):
         self.lspan = [
             TagBlock(
                 block.color,
-                block.count,
+                block.count_copy(),
                 [2 * i] if block.count > 1 else [])
             for i, block in enumerate(lspan)
         ]
@@ -213,7 +225,7 @@ class TagTape(BlockTape):
         self.rspan = [
             TagBlock(
                 block.color,
-                block.count,
+                block.count_copy(),
                 [2 * i + 1] if block.count > 1 else [])
             for i, block in enumerate(rspan)
         ]
@@ -359,14 +371,14 @@ class EnumTape(BlockTape):
             rspan: list[Block],
     ):
         self.lspan = [
-            EnumBlock(block.color, block.count, (0, i))
+            EnumBlock(block.color, block.count_copy(), (0, i))
             for i, block in enumerate(lspan, start = 1)
         ]
 
         self.scan = scan
 
         self.rspan = [
-            EnumBlock(block.color, block.count, (1, i))
+            EnumBlock(block.color, block.count_copy(), (1, i))
             for i, block in enumerate(rspan, start = 1)
         ]
 
@@ -463,7 +475,7 @@ class BlockMeasure(Tape):
             self.max_blocks = blocks
             self.max_blocks_step = self.steps
 
-        return super().step(shift, color, skip)
+        return int(super().step(shift, color, skip))
 
 
 def compr_eff(tape: list[Color], k: int) -> int:

@@ -59,7 +59,7 @@ class BasicMachine:
     cfglim: bool | None = None
     limrul: bool | None = None
 
-    rulapp: int = 0
+    rulapp: Count = 0
 
     def __init__(self, program: str | GetInstr):
         self.program = program
@@ -91,8 +91,14 @@ class BasicMachine:
         ]
 
         if self.rulapp > 0:
+            rulapp_disp = (
+                show_number(self.rulapp)
+                if isinstance(self.rulapp, int) else
+                "..."
+            )
+
             info.append(
-                f'RULAPP: {show_number(self.rulapp)}')
+                f'RULAPP: {rulapp_disp}')
 
         return f"{self.program} || {' | '.join(info)}"
 
@@ -151,6 +157,8 @@ class BasicMachine:
                 break
 
             stepped = tape.step(shift, color, same)
+
+            assert isinstance(stepped, int)
 
             step += stepped
 
@@ -300,7 +308,9 @@ class Machine(BasicMachine):
 
             stepped = tape.step(shift, color, same)
 
-            if step is not None:
+            if not isinstance(stepped, int):
+                step = None
+            elif step is not None:
                 step += stepped
 
             if (state := next_state) == -1:

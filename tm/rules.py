@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from math import log10
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from tm.num import Exp
 from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
 
 
 Plus = int
 
 if TYPE_CHECKING:
-    Count = int
+    from tm.num import Count
 
     Counts = tuple[
         list[Count],
@@ -26,12 +26,17 @@ if TYPE_CHECKING:
     Rule = dict[Index, Op]
 
 
-def calculate_diff(cnt1: int, cnt2: int, cnt3: int) -> Op | None:
+def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
     if cnt1 == cnt2 == cnt3:
         return None
 
-    if (plus := cnt2 - cnt1) == cnt3 - cnt2:
+    if (plus := int(cnt2 - cnt1)) == int(cnt3 - cnt2):
         return plus
+
+    if (not isinstance(cnt1, int)
+            or not isinstance(cnt2, int)
+            or not isinstance(cnt3, int)):
+        raise RuleLimit
 
     if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
         return mult
@@ -62,8 +67,8 @@ class ApplyRule:
     @abstractmethod
     def set_count(self, index: Index, val: Count) -> None: ...
 
-    def count_apps(self, rule: Rule) -> tuple[int, Index] | None:
-        divs: list[tuple[int, Index]] = []
+    def count_apps(self, rule: Rule) -> tuple[Count, Index] | None:
+        divs: list[tuple[Count, Index]] = []
 
         for pos, diff in rule.items():
             if not isinstance(diff, Plus) or diff >= 0:
@@ -81,15 +86,11 @@ class ApplyRule:
 
         return min(divs, key = lambda p: p[0])
 
-    def apply_rule(self, rule: Rule) -> int | None:
+    def apply_rule(self, rule: Rule) -> Count | None:
         if (apps := self.count_apps(rule)) is None:
             return None
 
         times, min_pos = apps
-
-        if (any(not isinstance(op, Plus) for op in rule.values())
-                and log10(times) > 10):
-            raise RuleLimit()
 
         for pos, diff in rule.items():
             count = self.get_count(pos)
@@ -118,17 +119,17 @@ class ApplyRule:
 
 def apply_plus(
         count: Count,
-        times: int,
+        times: Count,
         diff: Plus,
 ) -> Count:
     return count + diff * times
 
 
-def apply_mult(count: Count, times: int, div: int, mod: int) -> Count:
+def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
     result: Count = (
         count
-        * (term := div ** times)
-        + mod * (1 + ((term - div) // (div - 1)))
+        * Exp(div, times)
+        + mod * (1 + ((Exp(div, times) - div) // (div - 1)))
     )
 
     return result
