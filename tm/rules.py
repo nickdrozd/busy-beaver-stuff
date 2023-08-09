@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from math import log10
 from typing import TYPE_CHECKING
 
 from tm.num import Exp
@@ -126,10 +127,15 @@ def apply_plus(
 
 
 def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
+    if isinstance(times, int) and log10(times) < 8:
+        exp1 = exp2 = div ** times
+    else:
+        exp1 = Exp(div, times)
+        exp2 = exp1.copy()
+
     result: Count = (
-        count
-        * Exp(div, times)
-        + mod * (1 + ((Exp(div, times) - div) // (div - 1)))
+        count * exp1
+        + mod * (1 + ((exp2 - div) // (div - 1)))
     )
 
     return result
