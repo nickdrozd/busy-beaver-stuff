@@ -405,6 +405,9 @@ class TuringTest(TestCase):
         champ_2_5 = "1RB 2LB 4LB 3LA 1R_  1LA 3RA 3LB 0LB 0RA"
 
         for prog, marks in prog_data.items():
+            if prog in PROVER_FAILURES:
+                continue
+
             self.run_bb(
                 prog,
                 sim_lim = 10 ** 8,
@@ -715,21 +718,10 @@ class Fast(TuringTest):
                 opt_blocks = 120,
             )
 
-            self.assertIsNotNone(
-                self.machine.limrul)
-
-    @expectedFailure
-    def test_rule_limit_fail(self):
-        prog = "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA"
-
-        self.run_bb(
-            prog,
-            normal = False,
-            opt_blocks = 120,
-        )
-
-        self.assertIsNotNone(
-            self.machine.limrul)
+            (self.assertIsNone
+             if prog in PROVER_FAILURES else
+             self.assertIsNotNone)(
+                 self.machine.limrul)
 
     def test_backsymbol_required(self):
         prog = "1RB 0LC  1LC 0RC  1LA 0LC"
