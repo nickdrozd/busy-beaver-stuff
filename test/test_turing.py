@@ -810,6 +810,17 @@ class Fast(TuringTest):
         self.assertIsNotNone(
             self.machine.infrul)
 
+    def test_algebra_string(self):
+        self.run_bb(
+            "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",
+            opt_blocks = 56)
+
+        # pylint: disable = line-too-long
+
+        self.assertEqual(
+            str(self.machine.marks),
+            "((1 + (1 + (2 + (1 + (2 + (1 + (2 + (3 + (4 * ((1 + (1 + (2 + (1 + (((2042 * (4 ** 1073741817)) + -1) + (18 * (1 + (((4 ** 1073741817) + -4) // 3)))))))) + -1)))))))))) + 0)")
+
 
 class Slow(TuringTest):  # no-coverage
     @skip('')
