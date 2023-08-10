@@ -205,3 +205,16 @@ class TestFloss(TestCase):
             Machine(
                 "1RB 1LA  1LC 0RD  ... 0RA  1LD 0LA"
             ).run())
+
+    def test_num(self):
+        marks = Machine(
+            "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",
+            opt_blocks = 56,
+        ).run().marks
+
+        print(marks)
+
+        self.assertGreater(marks, 5)
+        self.assertGreaterEqual(marks, 5)
+        self.assertLess(5, marks)
+        self.assertLessEqual(5, marks)

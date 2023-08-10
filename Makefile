@@ -73,8 +73,9 @@ COV = test.test_coverage
 LR = test.test_lin_rado
 CG = test.test_code
 TP = test.test_tape
+NUM = test.test_num
 
-SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(TP) $(COV)
+SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(TP) $(COV) $(NUM)
 
 PYTEST = $(PYTHON) -m unittest
 
