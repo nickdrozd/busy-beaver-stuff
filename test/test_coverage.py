@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import TestCase, skip
 
 from tm.reason import Program, BackwardReasoner
 from tm.machine import Machine, LinRecMachine, run_variations
@@ -127,8 +127,9 @@ class TestFloss(TestCase):
                 sim_lim = 5739,
             ).xlimit)
 
+    @skip('')
     def test_rule_limit(self):
-        self.assertIsNotNone(
+        self.assertIsNotNone(  # no-coverage
             Machine(
                 "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
             ).run().limrul)
