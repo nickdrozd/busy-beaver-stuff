@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import operator
+from abc import abstractmethod
 from dataclasses import dataclass
 from collections.abc import Callable
 
@@ -62,31 +63,19 @@ class Num:
             int(self.r),
         )
 
-    def __neg__(self) -> Count:
-        raise NotImplementedError
+    @abstractmethod
+    def __neg__(self) -> Count: ...
 
-    def __lt__(self, other: Count) -> bool:
-        if not isinstance(other, int):
-            raise NotImplementedError
+    def __lt__(self, _: int) -> bool:
+        return False  # no-coverage
 
+    def __le__(self, _: int) -> bool:
         return False
 
-    def __le__(self, other: Count) -> bool:
-        if not isinstance(other, int):
-            raise NotImplementedError
-
-        return False
-
-    def __gt__(self, other: Count) -> bool:
-        if not isinstance(other, int):
-            raise NotImplementedError
-
+    def __gt__(self, _: int) -> bool:
         return True
 
-    def __ge__(self, other: Count) -> bool:
-        if not isinstance(other, int):
-            raise NotImplementedError
-
+    def __ge__(self, _: int) -> bool:
         return True
 
     def __add__(self, other: Count) -> Count:
@@ -101,17 +90,11 @@ class Num:
             self.copy(),
         )
 
-    def __sub__(self, other: Count) -> Count:
+    def __sub__(self, other: int) -> Count:
         if other == 0:
             return self.copy()
 
-        return Add(
-            self.copy(),
-            -(other.copy()) if isinstance(other, Num) else -other,
-        )
-
-    def __rsub__(self, other: Count) -> Count:
-        return Add(other, -(self.copy()))
+        return Add(self.copy(), -other)
 
     def __mul__(self, other: Count) -> Count:
         return Mul(
@@ -128,25 +111,13 @@ class Num:
             self.copy(),
         )
 
-    def __mod__(self, other: int) -> int:
-        raise NotImplementedError
-
-    def __rmod__(self, other: Count) -> int:
-        if isinstance(other, int):
-            return other
-
-        raise NotImplementedError
+    @abstractmethod
+    def __mod__(self, other: int) -> int: ...
 
     def __divmod__(self, other: int) -> tuple[Count, int]:
         mod = self % other
 
         return (self - mod) // other, mod
-
-    def __rdivmod__(self, other: Count) -> tuple[Count, int]:
-        if isinstance(other, int):
-            return 0, other
-
-        raise NotImplementedError
 
     def __floordiv__(self, other: Count) -> Count:
         if other == 1:
@@ -155,7 +126,7 @@ class Num:
         return Div(self.copy(), other)
 
     def __pow__(self, other: Count) -> Count:
-        return Exp(self.copy(), other)
+        return Exp(self.copy(), other)  # no-coverage
 
 
 class Add(Num):
@@ -192,10 +163,7 @@ class Add(Num):
 
         return self
 
-    def __isub__(self, other: Count) -> Count:
-        if isinstance(other, Num):
-            return Add(-(self.copy()), -(other.copy()))
-
+    def __isub__(self, other: int) -> Count:
         l: Count
         r: Count
 
@@ -237,14 +205,10 @@ class Div(Num):
     op = operator.floordiv
 
     def __neg__(self) -> Div:
-        return Div(
-            -(self.lcopy()),
-            self.rcopy(),
-        )
+        raise NotImplementedError
 
     def __mod__(self, other: int) -> int:
-        if not isinstance(self.r, int):
-            raise NotImplementedError
+        assert isinstance(self.r, int)
 
         if other == self.r:
             return 0
@@ -262,7 +226,7 @@ class Exp(Num):
 
     op = operator.pow
 
-    def __neg__(self) -> Count:
+    def __neg__(self) -> Exp:
         raise NotImplementedError
 
     def __mod__(self, other: int) -> int:
