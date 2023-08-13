@@ -717,7 +717,6 @@ class Fast(TuringTest):
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
-    @skip('')
     def test_rule_limit(self):
         for prog in RULE_LIMIT:
             self.run_bb(

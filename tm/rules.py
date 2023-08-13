@@ -4,7 +4,7 @@ from abc import abstractmethod
 from math import log10
 from typing import TYPE_CHECKING
 
-from tm.num import Exp
+from tm.num import Exp, NumException
 from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
 
 
@@ -28,16 +28,16 @@ if TYPE_CHECKING:
 
 
 def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
+    if (not isinstance(cnt1, int)
+            or not isinstance(cnt2, int)
+            or not isinstance(cnt3, int)):
+        raise RuleLimit
+
     if cnt1 == cnt2 == cnt3:
         return None
 
     if (plus := int(cnt2 - cnt1)) == int(cnt3 - cnt2):
         return plus
-
-    if (not isinstance(cnt1, int)
-            or not isinstance(cnt2, int)
-            or not isinstance(cnt3, int)):
-        raise RuleLimit
 
     if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
         return mult
@@ -78,7 +78,10 @@ class ApplyRule:
             if (absdiff := abs(diff)) >= (count := self.get_count(pos)):
                 return None
 
-            div, rem = divmod(count, absdiff)
+            try:
+                div, rem = divmod(count, absdiff)
+            except NumException as exc:
+                raise RuleLimit from exc
 
             divs.append((
                 div if rem > 0 else div - 1,

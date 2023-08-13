@@ -278,6 +278,9 @@ class Machine(BasicMachine):
             except InfiniteRule:
                 self.infrul = True
                 break
+            except RuleLimit:
+                self.limrul = True
+                break
 
             if rule is not None:
                 try:

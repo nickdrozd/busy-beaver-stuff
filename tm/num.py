@@ -7,6 +7,10 @@ from collections.abc import Callable
 from tm.show import show_number
 
 
+class NumException(Exception):
+    pass
+
+
 @dataclass
 class Num:
     l: Count
@@ -247,8 +251,8 @@ class Div(Num):
 
         try:
             inv = pow(self.r, -1, other)
-        except ValueError:
-            return int(self) % other
+        except ValueError as exc:
+            raise NumException from exc
 
         return ((self.l % other) * (inv % other)) % other
 
@@ -266,13 +270,13 @@ class Exp(Num):
             return 0
 
         if not isinstance(self.r, int):
-            raise NotImplementedError
+            raise NumException
 
         res = 1
 
         base, exp = self.l, self.r
 
-        while exp > 0:  # pylint: disable = while-used
+        while exp > 0 and res > 0:  # pylint: disable = while-used
             if (exp % 2) == 1:
                 res = (res * base) % other
             exp >>= 1
