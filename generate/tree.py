@@ -48,7 +48,7 @@ def tree_gen(
             continue
 
         if machine.undfnd is None:
-            if machine.rulapp:  # no-coverage
+            if machine.rulapp:
                 yield prog
             prog = None
             continue

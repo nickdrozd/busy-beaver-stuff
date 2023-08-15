@@ -97,8 +97,7 @@ class TestTree(TestCase):
             return
 
         if ((res := machine.undfnd)
-                and ((step := res[0] + 1)
-                       > self.results['halted'][0])):  # no-coverage
+                and ((step := res[0] + 1) > self.results['halted'][0])):
             self.results['halted'] = step, prog.replace('...', '1R_')
             return
 
@@ -113,7 +112,7 @@ class Fast(TestTree):
                 self.add_result(prog, machine)
                 return
 
-            self.queue.put(prog)  # no-coverage
+            self.queue.put(prog)
 
         run_tree_gen(
             states = 2,
@@ -205,7 +204,7 @@ class Fast(TestTree):
 
 
 class Slow(TestTree):
-    def test_42(self):  # no-coverage
+    def test_42(self):
         def capture(prog: str) -> None:
             if 'D' not in prog:
                 return

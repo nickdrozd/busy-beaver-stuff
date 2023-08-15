@@ -346,7 +346,7 @@ class TuringTest(TestCase):
                 assert steps is not None
                 self.verify_lin_recurrence(prog, steps, period)
 
-            if not quick or period > 2000:  # no-coverage
+            if not quick or period > 2000:
                 print(prog)
                 continue
 
@@ -495,8 +495,7 @@ class TuringTest(TestCase):
             )
 
             for cycles, params in zip(cycleses, macro_params):
-                if (cycles is not None
-                        and cycles > 10_000_000):  # no-coverage
+                if (cycles is not None and cycles > 10_000_000):
                     continue
 
                 match params:
@@ -831,7 +830,7 @@ class Fast(TuringTest):
             "(208783128 + ((((((0 + ((4 * ((2 + ((1 + (1 + (1 + (1 + (1 + (1 + (1 + (4 * ((3 + ((5 + (4 * (((52195782 * (64 ** (~10^20823))) + (70 * (1 + (((64 ** (~10^20823)) + -64) // 63)))) + -1))) + -1)) + -1))))))))) + -1)) + -1)) + -4)) + 1) + 1) + 1) + 1) + 1))")
 
 
-class Slow(TuringTest):  # no-coverage
+class Slow(TuringTest):
     @skip('')
     def test_halt(self):
         self._test_halt(HALT_SLOW)
