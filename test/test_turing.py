@@ -811,15 +811,24 @@ class Fast(TuringTest):
             self.machine.infrul)
 
     def test_algebra_string(self):
+        # pylint: disable = line-too-long
+
         self.run_bb(
             "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",
             opt_blocks = 56)
 
-        # pylint: disable = line-too-long
-
         self.assertEqual(
             str(self.machine.marks),
             "((1 + (1 + (2 + (1 + (2 + (1 + (2 + (3 + (4 * ((1 + (1 + (2 + (1 + (((2042 * (4 ** 1073741817)) + -1) + (18 * (1 + (((4 ** 1073741817) + -4) // 3)))))))) + -1)))))))))) + 0)")
+
+        self.run_bb(
+            "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",
+            normal = False,
+            opt_blocks = 99)
+
+        self.assertEqual(
+            str(self.machine.marks),
+            "(208783128 + ((((((0 + ((4 * ((2 + ((1 + (1 + (1 + (1 + (1 + (1 + (1 + (4 * ((3 + ((5 + (4 * (((52195782 * (64 ** (~10^20823))) + (70 * (1 + (((64 ** (~10^20823)) + -64) // 63)))) + -1))) + -1)) + -1))))))))) + -1)) + -1)) + -4)) + 1) + 1) + 1) + 1) + 1))")
 
 
 class Slow(TuringTest):  # no-coverage
