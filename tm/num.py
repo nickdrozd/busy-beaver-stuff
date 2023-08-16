@@ -95,12 +95,6 @@ class Num:
 
         return Add(self.copy(), -other)
 
-    def __mul__(self, other: Count) -> Count:
-        return Mul(
-            self.copy(),
-            other.copy() if isinstance(other, Num) else other,
-        )
-
     def __rmul__(self, other: Count) -> Count:
         if other == 1:
             return self.copy()
@@ -148,8 +142,6 @@ class Add(Num):
         return Add(-(self.lcopy()), -(self.rcopy()))
 
     def __add__(self, other: Count) -> Add:
-        assert isinstance(other, int)
-
         copy = self.copy()
 
         assert isinstance(copy, Add)
@@ -195,11 +187,25 @@ class Add(Num):
 
         return self
 
+    def __rmul__(self, other: Count) -> Count:
+        if isinstance(other, Num):
+            return super().__rmul__(other)
+
+        return (other * self.l) + (other * self.r)
+
 
 class Mul(Num):
     join = '*'
 
     op = operator.mul
+
+    def __init__(self, l: Count, r: Count):
+        if isinstance(r, int):
+            l, r = r, l
+
+        assert isinstance(r, Num)
+
+        super().__init__(l, r)
 
     def __neg__(self) -> Mul:
         return Mul(
@@ -209,6 +215,12 @@ class Mul(Num):
 
     def __mod__(self, other: int) -> int:
         return ((self.l % other) * (self.r % other)) % other
+
+    def __rmul__(self, other: Count) -> Count:
+        if isinstance(other, Num) or isinstance(self.l, Num):
+            return super().__rmul__(other)
+
+        return (self.l * other) * self.rcopy()
 
 
 class Div(Num):
@@ -231,6 +243,14 @@ class Div(Num):
             raise NumException from exc
 
         return ((self.l % other) * (inv % other)) % other
+
+    def __rmul__(self, other: Count) -> Count:
+        if (isinstance(other, Num)
+                or isinstance(self.r, Num)
+                or other % self.r != 0):
+            return super().__rmul__(other)
+
+        return (other // self.r) * self.lcopy()
 
 
 class Exp(Num):
