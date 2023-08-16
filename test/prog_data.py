@@ -1467,6 +1467,17 @@ NUMBER_SKIP = {
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE",
 }
 
+ALGEBRA_STRINGS: dict[str, tuple[int, int, str]] = {
+    "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (
+        56, 522,
+        "((1 + (24 * (4 ** 1073741817))) + (8168 * (4 ** 1073741817)))",
+    ),
+    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD": (
+        99, 3344,
+        "((208787669 + (4480 * ((-64 + (64 ** (~10^20823))) // 63))) + (3340530048 * (64 ** (~10^20823))))",
+    ),
+}
+
 ## test program ######################################################
 
 PROGS: dict[

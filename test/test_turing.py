@@ -815,28 +815,18 @@ class Fast(TuringTest):
             self.machine.infrul)
 
     def test_algebra_string(self):
-        # pylint: disable = line-too-long
+        for prog, (blocks, cycles, string) in ALGEBRA_STRINGS.items():
+            self.run_bb(
+                prog,
+                opt_blocks = blocks,
+                normal = False,
+            )
 
-        self.run_bb(
-            "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",
-            opt_blocks = 56)
+            self.assert_cycles(cycles)
 
-        self.assert_cycles(522)
-
-        self.assertEqual(
-            str(self.machine.marks),
-            "((1 + (24 * (4 ** 1073741817))) + (8168 * (4 ** 1073741817)))")
-
-        self.run_bb(
-            "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",
-            normal = False,
-            opt_blocks = 99)
-
-        self.assert_cycles(3344)
-
-        self.assertEqual(
-            str(self.machine.marks),
-            "((208787669 + (4480 * ((-64 + (64 ** (~10^20823))) // 63))) + (3340530048 * (64 ** (~10^20823))))")
+            self.assertEqual(
+                string,
+                str(self.machine.marks))
 
 
 class Slow(TuringTest):
