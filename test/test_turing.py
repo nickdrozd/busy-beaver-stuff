@@ -40,6 +40,11 @@ class TuringTest(TestCase):
             self.machine.steps,
             steps)
 
+    def assert_cycles(self, cycles: int):
+        self.assertEqual(
+            self.machine.cycles,
+            cycles)
+
     def assert_quasihalt(self, qsihlt: bool | None):
         self.assertEqual(
             self.machine.qsihlt,
@@ -816,6 +821,8 @@ class Fast(TuringTest):
             "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",
             opt_blocks = 56)
 
+        self.assert_cycles(522)
+
         self.assertEqual(
             str(self.machine.marks),
             "((1 + (24 * (4 ** 1073741817))) + (8168 * (4 ** 1073741817)))")
@@ -824,6 +831,8 @@ class Fast(TuringTest):
             "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",
             normal = False,
             opt_blocks = 99)
+
+        self.assert_cycles(3344)
 
         self.assertEqual(
             str(self.machine.marks),
