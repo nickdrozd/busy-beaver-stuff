@@ -18,7 +18,7 @@ class TestNum(TestCase):
         self.assertEqual(str(num), val)
 
     def test_add(self):
-        num = Add(3, 4) + Add(5, 6)
+        num: Count = Add(3, 4) + Add(5, 6)
 
         self.assert_string(num, "((3 + 4) + (5 + 6))")
 

@@ -85,10 +85,9 @@ class Num:
         )
 
     def __radd__(self, other: Count) -> Count:
-        return Add(
-            other.copy() if isinstance(other, Num) else other,
-            self.copy(),
-        )
+        assert isinstance(other, int)
+
+        return Add(other, self.copy())
 
     def __sub__(self, other: int) -> Count:
         if other == 0:
@@ -134,11 +133,33 @@ class Add(Num):
 
     op = operator.add
 
+    def __init__(self, l: Count, r: Count):
+        if isinstance(r, int):
+            l, r = r, l
+
+        assert isinstance(r, Num)
+
+        super().__init__(l, r)
+
     def __mod__(self, other: int) -> int:
         return ((self.l % other) + (self.r % other)) % other
 
     def __neg__(self) -> Add:
         return Add(-(self.lcopy()), -(self.rcopy()))
+
+    def __add__(self, other: Count) -> Add:
+        assert isinstance(other, int)
+
+        copy = self.copy()
+
+        assert isinstance(copy, Add)
+
+        copy.l += other
+
+        return copy
+
+    def __radd__(self, other: Count) -> Add:
+        return self + other
 
     def __iadd__(self, other: Count) -> Count:
         if isinstance(other, Num):
@@ -153,15 +174,12 @@ class Add(Num):
 
             return self.r if l == 0 else Add(l, r)
 
-        if isinstance(self.r, int):
-            r = other + self.r
-            l = self.lcopy()
-
-            return self.l if r == 0 else Add(l, r)
-
         self.l += other
 
         return self
+
+    def __sub__(self, other: int) -> Count:
+        return self + -other
 
     def __isub__(self, other: int) -> Count:
         l: Count
@@ -172,12 +190,6 @@ class Add(Num):
             r = self.rcopy()
 
             return self.r if l == 0 else Add(l, r)
-
-        if isinstance(self.r, int):
-            r = self.r - other
-            l = self.lcopy()
-
-            return self.l if r == 0 else Add(l, r)
 
         self.l -= other
 
