@@ -143,8 +143,10 @@ class TestTape(TestCase):
             (0, 0): (2, 8),
         })
 
+        exp = "((152 * (2 ** 327672)) + (-8 + (8 * (2 ** 327672))))"
+
         self.assert_tape(
-            "3^1 2^1 1^(~10^98641) [0]")
+            f"3^1 2^1 1^{exp} [0]")
 
     def assert_head(self, expected: int, tape = None):
         self.assertEqual(

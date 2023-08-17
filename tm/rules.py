@@ -130,7 +130,7 @@ def apply_plus(
 
 
 def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
-    if isinstance(times, int) and log10(times) < 8:
+    if isinstance(times, int) and log10(times) < 5:
         exp1 = exp2 = div ** times
     else:
         exp1 = Exp(div, times)

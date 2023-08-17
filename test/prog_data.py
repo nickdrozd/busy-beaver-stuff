@@ -1478,7 +1478,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
     ),
     "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (
         291,
-        "(~10^98641)",
+        "((3 + (152 * (2 ** 327672))) + (-8 + (8 * (2 ** 327672))))",
     ),
     "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (
         1698,
