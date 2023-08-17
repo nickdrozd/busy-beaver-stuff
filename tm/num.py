@@ -5,7 +5,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from collections.abc import Callable
 
-from tm.show import show_number
+from tm.show import show_number as show
 
 
 class NumException(Exception):
@@ -25,25 +25,7 @@ class Num:
         self.r = r
 
     def __repr__(self) -> str:
-        return f'({self.lstr} {self.join} {self.rstr})'
-
-    @property
-    def lstr(self) -> str:
-        return (
-            show_number(self.l)
-            if isinstance(self.l, int)
-            else
-            str(self.l)
-        )
-
-    @property
-    def rstr(self) -> str:
-        return (
-            show_number(self.r)
-            if isinstance(self.r, int)
-            else
-            str(self.r)
-        )
+        return f'({show(self.l)} {self.join} {show(self.r)})'
 
     def lcopy(self) -> Count:
         return self.l.copy() if isinstance(self.l, Num) else self.l
