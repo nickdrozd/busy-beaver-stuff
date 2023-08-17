@@ -12,6 +12,7 @@ from test.utils import LinRecSampler
 from tm.reason import Program, BackwardReasoner
 from tm.machine import (
     show_slot,
+    show_number,
     opt_block,
     BasicMachine,
     Machine,
@@ -815,10 +816,10 @@ class Fast(TuringTest):
             self.machine.infrul)
 
     def test_algebra_string(self):
-        for prog, (blocks, cycles, string) in ALGEBRA_STRINGS.items():
+        for prog, (cycles, string) in ALGEBRA_STRINGS.items():
             self.run_bb(
                 prog,
-                opt_blocks = blocks,
+                opt_blocks = 2000,
                 normal = False,
             )
 
@@ -826,7 +827,8 @@ class Fast(TuringTest):
 
             self.assertEqual(
                 string,
-                str(self.machine.marks))
+                show_number(self.machine.marks),
+                prog)
 
 
 class Slow(TuringTest):

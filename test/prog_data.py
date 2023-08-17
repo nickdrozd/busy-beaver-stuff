@@ -1467,14 +1467,50 @@ NUMBER_SKIP = {
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE",
 }
 
-ALGEBRA_STRINGS: dict[str, tuple[int, int, str]] = {
+ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
     "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (
-        56, 522,
+        522,
         "((1 + (24 * (4 ** 1073741817))) + (8168 * (4 ** 1073741817)))",
     ),
     "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD": (
-        99, 3344,
+        3344,
         "((208787669 + (4480 * ((-64 + (64 ** (~10^20823))) // 63))) + (3340530048 * (64 ** (~10^20823))))",
+    ),
+    "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (
+        291,
+        "(~10^98641)",
+    ),
+    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (
+        1698,
+        "(~10^39457)",
+    ),
+    "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (
+        5723,
+        "(~10^18267)",
+    ),
+    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (
+        3067,
+        "(~10^463)",
+    ),
+    "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (
+        731,
+        "(~10^4933)",
+    ),
+    "1RB 2LB 4RB 1LA 1RB 1R_  1LA 3RA 5RA 4LB 0RA 4LA": (
+        937,
+        "(~10^822)",
+    ),
+    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (
+        347,
+        "(~10^6519)",
+    ),
+    "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC 1R_ 1LB": (
+        227,
+        "(~10^1301)",
+    ),
+    "1RB 3LA 3RC 1RA  2RC 1LA 1R_ 2RB  1LC 1RB 1LB 2RA": (
+        681,
+        "(~10^628)",
     ),
 }
 
