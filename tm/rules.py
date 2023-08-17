@@ -126,15 +126,15 @@ def apply_plus(count: Count, times: Count, diff: Plus) -> Count:
 
 
 def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
-    if isinstance(times, int) and log10(times) < 5:
-        exp1 = exp2 = div ** times
-    else:
-        exp1 = Exp(div, times)
-        exp2 = exp1.copy()
+    exp = (
+        div ** times
+        if isinstance(times, int) and log10(times) < 5 else
+        Exp(div, times)
+    )
 
     result: Count = (
-        count * exp1
-        + mod * (1 + ((exp2 - div) // (div - 1)))
+        count * exp
+        + mod * (1 + ((exp - div) // (div - 1)))
     )
 
     return result
