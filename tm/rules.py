@@ -121,11 +121,7 @@ class ApplyRule:
         return times
 
 
-def apply_plus(
-        count: Count,
-        times: Count,
-        diff: Plus,
-) -> Count:
+def apply_plus(count: Count, times: Count, diff: Plus) -> Count:
     return count + diff * times
 
 
