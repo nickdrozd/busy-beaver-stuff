@@ -1463,10 +1463,6 @@ PROVER_FAILURES = {
     "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
 }
 
-NUMBER_SKIP = {
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE",
-}
-
 ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
     "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (
         522,
@@ -1487,6 +1483,10 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (
         5723,
         "(~10^18267)",
+    ),
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": (
+        413,
+        "(~10^10567)",
     ),
     "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (
         3067,

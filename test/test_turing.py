@@ -411,7 +411,7 @@ class TuringTest(TestCase):
         champ_2_5 = "1RB 2LB 4LB 3LA 1R_  1LA 3RA 3LB 0LB 0RA"
 
         for prog, marks in prog_data.items():
-            if prog in PROVER_FAILURES | NUMBER_SKIP:
+            if prog in PROVER_FAILURES:
                 continue
 
             self.run_bb(
