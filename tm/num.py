@@ -45,9 +45,6 @@ class Num:
             int(self.r),
         )
 
-    @abstractmethod
-    def __neg__(self) -> Count: ...
-
     def __lt__(self, _: int) -> bool:
         return False  # no-coverage
 
@@ -120,9 +117,6 @@ class Add(Num):
     def __mod__(self, other: int) -> int:
         return ((self.l % other) + (self.r % other)) % other
 
-    def __neg__(self) -> Add:
-        return Add(-(self.lcopy()), -(self.rcopy()))
-
     def __add__(self, other: Count) -> Add:
         copy = self.copy()
 
@@ -189,12 +183,6 @@ class Mul(Num):
 
         super().__init__(l, r)
 
-    def __neg__(self) -> Mul:
-        return Mul(
-            -(self.lcopy()),
-            self.rcopy(),
-        )
-
     def __mod__(self, other: int) -> int:
         return ((self.l % other) * (self.r % other)) % other
 
@@ -209,9 +197,6 @@ class Div(Num):
     join = '//'
 
     op = operator.floordiv
-
-    def __neg__(self) -> Div:
-        raise NotImplementedError
 
     def __mod__(self, other: int) -> int:
         assert isinstance(self.r, int)
@@ -239,9 +224,6 @@ class Exp(Num):
     join = '**'
 
     op = operator.pow
-
-    def __neg__(self) -> Exp:
-        raise NotImplementedError
 
     def __mod__(self, other: int) -> int:
         if other == 1:
