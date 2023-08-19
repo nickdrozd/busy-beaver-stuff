@@ -28,16 +28,16 @@ if TYPE_CHECKING:
 
 
 def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
-    if (not isinstance(cnt1, int)
-            or not isinstance(cnt2, int)
-            or not isinstance(cnt3, int)):
-        raise RuleLimit
-
     if cnt1 == cnt2 == cnt3:
         return None
 
     if (plus := int(cnt2 - cnt1)) == int(cnt3 - cnt2):
         return plus
+
+    if (not isinstance(cnt1, int)
+            or not isinstance(cnt2, int)
+            or not isinstance(cnt3, int)):
+        raise RuleLimit
 
     if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
         return mult

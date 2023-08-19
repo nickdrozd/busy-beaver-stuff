@@ -71,3 +71,24 @@ class TestNum(TestCase):
 
         for (base, exp, mod), val in vals.items():
             self.assertEqual(Exp(base, exp) % mod, val)
+
+    def test_eq_sub(self):
+        # pylint: disable = line-too-long
+
+        exp1 = (6584 + (2266788192 * Exp(64, 11524))) + (6496 * ((-64 + Exp(64, 11524)) // 63))
+        exp2 = (6581 + (2266788192 * Exp(64, 11524))) + (6496 * ((-64 + Exp(64, 11524)) // 63))
+        exp3 = (6578 + (2266788192 * Exp(64, 11524))) + (6496 * ((-64 + Exp(64, 11524)) // 63))
+        exp4 = (6578 + (2266788192 * Exp(64, 11524))) + (6496 * ((-64 + Exp(64, 11524)) // 63))
+
+        self.assertEqual(exp1, exp1)
+        self.assertEqual(exp2, exp2)
+        self.assertEqual(exp3, exp3)
+        self.assertEqual(exp3, exp4)
+        self.assertNotEqual(exp1, exp2)
+        self.assertNotEqual(exp1, exp3)
+        self.assertNotEqual(exp2, exp3)
+
+        self.assertEqual(exp1 - exp2, 3)
+        self.assertEqual(exp2 - exp3, 3)
+        self.assertEqual(exp1 - exp3, 6)
+        self.assertEqual(exp3 - exp4, 0)

@@ -45,6 +45,13 @@ class Num:
             int(self.r),
         )
 
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, type(self))
+            and self.l == other.l
+            and self.r == other.r
+        )
+
     def __lt__(self, _: int) -> bool:
         return False  # no-coverage
 
@@ -68,7 +75,9 @@ class Num:
 
         return Add(other, self.copy())
 
-    def __sub__(self, other: int) -> Count:
+    def __sub__(self, other: Count) -> Count:
+        assert isinstance(other, int)
+
         if other == 0:
             return self.copy()
 
@@ -146,10 +155,18 @@ class Add(Num):
 
         return self
 
-    def __sub__(self, other: int) -> Count:
-        return self + -other
+    def __sub__(self, other: Count) -> Count:
+        if isinstance(other, int):
+            return self + -other
 
-    def __isub__(self, other: int) -> Count:
+        if self.r != other.r:
+            raise NotImplementedError
+
+        return self.l - other.l
+
+    def __isub__(self, other: Count) -> Count:
+        assert isinstance(other, int)
+
         l: Count
         r: Count
 
