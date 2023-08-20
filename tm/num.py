@@ -80,7 +80,7 @@ class Num:
         if other == 0:
             return self.copy()
 
-        return Add(self.copy(), -other)
+        return self + -other
 
     def __rsub__(self, other: Count) -> Count:
         return other + -self
@@ -213,7 +213,7 @@ class Mul(Num):
         if isinstance(other, Num) or isinstance(self.l, Num):
             return super().__rmul__(other)
 
-        return (self.l * other) * self.rcopy()
+        return (self.l * other) * self.r
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul) and self.r == other.r:
@@ -246,12 +246,12 @@ class Div(Num):
                 or other % self.r != 0):
             return super().__rmul__(other)
 
-        return (other // self.r) * self.lcopy()
+        return (other // self.r) * self.l
 
     def __floordiv__(self, other: Count) -> Div:
         return Div(
             self.lcopy(),
-            other * self.rcopy(),
+            other * self.r,
         )
 
 
