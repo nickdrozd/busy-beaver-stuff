@@ -128,7 +128,7 @@ def apply_plus(count: Count, times: Count, diff: Plus) -> Count:
 def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
     exp = (
         div ** times
-        if isinstance(times, int) and log10(times) < 5 else
+        if isinstance(times, int) and log10(times) < 3 else
         Exp(div, times)
     )
 
