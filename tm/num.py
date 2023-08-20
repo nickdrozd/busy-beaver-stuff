@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import operator
 from abc import abstractmethod
-from dataclasses import dataclass
 from collections.abc import Callable
 
 from tm.show import show_number as show
@@ -12,7 +11,6 @@ class NumException(Exception):
     pass
 
 
-@dataclass
 class Num:
     l: Count
     r: Count
