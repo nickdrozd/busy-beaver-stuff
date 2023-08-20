@@ -236,6 +236,12 @@ class Div(Num):
 
         return (other // self.r) * self.lcopy()
 
+    def __floordiv__(self, other: Count) -> Div:
+        return Div(
+            self.lcopy(),
+            other * self.rcopy(),
+        )
+
 
 class Exp(Num):
     join = '**'
@@ -245,9 +251,6 @@ class Exp(Num):
     def __mod__(self, other: int) -> int:
         if other == 1:
             return 0
-
-        if not isinstance(self.r, int):
-            raise NumException
 
         res = 1
 
