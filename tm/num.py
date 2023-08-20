@@ -200,12 +200,7 @@ class Mul(Num):
 
     op = operator.mul
 
-    def __init__(self, l: Count, r: Count):
-        if isinstance(r, int):
-            l, r = r, l
-
-        assert isinstance(r, Num)
-
+    def __init__(self, l: Count, r: Num):
         super().__init__(l, r)
 
     def __neg__(self) -> Count:
