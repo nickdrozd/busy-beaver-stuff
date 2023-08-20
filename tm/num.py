@@ -45,6 +45,9 @@ class Num:
             int(self.r),
         )
 
+    def __neg__(self) -> Count:
+        raise NotImplementedError
+
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, type(self))
@@ -82,6 +85,12 @@ class Num:
             return self.copy()
 
         return Add(self.copy(), -other)
+
+    def __rsub__(self, other: Count) -> Count:
+        return other + -self
+
+    def __mul__(self, other: Count) -> Count:
+        return other * self
 
     def __rmul__(self, other: Count) -> Count:
         if other == 1:
@@ -130,6 +139,9 @@ class Add(Num):
 
     def __mod__(self, other: int) -> int:
         return ((self.l % other) + (self.r % other)) % other
+
+    def __neg__(self) -> Count:
+        return -(self.l) + -(self.r)
 
     def __add__(self, other: Count) -> Add:
         copy = self.copy()
