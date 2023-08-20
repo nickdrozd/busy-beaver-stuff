@@ -1448,6 +1448,7 @@ RULE_LIMIT = {
     "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",  # 10^^^3
     "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",  # 10^^90
     "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB 1R_ 3RB 4LA",  # 10^^70
+    "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",  # ???
 
     # 6/2
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",  # 10^^15
@@ -1512,6 +1513,10 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         681,
         "(~10^628)",
     ),
+    "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB": (
+        957,
+        "(0 + (4 * (2 ** (-3 + (8 * (2 ** (-3 + (8 * (2 ** (-3 + (8 * (2 ** 65533))))))))))))",
+    )
 }
 
 ## test program ######################################################

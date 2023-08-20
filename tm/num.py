@@ -173,13 +173,10 @@ class Add(Num):
         return self
 
     def __sub__(self, other: Count) -> Count:
-        if isinstance(other, int):
-            return self + -other
+        if isinstance(other, Add) and self.r == other.r:
+            return self.l - other.l
 
-        if self.r != other.r:
-            raise NotImplementedError
-
-        return self.l - other.l
+        return self + -other
 
     def __isub__(self, other: Count) -> Count:
         assert isinstance(other, int)
@@ -216,6 +213,9 @@ class Mul(Num):
         assert isinstance(r, Num)
 
         super().__init__(l, r)
+
+    def __neg__(self) -> Count:
+        return -(self.l) * self.r
 
     def __mod__(self, other: int) -> int:
         return ((self.l % other) * (self.r % other)) % other

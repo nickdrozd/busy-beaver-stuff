@@ -31,8 +31,8 @@ def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
     if cnt1 == cnt2 == cnt3:
         return None
 
-    if (plus := int(cnt2 - cnt1)) == int(cnt3 - cnt2):
-        return plus
+    if (plus := cnt2 - cnt1) == (cnt3 - cnt2):
+        return int(plus)
 
     if (not isinstance(cnt1, int)
             or not isinstance(cnt2, int)
