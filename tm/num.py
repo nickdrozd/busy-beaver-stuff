@@ -256,7 +256,7 @@ class Exp(Num):
         while exp > 0 and res > 0:  # pylint: disable = while-used
             if (exp % 2) == 1:
                 res = (res * base) % other
-            exp >>= 1
+            exp //= 2
             base = (base ** 2) % other
 
         return res
