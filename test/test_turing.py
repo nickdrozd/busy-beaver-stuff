@@ -726,6 +726,7 @@ class Fast(TuringTest):
         for prog in RULE_LIMIT:
             self.run_bb(
                 prog,
+                print_prog = prog not in PROVER_FAILURES,
                 normal = False,
                 opt_blocks = 120,
             )
