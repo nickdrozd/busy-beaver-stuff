@@ -74,13 +74,9 @@ class Num:
         )
 
     def __radd__(self, other: Count) -> Count:
-        assert isinstance(other, int)
-
         return Add(other, self.copy())
 
     def __sub__(self, other: Count) -> Count:
-        assert isinstance(other, int)
-
         if other == 0:
             return self.copy()
 
@@ -179,8 +175,6 @@ class Add(Num):
         return self + -other
 
     def __isub__(self, other: Count) -> Count:
-        assert isinstance(other, int)
-
         l: Count
         r: Count
 
