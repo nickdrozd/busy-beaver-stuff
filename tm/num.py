@@ -122,11 +122,6 @@ class Add(Num):
     op = operator.add
 
     def __init__(self, l: Count, r: Num):
-        if (isinstance(l, Add)
-                and not isinstance(r, Add)
-                and isinstance(ll := l.l, int)):
-            l, r = ll, l.r + r  # type: ignore[attr-defined]
-
         super().__init__(l, r)
 
     def rcopy(self) -> Num:
