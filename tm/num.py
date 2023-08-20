@@ -121,6 +121,11 @@ class Add(Num):
 
         assert isinstance(r, Num)
 
+        if (isinstance(l, Add)
+                and not isinstance(r, Add)
+                and isinstance(ll := l.l, int)):
+            l, r = ll, l.r + r  # type: ignore[attr-defined]
+
         super().__init__(l, r)
 
     def __mod__(self, other: int) -> int:
@@ -208,6 +213,12 @@ class Mul(Num):
             return super().__rmul__(other)
 
         return (self.l * other) * self.rcopy()
+
+    def __add__(self, other: Count) -> Count:
+        if isinstance(other, Mul) and self.r == other.r:
+            return (self.l + other.l) * self.r
+
+        return super().__add__(other)
 
 
 class Div(Num):
