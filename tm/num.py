@@ -43,8 +43,8 @@ class Num:
             int(self.r),
         )
 
-    def __neg__(self) -> Count:
-        raise NotImplementedError
+    @abstractmethod
+    def __neg__(self) -> Count: ...
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -78,19 +78,19 @@ class Num:
         return Add(other, self.copy())
 
     def __sub__(self, other: Count) -> Count:
-        if other == 0:
+        if other == 0:  # no-coverage
             return self.copy()
 
         return self + -other
 
     def __rsub__(self, other: Count) -> Count:
-        return other + -self
+        return other + -self  # no-coverage
 
     def __mul__(self, other: Count) -> Count:
-        return other * self
+        return other * self  # no-coverage
 
     def __rmul__(self, other: Count) -> Count:
-        if other == 1:
+        if other == 1:  # no-coverage
             return self.copy()
 
         return Mul(
@@ -178,7 +178,7 @@ class Add(Num):
         return self
 
     def __rmul__(self, other: Count) -> Count:
-        if isinstance(other, Num):
+        if isinstance(other, Num):  # no-coverage
             return super().__rmul__(other)
 
         return (other * self.l) + (other * self.r)
@@ -199,13 +199,14 @@ class Mul(Num):
         return ((self.l % other) * (self.r % other)) % other
 
     def __rmul__(self, other: Count) -> Count:
-        if isinstance(other, Num) or isinstance(self.l, Num):
+        if (isinstance(other, Num)
+                or isinstance(self.l, Num)):  # no-coverage
             return super().__rmul__(other)
 
         return (self.l * other) * self.r
 
     def __add__(self, other: Count) -> Count:
-        if isinstance(other, Mul) and self.r == other.r:
+        if isinstance(other, Mul) and self.r == other.r:  # no-coverage
             return (self.l + other.l) * self.r
 
         return super().__add__(other)
@@ -215,6 +216,9 @@ class Div(Num):
     join = '//'
 
     op = operator.floordiv
+
+    def __neg__(self) -> Count:
+        raise NotImplementedError
 
     def __mod__(self, other: int) -> int:
         assert isinstance(self.r, int)
@@ -248,6 +252,9 @@ class Exp(Num):
     join = '**'
 
     op = operator.pow
+
+    def __neg__(self) -> Count:
+        raise NotImplementedError
 
     def __mod__(self, other: int) -> int:
         if other == 1:
