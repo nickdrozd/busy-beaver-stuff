@@ -224,14 +224,10 @@ class Machine(BasicMachine):
             *,
             blocks: int | list[int] | None = None,
             backsym: int | list[int] | None = None,
-            opt_blocks: int | None = None,
+            opt_macro: int | None = None,
     ):
-        if opt_blocks is not None:
-            blocks = (
-                opt
-                if (opt := opt_block(program, opt_blocks)) > 1 else
-                None
-            )
+        if opt_macro is not None:
+            program = find_opt_macro(program, opt_macro)
 
         if blocks is not None:
             if isinstance(blocks, int):
@@ -428,7 +424,7 @@ def run_variations(
 
     yield Machine(
         prog,
-        opt_blocks = block_steps,
+        opt_macro = block_steps,
     ).run(
         sim_lim = sim_lim,
     )
@@ -463,3 +459,10 @@ def opt_block(prog: str | GetInstr, steps: int) -> int:
             opt_size = block_size
 
     return opt_size
+
+
+def find_opt_macro(prog: str | GetInstr, steps: int) -> str | GetInstr:
+    if (blocks := opt_block(prog, steps)) > 1:
+        prog = BlockMacro(prog, [blocks])
+
+    return prog

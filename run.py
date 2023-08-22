@@ -14,7 +14,7 @@ def main() -> None:
 
         machine = Machine(
             program,
-            opt_blocks = 8_000,
+            opt_macro = 8_000,
             backsym = BACKS or None,
         ).run(
             sim_lim = STEPS,

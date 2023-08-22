@@ -173,12 +173,12 @@ class TestFloss(TestCase):
         self.assertIsNotNone(
             Machine(
                 "1RB 1LB  1LA 1R_",
-                opt_blocks = 10,
+                opt_macro = 10,
             ))
 
         _ = Machine(
             "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA",
-            opt_blocks = 100,
+            opt_macro = 100,
             backsym = 1,
         )
 
@@ -213,7 +213,7 @@ class TestFloss(TestCase):
     def test_num(self):
         marks = Machine(
             "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",
-            opt_blocks = 56,
+            opt_macro = 56,
         ).run().marks
 
         print(marks)

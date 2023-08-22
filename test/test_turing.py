@@ -197,7 +197,7 @@ class TuringTest(TestCase):
             normal: bool = True,
             blocks: int | list[int] | None = None,
             backsym: int | list[int] | None = None,
-            opt_blocks: int | None = None,
+            opt_macro: int | None = None,
             prover: bool = True,
             check_rec: int | None = None,
             samples: Tapes | None = None,
@@ -212,12 +212,12 @@ class TuringTest(TestCase):
         elif not prover:
             self.machine = BasicMachine(
                 prog
-                if (not blocks and not opt_blocks and not backsym) else
+                if (not blocks and not opt_macro and not backsym) else
                 Machine(
                     prog,
                     blocks = blocks,
                     backsym = backsym,
-                    opt_blocks = opt_blocks,
+                    opt_macro = opt_macro,
                 ).program
             )
         else:
@@ -225,7 +225,7 @@ class TuringTest(TestCase):
                 prog,
                 blocks = blocks,
                 backsym = backsym,
-                opt_blocks = opt_blocks,
+                opt_macro = opt_macro,
             )
 
         if print_prog:
@@ -389,7 +389,7 @@ class TuringTest(TestCase):
 
             self.run_bb(
                 prog,
-                opt_blocks = 10_000,
+                opt_macro = 10_000,
             )
 
             if simple_term:
@@ -417,7 +417,7 @@ class TuringTest(TestCase):
             self.run_bb(
                 prog,
                 sim_lim = 10 ** 8,
-                opt_blocks = 3_000,
+                opt_macro = 3_000,
                 backsym = (
                     2
                     if prog == champ_2_5 else
@@ -728,7 +728,7 @@ class Fast(TuringTest):
                 prog,
                 print_prog = prog not in PROVER_FAILURES,
                 normal = False,
-                opt_blocks = 120,
+                opt_macro = 120,
             )
 
             (self.assertIsNone
@@ -820,7 +820,7 @@ class Fast(TuringTest):
         for prog, (cycles, string) in ALGEBRA_STRINGS.items():
             self.run_bb(
                 prog,
-                opt_blocks = 2000,
+                opt_macro = 2000,
                 normal = False,
             )
 
