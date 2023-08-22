@@ -29,12 +29,11 @@ class Block:
         return f"{self.color}^{show_number(self.count)}"
 
     def count_copy(self) -> Count:
-        count = self.count
-
-        if isinstance(count, Num):
-            return count.copy()
-
-        return count
+        return (
+            count.copy()
+            if isinstance(count := self.count, Num) else
+            count
+        )
 
 
 class BlockTape(ApplyRule):
