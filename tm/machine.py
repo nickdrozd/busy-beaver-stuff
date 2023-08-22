@@ -61,7 +61,29 @@ class BasicMachine:
 
     rulapp: Count = 0
 
-    def __init__(self, program: str | GetInstr):
+    def __init__(
+            self,
+            program: str | GetInstr,
+            *,
+            blocks: int | list[int] | None = None,
+            backsym: int | list[int] | None = None,
+            opt_macro: int | None = None,
+    ):
+        if opt_macro is not None:
+            program = find_opt_macro(program, opt_macro)
+
+        if blocks is not None:
+            if isinstance(blocks, int):
+                blocks = [blocks]
+
+            program = BlockMacro(program, blocks)
+
+        if backsym is not None:
+            if isinstance(backsym, int):
+                backsym = [backsym]
+
+            program = BacksymbolMacro(program, backsym)
+
         self.program = program
 
         self.comp = (
@@ -217,31 +239,6 @@ class BasicMachine:
 
 class Machine(BasicMachine):
     prover: Prover
-
-    def __init__(
-            self,
-            program: str | GetInstr,
-            *,
-            blocks: int | list[int] | None = None,
-            backsym: int | list[int] | None = None,
-            opt_macro: int | None = None,
-    ):
-        if opt_macro is not None:
-            program = find_opt_macro(program, opt_macro)
-
-        if blocks is not None:
-            if isinstance(blocks, int):
-                blocks = [blocks]
-
-            program = BlockMacro(program, blocks)
-
-        if backsym is not None:
-            if isinstance(backsym, int):
-                backsym = [backsym]
-
-            program = BacksymbolMacro(program, backsym)
-
-        super().__init__(program)
 
     def __str__(self) -> str:
         # pylint: disable = line-too-long
