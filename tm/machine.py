@@ -458,15 +458,8 @@ def opt_block(prog: str | GetInstr, steps: int) -> int:
     return opt_size
 
 
-def opt_backsym(_prog: str | GetInstr, _steps: int) -> int:
-    return 0
-
-
 def find_opt_macro(prog: str | GetInstr, steps: int) -> str | GetInstr:
     if (blocks := opt_block(prog, steps)) > 1:
         prog = BlockMacro(prog, [blocks])
-
-    if (backsym := opt_backsym(prog, steps)) > 0:
-        prog = BacksymbolMacro(prog, [backsym])
 
     return prog
