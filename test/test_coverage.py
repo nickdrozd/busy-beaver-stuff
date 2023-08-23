@@ -1,7 +1,13 @@
 from unittest import TestCase
 
-from tm.reason import Program, BackwardReasoner
 from tm.machine import Machine, LinRecMachine, run_variations
+from tm.reason import (
+    Program,
+    instr_seq,
+    cant_halt,
+    cant_blank,
+    cant_spin_out,
+)
 
 
 class TestDisplay(TestCase):
@@ -148,26 +154,34 @@ class TestFloss(TestCase):
 
     def test_reasoner(self):
         self.assertFalse(
-            BackwardReasoner("1RB 0RA  1LA 1R_").cant_halt)
+            cant_halt(
+                "1RB 0RA  1LA 1R_"))
 
         self.assertFalse(
-            BackwardReasoner("1RB ...  1LB 0RB").cant_blank)
+            cant_blank(
+                "1RB ...  1LB 0RB"))
 
         self.assertFalse(
-            BackwardReasoner("1RB 0RA  1LB 1LA").cant_blank)
+            cant_blank(
+                "1RB 0RA  1LB 1LA"))
 
         self.assertTrue(
-            BackwardReasoner("1RB 2LA 1LA  2LA 2RB 0RA").cant_blank)
+            cant_blank(
+                "1RB 2LA 1LA  2LA 2RB 0RA"))
 
         self.assertFalse(
-            BackwardReasoner("1RB 0RB 0LB  1LB 2RA 1LA").cant_spin_out)
+            cant_spin_out(
+                "1RB 0RB 0LB  1LB 2RA 1LA"))
 
         self.assertFalse(
-            BackwardReasoner("1RB ...  1LC 0RC  1RA 0LC").cant_halt)
+            cant_halt(
+                "1RB ...  1LC 0RC  1RA 0LC"))
 
-        _ = BackwardReasoner("1RB 1LB  1LA 1R_").instr_seq
-        _ = BackwardReasoner(
-            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD").instr_seq
+        _ = instr_seq(
+            "1RB 1LB  1LA 1R_")
+
+        _ = instr_seq(
+            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD")
 
     def test_machine_macros(self):
         self.assertIsNotNone(

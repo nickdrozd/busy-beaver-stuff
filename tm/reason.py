@@ -222,3 +222,20 @@ def final_value(final_prop: Result) -> GetResult:
                 return final
 
     return result
+
+########################################
+
+def instr_seq(prog: str) -> InstrSeq:
+    return BackwardReasoner(prog).instr_seq
+
+
+def cant_halt(prog: str) -> bool:
+    return BackwardReasoner(prog).cant_halt
+
+
+def cant_blank(prog: str) -> bool:
+    return BackwardReasoner(prog).cant_blank
+
+
+def cant_spin_out(prog: str) -> bool:
+    return BackwardReasoner(prog).cant_spin_out

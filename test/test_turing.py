@@ -9,7 +9,13 @@ from unittest import TestCase, skip, expectedFailure
 from test.prog_data import *
 from test.utils import LinRecSampler
 
-from tm.reason import Program, BackwardReasoner
+from tm.reason import (
+    Program,
+    instr_seq,
+    cant_halt,
+    cant_blank,
+    cant_spin_out,
+)
 from tm.machine import (
     show_slot,
     show_number,
@@ -85,41 +91,41 @@ class TuringTest(TestCase):
 
     def assert_could_halt(self, prog: str):
         self.assertFalse(
-            BackwardReasoner(prog).cant_halt,
+            cant_halt(prog),
             f'halt false positive: {prog}')
 
     def assert_cant_halt(self, prog: str):
         self.assertTrue(
-            BackwardReasoner(prog).cant_halt
+            cant_halt(prog)
                 or prog in CANT_HALT_FALSE_NEGATIVES,
             f'halt false negative: "{prog}"')
 
     def assert_could_blank(self, prog: str):
         self.assertFalse(
-            BackwardReasoner(prog).cant_blank,
+            cant_blank(prog),
             f'blank false positive: "{prog}"')
 
     def assert_cant_blank(self, prog: str):
         self.assertTrue(
-            BackwardReasoner(prog).cant_blank
+            cant_blank(prog)
                 or prog in CANT_BLANK_FALSE_NEGATIVES
                 or Machine(prog).run(sim_lim = 10).blanks,
             f'blank false negative: "{prog}"')
 
     def assert_could_spin_out(self, prog: str):
         self.assertFalse(
-            BackwardReasoner(prog).cant_spin_out,
+            cant_spin_out(prog),
             f'spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog: str):
         self.assertTrue(
-            BackwardReasoner(prog).cant_spin_out
+            cant_spin_out(prog)
                 or prog in CANT_SPIN_OUT_FALSE_NEGATIVES,
             f'spin out false negative: "{prog}"')
 
     def assert_simple(self, prog: str):
         self.assertTrue(
-            BackwardReasoner(prog).graph.is_simple
+            Program(prog).graph.is_simple
             or prog in SPAGHETTI
             or prog in KERNEL
         )
@@ -572,7 +578,7 @@ class Reasoner(TuringTest):
                 {
                     partial: (step, show_slot(slot))
                     for partial, step, slot in
-                    BackwardReasoner(prog).instr_seq
+                    instr_seq(prog)
                 },
             )
 
