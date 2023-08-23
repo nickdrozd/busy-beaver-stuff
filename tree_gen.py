@@ -1,15 +1,21 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from argparse import ArgumentParser
 
 from tm.reason import cant_halt, cant_spin_out
 from tm.machine import run_variations
 
-from generate.tree import run_tree_gen, Output, Prog
+from generate.tree import run_tree_gen
+
+if TYPE_CHECKING:
+    from generate.tree import Output
 
 
 def filter_run_print(halt: bool) -> Output:
     cant_reach = cant_halt if halt else cant_spin_out
 
-    def drop(prog: Prog) -> None:
+    def drop(prog: str) -> None:
         if cant_reach(prog):
             return
 
@@ -24,7 +30,6 @@ def filter_run_print(halt: bool) -> Output:
         print(prog)
 
     return drop
-
 
 
 if __name__ == '__main__':
