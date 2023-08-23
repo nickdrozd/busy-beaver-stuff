@@ -782,6 +782,29 @@ class Fast(TuringTest):
         self.assertIsNone(
             self.machine.halted)
 
+        ########################################
+
+        prog = "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE"
+
+
+        for backsym in range(0, 7):
+            self.run_bb(
+                prog,
+                backsym = backsym or None,
+                normal = False,
+            )
+
+            if backsym in {0, 3, 4, 6}:
+                self.assertNotIsInstance(
+                    self.machine.rulapp,
+                    int)
+            else:
+                assert backsym in {1, 2, 5}
+
+                self.assertIsInstance(
+                    self.machine.rulapp,
+                    int)
+
     @expectedFailure
     def test_wrong_block(self):
         prog = "1RB 0LA  1RC ...  1LD 0RC  0LA 1LD"
