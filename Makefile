@@ -3,7 +3,7 @@
 all : machines idris lint test generate
 
 clean-python :
-	rm -rf __pycache__ **/__pycache__ .mypy_cache .coverage* htmlcov build/ *.so **/*.so classes.png packages.png
+	rm -rf __pycache__ **/__pycache__ .mypy_cache .mutmut-cache .coverage* html* build/ *.so **/*.so classes.png packages.png
 
 clean : clean-python clean-rust
 	$(MAKE) -C machines clean
@@ -100,6 +100,10 @@ diagrams :
 # PYTHONPATH=$PYTHONPATH:tm make special target=tm/tape.py
 special :
 	specialist --target $(target) -m unittest $(TUR)
+
+mutmut :
+	-mutmut run
+	python3.8 -m mutmut html
 
 ## Program files (non-phony) ###########
 
