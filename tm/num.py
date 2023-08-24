@@ -69,6 +69,8 @@ class Num:
         copy = self.copy()
 
         return (
+            copy
+            if other == 0 else
             Add(other, copy)
             if isinstance(other, int) else
             Add(copy, other.copy())
@@ -159,7 +161,7 @@ class Add(Num):
 
         copy.l += other
 
-        return copy
+        return copy.rcopy() if copy.l == 0 else copy
 
     def __radd__(self, other: Count) -> Add:
         return self + other

@@ -1480,7 +1480,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
     ),
     "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (
         1698,
-        "(0 + (6144 * (4 ** 65530)))",
+        "(6144 * (4 ** 65530))",
     ),
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (
         5723,
@@ -1496,7 +1496,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
     ),
     "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (
         731,
-        "(0 + (4096 * (4 ** 8188)))",
+        "(4096 * (4 ** 8188))",
     ),
     "1RB 2LB 4RB 1LA 1RB 1R_  1LA 3RA 5RA 4LB 0RA 4LA": (
         937,
@@ -1516,7 +1516,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
     ),
     "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB": (
         957,
-        "(0 + (4 * (2 ** (-3 + (8 * (2 ** (-3 + (8 * (2 ** (-3 + (8 * (2 ** 65533))))))))))))",
+        "(4 * (2 ** (-3 + (8 * (2 ** (-3 + (8 * (2 ** (-3 + (8 * (2 ** 65533)))))))))))",
     ),
     "1RB 2LA 3LA 2LA  3LB 3RA 0RA 0RB": (
         9652,
