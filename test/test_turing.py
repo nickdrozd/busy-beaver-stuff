@@ -860,6 +860,19 @@ class Fast(TuringTest):
                 show_number(self.machine.marks),
                 prog)
 
+    def test_number_recursion_error(self):
+        try:
+            self.run_bb(
+                "1RB 2LA 0RB 0LA  1LA 3RA 1RA ...",
+                sim_lim = 20239,
+                opt_macro = 108,
+                backsym = 1,
+            )
+        except RecursionError:
+            pass
+        else:
+            assert False
+
 
 class Slow(TuringTest):
     @skip('')
