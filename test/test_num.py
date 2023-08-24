@@ -92,3 +92,8 @@ class TestNum(TestCase):
         self.assertEqual(exp2 - exp3, 3)
         self.assertEqual(exp1 - exp3, 6)
         self.assertEqual(exp3 - exp4, 0)
+
+    def test_mult_1(self):
+        self.assertEqual(
+            0 * Exp(2, 3),
+            0)

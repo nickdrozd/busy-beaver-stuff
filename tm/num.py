@@ -96,6 +96,9 @@ class Num:
         )
 
     def __rmul__(self, other: Count) -> Count:
+        if other == 0:
+            return 0
+
         if other == 1:  # no-coverage
             return self.copy()
 
