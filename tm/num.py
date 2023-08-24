@@ -228,8 +228,11 @@ class Mul(Num):
         return (self.l * other) * self.r
 
     def __add__(self, other: Count) -> Count:
-        if isinstance(other, Mul) and self.r == other.r:  # no-coverage
+        if isinstance(other, Mul) and self.r == other.r:
             return (self.l + other.l) * self.r
+
+        if isinstance(other, Add) and isinstance(other.l, int):
+            return other.l + (other.r + self)
 
         return super().__add__(other)
 
