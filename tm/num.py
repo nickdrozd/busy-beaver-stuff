@@ -119,7 +119,16 @@ class Num:
         return Div(self.copy(), other)
 
     def __pow__(self, other: Count) -> Count:
-        return Exp(self.copy(), other)  # no-coverage
+        return Exp(
+            self.copy(),
+            other.copy() if isinstance(other, Num) else other,
+        )
+
+    def __rpow__(self, other: Count) -> Count:
+        return Exp(
+            other.copy() if isinstance(other, Num) else other,
+            self.copy(),
+        )
 
 
 class Add(Num):
@@ -170,7 +179,11 @@ class Add(Num):
         if isinstance(other, Add) and self.r == other.r:
             return self.l - other.l
 
-        return self + -other
+        try:
+            return self + -other
+        except NotImplementedError:
+            print('  ', other)
+            raise
 
     def __isub__(self, other: Count) -> Count:
         if isinstance(self.l, int):
@@ -260,7 +273,15 @@ class Exp(Num):
     op = operator.pow
 
     def __neg__(self) -> Count:
-        raise NotImplementedError
+        return (
+            Exp(
+                -(self.lcopy()),
+                self.rcopy())
+            if self.r % 2 == 1 else
+            self.l * -Exp(
+                self.lcopy(),
+                self.r - 1)
+        )
 
     def __mod__(self, other: int) -> int:
         if other == 1:
