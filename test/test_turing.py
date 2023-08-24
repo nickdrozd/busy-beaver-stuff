@@ -864,11 +864,11 @@ class Fast(TuringTest):
         try:
             self.run_bb(
                 "1RB 2LA 0RB 0LA  1LA 3RA 1RA ...",
-                sim_lim = 20239,
+                sim_lim = 20342,
                 opt_macro = 108,
                 backsym = 1,
             )
-        except RecursionError:
+        except NotImplementedError:
             pass
         else:
             assert False

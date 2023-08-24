@@ -87,7 +87,13 @@ class Num:
         return other + -self  # no-coverage
 
     def __mul__(self, other: Count) -> Count:
-        return other * self  # no-coverage
+        if other == 1:  # no-coverage
+            return self.copy()
+
+        return Mul(
+            other.copy() if isinstance(other, Num) else other,
+            self.copy(),
+        )
 
     def __rmul__(self, other: Count) -> Count:
         if other == 1:  # no-coverage
