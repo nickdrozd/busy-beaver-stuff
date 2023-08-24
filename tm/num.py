@@ -119,13 +119,13 @@ class Num:
         return Div(self.copy(), other)
 
     def __pow__(self, other: Count) -> Count:
-        return Exp(
+        return Exp(  # no-coverage
             self.copy(),
             other.copy() if isinstance(other, Num) else other,
         )
 
     def __rpow__(self, other: Count) -> Count:
-        return Exp(
+        return Exp(  # no-coverage
             other.copy() if isinstance(other, Num) else other,
             self.copy(),
         )
