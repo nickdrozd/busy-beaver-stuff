@@ -734,7 +734,7 @@ class Fast(TuringTest):
                 prog,
                 print_prog = prog not in PROVER_FAILURES,
                 normal = False,
-                opt_macro = 120,
+                opt_macro = 1600,
             )
 
             (self.assertIsNone
