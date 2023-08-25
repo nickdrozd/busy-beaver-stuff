@@ -65,7 +65,7 @@ class Num:
     def __ge__(self, _: int) -> bool:
         return True
 
-    def __add__(self, other: Count) -> Count:
+    def __add__(self, other: Count) -> Num:
         copy = self.copy()
 
         return (
@@ -76,8 +76,10 @@ class Num:
             Add(copy, other.copy())
         )
 
-    def __radd__(self, other: Count) -> Count:
-        return Add(other, self.copy())
+    def __radd__(self, other: Count) -> Num:
+        assert isinstance(other, int)
+
+        return self + other
 
     def __sub__(self, other: Count) -> Count:
         if other == 0:  # no-coverage
@@ -123,13 +125,13 @@ class Num:
 
         return Div(self.copy(), other)
 
-    def __pow__(self, other: Count) -> Count:
+    def __pow__(self, other: Count) -> Exp:
         return Exp(  # no-coverage
             self.copy(),
             other.copy() if isinstance(other, Num) else other,
         )
 
-    def __rpow__(self, other: Count) -> Count:
+    def __rpow__(self, other: Count) -> Exp:
         return Exp(  # no-coverage
             other.copy() if isinstance(other, Num) else other,
             self.copy(),
@@ -154,7 +156,7 @@ class Add(Num):
     def __neg__(self) -> Count:
         return -(self.l) + -(self.r)
 
-    def __add__(self, other: Count) -> Add:
+    def __add__(self, other: Count) -> Num:
         copy = self.copy()
 
         assert isinstance(copy, Add)
@@ -163,16 +165,14 @@ class Add(Num):
 
         return copy.rcopy() if copy.l == 0 else copy
 
-    def __radd__(self, other: Count) -> Add:
-        return self + other
-
-    def __iadd__(self, other: Count) -> Count:
+    def __iadd__(self, other: Count) -> Num:
         if isinstance(other, Num):
             return Add(self.copy(), other.copy())
 
         if isinstance(self.l, int):
             l = other + self.l
             r = self.rcopy()
+            assert isinstance(r, Num)
 
             return r if l == 0 else l + r
 
@@ -229,9 +229,11 @@ class Mul(Num):
 
         return (self.l * other) * self.r
 
-    def __add__(self, other: Count) -> Count:
+    def __add__(self, other: Count) -> Num:
         if isinstance(other, Mul) and self.r == other.r:
-            return (self.l + other.l) * self.r
+            val = (self.l + other.l) * self.r
+            assert isinstance(val, Num)
+            return val
 
         if isinstance(other, Add) and isinstance(other.l, int):
             return other.l + (other.r + self)
@@ -307,7 +309,7 @@ class Exp(Num):
 
         return res
 
-    def __add__(self, other: Count) -> Add:
+    def __add__(self, other: Count) -> Num:
         if isinstance(other, Mul) and other.r == self:
             return (1 + other.l) ** self
 
