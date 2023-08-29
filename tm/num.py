@@ -329,7 +329,9 @@ class Exp(Num):
 
     def __add__(self, other: Count) -> Num:
         if isinstance(other, Mul) and other.r == self:
-            return (1 + other.l) ** self
+            result = (1 + other.l) * self
+            assert isinstance(result, Num)
+            return result
 
         return super().__add__(other)
 
