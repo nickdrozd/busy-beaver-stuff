@@ -28,18 +28,6 @@ class Num:
 
         return f'({show(self.l)} {self.join} {show(self.r)})'
 
-    def lcopy(self) -> Count:
-        return self.l.copy() if isinstance(self.l, Num) else self.l
-
-    def rcopy(self) -> Count:
-        return self.r.copy() if isinstance(self.r, Num) else self.r
-
-    def copy(self) -> Num:
-        return type(self)(
-            self.lcopy(),
-            self.rcopy(),
-        )
-
     def __int__(self) -> int:
         return self.op(
             int(self.l),
@@ -69,14 +57,12 @@ class Num:
         return True
 
     def __add__(self, other: Count) -> Num:
-        copy = self.copy()
-
         return (
-            copy
+            self
             if other == 0 else
-            Add(other, copy)
+            Add(other, self)
             if isinstance(other, int) else
-            Add(copy, other.copy())
+            Add(self, other)
         )
 
     def __radd__(self, other: Count) -> Num:
@@ -86,7 +72,7 @@ class Num:
 
     def __sub__(self, other: Count) -> Count:
         if other == 0:  # no-coverage
-            return self.copy()
+            return self
 
         return self + -other
 
@@ -95,24 +81,18 @@ class Num:
 
     def __mul__(self, other: Count) -> Count:
         if other == 1:  # no-coverage
-            return self.copy()
+            return self
 
-        return Mul(
-            other.copy() if isinstance(other, Num) else other,
-            self.copy(),
-        )
+        return Mul(other, self)
 
     def __rmul__(self, other: Count) -> Count:
         if other == 0:
             return 0
 
         if other == 1:  # no-coverage
-            return self.copy()
+            return self
 
-        return Mul(
-            other.copy() if isinstance(other, Num) else other,
-            self.copy(),
-        )
+        return Mul(other, self)
 
     @abstractmethod
     def __mod__(self, other: int) -> int: ...
@@ -124,21 +104,15 @@ class Num:
 
     def __floordiv__(self, other: Count) -> Count:
         if other == 1:
-            return self.copy()
+            return self
 
-        return Div(self.copy(), other)
+        return Div(self, other)
 
     def __pow__(self, other: Count) -> Exp:
-        return Exp(  # no-coverage
-            self.copy(),
-            other.copy() if isinstance(other, Num) else other,
-        )
+        return Exp(self, other)  # no-coverage
 
     def __rpow__(self, other: Count) -> Exp:
-        return Exp(  # no-coverage
-            other.copy() if isinstance(other, Num) else other,
-            self.copy(),
-        )
+        return Exp(other, self)  # no-coverage
 
 
 class Add(Num):
@@ -149,10 +123,6 @@ class Add(Num):
     def __init__(self, l: Count, r: Num):
         super().__init__(l, r)
 
-    def rcopy(self) -> Num:
-        assert isinstance(self.r, Num)
-        return self.r.copy()
-
     def __mod__(self, other: int) -> int:
         return ((self.l % other) + (self.r % other)) % other
 
@@ -160,10 +130,14 @@ class Add(Num):
         return -(self.l) + -(self.r)
 
     def __add__(self, other: Count) -> Num:
+        r = self.r
+
+        assert isinstance(r, Num)
+
         return (
-            self.r
+            r
             if (ladd := self.l + other) == 0 else
-            Add(ladd, self.r)
+            Add(ladd, r)
         )
 
     def __sub__(self, other: Count) -> Count:
@@ -248,10 +222,7 @@ class Div(Num):
         return (other // self.r) * self.l
 
     def __floordiv__(self, other: Count) -> Div:
-        return Div(
-            self.lcopy(),
-            other * self.r,
-        )
+        return Div(self, other * self.r)
 
 
 class Exp(Num):
@@ -270,13 +241,9 @@ class Exp(Num):
 
     def __neg__(self) -> Count:
         return (
-            Exp(
-                -(self.lcopy()),
-                self.rcopy())
+            Exp(-(self.l), self.r)
             if self.r % 2 == 1 else
-            self.l * -Exp(
-                self.lcopy(),
-                self.r - 1)
+            self.l * -Exp(self.l, self.r - 1)
         )
 
     def __mod__(self, other: int) -> int:
@@ -312,8 +279,8 @@ class Exp(Num):
             ):
             return super().__rmul__(other)
 
-        r = self.rcopy()
-        l = self.lcopy()
+        r = self.r
+        l = self.l
 
         assert isinstance(l, int)
 

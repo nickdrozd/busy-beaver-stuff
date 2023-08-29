@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
-from tm.num import Num
 from tm.show import show_number
 from tm.rules import ApplyRule
 
@@ -27,13 +26,6 @@ class Block:
 
     def __str__(self) -> str:
         return f"{self.color}^{show_number(self.count)}"
-
-    def count_copy(self) -> Count:
-        return (
-            count.copy()
-            if isinstance(count := self.count, Num) else
-            count
-        )
 
 
 class BlockTape(ApplyRule):
@@ -75,8 +67,8 @@ class BlockTape(ApplyRule):
     @property
     def counts(self) -> Counts:
         return (
-            [block.count_copy() for block in self.lspan],
-            [block.count_copy() for block in self.rspan],
+            [block.count for block in self.lspan],
+            [block.count for block in self.rspan],
         )
 
     @property
@@ -214,7 +206,7 @@ class TagTape(BlockTape):
         self.lspan = [
             TagBlock(
                 block.color,
-                block.count_copy(),
+                block.count,
                 [2 * i] if block.count > 1 else [])
             for i, block in enumerate(lspan)
         ]
@@ -224,7 +216,7 @@ class TagTape(BlockTape):
         self.rspan = [
             TagBlock(
                 block.color,
-                block.count_copy(),
+                block.count,
                 [2 * i + 1] if block.count > 1 else [])
             for i, block in enumerate(rspan)
         ]
@@ -370,14 +362,14 @@ class EnumTape(BlockTape):
             rspan: list[Block],
     ):
         self.lspan = [
-            EnumBlock(block.color, block.count_copy(), (0, i))
+            EnumBlock(block.color, block.count, (0, i))
             for i, block in enumerate(lspan, start = 1)
         ]
 
         self.scan = scan
 
         self.rspan = [
-            EnumBlock(block.color, block.count_copy(), (1, i))
+            EnumBlock(block.color, block.count, (1, i))
             for i, block in enumerate(rspan, start = 1)
         ]
 
