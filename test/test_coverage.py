@@ -246,3 +246,9 @@ class TestFloss(TestCase):
 
         self.assertIsNotNone(
             machine.limrul)
+
+    def test_algebra_compiler_error(self):
+        self.assertIsNotNone(
+            Machine(
+                "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB"
+            ).run())

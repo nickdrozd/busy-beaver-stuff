@@ -203,6 +203,12 @@ class Add(Num):
 
         return self
 
+    def __mul__(self, other: Count) -> Count:
+        if isinstance(other, int):
+            return other * self
+
+        return super().__mul__(other)
+
     def __rmul__(self, other: Count) -> Count:
         if isinstance(other, Num):  # no-coverage
             return super().__rmul__(other)
