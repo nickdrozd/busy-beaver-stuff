@@ -23,6 +23,8 @@ class Num:
         self.r = r
 
     def __repr__(self) -> str:
+        # return f'{type(self).__name__}({self.l}, {self.r})'
+
         return f'({show(self.l)} {self.join} {show(self.r)})'
 
     def lcopy(self) -> Count:
