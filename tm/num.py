@@ -160,55 +160,23 @@ class Add(Num):
         return -(self.l) + -(self.r)
 
     def __add__(self, other: Count) -> Num:
-        copy = self.copy()
-
-        assert isinstance(copy, Add)
-
-        copy.l += other
-
-        return copy.rcopy() if copy.l == 0 else copy
-
-    def __iadd__(self, other: Count) -> Num:
-        if isinstance(other, Num):
-            return Add(self.copy(), other.copy())
-
-        if isinstance(self.l, int):
-            l = other + self.l
-            r = self.rcopy()
-            assert isinstance(r, Num)
-
-            return r if l == 0 else l + r
-
-        self.l += other
-
-        return self
+        return (
+            self.r
+            if (ladd := self.l + other) == 0 else
+            Add(ladd, self.r)
+        )
 
     def __sub__(self, other: Count) -> Count:
         if isinstance(other, Add) and self.r == other.r:
             return self.l - other.l
 
-        try:
-            return self + -other
-        except NotImplementedError:
-            print('  ', other)
-            raise
-
-    def __isub__(self, other: Count) -> Count:
-        if isinstance(self.l, int):
-            l = self.l - other
-            r = self.rcopy()
-
-            return r if l == 0 else l + r
-
-        self.l -= other
-
-        return self
+        return self + -other
 
     def __mul__(self, other: Count) -> Count:
-        if isinstance(other, int):
-            return other * self
+        if isinstance(other, Num):
+            return super().__mul__(other)
 
-        return super().__mul__(other)
+        return other * self
 
     def __rmul__(self, other: Count) -> Count:
         if isinstance(other, Num):  # no-coverage
