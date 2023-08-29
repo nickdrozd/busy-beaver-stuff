@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import operator
 from abc import abstractmethod
+from math import sqrt, floor, ceil, log
 from collections.abc import Callable
 
 from tm.show import show_number as show
@@ -289,6 +290,15 @@ class Exp(Num):
     join = '**'
 
     op = operator.pow
+
+    def __init__(self, l: Count, r: Count):
+        while (isinstance(l, int)  # pylint: disable = while-used
+                   and l > 1
+                   and floor(root := sqrt(l)) == ceil(root)):
+            r *= int(log(l, root))
+            l = int(root)
+
+        super().__init__(l, r)
 
     def __neg__(self) -> Count:
         return (
