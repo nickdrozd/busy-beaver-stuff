@@ -143,7 +143,7 @@ class TestTape(TestCase):
             (0, 0): (2, 8),
         })
 
-        exp = "(-8 + (160 * (2 ** 327672)))"
+        exp = "(-8 + (5 * (2 ** 327677)))"
 
         self.assert_tape(
             f"3^1 2^1 1^{exp} [0]")

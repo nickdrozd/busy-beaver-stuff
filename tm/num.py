@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import operator
 from abc import abstractmethod
-from math import sqrt, floor, ceil, log
+from math import sqrt, floor, ceil, log, log10
 from collections.abc import Callable
 
 from tm.show import show_number as show
@@ -334,6 +334,26 @@ class Exp(Num):
             return result
 
         return super().__add__(other)
+
+    def __rmul__(self, other: Count) -> Count:
+        if (isinstance(other, Num)
+                or other < 1
+                or isinstance(self.l, Num)
+                or log10(other) > 20
+                or other % self.l != 0
+            ):
+            return super().__rmul__(other)
+
+        r = self.rcopy()
+        l = self.lcopy()
+
+        assert isinstance(l, int)
+
+        while other % l == 0:  # pylint: disable = while-used
+            other //= l
+            r += 1
+
+        return other * Exp(l, r)
 
 ########################################
 
