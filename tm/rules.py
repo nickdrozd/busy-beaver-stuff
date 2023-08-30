@@ -31,7 +31,12 @@ def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
     if cnt1 == cnt2 == cnt3:
         return None
 
-    if (plus := cnt2 - cnt1) == (cnt3 - cnt2):
+    try:
+        plus, diff = cnt2 - cnt1, cnt3 - cnt2
+    except NumException as exc:
+        raise RuleLimit from exc
+
+    if plus == diff:
         return int(plus)
 
     if (not isinstance(cnt1, int)
