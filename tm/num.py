@@ -177,6 +177,9 @@ class Mul(Num):
     def __mod__(self, other: int) -> int:
         return ((self.l % other) * (self.r % other)) % other
 
+    def __mul__(self, other: Count) -> Count:  # pylint: disable = useless-parent-delegation
+        return super().__mul__(other)
+
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)
                 or isinstance(self.l, Num)):  # no-coverage
