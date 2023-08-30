@@ -35,6 +35,25 @@ class Num:
         )
 
     @abstractmethod
+    def estimate(self) -> int: ...
+
+    def estimate_l(self) -> float:
+        return (
+            l.estimate()
+            if isinstance(l := self.l, Num) else
+            0
+            if l < 1 else
+            log10(l)
+        )
+
+    def estimate_r(self) -> float:
+        return (
+            log10(r)
+            if isinstance(r := self.r, int) else
+            r.estimate()
+        )
+
+    @abstractmethod
     def __neg__(self) -> Count: ...
 
     def __eq__(self, other: object) -> bool:
@@ -126,6 +145,9 @@ class Add(Num):
     def __init__(self, l: Count, r: Num):
         super().__init__(l, r)
 
+    def estimate(self) -> int:
+        return round(max(self.estimate_l(), self.estimate_r()))
+
     def __mod__(self, other: int) -> int:
         return ((self.l % other) + (self.r % other)) % other
 
@@ -170,6 +192,9 @@ class Mul(Num):
 
     def __init__(self, l: Count, r: Num):
         super().__init__(l, r)
+
+    def estimate(self) -> int:
+        return round(self.estimate_l() + self.estimate_r())
 
     def __neg__(self) -> Count:
         return -(self.l) * self.r
@@ -220,6 +245,9 @@ class Div(Num):
 
         return ((self.l % other) * (inv % other)) % other
 
+    def estimate(self) -> int:
+        return round(self.estimate_l() - self.estimate_r())
+
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)
                 or isinstance(self.r, Num)
@@ -245,6 +273,9 @@ class Exp(Num):
             l = int(root)
 
         super().__init__(l, r)
+
+    def estimate(self) -> int:
+        return round(self.estimate_l() * 10 ** self.estimate_r())
 
     def __neg__(self) -> Count:
         return (

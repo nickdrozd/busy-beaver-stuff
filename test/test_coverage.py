@@ -231,6 +231,11 @@ class TestFloss(TestCase):
         ).run().marks
 
         print(marks)
+        assert not isinstance(marks, int)
+        print(marks.estimate())
+        more_marks = marks * 3 // 2
+        assert not isinstance(more_marks, int)
+        print(more_marks.estimate())
 
         self.assertGreater(marks, 5)
         self.assertGreaterEqual(marks, 5)

@@ -440,8 +440,6 @@ class TuringTest(TestCase):
             if not isinstance(result, int):
                 print(f'--> {result}')
 
-            result = int(result)
-
             if not isinstance(macro := self.machine.program, str):
                 result *= macro.cells  # type: ignore[attr-defined]
 
@@ -452,16 +450,18 @@ class TuringTest(TestCase):
 
                 if exp < 100_000:
                     self.assert_close(
-                        result / 10 ** exp,
+                        int(result) / 10 ** exp,
                         digits,
                         rel_tol = .54,
                     )
                 else:
-                    assert isinstance(result, int)
+                    magnitude = (
+                        int(log10(result))
+                        if isinstance(result, int) else
+                        result.estimate()
+                    )
 
-                    self.assertEqual(
-                        exp,
-                        int(log10(result)))
+                    self.assertEqual(exp, magnitude)
 
             if result < 5:
                 self.assert_could_blank(prog)
