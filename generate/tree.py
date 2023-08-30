@@ -81,7 +81,10 @@ def worker(
     log(json.dumps(stack, indent = 4))
 
     for prog in tree_gen(steps, halt, stack):
-        output(prog)
+        try:
+            output(prog)
+        except Exception as err:  # pylint: disable = broad-exception-caught
+            log(f'ERROR: {err}')
 
     log('done')
 
