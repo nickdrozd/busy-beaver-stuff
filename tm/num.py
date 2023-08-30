@@ -58,10 +58,13 @@ class Num:
 
     def __add__(self, other: Count) -> Num:
         return (
-            self
-            if other == 0 else
-            Add(other, self)
-            if isinstance(other, int) else
+            self if other == 0
+            else
+            Add(other, self) if isinstance(other, int)
+            else
+            other.l + (self + other.r)
+                if (isinstance(other, Add)
+                    and isinstance(other.l, int)) else
             Add(self, other)
         )
 
@@ -130,15 +133,16 @@ class Add(Num):
         return -(self.l) + -(self.r)
 
     def __add__(self, other: Count) -> Num:
-        r = self.r
+        if isinstance(l := self.l, int):
+            assert isinstance(self.r, Num)
 
-        assert isinstance(r, Num)
+            return (
+                (l + other) + self.r
+                if isinstance(other, int) else
+                l + (self.r + other)
+            )
 
-        return (
-            r
-            if (ladd := self.l + other) == 0 else
-            Add(ladd, r)
-        )
+        return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
         if isinstance(other, Add) and self.r == other.r:
