@@ -5,8 +5,6 @@ from abc import abstractmethod
 from math import sqrt, floor, ceil, log, log10
 from collections.abc import Callable
 
-from tm.show import show_number as show
-
 
 class NumException(Exception):
     pass
@@ -24,9 +22,11 @@ class Num:
         self.r = r
 
     def __repr__(self) -> str:
+        # pylint: disable = line-too-long
+
         # return f'{type(self).__name__}({self.l}, {self.r})'
 
-        return f'({show(self.l)} {self.join} {show(self.r)})'
+        return f'({show_number(self.l)} {self.join} {show_number(self.r)})'
 
     def __int__(self) -> int:
         return self.op(
@@ -293,3 +293,13 @@ class Exp(Num):
 ########################################
 
 Count = int | Num
+
+
+TRUNCATE_COUNT = 10 ** 12
+
+def show_number(num: Count) -> str:
+    return (
+        str(num)
+        if not isinstance(num, int) or num < TRUNCATE_COUNT else
+        f"(~10^{log10(num):.0f})"
+    )
