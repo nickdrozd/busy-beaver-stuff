@@ -252,3 +252,13 @@ class TestFloss(TestCase):
             Machine(
                 "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB"
             ).run())
+
+    def test_uninvertible(self):
+        # pylint: disable = import-outside-toplevel
+        from tm.num import NumException
+
+        with self.assertRaises(NumException):
+            Machine(
+                "1RB 0LE  1RC 1RA  1RD 0LA  0LA 1LD  0RB 1LA",
+                opt_macro = 63,
+            ).run()
