@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 
     Rule = dict[Index, Op]
 
+    Apps = tuple[Count, Index]
+
 
 def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
     if cnt1 == cnt2 == cnt3:
@@ -73,8 +75,8 @@ class ApplyRule:
     @abstractmethod
     def set_count(self, index: Index, val: Count) -> None: ...
 
-    def count_apps(self, rule: Rule) -> tuple[Count, Index] | None:
-        divs: list[tuple[Count, Index]] = []
+    def count_apps(self, rule: Rule) -> Apps | None:
+        divs: list[Apps] = []
 
         for pos, diff in rule.items():
             if not isinstance(diff, Plus) or diff >= 0:
