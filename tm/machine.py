@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.prover import Prover
+from tm.prover import Prover, ConfigLimit
 from tm.lin_rec import History, HeadTape
 from tm.tape import Tape, BlockMeasure, compr_eff
 from tm.show import show_slot, show_number
@@ -274,6 +274,9 @@ class Machine(BasicMachine):
             except RuleLimit:
                 self.limrul = True
                 break
+            except ConfigLimit:
+                self.cfglim = True
+                break
 
             if rule is not None:
                 try:
@@ -287,10 +290,6 @@ class Machine(BasicMachine):
                     step = None
                     self.rulapp += times
                     continue
-
-            if self.prover.config_count > 100_000:
-                self.cfglim = True
-                break
 
             if (instr := comp[state, tape.scan]) is None:
                 self.undfnd = step or -1, (state, tape.scan)

@@ -14,6 +14,10 @@ if TYPE_CHECKING:
     MinSig = tuple[Signature, tuple[bool, bool]]
 
 
+class ConfigLimit(Exception):
+    pass
+
+
 class Prover:
     prog: GetInstr
 
@@ -128,6 +132,9 @@ class Prover:
             return known_rule
 
         if (states := self.configs.get(sig)) is None:
+            if self.config_count > 100_000:
+                raise ConfigLimit
+
             states = defaultdict(PastConfig)
             self.configs[sig] = states
 
