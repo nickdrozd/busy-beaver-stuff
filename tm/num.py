@@ -279,15 +279,6 @@ class Exp(Num):
 
     op = operator.pow
 
-    def __new__(cls, l: Count, r: Count) -> Count:  # type: ignore[misc]
-        return (
-            1 if r == 0
-            else
-            l if r == 1
-            else
-            super().__new__(cls)
-        )
-
     def __init__(self, l: Count, r: Count):
         while (isinstance(l, int)  # pylint: disable = while-used
                    and l > 1
@@ -341,7 +332,13 @@ class Exp(Num):
 
             diff = grt - lss
 
-            return Exp(base, lss) * (1 + Exp(base, diff))
+            diff_exp = (
+                base ** diff
+                if not isinstance(base, int) or diff < 1_000 else
+                Exp(base, diff)
+            )
+
+            return Exp(base, lss) * (1 + diff_exp)
 
         return super().__add__(other)
 
