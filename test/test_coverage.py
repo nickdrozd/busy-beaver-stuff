@@ -253,10 +253,14 @@ class TestFloss(TestCase):
             machine.limrul)
 
     def test_algebra_compiler_error(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB"
-            ).run())
+        progs = (
+            "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
+            "1RB 1RA  0LC 1RE  0LE 1LD  0LB 1LC  1LA 0LE",
+        )
+
+        for prog in progs:
+            self.assertIsNotNone(
+                Machine(prog).run())
 
     def test_uninvertible(self):
         self.assertIsNotNone(
