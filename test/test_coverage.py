@@ -268,3 +268,10 @@ class TestFloss(TestCase):
                 "1RB 0LE  1RC 1RA  1RD 0LA  0LA 1LD  0RB 1LA",
                 opt_macro = 63,
             ).run())
+
+    def test_depth_limit(self):
+        self.assertIsNotNone(
+            Machine(
+                "1RB 1RE  1LC 0LE  1RD 0LB  1RE 0RA  1LE 1RD",
+                opt_macro = 73,
+            ).run())

@@ -34,6 +34,12 @@ class Num:
             int(self.r),
         )
 
+    def depth(self) -> int:
+        l_depth = 0 if isinstance(self.l, int) else self.l.depth()
+        r_depth = 0 if isinstance(self.r, int) else self.r.depth()
+
+        return 1 + max(l_depth, r_depth)
+
     @abstractmethod
     def estimate(self) -> int: ...
 
