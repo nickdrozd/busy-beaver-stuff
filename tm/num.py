@@ -235,14 +235,14 @@ class Mul(Num):
         return super().__add__(other)
 
     def __floordiv__(self, other: Count) -> Count:
-        if isinstance(other, int):
+        if isinstance(other, int):  # pragma: no branch
             if self.l % other == 0:
                 return (self.l // other) * self.r
 
             if self.r % other == 0:
                 return self.l * (self.r // other)
 
-        return super().__floordiv__(other)
+        return super().__floordiv__(other)  # no-coverage
 
 
 class Div(Num):
@@ -256,7 +256,7 @@ class Div(Num):
     def __mod__(self, other: int) -> int:
         assert isinstance(self.r, int)
 
-        if other == self.r:
+        if other == self.r:  # no-coverage
             return 0
 
         try:
@@ -270,7 +270,7 @@ class Div(Num):
         return round(self.estimate_l() - self.estimate_r())
 
     def __mul__(self, other: Count) -> Count:
-        return other * self
+        return other * self  # no-coverage
 
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)

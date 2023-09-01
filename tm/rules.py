@@ -35,7 +35,7 @@ def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
 
     try:
         plus, diff = cnt2 - cnt1, cnt3 - cnt2
-    except NumException as exc:
+    except NumException as exc:  # no-coverage
         raise RuleLimit from exc
 
     if plus == diff:
