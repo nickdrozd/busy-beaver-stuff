@@ -279,6 +279,15 @@ class Exp(Num):
 
     op = operator.pow
 
+    def __new__(cls, l: Count, r: Count) -> Count:  # type: ignore[misc]
+        return (
+            1 if r == 0
+            else
+            l if r == 1
+            else
+            super().__new__(cls)
+        )
+
     def __init__(self, l: Count, r: Count):
         while (isinstance(l, int)  # pylint: disable = while-used
                    and l > 1
