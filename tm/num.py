@@ -81,6 +81,8 @@ class Num:
             else
             Add(other, self) if isinstance(other, int)
             else
+            2 * self if other == self
+            else
             other.l + (self + other.r)
                 if (isinstance(other, Add)
                     and isinstance(other.l, int))
