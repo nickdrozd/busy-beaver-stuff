@@ -297,7 +297,7 @@ class Exp(Num):
         )
 
     def __mod__(self, other: int) -> int:
-        if other == 1:
+        if other == 1 or other == self.l:  # pylint: disable = consider-using-in
             return 0
 
         res = 1
@@ -339,6 +339,12 @@ class Exp(Num):
             r += 1
 
         return other * Exp(l, r)
+
+    def __floordiv__(self, other: Count) -> Count:
+        if other == self.l:
+            return Exp(self.l, self.r - 1)
+
+        return super().__floordiv__(other)
 
 ########################################
 

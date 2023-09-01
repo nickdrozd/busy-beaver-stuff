@@ -447,6 +447,9 @@ class TuringTest(TestCase):
 
             if isinstance(marks, int):
                 self.assertEqual(result, marks)
+            elif isinstance(marks, str):
+                self.assertTrue(
+                    str(result).startswith(marks))
             else:
                 digits, exp = marks
 
@@ -861,6 +864,11 @@ class Fast(TuringTest):
                 string,
                 show_number(self.machine.marks),
                 prog)
+
+            if not self.machine.limrul:
+                self.assertIn(
+                    prog,
+                    PROVER_HALT)
 
 
 class Slow(TuringTest):
