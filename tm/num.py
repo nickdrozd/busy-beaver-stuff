@@ -75,7 +75,7 @@ class Num:
     def __ge__(self, _: int) -> bool:
         return True
 
-    def __add__(self, other: Count) -> Num:
+    def __add__(self, other: Count) -> Count:
         return (
             self if other == 0
             else
@@ -90,7 +90,7 @@ class Num:
             Add(self, other)
         )
 
-    def __radd__(self, other: Count) -> Num:
+    def __radd__(self, other: Count) -> Count:
         assert isinstance(other, int)
 
         return self + other
@@ -157,7 +157,7 @@ class Add(Num):
     def __neg__(self) -> Count:
         return -(self.l) + -(self.r)
 
-    def __add__(self, other: Count) -> Num:
+    def __add__(self, other: Count) -> Count:
         if isinstance(l := self.l, int):
             assert isinstance(self.r, Num)
 
@@ -188,7 +188,9 @@ class Add(Num):
         return (other * self.l) + (other * self.r)
 
     def __floordiv__(self, other: Count) -> Count:
-        if self.l % other == 0 and self.r % other == 0:
+        if (isinstance(other, int)
+                and self.l % other == 0
+                and self.r % other == 0):
             return (self.l // other) + (self.r // other)
 
         return super().__floordiv__(other)
@@ -221,7 +223,7 @@ class Mul(Num):
 
         return (self.l * other) * self.r
 
-    def __add__(self, other: Count) -> Num:
+    def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul) and self.r == other.r:
             val = (self.l + other.l) * self.r
             assert isinstance(val, Num)
@@ -312,7 +314,7 @@ class Exp(Num):
 
         return res
 
-    def __add__(self, other: Count) -> Num:
+    def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul) and other.r == self:
             result = (1 + other.l) * self
             assert isinstance(result, Num)
