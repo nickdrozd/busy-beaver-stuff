@@ -83,7 +83,8 @@ class Num:
             else
             other.l + (self + other.r)
                 if (isinstance(other, Add)
-                    and isinstance(other.l, int)) else
+                    and isinstance(other.l, int))
+            else
             Add(self, other)
         )
 
