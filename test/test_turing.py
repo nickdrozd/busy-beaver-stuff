@@ -37,6 +37,8 @@ class TuringTest(TestCase):
     tape: Tape
     machine: BasicMachine
 
+    maxDiff = None
+
     def assert_marks(self, marks: int):
         self.assertEqual(
             self.machine.marks,
