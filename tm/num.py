@@ -318,6 +318,20 @@ class Exp(Num):
             assert isinstance(result, Num)
             return result
 
+        if (isinstance(other, Exp)
+                and (base := other.l) == self.l
+                and isinstance(self.r, int)
+                and isinstance(other.r, int)):
+            grt, lss = (
+                (other.r, self.r)
+                if other.r > self.r else
+                (self.r, other.r)
+            )
+
+            diff = grt - lss
+
+            return Exp(base, lss) * (1 + Exp(base, diff))
+
         return super().__add__(other)
 
     def __rmul__(self, other: Count) -> Count:
