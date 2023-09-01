@@ -234,6 +234,16 @@ class Mul(Num):
 
         return super().__add__(other)
 
+    def __floordiv__(self, other: Count) -> Count:
+        if isinstance(other, int):
+            if self.l % other == 0:
+                return (self.l // other) * self.r
+
+            if self.r % other == 0:
+                return self.l * (self.r // other)
+
+        return super().__floordiv__(other)
+
 
 class Div(Num):
     join = '//'
