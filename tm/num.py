@@ -187,6 +187,12 @@ class Add(Num):
 
         return (other * self.l) + (other * self.r)
 
+    def __floordiv__(self, other: Count) -> Count:
+        if self.l % other == 0 and self.r % other == 0:
+            return (self.l // other) + (self.r // other)
+
+        return super().__floordiv__(other)
+
 
 class Mul(Num):
     join = '*'
