@@ -1,11 +1,18 @@
-from collections.abc import Callable
+# pylint: skip-file
 
-Null = Callable[[], None]
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    Null = Callable[[], None]
+
 
 def profile(function: Null) -> Null:
     def wrapper() -> None:
-        # pylint: disable = import-error, import-outside-toplevel
-        import yappi  # type: ignore[import]
+        import yappi  # type: ignore
 
         yappi.set_clock_type('cpu')
         yappi.start()
@@ -13,7 +20,6 @@ def profile(function: Null) -> Null:
         function()
 
         stats = yappi.get_func_stats()
-        # pylint: disable = no-member
         stats.save('yappi.callgrind', type = 'callgrind')
 
     return wrapper
