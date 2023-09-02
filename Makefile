@@ -9,6 +9,10 @@ clean : clean-python clean-rust
 	$(MAKE) -C machines clean
 	$(MAKE) -C idris clean
 
+refresh : clean-python rust
+
+quick-check : refresh lint coverage
+
 ## Odd langs ###########################
 
 machines :
