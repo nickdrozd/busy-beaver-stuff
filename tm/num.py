@@ -322,6 +322,9 @@ class Exp(Num):
 
         base, exp = self.l, self.r
 
+        if not isinstance(exp, int):
+            raise NumException
+
         while exp > 0 and res > 0:  # pylint: disable = while-used
             if (exp % 2) == 1:
                 res = (res * base) % other
