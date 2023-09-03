@@ -167,8 +167,6 @@ class Add(Num):
 
     def __add__(self, other: Count) -> Count:
         if isinstance(l := self.l, int):
-            assert isinstance(self.r, Num)
-
             return (
                 (l + other) + self.r
                 if isinstance(other, int) else
@@ -233,9 +231,7 @@ class Mul(Num):
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul) and self.r == other.r:
-            val = (self.l + other.l) * self.r
-            assert isinstance(val, Num)
-            return val
+            return (self.l + other.l) * self.r
 
         if isinstance(other, Add) and isinstance(other.l, int):
             return other.l + (other.r + self)
@@ -338,9 +334,7 @@ class Exp(Num):
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul) and isinstance(other.r, Exp):
             if other.r == self:
-                result = (1 + other.l) * self
-                assert isinstance(result, Num)
-                return result
+                return (1 + other.l) * self
 
         if (isinstance(other, Exp)
                 and (base := other.l) == self.l
@@ -378,8 +372,6 @@ class Exp(Num):
 
         r = self.r
         l = self.l
-
-        assert isinstance(l, int)
 
         while other % l == 0:  # pylint: disable = while-used
             other //= l
