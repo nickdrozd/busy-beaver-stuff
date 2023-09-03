@@ -5,7 +5,10 @@ from __future__ import annotations
 import operator
 from abc import abstractmethod
 from math import sqrt, floor, ceil, log, log10
-from collections.abc import Callable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class NumException(Exception):

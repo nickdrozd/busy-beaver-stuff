@@ -1,17 +1,21 @@
+from __future__ import annotations
+
 import os
 import re
 import json
+from typing import TYPE_CHECKING
 
-from collections.abc import Callable, Iterator
 from multiprocessing import cpu_count, Process
 
 from tm.program import Program
 from tm.machine import Machine
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
 
-Prog = str
+    Prog = str
 
-Output  = Callable[[Prog], None]
+    Output  = Callable[[Prog], None]
 
 
 def tree_gen(
