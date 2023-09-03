@@ -309,7 +309,7 @@ class Exp(Num):
         return (
             Exp(-(self.l), self.r)
             if self.r % 2 == 1 else
-            self.l * -Exp(self.l, self.r - 1)
+            -(self.l) * Exp(self.l, self.r - 1)
         )
 
     def __mod__(self, other: int) -> int:
