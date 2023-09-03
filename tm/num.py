@@ -334,10 +334,11 @@ class Exp(Num):
         return res
 
     def __add__(self, other: Count) -> Count:
-        if isinstance(other, Mul) and other.r == self:
-            result = (1 + other.l) * self
-            assert isinstance(result, Num)
-            return result
+        if isinstance(other, Mul) and isinstance(other.r, Exp):
+            if other.r == self:
+                result = (1 + other.l) * self
+                assert isinstance(result, Num)
+                return result
 
         if (isinstance(other, Exp)
                 and (base := other.l) == self.l
