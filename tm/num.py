@@ -104,9 +104,6 @@ class Num:
         return self + other
 
     def __sub__(self, other: Count) -> Count:
-        if other == 0:  # no-coverage
-            return self
-
         return self + -other
 
     def __rsub__(self, other: Count) -> Count:
