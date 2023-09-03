@@ -315,7 +315,7 @@ class Exp(Num):
         )
 
     def __mod__(self, other: int) -> int:
-        if other == 1 or other == self.l:  # pylint: disable = consider-using-in
+        if other == 1 or other == self.l:
             return 0
 
         res = 1
