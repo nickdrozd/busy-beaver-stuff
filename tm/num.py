@@ -113,10 +113,10 @@ class Num:
         return other + -self  # no-coverage
 
     def __mul__(self, other: Count) -> Count:
-        if other == 1:  # no-coverage
-            return self
+        if isinstance(other, int):
+            return other * self
 
-        return Mul(other, self)
+        return Mul(self, other)
 
     def __rmul__(self, other: Count) -> Count:
         if other == 0:
