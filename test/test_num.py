@@ -97,3 +97,10 @@ class TestNum(TestCase):
         self.assertEqual(
             0 * Exp(2, 3),
             0)
+
+    def test_neg_exp(self):
+        for e in range(1, 10):
+            for b in range(2, 11):
+                self.assertEqual(
+                    int(-Exp(b, e)),
+                    -(b ** e))
