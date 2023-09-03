@@ -110,19 +110,18 @@ class Num:
         return other + -self  # no-coverage
 
     def __mul__(self, other: Count) -> Count:
-        if isinstance(other, int):
-            return other * self
-
-        return Mul(self, other)
+        return (
+            other * self
+            if isinstance(other, int) else
+            Mul(self, other)
+        )
 
     def __rmul__(self, other: Count) -> Count:
-        if other == 0:
-            return 0
-
-        if other == 1:  # no-coverage
-            return self
-
-        return Mul(other, self)
+        return (
+            0 if other == 0 else
+            self if other == 1 else
+            Mul(other, self)
+        )
 
     @abstractmethod
     def __mod__(self, other: int) -> int: ...
@@ -133,10 +132,11 @@ class Num:
         return (self - mod) // other, mod
 
     def __floordiv__(self, other: Count) -> Count:
-        if other == 1:
-            return self
-
-        return Div(self, other)
+        return (
+            self
+            if other == 1 else
+            Div(self, other)
+        )
 
     def __pow__(self, other: Count) -> Exp:
         return Exp(self, other)  # no-coverage
@@ -173,22 +173,25 @@ class Add(Num):
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
-        if isinstance(other, Add) and self.r == other.r:
-            return self.l - other.l
-
-        return self + -other
+        return (
+            self.l - other.l
+            if isinstance(other, Add) and self.r == other.r else
+            self + -other
+        )
 
     def __mul__(self, other: Count) -> Count:
-        if isinstance(other, Num):
-            return super().__mul__(other)
-
-        return other * self
+        return (
+            other * self
+            if isinstance(other, int) else
+            super().__mul__(other)
+        )
 
     def __rmul__(self, other: Count) -> Count:
-        if isinstance(other, Num):  # no-coverage
-            return super().__rmul__(other)
-
-        return (other * self.l) + (other * self.r)
+        return (
+            (other * self.l) + (other * self.r)
+            if isinstance(other, int) else
+            super().__rmul__(other)
+        )
 
     def __floordiv__(self, other: Count) -> Count:
         if (isinstance(other, int)
