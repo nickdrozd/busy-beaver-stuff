@@ -1,3 +1,5 @@
+# pylint: disable = useless-parent-delegation
+
 from __future__ import annotations
 
 import operator
@@ -219,7 +221,7 @@ class Mul(Num):
     def __mod__(self, other: int) -> int:
         return ((self.l % other) * (self.r % other)) % other
 
-    def __mul__(self, other: Count) -> Count:  # pylint: disable = useless-parent-delegation
+    def __mul__(self, other: Count) -> Count:
         return super().__mul__(other)
 
     def __rmul__(self, other: Count) -> Count:
@@ -361,6 +363,9 @@ class Exp(Num):
             return Exp(base, lss) * (1 + diff_exp)
 
         return super().__add__(other)
+
+    def __mul__(self, other: Count) -> Count:
+        return super().__mul__(other)
 
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)
