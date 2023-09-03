@@ -351,7 +351,7 @@ class Exp(Num):
                 Exp(base, diff)
             )
 
-            return Exp(base, lss) * (1 + diff_exp)
+            return (1 + diff_exp) * Exp(base, lss)
 
         return super().__add__(other)
 
