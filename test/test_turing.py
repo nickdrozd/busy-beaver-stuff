@@ -855,7 +855,7 @@ class Fast(TuringTest):
             self.run_bb(
                 prog,
                 opt_macro = 2000,
-                normal = False,
+                analyze = False,
             )
 
             self.assert_cycles(cycles)
