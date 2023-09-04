@@ -122,4 +122,4 @@ class TestNum(TestCase):
 
         self.assert_string(
             exp,
-            "((2 ** 17) * (4 + (2 ** 15)))")
+            "((2 ** 19) + ((2 ** 17) * (2 ** 15)))")
