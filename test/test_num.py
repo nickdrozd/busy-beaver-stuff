@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
-from tm.num import Div, Exp, Mul
+from tm.num import Div, Exp
 
 if TYPE_CHECKING:
     from tm.num import Count
@@ -25,24 +25,25 @@ class TestNum(TestCase):
 
     def test_div(self):
         vals = {
-            (28, 3): 9,
-            (28, 4): 7,
-            (28, 5): 5,
-            (28, 6): 4,
+            3: 9,
+            4: 7,
+            5: 5,
+            6: 4,
         }
 
-        for (num, den), val in vals.items():
-            self.assert_val(Div(num, den), val)
+        for den, val in vals.items():
+            self.assert_val((7 * Exp(2, 2)) // den, val)
 
-        self.assert_string(Div(12, 3), "(12 // 3)")
+        div = (-2 + Exp(2, 3)) // 3
+
+        self.assert_val(div, 2)
+
+        self.assert_string(div, "((-2 + (2 ** 3)) // 3)")
 
     def test_div_mod(self):
-        vals = {
-            (100, 2, 3): 2,
-        }
-
-        for (num, den, mod), val in vals.items():
-            self.assertEqual(Div(num, den) % mod, val)
+        self.assertEqual(
+            ((Exp(2, 2) * Exp(5, 2)) // 2) % 3,
+            2)
 
         for i in range(2, 10000):
             div = (Exp(4, i) - 4) // 3
@@ -157,15 +158,15 @@ class TestNum(TestCase):
 
         self.assert_val(2 ** Exp(3, 4), 2417851639229258349412352)
 
-        self.assert_val(Div(24, 4) * 3, 18)
+        self.assert_val(((3 * Exp(2, 3)) // 4) * 3, 18)
 
-        self.assert_val(Mul(3, 5) // 5, 3)
+        self.assert_val((3 * Exp(5, 2)) // 5, 15)
 
-        self.assert_val((Exp(8, 4) - 64) // Mul(7, 9), 64)
+        self.assert_val((Exp(8, 4) - 64) // (7 * Exp(3, 2)), 64)
 
-        self.assert_val(Mul(6, 8) // Mul(4, 6), 2)
+        self.assert_val((6 * Exp(2, 3)) // (6 * Exp(2, 2)), 2)
 
-        self.assertEqual(Div(24, 4) % 4, 0)
+        self.assertEqual(((3 * Exp(2, 3)) // 4) % 4, 0)
 
     def test_comparisons(self):
         self.assert_less(
@@ -191,4 +192,4 @@ class TestNum(TestCase):
             _ = Exp(2, 5) < Exp(3, 4)
 
         with self.assertRaises(NotImplementedError):
-            _ = 3 + Exp(2, 3) < Mul(4, 5)
+            _ = 3 + Exp(2, 3) < 4 * Exp(2, 5)
