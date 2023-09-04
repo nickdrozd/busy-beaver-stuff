@@ -10,6 +10,12 @@ if TYPE_CHECKING:
 
 
 class TestNum(TestCase):
+    def assert_val(self, num: Count, val: int):
+        self.assertEqual(int(num), val)
+
+        if not isinstance(num, Div):
+            self.assertEqual(int(-num), -val)
+
     def assert_string(self, num: Count, val: str):
         self.assertEqual(str(num), val)
 
@@ -22,7 +28,7 @@ class TestNum(TestCase):
         }
 
         for (num, den), val in vals.items():
-            self.assertEqual(int(Div(num, den)), val)
+            self.assert_val(Div(num, den), val)
 
         self.assert_string(Div(12, 3), "(12 // 3)")
 
@@ -53,9 +59,9 @@ class TestNum(TestCase):
         self.assertEqual(int(div2) % 2, 0)
 
     def test_exp(self):
-        self.assertEqual(int(Exp(1, 8)), 1)
-        self.assertEqual(int(Exp(6, 0)), 1)
-        self.assertEqual(int(Exp(4, 5)), 1024)
+        self.assert_val(Exp(1, 8), 1)
+        self.assert_val(int(Exp(6, 0)), 1)
+        self.assert_val(Exp(4, 5), 1024)
 
         self.assert_string(Exp(2, 3), "(2 ** 3)")
 
@@ -88,22 +94,20 @@ class TestNum(TestCase):
         self.assertNotEqual(exp1, exp3)
         self.assertNotEqual(exp2, exp3)
 
-        self.assertEqual(exp1 - exp2, 3)
-        self.assertEqual(exp2 - exp3, 3)
-        self.assertEqual(exp1 - exp3, 6)
-        self.assertEqual(exp3 - exp4, 0)
+        self.assert_val(exp1 - exp2, 3)
+        self.assert_val(exp2 - exp3, 3)
+        self.assert_val(exp1 - exp3, 6)
+        self.assert_val(exp3 - exp4, 0)
 
     def test_mult_1(self):
-        self.assertEqual(
+        self.assert_val(
             0 * Exp(2, 3),
             0)
 
     def test_mul_neg(self):
         exp = 3 * Exp(2, 5)
 
-        self.assertEqual(
-            int(exp),
-            96,)
+        self.assert_val(exp, 96)
 
         self.assert_string(
             exp,
@@ -111,9 +115,7 @@ class TestNum(TestCase):
 
         neg = -exp
 
-        self.assertEqual(
-            int(neg),
-            -96)
+        self.assert_val(neg, -96)
 
         self.assert_string(
             neg,
@@ -122,23 +124,23 @@ class TestNum(TestCase):
     def test_neg_exp(self):
         for e in range(1, 10):
             for b in range(2, 11):
-                self.assertEqual(
-                    int(-Exp(b, e)),
+                self.assert_val(
+                    -Exp(b, e),
                     -(b ** e))
 
     def test_join_exp(self):
         exp = Exp(2, 17) * (4 + Exp(2, 15))
 
-        self.assertEqual(
-            int(exp),
+        self.assert_val(
+            exp,
             (2 ** 17) * (4 + (2 ** 15)))
 
-        self.assertEqual(
-            int(exp),
+        self.assert_val(
+            exp,
             8193 * (2 ** 19))
 
-        self.assertEqual(
-            int(exp),
+        self.assert_val(
+            exp,
             (2 ** 19) + ((2 ** 17) * (2 ** 15)))
 
         self.assert_string(
