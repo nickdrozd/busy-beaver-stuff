@@ -241,6 +241,7 @@ class TestFloss(TestCase):
         self.assertGreaterEqual(marks, 5)
         self.assertLess(5, marks)
         self.assertLessEqual(5, marks)
+        _ = marks < 5
 
     def test_algebra_compiler_error(self):
         progs = (

@@ -75,7 +75,7 @@ class Num:
         )
 
     def __lt__(self, _: int) -> bool:
-        return False  # no-coverage
+        return False
 
     def __le__(self, _: int) -> bool:
         return False
