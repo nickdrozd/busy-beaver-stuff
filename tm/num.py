@@ -365,27 +365,13 @@ class Exp(Num):
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul) and isinstance(other.r, Exp):
             if other.r == self:
-                return (1 + other.l) * self
+                return _add_exponents(self, other.r, r_co = other.l)
 
         if (isinstance(other, Exp)
-                and (base := other.l) == self.l
+                and other.l == self.l
                 and isinstance(self.r, int)
                 and isinstance(other.r, int)):
-            grt, lss = (
-                (other.r, self.r)
-                if other.r > self.r else
-                (self.r, other.r)
-            )
-
-            diff = grt - lss
-
-            diff_exp = (
-                base ** diff
-                if not isinstance(base, int) or diff < 1_000 else
-                Exp(base, diff)
-            )
-
-            return (1 + diff_exp) * Exp(base, lss)
+            return _add_exponents(self, other)
 
         return super().__add__(other)
 
@@ -438,6 +424,31 @@ class Exp(Num):
                 return False
 
         return super().__lt__(other)
+
+
+def _add_exponents(
+        l: Exp,
+        r: Exp,
+        l_co: Count = 1,
+        r_co: Count = 1,
+) -> Count:
+    assert (base := l.l) == r.l
+
+    lesser, greater = (
+        (lr, rr)
+        if (lr := l.r) < (rr := r.r) else
+        (rr, lr)
+    )
+
+    diff = greater - lesser
+
+    diff_exp = (
+        base ** diff
+        if not isinstance(base, int) or diff < 1_000 else
+        Exp(base, diff)
+    )
+
+    return (l_co + (r_co * diff_exp)) * Exp(base, lesser)
 
 ########################################
 
