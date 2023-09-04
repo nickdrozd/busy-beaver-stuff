@@ -389,6 +389,10 @@ class Exp(Num):
         if isinstance(other, Add):
             return (self * other.l) + (self * other.r)
 
+        if isinstance(other, Mul):
+            if isinstance(other.l, int):
+                return other.l * (self * other.r)
+
         return super().__mul__(other)
 
     def __rmul__(self, other: Count) -> Count:
