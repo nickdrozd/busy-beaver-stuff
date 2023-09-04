@@ -285,9 +285,16 @@ class Div(Num):
         if other == self.r:
             return 0
 
-        try:
-            return self.l % (self.r * other)
-        except NumException:
+        try:  # pylint: disable = too-many-try-statements
+            rem, div = divmod(
+                self.l % (other * self.r),
+                self.r
+            )
+
+            assert div == 0
+
+            return rem % other
+        except (NumException, AssertionError):
             pass
 
         try:
