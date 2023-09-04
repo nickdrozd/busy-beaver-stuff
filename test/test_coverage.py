@@ -242,16 +242,6 @@ class TestFloss(TestCase):
         self.assertLess(5, marks)
         self.assertLessEqual(5, marks)
 
-    def test_number_negative_exponent(self):
-        machine = Machine(
-            "1RB 2LA 0RB 0LA  1LA 3RA 1RA ...",
-            opt_macro = 108,
-            backsym = 1,
-        ).run(sim_lim = 20342)
-
-        self.assertIsNotNone(
-            machine.limrul)
-
     def test_algebra_compiler_error(self):
         progs = (
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",

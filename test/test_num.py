@@ -98,6 +98,27 @@ class TestNum(TestCase):
             0 * Exp(2, 3),
             0)
 
+    def test_mul_neg(self):
+        exp = 3 * Exp(2, 5)
+
+        self.assertEqual(
+            int(exp),
+            96,)
+
+        self.assert_string(
+            exp,
+            "(3 * (2 ** 5))")
+
+        neg = -exp
+
+        self.assertEqual(
+            int(neg),
+            -96)
+
+        self.assert_string(
+            neg,
+            "(-3 * (2 ** 5))")
+
     def test_neg_exp(self):
         for e in range(1, 10):
             for b in range(2, 11):
