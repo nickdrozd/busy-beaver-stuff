@@ -110,7 +110,7 @@ class Num:
         return self + -other
 
     def __rsub__(self, other: Count) -> Count:
-        return other + -self  # no-coverage
+        return other + -self
 
     def __mul__(self, other: Count) -> Count:
         return (
@@ -142,10 +142,10 @@ class Num:
         )
 
     def __pow__(self, other: Count) -> Exp:
-        return Exp(self, other)  # no-coverage
+        return Exp(self, other)
 
     def __rpow__(self, other: Count) -> Exp:
-        return Exp(other, self)  # no-coverage
+        return Exp(other, self)
 
 
 class Add(Num):
@@ -230,7 +230,7 @@ class Mul(Num):
 
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)
-                or isinstance(self.l, Num)):  # no-coverage
+                or isinstance(self.l, Num)):
             return super().__rmul__(other)
 
         return (self.l * other) * self.r
@@ -245,14 +245,14 @@ class Mul(Num):
         return super().__add__(other)
 
     def __floordiv__(self, other: Count) -> Count:
-        if isinstance(other, int):  # pragma: no branch
+        if isinstance(other, int):
             if self.l % other == 0:
                 return (self.l // other) * self.r
 
-            if self.r % other == 0:
+            if self.r % other == 0:  # pragma: no branch
                 return self.l * (self.r // other)
 
-        return super().__floordiv__(other)  # no-coverage
+        return super().__floordiv__(other)
 
 
 class Div(Num):
@@ -266,7 +266,7 @@ class Div(Num):
     def __mod__(self, other: int) -> int:
         assert isinstance(self.r, int)
 
-        if other == self.r:  # no-coverage
+        if other == self.r:
             return 0
 
         try:
@@ -280,7 +280,7 @@ class Div(Num):
         return round(self.estimate_l() - self.estimate_r())
 
     def __mul__(self, other: Count) -> Count:
-        return other * self  # no-coverage
+        return other * self
 
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)

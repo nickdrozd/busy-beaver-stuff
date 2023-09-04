@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
-from tm.num import Div, Exp
+from tm.num import Div, Exp, Mul
 
 if TYPE_CHECKING:
     from tm.num import Count
@@ -145,3 +145,20 @@ class TestNum(TestCase):
         self.assert_string(
             exp,
             "(8193 * (2 ** 19))")
+
+    def test_cover(self):
+        self.assert_val(3 - Exp(2, 5), -29)
+
+        self.assert_val(Exp(2, 3) ** 5, 32768)
+
+        self.assert_val(2 ** Exp(3, 4), 2417851639229258349412352)
+
+        self.assert_val(Div(24, 4) * 3, 18)
+
+        self.assert_val(Mul(3, 5) // 5, 3)
+
+        self.assert_val((Exp(8, 4) - 64) // Mul(7, 9), 64)
+
+        self.assert_val(Mul(6, 8) // Mul(4, 6), 2)
+
+        self.assertEqual(Div(24, 4) % 4, 0)
