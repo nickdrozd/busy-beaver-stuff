@@ -99,10 +99,9 @@ class TestNum(TestCase):
         self.assert_val(exp1 - exp3, 6)
         self.assert_val(exp3 - exp4, 0)
 
-    def test_mult_1(self):
-        self.assert_val(
-            0 * Exp(2, 3),
-            0)
+    def test_mul_triv(self):
+        self.assert_val(0 * Exp(2, 3), 0)
+        self.assert_val(1 * Exp(2, 3), 8)
 
     def test_mul_neg(self):
         exp = 3 * Exp(2, 5)
