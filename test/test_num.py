@@ -162,9 +162,15 @@ class TestNum(TestCase):
 
         self.assert_val((3 * Exp(5, 2)) // 5, 15)
 
-        self.assert_val((Exp(8, 4) - 64) // (7 * Exp(3, 2)), 64)
+        self.assert_val(
+            (Exp(8, 4) - 64)  # type: ignore[operator]
+                // (7 * Exp(3, 2)),
+            64)
 
-        self.assert_val((6 * Exp(2, 3)) // (6 * Exp(2, 2)), 2)
+        self.assert_val(
+            (6 * Exp(2, 3))  # type: ignore[operator]
+                // (6 * Exp(2, 2)),
+            2)
 
         self.assertEqual(((3 * Exp(2, 3)) // 4) % 4, 0)
 
