@@ -19,6 +19,10 @@ class TestNum(TestCase):
     def assert_string(self, num: Count, val: str):
         self.assertEqual(str(num), val)
 
+    def assert_less(self, val1: Count, val2: Count):
+        self.assertLess(val1, val2)
+        self.assertLess(int(val1), int(val2))
+
     def test_div(self):
         vals = {
             (28, 3): 9,
@@ -162,3 +166,29 @@ class TestNum(TestCase):
         self.assert_val(Mul(6, 8) // Mul(4, 6), 2)
 
         self.assertEqual(Div(24, 4) % 4, 0)
+
+    def test_comparisons(self):
+        self.assert_less(
+            -3 + Exp(2, 4),
+            -3 + Exp(2, 5))
+
+        self.assert_less(
+            -3 + Exp(2, 5),
+            -2 + Exp(2, 5))
+
+        with self.assertRaises(NotImplementedError):
+            _ = 3 + Exp(2, 5) < 4 + Exp(2, 4)
+
+        self.assert_less(
+            Exp(3, 4),
+            Exp(5, 6))
+
+        self.assertGreaterEqual(
+            Exp(5, 6),
+            Exp(3, 4))
+
+        with self.assertRaises(NotImplementedError):
+            _ = Exp(2, 5) < Exp(3, 4)
+
+        with self.assertRaises(NotImplementedError):
+            _ = 3 + Exp(2, 3) < Mul(4, 5)

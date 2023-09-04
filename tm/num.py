@@ -74,17 +74,20 @@ class Num:
             and self.r == other.r
         )
 
-    def __lt__(self, _: int) -> bool:
-        return False
+    def __lt__(self, other: Count) -> bool:
+        if isinstance(other, int):
+            return False
 
-    def __le__(self, _: int) -> bool:
-        return False
+        raise NotImplementedError
 
-    def __gt__(self, _: int) -> bool:
-        return True
+    def __le__(self, other: Count) -> bool:
+        return self == other or self < other
 
-    def __ge__(self, _: int) -> bool:
-        return True
+    def __gt__(self, other: Count) -> bool:
+        return self != other and not self < other
+
+    def __ge__(self, other: Count) -> bool:
+        return self == other or self > other
 
     def __add__(self, other: Count) -> Count:
         return (
@@ -203,6 +206,16 @@ class Add(Num):
             return (self.l // other) + (self.r // other)
 
         return super().__floordiv__(other)
+
+    def __lt__(self, other: Count) -> bool:
+        if isinstance(other, Add):
+            if self.l == other.l:
+                return self.r < other.r
+
+            if self.r == other.r:
+                return self.l < other.l
+
+        return super().__lt__(other)
 
 
 class Mul(Num):
@@ -396,6 +409,19 @@ class Exp(Num):
             return Exp(self.l, self.r - 1)
 
         return super().__floordiv__(other)
+
+    def __lt__(self, other: Count) -> bool:
+        if isinstance(other, Exp):
+            if self.l == other.l:
+                return self.r < other.r
+
+            if self.l < other.l and self.r < other.r:
+                return True
+
+            if self.l > other.l and self.r > other.r:
+                return False
+
+        return super().__lt__(other)
 
 ########################################
 
