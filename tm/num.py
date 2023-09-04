@@ -365,6 +365,9 @@ class Exp(Num):
         return super().__add__(other)
 
     def __mul__(self, other: Count) -> Count:
+        if isinstance(other, Exp) and (base := self.l) == other.l:
+            return Exp(base, self.r + other.r)
+
         if isinstance(other, Add):
             return (self * other.l) + (self * other.r)
 
