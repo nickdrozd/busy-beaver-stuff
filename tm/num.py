@@ -273,6 +273,9 @@ class Div(Num):
 
     op = operator.floordiv
 
+    def __init__(self, l: Num, r: Count):
+        super().__init__(l, r)
+
     def __neg__(self) -> Count:
         raise NotImplementedError
 
