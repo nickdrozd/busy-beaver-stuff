@@ -104,3 +104,22 @@ class TestNum(TestCase):
                 self.assertEqual(
                     int(-Exp(b, e)),
                     -(b ** e))
+
+    def test_join_exp(self):
+        exp = Exp(2, 17) * (4 + Exp(2, 15))
+
+        self.assertEqual(
+            int(exp),
+            (2 ** 17) * (4 + (2 ** 15)))
+
+        self.assertEqual(
+            int(exp),
+            8193 * (2 ** 19))
+
+        self.assertEqual(
+            int(exp),
+            (2 ** 19) + ((2 ** 17) * (2 ** 15)))
+
+        self.assert_string(
+            exp,
+            "((2 ** 17) * (4 + (2 ** 15)))")
