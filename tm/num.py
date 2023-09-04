@@ -286,6 +286,11 @@ class Div(Num):
             return 0
 
         try:
+            return self.l % (self.r * other)
+        except NumException:
+            pass
+
+        try:
             inv = pow(self.r, -1, other)
         except ValueError as exc:
             raise NumException from exc
@@ -294,9 +299,6 @@ class Div(Num):
 
     def estimate(self) -> int:
         return round(self.estimate_l() - self.estimate_r())
-
-    def __mul__(self, other: Count) -> Count:
-        return other * self
 
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)
