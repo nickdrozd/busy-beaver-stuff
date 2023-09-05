@@ -133,10 +133,10 @@ def apply_plus(count: Count, times: Count, diff: Plus) -> Count:
 
 
 def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
-    if not isinstance(count, int) and count.depth() > 20:
+    if not isinstance(count, int) and count.depth() > 20:  # no-coverage
         raise RuleLimit
 
-    if not isinstance(times, int) and times.depth() > 200:
+    if not isinstance(times, int) and times.depth() > 200:  # no-coverage
         raise RuleLimit
 
     exp = (

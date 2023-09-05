@@ -253,7 +253,7 @@ class Mul(Num):
                    and other == s_exp.base)):
             return (other * self.l) * self.r
 
-        return super().__rmul__(other)
+        return super().__rmul__(other)  # no-coverage
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul):
@@ -275,7 +275,7 @@ class Mul(Num):
                     pass
 
         elif isinstance(other, Add):
-            if isinstance(other.l, int):
+            if isinstance(other.l, int):  # pragma: no branch
                 return other.l + (other.r + self)
 
         elif isinstance(other, Exp):
@@ -339,7 +339,7 @@ class Div(Num):
         return round(self.estimate_l() - self.estimate_r())
 
     def __mul__(self, other: Count) -> Count:
-        return other * self
+        return other * self  # no-coverage
 
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)

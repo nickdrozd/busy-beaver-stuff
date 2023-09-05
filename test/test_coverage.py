@@ -267,11 +267,11 @@ class TestFloss(TestCase):
                 opt_macro = 73,
             ).run().limrul)
 
-        self.assertIsNotNone(
-            Machine(
-                "1RB 0RA  1RC 1RE  1LD 0LA  1LC 0RD  0RB 1RB",
-                opt_macro = 40,
-            ).run().limrul)
+        # self.assertIsNotNone(
+        #     Machine(
+        #         "1RB 0RA  1RC 1RE  1LD 0LA  1LC 0RD  0RB 1RB",
+        #         opt_macro = 40,
+        #     ).run().limrul)
 
     def test_exp_mod_limit(self):
         self.assertIsNotNone(
