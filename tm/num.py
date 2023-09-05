@@ -335,6 +335,14 @@ class Exp(Num):
 
     op = operator.pow
 
+    @property
+    def base(self) -> Count:
+        return self.l
+
+    @property
+    def exp(self) -> Count:
+        return self.r
+
     def __init__(self, l: Count, r: Count):
         while (isinstance(l, int)  # pylint: disable = while-used
                    and l > 1
@@ -348,12 +356,12 @@ class Exp(Num):
         return round(self.estimate_l() * 10 ** self.estimate_r())
 
     def __mod__(self, other: int) -> int:
-        if other == 1 or other == self.l:
+        if other == 1 or other == self.base:
             return 0
 
         res = 1
 
-        base, exp = self.l, self.r
+        base, exp = self.base, self.exp
 
         if not isinstance(exp, int):
             raise NumException
@@ -368,20 +376,22 @@ class Exp(Num):
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul):
-            if isinstance(exp := other.r, Exp) and exp.l == self.l:
+            base = self.base
+
+            if isinstance(exp := other.r, Exp) and exp.base == base:
                 try:
                     return _add_exponents((self, 1), (exp, other.l))
                 except NotImplementedError:
                     pass
 
-            if isinstance(exp := other.l, Exp) and exp.l == self.l:
+            if isinstance(exp := other.l, Exp) and exp.base == base:
                 try:
                     return _add_exponents((self, 1), (exp, other.r))
                 except NotImplementedError:
                     pass
 
         elif isinstance(other, Exp):
-            if other.l == self.l:
+            if other.base == self.base:
                 try:
                     return _add_exponents((self, 1), (other, 1))
                 except NotImplementedError:
@@ -391,8 +401,8 @@ class Exp(Num):
 
     def __mul__(self, other: Count) -> Count:
         if isinstance(other, Exp):
-            if (base := self.l) == other.l:
-                return Exp(base, self.r + other.r)
+            if (base := self.base) == other.base:
+                return Exp(base, self.exp + other.exp)
 
         elif isinstance(other, Add):
             return (self * other.l) + (self * other.r)
@@ -404,25 +414,26 @@ class Exp(Num):
         return super().__mul__(other)
 
     def __rmul__(self, other: Count) -> Count:
-        if isinstance(other, Num) or isinstance(self.l, Num):
+        if isinstance(other, Num) or isinstance(self.base, Num):
             return super().__rmul__(other)
 
         assert isinstance(other, int)
 
-        if other < -1 and -other % self.l == 0:
+        base = self.base
+
+        if other < -1 and -other % base == 0:
             return -(-other * self)
 
-        if other < 1 or other % self.l != 0:
+        if other < 1 or other % base != 0:
             return super().__rmul__(other)
 
-        r = self.r
-        l = self.l
+        exp = self.exp
 
-        while other % l == 0:  # pylint: disable = while-used
-            other //= l
-            r += 1
+        while other % base == 0:  # pylint: disable = while-used
+            other //= base
+            exp += 1
 
-        return other * Exp(l, r)
+        return other * Exp(base, exp)
 
     def __floordiv__(self, other: Count) -> Count:
         if other == self.l:
@@ -432,13 +443,13 @@ class Exp(Num):
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, Exp):
-            if self.l == other.l:
-                return self.r < other.r
+            if self.base == other.base:
+                return self.exp < other.exp
 
-            if self.l < other.l and self.r < other.r:
+            if self.base < other.base and self.exp < other.exp:
                 return True
 
-            if self.l > other.l and self.r > other.r:
+            if self.base > other.base and self.exp > other.exp:
                 return False
 
         return super().__lt__(other)
@@ -450,9 +461,9 @@ def _add_exponents(
 ) -> Count:
     (l_exp, l_co), (r_exp, r_co) = l, r
 
-    assert (base := l_exp.l) == r_exp.l
+    assert (base := l_exp.base) == r_exp.base
 
-    if (l_pow := l_exp.r) > (r_pow := r_exp.r):
+    if (l_pow := l_exp.exp) > (r_pow := r_exp.exp):
         return _add_exponents((r_exp, r_co), (l_exp, l_co))
 
     assert l_pow <= r_pow
