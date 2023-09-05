@@ -10,14 +10,19 @@ if TYPE_CHECKING:
 
 
 class TestNum(TestCase):
-    def assert_val(self, num: Count, val: int):
+    def assert_num(
+            self,
+            num: Count,
+            val: int,
+            rep: str | None = None,
+    ):
         self.assertEqual(int(num), val)
 
         if not isinstance(num, Div):
             self.assertEqual(int(-num), -val)
 
-    def assert_string(self, num: Count, val: str):
-        self.assertEqual(str(num), val)
+        if rep is not None:
+            self.assertEqual(str(num), rep)
 
     def assert_less(self, val1: Count, val2: Count):
         self.assertLess(val1, val2)
@@ -32,13 +37,12 @@ class TestNum(TestCase):
         }
 
         for den, val in vals.items():
-            self.assert_val((7 * Exp(2, 2)) // den, val)
+            self.assert_num((7 * Exp(2, 2)) // den, val)
 
-        div = (-2 + Exp(2, 3)) // 3
-
-        self.assert_val(div, 2)
-
-        self.assert_string(div, "((-2 + (2 ** 3)) // 3)")
+        self.assert_num(
+            (-2 + Exp(2, 3)) // 3,
+            2,
+            "((-2 + (2 ** 3)) // 3)")
 
     def test_div_mod(self):
         self.assertEqual(
@@ -64,11 +68,11 @@ class TestNum(TestCase):
         self.assertEqual(int(div2) % 2, 0)
 
     def test_exp(self):
-        self.assert_val(Exp(1, 8), 1)
-        self.assert_val(int(Exp(6, 0)), 1)
-        self.assert_val(Exp(4, 5), 1024)
+        self.assert_num(Exp(1, 8), 1)
+        self.assert_num(int(Exp(6, 0)), 1)
+        self.assert_num(Exp(4, 5), 1024)
 
-        self.assert_string(Exp(2, 3), "(2 ** 3)")
+        self.assert_num(Exp(2, 3), 8, "(2 ** 3)")
 
     def test_exp_mod(self):
         vals = {
@@ -99,75 +103,66 @@ class TestNum(TestCase):
         self.assertNotEqual(exp1, exp3)
         self.assertNotEqual(exp2, exp3)
 
-        self.assert_val(exp1 - exp2, 3)
-        self.assert_val(exp2 - exp3, 3)
-        self.assert_val(exp1 - exp3, 6)
-        self.assert_val(exp3 - exp4, 0)
+        self.assert_num(exp1 - exp2, 3)
+        self.assert_num(exp2 - exp3, 3)
+        self.assert_num(exp1 - exp3, 6)
+        self.assert_num(exp3 - exp4, 0)
 
     def test_mul_triv(self):
-        self.assert_val(0 * Exp(2, 3), 0)
-        self.assert_val(1 * Exp(2, 3), 8)
+        self.assert_num(0 * Exp(2, 3), 0)
+        self.assert_num(1 * Exp(2, 3), 8)
 
     def test_mul_neg(self):
-        exp = 3 * Exp(2, 5)
-
-        self.assert_val(exp, 96)
-
-        self.assert_string(
-            exp,
+        self.assert_num(
+            exp := 3 * Exp(2, 5),
+            96,
             "(3 * (2 ** 5))")
 
-        neg = -exp
-
-        self.assert_val(neg, -96)
-
-        self.assert_string(
-            neg,
+        self.assert_num(
+            -exp,
+            -96,
             "(-3 * (2 ** 5))")
 
     def test_neg_exp(self):
         for e in range(1, 10):
             for b in range(2, 11):
-                self.assert_val(
+                self.assert_num(
                     -Exp(b, e),
                     -(b ** e))
 
     def test_join_exp(self):
         exp = Exp(2, 17) * (4 + Exp(2, 15))
 
-        self.assert_val(
+        self.assert_num(
             exp,
             (2 ** 17) * (4 + (2 ** 15)))
 
-        self.assert_val(
+        self.assert_num(
             exp,
-            8193 * (2 ** 19))
+            8193 * (2 ** 19),
+            "(8193 * (2 ** 19))")
 
-        self.assert_val(
+        self.assert_num(
             exp,
             (2 ** 19) + ((2 ** 17) * (2 ** 15)))
 
-        self.assert_string(
-            exp,
-            "(8193 * (2 ** 19))")
-
     def test_cover(self):
-        self.assert_val(3 - Exp(2, 5), -29)
+        self.assert_num(3 - Exp(2, 5), -29)
 
-        self.assert_val(Exp(2, 3) ** 5, 32768)
+        self.assert_num(Exp(2, 3) ** 5, 32768)
 
-        self.assert_val(2 ** Exp(3, 4), 2417851639229258349412352)
+        self.assert_num(2 ** Exp(3, 4), 2417851639229258349412352)
 
-        self.assert_val(((3 * Exp(2, 3)) // 4) * 3, 18)
+        self.assert_num(((3 * Exp(2, 3)) // 4) * 3, 18)
 
-        self.assert_val((3 * Exp(5, 2)) // 5, 15)
+        self.assert_num((3 * Exp(5, 2)) // 5, 15)
 
-        self.assert_val(
+        self.assert_num(
             (Exp(8, 4) - 64)  # type: ignore[operator]
                 // (7 * Exp(3, 2)),
             64)
 
-        self.assert_val(
+        self.assert_num(
             (6 * Exp(2, 3))  # type: ignore[operator]
                 // (6 * Exp(2, 2)),
             2)
