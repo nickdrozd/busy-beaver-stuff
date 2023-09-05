@@ -307,6 +307,9 @@ class Div(Num):
     def estimate(self) -> int:
         return round(self.estimate_l() - self.estimate_r())
 
+    def __mul__(self, other: Count) -> Count:
+        return other * self
+
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)
                 or isinstance(self.r, Num)
