@@ -501,6 +501,9 @@ class Exp(Num):
 
         return super().__lt__(other)
 
+    def __pow__(self, other: Count) -> Exp:
+        return Exp(self.base, self.exp * other)
+
 
 def _add_exponents(
         l: tuple[Exp, Count],

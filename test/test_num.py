@@ -142,7 +142,12 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 3) ** 5,
             32768,
-            "((2 ** 3) ** 5)")
+            "(2 ** 15)")
+
+        self.assert_num(
+            (Exp(2, 3) * Exp(3, 2)) ** 5,
+            1934917632,
+            "(((2 ** 3) * (3 ** 2)) ** 5)")
 
         self.assert_num(
             2 ** Exp(3, 4),
