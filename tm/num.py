@@ -157,6 +157,9 @@ class Add(Num):
     op = operator.add
 
     def __init__(self, l: Count, r: Num):
+        if isinstance(l, Num) and l.depth() > r.depth():
+            l, r = r, l
+
         super().__init__(l, r)
 
     def estimate(self) -> int:
