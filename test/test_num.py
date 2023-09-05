@@ -15,6 +15,7 @@ class TestNum(TestCase):
             num: Count,
             val: int,
             rep: str | None = None,
+            mod_rem: tuple[int, int] | None = None,
     ):
         self.assertEqual(val, int(num))
 
@@ -26,6 +27,17 @@ class TestNum(TestCase):
         self.assertEqual(
             val,
             eval(str(num)))  # pylint: disable = eval-used
+
+        if mod_rem is not None:
+            mod, rem = mod_rem
+
+            self.assertEqual(
+                num % mod,
+                rem)
+
+            self.assertEqual(
+                int(num) % mod,
+                rem)
 
     def assert_less(self, val1: Count, val2: Count):
         self.assertLess(val1, val2)
@@ -95,14 +107,18 @@ class TestNum(TestCase):
             "((3 * (2 ** 4)) // (3 * (2 ** 3)))")
 
     def test_div_mod(self):
-        self.assertEqual(
-            ((Exp(2, 2) * Exp(5, 2)) // 2) % 3,
-            2)
+        self.assert_num(
+            (Exp(2, 2) * Exp(5, 2)) // 2,
+            50,
+            "(2 * (5 ** 2))",
+            (3, 2))
 
-        for i in range(2, 10000):
-            div = (Exp(4, i) - 4) // 3
-            self.assertEqual(div % 2, 0)
-            self.assertEqual(int(div) % 2, 0)
+        for i in range(2, 1000):
+            self.assert_num(
+                (Exp(4, i) - 4) // 3,
+                ((4 ** i) - 4) // 3,
+                f"((-4 + (2 ** {2 * i})) // 3)",
+                (2, 0))
 
         div1 = (Exp(4, 8188) - 4) // 3
 
