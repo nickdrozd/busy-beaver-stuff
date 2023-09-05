@@ -6,6 +6,7 @@ import operator
 from abc import abstractmethod
 from math import sqrt, floor, ceil, log, log10
 from typing import TYPE_CHECKING
+from functools import cached_property
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -39,9 +40,10 @@ class Num:
             int(self.r),
         )
 
+    @cached_property
     def depth(self) -> int:
-        l_depth = 0 if isinstance(self.l, int) else self.l.depth()
-        r_depth = 0 if isinstance(self.r, int) else self.r.depth()
+        l_depth = 0 if isinstance(self.l, int) else self.l.depth
+        r_depth = 0 if isinstance(self.r, int) else self.r.depth
 
         return 1 + max(l_depth, r_depth)
 
@@ -157,7 +159,7 @@ class Add(Num):
     op = operator.add
 
     def __init__(self, l: Count, r: Num):
-        if isinstance(l, Num) and l.depth() > r.depth():
+        if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
         super().__init__(l, r)
@@ -227,7 +229,7 @@ class Mul(Num):
     op = operator.mul
 
     def __init__(self, l: Count, r: Num):
-        if isinstance(l, Num) and l.depth() > r.depth():
+        if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
         super().__init__(l, r)
