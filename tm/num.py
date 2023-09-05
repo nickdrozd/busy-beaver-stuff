@@ -259,6 +259,17 @@ class Mul(Num):
             if self.r == other.r:
                 return (self.l + other.l) * self.r
 
+            if (isinstance(s_exp := self.r, Exp)
+                    and isinstance(o_exp := other.r, Exp)
+                    and s_exp.base == o_exp.base):
+                try:
+                    return _add_exponents(
+                        (s_exp, self.l),
+                        (o_exp, other.l),
+                    )
+                except NotImplementedError:
+                    pass
+
         elif isinstance(other, Add):
             if isinstance(other.l, int):
                 return other.l + (other.r + self)
