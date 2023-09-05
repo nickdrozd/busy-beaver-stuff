@@ -65,12 +65,12 @@ class TestNum(TestCase):
         self.assert_num(
             ((3 * Exp(5, 4)) // 5) // 15,
             25,
-            "((3 * (5 ** 3)) // 15)")
+            "(5 ** 2)")
 
         self.assert_num(
             ((3 * Exp(5, 4)) // 15) // 5,
             25,
-            "((3 * (5 ** 4)) // 75)")
+            "(5 ** 2)")
 
     def test_div_mod(self):
         self.assertEqual(

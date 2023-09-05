@@ -290,11 +290,19 @@ class Mul(Num):
 
     def __floordiv__(self, other: Count) -> Count:
         if isinstance(other, int):
-            if self.l % other == 0:
-                return (self.l // other) * self.r
+            l, r = self.l, self.r
 
-            if self.r % other == 0:  # pragma: no branch
-                return self.l * (self.r // other)
+            if l % other == 0:
+                return (l // other) * r
+
+            if r % other == 0:
+                return l * (r // other)
+
+            if isinstance(l, int) and other % l == 0:
+                return r // (other // l)
+
+            if isinstance(r, int) and other % r == 0:  # no-coverage
+                return l // (other // r)
 
         return super().__floordiv__(other)
 
