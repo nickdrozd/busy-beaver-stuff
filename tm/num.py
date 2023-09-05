@@ -248,11 +248,12 @@ class Mul(Num):
         return super().__mul__(other)
 
     def __rmul__(self, other: Count) -> Count:
-        if (isinstance(other, Num)
-                or isinstance(self.l, Num)):
-            return super().__rmul__(other)
+        if (isinstance(other, int)
+                or (isinstance(s_exp := self.l, Exp)
+                   and other == s_exp.base)):
+            return (other * self.l) * self.r
 
-        return (self.l * other) * self.r
+        return super().__rmul__(other)
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul):
