@@ -174,7 +174,7 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 5) + ((3 + Exp(3, 3)) * Exp(2, 3)),
             272,
-            "((2 ** 5) + ((2 ** 3) * (3 + (3 ** 3))))")
+            "((2 ** 3) * (7 + (3 ** 3)))")
 
     def test_cover(self):
         self.assert_num(3 - Exp(2, 5), -29)

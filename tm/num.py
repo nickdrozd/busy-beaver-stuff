@@ -374,6 +374,12 @@ class Exp(Num):
                 except NotImplementedError:
                     pass
 
+            if isinstance(exp := other.l, Exp) and exp.l == self.l:
+                try:
+                    return _add_exponents((self, 1), (exp, other.r))
+                except NotImplementedError:
+                    pass
+
         elif isinstance(other, Exp):
             if other.l == self.l:
                 try:
