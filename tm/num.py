@@ -375,10 +375,11 @@ class Exp(Num):
                     pass
 
         elif isinstance(other, Exp):
-            if (other.l == self.l
-                    and isinstance(self.r, int)
-                    and isinstance(other.r, int)):
-                return _add_exponents((self, 1), (other, 1))
+            if other.l == self.l:
+                try:
+                    return _add_exponents((self, 1), (other, 1))
+                except NotImplementedError:
+                    pass
 
         return super().__add__(other)
 
