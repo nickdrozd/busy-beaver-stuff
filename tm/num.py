@@ -195,7 +195,7 @@ class Add(Num):
     def __rmul__(self, other: Count) -> Count:
         return (
             (other * self.l) + (other * self.r)
-            if isinstance(other, int) else
+            if isinstance(other, int) and other != -1 else
             super().__rmul__(other)
         )
 
@@ -259,6 +259,9 @@ class Mul(Num):
         if isinstance(other, Mul):
             if self.r == other.r:
                 return (self.l + other.l) * self.r
+
+            if self.l == other.l:
+                return self.l * (self.r + other.r)
 
             if (isinstance(s_exp := self.r, Exp)
                     and isinstance(o_exp := other.r, Exp)
@@ -425,7 +428,9 @@ class Exp(Num):
                 return Exp(base, self.exp + other.exp)
 
         elif isinstance(other, Add):
-            return (self * other.l) + (self * other.r)
+            if (not isinstance(other.l, Exp)
+                    or not isinstance(other.r, Exp)):
+                return (self * other.l) + (self * other.r)
 
         elif isinstance(other, Mul):
             if isinstance(other.l, int):
