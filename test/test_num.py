@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
-from tm.num import Div, Exp
+from tm.num import Exp
 
 if TYPE_CHECKING:
     from tm.num import Count
@@ -18,8 +18,7 @@ class TestNum(TestCase):
     ):
         self.assertEqual(int(num), val)
 
-        if not isinstance(num, Div):
-            self.assertEqual(int(-num), -val)
+        self.assertEqual(int(-num), -val)
 
         if rep is not None:
             self.assertEqual(str(num), rep)
