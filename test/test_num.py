@@ -315,3 +315,14 @@ class TestNum(TestCase):
             -5 + (5 * Exp(2, 3)),
             35,
             "(-5 + (5 * (2 ** 3)))")
+
+    def test_mul_add(self):
+        self.assert_num(
+            (Exp(2, 3) * Exp(3, 2)) + (Exp(2, 3) * Exp(5, 3)),
+            1072,
+            "(((2 ** 3) * (3 ** 2)) + ((2 ** 3) * (5 ** 3)))")
+
+        self.assert_num(
+            (Exp(3, 2) * Exp(2, 3)) + (Exp(5, 3) * Exp(2, 3)),
+            1072,
+            "((2 ** 3) * ((3 ** 2) + (5 ** 3)))")
