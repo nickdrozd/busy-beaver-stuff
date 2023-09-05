@@ -351,12 +351,11 @@ class Div(Num):
         return other * self  # no-coverage
 
     def __rmul__(self, other: Count) -> Count:
-        if (isinstance(other, Num)
-                or isinstance(self.den, Num)
-                or other % self.den != 0):
-            return super().__rmul__(other)
-
-        return (other // self.den) * self.num
+        return (
+            (other * self.num) // self.den
+            if other != -1 else
+            super().__rmul__(other)
+        )
 
     def __floordiv__(self, other: Count) -> Count:
         assert isinstance(num := self.num, Num)
@@ -475,13 +474,16 @@ class Exp(Num):
         return other * Exp(base, exp)
 
     def __floordiv__(self, other: Count) -> Count:
-        if other != (base := self.base):
-            return super().__floordiv__(other)
+        base, exp = self.base, self.exp
+
+        while other % base == 0:  # pylint: disable = while-used
+            other //= base
+            exp -= 1
 
         return (
             base
-            if (exp_dec := self.exp - 1) == 1 else
-            Exp(base, exp_dec)
+            if exp == 1 else
+            Exp(base, exp)
         )
 
     def __lt__(self, other: Count) -> bool:

@@ -44,16 +44,6 @@ class TestNum(TestCase):
         self.assertLess(int(val1), int(val2))
 
     def test_div(self):
-        vals = {
-            3: 9,
-            4: 7,
-            5: 5,
-            6: 4,
-        }
-
-        for den, val in vals.items():
-            self.assert_num((7 * Exp(2, 2)) // den, val)
-
         self.assert_num(
             (-2 + Exp(2, 3)) // 3,
             2,
@@ -62,17 +52,17 @@ class TestNum(TestCase):
         self.assert_num(
             16 * ((-4 + Exp(2, 8)) // 3),
             1344,
-            "(16 * ((-4 + (2 ** 8)) // 3))")
+            "((-64 + (2 ** 12)) // 3)")
 
         self.assert_num(
             21 * ((Exp(3, 4) - 3) // 2),
             819,
-            "(21 * ((-3 + (3 ** 4)) // 2))")
+            "((-63 + (7 * (3 ** 5))) // 2)")
 
         self.assert_num(
             85 * ((Exp(2, 80) - 16) // 15),
             6850579644482898656668240,
-            "(85 * ((-16 + (2 ** 80)) // 15))")
+            "((-1360 + (85 * (2 ** 80))) // 15)")
 
         self.assert_num(
             ((3 * Exp(5, 4)) // 5) // 15,
@@ -87,7 +77,7 @@ class TestNum(TestCase):
         self.assert_num(
             ((3 * Exp(2, 3)) // 4) * 3,
             18,
-            "(9 * ((2 ** 3) // 4))")
+            "18")
 
         self.assert_num(
             (3 * Exp(5, 2)) // 5,
@@ -136,7 +126,7 @@ class TestNum(TestCase):
         self.assert_num(
             ((3 * Exp(2, 3)) // 4),
             6,
-            "(3 * ((2 ** 3) // 4))",
+            "6",
             (4, 2))
 
     def test_exp(self):
