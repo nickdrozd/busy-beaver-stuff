@@ -117,12 +117,37 @@ class TestNum(TestCase):
         self.assertEqual(div2 % 2, 0)
         self.assertEqual(int(div2) % 2, 0)
 
+        exp = ((3 * Exp(2, 3)) // 4)
+
+        self.assert_num(
+            exp,
+            6,
+            "(3 * ((2 ** 3) // 4))")
+
+        self.assertEqual(exp % 4, 0)
+        self.assertEqual(int(exp) % 4, 2)
+
     def test_exp(self):
         self.assert_num(Exp(1, 8), 1)
         self.assert_num(int(Exp(6, 0)), 1)
         self.assert_num(Exp(4, 5), 1024)
 
         self.assert_num(Exp(2, 3), 8, "(2 ** 3)")
+
+        self.assert_num(
+            3 - Exp(2, 5),
+            -29,
+            "(3 + -(2 ** 5))")
+
+        self.assert_num(
+            Exp(2, 3) ** 5,
+            32768,
+            "((2 ** 3) ** 5)")
+
+        self.assert_num(
+            2 ** Exp(3, 4),
+            2417851639229258349412352,
+            "(2 ** (3 ** 4))")
 
     def test_exp_mod(self):
         vals = {
@@ -235,32 +260,6 @@ class TestNum(TestCase):
             Exp(2, 5) + ((3 + Exp(3, 3)) * Exp(2, 3)),
             272,
             "((2 ** 3) * (7 + (3 ** 3)))")
-
-    def test_cover(self):
-        self.assert_num(
-            3 - Exp(2, 5),
-            -29,
-            "(3 + -(2 ** 5))")
-
-        self.assert_num(
-            Exp(2, 3) ** 5,
-            32768,
-            "((2 ** 3) ** 5)")
-
-        self.assert_num(
-            2 ** Exp(3, 4),
-            2417851639229258349412352,
-            "(2 ** (3 ** 4))")
-
-        exp = ((3 * Exp(2, 3)) // 4)
-
-        self.assert_num(
-            exp,
-            6,
-            "(3 * ((2 ** 3) // 4))")
-
-        self.assertEqual(exp % 4, 0)
-        self.assertEqual(int(exp) % 4, 2)
 
     def test_comparisons(self):
         self.assert_less(
