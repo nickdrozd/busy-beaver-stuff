@@ -404,12 +404,15 @@ class Exp(Num):
         return super().__mul__(other)
 
     def __rmul__(self, other: Count) -> Count:
-        if (isinstance(other, Num)
-                or other < 1
-                or isinstance(self.l, Num)
-                or log10(other) > 20
-                or other % self.l != 0
-            ):
+        if isinstance(other, Num) or isinstance(self.l, Num):
+            return super().__rmul__(other)
+
+        assert isinstance(other, int)
+
+        if other < -1 and -other % self.l == 0:
+            return -(-other * self)
+
+        if other < 1 or other % self.l != 0:
             return super().__rmul__(other)
 
         r = self.r

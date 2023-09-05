@@ -146,12 +146,12 @@ class TestNum(TestCase):
         self.assert_num(
             -64 * Exp(2, 20),
             -67108864,
-            "(-64 * (2 ** 20))")
+            "-(2 ** 26)")
 
         self.assert_num(
             -64 * Exp(2, 21),
             -134217728,
-            "(-64 * (2 ** 21))")
+            "-(2 ** 27)")
 
         self.assert_num(
             64 * Exp(2, 21),
