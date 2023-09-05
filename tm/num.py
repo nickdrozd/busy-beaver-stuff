@@ -354,8 +354,9 @@ class Div(Num):
 
         return (other // self.den) * self.num
 
-    def __floordiv__(self, other: Count) -> Div:
-        return Div(self, other * self.den)
+    def __floordiv__(self, other: Count) -> Count:
+        assert isinstance(num := self.num, Num)
+        return num // (other * self.den)
 
 
 class Exp(Num):
