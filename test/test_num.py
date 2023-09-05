@@ -221,19 +221,27 @@ class TestNum(TestCase):
 
         self.assert_num(2 ** Exp(3, 4), 2417851639229258349412352)
 
-        self.assert_num(((3 * Exp(2, 3)) // 4) * 3, 18)
+        self.assert_num(
+            ((3 * Exp(2, 3)) // 4) * 3,
+            18,
+            "(9 * ((2 ** 3) // 4))")
 
-        self.assert_num((3 * Exp(5, 2)) // 5, 15)
+        self.assert_num(
+            (3 * Exp(5, 2)) // 5,
+            15,
+            "(3 * (5 ** 1))")
 
         self.assert_num(
             (Exp(8, 4) - 64)  # type: ignore[operator]
                 // (7 * Exp(3, 2)),
-            64)
+            64,
+            "((-64 + (8 ** 4)) // (7 * (3 ** 2)))")
 
         self.assert_num(
             (6 * Exp(2, 3))  # type: ignore[operator]
                 // (6 * Exp(2, 2)),
-            2)
+            2,
+            "((3 * (2 ** 4)) // (3 * (2 ** 3)))")
 
         self.assertEqual(((3 * Exp(2, 3)) // 4) % 4, 0)
 
