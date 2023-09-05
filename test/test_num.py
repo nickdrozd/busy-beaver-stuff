@@ -305,6 +305,11 @@ class TestNum(TestCase):
             110464,
             "(-(2 ** 7) + ((2 ** 7) * ((3 ** 3) * (2 ** 5))))")
 
+        self.assert_num(
+            2 * (Exp(2, 3) * (1 + (Exp(3, 3) * Exp(2, 5)))),
+            13840,
+            "(2 * ((2 ** 3) * (1 + ((3 ** 3) * (2 ** 5)))))")
+
     def test_mul_add_neg(self):
         self.assert_num(
             -5 + (5 * Exp(2, 3)),
