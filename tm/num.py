@@ -479,10 +479,14 @@ class Exp(Num):
         return other * Exp(base, exp)
 
     def __floordiv__(self, other: Count) -> Count:
-        if other == self.l:
-            return Exp(self.l, self.r - 1)
+        if other != (base := self.base):
+            return super().__floordiv__(other)
 
-        return super().__floordiv__(other)
+        return (
+            base
+            if (exp_dec := self.exp - 1) == 1 else
+            Exp(base, exp_dec)
+        )
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, Exp):

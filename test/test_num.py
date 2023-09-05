@@ -80,7 +80,7 @@ class TestNum(TestCase):
         self.assert_num(
             (3 * Exp(5, 2)) // 5,
             15,
-            "(3 * (5 ** 1))")
+            "15")
 
         self.assert_num(
             (Exp(8, 4) - 64)  # type: ignore[operator]
