@@ -433,12 +433,12 @@ def _add_exponents(
         l: tuple[Exp, Count],
         r: tuple[Exp, Count],
 ) -> Count:
-    (l, l_co), (r, r_co) = l, r
+    (l_exp, l_co), (r_exp, r_co) = l, r
 
-    assert (base := l.l) == r.l
+    assert (base := l_exp.l) == r_exp.l
 
-    if (l_pow := l.r) > (r_pow := r.r):
-        return _add_exponents((r, r_co), (l, l_co))
+    if (l_pow := l_exp.r) > (r_pow := r_exp.r):
+        return _add_exponents((r_exp, r_co), (l_exp, l_co))
 
     assert l_pow <= r_pow
 
