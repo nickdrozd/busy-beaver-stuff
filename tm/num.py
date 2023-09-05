@@ -229,6 +229,12 @@ class Mul(Num):
 
         super().__init__(l, r)
 
+    def __repr__(self) -> str:
+        if self.l == -1:
+            return f'-{self.r}'
+
+        return super().__repr__()
+
     def estimate(self) -> int:
         return round(self.estimate_l() + self.estimate_r())
 
