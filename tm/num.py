@@ -365,13 +365,13 @@ class Exp(Num):
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul) and isinstance(other.r, Exp):
             if other.r == self:
-                return _add_exponents(self, other.r, r_co = other.l)
+                return _add_exponents((self, 1), (other.r, other.l))
 
         if (isinstance(other, Exp)
                 and other.l == self.l
                 and isinstance(self.r, int)
                 and isinstance(other.r, int)):
-            return _add_exponents(self, other)
+            return _add_exponents((self, 1), (other, 1))
 
         return super().__add__(other)
 
@@ -427,11 +427,11 @@ class Exp(Num):
 
 
 def _add_exponents(
-        l: Exp,
-        r: Exp,
-        l_co: Count = 1,
-        r_co: Count = 1,
+        l: tuple[Exp, Count],
+        r: tuple[Exp, Count],
 ) -> Count:
+    (l, l_co), (r, r_co) = l, r
+
     assert (base := l.l) == r.l
 
     lesser, greater = (
