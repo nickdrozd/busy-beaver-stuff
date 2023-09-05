@@ -64,8 +64,8 @@ class Num:
             r.estimate()
         )
 
-    @abstractmethod
-    def __neg__(self) -> Count: ...
+    def __neg__(self) -> Count:
+        return -1 * self
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -281,9 +281,6 @@ class Div(Num):
     def __init__(self, l: Num, r: Count):
         super().__init__(l, r)
 
-    def __neg__(self) -> Count:
-        raise NotImplementedError
-
     def __mod__(self, other: int) -> int:
         assert isinstance(self.r, int)
 
@@ -343,13 +340,6 @@ class Exp(Num):
 
     def estimate(self) -> int:
         return round(self.estimate_l() * 10 ** self.estimate_r())
-
-    def __neg__(self) -> Count:
-        return (
-            Exp(-(self.l), self.r)
-            if self.r % 2 == 1 else
-            -(self.l) * Exp(self.l, self.r - 1)
-        )
 
     def __mod__(self, other: int) -> int:
         if other == 1 or other == self.l:
