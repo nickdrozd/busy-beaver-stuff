@@ -430,6 +430,10 @@ class Exp(Num):
             if isinstance(other.l, int):
                 return other.l * (self * other.r)
 
+            if (isinstance(o_exp := other.l, Exp)
+                    and o_exp.base == self.base):
+                return (self * o_exp) * other.r
+
         return super().__mul__(other)
 
     def __rmul__(self, other: Count) -> Count:
