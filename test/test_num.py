@@ -16,12 +16,12 @@ class TestNum(TestCase):
             val: int,
             rep: str | None = None,
     ):
-        self.assertEqual(int(num), val)
+        self.assertEqual(val, int(num))
 
-        self.assertEqual(int(-num), -val)
+        self.assertEqual(-val, int(-num))
 
         if rep is not None:
-            self.assertEqual(str(num), rep)
+            self.assertEqual(rep, str(num))
 
         self.assertEqual(
             val,
