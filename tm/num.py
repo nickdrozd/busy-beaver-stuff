@@ -284,19 +284,27 @@ class Div(Num):
 
     op = operator.floordiv
 
+    @property
+    def num(self) -> Count:
+        return self.l
+
+    @property
+    def den(self) -> Count:
+        return self.r
+
     def __init__(self, l: Num, r: Count):
         super().__init__(l, r)
 
     def __mod__(self, other: int) -> int:
-        assert isinstance(self.r, int)
+        assert isinstance(den := self.den, int)
 
-        if other == self.r:
+        if other == den:
             return 0
 
         try:  # pylint: disable = too-many-try-statements
             rem, div = divmod(
-                self.l % (other * self.r),
-                self.r
+                self.num % (other * den),
+                den
             )
 
             assert div == 0
@@ -306,11 +314,11 @@ class Div(Num):
             pass
 
         try:
-            inv = pow(self.r, -1, other)
+            inv = pow(den, -1, other)
         except ValueError as exc:
             raise NumException from exc
 
-        return ((self.l % other) * (inv % other)) % other
+        return ((self.num % other) * (inv % other)) % other
 
     def estimate(self) -> int:
         return round(self.estimate_l() - self.estimate_r())
@@ -320,14 +328,14 @@ class Div(Num):
 
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, Num)
-                or isinstance(self.r, Num)
-                or other % self.r != 0):
+                or isinstance(self.den, Num)
+                or other % self.den != 0):
             return super().__rmul__(other)
 
-        return (other // self.r) * self.l
+        return (other // self.den) * self.num
 
     def __floordiv__(self, other: Count) -> Div:
-        return Div(self, other * self.r)
+        return Div(self, other * self.den)
 
 
 class Exp(Num):
