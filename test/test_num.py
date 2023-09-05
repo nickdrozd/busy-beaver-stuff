@@ -130,6 +130,26 @@ class TestNum(TestCase):
                     -Exp(b, e),
                     -(b ** e))
 
+        self.assert_num(
+            -Exp(2, 3),
+            -8,
+            "(-2 ** 3)")
+
+        self.assert_num(
+            -Exp(2, 4),
+            -16,
+            "(-2 * (2 ** 3))")
+
+        self.assert_num(
+            -64 * Exp(2, 20),
+            -67108864,
+            "(-64 * (2 ** 20))")
+
+        self.assert_num(
+            -64 * Exp(2, 21),
+            -134217728,
+            "(-64 * (2 ** 21))")
+
     def test_join_exp(self):
         exp = Exp(2, 17) * (4 + Exp(2, 15))
 
