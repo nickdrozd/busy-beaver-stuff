@@ -1,4 +1,4 @@
-# pylint: disable = useless-parent-delegation
+# pylint: disable = useless-parent-delegation, confusing-consecutive-elif
 
 from __future__ import annotations
 
@@ -249,11 +249,13 @@ class Mul(Num):
         return (self.l * other) * self.r
 
     def __add__(self, other: Count) -> Count:
-        if isinstance(other, Mul) and self.r == other.r:
-            return (self.l + other.l) * self.r
+        if isinstance(other, Mul):
+            if self.r == other.r:
+                return (self.l + other.l) * self.r
 
-        if isinstance(other, Add) and isinstance(other.l, int):
-            return other.l + (other.r + self)
+        elif isinstance(other, Add):
+            if isinstance(other.l, int):
+                return other.l + (other.r + self)
 
         return super().__add__(other)
 
@@ -373,22 +375,23 @@ class Exp(Num):
                 except NotImplementedError:
                     pass
 
-        if (isinstance(other, Exp)
-                and other.l == self.l
-                and isinstance(self.r, int)
-                and isinstance(other.r, int)):
-            return _add_exponents((self, 1), (other, 1))
+        elif isinstance(other, Exp):
+            if (other.l == self.l
+                    and isinstance(self.r, int)
+                    and isinstance(other.r, int)):
+                return _add_exponents((self, 1), (other, 1))
 
         return super().__add__(other)
 
     def __mul__(self, other: Count) -> Count:
-        if isinstance(other, Exp) and (base := self.l) == other.l:
-            return Exp(base, self.r + other.r)
+        if isinstance(other, Exp):
+            if (base := self.l) == other.l:
+                return Exp(base, self.r + other.r)
 
-        if isinstance(other, Add):
+        elif isinstance(other, Add):
             return (self * other.l) + (self * other.r)
 
-        if isinstance(other, Mul):
+        elif isinstance(other, Mul):
             if isinstance(other.l, int):
                 return other.l * (self * other.r)
 
