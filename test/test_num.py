@@ -23,6 +23,10 @@ class TestNum(TestCase):
         if rep is not None:
             self.assertEqual(str(num), rep)
 
+        self.assertEqual(
+            val,
+            eval(str(num)))  # pylint: disable = eval-used
+
     def assert_less(self, val1: Count, val2: Count):
         self.assertLess(val1, val2)
         self.assertLess(int(val1), int(val2))
