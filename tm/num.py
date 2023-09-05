@@ -434,13 +434,12 @@ def _add_exponents(
 
     assert (base := l.l) == r.l
 
-    lesser, greater = (
-        (lr, rr)
-        if (lr := l.r) < (rr := r.r) else
-        (rr, lr)
-    )
+    if (l_pow := l.r) > (r_pow := r.r):
+        return _add_exponents((r, r_co), (l, l_co))
 
-    diff = greater - lesser
+    assert l_pow <= r_pow
+
+    diff = r_pow - l_pow
 
     diff_exp = (
         base ** diff
@@ -448,7 +447,7 @@ def _add_exponents(
         Exp(base, diff)
     )
 
-    return (l_co + (r_co * diff_exp)) * Exp(base, lesser)
+    return (l_co + (r_co * diff_exp)) * Exp(base, l_pow)
 
 ########################################
 
