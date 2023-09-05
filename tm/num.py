@@ -326,9 +326,6 @@ class Div(Num):
     def __mod__(self, other: int) -> int:
         assert isinstance(den := self.den, int)
 
-        if other == den:
-            return 0
-
         try:  # pylint: disable = too-many-try-statements
             rem, div = divmod(
                 self.num % (other * den),

@@ -133,15 +133,11 @@ class TestNum(TestCase):
         self.assertEqual(div2 % 2, 0)
         self.assertEqual(int(div2) % 2, 0)
 
-        exp = ((3 * Exp(2, 3)) // 4)
-
         self.assert_num(
-            exp,
+            ((3 * Exp(2, 3)) // 4),
             6,
-            "(3 * ((2 ** 3) // 4))")
-
-        self.assertEqual(exp % 4, 0)
-        self.assertEqual(int(exp) % 4, 2)
+            "(3 * ((2 ** 3) // 4))",
+            (4, 2))
 
     def test_exp(self):
         self.assert_num(Exp(1, 8), 1)
