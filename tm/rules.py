@@ -136,6 +136,9 @@ def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
     if not isinstance(count, int) and count.depth() > 20:
         raise RuleLimit
 
+    if not isinstance(times, int) and times.depth() > 200:
+        raise RuleLimit
+
     exp = (
         div ** times
         if isinstance(times, int) and log10(times) < 3 else
