@@ -194,3 +194,24 @@ class TestNum(TestCase):
 
         with self.assertRaises(NotImplementedError):
             _ = 3 + Exp(2, 3) < 4 * Exp(2, 5)
+
+    def test_exp_add(self):
+        self.assert_num(
+            Exp(2, 3) + Exp(2, 5),
+            40,
+            "(5 * (2 ** 3))")
+
+        self.assert_num(
+            Exp(2, 3) + (Exp(2, 5) * 7),
+            232,
+            "((2 ** 3) + (7 * (2 ** 5)))")
+
+        self.assert_num(
+            (Exp(2, 3) * 7) + Exp(2, 5),
+            88,
+            "((7 * (2 ** 3)) + (2 ** 5))")
+
+        self.assert_num(
+            (Exp(2, 3) * 7) + (Exp(2, 5) * 11),
+            408,
+            "((7 * (2 ** 3)) + (11 * (2 ** 5)))")
