@@ -329,8 +329,7 @@ class Div(Num):
         try:  # pylint: disable = too-many-try-statements
             rem, div = divmod(
                 self.num % (other * den),
-                den
-            )
+                den)
 
             assert div == 0
 
