@@ -257,6 +257,9 @@ class Mul(Num):
             if isinstance(other.l, int):
                 return other.l + (other.r + self)
 
+        elif isinstance(other, Exp):
+            return other + self
+
         return super().__add__(other)
 
     def __floordiv__(self, other: Count) -> Count:

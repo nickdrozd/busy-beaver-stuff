@@ -209,7 +209,7 @@ class TestNum(TestCase):
         self.assert_num(
             (Exp(2, 3) * 7) + Exp(2, 5),
             88,
-            "((7 * (2 ** 3)) + (2 ** 5))")
+            "(11 * (2 ** 3))")
 
         self.assert_num(
             (Exp(2, 3) * 7) + (Exp(2, 5) * 11),
