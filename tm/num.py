@@ -363,9 +363,12 @@ class Exp(Num):
         return res
 
     def __add__(self, other: Count) -> Count:
-        if isinstance(other, Mul) and isinstance(other.r, Exp):
-            if other.r == self:
-                return _add_exponents((self, 1), (other.r, other.l))
+        if isinstance(other, Mul):
+            if isinstance(exp := other.r, Exp) and exp.l == self.l:
+                try:
+                    return _add_exponents((self, 1), (exp, other.l))
+                except NotImplementedError:
+                    pass
 
         if (isinstance(other, Exp)
                 and other.l == self.l
