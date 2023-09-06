@@ -209,11 +209,11 @@ class TestNum(TestCase):
             "(-3 * (2 ** 5))")
 
     def test_neg_exp(self):
-        for e in range(1, 10):
-            for b in range(2, 11):
+        for exp in range(1, 10):
+            for base in range(2, 11):
                 self.assert_num(
-                    -Exp(b, e),
-                    -(b ** e))
+                    -Exp(base, exp),
+                    -(base ** exp))
 
         self.assert_num(
             -Exp(2, 3),
