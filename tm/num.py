@@ -251,7 +251,13 @@ class Mul(Num):
         return -(self.l) * self.r
 
     def __mod__(self, other: int) -> int:
-        return ((self.l % other) * (self.r % other)) % other
+        if (l_mod := self.l % other) == 0:
+            return 0
+
+        if (r_mod := self.r % other) == 0:
+            return 0
+
+        return (l_mod * r_mod) % other
 
     def __mul__(self, other: Count) -> Count:
         return super().__mul__(other)
