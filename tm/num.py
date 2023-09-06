@@ -205,12 +205,16 @@ class Add(Num):
         )
 
     def __floordiv__(self, other: Count) -> Count:
-        if (isinstance(other, int)
-                and self.l % other == 0
-                and self.r % other == 0):
-            return (self.l // other) + (self.r // other)
+        try:
+            divisible = self.l % other == 0 and self.r % other == 0
+        except (NumException, TypeError):
+            divisible = False
 
-        return super().__floordiv__(other)
+        return (
+            (self.l // other) + (self.r // other)
+            if divisible else
+            super().__floordiv__(other)
+        )
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, Add):
