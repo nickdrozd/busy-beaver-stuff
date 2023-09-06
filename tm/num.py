@@ -146,6 +146,12 @@ class Num:
             Div(self, other)
         )
 
+    def __rfloordiv__(self, other: Count) -> Count:
+        if isinstance(other, int):
+            raise NotImplementedError
+
+        return Div(other, self)
+
     def __pow__(self, other: Count) -> Exp:
         return Exp(self, other)
 
@@ -205,6 +211,9 @@ class Add(Num):
         )
 
     def __floordiv__(self, other: Count) -> Count:
+        if not isinstance(other, int):
+            return super().__floordiv__(other)
+
         try:
             divisible = self.l % other == 0 and self.r % other == 0
         except (NumException, TypeError):
@@ -485,6 +494,9 @@ class Exp(Num):
 
     def __floordiv__(self, other: Count) -> Count:
         base, exp = self.base, self.exp
+
+        if not isinstance(base, int):
+            return super().__floordiv__(other)
 
         while other % base == 0:  # pylint: disable = while-used
             other //= base
