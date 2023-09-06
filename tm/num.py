@@ -226,6 +226,12 @@ class Add(Num):
         )
 
     def __lt__(self, other: Count) -> bool:
+        if other == self.r:
+            return self.l < 0
+
+        if other == self.l:
+            return self.r < 0
+
         if isinstance(other, Add):
             if self.l == other.l:
                 return self.r < other.r

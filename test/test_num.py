@@ -297,8 +297,9 @@ class TestNum(TestCase):
         with self.assertRaises(NotImplementedError):
             _ = 3 + Exp(2, 3) < 4 * Exp(2, 5)
 
-        with self.assertRaises(NotImplementedError):
-            _ = (-1 + (3 * Exp(2, 3))) < (3 * Exp(2, 3))
+        self.assertLess(
+            -1 + (3 * Exp(2, 3)),
+            3 * Exp(2, 3))
 
     def test_exp_add(self):
         self.assert_num(
