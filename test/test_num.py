@@ -318,6 +318,11 @@ class TestNum(TestCase):
             408,
             "(51 * (2 ** 3))")
 
+        self.assert_num(
+            ((2 ** (3 * Exp(2, 3))) + (2 ** (-1 + (3 * Exp(2, 3))))),
+            25165824,
+            "((2 ** (3 * (2 ** 3))) + (2 ** (-1 + (3 * (2 ** 3)))))")
+
     def test_exp_mul(self):
         self.assert_num(
             Exp(2, 3) * Exp(2, Exp(2, 5)),
