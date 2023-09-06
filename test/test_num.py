@@ -394,3 +394,34 @@ class TestNum(TestCase):
             (Exp(3, 2) * Exp(2, 3)) + (Exp(5, 3) * Exp(2, 3)),
             1072,
             "((2 ** 3) * ((3 ** 2) + (5 ** 3)))")
+
+    def test_add_neg(self):
+        self.assert_num(
+            Exp(2, 3) + Exp(2, 5),
+            40,
+            "(5 * (2 ** 3))")
+
+        self.assert_num(
+            -Exp(2, 3) + -Exp(2, 5),
+            -40,
+            "(-5 * (2 ** 3))")
+
+        self.assert_num(
+            -Exp(2, 3) + Exp(2, 5),
+            24,
+            "(3 * (2 ** 3))")
+
+        self.assert_num(
+            -Exp(2, 3) + (-Exp(2, 5) + Exp(3, 3)),
+            -13,
+            "(-(2 ** 3) + ((3 ** 3) + -(2 ** 5)))")
+
+        self.assert_num(
+            -Exp(2, 3) + (Exp(2, 5) * Exp(3, 3)),
+            856,
+            "(-(2 ** 3) + ((2 ** 5) * (3 ** 3)))")
+
+        self.assert_num(
+            -Exp(2, 2) + (-Exp(2, 3) + (Exp(2, 5) * Exp(3, 3))),
+            852,
+            "(-(2 ** 2) + (-(2 ** 3) + ((2 ** 5) * (3 ** 3))))")
