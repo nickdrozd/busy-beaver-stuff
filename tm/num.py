@@ -80,6 +80,13 @@ class Num:
         if isinstance(other, int):
             return False
 
+        if isinstance(other, Add):
+            if self == other.l:
+                return other.r > 0
+
+            if self == other.r:
+                return other.l > 0
+
         raise NotImplementedError
 
     def __le__(self, other: Count) -> bool:

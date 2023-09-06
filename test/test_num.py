@@ -301,6 +301,10 @@ class TestNum(TestCase):
             -1 + (3 * Exp(2, 3)),
             3 * Exp(2, 3))
 
+        self.assertLess(
+            3 * Exp(2, 3),
+            1 + (3 * Exp(2, 3)))
+
     def test_exp_add(self):
         self.assert_num(
             Exp(2, 3) + Exp(2, 5),
@@ -325,12 +329,12 @@ class TestNum(TestCase):
         self.assert_num(
             ((2 ** (3 * Exp(2, 3))) + (2 ** (-1 + (3 * Exp(2, 3))))),
             25165824,
-            "((2 ** (3 * (2 ** 3))) + (2 ** (-1 + (3 * (2 ** 3)))))")
+            "(3 * (2 ** (-1 + (3 * (2 ** 3)))))")
 
         self.assert_num(
             ((2 ** (3 * Exp(2, 3))) + (2 ** (1 + (3 * Exp(2, 3))))),
             50331648,
-            "((2 ** (3 * (2 ** 3))) + (2 ** (1 + (3 * (2 ** 3)))))")
+            "(3 * (2 ** (3 * (2 ** 3))))")
 
     def test_exp_mul(self):
         self.assert_num(
