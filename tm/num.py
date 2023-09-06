@@ -543,9 +543,14 @@ Count = int | Num
 
 TRUNCATE_COUNT = 10 ** 12
 
+MAX_DEPTH = 120
+
 def show_number(num: Count) -> str:
-    return (
-        str(num)
-        if not isinstance(num, int) or num < TRUNCATE_COUNT else
-        f"(~10^{log10(num):.0f})"
-    )
+    if isinstance(num, int):
+        if num >= TRUNCATE_COUNT:
+            return f"(~10^{log10(num):.0f})"
+
+    elif num.depth > MAX_DEPTH:  # no-coverage
+        return "(???)"
+
+    return str(num)

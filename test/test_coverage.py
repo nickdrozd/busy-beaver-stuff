@@ -275,7 +275,9 @@ class TestFloss(TestCase):
 
     def test_exp_mod_limit(self):
         self.assertIsNotNone(
-            Machine(
+            machine := Machine(
                 "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA",
                 opt_macro = 41,
             ).run())
+
+        print(machine)
