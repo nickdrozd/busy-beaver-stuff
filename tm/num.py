@@ -42,10 +42,15 @@ class Num:
 
     @cached_property
     def depth(self) -> int:
-        l_depth = 0 if isinstance(self.l, int) else self.l.depth
-        r_depth = 0 if isinstance(self.r, int) else self.r.depth
+        return 1 + max(self.l_depth, self.r_depth)
 
-        return 1 + max(l_depth, r_depth)
+    @property
+    def l_depth(self) -> int:
+        return 0 if isinstance(self.l, int) else self.l.depth
+
+    @property
+    def r_depth(self) -> int:
+        return 0 if isinstance(self.r, int) else self.r.depth
 
     @abstractmethod
     def estimate(self) -> int: ...
