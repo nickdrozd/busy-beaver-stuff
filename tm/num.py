@@ -107,9 +107,6 @@ class Num:
         if isinstance(other, int):
             return self if other == 0 else Add(other, self)
 
-        if other == self:
-            return 2 * self
-
         if isinstance(other, Add):
             if isinstance(other.l, int):
                 return other.l + (self + other.r)
