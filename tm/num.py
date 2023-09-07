@@ -270,7 +270,11 @@ class Mul(Num):
         return (l_mod * r_mod) % other
 
     def __mul__(self, other: Count) -> Count:
-        return super().__mul__(other)
+        return (
+            Mul(-1, self.r * other)
+            if self.l == -1 else
+            super().__mul__(other)
+        )
 
     def __rmul__(self, other: Count) -> Count:
         if (isinstance(other, int)
