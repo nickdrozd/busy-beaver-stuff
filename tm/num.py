@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import operator
 from abc import abstractmethod
-from math import sqrt, floor, ceil, log, log10
+from math import sqrt, floor, ceil, log, log10, gcd as pgcd
 from typing import TYPE_CHECKING
 from functools import cached_property
 
@@ -212,16 +212,13 @@ class Add(Num):
         )
 
     def __floordiv__(self, other: int) -> Count:
-        try:
-            divisible = self.l % other == 0 and self.r % other == 0
-        except (NumException, TypeError):  # no-coverage
-            divisible = False
+        lgcd = gcd(other, l := self.l)
+        rgcd = gcd(other, r := self.r)
 
-        return (
-            (self.l // other) + (self.r // other)
-            if divisible else
-            super().__floordiv__(other)
-        )
+        if lgcd != rgcd or lgcd == 1:
+            return super().__floordiv__(other)
+
+        return ((l // lgcd) + (r // lgcd)) // (other // lgcd)
 
     def __lt__(self, other: Count) -> bool:
         if other == self.r:
@@ -551,6 +548,32 @@ def _add_exponents(
     )
 
     return (l_co + (r_co * diff_exp)) * Exp(base, l_pow)
+
+
+def gcd(den: int, num: Count) -> int:
+    if isinstance(num, int):
+        return pgcd(den, num)
+
+    if isinstance(num, Add):
+        return min(gcd(den, num.l), gcd(den, num.r))
+
+    if isinstance(num, Mul):
+        return max(gcd(den, num.l), gcd(den, num.r))
+
+    if isinstance(num, Div):
+        return den
+
+    if isinstance(num, Exp) and isinstance(base := num.base, int):
+        val, exp = 1, num.exp
+
+        while den % base == 0:  # pylint: disable = while-used
+            val *= base
+            den //= base
+            exp -= 1
+
+        return val
+
+    return 1
 
 ########################################
 
