@@ -398,7 +398,7 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 10) * (-Exp(2, 6) * (1 + Exp(2, 4))),
             -1114112,
-            "(-17 * (2 ** 16))")
+            "-(17 * (2 ** 16))")
 
     def test_mul_add_neg(self):
         self.assert_num(
@@ -426,7 +426,7 @@ class TestNum(TestCase):
         self.assert_num(
             -Exp(2, 3) + -Exp(2, 5),
             -40,
-            "(-5 * (2 ** 3))")
+            "-(5 * (2 ** 3))")
 
         self.assert_num(
             -Exp(2, 3) + Exp(2, 5),
@@ -446,7 +446,7 @@ class TestNum(TestCase):
         self.assert_num(
             -Exp(2, 2) + (-Exp(2, 3) + (Exp(2, 5) * Exp(3, 3))),
             852,
-            "((-3 * (2 ** 2)) + ((2 ** 5) * (3 ** 3)))")
+            "(((2 ** 5) * (3 ** 3)) + -(3 * (2 ** 2)))")
 
     def test_div_gcd(self):
         self.assert_num(

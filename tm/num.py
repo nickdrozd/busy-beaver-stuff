@@ -277,13 +277,13 @@ class Mul(Num):
 
     def __mul__(self, other: Count) -> Count:
         return (
-            Mul(-1, self.r * other)
+            -1 * (self.r * other)
             if self.l == -1 else
             super().__mul__(other)
         )
 
     def __rmul__(self, other: Count) -> Count:
-        if (isinstance(other, int)
+        if ((isinstance(other, int) and other != -1)
                 or (isinstance(s_exp := self.l, Exp)
                    and other == s_exp.base)):
             return (other * self.l) * self.r
