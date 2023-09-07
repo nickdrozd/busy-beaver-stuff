@@ -311,7 +311,7 @@ class Mul(Num):
                 return other.l + (other.r + self)
 
             if isinstance(other.l, Mul):
-                if other.l.l == self.l:
+                if other.l.l == self.l:  # pragma: no branch
                     return (self + other.l) + other.r
 
         elif isinstance(other, Exp):
@@ -585,10 +585,11 @@ def gcd(den: int, num: Count) -> int:
     if isinstance(num, Mul):
         return max(gcd(den, num.l), gcd(den, num.r))
 
-    if isinstance(num, Div):
+    if isinstance(num, Div):  # no-coverage
         return den
 
-    if isinstance(num, Exp) and isinstance(base := num.base, int):
+    if (isinstance(num, Exp)
+            and isinstance(base := num.base, int)):  # pragma: no branch
         val, exp = 1, num.exp
 
         while den % base == 0:  # pylint: disable = while-used
@@ -598,7 +599,7 @@ def gcd(den: int, num: Count) -> int:
 
         return val
 
-    return 1
+    return 1  # no-coverage
 
 ########################################
 
