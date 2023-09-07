@@ -381,6 +381,9 @@ class Div(Num):
     def estimate(self) -> int:
         return round(self.estimate_l() - self.estimate_r())
 
+    def __add__(self, other: Count) -> Count:
+        return (self.num + (other * self.den)) // self.den
+
     def __radd__(self, other: Count) -> Count:
         assert isinstance(other, int)
 
