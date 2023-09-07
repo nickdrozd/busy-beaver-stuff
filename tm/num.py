@@ -104,19 +104,17 @@ class Num:
         return self == other or self > other
 
     def __add__(self, other: Count) -> Count:
-        return (
-            self if other == 0
-            else
-            Add(other, self) if isinstance(other, int)
-            else
-            2 * self if other == self
-            else
-            other.l + (self + other.r)
-                if (isinstance(other, Add)
-                    and isinstance(other.l, int))
-            else
-            Add(self, other)
-        )
+        if isinstance(other, int):
+            return self if other == 0 else Add(other, self)
+
+        if other == self:
+            return 2 * self
+
+        if isinstance(other, Add):
+            if isinstance(other.l, int):
+                return other.l + (self + other.r)
+
+        return Add(self, other)
 
     def __radd__(self, other: Count) -> Count:
         assert isinstance(other, int)
