@@ -427,7 +427,7 @@ class TestNum(TestCase):
         self.assert_num(
             -Exp(2, 2) + (-Exp(2, 3) + (Exp(2, 5) * Exp(3, 3))),
             852,
-            "(-(2 ** 2) + (-(2 ** 3) + ((2 ** 5) * (3 ** 3))))")
+            "((-3 * (2 ** 2)) + ((2 ** 5) * (3 ** 3)))")
 
     def test_div_gcd(self):
         self.assert_num(

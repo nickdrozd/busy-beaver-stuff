@@ -303,6 +303,10 @@ class Mul(Num):
             if isinstance(other.l, int):  # pragma: no branch
                 return other.l + (other.r + self)
 
+            if isinstance(other.l, Mul):
+                if other.l.l == self.l:
+                    return (self + other.l) + other.r
+
         elif isinstance(other, Exp):
             return other + self
 
