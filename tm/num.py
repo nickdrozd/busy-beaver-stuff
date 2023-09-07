@@ -146,18 +146,12 @@ class Num:
 
         return (self - mod) // other, mod
 
-    def __floordiv__(self, other: Count) -> Count:
+    def __floordiv__(self, other: int) -> Count:
         return (
             self
             if other == 1 else
             Div(self, other)
         )
-
-    def __rfloordiv__(self, other: Count) -> Count:
-        if isinstance(other, int):  # no-coverage
-            raise NotImplementedError
-
-        return Div(other, self)  # no-coverage
 
     def __pow__(self, other: Count) -> Exp:
         return Exp(self, other)
@@ -217,10 +211,7 @@ class Add(Num):
             super().__rmul__(other)
         )
 
-    def __floordiv__(self, other: Count) -> Count:
-        if not isinstance(other, int):
-            return super().__floordiv__(other)
-
+    def __floordiv__(self, other: int) -> Count:
         try:
             divisible = self.l % other == 0 and self.r % other == 0
         except (NumException, TypeError):  # no-coverage
@@ -320,23 +311,22 @@ class Mul(Num):
 
         return super().__add__(other)
 
-    def __floordiv__(self, other: Count) -> Count:
-        if isinstance(other, int):
-            l, r = self.l, self.r
+    def __floordiv__(self, other: int) -> Count:
+        l, r = self.l, self.r
 
-            if l % other == 0:
-                return (l // other) * r
+        if l % other == 0:
+            return (l // other) * r
 
-            if r % other == 0:
-                return l * (r // other)
+        if r % other == 0:
+            return l * (r // other)
 
-            if isinstance(l, int) and other % l == 0:
-                return r // (other // l)
+        if isinstance(l, int) and other % l == 0:
+            return r // (other // l)
 
-            if isinstance(r, int) and other % r == 0:  # no-coverage
-                return l // (other // r)
+        if isinstance(r, int) and other % r == 0:  # no-coverage
+            return l // (other // r)
 
-        return super().__floordiv__(other)
+        return super().__floordiv__(other)  # no-coverage
 
 
 class Div(Num):
@@ -349,10 +339,11 @@ class Div(Num):
         return self.l
 
     @property
-    def den(self) -> Count:
-        return self.r
+    def den(self) -> int:
+        assert isinstance(r := self.r, int)
+        return r
 
-    def __init__(self, l: Num, r: Count):
+    def __init__(self, l: Num, r: int):
         super().__init__(l, r)
 
     def __mod__(self, other: int) -> int:
@@ -389,7 +380,7 @@ class Div(Num):
             super().__rmul__(other)
         )
 
-    def __floordiv__(self, other: Count) -> Count:
+    def __floordiv__(self, other: int) -> Count:
         assert isinstance(num := self.num, Num)
         return num // (other * self.den)
 
@@ -505,7 +496,7 @@ class Exp(Num):
 
         return other * Exp(base, exp)
 
-    def __floordiv__(self, other: Count) -> Count:
+    def __floordiv__(self, other: int) -> Count:
         base, exp = self.base, self.exp
 
         if not isinstance(base, int):  # no-coverage
