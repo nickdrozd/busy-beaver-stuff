@@ -43,6 +43,15 @@ class TestNum(TestCase):
         self.assertLess(val1, val2)
         self.assertLess(int(val1), int(val2))
 
+    def assert_depth(self, val: Count, depth: int):
+        assert not isinstance(val, int)
+        self.assertEqual(val.depth, depth)
+
+    def test_depth(self):
+        self.assert_depth(Exp(3, 3), 1)
+        self.assert_depth(-Exp(2, 3), 2)
+        self.assert_depth(Exp(3, 3) + -Exp(2, 3), 3)
+
     def test_div(self):
         self.assert_num(
             (-2 + Exp(2, 3)) // 3,
