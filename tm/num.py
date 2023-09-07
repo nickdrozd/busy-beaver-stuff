@@ -114,6 +114,9 @@ class Num:
             if isinstance(other.l, int):
                 return other.l + (self + other.r)
 
+        if isinstance(other, Div):
+            return ((other.den * self) + other.num) // other.den
+
         return Add(self, other)
 
     def __radd__(self, other: Count) -> Count:
@@ -377,6 +380,11 @@ class Div(Num):
 
     def estimate(self) -> int:
         return round(self.estimate_l() - self.estimate_r())
+
+    def __radd__(self, other: Count) -> Count:
+        assert isinstance(other, int)
+
+        return ((other * self.den) + self.num) // self.den
 
     def __mul__(self, other: Count) -> Count:
         return other * self  # no-coverage
