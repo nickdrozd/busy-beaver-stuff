@@ -291,6 +291,10 @@ class TestNum(TestCase):
             Exp(5, 6),
             Exp(3, 4))
 
+        self.assertLess(
+            Exp(2, 3),
+            Exp(2, 3) + Exp(3, 3))
+
         with self.assertRaises(NotImplementedError):
             _ = Exp(2, 5) < Exp(3, 4)
 
