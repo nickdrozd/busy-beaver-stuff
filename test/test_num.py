@@ -98,6 +98,11 @@ class TestNum(TestCase):
             402653160,
             "(-24 + (3 * (2 ** (-5 + (2 ** 5)))))")
 
+        self.assert_num(
+            (2 * Exp(3, 13)) * ((-1 + Exp(3, 7)) // 2),
+            3485190078,
+            "((2 * (3 ** 13)) * ((-1 + (3 ** 7)) // 2))")
+
     def test_div_mod(self):
         self.assert_num(
             (Exp(2, 2) * Exp(5, 2)) // 2,
