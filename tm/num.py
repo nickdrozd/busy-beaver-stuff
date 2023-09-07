@@ -396,9 +396,15 @@ class Exp(Num):
         return self.r
 
     def __init__(self, l: Count, r: Count):
-        while (isinstance(l, int)  # pylint: disable = while-used
-                   and l > 1
-                   and floor(root := sqrt(l)) == ceil(root)):
+        while isinstance(l, int) and l > 1:  # pylint: disable = while-used
+            if l == 8:
+                l = 2
+                r *= 3
+                break
+
+            if floor(root := sqrt(l)) != ceil(root):
+                break
+
             r *= int(log(l, root))
             l = int(root)
 
