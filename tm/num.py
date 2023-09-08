@@ -86,11 +86,11 @@ class Num:
             return False
 
         if isinstance(other, Add):
-            if self == other.l:
-                return other.r > 0
-
             if self == other.r:
                 return other.l > 0
+
+            if self == other.l:
+                return other.r > 0
 
         raise NotImplementedError
 
@@ -226,11 +226,11 @@ class Add(Num):
         return ((l // lgcd) + (r // lgcd)) // (other // lgcd)
 
     def __lt__(self, other: Count) -> bool:
-        if other == self.r:
-            return self.l < 0
-
         if other == self.l:
             return self.r < 0
+
+        if other == self.r:
+            return self.l < 0
 
         if isinstance(other, Add):
             if self.l == other.l:
