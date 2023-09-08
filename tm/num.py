@@ -338,6 +338,19 @@ class Mul(Num):
 
         return super().__floordiv__(other)  # no-coverage
 
+    def __lt__(self, other: Count) -> bool:
+        if self.l < 0:
+            raise NotImplementedError
+
+        if isinstance(other, Mul):
+            if self.l == other.l:
+                return self.r < other.r
+
+            if self.r == other.r:  # pragma: no branch
+                return self.l < other.l
+
+        return super().__lt__(other)
+
 
 class Div(Num):
     join = '//'
