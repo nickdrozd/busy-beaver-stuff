@@ -399,6 +399,13 @@ class Div(Num):
         assert isinstance(num := self.num, Num)
         return num // (other * self.den)
 
+    def __lt__(self, other: Count) -> bool:
+        if isinstance(other, Div):
+            if self.den == other.den:  # pragma: no branch
+                return self.num < other.num
+
+        return super().__lt__(other)
+
 
 class Exp(Num):
     join = '**'
