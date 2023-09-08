@@ -128,11 +128,10 @@ class Num:
         return other + -self
 
     def __mul__(self, other: Count) -> Count:
-        return (
-            other * self
-            if isinstance(other, int) else
-            Mul(self, other)
-        )
+        if isinstance(other, int):
+            return other * self
+
+        return Mul(self, other)
 
     def __rmul__(self, other: Count) -> Count:
         return (
