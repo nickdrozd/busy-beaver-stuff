@@ -313,6 +313,9 @@ class TestNum(TestCase):
             3 * Exp(2, 3),
             1 + (3 * Exp(2, 3)))
 
+        with self.assertRaises(NotImplementedError):
+            _ = (1 + Exp(2, 3)) // 3 < (1 + Exp(2, 5)) // 3
+
     def test_exp_add(self):
         self.assert_num(
             Exp(2, 3) + Exp(2, 5),
