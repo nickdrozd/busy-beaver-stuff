@@ -239,6 +239,11 @@ class Add(Num):
             if self.r == other.r:
                 return self.l < other.l
 
+            if (isinstance(self.l, int)
+                    and isinstance(other.l, int)
+                    and abs(self.l - other.l) < 10):
+                return self.r < other.r
+
         return super().__lt__(other)
 
 
