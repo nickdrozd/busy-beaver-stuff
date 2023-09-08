@@ -131,6 +131,9 @@ class Num:
         if isinstance(other, int):
             return other * self
 
+        if isinstance(other, Div):
+            return (self * other.num) // other.den
+
         return Mul(self, other)
 
     def __rmul__(self, other: Count) -> Count:
@@ -384,9 +387,6 @@ class Div(Num):
         assert isinstance(other, int)
 
         return ((other * self.den) + self.num) // self.den
-
-    def __mul__(self, other: Count) -> Count:
-        return other * self  # no-coverage
 
     def __rmul__(self, other: Count) -> Count:
         return (

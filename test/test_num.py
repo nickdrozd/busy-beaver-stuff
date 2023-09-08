@@ -101,7 +101,7 @@ class TestNum(TestCase):
         self.assert_num(
             (2 * Exp(3, 13)) * ((-1 + Exp(3, 7)) // 2),
             3485190078,
-            "((2 * (3 ** 13)) * ((-1 + (3 ** 7)) // 2))")
+            "(2186 * (3 ** 13))")
 
     def test_div_mod(self):
         self.assert_num(
@@ -347,7 +347,7 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(3, 18) + ((2 * Exp(3, 18)) * ((-1 + Exp(3, 4)) // 2)),
             31381059609,
-            "((3 ** 18) + ((2 * (3 ** 18)) * ((-1 + (3 ** 4)) // 2)))")
+            "(3 ** 22)")
 
     def test_exp_mul(self):
         self.assert_num(
