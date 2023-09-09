@@ -193,6 +193,16 @@ class TestNum(TestCase):
         for (base, exp, mod), val in vals.items():
             self.assertEqual(Exp(base, exp) % mod, val)
 
+        self.assertEqual(
+            divmod(Exp(2, 3), 2),
+            (Exp(2, 2), 0))
+
+        self.assert_num(
+            3 * Exp(2, 3),
+            24,
+            "(3 * (2 ** 3))",
+            (2, 0))
+
     def test_eq_sub(self):
         # pylint: disable = line-too-long
 
@@ -343,6 +353,14 @@ class TestNum(TestCase):
         self.assertLess(
             (1 + Exp(2, 3)) // 3,
             (1 + Exp(2, 5)) // 3)
+
+        self.assertLess(
+            1,
+            (1 + Exp(2, 3)) // 3)
+
+        self.assertLess(
+            Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
+            -1 + (Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5)))))))
 
         # pylint: disable = line-too-long
         self.assertGreater(
