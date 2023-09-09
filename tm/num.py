@@ -114,6 +114,10 @@ class Num:
             if isinstance(other.l, int):
                 return other.l + (self + other.r)
 
+        if isinstance(other, Mul):
+            if other.l == -1 and self == other.r:
+                return 0
+
         if isinstance(other, Div):
             return ((other.den * self) + other.num) // other.den
 
@@ -329,6 +333,9 @@ class Mul(Num):
 
         elif isinstance(other, Exp):
             return other + self
+
+        if self.l == -1 and other == self.r:
+            return 0
 
         return super().__add__(other)
 
