@@ -92,6 +92,9 @@ class Num:
             if self == other.l:
                 return other.r > 0
 
+            if isinstance(other.l, int) and abs(other.l) < 10:
+                return self < other.r
+
         raise NotImplementedError
 
     def __le__(self, other: Count) -> bool:
@@ -243,6 +246,9 @@ class Add(Num):
                     and isinstance(other.l, int)
                     and abs(self.l - other.l) < 10):
                 return self.r < other.r
+
+        if isinstance(self.l, int) and abs(self.l) < 10:
+            return self.r < other
 
         return super().__lt__(other)
 
