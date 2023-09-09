@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import log10
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
@@ -47,10 +48,26 @@ class TestNum(TestCase):
         assert not isinstance(val, int)
         self.assertEqual(val.depth, depth)
 
+    def assert_estimate(self, val: Count, estimate: int):
+        assert not isinstance(val, int)
+
+        self.assertEqual(
+            val.estimate(),
+            int(log10(int(val))))
+
+        self.assertEqual(
+            val.estimate(),
+            estimate)
+
     def test_depth(self):
         self.assert_depth(Exp(3, 3), 1)
         self.assert_depth(-Exp(2, 3), 2)
         self.assert_depth(Exp(3, 3) + -Exp(2, 3), 3)
+
+    def test_estimate(self):
+        self.assert_estimate(
+            (469761947 + (19 * Exp(2, 69174))) // 9,
+            20823)
 
     def test_div(self):
         self.assert_num(
