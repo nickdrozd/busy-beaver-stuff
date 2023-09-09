@@ -240,6 +240,9 @@ class Add(Num):
             return self.l < 0
 
         if isinstance(other, Add):
+            if self == other.r:
+                return other.l > 0
+
             if self.l == other.l:
                 return self.r < other.r
 
