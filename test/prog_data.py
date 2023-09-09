@@ -1476,6 +1476,10 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         2424,
         "((469761947 + (19 * (2 ** 69174))) // 9)",
     ),
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE": (
+        458,
+        "4",
+    ),
     "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": (
         655,
         "(4088 + (2 ** (1 + (2 ** (2 + (2 ** (2 + (2 ** 524290))))))))",
