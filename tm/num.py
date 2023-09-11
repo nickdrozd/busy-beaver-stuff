@@ -24,10 +24,6 @@ class Num:
     join: str
     op: Callable[[int, int], int]
 
-    def __init__(self, l: Count, r: Count):
-        self.l = l
-        self.r = r
-
     def __repr__(self) -> str:
         # pylint: disable = line-too-long
 
@@ -182,7 +178,8 @@ class Add(Num):
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
-        super().__init__(l, r)
+        self.l = l
+        self.r = r
 
     def estimate(self) -> int:
         return round(max(self.estimate_l(), self.estimate_r()))
@@ -273,7 +270,8 @@ class Mul(Num):
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
-        super().__init__(l, r)
+        self.l = l
+        self.r = r
 
     def __repr__(self) -> str:
         if self.l == -1:
@@ -394,7 +392,8 @@ class Div(Num):
     def __init__(self, l: Num, r: int):
         assert r > 0
 
-        super().__init__(l, r)
+        self.l = l
+        self.r = r
 
     def __neg__(self) -> Count:
         return -(self.num) // self.den
@@ -476,7 +475,8 @@ class Exp(Num):
             r *= int(log(l, root))
             l = int(root)
 
-        super().__init__(l, r)
+        self.l = l
+        self.r = r
 
     def estimate(self) -> int:
         return round(self.estimate_l() * 10 ** self.estimate_r())
