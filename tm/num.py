@@ -392,6 +392,8 @@ class Div(Num):
         return r
 
     def __init__(self, l: Num, r: int):
+        assert r > 0
+
         super().__init__(l, r)
 
     def __mod__(self, other: int) -> int:
