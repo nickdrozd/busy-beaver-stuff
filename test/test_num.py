@@ -1,3 +1,5 @@
+# pylint: disable = line-too-long
+
 from __future__ import annotations
 
 from math import log10
@@ -204,8 +206,6 @@ class TestNum(TestCase):
             (2, 0))
 
     def test_eq_sub(self):
-        # pylint: disable = line-too-long
-
         exp1 = (6584 + (2266788192 * Exp(64, 11524))) + (6496 * ((-64 + Exp(64, 11524)) // 63))
         exp2 = (6581 + (2266788192 * Exp(64, 11524))) + (6496 * ((-64 + Exp(64, 11524)) // 63))
         exp3 = (6578 + (2266788192 * Exp(64, 11524))) + (6496 * ((-64 + Exp(64, 11524)) // 63))
@@ -361,8 +361,6 @@ class TestNum(TestCase):
         self.assertLess(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
             -1 + (Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5)))))))
-
-        # pylint: disable = line-too-long
 
         self.assertGreater(
             ((Exp(2, 5) * (-1 + Exp(2, (-5 + Exp(2, 5))))) + -(Exp(2, 5) * (-1 + Exp(2, (-5 + Exp(2, Exp(2, 5))))))) + (-(Exp(2, 5) * (-1 + Exp(2, (-5 + Exp(2, 5))))) + (Exp(2, 5) * (-1 + Exp(2, (-5 + Exp(2, Exp(2, Exp(2, Exp(2, 5))))))))),
@@ -545,7 +543,6 @@ class TestNum(TestCase):
             436880,
             "((-80 + (5 * (2 ** 18))) // 3)")
 
-        # pylint: disable = line-too-long
         self.assert_num(
             (13164 + ((70837131 * Exp(2, 12)) + ((-118784 + (29 * Exp(2, 12))) // 9))) // 3,
             96716300580,
