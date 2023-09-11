@@ -137,12 +137,15 @@ class TestFloss(TestCase):
         progs = (
             "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
             "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",
-            "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",
+            "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",
         )
 
         for prog in progs:
             self.assertIsNotNone(
-                Machine(prog).run().limrul)
+                Machine(
+                    prog,
+                    opt_macro = 200,
+                ).run().limrul)
 
     def test_config_limit(self):
         self.assertIsNotNone(
@@ -281,3 +284,9 @@ class TestFloss(TestCase):
             ).run())
 
         print(machine)
+
+    def test_exp_mod_special_cases(self):
+        self.assertIsNotNone(
+            Machine(
+                "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",
+            ).run().halted)
