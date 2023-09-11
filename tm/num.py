@@ -396,6 +396,9 @@ class Div(Num):
 
         super().__init__(l, r)
 
+    def __neg__(self) -> Count:
+        return -(self.num) // self.den
+
     def __mod__(self, other: int) -> int:
         assert isinstance(den := self.den, int)
 
