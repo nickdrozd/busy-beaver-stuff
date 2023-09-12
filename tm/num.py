@@ -171,6 +171,9 @@ class Num:
 
 
 class Add(Num):
+    l: Count
+    r: Num
+
     join = '+'
 
     op = operator.add
@@ -262,6 +265,9 @@ class Add(Num):
 
 
 class Mul(Num):
+    l: Count
+    r: Num
+
     join = '*'
 
     op = operator.mul
@@ -373,6 +379,9 @@ class Mul(Num):
 
 
 class Div(Num):
+    l: Num
+    r: int
+
     join = '//'
 
     op = operator.floordiv
