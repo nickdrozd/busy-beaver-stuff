@@ -478,9 +478,6 @@ class Div(Num):
         return ((other * self.den) + self.num) // self.den
 
     def __mul__(self, other: Count) -> Count:
-        if other == -1:
-            return super().__mul__(other)
-
         return (self.num * other) // self.den
 
     def __rmul__(self, other: int) -> Count:
