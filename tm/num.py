@@ -608,7 +608,7 @@ def _add_exponents(
 
     diff_exp = (
         base ** diff
-        if not isinstance(base, int) or diff < 1_000 else
+        if not isinstance(base, int) or diff < 2 else
         Exp(base, diff)
     )
 

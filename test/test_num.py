@@ -120,7 +120,7 @@ class TestNum(TestCase):
         self.assert_num(
             (2 * Exp(3, 13)) * ((-1 + Exp(3, 7)) // 2),
             3485190078,
-            "(2186 * (3 ** 13))")
+            "((3 ** 13) * (-1 + (3 ** 7)))")
 
     def test_div_mod(self):
         self.assert_num(
@@ -286,7 +286,7 @@ class TestNum(TestCase):
         self.assert_num(
             exp,
             8193 * (2 ** 19),
-            "(8193 * (2 ** 19))")
+            "((2 ** 19) * (1 + (2 ** 13)))")
 
         self.assert_num(
             exp,
@@ -300,7 +300,7 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 5) + ((3 + Exp(3, 3)) * Exp(2, 3)),
             272,
-            "((2 ** 3) * (7 + (3 ** 3)))")
+            "((2 ** 3) * (3 + ((3 ** 3) + (2 ** 2))))")
 
     def test_comparisons(self):
         self.assert_less(
@@ -374,22 +374,22 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 3) + Exp(2, 5),
             40,
-            "(5 * (2 ** 3))")
+            "((2 ** 3) * (1 + (2 ** 2)))")
 
         self.assert_num(
             Exp(2, 3) + (Exp(2, 5) * 7),
             232,
-            "(29 * (2 ** 3))")
+            "((2 ** 3) * (1 + (7 * (2 ** 2))))")
 
         self.assert_num(
             (Exp(2, 3) * 7) + Exp(2, 5),
             88,
-            "(11 * (2 ** 3))")
+            "((2 ** 3) * (7 + (2 ** 2)))")
 
         self.assert_num(
             (Exp(2, 3) * 7) + (Exp(2, 5) * 11),
             408,
-            "(51 * (2 ** 3))")
+            "((2 ** 3) * (7 + (11 * (2 ** 2))))")
 
         self.assert_num(
             ((2 ** (3 * Exp(2, 3))) + (2 ** (-1 + (3 * Exp(2, 3))))),
@@ -460,7 +460,7 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 10) * (-Exp(2, 6) * (1 + Exp(2, 4))),
             -1114112,
-            "-(17 * (2 ** 16))")
+            "-((2 ** 16) * (1 + (2 ** 4)))")
 
     def test_mul_add_neg(self):
         self.assert_num(
@@ -500,17 +500,17 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 3) + Exp(2, 5),
             40,
-            "(5 * (2 ** 3))")
+            "((2 ** 3) * (1 + (2 ** 2)))")
 
         self.assert_num(
             -Exp(2, 3) + -Exp(2, 5),
             -40,
-            "-(5 * (2 ** 3))")
+            "-((2 ** 3) * (1 + (2 ** 2)))")
 
         self.assert_num(
             -Exp(2, 3) + Exp(2, 5),
             24,
-            "(3 * (2 ** 3))")
+            "((2 ** 3) * (-1 + (2 ** 2)))")
 
         self.assert_num(
             -Exp(2, 3) + (-Exp(2, 5) + Exp(3, 3)),
@@ -585,37 +585,65 @@ class TestNum(TestCase):
             39,
             "((-3 + (3 ** 4)) // 2)")
 
-        self.assert_num(
-            ((-1 + Exp(3, 3)) // 2) * Exp(3, 5),
-            3159,
-            "((3 ** 5) * ((-1 + (3 ** 3)) // 2))")
+        with self.assertRaises(RecursionError):
+            self.assert_num(
+                ((-1 + Exp(3, 3)) // 2) * Exp(3, 5),
+                3159,
+                "((3 ** 5) * ((-1 + (3 ** 3)) // 2))")
 
-        self.assert_num(
-            -((-1 + Exp(3, 3)) // 2) * Exp(3, 5),
-            -3159,
-            "-((3 ** 5) * ((-1 + (3 ** 3)) // 2))")
+        with self.assertRaises(RecursionError):
+            self.assert_num(
+                -((-1 + Exp(3, 3)) // 2) * Exp(3, 5),
+                -3159,
+                "-((3 ** 5) * ((-1 + (3 ** 3)) // 2))")
 
-        self.assert_num(
-            -(((-1 + Exp(3, 3)) // 2) * Exp(3, 5)),
-            -3159,
-            "-(13 * (3 ** 5))")
+        #################################################
 
-        self.assert_num(
-            -(((1 + Exp(3, 3)) // 2) * Exp(3, 5)),
-            -3402,
-            "-(14 * (3 ** 5))")
+        with self.assertRaises(RecursionError):
+            self.assert_num(
+                -(((-1 + Exp(3, 3)) // 2) * Exp(3, 5)),
+                -3159,
+                "-(13 * (3 ** 5))")
 
-        self.assert_num(
-            -(((1 + Exp(3, 3)) * Exp(3, 5)) // 2),
-            -3402,
-            "(-14 * (3 ** 5))")
+        with self.assertRaises(RecursionError):  # no-coverage
+            self.assert_num(
+                -(((1 + Exp(3, 3)) // 2) * Exp(3, 5)),
+                -3402,
+                "-(14 * (3 ** 5))")
 
-        self.assert_num(
-            -(((1 * Exp(3, 5)) + (Exp(3, 3) * Exp(3, 5))) // 2),
-            -3402,
-            "(-14 * (3 ** 5))")
+        with self.assertRaises(RecursionError):  # no-coverage
+            self.assert_num(
+                -(((1 + Exp(3, 3)) * Exp(3, 5)) // 2),
+                -3402,
+                "(-14 * (3 ** 5))")
 
-        self.assert_num(
-            -((Exp(3, 5) + Exp(3, 8)) // 2),
-            -3402,
-            "(-14 * (3 ** 5))")
+        with self.assertRaises(RecursionError):  # no-coverage
+            self.assert_num(
+                -(((1 * Exp(3, 5)) + (Exp(3, 3) * Exp(3, 5))) // 2),
+                -3402,
+                "(-14 * (3 ** 5))")
+
+        with self.assertRaises(RecursionError):  # no-coverage
+            self.assert_num(
+                -((Exp(3, 5) + Exp(3, 8)) // 2),
+                -3402,
+                "(-14 * (3 ** 5))")
+
+        #################################################
+
+        # pylint: disable = expression-not-assigned
+
+        with self.assertRaises(RecursionError):  # no-coverage
+            -((Exp(3, 5) + Exp(3, 8)) // 2)
+
+        with self.assertRaises(RecursionError):  # no-coverage
+            -(((-1 + Exp(3, 3)) // 2) * Exp(3, 5))
+
+        with self.assertRaises(RecursionError):  # no-coverage
+            -(((1 + Exp(3, 3)) // 2) * Exp(3, 5))
+
+        with self.assertRaises(RecursionError):  # no-coverage
+            -(((1 + Exp(3, 3)) * Exp(3, 5)) // 2)
+
+        with self.assertRaises(RecursionError):  # no-coverage
+            -(((1 * Exp(3, 5)) + (Exp(3, 3) * Exp(3, 5))) // 2)
