@@ -353,9 +353,6 @@ class Mul(Num):
         if isinstance(l, int) and other % l == 0:
             return r // (other // l)
 
-        if isinstance(r, int) and other % r == 0:  # no-coverage
-            return l // (other // r)
-
         return super().__floordiv__(other)  # no-coverage
 
     def __lt__(self, other: Count) -> bool:
