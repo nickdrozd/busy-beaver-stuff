@@ -505,15 +505,15 @@ class Exp(Num):
         if isinstance(other, Mul):
             base = self.base
 
-            if isinstance(exp := other.r, Exp) and exp.base == base:
+            if isinstance(rexp := other.r, Exp) and rexp.base == base:
                 try:
-                    return _add_exponents((self, 1), (exp, other.l))
+                    return _add_exponents((self, 1), (rexp, other.l))
                 except NotImplementedError:
                     pass
 
-            if isinstance(exp := other.l, Exp) and exp.base == base:
+            if isinstance(lexp := other.l, Exp) and lexp.base == base:
                 try:
-                    return _add_exponents((self, 1), (exp, other.r))
+                    return _add_exponents((self, 1), (lexp, other.r))
                 except NotImplementedError:
                     pass
 
