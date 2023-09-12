@@ -629,8 +629,7 @@ class TestNum(TestCase):
                 -3402,
                 "(-14 * (3 ** 5))")
 
-        #################################################
-
+    def test_recursion_error(self):
         with self.assertRaises(RecursionError):  # no-coverage
             -((Exp(3, 5) + Exp(3, 8)) // 2)
 
