@@ -1,4 +1,4 @@
-# pylint: disable = line-too-long
+# pylint: disable = line-too-long, expression-not-assigned
 
 from __future__ import annotations
 
@@ -336,7 +336,7 @@ class TestNum(TestCase):
             Exp(2, 3) + Exp(3, 3))
 
         with self.assertRaises(NotImplementedError):
-            _ = Exp(2, 5) < Exp(3, 4)
+            Exp(2, 5) < Exp(3, 4)
 
         self.assertLess(
             3 + Exp(2, 3),
@@ -630,8 +630,6 @@ class TestNum(TestCase):
                 "(-14 * (3 ** 5))")
 
         #################################################
-
-        # pylint: disable = expression-not-assigned
 
         with self.assertRaises(RecursionError):  # no-coverage
             -((Exp(3, 5) + Exp(3, 8)) // 2)
