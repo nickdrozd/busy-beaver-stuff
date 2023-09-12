@@ -141,11 +141,13 @@ class Num:
         return Mul(self, other)
 
     def __rmul__(self, other: int) -> Count:
-        return (
-            0 if other == 0 else
-            self if other == 1 else
-            Mul(other, self)
-        )
+        if other == 0:
+            return 0
+
+        if other == 1:
+            return self
+
+        return Mul(other, self)
 
     @abstractmethod
     def __mod__(self, other: int) -> int: ...
@@ -156,11 +158,10 @@ class Num:
         return (self - mod) // other, mod
 
     def __floordiv__(self, other: int) -> Count:
-        return (
-            self
-            if other == 1 else
-            Div(self, other)
-        )
+        if other == 1:
+            return self
+
+        return Div(self, other)
 
     def __pow__(self, other: Count) -> Exp:
         return Exp(self, other)
@@ -294,11 +295,10 @@ class Mul(Num):
         return (l_mod * r_mod) % other
 
     def __mul__(self, other: Count) -> Count:
-        return (
-            -1 * (self.r * other)
-            if self.l == -1 else
-            super().__mul__(other)
-        )
+        if self.l == -1:
+            return -1 * (self.r * other)
+
+        return super().__mul__(other)
 
     def __rmul__(self, other: int) -> Count:
         if other == -1:
