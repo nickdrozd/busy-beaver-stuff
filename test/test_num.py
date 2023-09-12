@@ -585,62 +585,37 @@ class TestNum(TestCase):
             39,
             "((-3 + (3 ** 4)) // 2)")
 
-        with self.assertRaises(RecursionError):
-            self.assert_num(
-                ((-1 + Exp(3, 3)) // 2) * Exp(3, 5),
-                3159,
-                "((3 ** 5) * ((-1 + (3 ** 3)) // 2))")
+        self.assert_num(
+            ((-1 + Exp(3, 3)) // 2) * Exp(3, 5),
+            3159,
+            "(((3 ** 5) * (-1 + (3 ** 3))) // 2)")
 
-        with self.assertRaises(RecursionError):
-            self.assert_num(
-                -((-1 + Exp(3, 3)) // 2) * Exp(3, 5),
-                -3159,
-                "-((3 ** 5) * ((-1 + (3 ** 3)) // 2))")
+        self.assert_num(
+            -((-1 + Exp(3, 3)) // 2) * Exp(3, 5),
+            -3159,
+            "(((3 ** 5) * (1 + -(3 ** 3))) // 2)")
 
-        #################################################
+        self.assert_num(
+            -(((-1 + Exp(3, 3)) // 2) * Exp(3, 5)),
+            -3159,
+            "-(((3 ** 5) * (-1 + (3 ** 3))) // 2)")
 
-        with self.assertRaises(RecursionError):
-            self.assert_num(
-                -(((-1 + Exp(3, 3)) // 2) * Exp(3, 5)),
-                -3159,
-                "-(13 * (3 ** 5))")
+        self.assert_num(
+            -(((1 + Exp(3, 3)) // 2) * Exp(3, 5)),
+            -3402,
+            "-(((3 ** 5) * (1 + (3 ** 3))) // 2)")
 
-        with self.assertRaises(RecursionError):  # no-coverage
-            self.assert_num(
-                -(((1 + Exp(3, 3)) // 2) * Exp(3, 5)),
-                -3402,
-                "-(14 * (3 ** 5))")
+        self.assert_num(
+            -(((1 + Exp(3, 3)) * Exp(3, 5)) // 2),
+            -3402,
+            "-(((3 ** 5) * (1 + (3 ** 3))) // 2)")
 
-        with self.assertRaises(RecursionError):  # no-coverage
-            self.assert_num(
-                -(((1 + Exp(3, 3)) * Exp(3, 5)) // 2),
-                -3402,
-                "(-14 * (3 ** 5))")
+        self.assert_num(
+            -(((1 * Exp(3, 5)) + (Exp(3, 3) * Exp(3, 5))) // 2),
+            -3402,
+            "-(((3 ** 5) * (1 + (3 ** 3))) // 2)")
 
-        with self.assertRaises(RecursionError):  # no-coverage
-            self.assert_num(
-                -(((1 * Exp(3, 5)) + (Exp(3, 3) * Exp(3, 5))) // 2),
-                -3402,
-                "(-14 * (3 ** 5))")
-
-        with self.assertRaises(RecursionError):  # no-coverage
-            self.assert_num(
-                -((Exp(3, 5) + Exp(3, 8)) // 2),
-                -3402,
-                "(-14 * (3 ** 5))")
-
-    def test_recursion_error(self):
-        with self.assertRaises(RecursionError):  # no-coverage
-            -(((1 + Exp(3, 3)) // 2) * Exp(3, 5))
-
-        with self.assertRaises(RecursionError):  # no-coverage
-            -(((1 + Exp(3, 3)) * Exp(3, 5)) // 2)
-
-        with self.assertRaises(RecursionError):  # no-coverage
-            -(((1 * Exp(3, 5)) + (Exp(3, 3) * Exp(3, 5))) // 2)
-
-        with self.assertRaises(RecursionError):  # no-coverage
-            -((Exp(3, 5) + Exp(3, 8)) // 2)
-
-        with self.assertRaises(RecursionError):  # no-coverage
-            -(((-1 + Exp(3, 3)) // 2) * Exp(3, 5))
+        self.assert_num(
+            -((Exp(3, 5) + Exp(3, 8)) // 2),
+            -3402,
+            "-(((3 ** 5) * (1 + (3 ** 3))) // 2)")

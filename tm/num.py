@@ -68,6 +68,9 @@ class Num:
             r.estimate()
         )
 
+    def divides_by(self, other: int) -> bool:
+        return self % other == 0
+
     def __neg__(self) -> Count:
         return -1 * self
 
@@ -184,6 +187,17 @@ class Add(Num):
 
     def estimate(self) -> int:
         return round(max(self.estimate_l(), self.estimate_r()))
+
+    def divides_by(self, other: int) -> bool:
+        l, r = self.l, self.r
+
+        assert isinstance(r, Num)
+
+        return (
+            l % other == 0
+            if isinstance(l, int) else
+            l.divides_by(other)
+        ) and r.divides_by(other)
 
     def __mod__(self, other: int) -> int:
         return ((self.l % other) + (self.r % other)) % other
@@ -344,10 +358,12 @@ class Mul(Num):
     def __floordiv__(self, other: int) -> Count:
         l, r = self.l, self.r
 
-        if l % other == 0:
+        if ((isinstance(l, int) and l % other == 0)
+                or (isinstance(l, Num) and l.divides_by(other))):
             return (l // other) * r
 
-        if r % other == 0:
+        if ((isinstance(r, int) and r % other == 0)
+                or (isinstance(r, Num) and r.divides_by(other))):
             return l * (r // other)
 
         if isinstance(l, int) and other % l == 0:
