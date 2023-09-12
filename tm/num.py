@@ -464,7 +464,9 @@ class Div(Num):
         except ValueError as exc:
             raise NumException from exc
 
-        return ((self.num % other) * (inv % other)) % other
+        return (
+            (self.num % other) * (inv % other)
+        ) % other  # no-coverage
 
     def estimate(self) -> int:
         return round(self.estimate_l() - self.estimate_r())
@@ -550,9 +552,10 @@ class Exp(Num):
         base, exp = self.base, self.exp
 
         if not isinstance(exp, int):
-            if isinstance(base, int):
-                return exp_mod_special_cases(other, base, exp)
-            raise NumException
+            if not isinstance(base, int):  # no-coverage
+                raise NumException
+
+            return exp_mod_special_cases(other, base, exp)
 
         while exp > 0 and res > 0:  # pylint: disable = while-used
             if (exp % 2) == 1:
