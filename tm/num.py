@@ -140,7 +140,7 @@ class Num:
 
         return Mul(self, other)
 
-    def __rmul__(self, other: Count) -> Count:
+    def __rmul__(self, other: int) -> Count:
         return (
             0 if other == 0 else
             self if other == 1 else
@@ -214,12 +214,11 @@ class Add(Num):
             super().__mul__(other)
         )
 
-    def __rmul__(self, other: Count) -> Count:
-        return (
-            (other * self.l) + (other * self.r)
-            if isinstance(other, int) and other != -1 else
-            super().__rmul__(other)
-        )
+    def __rmul__(self, other: int) -> Count:
+        if other == -1:
+            return super().__rmul__(other)
+
+        return (other * self.l) + (other * self.r)
 
     def __floordiv__(self, other: int) -> Count:
         lgcd = gcd(other, l := self.l)
@@ -301,13 +300,11 @@ class Mul(Num):
             super().__mul__(other)
         )
 
-    def __rmul__(self, other: Count) -> Count:
-        if ((isinstance(other, int) and other != -1)
-                or (isinstance(s_exp := self.l, Exp)
-                   and other == s_exp.base)):
-            return (other * self.l) * self.r
+    def __rmul__(self, other: int) -> Count:
+        if other == -1:
+            return super().__rmul__(other)
 
-        return super().__rmul__(other)  # no-coverage
+        return (other * self.l) * self.r
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul):
@@ -427,12 +424,11 @@ class Div(Num):
 
         return ((other * self.den) + self.num) // self.den
 
-    def __rmul__(self, other: Count) -> Count:
-        return (
-            (other * self.num) // self.den
-            if other != -1 else
-            super().__rmul__(other)
-        )
+    def __rmul__(self, other: int) -> Count:
+        if other == -1:
+            return super().__rmul__(other)
+
+        return (other * self.num) // self.den
 
     def __floordiv__(self, other: int) -> Count:
         assert isinstance(num := self.num, Num)
@@ -544,13 +540,9 @@ class Exp(Num):
 
         return super().__mul__(other)
 
-    def __rmul__(self, other: Count) -> Count:
-        if isinstance(other, Num) or isinstance(self.base, Num):
+    def __rmul__(self, other: int) -> Count:
+        if other == -1 or isinstance(base := self.base, Num):
             return super().__rmul__(other)
-
-        assert isinstance(other, int)
-
-        base = self.base
 
         if other < -1 and -other % base == 0:
             return -(-other * self)
