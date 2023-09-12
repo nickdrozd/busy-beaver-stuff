@@ -631,12 +631,6 @@ class TestNum(TestCase):
 
     def test_recursion_error(self):
         with self.assertRaises(RecursionError):  # no-coverage
-            -((Exp(3, 5) + Exp(3, 8)) // 2)
-
-        with self.assertRaises(RecursionError):  # no-coverage
-            -(((-1 + Exp(3, 3)) // 2) * Exp(3, 5))
-
-        with self.assertRaises(RecursionError):  # no-coverage
             -(((1 + Exp(3, 3)) // 2) * Exp(3, 5))
 
         with self.assertRaises(RecursionError):  # no-coverage
@@ -644,3 +638,9 @@ class TestNum(TestCase):
 
         with self.assertRaises(RecursionError):  # no-coverage
             -(((1 * Exp(3, 5)) + (Exp(3, 3) * Exp(3, 5))) // 2)
+
+        with self.assertRaises(RecursionError):  # no-coverage
+            -((Exp(3, 5) + Exp(3, 8)) // 2)
+
+        with self.assertRaises(RecursionError):  # no-coverage
+            -(((-1 + Exp(3, 3)) // 2) * Exp(3, 5))
