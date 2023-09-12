@@ -318,7 +318,7 @@ class Mul(Num):
                     and isinstance(o_exp := other.r, Exp)
                     and s_exp.base == o_exp.base):
                 try:
-                    return _add_exponents(
+                    return add_exponents(
                         (s_exp, self.l),
                         (o_exp, other.l),
                     )
@@ -507,20 +507,20 @@ class Exp(Num):
 
             if isinstance(rexp := other.r, Exp) and rexp.base == base:
                 try:
-                    return _add_exponents((self, 1), (rexp, other.l))
+                    return add_exponents((self, 1), (rexp, other.l))
                 except NotImplementedError:
                     pass
 
             if isinstance(lexp := other.l, Exp) and lexp.base == base:
                 try:
-                    return _add_exponents((self, 1), (lexp, other.r))
+                    return add_exponents((self, 1), (lexp, other.r))
                 except NotImplementedError:
                     pass
 
         elif isinstance(other, Exp):
             if other.base == self.base:
                 try:
-                    return _add_exponents((self, 1), (other, 1))
+                    return add_exponents((self, 1), (other, 1))
                 except NotImplementedError:
                     pass
 
@@ -597,7 +597,7 @@ class Exp(Num):
         return Exp(self.base, self.exp * other)
 
 
-def _add_exponents(
+def add_exponents(
         l: tuple[Exp, Count],
         r: tuple[Exp, Count],
 ) -> Count:
@@ -606,7 +606,7 @@ def _add_exponents(
     assert (base := l_exp.base) == r_exp.base
 
     if (l_pow := l_exp.exp) > (r_pow := r_exp.exp):
-        return _add_exponents((r_exp, r_co), (l_exp, l_co))
+        return add_exponents((r_exp, r_co), (l_exp, l_co))
 
     assert l_pow <= r_pow
 
