@@ -18,11 +18,16 @@ class NumException(Exception):
 
 
 class Num:
-    l: Count
-    r: Count
-
     join: str
     op: Callable[[int, int], int]
+
+    @property
+    @abstractmethod
+    def l(self) -> Count: ...
+
+    @property
+    @abstractmethod
+    def r(self) -> Count: ...
 
     def __repr__(self) -> str:
         # pylint: disable = line-too-long
@@ -178,12 +183,23 @@ class Add(Num):
 
     op = operator.add
 
+    _l: Count
+    _r: Num
+
     def __init__(self, l: Count, r: Num):
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
-        self.l = l
-        self.r = r
+        self._l = l
+        self._r = r
+
+    @property
+    def l(self) -> Count:
+        return self._l
+
+    @property
+    def r(self) -> Num:
+        return self._r
 
     def estimate(self) -> int:
         return round(max(self.estimate_l(), self.estimate_r()))
@@ -280,12 +296,23 @@ class Mul(Num):
 
     op = operator.mul
 
+    _l: Count
+    _r: Num
+
     def __init__(self, l: Count, r: Num):
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
-        self.l = l
-        self.r = r
+        self._l = l
+        self._r = r
+
+    @property
+    def l(self) -> Count:
+        return self._l
+
+    @property
+    def r(self) -> Num:
+        return self._r
 
     def __repr__(self) -> str:
         if self.l == -1:
@@ -390,20 +417,30 @@ class Div(Num):
 
     op = operator.floordiv
 
-    @property
-    def num(self) -> Count:
-        return self.l
-
-    @property
-    def den(self) -> int:
-        assert isinstance(r := self.r, int)
-        return r
+    _l: Num
+    _r: int
 
     def __init__(self, l: Num, r: int):
         assert r > 0
 
-        self.l = l
-        self.r = r
+        self._l = l
+        self._r = r
+
+    @property
+    def l(self) -> Num:
+        return self._l
+
+    @property
+    def r(self) -> int:
+        return self._r
+
+    @property
+    def num(self) -> Count:
+        return self._l
+
+    @property
+    def den(self) -> int:
+        return self._r
 
     def __neg__(self) -> Count:
         return -(self.num) // self.den
@@ -469,13 +506,8 @@ class Exp(Num):
 
     op = operator.pow
 
-    @property
-    def base(self) -> Count:
-        return self.l
-
-    @property
-    def exp(self) -> Count:
-        return self.r
+    _l: Count
+    _r: Count
 
     def __init__(self, l: Count, r: Count):
         while isinstance(l, int) and l > 1:  # pylint: disable = while-used
@@ -490,8 +522,24 @@ class Exp(Num):
             r *= int(log(l, root))
             l = int(root)
 
-        self.l = l
-        self.r = r
+        self._l = l
+        self._r = r
+
+    @property
+    def l(self) -> Count:
+        return self._l
+
+    @property
+    def r(self) -> Count:
+        return self._r
+
+    @property
+    def base(self) -> Count:
+        return self._l
+
+    @property
+    def exp(self) -> Count:
+        return self._r
 
     def estimate(self) -> int:
         return round(self.estimate_l() * 10 ** self.estimate_r())
