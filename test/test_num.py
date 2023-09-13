@@ -155,6 +155,10 @@ class TestNum(TestCase):
             "6",
             (4, 2))
 
+        self.assertEqual(
+            4 % Exp(3, 3),
+            4)
+
     def test_exp(self):
         self.assert_num(Exp(1, 8), 1)
         self.assert_num(int(Exp(6, 0)), 1)

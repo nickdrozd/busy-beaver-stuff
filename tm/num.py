@@ -160,6 +160,9 @@ class Num:
     @abstractmethod
     def __mod__(self, other: int) -> int: ...
 
+    def __rmod__(self, other: int) -> int:
+        return other
+
     def __divmod__(self, other: int) -> tuple[Count, int]:
         mod = self % other
 
