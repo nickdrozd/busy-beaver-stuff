@@ -685,26 +685,26 @@ def add_exponents(
     return (l_co + (r_co * diff_exp)) * Exp(base, l_pow)
 
 
-def gcd(den: int, num: Count) -> int:
-    if isinstance(num, int):
-        return pgcd(den, num)
+def gcd(l: int, r: Count) -> int:
+    if isinstance(r, int):
+        return pgcd(l, r)
 
-    if isinstance(num, Add):
-        return min(gcd(den, num.l), gcd(den, num.r))
+    if isinstance(r, Add):
+        return min(gcd(l, r.l), gcd(l, r.r))
 
-    if isinstance(num, Mul):
-        return max(gcd(den, num.l), gcd(den, num.r))
+    if isinstance(r, Mul):
+        return max(gcd(l, r.l), gcd(l, r.r))
 
-    if isinstance(num, Div):  # no-coverage
-        return den
+    if isinstance(r, Div):  # no-coverage
+        return l
 
-    if (isinstance(num, Exp)
-            and isinstance(base := num.base, int)):  # pragma: no branch
-        val, exp = 1, num.exp
+    if (isinstance(r, Exp)
+            and isinstance(base := r.base, int)):  # pragma: no branch
+        val, exp = 1, r.exp
 
-        while den % base == 0:  # pylint: disable = while-used
+        while l % base == 0:  # pylint: disable = while-used
             val *= base
-            den //= base
+            l //= base
             exp -= 1
 
         return val
