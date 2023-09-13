@@ -57,7 +57,8 @@ class BasicMachine:
 
     infrul: bool | None = None
     cfglim: bool | None = None
-    limrul: bool | None = None
+
+    limrul: str | None = None
 
     rulapp: Count = 0
 
@@ -108,7 +109,8 @@ class BasicMachine:
             f'MARKS: {show_number(self.marks)}')
 
         info += [
-            f'{cat.upper()}: {data if self.rulapp == 0 else "..."}'
+            # pylint: disable = line-too-long
+            f'{cat.upper()}: {data if isinstance(data, int | str) else "..."}'
             for cat, data in self.term_results
         ]
 
@@ -271,8 +273,8 @@ class Machine(BasicMachine):
             except InfiniteRule:
                 self.infrul = True
                 break
-            except RuleLimit:
-                self.limrul = True
+            except RuleLimit as lim:
+                self.limrul = str(lim)
                 break
             except ConfigLimit:
                 self.cfglim = True
@@ -281,8 +283,8 @@ class Machine(BasicMachine):
             if rule is not None:
                 try:
                     times = tape.apply_rule(rule)
-                except RuleLimit:
-                    self.limrul = True
+                except RuleLimit as lim:
+                    self.limrul = str(lim)
                     break
 
                 if times is not None:

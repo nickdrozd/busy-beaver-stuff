@@ -1446,16 +1446,16 @@ PROVER_QUASIHALT = {
 
 RULE_LIMIT = {
     # 3/4
-    "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",  # 10^^2048
+    "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "calculate_diff",  # 10^^2048
 
     # 2/6
-    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",  # 10^^^3
-    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",  # 10^^90
-    "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",  # ???
+    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA": None,  # 10^^^3
+    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_": "count_apps",  # 10^^90
+    "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB": "calculate_diff",  # ???
 
     # 6/2
-    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",  # 10^^5
-    "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  1R_ 1LC",
+    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD": "count_apps",  # 10^^5
+    "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  1R_ 1LC": "count_apps",
 }
 
 PROVER_FAILURES = {

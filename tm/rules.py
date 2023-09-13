@@ -42,7 +42,7 @@ def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
     if (not isinstance(cnt1, int)
             or not isinstance(cnt2, int)
             or not isinstance(cnt3, int)):
-        raise RuleLimit
+        raise RuleLimit('calculate_diff')
 
     if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
         return mult
@@ -86,7 +86,7 @@ class ApplyRule:
             try:
                 div, rem = divmod(count, absdiff)
             except NumException as exc:
-                raise RuleLimit from exc
+                raise RuleLimit('count_apps') from exc
 
             divs.append((
                 div if rem > 0 else div - 1,
@@ -132,10 +132,10 @@ def apply_plus(count: Count, times: Count, diff: Plus) -> Count:
 
 def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
     if not isinstance(count, int) and count.depth > 20:  # no-coverage
-        raise RuleLimit
+        raise RuleLimit('count-depth')
 
     if not isinstance(times, int) and times.depth > 200:  # no-coverage
-        raise RuleLimit
+        raise RuleLimit('times-depth')
 
     exp = (
         div ** times

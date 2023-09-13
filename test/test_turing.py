@@ -734,7 +734,7 @@ class Fast(TuringTest):
                     self.machine.simple_termination)
 
     def test_rule_limit(self):
-        for prog in RULE_LIMIT:
+        for prog, reason in RULE_LIMIT.items():
             self.run_bb(
                 prog,
                 print_prog = prog not in PROVER_FAILURES,
@@ -742,10 +742,9 @@ class Fast(TuringTest):
                 opt_macro = 1600,
             )
 
-            (self.assertIsNone
-             if prog in PROVER_FAILURES else
-             self.assertIsNotNone)(
-                 self.machine.limrul)
+            self.assertEqual(
+                self.machine.limrul,
+                reason)
 
     def test_backsymbol_required(self):
         prog = "1RB 0LC  1LC 0RC  1LA 0LC"
