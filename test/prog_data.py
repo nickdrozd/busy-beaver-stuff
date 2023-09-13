@@ -1495,6 +1495,10 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         1711,
         "(3 * (2 ** 131071))",
     ),
+    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA": (
+        1799,
+        "((52 + (13 * (2 ** (~10^242)))) // 3)",
+    ),
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (
         6016,
         "((17 + (25 * (2 ** 60680))) // 9)",
