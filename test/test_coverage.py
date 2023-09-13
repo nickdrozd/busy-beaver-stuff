@@ -135,6 +135,7 @@ class TestFloss(TestCase):
 
     def test_rule_limit(self):
         progs = (
+            "1RB 2LA 3LA 2LA  3LB 3RA 0RA 0RB",
             "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB",
             "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
             "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",
@@ -145,7 +146,7 @@ class TestFloss(TestCase):
             self.assertIsNotNone(
                 Machine(
                     prog,
-                    opt_macro = 200,
+                    opt_macro = 500,
                 ).run().limrul)
 
     def test_config_limit(self):

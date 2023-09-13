@@ -47,11 +47,15 @@ def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
     (div_1, mod_1), (div_2, mod_2) = \
         mult, _ = divmod(cnt2, cnt1), divmod(cnt3, cnt2)
 
-    if mod_1 == mod_2:
-        if div_1 == div_2:  # pragma: no branch
-            return mult
+    if mod_1 != mod_2:
+        raise UnknownRule(
+            'different mods')
 
-    raise UnknownRule()
+    if div_1 == div_2:
+        return mult
+
+    raise UnknownRule(
+        'different divs')
 
 
 def make_rule(cnts1: Counts, cnts2: Counts, cnts3: Counts) -> Rule:
