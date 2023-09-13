@@ -798,12 +798,12 @@ class Fast(TuringTest):
                 normal = False,
             )
 
-            if backsym in {0, 3, 4, 6}:
+            if backsym in {0, 3, 4, 5, 6}:
                 self.assertNotIsInstance(
                     self.machine.rulapp,
                     int)
             else:
-                assert backsym in {1, 2, 5}
+                assert backsym in {1, 2}
 
                 self.assertIsInstance(
                     self.machine.rulapp,

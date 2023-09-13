@@ -1449,7 +1449,7 @@ RULE_LIMIT = {
     "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "calculate_diff",  # 10^^2048
 
     # 2/6
-    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA": None,  # 10^^^3
+    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA": "calculate_diff",  # 10^^^3
     "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_": "count_apps",  # 10^^90
     "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB": "calculate_diff",  # ???
 
@@ -1462,7 +1462,6 @@ PROVER_FAILURES = {
     "1RB 1RC 0RC  1RC 0LA 1LB  2LC 2RA 1LB",
 
     "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA 1R_",
-    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",
 
     "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
 }
@@ -1493,11 +1492,11 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         "(-5 + (5 * (2 ** 327677)))",
     ),
     "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (
-        1698,
+        1711,
         "(3 * (2 ** 131071))",
     ),
     "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (
-        5723,
+        6016,
         "((17 + (25 * (2 ** 60680))) // 9)",
     ),
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": (
@@ -1505,7 +1504,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         "((25 + (3 ** 22147)) // 2)",
     ),
     "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (
-        3067,
+        2847,
         "(~10^463)",
     ),
     "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (
@@ -1513,7 +1512,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         "(2 ** 16388)",
     ),
     "1RB 2LB 4RB 1LA 1RB 1R_  1LA 3RA 5RA 4LB 0RA 4LA": (
-        937,
+        999,
         "((13 + (2 ** 2731)) // 3)",
     ),
     "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (
@@ -1533,7 +1532,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         "(2 ** (-1 + (2 ** (2 ** (2 ** 65536)))))",
     ),
     "1RB 1RA  1LC 1RE  0RE 1LD  1RE 1LC  1LA 0LE": (
-        434,
+        445,
         "(-3 + (2 ** (2 + (2 ** (1 + (2 ** (1 + (2 ** 8589934593))))))))",
     ),
     "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD": (
@@ -1541,7 +1540,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         "(-5 + ((1 + (2 ** 2)) * (2 ** (-2 + ((1 + (2 ** 2)) * (2 ** (-3 + ((1 + (2 ** 2)) * (2 ** (-3 + ((2 ** 655357) * (1 + (2 ** 2)))))))))))))",
     ),
     "1RB 0RD  0LC 1RE  1RA 1LD  0LC 1LC  0RD 0LE": (
-        711,
+        503,
         "(-3 + (3 * (2 ** (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** 6143)))))))))))",
     ),
     "1RB 2LA 1RA 2RB  2LB 1LA 3RB 1LB": (
@@ -1561,7 +1560,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         "(-1 + (2 ** (-1 + (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** 65536)))))))))))))))))))))",
     ),
     "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA": (
-        2447,
+        2467,
         "(23540 + (-((2 ** 11760) * (1 + (2 ** 5879))) + ((2 ** 20578) * (-1 + ((~10^440) * (2 ** 1469))))))",
     ),
     "1RB 1RC  1LC 1RA  0RC 1RD  1LE 0RB  0LA 0LD": (
@@ -1597,7 +1596,7 @@ ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
         "((~10^63) + ((2 ** (~10^63)) * (2 + ((2 ** (~10^63)) * (2 + ((2 ** (~10^63)) * (2 + ((2 ** (~10^63)) * (2 + (2 ** (~10^63)))))))))))",
     ),
     "1RB 2LA 0RB 0LA  3LB 2LA 1RA 3RA": (
-        9210,
+        9230,
         "((~10^136) + ((2 ** (~10^136)) * (4 + ((2 ** (~10^136)) * (4 + ((2 ** (~10^136)) * (4 + ((2 ** (~10^136)) * (4 + (2 ** (~10^136)))))))))))",
     ),
     # "1RB 0RA  1LC 0LB  0LE 0LD  1LB 0LC  1RE 1RA": (3615, "(???)"),

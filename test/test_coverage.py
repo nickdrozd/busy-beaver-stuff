@@ -19,7 +19,7 @@ class TestDisplay(TestCase):
         print(machine)
 
         machine = Machine(
-            "1RB 1RA  0RC 0RB  1LC 1LD  1RA 1LB"
+            "1RB 1RA  0RC 1LA  1LC 1LD  0RB 0RD"
         ).run(watch_tape = True)
 
         print(machine)

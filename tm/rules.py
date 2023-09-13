@@ -29,13 +29,18 @@ if TYPE_CHECKING:
     Apps = tuple[Count, Index]
 
 
-def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
-    if cnt1 == cnt2 == cnt3:
+def calculate_diff(
+        cnt1: Count,
+        cnt2: Count,
+        cnt3: Count,
+        cnt4: Count,
+) -> Op | None:
+    if cnt1 == cnt2 == cnt3 == cnt4:
         return None
 
-    plus, diff = cnt2 - cnt1, cnt3 - cnt2
+    plus, diff1, diff2 = cnt2 - cnt1, cnt3 - cnt2, cnt4 - cnt3
 
-    if plus == diff:
+    if plus == diff1 == diff2:
         assert isinstance(plus, int)
         return plus
 
@@ -44,24 +49,33 @@ def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
             or not isinstance(cnt3, int)):
         raise RuleLimit('calculate_diff')
 
-    (div_1, mod_1), (div_2, mod_2) = \
-        mult, _ = divmod(cnt2, cnt1), divmod(cnt3, cnt2)
+    (div_1, mod_1), (div_2, mod_2), (div_3, mod_3) = \
+        mult, _, _ = (
+            divmod(cnt2, cnt1),
+            divmod(cnt3, cnt2),
+            divmod(cnt4, cnt3),
+        )
 
-    if mod_1 != mod_2:
+    if not mod_1 == mod_2 == mod_3:
         raise UnknownRule(
             'different mods')
 
-    if div_1 == div_2:
+    if div_1 == div_2 == div_3:
         return mult
 
     raise UnknownRule(
         'different divs')
 
 
-def make_rule(cnts1: Counts, cnts2: Counts, cnts3: Counts) -> Rule:
+def make_rule(
+        cnts1: Counts,
+        cnts2: Counts,
+        cnts3: Counts,
+        cnts4: Counts,
+) -> Rule:
     rule = {
         (s, i): diff
-        for s, spans in enumerate(zip(cnts1, cnts2, cnts3))
+        for s, spans in enumerate(zip(cnts1, cnts2, cnts3, cnts4))
         for i, counts in enumerate(zip(*spans))
         if (diff := calculate_diff(*counts)) is not None
     }

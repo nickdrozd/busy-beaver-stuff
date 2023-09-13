@@ -159,10 +159,14 @@ class Prover:
 
             counts.append(tags.counts)
 
-        assert len(counts) == 2
+        assert len(counts) == 3
 
         try:
-            rule = make_rule(tape.counts, counts[0], counts[1])
+            rule = make_rule(
+                tape.counts,
+                counts[0],
+                counts[1],
+                counts[2])
         except UnknownRule:
             return None
 
