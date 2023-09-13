@@ -44,8 +44,12 @@ def calculate_diff(cnt1: Count, cnt2: Count, cnt3: Count) -> Op | None:
             or not isinstance(cnt3, int)):
         raise RuleLimit('calculate_diff')
 
-    if (mult := divmod(cnt2, cnt1)) == divmod(cnt3, cnt2):
-        return mult
+    (div_1, mod_1), (div_2, mod_2) = \
+        mult, _ = divmod(cnt2, cnt1), divmod(cnt3, cnt2)
+
+    if mod_1 == mod_2:
+        if div_1 == div_2:  # pragma: no branch
+            return mult
 
     raise UnknownRule()
 
