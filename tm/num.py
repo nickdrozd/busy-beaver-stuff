@@ -529,16 +529,18 @@ class Exp(Num):
         return round(self.estimate_l() * 10 ** self.estimate_r())
 
     def __mod__(self, other: int) -> int:
-        if other == 1 or other == self.base:
+        base = self.base
+
+        assert isinstance(base, int)
+
+        if other == 1 or other == base:
             return 0
 
         res = 1
 
-        base, exp = self.base, self.exp
+        exp = self.exp
 
         if not isinstance(exp, int):
-            assert isinstance(base, int)
-
             return exp_mod_special_cases(other, base, exp)
 
         while exp > 0 and res > 0:  # pylint: disable = while-used
