@@ -142,8 +142,8 @@ class TestNum(TestCase):
         self.assertEqual(int(div1) % 2, 0)
 
         div2 = (
-            (2042 * Exp(4, 8188) + 7)
-            + (18 * (1 + (Exp(4, 8188) - 4) // 3)) - 1
+            ((2042 * Exp(4, 8188)) + 7)
+             + ((18 * (1 + (Exp(4, 8188) - 4) // 3)) - 1)
         ) // 2
 
         self.assertEqual(div2 % 2, 0)
