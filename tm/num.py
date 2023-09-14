@@ -388,16 +388,11 @@ class Mul(Num):
     def __floordiv__(self, other: int) -> Count:
         l, r = self.l, self.r
 
-        if ((isinstance(l, int) and l % other == 0)
-                or (isinstance(l, Num) and l.divides_by(other))):
-            return (l // other) * r
+        if (lgcd := gcd(other, l)) > 1:
+            return ((l // lgcd) * r) // (other // lgcd)
 
-        if ((isinstance(r, int) and r % other == 0)
-                or (isinstance(r, Num) and r.divides_by(other))):
-            return l * (r // other)
-
-        if isinstance(l, int) and other % l == 0:
-            return r // (other // l)
+        if (rgcd := gcd(other, r)) > 1:
+            return (l * (r // rgcd)) // (other // rgcd)
 
         return super().__floordiv__(other)  # no-coverage
 
