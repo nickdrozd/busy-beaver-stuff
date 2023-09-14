@@ -449,27 +449,13 @@ class Div(Num):
         return -(self.num) // self.den
 
     def __mod__(self, other: int) -> int:
-        assert isinstance(den := self.den, int)
+        div, rem = divmod(
+            self.num % (other * self.den),
+            self.den)
 
-        try:  # pylint: disable = too-many-try-statements
-            rem, div = divmod(
-                self.num % (other * den),
-                den)
+        assert rem == 0
 
-            assert div == 0
-
-            return rem % other
-        except (NumException, AssertionError):
-            pass
-
-        try:
-            inv = pow(den, -1, other)
-        except ValueError as exc:
-            raise NumException from exc
-
-        return (
-            (self.num % other) * (inv % other)
-        ) % other  # no-coverage
+        return div % other
 
     def estimate(self) -> int:
         return round(self.estimate_l() - self.estimate_r())
