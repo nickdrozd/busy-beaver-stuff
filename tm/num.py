@@ -7,7 +7,7 @@ import operator
 from abc import abstractmethod
 from math import sqrt, floor, ceil, log, log10, gcd as pgcd
 from typing import TYPE_CHECKING
-from functools import cached_property
+from functools import cache, cached_property
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -540,6 +540,9 @@ class Exp(Num):
 
         exp = self.exp
 
+        if (period := find_period(base, other)) > 0:
+            exp %= period
+
         if not isinstance(exp, int):
             return exp_mod_special_cases(other, base, exp)
 
@@ -696,6 +699,22 @@ def gcd(l: int, r: Count) -> int:
         return val
 
     return 1  # no-coverage
+
+
+@cache
+def find_period(base: int, mod: int) -> int:
+    if base % mod == 0:
+        return 0
+
+    val = 1
+    for period in range(1, mod):
+        val *= base
+        val %= mod
+
+        if val == 1:
+            return period
+
+    return 0
 
 
 # pylint: disable = too-complex

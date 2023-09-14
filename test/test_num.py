@@ -674,4 +674,4 @@ class TestNum(TestCase):
 
         self.assertEqual(
             num % 4,
-            0)
+            3)
