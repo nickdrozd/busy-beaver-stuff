@@ -1370,6 +1370,7 @@ PROVER_HALT: ProverEst = {
 
     # 6/2
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE": "((-11 + (3 ** ((13",  # 10^^15
+    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD": "((38 + (19 * (2 **",  # 10^^5
     "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (1.7, 646_456_993),
     "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2.0, 98641),
     "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (6.0, 39456),
@@ -1454,7 +1455,6 @@ RULE_LIMIT = {
     "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB": "calculate_diff",  # ???
 
     # 6/2
-    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD": "count_apps",  # 10^^5
     "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  1R_ 1LC": "count_apps",
 }
 
@@ -1472,8 +1472,8 @@ ALGEBRA: dict[str, tuple[int, str]] = {
         "(1 + (2 ** 2147483647))",
     ),
     "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD": (
-        3344,
-        "((1879048061 + (7 * (2 ** ((-20 + (19 * (2 ** 69175))) // 9)))) // 9)",
+        3666,
+        "((38 + (19 * (2 ** ((-26 + (7 * (2 ** ((-11 + (7 * (2 ** ((-11 + (19 * (2 ** 69175))) // 9)))) // 9)))) // 9)))) // 9)",
     ),
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE": (
         892,
