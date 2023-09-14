@@ -522,6 +522,16 @@ class TestNum(TestCase):
 
     def test_add_neg(self):
         self.assert_num(
+            -5 + (5 * Exp(2, 3)),
+            35,
+            "(-5 + (5 * (2 ** 3)))")
+
+        self.assert_num(
+            5 * (Exp(2, 3) - 1),
+            35,
+            "(-5 + (5 * (2 ** 3)))")
+
+        self.assert_num(
             Exp(2, 3) + Exp(2, 5),
             40,
             "((2 ** 3) * (1 + (2 ** 2)))")
