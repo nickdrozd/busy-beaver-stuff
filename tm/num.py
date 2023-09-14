@@ -718,6 +718,8 @@ def find_period(base: int, mod: int) -> int:
 
 
 def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
+    assert isinstance(exp, Div)
+
     if base == 3:
         if mod == 6:
             return 3
