@@ -537,8 +537,7 @@ class Exp(Num):
         base, exp = self.base, self.exp
 
         if not isinstance(exp, int):
-            if not isinstance(base, int):  # no-coverage
-                raise NumException
+            assert isinstance(base, int)
 
             return exp_mod_special_cases(other, base, exp)
 
