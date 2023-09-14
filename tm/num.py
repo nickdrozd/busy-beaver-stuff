@@ -255,13 +255,14 @@ class Add(Num):
         return (other * self.l) + (other * self.r)
 
     def __floordiv__(self, other: int) -> Count:
-        lgcd = gcd(other, l := self.l)
-        rgcd = gcd(other, r := self.r)
+        div = gcd(
+            gcd(other, l := self.l),
+            gcd(other, r := self.r))
 
-        if lgcd != rgcd or lgcd == 1:
+        if div == 1:
             return super().__floordiv__(other)
 
-        return ((l // lgcd) + (r // lgcd)) // (other // lgcd)
+        return ((l // div) + (r // div)) // (other // div)
 
     def __lt__(self, other: Count) -> bool:
         if other == self.l:

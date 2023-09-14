@@ -595,7 +595,7 @@ class TestNum(TestCase):
         self.assert_num(
             (384 + (Exp(2, 5) * (1 + (13 * Exp(2, 7))))) // 24,
             2236,
-            "((384 + ((2 ** 5) * (1 + (13 * (2 ** 7))))) // 24)")
+            "((48 + ((2 ** 2) * (1 + (13 * (2 ** 7))))) // 3)")
 
     def test_div_neg(self):
         self.assert_num(
