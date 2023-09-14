@@ -1466,7 +1466,7 @@ PROVER_FAILURES = {
     "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
 }
 
-ALGEBRA_STRINGS: dict[str, tuple[int, str]] = {
+ALGEBRA: dict[str, tuple[int, str]] = {
     "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (
         522,
         "(1 + (2 ** 2147483647))",

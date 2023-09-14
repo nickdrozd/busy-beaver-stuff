@@ -849,8 +849,8 @@ class Fast(TuringTest):
         self.assertIsNotNone(
             self.machine.infrul)
 
-    def test_algebra_string(self):
-        for prog, (cycles, string) in ALGEBRA_STRINGS.items():
+    def test_algebra(self):
+        for prog, (cycles, string) in ALGEBRA.items():
             self.run_bb(
                 prog,
                 opt_macro = 2000,
