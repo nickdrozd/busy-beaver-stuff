@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import operator
 from abc import abstractmethod
-from math import sqrt, floor, ceil, log, log10, gcd as pgcd
+from math import sqrt, floor, ceil, log, log10, gcd as pgcd, isclose
 from typing import TYPE_CHECKING
 from functools import cache, cached_property
 
@@ -732,11 +732,22 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     if base != 2:  # no-coverage
         raise NumException
 
-    if mod == 6:
-        return 4 if exp % 2 == 0 else 2
-
     if mod == 12:
         return 4 if exp % 2 == 0 else 8
+
+    if not isclose(
+            (log3 := log(mod / 2, 3)),
+            round(log3),
+            rel_tol = .00000000001):
+        raise NumException
+
+    period = exp % (mod // 3)
+
+    if mod == 6:
+        return {
+            0: 4,
+            1: 2,
+        }[period]
 
     if mod == 18:
         return {
@@ -746,7 +757,7 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
             3: 8,
             4: 16,
             5: 14,
-        }[exp % 6]
+        }[period]
 
     if mod == 54:
         return {
@@ -768,7 +779,7 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
             15: 44,
             16: 34,
             17: 14,
-        }[exp % 18]
+        }[period]
 
     if mod == 162:
         return {
@@ -826,7 +837,7 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
             51: 152,
             52: 142,
             53: 122,
-        }[exp % 54]
+        }[period]
 
     if mod == 486:
         return {
@@ -992,7 +1003,7 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
             159: 152,
             160: 304,
             161: 122,
-        }[exp % 162]
+        }[period]
 
     if mod == 1458:
         return {
@@ -1482,7 +1493,7 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
             483: 638,
             484: 1276,
             485: 1094,
-        }[exp % 486]
+        }[period]
 
     raise NumException
 
