@@ -869,6 +869,17 @@ class Fast(TuringTest):
                     prog,
                     PROVER_HALT)
 
+        # pylint: disable = import-outside-toplevel
+        from tm.num import NUM_COUNTS
+
+        self.assertEqual(
+            NUM_COUNTS, {
+                "adds": 135704,
+                "exps": 58422,
+                "muls": 44522,
+                "divs": 18935,
+            })
+
 
 class Slow(TuringTest):
     @skip('')
