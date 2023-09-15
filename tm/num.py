@@ -451,6 +451,9 @@ class Div(Num):
         return -(self.num) // self.den
 
     def __mod__(self, other: int) -> int:
+        if other == 1:
+            return 0
+
         div, rem = divmod(
             self.num % (other * self.den),
             self.den)
@@ -534,6 +537,9 @@ class Exp(Num):
         return round(self.estimate_l() * 10 ** self.estimate_r())
 
     def __mod__(self, other: int) -> int:
+        if other == 1:
+            return 0
+
         base = self.base
 
         assert isinstance(base, int)
