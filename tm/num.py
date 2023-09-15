@@ -239,6 +239,9 @@ class Add(Num):
             if self.r == other.r:
                 return self.l - other.l
 
+            if self.l == other.l:
+                return self.r - other.r
+
         return self + -other
 
     def __mul__(self, other: Count) -> Count:
