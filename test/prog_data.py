@@ -1614,7 +1614,9 @@ ALGEBRA: dict[str, dict[str, tuple[int, str]]] = {
         ),
     },
 
-    # "1RB 0RA  1LC 0LB  0LE 0LD  1LB 0LC  1RE 1RA": (3615, "(???)"),
+    # "times-depth": {
+    #     "1RB 0RA  1LC 0LB  0LE 0LD  1LB 0LC  1RE 1RA": (4415, "(???)"),
+    # },
 }
 
 ## test program ######################################################
