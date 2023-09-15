@@ -235,18 +235,17 @@ class Add(Num):
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
-        return (
-            self.l - other.l
-            if isinstance(other, Add) and self.r == other.r else
-            self + -other
-        )
+        if isinstance(other, Add):
+            if self.r == other.r:
+                return self.l - other.l
+
+        return self + -other
 
     def __mul__(self, other: Count) -> Count:
-        return (
-            other * self
-            if isinstance(other, int) else
-            super().__mul__(other)
-        )
+        if isinstance(other, int):
+            return other * self
+
+        return super().__mul__(other)
 
     def __rmul__(self, other: int) -> Count:
         if other == -1:
