@@ -752,16 +752,6 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
             1: 2,
         }[period]
 
-    if mod == 18:
-        return {
-            0: 10,
-            1: 2,
-            2: 4,
-            3: 8,
-            4: 16,
-            5: 14,
-        }[period]
-
     if mod == 54:
         return {
             0: 28,
