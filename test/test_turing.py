@@ -850,24 +850,33 @@ class Fast(TuringTest):
             self.machine.infrul)
 
     def test_algebra(self):
-        for prog, (cycles, string) in ALGEBRA.items():
-            self.run_bb(
-                prog,
-                opt_macro = 2000,
-                analyze = False,
-            )
-
-            self.assert_cycles(cycles)
-
-            self.assertEqual(
-                string,
-                show_number(self.machine.marks),
-                prog)
-
-            if not self.machine.limrul:
-                self.assertIn(
+        for term, progs in ALGEBRA.items():
+            for prog, (cycles, string) in progs.items():
+                self.run_bb(
                     prog,
-                    PROVER_HALT)
+                    opt_macro = 2000,
+                    analyze = False,
+                )
+
+                if self.machine.halted is not None:
+                    self.assertEqual(term, 'halt', prog)
+
+                    self.assertIn(
+                        prog,
+                        PROVER_HALT)
+
+                else:
+                    self.assertEqual(
+                        term,
+                        self.machine.limrul,
+                        prog)
+
+                self.assert_cycles(cycles)
+
+                self.assertEqual(
+                    string,
+                    show_number(self.machine.marks),
+                    prog)
 
         # pylint: disable = import-outside-toplevel
         from tm.num import NUM_COUNTS
