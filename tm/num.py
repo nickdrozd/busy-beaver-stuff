@@ -454,9 +454,6 @@ class Div(Num):
         return (self.num * other) // self.den
 
     def __rmul__(self, other: int) -> Count:
-        if other == -1:
-            return super().__rmul__(other)
-
         return (other * self.num) // self.den
 
     def __floordiv__(self, other: int) -> Count:
