@@ -686,7 +686,7 @@ def gcd(l: int, r: Count) -> int:
 
 @cache
 def find_period(base: int, mod: int) -> int:
-    if base % mod == 0:
+    if base % mod == 0:  # no-coverage
         return 0
 
     val = 1
@@ -704,10 +704,10 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     assert isinstance(exp, Div)
 
     if base == 3:
-        if mod == 6:
+        if mod == 6:  # pragma: no branch
             return 3
 
-    if base != 2:
+    if base != 2:  # no-coverage
         raise NumException
 
     if mod == 6:
