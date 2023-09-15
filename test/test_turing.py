@@ -883,10 +883,10 @@ class Fast(TuringTest):
 
         self.assertEqual(
             NUM_COUNTS, {
-                "adds": 134209,
-                "exps": 57688,
-                "muls": 43906,
-                "divs": 18935,
+                "adds": 134856,
+                "exps": 57764,
+                "muls": 44007,
+                "divs": 19214,
             })
 
 
