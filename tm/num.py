@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import operator
 from abc import abstractmethod
-from math import sqrt, floor, ceil, log, log10, gcd as pgcd, isclose
+from math import sqrt, floor, ceil, log, log10, gcd as pgcd
 from typing import TYPE_CHECKING
 from functools import cache, cached_property
 
@@ -741,10 +741,7 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     if mod == 12:
         return 4 if exp % 2 == 0 else 8
 
-    if not isclose(
-            (log3 := log(mod / 2, 3)),
-            round(log3),
-            rel_tol = .00000000001):
+    if 2 * (3 ** round(log(mod / 2, 3))) != mod:  # no-coverage
         raise NumException
 
     period = exp % (mod // 3)
