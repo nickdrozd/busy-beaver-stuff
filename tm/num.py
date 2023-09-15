@@ -221,12 +221,16 @@ class Add(Num):
         return -(self.l) + -(self.r)
 
     def __add__(self, other: Count) -> Count:
-        if isinstance(l := self.l, int):
-            return (
-                (l + other) + self.r
-                if isinstance(other, int) else
-                l + (self.r + other)
-            )
+        l, r = self.l, self.r
+
+        if isinstance(other, int):
+            if isinstance(l, int):
+                return (l + other) + r
+
+            return super().__add__(other)
+
+        if isinstance(l, int):
+            return l + (other + r)
 
         return super().__add__(other)
 
