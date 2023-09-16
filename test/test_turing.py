@@ -883,9 +883,9 @@ class Fast(TuringTest):
         self.assertEqual(
             num_mod.NUM_COUNTS, {
                 "adds": 133942,
-                "exps": 57764,
+                "exps": 57582,
                 "muls": 44007,
-                "divs": 18964,
+                "divs": 18522,
             })
 
         num_mod.PROFILE = False

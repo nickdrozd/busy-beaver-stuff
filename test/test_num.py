@@ -26,7 +26,7 @@ class TestNum(TestCase):
             'adds': 2397,
             'muls': 1585,
             'divs': 2112,
-            'exps': 1766,
+            'exps': 1762,
         }
 
         for cat in num_mod.NUM_COUNTS:

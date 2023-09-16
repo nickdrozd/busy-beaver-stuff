@@ -176,8 +176,7 @@ class Num:
         return (self - mod) // other, mod
 
     def __floordiv__(self, other: int) -> Count:
-        if other == 1:
-            return self
+        assert other > 1
 
         return Div(self, other)
 
@@ -260,6 +259,9 @@ class Add(Num):
         return (other * self.l) + (other * self.r)
 
     def __floordiv__(self, other: int) -> Count:
+        if other == 1:
+            return self
+
         div = gcd(
             gcd(other, l := self.l),
             gcd(other, r := self.r))
@@ -395,6 +397,9 @@ class Mul(Num):
         return super().__add__(other)
 
     def __floordiv__(self, other: int) -> Count:
+        if other == 1:
+            return self
+
         l, r = self.l, self.r
 
         if (lgcd := gcd(other, l)) > 1:
@@ -485,6 +490,9 @@ class Div(Num):
         return (other * self.num) // self.den
 
     def __floordiv__(self, other: int) -> Count:
+        if other == 1:
+            return self
+
         assert isinstance(num := self.num, Num)
         return num // (other * self.den)
 
@@ -635,6 +643,9 @@ class Exp(Num):
         return other * Exp(base, exp)
 
     def __floordiv__(self, other: int) -> Count:
+        if other == 1:
+            return self
+
         base, exp = self.base, self.exp
 
         if not isinstance(base, int):  # no-coverage
