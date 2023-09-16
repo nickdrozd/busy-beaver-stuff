@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import operator
+import itertools
 from abc import abstractmethod
 from math import sqrt, floor, ceil, log, log10, gcd as pgcd
 from typing import TYPE_CHECKING
@@ -516,7 +517,10 @@ class Exp(Num):
         if PROFILE:
             NUM_COUNTS["exps"] += 1
 
-        while isinstance(l, int) and l > 1:  # pylint: disable = while-used
+        for _ in itertools.count():
+            if not isinstance(l, int) or l <= 1:
+                break
+
             if l == 8:
                 l = 2
                 r *= 3
@@ -571,10 +575,15 @@ class Exp(Num):
         if not isinstance(exp, int):
             return exp_mod_special_cases(other, base, exp)
 
-        while exp > 0 and res > 0:  # pylint: disable = while-used
+        for _ in itertools.count():
+            if exp <= 0 or res <= 0:
+                break
+
             if (exp % 2) == 1:
                 res = (res * base) % other
+
             exp //= 2
+
             base = (base ** 2) % other
 
         return res
@@ -636,7 +645,10 @@ class Exp(Num):
 
         exp = self.exp
 
-        while other % base == 0:  # pylint: disable = while-used
+        for _ in itertools.count():
+            if other % base != 0:
+                break
+
             other //= base
             exp += 1
 
@@ -651,7 +663,10 @@ class Exp(Num):
         if not isinstance(base, int):  # no-coverage
             return super().__floordiv__(other)
 
-        while other % base == 0:  # pylint: disable = while-used
+        for _ in itertools.count():
+            if other % base != 0:
+                break
+
             other //= base
             exp -= 1
 
@@ -725,7 +740,10 @@ def gcd(l: int, r: Count) -> int:
 
     val = 1
 
-    while l % base == 0:  # pylint: disable = while-used
+    for _ in itertools.count():
+        if l % base != 0:
+            break
+
         val *= base
         l //= base
 
