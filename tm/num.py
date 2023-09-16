@@ -740,17 +740,13 @@ def gcd(l: int, r: Count) -> int:
     if not isinstance(base := r.base, int):  # no-coverage
         return 1
 
-    val = 1
-
-    for _ in itertools.count():
+    for i in itertools.count():
         if l % base != 0:
-            break
+            return base ** i  # type: ignore[no-any-return]
 
-        val *= base
         l //= base
 
-    return val
-
+    return 1  # no-coverage
 
 @cache
 def find_period(base: int, mod: int) -> int:
