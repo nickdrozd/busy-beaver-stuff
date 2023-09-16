@@ -706,12 +706,11 @@ def gcd(l: int, r: Count) -> int:
 
     if (isinstance(r, Exp)
             and isinstance(base := r.base, int)):  # pragma: no branch
-        val, exp = 1, r.exp
+        val = 1
 
         while l % base == 0:  # pylint: disable = while-used
             val *= base
             l //= base
-            exp -= 1
 
         return val
 
