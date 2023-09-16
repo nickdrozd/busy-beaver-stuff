@@ -645,12 +645,12 @@ class Exp(Num):
 
         exp = self.exp
 
-        for _ in itertools.count():
+        for i in itertools.count():
             if other % base != 0:
+                exp += i
                 break
 
             other //= base
-            exp += 1
 
         return other * Exp(base, exp)
 
