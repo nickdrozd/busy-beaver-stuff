@@ -703,6 +703,9 @@ def add_exponents(
 
 
 def gcd(l: int, r: Count) -> int:
+    if l == 1 or r == 1:
+        return 1
+
     if isinstance(r, int):
         return pgcd(l, r)
 
