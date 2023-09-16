@@ -663,12 +663,14 @@ class Exp(Num):
         if not isinstance(base, int):  # no-coverage
             return super().__floordiv__(other)
 
-        for _ in itertools.count():
+        for i in itertools.count():
             if other % base != 0:
+                exp -= i
                 break
 
             other //= base
-            exp -= 1
+
+        assert exp > 0
 
         return (
             base
