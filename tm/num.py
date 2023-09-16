@@ -732,10 +732,7 @@ def gcd(l: int, r: Count) -> int:
     if isinstance(r, Mul):
         return max(gcd(l, r.l), gcd(l, r.r))
 
-    if isinstance(r, Div):  # no-coverage
-        return l
-
-    assert isinstance(r, Exp)
+    assert isinstance(r, Exp), (l, r)
 
     if not isinstance(base := r.base, int):  # no-coverage
         return 1
