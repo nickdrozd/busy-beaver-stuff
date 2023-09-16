@@ -17,6 +17,8 @@ class NumException(Exception):
     pass
 
 
+PROFILE = False
+
 NUM_COUNTS = {
     "adds": 0,
     "muls": 0,
@@ -195,7 +197,8 @@ class Add(Num):
     _r: Num
 
     def __init__(self, l: Count, r: Num):
-        NUM_COUNTS["adds"] += 1
+        if PROFILE:
+            NUM_COUNTS["adds"] += 1
 
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
@@ -306,7 +309,8 @@ class Mul(Num):
     _r: Num
 
     def __init__(self, l: Count, r: Num):
-        NUM_COUNTS["muls"] += 1
+        if PROFILE:
+            NUM_COUNTS["muls"] += 1
 
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
@@ -424,7 +428,8 @@ class Div(Num):
     _r: int
 
     def __init__(self, l: Num, r: int):
-        NUM_COUNTS["divs"] += 1
+        if PROFILE:
+            NUM_COUNTS["divs"] += 1
 
         assert r > 0
 
@@ -500,7 +505,8 @@ class Exp(Num):
     _r: Count
 
     def __init__(self, l: Count, r: Count):
-        NUM_COUNTS["exps"] += 1
+        if PROFILE:
+            NUM_COUNTS["exps"] += 1
 
         while isinstance(l, int) and l > 1:  # pylint: disable = while-used
             if l == 8:
