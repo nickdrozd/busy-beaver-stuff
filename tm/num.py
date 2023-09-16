@@ -715,17 +715,18 @@ def gcd(l: int, r: Count) -> int:
     if isinstance(r, Div):  # no-coverage
         return l
 
-    if (isinstance(r, Exp)
-            and isinstance(base := r.base, int)):  # pragma: no branch
-        val = 1
+    assert isinstance(r, Exp)
 
-        while l % base == 0:  # pylint: disable = while-used
-            val *= base
-            l //= base
+    if not isinstance(base := r.base, int):  # no-coverage
+        return 1
 
-        return val
+    val = 1
 
-    return 1  # no-coverage
+    while l % base == 0:  # pylint: disable = while-used
+        val *= base
+        l //= base
+
+    return val
 
 
 @cache
