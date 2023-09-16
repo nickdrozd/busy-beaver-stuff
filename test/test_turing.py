@@ -29,12 +29,11 @@ if TYPE_CHECKING:
     from typing import Any
     from collections.abc import Mapping
 
-    from tm.machine import Tape, Tapes, GetInstr, Count
+    from tm.machine import Tapes, GetInstr, Count
 
 
 class TuringTest(TestCase):
     prog: str
-    tape: Tape
     machine: BasicMachine
 
     maxDiff = None
@@ -248,8 +247,6 @@ class TuringTest(TestCase):
             self.machine.run(samples = samples, **opts)
         else:
             self.machine.run(**opts)
-
-        self.tape = self.machine.tape
 
         if not analyze or not isinstance(prog, str):
             return
