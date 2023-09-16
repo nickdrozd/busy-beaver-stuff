@@ -6,11 +6,38 @@ from math import log10
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
-from tm.num import Exp
 import tm.num as num_mod
+from tm.num import Exp, NUM_COUNTS
 
 if TYPE_CHECKING:
     from tm.num import Count
+
+
+def profile_nums(func):  # no-coverage
+    def wrapper(*args, **kwargs):
+        num_mod.PROFILE = True
+
+        try:
+            func(*args, **kwargs)
+        finally:
+            num_mod.PROFILE = False
+
+    return wrapper
+
+
+def assert_num_counts(expected: dict[str, int]):
+    err = None
+
+    try:
+        assert NUM_COUNTS == expected, NUM_COUNTS
+    except AssertionError as ass:  # no-coverage
+        err = str(ass)
+    finally:
+        for cat in NUM_COUNTS:
+            NUM_COUNTS[cat] = 0
+
+    if err:  # no-coverage
+        raise AssertionError(err)
 
 
 class TestNum(TestCase):
@@ -22,15 +49,12 @@ class TestNum(TestCase):
     def tearDownClass(cls):
         num_mod.PROFILE = False
 
-        assert num_mod.NUM_COUNTS == {
+        assert_num_counts({
             'adds': 2397,
             'muls': 1585,
             'divs': 2112,
             'exps': 1762,
-        }
-
-        for cat in num_mod.NUM_COUNTS:
-            num_mod.NUM_COUNTS[cat] = 0
+        })
 
     def assert_num(
             self,

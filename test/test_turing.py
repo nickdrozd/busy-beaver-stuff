@@ -8,6 +8,7 @@ from unittest import TestCase, skip, expectedFailure
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 from test.utils import LinRecSampler
+from test.test_num import assert_num_counts, profile_nums
 
 from tm.reason import (
     Program,
@@ -846,12 +847,8 @@ class Fast(TuringTest):
         self.assertIsNotNone(
             self.machine.infrul)
 
+    @profile_nums
     def test_algebra(self):
-        # pylint: disable = import-outside-toplevel
-        import tm.num as num_mod
-
-        num_mod.PROFILE = True
-
         for term, progs in ALGEBRA.items():
             for prog, (cycles, string) in progs.items():
                 self.run_bb(
@@ -880,18 +877,12 @@ class Fast(TuringTest):
                     show_number(self.machine.marks),
                     prog)
 
-        self.assertEqual(
-            num_mod.NUM_COUNTS, {
-                "adds": 133942,
-                "exps": 57582,
-                "muls": 44007,
-                "divs": 18522,
-            })
-
-        num_mod.PROFILE = False
-
-        for cat in num_mod.NUM_COUNTS:
-            num_mod.NUM_COUNTS[cat] = 0
+        assert_num_counts({
+            "adds": 133942,
+            "exps": 57582,
+            "muls": 44007,
+            "divs": 18522,
+        })
 
 
 class Slow(TuringTest):
