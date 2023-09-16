@@ -848,9 +848,9 @@ class Fast(TuringTest):
 
     def test_algebra(self):
         # pylint: disable = import-outside-toplevel
-        import tm.num as num
+        import tm.num as num_mod
 
-        num.PROFILE = True
+        num_mod.PROFILE = True
 
         for term, progs in ALGEBRA.items():
             for prog, (cycles, string) in progs.items():
@@ -881,14 +881,17 @@ class Fast(TuringTest):
                     prog)
 
         self.assertEqual(
-            num.NUM_COUNTS, {
+            num_mod.NUM_COUNTS, {
                 "adds": 134856,
                 "exps": 57764,
                 "muls": 44007,
                 "divs": 19214,
             })
 
-        num.PROFILE = False
+        num_mod.PROFILE = False
+
+        for cat in num_mod.NUM_COUNTS:
+            num_mod.NUM_COUNTS[cat] = 0
 
 
 class Slow(TuringTest):

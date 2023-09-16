@@ -7,12 +7,31 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 from tm.num import Exp
+import tm.num as num_mod
 
 if TYPE_CHECKING:
     from tm.num import Count
 
 
 class TestNum(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        num_mod.PROFILE = True
+
+    @classmethod
+    def tearDownClass(cls):
+        num_mod.PROFILE = False
+
+        assert num_mod.NUM_COUNTS == {
+            'adds': 2397,
+            'muls': 1585,
+            'divs': 2112,
+            'exps': 1766,
+        }
+
+        for cat in num_mod.NUM_COUNTS:
+            num_mod.NUM_COUNTS[cat] = 0
+
     def assert_num(
             self,
             num: Count,
