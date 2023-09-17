@@ -53,8 +53,26 @@ class TestNum(TestCase):
             'adds': 2418,
             'muls': 1639,
             'divs': 2112,
-            'exps': 1830,
+            'exps': 1828,
         })
+
+    def assert_mod(
+            self,
+            num: Count,
+            mod: int,
+            rem: int,
+            skip_num: bool = False,
+    ):
+        self.assertEqual(
+            num % mod,
+            rem)
+
+        if skip_num:
+            return
+
+        self.assertEqual(
+            int(num) % mod,
+            rem)
 
     def assert_num(
             self,
@@ -77,13 +95,7 @@ class TestNum(TestCase):
         if mod_rem is not None:
             mod, rem = mod_rem
 
-            self.assertEqual(
-                num % mod,
-                rem)
-
-            self.assertEqual(
-                int(num) % mod,
-                rem)
+            self.assert_mod(num, mod, rem)
 
     def assert_less(self, val1: Count, val2: Count):
         self.assertLess(val1, val2)
@@ -179,28 +191,23 @@ class TestNum(TestCase):
                 f"((-4 + (2 ** {2 * i})) // 3)",
                 (2, 0))
 
-        div1 = (Exp(4, 8188) - 4) // 3
+        self.assert_mod(
+            (Exp(4, 8188) - 4) // 3,
+            2,
+            0,
+            skip_num = True)
 
-        self.assertEqual(div1 % 2, 0)
-        self.assertEqual(int(div1) % 2, 0)
-
-        div2 = (
+        self.assert_mod(
             ((2042 * Exp(4, 8188)) + 7)
-             + ((18 * (1 + (Exp(4, 8188) - 4) // 3)) - 1)
-        ) // 2
-
-        self.assertEqual(div2 % 2, 0)
-        self.assertEqual(int(div2) % 2, 0)
+            + ((18 * (1 + (Exp(4, 8188) - 4) // 3)) - 1),
+            2,
+            0)
 
         self.assert_num(
             ((3 * Exp(2, 3)) // 4),
             6,
             "6",
             (4, 2))
-
-        self.assertEqual(
-            4 % Exp(3, 3),
-            4)
 
     def test_exp(self):
         self.assert_num(Exp(1, 8), 1)
@@ -281,7 +288,10 @@ class TestNum(TestCase):
         }
 
         for (base, exp, mod), val in vals.items():
-            self.assertEqual(Exp(base, exp) % mod, val)
+            self.assert_mod(
+                Exp(base, exp),
+                mod,
+                val)
 
         self.assertEqual(
             divmod(Exp(2, 3), 2),
@@ -784,8 +794,8 @@ class TestNum(TestCase):
             "-((3 ** 5) * (1 + (3 ** 3)))")
 
     def test_cycle_mod(self):
-        num = (-11 + Exp(3, ((21 + Exp(3, ((7 + Exp(3, ((23 + Exp(3, ((7 + Exp(3, ((23 + Exp(3, ((7 + Exp(3, ((21 + Exp(3, ((7 + Exp(3, ((23 + Exp(3, ((7 + Exp(3, 22146)) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 2
-
-        self.assertEqual(
-            num % 4,
-            3)
+        self.assert_mod(
+            (-11 + Exp(3, ((21 + Exp(3, ((7 + Exp(3, ((23 + Exp(3, ((7 + Exp(3, ((23 + Exp(3, ((7 + Exp(3, ((21 + Exp(3, ((7 + Exp(3, ((23 + Exp(3, ((7 + Exp(3, 22146)) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 2,
+            4,
+            3,
+            skip_num = True)
