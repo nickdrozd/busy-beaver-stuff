@@ -627,9 +627,13 @@ class Exp(Num):
             if isinstance(other.l, int):
                 return other.l * (self * other.r)
 
-            if (isinstance(o_exp := other.l, Exp)
-                    and o_exp.base == self.base):
-                return (self * o_exp) * other.r
+            if (isinstance(l_exp := other.l, Exp)
+                    and l_exp.base == self.base):
+                return (self * l_exp) * other.r
+
+            if (isinstance(r_exp := other.r, Exp)
+                    and r_exp.base == self.base):
+                return other.l * (self * r_exp)
 
         return super().__mul__(other)
 
