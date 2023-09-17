@@ -51,9 +51,9 @@ class TestNum(TestCase):
 
         assert_num_counts({
             'adds': 2397,
-            'muls': 1585,
+            'muls': 1590,
             'divs': 2112,
-            'exps': 1762,
+            'exps': 1765,
         })
 
     def assert_num(
@@ -518,6 +518,11 @@ class TestNum(TestCase):
             Exp(2, 3) * (5 + Exp(2, Exp(2, 4))),
             524328,
             "((2 ** 3) * (5 + (2 ** (2 ** 4))))")
+
+        self.assert_num(
+            Exp(2, 4) * (Exp(3, 3) * Exp(2, 5)),
+            13824,
+            "((2 ** 4) * ((3 ** 3) * (2 ** 5)))")
 
         self.assert_num(
             Exp(2, 3) * (Exp(2, 4) * (-1 + (Exp(3, 3) * Exp(2, 5)))),
