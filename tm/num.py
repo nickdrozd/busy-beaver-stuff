@@ -739,11 +739,14 @@ def gcd(l: int, r: Count) -> int:
 
     blog = int(log(l, base))
 
+    over = base ** blog
+
     for _ in itertools.count():
-        if l % (base ** blog) == 0 :
+        if l % over == 0 :
             break
 
         blog -= 1
+        over //= base
 
     return base ** blog  # type: ignore[no-any-return]
 
