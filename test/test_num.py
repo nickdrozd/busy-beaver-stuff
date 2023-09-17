@@ -50,10 +50,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            'adds': 2404,
-            'muls': 1618,
+            'adds': 2418,
+            'muls': 1639,
             'divs': 2112,
-            'exps': 1795,
+            'exps': 1830,
         })
 
     def assert_num(
@@ -762,6 +762,26 @@ class TestNum(TestCase):
             -((Exp(3, 5) + Exp(3, 8)) // 2),
             -3402,
             "(-((3 ** 5) * (1 + (3 ** 3))) // 2)")
+
+        self.assert_num(
+            -(Exp(3, 5) * (1 + Exp(3, 3))),
+            -6804,
+            "-((3 ** 5) * (1 + (3 ** 3)))")
+
+        self.assert_num(
+            -Exp(3, 5) * (1 + Exp(3, 3)),
+            -6804,
+            "-((3 ** 5) * (1 + (3 ** 3)))")
+
+        self.assert_num(
+            Exp(3, 5) * -(1 + Exp(3, 3)),
+            -6804,
+            "-((3 ** 5) * (1 + (3 ** 3)))")
+
+        self.assert_num(
+            Exp(3, 5) * (-1 + -Exp(3, 3)),
+            -6804,
+            "-((3 ** 5) * (1 + (3 ** 3)))")
 
     def test_cycle_mod(self):
         num = (-11 + Exp(3, ((21 + Exp(3, ((7 + Exp(3, ((23 + Exp(3, ((7 + Exp(3, ((23 + Exp(3, ((7 + Exp(3, ((21 + Exp(3, ((7 + Exp(3, ((23 + Exp(3, ((7 + Exp(3, 22146)) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 2
