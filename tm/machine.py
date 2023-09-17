@@ -109,8 +109,9 @@ class BasicMachine:
             f'MARKS: {show_number(self.marks)}')
 
         info += [
-            # pylint: disable = line-too-long
-            f'{cat.upper()}: {data if isinstance(data, int | str) else "..."}'
+            '{}: {}'.format(
+                cat.upper(),
+                data if isinstance(data, int | str) else "...")
             for cat, data in self.term_results
         ]
 
@@ -243,8 +244,10 @@ class Machine(BasicMachine):
     prover: Prover
 
     def __str__(self) -> str:
-        # pylint: disable = line-too-long
-        return f'{super().__str__()} | TPCFGS: {self.prover.config_count}'
+        return '{} | TPCFGS: {}'.format(
+            super().__str__(),
+            self.prover.config_count,
+        )
 
     def run(  # type: ignore[override]  # pylint: disable = arguments-differ
         self,

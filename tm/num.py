@@ -41,11 +41,11 @@ class Num:
     def r(self) -> Count: ...
 
     def __repr__(self) -> str:
-        # pylint: disable = line-too-long
-
-        # return f'{type(self).__name__}({self.l}, {self.r})'
-
-        return f'({show_number(self.l)} {self.join} {show_number(self.r)})'
+        return '({} {} {})'.format(
+            show_number(self.l),
+            self.join,
+            show_number(self.r),
+        )
 
     def __int__(self) -> int:
         return self.op(

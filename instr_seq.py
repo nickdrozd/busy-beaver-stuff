@@ -7,8 +7,13 @@ def format_sequence(prog: str) -> None:
     print(f'    "{prog.strip()}": {{')
 
     for partial, step, slot in instr_seq(prog):
-        # pylint: disable-next = line-too-long
-        print(f'        "{partial}": ({step : 2d}, \'{show_slot(slot)}\'),')
+        print(
+            "        \"{}\": ({:2d}, '{}'),".format(
+                partial,
+                step,
+                show_slot(slot),
+            )
+        )
 
     print('    },')
 
