@@ -6,7 +6,7 @@ from __future__ import annotations
 import operator
 import itertools
 from abc import abstractmethod
-from math import sqrt, floor, ceil, log, log10, gcd as pgcd
+from math import sqrt, floor, ceil, log, log2, log10, gcd as pgcd
 from typing import TYPE_CHECKING
 from functools import cache, cached_property
 
@@ -755,6 +755,9 @@ def gcd(l: int, r: Count) -> int:
 def find_period(base: int, mod: int) -> int:
     if base % mod == 0:  # no-coverage
         return 0
+
+    if base == 3 and int(exp := log2(mod)) == exp:
+        return 2 ** (int(exp) - 2)  # type: ignore[no-any-return]
 
     val = 1
     for period in range(1, mod):
