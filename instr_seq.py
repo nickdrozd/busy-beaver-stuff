@@ -4,7 +4,7 @@ from tm.show import show_slot
 from tm.reason import instr_seq
 
 def format_sequence(prog: str) -> None:
-    print(f'    "{prog}": {{')
+    print(f'    "{prog.strip()}": {{')
 
     for partial, step, slot in instr_seq(prog):
         # pylint: disable-next = line-too-long
