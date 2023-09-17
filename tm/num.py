@@ -517,7 +517,7 @@ class Exp(Num):
         if PROFILE:
             NUM_COUNTS["exps"] += 1
 
-        for _ in itertools.count():
+        for _ in itertools.count():  # pragma: no branch
             if not isinstance(l, int) or l <= 1:
                 break
 
@@ -575,7 +575,7 @@ class Exp(Num):
         if not isinstance(exp, int):
             return exp_mod_special_cases(other, base, exp)
 
-        for _ in itertools.count():
+        for _ in itertools.count():  # pragma: no branch
             if exp <= 0 or res <= 0:
                 break
 
@@ -645,7 +645,7 @@ class Exp(Num):
 
         exp = self.exp
 
-        for i in itertools.count():
+        for i in itertools.count():  # pragma: no branch
             if other % base != 0:
                 exp += i
                 break
@@ -663,7 +663,7 @@ class Exp(Num):
         if not isinstance(base, int):  # no-coverage
             return super().__floordiv__(other)
 
-        for i in itertools.count():
+        for i in itertools.count():  # pragma: no branch
             if other % base != 0:
                 exp -= i
                 break
@@ -741,7 +741,7 @@ def gcd(l: int, r: Count) -> int:
 
     over = base ** blog
 
-    for _ in itertools.count():
+    for _ in itertools.count():  # pragma: no branch
         if l % over == 0 :
             break
 
