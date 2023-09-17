@@ -99,14 +99,16 @@ class Num:
             return False
 
         if isinstance(other, Add):
-            if self == other.r:
-                return other.l > 0
+            l, r = other.l, other.r
 
-            if self == other.l:
-                return other.r > 0
+            if self == r:
+                return l > 0
 
-            if isinstance(other.l, int) and abs(other.l) < 10:
-                return self < other.r
+            if self == l:
+                return r > 0
+
+            if isinstance(l, int) and abs(l) < 10:
+                return self < r
 
         raise NotImplementedError
 
@@ -590,17 +592,19 @@ class Exp(Num):
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, Mul):
+            l, r = other.l, other.r
+
             base = self.base
 
-            if isinstance(rexp := other.r, Exp) and rexp.base == base:
+            if isinstance(r, Exp) and r.base == base:
                 try:
-                    return add_exponents((self, 1), (rexp, other.l))
+                    return add_exponents((self, 1), (r, l))
                 except NotImplementedError:
                     pass
 
-            if isinstance(lexp := other.l, Exp) and lexp.base == base:
+            if isinstance(l, Exp) and l.base == base:
                 try:
-                    return add_exponents((self, 1), (lexp, other.r))
+                    return add_exponents((self, 1), (l, r))
                 except NotImplementedError:
                     pass
 
@@ -619,21 +623,22 @@ class Exp(Num):
                 return Exp(base, self.exp + other.exp)
 
         elif isinstance(other, Add):
-            if (not isinstance(other.l, Exp)
-                    or not isinstance(other.r, Exp)):
-                return (self * other.l) + (self * other.r)
+            l, r = other.l, other.r
+
+            if not isinstance(l, Exp) or not isinstance(r, Exp):
+                return (self * l) + (self * r)
 
         elif isinstance(other, Mul):
-            if isinstance(other.l, int):
-                return other.l * (self * other.r)
+            l, r = other.l, other.r
 
-            if (isinstance(l_exp := other.l, Exp)
-                    and l_exp.base == self.base):
-                return (self * l_exp) * other.r
+            if isinstance(l, int):
+                return l * (self * r)
 
-            if (isinstance(r_exp := other.r, Exp)
-                    and r_exp.base == self.base):
-                return other.l * (self * r_exp)
+            if isinstance(l, Exp) and l.base == self.base:
+                return (self * l) * r
+
+            if (isinstance(r, Exp) and r.base == self.base):
+                return l * (self * r)
 
         return super().__mul__(other)
 
