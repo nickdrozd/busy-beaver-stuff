@@ -56,15 +56,15 @@ def calculate_diff(
             divmod(cnt4, cnt3),
         )
 
-    if not mod_1 == mod_2 == mod_3:
+    if not div_1 == div_2 == div_3:
         raise UnknownRule(
-            'different mods')
+            'different divs')
 
-    if div_1 == div_2 == div_3:
+    if mod_1 == mod_2 == mod_3:
         return mult
 
     raise UnknownRule(
-        'different divs')
+        'different mods')
 
 
 def make_rule(
