@@ -88,7 +88,7 @@ def worker(
         try:
             output(prog)
         except Exception as err:  # pylint: disable = broad-exception-caught
-            log(f'ERROR: {err}')
+            log(f'ERROR: {prog} || {err}')
 
     log('done')
 
