@@ -774,6 +774,15 @@ class Fast(TuringTest):
             self.machine.infrul)
 
     def test_prover_false_positive(self):
+        self.run_bb(
+            "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
+            analyze = False)
+
+        self.assert_marks(237)
+        self.assert_cycles(546)
+
+        ########################################
+
         prog = "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC"
 
         self.run_bb(
@@ -796,7 +805,6 @@ class Fast(TuringTest):
         ########################################
 
         prog = "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE"
-
 
         for backsym in range(0, 7):
             self.run_bb(
