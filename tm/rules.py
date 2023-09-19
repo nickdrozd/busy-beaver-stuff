@@ -63,8 +63,12 @@ def calculate_diff(
     if mod_1 == mod_2 == mod_3:
         return mult
 
-    raise UnknownRule(
-        'different mods')
+    if (div_1 == 1  # pragma: no branch
+            and ((mdm := divmod(mod_2, mod_1))
+                    == divmod(mod_3, mod_2))):
+        return mdm
+
+    raise UnknownRule  # no-coverage
 
 
 def make_rule(

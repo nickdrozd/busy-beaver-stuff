@@ -292,3 +292,9 @@ class TestFloss(TestCase):
             Machine(
                 "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",
             ).run().halted)
+
+    def test_diff_mod_rule(self):
+        self.assertIsNotNone(
+            Machine(
+                "1RB 0LA  1RC ...  0RD 0RC  1LD 0LA"
+            ).run().infrul)
