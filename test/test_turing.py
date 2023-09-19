@@ -132,6 +132,15 @@ class TuringTest(TestCase):
             or prog in KERNEL
         )
 
+    def assert_mult_rules(self) -> None:
+        assert isinstance(self.machine, Machine)
+
+        self.assertTrue(any(
+            isinstance(diff, tuple)
+            for rules in self.machine.prover.rules.values()
+            for _, rule in rules
+            for diff in rule.values()))
+
     def assert_lin_recurrence(self, steps: int, recurrence: int):
         assert isinstance(self.machine, LinRecSampler)
         history = self.machine.history
@@ -438,7 +447,7 @@ class TuringTest(TestCase):
             result: Count = self.machine.marks
 
             if not isinstance(result, int):
-                print(f'--> {result}')
+                self.assert_mult_rules()
 
             if not isinstance(macro := self.machine.program, str):
                 result *= macro.cells  # type: ignore[attr-defined]
