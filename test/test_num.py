@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from tm.num import Count
 
 
-def profile_nums(func):  # no-coverage
+def profile_nums(func):  # no-cover
     def wrapper(*args, **kwargs):
         num_mod.PROFILE = True
 
@@ -30,13 +30,13 @@ def assert_num_counts(expected: dict[str, int]):
 
     try:
         assert NUM_COUNTS == expected, NUM_COUNTS
-    except AssertionError as ass:  # no-coverage
+    except AssertionError as ass:  # no-cover
         err = str(ass)
     finally:
         for cat in NUM_COUNTS:
             NUM_COUNTS[cat] = 0
 
-    if err:  # no-coverage
+    if err:  # no-cover
         raise AssertionError(err)
 
 

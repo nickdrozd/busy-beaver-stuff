@@ -63,12 +63,12 @@ def calculate_diff(
     if mod_1 == mod_2 == mod_3:
         return mult
 
-    if (div_1 == 1  # pragma: no branch
+    if (div_1 == 1  # no-branch
             and ((mdm := divmod(mod_2, mod_1))
                     == divmod(mod_3, mod_2))):
         return mdm
 
-    raise UnknownRule  # no-coverage
+    raise UnknownRule  # no-cover
 
 
 def make_rule(
@@ -157,10 +157,10 @@ def apply_plus(count: Count, times: Count, diff: Plus) -> Count:
 
 
 def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
-    if not isinstance(count, int) and count.depth > 20:  # no-coverage
+    if not isinstance(count, int) and count.depth > 20:  # no-cover
         raise RuleLimit('count-depth')
 
-    if not isinstance(times, int) and times.depth > 200:  # no-coverage
+    if not isinstance(times, int) and times.depth > 200:  # no-cover
         raise RuleLimit('times-depth')
 
     exp = (

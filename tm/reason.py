@@ -210,7 +210,7 @@ def final_value(final_prop: Result) -> GetResult:
                 )
                 machine.blanks = {}
                 return final
-        case Result.halted:  # pragma: no branch
+        case Result.halted:  # no-branch
             def result(machine: BasicMachine) -> int | None:
                 final: int | None
                 if (und := machine.undfnd):

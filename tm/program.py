@@ -246,7 +246,7 @@ class Program:
         return self
 
     def normalize_states(self) -> Self:
-        for _ in self.states:  # pragma: no branch
+        for _ in self.states:  # no-branch
             todo = sorted(self.states)[1:]
 
             for _, _, state in self.used_instructions:
@@ -266,7 +266,7 @@ class Program:
         return self
 
     def normalize_colors(self) -> Self:
-        for _ in self.colors:  # pragma: no branch
+        for _ in self.colors:  # no-branch
             todo = sorted(self.colors)[1:]
 
             for color, _, _ in self.used_instructions:

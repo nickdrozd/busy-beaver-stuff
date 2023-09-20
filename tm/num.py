@@ -293,7 +293,7 @@ class Add(Num):
                     and abs(self.l - other.l) < 10):
                 return self.r < other.r
 
-            if self.l == other.r:  # pragma: no branch
+            if self.l == other.r:  # no-branch
                 return self.r < other.l
 
         if isinstance(self.l, int) and abs(self.l) < 10:
@@ -381,11 +381,11 @@ class Mul(Num):
                     pass
 
         elif isinstance(other, Add):
-            if isinstance(other.l, int):  # pragma: no branch
+            if isinstance(other.l, int):  # no-branch
                 return other.l + (other.r + self)
 
             if isinstance(other.l, Mul):
-                if other.l.l == self.l:  # pragma: no branch
+                if other.l.l == self.l:  # no-branch
                     return (self + other.l) + other.r
 
         elif isinstance(other, Exp):
@@ -408,7 +408,7 @@ class Mul(Num):
         if (rgcd := gcd(other, r)) > 1:
             return (l * (r // rgcd)) // (other // rgcd)
 
-        return super().__floordiv__(other)  # no-coverage
+        return super().__floordiv__(other)  # no-cover
 
     def __lt__(self, other: Count) -> bool:
         if self.l < 0:
@@ -418,7 +418,7 @@ class Mul(Num):
             if self.l == other.l:
                 return self.r < other.r
 
-            if self.r == other.r:  # pragma: no branch
+            if self.r == other.r:  # no-branch
                 return self.l < other.l
 
         return super().__lt__(other)
@@ -498,7 +498,7 @@ class Div(Num):
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, Div):
-            if self.den == other.den:  # pragma: no branch
+            if self.den == other.den:  # no-branch
                 return self.num < other.num
 
         return super().__lt__(other)
@@ -516,7 +516,7 @@ class Exp(Num):
         if PROFILE:
             NUM_COUNTS["exps"] += 1
 
-        for _ in itertools.count():  # pragma: no branch
+        for _ in itertools.count():
             if not isinstance(l, int) or l <= 1:
                 break
 
@@ -574,7 +574,7 @@ class Exp(Num):
         if not isinstance(exp, int):
             return exp_mod_special_cases(other, base, exp)
 
-        for _ in itertools.count():  # pragma: no branch
+        for _ in itertools.count():
             if exp <= 0 or res <= 0:
                 break
 
@@ -646,7 +646,7 @@ class Exp(Num):
             if self.multiplies_with(l):
                 return (self * l) * r
 
-            if self.multiplies_with(r):  # pragma: no branch
+            if self.multiplies_with(r):  # no-branch
                 return l * (self * r)
 
         return super().__mul__(other)
@@ -663,7 +663,7 @@ class Exp(Num):
 
         exp = self.exp
 
-        for i in itertools.count():  # pragma: no branch
+        for i in itertools.count():
             if other % base != 0:
                 exp += i
                 break
@@ -678,10 +678,10 @@ class Exp(Num):
 
         base, exp = self.base, self.exp
 
-        if not isinstance(base, int):  # no-coverage
+        if not isinstance(base, int):  # no-cover
             return super().__floordiv__(other)
 
-        for i in itertools.count():  # pragma: no branch
+        for i in itertools.count():
             if other % base != 0:
                 exp -= i
                 break
@@ -752,14 +752,14 @@ def gcd(l: int, r: Count) -> int:
 
     assert isinstance(r, Exp), (l, r)
 
-    if not isinstance(base := r.base, int):  # no-coverage
+    if not isinstance(base := r.base, int):  # no-cover
         return 1
 
     blog = int(log(l, base))
 
     over = base ** blog
 
-    for _ in itertools.count():  # pragma: no branch
+    for _ in itertools.count():
         if l % over == 0 :
             break
 
@@ -771,7 +771,7 @@ def gcd(l: int, r: Count) -> int:
 
 @cache
 def find_period(base: int, mod: int) -> int:
-    if base % mod == 0:  # no-coverage
+    if base % mod == 0:  # no-cover
         return 0
 
     if base == 3 and int(exp := log2(mod)) == exp:
@@ -792,16 +792,16 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     assert isinstance(exp, Div)
 
     if base == 3:
-        if mod == 6:  # pragma: no branch
+        if mod == 6:  # no-branch
             return 3
 
-    if base != 2:  # no-coverage
+    if base != 2:  # no-cover
         raise NumException
 
     if mod == 12:
         return 4 if exp % 2 == 0 else 8
 
-    if 2 * (3 ** round(log(mod / 2, 3))) != mod:  # no-coverage
+    if 2 * (3 ** round(log(mod / 2, 3))) != mod:  # no-cover
         raise NumException
 
     period = exp % (mod // 3)
@@ -1564,7 +1564,7 @@ def show_number(num: Count) -> str:
         if num >= TRUNCATE_COUNT:
             return f"(~10^{log10(num):.0f})"
 
-    elif num.depth > MAX_DEPTH:  # no-coverage
+    elif num.depth > MAX_DEPTH:  # no-cover
         return "(???)"
 
     return str(num)

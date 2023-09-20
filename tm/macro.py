@@ -108,7 +108,7 @@ class MacroProg:
 
         seen: set[tuple[State, int, tuple[Color, ...]]] = set()
 
-        for _ in range(self.sim_lim):  # pragma: no branch
+        for _ in range(self.sim_lim):  # no-branch
             if (instr := self.comp[
                     state, scan := tape[pos]]) is None:
                 return None
@@ -138,7 +138,7 @@ class MacroProg:
             seen.add(curr)
 
         else:
-            return None  # no-coverage
+            return None  # no-cover
 
         return state, (cells <= pos, tape)
 
