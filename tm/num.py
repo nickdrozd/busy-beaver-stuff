@@ -124,9 +124,7 @@ class Num:
 
         return Add(self, other)
 
-    def __radd__(self, other: Count) -> Count:
-        assert isinstance(other, int)
-
+    def __radd__(self, other: int) -> Count:
         return self + other
 
     def __sub__(self, other: Count) -> Count:
@@ -456,9 +454,7 @@ class Div(Num):
     def __add__(self, other: Count) -> Count:
         return (self.num + (other * self.den)) // self.den
 
-    def __radd__(self, other: Count) -> Count:
-        assert isinstance(other, int)
-
+    def __radd__(self, other: int) -> Count:
         return ((other * self.den) + self.num) // self.den
 
     def __mul__(self, other: Count) -> Count:
@@ -471,8 +467,7 @@ class Div(Num):
         if other == 1:
             return self
 
-        assert isinstance(num := self.num, Num)
-        return num // (other * self.den)
+        return self.num // (other * self.den)
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, Div):
@@ -529,8 +524,6 @@ class Exp(Num):
             return 0
 
         base = self.base
-
-        assert isinstance(base, int)
 
         if other == 1 or other == base:
             return 0
