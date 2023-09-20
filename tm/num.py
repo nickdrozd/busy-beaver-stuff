@@ -278,6 +278,11 @@ class Add(Num):
             if self.l == other.r:  # no-branch
                 return self.r < other.l
 
+            if (isinstance(self.l, int)  # no-branch
+                    and isinstance(other.l, int)):
+                if abs(abs(self.l) - abs(other.l)) < 10:  # no-branch
+                    return self.r < other.r
+
         if isinstance(self.l, int) and abs(self.l) < 10:
             return self.r < other
 

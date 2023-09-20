@@ -895,10 +895,10 @@ class Fast(TuringTest):
                     prog)
 
         assert_num_counts({
-            "adds": 133005,
+            "adds": 138151,
             "divs": 18201,
-            "exps": 52136,
-            "muls": 40180,
+            "exps": 56615,
+            "muls": 43796,
         })
 
 
