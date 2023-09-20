@@ -46,15 +46,10 @@ class Num:
 
     @cached_property
     def depth(self) -> int:
-        return 1 + max(self.l_depth, self.r_depth)
-
-    @property
-    def l_depth(self) -> int:
-        return 0 if isinstance(l := self.left, int) else l.depth
-
-    @property
-    def r_depth(self) -> int:
-        return 0 if isinstance(r := self.right, int) else r.depth
+        return 1 + max(
+            0 if isinstance(l := self.left, int) else l.depth,
+            0 if isinstance(r := self.right, int) else r.depth,
+        )
 
     @abstractmethod
     def estimate(self) -> int: ...
