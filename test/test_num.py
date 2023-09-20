@@ -50,10 +50,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            'adds': 2419,
-            'muls': 1643,
+            'adds': 2451,
+            'muls': 1671,
             'divs': 2112,
-            'exps': 1829,
+            'exps': 1873,
         })
 
     def assert_mod(
@@ -120,6 +120,18 @@ class TestNum(TestCase):
         self.assert_depth(Exp(3, 3), 1)
         self.assert_depth(-Exp(2, 3), 2)
         self.assert_depth(Exp(3, 3) + -Exp(2, 3), 3)
+
+        self.assert_num(
+            ((Exp(2, 3) * (-1 + Exp(2, (-3 + Exp(2, Exp(2, 3))))))
+                 + -(Exp(2, 3) * (-1 + Exp(2, (-3 + Exp(2, 3)))))),
+            115792089237316195423570985008687907853269984665640564039457584007913129639680,
+            "(((2 ** 3) * (-1 + (2 ** (-3 + (2 ** (2 ** 3)))))) + -((2 ** 3) * (-1 + (2 ** (-3 + (2 ** 3))))))")
+
+        self.assert_num(
+            (-(Exp(2, 3) * (-1 + Exp(2, (-3 + Exp(2, 3)))))
+                + (Exp(2, 3) * (-1 + Exp(2, (-3 + Exp(2, Exp(2, 3))))))),
+            115792089237316195423570985008687907853269984665640564039457584007913129639680,
+            "(-((2 ** 3) * (-1 + (2 ** (-3 + (2 ** 3))))) + ((2 ** 3) * (-1 + (2 ** (-3 + (2 ** (2 ** 3)))))))")
 
     def test_estimate(self):
         self.assert_estimate(
