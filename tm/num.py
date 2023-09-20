@@ -614,6 +614,18 @@ class Exp(Num):
 
         return super().__add__(other)
 
+    def multiplies_with(self, other: Count) -> bool:
+        if isinstance(other, Exp):
+            return other.base == self.base
+
+        if isinstance(other, Mul):
+            return (
+                self.multiplies_with(other.l)
+                or self.multiplies_with(other.r)
+            )
+
+        return False
+
     def __mul__(self, other: Count) -> Count:
         if isinstance(other, Exp):
             if (base := self.base) == other.base:
@@ -631,10 +643,10 @@ class Exp(Num):
             if isinstance(l, int):
                 return l * (self * r)
 
-            if isinstance(l, Exp) and l.base == self.base:
+            if self.multiplies_with(l):
                 return (self * l) * r
 
-            if (isinstance(r, Exp) and r.base == self.base):
+            if self.multiplies_with(r):  # pragma: no branch
                 return l * (self * r)
 
         return super().__mul__(other)
