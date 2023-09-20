@@ -1,10 +1,8 @@
 # pylint: disable = line-too-long, too-many-lines, consider-using-namedtuple-or-dataclass
 
-from collections.abc import Mapping
-
 ## test turing #######################################################
 
-BasicTermData = Mapping[str, tuple[int, int]]
+BasicTermData = dict[str, tuple[int, int]]
 
 HALT: BasicTermData = {
     # 2/2 BB
@@ -1104,7 +1102,7 @@ BLOCK_MACRO_STEPS = {
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": 47176870,
 }
 
-MacroCycles = Mapping[
+MacroCycles = dict[
     str | tuple[str, int | None],
     tuple[int | None, ...],
 ]
