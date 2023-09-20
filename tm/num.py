@@ -401,8 +401,14 @@ class Mul(Num):
             if self.l == other.l:
                 return self.r < other.r
 
-            if self.r == other.r:  # no-branch
+            if self.r == other.r:
                 return self.l < other.l
+
+            if self.l == other.r:
+                return self.r < other.l
+
+            if self.r == other.l:  # no-branch
+                return self.l < other.r
 
         return super().__lt__(other)
 
