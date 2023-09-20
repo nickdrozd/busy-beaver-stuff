@@ -180,10 +180,7 @@ class Num:
 
         return Div(self, other)
 
-    def __pow__(self, other: Count) -> Exp:
-        return Exp(self, other)
-
-    def __rpow__(self, other: Count) -> Exp:
+    def __rpow__(self, other: int) -> Exp:
         return Exp(other, self)
 
 
@@ -509,10 +506,10 @@ class Exp(Num):
 
     op = operator.pow
 
-    _l: Count
+    _l: int
     _r: Count
 
-    def __init__(self, l: Count, r: Count):
+    def __init__(self, l: int, r: Count):
         if PROFILE:
             NUM_COUNTS["exps"] += 1
 
@@ -535,7 +532,7 @@ class Exp(Num):
         self._r = r
 
     @property
-    def l(self) -> Count:
+    def l(self) -> int:
         return self._l
 
     @property
@@ -543,7 +540,7 @@ class Exp(Num):
         return self._r
 
     @property
-    def base(self) -> Count:
+    def base(self) -> int:
         return self._l
 
     @property
@@ -726,11 +723,9 @@ def add_exponents(
 
     assert l_pow <= r_pow
 
-    diff = r_pow - l_pow
-
     diff_exp = (
         base ** diff
-        if not isinstance(base, int) or diff < 2 else
+        if (diff := r_pow - l_pow) < 2 else
         Exp(base, diff)
     )
 
