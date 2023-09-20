@@ -30,14 +30,18 @@ def assert_num_counts(expected: dict[str, int]):
 
     try:
         assert NUM_COUNTS == expected, NUM_COUNTS
-    except AssertionError as ass:  # no-cover
-        err = str(ass)
+    except AssertionError:  # no-cover
+        err = [
+            f'            "{cat}": {val},'
+            for cat, val in sorted(NUM_COUNTS.items())
+        ]
     finally:
         for cat in NUM_COUNTS:
             NUM_COUNTS[cat] = 0
 
     if err:  # no-cover
-        raise AssertionError(err)
+        raise AssertionError(
+            '\n' + '\n'.join(err))
 
 
 class TestNum(TestCase):
@@ -50,10 +54,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            'adds': 2480,
-            'muls': 1689,
-            'divs': 2112,
-            'exps': 1908,
+            "adds": 2480,
+            "divs": 2112,
+            "exps": 1908,
+            "muls": 1689,
         })
 
     def assert_mod(
