@@ -73,12 +73,8 @@ class Num:
     def __neg__(self) -> Count:
         return -1 * self
 
-    def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, type(self))
-            and self.left  == other.left
-            and self.right == other.right
-        )
+    @abstractmethod
+    def __eq__(self, other: object) -> bool: ...
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, int):
@@ -198,6 +194,15 @@ class Add(Num):
     def estimate(self) -> int:
         return round(max(self.estimate_l(), self.estimate_r()))
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Add):
+            return False
+
+        return (
+            (self.l == other.l and self.r == other.r)
+            or (self.l == other.r and self.r == other.l)
+        )
+
     def __mod__(self, other: int) -> int:
         return ((self.l % other) + (self.r % other)) % other
 
@@ -314,6 +319,15 @@ class Mul(Num):
 
     def estimate(self) -> int:
         return round(self.estimate_l() + self.estimate_r())
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Mul):
+            return False
+
+        return (
+            (self.l == other.l and self.r == other.r)
+            or (self.l == other.r and self.r == other.l)
+        )
 
     def __neg__(self) -> Count:
         return -(self.l) * self.r
@@ -440,6 +454,13 @@ class Div(Num):
     def __int__(self) -> int:
         return int(self.num) // self.den
 
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, Div)
+            and self.den == other.den
+            and self.num == other.num
+        )
+
     def __neg__(self) -> Count:
         return -(self.num) // self.den
 
@@ -522,6 +543,13 @@ class Exp(Num):
 
     def __int__(self) -> int:
         return self.base ** int(self.exp)  # type: ignore[no-any-return]
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, Exp)
+            and self.base == other.base
+            and self.exp == other.exp
+        )
 
     def estimate(self) -> int:
         return round(self.estimate_l() * 10 ** self.estimate_r())
