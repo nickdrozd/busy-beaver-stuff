@@ -270,11 +270,6 @@ class Add(Num):
             if self.r == other.r:
                 return self.l < other.l
 
-            if (isinstance(self.l, int)
-                    and isinstance(other.l, int)
-                    and abs(self.l - other.l) < 10):
-                return self.r < other.r
-
             if self.l == other.r:  # no-branch
                 return self.r < other.l
 
@@ -400,9 +395,6 @@ class Mul(Num):
         return super().__floordiv__(other)  # no-cover
 
     def __lt__(self, other: Count) -> bool:
-        if self.l < 0:
-            raise NotImplementedError
-
         if isinstance(other, Mul):
             if self.l == other.l:
                 return self.r < other.r
@@ -415,6 +407,9 @@ class Mul(Num):
 
             if self.r == other.l:  # no-branch
                 return self.l < other.r
+
+        if self.l < 0:  # no-cover
+            raise NotImplementedError
 
         return super().__lt__(other)
 

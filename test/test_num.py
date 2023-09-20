@@ -471,10 +471,9 @@ class TestNum(TestCase):
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
             -1 + (Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5)))))))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
-                -(Exp(2, 65536) * (-1 + Exp(2, (-65536 + Exp(2, 65536))))),
-                -(Exp(2, 65536) * (-1 + Exp(2, (-65536 + Exp(2, 65536))))))
+        self.assertFalse(
+            -(Exp(2, 65536) * (-1 + Exp(2, (-65536 + Exp(2, 65536)))))
+            < -(Exp(2, 65536) * (-1 + Exp(2, (-65536 + Exp(2, 65536))))))
 
         self.assertGreater(
             ((Exp(2, 5) * (-1 + Exp(2, (-5 + Exp(2, 5))))) + -(Exp(2, 5) * (-1 + Exp(2, (-5 + Exp(2, Exp(2, 5))))))) + (-(Exp(2, 5) * (-1 + Exp(2, (-5 + Exp(2, 5))))) + (Exp(2, 5) * (-1 + Exp(2, (-5 + Exp(2, Exp(2, Exp(2, Exp(2, 5))))))))),
