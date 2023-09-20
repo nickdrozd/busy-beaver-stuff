@@ -300,7 +300,11 @@ class TestFloss(TestCase):
             ).run().infrul)
 
     def test_mul_compare(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD"
-            ).run().limrul)
+        progs = (
+            "1RB 0RD  0LC 1RE  1RA 1LD  0LC 1LC  0LD 0LE",
+            "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
+        )
+
+        for prog in progs:
+            self.assertIsNotNone(
+                Machine(prog).run().limrul)

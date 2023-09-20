@@ -352,6 +352,12 @@ class Mul(Num):
             if self.l == other.l:
                 return self.l * (self.r + other.r)
 
+            if self.l == other.r:
+                return self.l * (self.r + other.l)
+
+            if self.r == other.l:
+                return (self.l + other.r) * self.r
+
             if (isinstance(s_exp := self.r, Exp)
                     and isinstance(o_exp := other.r, Exp)
                     and s_exp.base == o_exp.base):

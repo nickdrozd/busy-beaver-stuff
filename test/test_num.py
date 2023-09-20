@@ -51,7 +51,7 @@ class TestNum(TestCase):
 
         assert_num_counts({
             'adds': 2480,
-            'muls': 1688,
+            'muls': 1689,
             'divs': 2112,
             'exps': 1908,
         })
