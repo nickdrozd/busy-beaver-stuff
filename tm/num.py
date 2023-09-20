@@ -3,15 +3,10 @@
 
 from __future__ import annotations
 
-import operator
 import itertools
 from abc import abstractmethod
 from math import sqrt, floor, ceil, log, log2, log10, gcd as pgcd
-from typing import TYPE_CHECKING
 from functools import cache, cached_property
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 class NumException(Exception):
@@ -30,7 +25,6 @@ NUM_COUNTS = {
 
 class Num:
     join: str
-    op: Callable[[int, int], int]
 
     @property
     @abstractmethod
@@ -47,11 +41,8 @@ class Num:
             show_number(self.r),
         )
 
-    def __int__(self) -> int:
-        return self.op(
-            int(self.l),
-            int(self.r),
-        )
+    @abstractmethod
+    def __int__(self) -> int: ...
 
     @cached_property
     def depth(self) -> int:
@@ -187,8 +178,6 @@ class Num:
 class Add(Num):
     join = '+'
 
-    op = operator.add
-
     _l: Count
     _r: Num
 
@@ -209,6 +198,9 @@ class Add(Num):
     @property
     def r(self) -> Num:
         return self._r
+
+    def __int__(self) -> int:
+        return int(self.l) + int(self.r)
 
     def estimate(self) -> int:
         return round(max(self.estimate_l(), self.estimate_r()))
@@ -302,8 +294,6 @@ class Add(Num):
 class Mul(Num):
     join = '*'
 
-    op = operator.mul
-
     _l: Count
     _r: Num
 
@@ -330,6 +320,9 @@ class Mul(Num):
             return f'-{self.r}'
 
         return super().__repr__()
+
+    def __int__(self) -> int:
+        return int(self.l) * int(self.r)
 
     def estimate(self) -> int:
         return round(self.estimate_l() + self.estimate_r())
@@ -424,8 +417,6 @@ class Mul(Num):
 class Div(Num):
     join = '//'
 
-    op = operator.floordiv
-
     _l: Num
     _r: int
 
@@ -453,6 +444,9 @@ class Div(Num):
     @property
     def den(self) -> int:
         return self._r
+
+    def __int__(self) -> int:
+        return int(self.num) // self.den
 
     def __neg__(self) -> Count:
         return -(self.num) // self.den
@@ -504,8 +498,6 @@ class Div(Num):
 class Exp(Num):
     join = '**'
 
-    op = operator.pow
-
     _l: int
     _r: Count
 
@@ -546,6 +538,9 @@ class Exp(Num):
     @property
     def exp(self) -> Count:
         return self._r
+
+    def __int__(self) -> int:
+        return self.base ** int(self.exp)  # type: ignore[no-any-return]
 
     def estimate(self) -> int:
         return round(self.estimate_l() * 10 ** self.estimate_r())
