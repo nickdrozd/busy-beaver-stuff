@@ -28,17 +28,17 @@ class Num:
 
     @property
     @abstractmethod
-    def l(self) -> Count: ...
+    def left(self) -> Count: ...
 
     @property
     @abstractmethod
-    def r(self) -> Count: ...
+    def right(self) -> Count: ...
 
     def __repr__(self) -> str:
         return '({} {} {})'.format(
-            show_number(self.l),
+            show_number(self.left),
             self.join,
-            show_number(self.r),
+            show_number(self.right),
         )
 
     @abstractmethod
@@ -50,11 +50,11 @@ class Num:
 
     @property
     def l_depth(self) -> int:
-        return 0 if isinstance(self.l, int) else self.l.depth
+        return 0 if isinstance(l := self.left, int) else l.depth
 
     @property
     def r_depth(self) -> int:
-        return 0 if isinstance(self.r, int) else self.r.depth
+        return 0 if isinstance(r := self.right, int) else r.depth
 
     @abstractmethod
     def estimate(self) -> int: ...
@@ -62,7 +62,7 @@ class Num:
     def estimate_l(self) -> float:
         return (
             l.estimate()
-            if isinstance(l := self.l, Num) else
+            if isinstance(l := self.left, Num) else
             0
             if l < 1 else
             log10(l)
@@ -71,7 +71,7 @@ class Num:
     def estimate_r(self) -> float:
         return (
             log10(r)
-            if isinstance(r := self.r, int) else
+            if isinstance(r := self.right, int) else
             r.estimate()
         )
 
@@ -81,8 +81,8 @@ class Num:
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, type(self))
-            and self.l == other.l
-            and self.r == other.r
+            and self.left  == other.left
+            and self.right == other.right
         )
 
     def __lt__(self, other: Count) -> bool:
@@ -178,8 +178,8 @@ class Num:
 class Add(Num):
     join = '+'
 
-    _l: Count
-    _r: Num
+    l: Count
+    r: Num
 
     def __init__(self, l: Count, r: Num):
         if PROFILE:
@@ -188,16 +188,16 @@ class Add(Num):
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
-        self._l = l
-        self._r = r
+        self.l = l
+        self.r = r
 
     @property
-    def l(self) -> Count:
-        return self._l
+    def left(self) -> Count:
+        return self.l
 
     @property
-    def r(self) -> Num:
-        return self._r
+    def right(self) -> Num:
+        return self.r
 
     def __int__(self) -> int:
         return int(self.l) + int(self.r)
@@ -294,8 +294,8 @@ class Add(Num):
 class Mul(Num):
     join = '*'
 
-    _l: Count
-    _r: Num
+    l: Count
+    r: Num
 
     def __init__(self, l: Count, r: Num):
         if PROFILE:
@@ -304,16 +304,16 @@ class Mul(Num):
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
-        self._l = l
-        self._r = r
+        self.l = l
+        self.r = r
 
     @property
-    def l(self) -> Count:
-        return self._l
+    def left(self) -> Count:
+        return self.l
 
     @property
-    def r(self) -> Num:
-        return self._r
+    def right(self) -> Num:
+        return self.r
 
     def __repr__(self) -> str:
         if self.l == -1:
@@ -417,33 +417,25 @@ class Mul(Num):
 class Div(Num):
     join = '//'
 
-    _l: Num
-    _r: int
+    num: Num
+    den: int
 
-    def __init__(self, l: Num, r: int):
+    def __init__(self, num: Num, den: int):
         if PROFILE:
             NUM_COUNTS["divs"] += 1
 
-        assert r > 0
+        assert den > 0
 
-        self._l = l
-        self._r = r
-
-    @property
-    def l(self) -> Num:
-        return self._l
+        self.num = num
+        self.den = den
 
     @property
-    def r(self) -> int:
-        return self._r
+    def left(self) -> Num:
+        return self.num
 
     @property
-    def num(self) -> Count:
-        return self._l
-
-    @property
-    def den(self) -> int:
-        return self._r
+    def right(self) -> int:
+        return self.den
 
     def __int__(self) -> int:
         return int(self.num) // self.den
@@ -498,46 +490,38 @@ class Div(Num):
 class Exp(Num):
     join = '**'
 
-    _l: int
-    _r: Count
+    base: int
+    exp: Count
 
-    def __init__(self, l: int, r: Count):
+    def __init__(self, base: int, exp: Count):
         if PROFILE:
             NUM_COUNTS["exps"] += 1
 
         for _ in itertools.count():
-            if not isinstance(l, int) or l <= 1:
+            if not isinstance(base, int) or base <= 1:
                 break
 
-            if l == 8:
-                l = 2
-                r *= 3
+            if base == 8:
+                base = 2
+                exp *= 3
                 break
 
-            if floor(root := sqrt(l)) != ceil(root):
+            if floor(root := sqrt(base)) != ceil(root):
                 break
 
-            r *= int(log(l, root))
-            l = int(root)
+            exp *= int(log(base, root))
+            base = int(root)
 
-        self._l = l
-        self._r = r
-
-    @property
-    def l(self) -> int:
-        return self._l
+        self.base = base
+        self.exp = exp
 
     @property
-    def r(self) -> Count:
-        return self._r
+    def left(self) -> int:
+        return self.base
 
     @property
-    def base(self) -> int:
-        return self._l
-
-    @property
-    def exp(self) -> Count:
-        return self._r
+    def right(self) -> Count:
+        return self.exp
 
     def __int__(self) -> int:
         return self.base ** int(self.exp)  # type: ignore[no-any-return]
