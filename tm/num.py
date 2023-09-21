@@ -347,6 +347,10 @@ class Mul(Num):
         if self.l == -1:
             return -1 * (self.r * other)
 
+        if isinstance(other, Exp):
+            if other.multiplies_with(self.r):  # no-branch
+                return self.l * (self.r * other)
+
         return super().__mul__(other)
 
     def __rmul__(self, other: int) -> Count:

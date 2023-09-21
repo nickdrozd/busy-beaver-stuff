@@ -57,7 +57,7 @@ class TestNum(TestCase):
             "adds": 2492,
             "divs": 2112,
             "exps": 1929,
-            "muls": 1706,
+            "muls": 1704,
         })
 
     def assert_mod(
@@ -617,7 +617,7 @@ class TestNum(TestCase):
         self.assert_num(
             (3 * Exp(2, 3)) * Exp(2, 5),
             768,
-            "((2 ** 5) * (3 * (2 ** 3)))")
+            "(3 * (2 ** 8))")
 
     def test_mul_add_neg(self):
         self.assert_num(
