@@ -78,6 +78,11 @@ class TestNum(TestCase):
             int(num) % mod,
             rem)
 
+    def assert_rep(self, num: Count, rep: str):
+        self.assertEqual(
+            str(num),
+            rep)
+
     def assert_num(
             self,
             num: Count,
@@ -90,7 +95,7 @@ class TestNum(TestCase):
         self.assertEqual(-val, int(-num))
 
         if rep is not None:
-            self.assertEqual(rep, str(num))
+            self.assert_rep(num, rep)
 
         self.assertEqual(
             val,
