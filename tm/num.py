@@ -722,10 +722,10 @@ def add_exponents(
 
     assert (base := l_exp.base) == r_exp.base
 
-    if (l_pow := l_exp.exp) > (r_pow := r_exp.exp):
-        return add_exponents((r_exp, r_co), (l_exp, l_co))
+    if l_exp.exp > r_exp.exp:
+        (l_exp, l_co), (r_exp, r_co) = (r_exp, r_co), (l_exp, l_co)
 
-    assert l_pow <= r_pow
+    assert (l_pow := l_exp.exp) <= (r_pow := r_exp.exp)
 
     diff_exp = (
         base ** diff
