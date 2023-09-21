@@ -1563,8 +1563,11 @@ MAX_DEPTH = 120
 
 def show_number(num: Count) -> str:
     if isinstance(num, int):
-        if num >= TRUNCATE_COUNT:
-            return f"(~10^{log10(num):.0f})"
+        if abs(num) >= TRUNCATE_COUNT:
+            return "{}(~10^{:.0f})".format(
+                '-' if num < 0 else '',
+                log10(abs(num)),
+            )
 
     elif num.depth > MAX_DEPTH:  # no-cover
         return "(???)"
