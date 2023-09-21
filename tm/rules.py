@@ -131,8 +131,8 @@ class ApplyRule:
             count = self.get_count(pos)
 
             match diff:
-                case (div, mod):
-                    result = apply_mult(count, times, div, mod)
+                case (mul, add):
+                    result = apply_mult(count, times, mul, add)
                 case _:
                     assert isinstance(diff, Plus)
 
@@ -156,7 +156,7 @@ def apply_plus(count: Count, times: Count, diff: Plus) -> Count:
     return count + diff * times
 
 
-def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
+def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
     if not isinstance(count, int) and count.depth > 20:  # no-cover
         raise RuleLimit('count-depth')
 
@@ -164,14 +164,14 @@ def apply_mult(count: Count, times: Count, div: int, mod: int) -> Count:
         raise RuleLimit('times-depth')
 
     exp = (
-        div ** times
+        mul ** times
         if isinstance(times, int) and log10(times) < 3 else
-        Exp(div, times)
+        Exp(mul, times)
     )
 
     result: Count = (
         count * exp
-        + mod * (1 + ((exp - div) // (div - 1)))
+        + add * (1 + ((exp - mul) // (mul - 1)))
     )
 
     return result
