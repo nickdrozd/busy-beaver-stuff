@@ -472,10 +472,9 @@ class TestNum(TestCase):
             1,
             (1 + Exp(2, 3)) // 3)
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
-                (49 + (13 * Exp(2, 15))),
-                (113 + (13 * Exp(2, 16))))
+        self.assertLess(
+            (49 + (13 * Exp(2, 15))),
+            (113 + (13 * Exp(2, 16))))
 
         self.assertLess(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
