@@ -61,7 +61,7 @@ def calculate_diff(
             divmod(cnt4, cnt3),
         )
 
-    if not div_1 == div_2 == div_3:
+    if not div_1 == div_2 == div_3:  # no-cover
         raise UnknownRule(
             'different divs')
 

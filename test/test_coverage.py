@@ -135,9 +135,9 @@ class TestFloss(TestCase):
 
     def test_rule_limit(self):
         progs = (
-            "1RB 2LA 3LA 2LA  3LB 3RA 0RA 0RB",
+            "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA",
+            "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
             "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB",
-            "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
             "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",
             "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",
         )
