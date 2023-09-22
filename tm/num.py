@@ -80,7 +80,7 @@ class Num:
         if isinstance(other, int):
             return False
 
-        if isinstance(other, Add):
+        if isinstance(other, Add | Mul):
             l, r = other.l, other.r
 
             if self == r:
@@ -89,17 +89,9 @@ class Num:
             if self == l:
                 return r > 0
 
+        if isinstance(other, Add):
             if isinstance(l, int) and abs(l) < 10:
                 return self < r
-
-        elif isinstance(other, Mul):
-            l, r = other.l, other.r
-
-            if self == r:  # no-cover
-                return l > 0
-
-            if self == l:
-                return r > 0
 
         raise NotImplementedError
 
