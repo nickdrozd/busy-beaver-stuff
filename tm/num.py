@@ -52,7 +52,7 @@ class Num:
         )
 
     @abstractmethod
-    def estimate(self) -> Exp: ...
+    def estimate(self) -> Exp | Mul: ...
 
     def __neg__(self) -> Count:
         return -1 * self
@@ -182,7 +182,7 @@ class Add(Num):
     def __int__(self) -> int:
         return int(self.l) + int(self.r)
 
-    def estimate(self) -> Exp:
+    def estimate(self) -> Exp | Mul:
         l, r = self.l, self.r
 
         r_est = r.estimate()
@@ -317,20 +317,30 @@ class Mul(Num):
     def __int__(self) -> int:
         return int(self.l) * int(self.r)
 
-    def estimate(self) -> Exp:
+    def estimate(self) -> Exp | Mul:
         l, r = self.l, self.r
 
         if l < 0:
-            raise NotImplementedError
+            pos = -l * r
+
+            assert isinstance(pos, Num)
+
+            neg_est = -(pos.estimate())
+
+            assert isinstance(neg_est, Exp | Mul)
+
+            return neg_est
 
         r_est = r.estimate()
 
         if not isinstance(l, int):
-            mult_est = l.estimate() * r_est
+            mul_est = l.estimate() * r_est
 
-            assert isinstance(mult_est, Exp)
+            assert isinstance(mul_est, Exp)
 
-            return mult_est
+            return mul_est
+
+        assert isinstance(r_est, Exp)
 
         base, exp = r_est.base, r_est.exp
 
@@ -506,13 +516,23 @@ class Div(Num):
 
         return div % other
 
-    def estimate(self) -> Exp:
+    def estimate(self) -> Exp | Mul:
         num, den = self.num, self.den
 
         if num < 0:
-            raise NotImplementedError
+            pos = -num * den
+
+            assert isinstance(pos, Num)
+
+            neg_est = -(pos.estimate())
+
+            assert isinstance(neg_est, Exp | Mul)
+
+            return neg_est
 
         num_est = num.estimate()
+
+        assert isinstance(num_est, Exp)
 
         base, exp = num_est.base, num_est.exp
 
@@ -590,7 +610,7 @@ class Exp(Num):
             and self.exp == other.exp
         )
 
-    def estimate(self) -> Exp:
+    def estimate(self) -> Exp | Mul:
         base, exp = self.base, self.exp
 
         return Exp(

@@ -479,7 +479,7 @@ class TuringTest(TestCase):
                     magnitude = (
                         int(log10(result))
                         if isinstance(result, int) else
-                        result.estimate().exp
+                        result.estimate().exp # type: ignore[union-attr]
                     )
 
                     self.assertEqual(exp, magnitude)
