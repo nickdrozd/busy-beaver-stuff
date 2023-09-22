@@ -109,7 +109,7 @@ class TestTape(TestCase):
 
         self.tape.apply_rule({
             (0, 0): -2,
-            (1, 2): (2, 3),
+            (1, 2): (0, 2, 3),
         })
 
         self.assert_tape(
@@ -140,7 +140,7 @@ class TestTape(TestCase):
 
         self.tape.apply_rule({
             (0, 1): -2,
-            (0, 0): (2, 8),
+            (0, 0): (0, 2, 8),
         })
 
         exp = "(-8 + (5 * (2 ** 327677)))"
