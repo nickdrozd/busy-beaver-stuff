@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from math import log10
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
@@ -54,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2655,
+            "adds": 2658,
             "divs": 2112,
-            "exps": 2215,
-            "muls": 1853,
+            "exps": 2227,
+            "muls": 1856,
         })
 
     def assert_mod(
@@ -117,11 +116,6 @@ class TestNum(TestCase):
     def assert_estimate(self, val: Count, estimate: int):
         assert not isinstance(val, int)
 
-        if estimate > 0:
-            self.assertEqual(
-                val.estimate(),
-                int(log10(int(val))))
-
         self.assertEqual(
             val.estimate(),
             estimate)
@@ -145,6 +139,27 @@ class TestNum(TestCase):
 
     def test_estimate(self):
         self.assert_estimate(
+            Exp(2, 2147483647),
+            646456993)
+
+        for i in range(1, 4):
+            self.assert_estimate(
+                i + (i * Exp(2, 2147483647)),
+                646456993)
+
+        self.assert_estimate(
+            Exp(2, 5),
+            2)
+
+        self.assert_estimate(
+            Exp(2, Exp(2, 5)),
+            30)
+
+        self.assert_estimate(
+            Exp(2, Exp(2, Exp(2, 5))),
+            301029995663981202120128856064)
+
+        self.assert_estimate(
             (469761947 + (19 * Exp(2, 69174))) // 9,
             20823)
 
@@ -159,6 +174,10 @@ class TestNum(TestCase):
         self.assert_estimate(
             -13 * Exp(2, 345103),
             -103887)
+
+        self.assert_estimate(
+            -13 * -Exp(2, 345103),
+            103887)
 
     def test_div(self):
         self.assert_num(
