@@ -52,23 +52,7 @@ class Num:
         )
 
     @abstractmethod
-    def estimate(self) -> int: ...
-
-    def estimate_l(self) -> float:
-        return (
-            l.estimate()
-            if isinstance(l := self.left, Num) else
-            0
-            if l < 1 else
-            log10(l)
-        )
-
-    def estimate_r(self) -> float:
-        return (
-            log10(r)
-            if isinstance(r := self.right, int) else
-            r.estimate()
-        )
+    def estimate(self) -> Exp | Mul: ...
 
     def __neg__(self) -> Count:
         return -1 * self
@@ -198,8 +182,16 @@ class Add(Num):
     def __int__(self) -> int:
         return int(self.l) + int(self.r)
 
-    def estimate(self) -> int:
-        return round(max(self.estimate_l(), self.estimate_r()))
+    def estimate(self) -> Exp | Mul:
+        l, r = self.l, self.r
+
+        r_est = r.estimate()
+
+        return (
+            r_est
+            if isinstance(l, int) else
+            max(l.estimate(), r_est)
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Add):
@@ -325,11 +317,34 @@ class Mul(Num):
     def __int__(self) -> int:
         return int(self.l) * int(self.r)
 
-    def estimate(self) -> int:
-        if (l := self.l) < 0:
-            return -((-l * self.r).estimate())  # type: ignore
+    def estimate(self) -> Exp | Mul:
+        l, r = self.l, self.r
 
-        return round(self.estimate_l() + self.estimate_r())
+        if l < 0:
+            pos = -l * r
+
+            assert isinstance(pos, Num)
+
+            neg_est = -(pos.estimate())
+
+            assert isinstance(neg_est, Exp | Mul)
+
+            return neg_est
+
+        r_est = r.estimate()
+
+        if not isinstance(l, int):
+            mul_est = l.estimate() * r_est
+
+            assert isinstance(mul_est, Exp)
+
+            return mul_est
+
+        assert isinstance(r_est, Exp)
+
+        base, exp = r_est.base, r_est.exp
+
+        return Exp(base, round(log10(l)) + exp)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Mul):
@@ -501,8 +516,27 @@ class Div(Num):
 
         return div % other
 
-    def estimate(self) -> int:
-        return round(self.estimate_l() - self.estimate_r())
+    def estimate(self) -> Exp | Mul:
+        num, den = self.num, self.den
+
+        if num < 0:
+            pos = -num * den
+
+            assert isinstance(pos, Num)
+
+            neg_est = -(pos.estimate())
+
+            assert isinstance(neg_est, Exp | Mul)
+
+            return neg_est
+
+        num_est = num.estimate()
+
+        assert isinstance(num_est, Exp)
+
+        base, exp = num_est.base, num_est.exp
+
+        return Exp(base, exp - round(log10(den)))
 
     def __add__(self, other: Count) -> Count:
         return (self.num + (other * self.den)) // self.den
@@ -576,8 +610,19 @@ class Exp(Num):
             and self.exp == other.exp
         )
 
-    def estimate(self) -> int:
-        return round(self.estimate_l() * 10 ** self.estimate_r())
+    def estimate(self) -> Exp | Mul:
+        base, exp = self.base, self.exp
+
+        return Exp(
+            10,
+            (
+                exp.estimate()
+                if not isinstance(exp, int) else
+                int(log10(base ** exp))
+                if exp < 100 else
+                round(log10(base) * 10 ** log10(exp))
+            )
+        )
 
     def __mod__(self, other: int) -> int:
         if other == 1:

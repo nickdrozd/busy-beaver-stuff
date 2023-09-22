@@ -479,7 +479,7 @@ class TuringTest(TestCase):
                     magnitude = (
                         int(log10(result))
                         if isinstance(result, int) else
-                        result.estimate()
+                        result.estimate().exp # type: ignore[union-attr]
                     )
 
                     self.assertEqual(exp, magnitude)
@@ -898,7 +898,7 @@ class Fast(TuringTest):
     @profile_nums
     def test_algebra(self):
         for term, progs in ALGEBRA.items():
-            for prog, (cycles, string) in progs.items():
+            for prog, (cycles, string, est) in progs.items():
                 self.run_bb(
                     prog,
                     opt_macro = 2000,
@@ -920,15 +920,25 @@ class Fast(TuringTest):
 
                 self.assert_cycles(cycles)
 
+                marks = self.machine.marks
+
                 self.assertEqual(
                     string,
-                    show_number(self.machine.marks),
+                    show_number(marks),
                     prog)
 
+                if est:
+                    self.assertEqual(
+                        show_number(
+                            marks
+                            if isinstance(marks, int) else
+                            marks.estimate()),
+                        est)
+
         assert_num_counts({
-            "adds": 249994,
+            "adds": 250047,
             "divs": 23871,
-            "exps": 182844,
+            "exps": 183179,
             "muls": 131585,
         })
 
