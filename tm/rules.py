@@ -63,10 +63,14 @@ def calculate_diff(
     if mod_1 == mod_2 == mod_3:
         return 0, *mult
 
-    if (div_1 == 1  # no-branch
-            and ((mdm := divmod(mod_2, mod_1))
-                    == divmod(mod_3, mod_2))):
-        return 0, *mdm
+    mdm1, mdm2 = divmod(mod_2, mod_1), divmod(mod_3, mod_2)
+
+    if mdm1 != mdm2:  # no-cover
+        raise UnknownRule(
+            'different mdms')
+
+    if div_1 == 1:  # no-branch
+        return 0, *mdm1
 
     raise UnknownRule  # no-cover
 
