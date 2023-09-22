@@ -54,6 +54,15 @@ class TuringTest(TestCase):
             self.machine.cycles,
             cycles)
 
+    def assert_spinout(self) -> None:
+        self.assertIsNotNone(
+            self.machine.spnout)
+
+    def assert_macro_cells(self, cells: int):
+        self.assertEqual(
+            self.machine.program.cells,  # type: ignore
+            cells)
+
     def assert_quasihalt(self, qsihlt: bool | None):
         self.assertEqual(
             self.machine.qsihlt,
@@ -863,6 +872,28 @@ class Fast(TuringTest):
 
         self.assertIsNotNone(
             self.machine.infrul)
+
+        ########################################
+
+    def test_block_mult(self):
+        prog = "1RB 1RC 0RC  1RC 0LA 1LB  2LC 2RA 1LB"
+
+        self.run_bb(
+            prog,
+            blocks = 4,
+            analyze = False)
+
+        self.assert_marks(9899724)
+        self.assert_cycles(5441)
+        self.assert_spinout()
+
+        self.run_bb(
+            prog,
+            opt_macro = 1_000,
+            sim_lim = 1,
+            analyze = False)
+
+        self.assert_macro_cells(2)
 
     @profile_nums
     def test_algebra(self):
