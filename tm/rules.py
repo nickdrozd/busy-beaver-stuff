@@ -18,7 +18,7 @@ if TYPE_CHECKING:
         list[Count],
     ]
 
-    Mult = tuple[int, int, int]
+    Mult = tuple[int, int]
 
     Op = Plus | Mult
 
@@ -61,7 +61,7 @@ def calculate_diff(
             'different divs')
 
     if mod_1 == mod_2 == mod_3:
-        return 0, *mult
+        return mult
 
     mdm1, mdm2 = divmod(mod_2, mod_1), divmod(mod_3, mod_2)
 
@@ -70,7 +70,7 @@ def calculate_diff(
             'different mdms')
 
     if div_1 == 1:  # no-branch
-        return 0, *mdm1
+        return mdm1
 
     raise UnknownRule  # no-cover
 
@@ -135,8 +135,8 @@ class ApplyRule:
             count = self.get_count(pos)
 
             match diff:
-                case (bef, mul, aft):
-                    result = apply_mult(count, times, bef, mul, aft)
+                case (mul, add):
+                    result = apply_mult(count, times, mul, add)
                 case _:
                     assert isinstance(diff, Plus)
 
@@ -160,13 +160,7 @@ def apply_plus(count: Count, times: Count, diff: Plus) -> Count:
     return count + diff * times
 
 
-def apply_mult(
-        count: Count,
-        times: Count,
-        bef: int,
-        mul: int,
-        aft: int,
-) -> Count:
+def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
     if not isinstance(count, int) and count.depth > 20:  # no-cover
         raise RuleLimit('count-depth')
 
@@ -181,7 +175,7 @@ def apply_mult(
 
     result: Count = (
         count * exp
-        + (aft + bef * mul) * (1 + ((exp - mul) // (mul - 1)))
+        + add * (1 + ((exp - mul) // (mul - 1)))
     )
 
     return result
