@@ -326,6 +326,9 @@ class Mul(Num):
         return int(self.l) * int(self.r)
 
     def estimate(self) -> int:
+        if (l := self.l) < 0:
+            return -((-l * self.r).estimate())  # type: ignore
+
         return round(self.estimate_l() + self.estimate_r())
 
     def __eq__(self, other: object) -> bool:
