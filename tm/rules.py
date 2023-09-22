@@ -47,6 +47,11 @@ def calculate_diff(
     if (not isinstance(cnt1, int)
             or not isinstance(cnt2, int)
             or not isinstance(cnt3, int)):
+        try:
+            assert cnt1 < cnt2 < cnt3
+        except NotImplementedError:
+            pass
+
         raise RuleLimit('calculate_diff')
 
     (div_1, mod_1), (div_2, mod_2), (div_3, mod_3) = \
