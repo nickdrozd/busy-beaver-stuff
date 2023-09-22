@@ -443,6 +443,10 @@ class Mul(Num):
         if other == self.r:  # no-cover
             return self.l < 0
 
+        if isinstance(other, Exp):
+            if 0 < self.l < 10:
+                return self.r < other
+
         return super().__lt__(other)
 
 

@@ -509,10 +509,9 @@ class TestNum(TestCase):
             (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3))))))))),
             (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3))))))))))))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertFalse(
-                (3 * Exp(2, (5 + (Exp(2, 5) * (1 + Exp(2, Exp(2, 5)))))))
-                    < Exp(2, Exp(2, 5)))
+        self.assertFalse(
+            (3 * Exp(2, (5 + (Exp(2, 5) * (1 + Exp(2, Exp(2, 5)))))))
+                < Exp(2, Exp(2, 5)))
 
     def test_exp_add(self):
         self.assert_num(
