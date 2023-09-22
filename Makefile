@@ -78,8 +78,9 @@ LR = test.test_lin_rado
 CG = test.test_code
 TP = test.test_tape
 NUM = test.test_num
+RUL = test.test_rules
 
-SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(TP) $(COV) $(NUM)
+SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(RUL) $(TP) $(COV) $(NUM)
 
 PYTEST = $(PYTHON) -m unittest
 
