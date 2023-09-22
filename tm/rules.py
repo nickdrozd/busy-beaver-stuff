@@ -72,15 +72,6 @@ def calculate_diff(
     if div_1 == 1:  # no-branch
         return 0, *mdm1
 
-    mdm_d, mdm_m = mdm1
-
-    diff = cnt2 - (mdm_d * ((mdm_m * div_1) + cnt1))
-
-    if (diff + (mdm_d * ((mdm_m * div_1) + cnt1)) == cnt2
-            and diff + (mdm_d * ((mdm_m * div_1) + cnt2) == cnt3)
-            and diff + (mdm_d * ((mdm_m * div_1) + cnt3) == cnt4)):
-        return (mdm_m * div_1), mdm_d, diff
-
     raise UnknownRule  # no-cover
 
 
