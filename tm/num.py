@@ -83,11 +83,17 @@ class Num:
         if isinstance(other, Add | Mul):
             l, r = other.l, other.r
 
-            if self == r:
-                return l > 0
+            try:  # pylint: disable = too-many-try-statements
+                if self <= r and l > 0:
+                    return True
+            except NotImplementedError:
+                pass
 
-            if self == l:
-                return r > 0
+            try:  # pylint: disable = too-many-try-statements
+                if self <= l and r > 0:
+                    return True
+            except NotImplementedError:
+                pass
 
         if isinstance(other, Add):
             if isinstance(l, int) and abs(l) < 10:
