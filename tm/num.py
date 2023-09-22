@@ -92,6 +92,15 @@ class Num:
             if isinstance(l, int) and abs(l) < 10:
                 return self < r
 
+        elif isinstance(other, Mul):
+            l, r = other.l, other.r
+
+            if self == r:  # no-cover
+                return l > 0
+
+            if self == l:
+                return r > 0
+
         raise NotImplementedError
 
     def __le__(self, other: Count) -> bool:
