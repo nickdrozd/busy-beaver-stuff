@@ -56,8 +56,8 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2655,
             "divs": 2112,
-            "exps": 2212,
-            "muls": 1847,
+            "exps": 2215,
+            "muls": 1851,
         })
 
     def assert_mod(
@@ -117,9 +117,10 @@ class TestNum(TestCase):
     def assert_estimate(self, val: Count, estimate: int):
         assert not isinstance(val, int)
 
-        self.assertEqual(
-            val.estimate(),
-            int(log10(int(val))))
+        if estimate > 0:
+            self.assertEqual(
+                val.estimate(),
+                int(log10(int(val))))
 
         self.assertEqual(
             val.estimate(),
@@ -146,6 +147,20 @@ class TestNum(TestCase):
         self.assert_estimate(
             (469761947 + (19 * Exp(2, 69174))) // 9,
             20823)
+
+        self.assert_estimate(
+            13 * Exp(2, 345103),
+            103887)
+
+        with self.assertRaises(AssertionError):
+            self.assert_estimate(
+                13 * -Exp(2, 345103),
+                -103887)
+
+        with self.assertRaises(AssertionError):
+            self.assert_estimate(
+                -13 * Exp(2, 345103),
+                -103887)
 
     def test_div(self):
         self.assert_num(
