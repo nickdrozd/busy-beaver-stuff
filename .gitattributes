@@ -1,2 +1,3 @@
-test/prog_data.py -linguist-detectable
 idris/BB.idr -linguist-detectable
+test/test_num.py -linguist-detectable
+test/prog_data.py -linguist-detectable
