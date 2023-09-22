@@ -439,6 +439,12 @@ class Mul(Num):
         if self.l < 0:  # no-cover
             raise NotImplementedError
 
+        if other == self.l:
+            return self.r < 0
+
+        if other == self.r:  # no-cover
+            return self.l < 0
+
         return super().__lt__(other)
 
 
@@ -622,7 +628,7 @@ class Exp(Num):
             if other.base == self.base:
                 try:
                     return add_exponents((self, 1), (other, 1))
-                except NotImplementedError:
+                except NotImplementedError:  # no-cover
                     pass
 
         return super().__add__(other)

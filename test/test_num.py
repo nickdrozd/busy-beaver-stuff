@@ -54,10 +54,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2616,
+            "adds": 2617,
             "divs": 2112,
-            "exps": 2105,
-            "muls": 1802,
+            "exps": 2108,
+            "muls": 1804,
         })
 
     def assert_mod(
@@ -860,7 +860,7 @@ class TestNum(TestCase):
     def test_add_exp(self):
         self.assert_rep(
             Exp(2, (5 + (Exp(2, 7) * (1 + Exp(2, (5 + Exp(2, 7))))))) + Exp(2, (5 + Exp(2, 7))),
-            "((2 ** (5 + (2 ** 7))) + (2 ** (5 + ((2 ** 7) * (1 + (2 ** (5 + (2 ** 7))))))))")
+            "((2 ** (5 + (2 ** 7))) * (1 + (2 ** (2 ** (12 + (2 ** 7))))))")
 
         self.assert_rep(
             Exp(2, (3 * Exp(2, (5 + (Exp(2, 5) * (1 + Exp(2, Exp(2, 5)))))))) + (3 * Exp(2, (2172 + (Exp(2, 5) * (1 + Exp(2, Exp(2, 5))))))),
