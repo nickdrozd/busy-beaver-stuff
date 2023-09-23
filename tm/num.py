@@ -255,31 +255,33 @@ class Add(Num):
         return ((l // div) + (r // div)) // (other // div)
 
     def __lt__(self, other: Count) -> bool:
-        if other == self.l:
-            return self.r < 0
+        l, r = self.l, self.r
 
-        if other == self.r:
-            return self.l < 0
+        if other == l:
+            return r < 0
+
+        if other == r:
+            return l < 0
 
         if isinstance(other, Add):
             if self == other.r:
                 return other.l > 0
 
-            if self.l == other.l:
-                return self.r < other.r
+            if l == other.l:
+                return r < other.r
 
-            if self.r == other.r:
-                return self.l < other.l
+            if r == other.r:
+                return l < other.l
 
-            if self.l == other.r:  # no-branch
-                return self.r < other.l
+            if l == other.r:  # no-branch
+                return r < other.l
 
-            if (isinstance(self.l, int)  # no-branch
+            if (isinstance(l, int)  # no-branch
                     and isinstance(other.l, int)):
-                return self.r < other.r
+                return r < other.r
 
-        if isinstance(self.l, int) and abs(self.l) < 10:
-            return self.r < other
+        if isinstance(l, int) and abs(l) < 10:
+            return r < other
 
         return super().__lt__(other)
 
@@ -384,25 +386,27 @@ class Mul(Num):
         return (other * self.l) * self.r
 
     def __add__(self, other: Count) -> Count:
+        l, r = self.l, self.r
+
         if isinstance(other, Mul):
-            if self.r == other.r:
-                return (self.l + other.l) * self.r
+            if r == other.r:
+                return (l + other.l) * r
 
-            if self.l == other.l:
-                return self.l * (self.r + other.r)
+            if l == other.l:
+                return l * (r + other.r)
 
-            if self.l == other.r:
-                return self.l * (self.r + other.l)
+            if l == other.r:
+                return l * (r + other.l)
 
-            if self.r == other.l:
-                return (self.l + other.r) * self.r
+            if r == other.l:
+                return (l + other.r) * r
 
-            if (isinstance(s_exp := self.r, Exp)
+            if (isinstance(s_exp := r, Exp)
                     and isinstance(o_exp := other.r, Exp)
                     and s_exp.base == o_exp.base):
                 try:
                     return add_exponents(
-                        (s_exp, self.l),
+                        (s_exp, l),
                         (o_exp, other.l),
                     )
                 except NotImplementedError:
@@ -413,13 +417,13 @@ class Mul(Num):
                 return other.l + (other.r + self)
 
             if isinstance(other.l, Mul):
-                if other.l.l == self.l:  # no-branch
+                if other.l.l == l:  # no-branch
                     return (self + other.l) + other.r
 
         elif isinstance(other, Exp):
             return other + self
 
-        if self.l == -1 and other == self.r:
+        if l == -1 and other == r:
             return 0
 
         return super().__add__(other)
@@ -439,31 +443,33 @@ class Mul(Num):
         return super().__floordiv__(other)  # no-cover
 
     def __lt__(self, other: Count) -> bool:
+        l, r = self.l, self.r
+
         if isinstance(other, Mul):
-            if self.l == other.l:
-                return self.r < other.r
+            if l == other.l:
+                return r < other.r
 
-            if self.r == other.r:
-                return self.l < other.l
+            if r == other.r:
+                return l < other.l
 
-            if self.l == other.r:
-                return self.r < other.l
+            if l == other.r:
+                return r < other.l
 
-            if self.r == other.l:  # no-branch
-                return self.l < other.r
+            if r == other.l:  # no-branch
+                return l < other.r
 
-        if self.l < 0:  # no-cover
+        if l < 0:  # no-cover
             raise NotImplementedError
 
-        if other == self.l:
-            return self.r < 0
+        if other == l:
+            return r < 0
 
-        if other == self.r:  # no-cover
-            return self.l < 0
+        if other == r:  # no-cover
+            return l < 0
 
         if isinstance(other, Exp):
-            if 0 < self.l < 10:
-                return self.r < other
+            if 0 < l < 10:
+                return r < other
 
         return super().__lt__(other)
 
