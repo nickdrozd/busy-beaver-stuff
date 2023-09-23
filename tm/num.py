@@ -300,6 +300,13 @@ class Mul(Num):
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
+        if l < 0:
+            assert r > 0
+
+        if r < 0:
+            assert l > 0
+            assert isinstance(l, Num)
+
         self.l = l
         self.r = r
 
