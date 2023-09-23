@@ -62,6 +62,7 @@ class Num:
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, int):
+            assert not isinstance(self, Exp)
             return False
 
         if isinstance(other, Add | Mul):
@@ -772,6 +773,9 @@ class Exp(Num):
         )
 
     def __lt__(self, other: Count) -> bool:
+        if isinstance(other, int):
+            return False
+
         if isinstance(other, Exp):
             if self.base == other.base:
                 return self.exp < other.exp
