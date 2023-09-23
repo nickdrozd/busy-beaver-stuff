@@ -53,9 +53,9 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2658,
+            "adds": 2662,
             "divs": 2112,
-            "exps": 2268,
+            "exps": 2278,
             "muls": 1862,
         })
 
@@ -515,6 +515,14 @@ class TestNum(TestCase):
         self.assertLess(
             (49 + (13 * Exp(2, 15))),
             (113 + (13 * Exp(2, 16))))
+
+        self.assertFalse(
+            Exp(10, (3 + Exp(10, Exp(10, 3))))
+                < Exp(10, (3 + Exp(10, 3))))
+
+        self.assertTrue(
+            Exp(10, (3 + Exp(10, 3)))
+                < Exp(10, (3 + Exp(10, Exp(10, 3)))))
 
         self.assertLess(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
