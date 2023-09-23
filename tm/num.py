@@ -62,8 +62,7 @@ class Num:
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, int):
-            assert not isinstance(self, Div)
-            assert not isinstance(self, Exp)
+            assert isinstance(self, Add)
             return False
 
         if isinstance(other, Add | Mul):
@@ -446,6 +445,9 @@ class Mul(Num):
 
     def __lt__(self, other: Count) -> bool:
         l, r = self.l, self.r
+
+        if isinstance(other, int):
+            return l < 0
 
         if isinstance(other, Mul):
             if l == other.l:
