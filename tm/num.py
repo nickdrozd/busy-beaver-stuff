@@ -62,6 +62,7 @@ class Num:
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, int):
+            assert not isinstance(self, Div)
             assert not isinstance(self, Exp)
             return False
 
@@ -564,11 +565,14 @@ class Div(Num):
         return self.num // (other * self.den)
 
     def __lt__(self, other: Count) -> bool:
+        if isinstance(other, int):
+            return self.num < 0
+
         if isinstance(other, Div):
             if self.den == other.den:  # no-branch
                 return self.num < other.num
 
-        return super().__lt__(other)
+        return super().__lt__(other)  # no-cover
 
 
 class Exp(Num):
