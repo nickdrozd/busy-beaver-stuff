@@ -552,15 +552,11 @@ class Div(Num):
         num, den = self.num, self.den
 
         if num < 0:
-            pos = -num * den
+            pos = -self
 
             assert isinstance(pos, Num)
 
-            neg_est = -(pos.estimate())
-
-            assert isinstance(neg_est, Exp | Mul)
-
-            return neg_est
+            return -(pos.estimate())
 
         num_est = num.estimate()
 
