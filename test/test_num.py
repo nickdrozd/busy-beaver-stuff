@@ -55,8 +55,8 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2669,
             "divs": 2112,
-            "exps": 2292,
-            "muls": 1872,
+            "exps": 2294,
+            "muls": 1873,
         })
 
     def assert_mod(
@@ -480,6 +480,10 @@ class TestNum(TestCase):
         self.assertGreaterEqual(
             Exp(5, 6),
             Exp(3, 4))
+
+        with self.assertRaises(NotImplementedError):
+            self.assertFalse(
+                Exp(2, 3) < -Exp(2, 5))
 
         self.assertLess(
             Exp(2, 3),
