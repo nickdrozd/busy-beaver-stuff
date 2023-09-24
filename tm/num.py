@@ -804,6 +804,9 @@ class Exp(Num):
         if isinstance(other, int):
             return False
 
+        if other < 0:
+            return False
+
         if isinstance(other, Exp):
             if self.base == other.base:
                 return self.exp < other.exp
