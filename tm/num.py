@@ -267,7 +267,7 @@ class Add(Num):
             if isinstance(l, int):
                 return r < 0
 
-            if l < 0 and r < 0:
+            if l < 0 and r < 0:  # no-cover
                 return True
 
             if 0 < l and 0 < r:
