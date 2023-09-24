@@ -115,7 +115,9 @@ class ApplyRule:
             if not isinstance(diff, Plus) or diff >= 0:
                 continue
 
-            if (absdiff := abs(diff)) >= (count := self.get_count(pos)):
+            count, absdiff = self.get_count(pos), abs(diff)
+
+            if isinstance(count, int) and absdiff >= count:
                 return None
 
             try:
