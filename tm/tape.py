@@ -156,7 +156,7 @@ class Tape(BlockTape):
         else:
             next_pull = pull[0]
 
-            if next_pull.count > 1:
+            if next_pull.count != 1:
                 next_pull.count -= 1
             else:
                 popped = pull.pop(0)
@@ -207,7 +207,7 @@ class TagTape(BlockTape):
             TagBlock(
                 block.color,
                 block.count,
-                [2 * i] if block.count > 1 else [])
+                [2 * i] if block.count != 1 else [])
             for i, block in enumerate(lspan)
         ]
 
@@ -217,7 +217,7 @@ class TagTape(BlockTape):
             TagBlock(
                 block.color,
                 block.count,
-                [2 * i + 1] if block.count > 1 else [])
+                [2 * i + 1] if block.count != 1 else [])
             for i, block in enumerate(rspan)
         ]
 
@@ -247,7 +247,7 @@ class TagTape(BlockTape):
     @property
     def missing_tags(self) -> bool:
         return any(
-            block.count > 1 and len(block.tags) != 1
+            block.count != 1 and len(block.tags) != 1
             for span in (self.lspan, self.rspan)
             for block in span)
 
@@ -280,7 +280,7 @@ class TagTape(BlockTape):
         else:
             next_scan = (next_pull := pull[0]).color
 
-            if next_pull.count > 1:
+            if next_pull.count != 1:
                 next_pull.count -= 1
                 dec_pull = True
             else:
@@ -429,7 +429,7 @@ class EnumTape(BlockTape):
         else:
             next_scan = (next_pull := pull[0]).color
 
-            if next_pull.count > 1:
+            if next_pull.count != 1:
                 next_pull.count -= 1
             else:
                 popped = pull.pop(0)
