@@ -308,3 +308,10 @@ class TestFloss(TestCase):
         for prog in progs:
             self.assertIsNotNone(
                 Machine(prog).run().limrul)
+
+    def test_mixed_divs(self):
+        self.assertIsNotNone(
+            Machine(
+                "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
+                opt_macro = 50,
+            ).run())

@@ -130,6 +130,14 @@ class ApplyRule:
                 pos,
             ))
 
+        if (any(isinstance(div, int) for div, _ in divs)
+                and not all(isinstance(div, int) for div, _ in divs)):
+            divs = [
+                divpos
+                for divpos in divs
+                if isinstance(divpos[0], int)
+            ]
+
         return min(divs, key = lambda p: p[0])
 
     def apply_rule(self, rule: Rule) -> Count | None:
