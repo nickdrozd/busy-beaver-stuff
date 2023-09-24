@@ -64,7 +64,7 @@ class Num:
         if isinstance(other, int):
             assert isinstance(self, Add)
 
-            l, r = self.l, self.r
+            l, r = self.l, self.r  # pylint: disable = no-member
 
             assert (l < 0 < r) or (r < 0 < l)
 
@@ -361,7 +361,7 @@ class Mul(Num):
         if not isinstance(l, int):
             mul_est = l.estimate() * r_est
 
-            assert isinstance(mul_est, Exp)
+            assert isinstance(mul_est, Exp | Mul)
 
             return mul_est
 
@@ -645,7 +645,7 @@ class Exp(Num):
             and self.exp == other.exp
         )
 
-    def estimate(self) -> Exp | Mul:
+    def estimate(self) -> Exp:
         base, exp = self.base, self.exp
 
         return Exp(
