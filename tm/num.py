@@ -829,6 +829,9 @@ def add_exponents(
 ) -> Count:
     (l_exp, l_co), (r_exp, r_co) = l, r
 
+    if l_exp == r_exp:
+        return (l_co + r_co) * l_exp
+
     assert (base := l_exp.base) == r_exp.base
 
     if l_exp.exp > r_exp.exp:

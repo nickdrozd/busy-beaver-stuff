@@ -53,9 +53,9 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2669,
+            "adds": 2668,
             "divs": 2112,
-            "exps": 2294,
+            "exps": 2293,
             "muls": 1873,
         })
 
