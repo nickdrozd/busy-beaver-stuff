@@ -53,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2673,
+            "adds": 2709,
             "divs": 2114,
-            "exps": 2308,
-            "muls": 1879,
+            "exps": 2352,
+            "muls": 1907,
         })
 
     def assert_mod(
@@ -788,6 +788,11 @@ class TestNum(TestCase):
             -Exp(2, 2) + (-Exp(2, 3) + (Exp(2, 5) * Exp(3, 3))),
             852,
             "(((2 ** 5) * (3 ** 3)) + -(3 * (2 ** 2)))")
+
+        self.assert_num(
+            ((Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, 2))))) + -(Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (-1 + Exp(2, 2)))))))) + (-(Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, 2))))) + (Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (-1 + Exp(2, 2)))))))),
+            0,
+            "((-((2 ** 2) * (-1 + (2 ** (-2 + (2 ** 2))))) + ((2 ** 2) * (-1 + (2 ** (-2 + (2 ** (-1 + (2 ** 2)))))))) + (((2 ** 2) * (-1 + (2 ** (-2 + (2 ** 2))))) + -((2 ** 2) * (-1 + (2 ** (-2 + (2 ** (-1 + (2 ** 2)))))))))")
 
     def test_div_gcd(self):
         self.assert_num(
