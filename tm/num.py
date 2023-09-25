@@ -556,7 +556,11 @@ class Div(Num):
 
             assert isinstance(pos, Num)
 
-            return -(pos.estimate())
+            neg_est = -(pos.estimate())
+
+            assert isinstance(neg_est, Exp | Mul)
+
+            return neg_est
 
         num_est = num.estimate()
 
