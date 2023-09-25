@@ -929,11 +929,11 @@ class Fast(TuringTest):
 
                 if est:
                     self.assertEqual(
+                        est,
                         show_number(
                             marks
                             if isinstance(marks, int) else
-                            marks.estimate()),
-                        est)
+                            marks.estimate()))
 
         assert_num_counts({
             "adds": 250369,
