@@ -9,16 +9,18 @@ from tm.reason import BackwardReasoner
 from generate.tree import run_tree_gen
 
 
+if TYPE_CHECKING:
+    from tm.machine import BasicMachine
+
+    Q = Queue[str]  # pylint: disable = unsubscriptable-object
+
+
 def read_progs(name: str) -> set[str]:
     with open(f'test/data/{name}.prog') as holdouts:
         return set(
             prog.strip()
             for prog in holdouts.readlines()
         )
-
-
-if TYPE_CHECKING:
-    Q = Queue[str]  # pylint: disable = unsubscriptable-object
 
 
 def queue_to_set(queue: Q) -> set[str]:
@@ -85,19 +87,19 @@ class TestTree(TestCase):
                 prog.graph.is_simple
                 and prog.graph.is_strongly_connected)
 
-    def add_result(self, prog: str, machine) -> None:
+    def add_result(self, prog: str, machine: BasicMachine) -> None:
         if ((blanks := machine.blanks)
                 and (res := min(blanks.values()))
                 and  res > self.results['blanks'][0]):
             self.results['blanks'] = res, prog
 
-        if ((res := machine.spnout)
-                and res > self.results['spnout'][0]):
-            self.results['spnout'] = res, prog
+        if ((spnout := machine.spnout)
+                and spnout > self.results['spnout'][0]):
+            self.results['spnout'] = spnout, prog
             return
 
-        if ((res := machine.undfnd)
-                and ((step := res[0] + 1) > self.results['halted'][0])):
+        if ((und := machine.undfnd)
+                and ((step := und[0] + 1) > self.results['halted'][0])):
             self.results['halted'] = step, prog.replace('...', '1R_')
             return
 

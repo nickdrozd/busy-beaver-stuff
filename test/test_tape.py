@@ -148,7 +148,7 @@ class TestTape(TestCase):
         self.assert_tape(
             f"3^1 2^1 1^{exp} [0]")
 
-    def assert_head(self, expected: int, tape = None):
+    def assert_head(self, expected: int, tape: HeadTape | None = None):
         self.assertEqual(
             (tape or self.tape).head,
             expected)
