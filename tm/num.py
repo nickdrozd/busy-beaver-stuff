@@ -295,10 +295,10 @@ class Add(Num):
             if r == other.r:
                 return l < other.l
 
-            if l == other.r:  # no-branch
+            if l == other.r:
                 return r < other.l
 
-            if (isinstance(l, int)  # no-branch
+            if (isinstance(l, int)
                     and isinstance(other.l, int)):
                 return r < other.r
 
@@ -445,11 +445,11 @@ class Mul(Num):
                     pass
 
         elif isinstance(other, Add):
-            if isinstance(other.l, int):  # no-branch
+            if isinstance(other.l, int):
                 return other.l + (other.r + self)
 
             if isinstance(other.l, Mul):
-                if other.l.l == l:  # no-branch
+                if other.l.l == l:
                     return (self + other.l) + other.r
 
         elif isinstance(other, Exp):
@@ -472,7 +472,7 @@ class Mul(Num):
         if (rgcd := gcd(other, r)) > 1:
             return (l * (r // rgcd)) // (other // rgcd)
 
-        return super().__floordiv__(other)  # no-cover
+        return super().__floordiv__(other)
 
     def __lt__(self, other: Count) -> bool:
         l, r = self.l, self.r
@@ -490,7 +490,7 @@ class Mul(Num):
             if l == other.r:
                 return r < other.l
 
-            if r == other.l:  # no-branch
+            if r == other.l:
                 return l < other.r
 
         if l < 0:  # no-cover
@@ -605,7 +605,7 @@ class Div(Num):
             if self.den == other.den:  # no-branch
                 return self.num < other.num
 
-        return super().__lt__(other)  # no-cover
+        return super().__lt__(other)
 
 
 class Exp(Num):
@@ -912,7 +912,7 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     assert isinstance(exp, Div)
 
     if base == 3:
-        if mod == 6:  # no-branch
+        if mod == 6:
             return 3
 
     if base != 2:  # no-cover

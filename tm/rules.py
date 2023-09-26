@@ -74,10 +74,10 @@ def calculate_diff(
         raise UnknownRule(
             'different mdms')
 
-    if div_1 == 1:  # no-branch
+    if div_1 == 1:
         return mdm1
 
-    raise UnknownRule  # no-cover
+    raise UnknownRule
 
 
 def make_rule(

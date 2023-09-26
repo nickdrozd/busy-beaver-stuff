@@ -322,7 +322,7 @@ class Machine(BasicMachine):
 
                 self.blanks[state] = step or -1
 
-                if state == 0:  # no-cover
+                if state == 0:
                     break
 
         else:
