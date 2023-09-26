@@ -555,10 +555,9 @@ class TestNum(TestCase):
             Exp(3, 4),
             Exp(5, 6))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertFalse(
-                Exp(2, 4)
-                    < Exp(2, 4) + -Exp(3, 2))
+        self.assertFalse(
+            Exp(2, 4)
+                < Exp(2, 4) + -Exp(3, 2))
 
         self.assertGreaterEqual(
             Exp(5, 6),

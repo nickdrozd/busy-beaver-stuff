@@ -85,6 +85,12 @@ class Num:
             except NotImplementedError:
                 pass
 
+            if self == l:
+                return 0 < r
+
+            if self == r:
+                return 0 < l
+
         if isinstance(other, Add):
             if isinstance(l, int) and abs(l) < 10:
                 return self < r
