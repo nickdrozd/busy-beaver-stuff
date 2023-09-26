@@ -113,7 +113,7 @@ class TestNum(TestCase):
         assert not isinstance(val, int)
         self.assertEqual(val.depth, depth)
 
-    def assert_estimate(self, val: Count, estimate: int):
+    def assert_estimate(self, val: Count, estimate: Count):
         assert not isinstance(val, int)
 
         self.assertEqual(
