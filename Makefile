@@ -108,7 +108,7 @@ special :
 
 mutmut :
 	-mutmut run
-	python3.8 -m mutmut html
+	mutmut html
 
 ## Program files (non-phony) ###########
 
