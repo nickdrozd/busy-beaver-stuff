@@ -55,8 +55,8 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2739,
             "divs": 2114,
-            "exps": 2391,
-            "muls": 1923,
+            "exps": 2392,
+            "muls": 1925,
         })
 
     def assert_mod(
@@ -361,6 +361,12 @@ class TestNum(TestCase):
             3 * Exp(2, 3),
             24,
             "(3 * (2 ** 3))",
+            (2, 0))
+
+        self.assert_num(
+            2 * Exp(3, 2),
+            18,
+            "(2 * (3 ** 2))",
             (2, 0))
 
     def test_eq_sub(self):
