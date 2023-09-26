@@ -53,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2756,
+            "adds": 2766,
             "divs": 2124,
-            "exps": 2429,
-            "muls": 1936,
+            "exps": 2433,
+            "muls": 1942,
         })
 
     def assert_mod(
@@ -190,6 +190,17 @@ class TestNum(TestCase):
         self.assert_estimate(
             Exp(2, 33) * (2 + Exp(2, 35)),
             Exp(10, 20))
+
+    def test_add(self):
+        self.assert_num(
+            -(Exp(2, 3) + Exp(3, 2)),
+            -17,
+            "-((2 ** 3) + (3 ** 2))")
+
+        self.assert_num(
+            -((3 + Exp(2, 3)) + Exp(3, 2)),
+            -20,
+            "(-3 + -((3 ** 2) + (2 ** 3)))")
 
     def test_div(self):
         self.assert_num(
@@ -1016,11 +1027,4 @@ class TestNum(TestCase):
 
 class TestRecursion(TestCase):
     def test_recursion(self):
-        with self.assertRaises(RecursionError):
-            -((3 + Exp(2, 3)) + Exp(3, 2))
-
-        with self.assertRaises(RecursionError):
-            -(Exp(2, 3) + Exp(3, 2))
-
-        with self.assertRaises(RecursionError):
-            -Exp(2, (-2 + ((Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, Exp(2, (-1 + Exp(2, 2)))))))) + -(Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (-1 + Exp(2, 2)))))))))) + -Exp(2, (-2 + (-(Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (-1 + Exp(2, 2))))))) + (Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (2 + Exp(2, Exp(2, (-1 + Exp(2, 2)))))))))))))
+        -Exp(2, (-2 + ((Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, Exp(2, (-1 + Exp(2, 2)))))))) + -(Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (-1 + Exp(2, 2)))))))))) + -Exp(2, (-2 + (-(Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (-1 + Exp(2, 2))))))) + (Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (2 + Exp(2, Exp(2, (-1 + Exp(2, 2)))))))))))))
