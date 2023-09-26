@@ -191,7 +191,7 @@ class BasicMachine:
                 break
 
             if not color and tape.blank:
-                if state in self.blanks:  # no-cover
+                if state in self.blanks:
                     break
 
                 self.blanks[state] = step or -1
@@ -376,7 +376,7 @@ class LinRecMachine(BasicMachine):
 
             step += tape.step(shift, color, state == next_state)
 
-            if (state := next_state) == -1:  # no-cover
+            if (state := next_state) == -1:
                 self.halted = step
                 break
 

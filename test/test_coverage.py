@@ -1,6 +1,12 @@
 from unittest import TestCase
 
-from tm.machine import Machine, LinRecMachine, run_variations
+from tm.machine import (
+    BasicMachine,
+    Machine,
+    LinRecMachine,
+    run_variations,
+)
+
 from tm.reason import (
     Program,
     instr_seq,
@@ -114,6 +120,16 @@ class TestFloss(TestCase):
             Machine(
                 "1RB 2LA 1RA  1LB 1LA 2RB"
             ).run(sim_lim = 10).xlimit)
+
+        self.assertIsNotNone(
+            Machine(
+                "1RB ...  0LB 0RA"
+            ).run())
+
+        self.assertIsNotNone(
+            BasicMachine(
+                "1RB 2LA 0RB  1LA 0LB 1RA"
+            ).run())
 
     def test_prover(self):
         progs = (
