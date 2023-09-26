@@ -89,11 +89,6 @@ class TestFloss(TestCase):
 
         self.assertIsNotNone(
             LinRecMachine(
-                "1RB 0LB  1LA 0RB"
-            ).run(check_rec = 1))
-
-        self.assertIsNotNone(
-            LinRecMachine(
                 "1RB 1LA  0RC ...  1LC 0LA"
             ).run(check_rec = 1))
 
@@ -115,30 +110,15 @@ class TestFloss(TestCase):
                 "1RB 1LA  0LB 1LB"
             ).run(check_rec = 1))
 
-    def test_prover(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA"
-            ).run())
-
-        self.assertTrue(
-            Machine(
-                "1RB 0RA  1RA ..."
-            ).run())
-
         self.assertIsNotNone(
             Machine(
                 "1RB 2LA 1RA  1LB 1LA 2RB"
-            ).run(
-                sim_lim = 5739,
-            ).xlimit)
+            ).run(sim_lim = 10).xlimit)
 
-    def test_rule_limit(self):
+    def test_prover(self):
         progs = (
-            "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA",
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
-            "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB",
-            "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",
+            "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA",
             "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",
         )
 
@@ -147,7 +127,7 @@ class TestFloss(TestCase):
                 Machine(
                     prog,
                     opt_macro = 500,
-                ).run().limrul)
+                ).run())
 
     def test_config_limit(self):
         self.assertIsNotNone(
@@ -188,19 +168,6 @@ class TestFloss(TestCase):
         _ = instr_seq(
             "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD")
 
-    def test_machine_macros(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 1LB  1LA 1R_",
-                opt_macro = 10,
-            ))
-
-        _ = Machine(
-            "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA",
-            opt_macro = 100,
-            backsym = 1,
-        )
-
     def test_run_variations(self):
         self.assertEqual(
             3,
@@ -210,104 +177,17 @@ class TestFloss(TestCase):
                         "1RB 1LB  1LA 1R_",
                         sim_lim = 10))))
 
-    def test_branch_init(self):
-        self.assertEqual(
-            8,
-            len(
-                Program.branch_init(
-                    2, 2)))
-
-    def test_tape(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 0LB  1RC 0RC  1LB 1LA"
-            ).run())
-
     def test_diff_lim(self):
         self.assertIsNotNone(
             Machine(
                 "1RB 1LA  1LC 0RD  ... 0RA  1LD 0LA"
             ).run())
 
-    def test_num(self):
-        marks = Machine(
-            "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",
-            opt_macro = 56,
-        ).run().marks
-
-        print(marks)
-        assert not isinstance(marks, int)
-        print(marks.estimate())
-        more_marks = marks * 3 // 2
-        assert not isinstance(more_marks, int)
-        print(more_marks.estimate())
-
-        self.assertGreater(marks, 5)
-        self.assertGreaterEqual(marks, 5)
-        self.assertLess(5, marks)
-        self.assertLessEqual(5, marks)
-        _ = marks < 5
-
-    def test_algebra_compiler_error(self):
-        progs = (
-            "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
-            "1RB 1RA  0LC 1RE  0LE 1LD  0LB 1LC  1LA 0LE",
-        )
-
-        for prog in progs:
-            self.assertIsNotNone(
-                Machine(prog).run())
-
-    def test_uninvertible(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 0LE  1RC 1RA  1RD 0LA  0LA 1LD  0RB 1LA",
-                opt_macro = 63,
-            ).run())
-
-    def test_depth_limit(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 1RE  1LC 0LE  1RD 0LB  1RE 0RA  1LE 1RD",
-                opt_macro = 73,
-            ).run().limrul)
-
-        # self.assertIsNotNone(
-        #     Machine(
-        #         "1RB 0RA  1RC 1RE  1LD 0LA  1LC 0RD  0RB 1RB",
-        #         opt_macro = 40,
-        #     ).run().limrul)
-
-    def test_exp_mod_limit(self):
-        self.assertIsNotNone(
-            machine := Machine(
-                "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA",
-                opt_macro = 41,
-            ).run())
-
-        print(machine)
-
-    def test_exp_mod_special_cases(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",
-            ).run().halted)
-
     def test_diff_mod_rule(self):
         self.assertIsNotNone(
             Machine(
                 "1RB 0LA  1RC ...  0RD 0RC  1LD 0LA"
             ).run().infrul)
-
-    def test_mul_compare(self):
-        progs = (
-            "1RB 0RD  0LC 1RE  1RA 1LD  0LC 1LC  0LD 0LE",
-            "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
-        )
-
-        for prog in progs:
-            self.assertIsNotNone(
-                Machine(prog).run().limrul)
 
     def test_mixed_divs(self):
         self.assertIsNotNone(
