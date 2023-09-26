@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import tm.num as num_mod
-from tm.num import Exp, NUM_COUNTS
+from tm.num import Exp, show_number, NUM_COUNTS
 
 if TYPE_CHECKING:
     from tm.num import Count
@@ -55,7 +55,7 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2743,
             "divs": 2117,
-            "exps": 2399,
+            "exps": 2403,
             "muls": 1927,
         })
 
@@ -336,6 +336,10 @@ class TestNum(TestCase):
             684,
             "((19 * (2 ** 2)) * (1 + (2 ** 3)))")
 
+        self.assertEqual(
+            "(~10^19728)",
+            show_number(
+                int(Exp(2, Exp(2, Exp(2, Exp(2, 2)))))))
 
     def test_exp_mod(self):
         vals = {
