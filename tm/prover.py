@@ -84,16 +84,13 @@ class Prover:
                 if tape.apply_rule(rule) is not None:
                     continue
 
-            # pylint: disable = line-too-long
-            if (instr := self.prog[state, tape.scan]) is None:  # no-cover
-                return None
+            assert (instr := self.prog[state, tape.scan]) is not None
 
             color, shift, next_state = instr
 
             tape.step(shift, color, state == next_state)
 
-            if (state := next_state) == -1:  # no-cover
-                return None
+            assert (state := next_state) != -1
 
         return state
 
