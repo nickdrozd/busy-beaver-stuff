@@ -70,7 +70,7 @@ def calculate_diff(
 
     mdm1, mdm2 = divmod(mod_2, mod_1), divmod(mod_3, mod_2)
 
-    if mdm1 != mdm2:  # no-cover
+    if mdm1 != mdm2:
         raise UnknownRule(
             'different mdms')
 
