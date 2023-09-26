@@ -209,6 +209,9 @@ class Add(Num):
         )
 
     def __mod__(self, other: int) -> int:
+        if other == 1:
+            return 0
+
         return ((self.l % other) + (self.r % other)) % other
 
     def __neg__(self) -> Count:
@@ -384,6 +387,9 @@ class Mul(Num):
         return -(self.l) * self.r
 
     def __mod__(self, other: int) -> int:
+        if other == 1:
+            return 0
+
         if (l_mod := self.l % other) == 0:
             return 0
 
