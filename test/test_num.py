@@ -1017,4 +1017,10 @@ class TestNum(TestCase):
 class TestRecursion(TestCase):
     def test_recursion(self):
         with self.assertRaises(RecursionError):
+            -((3 + Exp(2, 3)) + Exp(3, 2))
+
+        with self.assertRaises(RecursionError):
+            -(Exp(2, 3) + Exp(3, 2))
+
+        with self.assertRaises(RecursionError):
             -Exp(2, (-2 + ((Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, Exp(2, (-1 + Exp(2, 2)))))))) + -(Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (-1 + Exp(2, 2)))))))))) + -Exp(2, (-2 + (-(Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (-1 + Exp(2, 2))))))) + (Exp(2, 2) * (-1 + Exp(2, (-2 + Exp(2, (2 + Exp(2, Exp(2, (-1 + Exp(2, 2)))))))))))))
