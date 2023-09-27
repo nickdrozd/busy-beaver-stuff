@@ -495,8 +495,11 @@ class Mul(Num):
             if r == other.l:
                 return l < other.r
 
-        if l < 0:  # no-cover
-            raise NotImplementedError
+        if l < 0:
+            if other < 0:  # no-cover
+                raise NotImplementedError
+
+            return True
 
         if (other <= l and 0 < r) or (other <= r and 0 < l):
             return False
