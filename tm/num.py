@@ -502,11 +502,11 @@ class Mul(Num):
         if l < 0:  # no-cover
             raise NotImplementedError
 
-        if other == l:
-            return r < 0
+        if (other <= l and 0 < r) or (other <= r and 0 < l):
+            return False
 
-        if other == r:  # no-cover
-            return l < 0
+        if (l < other and r < 0) or (r < other and l < 0):  # no-cover
+            return True
 
         if isinstance(other, Exp):
             if 0 < l < 10:
