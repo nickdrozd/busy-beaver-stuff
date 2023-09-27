@@ -927,19 +927,18 @@ class Fast(TuringTest):
                     show_number(marks),
                     prog)
 
-                if est:
-                    self.assertEqual(
-                        est,
-                        show_number(
-                            marks
-                            if isinstance(marks, int) else
-                            marks.estimate()))
+                self.assertEqual(
+                    est,
+                    show_number(
+                        marks
+                        if isinstance(marks, int) else
+                        marks.estimate()))
 
         assert_num_counts({
-            "adds": 253568,
+            "adds": 253588,
             "divs": 24451,
-            "exps": 182788,
-            "muls": 129538,
+            "exps": 182931,
+            "muls": 129591,
         })
 
 
