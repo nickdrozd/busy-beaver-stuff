@@ -664,16 +664,22 @@ class Exp(Num):
     def estimate(self) -> Count:
         base, exp = self.base, self.exp
 
-        return Exp(
-            10,
-            (
-                exp.estimate()
-                if not isinstance(exp, int) else
-                int(log10(base ** exp))
-                if exp < 100 else
-                round(log10(base) * 10 ** log10(exp))
-            )
+        if not isinstance(exp, int):
+            est = exp.estimate()
+
+            assert isinstance(est, Exp)
+
+            return 10 ** est
+
+        est = (
+            int(log10(base ** exp))
+            if exp < 100 else
+            round(log10(base) * 10 ** log10(exp))
         )
+
+        assert isinstance(est, int)
+
+        return Exp(10, est)
 
     def __mod__(self, other: int) -> int:
         if other == 1:
