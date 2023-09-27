@@ -830,6 +830,12 @@ class Exp(Num):
             if self.base > other.base and self.exp > other.exp:
                 return False
 
+        elif isinstance(other, Add):
+            l, r = other.l, other.r
+
+            if isinstance(l, int):
+                return self < r
+
         return super().__lt__(other)
 
     def __pow__(self, other: Count) -> Exp:

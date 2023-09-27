@@ -654,10 +654,9 @@ class TestNum(TestCase):
             Exp(2, 33) * (1 + Exp(2, 2)),
             (1 + Exp(2, 2)) * 2 ** (-3 + (Exp(2, 33) * (1 + Exp(2, 2)))))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertFalse(
-                (10 ** Exp(10, 8274649522))
-                    < 8274649524 + Exp(10, 8274649522))
+        self.assertFalse(
+            (10 ** Exp(10, 8274649522))
+                < 8274649524 + Exp(10, 8274649522))
 
         with self.assertRaises(NotImplementedError):
             self.assertLess(
