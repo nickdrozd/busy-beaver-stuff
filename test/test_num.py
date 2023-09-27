@@ -55,8 +55,8 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2572,
             "divs": 2114,
-            "exps": 2204,
-            "muls": 1818,
+            "exps": 2206,
+            "muls": 1819,
         })
 
     def assert_mod(
@@ -621,6 +621,11 @@ class TestNum(TestCase):
             self.assertLess(
                 Exp(2, 3) * (-1 + Exp(2, 3)),
                 2 ** (-3 + Exp(2, 3)))
+
+        with self.assertRaises(NotImplementedError):
+            self.assertLess(
+                -Exp(10, 14050258128),
+                Exp(10, 14050259810))
 
         self.assertLess(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
