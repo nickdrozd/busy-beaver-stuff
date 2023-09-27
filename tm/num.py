@@ -52,7 +52,7 @@ class Num:
         )
 
     @abstractmethod
-    def estimate(self) -> Exp | Mul: ...
+    def estimate(self) -> Count: ...
 
     def __neg__(self) -> Count:
         return -1 * self
@@ -194,7 +194,7 @@ class Add(Num):
     def __int__(self) -> int:
         return int(self.l) + int(self.r)
 
-    def estimate(self) -> Exp | Mul:
+    def estimate(self) -> Count:
         l, r = self.l, self.r
 
         r_est = r.estimate()
@@ -354,19 +354,15 @@ class Mul(Num):
     def __int__(self) -> int:
         return int(self.l) * int(self.r)
 
-    def estimate(self) -> Exp | Mul:
+    def estimate(self) -> Count:
         l, r = self.l, self.r
 
         if l < 0:
-            pos = -l * r
+            pos = -self
 
-            assert isinstance(pos, Num)
+            assert not isinstance(pos, int)
 
-            neg_est = -(pos.estimate())
-
-            assert isinstance(neg_est, Exp | Mul)
-
-            return neg_est
+            return -(pos.estimate())
 
         r_est = r.estimate()
 
@@ -563,21 +559,20 @@ class Div(Num):
 
         return div % other
 
-    def estimate(self) -> Exp | Mul:
+    def estimate(self) -> Count:
         num, den = self.num, self.den
 
         if num < 0:
             pos = -self
 
-            assert isinstance(pos, Num)
+            assert not isinstance(pos, int)
 
-            neg_est = -(pos.estimate())
-
-            assert isinstance(neg_est, Exp | Mul)
-
-            return neg_est
+            return -(pos.estimate())
 
         num_est = num.estimate()
+
+        if isinstance(num_est, int):
+            return num_est
 
         assert isinstance(num_est, Exp)
 
@@ -660,7 +655,7 @@ class Exp(Num):
             and self.exp == other.exp
         )
 
-    def estimate(self) -> Exp:
+    def estimate(self) -> Count:
         base, exp = self.base, self.exp
 
         return Exp(
