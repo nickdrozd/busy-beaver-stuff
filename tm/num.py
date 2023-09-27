@@ -671,6 +671,11 @@ class Exp(Num):
         if not isinstance(exp, int):
             est = exp.estimate()
 
+            if isinstance(est, int):
+                assert est == 10
+
+                return Exp(10, est)
+
             assert isinstance(est, Exp)
 
             return 10 ** est
@@ -683,7 +688,11 @@ class Exp(Num):
 
         assert isinstance(est, int)
 
-        return Exp(10, est)
+        return (
+            1 if est == 0 else
+            10 if est == 1 else
+            Exp(10, est)
+        )
 
     def __mod__(self, other: int) -> int:
         if other == 1:

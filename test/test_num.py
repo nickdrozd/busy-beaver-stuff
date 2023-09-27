@@ -55,7 +55,7 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2570,
             "divs": 2114,
-            "exps": 2205,
+            "exps": 2199,
             "muls": 1819,
         })
 
@@ -153,15 +153,15 @@ class TestNum(TestCase):
 
         self.assert_estimate(
             Exp(2, 5),
-            Exp(10, 1))
+            10)
 
         self.assert_estimate(
             2 ** Exp(2, 5),
-            10 ** Exp(10, 1))
+            Exp(10, 10))
 
         self.assert_estimate(
             2 ** 2 ** Exp(2, 5),
-            10 ** 10 ** Exp(10, 1))
+            10 ** Exp(10, 10))
 
         self.assert_estimate(
             (469761947 + (19 * Exp(2, 69174))) // 9,
