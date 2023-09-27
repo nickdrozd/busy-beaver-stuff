@@ -53,9 +53,9 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2567,
+            "adds": 2568,
             "divs": 2114,
-            "exps": 2194,
+            "exps": 2197,
             "muls": 1818,
         })
 
@@ -138,6 +138,10 @@ class TestNum(TestCase):
             "(-((2 ** 3) * (-1 + (2 ** (-3 + (2 ** 3))))) + ((2 ** 3) * (-1 + (2 ** (-3 + (2 ** (2 ** 3)))))))")
 
     def test_estimate(self):
+        self.assert_estimate(
+            -1 + Exp(2, 31),
+            Exp(10, 9))
+
         self.assert_estimate(
             Exp(2, 2147483647),
             Exp(10, 646456993))
