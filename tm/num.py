@@ -578,6 +578,9 @@ class Div(Num):
 
         base, exp = num_est.base, num_est.exp
 
+        if not isinstance(exp, int):
+            return Exp(base, exp.estimate())
+
         return Exp(base, exp - round(log10(den)))
 
     def __add__(self, other: Count) -> Count:
