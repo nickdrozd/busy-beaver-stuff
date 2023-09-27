@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import tm.num as num_mod
-from tm.num import Exp, show_number, NUM_COUNTS
+from tm.num import Exp, Tet, show_number, NUM_COUNTS
 
 if TYPE_CHECKING:
     from tm.num import Count
@@ -53,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2570,
+            "adds": 2571,
             "divs": 2114,
-            "exps": 2199,
-            "muls": 1819,
+            "exps": 2191,
+            "muls": 1821,
         })
 
     def assert_mod(
@@ -157,11 +157,11 @@ class TestNum(TestCase):
 
         self.assert_estimate(
             2 ** Exp(2, 5),
-            Exp(10, 10))
+            Tet(10, 2))
 
         self.assert_estimate(
             2 ** 2 ** Exp(2, 5),
-            10 ** Exp(10, 10))
+            Tet(10, 3))
 
         self.assert_estimate(
             (469761947 + (19 * Exp(2, 69174))) // 9,
@@ -189,11 +189,15 @@ class TestNum(TestCase):
 
         self.assert_estimate(
             Exp(2, 33) * (2 + Exp(2, 35)),
-            Exp(10, 20))
+            Tet(10, 2) * Tet(10, 2))
 
         self.assert_estimate(
             7 * (2 ** (-3 + (7 * Exp(2, 111)))),
             10 ** Exp(10, 34))
+
+        self.assert_estimate(
+            Tet(10, 2),
+            Tet(10, 2))
 
     def test_add(self):
         self.assert_num(
@@ -675,6 +679,24 @@ class TestNum(TestCase):
             (-(Exp(2, 8) * (-1 + 2 ** (-8 + Exp(2, 8)))) + (Exp(2, 8) * (-1 + 2 ** (-8 + 2 ** 2 ** Exp(2, 8)))))
                 < ((Exp(2, 8) * (-1 + 2 ** (-8 + 2 ** Exp(2, 8)))) + -(Exp(2, 8) * (-1 + 2 ** (-8 + Exp(2, 8))))))
 
+        self.assertLess(
+            Tet(10, 2),
+            Tet(10, 3))
+
+        self.assertGreater(
+            Tet(10, 3),
+            3 + Tet(10, 2))
+
+        with self.assertRaises(NotImplementedError):
+            self.assertGreater(
+                Tet(10, 2),
+                Exp(2, 5))
+
+        with self.assertRaises(NotImplementedError):
+            self.assertLess(
+                Tet(10, 2),
+                Tet(8, 3))
+
     def test_exp_add(self):
         self.assert_num(
             Exp(2, 3) + Exp(2, 5),
@@ -1060,3 +1082,12 @@ class TestNum(TestCase):
         self.assert_rep(
             3 ** Exp(3, 5) + (3 ** ((Exp(3, 5) * (-1 + 3 ** Exp(3, 5))) + -(Exp(3, 5) * (-1 + Exp(3, 5)))) * (1 + Exp(3, 5))),
             "((3 ** (3 ** 5)) + ((3 ** (((3 ** 5) * (-1 + (3 ** (3 ** 5)))) + -((3 ** 5) * (-1 + (3 ** 5))))) * (1 + (3 ** (5 + ((((3 ** 5) * (-1 + (3 ** (3 ** 5)))) + -((3 ** 5) * (-1 + (3 ** 5)))) + (((3 ** 5) * (-1 + (3 ** 5))) + -((3 ** 5) * (-1 + (3 ** (3 ** 5)))))))))))")
+
+    def test_tet(self):
+        self.assert_rep(
+            10 ** Tet(10, 2),
+            "(10 ↑↑ 3)")
+
+        self.assert_rep(
+            10 ** Tet(11, 2),
+            "(10 ** (11 ↑↑ 2))")

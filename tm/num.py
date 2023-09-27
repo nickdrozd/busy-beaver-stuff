@@ -163,7 +163,7 @@ class Num:
 
         return Div(self, other)
 
-    def __rpow__(self, other: int) -> Exp:
+    def __rpow__(self, other: int) -> Exp | Tet:
         return Exp(other, self)
 
 
@@ -674,9 +674,9 @@ class Exp(Num):
             if isinstance(est, int):
                 assert est == 10
 
-                return Exp(10, est)
+                return Tet(10, 2)
 
-            assert isinstance(est, Exp)
+            assert isinstance(est, Exp | Tet)
 
             return 10 ** est
 
@@ -691,6 +691,7 @@ class Exp(Num):
         return (
             1 if est == 0 else
             10 if est == 1 else
+            Tet(10, 2) if est == 10 else
             Exp(10, est)
         )
 
@@ -862,6 +863,59 @@ class Exp(Num):
 
     def __pow__(self, other: Count) -> Exp:
         return Exp(self.base, self.exp * other)
+
+
+class Tet(Num):
+    join = '↑↑'
+
+    base: int
+    height: int
+
+    def __init__(self, base: int, height: int):
+        self.base = base
+        self.height = height
+
+    @property
+    def left(self) -> Count:
+        return self.base
+
+    @property
+    def right(self) -> Count:
+        return self.height
+
+    def estimate(self) -> Tet:
+        return self
+
+    def __int__(self) -> int:
+        raise NotImplementedError  # no-cover
+
+    def __mod__(self, other: int) -> int:
+        raise NotImplementedError  # no-cover
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, Tet)
+            and self.base == other.base
+            and self.height == other.height
+        )
+
+    def __rpow__(self, other: int) -> Exp | Tet:
+        if other != self.base:
+            return super().__rpow__(other)
+
+        return Tet(self.base, 1 + self.height)
+
+    def __lt__(self, other: Count) -> bool:
+        if isinstance(other, int):
+            return False
+
+        if isinstance(other, Tet):
+            if not self.base == other.base:
+                raise NotImplementedError
+
+            return self.height < other.height
+
+        return super().__lt__(other)
 
 
 def add_exponents(
