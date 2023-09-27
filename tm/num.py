@@ -377,7 +377,11 @@ class Mul(Num):
 
         base, exp = r_est.base, r_est.exp
 
-        return Exp(base, round(log10(l)) + exp)
+        return (
+            r_est
+            if not isinstance(exp, int) else
+            Exp(base, round(log10(l)) + exp)
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Mul):
