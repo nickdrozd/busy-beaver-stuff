@@ -285,7 +285,6 @@ class Program:
         return self
 
     def normalize_directions(self) -> Self:
-        # pylint: disable = unsubscriptable-object
         if (index := self[0, 0]) is None or index[1]:
             return self
 

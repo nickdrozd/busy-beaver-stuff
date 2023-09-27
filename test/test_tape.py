@@ -36,7 +36,6 @@ class TestTape(TestCase):
             rspan: BlockSpan,
             head: int | None = None,
     ) -> None:
-        # pylint: disable = unnecessary-comprehension
         self.tape = HeadTape(
             [Block(color, count) for color, count in lspan],
             scan,
@@ -639,7 +638,6 @@ class TestEnum(TestCase):
             scan: Color,
             rspan: BlockSpan,
     ) -> None:
-        # pylint: disable = unnecessary-comprehension
         self.tape = EnumTape(
             [Block(color, count) for color, count in lspan],
             scan,

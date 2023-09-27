@@ -12,7 +12,7 @@ from generate.tree import run_tree_gen
 if TYPE_CHECKING:
     from tm.machine import BasicMachine
 
-    Q = Queue[str]  # pylint: disable = unsubscriptable-object
+    Q = Queue[str]
 
 
 def read_progs(name: str) -> set[str]:
