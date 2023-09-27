@@ -55,8 +55,8 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2572,
             "divs": 2114,
-            "exps": 2208,
-            "muls": 1820,
+            "exps": 2204,
+            "muls": 1818,
         })
 
     def assert_mod(
@@ -182,10 +182,6 @@ class TestNum(TestCase):
         self.assert_estimate(
             -13 * Exp(2, 345103),
             -Exp(10, 103887))
-
-        self.assert_estimate(
-            -13 * -Exp(2, 345103),
-            Exp(10, 103887))
 
         self.assert_estimate(
             -13 * -Exp(2, 345103),
