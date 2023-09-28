@@ -54,6 +54,9 @@ class Num:
     @abstractmethod
     def estimate(self) -> Count: ...
 
+    @abstractmethod
+    def digits(self) -> int: ...
+
     def __neg__(self) -> Count:
         return -1 * self
 
@@ -193,6 +196,15 @@ class Add(Num):
 
     def __int__(self) -> int:
         return int(self.l) + int(self.r)
+
+    def digits(self) -> int:
+        r_dig = self.r.digits()
+
+        return (
+            r_dig
+            if isinstance(l := self.l, int) else
+            max(l.digits(), r_dig)
+        )
 
     def estimate(self) -> Count:
         l, r = self.l, self.r
@@ -353,6 +365,16 @@ class Mul(Num):
 
     def __int__(self) -> int:
         return int(self.l) * int(self.r)
+
+    def digits(self) -> int:
+        r_dig = self.r.digits()
+
+        return r_dig + (
+            # pylint: disable = used-before-assignment
+            round(log10(l))
+            if isinstance(l := self.l, int) else
+            l.digits()
+        )
 
     def estimate(self) -> Count:
         l, r = self.l, self.r
@@ -566,6 +588,9 @@ class Div(Num):
 
         return div % other
 
+    def digits(self) -> int:
+        return self.num.digits() - round(log10(self.den))
+
     def estimate(self) -> Count:
         num, den = self.num, self.den
 
@@ -664,6 +689,12 @@ class Exp(Num):
             and self.base == other.base
             and self.exp == other.exp
         )
+
+    def digits(self) -> int:
+        if not isinstance(exp := self.exp, int):
+            raise OverflowError
+
+        return round(log10(self.base) * 10 ** log10(exp))
 
     def estimate(self) -> Count:
         base, exp = self.base, self.exp
@@ -882,6 +913,9 @@ class Tet(Num):
     @property
     def right(self) -> Count:
         return self.height
+
+    def digits(self) -> int:
+        raise OverflowError
 
     def estimate(self) -> Tet:
         return self

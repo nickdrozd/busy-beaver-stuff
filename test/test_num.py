@@ -53,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2571,
-            "divs": 2114,
-            "exps": 2191,
-            "muls": 1821,
+            "adds": 2572,
+            "divs": 2115,
+            "exps": 2200,
+            "muls": 1822,
         })
 
     def assert_mod(
@@ -113,6 +113,10 @@ class TestNum(TestCase):
         assert not isinstance(val, int)
         self.assertEqual(val.depth, depth)
 
+    def assert_digits(self, val: Count, digits: int):
+        assert not isinstance(val, int)
+        self.assertEqual(digits, val.digits())
+
     def assert_estimate(self, val: Count, estimate: Count):
         assert not isinstance(val, int)
 
@@ -136,6 +140,29 @@ class TestNum(TestCase):
                 + (Exp(2, 3) * (-1 + (2 ** (-3 + (2 ** Exp(2, 3))))))),
             115792089237316195423570985008687907853269984665640564039457584007913129639680,
             "(-((2 ** 3) * (-1 + (2 ** (-3 + (2 ** 3))))) + ((2 ** 3) * (-1 + (2 ** (-3 + (2 ** (2 ** 3)))))))")
+
+    def test_digits(self):
+        self.assert_digits(
+            Exp(2, 2147483647),
+            646456993)
+
+        self.assert_digits(
+            Exp(2, 11),
+            3)
+
+        self.assert_digits(
+            (Exp(2, 11) * Exp(3, 11)),
+            8)
+
+        self.assert_digits(
+            (Exp(3, 11) - 1) // 2,
+            5)
+
+        with self.assertRaises(OverflowError):
+            (2 ** 2 ** 2 ** Exp(2, 2)).digits()
+
+        with self.assertRaises(OverflowError):
+            Tet(10, 3).digits()
 
     def test_estimate(self):
         self.assert_estimate(
