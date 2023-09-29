@@ -55,7 +55,7 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2590,
             "divs": 2115,
-            "exps": 2236,
+            "exps": 2245,
             "muls": 1828,
         })
 
@@ -161,6 +161,22 @@ class TestNum(TestCase):
         self.assert_digits(
             2 ** 2 ** 2 ** Exp(2, 2),
             19728)
+
+        self.assert_digits(
+            3 ** Exp(3, 3),
+            13)
+
+        self.assert_digits(
+            4 ** Exp(4, 4),
+            154)
+
+        self.assert_digits(
+            5 ** Exp(5, 5),
+            2184)
+
+        self.assert_digits(
+            6 ** Exp(6, 6),
+            36305)
 
         with self.assertRaises(OverflowError):
             Tet(10, 3).digits()
