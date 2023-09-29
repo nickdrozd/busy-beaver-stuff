@@ -859,11 +859,9 @@ class Exp(Num):
 
             other //= base
 
-        assert exp > 0
-
         return (
-            base
-            if exp == 1 else
+            1 if exp == 0 else
+            base if exp == 1 else
             Exp(base, exp)
         )
 
