@@ -112,7 +112,7 @@ class TestTape(TestCase):
         })
 
         self.assert_tape(
-            "2^24 1^2 [3] 4^1 5^2 6^157")
+            "2^24 1^2 [3] 4^1 5^2 6^(-3 + (5 * (2 ** 5)))")
 
     def test_rule_2(self):
         self.set_tape(

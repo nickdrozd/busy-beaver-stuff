@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from math import log10
 from typing import TYPE_CHECKING
 
 from tm.num import Exp, NumException
@@ -182,11 +181,7 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
     if not isinstance(times, int) and times.depth > 200:  # no-cover
         raise RuleLimit('times-depth')
 
-    exp = (
-        mul ** times
-        if isinstance(times, int) and log10(times) < 3 else
-        Exp(mul, times)
-    )
+    exp = Exp(mul, times)
 
     result: Count = (
         count * exp

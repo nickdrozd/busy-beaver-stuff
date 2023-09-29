@@ -22,7 +22,7 @@ class TestApply(TestCase):
     def test_apply_mult(self):
         for (count, times, mul, add), val in VALUES.items():
             self.assertEqual(
-                apply_mult(count, times, mul, add),
+                int(apply_mult(count, times, mul, add)),
                 val)
 
             self.assertEqual(
