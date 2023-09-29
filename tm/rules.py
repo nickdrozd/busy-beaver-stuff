@@ -43,15 +43,22 @@ def calculate_diff(
         assert isinstance(plus, int)
         return plus
 
-    if (not isinstance(cnt1, int)
-            or not isinstance(cnt2, int)
-            or not isinstance(cnt3, int)):
+    assert type(cnt1) == type(cnt2) == type(cnt3) == type(cnt4)  # pylint: disable = unidiomatic-typecheck
+
+    if not isinstance(cnt1, int):
         try:
             assert cnt1 < cnt2 < cnt3
         except NotImplementedError:
             pass
 
         raise RuleLimit('calculate_diff')
+
+    assert (
+        isinstance(cnt1, int)
+        and isinstance(cnt2, int)
+        and isinstance(cnt3, int)
+        and isinstance(cnt4, int)
+    )
 
     (div_1, mod_1), (div_2, mod_2), (div_3, mod_3) = \
         mult, _, _ = (
