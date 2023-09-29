@@ -158,8 +158,9 @@ class TestNum(TestCase):
             (Exp(3, 11) - 1) // 2,
             5)
 
-        with self.assertRaises(OverflowError):
-            (2 ** 2 ** 2 ** Exp(2, 2)).digits()
+        self.assert_digits(
+            2 ** 2 ** 2 ** Exp(2, 2),
+            19728)
 
         with self.assertRaises(OverflowError):
             Tet(10, 3).digits()

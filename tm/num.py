@@ -692,7 +692,10 @@ class Exp(Num):
 
     def digits(self) -> int:
         if not isinstance(exp := self.exp, int):
-            raise OverflowError
+            if exp.digits() >= 10:
+                raise OverflowError
+
+            exp = int(exp)
 
         return round(log10(self.base) * 10 ** log10(exp))
 
