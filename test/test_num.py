@@ -53,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2572,
+            "adds": 2574,
             "divs": 2115,
-            "exps": 2200,
-            "muls": 1822,
+            "exps": 2207,
+            "muls": 1823,
         })
 
     def assert_mod(
@@ -723,6 +723,11 @@ class TestNum(TestCase):
             self.assertLess(
                 Tet(10, 2),
                 Tet(8, 3))
+
+        with self.assertRaises(NotImplementedError):
+            self.assertLess(
+                Exp(2, 13),
+                Exp(2, 10) * (4 + Exp(2, 13)))
 
     def test_exp_add(self):
         self.assert_num(
