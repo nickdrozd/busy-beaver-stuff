@@ -745,6 +745,9 @@ class Exp(Num):
         if (period := find_period(base, other)) > 0:
             exp %= period
 
+        if exp == 0:
+            return 1
+
         if not isinstance(exp, int):
             return exp_mod_special_cases(other, base, exp)
 
