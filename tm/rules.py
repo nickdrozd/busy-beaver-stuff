@@ -166,11 +166,7 @@ class ApplyRule:
                     else:
                         assert diff < 0
 
-                        result = (
-                            mod
-                            if (mod := count % -diff) > 0 else
-                            -diff
-                        )
+                        result = (count % -diff) or -diff
 
             self.set_count(pos, result)
 
