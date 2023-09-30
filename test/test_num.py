@@ -703,7 +703,7 @@ class TestNum(TestCase):
             Exp(2, 3))
 
         self.assertFalse(
-            ((2 + Exp(2, 3)) * 2 ** ((-5 + (5 * Exp(2, 11))) // 3))
+            ((2 + Exp(2, 3)) * 2 ** ((-4 + (5 * Exp(2, 11))) // 3))
                 < Exp(2, 3))
 
         self.assertLess(
