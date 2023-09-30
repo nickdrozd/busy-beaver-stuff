@@ -53,9 +53,9 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2636,
-            "divs": 2144,
-            "exps": 2297,
+            "adds": 2638,
+            "divs": 2145,
+            "exps": 2299,
             "muls": 1877,
         })
 
@@ -441,6 +441,9 @@ class TestNum(TestCase):
             177146,
             "(-1 + (3 ** 11))",
             (2, 0))
+
+        with self.assertRaises(AssertionError):
+            (-3 + (3 ** ((-3 + Exp(3, 5)) // 8))) % 2
 
     def test_exp_mod_special_case(self):
         self.assert_mod(
