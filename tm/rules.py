@@ -158,9 +158,7 @@ class ApplyRule:
             match diff:
                 case (mul, add):
                     result = apply_mult(count, times, mul, add)
-                case _:
-                    assert isinstance(diff, Plus)
-
+                case Plus():  # no-branch
                     if pos != min_pos:
                         result = apply_plus(count, times, diff)
                     else:
