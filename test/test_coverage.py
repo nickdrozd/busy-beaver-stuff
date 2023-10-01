@@ -133,10 +133,14 @@ class TestFloss(TestCase):
 
     def test_prover(self):
         progs = (
+            "1RB 2LA 3LA 2LA  3LB 3RA 0RA 0RB",
             "1RB ...  1LC 1RB  0RB 1LD  1LA 1LC",
+            "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB",
+            "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
-            "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA",
             "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",
+            "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",
+            "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",
         )
 
         for prog in progs:

@@ -912,6 +912,9 @@ class Fast(TuringTest):
                         prog,
                         PROVER_HALT)
 
+                elif self.machine.infrul is not None:
+                    self.assertEqual(term, 'infrul', prog)
+
                 else:
                     self.assertEqual(
                         term,
@@ -935,10 +938,10 @@ class Fast(TuringTest):
                         marks.estimate()))
 
         assert_num_counts({
-            "adds": 188597,
-            "divs": 27245,
-            "exps": 107517,
-            "muls": 77166,
+            "adds": 194874,
+            "divs": 27250,
+            "exps": 111679,
+            "muls": 77206,
         })
 
 

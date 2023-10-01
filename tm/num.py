@@ -35,6 +35,8 @@ class Num:
         return False
 
     def estimate(self) -> Count:
+        est: Exp | Tet
+
         if (tower := self.tower_est) > 3:
             est = Tet(10, tower)
         else:

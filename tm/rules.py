@@ -3,14 +3,14 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from tm.num import Exp, NumException
+from tm.num import Add, Mul, Div, Exp, NumException
 from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
 
 
 Plus = int
 
 if TYPE_CHECKING:
-    from tm.num import Count
+    from tm.num import Num, Count
 
     Counts = tuple[
         list[Count],
@@ -19,7 +19,9 @@ if TYPE_CHECKING:
 
     Mult = tuple[int, int]
 
-    Op = Plus | Mult
+    OpSeq = tuple[tuple[str, int], ...]
+
+    Op = Plus | Mult | OpSeq
 
     Index = tuple[int, int]
 
@@ -51,7 +53,13 @@ def calculate_diff(
         pass
 
     if not isinstance(cnt1, int):
-        raise RuleLimit('calculate_diff')
+        assert (
+            not isinstance(cnt2, int)
+            and not isinstance(cnt3, int)
+            and not isinstance(cnt4, int)
+        )
+
+        return calculate_op_seq(cnt1, cnt2, cnt3, cnt4)
 
     assert (
         isinstance(cnt1, int)
@@ -86,6 +94,114 @@ def calculate_diff(
     raise UnknownRule
 
 
+def calculate_op_seq(
+        cnt1: Num,
+        cnt2: Num,
+        cnt3: Num,
+        cnt4: Num,
+) -> OpSeq:
+    sub, descent = cnt1, []
+
+    for _ in range(20):  # no-branch
+        if sub in cnt2:
+            break
+
+        match sub:
+            case Add():
+                if not isinstance(l := sub.l, int):
+                    raise RuleLimit('calculate_diff')
+
+                descent.append(
+                    ('+', -l))
+
+                sub = sub.r
+
+            case Mul():
+                if not isinstance(l := sub.l, int):
+                    raise RuleLimit('calculate_diff')
+
+                descent.append(
+                    ('//', l))
+
+                sub = sub.r
+
+            case Div():
+                descent.append(
+                    ('*', sub.den))
+
+                sub = sub.num
+
+            case Exp():  # no-branch
+                if isinstance(exp := sub.exp, int):
+                    raise RuleLimit('calculate_diff')
+
+                descent.append(
+                    ('~', sub.base))
+
+                sub = exp
+
+    else:
+        raise RuleLimit('subexpression descent')  # no-cover
+
+    sup, ascent = cnt2, []
+
+    for _ in range(10):
+        if sup == sub:
+            break
+
+        match sup:
+            case Add():
+                if not isinstance(l := sup.l, int):  # no-cover
+                    raise RuleLimit('calculate_diff')
+
+                ascent.append(
+                    ('+', l))
+
+                sup = sup.r
+
+            case Mul():
+                if not isinstance(l := sup.l, int):
+                    raise RuleLimit('calculate_diff')
+
+                ascent.append(
+                    ('*', l))
+
+                sup = sup.r
+
+            case Div():
+                ascent.append(
+                    ('//', sup.den))
+
+                sup = sup.num
+
+            case Exp():
+                if isinstance(exp := sup.exp, int):  # no-cover
+                    raise RuleLimit('calculate_diff')
+
+                ascent.append(
+                    ('**', sup.base))
+
+                sup = exp
+
+    else:
+        raise RuleLimit('calculate_diff')
+
+    ops = tuple(descent) + tuple(reversed(ascent))
+
+    try:
+        check_23, check_34 = (
+            apply_ops(cnt2, 1, ops) != cnt3,
+            apply_ops(cnt3, 1, ops) != cnt4,
+        )
+    except AssertionError as ass:
+        raise RuleLimit('calculate_diff') from ass
+
+    if check_23 or check_34:  # no-cover
+        raise RuleLimit('calculate_diff')
+
+    return ops
+
+
 def make_rule(
         cnts1: Counts,
         cnts2: Counts,
@@ -102,6 +218,9 @@ def make_rule(
     if all(diff >= 0
            for diff in rule.values()
            if isinstance(diff, Plus)):
+
+        # print(f'inf: {rule}')
+
         raise InfiniteRule()
 
     return rule
@@ -148,7 +267,7 @@ class ApplyRule:
             count = self.get_count(pos)
 
             match diff:
-                case (mul, add):
+                case (int(mul), int(add)):
                     result = apply_mult(count, times, mul, add)
                 case Plus():  # no-branch
                     if pos != min_pos:
@@ -157,6 +276,8 @@ class ApplyRule:
                         assert diff < 0
 
                         result = (count % -diff) or -diff
+                case ops:
+                    result = apply_ops(count, times, ops) # type: ignore
 
             self.set_count(pos, result)
 
@@ -176,3 +297,32 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
         count * exp
         + add * (1 + ((exp - mul) // (mul - 1)))
     )
+
+
+def apply_ops(count: Count, times: Count, ops: OpSeq) -> Count:
+    if not isinstance(times, int):  # no-cover
+        raise NotImplementedError
+
+    result = count
+
+    for _ in range(times):
+        for op, val in ops:
+            match op:
+                case '+':
+                    result += val
+
+                case '*':
+                    result *= val
+
+                case '//':
+                    result //= val
+
+                case '**':
+                    result = val ** result
+
+                case '~':  # no-branch
+                    assert isinstance(result, Exp), result
+
+                    result = result.exp
+
+    return result

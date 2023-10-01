@@ -1,6 +1,8 @@
+# pylint: disable = line-too-long
+
 from unittest import TestCase
 
-from tm.rules import apply_mult
+from tm.rules import apply_mult, apply_ops, Exp
 
 
 def apply_loop(count: int, times: int, mul: int, add: int) -> int:
@@ -28,3 +30,29 @@ class TestApply(TestCase):
             self.assertEqual(
                 apply_loop(count, times, mul, add),
                 val)
+
+    def test_apply_ops(self):
+        count1 = (-4 + (7 * Exp(2, 3))) // 3
+
+        count2 = (-4 + (7 * (2 ** ((8 + (7 * Exp(2, 3))) // 3)))) // 3
+
+        count3 = (-4 + (7 * (2 ** ((8 + (7 * (2 ** ((8 + (7 * Exp(2, 3))) // 3)))) // 3)))) // 3
+
+        ops = (
+            ('*', 3),
+            ('+', 4),
+            ('+', 8),
+            ('//', 3),
+            ('**', 2),
+            ('*', 7),
+            ('+', -4),
+            ('//', 3),
+        )
+
+        self.assertEqual(
+            apply_ops(count1, 1, ops),
+            count2)
+
+        self.assertEqual(
+            apply_ops(count2, 1, ops),
+            count3)
