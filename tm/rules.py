@@ -152,7 +152,7 @@ class ApplyRule:
                     result = apply_mult(count, times, mul, add)
                 case Plus():  # no-branch
                     if pos != min_pos:
-                        result = apply_plus(count, times, diff)
+                        result = count + diff * times
                     else:
                         assert diff < 0
 
@@ -161,10 +161,6 @@ class ApplyRule:
             self.set_count(pos, result)
 
         return times
-
-
-def apply_plus(count: Count, times: Count, diff: Plus) -> Count:
-    return count + diff * times
 
 
 def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
