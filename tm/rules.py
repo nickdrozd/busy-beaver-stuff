@@ -115,7 +115,7 @@ class ApplyRule:
     def set_count(self, index: Index, val: Count) -> None: ...
 
     def count_apps(self, rule: Rule) -> Apps | None:
-        divs: list[Apps] = []
+        apps: Apps | None = None
 
         for pos, diff in rule.items():
             if not isinstance(diff, Plus) or diff >= 0:
@@ -131,20 +131,12 @@ class ApplyRule:
             except NumException as exc:
                 raise RuleLimit('count_apps') from exc
 
-            divs.append((
-                div if rem > 0 else div - 1,
-                pos,
-            ))
+            times = div if rem > 0 else div - 1
 
-        if (any(isinstance(div, int) for div, _ in divs)
-                and not all(isinstance(div, int) for div, _ in divs)):
-            divs = [
-                divpos
-                for divpos in divs
-                if isinstance(divpos[0], int)
-            ]
+            if apps is None or times < apps[0]:
+                apps = times, pos
 
-        return min(divs, key = lambda p: p[0])
+        return apps
 
     def apply_rule(self, rule: Rule) -> Count | None:
         if (apps := self.count_apps(rule)) is None:
