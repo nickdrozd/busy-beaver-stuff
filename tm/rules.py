@@ -172,9 +172,7 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
 
     exp = Exp(mul, times)
 
-    result: Count = (
+    return (
         count * exp
         + add * (1 + ((exp - mul) // (mul - 1)))
     )
-
-    return result
