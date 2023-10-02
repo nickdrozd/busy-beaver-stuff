@@ -53,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2638,
-            "divs": 2145,
-            "exps": 2299,
-            "muls": 1877,
+            "adds": 2642,
+            "divs": 2148,
+            "exps": 2304,
+            "muls": 1882,
         })
 
     def assert_mod(
@@ -123,6 +123,25 @@ class TestNum(TestCase):
         self.assertEqual(
             val.estimate(),
             estimate)
+
+    def test_subexpression(self):
+        expr = (-4 + (7 * (2 ** ((8 + (7 * Exp(2, 3))) // 3)))) // 3
+
+        self.assertIn(
+            7 * Exp(2, 3),
+            expr)  # type: ignore[arg-type]
+
+        self.assertNotIn(
+            -4 + (7 * Exp(2, 3)),
+            expr)  # type: ignore[arg-type]
+
+        self.assertNotIn(
+            (-4 + (7 * Exp(2, 3))) // 3,
+            expr)  # type: ignore[arg-type]
+
+        self.assertNotIn(
+            expr,
+            Tet(10, 2))  # type: ignore[arg-type]
 
     def test_depth(self):
         self.assert_depth(Exp(3, 3), 1)

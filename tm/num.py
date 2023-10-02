@@ -44,6 +44,9 @@ class Num:
     @abstractmethod
     def __int__(self) -> int: ...
 
+    def __contains__(self, other: Num) -> bool:
+        return False
+
     @cached_property
     def depth(self) -> int:
         return 1 + max(
@@ -193,6 +196,9 @@ class Add(Num):
     @property
     def right(self) -> Num:
         return self.r
+
+    def __contains__(self, other: Num) -> bool:
+        return other == self or other in self.r
 
     def __int__(self) -> int:
         return int(self.l) + int(self.r)
@@ -362,6 +368,9 @@ class Mul(Num):
             return f'-{self.r}'
 
         return super().__repr__()
+
+    def __contains__(self, other: Num) -> bool:
+        return other == self or other in self.r
 
     def __int__(self) -> int:
         return int(self.l) * int(self.r)
@@ -563,6 +572,9 @@ class Div(Num):
     def right(self) -> int:
         return self.den
 
+    def __contains__(self, other: Num) -> bool:
+        return other == self or other in self.num
+
     def __int__(self) -> int:
         return int(self.num) // self.den
 
@@ -679,6 +691,13 @@ class Exp(Num):
     @property
     def right(self) -> Count:
         return self.exp
+
+    def __contains__(self, other: Num) -> bool:
+        return (
+            other == self
+            or (not isinstance(exp := self.exp, int)
+                   and other in exp)
+        )
 
     def __int__(self) -> int:
         return self.base ** int(self.exp)  # type: ignore[no-any-return]
