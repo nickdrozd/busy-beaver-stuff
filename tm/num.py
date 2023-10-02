@@ -1038,7 +1038,7 @@ def find_period(base: int, mod: int) -> int:
         return 0
 
     if base == 3 and int(exp := log2(mod)) == exp:
-        return 2 ** (int(exp) - 2)  # type: ignore[no-any-return]
+        return int(2 ** (int(exp) - 2))
 
     val = 1
     for period in range(1, mod):
