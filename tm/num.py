@@ -24,7 +24,6 @@ NUM_COUNTS = {
 
 
 class Num:
-    join: str
     depth: int
 
     @property
@@ -34,13 +33,6 @@ class Num:
     @property
     @abstractmethod
     def right(self) -> Count: ...
-
-    def __repr__(self) -> str:
-        return '({} {} {})'.format(
-            show_number(self.left),
-            self.join,
-            show_number(self.right),
-        )
 
     @abstractmethod
     def __int__(self) -> int: ...
@@ -168,8 +160,6 @@ class Num:
 
 
 class Add(Num):
-    join = '+'
-
     l: Count
     r: Num
 
@@ -192,6 +182,9 @@ class Add(Num):
     @property
     def right(self) -> Num:
         return self.r
+
+    def __repr__(self) -> str:
+        return f'({show_number(self.l)} + {self.r})'
 
     def __contains__(self, other: Num) -> bool:
         return other == self or other in self.r
@@ -329,8 +322,6 @@ class Add(Num):
 
 
 class Mul(Num):
-    join = '*'
-
     l: Count
     r: Num
 
@@ -365,7 +356,7 @@ class Mul(Num):
         if self.l == -1:
             return f'-{self.r}'
 
-        return super().__repr__()
+        return f'({show_number(self.l)} * {self.r})'
 
     def __contains__(self, other: Num) -> bool:
         return other == self or other in self.r
@@ -548,8 +539,6 @@ class Mul(Num):
 
 
 class Div(Num):
-    join = '//'
-
     num: Num
     den: int
 
@@ -564,13 +553,8 @@ class Div(Num):
 
         self.depth = 1 + num.depth
 
-    @property
-    def left(self) -> Num:
-        return self.num
-
-    @property
-    def right(self) -> int:
-        return self.den
+    def __repr__(self) -> str:
+        return f'({self.num} // {self.den})'
 
     def __contains__(self, other: Num) -> bool:
         return other == self or other in self.num
@@ -657,8 +641,6 @@ class Div(Num):
 
 
 class Exp(Num):
-    join = '**'
-
     base: int
     exp: Count
 
@@ -693,6 +675,9 @@ class Exp(Num):
     @property
     def right(self) -> Count:
         return self.exp
+
+    def __repr__(self) -> str:
+        return f'({self.base} ** {show_number(self.exp)})'
 
     def __contains__(self, other: Num) -> bool:
         return (
@@ -922,8 +907,6 @@ class Exp(Num):
 
 
 class Tet(Num):
-    join = '↑↑'
-
     base: int
     height: int
 
@@ -940,6 +923,9 @@ class Tet(Num):
     @property
     def right(self) -> Count:
         return self.height
+
+    def __repr__(self) -> str:
+        return f'({self.base} ↑↑ {self.height})'
 
     def digits(self) -> int:
         raise OverflowError
