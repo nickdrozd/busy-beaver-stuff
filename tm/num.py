@@ -6,7 +6,7 @@ from __future__ import annotations
 import itertools
 from abc import abstractmethod
 from math import sqrt, floor, ceil, log, log2, log10, gcd as pgcd
-from functools import cache, cached_property
+from functools import cache
 
 
 class NumException(Exception):
@@ -25,6 +25,7 @@ NUM_COUNTS = {
 
 class Num:
     join: str
+    depth: int
 
     @property
     @abstractmethod
@@ -46,13 +47,6 @@ class Num:
 
     def __contains__(self, other: Num) -> bool:
         return False
-
-    @cached_property
-    def depth(self) -> int:
-        return 1 + max(
-            0 if isinstance(l := self.left, int) else l.depth,
-            0 if isinstance(r := self.right, int) else r.depth,
-        )
 
     @abstractmethod
     def estimate(self) -> Count: ...
@@ -188,6 +182,8 @@ class Add(Num):
 
         self.l = l
         self.r = r
+
+        self.depth = 1 + r.depth
 
     @property
     def left(self) -> Count:
@@ -354,6 +350,8 @@ class Mul(Num):
 
         self.l = l
         self.r = r
+
+        self.depth = 1 + r.depth
 
     @property
     def left(self) -> Count:
@@ -564,6 +562,8 @@ class Div(Num):
         self.num = num
         self.den = den
 
+        self.depth = 1 + num.depth
+
     @property
     def left(self) -> Num:
         return self.num
@@ -683,6 +683,8 @@ class Exp(Num):
 
         self.base = base
         self.exp = exp
+
+        self.depth = 1 + (0 if isinstance(exp, int) else exp.depth)
 
     @property
     def left(self) -> int:
@@ -928,6 +930,8 @@ class Tet(Num):
     def __init__(self, base: int, height: int):
         self.base = base
         self.height = height
+
+        self.depth = 1
 
     @property
     def left(self) -> Count:
