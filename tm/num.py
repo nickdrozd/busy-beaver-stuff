@@ -26,14 +26,6 @@ NUM_COUNTS = {
 class Num:
     depth: int
 
-    @property
-    @abstractmethod
-    def left(self) -> Count: ...
-
-    @property
-    @abstractmethod
-    def right(self) -> Count: ...
-
     @abstractmethod
     def __int__(self) -> int: ...
 
@@ -174,14 +166,6 @@ class Add(Num):
         self.r = r
 
         self.depth = 1 + r.depth
-
-    @property
-    def left(self) -> Count:
-        return self.l
-
-    @property
-    def right(self) -> Num:
-        return self.r
 
     def __repr__(self) -> str:
         return f'({show_number(self.l)} + {self.r})'
@@ -343,14 +327,6 @@ class Mul(Num):
         self.r = r
 
         self.depth = 1 + r.depth
-
-    @property
-    def left(self) -> Count:
-        return self.l
-
-    @property
-    def right(self) -> Num:
-        return self.r
 
     def __repr__(self) -> str:
         if self.l == -1:
@@ -668,14 +644,6 @@ class Exp(Num):
 
         self.depth = 1 + (0 if isinstance(exp, int) else exp.depth)
 
-    @property
-    def left(self) -> int:
-        return self.base
-
-    @property
-    def right(self) -> Count:
-        return self.exp
-
     def __repr__(self) -> str:
         return f'({self.base} ** {show_number(self.exp)})'
 
@@ -915,14 +883,6 @@ class Tet(Num):
         self.height = height
 
         self.depth = 1
-
-    @property
-    def left(self) -> Count:
-        return self.base
-
-    @property
-    def right(self) -> Count:
-        return self.height
 
     def __repr__(self) -> str:
         return f'({self.base} ↑↑ {self.height})'
