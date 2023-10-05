@@ -30,6 +30,9 @@ if TYPE_CHECKING:
     Apps = tuple[Count, Index]
 
 
+RULE_DESCENT: int = 20
+
+
 def calculate_diff(
         cnt1: Count,
         cnt2: Count,
@@ -106,7 +109,7 @@ def calculate_op_seq(
 ) -> OpSeq:
     sub, descent = cnt1, []
 
-    for _ in range(20):  # no-branch
+    for _ in range(RULE_DESCENT):  # no-branch
         if sub in cnt2:
             break
 
@@ -145,11 +148,12 @@ def calculate_op_seq(
                 sub = exp
 
     else:
-        raise RuleLimit('subexpression descent')  # no-cover
+        raise RuleLimit(  # no-cover
+            'subexpression descent')
 
     sup, ascent = cnt2, []
 
-    for _ in range(10):
+    for _ in range(RULE_DESCENT):  # no-branch
         if sup == sub:
             break
 
@@ -188,7 +192,8 @@ def calculate_op_seq(
                 sup = exp
 
     else:
-        raise RuleLimit('calculate_diff')
+        raise RuleLimit(  # no-cover
+            'superexpression descent')
 
     ops = tuple(descent) + tuple(reversed(ascent))
 
