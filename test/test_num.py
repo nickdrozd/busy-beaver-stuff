@@ -53,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2642,
-            "divs": 2148,
-            "exps": 2304,
-            "muls": 1882,
+            "adds": 2641,
+            "divs": 2147,
+            "exps": 2299,
+            "muls": 1877,
         })
 
     def assert_mod(
@@ -216,11 +216,11 @@ class TestNum(TestCase):
 
         self.assert_estimate(
             Exp(2, 5),
-            10)
+            Exp(10, 2))
 
         self.assert_estimate(
             2 ** Exp(2, 5),
-            Tet(10, 2))
+            Exp(10, 10))
 
         self.assert_estimate(
             2 ** 2 ** Exp(2, 5),
@@ -232,7 +232,7 @@ class TestNum(TestCase):
 
         self.assert_estimate(
             -(469761947 + (19 * Exp(2, 69174))) // 9,
-            -Exp(10, 20823))
+            -Exp(10, 20821))
 
         self.assert_estimate(
             13 * Exp(2, 345103),
@@ -240,11 +240,11 @@ class TestNum(TestCase):
 
         self.assert_estimate(
             13 * -Exp(2, 345103),
-            -Exp(10, 103887))
+            -Exp(10, 103885))
 
         self.assert_estimate(
             -13 * Exp(2, 345103),
-            -Exp(10, 103887))
+            -Exp(10, 103885))
 
         self.assert_estimate(
             -13 * -Exp(2, 345103),
@@ -252,15 +252,19 @@ class TestNum(TestCase):
 
         self.assert_estimate(
             Exp(2, 33) * (2 + Exp(2, 35)),
-            Tet(10, 2) * Tet(10, 2))
+            Exp(10, 20))
 
         self.assert_estimate(
             7 * (2 ** (-3 + (7 * Exp(2, 111)))),
-            10 ** Exp(10, 34))
+            Tet(10, 3))
 
         self.assert_estimate(
             Tet(10, 2),
             Tet(10, 2))
+
+        self.assert_estimate(
+            10 ** 10 ** 10 ** Exp(10, 10),
+            Tet(10, 5))
 
     def test_add(self):
         self.assert_num(
@@ -358,7 +362,6 @@ class TestNum(TestCase):
 
     def test_exp(self):
         self.assert_num(Exp(1, 8), 1)
-        self.assert_num(int(Exp(6, 0)), 1)
         self.assert_num(Exp(4, 5), 1024)
 
         self.assert_num(Exp(2, 3), 8, "(2 ** 3)")

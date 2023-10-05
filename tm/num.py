@@ -26,14 +26,26 @@ NUM_COUNTS = {
 class Num:
     depth: int
 
+    tower_est: int
+
     @abstractmethod
     def __int__(self) -> int: ...
 
     def __contains__(self, other: Num) -> bool:
         return False
 
-    @abstractmethod
-    def estimate(self) -> Count: ...
+    def estimate(self) -> Count:
+        if (tower := self.tower_est) > 3:
+            est = Tet(10, tower)
+        else:
+            try:
+                digits = self.digits()
+            except OverflowError:
+                est = Tet(10, tower)
+            else:
+                est = Exp(10, digits)
+
+        return -est if self < 0 else est
 
     @abstractmethod
     def digits(self) -> int: ...
@@ -167,6 +179,12 @@ class Add(Num):
 
         self.depth = 1 + r.depth
 
+        self.tower_est = (
+            r.tower_est
+            if isinstance(l, int) else
+            max(l.tower_est, r.tower_est)
+        )
+
     def __repr__(self) -> str:
         return f'({show_number(self.l)} + {self.r})'
 
@@ -183,17 +201,6 @@ class Add(Num):
             r_dig
             if isinstance(l := self.l, int) else
             max(l.digits(), r_dig)
-        )
-
-    def estimate(self) -> Count:
-        l, r = self.l, self.r
-
-        r_est = r.estimate()
-
-        return (
-            r_est
-            if isinstance(l, int) else
-            max(l.estimate(), r_est)
         )
 
     def __eq__(self, other: object) -> bool:
@@ -328,6 +335,12 @@ class Mul(Num):
 
         self.depth = 1 + r.depth
 
+        self.tower_est = (
+            r.tower_est
+            if isinstance(l, int) else
+            max(l.tower_est, r.tower_est)
+        )
+
     def __repr__(self) -> str:
         if self.l == -1:
             return f'-{self.r}'
@@ -345,38 +358,11 @@ class Mul(Num):
 
         return r_dig + (
             # pylint: disable = used-before-assignment
-            round(log10(l))
-            if isinstance(l := self.l, int) else
             l.digits()
-        )
-
-    def estimate(self) -> Count:
-        l, r = self.l, self.r
-
-        if l < 0:
-            pos = -self
-
-            assert not isinstance(pos, int)
-
-            return -(pos.estimate())
-
-        r_est = r.estimate()
-
-        if not isinstance(l, int):
-            mul_est = l.estimate() * r_est
-
-            assert isinstance(mul_est, Exp | Mul)
-
-            return mul_est
-
-        assert isinstance(r_est, Exp)
-
-        base, exp = r_est.base, r_est.exp
-
-        return (
-            r_est
-            if not isinstance(exp, int) else
-            Exp(base, round(log10(l)) + exp)
+            if not isinstance(l := self.l, int) else
+            round(log10(l))
+            if l > 0 else
+            -round(log10(-l))
         )
 
     def __eq__(self, other: object) -> bool:
@@ -529,6 +515,8 @@ class Div(Num):
 
         self.depth = 1 + num.depth
 
+        self.tower_est = num.tower_est
+
     def __repr__(self) -> str:
         return f'({self.num} // {self.den})'
 
@@ -562,30 +550,6 @@ class Div(Num):
 
     def digits(self) -> int:
         return self.num.digits() - round(log10(self.den))
-
-    def estimate(self) -> Count:
-        num, den = self.num, self.den
-
-        if num < 0:
-            pos = -self
-
-            assert not isinstance(pos, int)
-
-            return -(pos.estimate())
-
-        num_est = num.estimate()
-
-        if isinstance(num_est, int):
-            return num_est
-
-        assert isinstance(num_est, Exp)
-
-        base, exp = num_est.base, num_est.exp
-
-        if not isinstance(exp, int):
-            return Exp(base, exp.estimate())
-
-        return Exp(base, exp - round(log10(den)))
 
     def __add__(self, other: Count) -> Count:
         return (self.num + (other * self.den)) // self.den
@@ -644,6 +608,13 @@ class Exp(Num):
 
         self.depth = 1 + (0 if isinstance(exp, int) else exp.depth)
 
+        self.tower_est = (
+            1 + exp.tower_est
+            if not isinstance(exp, int) else
+            2 if log10(exp) >= 1 else
+            1
+        )
+
     def __repr__(self) -> str:
         return f'({self.base} ** {show_number(self.exp)})'
 
@@ -672,36 +643,6 @@ class Exp(Num):
             exp = int(exp)
 
         return round(log10(self.base) * 10 ** log10(exp))
-
-    def estimate(self) -> Count:
-        base, exp = self.base, self.exp
-
-        if not isinstance(exp, int):
-            est = exp.estimate()
-
-            if isinstance(est, int):
-                assert est == 10
-
-                return Tet(10, 2)
-
-            assert isinstance(est, Exp | Tet)
-
-            return 10 ** est
-
-        est = (
-            int(log10(base ** exp))
-            if exp < 100 else
-            round(log10(base) * 10 ** log10(exp))
-        )
-
-        assert isinstance(est, int)
-
-        return (
-            1 if est == 0 else
-            10 if est == 1 else
-            Tet(10, 2) if est == 10 else
-            Exp(10, est)
-        )
 
     def __mod__(self, other: int) -> int:
         if other == 1:
@@ -883,6 +824,7 @@ class Tet(Num):
         self.height = height
 
         self.depth = 1
+        self.tower_est = height
 
     def __repr__(self) -> str:
         return f'({self.base} ↑↑ {self.height})'
