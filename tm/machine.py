@@ -115,7 +115,7 @@ class BasicMachine:
             for cat, data in self.term_results
         ]
 
-        if self.rulapp > 0:
+        if self.rulapp:
             rulapp_disp = (
                 show_number(self.rulapp)
                 if isinstance(self.rulapp, int) else
