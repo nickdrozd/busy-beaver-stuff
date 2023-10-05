@@ -48,9 +48,13 @@ def calculate_diff(
     assert type(cnt1) == type(cnt2) == type(cnt3) == type(cnt4)  # pylint: disable = unidiomatic-typecheck
 
     try:
-        assert cnt1 < cnt2 < cnt3 < cnt4
+        ascending = cnt1 < cnt2 < cnt3 < cnt4
     except NotImplementedError:
         pass
+    else:  # no-cover
+        if not ascending:
+            raise UnknownRule(
+                'non-increasing')
 
     if not isinstance(cnt1, int):
         assert (
