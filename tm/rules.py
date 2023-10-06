@@ -116,7 +116,7 @@ def calculate_op_seq(
         match sub:
             case Add():
                 if not isinstance(l := sub.l, int):
-                    raise RuleLimit('calculate_diff')
+                    raise RuleLimit('sub_add')
 
                 descent.append(
                     ('+', -l))
@@ -125,7 +125,7 @@ def calculate_op_seq(
 
             case Mul():
                 if not isinstance(l := sub.l, int):
-                    raise RuleLimit('calculate_diff')
+                    raise RuleLimit('sub_mul')
 
                 descent.append(
                     ('//', l))
@@ -140,7 +140,7 @@ def calculate_op_seq(
 
             case Exp():  # no-branch
                 if isinstance(exp := sub.exp, int):
-                    raise RuleLimit('calculate_diff')
+                    raise RuleLimit('sub_exp')
 
                 descent.append(
                     ('~', sub.base))
@@ -160,7 +160,7 @@ def calculate_op_seq(
         match sup:
             case Add():
                 if not isinstance(l := sup.l, int):  # no-cover
-                    raise RuleLimit('calculate_diff')
+                    raise RuleLimit('sup_add')
 
                 ascent.append(
                     ('+', l))
@@ -169,7 +169,7 @@ def calculate_op_seq(
 
             case Mul():
                 if not isinstance(l := sup.l, int):
-                    raise RuleLimit('calculate_diff')
+                    raise RuleLimit('sup_mul')
 
                 ascent.append(
                     ('*', l))
@@ -184,7 +184,7 @@ def calculate_op_seq(
 
             case Exp():
                 if isinstance(exp := sup.exp, int):  # no-cover
-                    raise RuleLimit('calculate_diff')
+                    raise RuleLimit('sup_exp')
 
                 ascent.append(
                     ('**', sup.base))
@@ -197,16 +197,9 @@ def calculate_op_seq(
 
     ops = tuple(descent) + tuple(reversed(ascent))
 
-    try:
-        check_23, check_34 = (
-            apply_ops(cnt2, 1, ops) != cnt3,
-            apply_ops(cnt3, 1, ops) != cnt4,
-        )
-    except AssertionError as ass:
-        raise RuleLimit('calculate_diff') from ass
-
-    if check_23 or check_34:  # no-cover
-        raise RuleLimit('calculate_diff')
+    if (apply_ops(cnt2, 1, ops) != cnt3
+            or apply_ops(cnt3, 1, ops) != cnt4):  # no-cover
+        raise UnknownRule
 
     return ops
 
@@ -330,7 +323,8 @@ def apply_ops(count: Count, times: Count, ops: OpSeq) -> Count:
                     result = val ** result
 
                 case '~':  # no-branch
-                    assert isinstance(result, Exp), result
+                    if not isinstance(result, Exp):
+                        raise RuleLimit('inapplicable_op')
 
                     result = result.exp
 
