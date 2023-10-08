@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import tm.num as num_mod
-from tm.num import Exp, Tet, show_number, NUM_COUNTS, NumException
+from tm.num import make_exp as Exp, Tet, show_number, NUM_COUNTS, NumException
 
 if TYPE_CHECKING:
     from tm.num import Count
@@ -53,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2641,
-            "divs": 2147,
-            "exps": 2299,
-            "muls": 1877,
+            "adds": 2245,
+            "divs": 2068,
+            "exps": 1214,
+            "muls": 1343,
         })
 
     def assert_mod(

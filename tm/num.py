@@ -7,6 +7,7 @@ import itertools
 from abc import abstractmethod
 from math import sqrt, floor, ceil, log, log2, log10, gcd as pgcd
 from functools import cache
+from collections import defaultdict
 
 
 class NumException(Exception):
@@ -45,7 +46,7 @@ class Num:
             except OverflowError:
                 est = Tet(10, tower)
             else:
-                est = Exp(10, digits)
+                est = make_exp(10, digits)
 
         return -est if self < 0 else est
 
@@ -106,7 +107,7 @@ class Num:
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, int):
-            return self if other == 0 else Add(other, self)
+            return self if other == 0 else make_add(other, self)
 
         if isinstance(other, Add):
             if isinstance(other.l, int):
@@ -119,7 +120,7 @@ class Num:
         if isinstance(other, Div):
             return ((other.den * self) + other.num) // other.den
 
-        return Add(self, other)
+        return make_add(self, other)
 
     def __radd__(self, other: int) -> Count:
         return self + other
@@ -137,7 +138,7 @@ class Num:
         if isinstance(other, Div):
             return (self * other.num) // other.den
 
-        return Mul(self, other)
+        return make_mul(self, other)
 
     def __rmul__(self, other: int) -> Count:
         if other == 0:
@@ -146,7 +147,7 @@ class Num:
         if other == 1:
             return self
 
-        return Mul(other, self)
+        return make_mul(other, self)
 
     @abstractmethod
     def __mod__(self, other: int) -> int: ...
@@ -159,10 +160,21 @@ class Num:
     def __floordiv__(self, other: int) -> Count:
         assert other > 1
 
-        return Div(self, other)
+        return make_div(self, other)
 
     def __rpow__(self, other: int) -> Exp | Tet:
-        return Exp(other, self)
+        return make_exp(other, self)
+
+
+ADDS: dict[Count, dict[Num, Add]] = defaultdict(dict)
+
+def make_add(l: Count, r: Num) -> Add:
+    adds = ADDS[l]
+
+    if r not in adds:
+        adds[r] = Add(l, r)
+
+    return adds[r]
 
 
 class Add(Num):
@@ -258,7 +270,7 @@ class Add(Num):
 
     def __rmul__(self, other: int) -> Count:
         if other == -1:
-            return Mul(-1, self)
+            return make_mul(-1, self)
 
         return (other * self.l) + (other * self.r)
 
@@ -315,6 +327,17 @@ class Add(Num):
             return r < other
 
         return super().__lt__(other)
+
+
+MULS: dict[Count, dict[Num, Mul]] = defaultdict(dict)
+
+def make_mul(l: Count, r: Num) -> Mul:
+    muls = MULS[l]
+
+    if r not in muls:
+        muls[r] = Mul(l, r)
+
+    return muls[r]
 
 
 class Mul(Num):
@@ -508,6 +531,17 @@ class Mul(Num):
         return super().__lt__(other)
 
 
+DIVS: dict[Num, dict[int, Div]] = defaultdict(dict)
+
+def make_div(num: Num, den: int) -> Div:
+    divs = DIVS[num]
+
+    if den not in divs:
+        divs[den] = Div(num, den)
+
+    return divs[den]
+
+
 class Div(Num):
     num: Num
     den: int
@@ -589,6 +623,17 @@ class Div(Num):
                 return self.num < other.num
 
         return super().__lt__(other)
+
+
+EXPS: dict[int, dict[Count, Exp]] = defaultdict(dict)
+
+def make_exp(base: int, exp: Count) -> Exp:
+    exps = EXPS[base]
+
+    if exp not in exps:
+        exps[exp] = Exp(base, exp)
+
+    return exps[exp]
 
 
 class Exp(Num):
@@ -735,7 +780,7 @@ class Exp(Num):
     def __mul__(self, other: Count) -> Count:
         if isinstance(other, Exp):
             if (base := self.base) == other.base:
-                return Exp(base, self.exp + other.exp)
+                return make_exp(base, self.exp + other.exp)
 
         elif isinstance(other, Add):
             l, r = other.l, other.r
@@ -776,7 +821,7 @@ class Exp(Num):
 
             other //= base
 
-        return other * Exp(base, exp)
+        return other * make_exp(base, exp)
 
     def __floordiv__(self, other: int) -> Count:
         if other == 1:
@@ -797,7 +842,7 @@ class Exp(Num):
         return (
             1 if exp == 0 else
             base if exp == 1 else
-            Exp(base, exp)
+            make_exp(base, exp)
         )
 
     def __lt__(self, other: Count) -> bool:
@@ -826,7 +871,7 @@ class Exp(Num):
         return super().__lt__(other)
 
     def __pow__(self, other: Count) -> Exp:
-        return Exp(self.base, self.exp * other)
+        return make_exp(self.base, self.exp * other)
 
 
 class Tet(Num):
@@ -903,10 +948,10 @@ def add_exponents(
     diff_exp = (
         base ** diff
         if (diff := r_pow - l_pow) < 2 else
-        Exp(base, diff)
+        make_exp(base, diff)
     )
 
-    return (l_co + (r_co * diff_exp)) * Exp(base, l_pow)
+    return (l_co + (r_co * diff_exp)) * make_exp(base, l_pow)
 
 
 def gcd(l: int, r: Count) -> int:

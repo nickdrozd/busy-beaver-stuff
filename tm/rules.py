@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from tm.num import Add, Mul, Div, Exp, NumException
+from tm.num import Add, Mul, Div, Exp, NumException, make_exp
 from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
 
 
@@ -293,7 +293,7 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
     if not isinstance(times, int) and times.depth > 200:  # no-cover
         raise RuleLimit('times-depth')
 
-    exp = Exp(mul, times)
+    exp = make_exp(mul, times)
 
     return (
         count * exp
