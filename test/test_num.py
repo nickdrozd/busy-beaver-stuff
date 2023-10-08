@@ -53,10 +53,10 @@ class TestNum(TestCase):
         num_mod.PROFILE = False
 
         assert_num_counts({
-            "adds": 2238,
+            "adds": 2240,
             "divs": 2067,
-            "exps": 1181,
-            "muls": 1323,
+            "exps": 1179,
+            "muls": 1325,
         })
 
     def assert_mod(
@@ -232,7 +232,7 @@ class TestNum(TestCase):
 
         self.assert_estimate(
             -(469761947 + (19 * Exp(2, 69174))) // 9,
-            -Exp(10, 20821))
+            -Exp(10, 20823))
 
         self.assert_estimate(
             13 * Exp(2, 345103),
@@ -240,11 +240,11 @@ class TestNum(TestCase):
 
         self.assert_estimate(
             13 * -Exp(2, 345103),
-            -Exp(10, 103885))
+            -Exp(10, 103887))
 
         self.assert_estimate(
             -13 * Exp(2, 345103),
-            -Exp(10, 103885))
+            -Exp(10, 103887))
 
         self.assert_estimate(
             -13 * -Exp(2, 345103),
@@ -547,7 +547,7 @@ class TestNum(TestCase):
         self.assert_num(
             -exp,
             -96,
-            "(-3 * (2 ** 5))")
+            "-(3 * (2 ** 5))")
 
     def test_neg_exp(self):
         for exp in range(1, 10):
@@ -933,7 +933,7 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 3) * ((-13 * Exp(2, 5)) * (1 + Exp(2, 7))),
             -429312,
-            "((-13 * (2 ** 8)) * (1 + (2 ** 7)))")
+            "-((13 * (2 ** 8)) * (1 + (2 ** 7)))")
 
         self.assert_num(
             (3 * Exp(2, 3)) * Exp(2, 5),
@@ -982,7 +982,7 @@ class TestNum(TestCase):
         self.assert_num(
             (-3 * Exp(2, 3)) * (-1 + Exp(2, 5)),
             -744,
-            "((-3 * (2 ** 3)) * (-1 + (2 ** 5)))")
+            "-((3 * (2 ** 3)) * (-1 + (2 ** 5)))")
 
     def test_add_neg(self):
         self.assert_num(
@@ -1049,7 +1049,7 @@ class TestNum(TestCase):
         self.assert_num(
             (Exp(2, 6) * (-5 + (5 * Exp(2, 14)))) // 12,
             436880,
-            "(((2 ** 4) * (-5 + (5 * (2 ** 14)))) // 3)")
+            "(((5 * (2 ** 18)) + -(5 * (2 ** 4))) // 3)")
 
         self.assert_num(
             (13164 + ((70837131 * Exp(2, 12)) + ((-118784 + (29 * Exp(2, 12))) // 9))) // 3,
@@ -1173,7 +1173,7 @@ class TestNum(TestCase):
         self.assert_num(
             (5 * 2 ** ((1 + Exp(2, 3)) // 3)) + (-5 * 2 ** 2 ** ((-1 + Exp(2, 4)) // 3)),
             -21474836440,
-            "((5 * (2 ** ((1 + (2 ** 3)) // 3))) + (-5 * (2 ** (2 ** ((-1 + (2 ** 4)) // 3)))))")
+            "((5 * (2 ** ((1 + (2 ** 3)) // 3))) + -(5 * (2 ** (2 ** ((-1 + (2 ** 4)) // 3)))))")
 
         self.assert_rep(
             3 ** Exp(3, 5) + (3 ** ((Exp(3, 5) * (-1 + 3 ** Exp(3, 5))) + -(Exp(3, 5) * (-1 + Exp(3, 5)))) * (1 + Exp(3, 5))),

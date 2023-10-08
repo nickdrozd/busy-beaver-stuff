@@ -147,6 +147,14 @@ class Num:
         if other == 1:
             return self
 
+        if other < -1:
+            neg = -other * self
+
+            if isinstance(neg, int):
+                return -neg
+
+            return make_mul(-1, neg)
+
         return make_mul(other, self)
 
     @abstractmethod
