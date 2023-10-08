@@ -190,6 +190,9 @@ class Add(Num):
     def __repr__(self) -> str:
         return f'({show_number(self.l)} + {self.r})'
 
+    def __hash__(self) -> int:
+        return id(self)
+
     def __contains__(self, other: Num) -> bool:
         return other == self or other in self.r
 
@@ -348,6 +351,9 @@ class Mul(Num):
             return f'-{self.r}'
 
         return f'({show_number(self.l)} * {self.r})'
+
+    def __hash__(self) -> int:
+        return id(self)
 
     def __contains__(self, other: Num) -> bool:
         return other == self or other in self.r
@@ -522,6 +528,9 @@ class Div(Num):
     def __repr__(self) -> str:
         return f'({self.num} // {self.den})'
 
+    def __hash__(self) -> int:
+        return id(self)
+
     def __contains__(self, other: Num) -> bool:
         return other == self or other in self.num
 
@@ -619,6 +628,9 @@ class Exp(Num):
 
     def __repr__(self) -> str:
         return f'({self.base} ** {show_number(self.exp)})'
+
+    def __hash__(self) -> int:
+        return id(self)
 
     def __contains__(self, other: Num) -> bool:
         return (
@@ -830,6 +842,9 @@ class Tet(Num):
 
     def __repr__(self) -> str:
         return f'({self.base} ↑↑ {self.height})'
+
+    def __hash__(self) -> int:
+        return id(self)
 
     def digits(self) -> int:
         raise OverflowError
