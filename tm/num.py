@@ -258,6 +258,13 @@ class Add(Num):
         if isinstance(l, int):
             return l + (other + r)
 
+        if isinstance(other, Mul) and other.l == -1:
+            if isinstance(l, Mul) and l.l == -1:
+                return r + (l + other)
+
+            if isinstance(r, Mul) and r.l == -1:
+                return l + (r + other)
+
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
