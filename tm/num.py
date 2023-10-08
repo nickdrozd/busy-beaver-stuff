@@ -467,16 +467,26 @@ class Mul(Num):
             if r == other.l:
                 return (l + other.r) * r
 
-            if (isinstance(s_exp := r, Exp)
-                    and isinstance(o_exp := other.r, Exp)
-                    and s_exp.base == o_exp.base):
-                try:
-                    return add_exponents(
-                        (s_exp, l),
-                        (o_exp, other.l),
-                    )
-                except NotImplementedError:
-                    pass
+            if isinstance(s_exp := r, Exp):
+                if (isinstance(r_exp := other.r, Exp)
+                        and s_exp.base == r_exp.base):
+                    try:
+                        return add_exponents(
+                            (s_exp, l),
+                            (r_exp, other.l),
+                        )
+                    except NotImplementedError:
+                        pass
+
+                if (isinstance(l_exp := other.l, Exp)
+                        and s_exp.base == l_exp.base):
+                    try:
+                        return add_exponents(
+                            (s_exp, l),
+                            (l_exp, other.r),
+                        )
+                    except NotImplementedError:
+                        pass
 
         elif isinstance(other, Add):
             if isinstance(other.l, int):
