@@ -486,6 +486,9 @@ class Mul(Num):
                 if other.l.l == l:
                     return (self + other.l) + other.r
 
+                if other.r.l == l:
+                    return (self + other.r) + other.l
+
         elif isinstance(other, Exp):
             return other + self
 
