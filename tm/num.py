@@ -169,6 +169,9 @@ class Num:
 ADDS: dict[Count, dict[Num, Add]] = defaultdict(dict)
 
 def make_add(l: Count, r: Num) -> Add:
+    if isinstance(l, Num) and l.depth > r.depth:
+        l, r = r, l
+
     adds = ADDS[l]
 
     if r not in adds:
@@ -184,9 +187,6 @@ class Add(Num):
     def __init__(self, l: Count, r: Num):
         if PROFILE:
             NUM_COUNTS["adds"] += 1
-
-        if isinstance(l, Num) and l.depth > r.depth:
-            l, r = r, l
 
         self.l = l
         self.r = r
@@ -332,6 +332,9 @@ class Add(Num):
 MULS: dict[Count, dict[Num, Mul]] = defaultdict(dict)
 
 def make_mul(l: Count, r: Num) -> Mul:
+    if isinstance(l, Num) and l.depth > r.depth:
+        l, r = r, l
+
     muls = MULS[l]
 
     if r not in muls:
@@ -347,9 +350,6 @@ class Mul(Num):
     def __init__(self, l: Count, r: Num):
         if PROFILE:
             NUM_COUNTS["muls"] += 1
-
-        if isinstance(l, Num) and l.depth > r.depth:
-            l, r = r, l
 
         if l < 0:
             assert r > 0
@@ -628,6 +628,21 @@ class Div(Num):
 EXPS: dict[int, dict[Count, Exp]] = defaultdict(dict)
 
 def make_exp(base: int, exp: Count) -> Exp:
+    for _ in itertools.count():
+        if not isinstance(base, int) or base <= 1:
+            break
+
+        if base == 8:
+            base = 2
+            exp *= 3
+            break
+
+        if floor(root := sqrt(base)) != ceil(root):
+            break
+
+        exp *= int(log(base, root))
+        base = int(root)
+
     exps = EXPS[base]
 
     if exp not in exps:
@@ -643,21 +658,6 @@ class Exp(Num):
     def __init__(self, base: int, exp: Count):
         if PROFILE:
             NUM_COUNTS["exps"] += 1
-
-        for _ in itertools.count():
-            if not isinstance(base, int) or base <= 1:
-                break
-
-            if base == 8:
-                base = 2
-                exp *= 3
-                break
-
-            if floor(root := sqrt(base)) != ceil(root):
-                break
-
-            exp *= int(log(base, root))
-            base = int(root)
 
         self.base = base
         self.exp = exp
