@@ -338,6 +338,9 @@ class Add(Num):
                     and isinstance(other.l, int)):
                 return r < other.r
 
+            if l < other.l and r < other.l:
+                return True
+
         if isinstance(l, int) and abs(l) < 10:
             return r < other
 
