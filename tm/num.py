@@ -1,5 +1,5 @@
 # pylint: disable = useless-parent-delegation, confusing-consecutive-elif
-# pylint: disable = too-many-lines, too-many-return-statements
+# pylint: disable = too-many-lines, too-many-return-statements, too-complex
 
 from __future__ import annotations
 
