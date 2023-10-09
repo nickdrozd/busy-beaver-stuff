@@ -856,9 +856,15 @@ class Exp(Num):
         if not isinstance(other, int):
             assert isinstance(other, Exp)
             assert other.base == base
-            assert other.exp < exp
+            assert other.exp <= exp, (self, other)
 
-            return make_exp(base, exp - other.exp)
+            match (diff := exp - other.exp):
+                case 0:
+                    return 1
+                case 1:
+                    return base
+                case _:
+                    return make_exp(base, diff)
 
         for i in itertools.count():
             if other % base != 0:
@@ -895,6 +901,14 @@ class Exp(Num):
 
             if isinstance(l, int):
                 return self < r
+
+        elif isinstance(other, Mul):
+            l, r = other.l, other.r
+
+            if (isinstance(l, Exp)
+                    and l.base == self.base
+                    and l.exp <= self.exp):
+                return (self // l) < r
 
         return super().__lt__(other)
 

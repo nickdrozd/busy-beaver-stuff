@@ -56,9 +56,9 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2260,
+            "adds": 2261,
             "divs": 2067,
-            "exps": 1183,
+            "exps": 1184,
             "muls": 1352,
         })
 
@@ -756,6 +756,10 @@ class TestNum(TestCase):
             (Exp(2, 44097) * (-1 + (11 * Exp(2, 1469)))) + -(Exp(2, 23520) * (1 + (Exp(2, 11759) * (1 + Exp(2, 5879))))))
 
         self.assertLess(
+            Exp(2, 3),
+            Exp(2, 3) * (2 + Exp(2, 3)))
+
+        self.assertLess(
             (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3))))))))),
             (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3))))))))))))
 
@@ -785,15 +789,13 @@ class TestNum(TestCase):
                 Tet(10, 2),
                 Tet(8, 3))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
-                Exp(2, 13),
-                Exp(2, 10) * (4 + Exp(2, 13)))
+        self.assertLess(
+            Exp(2, 13),
+            Exp(2, 10) * (4 + Exp(2, 13)))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
-                Exp(2, 13),
-                Exp(2, 12) * (1 + Exp(2, 11)))
+        self.assertLess(
+            Exp(2, 13),
+            Exp(2, 12) * (1 + Exp(2, 11)))
 
     def test_exp_add(self):
         self.assert_num(
