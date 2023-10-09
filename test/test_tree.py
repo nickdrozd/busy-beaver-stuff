@@ -93,6 +93,9 @@ class TestTree(TestCase):
                 and  res > self.results['blanks'][0]):
             self.results['blanks'] = res, prog
 
+        if machine.infrul:
+            return
+
         if ((spnout := machine.spnout)
                 and spnout > self.results['spnout'][0]):
             self.results['spnout'] = spnout, prog
