@@ -56,7 +56,7 @@ class TestNum(TestCase):
             "adds": 2250,
             "divs": 2062,
             "exps": 1180,
-            "muls": 1339,
+            "muls": 1337,
         })
 
     def assert_mod(

@@ -369,12 +369,12 @@ class Mul(Num):
         if PROFILE:
             NUM_COUNTS["muls"] += 1
 
-        # if l < 0:
-        #     assert r > 0
+        if l < 0:
+            assert r > 0
 
-        # if r < 0:
-        #     assert l > 0
-        #     assert isinstance(l, Num)
+        if r < 0:
+            assert l > 0
+            assert isinstance(l, Num)
 
         self.l = l
         self.r = r
@@ -450,6 +450,9 @@ class Mul(Num):
 
     def __rmul__(self, other: int) -> Count:
         if other == -1:
+            if self.l == -1:
+                return self.r
+
             return super().__rmul__(other)
 
         return (other * self.l) * self.r
