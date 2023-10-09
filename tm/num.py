@@ -845,9 +845,6 @@ class Exp(Num):
 
         base, exp = self.base, self.exp
 
-        if not isinstance(base, int):  # no-cover
-            return super().__floordiv__(other)
-
         for i in itertools.count():
             if other % base != 0:
                 exp -= i
