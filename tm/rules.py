@@ -89,7 +89,11 @@ def calculate_diff(
     if mod_1 == mod_2 == mod_3:
         return mult
 
-    mdm1, mdm2 = divmod(mod_2, mod_1), divmod(mod_3, mod_2)
+    try:
+        mdm1, mdm2 = divmod(mod_2, mod_1), divmod(mod_3, mod_2)
+    except ZeroDivisionError:
+        # pylint: disable = raise-missing-from
+        raise UnknownRule('zero mod')
 
     if mdm1 != mdm2:
         raise UnknownRule(

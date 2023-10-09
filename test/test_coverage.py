@@ -150,6 +150,12 @@ class TestFloss(TestCase):
                     opt_macro = 500,
                 ).run())
 
+        Machine(
+            "1RB 2RA 1LB 2LA  2LA 3RB 1LB 2RA"
+        ).run(
+            sim_lim = 800
+        )
+
     def test_config_limit(self):
         self.assertIsNotNone(
             Machine(
