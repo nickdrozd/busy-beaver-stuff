@@ -14,14 +14,10 @@ class NumException(Exception):
     pass
 
 
-PROFILE = False
-
-NUM_COUNTS = {
-    "adds": 0,
-    "muls": 0,
-    "divs": 0,
-    "exps": 0,
-}
+ADDS: dict[Count, dict[Num, Add]] = defaultdict(dict)
+MULS: dict[Count, dict[Num, Mul]] = defaultdict(dict)
+DIVS: dict[Num, dict[int, Div]] = defaultdict(dict)
+EXPS: dict[int, dict[Count, Exp]] = defaultdict(dict)
 
 
 class Num:
@@ -174,8 +170,6 @@ class Num:
         return make_exp(other, self)
 
 
-ADDS: dict[Count, dict[Num, Add]] = defaultdict(dict)
-
 def make_add(l: Count, r: Num) -> Add:
     if isinstance(l, Num) and l.depth > r.depth:
         l, r = r, l
@@ -193,9 +187,6 @@ class Add(Num):
     r: Num
 
     def __init__(self, l: Count, r: Num):
-        if PROFILE:
-            NUM_COUNTS["adds"] += 1
-
         self.l = l
         self.r = r
 
@@ -347,8 +338,6 @@ class Add(Num):
         return super().__lt__(other)
 
 
-MULS: dict[Count, dict[Num, Mul]] = defaultdict(dict)
-
 def make_mul(l: Count, r: Num) -> Mul:
     if isinstance(l, Num) and l.depth > r.depth:
         l, r = r, l
@@ -366,9 +355,6 @@ class Mul(Num):
     r: Num
 
     def __init__(self, l: Count, r: Num):
-        if PROFILE:
-            NUM_COUNTS["muls"] += 1
-
         if l < 0:
             assert r > 0
 
@@ -566,8 +552,6 @@ class Mul(Num):
         return super().__lt__(other)
 
 
-DIVS: dict[Num, dict[int, Div]] = defaultdict(dict)
-
 def make_div(num: Num, den: int) -> Div:
     divs = DIVS[num]
 
@@ -582,9 +566,6 @@ class Div(Num):
     den: int
 
     def __init__(self, num: Num, den: int):
-        if PROFILE:
-            NUM_COUNTS["divs"] += 1
-
         assert den > 0
 
         self.num = num
@@ -665,8 +646,6 @@ class Div(Num):
         return super().__lt__(other)
 
 
-EXPS: dict[int, dict[Count, Exp]] = defaultdict(dict)
-
 def make_exp(base: int, exp: Count) -> Exp:
     for _ in itertools.count():
         if not isinstance(base, int) or base <= 1:
@@ -696,9 +675,6 @@ class Exp(Num):
     exp: Count
 
     def __init__(self, base: int, exp: Count):
-        if PROFILE:
-            NUM_COUNTS["exps"] += 1
-
         self.base = base
         self.exp = exp
 

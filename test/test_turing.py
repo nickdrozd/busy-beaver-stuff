@@ -8,7 +8,7 @@ from unittest import TestCase, skip, expectedFailure
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 from test.utils import LinRecSampler
-from test.test_num import assert_num_counts, profile_nums
+from test.test_num import assert_num_counts, clear_caches
 
 from tm.reason import (
     Program,
@@ -895,8 +895,9 @@ class Fast(TuringTest):
 
         self.assert_macro_cells(2)
 
-    @profile_nums
     def test_algebra(self):
+        clear_caches()
+
         for term, progs in ALGEBRA.items():
             for prog, (cycles, string, est) in progs.items():
                 self.run_bb(

@@ -5,38 +5,43 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
-import tm.num as num_mod
-from tm.num import make_exp as Exp, Tet, show_number, NUM_COUNTS, NumException
+import tm.num
+from tm.num import make_exp as Exp, Tet, show_number, NumException
 
 if TYPE_CHECKING:
     from tm.num import Count
 
 
-def profile_nums(func):  # no-cover
-    def wrapper(*args, **kwargs):
-        num_mod.PROFILE = True
+CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
+    "adds": tm.num.ADDS,  # type: ignore[dict-item]
+    "muls": tm.num.MULS,  # type: ignore[dict-item]
+    "divs": tm.num.DIVS,  # type: ignore[dict-item]
+    "exps": tm.num.EXPS,  # type: ignore[dict-item]
+}
 
-        try:
-            func(*args, **kwargs)
-        finally:
-            num_mod.PROFILE = False
 
-    return wrapper
+def clear_caches() -> None:
+    for cache in CACHES.values():
+        cache.clear()
 
 
 def assert_num_counts(expected: dict[str, int]):
     err = None
 
+    num_counts = {
+        name: sum(len(vals) for vals in cache.values())
+        for name, cache in CACHES.items()
+    }
+
     try:
-        assert NUM_COUNTS == expected, NUM_COUNTS
+        assert num_counts == expected, num_counts
     except AssertionError:  # no-cover
         err = [
             f'            "{cat}": {val},'
-            for cat, val in sorted(NUM_COUNTS.items())
+            for cat, val in sorted(num_counts.items())
         ]
     finally:
-        for cat in NUM_COUNTS:
-            NUM_COUNTS[cat] = 0
+        clear_caches()
 
     if err:  # no-cover
         raise AssertionError(
@@ -46,12 +51,10 @@ def assert_num_counts(expected: dict[str, int]):
 class TestNum(TestCase):
     @classmethod
     def setUpClass(cls):
-        num_mod.PROFILE = True
+        clear_caches()
 
     @classmethod
     def tearDownClass(cls):
-        num_mod.PROFILE = False
-
         assert_num_counts({
             "adds": 2259,
             "divs": 2067,
