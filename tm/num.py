@@ -161,7 +161,9 @@ class Num:
 
         return (self - mod) // other, mod
 
-    def __floordiv__(self, other: int) -> Count:
+    def __floordiv__(self, other: Count) -> Count:
+        assert isinstance(other, int)
+
         assert other > 1
 
         return make_div(self, other)
@@ -280,9 +282,11 @@ class Add(Num):
 
         return (other * self.l) + (other * self.r)
 
-    def __floordiv__(self, other: int) -> Count:
+    def __floordiv__(self, other: Count) -> Count:
         if other == 1:
             return self
+
+        assert isinstance(other, int)
 
         div = gcd(
             gcd(other, l := self.l),
@@ -500,9 +504,11 @@ class Mul(Num):
 
         return super().__add__(other)
 
-    def __floordiv__(self, other: int) -> Count:
+    def __floordiv__(self, other: Count) -> Count:
         if other == 1:
             return self
+
+        assert isinstance(other, int)
 
         l, r = self.l, self.r
 
@@ -624,9 +630,11 @@ class Div(Num):
     def __rmul__(self, other: int) -> Count:
         return (other * self.num) // self.den
 
-    def __floordiv__(self, other: int) -> Count:
+    def __floordiv__(self, other: Count) -> Count:
         if other == 1:
             return self
+
+        assert isinstance(other, int)
 
         num, den = self.num, self.den
 
@@ -839,11 +847,18 @@ class Exp(Num):
 
         return other * make_exp(base, exp)
 
-    def __floordiv__(self, other: int) -> Count:
+    def __floordiv__(self, other: Count) -> Count:
         if other == 1:
             return self
 
         base, exp = self.base, self.exp
+
+        if not isinstance(other, int):
+            assert isinstance(other, Exp)
+            assert other.base == base
+            assert other.exp < exp
+
+            return make_exp(base, exp - other.exp)
 
         for i in itertools.count():
             if other % base != 0:
