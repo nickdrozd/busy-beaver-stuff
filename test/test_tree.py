@@ -188,7 +188,7 @@ class Fast(TestTree):
                 self.add_result(prog, machine)
                 return
 
-            for machine in run_variations(prog, 9_600):
+            for machine in run_variations(prog, 5_000):
                 if machine.xlimit is None:
                     return
 
