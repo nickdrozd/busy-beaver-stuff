@@ -641,7 +641,12 @@ class Div(Num):
         if other == 1:
             return self
 
-        return self.num // (other * self.den)
+        num, den = self.num, self.den
+
+        if gcd(den, num) == 1 and gcd(other, num) == 1:
+            return make_div(num, other * den)
+
+        return num // (other * den)
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, int):
