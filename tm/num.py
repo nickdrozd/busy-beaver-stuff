@@ -366,12 +366,12 @@ class Mul(Num):
         if PROFILE:
             NUM_COUNTS["muls"] += 1
 
-        if l < 0:
-            assert r > 0
+        # if l < 0:
+        #     assert r > 0
 
-        if r < 0:
-            assert l > 0
-            assert isinstance(l, Num)
+        # if r < 0:
+        #     assert l > 0
+        #     assert isinstance(l, Num)
 
         self.l = l
         self.r = r
@@ -981,7 +981,7 @@ def add_exponents(
 
     diff_exp = (
         base ** diff
-        if (diff := r_pow - l_pow) < 2 else
+        if (diff := r_pow - l_pow) < 1_000 else
         make_exp(base, diff)
     )
 
