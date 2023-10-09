@@ -90,14 +90,6 @@ class Num:
             if isinstance(l, int) and abs(l) < 10:
                 return self < r
 
-        sest, oest = self.estimate(), other.estimate()
-
-        if sest < oest:
-            return True
-
-        if oest < sest:
-            return False
-
         raise NotImplementedError
 
     def __le__(self, other: Count) -> bool:
@@ -918,10 +910,6 @@ class Exp(Num):
                     and l.exp <= self.exp):
                 return (self // l) < r
 
-        elif isinstance(other, Tet):
-            if isinstance(self.base, int) and other.height >= 3:
-                return True
-
         return super().__lt__(other)
 
     def __pow__(self, other: Count) -> Exp:
@@ -979,18 +967,6 @@ class Tet(Num):
                 raise NotImplementedError
 
             return self.height < other.height
-
-        if isinstance(other, Exp):
-            if isinstance(other.base, int):
-                if self.height >= 3:
-                    return False
-
-                if self.height == 2 and other.exp < 10:
-                    return False
-
-        elif isinstance(other, Mul):
-            if other.l == -1:
-                return False
 
         return super().__lt__(other)
 

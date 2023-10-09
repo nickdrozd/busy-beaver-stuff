@@ -939,10 +939,10 @@ class Fast(TuringTest):
                         marks.estimate()))
 
         assert_num_counts({
-            "adds": 31625,
+            "adds": 29618,
             "divs": 5531,
-            "exps": 10338,
-            "muls": 9819,
+            "exps": 9481,
+            "muls": 8781,
         })
 
 

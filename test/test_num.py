@@ -56,10 +56,10 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2262,
+            "adds": 2261,
             "divs": 2067,
-            "exps": 1186,
-            "muls": 1354,
+            "exps": 1184,
+            "muls": 1352,
         })
 
     def assert_mod(
@@ -779,9 +779,10 @@ class TestNum(TestCase):
             Tet(10, 3),
             3 + Tet(10, 2))
 
-        self.assertGreater(
-            Tet(10, 2),
-            Exp(2, 5))
+        with self.assertRaises(NotImplementedError):
+            self.assertGreater(
+                Tet(10, 2),
+                Exp(2, 5))
 
         with self.assertRaises(NotImplementedError):
             self.assertLess(
@@ -1205,7 +1206,7 @@ class TestNum(TestCase):
 
         self.assert_rep(
             3 ** Exp(3, 5) + (3 ** ((Exp(3, 5) * (-1 + 3 ** Exp(3, 5))) + -(Exp(3, 5) * (-1 + Exp(3, 5)))) * (1 + Exp(3, 5))),
-            "((3 ** (3 ** 5)) * (1 + ((3 ** (-(3 ** 10) + ((3 ** 5) * (-1 + (3 ** (3 ** 5)))))) * (1 + (3 ** (5 + ((((3 ** 5) * (-1 + (3 ** (3 ** 5)))) + -((3 ** 5) * (-1 + (3 ** 5)))) + (((3 ** 5) * (-1 + (3 ** 5))) + -((3 ** 5) * (-1 + (3 ** (3 ** 5))))))))))))")
+            "((3 ** (3 ** 5)) + ((3 ** (((3 ** 5) * (-1 + (3 ** (3 ** 5)))) + -((3 ** 5) * (-1 + (3 ** 5))))) * (1 + (3 ** (5 + ((((3 ** 5) * (-1 + (3 ** (3 ** 5)))) + -((3 ** 5) * (-1 + (3 ** 5)))) + (((3 ** 5) * (-1 + (3 ** 5))) + -((3 ** 5) * (-1 + (3 ** (3 ** 5)))))))))))")
 
     def test_tet(self):
         self.assert_rep(
