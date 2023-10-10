@@ -100,7 +100,7 @@ coverage : rust
 	$(COVERAGE) html
 
 diagrams :
-	pyreverse --only-classnames --colorized -o png tm generate test
+	pyreverse --only-classnames --no-standalone --colorized -o png tm generate test
 
 # PYTHONPATH=$PYTHONPATH:tm make special target=tm/tape.py
 special :
