@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
-from tm.rules import make_rule, UnknownRule
+from tm.rules import make_rule
 from tm.rust_stuff import PastConfig
 
 if TYPE_CHECKING:
@@ -158,13 +158,14 @@ class Prover:
 
         assert len(counts) == 3
 
-        try:
-            rule = make_rule(
-                tape.counts,
-                counts[0],
-                counts[1],
-                counts[2])
-        except UnknownRule:
+        rule = make_rule(
+            tape.counts,
+            counts[0],
+            counts[1],
+            counts[2],
+        )
+
+        if rule is None:
             return None
 
         del states[state]

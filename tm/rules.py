@@ -213,13 +213,16 @@ def make_rule(
         cnts2: Counts,
         cnts3: Counts,
         cnts4: Counts,
-) -> Rule:
-    rule = {
-        (s, i): diff
-        for s, spans in enumerate(zip(cnts1, cnts2, cnts3, cnts4))
-        for i, counts in enumerate(zip(*spans))
-        if (diff := calculate_diff(*counts)) is not None
-    }
+) -> Rule | None:
+    try:
+        rule = {
+            (s, i): diff
+            for s, spans in enumerate(zip(cnts1, cnts2, cnts3, cnts4))
+            for i, counts in enumerate(zip(*spans))
+            if (diff := calculate_diff(*counts)) is not None
+        }
+    except UnknownRule:
+        return None
 
     if all(diff >= 0
            for diff in rule.values()
