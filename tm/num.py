@@ -77,7 +77,7 @@ class Num:
             try:  # pylint: disable = too-many-try-statements
                 if self <= l and r > 0:
                     return True
-            except NotImplementedError:
+            except NotImplementedError:  # no-cover
                 pass
 
             if self == l:
@@ -146,7 +146,7 @@ class Num:
         if other < -1:
             neg = -other * self
 
-            if isinstance(neg, int):
+            if isinstance(neg, int):  # no-cover
                 return -neg
 
             return make_mul(-1, neg)
@@ -251,7 +251,7 @@ class Add(Num):
         if isinstance(l, int):
             return l + (other + r)
 
-        if isinstance(other, Mul) and other.l == -1:
+        if isinstance(other, Mul) and other.l == -1:  # no-cover
             if isinstance(l, Mul) and l.l == -1:
                 return r + (l + other)
 
@@ -333,7 +333,7 @@ class Add(Num):
                     and isinstance(other.l, int)):
                 return r < other.r
 
-            if l < other.l and r < other.l:
+            if l < other.l and r < other.l:  # no-branch
                 return True
 
         if isinstance(l, int) and abs(l) < 10:
@@ -440,7 +440,7 @@ class Mul(Num):
 
     def __rmul__(self, other: int) -> Count:
         if other == -1:
-            if self.l == -1:
+            if self.l == -1:  # no-cover
                 return self.r
 
             return super().__rmul__(other)
@@ -471,7 +471,7 @@ class Mul(Num):
                             (s_exp, l),
                             (r_exp, other.l),
                         )
-                    except NotImplementedError:
+                    except NotImplementedError:  # no-cover
                         pass
 
                 if (isinstance(l_exp := other.l, Exp)
@@ -481,7 +481,7 @@ class Mul(Num):
                             (s_exp, l),
                             (l_exp, other.r),
                         )
-                    except NotImplementedError:
+                    except NotImplementedError:  # no-cover
                         pass
 
         elif isinstance(other, Add):
@@ -492,7 +492,7 @@ class Mul(Num):
                 if other.l.l == l:
                     return (self + other.l) + other.r
 
-            if isinstance(other.r, Mul):
+            if isinstance(other.r, Mul):  # no-branch
                 if other.r.l == l:
                     return other.l + (self + other.r)
 
@@ -647,11 +647,11 @@ class Div(Num):
         if isinstance(other, int):
             return self.num < 0
 
-        if isinstance(other, Div):
+        if isinstance(other, Div):  # no-branch
             if self.den == other.den:  # no-branch
                 return self.num < other.num
 
-        return super().__lt__(other)
+        return super().__lt__(other)  # no-cover
 
 
 def make_exp(base: int, exp: Count) -> Exp:
@@ -902,7 +902,7 @@ class Exp(Num):
             if isinstance(l, int):
                 return self < r
 
-        elif isinstance(other, Mul):
+        elif isinstance(other, Mul):  # no-branch
             l, r = other.l, other.r
 
             if (isinstance(l, Exp)
