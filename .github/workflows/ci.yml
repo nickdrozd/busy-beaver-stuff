@@ -26,6 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install setuptools
           pip install pylint mypy coverage
           rustup update
 
