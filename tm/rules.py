@@ -42,9 +42,7 @@ def calculate_diff(
     if cnt1 == cnt2 == cnt3 == cnt4:
         return None
 
-    plus, diff1, diff2 = cnt2 - cnt1, cnt3 - cnt2, cnt4 - cnt3
-
-    if plus == diff1 == diff2:
+    if (plus := cnt2 - cnt1) == cnt3 - cnt2 == cnt4 - cnt3:
         assert isinstance(plus, int)
         return plus
 
