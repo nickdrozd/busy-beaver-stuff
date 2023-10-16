@@ -989,7 +989,7 @@ def add_exponents(
 
     diff_exp = (
         base ** diff
-        if (diff := r_pow - l_pow) < 2 else
+        if (diff := r_pow - l_pow) < 1_000 else
         make_exp(base, diff)
     )
 

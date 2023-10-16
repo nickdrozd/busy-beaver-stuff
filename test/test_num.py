@@ -56,10 +56,10 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2269,
-            "divs": 2067,
-            "exps": 1187,
-            "muls": 1370,
+            "adds": 2256,
+            "divs": 2062,
+            "exps": 1184,
+            "muls": 1347,
         })
 
     def assert_mod(
@@ -329,7 +329,7 @@ class TestNum(TestCase):
         self.assert_num(
             (2 * Exp(3, 13)) * ((-1 + Exp(3, 7)) // 2),
             3485190078,
-            "((3 ** 13) * (-1 + (3 ** 7)))")
+            "(2186 * (3 ** 13))")
 
     def test_div_mod(self):
         self.assert_num(
@@ -402,27 +402,27 @@ class TestNum(TestCase):
         self.assert_num(
             19 * (Exp(2, 2) + Exp(2, 5)),
             684,
-            "((19 * (2 ** 2)) * (1 + (2 ** 3)))")
+            "(171 * (2 ** 2))")
 
         self.assert_num(
             (19 * Exp(2, 2)) + (19 * Exp(2, 5)),
             684,
-            "((19 * (2 ** 2)) * (1 + (2 ** 3)))")
+            "(171 * (2 ** 2))")
 
         self.assert_num(
             19 * (Exp(2, 2) * (1 + Exp(2, 3))),
             684,
-            "((19 * (2 ** 2)) * (1 + (2 ** 3)))")
+            "(171 * (2 ** 2))")
 
         self.assert_num(
             Exp(2, 2) * (19 * (1 + Exp(2, 3))),
             684,
-            "((19 * (2 ** 2)) * (1 + (2 ** 3)))")
+            "(171 * (2 ** 2))")
 
         self.assert_num(
             Exp(2, 2) * (19 + (19 * Exp(2, 3))),
             684,
-            "((19 * (2 ** 2)) * (1 + (2 ** 3)))")
+            "(171 * (2 ** 2))")
 
         self.assertEqual(
             "(~10^19728)",
@@ -599,7 +599,7 @@ class TestNum(TestCase):
         self.assert_num(
             exp,
             8193 * (2 ** 19),
-            "((2 ** 19) * (1 + (2 ** 13)))")
+            "(8193 * (2 ** 19))")
 
         self.assert_num(
             exp,
@@ -613,7 +613,7 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 5) + ((3 + Exp(3, 3)) * Exp(2, 3)),
             272,
-            "((2 ** 3) * (3 + ((2 ** 2) + (3 ** 3))))")
+            "((2 ** 3) * (7 + (3 ** 3)))")
 
     def test_comparisons(self):
         self.assert_less(
@@ -698,10 +698,9 @@ class TestNum(TestCase):
             Exp(2, 3) - Exp(3, 2),
             Exp(2, 3))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
-                Exp(2, 3) * (-1 + Exp(2, 3)),
-                2 ** (-3 + Exp(2, 3)))
+        self.assertLess(
+            Exp(2, 3) * (-1 + Exp(2, 3)),
+            2 ** (-3 + Exp(2, 3)))
 
         self.assertLess(
             -Exp(10, 14050258128),
@@ -789,13 +788,15 @@ class TestNum(TestCase):
                 Tet(10, 2),
                 Tet(8, 3))
 
-        self.assertLess(
-            Exp(2, 13),
-            Exp(2, 10) * (4 + Exp(2, 13)))
+        with self.assertRaises(NotImplementedError):
+            self.assertLess(
+                Exp(2, 13),
+                Exp(2, 10) * (4 + Exp(2, 13)))
 
-        self.assertLess(
-            Exp(2, 13),
-            Exp(2, 12) * (1 + Exp(2, 11)))
+        with self.assertRaises(NotImplementedError):
+            self.assertLess(
+                Exp(2, 13),
+                Exp(2, 12) * (1 + Exp(2, 11)))
 
         with self.assertRaises(NotImplementedError):
             self.assertLess(
@@ -806,17 +807,17 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 3) + Exp(2, 5),
             40,
-            "((2 ** 3) * (1 + (2 ** 2)))")
+            "(5 * (2 ** 3))")
 
         self.assert_num(
             Exp(2, 3) + (Exp(2, 5) * 7),
             232,
-            "((2 ** 3) * (1 + (7 * (2 ** 2))))")
+            "(29 * (2 ** 3))")
 
         self.assert_num(
             (Exp(2, 3) * 7) + Exp(2, 5),
             88,
-            "((2 ** 3) * (7 + (2 ** 2)))")
+            "(11 * (2 ** 3))")
 
         self.assert_num(
             Exp(2, 3) + (-4 + Exp(2, 3)),
@@ -826,7 +827,7 @@ class TestNum(TestCase):
         self.assert_num(
             (Exp(2, 3) * 7) + (Exp(2, 5) * 11),
             408,
-            "((2 ** 3) * (7 + (11 * (2 ** 2))))")
+            "(51 * (2 ** 3))")
 
         self.assert_num(
             (Exp(2, 3) + Exp(3, 3)) + (-5 + Exp(3, 3)),
@@ -902,42 +903,42 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 3) * (Exp(2, 4) * (-1 + (Exp(3, 3) * Exp(2, 5)))),
             110464,
-            "((2 ** 7) * (-1 + ((3 ** 3) * (2 ** 5))))")
+            "((2 ** 7) * (-1 + (32 * (3 ** 3))))")
 
         self.assert_num(
             2 * (Exp(2, 3) * (1 + (Exp(3, 3) * Exp(2, 5)))),
             13840,
-            "((2 ** 4) * (1 + ((3 ** 3) * (2 ** 5))))")
+            "((2 ** 4) * (1 + (32 * (3 ** 3))))")
 
         self.assert_num(
             Exp(2, 10) * (-Exp(2, 6) * (1 + Exp(2, 4))),
             -1114112,
-            "-((2 ** 16) * (1 + (2 ** 4)))")
+            "-(17 * (2 ** 16))")
 
         self.assert_num(
             Exp(2, 4) * (1 + (Exp(2, 3) * (1 + Exp(2, 2)))),
             656,
-            "((2 ** 4) * (1 + ((2 ** 3) * (1 + (2 ** 2)))))")
+            "(41 * (2 ** 4))")
 
         self.assert_num(
             Exp(2, 4) * (1 + (Exp(2, 3) + (Exp(2, 3) * Exp(2, 2)))),
             656,
-            "((2 ** 4) * (1 + ((2 ** 3) * (1 + (2 ** 2)))))")
+            "(41 * (2 ** 4))")
 
         self.assert_num(
             (Exp(2, 4) + ((Exp(2, 4) * Exp(2, 3)) + (Exp(2, 4) * (Exp(2, 3) * Exp(2, 2))))),
             656,
-            "((2 ** 4) * (1 + ((2 ** 3) * (1 + (2 ** 2)))))")
+            "(41 * (2 ** 4))")
 
         self.assert_num(
             (Exp(2, 4) + (Exp(2, 7) + Exp(2, 9))),
             656,
-            "((2 ** 4) * (1 + ((2 ** 3) * (1 + (2 ** 2)))))")
+            "(41 * (2 ** 4))")
 
         self.assert_num(
             (Exp(2, 4) + (Exp(2, 4) * (Exp(2, 3) * (1 + Exp(2, 2))))),
             656,
-            "((2 ** 4) * (1 + ((2 ** 3) * (1 + (2 ** 2)))))")
+            "(41 * (2 ** 4))")
 
         self.assert_num(
             Exp(2, 3) * ((-13 * Exp(2, 5)) * (1 + Exp(2, 7))),
@@ -975,7 +976,7 @@ class TestNum(TestCase):
         self.assert_num(
             (-6 + ((1 + Exp(2, 2)) * 2 ** Exp(2, 3))) - (-6 + ((1 + Exp(2, 2)) * Exp(2, 5))),
             1120,
-            "(((1 + (2 ** 2)) * (2 ** (2 ** 3))) + -((2 ** 5) * (1 + (2 ** 2))))")
+            "(((1 + (2 ** 2)) * (2 ** (2 ** 3))) + -(5 * (2 ** 5)))")
 
     def test_mul_add(self):
         self.assert_num(
@@ -1007,32 +1008,32 @@ class TestNum(TestCase):
         self.assert_num(
             Exp(2, 3) + Exp(2, 5),
             40,
-            "((2 ** 3) * (1 + (2 ** 2)))")
+            "(5 * (2 ** 3))")
 
         self.assert_num(
             -Exp(2, 3) + -Exp(2, 5),
             -40,
-            "-((2 ** 3) * (1 + (2 ** 2)))")
+            "-(5 * (2 ** 3))")
 
         self.assert_num(
             -Exp(2, 3) + Exp(2, 5),
             24,
-            "((2 ** 3) * (-1 + (2 ** 2)))")
+            "(3 * (2 ** 3))")
 
         self.assert_num(
             -Exp(2, 3) + (-Exp(2, 5) + Exp(3, 3)),
             -13,
-            "((3 ** 3) + -((2 ** 3) * (1 + (2 ** 2))))")
+            "((3 ** 3) + -(5 * (2 ** 3)))")
 
         self.assert_num(
             -Exp(2, 3) + (Exp(2, 5) * Exp(3, 3)),
             856,
-            "((2 ** 3) * (-1 + ((3 ** 3) * (2 ** 2))))")
+            "((2 ** 3) * (-1 + (4 * (3 ** 3))))")
 
         self.assert_num(
             -Exp(2, 2) + (-Exp(2, 3) + (Exp(2, 5) * Exp(3, 3))),
             852,
-            "((2 ** 2) * (-3 + ((2 ** 2) * (2 * (3 ** 3)))))")
+            "((2 ** 2) * (-3 + (8 * (3 ** 3))))")
 
     def test_div_gcd(self):
         self.assert_num(
@@ -1068,7 +1069,7 @@ class TestNum(TestCase):
         self.assert_num(
             (384 + (Exp(2, 5) * (1 + (13 * Exp(2, 7))))) // 24,
             2236,
-            "((48 + ((2 ** 2) * (1 + (13 * (2 ** 7))))) // 3)")
+            "(16 + (555 * (2 ** 2)))")
 
     def test_div_neg(self):
         self.assert_num(
@@ -1120,47 +1121,47 @@ class TestNum(TestCase):
         self.assert_num(
             -(((-1 + Exp(3, 3)) // 2) * Exp(3, 5)),
             -3159,
-            "(-((3 ** 5) * (-1 + (3 ** 3))) // 2)")
+            "-(13 * (3 ** 5))")
 
         self.assert_num(
             -(((1 + Exp(3, 3)) // 2) * Exp(3, 5)),
             -3402,
-            "(-((3 ** 5) * (1 + (3 ** 3))) // 2)")
+            "-(14 * (3 ** 5))")
 
         self.assert_num(
             -(((1 + Exp(3, 3)) * Exp(3, 5)) // 2),
             -3402,
-            "(-((3 ** 5) * (1 + (3 ** 3))) // 2)")
+            "-(14 * (3 ** 5))")
 
         self.assert_num(
             -(((1 * Exp(3, 5)) + (Exp(3, 3) * Exp(3, 5))) // 2),
             -3402,
-            "(-((3 ** 5) * (1 + (3 ** 3))) // 2)")
+            "-(14 * (3 ** 5))")
 
         self.assert_num(
             -((Exp(3, 5) + Exp(3, 8)) // 2),
             -3402,
-            "(-((3 ** 5) * (1 + (3 ** 3))) // 2)")
+            "-(14 * (3 ** 5))")
 
         self.assert_num(
             -(Exp(3, 5) * (1 + Exp(3, 3))),
             -6804,
-            "-((3 ** 5) * (1 + (3 ** 3)))")
+            "-(28 * (3 ** 5))")
 
         self.assert_num(
             -Exp(3, 5) * (1 + Exp(3, 3)),
             -6804,
-            "-((3 ** 5) * (1 + (3 ** 3)))")
+            "-(28 * (3 ** 5))")
 
         self.assert_num(
             Exp(3, 5) * -(1 + Exp(3, 3)),
             -6804,
-            "-((3 ** 5) * (1 + (3 ** 3)))")
+            "-(28 * (3 ** 5))")
 
         self.assert_num(
             Exp(3, 5) * (-1 + -Exp(3, 3)),
             -6804,
-            "-((3 ** 5) * (1 + (3 ** 3)))")
+            "-(28 * (3 ** 5))")
 
     def test_cycle_mod(self):
         self.assert_mod(
@@ -1177,7 +1178,7 @@ class TestNum(TestCase):
         self.assert_num(
             -(14 + Exp(2, 5)) + Exp(2, 17),
             131026,
-            "(-14 + ((2 ** 5) * (-1 + (2 ** 12))))")
+            "(-14 + (4095 * (2 ** 5)))")
 
         self.assert_num(
             -46 + (13 * Exp(2, 17)),
@@ -1187,7 +1188,7 @@ class TestNum(TestCase):
         self.assert_num(
             -(14 + Exp(2, 5)) + (13 * Exp(2, 17)),
             1703890,
-            "(-14 + ((2 ** 5) * (-1 + (13 * (2 ** 12)))))")
+            "(-14 + (53247 * (2 ** 5)))")
 
         self.assert_num(
             (Exp(2, 3) * (1 + 2 ** (5 + Exp(2, 3)))) - Exp(2, 3),
@@ -1211,7 +1212,7 @@ class TestNum(TestCase):
 
         self.assert_rep(
             3 ** Exp(3, 5) + (3 ** ((Exp(3, 5) * (-1 + 3 ** Exp(3, 5))) + -(Exp(3, 5) * (-1 + Exp(3, 5)))) * (1 + Exp(3, 5))),
-            "((3 ** (3 ** 5)) + ((3 ** (((3 ** 5) * (-1 + (3 ** (3 ** 5)))) + -((3 ** 5) * (-1 + (3 ** 5))))) * (1 + (3 ** (5 + ((((3 ** 5) * (-1 + (3 ** (3 ** 5)))) + -((3 ** 5) * (-1 + (3 ** 5)))) + (((3 ** 5) * (-1 + (3 ** 5))) + -((3 ** 5) * (-1 + (3 ** (3 ** 5)))))))))))")
+            "((3 ** (3 ** 5)) + ((3 ** (-(242 * (3 ** 5)) + ((3 ** 5) * (-1 + (3 ** (3 ** 5)))))) * (1 + (3 ** (5 + ((-(242 * (3 ** 5)) + ((3 ** 5) * (-1 + (3 ** (3 ** 5))))) + ((242 * (3 ** 5)) + -((3 ** 5) * (-1 + (3 ** (3 ** 5)))))))))))")
 
     def test_tet(self):
         self.assert_rep(
@@ -1269,7 +1270,7 @@ class TestNum(TestCase):
         self.assert_num(
             (2 ** Exp(2, 7)) // (2 ** Exp(2, 5)),
             79228162514264337593543950336,
-            "(2 ** ((2 ** 5) * (-1 + (2 ** 2))))")
+            "(2 ** (3 * (2 ** 5)))")
 
 
 class TestRecursionError(TestCase):
