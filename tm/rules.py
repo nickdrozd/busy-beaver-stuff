@@ -34,21 +34,22 @@ if TYPE_CHECKING:
 RULE_DESCENT: int = 20
 
 
-def calculate_diff(
-        cnt1: Count,
-        cnt2: Count,
-        cnt3: Count,
-        cnt4: Count,
-) -> Op | None:
-    if cnt1 == cnt2 == cnt3 == cnt4:
+def calculate_diff(*counts: Count) -> Op | None:
+    count_1, *rest = counts
+
+    if all(count == count_1 for count in rest):
         return None
 
-    if (plus := cnt2 - cnt1) == cnt3 - cnt2 == cnt4 - cnt3:
+    count_2, *_ = rest
+
+    plus = count_2 - count_1
+
+    if all(aft - bef == plus for bef, aft in pairwise(rest)):
         assert isinstance(plus, int)
         return plus
 
     try:
-        ascending = cnt1 < cnt2 < cnt3 < cnt4
+        ascending = all(bef < aft for bef, aft in pairwise(counts))
     except NotImplementedError:
         pass
     else:  # no-cover
@@ -56,40 +57,43 @@ def calculate_diff(
             raise UnknownRule(
                 'non-increasing')
 
-    if not isinstance(cnt1, int):
+    _, cnt3, cnt4 = rest
+
+    if not isinstance(count_1, int):
         assert (
-            not isinstance(cnt2, int)
+            not isinstance(count_2, int)
             and not isinstance(cnt3, int)
             and not isinstance(cnt4, int)
         )
 
-        return calculate_op_seq(cnt1, cnt2, cnt3, cnt4)
+        return calculate_op_seq(count_1, count_2, cnt3, cnt4)
 
     assert (
-        isinstance(cnt1, int)
-        and isinstance(cnt2, int)
+        isinstance(count_1, int)
+        and isinstance(count_2, int)
         and isinstance(cnt3, int)
         and isinstance(cnt4, int)
     )
 
-    (div_1, mod_1), (div_2, mod_2), (div_3, mod_3) = \
-        mult, _, _ = (
-            divmod(cnt2, cnt1),
-            divmod(cnt3, cnt2),
-            divmod(cnt4, cnt3),
-        )
+    div, mod = divmod(count_2, count_1)
 
-    if not div_1 == div_2 == div_3:
+    divmods = tuple(
+        (bef, aft, *divmod(aft, bef))  # type: ignore[operator]
+        for bef, aft in pairwise(rest)
+    )
+
+    if not all(div_next == div for _, _, div_next, _ in divmods):
         raise UnknownRule(
             'different divs')
 
-    if mod_1 == mod_2 == mod_3:
-        return mult
+    if all(mod_next == mod for _, _, _, mod_next in divmods):
+        return div, mod
 
-    if ((div_diff := cnt2 - (cnt1 * (1 + div_1)))
-            == (cnt3 - (cnt2 * (1 + div_2)))
-            == (cnt4 - (cnt3 * (1 + div_3)))):
-        return 1 + div_1, div_diff
+    div_diff = count_2 - (count_1 * (1 + div))
+
+    if all(aft - (bef * (1 + divv)) == div_diff
+           for bef, aft, divv, _ in divmods):
+        return 1 + div, div_diff
 
     raise UnknownRule
 
