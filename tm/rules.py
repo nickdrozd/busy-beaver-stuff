@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from itertools import pairwise
 
 from tm.num import Add, Mul, Div, Exp, NumException, make_exp
 from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
@@ -93,16 +94,13 @@ def calculate_diff(
     raise UnknownRule
 
 
-def calculate_op_seq(
-        cnt1: Num,
-        cnt2: Num,
-        cnt3: Num,
-        cnt4: Num,
-) -> OpSeq:
-    sub, descent = cnt1, []
+def calculate_op_seq(*counts: Num) -> OpSeq:
+    sub, sup, *_ = counts
+
+    descent = []
 
     for _ in range(RULE_DESCENT):  # no-branch
-        if sub in cnt2:
+        if sub in sup:
             break
 
         match sub:
@@ -143,7 +141,7 @@ def calculate_op_seq(
         raise RuleLimit(  # no-cover
             'subexpression descent')
 
-    sup, ascent = cnt2, []
+    ascent = []
 
     for _ in range(RULE_DESCENT):  # no-branch
         if sup == sub:
@@ -189,8 +187,8 @@ def calculate_op_seq(
 
     ops = tuple(descent) + tuple(reversed(ascent))
 
-    if (apply_ops(cnt2, 1, ops) != cnt3
-            or apply_ops(cnt3, 1, ops) != cnt4):  # no-cover
+    if any(apply_ops(bef, 1, ops) != aft
+           for bef, aft in pairwise(counts[1:])):  # no-cover
         raise UnknownRule
 
     return ops
