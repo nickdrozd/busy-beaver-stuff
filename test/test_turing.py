@@ -610,6 +610,14 @@ class Reasoner(TuringTest):
             self.assert_could_blank(prog)
             self.assert_could_spin_out(prog)
 
+    def test_bigfoot(self):
+        bigfoot = "1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA"
+
+        self.assert_could_halt(bigfoot)
+
+        for prog in Program(bigfoot).branch_read('C0'):
+            self.assert_cant_blank(prog)
+
     def test_blank(self):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)
