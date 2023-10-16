@@ -158,14 +158,7 @@ class Prover:
 
         assert len(counts) == 3
 
-        rule = make_rule(
-            tape.counts,
-            counts[0],
-            counts[1],
-            counts[2],
-        )
-
-        if rule is None:
+        if (rule := make_rule(tape.counts, *counts)) is None:
             return None
 
         del states[state]

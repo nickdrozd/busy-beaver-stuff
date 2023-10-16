@@ -196,16 +196,11 @@ def calculate_op_seq(
     return ops
 
 
-def make_rule(
-        cnts1: Counts,
-        cnts2: Counts,
-        cnts3: Counts,
-        cnts4: Counts,
-) -> Rule | None:
+def make_rule(*countses: Counts) -> Rule | None:
     try:
         rule = {
             (s, i): diff
-            for s, spans in enumerate(zip(cnts1, cnts2, cnts3, cnts4))
+            for s, spans in enumerate(zip(*countses))
             for i, counts in enumerate(zip(*spans))
             if (diff := calculate_diff(*counts)) is not None
         }
