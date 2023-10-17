@@ -671,8 +671,8 @@ class TestTags(TestCase):
 
         self.assert_tape(
             [[3, 6, 0], [1, 1]],
-            (3, [1]),
-            [[3, 9], [2, 1]])
+            3,
+            [[3, 9, 1], [2, 1]])
 
         ########################################
 
@@ -685,8 +685,8 @@ class TestTags(TestCase):
 
         self.assert_tape(
             [[3, 6, 0]],
-            (1, [1]),
-            [[3, 9], [2, 1]])
+            1,
+            [[3, 9, 1], [2, 1]])
 
     def test_trace_g(self):
         self.set_tape(
