@@ -641,6 +641,26 @@ class TestTags(TestCase):
             (3, [3]),
             [[0, 1, 5], [1, 1]])
 
+    def test_trace_e(self):
+        self.set_tape(
+            [[3, 7, 3], [2, 1]],
+            (1, [5]),
+            [])
+
+        self.step(0, 0, 0)
+
+        self.assert_tape(
+            [[3, 7, 3]],
+            2,
+            [[0, 1, 5]])
+
+        self.step(0, 1, 0)
+
+        self.assert_tape(
+            [[3, 6, 3]],
+            3,
+            [[1, 1], [0, 1, 5]])
+
 
 class TestEnum(TestCase):
     tape: EnumTape
