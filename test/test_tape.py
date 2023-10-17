@@ -659,7 +659,7 @@ class TestTags(TestCase):
         self.assert_tape(
             [[3, 6, 3]],
             3,
-            [[1, 1], [0, 1, 5]])
+            [[1, 1, 5]])
 
 
 class TestEnum(TestCase):
