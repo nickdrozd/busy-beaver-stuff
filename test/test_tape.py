@@ -637,8 +637,8 @@ class TestTags(TestCase):
         self.step(1, 3, 1)
 
         self.assert_tape(
-            [[3, 7, 3]],
-            3,
+            [[3, 7, 1]],
+            (3, [3]),
             [[0, 1, 5], [1, 1]])
 
 

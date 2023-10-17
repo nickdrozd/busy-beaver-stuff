@@ -292,7 +292,9 @@ class TagTape(BlockTape):
 
                 if (extra := popped.tags):
                     scan_info += extra
-                    push_block.tags = []
+
+                    if push_block.tags == extra:
+                        push_block.tags = []
 
         if push and (top_block := push[0]).color == color:
             inc_push = True
