@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import os
-import re
 import json
 from typing import TYPE_CHECKING
 
 from multiprocessing import cpu_count, Process
 
 from tm.program import Program
-from tm.machine import Machine
+from tm.machine import Machine, LinRecMachine
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -76,8 +75,9 @@ def worker(
         halt: bool,
         stack: list[Prog],
         output: Output,
+        prep: bool = False,
 ) -> None:
-    pid: int = os.getpid()
+    pid: str = 'prep' if prep else str(os.getpid())
 
     def log(msg: str) -> None:
         print(f'{pid}: {msg}')
@@ -93,6 +93,30 @@ def worker(
     log('done')
 
 
+def prep_branches(
+        states: int,
+        colors: int,
+        halt: bool,
+) -> list[Prog]:
+    branches = []
+
+    def run(prog: Prog) -> None:
+        if LinRecMachine(prog).run(3).linrec:
+            return
+
+        branches.append(prog)
+
+    worker(
+        steps = 3,
+        halt = halt,
+        stack = Program.branch_init(states, colors),
+        output = run,
+        prep = True,
+    )
+
+    return list(sorted(branches))
+
+
 def run_tree_gen(
         states: int,
         colors: int,
@@ -100,11 +124,7 @@ def run_tree_gen(
         halt: bool,
         output: Output,
 ) -> None:
-    branches = [
-        prog
-        for prog in Program.branch_init(states, colors)
-        if re.search('  .[^R]', prog)
-    ]
+    branches = prep_branches(states, colors, halt)
 
     cpus = cpu_count()
 
