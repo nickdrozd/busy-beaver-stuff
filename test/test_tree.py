@@ -230,7 +230,7 @@ class Slow(TestTree):
                     return
 
             for machine in run_variations(
-                    prog, 6_000, block_steps = 6_000):
+                    prog, 18_451, block_steps = 6_000):
                 if machine.xlimit is None:
                     return
 
@@ -245,7 +245,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            78,
+            74,
             'holdouts_42h')
 
         self.assert_records({
