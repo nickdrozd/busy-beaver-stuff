@@ -848,12 +848,12 @@ class Fast(TuringTest):
                 normal = False,
             )
 
-            if backsym in {0, 3, 4, 5, 6}:
+            if backsym in {0, 3, 4, 6}:
                 self.assertNotIsInstance(
                     self.machine.rulapp,
                     int)
             else:
-                assert backsym in {1, 2}
+                assert backsym in {1, 2, 5}
 
                 self.assertIsInstance(
                     self.machine.rulapp,
@@ -989,10 +989,10 @@ class Fast(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 30251,
-            "divs": 6729,
-            "exps": 9422,
-            "muls": 6812,
+            "adds": 30179,
+            "divs": 6786,
+            "exps": 9420,
+            "muls": 6757,
         })
 
 

@@ -149,8 +149,7 @@ class Prover:
         for delta in deltas:
             if (
                 self.run_simulator(delta, state, tags) != state
-                or tags.scan != sig[0]
-                or tags.signature != sig
+                or not tags.sig_compatible(sig)
                 or tags.missing_tags
             ):
                 return None

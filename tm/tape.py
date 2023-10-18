@@ -251,6 +251,27 @@ class TagTape(BlockTape):
             for span in (self.lspan, self.rspan)
             for block in span)
 
+    def sig_compatible(self, sig: Signature) -> bool:
+        scan, lspan, rspan = sig
+
+        return (
+            self.scan == scan
+            and len(self.lspan) == len(lspan)
+            and len(self.rspan) == len(rspan)
+            and all(
+                block.color == (
+                    color[0]
+                    if isinstance(color, tuple) else
+                    color
+                ) for block, color in zip(self.lspan, lspan))
+            and all(
+                block.color == (
+                    color[0]
+                    if isinstance(color, tuple) else
+                    color
+                ) for block, color in zip(self.rspan, rspan))
+        )
+
     def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
             (self.rspan, self.lspan)
