@@ -285,7 +285,11 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
     if not isinstance(times, int) and times.depth > 200:  # no-cover
         raise RuleLimit('times-depth')
 
-    exp = make_exp(mul, times)
+    exp: int | Exp = (
+        mul
+        if times == 1 else
+        make_exp(mul, times)
+    )
 
     return (
         count * exp
