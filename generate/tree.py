@@ -114,7 +114,24 @@ def prep_branches(
         prep = True,
     )
 
-    return list(sorted(branches))
+    return sorted(branches)
+
+
+def prep_branch_groups(
+        states: int,
+        colors: int,
+        halt: bool,
+) -> list[list[Prog]]:
+    branches = prep_branches(states, colors, halt)
+
+    cpus = cpu_count()
+
+    chunk = (len(branches) + cpus - 1) // cpus
+
+    return [
+        branches[ i : i + chunk ]
+        for i in range(0, len(branches), chunk)
+     ]
 
 
 def run_tree_gen(
@@ -124,23 +141,11 @@ def run_tree_gen(
         halt: bool,
         output: Output,
 ) -> None:
-    branches = prep_branches(states, colors, halt)
-
-    cpus = cpu_count()
-
-    chunk = (len(branches) + cpus - 1) // cpus
-
-    branch_groups = [
-        branches[ i : i + chunk ]
-        for i in range(0, len(branches), chunk)
-     ]
-
     processes = [
-         Process(
+        Process(
             target = worker,
-            args = (steps, halt, group, output),
-         )
-        for group in branch_groups
+            args = (steps, halt, group, output))
+        for group in prep_branch_groups(states, colors, halt)
      ]
 
     for process in processes:
