@@ -135,6 +135,7 @@ class TestFloss(TestCase):
         progs = (
             "1RB 2LA 3LA 2LA  3LB 3RA 0RA 0RB",
             "1RB ...  1LC 1RB  0RB 1LD  1LA 1LC",
+            "1RB 0LD  1LB 0RC  0RE 1LD  1LA ...  0RB 0LC",
             "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB",
             "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",

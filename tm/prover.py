@@ -84,7 +84,8 @@ class Prover:
                 if tape.apply_rule(rule) is not None:
                     continue
 
-            assert (instr := self.prog[state, tape.scan]) is not None
+            if (instr := self.prog[state, tape.scan]) is None:
+                return None
 
             color, shift, next_state = instr
 
