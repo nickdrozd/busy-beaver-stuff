@@ -101,7 +101,7 @@ def prep_branches(
     branches = []
 
     def run(prog: Prog) -> None:
-        if LinRecMachine(prog).run(3).linrec:
+        if LinRecMachine(prog).run(5).linrec:
             return
 
         branches.append(prog)
