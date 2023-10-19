@@ -126,12 +126,16 @@ def prep_branch_groups(
 
     cpus = cpu_count()
 
-    chunk = (len(branches) + cpus - 1) // cpus
+    size, rem = divmod(len(branches), cpus)
 
-    return [
-        branches[ i : i + chunk ]
-        for i in range(0, len(branches), chunk)
-     ]
+    start, result = 0, []
+
+    for i in range(cpus):
+        end = start + size + (1 if i < rem else 0)
+        result.append(branches[start:end])
+        start = end
+
+    return result
 
 
 def run_tree_gen(
