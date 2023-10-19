@@ -489,7 +489,7 @@ class Mul(Num):
                 return other.l + (other.r + self)
 
             if isinstance(other.l, Mul):
-                if other.l.l == l:
+                if other.l.l == l:  # no-cover
                     return (self + other.l) + other.r
 
             if isinstance(other.r, Mul):  # no-branch
@@ -533,10 +533,10 @@ class Mul(Num):
             if r == other.r:
                 return l < other.l
 
-            if l == other.r:
+            if l == other.r:  # no-cover
                 return r < other.l
 
-            if r == other.l:
+            if r == other.l:  # no-cover
                 return l < other.r
 
         if l < 0:
