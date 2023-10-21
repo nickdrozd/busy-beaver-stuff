@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from typing import Self
 
     from tm.parse import Color, Shift
-    from tm.rules import Count, Counts, Index
+    from tm.rules import Count, Counts, Index, Rule
 
     Signature = tuple[
         Color,
@@ -399,6 +399,16 @@ class EnumTape(BlockTape):
     @property
     def edges(self) -> tuple[bool, bool]:
         return self._edges[0], self._edges[1]
+
+    def apply_rule(self, rule: Rule) -> Count | None:
+        for side, pos in rule.keys():
+            if enums := (self.rspan if side else self.lspan)[pos].enums:
+                ind, offset = enums
+
+                if offset > self.offsets[ind]:
+                    self.offsets[ind] = offset
+
+        return super().apply_rule(rule)
 
     def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (

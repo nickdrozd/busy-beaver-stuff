@@ -142,6 +142,7 @@ class TestFloss(TestCase):
             "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
             "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA",
+            "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",
             "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",
             "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",
@@ -228,10 +229,10 @@ class TestFloss(TestCase):
                 opt_macro = 50,
             ).run())
 
-    def test_bad_index(self):
-        with self.assertRaises(IndexError):
+    def test_enum_rule(self):
+        self.assertIsNotNone(
             Machine(
                 "1RB 1LA  1RC 1RD  0LB ...  0LA 1RE  1RB 0RF  0RB 1LD"
             ).run(
                 sim_lim = 4846
-            )
+            ).xlimit)

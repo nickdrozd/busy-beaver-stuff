@@ -1423,8 +1423,6 @@ PROVER_SPINOUT: ProverEst = {
     "1RB 1LE  1RC 0RA  0LD 0LC  1RD 1RE  1LB 0RB": 1195275720475,
     "1RB 0LE  1RC 1LB  0RD 0RB  1LD 0LE  0RC 1LA": 44776124,
     "1RB 0RE  1RC 0RB  1LD 0RA  0LA 0LC  0LE 1LA": 23914766,
-    "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB": 0,
-    "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB": 0,
     "1RB 0RB  1RC 1RB  1LC 1LD  1RA 1LE  0RC 0RE": 0,
     "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA": 0,
     "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE": 2,
@@ -1562,6 +1560,16 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str]]] = {
     },
 
     "count_apps": {
+        "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB": (
+            1281,
+            "(-20 + (5 * (2 ** (-3 + (5 * (2 ** 155))))))",
+            "(10 ↑↑ 3)",
+        ),
+        "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB": (
+            1416,
+            "(-20 + (5 * (2 ** (-3 + (5 * (2 ** 155))))))",
+            "(10 ↑↑ 3)",
+        ),
         "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB 1R_": (
             3955,
             "((322 + ((2 ** 38) * (1 + ((2 ** ((-32 + (2 ** 37)) // 5)) * (1 + (5 * (2 ** ((-155 + ((2 ** 37) * (-1 + (2 ** ((-32 + (2 ** 37)) // 5))))) // 5)))))))) // 5)",
