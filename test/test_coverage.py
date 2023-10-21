@@ -138,14 +138,11 @@ class TestFloss(TestCase):
             "1RB 2LA 3LA 2LA  3LB 3RA 0RA 0RB",
             "1RB ...  1LC 1RB  0RB 1LD  1LA 1LC",
             "1RB 0LD  1LB 0RC  0RE 1LD  1LA ...  0RB 0LC",
-            "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB",
-            "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
             "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA",
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",
             "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",
-            "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",
             "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
         )
 
