@@ -227,3 +227,11 @@ class TestFloss(TestCase):
                 "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
                 opt_macro = 50,
             ).run())
+
+    def test_bad_index(self):
+        with self.assertRaises(IndexError):
+            Machine(
+                "1RB 1LA  1RC 1RD  0LB ...  0LA 1RE  1RB 0RF  0RB 1LD"
+            ).run(
+                sim_lim = 4846
+            )
