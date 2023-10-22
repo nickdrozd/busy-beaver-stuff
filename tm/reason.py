@@ -176,7 +176,7 @@ class BackwardReasoner(Program):
 
                     machine = machine.run(
                         sim_lim = step + 1,
-                        tape = next_tape.copy(),
+                        tape = next_tape,
                         state = entry,
                     )
 
@@ -186,10 +186,20 @@ class BackwardReasoner(Program):
                     if abs(result - step) > 1:
                         continue
 
+                    yield_tape = tape.copy()
+
+                    _ = yield_tape.step(
+                        not shift,
+                        yield_tape.scan,
+                        False,
+                    )
+
+                    yield_tape.scan = color
+
                     yield (
                         step + 1,
                         entry,
-                        next_tape,
+                        yield_tape,
                     )
 
 
