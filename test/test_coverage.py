@@ -233,3 +233,10 @@ class TestFloss(TestCase):
             ).run(
                 sim_lim = 4846
             ).xlimit)
+
+    def test_sus_rule(self):
+        self.assertEqual(
+            Machine(
+                "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA 1R_"
+            ).run().susrul,
+            (5, 2))

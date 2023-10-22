@@ -6,7 +6,7 @@ from tm.prover import Prover, ConfigLimit
 from tm.lin_rec import History, HeadTape
 from tm.tape import Tape, BlockMeasure, compr_eff
 from tm.show import show_slot, show_number
-from tm.rules import RuleLimit, InfiniteRule
+from tm.rules import RuleLimit, InfiniteRule, SuspectedRule
 from tm.macro import BlockMacro, BacksymbolMacro, tcompile
 
 if TYPE_CHECKING:
@@ -59,6 +59,8 @@ class BasicMachine:
     cfglim: bool | None = None
 
     limrul: str | None = None
+
+    susrul: tuple[int, int] | None = None
 
     rulapp: Count = 0
 
@@ -282,6 +284,9 @@ class Machine(BasicMachine):
             except ConfigLimit:
                 self.cfglim = True
                 break
+            except SuspectedRule as sus:
+                self.susrul = sus.args
+                rule = None
 
             if rule is not None:
                 try:

@@ -496,6 +496,15 @@ class TuringTest(TestCase):
                 self.assert_cant_halt(prog)
                 self.assert_could_spin_out(prog)
 
+            if prog in SUSPECTED_RULES:
+                self.assertIsNotNone(
+                    self.machine.susrul)
+
+            if self.machine.susrul is not None:
+                self.assertIn(
+                    prog,
+                    SUSPECTED_RULES)
+
     def _test_macro_cycles(self, prog_data: MacroCycles):
         for program, cycleses in prog_data.items():
             if isinstance(program, tuple):

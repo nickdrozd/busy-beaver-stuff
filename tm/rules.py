@@ -34,6 +34,13 @@ if TYPE_CHECKING:
 RULE_DESCENT: int = 20
 
 
+class SuspectedRule(Exception):
+    pass
+
+
+POSSIBLE_RULE_PAIRS = (3, 2), (5, 3), (5, 2), (5, 4), (4, 3)
+
+
 def calculate_diff(*counts: Count) -> Op | None:
     count_1, *rest = counts
 
@@ -94,6 +101,12 @@ def calculate_diff(*counts: Count) -> Op | None:
     if all(aft - (bef * (1 + divv)) == div_diff
            for bef, aft, divv, _ in divmods):
         return 1 + div, div_diff
+
+    for add, sub in POSSIBLE_RULE_PAIRS:
+        if ((count_2 - count_1 * add // sub)
+                == (cnt3 - count_2 * add // sub)
+                == (cnt4 - cnt3 * add // sub)):
+            raise SuspectedRule(add, sub)
 
     raise UnknownRule
 
