@@ -2,7 +2,7 @@ import sys
 
 from tm.machine import Machine
 
-PRINT = 1
+PRINT = 0
 STEPS = 10 ** 10
 BACKS = 0
 
@@ -21,7 +21,7 @@ def main() -> None:
             watch_tape = bool(PRINT),
         )
 
-        print(f'{i} | {machine}')
+        # print(f'{i} | {machine}')
 
 if __name__ == '__main__':
     if PROFILE:
