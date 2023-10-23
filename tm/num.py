@@ -154,7 +154,7 @@ class Num:
         return make_mul(other, self)
 
     @abstractmethod
-    def __mod__(self, other: int) -> int: ...
+    def __mod__(self, mod: int) -> int: ...
 
     def __divmod__(self, other: int) -> tuple[Count, int]:
         mod = self % other
@@ -230,11 +230,11 @@ class Add(Num):
             or (self.l == other.r and self.r == other.l)
         )
 
-    def __mod__(self, other: int) -> int:
-        if other == 1:
+    def __mod__(self, mod: int) -> int:
+        if mod == 1:
             return 0
 
-        return ((self.l % other) + (self.r % other)) % other
+        return ((self.l % mod) + (self.r % mod)) % mod
 
     def __neg__(self) -> Count:
         return -(self.l) + -(self.r)
@@ -416,17 +416,17 @@ class Mul(Num):
     def __neg__(self) -> Count:
         return -(self.l) * self.r
 
-    def __mod__(self, other: int) -> int:
-        if other == 1:
+    def __mod__(self, mod: int) -> int:
+        if mod == 1:
             return 0
 
-        if (l_mod := self.l % other) == 0:
+        if (l_mod := self.l % mod) == 0:
             return 0
 
-        if (r_mod := self.r % other) == 0:
+        if (r_mod := self.r % mod) == 0:
             return 0
 
-        return (l_mod * r_mod) % other
+        return (l_mod * r_mod) % mod
 
     def __mul__(self, other: Count) -> Count:
         if self.l == -1:
@@ -603,17 +603,17 @@ class Div(Num):
     def __neg__(self) -> Count:
         return -(self.num) // self.den
 
-    def __mod__(self, other: int) -> int:
-        if other == 1:
+    def __mod__(self, mod: int) -> int:
+        if mod == 1:
             return 0
 
         div, rem = divmod(
-            self.num % (other * self.den),
+            self.num % (mod * self.den),
             self.den)
 
         assert rem == 0
 
-        return div % other
+        return div % mod
 
     def digits(self) -> int:
         return self.num.digits() - round(log10(self.den))
@@ -727,38 +727,38 @@ class Exp(Num):
 
         return round(log10(self.base) * 10 ** log10(exp))
 
-    def __mod__(self, other: int) -> int:
-        if other == 1:
+    def __mod__(self, mod: int) -> int:
+        if mod == 1:
             return 0
 
         base = self.base
 
-        if other == 1 or other == base:
+        if mod == 1 or mod == base:
             return 0
 
         res = 1
 
         exp = self.exp
 
-        if (period := find_period(base, other)) > 0:
+        if (period := find_period(base, mod)) > 0:
             exp %= period
 
         if exp == 0:
             return 1
 
         if not isinstance(exp, int):
-            return exp_mod_special_cases(other, base, exp)
+            return exp_mod_special_cases(mod, base, exp)
 
         for _ in itertools.count():
             if exp <= 0 or res <= 0:
                 break
 
             if (exp % 2) == 1:
-                res = (res * base) % other
+                res = (res * base) % mod
 
             exp //= 2
 
-            base = (base ** 2) % other
+            base = (base ** 2) % mod
 
         return res
 
@@ -942,7 +942,7 @@ class Tet(Num):
     def __int__(self) -> int:
         raise NotImplementedError  # no-cover
 
-    def __mod__(self, other: int) -> int:
+    def __mod__(self, mod: int) -> int:
         raise NotImplementedError  # no-cover
 
     def __eq__(self, other: object) -> bool:
