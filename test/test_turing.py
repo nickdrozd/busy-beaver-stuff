@@ -627,6 +627,14 @@ class Reasoner(TuringTest):
         for prog in Program(bigfoot).branch_read('C0'):
             self.assert_cant_blank(prog)
 
+        # pylint: disable = line-too-long
+        two_color = "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  ... 1LC"
+
+        self.assert_could_halt(two_color)
+
+        for prog in Program(two_color).branch_read('H0'):
+            self.assert_cant_blank(prog)
+
     def test_blank(self):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)
