@@ -1055,6 +1055,9 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     if base != 2:  # no-cover
         raise NumException
 
+    if mod == 4:
+        return 0
+
     if mod == 12:
         return 4 if exp % 2 == 0 else 8
 
