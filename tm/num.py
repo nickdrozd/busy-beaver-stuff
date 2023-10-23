@@ -1994,6 +1994,10 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
                 484: 1276,
                 485: 1094,
             }
+        case 4374:
+            values = {
+                1004: 2560,
+            }
         case _:
             raise NumException(
                 f'({base} ** {exp}) % {mod}')
