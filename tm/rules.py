@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
     Rule = dict[Index, Op]
 
-    Apps = tuple[Count, Index]
+    Apps = tuple[Count, Index, int]
 
 
 RULE_DESCENT: int = 20
@@ -257,10 +257,14 @@ class ApplyRule:
             except NumException as exc:
                 raise RuleLimit('count_apps') from exc
 
-            times = div if rem > 0 else div - 1
+            times, min_res = (
+                (div, rem)
+                if rem > 0 else
+                (div - 1, absdiff)
+            )
 
             if apps is None or times < apps[0]:
-                apps = times, pos
+                apps = times, pos, min_res
 
         return apps
 
@@ -268,7 +272,7 @@ class ApplyRule:
         if (apps := self.count_apps(rule)) is None:
             return None
 
-        times, min_pos = apps
+        times, min_pos, min_res = apps
 
         for pos, diff in rule.items():
             count = self.get_count(pos)
@@ -281,8 +285,7 @@ class ApplyRule:
                         result = count + diff * times
                     else:
                         assert diff < 0
-
-                        result = (count % -diff) or -diff
+                        result = min_res
                 case ops:
                     result = apply_ops(count, times, ops) # type: ignore
 
