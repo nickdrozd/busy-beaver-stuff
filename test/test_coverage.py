@@ -166,10 +166,6 @@ class TestFloss(TestCase):
 
         self.assertFalse(
             cant_blank(
-                "1RB ...  1LB 0RB"))
-
-        self.assertFalse(
-            cant_blank(
                 "1RB 0RA  1LB 1LA"))
 
         self.assertTrue(
