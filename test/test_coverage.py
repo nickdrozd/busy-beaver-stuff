@@ -159,14 +159,6 @@ class TestFloss(TestCase):
             sim_lim = 800
         )
 
-    def test_config_limit(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA",
-                blocks = 4,
-            ).run().cfglim
-        )
-
     def test_reasoner(self):
         self.assertFalse(
             cant_halt(

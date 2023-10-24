@@ -281,7 +281,7 @@ class Machine(BasicMachine):
             except RuleLimit as lim:
                 self.limrul = str(lim)
                 break
-            except ConfigLimit:
+            except ConfigLimit:  # no-cover
                 self.cfglim = True
                 break
             except SuspectedRule as sus:

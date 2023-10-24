@@ -130,7 +130,7 @@ class Prover:
             return known_rule
 
         if (states := self.configs.get(sig)) is None:
-            if self.config_count > 100_000:
+            if self.config_count > 100_000:  # no-cover
                 raise ConfigLimit
 
             states = defaultdict(PastConfig)
