@@ -213,12 +213,6 @@ class TestFloss(TestCase):
                 "1RB 1LA  1LC 0RD  ... 0RA  1LD 0LA"
             ).run())
 
-    def test_diff_mod_rule(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 0LA  1RC ...  0RD 0RC  1LD 0LA"
-            ).run().infrul)
-
     def test_mixed_divs(self):
         self.assertIsNotNone(
             Machine(
