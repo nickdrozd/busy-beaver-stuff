@@ -1,3 +1,4 @@
+# pylint: disable = too-many-lines
 from __future__ import annotations
 
 from math import isclose, log10
@@ -923,12 +924,18 @@ class Fast(TuringTest):
     def test_algebra(self):
         clear_caches()
 
+        show = False
+
         for term, progs in ALGEBRA.items():
+            if show:
+                print(f'    "{term}": {{')
+
             for prog, (cycles, string, est) in progs.items():
                 self.run_bb(
                     prog,
                     opt_macro = 2000,
                     analyze = False,
+                    print_prog = not show,
                 )
 
                 if self.machine.halted is not None:
@@ -947,9 +954,26 @@ class Fast(TuringTest):
                         self.machine.limrul,
                         prog)
 
-                self.assert_cycles(cycles)
-
                 marks = self.machine.marks
+
+                estimate = (
+                    marks
+                    if isinstance(marks, int) else
+                    marks.estimate()
+                )
+
+                if show:
+                    print('\n'.join([
+                        f'        "{prog}": (',
+                        f'            {self.machine.cycles},',
+                        f'            "{marks}",',
+                        f'            "{estimate}",',
+                        '        ),',
+                    ]))
+
+                    continue
+
+                self.assert_cycles(cycles)
 
                 self.assertEqual(
                     string,
@@ -959,9 +983,10 @@ class Fast(TuringTest):
                 self.assertEqual(
                     est,
                     show_number(
-                        marks
-                        if isinstance(marks, int) else
-                        marks.estimate()))
+                        estimate))
+
+            if show:
+                print('    },\n')
 
         assert_num_counts({
             "adds": 30251,
