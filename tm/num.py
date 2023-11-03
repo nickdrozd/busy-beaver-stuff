@@ -733,7 +733,7 @@ class Exp(Num):
 
         base = self.base
 
-        if mod == 1 or mod == base:
+        if mod == base:
             return 0
 
         res = 1
