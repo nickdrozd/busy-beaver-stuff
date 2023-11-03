@@ -1059,7 +1059,8 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
             return 3
 
     if base != 2:  # no-cover
-        raise NumException
+        raise NumException(
+            f'({base} ** {exp}) % {mod}')
 
     if mod == 4:
         return 0
@@ -1068,7 +1069,8 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
         return 4 if exp % 2 == 0 else 8
 
     if 2 * (3 ** round(log(mod / 2, 3))) != mod:  # no-cover
-        raise NumException
+        raise NumException(
+            f'({base} ** {exp}) % {mod}')
 
     period = exp % (mod // 3)
 
@@ -1811,7 +1813,8 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
                 485: 1094,
             }
         case _:
-            raise NumException
+            raise NumException(
+                f'({base} ** {exp}) % {mod}')
 
     return values[period]
 

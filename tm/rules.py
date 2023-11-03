@@ -255,7 +255,7 @@ class ApplyRule:
             try:
                 div, rem = divmod(count, absdiff)
             except NumException as exc:
-                raise RuleLimit('count_apps') from exc
+                raise RuleLimit(f'count_apps: {exc}') from exc
 
             times, min_res = (
                 (div, rem)

@@ -784,9 +784,8 @@ class Fast(TuringTest):
                 opt_macro = 1600,
             )
 
-            self.assertEqual(
-                self.machine.limrul,
-                reason)
+            self.assertTrue(
+                str(self.machine.limrul).startswith(reason))
 
     def test_backsymbol_required(self):
         prog = "1RB 0LC  1LC 0RC  1LA 0LC"
