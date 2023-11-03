@@ -736,6 +736,9 @@ class Exp(Num):
         if mod == base:
             return 0
 
+        if mod == 2:
+            return base % 2
+
         res = 1
 
         exp = self.exp

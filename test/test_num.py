@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import tm.num
-from tm.num import make_exp as Exp, Tet, show_number, NumException
+from tm.num import make_exp as Exp, Tet, show_number
 
 if TYPE_CHECKING:
     from tm.num import Count
@@ -467,8 +467,10 @@ class TestNum(TestCase):
             "(-1 + (3 ** 11))",
             (2, 0))
 
-        with self.assertRaises(NumException):
-            (-3 + (3 ** ((-3 + Exp(3, 5)) // 8))) % 2
+        self.assert_mod(
+            (-3 + (3 ** ((-3 + Exp(3, 5)) // 8))),
+            2,
+            0)
 
     def test_exp_mod_special_case(self):
         self.assert_mod(
