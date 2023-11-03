@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     Apps = tuple[Count, Index, int]
 
 
-RULE_DESCENT: int = 20
+RULE_DESCENT: int = 50
 
 
 class SuspectedRule(Exception):
@@ -199,7 +199,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
                 sup = exp
 
     else:
-        raise RuleLimit(
+        raise RuleLimit(  # no-cover
             'superexpression descent')
 
     ops = tuple(descent) + tuple(reversed(ascent))
