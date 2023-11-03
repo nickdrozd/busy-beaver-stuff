@@ -166,7 +166,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
         match sup:
             case Add():
-                if not isinstance(l := sup.l, int):  # no-cover
+                if not isinstance(l := sup.l, int):
                     raise RuleLimit('sup_add')
 
                 ascent.append(
@@ -199,7 +199,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
                 sup = exp
 
     else:
-        raise RuleLimit(  # no-cover
+        raise RuleLimit(
             'superexpression descent')
 
     ops = tuple(descent) + tuple(reversed(ascent))
