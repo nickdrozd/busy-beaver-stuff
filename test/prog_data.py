@@ -1592,14 +1592,6 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str]]] = {
         ),
     },
 
-    "count_apps: (6 ** ((2 + (23 * (6 ** 14))) // 10)) % 10": {
-        "1RB ...  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE": (
-            539,
-            "((7 + (23 * (6 ** ((2 + (23 * (6 ** 14))) // 10)))) // 5)",
-            "(10 ↑↑ 3)",
-        ),
-    },
-
     "ops_times": {
         "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": (
             1966,
@@ -1714,6 +1706,11 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str]]] = {
             445,
             "(-3 + (2 ** (2 + (2 ** (1 + (2 ** (1 + (2 ** (1 + (2 ** 33))))))))))",
             "(10 ↑↑ 6)",
+        ),
+        "1RB ...  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE": (
+            640,
+            "((-3 + (23 * (6 ** ((2 + (23 * (6 ** ((2 + (23 * (6 ** ((2 + (23 * (6 ** 14))) // 10)))) // 10)))) // 10)))) // 5)",
+            "(10 ↑↑ 5)",
         ),
         "1RB 0RD  0LC 1RE  1RA 1LD  0LC 1LC  0RD 0LE": (
             711,
