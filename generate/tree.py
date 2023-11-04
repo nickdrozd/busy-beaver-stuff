@@ -140,13 +140,18 @@ def distribute_branches(branches: list[Prog]) -> list[list[Prog]]:
 
 
 def run_tree_gen(
-        states: int,
-        colors: int,
         steps: int,
         halt: bool,
         output: Output,
+        branches: list[Prog] | None = None,
+        states: int | None = None,
+        colors: int | None = None,
 ) -> None:
-    branches = prep_branches(states, colors, halt)
+    if branches is None:
+        assert states is not None
+        assert colors is not None
+
+        branches = prep_branches(states, colors, halt)
 
     processes = [
         Process(

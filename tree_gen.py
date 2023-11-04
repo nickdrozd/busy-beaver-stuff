@@ -42,7 +42,15 @@ if __name__ == '__main__':
 
     parser.add_argument('--halt', action = 'store_true')
 
+    parser.add_argument('--progfile', type = str)
+
     args = parser.parse_args()
+
+    if (progfile := args.progfile) is None:
+        BRANCHES = None
+    else:
+        with open(progfile) as progs:
+            BRANCHES = [prog.strip() for prog in progs.readlines()]
 
     run_tree_gen(
         states = args.states,
@@ -50,4 +58,5 @@ if __name__ == '__main__':
         halt   = args.halt,
         steps  = args.steps,
         output = filter_run_print(args.halt),
+        branches = BRANCHES,
     )
