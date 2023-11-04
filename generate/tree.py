@@ -82,7 +82,10 @@ def worker(
     def log(msg: str) -> None:
         print(f'{pid}: {msg}')
 
-    log(json.dumps(stack, indent = 4))
+    def log_stack() -> None:
+        log(json.dumps(stack, indent = 4))
+
+    log_stack()
 
     for prog in tree_gen(steps, halt, stack):
         try:
