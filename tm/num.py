@@ -1054,9 +1054,8 @@ def find_period(base: int, mod: int) -> int:
 
 
 def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
-    if base == 3:
-        if mod == 6:
-            return 3
+    if base == 3 and mod == 6:
+        return 3
 
     if base == 6 and mod == 10:
         return 6
