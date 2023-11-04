@@ -543,6 +543,9 @@ class TuringTest(TestCase):
 
                 match params:
                     case (blocks, backsym):
+                        assert isinstance(blocks, int | None)
+                        assert isinstance(backsym, int | list | None)
+
                         self.run_bb(
                             prog,
                             blocks = blocks,
