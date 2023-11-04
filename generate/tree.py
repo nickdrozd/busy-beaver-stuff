@@ -90,6 +90,10 @@ def worker(
     for prog in tree_gen(steps, halt, stack):
         try:
             output(prog)
+        except KeyboardInterrupt:
+            log('dumping...')
+            log_stack()
+            raise
         except Exception as err:  # pylint: disable = broad-exception-caught
             log(f'ERROR: {prog} || {err}')
 
