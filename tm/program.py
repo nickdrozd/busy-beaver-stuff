@@ -9,6 +9,8 @@ from tm.graph import Graph
 from tm.show import show_instr
 from tm.parse import parse, read_slot
 
+from tm.rust_stuff import Program as ProgramRust
+
 if TYPE_CHECKING:
     from typing import Self
 
@@ -19,18 +21,10 @@ if TYPE_CHECKING:
     Switch = dict[Color, Instr | None]
 
 
-class Program:
+class Program(ProgramRust):
     prog: dict[State, Switch]
 
     graph: Graph
-
-    def __init__(self, program: ProgStr):
-        self.prog = {
-            state: dict(enumerate(instrs))
-            for state, instrs in enumerate(parse(program))
-        }
-
-        self.graph = Graph(program)
 
     def __repr__(self) -> ProgStr:
         return '  '.join([
@@ -52,11 +46,6 @@ class Program:
     def get_switch(self, state: State) -> Switch:
         return self.prog[state]
 
-    def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
-        state, color = slot
-
-        self.prog[state][color] = instr
-
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
 
@@ -75,122 +64,6 @@ class Program:
     def branch_init(cls, states: int, colors: int) -> list[str]:
         return cls.init(states, colors).branch_read('B0')
 
-    @cached_property
-    def states(self) -> set[State]:
-        return set(self.prog.keys())
-
-    @cached_property
-    def colors(self) -> set[Color]:
-        return set(range(len(self.prog[0])))
-
-    @property
-    def state_switches(self) -> list[tuple[State, Switch]]:
-        return sorted(self.prog.items())
-
-    @property
-    def instr_slots(self) -> list[tuple[Slot, Instr | None]]:
-        return [
-            ((state, color), instr)
-            for state, instrs in self.prog.items()
-            for color, instr in instrs.items()
-        ]
-
-    @property
-    def used_instr_slots(self) -> list[tuple[Slot, Instr]]:
-        return [
-            (slot, instr)
-            for slot, instr in self.instr_slots
-            if instr is not None
-        ]
-
-    @property
-    def instructions(self) -> list[Instr | None]:
-        return [
-            instr
-            for instrs in self.prog.values()
-            for instr in instrs.values()
-        ]
-
-    @property
-    def used_instructions(self) -> list[Instr]:
-        return [
-            instr
-            for instr in self.instructions
-            if instr
-        ]
-
-    @property
-    def slots(self) -> tuple[Slot, ...]:
-        return tuple(slot for slot, _ in self.instr_slots)
-
-    @property
-    def open_slots(self) -> tuple[Slot, ...]:
-        return tuple(
-            slot
-            for slot, instr in self.instr_slots
-            if instr is None
-        )
-
-    @property
-    def last_slot(self) -> Slot | None:
-        if len((slots := self.open_slots)) != 1:
-            return None
-
-        return slots[0]
-
-    @property
-    def halt_slots(self) -> tuple[Slot, ...]:
-        return tuple(
-            slot
-            for slot, instr in self.instr_slots
-            if instr is None or instr[2] == -1
-        )
-
-    @property
-    def erase_slots(self) -> tuple[Slot, ...]:
-        return tuple(
-            slot
-            for slot, instr in self.used_instr_slots
-            if slot[1] != 0 and instr[0] == 0
-        )
-
-    @property
-    def spinout_slots(self) -> tuple[Slot, ...]:
-        return tuple(
-            (state, 0)
-            for state in self.graph.zero_reflexive_states
-        )
-
-    @property
-    def used_states(self) -> set[State]:
-        return {
-            state
-            for _, _, state in self.used_instructions
-        }
-
-    @property
-    def available_states(self) -> set[State]:
-        used = self.used_states | { 0 }
-        diff = sorted(self.states.difference(used))
-
-        return used | { diff[0] } if diff else used
-
-    @property
-    def used_colors(self) -> set[Color]:
-        return {
-            color
-            for color, _, _ in self.used_instructions
-        }
-
-    @property
-    def available_colors(self) -> set[Color]:
-        used = self.used_colors | { 0 }
-        diff = sorted(self.colors.difference(used))
-
-        return used | { diff[0] } if diff else used
-
-    @property
-    def available_instrs(self) -> list[Instr]:
         return sorted(
             product(
                 self.available_colors,
@@ -198,23 +71,6 @@ class Program:
                 self.available_states),
             reverse = True,
         )
-
-    def branch(self, slot: Slot) -> list[ProgStr]:
-        branches = []
-
-        orig = self[slot]
-
-        for instr in self.available_instrs:
-            if orig is not None and instr >= orig:
-                continue
-
-            self[slot] = instr
-
-            branches.append(str(self))
-
-        self[slot] = orig
-
-        return branches
 
     def branch_read(self, slot: str) -> list[ProgStr]:
         return self.branch(read_slot(slot))
