@@ -7,6 +7,7 @@
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::cast_possible_truncation)]
 
+mod graph;
 mod instrs;
 mod parse;
 mod prover;
@@ -14,6 +15,7 @@ mod rules;
 
 use pyo3::prelude::*;
 
+use graph::Graph;
 use parse::{
     parse as parse_fn, read_slot, read_state, show_instr, show_slot, show_state, tcompile,
 };
@@ -22,6 +24,9 @@ use rules::{InfiniteRule, RuleLimit, UnknownRule};
 
 #[pymodule]
 fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
+    // graph
+    m.add_class::<Graph>()?;
+
     // parse
     m.add_function(wrap_pyfunction!(parse_fn, m)?)?;
     m.add_function(wrap_pyfunction!(tcompile, m)?)?;
