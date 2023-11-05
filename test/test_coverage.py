@@ -6,7 +6,6 @@ from tm.machine import (
     BasicMachine,
     Machine,
     LinRecMachine,
-    run_variations,
 )
 
 from tm.reason import (
@@ -185,15 +184,6 @@ class TestFloss(TestCase):
 
         _ = instr_seq(
             "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD")
-
-    def test_run_variations(self):
-        self.assertEqual(
-            3,
-            len(
-                list(
-                    run_variations(
-                        "1RB 1LB  1LA 1R_",
-                        sim_lim = 10))))
 
     def test_diff_lim(self):
         self.assertIsNotNone(

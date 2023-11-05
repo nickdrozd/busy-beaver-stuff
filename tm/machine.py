@@ -11,7 +11,6 @@ from tm.macro import BlockMacro, BacksymbolMacro, tcompile
 
 if TYPE_CHECKING:
     from typing import Self
-    from collections.abc import Iterator
 
     from tm.tape import Count
     from tm.parse import State, Slot, GetInstr
@@ -415,33 +414,6 @@ class LinRecMachine(BasicMachine):
         return result
 
 ########################################
-
-def run_variations(
-        prog: str,
-        sim_lim: int,
-        *,
-        lin_rec: int = 50,
-        block_steps: int = 1_000,
-) -> Iterator[BasicMachine]:
-    yield LinRecMachine(prog).run(
-        sim_lim = lin_rec,
-        check_rec = 0,
-    )
-
-    yield Machine(
-        prog,
-        opt_macro = block_steps,
-    ).run(
-        sim_lim = sim_lim,
-    )
-
-    yield Machine(
-        prog,
-        backsym = 1,
-    ).run(
-        sim_lim = sim_lim,
-    )
-
 
 def opt_block(prog: str | GetInstr, steps: int) -> int:
     machine = BasicMachine(prog).run(

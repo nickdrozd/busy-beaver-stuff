@@ -4,12 +4,14 @@ from unittest import TestCase
 from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
-from tm.machine import run_variations
+from tm.machine import Machine, LinRecMachine
 from tm.reason import BackwardReasoner
 from generate.tree import run_tree_gen
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from tm.machine import BasicMachine
 
     Q = Queue[str]
@@ -30,6 +32,33 @@ def queue_to_set(queue: Q) -> set[str]:
         out.add(queue.get())
 
     return out
+
+
+def run_variations(
+        prog: str,
+        sim_lim: int,
+        *,
+        lin_rec: int = 50,
+        block_steps: int = 1_000,
+) -> Iterator[BasicMachine]:
+    yield LinRecMachine(prog).run(
+        sim_lim = lin_rec,
+        check_rec = 0,
+    )
+
+    yield Machine(
+        prog,
+        opt_macro = block_steps,
+    ).run(
+        sim_lim = sim_lim,
+    )
+
+    yield Machine(
+        prog,
+        backsym = 1,
+    ).run(
+        sim_lim = sim_lim,
+    )
 
 
 class TestTree(TestCase):
