@@ -72,6 +72,7 @@ class BasicMachine:
             opt_macro: int | None = None,
     ):
         if opt_macro is not None:
+            assert isinstance(program, str)
             program = find_opt_macro(program, opt_macro)
 
         if blocks is not None:
@@ -415,7 +416,7 @@ class LinRecMachine(BasicMachine):
 
 ########################################
 
-def opt_block(prog: str | GetInstr, steps: int) -> int:
+def opt_block(prog: str, steps: int) -> int:
     machine = BasicMachine(prog).run(
         sim_lim = steps,
         tape = BlockMeasure.init())
@@ -439,8 +440,8 @@ def opt_block(prog: str | GetInstr, steps: int) -> int:
     return opt_size
 
 
-def find_opt_macro(prog: str | GetInstr, steps: int) -> str | GetInstr:
+def find_opt_macro(prog: str, steps: int) -> str | GetInstr:
     if (blocks := opt_block(prog, steps)) > 1:
-        prog = BlockMacro(prog, [blocks])
+        return BlockMacro(prog, [blocks])
 
     return prog
