@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
@@ -21,13 +20,6 @@ if TYPE_CHECKING:
     Config = tuple[int, State, HeadTape]
 
     GetResult = Callable[[BasicMachine], int | None]
-
-
-class Result(Enum):
-    # pylint: disable = invalid-name
-    halted = 0
-    blanks = 1
-    spnout = 2
 
 
 class BackwardReasoner(Program):
@@ -55,28 +47,52 @@ class BackwardReasoner(Program):
 
     @property
     def cant_halt(self) -> bool:
+        def get_result(machine: BasicMachine) -> int | None:
+            final: int | None
+            if (und := machine.undfnd):
+                final = und[0]
+                machine.undfnd = None
+            else:
+                final = machine.halted
+                machine.halted = None
+            return final
+
         return self.cant_reach(
-            Result.halted,
+            get_result,
             self.halt_slots,
         )
 
     @property
     def cant_blank(self) -> bool:
+        def get_result(machine: BasicMachine) -> int | None:
+            final = (
+                min(blanks.values())
+                if (blanks := machine.blanks) else
+                None
+            )
+            machine.blanks = {}
+            return final
+
         return self.cant_reach(
-            Result.blanks,
+            get_result,
             self.erase_slots,
         )
 
     @property
     def cant_spin_out(self) -> bool:
+        def get_result(machine: BasicMachine) -> int | None:
+            final = machine.spnout
+            machine.spnout = None
+            return final
+
         return self.cant_reach(
-            Result.spnout,
+            get_result,
             self.spinout_slots,
         )
 
     def cant_reach(
             self,
-            final_prop: Result,
+            get_result: GetResult,
             slots: tuple[Slot, ...],
             max_steps: int = 24,
             max_cycles: int = 1_000,
@@ -99,8 +115,6 @@ class BackwardReasoner(Program):
         max_repeats = max_steps // 2
 
         seen: dict[State, set[HeadTape]] = defaultdict(set)
-
-        get_result = final_value(final_prop)
 
         for _ in range(max_cycles):
             try:
@@ -201,37 +215,6 @@ class BackwardReasoner(Program):
                         entry,
                         yield_tape,
                     )
-
-
-def final_value(final_prop: Result) -> GetResult:
-    # pylint: disable = function-redefined
-    match final_prop:
-        case Result.spnout:
-            def result(machine: BasicMachine) -> int | None:
-                final = machine.spnout
-                machine.spnout = None
-                return final
-        case Result.blanks:
-            def result(machine: BasicMachine) -> int | None:
-                final = (
-                    min(blanks.values())
-                    if (blanks := machine.blanks) else
-                    None
-                )
-                machine.blanks = {}
-                return final
-        case Result.halted:  # no-branch
-            def result(machine: BasicMachine) -> int | None:
-                final: int | None
-                if (und := machine.undfnd):
-                    final = und[0]
-                    machine.undfnd = None
-                else:
-                    final = machine.halted
-                    machine.halted = None
-                return final
-
-    return result
 
 ########################################
 
