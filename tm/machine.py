@@ -416,17 +416,34 @@ class LinRecMachine(BasicMachine):
 
 ########################################
 
-def opt_block(prog: str, steps: int) -> int:
-    machine = BasicMachine(prog).run(
-        sim_lim = steps,
-        tape = BlockMeasure.init())
+def measure_blocks(prog: str, steps: int) -> int | None:
+    comp = tcompile(prog)
+    state: State = 0
+    tape = BlockMeasure.init()
 
-    if machine.xlimit is None:
+    for _ in range(steps):
+        if (instr := comp[state, tape.scan]) is None:
+            return None
+
+        color, shift, next_state = instr
+
+        if (same := state == next_state) and tape.at_edge(shift):
+            return None
+
+        _ = tape.step(shift, color, same)
+
+        if (state := next_state) == -1:
+            return None
+
+    return tape.max_blocks_step
+
+
+def opt_block(prog: str, steps: int) -> int:
+    if (max_blocks_step := measure_blocks(prog, steps)) is None:
         return 1
 
-    tape = machine.run(
-        # pylint: disable = line-too-long
-        sim_lim = machine.tape.max_blocks_step,  # type: ignore[attr-defined]
+    tape = BasicMachine(prog).run(
+        sim_lim = max_blocks_step,
     ).tape.unroll()
 
     opt_size = 1
