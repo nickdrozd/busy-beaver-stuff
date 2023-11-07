@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from argparse import ArgumentParser
 
 from tm.reason import cant_halt, cant_spin_out
 from tm.machine import Machine, LinRecMachine
 
 from generate.tree import run_tree_gen
-
-if TYPE_CHECKING:
-    from generate.tree import Output
 
 
 def run_variations(
@@ -36,23 +32,29 @@ def run_variations(
     return machine
 
 
-def filter_run_print(halt: bool) -> Output:
-    cant_reach = cant_halt if halt else cant_spin_out
+def run_print(prog: str) -> None:
+    if (machine := run_variations(prog, 10_000)) is None:
+        return
 
-    def drop(prog: str) -> None:
-        if cant_reach(prog):
-            return
+    if machine.simple_termination and machine.rulapp > 1_000:
+        print(machine)
+        return
 
-        if (machine := run_variations(prog, 10_000)) is None:
-            return
+    print(prog)
 
-        if machine.simple_termination and machine.rulapp > 1_000:
-            print(machine)
-            return
 
-        print(prog)
+def filter_halt(prog: str) -> None:
+    if cant_halt(prog):
+        return
 
-    return drop
+    run_print(prog)
+
+
+def filter_spin_out(prog: str) -> None:
+    if cant_spin_out(prog):
+        return
+
+    run_print(prog)
 
 
 if __name__ == '__main__':
@@ -80,6 +82,6 @@ if __name__ == '__main__':
         colors = args.colors,
         halt   = args.halt,
         steps  = args.steps,
-        output = filter_run_print(args.halt),
+        output = filter_halt if args.halt else filter_spin_out,
         branches = BRANCHES,
     )
