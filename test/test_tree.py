@@ -285,7 +285,8 @@ class Slow(TestTree):
 
     def test_24(self):
         def capture(prog: str) -> None:
-            for machine in run_variations(prog, 3_000):
+            for machine in run_variations(
+                    prog, 3_000, block_steps = 6_000):
                 if machine.xlimit is None:
                     return
 
@@ -300,5 +301,5 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            1213,
+            1176,
             'holdouts_24h')
