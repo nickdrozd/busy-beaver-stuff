@@ -46,3 +46,9 @@ Rule = dict[Index, Op]
 class InfiniteRule(Exception): pass
 class RuleLimit(Exception): pass
 class UnknownRule(Exception): pass
+
+## blocks ##############################
+
+def measure_blocks(prog: str, steps: int) -> int | None: ...
+
+def unroll_tape(prog: str, steps: int) -> list[Color]: ...

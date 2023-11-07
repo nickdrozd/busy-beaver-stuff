@@ -2,69 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape
-from tm.parse import tcompile
+from tm.rust_stuff import measure_blocks, unroll_tape
 
 if TYPE_CHECKING:
-    from tm.parse import Color, Shift, State
-
-
-class BlockMeasure(Tape):
-    steps: int = 0
-    max_blocks: int = 0
-    max_blocks_step: int = 0
-
-    @property
-    def blocks(self) -> int:
-        return len(self.lspan) + len(self.rspan)
-
-    def step(self, shift: Shift, color: Color, skip: bool) -> int:
-        self.steps += 1
-
-        if (blocks := self.blocks) > self.max_blocks:
-            self.max_blocks = blocks
-            self.max_blocks_step = self.steps
-
-        return int(super().step(shift, color, skip))
-
-
-def measure_blocks(prog: str, steps: int) -> int | None:
-    comp = tcompile(prog)
-    state: State = 0
-    tape = BlockMeasure.init()
-
-    for _ in range(steps):
-        if (instr := comp[state, tape.scan]) is None:
-            return None
-
-        color, shift, next_state = instr
-
-        if (same := state == next_state) and tape.at_edge(shift):
-            return None
-
-        _ = tape.step(shift, color, same)
-
-        if (state := next_state) == -1:  # no-cover
-            return None
-
-    return tape.max_blocks_step
-
-
-def unroll_tape(prog: str, steps: int) -> list[Color]:
-    comp = tcompile(prog)
-    state: State = 0
-    tape = Tape.init()
-
-    for _ in range(steps):
-        assert (instr := comp[state, tape.scan]) is not None
-
-        color, shift, next_state = instr
-
-        _ = tape.step(shift, color, state == next_state)
-
-        state = next_state
-
-    return tape.unroll()
+    from tm.parse import Color
 
 
 def compr_eff(tape: list[Color], k: int) -> int:
