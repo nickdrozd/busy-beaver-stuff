@@ -282,3 +282,23 @@ class Slow(TestTree):
             'spnout': (171, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'halted': (107, "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA"),
         })
+
+    def test_24(self):
+        def capture(prog: str) -> None:
+            for machine in run_variations(prog, 3_000):
+                if machine.xlimit is None:
+                    return
+
+            self.queue.put(prog)
+
+        run_tree_gen(
+            states = 2,
+            colors = 4,
+            steps = 100,
+            halt = True,
+            output = capture,
+        )
+
+        self.assert_progs(
+            1213,
+            'holdouts_24h')
