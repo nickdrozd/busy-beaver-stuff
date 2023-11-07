@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tm.tape import Tape
-from tm.blocks import measure_blocks, compr_eff
+from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
 from tm.lin_rec import History, HeadTape
 from tm.show import show_slot, show_number
@@ -416,25 +416,6 @@ class LinRecMachine(BasicMachine):
         return result
 
 ########################################
-
-def opt_block(prog: str, steps: int) -> int:
-    if (max_blocks_step := measure_blocks(prog, steps)) is None:
-        return 1
-
-    tape = BasicMachine(prog).run(
-        sim_lim = max_blocks_step,
-    ).tape.unroll()
-
-    opt_size = 1
-    min_comp = 1 + len(tape)
-
-    for block_size in range(1, len(tape) // 2):
-        if (compr_size := compr_eff(tape, block_size)) < min_comp:
-            min_comp = compr_size
-            opt_size = block_size
-
-    return opt_size
-
 
 def find_opt_macro(prog: str, steps: int) -> str | GetInstr:
     if (blocks := opt_block(prog, steps)) > 1:

@@ -46,6 +46,23 @@ def measure_blocks(prog: str, steps: int) -> int | None:
     return tape.max_blocks_step
 
 
+def unroll_tape(prog: str, steps: int) -> list[Color]:
+    comp = tcompile(prog)
+    state: State = 0
+    tape = Tape.init()
+
+    for _ in range(steps):
+        assert (instr := comp[state, tape.scan]) is not None
+
+        color, shift, next_state = instr
+
+        _ = tape.step(shift, color, state == next_state)
+
+        state = next_state
+
+    return tape.unroll()
+
+
 def compr_eff(tape: list[Color], k: int) -> int:
     compr_size = len(tape)
 
@@ -54,3 +71,20 @@ def compr_eff(tape: list[Color], k: int) -> int:
             compr_size -= k
 
     return compr_size
+
+
+def opt_block(prog: str, steps: int) -> int:
+    if (max_blocks_step := measure_blocks(prog, steps)) is None:
+        return 1
+
+    tape = unroll_tape(prog, max_blocks_step)
+
+    opt_size = 1
+    min_comp = 1 + len(tape)
+
+    for block_size in range(1, len(tape) // 2):
+        if (compr_size := compr_eff(tape, block_size)) < min_comp:
+            min_comp = compr_size
+            opt_size = block_size
+
+    return opt_size
