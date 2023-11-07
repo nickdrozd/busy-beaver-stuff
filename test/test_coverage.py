@@ -83,6 +83,17 @@ class TestFloss(TestCase):
             len(program),
             10)
 
+        self.assertIsNone(
+            Machine(
+                "1RB 1LB  1LA 1R_",
+                backsym = 1,
+            ).run(100).xlimit)
+
+        Machine(
+            "1RB 2LB 1LA  2LB 2RA 0RA",
+            opt_macro = 100,
+        ).run()
+
     def test_machine(self):
         self.assertIsNotNone(
             Machine(
@@ -142,6 +153,7 @@ class TestFloss(TestCase):
             "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",
             "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",
             "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
+            "1RB ...  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE",
             "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
         )
 

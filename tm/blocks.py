@@ -44,7 +44,7 @@ def measure_blocks(prog: str, steps: int) -> int | None:
 
         _ = tape.step(shift, color, same)
 
-        if (state := next_state) == -1:
+        if (state := next_state) == -1:  # no-cover
             return None
 
     return tape.max_blocks_step

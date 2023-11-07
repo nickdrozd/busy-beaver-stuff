@@ -382,7 +382,7 @@ class LinRecMachine(BasicMachine):
 
             step += tape.step(shift, color, state == next_state)
 
-            if (state := next_state) == -1:
+            if (state := next_state) == -1:  # no-cover
                 self.halted = step
                 break
 
