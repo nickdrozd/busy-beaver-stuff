@@ -54,10 +54,6 @@ class BlockTape(ApplyRule):
 
         return scan + lspan + rspan
 
-    @property
-    def blocks(self) -> int:
-        return len(self.lspan) + len(self.rspan)
-
     def at_edge(self, edge: Shift) -> bool:
         return (
             self.scan == 0

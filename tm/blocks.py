@@ -14,6 +14,10 @@ class BlockMeasure(Tape):
     max_blocks: int = 0
     max_blocks_step: int = 0
 
+    @property
+    def blocks(self) -> int:
+        return len(self.lspan) + len(self.rspan)
+
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
         self.steps += 1
 
