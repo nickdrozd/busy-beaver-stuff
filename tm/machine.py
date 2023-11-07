@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from tm.tape import Tape
+from tm.blocks import measure_blocks, compr_eff
 from tm.prover import Prover, ConfigLimit
 from tm.lin_rec import History, HeadTape
-from tm.tape import Tape, BlockMeasure, compr_eff
 from tm.show import show_slot, show_number
 from tm.rules import RuleLimit, InfiniteRule, SuspectedRule
 from tm.macro import BlockMacro, BacksymbolMacro, tcompile
@@ -415,28 +416,6 @@ class LinRecMachine(BasicMachine):
         return result
 
 ########################################
-
-def measure_blocks(prog: str, steps: int) -> int | None:
-    comp = tcompile(prog)
-    state: State = 0
-    tape = BlockMeasure.init()
-
-    for _ in range(steps):
-        if (instr := comp[state, tape.scan]) is None:
-            return None
-
-        color, shift, next_state = instr
-
-        if (same := state == next_state) and tape.at_edge(shift):
-            return None
-
-        _ = tape.step(shift, color, same)
-
-        if (state := next_state) == -1:
-            return None
-
-    return tape.max_blocks_step
-
 
 def opt_block(prog: str, steps: int) -> int:
     if (max_blocks_step := measure_blocks(prog, steps)) is None:
