@@ -210,8 +210,6 @@ class BasicMachine:
         self.state = state
         self.cycles = cycle
 
-        # assert len(results := self.term_results) == 1, results
-
 
 class Machine(BasicMachine):
     prover: Prover
