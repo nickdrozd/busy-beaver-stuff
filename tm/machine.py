@@ -125,6 +125,38 @@ class BasicMachine:
 
         print(' | '.join(info))
 
+
+    def finalize(
+            self,
+            step: int | None,
+            cycle: int,
+            state: State,
+    ) -> None:
+        if step is None:
+            step = -1
+
+        if state == -1:
+            self.halted = step
+            self.qsihlt = True
+
+        if self.spnout is not None:
+            self.qsihlt = True
+
+        if self.tape.blank:
+            if state == -1:
+                self.blanks[-1] = step
+
+            if 0 in self.blanks:
+                self.linrec = 0, step
+            elif self.blanks:
+                if (period := step - self.blanks[state]):
+                    self.linrec = None, period
+                    self.xlimit = None
+
+        self.steps = step
+        self.state = state
+        self.cycles = cycle
+
     def run(self,
             sim_lim: int = 100_000_000,
             *,
@@ -178,37 +210,6 @@ class BasicMachine:
         self.finalize(step, cycle, state)
 
         return self
-
-    def finalize(
-            self,
-            step: int | None,
-            cycle: int,
-            state: State,
-    ) -> None:
-        if step is None:
-            step = -1
-
-        if state == -1:
-            self.halted = step
-            self.qsihlt = True
-
-        if self.spnout is not None:
-            self.qsihlt = True
-
-        if self.tape.blank:
-            if state == -1:
-                self.blanks[-1] = step
-
-            if 0 in self.blanks:
-                self.linrec = 0, step
-            elif self.blanks:
-                if (period := step - self.blanks[state]):
-                    self.linrec = None, period
-                    self.xlimit = None
-
-        self.steps = step
-        self.state = state
-        self.cycles = cycle
 
 
 class Machine(BasicMachine):
