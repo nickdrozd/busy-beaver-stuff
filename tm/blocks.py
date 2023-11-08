@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from tm.rust_stuff import measure_blocks, unroll_tape
 
-if TYPE_CHECKING:
-    from tm.parse import Color
 
-
-def compr_eff(tape: list[Color], k: int) -> int:
+def compr_eff(tape: list[int], k: int) -> int:
     compr_size = len(tape)
 
     for i in range(0, len(tape) - 2 * k, k):
