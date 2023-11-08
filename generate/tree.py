@@ -45,13 +45,8 @@ def tree_gen(
             prog = None
             continue
 
-        if machine.xlimit:
-            yield prog
-            prog = None
-            continue
-
         if machine.undfnd is None:
-            if machine.rulapp:
+            if machine.xlimit or machine.rulapp:
                 yield prog
             prog = None
             continue
