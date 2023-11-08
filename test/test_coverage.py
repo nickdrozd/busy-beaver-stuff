@@ -5,8 +5,9 @@ from unittest import TestCase
 from tm.machine import (
     BasicMachine,
     Machine,
-    LinRecMachine,
 )
+
+from tm.lin_rec import LinRecMachine
 
 from tm.reason import (
     Program,

@@ -24,14 +24,15 @@ from tm.machine import (
     opt_block,
     BasicMachine,
     Machine,
-    LinRecMachine,
 )
+from tm.lin_rec import LinRecMachine
 
 if TYPE_CHECKING:
     from typing import Any
     from collections.abc import Mapping
 
-    from tm.machine import Tapes, GetInstr, Count
+    from tm.lin_rec import Tapes
+    from tm.machine import Count, GetInstr
 
 
 class TuringTest(TestCase):

@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from tm.tape import Tape
 from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
-from tm.lin_rec import History, HeadTape
 from tm.show import show_slot, show_number
 from tm.rules import RuleLimit, InfiniteRule, SuspectedRule
 from tm.macro import BlockMacro, BacksymbolMacro, tcompile
@@ -15,7 +14,6 @@ if TYPE_CHECKING:
 
     from tm.tape import Count
     from tm.parse import State, Slot, GetInstr
-    from tm.lin_rec import RecRes, Tapes
 
     LinRec = tuple[int | None, int]
     Undfnd = tuple[int, Slot]
@@ -342,80 +340,6 @@ class Machine(BasicMachine):
             self.show_tape(step, 1 + cycle, state)
 
         return self
-
-########################################
-
-class LinRecMachine(BasicMachine):
-    history: History
-
-    def run(  # type: ignore[override]  # pylint: disable = arguments-differ
-        self,
-        sim_lim: int | None = None,
-        check_rec: int = 0,
-    ) -> Self:
-        self.blanks = {}
-
-        comp = self.comp
-
-        self.tape = tape = HeadTape.init()
-
-        self.history = History(tapes = {})
-
-        step: int = 0
-        state: State = 0
-
-        for cycle in range(sim_lim or 1_000_000):
-            slot: Slot = state, tape.scan
-
-            if step >= check_rec:
-                self.history.add_state_at_step(step, state)
-                self.history.add_tape_at_step(step, tape)
-
-                if self.check_rec(step, slot) is not None:
-                    break
-
-                self.history.add_slot_at_step(step, slot)
-
-            if (instr := comp[slot]) is None:
-                self.undfnd = step, slot
-                break
-
-            color, shift, next_state = instr
-
-            step += tape.step(shift, color, state == next_state)
-
-            if (state := next_state) == -1:  # no-cover
-                self.halted = step
-                break
-
-            if not color and tape.blank and state not in self.blanks:
-                self.blanks[state] = step
-
-        else:
-            self.xlimit = step
-
-        self.cycles = cycle
-
-        return self
-
-    def check_rec(self, step: int, slot: Slot) -> RecRes | None:
-        if (result := self.history.check_rec(step, slot)) is None:
-            return None
-
-        self.linrec = start, rec = result
-
-        if rec == 1:
-            self.spnout = step - 1
-
-        hc_beeps = self.history.calculate_beeps()
-        hp_beeps = self.history.calculate_beeps(start)
-
-        self.qsihlt = any(
-            hc_beeps[st] <= hp_beeps[st]
-            for st in hp_beeps
-        )
-
-        return result
 
 ########################################
 

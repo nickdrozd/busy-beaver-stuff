@@ -4,7 +4,8 @@ from unittest import TestCase
 from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
-from tm.machine import Machine, LinRecMachine
+from tm.machine import Machine
+from tm.lin_rec import LinRecMachine
 from tm.reason import BackwardReasoner
 from generate.tree import run_tree_gen
 

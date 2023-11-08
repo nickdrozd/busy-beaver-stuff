@@ -4,11 +4,8 @@ from typing import TYPE_CHECKING
 from collections import defaultdict
 
 from tm.program import Program
-from tm.machine import (
-    HeadTape,
-    History,
-    BasicMachine,
-)
+from tm.machine import BasicMachine
+from tm.lin_rec import History, HeadTape
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator

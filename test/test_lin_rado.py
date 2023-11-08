@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from tm.show import show_state
-from tm.machine import LinRecMachine
+from tm.lin_rec import LinRecMachine
 from generate.naive import yield_programs
 
 LEFT, RIGHT = 'L', 'R'

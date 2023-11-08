@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING
 from multiprocessing import cpu_count, Process
 
 from tm.program import Program
-from tm.machine import Machine, LinRecMachine
+from tm.machine import Machine
+from tm.lin_rec import LinRecMachine
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
