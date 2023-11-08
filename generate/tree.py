@@ -59,8 +59,7 @@ def tree_gen(
         _, slot = machine.undfnd
 
         if len((program := Program(prog)).open_slots) == open_slot_lim:
-            for ext in program.branch(slot):
-                yield ext
+            yield from program.branch(slot)
             prog = None
             continue
 
