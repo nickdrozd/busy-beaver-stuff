@@ -67,13 +67,20 @@ class BasicMachine:
         )
 
     @property
-    def term_results(self) -> tuple[tuple[str, Result], ...]:
-        return tuple(
-            (cat, data)
-            for cat in TERM_CATS
-            # pylint: disable = bad-builtin
-            if (data := getattr(self, cat)) is not None
-        )
+    def term_results(self) -> list[tuple[str, Result]]:
+        results = []
+
+        for cat in TERM_CATS:
+            try:
+                # pylint: disable = bad-builtin
+                data = getattr(self, cat)
+            except AttributeError:
+                continue
+
+            if data is not None:
+                results.append((cat, data))
+
+        return results
 
     def __str__(self) -> str:
         info = [ f'CYCLES: {self.cycles}' ]
