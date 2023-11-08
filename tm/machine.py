@@ -56,11 +56,6 @@ class BasicMachine:
     qsihlt: bool | None = None
 
     infrul: bool | None = None
-    cfglim: bool | None = None
-
-    limrul: str | None = None
-
-    susrul: tuple[int, int] | None = None
 
     rulapp: Count = 0
 
@@ -222,6 +217,10 @@ class BasicMachine:
 
 class Machine(BasicMachine):
     prover: Prover
+
+    cfglim: bool | None = None
+    limrul: str | None = None
+    susrul: tuple[int, int] | None = None
 
     def __init__(
             self,

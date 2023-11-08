@@ -417,6 +417,8 @@ class TuringTest(TestCase):
                 opt_macro = 10_000,
             )
 
+            assert isinstance(self.machine, Machine)
+
             if simple_term:
                 self.assertIsNotNone(
                     self.machine.simple_termination)
@@ -450,6 +452,8 @@ class TuringTest(TestCase):
                 ),
                 normal = False,
             )
+
+            assert isinstance(self.machine, Machine)
 
             self.assertIsNotNone(
                 self.machine.simple_termination)
@@ -787,6 +791,8 @@ class Fast(TuringTest):
                 opt_macro = 1600,
             )
 
+            assert isinstance(self.machine, Machine)
+
             self.assertTrue(
                 str(self.machine.limrul).startswith(reason))
 
@@ -939,6 +945,8 @@ class Fast(TuringTest):
                     analyze = False,
                     print_prog = not show,
                 )
+
+                assert isinstance(self.machine, Machine)
 
                 if self.machine.halted is not None:
                     self.assertEqual(term, 'halt', prog)
