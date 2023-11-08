@@ -219,7 +219,7 @@ class History:
 class LinRecMachine(BasicMachine):
     history: History
 
-    def run(  # type: ignore[override]  # pylint: disable = arguments-differ
+    def run(
         self,
         sim_lim: int | None = None,
         check_rec: int = 0,

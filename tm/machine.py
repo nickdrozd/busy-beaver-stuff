@@ -157,6 +157,8 @@ class BasicMachine:
         self.state = state
         self.cycles = cycle
 
+
+class QuickMachine(BasicMachine):
     def run(self,
             sim_lim: int = 100_000_000,
             *,
@@ -251,7 +253,7 @@ class Machine(BasicMachine):
             self.prover.config_count,
         )
 
-    def run(  # type: ignore[override]  # pylint: disable = arguments-differ
+    def run(
         self,
         sim_lim: int = 100_000_000,
         watch_tape: bool = False,

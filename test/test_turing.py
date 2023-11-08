@@ -22,7 +22,7 @@ from tm.machine import (
     show_slot,
     show_number,
     opt_block,
-    BasicMachine,
+    QuickMachine,
     Machine,
 )
 from tm.lin_rec import LinRecMachine
@@ -33,6 +33,13 @@ if TYPE_CHECKING:
 
     from tm.lin_rec import Tapes
     from tm.machine import Count, GetInstr
+
+    BasicMachine = (
+        Machine
+        | QuickMachine
+        | LinRecMachine
+        | LinRecSampler
+    )
 
 
 class TuringTest(TestCase):
@@ -238,7 +245,7 @@ class TuringTest(TestCase):
             assert isinstance(prog, str)
             self.machine = LinRecSampler(prog)
         elif not prover:
-            self.machine = BasicMachine(
+            self.machine = QuickMachine(
                 prog
                 if (not blocks and not opt_macro and not backsym) else
                 Machine(

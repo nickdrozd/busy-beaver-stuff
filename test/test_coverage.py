@@ -3,7 +3,7 @@
 from unittest import TestCase
 
 from tm.machine import (
-    BasicMachine,
+    QuickMachine,
     Machine,
 )
 
@@ -140,7 +140,7 @@ class TestFloss(TestCase):
             ).run())
 
         self.assertIsNotNone(
-            BasicMachine(
+            QuickMachine(
                 "1RB 2LA 0RB  1LA 0LB 1RA"
             ).run())
 

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class LinRecSampler(BasicMachine):
     history: History
 
-    def run(  # type: ignore[override]  # pylint: disable = arguments-differ
+    def run(
         self,
         sim_lim: int,
         samples: Tapes,
