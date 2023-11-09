@@ -143,7 +143,6 @@ class BasicMachine:
             step = -1
 
         if state == -1:
-            self.halted = step
             self.qsihlt = True
 
         if self.spnout is not None:
@@ -202,6 +201,7 @@ class QuickMachine(BasicMachine):
             step += stepped
 
             if (state := next_state) == -1:
+                self.halted = step
                 break
 
             if not color and tape.blank:
@@ -328,6 +328,7 @@ class Machine(BasicMachine):
                 step += stepped
 
             if (state := next_state) == -1:
+                self.halted = step or -1
                 break
 
             if not color and tape.blank:
