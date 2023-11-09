@@ -186,13 +186,13 @@ class QuickMachine(BasicMachine):
         for cycle in range(sim_lim):
 
             if (instr := comp[state, tape.scan]) is None:
-                self.undfnd = step or -1, (state, tape.scan)
+                self.undfnd = step, (state, tape.scan)
                 break
 
             color, shift, next_state = instr
 
             if (same := state == next_state) and tape.at_edge(shift):
-                self.spnout = step or -1
+                self.spnout = step
                 break
 
             stepped = tape.step(shift, color, same)
@@ -208,13 +208,13 @@ class QuickMachine(BasicMachine):
                 if state in self.blanks:
                     break
 
-                self.blanks[state] = step or -1
+                self.blanks[state] = step
 
                 if state == 0:
                     break
 
         else:
-            self.xlimit = step or -1
+            self.xlimit = step
 
         self.finalize(step, cycle, state)
 
