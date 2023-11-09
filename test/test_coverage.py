@@ -7,7 +7,7 @@ from tm.machine import (
     Machine,
 )
 
-from tm.lin_rec import LinRecMachine
+from tm.lin_rec import StrictLinRecMachine
 
 from tm.reason import (
     Program,
@@ -50,7 +50,7 @@ class TestDisplay(TestCase):
 
         print(Machine("1RB ...  ... ...").run(watch_tape = True))
 
-        print(LinRecMachine("1RB 0LB  1LA 0RB").run(check_rec = 0))
+        print(StrictLinRecMachine("1RB 0LB  1LA 0RB").run(check_rec = 0))
 
 
 class TestFloss(TestCase):
@@ -107,17 +107,17 @@ class TestFloss(TestCase):
             ).run().blanks)
 
         self.assertIsNotNone(
-            LinRecMachine(
+            StrictLinRecMachine(
                 "1RB 1LA  0RC ...  1LC 0LA"
             ).run(check_rec = 1))
 
         self.assertIsNotNone(
-            LinRecMachine(
+            StrictLinRecMachine(
                 "1RB 1RB  1RC 0LC  0LB 1RC"
             ).run(check_rec = 1))
 
         self.assertIsNotNone(
-            LinRecMachine(
+            StrictLinRecMachine(
                 "1RB 0LB  1LA 0RA"
             ).run(
                 check_rec = 1,
@@ -125,7 +125,7 @@ class TestFloss(TestCase):
             ))
 
         self.assertIsNotNone(
-            LinRecMachine(
+            StrictLinRecMachine(
                 "1RB 1LA  0LB 1LB"
             ).run(check_rec = 1))
 

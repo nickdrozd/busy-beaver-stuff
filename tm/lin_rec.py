@@ -34,6 +34,10 @@ class HeadTape(Tape):
 
         super().__init__(lspan, scan, rspan)
 
+    @classmethod
+    def init_stepped(cls) -> Self:  # no-cover
+        return cls([Block(1, 1)], 0, [], head = 1)
+
     def __hash__(self) -> int:
         return hash((
             self.scan,
@@ -215,7 +219,7 @@ class History:
         )
 
 
-class LinRecMachine(BasicMachine):
+class StrictLinRecMachine(BasicMachine):
     history: History
 
     def run(
@@ -286,3 +290,98 @@ class LinRecMachine(BasicMachine):
         )
 
         return result
+
+
+class LooseLinRecMachine(BasicMachine):
+    # pylint: disable = while-used, too-many-locals, line-too-long
+    def run(self, sim_lim: int) -> Self:  # no-cover
+        self.blanks = {}
+
+        comp = self.comp
+
+        state = 1
+
+        step = 1
+
+        self.tape = tape = HeadTape.init_stepped()
+
+        cycle = 1
+
+        while cycle < sim_lim:
+            steps_reset = 2 * step
+
+            leftmost = rightmost = init_pos = tape.head
+
+            init_state = state
+
+            init_tape = tape.to_ptr()
+
+            while step < steps_reset and cycle < sim_lim:
+                if (instr := comp[state, tape.scan]) is None:
+                    self.undfnd = step, (state, tape.scan)
+                    break
+
+                color, shift, next_state = instr
+
+                if (same := state == next_state) and tape.at_edge(shift):
+                    self.spnout = step
+                    break
+
+                stepped = tape.step(shift, color, same)
+
+                step += stepped
+
+                cycle += 1
+
+                if (state := next_state) == -1:
+                    self.halted = step
+                    break
+
+                if not color and tape.blank:
+                    if state in self.blanks:
+                        self.infrul = True
+                        break
+
+                    self.blanks[state] = step
+
+                    if state == 0:
+                        self.infrul = True
+                        break
+
+                leftmost = min(leftmost, tape.head)
+                rightmost = max(rightmost, tape.head)
+
+                if state != init_state:
+                    continue
+
+                ptr = tape.to_ptr()
+
+                if 0 < (diff := tape.head - init_pos):
+                    slice1 = init_tape.get_ltr(leftmost)
+                    slice2 = ptr.get_ltr(leftmost + diff)
+
+                elif diff < 0:
+                    slice1 = init_tape.get_rtl(rightmost + 1)
+                    slice2 = ptr.get_rtl(rightmost + diff + 1)
+
+                else:
+                    slice1 = init_tape.get_cnt(leftmost, rightmost + 1)
+                    slice2 = ptr.get_cnt(leftmost, rightmost + 1)
+
+                if slice1 == slice2:
+                    self.infrul = True
+                    break
+
+            else:
+                continue
+
+            self.xlimit = None
+
+            break
+
+        else:
+            self.xlimit = stepped
+
+        self.cycles = cycle
+
+        return self

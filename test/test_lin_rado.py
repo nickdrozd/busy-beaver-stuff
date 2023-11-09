@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from tm.show import show_state
-from tm.lin_rec import LinRecMachine
+from tm.lin_rec import StrictLinRecMachine
 from generate.naive import yield_programs
 
 LEFT, RIGHT = 'L', 'R'
@@ -44,7 +44,7 @@ class TestLinRado(TestCase):
                 bool(halt),
                 rejects)
             if
-            LinRecMachine(prog).run(
+            StrictLinRecMachine(prog).run(
                 sim_lim = xlimit,
                 check_rec = 0,
             ).xlimit is not None

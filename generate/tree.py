@@ -8,7 +8,7 @@ from multiprocessing import cpu_count, Process
 
 from tm.program import Program
 from tm.machine import Machine
-from tm.lin_rec import LinRecMachine
+from tm.lin_rec import StrictLinRecMachine
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -102,7 +102,7 @@ def prep_branches(
     branches = []
 
     def run(prog: Prog) -> None:
-        if LinRecMachine(prog).run(5).linrec:
+        if StrictLinRecMachine(prog).run(5).linrec:
             return
 
         branches.append(prog)

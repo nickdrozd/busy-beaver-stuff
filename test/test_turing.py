@@ -25,7 +25,7 @@ from tm.machine import (
     QuickMachine,
     Machine,
 )
-from tm.lin_rec import LinRecMachine
+from tm.lin_rec import StrictLinRecMachine, LooseLinRecMachine
 
 if TYPE_CHECKING:
     from typing import Any
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     BasicMachine = (
         Machine
         | QuickMachine
-        | LinRecMachine
+        | StrictLinRecMachine
         | LinRecSampler
     )
 
@@ -240,7 +240,7 @@ class TuringTest(TestCase):
     ):
         if check_rec is not None:
             assert isinstance(prog, str)
-            self.machine = LinRecMachine(prog)
+            self.machine = StrictLinRecMachine(prog)
         elif samples is not None:
             assert isinstance(prog, str)
             self.machine = LinRecSampler(prog)
@@ -267,7 +267,7 @@ class TuringTest(TestCase):
             print(self.machine.program)
 
         if check_rec is not None:
-            assert isinstance(self.machine, LinRecMachine)
+            assert isinstance(self.machine, StrictLinRecMachine)
             self.machine.run(check_rec = check_rec, **opts)
         elif samples is not None:
             assert isinstance(self.machine, LinRecSampler)
@@ -409,6 +409,12 @@ class TuringTest(TestCase):
                 self.machine.linrec[1])
 
             self.assert_quasihalt(qsihlt)
+
+            if steps is None or steps < 100_000:
+                self.assertTrue(
+                    LooseLinRecMachine(prog).run(
+                        100_000
+                    ).infrul)
 
     def _test_prover(  # type: ignore[misc]
             self,
