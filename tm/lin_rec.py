@@ -189,7 +189,10 @@ class History:
             slice1 = tape1.get(start = leftmost, stop = None)
             slice2 = tape2.get(start = diff + leftmost, stop = None)
 
-            slice2 = slice2 + [0] * (len(slice1) - len(slice2))
+            recur = slice1[ : len(slice2)] == slice2 and all(
+                cell == 0 for cell in
+                slice1[len(slice2) : ]
+            )
 
         elif diff < 0:
             rightmost = max(positions[steps:]) + 1
@@ -200,7 +203,10 @@ class History:
             slice1 = tape1.get(start = None, stop = rightmost       )
             slice2 = tape2.get(start = None, stop = rightmost + diff)
 
-            slice2 = [0] * (len(slice1) - len(slice2)) + slice2
+            recur = slice1[-len(slice2) : ] == slice2 and all(
+                cell == 0 for cell in
+                slice1[ : len(slice1) - len(slice2)]
+            )
 
         else:
             leftmost  = min(positions[steps:])
@@ -209,9 +215,11 @@ class History:
             slice1 = tape1.get(leftmost, rightmost)
             slice2 = tape2.get(leftmost, rightmost)
 
+            recur = slice1 == slice2
+
         return (
             (steps, _period := recurrence - steps)
-            if slice1 == slice2 else
+            if recur else
             None
         )
 
