@@ -25,10 +25,6 @@ idris :
 
 RUST_STUFF = tm/rust_stuff.so
 
-$(RUST_STUFF) :
-	cargo build --release
-	cp target/release/librust_stuff.so $(RUST_STUFF)
-
 rust :
 	cargo build --release
 	cp target/release/librust_stuff.so $(RUST_STUFF)
