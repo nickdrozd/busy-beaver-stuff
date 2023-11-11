@@ -53,6 +53,17 @@ class HeadTape(Tape):
             self.unroll(),
         )
 
+    def unroll(self) -> list[Color]:
+        return [
+            block.color
+            for block in reversed(self.lspan)
+            for _ in range(int(block.count))
+        ] + [self.scan] + [
+            block.color
+            for block in self.rspan
+            for _ in range(int(block.count))
+        ]
+
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
         stepped = int(super().step(shift, color, skip))
 

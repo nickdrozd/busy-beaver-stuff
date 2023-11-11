@@ -119,17 +119,6 @@ class Tape(BlockTape):
     def to_enum(self) -> EnumTape:
         return EnumTape(self.lspan, self.scan, self.rspan)
 
-    def unroll(self) -> list[Color]:
-        return [
-            block.color
-            for block in reversed(self.lspan)
-            for _ in range(int(block.count))
-        ] + [self.scan] + [
-            block.color
-            for block in self.rspan
-            for _ in range(int(block.count))
-        ]
-
     def step(self, shift: Shift, color: Color, skip: bool) -> Count:
         pull, push = (
             (self.rspan, self.lspan)
