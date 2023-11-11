@@ -194,9 +194,6 @@ class History:
         if 0 < (diff := positions[recurrence] - positions[steps]):
             leftmost = min(positions[steps:])
 
-            if tape2.r_end > tape1.r_end:
-                _ = tape1.get(start = None, stop = tape2.r_end)
-
             slice1 = tape1.get(start = leftmost, stop = None)
             slice2 = tape2.get(start = diff + leftmost, stop = None)
 
