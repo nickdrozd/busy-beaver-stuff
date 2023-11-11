@@ -280,7 +280,7 @@ class ApplyRule:
             match diff:
                 case (int(mul), int(add)):
                     result = apply_mult(count, times, mul, add)
-                case Plus():  # no-branch
+                case Plus():
                     if pos != min_pos:
                         result = count + diff * times
                     else:
