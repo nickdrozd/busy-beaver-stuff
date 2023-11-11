@@ -4,7 +4,7 @@ from unittest import TestCase
 from typing import TYPE_CHECKING
 
 from tm.tape import Tape, TagTape, EnumTape, Block
-from tm.lin_rec import PtrTape, HeadTape
+from tm.lin_rec import HeadTape
 
 if TYPE_CHECKING:
     from tm.tape import Color, Signature
@@ -27,7 +27,6 @@ def stringify_sig(sig: Signature) -> str:
 
 class TestTape(TestCase):
     tape: HeadTape
-    ptr: PtrTape
 
     def set_tape(
             self,
@@ -146,110 +145,6 @@ class TestTape(TestCase):
 
         self.assert_tape(
             f"3^1 2^1 1^{exp} [0]")
-
-    def assert_head(self, expected: int, tape: HeadTape | None = None):
-        self.assertEqual(
-            (tape or self.tape).head,
-            expected)
-
-    def assert_ptr_tape(self, expected: list[int]):
-        self.assertEqual(
-            self.ptr.tape,
-            expected)
-
-    def assert_ptr_positions(self, expected: tuple[int, int, int]):
-        self.assertEqual(
-            (self.ptr.l_end, self.ptr.init, self.ptr.r_end),
-            expected)
-
-        self.assertEqual(
-            abs(self.ptr.l_end) + self.ptr.r_end,
-            len(self.ptr.tape))
-
-    def test_slice(self):
-        # "1RB 2LB 1LA  2LB 2RA 0RA"
-        self.set_tape([], 0, [[2, 1], [1, 7]], head = -3)
-
-        self.assert_tape(
-            "[0] 2^1 1^7")
-
-        self.assert_head(
-            -3)
-
-        self.ptr = ptr = self.tape.to_ptr()
-
-        init_tape = [0, 2, 1, 1, 1, 1, 1, 1, 1]
-
-        ########################################
-
-        self.assert_ptr_tape(
-            init_tape)
-
-        ########################################
-
-        self.assert_ptr_tape(
-            init_tape)
-
-        ########################################
-
-        self.assertEqual(
-            ptr.get(-3, 0),
-            [0, 2, 1])
-
-        self.assertEqual(
-            ptr.get(0, 3),
-            [1, 1, 1])
-
-        self.assert_ptr_tape(
-            init_tape)
-
-        ########################################
-
-        self.assertEqual(
-            ptr.get(-3, 3),
-            [0, 2, 1, 1, 1, 1])
-
-        self.assert_ptr_tape(
-            init_tape)
-
-        ########################################
-
-        self.assertEqual(
-            ptr.get(-3, 4),
-            [0, 2, 1, 1, 1, 1, 1])
-
-        self.assert_ptr_tape(
-            init_tape + [0])
-
-        ########################################
-
-        self.assertEqual(
-            ptr.get(-3, 6),
-            [0, 2, 1, 1, 1, 1, 1, 1, 1])
-
-        self.assert_ptr_tape(
-            init_tape + [0, 0, 0])
-
-        ########################################
-
-        self.assertEqual(
-            ptr.get(-3, 7),
-            [0, 2, 1, 1, 1, 1, 1, 1, 1, 0])
-
-        self.assert_ptr_tape(
-            init_tape + [0, 0, 0, 0])
-
-        ########################################
-
-        self.assertEqual(
-            ptr.get(-5, 10),
-            [0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0])
-
-        self.assert_ptr_tape(
-            [0, 0] + init_tape + [0, 0, 0, 0, 0, 0, 0])
-
-        self.assert_ptr_positions(
-            (-5, 5, 13))
 
 
 class TestTags(TestCase):
