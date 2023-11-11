@@ -13,3 +13,4 @@ classes.png
 packages.png
 target/
 Cargo.lock
+.cargo
