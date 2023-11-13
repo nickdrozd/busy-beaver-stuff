@@ -88,21 +88,15 @@ class PtrTape:
         except IndexError:
             return 0
 
-    @property
-    def l_end(self) -> int:
-        return 0 - self.init
-
     def get_ltr(self, start: int) -> list[Color]:
         self.extend_to_bound_left(start)
 
         return self.tape[ start + self.init : ]
 
     def get_rtl(self, stop: int) -> list[Color]:
-        start = self.l_end
-
         self.extend_to_bound_right(stop)
 
-        return self.tape[ start + self.init : stop + self.init ]
+        return self.tape[ : stop + self.init ]
 
     def extend_to_bound_right(self, stop: int) -> None:
         if (rdiff := stop + self.init - len(self.tape) + self.init) > 0:
@@ -207,8 +201,8 @@ class History:
         elif diff < 0:
             rightmost = max(positions[steps:]) + 1
 
-            if tape2.l_end < tape1.l_end:
-                tape1.extend_to_bound_left(tape2.l_end)
+            if tape2.init > tape1.init:
+                tape1.extend_to_bound_left(-tape2.init)
 
             slice1 = tape1.get_rtl(rightmost)
             slice2 = tape2.get_rtl(rightmost + diff)
