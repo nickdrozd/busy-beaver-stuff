@@ -80,13 +80,11 @@ class PtrTape:
     def __getitem__(self, pos: int) -> Color:
         pos += self.init
 
-        if pos < 0:
-            return 0
-
-        try:
-            return self.tape[pos]
-        except IndexError:
-            return 0
+        return (
+            self.tape[pos]
+            if 0 <= pos < len(self.tape) else
+            0
+        )
 
     def get_ltr(self, start: int) -> list[Color]:
         start += self.init
