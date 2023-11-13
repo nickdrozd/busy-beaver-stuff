@@ -89,11 +89,13 @@ class PtrTape:
             return 0
 
     def get_ltr(self, start: int) -> list[Color]:
-        if (ldiff := 0 - (start + self.init)) > 0:
-            self.tape = [0] * ldiff + self.tape
-            self.init += ldiff
+        start += self.init
 
-        return self.tape[ start + self.init : ]
+        return (
+            self.tape[ start : ]
+            if (ldiff := -start) <= 0 else
+            [0] * ldiff + self.tape
+        )
 
     def get_rtl(self, stop: int) -> list[Color]:
         stop += self.init
