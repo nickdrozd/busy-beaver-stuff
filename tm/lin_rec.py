@@ -201,9 +201,6 @@ class History:
         elif diff < 0:
             rightmost = max(positions[steps:]) + 1
 
-            if tape2.init > tape1.init:
-                tape1.extend_to_bound_left(-tape2.init)
-
             slice1 = tape1.get_rtl(rightmost)
             slice2 = tape2.get_rtl(rightmost + diff)
 
