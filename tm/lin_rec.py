@@ -96,10 +96,11 @@ class PtrTape:
     def get_rtl(self, stop: int) -> list[Color]:
         stop += self.init
 
-        if (rdiff := stop - len(self.tape)) > 0:
-            self.tape.extend([0] * rdiff)
-
-        return self.tape[ : stop ]
+        return (
+            self.tape[ : stop ]
+            if (rdiff := stop - len(self.tape)) <= 0 else
+            self.tape[ : stop - rdiff ] + [0] * rdiff
+        )
 
     def extend_to_bound_left(self, start: int) -> None:
         if (ldiff := 0 - (start + self.init)) > 0:
