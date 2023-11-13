@@ -77,6 +77,17 @@ class PtrTape:
     init: int
     tape: list[Color]
 
+    def __getitem__(self, pos: int) -> Color:
+        pos += self.init
+
+        if pos < 0:
+            return 0
+
+        try:
+            return self.tape[pos]
+        except IndexError:
+            return 0
+
     @property
     def r_end(self) -> int:
         return len(self.tape) - self.init
