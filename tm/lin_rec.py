@@ -96,20 +96,17 @@ class PtrTape:
     def l_end(self) -> int:
         return 0 - self.init
 
-    def get(
-            self,
-            start: int | None = None,
-            stop: int | None = None,
-    ) -> list[Color]:
-        if stop is None:
-            stop = self.r_end + 1
-        else:
-            self.extend_to_bound_right(stop)
+    def get_ltr(self, start: int) -> list[Color]:
+        stop = self.r_end + 1
 
-        if start is None:
-            start = self.l_end
-        else:
-            self.extend_to_bound_left(start)
+        self.extend_to_bound_left(start)
+
+        return self.tape[ start + self.init : stop + self.init ]
+
+    def get_rtl(self, stop: int) -> list[Color]:
+        start = self.l_end
+
+        self.extend_to_bound_right(stop)
 
         return self.tape[ start + self.init : stop + self.init ]
 
@@ -205,8 +202,8 @@ class History:
         if 0 < (diff := positions[recurrence] - positions[steps]):
             leftmost = min(positions[steps:])
 
-            slice1 = tape1.get(start = leftmost, stop = None)
-            slice2 = tape2.get(start = diff + leftmost, stop = None)
+            slice1 = tape1.get_ltr(leftmost)
+            slice2 = tape2.get_ltr(leftmost + diff)
 
             recur = slice1[ : len(slice2)] == slice2 and all(
                 cell == 0 for cell in
@@ -219,8 +216,8 @@ class History:
             if tape2.l_end < tape1.l_end:
                 tape1.extend_to_bound_left(tape2.l_end)
 
-            slice1 = tape1.get(start = None, stop = rightmost       )
-            slice2 = tape2.get(start = None, stop = rightmost + diff)
+            slice1 = tape1.get_rtl(rightmost)
+            slice2 = tape2.get_rtl(rightmost + diff)
 
             recur = slice1[-len(slice2) : ] == slice2 and all(
                 cell == 0 for cell in
