@@ -231,10 +231,11 @@ class History:
             leftmost  = min(positions[steps:])
             rightmost = max(positions[steps:]) + 1
 
-            slice1 = tape1.get(leftmost, rightmost)
-            slice2 = tape2.get(leftmost, rightmost)
+            for pos in range(leftmost, rightmost):
+                if tape1[pos] != tape2[pos]:
+                    return None
 
-            recur = slice1 == slice2
+            recur = True
 
         return (
             (steps, _period := recurrence - steps)
