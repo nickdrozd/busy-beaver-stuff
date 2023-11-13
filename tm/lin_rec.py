@@ -89,7 +89,9 @@ class PtrTape:
             return 0
 
     def get_ltr(self, start: int) -> list[Color]:
-        self.extend_to_bound_left(start)
+        if (ldiff := 0 - (start + self.init)) > 0:
+            self.tape = [0] * ldiff + self.tape
+            self.init += ldiff
 
         return self.tape[ start + self.init : ]
 
@@ -101,11 +103,6 @@ class PtrTape:
             if (rdiff := stop - len(self.tape)) <= 0 else
             self.tape[ : stop - rdiff ] + [0] * rdiff
         )
-
-    def extend_to_bound_left(self, start: int) -> None:
-        if (ldiff := 0 - (start + self.init)) > 0:
-            self.tape = [0] * ldiff + self.tape
-            self.init += ldiff
 
 
 if TYPE_CHECKING:
