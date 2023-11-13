@@ -206,7 +206,7 @@ class History:
             rightmost = max(positions[steps:]) + 1
 
             if tape2.l_end < tape1.l_end:
-                _ = tape1.get(start = tape2.l_end, stop = None)
+                tape1.extend_to_bound_left(tape2.l_end)
 
             slice1 = tape1.get(start = None, stop = rightmost       )
             slice2 = tape2.get(start = None, stop = rightmost + diff)
