@@ -91,7 +91,7 @@ class BasicMachine:
         info += [
             '{}: {}'.format(
                 cat.upper(),
-                data if isinstance(data, int | str) else "...")
+                data if isinstance(data, int | str | tuple) else "...")
             for cat, data in self.term_results
         ]
 
