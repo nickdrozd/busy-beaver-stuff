@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
     RecRes = tuple[int, int]
 
+    TapeSlice = list[Color]
+
 
 @dataclass
 class HeadTape(Tape):
@@ -77,7 +79,7 @@ class PtrTape:
     init: int
     tape: list[Color]
 
-    def get_ltr(self, start: int) -> list[Color]:
+    def get_ltr(self, start: int) -> TapeSlice:
         start += self.init
 
         return (
@@ -86,7 +88,7 @@ class PtrTape:
             [0] * ldiff + self.tape
         )
 
-    def get_rtl(self, stop: int) -> list[Color]:
+    def get_rtl(self, stop: int) -> TapeSlice:
         stop += self.init
 
         return (
@@ -95,7 +97,7 @@ class PtrTape:
             self.tape[ : stop - rdiff ] + [0] * rdiff
         )
 
-    def get_cnt(self, start: int, stop: int) -> list[Color]:
+    def get_cnt(self, start: int, stop: int) -> TapeSlice:
         start += self.init
         stop += self.init
 
@@ -183,6 +185,9 @@ class History:
         tape2 = self.tapes[recurrence]
 
         positions = self.positions
+
+        slice1: TapeSlice
+        slice2: TapeSlice
 
         if 0 < (diff := positions[recurrence] - positions[steps]):
             leftmost = min(positions[steps:])
