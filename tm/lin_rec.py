@@ -77,15 +77,6 @@ class PtrTape:
     init: int
     tape: list[Color]
 
-    def __getitem__(self, pos: int) -> Color:
-        pos += self.init
-
-        return (
-            self.tape[pos]
-            if 0 <= pos < len(self.tape) else
-            0
-        )
-
     def get_ltr(self, start: int) -> list[Color]:
         start += self.init
 
@@ -105,8 +96,11 @@ class PtrTape:
         )
 
     def get_cnt(self, start: int, stop: int) -> list[Color]:
+        start += self.init
+        stop += self.init
+
         return [
-            self[pos]
+            self.tape[pos] if 0 <= pos < len(self.tape) else 0
             for pos in range(start, stop)
         ]
 

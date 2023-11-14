@@ -4,7 +4,7 @@ from unittest import TestCase
 from typing import TYPE_CHECKING
 
 from tm.tape import Tape, TagTape, EnumTape, Block
-from tm.lin_rec import HeadTape, PtrTape
+from tm.lin_rec import HeadTape
 
 if TYPE_CHECKING:
     from tm.tape import Color, Signature
@@ -145,21 +145,6 @@ class TestTape(TestCase):
 
         self.assert_tape(
             f"3^1 2^1 1^{exp} [0]")
-
-    def test_getitem(self):
-        ptr1 = PtrTape(init = 0, tape = [1, 1])
-
-        for pos in range(-10, 10):
-            self.assertEqual(
-                ptr1[pos],
-                1 if pos in {0, 1} else 0)
-
-        ptr2 = PtrTape(init = 2, tape = [1, 1, 1, 1])
-
-        for pos in range(-10, 10):
-            self.assertEqual(
-                ptr2[pos],
-                1 if pos in {-2, -1, 0, 1} else 0)
 
 
 class TestTags(TestCase):
