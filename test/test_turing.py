@@ -266,12 +266,12 @@ class TuringTest(TestCase):
         if print_prog:
             print(self.machine.program)
 
-        # pylint: disable = unexpected-keyword-arg
         if check_rec is not None:
             assert isinstance(self.machine, LinRecMachine)
             self.machine.run(check_rec = check_rec, **opts)
         elif samples is not None:
             assert isinstance(self.machine, LinRecSampler)
+            # pylint: disable = unexpected-keyword-arg
             self.machine.run(samples = samples, **opts)
         else:
             self.machine.run(**opts)

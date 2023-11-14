@@ -148,7 +148,6 @@ def lr_convert(rado_string: int) -> str:
         return f'{oct_string:b}'
 
     def bin_to_prog(bin_string: str) -> str:
-        # pylint: disable = invalid-name
         a0, a1, b0, b1, c0, c1 = map(
             convert_bin_instr,
             (

@@ -43,7 +43,6 @@ class LinRecSampler(BasicMachine):
 
             step += tape.step(shift, color, False)
 
-            # pylint: disable = duplicate-code
             if (state := next_state) == -1:
                 self.halted = step
                 break

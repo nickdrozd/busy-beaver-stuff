@@ -1,4 +1,5 @@
-# pylint: disable = line-too-long, too-many-lines, expression-not-assigned
+# pylint: disable = line-too-long, too-many-lines
+# pylint: disable = expression-not-assigned, pointless-statement
 
 from __future__ import annotations
 
@@ -1287,7 +1288,6 @@ class TestRecursionError(TestCase):
             str(num1),
             "(253398 + ((65 * (2 ** ((76 + (13 * (2 ** 803))) // 15))) + ((2 ** 801) * (351 + (65 * (2 ** ((-11954 + (13 * (2 ** 803))) // 15)))))))")
 
-        # pylint: disable = pointless-statement
         num1 // 15
 
         num2 = 84466 + (((65 * (2 ** ((76 + (13 * Exp(2, 803))) // 15))) + (Exp(2, 801) * (351 + (65 * (2 ** ((-11954 + (13 * Exp(2, 803))) // 15)))))) // 3)
@@ -1296,7 +1296,6 @@ class TestRecursionError(TestCase):
             str(num2),
             "(84466 + ((2 ** 801) * (117 + (65 * (2 ** ((-11954 + (13 * (2 ** 803))) // 15))))))")
 
-        # pylint: disable = pointless-statement
         num2 // 5
 
         num3 = (
