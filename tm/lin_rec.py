@@ -196,15 +196,11 @@ class History:
             slice1 = tape1.get_ltr(leftmost)
             slice2 = tape2.get_ltr(leftmost + diff)
 
-            recur = slice1 == slice2
-
         elif diff < 0:
             rightmost = max(positions[steps:]) + 1
 
             slice1 = tape1.get_rtl(rightmost)
             slice2 = tape2.get_rtl(rightmost + diff)
-
-            recur = slice1 == slice2
 
         else:
             leftmost  = min(positions[steps:])
@@ -213,11 +209,9 @@ class History:
             slice1 = tape1.get_cnt(leftmost, rightmost)
             slice2 = tape2.get_cnt(leftmost, rightmost)
 
-            recur = slice1 == slice2
-
         return (
             (steps, _period := recurrence - steps)
-            if recur else
+            if slice1 == slice2 else
             None
         )
 
