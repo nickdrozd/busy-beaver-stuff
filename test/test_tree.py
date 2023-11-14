@@ -5,7 +5,7 @@ from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
 from tm.machine import Machine
-from tm.lin_rec import StrictLinRecMachine
+from tm.lin_rec import LooseLinRecMachine
 from tm.reason import BackwardReasoner
 from generate.tree import run_tree_gen
 
@@ -42,9 +42,8 @@ def run_variations(
         lin_rec: int = 50,
         block_steps: int = 1_000,
 ) -> Iterator[BasicMachine]:
-    yield StrictLinRecMachine(prog).run(
+    yield LooseLinRecMachine(prog).run(
         sim_lim = lin_rec,
-        check_rec = 0,
     )
 
     yield Machine(
