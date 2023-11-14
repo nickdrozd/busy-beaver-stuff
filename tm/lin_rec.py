@@ -104,6 +104,12 @@ class PtrTape:
             self.tape[ : stop - rdiff ] + [0] * rdiff
         )
 
+    def get_cnt(self, start: int, stop: int) -> list[Color]:
+        return [
+            self[pos]
+            for pos in range(start, stop)
+        ]
+
 
 if TYPE_CHECKING:
     Tapes = dict[int, PtrTape]
@@ -204,11 +210,10 @@ class History:
             leftmost  = min(positions[steps:])
             rightmost = max(positions[steps:]) + 1
 
-            for pos in range(leftmost, rightmost):
-                if tape1[pos] != tape2[pos]:
-                    return None
+            slice1 = tape1.get_cnt(leftmost, rightmost)
+            slice2 = tape2.get_cnt(leftmost, rightmost)
 
-            recur = True
+            recur = slice1 == slice2
 
         return (
             (steps, _period := recurrence - steps)
