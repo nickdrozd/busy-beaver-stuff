@@ -93,7 +93,7 @@ class PtrTape:
         )
 
     def get_rtl(self, stop: int) -> TapeSlice:
-        stop += self.init
+        stop += self.init + 1
 
         return (
             self.tape[ : stop ]
@@ -103,7 +103,7 @@ class PtrTape:
 
     def get_cnt(self, start: int, stop: int) -> TapeSlice:
         start += self.init
-        stop += self.init
+        stop += self.init + 1
 
         return [
             self.tape[pos] if 0 <= pos < len(self.tape) else 0
@@ -200,14 +200,14 @@ class History:
             slice2 = tape2.get_ltr(leftmost + diff)
 
         elif diff < 0:
-            rightmost = max(positions[steps:]) + 1
+            rightmost = max(positions[steps:])
 
             slice1 = tape1.get_rtl(rightmost)
             slice2 = tape2.get_rtl(rightmost + diff)
 
         else:
             leftmost  = min(positions[steps:])
-            rightmost = max(positions[steps:]) + 1
+            rightmost = max(positions[steps:])
 
             slice1 = tape1.get_cnt(leftmost, rightmost)
             slice2 = tape2.get_cnt(leftmost, rightmost)
@@ -361,12 +361,12 @@ class LooseLinRecMachine(BasicMachine):
                     slice2 = ptr.get_ltr(leftmost + diff)
 
                 elif diff < 0:
-                    slice1 = init_tape.get_rtl(rightmost + 1)
-                    slice2 = ptr.get_rtl(rightmost + diff + 1)
+                    slice1 = init_tape.get_rtl(rightmost)
+                    slice2 = ptr.get_rtl(rightmost + diff)
 
                 else:
-                    slice1 = init_tape.get_cnt(leftmost, rightmost + 1)
-                    slice2 = ptr.get_cnt(leftmost, rightmost + 1)
+                    slice1 = init_tape.get_cnt(leftmost, rightmost)
+                    slice2 = ptr.get_cnt(leftmost, rightmost)
 
                 if slice1 == slice2:
                     self.infrul = True
