@@ -203,28 +203,3 @@ def cant_blank(prog: str) -> bool:
 
 def cant_spin_out(prog: str) -> bool:
     return BackwardReasoner(prog).cant_spin_out
-
-########################################
-
-def instr_seq(prog: str) -> InstrSeq:
-    program = Program(prog)
-
-    seqs: InstrSeq = []
-
-    partial = Program.init(len(program.states), len(program.colors))
-
-    machine = BasicMachine(partial)
-
-    for _ in range(len(program.states) * len(program.colors) - 1):
-        if (result := machine.run().undfnd) is None:
-            return seqs
-
-        step, slot = result
-
-        seqs.append((str(partial), step, slot))
-
-        partial[slot] = program[slot]
-
-        machine.undfnd = None
-
-    return seqs

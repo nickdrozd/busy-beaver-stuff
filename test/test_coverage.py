@@ -11,11 +11,12 @@ from tm.lin_rec import StrictLinRecMachine
 
 from tm.reason import (
     Program,
-    instr_seq,
     cant_halt,
     cant_blank,
     cant_spin_out,
 )
+
+from generate.instr_seq import instr_seq
 
 
 class TestDisplay(TestCase):

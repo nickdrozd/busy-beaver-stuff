@@ -13,7 +13,6 @@ from test.test_num import assert_num_counts, clear_caches
 
 from tm.reason import (
     Program,
-    instr_seq,
     cant_halt,
     cant_blank,
     cant_spin_out,
@@ -26,6 +25,8 @@ from tm.machine import (
     Machine,
 )
 from tm.lin_rec import StrictLinRecMachine, LooseLinRecMachine
+
+from generate.instr_seq import instr_seq
 
 if TYPE_CHECKING:
     from typing import Any
