@@ -228,29 +228,6 @@ class Machine(BasicMachine):
 
         return ' | '.join(info)
 
-    def finalize(
-            self,
-            step: int | None,
-            cycle: int,
-            state: State,
-    ) -> None:
-        if step is None:
-            step = -1
-
-        if self.tape.blank:
-            if state == -1:
-                self.blanks[-1] = step
-
-            if 0 in self.blanks:
-                self.infrul = True
-            elif self.blanks:
-                if step - self.blanks[state] > 0:
-                    self.infrul = True
-                    self.xlimit = None
-
-        self.steps = step
-        self.cycles = cycle
-
     def run(
         self,
         sim_lim: int = 100_000_000,
@@ -324,17 +301,20 @@ class Machine(BasicMachine):
 
             if not color and tape.blank:
                 if state in self.blanks:
+                    self.infrul = True
                     break
 
                 self.blanks[state] = step or -1
 
                 if state == 0:
+                    self.infrul = True
                     break
 
         else:
             self.xlimit = step or -1
 
-        self.finalize(step, cycle, state)
+        self.steps = step or -1
+        self.cycles = cycle
 
         if watch_tape and (bool(self.halted) or bool(self.blanks)):
             self.show_tape(step, 1 + cycle, state)
