@@ -122,7 +122,6 @@ if TYPE_CHECKING:
 class History:
     tapes: Tapes
 
-    states: list[State] = field(default_factory = list)
     positions: list[int] = field(default_factory = list)
 
     slots: dict[Slot, list[int]] = field(
@@ -131,7 +130,6 @@ class History:
     def copy(self) -> History:
         return History(
             tapes = copy(self.tapes),
-            states = copy(self.states),
             positions = copy(self.positions),
             slots = defaultdict(
                 list,
@@ -145,10 +143,6 @@ class History:
     def add_slot_at_step(self, step: int, slot: Slot) -> None:
         self.slots[slot].append(step)
 
-    def add_state_at_step(self, step: int, state: State) -> None:
-        self.states += [state] * (step - len(self.states))
-        self.states.append(state)
-
     def add_tape_at_step(self, step: int, tape: HeadTape) -> None:
         pos = tape.head
 
@@ -156,24 +150,6 @@ class History:
         self.positions.append(pos)
 
         self.tapes[step] = tape.to_ptr()
-
-    def calculate_beeps(
-            self,
-            through: int | None = None,
-    ) -> dict[State, int]:
-        states = (
-            self.states
-            if through is None else
-            self.states[:through]
-        )
-
-        steps = len(states)
-        rev   = list(reversed(states))
-
-        return {
-            state: steps - 1 - rev.index(state)
-            for state in set(states)
-        }
 
     def check_rec(self, step: int, slot: Slot) -> RecRes | None:
         return next((
@@ -223,8 +199,35 @@ class History:
         )
 
 
+@dataclass
+class BeepHistory(History):
+    states: list[State] = field(default_factory = list)
+
+    def add_state_at_step(self, step: int, state: State) -> None:
+        self.states += [state] * (step - len(self.states))
+        self.states.append(state)
+
+    def calculate_beeps(
+            self,
+            through: int | None = None,
+    ) -> dict[State, int]:
+        states = (
+            self.states
+            if through is None else
+            self.states[:through]
+        )
+
+        steps = len(states)
+        rev   = list(reversed(states))
+
+        return {
+            state: steps - 1 - rev.index(state)
+            for state in set(states)
+        }
+
+
 class StrictLinRecMachine(BasicMachine):
-    history: History
+    history: BeepHistory
 
     linrec: LinRec | None = None
     qsihlt: bool | None = None
@@ -240,7 +243,7 @@ class StrictLinRecMachine(BasicMachine):
 
         self.tape = tape = HeadTape.init()
 
-        self.history = History(tapes = {})
+        self.history = BeepHistory(tapes = {})
 
         step: int = 0
         state: State = 0
