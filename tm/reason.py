@@ -3,11 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
+from tm.parse import tcompile
 from tm.program import Program
-from tm.machine import QuickMachine as BasicMachine
 from tm.lin_rec import History, HeadTape
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from collections.abc import Callable, Iterator
 
     from tm.program import State, Slot
@@ -16,8 +18,6 @@ if TYPE_CHECKING:
 
     Config = tuple[int, State, HeadTape]
 
-    GetResult = Callable[[BasicMachine], int | None]
-
 
 class BackwardReasoner(Program):
     @property
@@ -25,7 +25,7 @@ class BackwardReasoner(Program):
         def get_result(machine: BasicMachine) -> int | None:
             final: int | None
             if (und := machine.undfnd):
-                final = und[0]
+                final = und
                 machine.undfnd = None
             else:
                 final = machine.halted
@@ -203,3 +203,62 @@ def cant_blank(prog: str) -> bool:
 
 def cant_spin_out(prog: str) -> bool:
     return BackwardReasoner(prog).cant_spin_out
+
+########################################
+
+class BasicMachine:
+    blanks: dict[State, int]
+
+    halted: int | None = None
+    spnout: int | None = None
+    undfnd: int | None = None
+
+    def __init__(self, prog: str):
+        self.comp = tcompile(prog)
+
+    def run(self,
+            *,
+            sim_lim: int,
+            state: State,
+            tape: HeadTape,
+    ) -> Self:
+        comp = self.comp
+
+        self.blanks = {}
+
+        step: int = 0
+
+        for _ in range(sim_lim):
+
+            if (instr := comp[state, tape.scan]) is None:
+                self.undfnd = step
+                break
+
+            color, shift, next_state = instr
+
+            if (same := state == next_state) and tape.at_edge(shift):
+                self.spnout = step
+                break
+
+            stepped = tape.step(shift, color, same)
+
+            step += stepped
+
+            if (state := next_state) == -1:
+                self.halted = step
+                break
+
+            if not color and tape.blank:
+                if state in self.blanks:  # no-cover
+                    break
+
+                self.blanks[state] = step
+
+                if state == 0:
+                    break
+
+        return self
+
+
+if TYPE_CHECKING:
+    GetResult = Callable[[BasicMachine], int | None]

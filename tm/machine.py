@@ -116,24 +116,18 @@ class BasicMachine:
 
 
 class QuickMachine(BasicMachine):
-    def run(self,
-            sim_lim: int = 100_000_000,
-            *,
-            state: State = 0,
-            tape: Tape | None = None,
-    ) -> Self:
+    def run(self, sim_lim: int = 100_000_000) -> Self:
         comp = self.comp
 
-        if tape is None:
-            tape = Tape.init()
-
-        self.tape = tape
+        self.tape = tape = Tape.init()
 
         self.blanks = {}
 
         step: int = 0
 
-        for cycle in range(sim_lim):
+        state: State = 0
+
+        for cycle in range(sim_lim):  # no-branch
 
             if (instr := comp[state, tape.scan]) is None:
                 self.undfnd = step, (state, tape.scan)
@@ -151,7 +145,7 @@ class QuickMachine(BasicMachine):
 
             step += stepped
 
-            if (state := next_state) == -1:
+            if (state := next_state) == -1:  # no-cover
                 self.halted = step
                 break
 
@@ -162,12 +156,12 @@ class QuickMachine(BasicMachine):
 
                 self.blanks[state] = step
 
-                if state == 0:
+                if state == 0:  # no-cover
                     self.infrul = True
                     break
 
         else:
-            self.xlimit = step
+            self.xlimit = step  # no-cover
 
         self.steps = step
         self.cycles = cycle
