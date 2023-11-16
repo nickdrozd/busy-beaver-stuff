@@ -116,31 +116,6 @@ class BasicMachine:
         print(' | '.join(info))
 
 
-    def finalize(
-            self,
-            step: int | None,
-            cycle: int,
-            state: State,
-    ) -> None:
-        if step is None:
-            step = -1
-
-        if self.tape.blank:
-            if state == -1:
-                self.blanks[-1] = step
-
-            if 0 in self.blanks:
-                self.infrul = True
-            elif self.blanks:
-                if step - self.blanks[state] > 0:
-                    self.infrul = True
-                    self.xlimit = None
-
-        self.steps = step
-        self.state = state
-        self.cycles = cycle
-
-
 class QuickMachine(BasicMachine):
     def run(self,
             sim_lim: int = 100_000_000,
@@ -183,17 +158,20 @@ class QuickMachine(BasicMachine):
 
             if not color and tape.blank:
                 if state in self.blanks:
+                    self.infrul = True
                     break
 
                 self.blanks[state] = step
 
                 if state == 0:
+                    self.infrul = True
                     break
 
         else:
             self.xlimit = step
 
-        self.finalize(step, cycle, state)
+        self.steps = step
+        self.cycles = cycle
 
         return self
 
@@ -250,6 +228,30 @@ class Machine(BasicMachine):
                 f'RULAPP: {rulapp_disp}')
 
         return ' | '.join(info)
+
+    def finalize(
+            self,
+            step: int | None,
+            cycle: int,
+            state: State,
+    ) -> None:
+        if step is None:
+            step = -1
+
+        if self.tape.blank:
+            if state == -1:
+                self.blanks[-1] = step
+
+            if 0 in self.blanks:
+                self.infrul = True
+            elif self.blanks:
+                if step - self.blanks[state] > 0:
+                    self.infrul = True
+                    self.xlimit = None
+
+        self.steps = step
+        self.state = state
+        self.cycles = cycle
 
     def run(
         self,
