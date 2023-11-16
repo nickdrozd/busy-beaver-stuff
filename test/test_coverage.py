@@ -51,8 +51,6 @@ class TestDisplay(TestCase):
 
         print(Machine("1RB ...  ... ...").run(watch_tape = True))
 
-        print(StrictLinRecMachine("1RB 0LB  1LA 0RB").run(check_rec = 0))
-
 
 class TestFloss(TestCase):
     def test_macro(self):

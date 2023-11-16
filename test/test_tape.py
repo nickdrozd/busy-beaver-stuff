@@ -4,7 +4,7 @@ from unittest import TestCase
 from typing import TYPE_CHECKING
 
 from tm.tape import Tape, TagTape, EnumTape, Block
-from tm.lin_rec import HeadTape
+from tm.lin_rec import HeadTape, Block as HeadBlock
 
 if TYPE_CHECKING:
     from tm.tape import Color, Signature
@@ -26,7 +26,7 @@ def stringify_sig(sig: Signature) -> str:
 
 
 class TestTape(TestCase):
-    tape: HeadTape
+    tape: Tape | HeadTape
 
     def set_tape(
             self,
@@ -35,24 +35,60 @@ class TestTape(TestCase):
             rspan: BlockSpan,
             head: int | None = None,
     ) -> None:
-        self.tape = HeadTape(
-            [Block(color, count) for color, count in lspan],
-            scan,
-            [Block(color, count) for color, count in rspan],
-            head = head or 0)
+        block = Block if head is None else HeadBlock
+
+        lspan = [
+            block(color, count)  # type: ignore[misc]
+            for color, count in lspan
+        ]
+        rspan = [
+            block(color, count)  # type: ignore[misc]
+            for color, count in rspan
+        ]
+
+        self.tape = (
+            Tape(lspan, scan, rspan)  # type: ignore[arg-type]
+            if head is None else
+            HeadTape(lspan, scan, rspan, head)  # type: ignore[arg-type]
+        )
 
     def assert_tape(self, tape: str):
-        self.assertEqual(tape, str(self.tape))
+        self.assertEqual(
+            tape,
+            str(tape)
+            if isinstance(
+                    tape := self.tape,  # type: ignore[assignment]
+                    Tape
+            ) else
+            str(Tape(
+                [Block(block.color, block.count)
+                 for block in tape.lspan],  # type: ignore[attr-defined]
+                tape.scan,  # type: ignore[attr-defined]
+                [Block(block.color, block.count)
+                 for block in tape.rspan]  # type: ignore[attr-defined]
+            ))
+        )
 
     def assert_signature(
             self,
             expected: str,
-            tape: Tape | None = None,
+            tape: Tape | HeadTape | None = None,
     ) -> None:
+        if tape is None:
+            tape = self.tape
+
+        assert isinstance(tape, HeadTape)
+
         self.assertEqual(
             expected,
             stringify_sig(
-                (tape or self.tape).signature))
+                Tape(
+                    [Block(block.color, block.count)
+                     for block in tape.lspan],
+                    tape.scan,
+                    [Block(block.color, block.count)
+                     for block in tape.rspan]
+                ).signature))
 
     def test_marks(self):
         self.assertFalse(
@@ -62,7 +98,8 @@ class TestTape(TestCase):
         self.set_tape(
             [[1, 1], [0, 1], [1, 1]],
             2,
-            [[2, 1], [1, 2]]
+            [[2, 1], [1, 2]],
+            0,
         )
 
         self.assert_tape(
@@ -70,6 +107,8 @@ class TestTape(TestCase):
 
         self.assert_signature(
             '1|0|1[2]2|1')
+
+        assert isinstance(self.tape, HeadTape)
 
         copy_1 = self.tape.copy()
         copy_2 = self.tape.copy()
@@ -97,6 +136,8 @@ class TestTape(TestCase):
         self.assert_tape(
             "2^3 1^12 [3] 4^15 5^2 6^2")
 
+        assert isinstance(self.tape, Tape)
+
         self.tape.apply_rule({
             (0, 1): 3,
             (1, 0): -2,
@@ -119,6 +160,8 @@ class TestTape(TestCase):
             4,
             [[5, 60], [2, 1], [4, 1], [5, 7], [1, 1]])
 
+        assert isinstance(self.tape, Tape)
+
         self.assert_tape(
             "4^2 [4] 5^60 2^1 4^1 5^7 1^1")
 
@@ -132,6 +175,8 @@ class TestTape(TestCase):
 
     def test_rule_3(self):
         self.set_tape([[1, 152], [2, 655345], [3, 1]], 0, [])
+
+        assert isinstance(self.tape, Tape)
 
         self.assert_tape(
             "3^1 2^655345 1^152 [0]")

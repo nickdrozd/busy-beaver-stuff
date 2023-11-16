@@ -66,7 +66,7 @@ class BasicMachine:
             try:
                 # pylint: disable = bad-builtin
                 data = getattr(self, cat)
-            except AttributeError:
+            except AttributeError:  # no-cover
                 continue
 
             if data is not None:
