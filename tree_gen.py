@@ -6,7 +6,7 @@ from tm.reason import cant_halt, cant_spin_out
 from tm.machine import Machine
 from tm.lin_rec import StrictLinRecMachine
 
-from generate.tree import run_tree_gen
+from tm.tree import run_tree_gen
 
 
 def run_variations(

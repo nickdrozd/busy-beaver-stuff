@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from tm.machine import Machine
 from tm.lin_rec import LooseLinRecMachine
 from tm.reason import BackwardReasoner, cant_halt
-from generate.tree import run_tree_gen
+from tm.tree import run_tree_gen
 
 
 if TYPE_CHECKING:
