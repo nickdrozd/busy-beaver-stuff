@@ -129,17 +129,18 @@ class History:
         default_factory = lambda: defaultdict(list))
 
     def copy(self) -> History:
-        new_copy = History(tapes = dict(self.tapes.items()))
-
-        new_copy.states = copy(self.states)
-        new_copy.positions = copy(self.positions)
-
-        new_copy.slots = defaultdict(list)
-
-        for slot, steps in self.slots.items():
-            new_copy.slots[slot] = copy(steps)
-
-        return new_copy
+        return History(
+            tapes = copy(self.tapes),
+            states = copy(self.states),
+            positions = copy(self.positions),
+            slots = defaultdict(
+                list,
+                {
+                    slot: copy(steps)
+                    for slot, steps in self.slots.items()
+                },
+            )
+        )
 
     def add_slot_at_step(self, step: int, slot: Slot) -> None:
         self.slots[slot].append(step)
