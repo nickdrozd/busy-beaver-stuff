@@ -50,8 +50,6 @@ class BasicMachine:
 
     infrul: bool | None = None
 
-    rulapp: Count = 0
-
     def __init__(self, program: str | GetInstr):
         self.program = program
 
@@ -89,16 +87,6 @@ class BasicMachine:
                 data if isinstance(data, int | str | tuple) else "...")
             for cat, data in self.term_results
         ]
-
-        if self.rulapp:
-            rulapp_disp = (
-                show_number(self.rulapp)
-                if isinstance(self.rulapp, int) else
-                "..."
-            )
-
-            info.append(
-                f'RULAPP: {rulapp_disp}')
 
         return f"{self.program} || {' | '.join(info)}"
 
@@ -217,6 +205,8 @@ class Machine(BasicMachine):
     limrul: str | None = None
     susrul: tuple[int, int] | None = None
 
+    rulapp: Count = 0
+
     def __init__(
             self,
             program: str | GetInstr,
@@ -244,10 +234,22 @@ class Machine(BasicMachine):
         super().__init__(program)
 
     def __str__(self) -> str:
-        return '{} | TPCFGS: {}'.format(
+        info = [
             super().__str__(),
-            self.prover.config_count,
-        )
+            f'TPCFGS: {self.prover.config_count}',
+        ]
+
+        if self.rulapp:
+            rulapp_disp = (
+                show_number(self.rulapp)
+                if isinstance(self.rulapp, int) else
+                "..."
+            )
+
+            info.append(
+                f'RULAPP: {rulapp_disp}')
+
+        return ' | '.join(info)
 
     def run(
         self,
