@@ -13,7 +13,7 @@ from tm.tree import run_tree_gen
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from tm.machine import BasicMachine
+    BasicMachine = Machine | LooseLinRecMachine
 
     Q = Queue[str]
 

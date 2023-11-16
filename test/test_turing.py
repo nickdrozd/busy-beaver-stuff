@@ -51,7 +51,7 @@ class TuringTest(TestCase):
 
     def assert_marks(self, marks: int):
         self.assertEqual(
-            self.machine.marks,
+            self.machine.marks,  # type: ignore[union-attr]
             marks)
 
     def assert_steps(self, steps: int):
@@ -300,6 +300,8 @@ class TuringTest(TestCase):
             self.run_bb(prog, prover = False)
 
             self.assert_steps(steps)
+
+            assert isinstance(self.machine, QuickMachine)
 
             self.assertEqual(
                 steps,
@@ -588,6 +590,8 @@ class TuringTest(TestCase):
                             prover = False,
                         )
 
+                assert isinstance(self.machine, QuickMachine)
+
                 self.assertEqual(
                     cycles,
                     None
@@ -618,6 +622,8 @@ class TuringTest(TestCase):
                     blocks = [cell] * wrap,
                     prover = False,
                 )
+
+                assert isinstance(self.machine, QuickMachine)
 
                 assert isinstance(
                     term := self.machine.simple_termination,
@@ -800,6 +806,8 @@ class Fast(TuringTest):
                 self.run_bb(
                     prog,
                     backsym = [back] * back)
+
+                assert isinstance(self.machine, QuickMachine)
 
                 self.assertIsNotNone(
                     self.machine.simple_termination)

@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from typing import Self, TYPE_CHECKING
 
-from tm.machine import BasicMachine
-from tm.lin_rec import BeepHistory, HeadTape
+from tm.lin_rec import BeepHistory, HeadTape, LinRecMachine
 
 if TYPE_CHECKING:
     from tm.lin_rec import State, Slot, Tapes
 
 
-class LinRecSampler(BasicMachine):
+class LinRecSampler(LinRecMachine):
     history: BeepHistory
 
     def run(

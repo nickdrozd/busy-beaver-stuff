@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from tm.machine import BasicMachine
+from tm.parse import tcompile
 
 if TYPE_CHECKING:
     from typing import Self
 
     from tm.parse import Color, Shift, State, Slot, GetInstr
+    from tm.machine import Undfnd
 
     RecRes = tuple[int, int]
     LinRec = tuple[int | None, int]
@@ -281,7 +282,30 @@ class BeepHistory(History):
         }
 
 
-class StrictLinRecMachine(BasicMachine):
+class LinRecMachine:
+    program: str
+    comp: GetInstr
+
+    tape: HeadTape
+    steps: int
+    cycles: int
+
+    blanks: dict[State, int]
+
+    halted: int | None = None
+    spnout: int | None = None
+    xlimit: int | None = None
+
+    undfnd: Undfnd | None = None
+
+    infrul: bool | None = None
+
+    def __init__(self, prog: str):
+        self.program = prog
+        self.comp = tcompile(prog)
+
+
+class StrictLinRecMachine(LinRecMachine):
     history: BeepHistory
 
     linrec: LinRec | None = None
@@ -357,7 +381,7 @@ class StrictLinRecMachine(BasicMachine):
         return result
 
 
-class LooseLinRecMachine(BasicMachine):
+class LooseLinRecMachine(LinRecMachine):
     # pylint: disable = while-used, too-many-locals, line-too-long
     def run(self, sim_lim: int) -> Self:  # no-cover
         self.blanks = {}
