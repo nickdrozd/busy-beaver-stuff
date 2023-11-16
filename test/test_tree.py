@@ -211,6 +211,7 @@ class Fast(TestTree):
         })
 
         self.assert_cant_terminate()
+        self.assert_simple_and_connected()
 
     def test_23(self):
         def capture(prog: str) -> None:
@@ -248,6 +249,7 @@ class Fast(TestTree):
             "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
             self.progs)
 
+        self.assert_cant_terminate()
         self.assert_simple_and_connected()
 
 
@@ -290,6 +292,8 @@ class Slow(TestTree):
             'halted': (107, "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA"),
         })
 
+        self.assert_simple_and_connected()
+
     def test_24(self):
         def capture(prog: str) -> None:
             if '3' not in prog:
@@ -316,3 +320,5 @@ class Slow(TestTree):
         self.assert_progs(
             1160,
             'holdouts_24h')
+
+        self.assert_simple_and_connected()
