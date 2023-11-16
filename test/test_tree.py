@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from tm.machine import Machine
 from tm.lin_rec import LooseLinRecMachine
-from tm.reason import BackwardReasoner
+from tm.reason import BackwardReasoner, cant_halt
 from generate.tree import run_tree_gen
 
 
@@ -263,6 +263,9 @@ class Slow(TestTree):
                 if machine.xlimit is None:
                     return
 
+            if cant_halt(prog):
+                return
+
             self.queue.put(prog)
 
         run_tree_gen(
@@ -274,7 +277,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            74,
+            19,
             'holdouts_42h')
 
         self.assert_records({
@@ -292,6 +295,9 @@ class Slow(TestTree):
                     prog, 3_000, block_steps = 6_000):
                 if machine.xlimit is None:
                     return
+
+            if cant_halt(prog):
+                return
 
             self.queue.put(prog)
 
