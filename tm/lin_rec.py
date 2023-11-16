@@ -56,6 +56,7 @@ class HeadTape(Tape):
     def to_ptr(self) -> PtrTape:
         return PtrTape(
             sum(int(q.count) for q in self.lspan) - self.head,
+            self.scan,
             self.unroll(),
         )
 
@@ -81,6 +82,7 @@ class HeadTape(Tape):
 @dataclass
 class PtrTape:
     init: int
+    scan: Color
     tape: list[Color]
 
     def get_ltr(self, start: int) -> TapeSlice:
@@ -352,6 +354,9 @@ class LooseLinRecMachine(BasicMachine):
                 rightmost = max(rightmost, tape.head)
 
                 if state != init_state:
+                    continue
+
+                if tape.scan != init_tape.scan:
                     continue
 
                 ptr = tape.to_ptr()
