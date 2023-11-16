@@ -106,9 +106,13 @@ class TestTree(TestCase):
     def assert_cant_terminate(self) -> None:
         for prog in map(BackwardReasoner, self.progs):
             self.assertTrue(
-                prog.cant_halt
-                and prog.cant_blank
-                and prog.cant_spin_out)
+                prog.cant_halt)
+
+            self.assertTrue(
+                prog.cant_blank)
+
+            self.assertTrue(
+                prog.cant_spin_out)
 
     def assert_simple_and_connected(self) -> None:
         for prog in map(BackwardReasoner, self.progs):
