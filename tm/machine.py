@@ -36,7 +36,6 @@ class BasicMachine:
     comp: GetInstr
 
     tape: Tape
-    state: State
     steps: int
     cycles: int
 
@@ -250,7 +249,6 @@ class Machine(BasicMachine):
                     self.xlimit = None
 
         self.steps = step
-        self.state = state
         self.cycles = cycle
 
     def run(
