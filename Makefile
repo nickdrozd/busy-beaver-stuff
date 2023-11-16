@@ -1,6 +1,6 @@
 .PHONY : all clean clean-python compile coverage generate idris lint machines profile special test test-all type
 
-all : machines idris lint test generate
+all : machines idris lint test tools
 
 clean-python :
 	rm -rf __pycache__ **/__pycache__ .mypy_cache .mutmut-cache .coverage* html* build/ *.so **/*.so classes.png packages.png
@@ -44,7 +44,7 @@ clean-rust :
 
 PYTHON = python3
 
-MODULES = tm generate test *.py
+MODULES = tm tools test *.py
 
 PYLINT = $(PYTHON) -m pylint
 
@@ -63,7 +63,7 @@ MYPYC = $(PYTHON) -m mypyc
 
 compile : rust
 	$(MYPYC) --version
-	$(MYPYC) tm generate test/utils.py --exclude rust_stuff
+	$(MYPYC) tm tools test/utils.py --exclude rust_stuff
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
@@ -96,7 +96,7 @@ coverage : rust
 	$(COVERAGE) html
 
 diagrams :
-	pyreverse --only-classnames --no-standalone --colorized -o png tm generate test
+	pyreverse --only-classnames --no-standalone --colorized -o png tm tools test
 
 # PYTHONPATH=$PYTHONPATH:tm make special target=tm/tape.py
 special :

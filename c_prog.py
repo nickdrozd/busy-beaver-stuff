@@ -1,6 +1,6 @@
 import sys
 
-from generate.c import make_c
+from tools.c import make_c
 
 
 if __name__ == '__main__':

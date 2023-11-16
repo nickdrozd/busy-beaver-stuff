@@ -3,7 +3,7 @@ import shlex
 import tempfile
 import subprocess
 
-from generate.dot import make_dot
+from tools.dot import make_dot
 
 if __name__ == '__main__':
     _, path = tempfile.mkstemp()

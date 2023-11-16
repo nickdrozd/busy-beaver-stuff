@@ -16,7 +16,7 @@ from tm.reason import (
     cant_spin_out,
 )
 
-from generate.instr_seq import instr_seq
+from tools.instr_seq import instr_seq
 
 
 class TestDisplay(TestCase):

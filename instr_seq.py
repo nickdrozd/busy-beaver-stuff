@@ -1,7 +1,7 @@
 import sys
 
 from tm.show import show_slot
-from generate.instr_seq import instr_seq
+from tools.instr_seq import instr_seq
 
 def format_sequence(prog: str) -> None:
     print(f'    "{prog.strip()}": {{')

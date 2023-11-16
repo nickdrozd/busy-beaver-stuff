@@ -26,7 +26,7 @@ from tm.machine import (
 )
 from tm.lin_rec import StrictLinRecMachine, LooseLinRecMachine
 
-from generate.instr_seq import instr_seq
+from tools.instr_seq import instr_seq
 
 if TYPE_CHECKING:
     from typing import Any

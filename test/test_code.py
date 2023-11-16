@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from generate.c import make_c
-from generate.dot import make_dot
+from tools.c import make_c
+from tools.dot import make_dot
 
 TEST_FILES = {
     "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": 2819,
