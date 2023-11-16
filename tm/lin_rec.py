@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from tm.parse import Color, State, Slot
 
     RecRes = tuple[int, int]
+    LinRec = tuple[int | None, int]
 
     TapeSlice = list[Color]
 
@@ -223,6 +224,9 @@ class History:
 
 class StrictLinRecMachine(BasicMachine):
     history: History
+
+    linrec: LinRec | None = None
+    qsihlt: bool | None = None
 
     def run(
         self,

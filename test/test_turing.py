@@ -73,6 +73,8 @@ class TuringTest(TestCase):
             cells)
 
     def assert_quasihalt(self, qsihlt: bool | None):
+        assert isinstance(self.machine, StrictLinRecMachine)
+
         self.assertEqual(
             self.machine.qsihlt,
             qsihlt)
@@ -321,8 +323,6 @@ class TuringTest(TestCase):
                     marks, {chr(blank + 65) for blank in blanks})
                 self.assert_could_blank(prog)
 
-            self.assert_quasihalt(True)
-
             if '_' in prog:
                 self.assert_could_halt(prog)
                 self.assert_cant_spin_out(prog)
@@ -402,13 +402,20 @@ class TuringTest(TestCase):
                     ) - qsihlt_diff,
                 )
 
-            assert self.machine.linrec is not None
+            if blank:
+                self.assertTrue(
+                    self.machine.infrul)
 
-            self.assertEqual(
-                period,
-                self.machine.linrec[1])
+            else:
+                assert isinstance(self.machine, StrictLinRecMachine)
 
-            self.assert_quasihalt(qsihlt)
+                assert self.machine.linrec is not None
+
+                self.assertEqual(
+                    period,
+                    self.machine.linrec[1])
+
+                self.assert_quasihalt(qsihlt)
 
             if steps is None or steps < 100_000:
                 self.assertTrue(
@@ -869,6 +876,8 @@ class Fast(TuringTest):
                 backsym = backsym or None,
                 normal = False,
             )
+
+            assert isinstance(self.machine, Machine)
 
             if backsym in {0, 3, 4, 6}:
                 self.assertNotIsInstance(
