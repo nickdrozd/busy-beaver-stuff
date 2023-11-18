@@ -186,7 +186,11 @@ class Fast(TestTree):
 
     def test_32(self):
         def capture(prog: str) -> None:
-            for machine in run_variations(prog, 800):
+            machines = run_variations(
+                prog, 800,
+            )
+
+            for machine in machines:
                 if machine.xlimit is None:
                     self.add_result(prog, machine)
                     return
@@ -215,12 +219,20 @@ class Fast(TestTree):
 
     def test_23(self):
         def capture(prog: str) -> None:
-            for machine in run_variations(prog, 400):
+            machines = run_variations(
+                prog, 400,
+            )
+
+            for machine in machines:
                 if machine.xlimit is None:
                     self.add_result(prog, machine)
                     return
 
-            for machine in run_variations(prog, 5_000):
+            machines = run_variations(
+                prog, 5_000,
+            )
+
+            for machine in machines:
                 if machine.xlimit is None:
                     return
 
@@ -257,13 +269,21 @@ class Slow(TestTree):
             if 'D' not in prog:
                 return
 
-            for machine in run_variations(prog, 1000):
+            machines = run_variations(
+                prog, 1000,
+            )
+
+            for machine in machines:
                 if machine.xlimit is None:
                     self.add_result(prog, machine)
                     return
 
-            for machine in run_variations(
-                    prog, 18_451, block_steps = 6_000):
+            machines = run_variations(
+                prog, 18_451,
+                block_steps = 6_000,
+            )
+
+            for machine in machines:
                 if machine.xlimit is None:
                     return
 
@@ -297,8 +317,12 @@ class Slow(TestTree):
             if '3' not in prog:
                 return
 
-            for machine in run_variations(
-                    prog, 3_000, block_steps = 6_000):
+            machines = run_variations(
+                prog, 3_000,
+                block_steps = 6_000,
+            )
+
+            for machine in machines:
                 if machine.xlimit is None:
                     return
 
