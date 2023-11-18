@@ -39,12 +39,11 @@ def run_variations(
         prog: str,
         sim_lim: int,
         *,
-        lin_rec: int = 50,
+        lin_rec: int | None = None,
         block_steps: int = 1_000,
 ) -> Iterator[BasicMachine]:
-    yield LooseLinRecMachine(prog).run(
-        sim_lim = lin_rec,
-    )
+    if lin_rec is not None:
+        yield LooseLinRecMachine(prog).run(lin_rec)
 
     yield Machine(
         prog,
@@ -198,6 +197,7 @@ class Fast(TestTree):
         def capture(prog: str) -> None:
             machines = run_variations(
                 prog, 1 + max_inf,
+                lin_rec = 50,
             )
 
             for machine in machines:
@@ -234,6 +234,7 @@ class Fast(TestTree):
         def capture(prog: str) -> None:
             machines = run_variations(
                 prog, 400,
+                lin_rec = 50,
             )
 
             for machine in machines:
@@ -288,6 +289,7 @@ class Slow(TestTree):
 
             machines = run_variations(
                 prog, 1000,
+                lin_rec = 50,
             )
 
             for machine in machines:
@@ -338,6 +340,7 @@ class Slow(TestTree):
 
             machines = run_variations(
                 prog, 3_000,
+                lin_rec = 50,
                 block_steps = 6_000,
             )
 
