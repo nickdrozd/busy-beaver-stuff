@@ -143,10 +143,12 @@ class TestTree(TestCase):
 class Fast(TestTree):
     def test_22(self):
         def capture(prog: str) -> None:
-            for machine in run_variations(prog, 190):
-                if machine.xlimit is not None:
-                    continue
+            machine = Machine(
+                prog,
+                opt_macro = 20,
+            ).run(sim_lim = 190)
 
+            if machine.xlimit is None:
                 self.add_result(prog, machine)
                 return
 
