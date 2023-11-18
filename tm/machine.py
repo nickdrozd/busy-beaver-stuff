@@ -47,7 +47,7 @@ class BasicMachine:
 
     undfnd: Undfnd | None = None
 
-    infrul: bool | None = None
+    infrul: int | None = None
 
     def __init__(self, program: str | GetInstr):
         self.program = program
@@ -151,13 +151,13 @@ class QuickMachine(BasicMachine):
 
             if not color and tape.blank:
                 if state in self.blanks:
-                    self.infrul = True
+                    self.infrul = step
                     break
 
                 self.blanks[state] = step
 
                 if state == 0:  # no-cover
-                    self.infrul = True
+                    self.infrul = step
                     break
 
         else:
@@ -172,7 +172,7 @@ class QuickMachine(BasicMachine):
 class Machine(BasicMachine):
     prover: Prover
 
-    cfglim: bool | None = None
+    cfglim: int | None = None
     limrul: str | None = None
     susrul: tuple[int, int] | None = None
 
@@ -247,13 +247,13 @@ class Machine(BasicMachine):
             try:
                 rule = self.prover.try_rule(cycle, state, tape)
             except InfiniteRule:
-                self.infrul = True
+                self.infrul = step
                 break
             except RuleLimit as lim:
                 self.limrul = str(lim)
                 break
             except ConfigLimit:  # no-cover
-                self.cfglim = True
+                self.cfglim = step
                 break
             except SuspectedRule as sus:
                 self.susrul = sus.args
@@ -295,13 +295,13 @@ class Machine(BasicMachine):
 
             if not color and tape.blank:
                 if state in self.blanks:
-                    self.infrul = True
+                    self.infrul = step
                     break
 
                 self.blanks[state] = step
 
                 if state == 0:
-                    self.infrul = True
+                    self.infrul = step
                     break
 
         else:

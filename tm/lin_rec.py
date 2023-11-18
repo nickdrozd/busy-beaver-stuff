@@ -298,7 +298,7 @@ class LinRecMachine:
 
     undfnd: Undfnd | None = None
 
-    infrul: bool | None = None
+    infrul: int | None = None
 
     def __init__(self, prog: str):
         self.program = prog
@@ -428,13 +428,13 @@ class LooseLinRecMachine(LinRecMachine):
 
                 if not color and tape.blank:
                     if state in self.blanks:
-                        self.infrul = True
+                        self.infrul = step
                         break
 
                     self.blanks[state] = step
 
                     if state == 0:
-                        self.infrul = True
+                        self.infrul = step
                         break
 
                 leftmost = min(leftmost, tape.head)
@@ -461,7 +461,7 @@ class LooseLinRecMachine(LinRecMachine):
                     slice2 = ptr.get_cnt(leftmost, rightmost)
 
                 if slice1 == slice2:
-                    self.infrul = True
+                    self.infrul = step
                     break
 
             else:
