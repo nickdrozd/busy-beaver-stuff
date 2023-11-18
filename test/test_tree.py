@@ -75,6 +75,7 @@ class TestTree(TestCase):
             blanks = (0, ""),
             halted = (0, ""),
             spnout = (0, ""),
+            infrul = (0, ""),
         )
 
     def assert_progs(self, count: int, progfile: str):
@@ -126,9 +127,6 @@ class TestTree(TestCase):
                 and  res > self.results['blanks'][0]):
             self.results['blanks'] = res, prog
 
-        if machine.infrul:
-            return
-
         if ((spnout := machine.spnout)
                 and spnout > self.results['spnout'][0]):
             self.results['spnout'] = spnout, prog
@@ -137,6 +135,12 @@ class TestTree(TestCase):
         if ((und := machine.undfnd)
                 and ((step := und[0] + 1) > self.results['halted'][0])):
             self.results['halted'] = step, prog.replace('...', '1R_')
+            return
+
+        if (machine.infrul
+                and (cycles := machine.cycles)
+                        > self.results['infrul'][0]):
+            self.results['infrul'] = cycles, prog
             return
 
 
@@ -173,6 +177,7 @@ class Fast(TestTree):
                     "1RB 1LB  1LB 1LA",
                     "1RB 0LB  0LB 1LA",
                 }),
+                'infrul': (187, "1RB 1LA  0LA 0RB"),
             })
         except AssertionError:
             self.assert_records({
@@ -182,6 +187,7 @@ class Fast(TestTree):
                     "1RB 1LB  1LB 1LA",
                     "1RB 0LB  0LB 1LA",
                 }),
+                'infrul': (187, "1RB 1LA  0LA 0RB"),
             })
 
     def test_32(self):
@@ -212,6 +218,7 @@ class Fast(TestTree):
         self.assert_records({
             'blanks': (34, "1RB 1LB  1LA 1LC  1RC 0LC"),
             'spnout': (55, "1RB 0LB  1LA 0RC  1LC 1LA"),
+            'infrul': (675, "1RB 1RC  0LC 0RB  1LA 1LC"),
         })
 
         self.assert_cant_terminate()
@@ -234,6 +241,7 @@ class Fast(TestTree):
 
             for machine in machines:
                 if machine.xlimit is None:
+                    self.add_result(prog, machine)
                     return
 
             self.queue.put(prog)
@@ -253,6 +261,7 @@ class Fast(TestTree):
         self.assert_records({
             'blanks': (77, "1RB 2LA 0RB  1LA 0LB 1RA"),
             'spnout': (59, "1RB 2LB 1LA  2LB 2RA 0RA"),
+            'infrul': (4988, "1RB 0RB 1LB  1LA 2RB 0LA"),
         })
 
         self.assertIn(
@@ -285,6 +294,7 @@ class Slow(TestTree):
 
             for machine in machines:
                 if machine.xlimit is None:
+                    self.add_result(prog, machine)
                     return
 
             if cant_halt(prog):
@@ -308,6 +318,7 @@ class Slow(TestTree):
             'blanks': (169, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'spnout': (171, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'halted': (107, "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA"),
+            'infrul': (13697, "1RB 0LD  1LC 1RA  ... 1LA  0RA 1LD"),
         })
 
         self.assert_simple_and_connected()
