@@ -187,11 +187,9 @@ class Fast(TestTree):
     def test_32(self):
         def capture(prog: str) -> None:
             for machine in run_variations(prog, 800):
-                if machine.xlimit is not None:
-                    continue
-
-                self.add_result(prog, machine)
-                return
+                if machine.xlimit is None:
+                    self.add_result(prog, machine)
+                    return
 
             self.queue.put(prog)
 
@@ -218,11 +216,9 @@ class Fast(TestTree):
     def test_23(self):
         def capture(prog: str) -> None:
             for machine in run_variations(prog, 400):
-                if machine.xlimit is not None:
-                    continue
-
-                self.add_result(prog, machine)
-                return
+                if machine.xlimit is None:
+                    self.add_result(prog, machine)
+                    return
 
             for machine in run_variations(prog, 5_000):
                 if machine.xlimit is None:
