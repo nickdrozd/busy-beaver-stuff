@@ -7,7 +7,10 @@ from itertools import product
 from typing import TYPE_CHECKING
 
 from tm.show import show_state
-from tm.lin_rec import StrictLinRecMachine
+from tm.lin_rec import (
+    StrictLinRecMachine,
+    LooseLinRecMachine,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -25,27 +28,27 @@ def read_progs(name: str) -> set[str]:
 
 
 class TestLinRado(TestCase):
-    progs: set[str]
+    progs_strict: set[str]
+    progs_loose: set[str]
 
     def assert_progs_equal(self, other: set[str]):
-        self.assertEqual(
-            self.progs,
-            other)
+        self.assertEqual(self.progs_strict, other)
+        self.assertEqual(self.progs_loose, other)
 
     def assert_progs_count(self, count: int):
-        self.assertEqual(
-            len(self.progs),
-            count)
+        self.assertEqual(len(self.progs_strict), count)
+        self.assertEqual(len(self.progs_loose), count)
 
     def run_lin_rado(
             self,
             states: int,
             colors: int,
             halt: int,
-            xlimit: int,
+            strict: int,
+            loose: int,
             rejects: list[str] | None = None,
     ):
-        self.progs = {
+        self.progs_strict = {
             prog
             for prog in
             yield_programs(
@@ -55,8 +58,22 @@ class TestLinRado(TestCase):
                 rejects)
             if
             StrictLinRecMachine(prog).run(
-                sim_lim = xlimit,
+                sim_lim = strict,
                 check_rec = 0,
+            ).xlimit is not None
+        }
+
+        self.progs_loose = {
+            prog
+            for prog in
+            yield_programs(
+                states,
+                colors,
+                bool(halt),
+                rejects)
+            if
+            LooseLinRecMachine(prog).run(
+                sim_lim = loose,
             ).xlimit is not None
         }
 
@@ -65,6 +82,7 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             2, 2, 1,
             6,
+            8,
         )
 
         self.assert_progs_count(
@@ -74,6 +92,7 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             2, 2, 0,
             13,
+            22,
             rejects = [],
         )
 
@@ -92,6 +111,7 @@ class TestLinRado(TestCase):
         self.run_lin_rado(
             3, 2, 1,
             29,
+            45,
             rejects = NOT_CONNECTED_32,
         )
 
