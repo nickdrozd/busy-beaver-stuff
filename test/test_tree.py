@@ -340,7 +340,7 @@ class Slow(TestTree):
 
             machines = run_variations(
                 prog, 3_000,
-                lin_rec = 50,
+                lin_rec = 100,
                 block_steps = 6_000,
             )
 
