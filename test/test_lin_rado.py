@@ -64,7 +64,7 @@ class TestLinRado(TestCase):
         # h
         self.run_lin_rado(
             2, 2, 1,
-            10,
+            6,
         )
 
         self.assert_progs_count(
