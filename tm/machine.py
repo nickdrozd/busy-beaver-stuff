@@ -99,7 +99,7 @@ class BasicMachine:
 
     def show_tape(
             self,
-            step: int | None,
+            step: int,
             cycle: int,
             state: int,
     ) -> None:
@@ -109,7 +109,7 @@ class BasicMachine:
             str(self.tape),
         ]
 
-        if step is not None:
+        if step == -1:
             info.insert(1, f'{step : 3d}')
 
         print(' | '.join(info))
@@ -235,7 +235,7 @@ class Machine(BasicMachine):
 
         self.blanks = {}
 
-        step: int | None = 0
+        step: int = 0
 
         state: State = 0
 
@@ -268,29 +268,29 @@ class Machine(BasicMachine):
 
                 if times is not None:
                     # print(f'--> applied rule: {rule}')
-                    step = None
+                    step = -1
                     self.rulapp += times
                     continue
 
             if (instr := comp[state, tape.scan]) is None:
-                self.undfnd = step or -1, (state, tape.scan)
+                self.undfnd = step, (state, tape.scan)
                 break
 
             color, shift, next_state = instr
 
             if (same := state == next_state) and tape.at_edge(shift):
-                self.spnout = step or -1
+                self.spnout = step
                 break
 
             stepped = tape.step(shift, color, same)
 
             if not isinstance(stepped, int):
-                step = None
-            elif step is not None:
+                step = -1
+            elif step != -1:
                 step += stepped
 
             if (state := next_state) == -1:
-                self.halted = step or -1
+                self.halted = step
                 break
 
             if not color and tape.blank:
@@ -298,16 +298,16 @@ class Machine(BasicMachine):
                     self.infrul = True
                     break
 
-                self.blanks[state] = step or -1
+                self.blanks[state] = step
 
                 if state == 0:
                     self.infrul = True
                     break
 
         else:
-            self.xlimit = step or -1
+            self.xlimit = step
 
-        self.steps = step or -1
+        self.steps = step
         self.cycles = cycle
 
         if watch_tape and (bool(self.halted) or bool(self.blanks)):
