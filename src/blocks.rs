@@ -93,7 +93,7 @@ impl BlockMeasure {
 
         if !push.is_empty() && push[0].color == color {
             push[0].count += stepped;
-        } else {
+        } else if !push.is_empty() || color != 0 {
             if let Some(block) = &mut push_block {
                 block.color = color;
                 block.count += 1;
@@ -101,10 +101,8 @@ impl BlockMeasure {
                 push_block = Some(Block { color, count: 1 });
             }
 
-            if !push.is_empty() || color != 0 {
-                if let Some(block) = push_block {
-                    push.insert(0, block);
-                }
+            if let Some(block) = push_block {
+                push.insert(0, block);
             }
         }
 
@@ -174,6 +172,7 @@ impl QuickTape {
             .chain(right_colors)
             .collect()
     }
+
     fn step(&mut self, shift: Shift, color: Color, skip: bool) {
         let (pull, push) = if shift {
             (&mut self.rspan, &mut self.lspan)
@@ -214,7 +213,7 @@ impl QuickTape {
 
         if !push.is_empty() && push[0].color == color {
             push[0].count += stepped;
-        } else {
+        } else if !push.is_empty() || color != 0 {
             if let Some(block) = &mut push_block {
                 block.color = color;
                 block.count += 1;
@@ -222,10 +221,8 @@ impl QuickTape {
                 push_block = Some(Block { color, count: 1 });
             }
 
-            if !push.is_empty() || color != 0 {
-                if let Some(block) = push_block {
-                    push.insert(0, block);
-                }
+            if let Some(block) = push_block {
+                push.insert(0, block);
             }
         }
 

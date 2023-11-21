@@ -131,15 +131,14 @@ class HeadTape:
 
         if push and (top_block := push[0]).color == color:
             top_block.count += stepped
-        else:
+        elif push or color != 0:
             if push_block is None:
                 push_block = Block(color, 1)
             else:
                 push_block.color = color
                 push_block.count += 1
 
-            if push or color != 0:
-                push.insert(0, push_block)
+            push.insert(0, push_block)
 
         self.scan = next_scan
 
