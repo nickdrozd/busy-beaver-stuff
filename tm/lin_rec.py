@@ -450,8 +450,10 @@ class LooseLinRecMachine(LinRecMachine):
                         self.infrul = step
                         break
 
-                leftmost = min(leftmost, tape.head)
-                rightmost = max(rightmost, tape.head)
+                if (curr := tape.head) < leftmost:
+                    leftmost = curr
+                elif rightmost < curr:
+                    rightmost = curr
 
                 if state != init_state:
                     continue
@@ -461,7 +463,7 @@ class LooseLinRecMachine(LinRecMachine):
 
                 ptr = tape.to_ptr()
 
-                if 0 < (diff := tape.head - init_pos):
+                if 0 < (diff := curr - init_pos):
                     slice1 = init_tape.get_ltr(leftmost)
                     slice2 = ptr.get_ltr(leftmost + diff)
 
