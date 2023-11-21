@@ -4,6 +4,8 @@ from unittest import TestCase
 from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
+from test.utils import read_progs
+
 from tm.machine import Machine
 from tm.lin_rec import LooseLinRecMachine
 from tm.reason import BackwardReasoner, cant_halt
@@ -16,14 +18,6 @@ if TYPE_CHECKING:
     BasicMachine = Machine | LooseLinRecMachine
 
     Q = Queue[str]
-
-
-def read_progs(name: str) -> set[str]:
-    with open(f'test/data/{name}.prog') as holdouts:
-        return set(
-            prog.strip()
-            for prog in holdouts.readlines()
-        )
 
 
 def queue_to_set(queue: Q) -> set[str]:

@@ -7,6 +7,16 @@ from tm.lin_rec import BeepHistory, HeadTape, LinRecMachine
 if TYPE_CHECKING:
     from tm.lin_rec import State, Slot, Tapes
 
+########################################
+
+def read_progs(name: str) -> set[str]:
+    with open(f'test/data/{name}.prog') as holdouts:
+        return set(
+            prog.strip()
+            for prog in holdouts.readlines()
+        )
+
+########################################
 
 class LinRecSampler(LinRecMachine):
     history: BeepHistory

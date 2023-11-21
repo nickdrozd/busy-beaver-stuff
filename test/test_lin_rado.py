@@ -6,6 +6,8 @@ import re
 from itertools import product
 from typing import TYPE_CHECKING
 
+from test.utils import read_progs
+
 from tm.show import show_state
 from tm.lin_rec import (
     StrictLinRecMachine,
@@ -17,14 +19,6 @@ if TYPE_CHECKING:
 
 SHIFTS = LEFT, RIGHT = 'L', 'R'
 HALT   = '_'
-
-
-def read_progs(name: str) -> set[str]:
-    with open(f'test/data/{name}.prog') as holdouts:
-        return set(
-            prog.strip()
-            for prog in holdouts.readlines()
-        )
 
 
 class TestLinRado(TestCase):
