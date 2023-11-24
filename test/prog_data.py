@@ -1022,6 +1022,13 @@ DO_HALT: set[str] = {
 
 DONT_BLANK: set[str] = {
     "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
+
+    "1RB 1LA 2LA  0LA 2RB 0RB",
+    "1RB 2LA 0LA  1LA 2RA 0RB",
+    "1RB 2LA 0LA  1LA 2RA 1RB",
+    "1RB 2LA 1LA  0LA 0RB 2RB",
+    "1RB 2LB 0LA  1LA 2RB 0RB",
+    "1RB 2LB 1LA  1LA 2RB 0RB",
 }
 
 DO_BLANK: set[str] = {
