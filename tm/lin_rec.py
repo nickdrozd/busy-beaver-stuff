@@ -27,6 +27,9 @@ class Block:
     def __str__(self) -> str:
         return f"{self.color}^{self.count}"
 
+    def __hash__(self) -> int:
+        return hash((self.color, self.count))
+
 
 @dataclass
 class HeadTape:
@@ -53,8 +56,8 @@ class HeadTape:
     def __hash__(self) -> int:
         return hash((
             self.scan,
-            tuple((block.color, block.count) for block in self.lspan),
-            tuple((block.color, block.count) for block in self.rspan),
+            tuple(self.lspan),
+            tuple(self.rspan),
         ))
 
     def copy(self) -> HeadTape:
