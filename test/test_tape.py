@@ -102,6 +102,8 @@ class TestTape(TestCase):
             0,
         )
 
+        print(self.tape)
+
         self.assert_tape(
             '1^1 0^1 1^1 [2] 2^1 1^2')
 

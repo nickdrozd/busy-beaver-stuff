@@ -24,6 +24,9 @@ class Block:
     color: Color
     count: int
 
+    def __str__(self) -> str:
+        return f"{self.color}^{self.count}"
+
 
 @dataclass
 class HeadTape:
@@ -32,6 +35,12 @@ class HeadTape:
     rspan: list[Block]
 
     head: int = 0
+
+    def __str__(self) -> str:
+        return ' '.join(
+            list(map(str, reversed(self.lspan)))
+            + [f'[{self.scan} ({self.head})]']
+            + list(map(str, self.rspan)))
 
     @classmethod
     def init(cls, scan: Color = 0) -> Self:
