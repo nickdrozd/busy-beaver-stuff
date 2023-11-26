@@ -208,13 +208,14 @@ class History:
         self.tapes[step] = tape.to_ptr()
 
     def check_rec(self, step: int, slot: Slot) -> RecRes | None:
-        return next((
-            result
-            for pstep in self.slots[slot]
-            if (result :=
-                self.verify_lin_recurrence(pstep, step)
-            ) is not None
-        ), None)
+        for pstep in self.slots[slot]:
+            if (result := self.verify_lin_recurrence(
+                    pstep,
+                    step,
+            )) is not None:
+                return result
+
+        return None
 
     def verify_lin_recurrence(
             self,
