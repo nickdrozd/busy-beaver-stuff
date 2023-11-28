@@ -261,7 +261,7 @@ class History:
             slice2 = tape2.get_cnt(leftmost, rightmost)
 
         return (
-            (steps, _period := recurrence - steps)
+            (steps, recurrence - steps)
             if slice1 == slice2 else
             None
         )
