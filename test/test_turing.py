@@ -162,69 +162,69 @@ class TuringTest(TestCase):
             for _, rule in rules
             for diff in rule.values()))
 
-    def assert_lin_recurrence(self, steps: int, recurrence: int):
+    def assert_lin_rec(self, steps: int, recur: int):
         assert isinstance(self.machine, LinRecSampler)
         history = self.machine.history
 
         self.assertEqual(
             history.states[steps],
-            history.states[recurrence],
+            history.states[recur],
         )
 
         self.assertEqual(
-            history.verify_lin_recurrence(
+            history.verify_lin_rec(
                 steps,
-                recurrence,
+                recur,
             ),
-            (steps, recurrence - steps),
+            (steps, recur - steps),
             self.prog,
         )
 
-    def deny_lin_recurrence(self, steps: int, recurrence: int):
+    def deny_lin_rec(self, steps: int, recur: int):
         assert isinstance(self.machine, LinRecSampler)
         history = self.machine.history
 
         states = history.states
 
-        if states[steps] == states[recurrence]:
+        if states[steps] == states[recur]:
             self.assertIsNone(
-                history.verify_lin_recurrence(
+                history.verify_lin_rec(
                     steps,
-                    recurrence,
+                    recur,
                 ),
                 self.prog,
             )
 
-    def verify_lin_recurrence(self, prog: str, steps: int, period: int):
-        recurrence = period + steps
-        runtime    = period + recurrence
+    def verify_lin_rec(self, prog: str, steps: int, period: int):
+        recur   = period + steps
+        runtime = period + recur
 
         self.run_bb(
             prog,
             print_prog = False,
             sim_lim = 1 + runtime,
             samples = {
-                steps - 1           : None,  # type: ignore[dict-item]
-                steps               : None,  # type: ignore[dict-item]
-                steps + 1           : None,  # type: ignore[dict-item]
-                recurrence - 1      : None,  # type: ignore[dict-item]
-                recurrence          : None,  # type: ignore[dict-item]
-                recurrence + 1      : None,  # type: ignore[dict-item]
-                recurrence + period : None,  # type: ignore[dict-item]
+                steps - 1      : None,  # type: ignore[dict-item]
+                steps          : None,  # type: ignore[dict-item]
+                steps + 1      : None,  # type: ignore[dict-item]
+                recur - 1      : None,  # type: ignore[dict-item]
+                recur          : None,  # type: ignore[dict-item]
+                recur + 1      : None,  # type: ignore[dict-item]
+                recur + period : None,  # type: ignore[dict-item]
             },
         )
 
-        self.assert_lin_recurrence(    steps,     recurrence)
-        self.assert_lin_recurrence(1 + steps, 1 + recurrence)
-        self.assert_lin_recurrence(steps, period + recurrence)
+        self.assert_lin_rec(    steps,          recur)
+        self.assert_lin_rec(1 + steps,      1 + recur)
+        self.assert_lin_rec(    steps, period + recur)
 
         assert period > 1
 
-        self.deny_lin_recurrence(steps, 1 + recurrence)
-        self.deny_lin_recurrence(steps, recurrence - 1)
+        self.deny_lin_rec(steps, 1 + recur)
+        self.deny_lin_rec(steps, recur - 1)
 
         if steps >= 1:
-            self.deny_lin_recurrence(steps - 1, recurrence)
+            self.deny_lin_rec(steps - 1, recur)
 
     def run_bb(  # pylint: disable = too-many-arguments
             self,
@@ -386,7 +386,7 @@ class TuringTest(TestCase):
                 if prog not in BLANKERS:
                     self.assert_cant_blank(prog)
                 assert steps is not None
-                self.verify_lin_recurrence(prog, steps, period)
+                self.verify_lin_rec(prog, steps, period)
 
             if not quick or period > 2000:
                 print(prog)

@@ -220,7 +220,7 @@ class History:
 
     def check_rec(self, step: int, slot: Slot) -> RecRes | None:
         for pstep in self.slots[slot]:
-            if (result := self.verify_lin_recurrence(
+            if (result := self.verify_lin_rec(
                     pstep,
                     step,
             )) is not None:
@@ -228,17 +228,17 @@ class History:
 
         return None
 
-    def verify_lin_recurrence(
+    def verify_lin_rec(
             self,
             steps: int,
-            recurrence: int,
+            recur: int,
     ) -> RecRes | None:
         tape1 = self.tapes[steps]
-        tape2 = self.tapes[recurrence]
+        tape2 = self.tapes[recur]
 
         positions = self.positions
 
-        if 0 < (diff := positions[recurrence] - positions[steps]):
+        if 0 < (diff := positions[recur] - positions[steps]):
             leftmost = min(positions[steps:])
 
             slice1 = tape1.get_ltr(leftmost)
@@ -258,7 +258,7 @@ class History:
             slice2 = tape2.get_cnt(leftmost, rightmost)
 
         return (
-            (steps, recurrence - steps)
+            (steps, recur - steps)
             if slice1 == slice2 else
             None
         )
