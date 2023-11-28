@@ -238,9 +238,6 @@ class History:
 
         positions = self.positions
 
-        slice1: TapeSlice
-        slice2: TapeSlice
-
         if 0 < (diff := positions[recurrence] - positions[steps]):
             leftmost = min(positions[steps:])
 
