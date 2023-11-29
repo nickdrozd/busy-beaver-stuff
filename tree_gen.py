@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 
 from tm.reason import cant_halt, cant_spin_out
 from tm.machine import Machine
-from tm.lin_rec import StrictLinRecMachine
+from tm.lin_rec import LooseLinRecMachine
 
 from tm.tree import run_tree_gen
 
@@ -16,10 +16,7 @@ def run_variations(
         lin_rec: int = 50,
         block_steps: int = 1_000,
 ) -> Machine | None:
-    if StrictLinRecMachine(prog).run(
-        sim_lim = lin_rec,
-        check_rec = 0,
-    ).xlimit is None:
+    if LooseLinRecMachine(prog).run(lin_rec).xlimit is None:
         return None
 
     machine = Machine(
