@@ -807,7 +807,7 @@ class Fast(TuringTest):
                     prog,
                     backsym = [back] * back)
 
-                assert isinstance(self.machine, QuickMachine)
+                assert isinstance(self.machine, Machine)
 
                 self.assertIsNotNone(
                     self.machine.simple_termination)
