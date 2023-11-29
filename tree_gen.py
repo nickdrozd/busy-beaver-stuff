@@ -13,7 +13,7 @@ def run_variations(
         prog: str,
         sim_lim: int,
         *,
-        lin_rec: int = 50,
+        lin_rec: int = 1_000,
         block_steps: int = 1_000,
 ) -> Machine | None:
     if LooseLinRecMachine(prog).run(lin_rec).xlimit is None:
