@@ -8,7 +8,7 @@ from test.utils import read_progs
 
 from tm.machine import Machine
 from tm.lin_rec import LooseLinRecMachine
-from tm.reason import BackwardReasoner, cant_halt
+from tm.reason import BackwardReasoner, cant_halt, cant_spin_out
 from tm.tree import run_tree_gen
 
 
@@ -274,7 +274,7 @@ class Fast(TestTree):
 
 
 class Slow(TestTree):
-    def test_42(self):
+    def test_42h(self):
         max_inf = 13_697
 
         def capture(prog: str) -> None:
@@ -360,3 +360,36 @@ class Slow(TestTree):
             'holdouts_24h')
 
         self.assert_simple_and_connected()
+
+    def test_42q(self):
+        def capture(prog: str) -> None:
+            if 'D' not in prog:
+                return
+
+            if cant_spin_out(prog):
+                return
+
+            if LooseLinRecMachine(prog).run(1_000).xlimit is None:
+                return
+
+            machine = Machine(
+                prog,
+                opt_macro = 1_000,
+            ).run(10_000)
+
+            if machine.simple_termination or machine.infrul:
+                return
+
+            self.queue.put(prog)
+
+        run_tree_gen(
+            states = 4,
+            colors = 2,
+            steps = 200,
+            halt = False,
+            output = capture,
+        )
+
+        self.assert_progs(
+            136,
+            'holdouts_42q')
