@@ -8,7 +8,7 @@ from unittest import TestCase, skip, expectedFailure
 
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
-from test.lin_rec import LinRecSampler
+from test.lin_rec import LinRecSampler, LooseLinRecMachine
 from test.test_num import assert_num_counts, clear_caches
 
 from tm.reason import (
@@ -24,7 +24,7 @@ from tm.machine import (
     QuickMachine,
     Machine,
 )
-from tm.lin_rec import StrictLinRecMachine, LooseLinRecMachine
+from tm.lin_rec import StrictLinRecMachine, quick_term_or_rec
 
 from tools.instr_seq import instr_seq
 
@@ -425,6 +425,9 @@ class TuringTest(TestCase):
                     LooseLinRecMachine(prog).run(
                         100_000
                     ).infrul)
+
+                self.assertTrue(
+                    quick_term_or_rec(prog, 100_000))
 
     def _test_prover(  # type: ignore[misc]
             self,

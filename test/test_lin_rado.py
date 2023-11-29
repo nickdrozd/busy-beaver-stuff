@@ -11,7 +11,7 @@ from test.utils import read_progs
 from tm.show import show_state
 from tm.lin_rec import (
     StrictLinRecMachine,
-    LooseLinRecMachine,
+    quick_term_or_rec,
 )
 
 if TYPE_CHECKING:
@@ -66,9 +66,7 @@ class TestLinRado(TestCase):
                 bool(halt),
                 rejects)
             if
-            LooseLinRecMachine(prog).run(
-                sim_lim = loose,
-            ).xlimit is not None
+            not quick_term_or_rec(prog, loose)
         }
 
     def test_22(self):

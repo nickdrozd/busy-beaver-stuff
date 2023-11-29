@@ -5,9 +5,10 @@ from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
 from test.utils import read_progs
+from test.lin_rec import LooseLinRecMachine
 
 from tm.machine import Machine
-from tm.lin_rec import LooseLinRecMachine
+from tm.lin_rec import quick_term_or_rec
 from tm.reason import BackwardReasoner, cant_halt, cant_spin_out
 from tm.tree import run_tree_gen
 
@@ -281,12 +282,10 @@ class Slow(TestTree):
             if 'D' not in prog:
                 return
 
-            machines = run_variations(
-                prog, 1000,
-                lin_rec = 50,
-            )
+            if quick_term_or_rec(prog, 50):
+                return
 
-            for machine in machines:
+            for machine in run_variations(prog, 1000):
                 if machine.xlimit is None:
                     self.add_result(prog, machine)
                     return
@@ -332,9 +331,11 @@ class Slow(TestTree):
             if '3' not in prog:
                 return
 
+            if quick_term_or_rec(prog, 100):
+                return
+
             machines = run_variations(
                 prog, 3_000,
-                lin_rec = 100,
                 block_steps = 6_000,
             )
 
@@ -369,7 +370,7 @@ class Slow(TestTree):
             if cant_spin_out(prog):
                 return
 
-            if LooseLinRecMachine(prog).run(1_000).xlimit is None:
+            if quick_term_or_rec(prog, 1_000):
                 return
 
             machine = Machine(
