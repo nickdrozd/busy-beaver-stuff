@@ -412,7 +412,7 @@ def quick_term_or_rec(prog: str, sim_lim: int) -> bool:  # no-cover
 
         while step < steps_reset and cycle < sim_lim:
             if (instr := comp[state, tape.scan]) is None:
-                return True
+                return False
 
             color, shift, next_state = instr
 
