@@ -335,7 +335,7 @@ class Slow(TestTree):
                 return
 
             machines = run_variations(
-                prog, 3_000,
+                prog, 10_000,
                 block_steps = 6_000,
             )
 
@@ -357,7 +357,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            1160,
+            1030,
             'holdouts_24h')
 
         self.assert_simple_and_connected()
