@@ -12,7 +12,7 @@ struct Block {
     count: Count,
 }
 
-type Pos = i32;
+type Pos = isize;
 
 struct HeadTape {
     lspan: Vec<Block>,
@@ -138,44 +138,20 @@ struct PtrTape {
 }
 
 impl PtrTape {
-    fn get_ltr(&self, start: Pos) -> TapeSlice {
-        let start = start + self.init;
-        if start >= 0 {
-            self.tape[start as usize..].to_vec()
-        } else {
-            let mut result = vec![0; -start as usize];
-            result.extend_from_slice(&self.tape);
-            result
-        }
+    fn get_ltr(&self, start: isize) -> &[Color] {
+        let start_idx = std::cmp::max(0, start + self.init) as usize;
+        &self.tape[start_idx..]
     }
 
-    fn get_rtl(&self, stop: Pos) -> TapeSlice {
-        let stop = stop + self.init + 1;
-        let tape_len = self.tape.len() as Pos;
-
-        if stop <= tape_len {
-            self.tape[..stop as usize].to_vec()
-        } else {
-            let mut result = self.tape[..].to_vec();
-            result.extend(vec![0; (stop - tape_len) as usize]);
-            result
-        }
+    fn get_rtl(&self, stop: isize) -> &[Color] {
+        let stop_idx = std::cmp::min(self.tape.len() as isize, stop + self.init + 1) as usize;
+        &self.tape[..stop_idx]
     }
 
-    fn get_cnt(&self, start: Pos, stop: Pos) -> TapeSlice {
-        let start = start + self.init;
-        let stop = stop + self.init + 1;
-        let tape_len = self.tape.len() as Pos;
-
-        (start..stop)
-            .map(|pos| {
-                if pos >= 0 && pos < tape_len {
-                    self.tape[pos as usize]
-                } else {
-                    0
-                }
-            })
-            .collect()
+    fn get_cnt(&self, start: isize, stop: isize) -> &[Color] {
+        let start_idx = std::cmp::max(0, start + self.init) as usize;
+        let stop_idx = std::cmp::min(self.tape.len() as isize, stop + self.init + 1) as usize;
+        &self.tape[start_idx..stop_idx]
     }
 }
 
