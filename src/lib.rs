@@ -10,6 +10,7 @@
 
 mod blocks;
 mod instrs;
+mod lin_rec;
 mod parse;
 mod prover;
 mod rules;
@@ -17,6 +18,7 @@ mod rules;
 use pyo3::prelude::*;
 
 use blocks::{measure_blocks, unroll_tape};
+use lin_rec::quick_term_or_rec;
 use parse::{
     parse as parse_fn, read_slot, read_state, show_instr, show_slot, show_state, tcompile,
 };
@@ -28,6 +30,9 @@ fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     // blocks
     m.add_function(wrap_pyfunction!(measure_blocks, m)?)?;
     m.add_function(wrap_pyfunction!(unroll_tape, m)?)?;
+
+    // lin_rec
+    m.add_function(wrap_pyfunction!(quick_term_or_rec, m)?)?;
 
     // parse
     m.add_function(wrap_pyfunction!(parse_fn, m)?)?;
