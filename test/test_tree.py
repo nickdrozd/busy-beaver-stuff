@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING
 from test.utils import read_progs
 from test.lin_rec import LooseLinRecMachine
 
-from tm.machine import Machine
-from tm.lin_rec import quick_term_or_rec
+from tm.machine import Machine, quick_term_or_rec
 from tm.reason import BackwardReasoner, cant_halt, cant_spin_out
 from tm.tree import run_tree_gen
 

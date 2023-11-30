@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape
+from tm.tape import Tape, HeadTape
 from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
 from tm.show import show_slot, show_number
@@ -30,6 +30,14 @@ TERM_CATS = (
     'xlimit',
 )
 
+
+def find_opt_macro(prog: str, steps: int) -> str | GetInstr:
+    if (blocks := opt_block(prog, steps)) > 1:
+        return BlockMacro(prog, [blocks])
+
+    return prog
+
+########################################
 
 class BasicMachine:
     program: str | GetInstr
@@ -317,8 +325,70 @@ class Machine(BasicMachine):
 
 ########################################
 
-def find_opt_macro(prog: str, steps: int) -> str | GetInstr:
-    if (blocks := opt_block(prog, steps)) > 1:
-        return BlockMacro(prog, [blocks])
+def quick_term_or_rec(prog: str, sim_lim: int) -> bool:  # no-cover
+    # pylint: disable = while-used, too-many-locals
 
-    return prog
+    comp = tcompile(prog)
+
+    state = 1
+
+    tape = HeadTape.init_stepped()
+
+    step, cycle = 1, 1
+
+    while cycle < sim_lim:
+        steps_reset = 2 * step
+
+        leftmost = rightmost = init_pos = tape.head
+
+        init_state = state
+
+        init_tape = tape.to_ptr()
+
+        while step < steps_reset and cycle < sim_lim:
+            if (instr := comp[state, tape.scan]) is None:
+                return False
+
+            color, shift, next_state = instr
+
+            if (same := state == next_state) and tape.at_edge(shift):
+                return True
+
+            stepped = tape.step(shift, color, same)
+
+            step += stepped
+
+            cycle += 1
+
+            if (state := next_state) == -1:
+                return True
+
+            if (curr := tape.head) < leftmost:
+                leftmost = curr
+            elif rightmost < curr:
+                rightmost = curr
+
+            if state != init_state:
+                continue
+
+            if tape.scan != init_tape.scan:
+                continue
+
+            ptr = tape.to_ptr()
+
+            if 0 < (diff := curr - init_pos):
+                slice1 = init_tape.get_ltr(leftmost)
+                slice2 = ptr.get_ltr(leftmost + diff)
+
+            elif diff < 0:
+                slice1 = init_tape.get_rtl(rightmost)
+                slice2 = ptr.get_rtl(rightmost + diff)
+
+            else:
+                slice1 = init_tape.get_cnt(leftmost, rightmost)
+                slice2 = ptr.get_cnt(leftmost, rightmost)
+
+            if slice1 == slice2:
+                return True
+
+    return False

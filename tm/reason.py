@@ -6,14 +6,14 @@ from collections import defaultdict
 
 from tm.parse import tcompile
 from tm.program import Program
-from tm.lin_rec import HeadTape
+from tm.tape import HeadTape
 
 if TYPE_CHECKING:
     from typing import Self
 
     from collections.abc import Callable, Iterator
 
-    from tm.lin_rec import PtrTape
+    from tm.tape import PtrTape
     from tm.program import Color, State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]

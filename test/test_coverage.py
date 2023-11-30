@@ -2,12 +2,12 @@
 
 from unittest import TestCase
 
+from test.lin_rec import StrictLinRecMachine
+
 from tm.machine import (
     QuickMachine,
     Machine,
 )
-
-from tm.lin_rec import StrictLinRecMachine
 
 from tm.reason import (
     Program,

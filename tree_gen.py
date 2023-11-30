@@ -3,8 +3,7 @@ from __future__ import annotations
 from argparse import ArgumentParser
 
 from tm.reason import cant_halt, cant_spin_out
-from tm.machine import Machine
-from tm.lin_rec import quick_term_or_rec
+from tm.machine import Machine, quick_term_or_rec
 
 from tm.tree import run_tree_gen
 

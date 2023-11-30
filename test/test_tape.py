@@ -3,8 +3,14 @@ from __future__ import annotations
 from unittest import TestCase
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape, TagTape, EnumTape, Block
-from tm.lin_rec import HeadTape, Block as HeadBlock
+from tm.tape import (
+    Tape,
+    Block,
+    TagTape,
+    EnumTape,
+    HeadTape,
+    HeadBlock,
+)
 
 if TYPE_CHECKING:
     from tm.tape import Color, Signature

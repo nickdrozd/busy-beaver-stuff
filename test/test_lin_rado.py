@@ -7,12 +7,10 @@ from itertools import product
 from typing import TYPE_CHECKING
 
 from test.utils import read_progs
+from test.lin_rec import StrictLinRecMachine
 
 from tm.show import show_state
-from tm.lin_rec import (
-    StrictLinRecMachine,
-    quick_term_or_rec,
-)
+from tm.machine import quick_term_or_rec
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

@@ -93,6 +93,7 @@ class BlockTape(ApplyRule):
 
         span[pos].count = val
 
+########################################
 
 class Tape(BlockTape):
     lspan: list[Block]
@@ -167,6 +168,7 @@ class Tape(BlockTape):
 
         return stepped
 
+########################################
 
 @dataclass
 class TagBlock(Block):
@@ -364,6 +366,7 @@ class TagTape(BlockTape):
 
         self.scan = next_scan
 
+########################################
 
 @dataclass
 class EnumBlock(Block):
@@ -484,3 +487,172 @@ class EnumTape(BlockTape):
             push.insert(0, push_block)
 
         self.scan = next_scan
+
+########################################
+
+@dataclass
+class HeadBlock:
+    color: Color
+    count: int
+
+    def __str__(self) -> str:
+        return f"{self.color}^{self.count}"
+
+    def __hash__(self) -> int:
+        return hash((self.color, self.count))
+
+
+@dataclass
+class HeadTape:
+    lspan: list[HeadBlock]
+    scan: Color
+    rspan: list[HeadBlock]
+
+    head: int = 0
+
+    def __str__(self) -> str:
+        return ' '.join(
+            list(map(str, reversed(self.lspan)))
+            + [f'[{self.scan} ({self.head})]']
+            + list(map(str, self.rspan)))
+
+    @classmethod
+    def init(cls, scan: Color = 0) -> Self:
+        return cls([], scan, [])
+
+    @classmethod
+    def init_stepped(cls) -> Self:  # no-cover
+        return cls([HeadBlock(1, 1)], 0, [], head = 1)
+
+    def __hash__(self) -> int:
+        return hash((
+            self.scan,
+            tuple(self.lspan),
+            tuple(self.rspan),
+        ))
+
+    def copy(self) -> HeadTape:
+        return HeadTape(
+            [HeadBlock(block.color, block.count)
+             for block in self.lspan],
+            self.scan,
+            [HeadBlock(block.color, block.count)
+             for block in self.rspan],
+            head = self.head,
+        )
+
+    def to_ptr(self) -> PtrTape:
+        return PtrTape(
+            sum(int(q.count) for q in self.lspan) - self.head,
+            self.scan,
+            self.unroll(),
+        )
+
+    def unroll(self) -> list[Color]:
+        return [
+            block.color
+            for block in reversed(self.lspan)
+            for _ in range(int(block.count))
+        ] + [self.scan] + [
+            block.color
+            for block in self.rspan
+            for _ in range(int(block.count))
+        ]
+
+    @property
+    def blank(self) -> bool:
+        return self.scan == 0 and not self.lspan and not self.rspan
+
+    def at_edge(self, edge: Shift) -> bool:
+        return (
+            self.scan == 0
+            and not (self.rspan if edge else self.lspan)
+        )
+
+    def step(self, shift: Shift, color: Color, skip: bool) -> int:
+        pull, push = (
+            (self.rspan, self.lspan)
+            if shift else
+            (self.lspan, self.rspan)
+        )
+
+        push_block = (
+            pull.pop(0)
+            if skip and pull and pull[0].color == self.scan else
+            None
+        )
+
+        stepped = 1 if push_block is None else 1 + push_block.count
+
+        next_scan: Color
+
+        if not pull:
+            next_scan = 0
+        else:
+            next_pull = pull[0]
+
+            if next_pull.count != 1:
+                next_pull.count -= 1
+            else:
+                popped = pull.pop(0)
+
+                if push_block is None:
+                    push_block = popped
+                    push_block.count = 0
+
+            next_scan = next_pull.color
+
+        if push and (top_block := push[0]).color == color:
+            top_block.count += stepped
+        elif push or color != 0:
+            if push_block is None:
+                push_block = HeadBlock(color, 1)
+            else:
+                push_block.color = color
+                push_block.count += 1
+
+            push.insert(0, push_block)
+
+        self.scan = next_scan
+
+        self.head += stepped if shift else -stepped
+
+        return stepped
+
+
+if TYPE_CHECKING:
+    TapeSlice = list[Color]
+
+
+@dataclass
+class PtrTape:
+    init: int
+    scan: Color
+    tape: list[Color]
+
+    def get_ltr(self, start: int) -> TapeSlice:
+        start += self.init
+
+        return (
+            self.tape[ start : ]
+            if (ldiff := -start) <= 0 else
+            [0] * ldiff + self.tape
+        )
+
+    def get_rtl(self, stop: int) -> TapeSlice:
+        stop += self.init + 1
+
+        return (
+            self.tape[ : stop ]
+            if (rdiff := stop - len(self.tape)) <= 0 else
+            self.tape[ : stop - rdiff ] + [0] * rdiff
+        )
+
+    def get_cnt(self, start: int, stop: int) -> TapeSlice:
+        start += self.init
+        stop += self.init + 1
+
+        return [
+            self.tape[pos] if 0 <= pos < len(self.tape) else 0
+            for pos in range(start, stop)
+        ]

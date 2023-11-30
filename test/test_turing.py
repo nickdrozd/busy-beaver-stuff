@@ -8,8 +8,12 @@ from unittest import TestCase, skip, expectedFailure
 
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
-from test.lin_rec import LinRecSampler, LooseLinRecMachine
 from test.test_num import assert_num_counts, clear_caches
+from test.lin_rec import (
+    LinRecSampler,
+    LooseLinRecMachine,
+    StrictLinRecMachine,
+)
 
 from tm.reason import (
     Program,
@@ -23,8 +27,8 @@ from tm.machine import (
     opt_block,
     QuickMachine,
     Machine,
+    quick_term_or_rec,
 )
-from tm.lin_rec import StrictLinRecMachine, quick_term_or_rec
 
 from tools.instr_seq import instr_seq
 
@@ -32,7 +36,7 @@ if TYPE_CHECKING:
     from typing import Any
     from collections.abc import Mapping
 
-    from tm.lin_rec import Tapes
+    from test.lin_rec import Tapes
     from tm.machine import Count, GetInstr
 
     BasicMachine = (
