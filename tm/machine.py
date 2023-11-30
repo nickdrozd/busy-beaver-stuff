@@ -39,11 +39,13 @@ def find_opt_macro(prog: str, steps: int) -> str | GetInstr:
 
 ########################################
 
-class BasicMachine:
+class Machine:
     program: str | GetInstr
     comp: GetInstr
 
     tape: Tape
+    prover: Prover
+
     steps: int
     cycles: int
 
@@ -57,7 +59,36 @@ class BasicMachine:
 
     infrul: int | None = None
 
-    def __init__(self, program: str | GetInstr):
+    cfglim: int | None = None
+    limrul: str | None = None
+    susrul: tuple[int, int] | None = None
+
+    rulapp: Count = 0
+
+    def __init__(
+            self,
+            program: str | GetInstr,
+            *,
+            blocks: int | list[int] | None = None,
+            backsym: int | list[int] | None = None,
+            opt_macro: int | None = None,
+    ):
+        if opt_macro is not None:
+            assert isinstance(program, str)
+            program = find_opt_macro(program, opt_macro)
+
+        if blocks is not None:
+            if isinstance(blocks, int):
+                blocks = [blocks]
+
+            program = BlockMacro(program, blocks)
+
+        if backsym is not None:
+            if isinstance(backsym, int):
+                backsym = [backsym]
+
+            program = BacksymbolMacro(program, backsym)
+
         self.program = program
 
         self.comp = (
@@ -95,15 +126,20 @@ class BasicMachine:
             for cat, data in self.term_results
         ]
 
+        info.append(
+            f'TPCFGS: {self.prover.config_count}')
+
+        if self.rulapp:
+            rulapp_disp = (
+                show_number(self.rulapp)
+                if isinstance(self.rulapp, int) else
+                "..."
+            )
+
+            info.append(
+                f'RULAPP: {rulapp_disp}')
+
         return f"{self.program} || {' | '.join(info)}"
-
-    @property
-    def simple_termination(self) -> Count | None:
-        return self.spnout if self.halted is None else self.halted
-
-    @property
-    def marks(self) -> Count:
-        return self.tape.marks
 
     def show_tape(
             self,
@@ -122,113 +158,13 @@ class BasicMachine:
 
         print(' | '.join(info))
 
+    @property
+    def simple_termination(self) -> Count | None:
+        return self.spnout if self.halted is None else self.halted
 
-class QuickMachine(BasicMachine):
-    def run(self, sim_lim: int = 100_000_000) -> Self:
-        comp = self.comp
-
-        self.tape = tape = Tape.init()
-
-        self.blanks = {}
-
-        step: int = 0
-
-        state: State = 0
-
-        for cycle in range(sim_lim):  # no-branch
-
-            if (instr := comp[state, tape.scan]) is None:
-                self.undfnd = step, (state, tape.scan)
-                break
-
-            color, shift, next_state = instr
-
-            if (same := state == next_state) and tape.at_edge(shift):
-                self.spnout = step
-                break
-
-            stepped = tape.step(shift, color, same)
-
-            assert isinstance(stepped, int)
-
-            step += stepped
-
-            if (state := next_state) == -1:  # no-cover
-                self.halted = step
-                break
-
-            if not color and tape.blank:
-                if state in self.blanks:
-                    self.infrul = step
-                    break
-
-                self.blanks[state] = step
-
-                if state == 0:  # no-cover
-                    self.infrul = step
-                    break
-
-        else:
-            self.xlimit = step  # no-cover
-
-        self.steps = step
-        self.cycles = cycle
-
-        return self
-
-
-class Machine(BasicMachine):
-    prover: Prover
-
-    cfglim: int | None = None
-    limrul: str | None = None
-    susrul: tuple[int, int] | None = None
-
-    rulapp: Count = 0
-
-    def __init__(
-            self,
-            program: str | GetInstr,
-            *,
-            blocks: int | list[int] | None = None,
-            backsym: int | list[int] | None = None,
-            opt_macro: int | None = None,
-    ):
-        if opt_macro is not None:
-            assert isinstance(program, str)
-            program = find_opt_macro(program, opt_macro)
-
-        if blocks is not None:
-            if isinstance(blocks, int):
-                blocks = [blocks]
-
-            program = BlockMacro(program, blocks)
-
-        if backsym is not None:
-            if isinstance(backsym, int):
-                backsym = [backsym]
-
-            program = BacksymbolMacro(program, backsym)
-
-        super().__init__(program)
-
-    def __str__(self) -> str:
-        info = [
-            super().__str__(),
-            f'TPCFGS: {self.prover.config_count}',
-        ]
-
-        if self.rulapp:
-            rulapp_disp = (
-                show_number(self.rulapp)
-                if isinstance(self.rulapp, int) else
-                "..."
-            )
-
-            info.append(
-                f'RULAPP: {rulapp_disp}')
-
-        return ' | '.join(info)
+    @property
+    def marks(self) -> Count:
+        return self.tape.marks
 
     def run(
         self,

@@ -9,6 +9,7 @@ from unittest import TestCase, skip, expectedFailure
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 from test.test_num import assert_num_counts, clear_caches
+from test.machine import QuickMachine
 from test.lin_rec import (
     LinRecSampler,
     LooseLinRecMachine,
@@ -25,7 +26,6 @@ from tm.machine import (
     show_slot,
     show_number,
     opt_block,
-    QuickMachine,
     Machine,
     quick_term_or_rec,
 )

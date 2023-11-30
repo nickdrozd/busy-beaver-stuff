@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.program import Program
-from tm.machine import QuickMachine
+from tm.reason import Program, HeadTape
 
 if TYPE_CHECKING:
-    from tm.program import Slot
+    from tm.machine import Slot, Undfnd
 
     InstrSeq = list[tuple[str, int, Slot]]
 
@@ -18,10 +17,8 @@ def instr_seq(prog: str) -> InstrSeq:
 
     partial = Program.init(len(program.states), len(program.colors))
 
-    machine = QuickMachine(partial)
-
     for _ in range(len(program.states) * len(program.colors) - 1):
-        if (result := machine.run().undfnd) is None:
+        if (result := run_for_undefined(partial)) is None:
             return seqs
 
         step, slot = result
@@ -30,6 +27,32 @@ def instr_seq(prog: str) -> InstrSeq:
 
         partial[slot] = program[slot]
 
-        machine.undfnd = None
-
     return seqs
+
+
+def run_for_undefined(prog: Program) -> Undfnd | None:
+    tape = HeadTape.init()
+
+    step = 0
+
+    state = 0
+
+    for _ in range(100_000_000):
+        if (instr := prog[state, tape.scan]) is None:
+            return step, (state, tape.scan)
+
+        color, shift, next_state = instr
+
+        if (same := state == next_state) and tape.at_edge(shift):
+            return None
+
+        stepped = tape.step(shift, color, same)
+
+        assert isinstance(stepped, int)
+
+        step += stepped
+
+        if (state := next_state) == -1:  # no-cover
+            return None
+
+    return None
