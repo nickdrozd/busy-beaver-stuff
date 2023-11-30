@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from dataclasses import dataclass
 from collections import defaultdict
 
 from tm.parse import tcompile
 from tm.program import Program
-from tm.lin_rec import History, HeadTape
+from tm.lin_rec import HeadTape
 
 if TYPE_CHECKING:
     from typing import Self
 
     from collections.abc import Callable, Iterator
 
-    from tm.program import State, Slot
+    from tm.lin_rec import PtrTape
+    from tm.program import Color, State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
 
@@ -80,7 +82,7 @@ class BackwardReasoner(Program):
                     HeadTape.init(color),
                 ),
                 0,
-                History(tapes = {}),
+                History(),
             )
             for state, color in sorted(slots)
         ]
@@ -108,11 +110,9 @@ class BackwardReasoner(Program):
 
             seen[state].add(tape)
 
-            history.add_tape_at_step(step, tape)
+            history.update(state, tape.scan, tape)
 
-            if history.check_rec(
-                    step,
-                    slot := (state, tape.scan)) is None:
+            if not history.check_rec():
                 repeat = 0
             else:
                 repeat += 1
@@ -120,16 +120,16 @@ class BackwardReasoner(Program):
                 if repeat > max_repeats:
                     continue
 
-            history.add_slot_at_step(step, slot)
-
             # print(step, state, tape)
 
             for config in self.branch_back(
                     step, state, tape, machine, get_result):
+                next_history = History(prev = history)
+
                 configs.append((
                     config,
                     repeat,
-                    history.copy(),
+                    next_history,
                 ))
 
         return False
@@ -262,3 +262,65 @@ class BasicMachine:
 
 if TYPE_CHECKING:
     GetResult = Callable[[BasicMachine], int | None]
+
+########################################
+
+@dataclass
+class History:
+    state: State | None = None
+    scan: Color | None = None
+    head: int | None = None
+    tape: PtrTape | None = None
+    prev: History | None = None
+
+    def update(self, state: State, scan: Color, tape: HeadTape) -> None:
+        self.state = state
+        self.scan = scan
+        self.head = tape.head
+        self.tape = tape.to_ptr()
+
+    def check_rec(self) -> bool:
+        prev = self.prev
+
+        curr_head = self.head
+        assert curr_head is not None
+
+        leftmost = rightmost = curr_head
+
+        curr_tape = self.tape
+        assert curr_tape is not None
+
+        while prev:  # pylint: disable = while-used
+            if self.state != prev.state or self.scan != prev.scan:
+                prev = prev.prev
+                continue
+
+            prev_head = prev.head
+            assert prev_head is not None
+
+            if prev_head < leftmost:
+                leftmost = prev_head
+            elif rightmost < prev_head:
+                rightmost = prev_head
+
+            prev_tape = prev.tape
+            assert prev_tape is not None
+
+            if 0 < (diff := curr_head - prev_head):
+                slice1 = prev_tape.get_ltr(leftmost)
+                slice2 = curr_tape.get_ltr(leftmost + diff)
+
+            elif diff < 0:
+                slice1 = prev_tape.get_rtl(rightmost)
+                slice2 = curr_tape.get_rtl(rightmost + diff)
+
+            else:
+                slice1 = prev_tape.get_cnt(leftmost, rightmost)
+                slice2 = curr_tape.get_cnt(leftmost, rightmost)
+
+            if slice1 == slice2:
+                return True
+
+            prev = prev.prev
+
+        return False
