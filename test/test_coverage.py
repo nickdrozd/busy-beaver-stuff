@@ -2,10 +2,7 @@
 
 from unittest import TestCase
 
-from test.machine import QuickMachine
-from test.lin_rec import StrictLinRecMachine
-
-from tm.machine import Machine
+from tm.machine import Machine, quick_term_or_rec
 
 from tm.reason import (
     Program,
@@ -103,28 +100,40 @@ class TestFloss(TestCase):
                 "1RB 1LA  1RC 0LB  0LB ..."
             ).run().blanks)
 
-        self.assertIsNotNone(
-            StrictLinRecMachine(
-                "1RB 1LA  0RC ...  1LC 0LA"
-            ).run(check_rec = 1))
+        self.assertFalse(
+            quick_term_or_rec(
+                "1RB 1LA  0RC ...  1LC 0LA",
+                100))
 
-        self.assertIsNotNone(
-            StrictLinRecMachine(
-                "1RB 1RB  1RC 0LC  0LB 1RC"
-            ).run(check_rec = 1))
+        self.assertTrue(
+            quick_term_or_rec(
+                "1RB 1RB  1RC 0LC  0LB 1RC",
+                100))
 
-        self.assertIsNotNone(
-            StrictLinRecMachine(
-                "1RB 0LB  1LA 0RA"
-            ).run(
-                check_rec = 1,
-                sim_lim = 50,
-            ))
+        self.assertFalse(
+            quick_term_or_rec(
+                "1RB 0LB  1LA 0RA",
+                50))
 
-        self.assertIsNotNone(
-            StrictLinRecMachine(
-                "1RB 1LA  0LB 1LB"
-            ).run(check_rec = 1))
+        self.assertTrue(
+            quick_term_or_rec(
+                "1RB 1LA  0LB 1LB",
+                50))
+
+        self.assertTrue(
+            quick_term_or_rec(
+                "1RB ...  0RC 1LB  1LA 0RB",
+                50))
+
+        self.assertTrue(
+            quick_term_or_rec(
+                "1RB 1RB  0LA ...",
+                10))
+
+        self.assertTrue(
+            quick_term_or_rec(
+                "1RB 1RA  1RC 0RD  1LE 0RA  0R_ 0RB  1LB 1LE",
+                100_000_000))
 
         self.assertIsNotNone(
             Machine(
@@ -134,11 +143,6 @@ class TestFloss(TestCase):
         self.assertIsNotNone(
             Machine(
                 "1RB ...  0LB 0RA"
-            ).run())
-
-        self.assertIsNotNone(
-            QuickMachine(
-                "1RB 2LA 0RB  1LA 0LB 1RA"
             ).run())
 
     def test_prover(self):

@@ -261,7 +261,7 @@ class Machine:
 
 ########################################
 
-def quick_term_or_rec(prog: str, sim_lim: int) -> bool:  # no-cover
+def quick_term_or_rec(prog: str, sim_lim: int) -> bool:
     # pylint: disable = while-used, too-many-locals
 
     comp = tcompile(prog)
