@@ -126,7 +126,13 @@ def distribute_branches(branches: list[Prog]) -> list[list[Prog]]:
 
     for i in range(cpus):
         end = start + size + (1 if i < rem else 0)
-        result.append(branches[start:end])
+        result.append(
+            sorted(
+                branches[ start : end ],
+                key = lambda branch: branch.count('...'),
+                reverse = True,
+            )
+        )
         start = end
 
     return result
