@@ -279,9 +279,15 @@ class History:
         self.head = tape.head
         self.tape = tape.to_ptr()
 
-    def check_rec(self) -> bool:
+    def __iter__(self) -> Iterator[History]:
         prev = self.prev
 
+        while prev:  # pylint: disable = while-used
+            yield prev
+
+            prev = prev.prev
+
+    def check_rec(self) -> bool:
         curr_head = self.head
         assert curr_head is not None
 
@@ -290,9 +296,8 @@ class History:
         curr_tape = self.tape
         assert curr_tape is not None
 
-        while prev:  # pylint: disable = while-used
+        for prev in self:
             if self.state != prev.state or self.scan != prev.scan:
-                prev = prev.prev
                 continue
 
             prev_head = prev.head
@@ -313,7 +318,5 @@ class History:
                     rightmost,
             ):
                 return True
-
-            prev = prev.prev
 
         return False
