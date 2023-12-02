@@ -341,19 +341,19 @@ class LooseLinRecMachine(LinRecMachine):
                 if tape.scan != init_tape.scan:
                     continue
 
-                ptr = tape.to_ptr()
+                curr_tape = tape.to_ptr()
 
                 if 0 < (diff := curr - init_pos):
                     slice1 = init_tape.get_ltr(leftmost)
-                    slice2 = ptr.get_ltr(leftmost + diff)
+                    slice2 = curr_tape.get_ltr(leftmost + diff)
 
                 elif diff < 0:
                     slice1 = init_tape.get_rtl(rightmost)
-                    slice2 = ptr.get_rtl(rightmost + diff)
+                    slice2 = curr_tape.get_rtl(rightmost + diff)
 
                 else:
                     slice1 = init_tape.get_cnt(leftmost, rightmost)
-                    slice2 = ptr.get_cnt(leftmost, rightmost)
+                    slice2 = curr_tape.get_cnt(leftmost, rightmost)
 
                 if slice1 == slice2:
                     self.infrul = step
