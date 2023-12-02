@@ -14,10 +14,47 @@ if TYPE_CHECKING:
     from tm.parse import Color, Shift, State, Slot, GetInstr
     from tm.machine import Undfnd
 
-    Tapes = dict[int, PtrTape]
-
     RecRes = tuple[int, int]
     LinRec = tuple[int | None, int]
+
+
+class PtrTapeLR(PtrTape):
+    @classmethod
+    def from_head(cls, tape: HeadTape) -> Self:
+        return cls(
+            sum(int(q.count) for q in tape.lspan) - tape.head,
+            tape.scan,
+            tape.unroll(),
+        )
+
+    def aligns_with_optional_offsets(
+            self,
+            prev: PtrTape,
+            diff: int,
+            leftmost: int | None = None,
+            rightmost: int | None = None,
+    ) -> bool:
+        if 0 < diff:
+            assert leftmost is not None
+            slice1 = prev.get_ltr(leftmost)
+            slice2 = self.get_ltr(leftmost + diff)
+
+        elif diff < 0:
+            assert rightmost is not None
+            slice1 = prev.get_rtl(rightmost)
+            slice2 = self.get_rtl(rightmost + diff)
+
+        else:
+            assert leftmost is not None
+            assert rightmost is not None
+            slice1 = prev.get_cnt(leftmost, rightmost)
+            slice2 = self.get_cnt(leftmost, rightmost)
+
+        return slice1 == slice2
+
+
+if TYPE_CHECKING:
+    Tapes = dict[int, PtrTapeLR]
 
 
 @dataclass
@@ -51,7 +88,7 @@ class History:
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
 
-        self.tapes[step] = tape.to_ptr()
+        self.tapes[step] = PtrTapeLR.from_head(tape)
 
     def check_rec(self, step: int, slot: Slot) -> RecRes | None:
         for pstep in self.slots[slot]:
@@ -74,27 +111,30 @@ class History:
         positions = self.positions
 
         if 0 < (diff := positions[recur] - positions[steps]):
-            leftmost = min(positions[steps:])
-
-            slice1 = tape1.get_ltr(leftmost)
-            slice2 = tape2.get_ltr(leftmost + diff)
+            aligns = tape2.aligns_with_optional_offsets(
+                tape1,
+                diff,
+                leftmost = min(positions[steps:]),
+            )
 
         elif diff < 0:
-            rightmost = max(positions[steps:])
-
-            slice1 = tape1.get_rtl(rightmost)
-            slice2 = tape2.get_rtl(rightmost + diff)
+            aligns = tape2.aligns_with_optional_offsets(
+                tape1,
+                diff,
+                rightmost = max(positions[steps:]),
+            )
 
         else:
-            leftmost  = min(positions[steps:])
-            rightmost = max(positions[steps:])
-
-            slice1 = tape1.get_cnt(leftmost, rightmost)
-            slice2 = tape2.get_cnt(leftmost, rightmost)
+            aligns = tape2.aligns_with_optional_offsets(
+                tape1,
+                diff,
+                leftmost = min(positions[steps:]),
+                rightmost = max(positions[steps:]),
+            )
 
         return (
             (steps, recur - steps)
-            if slice1 == slice2 else
+            if aligns else
             None
         )
 
@@ -341,21 +381,12 @@ class LooseLinRecMachine(LinRecMachine):
                 if tape.scan != init_tape.scan:
                     continue
 
-                curr_tape = tape.to_ptr()
-
-                if 0 < (diff := curr - init_pos):
-                    slice1 = init_tape.get_ltr(leftmost)
-                    slice2 = curr_tape.get_ltr(leftmost + diff)
-
-                elif diff < 0:
-                    slice1 = init_tape.get_rtl(rightmost)
-                    slice2 = curr_tape.get_rtl(rightmost + diff)
-
-                else:
-                    slice1 = init_tape.get_cnt(leftmost, rightmost)
-                    slice2 = curr_tape.get_cnt(leftmost, rightmost)
-
-                if slice1 == slice2:
+                if tape.to_ptr().aligns_with(
+                        init_tape,
+                        curr - init_pos,
+                        leftmost,
+                        rightmost,
+                ):
                     self.infrul = step
                     break
 

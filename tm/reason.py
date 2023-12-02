@@ -306,19 +306,12 @@ class History:
             prev_tape = prev.tape
             assert prev_tape is not None
 
-            if 0 < (diff := curr_head - prev_head):
-                slice1 = prev_tape.get_ltr(leftmost)
-                slice2 = curr_tape.get_ltr(leftmost + diff)
-
-            elif diff < 0:
-                slice1 = prev_tape.get_rtl(rightmost)
-                slice2 = curr_tape.get_rtl(rightmost + diff)
-
-            else:
-                slice1 = prev_tape.get_cnt(leftmost, rightmost)
-                slice2 = curr_tape.get_cnt(leftmost, rightmost)
-
-            if slice1 == slice2:
+            if curr_tape.aligns_with(
+                    prev_tape,
+                    curr_head - prev_head,
+                    leftmost,
+                    rightmost,
+            ):
                 return True
 
             prev = prev.prev

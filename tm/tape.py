@@ -630,6 +630,27 @@ class PtrTape:
     scan: Color
     tape: list[Color]
 
+    def aligns_with(
+            self,
+            prev: PtrTape,
+            diff: int,
+            leftmost: int,
+            rightmost: int,
+    ) -> bool:
+        if 0 < diff:
+            slice1 = prev.get_ltr(leftmost)
+            slice2 = self.get_ltr(leftmost + diff)
+
+        elif diff < 0:
+            slice1 = prev.get_rtl(rightmost)
+            slice2 = self.get_rtl(rightmost + diff)
+
+        else:
+            slice1 = prev.get_cnt(leftmost, rightmost)
+            slice2 = self.get_cnt(leftmost, rightmost)
+
+        return slice1 == slice2
+
     def get_ltr(self, start: int) -> TapeSlice:
         start += self.init
 
