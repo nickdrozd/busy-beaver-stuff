@@ -72,20 +72,27 @@ def worker(
 ) -> None:
     pid: str = 'prep' if prep else str(os.getpid())
 
-    def log(msg: str) -> None:
-        print(f'{pid}: {msg}')
+    def log(msg: str, stack: bool = False) -> None:
+        msg = f'{pid}: {msg}'
 
-    def log_stack() -> None:
-        log(json.dumps(stack, indent = 4))
+        if stack:
+            msg = '\n'.join([
+                msg,
+                json.dumps(
+                    stack,
+                    indent = 4,
+                )
+            ])
 
-    log_stack()
+        print(msg)
+
+    log('starting...', stack = True)
 
     for prog in tree_gen(steps, halt, stack):
         try:
             output(prog)
         except KeyboardInterrupt:
-            log('dumping...')
-            log_stack()
+            log('dumping...', stack = True)
             raise
         except Exception as err:  # pylint: disable = broad-exception-caught
             log(f'ERROR: {prog} || {err}')
