@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+import signal
 from typing import TYPE_CHECKING
 
 from multiprocessing import cpu_count, Process
@@ -72,10 +73,10 @@ def worker(
 ) -> None:
     pid: str = 'prep' if prep else str(os.getpid())
 
-    def log(msg: str, stack: bool = False) -> None:
+    def log(msg: str, dump_stack: bool = False) -> None:
         msg = f'{pid}: {msg}'
 
-        if stack:
+        if dump_stack:
             msg = '\n'.join([
                 msg,
                 json.dumps(
@@ -86,14 +87,20 @@ def worker(
 
         print(msg)
 
-    log('starting...', stack = True)
+    def handle_interrupt(_, __) -> None:  # type: ignore[no-untyped-def]
+        log('interrupted...', dump_stack = True)
+
+        raise KeyboardInterrupt
+
+    signal.signal(
+        signal.SIGINT,
+        handle_interrupt)
+
+    log('starting...', dump_stack = True)
 
     for prog in tree_gen(steps, halt, stack):
         try:
             output(prog)
-        except KeyboardInterrupt:
-            log('dumping...', stack = True)
-            raise
         except Exception as err:  # pylint: disable = broad-exception-caught
             log(f'ERROR: {prog} || {err}')
 
