@@ -317,23 +317,24 @@ class Add(Num):
             return l < 0
 
         if isinstance(other, Add):
-            if self == other.r:
-                return other.l > 0
+            lo, ro = other.l, other.r
 
-            if l == other.l:
-                return r < other.r
+            if self == ro:
+                return lo > 0
 
-            if r == other.r:
-                return l < other.l
+            if l == lo:
+                return r < ro
 
-            if l == other.r:
-                return r < other.l
+            if r == ro:
+                return l < lo
 
-            if (isinstance(l, int)
-                    and isinstance(other.l, int)):
-                return r < other.r
+            if l == ro:
+                return r < lo
 
-            if l < other.l and r < other.l:  # no-branch
+            if isinstance(l, int) and isinstance(lo, int):
+                return r < ro
+
+            if l < lo and r < lo:  # no-branch
                 return True
 
         if isinstance(l, int) and abs(l) < 10:
@@ -451,50 +452,46 @@ class Mul(Num):
         l, r = self.l, self.r
 
         if isinstance(other, Mul):
-            if r == other.r:
-                return (l + other.l) * r
+            lo, ro = other.l, other.r
 
-            if l == other.l:
-                return l * (r + other.r)
+            if r == ro:
+                return (l + lo) * r
 
-            if l == other.r:
-                return l * (r + other.l)
+            if l == lo:
+                return l * (r + ro)
 
-            if r == other.l:
-                return (l + other.r) * r
+            if l == ro:
+                return l * (r + lo)
 
-            if isinstance(s_exp := r, Exp):
-                if (isinstance(r_exp := other.r, Exp)
-                        and s_exp.base == r_exp.base):
+            if r == lo:
+                return (l + ro) * r
+
+            if isinstance(r, Exp):
+                if isinstance(ro, Exp) and r.base == ro.base:
                     try:
-                        return add_exponents(
-                            (s_exp, l),
-                            (r_exp, other.l),
-                        )
+                        return add_exponents((r, l), (ro, lo))
                     except NotImplementedError:  # no-cover
                         pass
 
-                if (isinstance(l_exp := other.l, Exp)
-                        and s_exp.base == l_exp.base):
+                if isinstance(lo, Exp) and r.base == lo.base:
                     try:
-                        return add_exponents(
-                            (s_exp, l),
-                            (l_exp, other.r),
-                        )
+                        return add_exponents((r, l), (lo, ro))
                     except NotImplementedError:  # no-cover
                         pass
 
         elif isinstance(other, Add):
-            if isinstance(other.l, int):
-                return other.l + (other.r + self)
+            lo, ro = other.l, other.r
 
-            if isinstance(other.l, Mul):
-                if other.l.l == l:  # no-cover
-                    return (self + other.l) + other.r
+            if isinstance(lo, int):
+                return lo + (ro + self)
 
-            if isinstance(other.r, Mul):  # no-branch
-                if other.r.l == l:
-                    return other.l + (self + other.r)
+            if isinstance(lo, Mul):
+                if lo.l == l:  # no-cover
+                    return (self + lo) + ro
+
+            if isinstance(ro, Mul):  # no-branch
+                if ro.l == l:
+                    return lo + (self + ro)
 
         elif isinstance(other, Exp):
             return other + self
@@ -527,17 +524,19 @@ class Mul(Num):
             return l < 0
 
         if isinstance(other, Mul):
-            if l == other.l:
-                return r < other.r
+            lo, ro = other.l, other.r
 
-            if r == other.r:
-                return l < other.l
+            if l == lo:
+                return r < ro
 
-            if l == other.r:  # no-cover
-                return r < other.l
+            if r == ro:
+                return l < lo
 
-            if r == other.l:  # no-cover
-                return l < other.r
+            if l == ro:  # no-cover
+                return r < lo
+
+            if r == lo:  # no-cover
+                return l < ro
 
         if l < 0:
             if other < 0:  # no-cover
@@ -889,14 +888,16 @@ class Exp(Num):
         if other < 0:
             return False
 
-        if isinstance(other, Exp):
-            if self.base == other.base:
-                return self.exp < other.exp
+        base, exp = self.base, self.exp
 
-            if self.base < other.base and self.exp < other.exp:
+        if isinstance(other, Exp):
+            if base == other.base:
+                return exp < other.exp
+
+            if base < other.base and exp < other.exp:
                 return True
 
-            if self.base > other.base and self.exp > other.exp:
+            if base > other.base and exp > other.exp:
                 return False
 
         elif isinstance(other, Add):
@@ -908,9 +909,7 @@ class Exp(Num):
         elif isinstance(other, Mul):  # no-branch
             l, r = other.l, other.r
 
-            if (isinstance(l, Exp)
-                    and l.base == self.base
-                    and l.exp <= self.exp):
+            if isinstance(l, Exp) and l.base == base and l.exp <= exp:
                 return (self // l) < r
 
         return super().__lt__(other)
