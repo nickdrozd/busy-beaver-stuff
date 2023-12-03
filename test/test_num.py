@@ -284,7 +284,7 @@ class TestNum(TestCase):
         self.assert_num(
             (7 * Exp(3, 3)) + -(5 * Exp(3, 3)),
             54,
-            "((7 * (3 ** 3)) + -(5 * (3 ** 3)))")
+            "(2 * (3 ** 3))")
 
     def test_div(self):
         self.assert_num(

@@ -479,6 +479,14 @@ class Mul(Num):
                     except NotImplementedError:  # no-cover
                         pass
 
+                if lo == -1 and isinstance(ro, Mul):
+                    rol, ror = ro.l, ro.r
+
+                    if (isinstance(ror, Exp)
+                            and ror.base == r.base
+                            and ror.exp == r.exp):
+                        return (l + -rol) * r
+
         elif isinstance(other, Add):
             lo, ro = other.l, other.r
 
