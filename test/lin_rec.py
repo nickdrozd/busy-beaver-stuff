@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     RecRes = tuple[int, int]
     LinRec = tuple[int | None, int]
 
+    TapeSlice = list[Color]
+
 
 class PtrTapeLR(PtrTape):
     @classmethod
@@ -26,6 +28,33 @@ class PtrTapeLR(PtrTape):
             tape.scan,
             tape.unroll(),
         )
+
+    def get_ltr(self, start: int) -> TapeSlice:
+        start += self.init
+
+        return (
+            self.tape[ start : ]
+            if (ldiff := -start) <= 0 else
+            [0] * ldiff + self.tape
+        )
+
+    def get_rtl(self, stop: int) -> TapeSlice:
+        stop += self.init + 1
+
+        return (
+            self.tape[ : stop ]
+            if (rdiff := stop - len(self.tape)) <= 0 else
+            self.tape[ : stop - rdiff ] + [0] * rdiff
+        )
+
+    def get_cnt(self, start: int, stop: int) -> TapeSlice:
+        start += self.init
+        stop += self.init + 1
+
+        return [
+            self.tape[pos] if 0 <= pos < len(self.tape) else 0
+            for pos in range(start, stop)
+        ]
 
     def aligns_with_optional_offsets(
             self,
