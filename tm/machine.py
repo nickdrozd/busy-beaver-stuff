@@ -153,7 +153,7 @@ class Machine:
             str(self.tape),
         ]
 
-        if step == -1:
+        if step != -1:
             info.insert(1, f'{step : 3d}')
 
         print(' | '.join(info))
