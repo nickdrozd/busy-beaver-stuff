@@ -61,9 +61,11 @@ type :
 
 MYPYC = $(PYTHON) -m mypyc
 
+TEST_COMPILE = test/utils.py test/lin_rec.py test/machine.py
+
 compile : rust
 	$(MYPYC) --version
-	$(MYPYC) tm tools test/utils.py test/lin_rec.py --exclude rust_stuff
+	$(MYPYC) tm tools $(TEST_COMPILE) --exclude rust_stuff
 
 TUR = test.test_turing.Fast
 PROG = test.test_program
