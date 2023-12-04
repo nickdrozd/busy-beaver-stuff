@@ -59,7 +59,7 @@ def calculate_diff(*counts: Count) -> Op | None:
         ascending = all(bef < aft for bef, aft in pairwise(counts))
     except NotImplementedError:
         pass
-    else:  # no-cover
+    else:
         if not ascending:
             raise UnknownRule(
                 'non-increasing')
@@ -122,7 +122,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
         match sub:
             case Add():
-                if not isinstance(l := sub.l, int):
+                if not isinstance(l := sub.l, int):  # no-cover
                     raise RuleLimit('sub_add')
 
                 descent.append(
@@ -131,13 +131,13 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
                 sub = sub.r
 
             case Mul():
-                if not isinstance(l := sub.l, int):
+                if not isinstance(l := sub.l, int):  # no-branch
                     raise RuleLimit('sub_mul')
 
-                descent.append(
+                descent.append(  # no-cover
                     ('//', l))
 
-                sub = sub.r
+                sub = sub.r  # no-cover
 
             case Div():
                 descent.append(
@@ -148,6 +148,10 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
             case Exp():  # no-branch
                 if isinstance(exp := sub.exp, int):
                     raise RuleLimit('sub_exp')
+
+                if (coef := sub.coef) != 1:  # no-branch
+                    descent.append(
+                        ('//', coef))
 
                 descent.append(
                     ('~', sub.base))
@@ -175,13 +179,13 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
                 sup = sup.r
 
             case Mul():
-                if not isinstance(l := sup.l, int):
+                if not isinstance(l := sup.l, int):  # no-branch
                     raise RuleLimit('sup_mul')
 
-                ascent.append(
+                ascent.append(  # no-cover
                     ('*', l))
 
-                sup = sup.r
+                sup = sup.r  # no-cover
 
             case Div():
                 ascent.append(
@@ -189,9 +193,13 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
                 sup = sup.num
 
-            case Exp():
+            case Exp():  # no-branch
                 if isinstance(exp := sup.exp, int):  # no-cover
                     raise RuleLimit('sup_exp')
+
+                if (coef := sup.coef) != 1:  # no-branch
+                    ascent.append(
+                        ('*', coef))
 
                 ascent.append(
                     ('**', sup.base))
@@ -204,9 +212,9 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
     ops = tuple(descent) + tuple(reversed(ascent))
 
-    if any(apply_ops(bef, 1, ops) != aft
-           for bef, aft in pairwise(counts[1:])):  # no-cover
-        raise UnknownRule
+    if any(apply_ops(bef, 1, ops) != aft  # no-branch
+           for bef, aft in pairwise(counts[1:])):
+        raise UnknownRule  # no-cover
 
     return ops
 
@@ -295,11 +303,11 @@ class ApplyRule:
 
 
 def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
-    if not isinstance(count, int) and count.depth > 20:  # no-cover
-        raise RuleLimit('count-depth')
+    if not isinstance(count, int) and count.depth > 20:
+        raise RuleLimit('count-depth')  # no-cover
 
-    if not isinstance(times, int) and times.depth > 200:  # no-cover
-        raise RuleLimit('times-depth')
+    if not isinstance(times, int) and times.depth > 200:
+        raise RuleLimit('times-depth')  # no-cover
 
     exp: int | Exp = (
         mul

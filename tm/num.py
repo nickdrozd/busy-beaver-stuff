@@ -17,7 +17,7 @@ class NumException(Exception):
 ADDS: dict[Count, dict[Num, Add]] = defaultdict(dict)
 MULS: dict[Count, dict[Num, Mul]] = defaultdict(dict)
 DIVS: dict[Num, dict[int, Div]] = defaultdict(dict)
-EXPS: dict[int, dict[Count, Exp]] = defaultdict(dict)
+EXPS: dict[tuple[int, int], dict[Count, Exp]] = defaultdict(dict)
 
 
 class Num:
@@ -32,7 +32,7 @@ class Num:
         return False
 
     def estimate(self) -> Count:
-        est: Exp | Tet
+        est: int | Exp | Tet
 
         if (tower := self.tower_est) > 3:
             est = Tet(10, tower)
@@ -168,7 +168,7 @@ class Num:
 
         return make_div(self, other)
 
-    def __rpow__(self, other: int) -> Exp | Tet:
+    def __rpow__(self, other: int) -> int | Exp | Tet:
         return make_exp(other, self)
 
 
@@ -348,13 +348,6 @@ class Mul(Num):
     r: Num
 
     def __init__(self, l: Count, r: Num):
-        if l < 0:
-            assert r > 0
-
-        if r < 0:
-            assert l > 0
-            assert isinstance(l, Num)
-
         self.l = l
         self.r = r
 
@@ -632,7 +625,9 @@ class Div(Num):
         return super().__lt__(other)  # no-cover
 
 
-def make_exp(base: int, exp: Count) -> Exp:
+def make_exp(base: int, exp: Count, coef: int = 1) -> int | Exp:
+    assert coef != 0
+
     for _ in itertools.count():
         if not isinstance(base, int) or base <= 1:
             break
@@ -648,20 +643,32 @@ def make_exp(base: int, exp: Count) -> Exp:
         exp *= int(log(base, root))
         base = int(root)
 
+    for i in itertools.count():
+        if coef % base != 0:
+            exp += i
+            break
+
+        if -1 <= coef <= 1:
+            break
+
+        coef //= base
+
     try:
-        return (exps := EXPS[base])[exp]
+        return (exps := EXPS[(base, coef)])[exp]
     except KeyError:
-        exps[exp] = Exp(base, exp)  # pylint: disable = used-before-assignment
+        exps[exp] = Exp(base, exp, coef)  # pylint: disable = used-before-assignment
         return exps[exp]
 
 
 class Exp(Num):
     base: int
     exp: Count
+    coef: int
 
-    def __init__(self, base: int, exp: Count):
+    def __init__(self, base: int, exp: Count, coef: int = 1):
         self.base = base
         self.exp = exp
+        self.coef = coef
 
         self.depth = 1 + (0 if isinstance(exp, int) else exp.depth)
 
@@ -673,7 +680,18 @@ class Exp(Num):
         )
 
     def __repr__(self) -> str:
-        return f'({self.base} ** {show_number(self.exp)})'
+        exp = f'({self.base} ** {show_number(self.exp)})'
+
+        if (coef := self.coef) == 1:
+            return exp
+
+        if coef == -1:
+            return f'-{exp}'
+
+        if coef < 0:
+            return f'-({show_number(-coef)} * {exp})'
+
+        return f'({show_number(coef)} * {exp})'
 
     def __hash__(self) -> int:
         return id(self)
@@ -686,7 +704,17 @@ class Exp(Num):
         )
 
     def __int__(self) -> int:
-        return self.base ** int(self.exp)  # type: ignore[no-any-return]
+        return (  # type: ignore[no-any-return]
+            self.coef
+            * self.base ** int(self.exp)
+        )
+
+    def __neg__(self) -> Count:
+        return make_exp(
+            self.base,
+            self.exp,
+            -(self.coef),
+        )
 
     def digits(self) -> int:
         if not isinstance(exp := self.exp, int):
@@ -695,9 +723,20 @@ class Exp(Num):
 
             exp = int(exp)
 
-        return round(log10(self.base) * 10 ** log10(exp))
+        coef = self.coef
+        coef_digits = round(log10(coef if coef > 0 else -coef))
+        exp_digits = round(log10(self.base) * 10 ** log10(exp))
+
+        return coef_digits + exp_digits
 
     def __mod__(self, mod: int) -> int:
+        if self.coef != 1:
+            expo = make_exp(self.base, self.exp, 1)
+
+            assert isinstance(expo, Exp)
+
+            return Mul(self.coef, expo) % mod
+
         if mod == 1:
             return 0
 
@@ -736,6 +775,32 @@ class Exp(Num):
         return res
 
     def __add__(self, other: Count) -> Count:
+        base, exp, coef = self.base, self.exp, self.coef
+
+        if isinstance(other, Exp):
+            if base == other.base:
+                if exp == other.exp and coef == -(other.coef):
+                    return 0
+
+                try:
+                    if exp > other.exp:
+                        return other + self
+
+                    assert exp <= other.exp
+                except NotImplementedError:
+                    return super().__add__(other)
+
+                diff_exp = (
+                    base ** diff
+                    if (diff := other.exp - exp) < 1_000 else
+                    make_exp(base, diff)
+                )
+
+                return (
+                    (coef + (other.coef * diff_exp))
+                    * make_exp(base, exp)
+                )
+
         if isinstance(other, Mul):
             l, r = other.l, other.r
 
@@ -743,21 +808,18 @@ class Exp(Num):
 
             if isinstance(r, Exp) and r.base == base:
                 try:
-                    return add_exponents((self, 1), (r, l))
+                    return add_exponents(
+                        (self, self.coef),
+                        (r, r.coef * l))
                 except NotImplementedError:
                     pass
 
             if isinstance(l, Exp) and l.base == base:
                 try:
-                    return add_exponents((self, 1), (l, r))
+                    return add_exponents(
+                        (self, self.coef),
+                        (l, l.coef * r))
                 except NotImplementedError:
-                    pass
-
-        elif isinstance(other, Exp):
-            if other.base == self.base:
-                try:
-                    return add_exponents((self, 1), (other, 1))
-                except NotImplementedError:  # no-cover
                     pass
 
         return super().__add__(other)
@@ -777,7 +839,19 @@ class Exp(Num):
     def __mul__(self, other: Count) -> Count:
         if isinstance(other, Exp):
             if (base := self.base) == other.base:
-                return make_exp(base, self.exp + other.exp)
+                return make_exp(
+                    base,
+                    self.exp + other.exp,
+                    self.coef * other.coef,
+                )
+
+            if self.coef != 1 or other.coef != 1:
+                return (
+                    (self.coef * other.coef) * (
+                        make_exp(self.base, self.exp, 1)
+                        * make_exp(other.base, other.exp, 1)
+                    )
+                )
 
         elif isinstance(other, Add):
             l, r = other.l, other.r
@@ -800,36 +874,27 @@ class Exp(Num):
         return super().__mul__(other)
 
     def __rmul__(self, other: int) -> Count:
-        if other == -1 or isinstance(base := self.base, Num):
-            return super().__rmul__(other)
+        if other == 0:
+            return 0
 
-        if other < -1 and -other % base == 0:
-            return -(-other * self)
-
-        if other < 1 or other % base != 0:
-            return super().__rmul__(other)
-
-        exp = self.exp
-
-        for i in itertools.count():
-            if other % base != 0:
-                exp += i
-                break
-
-            other //= base
-
-        return other * make_exp(base, exp)
+        return make_exp(
+            self.base,
+            self.exp,
+            other * self.coef,
+        )
 
     def __floordiv__(self, other: Count) -> Count:
         if other == 1:
             return self
 
-        base, exp = self.base, self.exp
+        base, exp, coef = self.base, self.exp, self.coef
 
         if not isinstance(other, int):
             assert isinstance(other, Exp)
             assert other.base == base
             assert other.exp <= exp, (self, other)
+
+            assert other.coef == 1, (self, other)
 
             match (diff := exp - other.exp):
                 case 0:
@@ -838,6 +903,11 @@ class Exp(Num):
                     return base
                 case _:
                     return make_exp(base, diff)
+
+        assert isinstance(other, int)
+
+        if (div := pgcd(coef, other)) > 1:
+            return make_exp(base, exp, coef // div) // (other // div)
 
         for i in itertools.count():
             if other % base != 0:
@@ -848,13 +918,15 @@ class Exp(Num):
 
         return (
             1 if exp == 0 else
-            base if exp == 1 else
-            make_exp(base, exp)
+            coef * base if exp == 1 else
+            make_exp(base, exp, coef)
         )
 
     def __lt__(self, other: Count) -> bool:
+        coef = self.coef
+
         if isinstance(other, int):
-            return False
+            return coef < 0
 
         if other < 0:
             return False
@@ -862,8 +934,30 @@ class Exp(Num):
         base, exp = self.base, self.exp
 
         if isinstance(other, Exp):
+            if coef < 0 < other.coef:
+                return True
+
+            if other.coef < 0 < coef:
+                return False
+
+            if isinstance(exp, int) and not isinstance(other.exp, int):
+                return True
+
+            if not isinstance(exp, int) and isinstance(other.exp, int):
+                return False
+
             if base == other.base:
-                return exp < other.exp
+                if coef == other.coef:
+                    return exp < other.exp
+
+                if exp == other.exp:
+                    return coef < other.coef
+
+                if coef < other.coef and exp < other.exp:
+                    return True
+
+                if other.coef < coef and other.exp < exp:
+                    return False
 
             if base < other.base and exp < other.exp:
                 return True
@@ -873,6 +967,12 @@ class Exp(Num):
 
         elif isinstance(other, Add):
             l, r = other.l, other.r
+
+            if self == r:
+                return 0 < l
+
+            if self == l:
+                return 0 < r
 
             if isinstance(l, int):
                 return self < r
@@ -885,7 +985,7 @@ class Exp(Num):
 
         return super().__lt__(other)
 
-    def __pow__(self, other: Count) -> Exp:
+    def __pow__(self, other: Count) -> int | Exp:
         return make_exp(self.base, self.exp * other)
 
 
@@ -925,7 +1025,7 @@ class Tet(Num):
             and self.height == other.height
         )
 
-    def __rpow__(self, other: int) -> Exp | Tet:
+    def __rpow__(self, other: int) -> int | Exp | Tet:
         if other != self.base:
             return super().__rpow__(other)
 
@@ -987,6 +1087,8 @@ def gcd(l: int, r: Count) -> int:
     if not isinstance(base := r.base, int):  # no-cover
         return 1
 
+    cogcd = pgcd(l, r.coef)
+
     blog = int(log(l, base))
 
     over = base ** blog
@@ -998,7 +1100,7 @@ def gcd(l: int, r: Count) -> int:
         blog -= 1
         over //= base
 
-    return base ** blog  # type: ignore[no-any-return]
+    return cogcd * (base ** blog)  # type: ignore[no-any-return]
 
 
 @cache
