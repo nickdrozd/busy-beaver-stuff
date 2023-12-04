@@ -60,7 +60,7 @@ class TestNum(TestCase):
             "adds": 2272,
             "divs": 2062,
             "exps": 1187,
-            "muls": 1385,
+            "muls": 1386,
         })
 
     def assert_mod(
@@ -454,6 +454,16 @@ class TestNum(TestCase):
             "(~10^19728)",
             show_number(
                 int(2 ** 2 ** 2 ** Exp(2, 2))))
+
+        self.assert_num(
+            2 ** Exp(2, 5),
+            4294967296,
+            "(2 ** (2 ** 5))")
+
+        self.assert_num(
+            Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
+            4294967264,
+            "((2 ** 5) * (-1 + (2 ** (-5 + (2 ** 5)))))")
 
     def test_exp_mod(self):
         vals = {
@@ -1052,6 +1062,11 @@ class TestNum(TestCase):
             -Exp(2, 3) + (-Exp(2, 5) + Exp(3, 3)),
             -13,
             "((3 ** 3) + -(5 * (2 ** 3)))")
+
+        self.assert_num(
+            Exp(2, 3) * (-1 + (4 * Exp(3, 3))),
+            856,
+            "((2 ** 3) * (-1 + (4 * (3 ** 3))))")
 
         self.assert_num(
             -Exp(2, 3) + (Exp(2, 5) * Exp(3, 3)),
