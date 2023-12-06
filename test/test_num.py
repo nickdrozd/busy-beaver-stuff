@@ -57,10 +57,10 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2272,
-            "divs": 2062,
+            "adds": 2274,
+            "divs": 2063,
             "exps": 1187,
-            "muls": 1386,
+            "muls": 1389,
         })
 
     def assert_mod(
@@ -336,6 +336,11 @@ class TestNum(TestCase):
             ((3 * Exp(5, 4)) // 15) // 5,
             25,
             "(5 ** 2)")
+
+        self.assert_num(
+            (3 * Exp(2, 3)) // 4,
+            6,
+            "6")
 
         self.assert_num(
             ((3 * Exp(2, 3)) // 4) * 3,
@@ -888,6 +893,16 @@ class TestNum(TestCase):
             "(3 * (2 ** (3 * (2 ** 3))))")
 
         self.assert_num(
+            (-1 + Exp(3, 4)) // 2,
+            40,
+            "((-1 + (3 ** 4)) // 2)")
+
+        self.assert_num(
+            (2 * Exp(3, 18)) * ((-1 + Exp(3, 4)) // 2),
+            30993639120,
+            "(80 * (3 ** 18))")
+
+        self.assert_num(
             Exp(3, 18) + ((2 * Exp(3, 18)) * ((-1 + Exp(3, 4)) // 2)),
             31381059609,
             "(3 ** 22)")
@@ -942,6 +957,16 @@ class TestNum(TestCase):
             Exp(2, 3) * (Exp(2, 4) * (-1 + (Exp(3, 3) * Exp(2, 5)))),
             110464,
             "((2 ** 7) * (-1 + (32 * (3 ** 3))))")
+
+        self.assert_num(
+            -Exp(2, 4) * 32,
+            -512,
+            "-(2 ** 9)")
+
+        self.assert_num(
+            -Exp(2, 4) * (32 * Exp(3, 3)),
+            -13824,
+            "-((2 ** 9) * (3 ** 3))")
 
         self.assert_num(
             2 * (Exp(2, 3) * (1 + (Exp(3, 3) * Exp(2, 5)))),
@@ -1098,6 +1123,11 @@ class TestNum(TestCase):
             (Exp(2, 4) * Exp(3, 3)) // 12,
             36,
             "((2 ** 2) * (3 ** 2))")
+
+        self.assert_num(
+            Exp(2, 6) * (-5 + (5 * Exp(2, 14))),
+            5242560,
+            "((5 * (2 ** 20)) + -(5 * (2 ** 6)))")
 
         self.assert_num(
             (Exp(2, 6) * (-5 + (5 * Exp(2, 14)))) // 12,
