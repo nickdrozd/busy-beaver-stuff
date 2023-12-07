@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -20,6 +22,9 @@ def profile(function: Null) -> Null:
         function()
 
         stats = yappi.get_func_stats()
-        stats.save('yappi.callgrind', type = 'callgrind')
+
+        stats.save(
+            f"{sys.argv[0].split('.')[0]}.callgrind",
+            type = 'callgrind')
 
     return wrapper

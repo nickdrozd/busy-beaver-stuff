@@ -14,3 +14,4 @@ packages.png
 target/
 Cargo.lock
 .cargo
+*callgrind
