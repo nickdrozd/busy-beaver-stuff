@@ -44,7 +44,7 @@ clean-rust :
 
 PYTHON = python3
 
-MODULES = tm tools test *.py
+MODULES = tm tools test perf *.py
 
 PYLINT = $(PYTHON) -m pylint
 
@@ -98,7 +98,7 @@ coverage : rust
 	$(COVERAGE) html
 
 diagrams :
-	pyreverse --only-classnames --no-standalone --colorized -o png tm tools test
+	pyreverse --only-classnames --no-standalone --colorized -o png tm tools test perf
 
 # PYTHONPATH=$PYTHONPATH:tm make special target=tm/tape.py
 special :
