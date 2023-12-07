@@ -108,6 +108,9 @@ mutmut :
 	-mutmut run
 	mutmut html
 
+profile :
+	$(MAKE) -C perf
+
 ## Program files (non-phony) ###########
 
 TIME = time -p
@@ -132,11 +135,3 @@ TREE = $(PYTHON) tree_gen.py
 
 generate : 3-2.prog 2-3.prog
 	wc -l *.prog
-
-CALLGRIND = yappi.callgrind
-PROFILE = yappi.png
-
-$(PROFILE) : $(CALLGRIND)
-	gprof2dot $(CALLGRIND) -f callgrind --colour-nodes-by-selftime | dot -T png -o $(PROFILE)
-
-profile : $(PROFILE)
