@@ -57,10 +57,10 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2274,
+            "adds": 2279,
             "divs": 2063,
-            "exps": 1187,
-            "muls": 1389,
+            "exps": 1192,
+            "muls": 1391,
         })
 
     def assert_mod(
@@ -1344,6 +1344,11 @@ class TestNum(TestCase):
             (2 ** Exp(2, 7)) // (2 ** Exp(2, 5)),
             79228162514264337593543950336,
             "(2 ** (3 * (2 ** 5)))")
+
+    def test_mul_pow(self):
+        self.assert_rep(
+            (2 ** (-259 + Exp(2, 258))) * ((2 ** (Exp(2, 258) * (-1 + (2 ** (-258 + Exp(2, 258)))))) + (2 ** (2 + (Exp(2, 258) * (-1 + (2 ** (-258 + Exp(2, 258)))))))),
+            "((2 ** (-259 + (2 ** 258))) * ((2 ** ((2 ** 258) * (-1 + (2 ** (-258 + (2 ** 258)))))) + (2 ** (2 + ((2 ** 258) * (-1 + (2 ** (-258 + (2 ** 258)))))))))")
 
 
 class TestRecursionError(TestCase):
