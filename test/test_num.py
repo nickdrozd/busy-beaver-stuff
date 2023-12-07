@@ -34,6 +34,8 @@ def assert_num_counts(expected: dict[str, int]):
         for name, cache in CACHES.items()
     }
 
+    num_counts['totl'] = sum(num_counts.values())
+
     try:
         assert num_counts == expected, num_counts
     except AssertionError:  # no-cover
@@ -61,6 +63,7 @@ class TestNum(TestCase):
             "divs": 2063,
             "exps": 1192,
             "muls": 1391,
+            "totl": 6925,
         })
 
     def assert_mod(

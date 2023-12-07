@@ -1042,6 +1042,7 @@ class Fast(TuringTest):
             "divs": 8390,
             "exps": 9657,
             "muls": 7462,
+            "totl": 59211,
         })
 
 
