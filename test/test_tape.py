@@ -199,6 +199,33 @@ class TestTape(TestCase):
         self.assert_tape(
             f"3^1 2^1 1^{exp} [0]")
 
+    def test_hash(self):
+        blocks = set()
+
+        block1 = HeadBlock(1, 1)
+
+        blocks.add(block1)
+
+        block2 = HeadBlock(1, 1)
+
+        self.assertEqual(hash(block1), hash(block2))
+
+        self.assertIn(block2, blocks)
+
+        tapes = set()
+
+        tape1 = HeadTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)], -4)
+
+        tapes.add(tape1)
+
+        self.assertIn(tape1, tapes)
+
+        tape2 = HeadTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)], -4)
+
+        self.assertEqual(hash(tape1), hash(tape2))
+
+        self.assertIn(tape2, tapes)
+
 
 class TestTags(TestCase):
     tape: TagTape
