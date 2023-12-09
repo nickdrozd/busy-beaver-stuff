@@ -40,32 +40,16 @@ class TestLinRado(TestCase):
             loose: int,
             rejects: list[str] | None = None,
     ):
-        self.progs_strict = {
-            prog
-            for prog in
-            yield_programs(
-                states,
-                colors,
-                bool(halt),
-                rejects)
-            if
-            StrictLinRecMachine(prog).run(
-                sim_lim = strict,
-                check_rec = 0,
-            ).xlimit is not None
-        }
+        self.progs_strict, self.progs_loose = set(), set()
 
-        self.progs_loose = {
-            prog
-            for prog in
-            yield_programs(
-                states,
-                colors,
-                bool(halt),
-                rejects)
-            if
-            not quick_term_or_rec(prog, loose)
-        }
+        for prog in yield_programs(states, colors, bool(halt), rejects):
+            if not quick_term_or_rec(prog, loose):
+                self.progs_loose.add(prog)
+
+            if StrictLinRecMachine(prog).run(
+                    sim_lim = strict,
+                    check_rec = 0).xlimit is not None:
+                self.progs_strict.add(prog)
 
     def test_22(self):
         # h
