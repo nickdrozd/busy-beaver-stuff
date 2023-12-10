@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
     from collections.abc import Callable, Iterator
 
-    from tm.tape import PtrTape
     from tm.program import Color, State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
@@ -270,14 +269,14 @@ class History:
     state: State | None = None
     scan: Color | None = None
     head: int | None = None
-    tape: PtrTape | None = None
+    tape: HeadTape | None = None
     prev: History | None = None
 
     def update(self, state: State, scan: Color, tape: HeadTape) -> None:
         self.state = state
         self.scan = scan
         self.head = tape.head
-        self.tape = tape.to_ptr()
+        self.tape = tape.copy()
 
     def __iter__(self) -> Iterator[History]:
         prev = self.prev

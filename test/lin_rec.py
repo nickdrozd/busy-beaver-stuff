@@ -365,7 +365,7 @@ class LooseLinRecMachine(LinRecMachine):
 
             init_state = state
 
-            init_tape = tape.to_ptr()
+            init_tape = tape.copy()
 
             while step < steps_reset and cycle < sim_lim:
                 if (instr := comp[state, tape.scan]) is None:
@@ -410,7 +410,7 @@ class LooseLinRecMachine(LinRecMachine):
                 if tape.scan != init_tape.scan:
                     continue
 
-                if tape.to_ptr().aligns_with(
+                if tape.aligns_with(
                         init_tape,
                         curr - init_pos,
                         leftmost,

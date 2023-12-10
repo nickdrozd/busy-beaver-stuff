@@ -18,6 +18,8 @@ if TYPE_CHECKING:
         tuple[Color | tuple[Color], ...],
     ]
 
+    TapeSlice = list[Color]
+
 
 @dataclass
 class Block:
@@ -619,20 +621,18 @@ class HeadTape:
 
         return stepped
 
+    def get_ltr(self, start: int) -> TapeSlice:
+        return self.to_ptr().get_ltr(start)
 
-if TYPE_CHECKING:
-    TapeSlice = list[Color]
+    def get_rtl(self, stop: int) -> TapeSlice:
+        return self.to_ptr().get_rtl(stop)
 
-
-@dataclass
-class PtrTape:
-    init: int
-    scan: Color
-    tape: list[Color]
+    def get_cnt(self, start: int, stop: int) -> TapeSlice:
+        return self.to_ptr().get_cnt(start, stop)
 
     def aligns_with(
             self,
-            prev: PtrTape,
+            prev: HeadTape,
             diff: int,
             leftmost: int,
             rightmost: int,
@@ -650,6 +650,13 @@ class PtrTape:
             slice2 = self.get_cnt(leftmost, rightmost)
 
         return slice1 == slice2
+
+
+@dataclass
+class PtrTape:
+    init: int
+    scan: Color
+    tape: list[Color]
 
     def get_ltr(self, start: int) -> TapeSlice:
         start += self.init
