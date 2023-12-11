@@ -145,6 +145,16 @@ class TestFloss(TestCase):
                 "1RB ...  0LB 0RA"
             ).run())
 
+        self.assertFalse(
+            quick_term_or_rec(
+                "1RB ...  0LB 1LA",
+                10))
+
+        self.assertFalse(
+            quick_term_or_rec(
+                "1RB 1LA ...  2LB 1RB 0LA",
+                50))
+
     def test_prover(self):
         progs = (
             "1RB 2LA 3LA 2LA  3LB 3RA 0RA 0RB",

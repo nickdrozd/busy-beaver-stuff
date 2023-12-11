@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.parse import tcompile
-from tm.tape import HeadTape, PtrTape
+from tm.tape import HeadTape
 
 if TYPE_CHECKING:
     from typing import Self
@@ -20,13 +20,26 @@ if TYPE_CHECKING:
     TapeSlice = list[Color]
 
 
-class PtrTapeLR(PtrTape):
+@dataclass
+class PtrTape:
+    init: int
+    scan: Color
+    tape: list[Color]
+
     @classmethod
     def from_head(cls, tape: HeadTape) -> Self:
         return cls(
             sum(int(q.count) for q in tape.lspan) - tape.head,
             tape.scan,
-            tape.unroll(),
+            [
+                block.color
+                for block in reversed(tape.lspan)
+                for _ in range(int(block.count))
+            ] + [tape.scan] + [
+                block.color
+                for block in tape.rspan
+                for _ in range(int(block.count))
+            ],
         )
 
     def get_ltr(self, start: int) -> TapeSlice:
@@ -83,7 +96,7 @@ class PtrTapeLR(PtrTape):
 
 
 if TYPE_CHECKING:
-    Tapes = dict[int, PtrTapeLR]
+    Tapes = dict[int, PtrTape]
 
 
 @dataclass
@@ -117,7 +130,7 @@ class History:
         self.positions += [pos] * (step - len(self.positions))
         self.positions.append(pos)
 
-        self.tapes[step] = PtrTapeLR.from_head(tape)
+        self.tapes[step] = PtrTape.from_head(tape)
 
     def check_rec(self, step: int, slot: Slot) -> RecRes | None:
         for pstep in self.slots[slot]:

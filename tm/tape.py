@@ -543,24 +543,6 @@ class HeadTape:
             head = self.head,
         )
 
-    def to_ptr(self) -> PtrTape:
-        return PtrTape(
-            sum(int(q.count) for q in self.lspan) - self.head,
-            self.scan,
-            self.unroll(),
-        )
-
-    def unroll(self) -> list[Color]:
-        return [
-            block.color
-            for block in reversed(self.lspan)
-            for _ in range(int(block.count))
-        ] + [self.scan] + [
-            block.color
-            for block in self.rspan
-            for _ in range(int(block.count))
-        ]
-
     @property
     def blank(self) -> bool:
         return self.scan == 0 and not self.lspan and not self.rspan
@@ -621,14 +603,77 @@ class HeadTape:
 
         return stepped
 
-    def get_ltr(self, start: int) -> TapeSlice:
-        return self.to_ptr().get_ltr(start)
+    def get_slice(
+            self,
+            start: int,
+            *,
+            stop: int | None,  # pylint: disable = unused-argument
+            ltr: bool,
+    ) -> TapeSlice:
+        if ltr:
+            lspan, rspan = self.lspan, self.rspan
+            diff = self.head - start
+        else:
+            lspan, rspan = self.rspan, self.lspan
+            diff = start - self.head
 
-    def get_rtl(self, stop: int) -> TapeSlice:
-        return self.to_ptr().get_rtl(stop)
+        tape: TapeSlice = []
+
+        if diff > 0:
+            for block in lspan:
+                if diff <= (count := block.count):
+                    tape.extend(
+                        [block.color] * diff)
+
+                    break
+
+                assert isinstance(count, int)
+
+                tape.extend(
+                    [block.color] * count)
+
+                diff -= count
+
+                if diff <= 0:  # no-cover
+                    break
+
+            else:
+                assert diff > 0
+
+                tape.extend(
+                    [0] * diff)
+
+            tape.reverse()
+
+        tape.append(self.scan)
+
+        for block in rspan:
+            assert isinstance(block.count, int)
+
+            tape.extend(
+                [block.color] * block.count)
+
+        return tape
+
+    def get_ltr(self, start: int, stop: int | None = None) -> TapeSlice:
+        return self.get_slice(start, stop = stop, ltr = True)
+
+    def get_rtl(self, start: int, stop: int | None = None) -> TapeSlice:
+        return self.get_slice(start, stop = stop, ltr = False)
 
     def get_cnt(self, start: int, stop: int) -> TapeSlice:
-        return self.to_ptr().get_cnt(start, stop)
+        assert start <= (head := self.head) <= stop
+
+        if start == head:
+            return self.get_ltr(start, stop = stop)
+
+        if stop == head:
+            return self.get_rtl(start, stop = start)
+
+        return (
+            self.get_rtl(head - 1, stop = start)
+            + self.get_ltr(head, stop = stop)
+        )
 
     def aligns_with(
             self,
@@ -650,37 +695,3 @@ class HeadTape:
             slice2 = self.get_cnt(leftmost, rightmost)
 
         return slice1 == slice2
-
-
-@dataclass
-class PtrTape:
-    init: int
-    scan: Color
-    tape: list[Color]
-
-    def get_ltr(self, start: int) -> TapeSlice:
-        start += self.init
-
-        return (
-            self.tape[ start : ]
-            if (ldiff := -start) <= 0 else
-            [0] * ldiff + self.tape
-        )
-
-    def get_rtl(self, stop: int) -> TapeSlice:
-        stop += self.init + 1
-
-        return (
-            self.tape[ : stop ]
-            if (rdiff := stop - len(self.tape)) <= 0 else
-            self.tape[ : stop - rdiff ] + [0] * rdiff
-        )
-
-    def get_cnt(self, start: int, stop: int) -> TapeSlice:
-        start += self.init
-        stop += self.init + 1
-
-        return [
-            self.tape[pos] if 0 <= pos < len(self.tape) else 0
-            for pos in range(start, stop)
-        ]
