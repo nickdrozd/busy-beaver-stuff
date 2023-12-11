@@ -1,20 +1,10 @@
-from test.utils import read_progs
+from perf import profile, HOLDOUTS
 from tm.reason import BackwardReasoner
-from perf import profile
-
-
-PROGS = (
-    read_progs('holdouts_32q')
-    | read_progs('holdouts_23q')
-    | read_progs('holdouts_42h')
-    | read_progs('holdouts_42q')
-    | read_progs('holdouts_24h')
-)
 
 
 @profile
 def main() -> None:
-    for prog in PROGS:
+    for prog in HOLDOUTS:
         print(prog)
 
         reasoner = BackwardReasoner(prog)
