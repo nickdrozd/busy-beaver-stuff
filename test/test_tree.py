@@ -330,7 +330,7 @@ class Slow(TestTree):
             if '3' not in prog:
                 return
 
-            if quick_term_or_rec(prog, 100):
+            if quick_term_or_rec(prog, 1_000):
                 return
 
             machines = run_variations(
@@ -356,7 +356,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            1021,
+            1019,
             'holdouts_24h')
 
         self.assert_simple_and_connected()
