@@ -264,7 +264,7 @@ if TYPE_CHECKING:
 
 ########################################
 
-@dataclass
+@dataclass(slots = True)
 class History:
     state: State | None = None
     scan: Color | None = None

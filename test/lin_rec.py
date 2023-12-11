@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     TapeSlice = list[Color]
 
 
-@dataclass
+@dataclass(slots = True)
 class PtrTape:
     init: int
     scan: Color
@@ -99,7 +99,7 @@ if TYPE_CHECKING:
     Tapes = dict[int, PtrTape]
 
 
-@dataclass
+@dataclass(slots = True)
 class History:
     tapes: Tapes
 
@@ -181,7 +181,7 @@ class History:
         )
 
 
-@dataclass
+@dataclass(slots = True)
 class BeepHistory(History):
     states: list[State] = field(default_factory = list)
 

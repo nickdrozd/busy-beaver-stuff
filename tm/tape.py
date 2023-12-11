@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     TapeSlice = list[Color]
 
 
-@dataclass
+@dataclass(slots = True)
 class Block:
     color: Color
     count: Count
@@ -172,7 +172,7 @@ class Tape(BlockTape):
 
 ########################################
 
-@dataclass
+@dataclass(slots = True)
 class TagBlock(Block):
     tags: list[int] = field(
         default_factory = list)
@@ -370,7 +370,7 @@ class TagTape(BlockTape):
 
 ########################################
 
-@dataclass
+@dataclass(slots = True)
 class EnumBlock(Block):
     enums: tuple[int, int] | None = None
 
@@ -492,7 +492,7 @@ class EnumTape(BlockTape):
 
 ########################################
 
-@dataclass
+@dataclass(slots = True)
 class HeadBlock:
     color: Color
     count: int
@@ -504,7 +504,7 @@ class HeadBlock:
         return hash((self.color, self.count))
 
 
-@dataclass
+@dataclass(slots = True)
 class HeadTape:
     lspan: list[HeadBlock]
     scan: Color
