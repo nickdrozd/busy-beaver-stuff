@@ -274,7 +274,7 @@ def quick_term_or_rec(prog: str, sim_lim: int) -> bool:
     while cycle < sim_lim:
         steps_reset = 2 * step
 
-        leftmost = rightmost = init_pos = tape.head
+        leftmost = rightmost = tape.head
 
         init_state = state
 
@@ -309,12 +309,7 @@ def quick_term_or_rec(prog: str, sim_lim: int) -> bool:
             if tape.scan != init_tape.scan:
                 continue
 
-            if tape.aligns_with(
-                    init_tape,
-                    curr - init_pos,
-                    leftmost,
-                    rightmost,
-            ):
+            if tape.aligns_with(init_tape, leftmost, rightmost):
                 return True
 
     return False

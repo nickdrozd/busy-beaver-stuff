@@ -287,8 +287,7 @@ class History:
             prev = prev.prev
 
     def check_rec(self) -> bool:
-        curr_head = self.head
-        assert curr_head is not None
+        assert (curr_head := self.head) is not None
 
         leftmost = rightmost = curr_head
 
@@ -299,8 +298,7 @@ class History:
             if self.state != prev.state or self.scan != prev.scan:
                 continue
 
-            prev_head = prev.head
-            assert prev_head is not None
+            assert (prev_head := prev.head) is not None
 
             if prev_head < leftmost:
                 leftmost = prev_head
@@ -310,12 +308,7 @@ class History:
             prev_tape = prev.tape
             assert prev_tape is not None
 
-            if curr_tape.aligns_with(
-                    prev_tape,
-                    curr_head - prev_head,
-                    leftmost,
-                    rightmost,
-            ):
+            if curr_tape.aligns_with(prev_tape, leftmost, rightmost):
                 return True
 
         return False

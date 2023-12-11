@@ -374,7 +374,7 @@ class LooseLinRecMachine(LinRecMachine):
         while cycle < sim_lim:
             steps_reset = 2 * step
 
-            leftmost = rightmost = init_pos = tape.head
+            leftmost = rightmost = tape.head
 
             init_state = state
 
@@ -423,12 +423,7 @@ class LooseLinRecMachine(LinRecMachine):
                 if tape.scan != init_tape.scan:
                     continue
 
-                if tape.aligns_with(
-                        init_tape,
-                        curr - init_pos,
-                        leftmost,
-                        rightmost,
-                ):
+                if tape.aligns_with(init_tape, leftmost, rightmost):
                     self.infrul = step
                     break
 

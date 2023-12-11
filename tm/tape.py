@@ -678,11 +678,10 @@ class HeadTape:
     def aligns_with(
             self,
             prev: HeadTape,
-            diff: int,
             leftmost: int,
             rightmost: int,
     ) -> bool:
-        if 0 < diff:
+        if 0 < (diff := self.head - prev.head):
             slice1 = prev.get_ltr(leftmost)
             slice2 = self.get_ltr(leftmost + diff)
 
