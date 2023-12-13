@@ -52,6 +52,8 @@ def assert_num_counts(expected: dict[str, int]):
 
 
 class TestNum(TestCase):
+    maxDiff = None
+
     @classmethod
     def setUpClass(cls):
         clear_caches()
