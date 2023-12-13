@@ -59,7 +59,7 @@ def calculate_diff(*counts: Count) -> Op | None:
         ascending = all(bef < aft for bef, aft in pairwise(counts))
     except NotImplementedError:
         pass
-    else:  # no-cover
+    else:
         if not ascending:
             raise UnknownRule(
                 'non-increasing')
