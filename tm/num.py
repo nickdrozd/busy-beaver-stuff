@@ -251,11 +251,10 @@ class Add(Num):
 
     def __sub__(self, other: Count) -> Count:
         if isinstance(other, Add):
-            if self.r == other.r:
-                return self.l - other.l
+            l, lo = self.l, other.l
 
-            if self.l == other.l:
-                return self.r - other.r
+            if isinstance(l, int) and isinstance(lo, int):
+                return (l - lo) + (self.r - other.r)
 
         return self + -other
 
