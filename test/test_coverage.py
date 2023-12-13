@@ -170,6 +170,8 @@ class TestFloss(TestCase):
         )
 
         for prog in progs:
+            print(prog)
+
             self.assertIsNotNone(
                 Machine(
                     prog,
