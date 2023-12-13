@@ -487,6 +487,14 @@ class Mul(Num):
 
         return super().__add__(other)
 
+    def __sub__(self, other: Count) -> Count:
+        l, r = self.l, self.r
+
+        if other == l:
+            return l * (r - 1)
+
+        return super().__sub__(other)
+
     def __floordiv__(self, other: Count) -> Count:
         if other == 1:
             return self
