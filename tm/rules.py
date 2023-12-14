@@ -89,11 +89,15 @@ def calculate_diff(*counts: Count) -> Op | None:
         for bef, aft in pairwise(rest)
     )
 
-    if not all(div_next == div for _, _, div_next, _ in divmods):
-        raise UnknownRule(
-            'different divs')
+    for _, _, div_next, mod_next in divmods:
+        if div_next != div:
+            raise UnknownRule(
+                'different divs')
 
-    if all(mod_next == mod for _, _, _, mod_next in divmods):
+        if mod_next != mod:
+            break
+
+    else:
         return div, mod
 
     div_diff = count_2 - (count_1 * (1 + div))
