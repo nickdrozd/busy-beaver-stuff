@@ -143,14 +143,6 @@ class Num:
         if other == 1:
             return self
 
-        if other < -1:
-            neg = -other * self
-
-            if isinstance(neg, int):  # no-cover
-                return -neg
-
-            return make_mul(-1, neg)
-
         return make_mul(other, self)
 
     @abstractmethod
@@ -418,9 +410,14 @@ class Mul(Num):
         return super().__mul__(other)
 
     def __rmul__(self, other: int) -> Count:
+        l, r = self.l, self.r
+
         if other == -1:
-            if self.l == -1:  # no-cover
+            if l == -1:  # no-cover
                 return self.r
+
+            if isinstance(l, int):
+                return -l * r
 
             return super().__rmul__(other)
 

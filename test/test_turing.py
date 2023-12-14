@@ -1038,11 +1038,11 @@ class Fast(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 33698,
-            "divs": 8461,
-            "exps": 9671,
-            "muls": 7551,
-            "totl": 59381,
+            "adds": 33913,
+            "divs": 8574,
+            "exps": 9812,
+            "muls": 7798,
+            "totl": 60097,
         })
 
 
