@@ -229,6 +229,12 @@ class Add(Num):
 
             return super().__add__(other)
 
+        if isinstance(other, Add):
+            lo, ro = other.l, other.r
+
+            if isinstance(lo, int):
+                return (lo + l) + (r + ro)
+
         if isinstance(l, int):
             return l + (other + r)
 
