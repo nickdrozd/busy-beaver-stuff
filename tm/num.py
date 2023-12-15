@@ -116,6 +116,9 @@ class Num:
         if isinstance(other, Div):
             return ((other.den * self) + other.num) // other.den
 
+        if type(self) == type(other) and other.depth < self.depth:
+            return other + self
+
         return make_add(self, other)
 
     def __radd__(self, other: int) -> Count:
