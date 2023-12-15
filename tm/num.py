@@ -492,6 +492,10 @@ class Mul(Num):
         if other == l:
             return l * (r - 1)
 
+        if isinstance(other, Mul):
+            if l == other.l:
+                return l * (r - other.r)
+
         return super().__sub__(other)
 
     def __floordiv__(self, other: Count) -> Count:
