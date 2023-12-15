@@ -608,6 +608,12 @@ class Div(Num):
     def __radd__(self, other: int) -> Count:
         return ((other * self.den) + self.num) // self.den
 
+    def __sub__(self, other: Count) -> Count:
+        if not isinstance(other, Div) or (den := self.den) != other.den:
+            return super().__sub__(other)
+
+        return (self.num - other.num) // den
+
     def __mul__(self, other: Count) -> Count:
         return (self.num * other) // self.den
 
