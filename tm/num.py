@@ -125,6 +125,12 @@ class Num:
         if self == other:
             return 0
 
+        if isinstance(other, Add):
+            l, r = other.l, other.r
+
+            if self == r:
+                return -l
+
         return self + -other
 
     def __rsub__(self, other: Count) -> Count:
