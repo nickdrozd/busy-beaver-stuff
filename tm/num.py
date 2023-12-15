@@ -269,7 +269,7 @@ class Add(Num):
 
     def __rmul__(self, other: int) -> Count:
         if other == -1:
-            return make_mul(-1, self)
+            return -self
 
         return (other * self.l) + (other * self.r)
 
@@ -443,7 +443,7 @@ class Mul(Num):
             if r == ro:
                 return (l + lo) * r
 
-            if l == lo:
+            if l != -1 and l == lo:
                 return l * (r + ro)
 
             if l == ro:
@@ -992,7 +992,8 @@ def add_exponents(
     if l_exp.exp > r_exp.exp:
         (l_exp, l_co), (r_exp, r_co) = (r_exp, r_co), (l_exp, l_co)
 
-    assert (l_pow := l_exp.exp) <= (r_pow := r_exp.exp)
+    if not (l_pow := l_exp.exp) <= (r_pow := r_exp.exp):
+        raise NotImplementedError
 
     diff_exp = (
         base ** diff
