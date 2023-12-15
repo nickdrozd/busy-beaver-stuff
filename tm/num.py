@@ -557,6 +557,9 @@ class Mul(Num):
             if 0 < l < 10:
                 return r < other
 
+        if 0 < l and isinstance(r, Add) and r.l == -1 and r.r == other:
+            return False
+
         return super().__lt__(other)
 
 
