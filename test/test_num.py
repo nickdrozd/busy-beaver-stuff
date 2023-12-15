@@ -61,11 +61,11 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2302,
+            "adds": 2305,
             "divs": 2064,
-            "exps": 1226,
-            "muls": 1426,
-            "totl": 7018,
+            "exps": 1229,
+            "muls": 1428,
+            "totl": 7026,
         })
 
     def assert_mod(
@@ -857,6 +857,11 @@ class TestNum(TestCase):
             self.assertLess(
                 Exp(2, 10) * (4 + Exp(2, 13)),
                 Exp(2, 13))
+
+        with self.assertRaises(NotImplementedError):
+            self.assertLess(
+                (2 ** (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19)))))),
+                (2 ** (2 + (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19))))))))
 
     def test_exp_add(self):
         self.assert_num(
