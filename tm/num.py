@@ -122,6 +122,9 @@ class Num:
         return self + other
 
     def __sub__(self, other: Count) -> Count:
+        if self == other:
+            return 0
+
         return self + -other
 
     def __rsub__(self, other: Count) -> Count:
