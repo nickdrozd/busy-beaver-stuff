@@ -774,6 +774,12 @@ class Exp(Num):
 
         return super().__add__(other)
 
+    def __sub__(self, other: Count) -> Count:
+        if not isinstance(other, Exp) or self.base != other.base:
+            return super().__sub__(other)
+
+        return add_exponents((self, 1), (other, -1))
+
     def multiplies_with(self, other: Count) -> bool:
         if isinstance(other, Exp):
             return other.base == self.base
