@@ -430,6 +430,9 @@ class Mul(Num):
             if isinstance(l, int):
                 return -l * r
 
+            if isinstance(l, Exp) and isinstance(r, Add):
+                return l * -r
+
             return super().__rmul__(other)
 
         return (other * self.l) * self.r
