@@ -977,7 +977,7 @@ class Fast(TuringTest):
             if show:
                 print(f'    "{term}": {{')
 
-            for prog, (cycles, est, string) in progs.items():
+            for prog, (cycles, est, string, rulapp) in progs.items():
                 self.run_bb(
                     prog,
                     opt_macro = 2000,
@@ -1011,12 +1011,15 @@ class Fast(TuringTest):
                     marks.estimate()
                 )
 
+                show_rulapp = show_number(self.machine.rulapp)
+
                 if show:
                     print('\n'.join([
                         f'        "{prog}": (',
                         f'            {self.machine.cycles},',
                         f'            "{estimate}",',
                         f'            "{marks}",',
+                        f'            "{show_rulapp}",',
                         '        ),',
                     ]))
 
@@ -1033,6 +1036,11 @@ class Fast(TuringTest):
                     est,
                     show_number(
                         estimate))
+
+                self.assertEqual(
+                    rulapp,
+                    show_rulapp,
+                    prog)
 
             if show:
                 print('    },\n')
