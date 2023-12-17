@@ -23,6 +23,8 @@ EXPS: dict[int, dict[Count, Exp]] = defaultdict(dict)
 class Num:
     depth: int
 
+    leaves: int
+
     tower_est: int
 
     @abstractmethod
@@ -196,6 +198,8 @@ class Add(Num):
 
         self.depth = 1 + r.depth
 
+        self.leaves = (1 if isinstance(l, int) else l.leaves) + r.leaves
+
         self.tower_est = (
             r.tower_est
             if isinstance(l, int) else
@@ -361,6 +365,8 @@ class Mul(Num):
         self.r = r
 
         self.depth = 1 + r.depth
+
+        self.leaves = (1 if isinstance(l, int) else l.leaves) + r.leaves
 
         self.tower_est = (
             r.tower_est
@@ -589,6 +595,8 @@ class Div(Num):
 
         self.depth = 1 + num.depth
 
+        self.leaves = 1 + num.leaves
+
         self.tower_est = num.tower_est
 
     def __repr__(self) -> str:
@@ -695,6 +703,8 @@ class Exp(Num):
         self.exp = exp
 
         self.depth = 1 + (0 if isinstance(exp, int) else exp.depth)
+
+        self.leaves = 1 + (1 if isinstance(exp, int) else exp.leaves)
 
         self.tower_est = (
             1 + exp.tower_est
@@ -941,6 +951,7 @@ class Tet(Num):
         self.height = height
 
         self.depth = 1
+        self.leaves = 2
         self.tower_est = height
 
     def __repr__(self) -> str:
@@ -1843,7 +1854,7 @@ Count = int | Num
 
 TRUNCATE_COUNT = 10 ** 12
 
-MAX_DEPTH = 120
+MAX_LEAVES = 120
 
 def show_number(num: Count) -> str:
     if isinstance(num, int):
@@ -1853,7 +1864,7 @@ def show_number(num: Count) -> str:
                 log10(abs(num)),
             )
 
-    elif num.depth > MAX_DEPTH:  # no-cover
+    elif num.leaves > MAX_LEAVES:  # no-cover
         return "(???)"
 
     return str(num)
