@@ -977,7 +977,7 @@ class Fast(TuringTest):
             if show:
                 print(f'    "{term}": {{')
 
-            for prog, (cycles, string, est) in progs.items():
+            for prog, (cycles, est, string) in progs.items():
                 self.run_bb(
                     prog,
                     opt_macro = 2000,
@@ -1015,8 +1015,8 @@ class Fast(TuringTest):
                     print('\n'.join([
                         f'        "{prog}": (',
                         f'            {self.machine.cycles},',
-                        f'            "{marks}",',
                         f'            "{estimate}",',
+                        f'            "{marks}",',
                         '        ),',
                     ]))
 
