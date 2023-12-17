@@ -1022,8 +1022,7 @@ def gcd(l: int, r: Count) -> int:
 
     assert isinstance(r, Exp), (l, r)
 
-    if not isinstance(base := r.base, int):  # no-cover
-        return 1
+    base = r.base
 
     blog = int(log(l, base))
 
