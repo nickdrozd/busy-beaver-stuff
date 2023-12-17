@@ -61,11 +61,11 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2349,
-            "divs": 2061,
-            "exps": 1242,
-            "muls": 1479,
-            "totl": 7131,
+            "adds": 2351,
+            "divs": 2063,
+            "exps": 1243,
+            "muls": 1481,
+            "totl": 7138,
         })
 
     def assert_mod(
@@ -1199,6 +1199,11 @@ class TestNum(TestCase):
             (384 + (Exp(2, 5) * (1 + (13 * Exp(2, 7))))) // 24,
             2236,
             "(16 + (555 * (2 ** 2)))")
+
+        self.assert_num(
+            ((2 + (23 * Exp(6, 14))) // 10),
+            180237577421,
+            "((2 + (23 * (6 ** 14))) // 10)")
 
     def test_div_neg(self):
         self.assert_num(
