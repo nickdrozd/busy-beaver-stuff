@@ -883,6 +883,12 @@ class Exp(Num):
 
             other //= base
 
+        if other > 1:
+            assert base > other
+            assert base % other == 0
+
+            return (base // other) * make_exp(base, exp - 1)
+
         return (
             1 if exp == 0 else
             base if exp == 1 else
@@ -1023,6 +1029,9 @@ def gcd(l: int, r: Count) -> int:
     assert isinstance(r, Exp), (l, r)
 
     base = r.base
+
+    if l % base != 0:
+        return pgcd(l, base)
 
     blog = int(log(l, base))
 
