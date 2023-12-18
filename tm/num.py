@@ -941,14 +941,22 @@ class Exp(Num):
         return super().__mul__(other)
 
     def __rmul__(self, other: int) -> Count:
-        if other == -1 or isinstance(base := self.base, Num):
-            return super().__rmul__(other)
+        if other == 0:
+            return 0
+
+        if other == 1:
+            return self
+
+        if other == -1:
+            return make_mul(-1, self)
+
+        base = self.base
 
         if other < -1 and -other % base == 0:
             return -(-other * self)
 
-        if other < 1 or other % base != 0:
-            return super().__rmul__(other)
+        if other % base != 0:
+            return make_mul(other, self)
 
         exp = self.exp
 
