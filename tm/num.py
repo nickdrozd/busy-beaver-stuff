@@ -108,8 +108,7 @@ class Num:
         return self == other or self > other
 
     def __add__(self, other: Count) -> Count:
-        if isinstance(other, int):
-            return self if other == 0 else make_add(other, self)
+        assert not isinstance(other, int)
 
         if isinstance(other, Add):
             if isinstance(other.l, int):
@@ -269,7 +268,7 @@ class Add(Num):
             if isinstance(l, int):
                 return (l + other) + r
 
-            return super().__add__(other)
+            return make_add(other, self)
 
         if isinstance(other, Add):
             lo, ro = other.l, other.r
@@ -493,8 +492,8 @@ class Mul(Num):
         return (other * self.l) * self.r
 
     def __add__(self, other: Count) -> Count:
-        if other == 0:
-            return self
+        if isinstance(other, int):
+            return self if other == 0 else make_add(other, self)
 
         l, r = self.l, self.r
 
@@ -857,8 +856,8 @@ class Exp(Num):
         return res
 
     def __add__(self, other: Count) -> Count:
-        if other == 0:
-            return self
+        if isinstance(other, int):
+            return self if other == 0 else make_add(other, self)
 
         if isinstance(other, Mul):
             l, r = other.l, other.r
@@ -1091,6 +1090,12 @@ class Tet(Num):
             return self.height < other.height
 
         return super().__lt__(other)
+
+    def __add__(self, other: Count) -> Count:
+        if isinstance(other, int):
+            return self if other == 0 else make_add(other, self)
+
+        return super().__add__(other)
 
 
 def add_exponents(
