@@ -132,6 +132,9 @@ class Num:
         return make_add(self, other)
 
     def __radd__(self, other: int) -> Count:
+        if other == 0:
+            return self
+
         return self + other
 
     def __sub__(self, other: Count) -> Count:
@@ -260,6 +263,9 @@ class Add(Num):
         l, r = self.l, self.r
 
         if isinstance(other, int):
+            if other == 0:
+                return self
+
             if isinstance(l, int):
                 return (l + other) + r
 
@@ -277,6 +283,9 @@ class Add(Num):
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
+        if other == 0:
+            return self
+
         if isinstance(other, Add):
             l, lo = self.l, other.l
 
@@ -478,9 +487,15 @@ class Mul(Num):
 
             return super().__rmul__(other)
 
+        if other == 1:
+            return self
+
         return (other * self.l) * self.r
 
     def __add__(self, other: Count) -> Count:
+        if other == 0:
+            return self
+
         l, r = self.l, self.r
 
         if isinstance(other, Mul):
@@ -542,6 +557,9 @@ class Mul(Num):
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
+        if other == 0:
+            return self
+
         l, r = self.l, self.r
 
         if other == l:
@@ -671,12 +689,21 @@ class Div(Num):
         return self.num.digits() - round(log10(self.den))
 
     def __add__(self, other: Count) -> Count:
+        if other == 0:
+            return self
+
         return (self.num + (other * self.den)) // self.den
 
     def __radd__(self, other: int) -> Count:
+        if other == 0:
+            return self
+
         return ((other * self.den) + self.num) // self.den
 
     def __sub__(self, other: Count) -> Count:
+        if other == 0:
+            return self
+
         if not isinstance(other, Div) or (den := self.den) != other.den:
             return super().__sub__(other)
 
@@ -686,7 +713,15 @@ class Div(Num):
         return (self.num * other) // self.den
 
     def __rmul__(self, other: int) -> Count:
-        return (other * self.num) // self.den
+        match other:
+            case 0:
+                return 0
+
+            case 1:
+                return self
+
+            case _:
+                return (other * self.num) // self.den
 
     def __floordiv__(self, other: Count) -> Count:
         if other == 1:
@@ -822,6 +857,9 @@ class Exp(Num):
         return res
 
     def __add__(self, other: Count) -> Count:
+        if other == 0:
+            return self
+
         if isinstance(other, Mul):
             l, r = other.l, other.r
 
@@ -849,6 +887,9 @@ class Exp(Num):
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
+        if other == 0:
+            return self
+
         if not isinstance(other, Exp) or self.base != other.base:
             return super().__sub__(other)
 
@@ -867,6 +908,15 @@ class Exp(Num):
         return False
 
     def __mul__(self, other: Count) -> Count:
+        if other == 0:
+            return 0
+
+        if other == 1:
+            return self
+
+        if other == -1:
+            return -self
+
         if isinstance(other, Exp):
             if (base := self.base) == other.base:
                 return make_exp(base, self.exp + other.exp)
