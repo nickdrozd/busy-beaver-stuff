@@ -292,10 +292,18 @@ class Add(Num):
         return super().__mul__(other)
 
     def __rmul__(self, other: int) -> Count:
-        if other == -1:
-            return -self
+        match other:
+            case 0:
+                return 0
 
-        return (other * self.l) + (other * self.r)
+            case 1:
+                return self
+
+            case -1:
+                return -self
+
+            case _:
+                return (other * self.l) + (other * self.r)
 
     def __floordiv__(self, other: Count) -> Count:
         if other == 1:
