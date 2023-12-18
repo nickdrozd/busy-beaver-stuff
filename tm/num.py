@@ -176,6 +176,9 @@ class Num:
     def __mod__(self, mod: int) -> int: ...
 
     def __divmod__(self, other: int) -> tuple[Count, int]:
+        if other == 1:
+            return self, 0
+
         mod = self % other
 
         return (self - mod) // other, mod
