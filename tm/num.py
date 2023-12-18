@@ -730,7 +730,7 @@ class Div(Num):
 
         num, den = self.num, self.den
 
-        if gcd(den, num) == 1 and gcd(other, num) == 1:
+        if gcd(other, num) == 1:
             return make_div(num, other * den)
 
         return num // (other * den)
