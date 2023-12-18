@@ -261,6 +261,15 @@ class Add(Num):
     def __neg__(self) -> Count:
         return -(self.l) + -(self.r)
 
+    def __radd__(self, other: int) -> Count:
+        if other == 0:
+            return self
+
+        if isinstance(l := self.l, int):
+            return (l + other) + self.r
+
+        return make_add(other, self)
+
     def __add__(self, other: Count) -> Count:
         l, r = self.l, self.r
 
@@ -491,6 +500,12 @@ class Mul(Num):
             return self
 
         return (other * self.l) * self.r
+
+    def __radd__(self, other: int) -> Count:
+        if other == 0:
+            return self
+
+        return make_add(other, self)
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, int):
@@ -855,6 +870,12 @@ class Exp(Num):
             base = (base ** 2) % mod
 
         return res
+
+    def __radd__(self, other: int) -> Count:
+        if other == 0:
+            return self
+
+        return make_add(other, self)
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, int):
