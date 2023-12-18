@@ -322,7 +322,7 @@ class Add(Num):
         if (((lgcd := gcd(other, l := self.l)) == 1
                 or (rgcd := gcd(other, r := self.r))) == 1
                 or (div := gcd(lgcd, rgcd)) == 1):
-            return super().__floordiv__(other)
+            return make_div(self, other)
 
         return ((l // div) + (r // div)) // (other // div)
 
@@ -582,7 +582,7 @@ class Mul(Num):
         if (rgcd := gcd(other, r)) > 1:
             return (l * (r // rgcd)) // (other // rgcd)
 
-        return super().__floordiv__(other)
+        return make_div(self, other)
 
     def __lt__(self, other: Count) -> bool:
         l, r = self.l, self.r
