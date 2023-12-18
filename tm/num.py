@@ -148,6 +148,9 @@ class Num:
         if isinstance(other, Div):
             return (self * other.num) // other.den
 
+        if isinstance(self, Mul):
+            return (self.l * other) * self.r
+
         return make_mul(self, other)
 
     def __rmul__(self, other: int) -> Count:
