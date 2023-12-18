@@ -319,11 +319,9 @@ class Add(Num):
 
         assert isinstance(other, int)
 
-        div = gcd(
-            gcd(other, l := self.l),
-            gcd(other, r := self.r))
-
-        if div == 1:
+        if (((lgcd := gcd(other, l := self.l)) == 1
+                or (rgcd := gcd(other, r := self.r))) == 1
+                or (div := gcd(lgcd, rgcd)) == 1):
             return super().__floordiv__(other)
 
         return ((l // div) + (r // div)) // (other // div)
