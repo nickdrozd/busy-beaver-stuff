@@ -584,6 +584,9 @@ class Mul(Num):
             if l == other.l:
                 return l * (r - other.r)
 
+        if isinstance(other, int):
+            return -other + self
+
         return super().__sub__(other)
 
     def __floordiv__(self, other: Count) -> Count:
@@ -719,10 +722,12 @@ class Div(Num):
         if other == 0:
             return self
 
-        if not isinstance(other, Div) or (den := self.den) != other.den:
-            return super().__sub__(other)
+        if isinstance(other, Div) and (den := self.den) == other.den:
+            return (self.num - other.num) // den
 
-        return (self.num - other.num) // den
+        assert isinstance(other, int)
+
+        return -other + self
 
     def __mul__(self, other: Count) -> Count:
         return (self.num * other) // self.den
@@ -911,10 +916,12 @@ class Exp(Num):
         if other == 0:
             return self
 
-        if not isinstance(other, Exp) or self.base != other.base:
-            return super().__sub__(other)
+        if isinstance(other, Exp) and self.base == other.base:
+            return add_exponents((self, 1), (other, -1))
 
-        return add_exponents((self, 1), (other, -1))
+        assert isinstance(other, int | Exp)
+
+        return make_add(-other, self)
 
     def multiplies_with(self, other: Count) -> bool:
         if isinstance(other, Exp):
