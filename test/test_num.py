@@ -61,11 +61,11 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2246,
+            "adds": 2245,
             "divs": 2064,
             "exps": 1215,
-            "muls": 1388,
-            "totl": 6913,
+            "muls": 1387,
+            "totl": 6911,
         })
 
     def assert_mod(

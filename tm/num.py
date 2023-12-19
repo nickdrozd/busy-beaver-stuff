@@ -741,7 +741,19 @@ class Div(Num):
         return -other + self
 
     def __mul__(self, other: Count) -> Count:
-        return (self.num * other) // self.den
+        num, den = self.num, self.den
+
+        if isinstance(other, int):
+            if other == den:
+                return num
+
+            if other % den == 0:
+                return (other // den) * num
+
+            if den % other == 0:
+                return num // (den // other)
+
+        return (num * other) // den
 
     def __rmul__(self, other: int) -> Count:
         match other:
@@ -750,6 +762,9 @@ class Div(Num):
 
             case 1:
                 return self
+
+            case _ if 0 < other:
+                return self * other
 
             case _:
                 return (other * self.num) // self.den
