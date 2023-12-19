@@ -1911,6 +1911,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 }
 
+ALGEBRA_PROGS = {
+    prog
+    for progs in ALGEBRA.values()
+    for prog in progs
+}
+
 ## test program ######################################################
 
 PROGS: dict[

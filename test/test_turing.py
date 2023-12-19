@@ -465,6 +465,10 @@ class TuringTest(TestCase):
                     or self.machine.cfglim
                     or self.machine.spnout is not None)
 
+            self.assertIsInstance(
+                self.machine.rulapp,
+                int)
+
     def _test_prover_est(self, prog_data: ProverEst):
         champ_2_5 = "1RB 2LB 4LB 3LA 1R_  1LA 3RA 3LB 0LB 0RA"
 
@@ -485,6 +489,9 @@ class TuringTest(TestCase):
             )
 
             assert isinstance(self.machine, Machine)
+
+            if not isinstance(self.machine.rulapp, int):
+                assert prog in ALGEBRA_PROGS, prog
 
             self.assertIsNotNone(
                 self.machine.simple_termination)
