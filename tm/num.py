@@ -114,6 +114,9 @@ class Num:
             if isinstance(other.l, int):
                 return other.l + (self + other.r)
 
+            if self.has_div_exp or other.has_div_exp:
+                return other.l + (self + other.r)
+
         if isinstance(other, Mul):
             if other.l == -1 and self == other.r:
                 return 0
@@ -123,10 +126,6 @@ class Num:
 
         if other.depth < self.depth:
             return other + self
-
-        if (isinstance(other, Add)
-                and (self.has_div_exp or other.has_div_exp)):
-            return other.l + (self + other.r)
 
         return make_add(self, other)
 
