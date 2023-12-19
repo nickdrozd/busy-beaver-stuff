@@ -291,6 +291,9 @@ class Add(Num):
         if isinstance(l, int):
             return l + (other + r)
 
+        if other.depth < l.depth <= 8:
+            return (other + l) + r
+
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
