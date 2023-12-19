@@ -721,7 +721,23 @@ class Div(Num):
         if other == 0:
             return self
 
-        return (self.num + (other * self.den)) // self.den
+        num, den = self.num, self.den
+
+        if not isinstance(other, Div):
+            return (num + (other * den)) // den
+
+        if den == (oden := other.den):
+            return (num + other.num) // den
+
+        if den < oden:
+            return other + self
+
+        if den % oden == 0:
+            return (num + ((den // oden) * other.num)) // den
+
+        assert pgcd(den, oden) == 1, (self, other)
+
+        return ((oden * num) + (den * other.num)) // (den * oden)
 
     def __radd__(self, other: int) -> Count:
         if other == 0:
