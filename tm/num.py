@@ -529,13 +529,17 @@ class Mul(Num):
                 return (l + ro) * r
 
             if isinstance(r, Exp):
-                if isinstance(ro, Exp) and r.base == ro.base:
+                if isinstance(ro, Exp):
+                    assert r.base == ro.base
+
                     try:
                         return add_exponents((r, l), (ro, lo))
                     except NotImplementedError:  # no-cover
                         pass
 
-                if isinstance(lo, Exp) and r.base == lo.base:
+                if isinstance(lo, Exp):
+                    assert r.base == lo.base
+
                     try:
                         return add_exponents((r, l), (lo, ro))
                     except NotImplementedError:  # no-cover
@@ -544,10 +548,11 @@ class Mul(Num):
                 if lo == -1 and isinstance(ro, Mul):
                     rol, ror = ro.l, ro.r
 
-                    if (isinstance(ror, Exp)
-                            and ror.base == r.base
-                            and ror.exp == r.exp):
-                        return (l + -rol) * r
+                    if isinstance(ror, Exp):
+                        assert ror.base == r.base
+
+                        if ror.exp == r.exp:
+                            return (l + -rol) * r
 
         elif isinstance(other, Add):
             lo, ro = other.l, other.r
@@ -891,24 +896,29 @@ class Exp(Num):
 
             base = self.base
 
-            if isinstance(r, Exp) and r.base == base:
+            if isinstance(r, Exp):
+                assert r.base == base
+
                 try:
                     return add_exponents((self, 1), (r, l))
                 except NotImplementedError:
                     pass
 
-            if isinstance(l, Exp) and l.base == base:
+            if isinstance(l, Exp):
+                assert l.base == base
+
                 try:
                     return add_exponents((self, 1), (l, r))
                 except NotImplementedError:
                     pass
 
         elif isinstance(other, Exp):
-            if other.base == self.base:
-                try:
-                    return add_exponents((self, 1), (other, 1))
-                except NotImplementedError:  # no-cover
-                    pass
+            assert other.base == self.base
+
+            try:
+                return add_exponents((self, 1), (other, 1))
+            except NotImplementedError:  # no-cover
+                pass
 
         return super().__add__(other)
 
@@ -916,10 +926,12 @@ class Exp(Num):
         if other == 0:
             return self
 
-        if isinstance(other, Exp) and self.base == other.base:
+        if isinstance(other, Exp):
+            assert self.base == other.base
+
             return add_exponents((self, 1), (other, -1))
 
-        assert isinstance(other, int | Exp)
+        assert isinstance(other, int)
 
         return make_add(-other, self)
 
@@ -940,10 +952,11 @@ class Exp(Num):
             return other * self
 
         if isinstance(other, Exp):
-            if (base := self.base) == other.base:
-                return make_exp(base, self.exp + other.exp)
+            assert (base := self.base) == other.base
 
-        elif isinstance(other, Add):
+            return make_exp(base, self.exp + other.exp)
+
+        if isinstance(other, Add):
             l, r = other.l, other.r
 
             if not isinstance(l, Exp) or not isinstance(r, Exp):
@@ -1040,16 +1053,10 @@ class Exp(Num):
         base, exp = self.base, self.exp
 
         if isinstance(other, Exp):
-            if base == other.base:
-                return exp < other.exp
+            assert base == other.base
+            return exp < other.exp
 
-            if base < other.base and exp < other.exp:
-                return True
-
-            if base > other.base and exp > other.exp:
-                return False
-
-        elif isinstance(other, Add):
+        if isinstance(other, Add):
             l, r = other.l, other.r
 
             if isinstance(l, int):
@@ -1058,8 +1065,11 @@ class Exp(Num):
         elif isinstance(other, Mul):  # no-branch
             l, r = other.l, other.r
 
-            if isinstance(l, Exp) and l.base == base and l.exp <= exp:
-                return (self // l) < r
+            if isinstance(l, Exp):
+                assert l.base == base
+
+                if l.exp <= exp:
+                    return (self // l) < r
 
         return super().__lt__(other)
 
