@@ -571,6 +571,9 @@ class Mul(Num):
                 if ro.l == l:
                     return lo + (self + ro)
 
+            if lo.depth < self.depth:
+                return lo + (self + ro)
+
         elif isinstance(other, Exp):
             return other + self
 
