@@ -1173,7 +1173,13 @@ def gcd(l: int, r: Count) -> int:
         return pgcd(l, r)
 
     if isinstance(r, Add):
-        return min(gcd(l, r.l), gcd(l, r.r))
+        if (lgcd := gcd(l, r.l)) == 1:
+            return 1
+
+        if (rgcd := gcd(l, r.r)) == 1:
+            return 1
+
+        return min(lgcd, rgcd)
 
     if isinstance(r, Mul):
         return max(gcd(l, r.l), gcd(l, r.r))
