@@ -57,10 +57,6 @@ class Num:
     def __eq__(self, other: object) -> bool:
         return other is self
 
-    @property
-    def has_div_exp(self) -> bool:
-        return False
-
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, int):
             assert isinstance(self, Add)
@@ -112,9 +108,6 @@ class Num:
 
         if isinstance(other, Add):
             if isinstance(other.l, int):
-                return other.l + (self + other.r)
-
-            if self.has_div_exp or other.has_div_exp:
                 return other.l + (self + other.r)
 
         if isinstance(other, Mul):
@@ -232,15 +225,6 @@ class Add(Num):
 
     def __int__(self) -> int:
         return int(self.l) + int(self.r)
-
-    @property
-    def has_div_exp(self) -> bool:
-        l, r = self.l, self.r
-
-        return (
-            r.has_div_exp
-            or (not isinstance(l, int) and l.has_div_exp)
-        )
 
     def digits(self) -> int:
         r_dig = self.r.digits()
@@ -437,15 +421,6 @@ class Mul(Num):
     def __int__(self) -> int:
         return int(self.l) * int(self.r)
 
-    @property
-    def has_div_exp(self) -> bool:
-        l, r = self.l, self.r
-
-        return (
-            r.has_div_exp
-            or (not isinstance(l, int) and l.has_div_exp)
-        )
-
     def digits(self) -> int:
         r_dig = self.r.digits()
 
@@ -571,6 +546,10 @@ class Mul(Num):
                     return lo + (self + ro)
 
             if lo.depth < self.depth:
+                return lo + (self + ro)
+
+            if (isinstance(l, int)
+                    and isinstance(r, Exp) and isinstance(r.exp, Div)):
                 return lo + (self + ro)
 
         elif isinstance(other, Exp):
@@ -708,10 +687,6 @@ class Div(Num):
         assert rem == 0
 
         return div % mod
-
-    @property
-    def has_div_exp(self) -> bool:
-        return self.num.has_div_exp
 
     def digits(self) -> int:
         return self.num.digits() - round(log10(self.den))
@@ -862,10 +837,6 @@ class Exp(Num):
 
     def __int__(self) -> int:
         return self.base ** int(self.exp)  # type: ignore[no-any-return]
-
-    @property
-    def has_div_exp(self) -> bool:
-        return isinstance(self.exp, Div)
 
     def digits(self) -> int:
         if not isinstance(exp := self.exp, int):
