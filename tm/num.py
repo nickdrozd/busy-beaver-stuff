@@ -762,11 +762,8 @@ class Div(Num):
             if other == den:
                 return num
 
-            if other % den == 0:
-                return (other // den) * num
-
-            if den % other == 0:
-                return num // (den // other)
+            if (cden := pgcd(den, other)) > 1:
+                return ((other // cden) * num) // (den // cden)
 
         return (num * other) // den
 
