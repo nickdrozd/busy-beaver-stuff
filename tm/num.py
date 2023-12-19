@@ -936,14 +936,8 @@ class Exp(Num):
         return False
 
     def __mul__(self, other: Count) -> Count:
-        if other == 0:
-            return 0
-
-        if other == 1:
-            return self
-
-        if other == -1:
-            return -self
+        if isinstance(other, int):
+            return other * self
 
         if isinstance(other, Exp):
             if (base := self.base) == other.base:
