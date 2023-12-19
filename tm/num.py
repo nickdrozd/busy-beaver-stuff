@@ -957,12 +957,9 @@ class Exp(Num):
             return make_exp(base, self.exp + other.exp)
 
         if isinstance(other, Add):
-            l, r = other.l, other.r
+            return (self * other.l) + (self * other.r)
 
-            if not isinstance(l, Exp) or not isinstance(r, Exp):
-                return (self * l) + (self * r)
-
-        elif isinstance(other, Mul):
+        if isinstance(other, Mul):
             l, r = other.l, other.r
 
             if isinstance(l, int):
