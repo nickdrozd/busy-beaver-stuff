@@ -789,10 +789,10 @@ class Div(Num):
 
         num, den = self.num, self.den
 
-        if gcd(other, num) == 1:
+        if (cden := gcd(other, num)) == 1:
             return make_div(num, other * den)
 
-        return num // (other * den)
+        return (num // cden) // ((other // cden) * den)
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, int):
