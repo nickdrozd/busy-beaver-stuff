@@ -1490,6 +1490,27 @@ SUSPECTED_RULES = {
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
+    "spinout": {
+        "1RB 0LB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": (
+            129,
+            "0",
+            "0",
+            "(222 + (11 * (2 ** 41)))",
+        ),
+        "1RB 0LB 1LA  2LC 0LA 2LB  2RC 2RA 0LC": (
+            132,
+            "0",
+            "0",
+            "(222 + (11 * (2 ** 41)))",
+        ),
+        "1RB 0LB 1LA  2LC 2LB 2LB  2RC 2RA 0LC": (
+            141,
+            "0",
+            "0",
+            "(430 + (13 * (2 ** 101)))",
+        ),
+    },
+
     "halt": {
         "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": (
             152,

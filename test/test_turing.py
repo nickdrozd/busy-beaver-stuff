@@ -994,6 +994,13 @@ class Fast(TuringTest):
                         prog,
                         PROVER_HALT)
 
+                elif self.machine.spnout is not None:
+                    self.assertEqual(term, 'spinout', prog)
+
+                    self.assertIn(
+                        prog,
+                        PROVER_SPINOUT)
+
                 elif self.machine.infrul is not None:
                     self.assertEqual(term, 'infrul', prog)
 
@@ -1046,11 +1053,11 @@ class Fast(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 38345,
+            "adds": 38369,
             "divs": 8394,
             "exps": 10214,
-            "muls": 10297,
-            "totl": 67250,
+            "muls": 10305,
+            "totl": 67282,
         })
 
 
