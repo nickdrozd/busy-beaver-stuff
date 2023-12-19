@@ -1186,7 +1186,8 @@ def gcd(l: int, r: Count) -> int:
 
     assert isinstance(r, Exp), (l, r)
 
-    base = r.base
+    if l == (base := r.base):
+        return l
 
     if l % base != 0:
         return pgcd(l, base)
