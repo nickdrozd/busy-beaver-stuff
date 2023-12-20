@@ -449,6 +449,9 @@ class Mul(Num):
         return (l_mod * r_mod) % mod
 
     def __mul__(self, other: Count) -> Count:
+        if isinstance(other, int):
+            return other * self
+
         if self.l == -1:
             return -1 * (self.r * other)
 
