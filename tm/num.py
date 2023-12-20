@@ -452,12 +452,14 @@ class Mul(Num):
         if isinstance(other, int):
             return other * self
 
-        if self.l == -1:
-            return -1 * (self.r * other)
+        l, r = self.l, self.r
+
+        if l == -1:
+            return -1 * (r * other)
 
         if isinstance(other, Exp):
-            if other.multiplies_with(self.r):  # no-branch
-                return self.l * (self.r * other)
+            if other.multiplies_with(r):  # no-branch
+                return l * (r * other)
 
         return super().__mul__(other)
 
@@ -466,7 +468,7 @@ class Mul(Num):
 
         if other == -1:
             if l == -1:  # no-cover
-                return self.r
+                return r
 
             if isinstance(l, int):
                 return -l * r
@@ -479,7 +481,7 @@ class Mul(Num):
         if other == 1:
             return self
 
-        return (other * self.l) * self.r
+        return (other * l) * r
 
     def __radd__(self, other: int) -> Count:
         if other == 0:
