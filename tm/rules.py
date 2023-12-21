@@ -126,8 +126,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
         match sub:
             case Add():
-                if not isinstance(l := sub.l, int):
-                    raise RuleLimit('sub_add')
+                assert isinstance(l := sub.l, int)
 
                 descent.append(
                     ('+', -l))
@@ -170,8 +169,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
         match sup:
             case Add():
-                if not isinstance(l := sup.l, int):
-                    raise RuleLimit('sup_add')
+                assert isinstance(l := sup.l, int)
 
                 ascent.append(
                     ('+', l))

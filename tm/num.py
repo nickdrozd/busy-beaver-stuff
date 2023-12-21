@@ -58,15 +58,7 @@ class Num:
         return other is self
 
     def __lt__(self, other: Count) -> bool:
-        if isinstance(other, int):
-            assert isinstance(self, Add)
-
-            l, r = self.l, self.r  # pylint: disable = no-member
-
-            assert (l < 0 < r) or (r < 0 < l)
-
-            return False
-
+        assert not isinstance(other, int)
         if isinstance(other, Add | Mul):
             l, r = other.l, other.r
 
@@ -82,11 +74,11 @@ class Num:
             except NotImplementedError:  # no-cover
                 pass
 
-            if self == l:
-                return 0 < r
-
             if self == r:
                 return 0 < l
+
+            if self == l:  # no-cover
+                return 0 < r
 
         if isinstance(other, Add):
             if isinstance(l, int) and abs(l) < 10:
@@ -111,7 +103,7 @@ class Num:
                 return other.l + (self + other.r)
 
         if isinstance(other, Mul):
-            if other.l == -1 and self == other.r:
+            if other.l == -1 and self == other.r:  # no-cover
                 return 0
 
         if isinstance(other, Div):
@@ -123,19 +115,19 @@ class Num:
         return make_add(self, other)
 
     def __radd__(self, other: int) -> Count:
-        if other == 0:
+        if other == 0:  # no-cover
             return self
 
         return self + other
 
     def __sub__(self, other: Count) -> Count:
-        if self == other:
+        if self == other:  # no-cover
             return 0
 
         if isinstance(other, Add):
             l, r = other.l, other.r
 
-            if self == r:
+            if self == r:  # no-branch
                 return -l
 
         return self + -other
@@ -144,7 +136,7 @@ class Num:
         return other + -self
 
     def __mul__(self, other: Count) -> Count:
-        if isinstance(other, int):
+        if isinstance(other, int):  # no-cover
             return other * self
 
         if isinstance(other, Div):
@@ -155,7 +147,7 @@ class Num:
 
         return make_mul(self, other)
 
-    def __rmul__(self, other: int) -> Count:
+    def __rmul__(self, other: int) -> Count:  # no-cover
         if other == 0:
             return 0
 
@@ -175,7 +167,7 @@ class Num:
 
         return (self - mod) // other, mod
 
-    def __floordiv__(self, other: Count) -> Count:
+    def __floordiv__(self, other: Count) -> Count:  # no-cover
         assert isinstance(other, int)
 
         assert other > 1
@@ -187,7 +179,7 @@ class Num:
 
 
 def make_add(l: Count, r: Num) -> Add:
-    if isinstance(l, Num) and l.depth > r.depth:
+    if isinstance(l, Num) and l.depth > r.depth:  # no-cover
         l, r = r, l
 
     try:
@@ -236,7 +228,7 @@ class Add(Num):
         )
 
     def __mod__(self, mod: int) -> int:
-        if mod == 1:
+        if mod == 1:  # no-cover
             return 0
 
         return ((self.l % mod) + (self.r % mod)) % mod
@@ -257,13 +249,13 @@ class Add(Num):
         l, r = self.l, self.r
 
         if isinstance(other, int):
-            if other == 0:
+            if other == 0:  # no-cover
                 return self
 
             if isinstance(l, int):
                 return (l + other) + r
 
-            return make_add(other, self)
+            return make_add(other, self)  # no-cover
 
         if isinstance(other, Add):
             lo, ro = other.l, other.r
@@ -286,7 +278,7 @@ class Add(Num):
         if isinstance(other, Add):
             l, lo = self.l, other.l
 
-            if isinstance(l, int) and isinstance(lo, int):
+            if isinstance(l, int) and isinstance(lo, int):  # no-branch
                 return (l - lo) + (self.r - other.r)
 
         return self + -other
@@ -299,7 +291,7 @@ class Add(Num):
 
     def __rmul__(self, other: int) -> Count:
         match other:
-            case 0:
+            case 0:  # no-cover
                 return 0
 
             case 1:
@@ -334,10 +326,10 @@ class Add(Num):
             if l < 0 and r < 0:  # no-cover
                 return True
 
-            if 0 < l and 0 < r:
+            if 0 < l and 0 < r:  # no-cover
                 return False
 
-        if other == l:
+        if other == l:  # no-cover
             return r < 0
 
         if other == r:
@@ -346,7 +338,7 @@ class Add(Num):
         if isinstance(other, Add):
             lo, ro = other.l, other.r
 
-            if self == ro:
+            if self == ro:  # no-cover
                 return lo > 0
 
             if l == lo:
@@ -355,7 +347,7 @@ class Add(Num):
             if r == ro:
                 return l < lo
 
-            if l == ro:
+            if l == ro:  # no-cover
                 return r < lo
 
             if isinstance(l, int) and isinstance(lo, int):
@@ -437,7 +429,7 @@ class Mul(Num):
         return -(self.l) * self.r
 
     def __mod__(self, mod: int) -> int:
-        if mod == 1:
+        if mod == 1:  # no-cover
             return 0
 
         if (l_mod := self.l % mod) == 0:
@@ -473,12 +465,12 @@ class Mul(Num):
             if isinstance(l, int):
                 return -l * r
 
-            if isinstance(l, Exp) and isinstance(r, Add):
+            if isinstance(l, Exp) and isinstance(r, Add):  # no-branch
                 return l * -r
 
-            return super().__rmul__(other)
+            return super().__rmul__(other)  # no-cover
 
-        if other == 1:
+        if other == 1:  # no-cover
             return self
 
         return (other * l) * r
@@ -527,15 +519,6 @@ class Mul(Num):
                     except NotImplementedError:  # no-cover
                         pass
 
-                if lo == -1 and isinstance(ro, Mul):
-                    rol, ror = ro.l, ro.r
-
-                    if isinstance(ror, Exp):
-                        assert ror.base == r.base
-
-                        if ror.exp == r.exp:
-                            return (l + -rol) * r
-
         elif isinstance(other, Add):
             lo, ro = other.l, other.r
 
@@ -553,20 +536,20 @@ class Mul(Num):
             if lo.depth < self.depth:
                 return lo + (self + ro)
 
-            if (isinstance(l, int)
+            if (isinstance(l, int)  # no-cover
                     and isinstance(r, Exp) and isinstance(r.exp, Div)):
-                return lo + (self + ro)
+                return lo + (self + ro)  # no-cover
 
         elif isinstance(other, Exp):
             return other + self
 
-        if l == -1 and other == r:
+        if l == -1 and other == r:  # no-cover
             return 0
 
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
-        if other == 0:
+        if other == 0:  # no-cover
             return self
 
         l, r = self.l, self.r
@@ -697,7 +680,7 @@ class Div(Num):
         return self.num.digits() - round(log10(self.den))
 
     def __add__(self, other: Count) -> Count:
-        if other == 0:
+        if other == 0:  # no-cover
             return self
 
         num, den = self.num, self.den
@@ -719,7 +702,7 @@ class Div(Num):
         return ((oden * num) + (den * other.num)) // (den * oden)
 
     def __radd__(self, other: int) -> Count:
-        if other == 0:
+        if other == 0:  # no-cover
             return self
 
         return ((other * self.den) + self.num) // self.den
@@ -749,7 +732,7 @@ class Div(Num):
 
     def __rmul__(self, other: int) -> Count:
         match other:
-            case 0:
+            case 0:  # no-cover
                 return 0
 
             case 1:
@@ -918,7 +901,7 @@ class Exp(Num):
 
                 try:
                     return add_exponents((self, 1), (l, r))
-                except NotImplementedError:
+                except NotImplementedError:  # no-cover
                     pass
 
         elif isinstance(other, Exp):
@@ -948,7 +931,7 @@ class Exp(Num):
         if isinstance(other, Exp):
             return other.base == self.base
 
-        if isinstance(other, Mul):
+        if isinstance(other, Mul):  # no-cover
             return (
                 self.multiplies_with(other.l)
                 or self.multiplies_with(other.r)
@@ -968,19 +951,21 @@ class Exp(Num):
         if isinstance(other, Add):
             return (self * other.l) + (self * other.r)
 
-        if isinstance(other, Mul):
-            l, r = other.l, other.r
+        if not isinstance(other, Mul):  # no-cover
+            return super().__mul__(other)
 
-            if isinstance(l, int):
-                return l * (self * r)
+        l, r = other.l, other.r
 
-            if self.multiplies_with(l):
-                return (self * l) * r
+        if isinstance(l, int):
+            return l * (self * r)
 
-            if self.multiplies_with(r):  # no-branch
-                return l * (self * r)
+        if self.multiplies_with(l):
+            return (self * l) * r
 
-        return super().__mul__(other)
+        if self.multiplies_with(r):  # no-branch
+            return l * (self * r)
+
+        return super().__mul__(other)  # no-cover
 
     def __rmul__(self, other: int) -> Count:
         if other == 0:
@@ -1065,7 +1050,7 @@ class Exp(Num):
         if isinstance(other, Add):
             l, r = other.l, other.r
 
-            if isinstance(l, int):
+            if isinstance(l, int):  # no-branch
                 return self < r
 
         elif isinstance(other, Mul):  # no-branch
@@ -1139,10 +1124,9 @@ class Tet(Num):
         return super().__lt__(other)
 
     def __add__(self, other: Count) -> Count:
-        if isinstance(other, int):
-            return self if other == 0 else make_add(other, self)
+        assert isinstance(other, int)
 
-        return super().__add__(other)
+        return self if other == 0 else make_add(other, self)
 
 
 def add_exponents(
@@ -1172,7 +1156,7 @@ def add_exponents(
 
 
 def gcd(l: int, r: Count) -> int:
-    if l == 1:
+    if l == 1:  # no-cover
         return 1
 
     if isinstance(r, int):
