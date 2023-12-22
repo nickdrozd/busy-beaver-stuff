@@ -356,7 +356,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            1019,
+            1025,
             'holdouts_24h')
 
         self.assert_simple_and_connected()
