@@ -118,122 +118,14 @@ colorIndex (S c) (_ :: is) = colorIndex c is
 
 {n : Nat} -> Cast (ProgVect n k) Program where
   cast prog state color =
-    case n of
-      1 =>
-        case state of
-          1 => colorIndex color (index FZ prog)
-          _ => (1, R, halt)
-      2 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          _ => (1, R, halt)
-      3 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          _ => (1, R, halt)
-      4 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          _ => (1, R, halt)
-      5 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, halt)
-      6 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, halt)
-      7 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
-          7 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, halt)
-      8 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
-          7 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          8 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, halt)
-      9 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
-          7 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          8 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          9 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, halt)
-      10 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
-          7 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          8 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          9 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          10 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, halt)
-      11 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
-          7 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          8 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          9 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          10 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          11 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, halt)
-      12 =>
-        case state of
-          1 => colorIndex color $ index FZ prog
-          2 => colorIndex color $ index (FS FZ) prog
-          3 => colorIndex color $ index (FS $ FS FZ) prog
-          4 => colorIndex color $ index (FS $ FS $ FS FZ) prog
-          5 => colorIndex color $ index (FS $ FS $ FS $ FS FZ) prog
-          6 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS FZ) prog
-          7 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          8 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          9 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          10 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          11 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          12 => colorIndex color $ index (FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS $ FS FZ) prog
-          _ => (1, R, halt)
-      _ => (1, R, halt)
+    case vectLookup (pred state) prog of
+      Just instrs => colorIndex color instrs
+      Nothing => (1, R, halt)
+    where
+      vectLookup : Nat -> Vect _ a -> Maybe a
+      vectLookup Z (x :: xs) = Just x
+      vectLookup (S k) (x :: xs) = vectLookup k xs
+      vectLookup _ [] = Nothing
 
 public export
 parse : (n, k : Nat) -> String -> Maybe Program
