@@ -58,22 +58,8 @@ class TestTape(TestCase):
             HeadTape(lspan, scan, rspan, head)  # type: ignore[arg-type]
         )
 
-    def assert_tape(self, tape: str):
-        self.assertEqual(
-            tape,
-            str(tape)
-            if isinstance(
-                    tape := self.tape,  # type: ignore[assignment]
-                    Tape
-            ) else
-            str(Tape(
-                [Block(block.color, block.count)
-                 for block in tape.lspan],  # type: ignore[attr-defined]
-                tape.scan,  # type: ignore[attr-defined]
-                [Block(block.color, block.count)
-                 for block in tape.rspan]  # type: ignore[attr-defined]
-            ))
-        )
+    def assert_tape(self, tape_str: str):
+        self.assertEqual(tape_str, str(self.tape))
 
     def assert_signature(
             self,
@@ -111,7 +97,7 @@ class TestTape(TestCase):
         print(self.tape)
 
         self.assert_tape(
-            '1^1 0^1 1^1 [2] 2^1 1^2')
+            '1^1 0^1 1^1 [2 (0)] 2^1 1^2')
 
         self.assert_signature(
             '1|0|1[2]2|1')
