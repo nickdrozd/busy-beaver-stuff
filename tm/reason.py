@@ -78,7 +78,7 @@ class BackwardReasoner(Program):
                 (
                     1,
                     state,
-                    HeadTape.init(color),
+                    HeadTape(scan = color),
                 ),
                 0,
                 History(),

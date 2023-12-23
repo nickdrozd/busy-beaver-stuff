@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape, HeadTape
+from tm.tape import Tape, init_stepped
 from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
 from tm.show import show_slot, show_number
@@ -12,7 +12,7 @@ from tm.macro import BlockMacro, BacksymbolMacro, tcompile
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.tape import Count
+    from tm.tape import Count, HeadTape
     from tm.parse import State, Slot, GetInstr
 
     Undfnd = tuple[int, Slot]
@@ -172,7 +172,7 @@ class Machine:
     ) -> Self:
         comp = self.comp
 
-        self.tape = tape = Tape.init()
+        self.tape = tape = Tape()
 
         self.prover = Prover(comp)
 
@@ -267,7 +267,7 @@ def quick_term_or_rec(prog: str, sim_lim: int) -> bool:
 
     state = 1
 
-    tape = HeadTape.init_stepped()
+    tape: HeadTape = init_stepped()
 
     step, cycle = 1, 1
 

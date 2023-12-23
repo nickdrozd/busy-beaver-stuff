@@ -31,7 +31,7 @@ def instr_seq(prog: str) -> InstrSeq:
 
 
 def run_for_undefined(prog: Program) -> Undfnd | None:
-    tape = HeadTape.init()
+    tape = HeadTape()
 
     step = 0
 

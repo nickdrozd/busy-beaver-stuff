@@ -48,7 +48,7 @@ class QuickMachine:
     def run(self, sim_lim: int = 100_000_000) -> Self:
         comp = self.comp
 
-        self.tape = tape = Tape.init()
+        self.tape = tape = Tape()
 
         self.blanks = {}
 

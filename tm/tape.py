@@ -104,17 +104,21 @@ class Tape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[Block],
-            scan: Color,
-            rspan: list[Block],
+            lspan: list[tuple[int, int]] | None = None,
+            scan: Color = 0,
+            rspan: list[tuple[int, int]] | None = None,
     ):
-        self.lspan = lspan
-        self.scan = scan
-        self.rspan = rspan
+        self.lspan = [] if lspan is None else [
+            Block(color, count)
+            for color, count in lspan
+        ]
 
-    @classmethod
-    def init(cls, scan: Color = 0) -> Self:
-        return cls([], scan, [])
+        self.scan = scan
+
+        self.rspan = [] if rspan is None else [
+            Block(color, count)
+            for color, count in rspan
+        ]
 
     def to_tag(self) -> TagTape:
         return TagTape(self.lspan, self.scan, self.rspan)
@@ -512,19 +516,32 @@ class HeadTape:
 
     head: int = 0
 
+    def __init__(
+            self,
+            lspan: list[tuple[int, int]] | None = None,
+            scan: Color = 0,
+            rspan: list[tuple[int, int]] | None = None,
+            head: int = 0,
+    ):
+        self.lspan = [] if lspan is None else [
+            HeadBlock(color, count)
+            for color, count in lspan
+        ]
+
+        self.scan = scan
+
+        self.rspan = [] if rspan is None else [
+            HeadBlock(color, count)
+            for color, count in rspan
+        ]
+
+        self.head = head
+
     def __str__(self) -> str:
         return ' '.join(
             list(map(str, reversed(self.lspan)))
             + [f'[{self.scan} ({self.head})]']
             + list(map(str, self.rspan)))
-
-    @classmethod
-    def init(cls, scan: Color = 0) -> Self:
-        return cls([], scan, [])
-
-    @classmethod
-    def init_stepped(cls) -> Self:  # no-cover
-        return cls([HeadBlock(1, 1)], 0, [], head = 1)
 
     def __hash__(self) -> int:
         return hash((
@@ -535,11 +552,9 @@ class HeadTape:
 
     def copy(self) -> HeadTape:
         return HeadTape(
-            [HeadBlock(block.color, block.count)
-             for block in self.lspan],
+            [(block.color, block.count) for block in self.lspan],
             self.scan,
-            [HeadBlock(block.color, block.count)
-             for block in self.rspan],
+            [(block.color, block.count) for block in self.rspan],
             head = self.head,
         )
 
@@ -694,3 +709,7 @@ class HeadTape:
             slice2 = self.get_cnt(leftmost, rightmost)
 
         return slice1 == slice2
+
+
+def init_stepped() -> HeadTape:
+    return HeadTape([(1, 1)], 0, [], head = 1)

@@ -36,26 +36,15 @@ class TestTape(TestCase):
 
     def set_tape(
             self,
-            lspan: BlockSpan,
+            lspan: list[tuple[int, int]],
             scan: Color,
-            rspan: BlockSpan,
+            rspan: list[tuple[int, int]],
             head: int | None = None,
     ) -> None:
-        block = Block if head is None else HeadBlock
-
-        lspan = [
-            block(color, count)  # type: ignore[misc]
-            for color, count in lspan
-        ]
-        rspan = [
-            block(color, count)  # type: ignore[misc]
-            for color, count in rspan
-        ]
-
         self.tape = (
-            Tape(lspan, scan, rspan)  # type: ignore[arg-type]
+            Tape(lspan, scan, rspan)
             if head is None else
-            HeadTape(lspan, scan, rspan, head)  # type: ignore[arg-type]
+            HeadTape(lspan, scan, rspan, head)
         )
 
     def assert_tape(self, tape_str: str):
@@ -73,24 +62,21 @@ class TestTape(TestCase):
 
         self.assertEqual(
             expected,
-            stringify_sig(
-                Tape(
-                    [Block(block.color, block.count)
-                     for block in tape.lspan],
-                    tape.scan,
-                    [Block(block.color, block.count)
-                     for block in tape.rspan]
-                ).signature))
+            stringify_sig(Tape(
+                [(block.color, block.count) for block in tape.lspan],
+                tape.scan,
+                [(block.color, block.count) for block in tape.rspan],
+            ).signature))
 
     def test_marks(self):
         self.assertFalse(
-            Tape.init().marks)
+            Tape().marks)
 
     def test_copy(self):
         self.set_tape(
-            [[1, 1], [0, 1], [1, 1]],
+            [(1, 1), (0, 1), (1, 1)],
             2,
-            [[2, 1], [1, 2]],
+            [(2, 1), (1, 2)],
             0,
         )
 
@@ -123,9 +109,9 @@ class TestTape(TestCase):
 
     def test_rule_1(self):
         self.set_tape(
-            [[1, 12], [2, 3]],
+            [(1, 12), (2, 3)],
             3,
-            [[4, 15], [5, 2], [6, 2]])
+            [(4, 15), (5, 2), (6, 2)])
 
         self.assert_tape(
             "2^3 1^12 [3] 4^15 5^2 6^2")
@@ -150,9 +136,9 @@ class TestTape(TestCase):
 
     def test_rule_2(self):
         self.set_tape(
-            [[4, 2]],
+            [(4, 2)],
             4,
-            [[5, 60], [2, 1], [4, 1], [5, 7], [1, 1]])
+            [(5, 60), (2, 1), (4, 1), (5, 7), (1, 1)])
 
         assert isinstance(self.tape, Tape)
 
@@ -168,7 +154,7 @@ class TestTape(TestCase):
             "4^118 [4] 5^2 2^1 4^1 5^7 1^1")
 
     def test_rule_3(self):
-        self.set_tape([[1, 152], [2, 655345], [3, 1]], 0, [])
+        self.set_tape([(1, 152), (2, 655345), (3, 1)], 0, [])
 
         assert isinstance(self.tape, Tape)
 
@@ -200,13 +186,13 @@ class TestTape(TestCase):
 
         tapes = set()
 
-        tape1 = HeadTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)], -4)
+        tape1 = HeadTape([(1, 1)], 1, [(1, 4)], -4)
 
         tapes.add(tape1)
 
         self.assertIn(tape1, tapes)
 
-        tape2 = HeadTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)], -4)
+        tape2 = HeadTape([(1, 1)], 1, [(1, 4)], -4)
 
         self.assertEqual(hash(tape1), hash(tape2))
 

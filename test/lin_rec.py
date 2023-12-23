@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tm.parse import tcompile
-from tm.tape import HeadTape
+from tm.tape import HeadTape, init_stepped
 
 if TYPE_CHECKING:
     from typing import Self
@@ -246,7 +246,7 @@ class StrictLinRecMachine(LinRecMachine):
 
         comp = self.comp
 
-        self.tape = tape = HeadTape.init()
+        self.tape = tape = HeadTape()
 
         self.history = BeepHistory(tapes = {})
 
@@ -319,7 +319,7 @@ class LinRecSampler(LinRecMachine):
 
         comp = self.comp
 
-        self.tape = tape = HeadTape.init()
+        self.tape = tape = HeadTape()
 
         self.history = BeepHistory(tapes = samples)
 
@@ -367,7 +367,7 @@ class LooseLinRecMachine(LinRecMachine):
 
         step = 1
 
-        self.tape = tape = HeadTape.init_stepped()
+        self.tape = tape = init_stepped()
 
         cycle = 1
 
