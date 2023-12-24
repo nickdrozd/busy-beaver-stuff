@@ -12,7 +12,10 @@ from tm.parse import parse, read_slot
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.parse import Color, Shift, State, Slot, Instr
+    from tm.parse import Color, State, Slot, Instr
+
+    # ruff: noqa: F401
+    from tm.parse import Shift
 
     ProgStr = str
 

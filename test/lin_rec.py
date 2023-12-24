@@ -11,7 +11,7 @@ from tm.tape import HeadTape, init_stepped
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.parse import Color, Shift, State, Slot, GetInstr
+    from tm.parse import Color, State, Slot, GetInstr
     from tm.machine import Undfnd
 
     RecRes = tuple[int, int]

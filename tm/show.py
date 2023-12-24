@@ -1,3 +1,4 @@
+# ruff: noqa: F401
 # pylint: disable = unused-import
 from tm.num import show_number
 

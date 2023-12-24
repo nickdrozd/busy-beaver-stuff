@@ -46,12 +46,15 @@ PYTHON = python3
 
 MODULES = tm tools test perf *.py
 
+RUFF = $(PYTHON) -m ruff
 PYLINT = $(PYTHON) -m pylint
 
 lint : clippy rust
+	$(RUFF) --version
+	$(RUFF) $(MODULES)
+	$(MAKE) type
 	$(PYLINT) --version
 	$(PYLINT) --enable-all-extensions $(MODULES)
-	$(MAKE) type
 
 MYPY = $(PYTHON) -m mypy
 
