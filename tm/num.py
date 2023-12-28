@@ -198,13 +198,13 @@ class Add(Num):
 
         self.depth = 1 + r.depth
 
-        self.leaves = (1 if isinstance(l, int) else l.leaves) + r.leaves
+        if isinstance(l, int):
+            self.leaves = 1 + r.leaves
+            self.tower_est = r.tower_est
 
-        self.tower_est = (
-            r.tower_est
-            if isinstance(l, int) else
-            max(l.tower_est, r.tower_est)
-        )
+        else:
+            self.leaves = l.leaves + r.leaves
+            self.tower_est = max(l.tower_est, r.tower_est)
 
     def __repr__(self) -> str:
         return f'({show_number(self.l)} + {self.r})'
@@ -390,13 +390,13 @@ class Mul(Num):
 
         self.depth = 1 + r.depth
 
-        self.leaves = (1 if isinstance(l, int) else l.leaves) + r.leaves
+        if isinstance(l, int):
+            self.leaves = 1 + r.leaves
+            self.tower_est = r.tower_est
 
-        self.tower_est = (
-            r.tower_est
-            if isinstance(l, int) else
-            max(l.tower_est, r.tower_est)
-        )
+        else:
+            self.leaves = l.leaves + r.leaves
+            self.tower_est = max(l.tower_est, r.tower_est)
 
     def __repr__(self) -> str:
         if self.l == -1:
@@ -799,16 +799,15 @@ class Exp(Num):
         self.base = base
         self.exp = exp
 
-        self.depth = 1 + (0 if isinstance(exp, int) else exp.depth)
+        if isinstance(exp, int):
+            self.depth = 1
+            self.leaves = 2
+            self.tower_est = 2 if log10(exp) >= 1 else 1
 
-        self.leaves = 1 + (1 if isinstance(exp, int) else exp.leaves)
-
-        self.tower_est = (
-            1 + exp.tower_est
-            if not isinstance(exp, int) else
-            2 if log10(exp) >= 1 else
-            1
-        )
+        else:
+            self.depth = 1 + exp.depth
+            self.leaves = 1 + exp.leaves
+            self.tower_est = 1 + exp.tower_est
 
     def __repr__(self) -> str:
         return f'({self.base} ** {show_number(self.exp)})'
