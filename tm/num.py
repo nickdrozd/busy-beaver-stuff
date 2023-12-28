@@ -747,7 +747,7 @@ class Div(Num):
                 return self * other
 
             case _:
-                return (other * self.num) // self.den
+                return -(self * -other)
 
     def __floordiv__(self, other: Count) -> Count:
         if other == 1:
