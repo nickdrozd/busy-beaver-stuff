@@ -394,6 +394,8 @@ class Mul(Num):
             self.leaves = 1 + r.leaves
             self.tower_est = r.tower_est
 
+            assert isinstance(r, Exp), (l, r)
+
         else:
             self.leaves = l.leaves + r.leaves
             self.tower_est = max(l.tower_est, r.tower_est)
