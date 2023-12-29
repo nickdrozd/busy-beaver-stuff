@@ -114,11 +114,8 @@ class Num:
 
         return make_add(self, other)
 
-    def __radd__(self, other: int) -> Count:
-        if other == 0:  # no-cover
-            return self
-
-        return self + other
+    @abstractmethod
+    def __radd__(self, other: int) -> Count: ...
 
     def __sub__(self, other: Count) -> Count:
         if self == other:  # no-cover
@@ -147,14 +144,8 @@ class Num:
 
         return make_mul(self, other)
 
-    def __rmul__(self, other: int) -> Count:  # no-cover
-        if other == 0:
-            return 0
-
-        if other == 1:
-            return self
-
-        return make_mul(other, self)
+    @abstractmethod
+    def __rmul__(self, other: int) -> Count: ...
 
     @abstractmethod
     def __mod__(self, mod: int) -> int: ...
@@ -167,12 +158,8 @@ class Num:
 
         return (self - mod) // other, mod
 
-    def __floordiv__(self, other: Count) -> Count:  # no-cover
-        assert isinstance(other, int)
-
-        assert other > 1
-
-        return make_div(self, other)
+    @abstractmethod
+    def __floordiv__(self, other: Count) -> Count: ...
 
     def __rpow__(self, other: int) -> Exp | Tet:
         return make_exp(other, self)
@@ -1132,6 +1119,15 @@ class Tet(Num):
 
     def __add__(self, other: Count) -> Count:
         return self
+
+    def __radd__(self, other: int) -> Count:
+        return self  # no-cover
+
+    def __rmul__(self, other: int) -> Count:
+        raise NotImplementedError  # no-cover
+
+    def __floordiv__(self, other: Count) -> Count:
+        raise NotImplementedError  # no-cover
 
 
 def add_exponents(
