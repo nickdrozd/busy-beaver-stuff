@@ -474,10 +474,9 @@ class Mul(Num):
             if isinstance(l, int):
                 return -l * r
 
-            if isinstance(l, Exp) and isinstance(r, Add):  # no-branch
-                return l * -r
+            assert isinstance(l, Exp) and isinstance(r, Add), self
 
-            return super().__rmul__(other)  # no-cover
+            return l * -r
 
         if other == 1:  # no-cover
             return self
