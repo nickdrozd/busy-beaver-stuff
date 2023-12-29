@@ -291,9 +291,6 @@ class Add(Num):
             case -1:
                 return -self
 
-            case 2:
-                return self + self
-
             case _:
                 return (other * self.l) + (other * self.r)
 
