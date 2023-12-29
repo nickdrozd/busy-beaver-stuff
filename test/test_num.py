@@ -76,15 +76,15 @@ class TestNum(TestCase):
             skip_num: bool = False,
     ):
         self.assertEqual(
-            num % mod,
-            rem)
+            rem,
+            num % mod)
 
         if skip_num:
             return
 
         self.assertEqual(
-            int(num) % mod,
-            rem)
+            rem,
+            int(num) % mod)
 
     def assert_num(
             self,
@@ -106,7 +106,7 @@ class TestNum(TestCase):
                 eval(str(num)))  # pylint: disable = eval-used
 
         if rep is not None:
-            self.assertEqual(str(num), rep)
+            self.assertEqual(rep, str(num))
 
         if mod_rem is not None:
             mod, rem = mod_rem
@@ -119,7 +119,7 @@ class TestNum(TestCase):
 
     def assert_depth(self, val: Count, depth: int):
         assert not isinstance(val, int)
-        self.assertEqual(val.depth, depth)
+        self.assertEqual(depth, val.depth)
 
     def assert_digits(self, val: Count, digits: int):
         assert not isinstance(val, int)
@@ -131,8 +131,8 @@ class TestNum(TestCase):
         est = val.estimate()
 
         self.assertEqual(
-            str(est) if isinstance(estimate, str) else est,
             estimate,
+            str(est) if isinstance(estimate, str) else est,
             est)
 
     def test_subexpression(self):
