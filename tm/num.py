@@ -1132,9 +1132,7 @@ class Tet(Num):
         return super().__lt__(other)
 
     def __add__(self, other: Count) -> Count:
-        assert isinstance(other, int)
-
-        return self if other == 0 else make_add(other, self)
+        return self
 
 
 def add_exponents(
