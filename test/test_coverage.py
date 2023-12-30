@@ -84,45 +84,15 @@ class TestFloss(TestCase):
                 backsym = 1,
             ).run(100).xlimit)
 
-        Machine(
-            "1RB 2LB 1LA  2LB 2RA 0RA",
-            opt_macro = 100,
-        ).run()
-
     def test_machine(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 1RA  1RC 0RD  1LE 0RA  0R_ 0RB  1LB 1LE"
-            ).run().simple_termination)
-
         self.assertIsNotNone(
             Machine(
                 "1RB 1LA  1RC 0LB  0LB ..."
             ).run().blanks)
 
-        self.assertFalse(
-            quick_term_or_rec(
-                "1RB 1LA  0RC ...  1LC 0LA",
-                100))
-
-        self.assertTrue(
-            quick_term_or_rec(
-                "1RB 1RB  1RC 0LC  0LB 1RC",
-                100))
-
-        self.assertFalse(
-            quick_term_or_rec(
-                "1RB 0LB  1LA 0RA",
-                50))
-
         self.assertTrue(
             quick_term_or_rec(
                 "1RB 1LA  0LB 1LB",
-                50))
-
-        self.assertTrue(
-            quick_term_or_rec(
-                "1RB ...  0RC 1LB  1LA 0RB",
                 50))
 
         self.assertTrue(
@@ -134,11 +104,6 @@ class TestFloss(TestCase):
             quick_term_or_rec(
                 "1RB 1RA  1RC 0RD  1LE 0RA  0R_ 0RB  1LB 1LE",
                 100_000_000))
-
-        self.assertIsNotNone(
-            Machine(
-                "1RB 2LA 1RA  1LB 1LA 2RB"
-            ).run(sim_lim = 10).xlimit)
 
         self.assertIsNotNone(
             Machine(
@@ -157,15 +122,11 @@ class TestFloss(TestCase):
 
     def test_prover(self):
         progs = (
-            "1RB 2LA 3LA 2LA  3LB 3RA 0RA 0RB",
             "1RB 0LD  1LB 0RC  0RE 1LD  1LA ...  0RB 0LC",
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
-            "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA",
-            "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",
             "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",
             "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
-            "1RB ...  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE",
             "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
         )
 
@@ -173,10 +134,13 @@ class TestFloss(TestCase):
             print(prog)
 
             self.assertIsNotNone(
-                Machine(
+                machine := Machine(
                     prog,
                     opt_macro = 500,
                 ).run())
+
+            self.assertIsNotNone(
+                machine.marks)
 
         Machine(
             "1RB 2RA 1LB 2LA  2LA 3RB 1LB 2RA"

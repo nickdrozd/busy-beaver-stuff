@@ -61,11 +61,11 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2245,
-            "divs": 2066,
-            "exps": 1215,
-            "muls": 1388,
-            "totl": 6914,
+            "adds": 2255,
+            "divs": 2068,
+            "exps": 1223,
+            "muls": 1397,
+            "totl": 6943,
         })
 
     def assert_mod(
@@ -298,6 +298,14 @@ class TestNum(TestCase):
             4874092339984591505850368,
             "(270566477 * (2 ** 54))")
 
+        self.assert_estimate(
+            1 + Tet(10, 5),
+            Tet(10, 5))
+
+        self.assert_estimate(
+            Tet(10, 5) + 1,
+            Tet(10, 5))
+
     def test_div(self):
         self.assert_num(
             (-2 + Exp(2, 3)) // 3,
@@ -461,7 +469,7 @@ class TestNum(TestCase):
             (4, 5, 3): 1,
             (5, 3, 13): 8,
             (4, 13, 497): 445,
-            (2, 40, 13): 3,
+            (2, 31,  4): 0,
             (2, 50, 13): 4,
             (2, 90, 13): 12,
         }
@@ -498,6 +506,17 @@ class TestNum(TestCase):
             (-3 + (3 ** ((-3 + Exp(3, 5)) // 8))),
             2,
             0)
+
+        self.assert_mod(
+            2 ** Exp(3, 11),
+            4,
+            0)
+
+        self.assert_mod(
+            6 ** ((1 + (69 * Exp(6, 13))) // 5),
+            10,
+            6,
+            skip_num = True)
 
     def test_exp_mod_special_case(self):
         self.assert_mod(
@@ -806,6 +825,10 @@ class TestNum(TestCase):
         self.assertLess(
             (2 ** (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19)))))),
             (2 ** (2 + (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19))))))))
+
+        self.assertGreater(
+            Tet(10, 5),
+            5)
 
     def test_exp_add(self):
         self.assert_num(
@@ -1240,6 +1263,16 @@ class TestNum(TestCase):
             "(351 + (65 * (2 ** (2 ** 3))))")
 
         self.assert_num(
+            (1 + (2 ** (-1 + Exp(2, 31)))) + 0,
+            "(10 ** 646456993)",
+            "(1 + (2 ** (-1 + (2 ** 31))))")
+
+        self.assert_num(
+            (1 + (2 ** (-1 + Exp(2, 31)))) - 0,
+            "(10 ** 646456993)",
+            "(1 + (2 ** (-1 + (2 ** 31))))")
+
+        self.assert_num(
             (5 * 2 ** ((1 + Exp(2, 3)) // 3)) + (-5 * 2 ** 2 ** ((-1 + Exp(2, 4)) // 3)),
             -21474836440,
             "((5 * (2 ** ((1 + (2 ** 3)) // 3))) + (-5 * (2 ** (2 ** ((-1 + (2 ** 4)) // 3)))))")
@@ -1248,6 +1281,11 @@ class TestNum(TestCase):
             3 ** Exp(3, 5) + (3 ** ((Exp(3, 5) * (-1 + 3 ** Exp(3, 5))) + -(Exp(3, 5) * (-1 + Exp(3, 5)))) * (1 + Exp(3, 5))),
             "(10 ↑↑ 3)",
             "((3 ** (3 ** 5)) * (1 + (244 * (3 ** ((3 ** 5) * (-244 + (3 ** (3 ** 5))))))))")
+
+        self.assert_num(
+            (-20 + (13 * (2 ** ((-5 + (13 * Exp(2, 553))) // 3)))) + ((Exp(2, 552) * (117 + (117 * (2 ** Exp(2, 553))))) + (117 * (2 ** ((-8 + (13 * Exp(2, 553))) // 3)))),
+            "(10 ↑↑ 3)",
+            "(-20 + (((2 ** 552) * (117 + (117 * (2 ** (2 ** 553))))) + (143 * (2 ** ((-8 + (13 * (2 ** 553))) // 3)))))")
 
     def test_tet(self):
         self.assert_num(
@@ -1302,6 +1340,11 @@ class TestNum(TestCase):
             "(84466 + ((2 ** 801) * (117 + (65 * (2 ** ((-11954 + (13 * (2 ** 803))) // 15))))))")
 
     def test_exp_div(self):
+        self.assert_num(
+            Exp(2, 10) // Exp(2, 9),
+            2,
+            "2")
+
         self.assert_num(
             Exp(2, 13) // Exp(2, 10),
             8,

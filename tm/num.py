@@ -236,7 +236,7 @@ class Add(Num):
         l, r = self.l, self.r
 
         if isinstance(other, int):
-            if other == 0:  # no-cover
+            if other == 0:
                 return self
 
             if isinstance(l, int):
@@ -269,8 +269,9 @@ class Add(Num):
         if isinstance(other, Add):
             l, lo = self.l, other.l
 
-            if isinstance(l, int) and isinstance(lo, int):  # no-branch
-                return (l - lo) + (self.r - other.r)
+            assert isinstance(l, int) and isinstance(lo, int)
+
+            return (l - lo) + (self.r - other.r)
 
         return self + -other
 
@@ -672,7 +673,7 @@ class Div(Num):
         return self.num.digits() - round(log10(self.den))
 
     def __add__(self, other: Count) -> Count:
-        if other == 0:  # no-cover
+        if other == 0:
             return self
 
         num, den = self.num, self.den
@@ -694,7 +695,7 @@ class Div(Num):
         return ((oden * num) + (den * other.num)) // (den * oden)
 
     def __radd__(self, other: int) -> Count:
-        if other == 0:  # no-cover
+        if other == 0:
             return self
 
         return ((other * self.den) + self.num) // self.den
@@ -753,11 +754,12 @@ class Div(Num):
         if isinstance(other, int):
             return self.num < 0
 
-        if isinstance(other, Div):  # no-branch
-            if self.den == other.den:  # no-branch
-                return self.num < other.num
+        if not isinstance(other, Div):
+            return super().__lt__(other)
 
-        return super().__lt__(other)  # no-cover
+        assert self.den == other.den, (self, other)
+
+        return self.num < other.num
 
 
 def make_exp(base: int, exp: Count) -> Exp:
@@ -942,8 +944,7 @@ class Exp(Num):
         if isinstance(other, Add):
             return (self * other.l) + (self * other.r)
 
-        if not isinstance(other, Mul):  # no-cover
-            return super().__mul__(other)
+        assert isinstance(other, Mul), (self, other)
 
         l, r = other.l, other.r
 
@@ -1053,7 +1054,7 @@ class Exp(Num):
                 if l.exp <= exp:
                     return (self // l) < r
 
-        return super().__lt__(other)
+        return super().__lt__(other)  # no-cover
 
     def __pow__(self, other: Count) -> Exp:
         return make_exp(self.base, self.exp * other)
@@ -1118,7 +1119,7 @@ class Tet(Num):
         return self
 
     def __radd__(self, other: int) -> Count:
-        return self  # no-cover
+        return self
 
     def __rmul__(self, other: int) -> Count:
         raise NotImplementedError  # no-cover
