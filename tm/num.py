@@ -84,7 +84,7 @@ class Num:
             if isinstance(l, int) and abs(l) < 10:
                 return self < r
 
-        raise NotImplementedError
+        raise NotImplementedError(self, other)
 
     def __le__(self, other: Count) -> bool:
         return self == other or self < other
@@ -598,7 +598,7 @@ class Mul(Num):
 
         if l < 0:
             if other < 0:  # no-cover
-                raise NotImplementedError
+                raise NotImplementedError(self, other)
 
             return True
 
@@ -1109,7 +1109,7 @@ class Tet(Num):
 
         if isinstance(other, Tet):
             if not self.base == other.base:
-                raise NotImplementedError
+                raise NotImplementedError(self, other)
 
             return self.height < other.height
 
@@ -1143,7 +1143,7 @@ def add_exponents(
         (l_exp, l_co), (r_exp, r_co) = (r_exp, r_co), (l_exp, l_co)
 
     if not (l_pow := l_exp.exp) <= (r_pow := r_exp.exp):
-        raise NotImplementedError
+        raise NotImplementedError(l_pow, r_pow)
 
     diff_exp = (
         base ** diff
