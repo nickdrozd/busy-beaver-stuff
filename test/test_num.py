@@ -689,38 +689,38 @@ class TestNum(TestCase):
             3 * Exp(2, 5),
             5 * Exp(2, 5))
 
-        self.assertLess(
+        self.assert_less(
             4 + Exp(2, 4),
             3 + Exp(2, 5))
 
         self.assertFalse(
             Exp(2, 3) < -Exp(2, 5))
 
-        self.assertLess(
+        self.assert_less(
             Exp(2, 3),
             Exp(2, 3) * (1 + Exp(2, 3)))
 
-        self.assertLess(
+        self.assert_less(
             3 + Exp(2, 3),
             4 * Exp(2, 5))
 
-        self.assertLess(
+        self.assert_less(
             -1 + (3 * Exp(2, 3)),
             3 * Exp(2, 3))
 
-        self.assertLess(
+        self.assert_less(
             3 * Exp(2, 3),
             1 + (3 * Exp(2, 3)))
 
-        self.assertLess(
+        self.assert_less(
             (1 + Exp(2, 3)) // 3,
             (1 + Exp(2, 5)) // 3)
 
-        self.assertLess(
+        self.assert_less(
             1,
             (1 + Exp(2, 3)) // 3)
 
-        self.assertLess(
+        self.assert_less(
             49 + (13 * Exp(2, 15)),
             113 + (13 * Exp(2, 16)))
 
@@ -792,7 +792,7 @@ class TestNum(TestCase):
             -(Exp(2, 11760) * (1 + Exp(2, 5879))) + (Exp(2, 20578) * (-1 + (11 * Exp(2, 1469)))),
             (Exp(2, 44097) * (-1 + (11 * Exp(2, 1469)))) + -(Exp(2, 23520) * (1 + (Exp(2, 11759) * (1 + Exp(2, 5879))))))
 
-        self.assertLess(
+        self.assert_less(
             Exp(2, 3),
             Exp(2, 3) * (2 + Exp(2, 3)))
 
