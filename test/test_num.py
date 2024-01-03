@@ -117,6 +117,22 @@ class TestNum(TestCase):
         self.assertLess(val1, val2)
         self.assertLess(int(val1), int(val2))
 
+    def assert_less_not_implemented(
+            self,
+            val1: Count,
+            val2: Count,
+            comps: tuple[Count, Count],
+    ):
+        with self.assertRaises(NotImplementedError) as ctx:
+            self.assertLess(val1, val2)
+
+        self.assertEqual(comps, ctx.exception.args)
+
+        comp1, comp2 = comps
+
+        with self.assertRaises(NotImplementedError):
+            self.assertLess(comp1, comp2)
+
     def assert_depth(self, val: Count, depth: int):
         assert not isinstance(val, int)
         self.assertEqual(depth, val.depth)
@@ -724,10 +740,13 @@ class TestNum(TestCase):
             -Exp(10, 14050258128),
             Exp(10, 14050259810))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
-                Exp(3, 5) * (-243 + (3 ** Exp(3, 5))),
-                3 ** Exp(3, 5))
+        self.assert_less_not_implemented(
+            Exp(3, 5) * (-243 + (3 ** Exp(3, 5))),
+            3 ** Exp(3, 5),
+            (
+                Exp(3, 10) * (-1 + (3 ** (-5 + Exp(3, 5)))),
+                3 ** Exp(3, 5),
+            ))
 
         self.assertLess(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
@@ -797,35 +816,53 @@ class TestNum(TestCase):
             Tet(10, 3),
             3 + Tet(10, 2))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertGreater(
+        self.assert_less_not_implemented(
+            Tet(10, 2),
+            Exp(2, 5),
+            (
                 Tet(10, 2),
-                Exp(2, 5))
+                Exp(2, 5),
+            ))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
+        self.assert_less_not_implemented(
+            Tet(10, 2),
+            Tet(8, 3),
+            (
                 Tet(10, 2),
-                Tet(8, 3))
+                Tet(8, 3),
+            ))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
+        self.assert_less_not_implemented(
+            Exp(2, 13),
+            Exp(2, 10) * (4 + Exp(2, 13)),
+            (
                 Exp(2, 13),
-                Exp(2, 10) * (4 + Exp(2, 13)))
+                2049 * Exp(2, 12),
+            ))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
+        self.assert_less_not_implemented(
+            Exp(2, 13),
+            Exp(2, 12) * (1 + Exp(2, 11)),
+            (
                 Exp(2, 13),
-                Exp(2, 12) * (1 + Exp(2, 11)))
+                2049 * Exp(2, 12),
+            ))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
-                (Exp(2, 7) * (4 + (Exp(2, 8) * (4 + (Exp(2, 9) * (4 + (Exp(2, 10) * (4 + Exp(2, 13))))))))),
-                (Exp(2, 6) * (4 + (Exp(2, 7) * (4 + (Exp(2, 8) * (4 + (Exp(2, 9) * (4 + (Exp(2, 10) * (4 + Exp(2, 13))))))))))))
+        self.assert_less_not_implemented(
+            Exp(2, 7) * (4 + (Exp(2, 8) * (4 + (Exp(2, 9) * (4 + (Exp(2, 10) * (4 + Exp(2, 13)))))))),
+            Exp(2, 6) * (4 + (Exp(2, 7) * (4 + (Exp(2, 8) * (4 + (Exp(2, 9) * (4 + (Exp(2, 10) * (4 + Exp(2, 13)))))))))),
+            (
+                35201568768129 * Exp(2, 8),
+                Exp(2, 9),
+            ))
 
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(
-                Exp(2, 10) * (4 + Exp(2, 13)),
-                Exp(2, 13))
+        self.assert_less_not_implemented(
+            Exp(2, 10) * (4 + Exp(2, 13)),
+            Exp(2, 13),
+            (
+                2049 * Exp(2, 12),
+                Exp(2, 13),
+            ))
 
         self.assertLess(
             (2 ** (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19)))))),
