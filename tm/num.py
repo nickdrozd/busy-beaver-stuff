@@ -65,7 +65,7 @@ class Num:
             try:  # pylint: disable = too-many-try-statements
                 if self <= r and l > 0:
                     return True
-            except NotImplementedError:
+            except NotImplementedError:  # no-cover
                 pass
 
             try:  # pylint: disable = too-many-try-statements
@@ -1053,6 +1053,12 @@ class Exp(Num):
 
                 if l.exp <= exp:
                     return (self // l) < r
+
+            if isinstance(r, Exp):
+                assert r.base == base
+
+                if r.exp <= exp:
+                    return (self // r) < l
 
         return super().__lt__(other)  # no-cover
 
