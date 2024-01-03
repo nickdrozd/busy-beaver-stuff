@@ -698,7 +698,7 @@ class TestNum(TestCase):
 
         self.assertLess(
             Exp(2, 3),
-            (Exp(2, 3) * (1 + Exp(2, 3))))
+            Exp(2, 3) * (1 + Exp(2, 3)))
 
         self.assertLess(
             3 + Exp(2, 3),
@@ -721,16 +721,16 @@ class TestNum(TestCase):
             (1 + Exp(2, 3)) // 3)
 
         self.assertLess(
-            (49 + (13 * Exp(2, 15))),
-            (113 + (13 * Exp(2, 16))))
+            49 + (13 * Exp(2, 15)),
+            113 + (13 * Exp(2, 16)))
 
         self.assertFalse(
-            Exp(10, (3 + Exp(10, Exp(10, 3))))
-                < Exp(10, (3 + Exp(10, 3))))
+            Exp(10, 3 + Exp(10, Exp(10, 3)))
+                < Exp(10, 3 + Exp(10, 3)))
 
         self.assertTrue(
-            Exp(10, (3 + Exp(10, 3)))
-                < Exp(10, (3 + Exp(10, Exp(10, 3)))))
+            Exp(10, 3 + Exp(10, 3))
+                < Exp(10, 3 + Exp(10, Exp(10, 3))))
 
         self.assertLess(
             Exp(2, 3) * (-1 + Exp(2, 3)),
@@ -797,8 +797,8 @@ class TestNum(TestCase):
             Exp(2, 3) * (2 + Exp(2, 3)))
 
         self.assertLess(
-            (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3))))))))),
-            (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3))))))))))))
+            Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3)))))))),
+            Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3)))))))))))
 
         self.assertFalse(
             (3 * 2 ** (5 + (Exp(2, 5) * (1 + 2 ** Exp(2, 5)))))
@@ -865,8 +865,8 @@ class TestNum(TestCase):
             ))
 
         self.assertLess(
-            (2 ** (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19)))))),
-            (2 ** (2 + (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19))))))))
+            2 ** (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19))))),
+            2 ** (2 + (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19)))))))
 
         self.assertGreater(
             Tet(10, 5),
@@ -904,7 +904,7 @@ class TestNum(TestCase):
             "(-1 + ((2 ** 3) * (-1 + (2 ** (-4 + (2 ** 3))))))")
 
         self.assert_num(
-            ((2 ** (3 * Exp(2, 3))) + (2 ** (-1 + (3 * Exp(2, 3))))),
+            (2 ** (3 * Exp(2, 3))) + (2 ** (-1 + (3 * Exp(2, 3)))),
             25165824,
             "(3 * (2 ** (-1 + (3 * (2 ** 3)))))")
 
@@ -1000,7 +1000,7 @@ class TestNum(TestCase):
             "(41 * (2 ** 4))")
 
         self.assert_num(
-            (Exp(2, 4) + (Exp(2, 4) * (Exp(2, 3) * (1 + Exp(2, 2))))),
+            Exp(2, 4) + (Exp(2, 4) * (Exp(2, 3) * (1 + Exp(2, 2)))),
             656,
             "(41 * (2 ** 4))")
 
@@ -1121,7 +1121,7 @@ class TestNum(TestCase):
             "(3 * (2 ** (-5 + (2 ** 5))))")
 
         self.assert_num(
-            ((52 + (32 * Exp(7, 7))) // 12),
+            (52 + (32 * Exp(7, 7))) // 12,
             2196119,
             "((13 + (8 * (7 ** 7))) // 3)")
 
@@ -1161,7 +1161,7 @@ class TestNum(TestCase):
             "(16 + (555 * (2 ** 2)))")
 
         self.assert_num(
-            ((2 + (23 * Exp(6, 14))) // 10),
+            (2 + (23 * Exp(6, 14))) // 10,
             180237577421,
             "((1 + (69 * (6 ** 13))) // 5)")
 
