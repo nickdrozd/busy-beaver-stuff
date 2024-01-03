@@ -114,8 +114,8 @@ class TestNum(TestCase):
             self.assert_mod(num, mod, rem)
 
     def assert_less(self, val1: Count, val2: Count):
-        self.assertLess(val1, val2)
         self.assertLess(int(val1), int(val2))
+        self.assertLess(val1, val2)
 
     def assert_less_not_implemented(
             self,
