@@ -63,9 +63,9 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2259,
             "divs": 2068,
-            "exps": 1227,
+            "exps": 1231,
             "muls": 1401,
-            "totl": 6955,
+            "totl": 6959,
         })
 
     def assert_mod(
@@ -113,9 +113,26 @@ class TestNum(TestCase):
 
             self.assert_mod(num, mod, rem)
 
-    def assert_less(self, val1: Count, val2: Count):
-        self.assertLess(int(val1), int(val2))
+    def assert_less(
+            self,
+            val1: Count,
+            val2: Count,
+            estimate: bool = False,
+    ):
         self.assertLess(val1, val2)
+
+        if not estimate:
+            self.assertLess(
+                int(val1),
+                int(val2))
+
+        else:
+            assert not isinstance(val1, int)
+            assert not isinstance(val2, int)
+
+            self.assertLessEqual(
+                val1.estimate(),
+                val2.estimate())
 
     def assert_less_not_implemented(
             self,
@@ -728,9 +745,10 @@ class TestNum(TestCase):
             Exp(10, 3 + Exp(10, Exp(10, 3)))
                 < Exp(10, 3 + Exp(10, 3)))
 
-        self.assertTrue(
-            Exp(10, 3 + Exp(10, 3))
-                < Exp(10, 3 + Exp(10, Exp(10, 3))))
+        self.assert_less(
+            Exp(10, 3 + Exp(10, 3)),
+            Exp(10, 3 + Exp(10, Exp(10, 3))),
+            estimate = True)
 
         self.assert_less_not_implemented(
             Exp(2, 13) * (-1 + Exp(2, 13)),
@@ -740,9 +758,10 @@ class TestNum(TestCase):
                 2 ** (-3 + Exp(2, 13)),
             ))
 
-        self.assertLess(
+        self.assert_less(
             -Exp(10, 14050258128),
-            Exp(10, 14050259810))
+            Exp(10, 14050259810),
+            estimate = True)
 
         self.assert_less_not_implemented(
             Exp(3, 5) * (-243 + (3 ** Exp(3, 5))),
@@ -752,21 +771,25 @@ class TestNum(TestCase):
                 3 ** Exp(3, 5),
             ))
 
-        self.assertLess(
+        self.assert_less(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
-            -1 + (Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5)))))))
+            -1 + (Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5)))))),
+            estimate = True)
 
-        self.assertLess(
+        self.assert_less(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
-            Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5))))))
+            Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5))))),
+            estimate = True)
 
-        self.assertLess(
+        self.assert_less(
             -1 + (2 ** (-5 + Exp(2, 5))),
-            -1 + (2 ** (-5 + (2 ** Exp(2, 5)))))
+            -1 + (2 ** (-5 + (2 ** Exp(2, 5)))),
+            estimate = True)
 
-        self.assertLess(
+        self.assert_less(
             2 ** (-5 + Exp(2, 5)),
-            2 ** (-5 + (2 ** Exp(2, 5))))
+            2 ** (-5 + (2 ** Exp(2, 5))),
+            estimate = True)
 
         self.assertFalse(
             -(Exp(2, 65536) * (-1 + 2 ** (-65536 + Exp(2, 65536))))
@@ -784,25 +807,28 @@ class TestNum(TestCase):
             ((2 + Exp(2, 3)) * 2 ** ((-4 + (5 * Exp(2, 11))) // 3))
                 < Exp(2, 3))
 
-        self.assertLess(
+        self.assert_less(
             Exp(2, 33) * (1 + Exp(2, 2)),
-            (1 + Exp(2, 2)) * 2 ** (-3 + (Exp(2, 33) * (1 + Exp(2, 2)))))
+            (1 + Exp(2, 2)) * 2 ** (-3 + (Exp(2, 33) * (1 + Exp(2, 2)))),
+            estimate = True)
 
         self.assertFalse(
             (10 ** Exp(10, 8274649522))
                 < 8274649524 + Exp(10, 8274649522))
 
-        self.assertLess(
+        self.assert_less(
             -(Exp(2, 11760) * (1 + Exp(2, 5879))) + (Exp(2, 20578) * (-1 + (11 * Exp(2, 1469)))),
-            (Exp(2, 44097) * (-1 + (11 * Exp(2, 1469)))) + -(Exp(2, 23520) * (1 + (Exp(2, 11759) * (1 + Exp(2, 5879))))))
+            (Exp(2, 44097) * (-1 + (11 * Exp(2, 1469)))) + -(Exp(2, 23520) * (1 + (Exp(2, 11759) * (1 + Exp(2, 5879))))),
+            estimate = True)
 
         self.assert_less(
             Exp(2, 3),
             Exp(2, 3) * (2 + Exp(2, 3)))
 
-        self.assertLess(
+        self.assert_less(
             Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3)))))))),
-            Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3)))))))))))
+            Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + (Exp(2, 3) * (2 + Exp(2, 3)))))))))),
+            estimate = True)
 
         self.assertFalse(
             (3 * 2 ** (5 + (Exp(2, 5) * (1 + 2 ** Exp(2, 5)))))
@@ -812,9 +838,10 @@ class TestNum(TestCase):
             (-(Exp(2, 8) * (-1 + 2 ** (-8 + Exp(2, 8)))) + (Exp(2, 8) * (-1 + 2 ** (-8 + 2 ** 2 ** Exp(2, 8)))))
                 < ((Exp(2, 8) * (-1 + 2 ** (-8 + 2 ** Exp(2, 8)))) + -(Exp(2, 8) * (-1 + 2 ** (-8 + Exp(2, 8))))))
 
-        self.assertLess(
+        self.assert_less(
             Tet(10, 2),
-            Tet(10, 3))
+            Tet(10, 3),
+            estimate = True)
 
         self.assertGreater(
             Tet(10, 3),
@@ -860,9 +887,10 @@ class TestNum(TestCase):
                 Exp(2, 13),
             ))
 
-        self.assertLess(
+        self.assert_less(
             2 ** (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19))))),
-            2 ** (2 + (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19)))))))
+            2 ** (2 + (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19)))))),
+            estimate = True)
 
         self.assertGreater(
             Tet(10, 5),

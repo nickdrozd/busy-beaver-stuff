@@ -1060,6 +1060,9 @@ class Exp(Num):
                 if r.exp <= exp:
                     return (self // r) < l
 
+        elif isinstance(other, Tet):
+            return other > self
+
         return super().__lt__(other)  # no-cover
 
     def __pow__(self, other: Count) -> Exp:
@@ -1118,6 +1121,10 @@ class Tet(Num):
                 raise NotImplementedError(self, other)
 
             return self.height < other.height
+
+        if isinstance(other, Exp):  # no-branch
+            if isinstance(other.exp, int) and 2 < self.height:
+                return False
 
         return super().__lt__(other)
 
