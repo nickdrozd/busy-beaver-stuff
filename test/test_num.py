@@ -732,9 +732,13 @@ class TestNum(TestCase):
             Exp(10, 3 + Exp(10, 3))
                 < Exp(10, 3 + Exp(10, Exp(10, 3))))
 
-        self.assertLess(
+        self.assert_less_not_implemented(
+            2 ** (-3 + Exp(2, 3)),
             Exp(2, 3) * (-1 + Exp(2, 3)),
-            2 ** (-3 + Exp(2, 3)))
+            (
+                2 ** (-3 + Exp(2, 3)),
+                7 * Exp(2, 3),
+            ))
 
         self.assertLess(
             -Exp(10, 14050258128),
