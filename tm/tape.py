@@ -618,13 +618,7 @@ class HeadTape:
 
         return stepped
 
-    def get_slice(
-            self,
-            start: int,
-            *,
-            stop: int | None,  # pylint: disable = unused-argument
-            ltr: bool,
-    ) -> TapeSlice:
+    def get_slice(self, start: int, *, ltr: bool) -> TapeSlice:
         if ltr:
             lspan, rspan = self.lspan, self.rspan
             diff = self.head - start
@@ -670,25 +664,22 @@ class HeadTape:
 
         return tape
 
-    def get_ltr(self, start: int, stop: int | None = None) -> TapeSlice:
-        return self.get_slice(start, stop = stop, ltr = True)
+    def get_ltr(self, start: int) -> TapeSlice:
+        return self.get_slice(start, ltr = True)
 
-    def get_rtl(self, start: int, stop: int | None = None) -> TapeSlice:
-        return self.get_slice(start, stop = stop, ltr = False)
+    def get_rtl(self, start: int) -> TapeSlice:
+        return self.get_slice(start, ltr = False)
 
     def get_cnt(self, start: int, stop: int) -> TapeSlice:
         assert start <= (head := self.head) <= stop
 
         if start == head:
-            return self.get_ltr(start, stop = stop)
+            return self.get_ltr(start)
 
         if stop == head:
-            return self.get_rtl(start, stop = start)
+            return self.get_rtl(start)
 
-        return (
-            self.get_rtl(head - 1, stop = start)
-            + self.get_ltr(head, stop = stop)
-        )
+        return self.get_rtl(head - 1) + self.get_ltr(head)
 
     def aligns_with(
             self,
