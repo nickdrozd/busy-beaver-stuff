@@ -60,9 +60,6 @@ class Program:
 
         self.prog[state][color] = instr
 
-    def __eq__(self, other: object) -> bool:
-        return str(self) == str(other)
-
     @classmethod
     def init(cls, states: int, colors: int) -> Self:
         return cls(
