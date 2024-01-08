@@ -33,6 +33,9 @@ class Num:
     def __contains__(self, other: Num) -> bool:
         return False
 
+    @abstractmethod
+    def __hash__(self) -> int: ...
+
     def estimate(self) -> Count:
         est: Exp | Tet
 
