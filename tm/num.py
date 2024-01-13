@@ -2125,12 +2125,12 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
                 766935248: 153477472,
             }
         case _:
-            raise Exception(mod, f'{period}: {(2 ** (exp % (mod // 3))) % mod}')
+            raise Exception(mod, f'{period}: {Exp(2, (exp % (mod // 3))) % mod}')
 
     try:
         return values[period]
     except KeyError:
-        raise Exception(f'{mod} {period}: {(2 ** (exp % (mod // 3))) % mod},')
+        raise Exception(f'{mod} {period}: {Exp(2, (exp % (mod // 3))) % mod},')
 
 ########################################
 
