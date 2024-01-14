@@ -553,9 +553,34 @@ class TestNum(TestCase):
 
     def test_exp_mod_special_case(self):
         self.assert_mod(
-            3 ** ((7 + Exp(3, 2)) // 8),
+            Exp(2, 3),
             6,
-            3)
+            2)
+
+        self.assert_mod(
+            -4 + Exp(2, 4),
+            6,
+            0)
+
+        self.assert_mod(
+            13 * Exp(2, 3),
+            6,
+            2)
+
+        self.assert_mod(
+            -2 + (13 * Exp(2, 3)),
+            6,
+            0)
+
+        self.assert_mod(
+            (-4 + Exp(2, 4)) // 3,
+            2,
+            0)
+
+        self.assert_mod(
+            (-2 + (13 * Exp(2, 3))) // 3,
+            2,
+            0)
 
         self.assert_mod(
             2 ** ((-2 + (13 * Exp(2, 3))) // 3),
@@ -566,6 +591,11 @@ class TestNum(TestCase):
             2 ** ((-5 + (13 * Exp(2, 3))) // 3),
             6,
             2)
+
+        self.assert_mod(
+            -55 + (61 * Exp(2, 8)),
+            162,
+            9)
 
         self.assert_mod(
             2 ** ((-55 + (61 * Exp(2, 8))) // 9),
@@ -586,6 +616,11 @@ class TestNum(TestCase):
             2 ** ((62 + (49 * Exp(2, 16))) // 27),
             1458,
             1126)
+
+        self.assert_mod(
+            3 ** ((7 + Exp(3, 2)) // 8),
+            6,
+            3)
 
     def test_mod_1(self):
         nums = (
