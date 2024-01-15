@@ -840,12 +840,31 @@ class Exp(Num):
         if mod == base:
             return 0
 
+        assert base % mod != 0
+
         if mod == 2:
             return base % 2
 
         exp = self.exp
 
-        assert base % mod != 0
+        assert 1 < exp
+
+        match base:
+            case 2:
+                match mod:
+                    case 4:
+                        return 0
+
+                    case 12:
+                        return 4 if exp % 2 == 0 else 8
+
+            case 3:
+                if mod == 6:  # no-branch
+                    return 3
+
+            case 6:
+                if mod == 10:  # no-branch
+                    return 6
 
         if base == 3 and int(log_mod := log2(mod)) == log_mod:
             exp %= int(2 ** (int(log_mod) - 2))
@@ -1233,23 +1252,7 @@ def find_period(base: int, mod: int) -> int:
 
 
 def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
-    if base == 3 and mod == 6:
-        return 3
-
-    if base == 6 and mod == 10:
-        return 6
-
-    if base != 2:  # no-cover
-        raise NumException(
-            f'({base} ** {exp}) % {mod}')
-
-    if mod == 4:
-        return 0
-
-    if mod == 12:
-        return 4 if exp % 2 == 0 else 8
-
-    if 2 * (3 ** round(log(mod / 2, 3))) != mod:  # no-cover
+    if base != 2 or 2 * (3 ** round(log(mod / 2, 3))) != mod: # no-cover
         raise NumException(
             f'({base} ** {exp}) % {mod}')
 
