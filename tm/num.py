@@ -690,10 +690,8 @@ class Div(Num):
         if den < oden:
             return other + self
 
-        if den % oden == 0:
+        if pgcd(den, oden) > 1:
             return (num + ((den // oden) * other.num)) // den
-
-        assert pgcd(den, oden) == 1, (self, other)
 
         return ((oden * num) + (den * other.num)) // (den * oden)
 
