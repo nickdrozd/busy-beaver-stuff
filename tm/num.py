@@ -859,15 +859,15 @@ class Exp(Num):
                         return 4 if exp % 2 == 0 else 8
 
             case 3:
-                if mod == 6:  # no-branch
+                if mod == 6:
                     return 3
+
+                if int(log_mod := log2(mod)) == log_mod:  # no-branch
+                    exp %= int(2 ** (int(log_mod) - 2))
 
             case 6:
                 if mod == 10:  # no-branch
                     return 6
-
-        if base == 3 and int(log_mod := log2(mod)) == log_mod:
-            exp %= int(2 ** (int(log_mod) - 2))
 
         if (period := find_period(base, mod)) > 0:
             exp %= period
