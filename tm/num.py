@@ -855,8 +855,22 @@ class Exp(Num):
                     case 4:
                         return 0
 
+                    case 6:
+                        return 4 if exp % 2 == 0 else 2
+
                     case 12:
                         return 4 if exp % 2 == 0 else 8
+
+                    case 30:
+                        match exp % 4:
+                            case 3:
+                                return 8
+                            case 0:  # no-cover
+                                return 15
+                            case 1:  # no-cover
+                                return 2
+                            case 2:  # no-cover
+                                return 4
 
             case 3:
                 if mod == 6:
@@ -868,6 +882,10 @@ class Exp(Num):
             case 6:
                 if mod == 10:  # no-branch
                     return 6
+
+            case 7:
+                if mod == 12:  # no-branch
+                    return 1 if exp % 2 == 0 else 7
 
         if (period := find_period(base, mod)) > 0:
             exp %= period
@@ -1259,11 +1277,6 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     period = exp % (mod // 3)
 
     match mod:
-        case 6:
-            values = {
-                0: 4,
-                1: 2,
-            }
         case 54:
             values = {
                 0: 28,
