@@ -843,8 +843,6 @@ class Exp(Num):
         if mod == 2:
             return base % 2
 
-        res = 1
-
         exp = self.exp
 
         assert base % mod != 0
@@ -860,6 +858,8 @@ class Exp(Num):
 
         if not isinstance(exp, int):
             return exp_mod_special_cases(mod, base, exp)
+
+        res = 1
 
         for _ in itertools.count():
             if exp <= 0 or res <= 0:
