@@ -847,6 +847,11 @@ class Exp(Num):
 
         exp = self.exp
 
+        assert base % mod != 0
+
+        if base == 3 and int(log_mod := log2(mod)) == log_mod:
+            exp %= int(2 ** (int(log_mod) - 2))
+
         if (period := find_period(base, mod)) > 0:
             exp %= period
 
@@ -1213,12 +1218,6 @@ def gcd(l: int, r: Count) -> int:
 
 @cache
 def find_period(base: int, mod: int) -> int:
-    if base % mod == 0:  # no-cover
-        return 0
-
-    if base == 3 and int(exp := log2(mod)) == exp:
-        return int(2 ** (int(exp) - 2))
-
     if base == 2 and mod == 2 * (3 ** round(log(mod / 2, 3))):
         return 0
 
