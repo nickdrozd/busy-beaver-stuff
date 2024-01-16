@@ -32,8 +32,6 @@ class MacroProg:
     color_to_tape_cache: dict[Color, tuple[Color, ...]]
     tape_to_color_cache: dict[tuple[Color, ...], Color]
 
-    _state: State | None
-
     def __init__(self, program: str | GetInstr):
         self.program = program
 
@@ -60,8 +58,6 @@ class MacroProg:
 
         self.color_to_tape_cache = {}
         self.tape_to_color_cache = {}
-
-        self._state = None
 
     def __getitem__(self, slot: Slot) -> Instr | None:
         try:
