@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
-use crate::instrs::{Color, Instr, Prog, Slot, State};
+use crate::instrs::{Color, Instr, Prog, Shift, Slot, State};
 
 const HALT: char = '_';
 const UNDF: char = '.';
@@ -14,22 +14,7 @@ pub fn parse(program: &str) -> Vec<Vec<Option<Instr>>> {
     program
         .trim()
         .split("  ")
-        .map(|instrs| {
-            instrs
-                .split(' ')
-                .map(|instr| {
-                    if instr.contains(UNDF) {
-                        None
-                    } else {
-                        Some((
-                            Color::from(instr.chars().next().unwrap().to_digit(10).unwrap()),
-                            instr.chars().nth(1).unwrap() == RIGHT,
-                            read_state(instr.chars().nth(2).unwrap()),
-                        ))
-                    }
-                })
-                .collect()
-        })
+        .map(|instrs| instrs.split(' ').map(read_instr).collect())
         .collect()
 }
 
@@ -44,6 +29,14 @@ pub fn tcompile(program: &str) -> Prog {
     }
 
     prog
+}
+
+fn read_color(color: char) -> Color {
+    color.to_digit(10).unwrap().into()
+}
+
+const fn read_shift(shift: char) -> Shift {
+    shift == RIGHT
 }
 
 #[pyfunction]
@@ -76,7 +69,7 @@ pub fn read_slot(slot: &str) -> Slot {
     let state = chars.next().unwrap();
     let color = chars.next().unwrap();
 
-    (read_state(state), color.to_digit(10).unwrap().into())
+    (read_state(state), read_color(color))
 }
 
 #[pyfunction]
@@ -90,4 +83,17 @@ pub fn show_instr(instr: Option<Instr>) -> String {
             show_state(Some(trans))
         ),
     }
+}
+
+fn read_instr(instr: &str) -> Option<Instr> {
+    if instr.contains(UNDF) {
+        return None;
+    }
+
+    let mut chars = instr.chars();
+    let color = chars.next().unwrap();
+    let shift = chars.next().unwrap();
+    let state = chars.next().unwrap();
+
+    Some((read_color(color), read_shift(shift), read_state(state)))
 }
