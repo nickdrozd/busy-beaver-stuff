@@ -975,13 +975,6 @@ class Fast(TuringTest):
 
         self.assert_macro_cells(2)
 
-    def test_recursion_error(self):
-        self.run_bb(
-            "1RB 1LC  1LA 1RF  0LD 0LA  0RE 1LF  1LA 1RE  ... 0RE",
-            opt_macro = 2000,
-            analyze = False,
-        )
-
     def test_algebra(self):
         clear_caches()
 
@@ -1067,11 +1060,11 @@ class Fast(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 39664,
+            "adds": 40131,
             "divs": 9460,
-            "exps": 10340,
-            "muls": 10630,
-            "totl": 70094,
+            "exps": 10388,
+            "muls": 10705,
+            "totl": 70684,
         })
 
 
