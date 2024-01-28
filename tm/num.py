@@ -521,13 +521,14 @@ class Mul(Num):
             if isinstance(lo, int):
                 return lo + (ro + self)
 
-            if isinstance(lo, Mul):
-                if lo.l == l:
-                    return (self + lo) + ro
+            if l != -1:  # no-branch
+                if isinstance(lo, Mul):
+                    if lo.l == l:
+                        return (self + lo) + ro
 
-            if isinstance(ro, Mul):
-                if ro.l == l:
-                    return lo + (self + ro)
+                if isinstance(ro, Mul):
+                    if ro.l == l:
+                        return lo + (self + ro)
 
             if lo.depth < self.depth:
                 return lo + (self + ro)
