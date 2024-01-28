@@ -522,17 +522,17 @@ class Mul(Num):
                 return lo + (ro + self)
 
             if isinstance(lo, Mul):
-                if lo.l == l:  # no-cover
+                if lo.l == l:
                     return (self + lo) + ro
 
-            if isinstance(ro, Mul):  # no-branch
+            if isinstance(ro, Mul):
                 if ro.l == l:
                     return lo + (self + ro)
 
             if lo.depth < self.depth:
                 return lo + (self + ro)
 
-            if (isinstance(l, int)  # no-cover
+            if (isinstance(l, int)
                     and isinstance(r, Exp) and isinstance(r.exp, Div)):
                 return lo + (self + ro)  # no-cover
 
