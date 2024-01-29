@@ -3,7 +3,7 @@
 all : machines idris lint test tools
 
 clean-python :
-	rm -rf __pycache__ **/__pycache__ .mypy_cache .mutmut-cache .coverage* html* build/ *.so **/*.so classes.png packages.png
+	rm -rf __pycache__ **/__pycache__ .mypy_cache .mutmut-cache .ruff_cache .coverage* html* build/ *.so **/*.so classes.png packages.png
 
 clean : clean-python clean-rust
 	$(MAKE) -C machines clean
