@@ -951,7 +951,13 @@ class Exp(Num):
                     pass
 
         elif isinstance(other, Exp):
-            assert other.base == self.base
+            assert (base := self.base) == other.base
+
+            if base == 2:
+                sexp, oexp = self.exp, other.exp
+
+                if sexp == oexp:
+                    return make_exp(2, 1 + sexp)
 
             try:
                 return add_exponents((self, 1), (other, 1))
