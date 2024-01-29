@@ -269,6 +269,9 @@ class Add(Num):
         if other == 0:
             return self
 
+        if self == other:
+            return 0
+
         if isinstance(other, Add):
             l, lo = self.l, other.l
 
@@ -549,6 +552,9 @@ class Mul(Num):
         if other == 0:  # no-cover
             return self
 
+        if self == other:
+            return 0
+
         l, r = self.l, self.r
 
         if other == l:
@@ -705,6 +711,9 @@ class Div(Num):
     def __sub__(self, other: Count) -> Count:
         if other == 0:
             return self
+
+        if self == other:
+            return 0
 
         if isinstance(other, Div) and (den := self.den) == other.den:
             return (self.num - other.num) // den
@@ -954,6 +963,9 @@ class Exp(Num):
     def __sub__(self, other: Count) -> Count:
         if other == 0:
             return self
+
+        if self == other:
+            return 0
 
         if isinstance(other, Exp):
             assert self.base == other.base
