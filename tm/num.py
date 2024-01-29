@@ -256,6 +256,11 @@ class Add(Num):
             if isinstance(l, Mul) and isinstance(lo, Mul):
                 return (l + lo) + (r + ro)
 
+            if (isinstance(r, Add)
+                    and isinstance(lo, Add)
+                    and isinstance(ro, Add)):
+                return l + (r + other)
+
         if isinstance(l, int):
             return l + (other + r)
 
