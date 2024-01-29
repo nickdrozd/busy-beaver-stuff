@@ -253,8 +253,7 @@ class Add(Num):
             if isinstance(lo, int):
                 return (lo + l) + (r + ro)
 
-            # pylint: disable = unidiomatic-typecheck
-            if type(l) == type(lo):
+            if isinstance(l, Mul) and isinstance(lo, Mul):
                 return (l + lo) + (r + ro)
 
         if isinstance(l, int):
