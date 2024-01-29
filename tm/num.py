@@ -1226,7 +1226,7 @@ def add_exponents(
         make_exp(base, diff)
     )
 
-    return (l_co + (r_co * diff_exp)) * make_exp(base, l_pow)
+    return (l_co + (r_co * diff_exp)) * l_exp
 
 
 def gcd(l: int, r: Count) -> int:
