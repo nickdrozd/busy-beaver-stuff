@@ -253,7 +253,7 @@ class Add(Num):
             if isinstance(lo, int):
                 return (lo + l) + (r + ro)
 
-            if self == lo:
+            if self == lo:  # no-cover
                 return (2 * self) + ro
 
             if (isinstance(l, Mul) and isinstance(lo, Mul)
@@ -497,7 +497,7 @@ class Mul(Num):
                 return (l + lo) * r
 
             if l != -1 and l == lo:
-                if (not isinstance(nr := r + ro, Add)
+                if (not isinstance(nr := r + ro, Add)  # no-branch
                         or (nr.l != r and nr.l != ro)):
                     return l * nr
 
