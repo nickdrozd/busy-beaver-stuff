@@ -253,7 +253,9 @@ class Add(Num):
             if isinstance(lo, int):
                 return (lo + l) + (r + ro)
 
-            if isinstance(l, Mul) and isinstance(lo, Mul):
+            if (isinstance(l, Mul) and isinstance(lo, Mul)
+                    and (not isinstance(l.l, int)
+                           or not isinstance(lo.l, int))):
                 return (l + lo) + (r + ro)
 
             if (isinstance(r, Add)
@@ -497,7 +499,9 @@ class Mul(Num):
                 return (l + lo) * r
 
             if l != -1 and l == lo:
-                return l * (r + ro)
+                if (not isinstance(nr := r + ro, Add)
+                        or (nr.l != r and nr.l != ro)):
+                    return l * nr
 
             if l == ro:
                 return l * (r + lo)
