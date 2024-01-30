@@ -808,6 +808,15 @@ class Fast(TuringTest):
 
                 self.assert_undefined(expected)
 
+    def test_macro_undefined(self):
+        self.run_bb(
+            "1RB 0RA 1LB  2LA 2RB 0LA",
+            blocks = 3,
+            backsym = 1,
+        )
+
+        self.assert_undefined((0, 'A0'))
+
     def test_block_macro_steps(self):
         self._test_block_macro_steps(4, 5)
 
