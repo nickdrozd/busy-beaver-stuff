@@ -253,15 +253,13 @@ class Add(Num):
             if isinstance(lo, int):
                 return (lo + l) + (r + ro)
 
+            if self == lo:
+                return (2 * self) + ro
+
             if (isinstance(l, Mul) and isinstance(lo, Mul)
                     and (not isinstance(l.l, int)
                            or not isinstance(lo.l, int))):
                 return (l + lo) + (r + ro)
-
-            if (isinstance(r, Add)
-                    and isinstance(lo, Add)
-                    and isinstance(ro, Add)):
-                return l + (r + other)
 
         if isinstance(l, int):
             return l + (other + r)
