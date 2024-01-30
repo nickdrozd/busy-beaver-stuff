@@ -72,6 +72,14 @@ class TuringTest(TestCase):
         self.assertIsNotNone(
             self.machine.spnout)
 
+    def assert_undefined(self, expected: tuple[int, str]):
+        assert (undfnd := self.machine.undfnd) is not None
+        step, slot = undfnd
+
+        self.assertEqual(
+            expected,
+            (step, show_slot(slot)))
+
     def assert_macro_cells(self, cells: int):
         self.assertEqual(
             self.machine.program.cells,  # type: ignore
@@ -798,12 +806,7 @@ class Fast(TuringTest):
             for partial, expected in sequence.items():
                 self.run_bb(partial, prover = False, normal = False)
 
-                assert (undfnd := self.machine.undfnd) is not None
-                step, slot = undfnd
-
-                self.assertEqual(
-                    expected,
-                    (step, show_slot(slot)))
+                self.assert_undefined(expected)
 
     def test_block_macro_steps(self):
         self._test_block_macro_steps(4, 5)
