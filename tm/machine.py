@@ -217,8 +217,8 @@ class Machine:
 
             try:
                 instr = comp[state, tape.scan]
-            except KeyError:
-                self.undfnd = step, (state, tape.scan)
+            except KeyError as slot:
+                self.undfnd = step, slot.args[0]
                 break
             except MacroInfLoop:
                 self.infrul = step
