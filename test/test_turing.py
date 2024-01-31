@@ -819,6 +819,13 @@ class Fast(TuringTest):
             0,
             self.machine.infrul)
 
+        self.run_bb(
+            "1RB ...  1LB 0RC  1RB 1RD  0RE 0LD  1LF 1RA  1LC ...",
+            opt_macro = 2_000,
+        )
+
+        self.assert_undefined((4470, 'I3'))
+
     def test_block_macro_steps(self):
         self._test_block_macro_steps(4, 5)
 
