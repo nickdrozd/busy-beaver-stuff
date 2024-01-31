@@ -229,7 +229,9 @@ class BasicMachine:
 
         for _ in range(sim_lim):
 
-            if (instr := comp[state, tape.scan]) is None:
+            try:
+                instr = comp[state, tape.scan]
+            except KeyError:
                 self.undfnd = step
                 break
 

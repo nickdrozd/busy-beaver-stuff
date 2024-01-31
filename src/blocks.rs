@@ -118,9 +118,7 @@ pub fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
     let mut tape = BlockMeasure::new();
 
     for _ in 0..steps {
-        let instr = comp[&(state, tape.scan)];
-
-        let (color, shift, next_state) = instr?;
+        let (color, shift, next_state) = *(comp.get(&(state, tape.scan))?);
 
         let same = state == next_state;
 
@@ -240,7 +238,7 @@ pub fn unroll_tape(prog: &str, steps: Count) -> Vec<Color> {
     for _ in 0..steps {
         let instr = comp[&(state, tape.scan)];
 
-        let (color, shift, next_state) = instr.unwrap();
+        let (color, shift, next_state) = instr;
 
         tape.step(shift, color, state == next_state);
 

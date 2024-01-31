@@ -84,7 +84,9 @@ class Prover:
                 if tape.apply_rule(rule) is not None:
                     continue
 
-            if (instr := self.prog[state, tape.scan]) is None:
+            try:
+                instr = self.prog[state, tape.scan]
+            except KeyError:
                 return None
 
             color, shift, next_state = instr
@@ -107,9 +109,7 @@ class Prover:
                 if tape.apply_rule(rule) is not None:
                     continue
 
-            assert (instr := self.prog[state, tape.scan]) is not None
-
-            color, shift, next_state = instr
+            color, shift, next_state = self.prog[state, tape.scan]
 
             tape.step(shift, color, state == next_state)
 

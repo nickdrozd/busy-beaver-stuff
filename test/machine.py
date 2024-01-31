@@ -57,8 +57,9 @@ class QuickMachine:
         state: State = 0
 
         for cycle in range(sim_lim):  # no-branch
-
-            if (instr := comp[state, tape.scan]) is None:
+            try:
+                instr = comp[state, tape.scan]
+            except KeyError:
                 self.undfnd = step, (state, tape.scan)
                 break
 

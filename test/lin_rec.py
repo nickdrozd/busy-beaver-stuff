@@ -265,7 +265,9 @@ class StrictLinRecMachine(LinRecMachine):
 
                 self.history.add_slot_at_step(step, slot)
 
-            if (instr := comp[slot]) is None:
+            try:
+                instr = comp[slot]
+            except KeyError:
                 self.undfnd = step, slot
                 break
 
@@ -333,7 +335,9 @@ class LinRecSampler(LinRecMachine):
                 self.history.add_state_at_step(step, state)
                 self.history.add_tape_at_step(step, tape)
 
-            if (instr := comp[slot]) is None:
+            try:
+                instr = comp[slot]
+            except KeyError:
                 self.undfnd = step, slot
                 break
 
@@ -381,7 +385,9 @@ class LooseLinRecMachine(LinRecMachine):
             init_tape = tape.copy()
 
             while step < steps_reset and cycle < sim_lim:
-                if (instr := comp[state, tape.scan]) is None:
+                try:
+                    instr = comp[state, tape.scan]
+                except KeyError:
                     self.undfnd = step, (state, tape.scan)
                     break
 

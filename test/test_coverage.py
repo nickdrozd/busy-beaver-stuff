@@ -64,7 +64,7 @@ class TestFloss(TestCase):
 
         print(macro)
 
-        self.assertEqual(len(macro), 1)
+        self.assertEqual(len(macro), 0)
 
         self.assertEqual(
             Machine(

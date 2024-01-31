@@ -38,7 +38,9 @@ def run_for_undefined(prog: Program) -> Undfnd | None:
     state = 0
 
     for _ in range(100_000_000):  # no-branch
-        if (instr := prog[state, tape.scan]) is None:
+        try:
+            instr = prog[state, tape.scan]
+        except KeyError:
             return step, (state, tape.scan)
 
         color, shift, next_state = instr

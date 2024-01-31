@@ -47,10 +47,13 @@ class Program:
     def __len__(self) -> int:
         return len(self.states) * len(self.colors)
 
-    def __getitem__(self, slot: Slot) -> Instr | None:
+    def __getitem__(self, slot: Slot) -> Instr:
         state, color = slot
 
-        return self.prog[state][color]
+        if (instr := self.prog[state][color]) is None:
+            raise KeyError(slot)
+
+        return instr
 
     def get_switch(self, state: State) -> Switch:
         return self.prog[state]
@@ -208,7 +211,10 @@ class Program:
     def branch(self, slot: Slot) -> list[ProgStr]:
         branches = []
 
-        orig = self[slot]
+        try:
+            orig = self[slot]
+        except KeyError:
+            orig = None
 
         for instr in self.available_instrs:
             if orig is not None and instr >= orig:

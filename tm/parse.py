@@ -15,7 +15,7 @@ Shift = bool
 
 Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
-Prog = dict[Slot, Instr | None]
+Prog = dict[Slot, Instr]
 
 class GetInstr(Protocol, Sized):
-    def __getitem__(self, slot: Slot) -> Instr | None: ...
+    def __getitem__(self, slot: Slot) -> Instr: ...

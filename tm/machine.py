@@ -7,7 +7,7 @@ from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
 from tm.show import show_slot, show_number
 from tm.rules import RuleLimit, InfiniteRule, SuspectedRule
-from tm.macro import BlockMacro, BacksymbolMacro, tcompile
+from tm.macro import BlockMacro, BacksymbolMacro, MacroInfLoop, tcompile
 
 if TYPE_CHECKING:
     from typing import Self
@@ -215,8 +215,13 @@ class Machine:
                     self.rulapp += times
                     continue
 
-            if (instr := comp[state, tape.scan]) is None:
+            try:
+                instr = comp[state, tape.scan]
+            except KeyError:
                 self.undfnd = step, (state, tape.scan)
+                break
+            except MacroInfLoop:
+                self.infrul = step
                 break
 
             color, shift, next_state = instr
@@ -281,7 +286,9 @@ def quick_term_or_rec(prog: str, sim_lim: int) -> bool:
         init_tape = tape.copy()
 
         while step < steps_reset and cycle < sim_lim:
-            if (instr := comp[state, tape.scan]) is None:
+            try:
+                instr = comp[state, tape.scan]
+            except KeyError:
                 return False
 
             color, shift, next_state = instr

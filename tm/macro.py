@@ -13,6 +13,10 @@ if TYPE_CHECKING:
 
 ########################################
 
+class MacroInfLoop(Exception):
+    pass
+
+
 class MacroProg:
     program: str | GetInstr
     comp: GetInstr
@@ -25,7 +29,7 @@ class MacroProg:
 
     sim_lim: int
 
-    instrs: dict[Slot, Instr | None]
+    instrs: dict[Slot, Instr]
 
     cells: int
 
@@ -59,7 +63,7 @@ class MacroProg:
         self.color_to_tape_cache = {}
         self.tape_to_color_cache = {}
 
-    def __getitem__(self, slot: Slot) -> Instr | None:
+    def __getitem__(self, slot: Slot) -> Instr:
         try:
             instr = self.instrs[slot]
         except KeyError:
@@ -76,14 +80,12 @@ class MacroProg:
             self,
             macro_state: State,
             macro_color: Color,
-    ) -> Instr | None:
-        return self.reconstruct_outputs(result) if (
-            result :=
+    ) -> Instr:
+        return self.reconstruct_outputs(
             self.run_simulator(
                 self.deconstruct_inputs(
                     macro_state,
-                    macro_color))
-        ) is not None else None
+                    macro_color)))
 
     @abstractmethod
     def deconstruct_inputs(
@@ -95,7 +97,7 @@ class MacroProg:
     @abstractmethod
     def reconstruct_outputs(self, config: Config) -> Instr: ...
 
-    def run_simulator(self, config: Config) -> Config | None:
+    def run_simulator(self, config: Config) -> Config:
         state, (right_edge, tape) = config
 
         cells = len(tape)
@@ -105,11 +107,8 @@ class MacroProg:
         seen: set[tuple[State, int, tuple[Color, ...]]] = set()
 
         for _ in range(self.sim_lim):  # no-branch
-            if (instr := self.comp[
-                    state, scan := tape[pos]]) is None:
-                return None
-
-            color, shift, next_state = instr
+            color, shift, next_state = \
+                self.comp[state, scan := tape[pos]]
 
             if next_state != state:
                 tape[pos] = color
@@ -129,12 +128,12 @@ class MacroProg:
                 break
 
             if (curr := (state, pos, tuple(tape))) in seen:
-                return None
+                raise MacroInfLoop
 
             seen.add(curr)
 
         else:
-            return None  # no-cover
+            raise MacroInfLoop  # no-cover
 
         return state, (cells <= pos, tape)
 

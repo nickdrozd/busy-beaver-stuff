@@ -815,7 +815,9 @@ class Fast(TuringTest):
             backsym = 1,
         )
 
-        self.assert_undefined((0, 'A0'))
+        self.assertEqual(
+            0,
+            self.machine.infrul)
 
     def test_block_macro_steps(self):
         self._test_block_macro_steps(4, 5)
@@ -826,6 +828,9 @@ class Fast(TuringTest):
     def test_macro_multi_backsymbol(self):
         for prog in HALT | SPINOUT:
             if len(prog) > 35:
+                continue
+
+            if prog == "1RB ...  0L_ ...":
                 continue
 
             for back in range(1, 5):

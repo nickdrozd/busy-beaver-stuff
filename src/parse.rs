@@ -24,7 +24,9 @@ pub fn tcompile(program: &str) -> Prog {
 
     for (state, instrs) in parse(program).iter().enumerate() {
         for (color, instr) in instrs.iter().enumerate() {
-            prog.insert((state as State, color as Color), *instr);
+            if let Some(instr) = instr {
+                prog.insert((state as State, color as Color), *instr);
+            }
         }
     }
 
