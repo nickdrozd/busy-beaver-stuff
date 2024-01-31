@@ -61,7 +61,6 @@ class Num:
         return other is self
 
     def __lt__(self, other: Count) -> bool:
-        assert not isinstance(other, int)
         if isinstance(other, Add | Mul):
             l, r = other.l, other.r
 
