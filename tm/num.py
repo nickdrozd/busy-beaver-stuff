@@ -255,11 +255,6 @@ class Add(Num):
             if self == lo:  # no-cover
                 return (2 * self) + ro
 
-            if (isinstance(l, Mul) and isinstance(lo, Mul)
-                    and (not isinstance(l.l, int)
-                           or not isinstance(lo.l, int))):
-                return (l + lo) + (r + ro)
-
         if isinstance(l, int):
             return l + (other + r)
 
