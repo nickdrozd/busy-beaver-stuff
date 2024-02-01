@@ -612,8 +612,11 @@ class Mul(Num):
 
             return True
 
-        if (other <= l and 0 < r) or (other <= r and 0 < l):
-            return False
+        try:  # pylint: disable = too-many-try-statements
+            if (other <= l and 0 < r) or (other <= r and 0 < l):
+                return False
+        except NotImplementedError:
+            pass
 
         if (l < other and r < 0) or (r < other and l < 0):  # no-cover
             return True
@@ -978,9 +981,10 @@ class Exp(Num):
 
             return add_exponents((self, 1), (other, -1))
 
-        assert isinstance(other, int)
+        if isinstance(other, int):
+            return make_add(-other, self)
 
-        return make_add(-other, self)
+        return self + -other
 
     def multiplies_with(self, other: Count) -> bool:
         if isinstance(other, Exp):
