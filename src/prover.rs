@@ -1,8 +1,10 @@
 use pyo3::prelude::*;
 
+type Cycle = u32;
+
 #[pyclass]
 pub struct PastConfig {
-    cycles: Vec<u32>,
+    cycles: Vec<Cycle>,
 }
 
 #[pymethods]
@@ -13,7 +15,7 @@ impl PastConfig {
     }
 
     #[allow(clippy::many_single_char_names)]
-    pub fn next_deltas(&mut self, cycle: u32) -> Option<(u32, u32, u32)> {
+    pub fn next_deltas(&mut self, cycle: Cycle) -> Option<(Cycle, Cycle, Cycle)> {
         let cycles = &mut self.cycles;
         cycles.push(cycle);
 
