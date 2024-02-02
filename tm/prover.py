@@ -145,14 +145,14 @@ class Prover:
                 state, tape, sig := tape.signature)) is not None:
             return known_rule
 
-        if (states := self.configs.get(sig)) is None:
+        if (past_configs := self.configs.get(sig)) is None:
             if self.config_count > 100_000:  # no-cover
                 raise ConfigLimit
 
-            states = PastConfigs()
-            self.configs[sig] = states
+            past_configs = PastConfigs()
+            self.configs[sig] = past_configs
 
-        if (deltas := states.next_deltas(state, cycle)) is None:
+        if (deltas := past_configs.next_deltas(state, cycle)) is None:
             return None
 
         if any(delta > 90_000 for delta in deltas):
@@ -177,7 +177,7 @@ class Prover:
         if (rule := make_rule(tape.counts, *counts)) is None:
             return None
 
-        states.delete_configs(state)
+        past_configs.delete_configs(state)
 
         self.set_rule(
             rule,
