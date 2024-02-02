@@ -23,15 +23,19 @@ class PastConfigs:
     def __init__(self) -> None:
         self._configs = {}
 
-    def __getitem__(self, state: State) -> PastConfig:
+    def next_deltas(
+            self,
+            state: State,
+            cycle: int,
+    ) -> tuple[int, int, int] | None:
         try:
-            return self._configs[state]
+            config = self._configs[state]
         except KeyError:
             self._configs[state] = (config := PastConfig())
 
-            return config
+        return config.next_deltas(cycle)
 
-    def __delitem__(self, state: State) -> None:
+    def delete_configs(self, state: State) -> None:
         del self._configs[state]
 
 
@@ -148,7 +152,7 @@ class Prover:
             states = PastConfigs()
             self.configs[sig] = states
 
-        if (deltas := states[state].next_deltas(cycle)) is None:
+        if (deltas := states.next_deltas(state, cycle)) is None:
             return None
 
         if any(delta > 90_000 for delta in deltas):
@@ -173,7 +177,7 @@ class Prover:
         if (rule := make_rule(tape.counts, *counts)) is None:
             return None
 
-        del states[state]
+        states.delete_configs(state)
 
         self.set_rule(
             rule,
