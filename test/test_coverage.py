@@ -84,6 +84,12 @@ class TestFloss(TestCase):
                 backsym = 1,
             ).run(100).xlimit)
 
+        self.assertIsNotNone(
+            Machine(
+                "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF",
+                opt_macro = 200,
+            ).run(500).infrul)
+
     def test_machine(self):
         self.assertIsNotNone(
             Machine(

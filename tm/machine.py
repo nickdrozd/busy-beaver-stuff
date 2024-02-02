@@ -201,6 +201,8 @@ class Machine:
             except SuspectedRule as sus:
                 self.susrul = sus.args
                 rule = None
+            except MacroInfLoop:
+                rule = None
 
             if rule is not None:
                 try:
