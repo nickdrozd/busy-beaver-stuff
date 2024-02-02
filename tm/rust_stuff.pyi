@@ -1,9 +1,15 @@
 ## prover ##############################
 
-class PastConfig:
-    cycles: list[int]
+class PastConfigs:
+    def __init__(self) -> None: ...
 
-    def next_deltas(self, cycle: int) -> tuple[int, int, int] | None: ...
+    def next_deltas(
+            self,
+            state: State,
+            cycle: int,
+    ) -> tuple[int, int, int] | None: ...
+
+    def delete_configs(self, state: State) -> None: ...
 
 ## parse ###############################
 

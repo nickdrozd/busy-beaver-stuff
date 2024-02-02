@@ -20,7 +20,7 @@ use blocks::{measure_blocks, unroll_tape};
 use parse::{
     parse as parse_fn, read_slot, read_state, show_instr, show_slot, show_state, tcompile,
 };
-use prover::PastConfig;
+use prover::PastConfigs;
 use rules::{InfiniteRule, RuleLimit, UnknownRule};
 
 #[pymodule]
@@ -39,7 +39,7 @@ fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(show_instr, m)?)?;
 
     // prover
-    m.add_class::<PastConfig>()?;
+    m.add_class::<PastConfigs>()?;
 
     // rules
     m.add("UnknownRule", py.get_type::<UnknownRule>())?;

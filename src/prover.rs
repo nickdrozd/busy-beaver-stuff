@@ -1,15 +1,16 @@
+use std::collections::HashMap;
+
 use pyo3::prelude::*;
+
+use crate::instrs::State;
 
 type Cycle = u32;
 
-#[pyclass]
-pub struct PastConfig {
+struct PastConfig {
     cycles: Vec<Cycle>,
 }
 
-#[pymethods]
 impl PastConfig {
-    #[new]
     const fn new() -> Self {
         Self { cycles: Vec::new() }
     }
@@ -53,5 +54,29 @@ impl PastConfig {
         }
 
         None
+    }
+}
+
+#[pyclass]
+pub struct PastConfigs {
+    configs: HashMap<State, PastConfig>,
+}
+
+#[pymethods]
+impl PastConfigs {
+    #[new]
+    fn new() -> Self {
+        Self {
+            configs: HashMap::new(),
+        }
+    }
+
+    fn next_deltas(&mut self, state: State, cycle: Cycle) -> Option<(Cycle, Cycle, Cycle)> {
+        let config = self.configs.entry(state).or_insert_with(PastConfig::new);
+        config.next_deltas(cycle)
+    }
+
+    fn delete_configs(&mut self, state: State) {
+        self.configs.remove(&state);
     }
 }

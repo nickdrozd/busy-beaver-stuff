@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tm.rules import make_rule
-from tm.rust_stuff import PastConfig
+from tm.rust_stuff import PastConfigs
 
 if TYPE_CHECKING:
     from tm.rules import Rule
@@ -15,28 +15,6 @@ if TYPE_CHECKING:
 
 class ConfigLimit(Exception):
     pass
-
-
-class PastConfigs:
-    _configs: dict[State, PastConfig]
-
-    def __init__(self) -> None:
-        self._configs = {}
-
-    def next_deltas(
-            self,
-            state: State,
-            cycle: int,
-    ) -> tuple[int, int, int] | None:
-        try:
-            config = self._configs[state]
-        except KeyError:
-            self._configs[state] = (config := PastConfig())
-
-        return config.next_deltas(cycle)
-
-    def delete_configs(self, state: State) -> None:
-        del self._configs[state]
 
 
 class Prover:
