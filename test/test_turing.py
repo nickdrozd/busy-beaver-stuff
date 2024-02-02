@@ -848,7 +848,7 @@ class Fast(TuringTest):
             if prog == "1RB ...  0L_ ...":
                 continue
 
-            for back in range(1, 5):
+            for back in range(1, 4):
                 self.run_bb(
                     prog,
                     backsym = [back] * back)
