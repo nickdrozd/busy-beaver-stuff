@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from collections import defaultdict
 
 from tm.rules import make_rule
 from tm.rust_stuff import PastConfig
@@ -18,6 +17,24 @@ class ConfigLimit(Exception):
     pass
 
 
+class PastConfigs:
+    _configs: dict[State, PastConfig]
+
+    def __init__(self) -> None:
+        self._configs = {}
+
+    def __getitem__(self, state: State) -> PastConfig:
+        try:
+            return self._configs[state]
+        except KeyError:
+            self._configs[state] = (config := PastConfig())
+
+            return config
+
+    def __delitem__(self, state: State) -> None:
+        del self._configs[state]
+
+
 class Prover:
     prog: GetInstr
 
@@ -26,12 +43,7 @@ class Prover:
         list[tuple[MinSig, Rule]],
     ]
 
-    configs: dict[
-        Signature, dict[
-            State,
-            PastConfig,
-        ],
-    ]
+    configs: dict[Signature, PastConfigs]
 
     def __init__(self, prog: GetInstr):
         self.prog = prog
@@ -133,7 +145,7 @@ class Prover:
             if self.config_count > 100_000:  # no-cover
                 raise ConfigLimit
 
-            states = defaultdict(PastConfig)
+            states = PastConfigs()
             self.configs[sig] = states
 
         if (deltas := states[state].next_deltas(cycle)) is None:
