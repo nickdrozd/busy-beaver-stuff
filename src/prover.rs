@@ -8,12 +8,10 @@ pub struct PastConfig {
 #[pymethods]
 impl PastConfig {
     #[new]
-    #[allow(clippy::new_without_default)]
     const fn new() -> Self {
         Self { cycles: Vec::new() }
     }
 
-    #[allow(clippy::similar_names)]
     #[allow(clippy::many_single_char_names)]
     pub fn next_deltas(&mut self, cycle: u32) -> Option<(u32, u32, u32)> {
         let cycles = &mut self.cycles;
