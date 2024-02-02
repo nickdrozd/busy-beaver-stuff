@@ -1,4 +1,4 @@
-# pylint: disable = confusing-consecutive-elif
+# pylint: disable = confusing-consecutive-elif, too-many-try-statements
 # pylint: disable = too-many-lines, too-many-return-statements, too-complex
 
 from __future__ import annotations
@@ -64,13 +64,13 @@ class Num:
         if isinstance(other, Add | Mul):
             l, r = other.l, other.r
 
-            try:  # pylint: disable = too-many-try-statements
+            try:
                 if self <= r and l > 0:
                     return True
             except NotImplementedError:  # no-cover
                 pass
 
-            try:  # pylint: disable = too-many-try-statements
+            try:
                 if self <= l and r > 0:
                     return True
             except NotImplementedError:  # no-cover
@@ -612,7 +612,7 @@ class Mul(Num):
 
             return True
 
-        try:  # pylint: disable = too-many-try-statements
+        try:
             if (other <= l and 0 < r) or (other <= r and 0 < l):
                 return False
         except NotImplementedError:
