@@ -31,21 +31,17 @@ def stringify_sig(sig: Signature) -> str:
     return f'{l_sig}[{scan}]{r_sig}'
 
 
-class TestTape(TestCase):
-    tape: Tape | HeadTape
+class TestHeadTape(TestCase):
+    tape: HeadTape
 
     def set_tape(
             self,
             lspan: list[tuple[int, int]],
             scan: Color,
             rspan: list[tuple[int, int]],
-            head: int | None = None,
+            head: int,
     ) -> None:
-        self.tape = (
-            Tape(lspan, scan, rspan)
-            if head is None else
-            HeadTape(lspan, scan, rspan, head)
-        )
+        self.tape = HeadTape(lspan, scan, rspan, head)
 
     def assert_tape(self, tape_str: str):
         self.assertEqual(tape_str, str(self.tape))
@@ -53,12 +49,10 @@ class TestTape(TestCase):
     def assert_signature(
             self,
             expected: str,
-            tape: Tape | HeadTape | None = None,
+            tape: HeadTape | None = None,
     ) -> None:
         if tape is None:
             tape = self.tape
-
-        assert isinstance(tape, HeadTape)
 
         self.assertEqual(
             expected,
@@ -67,10 +61,6 @@ class TestTape(TestCase):
                 tape.scan,
                 [(block.color, block.count) for block in tape.rspan],
             ).signature))
-
-    def test_marks(self):
-        self.assertFalse(
-            Tape().marks)
 
     def test_copy(self):
         self.set_tape(
@@ -88,8 +78,6 @@ class TestTape(TestCase):
         self.assert_signature(
             '1|0|1[2]2|1')
 
-        assert isinstance(self.tape, HeadTape)
-
         copy_1 = self.tape.copy()
         copy_2 = self.tape.copy()
 
@@ -106,70 +94,6 @@ class TestTape(TestCase):
         self.assert_signature(
             '1|0|1[2]1',
             tape = copy_2)
-
-    def test_rule_1(self):
-        self.set_tape(
-            [(1, 12), (2, 3)],
-            3,
-            [(4, 15), (5, 2), (6, 2)])
-
-        self.assert_tape(
-            "2^3 1^12 [3] 4^15 5^2 6^2")
-
-        assert isinstance(self.tape, Tape)
-
-        self.tape.apply_rule({
-            (0, 1): 3,
-            (1, 0): -2,
-        })
-
-        self.assert_tape(
-            "2^24 1^12 [3] 4^1 5^2 6^2")
-
-        self.tape.apply_rule({
-            (0, 0): -2,
-            (1, 2): (2, 3),
-        })
-
-        self.assert_tape(
-            "2^24 1^2 [3] 4^1 5^2 6^(-3 + (5 * (2 ** 5)))")
-
-    def test_rule_2(self):
-        self.set_tape(
-            [(4, 2)],
-            4,
-            [(5, 60), (2, 1), (4, 1), (5, 7), (1, 1)])
-
-        assert isinstance(self.tape, Tape)
-
-        self.assert_tape(
-            "4^2 [4] 5^60 2^1 4^1 5^7 1^1")
-
-        self.tape.apply_rule({
-            (0, 0): 4,
-            (1, 0): -2,
-        })
-
-        self.assert_tape(
-            "4^118 [4] 5^2 2^1 4^1 5^7 1^1")
-
-    def test_rule_3(self):
-        self.set_tape([(1, 152), (2, 655345), (3, 1)], 0, [])
-
-        assert isinstance(self.tape, Tape)
-
-        self.assert_tape(
-            "3^1 2^655345 1^152 [0]")
-
-        self.tape.apply_rule({
-            (0, 1): -2,
-            (0, 0): (2, 8),
-        })
-
-        exp = "(-8 + (5 * (2 ** 327677)))"
-
-        self.assert_tape(
-            f"3^1 2^1 1^{exp} [0]")
 
     def test_hash(self):
         blocks = set()
@@ -197,6 +121,83 @@ class TestTape(TestCase):
         self.assertEqual(hash(tape1), hash(tape2))
 
         self.assertIn(tape2, tapes)
+
+
+class TestTape(TestCase):
+    tape: Tape
+
+    def set_tape(
+            self,
+            lspan: list[tuple[int, int]],
+            scan: Color,
+            rspan: list[tuple[int, int]],
+    ) -> None:
+        self.tape = Tape(lspan, scan, rspan)
+
+    def assert_tape(self, tape_str: str):
+        self.assertEqual(tape_str, str(self.tape))
+
+    def test_marks(self):
+        self.assertFalse(
+            Tape().marks)
+
+    def test_rule_1(self):
+        self.set_tape(
+            [(1, 12), (2, 3)],
+            3,
+            [(4, 15), (5, 2), (6, 2)])
+
+        self.assert_tape(
+            "2^3 1^12 [3] 4^15 5^2 6^2")
+
+        self.tape.apply_rule({
+            (0, 1): 3,
+            (1, 0): -2,
+        })
+
+        self.assert_tape(
+            "2^24 1^12 [3] 4^1 5^2 6^2")
+
+        self.tape.apply_rule({
+            (0, 0): -2,
+            (1, 2): (2, 3),
+        })
+
+        self.assert_tape(
+            "2^24 1^2 [3] 4^1 5^2 6^(-3 + (5 * (2 ** 5)))")
+
+    def test_rule_2(self):
+        self.set_tape(
+            [(4, 2)],
+            4,
+            [(5, 60), (2, 1), (4, 1), (5, 7), (1, 1)])
+
+        self.assert_tape(
+            "4^2 [4] 5^60 2^1 4^1 5^7 1^1")
+
+        self.tape.apply_rule({
+            (0, 0): 4,
+            (1, 0): -2,
+        })
+
+        self.assert_tape(
+            "4^118 [4] 5^2 2^1 4^1 5^7 1^1")
+
+    def test_rule_3(self):
+        self.set_tape([(1, 152), (2, 655345), (3, 1)], 0, [])
+
+        self.assert_tape(
+            "3^1 2^655345 1^152 [0]")
+
+        self.tape.apply_rule({
+            (0, 1): -2,
+            (0, 0): (2, 8),
+        })
+
+        exp = "(-8 + (5 * (2 ** 327677)))"
+
+        self.assert_tape(
+            f"3^1 2^1 1^{exp} [0]")
 
 
 class TestTags(TestCase):
