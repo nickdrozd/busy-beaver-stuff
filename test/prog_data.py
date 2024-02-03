@@ -838,6 +838,7 @@ KERNEL = {
     "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD 1R_": 3,
     "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD 1R_": 3,
     "1RB 0RC  0LA 0RD  1RD 1R_  1LE 0LD  1RF 1LB  1RA 1RE": 3,
+    "1RB 1RF  0RC 0RA  1LD 1R_  0LE 0LB  1LF 1LD  1RA 1LB": 3,
 
     # Spinout
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,
@@ -1389,6 +1390,7 @@ PROVER_HALT: ProverEst = {
     "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE": (2.5,   881),
     "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_": (1.2,   865),
     "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (6.4,   462),
+    "1RB 1RF  0RC 0RA  1LD 1R_  0LE 0LB  1LF 1LD  1RA 1LB": (3.3,    79),
     "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF 1R_  1RA 1RE": (1.4,    60),
     "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE 1R_": (6.9,    49),
     "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE 1R_": (1.1,    49),
@@ -1577,6 +1579,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ** 822)",
             "((13 + (2 ** 2731)) // 3)",
             "((11963 + (7 * (2 ** 2728))) // 3)",
+        ),
+        "1RB 1RF  0RC 0RA  1LD 1R_  0LE 0LB  1LF 1LD  1RA 1LB": (
+            1630,
+            "(10 ** 80)",
+            "(142 + (9 * (2 ** 261)))",
+            "((~10^17) + ((~10^60) * (2 ** 64)))",
         ),
         "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (
             1698,
