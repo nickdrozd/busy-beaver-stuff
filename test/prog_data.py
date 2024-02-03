@@ -1939,6 +1939,15 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(???)",
         ),
     },
+
+    "times-depth": {
+        "1RB 0RF  0RC 0LA  1LD ...  0LE 0LB  1RF 1LD  1RA 1RE": (
+            16781,
+            "(10 ↑↑ 101)",
+            "(???)",
+            "(???)",
+        ),
+    },
 }
 
 ALGEBRA_PROGS = {

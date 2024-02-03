@@ -1021,6 +1021,7 @@ class Fast(TuringTest):
                     prog,
                     opt_macro = 2000,
                     analyze = False,
+                    backsym = 1 if term == 'times-depth' else None,
                     print_prog = not show,
                 )
 
@@ -1092,11 +1093,11 @@ class Fast(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 44061,
+            "adds": 50178,
             "divs": 10461,
-            "exps": 11231,
-            "muls": 13008,
-            "totl": 78761,
+            "exps": 12214,
+            "muls": 14912,
+            "totl": 87765,
         })
 
 
