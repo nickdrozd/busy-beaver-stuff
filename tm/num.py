@@ -120,8 +120,7 @@ class Num:
     def __radd__(self, other: int) -> Count: ...
 
     def __sub__(self, other: Count) -> Count:
-        if self == other:  # no-cover
-            return 0
+        assert not isinstance(other, int)
 
         if isinstance(other, Add):
             l, r = other.l, other.r
@@ -135,8 +134,7 @@ class Num:
         return other + -self
 
     def __mul__(self, other: Count) -> Count:
-        if isinstance(other, int):  # no-cover
-            return other * self
+        assert not isinstance(other, int)
 
         if isinstance(other, Div):
             return (self * other.num) // other.den
