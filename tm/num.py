@@ -560,6 +560,9 @@ class Mul(Num):
             if l == lo:
                 return l * (r - ro)
 
+            if r == ro:
+                return (l - lo) * r
+
         elif isinstance(other, int):
             if other == 0:
                 return self
