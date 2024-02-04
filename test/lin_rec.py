@@ -275,7 +275,7 @@ class StrictLinRecMachine(LinRecMachine):
 
             step += tape.step(shift, color, state == next_state)
 
-            if (state := next_state) == -1:  # no-cover
+            if (state := next_state) == -1:
                 self.halted = step
                 break
 
@@ -362,7 +362,7 @@ class LinRecSampler(LinRecMachine):
 
 class LooseLinRecMachine(LinRecMachine):
     # pylint: disable = while-used, too-many-locals, line-too-long
-    def run(self, sim_lim: int) -> Self:  # no-cover
+    def run(self, sim_lim: int) -> Self:
         self.blanks = {}
 
         comp = self.comp

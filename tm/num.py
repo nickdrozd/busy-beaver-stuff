@@ -67,13 +67,13 @@ class Num:
             try:
                 if self <= r and l > 0:
                     return True
-            except NotImplementedError:  # no-cover
+            except NotImplementedError:
                 pass
 
             try:
                 if self <= l and r > 0:
                     return True
-            except NotImplementedError:  # no-cover
+            except NotImplementedError:
                 pass
 
             if self == r:
@@ -241,10 +241,10 @@ class Add(Num):
             if other == 0:
                 return self
 
-            if isinstance(l, int):
-                return (l + other) + r
+            if not isinstance(l, int):  # no-cover
+                return make_add(other, self)
 
-            return make_add(other, self)  # no-cover
+            return (l + other) + r
 
         if isinstance(other, Add):
             lo, ro = other.l, other.r
@@ -322,7 +322,7 @@ class Add(Num):
             if l < 0 and r < 0:  # no-cover
                 return True
 
-            if 0 < l and 0 < r:  # no-cover
+            if 0 < l and 0 < r:  # no-branch
                 return False
 
         if other == l:  # no-cover
@@ -507,7 +507,7 @@ class Mul(Num):
 
                     try:
                         return add_exponents((r, l), (ro, lo))
-                    except NotImplementedError:  # no-cover
+                    except NotImplementedError:
                         pass
 
                 if isinstance(lo, Exp):
@@ -536,9 +536,9 @@ class Mul(Num):
             if lo.depth < self.depth:
                 return lo + (self + ro)
 
-            if (isinstance(l, int)
+            if (isinstance(l, int)  # no-cover
                     and isinstance(r, Exp) and isinstance(r.exp, Div)):
-                return lo + (self + ro)  # no-cover
+                return lo + (self + ro)
 
         elif isinstance(other, Exp):
             return other + self
@@ -618,7 +618,7 @@ class Mul(Num):
         except NotImplementedError:
             pass
 
-        if (l < other and r < 0) or (r < other and l < 0):  # no-cover
+        if (l < other and r < 0) or (r < other and l < 0):
             return True
 
         if isinstance(other, Exp):
@@ -964,7 +964,7 @@ class Exp(Num):
 
             try:
                 return add_exponents((self, 1), (other, 1))
-            except NotImplementedError:  # no-cover
+            except NotImplementedError:
                 pass
 
         return super().__add__(other)
@@ -1111,7 +1111,7 @@ class Exp(Num):
             if isinstance(l, int):  # no-branch
                 return self < r
 
-        elif isinstance(other, Mul):  # no-branch
+        elif isinstance(other, Mul):
             l, r = other.l, other.r
 
             if isinstance(l, Exp):
@@ -1126,10 +1126,10 @@ class Exp(Num):
                 if r.exp <= exp:
                     return (self // r) < l
 
-        elif isinstance(other, Tet):
+        elif isinstance(other, Tet):  # no-branch
             return other > self
 
-        return super().__lt__(other)  # no-cover
+        return super().__lt__(other)
 
     def __pow__(self, other: Count) -> Exp:
         return make_exp(self.base, self.exp * other)

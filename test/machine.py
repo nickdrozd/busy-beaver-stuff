@@ -56,7 +56,7 @@ class QuickMachine:
 
         state: State = 0
 
-        for cycle in range(sim_lim):  # no-branch
+        for cycle in range(sim_lim):
             try:
                 instr = comp[state, tape.scan]
             except KeyError:
@@ -75,7 +75,7 @@ class QuickMachine:
 
             step += stepped
 
-            if (state := next_state) == -1:  # no-cover
+            if (state := next_state) == -1:
                 self.halted = step
                 break
 
@@ -86,12 +86,12 @@ class QuickMachine:
 
                 self.blanks[state] = step
 
-                if state == 0:  # no-cover
+                if state == 0:
                     self.infrul = step
                     break
 
         else:
-            self.xlimit = step  # no-cover
+            self.xlimit = step
 
         self.steps = step
         self.cycles = cycle
