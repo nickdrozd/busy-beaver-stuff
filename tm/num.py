@@ -325,7 +325,7 @@ class Add(Num):
             if 0 < l and 0 < r:  # no-branch
                 return False
 
-        if other == l:  # no-cover
+        if other == l:
             return r < 0
 
         if other == r:
@@ -467,7 +467,7 @@ class Mul(Num):
 
             return l * -r
 
-        if other == 1:  # no-cover
+        if other == 1:
             return self
 
         return (other * l) * r
@@ -549,7 +549,7 @@ class Mul(Num):
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
-        if other == 0:  # no-cover
+        if other == 0:
             return self
 
         if self == other:
@@ -950,7 +950,7 @@ class Exp(Num):
 
                 try:
                     return add_exponents((self, 1), (l, r))
-                except NotImplementedError:  # no-cover
+                except NotImplementedError:
                     pass
 
         elif isinstance(other, Exp):
