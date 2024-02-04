@@ -549,23 +549,25 @@ class Mul(Num):
         return super().__add__(other)
 
     def __sub__(self, other: Count) -> Count:
-        if other == 0:
-            return self
-
-        if self == other:
-            return 0
-
         l, r = self.l, self.r
+
+        if isinstance(other, Mul):
+            lo, ro = other.l, other.r
+
+            if self == other:
+                return 0
+
+            if l == lo:
+                return l * (r - ro)
+
+        elif isinstance(other, int):
+            if other == 0:
+                return self
+
+            return -other + self
 
         if other == l:
             return l * (r - 1)
-
-        if isinstance(other, Mul):
-            if l == other.l:
-                return l * (r - other.r)
-
-        if isinstance(other, int):
-            return -other + self
 
         return super().__sub__(other)
 
