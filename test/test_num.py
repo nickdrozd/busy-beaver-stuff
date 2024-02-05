@@ -9,6 +9,7 @@ from unittest import TestCase
 from tm.num import (
     Tet,
     show_number,
+    NumException,
     make_exp as Exp,
     ADDS, MULS, DIVS, EXPS,
 )
@@ -65,11 +66,11 @@ class TestNum(TestCase):
     @classmethod
     def tearDownClass(cls):
         assert_num_counts({
-            "adds": 2280,
-            "divs": 2073,
-            "exps": 1249,
-            "muls": 1410,
-            "totl": 7012,
+            "adds": 2281,
+            "divs": 2074,
+            "exps": 1251,
+            "muls": 1411,
+            "totl": 7017,
         })
 
     def assert_mod(
@@ -153,6 +154,22 @@ class TestNum(TestCase):
 
         with self.assertRaises(NotImplementedError):
             self.assertLess(comp1, comp2)
+
+    def assert_mod_error(
+            self,
+            num: Count,
+            mod: int,
+            rem: int,
+            msg: str,
+    ):
+        with self.assertRaises(NumException) as ctx:
+            self.assert_mod(
+                num,
+                mod,
+                rem,
+                skip_num = True)
+
+        self.assertEqual(msg, ctx.exception.args[0])
 
     def assert_depth(self, val: Count, depth: int):
         assert not isinstance(val, int)
@@ -1555,3 +1572,15 @@ class TestNum(TestCase):
             num4,
             "(10 ↑↑ 3)",
             "((2 ** 801) * (351 + (65 * (2 ** ((-11954 + (13 * (2 ** 803))) // 15)))))")
+
+    def test_mod(self):
+        self.assert_num(
+            num := (2 ** ((-50 + (99 * Exp(2, 7236))) // 7)),
+            "(10 ↑↑ 3)",
+            "(2 ** ((-50 + (99 * (2 ** 7236))) // 7))")
+
+        self.assert_mod_error(
+            num,
+            14,
+            2,
+            "(2 ** ((-50 + (99 * (2 ** 7236))) // 7)) % 14")
