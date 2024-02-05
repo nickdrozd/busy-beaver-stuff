@@ -1,5 +1,5 @@
 # pylint: disable = line-too-long, too-many-lines
-# pylint: disable = expression-not-assigned, pointless-statement
+# pylint: disable = pointless-statement
 
 from __future__ import annotations
 
