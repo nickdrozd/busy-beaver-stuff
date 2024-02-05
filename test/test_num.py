@@ -6,18 +6,22 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
-import tm.num
-from tm.num import make_exp as Exp, Tet, show_number
+from tm.num import (
+    Tet,
+    show_number,
+    make_exp as Exp,
+    ADDS, MULS, DIVS, EXPS,
+)
 
 if TYPE_CHECKING:
     from tm.num import Count
 
 
 CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
-    "adds": tm.num.ADDS,  # type: ignore[dict-item]
-    "muls": tm.num.MULS,  # type: ignore[dict-item]
-    "divs": tm.num.DIVS,  # type: ignore[dict-item]
-    "exps": tm.num.EXPS,  # type: ignore[dict-item]
+    "adds": ADDS,  # type: ignore[dict-item]
+    "muls": MULS,  # type: ignore[dict-item]
+    "divs": DIVS,  # type: ignore[dict-item]
+    "exps": EXPS,  # type: ignore[dict-item]
 }
 
 
