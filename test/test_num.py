@@ -4,7 +4,6 @@ from unittest import TestCase
 from tm.num import (
     Add,
     Div,
-    ExpModLimit,
     Mul,
     Tet,
     show_number,
@@ -26,11 +25,11 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 
 
 NUM_COUNTS = {
-    "adds": 2313,
-    "divs": 2082,
+    "adds": 2319,
+    "divs": 2088,
     "exps": 1259,
     "muls": 1435,
-    "totl": 7089,
+    "totl": 7101,
 }
 
 
@@ -150,22 +149,6 @@ class TestNum(TestCase):
             self.assertLess(val1, val2)
 
         self.assertEqual(msg, ctx.exception.args[0].split(': ')[1])
-
-    def assert_mod_error(
-            self,
-            num: Count,
-            mod: int,
-            rem: int,
-            msg: str,
-    ):
-        with self.assertRaises(ExpModLimit) as ctx:
-            self.assert_mod(
-                num,
-                mod,
-                rem,
-                skip_num = True)
-
-        self.assertEqual(msg, ctx.exception.args[0])
 
     def assert_depth(self, val: Count, depth: int):
         assert not isinstance(val, int)
@@ -1702,19 +1685,11 @@ class TestNum(TestCase):
             "(10 ↑↑ 3)",
             "(2 ** ((-50 + (99 * (2 ** 7236))) // 7))")
 
-        self.assert_mod_error(
-            num,
-            14,
-            2,
-            "(2 ** ((-50 + (99 * (2 ** 7236))) // 7)) % 14")
+        self.assert_mod(num, 14, 2, skip_num = True)
 
         self.assert_num(
             num := (2 ** ((-17 + (61 * Exp(2, 71))) // 9)),
             "(10 ↑↑ 3)",
             "(2 ** ((-17 + (61 * (2 ** 71))) // 9))")
 
-        self.assert_mod_error(
-            num,
-            4374,
-            2,
-            "(2 ** ((-17 + (61 * (2 ** 71))) // 9)) % 4374")
+        self.assert_mod(num, 4374, 2384, skip_num = True)

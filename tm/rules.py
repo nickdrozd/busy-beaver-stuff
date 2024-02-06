@@ -7,7 +7,6 @@ from tm.num import (
     Add,
     Div,
     Exp,
-    ExpModLimit,
     ModDepthLimit,
     Mul,
     PeriodLimit,
@@ -303,9 +302,7 @@ def count_apps(rule: Rule, tape: IndexTape) -> Apps | None:
 
         try:
             div, rem = divmod(count, absdiff)
-        except ExpModLimit as exp:
-            raise RuleLimit(f'count_apps: {exp}') from exp
-        except ModDepthLimit as mod:
+        except ModDepthLimit as mod:  # no-cover
             raise RuleLimit(f'depth-limit: {mod}') from mod
         except PeriodLimit as per:
             raise RuleLimit(f'period-limit: {per}') from per
