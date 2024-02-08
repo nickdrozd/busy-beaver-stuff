@@ -839,6 +839,7 @@ KERNEL = {
     "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD 1R_": 3,
     "1RB 0RC  0LA 0RD  1RD 1R_  1LE 0LD  1RF 1LB  1RA 1RE": 3,
     "1RB 1RF  0RC 0RA  1LD 1R_  0LE 0LB  1LF 1LD  1RA 1LB": 3,
+    "1RB 0LF  1RC 0LE  1RD 0RA  1LE 1R_  1RC 0LA  1RA 0LB": 3,
 
     # Spinout
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,
@@ -958,6 +959,8 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC",
 
     "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA 1R_",
+
+    "1RB 0LF  1RC 0LE  1RD 0RA  1LE 1R_  1RC 0LA  1RA 0LB",
 }
 
 CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
@@ -1397,6 +1400,7 @@ PROVER_HALT: ProverEst = {
     "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (6.7,    47),
     "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (6.7,    47),
     "1RB 0RC  0LA 0RD  1RD 1R_  1LE 0LD  1RF 1LB  1RA 1RE": (2.5,    21),
+    "1RB 0LF  1RC 0LE  1RD 0RA  1LE 1R_  1RC 0LA  1RA 0LB": (1.0,     7),
 
     # Green-8
     "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": "((-3 + (7 *",
@@ -1579,6 +1583,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ** 822)",
             "((13 + (2 ** 2731)) // 3)",
             "((11963 + (7 * (2 ** 2728))) // 3)",
+        ),
+        "1RB 0LF  1RC 0LE  1RD 0RA  1LE 1R_  1RC 0LA  1RA 0LB": (
+            992,
+            "(10 ** 7)",
+            "((2 + (5 * (2 ** 21))) // 3)",
+            "((81157 + (35 * (2 ** 20))) // 3)",
         ),
         "1RB 1RF  0RC 0RA  1LD 1R_  0LE 0LB  1LF 1LD  1RA 1LB": (
             1630,
