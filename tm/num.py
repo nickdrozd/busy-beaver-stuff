@@ -534,10 +534,6 @@ class Mul(Num):
             if lo.depth < self.depth:
                 return lo + (self + ro)
 
-            if (isinstance(l, int)  # no-cover
-                    and isinstance(r, Exp) and isinstance(r.exp, Div)):
-                return lo + (self + ro)
-
         elif isinstance(other, Exp):
             return other + self
 
