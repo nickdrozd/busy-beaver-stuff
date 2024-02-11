@@ -134,22 +134,19 @@ def prep_branches(
 def distribute_branches(branches: list[Prog]) -> list[list[Prog]]:
     cpus = cpu_count()
 
-    size, rem = divmod(len(branches), cpus)
+    branch_groups: list[list[Prog]] = [[] for _ in range(cpus)]
 
-    start, result = 0, []
+    branch_counts = [0] * cpus
 
-    for i in range(cpus):
-        end = start + size + (1 if i < rem else 0)
-        result.append(
-            sorted(
-                branches[ start : end ],
-                key = lambda branch: branch.count('...'),
-                reverse = True,
-            )
-        )
-        start = end
+    for branch in branches:
+        min_index = branch_counts.index(min(branch_counts))
+        branch_groups[min_index].append(branch)
+        branch_counts[min_index] += branch.count('...')
 
-    return result
+    for group in branch_groups:
+        group.sort(key = lambda x: x.count('...'), reverse = True)
+
+    return branch_groups
 
 
 def run_tree_gen(
