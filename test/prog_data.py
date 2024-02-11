@@ -918,6 +918,8 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 1RA  1RC ...  1LC 1LD  0RA 1LE  0RC 0RE",
     "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA",
     "1RB 1RC  0LD ...  0LE 0LC  1LE 1LD  1RE 1RA",
+
+    "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
 }
 
 CANT_BLANK_FALSE_NEGATIVES: set[str] = {
@@ -1458,6 +1460,7 @@ PROVER_SPINOUT: ProverEst = {
     "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA": 2,
 
     # 6/2
+    "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": 2,
     "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1RF 1RB": (3.3, 7),
 }
 
@@ -1524,6 +1527,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ** 8)",
             "(-9 + (2 ** 25))",
             "(478 + (7 * (2 ** 21)))",
+        ),
+        "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": (
+            711,
+            "1",
+            "1",
+            "(1231 + (7 * (2 ** 9)))",
         ),
     },
 

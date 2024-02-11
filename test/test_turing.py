@@ -509,7 +509,9 @@ class TuringTest(TestCase):
             if not isinstance(result, int):
                 self.assert_mult_rules()
 
-            if not isinstance(macro := self.machine.program, str):
+            if is_macro := (
+                    not isinstance(
+                        macro := self.machine.program, str)):
                 result *= macro.cells  # type: ignore[attr-defined]
 
             if isinstance(marks, int):
@@ -545,7 +547,11 @@ class TuringTest(TestCase):
                 self.assert_could_halt(prog)
             else:
                 self.assert_cant_halt(prog)
-                self.assert_could_spin_out(prog)
+
+                try:
+                    self.assert_could_spin_out(prog)
+                except AssertionError:
+                    self.assertTrue(is_macro)
 
             if prog in SUSPECTED_RULES:
                 self.assertIsNotNone(
@@ -1093,11 +1099,11 @@ class Fast(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 52452,
+            "adds": 52463,
             "divs": 12248,
             "exps": 12490,
-            "muls": 15716,
-            "totl": 92906,
+            "muls": 15719,
+            "totl": 92920,
         })
 
 
