@@ -18,6 +18,14 @@ if TYPE_CHECKING:
 
     TapeSlice = list[Color]
 
+    TupleBlock = tuple[int, int]
+
+    TupleTape = tuple[
+        tuple[TupleBlock, ...],
+        Color,
+        tuple[TupleBlock, ...],
+    ]
+
 
 @dataclass(slots = True)
 class Block:
@@ -524,6 +532,13 @@ class HeadTape:
             self.scan,
             [HeadBlock(blk.color, blk.count) for blk in self.rspan],
             head = self.head,
+        )
+
+    def to_tuples(self) -> TupleTape:
+        return (
+            tuple((blk.color, blk.count) for blk in self.lspan),
+            self.scan,
+            tuple((blk.color, blk.count) for blk in self.rspan),
         )
 
     @property

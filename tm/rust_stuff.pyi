@@ -57,3 +57,31 @@ class UnknownRule(Exception): pass
 def measure_blocks(prog: str, steps: int) -> int | None: ...
 
 def unroll_tape(prog: str, steps: int) -> list[Color]: ...
+
+## tape ################################
+
+TupleBlock = tuple[int, int]
+
+TupleTape = tuple[
+    tuple[TupleBlock, ...],
+    Color,
+    tuple[TupleBlock, ...],
+]
+
+class BackstepMachine:
+    blanks: dict[State, int]
+
+    halted: int | None
+    spnout: int | None
+    undfnd: int | None
+
+    def __init__(self, prog: str): ...
+
+    def backstep_run(
+            self,
+            sim_lim: int,
+            init_tape: TupleTape,
+            state: State,
+            shift: Shift,
+            color: Color,
+    ) -> None: ...

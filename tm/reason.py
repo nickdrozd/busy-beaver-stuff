@@ -4,19 +4,20 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from collections import defaultdict
 
-from tm.parse import tcompile
 from tm.program import Program
 from tm.tape import HeadTape
+from tm.rust_stuff import BackstepMachine
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from tm.parse import Prog
-    from tm.program import Color, Shift, State, Slot
+    from tm.program import Color, State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
 
     Config = tuple[int, State, HeadTape]
+
+    GetResult = Callable[[BackstepMachine], int | None]
 
 
 class BackwardReasoner(Program):
@@ -153,7 +154,7 @@ class BackwardReasoner(Program):
                 for color in self.colors:
                     machine.backstep_run(
                         sim_lim = step + 1,
-                        init_tape = tape,
+                        init_tape = tape.to_tuples(),
                         state = entry,
                         shift = shift,
                         color = color,
@@ -187,157 +188,6 @@ def cant_blank(prog: str) -> bool:
 
 def cant_spin_out(prog: str) -> bool:
     return BackwardReasoner(prog).cant_spin_out
-
-########################################
-
-class BackstepMachine:
-    comp: Prog
-
-    blanks: dict[State, int]
-
-    halted: int | None = None
-    spnout: int | None = None
-    undfnd: int | None = None
-
-    def __init__(self, prog: str):
-        self.comp = tcompile(prog)
-
-    def backstep_run(self,
-            *,
-            sim_lim: int,
-            state: State,
-            shift: Shift,
-            color: Color,
-            init_tape: HeadTape,
-    ) -> None:
-        comp = self.comp
-
-        self.blanks = {}
-
-        step: int = 0
-
-        tape = BackstepTape(
-            [Block(blk.color, blk.count) for blk in init_tape.lspan],
-            init_tape.scan,
-            [Block(blk.color, blk.count) for blk in init_tape.rspan],
-        )
-
-        tape.backstep(shift, color)
-
-        for _ in range(sim_lim):
-
-            try:
-                instr = comp[state, tape.scan]
-            except KeyError:
-                self.undfnd = step
-                break
-
-            color, shift, next_state = instr
-
-            if (same := state == next_state) and tape.at_edge(shift):
-                self.spnout = step
-                break
-
-            stepped = tape.step(shift, color, same)
-
-            step += stepped
-
-            if (state := next_state) == -1:
-                self.halted = step
-                break
-
-            if not color and tape.blank:
-                if state in self.blanks:  # no-cover
-                    break
-
-                self.blanks[state] = step
-
-                if state == 0:
-                    break
-
-
-@dataclass(slots = True)
-class Block:
-    color: Color
-    count: int
-
-
-@dataclass(slots = True)
-class BackstepTape:
-    lspan: list[Block]
-    scan: Color
-    rspan: list[Block]
-
-    @property
-    def blank(self) -> bool:
-        return self.scan == 0 and not self.lspan and not self.rspan
-
-    def at_edge(self, edge: Shift) -> bool:
-        return (
-            self.scan == 0
-            and not (self.rspan if edge else self.lspan)
-        )
-
-    def backstep(self, shift: Shift, color: Color) -> None:
-        _ = self.step(
-            not shift,
-            self.scan,
-            False,
-        )
-
-        self.scan = color
-
-    def step(self, shift: Shift, color: Color, skip: bool) -> int:
-        pull, push = (
-            (self.rspan, self.lspan)
-            if shift else
-            (self.lspan, self.rspan)
-        )
-
-        push_block = (
-            pull.pop(0)
-            if skip and pull and pull[0].color == self.scan else
-            None
-        )
-
-        stepped = 1 if push_block is None else 1 + push_block.count
-
-        next_scan: Color
-
-        if not pull:
-            next_scan = 0
-        else:
-            next_pull = pull[0]
-
-            if next_pull.count != 1:
-                next_pull.count -= 1
-            else:
-                popped = pull.pop(0)
-
-                if push_block is None:
-                    push_block = popped
-                    push_block.count = 0
-
-            next_scan = next_pull.color
-
-        if push and (top_block := push[0]).color == color:
-            top_block.count += stepped
-        elif push or color != 0:
-            if push_block is None:
-                push_block = Block(color, 1)
-            else:
-                push_block.color = color
-                push_block.count += 1
-
-            push.insert(0, push_block)
-
-        self.scan = next_scan
-
-        return stepped
-
-
-if TYPE_CHECKING:
-    GetResult = Callable[[BackstepMachine], int | None]
 
 ########################################
 

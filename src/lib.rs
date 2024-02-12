@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::similar_names)]
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::redundant_pub_crate)]
 #![allow(clippy::module_name_repetitions)]
@@ -12,6 +13,7 @@ mod blocks;
 mod instrs;
 mod parse;
 mod prover;
+mod reason;
 mod rules;
 
 use pyo3::prelude::*;
@@ -19,6 +21,7 @@ use pyo3::prelude::*;
 use blocks::{measure_blocks, unroll_tape};
 use parse::{parse as parse_fn, read_slot, show_instr, show_slot, show_state, tcompile};
 use prover::PastConfigs;
+use reason::BackstepMachine;
 use rules::{InfiniteRule, RuleLimit, UnknownRule};
 
 #[pymodule]
@@ -42,6 +45,9 @@ fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("UnknownRule", py.get_type::<UnknownRule>())?;
     m.add("InfiniteRule", py.get_type::<InfiniteRule>())?;
     m.add("RuleLimit", py.get_type::<RuleLimit>())?;
+
+    // reason
+    m.add_class::<BackstepMachine>()?;
 
     Ok(())
 }
