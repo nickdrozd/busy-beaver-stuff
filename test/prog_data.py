@@ -1395,6 +1395,7 @@ PROVER_HALT: ProverEst = {
     "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE": (2.5,   881),
     "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_": (1.2,   865),
     "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (6.4,   462),
+    "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  1R_ 0LD": (8.8,   102),
     "1RB 1RF  0RC 0RA  1LD 1R_  0LE 0LB  1LF 1LD  1RA 1LB": (3.3,    79),
     "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF 1R_  1RA 1RE": (1.4,    60),
     "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE 1R_": (6.9,    49),
@@ -1626,6 +1627,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ** 39456)",
             "(3 * (2 ** 131071))",
             "(1121685 + (9 * (2 ** 131071)))",
+        ),
+        "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  1R_ 0LD": (
+            2335,
+            "(10 ** 103)",
+            "(1430 + (2 ** 341))",
+            "(10863 + (3 * (2 ** 340)))",
         ),
         "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (
             3067,
