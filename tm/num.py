@@ -104,9 +104,6 @@ class Num:
             if isinstance(other.l, int):
                 return other.l + (self + other.r)
 
-        if other.depth < self.depth:
-            return other + self
-
         return make_add(self, other)
 
     @abstractmethod
@@ -503,7 +500,7 @@ class Mul(Num):
                 return lo + (ro + self)
 
             if l != -1:  # no-branch
-                if isinstance(lo, Mul):
+                if isinstance(lo, Mul):  # no-branch
                     if lo.l == l:
                         return (self + lo) + ro
 
@@ -547,7 +544,7 @@ class Mul(Num):
             return -other + self
 
         elif isinstance(other, Add):
-            if self == other.r:
+            if self == other.r:  # no-branch
                 return -(other.l)
 
         if other == l:
@@ -939,7 +936,7 @@ class Exp(Num):
 
                 try:
                     return add_exponents((self, 1), (l, r))
-                except NotImplementedError:
+                except NotImplementedError:  # no-cover
                     pass
 
         elif isinstance(other, Exp):
