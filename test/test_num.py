@@ -1,5 +1,5 @@
 # pylint: disable = line-too-long, too-many-lines
-# pylint: disable = pointless-statement
+# pylint: disable = pointless-statement, expression-not-assigned
 
 from __future__ import annotations
 
@@ -1458,6 +1458,18 @@ class TestNum(TestCase):
             10 ** Tet(11, 2),
             "(10 ↑↑ 3)",
             "(10 ** (11 ↑↑ 2))")
+
+        with self.assertRaises(NotImplementedError):
+            int(Tet(10, 3))
+
+        with self.assertRaises(NotImplementedError):
+            Tet(10, 3) % 3
+
+        with self.assertRaises(NotImplementedError):
+            3 * Tet(10, 3)
+
+        with self.assertRaises(NotImplementedError):
+            Tet(10, 3) // 2
 
     def test_div_div(self):
         self.assert_num(

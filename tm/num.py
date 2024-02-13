@@ -1156,10 +1156,10 @@ class Tet(Num):
         return self
 
     def __int__(self) -> int:
-        raise NotImplementedError  # no-cover
+        raise NotImplementedError
 
     def __mod__(self, mod: int) -> int:
-        raise NotImplementedError  # no-cover
+        raise NotImplementedError
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -1184,9 +1184,10 @@ class Tet(Num):
 
             return self.height < other.height
 
-        if isinstance(other, Exp):  # no-branch
-            if isinstance(other.exp, int) and 2 < self.height:
-                return False
+        assert isinstance(other, Exp)
+
+        if isinstance(other.exp, int) and 2 < self.height:
+            return False
 
         return super().__lt__(other)
 
@@ -1197,10 +1198,10 @@ class Tet(Num):
         return self
 
     def __rmul__(self, other: int) -> Count:
-        raise NotImplementedError  # no-cover
+        raise NotImplementedError
 
     def __floordiv__(self, other: Count) -> Count:
-        raise NotImplementedError  # no-cover
+        raise NotImplementedError
 
 
 def add_exponents(
