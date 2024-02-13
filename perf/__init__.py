@@ -6,21 +6,12 @@ import sys
 
 from typing import TYPE_CHECKING
 
-from test.utils import read_progs
+from test.utils import get_holdouts  # noqa: F401
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     Null = Callable[[], None]
-
-
-HOLDOUTS = (
-    read_progs('holdouts_32q')
-    | read_progs('holdouts_23q')
-    | read_progs('holdouts_42h')
-    | read_progs('holdouts_42q')
-    | read_progs('holdouts_24h')
-)
 
 
 def profile(function: Null) -> Null:

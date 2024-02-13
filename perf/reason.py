@@ -1,10 +1,10 @@
-from perf import profile, HOLDOUTS
+from perf import profile, get_holdouts
 from tm.reason import BackwardReasoner
 
 
 @profile
 def main() -> None:
-    for prog in HOLDOUTS:
+    for prog in get_holdouts():
         print(prog)
 
         reasoner = BackwardReasoner(prog)
