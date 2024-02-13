@@ -15,6 +15,7 @@ from test.lin_rec import (
     LooseLinRecMachine,
     StrictLinRecMachine,
 )
+from perf import HOLDOUTS
 
 from tm.reason import (
     Program,
@@ -769,6 +770,16 @@ class Fast(TuringTest):
             QUASIHALT,  # type: ignore[arg-type]
             qsihlt = True,
         )
+
+    def test_holdouts(self):
+        self.assertEqual(
+            len(HOLDOUTS),
+            1198)
+
+        for prog in sorted(HOLDOUTS):
+            self.assertFalse(
+                quick_term_or_rec(prog, 1_000),
+                prog)
 
     def test_prover(self):
         self._test_prover_est(
