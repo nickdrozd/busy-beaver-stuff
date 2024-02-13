@@ -1095,9 +1095,6 @@ class Exp(Num):
         if isinstance(other, int):
             return False
 
-        if other < 0:
-            return False
-
         base, exp = self.base, self.exp
 
         if isinstance(other, Exp):

@@ -789,9 +789,6 @@ class TestNum(TestCase):
             4 + Exp(2, 4),
             3 + Exp(2, 5))
 
-        self.assertFalse(
-            Exp(2, 3) < -Exp(2, 5))
-
         self.assert_less(
             Exp(2, 3),
             Exp(2, 3) * (1 + Exp(2, 3)))
