@@ -7,8 +7,6 @@ from tm.show import show_number
 from tm.rules import ApplyRule
 
 if TYPE_CHECKING:
-    from typing import Self
-
     from tm.parse import Color, Shift
     from tm.rules import Count, Counts, Index, Rule
 
@@ -214,27 +212,6 @@ class TagTape(BlockTape):
         ]
 
         self.scan_info = []
-
-    @classmethod
-    def from_tuples(
-            cls,
-            lspan: list[tuple[Color, Count, list[int]]],
-            scan: Color,
-            rspan: list[tuple[Color, Count, list[int]]],
-    ) -> Self:
-        tape = cls([], scan, [])
-
-        tape.lspan = [
-            TagBlock(color, count, tags)
-            for color, count, tags in lspan
-        ]
-
-        tape.rspan = [
-            TagBlock(color, count, tags)
-            for color, count, tags in rspan
-        ]
-
-        return tape
 
     @property
     def missing_tags(self) -> bool:

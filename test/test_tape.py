@@ -5,13 +5,12 @@ from typing import TYPE_CHECKING
 
 from tm.tape import (
     Tape,
-    TagTape,
     HeadTape,
     HeadBlock,
 )
 
 if TYPE_CHECKING:
-    from tm.tape import Color, Signature, EnumTape
+    from tm.tape import Color, Signature, TagTape, EnumTape
 
 
 def stringify_sig(sig: Signature) -> str:
@@ -219,13 +218,18 @@ class TestTags(TestCase):
         else:
             scan_info = []
 
-        self.tape = TagTape.from_tuples(
-            [(color, count, tags)
-                 for color, count, *tags in reversed(lspan)],
+        # pylint: disable = unnecessary-comprehension
+        self.tape = Tape(
+            [(color, count) for color, count, *_ in reversed(lspan)],
             scan,
-            [(color, count, tags)
-                 for color, count, *tags in rspan],
-        )
+            [(color, count) for color, count, *_ in rspan],
+        ).to_tag()
+
+        for blk, (_, _, *tags) in zip(self.tape.lspan, reversed(lspan)):
+            blk.tags = tags
+
+        for blk, (_, _, *tags) in zip(self.tape.rspan, rspan):
+            blk.tags = tags
 
         self.tape.scan_info = scan_info
 
