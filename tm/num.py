@@ -104,10 +104,6 @@ class Num:
             if isinstance(other.l, int):
                 return other.l + (self + other.r)
 
-        if isinstance(other, Mul):
-            if other.l == -1 and self == other.r:  # no-cover
-                return 0
-
         if other.depth < self.depth:
             return other + self
 
