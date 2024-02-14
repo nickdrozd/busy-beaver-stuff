@@ -97,10 +97,8 @@ class Num:
     def __ge__(self, other: Count) -> bool:
         return self == other or self > other
 
-    def __add__(self, other: Count) -> Count:
-        assert not isinstance(other, int | Div)
-
-        return make_add(self, other)
+    @abstractmethod
+    def __add__(self, other: Count) -> Count: ...
 
     @abstractmethod
     def __radd__(self, other: int) -> Count: ...
@@ -229,7 +227,7 @@ class Add(Num):
         if other.depth < l.depth <= 8:
             return (other + l) + r
 
-        return super().__add__(other)
+        return make_add(self, other)
 
     def __sub__(self, other: Count) -> Count:
         if other == 0:
@@ -516,7 +514,7 @@ class Mul(Num):
         if l == -1 and other == r:  # no-cover
             return 0
 
-        return super().__add__(other)
+        return make_add(self, other)
 
     def __sub__(self, other: Count) -> Count:
         l, r = self.l, self.r
@@ -956,7 +954,7 @@ class Exp(Num):
             if isinstance(other.l, int):
                 return other.l + (self + other.r)
 
-        return super().__add__(other)
+        return make_add(self, other)
 
     def __sub__(self, other: Count) -> Count:
         if other == 0:
