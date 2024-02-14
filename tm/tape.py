@@ -495,23 +495,14 @@ class HeadTape:
 
     def __init__(
             self,
-            lspan: list[tuple[int, int]] | None = None,
+            lspan: list[HeadBlock] | None = None,
             scan: Color = 0,
-            rspan: list[tuple[int, int]] | None = None,
+            rspan: list[HeadBlock] | None = None,
             head: int = 0,
     ):
-        self.lspan = [] if lspan is None else [
-            HeadBlock(color, count)
-            for color, count in lspan
-        ]
-
+        self.lspan = lspan or []
         self.scan = scan
-
-        self.rspan = [] if rspan is None else [
-            HeadBlock(color, count)
-            for color, count in rspan
-        ]
-
+        self.rspan = rspan or []
         self.head = head
 
     def __str__(self) -> str:
@@ -529,9 +520,9 @@ class HeadTape:
 
     def copy(self) -> HeadTape:
         return HeadTape(
-            [(block.color, block.count) for block in self.lspan],
+            [HeadBlock(blk.color, blk.count) for blk in self.lspan],
             self.scan,
-            [(block.color, block.count) for block in self.rspan],
+            [HeadBlock(blk.color, blk.count) for blk in self.rspan],
             head = self.head,
         )
 
@@ -680,4 +671,4 @@ class HeadTape:
 
 
 def init_stepped() -> HeadTape:
-    return HeadTape([(1, 1)], 0, [], head = 1)
+    return HeadTape([HeadBlock(1, 1)], 0, [], head = 1)

@@ -36,7 +36,12 @@ class TestHeadTape(TestCase):
             rspan: list[tuple[int, int]],
             head: int,
     ) -> None:
-        self.tape = HeadTape(lspan, scan, rspan, head)
+        self.tape = HeadTape(
+            [HeadBlock(color, count) for color, count in lspan],
+            scan,
+            [HeadBlock(color, count) for color, count in rspan],
+            head,
+        )
 
     def assert_tape(self, tape_str: str):
         self.assertEqual(tape_str, str(self.tape))
@@ -105,13 +110,13 @@ class TestHeadTape(TestCase):
 
         tapes = set()
 
-        tape1 = HeadTape([(1, 1)], 1, [(1, 4)], -4)
+        tape1 = HeadTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)], -4)
 
         tapes.add(tape1)
 
         self.assertIn(tape1, tapes)
 
-        tape2 = HeadTape([(1, 1)], 1, [(1, 4)], -4)
+        tape2 = HeadTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)], -4)
 
         self.assertEqual(hash(tape1), hash(tape2))
 
