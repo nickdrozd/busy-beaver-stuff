@@ -98,7 +98,7 @@ class Num:
         return self == other or self > other
 
     def __add__(self, other: Count) -> Count:
-        assert not isinstance(other, int)
+        assert not isinstance(other, int | Div)
 
         if isinstance(other, Add):
             if isinstance(other.l, int):
@@ -107,9 +107,6 @@ class Num:
         if isinstance(other, Mul):
             if other.l == -1 and self == other.r:  # no-cover
                 return 0
-
-        if isinstance(other, Div):
-            return ((other.den * self) + other.num) // other.den
 
         if other.depth < self.depth:
             return other + self
@@ -535,6 +532,9 @@ class Mul(Num):
                 return lo + (self + ro)
 
         elif isinstance(other, Exp):
+            return other + self
+
+        elif isinstance(other, Div):
             return other + self
 
         if l == -1 and other == r:  # no-cover
@@ -965,6 +965,9 @@ class Exp(Num):
                 return add_exponents((self, 1), (other, 1))
             except NotImplementedError:
                 pass
+
+        elif isinstance(other, Div):
+            return other + self
 
         return super().__add__(other)
 
