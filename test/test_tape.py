@@ -5,15 +5,13 @@ from typing import TYPE_CHECKING
 
 from tm.tape import (
     Tape,
-    Block,
     TagTape,
-    EnumTape,
     HeadTape,
     HeadBlock,
 )
 
 if TYPE_CHECKING:
-    from tm.tape import Color, Signature
+    from tm.tape import Color, Signature, EnumTape
 
 
 def stringify_sig(sig: Signature) -> str:
@@ -653,14 +651,11 @@ class TestEnum(TestCase):
 
     def set_tape(
             self,
-            lspan: list[list[int]],
+            lspan: list[tuple[int, int]],
             scan: Color,
-            rspan: list[list[int]],
+            rspan: list[tuple[int, int]],
     ) -> None:
-        self.tape = EnumTape(
-            [Block(color, count) for color, count in lspan],
-            scan,
-            [Block(color, count) for color, count in rspan])
+        self.tape = Tape(lspan, scan, rspan).to_enum()
 
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
@@ -677,18 +672,16 @@ class TestEnum(TestCase):
 
     def assert_tape(
             self,
-            lspan: list[list[int]],
+            lspan: list[tuple[int, int]],
             scan: Color,
-            rspan: list[list[int]],
+            rspan: list[tuple[int, int]],
     ):
         self.assertEqual(
             (lspan, scan, rspan),
             (
-                [[block.color, block.count]
-                     for block in self.tape.lspan],
+                [(blk.color, blk.count) for blk in self.tape.lspan],
                 self.tape.scan,
-                [[block.color, block.count]
-                     for block in self.tape.rspan],
+                [(blk.color, blk.count) for blk in self.tape.rspan],
             ))
 
     def test_offsets_1(self):
@@ -704,28 +697,28 @@ class TestEnum(TestCase):
         #  165 | B0 | 2^1 3^9 4^1 1^14 [0]
 
         self.set_tape(
-            [[1, 11], [4, 1], [3, 11], [2, 1]], 0, [])
+            [(1, 11), (4, 1), (3, 11), (2, 1)], 0, [])
 
         self.assert_offsets([0, 0])
 
         self.step(0, 0, 0)  # B0
 
         self.assert_tape(
-            [[1, 10], [4, 1], [3, 11], [2, 1]], 1, [])
+            [(1, 10), (4, 1), (3, 11), (2, 1)], 1, [])
 
         self.assert_offsets([1, 0])
 
         self.step(0, 2, 1)  # A1
 
         self.assert_tape(
-            [[3, 11], [2, 1]], 4, [[2, 11]])
+            [(3, 11), (2, 1)], 4, [(2, 11)])
 
         self.assert_offsets([2, 0])
 
         self.step(0, 2, 1)  # A4
 
         self.assert_tape(
-            [[3, 10], [2, 1]], 3, [[2, 12]])
+            [(3, 10), (2, 1)], 3, [(2, 12)])
 
         self.assert_offsets([3, 0])
 
@@ -738,7 +731,7 @@ class TestEnum(TestCase):
         self.step(1, 1, 0)  # A0
 
         self.assert_tape(
-            [[1, 14], [4, 1], [3, 9], [2, 1]], 0, [])
+            [(1, 14), (4, 1), (3, 9), (2, 1)], 0, [])
 
         self.assert_offsets([3, 0])
 
@@ -752,42 +745,42 @@ class TestEnum(TestCase):
         #  931 | |0 | 3^5 2^414422567 [0]
 
         self.set_tape(
-            [[2, 414422565], [3, 6]], 0, [])
+            [(2, 414422565), (3, 6)], 0, [])
 
         self.assert_offsets([0, 0])
 
         self.step(0, 5, 0)
         self.assert_tape(
-            [[2, 414422564], [3, 6]], 2, [[5, 1]])
+            [(2, 414422564), (3, 6)], 2, [(5, 1)])
         self.assert_offsets([1, 0])
 
         self.step(0, 5, 1)
         self.assert_tape(
-            [[3, 5]], 3, [[5, 414422566]])
+            [(3, 5)], 3, [(5, 414422566)])
         self.assert_offsets([2, 0])
 
         self.step(1, 2, 0)
         self.step(1, 2, 1)
 
         self.assert_tape(
-            [[2, 414422567], [3, 5]], 0, [])
+            [(2, 414422567), (3, 5)], 0, [])
 
     def test_offsets_3(self):
         # 1^1 2^2 3^9 [3] 1^10
 
-        self.set_tape([[3, 9]], 3, [[1, 10]])
+        self.set_tape([(3, 9)], 3, [(1, 10)])
         self.step(0, 1, 0)
-        self.assert_tape([[3, 8]], 3, [[1, 11]])
+        self.assert_tape([(3, 8)], 3, [(1, 11)])
         self.assert_offsets([1, 1])
 
     def test_edges_1(self):
         self.set_tape([], 0, [])
         self.step(0, 1, 0)
-        self.assert_tape([], 0, [[1, 1]])
+        self.assert_tape([], 0, [(1, 1)])
         self.assert_edges((True, False))
 
     def test_edges_2(self):
-        self.set_tape([[1, 3]], 1, [])
+        self.set_tape([(1, 3)], 1, [])
         self.step(0, 2, 1)
-        self.assert_tape([], 0, [[2, 4]])
+        self.assert_tape([], 0, [(2, 4)])
         self.assert_edges((True, False))
