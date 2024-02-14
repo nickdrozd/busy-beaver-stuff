@@ -100,10 +100,6 @@ class Num:
     def __add__(self, other: Count) -> Count:
         assert not isinstance(other, int | Div)
 
-        if isinstance(other, Add):
-            if isinstance(other.l, int):
-                return other.l + (self + other.r)
-
         return make_add(self, other)
 
     @abstractmethod
@@ -955,6 +951,10 @@ class Exp(Num):
 
         elif isinstance(other, Div):
             return other + self
+
+        elif isinstance(other, Add):  # no-branch
+            if isinstance(other.l, int):
+                return other.l + (self + other.r)
 
         return super().__add__(other)
 
