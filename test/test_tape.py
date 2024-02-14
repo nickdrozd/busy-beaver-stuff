@@ -15,8 +15,6 @@ from tm.tape import (
 if TYPE_CHECKING:
     from tm.tape import Color, Signature
 
-    BlockSpan = list[list[int]]
-
 
 def stringify_sig(sig: Signature) -> str:
     scan, lspan, rspan = sig
@@ -214,9 +212,9 @@ class TestTags(TestCase):
 
     def set_tape(
             self,
-            lspan: BlockSpan,
+            lspan: list[list[int]],
             scan: Color | tuple[Color, list[int]],
-            rspan: BlockSpan,
+            rspan: list[list[int]],
     ):
         if isinstance(scan, tuple):
             scan, scan_info = scan
@@ -237,9 +235,9 @@ class TestTags(TestCase):
 
     def assert_tape(
             self,
-            lspan: BlockSpan,
+            lspan: list[list[int]],
             scan: Color | tuple[Color, list[int]],
-            rspan: BlockSpan,
+            rspan: list[list[int]],
     ):
         self.assertEqual(
             (self.tape.scan, self.tape.scan_info),
@@ -655,9 +653,9 @@ class TestEnum(TestCase):
 
     def set_tape(
             self,
-            lspan: BlockSpan,
+            lspan: list[list[int]],
             scan: Color,
-            rspan: BlockSpan,
+            rspan: list[list[int]],
     ) -> None:
         self.tape = EnumTape(
             [Block(color, count) for color, count in lspan],
@@ -679,9 +677,9 @@ class TestEnum(TestCase):
 
     def assert_tape(
             self,
-            lspan: BlockSpan,
+            lspan: list[list[int]],
             scan: Color,
-            rspan: BlockSpan,
+            rspan: list[list[int]],
     ):
         self.assertEqual(
             (lspan, scan, rspan),
