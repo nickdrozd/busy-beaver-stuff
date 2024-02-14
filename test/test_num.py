@@ -1493,6 +1493,9 @@ class TestNum(TestCase):
         with self.assertRaises(NotImplementedError):
             Tet(10, 3) // 2
 
+        with self.assertRaises(NotImplementedError):
+            -Tet(10, 3)
+
     def test_div_div(self):
         self.assert_num(
             130 * (2 ** ((61 + (13 * Exp(2, 803))) // 15)),

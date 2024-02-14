@@ -54,8 +54,8 @@ class Num:
     @abstractmethod
     def digits(self) -> int: ...
 
-    def __neg__(self) -> Count:
-        return -1 * self
+    @abstractmethod
+    def __neg__(self) -> Count: ...
 
     def __eq__(self, other: object) -> bool:
         return other is self
@@ -816,6 +816,9 @@ class Exp(Num):
                    and other in exp)
         )
 
+    def __neg__(self) -> Count:
+        return -1 * self
+
     def __int__(self) -> int:
         return self.base ** int(self.exp)  # type: ignore[no-any-return]
 
@@ -1144,6 +1147,9 @@ class Tet(Num):
 
     def estimate(self) -> Tet:
         return self
+
+    def __neg__(self) -> Count:
+        raise NotImplementedError
 
     def __int__(self) -> int:
         raise NotImplementedError
