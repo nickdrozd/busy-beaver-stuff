@@ -116,16 +116,8 @@ class Num:
     @abstractmethod
     def __radd__(self, other: int) -> Count: ...
 
-    def __sub__(self, other: Count) -> Count:
-        assert not isinstance(other, int)
-
-        if isinstance(other, Add):
-            l, r = other.l, other.r
-
-            if self == r:  # no-branch
-                return -l
-
-        return self + -other
+    @abstractmethod
+    def __sub__(self, other: Count) -> Count: ...
 
     def __rsub__(self, other: Count) -> Count:
         return other + -self
@@ -563,10 +555,14 @@ class Mul(Num):
 
             return -other + self
 
+        elif isinstance(other, Add):
+            if self == other.r:
+                return -(other.l)
+
         if other == l:
             return l * (r - 1)
 
-        return super().__sub__(other)
+        return self + -other
 
     def __floordiv__(self, other: Count) -> Count:
         if other == 1:
@@ -1195,6 +1191,12 @@ class Tet(Num):
         return super().__lt__(other)
 
     def __add__(self, other: Count) -> Count:
+        return self
+
+    def __sub__(self, other: Count) -> Count:
+        if other == self:
+            return 0
+
         return self
 
     def __radd__(self, other: int) -> Count:
