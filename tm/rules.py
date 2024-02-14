@@ -309,6 +309,9 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
         make_exp(mul, times)
     )
 
+    if add == 0:
+        return count * exp
+
     return (
         count * exp
         + add * (1 + ((exp - mul) // (mul - 1)))
