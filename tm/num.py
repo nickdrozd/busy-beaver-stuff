@@ -122,16 +122,8 @@ class Num:
     def __rsub__(self, other: Count) -> Count:
         return other + -self
 
-    def __mul__(self, other: Count) -> Count:
-        assert not isinstance(other, int)
-
-        if isinstance(other, Div):
-            return (self * other.num) // other.den
-
-        if isinstance(self, Mul):
-            return (self.l * other) * self.r
-
-        return make_mul(self, other)
+    @abstractmethod
+    def __mul__(self, other: Count) -> Count: ...
 
     @abstractmethod
     def __rmul__(self, other: int) -> Count: ...
@@ -270,7 +262,7 @@ class Add(Num):
         if isinstance(other, int):
             return other * self
 
-        return super().__mul__(other)
+        return make_mul(self, other)
 
     def __rmul__(self, other: int) -> Count:
         match other:
@@ -438,7 +430,10 @@ class Mul(Num):
             if other.multiplies_with(r):  # no-branch
                 return l * (r * other)
 
-        return super().__mul__(other)
+        elif isinstance(other, Div):
+            return (self * other.num) // other.den
+
+        return (self.l * other) * self.r
 
     def __rmul__(self, other: int) -> Count:
         l, r = self.l, self.r
@@ -1021,7 +1016,7 @@ class Exp(Num):
         if self.multiplies_with(r):  # no-branch
             return l * (self * r)
 
-        return super().__mul__(other)  # no-cover
+        return make_mul(self, other) # no-cover
 
     def __rmul__(self, other: int) -> Count:
         if other == 0:
@@ -1200,6 +1195,9 @@ class Tet(Num):
         return self
 
     def __radd__(self, other: int) -> Count:
+        return self
+
+    def __mul__(self, other: Count) -> Count:
         return self
 
     def __rmul__(self, other: int) -> Count:

@@ -1477,6 +1477,10 @@ class TestNum(TestCase):
             Tet(10, 3) - Exp(10, 10),
             "(10 ↑↑ 3)")
 
+        self.assert_num(
+            Tet(10, 3) * Exp(10, 10),
+            "(10 ↑↑ 3)")
+
         with self.assertRaises(NotImplementedError):
             int(Tet(10, 3))
 
