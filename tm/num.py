@@ -850,10 +850,10 @@ class Exp(Num):
         if mod == base:
             return 0
 
-        assert base % mod != 0
-
         if mod == 2:
             return base % 2
+
+        assert base % mod != 0
 
         exp = self.exp
 
