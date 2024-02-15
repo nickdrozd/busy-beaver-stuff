@@ -291,13 +291,7 @@ class Add(Num):
             if 0 < l and 0 < r:  # no-branch
                 return False
 
-        if other == l:
-            return r < 0
-
-        if other == r:
-            return l < 0
-
-        if isinstance(other, Add):
+        elif isinstance(other, Add):
             lo, ro = other.l, other.r
 
             if self == ro:  # no-cover
@@ -318,8 +312,15 @@ class Add(Num):
             if l < lo and r < lo:  # no-branch
                 return True
 
-        if isinstance(l, int) and abs(l) < 10:
-            return r < other
+        if other == r:
+            return l < 0
+
+        if isinstance(l, int):
+            if abs(l) < 10:
+                return r < other
+
+        elif other == l:
+            return r < 0
 
         return super().__lt__(other)
 
