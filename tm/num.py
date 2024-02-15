@@ -747,7 +747,7 @@ class Div(Num):
             return self.num < 0
 
         if not isinstance(other, Div):
-            return super().__lt__(other)
+            raise NotImplementedError(self, other)
 
         assert self.den == other.den, (self, other)
 
