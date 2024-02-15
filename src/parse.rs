@@ -50,8 +50,7 @@ pub const fn show_state(state: Option<State>) -> char {
     }
 }
 
-#[pyfunction]
-pub fn read_state(state: char) -> State {
+fn read_state(state: char) -> State {
     if state == HALT {
         -1
     } else {
