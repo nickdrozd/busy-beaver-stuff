@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape, init_stepped
+from tm.tape import Tape, init_stepped, show_number
 from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
-from tm.show import show_slot, show_number
+from tm.show import show_slot
 from tm.rules import RuleLimit, InfiniteRule, SuspectedRule
 from tm.macro import BlockMacro, BacksymbolMacro, MacroInfLoop, tcompile
 
