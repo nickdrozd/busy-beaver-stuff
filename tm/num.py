@@ -322,7 +322,7 @@ class Add(Num):
         elif other == l:
             return r < 0
 
-        return super().__lt__(other)
+        raise NotImplementedError(self, other)
 
 
 def make_mul(l: Count, r: Num) -> Mul:
