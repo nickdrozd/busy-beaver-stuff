@@ -99,3 +99,61 @@ fn read_instr(instr: &str) -> Option<Instr> {
 
     Some((read_color(color), read_shift(shift), read_state(state)))
 }
+
+/**************************************/
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn check_state(state: char) {
+        assert_eq!(state, show_state(Some(read_state(state))));
+    }
+
+    #[test]
+    fn test_state() {
+        let states = ['A', 'B', 'C', '_'];
+
+        for state in states {
+            check_state(state);
+        }
+    }
+
+    fn check_slot(slot: &str) {
+        assert_eq!(slot, show_slot(read_slot(slot)));
+    }
+
+    #[test]
+    fn test_slot() {
+        let slots = ["A0", "A1", "A2", "B0", "B1", "B2", "C0", "C1", "C2"];
+
+        for slot in slots {
+            check_slot(slot);
+        }
+    }
+
+    fn check_instr(instr: &str) {
+        assert_eq!(instr, show_instr(read_instr(instr)));
+    }
+
+    #[test]
+    fn test_instr() {
+        let instrs = ["1RB", "2LC", "1R_"];
+
+        for instr in instrs {
+            check_instr(instr);
+        }
+    }
+
+    #[test]
+    fn test_parse() {
+        assert_eq!(
+            vec![
+                vec![Some((1, true, 1)), Some((1, true, -1))],
+                vec![Some((1, false, 1)), Some((0, true, 2))],
+                vec![Some((1, false, 2)), Some((1, false, 0))],
+            ],
+            parse("1RB 1R_  1LB 0RC  1LC 1LA"),
+        );
+    }
+}
