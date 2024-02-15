@@ -1111,10 +1111,28 @@ class Exp(Num):
                 if r.exp <= exp:
                     return (self // r) < l
 
+            try:
+                if self <= r and l > 0:
+                    return True
+            except NotImplementedError:
+                pass
+
+            try:
+                if self <= l and r > 0:
+                    return True
+            except NotImplementedError:
+                pass
+
+            if self == r:
+                return 0 < l
+
+            if self == l:  # no-cover
+                return 0 < r
+
         elif isinstance(other, Tet):  # no-branch
             return other > self
 
-        return super().__lt__(other)
+        raise NotImplementedError(self, other)
 
     def __pow__(self, other: Count) -> Exp:
         return make_exp(self.base, self.exp * other)
