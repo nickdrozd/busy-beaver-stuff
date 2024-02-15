@@ -1162,7 +1162,7 @@ class Tet(Num):
 
     def __rpow__(self, other: int) -> Exp | Tet:
         if other != self.base:
-            return super().__rpow__(other)
+            return make_exp(other, self)
 
         return Tet(self.base, 1 + self.height)
 
@@ -1181,7 +1181,7 @@ class Tet(Num):
         if isinstance(other.exp, int) and 2 < self.height:
             return False
 
-        return super().__lt__(other)
+        raise NotImplementedError(self, other)
 
     def __add__(self, other: Count) -> Count:
         return self
