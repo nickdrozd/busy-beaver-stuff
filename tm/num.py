@@ -390,6 +390,10 @@ class Mul(Num):
             -round(log10(-l))
         )
 
+    @property
+    def is_exp_coef(self) -> bool:
+        return isinstance(self.r, Exp) and isinstance(self.l, int)
+
     def __neg__(self) -> Count:
         return -(self.l) * self.r
 
@@ -583,6 +587,28 @@ class Mul(Num):
 
             if r == lo:  # no-cover
                 return l < ro
+
+            if self.is_exp_coef and other.is_exp_coef:
+                # pylint: disable = line-too-long, no-else-return
+                assert isinstance(l, int) and isinstance(lo, int)
+                assert isinstance(r, Exp) and isinstance(ro, Exp)
+
+                assert (base := r.base) == ro.base
+
+                if (rexp := r.exp) == (roexp := ro.exp):
+                    return l < lo
+
+                if rexp < roexp:
+                    if not isinstance(diff := roexp - rexp, int):
+                        return True
+
+                    return ceil(l / lo) <= (base ** diff)  # type: ignore[no-any-return]
+
+                else:
+                    if not isinstance(diff := rexp - roexp, int):
+                        return False
+
+                    return ceil(lo / l) > (base ** diff)  # type: ignore[no-any-return]
 
         if l < 0:
             if other < 0:  # no-cover
