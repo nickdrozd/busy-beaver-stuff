@@ -1,3 +1,4 @@
+# type: ignore
 # pylint: disable = line-too-long, too-many-lines
 # pylint: disable = pointless-statement, expression-not-assigned
 
