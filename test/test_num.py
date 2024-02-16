@@ -68,9 +68,9 @@ class TestNum(TestCase):
         assert_num_counts({
             "adds": 2287,
             "divs": 2082,
-            "exps": 1256,
-            "muls": 1410,
-            "totl": 7035,
+            "exps": 1257,
+            "muls": 1412,
+            "totl": 7038,
         })
 
     def assert_mod(
@@ -837,6 +837,14 @@ class TestNum(TestCase):
             (
                 8191 * Exp(2, 13),
                 2 ** (-3 + Exp(2, 13)),
+            ))
+
+        self.assert_less_not_implemented(
+            9 * Exp(2, 87),
+            15 * Exp(2, 86),
+            (
+                9 * Exp(2, 87),
+                15 * Exp(2, 86),
             ))
 
         self.assert_less(
