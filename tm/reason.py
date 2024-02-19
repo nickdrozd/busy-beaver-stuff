@@ -154,13 +154,7 @@ class BackwardReasoner(Program):
                 for color in self.colors:
                     next_tape = tape.copy()
 
-                    _ = next_tape.step(
-                        not shift,
-                        next_tape.scan,
-                        False,
-                    )
-
-                    next_tape.scan = color
+                    next_tape.backstep(shift, color)
 
                     machine = machine.run(
                         sim_lim = step + 1,
@@ -176,13 +170,7 @@ class BackwardReasoner(Program):
 
                     yield_tape = tape.copy()
 
-                    _ = yield_tape.step(
-                        not shift,
-                        yield_tape.scan,
-                        False,
-                    )
-
-                    yield_tape.scan = color
+                    yield_tape.backstep(shift, color)
 
                     yield (
                         step + 1,

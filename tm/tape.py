@@ -536,6 +536,15 @@ class HeadTape:
             and not (self.rspan if edge else self.lspan)
         )
 
+    def backstep(self, shift: Shift, color: Color) -> None:
+        _ = self.step(
+            not shift,
+            self.scan,
+            False,
+        )
+
+        self.scan = color
+
     def step(self, shift: Shift, color: Color, skip: bool) -> int:
         pull, push = (
             (self.rspan, self.lspan)
