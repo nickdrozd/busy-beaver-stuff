@@ -526,6 +526,13 @@ class HeadTape:
             head = self.head,
         )
 
+    def basic_copy(self) -> BasicTape:
+        return BasicTape(
+            [HeadBlock(blk.color, blk.count) for blk in self.lspan],
+            self.scan,
+            [HeadBlock(blk.color, blk.count) for blk in self.rspan],
+        )
+
     @property
     def blank(self) -> bool:
         return self.scan == 0 and not self.lspan and not self.rspan
@@ -681,3 +688,78 @@ class HeadTape:
 
 def init_stepped() -> HeadTape:
     return HeadTape([HeadBlock(1, 1)], 0, [], head = 1)
+
+########################################
+
+@dataclass(slots = True)
+class BasicTape:
+    lspan: list[HeadBlock]
+    scan: Color
+    rspan: list[HeadBlock]
+
+    @property
+    def blank(self) -> bool:
+        return self.scan == 0 and not self.lspan and not self.rspan
+
+    def at_edge(self, edge: Shift) -> bool:
+        return (
+            self.scan == 0
+            and not (self.rspan if edge else self.lspan)
+        )
+
+    def backstep(self, shift: Shift, color: Color) -> None:
+        _ = self.step(
+            not shift,
+            self.scan,
+            False,
+        )
+
+        self.scan = color
+
+    def step(self, shift: Shift, color: Color, skip: bool) -> int:
+        pull, push = (
+            (self.rspan, self.lspan)
+            if shift else
+            (self.lspan, self.rspan)
+        )
+
+        push_block = (
+            pull.pop(0)
+            if skip and pull and pull[0].color == self.scan else
+            None
+        )
+
+        stepped = 1 if push_block is None else 1 + push_block.count
+
+        next_scan: Color
+
+        if not pull:
+            next_scan = 0
+        else:
+            next_pull = pull[0]
+
+            if next_pull.count != 1:
+                next_pull.count -= 1
+            else:
+                popped = pull.pop(0)
+
+                if push_block is None:
+                    push_block = popped
+                    push_block.count = 0
+
+            next_scan = next_pull.color
+
+        if push and (top_block := push[0]).color == color:
+            top_block.count += stepped
+        elif push or color != 0:
+            if push_block is None:
+                push_block = HeadBlock(color, 1)
+            else:
+                push_block.color = color
+                push_block.count += 1
+
+            push.insert(0, push_block)
+
+        self.scan = next_scan
+
+        return stepped

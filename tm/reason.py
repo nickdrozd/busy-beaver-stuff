@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
     from collections.abc import Callable, Iterator
 
+    from tm.tape import BasicTape
     from tm.program import Color, State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
@@ -152,7 +153,7 @@ class BackwardReasoner(Program):
                     continue
 
                 for color in self.colors:
-                    next_tape = tape.copy()
+                    next_tape = tape.basic_copy()
 
                     next_tape.backstep(shift, color)
 
@@ -207,7 +208,7 @@ class BasicMachine:
             *,
             sim_lim: int,
             state: State,
-            tape: HeadTape,
+            tape: BasicTape,
     ) -> Self:
         comp = self.comp
 
