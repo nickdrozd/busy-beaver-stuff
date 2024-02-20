@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class BackwardReasoner(Program):
     @property
     def cant_halt(self) -> bool:
-        def get_result(machine: BasicMachine) -> int | None:
+        def get_result(machine: BackstepMachine) -> int | None:
             final: int | None
             if (und := machine.undfnd):
                 final = und
@@ -39,7 +39,7 @@ class BackwardReasoner(Program):
 
     @property
     def cant_blank(self) -> bool:
-        def get_result(machine: BasicMachine) -> int | None:
+        def get_result(machine: BackstepMachine) -> int | None:
             final = (
                 min(blanks.values())
                 if (blanks := machine.blanks) else
@@ -55,7 +55,7 @@ class BackwardReasoner(Program):
 
     @property
     def cant_spin_out(self) -> bool:
-        def get_result(machine: BasicMachine) -> int | None:
+        def get_result(machine: BackstepMachine) -> int | None:
             final = machine.spnout
             machine.spnout = None
             return final
@@ -85,7 +85,7 @@ class BackwardReasoner(Program):
             for state, color in sorted(slots)
         ]
 
-        machine = BasicMachine(str(self))
+        machine = BackstepMachine(str(self))
 
         max_repeats = max_steps // 2
 
@@ -137,7 +137,7 @@ class BackwardReasoner(Program):
             step: int,
             state: State,
             tape: HeadTape,
-            machine: BasicMachine,
+            machine: BackstepMachine,
             get_result: GetResult,
     ) -> Iterator[Config]:
         for entry in sorted(self.graph.entry_points[state]):
@@ -151,7 +151,7 @@ class BackwardReasoner(Program):
                     continue
 
                 for color in self.colors:
-                    machine.run(
+                    machine.backstep_run(
                         sim_lim = step + 1,
                         init_tape = tape,
                         state = entry,
@@ -190,7 +190,7 @@ def cant_spin_out(prog: str) -> bool:
 
 ########################################
 
-class BasicMachine:
+class BackstepMachine:
     comp: Prog
 
     blanks: dict[State, int]
@@ -202,7 +202,7 @@ class BasicMachine:
     def __init__(self, prog: str):
         self.comp = tcompile(prog)
 
-    def run(self,
+    def backstep_run(self,
             *,
             sim_lim: int,
             state: State,
@@ -216,7 +216,7 @@ class BasicMachine:
 
         step: int = 0
 
-        tape = BasicTape(
+        tape = BackstepTape(
             [Block(blk.color, blk.count) for blk in init_tape.lspan],
             init_tape.scan,
             [Block(blk.color, blk.count) for blk in init_tape.rspan],
@@ -263,7 +263,7 @@ class Block:
 
 
 @dataclass(slots = True)
-class BasicTape:
+class BackstepTape:
     lspan: list[Block]
     scan: Color
     rspan: list[Block]
@@ -337,7 +337,7 @@ class BasicTape:
 
 
 if TYPE_CHECKING:
-    GetResult = Callable[[BasicMachine], int | None]
+    GetResult = Callable[[BackstepMachine], int | None]
 
 ########################################
 
