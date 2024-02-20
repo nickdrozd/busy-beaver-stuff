@@ -2,7 +2,6 @@
 #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
 #![allow(clippy::similar_names)]
-#![allow(clippy::missing_errors_doc)]
 #![allow(clippy::redundant_pub_crate)]
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::cast_sign_loss)]
