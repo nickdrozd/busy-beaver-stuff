@@ -92,7 +92,7 @@ impl BlockMeasure {
                 block.color = color;
                 block.count += 1;
             } else {
-                push_block = Some(Block { color, count: 1 });
+                push_block = Some(Block::new(color, 1));
             }
 
             if let Some(block) = push_block {
@@ -210,7 +210,7 @@ impl QuickTape {
                 block.color = color;
                 block.count += 1;
             } else {
-                push_block = Some(Block { color, count: 1 });
+                push_block = Some(Block::new(color, 1));
             }
 
             if let Some(block) = push_block {

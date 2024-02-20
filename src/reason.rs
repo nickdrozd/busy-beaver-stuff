@@ -108,7 +108,7 @@ struct BackstepTape {
 
 impl From<TupleBlock> for Block {
     fn from((color, count): TupleBlock) -> Self {
-        Self { color, count }
+        Self::new(color, count)
     }
 }
 
@@ -182,7 +182,7 @@ impl BackstepTape {
                 block.color = color;
                 block.count += 1;
             } else {
-                push_block = Some(Block { color, count: 1 });
+                push_block = Some(Block::new(color, 1));
             }
 
             if let Some(block) = push_block {
