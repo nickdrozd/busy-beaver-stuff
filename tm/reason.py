@@ -151,20 +151,12 @@ class BackwardReasoner(Program):
                     continue
 
                 for color in self.colors:
-                    next_tape = BasicTape(
-                        [Block(blk.color, blk.count)
-                             for blk in tape.lspan],
-                        tape.scan,
-                        [Block(blk.color, blk.count)
-                             for blk in tape.rspan],
-                    )
-
-                    next_tape.backstep(shift, color)
-
                     machine.run(
                         sim_lim = step + 1,
-                        tape = next_tape,
+                        init_tape = tape,
                         state = entry,
+                        shift = shift,
+                        color = color,
                     )
 
                     if not (result := get_result(machine)):
@@ -214,13 +206,23 @@ class BasicMachine:
             *,
             sim_lim: int,
             state: State,
-            tape: BasicTape,
+            shift: Shift,
+            color: Color,
+            init_tape: HeadTape,
     ) -> None:
         comp = self.comp
 
         self.blanks = {}
 
         step: int = 0
+
+        tape = BasicTape(
+            [Block(blk.color, blk.count) for blk in init_tape.lspan],
+            init_tape.scan,
+            [Block(blk.color, blk.count) for blk in init_tape.rspan],
+        )
+
+        tape.backstep(shift, color)
 
         for _ in range(sim_lim):
 
