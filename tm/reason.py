@@ -12,8 +12,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
     from tm.parse import Prog
-    from tm.tape import BasicTape
-    from tm.program import Color, State, Slot
+    from tm.program import Color, Shift, State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
 
@@ -152,7 +151,13 @@ class BackwardReasoner(Program):
                     continue
 
                 for color in self.colors:
-                    next_tape = tape.basic_copy()
+                    next_tape = BasicTape(
+                        [Block(blk.color, blk.count)
+                             for blk in tape.lspan],
+                        tape.scan,
+                        [Block(blk.color, blk.count)
+                             for blk in tape.rspan],
+                    )
 
                     next_tape.backstep(shift, color)
 
@@ -247,6 +252,86 @@ class BasicMachine:
 
                 if state == 0:
                     break
+
+
+@dataclass(slots = True)
+class Block:
+    color: Color
+    count: int
+
+
+@dataclass(slots = True)
+class BasicTape:
+    lspan: list[Block]
+    scan: Color
+    rspan: list[Block]
+
+    @property
+    def blank(self) -> bool:
+        return self.scan == 0 and not self.lspan and not self.rspan
+
+    def at_edge(self, edge: Shift) -> bool:
+        return (
+            self.scan == 0
+            and not (self.rspan if edge else self.lspan)
+        )
+
+    def backstep(self, shift: Shift, color: Color) -> None:
+        _ = self.step(
+            not shift,
+            self.scan,
+            False,
+        )
+
+        self.scan = color
+
+    def step(self, shift: Shift, color: Color, skip: bool) -> int:
+        pull, push = (
+            (self.rspan, self.lspan)
+            if shift else
+            (self.lspan, self.rspan)
+        )
+
+        push_block = (
+            pull.pop(0)
+            if skip and pull and pull[0].color == self.scan else
+            None
+        )
+
+        stepped = 1 if push_block is None else 1 + push_block.count
+
+        next_scan: Color
+
+        if not pull:
+            next_scan = 0
+        else:
+            next_pull = pull[0]
+
+            if next_pull.count != 1:
+                next_pull.count -= 1
+            else:
+                popped = pull.pop(0)
+
+                if push_block is None:
+                    push_block = popped
+                    push_block.count = 0
+
+            next_scan = next_pull.color
+
+        if push and (top_block := push[0]).color == color:
+            top_block.count += stepped
+        elif push or color != 0:
+            if push_block is None:
+                push_block = Block(color, 1)
+            else:
+                push_block.color = color
+                push_block.count += 1
+
+            push.insert(0, push_block)
+
+        self.scan = next_scan
+
+        return stepped
 
 
 if TYPE_CHECKING:
