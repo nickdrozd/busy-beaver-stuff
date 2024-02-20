@@ -9,10 +9,9 @@ from tm.program import Program
 from tm.tape import HeadTape
 
 if TYPE_CHECKING:
-    from typing import Self
-
     from collections.abc import Callable, Iterator
 
+    from tm.parse import Prog
     from tm.tape import BasicTape
     from tm.program import Color, State, Slot
 
@@ -157,7 +156,7 @@ class BackwardReasoner(Program):
 
                     next_tape.backstep(shift, color)
 
-                    machine = machine.run(
+                    machine.run(
                         sim_lim = step + 1,
                         tape = next_tape,
                         state = entry,
@@ -195,6 +194,8 @@ def cant_spin_out(prog: str) -> bool:
 ########################################
 
 class BasicMachine:
+    comp: Prog
+
     blanks: dict[State, int]
 
     halted: int | None = None
@@ -209,7 +210,7 @@ class BasicMachine:
             sim_lim: int,
             state: State,
             tape: BasicTape,
-    ) -> Self:
+    ) -> None:
         comp = self.comp
 
         self.blanks = {}
@@ -246,8 +247,6 @@ class BasicMachine:
 
                 if state == 0:
                     break
-
-        return self
 
 
 if TYPE_CHECKING:
