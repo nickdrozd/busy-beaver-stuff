@@ -2,13 +2,7 @@ use pyo3::prelude::*;
 
 use crate::instrs::{Color, Shift};
 use crate::parse::tcompile;
-
-type Count = u64;
-
-struct Block {
-    color: Color,
-    count: Count,
-}
+use crate::tape::{Block, Count};
 
 struct BlockMeasure {
     lspan: Vec<Block>,

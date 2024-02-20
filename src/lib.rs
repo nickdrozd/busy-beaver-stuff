@@ -14,6 +14,7 @@ mod parse;
 mod prover;
 mod reason;
 mod rules;
+mod tape;
 
 use pyo3::prelude::*;
 

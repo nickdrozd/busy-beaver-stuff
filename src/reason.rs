@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 
 use crate::instrs::{Color, Prog, Shift, State};
 use crate::parse::tcompile;
+use crate::tape::{Block, Count};
 
 type Step = u64;
 
@@ -95,13 +96,6 @@ impl BackstepMachine {
             }
         }
     }
-}
-
-type Count = u64;
-
-struct Block {
-    color: Color,
-    count: Count,
 }
 
 struct BackstepTape {
