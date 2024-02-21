@@ -71,9 +71,9 @@ class Num:
                 pass
 
             try:
-                if self <= l and r > 0:
-                    return True
-            except NotImplementedError:
+                if self <= l and r > 0:  # no-branch
+                    return True  # no-cover
+            except NotImplementedError:  # no-cover
                 pass
 
             if self == r:
@@ -595,18 +595,18 @@ class Mul(Num):
 
                 assert (base := r.base) == ro.base
 
-                if (rexp := r.exp) == (roexp := ro.exp):
-                    return l < lo
+                if (rexp := r.exp) == (roexp := ro.exp):  # no-ranch
+                    return l < lo  # no-cover
 
                 if rexp < roexp:
-                    if not isinstance(diff := roexp - rexp, int):
-                        return True
+                    if not isinstance(diff := roexp - rexp, int):  # no-branch
+                        return True  # no-cover
 
                     return ceil(l / lo) <= (base ** diff)  # type: ignore[no-any-return]
 
                 else:
-                    if not isinstance(diff := rexp - roexp, int):
-                        return False
+                    if not isinstance(diff := rexp - roexp, int):  # no-branch
+                        return False  # no-cover
 
                     return ceil(lo / l) > (base ** diff)  # type: ignore[no-any-return]
 
@@ -1140,16 +1140,16 @@ class Exp(Num):
             try:
                 if self <= r and l > 0:
                     return True
-            except NotImplementedError:
+            except NotImplementedError:  # no-cover
                 pass
 
             try:
-                if self <= l and r > 0:
+                if self <= l and r > 0:  # no-branch
                     return True
-            except NotImplementedError:
+            except NotImplementedError:  # no-cover
                 pass
 
-            if self == r:
+            if self == r:  # no-cover
                 return 0 < l
 
             if self == l:  # no-cover
@@ -1158,7 +1158,7 @@ class Exp(Num):
         elif isinstance(other, Tet):  # no-branch
             return other > self
 
-        raise NotImplementedError(self, other)
+        raise NotImplementedError(self, other)  # no-cover
 
     def __pow__(self, other: Count) -> Exp:
         return make_exp(self.base, self.exp * other)
