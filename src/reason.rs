@@ -12,16 +12,10 @@ type Step = u64;
 pub struct BackstepMachine {
     comp: Prog,
 
-    #[pyo3(get, set)]
     blanks: HashMap<State, Step>,
 
-    #[pyo3(get, set)]
     halted: Option<Step>,
-
-    #[pyo3(get, set)]
     spnout: Option<Step>,
-
-    #[pyo3(get, set)]
     undfnd: Option<Step>,
 }
 
@@ -41,6 +35,30 @@ impl BackstepMachine {
             spnout: None,
             undfnd: None,
         }
+    }
+
+    fn get_halt(&mut self) -> Option<Step> {
+        if self.undfnd.is_some() {
+            let result = self.undfnd;
+            self.undfnd = None;
+            result
+        } else if self.halted.is_some() {
+            let result = self.halted;
+            self.halted = None;
+            result
+        } else {
+            None
+        }
+    }
+
+    fn get_min_blank(&mut self) -> Option<Step> {
+        self.blanks.drain().map(|(_, value)| value).min()
+    }
+
+    fn get_spinout(&mut self) -> Option<Step> {
+        let result = self.spnout;
+        self.spnout = None;
+        result
     }
 
     fn backstep_run(

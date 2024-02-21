@@ -23,46 +23,22 @@ if TYPE_CHECKING:
 class BackwardReasoner(Program):
     @property
     def cant_halt(self) -> bool:
-        def get_result(machine: BackstepMachine) -> int | None:
-            final: int | None
-            if (und := machine.undfnd):
-                final = und
-                machine.undfnd = None
-            else:
-                final = machine.halted
-                machine.halted = None
-            return final
-
         return self.cant_reach(
-            get_result,
+            lambda machine: machine.get_halt(),
             self.halt_slots,
         )
 
     @property
     def cant_blank(self) -> bool:
-        def get_result(machine: BackstepMachine) -> int | None:
-            final = (
-                min(blanks.values())
-                if (blanks := machine.blanks) else
-                None
-            )
-            machine.blanks = {}
-            return final
-
         return self.cant_reach(
-            get_result,
+            lambda machine: machine.get_min_blank(),
             self.erase_slots,
         )
 
     @property
     def cant_spin_out(self) -> bool:
-        def get_result(machine: BackstepMachine) -> int | None:
-            final = machine.spnout
-            machine.spnout = None
-            return final
-
         return self.cant_reach(
-            get_result,
+            lambda machine: machine.get_spinout(),
             self.spinout_slots,
         )
 
