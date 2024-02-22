@@ -18,7 +18,6 @@ class MacroInfLoop(Exception):
 
 
 class MacroProg:
-    program: str | GetInstr
     comp: GetInstr
 
     base_states: int
@@ -35,8 +34,6 @@ class MacroProg:
     tape_to_color_cache: dict[tuple[Color, ...], Color]
 
     def __init__(self, program: str | GetInstr, cells: int):
-        self.program = program
-
         if isinstance(program, MacroProg):
             self.comp = program
 
@@ -158,6 +155,8 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
+    program: str | GetInstr
+
     cells: int
 
     def __init__(self, program: str | GetInstr, cell_seq: list[int]):
@@ -165,6 +164,8 @@ class BlockMacro(MacroProg):
 
         if seq:
             program = BlockMacro(program, seq)
+
+        self.program = program
 
         super().__init__(program, cells)
 
@@ -210,6 +211,8 @@ class BlockMacro(MacroProg):
 ########################################
 
 class BacksymbolMacro(MacroProg):
+    program: str | GetInstr
+
     cells: int
     backsymbols: int
 
@@ -218,6 +221,8 @@ class BacksymbolMacro(MacroProg):
 
         if seq:
             program = BacksymbolMacro(program, seq)
+
+        self.program = program
 
         super().__init__(program, cells)
 
