@@ -17,6 +17,30 @@ class MacroInfLoop(Exception):
     pass
 
 
+def prog_params(program: str | GetInstr) -> tuple[GetInstr, int, int]:
+    comp: GetInstr
+
+    if isinstance(program, MacroProg):
+        comp = program
+
+        base_states = program.macro_states
+        base_colors = program.macro_colors
+
+    elif isinstance(program, str):
+        comp = tcompile(program)
+
+        base_states = len(set(map(lambda s: s[0], comp)))
+        base_colors = len(set(map(lambda s: s[1], comp)))
+
+    else:
+        comp = program
+
+        base_states = len(program.states)  # type: ignore[attr-defined]
+        base_colors = len(program.colors)  # type: ignore[attr-defined]
+
+    return comp, base_states, base_colors
+
+
 class MacroProg:
     comp: GetInstr
 
@@ -34,24 +58,8 @@ class MacroProg:
     tape_to_color_cache: dict[tuple[Color, ...], Color]
 
     def __init__(self, program: str | GetInstr, cells: int):
-        if isinstance(program, MacroProg):
-            self.comp = program
-
-            self.base_states = program.macro_states
-            self.base_colors = program.macro_colors
-
-        elif isinstance(program, str):
-            self.comp = tcompile(program)
-
-            self.base_states = len(set(map(lambda s: s[0], self.comp)))
-            self.base_colors = len(set(map(lambda s: s[1], self.comp)))
-
-        else:
-            self.comp = program
-
-            # pylint: disable = line-too-long
-            self.base_states = len(program.states)  # type: ignore[attr-defined]
-            self.base_colors = len(program.colors)  # type: ignore[attr-defined]
+        self.comp, self.base_states, self.base_colors = \
+            prog_params(program)
 
         self.instrs = {}
 
