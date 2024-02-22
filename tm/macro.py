@@ -71,6 +71,9 @@ class MacroProg:
     def __len__(self) -> int:
         return len(self.instrs)
 
+    @abstractmethod
+    def __str__(self) -> str: ...
+
     def calculate_instr(
             self,
             macro_state: State,
