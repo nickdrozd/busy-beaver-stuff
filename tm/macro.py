@@ -31,12 +31,10 @@ class MacroProg:
 
     instrs: dict[Slot, Instr]
 
-    cells: int
-
     color_to_tape_cache: dict[Color, tuple[Color, ...]]
     tape_to_color_cache: dict[tuple[Color, ...], Color]
 
-    def __init__(self, program: str | GetInstr):
+    def __init__(self, program: str | GetInstr, cells: int):
         self.program = program
 
         if isinstance(program, MacroProg):
@@ -60,8 +58,8 @@ class MacroProg:
 
         self.instrs = {}
 
-        self.color_to_tape_cache = {}
         self.tape_to_color_cache = {}
+        self.color_to_tape_cache = { 0: (0,) * cells }
 
     def __getitem__(self, slot: Slot) -> Instr:
         try:
@@ -153,9 +151,6 @@ class MacroProg:
         return color
 
     def color_to_tape(self, color: Color) -> Tape:
-        if color == 0:
-            return [0] * self.cells
-
         assert (prev := self.color_to_tape_cache.get(color)) is not None
 
         return list(prev)
@@ -163,13 +158,15 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
+    cells: int
+
     def __init__(self, program: str | GetInstr, cell_seq: list[int]):
         *seq, cells = cell_seq
 
         if seq:
             program = BlockMacro(program, seq)
 
-        super().__init__(program)
+        super().__init__(program, cells)
 
         self.macro_states = self.base_states * 2
         self.macro_colors = self.base_colors ** cells
@@ -213,6 +210,7 @@ class BlockMacro(MacroProg):
 ########################################
 
 class BacksymbolMacro(MacroProg):
+    cells: int
     backsymbols: int
 
     def __init__(self, program: str | GetInstr, cell_seq: list[int]):
@@ -221,7 +219,7 @@ class BacksymbolMacro(MacroProg):
         if seq:
             program = BacksymbolMacro(program, seq)
 
-        super().__init__(program)
+        super().__init__(program, cells)
 
         self.macro_colors = self.base_colors
 
