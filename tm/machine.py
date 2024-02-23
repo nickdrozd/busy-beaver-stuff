@@ -33,7 +33,7 @@ TERM_CATS = (
 
 def find_opt_macro(prog: str, steps: int) -> str | GetInstr:
     if (blocks := opt_block(prog, steps)) > 1:
-        return BlockMacro(prog, [blocks])
+        return BlockMacro(prog, blocks)
 
     return prog
 
@@ -69,8 +69,8 @@ class Machine:
             self,
             program: str | GetInstr,
             *,
-            blocks: int | list[int] | None = None,
-            backsym: int | list[int] | None = None,
+            blocks: int | None = None,
+            backsym: int | None = None,
             opt_macro: int | None = None,
     ):
         if opt_macro is not None:
@@ -78,15 +78,9 @@ class Machine:
             program = find_opt_macro(program, opt_macro)
 
         if blocks is not None:
-            if isinstance(blocks, int):
-                blocks = [blocks]
-
             program = BlockMacro(program, blocks)
 
         if backsym is not None:
-            if isinstance(backsym, int):
-                backsym = [backsym]
-
             program = BacksymbolMacro(program, backsym)
 
         self.program = program

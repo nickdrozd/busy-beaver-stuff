@@ -58,8 +58,8 @@ class TestFloss(TestCase):
         self.assertIsNotNone(
             macro := Machine(
                 "1RB 0RA 1LB  2LA 2RB 0LA",
-                blocks = [3, 3],
-                backsym = [1, 1],
+                blocks = 3,
+                backsym = 1,
             ).run().comp)
 
         print(macro)

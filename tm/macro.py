@@ -192,12 +192,7 @@ class BlockMacro(MacroProg):
     _color_to_tape_cache: dict[Color, tuple[Color, ...]]
     _tape_to_color_cache: dict[tuple[Color, ...], Color]
 
-    def __init__(self, program: str | GetInstr, cell_seq: list[int]):
-        *seq, cells = cell_seq
-
-        if seq:
-            program = BlockMacro(program, seq)
-
+    def __init__(self, program: str | GetInstr, cells: int):
         self.program = program
 
         self._comp, self._base_states, self._base_colors = \
@@ -298,12 +293,7 @@ class BacksymbolMacro(MacroProg):
     _color_to_tape_cache: dict[Color, tuple[Color, ...]]
     _tape_to_color_cache: dict[tuple[Color, ...], Color]
 
-    def __init__(self, program: str | GetInstr, cell_seq: list[int]):
-        *seq, cells = cell_seq
-
-        if seq:
-            program = BacksymbolMacro(program, seq)
-
+    def __init__(self, program: str | GetInstr, cells: int):
         self.program = program
 
         self._comp, self._base_states, self._base_colors = \
