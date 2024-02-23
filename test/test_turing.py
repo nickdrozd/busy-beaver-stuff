@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from test.lin_rec import Tapes
-    from tm.machine import Count, GetInstr
+    from tm.machine import Count
 
     BasicMachine = (
         Machine
@@ -241,7 +241,7 @@ class TuringTest(TestCase):
 
     def run_bb(  # pylint: disable = too-many-arguments
             self,
-            prog: str | GetInstr,
+            prog: str,
             *,
             print_prog: bool = True,
             analyze: bool = True,
@@ -513,7 +513,7 @@ class TuringTest(TestCase):
             if is_macro := (
                     not isinstance(
                         macro := self.machine.program, str)):
-                result *= macro.cells  # type: ignore[attr-defined]
+                result *= macro.cells
 
             if isinstance(marks, int):
                 self.assertEqual(result, marks)

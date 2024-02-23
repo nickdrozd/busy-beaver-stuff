@@ -44,9 +44,6 @@ class Program:
             for instrs in self.prog.values()
         ])
 
-    def __len__(self) -> int:
-        return len(self.states) * len(self.colors)
-
     def __getitem__(self, slot: Slot) -> Instr:
         state, color = slot
 

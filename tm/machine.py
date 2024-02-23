@@ -31,7 +31,7 @@ TERM_CATS = (
 )
 
 
-def find_opt_macro(prog: str, steps: int) -> str | GetInstr:
+def find_opt_macro(prog: str, steps: int) -> str | BlockMacro:
     if (blocks := opt_block(prog, steps)) > 1:
         return BlockMacro(prog, blocks)
 
@@ -40,7 +40,7 @@ def find_opt_macro(prog: str, steps: int) -> str | GetInstr:
 ########################################
 
 class Machine:
-    program: str | GetInstr
+    program: str | BlockMacro | BacksymbolMacro
     comp: GetInstr
 
     tape: Tape
@@ -67,29 +67,33 @@ class Machine:
 
     def __init__(
             self,
-            program: str | GetInstr,
+            program: str,
             *,
             blocks: int | None = None,
             backsym: int | None = None,
             opt_macro: int | None = None,
     ):
+        prog: str | BlockMacro | BacksymbolMacro = program
+
         if opt_macro is not None:
-            assert isinstance(program, str)
-            program = find_opt_macro(program, opt_macro)
+            assert isinstance(prog, str)
+            prog = find_opt_macro(prog, opt_macro)
 
         if blocks is not None:
-            program = BlockMacro(program, blocks)
+            assert isinstance(prog, str)
+            prog = BlockMacro(prog, blocks)
 
         if backsym is not None:
-            program = BacksymbolMacro(program, backsym)
-
-        self.program = program
+            assert isinstance(prog, str | BlockMacro)
+            prog = BacksymbolMacro(prog, backsym)
 
         self.comp = (
-            tcompile(self.program)
-            if isinstance(self.program, str) else
-            self.program
+            tcompile(prog)
+            if isinstance(prog, str) else
+            prog
         )
+
+        self.program = prog
 
     @property
     def term_results(self) -> list[tuple[str, Result]]:

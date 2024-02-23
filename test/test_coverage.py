@@ -5,7 +5,6 @@ from unittest import TestCase
 from tm.machine import Machine, quick_term_or_rec
 
 from tm.reason import (
-    Program,
     cant_halt,
     cant_blank,
     cant_spin_out,
@@ -53,7 +52,7 @@ class TestFloss(TestCase):
             Machine(
                 "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
                 blocks = 2,
-            ).run())
+            ).run().simple_termination)
 
         self.assertIsNotNone(
             macro := Machine(
@@ -65,18 +64,6 @@ class TestFloss(TestCase):
         print(macro)
 
         self.assertEqual(len(macro), 0)
-
-        self.assertEqual(
-            Machine(
-                program := Program(
-                    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA"),
-                blocks = 3,
-            ).run().simple_termination,
-            -1)
-
-        self.assertEqual(
-            len(program),
-            10)
 
         self.assertIsNone(
             Machine(

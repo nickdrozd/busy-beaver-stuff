@@ -51,16 +51,10 @@ class MacroInfLoop(Exception):
     pass
 
 
-def prog_params(program: str | GetInstr) -> tuple[GetInstr, int, int]:
+def prog_params(program: str | MacroProg) -> tuple[GetInstr, int, int]:
     comp: GetInstr
 
-    if isinstance(program, MacroProg):
-        comp = program
-
-        base_states = program.macro_states
-        base_colors = program.macro_colors
-
-    elif isinstance(program, str):
+    if isinstance(program, str):
         comp = tcompile(program)
 
         base_states = len(set(map(lambda s: s[0], comp)))
@@ -69,8 +63,8 @@ def prog_params(program: str | GetInstr) -> tuple[GetInstr, int, int]:
     else:
         comp = program
 
-        base_states = len(program.states)  # type: ignore[attr-defined]
-        base_colors = len(program.colors)  # type: ignore[attr-defined]
+        base_states = program.macro_states
+        base_colors = program.macro_colors
 
     return comp, base_states, base_colors
 
@@ -197,7 +191,7 @@ class BlockMacro(MacroProg):
 
     converter: TapeColorConverter
 
-    def __init__(self, program: str | GetInstr, cells: int):
+    def __init__(self, program: str | MacroProg, cells: int):
         self.program = program
 
         self._comp, self._base_states, self._base_colors = \
@@ -288,7 +282,7 @@ class BacksymbolMacro(MacroProg):
 
     converter: TapeColorConverter
 
-    def __init__(self, program: str | GetInstr, cells: int):
+    def __init__(self, program: str | MacroProg, cells: int):
         self.program = program
 
         self._comp, self._base_states, self._base_colors = \
