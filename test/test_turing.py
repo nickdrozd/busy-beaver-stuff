@@ -784,6 +784,19 @@ class Fast(TuringTest):
         self.assertIsNotNone(
             self.machine.infrul)
 
+    def test_show_state_overflow(self):
+        self.run_bb(
+            "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
+            opt_macro = 4_000)
+
+        self.assert_macro_cells(41)
+
+        with self.assertRaises(OverflowError):
+            self.run_bb(
+                "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
+                opt_macro = 4_000,
+                watch_tape = True)
+
     def test_prover_false_positive(self):
         self.run_bb(
             "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
