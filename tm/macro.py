@@ -42,20 +42,41 @@ def prog_params(program: str | GetInstr) -> tuple[GetInstr, int, int]:
 
 
 class MacroProg:
-    comp: GetInstr
+    @property
+    @abstractmethod
+    def comp(self) -> GetInstr: ...
 
-    base_states: int
-    base_colors: int
+    @property
+    @abstractmethod
+    def base_states(self) -> int: ...
 
-    macro_states: int
-    macro_colors: int
+    @property
+    @abstractmethod
+    def base_colors(self) -> int: ...
 
-    sim_lim: int
+    @property
+    @abstractmethod
+    def macro_states(self) -> int: ...
 
-    instrs: dict[Slot, Instr]
+    @property
+    @abstractmethod
+    def macro_colors(self) -> int: ...
 
-    color_to_tape_cache: dict[Color, tuple[Color, ...]]
-    tape_to_color_cache: dict[tuple[Color, ...], Color]
+    @property
+    @abstractmethod
+    def sim_lim(self) -> int: ...
+
+    @property
+    @abstractmethod
+    def instrs(self) -> dict[Slot, Instr]: ...
+
+    @property
+    @abstractmethod
+    def color_to_tape_cache(self) -> dict[Color, tuple[Color, ...]]: ...
+
+    @property
+    @abstractmethod
+    def tape_to_color_cache(self) -> dict[tuple[Color, ...], Color]: ...
 
     def __getitem__(self, slot: Slot) -> Instr:
         try:
@@ -161,6 +182,16 @@ class BlockMacro(MacroProg):
 
     cells: int
 
+    _comp: GetInstr
+
+    _base_states: int
+    _base_colors: int
+
+    _instrs: dict[Slot, Instr]
+
+    _color_to_tape_cache: dict[Color, tuple[Color, ...]]
+    _tape_to_color_cache: dict[tuple[Color, ...], Color]
+
     def __init__(self, program: str | GetInstr, cell_seq: list[int]):
         *seq, cells = cell_seq
 
@@ -169,27 +200,60 @@ class BlockMacro(MacroProg):
 
         self.program = program
 
-        self.comp, self.base_states, self.base_colors = \
+        self._comp, self._base_states, self._base_colors = \
             prog_params(program)
 
-        self.instrs = {}
+        self._instrs = {}
 
-        self.tape_to_color_cache = {}
-        self.color_to_tape_cache = { 0: (0,) * cells }
-
-        self.macro_states = self.base_states * 2
-        self.macro_colors = self.base_colors ** cells
+        self._tape_to_color_cache = {}
+        self._color_to_tape_cache = { 0: (0,) * cells }
 
         self.cells = cells
 
-        self.sim_lim = (
+    def __str__(self) -> str:
+        return f'{self.program} ({self.cells}-cell block macro)'
+
+    @property
+    def comp(self) -> GetInstr:
+        return self._comp
+
+    @property
+    def base_states(self) -> int:
+        return self._base_states
+
+    @property
+    def base_colors(self) -> int:
+        return self._base_colors
+
+    @property
+    def macro_states(self) -> int:
+        return 2 * self.base_states
+
+    @property
+    def macro_colors(self) -> int:
+        macro_colors: int = self.base_colors ** self.cells
+
+        return macro_colors
+
+    @property
+    def sim_lim(self) -> int:
+        return (
             self.base_states
             * self.cells
             * self.macro_colors
         )
 
-    def __str__(self) -> str:
-        return f'{self.program} ({self.cells}-cell block macro)'
+    @property
+    def instrs(self) -> dict[Slot, Instr]:
+        return self._instrs
+
+    @property
+    def color_to_tape_cache(self) -> dict[Color, tuple[Color, ...]]:
+        return self._color_to_tape_cache
+
+    @property
+    def tape_to_color_cache(self) -> dict[tuple[Color, ...], Color]:
+        return self._tape_to_color_cache
 
     def deconstruct_inputs(
             self,
@@ -224,6 +288,16 @@ class BacksymbolMacro(MacroProg):
     cells: int
     backsymbols: int
 
+    _comp: GetInstr
+
+    _base_states: int
+    _base_colors: int
+
+    _instrs: dict[Slot, Instr]
+
+    _color_to_tape_cache: dict[Color, tuple[Color, ...]]
+    _tape_to_color_cache: dict[tuple[Color, ...], Color]
+
     def __init__(self, program: str | GetInstr, cell_seq: list[int]):
         *seq, cells = cell_seq
 
@@ -232,26 +306,56 @@ class BacksymbolMacro(MacroProg):
 
         self.program = program
 
-        self.comp, self.base_states, self.base_colors = \
+        self._comp, self._base_states, self._base_colors = \
             prog_params(program)
 
-        self.instrs = {}
+        self._instrs = {}
 
-        self.tape_to_color_cache = {}
-        self.color_to_tape_cache = { 0: (0,) * cells }
-
-        self.macro_colors = self.base_colors
+        self._tape_to_color_cache = {}
+        self._color_to_tape_cache = { 0: (0,) * cells }
 
         self.cells = cells
 
         self.backsymbols = self.base_colors ** self.cells
 
-        self.macro_states = 2 * self.base_states * self.backsymbols
-
-        self.sim_lim = self.macro_states * self.macro_colors
-
     def __str__(self) -> str:
         return f'{self.program} ({self.cells}-cell backsymbol macro)'
+
+    @property
+    def comp(self) -> GetInstr:
+        return self._comp
+
+    @property
+    def base_states(self) -> int:
+        return self._base_states
+
+    @property
+    def base_colors(self) -> int:
+        return self._base_colors
+
+    @property
+    def macro_states(self) -> int:
+        return 2 * self.base_states * self.backsymbols
+
+    @property
+    def macro_colors(self) -> int:
+        return self.base_colors
+
+    @property
+    def sim_lim(self) -> int:
+        return self.macro_states * self.macro_colors
+
+    @property
+    def instrs(self) -> dict[Slot, Instr]:
+        return self._instrs
+
+    @property
+    def color_to_tape_cache(self) -> dict[Color, tuple[Color, ...]]:
+        return self._color_to_tape_cache
+
+    @property
+    def tape_to_color_cache(self) -> dict[tuple[Color, ...], Color]:
+        return self._tape_to_color_cache
 
     def deconstruct_inputs(
             self,
