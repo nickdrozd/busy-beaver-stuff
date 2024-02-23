@@ -13,6 +13,40 @@ if TYPE_CHECKING:
 
 ########################################
 
+class TapeColorConverter:
+    base_colors: int
+
+    color_to_tape_cache: dict[Color, tuple[Color, ...]]
+    tape_to_color_cache: dict[tuple[Color, ...], Color]
+
+    def __init__(self, base_colors: int, cells: int):
+        self.base_colors = base_colors
+
+        self.tape_to_color_cache = {}
+        self.color_to_tape_cache = { 0: (0,) * cells }
+
+    def color_to_tape(self, color: Color) -> Tape:
+        assert (prev := self.color_to_tape_cache.get(color)) is not None
+
+        return list(prev)
+
+    def tape_to_color(self, tape: Tape) -> Color:
+        if (cached := self.tape_to_color_cache.get(
+                tuple_tape := tuple(tape))) is not None:
+            return cached
+
+        color: Color = sum(
+            value * self.base_colors ** place
+            for place, value in enumerate(reversed(tape))
+        )
+
+        self.tape_to_color_cache[tuple_tape] = color
+        self.color_to_tape_cache[color] = tuple_tape
+
+        return color
+
+########################################
+
 class MacroInfLoop(Exception):
     pass
 
@@ -69,14 +103,6 @@ class MacroProg:
     @property
     @abstractmethod
     def instrs(self) -> dict[Slot, Instr]: ...
-
-    @property
-    @abstractmethod
-    def color_to_tape_cache(self) -> dict[Color, tuple[Color, ...]]: ...
-
-    @property
-    @abstractmethod
-    def tape_to_color_cache(self) -> dict[tuple[Color, ...], Color]: ...
 
     def __getitem__(self, slot: Slot) -> Instr:
         try:
@@ -155,26 +181,6 @@ class MacroProg:
 
         return state, (cells <= pos, tape)
 
-    def tape_to_color(self, tape: Tape) -> Color:
-        if (cached := self.tape_to_color_cache.get(
-                tuple_tape := tuple(tape))) is not None:
-            return cached
-
-        color: Color = sum(
-            value * self.base_colors ** place
-            for place, value in enumerate(reversed(tape))
-        )
-
-        self.tape_to_color_cache[tuple_tape] = color
-        self.color_to_tape_cache[color] = tuple_tape
-
-        return color
-
-    def color_to_tape(self, color: Color) -> Tape:
-        assert (prev := self.color_to_tape_cache.get(color)) is not None
-
-        return list(prev)
-
 ########################################
 
 class BlockMacro(MacroProg):
@@ -189,8 +195,7 @@ class BlockMacro(MacroProg):
 
     _instrs: dict[Slot, Instr]
 
-    _color_to_tape_cache: dict[Color, tuple[Color, ...]]
-    _tape_to_color_cache: dict[tuple[Color, ...], Color]
+    converter: TapeColorConverter
 
     def __init__(self, program: str | GetInstr, cells: int):
         self.program = program
@@ -200,10 +205,9 @@ class BlockMacro(MacroProg):
 
         self._instrs = {}
 
-        self._tape_to_color_cache = {}
-        self._color_to_tape_cache = { 0: (0,) * cells }
-
         self.cells = cells
+
+        self.converter = TapeColorConverter(self.base_colors,self.cells)
 
     def __str__(self) -> str:
         return f'{self.program} ({self.cells}-cell block macro)'
@@ -242,14 +246,6 @@ class BlockMacro(MacroProg):
     def instrs(self) -> dict[Slot, Instr]:
         return self._instrs
 
-    @property
-    def color_to_tape_cache(self) -> dict[Color, tuple[Color, ...]]:
-        return self._color_to_tape_cache
-
-    @property
-    def tape_to_color_cache(self) -> dict[tuple[Color, ...], Color]:
-        return self._tape_to_color_cache
-
     def deconstruct_inputs(
             self,
             macro_state: State,
@@ -259,14 +255,14 @@ class BlockMacro(MacroProg):
 
         return state, (
             right_edge == 1,
-            self.color_to_tape(macro_color),
+            self.converter.color_to_tape(macro_color),
         )
 
     def reconstruct_outputs(self, config: Config) -> Instr:
         state, (right_edge, tape) = config
 
         return (
-            self.tape_to_color(tape),
+            self.converter.tape_to_color(tape),
             right_edge,
             (
                 (2 * state) + int(not right_edge)
@@ -290,8 +286,7 @@ class BacksymbolMacro(MacroProg):
 
     _instrs: dict[Slot, Instr]
 
-    _color_to_tape_cache: dict[Color, tuple[Color, ...]]
-    _tape_to_color_cache: dict[tuple[Color, ...], Color]
+    converter: TapeColorConverter
 
     def __init__(self, program: str | GetInstr, cells: int):
         self.program = program
@@ -301,12 +296,11 @@ class BacksymbolMacro(MacroProg):
 
         self._instrs = {}
 
-        self._tape_to_color_cache = {}
-        self._color_to_tape_cache = { 0: (0,) * cells }
-
         self.cells = cells
 
         self.backsymbols = self.base_colors ** self.cells
+
+        self.converter = TapeColorConverter(self.base_colors,self.cells)
 
     def __str__(self) -> str:
         return f'{self.program} ({self.cells}-cell backsymbol macro)'
@@ -339,14 +333,6 @@ class BacksymbolMacro(MacroProg):
     def instrs(self) -> dict[Slot, Instr]:
         return self._instrs
 
-    @property
-    def color_to_tape_cache(self) -> dict[Color, tuple[Color, ...]]:
-        return self._color_to_tape_cache
-
-    @property
-    def tape_to_color_cache(self) -> dict[tuple[Color, ...], Color]:
-        return self._tape_to_color_cache
-
     def deconstruct_inputs(
             self,
             macro_state: State,
@@ -357,9 +343,9 @@ class BacksymbolMacro(MacroProg):
         state, backsymbol = divmod(st_co, self.backsymbols)
 
         tape = (
-            [macro_color] + self.color_to_tape(backsymbol)
+            [macro_color] + self.converter.color_to_tape(backsymbol)
             if at_right else
-            self.color_to_tape(backsymbol) + [macro_color]
+            self.converter.color_to_tape(backsymbol) + [macro_color]
         )
 
         return state, (not at_right, tape)
@@ -379,7 +365,7 @@ class BacksymbolMacro(MacroProg):
             (
                 int(not right_edge)
                 + (2
-                   * (self.tape_to_color(backsymbol)
+                   * (self.converter.tape_to_color(backsymbol)
                       + (state
                          * self.backsymbols)))
                 if state != -1 else
