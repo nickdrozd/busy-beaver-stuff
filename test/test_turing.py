@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from math import isclose, log10
 from typing import TYPE_CHECKING
-from itertools import product
 from unittest import TestCase, skip, expectedFailure
 
 # pylint: disable-next = wildcard-import, unused-wildcard-import
@@ -247,8 +246,8 @@ class TuringTest(TestCase):
             print_prog: bool = True,
             analyze: bool = True,
             normal: bool = True,
-            blocks: int | list[int] | None = None,
-            backsym: int | list[int] | None = None,
+            blocks: int | None = None,
+            backsym: int | None = None,
             opt_macro: int | None = None,
             prover: bool = True,
             check_rec: int | None = None,
@@ -564,107 +563,6 @@ class TuringTest(TestCase):
                     prog,
                     SUSPECTED_RULES)
 
-    def _test_macro_cycles(self, prog_data: MacroCycles):
-        for program, cycleses in prog_data.items():
-            if isinstance(program, tuple):
-                prog, opt = program
-                sim_lim = opt
-            else:
-                assert isinstance(program, str)
-                prog, opt, sim_lim = program, 0, None
-
-            macro_params = (
-                (None, None),
-                (2, None),
-                (3, None),
-                (None, 1),
-                (2, 1),
-                (3, 1),
-                (None, [1, 1]),
-                (None, 1, 2),
-                (None, 1, 3),
-            )
-
-            self.assertEqual(
-                len(cycleses),
-                len(macro_params))
-
-            run_lim = (
-                20_000 if opt is None else
-                sim_lim  if sim_lim is not None else
-                10 ** 10
-            )
-
-            for cycles, params in zip(cycleses, macro_params):
-                if (cycles is not None and cycles > 10_000_000):
-                    continue
-
-                match params:
-                    case (blocks, backsym):
-                        assert isinstance(blocks, int | None)
-                        assert isinstance(backsym, int | list | None)
-
-                        self.run_bb(
-                            prog,
-                            blocks = blocks,
-                            backsym = backsym,
-                            sim_lim = run_lim,
-                            prover = False,
-                        )
-
-                    case (_, backsym, blocks):
-                        self.run_bb(
-                            Machine(prog, backsym = backsym).program,
-                            blocks = blocks,
-                            sim_lim = run_lim,
-                            prover = False,
-                        )
-
-                assert isinstance(self.machine, QuickMachine)
-
-                self.assertEqual(
-                    cycles,
-                    None
-                    if (self.machine.simple_termination is None
-                        and opt is None) else
-                    self.machine.cycles
-                    if sim_lim is None else
-                    self.machine.steps)
-
-                if (sim_lim is None
-                        and not isinstance(
-                            macro := self.machine.program,
-                            str)):
-                    self.assertTrue(
-                        len(macro) <= 60,
-                        (len(macro), str(macro)))
-
-    def _test_block_macro_steps(
-            self,
-            wraps: int,
-            cells: int,
-            rel_tol: float = .001,
-    ):
-        for prog, steps in BLOCK_MACRO_STEPS.items():
-            for wrap, cell in product(range(1, wraps), range(1, cells)):
-                self.run_bb(
-                    prog,
-                    blocks = [cell] * wrap,
-                    prover = False,
-                )
-
-                assert isinstance(self.machine, QuickMachine)
-
-                assert isinstance(
-                    term := self.machine.simple_termination,
-                    int)
-
-                self.assert_close(
-                    term,
-                    steps / (cell ** wrap),
-                    rel_tol = rel_tol,
-                )
-
 
 class Reasoner(TuringTest):
     def test_undefined(self):
@@ -851,30 +749,6 @@ class Fast(TuringTest):
         self.assertEqual(
             self.machine.infrul,
             -1)
-
-    def test_block_macro_steps(self):
-        self._test_block_macro_steps(4, 5)
-
-    def test_macro_cycles(self):
-        self._test_macro_cycles(MACRO_CYCLES_FAST)
-
-    def test_macro_multi_backsymbol(self):
-        for prog in HALT | SPINOUT:
-            if len(prog) > 35:
-                continue
-
-            if prog == "1RB ...  0L_ ...":
-                continue
-
-            for back in range(1, 4):
-                self.run_bb(
-                    prog,
-                    backsym = [back] * back)
-
-                assert isinstance(self.machine, Machine)
-
-                self.assertIsNotNone(
-                    self.machine.simple_termination)
 
     def test_rule_limit(self):
         for prog, reason in RULE_LIMIT.items():
@@ -1130,6 +1004,3 @@ class Slow(TuringTest):
 
     def test_recur(self):
         self._test_recur(RECUR_SLOW, quick = False)
-
-    def test_macro_cycles(self):
-        self._test_macro_cycles(MACRO_CYCLES_SLOW)
