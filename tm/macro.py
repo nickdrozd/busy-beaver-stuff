@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from collections import defaultdict
 
 from tm.parse import tcompile
 
@@ -12,6 +13,21 @@ if TYPE_CHECKING:
     Config = tuple[State, tuple[bool, Tape]]
 
 ########################################
+
+CONVERTERS: dict[
+    int,
+    dict[int, TapeColorConverter],
+] = defaultdict(dict)
+
+
+def make_converter(base_colors: int, cells: int) -> TapeColorConverter:
+    if (cached := CONVERTERS[base_colors].get(cells)) is not None:
+        return cached
+
+    converter = TapeColorConverter(base_colors, cells)
+    CONVERTERS[base_colors][cells] = converter
+    return converter
+
 
 class TapeColorConverter:
     base_colors: int
@@ -201,7 +217,7 @@ class BlockMacro(MacroProg):
 
         self.cells = cells
 
-        self.converter = TapeColorConverter(self.base_colors,self.cells)
+        self.converter = make_converter(self.base_colors, self.cells)
 
     def __str__(self) -> str:
         return f'{self.program} ({self.cells}-cell block macro)'
@@ -294,7 +310,7 @@ class BacksymbolMacro(MacroProg):
 
         self.backsymbols = self.base_colors ** self.cells
 
-        self.converter = TapeColorConverter(self.base_colors,self.cells)
+        self.converter = make_converter(self.base_colors, self.cells)
 
     def __str__(self) -> str:
         return f'{self.program} ({self.cells}-cell backsymbol macro)'
