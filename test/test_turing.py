@@ -673,7 +673,7 @@ class Fast(TuringTest):
     def test_holdouts(self):
         self.assertEqual(
             len(holdouts := get_holdouts()),
-            1198)
+            1709)
 
         for prog in holdouts:
             self.assertFalse(

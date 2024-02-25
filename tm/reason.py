@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from dataclasses import dataclass
 from collections import defaultdict
 
 from tm.program import Program
@@ -11,7 +10,7 @@ from tm.rust_stuff import BackstepMachine
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from tm.program import Color, State, Slot
+    from tm.program import State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
 
@@ -49,28 +48,18 @@ class BackwardReasoner(Program):
             max_steps: int = 24,
             max_cycles: int = 1_000,
     ) -> bool:
-        configs: list[tuple[Config, int, History]] = [
-            (
-                (
-                    1,
-                    state,
-                    HeadTape(scan = color),
-                ),
-                0,
-                History(),
-            )
+        configs: list[Config] = [
+            (1, state, HeadTape(scan = color))
             for state, color in sorted(slots)
         ]
 
         machine = BackstepMachine(str(self))
 
-        max_repeats = max_steps // 2
-
         seen: dict[State, set[HeadTape]] = defaultdict(set)
 
-        for _ in range(max_cycles):
+        for _ in range(max_cycles):  # no-branch
             try:
-                (step, state, tape), repeat, history = configs.pop()
+                step, state, tape = configs.pop()
             except IndexError:
                 return True
 
@@ -85,29 +74,13 @@ class BackwardReasoner(Program):
 
             seen[state].add(tape)
 
-            history.update(state, tape.scan, tape)
-
-            if not history.check_rec():
-                repeat = 0
-            else:
-                repeat += 1
-
-                if repeat > max_repeats:
-                    continue
-
             # print(step, state, tape)
 
             for config in self.branch_back(
                     step, state, tape, machine, get_result):
-                next_history = History(prev = history)
+                configs.append(config)
 
-                configs.append((
-                    config,
-                    repeat,
-                    next_history,
-                ))
-
-        return False
+        return False  # no-cover
 
     def branch_back(
             self,
@@ -164,54 +137,3 @@ def cant_blank(prog: str) -> bool:
 
 def cant_spin_out(prog: str) -> bool:
     return BackwardReasoner(prog).cant_spin_out
-
-########################################
-
-@dataclass(slots = True)
-class History:
-    state: State | None = None
-    scan: Color | None = None
-    head: int | None = None
-    tape: HeadTape | None = None
-    prev: History | None = None
-
-    def update(self, state: State, scan: Color, tape: HeadTape) -> None:
-        self.state = state
-        self.scan = scan
-        self.head = tape.head
-        self.tape = tape.copy()
-
-    def __iter__(self) -> Iterator[History]:
-        prev = self.prev
-
-        while prev:  # pylint: disable = while-used
-            yield prev
-
-            prev = prev.prev
-
-    def check_rec(self) -> bool:
-        assert (curr_head := self.head) is not None
-
-        leftmost = rightmost = curr_head
-
-        curr_tape = self.tape
-        assert curr_tape is not None
-
-        for prev in self:
-            if self.state != prev.state or self.scan != prev.scan:
-                continue
-
-            assert (prev_head := prev.head) is not None
-
-            if prev_head < leftmost:
-                leftmost = prev_head
-            elif rightmost < prev_head:
-                rightmost = prev_head
-
-            prev_tape = prev.tape
-            assert prev_tape is not None
-
-            if curr_tape.aligns_with(prev_tape, leftmost, rightmost):
-                return True
-
-        return False

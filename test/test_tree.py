@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from test.utils import read_progs
 from test.lin_rec import LooseLinRecMachine
+from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 
 from tm.machine import Machine, quick_term_or_rec
 from tm.reason import BackwardReasoner, cant_halt, cant_spin_out
@@ -102,8 +103,9 @@ class TestTree(TestCase):
             self.assertTrue(
                 prog.cant_halt)
 
-            self.assertTrue(
-                prog.cant_blank)
+            if prog not in CANT_BLANK_FALSE_NEGATIVES:
+                self.assertTrue(
+                    prog.cant_blank)
 
             self.assertTrue(
                 prog.cant_spin_out)
@@ -391,5 +393,5 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            137,
+            648,
             'holdouts_42q')
