@@ -8,12 +8,13 @@ def run(prog: str) -> None:
 
     print('infrul' if machine.infrul else machine.limrul)
 
-    assert not isinstance(marks := machine.marks, int)
+    if not isinstance(marks := machine.marks, int):
+        marks = marks.estimate()
 
     print('\n'.join([
         f'        "{prog.strip()}": (',
         f'            {machine.cycles},',
-        f'            "{marks.estimate()}",',
+        f'            "{marks}",',
         f'            "{marks}",',
         f'            "{show_number(machine.rulapp)}",',
         '        ),',
