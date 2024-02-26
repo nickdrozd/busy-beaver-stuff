@@ -628,15 +628,10 @@ class HeadTape:
 
                     break
 
-                assert isinstance(count, int)
-
                 tape.extend(
                     [block.color] * count)
 
                 diff -= count
-
-                if diff <= 0:  # no-cover
-                    break
 
             else:
                 assert diff > 0
@@ -649,8 +644,6 @@ class HeadTape:
         tape.append(self.scan)
 
         for block in rspan:
-            assert isinstance(block.count, int)
-
             tape.extend(
                 [block.color] * block.count)
 
