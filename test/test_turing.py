@@ -15,7 +15,7 @@ from test.lin_rec import (
     LooseLinRecMachine,
     StrictLinRecMachine,
 )
-from test.utils import get_holdouts
+from test.utils import get_holdouts, read_holdouts
 
 from tm.reason import (
     Program,
@@ -643,6 +643,15 @@ class Reasoner(TuringTest):
             self.assert_cant_halt(prog)
             self.assert_cant_blank(prog)
             self.assert_cant_spin_out(prog)
+
+    def test_holdouts(self):
+        for cat in ('42h', '24h'):
+            for prog in read_holdouts(cat):
+                self.assert_could_halt(prog)
+
+        for prog in read_holdouts('42q'):
+            self.assert_cant_halt(prog)
+            self.assert_could_spin_out(prog)
 
 
 class Fast(TuringTest):

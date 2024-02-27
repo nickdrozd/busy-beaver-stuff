@@ -908,6 +908,10 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 0LA ...  1LB 2LA 0RB",
     "1RB 2LA 0RB  2LA ... 1RA",
 
+    "1RB ...  1LC 1RD  1LA 0LC  0RD 0LA",
+    "1RB 0LD  1LC 0RB  0LC 1LD  0RA ...",
+    "1RB 1LC  0LA ...  1RD 0LC  0RD 0RB",
+
     "1RB 1RA  1RC ...  0RD 0RC  1LD 1LE  1RA 1LC",
     "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
     "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA",
