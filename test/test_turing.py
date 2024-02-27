@@ -32,6 +32,7 @@ from tm.machine import (
 )
 
 from tools.instr_seq import instr_seq
+from tools.normalize import Normalizer
 
 if TYPE_CHECKING:
     from typing import Any
@@ -113,7 +114,7 @@ class TuringTest(TestCase):
             prog)
 
         self.assertTrue(
-            prog == Program(prog).normalize()
+            prog == Normalizer(prog).normalize()
             or prog.startswith('0')
         )
 

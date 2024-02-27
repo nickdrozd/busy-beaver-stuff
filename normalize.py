@@ -1,7 +1,7 @@
 import sys
 
-from tm.program import Program
+from tools.normalize import Normalizer
 
 if __name__ == '__main__':
     for prog in sys.stdin:
-        print(Program(prog).normalize())
+        print(Normalizer(prog).normalize())

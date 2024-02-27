@@ -4,6 +4,7 @@ from test.prog_data import BRANCH, PROGS, NORMALIZE
 
 from tm.program import Program
 from tm.show import show_slot, show_state
+from tools.normalize import Normalizer
 
 
 class TestProgram(TestCase):
@@ -64,14 +65,16 @@ class TestProgram(TestCase):
 
         for norm, devs in NORMALIZE.items():
             for dev in devs:
-                program = Program(dev)
-                normalized = program.normalize()
+                normalized = Normalizer(dev)
 
                 self.assertEqual(
                     norm,
-                    normalized)
+                    normalized.normalize())
+
+                program = Program(dev)
 
                 progs.add(program)
+                progs.add(normalized)
 
                 self.assertIn(program, progs)
                 self.assertIn(normalized, progs)
