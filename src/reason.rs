@@ -8,57 +8,33 @@ use crate::tape::{Block, Count};
 
 type Step = u64;
 
-#[pyclass]
-pub struct BackstepMachine {
-    comp: Prog,
-
-    blanks: HashMap<State, Step>,
-
-    halted: Option<Step>,
-    spnout: Option<Step>,
-    undfnd: Option<Step>,
-}
-
 type TupleBlock = (Color, Count);
 type TupleTape = (Vec<TupleBlock>, Color, Vec<TupleBlock>);
 
+/**************************************/
+
+#[pyclass]
+pub struct BackstepMachineHalt {
+    comp: Prog,
+}
+
+#[pyclass]
+pub struct BackstepMachineBlank {
+    comp: Prog,
+}
+
+#[pyclass]
+pub struct BackstepMachineSpinout {
+    comp: Prog,
+}
+
 #[pymethods]
-impl BackstepMachine {
+impl BackstepMachineHalt {
     #[new]
     fn new(prog: &str) -> Self {
         Self {
             comp: tcompile(prog),
-
-            blanks: HashMap::new(),
-
-            halted: None,
-            spnout: None,
-            undfnd: None,
         }
-    }
-
-    fn get_halt(&mut self) -> Option<Step> {
-        if self.undfnd.is_some() {
-            let result = self.undfnd;
-            self.undfnd = None;
-            result
-        } else if self.halted.is_some() {
-            let result = self.halted;
-            self.halted = None;
-            result
-        } else {
-            None
-        }
-    }
-
-    fn get_min_blank(&mut self) -> Option<Step> {
-        self.blanks.drain().map(|(_, value)| value).min()
-    }
-
-    fn get_spinout(&mut self) -> Option<Step> {
-        let result = self.spnout;
-        self.spnout = None;
-        result
     }
 
     fn backstep_run(
@@ -68,10 +44,8 @@ impl BackstepMachine {
         mut state: State,
         shift: Shift,
         color: Color,
-    ) {
+    ) -> Option<Step> {
         let mut step = 0;
-
-        self.blanks.clear();
 
         let mut tape = BackstepTape::new(init_tape);
 
@@ -79,14 +53,12 @@ impl BackstepMachine {
 
         for _ in 0..sim_lim {
             let Some(&(color, shift, next_state)) = self.comp.get(&(state, tape.scan)) else {
-                self.undfnd = Some(step);
-                break;
+                return Some(step);
             };
 
             let same = state == next_state;
 
             if same && tape.at_edge(shift) {
-                self.spnout = Some(step);
                 break;
             }
 
@@ -95,26 +67,129 @@ impl BackstepMachine {
             step += stepped;
 
             if next_state == -1 {
-                self.halted = Some(step);
+                return Some(step);
+            }
+
+            state = next_state;
+        }
+
+        None
+    }
+}
+
+#[pymethods]
+impl BackstepMachineBlank {
+    #[new]
+    fn new(prog: &str) -> Self {
+        Self {
+            comp: tcompile(prog),
+        }
+    }
+
+    fn backstep_run(
+        &mut self,
+        sim_lim: Step,
+        init_tape: TupleTape,
+        mut state: State,
+        shift: Shift,
+        color: Color,
+    ) -> Option<Step> {
+        let mut step = 0;
+
+        let mut blanks: HashMap<State, Step> = HashMap::new();
+
+        let mut tape = BackstepTape::new(init_tape);
+
+        tape.backstep(shift, color);
+
+        for _ in 0..sim_lim {
+            let Some(&(color, shift, next_state)) = self.comp.get(&(state, tape.scan)) else {
+                break;
+            };
+
+            let same = state == next_state;
+
+            if same && tape.at_edge(shift) {
+                break;
+            }
+
+            let stepped = tape.step(shift, color, same);
+
+            step += stepped;
+
+            if next_state == -1 {
                 break;
             }
 
             state = next_state;
 
             if color == 0 && tape.blank() {
-                if self.blanks.contains_key(&state) {
+                if blanks.contains_key(&state) {
                     break;
                 }
 
-                self.blanks.insert(state, step);
+                blanks.insert(state, step);
 
                 if state == 0 {
                     break;
                 }
             }
         }
+
+        blanks.drain().map(|(_, value)| value).min()
     }
 }
+
+#[pymethods]
+impl BackstepMachineSpinout {
+    #[new]
+    fn new(prog: &str) -> Self {
+        Self {
+            comp: tcompile(prog),
+        }
+    }
+
+    fn backstep_run(
+        &mut self,
+        sim_lim: Step,
+        init_tape: TupleTape,
+        mut state: State,
+        shift: Shift,
+        color: Color,
+    ) -> Option<Step> {
+        let mut step = 0;
+
+        let mut tape = BackstepTape::new(init_tape);
+
+        tape.backstep(shift, color);
+
+        for _ in 0..sim_lim {
+            let Some(&(color, shift, next_state)) = self.comp.get(&(state, tape.scan)) else {
+                break;
+            };
+
+            let same = state == next_state;
+
+            if same && tape.at_edge(shift) {
+                return Some(step);
+            }
+
+            let stepped = tape.step(shift, color, same);
+
+            step += stepped;
+
+            if next_state == -1 {
+                break;
+            }
+
+            state = next_state;
+        }
+
+        None
+    }
+}
+
+/**************************************/
 
 struct BackstepTape {
     lspan: Vec<Block>,

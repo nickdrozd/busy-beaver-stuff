@@ -5,18 +5,24 @@ from collections import defaultdict
 
 from tm.program import Program
 from tm.tape import BackstepTape
-from tm.rust_stuff import BackstepMachine
+from tm.rust_stuff import (
+    BackstepMachineHalt,
+    BackstepMachineBlank,
+    BackstepMachineSpinout,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from tm.program import State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
 
     Config = tuple[int, State, BackstepTape]
 
-    GetResult = Callable[[BackstepMachine], int | None]
+    BackstepMachine = (
+        BackstepMachineHalt
+        | BackstepMachineBlank
+        | BackstepMachineSpinout
+    )
 
 ########################################
 
@@ -24,7 +30,7 @@ def cant_halt(prog: str) -> bool:
     return cant_reach(
         program := Program(prog),
         program.halt_slots,
-        lambda machine: machine.get_halt(),
+        BackstepMachineHalt(prog),
     )
 
 
@@ -32,7 +38,7 @@ def cant_blank(prog: str) -> bool:
     return cant_reach(
         program := Program(prog),
         program.erase_slots,
-        lambda machine: machine.get_min_blank(),
+        BackstepMachineBlank(prog),
     )
 
 
@@ -40,7 +46,7 @@ def cant_spin_out(prog: str) -> bool:
     return cant_reach(
         program := Program(prog),
         program.spinout_slots,
-        lambda machine: machine.get_spinout(),
+        BackstepMachineSpinout(prog),
     )
 
 ########################################
@@ -48,7 +54,7 @@ def cant_spin_out(prog: str) -> bool:
 def cant_reach(
         program: Program,
         slots: tuple[Slot, ...],
-        get_result: GetResult,
+        machine: BackstepMachine,
         max_steps: int = 24,
         max_cycles: int = 1_000,
 ) -> bool:
@@ -56,8 +62,6 @@ def cant_reach(
         (1, state, BackstepTape(scan = color))
         for state, color in sorted(slots)
     ]
-
-    machine = BackstepMachine(str(program))
 
     seen: dict[State, set[BackstepTape]] = defaultdict(set)
 
@@ -91,7 +95,7 @@ def cant_reach(
                     continue
 
                 for color in program.colors:
-                    machine.backstep_run(
+                    result = machine.backstep_run(
                         sim_lim = step + 1,
                         init_tape = tape.to_tuples(),
                         state = entry,
@@ -99,7 +103,7 @@ def cant_reach(
                         color = color,
                     )
 
-                    if not (result := get_result(machine)):
+                    if not result:
                         continue
 
                     if abs(result - step) > 1:

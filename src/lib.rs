@@ -21,7 +21,7 @@ use pyo3::prelude::*;
 use blocks::{measure_blocks, unroll_tape};
 use parse::{parse as parse_fn, read_slot, show_instr, show_slot, show_state, tcompile};
 use prover::PastConfigs;
-use reason::BackstepMachine;
+use reason::{BackstepMachineBlank, BackstepMachineHalt, BackstepMachineSpinout};
 use rules::{InfiniteRule, RuleLimit, UnknownRule};
 
 #[pymodule]
@@ -47,7 +47,9 @@ fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("RuleLimit", py.get_type::<RuleLimit>())?;
 
     // reason
-    m.add_class::<BackstepMachine>()?;
+    m.add_class::<BackstepMachineHalt>()?;
+    m.add_class::<BackstepMachineBlank>()?;
+    m.add_class::<BackstepMachineSpinout>()?;
 
     Ok(())
 }

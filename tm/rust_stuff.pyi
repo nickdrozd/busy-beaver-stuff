@@ -68,18 +68,8 @@ TupleTape = tuple[
     tuple[TupleBlock, ...],
 ]
 
-class BackstepMachine:
-    blanks: dict[State, int]
-
-    halted: int | None
-    spnout: int | None
-    undfnd: int | None
-
+class BackstepMachineHalt:
     def __init__(self, prog: str): ...
-
-    def get_halt(self) -> int | None: ...
-    def get_spinout(self) -> int | None: ...
-    def get_min_blank(self) -> int | None: ...
 
     def backstep_run(
             self,
@@ -88,4 +78,28 @@ class BackstepMachine:
             state: State,
             shift: Shift,
             color: Color,
-    ) -> None: ...
+    ) -> int | None: ...
+
+class BackstepMachineBlank:
+    def __init__(self, prog: str): ...
+
+    def backstep_run(
+            self,
+            sim_lim: int,
+            init_tape: TupleTape,
+            state: State,
+            shift: Shift,
+            color: Color,
+    ) -> int | None: ...
+
+class BackstepMachineSpinout:
+    def __init__(self, prog: str): ...
+
+    def backstep_run(
+            self,
+            sim_lim: int,
+            init_tape: TupleTape,
+            state: State,
+            shift: Shift,
+            color: Color,
+    ) -> int | None: ...
