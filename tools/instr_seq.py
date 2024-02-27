@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.reason import Program, HeadTape
+from tm.tape import Tape
+from tm.program import Program
 
 if TYPE_CHECKING:
     from tm.machine import Slot, Undfnd
@@ -31,7 +32,7 @@ def instr_seq(prog: str) -> InstrSeq:
 
 
 def run_for_undefined(prog: Program) -> Undfnd | None:
-    tape = HeadTape()
+    tape = Tape()
 
     step = 0
 

@@ -7,6 +7,7 @@ from tm.tape import (
     Tape,
     HeadTape,
     HeadBlock,
+    BackstepTape,
 )
 
 if TYPE_CHECKING:
@@ -70,6 +71,9 @@ class TestHeadTape(TestCase):
             0,
         )
 
+        self.assertFalse(
+            self.tape.blank)
+
         print(self.tape)
 
         self.assert_tape(
@@ -110,13 +114,13 @@ class TestHeadTape(TestCase):
 
         tapes = set()
 
-        tape1 = HeadTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)], -4)
+        tape1 = BackstepTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)])
 
         tapes.add(tape1)
 
         self.assertIn(tape1, tapes)
 
-        tape2 = HeadTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)], -4)
+        tape2 = BackstepTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)])
 
         self.assertEqual(hash(tape1), hash(tape2))
 

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from collections import defaultdict
 
 from tm.program import Program
-from tm.tape import HeadTape
+from tm.tape import BackstepTape
 from tm.rust_stuff import BackstepMachine
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     InstrSeq = list[tuple[str, int, Slot]]
 
-    Config = tuple[int, State, HeadTape]
+    Config = tuple[int, State, BackstepTape]
 
     GetResult = Callable[[BackstepMachine], int | None]
 
@@ -53,13 +53,13 @@ def cant_reach(
         max_cycles: int = 1_000,
 ) -> bool:
     configs: list[Config] = [
-        (1, state, HeadTape(scan = color))
+        (1, state, BackstepTape(scan = color))
         for state, color in sorted(slots)
     ]
 
     machine = BackstepMachine(str(program))
 
-    seen: dict[State, set[HeadTape]] = defaultdict(set)
+    seen: dict[State, set[BackstepTape]] = defaultdict(set)
 
     for _ in range(max_cycles):  # no-branch
         try:
