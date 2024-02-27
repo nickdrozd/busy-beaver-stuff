@@ -18,6 +18,7 @@ pub struct BackstepMachineHalt {
 #[pyclass]
 pub struct BackstepMachineBlank {
     comp: Prog,
+    blanks: HashMap<State, Step>,
 }
 
 #[pyclass]
@@ -80,6 +81,7 @@ impl BackstepMachineBlank {
     fn new(prog: &str) -> Self {
         Self {
             comp: tcompile(prog),
+            blanks: HashMap::new(),
         }
     }
 
@@ -92,8 +94,6 @@ impl BackstepMachineBlank {
         color: Color,
     ) -> Option<Step> {
         let mut step = 0;
-
-        let mut blanks: HashMap<State, Step> = HashMap::new();
 
         let mut tape = BackstepTape::from_tuples(init_tape);
 
@@ -121,11 +121,11 @@ impl BackstepMachineBlank {
             state = next_state;
 
             if color == 0 && tape.blank() {
-                if blanks.contains_key(&state) {
+                if self.blanks.contains_key(&state) {
                     break;
                 }
 
-                blanks.insert(state, step);
+                self.blanks.insert(state, step);
 
                 if state == 0 {
                     break;
@@ -133,7 +133,7 @@ impl BackstepMachineBlank {
             }
         }
 
-        blanks.drain().map(|(_, value)| value).min()
+        self.blanks.drain().map(|(_, value)| value).min()
     }
 }
 
