@@ -44,7 +44,7 @@ impl BackstepMachineHalt {
     ) -> Option<Step> {
         let mut step = 0;
 
-        let mut tape = BackstepTape::new(init_tape);
+        let mut tape = BackstepTape::from_tuples(init_tape);
 
         tape.backstep(shift, color);
 
@@ -95,7 +95,7 @@ impl BackstepMachineBlank {
 
         let mut blanks: HashMap<State, Step> = HashMap::new();
 
-        let mut tape = BackstepTape::new(init_tape);
+        let mut tape = BackstepTape::from_tuples(init_tape);
 
         tape.backstep(shift, color);
 
@@ -156,7 +156,7 @@ impl BackstepMachineSpinout {
     ) -> Option<Step> {
         let mut step = 0;
 
-        let mut tape = BackstepTape::new(init_tape);
+        let mut tape = BackstepTape::from_tuples(init_tape);
 
         tape.backstep(shift, color);
 

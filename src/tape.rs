@@ -35,7 +35,7 @@ pub struct BackstepTape {
 }
 
 impl BackstepTape {
-    pub fn new(tape: TupleTape) -> Self {
+    pub fn from_tuples(tape: TupleTape) -> Self {
         let (lspan, scan, rspan) = tape;
 
         Self {
