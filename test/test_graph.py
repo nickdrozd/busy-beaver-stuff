@@ -2,7 +2,8 @@ from unittest import TestCase
 
 from test.prog_data import GRAPHS, SPAGHETTI, KERNEL
 
-from tm.graph import Graph, show_state
+from tm.graph import Graph
+from tm.show import show_state
 
 
 class TestGraph(TestCase):
