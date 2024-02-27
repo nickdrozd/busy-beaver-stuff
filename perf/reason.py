@@ -1,5 +1,5 @@
 from perf import profile, get_holdouts
-from tm.reason import BackwardReasoner
+from tm.reason import cant_halt, cant_blank, cant_spin_out
 
 
 @profile
@@ -7,11 +7,9 @@ def main() -> None:
     for prog in get_holdouts():
         print(prog)
 
-        reasoner = BackwardReasoner(prog)
-
-        _ = reasoner.cant_halt
-        _ = reasoner.cant_blank
-        _ = reasoner.cant_spin_out
+        _ = cant_halt(prog)
+        _ = cant_blank(prog)
+        _ = cant_spin_out(prog)
 
 
 if __name__ == '__main__':

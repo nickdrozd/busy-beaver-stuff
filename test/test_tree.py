@@ -8,9 +8,14 @@ from test.utils import read_progs
 from test.lin_rec import LooseLinRecMachine
 from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 
-from tm.machine import Machine, quick_term_or_rec
-from tm.reason import BackwardReasoner, cant_halt, cant_spin_out
 from tm.tree import run_tree_gen
+from tm.machine import Machine, quick_term_or_rec
+from tm.reason import (
+    Program,
+    cant_halt,
+    cant_blank,
+    cant_spin_out,
+)
 
 
 if TYPE_CHECKING:
@@ -99,19 +104,19 @@ class TestTree(TestCase):
                     or res_prog in exp_prog)
 
     def assert_cant_terminate(self) -> None:
-        for prog in map(BackwardReasoner, self.progs):
+        for prog in self.progs:
             self.assertTrue(
-                prog.cant_halt)
+                cant_halt(prog))
 
             if prog not in CANT_BLANK_FALSE_NEGATIVES:
                 self.assertTrue(
-                    prog.cant_blank)
+                    cant_blank(prog))
 
             self.assertTrue(
-                prog.cant_spin_out)
+                cant_spin_out(prog))
 
     def assert_simple_and_connected(self) -> None:
-        for prog in map(BackwardReasoner, self.progs):
+        for prog in map(Program, self.progs):
             self.assertTrue(
                 prog.graph.is_simple
                 and prog.graph.is_strongly_connected)
