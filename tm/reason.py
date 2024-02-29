@@ -76,6 +76,8 @@ def cant_reach(
 
     machine = machine_type(prog)
 
+    entry_points = program.graph.entry_points
+
     for _ in range(max_cycles):  # no-branch
         try:
             step, state, tape = configs.pop()
@@ -95,7 +97,7 @@ def cant_reach(
 
         # print(step, state, tape)
 
-        for entry in sorted(program.graph.entry_points[state]):
+        for entry in sorted(entry_points[state]):
             for _, instr in program.get_switch(entry).items():
                 if instr is None:
                     continue
