@@ -12,6 +12,8 @@ from tm.rust_stuff import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from tm.program import State, Slot
 
     InstrSeq = list[tuple[str, int, Slot]]
@@ -30,7 +32,8 @@ def cant_halt(prog: str) -> bool:
     return cant_reach(
         program := Program(prog),
         program.halt_slots,
-        BackstepMachineHalt(prog),
+        prog,
+        BackstepMachineHalt,
     )
 
 
@@ -38,7 +41,8 @@ def cant_blank(prog: str) -> bool:
     return cant_reach(
         program := Program(prog),
         program.erase_slots,
-        BackstepMachineBlank(prog),
+        prog,
+        BackstepMachineBlank,
     )
 
 
@@ -46,7 +50,8 @@ def cant_spin_out(prog: str) -> bool:
     return cant_reach(
         program := Program(prog),
         program.spinout_slots,
-        BackstepMachineSpinout(prog),
+        prog,
+        BackstepMachineSpinout,
     )
 
 ########################################
@@ -54,7 +59,8 @@ def cant_spin_out(prog: str) -> bool:
 def cant_reach(
         program: Program,
         slots: tuple[Slot, ...],
-        machine: BackstepMachine,
+        prog: str,
+        machine_type: Callable[[str], BackstepMachine],
         max_steps: int = 24,
         max_cycles: int = 1_000,
 ) -> bool:
@@ -64,6 +70,8 @@ def cant_reach(
     ]
 
     seen: dict[State, set[BackstepTape]] = defaultdict(set)
+
+    machine = machine_type(prog)
 
     for _ in range(max_cycles):  # no-branch
         try:
