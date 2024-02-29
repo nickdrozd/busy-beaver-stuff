@@ -160,6 +160,10 @@ class TestFloss(TestCase):
             cant_spin_out(
                 "1RB 0RB 0LB  1LB 2RA 1LA"))
 
+        self.assertTrue(
+            cant_spin_out(
+                "1RB 1LA  0LA 0RC  0LA 1RB"))
+
         self.assertFalse(
             cant_halt(
                 "1RB ...  1LC 0RC  1RA 0LC"))

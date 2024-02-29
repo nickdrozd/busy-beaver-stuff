@@ -64,6 +64,9 @@ def cant_reach(
         max_steps: int = 24,
         max_cycles: int = 1_000,
 ) -> bool:
+    if not slots:
+        return True
+
     configs: list[Config] = [
         (1, state, BackstepTape(scan = color))
         for state, color in sorted(slots)
