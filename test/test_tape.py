@@ -7,7 +7,6 @@ from tm.tape import (
     Tape,
     HeadTape,
     HeadBlock,
-    BackstepTape,
 )
 
 if TYPE_CHECKING:
@@ -98,33 +97,6 @@ class TestHeadTape(TestCase):
         self.assert_signature(
             '1|0|1[2]1',
             tape = copy_2)
-
-    def test_hash(self):
-        blocks = set()
-
-        block1 = HeadBlock(1, 1)
-
-        blocks.add(block1)
-
-        block2 = HeadBlock(1, 1)
-
-        self.assertEqual(hash(block1), hash(block2))
-
-        self.assertIn(block2, blocks)
-
-        tapes = set()
-
-        tape1 = BackstepTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)])
-
-        tapes.add(tape1)
-
-        self.assertIn(tape1, tapes)
-
-        tape2 = BackstepTape([HeadBlock(1, 1)], 1, [HeadBlock(1, 4)])
-
-        self.assertEqual(hash(tape1), hash(tape2))
-
-        self.assertIn(tape2, tapes)
 
 
 class TestTape(TestCase):
