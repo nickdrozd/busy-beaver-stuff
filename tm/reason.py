@@ -85,14 +85,6 @@ class Reasoner:
         ]
 
     @property
-    def used_instr_slots(self) -> list[tuple[Slot, Instr]]:
-        return [
-            (slot, instr)
-            for slot, instr in self.instr_slots
-            if instr is not None
-        ]
-
-    @property
     def halt_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
@@ -104,8 +96,8 @@ class Reasoner:
     def erase_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
-            for slot, instr in self.used_instr_slots
-            if slot[1] != 0 and instr[0] == 0
+            for slot, instr in self.instr_slots
+            if instr and slot[1] != 0 and instr[0] == 0
         )
 
     @property

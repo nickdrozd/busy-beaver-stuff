@@ -7,9 +7,17 @@ from tm.program import Program
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.parse import Color, State
+    from tm.parse import Color, State, Slot, Instr
 
 class Normalizer(Program):
+    @property
+    def used_instr_slots(self) -> list[tuple[Slot, Instr]]:
+        return [
+            (slot, instr)
+            for slot, instr in self.instr_slots
+            if instr is not None
+        ]
+
     def swap_states(self, st1: State, st2: State) -> Self:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
 

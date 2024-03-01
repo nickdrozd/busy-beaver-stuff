@@ -88,14 +88,6 @@ class Program:
         ]
 
     @property
-    def used_instr_slots(self) -> list[tuple[Slot, Instr]]:
-        return [
-            (slot, instr)
-            for slot, instr in self.instr_slots
-            if instr is not None
-        ]
-
-    @property
     def instructions(self) -> list[Instr | None]:
         return [
             instr
