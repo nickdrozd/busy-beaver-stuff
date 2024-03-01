@@ -12,12 +12,9 @@ from tm.parse import parse, read_slot
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.parse import Color, State, Slot, Instr
-    from tm.parse import Shift  # noqa: F401
+    from tm.parse import Color, State, Slot, Instr, Switch
 
     ProgStr = str
-
-    Switch = dict[Color, Instr | None]
 
 
 class Program:
@@ -86,10 +83,6 @@ class Program:
     @cached_property
     def colors(self) -> set[Color]:
         return set(range(len(self.prog[0])))
-
-    @property
-    def state_switches(self) -> list[tuple[State, Switch]]:
-        return sorted(self.prog.items())
 
     @property
     def instr_slots(self) -> list[tuple[Slot, Instr | None]]:

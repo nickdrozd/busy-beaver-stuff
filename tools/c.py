@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tm.show import show_state
-from tm.program import Program
+from tm.parse import parse
 
 if TYPE_CHECKING:
-    from tm.program import Color, Shift, State, Instr
+    from tm.parse import Color, Shift, State, Instr, Switch
 
 
 def make_comment(st: State, co: Color) -> str:
@@ -154,6 +154,13 @@ def make_label(state: State) -> str:
     return f' {show_state(state)}:'
 
 
+def parse_prog(prog: str) -> list[tuple[State, Switch]]:
+    return sorted([
+        (state, dict(enumerate(instrs)))
+        for state, instrs in enumerate(parse(prog))
+    ])
+
+
 def make_labels(prog: str) -> str:
     return '\n'.join([
         make_label(state) + make_switch(
@@ -162,7 +169,7 @@ def make_labels(prog: str) -> str:
                 instr or (1, True, -1)
                 for instr in switch.values()),
         )
-        for state, switch in Program(prog).state_switches
+        for state, switch in parse_prog(prog)
     ])
 
 
