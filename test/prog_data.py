@@ -1998,38 +1998,22 @@ ALGEBRA_PROGS = {
 PROGS: dict[
     str,
     tuple[
-        set[str],
-        set[int],
-        set[str],
-        set[int],
         str | None,
         tuple[str, ...],
         tuple[str, ...],
     ],
 ] = {
     "1RB ...  1LB 0RC  1LC 1LA": (
-        {'A', 'B', 'C'},
-        {0, 1},
-        {'A', 'B', 'C'},
-        {0, 1},
         'A1',
         ('A0', 'A1', 'B0', 'B1', 'C0', 'C1'),
         ('0LA', '0LB', '0LC', '0RA', '0RB', '0RC', '1LA', '1LB', '1LC', '1RA', '1RB', '1RC'),
     ),
     "1RB ...  1RC ...  ... ...  ... ...  ... ...": (
-        {'B', 'C'},
-        {1},
-        {'A', 'B', 'C', 'D'},
-        {0, 1},
         None,
         ('A0', 'A1', 'B0', 'B1', 'C0', 'C1', 'D0', 'D1', 'E0', 'E1'),
         ('0LA', '0LB', '0LC', '0LD', '0RA', '0RB', '0RC', '0RD', '1LA', '1LB', '1LC', '1LD', '1RA', '1RB', '1RC', '1RD'),
     ),
     "1RB ... ... ...  1LB 1LA ... ...": (
-        {'A', 'B'},
-        {1},
-        {'A', 'B'},
-        {0, 1, 2},
         None,
         ('A0', 'A1', 'A2', 'A3', 'B0', 'B1', 'B2', 'B3'),
         ('0LA', '0LB', '0RA', '0RB', '1LA', '1LB', '1RA', '1RB', '2LA', '2LB', '2RA', '2RB'),

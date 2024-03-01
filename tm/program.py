@@ -10,6 +10,7 @@ from tm.parse import parse, read_slot
 
 if TYPE_CHECKING:
     from typing import Self
+    from collections.abc import Iterator
 
     from tm.parse import Color, State, Slot, Instr, Switch
 
@@ -88,20 +89,13 @@ class Program:
         ]
 
     @property
-    def instructions(self) -> list[Instr | None]:
-        return [
+    def used_instructions(self) -> Iterator[Instr]:
+        return (
             instr
             for instrs in self.prog.values()
             for instr in instrs.values()
-        ]
-
-    @property
-    def used_instructions(self) -> list[Instr]:
-        return [
-            instr
-            for instr in self.instructions
             if instr
-        ]
+        )
 
     @property
     def slots(self) -> tuple[Slot, ...]:
@@ -122,41 +116,30 @@ class Program:
 
         return slots[0]
 
-    @property
-    def used_states(self) -> set[State]:
-        return {
-            state
-            for _, _, state in self.used_instructions
-        }
-
-    @property
-    def available_states(self) -> set[State]:
-        used = self.used_states | { 0 }
+    def available_states(self, used: set[State]) -> set[State]:
         diff = sorted(self.states.difference(used))
 
         return used | { diff[0] } if diff else used
 
-    @property
-    def used_colors(self) -> set[Color]:
-        return {
-            color
-            for color, _, _ in self.used_instructions
-        }
-
-    @property
-    def available_colors(self) -> set[Color]:
-        used = self.used_colors | { 0 }
+    def available_colors(self, used: set[Color]) -> set[Color]:
         diff = sorted(self.colors.difference(used))
 
         return used | { diff[0] } if diff else used
 
     @property
     def available_instrs(self) -> list[Instr]:
+        used_colors = { 0 }
+        used_states = { 0 }
+
+        for color, _, state in self.used_instructions:
+            used_colors.add(color)
+            used_states.add(state)
+
         return sorted(
             product(
-                self.available_colors,
+                self.available_colors(used_colors),
                 (False, True),
-                self.available_states),
+                self.available_states(used_states)),
             reverse = True,
         )
 

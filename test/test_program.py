@@ -3,32 +3,12 @@ from unittest import TestCase
 from test.prog_data import BRANCH, PROGS, NORMALIZE
 
 from tm.program import Program
-from tm.show import show_slot, show_state, show_instr
+from tm.show import show_slot, show_instr
 from tools.normalize import Normalizer
 
 
 class TestProgram(TestCase):
     prog: Program
-
-    def assert_used_states(self, states: set[str]):
-        self.assertEqual(
-            states,
-            set(map(show_state, self.prog.used_states)))
-
-    def assert_available_states(self, states: set[str]):
-        self.assertEqual(
-            states,
-            set(map(show_state, self.prog.available_states)))
-
-    def assert_used_colors(self, colors: set[int]):
-        self.assertEqual(
-            colors,
-            set(map(int, self.prog.used_colors)))
-
-    def assert_available_colors(self, colors: set[int]):
-        self.assertEqual(
-            colors,
-            set(map(int, self.prog.available_colors)))
 
     def assert_last_slot(self, slot: str | None):
         self.assertEqual(
@@ -48,14 +28,9 @@ class TestProgram(TestCase):
             tuple(map(show_instr,reversed(self.prog.available_instrs))))
 
     def test_used_available(self):
-        # pylint: disable = line-too-long
-        for prog, (used_st, used_co, avail_st, avail_co, last, slots, avail_instr) in PROGS.items():
+        for prog, (last, slots, avail_instr) in PROGS.items():
             self.prog = Program(prog)
 
-            self.assert_used_states(used_st)
-            self.assert_used_colors(used_co)
-            self.assert_available_states(avail_st)
-            self.assert_available_colors(avail_co)
             self.assert_last_slot(last)
             self.assert_slots(slots)
             self.assert_instrs(avail_instr)
