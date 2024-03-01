@@ -3,7 +3,7 @@ from unittest import TestCase
 from test.prog_data import BRANCH, PROGS, NORMALIZE
 
 from tm.program import Program
-from tm.show import show_slot, show_state
+from tm.show import show_slot, show_state, show_instr
 from tools.normalize import Normalizer
 
 
@@ -42,9 +42,14 @@ class TestProgram(TestCase):
             slots,
             tuple(map(show_slot, self.prog.slots)))
 
+    def assert_instrs(self, instrs: tuple[str, ...]):
+        self.assertEqual(
+            instrs,
+            tuple(map(show_instr,reversed(self.prog.available_instrs))))
+
     def test_used_available(self):
         # pylint: disable = line-too-long
-        for prog, (used_st, used_co, avail_st, avail_co, last, slots) in PROGS.items():
+        for prog, (used_st, used_co, avail_st, avail_co, last, slots, avail_instr) in PROGS.items():
             self.prog = Program(prog)
 
             self.assert_used_states(used_st)
@@ -53,6 +58,7 @@ class TestProgram(TestCase):
             self.assert_available_colors(avail_co)
             self.assert_last_slot(last)
             self.assert_slots(slots)
+            self.assert_instrs(avail_instr)
 
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
