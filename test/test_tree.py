@@ -11,7 +11,7 @@ from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 from tm.tree import run_tree_gen
 from tm.machine import Machine, quick_term_or_rec
 from tm.reason import (
-    Program,
+    Reasoner,
     cant_halt,
     cant_blank,
     cant_spin_out,
@@ -116,7 +116,7 @@ class TestTree(TestCase):
                 cant_spin_out(prog))
 
     def assert_simple_and_connected(self) -> None:
-        for prog in map(Program, self.progs):
+        for prog in map(Reasoner, self.progs):
             self.assertTrue(
                 prog.graph.is_simple
                 and prog.graph.is_strongly_connected)

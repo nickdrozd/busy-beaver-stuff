@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from collections import defaultdict
+from functools import cached_property
 
-from tm.program import Program
+from tm.parse import parse
+from tm.graph import Graph
 from tm.tape import BackstepTape
 from tm.rust_stuff import (
     BackstepMachineHalt,
@@ -14,7 +16,7 @@ from tm.rust_stuff import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from tm.program import State, Slot
+    from tm.parse import Color, State, Slot, Instr, Switch
 
     InstrSeq = list[tuple[str, int, Slot]]
 
@@ -30,7 +32,7 @@ if TYPE_CHECKING:
 
 def cant_halt(prog: str) -> bool:
     return cant_reach(
-        program := Program(prog),
+        program := Reasoner(prog),
         program.halt_slots,
         prog,
         BackstepMachineHalt,
@@ -39,7 +41,7 @@ def cant_halt(prog: str) -> bool:
 
 def cant_blank(prog: str) -> bool:
     return cant_reach(
-        program := Program(prog),
+        program := Reasoner(prog),
         program.erase_slots,
         prog,
         BackstepMachineBlank,
@@ -48,7 +50,7 @@ def cant_blank(prog: str) -> bool:
 
 def cant_spin_out(prog: str) -> bool:
     return cant_reach(
-        program := Program(prog),
+        program := Reasoner(prog),
         program.spinout_slots,
         prog,
         BackstepMachineSpinout,
@@ -56,8 +58,73 @@ def cant_spin_out(prog: str) -> bool:
 
 ########################################
 
+class Reasoner:
+    prog: dict[State, Switch]
+
+    graph: Graph
+
+    prog_str: str
+
+    def __init__(self, program: str):
+        self.prog = {
+            state: dict(enumerate(instrs))
+            for state, instrs in enumerate(parse(program))
+        }
+
+        self.graph = Graph(program)
+
+        self.prog_str = program
+
+    def get_switch(self, state: State) -> Switch:
+        return self.prog[state]
+
+    @cached_property
+    def colors(self) -> set[Color]:
+        return set(range(len(self.prog[0])))
+
+    @property
+    def instr_slots(self) -> list[tuple[Slot, Instr | None]]:
+        return [
+            ((state, color), instr)
+            for state, instrs in self.prog.items()
+            for color, instr in instrs.items()
+        ]
+
+    @property
+    def used_instr_slots(self) -> list[tuple[Slot, Instr]]:
+        return [
+            (slot, instr)
+            for slot, instr in self.instr_slots
+            if instr is not None
+        ]
+
+    @property
+    def halt_slots(self) -> tuple[Slot, ...]:
+        return tuple(
+            slot
+            for slot, instr in self.instr_slots
+            if instr is None or instr[2] == -1
+        )
+
+    @property
+    def erase_slots(self) -> tuple[Slot, ...]:
+        return tuple(
+            slot
+            for slot, instr in self.used_instr_slots
+            if slot[1] != 0 and instr[0] == 0
+        )
+
+    @property
+    def spinout_slots(self) -> tuple[Slot, ...]:
+        return tuple(
+            (state, 0)
+            for state in self.graph.zero_reflexive_states
+        )
+
+########################################
+
 def cant_reach(
-        program: Program,
+        program: Reasoner,
         slots: tuple[Slot, ...],
         prog: str,
         machine_type: Callable[[str], BackstepMachine],

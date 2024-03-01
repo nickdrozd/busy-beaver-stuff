@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from itertools import product
 from functools import cached_property
 
-from tm.graph import Graph
 from tm.show import show_instr
 from tm.parse import parse, read_slot
 
@@ -20,15 +19,11 @@ if TYPE_CHECKING:
 class Program:
     prog: dict[State, Switch]
 
-    graph: Graph
-
     def __init__(self, program: ProgStr):
         self.prog = {
             state: dict(enumerate(instrs))
             for state, instrs in enumerate(parse(program))
         }
-
-        self.graph = Graph(program)
 
     def __repr__(self) -> ProgStr:
         return '  '.join([
@@ -134,29 +129,6 @@ class Program:
             return None
 
         return slots[0]
-
-    @property
-    def halt_slots(self) -> tuple[Slot, ...]:
-        return tuple(
-            slot
-            for slot, instr in self.instr_slots
-            if instr is None or instr[2] == -1
-        )
-
-    @property
-    def erase_slots(self) -> tuple[Slot, ...]:
-        return tuple(
-            slot
-            for slot, instr in self.used_instr_slots
-            if slot[1] != 0 and instr[0] == 0
-        )
-
-    @property
-    def spinout_slots(self) -> tuple[Slot, ...]:
-        return tuple(
-            (state, 0)
-            for state in self.graph.zero_reflexive_states
-        )
 
     @property
     def used_states(self) -> set[State]:

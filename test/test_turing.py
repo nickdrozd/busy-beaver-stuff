@@ -17,8 +17,9 @@ from test.lin_rec import (
 )
 from test.utils import get_holdouts, read_holdouts
 
+from tm.program import Program
 from tm.reason import (
-    Program,
+    Reasoner,
     cant_halt,
     cant_blank,
     cant_spin_out,
@@ -110,7 +111,7 @@ class TuringTest(TestCase):
 
     def assert_normal(self, prog: str):
         self.assertTrue(
-            Program(prog).graph.is_normal,
+            Reasoner(prog).graph.is_normal,
             prog)
 
         self.assertTrue(
@@ -120,7 +121,7 @@ class TuringTest(TestCase):
 
     def assert_connected(self, prog: str):
         self.assertTrue(
-            Program(prog).graph.is_strongly_connected
+            Reasoner(prog).graph.is_strongly_connected
             or prog in MODULAR
             or 'A' not in prog
             or '...' in prog
@@ -162,7 +163,7 @@ class TuringTest(TestCase):
 
     def assert_simple(self, prog: str):
         self.assertTrue(
-            Program(prog).graph.is_simple
+            Reasoner(prog).graph.is_simple
             or prog in SPAGHETTI
             or prog in KERNEL
         )
@@ -349,7 +350,7 @@ class TuringTest(TestCase):
                 self.assert_cant_halt(prog)
 
                 self.assertTrue(
-                    (graph := Program(prog).graph).is_zero_reflexive
+                    (graph := Reasoner(prog).graph).is_zero_reflexive
                     and not graph.is_irreflexive
                 )
 
@@ -565,7 +566,7 @@ class TuringTest(TestCase):
                     SUSPECTED_RULES)
 
 
-class Reasoner(TuringTest):
+class Reason(TuringTest):
     def test_undefined(self):
         for prog, sequence in UNDEFINED.items():
             self.assertEqual(
