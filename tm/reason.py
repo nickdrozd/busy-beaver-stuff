@@ -31,28 +31,22 @@ if TYPE_CHECKING:
 ########################################
 
 def cant_halt(prog: str) -> bool:
-    return cant_reach(
-        program := Reasoner(prog),
+    return (program := Reasoner(prog)).cant_reach(
         program.halt_slots,
-        prog,
         BackstepMachineHalt,
     )
 
 
 def cant_blank(prog: str) -> bool:
-    return cant_reach(
-        program := Reasoner(prog),
+    return (program := Reasoner(prog)).cant_reach(
         program.erase_slots,
-        prog,
         BackstepMachineBlank,
     )
 
 
 def cant_spin_out(prog: str) -> bool:
-    return cant_reach(
-        program := Reasoner(prog),
+    return (program := Reasoner(prog)).cant_reach(
         program.spinout_slots,
-        prog,
         BackstepMachineSpinout,
     )
 
@@ -121,82 +115,79 @@ class Reasoner:
             for state in self.graph.zero_reflexive_states
         )
 
-########################################
-
-def cant_reach(
-        program: Reasoner,
-        slots: tuple[Slot, ...],
-        prog: str,
-        machine_type: Callable[[str], BackstepMachine],
-        max_steps: int = 24,
-        max_cycles: int = 1_000,
-) -> bool:
-    if not slots:
-        return True
-
-    configs: list[Config] = [
-        (1, state, BackstepTape(scan = color))
-        for state, color in sorted(slots)
-    ]
-
-    seen: dict[State, set[BackstepTape]] = defaultdict(set)
-
-    machine = machine_type(prog)
-
-    entry_points = program.graph.entry_points
-
-    for _ in range(max_cycles):  # no-branch
-        try:
-            step, state, tape = configs.pop()
-        except IndexError:
+    def cant_reach(
+            self,
+            slots: tuple[Slot, ...],
+            machine_type: Callable[[str], BackstepMachine],
+            max_steps: int = 24,
+            max_cycles: int = 1_000,
+    ) -> bool:
+        if not slots:
             return True
 
-        if step > max_steps:
-            return False
+        configs: list[Config] = [
+            (1, state, BackstepTape(scan = color))
+            for state, color in sorted(slots)
+        ]
 
-        if state == 0 and tape.blank:
-            return False
+        seen: dict[State, set[BackstepTape]] = defaultdict(set)
 
-        if tape in seen[state]:
-            continue
+        machine = machine_type(self.prog_str)
 
-        seen[state].add(tape)
+        entry_points = self.graph.entry_points
 
-        # print(step, state, tape)
+        for _ in range(max_cycles):  # no-branch
+            try:
+                step, state, tape = configs.pop()
+            except IndexError:
+                return True
 
-        for entry in sorted(entry_points[state]):
-            for _, instr in program.get_switch(entry).items():
-                if instr is None:
-                    continue
+            if step > max_steps:
+                return False
 
-                _, shift, trans = instr
+            if state == 0 and tape.blank:
+                return False
 
-                if trans != state:
-                    continue
+            if tape in seen[state]:
+                continue
 
-                for color in program.colors:
-                    result = machine.backstep_run(
-                        sim_lim = step + 1,
-                        init_tape = tape.to_tuples(),
-                        state = entry,
-                        shift = shift,
-                        color = color,
-                    )
+            seen[state].add(tape)
 
-                    if not result:
+            # print(step, state, tape)
+
+            for entry in sorted(entry_points[state]):
+                for _, instr in self.get_switch(entry).items():
+                    if instr is None:
                         continue
 
-                    if abs(result - step) > 1:
+                    _, shift, trans = instr
+
+                    if trans != state:
                         continue
 
-                    yield_tape = tape.copy()
+                    for color in self.colors:
+                        result = machine.backstep_run(
+                            sim_lim = step + 1,
+                            init_tape = tape.to_tuples(),
+                            state = entry,
+                            shift = shift,
+                            color = color,
+                        )
 
-                    yield_tape.backstep(shift, color)
+                        if not result:
+                            continue
 
-                    configs.append((
-                        step + 1,
-                        entry,
-                        yield_tape,
-                    ))
+                        if abs(result - step) > 1:
+                            continue
 
-    return False  # no-cover
+                        yield_tape = tape.copy()
+
+                        yield_tape.backstep(shift, color)
+
+                        configs.append((
+                            step + 1,
+                            entry,
+                            yield_tape,
+                        ))
+
+        return False  # no-cover
