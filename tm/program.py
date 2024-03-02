@@ -98,10 +98,6 @@ class Program:
         )
 
     @property
-    def slots(self) -> tuple[Slot, ...]:
-        return tuple(slot for slot, _ in self.instr_slots)
-
-    @property
     def open_slots(self) -> tuple[Slot, ...]:
         return tuple(
             slot
