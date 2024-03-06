@@ -4,7 +4,7 @@ from test.prog_data import BRANCH, PROGS, NORMALIZE
 
 from tm.program import Program
 from tm.show import show_slot, show_instr
-from tools.normalize import Normalizer
+from tools.normalize import normalize
 
 
 class TestProgram(TestCase):
@@ -38,11 +38,9 @@ class TestProgram(TestCase):
     def test_normalize(self):
         for norm, devs in NORMALIZE.items():
             for dev in devs:
-                normalized = Normalizer(dev)
-
                 self.assertEqual(
                     norm,
-                    normalized.normalize())
+                    normalize(dev))
 
     def test_branch_init(self):
         self.assertEqual(

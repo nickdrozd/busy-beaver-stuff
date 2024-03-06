@@ -9,6 +9,11 @@ if TYPE_CHECKING:
 
     from tm.parse import Color, State, Slot, Instr
 
+
+def normalize(prog: str) -> str:
+    return str(Normalizer(prog).normalize())
+
+
 class Normalizer(Program):
     @property
     def used_instr_slots(self) -> list[tuple[Slot, Instr]]:
