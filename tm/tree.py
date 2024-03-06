@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from multiprocessing import cpu_count, Process
 
-from tm.program import Program
+from tm.program import Program, init_branches
 from tm.machine import Machine, quick_term_or_rec
 
 if TYPE_CHECKING:
@@ -123,7 +123,7 @@ def prep_branches(
     worker(
         steps = 3,
         halt = halt,
-        stack = Program.branch_init(states, colors),
+        stack = init_branches(states, colors),
         output = run,
         prep = True,
     )

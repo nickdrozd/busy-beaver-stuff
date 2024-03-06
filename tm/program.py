@@ -9,12 +9,26 @@ from tm.show import show_instr
 from tm.parse import parse, read_slot
 
 if TYPE_CHECKING:
-    from typing import Self
     from collections.abc import Iterator
 
     from tm.parse import Color, State, Slot, Instr, Switch
 
     ProgStr = str
+
+
+def init_prog(states: int, colors: int) -> Program:
+    return Program(
+        re.sub(
+            r'^\.\.\.',
+            '1RB',
+            '  '.join([
+                ' '.join(
+                    ['...'] * colors)
+            ] * states)))
+
+
+def init_branches(states: int, colors: int) -> list[str]:
+    return init_prog(states, colors).branch_read('B0')
 
 
 class Program:
@@ -50,21 +64,6 @@ class Program:
         state, color = slot
 
         self.prog[state][color] = instr
-
-    @classmethod
-    def init(cls, states: int, colors: int) -> Self:
-        return cls(
-            re.sub(
-                r'^\.\.\.',
-                '1RB',
-                '  '.join([
-                    ' '.join(
-                        ['...'] * colors)
-                ] * states)))
-
-    @classmethod
-    def branch_init(cls, states: int, colors: int) -> list[str]:
-        return cls.init(states, colors).branch_read('B0')
 
     @cached_property
     def states(self) -> set[State]:

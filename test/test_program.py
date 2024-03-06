@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from test.prog_data import BRANCH, PROGS, NORMALIZE
 
-from tm.program import Program
+from tm.program import Program, init_branches
 from tm.show import show_slot, show_instr
 from tools.normalize import normalize
 
@@ -44,5 +44,5 @@ class TestProgram(TestCase):
 
     def test_branch_init(self):
         self.assertEqual(
-            sorted(Program.branch_init(2, 2)),
+            sorted(init_branches(2, 2)),
             sorted(BRANCH[("1RB ...  ... ...", 'B0')]))

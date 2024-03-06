@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tm.tape import Tape
-from tm.program import Program
+from tm.program import Program, init_prog
 
 if TYPE_CHECKING:
     from tm.machine import Slot, Undfnd
@@ -16,7 +16,7 @@ def instr_seq(prog: str) -> InstrSeq:
 
     seqs: InstrSeq = []
 
-    partial = Program.init(len(program.states), len(program.colors))
+    partial = init_prog(len(program.states), len(program.colors))
 
     for _ in range(len(program.states) * len(program.colors) - 1):
         if (result := run_for_undefined(partial)) is None:
