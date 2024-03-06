@@ -148,7 +148,7 @@ class Reasoner:
             # print(step, state, tape)
 
             for entry in sorted(entry_points[state]):
-                for _, instr in self.get_switch(entry).items():
+                for instr in self.get_switch(entry).values():
                     if instr is None:
                         continue
 
