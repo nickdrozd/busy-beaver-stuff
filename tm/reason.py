@@ -16,7 +16,7 @@ from tm.rust_stuff import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from tm.parse import Color, State, Slot, Instr, Switch
+    from tm.parse import Color, State, Slot, Instr
 
     InstrSeq = list[tuple[str, int, Slot]]
 
@@ -53,17 +53,14 @@ def cant_spin_out(prog: str) -> bool:
 ########################################
 
 class Reasoner:
-    prog: dict[State, Switch]
+    prog: dict[State, list[Instr | None]]
 
     graph: Graph
 
     prog_str: str
 
     def __init__(self, program: str):
-        self.prog = {
-            state: dict(enumerate(instrs))
-            for state, instrs in enumerate(parse(program))
-        }
+        self.prog = dict(enumerate(parse(program)))
 
         self.graph = Graph(program)
 
@@ -78,7 +75,7 @@ class Reasoner:
         return [
             ((state, color), instr)
             for state, instrs in self.prog.items()
-            for color, instr in instrs.items()
+            for color, instr in enumerate(instrs)
         ]
 
     @property
@@ -145,7 +142,7 @@ class Reasoner:
             # print(step, state, tape)
 
             for entry in sorted(entry_points[state]):
-                for instr in self.prog[entry].values():
+                for instr in self.prog[entry]:
                     if instr is None:
                         continue
 
