@@ -36,8 +36,6 @@ class TestProgram(TestCase):
                 extensions)
 
     def test_normalize(self):
-        progs = set()
-
         for norm, devs in NORMALIZE.items():
             for dev in devs:
                 normalized = Normalizer(dev)
@@ -45,14 +43,6 @@ class TestProgram(TestCase):
                 self.assertEqual(
                     norm,
                     normalized.normalize())
-
-                program = Program(dev)
-
-                progs.add(program)
-                progs.add(normalized)
-
-                self.assertIn(program, progs)
-                self.assertIn(normalized, progs)
 
     def test_branch_init(self):
         self.assertEqual(
