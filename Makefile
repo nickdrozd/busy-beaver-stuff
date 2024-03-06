@@ -51,10 +51,10 @@ PYLINT = $(PYTHON) -m pylint
 
 lint : clippy rust
 	$(RUFF) --version
-	$(RUFF) $(MODULES)
+	$(RUFF) check $(MODULES)
 	$(MAKE) type
 	$(PYLINT) --version
-	$(PYLINT) --enable-all-extensions $(MODULES)
+	$(PYLINT) --enable-all-extensions $(MODULES) --ignore-patterns=.*.pyi
 
 MYPY = $(PYTHON) -m mypy
 

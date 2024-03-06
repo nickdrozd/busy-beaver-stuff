@@ -47,10 +47,9 @@ Index = tuple[int, int]
 
 Rule = dict[Index, Op]
 
-# ruff: noqa: E701
-class InfiniteRule(Exception): pass
-class RuleLimit(Exception): pass
-class UnknownRule(Exception): pass
+class InfiniteRule(Exception): ...
+class RuleLimit(Exception): ...
+class UnknownRule(Exception): ...
 
 ## blocks ##############################
 
