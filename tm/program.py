@@ -57,9 +57,6 @@ class Program:
 
         return instr
 
-    def get_switch(self, state: State) -> Switch:
-        return self.prog[state]
-
     def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
         state, color = slot
 

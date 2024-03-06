@@ -69,9 +69,6 @@ class Reasoner:
 
         self.prog_str = program
 
-    def get_switch(self, state: State) -> Switch:
-        return self.prog[state]
-
     @cached_property
     def colors(self) -> set[Color]:
         return set(range(len(self.prog[0])))
@@ -148,7 +145,7 @@ class Reasoner:
             # print(step, state, tape)
 
             for entry in sorted(entry_points[state]):
-                for instr in self.get_switch(entry).values():
+                for instr in self.prog[entry].values():
                     if instr is None:
                         continue
 

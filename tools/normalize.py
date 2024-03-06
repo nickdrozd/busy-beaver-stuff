@@ -36,9 +36,9 @@ class Normalizer(Program):
         return self
 
     def swap_colors(self, co1: Color, co2: Color) -> Self:
-        for state_str in self.states:
-            st_key = self.get_switch(state_str)
-            st_key[co1], st_key[co2] = st_key[co2], st_key[co1]
+        for state in self.states:
+            switch = self.prog[state]
+            switch[co1], switch[co2] = switch[co2], switch[co1]
 
         for slot, (color, shift, state) in self.used_instr_slots:
             self[slot] = (
