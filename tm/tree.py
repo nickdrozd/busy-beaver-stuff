@@ -42,7 +42,7 @@ def tree_gen(
             prog = None
             continue
 
-        if any(blank < 10 for blank in machine.blanks.values()):
+        if machine.blanks:
             prog = None
             continue
 

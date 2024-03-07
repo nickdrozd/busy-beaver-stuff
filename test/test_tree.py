@@ -398,5 +398,5 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            648,
+            646,
             'holdouts_42q')
