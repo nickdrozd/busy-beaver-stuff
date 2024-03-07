@@ -13,17 +13,17 @@ from tm.machine import Machine, quick_term_or_rec
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    Prog = str
+    ProgStr = str
 
-    Output  = Callable[[Prog], None]
+    Output = Callable[[ProgStr], None]
 
 
 def tree_gen(
         steps: int,
         halt: bool,
-        stack: list[Prog],
-) -> Iterator[Prog]:
-    prog: Prog | None = None
+        stack: list[ProgStr],
+) -> Iterator[ProgStr]:
+    prog: ProgStr | None = None
 
     open_slot_lim = 2 if halt else 1
 
@@ -67,7 +67,7 @@ def tree_gen(
 def worker(
         steps: int,
         halt: bool,
-        stack: list[Prog],
+        stack: list[ProgStr],
         output: Output,
         prep: bool = False,
 ) -> None:
@@ -111,10 +111,10 @@ def prep_branches(
         states: int,
         colors: int,
         halt: bool,
-) -> list[Prog]:
+) -> list[ProgStr]:
     branches = []
 
-    def run(prog: Prog) -> None:
+    def run(prog: ProgStr) -> None:
         if quick_term_or_rec(prog, 10):
             return
 
@@ -131,10 +131,10 @@ def prep_branches(
     return sorted(branches)
 
 
-def distribute_branches(branches: list[Prog]) -> list[list[Prog]]:
+def distribute_branches(branches: list[ProgStr]) -> list[list[ProgStr]]:
     cpus = cpu_count()
 
-    branch_groups: list[list[Prog]] = [[] for _ in range(cpus)]
+    branch_groups: list[list[ProgStr]] = [[] for _ in range(cpus)]
 
     branch_counts = [0] * cpus
 
@@ -153,7 +153,7 @@ def run_tree_gen(
         steps: int,
         halt: bool,
         output: Output,
-        branches: list[Prog] | None = None,
+        branches: list[ProgStr] | None = None,
         states: int | None = None,
         colors: int | None = None,
 ) -> None:
