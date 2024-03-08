@@ -1,5 +1,4 @@
 use pyo3::prelude::*;
-use std::collections::HashMap;
 
 use crate::instrs::{Color, Instr, Prog, Shift, Slot, State};
 
@@ -20,7 +19,7 @@ pub fn parse(program: &str) -> Vec<Vec<Option<Instr>>> {
 
 #[pyfunction]
 pub fn tcompile(program: &str) -> Prog {
-    let mut prog = HashMap::new();
+    let mut prog = Prog::new();
 
     for (state, instrs) in parse(program).iter().enumerate() {
         for (color, instr) in instrs.iter().enumerate() {
