@@ -7,11 +7,15 @@ from typing import TYPE_CHECKING
 
 from multiprocessing import cpu_count, Process
 
+from tm.parse import tcompile
+from tm.tape import init_stepped
 from tm.program import Program, init_branches
-from tm.machine import Machine, quick_term_or_rec
+from tm.machine import quick_term_or_rec
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+
+    from tm.parse import Slot
 
     ProgStr = str
 
@@ -34,21 +38,16 @@ def tree_gen(
             except IndexError:
                 break
 
-        machine = Machine(prog).run(
-            sim_lim = steps,
-        )
-
-        if machine.blanks:
+        try:
+            slot = run_for_undefined(prog, steps)
+        except TreeSkip:
             prog = None
             continue
 
-        if machine.undfnd is None:
-            if machine.xlimit or machine.rulapp:
-                yield prog
+        if slot is None:
+            yield prog
             prog = None
             continue
-
-        _, slot = machine.undfnd
 
         if len((program := Program(prog)).open_slots) == open_slot_lim:
             yield from program.branch(slot)
@@ -171,3 +170,34 @@ def run_tree_gen(
 
     for process in processes:
         process.join()
+
+########################################
+
+class TreeSkip(Exception):
+    pass
+
+
+def run_for_undefined(prog: str, sim_lim: int) -> Slot | None:
+    comp = tcompile(prog)
+
+    state = 1
+
+    tape = init_stepped()
+
+    for _ in range(sim_lim):
+        try:
+            color, shift, next_state = comp[slot := (state, tape.scan)]
+        except KeyError:
+            return slot  # pylint: disable = used-before-assignment
+
+        if (same := state == next_state) and tape.at_edge(shift):
+            raise TreeSkip
+
+        _ = tape.step(shift, color, same)
+
+        if tape.blank:
+            raise TreeSkip
+
+        state = next_state
+
+    return None
