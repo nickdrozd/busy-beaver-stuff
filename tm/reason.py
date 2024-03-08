@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from collections import defaultdict
-from functools import cached_property
 
 from tm.parse import parse
 from tm.graph import Graph
@@ -16,7 +15,7 @@ from tm.rust_stuff import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from tm.parse import Color, State, Slot, Instr
+    from tm.parse import State, Slot, Instr
 
     InstrSeq = list[tuple[str, int, Slot]]
 
@@ -65,10 +64,6 @@ class Reasoner:
         self.graph = Graph(program)
 
         self.prog_str = program
-
-    @cached_property
-    def colors(self) -> set[Color]:
-        return set(range(len(self.prog[0])))
 
     @property
     def instr_slots(self) -> list[tuple[Slot, Instr | None]]:
@@ -122,6 +117,8 @@ class Reasoner:
 
         entry_points = self.graph.entry_points
 
+        colors = self.graph.colors
+
         for _ in range(max_cycles):  # no-branch
             try:
                 step, state, tape = configs.pop()
@@ -151,7 +148,7 @@ class Reasoner:
                     if trans != state:
                         continue
 
-                    for color in self.colors:
+                    for color in colors:
                         result = machine.backstep_run(
                             sim_lim = step + 1,
                             init_tape = tape.to_tuples(),
