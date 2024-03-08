@@ -38,10 +38,6 @@ def tree_gen(
             sim_lim = steps,
         )
 
-        if machine.infrul:
-            prog = None
-            continue
-
         if machine.blanks:
             prog = None
             continue
