@@ -35,6 +35,14 @@ pub struct Tape {
 }
 
 impl Tape {
+    pub fn init_stepped() -> Self {
+        Self {
+            lspan: vec![Block::new(1, 1)],
+            scan: 0,
+            rspan: vec![],
+        }
+    }
+
     pub fn from_tuples(tape: TupleTape) -> Self {
         let (lspan, scan, rspan) = tape;
 

@@ -102,3 +102,9 @@ class BackstepMachineSpinout:
             shift: Shift,
             color: Color,
     ) -> int | None: ...
+
+## tree ################################
+
+class TreeSkip(Exception): ...
+
+def run_for_undefined(prog: str, sim_lim: int) -> Slot | None: ...

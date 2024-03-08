@@ -15,6 +15,7 @@ mod prover;
 mod reason;
 mod rules;
 mod tape;
+mod tree;
 
 use pyo3::prelude::*;
 
@@ -23,6 +24,7 @@ use parse::{parse as parse_fn, read_slot, show_instr, show_slot, show_state, tco
 use prover::PastConfigs;
 use reason::{BackstepMachineBlank, BackstepMachineHalt, BackstepMachineSpinout};
 use rules::{InfiniteRule, RuleLimit, UnknownRule};
+use tree::{run_for_undefined, TreeSkip};
 
 #[pymodule]
 fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
@@ -50,6 +52,10 @@ fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<BackstepMachineHalt>()?;
     m.add_class::<BackstepMachineBlank>()?;
     m.add_class::<BackstepMachineSpinout>()?;
+
+    // tree
+    m.add("TreeSkip", py.get_type::<TreeSkip>())?;
+    m.add_function(wrap_pyfunction!(run_for_undefined, m)?)?;
 
     Ok(())
 }

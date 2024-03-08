@@ -7,15 +7,12 @@ from typing import TYPE_CHECKING
 
 from multiprocessing import cpu_count, Process
 
-from tm.parse import tcompile
-from tm.tape import init_stepped
 from tm.program import Program, init_branches
 from tm.machine import quick_term_or_rec
+from tm.rust_stuff import run_for_undefined, TreeSkip
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
-
-    from tm.parse import Slot
 
     ProgStr = str
 
@@ -170,34 +167,3 @@ def run_tree_gen(
 
     for process in processes:
         process.join()
-
-########################################
-
-class TreeSkip(Exception):
-    pass
-
-
-def run_for_undefined(prog: str, sim_lim: int) -> Slot | None:
-    comp = tcompile(prog)
-
-    state = 1
-
-    tape = init_stepped()
-
-    for _ in range(sim_lim):
-        try:
-            color, shift, next_state = comp[slot := (state, tape.scan)]
-        except KeyError:
-            return slot  # pylint: disable = used-before-assignment
-
-        if (same := state == next_state) and tape.at_edge(shift):
-            raise TreeSkip
-
-        _ = tape.step(shift, color, same)
-
-        if tape.blank:
-            raise TreeSkip
-
-        state = next_state
-
-    return None
