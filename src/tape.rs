@@ -26,7 +26,7 @@ impl Block {
 
 /**************************************/
 
-pub struct BackstepTape {
+pub struct Tape {
     lspan: Vec<Block>,
 
     pub scan: Color,
@@ -34,7 +34,7 @@ pub struct BackstepTape {
     rspan: Vec<Block>,
 }
 
-impl BackstepTape {
+impl Tape {
     pub fn from_tuples(tape: TupleTape) -> Self {
         let (lspan, scan, rspan) = tape;
 

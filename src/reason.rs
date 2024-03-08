@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 
 use crate::instrs::{Color, Prog, Shift, State};
 use crate::parse::tcompile;
-use crate::tape::{BackstepTape, TupleTape};
+use crate::tape::{Tape, TupleTape};
 
 type Step = u64;
 
@@ -45,7 +45,7 @@ impl BackstepMachineHalt {
     ) -> Option<Step> {
         let mut step = 0;
 
-        let mut tape = BackstepTape::from_tuples(init_tape);
+        let mut tape = Tape::from_tuples(init_tape);
 
         tape.backstep(shift, color);
 
@@ -95,7 +95,7 @@ impl BackstepMachineBlank {
     ) -> Option<Step> {
         let mut step = 0;
 
-        let mut tape = BackstepTape::from_tuples(init_tape);
+        let mut tape = Tape::from_tuples(init_tape);
 
         tape.backstep(shift, color);
 
@@ -156,7 +156,7 @@ impl BackstepMachineSpinout {
     ) -> Option<Step> {
         let mut step = 0;
 
-        let mut tape = BackstepTape::from_tuples(init_tape);
+        let mut tape = Tape::from_tuples(init_tape);
 
         tape.backstep(shift, color);
 
