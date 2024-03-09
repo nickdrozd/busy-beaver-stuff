@@ -32,21 +32,21 @@ if TYPE_CHECKING:
 def cant_halt(prog: str) -> bool:
     return (program := Reasoner(prog)).cant_reach(
         program.halt_slots,
-        BackstepMachineHalt,
+        lambda: BackstepMachineHalt(prog),
     )
 
 
 def cant_blank(prog: str) -> bool:
     return (program := Reasoner(prog)).cant_reach(
         program.erase_slots,
-        BackstepMachineBlank,
+        lambda: BackstepMachineBlank(prog),
     )
 
 
 def cant_spin_out(prog: str) -> bool:
     return (program := Reasoner(prog)).cant_reach(
         program.spinout_slots,
-        BackstepMachineSpinout,
+        lambda: BackstepMachineSpinout(prog),
     )
 
 ########################################
@@ -56,14 +56,10 @@ class Reasoner:
 
     graph: Graph
 
-    prog_str: str
-
     def __init__(self, program: str):
         self.prog = dict(enumerate(parse(program)))
 
         self.graph = Graph(program)
-
-        self.prog_str = program
 
     @property
     def instr_slots(self) -> list[tuple[Slot, Instr | None]]:
@@ -99,7 +95,7 @@ class Reasoner:
     def cant_reach(
             self,
             slots: tuple[Slot, ...],
-            machine_type: Callable[[str], BackstepMachine],
+            get_machine: Callable[[], BackstepMachine],
             max_steps: int = 24,
             max_cycles: int = 1_000,
     ) -> bool:
@@ -113,7 +109,7 @@ class Reasoner:
 
         seen: dict[State, set[BackstepTape]] = defaultdict(set)
 
-        machine = machine_type(self.prog_str)
+        machine = get_machine()
 
         entry_points = self.graph.entry_points
 
