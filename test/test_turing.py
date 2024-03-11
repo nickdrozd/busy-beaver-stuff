@@ -641,7 +641,8 @@ class Reason(TuringTest):
             self.assert_cant_spin_out(prog)
 
     def test_recur(self):
-        for prog in RECUR_COMPACT | RECUR_DIFFUSE | RECUR_TOO_SLOW:
+        # pylint: disable-next = line-too-long
+        for prog in RECUR_COMPACT | RECUR_DIFFUSE | RECUR_SLOW | RECUR_TOO_SLOW:
             self.assert_cant_halt(prog)
             self.assert_cant_blank(prog)
             self.assert_cant_spin_out(prog)
@@ -684,7 +685,7 @@ class Fast(TuringTest):
     def test_holdouts(self):
         self.assertEqual(
             len(holdouts := get_holdouts()),
-            1709)
+            1788)
 
         for prog in holdouts:
             self.assertFalse(
