@@ -19,43 +19,23 @@ mod tree;
 
 use pyo3::prelude::*;
 
-use blocks::{measure_blocks, unroll_tape};
-use parse::{parse as parse_fn, read_slot, show_instr, show_slot, show_state, tcompile};
-use prover::PastConfigs;
-use reason::{BackstepMachineBlank, BackstepMachineHalt, BackstepMachineSpinout};
-use rules::{InfiniteRule, RuleLimit, UnknownRule};
-use tree::{run_for_undefined, TreeSkip};
-
 #[pymodule]
-fn rust_stuff(py: Python, m: &PyModule) -> PyResult<()> {
-    // blocks
-    m.add_function(wrap_pyfunction!(measure_blocks, m)?)?;
-    m.add_function(wrap_pyfunction!(unroll_tape, m)?)?;
+mod rust_stuff {
+    #[pymodule_export]
+    use crate::blocks::{measure_blocks, unroll_tape};
 
-    // parse
-    m.add_function(wrap_pyfunction!(parse_fn, m)?)?;
-    m.add_function(wrap_pyfunction!(tcompile, m)?)?;
-    m.add_function(wrap_pyfunction!(show_state, m)?)?;
-    m.add_function(wrap_pyfunction!(show_slot, m)?)?;
-    m.add_function(wrap_pyfunction!(read_slot, m)?)?;
-    m.add_function(wrap_pyfunction!(show_instr, m)?)?;
+    #[pymodule_export]
+    use crate::parse::{parse, read_slot, show_instr, show_slot, show_state, tcompile};
 
-    // prover
-    m.add_class::<PastConfigs>()?;
+    #[pymodule_export]
+    use crate::prover::PastConfigs;
 
-    // rules
-    m.add("UnknownRule", py.get_type::<UnknownRule>())?;
-    m.add("InfiniteRule", py.get_type::<InfiniteRule>())?;
-    m.add("RuleLimit", py.get_type::<RuleLimit>())?;
+    #[pymodule_export]
+    use crate::reason::{BackstepMachineBlank, BackstepMachineHalt, BackstepMachineSpinout};
 
-    // reason
-    m.add_class::<BackstepMachineHalt>()?;
-    m.add_class::<BackstepMachineBlank>()?;
-    m.add_class::<BackstepMachineSpinout>()?;
+    #[pymodule_export]
+    use crate::rules::{InfiniteRule, RuleLimit, UnknownRule};
 
-    // tree
-    m.add("TreeSkip", py.get_type::<TreeSkip>())?;
-    m.add_function(wrap_pyfunction!(run_for_undefined, m)?)?;
-
-    Ok(())
+    #[pymodule_export]
+    use crate::tree::{run_for_undefined, TreeSkip};
 }
