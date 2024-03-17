@@ -1,6 +1,5 @@
 use pyo3::create_exception;
 use pyo3::exceptions::PyException;
-use pyo3::prelude::PyResult;
 use pyo3::prelude::*;
 
 use crate::instrs::Slot;
