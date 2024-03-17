@@ -263,16 +263,8 @@ class TuringTest(TestCase):
             assert isinstance(prog, str)
             self.machine = LinRecSampler(prog)
         elif not prover:
-            self.machine = QuickMachine(
-                prog
-                if (not blocks and not opt_macro and not backsym) else
-                Machine(
-                    prog,
-                    blocks = blocks,
-                    backsym = backsym,
-                    opt_macro = opt_macro,
-                ).program
-            )
+            assert not blocks and not opt_macro and not backsym
+            self.machine = QuickMachine(prog)
         else:
             self.machine = Machine(
                 prog,
@@ -282,7 +274,11 @@ class TuringTest(TestCase):
             )
 
         if print_prog:
-            print(self.machine.program)
+            print(
+                self.machine.program
+                if isinstance(self.machine, Machine) else
+                prog
+            )
 
         if check_rec is not None:
             assert isinstance(self.machine, StrictLinRecMachine)

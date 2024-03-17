@@ -7,12 +7,12 @@ from tm.machine import tcompile, Tape
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.machine import Count, State, GetInstr, Undfnd
+    from tm.parse import Prog
+    from tm.machine import Count, State, Undfnd
 
 
 class QuickMachine:
-    program: str | GetInstr
-    comp: GetInstr
+    comp: Prog
 
     tape: Tape
     steps: int
@@ -28,14 +28,8 @@ class QuickMachine:
 
     infrul: int | None = None
 
-    def __init__(self, program: str | GetInstr):
-        self.program = program
-
-        self.comp = (
-            tcompile(self.program)
-            if isinstance(self.program, str) else
-            self.program
-        )
+    def __init__(self, program: str):
+        self.comp = tcompile(program)
 
     @property
     def simple_termination(self) -> Count | None:

@@ -209,7 +209,6 @@ class BeepHistory(History):
 
 
 class LinRecMachine:
-    program: str
     comp: Prog
 
     tape: HeadTape
@@ -227,7 +226,6 @@ class LinRecMachine:
     infrul: int | None = None
 
     def __init__(self, prog: str):
-        self.program = prog
         self.comp = tcompile(prog)
 
 
