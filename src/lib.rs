@@ -10,6 +10,7 @@
 
 mod blocks;
 mod instrs;
+mod machine;
 mod parse;
 mod prover;
 mod reason;
@@ -23,6 +24,9 @@ use pyo3::prelude::*;
 mod rust_stuff {
     #[pymodule_export]
     use crate::blocks::{measure_blocks, unroll_tape};
+
+    #[pymodule_export]
+    use crate::machine::{run_machine, MachineResult, TermRes};
 
     #[pymodule_export]
     use crate::parse::{parse, read_slot, show_instr, show_slot, show_state, tcompile};

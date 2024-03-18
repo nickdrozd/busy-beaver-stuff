@@ -1,3 +1,5 @@
+from enum import Enum
+
 ## prover ##############################
 
 class PastConfigs:
@@ -34,6 +36,50 @@ def show_slot(slot: Slot) -> str: ...
 def read_slot(slot: str) -> Slot: ...
 
 def show_instr(instr: Instr | None) -> str: ...
+
+## machine #############################
+
+class TermRes(Enum):
+    undfnd: int
+    spnout: int
+    halted: int
+    infrul: int
+    xlimit: int
+
+class MachineResult:
+    result: TermRes
+
+    steps: int
+    cycles: int
+    marks: int
+
+    last_slot: Slot | None
+    blanks: dict[State, int]
+
+    def __init__(
+            self,
+            result: TermRes,
+            steps: int,
+            cycles: int,
+            marks: int,
+            last_slot: Slot | None,
+            blanks: dict[State, int],
+    ): ...
+
+    @property
+    def simple_termination(self) -> int | None: ...
+    @property
+    def undfnd(self) -> tuple[int, Slot] | None: ...
+    @property
+    def halted(self) -> int | None: ...
+    @property
+    def infrul(self) -> int | None: ...
+    @property
+    def spnout(self) -> int | None: ...
+    @property
+    def xlimit(self) -> int | None: ...
+
+def run_machine(prog: str, sim_lim: int = 0) -> MachineResult: ...
 
 ## rules ###############################
 

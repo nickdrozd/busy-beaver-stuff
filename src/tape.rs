@@ -35,7 +35,6 @@ pub struct Tape {
 }
 
 impl Tape {
-    #[cfg(test)]
     pub fn init() -> Self {
         Self {
             lspan: vec![],
@@ -62,7 +61,6 @@ impl Tape {
         }
     }
 
-    #[cfg(test)]
     pub fn marks(&self) -> Count {
         Count::from(self.scan != 0)
             + self
