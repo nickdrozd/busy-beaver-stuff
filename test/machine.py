@@ -7,12 +7,12 @@ from tm.machine import tcompile, Tape
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.parse import Prog
+    from tm.parse import CompProg
     from tm.machine import Count, State, Undfnd
 
 
 class QuickMachine:
-    comp: Prog
+    comp: CompProg
 
     tape: Tape
     steps: int

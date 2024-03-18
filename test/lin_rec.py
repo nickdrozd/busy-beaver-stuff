@@ -11,7 +11,7 @@ from tm.tape import HeadTape, init_stepped
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.parse import Color, State, Slot, Prog
+    from tm.parse import Color, State, Slot, CompProg
     from tm.machine import Undfnd
 
     RecRes = tuple[int, int]
@@ -209,7 +209,7 @@ class BeepHistory(History):
 
 
 class LinRecMachine:
-    comp: Prog
+    comp: CompProg
 
     tape: HeadTape
     steps: int

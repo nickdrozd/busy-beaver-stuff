@@ -19,13 +19,13 @@ Shift = bool
 
 Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
-Prog = dict[Slot, Instr]
+CompProg = dict[Slot, Instr]
 
 LetterState = str
 
 def parse(program: str) -> list[list[Instr | None]]: ...
 
-def tcompile(program: str) -> Prog: ...
+def tcompile(program: str) -> CompProg: ...
 
 def show_state(state: State | None) -> LetterState: ...
 

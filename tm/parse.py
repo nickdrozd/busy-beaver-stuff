@@ -15,7 +15,7 @@ Shift = bool
 
 Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
-Prog = dict[Slot, Instr]
+CompProg = dict[Slot, Instr]
 
 Switch = dict[Color, Instr | None]
 

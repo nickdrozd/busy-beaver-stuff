@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use pyo3::prelude::*;
 
-use crate::instrs::{Color, Prog, Shift, State};
+use crate::instrs::{Color, CompProg, Shift, State};
 use crate::parse::tcompile;
 use crate::tape::{Tape, TupleTape};
 
@@ -12,18 +12,18 @@ type Step = u64;
 
 #[pyclass]
 pub struct BackstepMachineHalt {
-    comp: Prog,
+    comp: CompProg,
 }
 
 #[pyclass]
 pub struct BackstepMachineBlank {
-    comp: Prog,
+    comp: CompProg,
     blanks: HashMap<State, Step>,
 }
 
 #[pyclass]
 pub struct BackstepMachineSpinout {
-    comp: Prog,
+    comp: CompProg,
 }
 
 #[pymethods]
