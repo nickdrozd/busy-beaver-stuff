@@ -35,6 +35,15 @@ pub struct Tape {
 }
 
 impl Tape {
+    #[cfg(test)]
+    pub fn init() -> Self {
+        Self {
+            lspan: vec![],
+            scan: 0,
+            rspan: vec![],
+        }
+    }
+
     pub fn init_stepped() -> Self {
         Self {
             lspan: vec![Block::new(1, 1)],
@@ -51,6 +60,18 @@ impl Tape {
             scan,
             rspan: rspan.into_iter().map(std::convert::Into::into).collect(),
         }
+    }
+
+    #[cfg(test)]
+    pub fn marks(&self) -> Count {
+        Count::from(self.scan != 0)
+            + self
+                .lspan
+                .iter()
+                .chain(self.rspan.iter())
+                .filter(|block| block.color != 0)
+                .map(|block| block.count)
+                .sum::<Count>()
     }
 
     pub fn at_edge(&self, edge: Shift) -> bool {
@@ -123,5 +144,37 @@ impl Tape {
         self.scan = next_scan;
 
         stepped
+    }
+}
+
+/**************************************/
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assert_marks(tape: &Tape, marks: Count) {
+        assert_eq!(tape.marks(), marks);
+    }
+
+    #[test]
+    fn test_marks() {
+        assert_marks(&Tape::init(), 0);
+
+        let mut tape = Tape::init_stepped();
+
+        assert_marks(&tape, 1);
+
+        tape.step(true, 1, false);
+
+        assert_marks(&tape, 2);
+
+        tape.step(false, 0, false);
+
+        assert_marks(&tape, 2);
+
+        tape.step(false, 0, true);
+
+        assert_marks(&tape, 0);
     }
 }
