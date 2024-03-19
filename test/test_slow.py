@@ -1,6 +1,6 @@
 from unittest import skip
 
-from test.test_turing import TuringTest
+from test.test_turing import Simple, Recur
 from test.prog_data import (
     HALT_SLOW,
     RECUR_SLOW,
@@ -8,7 +8,7 @@ from test.prog_data import (
     SPINOUT_BLANK_SLOW,
 )
 
-class Slow(TuringTest):
+class SimpleSlow(Simple):
     @skip('')
     def test_halt(self):
         self._test_halt(HALT_SLOW)
@@ -17,5 +17,7 @@ class Slow(TuringTest):
         self._test_spinout(SPINOUT_SLOW)
         self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
 
+
+class RecurSlow(Recur):
     def test_recur(self):
         self._test_recur(RECUR_SLOW, quick = False)

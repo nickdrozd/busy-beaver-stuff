@@ -51,7 +51,6 @@ if TYPE_CHECKING:
 
 
 class TuringTest(TestCase):
-    prog: str
     machine: BasicMachine
 
     maxDiff = None
@@ -71,10 +70,6 @@ class TuringTest(TestCase):
             self.machine.cycles,
             cycles)
 
-    def assert_spinout(self) -> None:
-        self.assertIsNotNone(
-            self.machine.spnout)
-
     def assert_undefined(self, expected: tuple[int, str]):
         assert (undfnd := self.machine.undfnd) is not None
         step, slot = undfnd
@@ -82,32 +77,6 @@ class TuringTest(TestCase):
         self.assertEqual(
             expected,
             (step, show_slot(slot)))
-
-    def assert_macro_cells(self, cells: int):
-        self.assertEqual(
-            self.machine.program.cells,  # type: ignore
-            cells)
-
-    def assert_quasihalt(self, qsihlt: bool | None):
-        assert isinstance(self.machine, StrictLinRecMachine)
-
-        self.assertEqual(
-            self.machine.qsihlt,
-            qsihlt)
-
-    def assert_close(
-            self,
-            this: int,
-            that: int | float,
-            rel_tol: float,
-    ):
-        self.assertTrue(
-            isclose(
-                this,
-                that,
-                rel_tol = rel_tol,
-            )
-        )
 
     def assert_normal(self, prog: str):
         self.assertTrue(
@@ -167,79 +136,6 @@ class TuringTest(TestCase):
             or prog in SPAGHETTI
             or prog in KERNEL
         )
-
-    def assert_mult_rules(self) -> None:
-        assert isinstance(self.machine, Machine)
-
-        self.assertTrue(any(
-            isinstance(diff, tuple)
-            for rules in self.machine.prover.rules.values()
-            for _, rule in rules
-            for diff in rule.values()))
-
-    def assert_lin_rec(self, steps: int, recur: int):
-        assert isinstance(self.machine, LinRecSampler)
-        history = self.machine.history
-
-        self.assertEqual(
-            history.states[steps],
-            history.states[recur],
-        )
-
-        self.assertEqual(
-            history.verify_lin_rec(
-                steps,
-                recur,
-            ),
-            (steps, recur - steps),
-            self.prog,
-        )
-
-    def deny_lin_rec(self, steps: int, recur: int):
-        assert isinstance(self.machine, LinRecSampler)
-        history = self.machine.history
-
-        states = history.states
-
-        if states[steps] == states[recur]:
-            self.assertIsNone(
-                history.verify_lin_rec(
-                    steps,
-                    recur,
-                ),
-                self.prog,
-            )
-
-    def verify_lin_rec(self, prog: str, steps: int, period: int):
-        recur   = period + steps
-        runtime = period + recur
-
-        self.run_bb(
-            prog,
-            print_prog = False,
-            sim_lim = 1 + runtime,
-            samples = {
-                steps - 1      : None,  # type: ignore[dict-item]
-                steps          : None,  # type: ignore[dict-item]
-                steps + 1      : None,  # type: ignore[dict-item]
-                recur - 1      : None,  # type: ignore[dict-item]
-                recur          : None,  # type: ignore[dict-item]
-                recur + 1      : None,  # type: ignore[dict-item]
-                recur + period : None,  # type: ignore[dict-item]
-            },
-        )
-
-        self.assert_lin_rec(    steps,          recur)
-        self.assert_lin_rec(1 + steps,      1 + recur)
-        self.assert_lin_rec(    steps, period + recur)
-
-        assert period > 1
-
-        self.deny_lin_rec(steps, 1 + recur)
-        self.deny_lin_rec(steps, recur - 1)
-
-        if steps >= 1:
-            self.deny_lin_rec(steps - 1, recur)
 
     def run_bb(  # pylint: disable = too-many-arguments
             self,
@@ -301,6 +197,123 @@ class TuringTest(TestCase):
 
         _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
         _ = Machine(prog, backsym = 1).run(sim_lim = 10)
+
+
+class Reason(TuringTest):
+    def test_undefined(self):
+        for prog, sequence in UNDEFINED.items():
+            self.assertEqual(
+                sequence,
+                {
+                    partial: (step, show_slot(slot))
+                    for partial, step, slot in
+                    instr_seq(prog)
+                },
+            )
+
+    def test_mother_of_giants(self):
+        mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
+
+        for prog in Program(mother).branch_read('E0'):
+            self.assert_could_blank(prog)
+            self.assert_could_spin_out(prog)
+
+    def test_bigfoot(self):
+        bigfoot = "1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA"
+
+        self.assert_could_halt(bigfoot)
+
+        for prog in Program(bigfoot).branch_read('C0'):
+            self.assert_cant_blank(prog)
+
+        # pylint: disable = line-too-long
+        two_color = "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  ... 1LC"
+
+        self.assert_could_halt(two_color)
+
+        for prog in Program(two_color).branch_read('H0'):
+            self.assert_cant_blank(prog)
+
+    def test_blank(self):
+        for prog in DONT_BLANK:
+            self.assert_cant_blank(prog)
+
+        for prog in BLANKERS:
+            self.assert_simple(prog)
+            self.assert_could_blank(prog)
+
+    def test_false_negatives(self):
+        for prog in CANT_HALT_FALSE_NEGATIVES:
+            self.assert_could_halt(prog)
+            self.assert_could_halt(prog.replace('...', '1R_'))
+
+        for prog in CANT_BLANK_FALSE_NEGATIVES:
+            self.assertNotIn(prog, BLANKERS)
+            self.assert_could_blank(prog)
+
+        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
+            self.assertNotIn(
+                prog,
+                SPINOUT
+                 | SPINOUT_SLOW
+                 | SPINOUT_BLANK
+                 | SPINOUT_BLANK_SLOW)
+
+            self.assert_could_spin_out(prog)
+
+    def test_halt(self):
+        for prog in DO_HALT | set(HALT_SLOW):
+            self.assert_could_halt(prog)
+
+    def test_spinout(self):
+        for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
+            self.assert_simple(prog)
+            self.assert_could_spin_out(prog)
+
+        for prog in DONT_SPIN_OUT:
+            self.assert_cant_spin_out(prog)
+
+    def test_recur(self):
+        # pylint: disable-next = line-too-long
+        for prog in RECUR_COMPACT | RECUR_DIFFUSE | RECUR_SLOW | RECUR_TOO_SLOW:
+            self.assert_cant_halt(prog)
+            self.assert_cant_blank(prog)
+            self.assert_cant_spin_out(prog)
+
+    def test_holdouts(self):
+        for cat in ('42h', '24h'):
+            for prog in read_holdouts(cat):
+                self.assert_could_halt(prog)
+
+        for prog in read_holdouts('42q'):
+            self.assert_cant_halt(prog)
+            self.assert_could_spin_out(prog)
+
+
+class Simple(TuringTest):
+    def test_halt(self):
+        self._test_halt(HALT)
+
+    def test_spinout(self):
+        self._test_spinout(SPINOUT)
+        self._test_spinout(SPINOUT_BLANK, blank = True)
+
+    def test_undefined(self):
+        for sequence in UNDEFINED.values():
+            for partial, expected in sequence.items():
+                self.run_bb(partial, prover = False, normal = False)
+
+                self.assert_undefined(expected)
+
+    def test_holdouts(self):
+        self.assertEqual(
+            len(holdouts := get_holdouts()),
+            1788)
+
+        for prog in holdouts:
+            self.assertFalse(
+                quick_term_or_rec(prog, 1_000),
+                prog)
 
     def _test_simple_terminate(
             self,
@@ -364,6 +377,35 @@ class TuringTest(TestCase):
         self._test_simple_terminate(
             prog_data,
             blank = blank,
+        )
+
+
+class Recur(TuringTest):
+    prog: str
+    machine: Machine | StrictLinRecMachine | LinRecSampler
+
+    def assert_quasihalt(self, qsihlt: bool | None):
+        assert isinstance(self.machine, StrictLinRecMachine)
+
+        self.assertEqual(
+            self.machine.qsihlt,
+            qsihlt)
+
+    def test_recur(self):
+        self._test_recur(
+            RECUR_COMPACT
+            | RECUR_DIFFUSE
+        )
+
+        self._test_recur(
+            RECUR_BLANK_IN_PERIOD,
+            blank = True,
+            qsihlt = None,
+        )
+
+        self._test_recur(
+            QUASIHALT,  # type: ignore[arg-type]
+            qsihlt = True,
         )
 
     def _test_recur(
@@ -439,6 +481,143 @@ class TuringTest(TestCase):
 
                 self.assertTrue(
                     quick_term_or_rec(prog, 100_000))
+
+    def assert_lin_rec(self, steps: int, recur: int):
+        assert isinstance(self.machine, LinRecSampler)
+        history = self.machine.history
+
+        self.assertEqual(
+            history.states[steps],
+            history.states[recur],
+        )
+
+        self.assertEqual(
+            history.verify_lin_rec(
+                steps,
+                recur,
+            ),
+            (steps, recur - steps),
+            self.prog,
+        )
+
+    def deny_lin_rec(self, steps: int, recur: int):
+        assert isinstance(self.machine, LinRecSampler)
+        history = self.machine.history
+
+        states = history.states
+
+        if states[steps] == states[recur]:
+            self.assertIsNone(
+                history.verify_lin_rec(
+                    steps,
+                    recur,
+                ),
+                self.prog,
+            )
+
+    def verify_lin_rec(self, prog: str, steps: int, period: int):
+        recur   = period + steps
+        runtime = period + recur
+
+        self.run_bb(
+            prog,
+            print_prog = False,
+            sim_lim = 1 + runtime,
+            samples = {
+                steps - 1      : None,  # type: ignore[dict-item]
+                steps          : None,  # type: ignore[dict-item]
+                steps + 1      : None,  # type: ignore[dict-item]
+                recur - 1      : None,  # type: ignore[dict-item]
+                recur          : None,  # type: ignore[dict-item]
+                recur + 1      : None,  # type: ignore[dict-item]
+                recur + period : None,  # type: ignore[dict-item]
+            },
+        )
+
+        self.assert_lin_rec(    steps,          recur)
+        self.assert_lin_rec(1 + steps,      1 + recur)
+        self.assert_lin_rec(    steps, period + recur)
+
+        assert period > 1
+
+        self.deny_lin_rec(steps, 1 + recur)
+        self.deny_lin_rec(steps, recur - 1)
+
+        if steps >= 1:
+            self.deny_lin_rec(steps - 1, recur)
+
+
+class Prover(TuringTest):
+    machine: Machine
+
+    def assert_spinout(self) -> None:
+        self.assertIsNotNone(
+            self.machine.spnout)
+
+    def assert_macro_cells(self, cells: int):
+        self.assertEqual(
+            self.machine.program.cells,  # type: ignore
+            cells)
+
+    def assert_mult_rules(self) -> None:
+        assert isinstance(self.machine, Machine)
+
+        self.assertTrue(any(
+            isinstance(diff, tuple)
+            for rules in self.machine.prover.rules.values()
+            for _, rule in rules
+            for diff in rule.values()))
+
+    def assert_close(
+            self,
+            this: int,
+            that: int | float,
+            rel_tol: float,
+    ):
+        self.assertTrue(
+            isclose(
+                this,
+                that,
+                rel_tol = rel_tol,
+            )
+        )
+
+    def test_prover(self):
+        self._test_prover_est(
+            PROVER_HALT
+            | PROVER_SPINOUT
+        )
+
+        self._test_prover(
+            HALT
+            | HALT_SLOW
+            | SPINOUT
+        )
+
+        self._test_prover(
+            SPINOUT_BLANK,
+            blank = True,
+        )
+
+        self._test_prover(
+            RECUR_COMPACT
+            | QUASIHALT,
+            simple_term = False,
+        )
+
+        self.run_bb(
+            "1RB 0LC  1RD 1RA  ... 0LD  1LA 0LB",
+            analyze = False,
+        )
+
+        self.run_bb(
+            "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",
+        )
+
+        self.run_bb(
+            "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
+            backsym = 2,
+        )
 
     def _test_prover(  # type: ignore[misc]
             self,
@@ -560,177 +739,6 @@ class TuringTest(TestCase):
                 self.assertIn(
                     prog,
                     SUSPECTED_RULES)
-
-
-class Reason(TuringTest):
-    def test_undefined(self):
-        for prog, sequence in UNDEFINED.items():
-            self.assertEqual(
-                sequence,
-                {
-                    partial: (step, show_slot(slot))
-                    for partial, step, slot in
-                    instr_seq(prog)
-                },
-            )
-
-    def test_mother_of_giants(self):
-        mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
-
-        for prog in Program(mother).branch_read('E0'):
-            self.assert_could_blank(prog)
-            self.assert_could_spin_out(prog)
-
-    def test_bigfoot(self):
-        bigfoot = "1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA"
-
-        self.assert_could_halt(bigfoot)
-
-        for prog in Program(bigfoot).branch_read('C0'):
-            self.assert_cant_blank(prog)
-
-        # pylint: disable = line-too-long
-        two_color = "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  ... 1LC"
-
-        self.assert_could_halt(two_color)
-
-        for prog in Program(two_color).branch_read('H0'):
-            self.assert_cant_blank(prog)
-
-    def test_blank(self):
-        for prog in DONT_BLANK:
-            self.assert_cant_blank(prog)
-
-        for prog in BLANKERS:
-            self.assert_simple(prog)
-            self.assert_could_blank(prog)
-
-    def test_false_negatives(self):
-        for prog in CANT_HALT_FALSE_NEGATIVES:
-            self.assert_could_halt(prog)
-            self.assert_could_halt(prog.replace('...', '1R_'))
-
-        for prog in CANT_BLANK_FALSE_NEGATIVES:
-            self.assertNotIn(prog, BLANKERS)
-            self.assert_could_blank(prog)
-
-        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
-            self.assertNotIn(
-                prog,
-                SPINOUT
-                 | SPINOUT_SLOW
-                 | SPINOUT_BLANK
-                 | SPINOUT_BLANK_SLOW)
-
-            self.assert_could_spin_out(prog)
-
-    def test_halt(self):
-        for prog in DO_HALT | set(HALT_SLOW):
-            self.assert_could_halt(prog)
-
-    def test_spinout(self):
-        for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
-            self.assert_simple(prog)
-            self.assert_could_spin_out(prog)
-
-        for prog in DONT_SPIN_OUT:
-            self.assert_cant_spin_out(prog)
-
-    def test_recur(self):
-        # pylint: disable-next = line-too-long
-        for prog in RECUR_COMPACT | RECUR_DIFFUSE | RECUR_SLOW | RECUR_TOO_SLOW:
-            self.assert_cant_halt(prog)
-            self.assert_cant_blank(prog)
-            self.assert_cant_spin_out(prog)
-
-    def test_holdouts(self):
-        for cat in ('42h', '24h'):
-            for prog in read_holdouts(cat):
-                self.assert_could_halt(prog)
-
-        for prog in read_holdouts('42q'):
-            self.assert_cant_halt(prog)
-            self.assert_could_spin_out(prog)
-
-
-class Fast(TuringTest):
-    def test_halt(self):
-        self._test_halt(HALT)
-
-    def test_spinout(self):
-        self._test_spinout(SPINOUT)
-        self._test_spinout(SPINOUT_BLANK, blank = True)
-
-    def test_recur(self):
-        self._test_recur(
-            RECUR_COMPACT
-            | RECUR_DIFFUSE
-        )
-
-        self._test_recur(
-            RECUR_BLANK_IN_PERIOD,
-            blank = True,
-            qsihlt = None,
-        )
-
-        self._test_recur(
-            QUASIHALT,  # type: ignore[arg-type]
-            qsihlt = True,
-        )
-
-    def test_holdouts(self):
-        self.assertEqual(
-            len(holdouts := get_holdouts()),
-            1788)
-
-        for prog in holdouts:
-            self.assertFalse(
-                quick_term_or_rec(prog, 1_000),
-                prog)
-
-    def test_prover(self):
-        self._test_prover_est(
-            PROVER_HALT
-            | PROVER_SPINOUT
-        )
-
-        self._test_prover(
-            HALT
-            | HALT_SLOW
-            | SPINOUT
-        )
-
-        self._test_prover(
-            SPINOUT_BLANK,
-            blank = True,
-        )
-
-        self._test_prover(
-            RECUR_COMPACT
-            | QUASIHALT,
-            simple_term = False,
-        )
-
-        self.run_bb(
-            "1RB 0LC  1RD 1RA  ... 0LD  1LA 0LB",
-            analyze = False,
-        )
-
-        self.run_bb(
-            "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",
-        )
-
-        self.run_bb(
-            "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
-            backsym = 2,
-        )
-
-    def test_undefined(self):
-        for sequence in UNDEFINED.values():
-            for partial, expected in sequence.items():
-                self.run_bb(partial, prover = False, normal = False)
-
-                self.assert_undefined(expected)
 
     def test_macro_undefined(self):
         self.run_bb(
