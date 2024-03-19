@@ -5,7 +5,7 @@ from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
 from test.utils import read_progs
-from test.lin_rec import LooseLinRecMachine
+from test.lin_rec import run_loose_linrec_machine
 from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 
 from tm.tree import run_tree_gen
@@ -21,7 +21,9 @@ from tm.reason import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    BasicMachine = Machine | LooseLinRecMachine
+    from test.lin_rec import QuickMachineResult
+
+    BasicMachine = Machine | QuickMachineResult
 
     Q = Queue[str]
 
@@ -43,7 +45,7 @@ def run_variations(
         block_steps: int = 1_000,
 ) -> Iterator[BasicMachine]:
     if lin_rec is not None:
-        yield LooseLinRecMachine(prog).run(lin_rec)
+        yield run_loose_linrec_machine(prog, lin_rec)
 
     yield Machine(
         prog,

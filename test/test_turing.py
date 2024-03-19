@@ -9,10 +9,10 @@ from unittest import TestCase, expectedFailure
 from test.prog_data import *
 # pylint: disable-next = line-too-long
 from test.test_num import assert_num_counts, clear_caches  # type: ignore[attr-defined]
-from test.machine import QuickMachine
+from test.machine import QuickMachineResult, run_quick_machine
 from test.lin_rec import (
     LinRecSampler,
-    LooseLinRecMachine,
+    run_loose_linrec_machine,
     StrictLinRecMachine,
 )
 from test.utils import get_holdouts, read_holdouts
@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 
     BasicMachine = (
         Machine
-        | QuickMachine
+        | QuickMachineResult
         | StrictLinRecMachine
         | LinRecSampler
     )
@@ -58,7 +58,7 @@ class TuringTest(TestCase):
     def assert_marks(self, marks: int):
         assert isinstance(
             self.machine,
-            Machine | QuickMachine)
+            Machine | QuickMachineResult)
 
         self.assertEqual(
             self.machine.marks,
@@ -244,14 +244,14 @@ class Reason(TuringTest):
 
 
 class Simple(TuringTest):
-    machine: QuickMachine
+    machine: QuickMachineResult
 
     def run_bb(self, prog: str, normal: bool = True):
         print(prog)
 
         self.analyze(prog, normal = normal)
 
-        self.machine = QuickMachine(prog).run()
+        self.machine = run_quick_machine(prog)
 
     def test_halt(self):
         self._test_halt(HALT)
@@ -459,10 +459,8 @@ class Recur(TuringTest):
                 self.assert_quasihalt(qsihlt)
 
             if steps is None or steps < 100_000:
-                self.assertTrue(
-                    LooseLinRecMachine(prog).run(
-                        100_000
-                    ).infrul)
+                self.assertIsNotNone(
+                    run_loose_linrec_machine(prog, 100_000).infrul)
 
                 self.assertTrue(
                     quick_term_or_rec(prog, 100_000))

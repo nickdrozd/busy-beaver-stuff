@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from collections import defaultdict
 from dataclasses import dataclass, field
 
+from test.machine import QuickMachineResult, TermRes
+
 from tm.parse import tcompile
 from tm.tape import HeadTape, init_stepped
 
@@ -358,89 +360,98 @@ class LinRecSampler(LinRecMachine):
         return self
 
 
-class LooseLinRecMachine(LinRecMachine):
-    # pylint: disable = while-used, too-many-locals, line-too-long
-    def run(self, sim_lim: int) -> Self:
-        self.blanks = {}
+def run_loose_linrec_machine(
+        program: str,
+        sim_lim: int = 100_000_000,
+) -> QuickMachineResult:
+    # pylint: disable = while-used, too-many-locals
+    blanks = {}
 
-        comp = self.comp
+    comp = tcompile(program)
 
-        state = 1
+    state = 1
 
-        step = 1
+    step = 1
 
-        self.tape = tape = init_stepped()
+    tape = init_stepped()
 
-        cycle = 1
+    cycle = 1
 
-        while cycle < sim_lim:
-            steps_reset = 2 * step
+    result: TermRes | None = None
+    last_slot: Slot | None = None
 
-            leftmost = rightmost = tape.head
+    while cycle < sim_lim:
+        steps_reset = 2 * step
 
-            init_state = state
+        leftmost = rightmost = tape.head
 
-            init_tape = tape.copy()
+        init_state = state
 
-            while step < steps_reset and cycle < sim_lim:
-                try:
-                    instr = comp[state, tape.scan]
-                except KeyError:
-                    self.undfnd = step, (state, tape.scan)
+        init_tape = tape.copy()
+
+        while step < steps_reset and cycle < sim_lim:
+            try:
+                instr = comp[state, tape.scan]
+            except KeyError:
+                last_slot = state, tape.scan
+                result = TermRes.undfnd
+                break
+
+            color, shift, next_state = instr
+
+            if (same := state == next_state) and tape.at_edge(shift):
+                result = TermRes.spnout
+                break
+
+            stepped = tape.step(shift, color, same)
+
+            step += stepped
+
+            cycle += 1
+
+            if (state := next_state) == -1:
+                result = TermRes.halted
+                break
+
+            if not color and tape.blank:
+                if state in blanks:
+                    result = TermRes.infrul
                     break
 
-                color, shift, next_state = instr
+                blanks[state] = step
 
-                if (same := state == next_state) and tape.at_edge(shift):
-                    self.spnout = step
+                if state == 0:
+                    result = TermRes.infrul
                     break
 
-                stepped = tape.step(shift, color, same)
+            if (curr := tape.head) < leftmost:
+                leftmost = curr
+            elif rightmost < curr:
+                rightmost = curr
 
-                step += stepped
-
-                cycle += 1
-
-                if (state := next_state) == -1:
-                    self.halted = step
-                    break
-
-                if not color and tape.blank:
-                    if state in self.blanks:
-                        self.infrul = step
-                        break
-
-                    self.blanks[state] = step
-
-                    if state == 0:
-                        self.infrul = step
-                        break
-
-                if (curr := tape.head) < leftmost:
-                    leftmost = curr
-                elif rightmost < curr:
-                    rightmost = curr
-
-                if state != init_state:
-                    continue
-
-                if tape.scan != init_tape.scan:
-                    continue
-
-                if tape.aligns_with(init_tape, leftmost, rightmost):
-                    self.infrul = step
-                    break
-
-            else:
+            if state != init_state:
                 continue
 
-            self.xlimit = None
+            if tape.scan != init_tape.scan:
+                continue
 
-            break
+            if tape.aligns_with(init_tape, leftmost, rightmost):
+                result = TermRes.infrul
+                break
 
         else:
-            self.xlimit = stepped
+            continue
 
-        self.cycles = cycle
+        break
 
-        return self
+    else:
+        result = TermRes.xlimit
+
+    return QuickMachineResult(
+        result = result,
+        steps = step,
+        cycles = cycle,
+        marks = -1,
+        last_slot = last_slot,
+        blanks = blanks,
+    )
