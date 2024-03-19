@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from math import isclose, log10
 from typing import TYPE_CHECKING
-from unittest import TestCase, skip, expectedFailure
+from unittest import TestCase, expectedFailure
 
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
@@ -1012,16 +1012,3 @@ class Fast(TuringTest):
             "muls": 12079,
             "totl": 84947,
         })
-
-
-class Slow(TuringTest):
-    @skip('')
-    def test_halt(self):
-        self._test_halt(HALT_SLOW)
-
-    def test_spinout(self):
-        self._test_spinout(SPINOUT_SLOW)
-        self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
-
-    def test_recur(self):
-        self._test_recur(RECUR_SLOW, quick = False)

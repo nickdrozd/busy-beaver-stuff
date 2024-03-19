@@ -70,7 +70,7 @@ compile : rust
 	$(MYPYC) --version
 	$(MYPYC) tm tools $(TEST_COMPILE) --exclude rust_stuff
 
-TUR = test.test_turing.Fast
+TUR = test.test_turing
 PROG = test.test_program
 GRAPH = test.test_graph
 TREEF = test.test_tree.Fast
