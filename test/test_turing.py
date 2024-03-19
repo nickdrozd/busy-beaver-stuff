@@ -147,56 +147,6 @@ class TuringTest(TestCase):
         _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
         _ = Machine(prog, backsym = 1).run(sim_lim = 10)
 
-    def run_bb(  # pylint: disable = too-many-arguments
-            self,
-            prog: str,
-            *,
-            print_prog: bool = True,
-            analyze: bool = True,
-            normal: bool = True,
-            blocks: int | None = None,
-            backsym: int | None = None,
-            opt_macro: int | None = None,
-            prover: bool = True,
-            check_rec: int | None = None,
-            samples: Tapes | None = None,
-            **opts,
-    ):
-        if check_rec is not None:
-            self.machine = StrictLinRecMachine(prog)
-        elif samples is not None:
-            self.machine = LinRecSampler(prog)
-        elif not prover:
-            assert not blocks and not opt_macro and not backsym
-            self.machine = QuickMachine(prog)
-        else:
-            self.machine = Machine(
-                prog,
-                blocks = blocks,
-                backsym = backsym,
-                opt_macro = opt_macro,
-            )
-
-        if print_prog:
-            print(
-                self.machine.program
-                if isinstance(self.machine, Machine) else
-                prog
-            )
-
-        if check_rec is not None:
-            assert isinstance(self.machine, StrictLinRecMachine)
-            self.machine.run(check_rec = check_rec, **opts)
-        elif samples is not None:
-            assert isinstance(self.machine, LinRecSampler)
-            # pylint: disable = unexpected-keyword-arg
-            self.machine.run(samples = samples, **opts)
-        else:
-            self.machine.run(**opts)
-
-        if analyze:
-            self.analyze(prog, normal = normal)
-
 
 class Reason(TuringTest):
     def test_undefined(self):
@@ -290,6 +240,15 @@ class Reason(TuringTest):
 
 
 class Simple(TuringTest):
+    machine: QuickMachine
+
+    def run_bb(self, prog: str, normal: bool = True):
+        print(prog)
+
+        self.analyze(prog, normal = normal)
+
+        self.machine = QuickMachine(prog).run()
+
     def test_halt(self):
         self._test_halt(HALT)
 
@@ -300,7 +259,7 @@ class Simple(TuringTest):
     def test_undefined(self):
         for sequence in UNDEFINED.values():
             for partial, expected in sequence.items():
-                self.run_bb(partial, prover = False, normal = False)
+                self.run_bb(partial, normal = False)
 
                 self.assert_undefined(expected)
 
@@ -320,11 +279,9 @@ class Simple(TuringTest):
             blank: bool,
     ):
         for prog, (marks, steps) in prog_data.items():
-            self.run_bb(prog, prover = False)
+            self.run_bb(prog)
 
             self.assert_steps(steps)
-
-            assert isinstance(self.machine, QuickMachine)
 
             self.assertEqual(
                 steps,
@@ -389,6 +346,31 @@ class Recur(TuringTest):
         self.assertEqual(
             self.machine.qsihlt,
             qsihlt)
+
+    def run_bb(
+            self,
+            prog: str,
+            *,
+            print_prog: bool = True,
+            check_rec: int | None = None,
+            samples: Tapes | None = None,
+            sim_lim: int | None = None,
+    ):
+        if print_prog:
+            print(prog)
+
+        if check_rec is not None:
+            self.machine = StrictLinRecMachine(prog).run(
+                check_rec = check_rec)
+        elif samples is not None:
+            assert sim_lim is not None
+            self.machine = LinRecSampler(prog).run(
+                samples = samples,
+                sim_lim = sim_lim)
+        else:
+            self.machine = Machine(prog).run()
+
+        self.analyze(prog)
 
     def test_recur(self):
         self._test_recur(
@@ -559,8 +541,6 @@ class Prover(TuringTest):
             cells)
 
     def assert_mult_rules(self) -> None:
-        assert isinstance(self.machine, Machine)
-
         self.assertTrue(any(
             isinstance(diff, tuple)
             for rules in self.machine.prover.rules.values()
@@ -580,6 +560,33 @@ class Prover(TuringTest):
                 rel_tol = rel_tol,
             )
         )
+
+    def run_bb(  # pylint: disable = too-many-arguments
+        self,
+        prog: str,
+        *,
+        print_prog: bool = True,
+        analyze: bool = True,
+        normal: bool = True,
+        blocks: int | None = None,
+        backsym: int | None = None,
+        opt_macro: int | None = None,
+        **opts,
+    ):
+        self.machine = Machine(
+            prog,
+            blocks = blocks,
+            backsym = backsym,
+            opt_macro = opt_macro,
+        )
+
+        if print_prog:
+            print(self.machine.program)
+
+        self.machine.run(**opts)
+
+        if analyze:
+            self.analyze(prog, normal = normal)
 
     def test_prover(self):
         self._test_prover_est(
@@ -633,8 +640,6 @@ class Prover(TuringTest):
                 opt_macro = 10_000,
             )
 
-            assert isinstance(self.machine, Machine)
-
             if simple_term:
                 self.assertIsNotNone(
                     self.machine.simple_termination)
@@ -672,8 +677,6 @@ class Prover(TuringTest):
                 ),
                 normal = False,
             )
-
-            assert isinstance(self.machine, Machine)
 
             if not isinstance(self.machine.rulapp, int):
                 assert prog in ALGEBRA_PROGS, prog
@@ -774,8 +777,6 @@ class Prover(TuringTest):
                 opt_macro = 1600,
             )
 
-            assert isinstance(self.machine, Machine)
-
             self.assertTrue(
                 str(self.machine.limrul).startswith(reason))
 
@@ -851,8 +852,6 @@ class Prover(TuringTest):
                 backsym = backsym or None,
                 normal = False,
             )
-
-            assert isinstance(self.machine, Machine)
 
             if backsym in {0, 3, 4, 6}:
                 self.assertNotIsInstance(
@@ -944,8 +943,6 @@ class Prover(TuringTest):
                     backsym = 1 if term == 'times-depth' else None,
                     print_prog = not show,
                 )
-
-                assert isinstance(self.machine, Machine)
 
                 if self.machine.halted is not None:
                     self.assertEqual(term, 'halt', prog)
