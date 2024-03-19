@@ -137,6 +137,16 @@ class TuringTest(TestCase):
             or prog in KERNEL
         )
 
+    def analyze(self, prog: str, normal: bool = True) -> None:
+        if normal:
+            self.assert_normal(prog)
+
+        self.assert_simple(prog)
+        self.assert_connected(prog)
+
+        _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
+        _ = Machine(prog, backsym = 1).run(sim_lim = 10)
+
     def run_bb(  # pylint: disable = too-many-arguments
             self,
             prog: str,
@@ -184,17 +194,8 @@ class TuringTest(TestCase):
         else:
             self.machine.run(**opts)
 
-        if not analyze:
-            return
-
-        if normal:
-            self.assert_normal(prog)
-
-        self.assert_simple(prog)
-        self.assert_connected(prog)
-
-        _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
-        _ = Machine(prog, backsym = 1).run(sim_lim = 10)
+        if analyze:
+            self.analyze(prog, normal = normal)
 
 
 class Reason(TuringTest):
