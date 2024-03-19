@@ -56,8 +56,12 @@ class TuringTest(TestCase):
     maxDiff = None
 
     def assert_marks(self, marks: int):
+        assert isinstance(
+            self.machine,
+            Machine | QuickMachine)
+
         self.assertEqual(
-            self.machine.marks,  # type: ignore[union-attr]
+            self.machine.marks,
             marks)
 
     def assert_steps(self, steps: int):
@@ -536,8 +540,10 @@ class Prover(TuringTest):
             self.machine.spnout)
 
     def assert_macro_cells(self, cells: int):
+        assert not isinstance(macro := self.machine.program, str)
+
         self.assertEqual(
-            self.machine.program.cells,  # type: ignore
+            macro.cells,
             cells)
 
     def assert_mult_rules(self) -> None:
