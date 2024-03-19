@@ -153,10 +153,8 @@ class TuringTest(TestCase):
             **opts,
     ):
         if check_rec is not None:
-            assert isinstance(prog, str)
             self.machine = StrictLinRecMachine(prog)
         elif samples is not None:
-            assert isinstance(prog, str)
             self.machine = LinRecSampler(prog)
         elif not prover:
             assert not blocks and not opt_macro and not backsym
@@ -186,7 +184,7 @@ class TuringTest(TestCase):
         else:
             self.machine.run(**opts)
 
-        if not analyze or not isinstance(prog, str):
+        if not analyze:
             return
 
         if normal:
