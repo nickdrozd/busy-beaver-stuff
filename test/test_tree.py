@@ -10,8 +10,8 @@ from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 
 from tm.tree import run_tree_gen
 from tm.machine import Machine, quick_term_or_rec
+from tm.graph import Graph
 from tm.reason import (
-    Reasoner,
     cant_halt,
     cant_blank,
     cant_spin_out,
@@ -118,10 +118,10 @@ class TestTree(TestCase):
                 cant_spin_out(prog))
 
     def assert_simple_and_connected(self) -> None:
-        for prog in map(Reasoner, self.progs):
+        for graph in map(Graph, self.progs):
             self.assertTrue(
-                prog.graph.is_simple
-                and prog.graph.is_strongly_connected)
+                graph.is_simple
+                and graph.is_strongly_connected)
 
     def add_result(self, prog: str, machine: BasicMachine) -> None:
         if ((blanks := machine.blanks)
