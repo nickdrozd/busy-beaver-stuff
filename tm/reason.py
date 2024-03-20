@@ -67,8 +67,10 @@ def cant_reach(
     if not (slots := get_slots(prog)):
         return True
 
-    program: dict[State, list[Instr | None]] = \
-        dict(enumerate(parse(prog)))
+    program: dict[State, list[Instr]] = {
+        state: [instr for instr in instrs if instr]
+        for state, instrs in enumerate(parse(prog))
+    }
 
     configs: list[Config] = [
         (1, state, BackstepTape(scan = color))
@@ -105,12 +107,7 @@ def cant_reach(
         # print(step, state, tape)
 
         for entry in sorted(entry_points[state]):
-            for instr in program[entry]:
-                if instr is None:
-                    continue
-
-                _, shift, trans = instr
-
+            for _, shift, trans in program[entry]:
                 if trans != state:
                     continue
 
