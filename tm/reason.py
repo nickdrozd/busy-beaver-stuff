@@ -67,7 +67,9 @@ def cant_reach(
     if not (slots := get_slots(prog)):
         return True
 
-    program: dict[State, list[Instr]] = reason_parse(prog)
+    program: dict[State, list[Instr]]
+
+    color_count, program = reason_parse(prog)
 
     configs: list[Config] = [
         (1, state, BackstepTape(scan = color))
@@ -82,7 +84,7 @@ def cant_reach(
 
     entry_points = graph.entry_points
 
-    colors = graph.colors
+    colors = tuple(range(color_count))
 
     for _ in range(max_cycles):  # no-branch
         try:

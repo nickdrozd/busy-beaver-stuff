@@ -9,17 +9,19 @@ use crate::tape::{Tape, TupleTape};
 /**************************************/
 
 #[pyfunction]
-pub fn reason_parse(prog: &str) -> HashMap<State, Vec<Instr>> {
+pub fn reason_parse(prog: &str) -> (usize, HashMap<State, Vec<Instr>>) {
     let mut program = HashMap::new();
 
-    for (state, instrs) in prim_parse(prog).iter().enumerate() {
+    let parsed = prim_parse(prog);
+
+    for (state, instrs) in parsed.iter().enumerate() {
         program.insert(
             state as State,
             instrs.iter().filter_map(|instr| *instr).collect(),
         );
     }
 
-    program
+    (parsed[0].len(), program)
 }
 
 /**************************************/
