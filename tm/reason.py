@@ -35,36 +35,36 @@ if TYPE_CHECKING:
 def cant_halt(prog: str) -> bool:
     return cant_reach(
         prog,
-        halt_slots(prog),
-        lambda: BackstepMachineHalt(prog),
+        halt_slots,
+        BackstepMachineHalt,
     )
 
 
 def cant_blank(prog: str) -> bool:
     return cant_reach(
         prog,
-        erase_slots(prog),
-        lambda: BackstepMachineBlank(prog),
+        erase_slots,
+        BackstepMachineBlank,
     )
 
 
 def cant_spin_out(prog: str) -> bool:
     return cant_reach(
         prog,
-        zero_reflexive_slots(prog),
-        lambda: BackstepMachineSpinout(prog),
+        zero_reflexive_slots,
+        BackstepMachineSpinout,
     )
 
 ########################################
 
 def cant_reach(
         program: str,
-        slots: list[Slot],
-        get_machine: Callable[[], BackstepMachine],
+        get_slots: Callable[[str], list[Slot]],
+        get_machine: Callable[[str], BackstepMachine],
         max_steps: int = 24,
         max_cycles: int = 1_000,
 ) -> bool:
-    if not slots:
+    if not (slots := get_slots(program)):
         return True
 
     prog: dict[State, list[Instr | None]] = \
@@ -77,7 +77,7 @@ def cant_reach(
 
     seen: dict[State, set[BackstepTape]] = defaultdict(set)
 
-    machine = get_machine()
+    machine = get_machine(program)
 
     graph = Graph(program)
 
