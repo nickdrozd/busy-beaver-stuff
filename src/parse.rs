@@ -8,27 +8,26 @@ const LEFT: char = 'L';
 const RIGHT: char = 'R';
 
 #[pyfunction]
-pub fn parse(program: &str) -> Vec<Vec<Option<Instr>>> {
-    program
-        .trim()
+pub fn parse(prog: &str) -> Vec<Vec<Option<Instr>>> {
+    prog.trim()
         .split("  ")
         .map(|instrs| instrs.split(' ').map(read_instr).collect())
         .collect()
 }
 
 #[pyfunction]
-pub fn tcompile(program: &str) -> CompProg {
-    let mut prog = CompProg::new();
+pub fn tcompile(prog: &str) -> CompProg {
+    let mut program = CompProg::new();
 
-    for (state, instrs) in parse(program).iter().enumerate() {
+    for (state, instrs) in parse(prog).iter().enumerate() {
         for (color, instr) in instrs.iter().enumerate() {
             if let Some(instr) = instr {
-                prog.insert((state as State, color as Color), *instr);
+                program.insert((state as State, color as Color), *instr);
             }
         }
     }
 
-    prog
+    program
 }
 
 /**************************************/

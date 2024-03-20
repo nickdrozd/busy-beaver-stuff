@@ -58,17 +58,17 @@ def cant_spin_out(prog: str) -> bool:
 ########################################
 
 def cant_reach(
-        program: str,
+        prog: str,
         get_slots: Callable[[str], list[Slot]],
         get_machine: Callable[[str], BackstepMachine],
         max_steps: int = 24,
         max_cycles: int = 1_000,
 ) -> bool:
-    if not (slots := get_slots(program)):
+    if not (slots := get_slots(prog)):
         return True
 
-    prog: dict[State, list[Instr | None]] = \
-        dict(enumerate(parse(program)))
+    program: dict[State, list[Instr | None]] = \
+        dict(enumerate(parse(prog)))
 
     configs: list[Config] = [
         (1, state, BackstepTape(scan = color))
@@ -77,9 +77,9 @@ def cant_reach(
 
     seen: dict[State, set[BackstepTape]] = defaultdict(set)
 
-    machine = get_machine(program)
+    machine = get_machine(prog)
 
-    graph = Graph(program)
+    graph = Graph(prog)
 
     entry_points = graph.entry_points
 
@@ -105,7 +105,7 @@ def cant_reach(
         # print(step, state, tape)
 
         for entry in sorted(entry_points[state]):
-            for instr in prog[entry]:
+            for instr in program[entry]:
                 if instr is None:
                     continue
 
