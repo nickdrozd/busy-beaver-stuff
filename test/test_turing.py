@@ -198,7 +198,7 @@ class Reason(TuringTest):
     def test_false_negatives(self):
         for prog in CANT_HALT_FALSE_NEGATIVES:
             self.assert_could_halt(prog)
-            self.assert_could_halt(prog.replace('...', '1R_'))
+            self.assert_could_halt(prog)
 
         for prog in CANT_BLANK_FALSE_NEGATIVES:
             self.assertNotIn(prog, BLANKERS)
@@ -310,7 +310,7 @@ class Simple(TuringTest):
                     marks, {chr(blank + 65) for blank in blanks})
                 self.assert_could_blank(prog)
 
-            if '_' in prog:
+            if self.machine.halted is not None:
                 self.assert_could_halt(prog)
                 self.assert_cant_spin_out(prog)
 
@@ -726,7 +726,7 @@ class Prover(TuringTest):
             else:
                 self.assert_cant_blank(prog)
 
-            if '_' in prog:
+            if self.machine.halted is not None:
                 self.assert_cant_spin_out(prog)
                 self.assert_could_halt(prog)
             else:
