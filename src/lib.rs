@@ -29,7 +29,9 @@ mod rust_stuff {
     use crate::machine::{run_machine, MachineResult, TermRes};
 
     #[pymodule_export]
-    use crate::parse::{parse, read_slot, show_instr, show_slot, show_state, tcompile};
+    use crate::parse::{
+        erase_slots, halt_slots, parse, read_slot, show_instr, show_slot, show_state, tcompile,
+    };
 
     #[pymodule_export]
     use crate::prover::PastConfigs;

@@ -7,6 +7,8 @@ from tm.parse import parse
 from tm.graph import Graph
 from tm.tape import BackstepTape
 from tm.rust_stuff import (
+    halt_slots,
+    erase_slots,
     BackstepMachineHalt,
     BackstepMachineBlank,
     BackstepMachineSpinout,
@@ -30,15 +32,15 @@ if TYPE_CHECKING:
 ########################################
 
 def cant_halt(prog: str) -> bool:
-    return (program := Reasoner(prog)).cant_reach(
-        program.halt_slots,
+    return Reasoner(prog).cant_reach(
+        halt_slots(prog),
         lambda: BackstepMachineHalt(prog),
     )
 
 
 def cant_blank(prog: str) -> bool:
-    return (program := Reasoner(prog)).cant_reach(
-        program.erase_slots,
+    return Reasoner(prog).cant_reach(
+        erase_slots(prog),
         lambda: BackstepMachineBlank(prog),
     )
 
@@ -62,39 +64,15 @@ class Reasoner:
         self.graph = Graph(program)
 
     @property
-    def instr_slots(self) -> list[tuple[Slot, Instr | None]]:
+    def spinout_slots(self) -> list[Slot]:
         return [
-            ((state, color), instr)
-            for state, instrs in self.prog.items()
-            for color, instr in enumerate(instrs)
-        ]
-
-    @property
-    def halt_slots(self) -> tuple[Slot, ...]:
-        return tuple(
-            slot
-            for slot, instr in self.instr_slots
-            if instr is None
-        )
-
-    @property
-    def erase_slots(self) -> tuple[Slot, ...]:
-        return tuple(
-            slot
-            for slot, instr in self.instr_slots
-            if instr and slot[1] != 0 and instr[0] == 0
-        )
-
-    @property
-    def spinout_slots(self) -> tuple[Slot, ...]:
-        return tuple(
             (state, 0)
             for state in self.graph.zero_reflexive_states
-        )
+        ]
 
     def cant_reach(
             self,
-            slots: tuple[Slot, ...],
+            slots: list[Slot],
             get_machine: Callable[[], BackstepMachine],
             max_steps: int = 24,
             max_cycles: int = 1_000,

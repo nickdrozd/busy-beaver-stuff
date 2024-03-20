@@ -31,6 +31,44 @@ pub fn tcompile(program: &str) -> CompProg {
     prog
 }
 
+/**************************************/
+
+#[pyfunction]
+pub fn halt_slots(prog: &str) -> Vec<Slot> {
+    let mut slots = vec![];
+
+    for (state, instrs) in parse(prog).iter().enumerate() {
+        for (color, instr) in instrs.iter().enumerate() {
+            if instr.is_none() {
+                slots.push((state as State, color as Color));
+            }
+        }
+    }
+
+    slots
+}
+
+#[pyfunction]
+pub fn erase_slots(prog: &str) -> Vec<Slot> {
+    let mut slots = vec![];
+
+    for (state, instrs) in parse(prog).iter().enumerate() {
+        for (color, instr) in instrs.iter().enumerate() {
+            if color != 0 {
+                if let Some((pr, _, _)) = instr {
+                    if *pr == 0 {
+                        slots.push((state as State, color as Color));
+                    }
+                }
+            }
+        }
+    }
+
+    slots
+}
+
+/**************************************/
+
 fn read_color(color: char) -> Color {
     color.to_digit(10).unwrap().into()
 }
