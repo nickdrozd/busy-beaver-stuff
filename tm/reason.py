@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
-from tm.parse import parse
 from tm.graph import Graph
 from tm.tape import BackstepTape
 from tm.rust_stuff import (
     halt_slots,
     erase_slots,
     zero_reflexive_slots,
+    reason_parse,
     BackstepMachineHalt,
     BackstepMachineBlank,
     BackstepMachineSpinout,
@@ -67,10 +67,7 @@ def cant_reach(
     if not (slots := get_slots(prog)):
         return True
 
-    program: dict[State, list[Instr]] = {
-        state: [instr for instr in instrs if instr]
-        for state, instrs in enumerate(parse(prog))
-    }
+    program: dict[State, list[Instr]] = reason_parse(prog)
 
     configs: list[Config] = [
         (1, state, BackstepTape(scan = color))

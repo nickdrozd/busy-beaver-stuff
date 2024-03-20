@@ -109,7 +109,7 @@ def measure_blocks(prog: str, steps: int) -> int | None: ...
 
 def unroll_tape(prog: str, steps: int) -> list[Color]: ...
 
-## tape ################################
+## reason ##############################
 
 TupleBlock = tuple[int, int]
 
@@ -118,6 +118,8 @@ TupleTape = tuple[
     Color,
     tuple[TupleBlock, ...],
 ]
+
+def reason_parse(prog: str) -> dict[State, list[Instr]]: ...
 
 class BackstepMachineHalt:
     def __init__(self, prog: str): ...

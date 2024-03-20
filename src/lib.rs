@@ -38,7 +38,9 @@ mod rust_stuff {
     use crate::prover::PastConfigs;
 
     #[pymodule_export]
-    use crate::reason::{BackstepMachineBlank, BackstepMachineHalt, BackstepMachineSpinout};
+    use crate::reason::{
+        reason_parse, BackstepMachineBlank, BackstepMachineHalt, BackstepMachineSpinout,
+    };
 
     #[pymodule_export]
     use crate::rules::{InfiniteRule, RuleLimit, UnknownRule};

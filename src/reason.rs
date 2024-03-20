@@ -2,13 +2,29 @@ use std::collections::HashMap;
 
 use pyo3::prelude::*;
 
-use crate::instrs::{Color, CompProg, Shift, State};
-use crate::parse::tcompile;
+use crate::instrs::{Color, CompProg, Instr, Shift, State};
+use crate::parse::{parse as prim_parse, tcompile};
 use crate::tape::{Tape, TupleTape};
 
-type Step = u64;
+/**************************************/
+
+#[pyfunction]
+pub fn reason_parse(prog: &str) -> HashMap<State, Vec<Instr>> {
+    let mut program = HashMap::new();
+
+    for (state, instrs) in prim_parse(prog).iter().enumerate() {
+        program.insert(
+            state as State,
+            instrs.iter().filter_map(|instr| *instr).collect(),
+        );
+    }
+
+    program
+}
 
 /**************************************/
+
+type Step = u64;
 
 #[pyclass]
 pub struct BackstepMachineHalt {
