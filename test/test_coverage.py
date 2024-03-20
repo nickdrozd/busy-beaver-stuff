@@ -16,7 +16,7 @@ from tools.instr_seq import instr_seq
 class TestDisplay(TestCase):
     def test_display(self):
         machine = Machine(
-            "1RB 2LA 1R_  1LB 1LA 0RA"
+            "1RB 2LA ...  1LB 1LA 0RA"
         ).run(watch_tape = True)
 
         print(machine)
@@ -50,7 +50,7 @@ class TestFloss(TestCase):
     def test_macro(self):
         self.assertIsNotNone(
             Machine(
-                "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_",
+                "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...",
                 blocks = 2,
             ).run().simple_termination)
 
@@ -67,7 +67,7 @@ class TestFloss(TestCase):
 
         self.assertIsNone(
             Machine(
-                "1RB 1LB  1LA 1R_",
+                "1RB 1LB  1LA ...",
                 backsym = 1,
             ).run(100).xlimit)
 
@@ -93,9 +93,9 @@ class TestFloss(TestCase):
                 "1RB 1RB  0LA ...",
                 10))
 
-        self.assertTrue(
+        self.assertFalse(
             quick_term_or_rec(
-                "1RB 1RA  1RC 0RD  1LE 0RA  0R_ 0RB  1LB 1LE",
+                "1RB 1RA  1RC 0RD  1LE 0RA  ... 0RB  1LB 1LE",
                 100_000_000))
 
         self.assertIsNotNone(
@@ -117,12 +117,12 @@ class TestFloss(TestCase):
         progs = (
             "1RB 0LD  1LB 0RC  0RE 1LD  1LA ...  0RB 0LC",
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
-            "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",
-            "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",
+            "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...",
+            "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA",
             "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
             "1RB 1LC  1LA 0LD  1RB 0LA  ... 1LE  1RF 0LB  1RB 0RE",
             "1RB 0LF  0RC 1RC  1RD 1RB  0RE 1RA  1RF ...  1LA 0LD",
-            "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
+            "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
         )
 
         for prog in progs:
@@ -146,7 +146,7 @@ class TestFloss(TestCase):
     def test_reasoner(self):
         self.assertFalse(
             cant_halt(
-                "1RB 0RA  1LA 1R_"))
+                "1RB 0RA  1LA ..."))
 
         self.assertFalse(
             cant_blank(
@@ -169,7 +169,7 @@ class TestFloss(TestCase):
                 "1RB ...  1LC 0RC  1RA 0LC"))
 
         _ = instr_seq(
-            "1RB 1LB  1LA 1R_")
+            "1RB 1LB  1LA ...")
 
         _ = instr_seq(
             "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD")
@@ -198,6 +198,6 @@ class TestFloss(TestCase):
     def test_sus_rule(self):
         self.assertEqual(
             Machine(
-                "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA 1R_"
+                "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ..."
             ).run().susrul,
             (5, 2))

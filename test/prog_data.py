@@ -6,94 +6,94 @@ BasicTermData = dict[str, tuple[int, int]]
 
 HALT: BasicTermData = {
     # 2/2 BB
-    "1RB 1LB  1LA 1R_": (4, 6),
-    "1RB 0LB  1LA 1R_": (3, 6),
-    "1RB 1R_  1LB 1LA": (3, 6),
-    "1RB 1R_  0LB 1LA": (2, 6),
+    "1RB 1LB  1LA ...": (4, 6),
+    "1RB 0LB  1LA ...": (3, 6),
+    "1RB ...  1LB 1LA": (3, 6),
+    "1RB ...  0LB 1LA": (2, 6),
 
     # 3/2 BB
-    "1RB 1R_  1LB 0RC  1LC 1LA": (5, 21),  # shift
-    "1RB 1R_  0LC 0RC  1LC 1LA": (5, 20),
-    "1RB 1LA  0RC 1R_  1LC 0LA": (5, 20),
-    "1RB 1RA  0RC 1R_  1LC 0LA": (5, 19),
-    "1RB 0RA  0RC 1R_  1LC 0LA": (4, 19),
-    "1RB 1LC  1RC 1R_  1LA 0LB": (6, 11),  # sigma
+    "1RB ...  1LB 0RC  1LC 1LA": (5, 21),  # shift
+    "1RB ...  0LC 0RC  1LC 1LA": (5, 20),
+    "1RB 1LA  0RC ...  1LC 0LA": (5, 20),
+    "1RB 1RA  0RC ...  1LC 0LA": (5, 19),
+    "1RB 0RA  0RC ...  1LC 0LA": (4, 19),
+    "1RB 1LC  1RC ...  1LA 0LB": (6, 11),  # sigma
 
     # 2/3 BB
-    "1RB 2LB 1R_  2LA 2RB 1LB": (9, 38),
-    "1RB 0LB 1R_  2LA 1RB 1RA": (8, 29),
-    "0LB 2RB 1R_  1RA 1LB 1LA": (6, 27),
-    "1RB 1LA 1LB  0LA 2RA 1R_": (6, 26),
-    "1RB 2LA 1R_  1LB 1LA 0RA": (6, 26),
+    "1RB 2LB ...  2LA 2RB 1LB": (9, 38),
+    "1RB 0LB ...  2LA 1RB 1RA": (8, 29),
+    "0LB 2RB ...  1RA 1LB 1LA": (6, 27),
+    "1RB 1LA 1LB  0LA 2RA ...": (6, 26),
+    "1RB 2LA ...  1LB 1LA 0RA": (6, 26),
 
     # 4/2 BB
-    "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": (13, 107),  # shift
-    "1RB 1LC  1LD 0RB  1R_ 0LD  1RA 1LA": ( 9,  97),
-    "1RB 0RC  1LA 1RA  1R_ 1RD  1LD 0LB": (13,  96),  # sigma
-    "1RB 1LB  0LC 0RD  1R_ 1LA  1RA 0LA": ( 6,  96),
-    "1RB 1LC  0LD 0RD  1R_ 0LA  1LD 1LA": (11,  84),
+    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": (13, 107),  # shift
+    "1RB 1LC  1LD 0RB  ... 0LD  1RA 1LA": ( 9,  97),
+    "1RB 0RC  1LA 1RA  ... 1RD  1LD 0LB": (13,  96),  # sigma
+    "1RB 1LB  0LC 0RD  ... 1LA  1RA 0LA": ( 6,  96),
+    "1RB 1LC  0LD 0RD  ... 0LA  1LD 1LA": (11,  84),
 
     # 2/4
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (2050, 3932964),  # BB
-    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2RA": (  90,    7195),
-    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2LA": (  84,    6445),
-    "1RB 2LA 1RA 1LA  3LA 1R_ 2RB 3RA": (  84,    6445),
-    "1RB 2RB 3LA 2RA  1LA 3RB 1R_ 1LB": (  60,    2351),
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (2050, 3932964),  # BB
+    "1RB 2LA 1RA 1LA  3LA ... 2RB 2RA": (  90,    7195),
+    "1RB 2LA 1RA 1LA  3LA ... 2RB 2LA": (  84,    6445),
+    "1RB 2LA 1RA 1LA  3LA ... 2RB 3RA": (  84,    6445),
+    "1RB 2RB 3LA 2RA  1LA 3RB ... 1LB": (  60,    2351),
 
     # 5/2 BB
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (4098, 47176870),
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (4098, 47176870),
 
     # 3/3
-    "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC": (36089, 310341163),
-    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
+    "1RB 2RA 2RC  1LC ... 1LA  1RA 2LB 1LC": (36089, 310341163),
+    "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
 
     # Copy of 2/4 BB
-    "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
+    "1RB 1LC ...  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
     # Surprise-in-a-box
-    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (31, 2315619),
+    "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC": (31, 2315619),
     # R. Blodgett
-    "1RB 1LB 2LB  1RC 1LA 0RA  1LA 2RA 1R_": (9, 57),
+    "1RB 1LB 2LB  1RC 1LA 0RA  1LA 2RA ...": (9, 57),
     # David Jefferson
-    "1RB 1RA 1R_  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
+    "1RB 1RA ...  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 
     # Milton Green (1964)
-    "1RB ...  0L_ ...": (1, 2),
-    "1RB 1R_  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": (35, 436),
-    "1RB 1RC  0RD 0RB  1R_ 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD": (22961, 197_700_005),
+    "1RB ...  ... ...": (1, 2),
+    "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": (35, 436),
+    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD": (22961, 197_700_005),
 
     # Lynn (1971)
-    "1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB": (15, 435),
-    "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  1R_ 1RD": (22, 292),
-    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB 1R_": (22, 217),
+    "1RB 1RA  1LC 0LD  0RA 1LB  ... 0LE  1RC 1RB": (15, 435),
+    "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  ... 1RD": (22, 292),
+    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB ...": (22, 217),
     # Lynn reports 522 steps
-    "1RB 0LB  1LC 1R_  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD": (42, 521),
+    "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD": (42, 521),
 
     # Uwe (1981)
 
     # Castor diligentissimus et primus et perpetuus (Castor schultis)
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": (501, 134467),
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": (501, 134467),
 
     # Castor ministerialis: the Civil Servant Beaver, who
     # cares most for his progress, but does not produce anything.
-    "1RB 1RA  1RC 0RD  1LE 0RA  0R_ 0RB  1LB 1LE": (0, 52),
+    "1RB 1RA  1RC 0RD  1LE 0RA  ... 0RB  1LB 1LE": (0, 52),
 
     # Castor scientificus: the Scientific Beaver, who does
     # not produce anything either, but with more effort and
     # less effect on his position.
-    "0RB 0LA  0RC 0R_  1RD 1LE  1LA 0LD  1RC 1RE": (0, 187),
+    "0RB 0LA  0RC ...  1RD 1LE  1LA 0LD  1RC 1RE": (0, 187),
 
     # Castor exflippus: the Beaver Freak, who tries to
     # survive as long as possible without producing
     # anything, moving on the tape, and changing his state.
-    "0RB 0LA  1RC 0R_  0LC 1RD  0LD 1RE  1LA 0LE": (0, 67),
+    "0RB 0LA  1RC ...  0LC 1RD  0LD 1RE  1LA 0LE": (0, 67),
 }
 
 HALT_SLOW = {
     # 3/3
-    "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA": (1525688, 987522842126),
-    "1RB 1R_ 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
-    "1RB 2RC 1LA  2LA 1RB 1R_  2RB 2RA 1LC": (95524079, 0),
-    "1RB 2LA 1LC  0LA 2RB 1LB  1R_ 1RA 1RC": (374676383, 0),
+    "1RB 2LA 1RA  1RC 2RB 0RC  1LA ... 1LA": (1525688, 987522842126),
+    "1RB ... 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
+    "1RB 2RC 1LA  2LA 1RB ...  2RB 2RA 1LC": (95524079, 0),
+    "1RB 2LA 1LC  0LA 2RB 1LB  ... 1RA 1RC": (374676383, 0),
 }
 
 SPINOUT: dict[str, tuple[int, int]] = {
@@ -574,7 +574,7 @@ UNDEFINED = {
     },
 
     # 4/2 BBH
-    "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": {
+    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": {
         "1RB ...  ... ...  ... ...  ... ...": (  1, 'B0'),
         "1RB ...  1LA ...  ... ...  ... ...": (  2, 'A1'),
         "1RB 1LB  1LA ...  ... ...  ... ...": (  5, 'B1'),
@@ -629,7 +629,7 @@ UNDEFINED = {
     },
 
     # 2/4 BBH
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": {
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": {
         "1RB ... ... ...  ... ... ... ...": ( 1, 'B0'),
         "1RB ... ... ...  1LB ... ... ...": ( 2, 'B1'),
         "1RB ... ... ...  1LB 1LA ... ...": ( 5, 'A1'),
@@ -662,7 +662,7 @@ UNDEFINED = {
     },
 
     # 5/2 BBH
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": {
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": {
         "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
         "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
         "1RB ...  1RC ...  1RD ...  ... ...  ... ...": ( 3, 'D0'),
@@ -675,7 +675,7 @@ UNDEFINED = {
     },
 
     # 5/2 Uwe
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": {
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": {
         "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
         "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
         "1RB ...  1RC ...  1LA ...  ... ...  ... ...": ( 3, 'A1'),
@@ -807,10 +807,10 @@ UNDEFINED = {
 
 SPAGHETTI = {
     # Halt
-    "1RB 2RA 2RC  1LC 1R_ 1LA  1RA 2LB 1LC",  # 310341163
+    "1RB 2RA 2RC  1LC ... 1LA  1RA 2LB 1LC",  # 310341163
 
-    "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC 1R_ 1LB",
-    "1RB 3LA 3RC 1RA  2RC 1LA 1R_ 2RB  1LC 1RB 1LB 2RA",
+    "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB",
+    "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA",
 
     # Quasihalt
     "1RB 2LC 2RA  1LA 2LB 1RC  1RA 2LC 1RB",  # marks
@@ -824,22 +824,21 @@ SPAGHETTI = {
 
 KERNEL = {
     # Halt
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": 3,  # 134467 Uwe
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 3,  # 134467 Uwe
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": 3,  # partial
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 3,  # partial
 
-    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC 1R_ 0LC": 3,
+    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC ... 0LC": 3,
 
-    "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC": 3,
+    "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC": 3,
 
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE": 4,  # Pavel, BB6
-    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": 4,  # Shawn
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": 3,  # Pavel
-    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD 1R_": 3,
-    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD 1R_": 3,
-    "1RB 0RC  0LA 0RD  1RD 1R_  1LE 0LD  1RF 1LB  1RA 1RE": 3,
-    "1RB 1RF  0RC 0RA  1LD 1R_  0LE 0LB  1LF 1LD  1RA 1LB": 3,
-    "1RB 0LF  1RC 0LE  1RD 0RA  1LE 1R_  1RC 0LA  1RA 0LB": 3,
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": 4,  # Pavel, BB6
+    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...": 4,  # Shawn
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE": 3,  # Pavel
+    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD ...": 3,
+    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD ...": 3,
+    "1RB 0RC  0LA 0RD  1RD ...  1LE 0LD  1RF 1LB  1RA 1RE": 3,
+    "1RB 1RF  0RC 0RA  1LD ...  0LE 0LB  1LF 1LD  1RA 1LB": 3,
+    "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB": 3,
 
     # Spinout
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,
@@ -878,7 +877,7 @@ KERNEL = {
     "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": 3,
 
     # Prover false positive
-    "1RB 0RD  1LC 0RA  1LA 1LB  1R_ 0RC": 3,
+    "1RB 0RD  1LC 0RA  1LA 1LB  ... 0RC": 3,
 }
 
 MODULAR = {
@@ -945,7 +944,7 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1LB  1LA 0RB",
     "1RB 0LB  1LA 0RB",
 
-    "1RB 0RA  0RC 1R_  1LC 0LA",
+    "1RB 0RA  0RC ...  1LC 0LA",
     "1RB ...  1LC 0RB  1LB 1RC",
     "1RB ...  1LC 0RC  1RA 0LC",
     "1RB ...  1LC 1RA  1LA 0LC",
@@ -980,7 +979,7 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 2RB 2LA  0LA 0RB 1LA",
     "1RB 2RB 1LA  0LA 2LA 0RB",
 
-    "1RB 1LC  1LD 0RB  1R_ 0LD  1RA 1LA",
+    "1RB 1LC  1LD 0RB  ... 0LD  1RA 1LA",
     "1RB 0LA  1LC 1LD  1RD 1LB  1RA 0RD",
     "1RB 0LC  1RD 1LD  0LA 1LB  1LC 0RD",
     "1RB 0RA  1RC 0RB  1LD 1LC  1RA 0LC",
@@ -1080,49 +1079,49 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 2LB 3RA 3RB  1LA 1RA 0LB 2LA",
     "1RB 2LA 0LB 1RA  3LA 2RA 0RA 0LB",
 
-    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
-    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC",
+    "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
+    "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC",
     "1RB 2RA 1LC  2LB 0RB 2LA  1LA 0LB 1LA",
     "1RB 2RA 1LC  2LB 0RB 2LA  2RB 0LB 1LA",
 
-    "1RB 2LB 4LB 3LA 1R_  1LA 3RA 3LB 0LB 0RA",
+    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",
 
     "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA",
     "1RB 0LE  1RC 1LB  0RD 0RB  1LD 0LE  0RC 1LA",
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",
-    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB 1R_",
+    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB ...",
     "1RB 1LE  1RC 0RA  0LD 0LC  1RD 1RE  1LB 0RB",
     "1RB 0RE  1RC 0RB  1LD 0RA  0LA 0LC  0LE 1LA",
     "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  1RA 1LD",
 
-    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC",
-    "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC",
-    "1RB 1LA 1LB 1RA  0LA 2RB 2LC 1R_  3RB 2LB 1RC 0RC",
+    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC",
+    "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC",
+    "1RB 1LA 1LB 1RA  0LA 2RB 2LC ...  3RB 2LB 1RC 0RC",
 
-    "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
-    "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA 1R_",
-    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC 1R_ 0LC",
+    "1RB 2LD ...  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
+    "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA ...",
+    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC ... 0LC",
 
-    "1RB 0LF  1RC 0LE  1RD 0RA  1LE 1R_  1RC 0LA  1RA 0LB",
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",
-    "1RB 1R_  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
-    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",
-    "1RB 0LB  1LC 1R_  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
-    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_",
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE",
-    "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE",
-    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_",
-    "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  1R_ 0LD",
-    "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF 1R_  1RA 1RE",
-    "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE 1R_",
-    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD 1R_",
+    "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB",
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",
+    "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
+    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD",
+    "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
+    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...",
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
+    "1RB 0RF  0LB 1LC  1LD 0RC  1LE ...  1LF 0LD  1RA 0LE",
+    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA ...",
+    "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  ... 0LD",
+    "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF ...  1RA 1RE",
+    "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE ...",
+    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD ...",
 
-    "1RB 1RC  0RD 0RB  1R_ 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
+    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
 
     "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  0LG 1LC",
-    "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
+    "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
 
-    "1RB 1RC  0RD 0RB  1R_ 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
+    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
 }
 
 CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
@@ -1160,54 +1159,54 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB",  # QH 14, xmas
 
 
-    "1RB 1R_  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",
-    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",
-    "1RB 0LB  1LC 1R_  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE",
+    "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",
+    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD",
+    "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
 
-    "1RB 1RC  0RD 0RB  1R_ 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
+    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
 
-    "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
+    "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
 
-    "1RB 1RC  0RD 0RB  1R_ 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
+    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
 }
 
 DO_HALT: set[str] = {
     # 3/4
-    "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",  # 10^^2048
+    "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",  # 10^^2048
 
     # 2/6
-    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA",  # 10^^^3
-    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_",  # 10^^90
-    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB 1R_ 3RB 4LA",  # 10^^70
-    "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB 1R_",  # 10^^24
+    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA",  # 10^^^3
+    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...",  # 10^^90
+    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB ... 3RB 4LA",  # 10^^70
+    "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ...",  # 10^^24
 
     # 6/2
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE",  # 10^^15
-    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD",  # 10^^5
-    "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",  # 10^1292913985
-    "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA",  # 10^197282
-    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_",  # 10^78913
-    "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC",  # 10^36534
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE",  # 10^21132
-    "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE 1R_",  # 10^2879
-    "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE",  # 10^1762
-    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_",  # 10^1730
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",  # 10^^15
+    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD",  # 10^^5
+    "1RB ...  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",  # 10^1292913985
+    "1RB ...  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA",  # 10^197282
+    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...",  # 10^78913
+    "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  ... 1RC",  # 10^36534
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",  # 10^21132
+    "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE ...",  # 10^2879
+    "1RB 0RF  0LB 1LC  1LD 0RC  1LE ...  1LF 0LD  1RA 0LE",  # 10^1762
+    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA ...",  # 10^1730
 
     # 2/5
-    "1RB 2LB 4LB 3LA 1R_  1LA 3RA 3LB 0LB 0RA",  # 10^19017
-    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_",  # 10^704
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_",  # 10^211
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA 1R_",  # 10^211
-    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB 1R_ 2RA",  # 10^176
-    "1RB 2LA 1RA 2LB 2RA  0LA 3RB 3RB 4RA 1R_",  # 10^113
-    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB 1R_ 2LA",  # 10^101
-    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA 1R_",  # 10^61
-    "1RB 2LA 1RA 2RB 2LB  0LA 3RA 4RB 1R_ 1RA",  # 10^60
-    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA 1R_",  # 10^52
-    "1RB 4LA 1LA 1R_ 2RB  2LB 3LA 1LB 2RA 0RB",  #      7,021,292,621
-    "1RB 3LA 1LA 4LA 1RA  2LB 2RA 1R_ 0RA 0RB",  # 26,375,397,569,930
+    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",  # 10^19017
+    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...",  # 10^704
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA ...",  # 10^211
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA ...",  # 10^211
+    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB ... 2RA",  # 10^176
+    "1RB 2LA 1RA 2LB 2RA  0LA 3RB 3RB 4RA ...",  # 10^113
+    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB ... 2LA",  # 10^101
+    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ...",  # 10^61
+    "1RB 2LA 1RA 2RB 2LB  0LA 3RA 4RB ... 1RA",  # 10^60
+    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ...",  # 10^52
+    "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",  #      7,021,292,621
+    "1RB 3LA 1LA 4LA 1RA  2LB 2RA ... 0RA 0RB",  # 26,375,397,569,930
 }
 
 DONT_BLANK: set[str] = {
@@ -1299,13 +1298,13 @@ BLANKERS = (
 
 DIFFUSE = {
     # 5/2
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": 3,  # BB(5)
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE 1R_  1LC 1RA": 2,  # uwe
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": 3,  # BB(5)
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 2,  # uwe
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,  # high mark SO
 
     # 3/3
-    "1RB 1R_ 2RB  1LC 0LB 1RA  1RA 2LC 1RC": 2,
-    "1RB 2LA 1RA  1RC 2RB 0RC  1LA 1R_ 1LA": 2,
+    "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC": 2,
+    "1RB 2LA 1RA  1RC 2RB 0RC  1LA ... 1LA": 2,
 
     # QH
     "1RB ...  1LB 1RC  0LC 0RB": 2,
@@ -1329,70 +1328,70 @@ ProverEst = dict[
 
 PROVER_HALT: ProverEst = {
     # 2/5
-    "1RB 2LB 4LB 3LA 1R_  1LA 3RA 3LB 0LB 0RA": (7.3, 19016),
-    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (1.7, 352),
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_": (5.2, 105),
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA 1R_": (5.2, 105),
-    "1RB 2LA 3RA 2LA 2LB  0LA 2RB 4RB 1R_ 1RA": (5.2, 105),
-    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB 1R_ 2RA": (2.4,  88),
-    "1RB 2LA 1RA 2LB 2RA  0LA 3RB 3RB 4RA 1R_": (6.2,  56),
-    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB 1R_ 2LA": (1.0,  51),
-    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA 1R_": (9.3,  30),
-    "1RB 2LA 1RA 2RB 2LB  0LA 3RA 4RB 1R_ 1RA": (4.0,  30),
-    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA 1R_": (3.2,  26),
+    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": (7.3, 19016),
+    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...": (1.7, 352),
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA ...": (5.2, 105),
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA ...": (5.2, 105),
+    "1RB 2LA 3RA 2LA 2LB  0LA 2RB 4RB ... 1RA": (5.2, 105),
+    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB ... 2RA": (2.4,  88),
+    "1RB 2LA 1RA 2LB 2RA  0LA 3RB 3RB 4RA ...": (6.2,  56),
+    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB ... 2LA": (1.0,  51),
+    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ...": (9.3,  30),
+    "1RB 2LA 1RA 2RB 2LB  0LA 3RA 4RB ... 1RA": (4.0,  30),
+    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ...": (3.2,  26),
 
     # 2/6
-    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB 1R_ 3RB 4LA": "(14 + (2 ** (-1",  # 10 ^^ 70
-    "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (1.9, 4933),
-    "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA 1R_": (6.9, 4931),
-    "1RB 2LB 4RB 1LA 1RB 1R_  1LA 3RA 5RA 4LB 0RA 4LA": (8.6,  821),
-    "1RB 0RB 3LA 5LA 1R_ 4LB  1LA 2RB 3LA 4LB 3RB 3RA": (1.9,   27),
+    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB ... 3RB 4LA": "(14 + (2 ** (-1",  # 10 ^^ 70
+    "1RB 2LA ... 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (1.9, 4933),
+    "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ...": (6.9, 4931),
+    "1RB 2LB 4RB 1LA 1RB ...  1LA 3RA 5RA 4LB 0RA 4LA": (8.6,  821),
+    "1RB 0RB 3LA 5LA ... 4LB  1LA 2RB 3LA 4LB 3RB 3RA": (1.9,   27),
 
     # 4/3
-    "1RB 1R_ 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC": (1.3, 7036),
-    "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA 1R_": (4.2, 6034),
-    "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (8.9, 4931),
-    "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2.5, 4561),
-    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC 1R_ 0LC": (4.0, 3860),
+    "1RB ... 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC": (1.3, 7036),
+    "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA ...": (4.2, 6034),
+    "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (8.9, 4931),
+    "1RB 2LD ...  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2.5, 4561),
+    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC ... 0LC": (4.0, 3860),
 
     # 3/4
-    "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "(4 + (2 ** (???)))",
-    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (3.7, 6518),
-    "1RB 1RA 1LB 1RC  2LA 0LB 3LC 1R_  1LB 0RC 2RA 2RC": (2.2, 2372),
-    "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC 1R_ 1LB": (1.7, 1301),
-    "1RB 3LA 3RC 1RA  2RC 1LA 1R_ 2RB  1LC 1RB 1LB 2RA": (2.1,  628),
-    "1RB 0RB 3LC 1RC  0RC 1R_ 2RC 3RC  1LB 2LA 3LA 2RB": (4.6,  434),
-    "1RB 1LA 1LB 1RA  0LA 2RB 2LC 1R_  3RB 2LB 1RC 0RC": (2.4,   26),
+    "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "(4 + (2 ** (???)))",
+    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC": (3.7, 6518),
+    "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC": (2.2, 2372),
+    "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB": (1.7, 1301),
+    "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA": (2.1,  628),
+    "1RB 0RB 3LC 1RC  0RC ... 2RC 3RC  1LB 2LA 3LA 2RB": (4.6,  434),
+    "1RB 1LA 1LB 1RA  0LA 2RB 2LC ...  3RB 2LB 1RC 0RC": (2.4,   26),
 
     # 6/2
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE": "((-11 + (3 ** ((13",  # 10^^15
-    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD": "((38 + (19 * (2 **",  # 10^^5
-    "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  1R_ 1LC": "((46 + (49 * (2 **",  # ???
-    "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (1.7, 646_456_993),
-    "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2.0, 98641),
-    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (6.0, 39456),
-    "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (3.5, 18267),
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": (3.1, 10566),
-    "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE 1R_": (4.6,  1439),
-    "1RB 0RF  0LB 1LC  1LD 0RC  1LE 1R_  1LF 0LD  1RA 0LE": (2.5,   881),
-    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA 1R_": (1.2,   865),
-    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (6.4,   462),
-    "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  1R_ 0LD": (8.8,   102),
-    "1RB 1RF  0RC 0RA  1LD 1R_  0LE 0LB  1LF 1LD  1RA 1LB": (3.3,    79),
-    "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF 1R_  1RA 1RE": (1.4,    60),
-    "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE 1R_": (6.9,    49),
-    "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE 1R_": (1.1,    49),
-    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (6.7,    47),
-    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD 1R_": (6.7,    47),
-    "1RB 0RC  0LA 0RD  1RD 1R_  1LE 0LD  1RF 1LB  1RA 1RE": (2.5,    21),
-    "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1R_ 1RB": (3.3,     7),
-    "1RB 0LF  1RC 0LE  1RD 0RA  1LE 1R_  1RC 0LA  1RA 0LB": (1.0,     7),
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": "((-11 + (3 ** ((13",  # 10^^15
+    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD": "((38 + (19 * (2 **",  # 10^^5
+    "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  ... 1LC": "((46 + (49 * (2 **",  # ???
+    "1RB ...  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (1.7, 646_456_993),
+    "1RB ...  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2.0, 98641),
+    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...": (6.0, 39456),
+    "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  ... 1RC": (3.5, 18267),
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE": (3.1, 10566),
+    "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE ...": (4.6,  1439),
+    "1RB 0RF  0LB 1LC  1LD 0RC  1LE ...  1LF 0LD  1RA 0LE": (2.5,   881),
+    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA ...": (1.2,   865),
+    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  ... 1LE": (6.4,   462),
+    "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  ... 0LD": (8.8,   102),
+    "1RB 1RF  0RC 0RA  1LD ...  0LE 0LB  1LF 1LD  1RA 1LB": (3.3,    79),
+    "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF ...  1RA 1RE": (1.4,    60),
+    "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE ...": (6.9,    49),
+    "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE ...": (1.1,    49),
+    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD ...": (6.7,    47),
+    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD ...": (6.7,    47),
+    "1RB 0RC  0LA 0RD  1RD ...  1LE 0LD  1RF 1LB  1RA 1RE": (2.5,    21),
+    "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB": (3.3,     7),
+    "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB": (1.0,     7),
 
     # Green-8
-    "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": "((-3 + (7 *",
+    "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": "((-3 + (7 *",
 
     # Green-9
-    "1RB 1RC  0RD 0RB  1R_ 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": "((-1 + (7 * (3",
+    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": "((-5 + (7 * (3",
 }
 
 PROVER_SPINOUT: ProverEst = {
@@ -1456,30 +1455,30 @@ PROVER_QUASIHALT = {
 
 RULE_LIMIT = {
     # 2/6
-    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA": "inapplicable_op",  # 10^^^3
-    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_": "count_apps",  # 10^^90
+    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA": "inapplicable_op",  # 10^^^3
+    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...": "count_apps",  # 10^^90
 }
 
 PROVER_FAILURES = {
     "1RB 1RC 0RC  1RC 0LA 1LB  2LC 2RA 1LB",
 
-    "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA 1R_",
+    "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ...",
 
-    "1RB 1LD 1R_  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
+    "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
 }
 
 SUSPECTED_RULES = {
-    "1RB 2LB 4LB 3LA 1R_  1LA 3RA 3LB 0LB 0RA",
-    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_",
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_",
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA 1R_",
-    "1RB 2LA 3RA 2LA 2LB  0LA 2RB 4RB 1R_ 1RA",
-    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB 1R_ 2LA",
-    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA 1R_",
-    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA 1R_",
+    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",
+    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...",
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA ...",
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA ...",
+    "1RB 2LA 3RA 2LA 2LB  0LA 2RB 4RB ... 1RA",
+    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB ... 2LA",
+    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ...",
+    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ...",
 
-    "1RB 1R_ 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC",
-    "1RB 2LD 1R_  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
+    "1RB ... 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC",
+    "1RB 2LD ...  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
 
     "1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA",
     "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",
@@ -1520,142 +1519,142 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "halt": {
-        "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": (
+        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": (
             152,
             "(10 ** 45)",
             "((-3 + (7 * (3 ** 93))) // 2)",
             "((1041 + (7 * (3 ** 92))) // 2)",
         ),
-        "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC 1R_ 1LB": (
+        "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB": (
             227,
             "(10 ** 1301)",
             "((-4 + (19 * (2 ** 4320))) // 3)",
             "4817",
         ),
-        "1RB 1R_  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (
+        "1RB ...  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (
             291,
             "(10 ** 98642)",
             "(-5 + (5 * (2 ** (-3 + (5 * (2 ** 16))))))",
             "(718 + (5 * (2 ** 16)))",
         ),
-        "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC 1R_ 1LC": (
+        "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC": (
             347,
             "(10 ** 6518)",
             "((-5 + (25 * (3 ** 13660))) // 2)",
             "27762",
         ),
-        "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1R_ 1RB": (
+        "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB": (
             375,
             "(10 ** 8)",
-            "(-8 + (2 ** 25))",
+            "(-9 + (2 ** 25))",
             "(478 + (7 * (2 ** 21)))",
         ),
-        "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LA 0RB  0RC 0RE": (
+        "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE": (
             413,
             "(10 ** 10567)",
             "((25 + (3 ** ((29 + (3 ** 11)) // 8))) // 2)",
             "((9861 + ((4 * (3 ** ((21 + (3 ** 11)) // 8))) + ((4 * (3 ** ((21 + (3 ** 11)) // 8))) + ((4 * (3 ** ((13 + (3 ** 11)) // 8))) + ((4 * (3 ** ((13 + (3 ** 11)) // 8))) + ((3 ** 10) * (7 + (4 * (3 ** ((-67 + (3 ** 11)) // 8)))))))))) // 8)",
         ),
-        "1RB 1R_  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (
+        "1RB ...  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (
             522,
             "(10 ** 646456993)",
             "(1 + (2 ** (-1 + (2 ** 31))))",
             "(11559 + ((2 ** 30) * (1 + (2 ** (-33 + (2 ** 31))))))",
         ),
-        "1RB 3LA 3RC 1RA  2RC 1LA 1R_ 2RB  1LC 1RB 1LB 2RA": (
+        "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA": (
             681,
             "(10 ** 629)",
             "((13 + (8 * (7 ** 743))) // 3)",
             "(9481 + (40 * (7 ** 741)))",
         ),
-        "1RB 0LB 1R_ 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": (
+        "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": (
             683,
             "(10 ↑↑ 2049)",
             "(???)",
             "(???)",
         ),
-        "1RB 2LA 1R_ 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (
+        "1RB 2LA ... 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (
             731,
             "(10 ** 4933)",
             "(2 ** 16388)",
             "(17326 + (2 ** 16386))",
         ),
-        "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1R_  1LF 0RB  0RC 0RE": (
+        "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": (
             980,
             "(10 ↑↑ 16)",
             "((-11 + (3 ** ((13 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** 11)) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 2)",
             "(???)",
         ),
-        "1RB 2LB 4RB 1LA 1RB 1R_  1LA 3RA 5RA 4LB 0RA 4LA": (
+        "1RB 2LB 4RB 1LA 1RB ...  1LA 3RA 5RA 4LB 0RA 4LA": (
             937,
             "(10 ** 822)",
             "((13 + (2 ** 2731)) // 3)",
             "((11963 + (7 * (2 ** 2728))) // 3)",
         ),
-        "1RB 0LF  1RC 0LE  1RD 0RA  1LE 1R_  1RC 0LA  1RA 0LB": (
+        "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB": (
             992,
             "(10 ** 7)",
             "((2 + (5 * (2 ** 21))) // 3)",
             "((81157 + (35 * (2 ** 20))) // 3)",
         ),
-        "1RB 1RF  0RC 0RA  1LD 1R_  0LE 0LB  1LF 1LD  1RA 1LB": (
+        "1RB 1RF  0RC 0RA  1LD ...  0LE 0LB  1LF 1LD  1RA 1LB": (
             1630,
             "(10 ** 80)",
             "(142 + (9 * (2 ** 261)))",
             "((~10^17) + ((~10^60) * (2 ** 64)))",
         ),
-        "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE 1R_": (
+        "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...": (
             1698,
             "(10 ** 39456)",
             "(3 * (2 ** 131071))",
             "(1121685 + (9 * (2 ** 131071)))",
         ),
-        "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  1R_ 0LD": (
+        "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  ... 0LD": (
             2335,
             "(10 ** 103)",
             "(1430 + (2 ** 341))",
             "(10863 + (3 * (2 ** 340)))",
         ),
-        "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  1R_ 1LE": (
+        "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  ... 1LE": (
             3067,
             "(10 ** 463)",
             "((-1 + (2 ** 1538)) // 3)",
             "((93536 + (95 * (2 ** 1535))) // 3)",
         ),
-        "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  1R_ 1LD": (
+        "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD": (
             3666,
             "(10 ↑↑ 5)",
             "((38 + (19 * (2 ** ((-26 + (7 * (2 ** ((-11 + (7 * (2 ** ((-11 + (19 * (2 ** 69175))) // 9)))) // 9)))) // 9)))) // 9)",
             "(???)",
         ),
-        "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB 1R_ 3RB 4LA": (
+        "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB ... 3RB 4LA": (
             5708,
             "(10 ↑↑ 70)",
             "(14 + (2 ** (-1 + (2 ** (2 + (2 ** (1 + (2 ** (-1 + (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (2 + (2 ** (2 ** (2 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (3 + (2 ** (2 ** (3 + (2 ** (2 ** (2 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (2 + (2 ** (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (2 + (2 ** (2 ** (2 + (2 ** (2 ** (-1 + (2 ** (2 ** (3 + (2 ** (2 ** (-1 + (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (1 + (2 ** (1 + (2 ** (-1 + (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (2 + (2 ** (2 ** (2 + (2 ** (2 ** (-1 + (2 ** (2 ** 258))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))",
             "(???)",
         ),
-        "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  1R_ 1RC": (
+        "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  ... 1RC": (
             5723,
             "(10 ** 18267)",
             "((17 + (25 * (2 ** 60680))) // 9)",
             "(((~10^15) + (175 * (2 ** 60674))) // 3)",
         ),
-        "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  1R_ 1LC": (
+        "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  ... 1LC": (
             15200,
             "(10 ↑↑ 5)",
             "((23 + (49 * (2 ** ((-124 + (49 * (2 ** ((-34 + (49 * (2 ** ((62 + (49 * (2 ** 15172))) // 27)))) // 27)))) // 27)))) // 9)",
             "(???)",
         ),
-        "1RB 1RC  0RD 0RB  1R_ 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": (
+        "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": (
             1793,
             "(10 ↑↑ 30)",
-            "((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** 31))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 4)",
+            "((-5 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** 31))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 4)",
             "(???)",
         ),
     },
 
     "count_apps: (2 ** ((-32 + (2 ** 37)) // 5)) % 100": {
-        "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB 1R_": (
+        "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ...": (
             3935,
             "(10 ↑↑ 4)",
             "((322 + ((2 ** 38) * (1 + ((2 ** ((-32 + (2 ** 37)) // 5)) * (1 + (5 * (2 ** ((-155 + ((2 ** 37) * (-1 + (2 ** ((-32 + (2 ** 37)) // 5))))) // 5)))))))) // 5)",
@@ -1673,7 +1672,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "count_apps: (2 ** ((-59 + (61 * (2 ** ((-13 + (61 * (2 ** ((-62 + (61 * (2 ** ((-19 + (61 * (2 ** ((-34 + (61 * (2 ** ((-80 + (61 * (2 ** ((-55 + (61 * (2 ** ((-74 + (61 * (2 ** 105))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)) % 3188646": {
-        "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB 1R_": (
+        "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...": (
             17171,
             "(10 ↑↑ 21)",
             "((128 + (61 * (2 ** ((-74 + (61 * (2 ** ((-53 + (61 * (2 ** ((-77 + (61 * (2 ** ((-43 + (61 * (2 ** ((-22 + (61 * (2 ** ((-34 + (61 * (2 ** ((-80 + (61 * (2 ** ((-55 + (61 * (2 ** ((-74 + (61 * (2 ** ((-59 + (61 * (2 ** ((-77 + (61 * (2 ** ((-59 + (61 * (2 ** ((-13 + (61 * (2 ** ((-62 + (61 * (2 ** ((-19 + (61 * (2 ** ((-34 + (61 * (2 ** ((-80 + (61 * (2 ** ((-55 + (61 * (2 ** ((-74 + (61 * (2 ** 105))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 3)",
@@ -1682,7 +1681,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "ops_times": {
-        "1LB 1R_  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": (
+        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": (
             1966,
             "3",
             "3",
@@ -1691,7 +1690,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "inapplicable_op": {
-        "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB 1R_ 3LB 2LA": (
+        "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA": (
             1799,
             "(10 ↑↑ 3)",
             "((52 + (13 * (2 ** ((151 + (13 * (2 ** 803))) // 15)))) // 3)",
@@ -2133,12 +2132,12 @@ BRANCH = {
 }
 
 NORMALIZE = {
-    '1RB 2LA 1RA 1LA  3LA 1R_ 2RB 2RA': {
-        '1RB 3LA 1LA 1RA  2LA 1R_ 3RA 3RB',
-        '2RB 2RA 1LA 2LA  3LA 1RB 2R_ 1RA',
-        '1LB 2RA 1LA 1RA  3RA 1L_ 2LB 2LA',
-        '1LB 3RA 1RA 1LA  2RA 1L_ 3LA 3LB',
-        '2LB 2LA 1RA 2RA  3RA 1LB 2L_ 1LA',
+    '1RB 2LA 1RA 1LA  3LA ... 2RB 2RA': {
+        '1RB 3LA 1LA 1RA  2LA ... 3RA 3RB',
+        '2RB 2RA 1LA 2LA  3LA 1RB ... 1RA',
+        '1LB 2RA 1LA 1RA  3RA ... 2LB 2LA',
+        '1LB 3RA 1RA 1LA  2RA ... 3LA 3LB',
+        '2LB 2LA 1RA 2RA  3RA 1LB ... 1LA',
     },
     '1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC': {
         '1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC',
@@ -2165,8 +2164,8 @@ GRAPHS: dict[
     ],
 ] = {
     # 2 2
-    "1RB 1LB  1LA 1R_": (
-        "BBA_",
+    "1RB 1LB  1LA ...": (
+        "BBA.",
         1, 1, 1, 0,
         {A: {B}, B: {A}},
         {A: {B}, B: {A}},
@@ -2197,14 +2196,14 @@ GRAPHS: dict[
         {A: set(), B: {A, B, C}, C: {B, C}},
         {A: {B}, B: {B, C}, C: {B, C}},
     ),
-    "1RB 1R_  1LB 0RC  1LC 1LA": (
-        "B_BCCA",
+    "1RB ...  1LB 0RC  1LC 1LA": (
+        "B.BCCA",
         1, 1, 0, 1,
         {A: {C}, B: {A, B}, C: {B, C}},
         {A: {B}, B: {B, C}, C: {A, C}},
     ),
-    "1RC 1R_  1LB 0RC  1LB 1LA": (
-        "C_BCBA",
+    "1RC ...  1LB 0RC  1LB 1LA": (
+        "C.BCBA",
         0, 1, 0, 1,
         {A: {C}, B: {B, C}, C: {A, B}},
         {A: {C}, B: {B, C}, C: {A, B}},
@@ -2223,8 +2222,8 @@ GRAPHS: dict[
     ),
 
     # 2 3
-    "1RB 2LB 1R_  2LA 2RB 1LB": (
-        "BB_ABB",
+    "1RB 2LB ...  2LA 2RB 1LB": (
+        "BB.ABB",
         1, 1, 0, 0,
         {A: {B}, B: {A, B}},
         {A: {B}, B: {A, B}},
@@ -2249,26 +2248,26 @@ GRAPHS: dict[
     ),
 
     # 4 2
-    "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA": (
-        "BBAC_DDA",
+    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": (
+        "BBAC.DDA",
         1, 1, 0, 1,
         {A: {B, D}, B: {A}, C: {B}, D: {C, D}},
         {A: {B}, B: {A, C}, C: {D}, D: {A, D}},
     ),
-    "1RC 1LB  1LA 0LC  1R_ 1LD  1RC 0RA": (
-        "CBAC_DCA",
+    "1RC 1LB  1LA 0LC  ... 1LD  1RC 0RA": (
+        "CBAC.DCA",
         0, 1, 1, 0,
         {A: {B, D}, B: {A}, C: {A, B, D}, D: {C}},
         {A: {B, C}, B: {A, C}, C: {D}, D: {A, C}},
     ),
-    "1RB 1LB  1LA 0LB  1R_ 1LC  1RD 0RA": (
-        "BBAB_CDA",
+    "1RB 1LB  1LA 0LB  ... 1LC  1RD 0RA": (
+        "BBAB.CDA",
         1, 0, 0, 1,
         {A: {B, D}, B: {A, B}, C: {C}, D: {D}},
         {A: {B}, B: {A, B}, C: {C}, D: {A, D}},
     ),
-    "1RC 1LB  1LA 0LC  1R_ 1LD  1RD 0RD": (
-        "CBAC_DDD",
+    "1RC 1LB  1LA 0LC  ... 1LD  1RD 0RD": (
+        "CBAC.DDD",
         0, 0, 0, 1,
         {A: {B}, B: {A}, C: {A, B}, D: {C, D}},
         {A: {B, C}, B: {A, C}, C: {D}, D: {D}},
@@ -2299,60 +2298,60 @@ GRAPHS: dict[
     ),
 
     # 2 4
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
-        "BAAABAB_",
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (
+        "BAAABAB.",
         1, 1, 0, 1,
         {A: {A, B}, B: {A, B}},
         {A: {A, B}, B: {A, B}},
     ),
-    "1RA 2LA 1RA 1RA  1LB 1LA 3RB 1R_": (
-        "AAAABAB_",
+    "1RA 2LA 1RA 1RA  1LB 1LA 3RB ...": (
+        "AAAABAB.",
         1, 0, 0, 1,
         {A: {A, B}, B: {B}},
         {A: {A}, B: {A, B}},
     ),
 
     # 3 3
-    "1RB 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (
-        "BBCABB_AC",
+    "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC": (
+        "BBCABB.AC",
         1, 1, 0, 0,
         {A: {B, C}, B: {A, B}, C: {A, C}},
         {A: {B, C}, B: {A, B}, C: {A, C}},
     ),
-    "1RB 2LB 1LA  1LA 2RB 1RB  1R_ 2LA 0LC": (
-        "BBAABB_AC",
+    "1RB 2LB 1LA  1LA 2RB 1RB  ... 2LA 0LC": (
+        "BBAABB.AC",
         1, 0, 0, 0,
         {A: {A, B, C}, B: {A, B}, C: {C}},
         {A: {A, B}, B: {A, B}, C: {A, C}},
     ),
-    "1RC 2LB 1LC  1LA 2RB 1RB  1R_ 2LA 0LC": (
-        "CBCABB_AC",
+    "1RC 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC": (
+        "CBCABB.AC",
         0, 1, 0, 0,
         {A: {B, C}, B: {A, B}, C: {A, C}},
         {A: {B, C}, B: {A, B}, C: {A, C}},
     ),
-    "1RB 1LC 1R_  1LA 1LC 2RB  1RB 2LC 1RC": (
-        "BC_ACBBCC",
+    "1RB 1LC ...  1LA 1LC 2RB  1RB 2LC 1RC": (
+        "BC.ACBBCC",
         1, 1, 0, 0,
         {A: {B}, B: {A, B, C}, C: {A, B, C}},
         {A: {B, C}, B: {A, B, C}, C: {B, C}},
     ),
 
     # 5 2
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  1R_ 0LA": (
-        "BCCBDEAD_A",
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (
+        "BCCBDEAD.A",
         1, 1, 0, 0,
         {A: {D, E}, B: {A, B}, C: {A, B}, D: {C, D}, E: {C}},
         {A: {B, C}, B: {B, C}, C: {D, E}, D: {A, D}, E: {A}},
     ),
-    "1RB 1LC  1RC 1RB  0LE 1RD  1LA 1LD  1R_ 0LA": (
-        "BCCBEDAD_A",
+    "1RB 1LC  1RC 1RB  0LE 1RD  1LA 1LD  ... 0LA": (
+        "BCCBEDAD.A",
         0, 1, 0, 0,
         {A: {D, E}, B: {A, B}, C: {A, B}, D: {C, D}, E: {C}},
         {A: {B, C}, B: {B, C}, C: {E, D}, D: {A, D}, E: {A}},
     ),
-    "1RB 1LC  1RC 1RB  1RD 0LC  1LA 1LD  1R_ 0LE": (
-        "BCCBDCAD_E",
+    "1RB 1LC  1RC 1RB  1RD 0LC  1LA 1LD  ... 0LE": (
+        "BCCBDCAD.E",
         1, 0, 0, 0,
         {A: {D}, B: {A, B}, C: {A, B, C}, D: {C, D}, E: {E}},
         {A: {B, C}, B: {B, C}, C: {C, D}, D: {A, D}, E: {E}},

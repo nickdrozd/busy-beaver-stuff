@@ -91,7 +91,7 @@ class TestGraph(TestCase):
                 prog)
 
             self.assertTrue(
-                graph.is_dispersed or '_' in prog,
+                graph.is_dispersed or '.' in prog,
                 prog)
 
         for prog, kernel in KERNEL.items():

@@ -297,7 +297,7 @@ class TestTags(TestCase):
 
     def test_trace_4(self):
         # Lynn exception
-        # 1RB 1RA  1LC 0LD  0RA 1LB  1R_ 0LE  1RC 1RB
+        # 1RB 1RA  1LC 0LD  0RA 1LB  ... 0LE  1RC 1RB
         #    50 | 54 | C0 | 1^2 [0] 0^1 1^4
         #    51 | 55 | A0 | 1^2 0^1 [0] 1^4
         #    52 | 56 | B1 | 1^2 0^1 1^1 [1] 1^3
@@ -670,7 +670,7 @@ class TestEnum(TestCase):
             ))
 
     def test_offsets_1(self):
-        # 1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA 1R_
+        # 1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...
 
         #  158 | B0 | 2^1 3^11 4^1 1^11 [0]
         #  159 | A1 | 2^1 3^11 4^1 1^10 [1]
@@ -721,7 +721,7 @@ class TestEnum(TestCase):
         self.assert_offsets([3, 0])
 
     def test_offsets_2(self):
-        # 1RB 1R_ 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC
+        # 1RB ... 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC
 
         #  927 | |0 | 3^6 2^414422565 [0]
         #  928 | 2 | 3^6 2^414422564 [2] 5^1

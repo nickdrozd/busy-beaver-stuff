@@ -136,7 +136,7 @@ class TestTree(TestCase):
 
         if ((und := machine.undfnd)
                 and ((step := und[0] + 1) > self.results['halted'][0])):
-            self.results['halted'] = step, prog.replace('...', '1R_')
+            self.results['halted'] = step, prog
             return
 
         if (machine.infrul
@@ -328,7 +328,7 @@ class Slow(TestTree):
         self.assert_records({
             'blanks': (169, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'spnout': (171, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
-            'halted': (107, "1RB 1LB  1LA 0LC  1R_ 1LD  1RD 0RA"),
+            'halted': (107, "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA"),
             'infrul': (max_inf, "1RB 0LD  1LC 1RA  ... 1LA  0RA 1LD"),
         })
 

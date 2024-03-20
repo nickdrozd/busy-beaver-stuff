@@ -74,7 +74,7 @@ class Reasoner:
         return tuple(
             slot
             for slot, instr in self.instr_slots
-            if instr is None or instr[2] == -1
+            if instr is None
         )
 
     @property

@@ -275,9 +275,7 @@ class StrictLinRecMachine(LinRecMachine):
 
             step += tape.step(shift, color, state == next_state)
 
-            if (state := next_state) == -1:
-                self.halted = step
-                break
+            state = next_state
 
             if not color and tape.blank and state not in self.blanks:
                 self.blanks[state] = step
@@ -345,9 +343,7 @@ class LinRecSampler(LinRecMachine):
 
             step += tape.step(shift, color, False)
 
-            if (state := next_state) == -1:
-                self.halted = step
-                break
+            state = next_state
 
             if not color and tape.blank and state not in self.blanks:
                 self.blanks[state] = step
@@ -409,9 +405,7 @@ def run_loose_linrec_machine(
 
             cycle += 1
 
-            if (state := next_state) == -1:
-                result = TermRes.halted
-                break
+            state = next_state
 
             if not color and tape.blank:
                 if state in blanks:

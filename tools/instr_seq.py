@@ -26,7 +26,10 @@ def instr_seq(prog: str) -> InstrSeq:
 
         seqs.append((str(partial), step, slot))
 
-        partial[slot] = program[slot]
+        try:
+            partial[slot] = program[slot]
+        except KeyError:
+            return seqs
 
     return seqs
 
@@ -55,7 +58,6 @@ def run_for_undefined(prog: Program) -> Undfnd | None:
 
         step += stepped
 
-        if (state := next_state) == -1:  # no-cover
-            return None
+        state = next_state
 
     return None  # no-cover

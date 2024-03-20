@@ -18,7 +18,7 @@ def make_shift(sh: Shift) -> str:
 
 
 def make_trans(tr: State) -> str:
-    return f'goto {show_state(tr)};'
+    return f'goto {show_state(tr) if 0 <= tr else "_"};'
 
 
 def make_binary_write(pr: Color) -> str:

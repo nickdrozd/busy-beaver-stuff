@@ -87,7 +87,7 @@ class Prover:
 
             tape.step(shift, color, state == next_state)
 
-            assert (state := next_state) != -1
+            state = next_state
 
         return state
 

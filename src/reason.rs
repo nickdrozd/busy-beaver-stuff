@@ -64,10 +64,6 @@ impl BackstepMachineHalt {
 
             step += stepped;
 
-            if next_state == -1 {
-                return Some(step);
-            }
-
             state = next_state;
         }
 
@@ -113,10 +109,6 @@ impl BackstepMachineBlank {
             let stepped = tape.step(shift, color, same);
 
             step += stepped;
-
-            if next_state == -1 {
-                break;
-            }
 
             state = next_state;
 
@@ -174,10 +166,6 @@ impl BackstepMachineSpinout {
             let stepped = tape.step(shift, color, same);
 
             step += stepped;
-
-            if next_state == -1 {
-                break;
-            }
 
             state = next_state;
         }

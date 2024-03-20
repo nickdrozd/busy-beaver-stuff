@@ -53,7 +53,7 @@ class Graph:
             state: set(
                 conn
                 for conn in connections
-                if conn is not None and conn != -1
+                if conn is not None
             )
             for state, connections in self.arrows.items()
         }

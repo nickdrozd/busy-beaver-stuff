@@ -17,7 +17,6 @@ pub enum TermRes {
     xlimit,
     infrul,
     spnout,
-    halted,
     undfnd,
 }
 
@@ -94,7 +93,7 @@ impl MachineResult {
     #[getter]
     const fn simple_termination(&self) -> Option<Step> {
         match self.result {
-            TermRes::halted | TermRes::spnout => Some(self.steps),
+            TermRes::undfnd | TermRes::spnout => Some(self.steps),
             _ => None,
         }
     }
@@ -102,7 +101,7 @@ impl MachineResult {
     #[getter]
     const fn halted(&self) -> Option<Step> {
         match self.result {
-            TermRes::halted => Some(self.steps),
+            TermRes::undfnd => Some(self.steps),
             _ => None,
         }
     }
@@ -169,12 +168,6 @@ pub fn run_machine(prog: &str, sim_lim: Step) -> MachineResult {
         let stepped = tape.step(shift, color, same);
 
         steps += stepped;
-
-        if next_state == -1 {
-            cycles = cycle;
-            result = Some(TermRes::halted);
-            break;
-        }
 
         state = next_state;
 

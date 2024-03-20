@@ -122,10 +122,6 @@ pub fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
 
         tape.step(shift, color, same);
 
-        if next_state == -1 {
-            return None;
-        }
-
         state = next_state;
     }
 

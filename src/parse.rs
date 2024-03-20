@@ -2,7 +2,6 @@ use pyo3::prelude::*;
 
 use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
 
-const HALT: char = '_';
 const UNDF: char = '.';
 
 const LEFT: char = 'L';
@@ -43,18 +42,13 @@ const fn read_shift(shift: char) -> Shift {
 #[pyfunction]
 pub const fn show_state(state: Option<State>) -> char {
     match state {
-        Some(-1) => HALT,
         None => UNDF,
         Some(s) => (s as u8 + 65) as char,
     }
 }
 
 fn read_state(state: char) -> State {
-    if state == HALT {
-        -1
-    } else {
-        State::from(state as u8 - 65)
-    }
+    State::from(state as u8 - 65)
 }
 
 #[pyfunction]
@@ -110,7 +104,7 @@ mod tests {
 
     #[test]
     fn test_state() {
-        let states = ['A', 'B', 'C', '_'];
+        let states = ['A', 'B', 'C'];
 
         for state in states {
             check_state(state);
@@ -136,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_instr() {
-        let instrs = ["1RB", "2LC", "1R_"];
+        let instrs = ["1RB", "2LC"];
 
         for instr in instrs {
             check_instr(instr);
@@ -147,11 +141,11 @@ mod tests {
     fn test_parse() {
         assert_eq!(
             vec![
-                vec![Some((1, true, 1)), Some((1, true, -1))],
+                vec![Some((1, true, 1)), None],
                 vec![Some((1, false, 1)), Some((0, true, 2))],
                 vec![Some((1, false, 2)), Some((1, false, 0))],
             ],
-            parse("1RB 1R_  1LB 0RC  1LC 1LA"),
+            parse("1RB ...  1LB 0RC  1LC 1LA"),
         );
     }
 }

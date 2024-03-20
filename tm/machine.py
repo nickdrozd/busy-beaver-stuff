@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 TERM_CATS = (
     'cfglim',
-    'halted',
     'infrul',
     'limrul',
     'spnout',
@@ -51,7 +50,6 @@ class Machine:
 
     blanks: dict[State, int]
 
-    halted: int | None = None
     spnout: int | None = None
     xlimit: int | None = None
 
@@ -157,7 +155,11 @@ class Machine:
 
     @property
     def simple_termination(self) -> Count | None:
-        return self.spnout if self.halted is None else self.halted
+        return (
+            self.spnout
+            if (undfnd := self.undfnd) is None else
+            undfnd[0]
+        )
 
     @property
     def marks(self) -> Count:
@@ -237,9 +239,7 @@ class Machine:
             elif step != -1:
                 step += stepped
 
-            if (state := next_state) == -1:
-                self.halted = step
-                break
+            state = next_state
 
             if not color and tape.blank:
                 if state in self.blanks:
@@ -258,7 +258,7 @@ class Machine:
         self.steps = step
         self.cycles = cycle
 
-        if watch_tape and (bool(self.halted) or bool(self.blanks)):
+        if watch_tape and (bool(self.undfnd) or bool(self.blanks)):
             self.show_tape(step, 1 + cycle, state)
 
         return self
@@ -302,8 +302,7 @@ def quick_term_or_rec(prog: str, sim_lim: int) -> bool:
 
             cycle += 1
 
-            if (state := next_state) == -1:
-                return True
+            state = next_state
 
             if (curr := tape.head) < leftmost:
                 leftmost = curr

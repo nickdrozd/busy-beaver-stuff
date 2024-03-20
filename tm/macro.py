@@ -175,8 +175,7 @@ class MacroProg:
                     if not 0 <= pos < cells:
                         break
 
-            if (state := next_state) == -1:
-                break
+            state = next_state
 
             if not 0 <= pos < cells:
                 break
@@ -274,11 +273,7 @@ class BlockMacro(MacroProg):
         return (
             self.converter.tape_to_color(tape),
             right_edge,
-            (
-                (2 * state) + int(not right_edge)
-                if state != -1 else
-                state
-            ),
+            (2 * state) + int(not right_edge),
         )
 
 ########################################
@@ -372,13 +367,10 @@ class BacksymbolMacro(MacroProg):
         return (
             out_color,
             not right_edge,
-            (
-                int(not right_edge)
-                + (2
-                   * (self.converter.tape_to_color(backsymbol)
-                      + (state
-                         * self.backsymbols)))
-                if state != -1 else
-                state
-            ),
+            int(not right_edge)
+            + (2
+               * (self.converter.tape_to_color(backsymbol)
+                  + (state
+                     * self.backsymbols)))
+            ,
         )
