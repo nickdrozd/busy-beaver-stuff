@@ -32,119 +32,118 @@ if TYPE_CHECKING:
 ########################################
 
 def cant_halt(prog: str) -> bool:
-    return Reasoner(prog).cant_reach(
+    return cant_reach(
+        prog,
         halt_slots(prog),
         lambda: BackstepMachineHalt(prog),
     )
 
 
 def cant_blank(prog: str) -> bool:
-    return Reasoner(prog).cant_reach(
+    return cant_reach(
+        prog,
         erase_slots(prog),
         lambda: BackstepMachineBlank(prog),
     )
 
 
 def cant_spin_out(prog: str) -> bool:
-    return (program := Reasoner(prog)).cant_reach(
-        program.spinout_slots,
+    graph = Graph(prog)
+
+    return cant_reach(
+        prog,
+        [
+            (state, 0)
+            for state in graph.zero_reflexive_states
+        ],
         lambda: BackstepMachineSpinout(prog),
+        graph = graph,
     )
 
 ########################################
 
-class Reasoner:
-    prog: dict[State, list[Instr | None]]
+def cant_reach(
+        program: str,
+        slots: list[Slot],
+        get_machine: Callable[[], BackstepMachine],
+        graph: Graph | None = None,
+        max_steps: int = 24,
+        max_cycles: int = 1_000,
+) -> bool:
+    if not slots:
+        return True
 
-    graph: Graph
+    prog: dict[State, list[Instr | None]] = \
+        dict(enumerate(parse(program)))
 
-    def __init__(self, program: str):
-        self.prog = dict(enumerate(parse(program)))
+    configs: list[Config] = [
+        (1, state, BackstepTape(scan = color))
+        for state, color in sorted(slots)
+    ]
 
-        self.graph = Graph(program)
+    seen: dict[State, set[BackstepTape]] = defaultdict(set)
 
-    @property
-    def spinout_slots(self) -> list[Slot]:
-        return [
-            (state, 0)
-            for state in self.graph.zero_reflexive_states
-        ]
+    machine = get_machine()
 
-    def cant_reach(
-            self,
-            slots: list[Slot],
-            get_machine: Callable[[], BackstepMachine],
-            max_steps: int = 24,
-            max_cycles: int = 1_000,
-    ) -> bool:
-        if not slots:
+    if graph is None:
+        graph = Graph(program)
+
+    entry_points = graph.entry_points
+
+    colors = graph.colors
+
+    for _ in range(max_cycles):  # no-branch
+        try:
+            step, state, tape = configs.pop()
+        except IndexError:
             return True
 
-        configs: list[Config] = [
-            (1, state, BackstepTape(scan = color))
-            for state, color in sorted(slots)
-        ]
+        if step > max_steps:
+            return False
 
-        seen: dict[State, set[BackstepTape]] = defaultdict(set)
+        if state == 0 and tape.blank:
+            return False
 
-        machine = get_machine()
+        if tape in seen[state]:
+            continue
 
-        entry_points = self.graph.entry_points
+        seen[state].add(tape)
 
-        colors = self.graph.colors
+        # print(step, state, tape)
 
-        for _ in range(max_cycles):  # no-branch
-            try:
-                step, state, tape = configs.pop()
-            except IndexError:
-                return True
+        for entry in sorted(entry_points[state]):
+            for instr in prog[entry]:
+                if instr is None:
+                    continue
 
-            if step > max_steps:
-                return False
+                _, shift, trans = instr
 
-            if state == 0 and tape.blank:
-                return False
+                if trans != state:
+                    continue
 
-            if tape in seen[state]:
-                continue
+                for color in colors:
+                    result = machine.backstep_run(
+                        sim_lim = step + 1,
+                        init_tape = tape.to_tuples(),
+                        state = entry,
+                        shift = shift,
+                        color = color,
+                    )
 
-            seen[state].add(tape)
-
-            # print(step, state, tape)
-
-            for entry in sorted(entry_points[state]):
-                for instr in self.prog[entry]:
-                    if instr is None:
+                    if not result:
                         continue
 
-                    _, shift, trans = instr
-
-                    if trans != state:
+                    if abs(result - step) > 1:
                         continue
 
-                    for color in colors:
-                        result = machine.backstep_run(
-                            sim_lim = step + 1,
-                            init_tape = tape.to_tuples(),
-                            state = entry,
-                            shift = shift,
-                            color = color,
-                        )
+                    yield_tape = tape.copy()
 
-                        if not result:
-                            continue
+                    yield_tape.backstep(shift, color)
 
-                        if abs(result - step) > 1:
-                            continue
+                    configs.append((
+                        step + 1,
+                        entry,
+                        yield_tape,
+                    ))
 
-                        yield_tape = tape.copy()
-
-                        yield_tape.backstep(shift, color)
-
-                        configs.append((
-                            step + 1,
-                            entry,
-                            yield_tape,
-                        ))
-
-        return False  # no-cover
+    return False  # no-cover
