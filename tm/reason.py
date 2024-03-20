@@ -9,6 +9,7 @@ from tm.tape import BackstepTape
 from tm.rust_stuff import (
     halt_slots,
     erase_slots,
+    zero_reflexive_slots,
     BackstepMachineHalt,
     BackstepMachineBlank,
     BackstepMachineSpinout,
@@ -48,16 +49,10 @@ def cant_blank(prog: str) -> bool:
 
 
 def cant_spin_out(prog: str) -> bool:
-    graph = Graph(prog)
-
     return cant_reach(
         prog,
-        [
-            (state, 0)
-            for state in graph.zero_reflexive_states
-        ],
+        zero_reflexive_slots(prog),
         lambda: BackstepMachineSpinout(prog),
-        graph = graph,
     )
 
 ########################################
@@ -66,7 +61,6 @@ def cant_reach(
         program: str,
         slots: list[Slot],
         get_machine: Callable[[], BackstepMachine],
-        graph: Graph | None = None,
         max_steps: int = 24,
         max_cycles: int = 1_000,
 ) -> bool:
@@ -85,8 +79,7 @@ def cant_reach(
 
     machine = get_machine()
 
-    if graph is None:
-        graph = Graph(program)
+    graph = Graph(program)
 
     entry_points = graph.entry_points
 

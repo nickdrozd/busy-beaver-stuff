@@ -67,6 +67,25 @@ pub fn erase_slots(prog: &str) -> Vec<Slot> {
     slots
 }
 
+#[pyfunction]
+pub fn zero_reflexive_slots(prog: &str) -> Vec<Slot> {
+    let mut slots = vec![];
+
+    for (state, instrs) in parse(prog).iter().enumerate() {
+        let (color, instr) = instrs.iter().enumerate().next().unwrap();
+
+        let state = state as State;
+
+        if let Some((_, _, tr)) = instr {
+            if *tr == state {
+                slots.push((state, color as Color));
+            }
+        }
+    }
+
+    slots
+}
+
 /**************************************/
 
 fn read_color(color: char) -> Color {
