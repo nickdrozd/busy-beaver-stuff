@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
@@ -15,8 +16,6 @@ from tm.rust_stuff import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from tm.parse import State, Slot, Instr
 
     InstrSeq = list[tuple[str, int, Slot]]
@@ -29,41 +28,38 @@ if TYPE_CHECKING:
         | BackstepMachineSpinout
     )
 
+class TermType(Enum):
+    # pylint: disable = invalid-name
+    Halt = 0
+    Blank = 1
+    Spinout = 2
+
 ########################################
 
 def cant_halt(prog: str) -> bool:
-    return cant_reach(
-        prog,
-        halt_slots,
-        BackstepMachineHalt,
-    )
-
+    return cant_reach(prog, TermType.Halt)
 
 def cant_blank(prog: str) -> bool:
-    return cant_reach(
-        prog,
-        erase_slots,
-        BackstepMachineBlank,
-    )
-
+    return cant_reach(prog, TermType.Blank)
 
 def cant_spin_out(prog: str) -> bool:
-    return cant_reach(
-        prog,
-        zero_reflexive_slots,
-        BackstepMachineSpinout,
-    )
+    return cant_reach(prog, TermType.Spinout)
 
 ########################################
 
 def cant_reach(
         prog: str,
-        get_slots: Callable[[str], list[Slot]],
-        get_machine: Callable[[str], BackstepMachine],
+        term_type: TermType,
         max_steps: int = 24,
         max_cycles: int = 1_000,
 ) -> bool:
-    if not (slots := get_slots(prog)):
+    slots = (
+        halt_slots if term_type == TermType.Halt else
+        erase_slots if term_type == TermType.Blank else
+        zero_reflexive_slots
+    )(prog)
+
+    if not slots:
         return True
 
     program: dict[State, list[Instr]]
@@ -79,7 +75,11 @@ def cant_reach(
 
     seen: dict[State, set[BackstepTape]] = defaultdict(set)
 
-    machine = get_machine(prog)
+    machine: BackstepMachine = (  # type: ignore[assignment]
+        BackstepMachineHalt if term_type == TermType.Halt else
+        BackstepMachineBlank if term_type == TermType.Blank else
+        BackstepMachineSpinout
+    )(prog)
 
     colors = tuple(range(color_count))
 
