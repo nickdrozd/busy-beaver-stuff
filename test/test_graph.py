@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from test.prog_data import GRAPHS, SPAGHETTI, KERNEL
 
-from tm.graph import Graph
+from tools.graph import Graph
 from tm.show import show_state
 
 

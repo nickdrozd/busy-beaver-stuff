@@ -18,7 +18,6 @@ from test.lin_rec import (
 from test.utils import get_holdouts, read_holdouts
 
 from tm.program import Program
-from tm.graph import Graph
 from tm.reason import (
     cant_halt,
     cant_blank,
@@ -32,6 +31,7 @@ from tm.machine import (
     quick_term_or_rec,
 )
 
+from tools.graph import Graph
 from tools.instr_seq import instr_seq
 from tools.normalize import normalize
 

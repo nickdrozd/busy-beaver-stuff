@@ -8,9 +8,10 @@ from test.utils import read_progs
 from test.lin_rec import run_loose_linrec_machine
 from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 
+from tools.graph import Graph
+
 from tm.tree import run_tree_gen
 from tm.machine import Machine, quick_term_or_rec
-from tm.graph import Graph
 from tm.reason import (
     cant_halt,
     cant_blank,

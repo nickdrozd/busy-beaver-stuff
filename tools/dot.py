@@ -1,4 +1,4 @@
-from tm.graph import Graph
+from tools.graph import Graph
 from tm.show import show_state as conv
 
 COLORS = (
