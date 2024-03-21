@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use pyo3::prelude::*;
 
@@ -8,9 +8,38 @@ use crate::tape::{Tape, TupleTape};
 
 /**************************************/
 
+type Graph = HashMap<State, Vec<State>>;
+type Program = HashMap<State, Vec<Instr>>;
+
+fn entry_points(program: &Program) -> Graph {
+    let mut exits: HashMap<State, HashSet<State>> = HashMap::new();
+
+    for (state, instrs) in program {
+        exits.insert(*state, instrs.iter().map(|instr| instr.2).collect());
+    }
+
+    let mut entries: Graph = (0..program.len())
+        .map(|state| (state as State, Vec::new()))
+        .collect();
+
+    for (state, cons) in exits {
+        for exit_point in cons {
+            if let Some(states) = entries.get_mut(&exit_point) {
+                states.push(state);
+            }
+        }
+    }
+
+    for entr in entries.values_mut() {
+        entr.sort_unstable();
+    }
+
+    entries
+}
+
 #[pyfunction]
-pub fn reason_parse(prog: &str) -> (usize, HashMap<State, Vec<Instr>>) {
-    let mut program = HashMap::new();
+pub fn reason_parse(prog: &str) -> (usize, Graph, Program) {
+    let mut program = Program::new();
 
     let parsed = prim_parse(prog);
 
@@ -21,7 +50,7 @@ pub fn reason_parse(prog: &str) -> (usize, HashMap<State, Vec<Instr>>) {
         );
     }
 
-    (parsed[0].len(), program)
+    (parsed[0].len(), entry_points(&program), program)
 }
 
 /**************************************/

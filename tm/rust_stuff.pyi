@@ -119,7 +119,11 @@ TupleTape = tuple[
     tuple[TupleBlock, ...],
 ]
 
-def reason_parse(prog: str) -> tuple[int, dict[State, list[Instr]]]: ...
+def reason_parse(prog: str) -> tuple[
+        int,
+        dict[State, list[State]],
+        dict[State, list[Instr]],
+]: ...
 
 class BackstepMachineHalt:
     def __init__(self, prog: str): ...
