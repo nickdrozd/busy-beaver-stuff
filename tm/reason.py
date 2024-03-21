@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
-from tm.graph import Graph
 from tm.tape import BackstepTape
 from tm.rust_stuff import (
     halt_slots,
@@ -57,6 +56,32 @@ def cant_spin_out(prog: str) -> bool:
 
 ########################################
 
+if TYPE_CHECKING:
+    Program = dict[State, list[Instr]]
+    Graph = dict[State, list[State]]
+
+
+def get_entry_points(program: Program) -> Graph:
+    exits = {
+        state: { trans for _, _, trans in instrs }
+        for state, instrs in program.items()
+    }
+
+    entries: Graph = {
+        state: []
+        for state in range(len(program))
+    }
+
+    for state, cons in exits.items():
+        for exit_point in cons:
+            entries[exit_point].append(state)
+
+    for state, entr in entries.items():
+        entr.sort()
+
+    return entries
+
+
 def cant_reach(
         prog: str,
         get_slots: Callable[[str], list[Slot]],
@@ -67,7 +92,7 @@ def cant_reach(
     if not (slots := get_slots(prog)):
         return True
 
-    program: dict[State, list[Instr]]
+    program: Program
 
     color_count, program = reason_parse(prog)
 
@@ -80,9 +105,7 @@ def cant_reach(
 
     machine = get_machine(prog)
 
-    graph = Graph(prog)
-
-    entry_points = graph.entry_points
+    entry_points = get_entry_points(program)
 
     colors = tuple(range(color_count))
 
@@ -105,7 +128,7 @@ def cant_reach(
 
         # print(step, state, tape)
 
-        for entry in sorted(entry_points[state]):
+        for entry in entry_points[state]:
             for _, shift, trans in program[entry]:
                 if trans != state:
                     continue
