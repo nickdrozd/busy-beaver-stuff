@@ -16,11 +16,13 @@ def instr_seq(prog: str) -> InstrSeq:
 
     seqs: InstrSeq = []
 
-    partial = init_prog(len(program.states), len(program.colors))
+    partial = init_prog(
+        states := len(program.states),
+        colors := len(program.colors))
 
-    for _ in range(len(program.states) * len(program.colors) - 1):
+    for _ in range(states * colors - 1):  # no-branch
         if (result := run_for_undefined(partial)) is None:
-            return seqs
+            break
 
         step, slot = result
 
@@ -29,7 +31,7 @@ def instr_seq(prog: str) -> InstrSeq:
         try:
             partial[slot] = program[slot]
         except KeyError:
-            return seqs
+            break
 
     return seqs
 
