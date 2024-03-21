@@ -4,18 +4,10 @@ pub type Count = u64;
 
 /**************************************/
 
-type TupleBlock = (Color, Count);
-pub type TupleTape = (Vec<TupleBlock>, Color, Vec<TupleBlock>);
-
+#[derive(Copy, Clone, Eq, Hash, PartialEq)]
 pub struct Block {
     pub color: Color,
     pub count: Count,
-}
-
-impl From<TupleBlock> for Block {
-    fn from((color, count): TupleBlock) -> Self {
-        Self::new(color, count)
-    }
 }
 
 impl Block {
@@ -26,6 +18,7 @@ impl Block {
 
 /**************************************/
 
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Tape {
     lspan: Vec<Block>,
 
@@ -35,10 +28,10 @@ pub struct Tape {
 }
 
 impl Tape {
-    pub fn init() -> Self {
+    pub fn init(scan: Color) -> Self {
         Self {
             lspan: vec![],
-            scan: 0,
+            scan,
             rspan: vec![],
         }
     }
@@ -48,16 +41,6 @@ impl Tape {
             lspan: vec![Block::new(1, 1)],
             scan: 0,
             rspan: vec![],
-        }
-    }
-
-    pub fn from_tuples(tape: TupleTape) -> Self {
-        let (lspan, scan, rspan) = tape;
-
-        Self {
-            lspan: lspan.into_iter().map(std::convert::Into::into).collect(),
-            scan,
-            rspan: rspan.into_iter().map(std::convert::Into::into).collect(),
         }
     }
 

@@ -136,7 +136,7 @@ impl MachineResult {
 pub fn run_machine(prog: &str, sim_lim: Step) -> MachineResult {
     let comp = tcompile(prog);
 
-    let mut tape = Tape::init();
+    let mut tape = Tape::init(0);
 
     let mut blanks = HashMap::new();
 

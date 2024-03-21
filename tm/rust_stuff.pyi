@@ -111,55 +111,9 @@ def unroll_tape(prog: str, steps: int) -> list[Color]: ...
 
 ## reason ##############################
 
-TupleBlock = tuple[int, int]
-
-TupleTape = tuple[
-    tuple[TupleBlock, ...],
-    Color,
-    tuple[TupleBlock, ...],
-]
-
-def reason_parse(prog: str) -> tuple[
-        int,
-        dict[State, list[State]],
-        dict[State, list[Instr]],
-]: ...
-
-class BackstepMachineHalt:
-    def __init__(self, prog: str): ...
-
-    def backstep_run(
-            self,
-            sim_lim: int,
-            init_tape: TupleTape,
-            state: State,
-            shift: Shift,
-            color: Color,
-    ) -> int | None: ...
-
-class BackstepMachineBlank:
-    def __init__(self, prog: str): ...
-
-    def backstep_run(
-            self,
-            sim_lim: int,
-            init_tape: TupleTape,
-            state: State,
-            shift: Shift,
-            color: Color,
-    ) -> int | None: ...
-
-class BackstepMachineSpinout:
-    def __init__(self, prog: str): ...
-
-    def backstep_run(
-            self,
-            sim_lim: int,
-            init_tape: TupleTape,
-            state: State,
-            shift: Shift,
-            color: Color,
-    ) -> int | None: ...
+def cant_halt(prog: str) -> bool: ...
+def cant_blank(prog: str) -> bool: ...
+def cant_spin_out(prog: str) -> bool: ...
 
 ## tree ################################
 

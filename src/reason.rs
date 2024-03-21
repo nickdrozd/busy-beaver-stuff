@@ -2,9 +2,119 @@ use std::collections::{HashMap, HashSet};
 
 use pyo3::prelude::*;
 
-use crate::instrs::{Color, CompProg, Instr, Shift, State};
-use crate::parse::{parse as prim_parse, tcompile};
-use crate::tape::{Tape, TupleTape};
+use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
+use crate::parse::{erase_slots, halt_slots, parse as prim_parse, tcompile, zero_reflexive_slots};
+use crate::tape::Tape;
+
+type Step = u64;
+
+/**************************************/
+
+#[derive(Clone, Copy)]
+enum TermType {
+    Halt,
+    Blank,
+    Spinout,
+}
+
+#[pyfunction]
+pub fn cant_halt(prog: &str) -> bool {
+    cant_reach(prog, TermType::Halt)
+}
+
+#[pyfunction]
+pub fn cant_blank(prog: &str) -> bool {
+    cant_reach(prog, TermType::Blank)
+}
+
+#[pyfunction]
+pub fn cant_spin_out(prog: &str) -> bool {
+    cant_reach(prog, TermType::Spinout)
+}
+
+/**************************************/
+
+fn cant_reach(prog: &str, term_type: TermType) -> bool {
+    let slots: Vec<Slot> = match term_type {
+        TermType::Halt => halt_slots,
+        TermType::Blank => erase_slots,
+        TermType::Spinout => zero_reflexive_slots,
+    }(prog);
+
+    if slots.is_empty() {
+        return true;
+    }
+
+    let max_steps = 24;
+    let max_cycles = 1_000;
+
+    let (colors, entry_points, program) = parse(prog);
+
+    let mut configs: Vec<(Color, State, Tape)> = slots
+        .iter()
+        .map(|(state, color)| (1, *state, Tape::init(*color)))
+        .collect();
+
+    let mut seen: HashMap<State, HashSet<Tape>> = HashMap::new();
+
+    let mut machine: Box<dyn BackstepMachine> = match term_type {
+        TermType::Halt => Box::new(BackstepMachineHalt::new(prog)),
+        TermType::Blank => Box::new(BackstepMachineBlank::new(prog)),
+        TermType::Spinout => Box::new(BackstepMachineSpinout::new(prog)),
+    };
+
+    for _ in 0..max_cycles {
+        let Some((step, state, tape)) = configs.pop() else {
+            return true;
+        };
+
+        if step > max_steps {
+            return false;
+        }
+
+        if state == 0 && tape.blank() {
+            return false;
+        }
+
+        if seen.entry(state).or_default().contains(&tape) {
+            continue;
+        }
+
+        seen.get_mut(&state).unwrap().insert(tape.clone());
+
+        for entry in entry_points.get(&state).unwrap() {
+            for (_, shift, trans) in program.get(entry).unwrap() {
+                if *trans != state {
+                    continue;
+                }
+
+                for color in 0..colors {
+                    let Some(result) = machine.backstep_run(
+                        step + 1,
+                        tape.clone(),
+                        *entry,
+                        *shift,
+                        color as Color,
+                    ) else {
+                        continue;
+                    };
+
+                    if (result as isize - step as isize).abs() > 1 {
+                        continue;
+                    }
+
+                    let mut yield_tape = tape.clone();
+
+                    yield_tape.backstep(*shift, color as Color);
+
+                    configs.push((step + 1, *entry, yield_tape));
+                }
+            }
+        }
+    }
+
+    true
+}
 
 /**************************************/
 
@@ -37,8 +147,7 @@ fn entry_points(program: &Program) -> Graph {
     entries
 }
 
-#[pyfunction]
-pub fn reason_parse(prog: &str) -> (usize, Graph, Program) {
+fn parse(prog: &str) -> (usize, Graph, Program) {
     let mut program = Program::new();
 
     let parsed = prim_parse(prog);
@@ -55,27 +164,35 @@ pub fn reason_parse(prog: &str) -> (usize, Graph, Program) {
 
 /**************************************/
 
-type Step = u64;
+trait BackstepMachine {
+    fn new(prog: &str) -> Self
+    where
+        Self: Sized;
 
-#[pyclass]
-pub struct BackstepMachineHalt {
+    fn backstep_run(
+        &mut self,
+        sim_lim: Step,
+        tape: Tape,
+        state: State,
+        shift: Shift,
+        color: Color,
+    ) -> Option<Step>;
+}
+
+struct BackstepMachineHalt {
     comp: CompProg,
 }
 
-#[pyclass]
-pub struct BackstepMachineBlank {
+struct BackstepMachineBlank {
     comp: CompProg,
     blanks: HashMap<State, Step>,
 }
 
-#[pyclass]
-pub struct BackstepMachineSpinout {
+struct BackstepMachineSpinout {
     comp: CompProg,
 }
 
-#[pymethods]
-impl BackstepMachineHalt {
-    #[new]
+impl BackstepMachine for BackstepMachineHalt {
     fn new(prog: &str) -> Self {
         Self {
             comp: tcompile(prog),
@@ -85,14 +202,12 @@ impl BackstepMachineHalt {
     fn backstep_run(
         &mut self,
         sim_lim: Step,
-        init_tape: TupleTape,
+        mut tape: Tape,
         mut state: State,
         shift: Shift,
         color: Color,
     ) -> Option<Step> {
         let mut step = 0;
-
-        let mut tape = Tape::from_tuples(init_tape);
 
         tape.backstep(shift, color);
 
@@ -118,9 +233,7 @@ impl BackstepMachineHalt {
     }
 }
 
-#[pymethods]
-impl BackstepMachineBlank {
-    #[new]
+impl BackstepMachine for BackstepMachineBlank {
     fn new(prog: &str) -> Self {
         Self {
             comp: tcompile(prog),
@@ -131,14 +244,12 @@ impl BackstepMachineBlank {
     fn backstep_run(
         &mut self,
         sim_lim: Step,
-        init_tape: TupleTape,
+        mut tape: Tape,
         mut state: State,
         shift: Shift,
         color: Color,
     ) -> Option<Step> {
         let mut step = 0;
-
-        let mut tape = Tape::from_tuples(init_tape);
 
         tape.backstep(shift, color);
 
@@ -176,9 +287,7 @@ impl BackstepMachineBlank {
     }
 }
 
-#[pymethods]
-impl BackstepMachineSpinout {
-    #[new]
+impl BackstepMachine for BackstepMachineSpinout {
     fn new(prog: &str) -> Self {
         Self {
             comp: tcompile(prog),
@@ -188,14 +297,12 @@ impl BackstepMachineSpinout {
     fn backstep_run(
         &mut self,
         sim_lim: Step,
-        init_tape: TupleTape,
+        mut tape: Tape,
         mut state: State,
         shift: Shift,
         color: Color,
     ) -> Option<Step> {
         let mut step = 0;
-
-        let mut tape = Tape::from_tuples(init_tape);
 
         tape.backstep(shift, color);
 
