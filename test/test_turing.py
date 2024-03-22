@@ -17,7 +17,7 @@ from test.lin_rec import (
 )
 from test.utils import get_holdouts, read_holdouts
 
-from tm.program import Program
+from tm.program import branch_read
 from tm.reason import (
     cant_halt,
     cant_blank,
@@ -182,7 +182,7 @@ class Reason(TuringTest):
     def test_mother_of_giants(self):
         mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
 
-        for prog in Program(mother).branch_read('E0'):
+        for prog in branch_read(mother, 'E0'):
             self.assert_could_blank(prog)
             self.assert_could_spin_out(prog)
 
@@ -191,7 +191,7 @@ class Reason(TuringTest):
 
         self.assert_could_halt(bigfoot)
 
-        for prog in Program(bigfoot).branch_read('C0'):
+        for prog in branch_read(bigfoot, 'C0'):
             self.assert_cant_blank(prog)
 
         # pylint: disable = line-too-long
@@ -199,7 +199,7 @@ class Reason(TuringTest):
 
         self.assert_could_halt(two_color)
 
-        for prog in Program(two_color).branch_read('H0'):
+        for prog in branch_read(two_color, 'H0'):
             self.assert_cant_blank(prog)
 
     def test_blank(self):

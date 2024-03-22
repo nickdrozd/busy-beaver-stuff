@@ -13,10 +13,19 @@ if TYPE_CHECKING:
 
     ProgStr = str
 
+########################################
+
+def branch_read(prog: str, slot: str) -> list[ProgStr]:
+    return Program(prog).branch(
+        read_slot(slot))
+
 
 def init_branches(states: int, colors: int) -> list[str]:
-    return Program(init_prog(states, colors)).branch_read('B0')
+    return branch_read(
+        init_prog(states, colors),
+        'B0')
 
+########################################
 
 class Program:
     prog: dict[State, Switch]
@@ -135,6 +144,3 @@ class Program:
         self[slot] = orig
 
         return branches
-
-    def branch_read(self, slot: str) -> list[ProgStr]:
-        return self.branch(read_slot(slot))

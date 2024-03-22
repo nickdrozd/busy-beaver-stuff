@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from test.prog_data import BRANCH, PROGS, NORMALIZE
 
-from tm.program import Program, init_branches
+from tm.program import Program, init_branches, branch_read
 from tm.show import show_slot, show_instr
 from tools.normalize import normalize
 
@@ -32,7 +32,7 @@ class TestProgram(TestCase):
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
             self.assertEqual(
-                set(Program(prog).branch_read(loc)),
+                set(branch_read(prog, loc)),
                 extensions)
 
     def test_normalize(self):
