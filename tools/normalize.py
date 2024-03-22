@@ -2,19 +2,67 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.program import Program
+from tm.parse import parse
+from tm.show import show_instr
 
 if TYPE_CHECKING:
     from typing import Self
+    from collections.abc import Iterator
 
-    from tm.parse import Color, State, Slot, Instr
+    from tm.parse import Color, State, Slot, Instr, Switch
 
 
 def normalize(prog: str) -> str:
     return str(Normalizer(prog).normalize())
 
 
-class Normalizer(Program):
+class Normalizer:
+    prog: dict[State, Switch]
+
+    states: set[State]
+    colors: set[Color]
+
+    def __init__(self, program: str):
+        parsed = parse(program)
+
+        self.prog = {
+            state: dict(enumerate(instrs))
+            for state, instrs in enumerate(parsed)
+        }
+
+        self.states = set(range(len(parsed)))
+        self.colors = set(range(len(parsed[0])))
+
+    def __repr__(self) -> str:
+        return '  '.join([
+            ' '.join(
+                show_instr(instr)
+                for instr in instrs.values()
+            )
+            for instrs in self.prog.values()
+        ])
+
+    def __getitem__(self, slot: Slot) -> Instr:
+        state, color = slot
+
+        if (instr := self.prog[state][color]) is None:  # no-cover
+            raise KeyError(slot)
+
+        return instr
+
+    def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
+        state, color = slot
+
+        self.prog[state][color] = instr
+
+    @property
+    def instr_slots(self) -> list[tuple[Slot, Instr | None]]:
+        return [
+            ((state, color), instr)
+            for state, instrs in self.prog.items()
+            for color, instr in instrs.items()
+        ]
+
     @property
     def used_instr_slots(self) -> list[tuple[Slot, Instr]]:
         return [
@@ -22,6 +70,15 @@ class Normalizer(Program):
             for slot, instr in self.instr_slots
             if instr is not None
         ]
+
+    @property
+    def used_instructions(self) -> Iterator[Instr]:
+        return (
+            instr
+            for instrs in self.prog.values()
+            for instr in instrs.values()
+            if instr
+        )
 
     def swap_states(self, st1: State, st2: State) -> Self:
         self.prog[st1], self.prog[st2] = self.prog[st2], self.prog[st1]
