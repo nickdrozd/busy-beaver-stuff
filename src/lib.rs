@@ -30,8 +30,8 @@ mod rust_stuff {
 
     #[pymodule_export]
     use crate::parse::{
-        erase_slots, halt_slots, parse, read_slot, show_instr, show_slot, show_state, tcompile,
-        zero_reflexive_slots,
+        erase_slots, halt_slots, init_prog, parse, read_slot, show_instr, show_slot, show_state,
+        tcompile, zero_reflexive_slots,
     };
 
     #[pymodule_export]

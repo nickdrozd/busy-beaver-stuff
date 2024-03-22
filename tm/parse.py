@@ -4,6 +4,7 @@ from tm.rust_stuff import (
     parse,
     tcompile,
     read_slot,
+    init_prog,
 )
 
 from typing import Protocol

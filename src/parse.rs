@@ -150,6 +150,20 @@ fn read_instr(instr: &str) -> Option<Instr> {
 
 /**************************************/
 
+#[pyfunction]
+pub fn init_prog(states: usize, colors: usize) -> String {
+    let mut prog = vec![vec!["..."; colors]; states];
+
+    prog[0][0] = "1RB";
+
+    prog.iter()
+        .map(|state| state.join(" "))
+        .collect::<Vec<String>>()
+        .join("  ")
+}
+
+/**************************************/
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -203,5 +217,17 @@ mod tests {
             ],
             parse("1RB ...  1LB 0RC  1LC 1LA"),
         );
+    }
+
+    fn check_init(states: usize, colors: usize, expected: &str) {
+        assert_eq!(init_prog(states, colors), expected);
+    }
+
+    #[test]
+    fn test_init() {
+        check_init(2, 3, "1RB ... ...  ... ... ...");
+        check_init(3, 2, "1RB ...  ... ...  ... ...");
+        check_init(2, 4, "1RB ... ... ...  ... ... ... ...");
+        check_init(4, 2, "1RB ...  ... ...  ... ...  ... ...");
     }
 }

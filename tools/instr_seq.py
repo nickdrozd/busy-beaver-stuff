@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from tm.parse import init_prog
 from tm.tape import Tape
-from tm.program import Program, init_prog
+from tm.program import Program
 
 if TYPE_CHECKING:
     from tm.machine import Slot, Undfnd
@@ -16,9 +17,9 @@ def instr_seq(prog: str) -> InstrSeq:
 
     seqs: InstrSeq = []
 
-    partial = init_prog(
+    partial = Program(init_prog(
         states := len(program.states),
-        colors := len(program.colors))
+        colors := len(program.colors)))
 
     for _ in range(states * colors - 1):  # no-branch
         if (result := run_for_undefined(partial)) is None:

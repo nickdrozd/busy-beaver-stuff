@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from itertools import product
 
 from tm.show import show_instr
-from tm.parse import parse, read_slot
+from tm.parse import parse, read_slot, init_prog
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -14,24 +14,8 @@ if TYPE_CHECKING:
     ProgStr = str
 
 
-def init_prog(states: int, colors: int) -> Program:
-    prog = [
-        ['...' for _ in range(colors)]
-        for _ in range(states)
-    ]
-
-    prog[0][0] = '1RB'
-
-    return Program(
-        '  '.join(
-            ' '.join(state)
-            for state in prog
-        )
-    )
-
-
 def init_branches(states: int, colors: int) -> list[str]:
-    return init_prog(states, colors).branch_read('B0')
+    return Program(init_prog(states, colors)).branch_read('B0')
 
 
 class Program:
