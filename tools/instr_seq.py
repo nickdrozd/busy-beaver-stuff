@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 from tm.parse import init_prog
 from tm.tape import Tape
-from tm.program import Program
+
+from tools.normalize import Normalizer
 
 if TYPE_CHECKING:
     from tm.machine import Slot, Undfnd
@@ -13,11 +14,11 @@ if TYPE_CHECKING:
 
 
 def instr_seq(prog: str) -> InstrSeq:
-    program = Program(prog)
+    program = Normalizer(prog)
 
     seqs: InstrSeq = []
 
-    partial = Program(init_prog(
+    partial = Normalizer(init_prog(
         states := len(program.states),
         colors := len(program.colors)))
 
@@ -37,7 +38,7 @@ def instr_seq(prog: str) -> InstrSeq:
     return seqs
 
 
-def run_for_undefined(prog: Program) -> Undfnd | None:
+def run_for_undefined(prog: Normalizer) -> Undfnd | None:
     tape = Tape()
 
     step = 0
