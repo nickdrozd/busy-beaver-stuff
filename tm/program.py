@@ -41,8 +41,8 @@ class Program:
             for state, instrs in enumerate(parsed)
         }
 
-        self.states = set(range(len(parsed)))
-        self.colors = set(range(len(parsed[0])))
+        self.max_state = len(parsed) - 1
+        self.max_color = len(parsed[0]) - 1
 
     def __repr__(self) -> ProgStr:
         return '  '.join([
@@ -98,31 +98,30 @@ class Program:
 
         return slots[0]
 
-    def available_states(self, used: set[State]) -> set[State]:
-        diff = sorted(self.states.difference(used))
-
-        return used | { diff[0] } if diff else used
-
-    def available_colors(self, used: set[Color]) -> set[Color]:
-        diff = sorted(self.colors.difference(used))
-
-        return used | { diff[0] } if diff else used
-
     @property
     def available_instrs(self) -> list[Instr]:
-        used_colors = { 0 }
-        used_states = { 0 }
+        max_used_color = 1
+        max_used_state = 1
 
         for color, _, state in self.used_instructions:
-            used_colors.add(color)
-            used_states.add(state)
+            # pylint: disable = consider-using-max-builtin
+            if color > max_used_color:
+                max_used_color = color
+
+            if state > max_used_state:
+                max_used_state = state
+
+        if max_used_color < self.max_color:
+            max_used_color += 1
+
+        if max_used_state < self.max_state:
+            max_used_state += 1
 
         return sorted(
             product(
-                self.available_colors(used_colors),
+                range(1 + max_used_color),
                 (False, True),
-                self.available_states(used_states)),
-            reverse = True,
+                range(1 + max_used_state)),
         )
 
     def branch(self, slot: Slot) -> list[ProgStr]:

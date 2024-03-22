@@ -17,10 +17,12 @@ class TestProgram(TestCase):
             if (last := self.prog.last_slot) is None else
             show_slot(last))
 
-    def assert_instrs(self, instrs: tuple[str, ...]):
+    def assert_instrs(self, instrs: list[str]):
         self.assertEqual(
             instrs,
-            tuple(map(show_instr,reversed(self.prog.available_instrs))))
+            sorted(map(
+                show_instr,
+                reversed(self.prog.available_instrs))))
 
     def test_used_available(self):
         for prog, (last, avail_instr) in PROGS.items():

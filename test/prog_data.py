@@ -2041,21 +2041,25 @@ PROGS: dict[
     str,
     tuple[
         str | None,
-        tuple[str, ...],
+        list[str],
     ],
 ] = {
     "1RB ...  1LB 0RC  1LC 1LA": (
         'A1',
-        ('0LA', '0LB', '0LC', '0RA', '0RB', '0RC', '1LA', '1LB', '1LC', '1RA', '1RB', '1RC'),
+        ['0LA', '0LB', '0LC', '0RA', '0RB', '0RC', '1LA', '1LB', '1LC', '1RA', '1RB', '1RC'],
     ),
     "1RB ...  1RC ...  ... ...  ... ...  ... ...": (
         None,
-        ('0LA', '0LB', '0LC', '0LD', '0RA', '0RB', '0RC', '0RD', '1LA', '1LB', '1LC', '1LD', '1RA', '1RB', '1RC', '1RD'),
+        ['0LA', '0LB', '0LC', '0LD', '0RA', '0RB', '0RC', '0RD', '1LA', '1LB', '1LC', '1LD', '1RA', '1RB', '1RC', '1RD'],
     ),
     "1RB ... ... ...  1LB 1LA ... ...": (
         None,
-        ('0LA', '0LB', '0RA', '0RB', '1LA', '1LB', '1RA', '1RB', '2LA', '2LB', '2RA', '2RB'),
-    )
+        ['0LA', '0LB', '0RA', '0RB', '1LA', '1LB', '1RA', '1RB', '2LA', '2LB', '2RA', '2RB'],
+    ),
+    "1RB 2LA ... ...  1LB 1LA ... ...": (
+        None,
+        ['0LA', '0LB', '0RA', '0RB', '1LA', '1LB', '1RA', '1RB', '2LA', '2LB', '2RA', '2RB', '3LA', '3LB', '3RA', '3RB'],
+    ),
 }
 
 BRANCH = {
