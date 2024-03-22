@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 from itertools import product
-from functools import cached_property
 
 from tm.show import show_instr
 from tm.parse import parse, read_slot
@@ -34,11 +33,19 @@ def init_branches(states: int, colors: int) -> list[str]:
 class Program:
     prog: dict[State, Switch]
 
+    states: set[State]
+    colors: set[Color]
+
     def __init__(self, program: ProgStr):
+        parsed = parse(program)
+
         self.prog = {
             state: dict(enumerate(instrs))
-            for state, instrs in enumerate(parse(program))
+            for state, instrs in enumerate(parsed)
         }
+
+        self.states = set(range(len(parsed)))
+        self.colors = set(range(len(parsed[0])))
 
     def __repr__(self) -> ProgStr:
         return '  '.join([
@@ -61,14 +68,6 @@ class Program:
         state, color = slot
 
         self.prog[state][color] = instr
-
-    @cached_property
-    def states(self) -> set[State]:
-        return set(self.prog.keys())
-
-    @cached_property
-    def colors(self) -> set[Color]:
-        return set(range(len(self.prog[0])))
 
     @property
     def instr_slots(self) -> list[tuple[Slot, Instr | None]]:
