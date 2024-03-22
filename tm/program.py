@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from typing import TYPE_CHECKING
 from itertools import product
 
@@ -16,14 +15,19 @@ if TYPE_CHECKING:
 
 
 def init_prog(states: int, colors: int) -> Program:
+    prog = [
+        ['...' for _ in range(colors)]
+        for _ in range(states)
+    ]
+
+    prog[0][0] = '1RB'
+
     return Program(
-        re.sub(
-            r'^\.\.\.',
-            '1RB',
-            '  '.join([
-                ' '.join(
-                    ['...'] * colors)
-            ] * states)))
+        '  '.join(
+            ' '.join(state)
+            for state in prog
+        )
+    )
 
 
 def init_branches(states: int, colors: int) -> list[str]:
