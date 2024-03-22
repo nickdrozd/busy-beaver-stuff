@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn test_marks() {
-        assert_marks(&Tape::init(), 0);
+        assert_marks(&Tape::init(0), 0);
 
         let mut tape = Tape::init_stepped();
 

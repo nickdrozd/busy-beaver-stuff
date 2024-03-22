@@ -85,7 +85,7 @@ SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(RUL) $(TP) $(COV) $(NUM)
 
 PYTEST = $(PYTHON) -m unittest
 
-test : rust
+test : test-rust
 	$(PYTEST) -v $(SHORT_TESTS) $(LR) $(TREEF) $(TUR)
 
 test-all : test-rust compile
