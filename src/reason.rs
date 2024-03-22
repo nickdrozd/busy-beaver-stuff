@@ -45,6 +45,8 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
         return true;
     }
 
+    let comp = tcompile(prog);
+
     let max_steps = 24;
     let max_cycles = 1_000;
 
@@ -57,10 +59,10 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
     let mut seen: HashMap<State, HashSet<Tape>> = HashMap::new();
 
-    let mut machine: Box<dyn BackstepMachine> = match term_type {
-        TermType::Halt => Box::new(BackstepMachineHalt::new(prog)),
-        TermType::Blank => Box::new(BackstepMachineBlank::new(prog)),
-        TermType::Spinout => Box::new(BackstepMachineSpinout::new(prog)),
+    let backstep_run = match term_type {
+        TermType::Halt => backstep_run_halt,
+        TermType::Blank => backstep_run_blank,
+        TermType::Spinout => backstep_run_spinout,
     };
 
     for _ in 0..max_cycles {
@@ -89,7 +91,8 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                 }
 
                 for color in 0..colors {
-                    let Some(result) = machine.backstep_run(
+                    let Some(result) = backstep_run(
+                        &comp,
                         step + 1,
                         tape.clone(),
                         *entry,
@@ -164,166 +167,115 @@ fn parse(prog: &str) -> (usize, Graph, Program) {
 
 /**************************************/
 
-trait BackstepMachine {
-    fn new(prog: &str) -> Self
-    where
-        Self: Sized;
+fn backstep_run_halt(
+    comp: &CompProg,
+    sim_lim: Step,
+    mut tape: Tape,
+    mut state: State,
+    shift: Shift,
+    color: Color,
+) -> Option<Step> {
+    let mut step = 0;
 
-    fn backstep_run(
-        &mut self,
-        sim_lim: Step,
-        tape: Tape,
-        state: State,
-        shift: Shift,
-        color: Color,
-    ) -> Option<Step>;
-}
+    tape.backstep(shift, color);
 
-struct BackstepMachineHalt {
-    comp: CompProg,
-}
+    for _ in 0..sim_lim {
+        let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan)) else {
+            return Some(step);
+        };
 
-struct BackstepMachineBlank {
-    comp: CompProg,
-    blanks: HashMap<State, Step>,
-}
+        let same = state == next_state;
 
-struct BackstepMachineSpinout {
-    comp: CompProg,
-}
-
-impl BackstepMachine for BackstepMachineHalt {
-    fn new(prog: &str) -> Self {
-        Self {
-            comp: tcompile(prog),
+        if same && tape.at_edge(shift) {
+            break;
         }
+
+        let stepped = tape.step(shift, color, same);
+
+        step += stepped;
+
+        state = next_state;
     }
 
-    fn backstep_run(
-        &mut self,
-        sim_lim: Step,
-        mut tape: Tape,
-        mut state: State,
-        shift: Shift,
-        color: Color,
-    ) -> Option<Step> {
-        let mut step = 0;
+    None
+}
 
-        tape.backstep(shift, color);
+fn backstep_run_blank(
+    comp: &CompProg,
+    sim_lim: Step,
+    mut tape: Tape,
+    mut state: State,
+    shift: Shift,
+    color: Color,
+) -> Option<Step> {
+    let mut blanks: HashMap<State, Step> = HashMap::new();
 
-        for _ in 0..sim_lim {
-            let Some(&(color, shift, next_state)) = self.comp.get(&(state, tape.scan)) else {
-                return Some(step);
-            };
+    let mut step = 0;
 
-            let same = state == next_state;
+    tape.backstep(shift, color);
 
-            if same && tape.at_edge(shift) {
+    for _ in 0..sim_lim {
+        let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan)) else {
+            break;
+        };
+
+        let same = state == next_state;
+
+        if same && tape.at_edge(shift) {
+            break;
+        }
+
+        let stepped = tape.step(shift, color, same);
+
+        step += stepped;
+
+        state = next_state;
+
+        if color == 0 && tape.blank() {
+            if blanks.contains_key(&state) {
                 break;
             }
 
-            let stepped = tape.step(shift, color, same);
+            blanks.insert(state, step);
 
-            step += stepped;
-
-            state = next_state;
+            if state == 0 {
+                break;
+            }
         }
-
-        None
     }
+
+    blanks.drain().map(|(_, value)| value).min()
 }
 
-impl BackstepMachine for BackstepMachineBlank {
-    fn new(prog: &str) -> Self {
-        Self {
-            comp: tcompile(prog),
-            blanks: HashMap::new(),
-        }
-    }
+fn backstep_run_spinout(
+    comp: &CompProg,
+    sim_lim: Step,
+    mut tape: Tape,
+    mut state: State,
+    shift: Shift,
+    color: Color,
+) -> Option<Step> {
+    let mut step = 0;
 
-    fn backstep_run(
-        &mut self,
-        sim_lim: Step,
-        mut tape: Tape,
-        mut state: State,
-        shift: Shift,
-        color: Color,
-    ) -> Option<Step> {
-        let mut step = 0;
+    tape.backstep(shift, color);
 
-        tape.backstep(shift, color);
+    for _ in 0..sim_lim {
+        let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan)) else {
+            break;
+        };
 
-        for _ in 0..sim_lim {
-            let Some(&(color, shift, next_state)) = self.comp.get(&(state, tape.scan)) else {
-                break;
-            };
+        let same = state == next_state;
 
-            let same = state == next_state;
-
-            if same && tape.at_edge(shift) {
-                break;
-            }
-
-            let stepped = tape.step(shift, color, same);
-
-            step += stepped;
-
-            state = next_state;
-
-            if color == 0 && tape.blank() {
-                if self.blanks.contains_key(&state) {
-                    break;
-                }
-
-                self.blanks.insert(state, step);
-
-                if state == 0 {
-                    break;
-                }
-            }
+        if same && tape.at_edge(shift) {
+            return Some(step);
         }
 
-        self.blanks.drain().map(|(_, value)| value).min()
-    }
-}
+        let stepped = tape.step(shift, color, same);
 
-impl BackstepMachine for BackstepMachineSpinout {
-    fn new(prog: &str) -> Self {
-        Self {
-            comp: tcompile(prog),
-        }
+        step += stepped;
+
+        state = next_state;
     }
 
-    fn backstep_run(
-        &mut self,
-        sim_lim: Step,
-        mut tape: Tape,
-        mut state: State,
-        shift: Shift,
-        color: Color,
-    ) -> Option<Step> {
-        let mut step = 0;
-
-        tape.backstep(shift, color);
-
-        for _ in 0..sim_lim {
-            let Some(&(color, shift, next_state)) = self.comp.get(&(state, tape.scan)) else {
-                break;
-            };
-
-            let same = state == next_state;
-
-            if same && tape.at_edge(shift) {
-                return Some(step);
-            }
-
-            let stepped = tape.step(shift, color, same);
-
-            step += stepped;
-
-            state = next_state;
-        }
-
-        None
-    }
+    None
 }
