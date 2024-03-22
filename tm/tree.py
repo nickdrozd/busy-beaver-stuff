@@ -24,36 +24,29 @@ def tree_gen(
         halt: bool,
         stack: list[ProgStr],
 ) -> Iterator[ProgStr]:
-    prog: ProgStr | None = None
-
     open_slot_lim = 2 if halt else 1
 
     while True:  # pylint: disable = while-used
-        if prog is None:
-            try:
-                prog = stack.pop()
-            except IndexError:
-                break
+        try:
+            prog: ProgStr = stack.pop()
+        except IndexError:
+            break
 
         try:
             slot = run_for_undefined(prog, steps)
         except TreeSkip:
-            prog = None
             continue
 
         if slot is None:
             yield prog
-            prog = None
             continue
 
-        if len((program := Program(prog)).open_slots) == open_slot_lim:
-            yield from program.branch(slot)
-            prog = None
-            continue
+        branches = (program := Program(prog)).branch(slot)
 
-        prog, *branches = program.branch(slot)
-
-        stack.extend(branches)
+        if len(program.open_slots) == open_slot_lim:
+            yield from branches
+        else:
+            stack.extend(branches)
 
 
 def worker(
