@@ -58,6 +58,12 @@ class Program:
         self.max_used_color = max_used_color
         self.max_used_state = max_used_state
 
+        self._available_instrs = sorted(
+            product(
+                range(1 + max_used_color),
+                (False, True),
+                range(1 + max_used_state)))
+
     def __repr__(self) -> ProgStr:
         return '  '.join([
             ' '.join(
@@ -114,18 +120,33 @@ class Program:
 
     @property
     def available_instrs(self) -> list[Instr]:
-        if self.max_used_color < self.max_color:
-            self.max_used_color += 1
-
-        elif self.max_used_state < self.max_state:
+        if self.max_used_state < self.max_state:
             self.max_used_state += 1
 
-        return sorted(
-            product(
-                range(1 + self.max_used_color),
-                (False, True),
-                range(1 + self.max_used_state)),
-        )
+            self._available_instrs.extend(list(
+                product(
+                    range(1 + self.max_used_color),
+                    (False, True),
+                    (self.max_used_state,),
+                )
+            ))
+
+            self._available_instrs.sort()
+
+        elif self.max_used_color < self.max_color:
+            self.max_used_color += 1
+
+            self._available_instrs.extend(list(
+                product(
+                    (self.max_used_color,),
+                    (False, True),
+                    range(1 + self.max_used_state),
+                )
+            ))
+
+            self._available_instrs.sort()
+
+        return self._available_instrs
 
     def branch(self, slot: Slot) -> list[ProgStr]:
         branches = []
