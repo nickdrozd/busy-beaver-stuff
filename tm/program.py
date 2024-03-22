@@ -44,6 +44,20 @@ class Program:
         self.max_state = len(parsed) - 1
         self.max_color = len(parsed[0]) - 1
 
+        max_used_color = 1
+        max_used_state = 1
+
+        for color, _, state in self.used_instructions:
+            # pylint: disable = consider-using-max-builtin
+            if color > max_used_color:
+                max_used_color = color
+
+            if state > max_used_state:
+                max_used_state = state
+
+        self.max_used_color = max_used_color
+        self.max_used_state = max_used_state
+
     def __repr__(self) -> ProgStr:
         return '  '.join([
             ' '.join(
@@ -100,28 +114,17 @@ class Program:
 
     @property
     def available_instrs(self) -> list[Instr]:
-        max_used_color = 1
-        max_used_state = 1
+        if self.max_used_color < self.max_color:
+            self.max_used_color += 1
 
-        for color, _, state in self.used_instructions:
-            # pylint: disable = consider-using-max-builtin
-            if color > max_used_color:
-                max_used_color = color
-
-            if state > max_used_state:
-                max_used_state = state
-
-        if max_used_color < self.max_color:
-            max_used_color += 1
-
-        if max_used_state < self.max_state:
-            max_used_state += 1
+        elif self.max_used_state < self.max_state:
+            self.max_used_state += 1
 
         return sorted(
             product(
-                range(1 + max_used_color),
+                range(1 + self.max_used_color),
                 (False, True),
-                range(1 + max_used_state)),
+                range(1 + self.max_used_state)),
         )
 
     def branch(self, slot: Slot) -> list[ProgStr]:
