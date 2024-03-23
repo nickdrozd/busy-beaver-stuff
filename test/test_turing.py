@@ -285,7 +285,7 @@ class Simple(TuringTest):
     def test_holdouts(self):
         self.assertEqual(
             len(holdouts := get_holdouts()),
-            1788)
+            1775)
 
         for prog in holdouts:
             self.assertFalse(

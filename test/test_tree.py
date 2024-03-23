@@ -355,6 +355,9 @@ class Slow(TestTree):
             if cant_halt(prog):
                 return
 
+            if quick_term_or_rec(prog, 10_000):
+                return
+
             self.queue.put(prog)
 
         run_tree_gen(
@@ -366,7 +369,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            1025,
+            1022,
             'holdouts_24h')
 
         self.assert_simple_and_connected()
@@ -390,6 +393,9 @@ class Slow(TestTree):
             if machine.simple_termination or machine.infrul:
                 return
 
+            if quick_term_or_rec(prog, 40_000):
+                return
+
             self.queue.put(prog)
 
         run_tree_gen(
@@ -401,5 +407,5 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            727,
+            717,
             'holdouts_42q')
