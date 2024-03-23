@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from test.prog_data import BRANCH, PROGS, NORMALIZE
 
-from tm.program import Program, init_branches, branch_read
+from tm.tree import Program, init_branches, branch_read
 from tm.show import show_slot, show_instr
 from tools.normalize import normalize
 

@@ -17,7 +17,7 @@ from test.lin_rec import (
 )
 from test.utils import get_holdouts, read_holdouts
 
-from tm.program import branch_read
+from tm.tree import branch_read
 from tm.reason import (
     cant_halt,
     cant_blank,

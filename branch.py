@@ -1,6 +1,6 @@
 import sys
 
-from tm.program import Program
+from tm.tree import Program
 from tm.machine import Machine
 
 
