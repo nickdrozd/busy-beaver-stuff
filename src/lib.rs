@@ -26,7 +26,7 @@ mod rust_stuff {
     use crate::blocks::{measure_blocks, unroll_tape};
 
     #[pymodule_export]
-    use crate::machine::{run_machine, MachineResult, TermRes};
+    use crate::machine::{quick_term_or_rec, run_machine, MachineResult, TermRes};
 
     #[pymodule_export]
     use crate::parse::{

@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape, init_stepped, show_number
+from tm.tape import Tape, show_number
 from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
 from tm.show import show_slot
 from tm.rules import RuleLimit, InfiniteRule, SuspectedRule
 from tm.macro import BlockMacro, BacksymbolMacro, MacroInfLoop, tcompile
+# pylint: disable-next = unused-import
+from tm.rust_stuff import quick_term_or_rec  # noqa: F401
 
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.tape import Count, HeadTape
+    from tm.tape import Count
     from tm.parse import State, Slot, GetInstr
 
     Undfnd = tuple[int, Slot]
@@ -262,60 +264,3 @@ class Machine:
             self.show_tape(step, 1 + cycle, state)
 
         return self
-
-########################################
-
-def quick_term_or_rec(prog: str, sim_lim: int) -> bool:
-    # pylint: disable = while-used
-
-    comp = tcompile(prog)
-
-    state = 1
-
-    tape: HeadTape = init_stepped()
-
-    step, cycle = 1, 1
-
-    while cycle < sim_lim:
-        steps_reset = 2 * step
-
-        leftmost = rightmost = tape.head
-
-        init_state = state
-
-        init_tape = tape.copy()
-
-        while step < steps_reset and cycle < sim_lim:
-            try:
-                instr = comp[state, tape.scan]
-            except KeyError:
-                return False
-
-            color, shift, next_state = instr
-
-            if (same := state == next_state) and tape.at_edge(shift):
-                return True
-
-            stepped = tape.step(shift, color, same)
-
-            step += stepped
-
-            cycle += 1
-
-            state = next_state
-
-            if (curr := tape.head) < leftmost:
-                leftmost = curr
-            elif rightmost < curr:
-                rightmost = curr
-
-            if state != init_state:
-                continue
-
-            if tape.scan != init_tape.scan:
-                continue
-
-            if tape.aligns_with(init_tape, leftmost, rightmost):
-                return True
-
-    return False

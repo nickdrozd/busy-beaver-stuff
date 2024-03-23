@@ -3,100 +3,10 @@ from __future__ import annotations
 from unittest import TestCase
 from typing import TYPE_CHECKING
 
-from tm.tape import (
-    Tape,
-    HeadTape,
-    HeadBlock,
-)
+from tm.tape import Tape
 
 if TYPE_CHECKING:
-    from tm.tape import Color, Signature, TagTape, EnumTape
-
-
-def stringify_sig(sig: Signature) -> str:
-    scan, lspan, rspan = sig
-
-    l_sig = '|'.join(reversed(
-        [str(c if isinstance(c, int) else c[0])
-         for c in lspan]))
-    r_sig = '|'.join(
-        str(c if isinstance(c, int) else c[0])
-        for c in rspan)
-
-    return f'{l_sig}[{scan}]{r_sig}'
-
-
-class TestHeadTape(TestCase):
-    tape: HeadTape
-
-    def set_tape(
-            self,
-            lspan: list[tuple[int, int]],
-            scan: Color,
-            rspan: list[tuple[int, int]],
-            head: int,
-    ) -> None:
-        self.tape = HeadTape(
-            [HeadBlock(color, count) for color, count in lspan],
-            scan,
-            [HeadBlock(color, count) for color, count in rspan],
-            head,
-        )
-
-    def assert_tape(self, tape_str: str):
-        self.assertEqual(tape_str, str(self.tape))
-
-    def assert_signature(
-            self,
-            expected: str,
-            tape: HeadTape | None = None,
-    ) -> None:
-        if tape is None:
-            tape = self.tape
-
-        self.assertEqual(
-            expected,
-            stringify_sig(Tape(
-                [(block.color, block.count) for block in tape.lspan],
-                tape.scan,
-                [(block.color, block.count) for block in tape.rspan],
-            ).signature))
-
-    def test_copy(self):
-        self.set_tape(
-            [(1, 1), (0, 1), (1, 1)],
-            2,
-            [(2, 1), (1, 2)],
-            0,
-        )
-
-        self.assertFalse(
-            self.tape.blank)
-
-        print(self.tape)
-
-        self.assert_tape(
-            '1^1 0^1 1^1 [2 (0)] 2^1 1^2')
-
-        self.assert_signature(
-            '1|0|1[2]2|1')
-
-        copy_1 = self.tape.copy()
-        copy_2 = self.tape.copy()
-
-        _ = copy_1.step(False, 2, False)
-        _ = copy_2.step( True, 1, False)
-
-        self.assert_signature(
-            '1|0|1[2]2|1')
-
-        self.assert_signature(
-            '1|0[1]2|1',
-            tape = copy_1)
-
-        self.assert_signature(
-            '1|0|1[2]1',
-            tape = copy_2)
+    from tm.tape import Color, TagTape, EnumTape
 
 
 class TestTape(TestCase):

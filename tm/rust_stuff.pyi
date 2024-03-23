@@ -89,6 +89,8 @@ class MachineResult:
 
 def run_machine(prog: str, sim_lim: int = 0) -> MachineResult: ...
 
+def quick_term_or_rec(prog: str, sim_lim: int) -> bool: ...
+
 ## rules ###############################
 
 Plus = int

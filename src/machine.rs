@@ -195,3 +195,68 @@ pub fn run_machine(prog: &str, sim_lim: Step) -> MachineResult {
         blanks,
     }
 }
+
+/**************************************/
+
+#[pyfunction]
+pub fn quick_term_or_rec(prog: &str, sim_lim: u32) -> bool {
+    let comp = tcompile(prog);
+
+    let mut state = 1;
+
+    let mut tape = Tape::init_stepped();
+
+    let (mut step, mut cycle) = (1, 1);
+
+    while cycle < sim_lim {
+        let steps_reset = 2 * step;
+
+        let (mut leftmost, mut rightmost) = (tape.head, tape.head);
+
+        let init_state = state;
+
+        let init_tape = tape.clone();
+
+        while step < steps_reset && cycle < sim_lim {
+            let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan)) else {
+                return false;
+            };
+
+            let same = state == next_state;
+
+            if same && tape.at_edge(shift) {
+                return true;
+            }
+
+            let stepped = tape.step(shift, color, same);
+
+            step += stepped;
+
+            cycle += 1;
+
+            state = next_state;
+
+            let curr = tape.head;
+
+            if curr < leftmost {
+                leftmost = curr;
+            } else if rightmost < curr {
+                rightmost = curr;
+            }
+
+            if state != init_state {
+                continue;
+            }
+
+            if tape.scan != init_tape.scan {
+                continue;
+            }
+
+            if tape.aligns_with(&init_tape, leftmost, rightmost) {
+                return true;
+            }
+        }
+    }
+
+    false
+}

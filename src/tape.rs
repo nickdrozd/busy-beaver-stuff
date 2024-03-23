@@ -52,6 +52,8 @@ pub struct Signature {
 /**************************************/
 
 type Pos = isize;
+type TapeSlice = Vec<Color>;
+
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Tape {
     lspan: Vec<Block>,
@@ -197,6 +199,74 @@ impl Tape {
         };
 
         stepped
+    }
+
+    pub fn aligns_with(&self, prev: &Self, leftmost: Pos, rightmost: Pos) -> bool {
+        let diff = self.head - prev.head;
+
+        #[allow(clippy::comparison_chain)]
+        let (slice1, slice2) = if diff > 0 {
+            (prev.get_ltr(leftmost), self.get_ltr(leftmost + diff))
+        } else if diff < 0 {
+            (prev.get_rtl(rightmost), self.get_rtl(rightmost + diff))
+        } else {
+            (
+                prev.get_cnt(leftmost, rightmost),
+                self.get_cnt(leftmost, rightmost),
+            )
+        };
+
+        slice1 == slice2
+    }
+
+    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
+        let (lspan, rspan, diff) = if ltr {
+            (&self.lspan, &self.rspan, self.head - start)
+        } else {
+            (&self.rspan, &self.lspan, start - self.head)
+        };
+
+        let mut tape = TapeSlice::new();
+
+        if diff > 0 {
+            let mut remaining = diff as Count;
+            for block in lspan {
+                let count = block.count.min(remaining);
+                tape.extend(vec![block.color; count as usize]);
+                remaining -= count;
+            }
+            if remaining > 0 {
+                tape.extend(vec![0; remaining as usize]);
+            }
+            tape.reverse();
+        }
+
+        tape.push(self.scan);
+
+        for block in rspan {
+            tape.extend(vec![block.color; block.count as usize]);
+        }
+
+        tape
+    }
+
+    fn get_ltr(&self, start: Pos) -> TapeSlice {
+        self.get_slice(start, true)
+    }
+
+    fn get_rtl(&self, start: Pos) -> TapeSlice {
+        self.get_slice(start, false)
+    }
+
+    fn get_cnt(&self, start: Pos, stop: Pos) -> TapeSlice {
+        assert!(start <= self.head && self.head <= stop);
+        if start == self.head {
+            self.get_ltr(start)
+        } else if stop == self.head {
+            self.get_rtl(start)
+        } else {
+            [self.get_rtl(self.head - 1), self.get_ltr(self.head)].concat()
+        }
     }
 }
 
