@@ -448,6 +448,14 @@ class Recur(TuringTest):
 
             if not quick or period > 2000:
                 print(prog)
+
+                self.assertTrue(
+                    quick_term_or_rec(
+                        prog,
+                        1_000_000,
+                    ),
+                    prog)
+
                 continue
 
             if blank:
