@@ -72,7 +72,7 @@ def worker(
 
         print(msg)
 
-    def handle_interrupt(_, __) -> None:  # type: ignore[no-untyped-def]
+    def handle_interrupt(_,__):# type: ignore[no-untyped-def] # no-cover
         log('interrupted...', dump_stack = True)
 
         raise KeyboardInterrupt
@@ -86,7 +86,8 @@ def worker(
     for prog in tree_gen(steps, halt, stack):
         try:
             output(prog)
-        except Exception as err:  # pylint: disable = broad-exception-caught
+        # pylint: disable-next = broad-exception-caught
+        except Exception as err:  # no-cover
             log(f'ERROR: {prog} || {err}')
 
     log('done')
