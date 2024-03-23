@@ -51,6 +51,7 @@ pub struct Signature {
 
 /**************************************/
 
+type Pos = isize;
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Tape {
     lspan: Vec<Block>,
@@ -58,6 +59,8 @@ pub struct Tape {
     pub scan: Color,
 
     rspan: Vec<Block>,
+
+    pub head: Pos,
 }
 
 impl fmt::Display for Tape {
@@ -76,7 +79,7 @@ impl fmt::Display for Tape {
             .collect::<Vec<_>>()
             .join(" ");
 
-        write!(f, "{} [{}] {}", lspan, self.scan, rspan)
+        write!(f, "{} [{} ({})] {}", lspan, self.scan, self.head, rspan)
     }
 }
 
@@ -86,6 +89,7 @@ impl Tape {
             lspan: vec![],
             scan,
             rspan: vec![],
+            head: 0,
         }
     }
 
@@ -94,6 +98,7 @@ impl Tape {
             lspan: vec![Block::new(1, 1)],
             scan: 0,
             rspan: vec![],
+            head: 1,
         }
     }
 
@@ -185,6 +190,12 @@ impl Tape {
 
         self.scan = next_scan;
 
+        if shift {
+            self.head += stepped as Pos;
+        } else {
+            self.head -= stepped as Pos;
+        };
+
         stepped
     }
 }
@@ -234,6 +245,7 @@ mod tests {
             lspan: vec![Block::new(1, 1), Block::new(0, 1), Block::new(1, 1)],
             scan: 2,
             rspan: vec![Block::new(2, 1), Block::new(1, 2)],
+            head: 0,
         };
 
         assert_marks(&tape, 6);
@@ -242,7 +254,7 @@ mod tests {
         let just = ColorCount::Just;
         let mult = ColorCount::Mult;
 
-        assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
+        assert_tape(&tape, "1^1 0^1 1^1 [2 (0)] 2^1 1^2");
 
         assert_sig(
             &tape,
@@ -259,7 +271,7 @@ mod tests {
         let _ = copy_1.step(false, 2, false);
         let _ = copy_2.step(true, 1, false);
 
-        assert_tape(&copy_1, "1^1 0^1 [1] 2^2 1^2");
+        assert_tape(&copy_1, "1^1 0^1 [1 (-1)] 2^2 1^2");
 
         assert_sig(
             &copy_1,
@@ -270,7 +282,7 @@ mod tests {
             },
         );
 
-        assert_tape(&copy_2, "1^1 0^1 1^2 [2] 1^2");
+        assert_tape(&copy_2, "1^1 0^1 1^2 [2 (1)] 1^2");
 
         assert_sig(
             &copy_2,
@@ -281,7 +293,7 @@ mod tests {
             },
         );
 
-        assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
+        assert_tape(&tape, "1^1 0^1 1^1 [2 (0)] 2^1 1^2");
 
         assert_sig(
             &tape,
