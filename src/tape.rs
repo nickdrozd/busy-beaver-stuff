@@ -18,6 +18,31 @@ impl Block {
 
 /**************************************/
 
+#[derive(PartialEq, Eq, Debug)]
+pub enum ColorCount {
+    Just(Color),
+    Mult(Color),
+}
+
+impl From<&Block> for ColorCount {
+    fn from(block: &Block) -> Self {
+        (if block.count == 1 {
+            Self::Just
+        } else {
+            Self::Mult
+        })(block.color)
+    }
+}
+
+#[derive(PartialEq, Eq, Debug)]
+pub struct Signature {
+    scan: Color,
+    lspan: Vec<ColorCount>,
+    rspan: Vec<ColorCount>,
+}
+
+/**************************************/
+
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Tape {
     lspan: Vec<Block>,
@@ -55,6 +80,14 @@ impl Tape {
                 .sum::<Count>()
     }
 
+    #[cfg(test)]
+    pub fn signature(&self) -> Signature {
+        Signature {
+            scan: self.scan,
+            lspan: self.lspan.iter().map(std::convert::Into::into).collect(),
+            rspan: self.rspan.iter().map(std::convert::Into::into).collect(),
+        }
+    }
     pub fn at_edge(&self, edge: Shift) -> bool {
         self.scan == 0 && (if edge { &self.rspan } else { &self.lspan }).is_empty()
     }
@@ -157,5 +190,66 @@ mod tests {
         tape.step(false, 0, true);
 
         assert_marks(&tape, 0);
+    }
+
+    fn assert_sig(tape: &Tape, sig: Signature) {
+        assert_eq!(tape.signature(), sig);
+    }
+
+    #[test]
+    fn test_sig() {
+        let tape = Tape {
+            lspan: vec![Block::new(1, 1), Block::new(0, 1), Block::new(1, 1)],
+            scan: 2,
+            rspan: vec![Block::new(2, 1), Block::new(1, 2)],
+        };
+
+        assert_marks(&tape, 6);
+        assert!(!tape.blank());
+
+        let just = ColorCount::Just;
+        let mult = ColorCount::Mult;
+
+        assert_sig(
+            &tape,
+            Signature {
+                scan: 2,
+                lspan: vec![just(1), just(0), just(1)],
+                rspan: vec![just(2), mult(1)],
+            },
+        );
+
+        let mut copy_1 = tape.clone();
+        let mut copy_2 = tape.clone();
+
+        let _ = copy_1.step(false, 2, false);
+        let _ = copy_2.step(true, 1, false);
+
+        assert_sig(
+            &copy_1,
+            Signature {
+                scan: 1,
+                lspan: vec![just(0), just(1)],
+                rspan: vec![mult(2), mult(1)],
+            },
+        );
+
+        assert_sig(
+            &copy_2,
+            Signature {
+                scan: 2,
+                lspan: vec![mult(1), just(0), just(1)],
+                rspan: vec![mult(1)],
+            },
+        );
+
+        assert_sig(
+            &tape,
+            Signature {
+                scan: 2,
+                lspan: vec![just(1), just(0), just(1)],
+                rspan: vec![just(2), mult(1)],
+            },
+        );
     }
 }
