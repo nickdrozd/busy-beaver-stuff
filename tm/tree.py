@@ -184,13 +184,6 @@ class Program:
         )
 
     @property
-    def last_slot(self) -> Slot | None:
-        if len((slots := self.open_slots)) != 1:
-            return None
-
-        return slots[0]
-
-    @property
     def available_instrs(self) -> list[Instr]:
         if self.max_used_state < self.max_state:
             self.max_used_state += 1

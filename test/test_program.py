@@ -14,8 +14,10 @@ class TestProgram(TestCase):
         self.assertEqual(
             slot,
             None
-            if (last := self.prog.last_slot) is None else
-            show_slot(last))
+            if (len(open_slots := self.prog.open_slots) != 1
+                    or (last := open_slots[0]) is None) else
+            show_slot(last)
+        )
 
     def assert_instrs(self, instrs: list[str]):
         self.assertEqual(
