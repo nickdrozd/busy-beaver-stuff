@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::instrs::{Color, Shift};
 
 pub type Count = u64;
@@ -13,6 +15,12 @@ pub struct Block {
 impl Block {
     pub const fn new(color: Color, count: Count) -> Self {
         Self { color, count }
+    }
+}
+
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}^{}", self.color, self.count)
     }
 }
 
@@ -50,6 +58,26 @@ pub struct Tape {
     pub scan: Color,
 
     rspan: Vec<Block>,
+}
+
+impl fmt::Display for Tape {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let lspan = self
+            .lspan
+            .iter()
+            .rev()
+            .map(std::string::ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" ");
+        let rspan = self
+            .rspan
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        write!(f, "{} [{}] {}", lspan, self.scan, rspan)
+    }
 }
 
 impl Tape {
@@ -192,6 +220,10 @@ mod tests {
         assert_marks(&tape, 0);
     }
 
+    fn assert_tape(tape: &Tape, tape_str: &str) {
+        assert_eq!(tape.to_string(), tape_str);
+    }
+
     fn assert_sig(tape: &Tape, sig: Signature) {
         assert_eq!(tape.signature(), sig);
     }
@@ -210,6 +242,8 @@ mod tests {
         let just = ColorCount::Just;
         let mult = ColorCount::Mult;
 
+        assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
+
         assert_sig(
             &tape,
             Signature {
@@ -225,6 +259,8 @@ mod tests {
         let _ = copy_1.step(false, 2, false);
         let _ = copy_2.step(true, 1, false);
 
+        assert_tape(&copy_1, "1^1 0^1 [1] 2^2 1^2");
+
         assert_sig(
             &copy_1,
             Signature {
@@ -234,6 +270,8 @@ mod tests {
             },
         );
 
+        assert_tape(&copy_2, "1^1 0^1 1^2 [2] 1^2");
+
         assert_sig(
             &copy_2,
             Signature {
@@ -242,6 +280,8 @@ mod tests {
                 rspan: vec![mult(1)],
             },
         );
+
+        assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
 
         assert_sig(
             &tape,
