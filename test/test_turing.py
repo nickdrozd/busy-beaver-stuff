@@ -257,6 +257,18 @@ class Reason(TuringTest):
             self.assert_could_spin_out(prog)
 
 
+class Holdouts(TestCase):
+    def test_holdouts(self):
+        self.assertEqual(
+            len(holdouts := get_holdouts()),
+            1775)
+
+        for prog in holdouts:
+            self.assertFalse(
+                quick_term_or_rec(prog, 1_000),
+                prog)
+
+
 class Simple(TuringTest):
     machine: QuickMachineResult
 
@@ -280,16 +292,6 @@ class Simple(TuringTest):
                 self.run_bb(partial, normal = False)
 
                 self.assert_undefined(expected)
-
-    def test_holdouts(self):
-        self.assertEqual(
-            len(holdouts := get_holdouts()),
-            1775)
-
-        for prog in holdouts:
-            self.assertFalse(
-                quick_term_or_rec(prog, 1_000),
-                prog)
 
     def _test_simple_terminate(
             self,
