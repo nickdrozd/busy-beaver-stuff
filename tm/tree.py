@@ -105,6 +105,12 @@ class Program:
     states: set[State]
     colors: set[Color]
 
+    max_state: State
+    max_color: Color
+
+    max_used_state: State
+    max_used_color: Color
+
     def __init__(self, program: ProgStr):
         parsed = parse(program)
 
