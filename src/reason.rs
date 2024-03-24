@@ -116,7 +116,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
         }
     }
 
-    true
+    false
 }
 
 /**************************************/
