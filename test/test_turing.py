@@ -256,6 +256,12 @@ class Reason(TuringTest):
             self.assert_cant_halt(prog)
             self.assert_could_spin_out(prog)
 
+        for cat in ('32q', '23q'):
+            for prog in read_holdouts(cat):
+                self.assert_cant_halt(prog)
+                self.assert_cant_blank(prog)
+                self.assert_cant_spin_out(prog)
+
 
 class Holdouts(TestCase):
     def test_holdouts(self):
