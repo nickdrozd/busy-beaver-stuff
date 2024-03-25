@@ -36,7 +36,7 @@ class TestProgram(TestCase):
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
             self.assertEqual(
-                set(branch_read(prog, loc)),
+                branch_read(prog, loc),
                 extensions)
 
     def test_normalize(self):
