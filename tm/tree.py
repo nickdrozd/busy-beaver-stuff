@@ -18,20 +18,18 @@ if TYPE_CHECKING:
 
     from tm.parse import Color, State, Slot, Instr, Switch
 
-    ProgStr = str
-
-    Output = Callable[[ProgStr], None]
+    Output = Callable[[str], None]
 
 ########################################
 
 def tree_gen(
         steps: int,
-        stack: list[ProgStr],
+        stack: list[str],
         open_slot_lim: int,
-) -> Iterator[ProgStr]:
+) -> Iterator[str]:
     while True:  # pylint: disable = while-used
         try:
-            prog: ProgStr = stack.pop()
+            prog: str = stack.pop()
         except IndexError:
             break
 
@@ -55,7 +53,7 @@ def tree_gen(
 def worker(
         steps: int,
         halt: bool,
-        stack: list[ProgStr],
+        stack: list[str],
         output: Output,
         prep: bool = False,
 ) -> None:
@@ -109,7 +107,7 @@ class Program:
     max_used_state: State
     max_used_color: Color
 
-    def __init__(self, program: ProgStr):
+    def __init__(self, program: str):
         parsed = parse(program)
 
         self.prog = {
@@ -134,7 +132,7 @@ class Program:
         self.max_used_color = max_used_color
         self.max_used_state = max_used_state
 
-    def __repr__(self) -> ProgStr:
+    def __repr__(self) -> str:
         return '  '.join([
             ' '.join(
                 show_instr(instr)
@@ -195,7 +193,7 @@ class Program:
                 (False, True),
                 range(1 + self.max_used_state)))
 
-    def branch(self, slot: Slot) -> list[ProgStr]:
+    def branch(self, slot: Slot) -> list[str]:
         branches = []
 
         for instr in self.available_instrs:
@@ -209,7 +207,7 @@ class Program:
 
 ########################################
 
-def branch_read(prog: str, slot: str) -> list[ProgStr]:
+def branch_read(prog: str, slot: str) -> list[str]:
     return Program(prog).branch(
         read_slot(slot))
 
@@ -225,10 +223,10 @@ def prep_branches(
         states: int,
         colors: int,
         halt: bool,
-) -> list[ProgStr]:
+) -> list[str]:
     branches = []
 
-    def run(prog: ProgStr) -> None:
+    def run(prog: str) -> None:
         if quick_term_or_rec(prog, 10):
             return
 
@@ -245,10 +243,10 @@ def prep_branches(
     return sorted(branches)
 
 
-def distribute_branches(branches: list[ProgStr]) -> list[list[ProgStr]]:
+def distribute_branches(branches: list[str]) -> list[list[str]]:
     cpus = cpu_count()
 
-    branch_groups: list[list[ProgStr]] = [[] for _ in range(cpus)]
+    branch_groups: list[list[str]] = [[] for _ in range(cpus)]
 
     branch_counts = [0] * cpus
 
@@ -267,7 +265,7 @@ def run_tree_gen(
         steps: int,
         halt: bool,
         output: Output,
-        branches: list[ProgStr] | None = None,
+        branches: list[str] | None = None,
         states: int | None = None,
         colors: int | None = None,
 ) -> None:
