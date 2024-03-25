@@ -26,11 +26,9 @@ if TYPE_CHECKING:
 
 def tree_gen(
         steps: int,
-        halt: bool,
         stack: list[ProgStr],
+        open_slot_lim: int,
 ) -> Iterator[ProgStr]:
-    open_slot_lim = 2 if halt else 1
-
     while True:  # pylint: disable = while-used
         try:
             prog: ProgStr = stack.pop()
@@ -88,7 +86,7 @@ def worker(
 
     log('starting...', dump_stack = True)
 
-    for prog in tree_gen(steps, halt, stack):
+    for prog in tree_gen(steps, stack, 2 if halt else 1):
         try:
             output(prog)
         # pylint: disable-next = broad-exception-caught
