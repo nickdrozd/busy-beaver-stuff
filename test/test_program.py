@@ -36,8 +36,9 @@ class TestProgram(TestCase):
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
             self.assertEqual(
-                branch_read(prog, loc),
-                extensions)
+                branches := branch_read(prog, loc),
+                extensions,
+                branches)
 
     def test_normalize(self):
         for norm, devs in NORMALIZE.items():
