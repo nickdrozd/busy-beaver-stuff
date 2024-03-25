@@ -220,20 +220,12 @@ class Program:
     def branch(self, slot: Slot) -> list[ProgStr]:
         branches = []
 
-        try:
-            orig = self[slot]
-        except KeyError:
-            orig = None
-
         for instr in self.available_instrs:
-            if orig is not None and instr >= orig:
-                continue
-
             self[slot] = instr
 
             branches.append(str(self))
 
-        self[slot] = orig
+        self[slot] = None
 
         return branches
 

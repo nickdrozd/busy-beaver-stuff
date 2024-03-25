@@ -2074,17 +2074,6 @@ BRANCH = {
         '1RB ...  1RB ...',
     },
 
-    ("1RB 1LB  1LB 1LA", 'A1'): {
-        '1RB 0LA  1LB 1LA',
-        '1RB 0LB  1LB 1LA',
-        '1RB 0RA  1LB 1LA',
-        '1RB 0RB  1LB 1LA',
-        '1RB 1LA  1LB 1LA',
-        # '1RB 1LB  1LB 1LA',
-        # '1RB 1RA  1LB 1LA',
-        # '1RB 1RB  1LB 1LA',
-    },
-
     ("1RB ...  1LC ...  ... ...  ... ...", 'D0'): {
         '1RB ...  1LC ...  ... ...  0LA ...',
         '1RB ...  1LC ...  ... ...  0LB ...',
