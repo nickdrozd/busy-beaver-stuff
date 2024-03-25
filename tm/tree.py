@@ -181,17 +181,14 @@ class Program:
 
     @property
     def available_instrs(self) -> list[Instr]:
-        if self.max_used_state < self.max_state:
-            self.max_used_state += 1
-
-        elif self.max_used_color < self.max_color:
-            self.max_used_color += 1
+        avail_states = min(self.max_state, 1 + self.max_used_state)
+        avail_colors = min(self.max_color, 1 + self.max_used_color)
 
         return sorted(
             product(
-                range(1 + self.max_used_color),
+                range(1 + avail_colors),
                 (False, True),
-                range(1 + self.max_used_state)))
+                range(1 + avail_states)))
 
     def branch(self, slot: Slot) -> list[str]:
         branches = []
