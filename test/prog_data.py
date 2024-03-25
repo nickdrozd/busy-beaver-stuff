@@ -2062,6 +2062,23 @@ PROGS: dict[
     ),
 }
 
+NORMALIZE = {
+    "1RB 2LA 1RA 1LA  3LA ... 2RB 2RA": {
+        "1RB 3LA 1LA 1RA  2LA ... 3RA 3RB",
+        "2RB 2RA 1LA 2LA  3LA 1RB ... 1RA",
+        "1LB 2RA 1LA 1RA  3RA ... 2LB 2LA",
+        "1LB 3RA 1RA 1LA  2RA ... 3LA 3LB",
+        "2LB 2LA 1RA 2RA  3RA 1LB ... 1LA",
+    },
+    "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC": {
+        "1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC",
+        "1RB 1LD  1RE 1RB  0RE 0RD  0RF 1RF  1LE 1LA  0LC 1LC",
+        "1LB 1RC  1LD 1LB  0LE 1LE  1RD 1RA  0RF 1RF  0LD 0LC",
+        "1LB 1RE  1LD 1LB  0LD 0LE  1RD 1RA  0LF 1LF  0RC 1RC",
+        "1LB 1RD  1LE 1LB  0LE 0LD  0LF 1LF  1RE 1RA  0RC 1RC",
+    },
+}
+
 BRANCH = {
     ("1RB ...  ... ...", 'B0'): [
         '1RB ...  0LA ...',
@@ -2122,23 +2139,6 @@ BRANCH = {
         '1RB ... ... ...  2RA ... ... ...',
         '1RB ... ... ...  2RB ... ... ...',
     ],
-}
-
-NORMALIZE = {
-    '1RB 2LA 1RA 1LA  3LA ... 2RB 2RA': {
-        '1RB 3LA 1LA 1RA  2LA ... 3RA 3RB',
-        '2RB 2RA 1LA 2LA  3LA 1RB ... 1RA',
-        '1LB 2RA 1LA 1RA  3RA ... 2LB 2LA',
-        '1LB 3RA 1RA 1LA  2RA ... 3LA 3LB',
-        '2LB 2LA 1RA 2RA  3RA 1LB ... 1LA',
-    },
-    '1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC': {
-        '1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC',
-        '1RB 1LD  1RE 1RB  0RE 0RD  0RF 1RF  1LE 1LA  0LC 1LC',
-        '1LB 1RC  1LD 1LB  0LE 1LE  1RD 1RA  0RF 1RF  0LD 0LC',
-        '1LB 1RE  1LD 1LB  0LD 0LE  1RD 1RA  0LF 1LF  0RC 1RC',
-        '1LB 1RD  1LE 1LB  0LE 0LD  0LF 1LF  1RE 1RA  0RC 1RC',
-    },
 }
 
 ## test graph ########################################################
