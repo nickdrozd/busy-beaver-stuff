@@ -136,16 +136,12 @@ fn erase_slots(prog: &str) -> Vec<Slot> {
     parse(prog)
         .enumerate()
         .flat_map(|(state, instrs)| {
-            instrs.enumerate().filter_map(move |(color, instr)| {
-                if color != 0 {
-                    if let Some((pr, _, _)) = instr {
-                        if pr == 0 {
-                            return Some((state as State, color as Color));
-                        }
-                    }
-                }
-                None
-            })
+            instrs
+                .enumerate()
+                .filter_map(move |(color, instr)| match instr {
+                    Some((0, _, _)) if color != 0 => Some((state as State, color as Color)),
+                    _ => None,
+                })
         })
         .collect()
 }
@@ -153,19 +149,15 @@ fn erase_slots(prog: &str) -> Vec<Slot> {
 fn zero_reflexive_slots(prog: &str) -> Vec<Slot> {
     parse(prog)
         .enumerate()
-        .filter_map(|(state, instrs)| {
-            instrs
-                .enumerate()
-                .next()
-                .map(|(color, instr)| (state as State, color, instr))
-                .filter(|&(state, _, instr)| {
-                    if let Some((_, _, tr)) = instr {
-                        tr == state
-                    } else {
-                        false
+        .filter_map(|(state, mut instrs)| {
+            instrs.next().and_then(|instr| {
+                if let Some((_, _, tr)) = instr {
+                    if tr == state as State {
+                        return Some((state as State, 0));
                     }
-                })
-                .map(|(state, color, _)| (state, color as Color))
+                }
+                None
+            })
         })
         .collect()
 }
