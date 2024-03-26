@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use pyo3::prelude::*;
 
 use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
-use crate::parse::{erase_slots, halt_slots, parse as prim_parse, tcompile, zero_reflexive_slots};
+use crate::parse::{parse, tcompile};
 use crate::tape::Tape;
 
 type Step = u64;
@@ -50,7 +50,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
     let max_steps = 24;
     let max_cycles = 1_000;
 
-    let (colors, entry_points, program) = parse(prog);
+    let (colors, entry_points, program) = rparse(prog);
 
     let mut configs: Vec<(Color, State, Tape)> = slots
         .iter()
@@ -121,6 +121,58 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
 /**************************************/
 
+fn halt_slots(prog: &str) -> Vec<Slot> {
+    let mut slots = vec![];
+
+    for (state, instrs) in parse(prog).iter().enumerate() {
+        for (color, instr) in instrs.iter().enumerate() {
+            if instr.is_none() {
+                slots.push((state as State, color as Color));
+            }
+        }
+    }
+
+    slots
+}
+
+fn erase_slots(prog: &str) -> Vec<Slot> {
+    let mut slots = vec![];
+
+    for (state, instrs) in parse(prog).iter().enumerate() {
+        for (color, instr) in instrs.iter().enumerate() {
+            if color != 0 {
+                if let Some((pr, _, _)) = instr {
+                    if *pr == 0 {
+                        slots.push((state as State, color as Color));
+                    }
+                }
+            }
+        }
+    }
+
+    slots
+}
+
+fn zero_reflexive_slots(prog: &str) -> Vec<Slot> {
+    let mut slots = vec![];
+
+    for (state, instrs) in parse(prog).iter().enumerate() {
+        let (color, instr) = instrs.iter().enumerate().next().unwrap();
+
+        let state = state as State;
+
+        if let Some((_, _, tr)) = instr {
+            if *tr == state {
+                slots.push((state, color as Color));
+            }
+        }
+    }
+
+    slots
+}
+
+/**************************************/
+
 type Graph = HashMap<State, Vec<State>>;
 type Program = HashMap<State, Vec<Instr>>;
 
@@ -150,10 +202,10 @@ fn entry_points(program: &Program) -> Graph {
     entries
 }
 
-fn parse(prog: &str) -> (usize, Graph, Program) {
+fn rparse(prog: &str) -> (usize, Graph, Program) {
     let mut program = Program::new();
 
-    let parsed = prim_parse(prog);
+    let parsed = parse(prog);
 
     for (state, instrs) in parsed.iter().enumerate() {
         program.insert(

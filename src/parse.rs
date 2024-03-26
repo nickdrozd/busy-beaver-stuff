@@ -32,58 +32,6 @@ pub fn tcompile(prog: &str) -> CompProg {
 
 /**************************************/
 
-pub fn halt_slots(prog: &str) -> Vec<Slot> {
-    let mut slots = vec![];
-
-    for (state, instrs) in parse(prog).iter().enumerate() {
-        for (color, instr) in instrs.iter().enumerate() {
-            if instr.is_none() {
-                slots.push((state as State, color as Color));
-            }
-        }
-    }
-
-    slots
-}
-
-pub fn erase_slots(prog: &str) -> Vec<Slot> {
-    let mut slots = vec![];
-
-    for (state, instrs) in parse(prog).iter().enumerate() {
-        for (color, instr) in instrs.iter().enumerate() {
-            if color != 0 {
-                if let Some((pr, _, _)) = instr {
-                    if *pr == 0 {
-                        slots.push((state as State, color as Color));
-                    }
-                }
-            }
-        }
-    }
-
-    slots
-}
-
-pub fn zero_reflexive_slots(prog: &str) -> Vec<Slot> {
-    let mut slots = vec![];
-
-    for (state, instrs) in parse(prog).iter().enumerate() {
-        let (color, instr) = instrs.iter().enumerate().next().unwrap();
-
-        let state = state as State;
-
-        if let Some((_, _, tr)) = instr {
-            if *tr == state {
-                slots.push((state, color as Color));
-            }
-        }
-    }
-
-    slots
-}
-
-/**************************************/
-
 fn read_color(color: char) -> Color {
     color.to_digit(10).unwrap().into()
 }
