@@ -12,7 +12,7 @@ from tm.parse import tcompile
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.parse import Color, Shift, State, Slot, CompProg
+    from tm.parse import Color, Shift, State, Slot, CompThin
     from tm.machine import Undfnd
 
     RecRes = tuple[int, int]
@@ -397,7 +397,7 @@ class BeepHistory(History):
 
 
 class LinRecMachine:
-    comp: CompProg
+    comp: CompThin
 
     tape: HeadTape
     steps: int

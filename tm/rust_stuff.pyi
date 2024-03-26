@@ -21,13 +21,13 @@ Shift = bool
 
 Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
-CompProg = dict[Slot, Instr]
+CompThin = dict[Slot, Instr]
 
 LetterState = str
 
 def parse_to_vec(program: str) -> list[list[Instr | None]]: ...
 
-def tcompile(program: str) -> CompProg: ...
+def tcompile(program: str) -> CompThin: ...
 
 def halt_slots(prog: str) -> list[Slot]: ...
 

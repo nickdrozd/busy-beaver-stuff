@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use pyo3::prelude::*;
 
-use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
+use crate::instrs::{Color, CompThin, Instr, Shift, Slot, State};
 use crate::parse::{parse, parse_to_vec, tcompile};
 use crate::tape::Tape;
 
@@ -211,7 +211,7 @@ fn rparse(prog: &str) -> (usize, Graph, Program) {
 /**************************************/
 
 fn backstep_run_halt(
-    comp: &CompProg,
+    comp: &CompThin,
     sim_lim: Step,
     mut tape: Tape,
     mut state: State,
@@ -244,7 +244,7 @@ fn backstep_run_halt(
 }
 
 fn backstep_run_blank(
-    comp: &CompProg,
+    comp: &CompThin,
     sim_lim: Step,
     mut tape: Tape,
     mut state: State,
@@ -291,7 +291,7 @@ fn backstep_run_blank(
 }
 
 fn backstep_run_spinout(
-    comp: &CompProg,
+    comp: &CompThin,
     sim_lim: Step,
     mut tape: Tape,
     mut state: State,
