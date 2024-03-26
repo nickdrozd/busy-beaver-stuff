@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use pyo3::prelude::*;
 
 use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
-use crate::parse::{parse, tcompile};
+use crate::parse::{parse, parse_to_vec, tcompile};
 use crate::tape::Tape;
 
 type Step = u64;
@@ -123,10 +123,9 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
 fn halt_slots(prog: &str) -> Vec<Slot> {
     parse(prog)
-        .iter()
         .enumerate()
         .flat_map(|(state, instrs)| {
-            instrs.iter().enumerate().filter_map(move |(color, instr)| {
+            instrs.enumerate().filter_map(move |(color, instr)| {
                 instr.is_none().then_some((state as State, color as Color))
             })
         })
@@ -135,13 +134,12 @@ fn halt_slots(prog: &str) -> Vec<Slot> {
 
 fn erase_slots(prog: &str) -> Vec<Slot> {
     parse(prog)
-        .iter()
         .enumerate()
         .flat_map(|(state, instrs)| {
-            instrs.iter().enumerate().filter_map(move |(color, instr)| {
+            instrs.enumerate().filter_map(move |(color, instr)| {
                 if color != 0 {
                     if let Some((pr, _, _)) = instr {
-                        if *pr == 0 {
+                        if pr == 0 {
                             return Some((state as State, color as Color));
                         }
                     }
@@ -154,20 +152,15 @@ fn erase_slots(prog: &str) -> Vec<Slot> {
 
 fn zero_reflexive_slots(prog: &str) -> Vec<Slot> {
     parse(prog)
-        .iter()
         .enumerate()
         .filter_map(|(state, instrs)| {
             instrs
-                .iter()
                 .enumerate()
                 .next()
-                .map(|(color, instr)| {
-                    let state = state as State;
-                    (state, color, instr)
-                })
+                .map(|(color, instr)| (state as State, color, instr))
                 .filter(|&(state, _, instr)| {
                     if let Some((_, _, tr)) = instr {
-                        *tr == state
+                        tr == state
                     } else {
                         false
                     }
@@ -211,7 +204,7 @@ fn entry_points(program: &Program) -> Graph {
 fn rparse(prog: &str) -> (usize, Graph, Program) {
     let mut program = Program::new();
 
-    let parsed = parse(prog);
+    let parsed = parse_to_vec(prog);
 
     for (state, instrs) in parsed.iter().enumerate() {
         program.insert(

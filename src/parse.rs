@@ -7,22 +7,25 @@ const UNDF: char = '.';
 const LEFT: char = 'L';
 const RIGHT: char = 'R';
 
-#[pyfunction]
-pub fn parse(prog: &str) -> Vec<Vec<Option<Instr>>> {
+pub fn parse(prog: &str) -> impl Iterator<Item = impl Iterator<Item = Option<Instr>> + '_> + '_ {
     prog.trim()
         .split("  ")
-        .map(|instrs| instrs.split(' ').map(read_instr).collect())
-        .collect()
+        .map(|instrs| instrs.split(' ').map(read_instr))
+}
+
+#[pyfunction]
+pub fn parse_to_vec(prog: &str) -> Vec<Vec<Option<Instr>>> {
+    parse(prog).map(std::iter::Iterator::collect).collect()
 }
 
 #[pyfunction]
 pub fn tcompile(prog: &str) -> CompProg {
     let mut program = CompProg::new();
 
-    for (state, instrs) in parse(prog).iter().enumerate() {
-        for (color, instr) in instrs.iter().enumerate() {
+    for (state, instrs) in parse(prog).enumerate() {
+        for (color, instr) in instrs.enumerate() {
             if let Some(instr) = instr {
-                program.insert((state as State, color as Color), *instr);
+                program.insert((state as State, color as Color), instr);
             }
         }
     }
@@ -160,7 +163,7 @@ mod tests {
                 vec![Some((1, false, 1)), Some((0, true, 2))],
                 vec![Some((1, false, 2)), Some((1, false, 0))],
             ],
-            parse("1RB ...  1LB 0RC  1LC 1LA"),
+            parse_to_vec("1RB ...  1LB 0RC  1LC 1LA"),
         );
     }
 

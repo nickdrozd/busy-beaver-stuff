@@ -1,7 +1,7 @@
 # ruff: noqa: F401
 # pylint: disable-next = unused-import, wrong-import-order
 from tm.rust_stuff import (
-    parse,
+    parse_to_vec as parse,
     tcompile,
     read_slot,
     init_prog,
