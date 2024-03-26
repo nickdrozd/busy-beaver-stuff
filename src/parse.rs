@@ -32,7 +32,6 @@ pub fn tcompile(prog: &str) -> CompProg {
 
 /**************************************/
 
-#[pyfunction]
 pub fn halt_slots(prog: &str) -> Vec<Slot> {
     let mut slots = vec![];
 
@@ -47,7 +46,6 @@ pub fn halt_slots(prog: &str) -> Vec<Slot> {
     slots
 }
 
-#[pyfunction]
 pub fn erase_slots(prog: &str) -> Vec<Slot> {
     let mut slots = vec![];
 
@@ -66,7 +64,6 @@ pub fn erase_slots(prog: &str) -> Vec<Slot> {
     slots
 }
 
-#[pyfunction]
 pub fn zero_reflexive_slots(prog: &str) -> Vec<Slot> {
     let mut slots = vec![];
 
