@@ -8,3 +8,4 @@ pub type Slot = (State, Color);
 pub type Instr = (Color, Shift, State);
 
 pub type CompThin = HashMap<Slot, Instr>;
+pub type CompThic = HashMap<Slot, Option<Instr>>;

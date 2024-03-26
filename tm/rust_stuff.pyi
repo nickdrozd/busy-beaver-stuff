@@ -23,12 +23,15 @@ Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
 
 CompThin = dict[Slot, Instr]
+CompThic = dict[Slot, Instr | None]
 
 LetterState = str
 
 def parse_to_vec(program: str) -> list[list[Instr | None]]: ...
 
 def comp_thin(program: str) -> CompThin: ...
+
+def comp_thic(program: str) -> CompThic: ...
 
 def halt_slots(prog: str) -> list[Slot]: ...
 

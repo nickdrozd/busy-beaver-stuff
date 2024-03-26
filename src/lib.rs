@@ -30,7 +30,7 @@ mod rust_stuff {
 
     #[pymodule_export]
     use crate::parse::{
-        comp_thin, init_prog, parse_to_vec, read_slot, show_instr, show_slot, show_state,
+        comp_thic, comp_thin, init_prog, parse_to_vec, read_slot, show_instr, show_slot, show_state,
     };
 
     #[pymodule_export]
