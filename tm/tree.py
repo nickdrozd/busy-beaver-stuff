@@ -141,14 +141,6 @@ class Program:
             for instrs in self.prog.values()
         ])
 
-    def __getitem__(self, slot: Slot) -> Instr:
-        state, color = slot
-
-        if (instr := self.prog[state][color]) is None:
-            raise KeyError(slot)
-
-        return instr
-
     def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
         state, color = slot
 
