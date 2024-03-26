@@ -2,7 +2,7 @@
 # pylint: disable-next = unused-import, wrong-import-order
 from tm.rust_stuff import (
     parse_to_vec as parse,
-    tcompile,
+    comp_thin,
     read_slot,
     init_prog,
 )
@@ -16,6 +16,7 @@ Shift = bool
 
 Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
+
 CompThin = dict[Slot, Instr]
 
 Switch = dict[Color, Instr | None]

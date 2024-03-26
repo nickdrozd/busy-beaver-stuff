@@ -19,7 +19,7 @@ pub fn parse_to_vec(prog: &str) -> Vec<Vec<Option<Instr>>> {
 }
 
 #[pyfunction]
-pub fn tcompile(prog: &str) -> CompThin {
+pub fn comp_thin(prog: &str) -> CompThin {
     let mut program = CompThin::new();
 
     for (state, instrs) in parse(prog).enumerate() {

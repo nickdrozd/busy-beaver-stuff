@@ -7,7 +7,7 @@ from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
 from tm.show import show_slot
 from tm.rules import RuleLimit, InfiniteRule, SuspectedRule
-from tm.macro import BlockMacro, BacksymbolMacro, MacroInfLoop, tcompile
+from tm.macro import BlockMacro, BacksymbolMacro, MacroInfLoop,comp_thin
 # pylint: disable-next = unused-import
 from tm.rust_stuff import quick_term_or_rec  # noqa: F401
 
@@ -88,7 +88,7 @@ class Machine:
             prog = BacksymbolMacro(prog, backsym)
 
         self.comp = (
-            tcompile(prog)
+            comp_thin(prog)
             if isinstance(prog, str) else
             prog
         )

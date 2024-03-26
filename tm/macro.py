@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
-from tm.parse import tcompile
+from tm.parse import comp_thin
 
 if TYPE_CHECKING:
     from tm.parse import Color, State, Slot, Instr, GetInstr
@@ -71,7 +71,7 @@ def prog_params(program: str | MacroProg) -> tuple[GetInstr, int, int]:
     comp: GetInstr
 
     if isinstance(program, str):
-        comp = tcompile(program)
+        comp = comp_thin(program)
 
         base_states = len(set(map(lambda s: s[0], comp)))
         base_colors = len(set(map(lambda s: s[1], comp)))
