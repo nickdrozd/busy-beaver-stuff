@@ -122,53 +122,59 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 /**************************************/
 
 fn halt_slots(prog: &str) -> Vec<Slot> {
-    let mut slots = vec![];
-
-    for (state, instrs) in parse(prog).iter().enumerate() {
-        for (color, instr) in instrs.iter().enumerate() {
-            if instr.is_none() {
-                slots.push((state as State, color as Color));
-            }
-        }
-    }
-
-    slots
+    parse(prog)
+        .iter()
+        .enumerate()
+        .flat_map(|(state, instrs)| {
+            instrs.iter().enumerate().filter_map(move |(color, instr)| {
+                instr.is_none().then_some((state as State, color as Color))
+            })
+        })
+        .collect()
 }
 
 fn erase_slots(prog: &str) -> Vec<Slot> {
-    let mut slots = vec![];
-
-    for (state, instrs) in parse(prog).iter().enumerate() {
-        for (color, instr) in instrs.iter().enumerate() {
-            if color != 0 {
-                if let Some((pr, _, _)) = instr {
-                    if *pr == 0 {
-                        slots.push((state as State, color as Color));
+    parse(prog)
+        .iter()
+        .enumerate()
+        .flat_map(|(state, instrs)| {
+            instrs.iter().enumerate().filter_map(move |(color, instr)| {
+                if color != 0 {
+                    if let Some((pr, _, _)) = instr {
+                        if *pr == 0 {
+                            return Some((state as State, color as Color));
+                        }
                     }
                 }
-            }
-        }
-    }
-
-    slots
+                None
+            })
+        })
+        .collect()
 }
 
 fn zero_reflexive_slots(prog: &str) -> Vec<Slot> {
-    let mut slots = vec![];
-
-    for (state, instrs) in parse(prog).iter().enumerate() {
-        let (color, instr) = instrs.iter().enumerate().next().unwrap();
-
-        let state = state as State;
-
-        if let Some((_, _, tr)) = instr {
-            if *tr == state {
-                slots.push((state, color as Color));
-            }
-        }
-    }
-
-    slots
+    parse(prog)
+        .iter()
+        .enumerate()
+        .filter_map(|(state, instrs)| {
+            instrs
+                .iter()
+                .enumerate()
+                .next()
+                .map(|(color, instr)| {
+                    let state = state as State;
+                    (state, color, instr)
+                })
+                .filter(|&(state, _, instr)| {
+                    if let Some((_, _, tr)) = instr {
+                        *tr == state
+                    } else {
+                        false
+                    }
+                })
+                .map(|(state, color, _)| (state, color as Color))
+        })
+        .collect()
 }
 
 /**************************************/
