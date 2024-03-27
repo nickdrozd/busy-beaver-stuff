@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from unittest import TestCase
+from unittest import TestCase, skipUnless
 from multiprocessing import Queue, Manager
 from typing import TYPE_CHECKING
 
-from test.utils import read_progs
+from test.utils import read_progs, RUN_SLOW
 from test.lin_rec import run_loose_linrec_machine
 from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 
@@ -283,6 +283,7 @@ class Fast(TestTree):
         self.assert_simple_and_connected()
 
 
+@skipUnless(RUN_SLOW, '')
 class Slow(TestTree):
     def test_42h(self):
         max_inf = 13_697

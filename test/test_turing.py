@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from math import isclose, log10
 from typing import TYPE_CHECKING
-from unittest import TestCase, expectedFailure
+from unittest import TestCase, expectedFailure, skip, skipUnless
 
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
@@ -15,7 +15,7 @@ from test.lin_rec import (
     run_loose_linrec_machine,
     StrictLinRecMachine,
 )
-from test.utils import get_holdouts, read_holdouts
+from test.utils import get_holdouts, read_holdouts, RUN_SLOW
 
 from tm.tree import branch_read
 from tm.reason import (
@@ -367,6 +367,17 @@ class Simple(TuringTest):
         )
 
 
+@skipUnless(RUN_SLOW, '')
+class SimpleSlow(Simple):
+    @skip('')
+    def test_halt(self):
+        self._test_halt(HALT_SLOW)
+
+    def test_spinout(self):
+        self._test_spinout(SPINOUT_SLOW)
+        self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
+
+
 class Recur(TuringTest):
     prog: str
     machine: Machine | StrictLinRecMachine | LinRecSampler
@@ -563,6 +574,12 @@ class Recur(TuringTest):
 
         if steps >= 1:
             self.deny_lin_rec(steps - 1, recur)
+
+
+@skipUnless(RUN_SLOW, '')
+class RecurSlow(Recur):
+    def test_recur(self):
+        self._test_recur(RECUR_SLOW, quick = False)
 
 
 class Prover(TuringTest):

@@ -73,9 +73,7 @@ compile : rust
 TUR = test.test_turing
 PROG = test.test_program
 GRAPH = test.test_graph
-TREEF = test.test_tree.Fast
 COV = test.test_coverage
-LR = test.test_lin_rado
 CG = test.test_code
 TP = test.test_tape
 NUM = test.test_num
@@ -86,10 +84,10 @@ SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(RUL) $(TP) $(COV) $(NUM)
 PYTEST = $(PYTHON) -m unittest
 
 test : test-rust
-	$(PYTEST) -v $(SHORT_TESTS) $(LR) $(TREEF) $(TUR)
-
-test-all : test-rust compile
 	$(PYTEST) discover -v
+
+test-all : compile
+	RUN_SLOW=1 $(MAKE) test
 
 COVERAGE = $(PYTHON) -m coverage
 

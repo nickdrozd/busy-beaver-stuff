@@ -1,4 +1,8 @@
+import os
 from functools import reduce
+
+
+RUN_SLOW = os.environ.get('RUN_SLOW')
 
 
 def read_progs(name: str) -> set[str]:
