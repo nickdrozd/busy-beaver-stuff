@@ -722,6 +722,9 @@ class Prover(TuringTest):
             if prog in PROVER_FAILURES:
                 continue
 
+            if prog == champ_2_5 and not RUN_SLOW:
+                continue
+
             self.run_bb(
                 prog,
                 sim_lim = 10 ** 8,
