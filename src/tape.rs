@@ -1,8 +1,10 @@
 use std::fmt;
 
 use crate::instrs::{Color, Shift};
+pub use crate::rules::Count;
 
-pub type Count = u64;
+#[cfg(test)]
+use crate::rules::{ApplyRule, Index, Op};
 
 /**************************************/
 
@@ -95,6 +97,25 @@ macro_rules! tape {
             head: $ head,
         }
     };
+}
+
+#[cfg(test)]
+impl ApplyRule for Tape {
+    fn get_count(&self, (side, pos): &Index) -> Count {
+        let span = if *side { &self.rspan } else { &self.lspan };
+
+        span[*pos].count
+    }
+
+    fn set_count(&mut self, (side, pos): &Index, val: Count) {
+        let span = if *side {
+            &mut self.rspan
+        } else {
+            &mut self.lspan
+        };
+
+        span[*pos].count = val;
+    }
 }
 
 impl Tape {
@@ -353,4 +374,56 @@ fn test_sig() {
     tape.assert_tape(6, "1^1 0^1 1^1 [2] 2^1 1^2");
 
     tape.assert_sig(sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] });
+}
+
+#[cfg(test)]
+macro_rules! rule {
+    (
+        $ ( ( $ shift : expr, $ index : expr ) => $ diff : expr ), *
+        $ ( , ) *
+    ) => {
+        {
+            let mut _rule = std::collections::HashMap::new();
+            $ ( _rule.insert(( $ shift == 1, $ index ), Op::Plus( $ diff )); ) *
+            _rule
+        }
+    };
+}
+
+#[test]
+fn test_apply_1() {
+    let mut tape = tape! {
+        3,
+        [(1, 12), (2, 3)],
+        [(4, 15), (5, 2), (6, 2)],
+        0
+    };
+
+    tape.assert_tape(35, "2^3 1^12 [3] 4^15 5^2 6^2");
+
+    tape.apply_rule(&rule![
+        (0, 1) => 3,
+        (1, 0) => -2,
+    ]);
+
+    tape.assert_tape(42, "2^24 1^12 [3] 4^1 5^2 6^2");
+}
+
+#[test]
+fn test_apply_2() {
+    let mut tape = tape! {
+        4,
+        [(4, 2)],
+        [(5, 60), (2, 1), (4, 1), (5, 7), (1, 1)],
+        0
+    };
+
+    tape.assert_tape(73, "4^2 [4] 5^60 2^1 4^1 5^7 1^1");
+
+    tape.apply_rule(&rule![
+        (0, 0) => 4,
+        (1, 0) => -2,
+    ]);
+
+    tape.assert_tape(131, "4^118 [4] 5^2 2^1 4^1 5^7 1^1");
 }
