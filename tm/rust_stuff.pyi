@@ -63,6 +63,7 @@ class MachineResult:
     steps: int
     cycles: int
     marks: int
+    rulapp: int
 
     last_slot: Slot | None
     blanks: dict[State, int]
@@ -73,6 +74,7 @@ class MachineResult:
             steps: int,
             cycles: int,
             marks: int,
+            rulapp: int,
             last_slot: Slot | None,
             blanks: dict[State, int],
     ): ...
@@ -89,6 +91,10 @@ class MachineResult:
     def spnout(self) -> int | None: ...
     @property
     def xlimit(self) -> int | None: ...
+    @property
+    def cfglim(self) -> int | None: ...
+
+def run_prover(prog: str, sim_lim: int = 0) -> MachineResult: ...
 
 def run_quick_machine(prog: str, sim_lim: int = 0) -> MachineResult: ...
 

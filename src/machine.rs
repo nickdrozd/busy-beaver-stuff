@@ -5,6 +5,8 @@ use pyo3::{pyclass, pyfunction, pymethods};
 use crate::{
     instrs::{Slot, State},
     parse::tcompile,
+    prover::{Prover, ProverResult},
+    rules::apply_rule,
     tape::{BasicTape as Tape, Count, HeadTape},
 };
 
@@ -19,6 +21,7 @@ type Blanks = HashMap<State, Step>;
 #[derive(Clone)]
 pub enum TermRes {
     xlimit,
+    cfglim,
     infrul,
     spnout,
     undfnd,
@@ -33,6 +36,7 @@ pub struct MachineResult {
     steps: Step,
     cycles: Step,
     marks: Count,
+    rulapp: Count,
 
     blanks: Blanks,
 
@@ -47,6 +51,7 @@ impl MachineResult {
         steps: Step,
         cycles: Step,
         marks: Count,
+        rulapp: Count,
         blanks: Blanks,
         last_slot: Option<Slot>,
     ) -> Self {
@@ -55,6 +60,7 @@ impl MachineResult {
             steps,
             cycles,
             marks,
+            rulapp,
             blanks,
             last_slot,
         }
@@ -73,6 +79,11 @@ impl MachineResult {
     #[getter]
     const fn marks(&self) -> Count {
         self.marks
+    }
+
+    #[getter]
+    const fn rulapp(&self) -> Count {
+        self.rulapp
     }
 
     #[getter]
@@ -133,7 +144,109 @@ impl MachineResult {
             _ => None,
         }
     }
+
+    #[getter]
+    const fn cfglim(&self) -> Option<Step> {
+        match self.result {
+            TermRes::cfglim => Some(self.steps),
+            _ => None,
+        }
+    }
 }
+
+/**************************************/
+
+#[pyfunction]
+#[pyo3(signature = (prog, sim_lim=100_000_000))]
+pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
+    let comp = tcompile(prog);
+
+    let mut tape = Tape::init(0);
+
+    let mut prover = Prover::new(&comp);
+
+    let mut blanks = Blanks::new();
+
+    let mut state = 0;
+    let mut steps = 0;
+    let mut cycles = 0;
+    let mut rulapp = 0;
+
+    let mut result: Option<TermRes> = None;
+    let mut last_slot: Option<Slot> = None;
+
+    for cycle in 0..sim_lim {
+        match prover.try_rule(cycle, state, &tape) {
+            None => {},
+            Some(ProverResult::ConfigLimit) => {
+                cycles = cycle;
+                result = Some(TermRes::cfglim);
+                break;
+            },
+            Some(ProverResult::InfiniteRule) => {
+                cycles = cycle;
+                result = Some(TermRes::infrul);
+                break;
+            },
+            Some(ProverResult::Got(rule)) => {
+                if let Some(times) = apply_rule(&rule, &mut tape) {
+                    // println!("applying rule: {:?}", rule);
+                    rulapp += times;
+                    continue;
+                }
+            },
+        }
+
+        let slot = (state, tape.scan);
+
+        let Some(&(color, shift, next_state)) = comp.get(&slot) else {
+            cycles = cycle;
+            result = Some(TermRes::undfnd);
+            last_slot = Some(slot);
+            break;
+        };
+
+        let same = state == next_state;
+
+        if same && tape.at_edge(shift) {
+            cycles = cycle;
+            result = Some(TermRes::spnout);
+            break;
+        }
+
+        let stepped = tape.step(shift, color, same);
+
+        steps += stepped;
+
+        state = next_state;
+
+        if color == 0 && tape.blank() {
+            if blanks.contains_key(&state) {
+                result = Some(TermRes::infrul);
+                break;
+            }
+
+            blanks.insert(state, steps);
+
+            if state == 0 {
+                result = Some(TermRes::infrul);
+                break;
+            }
+        }
+    }
+
+    MachineResult {
+        result: result.unwrap_or(TermRes::xlimit),
+        steps,
+        cycles,
+        marks: tape.marks(),
+        rulapp,
+        last_slot,
+        blanks,
+    }
+}
+
+/**************************************/
 
 #[pyfunction]
 #[pyo3(signature = (prog, sim_lim=100_000_000))]
@@ -195,6 +308,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
         steps,
         cycles,
         marks: tape.marks(),
+        rulapp: 0,
         last_slot,
         blanks,
     }

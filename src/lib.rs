@@ -11,7 +11,6 @@
     clippy::redundant_type_annotations
 )]
 #![allow(
-    dead_code,
     non_local_definitions,
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
@@ -38,7 +37,8 @@ mod rust_stuff {
 
     #[pymodule_export]
     use crate::machine::{
-        quick_term_or_rec, run_quick_machine, MachineResult, TermRes,
+        quick_term_or_rec, run_prover, run_quick_machine,
+        MachineResult, TermRes,
     };
 
     #[pymodule_export]

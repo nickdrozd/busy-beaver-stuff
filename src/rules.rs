@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use pyo3::{create_exception, exceptions::PyException};
 
-use crate::tape::{Count, Index, IndexTape};
+use crate::tape::{Count, Counts, Index, IndexTape};
 
 /**************************************/
 
@@ -14,12 +14,78 @@ create_exception!(rules, RuleLimit, PyException);
 
 pub type Diff = i32;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Op {
     Plus(Diff),
 }
 
 pub type Rule = HashMap<Index, Op>;
+
+/**************************************/
+
+enum DiffResult {
+    Got(Op),
+    Unknown,
+}
+
+const fn calculate_diff(
+    a: Count,
+    b: Count,
+    c: Count,
+    d: Count,
+) -> Option<DiffResult> {
+    if a == b && b == c && c == d {
+        return None;
+    }
+
+    let diff_1 = (b - a) as Diff;
+    let diff_2 = (c - b) as Diff;
+
+    if diff_1 != diff_2 || diff_2 != (d - c) as Diff {
+        return Some(DiffResult::Unknown);
+    }
+
+    Some(DiffResult::Got(Op::Plus(diff_1)))
+}
+
+pub fn make_rule(
+    (l1, r1): &Counts,
+    (l2, r2): &Counts,
+    (l3, r3): &Counts,
+    (l4, r4): &Counts,
+) -> Option<Rule> {
+    let countses: Vec<Vec<_>> = vec![
+        l1.iter()
+            .zip(l2.iter())
+            .zip(l3.iter())
+            .zip(l4.iter())
+            .map(|(((a, b), c), d)| (*a, *b, *c, *d))
+            .collect(),
+        r1.iter()
+            .zip(r2.iter())
+            .zip(r3.iter())
+            .zip(r4.iter())
+            .map(|(((a, b), c), d)| (*a, *b, *c, *d))
+            .collect(),
+    ];
+
+    let mut rule = Rule::new();
+
+    for (s, spans) in countses.iter().enumerate() {
+        for (i, &(a, b, c, d)) in spans.iter().enumerate() {
+            match calculate_diff(a, b, c, d)? {
+                DiffResult::Unknown => {
+                    return None;
+                },
+                DiffResult::Got(op) => {
+                    rule.insert((s == 1, i), op);
+                },
+            }
+        }
+    }
+
+    Some(rule)
+}
 
 /**************************************/
 
@@ -38,6 +104,10 @@ fn count_apps(
 
         let count = tape.get_count(pos);
         let absdiff: Count = diff.unsigned_abs().into();
+
+        if absdiff >= count {
+            return None;
+        }
 
         let div = count / absdiff;
         let rem = count % absdiff;
