@@ -81,7 +81,7 @@ impl fmt::Display for Tape {
             .collect::<Vec<_>>()
             .join(" ");
 
-        write!(f, "{} [{} ({})] {}", lspan, self.scan, self.head, rspan)
+        write!(f, "{} [{}] {}", lspan, self.scan, rspan)
     }
 }
 
@@ -340,7 +340,7 @@ mod tests {
         let just = ColorCount::Just;
         let mult = ColorCount::Mult;
 
-        assert_tape(&tape, "1^1 0^1 1^1 [2 (0)] 2^1 1^2");
+        assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
 
         assert_sig(
             &tape,
@@ -353,11 +353,11 @@ mod tests {
         let _ = copy_1.step(false, 2, false);
         let _ = copy_2.step(true, 1, false);
 
-        assert_tape(&copy_1, "1^1 0^1 [1 (-1)] 2^2 1^2");
+        assert_tape(&copy_1, "1^1 0^1 [1] 2^2 1^2");
 
         assert_sig(&copy_1, sig! { 1, [just(0), just(1)], [mult(2), mult(1)] });
 
-        assert_tape(&copy_2, "1^1 0^1 1^2 [2 (1)] 1^2");
+        assert_tape(&copy_2, "1^1 0^1 1^2 [2] 1^2");
 
         assert_sig(
             &copy_2,
@@ -368,7 +368,7 @@ mod tests {
             },
         );
 
-        assert_tape(&tape, "1^1 0^1 1^1 [2 (0)] 2^1 1^2");
+        assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
 
         assert_sig(
             &tape,
