@@ -309,14 +309,30 @@ mod tests {
         assert_eq!(tape.signature(), sig);
     }
 
+    macro_rules! tape {
+        ($scan:expr, [$($lspan:expr),*], [$($rspan:expr),*]) => {
+            Tape {
+                scan: $scan,
+                head: 0,
+                lspan: vec![$(Block::new($lspan.0, $lspan.1)),*],
+                rspan: vec![$(Block::new($rspan.0, $rspan.1)),*],
+            }
+        };
+    }
+
+    macro_rules! sig {
+        ($scan:expr, [$($lspan:expr),*], [$($rspan:expr),*]) => {
+            Signature {
+                scan: $scan,
+                lspan: vec![$($lspan),*],
+                rspan: vec![$($rspan),*],
+            }
+        };
+    }
+
     #[test]
     fn test_sig() {
-        let tape = Tape {
-            lspan: vec![Block::new(1, 1), Block::new(0, 1), Block::new(1, 1)],
-            scan: 2,
-            rspan: vec![Block::new(2, 1), Block::new(1, 2)],
-            head: 0,
-        };
+        let tape = tape! {2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)]};
 
         assert_marks(&tape, 6);
         assert!(!tape.blank());
@@ -328,11 +344,7 @@ mod tests {
 
         assert_sig(
             &tape,
-            Signature {
-                scan: 2,
-                lspan: vec![just(1), just(0), just(1)],
-                rspan: vec![just(2), mult(1)],
-            },
+            sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] },
         );
 
         let mut copy_1 = tape.clone();
@@ -343,23 +355,16 @@ mod tests {
 
         assert_tape(&copy_1, "1^1 0^1 [1 (-1)] 2^2 1^2");
 
-        assert_sig(
-            &copy_1,
-            Signature {
-                scan: 1,
-                lspan: vec![just(0), just(1)],
-                rspan: vec![mult(2), mult(1)],
-            },
-        );
+        assert_sig(&copy_1, sig! { 1, [just(0), just(1)], [mult(2), mult(1)] });
 
         assert_tape(&copy_2, "1^1 0^1 1^2 [2 (1)] 1^2");
 
         assert_sig(
             &copy_2,
-            Signature {
-                scan: 2,
-                lspan: vec![mult(1), just(0), just(1)],
-                rspan: vec![mult(1)],
+            sig! {
+                2,
+                [mult(1), just(0), just(1)],
+                [mult(1)]
             },
         );
 
@@ -367,11 +372,7 @@ mod tests {
 
         assert_sig(
             &tape,
-            Signature {
-                scan: 2,
-                lspan: vec![just(1), just(0), just(1)],
-                rspan: vec![just(2), mult(1)],
-            },
+            sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] },
         );
     }
 }
