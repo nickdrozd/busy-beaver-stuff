@@ -632,6 +632,7 @@ def run_loose_linrec_machine(
         steps = step,
         cycles = cycle,
         marks = 0,
+        rulapp = 0,
         last_slot = last_slot,
         blanks = blanks,
     )

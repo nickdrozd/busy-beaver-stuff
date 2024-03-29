@@ -7,6 +7,7 @@ use core::{
 use crate::instrs::{Color, Shift};
 
 pub type Count = u64;
+pub type Counts = (Vec<Count>, Vec<Count>);
 
 /**************************************/
 
@@ -72,10 +73,18 @@ impl Display for BasicBlock {
 
 /**************************************/
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum ColorCount {
     Just(Color),
     Mult(Color),
+}
+
+impl ColorCount {
+    const fn get_color(&self) -> Color {
+        match self {
+            Self::Just(color) | Self::Mult(color) => *color,
+        }
+    }
 }
 
 impl<B: Block> From<&B> for ColorCount {
@@ -88,11 +97,16 @@ impl<B: Block> From<&B> for ColorCount {
     }
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Signature {
-    scan: Color,
-    lspan: Vec<ColorCount>,
-    rspan: Vec<ColorCount>,
+    pub scan: Color,
+    pub lspan: Vec<ColorCount>,
+    pub rspan: Vec<ColorCount>,
+}
+
+pub trait GetSig {
+    fn scan(&self) -> Color;
+    fn signature(&self) -> Signature;
 }
 
 /**************************************/
@@ -121,6 +135,34 @@ impl<B: Block> Display for Tape<B> {
                 .collect::<Vec<_>>()
                 .join(" ")
         )
+    }
+}
+
+impl GetSig for BasicTape {
+    fn scan(&self) -> Color {
+        self.scan
+    }
+
+    fn signature(&self) -> Signature {
+        Signature {
+            scan: self.scan,
+            lspan: self.lspan.iter().map(Into::into).collect(),
+            rspan: self.rspan.iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl GetSig for EnumTape {
+    fn scan(&self) -> Color {
+        self.tape.scan
+    }
+
+    fn signature(&self) -> Signature {
+        Signature {
+            scan: self.scan(),
+            lspan: self.tape.lspan.iter().map(Into::into).collect(),
+            rspan: self.tape.rspan.iter().map(Into::into).collect(),
+        }
     }
 }
 
@@ -162,12 +204,15 @@ impl<B: Block> Tape<B> {
         (self.lspan.len() + self.rspan.len()) as Count
     }
 
-    pub fn signature(&self) -> Signature {
-        Signature {
-            scan: self.scan,
-            lspan: self.lspan.iter().map(Into::into).collect(),
-            rspan: self.rspan.iter().map(Into::into).collect(),
-        }
+    pub fn counts(&self) -> Counts {
+        (
+            self.lspan.iter().map(B::get_count).collect(),
+            self.rspan.iter().map(B::get_count).collect(),
+        )
+    }
+
+    pub fn span_lens(&self) -> (usize, usize) {
+        (self.lspan.len(), self.rspan.len())
     }
 
     pub fn at_edge(&self, edge: Shift) -> bool {
@@ -177,6 +222,26 @@ impl<B: Block> Tape<B> {
 
     pub fn blank(&self) -> bool {
         self.scan == 0 && self.lspan.is_empty() && self.rspan.is_empty()
+    }
+
+    pub fn sig_compatible(&self, sig: &Signature) -> bool {
+        let Signature { scan, lspan, rspan } = sig;
+
+        self.scan == *scan
+            && self.lspan.len() >= lspan.len()
+            && self.rspan.len() >= rspan.len()
+            && self
+                .lspan
+                .iter()
+                .take(lspan.len())
+                .zip(lspan.iter())
+                .all(|(bk, cc)| bk.get_color() == cc.get_color())
+            && self
+                .rspan
+                .iter()
+                .take(rspan.len())
+                .zip(rspan.iter())
+                .all(|(bk, cc)| bk.get_color() == cc.get_color())
     }
 
     pub fn unroll(&self) -> Vec<Color> {
@@ -261,13 +326,11 @@ impl<B: Block> Tape<B> {
 
 pub type Index = (Shift, usize);
 
-#[cfg(test)]
 pub trait IndexTape {
     fn get_count(&self, index: &Index) -> Count;
     fn set_count(&mut self, index: &Index, val: Count);
 }
 
-#[cfg(test)]
 impl<B: Block> IndexTape for Tape<B> {
     fn get_count(&self, &(side, pos): &Index) -> Count {
         let span = if side { &self.rspan } else { &self.lspan };
@@ -583,7 +646,6 @@ impl EnumTape {
     }
 }
 
-#[cfg(test)]
 impl IndexTape for EnumTape {
     fn get_count(&self, index: &Index) -> Count {
         self.tape.get_count(index)
@@ -688,6 +750,9 @@ fn test_clone() {
 }
 
 #[cfg(test)]
+use crate::rules::Op;
+
+#[cfg(test)]
 macro_rules! rule {
     (
         $ ( ( $ shift : expr, $ index : expr ) => $ diff : expr ), *
@@ -702,7 +767,7 @@ macro_rules! rule {
 }
 
 #[cfg(test)]
-use crate::rules::{apply_rule, Op, Rule};
+use crate::rules::{apply_rule, Rule};
 
 #[test]
 fn test_apply_1() {

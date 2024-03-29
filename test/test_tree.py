@@ -11,7 +11,12 @@ from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 from tools.graph import Graph
 
 from tm.tree import run_tree_gen
-from tm.machine import Machine, quick_term_or_rec
+from tm.macro import opt_block
+from tm.machine import (
+    Machine,
+    run_prover,
+    quick_term_or_rec,
+)
 from tm.reason import (
     cant_halt,
     cant_blank,
@@ -51,13 +56,16 @@ def run_variations(
     if lin_rec is not None:
         yield run_loose_linrec_machine(prog, lin_rec)
 
-    yield Machine(
-        prog,
-        opt_macro = block_steps,
-        params = params,
-    ).run(
-        sim_lim = sim_lim,
-    )
+    if opt_block(prog, block_steps) == 1:
+        yield run_prover(prog, sim_lim)
+    else:
+        yield Machine(
+            prog,
+            opt_macro = block_steps,
+            params = params,
+        ).run(
+            sim_lim = sim_lim,
+        )
 
     yield Machine(
         prog,
