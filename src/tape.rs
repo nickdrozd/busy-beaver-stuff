@@ -56,10 +56,9 @@ type TapeSlice = Vec<Color>;
 
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Tape {
-    lspan: Vec<Block>,
-
     pub scan: Color,
 
+    lspan: Vec<Block>,
     rspan: Vec<Block>,
 
     pub head: Pos,
@@ -74,6 +73,7 @@ impl fmt::Display for Tape {
             .map(std::string::ToString::to_string)
             .collect::<Vec<_>>()
             .join(" ");
+
         let rspan = self
             .rspan
             .iter()
@@ -88,8 +88,8 @@ impl fmt::Display for Tape {
 impl Tape {
     pub fn init(scan: Color) -> Self {
         Self {
-            lspan: vec![],
             scan,
+            lspan: vec![],
             rspan: vec![],
             head: 0,
         }
@@ -97,8 +97,8 @@ impl Tape {
 
     pub fn init_stepped() -> Self {
         Self {
-            lspan: vec![Block::new(1, 1)],
             scan: 0,
+            lspan: vec![Block::new(1, 1)],
             rspan: vec![],
             head: 1,
         }
