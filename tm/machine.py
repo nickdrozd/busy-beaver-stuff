@@ -95,22 +95,6 @@ class Machine:
 
         self.program = prog
 
-    @property
-    def term_results(self) -> list[tuple[str, Result]]:
-        results = []
-
-        for cat in TERM_CATS:
-            try:
-                # pylint: disable = bad-builtin
-                data = getattr(self, cat)
-            except AttributeError:  # no-cover
-                continue
-
-            if data is not None:
-                results.append((cat, data))
-
-        return results
-
     def __str__(self) -> str:
         info = [ f'CYCLES: {self.cycles}' ]
 
@@ -121,7 +105,9 @@ class Machine:
             '{}: {}'.format(
                 cat.upper(),
                 data if isinstance(data, int | str | tuple) else "...")
-            for cat, data in self.term_results
+            for cat in TERM_CATS
+            # pylint: disable = bad-builtin
+            if (data := getattr(self, cat, None)) is not None
         ]
 
         info.append(
