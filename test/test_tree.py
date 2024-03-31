@@ -196,7 +196,7 @@ class Fast(TestTree):
             })
 
     def test_32(self):
-        max_inf = 675
+        max_inf = 27_575
 
         def capture(prog: str) -> None:
             machines = run_variations(
@@ -226,14 +226,14 @@ class Fast(TestTree):
         self.assert_records({
             'blanks': (34, "1RB 1LB  1LA 1LC  1RC 0LC"),
             'spnout': (55, "1RB 0LB  1LA 0RC  1LC 1LA"),
-            'infrul': (max_inf, "1RB 1RC  0LC 0RB  1LA 1LC"),
+            'infrul': (max_inf, "1RB 1LA  0LA 1RC  0RB 0LB"),
         })
 
         self.assert_cant_terminate()
         self.assert_simple_and_connected()
 
     def test_23(self):
-        max_inf = 4_988
+        max_inf = 7_396
 
         def capture(prog: str) -> None:
             machines = run_variations(
@@ -266,13 +266,13 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            14,
+            13,
             'holdouts_23q')
 
         self.assert_records({
             'blanks': (77, "1RB 2LA 0RB  1LA 0LB 1RA"),
             'spnout': (59, "1RB 2LB 1LA  2LB 2RA 0RA"),
-            'infrul': (max_inf, "1RB 0RB 1LB  1LA 2RB 0LA"),
+            'infrul': (max_inf, "1RB 2LA 0RB  1LB 1LA 1RA"),
         })
 
         self.assertIn(
