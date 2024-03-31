@@ -43,7 +43,9 @@ class TestDisplay(TestCase):
             str(machine.tape),
             "1^2 3^97 [0]")
 
-        print(Machine("1RB ...  ... ...").run(watch_tape = True))
+        self.assertEqual(
+            str(Machine("1RB ...  ... ...").run(watch_tape = True)),
+            "1RB ...  ... ... || CYCLES: 1 | MARKS: 1 | UNDFND: (1, (1, 0)) | TPCFGS: 2")
 
 
 class TestFloss(TestCase):
