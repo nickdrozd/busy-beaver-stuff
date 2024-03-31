@@ -96,22 +96,19 @@ class Machine:
         self.program = prog
 
     def __str__(self) -> str:
-        info = [ f'CYCLES: {self.cycles}' ]
-
-        info.append(
-            f'MARKS: {show_number(self.marks)}')
-
-        info += [
-            '{}: {}'.format(
-                cat.upper(),
-                data if isinstance(data, int | str | tuple) else "...")
-            for cat in TERM_CATS
-            # pylint: disable = bad-builtin
-            if (data := getattr(self, cat, None)) is not None
+        info = [
+            f"CYCLES: {self.cycles}",
+            f"MARKS: {show_number(self.marks)}",
+            *[
+                "{}: {}".format(
+                    cat.upper(),
+                    data if isinstance(data, int|str|tuple) else "...")
+                for cat in TERM_CATS
+                # pylint: disable = bad-builtin
+                if (data := getattr(self, cat, None)) is not None
+            ],
+            f"TPCFGS: {self.prover.config_count}",
         ]
-
-        info.append(
-            f'TPCFGS: {self.prover.config_count}')
 
         if self.rulapp:
             rulapp_disp = (
