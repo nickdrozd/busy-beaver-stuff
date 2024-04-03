@@ -131,12 +131,6 @@ impl Tape {
         self.scan == 0 && self.lspan.is_empty() && self.rspan.is_empty()
     }
 
-    pub fn backstep(&mut self, shift: Shift, color: Color) {
-        let _ = self.step(!shift, self.scan, false);
-
-        self.scan = color;
-    }
-
     pub fn step(&mut self, shift: Shift, color: Color, skip: bool) -> Count {
         let (pull, push) = if shift {
             (&mut self.rspan, &mut self.lspan)

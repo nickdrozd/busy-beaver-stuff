@@ -210,6 +210,20 @@ fn rparse(prog: &str) -> (usize, Graph, Program) {
 
 /**************************************/
 
+trait Backstep {
+    fn backstep(&mut self, shift: Shift, color: Color);
+}
+
+impl Backstep for Tape {
+    fn backstep(&mut self, shift: Shift, color: Color) {
+        let _ = self.step(!shift, self.scan, false);
+
+        self.scan = color;
+    }
+}
+
+/**************************************/
+
 fn backstep_run_halt(
     comp: &CompThin,
     sim_lim: Step,
