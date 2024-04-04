@@ -66,22 +66,18 @@ pub struct Tape {
 
 impl fmt::Display for Tape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let lspan = self
-            .lspan
-            .iter()
-            .rev()
-            .map(std::string::ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(" ");
-
-        let rspan = self
-            .rspan
-            .iter()
-            .map(std::string::ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(" ");
-
-        write!(f, "{} [{}] {}", lspan, self.scan, rspan)
+        write!(
+            f,
+            "{}",
+            self.lspan
+                .iter()
+                .rev()
+                .map(ToString::to_string)
+                .chain(std::iter::once(format!("[{}]", self.scan)))
+                .chain(self.rspan.iter().map(ToString::to_string))
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
     }
 }
 
@@ -310,23 +306,23 @@ macro_rules! sig {
 
 #[test]
 fn test_marks() {
-    Tape::init(0).assert_tape(0, " [0] ");
+    Tape::init(0).assert_tape(0, "[0]");
 
     let mut tape = Tape::init_stepped();
 
-    tape.assert_tape(1, "1^1 [0] ");
+    tape.assert_tape(1, "1^1 [0]");
 
     tape.stepp(1, 1, 0);
 
-    tape.assert_tape(2, "1^2 [0] ");
+    tape.assert_tape(2, "1^2 [0]");
 
     tape.stepp(0, 0, 0);
 
-    tape.assert_tape(2, "1^1 [1] ");
+    tape.assert_tape(2, "1^1 [1]");
 
     tape.stepp(0, 0, 1);
 
-    tape.assert_tape(0, " [0] ");
+    tape.assert_tape(0, "[0]");
 }
 
 #[test]
