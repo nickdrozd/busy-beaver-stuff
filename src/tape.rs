@@ -273,99 +273,98 @@ impl Tape {
 /**************************************/
 
 #[cfg(test)]
-mod tests {
-    use super::*;
+fn assert_marks(tape: &Tape, marks: Count) {
+    assert_eq!(tape.marks(), marks);
+}
 
-    fn assert_marks(tape: &Tape, marks: Count) {
-        assert_eq!(tape.marks(), marks);
-    }
+#[cfg(test)]
+fn assert_tape(tape: &Tape, tape_str: &str) {
+    assert_eq!(tape.to_string(), tape_str);
+}
 
-    #[test]
-    fn test_marks() {
-        assert_marks(&Tape::init(0), 0);
+#[cfg(test)]
+fn assert_sig(tape: &Tape, sig: Signature) {
+    assert_eq!(tape.signature(), sig);
+}
 
-        let mut tape = Tape::init_stepped();
+#[cfg(test)]
+macro_rules! sig {
+    (
+        $ scan : expr,
+        [ $ ( $ lspan : expr ), * ],
+        [ $ ( $ rspan : expr ), * ]
+    ) => {
+        Signature {
+            scan: $ scan,
+            lspan: vec! [ $ ( $ lspan ), * ],
+            rspan: vec! [ $ ( $ rspan ), * ],
+        }
+    };
+}
 
-        assert_marks(&tape, 1);
+#[test]
+fn test_marks() {
+    assert_marks(&Tape::init(0), 0);
 
-        tape.step(true, 1, false);
+    let mut tape = Tape::init_stepped();
 
-        assert_marks(&tape, 2);
+    assert_marks(&tape, 1);
 
-        tape.step(false, 0, false);
+    tape.step(true, 1, false);
 
-        assert_marks(&tape, 2);
+    assert_marks(&tape, 2);
 
-        tape.step(false, 0, true);
+    tape.step(false, 0, false);
 
-        assert_marks(&tape, 0);
-    }
+    assert_marks(&tape, 2);
 
-    fn assert_tape(tape: &Tape, tape_str: &str) {
-        assert_eq!(tape.to_string(), tape_str);
-    }
+    tape.step(false, 0, true);
 
-    fn assert_sig(tape: &Tape, sig: Signature) {
-        assert_eq!(tape.signature(), sig);
-    }
+    assert_marks(&tape, 0);
+}
 
-    macro_rules! sig {
-        (
-            $ scan : expr,
-            [ $ ( $ lspan : expr ), * ],
-            [ $ ( $ rspan : expr ), * ]
-        ) => {
-            Signature {
-                scan: $ scan,
-                lspan: vec! [ $ ( $ lspan ), * ],
-                rspan: vec! [ $ ( $ rspan ), * ],
-            }
-        };
-    }
+#[test]
+fn test_sig() {
+    let tape = tape! { 2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)], 0 };
 
-    #[test]
-    fn test_sig() {
-        let tape = tape! { 2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)], 0 };
+    assert_marks(&tape, 6);
+    assert!(!tape.blank());
 
-        assert_marks(&tape, 6);
-        assert!(!tape.blank());
+    let just = ColorCount::Just;
+    let mult = ColorCount::Mult;
 
-        let just = ColorCount::Just;
-        let mult = ColorCount::Mult;
+    assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
 
-        assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
+    assert_sig(
+        &tape,
+        sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] },
+    );
 
-        assert_sig(
-            &tape,
-            sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] },
-        );
+    let mut copy_1 = tape.clone();
+    let mut copy_2 = tape.clone();
 
-        let mut copy_1 = tape.clone();
-        let mut copy_2 = tape.clone();
+    let _ = copy_1.step(false, 2, false);
+    let _ = copy_2.step(true, 1, false);
 
-        let _ = copy_1.step(false, 2, false);
-        let _ = copy_2.step(true, 1, false);
+    assert_tape(&copy_1, "1^1 0^1 [1] 2^2 1^2");
 
-        assert_tape(&copy_1, "1^1 0^1 [1] 2^2 1^2");
+    assert_sig(&copy_1, sig! { 1, [just(0), just(1)], [mult(2), mult(1)] });
 
-        assert_sig(&copy_1, sig! { 1, [just(0), just(1)], [mult(2), mult(1)] });
+    assert_tape(&copy_2, "1^1 0^1 1^2 [2] 1^2");
 
-        assert_tape(&copy_2, "1^1 0^1 1^2 [2] 1^2");
+    assert_sig(
+        &copy_2,
+        sig! {
+            2,
+            [mult(1), just(0), just(1)],
+            [mult(1)]
+        },
+    );
 
-        assert_sig(
-            &copy_2,
-            sig! {
-                2,
-                [mult(1), just(0), just(1)],
-                [mult(1)]
-            },
-        );
+    assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
 
-        assert_tape(&tape, "1^1 0^1 1^1 [2] 2^1 1^2");
-
-        assert_sig(
-            &tape,
-            sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] },
-        );
-    }
+    assert_sig(
+        &tape,
+        sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] },
+    );
 }

@@ -126,69 +126,68 @@ pub fn init_prog(states: usize, colors: usize) -> String {
 /**************************************/
 
 #[cfg(test)]
-mod tests {
-    use super::*;
+fn check_state(state: char) {
+    assert_eq!(state, show_state(Some(read_state(state))));
+}
 
-    fn check_state(state: char) {
-        assert_eq!(state, show_state(Some(read_state(state))));
+#[test]
+fn test_state() {
+    let states = ['A', 'B', 'C'];
+
+    for state in states {
+        check_state(state);
     }
+}
 
-    #[test]
-    fn test_state() {
-        let states = ['A', 'B', 'C'];
+#[cfg(test)]
+fn check_slot(slot: &str) {
+    assert_eq!(slot, show_slot(read_slot(slot)));
+}
 
-        for state in states {
-            check_state(state);
-        }
+#[test]
+fn test_slot() {
+    let slots = ["A0", "A1", "A2", "B0", "B1", "B2", "C0", "C1", "C2"];
+
+    for slot in slots {
+        check_slot(slot);
     }
+}
 
-    fn check_slot(slot: &str) {
-        assert_eq!(slot, show_slot(read_slot(slot)));
+#[cfg(test)]
+fn check_instr(instr: &str) {
+    assert_eq!(instr, show_instr(read_instr(instr)));
+}
+
+#[test]
+fn test_instr() {
+    let instrs = ["1RB", "2LC"];
+
+    for instr in instrs {
+        check_instr(instr);
     }
+}
 
-    #[test]
-    fn test_slot() {
-        let slots = ["A0", "A1", "A2", "B0", "B1", "B2", "C0", "C1", "C2"];
+#[test]
+fn test_parse() {
+    assert_eq!(
+        vec![
+            vec![Some((1, true, 1)), None],
+            vec![Some((1, false, 1)), Some((0, true, 2))],
+            vec![Some((1, false, 2)), Some((1, false, 0))],
+        ],
+        parse_to_vec("1RB ...  1LB 0RC  1LC 1LA"),
+    );
+}
 
-        for slot in slots {
-            check_slot(slot);
-        }
-    }
+#[cfg(test)]
+fn check_init(states: usize, colors: usize, expected: &str) {
+    assert_eq!(init_prog(states, colors), expected);
+}
 
-    fn check_instr(instr: &str) {
-        assert_eq!(instr, show_instr(read_instr(instr)));
-    }
-
-    #[test]
-    fn test_instr() {
-        let instrs = ["1RB", "2LC"];
-
-        for instr in instrs {
-            check_instr(instr);
-        }
-    }
-
-    #[test]
-    fn test_parse() {
-        assert_eq!(
-            vec![
-                vec![Some((1, true, 1)), None],
-                vec![Some((1, false, 1)), Some((0, true, 2))],
-                vec![Some((1, false, 2)), Some((1, false, 0))],
-            ],
-            parse_to_vec("1RB ...  1LB 0RC  1LC 1LA"),
-        );
-    }
-
-    fn check_init(states: usize, colors: usize, expected: &str) {
-        assert_eq!(init_prog(states, colors), expected);
-    }
-
-    #[test]
-    fn test_init() {
-        check_init(2, 3, "1RB ... ...  ... ... ...");
-        check_init(3, 2, "1RB ...  ... ...  ... ...");
-        check_init(2, 4, "1RB ... ... ...  ... ... ... ...");
-        check_init(4, 2, "1RB ...  ... ...  ... ...  ... ...");
-    }
+#[test]
+fn test_init() {
+    check_init(2, 3, "1RB ... ...  ... ... ...");
+    check_init(3, 2, "1RB ...  ... ...  ... ...");
+    check_init(2, 4, "1RB ... ... ...  ... ... ... ...");
+    check_init(4, 2, "1RB ...  ... ...  ... ...  ... ...");
 }
