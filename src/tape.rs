@@ -291,14 +291,12 @@ impl Tape {
 
 #[cfg(test)]
 impl Tape {
-    fn assert_tape(&self, marks: Count, tape_str: &str) {
+    fn assert(&self, marks: Count, tape_str: &str, sig: Signature) {
         assert_eq!(self.marks(), marks);
+        assert_eq!(self.blank(), marks == 0);
+
         assert_eq!(self.to_string(), tape_str);
 
-        assert_eq!(self.blank(), marks == 0)
-    }
-
-    fn assert_sig(&self, sig: Signature) {
         assert_eq!(self.signature(), sig);
     }
 
@@ -334,31 +332,29 @@ macro_rules! sig {
 }
 
 #[test]
-fn test_marks() {
-    Tape::init(0).assert_tape(0, "[0]");
+fn test_init() {
+    Tape::init(0).assert(0, "[0]", sig![0, [], []]);
 
     let mut tape = Tape::init_stepped();
 
-    tape.assert_tape(1, "1^1 [0]");
+    tape.assert(1, "1^1 [0]", sig![0, [[1]], []]);
 
     tape.stepp(1, 1, 0);
 
-    tape.assert_tape(2, "1^2 [0]");
+    tape.assert(2, "1^2 [0]", sig![0, [1], []]);
 
     tape.stepp(0, 0, 0);
 
-    tape.assert_tape(2, "1^1 [1]");
+    tape.assert(2, "1^1 [1]", sig![1, [[1]], []]);
 
     tape.stepp(0, 0, 1);
 
-    tape.assert_tape(0, "[0]");
+    tape.assert(0, "[0]", sig![0, [], []]);
 }
 
 #[test]
-fn test_sig() {
+fn test_clone() {
     let tape = tape! { 2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)], 0 };
-
-    tape.assert_sig(sig! { 2, [[1], [0], [1]], [[2], 1] });
 
     let mut copy_1 = tape.clone();
     let mut copy_2 = tape.clone();
@@ -366,17 +362,14 @@ fn test_sig() {
     copy_1.stepp(0, 2, 0);
     copy_2.stepp(1, 1, 0);
 
-    copy_1.assert_tape(6, "1^1 0^1 [1] 2^2 1^2");
+    copy_1.assert(6, "1^1 0^1 [1] 2^2 1^2", sig![1, [[0], [1]], [2, 1]]);
+    copy_2.assert(6, "1^1 0^1 1^2 [2] 1^2", sig![2, [1, [0], [1]], [1]]);
 
-    copy_1.assert_sig(sig! { 1, [[0], [1]], [2, 1] });
-
-    copy_2.assert_tape(6, "1^1 0^1 1^2 [2] 1^2");
-
-    copy_2.assert_sig(sig! { 2, [1, [0], [1]], [1] });
-
-    tape.assert_tape(6, "1^1 0^1 1^1 [2] 2^1 1^2");
-
-    tape.assert_sig(sig! { 2, [[1], [0], [1]], [[2], 1] });
+    tape.assert(
+        6,
+        "1^1 0^1 1^1 [2] 2^1 1^2",
+        sig![2, [[1], [0], [1]], [[2], 1]],
+    );
 }
 
 #[cfg(test)]
@@ -402,14 +395,18 @@ fn test_apply_1() {
         0
     };
 
-    tape.assert_tape(35, "2^3 1^12 [3] 4^15 5^2 6^2");
+    tape.assert(35, "2^3 1^12 [3] 4^15 5^2 6^2", sig![3, [1, 2], [4, 5, 6]]);
 
     tape.apply_rule(&rule![
         (0, 1) => 3,
         (1, 0) => -2,
     ]);
 
-    tape.assert_tape(42, "2^24 1^12 [3] 4^1 5^2 6^2");
+    tape.assert(
+        42,
+        "2^24 1^12 [3] 4^1 5^2 6^2",
+        sig![3, [1, 2], [[4], 5, 6]],
+    );
 }
 
 #[test]
@@ -421,12 +418,20 @@ fn test_apply_2() {
         0
     };
 
-    tape.assert_tape(73, "4^2 [4] 5^60 2^1 4^1 5^7 1^1");
+    tape.assert(
+        73,
+        "4^2 [4] 5^60 2^1 4^1 5^7 1^1",
+        sig![4, [4], [5, [2], [4], 5, [1]]],
+    );
 
     tape.apply_rule(&rule![
         (0, 0) => 4,
         (1, 0) => -2,
     ]);
 
-    tape.assert_tape(131, "4^118 [4] 5^2 2^1 4^1 5^7 1^1");
+    tape.assert(
+        131,
+        "4^118 [4] 5^2 2^1 4^1 5^7 1^1",
+        sig![4, [4], [5, [2], [4], 5, [1]]],
+    );
 }
