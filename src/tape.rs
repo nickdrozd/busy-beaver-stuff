@@ -274,12 +274,11 @@ impl Tape {
 
 #[cfg(test)]
 impl Tape {
-    fn assert_marks(&self, marks: Count) {
+    fn assert_tape(&self, marks: Count, tape_str: &str) {
         assert_eq!(self.marks(), marks);
-    }
-
-    fn assert_tape(&self, tape_str: &str) {
         assert_eq!(self.to_string(), tape_str);
+
+        assert_eq!(self.blank(), marks == 0)
     }
 
     fn assert_sig(&self, sig: Signature) {
@@ -311,36 +310,33 @@ macro_rules! sig {
 
 #[test]
 fn test_marks() {
-    Tape::init(0).assert_marks(0);
+    Tape::init(0).assert_tape(0, " [0] ");
 
     let mut tape = Tape::init_stepped();
 
-    tape.assert_marks(1);
+    tape.assert_tape(1, "1^1 [0] ");
 
     tape.stepp(1, 1, 0);
 
-    tape.assert_marks(2);
+    tape.assert_tape(2, "1^2 [0] ");
 
     tape.stepp(0, 0, 0);
 
-    tape.assert_marks(2);
+    tape.assert_tape(2, "1^1 [1] ");
 
     tape.stepp(0, 0, 1);
 
-    tape.assert_marks(0);
+    tape.assert_tape(0, " [0] ");
 }
 
 #[test]
 fn test_sig() {
     let tape = tape! { 2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)], 0 };
 
-    tape.assert_marks(6);
-    assert!(!tape.blank());
-
     let just = ColorCount::Just;
     let mult = ColorCount::Mult;
 
-    tape.assert_tape("1^1 0^1 1^1 [2] 2^1 1^2");
+    tape.assert_tape(6, "1^1 0^1 1^1 [2] 2^1 1^2");
 
     tape.assert_sig(sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] });
 
@@ -350,15 +346,15 @@ fn test_sig() {
     copy_1.stepp(0, 2, 0);
     copy_2.stepp(1, 1, 0);
 
-    copy_1.assert_tape("1^1 0^1 [1] 2^2 1^2");
+    copy_1.assert_tape(6, "1^1 0^1 [1] 2^2 1^2");
 
     copy_1.assert_sig(sig! { 1, [just(0), just(1)], [mult(2), mult(1)] });
 
-    copy_2.assert_tape("1^1 0^1 1^2 [2] 1^2");
+    copy_2.assert_tape(6, "1^1 0^1 1^2 [2] 1^2");
 
     copy_2.assert_sig(sig! { 2, [mult(1), just(0), just(1)], [mult(1)] });
 
-    tape.assert_tape("1^1 0^1 1^1 [2] 2^1 1^2");
+    tape.assert_tape(6, "1^1 0^1 1^1 [2] 2^1 1^2");
 
     tape.assert_sig(sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] });
 }
