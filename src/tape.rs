@@ -85,23 +85,24 @@ impl fmt::Display for Tape {
     }
 }
 
+macro_rules! tape {
+    ($scan:expr, [$($lspan:expr),*], [$($rspan:expr),*], $head:expr) => {
+        Tape {
+            scan: $scan,
+            lspan: vec![$(Block::new($lspan.0, $lspan.1)),*],
+            rspan: vec![$(Block::new($rspan.0, $rspan.1)),*],
+            head: $head,
+        }
+    };
+}
+
 impl Tape {
     pub fn init(scan: Color) -> Self {
-        Self {
-            scan,
-            lspan: vec![],
-            rspan: vec![],
-            head: 0,
-        }
+        tape! { scan, [], [], 0 }
     }
 
     pub fn init_stepped() -> Self {
-        Self {
-            scan: 0,
-            lspan: vec![Block::new(1, 1)],
-            rspan: vec![],
-            head: 1,
-        }
+        tape! { 0, [(1, 1)], [], 1 }
     }
 
     pub fn marks(&self) -> Count {
@@ -303,17 +304,6 @@ mod tests {
         assert_eq!(tape.signature(), sig);
     }
 
-    macro_rules! tape {
-        ($scan:expr, [$($lspan:expr),*], [$($rspan:expr),*]) => {
-            Tape {
-                scan: $scan,
-                head: 0,
-                lspan: vec![$(Block::new($lspan.0, $lspan.1)),*],
-                rspan: vec![$(Block::new($rspan.0, $rspan.1)),*],
-            }
-        };
-    }
-
     macro_rules! sig {
         ($scan:expr, [$($lspan:expr),*], [$($rspan:expr),*]) => {
             Signature {
@@ -326,7 +316,7 @@ mod tests {
 
     #[test]
     fn test_sig() {
-        let tape = tape! {2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)]};
+        let tape = tape! { 2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)], 0 };
 
         assert_marks(&tape, 6);
         assert!(!tape.blank());
