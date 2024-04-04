@@ -86,12 +86,17 @@ impl fmt::Display for Tape {
 }
 
 macro_rules! tape {
-    ($scan:expr, [$($lspan:expr),*], [$($rspan:expr),*], $head:expr) => {
+    (
+        $ scan : expr,
+        [ $ ( $ lspan : expr ), * ],
+        [ $ ( $ rspan : expr ), * ],
+        $head : expr
+    ) => {
         Tape {
-            scan: $scan,
-            lspan: vec![$(Block::new($lspan.0, $lspan.1)),*],
-            rspan: vec![$(Block::new($rspan.0, $rspan.1)),*],
-            head: $head,
+            scan: $ scan,
+            lspan: vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ],
+            rspan: vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ],
+            head: $ head,
         }
     };
 }
@@ -305,11 +310,15 @@ mod tests {
     }
 
     macro_rules! sig {
-        ($scan:expr, [$($lspan:expr),*], [$($rspan:expr),*]) => {
+        (
+            $ scan : expr,
+            [ $ ( $ lspan : expr ), * ],
+            [ $ ( $ rspan : expr ), * ]
+        ) => {
             Signature {
-                scan: $scan,
-                lspan: vec![$($lspan),*],
-                rspan: vec![$($rspan),*],
+                scan: $ scan,
+                lspan: vec! [ $ ( $ lspan ), * ],
+                rspan: vec! [ $ ( $ rspan ), * ],
             }
         };
     }
