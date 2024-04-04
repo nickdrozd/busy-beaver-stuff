@@ -125,23 +125,13 @@ pub fn init_prog(states: usize, colors: usize) -> String {
 
 /**************************************/
 
-#[cfg(test)]
-fn check_state(state: char) {
-    assert_eq!(state, show_state(Some(read_state(state))));
-}
-
 #[test]
 fn test_state() {
     let states = ['A', 'B', 'C'];
 
     for state in states {
-        check_state(state);
+        assert_eq!(state, show_state(Some(read_state(state))));
     }
-}
-
-#[cfg(test)]
-fn check_slot(slot: &str) {
-    assert_eq!(slot, show_slot(read_slot(slot)));
 }
 
 #[test]
@@ -149,13 +139,8 @@ fn test_slot() {
     let slots = ["A0", "A1", "A2", "B0", "B1", "B2", "C0", "C1", "C2"];
 
     for slot in slots {
-        check_slot(slot);
+        assert_eq!(slot, show_slot(read_slot(slot)));
     }
-}
-
-#[cfg(test)]
-fn check_instr(instr: &str) {
-    assert_eq!(instr, show_instr(read_instr(instr)));
 }
 
 #[test]
@@ -163,7 +148,7 @@ fn test_instr() {
     let instrs = ["1RB", "2LC"];
 
     for instr in instrs {
-        check_instr(instr);
+        assert_eq!(instr, show_instr(read_instr(instr)));
     }
 }
 
@@ -179,15 +164,16 @@ fn test_parse() {
     );
 }
 
-#[cfg(test)]
-fn check_init(states: usize, colors: usize, expected: &str) {
-    assert_eq!(init_prog(states, colors), expected);
-}
-
 #[test]
 fn test_init() {
-    check_init(2, 3, "1RB ... ...  ... ... ...");
-    check_init(3, 2, "1RB ...  ... ...  ... ...");
-    check_init(2, 4, "1RB ... ... ...  ... ... ... ...");
-    check_init(4, 2, "1RB ...  ... ...  ... ...  ... ...");
+    let inits = [
+        (2, 3, "1RB ... ...  ... ... ..."),
+        (3, 2, "1RB ...  ... ...  ... ..."),
+        (2, 4, "1RB ... ... ...  ... ... ... ..."),
+        (4, 2, "1RB ...  ... ...  ... ...  ... ..."),
+    ];
+
+    for (states, colors, expected) in inits {
+        assert_eq!(init_prog(states, colors), expected);
+    }
 }
