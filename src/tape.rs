@@ -314,14 +314,22 @@ impl Tape {
 macro_rules! sig {
     (
         $ scan : expr,
-        [ $ ( $ lspan : expr ), * ],
-        [ $ ( $ rspan : expr ), * ]
+        [ $ ( $ lspan : tt ), * ],
+        [ $ ( $ rspan : tt ), * ]
     ) => {
         Signature {
             scan: $ scan,
-            lspan: vec! [ $ ( $ lspan ), * ],
-            rspan: vec! [ $ ( $ rspan ), * ],
+            lspan: vec![ $ ( sig!( @_ $ lspan ) ), * ],
+            rspan: vec![ $ ( sig!( @_ $ rspan ) ), * ],
         }
+    };
+
+    ( @_ [ $ num : expr ] ) => {
+        ColorCount::Just( $ num )
+    };
+
+    ( @_ $ num : expr ) => {
+        ColorCount::Mult( $ num )
     };
 }
 
@@ -350,12 +358,7 @@ fn test_marks() {
 fn test_sig() {
     let tape = tape! { 2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)], 0 };
 
-    let just = ColorCount::Just;
-    let mult = ColorCount::Mult;
-
-    tape.assert_tape(6, "1^1 0^1 1^1 [2] 2^1 1^2");
-
-    tape.assert_sig(sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] });
+    tape.assert_sig(sig! { 2, [[1], [0], [1]], [[2], 1] });
 
     let mut copy_1 = tape.clone();
     let mut copy_2 = tape.clone();
@@ -365,15 +368,15 @@ fn test_sig() {
 
     copy_1.assert_tape(6, "1^1 0^1 [1] 2^2 1^2");
 
-    copy_1.assert_sig(sig! { 1, [just(0), just(1)], [mult(2), mult(1)] });
+    copy_1.assert_sig(sig! { 1, [[0], [1]], [2, 1] });
 
     copy_2.assert_tape(6, "1^1 0^1 1^2 [2] 1^2");
 
-    copy_2.assert_sig(sig! { 2, [mult(1), just(0), just(1)], [mult(1)] });
+    copy_2.assert_sig(sig! { 2, [1, [0], [1]], [1] });
 
     tape.assert_tape(6, "1^1 0^1 1^1 [2] 2^1 1^2");
 
-    tape.assert_sig(sig! { 2, [just(1), just(0), just(1)], [just(2), mult(1)] });
+    tape.assert_sig(sig! { 2, [[1], [0], [1]], [[2], 1] });
 }
 
 #[cfg(test)]
