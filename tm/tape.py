@@ -152,7 +152,7 @@ class Tape(BlockTape):
         if not pull:
             next_scan = 0
         else:
-            next_pull = pull[0]
+            next_scan = (next_pull := pull[0]).color
 
             if next_pull.count != 1:
                 next_pull.count -= 1
@@ -162,8 +162,6 @@ class Tape(BlockTape):
                 if push_block is None:
                     push_block = popped
                     push_block.count = 0
-
-            next_scan = next_pull.color
 
         if push and (top_block := push[0]).color == color:
             top_block.count += stepped
