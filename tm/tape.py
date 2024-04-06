@@ -16,16 +16,6 @@ if TYPE_CHECKING:
         tuple[Color | tuple[Color], ...],
     ]
 
-    TapeSlice = list[Color]
-
-    TupleBlock = tuple[int, int]
-
-    TupleTape = tuple[
-        tuple[TupleBlock, ...],
-        Color,
-        tuple[TupleBlock, ...],
-    ]
-
 
 @dataclass(slots = True)
 class Block:
