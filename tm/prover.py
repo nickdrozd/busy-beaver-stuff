@@ -99,11 +99,11 @@ class Prover:
             sig: Signature,
     ) -> MinSig:
         for _ in range(steps):
-            if (rule := self.get_rule(state, tape)) is not None:
+            if (rule := self.get_rule(state, tape.tape)) is not None:
                 if tape.apply_rule(rule) is not None:
                     continue
 
-            color, shift, next_state = self.prog[state, tape.scan]
+            color, shift, next_state = self.prog[state, tape.tape.scan]
 
             tape.step(shift, color, state == next_state)
 

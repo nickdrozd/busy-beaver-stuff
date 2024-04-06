@@ -25,6 +25,9 @@ class Block:
     def __str__(self) -> str:
         return f"{self.color}^{show_number(self.count)}"
 
+    def clone(self) -> Block:
+        return Block(self.color, self.count)
+
 
 class BlockTape(ApplyRule):
     lspan: list[Block]
@@ -111,8 +114,15 @@ class Tape(BlockTape):
     def to_tag(self) -> TagTape:
         return TagTape(self.lspan, self.scan, self.rspan)
 
+    def clone(self) -> Tape:
+        return Tape(
+            lspan = [block.clone() for block in self.lspan],
+            scan = self.scan,
+            rspan = [block.clone() for block in self.rspan],
+        )
+
     def to_enum(self) -> EnumTape:
-        return EnumTape(self.lspan, self.scan, self.rspan)
+        return EnumTape(self.clone())
 
     def step(self, shift: Shift, color: Color, skip: bool) -> Count:
         pull, push = (
@@ -339,41 +349,25 @@ class TagTape(BlockTape):
 
 ########################################
 
-@dataclass(slots = True)
-class EnumBlock(Block):
-    enums: tuple[int, int] | None = None
-
-
-class EnumTape(BlockTape):
-    lspan: list[EnumBlock]  # type: ignore[assignment]
-    scan: Color
-    rspan: list[EnumBlock]  # type: ignore[assignment]
+class EnumTape:
+    tape: Tape
 
     offsets: list[int]
-
     _edges: list[bool]
 
-    def __init__(
-            self,
-            lspan: list[Block],
-            scan: Color,
-            rspan: list[Block],
-    ):
-        self.lspan = [
-            EnumBlock(block.color, block.count, (0, i))
-            for i, block in enumerate(lspan, start = 1)
-        ]
+    enums: dict[int, tuple[int, int]]
 
-        self.scan = scan
-
-        self.rspan = [
-            EnumBlock(block.color, block.count, (1, i))
-            for i, block in enumerate(rspan, start = 1)
-        ]
+    def __init__(self, tape: Tape):
+        self.tape = tape
 
         self.offsets = [0, 0]
-
         self._edges = [False, False]
+
+        self.enums = {
+            id(block): (side, num)
+            for side, span in enumerate((tape.lspan, tape.rspan))
+            for num, block in enumerate(span, start = 1)
+        }
 
     @property
     def edges(self) -> tuple[bool, bool]:
@@ -381,80 +375,49 @@ class EnumTape(BlockTape):
 
     def apply_rule(self, rule: Rule) -> Count | None:
         for side, pos in rule.keys():
-            if enums := (self.rspan if side else self.lspan)[pos].enums:
-                ind, offset = enums
+            span = self.tape.rspan if side else self.tape.lspan
 
-                if offset > self.offsets[ind]:
-                    self.offsets[ind] = offset
+            if (enums := self.enums.get(id(span[pos]))) is None:
+                continue
 
-        return super().apply_rule(rule)
+            ind, offset = enums
+
+            if offset > self.offsets[ind]:
+                self.offsets[ind] = offset
+
+        return self.tape.apply_rule(rule)
 
     def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
-            (self.rspan, self.lspan)
+            (self.tape.rspan, self.tape.lspan)
             if shift else
-            (self.lspan, self.rspan)
+            (self.tape.lspan, self.tape.rspan)
         )
 
         if not pull:
             self._edges[bool(shift)] = True
         else:
-            if enums := (near_block := pull[0]).enums:
+            if enums := self.enums.get(id(near_block := pull[0])):
                 ind, offset = enums
 
                 if offset > self.offsets[ind]:
                     self.offsets[ind] = offset
 
-            if skip and near_block.color == self.scan:
+            if skip and near_block.color == self.tape.scan:
                 if not pull[1:]:
                     self._edges[bool(shift)] = True
-                elif (next_block := pull[1].enums):
+                elif next_block := (self.enums.get(id(pull[1]))):
                     ind, offset = next_block
 
                     if offset > self.offsets[ind]:
                         self.offsets[ind] = offset
 
         if (push
-                and (enums := (opp := push[0]).enums)
+                and (enums := self.enums.get(id(opp := push[0])))
                 and color == opp.color):
             ind, offset = enums
 
             if offset > self.offsets[ind]:
                 self.offsets[ind] = offset
 
-        push_block = (
-            pull.pop(0)
-            if skip and pull and pull[0].color == self.scan else
-            None
-        )
-
-        stepped = 1 if push_block is None else 1 + push_block.count
-
-        next_scan: Color
-
-        if not pull:
-            next_scan = 0
-        else:
-            next_scan = (next_pull := pull[0]).color
-
-            if next_pull.count != 1:
-                next_pull.count -= 1
-            else:
-                popped = pull.pop(0)
-
-                if push_block is None:
-                    push_block = popped
-                    push_block.count = 0
-
-        if push and (top_block := push[0]).color == color:
-            top_block.count += stepped
-        elif push or color != 0:
-            if push_block is None:
-                push_block = EnumBlock(color, 1)
-            else:
-                push_block.color = color
-                push_block.count += 1
-
-            push.insert(0, push_block)
-
-        self.scan = next_scan
+        _ = self.tape.step(shift, color, skip)

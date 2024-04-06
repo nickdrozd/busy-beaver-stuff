@@ -582,9 +582,9 @@ class TestEnum(TestCase):
         self.assertEqual(
             (lspan, scan, rspan),
             (
-                [(blk.color, blk.count) for blk in self.tape.lspan],
-                self.tape.scan,
-                [(blk.color, blk.count) for blk in self.tape.rspan],
+                [(blk.color,blk.count) for blk in self.tape.tape.lspan],
+                self.tape.tape.scan,
+                [(blk.color,blk.count) for blk in self.tape.tape.rspan],
             ))
 
     def test_offsets_1(self):
