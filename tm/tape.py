@@ -395,7 +395,7 @@ class EnumTape:
         )
 
         if not pull:
-            self._edges[bool(shift)] = True
+            self._edges[int(shift)] = True
         else:
             if enums := self.enums.get(id(near_block := pull[0])):
                 ind, offset = enums
@@ -405,7 +405,7 @@ class EnumTape:
 
             if skip and near_block.color == self.tape.scan:
                 if not pull[1:]:
-                    self._edges[bool(shift)] = True
+                    self._edges[int(shift)] = True
                 elif next_block := (self.enums.get(id(pull[1]))):
                     ind, offset = next_block
 
