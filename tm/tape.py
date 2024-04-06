@@ -100,21 +100,13 @@ class Tape(BlockTape):
 
     def __init__(
             self,
-            lspan: list[tuple[int, int]] | None = None,
+            lspan: list[Block] | None = None,
             scan: Color = 0,
-            rspan: list[tuple[int, int]] | None = None,
+            rspan: list[Block] | None = None,
     ):
-        self.lspan = [] if lspan is None else [
-            Block(color, count)
-            for color, count in lspan
-        ]
-
+        self.lspan = lspan or []
         self.scan = scan
-
-        self.rspan = [] if rspan is None else [
-            Block(color, count)
-            for color, count in rspan
-        ]
+        self.rspan = rspan or []
 
     def to_tag(self) -> TagTape:
         return TagTape(self.lspan, self.scan, self.rspan)

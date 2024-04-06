@@ -3,7 +3,7 @@ from __future__ import annotations
 from unittest import TestCase
 from typing import TYPE_CHECKING
 
-from tm.tape import Tape
+from tm.tape import Tape, Block
 
 if TYPE_CHECKING:
     from tm.tape import Color, TagTape, EnumTape
@@ -18,7 +18,11 @@ class TestTape(TestCase):
             scan: Color,
             rspan: list[tuple[int, int]],
     ) -> None:
-        self.tape = Tape(lspan, scan, rspan)
+        self.tape = Tape(
+            lspan = [Block(color, count) for color, count in lspan],
+            scan = scan,
+            rspan = [Block(color, count) for color, count in rspan],
+        )
 
     def assert_tape(self, tape_str: str):
         self.assertEqual(tape_str, str(self.tape))
@@ -111,9 +115,9 @@ class TestTags(TestCase):
 
         # pylint: disable = unnecessary-comprehension
         self.tape = Tape(
-            [(color, count) for color, count, *_ in reversed(lspan)],
+            [Block(color, count) for color,count,*_ in reversed(lspan)],
             scan,
-            [(color, count) for color, count, *_ in rspan],
+            [Block(color, count) for color, count, *_ in rspan],
         ).to_tag()
 
         for blk, (_, _, *tags) in zip(self.tape.lspan, reversed(lspan)):
@@ -550,7 +554,11 @@ class TestEnum(TestCase):
             scan: Color,
             rspan: list[tuple[int, int]],
     ) -> None:
-        self.tape = Tape(lspan, scan, rspan).to_enum()
+        self.tape = Tape(
+            lspan = [Block(color, count) for color, count in lspan],
+            scan = scan,
+            rspan = [Block(color, count) for color, count in rspan],
+        ).to_enum()
 
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
