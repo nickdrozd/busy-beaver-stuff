@@ -300,7 +300,7 @@ impl Tape {
         assert_eq!(self.signature(), sig);
     }
 
-    fn stepp(&mut self, shift: u8, color: Color, skip: u8) {
+    fn tstep(&mut self, shift: u8, color: Color, skip: u8) {
         assert!(matches!(shift, 0 | 1));
         assert!(matches!(skip, 0 | 1));
 
@@ -339,15 +339,15 @@ fn test_init() {
 
     tape.assert(1, "1^1 [0]", sig![0, [[1]], []]);
 
-    tape.stepp(1, 1, 0);
+    tape.tstep(1, 1, 0);
 
     tape.assert(2, "1^2 [0]", sig![0, [1], []]);
 
-    tape.stepp(0, 0, 0);
+    tape.tstep(0, 0, 0);
 
     tape.assert(2, "1^1 [1]", sig![1, [[1]], []]);
 
-    tape.stepp(0, 0, 1);
+    tape.tstep(0, 0, 1);
 
     tape.assert(0, "[0]", sig![0, [], []]);
 }
@@ -359,8 +359,8 @@ fn test_clone() {
     let mut copy_1 = tape.clone();
     let mut copy_2 = tape.clone();
 
-    copy_1.stepp(0, 2, 0);
-    copy_2.stepp(1, 1, 0);
+    copy_1.tstep(0, 2, 0);
+    copy_2.tstep(1, 1, 0);
 
     copy_1.assert(6, "1^1 0^1 [1] 2^2 1^2", sig![1, [[0], [1]], [2, 1]]);
     copy_2.assert(6, "1^1 0^1 1^2 [2] 1^2", sig![2, [1, [0], [1]], [1]]);
