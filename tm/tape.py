@@ -398,10 +398,13 @@ class EnumTape:
 
         side, offset = enums
 
-        if offset > (self.r_offset if side else self.l_offset):
-            if side:
+        # pylint: disable = confusing-consecutive-elif, consider-using-max-builtin, else-if-used
+
+        if side:
+            if offset > self.r_offset:
                 self.r_offset = offset
-            else:
+        else:
+            if offset > self.l_offset:
                 self.l_offset = offset
 
     def apply_rule(self, rule: Rule) -> Count | None:
