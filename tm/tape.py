@@ -349,13 +349,16 @@ class TagTape(BlockTape):
 
 ########################################
 
+BlockId = int
+Enums = tuple[int, int]
+
 class EnumTape:
     tape: Tape
 
     offsets: list[int]
     _edges: list[bool]
 
-    enums: dict[int, tuple[int, int]]
+    enums: dict[BlockId, Enums]
 
     def __init__(self, tape: Tape):
         self.tape = tape
@@ -373,11 +376,14 @@ class EnumTape:
     def edges(self) -> tuple[bool, bool]:
         return self._edges[0], self._edges[1]
 
+    def get_enums(self, block: Block) -> Enums | None:
+        return self.enums.get(id(block))
+
     def apply_rule(self, rule: Rule) -> Count | None:
         for side, pos in rule.keys():
             span = self.tape.rspan if side else self.tape.lspan
 
-            if (enums := self.enums.get(id(span[pos]))) is None:
+            if (enums := self.get_enums(span[pos])) is None:
                 continue
 
             ind, offset = enums
@@ -397,7 +403,7 @@ class EnumTape:
         if not pull:
             self._edges[int(shift)] = True
         else:
-            if enums := self.enums.get(id(near_block := pull[0])):
+            if enums := self.get_enums(near_block := pull[0]):
                 ind, offset = enums
 
                 if offset > self.offsets[ind]:
@@ -406,14 +412,14 @@ class EnumTape:
             if skip and near_block.color == self.tape.scan:
                 if not pull[1:]:
                     self._edges[int(shift)] = True
-                elif next_block := (self.enums.get(id(pull[1]))):
+                elif next_block := self.get_enums(pull[1]):
                     ind, offset = next_block
 
                     if offset > self.offsets[ind]:
                         self.offsets[ind] = offset
 
         if (push
-                and (enums := self.enums.get(id(opp := push[0])))
+                and (enums := self.get_enums(opp := push[0]))
                 and color == opp.color):
             ind, offset = enums
 
