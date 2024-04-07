@@ -386,20 +386,19 @@ class EnumTape:
         else:
             self.l_edge = True
 
-    def get_enums(self, block: Block) -> Enums | None:
-        return self.enums.get(id(block))
+    def check_offsets(self, block: Block) -> None:
+        if (enums := self.enums.get(id(block))) is None:
+            return
+
+        ind, offset = enums
+
+        if offset > self.offsets[ind]:
+            self.offsets[ind] = offset
 
     def apply_rule(self, rule: Rule) -> Count | None:
         for side, pos in rule.keys():
-            span = self.tape.rspan if side else self.tape.lspan
-
-            if (enums := self.get_enums(span[pos])) is None:
-                continue
-
-            ind, offset = enums
-
-            if offset > self.offsets[ind]:
-                self.offsets[ind] = offset
+            self.check_offsets(
+                (self.tape.rspan if side else self.tape.lspan)[pos])
 
         return self.tape.apply_rule(rule)
 
@@ -413,27 +412,15 @@ class EnumTape:
         if not pull:
             self.touch_edge(shift)
         else:
-            if enums := self.get_enums(near_block := pull[0]):
-                ind, offset = enums
-
-                if offset > self.offsets[ind]:
-                    self.offsets[ind] = offset
+            self.check_offsets(near_block := pull[0])
 
             if skip and near_block.color == self.tape.scan:
                 if not pull[1:]:
                     self.touch_edge(shift)
-                elif next_block := self.get_enums(pull[1]):
-                    ind, offset = next_block
+                else:
+                    self.check_offsets(pull[1])
 
-                    if offset > self.offsets[ind]:
-                        self.offsets[ind] = offset
-
-        if (push
-                and (enums := self.get_enums(opp := push[0]))
-                and color == opp.color):
-            ind, offset = enums
-
-            if offset > self.offsets[ind]:
-                self.offsets[ind] = offset
+        if push and color == (opp := push[0]).color:
+            self.check_offsets(opp)
 
         _ = self.tape.step(shift, color, skip)
