@@ -596,6 +596,10 @@ class TestEnum(TestCase):
         self.set_tape(
             [(1, 11), (4, 1), (3, 11), (2, 1)], 0, [])
 
+        self.assert_tape(
+            "2^1 3^11 4^1 1^11 [0]",
+            (0, 0), (0, 0))
+
         self.step(0, 0, 0)  # B0
 
         self.assert_tape(
@@ -615,8 +619,23 @@ class TestEnum(TestCase):
             (3, 0), (0, 0))
 
         self.step(0, 2, 0)  # A3
+
+        self.assert_tape(
+            "2^1 3^9 [3] 2^13",
+            (3, 0), (0, 0))
+
         self.step(1, 4, 0)  # B3
+
+        self.assert_tape(
+            "2^1 3^9 4^1 [2] 2^12",
+            (3, 0), (0, 0))
+
         self.step(1, 1, 1)  # A2
+
+        self.assert_tape(
+            "2^1 3^9 4^1 1^13 [0]",
+            (3, 0), (0, 1))
+
         self.step(1, 1, 0)  # A0
 
         self.assert_tape(
@@ -635,6 +654,10 @@ class TestEnum(TestCase):
         self.set_tape(
             [(2, 414422565), (3, 6)], 0, [])
 
+        self.assert_tape(
+            "3^6 2^414422565 [0]",
+            (0, 0), (0, 0))
+
         self.step(0, 5, 0)
 
         self.assert_tape(
@@ -648,6 +671,11 @@ class TestEnum(TestCase):
             (2, 0), (0, 0))
 
         self.step(1, 2, 0)
+
+        self.assert_tape(
+            "3^5 2^1 [5] 5^414422565",
+            (2, 0), (0, 0))
+
         self.step(1, 2, 1)
 
         self.assert_tape(
