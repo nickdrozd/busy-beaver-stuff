@@ -355,7 +355,8 @@ Enums = tuple[int, int]
 class EnumTape:
     tape: Tape
 
-    offsets: list[int]
+    l_offset: int
+    r_offset: int
 
     l_edge: bool
     r_edge: bool
@@ -365,7 +366,8 @@ class EnumTape:
     def __init__(self, tape: Tape):
         self.tape = tape
 
-        self.offsets = [0, 0]
+        self.l_offset = 0
+        self.r_offset = 0
 
         self.l_edge = False
         self.r_edge = False
@@ -375,6 +377,10 @@ class EnumTape:
             for side, span in enumerate((tape.lspan, tape.rspan))
             for num, block in enumerate(span, start = 1)
         }
+
+    @property
+    def offsets(self) -> tuple[int, int]:
+        return self.l_offset, self.r_offset
 
     @property
     def edges(self) -> tuple[bool, bool]:
@@ -390,10 +396,13 @@ class EnumTape:
         if (enums := self.enums.get(id(block))) is None:
             return
 
-        ind, offset = enums
+        side, offset = enums
 
-        if offset > self.offsets[ind]:
-            self.offsets[ind] = offset
+        if offset > (self.r_offset if side else self.l_offset):
+            if side:
+                self.r_offset = offset
+            else:
+                self.l_offset = offset
 
     def apply_rule(self, rule: Rule) -> Count | None:
         for side, pos in rule.keys():
