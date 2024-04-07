@@ -356,7 +356,9 @@ class EnumTape:
     tape: Tape
 
     offsets: list[int]
-    _edges: list[bool]
+
+    l_edge: bool
+    r_edge: bool
 
     enums: dict[BlockId, Enums]
 
@@ -364,7 +366,9 @@ class EnumTape:
         self.tape = tape
 
         self.offsets = [0, 0]
-        self._edges = [False, False]
+
+        self.l_edge = False
+        self.r_edge = False
 
         self.enums = {
             id(block): (side, num)
@@ -374,7 +378,13 @@ class EnumTape:
 
     @property
     def edges(self) -> tuple[bool, bool]:
-        return self._edges[0], self._edges[1]
+        return self.l_edge, self.r_edge
+
+    def touch_edge(self, shift: Shift) -> None:
+        if shift:
+            self.r_edge = True
+        else:
+            self.l_edge = True
 
     def get_enums(self, block: Block) -> Enums | None:
         return self.enums.get(id(block))
@@ -401,7 +411,7 @@ class EnumTape:
         )
 
         if not pull:
-            self._edges[int(shift)] = True
+            self.touch_edge(shift)
         else:
             if enums := self.get_enums(near_block := pull[0]):
                 ind, offset = enums
@@ -411,7 +421,7 @@ class EnumTape:
 
             if skip and near_block.color == self.tape.scan:
                 if not pull[1:]:
-                    self._edges[int(shift)] = True
+                    self.touch_edge(shift)
                 elif next_block := self.get_enums(pull[1]):
                     ind, offset = next_block
 
