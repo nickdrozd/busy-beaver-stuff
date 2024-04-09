@@ -1,5 +1,4 @@
-#![deny(clippy::all)]
-#![warn(clippy::nursery, clippy::pedantic)]
+#![deny(clippy::all, clippy::nursery, clippy::pedantic)]
 #![allow(
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
