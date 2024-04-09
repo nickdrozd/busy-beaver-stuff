@@ -9,7 +9,6 @@ from tm.rules import ApplyRule
 if TYPE_CHECKING:
     from tm.num import Count
     from tm.parse import Color, Shift
-    from tm.rules import Rule
 
     Signature = tuple[
         Color,
@@ -360,7 +359,7 @@ class TagTape(BlockTape):
 BlockId = int
 Enums = tuple[int, int]
 
-class EnumTape:
+class EnumTape(ApplyRule):
     tape: Tape
 
     l_offset: int
@@ -415,12 +414,21 @@ class EnumTape:
             if offset > self.l_offset:
                 self.l_offset = offset
 
-    def apply_rule(self, rule: Rule) -> Count | None:
-        for side, pos in rule.keys():
-            self.check_offsets(
-                (self.tape.rspan if side else self.tape.lspan)[pos])
+    def get_count(self, index: Index) -> Count:
+        side, pos = index
 
-        return self.tape.apply_rule(rule)
+        self.check_offsets(
+            block := (
+                self.tape.rspan
+                if side else
+                self.tape.lspan
+            )[pos]
+        )
+
+        return block.count
+
+    def set_count(self, index: Index, val: Count) -> None:
+        self.tape.set_count(index, val)
 
     def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
