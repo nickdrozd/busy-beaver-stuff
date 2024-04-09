@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 from itertools import pairwise
 
 from tm.num import Add, Mul, Div, Exp, NumException, make_exp
@@ -229,65 +228,65 @@ def make_rule(*countses: Counts) -> Rule | None:
     return rule
 
 
-class ApplyRule:
-    @abstractmethod
+class IndexTape(Protocol):
     def get_count(self, index: Index) -> Count: ...
-
-    @abstractmethod
     def set_count(self, index: Index, val: Count) -> None: ...
 
-    def count_apps(self, rule: Rule) -> Apps | None:
-        apps: Apps | None = None
 
-        for pos, diff in rule.items():
-            if not isinstance(diff, Plus) or diff >= 0:
-                continue
+def count_apps(rule: Rule, tape: IndexTape) -> Apps | None:
+    apps: Apps | None = None
 
-            count, absdiff = self.get_count(pos), abs(diff)
+    for pos, diff in rule.items():
+        if not isinstance(diff, Plus) or diff >= 0:
+            continue
 
-            if isinstance(count, int) and absdiff >= count:
-                return None
+        count, absdiff = tape.get_count(pos), abs(diff)
 
-            try:
-                div, rem = divmod(count, absdiff)
-            except NumException as exc:
-                raise RuleLimit(f'count_apps: {exc}') from exc
-
-            times, min_res = (
-                (div, rem)
-                if rem > 0 else
-                (div - 1, absdiff)
-            )
-
-            if apps is None or times < apps[0]:
-                apps = times, pos, min_res
-
-        return apps
-
-    def apply_rule(self, rule: Rule) -> Count | None:
-        if (apps := self.count_apps(rule)) is None:
+        if isinstance(count, int) and absdiff >= count:
             return None
 
-        times, min_pos, min_res = apps
+        try:
+            div, rem = divmod(count, absdiff)
+        except NumException as exc:
+            raise RuleLimit(f'count_apps: {exc}') from exc
 
-        for pos, diff in rule.items():
-            count = self.get_count(pos)
+        times, min_res = (
+            (div, rem)
+            if rem > 0 else
+            (div - 1, absdiff)
+        )
 
-            match diff:
-                case (int(mul), int(add)):
-                    result = apply_mult(count, times, mul, add)
-                case Plus():
-                    if pos != min_pos:
-                        result = count + diff * times
-                    else:
-                        assert diff < 0
-                        result = min_res
-                case ops:
-                    result = apply_ops(count, times, ops) # type: ignore
+        # pylint: disable = unsubscriptable-object
+        if apps is None or times < apps[0]:
+            apps = times, pos, min_res
 
-            self.set_count(pos, result)
+    return apps
 
-        return times
+
+def apply_rule(rule: Rule, tape: IndexTape) -> Count | None:
+    if (apps := count_apps(rule, tape)) is None:
+        return None
+
+    times, min_pos, min_res = apps
+
+    for pos, diff in rule.items():
+        count = tape.get_count(pos)
+
+        match diff:
+            case (int(mul), int(add)):
+                result = apply_mult(count, times, mul, add)
+            case Plus():
+                if pos != min_pos:
+                    result = count + diff * times
+                else:
+                    assert diff < 0
+                    result = min_res
+            case ops:
+                result = apply_ops(count, times, ops) # type: ignore
+
+        tape.set_count(pos, result)
+
+    return times
 
 
 def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:

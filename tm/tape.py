@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 from tm.num import show_number
-from tm.rules import ApplyRule
 
 if TYPE_CHECKING:
     from tm.num import Count
@@ -36,7 +35,7 @@ class Block:
         return Block(self.color, self.count)
 
 
-class BlockTape(ApplyRule):
+class BlockTape:
     lspan: list[Block]
     scan: Color
     rspan: list[Block]
@@ -359,7 +358,7 @@ class TagTape(BlockTape):
 BlockId = int
 Enums = tuple[int, int]
 
-class EnumTape(ApplyRule):
+class EnumTape:
     tape: Tape
 
     l_offset: int

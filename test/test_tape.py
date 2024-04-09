@@ -4,8 +4,10 @@ from unittest import TestCase
 from typing import TYPE_CHECKING
 
 from tm.tape import Tape, Block
+from tm.rules import apply_rule
 
 if TYPE_CHECKING:
+    from tm.rules import Rule
     from tm.tape import Color, TagTape, EnumTape
 
 
@@ -27,6 +29,9 @@ class TestTape(TestCase):
     def assert_tape(self, tape_str: str):
         self.assertEqual(tape_str, str(self.tape))
 
+    def apply_rule(self, rule: Rule) -> None:
+        _ = apply_rule(rule, self.tape)
+
     def test_marks(self):
         self.assertFalse(
             Tape().marks)
@@ -40,7 +45,7 @@ class TestTape(TestCase):
         self.assert_tape(
             "2^3 1^12 [3] 4^15 5^2 6^2")
 
-        self.tape.apply_rule({
+        self.apply_rule({
             (0, 1): 3,
             (1, 0): -2,
         })
@@ -48,7 +53,7 @@ class TestTape(TestCase):
         self.assert_tape(
             "2^24 1^12 [3] 4^1 5^2 6^2")
 
-        self.tape.apply_rule({
+        self.apply_rule({
             (0, 0): -2,
             (1, 2): (2, 3),
         })
@@ -65,7 +70,7 @@ class TestTape(TestCase):
         self.assert_tape(
             "4^2 [4] 5^60 2^1 4^1 5^7 1^1")
 
-        self.tape.apply_rule({
+        self.apply_rule({
             (0, 0): 4,
             (1, 0): -2,
         })
@@ -79,7 +84,7 @@ class TestTape(TestCase):
         self.assert_tape(
             "3^1 2^655345 1^152 [0]")
 
-        self.tape.apply_rule({
+        self.apply_rule({
             (0, 1): -2,
             (0, 0): (2, 8),
         })
@@ -157,6 +162,9 @@ class TestTags(TestCase):
     def step(self, shift: int, color: int, skip: int) -> None:
         self.tape.step(bool(shift), color, bool(skip))
 
+    def apply_rule(self, rule: Rule) -> None:
+        _ = apply_rule(rule, self.tape)
+
     def test_trace_1(self):
         # 1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA : BBB(4, 2)
 
@@ -180,7 +188,7 @@ class TestTags(TestCase):
         self.step(1, 1, 0)
         self.step(1, 0, 1)
 
-        self.tape.apply_rule({(0, 0): -1, (0, 1): 1})
+        self.apply_rule({(0, 0): -1, (0, 1): 1})
 
         self.step(0, 0, 0)
         self.step(1, 1, 0)
@@ -198,7 +206,7 @@ class TestTags(TestCase):
         self.step(0, 1, 0)
         self.step(1, 2, 1)
 
-        self.tape.apply_rule({(0, 0): 4, (1, 0): -2})
+        self.apply_rule({(0, 0): 4, (1, 0): -2})
 
         self.step(0, 1, 1)
         self.step(0, 1, 0)

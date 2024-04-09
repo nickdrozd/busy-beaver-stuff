@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.rules import make_rule
+from tm.rules import apply_rule, make_rule
 from tm.rust_stuff import PastConfigs
 
 if TYPE_CHECKING:
@@ -75,7 +75,7 @@ class Prover:
     ) -> State | None:
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
-                if tape.apply_rule(rule) is not None:
+                if apply_rule(rule, tape) is not None:
                     continue
 
             try:
@@ -100,7 +100,7 @@ class Prover:
     ) -> MinSig:
         for _ in range(steps):
             if (rule := self.get_rule(state, tape.tape)) is not None:
-                if tape.apply_rule(rule) is not None:
+                if apply_rule(rule, tape) is not None:
                     continue
 
             color, shift, next_state = self.prog[state, tape.tape.scan]

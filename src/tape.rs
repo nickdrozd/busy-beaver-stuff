@@ -90,12 +90,6 @@ macro_rules! tape {
     };
 }
 
-#[cfg(test)]
-use crate::rules::{ApplyRule, Op};
-
-#[cfg(test)]
-impl ApplyRule for Tape {}
-
 impl Tape {
     pub fn init(scan: Color) -> Self {
         tape! { scan, [], [] }
@@ -427,6 +421,9 @@ macro_rules! rule {
     };
 }
 
+#[cfg(test)]
+use crate::rules::{apply_rule, Op};
+
 #[test]
 fn test_apply_1() {
     let mut tape = tape! {
@@ -437,10 +434,13 @@ fn test_apply_1() {
 
     tape.assert(35, "2^3 1^12 [3] 4^15 5^2 6^2", sig![3, [1, 2], [4, 5, 6]]);
 
-    tape.apply_rule(&rule![
-        (0, 1) => 3,
-        (1, 0) => -2,
-    ]);
+    apply_rule(
+        &rule![
+            (0, 1) => 3,
+            (1, 0) => -2,
+        ],
+        &mut tape,
+    );
 
     tape.assert(
         42,
@@ -463,10 +463,13 @@ fn test_apply_2() {
         sig![4, [4], [5, [2], [4], 5, [1]]],
     );
 
-    tape.apply_rule(&rule![
-        (0, 0) => 4,
-        (1, 0) => -2,
-    ]);
+    apply_rule(
+        &rule![
+            (0, 0) => 4,
+            (1, 0) => -2,
+        ],
+        &mut tape,
+    );
 
     tape.assert(
         131,

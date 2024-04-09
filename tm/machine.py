@@ -6,7 +6,7 @@ from tm.tape import Tape, show_number
 from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
 from tm.show import show_slot
-from tm.rules import RuleLimit, InfiniteRule, SuspectedRule
+from tm.rules import apply_rule, RuleLimit, InfiniteRule, SuspectedRule
 from tm.macro import BlockMacro, BacksymbolMacro, MacroInfLoop,comp_thin
 # pylint: disable-next = unused-import
 from tm.rust_stuff import quick_term_or_rec  # noqa: F401
@@ -191,7 +191,7 @@ class Machine:
 
             if rule is not None:
                 try:
-                    times = tape.apply_rule(rule)
+                    times = apply_rule(rule, tape)
                 except RuleLimit as lim:
                     self.limrul = str(lim)
                     break
