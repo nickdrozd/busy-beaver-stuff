@@ -7,13 +7,21 @@ from tm.num import show_number
 from tm.rules import ApplyRule
 
 if TYPE_CHECKING:
+    from tm.num import Count
     from tm.parse import Color, Shift
-    from tm.rules import Count, Counts, Index, Rule
+    from tm.rules import Rule
 
     Signature = tuple[
         Color,
         tuple[Color | tuple[Color], ...],
         tuple[Color | tuple[Color], ...],
+    ]
+
+    Index = tuple[int, int]
+
+    Counts = tuple[
+        list[Count],
+        list[Count],
     ]
 
 

@@ -12,19 +12,13 @@ Plus = int
 
 if TYPE_CHECKING:
     from tm.num import Num, Count
-
-    Counts = tuple[
-        list[Count],
-        list[Count],
-    ]
+    from tm.tape import Index, Counts
 
     Mult = tuple[int, int]
 
     OpSeq = tuple[tuple[str, int], ...]
 
     Op = Plus | Mult | OpSeq
-
-    Index = tuple[int, int]
 
     Rule = dict[Index, Op]
 
