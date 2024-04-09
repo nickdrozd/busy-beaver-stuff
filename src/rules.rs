@@ -5,7 +5,7 @@ use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 
 #[cfg(test)]
-use crate::instrs::Shift;
+use crate::tape::{Count, Index, IndexTape};
 
 /**************************************/
 
@@ -15,13 +15,8 @@ create_exception!(rules, RuleLimit, PyException);
 
 /**************************************/
 
-pub type Count = u64;
-
 #[cfg(test)]
 pub type Diff = i32;
-
-#[cfg(test)]
-pub type Index = (Shift, usize);
 
 #[cfg(test)]
 #[derive(PartialEq, Eq)]
@@ -35,11 +30,7 @@ pub type Rule = HashMap<Index, Op>;
 /**************************************/
 
 #[cfg(test)]
-pub trait ApplyRule {
-    fn get_count(&self, index: &Index) -> Count;
-
-    fn set_count(&mut self, index: &Index, val: Count);
-
+pub trait ApplyRule: IndexTape {
     fn count_apps(&self, rule: &Rule) -> Option<(Count, Index, Count)> {
         let mut apps: Option<(Count, Index, Count)> = None;
 

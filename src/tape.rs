@@ -1,10 +1,8 @@
 use std::fmt;
 
 use crate::instrs::{Color, Shift};
-pub use crate::rules::Count;
 
-#[cfg(test)]
-use crate::rules::{ApplyRule, Index, Op};
+pub type Count = u64;
 
 /**************************************/
 
@@ -93,23 +91,10 @@ macro_rules! tape {
 }
 
 #[cfg(test)]
-impl ApplyRule for Tape {
-    fn get_count(&self, (side, pos): &Index) -> Count {
-        let span = if *side { &self.rspan } else { &self.lspan };
+use crate::rules::{ApplyRule, Op};
 
-        span[*pos].count
-    }
-
-    fn set_count(&mut self, (side, pos): &Index, val: Count) {
-        let span = if *side {
-            &mut self.rspan
-        } else {
-            &mut self.lspan
-        };
-
-        span[*pos].count = val;
-    }
-}
+#[cfg(test)]
+impl ApplyRule for Tape {}
 
 impl Tape {
     pub fn init(scan: Color) -> Self {
@@ -208,6 +193,35 @@ impl Tape {
 
 /**************************************/
 
+#[cfg(test)]
+pub type Index = (Shift, usize);
+
+#[cfg(test)]
+pub trait IndexTape {
+    fn get_count(&self, index: &Index) -> Count;
+    fn set_count(&mut self, index: &Index, val: Count);
+}
+
+#[cfg(test)]
+impl IndexTape for Tape {
+    fn get_count(&self, (side, pos): &Index) -> Count {
+        let span = if *side { &self.rspan } else { &self.lspan };
+
+        span[*pos].count
+    }
+
+    fn set_count(&mut self, (side, pos): &Index, val: Count) {
+        let span = if *side {
+            &mut self.rspan
+        } else {
+            &mut self.lspan
+        };
+
+        span[*pos].count = val;
+    }
+}
+
+/**************************************/
 type Pos = isize;
 type TapeSlice = Vec<Color>;
 
