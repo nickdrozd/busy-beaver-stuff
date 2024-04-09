@@ -53,17 +53,12 @@ pub struct Signature {
 
 /**************************************/
 
-type Pos = isize;
-type TapeSlice = Vec<Color>;
-
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Tape {
     pub scan: Color,
 
     lspan: Vec<Block>,
     rspan: Vec<Block>,
-
-    pub head: Pos,
 }
 
 impl fmt::Display for Tape {
@@ -87,14 +82,12 @@ macro_rules! tape {
     (
         $ scan : expr,
         [ $ ( $ lspan : expr ), * ],
-        [ $ ( $ rspan : expr ), * ],
-        $head : expr
+        [ $ ( $ rspan : expr ), * ]
     ) => {
         Tape {
             scan: $ scan,
             lspan: vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ],
             rspan: vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ],
-            head: $ head,
         }
     };
 }
@@ -120,11 +113,11 @@ impl ApplyRule for Tape {
 
 impl Tape {
     pub fn init(scan: Color) -> Self {
-        tape! { scan, [], [], 0 }
+        tape! { scan, [], [] }
     }
 
     pub fn init_stepped() -> Self {
-        tape! { 0, [(1, 1)], [], 1 }
+        tape! { 0, [(1, 1)], [] }
     }
 
     pub fn marks(&self) -> Count {
@@ -209,6 +202,40 @@ impl Tape {
 
         self.scan = next_scan;
 
+        stepped
+    }
+}
+
+/**************************************/
+
+type Pos = isize;
+type TapeSlice = Vec<Color>;
+
+#[derive(Clone)]
+pub struct HeadTape {
+    pub head: Pos,
+    tape: Tape,
+}
+
+impl HeadTape {
+    pub fn init_stepped() -> Self {
+        Self {
+            head: 1,
+            tape: tape! { 0, [(1, 1)], [] },
+        }
+    }
+
+    pub const fn scan(&self) -> Color {
+        self.tape.scan
+    }
+
+    pub fn at_edge(&self, edge: Shift) -> bool {
+        self.tape.at_edge(edge)
+    }
+
+    pub fn step(&mut self, shift: Shift, color: Color, skip: bool) -> Count {
+        let stepped = self.tape.step(shift, color, skip);
+
         if shift {
             self.head += stepped as Pos;
         } else {
@@ -238,9 +265,9 @@ impl Tape {
 
     fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
         let (lspan, rspan, diff) = if ltr {
-            (&self.lspan, &self.rspan, self.head - start)
+            (&self.tape.lspan, &self.tape.rspan, self.head - start)
         } else {
-            (&self.rspan, &self.lspan, start - self.head)
+            (&self.tape.rspan, &self.tape.lspan, start - self.head)
         };
 
         let mut tape = TapeSlice::new();
@@ -258,7 +285,7 @@ impl Tape {
             tape.reverse();
         }
 
-        tape.push(self.scan);
+        tape.push(self.scan());
 
         for block in rspan {
             tape.extend(vec![block.color; block.count as usize]);
@@ -354,7 +381,7 @@ fn test_init() {
 
 #[test]
 fn test_clone() {
-    let tape = tape! { 2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)], 0 };
+    let tape = tape! { 2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)] };
 
     let mut copy_1 = tape.clone();
     let mut copy_2 = tape.clone();
@@ -391,8 +418,7 @@ fn test_apply_1() {
     let mut tape = tape! {
         3,
         [(1, 12), (2, 3)],
-        [(4, 15), (5, 2), (6, 2)],
-        0
+        [(4, 15), (5, 2), (6, 2)]
     };
 
     tape.assert(35, "2^3 1^12 [3] 4^15 5^2 6^2", sig![3, [1, 2], [4, 5, 6]]);
@@ -414,8 +440,7 @@ fn test_apply_2() {
     let mut tape = tape! {
         4,
         [(4, 2)],
-        [(5, 60), (2, 1), (4, 1), (5, 7), (1, 1)],
-        0
+        [(5, 60), (2, 1), (4, 1), (5, 7), (1, 1)]
     };
 
     tape.assert(

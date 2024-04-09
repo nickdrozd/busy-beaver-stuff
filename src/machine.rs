@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 
 use crate::instrs::{Slot, State};
 use crate::parse::comp_thin;
-use crate::tape::{Count, Tape};
+use crate::tape::{Count, HeadTape, Tape};
 
 type Step = u64;
 
@@ -204,7 +204,7 @@ pub fn quick_term_or_rec(prog: &str, sim_lim: u32) -> bool {
 
     let mut state = 1;
 
-    let mut tape = Tape::init_stepped();
+    let mut tape = HeadTape::init_stepped();
 
     let (mut step, mut cycle) = (1, 1);
 
@@ -218,7 +218,7 @@ pub fn quick_term_or_rec(prog: &str, sim_lim: u32) -> bool {
         let init_tape = tape.clone();
 
         while step < steps_reset && cycle < sim_lim {
-            let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan)) else {
+            let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan())) else {
                 return false;
             };
 
@@ -248,7 +248,7 @@ pub fn quick_term_or_rec(prog: &str, sim_lim: u32) -> bool {
                 continue;
             }
 
-            if tape.scan != init_tape.scan {
+            if tape.scan() != init_tape.scan() {
                 continue;
             }
 
