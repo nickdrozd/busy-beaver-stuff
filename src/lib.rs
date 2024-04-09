@@ -1,12 +1,13 @@
 #![deny(clippy::all)]
-#![warn(clippy::nursery)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::similar_names)]
-#![allow(clippy::redundant_pub_crate)]
-#![allow(clippy::module_name_repetitions)]
-#![allow(clippy::cast_sign_loss)]
-#![allow(clippy::cast_possible_wrap)]
-#![allow(clippy::cast_possible_truncation)]
+#![warn(clippy::nursery, clippy::pedantic)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss,
+    clippy::module_name_repetitions,
+    clippy::redundant_pub_crate,
+    clippy::similar_names
+)]
 
 mod blocks;
 mod instrs;
