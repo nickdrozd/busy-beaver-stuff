@@ -2,10 +2,8 @@
 #![allow(
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
-    clippy::cast_sign_loss,
     clippy::module_name_repetitions,
-    clippy::redundant_pub_crate,
-    clippy::similar_names
+    clippy::redundant_pub_crate
 )]
 
 mod blocks;

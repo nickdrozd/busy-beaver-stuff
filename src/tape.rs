@@ -281,6 +281,7 @@ impl HeadTape {
         let mut tape = TapeSlice::new();
 
         if diff > 0 {
+            #[allow(clippy::cast_sign_loss)]
             let mut remaining = diff as Count;
             for block in lspan {
                 let count = block.count.min(remaining);
