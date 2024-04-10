@@ -2,6 +2,7 @@
     clippy::all,
     clippy::nursery,
     clippy::pedantic,
+    clippy::get_unwrap,
     clippy::str_to_string,
     clippy::std_instead_of_core,
     clippy::std_instead_of_alloc,

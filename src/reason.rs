@@ -84,8 +84,8 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
         seen.get_mut(&state).unwrap().insert(tape.clone());
 
-        for entry in entry_points.get(&state).unwrap() {
-            for (_, shift, trans) in program.get(entry).unwrap() {
+        for entry in &entry_points[&state] {
+            for (_, shift, trans) in &program[entry] {
                 if *trans != state {
                     continue;
                 }
