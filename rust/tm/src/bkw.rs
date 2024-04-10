@@ -5402,8 +5402,7 @@ impl Block {
     }
 
     fn total_exact_cells(&self) -> Option<usize> {
-        self.exact_copies()
-            .and_then(|copies| self.width().checked_mul(copies))
+        self.width().checked_mul(self.exact_copies()?)
     }
 
     fn display(&self, reverse: bool) -> String {
@@ -7019,6 +7018,7 @@ impl Tape {
             tail_any: Option<usize>,
         }
 
+        #[expect(clippy::missing_asserts_for_indexing)]
         fn compile_span<const C: usize>(
             span: &Span,
         ) -> SideRequirements<C> {

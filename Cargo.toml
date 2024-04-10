@@ -52,9 +52,12 @@ all = "deny"
 panic = "deny"
 nursery = "deny"
 pedantic = "deny"
+restriction = "deny"
+
 get_unwrap = "deny"
 ref_patterns = "deny"
 str_to_string = "deny"
+return_and_then = "deny"
 deref_by_slicing = "deny"
 clone_on_ref_ptr = "deny"
 same_name_method = "deny"
@@ -82,4 +85,62 @@ fallible_impl_from = { level = "allow", priority = 1 }
 new_without_default = { level = "allow", priority = 1 }
 needless_range_loop = { level = "allow", priority = 1 }
 len_without_is_empty = { level = "allow", priority = 1 }
+
+blanket_clippy_restriction_lints = { level = "allow", priority = 1 }
+
+unreachable = { level = "allow", priority = 1 }
+unwrap_used = { level = "allow", priority = 1 }
+print_stdout = { level = "allow", priority = 1 }
+shadow_reuse = { level = "allow", priority = 1 }
+unimplemented = { level = "allow", priority = 1 }
+as_conversions = { level = "allow", priority = 1 }
+indexing_slicing = { level = "allow", priority = 1 }
+integer_division = { level = "allow", priority = 1 }
+panic_in_result_fn = { level = "allow", priority = 1 }
+iter_over_hash_type = { level = "allow", priority = 1 }
+else_if_without_else = { level = "allow", priority = 1 }
+missing_trait_methods = { level = "allow", priority = 1 }
+pattern_type_mismatch = { level = "allow", priority = 1 }
 items_after_statements = { level = "allow", priority = 1 }
+wildcard_enum_match_arm = { level = "allow", priority = 1 }
+multiple_unsafe_ops_per_block = { level = "allow", priority = 1 }
+integer_division_remainder_used = { level = "allow", priority = 1 }
+map_with_unused_argument_over_ranges = { level = "allow", priority = 1 }
+
+pub_use = { level = "allow", priority = 1 }
+use_debug = { level = "allow", priority = 1 }
+expect_used = { level = "allow", priority = 1 }
+shadow_same = { level = "allow", priority = 1 }
+inline_modules = { level = "allow", priority = 1 }
+absolute_paths = { level = "allow", priority = 1 }
+map_err_ignore = { level = "allow", priority = 1 }
+single_call_fn = { level = "allow", priority = 1 }
+implicit_return = { level = "allow", priority = 1 }
+min_ident_chars = { level = "allow", priority = 1 }
+shadow_unrelated = { level = "allow", priority = 1 }
+exhaustive_enums = { level = "allow", priority = 1 }
+modulo_arithmetic = { level = "allow", priority = 1 }
+exhaustive_structs = { level = "allow", priority = 1 }
+question_mark_used = { level = "allow", priority = 1 }
+inline_trait_bounds = { level = "allow", priority = 1 }
+impl_trait_in_params = { level = "allow", priority = 1 }
+std_instead_of_alloc = { level = "allow", priority = 1 }
+redundant_test_prefix = { level = "allow", priority = 1 }
+let_underscore_untyped = { level = "allow", priority = 1 }
+missing_assert_message = { level = "allow", priority = 1 }
+module_name_repetitions = { level = "allow", priority = 1 }
+arithmetic_side_effects = { level = "allow", priority = 1 }
+renamed_function_params = { level = "allow", priority = 1 }
+semicolon_outside_block = { level = "allow", priority = 1 }
+default_numeric_fallback = { level = "allow", priority = 1 }
+separated_literal_suffix = { level = "allow", priority = 1 }
+tests_outside_test_module = { level = "allow", priority = 1 }
+single_char_lifetime_names = { level = "allow", priority = 1 }
+undocumented_unsafe_blocks = { level = "allow", priority = 1 }
+rest_pattern_accessible_field = { level = "allow", priority = 1 }
+missing_docs_in_private_items = { level = "allow", priority = 1 }
+arbitrary_source_item_ordering = { level = "allow", priority = 1 }
+missing_inline_in_public_items = { level = "allow", priority = 1 }
+allow_attributes_without_reason = { level = "allow", priority = 1 }
+empty_enum_variants_with_brackets = { level = "allow", priority = 1 }
+doc_paragraphs_missing_punctuation = { level = "allow", priority = 1 }
