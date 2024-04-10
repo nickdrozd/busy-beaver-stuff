@@ -1,4 +1,5 @@
 #![deny(
+    clippy::restriction,
     clippy::all,
     clippy::panic,
     clippy::nursery,
@@ -19,6 +20,48 @@
 )]
 #![expect(clippy::cast_possible_truncation)]
 #![allow(clippy::enum_glob_use)]
+#![expect(
+    clippy::absolute_paths,
+    clippy::allow_attributes_without_reason,
+    clippy::arbitrary_source_item_ordering,
+    clippy::arithmetic_side_effects,
+    clippy::as_conversions,
+    clippy::blanket_clippy_restriction_lints,
+    clippy::default_numeric_fallback,
+    clippy::empty_enum_variants_with_brackets,
+    clippy::else_if_without_else,
+    clippy::impl_trait_in_params,
+    clippy::implicit_return,
+    clippy::indexing_slicing,
+    clippy::integer_division,
+    clippy::integer_division_remainder_used,
+    clippy::min_ident_chars,
+    clippy::missing_assert_message,
+    clippy::missing_trait_methods,
+    clippy::pattern_type_mismatch,
+    clippy::print_stdout,
+    clippy::question_mark_used,
+    clippy::semicolon_outside_block,
+    clippy::shadow_reuse,
+    clippy::shadow_unrelated,
+    clippy::single_call_fn,
+    clippy::single_char_lifetime_names,
+    clippy::std_instead_of_alloc,
+    clippy::unimplemented,
+    clippy::unwrap_used,
+    clippy::wildcard_enum_match_arm
+)]
+#![allow(
+    clippy::cfg_not_test,
+    clippy::let_underscore_untyped,
+    clippy::missing_docs_in_private_items,
+    clippy::multiple_inherent_impl,
+    clippy::redundant_pub_crate,
+    clippy::redundant_test_prefix,
+    clippy::should_panic_without_expect,
+    clippy::tests_outside_test_module,
+    clippy::unreachable
+)]
 
 mod blocks;
 mod cps;
