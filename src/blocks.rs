@@ -54,11 +54,8 @@ impl BlockMeasure {
             (&mut self.lspan, &mut self.rspan)
         };
 
-        let mut push_block = if skip && !pull.is_empty() && pull[0].color == self.scan {
-            Some(pull.remove(0))
-        } else {
-            None
-        };
+        let mut push_block =
+            (skip && !pull.is_empty() && pull[0].color == self.scan).then(|| pull.remove(0));
 
         let stepped = push_block
             .as_ref()
@@ -168,11 +165,8 @@ impl QuickTape {
             (&mut self.lspan, &mut self.rspan)
         };
 
-        let mut push_block = if skip && !pull.is_empty() && pull[0].color == self.scan {
-            Some(pull.remove(0))
-        } else {
-            None
-        };
+        let mut push_block =
+            (skip && !pull.is_empty() && pull[0].color == self.scan).then(|| pull.remove(0));
 
         let stepped = push_block
             .as_ref()
