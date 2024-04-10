@@ -1,5 +1,5 @@
 use core::fmt;
-use core::iter::once;
+use core::iter::{once, repeat};
 
 use crate::instrs::{Color, Shift};
 
@@ -129,6 +129,24 @@ impl Tape {
 
     pub fn blank(&self) -> bool {
         self.scan == 0 && self.lspan.is_empty() && self.rspan.is_empty()
+    }
+
+    pub fn unroll(&self) -> Vec<Color> {
+        let left_colors = self
+            .lspan
+            .iter()
+            .rev()
+            .flat_map(|block| repeat(block.color).take(block.count as usize));
+
+        let right_colors = self
+            .rspan
+            .iter()
+            .flat_map(|block| repeat(block.color).take(block.count as usize));
+
+        left_colors
+            .chain(once(self.scan))
+            .chain(right_colors)
+            .collect()
     }
 
     pub fn step(&mut self, shift: Shift, color: Color, skip: bool) -> Count {
