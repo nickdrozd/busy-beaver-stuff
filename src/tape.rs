@@ -111,6 +111,10 @@ impl Tape {
                 .sum::<Count>()
     }
 
+    pub fn blocks(&self) -> Count {
+        (self.lspan.len() + self.rspan.len()) as Count
+    }
+
     #[cfg(test)]
     pub fn signature(&self) -> Signature {
         Signature {
