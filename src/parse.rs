@@ -15,7 +15,7 @@ pub fn parse(prog: &str) -> impl Iterator<Item = impl Iterator<Item = Option<Ins
 
 #[pyfunction]
 pub fn parse_to_vec(prog: &str) -> Vec<Vec<Option<Instr>>> {
-    parse(prog).map(std::iter::Iterator::collect).collect()
+    parse(prog).map(Iterator::collect).collect()
 }
 
 #[pyfunction]

@@ -1,4 +1,5 @@
 use std::fmt;
+use std::iter::once;
 
 use crate::instrs::{Color, Shift};
 
@@ -68,7 +69,7 @@ impl fmt::Display for Tape {
                 .iter()
                 .rev()
                 .map(ToString::to_string)
-                .chain(std::iter::once(format!("[{}]", self.scan)))
+                .chain(once(format!("[{}]", self.scan)))
                 .chain(self.rspan.iter().map(ToString::to_string))
                 .collect::<Vec<_>>()
                 .join(" ")
@@ -114,8 +115,8 @@ impl Tape {
     pub fn signature(&self) -> Signature {
         Signature {
             scan: self.scan,
-            lspan: self.lspan.iter().map(std::convert::Into::into).collect(),
-            rspan: self.rspan.iter().map(std::convert::Into::into).collect(),
+            lspan: self.lspan.iter().map(Into::into).collect(),
+            rspan: self.rspan.iter().map(Into::into).collect(),
         }
     }
     pub fn at_edge(&self, edge: Shift) -> bool {
@@ -412,7 +413,7 @@ macro_rules! rule {
         $ ( , ) *
     ) => {
         {
-            let mut _rule = std::collections::HashMap::new();
+            let mut _rule = Rule::new();
             $ ( _rule.insert(( $ shift == 1, $ index ), Op::Plus( $ diff )); ) *
             _rule
         }
@@ -420,7 +421,7 @@ macro_rules! rule {
 }
 
 #[cfg(test)]
-use crate::rules::{apply_rule, Op};
+use crate::rules::{apply_rule, Op, Rule};
 
 #[test]
 fn test_apply_1() {

@@ -1,3 +1,5 @@
+use std::iter::{once, repeat};
+
 use pyo3::prelude::*;
 
 use crate::instrs::{Color, Shift};
@@ -145,15 +147,15 @@ impl QuickTape {
             .lspan
             .iter()
             .rev()
-            .flat_map(|block| std::iter::repeat(block.color).take(block.count as usize));
+            .flat_map(|block| repeat(block.color).take(block.count as usize));
 
         let right_colors = self
             .rspan
             .iter()
-            .flat_map(|block| std::iter::repeat(block.color).take(block.count as usize));
+            .flat_map(|block| repeat(block.color).take(block.count as usize));
 
         left_colors
-            .chain(std::iter::once(self.scan))
+            .chain(once(self.scan))
             .chain(right_colors)
             .collect()
     }
