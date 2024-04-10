@@ -71,6 +71,7 @@ impl Init for BlockMeasure {
         }
     }
 
+    #[expect(clippy::unimplemented)]
     fn init_stepped() -> Self {
         unimplemented!()
     }

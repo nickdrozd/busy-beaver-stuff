@@ -367,6 +367,7 @@ macro_rules! assert_entrypoints {
 }
 
 #[test]
+#[expect(clippy::cognitive_complexity)]
 fn test_entrypoints() {
     assert_entrypoints!(
         ("1RB ...  1LB 0RB", (2, 2)) => [
