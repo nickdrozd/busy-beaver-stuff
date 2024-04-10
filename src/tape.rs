@@ -1,5 +1,5 @@
-use std::fmt;
-use std::iter::once;
+use core::fmt;
+use core::iter::once;
 
 use crate::instrs::{Color, Shift};
 

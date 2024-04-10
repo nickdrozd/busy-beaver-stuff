@@ -1,4 +1,4 @@
-use std::iter::{once, repeat};
+use core::iter::{once, repeat};
 
 use pyo3::prelude::*;
 
