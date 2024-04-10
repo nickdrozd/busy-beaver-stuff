@@ -86,7 +86,7 @@ pub fn read_slot(slot: &str) -> Slot {
 #[pyfunction]
 pub fn show_instr(instr: Option<Instr>) -> String {
     match instr {
-        None => "...".to_string(),
+        None => "...".to_owned(),
         Some((color, shift, trans)) => format!(
             "{}{}{}",
             color,
