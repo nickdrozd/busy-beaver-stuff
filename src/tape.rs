@@ -118,17 +118,13 @@ impl<B: Block> Span<B> {
         self.0.iter().map(B::get_count).collect()
     }
 
-    fn unroll(
-        &self,
-    ) -> impl DoubleEndedIterator<Item = Color> + use<'_, B> {
+    fn unroll(&self) -> impl DoubleEndedIterator<Item = Color> {
         self.0.iter().flat_map(|block| {
             repeat(block.get_color()).take(block.get_count() as usize)
         })
     }
 
-    fn string_iter(
-        &self,
-    ) -> impl DoubleEndedIterator<Item = String> + use<'_, B> {
+    fn string_iter(&self) -> impl DoubleEndedIterator<Item = String> {
         self.0.iter().map(ToString::to_string)
     }
 
