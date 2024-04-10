@@ -25,6 +25,49 @@
     clippy::missing_panics_doc
 )]
 #![allow(clippy::enum_glob_use)]
+#![deny(clippy::restriction)]
+#![expect(
+    clippy::allow_attributes_without_reason,
+    clippy::arbitrary_source_item_ordering,
+    clippy::arithmetic_side_effects,
+    clippy::as_conversions,
+    clippy::blanket_clippy_restriction_lints,
+    clippy::default_numeric_fallback,
+    clippy::else_if_without_else,
+    clippy::exhaustive_enums,
+    clippy::exhaustive_structs,
+    clippy::impl_trait_in_params,
+    clippy::implicit_return,
+    clippy::indexing_slicing,
+    clippy::integer_division,
+    clippy::integer_division_remainder_used,
+    clippy::min_ident_chars,
+    clippy::missing_assert_message,
+    clippy::missing_trait_methods,
+    clippy::module_name_repetitions,
+    clippy::pattern_type_mismatch,
+    clippy::print_stdout,
+    clippy::question_mark_used,
+    clippy::renamed_function_params,
+    clippy::semicolon_outside_block,
+    clippy::shadow_reuse,
+    clippy::shadow_unrelated,
+    clippy::single_call_fn,
+    clippy::single_char_lifetime_names,
+    clippy::std_instead_of_alloc,
+    clippy::unwrap_used,
+    clippy::wildcard_enum_match_arm
+)]
+#![allow(
+    clippy::let_underscore_untyped,
+    clippy::missing_docs_in_private_items,
+    clippy::missing_inline_in_public_items,
+    clippy::multiple_inherent_impl,
+    clippy::redundant_test_prefix,
+    clippy::separated_literal_suffix,
+    clippy::tests_outside_test_module,
+    clippy::unreachable
+)]
 
 pub mod blocks;
 pub mod cps;
