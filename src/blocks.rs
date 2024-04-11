@@ -16,11 +16,11 @@ struct BlockMeasure {
 impl BlockMeasure {
     fn new() -> Self {
         Self {
-            tape: Tape::init_stepped(),
+            tape: Tape::init(0),
 
-            steps: 1,
-            max_blocks: 1,
-            max_blocks_step: 1,
+            steps: 0,
+            max_blocks: 0,
+            max_blocks_step: 0,
         }
     }
 
@@ -42,10 +42,10 @@ impl BlockMeasure {
 pub fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
     let comp = comp_thin(prog);
 
-    let mut state = 1;
+    let mut state = 0;
     let mut tape = BlockMeasure::new();
 
-    for _ in 1..steps {
+    for _ in 0..steps {
         let (color, shift, next_state) = *(comp.get(&(state, tape.tape.scan))?);
 
         let same = state == next_state;
@@ -66,10 +66,10 @@ pub fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
 pub fn unroll_tape(prog: &str, steps: Count) -> Vec<Color> {
     let comp = comp_thin(prog);
 
-    let mut state = 1;
-    let mut tape = Tape::init_stepped();
+    let mut state = 0;
+    let mut tape = Tape::init(0);
 
-    for _ in 1..steps {
+    for _ in 0..steps {
         let instr = comp[&(state, tape.scan)];
 
         let (color, shift, next_state) = instr;
