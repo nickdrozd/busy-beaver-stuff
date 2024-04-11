@@ -27,6 +27,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pylint mypy[mypyc] coverage ruff
+
+          rustup default nightly
+          rustup component add clippy
           rustup update
 
       - name: Lint
