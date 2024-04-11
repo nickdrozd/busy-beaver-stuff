@@ -17,16 +17,17 @@ impl PastConfig {
 
     #[allow(clippy::many_single_char_names)]
     pub fn next_deltas(&mut self, cycle: Cycle) -> Option<(Cycle, Cycle, Cycle)> {
-        let cycles = &mut self.cycles;
-        cycles.push(cycle);
+        self.cycles.push(cycle);
 
-        if cycles.len() < 5 {
+        if self.cycles.len() < 5 {
             return None;
         }
 
-        let (e, d, c, b, a) = (cycles[0], cycles[1], cycles[2], cycles[3], cycles[4]);
+        let [e, d, c, b, a] = self.cycles[..] else {
+            panic!();
+        };
 
-        cycles.remove(0);
+        self.cycles.remove(0);
 
         for i in 1..=4 {
             let p1 = a - (b * i);
