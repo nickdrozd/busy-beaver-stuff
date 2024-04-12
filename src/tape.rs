@@ -1,5 +1,7 @@
 use core::fmt;
 use core::iter::{once, repeat};
+#[cfg(test)]
+use std::cell::Cell;
 
 use crate::instrs::{Color, Shift};
 
@@ -390,6 +392,187 @@ impl HeadTape {
 /**************************************/
 
 #[cfg(test)]
+struct EnumBlock {
+    color: Color,
+    count: Count,
+
+    index: Option<Index>,
+}
+
+#[cfg(test)]
+impl Block for EnumBlock {
+    fn new(color: Color, count: Count) -> Self {
+        Self {
+            color,
+            count,
+            index: None,
+        }
+    }
+
+    fn get_color(&self) -> Color {
+        self.color
+    }
+
+    fn set_color(&mut self, color: Color) {
+        self.color = color;
+    }
+
+    fn get_count(&self) -> Count {
+        self.count
+    }
+
+    fn set_count(&mut self, count: Count) {
+        self.count = count;
+    }
+
+    fn add_count(&mut self, count: Count) {
+        self.count += count;
+    }
+
+    fn dec_count(&mut self) {
+        self.count -= 1;
+    }
+}
+
+#[cfg(test)]
+impl fmt::Display for EnumBlock {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}^{}", self.color, self.count)
+    }
+}
+
+#[cfg(test)]
+pub struct EnumTape {
+    tape: Tape<EnumBlock>,
+
+    l_offset: Cell<usize>,
+    r_offset: Cell<usize>,
+
+    l_edge: Cell<bool>,
+    r_edge: Cell<bool>,
+}
+
+#[cfg(test)]
+impl fmt::Display for EnumTape {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.tape)
+    }
+}
+
+#[cfg(test)]
+impl From<&BasicTape> for EnumTape {
+    fn from(tape: &BasicTape) -> Self {
+        let mut lspan = vec![];
+
+        for (i, block) in tape.lspan.iter().enumerate() {
+            lspan.push(EnumBlock {
+                color: block.get_color(),
+                count: block.get_count(),
+                index: Some((false, 1 + i)),
+            });
+        }
+
+        let mut rspan = vec![];
+
+        for (i, block) in tape.rspan.iter().enumerate() {
+            rspan.push(EnumBlock {
+                color: block.get_color(),
+                count: block.get_count(),
+                index: Some((true, 1 + i)),
+            });
+        }
+
+        Self {
+            tape: Tape {
+                scan: tape.scan,
+                lspan,
+                rspan,
+            },
+
+            l_offset: Cell::new(0),
+            r_offset: Cell::new(0),
+            l_edge: Cell::new(false),
+            r_edge: Cell::new(false),
+        }
+    }
+}
+
+#[cfg(test)]
+impl EnumTape {
+    pub fn offsets(&self) -> (usize, usize) {
+        (self.l_offset.get(), self.r_offset.get())
+    }
+
+    pub fn edges(&self) -> (bool, bool) {
+        (self.l_edge.get(), self.r_edge.get())
+    }
+
+    fn touch_edge(&self, shift: Shift) {
+        (if shift { &self.r_edge } else { &self.l_edge }).set(true);
+    }
+
+    fn check_offsets(&self, block: &EnumBlock) {
+        if let Some((side, offset)) = block.index {
+            let s_offset = if side { &self.r_offset } else { &self.l_offset };
+
+            if offset > s_offset.get() {
+                s_offset.set(offset);
+            }
+        }
+    }
+
+    fn check_step(&mut self, shift: Shift, color: Color, skip: bool) {
+        let (pull, push) = if shift {
+            (&self.tape.rspan, &self.tape.lspan)
+        } else {
+            (&self.tape.lspan, &self.tape.rspan)
+        };
+
+        if pull.is_empty() {
+            self.touch_edge(shift);
+        } else {
+            let near_block = &pull[0];
+            self.check_offsets(near_block);
+
+            if skip && near_block.color == self.tape.scan {
+                if pull.len() == 1 {
+                    self.touch_edge(shift);
+                } else {
+                    self.check_offsets(&pull[1]);
+                }
+            }
+        }
+
+        if !push.is_empty() {
+            let opp = &push[0];
+
+            if color == opp.color {
+                self.check_offsets(opp);
+            }
+        }
+    }
+
+    pub fn step(&mut self, shift: Shift, color: Color, skip: bool) -> Count {
+        self.check_step(shift, color, skip);
+
+        self.tape.step(shift, color, skip)
+    }
+}
+
+#[cfg(test)]
+impl IndexTape for EnumTape {
+    fn get_count(&self, index: &Index) -> Count {
+        self.tape.get_count(index)
+    }
+
+    fn set_count(&mut self, index: &Index, val: Count) {
+        self.tape.set_count(index, val);
+    }
+}
+
+/**************************************/
+
+#[cfg(test)]
 impl BasicTape {
     fn assert(&self, marks: Count, tape_str: &str, sig: Signature) {
         assert_eq!(self.marks(), marks);
@@ -541,4 +724,133 @@ fn test_apply_2() {
         "4^118 [4] 5^2 2^1 4^1 5^7 1^1",
         sig![4, [4], [5, [2], [4], 5, [1]]],
     );
+}
+
+/**************************************/
+
+#[cfg(test)]
+impl EnumTape {
+    fn assert(&self, tape_str: &str, offsets: (usize, usize), edges: (usize, usize)) {
+        assert_eq!(self.to_string(), tape_str);
+
+        assert_eq!(self.offsets(), offsets);
+
+        assert_eq!(self.edges(), {
+            let (l_edge, r_edge) = edges;
+
+            assert!(matches!(l_edge, 0 | 1));
+            assert!(matches!(r_edge, 0 | 1));
+
+            (l_edge == 1, r_edge == 1)
+        });
+    }
+
+    fn tstep(&mut self, shift: u8, color: Color, skip: u8) {
+        assert!(matches!(shift, 0 | 1));
+        assert!(matches!(skip, 0 | 1));
+
+        let _ = self.step(shift != 0, color, skip != 0);
+    }
+}
+
+#[cfg(test)]
+macro_rules! enum_tape {
+    (
+        $ scan : expr,
+        [ $ ( $ lspan : expr ), * ],
+        [ $ ( $ rspan : expr ), * ]
+    ) => {
+        EnumTape::from(
+            &BasicTape {
+                scan: $ scan,
+                lspan: vec! [ $ ( BasicBlock::new( $ lspan.0, $ lspan.1) ), * ],
+                rspan: vec! [ $ ( BasicBlock::new( $ rspan.0, $ rspan.1) ), * ],
+            }
+        )
+    };
+}
+
+#[test]
+fn test_offsets_1() {
+    let mut tape = enum_tape! { 0, [(1, 11), (4, 1), (3, 11), (2, 1)], [] };
+
+    tape.assert("2^1 3^11 4^1 1^11 [0]", (0, 0), (0, 0));
+
+    tape.tstep(0, 0, 0);
+
+    tape.assert("2^1 3^11 4^1 1^10 [1]", (1, 0), (0, 0));
+
+    tape.tstep(0, 2, 1);
+
+    tape.assert("2^1 3^11 [4] 2^11", (2, 0), (0, 0));
+
+    tape.tstep(0, 2, 1);
+
+    tape.assert("2^1 3^10 [3] 2^12", (3, 0), (0, 0));
+
+    tape.tstep(0, 2, 0);
+
+    tape.assert("2^1 3^9 [3] 2^13", (3, 0), (0, 0));
+
+    tape.tstep(1, 4, 0);
+
+    tape.assert("2^1 3^9 4^1 [2] 2^12", (3, 0), (0, 0));
+
+    tape.tstep(1, 1, 1);
+
+    tape.assert("2^1 3^9 4^1 1^13 [0]", (3, 0), (0, 1));
+
+    tape.tstep(1, 1, 0);
+
+    tape.assert("2^1 3^9 4^1 1^14 [0]", (3, 0), (0, 1));
+}
+
+#[test]
+fn test_offsets_2() {
+    let mut tape = enum_tape! { 0, [(2, 414422565), (3, 6)], [] };
+
+    tape.assert("3^6 2^414422565 [0]", (0, 0), (0, 0));
+
+    tape.tstep(0, 5, 0);
+
+    tape.assert("3^6 2^414422564 [2] 5^1", (1, 0), (0, 0));
+
+    tape.tstep(0, 5, 1);
+
+    tape.assert("3^5 [3] 5^414422566", (2, 0), (0, 0));
+
+    tape.tstep(1, 2, 0);
+
+    tape.assert("3^5 2^1 [5] 5^414422565", (2, 0), (0, 0));
+
+    tape.tstep(1, 2, 1);
+
+    tape.assert("3^5 2^414422567 [0]", (2, 0), (0, 1));
+}
+
+#[test]
+fn test_offsets_3() {
+    let mut tape = enum_tape! { 3, [(3, 9)], [(1, 10)] };
+
+    tape.tstep(0, 1, 0);
+
+    tape.assert("3^8 [3] 1^11", (1, 1), (0, 0));
+}
+
+#[test]
+fn test_edges_1() {
+    let mut tape = enum_tape! { 0, [], [] };
+
+    tape.tstep(0, 1, 0);
+
+    tape.assert("[0] 1^1", (0, 0), (1, 0));
+}
+
+#[test]
+fn test_edges_2() {
+    let mut tape = enum_tape! { 1, [(1, 3)], [] };
+
+    tape.tstep(0, 2, 1);
+
+    tape.assert("[0] 2^4", (1, 0), (1, 0));
 }
