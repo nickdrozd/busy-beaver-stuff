@@ -7,19 +7,61 @@ pub type Count = u64;
 
 /**************************************/
 
+pub trait Block: fmt::Display {
+    fn new(color: Color, count: Count) -> Self;
+
+    fn get_color(&self) -> Color;
+    fn set_color(&mut self, color: Color);
+
+    fn get_count(&self) -> Count;
+    fn set_count(&mut self, count: Count);
+
+    fn add_count(&mut self, count: Count);
+
+    fn inc_count(&mut self) {
+        self.add_count(1);
+    }
+
+    fn dec_count(&mut self);
+}
+
 #[derive(Copy, Clone, Eq, Hash, PartialEq)]
-pub struct Block {
+pub struct BasicBlock {
     pub color: Color,
     pub count: Count,
 }
 
-impl Block {
-    pub const fn new(color: Color, count: Count) -> Self {
+impl Block for BasicBlock {
+    fn new(color: Color, count: Count) -> Self {
         Self { color, count }
+    }
+
+    fn get_color(&self) -> Color {
+        self.color
+    }
+
+    fn set_color(&mut self, color: Color) {
+        self.color = color;
+    }
+
+    fn get_count(&self) -> Count {
+        self.count
+    }
+
+    fn set_count(&mut self, count: Count) {
+        self.count = count;
+    }
+
+    fn add_count(&mut self, count: Count) {
+        self.count += count;
+    }
+
+    fn dec_count(&mut self) {
+        self.count -= 1;
     }
 }
 
-impl fmt::Display for Block {
+impl fmt::Display for BasicBlock {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}^{}", self.color, self.count)
     }
@@ -33,13 +75,13 @@ pub enum ColorCount {
     Mult(Color),
 }
 
-impl From<&Block> for ColorCount {
-    fn from(block: &Block) -> Self {
-        (if block.count == 1 {
+impl<B: Block> From<&B> for ColorCount {
+    fn from(block: &B) -> Self {
+        (if block.get_count() == 1 {
             Self::Just
         } else {
             Self::Mult
-        })(block.color)
+        })(block.get_color())
     }
 }
 
@@ -53,14 +95,16 @@ pub struct Signature {
 /**************************************/
 
 #[derive(Clone, Eq, Hash, PartialEq)]
-pub struct Tape {
+pub struct Tape<B: Block> {
     pub scan: Color,
 
-    lspan: Vec<Block>,
-    rspan: Vec<Block>,
+    lspan: Vec<B>,
+    rspan: Vec<B>,
 }
 
-impl fmt::Display for Tape {
+pub type BasicTape = Tape<BasicBlock>;
+
+impl<B: Block> fmt::Display for Tape<B> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -91,7 +135,7 @@ macro_rules! tape {
     };
 }
 
-impl Tape {
+impl<B: Block> Tape<B> {
     pub fn init(scan: Color) -> Self {
         tape! { scan, [], [] }
     }
@@ -106,8 +150,8 @@ impl Tape {
                 .lspan
                 .iter()
                 .chain(self.rspan.iter())
-                .filter(|block| block.color != 0)
-                .map(|block| block.count)
+                .filter(|block| block.get_color() != 0)
+                .map(Block::get_count)
                 .sum::<Count>()
     }
 
@@ -136,12 +180,12 @@ impl Tape {
             .lspan
             .iter()
             .rev()
-            .flat_map(|block| repeat(block.color).take(block.count as usize));
+            .flat_map(|block| repeat(block.get_color()).take(block.get_count() as usize));
 
         let right_colors = self
             .rspan
             .iter()
-            .flat_map(|block| repeat(block.color).take(block.count as usize));
+            .flat_map(|block| repeat(block.get_color()).take(block.get_count() as usize));
 
         left_colors
             .chain(once(self.scan))
@@ -157,11 +201,11 @@ impl Tape {
         };
 
         let mut push_block =
-            (skip && !pull.is_empty() && pull[0].color == self.scan).then(|| pull.remove(0));
+            (skip && !pull.is_empty() && pull[0].get_color() == self.scan).then(|| pull.remove(0));
 
         let stepped = push_block
             .as_ref()
-            .map_or_else(|| 1, |block| 1 + block.count);
+            .map_or_else(|| 1, |block| 1 + block.get_count());
 
         let next_scan: Color;
 
@@ -170,26 +214,26 @@ impl Tape {
         } else {
             let next_pull = &mut pull[0];
 
-            next_scan = next_pull.color;
+            next_scan = next_pull.get_color();
 
-            if next_pull.count > 1 {
-                next_pull.count -= 1;
+            if next_pull.get_count() > 1 {
+                next_pull.dec_count();
             } else {
                 let mut popped = pull.remove(0);
 
                 if push_block.is_none() {
-                    popped.count = 0;
+                    popped.set_count(0);
                     push_block = Some(popped);
                 }
             }
         }
 
-        if !push.is_empty() && push[0].color == color {
-            push[0].count += stepped;
+        if !push.is_empty() && push[0].get_color() == color {
+            push[0].add_count(stepped);
         } else if !push.is_empty() || color != 0 {
             if let Some(block) = &mut push_block {
-                block.color = color;
-                block.count += 1;
+                block.set_color(color);
+                block.inc_count();
             } else {
                 push_block = Some(Block::new(color, 1));
             }
@@ -217,11 +261,11 @@ pub trait IndexTape {
 }
 
 #[cfg(test)]
-impl IndexTape for Tape {
+impl<B: Block> IndexTape for Tape<B> {
     fn get_count(&self, (side, pos): &Index) -> Count {
         let span = if *side { &self.rspan } else { &self.lspan };
 
-        span[*pos].count
+        span[*pos].get_count()
     }
 
     fn set_count(&mut self, (side, pos): &Index, val: Count) {
@@ -231,7 +275,7 @@ impl IndexTape for Tape {
             &mut self.lspan
         };
 
-        span[*pos].count = val;
+        span[*pos].set_count(val);
     }
 }
 
@@ -242,7 +286,7 @@ type TapeSlice = Vec<Color>;
 #[derive(Clone)]
 pub struct HeadTape {
     pub head: Pos,
-    tape: Tape,
+    tape: BasicTape,
 }
 
 impl HeadTape {
@@ -346,7 +390,7 @@ impl HeadTape {
 /**************************************/
 
 #[cfg(test)]
-impl Tape {
+impl BasicTape {
     fn assert(&self, marks: Count, tape_str: &str, sig: Signature) {
         assert_eq!(self.marks(), marks);
         assert_eq!(self.blank(), marks == 0);

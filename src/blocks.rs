@@ -2,10 +2,10 @@ use pyo3::prelude::*;
 
 use crate::instrs::{Color, Shift};
 use crate::parse::comp_thin;
-use crate::tape::{Count, Tape};
+use crate::tape::{BasicTape, Count};
 
 struct BlockMeasure {
-    tape: Tape,
+    tape: BasicTape,
 
     steps: Count,
     max_blocks: Count,
@@ -16,7 +16,7 @@ struct BlockMeasure {
 impl BlockMeasure {
     fn new() -> Self {
         Self {
-            tape: Tape::init(0),
+            tape: BasicTape::init(0),
 
             steps: 0,
             max_blocks: 0,
@@ -67,7 +67,7 @@ pub fn unroll_tape(prog: &str, steps: Count) -> Vec<Color> {
     let comp = comp_thin(prog);
 
     let mut state = 0;
-    let mut tape = Tape::init(0);
+    let mut tape = BasicTape::init(0);
 
     for _ in 0..steps {
         let instr = comp[&(state, tape.scan)];

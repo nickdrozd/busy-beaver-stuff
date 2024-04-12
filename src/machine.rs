@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 
 use crate::instrs::{Slot, State};
 use crate::parse::comp_thin;
-use crate::tape::{Count, HeadTape, Tape};
+use crate::tape::{BasicTape as Tape, Count, HeadTape};
 
 type Step = u64;
 

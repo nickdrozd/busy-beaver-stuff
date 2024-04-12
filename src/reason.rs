@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 
 use crate::instrs::{Color, CompThin, Instr, Shift, Slot, State};
 use crate::parse::{comp_thin, parse, parse_to_vec};
-use crate::tape::Tape;
+use crate::tape::BasicTape as Tape;
 
 type Step = u64;
 
