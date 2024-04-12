@@ -13,7 +13,10 @@ type Step = u64;
 create_exception!(tree, TreeSkip, PyException);
 
 #[pyfunction]
-pub fn run_for_undefined(prog: &str, sim_lim: Step) -> PyResult<Option<Slot>> {
+pub fn run_for_undefined(
+    prog: &str,
+    sim_lim: Step,
+) -> PyResult<Option<Slot>> {
     let comp = comp_thin(prog);
 
     let mut state = 1;

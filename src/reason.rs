@@ -126,7 +126,9 @@ fn halt_slots(prog: &str) -> Vec<Slot> {
         .enumerate()
         .flat_map(|(state, instrs)| {
             instrs.enumerate().filter_map(move |(color, instr)| {
-                instr.is_none().then_some((state as State, color as Color))
+                instr
+                    .is_none()
+                    .then_some((state as State, color as Color))
             })
         })
         .collect()
@@ -136,12 +138,14 @@ fn erase_slots(prog: &str) -> Vec<Slot> {
     parse(prog)
         .enumerate()
         .flat_map(|(state, instrs)| {
-            instrs
-                .enumerate()
-                .filter_map(move |(color, instr)| match instr {
-                    Some((0, _, _)) if color != 0 => Some((state as State, color as Color)),
+            instrs.enumerate().filter_map(move |(color, instr)| {
+                match instr {
+                    Some((0, _, _)) if color != 0 => {
+                        Some((state as State, color as Color))
+                    },
                     _ => None,
-                })
+                }
+            })
         })
         .collect()
 }
@@ -171,7 +175,10 @@ fn entry_points(program: &Program) -> Graph {
     let mut exits: HashMap<State, HashSet<State>> = HashMap::new();
 
     for (state, instrs) in program {
-        exits.insert(*state, instrs.iter().map(|instr| instr.2).collect());
+        exits.insert(
+            *state,
+            instrs.iter().map(|instr| instr.2).collect(),
+        );
     }
 
     let mut entries: Graph = (0..program.len())
@@ -237,7 +244,9 @@ fn backstep_run_halt(
     tape.backstep(shift, color);
 
     for _ in 0..sim_lim {
-        let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan)) else {
+        let Some(&(color, shift, next_state)) =
+            comp.get(&(state, tape.scan))
+        else {
             return Some(step);
         };
 
@@ -272,7 +281,9 @@ fn backstep_run_blank(
     tape.backstep(shift, color);
 
     for _ in 0..sim_lim {
-        let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan)) else {
+        let Some(&(color, shift, next_state)) =
+            comp.get(&(state, tape.scan))
+        else {
             break;
         };
 
@@ -317,7 +328,9 @@ fn backstep_run_spinout(
     tape.backstep(shift, color);
 
     for _ in 0..sim_lim {
-        let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan)) else {
+        let Some(&(color, shift, next_state)) =
+            comp.get(&(state, tape.scan))
+        else {
             break;
         };
 

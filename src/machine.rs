@@ -85,7 +85,7 @@ impl MachineResult {
                 } else {
                     panic!()
                 }
-            }
+            },
             _ => None,
         }
     }
@@ -218,7 +218,9 @@ pub fn quick_term_or_rec(prog: &str, sim_lim: u32) -> bool {
         let init_tape = tape.clone();
 
         while step < steps_reset && cycle < sim_lim {
-            let Some(&(color, shift, next_state)) = comp.get(&(state, tape.scan())) else {
+            let Some(&(color, shift, next_state)) =
+                comp.get(&(state, tape.scan()))
+            else {
                 return false;
             };
 

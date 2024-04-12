@@ -30,7 +30,10 @@ pub type Rule = HashMap<Index, Op>;
 /**************************************/
 
 #[cfg(test)]
-fn count_apps(rule: &Rule, tape: &impl IndexTape) -> Option<(Count, Index, Count)> {
+fn count_apps(
+    rule: &Rule,
+    tape: &impl IndexTape,
+) -> Option<(Count, Index, Count)> {
     let mut apps: Option<(Count, Index, Count)> = None;
 
     for (pos, diff) in rule {
@@ -65,7 +68,10 @@ fn count_apps(rule: &Rule, tape: &impl IndexTape) -> Option<(Count, Index, Count
 }
 
 #[cfg(test)]
-pub fn apply_rule(rule: &Rule, tape: &mut impl IndexTape) -> Option<Count> {
+pub fn apply_rule(
+    rule: &Rule,
+    tape: &mut impl IndexTape,
+) -> Option<Count> {
     let (times, min_pos, min_res) = count_apps(rule, tape)?;
 
     for (pos, diff) in rule {
@@ -77,7 +83,7 @@ pub fn apply_rule(rule: &Rule, tape: &mut impl IndexTape) -> Option<Count> {
                 } else {
                     apply_plus(tape.get_count(pos), *plus, times)
                 }
-            }
+            },
         };
 
         tape.set_count(pos, result);

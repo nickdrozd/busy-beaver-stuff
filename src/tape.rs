@@ -169,8 +169,10 @@ impl<B: Block> Tape<B> {
             rspan: self.rspan.iter().map(Into::into).collect(),
         }
     }
+
     pub fn at_edge(&self, edge: Shift) -> bool {
-        self.scan == 0 && (if edge { &self.rspan } else { &self.lspan }).is_empty()
+        self.scan == 0
+            && (if edge { &self.rspan } else { &self.lspan }).is_empty()
     }
 
     pub fn blank(&self) -> bool {
@@ -178,16 +180,13 @@ impl<B: Block> Tape<B> {
     }
 
     pub fn unroll(&self) -> Vec<Color> {
-        let left_colors = self
-            .lspan
-            .iter()
-            .rev()
-            .flat_map(|block| repeat(block.get_color()).take(block.get_count() as usize));
+        let left_colors = self.lspan.iter().rev().flat_map(|block| {
+            repeat(block.get_color()).take(block.get_count() as usize)
+        });
 
-        let right_colors = self
-            .rspan
-            .iter()
-            .flat_map(|block| repeat(block.get_color()).take(block.get_count() as usize));
+        let right_colors = self.rspan.iter().flat_map(|block| {
+            repeat(block.get_color()).take(block.get_count() as usize)
+        });
 
         left_colors
             .chain(once(self.scan))
@@ -195,15 +194,22 @@ impl<B: Block> Tape<B> {
             .collect()
     }
 
-    pub fn step(&mut self, shift: Shift, color: Color, skip: bool) -> Count {
+    pub fn step(
+        &mut self,
+        shift: Shift,
+        color: Color,
+        skip: bool,
+    ) -> Count {
         let (pull, push) = if shift {
             (&mut self.rspan, &mut self.lspan)
         } else {
             (&mut self.lspan, &mut self.rspan)
         };
 
-        let mut push_block =
-            (skip && !pull.is_empty() && pull[0].get_color() == self.scan).then(|| pull.remove(0));
+        let mut push_block = (skip
+            && !pull.is_empty()
+            && pull[0].get_color() == self.scan)
+            .then(|| pull.remove(0));
 
         let stepped = push_block
             .as_ref()
@@ -282,6 +288,7 @@ impl<B: Block> IndexTape for Tape<B> {
 }
 
 /**************************************/
+
 type Pos = isize;
 type TapeSlice = Vec<Color>;
 
@@ -307,7 +314,12 @@ impl HeadTape {
         self.tape.at_edge(edge)
     }
 
-    pub fn step(&mut self, shift: Shift, color: Color, skip: bool) -> Count {
+    pub fn step(
+        &mut self,
+        shift: Shift,
+        color: Color,
+        skip: bool,
+    ) -> Count {
         let stepped = self.tape.step(shift, color, skip);
 
         if shift {
@@ -319,7 +331,12 @@ impl HeadTape {
         stepped
     }
 
-    pub fn aligns_with(&self, prev: &Self, leftmost: Pos, rightmost: Pos) -> bool {
+    pub fn aligns_with(
+        &self,
+        prev: &Self,
+        leftmost: Pos,
+        rightmost: Pos,
+    ) -> bool {
         let diff = self.head - prev.head;
 
         #[allow(clippy::comparison_chain)]
@@ -516,7 +533,8 @@ impl EnumTape {
 
     fn check_offsets(&self, block: &EnumBlock) {
         if let Some((side, offset)) = block.index {
-            let s_offset = if side { &self.r_offset } else { &self.l_offset };
+            let s_offset =
+                if side { &self.r_offset } else { &self.l_offset };
 
             if offset > s_offset.get() {
                 s_offset.set(offset);
@@ -555,7 +573,12 @@ impl EnumTape {
         }
     }
 
-    pub fn step(&mut self, shift: Shift, color: Color, skip: bool) -> Count {
+    pub fn step(
+        &mut self,
+        shift: Shift,
+        color: Color,
+        skip: bool,
+    ) -> Count {
         self.check_step(shift, color, skip);
 
         self.tape.step(shift, color, skip)
@@ -648,8 +671,16 @@ fn test_clone() {
     copy_1.tstep(0, 2, 0);
     copy_2.tstep(1, 1, 0);
 
-    copy_1.assert(6, "1^1 0^1 [1] 2^2 1^2", sig![1, [[0], [1]], [2, 1]]);
-    copy_2.assert(6, "1^1 0^1 1^2 [2] 1^2", sig![2, [1, [0], [1]], [1]]);
+    copy_1.assert(
+        6,
+        "1^1 0^1 [1] 2^2 1^2",
+        sig![1, [[0], [1]], [2, 1]],
+    );
+    copy_2.assert(
+        6,
+        "1^1 0^1 1^2 [2] 1^2",
+        sig![2, [1, [0], [1]], [1]],
+    );
 
     tape.assert(
         6,
@@ -683,7 +714,11 @@ fn test_apply_1() {
         [(4, 15), (5, 2), (6, 2)]
     };
 
-    tape.assert(35, "2^3 1^12 [3] 4^15 5^2 6^2", sig![3, [1, 2], [4, 5, 6]]);
+    tape.assert(
+        35,
+        "2^3 1^12 [3] 4^15 5^2 6^2",
+        sig![3, [1, 2], [4, 5, 6]],
+    );
 
     apply_rule(
         &rule![
@@ -733,7 +768,12 @@ fn test_apply_2() {
 
 #[cfg(test)]
 impl EnumTape {
-    fn assert(&self, tape_str: &str, offsets: (usize, usize), edges: (usize, usize)) {
+    fn assert(
+        &self,
+        tape_str: &str,
+        offsets: (usize, usize),
+        edges: (usize, usize),
+    ) {
         assert_eq!(self.to_string(), tape_str);
 
         assert_eq!(self.offsets(), offsets);
@@ -775,7 +815,11 @@ macro_rules! enum_tape {
 
 #[test]
 fn test_offsets_1() {
-    let mut tape = enum_tape! { 0, [(1, 11), (4, 1), (3, 11), (2, 1)], [] };
+    let mut tape = enum_tape! {
+        0,
+        [(1, 11), (4, 1), (3, 11), (2, 1)],
+        []
+    };
 
     tape.assert("2^1 3^11 4^1 1^11 [0]", (0, 0), (0, 0));
 

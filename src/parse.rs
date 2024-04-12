@@ -1,13 +1,18 @@
 use pyo3::prelude::*;
 
-use crate::instrs::{Color, CompThic, CompThin, Instr, Shift, Slot, State};
+use crate::instrs::{
+    Color, CompThic, CompThin, Instr, Shift, Slot, State,
+};
 
 const UNDF: char = '.';
 
 const LEFT: char = 'L';
 const RIGHT: char = 'R';
 
-pub fn parse(prog: &str) -> impl Iterator<Item = impl Iterator<Item = Option<Instr>> + '_> + '_ {
+pub fn parse(
+    prog: &str,
+) -> impl Iterator<Item = impl Iterator<Item = Option<Instr>> + '_> + '_
+{
     prog.trim()
         .split("  ")
         .map(|instrs| instrs.split(' ').map(read_instr))

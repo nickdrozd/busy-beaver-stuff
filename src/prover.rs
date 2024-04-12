@@ -16,7 +16,10 @@ impl PastConfig {
     }
 
     #[allow(clippy::many_single_char_names)]
-    pub fn next_deltas(&mut self, cycle: Cycle) -> Option<(Cycle, Cycle, Cycle)> {
+    pub fn next_deltas(
+        &mut self,
+        cycle: Cycle,
+    ) -> Option<(Cycle, Cycle, Cycle)> {
         self.cycles.push(cycle);
 
         if self.cycles.len() < 5 {
@@ -72,8 +75,13 @@ impl PastConfigs {
         }
     }
 
-    fn next_deltas(&mut self, state: State, cycle: Cycle) -> Option<(Cycle, Cycle, Cycle)> {
-        let config = self.configs.entry(state).or_insert_with(PastConfig::new);
+    fn next_deltas(
+        &mut self,
+        state: State,
+        cycle: Cycle,
+    ) -> Option<(Cycle, Cycle, Cycle)> {
+        let config =
+            self.configs.entry(state).or_insert_with(PastConfig::new);
         config.next_deltas(cycle)
     }
 
