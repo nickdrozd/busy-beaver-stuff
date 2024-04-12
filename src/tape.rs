@@ -378,13 +378,16 @@ impl HeadTape {
     }
 
     fn get_cnt(&self, start: Pos, stop: Pos) -> TapeSlice {
-        assert!(start <= self.head && self.head <= stop);
-        if start == self.head {
+        let head = self.head;
+
+        assert!(start <= head && head <= stop);
+
+        if start == head {
             self.get_ltr(start)
-        } else if stop == self.head {
+        } else if head == stop {
             self.get_rtl(start)
         } else {
-            [self.get_rtl(self.head - 1), self.get_ltr(self.head)].concat()
+            [self.get_rtl(head - 1), self.get_ltr(head)].concat()
         }
     }
 }
