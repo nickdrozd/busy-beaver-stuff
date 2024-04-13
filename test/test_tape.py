@@ -525,8 +525,7 @@ class TestTags(TestCase):
             3,
             [[3, 9, 1], [2, 1]])
 
-        ########################################
-
+    def test_trace_g(self):
         self.set_tape(
             [[3, 6, 0], [1, 1, 1], [0, 8]],
             0,
@@ -539,7 +538,7 @@ class TestTags(TestCase):
             1,
             [[3, 9, 1], [2, 1]])
 
-    def test_trace_g(self):
+    def test_trace_h(self):
         self.set_tape(
             [[1, 2, 6]],
             1,
