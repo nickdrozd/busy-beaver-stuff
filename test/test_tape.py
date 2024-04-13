@@ -168,7 +168,7 @@ class TestTags(TestCase):
     def test_trace_1(self):
         # 1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA : BBB(4, 2)
 
-        self.set_tape([[1, 15, 1]], 1, [[1, 6, 2]])
+        self.set_tape([[1, 15, 0]], 1, [[1, 6, 1]])
 
         self.step(0, 1, 0)
         self.step(0, 1, 0)
@@ -176,7 +176,7 @@ class TestTags(TestCase):
         self.step(1, 0, 0)
         self.step(0, 1, 1)
 
-        self.assert_tape([[1, 12, 1]], 1, [[1, 11, 2]])
+        self.assert_tape([[1, 12, 0]], 1, [[1, 11, 1]])
 
     def test_trace_2(self):
         # 1RB 1LA  0LA 0RB: counter
@@ -264,7 +264,7 @@ class TestTags(TestCase):
         # C0 | 1^3 0^1 [0] 1^15 0^1 1^3 0^1 1^1
         # A0 | 1^3 [0] 1^16 0^1 1^3 0^1 1^1
 
-        self.set_tape([[1, 2, 1]], 0, [[1, 17, 2]])
+        self.set_tape([[1, 2, 0]], 0, [[1, 17, 1]])
 
         self.step(1, 1, 0)
         self.step(1, 0, 0)
@@ -272,7 +272,7 @@ class TestTags(TestCase):
         self.step(0, 1, 0)
         self.step(0, 1, 0)
 
-        self.assert_tape([[1, 3, 1]], 0, [[1, 16, 2]])
+        self.assert_tape([[1, 3, 0]], 0, [[1, 16, 1]])
 
     def test_trace_6(self):
         # 1RB 0LB  1LC 0RC  1RA 1LA
@@ -540,15 +540,15 @@ class TestTags(TestCase):
 
     def test_trace_h(self):
         self.set_tape(
-            [[1, 2, 6]],
+            [[1, 2, 0]],
             1,
-            [[1, 1], [2, 1, 0], [0, 1], [2, 1]])
+            [[1, 1], [2, 1, 1], [0, 1], [2, 1]])
 
         self.step(1, 3, 1)
 
         self.assert_tape(
-            [[1, 2, 6], [3, 2]],
-            (2, [0]),
+            [[1, 2, 0], [3, 2]],
+            (2, [1]),
             [[0, 1], [2, 1]])
 
 
