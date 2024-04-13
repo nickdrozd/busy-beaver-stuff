@@ -1,4 +1,4 @@
-use core::fmt;
+use core::fmt::{Display, Formatter, Result};
 use core::iter::{once, repeat};
 #[cfg(test)]
 use std::cell::Cell;
@@ -9,7 +9,7 @@ pub type Count = u64;
 
 /**************************************/
 
-pub trait Block: fmt::Display {
+pub trait Block: Display {
     fn new(color: Color, count: Count) -> Self;
 
     fn get_color(&self) -> Color;
@@ -63,8 +63,8 @@ impl Block for BasicBlock {
     }
 }
 
-impl fmt::Display for BasicBlock {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for BasicBlock {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}^{}", self.color, self.count)
     }
 }
@@ -106,8 +106,8 @@ pub struct Tape<B: Block> {
 
 pub type BasicTape = Tape<BasicBlock>;
 
-impl<B: Block> fmt::Display for Tape<B> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<B: Block> Display for Tape<B> {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         write!(
             f,
             "{}",
@@ -455,8 +455,8 @@ impl Block for EnumBlock {
 }
 
 #[cfg(test)]
-impl fmt::Display for EnumBlock {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for EnumBlock {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}^{}", self.color, self.count)
     }
 }
@@ -473,8 +473,8 @@ pub struct EnumTape {
 }
 
 #[cfg(test)]
-impl fmt::Display for EnumTape {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for EnumTape {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}", self.tape)
     }
 }
