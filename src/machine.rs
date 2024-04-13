@@ -8,6 +8,8 @@ use crate::tape::{BasicTape as Tape, Count, HeadTape};
 
 type Step = u64;
 
+type Blanks = HashMap<State, Step>;
+
 /**************************************/
 
 #[allow(non_camel_case_types)]
@@ -30,7 +32,7 @@ pub struct MachineResult {
     cycles: Step,
     marks: Count,
 
-    blanks: HashMap<State, Step>,
+    blanks: Blanks,
 
     last_slot: Option<Slot>,
 }
@@ -43,7 +45,7 @@ impl MachineResult {
         steps: Step,
         cycles: Step,
         marks: Count,
-        blanks: HashMap<State, Step>,
+        blanks: Blanks,
         last_slot: Option<Slot>,
     ) -> Self {
         Self {
@@ -72,7 +74,7 @@ impl MachineResult {
     }
 
     #[getter]
-    fn blanks(&self) -> HashMap<State, Step> {
+    fn blanks(&self) -> Blanks {
         self.blanks.clone()
     }
 
@@ -138,7 +140,7 @@ pub fn run_machine(prog: &str, sim_lim: Step) -> MachineResult {
 
     let mut tape = Tape::init(0);
 
-    let mut blanks = HashMap::new();
+    let mut blanks = Blanks::new();
 
     let mut state = 0;
     let mut steps = 0;
