@@ -120,12 +120,12 @@ class TestTags(TestCase):
 
         # pylint: disable = unnecessary-comprehension
         self.tape = Tape(
-            [Block(color, count) for color,count,*_ in reversed(lspan)],
+            [Block(color, count) for color,count,*_ in lspan],
             scan,
             [Block(color, count) for color, count, *_ in rspan],
         ).to_tag()
 
-        for blk, (_, _, *tags) in zip(self.tape.lspan, reversed(lspan)):
+        for blk, (_, _, *tags) in zip(self.tape.lspan, lspan):
             blk.tags = tags
 
         for blk, (_, _, *tags) in zip(self.tape.rspan, rspan):
@@ -148,7 +148,7 @@ class TestTags(TestCase):
         self.assertEqual(
             lspan,
             [[block.color, block.count, *block.tags]
-                 for block in reversed(self.tape.lspan)])
+                 for block in self.tape.lspan])
 
         self.assertEqual(
             rspan,
@@ -232,17 +232,17 @@ class TestTags(TestCase):
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 1], [0, 1]], (0, [2]), [[1, 4, 3]])
+            [[0, 1], [1, 2, 1]], (0, [2]), [[1, 4, 3]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 2, 1], [0, 1], [1, 1, 2]], 1, [[1, 3, 3]])
+            [[1, 1, 2], [0, 1], [1, 2, 1]], 1, [[1, 3, 3]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 2, 1], [0, 1]], (1, [2]), [[0, 1], [1, 3, 3]])
+            [[0, 1], [1, 2, 1]], (1, [2]), [[0, 1], [1, 3, 3]])
 
         self.step(0, 0, 0)
 
@@ -301,7 +301,7 @@ class TestTags(TestCase):
         #   67 | B1 | 1^3 0^5 1^3 [1]
 
         self.set_tape(
-            [[1, 3, 0], [0, 2, 1], [1, 3, 2]],
+            [[1, 3, 2], [0, 2, 1], [1, 3, 0]],
             1,
             [])
 
@@ -313,7 +313,7 @@ class TestTags(TestCase):
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 2, 1], [1, 3, 2]],
+            [[1, 3, 2], [0, 2, 1], [1, 3, 0]],
             0,
             [[0, 1], [1, 2]])
 
@@ -321,98 +321,98 @@ class TestTags(TestCase):
         self.step(0, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 2, 1], [1, 1, 2]],
+            [[1, 1, 2], [0, 2, 1], [1, 3, 0]],
             1,
             [[1, 2], [0, 1], [1, 2]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 2, 1]],
+            [[0, 2, 1], [1, 3, 0]],
             (1, [2]),
             [[0, 1], [1, 2], [0, 1], [1, 2]])
 
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 3, 1, 2]],
+            [[0, 3, 1, 2], [1, 3, 0]],
             0,
             [[1, 2], [0, 1], [1, 2]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 3, 1], [1, 1, 2]],
+            [[1, 1, 2], [0, 3, 1], [1, 3, 0]],
             1,
             [[1, 1], [0, 1], [1, 2]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 3, 1]],
+            [[0, 3, 1], [1, 3, 0]],
             (1, [2]),
             [[0, 1], [1, 1], [0, 1], [1, 2]])
 
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 4, 1, 2]],
+            [[0, 4, 1, 2], [1, 3, 0]],
             0,
             [[1, 1], [0, 1], [1, 2]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 4, 1], [1, 1, 2]],
+            [[1, 1, 2], [0, 4, 1], [1, 3, 0]],
             1,
             [[0, 1], [1, 2]])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 4, 1]],
+            [[0, 4, 1], [1, 3, 0]],
             1,
             [[0, 2, 2], [1, 2]])
 
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 5, 1]],
+            [[0, 5, 1], [1, 3, 0]],
             0,
             [[0, 1, 2], [1, 2]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 5, 1], [1, 1]],
+            [[1, 1], [0, 5, 1], [1, 3, 0]],
             (0, [2]),
             [[1, 2]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 5, 1], [1, 2, 2]],
+            [[1, 2, 2], [0, 5, 1], [1, 3, 0]],
             1,
             [[1, 1]])
 
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 5, 1], [1, 2, 2], [0, 1]],
+            [[0, 1], [1, 2, 2], [0, 5, 1], [1, 3, 0]],
             1,
             [])
 
         self.step(0, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 5, 1], [1, 2, 2]],
+            [[1, 2, 2], [0, 5, 1], [1, 3, 0]],
             0,
             [[1, 1]])
 
         self.step(1, 1, 0)
 
         self.assert_tape(
-            [[1, 3, 0], [0, 5, 1], [1, 3, 2]], 1, [])
+            [[1, 3, 2], [0, 5, 1], [1, 3, 0]], 1, [])
 
     def test_trace_7(self):
         # 1RB 1LA 0RB  0LA 2RB ...
@@ -425,7 +425,7 @@ class TestTags(TestCase):
         self.step(1, 0, 0)
 
         self.assert_tape(
-            [[1, 1], [0, 1, 0]], 1, [[1, 1], [0, 1]])
+            [[0, 1, 0], [1, 1]], 1, [[1, 1], [0, 1]])
 
     def test_trace_8(self):
         # 1RB 1RA  1LC 0LA  0RA 0LC
@@ -445,7 +445,7 @@ class TestTags(TestCase):
 
     def test_trace_9(self):
         self.set_tape(
-            [[1, 1], [0, 1, 0]], 1, [[1, 6]])
+            [[0, 1, 0], [1, 1]], 1, [[1, 6]])
 
         self.step(0, 1, 0)
 
@@ -463,16 +463,16 @@ class TestTags(TestCase):
 
     def test_trace_b(self):
         self.set_tape(
-            [[1, 3], [0, 1], [1, 1]], (1, [0]), [])
+            [[1, 1], [0, 1], [1, 3]], (1, [0]), [])
 
         self.step(0, 0, 0)
 
         self.assert_tape(
-            [[1, 3], [0, 1]], 1, [[0, 1, 0]])
+            [[0, 1], [1, 3]], 1, [[0, 1, 0]])
 
     def test_trace_c(self):
         self.set_tape(
-            [[1, 1], [0, 1], [1, 1, 1]], 1, [[2, 2, 0]])
+            [[1, 1, 1], [0, 1], [1, 1]], 1, [[2, 2, 0]])
 
         self.step(0, 2, 1)
 
@@ -494,7 +494,7 @@ class TestTags(TestCase):
 
     def test_trace_e(self):
         self.set_tape(
-            [[3, 7, 3], [2, 1]],
+            [[2, 1], [3, 7, 3]],
             (1, [5]),
             [])
 
@@ -514,20 +514,20 @@ class TestTags(TestCase):
 
     def test_trace_f(self):
         self.set_tape(
-            [[3, 6, 0], [1, 1], [3, 1, 1], [0, 8]],
+            [[0, 8], [3, 1, 1], [1, 1], [3, 6, 0]],
             0,
             [[2, 1]])
 
         self.step(0, 3, 1)
 
         self.assert_tape(
-            [[3, 6, 0], [1, 1]],
+            [[1, 1], [3, 6, 0]],
             3,
             [[3, 9, 1], [2, 1]])
 
     def test_trace_g(self):
         self.set_tape(
-            [[3, 6, 0], [1, 1, 1], [0, 8]],
+            [[0, 8], [1, 1, 1], [3, 6, 0]],
             0,
             [[2, 1]])
 
@@ -547,7 +547,7 @@ class TestTags(TestCase):
         self.step(1, 3, 1)
 
         self.assert_tape(
-            [[1, 2, 0], [3, 2]],
+            [[3, 2], [1, 2, 0]],
             (2, [1]),
             [[0, 1], [2, 1]])
 
