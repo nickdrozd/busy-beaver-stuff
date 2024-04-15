@@ -281,24 +281,23 @@ class TagTape(BlockTape):
                 popped = pull.pop(0)
 
                 if push_block is None:
+                    if (popped_tags := popped.tags):
+                        scan_info += popped_tags
+                        popped_tags.clear()
+
+                    popped.count = 0
+
                     push_block = popped
-                    push_block.count = 0
 
-                if (extra := popped.tags):
-                    if push_block.tags:
-                        scan_info += extra
+                elif (extra := popped.tags):
+                    target = (
+                        scan_info
+                        # pylint: disable = line-too-long
+                        if push_block.tags or push_block.count <= popped.count else
+                        push_block.tags
+                    )
 
-                        if push_block.tags == extra:
-                            push_block.tags.clear()
-
-                    else:
-                        target = (
-                            push_block.tags
-                            if push_block.count > popped.count else
-                            scan_info
-                        )
-
-                        target += extra
+                    target += extra
 
         if push and (top_block := push[0]).color == color:
             inc_push = True
