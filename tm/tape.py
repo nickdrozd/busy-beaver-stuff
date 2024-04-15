@@ -289,7 +289,7 @@ class TagTape(BlockTape):
                         scan_info += extra
 
                         if push_block.tags == extra:
-                            push_block.tags = []
+                            push_block.tags.clear()
 
                     else:
                         target = (
