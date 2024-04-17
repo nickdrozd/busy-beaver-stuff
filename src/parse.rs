@@ -1,8 +1,6 @@
 use pyo3::prelude::*;
 
-use crate::instrs::{
-    Color, CompThic, CompThin, Instr, Shift, Slot, State,
-};
+use crate::instrs::{Color, CompThin, Instr, Shift, Slot, State};
 
 const UNDF: char = '.';
 
@@ -24,7 +22,7 @@ pub fn parse_to_vec(prog: &str) -> Vec<Vec<Option<Instr>>> {
 }
 
 #[pyfunction]
-pub fn comp_thin(prog: &str) -> CompThin {
+pub fn tcompile(prog: &str) -> CompThin {
     let mut program = CompThin::new();
 
     for (state, instrs) in parse(prog).enumerate() {
@@ -32,19 +30,6 @@ pub fn comp_thin(prog: &str) -> CompThin {
             if let Some(instr) = instr {
                 program.insert((state as State, color as Color), instr);
             }
-        }
-    }
-
-    program
-}
-
-#[pyfunction]
-pub fn comp_thic(prog: &str) -> CompThic {
-    let mut program = CompThic::new();
-
-    for (state, instrs) in parse(prog).enumerate() {
-        for (color, instr) in instrs.enumerate() {
-            program.insert((state as State, color as Color), instr);
         }
     }
 

@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 
 use crate::instrs::{Color, Shift};
-use crate::parse::comp_thin;
+use crate::parse::tcompile;
 use crate::tape::{BasicTape, Count};
 
 struct BlockMeasure {
@@ -40,7 +40,7 @@ impl BlockMeasure {
 
 #[pyfunction]
 pub fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
-    let comp = comp_thin(prog);
+    let comp = tcompile(prog);
 
     let mut state = 0;
     let mut tape = BlockMeasure::new();
@@ -65,7 +65,7 @@ pub fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
 
 #[pyfunction]
 pub fn unroll_tape(prog: &str, steps: Count) -> Vec<Color> {
-    let comp = comp_thin(prog);
+    let comp = tcompile(prog);
 
     let mut state = 0;
     let mut tape = BasicTape::init(0);

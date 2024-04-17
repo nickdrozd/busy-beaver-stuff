@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from test.machine import QuickMachineResult, TermRes
 
-from tm.parse import comp_thin
+from tm.parse import tcompile
 
 if TYPE_CHECKING:
     from typing import Self
@@ -414,7 +414,7 @@ class LinRecMachine:
     infrul: int | None = None
 
     def __init__(self, prog: str):
-        self.comp = comp_thin(prog)
+        self.comp = tcompile(prog)
 
 
 class StrictLinRecMachine(LinRecMachine):
@@ -549,7 +549,7 @@ def run_loose_linrec_machine(
     # pylint: disable = while-used, too-many-locals
     blanks = {}
 
-    comp = comp_thin(program)
+    comp = tcompile(program)
 
     state = 1
 

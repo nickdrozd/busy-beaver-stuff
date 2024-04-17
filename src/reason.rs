@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use pyo3::prelude::*;
 
 use crate::instrs::{Color, CompThin, Instr, Shift, Slot, State};
-use crate::parse::{comp_thin, parse, parse_to_vec};
+use crate::parse::{parse, parse_to_vec, tcompile};
 use crate::tape::BasicTape as Tape;
 
 type Step = u64;
@@ -45,7 +45,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
         return true;
     }
 
-    let comp = comp_thin(prog);
+    let comp = tcompile(prog);
 
     let max_steps = 24;
     let max_cycles = 1_000;

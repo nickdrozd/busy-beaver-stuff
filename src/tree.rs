@@ -3,7 +3,7 @@ use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 
 use crate::instrs::Slot;
-use crate::parse::comp_thin;
+use crate::parse::tcompile;
 use crate::tape::BasicTape as Tape;
 
 type Step = u64;
@@ -17,7 +17,7 @@ pub fn run_for_undefined(
     prog: &str,
     sim_lim: Step,
 ) -> PyResult<Option<Slot>> {
-    let comp = comp_thin(prog);
+    let comp = tcompile(prog);
 
     let mut state = 1;
 
