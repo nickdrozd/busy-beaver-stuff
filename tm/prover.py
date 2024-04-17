@@ -119,9 +119,10 @@ class Prover:
             state: State,
             tape: Tape,
     ) -> Rule | None:
-        if (known_rule := self.get_rule(
-                state, tape, sig := tape.signature)) is not None:
-            return known_rule
+        sig = tape.signature
+
+        if (known := self.get_rule(state, tape, sig)) is not None:
+            return known
 
         if (past_configs := self.configs.get(sig)) is None:
             if self.config_count > 100_000:  # no-cover
