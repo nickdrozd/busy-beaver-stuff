@@ -1,7 +1,6 @@
+use core::cell::Cell;
 use core::fmt::{Display, Formatter, Result};
 use core::iter::{once, repeat};
-#[cfg(test)]
-use std::cell::Cell;
 
 use crate::instrs::{Color, Shift};
 
@@ -161,7 +160,6 @@ impl<B: Block> Tape<B> {
         (self.lspan.len() + self.rspan.len()) as Count
     }
 
-    #[cfg(test)]
     pub fn signature(&self) -> Signature {
         Signature {
             scan: self.scan,
@@ -259,16 +257,13 @@ impl<B: Block> Tape<B> {
 
 /**************************************/
 
-#[cfg(test)]
 pub type Index = (Shift, usize);
 
-#[cfg(test)]
 pub trait IndexTape {
     fn get_count(&self, index: &Index) -> Count;
     fn set_count(&mut self, index: &Index, val: Count);
 }
 
-#[cfg(test)]
 impl<B: Block> IndexTape for Tape<B> {
     fn get_count(&self, (side, pos): &Index) -> Count {
         let span = if *side { &self.rspan } else { &self.lspan };
@@ -411,7 +406,6 @@ impl HeadTape {
 
 /**************************************/
 
-#[cfg(test)]
 struct EnumBlock {
     color: Color,
     count: Count,
@@ -419,7 +413,6 @@ struct EnumBlock {
     index: Option<Index>,
 }
 
-#[cfg(test)]
 impl Block for EnumBlock {
     fn new(color: Color, count: Count) -> Self {
         Self {
@@ -454,14 +447,12 @@ impl Block for EnumBlock {
     }
 }
 
-#[cfg(test)]
 impl Display for EnumBlock {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}^{}", self.color, self.count)
     }
 }
 
-#[cfg(test)]
 pub struct EnumTape {
     tape: Tape<EnumBlock>,
 
@@ -472,14 +463,12 @@ pub struct EnumTape {
     r_edge: Cell<bool>,
 }
 
-#[cfg(test)]
 impl Display for EnumTape {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}", self.tape)
     }
 }
 
-#[cfg(test)]
 impl From<&BasicTape> for EnumTape {
     fn from(tape: &BasicTape) -> Self {
         let mut lspan = vec![];
@@ -517,7 +506,6 @@ impl From<&BasicTape> for EnumTape {
     }
 }
 
-#[cfg(test)]
 impl EnumTape {
     pub fn offsets(&self) -> (usize, usize) {
         (self.l_offset.get(), self.r_offset.get())
@@ -585,7 +573,6 @@ impl EnumTape {
     }
 }
 
-#[cfg(test)]
 impl IndexTape for EnumTape {
     fn get_count(&self, index: &Index) -> Count {
         self.tape.get_count(index)
@@ -598,10 +585,8 @@ impl IndexTape for EnumTape {
 
 /**************************************/
 
-#[cfg(test)]
 type Tag = u8;
 
-#[cfg(test)]
 #[derive(PartialEq, Eq, Debug)]
 struct TagBlock {
     color: Color,
@@ -610,7 +595,6 @@ struct TagBlock {
     tags: Vec<Tag>,
 }
 
-#[cfg(test)]
 #[derive(PartialEq, Eq, Debug)]
 pub struct TagTape {
     pub scan: Color,
@@ -621,7 +605,6 @@ pub struct TagTape {
     rspan: Vec<TagBlock>,
 }
 
-#[cfg(test)]
 impl IndexTape for TagTape {
     fn get_count(&self, (side, pos): &Index) -> Count {
         let span = if *side { &self.rspan } else { &self.lspan };
@@ -640,8 +623,8 @@ impl IndexTape for TagTape {
     }
 }
 
-#[cfg(test)]
 impl TagTape {
+    #[allow(clippy::too_many_lines)]
     pub fn step(&mut self, shift: bool, color: Color, mut skip: bool) {
         let (pull, push) = if shift {
             (&mut self.rspan, &mut self.lspan)
@@ -694,9 +677,9 @@ impl TagTape {
                         if !block.tags.is_empty()
                             || block.count <= popped.count
                         {
-                            scan_info.extend(extra.clone());
+                            scan_info.extend(extra);
                         } else {
-                            block.tags.extend(extra.clone());
+                            block.tags.extend(extra);
                         }
                     }
                 }

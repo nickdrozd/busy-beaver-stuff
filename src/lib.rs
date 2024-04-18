@@ -9,6 +9,7 @@
     clippy::if_then_some_else_none
 )]
 #![allow(
+    dead_code,
     non_local_definitions,
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
