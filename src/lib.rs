@@ -36,7 +36,7 @@ mod rust_stuff {
 
     #[pymodule_export]
     use crate::machine::{
-        quick_term_or_rec, run_machine, MachineResult, TermRes,
+        quick_term_or_rec, run_quick_machine, MachineResult, TermRes,
     };
 
     #[pymodule_export]

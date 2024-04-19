@@ -135,7 +135,7 @@ impl MachineResult {
 
 #[pyfunction]
 #[pyo3(signature = (prog, sim_lim=100_000_000))]
-pub fn run_machine(prog: &str, sim_lim: Step) -> MachineResult {
+pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
     let comp = tcompile(prog);
 
     let mut tape = Tape::init(0);

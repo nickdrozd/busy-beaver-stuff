@@ -2,6 +2,6 @@
 # pylint: disable-next = unused-import, wrong-import-order
 from tm.rust_stuff import (
     TermRes,
-    run_machine as run_quick_machine,
+    run_quick_machine,
     MachineResult as QuickMachineResult,
 )
