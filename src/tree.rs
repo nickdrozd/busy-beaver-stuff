@@ -1,10 +1,8 @@
-use pyo3::create_exception;
-use pyo3::exceptions::PyException;
-use pyo3::{pyfunction, PyResult};
+use pyo3::{
+    create_exception, exceptions::PyException, pyfunction, PyResult,
+};
 
-use crate::instrs::Slot;
-use crate::parse::tcompile;
-use crate::tape::BasicTape as Tape;
+use crate::{instrs::Slot, parse::tcompile, tape::BasicTape as Tape};
 
 type Step = u64;
 

@@ -1,8 +1,10 @@
 use pyo3::pyfunction;
 
-use crate::instrs::{Color, Shift};
-use crate::parse::tcompile;
-use crate::tape::{BasicTape, Count};
+use crate::{
+    instrs::{Color, Shift},
+    parse::tcompile,
+    tape::{BasicTape, Count},
+};
 
 struct BlockMeasure {
     tape: BasicTape,

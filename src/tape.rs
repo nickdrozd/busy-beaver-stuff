@@ -1,6 +1,8 @@
-use core::cell::Cell;
-use core::fmt::{Display, Formatter, Result};
-use core::iter::{once, repeat};
+use core::{
+    cell::Cell,
+    fmt::{Display, Formatter, Result},
+    iter::{once, repeat},
+};
 
 use crate::instrs::{Color, Shift};
 

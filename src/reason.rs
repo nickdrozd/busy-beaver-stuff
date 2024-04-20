@@ -2,9 +2,11 @@ use std::collections::{HashMap, HashSet};
 
 use pyo3::pyfunction;
 
-use crate::instrs::{Color, CompThin, Instr, Shift, Slot, State};
-use crate::parse::{parse, parse_to_vec, tcompile};
-use crate::tape::BasicTape as Tape;
+use crate::{
+    instrs::{Color, CompThin, Instr, Shift, Slot, State},
+    parse::{parse, parse_to_vec, tcompile},
+    tape::BasicTape as Tape,
+};
 
 type Step = u64;
 
