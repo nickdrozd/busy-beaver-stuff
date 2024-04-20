@@ -1,6 +1,6 @@
 use pyo3::create_exception;
 use pyo3::exceptions::PyException;
-use pyo3::prelude::*;
+use pyo3::{pyfunction, PyResult};
 
 use crate::instrs::Slot;
 use crate::parse::tcompile;

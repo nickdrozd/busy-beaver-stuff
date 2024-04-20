@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use pyo3::prelude::*;
+use pyo3::{pyclass, pymethods};
 
 use crate::instrs::State;
 

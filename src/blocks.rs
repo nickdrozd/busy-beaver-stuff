@@ -1,4 +1,4 @@
-use pyo3::prelude::*;
+use pyo3::pyfunction;
 
 use crate::instrs::{Color, Shift};
 use crate::parse::tcompile;

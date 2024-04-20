@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use pyo3::prelude::*;
+use pyo3::pyfunction;
 
 use crate::instrs::{Color, CompThin, Instr, Shift, Slot, State};
 use crate::parse::{parse, parse_to_vec, tcompile};

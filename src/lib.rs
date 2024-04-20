@@ -27,7 +27,7 @@ mod rules;
 mod tape;
 mod tree;
 
-use pyo3::prelude::*;
+use pyo3::pymodule;
 
 #[pymodule]
 mod rust_stuff {
