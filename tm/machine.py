@@ -219,9 +219,8 @@ class Machine:
 
             stepped = tape.step(shift, color, same)
 
-            if not isinstance(stepped, int):
-                step = -1
-            elif step != -1:
+            if step != -1:
+                assert isinstance(stepped, int)
                 step += stepped
 
             state = next_state
