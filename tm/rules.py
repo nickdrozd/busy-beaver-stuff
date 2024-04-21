@@ -207,15 +207,17 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
 
 def make_rule(*countses: Counts) -> Rule | None:
-    try:
-        rule = {
-            (s, i): diff
-            for s, spans in enumerate(zip(*countses))
-            for i, counts in enumerate(zip(*spans))
-            if (diff := calculate_diff(*counts)) is not None
-        }
-    except UnknownRule:
-        return None
+    rule = {}
+
+    for s, spans in enumerate(zip(*countses)):
+        for i, counts in enumerate(zip(*spans)):
+            try:
+                diff = calculate_diff(*counts)
+            except UnknownRule:
+                return None
+
+            if diff is not None:
+                rule[s, i] = diff
 
     if all(diff >= 0
            for diff in rule.values()
