@@ -128,8 +128,8 @@ class Prover:
             if self.config_count > 100_000:  # no-cover
                 raise ConfigLimit
 
-            past_configs = PastConfigs()
-            self.configs[sig] = past_configs
+            self.configs[sig] = PastConfigs(state, cycle)
+            return None
 
         if (deltas := past_configs.next_deltas(state, cycle)) is None:
             return None

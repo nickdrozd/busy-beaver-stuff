@@ -11,8 +11,10 @@ struct PastConfig {
 }
 
 impl PastConfig {
-    const fn new() -> Self {
-        Self { cycles: Vec::new() }
+    fn new(cycle: Cycle) -> Self {
+        Self {
+            cycles: vec![cycle],
+        }
     }
 
     #[allow(clippy::many_single_char_names)]
@@ -69,9 +71,9 @@ pub struct PastConfigs {
 #[pymethods]
 impl PastConfigs {
     #[new]
-    fn new() -> Self {
+    fn new(state: State, cycle: Cycle) -> Self {
         Self {
-            configs: HashMap::new(),
+            configs: HashMap::from([(state, PastConfig::new(cycle))]),
         }
     }
 
@@ -80,9 +82,10 @@ impl PastConfigs {
         state: State,
         cycle: Cycle,
     ) -> Option<(Cycle, Cycle, Cycle)> {
-        let config =
-            self.configs.entry(state).or_insert_with(PastConfig::new);
-        config.next_deltas(cycle)
+        self.configs
+            .entry(state)
+            .or_insert_with(|| PastConfig::new(cycle))
+            .next_deltas(cycle)
     }
 
     fn delete_configs(&mut self, state: State) {

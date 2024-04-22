@@ -3,7 +3,7 @@ from enum import Enum
 ## prover ##############################
 
 class PastConfigs:
-    def __init__(self) -> None: ...
+    def __init__(self, state: State, cycle: int) -> None: ...
 
     def next_deltas(
             self,
