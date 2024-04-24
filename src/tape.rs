@@ -646,8 +646,8 @@ impl TagTape {
 
         let next_scan: Color;
 
-        let mut dec_pull: bool = false;
-        let mut inc_push: bool = false;
+        let mut dec_pull = false;
+        let mut inc_push = false;
 
         if pull.is_empty() {
             next_scan = 0;
