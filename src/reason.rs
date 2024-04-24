@@ -56,7 +56,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
     let mut configs: Vec<(Color, State, Tape)> = slots
         .iter()
-        .map(|(state, color)| (1, *state, Tape::init(*color)))
+        .map(|&(state, color)| (1, state, Tape::init(color)))
         .collect();
 
     let mut seen: HashMap<State, HashSet<Tape>> = HashMap::new();
@@ -87,8 +87,8 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
         seen.get_mut(&state).unwrap().insert(tape.clone());
 
         for entry in &entry_points[&state] {
-            for (_, shift, trans) in &program[entry] {
-                if *trans != state {
+            for &(_, shift, trans) in &program[entry] {
+                if trans != state {
                     continue;
                 }
 
@@ -98,7 +98,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                         step + 1,
                         tape.clone(),
                         *entry,
-                        *shift,
+                        shift,
                         color as Color,
                     ) else {
                         continue;
@@ -110,7 +110,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
                     let mut yield_tape = tape.clone();
 
-                    yield_tape.backstep(*shift, color as Color);
+                    yield_tape.backstep(shift, color as Color);
 
                     configs.push((step + 1, *entry, yield_tape));
                 }

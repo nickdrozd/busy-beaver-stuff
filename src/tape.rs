@@ -267,20 +267,20 @@ pub trait IndexTape {
 }
 
 impl<B: Block> IndexTape for Tape<B> {
-    fn get_count(&self, (side, pos): &Index) -> Count {
-        let span = if *side { &self.rspan } else { &self.lspan };
+    fn get_count(&self, &(side, pos): &Index) -> Count {
+        let span = if side { &self.rspan } else { &self.lspan };
 
-        span[*pos].get_count()
+        span[pos].get_count()
     }
 
-    fn set_count(&mut self, (side, pos): &Index, val: Count) {
-        let span = if *side {
+    fn set_count(&mut self, &(side, pos): &Index, val: Count) {
+        let span = if side {
             &mut self.rspan
         } else {
             &mut self.lspan
         };
 
-        span[*pos].set_count(val);
+        span[pos].set_count(val);
     }
 }
 
@@ -608,20 +608,20 @@ pub struct TagTape {
 }
 
 impl IndexTape for TagTape {
-    fn get_count(&self, (side, pos): &Index) -> Count {
-        let span = if *side { &self.rspan } else { &self.lspan };
+    fn get_count(&self, &(side, pos): &Index) -> Count {
+        let span = if side { &self.rspan } else { &self.lspan };
 
-        span[*pos].count
+        span[pos].count
     }
 
-    fn set_count(&mut self, (side, pos): &Index, val: Count) {
-        let span = if *side {
+    fn set_count(&mut self, &(side, pos): &Index, val: Count) {
+        let span = if side {
             &mut self.rspan
         } else {
             &mut self.lspan
         };
 
-        span[*pos].count = val;
+        span[pos].count = val;
     }
 }
 

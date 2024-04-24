@@ -30,9 +30,9 @@ fn count_apps(
     let mut apps: Option<(Count, Index, Count)> = None;
 
     for (pos, diff) in rule {
-        let Op::Plus(diff) = diff;
+        let Op::Plus(diff) = *diff;
 
-        if *diff >= 0 {
+        if diff >= 0 {
             continue;
         }
 
@@ -67,13 +67,13 @@ pub fn apply_rule(
     let (times, min_pos, min_res) = count_apps(rule, tape)?;
 
     for (pos, diff) in rule {
-        let result = match diff {
+        let result = match *diff {
             Op::Plus(plus) => {
                 if *pos == min_pos {
-                    assert!(*plus < 0);
+                    assert!(plus < 0);
                     min_res
                 } else {
-                    apply_plus(tape.get_count(pos), *plus, times)
+                    apply_plus(tape.get_count(pos), plus, times)
                 }
             },
         };

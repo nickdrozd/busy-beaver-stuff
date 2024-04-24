@@ -6,6 +6,7 @@
     clippy::str_to_string,
     clippy::std_instead_of_core,
     clippy::std_instead_of_alloc,
+    // clippy::pattern_type_mismatch,
     clippy::if_then_some_else_none,
     clippy::redundant_type_annotations
 )]
