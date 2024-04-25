@@ -40,8 +40,7 @@ impl BlockMeasure {
     }
 }
 
-#[pyfunction]
-pub fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
+fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
     let comp = tcompile(prog);
 
     let mut state = 0;
@@ -65,8 +64,7 @@ pub fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
     Some(tape.max_blocks_step)
 }
 
-#[pyfunction]
-pub fn unroll_tape(prog: &str, steps: Count) -> Vec<Color> {
+fn unroll_tape(prog: &str, steps: Count) -> Vec<Color> {
     let comp = tcompile(prog);
 
     let mut state = 0;
@@ -83,4 +81,38 @@ pub fn unroll_tape(prog: &str, steps: Count) -> Vec<Color> {
     }
 
     tape.unroll()
+}
+
+fn compr_eff(tape: &[Color], k: usize) -> usize {
+    let mut compr_size = tape.len();
+
+    for i in (0..tape.len() - 2 * k).step_by(k) {
+        if tape[i..i + k] == tape[i + k..i + 2 * k] {
+            compr_size -= k;
+        }
+    }
+
+    compr_size
+}
+
+#[pyfunction]
+pub fn opt_block(prog: &str, steps: Count) -> usize {
+    let Some(max_blocks_step) = measure_blocks(prog, steps) else {
+        return 1;
+    };
+
+    let tape = unroll_tape(prog, max_blocks_step);
+
+    let mut opt_size = 1;
+    let mut min_comp = 1 + tape.len();
+
+    for block_size in 1..tape.len() / 2 {
+        let compr_size = compr_eff(&tape, block_size);
+        if compr_size < min_comp {
+            min_comp = compr_size;
+            opt_size = block_size;
+        }
+    }
+
+    opt_size
 }

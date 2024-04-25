@@ -34,7 +34,7 @@ use pyo3::pymodule;
 #[pymodule]
 mod rust_stuff {
     #[pymodule_export]
-    use crate::blocks::{measure_blocks, unroll_tape};
+    use crate::blocks::opt_block;
 
     #[pymodule_export]
     use crate::machine::{
