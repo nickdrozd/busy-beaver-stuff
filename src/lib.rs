@@ -15,6 +15,7 @@
     non_local_definitions,
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
+    clippy::if_not_else,
     clippy::module_name_repetitions,
     clippy::redundant_pub_crate
 )]
@@ -22,6 +23,7 @@
 mod blocks;
 mod instrs;
 mod machine;
+mod macros;
 mod parse;
 mod prover;
 mod reason;
