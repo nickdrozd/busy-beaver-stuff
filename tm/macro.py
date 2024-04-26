@@ -187,16 +187,35 @@ class MacroProg:
                 state = next_state
 
                 tape[pos] = color
-                pos += 1 if shift else -1
-            else:
-                while tape[pos] == scan:  # pylint: disable = while-used
-                    tape[pos] = color
-                    pos += 1 if shift else -1
 
-                    if not 0 <= pos < cells:
+                if shift:
+                    pos += 1
+                    if cells <= pos:
                         break
+                else:
+                    if pos == 0:
+                        break
+                    pos -= 1
 
-            if not 0 <= pos < cells:
+            else:
+                if shift:
+                    while tape[pos] == scan:  # pylint: disable = while-used
+                        tape[pos] = color
+                        pos += 1
+                        if cells <= pos:
+                            break
+                    else:
+                        continue
+
+                else:
+                    while tape[pos] == scan:  # pylint: disable = while-used
+                        tape[pos] = color
+                        if pos == 0:
+                            break
+                        pos -= 1
+                    else:
+                        continue
+
                 break
 
         else:
