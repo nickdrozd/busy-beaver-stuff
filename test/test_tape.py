@@ -188,7 +188,11 @@ class TestTags(TestCase):
         self.step(1, 1, 0)
         self.step(1, 0, 1)
 
+        self.assert_tape(0, [[0, 4, 0], [1, 1]], [])
+
         self.apply_rule({(0, 0): -1, (0, 1): 1})
+
+        self.assert_tape(0, [[0, 1, 0], [1, 4]], [])
 
         self.step(0, 0, 0)
         self.step(1, 1, 0)
@@ -206,7 +210,17 @@ class TestTags(TestCase):
         self.step(0, 1, 0)
         self.step(1, 2, 1)
 
+        self.assert_tape(
+            2,
+            [[2, 2]],
+            [[2, 29, 0], [1, 1]])
+
         self.apply_rule({(0, 0): 4, (1, 0): -2})
+
+        self.assert_tape(
+            2,
+            [[2, 58]],
+            [[2, 1, 0], [1, 1]])
 
         self.step(0, 1, 1)
         self.step(0, 1, 0)
@@ -587,7 +601,19 @@ class TestTags(TestCase):
             [[1, 265]])
 
         self.step(0, 1, 0)
+
+        self.assert_tape(
+            1,
+            [[1, 1, 0]],
+            [[1, 266]])
+
         self.step(0, 0, 0)
+
+        self.assert_tape(
+            (1, [0]),
+            [],
+            [[0, 1], [1, 266]])
+
         self.step(1, 0, 0)
 
         self.assert_tape(
