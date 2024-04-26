@@ -282,7 +282,13 @@ class TagTape(BlockTape):
 
                 if push_block is None:
                     if (popped_tags := popped.tags):
-                        scan_info += popped_tags
+                        if (push and not pull
+                                and (self.scan == next_scan
+                                       == (top := push[0]).color)
+                                and not top.tags):
+                            top.tags += popped_tags
+                        else:
+                            scan_info += popped_tags
                         popped_tags.clear()
 
                     popped.count = 0

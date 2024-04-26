@@ -267,7 +267,7 @@ class Holdouts(TestCase):
     def test_holdouts(self):
         self.assertEqual(
             len(holdouts := get_holdouts()),
-            1774)
+            1768)
 
         for prog in holdouts:
             self.assertFalse(
@@ -839,7 +839,7 @@ class Prover(TuringTest):
             self.assertTrue(
                 str(self.machine.limrul).startswith(reason))
 
-    def test_backsymbol_required(self):
+    def test_backsymbol_not_required(self):
         prog = "1RB 0LC  1LC 0RC  1LA 0LC"
 
         self.run_bb(
@@ -847,7 +847,8 @@ class Prover(TuringTest):
             sim_lim = 100,
         )
 
-        self.assertIsNone(
+        self.assertEqual(
+            85,
             self.machine.infrul)
 
         self.run_bb(
@@ -1069,9 +1070,9 @@ class Prover(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 47066,
-            "divs": 13466,
+            "adds": 47069,
+            "divs": 13469,
             "exps": 12336,
             "muls": 12079,
-            "totl": 84947,
+            "totl": 84953,
         })

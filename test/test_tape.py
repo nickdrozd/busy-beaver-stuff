@@ -610,16 +610,16 @@ class TestTags(TestCase):
         self.step(0, 0, 0)
 
         self.assert_tape(
-            (1, [0]),
+            1,
             [],
-            [[0, 1], [1, 266]])
+            [[0, 1], [1, 266, 0]])
 
         self.step(1, 0, 0)
 
         self.assert_tape(
             0,
-            [[0, 1, 0]],
-            [[1, 266]])
+            [],
+            [[1, 266, 0]])
 
 
 class TestEnum(TestCase):
