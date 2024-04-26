@@ -165,6 +165,8 @@ class MacroProg:
                 self.comp[state, scan := tape[pos]]
 
             if next_state != state:
+                state = next_state
+
                 tape[pos] = color
                 pos += 1 if shift else -1
             else:
@@ -174,8 +176,6 @@ class MacroProg:
 
                     if not 0 <= pos < cells:
                         break
-
-            state = next_state
 
             if not 0 <= pos < cells:
                 break
