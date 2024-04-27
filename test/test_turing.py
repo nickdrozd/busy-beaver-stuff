@@ -1070,9 +1070,9 @@ class Prover(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 47069,
+            "adds": 46347,
             "divs": 13469,
-            "exps": 12336,
-            "muls": 12079,
-            "totl": 84953,
+            "exps": 12299,
+            "muls": 11859,
+            "totl": 83974,
         })
