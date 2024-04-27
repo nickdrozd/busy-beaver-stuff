@@ -267,7 +267,7 @@ class Holdouts(TestCase):
     def test_holdouts(self):
         self.assertEqual(
             len(holdouts := get_holdouts()),
-            1762)
+            1738)
 
         for prog in holdouts:
             self.assertFalse(
@@ -848,7 +848,7 @@ class Prover(TuringTest):
         )
 
         self.assertEqual(
-            85,
+            84,
             self.machine.infrul)
 
         self.run_bb(
@@ -1070,9 +1070,9 @@ class Prover(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 46347,
-            "divs": 13469,
-            "exps": 12299,
-            "muls": 11859,
-            "totl": 83974,
+            "adds": 48034,
+            "divs": 13574,
+            "exps": 12614,
+            "muls": 12166,
+            "totl": 86388,
         })

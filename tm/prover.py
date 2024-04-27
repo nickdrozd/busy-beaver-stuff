@@ -8,7 +8,7 @@ from tm.rust_stuff import PastConfigs
 if TYPE_CHECKING:
     from tm.rules import Rule
     from tm.parse import State, Slot, GetInstr
-    from tm.tape import Signature, Tape, BlockTape, TagTape, EnumTape
+    from tm.tape import Signature, Tape, BlockTape, EnumTape
 
     MinSig = tuple[Signature, tuple[bool, bool]]
 
@@ -71,7 +71,7 @@ class Prover:
             self,
             steps: int,
             state: State,
-            tape: TagTape,
+            tape: Tape,
     ) -> State | None:
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
@@ -137,7 +137,7 @@ class Prover:
         if any(delta > 90_000 for delta in deltas):
             return None
 
-        tags: TagTape = tape.to_tag()
+        tags = tape.clone()
 
         counts = []
 
@@ -145,7 +145,6 @@ class Prover:
             if (
                 self.run_simulator(delta, state, tags) != state
                 or not tags.sig_compatible(sig)
-                or tags.missing_tags
             ):
                 return None
 
