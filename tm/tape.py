@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         list[Count],
     ]
 
+########################################
 
 @dataclass(slots = True)
 class Block:
@@ -34,11 +35,31 @@ class Block:
     def clone(self) -> Block:
         return Block(self.color, self.count)
 
-
-class BlockTape:
+@dataclass(slots = True)
+class Tape:
     lspan: list[Block]
     scan: Color
     rspan: list[Block]
+
+    def __init__(
+            self,
+            lspan: list[Block] | None = None,
+            scan: Color = 0,
+            rspan: list[Block] | None = None,
+    ):
+        self.lspan = lspan or []
+        self.scan = scan
+        self.rspan = rspan or []
+
+    def clone(self) -> Tape:
+        return Tape(
+            lspan = [block.clone() for block in self.lspan],
+            scan = self.scan,
+            rspan = [block.clone() for block in self.rspan],
+        )
+
+    def to_enum(self) -> EnumTape:
+        return EnumTape(self.clone())
 
     def __str__(self) -> str:
         return ' '.join(
@@ -99,33 +120,6 @@ class BlockTape:
         span = self.rspan if side else self.lspan
 
         span[pos].count = val
-
-########################################
-
-class Tape(BlockTape):
-    lspan: list[Block]
-    scan: Color
-    rspan: list[Block]
-
-    def __init__(
-            self,
-            lspan: list[Block] | None = None,
-            scan: Color = 0,
-            rspan: list[Block] | None = None,
-    ):
-        self.lspan = lspan or []
-        self.scan = scan
-        self.rspan = rspan or []
-
-    def clone(self) -> Tape:
-        return Tape(
-            lspan = [block.clone() for block in self.lspan],
-            scan = self.scan,
-            rspan = [block.clone() for block in self.rspan],
-        )
-
-    def to_enum(self) -> EnumTape:
-        return EnumTape(self.clone())
 
     def sig_compatible(self, sig: Signature) -> bool:
         scan, lspan, rspan = sig

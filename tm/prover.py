@@ -8,7 +8,7 @@ from tm.rust_stuff import PastConfigs
 if TYPE_CHECKING:
     from tm.rules import Rule
     from tm.parse import State, Slot, GetInstr
-    from tm.tape import Signature, Tape, BlockTape, EnumTape
+    from tm.tape import Signature, Tape, EnumTape
 
     MinSig = tuple[Signature, tuple[bool, bool]]
 
@@ -39,7 +39,7 @@ class Prover:
     def get_rule(
             self,
             state: State,
-            tape: BlockTape,
+            tape: Tape,
             sig: Signature | None = None,
     ) -> Rule | None:
         if (temp := self.rules.get((state, tape.scan))) is None:
