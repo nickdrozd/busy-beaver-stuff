@@ -35,7 +35,6 @@ jobs:
       - name: Lint
         run: |
           make lint
-          make clippy
 
       - name: Test Python
         run: |

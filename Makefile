@@ -11,7 +11,7 @@ clean : clean-python clean-rust
 
 refresh : clean-python rust
 
-quick-check : refresh lint coverage
+quick-check : refresh test-rust lint coverage
 
 ## Odd langs ###########################
 
@@ -86,7 +86,7 @@ PYTEST = $(PYTHON) -m unittest
 test : test-rust
 	$(PYTEST) discover -v
 
-test-all : compile
+test-all : test-rust compile
 	RUN_SLOW=1 $(MAKE) test
 
 test-tree : compile
