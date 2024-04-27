@@ -229,20 +229,22 @@ class TagTape(BlockTape):
 
         return (
             self.scan == scan
-            and len(self.lspan) == len(lspan)
-            and len(self.rspan) == len(rspan)
+            and len(self.lspan) >= len(lspan)
+            and len(self.rspan) >= len(rspan)
             and all(
                 block.color == (
                     color[0]
                     if isinstance(color, tuple) else
                     color
-                ) for block, color in zip(self.lspan, lspan))
+                ) for block, color in zip(
+                    self.lspan[:len(lspan)], lspan))
             and all(
                 block.color == (
                     color[0]
                     if isinstance(color, tuple) else
                     color
-                ) for block, color in zip(self.rspan, rspan))
+                ) for block, color in zip(
+                    self.rspan[:len(rspan)], rspan))
         )
 
     def step(self, shift: Shift, color: Color, skip: bool) -> None:
