@@ -330,11 +330,8 @@ fn backstep_run_spinout(
     tape.backstep(shift, color);
 
     for _ in 0..sim_lim {
-        let Some(&(color, shift, next_state)) =
-            comp.get(&(state, tape.scan))
-        else {
-            break;
-        };
+        let &(color, shift, next_state) =
+            comp.get(&(state, tape.scan))?;
 
         let same = state == next_state;
 
