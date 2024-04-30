@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from typing import Self
 
     from tm.tape import Count
-    from tm.parse import State, Slot, GetInstr
+    from tm.macro import State, Slot, GetInstr
 
     Undfnd = tuple[int, Slot]
 

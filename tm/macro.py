@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 from collections import defaultdict
+from collections.abc import Sized
 
 from tm.parse import tcompile
 
 if TYPE_CHECKING:
-    from tm.parse import Color, State, Slot, Instr, GetInstr
+    from tm.parse import Color, State, Slot, Instr
 
     Tape = list[Color]
     Config = tuple[State, tuple[bool, Tape]]
+
+
+class GetInstr(Protocol, Sized):
+    def __getitem__(self, slot: Slot) -> Instr: ...
 
 ########################################
 

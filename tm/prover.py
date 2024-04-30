@@ -7,7 +7,7 @@ from tm.rust_stuff import PastConfigs
 
 if TYPE_CHECKING:
     from tm.rules import Rule
-    from tm.parse import State, Slot, GetInstr
+    from tm.macro import State, Slot, GetInstr
     from tm.tape import Signature, Tape, EnumTape
 
     MinSig = tuple[Signature, tuple[bool, bool]]

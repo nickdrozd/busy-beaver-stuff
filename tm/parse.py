@@ -7,9 +7,6 @@ from tm.rust_stuff import (
     init_prog,
 )
 
-from typing import Protocol
-from collections.abc import Sized
-
 Color = int
 State = int
 Shift = bool
@@ -20,6 +17,3 @@ Instr = tuple[Color, Shift, State]
 CompThin = dict[Slot, Instr]
 
 Switch = dict[Color, Instr | None]
-
-class GetInstr(Protocol, Sized):
-    def __getitem__(self, slot: Slot) -> Instr: ...
