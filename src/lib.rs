@@ -43,8 +43,8 @@ mod rust_stuff {
 
     #[pymodule_export]
     use crate::parse::{
-        init_prog, parse_to_vec, read_slot, show_instr, show_slot,
-        show_state, tcompile,
+        init_prog, parse_to_vec, read_slot, show_comp, show_instr,
+        show_slot, show_state, tcompile,
     };
 
     #[pymodule_export]

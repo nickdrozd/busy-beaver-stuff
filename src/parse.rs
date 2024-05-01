@@ -99,6 +99,30 @@ fn read_instr(instr: &str) -> Option<Instr> {
     Some((read_color(color), read_shift(shift), read_state(state)))
 }
 
+#[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
+pub fn show_comp(comp: CompThin) -> String {
+    let max_state =
+        comp.keys().map(|(state, _)| *state).max().unwrap_or(0);
+    let max_color =
+        comp.keys().map(|(_, color)| *color).max().unwrap_or(0);
+
+    let mut result = vec![];
+
+    for state in 0..=max_state {
+        let mut state_instrs = vec![];
+
+        for color in 0..=max_color {
+            state_instrs
+                .push(show_instr(comp.get(&(state, color)).copied()));
+        }
+
+        result.push(state_instrs.join(" "));
+    }
+
+    result.join("  ")
+}
+
 /**************************************/
 
 #[pyfunction]
@@ -165,5 +189,24 @@ fn test_init() {
 
     for (states, colors, expected) in inits {
         assert_eq!(init_prog(states, colors), expected);
+    }
+}
+
+#[test]
+fn test_comp() {
+    let progs = [
+        "1RB 1LB  1LA ...",
+        "1RB ... ...  2LB 1RB 1LB",
+        "1RB 0RB ...  2LA ... 0LB",
+        "1RB ...  1LB 0RC  1LC 1LA",
+        "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB",
+        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
+        "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",
+        "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
+        "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF",
+    ];
+
+    for prog in progs {
+        assert_eq!(show_comp(tcompile(prog)), prog);
     }
 }

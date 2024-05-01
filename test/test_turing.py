@@ -17,6 +17,8 @@ from test.lin_rec import (
 )
 from test.utils import get_holdouts, read_holdouts, RUN_SLOW
 
+from tm.parse import tcompile
+from tm.show import show_comp
 from tm.tree import branch_read
 from tm.reason import (
     cant_halt,
@@ -156,12 +158,22 @@ class TuringTest(TestCase):
             or prog in KERNEL
         )
 
-    def analyze(self, prog: str, normal: bool = True) -> None:
+    def analyze(
+            self,
+            prog: str,
+            normal: bool = True,
+            decomp: bool = True,
+    ) -> None:
         if normal:
             self.assert_normal(prog)
 
         self.assert_simple(prog)
         self.assert_connected(prog)
+
+        if decomp and prog != "1RB ...  ... ...":
+            self.assertEqual(
+                prog,
+                show_comp(tcompile(prog)))
 
         _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
         _ = Machine(prog, backsym = 1).run(sim_lim = 10)
@@ -278,10 +290,15 @@ class Holdouts(TestCase):
 class Simple(TuringTest):
     machine: QuickMachineResult
 
-    def run_bb(self, prog: str, normal: bool = True):
+    def run_bb(
+            self,
+            prog: str,
+            normal: bool = True,
+            decomp: bool = True,
+    ):
         print(prog)
 
-        self.analyze(prog, normal = normal)
+        self.analyze(prog, normal = normal, decomp = decomp)
 
         self.machine = run_quick_machine(prog)
 
@@ -295,7 +312,7 @@ class Simple(TuringTest):
     def test_undefined(self):
         for sequence in UNDEFINED.values():
             for partial, expected in sequence.items():
-                self.run_bb(partial, normal = False)
+                self.run_bb(partial, normal = False, decomp = False)
 
                 self.assert_undefined(expected)
 
