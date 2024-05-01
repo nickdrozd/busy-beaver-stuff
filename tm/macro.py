@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Protocol
 from collections import defaultdict
 from collections.abc import Sized
 
-from tm.parse import tcompile
+from tm.show import show_comp
 
 if TYPE_CHECKING:
     from tm.parse import Color, State, Slot, Instr
@@ -72,22 +72,18 @@ class MacroInfLoop(Exception):
     pass
 
 
-def prog_params(program: str | MacroProg) -> tuple[GetInstr, int, int]:
-    comp: GetInstr
+def prog_params(comp: GetInstr) -> tuple[int, int]:
+    if isinstance(comp, MacroProg):
+        base_states = comp.macro_states
+        base_colors = comp.macro_colors
 
-    if isinstance(program, str):
-        comp = tcompile(program)
+    else:
+        assert isinstance(comp, dict)
 
         base_states = len(set(map(lambda s: s[0], comp)))
         base_colors = len(set(map(lambda s: s[1], comp)))
 
-    else:
-        comp = program
-
-        base_states = program.macro_states
-        base_colors = program.macro_colors
-
-    return comp, base_states, base_colors
+    return base_states, base_colors
 
 
 class MacroProg:
@@ -198,8 +194,6 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
-    program: str | GetInstr
-
     cells: int
 
     _comp: GetInstr
@@ -211,11 +205,10 @@ class BlockMacro(MacroProg):
 
     converter: TapeColorConverter
 
-    def __init__(self, program: str | MacroProg, cells: int):
-        self.program = program
+    def __init__(self, comp: GetInstr, cells: int):
+        self._comp = comp
 
-        self._comp, self._base_states, self._base_colors = \
-            prog_params(program)
+        self._base_states, self._base_colors = prog_params(comp)
 
         self._instrs = {}
 
@@ -224,7 +217,13 @@ class BlockMacro(MacroProg):
         self.converter = make_converter(self.base_colors, self.cells)
 
     def __str__(self) -> str:
-        return f'{self.program} ({self.cells}-cell block macro)'
+        comp_str = (
+            show_comp(comp)
+            if isinstance(comp := self.comp, dict) else
+            str(comp)
+        )
+
+        return f'{comp_str} ({self.cells}-cell block macro)'
 
     @property
     def comp(self) -> GetInstr:
@@ -298,11 +297,10 @@ class BacksymbolMacro(MacroProg):
 
     converter: TapeColorConverter
 
-    def __init__(self, program: str | MacroProg, cells: int):
-        self.program = program
+    def __init__(self, comp: GetInstr, cells: int):
+        self._comp = comp
 
-        self._comp, self._base_states, self._base_colors = \
-            prog_params(program)
+        self._base_states, self._base_colors = prog_params(comp)
 
         self._instrs = {}
 
@@ -313,7 +311,13 @@ class BacksymbolMacro(MacroProg):
         self.converter = make_converter(self.base_colors, self.cells)
 
     def __str__(self) -> str:
-        return f'{self.program} ({self.cells}-cell backsymbol macro)'
+        comp_str = (
+            show_comp(comp)
+            if isinstance(comp := self.comp, dict) else
+            str(comp)
+        )
+
+        return f'{comp_str} ({self.cells}-cell backsymbol macro)'
 
     @property
     def comp(self) -> GetInstr:

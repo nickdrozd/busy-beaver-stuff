@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from tm.parse import tcompile
 from tm.tape import Tape, show_number
 from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
-from tm.show import show_slot
+from tm.show import show_slot, show_comp
+from tm.macro import BlockMacro, BacksymbolMacro, MacroInfLoop
 from tm.rules import apply_rule, RuleLimit, InfiniteRule, SuspectedRule
-from tm.macro import BlockMacro, BacksymbolMacro, MacroInfLoop, tcompile
 # pylint: disable-next = unused-import
 from tm.rust_stuff import quick_term_or_rec  # noqa: F401
 
@@ -31,18 +32,10 @@ TERM_CATS = (
     'xlimit',
 )
 
-
-def find_opt_macro(prog: str, steps: int) -> str | BlockMacro:
-    if (blocks := opt_block(prog, steps)) > 1:
-        return BlockMacro(prog, blocks)
-
-    return prog
-
 ########################################
 
 class Machine:
-    program: str | BlockMacro | BacksymbolMacro
-    comp: GetInstr
+    program: GetInstr
 
     tape: Tape
     prover: Prover
@@ -73,27 +66,26 @@ class Machine:
             backsym: int | None = None,
             opt_macro: int | None = None,
     ):
-        prog: str | BlockMacro | BacksymbolMacro = program
+        comp: GetInstr = tcompile(program)
 
         if opt_macro is not None:
-            assert isinstance(prog, str)
-            prog = find_opt_macro(prog, opt_macro)
+            blocks = opt_block(program, opt_macro)
 
-        if blocks is not None:
-            assert isinstance(prog, str)
-            prog = BlockMacro(prog, blocks)
+        if blocks is not None and blocks > 1:
+            comp = BlockMacro(comp, blocks)
 
         if backsym is not None:
-            assert isinstance(prog, str | BlockMacro)
-            prog = BacksymbolMacro(prog, backsym)
+            comp = BacksymbolMacro(comp, backsym)
 
-        self.comp = (
-            tcompile(prog)
-            if isinstance(prog, str) else
-            prog
+        self.program = comp
+
+    @property
+    def prog_str(self) -> str:
+        return (
+            show_comp(comp)
+            if isinstance(comp := self.program, dict) else
+            str(comp)
         )
-
-        self.program = prog
 
     def __str__(self) -> str:
         info = [
@@ -120,7 +112,7 @@ class Machine:
             info.append(
                 f'RULAPP: {rulapp_disp}')
 
-        return f"{self.program} || {' | '.join(info)}"
+        return f"{self.prog_str} || {' | '.join(info)}"
 
     def show_tape(
             self,
@@ -155,7 +147,7 @@ class Machine:
         sim_lim: int = 100_000_000,
         watch_tape: bool = False,
     ) -> Self:
-        comp = self.comp
+        comp = self.program
 
         self.tape = tape = Tape()
 

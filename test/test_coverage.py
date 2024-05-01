@@ -44,8 +44,8 @@ class TestDisplay(TestCase):
             "1^2 3^97 [0]")
 
         self.assertEqual(
-            str(Machine("1RB ...  ... ...").run(watch_tape = True)),
-            "1RB ...  ... ... || CYCLES: 1 | MARKS: 1 | UNDFND: (1, (1, 0)) | TPCFGS: 2")
+            str(Machine("1RB 1RB  1LA ...").run(watch_tape = True)),
+            "1RB 1RB  1LA ... || CYCLES: 3 | MARKS: 2 | UNDFND: (3, (1, 1)) | TPCFGS: 4")
 
 
 class TestFloss(TestCase):
@@ -61,7 +61,7 @@ class TestFloss(TestCase):
                 "1RB 0RA 1LB  2LA 2RB 0LA",
                 blocks = 3,
                 backsym = 1,
-            ).run().comp)
+            ).run().program)
 
         print(macro)
 
@@ -74,10 +74,12 @@ class TestFloss(TestCase):
             ).run(100).xlimit)
 
         self.assertIsNotNone(
-            Machine(
+            (machine := Machine(
                 "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF",
                 opt_macro = 200,
-            ).run(500).infrul)
+            ).run(500)).infrul)
+
+        print(machine)
 
     def test_machine(self):
         self.assertIsNotNone(

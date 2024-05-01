@@ -607,10 +607,10 @@ class Prover(TuringTest):
             self.machine.spnout)
 
     def assert_macro_cells(self, cells: int):
-        assert not isinstance(macro := self.machine.program, str)
+        assert not isinstance(macro := self.machine.program, dict)
 
         self.assertEqual(
-            macro.cells,
+            macro.cells,  # type: ignore[attr-defined]
             cells)
 
     def assert_mult_rules(self) -> None:
@@ -654,7 +654,7 @@ class Prover(TuringTest):
         )
 
         if print_prog:
-            print(self.machine.program)
+            print(self.machine.prog_str)
 
         self.machine.run(**opts)
 
@@ -717,7 +717,7 @@ class Prover(TuringTest):
                 self.assertIsNotNone(
                     self.machine.simple_termination)
 
-                if not isinstance(self.machine.program, str):
+                if not isinstance(self.machine.program, dict):
                     continue
 
                 self.assert_marks(
@@ -767,8 +767,8 @@ class Prover(TuringTest):
 
             if is_macro := (
                     not isinstance(
-                        macro := self.machine.program, str)):
-                result *= macro.cells
+                        macro := self.machine.program, dict)):
+                result *= macro.cells  # type: ignore[attr-defined]
 
             if isinstance(marks, int):
                 self.assertEqual(result, marks)
