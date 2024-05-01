@@ -20,6 +20,7 @@ from test.utils import get_holdouts, read_holdouts, RUN_SLOW
 from tm.parse import tcompile
 from tm.show import show_comp
 from tm.tree import branch_read
+from tm.macro import opt_block
 from tm.reason import (
     cant_halt,
     cant_blank,
@@ -28,7 +29,6 @@ from tm.reason import (
 from tm.machine import (
     show_slot,
     show_number,
-    opt_block,
     Machine,
     quick_term_or_rec,
 )

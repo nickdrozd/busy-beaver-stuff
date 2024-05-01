@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.parse import tcompile
 from tm.tape import Tape, show_number
-from tm.blocks import opt_block
 from tm.prover import Prover, ConfigLimit
 from tm.show import show_slot, show_comp
-from tm.macro import BlockMacro, BacksymbolMacro, MacroInfLoop
+from tm.macro import make_macro, MacroInfLoop
 from tm.rules import apply_rule, RuleLimit, InfiniteRule, SuspectedRule
 # pylint: disable-next = unused-import
 from tm.rust_stuff import quick_term_or_rec  # noqa: F401
@@ -60,24 +58,18 @@ class Machine:
 
     def __init__(
             self,
-            program: str,
+            prog: str,
             *,
             blocks: int | None = None,
             backsym: int | None = None,
             opt_macro: int | None = None,
     ):
-        comp: GetInstr = tcompile(program)
-
-        if opt_macro is not None:
-            blocks = opt_block(program, opt_macro)
-
-        if blocks is not None and blocks > 1:
-            comp = BlockMacro(comp, blocks)
-
-        if backsym is not None:
-            comp = BacksymbolMacro(comp, backsym)
-
-        self.program = comp
+        self.program = make_macro(
+            prog,
+            blocks = blocks,
+            backsym = backsym,
+            opt_macro = opt_macro,
+        )
 
     @property
     def prog_str(self) -> str:

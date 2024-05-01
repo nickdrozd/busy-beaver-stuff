@@ -6,6 +6,8 @@ from collections import defaultdict
 from collections.abc import Sized
 
 from tm.show import show_comp
+from tm.parse import tcompile
+from tm.rust_stuff import opt_block
 
 if TYPE_CHECKING:
     from tm.parse import Color, State, Slot, Instr
@@ -16,6 +18,28 @@ if TYPE_CHECKING:
 
 class GetInstr(Protocol, Sized):
     def __getitem__(self, slot: Slot) -> Instr: ...
+
+########################################
+
+def make_macro(
+        prog: str,
+        *,
+        blocks: int | None = None,
+        backsym: int | None = None,
+        opt_macro: int | None = None,
+) -> GetInstr:
+    comp: GetInstr = tcompile(prog)
+
+    if opt_macro is not None:
+        blocks = opt_block(prog, opt_macro)
+
+    if blocks is not None and blocks > 1:
+        comp = BlockMacro(comp, blocks)
+
+    if backsym is not None:
+        comp = BacksymbolMacro(comp, backsym)
+
+    return comp
 
 ########################################
 
