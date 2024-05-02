@@ -2105,11 +2105,15 @@ NORMALIZE = {
         "1LB 1RD  1LE 1LB  0LE 0LD  0LF 1LF  1RE 1RA  0RC 1RC",
     },
 
-    "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD  ... ... ... ...  ... ... ... ...  ... ... ... ...": (
+    "0RB ...  0LC ...  1LD 1LE  1RF ...  0LG 0RH  0RH 1RF  1RH ...  1LI 0RH  1LI 1LC": (
+        "0RB ...  0LC ...  1LD 1LE  1RF ...  0LG 0RH  0RH 1RF  1RH ...  1LI 0RH  1LI 1LC",
+    ),
+
+    "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD": (
         "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD  ... ... ... ...  ... ... ... ...  ... ... ... ...",
     ),
 
-    "1RB ... ... ... ... ... ... ...  2LC ... ... ... ... ... ... ...  3RD 3LC ... 1LC ... ... ... ...  ... 1RD 1RB 1LE ... ... ... ...  4RD 1LE ... 1RD 1LC ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...": (
+    "1RB ... ... ... ... ... ... ...  2LC ... ... ... ... ... ... ...  3RD 3LC ... 1LC ... ... ... ...  ... 1RD 1RB 1LE ... ... ... ...  4RD 1LE ... 1RD 1LC ... ... ...": (
         "1RB ... ... ... ... ... ... ...  2LC ... ... ... ... ... ... ...  3RD 3LC ... 1LC ... ... ... ...  ... 1RD 1RB 1LE ... ... ... ...  4RD 1LE ... 1RD 1LC ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
     ),
 }

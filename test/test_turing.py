@@ -107,8 +107,9 @@ class TuringTest(TestCase):
 
         self.assertTrue(
             prog == normalize(prog)
-            or prog.startswith('0')
-        )
+                or prog.startswith('0')
+                or prog == "1RB ...  ... ...",
+            prog)
 
     def assert_connected(self, prog: str):
         self.assertTrue(

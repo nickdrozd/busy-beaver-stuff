@@ -154,9 +154,20 @@ class Normalizer:
 
         return self
 
+    def cut_unused_states(self) -> None:
+        states_to_del = {
+            state
+            for state, switch in self.prog.items()
+            if all(switch[color] is None for color in self.colors)
+        }
+
+        for state in states_to_del:
+            del self.prog[state]
+
     def normalize(self) -> Self:
         for _ in self.colors:
             self.normalize_states()
             self.normalize_colors()
+            self.cut_unused_states()
 
         return self.normalize_directions()
