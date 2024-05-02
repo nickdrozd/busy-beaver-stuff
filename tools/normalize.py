@@ -19,9 +19,6 @@ def normalize(prog: str) -> str:
 class Normalizer:
     prog: dict[State, Switch]
 
-    states: set[State]
-    colors: set[Color]
-
     def __init__(self, program: str):
         parsed = parse(program)
 
@@ -30,8 +27,13 @@ class Normalizer:
             for state, instrs in enumerate(parsed)
         }
 
-        self.states = set(range(len(parsed)))
-        self.colors = set(range(len(parsed[0])))
+    @property
+    def states(self) -> set[State]:
+        return set(range(len(self.prog)))
+
+    @property
+    def colors(self) -> set[Color]:
+        return set(range(len(self.prog[0])))
 
     def __repr__(self) -> str:
         return '  '.join([
