@@ -101,7 +101,6 @@ class TuringTest(TestCase):
 
     def assert_normal(self, prog: str):
         self.assertTrue(
-            prog == "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA  0RA ...  0LH ..." or
             Graph(prog).is_normal,
             prog)
 

@@ -176,6 +176,12 @@ class Normalizer:
         for state in states_to_del:
             del self.prog[state]
 
+        for state in sorted(self.states, reverse = True)[:-1]:
+            if not any(state in instr
+                       for instr in self.used_instructions):
+                del self.prog[state]
+
+
     def normalize(self) -> Self:
         for _ in self.colors:
             self.normalize_states()
