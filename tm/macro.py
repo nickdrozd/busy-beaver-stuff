@@ -10,7 +10,7 @@ from tm.parse import tcompile
 from tm.rust_stuff import opt_block
 
 if TYPE_CHECKING:
-    from tm.parse import Color, State, Slot, Instr
+    from tm.parse import Color, State, Slot, Instr, CompProg
 
     Tape = list[Color]
     Config = tuple[State, tuple[bool, Tape]]
@@ -137,7 +137,7 @@ class MacroProg:
 
     @property
     @abstractmethod
-    def instrs(self) -> dict[Slot, Instr]: ...
+    def instrs(self) -> CompProg: ...
 
     def __getitem__(self, slot: Slot) -> Instr:
         try:
@@ -225,7 +225,7 @@ class BlockMacro(MacroProg):
     _base_states: int
     _base_colors: int
 
-    _instrs: dict[Slot, Instr]
+    _instrs: CompProg
 
     converter: TapeColorConverter
 
@@ -280,7 +280,7 @@ class BlockMacro(MacroProg):
         )
 
     @property
-    def instrs(self) -> dict[Slot, Instr]:
+    def instrs(self) -> CompProg:
         return self._instrs
 
     def deconstruct_inputs(
@@ -317,7 +317,7 @@ class BacksymbolMacro(MacroProg):
     _base_states: int
     _base_colors: int
 
-    _instrs: dict[Slot, Instr]
+    _instrs: CompProg
 
     converter: TapeColorConverter
 
@@ -368,7 +368,7 @@ class BacksymbolMacro(MacroProg):
         return self.macro_states * self.macro_colors
 
     @property
-    def instrs(self) -> dict[Slot, Instr]:
+    def instrs(self) -> CompProg:
         return self._instrs
 
     def deconstruct_inputs(
