@@ -154,6 +154,16 @@ class Normalizer:
 
         return self
 
+    def cinch(self) -> None:
+        for state in self.states:  # no-branch
+            if (instr := self.prog[state][0]) is None or instr[0] == 0:
+                continue
+
+            if state != 0:
+                self.swap_states(0, state)
+
+            return
+
     def cut_unused_states(self) -> None:
         states_to_del = {
             state
@@ -169,5 +179,6 @@ class Normalizer:
             self.normalize_states()
             self.normalize_colors()
             self.cut_unused_states()
+            self.cinch()
 
         return self.normalize_directions()

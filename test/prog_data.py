@@ -2105,7 +2105,7 @@ NORMALIZE = {
         "1LB 1RD  1LE 1LB  0LE 0LD  0LF 1LF  1RE 1RA  0RC 1RC",
     },
 
-    "0RB ...  0LC ...  1LD 1LE  1RF ...  0LG 0RH  0RH 1RF  1RH ...  1LI 0RH  1LI 1LC": (
+    "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA  0RA ...  0LH ...": (
         "0RB ...  0LC ...  1LD 1LE  1RF ...  0LG 0RH  0RH 1RF  1RH ...  1LI 0RH  1LI 1LC",
     ),
 
