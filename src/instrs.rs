@@ -7,4 +7,4 @@ pub type Shift = bool;
 pub type Slot = (State, Color);
 pub type Instr = (Color, Shift, State);
 
-pub type CompThin = HashMap<Slot, Instr>;
+pub type CompProg = HashMap<Slot, Instr>;

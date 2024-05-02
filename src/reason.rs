@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use pyo3::pyfunction;
 
 use crate::{
-    instrs::{Color, CompThin, Instr, Shift, Slot, State},
+    instrs::{Color, CompProg, Instr, Shift, Slot, State},
     parse::{parse, parse_to_vec, tcompile},
     tape::BasicTape as Tape,
 };
@@ -234,7 +234,7 @@ impl Backstep for Tape {
 /**************************************/
 
 fn backstep_run_halt(
-    comp: &CompThin,
+    comp: &CompProg,
     sim_lim: Step,
     mut tape: Tape,
     mut state: State,
@@ -269,7 +269,7 @@ fn backstep_run_halt(
 }
 
 fn backstep_run_blank(
-    comp: &CompThin,
+    comp: &CompProg,
     sim_lim: Step,
     mut tape: Tape,
     mut state: State,
@@ -318,7 +318,7 @@ fn backstep_run_blank(
 }
 
 fn backstep_run_spinout(
-    comp: &CompThin,
+    comp: &CompProg,
     sim_lim: Step,
     mut tape: Tape,
     mut state: State,

@@ -1,6 +1,6 @@
 use pyo3::pyfunction;
 
-use crate::instrs::{Color, CompThin, Instr, Shift, Slot, State};
+use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
 
 const UNDF: char = '.';
 
@@ -22,8 +22,8 @@ pub fn parse_to_vec(prog: &str) -> Vec<Vec<Option<Instr>>> {
 }
 
 #[pyfunction]
-pub fn tcompile(prog: &str) -> CompThin {
-    let mut program = CompThin::new();
+pub fn tcompile(prog: &str) -> CompProg {
+    let mut program = CompProg::new();
 
     for (state, instrs) in parse(prog).enumerate() {
         for (color, instr) in instrs.enumerate() {
@@ -101,7 +101,7 @@ fn read_instr(instr: &str) -> Option<Instr> {
 
 #[pyfunction]
 #[allow(clippy::needless_pass_by_value)]
-pub fn show_comp(comp: CompThin) -> String {
+pub fn show_comp(comp: CompProg) -> String {
     let max_state =
         comp.keys().map(|(state, _)| *state).max().unwrap_or(0);
     let max_color =
