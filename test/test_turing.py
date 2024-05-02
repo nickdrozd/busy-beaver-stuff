@@ -740,7 +740,7 @@ class Prover(TuringTest):
             if prog in PROVER_FAILURES:
                 continue
 
-            if prog == champ_2_5 and not RUN_SLOW:
+            if prog in PROVER_HALT_TOO_SLOW and not RUN_SLOW:
                 continue
 
             self.run_bb(

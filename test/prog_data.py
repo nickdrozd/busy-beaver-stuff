@@ -890,6 +890,8 @@ KERNEL = {
     "1RB 0RD  1LC 0RA  1LA 1LB  ... 0RC": 3,
 
     "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD": 6,
+
+    "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...": 5,
 }
 
 MODULAR = {
@@ -1143,6 +1145,8 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
 
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB",
+
+    "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...",
 }
 
 CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
@@ -1347,6 +1351,11 @@ ProverEst = dict[
     int | tuple[float, int] | str,
 ]
 
+PROVER_HALT_TOO_SLOW = {
+    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",
+    "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...",
+}
+
 PROVER_HALT: ProverEst = {
     # 2/5
     "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": (7.3, 19016),
@@ -1410,6 +1419,9 @@ PROVER_HALT: ProverEst = {
 
     # 5/5 block-compiled from 1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": (6.0, 39456),
+
+    # 4/11 backsym-compiled from 2/5 BB
+    "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...": (7.3, 19016),
 
     # Green-8
     "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": "((-3 + (7 *",
@@ -1509,6 +1521,8 @@ SUSPECTED_RULES = {
 
     "1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA",
     "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",
+
+    "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...",
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
