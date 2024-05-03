@@ -52,11 +52,11 @@ impl PastConfig {
                 continue;
             }
 
-            let nxt1 = cycle * i + p1 + diff;
+            let nxt1 = a * i + p1 + diff;
             let nxt2 = nxt1 * i + p1 + 2 * diff;
             let nxt3 = nxt2 * i + p1 + 3 * diff;
 
-            return Some((nxt1 - cycle, nxt2 - nxt1, nxt3 - nxt2));
+            return Some((nxt1 - a, nxt2 - nxt1, nxt3 - nxt2));
         }
 
         None
