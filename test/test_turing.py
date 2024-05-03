@@ -225,6 +225,7 @@ class Reason(TuringTest):
 
     def test_false_negatives(self):
         for prog in CANT_HALT_FALSE_NEGATIVES:
+            self.assertNotIn(prog, HALTERS)
             self.assert_could_halt(prog)
 
         for prog in CANT_BLANK_FALSE_NEGATIVES:
@@ -232,33 +233,35 @@ class Reason(TuringTest):
             self.assert_could_blank(prog)
 
         for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
-            self.assertNotIn(
-                prog,
-                SPINOUT
-                 | SPINOUT_SLOW
-                 | SPINOUT_BLANK
-                 | SPINOUT_BLANK_SLOW)
-
+            self.assertNotIn(prog, SPINNERS)
             self.assert_could_spin_out(prog)
 
     def test_halt(self):
-        for prog in DO_HALT | set(HALT_SLOW):
+        for prog in HALTERS:
             self.assert_could_halt(prog)
 
+        for prog in SPINNERS | RECURS:
+            self.assert_cant_halt(prog)
+
     def test_spinout(self):
-        for prog in DO_SPIN_OUT | set(SPINOUT_SLOW):
+        for prog in SPINNERS:
             self.assert_simple(prog)
+
+            if prog in MACRO_SPINOUT:
+                continue
+
             self.assert_could_spin_out(prog)
 
-        for prog in DONT_SPIN_OUT:
+        for prog in DONT_SPIN_OUT | HALTERS | RECURS:
             self.assert_cant_spin_out(prog)
 
     def test_recur(self):
-        # pylint: disable-next = line-too-long
-        for prog in RECUR_COMPACT | RECUR_DIFFUSE | RECUR_SLOW | RECUR_TOO_SLOW:
+        for prog in RECURS:
             self.assert_cant_halt(prog)
-            self.assert_cant_blank(prog)
             self.assert_cant_spin_out(prog)
+
+            if prog not in BLANKERS:
+                self.assert_cant_blank(prog)
 
     def test_holdouts(self):
         for cat in ('42h', '24h'):

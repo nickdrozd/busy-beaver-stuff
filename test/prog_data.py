@@ -851,6 +851,8 @@ KERNEL = {
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": 3,
 
     # Spinout
+    "1RB 1RC 0RC  1RC 0LA 1LB  2LC 2RA 1LB": 3,
+
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,
     "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA": 3,
     "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB": 3,  # 10^1089
@@ -1102,6 +1104,7 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC",
     "1RB 2RA 1LC  2LB 0RB 2LA  1LA 0LB 1LA",
     "1RB 2RA 1LC  2LB 0RB 2LA  2RB 0LB 1LA",
+    "1RB 2RC 1LA  2LA 1RB 0RB  2RB 2RA 1LC",
 
     "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",
 
@@ -1183,6 +1186,8 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     "1RB 3LA 1LA 1RA  2LB 2RA 0RB 3RB",  # QH 77, xmas
     "1RB 2LA 2RB 1LA  3LB 3RA 2RB 0RB",  # QH 14, xmas
 
+    "1RB 3LA 1LA 4LA 1RA  2LB 2RA ... 0RA 0RB",
+    "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",
 
     "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",
@@ -1311,6 +1316,10 @@ DONT_SPIN_OUT: set[str] = {
     "1RB 1RD  1LC 1LB  1LD 1RA  0RE 0RD  1LB 1RE",  # 10^28, xmas
     "1RB 1RA  1LC 0RB  1LE 0LD  1RA 1RE  1LB 0RA",  # 10^31
     "1RB 1LE  0RC 1LD  1RD 0RD  1RE 1RC  0LA 1LB",  # 10^46
+}
+
+MACRO_SPINOUT: set[str] = {
+    "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
 }
 
 BLANKERS = (
@@ -2075,6 +2084,28 @@ ALGEBRA_PROGS = {
     for progs in ALGEBRA.values()
     for prog in progs
 }
+
+HALTERS = set(
+    HALT
+    | HALT_SLOW
+    | PROVER_HALT
+) | DO_HALT
+
+SPINNERS = set(
+    SPINOUT
+    | SPINOUT_SLOW
+    | SPINOUT_BLANK
+    | SPINOUT_BLANK_SLOW
+    | PROVER_SPINOUT
+) | DO_SPIN_OUT
+
+RECURS = set(
+    RECUR_COMPACT
+    | RECUR_DIFFUSE
+    | RECUR_SLOW
+    | RECUR_TOO_SLOW
+    | QUASIHALT
+) | PROVER_QUASIHALT
 
 ## test program ######################################################
 
