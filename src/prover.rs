@@ -63,6 +63,20 @@ impl PastConfig {
             return Some((nxt1 - a, nxt2 - nxt1, nxt3 - nxt2));
         }
 
+        const fn a232584(t3: Cycle, t2: Cycle, t1: Cycle) -> Cycle {
+            (4 * t1) - (4 * t2) + t3
+        }
+
+        if a232584(e, d, c) == b && a232584(d, c, b) == a {
+            let nxt1 = a232584(c, b, a);
+            let nxt2 = a232584(b, a, nxt1);
+            let nxt3 = a232584(a, nxt1, nxt2);
+
+            if a < nxt1 && nxt1 < nxt2 && nxt2 < nxt3 {
+                return Some((nxt1 - a, nxt2 - nxt1, nxt3 - nxt2));
+            }
+        }
+
         None
     }
 }
