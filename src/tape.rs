@@ -532,7 +532,7 @@ impl EnumTape {
         }
     }
 
-    fn check_step(&mut self, shift: Shift, color: Color, skip: bool) {
+    fn check_step(&self, shift: Shift, color: Color, skip: bool) {
         let (pull, push) = if shift {
             (&self.tape.rspan, &self.tape.lspan)
         } else {
