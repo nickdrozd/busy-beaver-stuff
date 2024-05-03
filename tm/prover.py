@@ -134,9 +134,6 @@ class Prover:
         if (deltas := past_configs.next_deltas(state, cycle)) is None:
             return None
 
-        if any(delta > 90_000 for delta in deltas):
-            return None
-
         tags = tape.clone()
 
         counts = []

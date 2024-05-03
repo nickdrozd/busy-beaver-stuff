@@ -178,12 +178,6 @@ class TestFloss(TestCase):
         _ = instr_seq(
             "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD")
 
-    def test_diff_lim(self):
-        self.assertIsNotNone(
-            Machine(
-                "1RB 1LA  1LC 0RD  ... 0RA  1LD 0LA"
-            ).run())
-
     def test_mixed_divs(self):
         self.assertIsNotNone(
             Machine(

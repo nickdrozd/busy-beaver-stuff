@@ -56,6 +56,10 @@ impl PastConfig {
             let nxt2 = nxt1 * i + p1 + 2 * diff;
             let nxt3 = nxt2 * i + p1 + 3 * diff;
 
+            if a > nxt1 || nxt1 > nxt2 || nxt2 > nxt3 {
+                return None;
+            }
+
             return Some((nxt1 - a, nxt2 - nxt1, nxt3 - nxt2));
         }
 
