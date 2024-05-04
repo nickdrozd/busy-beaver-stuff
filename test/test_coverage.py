@@ -65,8 +65,6 @@ class TestFloss(TestCase):
 
         print(macro)
 
-        self.assertEqual(len(macro), 0)
-
         self.assertIsNone(
             Machine(
                 "1RB 1LB  1LA ...",

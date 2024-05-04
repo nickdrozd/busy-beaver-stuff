@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Protocol
 from collections import defaultdict
-from collections.abc import Sized
 
 from tm.show import show_comp
 from tm.parse import tcompile
@@ -16,7 +15,7 @@ if TYPE_CHECKING:
     Config = tuple[State, tuple[bool, Tape]]
 
 
-class GetInstr(Protocol, Sized):
+class GetInstr(Protocol):
     def __getitem__(self, slot: Slot) -> Instr: ...
 
 ########################################
@@ -148,9 +147,6 @@ class MacroProg:
             self.instrs[slot] = instr
 
         return instr
-
-    def __len__(self) -> int:
-        return len(self.instrs)
 
     @abstractmethod
     def __str__(self) -> str: ...
