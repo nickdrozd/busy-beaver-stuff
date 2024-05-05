@@ -179,8 +179,6 @@ class MacroProg:
 
         pos = cells - 1 if right_edge else 0
 
-        seen: set[tuple[State, int, tuple[Color, ...]]] = set()
-
         for _ in range(self.sim_lim):  # no-branch
             color, shift, next_state = \
                 self.comp[state, scan := tape[pos]]
@@ -201,13 +199,8 @@ class MacroProg:
             if not 0 <= pos < cells:
                 break
 
-            if (curr := (state, pos, tuple(tape))) in seen:
-                raise MacroInfLoop
-
-            seen.add(curr)
-
         else:
-            raise MacroInfLoop  # no-cover
+            raise MacroInfLoop
 
         return state, (cells <= pos, tape)
 
