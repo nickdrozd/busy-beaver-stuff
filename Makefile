@@ -89,7 +89,7 @@ test : test-rust
 test-all : test-rust compile
 	RUN_SLOW=1 $(MAKE) test
 
-test-tree : compile
+tree : compile
 	RUN_SLOW=1 $(PYTEST) test.test_tree
 	$(MAKE) refresh
 
