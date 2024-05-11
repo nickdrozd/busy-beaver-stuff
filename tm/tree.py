@@ -5,6 +5,7 @@ import json
 import signal
 from itertools import product
 from typing import TYPE_CHECKING
+from collections import defaultdict
 
 from multiprocessing import cpu_count, Process
 
@@ -22,9 +23,30 @@ if TYPE_CHECKING:
 
 ########################################
 
+class Stack:
+    progs: dict[int, list[str]]
+
+    def __init__(self, progs: list[str]):
+        self.progs = defaultdict(list)
+        self.extend(progs)
+
+    def extend(self, progs: list[str]) -> None:
+        for prog in progs:
+            self.progs[prog.count('...')].append(prog)
+
+    def pop(self) -> str:
+        for _, progs in sorted(self.progs.items()):
+            if not progs:
+                continue
+
+            return progs.pop()
+
+        raise IndexError
+
+
 def tree_gen(
         steps: int,
-        stack: list[str],
+        stack: Stack,
         open_slot_lim: int,
 ) -> Iterator[str]:
     while True:  # pylint: disable = while-used
@@ -84,7 +106,7 @@ def worker(
 
     log('starting...', dump_stack = True)
 
-    for prog in tree_gen(steps, stack, 2 if halt else 1):
+    for prog in tree_gen(steps, Stack(stack), 2 if halt else 1):
         try:
             output(prog)
         # pylint: disable-next = broad-exception-caught
