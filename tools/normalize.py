@@ -181,12 +181,20 @@ class Normalizer:
                        for instr in self.used_instructions):
                 del self.prog[state]
 
+    def cut_unused_colors(self) -> None:
+        for color in self.colors:
+            if any(sw[color] is not None for sw in self.prog.values()):
+                continue
+
+            for switch in self.prog.values():
+                del switch[color]
 
     def normalize(self) -> Self:
         for _ in self.colors:
             self.normalize_states()
             self.normalize_colors()
             self.cut_unused_states()
+            self.cut_unused_colors()
             self.cinch()
 
         return self.normalize_directions()
