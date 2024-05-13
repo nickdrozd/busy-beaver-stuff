@@ -198,28 +198,18 @@ class Reason(TuringTest):
                 },
             )
 
-    def test_mother_of_giants(self):
-        mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
+    def test_cryptids(self):
+        for cryptid in CRYPTIDS:
+            self.assert_could_halt(cryptid)
 
-        for prog in branch_last(mother):
-            self.assert_could_blank(prog)
-            self.assert_could_spin_out(prog)
+        for mother in MOTHER:
+            for ext in branch_last(mother):
+                self.assert_could_blank(ext)
+                self.assert_could_spin_out(ext)
 
-    def test_bigfoot(self):
-        bigfoot = "1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA"
-
-        self.assert_could_halt(bigfoot)
-
-        for prog in branch_last(bigfoot):
-            self.assert_cant_blank(prog)
-
-        # pylint: disable = line-too-long
-        two_color = "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  ... 1LC"
-
-        self.assert_could_halt(two_color)
-
-        for prog in branch_last(two_color):
-            self.assert_cant_blank(prog)
+        for bigfoot in BIGFOOT:
+            for ext in branch_last(bigfoot):
+                self.assert_cant_blank(ext)
 
     def test_blank(self):
         for prog in DONT_BLANK:
