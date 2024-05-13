@@ -211,6 +211,10 @@ class Reason(TuringTest):
             for ext in branch_last(bigfoot):
                 self.assert_cant_blank(ext)
 
+        for hydra in HYDRA:
+            self.assert_could_blank(hydra)
+            self.assert_cant_spin_out(hydra)
+
     def test_blank(self):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)
