@@ -19,7 +19,7 @@ from test.utils import get_holdouts, read_holdouts, RUN_SLOW
 
 from tm.parse import tcompile
 from tm.show import show_comp
-from tm.tree import branch_read
+from tm.tree import Program
 from tm.macro import opt_block
 from tm.reason import (
     cant_halt,
@@ -180,6 +180,12 @@ class TuringTest(TestCase):
         _ = Machine(prog, backsym = 1).run(sim_lim = 10)
 
 
+def branch_last(prog: str) -> list[str]:
+    program = Program(prog)
+    assert len(slots := program.open_slots) == 1
+    return program.branch(slots[0])
+
+
 class Reason(TuringTest):
     def test_undefined(self):
         for prog, sequence in UNDEFINED.items():
@@ -195,7 +201,7 @@ class Reason(TuringTest):
     def test_mother_of_giants(self):
         mother = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
 
-        for prog in branch_read(mother, 'E0'):
+        for prog in branch_last(mother):
             self.assert_could_blank(prog)
             self.assert_could_spin_out(prog)
 
@@ -204,7 +210,7 @@ class Reason(TuringTest):
 
         self.assert_could_halt(bigfoot)
 
-        for prog in branch_read(bigfoot, 'C0'):
+        for prog in branch_last(bigfoot):
             self.assert_cant_blank(prog)
 
         # pylint: disable = line-too-long
@@ -212,7 +218,7 @@ class Reason(TuringTest):
 
         self.assert_could_halt(two_color)
 
-        for prog in branch_read(two_color, 'H0'):
+        for prog in branch_last(two_color):
             self.assert_cant_blank(prog)
 
     def test_blank(self):
