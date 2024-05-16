@@ -266,6 +266,14 @@ class EnumTape:
     def set_count(self, index: Index, val: Count) -> None:
         self.tape.set_count(index, val)
 
+    @property
+    def scan(self) -> Color:
+        return self.tape.scan
+
+    @property
+    def signature(self) -> Signature:
+        return self.tape.signature
+
     def step(self, shift: Shift, color: Color, skip: bool) -> None:
         pull, push = (
             (self.tape.rspan, self.tape.lspan)

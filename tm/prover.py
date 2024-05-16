@@ -39,7 +39,7 @@ class Prover:
     def get_rule(
             self,
             state: State,
-            tape: Tape,
+            tape: Tape | EnumTape,
             sig: Signature | None = None,
     ) -> Rule | None:
         if (temp := self.rules.get((state, tape.scan))) is None:
@@ -71,7 +71,7 @@ class Prover:
             self,
             steps: int,
             state: State,
-            tape: Tape,
+            tape: Tape | EnumTape,
     ) -> State | None:
         for _ in range(steps):
             if (rule := self.get_rule(state, tape)) is not None:
@@ -98,16 +98,7 @@ class Prover:
             tape: EnumTape,
             sig: Signature,
     ) -> MinSig:
-        for _ in range(steps):
-            if (rule := self.get_rule(state, tape.tape)) is not None:
-                if apply_rule(rule, tape) is not None:
-                    continue
-
-            color, shift, next_state = self.prog[state, tape.tape.scan]
-
-            tape.step(shift, color, state == next_state)
-
-            state = next_state
+        _ = self.run_simulator(steps, state, tape)
 
         lmax, rmax = tape.offsets
 
