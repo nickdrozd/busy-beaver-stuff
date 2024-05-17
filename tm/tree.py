@@ -10,7 +10,7 @@ from collections import defaultdict
 from multiprocessing import cpu_count, Process
 
 from tm.show import show_instr
-from tm.parse import parse, read_slot, init_prog
+from tm.parse import parse, init_prog
 from tm.machine import quick_term_or_rec
 from tm.rust_stuff import run_for_undefined, TreeSkip
 
@@ -218,17 +218,11 @@ class Program:
 
 ########################################
 
-def branch_read(prog: str, slot: str) -> list[str]:
-    return Program(prog).branch(
-        read_slot(slot))
-
-
 def init_branches(states: int, colors: int) -> list[str]:
-    return branch_read(
-        init_prog(states, colors),
-        'B0')
+    return Program(
+        init_prog(states, colors)
+    ).branch((1, 0))  # B0
 
-########################################
 
 def prep_branches(
         states: int,
