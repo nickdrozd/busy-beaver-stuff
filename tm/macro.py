@@ -315,8 +315,6 @@ class BlockMacro(MacroProg):
 ########################################
 
 class BacksymbolMacro(MacroProg):
-    program: str | GetInstr
-
     cells: int
     backsymbols: int
 
