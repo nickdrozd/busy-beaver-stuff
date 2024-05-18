@@ -116,14 +116,6 @@ class MacroProg:
 
     @property
     @abstractmethod
-    def base_states(self) -> int: ...
-
-    @property
-    @abstractmethod
-    def base_colors(self) -> int: ...
-
-    @property
-    @abstractmethod
     def macro_states(self) -> int: ...
 
     @property
@@ -230,8 +222,8 @@ class BlockMacro(MacroProg):
 
     _comp: GetInstr
 
-    _base_states: int
-    _base_colors: int
+    base_states: int
+    base_colors: int
 
     _instrs: CompProg
 
@@ -240,7 +232,7 @@ class BlockMacro(MacroProg):
     def __init__(self, comp: GetInstr, cells: int):
         self._comp = comp
 
-        self._base_states, self._base_colors = prog_params(comp)
+        self.base_states, self.base_colors = prog_params(comp)
 
         self._instrs = {}
 
@@ -260,14 +252,6 @@ class BlockMacro(MacroProg):
     @property
     def comp(self) -> GetInstr:
         return self._comp
-
-    @property
-    def base_states(self) -> int:
-        return self._base_states
-
-    @property
-    def base_colors(self) -> int:
-        return self._base_colors
 
     @property
     def macro_states(self) -> int:
@@ -320,8 +304,8 @@ class BacksymbolMacro(MacroProg):
 
     _comp: GetInstr
 
-    _base_states: int
-    _base_colors: int
+    base_states: int
+    base_colors: int
 
     _instrs: CompProg
 
@@ -330,7 +314,7 @@ class BacksymbolMacro(MacroProg):
     def __init__(self, comp: GetInstr, cells: int):
         self._comp = comp
 
-        self._base_states, self._base_colors = prog_params(comp)
+        self.base_states, self.base_colors = prog_params(comp)
 
         self._instrs = {}
 
@@ -352,14 +336,6 @@ class BacksymbolMacro(MacroProg):
     @property
     def comp(self) -> GetInstr:
         return self._comp
-
-    @property
-    def base_states(self) -> int:
-        return self._base_states
-
-    @property
-    def base_colors(self) -> int:
-        return self._base_colors
 
     @property
     def macro_states(self) -> int:
