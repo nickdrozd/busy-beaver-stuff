@@ -113,10 +113,29 @@ class MacroProg:
     comp: GetInstr
     instrs: CompProg
 
+    converter: TapeColorConverter
+
+    base_states: int
+    base_colors: int
+
     macro_states: int
     macro_colors: int
 
+    cells: int
     sim_lim: int
+
+    def __init__(self, comp: GetInstr, cells: int):
+        self.comp = comp
+        self.instrs = {}
+
+        self.base_states, self.base_colors = prog_params(comp)
+
+        self.cells = cells
+
+        self.converter = make_converter(
+            self.base_colors,
+            self.cells,
+        )
 
     def __getitem__(self, slot: Slot) -> Instr:
         try:
@@ -206,20 +225,8 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
-    cells: int
-
-    base_states: int
-    base_colors: int
-
-    converter: TapeColorConverter
-
     def __init__(self, comp: GetInstr, cells: int):
-        self.comp = comp
-        self.instrs = {}
-
-        self.base_states, self.base_colors = prog_params(comp)
-
-        self.cells = cells
+        super().__init__(comp, cells)
 
         self.macro_states = 2 * self.base_states
         self.macro_colors = self.base_colors ** self.cells
@@ -229,8 +236,6 @@ class BlockMacro(MacroProg):
             * self.cells
             * self.macro_colors
         )
-
-        self.converter = make_converter(self.base_colors, self.cells)
 
     def __str__(self) -> str:
         comp_str = (
@@ -265,23 +270,10 @@ class BlockMacro(MacroProg):
 ########################################
 
 class BacksymbolMacro(MacroProg):
-    cells: int
     backsymbols: int
 
-    base_states: int
-    base_colors: int
-
-    macro_states: int
-
-    converter: TapeColorConverter
-
     def __init__(self, comp: GetInstr, cells: int):
-        self.comp = comp
-        self.instrs = {}
-
-        self.base_states, self.base_colors = prog_params(comp)
-
-        self.cells = cells
+        super().__init__(comp, cells)
 
         self.backsymbols = self.base_colors ** self.cells
 
@@ -289,8 +281,6 @@ class BacksymbolMacro(MacroProg):
         self.macro_colors = self.base_colors
 
         self.sim_lim = self.macro_states * self.macro_colors
-
-        self.converter = make_converter(self.base_colors, self.cells)
 
     def __str__(self) -> str:
         comp_str = (
