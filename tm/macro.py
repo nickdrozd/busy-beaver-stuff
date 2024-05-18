@@ -110,9 +110,8 @@ def prog_params(comp: GetInstr) -> tuple[int, int]:
 
 
 class MacroProg:
-    @property
-    @abstractmethod
-    def comp(self) -> GetInstr: ...
+    comp: GetInstr
+    instrs: CompProg
 
     @property
     @abstractmethod
@@ -125,10 +124,6 @@ class MacroProg:
     @property
     @abstractmethod
     def sim_lim(self) -> int: ...
-
-    @property
-    @abstractmethod
-    def instrs(self) -> CompProg: ...
 
     def __getitem__(self, slot: Slot) -> Instr:
         try:
@@ -220,21 +215,16 @@ class MacroProg:
 class BlockMacro(MacroProg):
     cells: int
 
-    _comp: GetInstr
-
     base_states: int
     base_colors: int
-
-    _instrs: CompProg
 
     converter: TapeColorConverter
 
     def __init__(self, comp: GetInstr, cells: int):
-        self._comp = comp
+        self.comp = comp
+        self.instrs = {}
 
         self.base_states, self.base_colors = prog_params(comp)
-
-        self._instrs = {}
 
         self.cells = cells
 
@@ -248,10 +238,6 @@ class BlockMacro(MacroProg):
         )
 
         return f'{comp_str} ({self.cells}-cell block macro)'
-
-    @property
-    def comp(self) -> GetInstr:
-        return self._comp
 
     @property
     def macro_states(self) -> int:
@@ -270,10 +256,6 @@ class BlockMacro(MacroProg):
             * self.cells
             * self.macro_colors
         )
-
-    @property
-    def instrs(self) -> CompProg:
-        return self._instrs
 
     def deconstruct_inputs(
             self,
@@ -312,11 +294,10 @@ class BacksymbolMacro(MacroProg):
     converter: TapeColorConverter
 
     def __init__(self, comp: GetInstr, cells: int):
-        self._comp = comp
+        self.comp = comp
+        self.instrs = {}
 
         self.base_states, self.base_colors = prog_params(comp)
-
-        self._instrs = {}
 
         self.cells = cells
 
@@ -334,10 +315,6 @@ class BacksymbolMacro(MacroProg):
         return f'{comp_str} ({self.cells}-cell backsymbol macro)'
 
     @property
-    def comp(self) -> GetInstr:
-        return self._comp
-
-    @property
     def macro_states(self) -> int:
         return 2 * self.base_states * self.backsymbols
 
@@ -348,10 +325,6 @@ class BacksymbolMacro(MacroProg):
     @property
     def sim_lim(self) -> int:
         return self.macro_states * self.macro_colors
-
-    @property
-    def instrs(self) -> CompProg:
-        return self._instrs
 
     def deconstruct_inputs(
             self,
