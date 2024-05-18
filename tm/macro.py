@@ -137,6 +137,19 @@ class MacroProg:
             self.cells,
         )
 
+    def __str__(self) -> str:
+        comp_str = (
+            show_comp(comp)
+            if isinstance(comp := self.comp, dict) else
+            str(comp)
+        )
+
+        return f'{comp_str} ({self.cells}-cell {self.name} macro)'
+
+    @property
+    @abstractmethod
+    def name(self) -> str: ...
+
     def __getitem__(self, slot: Slot) -> Instr:
         try:
             instr = self.instrs[slot]
@@ -146,9 +159,6 @@ class MacroProg:
             self.instrs[slot] = instr
 
         return instr
-
-    @abstractmethod
-    def __str__(self) -> str: ...
 
     def calculate_instr(
             self,
@@ -237,14 +247,9 @@ class BlockMacro(MacroProg):
             * self.macro_colors
         )
 
-    def __str__(self) -> str:
-        comp_str = (
-            show_comp(comp)
-            if isinstance(comp := self.comp, dict) else
-            str(comp)
-        )
-
-        return f'{comp_str} ({self.cells}-cell block macro)'
+    @property
+    def name(self) -> str:
+        return 'block'
 
     def deconstruct_inputs(
             self,
@@ -282,14 +287,9 @@ class BacksymbolMacro(MacroProg):
 
         self.sim_lim = self.macro_states * self.macro_colors
 
-    def __str__(self) -> str:
-        comp_str = (
-            show_comp(comp)
-            if isinstance(comp := self.comp, dict) else
-            str(comp)
-        )
-
-        return f'{comp_str} ({self.cells}-cell backsymbol macro)'
+    @property
+    def name(self) -> str:
+        return 'backsymbol'
 
     def deconstruct_inputs(
             self,
