@@ -34,28 +34,19 @@ use pyo3::pymodule;
 #[pymodule]
 mod rust_stuff {
     #[pymodule_export]
-    use crate::blocks::opt_block;
-
-    #[pymodule_export]
-    use crate::machine::{
-        quick_term_or_rec, run_quick_machine, MachineResult, TermRes,
+    use crate::{
+        blocks::opt_block,
+        machine::{
+            quick_term_or_rec, run_quick_machine, MachineResult,
+            TermRes,
+        },
+        parse::{
+            init_prog, parse_to_vec, read_slot, show_comp, show_instr,
+            show_slot, show_state, tcompile,
+        },
+        prover::PastConfigs,
+        reason::{cant_blank, cant_halt, cant_spin_out},
+        rules::{InfiniteRule, RuleLimit, UnknownRule},
+        tree::{run_for_undefined, TreeSkip},
     };
-
-    #[pymodule_export]
-    use crate::parse::{
-        init_prog, parse_to_vec, read_slot, show_comp, show_instr,
-        show_slot, show_state, tcompile,
-    };
-
-    #[pymodule_export]
-    use crate::prover::PastConfigs;
-
-    #[pymodule_export]
-    use crate::reason::{cant_blank, cant_halt, cant_spin_out};
-
-    #[pymodule_export]
-    use crate::rules::{InfiniteRule, RuleLimit, UnknownRule};
-
-    #[pymodule_export]
-    use crate::tree::{run_for_undefined, TreeSkip};
 }
