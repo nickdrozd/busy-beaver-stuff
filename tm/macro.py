@@ -154,29 +154,20 @@ class MacroProg:
         try:
             instr = self.instrs[slot]
         except KeyError:
-            instr = self.calculate_instr(*slot)
+            instr = self.calculate_instr(slot)
 
             self.instrs[slot] = instr
 
         return instr
 
-    def calculate_instr(
-            self,
-            macro_state: State,
-            macro_color: Color,
-    ) -> Instr:
+    def calculate_instr(self, slot: Slot) -> Instr:
         return self.reconstruct_outputs(
             self.run_simulator(
                 self.deconstruct_inputs(
-                    macro_state,
-                    macro_color)))
+                    slot)))
 
     @abstractmethod
-    def deconstruct_inputs(
-            self,
-            macro_state: State,
-            macro_color: Color,
-    ) -> Config: ...
+    def deconstruct_inputs(self, slot: Slot) -> Config: ...
 
     @abstractmethod
     def reconstruct_outputs(self, config: Config) -> Instr: ...
@@ -251,11 +242,9 @@ class BlockMacro(MacroProg):
     def name(self) -> str:
         return 'block'
 
-    def deconstruct_inputs(
-            self,
-            macro_state: State,
-            macro_color: Color,
-    ) -> Config:
+    def deconstruct_inputs(self, slot: Slot) -> Config:
+        macro_state, macro_color = slot
+
         state, right_edge = divmod(macro_state, 2)
 
         return state, (
@@ -291,11 +280,9 @@ class BacksymbolMacro(MacroProg):
     def name(self) -> str:
         return 'backsymbol'
 
-    def deconstruct_inputs(
-            self,
-            macro_state: State,
-            macro_color: Color,
-    ) -> Config:
+    def deconstruct_inputs(self, slot: Slot) -> Config:
+        macro_state, macro_color = slot
+
         st_co, at_right = divmod(macro_state, 2)
 
         state, backsymbol = divmod(st_co, self.backsymbols)
