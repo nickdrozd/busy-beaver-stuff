@@ -63,7 +63,9 @@ class TestFloss(TestCase):
                 backsym = 1,
             ).run().program)
 
-        print(macro)
+        self.assertEqual(
+            str(macro),
+            "1RB 0RA 1LB  2LA 2RB 0LA (3-cell block macro) (1-cell backsymbol macro)")
 
         self.assertIsNone(
             Machine(
