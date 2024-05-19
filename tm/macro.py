@@ -118,9 +118,6 @@ class MacroProg:
     base_states: int
     base_colors: int
 
-    macro_states: int
-    macro_colors: int
-
     cells: int
     sim_lim: int
 
@@ -149,6 +146,14 @@ class MacroProg:
     @property
     @abstractmethod
     def name(self) -> str: ...
+
+    @property
+    @abstractmethod
+    def macro_states(self) -> int: ...
+
+    @property
+    @abstractmethod
+    def macro_colors(self) -> int: ...
 
     def __getitem__(self, slot: Slot) -> Instr:
         try:
@@ -229,9 +234,6 @@ class BlockMacro(MacroProg):
     def __init__(self, comp: GetInstr, cells: int):
         super().__init__(comp, cells)
 
-        self.macro_states = 2 * self.base_states
-        self.macro_colors = self.base_colors ** self.cells
-
         self.sim_lim = (
             self.base_states
             * self.cells
@@ -241,6 +243,16 @@ class BlockMacro(MacroProg):
     @property
     def name(self) -> str:
         return 'block'
+
+    @property
+    def macro_states(self) -> int:
+        return 2 * self.base_states
+
+    @property
+    def macro_colors(self) -> int:
+        macro_colors: int = self.base_colors ** self.cells
+
+        return macro_colors
 
     def deconstruct_inputs(self, slot: Slot) -> Config:
         macro_state, macro_color = slot
@@ -271,14 +283,19 @@ class BacksymbolMacro(MacroProg):
 
         self.backsymbols = self.base_colors ** self.cells
 
-        self.macro_states = 2 * self.base_states * self.backsymbols
-        self.macro_colors = self.base_colors
-
         self.sim_lim = self.macro_states * self.macro_colors
 
     @property
     def name(self) -> str:
         return 'backsymbol'
+
+    @property
+    def macro_states(self) -> int:
+        return 2 * self.base_states * self.backsymbols
+
+    @property
+    def macro_colors(self) -> int:
+        return self.base_colors
 
     def deconstruct_inputs(self, slot: Slot) -> Config:
         macro_state, macro_color = slot
