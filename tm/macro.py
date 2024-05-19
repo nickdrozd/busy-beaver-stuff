@@ -306,27 +306,25 @@ class BacksymbolMacro(MacroProg):
 
         backspan = self.converter.color_to_tape(backsymbol)
 
-        tape = (
-            [macro_color] + backspan
+        return state, (
+            (False, [macro_color] + backspan)
             if at_right else
-            backspan + [macro_color]
+            ( True, backspan + [macro_color])
         )
 
-        return state, (not at_right, tape)
-
     def reconstruct_outputs(self, config: Config) -> Instr:
-        state, (right_edge, tape) = config
+        state, (at_right, tape) = config
 
         out_color, backsymbol = (
-            (tape[0], tape[1:])
-            if right_edge else
             (tape[-1], tape[:-1])
+            if (shift := not at_right) else
+            (tape[0], tape[1:])
         )
 
         return (
             out_color,
-            not right_edge,
-            int(not right_edge)
+            shift,
+            int(shift)
             + (2
                * (self.converter.tape_to_color(backsymbol)
                   + (state
