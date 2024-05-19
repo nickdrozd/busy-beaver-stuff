@@ -61,6 +61,7 @@ class TestFloss(TestCase):
                 "1RB 0RA 1LB  2LA 2RB 0LA",
                 blocks = 3,
                 backsym = 1,
+                params = (2, 3),
             ).run().program)
 
         self.assertEqual(
@@ -71,6 +72,13 @@ class TestFloss(TestCase):
             Machine(
                 "1RB 1LB  1LA ...",
                 backsym = 1,
+            ).run(100).xlimit)
+
+        self.assertIsNone(
+            Machine(
+                "1RB 1LA  1LA ...",
+                backsym = 1,
+                params = (2, 2),
             ).run(100).xlimit)
 
         self.assertIsNotNone(

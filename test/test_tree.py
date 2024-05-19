@@ -24,6 +24,8 @@ if TYPE_CHECKING:
 
     from test.lin_rec import QuickMachineResult
 
+    from tm.machine import Params
+
     BasicMachine = Machine | QuickMachineResult
 
     Q = Queue[str]
@@ -41,6 +43,7 @@ def queue_to_set(queue: Q) -> set[str]:
 def run_variations(
         prog: str,
         sim_lim: int,
+        params: Params,
         *,
         lin_rec: int | None = None,
         block_steps: int = 1_000,
@@ -51,6 +54,7 @@ def run_variations(
     yield Machine(
         prog,
         opt_macro = block_steps,
+        params = params,
     ).run(
         sim_lim = sim_lim,
     )
@@ -58,6 +62,7 @@ def run_variations(
     yield Machine(
         prog,
         backsym = 1,
+        params = params,
     ).run(
         sim_lim = sim_lim,
     )
@@ -155,6 +160,7 @@ class Fast(TestTree):
             machine = Machine(
                 prog,
                 opt_macro = 20,
+                params = (2, 2),
             ).run(sim_lim = 1 + max_inf)
 
             if machine.xlimit is None:
@@ -202,6 +208,7 @@ class Fast(TestTree):
             machines = run_variations(
                 prog, 1 + max_inf,
                 lin_rec = 50,
+                params = (3, 2),
             )
 
             for machine in machines:
@@ -234,11 +241,13 @@ class Fast(TestTree):
 
     def test_23(self):
         max_inf = 7_395
+        params = 2, 3
 
         def capture(prog: str) -> None:
             machines = run_variations(
                 prog, 400,
                 lin_rec = 50,
+                params = params,
             )
 
             for machine in machines:
@@ -248,6 +257,7 @@ class Fast(TestTree):
 
             machines = run_variations(
                 prog, 1 + max_inf,
+                params = params,
             )
 
             for machine in machines:
@@ -287,6 +297,7 @@ class Fast(TestTree):
 class Slow(TestTree):
     def test_42h(self):
         max_inf = 13_690
+        params = 4, 2
 
         def capture(prog: str) -> None:
             if 'D' not in prog:
@@ -295,7 +306,7 @@ class Slow(TestTree):
             if quick_term_or_rec(prog, 50):
                 return
 
-            for machine in run_variations(prog, 1000):
+            for machine in run_variations(prog, 1000, params = params):
                 if machine.xlimit is None:
                     self.add_result(prog, machine)
                     return
@@ -303,6 +314,7 @@ class Slow(TestTree):
             machines = run_variations(
                 prog, 1 + max_inf,
                 block_steps = 6_000,
+                params = params
             )
 
             for machine in machines:
@@ -337,6 +349,8 @@ class Slow(TestTree):
         self.assert_simple_and_connected()
 
     def test_24(self):
+        params = 2, 4
+
         def capture(prog: str) -> None:
             if '3' not in prog:
                 return
@@ -347,6 +361,7 @@ class Slow(TestTree):
             machines = run_variations(
                 prog, 15_000,
                 block_steps = 6_000,
+                params = params,
             )
 
             for machine in machines:
@@ -376,6 +391,8 @@ class Slow(TestTree):
         self.assert_simple_and_connected()
 
     def test_42q(self):
+        params = 4, 2
+
         def capture(prog: str) -> None:
             if 'D' not in prog:
                 return
@@ -389,6 +406,7 @@ class Slow(TestTree):
             machine = Machine(
                 prog,
                 opt_macro = 1_000,
+                params = params,
             ).run(10_000)
 
             if machine.simple_termination or machine.infrul:

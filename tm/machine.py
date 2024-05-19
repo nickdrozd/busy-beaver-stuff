@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from typing import Self
 
     from tm.tape import Count
-    from tm.macro import State, Slot, GetInstr
+    from tm.macro import State, Slot, GetInstr, Params
 
     Undfnd = tuple[int, Slot]
 
@@ -63,12 +63,14 @@ class Machine:
             blocks: int | None = None,
             backsym: int | None = None,
             opt_macro: int | None = None,
+            params: Params | None = None,
     ):
         self.program = make_macro(
             prog,
             blocks = blocks,
             backsym = backsym,
             opt_macro = opt_macro,
+            params = params,
         )
 
     @property

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
     Tape = tuple[Color, ...]
     Config = tuple[State, tuple[bool, Tape]]
+    Params = tuple[int, int]
 
 
 class GetInstr(Protocol):
@@ -26,6 +27,7 @@ def make_macro(
         blocks: int | None = None,
         backsym: int | None = None,
         opt_macro: int | None = None,
+        params: Params | None = None,
 ) -> GetInstr:
     comp: GetInstr = tcompile(prog)
 
@@ -33,13 +35,18 @@ def make_macro(
         blocks = opt_block(prog, opt_macro)
 
     if blocks is not None and blocks > 1:
-        comp = BlockMacro(comp, blocks)
+        if params is None:
+            params = prog_params(comp)
+
+        comp = BlockMacro(comp, blocks, params)
 
     if backsym is not None:
-        comp = BacksymbolMacro(comp, backsym)
+        if params is None or blocks is not None:
+            params = prog_params(comp)
+
+        comp = BacksymbolMacro(comp, backsym, params)
 
     return comp
-
 ########################################
 
 CONVERTERS: dict[
@@ -95,7 +102,7 @@ class MacroInfLoop(Exception):
     pass
 
 
-def prog_params(comp: GetInstr) -> tuple[int, int]:
+def prog_params(comp: GetInstr) -> Params:
     if isinstance(comp, MacroProg):
         base_states = comp.macro_states
         base_colors = comp.macro_colors
@@ -121,11 +128,11 @@ class MacroProg:
     cells: int
     sim_lim: int
 
-    def __init__(self, comp: GetInstr, cells: int):
+    def __init__(self, comp: GetInstr, cells: int, params: Params):
         self.comp = comp
         self.instrs = {}
 
-        self.base_states, self.base_colors = prog_params(comp)
+        self.base_states, self.base_colors = params
 
         self.cells = cells
 
@@ -233,8 +240,8 @@ class MacroProg:
 ########################################
 
 class BlockMacro(MacroProg):
-    def __init__(self, comp: GetInstr, cells: int):
-        super().__init__(comp, cells)
+    def __init__(self, comp: GetInstr, cells: int, params: Params):
+        super().__init__(comp, cells, params)
 
         self.sim_lim = (
             self.base_states
@@ -280,8 +287,8 @@ class BlockMacro(MacroProg):
 class BacksymbolMacro(MacroProg):
     backsymbols: int
 
-    def __init__(self, comp: GetInstr, cells: int):
-        super().__init__(comp, cells)
+    def __init__(self, comp: GetInstr, cells: int, params: Params):
+        super().__init__(comp, cells, params)
 
         self.backsymbols = self.base_colors ** self.cells
 

@@ -8,6 +8,9 @@ from tm.machine import Machine, quick_term_or_rec
 from tm.tree import run_tree_gen
 
 
+STATES: int
+COLORS: int
+
 def run_variations(
         prog: str,
         sim_lim: int,
@@ -21,6 +24,7 @@ def run_variations(
     machine = Machine(
         prog,
         opt_macro = block_steps,
+        params = (STATES, COLORS),
     ).run(sim_lim = sim_lim)
 
     if machine.infrul:
@@ -74,9 +78,12 @@ if __name__ == '__main__':
         with open(progfile) as progs:
             BRANCHES = [prog.strip() for prog in progs.readlines()]
 
+    STATES = args.states
+    COLORS = args.colors
+
     run_tree_gen(
-        states = args.states,
-        colors = args.colors,
+        states = STATES,
+        colors = COLORS,
         halt   = args.halt,
         steps  = args.steps,
         output = filter_halt if args.halt else filter_spin_out,
