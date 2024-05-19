@@ -38,15 +38,32 @@ def make_macro(
         if params is None:
             params = prog_params(comp)
 
-        comp = BlockMacro(comp, blocks, params)
+        comp = make_block_macro(comp, blocks, params)
 
     if backsym is not None:
         if params is None or blocks is not None:
             params = prog_params(comp)
 
-        comp = BacksymbolMacro(comp, backsym, params)
+        comp = make_backsymbol_macro(comp, backsym, params)
 
     return comp
+
+
+def make_block_macro(
+        comp: GetInstr,
+        blocks: int,
+        params: Params,
+) -> MacroProg:
+    return MacroProg(comp, BlockLogic(blocks, *params))
+
+
+def make_backsymbol_macro(
+        comp: GetInstr,
+        backsym: int,
+        params: Params,
+) -> MacroProg:
+    return MacroProg(comp, BacksymbolLogic(backsym, *params))
+
 ########################################
 
 CONVERTERS: dict[
@@ -120,26 +137,17 @@ class MacroProg:
     comp: GetInstr
     instrs: CompProg
 
-    converter: TapeColorConverter
-
-    base_states: int
-    base_colors: int
-
-    cells: int
     sim_lim: int
 
-    def __init__(self, comp: GetInstr, cells: int, params: Params):
+    logic: Logic
+
+    def __init__(self, comp: GetInstr, logic: Logic):
         self.comp = comp
         self.instrs = {}
 
-        self.base_states, self.base_colors = params
+        self.logic = logic
 
-        self.cells = cells
-
-        self.converter = make_converter(
-            self.base_colors,
-            self.cells,
-        )
+        self.sim_lim = self.logic.sim_lim
 
     def __str__(self) -> str:
         comp_str = (
@@ -148,19 +156,19 @@ class MacroProg:
             str(comp)
         )
 
-        return f'{comp_str} ({self.cells}-cell {self.name} macro)'
+        return f'{comp_str} ({self.cells}-cell {self.logic.name} macro)'
 
     @property
-    @abstractmethod
-    def name(self) -> str: ...
+    def macro_states(self) -> int:
+        return self.logic.macro_states
 
     @property
-    @abstractmethod
-    def macro_states(self) -> int: ...
+    def macro_colors(self) -> int:
+        return self.logic.macro_colors
 
     @property
-    @abstractmethod
-    def macro_colors(self) -> int: ...
+    def cells(self) -> int:
+        return self.logic.cells
 
     def __getitem__(self, slot: Slot) -> Instr:
         try:
@@ -173,16 +181,10 @@ class MacroProg:
         return instr
 
     def calculate_instr(self, slot: Slot) -> Instr:
-        return self.reconstruct_outputs(
+        return self.logic.reconstruct_outputs(
             self.run_simulator(
-                self.deconstruct_inputs(
+                self.logic.deconstruct_inputs(
                     slot)))
-
-    @abstractmethod
-    def deconstruct_inputs(self, slot: Slot) -> Config: ...
-
-    @abstractmethod
-    def reconstruct_outputs(self, config: Config) -> Instr: ...
 
     def run_simulator(self, config: Config) -> Config:
         state, (right_edge, in_tape) = config
@@ -239,15 +241,43 @@ class MacroProg:
 
 ########################################
 
-class BlockMacro(MacroProg):
-    def __init__(self, comp: GetInstr, cells: int, params: Params):
-        super().__init__(comp, cells, params)
+class Logic(Protocol):
+    cells: int
+    base_states: int
+    base_colors: int
 
-        self.sim_lim = (
-            self.base_states
-            * self.cells
-            * self.macro_colors
-        )
+    converter: TapeColorConverter
+
+    @property
+    @abstractmethod
+    def name(self) -> str: ...
+
+    @property
+    @abstractmethod
+    def macro_states(self) -> int: ...
+
+    @property
+    @abstractmethod
+    def macro_colors(self) -> int: ...
+
+    @property
+    @abstractmethod
+    def sim_lim(self) -> int: ...
+
+    @abstractmethod
+    def deconstruct_inputs(self, slot: Slot) -> Config: ...
+
+    @abstractmethod
+    def reconstruct_outputs(self, config: Config) -> Instr: ...
+
+
+class BlockLogic:
+    def __init__(self, cells: int, base_states: int, base_colors: int):
+        self.cells = cells
+        self.base_states = base_states
+        self.base_colors = base_colors
+
+        self.converter = make_converter(base_colors, cells)
 
     @property
     def name(self) -> str:
@@ -262,6 +292,14 @@ class BlockMacro(MacroProg):
         macro_colors: int = self.base_colors ** self.cells
 
         return macro_colors
+
+    @property
+    def sim_lim(self) -> int:
+        return (
+            self.base_states
+            * self.cells
+            * self.macro_colors
+        )
 
     def deconstruct_inputs(self, slot: Slot) -> Config:
         macro_state, macro_color = slot
@@ -282,17 +320,17 @@ class BlockMacro(MacroProg):
             (2 * state) + int(not right_edge),
         )
 
-########################################
 
-class BacksymbolMacro(MacroProg):
+class BacksymbolLogic:
     backsymbols: int
 
-    def __init__(self, comp: GetInstr, cells: int, params: Params):
-        super().__init__(comp, cells, params)
-
+    def __init__(self, cells: int, base_states: int, base_colors: int):
+        self.cells = cells
+        self.base_states = base_states
+        self.base_colors = base_colors
         self.backsymbols = self.base_colors ** self.cells
 
-        self.sim_lim = self.macro_states * self.macro_colors
+        self.converter = make_converter(base_colors, cells)
 
     @property
     def name(self) -> str:
@@ -305,6 +343,10 @@ class BacksymbolMacro(MacroProg):
     @property
     def macro_colors(self) -> int:
         return self.base_colors
+
+    @property
+    def sim_lim(self) -> int:
+        return self.macro_states * self.macro_colors
 
     def deconstruct_inputs(self, slot: Slot) -> Config:
         macro_state, macro_color = slot
