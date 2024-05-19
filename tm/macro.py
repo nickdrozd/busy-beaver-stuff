@@ -304,10 +304,12 @@ class BacksymbolMacro(MacroProg):
 
         state, backsymbol = divmod(st_co, self.backsymbols)
 
+        backspan = self.converter.color_to_tape(backsymbol)
+
         tape = (
-            [macro_color] + self.converter.color_to_tape(backsymbol)
+            [macro_color] + backspan
             if at_right else
-            self.converter.color_to_tape(backsymbol) + [macro_color]
+            backspan + [macro_color]
         )
 
         return state, (not at_right, tape)
