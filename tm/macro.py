@@ -54,7 +54,7 @@ def make_block_macro(
         blocks: int,
         params: Params,
 ) -> MacroProg:
-    return MacroProg(comp, BlockLogic(blocks, *params))
+    return MacroProg(comp, make_block(blocks, params))
 
 
 def make_backsymbol_macro(
@@ -62,7 +62,7 @@ def make_backsymbol_macro(
         backsym: int,
         params: Params,
 ) -> MacroProg:
-    return MacroProg(comp, BacksymbolLogic(backsym, *params))
+    return MacroProg(comp, make_backsym(backsym, params))
 
 ########################################
 
@@ -382,3 +382,34 @@ class BacksymbolLogic:
                      * self.backsymbols)))
             ,
         )
+
+########################################
+
+BLOCKS: dict[
+    Params,
+    dict[int, BlockLogic]
+] = defaultdict(dict)
+
+
+BACKSYMS: dict[
+    Params,
+    dict[int, BacksymbolLogic]
+] = defaultdict(dict)
+
+
+def make_block(blocks: int, params: Params) -> BlockLogic:
+    if (cached := BLOCKS[params].get(blocks)) is not None:
+        return cached
+
+    block = BlockLogic(blocks, *params)
+    BLOCKS[params][blocks] = block
+    return block
+
+
+def make_backsym(backsyms: int, params: Params) -> BacksymbolLogic:
+    if (cached := BACKSYMS[params].get(backsyms)) is not None:
+        return cached
+
+    backsym = BacksymbolLogic(backsyms, *params)
+    BACKSYMS[params][backsyms] = backsym
+    return backsym
