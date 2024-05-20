@@ -20,7 +20,7 @@ from test.utils import get_holdouts, read_holdouts, RUN_SLOW
 from tm.parse import tcompile
 from tm.show import show_comp
 from tm.tree import Program
-from tm.macro import opt_block
+from tm.macro import opt_block, MacroProg
 from tm.reason import (
     cant_halt,
     cant_blank,
@@ -611,10 +611,10 @@ class Prover(TuringTest):
             self.machine.spnout)
 
     def assert_macro_cells(self, cells: int):
-        assert not isinstance(macro := self.machine.program, dict)
+        assert isinstance(macro := self.machine.program, MacroProg)
 
         self.assertEqual(
-            macro.cells,  # type: ignore[attr-defined]
+            macro.cells,
             cells)
 
     def assert_mult_rules(self) -> None:
@@ -770,9 +770,10 @@ class Prover(TuringTest):
                 self.assert_mult_rules()
 
             if is_macro := (
-                    not isinstance(
-                        macro := self.machine.program, dict)):
-                result *= macro.cells  # type: ignore[attr-defined]
+                    isinstance(
+                        macro := self.machine.program,
+                        MacroProg)):
+                result *= macro.cells
 
             if isinstance(marks, int):
                 self.assertEqual(result, marks)

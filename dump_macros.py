@@ -1,6 +1,6 @@
 import sys
 
-from tm.macro import show_comp
+from tm.macro import show_comp, MacroProg
 from tm.machine import Machine
 
 from tools.normalize import normalize
@@ -13,9 +13,9 @@ if __name__ == '__main__':
             backsym = None,
         ).run()
 
-        if isinstance(macro := machine.program, dict):
+        if not isinstance(macro := machine.program, MacroProg):
             continue
 
-        prog = show_comp(macro.instrs)  # type: ignore[attr-defined]
+        prog = show_comp(macro.instrs)
 
         print(normalize(prog))
