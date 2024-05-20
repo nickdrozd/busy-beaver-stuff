@@ -11,7 +11,7 @@ from tm.rust_stuff import opt_block
 if TYPE_CHECKING:
     from tm.parse import Color, State, Slot, Instr, CompProg
 
-    Tape = list[Color]
+    Tape = tuple[Color, ...]
     Config = tuple[State, tuple[bool, Tape]]
 
 
@@ -72,7 +72,7 @@ class TapeColorConverter:
     def color_to_tape(self, color: Color) -> Tape:
         assert (prev := self.color_to_tape_cache.get(color)) is not None
 
-        return list(prev)
+        return prev
 
     def tape_to_color(self, tape: Tape) -> Color:
         if (cached := self.tape_to_color_cache.get(
@@ -178,7 +178,9 @@ class MacroProg:
     def reconstruct_outputs(self, config: Config) -> Instr: ...
 
     def run_simulator(self, config: Config) -> Config:
-        state, (right_edge, tape) = config
+        state, (right_edge, in_tape) = config
+
+        tape = list(in_tape)
 
         cells = len(tape)
 
@@ -226,7 +228,7 @@ class MacroProg:
         else:
             raise MacroInfLoop
 
-        return state, (cells <= pos, tape)
+        return state, (cells <= pos, tuple(tape))
 
 ########################################
 
@@ -307,9 +309,9 @@ class BacksymbolMacro(MacroProg):
         backspan = self.converter.color_to_tape(backsymbol)
 
         return state, (
-            (False, [macro_color] + backspan)
+            (False, (macro_color,) + backspan)
             if at_right else
-            ( True, backspan + [macro_color])
+            ( True, backspan + (macro_color,))
         )
 
     def reconstruct_outputs(self, config: Config) -> Instr:
