@@ -296,7 +296,7 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
         raise RuleLimit('count-depth')
 
     if not isinstance(times, int) and times.depth > 200:  # no-cover
-        raise RuleLimit('times-depth')
+        raise RuleLimit(f'times-depth: {times.depth}')
 
     exp: int | Exp = (
         mul

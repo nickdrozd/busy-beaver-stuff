@@ -1022,7 +1022,11 @@ class Prover(TuringTest):
                     prog,
                     opt_macro = 2000,
                     analyze = False,
-                    backsym = 1 if term == 'times-depth' else None,
+                    backsym = (
+                        1
+                        if term.startswith('times-depth') else
+                        None
+                    ),
                     print_prog = not show,
                 )
 
