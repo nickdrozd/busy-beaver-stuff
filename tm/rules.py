@@ -3,7 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 from itertools import pairwise
 
-from tm.num import Add, Mul, Div, Exp, ExpModLimit, make_exp
+from tm.num import (
+    make_exp,
+    Add, Mul, Div, Exp,
+    ExpModLimit, ModDepthLimit,
+)
 from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
 
 
@@ -251,6 +255,8 @@ def count_apps(rule: Rule, tape: IndexTape) -> Apps | None:
             div, rem = divmod(count, absdiff)
         except ExpModLimit as exc:
             raise RuleLimit(f'count_apps: {exc}') from exc
+        except ModDepthLimit as exc:
+            raise RuleLimit(f'depth-limit: {exc}') from exc
 
         times, min_res = (
             (div, rem)
@@ -294,9 +300,6 @@ def apply_rule(rule: Rule, tape: IndexTape) -> Count | None:
 def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
     if not isinstance(count, int) and count.depth > 20:  # no-cover
         raise RuleLimit('count-depth')
-
-    if not isinstance(times, int) and times.depth > 200:  # no-cover
-        raise RuleLimit(f'times-depth: {times.depth}')
 
     exp: int | Exp = (
         mul

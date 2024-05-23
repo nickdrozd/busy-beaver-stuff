@@ -13,6 +13,9 @@ from collections import defaultdict
 class ExpModLimit(Exception):
     pass
 
+class ModDepthLimit(Exception):
+    pass
+
 
 ADDS: dict[Count, dict[Num, Add]] = defaultdict(dict)
 MULS: dict[Count, dict[Num, Mul]] = defaultdict(dict)
@@ -677,6 +680,10 @@ class Div(Num):
     def __mod__(self, mod: int) -> int:
         if mod == 1:
             return 0
+
+        if self.num.depth > 200:
+            raise ModDepthLimit(
+                f'{self} % {mod}')
 
         div, rem = divmod(
             self.num % (mod * self.den),

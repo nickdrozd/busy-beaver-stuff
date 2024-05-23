@@ -1024,7 +1024,7 @@ class Prover(TuringTest):
                     analyze = False,
                     backsym = (
                         1
-                        if term.startswith('times-depth') else
+                        if term.startswith('depth-limit') else
                         None
                     ),
                     print_prog = not show,
@@ -1096,9 +1096,9 @@ class Prover(TuringTest):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 48034,
+            "adds": 43514,
             "divs": 13574,
-            "exps": 12614,
-            "muls": 12166,
-            "totl": 86388,
+            "exps": 12140,
+            "muls": 11396,
+            "totl": 80624,
         })
