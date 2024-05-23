@@ -737,8 +737,6 @@ class Prover(TuringTest):
                 int)
 
     def _test_prover_est(self, prog_data: ProverEst):
-        champ_2_5 = "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA"
-
         for prog, marks in prog_data.items():
             if prog in PROVER_FAILURES:
                 continue
@@ -750,11 +748,7 @@ class Prover(TuringTest):
                 prog,
                 sim_lim = 10 ** 8,
                 opt_macro = 3_000,
-                backsym = (
-                    2
-                    if prog == champ_2_5 else
-                    None
-                ),
+                backsym = REQUIRES_BACKSYM.get(prog),
                 normal = False,
             )
 
@@ -1022,11 +1016,7 @@ class Prover(TuringTest):
                     prog,
                     opt_macro = 2000,
                     analyze = False,
-                    backsym = (
-                        1
-                        if term.startswith('depth-limit') else
-                        None
-                    ),
+                    backsym = REQUIRES_BACKSYM.get(prog),
                     print_prog = not show,
                 )
 

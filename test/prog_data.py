@@ -1550,6 +1550,14 @@ SUSPECTED_RULES = {
     "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...",
 }
 
+REQUIRES_BACKSYM = {
+    # 2/5
+    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": 2,
+
+    # 6/2
+    "1RB 1LD  0RC ...  1RD 0LA  1RE 1RF  1LC 1LE  1RA 0RD": 1,
+}
+
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     "spinout": {
         "1RB 0LB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": (
