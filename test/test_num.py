@@ -10,7 +10,7 @@ from unittest import TestCase
 from tm.num import (
     Tet,
     show_number,
-    NumException,
+    ExpModLimit,
     make_exp as Exp,
     ADDS, MULS, DIVS, EXPS,
 )
@@ -163,7 +163,7 @@ class TestNum(TestCase):
             rem: int,
             msg: str,
     ):
-        with self.assertRaises(NumException) as ctx:
+        with self.assertRaises(ExpModLimit) as ctx:
             self.assert_mod(
                 num,
                 mod,

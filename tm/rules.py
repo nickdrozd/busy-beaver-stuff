@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 from itertools import pairwise
 
-from tm.num import Add, Mul, Div, Exp, NumException, make_exp
+from tm.num import Add, Mul, Div, Exp, ExpModLimit, make_exp
 from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
 
 
@@ -249,7 +249,7 @@ def count_apps(rule: Rule, tape: IndexTape) -> Apps | None:
 
         try:
             div, rem = divmod(count, absdiff)
-        except NumException as exc:
+        except ExpModLimit as exc:
             raise RuleLimit(f'count_apps: {exc}') from exc
 
         times, min_res = (

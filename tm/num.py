@@ -10,7 +10,7 @@ from functools import cache
 from collections import defaultdict
 
 
-class NumException(Exception):
+class ExpModLimit(Exception):
     pass
 
 
@@ -1334,7 +1334,7 @@ def find_period(base: int, mod: int) -> int:
 
 def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     if base != 2 or 2 * (3 ** round(log(mod / 2, 3))) != mod: # no-cover
-        raise NumException(
+        raise ExpModLimit(
             f'({base} ** {exp}) % {mod}')
 
     period = exp % (mod // 3)
@@ -2213,13 +2213,13 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
                 1541776226: 153477472,
             }
         case _:  # no-cover
-            raise NumException(f'({base} ** {exp}) % {mod}')
+            raise ExpModLimit(f'({base} ** {exp}) % {mod}')
 
     try:
         return values[period]
     except KeyError:
         # pylint: disable = raise-missing-from
-        raise NumException(f'({base} ** {exp}) % {mod}')
+        raise ExpModLimit(f'({base} ** {exp}) % {mod}')
 
 ########################################
 
