@@ -1752,7 +1752,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
         ),
     },
 
-    "ops_times": {
+    "ops_times: ((-23 + (7 * (3 ** ((-1 + (7 * (3 ** 31))) // 2)))) // 4)": {
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": (
             1966,
             "3",

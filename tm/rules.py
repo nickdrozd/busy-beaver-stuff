@@ -315,7 +315,7 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
 
 def apply_ops(count: Count, times: Count, ops: OpSeq) -> Count:
     if not isinstance(times, int):
-        raise RuleLimit('ops_times')
+        raise RuleLimit(f'ops_times: {times}')
 
     result = count
 
