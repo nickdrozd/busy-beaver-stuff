@@ -31,7 +31,7 @@ class TestApply(TestCase):
                 apply_loop(count, times, mul, add),
                 val)
 
-    def test_apply_ops(self):
+    def test_apply_ops_1(self):
         count1 = (-4 + (7 * Exp(2, 3))) // 3
 
         count2 = (-4 + (7 * (2 ** ((8 + (7 * Exp(2, 3))) // 3)))) // 3
@@ -56,3 +56,27 @@ class TestApply(TestCase):
         self.assertEqual(
             apply_ops(count2, 1, ops),
             count3)
+
+    def test_apply_ops_2(self):
+        count = -6 + Exp(2, 13)
+
+        times = 32764
+
+        ops = (
+            ('+', 6),
+            ('~', 2),
+            ('+', 3),
+            ('**', 2),
+            ('**', 2),
+            ('+', -3),
+            ('**', 2),
+            ('+', -6),
+        )
+
+        result = apply_ops(count, times, ops)
+
+        assert not isinstance(result, int)
+
+        self.assertEqual(
+            str(result.estimate()),
+            "(10 ↑↑ 65530)")

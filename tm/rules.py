@@ -335,7 +335,11 @@ def apply_ops(count: Count, times: Count, ops: OpSeq) -> Count:
                     result //= val
 
                 case '**':
-                    result = val ** result
+                    result = (
+                        make_exp(val, result)
+                        if isinstance(result, int) else
+                        val ** result
+                    )
 
                 case '~':  # no-branch
                     if not isinstance(result, Exp):
