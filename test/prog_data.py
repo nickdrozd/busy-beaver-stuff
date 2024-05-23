@@ -1220,6 +1220,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 
 DO_HALT: set[str] = {
     # 3/4
+    "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC",  # 2^[15]5 + 14
     "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",  # 10^^2048
 
     # 2/6
@@ -1554,6 +1555,9 @@ REQUIRES_BACKSYM = {
     # 2/5
     "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": 2,
 
+    # 3/4
+    "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": 1,
+
     # 6/2
     "1RB 1LD  0RC ...  1RD 0LA  1RE 1RF  1LC 1LE  1RA 0RD": 1,
 }
@@ -1765,6 +1769,15 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             1966,
             "3",
             "3",
+            "(???)",
+        ),
+    },
+
+    "ops_times: (-4 + (2 ** 15))": {
+        "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": (
+            3169,
+            "(10 ↑↑ 65533)",
+            "(???)",
             "(???)",
         ),
     },
