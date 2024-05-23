@@ -1,11 +1,11 @@
 from unittest import TestCase
 
-from test.prog_data import BRANCH, PROGS, NORMALIZE
+from test.prog_data import BRANCH, PROGS, NORMALIZE, EXPAND
 
 from tm.tree import Program, init_branches
 from tm.show import show_slot, show_instr
 from tm.parse import read_slot
-from tools.normalize import normalize
+from tools.normalize import normalize, expand
 
 
 class TestProgram(TestCase):
@@ -52,3 +52,10 @@ class TestProgram(TestCase):
         self.assertEqual(
             sorted(init_branches(2, 2)),
             sorted(BRANCH[("1RB ...  ... ...", 'B0')]))
+
+    def test_expand(self):
+        for compact, expanded in EXPAND.items():
+            self.assertEqual(
+                expand(compact),
+                expanded,
+            )

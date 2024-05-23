@@ -12,6 +12,20 @@ if TYPE_CHECKING:
     from tm.parse import Color, State, Slot, Instr, Switch
 
 
+def expand(prog: str) -> str:
+    assert ' ' not in prog
+
+    return '  '.join([
+        ' '.join([
+            '...'
+            if 'Z' in (instr := state[i:i+3]) or '-' in instr else
+            instr
+            for i in range(0, len(state), 3)
+         ])
+        for state in prog.strip().split('_')
+    ])
+
+
 def normalize(prog: str) -> str:
     return str(Normalizer(prog).normalize())
 
