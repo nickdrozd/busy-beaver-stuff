@@ -55,25 +55,22 @@ int main(void)
           WRITE(1);
           LEFT;
 
-          switch (SCAN) {
-            case 0:
-              // G0
-              WRITE(2);
-              RIGHT;
+          if (BLANK) {
+            // G0
+            WRITE(2);
+            RIGHT;
 
-              // E1
-              assert(SCAN == 1);
-              WRITE(3);
-              RIGHT;
-              goto D;
-
-            case 2:
-              // G2
-              LEFT;
-              goto C;
+            // E1
+            assert(SCAN == 1);
+            WRITE(3);
+            RIGHT;
+            goto D;
           }
 
-          assert(0);
+          // G2
+          assert(SCAN == 2);
+          LEFT;
+          goto C;
 
         case 2:
           // F2
