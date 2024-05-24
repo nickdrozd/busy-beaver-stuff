@@ -17,9 +17,8 @@ int main(void)
   WRITE(3);
   RIGHT;
 
- D:
-  switch (SCAN) {
-    case 2:
+  while (1) {
+    if (SCAN == 2) {
       // D2
       WRITE(1);
       RIGHT;
@@ -28,10 +27,9 @@ int main(void)
       if (SCAN == 1) {
         WRITE(2);
       }
+    }
 
-      break;
-
-    case 0:
+    else if (BLANK) {
       // D0
       WRITE(1);
       LEFT;
@@ -65,43 +63,43 @@ int main(void)
           // E1
           WRITE(3);
           RIGHT;
-          goto D;
+          continue;
         }
       }
-  }
+    }
 
-  // B0 / B1 / D1 / G2
-  LEFT;
-
-  while (BLANK) {
-    // C0
-    CHECK_RECUR(L);
+    // B0 / B1 / D1 / G2
     LEFT;
+
+    while (BLANK) {
+      // C0
+      CHECK_RECUR(L);
+      LEFT;
+    }
+
+    switch (SCAN) {
+      case 1:
+        // C1
+        WRITE(3);
+        break;
+
+      case 2:
+        // C2
+        WRITE(0);
+        break;
+
+      case 3:
+        // C3
+        WRITE(2);
+        RIGHT;
+
+        // E1
+        WRITE(3);
+        break;
+    }
+
+    RIGHT;
   }
-
-  switch (SCAN) {
-    case 1:
-      // C1
-      WRITE(3);
-      break;
-
-    case 2:
-      // C2
-      WRITE(0);
-      break;
-
-    case 3:
-      // C3
-      WRITE(2);
-      RIGHT;
-
-      // E1
-      WRITE(3);
-      break;
-  }
-
-  RIGHT;
-  goto D;
 
  H:
   CHECK_STEPS;
