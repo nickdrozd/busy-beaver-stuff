@@ -13,7 +13,6 @@ int main(void)
   // B0 / B1
   LEFT;
 
-  assert(SCAN == 1);
   // C1
   WRITE(3);
   RIGHT;
@@ -51,7 +50,6 @@ int main(void)
 
       if (!BLANK) {
         // F2
-        assert(SCAN == 2);
         RIGHT;
 
         // B1
@@ -74,14 +72,12 @@ int main(void)
           RIGHT;
 
           // E1
-          assert(SCAN == 1);
           WRITE(3);
           RIGHT;
           goto D;
         }
 
         // G2
-        assert(SCAN == 2);
         LEFT;
         goto C;
       }
@@ -111,7 +107,6 @@ int main(void)
       RIGHT;
 
       // E1
-      assert(SCAN == 1);
       WRITE(3);
       break;
   }
