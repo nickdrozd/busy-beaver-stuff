@@ -79,7 +79,21 @@ int main(void)
       // F0
       WRITE(1);
       LEFT;
-      goto G;
+
+      switch (SCAN) {
+        case 0:
+          // G0
+          WRITE(2);
+          RIGHT;
+          goto E;
+
+        case 2:
+          // G2
+          LEFT;
+          goto C;
+      }
+
+      assert(0);
 
     case 2:
       // F2
@@ -91,20 +105,6 @@ int main(void)
       WRITE(1);
       LEFT;
       goto F;
-  }
-
- G:
-  switch (SCAN) {
-    case 0:
-      // G0
-      WRITE(2);
-      RIGHT;
-      goto E;
-
-    case 2:
-      // G2
-      LEFT;
-      goto C;
   }
 
  H:
