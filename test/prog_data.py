@@ -135,7 +135,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,  536),
     "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,  444),
 
-    # 4/7 block-compiled from 4/2 BBB sigma
+    # 7/4 block-compiled from 4/2 BBB sigma
     "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...": (35, 1434),
 
     # 2/4
