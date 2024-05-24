@@ -18,54 +18,56 @@ int main(void)
   RIGHT;
 
   while (1) {
-    if (SCAN == 2) {
-      // D2
-      WRITE(1);
-      RIGHT;
-
-      // B1
-      if (SCAN == 1) {
-        WRITE(2);
-      }
-    }
-
-    else if (BLANK) {
-      // D0
-      WRITE(1);
-      LEFT;
-
-      while (SCAN == 3) {
-        // F3
+    switch (SCAN) {
+      case 2:
+        // D2
         WRITE(1);
-        LEFT;
-      }
-
-      if (!BLANK) {
-        // F2
         RIGHT;
 
         // B1
         if (SCAN == 1) {
           WRITE(2);
         }
-      }
 
-      else {
-        // F0
+        break;
+
+      case 0:
+        // D0
         WRITE(1);
         LEFT;
 
-        if (BLANK) {
-          // G0
-          WRITE(2);
+        while (SCAN == 3) {
+          // F3
+          WRITE(1);
+          LEFT;
+        }
+
+        if (!BLANK) {
+          // F2
           RIGHT;
 
-          // E1
-          WRITE(3);
-          RIGHT;
-          continue;
+          // B1
+          if (SCAN == 1) {
+            WRITE(2);
+          }
         }
-      }
+
+        else {
+          // F0
+          WRITE(1);
+          LEFT;
+
+          if (BLANK) {
+            // G0
+            WRITE(2);
+            RIGHT;
+
+            // E1
+            WRITE(3);
+            RIGHT;
+            continue;
+          }
+        }
     }
 
     // B0 / B1 / D1 / G2
