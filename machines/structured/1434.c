@@ -14,24 +14,22 @@ int main(void)
   LEFT;
 
  C:
-  switch (SCAN) {
-    case 0:
-      // C0
-      CHECK_RECUR(L);
-      LEFT;
-      goto C;
+  while (BLANK) {
+    // C0
+    CHECK_RECUR(L);
+    LEFT;
+  }
 
+  switch (SCAN) {
     case 1:
       // C1
       WRITE(3);
-      RIGHT;
-      goto D;
+      break;
 
     case 2:
       // C2
       WRITE(0);
-      RIGHT;
-      goto D;
+      break;
 
     case 3:
       // C3
@@ -41,9 +39,10 @@ int main(void)
       // E1
       assert(SCAN == 1);
       WRITE(3);
-      RIGHT;
-      goto D;
+      break;
   }
+
+  RIGHT;
 
  D:
   switch (SCAN) {
