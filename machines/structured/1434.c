@@ -19,11 +19,6 @@ int main(void)
 
  D:
   switch (SCAN) {
-    case 1:
-      // D1
-      LEFT;
-      goto C;
-
     case 2:
       // D2
       WRITE(1);
@@ -33,9 +28,8 @@ int main(void)
       if (SCAN == 1) {
         WRITE(2);
       }
-      // B0 / B1
-      LEFT;
-      goto C;
+
+      break;
 
     case 0:
       // D0
@@ -73,15 +67,12 @@ int main(void)
           RIGHT;
           goto D;
         }
-
       }
-
-      // B0 / B1 / G2
-      LEFT;
-      goto C;
   }
 
- C:
+  // B0 / B1 / D1 / G2
+  LEFT;
+
   while (BLANK) {
     // C0
     CHECK_RECUR(L);
