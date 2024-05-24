@@ -49,7 +49,21 @@ int main(void)
         LEFT;
       }
 
-      if (BLANK) {
+      if (!BLANK) {
+        // F2
+        assert(SCAN == 2);
+        RIGHT;
+
+        // B1
+        if (SCAN == 1) {
+          WRITE(2);
+        }
+        // B0 / B1
+        LEFT;
+        goto C;
+      }
+
+      else {
         // F0
         WRITE(1);
         LEFT;
@@ -71,18 +85,6 @@ int main(void)
         LEFT;
         goto C;
       }
-
-      // F2
-      assert(SCAN == 2);
-      RIGHT;
-
-      // B1
-      if (SCAN == 1) {
-        WRITE(2);
-      }
-      // B0 / B1
-      LEFT;
-      goto C;
   }
 
  C:
