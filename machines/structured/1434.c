@@ -37,7 +37,12 @@ int main(void)
       // C3
       WRITE(2);
       RIGHT;
-      goto E;
+
+      // E1
+      assert(SCAN == 1);
+      WRITE(3);
+      RIGHT;
+      goto D;
   }
 
  D:
@@ -67,13 +72,6 @@ int main(void)
       goto C;
   }
 
- E:
-  // E1
-  assert(SCAN == 1);
-  WRITE(3);
-  RIGHT;
-  goto D;
-
  F:
   switch (SCAN) {
     case 0:
@@ -86,7 +84,12 @@ int main(void)
           // G0
           WRITE(2);
           RIGHT;
-          goto E;
+
+          // E1
+          assert(SCAN == 1);
+          WRITE(3);
+          RIGHT;
+          goto D;
 
         case 2:
           // G2
