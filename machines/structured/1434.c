@@ -11,18 +11,13 @@ int main(void)
   RIGHT;
 
  B:
-  switch (SCAN) {
-    case 0:
-      // B0
-      LEFT;
-      goto C;
-
-    case 1:
-      // B1
-      WRITE(2);
-      LEFT;
-      goto C;
+  // B1
+  if (SCAN == 1) {
+    WRITE(2);
   }
+  // B0 / B1
+  LEFT;
+  goto C;
 
  C:
   switch (SCAN) {
