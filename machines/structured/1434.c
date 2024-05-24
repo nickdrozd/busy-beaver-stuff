@@ -56,9 +56,6 @@ int main(void)
         if (SCAN == 1) {
           WRITE(2);
         }
-        // B0 / B1
-        LEFT;
-        goto C;
       }
 
       else {
@@ -77,10 +74,11 @@ int main(void)
           goto D;
         }
 
-        // G2
-        LEFT;
-        goto C;
       }
+
+      // B0 / B1 / G2
+      LEFT;
+      goto C;
   }
 
  C:
