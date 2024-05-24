@@ -6,31 +6,9 @@
 
 int main(void)
 {
- A:
-  switch (SCAN) {
-    case 0:
-      // A0
-      WRITE(1);
-      RIGHT;
-      goto B;
-
-    case 1:
-      // A1
-      RIGHT;
-      goto H;
-
-    case 2:
-      // A2
-      WRITE(1);
-      RIGHT;
-      goto H;
-
-    case 3:
-      // A3
-      WRITE(1);
-      RIGHT;
-      goto H;
-  }
+  // A0
+  WRITE(1);
+  RIGHT;
 
  B:
   switch (SCAN) {
@@ -44,18 +22,6 @@ int main(void)
       WRITE(2);
       LEFT;
       goto C;
-
-    case 2:
-      // B2
-      WRITE(1);
-      RIGHT;
-      goto H;
-
-    case 3:
-      // B3
-      WRITE(1);
-      RIGHT;
-      goto H;
   }
 
  C:
@@ -103,40 +69,14 @@ int main(void)
       WRITE(1);
       RIGHT;
       goto B;
-
-    case 3:
-      // D3
-      WRITE(1);
-      RIGHT;
-      goto H;
   }
 
  E:
-  switch (SCAN) {
-    case 0:
-      // E0
-      WRITE(1);
-      RIGHT;
-      goto H;
-
-    case 1:
-      // E1
-      WRITE(3);
-      RIGHT;
-      goto D;
-
-    case 2:
-      // E2
-      WRITE(1);
-      RIGHT;
-      goto H;
-
-    case 3:
-      // E3
-      WRITE(1);
-      RIGHT;
-      goto H;
-  }
+  // E1
+  assert(SCAN == 1);
+  WRITE(3);
+  RIGHT;
+  goto D;
 
  F:
   switch (SCAN) {
@@ -145,11 +85,6 @@ int main(void)
       WRITE(1);
       LEFT;
       goto G;
-
-    case 1:
-      // F1
-      RIGHT;
-      goto H;
 
     case 2:
       // F2
@@ -171,21 +106,10 @@ int main(void)
       RIGHT;
       goto E;
 
-    case 1:
-      // G1
-      RIGHT;
-      goto H;
-
     case 2:
       // G2
       LEFT;
       goto C;
-
-    case 3:
-      // G3
-      WRITE(1);
-      RIGHT;
-      goto H;
   }
 
  H:
