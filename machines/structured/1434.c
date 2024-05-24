@@ -10,14 +10,8 @@ int main(void)
   WRITE(1);
   RIGHT;
 
- B:
-  // B1
-  if (SCAN == 1) {
-    WRITE(2);
-  }
   // B0 / B1
   LEFT;
-  goto C;
 
  C:
   switch (SCAN) {
@@ -63,7 +57,14 @@ int main(void)
       // D2
       WRITE(1);
       RIGHT;
-      goto B;
+
+      // B1
+      if (SCAN == 1) {
+        WRITE(2);
+      }
+      // B0 / B1
+      LEFT;
+      goto C;
   }
 
  E:
@@ -98,7 +99,14 @@ int main(void)
     case 2:
       // F2
       RIGHT;
-      goto B;
+
+      // B1
+      if (SCAN == 1) {
+        WRITE(2);
+      }
+      // B0 / B1
+      LEFT;
+      goto C;
 
     case 3:
       // F3
