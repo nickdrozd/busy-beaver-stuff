@@ -13,35 +13,9 @@ int main(void)
   // B0 / B1
   LEFT;
 
- C:
-  while (BLANK) {
-    // C0
-    CHECK_RECUR(L);
-    LEFT;
-  }
-
-  switch (SCAN) {
-    case 1:
-      // C1
-      WRITE(3);
-      break;
-
-    case 2:
-      // C2
-      WRITE(0);
-      break;
-
-    case 3:
-      // C3
-      WRITE(2);
-      RIGHT;
-
-      // E1
-      assert(SCAN == 1);
-      WRITE(3);
-      break;
-  }
-
+  assert(SCAN == 1);
+  // C1
+  WRITE(3);
   RIGHT;
 
  D:
@@ -114,6 +88,38 @@ int main(void)
           goto C;
       }
   }
+
+ C:
+  while (BLANK) {
+    // C0
+    CHECK_RECUR(L);
+    LEFT;
+  }
+
+  switch (SCAN) {
+    case 1:
+      // C1
+      WRITE(3);
+      break;
+
+    case 2:
+      // C2
+      WRITE(0);
+      break;
+
+    case 3:
+      // C3
+      WRITE(2);
+      RIGHT;
+
+      // E1
+      assert(SCAN == 1);
+      WRITE(3);
+      break;
+  }
+
+  RIGHT;
+  goto D;
 
  H:
   CHECK_STEPS;
