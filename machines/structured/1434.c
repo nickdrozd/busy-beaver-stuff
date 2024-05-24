@@ -49,41 +49,40 @@ int main(void)
         LEFT;
       }
 
-      switch (SCAN) {
-        case 0:
-          // F0
-          WRITE(1);
-          LEFT;
+      if (BLANK) {
+        // F0
+        WRITE(1);
+        LEFT;
 
-          if (BLANK) {
-            // G0
-            WRITE(2);
-            RIGHT;
-
-            // E1
-            assert(SCAN == 1);
-            WRITE(3);
-            RIGHT;
-            goto D;
-          }
-
-          // G2
-          assert(SCAN == 2);
-          LEFT;
-          goto C;
-
-        case 2:
-          // F2
+        if (BLANK) {
+          // G0
+          WRITE(2);
           RIGHT;
 
-          // B1
-          if (SCAN == 1) {
-            WRITE(2);
-          }
-          // B0 / B1
-          LEFT;
-          goto C;
+          // E1
+          assert(SCAN == 1);
+          WRITE(3);
+          RIGHT;
+          goto D;
+        }
+
+        // G2
+        assert(SCAN == 2);
+        LEFT;
+        goto C;
       }
+
+      // F2
+      assert(SCAN == 2);
+      RIGHT;
+
+      // B1
+      if (SCAN == 1) {
+        WRITE(2);
+      }
+      // B0 / B1
+      LEFT;
+      goto C;
   }
 
  C:
