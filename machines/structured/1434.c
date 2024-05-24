@@ -46,12 +46,6 @@ int main(void)
 
  D:
   switch (SCAN) {
-    case 0:
-      // D0
-      WRITE(1);
-      LEFT;
-      goto F;
-
     case 1:
       // D1
       LEFT;
@@ -69,52 +63,56 @@ int main(void)
       // B0 / B1
       LEFT;
       goto C;
-  }
 
- F:
-  while (SCAN == 3) {
-    // F3
-    WRITE(1);
-    LEFT;
-  }
-
-  switch (SCAN) {
     case 0:
-      // F0
+      // D0
       WRITE(1);
       LEFT;
 
+      while (SCAN == 3) {
+        // F3
+        WRITE(1);
+        LEFT;
+      }
+
       switch (SCAN) {
         case 0:
-          // G0
-          WRITE(2);
-          RIGHT;
+          // F0
+          WRITE(1);
+          LEFT;
 
-          // E1
-          assert(SCAN == 1);
-          WRITE(3);
-          RIGHT;
-          goto D;
+          switch (SCAN) {
+            case 0:
+              // G0
+              WRITE(2);
+              RIGHT;
+
+              // E1
+              assert(SCAN == 1);
+              WRITE(3);
+              RIGHT;
+              goto D;
+
+            case 2:
+              // G2
+              LEFT;
+              goto C;
+          }
+
+          assert(0);
 
         case 2:
-          // G2
+          // F2
+          RIGHT;
+
+          // B1
+          if (SCAN == 1) {
+            WRITE(2);
+          }
+          // B0 / B1
           LEFT;
           goto C;
       }
-
-      assert(0);
-
-    case 2:
-      // F2
-      RIGHT;
-
-      // B1
-      if (SCAN == 1) {
-        WRITE(2);
-      }
-      // B0 / B1
-      LEFT;
-      goto C;
   }
 
  H:
