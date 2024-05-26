@@ -253,10 +253,10 @@ def count_apps(rule: Rule, tape: IndexTape) -> Apps | None:
 
         try:
             div, rem = divmod(count, absdiff)
-        except ExpModLimit as exc:
-            raise RuleLimit(f'count_apps: {exc}') from exc
-        except ModDepthLimit as exc:
-            raise RuleLimit(f'depth-limit: {exc}') from exc
+        except ExpModLimit as exp:
+            raise RuleLimit(f'count_apps: {exp}') from exp
+        except ModDepthLimit as dep:
+            raise RuleLimit(f'depth-limit: {dep}') from dep
 
         times, min_res = (
             (div, rem)
