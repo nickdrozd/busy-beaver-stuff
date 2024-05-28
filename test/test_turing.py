@@ -17,10 +17,8 @@ from test.lin_rec import (
 )
 from test.utils import get_holdouts, read_holdouts, RUN_SLOW
 
-from tm.parse import tcompile
-from tm.show import show_comp
 from tm.tree import Program
-from tm.macro import opt_block, MacroProg
+from tm.macro import opt_block, MacroProg, tcompile, show_comp
 from tm.reason import (
     cant_halt,
     cant_blank,
