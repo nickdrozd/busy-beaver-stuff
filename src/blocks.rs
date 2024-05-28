@@ -1,7 +1,7 @@
 use pyo3::pyfunction;
 
 use crate::{
-    instrs::{Color, Shift},
+    instrs::{Color, CompProg, Shift},
     parse::tcompile,
     tape::{BasicTape, Count},
 };
@@ -40,9 +40,7 @@ impl BlockMeasure {
     }
 }
 
-fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
-    let comp = tcompile(prog);
-
+fn measure_blocks(comp: &CompProg, steps: Count) -> Option<Count> {
     let mut state = 0;
     let mut tape = BlockMeasure::new();
 
@@ -64,9 +62,7 @@ fn measure_blocks(prog: &str, steps: Count) -> Option<Count> {
     Some(tape.max_blocks_step)
 }
 
-fn unroll_tape(prog: &str, steps: Count) -> Vec<Color> {
-    let comp = tcompile(prog);
-
+fn unroll_tape(comp: &CompProg, steps: Count) -> Vec<Color> {
     let mut state = 0;
     let mut tape = BasicTape::init(0);
 
@@ -97,11 +93,13 @@ fn compr_eff(tape: &[Color], k: usize) -> usize {
 
 #[pyfunction]
 pub fn opt_block(prog: &str, steps: Count) -> usize {
-    let Some(max_blocks_step) = measure_blocks(prog, steps) else {
+    let comp = tcompile(prog);
+
+    let Some(max_blocks_step) = measure_blocks(&comp, steps) else {
         return 1;
     };
 
-    let tape = unroll_tape(prog, max_blocks_step);
+    let tape = unroll_tape(&comp, max_blocks_step);
 
     let mut opt_size = 1;
     let mut min_comp = 1 + tape.len();
