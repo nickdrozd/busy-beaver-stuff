@@ -120,9 +120,6 @@ def worker(
 class Program:
     prog: dict[State, Switch]
 
-    states: set[State]
-    colors: set[Color]
-
     max_state: State
     max_color: Color
 
