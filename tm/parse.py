@@ -15,3 +15,5 @@ Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
 
 CompProg = dict[Slot, Instr]
+
+Params = tuple[int, int]

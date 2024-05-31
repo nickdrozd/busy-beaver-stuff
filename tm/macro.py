@@ -9,11 +9,10 @@ from tm.parse import tcompile
 from tm.rust_stuff import opt_block
 
 if TYPE_CHECKING:
-    from tm.parse import Color, State, Slot, Instr, CompProg
+    from tm.parse import Color, State, Slot, Instr, CompProg, Params
 
     Tape = tuple[Color, ...]
     Config = tuple[State, tuple[bool, Tape]]
-    Params = tuple[int, int]
 
 
 class GetInstr(Protocol):
