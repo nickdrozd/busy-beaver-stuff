@@ -82,8 +82,7 @@ if __name__ == '__main__':
     COLORS = args.colors
 
     run_tree_gen(
-        states = STATES,
-        colors = COLORS,
+        params = (STATES, COLORS),
         halt   = args.halt,
         steps  = args.steps,
         output = filter_halt if args.halt else filter_spin_out,

@@ -17,7 +17,7 @@ from tm.rust_stuff import run_for_undefined, TreeSkip
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from tm.parse import Color, State, Slot, Instr, CompProg
+    from tm.parse import Color, State, Slot, Instr, CompProg, Params
 
     Output = Callable[[str], None]
 
@@ -188,17 +188,13 @@ class Program:
 
 ########################################
 
-def init_branches(states: int, colors: int) -> list[str]:
+def init_branches(params: Params) -> list[str]:
     return Program(
-        init_prog(states, colors)
+        init_prog(*params)
     ).branch((1, 0))  # B0
 
 
-def prep_branches(
-        states: int,
-        colors: int,
-        halt: bool,
-) -> list[str]:
+def prep_branches(params: Params, halt: bool) -> list[str]:
     branches = []
 
     def run(prog: str) -> None:
@@ -210,7 +206,7 @@ def prep_branches(
     worker(
         steps = 3,
         halt = halt,
-        stack = init_branches(states, colors),
+        stack = init_branches(params),
         output = run,
         prep = True,
     )
@@ -241,14 +237,12 @@ def run_tree_gen(
         halt: bool,
         output: Output,
         branches: list[str] | None = None,
-        states: int | None = None,
-        colors: int | None = None,
+        params: Params | None = None,
 ) -> None:
     if branches is None:
-        assert states is not None
-        assert colors is not None
+        assert params is not None
 
-        branches = prep_branches(states, colors, halt)
+        branches = prep_branches(params, halt)
 
     processes = [
         Process(

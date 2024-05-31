@@ -50,7 +50,7 @@ class TestProgram(TestCase):
 
     def test_branch_init(self):
         self.assertEqual(
-            sorted(init_branches(2, 2)),
+            sorted(init_branches((2, 2))),
             sorted(BRANCH[("1RB ...  ... ...", 'B0')]))
 
     def test_expand(self):

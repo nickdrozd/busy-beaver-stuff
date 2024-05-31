@@ -215,8 +215,7 @@ class TestFloss(TestCase):
             steps = 10,
             halt = True,
             output = print,
-            states = 2,
-            colors = 2,
+            params = (2, 2),
         )
 
         run_tree_gen(

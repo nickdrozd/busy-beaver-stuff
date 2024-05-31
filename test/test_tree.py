@@ -154,13 +154,15 @@ class TestTree(TestCase):
 
 class Fast(TestTree):
     def test_22(self):
+        params = 2, 2
+
         max_inf = 187
 
         def capture(prog: str) -> None:
             machine = Machine(
                 prog,
                 opt_macro = 20,
-                params = (2, 2),
+                params = params,
             ).run(sim_lim = 1 + max_inf)
 
             if machine.xlimit is None:
@@ -170,10 +172,9 @@ class Fast(TestTree):
             self.queue.put(prog)
 
         run_tree_gen(
-            states = 2,
-            colors = 2,
             steps = 20,
             halt = False,
+            params = params,
             output = capture,
         )
 
@@ -202,13 +203,15 @@ class Fast(TestTree):
             })
 
     def test_32(self):
+        params = 3, 2
+
         max_inf = 4_927
 
         def capture(prog: str) -> None:
             machines = run_variations(
                 prog, 1 + max_inf,
                 lin_rec = 50,
-                params = (3, 2),
+                params = params,
             )
 
             for machine in machines:
@@ -219,10 +222,9 @@ class Fast(TestTree):
             self.queue.put(prog)
 
         run_tree_gen(
-            states = 3,
-            colors = 2,
             steps = 15,
             halt = False,
+            params = params,
             output = capture,
         )
 
@@ -240,8 +242,9 @@ class Fast(TestTree):
         self.assert_simple_and_connected()
 
     def test_23(self):
-        max_inf = 7_395
         params = 2, 3
+
+        max_inf = 7_395
 
         def capture(prog: str) -> None:
             machines = run_variations(
@@ -268,10 +271,9 @@ class Fast(TestTree):
             self.queue.put(prog)
 
         run_tree_gen(
-            states = 2,
-            colors = 3,
             steps = 23,
             halt = False,
+            params = params,
             output = capture,
         )
 
@@ -296,8 +298,9 @@ class Fast(TestTree):
 @skipUnless(RUN_SLOW, '')
 class Slow(TestTree):
     def test_42h(self):
-        max_inf = 13_690
         params = 4, 2
+
+        max_inf = 13_690
 
         def capture(prog: str) -> None:
             if 'D' not in prog:
@@ -328,10 +331,9 @@ class Slow(TestTree):
             self.queue.put(prog)
 
         run_tree_gen(
-            states = 4,
-            colors = 2,
             steps = 35,
             halt = True,
+            params = params,
             output = capture,
         )
 
@@ -377,10 +379,9 @@ class Slow(TestTree):
             self.queue.put(prog)
 
         run_tree_gen(
-            states = 2,
-            colors = 4,
             steps = 100,
             halt = True,
+            params = params,
             output = capture,
         )
 
@@ -418,10 +419,9 @@ class Slow(TestTree):
             self.queue.put(prog)
 
         run_tree_gen(
-            states = 4,
-            colors = 2,
             steps = 200,
             halt = False,
+            params = params,
             output = capture,
         )
 
