@@ -66,7 +66,7 @@ def tree_gen(
 
         branches = (program := Program(prog)).branch(slot)
 
-        if len(program.open_slots) == open_slot_lim:
+        if program.open_slot_count == open_slot_lim:
             yield from branches
         else:
             stack.extend(branches)
@@ -181,6 +181,10 @@ class Program:
             for instr in instrs.values()
             if instr
         )
+
+    @property
+    def open_slot_count(self) -> int:
+        return len(self.open_slots)
 
     @property
     def open_slots(self) -> tuple[Slot, ...]:
