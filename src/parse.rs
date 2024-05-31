@@ -101,10 +101,12 @@ fn read_instr(instr: &str) -> Option<Instr> {
 #[pyfunction]
 #[allow(clippy::needless_pass_by_value)]
 pub fn show_comp(comp: CompProg) -> String {
-    let max_state =
-        comp.keys().map(|(state, _)| *state).max().unwrap_or(0);
-    let max_color =
-        comp.keys().map(|(_, color)| *color).max().unwrap_or(0);
+    let (max_state, max_color) = comp.iter().fold(
+        (0, 0),
+        |(ms, mc), (&(ss, sc), &(ic, _, is))| {
+            (ms.max(ss).max(is), mc.max(sc).max(ic))
+        },
+    );
 
     (0..=max_state)
         .map(|state| {
@@ -191,7 +193,10 @@ fn test_init() {
 #[test]
 fn test_comp() {
     let progs = [
+        "1RB ...  ... ...",
+        "1RB ...  1LA ...",
         "1RB 1LB  1LA ...",
+        "1RB ... ...  2LB ... ...",
         "1RB ... ...  2LB 1RB 1LB",
         "1RB 0RB ...  2LA ... 0LB",
         "1RB ...  1LB 0RC  1LC 1LA",
@@ -204,5 +209,16 @@ fn test_comp() {
 
     for prog in progs {
         assert_eq!(show_comp(tcompile(prog)), prog);
+    }
+
+    let underspecified = [
+        "1RB ... ...  ... ... ...",
+        "1RB ... ... ...  ... ... ... ...",
+        "1RB ...  ... ...  ... ...",
+        "1RB ...  ... ...  ... ...  ... ...",
+    ];
+
+    for prog in underspecified {
+        assert_eq!(show_comp(tcompile(prog)), "1RB ...  ... ...");
     }
 }
