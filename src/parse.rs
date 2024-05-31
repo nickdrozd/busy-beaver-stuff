@@ -23,17 +23,16 @@ pub fn parse_to_vec(prog: &str) -> Vec<Vec<Option<Instr>>> {
 
 #[pyfunction]
 pub fn tcompile(prog: &str) -> CompProg {
-    let mut program = CompProg::new();
-
-    for (state, instrs) in parse(prog).enumerate() {
-        for (color, instr) in instrs.enumerate() {
-            if let Some(instr) = instr {
-                program.insert((state as State, color as Color), instr);
-            }
-        }
-    }
-
-    program
+    parse(prog)
+        .enumerate()
+        .flat_map(|(state, instrs)| {
+            instrs.enumerate().filter_map(move |(color, instr)| {
+                instr.map(|instr| {
+                    ((state as State, color as Color), instr)
+                })
+            })
+        })
+        .collect()
 }
 
 /**************************************/
@@ -107,20 +106,17 @@ pub fn show_comp(comp: CompProg) -> String {
     let max_color =
         comp.keys().map(|(_, color)| *color).max().unwrap_or(0);
 
-    let mut result = vec![];
-
-    for state in 0..=max_state {
-        let mut state_instrs = vec![];
-
-        for color in 0..=max_color {
-            state_instrs
-                .push(show_instr(comp.get(&(state, color)).copied()));
-        }
-
-        result.push(state_instrs.join(" "));
-    }
-
-    result.join("  ")
+    (0..=max_state)
+        .map(|state| {
+            (0..=max_color)
+                .map(|color| {
+                    show_instr(comp.get(&(state, color)).copied())
+                })
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .collect::<Vec<_>>()
+        .join("  ")
 }
 
 /**************************************/
