@@ -100,17 +100,24 @@ fn read_instr(instr: &str) -> Option<Instr> {
 
 #[pyfunction]
 #[allow(clippy::needless_pass_by_value)]
-pub fn show_comp(comp: CompProg) -> String {
-    let (max_state, max_color) = comp.iter().fold(
-        (0, 0),
-        |(ms, mc), (&(ss, sc), &(ic, _, is))| {
-            (ms.max(ss).max(is), mc.max(sc).max(ic))
-        },
-    );
+pub fn show_comp(
+    comp: CompProg,
+    params: Option<(State, Color)>,
+) -> String {
+    let (max_state, max_color) = params.unwrap_or_else(|| {
+        let (ms, mx) = comp.iter().fold(
+            (1, 1),
+            |(ms, mc), (&(ss, sc), &(ic, _, is))| {
+                (ms.max(ss).max(is), mc.max(sc).max(ic))
+            },
+        );
 
-    (0..=max_state)
+        (1 + ms, 1 + mx)
+    });
+
+    (0..max_state)
         .map(|state| {
-            (0..=max_color)
+            (0..max_color)
                 .map(|color| {
                     show_instr(comp.get(&(state, color)).copied())
                 })
@@ -208,17 +215,17 @@ fn test_comp() {
     ];
 
     for prog in progs {
-        assert_eq!(show_comp(tcompile(prog)), prog);
+        assert_eq!(show_comp(tcompile(prog), None), prog);
     }
 
     let underspecified = [
-        "1RB ... ...  ... ... ...",
-        "1RB ... ... ...  ... ... ... ...",
-        "1RB ...  ... ...  ... ...",
-        "1RB ...  ... ...  ... ...  ... ...",
+        ("1RB ... ...  ... ... ...", (2, 3)),
+        ("1RB ... ... ...  ... ... ... ...", (2, 4)),
+        ("1RB ...  ... ...  ... ...", (3, 2)),
+        ("1RB ...  ... ...  ... ...  ... ...", (4, 2)),
     ];
 
-    for prog in underspecified {
-        assert_eq!(show_comp(tcompile(prog)), "1RB ...  ... ...");
+    for (prog, params) in underspecified {
+        assert_eq!(show_comp(tcompile(prog), Some(params)), prog);
     }
 }
