@@ -6,7 +6,8 @@ from tm.show import show_state
 from tm.parse import parse
 
 if TYPE_CHECKING:
-    from tm.parse import Color, Shift, State, Instr, Switch
+    from tools import Switch
+    from tm.parse import Color, Shift, State, Instr
 
 
 def make_comment(st: State, co: Color) -> str:

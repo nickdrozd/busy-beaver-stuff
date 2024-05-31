@@ -15,5 +15,3 @@ Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
 
 CompProg = dict[Slot, Instr]
-
-Switch = dict[Color, Instr | None]

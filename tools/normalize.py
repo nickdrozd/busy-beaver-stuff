@@ -9,7 +9,8 @@ if TYPE_CHECKING:
     from typing import Self
     from collections.abc import Iterator
 
-    from tm.parse import Color, State, Slot, Instr, Switch
+    from tools import Switch
+    from tm.parse import Color, State, Slot, Instr
 
 
 def expand(prog: str) -> str:
