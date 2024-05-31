@@ -120,8 +120,8 @@ def worker(
 class Program:
     prog: dict[State, Switch]
 
-    max_state: State
-    max_color: Color
+    states: int
+    colors: int
 
     max_used_state: State
     max_used_color: Color
@@ -134,8 +134,8 @@ class Program:
             for state, instrs in enumerate(parsed)
         }
 
-        self.max_state = len(parsed) - 1
-        self.max_color = len(parsed[0]) - 1
+        self.states = len(parsed)
+        self.colors = len(parsed[0])
 
         max_used_color = 1
         max_used_state = 1
@@ -196,8 +196,8 @@ class Program:
 
     @property
     def available_instrs(self) -> list[Instr]:
-        avail_states = min(self.max_state, 1 + self.max_used_state)
-        avail_colors = min(self.max_color, 1 + self.max_used_color)
+        avail_states = min(self.states - 1, 1 + self.max_used_state)
+        avail_colors = min(self.colors - 1, 1 + self.max_used_color)
 
         return sorted(
             product(
