@@ -9,15 +9,15 @@ from collections import defaultdict
 
 from multiprocessing import cpu_count, Process
 
-from tm.show import show_instr
-from tm.parse import parse, init_prog
+from tm.show import show_comp
+from tm.parse import parse, init_prog, tcompile
 from tm.machine import quick_term_or_rec
 from tm.rust_stuff import run_for_undefined, TreeSkip
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from tm.parse import Color, State, Slot, Instr, Switch
+    from tm.parse import Color, State, Slot, Instr, CompProg
 
     Output = Callable[[str], None]
 
@@ -118,7 +118,7 @@ def worker(
 ########################################
 
 class Program:
-    prog: dict[State, Switch]
+    prog: CompProg
 
     states: int
     colors: int
@@ -129,10 +129,7 @@ class Program:
     def __init__(self, program: str):
         parsed = parse(program)
 
-        self.prog = {
-            state: dict(enumerate(instrs))
-            for state, instrs in enumerate(parsed)
-        }
+        self.prog = tcompile(program)
 
         self.states = len(parsed)
         self.colors = len(parsed[0])
@@ -140,7 +137,7 @@ class Program:
         max_used_color = 1
         max_used_state = 1
 
-        for color, _, state in self.used_instructions:
+        for color, _, state in self.prog.values():
             # pylint: disable = consider-using-max-builtin
             if color > max_used_color:
                 max_used_color = color
@@ -152,47 +149,19 @@ class Program:
         self.max_used_state = max_used_state
 
     def __repr__(self) -> str:
-        return '  '.join([
-            ' '.join(
-                show_instr(instr)
-                for instr in instrs.values()
-            )
-            for instrs in self.prog.values()
-        ])
-
-    def __setitem__(self, slot: Slot, instr: Instr | None) -> None:
-        state, color = slot
-
-        self.prog[state][color] = instr
-
-    @property
-    def instr_slots(self) -> list[tuple[Slot, Instr | None]]:
-        return [
-            ((state, color), instr)
-            for state, instrs in self.prog.items()
-            for color, instr in instrs.items()
-        ]
-
-    @property
-    def used_instructions(self) -> Iterator[Instr]:
-        return (
-            instr
-            for instrs in self.prog.values()
-            for instr in instrs.values()
-            if instr
-        )
+        return show_comp(self.prog, (self.states, self.colors))
 
     @property
     def open_slot_count(self) -> int:
-        return len(self.open_slots)
+        return (self.states * self.colors) - len(self.prog)
 
     @property
-    def open_slots(self) -> tuple[Slot, ...]:
-        return tuple(
+    def open_slots(self) -> list[Slot]:
+        return [
             slot
-            for slot, instr in self.instr_slots
-            if instr is None
-        )
+            for slot in product(range(self.states), range(self.colors))
+            if slot not in self.prog
+        ]
 
     @property
     def available_instrs(self) -> list[Instr]:
@@ -209,11 +178,11 @@ class Program:
         branches = []
 
         for instr in self.available_instrs:
-            self[slot] = instr
+            self.prog[slot] = instr
 
             branches.append(str(self))
 
-        self[slot] = None
+        del self.prog[slot]
 
         return branches
 
