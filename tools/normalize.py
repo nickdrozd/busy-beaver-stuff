@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from tools import parse
 from tm.show import show_instr
+from tm.parse import init_prog
 
 if TYPE_CHECKING:
     from typing import Self
@@ -41,6 +42,10 @@ class Normalizer:
             state: dict(enumerate(instrs))
             for state, instrs in enumerate(parsed)
         }
+
+    @classmethod
+    def init(cls, states: int, colors: int) -> Self:
+        return cls(init_prog(states, colors))
 
     @property
     def states(self) -> set[State]:
