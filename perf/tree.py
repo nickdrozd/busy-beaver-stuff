@@ -14,6 +14,7 @@ def main() -> None:
         worker(
             steps = 100,
             halt = bool(halt),
+            params = params,
             output = print,
             stack = prep_branches(
                 params = params,

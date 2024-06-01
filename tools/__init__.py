@@ -1,3 +1,13 @@
-from tm.parse import Color, Instr
+from __future__ import annotations
 
-Switch = dict[Color, Instr | None]
+from typing import TYPE_CHECKING
+
+from tm.parse import parse
+
+if TYPE_CHECKING:
+    from tm.parse import Color, Instr, Params
+
+    Switch = dict[Color, Instr | None]
+
+def get_params(prog: str) -> Params:
+    return len(parsed := parse(prog)), len(parsed[0])

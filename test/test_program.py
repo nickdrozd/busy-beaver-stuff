@@ -5,6 +5,7 @@ from test.prog_data import BRANCH, PROGS, NORMALIZE, EXPAND
 from tm.tree import Program, init_branches
 from tm.show import show_slot, show_instr
 from tm.parse import read_slot
+from tools import get_params
 from tools.normalize import normalize, expand
 
 
@@ -29,15 +30,16 @@ class TestProgram(TestCase):
 
     def test_used_available(self):
         for prog, (last, avail_instr) in PROGS.items():
-            self.prog = Program(prog)
+            self.prog = Program(get_params(prog), prog)
 
             self.assert_last_slot(last)
             self.assert_instrs(avail_instr)
 
     def test_branch(self):
         for (prog, loc), extensions in BRANCH.items():
+            params = get_params(prog)
             self.assertEqual(
-                branches := Program(prog).branch(read_slot(loc)),
+                branches := Program(params,prog).branch(read_slot(loc)),
                 extensions,
                 branches)
 

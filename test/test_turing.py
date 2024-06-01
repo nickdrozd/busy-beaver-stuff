@@ -31,6 +31,7 @@ from tm.machine import (
     quick_term_or_rec,
 )
 
+from tools import get_params
 from tools.graph import Graph
 from tools.instr_seq import instr_seq
 from tools.normalize import normalize
@@ -179,7 +180,7 @@ class TuringTest(TestCase):
 
 
 def branch_last(prog: str) -> list[str]:
-    program = Program(prog)
+    program = Program(get_params(prog), prog)
     assert len(slots := program.open_slots) == 1
     return program.branch(slots[0])
 

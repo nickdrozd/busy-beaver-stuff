@@ -10,14 +10,14 @@ from collections import defaultdict
 from multiprocessing import cpu_count, Process
 
 from tm.show import show_comp
-from tm.parse import parse, init_prog, tcompile
+from tm.parse import init_prog, tcompile
 from tm.machine import quick_term_or_rec
 from tm.rust_stuff import run_for_undefined, TreeSkip
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from tm.parse import Color, State, Slot, Instr, CompProg, Params
+    from tm.parse import Params, Slot, Instr, CompProg
 
     Output = Callable[[str], None]
 
@@ -47,6 +47,7 @@ class Stack:
 def tree_gen(
         steps: int,
         stack: Stack,
+        params: Params,
         open_slot_lim: int,
 ) -> Iterator[str]:
     while True:  # pylint: disable = while-used
@@ -64,7 +65,7 @@ def tree_gen(
             yield prog
             continue
 
-        branches = (program := Program(prog)).branch(slot)
+        branches = (program := Program(params, prog)).branch(slot)
 
         if program.open_slot_count == open_slot_lim:
             yield from branches
@@ -76,6 +77,7 @@ def worker(
         steps: int,
         halt: bool,
         stack: list[str],
+        params: Params,
         output: Output,
         prep: bool = False,
 ) -> None:
@@ -106,7 +108,7 @@ def worker(
 
     log('starting...', dump_stack = True)
 
-    for prog in tree_gen(steps, Stack(stack), 2 if halt else 1):
+    for prog in tree_gen(steps, Stack(stack), params, 2 if halt else 1):
         try:
             output(prog)
         # pylint: disable-next = broad-exception-caught
@@ -126,13 +128,10 @@ class Program:
     avail_states: int
     avail_colors: int
 
-    def __init__(self, program: str):
-        parsed = parse(program)
-
+    def __init__(self, params: Params, program: str):
         self.prog = tcompile(program)
 
-        self.states = len(parsed)
-        self.colors = len(parsed[0])
+        self.states, self.colors = params
 
         max_used_color = 1
         max_used_state = 1
@@ -187,7 +186,8 @@ class Program:
 
 def init_branches(params: Params) -> list[str]:
     return Program(
-        init_prog(*params)
+        params,
+        init_prog(*params),
     ).branch((1, 0))  # B0
 
 
@@ -204,6 +204,7 @@ def prep_branches(params: Params, halt: bool) -> list[str]:
         steps = 3,
         halt = halt,
         stack = init_branches(params),
+        params = params,
         output = run,
         prep = True,
     )
@@ -232,19 +233,17 @@ def distribute_branches(branches: list[str]) -> list[list[str]]:
 def run_tree_gen(
         steps: int,
         halt: bool,
+        params: Params,
         output: Output,
         branches: list[str] | None = None,
-        params: Params | None = None,
 ) -> None:
     if branches is None:
-        assert params is not None
-
         branches = prep_branches(params, halt)
 
     processes = [
         Process(
             target = worker,
-            args = (steps, halt, group, output))
+            args = (steps, halt, group, params, output))
         for group in distribute_branches(branches)
      ]
 

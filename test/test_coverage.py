@@ -211,16 +211,11 @@ class TestFloss(TestCase):
 
     def test_tree(self):
         # pylint: disable = no-self-use
-        run_tree_gen(
-            steps = 10,
-            halt = True,
-            output = print,
-            params = (2, 2),
-        )
-
-        run_tree_gen(
-            steps = 10,
-            halt = True,
-            output = print,
-            branches = ["1RB ...  ... ..."],
-        )
+        for branches in (None, ["1RB ...  ... ..."]):
+            run_tree_gen(
+                steps = 10,
+                halt = True,
+                output = print,
+                params = (2, 2),
+                branches = branches,
+            )
