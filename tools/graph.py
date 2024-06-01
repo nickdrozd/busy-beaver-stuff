@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from functools import cached_property
 
 from tm.show import show_state
-from tm.parse import parse
+from tools import parse
 
 if TYPE_CHECKING:
     from tm.parse import Color, State

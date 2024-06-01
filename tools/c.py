@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tm.show import show_state
-from tm.parse import parse
+from tools import parse
 
 if TYPE_CHECKING:
     from tools import Switch

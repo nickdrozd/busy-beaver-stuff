@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.parse import parse
+from tm.rust_stuff import parse_to_vec as parse
 
 if TYPE_CHECKING:
     from tm.parse import Color, Instr, Params

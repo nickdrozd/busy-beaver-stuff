@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tm.parse import parse
+from tools import parse
 from tm.show import show_instr
 
 if TYPE_CHECKING:
