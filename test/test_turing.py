@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from math import isclose, log10
 from typing import TYPE_CHECKING
+from itertools import product
 from unittest import TestCase, expectedFailure, skip, skipUnless
 
 # pylint: disable-next = wildcard-import, unused-wildcard-import
@@ -17,7 +18,6 @@ from test.lin_rec import (
 )
 from test.utils import get_holdouts, read_holdouts, RUN_SLOW
 
-from tm.tree import Program
 from tm.macro import opt_block, MacroProg, tcompile, show_comp
 from tm.reason import (
     cant_halt,
@@ -180,9 +180,28 @@ class TuringTest(TestCase):
 
 
 def branch_last(prog: str) -> list[str]:
-    program = Program(get_params(prog), prog)
-    assert len(slots := program.open_slots) == 1
-    return program.branch(slots[0])
+    comp = tcompile(prog)
+
+    states, colors = get_params(prog)
+
+    all_slots = set(product(range(states), range(colors)))
+
+    open_slots = all_slots - set(comp.keys())
+
+    assert len(open_slots) == 1
+
+    open_slot = list(open_slots)[0]
+
+    all_instrs = product(
+        range(colors),
+        (True, False),
+        range(states),
+    )
+
+    return [
+        show_comp(comp | { open_slot : instr })
+        for instr in all_instrs
+    ]
 
 
 class Reason(TuringTest):
