@@ -30,6 +30,13 @@ class Stack:
         self.progs = defaultdict(list)
         self.extend(progs)
 
+    def to_json(self) -> list[str]:
+        return sorted(
+            prog
+            for cat in self.progs.values()
+            for prog in cat
+        )
+
     def extend(self, progs: list[str]) -> None:
         for prog in progs:
             self.progs[prog.count('...')].append(prog)
@@ -76,12 +83,14 @@ def tree_gen(
 def worker(
         steps: int,
         halt: bool,
-        stack: list[str],
+        progs: list[str],
         params: Params,
         output: Output,
         prep: bool = False,
 ) -> None:
     pid: str = 'prep' if prep else str(os.getpid())
+
+    stack = Stack(progs)
 
     def log(msg: str, dump_stack: bool = False) -> None:
         msg = f'{pid}: {msg}'
@@ -90,7 +99,7 @@ def worker(
             msg = '\n'.join([
                 msg,
                 json.dumps(
-                    stack,
+                    stack.to_json(),
                     indent = 4,
                 )
             ])
@@ -108,7 +117,7 @@ def worker(
 
     log('starting...', dump_stack = True)
 
-    for prog in tree_gen(steps, Stack(stack), params, 2 if halt else 1):
+    for prog in tree_gen(steps, stack, params, 2 if halt else 1):
         try:
             output(prog)
         # pylint: disable-next = broad-exception-caught
@@ -203,7 +212,7 @@ def prep_branches(params: Params, halt: bool) -> list[str]:
     worker(
         steps = 3,
         halt = halt,
-        stack = init_branches(params),
+        progs = init_branches(params),
         params = params,
         output = run,
         prep = True,

@@ -16,7 +16,7 @@ def main() -> None:
             halt = bool(halt),
             params = params,
             output = print,
-            stack = init_branches(params),
+            progs = init_branches(params),
         )
 
 
