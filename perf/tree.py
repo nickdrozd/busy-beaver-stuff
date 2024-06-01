@@ -1,5 +1,5 @@
 from perf import profile
-from tm.tree import worker, prep_branches
+from tm.tree import worker, init_branches
 
 PROG_PARAMS = (
     ((2, 2), 0),
@@ -16,10 +16,7 @@ def main() -> None:
             halt = bool(halt),
             params = params,
             output = print,
-            stack = prep_branches(
-                params = params,
-                halt = bool(halt),
-            ),
+            stack = init_branches(params),
         )
 
 
