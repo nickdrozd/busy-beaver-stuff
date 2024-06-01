@@ -212,9 +212,10 @@ def prep_branches(params: Params, halt: bool) -> list[str]:
     return sorted(branches)
 
 
-def distribute_branches(branches: list[str]) -> list[list[str]]:
-    cpus = cpu_count()
-
+def distribute(
+        cpus: int,
+        branches: list[str],
+) -> list[list[str]]:
     branch_groups: list[list[str]] = [[] for _ in range(cpus)]
 
     branch_counts = [0] * cpus
@@ -244,7 +245,7 @@ def run_tree_gen(
         Process(
             target = worker,
             args = (steps, halt, group, params, output))
-        for group in distribute_branches(branches)
+        for group in distribute(cpu_count(), branches)
      ]
 
     for process in processes:
