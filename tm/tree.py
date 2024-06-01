@@ -123,8 +123,8 @@ class Program:
     states: int
     colors: int
 
-    max_used_state: State
-    max_used_color: Color
+    avail_states: int
+    avail_colors: int
 
     def __init__(self, program: str):
         parsed = parse(program)
@@ -145,8 +145,8 @@ class Program:
             if state > max_used_state:
                 max_used_state = state
 
-        self.max_used_color = max_used_color
-        self.max_used_state = max_used_state
+        self.avail_states = min(self.states, 2 + max_used_state)
+        self.avail_colors = min(self.colors, 2 + max_used_color)
 
     def __repr__(self) -> str:
         return show_comp(self.prog, (self.states, self.colors))
@@ -165,14 +165,11 @@ class Program:
 
     @property
     def available_instrs(self) -> list[Instr]:
-        avail_states = min(self.states - 1, 1 + self.max_used_state)
-        avail_colors = min(self.colors - 1, 1 + self.max_used_color)
-
         return sorted(
             product(
-                range(1 + avail_colors),
+                range(self.avail_colors),
                 (False, True),
-                range(1 + avail_states)))
+                range(self.avail_states)))
 
     def branch(self, slot: Slot) -> list[str]:
         branches = []
