@@ -726,6 +726,17 @@ class Macro(RunProver):
                 opt_macro = 4_000,
                 watch_tape = True)
 
+    def test_backsym_overflow(self):
+        self.run_bb(
+            "1RB 1LA ... 0RB  2LA 3RB 1LB 0RA",
+            backsym = 1,
+            sim_lim = 2422,
+        )
+
+        self.assertEqual(
+            self.machine.infrul,
+            133219)
+
     @expectedFailure
     def test_wrong_block(self):
         prog = "1RB 0LA  1RC ...  1LD 0RC  0LA 1LD"
