@@ -621,40 +621,12 @@ class RecurSlow(Recur):
         self._test_recur(RECUR_SLOW, quick = False)
 
 
-class Prover(TuringTest):
+class RunProver(TuringTest):
     machine: Machine
 
     def assert_spinout(self) -> None:
         self.assertIsNotNone(
             self.machine.spnout)
-
-    def assert_macro_cells(self, cells: int):
-        assert isinstance(macro := self.machine.program, MacroProg)
-
-        self.assertEqual(
-            macro.cells,
-            cells)
-
-    def assert_mult_rules(self) -> None:
-        self.assertTrue(any(
-            isinstance(diff, tuple)
-            for rules in self.machine.prover.rules.values()
-            for _, rule in rules
-            for diff in rule.values()))
-
-    def assert_close(
-            self,
-            this: int,
-            that: int | float,
-            rel_tol: float,
-    ):
-        self.assertTrue(
-            isclose(
-                this,
-                that,
-                rel_tol = rel_tol,
-            )
-        )
 
     def run_bb(  # pylint: disable = too-many-arguments
         self,
@@ -682,6 +654,162 @@ class Prover(TuringTest):
 
         if analyze:
             self.analyze(prog, normal = normal)
+
+
+class Macro(RunProver):
+    def assert_macro_cells(self, cells: int):
+        assert isinstance(
+            macro := self.machine.program,
+            MacroProg)
+
+        self.assertEqual(
+            macro.cells,
+            cells)
+
+    def test_macro_undefined(self):
+        self.run_bb(
+            "1RB 0RA 1LB  2LA 2RB 0LA",
+            blocks = 3,
+            backsym = 1,
+        )
+
+        self.assertEqual(
+            0,
+            self.machine.infrul)
+
+        self.run_bb(
+            "1RB ...  1LB 0RC  1RB 1RD  0RE 0LD  1LF 1RA  1LC ...",
+            opt_macro = 2_000,
+        )
+
+        self.assert_undefined((4470, 'A1'))
+
+        self.run_bb(
+            "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF",
+            opt_macro = 200)
+
+        self.assertEqual(
+            self.machine.infrul,
+            -1)
+
+    def test_backsymbol_not_required(self):
+        prog = "1RB 0LC  1LC 0RC  1LA 0LC"
+
+        self.run_bb(
+            prog,
+            sim_lim = 100,
+        )
+
+        self.assertEqual(
+            84,
+            self.machine.infrul)
+
+        self.run_bb(
+            prog,
+            backsym = 1,
+            sim_lim = 100,
+        )
+
+        self.assertIsNotNone(
+            self.machine.infrul)
+
+    def test_show_state_overflow(self):
+        self.run_bb(
+            "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
+            opt_macro = 4_000)
+
+        self.assert_macro_cells(41)
+
+        with self.assertRaises(OverflowError):
+            self.run_bb(
+                "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
+                opt_macro = 4_000,
+                watch_tape = True)
+
+    @expectedFailure
+    def test_wrong_block(self):
+        prog = "1RB 0LA  1RC ...  1LD 0RC  0LA 1LD"
+
+        self.run_bb(
+            prog,
+            blocks = 2,
+        )
+
+        self.assertIsNotNone(
+            self.machine.infrul)
+
+        blocks = {
+            7_130: 1,
+            7_131: 4,
+        }
+
+        for steps, block in blocks.items():
+            self.assertEqual(
+                block,
+                opt_block(prog, steps))
+
+            self.run_bb(
+                prog,
+                blocks = block,
+                sim_lim = 8806,
+            )
+
+            self.assertIsNotNone(
+                self.machine.xlimit)
+
+        self.run_bb(
+            prog,
+            blocks = 4,
+            sim_lim = 8807,
+        )
+
+        self.assertIsNotNone(
+            self.machine.infrul)
+
+    def test_block_mult(self):
+        prog = "1RB 1RC 0RC  1RC 0LA 1LB  2LC 2RA 1LB"
+
+        self.run_bb(
+            prog,
+            blocks = 4,
+            analyze = False)
+
+        self.assert_marks(9899724)
+        self.assert_cycles(5441)
+        self.assert_spinout()
+
+        self.run_bb(
+            prog,
+            opt_macro = 1_000,
+            sim_lim = 1,
+            analyze = False)
+
+        self.assert_macro_cells(2)
+
+
+class Prover(RunProver):
+    machine: Machine
+
+    def assert_mult_rules(self) -> None:
+        self.assertTrue(any(
+            isinstance(diff, tuple)
+            for rules in self.machine.prover.rules.values()
+            for _, rule in rules
+            for diff in rule.values()))
+
+    def assert_close(
+            self,
+            this: int,
+            that: int | float,
+            rel_tol: float,
+    ):
+        self.assertTrue(
+            isclose(
+                this,
+                that,
+                rel_tol = rel_tol,
+            )
+        )
 
     def test_prover(self):
         self._test_prover_est(
@@ -835,32 +963,6 @@ class Prover(TuringTest):
                     prog,
                     SUSPECTED_RULES)
 
-    def test_macro_undefined(self):
-        self.run_bb(
-            "1RB 0RA 1LB  2LA 2RB 0LA",
-            blocks = 3,
-            backsym = 1,
-        )
-
-        self.assertEqual(
-            0,
-            self.machine.infrul)
-
-        self.run_bb(
-            "1RB ...  1LB 0RC  1RB 1RD  0RE 0LD  1LF 1RA  1LC ...",
-            opt_macro = 2_000,
-        )
-
-        self.assert_undefined((4470, 'A1'))
-
-        self.run_bb(
-            "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF",
-            opt_macro = 200)
-
-        self.assertEqual(
-            self.machine.infrul,
-            -1)
-
     def test_rule_limit(self):
         for prog, reason in RULE_LIMIT.items():
             self.run_bb(
@@ -872,40 +974,6 @@ class Prover(TuringTest):
 
             self.assertTrue(
                 str(self.machine.limrul).startswith(reason))
-
-    def test_backsymbol_not_required(self):
-        prog = "1RB 0LC  1LC 0RC  1LA 0LC"
-
-        self.run_bb(
-            prog,
-            sim_lim = 100,
-        )
-
-        self.assertEqual(
-            84,
-            self.machine.infrul)
-
-        self.run_bb(
-            prog,
-            backsym = 1,
-            sim_lim = 100,
-        )
-
-        self.assertIsNotNone(
-            self.machine.infrul)
-
-    def test_show_state_overflow(self):
-        self.run_bb(
-            "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
-            opt_macro = 4_000)
-
-        self.assert_macro_cells(41)
-
-        with self.assertRaises(OverflowError):
-            self.run_bb(
-                "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
-                opt_macro = 4_000,
-                watch_tape = True)
 
     def test_prover_false_positive(self):
         self.run_bb(
@@ -957,68 +1025,6 @@ class Prover(TuringTest):
                 self.assertIsInstance(
                     self.machine.rulapp,
                     int)
-
-    @expectedFailure
-    def test_wrong_block(self):
-        prog = "1RB 0LA  1RC ...  1LD 0RC  0LA 1LD"
-
-        self.run_bb(
-            prog,
-            blocks = 2,
-        )
-
-        self.assertIsNotNone(
-            self.machine.infrul)
-
-        blocks = {
-            7_130: 1,
-            7_131: 4,
-        }
-
-        for steps, block in blocks.items():
-            self.assertEqual(
-                block,
-                opt_block(prog, steps))
-
-            self.run_bb(
-                prog,
-                blocks = block,
-                sim_lim = 8806,
-            )
-
-            self.assertIsNotNone(
-                self.machine.xlimit)
-
-        self.run_bb(
-            prog,
-            blocks = 4,
-            sim_lim = 8807,
-        )
-
-        self.assertIsNotNone(
-            self.machine.infrul)
-
-        ########################################
-
-    def test_block_mult(self):
-        prog = "1RB 1RC 0RC  1RC 0LA 1LB  2LC 2RA 1LB"
-
-        self.run_bb(
-            prog,
-            blocks = 4,
-            analyze = False)
-
-        self.assert_marks(9899724)
-        self.assert_cycles(5441)
-        self.assert_spinout()
-
-        self.run_bb(
-            prog,
-            opt_macro = 1_000,
-            sim_lim = 1,
-            analyze = False)
-
-        self.assert_macro_cells(2)
 
     def test_algebra(self):
         clear_caches()
