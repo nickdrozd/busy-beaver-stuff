@@ -786,6 +786,16 @@ class Macro(RunProver):
 
         self.assert_macro_cells(2)
 
+    def test_backsym_no_help(self):
+        self.run_bb(
+            "1RB 1LA  0LB 1RC  0LA 0RC",
+            backsym = 1,
+            sim_lim = 3,
+        )
+
+        self.assertIsNotNone(
+            self.machine.xlimit)
+
 
 class Prover(RunProver):
     machine: Machine
