@@ -245,11 +245,9 @@ class Logic(Protocol):
     base_states: int
     base_colors: int
 
-    converter: TapeColorConverter
+    name: str
 
-    @property
-    @abstractmethod
-    def name(self) -> str: ...
+    converter: TapeColorConverter
 
     @property
     @abstractmethod
@@ -271,16 +269,14 @@ class Logic(Protocol):
 
 
 class BlockLogic:
+    name = 'block'
+
     def __init__(self, cells: int, base_states: int, base_colors: int):
         self.cells = cells
         self.base_states = base_states
         self.base_colors = base_colors
 
         self.converter = make_converter(base_colors, cells)
-
-    @property
-    def name(self) -> str:
-        return 'block'
 
     @property
     def macro_states(self) -> int:
@@ -323,6 +319,8 @@ class BlockLogic:
 class BacksymbolLogic:
     backsymbols: int
 
+    name = 'backsymbol'
+
     def __init__(self, cells: int, base_states: int, base_colors: int):
         self.cells = cells
         self.base_states = base_states
@@ -330,10 +328,6 @@ class BacksymbolLogic:
         self.backsymbols = self.base_colors ** self.cells
 
         self.converter = make_converter(base_colors, cells)
-
-    @property
-    def name(self) -> str:
-        return 'backsymbol'
 
     @property
     def macro_states(self) -> int:
