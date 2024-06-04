@@ -18,7 +18,13 @@ from test.lin_rec import (
 )
 from test.utils import get_holdouts, read_holdouts, RUN_SLOW
 
-from tm.macro import opt_block, MacroProg, tcompile, show_comp
+from tm.macro import (
+    tcompile,
+    show_comp,
+    opt_block,
+    MacroProg,
+    prog_params,
+)
 from tm.reason import (
     cant_halt,
     cant_blank,
@@ -173,7 +179,9 @@ class TuringTest(TestCase):
         if decomp and prog != "1RB ...  ... ...":
             self.assertEqual(
                 prog,
-                show_comp(tcompile(prog)))
+                show_comp(
+                    comp := tcompile(prog),
+                    params = prog_params(comp)))
 
         _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
         _ = Machine(prog, backsym = 1).run(sim_lim = 10)
