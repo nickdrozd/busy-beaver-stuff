@@ -1446,7 +1446,7 @@ PROVER_HALT: ProverEst = {
     # 5/5 block-compiled from 1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": (6.0, 39456),
 
-    # 4/11 backsym-compiled from 2/5 BB
+    # 11/4 backsym-compiled from 2/5 BB
     "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...": (7.3, 19016),
 
     # Green-8
