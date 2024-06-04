@@ -181,11 +181,11 @@ class TestFloss(TestCase):
             cant_halt(
                 "1RB ...  1LC 0RC  1RA 0LC"))
 
-        _ = instr_seq(
-            "1RB 1LB  1LA ...")
+        _ = list(instr_seq(
+            "1RB 1LB  1LA ..."))
 
-        _ = instr_seq(
-            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD")
+        _ = list(instr_seq(
+            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"))
 
     def test_mixed_divs(self):
         self.assertIsNotNone(

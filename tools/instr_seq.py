@@ -7,15 +7,13 @@ from tm.tape import Tape
 from tools.normalize import Normalizer
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from tm.machine import Slot, Undfnd
 
-    InstrSeq = list[tuple[str, int, Slot]]
 
-
-def instr_seq(prog: str) -> InstrSeq:
+def instr_seq(prog: str) -> Iterator[tuple[str, int, Slot]]:
     program = Normalizer(prog)
-
-    seqs: InstrSeq = []
 
     partial = Normalizer.init(
         states := len(program.states),
@@ -27,14 +25,12 @@ def instr_seq(prog: str) -> InstrSeq:
 
         step, slot = result
 
-        seqs.append((str(partial), step, slot))
+        yield str(partial), step, slot
 
         try:
             partial[slot] = program[slot]
         except KeyError:
             break
-
-    return seqs
 
 
 def run_for_undefined(prog: Normalizer) -> Undfnd | None:
