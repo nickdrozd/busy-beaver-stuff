@@ -51,7 +51,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
     let comp = tcompile(prog);
 
     let max_steps = 24;
-    let max_cycles = 1_000;
+    let max_cycles = 94;
 
     let (colors, entry_points, program) = rparse(prog);
 
