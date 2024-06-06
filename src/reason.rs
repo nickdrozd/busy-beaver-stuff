@@ -37,13 +37,16 @@ pub fn cant_spin_out(prog: &str) -> bool {
 /**************************************/
 
 fn cant_reach(prog: &str, term_type: TermType) -> bool {
-    let slots: Vec<Slot> = match term_type {
+    let mut configs: Vec<(Color, State, Tape)> = match term_type {
         TermType::Halt => halt_slots,
         TermType::Blank => erase_slots,
         TermType::Spinout => zero_reflexive_slots,
-    }(prog);
+    }(prog)
+    .iter()
+    .map(|&(state, color)| (1, state, Tape::init(color)))
+    .collect();
 
-    if slots.is_empty() {
+    if configs.is_empty() {
         return true;
     }
 
@@ -53,11 +56,6 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
     let max_cycles = 1_000;
 
     let (colors, entry_points, program) = rparse(prog);
-
-    let mut configs: Vec<(Color, State, Tape)> = slots
-        .iter()
-        .map(|&(state, color)| (1, state, Tape::init(color)))
-        .collect();
 
     let mut seen: HashMap<State, HashSet<Tape>> = HashMap::new();
 
