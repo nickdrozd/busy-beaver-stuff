@@ -57,10 +57,10 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
     let mut seen: HashMap<State, HashSet<Tape>> = HashMap::new();
 
-    let backstep_run = match term_type {
-        TermType::Halt => backstep_run_halt,
-        TermType::Blank => backstep_run_blank,
-        TermType::Spinout => backstep_run_spinout,
+    let run = match term_type {
+        TermType::Halt => run_halt,
+        TermType::Blank => run_blank,
+        TermType::Spinout => run_spinout,
     };
 
     for _ in 0..max_cycles {
@@ -95,13 +95,11 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                 }
 
                 for color in 0..colors {
-                    let Some(result) = backstep_run(
+                    let Some(result) = run(
                         &comp,
                         next_step,
-                        tape.clone(),
+                        tape.clone().backstep(shift, color as Color),
                         next_state,
-                        shift,
-                        color as Color,
                     ) else {
                         continue;
                     };
@@ -110,9 +108,8 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                         continue;
                     }
 
-                    let mut next_tape = tape.clone();
-
-                    next_tape.backstep(shift, color as Color);
+                    let next_tape =
+                        tape.clone().backstep(shift, color as Color);
 
                     configs.push((next_step, next_state, next_tape));
                 }
@@ -222,14 +219,16 @@ fn rparse(prog: &str) -> (usize, Graph, Program) {
 /**************************************/
 
 trait Backstep {
-    fn backstep(&mut self, shift: Shift, color: Color);
+    fn backstep(self, shift: Shift, color: Color) -> Self;
 }
 
 impl Backstep for Tape {
-    fn backstep(&mut self, shift: Shift, color: Color) {
+    fn backstep(mut self, shift: Shift, color: Color) -> Self {
         let _ = self.step(!shift, self.scan, false);
 
         self.scan = color;
+
+        self
     }
 }
 
@@ -237,17 +236,13 @@ impl Backstep for Tape {
 
 type Step = u64;
 
-fn backstep_run_halt(
+fn run_halt(
     comp: &CompProg,
     sim_lim: Step,
     mut tape: Tape,
     mut state: State,
-    shift: Shift,
-    color: Color,
 ) -> Option<Step> {
     let mut step = 0;
-
-    tape.backstep(shift, color);
 
     for _ in 0..sim_lim {
         let Some(&(color, shift, next_state)) =
@@ -272,19 +267,15 @@ fn backstep_run_halt(
     None
 }
 
-fn backstep_run_blank(
+fn run_blank(
     comp: &CompProg,
     sim_lim: Step,
     mut tape: Tape,
     mut state: State,
-    shift: Shift,
-    color: Color,
 ) -> Option<Step> {
     let mut blanks: HashMap<State, Step> = HashMap::new();
 
     let mut step = 0;
-
-    tape.backstep(shift, color);
 
     for _ in 0..sim_lim {
         let Some(&(color, shift, next_state)) =
@@ -321,17 +312,13 @@ fn backstep_run_blank(
     blanks.drain().map(|(_, value)| value).min()
 }
 
-fn backstep_run_spinout(
+fn run_spinout(
     comp: &CompProg,
     sim_lim: Step,
     mut tape: Tape,
     mut state: State,
-    shift: Shift,
-    color: Color,
 ) -> Option<Step> {
     let mut step = 0;
-
-    tape.backstep(shift, color);
 
     for _ in 0..sim_lim {
         let &(color, shift, next_state) =
