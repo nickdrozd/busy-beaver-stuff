@@ -8,8 +8,6 @@ use crate::{
     tape::BasicTape as Tape,
 };
 
-type Step = u64;
-
 /**************************************/
 
 #[derive(Clone, Copy)]
@@ -230,6 +228,8 @@ impl Backstep for Tape {
 }
 
 /**************************************/
+
+type Step = u64;
 
 fn backstep_run_halt(
     comp: &CompProg,
