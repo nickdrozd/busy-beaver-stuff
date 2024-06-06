@@ -84,7 +84,11 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
         // println!("{step} | {state} | {tape}");
 
+        let next_step = 1 + step;
+
         for entry in &entry_points[&state] {
+            let next_state = *entry;
+
             for &(_, shift, trans) in &program[entry] {
                 if trans != state {
                     continue;
@@ -93,9 +97,9 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                 for color in 0..colors {
                     let Some(result) = backstep_run(
                         &comp,
-                        step + 1,
+                        next_step,
                         tape.clone(),
-                        *entry,
+                        next_state,
                         shift,
                         color as Color,
                     ) else {
@@ -106,11 +110,11 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                         continue;
                     }
 
-                    let mut yield_tape = tape.clone();
+                    let mut next_tape = tape.clone();
 
-                    yield_tape.backstep(shift, color as Color);
+                    next_tape.backstep(shift, color as Color);
 
-                    configs.push((step + 1, *entry, yield_tape));
+                    configs.push((next_step, next_state, next_tape));
                 }
             }
         }
