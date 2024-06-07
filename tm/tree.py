@@ -128,6 +128,14 @@ def worker(
 
 ########################################
 
+def make_instrs(states: int, colors: int) -> list[Instr]:
+    return sorted(
+        product(
+            range(colors),
+            (False, True),
+            range(states)))
+
+
 class Program:
     prog: CompProg
 
@@ -165,11 +173,9 @@ class Program:
 
     @property
     def available_instrs(self) -> list[Instr]:
-        return sorted(
-            product(
-                range(self.avail_colors),
-                (False, True),
-                range(self.avail_states)))
+        return make_instrs(
+            self.avail_states,
+            self.avail_colors)
 
     def branch(self, slot: Slot) -> list[str]:
         branches = []
