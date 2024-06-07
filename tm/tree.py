@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import json
 import signal
-from itertools import product
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
@@ -12,7 +11,7 @@ from multiprocessing import cpu_count, Process
 from tm.show import show_comp
 from tm.parse import init_prog, tcompile
 from tm.machine import quick_term_or_rec
-from tm.rust_stuff import run_for_undefined, TreeSkip
+from tm.rust_stuff import run_for_undefined, TreeSkip, make_instrs
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -127,14 +126,6 @@ def worker(
     log('done')
 
 ########################################
-
-def make_instrs(states: int, colors: int) -> list[Instr]:
-    return sorted(
-        product(
-            range(colors),
-            (False, True),
-            range(states)))
-
 
 class Program:
     prog: CompProg

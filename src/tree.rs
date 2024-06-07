@@ -2,9 +2,32 @@ use pyo3::{
     create_exception, exceptions::PyException, pyfunction, PyResult,
 };
 
-use crate::{instrs::Slot, parse::tcompile, tape::BasicTape as Tape};
+use crate::{
+    instrs::{Color, Instr, Slot, State},
+    parse::tcompile,
+    tape::BasicTape as Tape,
+};
 
 type Step = u64;
+
+/**************************************/
+
+#[pyfunction]
+pub fn make_instrs(states: State, colors: Color) -> Vec<Instr> {
+    let mut instrs = vec![];
+
+    let shifts = [false, true];
+
+    for color in 0..colors {
+        for shift in shifts {
+            for state in 0..states {
+                instrs.push((color, shift, state));
+            }
+        }
+    }
+
+    instrs
+}
 
 /**************************************/
 
