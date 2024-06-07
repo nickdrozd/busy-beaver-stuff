@@ -68,7 +68,9 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
             return true;
         };
 
-        if step > max_steps {
+        let next_step = 1 + step;
+
+        if next_step > max_steps {
             return false;
         }
 
@@ -83,8 +85,6 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
         }
 
         // println!("{step} | {state} | {tape}");
-
-        let next_step = 1 + step;
 
         for entry in &entry_points[&state] {
             let next_state = *entry;
