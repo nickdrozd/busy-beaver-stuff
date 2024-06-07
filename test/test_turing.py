@@ -249,6 +249,11 @@ class Reason(TuringTest):
             self.assert_simple(prog)
             self.assert_could_blank(prog)
 
+    def test_max_steps(self):
+        for prog in CANT_BLANK_MAX_STEPS:
+            self.assert_cant_blank(prog)
+            self.assert_cant_spin_out(prog)
+
     def test_false_negatives(self):
         for prog in CANT_HALT_FALSE_NEGATIVES:
             self.assertNotIn(prog, HALTERS)
