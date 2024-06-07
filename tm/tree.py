@@ -11,7 +11,11 @@ from multiprocessing import cpu_count, Process
 from tm.show import show_comp
 from tm.parse import init_prog, tcompile
 from tm.machine import quick_term_or_rec
-from tm.rust_stuff import run_for_undefined, TreeSkip, make_instrs
+from tm.rust_stuff import (
+    TreeSkip,
+    make_instrs,
+    run_for_undefined_py as run_for_undefined,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator

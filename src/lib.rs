@@ -47,6 +47,6 @@ mod rust_stuff {
         prover::PastConfigs,
         reason::{cant_blank, cant_halt, cant_spin_out},
         rules::{InfiniteRule, RuleLimit, UnknownRule},
-        tree::{make_instrs, run_for_undefined, TreeSkip},
+        tree::{make_instrs, run_for_undefined_py, TreeSkip},
     };
 }
