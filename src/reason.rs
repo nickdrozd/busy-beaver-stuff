@@ -98,13 +98,13 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                     let next_tape =
                         tape.clone().backstep(shift, color as Color);
 
-                    let Some(&(_, come_back, _)) =
+                    let Some(&(_, come_back, prev_state)) =
                         comp.get(&(next_state, next_tape.scan))
                     else {
                         continue;
                     };
 
-                    if come_back != shift {
+                    if come_back != shift || prev_state != state {
                         continue;
                     }
 
