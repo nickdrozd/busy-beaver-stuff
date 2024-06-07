@@ -95,12 +95,22 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                 }
 
                 for color in 0..colors {
-                    let Some(result) = run(
-                        &comp,
-                        next_step,
-                        tape.clone().backstep(shift, color as Color),
-                        next_state,
-                    ) else {
+                    let next_tape =
+                        tape.clone().backstep(shift, color as Color);
+
+                    let Some(&(_, come_back, _)) =
+                        comp.get(&(next_state, next_tape.scan))
+                    else {
+                        continue;
+                    };
+
+                    if come_back != shift {
+                        continue;
+                    }
+
+                    let Some(result) =
+                        run(&comp, next_step, next_tape, next_state)
+                    else {
                         continue;
                     };
 
