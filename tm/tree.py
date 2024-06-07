@@ -164,14 +164,6 @@ class Program:
         return (self.states * self.colors) - len(self.prog)
 
     @property
-    def open_slots(self) -> list[Slot]:
-        return [
-            slot
-            for slot in product(range(self.states), range(self.colors))
-            if slot not in self.prog
-        ]
-
-    @property
     def available_instrs(self) -> list[Instr]:
         return sorted(
             product(

@@ -1,4 +1,5 @@
 from unittest import TestCase
+from itertools import product
 
 from test.prog_data import BRANCH, PROGS, NORMALIZE, EXPAND
 
@@ -13,10 +14,18 @@ class TestProgram(TestCase):
     prog: Program
 
     def assert_last_slot(self, slot: str | None):
+        prog = self.prog
+
+        open_slots = [
+            slot
+            for slot in product(range(prog.states), range(prog.colors))
+            if slot not in prog.prog
+        ]
+
         self.assertEqual(
             slot,
             None
-            if (len(open_slots := self.prog.open_slots) != 1
+            if (len(open_slots) != 1
                     or (last := open_slots[0]) is None) else
             show_slot(last)
         )
