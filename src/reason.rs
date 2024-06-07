@@ -72,15 +72,15 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
             return false;
         }
 
-        if state == 0 && tape.blank() {
-            return false;
-        }
-
         if seen.entry(state).or_default().contains(&tape) {
             continue;
         }
 
         seen.get_mut(&state).unwrap().insert(tape.clone());
+
+        if state == 0 && tape.blank() {
+            return false;
+        }
 
         // println!("{step} | {state} | {tape}");
 
