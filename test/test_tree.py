@@ -67,18 +67,24 @@ def run_variations(
         sim_lim = sim_lim,
     )
 
+########################################
+
+PROGS: Q
+
+RESULTS: dict[str, tuple[int, str]]
+
 
 class TestTree(TestCase):
-    queue: Q
-
     progs: set[str]
 
     results: dict[str, tuple[int, str]]
 
     def setUp(self):
-        self.queue = Queue()
+        global PROGS, RESULTS  # pylint: disable = global-statement
 
-        self.results = Manager().dict(  # type: ignore[assignment]
+        PROGS = Queue()
+
+        RESULTS = Manager().dict(  # type: ignore[assignment]
             blanks = (0, ""),
             halted = (0, ""),
             spnout = (0, ""),
@@ -86,7 +92,7 @@ class TestTree(TestCase):
         )
 
     def assert_progs(self, count: int, progfile: str):
-        self.progs = queue_to_set(self.queue)
+        self.progs = queue_to_set(PROGS)
 
         self.assertEqual(
             self.progs,
@@ -103,7 +109,7 @@ class TestTree(TestCase):
                 tuple[int, str | set[str]]],
     ):
         for cat, (exp_step, exp_prog) in expected.items():
-            res_step, res_prog = self.results[cat]
+            res_step, res_prog = RESULTS[cat]
 
             self.assertEqual(res_step, exp_step)
 
@@ -129,57 +135,108 @@ class TestTree(TestCase):
                 graph.is_simple
                 and graph.is_strongly_connected)
 
-    def add_result(self, prog: str, machine: BasicMachine) -> None:
-        if ((blanks := machine.blanks)
-                and (res := min(blanks.values()))
-                and  res > self.results['blanks'][0]):
-            self.results['blanks'] = res, prog
 
-        if ((spnout := machine.spnout)
-                and spnout > self.results['spnout'][0]):
-            self.results['spnout'] = spnout, prog
+def add_result(prog: str, machine: BasicMachine) -> None:
+    if ((blanks := machine.blanks)
+            and (res := min(blanks.values()))
+            and  res > RESULTS['blanks'][0]):
+        RESULTS['blanks'] = res, prog
+
+    if ((spnout := machine.spnout)
+            and spnout > RESULTS['spnout'][0]):
+        RESULTS['spnout'] = spnout, prog
+        return
+
+    if ((und := machine.undfnd)
+            and ((step := und[0] + 1) > RESULTS['halted'][0])):
+        RESULTS['halted'] = step, prog
+        return
+
+    if (machine.infrul
+            and (cycles := machine.cycles)
+                    > RESULTS['infrul'][0]):
+        RESULTS['infrul'] = cycles, prog
+        return
+
+########################################
+
+PARAMS_22 = 2, 2
+MAXINF_22 = 187
+
+def capture_22(prog: str) -> None:
+    machine = Machine(
+        prog,
+        opt_macro = 20,
+        params = PARAMS_22,
+    ).run(sim_lim = 1 + MAXINF_22)
+
+    if machine.xlimit is None:
+        add_result(prog, machine)
+        return
+
+    PROGS.put(prog)
+
+########################################
+
+PARAMS_32 = 3, 2
+MAXINF_32 = 4_927
+
+def capture_32(prog: str) -> None:
+    machines = run_variations(
+        prog, 1 + MAXINF_32,
+        lin_rec = 50,
+        params = PARAMS_32,
+    )
+
+    for machine in machines:
+        if machine.xlimit is None:
+            add_result(prog, machine)
             return
 
-        if ((und := machine.undfnd)
-                and ((step := und[0] + 1) > self.results['halted'][0])):
-            self.results['halted'] = step, prog
+    PROGS.put(prog)
+
+########################################
+
+PARAMS_23 = 2, 3
+MAXINF_23 = 7_395
+
+def capture_23(prog: str) -> None:
+    machines = run_variations(
+        prog, 400,
+        lin_rec = 50,
+        params = PARAMS_23,
+    )
+
+    for machine in machines:
+        if machine.xlimit is None:
+            add_result(prog, machine)
             return
 
-        if (machine.infrul
-                and (cycles := machine.cycles)
-                        > self.results['infrul'][0]):
-            self.results['infrul'] = cycles, prog
+    machines = run_variations(
+        prog, 1 + MAXINF_23,
+        params = PARAMS_23,
+    )
+
+    for machine in machines:
+        if machine.xlimit is None:
+            add_result(prog, machine)
             return
 
+    PROGS.put(prog)
+
+########################################
 
 class Fast(TestTree):
     def test_22(self):
-        params = 2, 2
-
-        max_inf = 187
-
-        def capture(prog: str) -> None:
-            machine = Machine(
-                prog,
-                opt_macro = 20,
-                params = params,
-            ).run(sim_lim = 1 + max_inf)
-
-            if machine.xlimit is None:
-                self.add_result(prog, machine)
-                return
-
-            self.queue.put(prog)
-
         run_tree_gen(
             steps = 20,
             halt = False,
-            params = params,
-            output = capture,
+            params = PARAMS_22,
+            output = capture_22,
         )
 
         self.assertFalse(
-            queue_to_set(self.queue))
+            queue_to_set(PROGS))
 
         try:
             self.assert_records({
@@ -189,7 +246,7 @@ class Fast(TestTree):
                     "1RB 1LB  1LB 1LA",
                     "1RB 0LB  0LB 1LA",
                 }),
-                'infrul': (max_inf, "1RB 1LA  0LA 0RB"),
+                'infrul': (MAXINF_22, "1RB 1LA  0LA 0RB"),
             })
         except AssertionError:
             self.assert_records({
@@ -203,29 +260,11 @@ class Fast(TestTree):
             })
 
     def test_32(self):
-        params = 3, 2
-
-        max_inf = 4_927
-
-        def capture(prog: str) -> None:
-            machines = run_variations(
-                prog, 1 + max_inf,
-                lin_rec = 50,
-                params = params,
-            )
-
-            for machine in machines:
-                if machine.xlimit is None:
-                    self.add_result(prog, machine)
-                    return
-
-            self.queue.put(prog)
-
         run_tree_gen(
             steps = 15,
             halt = False,
-            params = params,
-            output = capture,
+            params = PARAMS_32,
+            output = capture_32,
         )
 
         self.assert_progs(
@@ -235,46 +274,18 @@ class Fast(TestTree):
         self.assert_records({
             'blanks': (34, "1RB 1LB  1LA 1LC  1RC 0LC"),
             'spnout': (55, "1RB 0LB  1LA 0RC  1LC 1LA"),
-            'infrul': (max_inf, "1RB 1LA  0LB 1RC  1LA 0RB"),
+            'infrul': (MAXINF_32, "1RB 1LA  0LB 1RC  1LA 0RB"),
         })
 
         self.assert_cant_terminate()
         self.assert_simple_and_connected()
 
     def test_23(self):
-        params = 2, 3
-
-        max_inf = 7_395
-
-        def capture(prog: str) -> None:
-            machines = run_variations(
-                prog, 400,
-                lin_rec = 50,
-                params = params,
-            )
-
-            for machine in machines:
-                if machine.xlimit is None:
-                    self.add_result(prog, machine)
-                    return
-
-            machines = run_variations(
-                prog, 1 + max_inf,
-                params = params,
-            )
-
-            for machine in machines:
-                if machine.xlimit is None:
-                    self.add_result(prog, machine)
-                    return
-
-            self.queue.put(prog)
-
         run_tree_gen(
             steps = 23,
             halt = False,
-            params = params,
-            output = capture,
+            params = PARAMS_23,
+            output = capture_23,
         )
 
         self.assert_progs(
@@ -284,7 +295,7 @@ class Fast(TestTree):
         self.assert_records({
             'blanks': (77, "1RB 2LA 0RB  1LA 0LB 1RA"),
             'spnout': (59, "1RB 2LB 1LA  2LB 2RA 0RA"),
-            'infrul': (max_inf, "1RB 2LA 0RB  1LB 1LA 1RA"),
+            'infrul': (MAXINF_23, "1RB 2LA 0RB  1LB 1LA 1RA"),
         })
 
         self.assertIn(
@@ -294,47 +305,104 @@ class Fast(TestTree):
         self.assert_cant_terminate()
         self.assert_simple_and_connected()
 
+########################################
+
+PARAMS_42 = 4, 2
+MAXINF_42H = 13_690
+
+def capture_42h(prog: str) -> None:
+    if 'D' not in prog:
+        return
+
+    if quick_term_or_rec(prog, 50):
+        return
+
+    for machine in run_variations(prog, 1000, params = PARAMS_42):
+        if machine.xlimit is None:
+            add_result(prog, machine)
+            return
+
+    machines = run_variations(
+        prog, 1 + MAXINF_42H,
+        block_steps = 6_000,
+        params = PARAMS_42,
+    )
+
+    for machine in machines:
+        if machine.xlimit is None:
+            add_result(prog, machine)
+            return
+
+    if cant_halt(prog):
+        return
+
+    PROGS.put(prog)
+
+########################################
+
+PARAMS_24 = 2, 4
+
+def capture_24(prog: str) -> None:
+    if '3' not in prog:
+        return
+
+    if quick_term_or_rec(prog, 1_000):
+        return
+
+    machines = run_variations(
+        prog, 15_000,
+        block_steps = 6_000,
+        params = PARAMS_24,
+    )
+
+    for machine in machines:
+        if machine.xlimit is None:
+            return
+
+    if cant_halt(prog):
+        return
+
+    if quick_term_or_rec(prog, 10_000):
+        return
+
+    PROGS.put(prog)
+
+########################################
+
+def capture_42q(prog: str) -> None:
+    if 'D' not in prog:
+        return
+
+    if cant_spin_out(prog):
+        return
+
+    if quick_term_or_rec(prog, 1_000):
+        return
+
+    machine = Machine(
+        prog,
+        opt_macro = 1_000,
+        params = PARAMS_42,
+    ).run(10_000)
+
+    if machine.simple_termination or machine.infrul:
+        return
+
+    if quick_term_or_rec(prog, 40_000):
+        return
+
+    PROGS.put(prog)
+
+########################################
 
 @skipUnless(RUN_SLOW, '')
 class Slow(TestTree):
     def test_42h(self):
-        params = 4, 2
-
-        max_inf = 13_690
-
-        def capture(prog: str) -> None:
-            if 'D' not in prog:
-                return
-
-            if quick_term_or_rec(prog, 50):
-                return
-
-            for machine in run_variations(prog, 1000, params = params):
-                if machine.xlimit is None:
-                    self.add_result(prog, machine)
-                    return
-
-            machines = run_variations(
-                prog, 1 + max_inf,
-                block_steps = 6_000,
-                params = params
-            )
-
-            for machine in machines:
-                if machine.xlimit is None:
-                    self.add_result(prog, machine)
-                    return
-
-            if cant_halt(prog):
-                return
-
-            self.queue.put(prog)
-
         run_tree_gen(
             steps = 35,
             halt = True,
-            params = params,
-            output = capture,
+            params = PARAMS_42,
+            output = capture_42h,
         )
 
         self.assert_progs(
@@ -345,44 +413,18 @@ class Slow(TestTree):
             'blanks': (169, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'spnout': (171, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'halted': (107, "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA"),
-            'infrul': (max_inf, "1RB 0LD  1LC 1RA  ... 1LA  0RA 1LD"),
+            # pylint: disable = line-too-long
+            'infrul': (MAXINF_42H, "1RB 0LD  1LC 1RA  ... 1LA  0RA 1LD"),
         })
 
         self.assert_simple_and_connected()
 
     def test_24(self):
-        params = 2, 4
-
-        def capture(prog: str) -> None:
-            if '3' not in prog:
-                return
-
-            if quick_term_or_rec(prog, 1_000):
-                return
-
-            machines = run_variations(
-                prog, 15_000,
-                block_steps = 6_000,
-                params = params,
-            )
-
-            for machine in machines:
-                if machine.xlimit is None:
-                    return
-
-            if cant_halt(prog):
-                return
-
-            if quick_term_or_rec(prog, 10_000):
-                return
-
-            self.queue.put(prog)
-
         run_tree_gen(
             steps = 100,
             halt = True,
-            params = params,
-            output = capture,
+            params = PARAMS_24,
+            output = capture_24,
         )
 
         self.assert_progs(
@@ -392,37 +434,11 @@ class Slow(TestTree):
         self.assert_simple_and_connected()
 
     def test_42q(self):
-        params = 4, 2
-
-        def capture(prog: str) -> None:
-            if 'D' not in prog:
-                return
-
-            if cant_spin_out(prog):
-                return
-
-            if quick_term_or_rec(prog, 1_000):
-                return
-
-            machine = Machine(
-                prog,
-                opt_macro = 1_000,
-                params = params,
-            ).run(10_000)
-
-            if machine.simple_termination or machine.infrul:
-                return
-
-            if quick_term_or_rec(prog, 40_000):
-                return
-
-            self.queue.put(prog)
-
         run_tree_gen(
             steps = 200,
             halt = False,
-            params = params,
-            output = capture,
+            params = PARAMS_42,
+            output = capture_42q,
         )
 
         self.assert_progs(
