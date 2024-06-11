@@ -77,11 +77,18 @@ impl TreeProg {
     fn leaf(
         instr: Instr,
         prog: &CompProg,
+        (max_state, max_color): Params,
         harvester: &mut dyn FnMut(&CompProg),
-    ) -> Self {
+    ) -> Option<Self> {
+        if prog.values().all(|(_, _, state)| 1 + state < max_state)
+            || prog.values().all(|(color, _, _)| 1 + color < max_color)
+        {
+            return None;
+        }
+
         harvester(prog);
 
-        Self { instr, nodes: None }
+        Some(Self { instr, nodes: None })
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -91,18 +98,20 @@ impl TreeProg {
         (state, tape): Config,
         sim_lim: Step,
         (mut avail_states, mut avail_colors): Params,
-        (max_states, max_colors): Params,
+        params: Params,
         remaining_slots: Slots,
         harvester: &mut dyn FnMut(&CompProg),
-    ) -> Self {
+    ) -> Option<Self> {
+        let (max_states, max_colors) = params;
+
         if remaining_slots == 0 {
-            return Self::leaf(instr, prog, harvester);
+            return Self::leaf(instr, prog, params, harvester);
         }
 
         let Ok(Some(slot)) =
             run_for_undefined(prog, state, tape, sim_lim)
         else {
-            return Self::leaf(instr, prog, harvester);
+            return Self::leaf(instr, prog, params, harvester);
         };
 
         let (slot_state, slot_color) = slot;
@@ -125,7 +134,7 @@ impl TreeProg {
         for next_instr in make_instrs(avail_states, avail_colors) {
             prog.insert(slot, next_instr);
 
-            nodes.push(Self::branch(
+            let Some(node) = Self::branch(
                 next_instr,
                 prog,
                 (slot.0, &mut tape.clone()),
@@ -134,17 +143,21 @@ impl TreeProg {
                 (max_states, max_colors),
                 remaining_slots - 1,
                 harvester,
-            ));
+            ) else {
+                continue;
+            };
+
+            nodes.push(node);
 
             prog.remove(&slot);
         }
 
         assert!(!nodes.is_empty());
 
-        Self {
+        Some(Self {
             instr,
             nodes: Some((slot, nodes)),
-        }
+        })
     }
 
     fn leaves(&self) -> usize {
@@ -183,6 +196,7 @@ fn build_tree(
         (states * colors) - (1 + Slots::from(halt)),
         harvester,
     )
+    .unwrap()
 }
 
 #[pyfunction]
@@ -205,14 +219,14 @@ fn test_tree() {
     let leaves = vec![
         ((2, 2, 1), 36),
         ((2, 2, 0), 106),
-        ((3, 2, 1), 3_246),
-        ((3, 2, 0), 13_234),
-        ((2, 3, 1), 2_553),
-        ((2, 3, 0), 9_274),
-        ((4, 2, 1), 480_376),
-        ((4, 2, 0), 2_304_871),
-        ((2, 4, 1), 321_901),
-        ((2, 4, 0), 1_728_046),
+        ((3, 2, 1), 3_140),
+        ((3, 2, 0), 13_128),
+        ((2, 3, 1), 2_447),
+        ((2, 3, 0), 9_168),
+        ((4, 2, 1), 467_142),
+        ((4, 2, 0), 2_291_637),
+        ((2, 4, 1), 312_627),
+        ((2, 4, 0), 1_718_772),
     ];
 
     for ((states, colors, halt), leaves) in leaves {
@@ -227,4 +241,13 @@ fn test_tree() {
         assert_eq!(tree.depth(), ((states * colors) - halt) as usize);
         assert_eq!(leaf_count, leaves);
     }
+}
+
+#[test]
+fn test_progs() {
+    let params = (3, 2);
+
+    build_tree(params, true, 100, &mut |comp| {
+        println!("{}", show_comp(comp, Some(params)));
+    });
 }
