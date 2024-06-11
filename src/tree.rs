@@ -67,114 +67,79 @@ type Slots = u64;
 type Params = (State, Color);
 type Config<'t> = (State, &'t mut Tape);
 
-#[derive(Debug)]
-struct TreeProg {
-    instr: Instr,
-    nodes: Option<(Slot, Vec<TreeProg>)>,
+fn leaf(
+    prog: &CompProg,
+    (max_state, max_color): Params,
+    harvester: &mut dyn FnMut(&CompProg),
+) -> bool {
+    if prog.values().all(|(_, _, state)| 1 + state < max_state)
+        || prog.values().all(|(color, _, _)| 1 + color < max_color)
+    {
+        return false;
+    }
+
+    harvester(prog);
+
+    true
 }
 
-impl TreeProg {
-    fn leaf(
-        instr: Instr,
-        prog: &CompProg,
-        (max_state, max_color): Params,
-        harvester: &mut dyn FnMut(&CompProg),
-    ) -> Option<Self> {
-        if prog.values().all(|(_, _, state)| 1 + state < max_state)
-            || prog.values().all(|(color, _, _)| 1 + color < max_color)
-        {
-            return None;
-        }
+#[allow(clippy::too_many_arguments)]
+fn branch(
+    instr: Instr,
+    prog: &mut CompProg,
+    (state, tape): Config,
+    sim_lim: Step,
+    (mut avail_states, mut avail_colors): Params,
+    params: Params,
+    remaining_slots: Slots,
+    harvester: &mut dyn FnMut(&CompProg),
+) -> bool {
+    let (max_states, max_colors) = params;
 
-        harvester(prog);
-
-        Some(Self { instr, nodes: None })
+    if remaining_slots == 0 {
+        return leaf(prog, params, harvester);
     }
 
-    #[allow(clippy::too_many_arguments)]
-    fn branch(
-        instr: Instr,
-        prog: &mut CompProg,
-        (state, tape): Config,
-        sim_lim: Step,
-        (mut avail_states, mut avail_colors): Params,
-        params: Params,
-        remaining_slots: Slots,
-        harvester: &mut dyn FnMut(&CompProg),
-    ) -> Option<Self> {
-        let (max_states, max_colors) = params;
+    let Ok(Some(slot)) = run_for_undefined(prog, state, tape, sim_lim)
+    else {
+        return leaf(prog, params, harvester);
+    };
 
-        if remaining_slots == 0 {
-            return Self::leaf(instr, prog, params, harvester);
-        }
+    let (slot_state, slot_color) = slot;
+    let (instr_color, _, instr_state) = instr;
 
-        let Ok(Some(slot)) =
-            run_for_undefined(prog, state, tape, sim_lim)
-        else {
-            return Self::leaf(instr, prog, params, harvester);
+    if avail_states < max_states
+        && 1 + max(slot_state, instr_state) == avail_states
+    {
+        avail_states += 1;
+    }
+
+    if avail_colors < max_colors
+        && 1 + max(slot_color, instr_color) == avail_colors
+    {
+        avail_colors += 1;
+    }
+
+    for next_instr in make_instrs(avail_states, avail_colors) {
+        prog.insert(slot, next_instr);
+
+        if !branch(
+            next_instr,
+            prog,
+            (slot.0, &mut tape.clone()),
+            sim_lim,
+            (avail_states, avail_colors),
+            (max_states, max_colors),
+            remaining_slots - 1,
+            harvester,
+        ) {
+            continue;
         };
 
-        let (slot_state, slot_color) = slot;
-        let (instr_color, _, instr_state) = instr;
-
-        if avail_states < max_states
-            && 1 + max(slot_state, instr_state) == avail_states
-        {
-            avail_states += 1;
-        }
-
-        if avail_colors < max_colors
-            && 1 + max(slot_color, instr_color) == avail_colors
-        {
-            avail_colors += 1;
-        }
-
-        let mut nodes = vec![];
-
-        for next_instr in make_instrs(avail_states, avail_colors) {
-            prog.insert(slot, next_instr);
-
-            let Some(node) = Self::branch(
-                next_instr,
-                prog,
-                (slot.0, &mut tape.clone()),
-                sim_lim,
-                (avail_states, avail_colors),
-                (max_states, max_colors),
-                remaining_slots - 1,
-                harvester,
-            ) else {
-                continue;
-            };
-
-            nodes.push(node);
-
-            prog.remove(&slot);
-        }
-
-        assert!(!nodes.is_empty());
-
-        Some(Self {
-            instr,
-            nodes: Some((slot, nodes)),
-        })
+        prog.remove(&slot);
     }
 
-    fn leaves(&self) -> usize {
-        match &self.nodes {
-            None => 1,
-            Some((_, nodes)) => nodes.iter().map(Self::leaves).sum(),
-        }
-    }
-
-    fn depth(&self) -> usize {
-        1 + match &self.nodes {
-            None => 0,
-            Some((_, nodes)) => {
-                nodes.iter().map(Self::depth).max().unwrap()
-            },
-        }
-    }
+    true
 }
 
 fn build_tree(
@@ -182,11 +147,11 @@ fn build_tree(
     halt: bool,
     sim_lim: Step,
     harvester: &mut dyn FnMut(&CompProg),
-) -> TreeProg {
+) {
     let init_slot = (0, 0);
     let init_instr = (1, true, 1);
 
-    TreeProg::branch(
+    let _ = branch(
         init_instr,
         &mut CompProg::from([(init_slot, init_instr)]),
         (1, &mut Tape::init_stepped()),
@@ -195,8 +160,7 @@ fn build_tree(
         (states, colors),
         (states * colors) - (1 + Slots::from(halt)),
         harvester,
-    )
-    .unwrap()
+    );
 }
 
 #[pyfunction]
@@ -207,7 +171,7 @@ pub fn tree_progs(
 ) -> Vec<String> {
     let mut progs = vec![];
 
-    let _ = build_tree(params, halt, sim_lim, &mut |comp| {
+    build_tree(params, halt, sim_lim, &mut |comp| {
         progs.push(show_comp(comp, Some(params)));
     });
 
@@ -232,13 +196,10 @@ fn test_tree() {
     for ((states, colors, halt), leaves) in leaves {
         let mut leaf_count = 0;
 
-        let tree =
-            build_tree((states, colors), halt != 0, 100, &mut |_| {
-                leaf_count += 1;
-            });
+        build_tree((states, colors), halt != 0, 100, &mut |_| {
+            leaf_count += 1;
+        });
 
-        assert_eq!(tree.leaves(), leaves, "{states} {colors} {halt}");
-        assert_eq!(tree.depth(), ((states * colors) - halt) as usize);
         assert_eq!(leaf_count, leaves);
     }
 }
