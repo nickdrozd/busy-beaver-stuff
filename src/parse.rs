@@ -100,8 +100,15 @@ fn read_instr(instr: &str) -> Option<Instr> {
 
 #[pyfunction]
 #[allow(clippy::needless_pass_by_value)]
-pub fn show_comp(
+pub fn show_comp_py(
     comp: CompProg,
+    params: Option<(State, Color)>,
+) -> String {
+    show_comp(&comp, params)
+}
+
+pub fn show_comp(
+    comp: &CompProg,
     params: Option<(State, Color)>,
 ) -> String {
     let (max_state, max_color) = params.unwrap_or_else(|| {
@@ -215,7 +222,7 @@ fn test_comp() {
     ];
 
     for prog in progs {
-        assert_eq!(show_comp(tcompile(prog), None), prog);
+        assert_eq!(show_comp(&tcompile(prog), None), prog);
     }
 
     let underspecified = [
@@ -226,18 +233,18 @@ fn test_comp() {
     ];
 
     for (prog, params) in underspecified {
-        assert_eq!(show_comp(tcompile(prog), Some(params)), prog);
+        assert_eq!(show_comp(&tcompile(prog), Some(params)), prog);
     }
 
     let prog_11_4 = "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...";
 
     assert_eq!(
-        show_comp(tcompile(prog_11_4), Some((11, 4))),
+        show_comp(&tcompile(prog_11_4), Some((11, 4))),
         prog_11_4,
     );
 
     assert_eq!(
-        show_comp(tcompile(prog_11_4), Some((11, 5))),
+        show_comp(&tcompile(prog_11_4), Some((11, 5))),
         "1RB ... ... ... ...  2LC 3RD ... ... ...  1LA 3RD 1LE 4RD ...  ... ... 1RF ... ...  1RF 2LG 2LE 2RH ...  3RI 2RH 3RJ ... ...  1LE ... ... 2LC ...  2LE 2RK 2RH ... ...  1LE ... ... ... ...  0RI 1RF 0RJ ... ...  2RB ... 2RF ... ...",
     );
 }
