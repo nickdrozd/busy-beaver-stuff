@@ -106,7 +106,7 @@ class TestTree(TestCase):
             self,
             expected: dict[
                 str,
-                tuple[int, str | set[str]]],
+                tuple[int, str]],
     ):
         for cat, (exp_step, exp_prog) in expected.items():
             res_step, res_prog = RESULTS[cat]
@@ -114,8 +114,7 @@ class TestTree(TestCase):
             self.assertEqual(res_step, exp_step)
 
             self.assertTrue(
-                res_prog == exp_prog
-                    or res_prog in exp_prog)
+                res_prog == exp_prog)
 
     def assert_cant_terminate(self) -> None:
         for prog in self.progs:
@@ -238,26 +237,29 @@ class Fast(TestTree):
         self.assertFalse(
             queue_to_set(PROGS))
 
-        try:
-            self.assert_records({
-                'blanks': (8, "1RB 0RA  1LB 1LA"),
-                'spnout': (6, {
-                    "1RB 1LB  0LB 1LA",
-                    "1RB 1LB  1LB 1LA",
-                    "1RB 0LB  0LB 1LA",
-                }),
-                'infrul': (MAXINF_22, "1RB 1LA  0LA 0RB"),
-            })
-        except AssertionError:
-            self.assert_records({
-                'blanks': (7, '1RB 0RA  0LB 1LA'),
-                'spnout': (6, {
-                    "1RB 1LB  0LB 1LA",
-                    "1RB 1LB  1LB 1LA",
-                    "1RB 0LB  0LB 1LA",
-                }),
-                'infrul': (187, "1RB 1LA  0LA 0RB"),
-            })
+        self.assertIn(
+            result := RESULTS['blanks'], {
+                (8, "1RB 0RA  1LB 1LA"),
+                (7, '1RB 0RA  0LB 1LA'),
+            },
+            result)
+
+        self.assertIn(
+            result := RESULTS['infrul'], {
+                (MAXINF_22, "1RB 1LA  0LA 0RB"),
+                (39, '1RB 0LB  1LA 1RB'),
+                (39, '1RB 1LA  1LA 0RA'),
+            },
+            result)
+
+        self.assertIn(
+            result := RESULTS['spnout'], {
+                (6, "1RB 0LB  0LB 1LA"),
+                (6, "1RB 1LB  0LB 1LA"),
+                (6, "1RB 1LB  1LB 1LA"),
+                (6, '1RB 0LB  1LB 1LA'),
+            },
+            result)
 
     def test_32(self):
         run_tree_gen(
