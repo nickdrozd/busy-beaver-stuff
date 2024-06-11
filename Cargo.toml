@@ -12,3 +12,6 @@ pyo3 = { version = "= 0.21.0", features = ["extension-module", "experimental-dec
 [profile.release]
 lto = true
 codegen-units = 1
+
+[profile.test]
+opt-level = 3
