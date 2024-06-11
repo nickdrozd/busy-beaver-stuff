@@ -86,5 +86,4 @@ if __name__ == '__main__':
         halt   = args.halt,
         steps  = args.steps,
         output = filter_halt if args.halt else filter_spin_out,
-        branches = BRANCHES,
     )

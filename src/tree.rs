@@ -1,12 +1,10 @@
 use core::cmp::{max, min};
 
-use pyo3::{
-    create_exception, exceptions::PyException, pyfunction, PyResult,
-};
+use pyo3::pyfunction;
 
 use crate::{
     instrs::{Color, CompProg, Instr, Slot, State},
-    parse::{show_comp, tcompile},
+    parse::show_comp,
     tape::BasicTape as Tape,
 };
 
@@ -14,8 +12,7 @@ type Step = u64;
 
 /**************************************/
 
-#[pyfunction]
-pub fn make_instrs(states: State, colors: Color) -> Vec<Instr> {
+fn make_instrs(states: State, colors: Color) -> Vec<Instr> {
     let mut instrs = vec![];
 
     let shifts = [false, true];
@@ -32,22 +29,6 @@ pub fn make_instrs(states: State, colors: Color) -> Vec<Instr> {
 }
 
 /**************************************/
-
-create_exception!(tree, TreeSkip, PyException);
-
-#[pyfunction]
-pub fn run_for_undefined_py(
-    prog: &str,
-    sim_lim: Step,
-) -> PyResult<Option<Slot>> {
-    run_for_undefined(
-        &tcompile(prog),
-        1,
-        &mut Tape::init_stepped(),
-        sim_lim,
-    )
-    .map_err(|()| TreeSkip::new_err(""))
-}
 
 fn run_for_undefined(
     comp: &CompProg,

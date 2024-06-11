@@ -10,4 +10,4 @@ if TYPE_CHECKING:
     Switch = dict[Color, Instr | None]
 
 def get_params(prog: str) -> Params:
-    return len(parsed := parse(prog)), len(parsed[0])
+    return len(parsed := parse(prog)), len(parsed[0])  # no-cover
