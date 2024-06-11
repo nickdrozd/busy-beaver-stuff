@@ -74,10 +74,17 @@ struct TreeProg {
 }
 
 impl TreeProg {
-    const fn leaf(instr: Instr) -> Self {
+    fn leaf(
+        instr: Instr,
+        prog: &CompProg,
+        harvester: &mut dyn FnMut(&CompProg),
+    ) -> Self {
+        harvester(prog);
+
         Self { instr, nodes: None }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn branch(
         instr: Instr,
         prog: &mut CompProg,
@@ -86,15 +93,16 @@ impl TreeProg {
         (mut avail_states, mut avail_colors): Params,
         (max_states, max_colors): Params,
         remaining_slots: Slots,
+        harvester: &mut dyn FnMut(&CompProg),
     ) -> Self {
         if remaining_slots == 0 {
-            return Self::leaf(instr);
+            return Self::leaf(instr, prog, harvester);
         }
 
         let Ok(Some(slot)) =
             run_for_undefined(prog, state, tape, sim_lim)
         else {
-            return Self::leaf(instr);
+            return Self::leaf(instr, prog, harvester);
         };
 
         let (slot_state, slot_color) = slot;
@@ -125,6 +133,7 @@ impl TreeProg {
                 (avail_states, avail_colors),
                 (max_states, max_colors),
                 remaining_slots - 1,
+                harvester,
             ));
 
             prog.remove(&slot);
@@ -153,34 +162,13 @@ impl TreeProg {
             },
         }
     }
-
-    fn harvest<'p>(
-        &self,
-        params: Params,
-        slot: Slot,
-        prog: &mut CompProg,
-        progs: &'p mut Vec<String>,
-    ) -> &'p mut Vec<String> {
-        prog.insert(slot, self.instr);
-
-        if let Some((next_slot, nodes)) = &self.nodes {
-            for node in nodes {
-                node.harvest(params, *next_slot, prog, progs);
-            }
-        } else {
-            progs.push(show_comp(prog, Some(params)));
-        };
-
-        prog.remove(&slot);
-
-        progs
-    }
 }
 
 fn build_tree(
     (states, colors): Params,
     halt: bool,
     sim_lim: Step,
+    harvester: &mut dyn FnMut(&CompProg),
 ) -> TreeProg {
     let init_slot = (0, 0);
     let init_instr = (1, true, 1);
@@ -193,6 +181,7 @@ fn build_tree(
         (min(3, states), min(3, colors)),
         (states, colors),
         (states * colors) - (1 + Slots::from(halt)),
+        harvester,
     )
 }
 
@@ -202,14 +191,13 @@ pub fn tree_progs(
     halt: bool,
     sim_lim: Step,
 ) -> Vec<String> {
-    build_tree(params, halt, sim_lim)
-        .harvest(
-            params,
-            (1, 0),
-            &mut CompProg::from([((0, 0), (1, true, 1))]),
-            &mut vec![],
-        )
-        .clone()
+    let mut progs = vec![];
+
+    let _ = build_tree(params, halt, sim_lim, &mut |comp| {
+        progs.push(show_comp(comp, Some(params)));
+    });
+
+    progs
 }
 
 #[test]
@@ -228,9 +216,15 @@ fn test_tree() {
     ];
 
     for ((states, colors, halt), leaves) in leaves {
-        let tree = build_tree((states, colors), halt != 0, 100);
+        let mut leaf_count = 0;
+
+        let tree =
+            build_tree((states, colors), halt != 0, 100, &mut |_| {
+                leaf_count += 1;
+            });
 
         assert_eq!(tree.leaves(), leaves, "{states} {colors} {halt}");
         assert_eq!(tree.depth(), ((states * colors) - halt) as usize);
+        assert_eq!(leaf_count, leaves);
     }
 }
