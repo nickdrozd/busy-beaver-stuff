@@ -7,8 +7,8 @@ from tm.prover import Prover, ConfigLimit
 from tm.show import show_slot, show_comp
 from tm.macro import make_macro, MacroInfLoop
 from tm.rules import apply_rule, RuleLimit, InfiniteRule, SuspectedRule
-# pylint: disable-next = unused-import
-from tm.rust_stuff import quick_term_or_rec  # noqa: F401
+# pylint: disable-next = unused-import, line-too-long
+from tm.rust_stuff import quick_term_or_rec_py as quick_term_or_rec  # noqa: F401
 
 if TYPE_CHECKING:
     from typing import Self

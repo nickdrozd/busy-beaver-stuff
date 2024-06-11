@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use pyo3::{pyclass, pyfunction, pymethods};
 
 use crate::{
-    instrs::{Slot, State},
+    instrs::{CompProg, Slot, State},
     parse::tcompile,
     tape::{BasicTape as Tape, Count, HeadTape},
 };
@@ -203,9 +203,11 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
 /**************************************/
 
 #[pyfunction]
-pub fn quick_term_or_rec(prog: &str, sim_lim: u32) -> bool {
-    let comp = tcompile(prog);
+pub fn quick_term_or_rec_py(prog: &str, sim_lim: u32) -> bool {
+    quick_term_or_rec(&tcompile(prog), sim_lim)
+}
 
+pub fn quick_term_or_rec(comp: &CompProg, sim_lim: u32) -> bool {
     let mut state = 1;
 
     let mut tape = HeadTape::init_stepped();

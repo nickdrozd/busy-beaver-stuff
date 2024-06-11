@@ -37,7 +37,7 @@ mod rust_stuff {
     use crate::{
         blocks::opt_block,
         machine::{
-            quick_term_or_rec, run_quick_machine, MachineResult,
+            quick_term_or_rec_py, run_quick_machine, MachineResult,
             TermRes,
         },
         parse::{
