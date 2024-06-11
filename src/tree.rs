@@ -1,4 +1,4 @@
-use core::cmp::min;
+use core::cmp::{max, min};
 
 use pyo3::{
     create_exception, exceptions::PyException, pyfunction, PyResult,
@@ -116,13 +116,18 @@ impl TreeProg {
             return Self::leaf(instr);
         };
 
-        let (state, color) = slot;
+        let (slot_state, slot_color) = slot;
+        let (instr_color, _, instr_state) = instr;
 
-        if 1 + state == avail_states && avail_states < max_states {
+        if avail_states < max_states
+            && 1 + max(slot_state, instr_state) == avail_states
+        {
             avail_states += 1;
         }
 
-        if 1 + color == avail_colors && avail_colors < max_colors {
+        if avail_colors < max_colors
+            && 1 + max(slot_color, instr_color) == avail_colors
+        {
             avail_colors += 1;
         }
 
@@ -237,8 +242,8 @@ fn test_tree() {
         ((2, 3, 0), 9_274),
         ((4, 2, 1), 480_376),
         ((4, 2, 0), 2_304_871),
-        ((2, 4, 1), 196_668),
-        ((2, 4, 0), 1_034_073),
+        ((2, 4, 1), 321_901),
+        ((2, 4, 0), 1_728_046),
     ];
 
     for ((states, colors, halt), leaves) in leaves {
