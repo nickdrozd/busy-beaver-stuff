@@ -174,6 +174,17 @@ pub fn tree_progs(
     progs
 }
 
+#[cfg(test)]
+fn assert_tree(params: Params, halt: u8, leaves: u64) {
+    let mut leaf_count = 0;
+
+    build_tree(params, halt != 0, 100, &mut |_| {
+        leaf_count += 1;
+    });
+
+    assert_eq!(leaf_count, leaves);
+}
+
 #[test]
 fn test_tree() {
     let leaves = vec![
@@ -191,20 +202,24 @@ fn test_tree() {
         //
         ((2, 4), 1, 312_627),
         ((2, 4), 0, 1_718_772),
-        //
+    ];
+
+    for (params, halt, leaves) in leaves {
+        assert_tree(params, halt, leaves);
+    }
+}
+
+#[test]
+#[ignore]
+fn test_tree_slow() {
+    let leaves = vec![
         ((5, 2), 1, 95_309_237),
         //
         ((2, 5), 1, 70_004_752),
     ];
 
     for (params, halt, leaves) in leaves {
-        let mut leaf_count = 0;
-
-        build_tree(params, halt != 0, 100, &mut |_| {
-            leaf_count += 1;
-        });
-
-        assert_eq!(leaf_count, leaves);
+        assert_tree(params, halt, leaves);
     }
 }
 
