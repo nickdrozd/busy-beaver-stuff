@@ -123,7 +123,7 @@ fn branch(
     for next_instr in make_instrs(avail_states, avail_colors) {
         prog.insert(slot, next_instr);
 
-        if !branch(
+        branch(
             next_instr,
             prog,
             (slot.0, &mut tape.clone()),
@@ -132,9 +132,7 @@ fn branch(
             (max_states, max_colors),
             remaining_slots - 1,
             harvester,
-        ) {
-            continue;
-        };
+        );
 
         prog.remove(&slot);
     }
