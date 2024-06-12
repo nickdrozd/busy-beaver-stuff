@@ -1,5 +1,5 @@
 use core::{
-    cell::RefCell,
+    cell::{RefCell, RefMut},
     cmp::{max, min},
 };
 
@@ -169,30 +169,44 @@ fn build_tree<F>(
     );
 }
 
+type Basket<T> = RefCell<T>;
+
+const fn set_val<T>(val: T) -> Basket<T> {
+    RefCell::new(val)
+}
+
+fn access<T>(basket: &Basket<T>) -> RefMut<'_, T> {
+    basket.borrow_mut()
+}
+
+fn get_val<T: Default>(basket: &Basket<T>) -> T {
+    basket.take()
+}
+
 #[pyfunction]
 pub fn tree_progs(
     params: Params,
     halt: bool,
     sim_lim: Step,
 ) -> Vec<String> {
-    let progs = RefCell::new(vec![]);
+    let progs = set_val(vec![]);
 
     build_tree(params, halt, sim_lim, &|comp| {
-        progs.borrow_mut().push(show_comp(comp, Some(params)));
+        access(&progs).push(show_comp(comp, Some(params)));
     });
 
-    progs.take()
+    get_val(&progs)
 }
 
 #[cfg(test)]
 fn assert_tree(params: Params, halt: u8, leaves: u64) {
-    let leaf_count = RefCell::new(0);
+    let leaf_count = set_val(0);
 
     build_tree(params, halt != 0, 100, &mut |_| {
-        *leaf_count.borrow_mut() += 1;
+        *access(&leaf_count) += 1;
     });
 
-    assert_eq!(leaf_count.take(), leaves);
+    assert_eq!(get_val(&leaf_count), leaves);
 }
 
 #[test]
