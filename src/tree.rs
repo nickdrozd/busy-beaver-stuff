@@ -94,11 +94,6 @@ fn branch(
 ) {
     let (max_states, max_colors) = params;
 
-    if remaining_slots == 0 {
-        leaf(prog, params, harvester);
-        return;
-    }
-
     let Ok(Some(slot)) = run_for_undefined(prog, state, tape, sim_lim)
     else {
         leaf(prog, params, harvester);
@@ -120,19 +115,25 @@ fn branch(
         avail_colors += 1;
     }
 
+    let next_remaining_slots = remaining_slots - 1;
+
     for next_instr in make_instrs(avail_states, avail_colors) {
         prog.insert(slot, next_instr);
 
-        branch(
-            next_instr,
-            prog,
-            (slot_state, &mut tape.clone()),
-            sim_lim,
-            (avail_states, avail_colors),
-            (max_states, max_colors),
-            remaining_slots - 1,
-            harvester,
-        );
+        if next_remaining_slots == 0 {
+            leaf(prog, params, harvester);
+        } else {
+            branch(
+                next_instr,
+                prog,
+                (slot_state, &mut tape.clone()),
+                sim_lim,
+                (avail_states, avail_colors),
+                (max_states, max_colors),
+                next_remaining_slots,
+                harvester,
+            );
+        }
 
         prog.remove(&slot);
     }
