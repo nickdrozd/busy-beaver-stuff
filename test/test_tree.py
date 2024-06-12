@@ -249,6 +249,7 @@ class Fast(TestTree):
                 (MAXINF_22, "1RB 1LA  0LA 0RB"),
                 (39, '1RB 0LB  1LA 1RB'),
                 (39, '1RB 1LA  1LA 0RA'),
+                (30, '1RB 0LB  1LA 1RA'),
             },
             result)
 
