@@ -126,7 +126,7 @@ fn branch(
         branch(
             next_instr,
             prog,
-            (slot.0, &mut tape.clone()),
+            (slot_state, &mut tape.clone()),
             sim_lim,
             (avail_states, avail_colors),
             (max_states, max_colors),
