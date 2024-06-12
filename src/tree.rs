@@ -71,16 +71,14 @@ fn leaf(
     prog: &CompProg,
     (max_state, max_color): Params,
     harvester: &mut dyn FnMut(&CompProg),
-) -> bool {
+) {
     if prog.values().all(|(_, _, state)| 1 + state < max_state)
         || prog.values().all(|(color, _, _)| 1 + color < max_color)
     {
-        return false;
+        return;
     }
 
     harvester(prog);
-
-    true
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -93,16 +91,18 @@ fn branch(
     params: Params,
     remaining_slots: Slots,
     harvester: &mut dyn FnMut(&CompProg),
-) -> bool {
+) {
     let (max_states, max_colors) = params;
 
     if remaining_slots == 0 {
-        return leaf(prog, params, harvester);
+        leaf(prog, params, harvester);
+        return;
     }
 
     let Ok(Some(slot)) = run_for_undefined(prog, state, tape, sim_lim)
     else {
-        return leaf(prog, params, harvester);
+        leaf(prog, params, harvester);
+        return;
     };
 
     let (slot_state, slot_color) = slot;
@@ -136,8 +136,6 @@ fn branch(
 
         prog.remove(&slot);
     }
-
-    true
 }
 
 fn build_tree(
@@ -149,7 +147,7 @@ fn build_tree(
     let init_slot = (0, 0);
     let init_instr = (1, true, 1);
 
-    let _ = branch(
+    branch(
         init_instr,
         &mut CompProg::from([(init_slot, init_instr)]),
         (1, &mut Tape::init_stepped()),
