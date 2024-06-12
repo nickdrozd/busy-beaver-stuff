@@ -1,9 +1,11 @@
 use core::{
-    cell::{RefCell, RefMut},
     cmp::{max, min},
+    fmt::Debug,
 };
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use pyo3::pyfunction;
+use rayon::prelude::*;
 
 use crate::{
     instrs::{Color, CompProg, Instr, Slot, State},
@@ -152,40 +154,42 @@ fn build_tree<F>(
     sim_lim: Step,
     harvester: &F,
 ) where
-    F: Fn(&CompProg),
+    F: Fn(&CompProg) + Sync,
 {
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
-    for next_instr in make_instrs(init_states, init_colors) {
-        branch(
-            next_instr,
-            &mut CompProg::from([
-                ((0, 0), (1, true, 1)),
-                ((1, 0), next_instr),
-            ]),
-            (1, &mut Tape::init_stepped()),
-            sim_lim,
-            (init_states, init_colors),
-            (states, colors),
-            (states * colors) - 1 - (1 + Slots::from(halt)),
-            harvester,
-        );
-    }
+    make_instrs(init_states, init_colors).par_iter().for_each(
+        |&next_instr| {
+            branch(
+                next_instr,
+                &mut CompProg::from([
+                    ((0, 0), (1, true, 1)),
+                    ((1, 0), next_instr),
+                ]),
+                (1, &mut Tape::init_stepped()),
+                sim_lim,
+                (init_states, init_colors),
+                (states, colors),
+                (states * colors) - 1 - (1 + Slots::from(halt)),
+                harvester,
+            );
+        },
+    );
 }
 
-type Basket<T> = RefCell<T>;
+type Basket<T> = Arc<Mutex<T>>;
 
-const fn set_val<T>(val: T) -> Basket<T> {
-    RefCell::new(val)
+fn set_val<T>(val: T) -> Basket<T> {
+    Arc::new(Mutex::new(val))
 }
 
-fn access<T>(basket: &Basket<T>) -> RefMut<'_, T> {
-    basket.borrow_mut()
+fn access<T>(basket: &Basket<T>) -> MutexGuard<'_, T> {
+    basket.lock().unwrap()
 }
 
-fn get_val<T: Default>(basket: &Basket<T>) -> T {
-    basket.take()
+fn get_val<T: Debug>(basket: Basket<T>) -> T {
+    Arc::try_unwrap(basket).unwrap().into_inner().unwrap()
 }
 
 #[pyfunction]
@@ -200,7 +204,7 @@ pub fn tree_progs(
         access(&progs).push(show_comp(comp, Some(params)));
     });
 
-    get_val(&progs)
+    get_val(progs)
 }
 
 #[cfg(test)]
@@ -211,7 +215,7 @@ fn assert_tree(params: Params, halt: u8, leaves: u64) {
         *access(&leaf_count) += 1;
     });
 
-    assert_eq!(get_val(&leaf_count), leaves);
+    assert_eq!(get_val(leaf_count), leaves);
 }
 
 #[test]
