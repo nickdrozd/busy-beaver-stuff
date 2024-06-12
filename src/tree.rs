@@ -1,4 +1,7 @@
-use core::cmp::{max, min};
+use core::{
+    cell::RefCell,
+    cmp::{max, min},
+};
 
 use pyo3::pyfunction;
 
@@ -67,11 +70,13 @@ type Slots = u64;
 type Params = (State, Color);
 type Config<'t> = (State, &'t mut Tape);
 
-fn leaf(
+fn leaf<F>(
     prog: &CompProg,
     (max_state, max_color): Params,
-    harvester: &mut dyn FnMut(&CompProg),
-) {
+    harvester: &F,
+) where
+    F: Fn(&CompProg),
+{
     if prog.values().all(|(_, _, state)| 1 + state < max_state)
         || prog.values().all(|(color, _, _)| 1 + color < max_color)
     {
@@ -82,7 +87,7 @@ fn leaf(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn branch(
+fn branch<F>(
     instr: Instr,
     prog: &mut CompProg,
     (state, tape): Config,
@@ -90,8 +95,10 @@ fn branch(
     (mut avail_states, mut avail_colors): Params,
     params: Params,
     remaining_slots: Slots,
-    harvester: &mut dyn FnMut(&CompProg),
-) {
+    harvester: &F,
+) where
+    F: Fn(&CompProg),
+{
     let (max_states, max_colors) = params;
 
     let Ok(Some(slot)) = run_for_undefined(prog, state, tape, sim_lim)
@@ -139,12 +146,14 @@ fn branch(
     }
 }
 
-fn build_tree(
+fn build_tree<F>(
     (states, colors): Params,
     halt: bool,
     sim_lim: Step,
-    harvester: &mut dyn FnMut(&CompProg),
-) {
+    harvester: &F,
+) where
+    F: Fn(&CompProg),
+{
     let init_slot = (0, 0);
     let init_instr = (1, true, 1);
 
@@ -166,24 +175,24 @@ pub fn tree_progs(
     halt: bool,
     sim_lim: Step,
 ) -> Vec<String> {
-    let mut progs = vec![];
+    let progs = RefCell::new(vec![]);
 
-    build_tree(params, halt, sim_lim, &mut |comp| {
-        progs.push(show_comp(comp, Some(params)));
+    build_tree(params, halt, sim_lim, &|comp| {
+        progs.borrow_mut().push(show_comp(comp, Some(params)));
     });
 
-    progs
+    progs.take()
 }
 
 #[cfg(test)]
 fn assert_tree(params: Params, halt: u8, leaves: u64) {
-    let mut leaf_count = 0;
+    let leaf_count = RefCell::new(0);
 
     build_tree(params, halt != 0, 100, &mut |_| {
-        leaf_count += 1;
+        *leaf_count.borrow_mut() += 1;
     });
 
-    assert_eq!(leaf_count, leaves);
+    assert_eq!(leaf_count.take(), leaves);
 }
 
 #[test]
