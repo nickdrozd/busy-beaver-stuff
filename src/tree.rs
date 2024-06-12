@@ -154,19 +154,24 @@ fn build_tree<F>(
 ) where
     F: Fn(&CompProg),
 {
-    let init_slot = (0, 0);
-    let init_instr = (1, true, 1);
+    let init_states = min(3, states);
+    let init_colors = min(3, colors);
 
-    branch(
-        init_instr,
-        &mut CompProg::from([(init_slot, init_instr)]),
-        (1, &mut Tape::init_stepped()),
-        sim_lim,
-        (min(3, states), min(3, colors)),
-        (states, colors),
-        (states * colors) - (1 + Slots::from(halt)),
-        harvester,
-    );
+    for next_instr in make_instrs(init_states, init_colors) {
+        branch(
+            next_instr,
+            &mut CompProg::from([
+                ((0, 0), (1, true, 1)),
+                ((1, 0), next_instr),
+            ]),
+            (1, &mut Tape::init_stepped()),
+            sim_lim,
+            (init_states, init_colors),
+            (states, colors),
+            (states * colors) - 1 - (1 + Slots::from(halt)),
+            harvester,
+        );
+    }
 }
 
 type Basket<T> = RefCell<T>;
