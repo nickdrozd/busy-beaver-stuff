@@ -219,11 +219,16 @@ pub fn tree_progs(
 use crate::machine::quick_term_or_rec;
 
 #[cfg(test)]
+fn skip(comp: &CompProg) -> bool {
+    quick_term_or_rec(comp, 50, true)
+}
+
+#[cfg(test)]
 fn assert_tree(params: Params, halt: u8, leaves: u64) {
     let leaf_count = set_val(0);
 
     build_tree(params, halt != 0, 100, &|prog| {
-        if quick_term_or_rec(prog, 50, true) {
+        if skip(prog) {
             return;
         }
 
