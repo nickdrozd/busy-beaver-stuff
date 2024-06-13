@@ -237,9 +237,9 @@ fn test_tree() {
         ((2, 4), 0, 1_718_772),
     ];
 
-    for (params, halt, leaves) in leaves {
+    leaves.par_iter().for_each(&|&(params, halt, leaves)| {
         assert_tree(params, halt, leaves);
-    }
+    })
 }
 
 #[test]
@@ -254,9 +254,9 @@ fn test_tree_slow() {
         ((3, 3), 0, 149_297_456),
     ];
 
-    for (params, halt, leaves) in leaves {
+    leaves.par_iter().for_each(&|&(params, halt, leaves)| {
         assert_tree(params, halt, leaves);
-    }
+    })
 }
 
 #[test]
