@@ -216,19 +216,31 @@ pub fn tree_progs(
 /**************************************/
 
 #[cfg(test)]
-use crate::machine::quick_term_or_rec;
+use crate::{
+    machine::quick_term_or_rec,
+    reason::{cant_halt, cant_spin_out},
+};
 
 #[cfg(test)]
-fn skip(comp: &CompProg) -> bool {
-    quick_term_or_rec(comp, 50, true)
+fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
+    quick_term_or_rec(comp, 50, true) || {
+        let (states, colors) = params;
+
+        (colors == 2 || states * colors < 10)
+            && (if halt { cant_halt } else { cant_spin_out })(
+                &show_comp(comp, Some(params)),
+            )
+    }
 }
 
 #[cfg(test)]
 fn assert_tree(params: Params, halt: u8, leaves: u64) {
+    let halt = halt != 0;
+
     let leaf_count = set_val(0);
 
-    build_tree(params, halt != 0, 100, &|prog| {
-        if skip(prog) {
+    build_tree(params, halt, 100, &|prog| {
+        if skip(prog, params, halt) {
             return;
         }
 
@@ -254,19 +266,19 @@ macro_rules! assert_trees {
 fn test_tree() {
     assert_trees![
         ((2, 2), 1, 0),
-        ((2, 2), 0, 4),
+        ((2, 2), 0, 0),
         //
-        ((3, 2), 1, 58),
-        ((3, 2), 0, 716),
+        ((3, 2), 1, 26),
+        ((3, 2), 0, 51),
         //
-        ((2, 3), 1, 136),
-        ((2, 3), 0, 1_151),
+        ((2, 3), 1, 135),
+        ((2, 3), 0, 143),
         //
-        ((4, 2), 1, 15_180),
-        ((4, 2), 0, 246_093),
+        ((4, 2), 1, 6_769),
+        ((4, 2), 0, 16_591),
         //
-        ((2, 4), 1, 30_540),
-        ((2, 4), 0, 452_328),
+        ((2, 4), 1, 30_522),
+        ((2, 4), 0, 90_555),
     ];
 }
 
@@ -274,12 +286,12 @@ fn test_tree() {
 #[ignore]
 fn test_tree_slow() {
     assert_trees![
-        ((5, 2), 1, 7_074_654),
+        ((5, 2), 1, 3_241_903),
         //
         ((2, 5), 1, 13_073_485),
         //
-        ((3, 3), 1, 2_354_609),
-        ((3, 3), 0, 41_090_324),
+        ((3, 3), 1, 2_254_003),
+        ((3, 3), 0, 5_986_602),
     ];
 }
 
