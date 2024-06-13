@@ -22,7 +22,7 @@ def get_holdouts() -> list[str]:
     return sorted(
         reduce(
             lambda acc, cat: acc | read_holdouts(cat), # type: ignore
-            ('32q', '23q', '42h', '42q', '24h'),
+            ('23q', '42h', '42q', '24h'),
             set(),
         )
     )
