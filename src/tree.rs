@@ -226,9 +226,21 @@ fn assert_tree(params: Params, halt: u8, leaves: u64) {
     assert_eq!(get_val(leaf_count), leaves);
 }
 
+#[cfg(test)]
+macro_rules! assert_trees {
+    ( $( ( $params:expr, $halt:expr, $leaves:expr ) ),* $(,)? ) => {
+        {
+            vec![$( ($params, $halt, $leaves) ),*]
+                .par_iter().for_each(|&(params, halt, leaves)| {
+                assert_tree(params, halt, leaves);
+            });
+        }
+    };
+}
+
 #[test]
 fn test_tree() {
-    let leaves = vec![
+    assert_trees![
         ((2, 2), 1, 36),
         ((2, 2), 0, 106),
         //
@@ -244,16 +256,12 @@ fn test_tree() {
         ((2, 4), 1, 312_627),
         ((2, 4), 0, 1_718_772),
     ];
-
-    leaves.par_iter().for_each(|&(params, halt, leaves)| {
-        assert_tree(params, halt, leaves);
-    });
 }
 
 #[test]
 #[ignore]
 fn test_tree_slow() {
-    let leaves = vec![
+    assert_trees![
         ((5, 2), 1, 95_309_237),
         //
         ((2, 5), 1, 70_004_752),
@@ -261,10 +269,6 @@ fn test_tree_slow() {
         ((3, 3), 1, 25_305_355),
         ((3, 3), 0, 149_297_456),
     ];
-
-    leaves.par_iter().for_each(|&(params, halt, leaves)| {
-        assert_tree(params, halt, leaves);
-    });
 }
 
 #[test]
