@@ -211,7 +211,7 @@ pub fn tree_progs(
 fn assert_tree(params: Params, halt: u8, leaves: u64) {
     let leaf_count = set_val(0);
 
-    build_tree(params, halt != 0, 100, &mut |_| {
+    build_tree(params, halt != 0, 100, &|_| {
         *access(&leaf_count) += 1;
     });
 
@@ -237,9 +237,9 @@ fn test_tree() {
         ((2, 4), 0, 1_718_772),
     ];
 
-    leaves.par_iter().for_each(&|&(params, halt, leaves)| {
+    leaves.par_iter().for_each(|&(params, halt, leaves)| {
         assert_tree(params, halt, leaves);
-    })
+    });
 }
 
 #[test]
@@ -254,16 +254,16 @@ fn test_tree_slow() {
         ((3, 3), 0, 149_297_456),
     ];
 
-    leaves.par_iter().for_each(&|&(params, halt, leaves)| {
+    leaves.par_iter().for_each(|&(params, halt, leaves)| {
         assert_tree(params, halt, leaves);
-    })
+    });
 }
 
 #[test]
 fn test_progs() {
     let params = (3, 2);
 
-    build_tree(params, true, 100, &mut |comp| {
+    build_tree(params, true, 100, &|comp| {
         println!("{}", show_comp(comp, Some(params)));
     });
 }

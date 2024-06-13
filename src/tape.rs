@@ -591,13 +591,13 @@ impl IndexTape for EnumTape {
 
 #[cfg(test)]
 impl BasicTape {
-    fn assert(&self, marks: Count, tape_str: &str, sig: Signature) {
+    fn assert(&self, marks: Count, tape_str: &str, sig: &Signature) {
         assert_eq!(self.marks(), marks);
         assert_eq!(self.blank(), marks == 0);
 
         assert_eq!(self.to_string(), tape_str);
 
-        assert_eq!(self.signature(), sig);
+        assert_eq!(self.signature(), *sig);
     }
 
     fn tstep(&mut self, shift: u8, color: Color, skip: u8) {
@@ -633,23 +633,23 @@ macro_rules! sig {
 
 #[test]
 fn test_init() {
-    Tape::init(0).assert(0, "[0]", sig![0, [], []]);
+    Tape::init(0).assert(0, "[0]", &sig![0, [], []]);
 
     let mut tape = Tape::init_stepped();
 
-    tape.assert(1, "1^1 [0]", sig![0, [[1]], []]);
+    tape.assert(1, "1^1 [0]", &sig![0, [[1]], []]);
 
     tape.tstep(1, 1, 0);
 
-    tape.assert(2, "1^2 [0]", sig![0, [1], []]);
+    tape.assert(2, "1^2 [0]", &sig![0, [1], []]);
 
     tape.tstep(0, 0, 0);
 
-    tape.assert(2, "1^1 [1]", sig![1, [[1]], []]);
+    tape.assert(2, "1^1 [1]", &sig![1, [[1]], []]);
 
     tape.tstep(0, 0, 1);
 
-    tape.assert(0, "[0]", sig![0, [], []]);
+    tape.assert(0, "[0]", &sig![0, [], []]);
 }
 
 #[test]
@@ -665,18 +665,18 @@ fn test_clone() {
     copy_1.assert(
         6,
         "1^1 0^1 [1] 2^2 1^2",
-        sig![1, [[0], [1]], [2, 1]],
+        &sig![1, [[0], [1]], [2, 1]],
     );
     copy_2.assert(
         6,
         "1^1 0^1 1^2 [2] 1^2",
-        sig![2, [1, [0], [1]], [1]],
+        &sig![2, [1, [0], [1]], [1]],
     );
 
     tape.assert(
         6,
         "1^1 0^1 1^1 [2] 2^1 1^2",
-        sig![2, [[1], [0], [1]], [[2], 1]],
+        &sig![2, [[1], [0], [1]], [[2], 1]],
     );
 }
 
@@ -708,7 +708,7 @@ fn test_apply_1() {
     tape.assert(
         35,
         "2^3 1^12 [3] 4^15 5^2 6^2",
-        sig![3, [1, 2], [4, 5, 6]],
+        &sig![3, [1, 2], [4, 5, 6]],
     );
 
     apply_rule(
@@ -722,7 +722,7 @@ fn test_apply_1() {
     tape.assert(
         42,
         "2^24 1^12 [3] 4^1 5^2 6^2",
-        sig![3, [1, 2], [[4], 5, 6]],
+        &sig![3, [1, 2], [[4], 5, 6]],
     );
 }
 
@@ -737,7 +737,7 @@ fn test_apply_2() {
     tape.assert(
         73,
         "4^2 [4] 5^60 2^1 4^1 5^7 1^1",
-        sig![4, [4], [5, [2], [4], 5, [1]]],
+        &sig![4, [4], [5, [2], [4], 5, [1]]],
     );
 
     apply_rule(
@@ -751,7 +751,7 @@ fn test_apply_2() {
     tape.assert(
         131,
         "4^118 [4] 5^2 2^1 4^1 5^7 1^1",
-        sig![4, [4], [5, [2], [4], 5, [1]]],
+        &sig![4, [4], [5, [2], [4], 5, [1]]],
     );
 }
 
@@ -845,7 +845,7 @@ fn test_offsets_1() {
 
 #[test]
 fn test_offsets_2() {
-    let mut tape = enum_tape! { 0, [(2, 414422565), (3, 6)], [] };
+    let mut tape = enum_tape! { 0, [(2, 414_422_565), (3, 6)], [] };
 
     tape.assert("3^6 2^414422565 [0]", (0, 0), (0, 0));
 

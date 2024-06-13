@@ -31,7 +31,7 @@ rust :
 
 clippy :
 	cargo --version
-	cargo clippy
+	cargo clippy --all-targets
 
 test-rust :
 	cargo --version
