@@ -204,10 +204,14 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
 
 #[pyfunction]
 pub fn quick_term_or_rec_py(prog: &str, sim_lim: u32) -> bool {
-    quick_term_or_rec(&tcompile(prog), sim_lim)
+    quick_term_or_rec(&tcompile(prog), sim_lim, false)
 }
 
-pub fn quick_term_or_rec(comp: &CompProg, sim_lim: u32) -> bool {
+pub fn quick_term_or_rec(
+    comp: &CompProg,
+    sim_lim: u32,
+    drop_halt: bool,
+) -> bool {
     let mut state = 1;
 
     let mut tape = HeadTape::init_stepped();
@@ -227,7 +231,7 @@ pub fn quick_term_or_rec(comp: &CompProg, sim_lim: u32) -> bool {
             let Some(&(color, shift, next_state)) =
                 comp.get(&(state, tape.scan()))
             else {
-                return false;
+                return drop_halt;
             };
 
             let same = state == next_state;
