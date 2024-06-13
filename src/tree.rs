@@ -148,6 +148,8 @@ fn branch<F>(
     }
 }
 
+/**************************************/
+
 fn build_tree<F>(
     (states, colors): Params,
     halt: bool,
@@ -178,6 +180,8 @@ fn build_tree<F>(
     );
 }
 
+/**************************************/
+
 type Basket<T> = Arc<Mutex<T>>;
 
 fn set_val<T>(val: T) -> Basket<T> {
@@ -191,6 +195,8 @@ fn access<T>(basket: &Basket<T>) -> MutexGuard<'_, T> {
 fn get_val<T: Debug>(basket: Basket<T>) -> T {
     Arc::try_unwrap(basket).unwrap().into_inner().unwrap()
 }
+
+/**************************************/
 
 #[pyfunction]
 pub fn tree_progs(
@@ -206,6 +212,8 @@ pub fn tree_progs(
 
     get_val(progs)
 }
+
+/**************************************/
 
 #[cfg(test)]
 fn assert_tree(params: Params, halt: u8, leaves: u64) {
