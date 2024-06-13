@@ -86,7 +86,9 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
         // println!("{step} | {state} | {tape}");
 
-        for entry in &entry_points[&state] {
+        for (next_color, entry) in
+            entry_points[&state].iter().enumerate()
+        {
             let next_state = *entry;
 
             for &(_, shift, trans) in &program[entry] {
@@ -105,6 +107,14 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
                     if come_back != shift || prev_state != state {
                         continue;
+                    }
+
+                    if state == next_state
+                        && tape.scan == next_color as Color
+                        && tape.scan == next_tape.scan
+                        && tape.signature() == next_tape.signature()
+                    {
+                        return false;
                     }
 
                     let Some(result) =
