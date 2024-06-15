@@ -111,8 +111,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                     }
 
                     if state == next_state
-                        && tape.scan == next_color as Color
-                        && tape.scan == next_tape.scan
+                        && try_color == next_color as Color
                         && tape.signature() == next_tape.signature()
                     {
                         return false;
