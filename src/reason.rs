@@ -97,11 +97,8 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                 }
 
                 for try_color in 0..colors as Color {
-                    let next_tape =
-                        tape.clone().backstep(shift, try_color);
-
                     let Some(&(_, come_back, prev_state)) =
-                        comp.get(&(next_state, next_tape.scan))
+                        comp.get(&(next_state, try_color))
                     else {
                         continue;
                     };
@@ -109,6 +106,9 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                     if come_back != shift || prev_state != state {
                         continue;
                     }
+
+                    let next_tape =
+                        tape.clone().backstep(shift, try_color);
 
                     if state == next_state
                         && try_color == next_color as Color
