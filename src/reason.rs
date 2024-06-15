@@ -88,12 +88,10 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
         // println!("{step} | {state} | {tape}");
 
-        for (next_color, entry) in
+        for (next_color, &next_state) in
             entry_points[&state].iter().enumerate()
         {
-            let next_state = *entry;
-
-            for &(_, shift, trans) in &program[entry] {
+            for &(_, shift, trans) in &program[&next_state] {
                 if trans != state {
                     continue;
                 }
