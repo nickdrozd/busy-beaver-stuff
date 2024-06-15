@@ -97,7 +97,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                 }
 
                 for try_color in 0..colors as Color {
-                    let Some(&(_, come_back, prev_state)) =
+                    let Some(&(prev_color, come_back, prev_state)) =
                         comp.get(&(next_state, try_color))
                     else {
                         continue;
@@ -107,12 +107,12 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                         continue;
                     }
 
-                    let next_tape =
+                    let (overwrite, next_tape) =
                         tape.clone().backstep(shift, try_color);
 
                     if state == next_state
                         && try_color == next_color as Color
-                        && tape.signature() == next_tape.signature()
+                        && prev_color == overwrite
                     {
                         return false;
                     }
@@ -127,7 +127,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                         continue;
                     }
 
-                    let next_tape =
+                    let (_, next_tape) =
                         tape.clone().backstep(shift, try_color);
 
                     configs.push((next_step, next_state, next_tape));
@@ -238,16 +238,18 @@ fn rparse(prog: &str) -> (usize, Graph, Program) {
 /**************************************/
 
 trait Backstep {
-    fn backstep(self, shift: Shift, color: Color) -> Self;
+    fn backstep(self, shift: Shift, color: Color) -> (Color, Self);
 }
 
 impl Backstep for Tape {
-    fn backstep(mut self, shift: Shift, color: Color) -> Self {
+    fn backstep(mut self, shift: Shift, color: Color) -> (Color, Self) {
         let _ = self.step(!shift, self.scan, false);
+
+        let overwrite = self.scan;
 
         self.scan = color;
 
-        self
+        (overwrite, self)
     }
 }
 
