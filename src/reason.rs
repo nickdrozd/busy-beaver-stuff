@@ -34,8 +34,10 @@ pub fn cant_spin_out(prog: &str) -> bool {
 
 /**************************************/
 
+type Step = u64;
+
 fn cant_reach(prog: &str, term_type: TermType) -> bool {
-    let mut configs: Vec<(Color, State, Tape)> = match term_type {
+    let mut configs: Vec<(Step, State, Tape)> = match term_type {
         TermType::Halt => halt_slots,
         TermType::Blank => erase_slots,
         TermType::Spinout => zero_reflexive_slots,
@@ -251,8 +253,6 @@ impl Backstep for Tape {
 }
 
 /**************************************/
-
-type Step = u64;
 
 fn run_halt(
     comp: &CompProg,
