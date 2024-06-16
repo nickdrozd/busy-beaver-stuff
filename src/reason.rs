@@ -114,9 +114,18 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
                     if state == next_state
                         && try_color == next_color as Color
-                        && prev_color == overwrite
                     {
-                        return false;
+                        if prev_color == overwrite {
+                            return false;
+                        }
+
+                        next_tape.step(come_back, prev_color, false);
+
+                        if next_tape != tape {
+                            continue;
+                        }
+
+                        next_tape.backstep(shift, try_color);
                     }
 
                     let Some(result) =
