@@ -11,7 +11,6 @@ from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 from tools.graph import Graph
 
 from tm.tree import run_tree_gen
-from tm.macro import MacroProg, show_comp
 from tm.machine import Machine, quick_term_or_rec
 from tm.reason import (
     cant_halt,
@@ -193,13 +192,6 @@ def capture_32(prog: str) -> None:
             add_result(prog, machine)
             return
 
-        if not isinstance(machine, Machine):
-            continue
-
-        if isinstance(macro := machine.program, MacroProg):
-            if cant_halt(show_comp(macro.instrs)):
-                return
-
     PROGS.put(prog)
 
 ########################################
@@ -218,13 +210,6 @@ def capture_23(prog: str) -> None:
         if machine.xlimit is None:
             add_result(prog, machine)
             return
-
-        if not isinstance(machine, Machine):
-            continue
-
-        if isinstance(macro := machine.program, MacroProg):
-            if cant_halt(show_comp(macro.instrs)):
-                return
 
     machines = run_variations(
         prog, 1 + MAXINF_23,
@@ -285,14 +270,18 @@ class Fast(TestTree):
             output = capture_32,
         )
 
-        self.assertFalse(
-            queue_to_set(PROGS))
+        self.assert_progs(
+            3,
+            'holdouts_32q')
 
         self.assert_records({
             'blanks': (34, "1RB 1LB  1LA 1LC  1RC 0LC"),
             'spnout': (55, "1RB 0LB  1LA 0RC  1LC 1LA"),
             'infrul': (MAXINF_32, "1RB 1LA  0LB 1RC  1LA 0RB"),
         })
+
+        self.assert_cant_terminate()
+        self.assert_simple_and_connected()
 
     def test_23(self):
         run_tree_gen(
@@ -303,7 +292,7 @@ class Fast(TestTree):
         )
 
         self.assert_progs(
-            5,
+            9,
             'holdouts_23q')
 
         self.assert_records({
@@ -347,12 +336,6 @@ def capture_42h(prog: str) -> None:
             add_result(prog, machine)
             return
 
-        assert isinstance(machine, Machine)
-
-        if isinstance(macro := machine.program, MacroProg):
-            if cant_halt(show_comp(macro.instrs)):
-                return
-
     if cant_halt(prog):
         return
 
@@ -378,12 +361,6 @@ def capture_24(prog: str) -> None:
     for machine in machines:
         if machine.xlimit is None:
             return
-
-        assert isinstance(machine, Machine)
-
-        if isinstance(macro := machine.program, MacroProg):
-            if cant_halt(show_comp(macro.instrs)):
-                return
 
     if cant_halt(prog):
         return
@@ -413,10 +390,6 @@ def capture_42q(prog: str) -> None:
 
     if machine.simple_termination or machine.infrul:
         return
-
-    if isinstance(macro := machine.program, MacroProg):
-        if cant_spin_out(show_comp(macro.instrs)):
-            return
 
     if quick_term_or_rec(prog, 40_000):
         return
@@ -458,7 +431,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            757,
+            759,
             'holdouts_24h')
 
         self.assert_simple_and_connected()
@@ -472,5 +445,5 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            86,
+            115,
             'holdouts_42q')
