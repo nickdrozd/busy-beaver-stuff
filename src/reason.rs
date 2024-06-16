@@ -107,8 +107,10 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                         continue;
                     }
 
-                    let (overwrite, next_tape) =
-                        tape.clone().backstep(shift, try_color);
+                    let mut next_tape = tape.clone();
+
+                    let overwrite =
+                        next_tape.backstep(shift, try_color);
 
                     if state == next_state
                         && try_color == next_color as Color
@@ -127,8 +129,8 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                         continue;
                     }
 
-                    let (_, next_tape) =
-                        tape.clone().backstep(shift, try_color);
+                    let mut next_tape = tape.clone();
+                    next_tape.backstep(shift, try_color);
 
                     configs.push((next_step, next_state, next_tape));
                 }
@@ -238,18 +240,18 @@ fn rparse(prog: &str) -> (usize, Graph, Program) {
 /**************************************/
 
 trait Backstep {
-    fn backstep(self, shift: Shift, color: Color) -> (Color, Self);
+    fn backstep(&mut self, shift: Shift, color: Color) -> Color;
 }
 
 impl Backstep for Tape {
-    fn backstep(mut self, shift: Shift, color: Color) -> (Color, Self) {
+    fn backstep(&mut self, shift: Shift, color: Color) -> Color {
         let _ = self.step(!shift, self.scan, false);
 
         let overwrite = self.scan;
 
         self.scan = color;
 
-        (overwrite, self)
+        overwrite
     }
 }
 
