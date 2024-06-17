@@ -139,7 +139,7 @@ macro_rules! tape {
 }
 
 impl<B: Block> Tape<B> {
-    pub fn init(scan: Color) -> Self {
+    pub const fn init(scan: Color) -> Self {
         tape! { scan, [], [] }
     }
 

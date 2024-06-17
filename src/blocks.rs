@@ -16,7 +16,7 @@ struct BlockMeasure {
 }
 
 impl BlockMeasure {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             tape: BasicTape::init(0),
 
