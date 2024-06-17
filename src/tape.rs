@@ -215,14 +215,12 @@ impl<B: Block> Tape<B> {
             .as_ref()
             .map_or_else(|| 1, |block| 1 + block.get_count());
 
-        let next_scan: Color;
-
-        if pull.is_empty() {
-            next_scan = 0;
+        let next_scan = if pull.is_empty() {
+            0
         } else {
             let next_pull = &mut pull[0];
 
-            next_scan = next_pull.get_color();
+            let pull_color = next_pull.get_color();
 
             if next_pull.get_count() > 1 {
                 next_pull.dec_count();
@@ -234,7 +232,9 @@ impl<B: Block> Tape<B> {
                     push_block = Some(popped);
                 }
             }
-        }
+
+            pull_color
+        };
 
         if !push.is_empty() && push[0].get_color() == color {
             push[0].add_count(stepped);
