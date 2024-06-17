@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use pyo3::pyfunction;
 
 use crate::{
-    instrs::{Color, CompProg, Instr, Shift, Slot, State},
+    instrs::{Color, CompProg, Instr, Shift, State},
     parse::{parse, parse_to_vec, tcompile},
     tape::BasicTape as Tape,
 };
@@ -38,12 +38,12 @@ type Step = u64;
 
 fn cant_reach(prog: &str, term_type: TermType) -> bool {
     let mut configs: Vec<(Step, State, Tape)> = match term_type {
-        TermType::Halt => halt_slots,
-        TermType::Blank => erase_slots,
-        TermType::Spinout => zero_reflexive_slots,
+        TermType::Halt => halt_configs,
+        TermType::Blank => erase_configs,
+        TermType::Spinout => zero_reflexive_configs,
     }(prog)
-    .iter()
-    .map(|&(state, color)| (1, state, Tape::init(color)))
+    .into_iter()
+    .map(|(state, tape)| (1, state, tape))
     .collect();
 
     if configs.is_empty() {
@@ -152,28 +152,32 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
 /**************************************/
 
-fn halt_slots(prog: &str) -> Vec<Slot> {
+type Config = (State, Tape);
+
+fn halt_configs(prog: &str) -> Vec<Config> {
     parse(prog)
         .enumerate()
         .flat_map(|(state, instrs)| {
             instrs.enumerate().filter_map(move |(color, instr)| {
-                instr
-                    .is_none()
-                    .then_some((state as State, color as Color))
+                instr.is_none().then_some((
+                    state as State,
+                    Tape::init(color as Color),
+                ))
             })
         })
         .collect()
 }
 
-fn erase_slots(prog: &str) -> Vec<Slot> {
+fn erase_configs(prog: &str) -> Vec<Config> {
     parse(prog)
         .enumerate()
         .flat_map(|(state, instrs)| {
             instrs.enumerate().filter_map(move |(color, instr)| {
                 match instr {
-                    Some((0, _, _)) if color != 0 => {
-                        Some((state as State, color as Color))
-                    },
+                    Some((0, _, _)) if color != 0 => Some((
+                        state as State,
+                        Tape::init(color as Color),
+                    )),
                     _ => None,
                 }
             })
@@ -181,14 +185,14 @@ fn erase_slots(prog: &str) -> Vec<Slot> {
         .collect()
 }
 
-fn zero_reflexive_slots(prog: &str) -> Vec<Slot> {
+fn zero_reflexive_configs(prog: &str) -> Vec<Config> {
     parse(prog)
         .enumerate()
         .filter_map(|(state, mut instrs)| {
             instrs.next().and_then(|instr| {
                 if let Some((_, _, tr)) = instr {
                     if tr == state as State {
-                        return Some((state as State, 0));
+                        return Some((state as State, Tape::init(0)));
                     }
                 }
                 None
