@@ -112,6 +112,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                     let overwrite =
                         next_tape.backstep(shift, try_color);
 
+                    #[allow(clippy::branches_sharing_code)]
                     if state == next_state
                         && try_color == next_color as Color
                     {
@@ -126,16 +127,17 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                         }
 
                         next_tape.backstep(shift, try_color);
-                    }
+                    } else {
+                        if !validate(
+                            &comp, next_step, next_tape, next_state,
+                            &run,
+                        ) {
+                            continue;
+                        }
 
-                    if !validate(
-                        &comp, next_step, next_tape, next_state, &run,
-                    ) {
-                        continue;
+                        next_tape = tape.clone();
+                        next_tape.backstep(shift, try_color);
                     }
-
-                    let mut next_tape = tape.clone();
-                    next_tape.backstep(shift, try_color);
 
                     configs.push((next_step, next_state, next_tape));
                 }
