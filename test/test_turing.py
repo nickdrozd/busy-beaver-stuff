@@ -314,7 +314,7 @@ class Holdouts(TestCase):
     def test_holdouts(self):
         self.assertEqual(
             len(holdouts := get_holdouts()),
-            886)
+            885)
 
         for prog in holdouts:
             self.assertFalse(

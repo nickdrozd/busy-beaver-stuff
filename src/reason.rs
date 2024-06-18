@@ -91,7 +91,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
         for (next_color, &next_state) in
             entry_points[&state].iter().enumerate()
         {
-            for &(_, shift, trans) in &program[&next_state] {
+            for &(print, shift, trans) in &program[&next_state] {
                 if trans != state {
                     continue;
                 }
@@ -116,7 +116,8 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                     if state == next_state
                         && try_color == next_color as Color
                     {
-                        if prev_color == overwrite {
+                        if prev_color == overwrite && print == tape.scan
+                        {
                             return false;
                         }
 
