@@ -250,6 +250,7 @@ class Fast(TestTree):
                 (39, '1RB 0LB  1LA 1RB'),
                 (39, '1RB 1LA  1LA 0RA'),
                 (30, '1RB 0LB  1LA 1RA'),
+                ( 6, '1RB 1LA  0LA 0LB'),
             },
             result)
 
