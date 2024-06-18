@@ -128,13 +128,9 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
                         next_tape.backstep(shift, try_color);
                     }
 
-                    let Some(result) =
-                        run(&comp, next_step, next_tape, next_state)
-                    else {
-                        continue;
-                    };
-
-                    if (result as isize - step as isize).abs() > 1 {
+                    if !validate(
+                        &comp, next_step, next_tape, next_state, &run,
+                    ) {
                         continue;
                     }
 
@@ -269,6 +265,20 @@ impl Backstep for Tape {
 }
 
 /**************************************/
+
+fn validate(
+    comp: &CompProg,
+    step: Step,
+    tape: Tape,
+    state: State,
+    run: &impl Fn(&CompProg, Step, Tape, State) -> Option<Step>,
+) -> bool {
+    let Some(result) = run(comp, step, tape, state) else {
+        return false;
+    };
+
+    (result as isize - step as isize).abs() <= 1
+}
 
 fn run_halt(
     comp: &CompProg,
