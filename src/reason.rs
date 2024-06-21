@@ -1,11 +1,11 @@
-use std::collections::{BTreeMap as Dict, HashMap, HashSet as Set};
+use core::{fmt, iter::once};
+use std::collections::{BTreeMap as Dict, HashSet as Set};
 
 use pyo3::pyfunction;
 
 use crate::{
-    instrs::{Color, CompProg, Instr, Shift, State},
-    parse::{parse_to_vec, tcompile},
-    tape::BasicTape as Tape,
+    instrs::{Color, CompProg, Shift, State},
+    parse::tcompile,
 };
 
 /**************************************/
@@ -39,14 +39,15 @@ type Step = u64;
 fn cant_reach(prog: &str, term_type: TermType) -> bool {
     let comp = tcompile(prog);
 
-    let mut configs: Vec<(Step, State, Tape)> = match term_type {
-        TermType::Halt => halt_configs,
-        TermType::Blank => erase_configs,
-        TermType::Spinout => zero_reflexive_configs,
-    }(&comp)
-    .into_iter()
-    .map(|(state, tape)| (1, state, tape))
-    .collect();
+    let mut configs: Vec<(Step, State, Backstepper)> =
+        match term_type {
+            TermType::Halt => halt_configs,
+            TermType::Blank => erase_configs,
+            TermType::Spinout => zero_reflexive_configs,
+        }(&comp)
+        .into_iter()
+        .map(|(state, tape)| (1, state, tape))
+        .collect();
 
     if configs.is_empty() {
         return true;
@@ -55,15 +56,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
     let max_steps = 11;
     let max_cycles = 25;
 
-    let (colors, entry_points, program) = rparse(prog);
-
-    let mut seen: Dict<State, Set<Tape>> = Dict::new();
-
-    let run = match term_type {
-        TermType::Halt => run_halt,
-        TermType::Blank => run_blank,
-        TermType::Spinout => run_spinout,
-    };
+    let mut seen: Dict<State, Set<Backstepper>> = Dict::new();
 
     for _ in 0..max_cycles {
         let Some((step, state, tape)) = configs.pop() else {
@@ -88,61 +81,29 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
         // println!("{step} | {state} | {tape}");
 
-        for (next_color, &next_state) in
-            entry_points[&state].iter().enumerate()
+        for (&(next_state, next_color), &(print, shift, trans)) in &comp
         {
-            for &(print, shift, trans) in &program[&next_state] {
-                if trans != state {
-                    continue;
-                }
-
-                for try_color in 0..colors as Color {
-                    let Some(&(prev_color, come_back, prev_state)) =
-                        comp.get(&(next_state, try_color))
-                    else {
-                        continue;
-                    };
-
-                    if come_back != shift || prev_state != state {
-                        continue;
-                    }
-
-                    let mut next_tape = tape.clone();
-
-                    let overwrite =
-                        next_tape.backstep(shift, try_color);
-
-                    #[allow(clippy::branches_sharing_code)]
-                    if state == next_state
-                        && try_color == next_color as Color
-                    {
-                        if prev_color == overwrite && print == tape.scan
-                        {
-                            return false;
-                        }
-
-                        next_tape.step(come_back, prev_color, false);
-
-                        if next_tape != tape {
-                            continue;
-                        }
-
-                        next_tape.backstep(shift, try_color);
-                    } else {
-                        if !validate(
-                            &comp, next_step, next_tape, next_state,
-                            &run,
-                        ) {
-                            continue;
-                        }
-
-                        next_tape = tape.clone();
-                        next_tape.backstep(shift, try_color);
-                    }
-
-                    configs.push((next_step, next_state, next_tape));
-                }
+            if trans != state {
+                continue;
             }
+
+            match tape.check_step(shift, print) {
+                None => continue,
+                Some(at_edge) => {
+                    if at_edge
+                        && state == next_state
+                        && tape.scan == next_color
+                    {
+                        return false;
+                    }
+                },
+            }
+
+            let mut next_tape = tape.clone();
+
+            next_tape.backstep(shift, next_color);
+
+            configs.push((next_step, next_state, next_tape));
         }
     }
 
@@ -151,7 +112,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
 /**************************************/
 
-type Config = (State, Tape);
+type Config = (State, Backstepper);
 
 fn halt_configs(comp: &CompProg) -> Vec<Config> {
     let mut configs = vec![];
@@ -163,7 +124,7 @@ fn halt_configs(comp: &CompProg) -> Vec<Config> {
     for state in 0..=max_state {
         for color in 0..=max_color {
             if !comp.contains_key(&(state, color)) {
-                configs.push((state, Tape::init(color)));
+                configs.push((state, Backstepper::init_halt(color)));
             }
         }
     }
@@ -174,7 +135,9 @@ fn halt_configs(comp: &CompProg) -> Vec<Config> {
 fn erase_configs(comp: &CompProg) -> Vec<Config> {
     comp.iter()
         .filter_map(|(&(state, color), &instr)| match instr {
-            (0, _, _) if color != 0 => Some((state, Tape::init(color))),
+            (0, _, _) if color != 0 => {
+                Some((state, Backstepper::init_blank(color)))
+            },
             _ => None,
         })
         .collect()
@@ -182,9 +145,9 @@ fn erase_configs(comp: &CompProg) -> Vec<Config> {
 
 fn zero_reflexive_configs(comp: &CompProg) -> Vec<Config> {
     comp.iter()
-        .filter_map(|(&slot, &(_, _, trans))| match slot {
+        .filter_map(|(&slot, &(_, shift, trans))| match slot {
             (state, 0) if trans == state => {
-                Some((state, Tape::init(0)))
+                Some((state, Backstepper::init_spinout(shift)))
             },
             _ => None,
         })
@@ -193,187 +156,233 @@ fn zero_reflexive_configs(comp: &CompProg) -> Vec<Config> {
 
 /**************************************/
 
-type Graph = Dict<State, Vec<State>>;
-type Program = Dict<State, Vec<Instr>>;
+#[derive(Clone, PartialEq, Eq, Hash)]
+enum Square {
+    Blanks,
+    Unknown,
+    Known(u64),
+}
 
-fn entry_points(program: &Program) -> Graph {
-    let mut exits: Dict<State, Set<State>> = Dict::new();
-
-    for (state, instrs) in program {
-        exits.insert(
-            *state,
-            instrs.iter().map(|instr| instr.2).collect(),
-        );
+impl Square {
+    const fn blank(&self) -> bool {
+        match self {
+            Self::Blanks => true,
+            Self::Unknown => false,
+            Self::Known(color) => *color == 0,
+        }
     }
+}
 
-    let mut entries: Graph = (0..program.len())
-        .map(|state| (state as State, Vec::new()))
-        .collect();
+impl fmt::Display for Square {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Blanks => write!(f, "0+"),
+            Self::Unknown => write!(f, "?"),
+            Self::Known(color) => write!(f, "{color}"),
+        }
+    }
+}
 
-    for (state, cons) in exits {
-        for exit_point in cons {
-            if let Some(states) = entries.get_mut(&exit_point) {
-                states.push(state);
-            }
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct Backstepper {
+    scan: Color,
+    lspan: Vec<Square>,
+    rspan: Vec<Square>,
+}
+
+impl fmt::Display for Backstepper {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.lspan
+                .iter()
+                .rev()
+                .map(ToString::to_string)
+                .chain(once(format!("[{}]", self.scan)))
+                .chain(self.rspan.iter().map(ToString::to_string))
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
+    }
+}
+
+impl Backstepper {
+    fn init_halt(scan: Color) -> Self {
+        Self {
+            scan,
+            lspan: vec![Square::Unknown],
+            rspan: vec![Square::Unknown],
         }
     }
 
-    for entr in entries.values_mut() {
-        entr.sort_unstable();
+    fn init_blank(scan: Color) -> Self {
+        Self {
+            scan,
+            lspan: vec![Square::Blanks],
+            rspan: vec![Square::Blanks],
+        }
     }
 
-    entries
-}
-
-fn rparse(prog: &str) -> (usize, Graph, Program) {
-    let mut program = Program::new();
-
-    let parsed = parse_to_vec(prog);
-
-    for (state, instrs) in parsed.iter().enumerate() {
-        program.insert(
-            state as State,
-            instrs.iter().filter_map(|instr| *instr).collect(),
-        );
-    }
-
-    (parsed[0].len(), entry_points(&program), program)
-}
-
-/**************************************/
-
-trait Backstep {
-    fn backstep(&mut self, shift: Shift, color: Color) -> Color;
-}
-
-impl Backstep for Tape {
-    fn backstep(&mut self, shift: Shift, color: Color) -> Color {
-        let _ = self.step(!shift, self.scan, false);
-
-        let overwrite = self.scan;
-
-        self.scan = color;
-
-        overwrite
-    }
-}
-
-/**************************************/
-
-fn validate(
-    comp: &CompProg,
-    step: Step,
-    tape: Tape,
-    state: State,
-    run: &impl Fn(&CompProg, Step, Tape, State) -> Option<Step>,
-) -> bool {
-    let Some(result) = run(comp, step, tape, state) else {
-        return false;
-    };
-
-    (result as isize - step as isize).abs() <= 1
-}
-
-fn run_halt(
-    comp: &CompProg,
-    sim_lim: Step,
-    mut tape: Tape,
-    mut state: State,
-) -> Option<Step> {
-    let mut step = 0;
-
-    for _ in 0..sim_lim {
-        let Some(&(color, shift, next_state)) =
-            comp.get(&(state, tape.scan))
-        else {
-            return Some(step);
+    fn init_spinout(dir: Shift) -> Self {
+        let (l_val, r_val) = if dir {
+            (Square::Unknown, Square::Blanks)
+        } else {
+            (Square::Blanks, Square::Unknown)
         };
 
-        let same = state == next_state;
-
-        if same && tape.at_edge(shift) {
-            break;
+        Self {
+            scan: 0,
+            lspan: vec![l_val],
+            rspan: vec![r_val],
         }
-
-        let stepped = tape.step(shift, color, same);
-
-        step += stepped;
-
-        state = next_state;
     }
 
-    None
-}
+    fn blank(&self) -> bool {
+        self.scan == 0
+            && self
+                .lspan
+                .iter()
+                .chain(self.rspan.iter())
+                .all(Square::blank)
+    }
 
-fn run_blank(
-    comp: &CompProg,
-    sim_lim: Step,
-    mut tape: Tape,
-    mut state: State,
-) -> Option<Step> {
-    let mut blanks: HashMap<State, Step> = HashMap::new();
+    fn check_step(&self, shift: Shift, print: Color) -> Option<bool> {
+        let pull = if !shift { &self.rspan } else { &self.lspan };
 
-    let mut step = 0;
-
-    for _ in 0..sim_lim {
-        let Some(&(color, shift, next_state)) =
-            comp.get(&(state, tape.scan))
-        else {
-            break;
+        let (required, at_edge) = match &pull[0] {
+            Square::Unknown => {
+                return Some(false);
+            },
+            Square::Blanks => (0, true),
+            Square::Known(color) => (*color, false),
         };
 
-        let same = state == next_state;
-
-        if same && tape.at_edge(shift) {
-            break;
-        }
-
-        let stepped = tape.step(shift, color, same);
-
-        step += stepped;
-
-        state = next_state;
-
-        if color == 0 && tape.blank() {
-            if blanks.contains_key(&state) {
-                break;
-            }
-
-            blanks.insert(state, step);
-
-            if state == 0 {
-                break;
-            }
+        if print != required {
+            None
+        } else {
+            Some(at_edge)
         }
     }
 
-    blanks.drain().map(|(_, value)| value).min()
+    fn backstep(&mut self, shift: Shift, read: Color) {
+        let (pull, push) = if !shift {
+            (&mut self.rspan, &mut self.lspan)
+        } else {
+            (&mut self.lspan, &mut self.rspan)
+        };
+
+        if let Square::Known(_) = &pull[0] {
+            pull.remove(0);
+        }
+
+        if !(self.scan == 0 && push[0] == Square::Blanks) {
+            push.insert(0, Square::Known(self.scan));
+        }
+
+        self.scan = read;
+    }
 }
 
-fn run_spinout(
-    comp: &CompProg,
-    sim_lim: Step,
-    mut tape: Tape,
-    mut state: State,
-) -> Option<Step> {
-    let mut step = 0;
-
-    for _ in 0..sim_lim {
-        let &(color, shift, next_state) =
-            comp.get(&(state, tape.scan))?;
-
-        let same = state == next_state;
-
-        if same && tape.at_edge(shift) {
-            return Some(step);
-        }
-
-        let stepped = tape.step(shift, color, same);
-
-        step += stepped;
-
-        state = next_state;
+#[cfg(test)]
+impl Backstepper {
+    fn assert(&self, exp: &str) {
+        assert_eq!(self.to_string(), exp);
     }
 
-    None
+    fn tbackstep(
+        &mut self,
+        shift: u8,
+        print: Color,
+        read: Color,
+        success: bool,
+    ) {
+        assert!(matches!(shift, 0 | 1));
+
+        let shift = shift != 0;
+
+        let result = self.check_step(shift, print).is_some();
+
+        assert_eq!(result, success);
+
+        if !result {
+            return;
+        }
+
+        self.backstep(shift, read);
+    }
+}
+
+#[test]
+fn test_backstep_halt() {
+    let mut tape = Backstepper::init_halt(2);
+
+    tape.assert("? [2] ?");
+
+    tape.tbackstep(0, 2, 1, true);
+
+    tape.assert("? 2 [1] ?");
+
+    tape.tbackstep(1, 1, 2, false);
+
+    tape.assert("? 2 [1] ?");
+
+    tape.tbackstep(1, 2, 0, true);
+
+    tape.assert("? [0] 1 ?");
+
+    tape.tbackstep(1, 0, 2, true);
+
+    tape.assert("? [2] 0 1 ?");
+}
+
+#[test]
+fn test_backstep_blank() {
+    let mut tape = Backstepper::init_blank(2);
+
+    tape.assert("0+ [2] 0+");
+
+    tape.tbackstep(0, 1, 1, false);
+    tape.tbackstep(0, 2, 1, false);
+    tape.tbackstep(0, 0, 1, true);
+
+    tape.assert("0+ 2 [1] 0+");
+
+    tape.tbackstep(1, 0, 0, false);
+    tape.tbackstep(1, 1, 0, false);
+    tape.tbackstep(1, 2, 0, true);
+
+    tape.assert("0+ [0] 1 0+");
+
+    tape.tbackstep(1, 1, 0, false);
+    tape.tbackstep(1, 2, 0, false);
+    tape.tbackstep(1, 0, 0, true);
+
+    tape.assert("0+ [0] 0 1 0+");
+}
+
+#[test]
+fn test_backstep_spinout() {
+    let mut tape = Backstepper::init_spinout(true);
+
+    tape.assert("? [0] 0+");
+
+    tape.tbackstep(0, 1, 1, false);
+    tape.tbackstep(0, 2, 1, false);
+    tape.tbackstep(0, 0, 1, true);
+
+    tape.assert("? 0 [1] 0+");
+
+    tape.tbackstep(0, 1, 2, false);
+    tape.tbackstep(0, 2, 2, false);
+    tape.tbackstep(0, 0, 2, true);
+
+    tape.assert("? 0 1 [2] 0+");
+
+    tape.tbackstep(1, 1, 2, true);
+    tape.tbackstep(1, 0, 1, true);
+    tape.tbackstep(1, 0, 0, true);
+    tape.tbackstep(1, 0, 0, true);
+
+    tape.assert("? [0] 0 1 2 2 0+");
 }

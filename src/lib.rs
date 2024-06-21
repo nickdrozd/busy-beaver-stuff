@@ -13,6 +13,7 @@
 #![allow(
     dead_code,
     non_local_definitions,
+    clippy::if_not_else,
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
     clippy::module_name_repetitions,

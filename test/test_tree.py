@@ -410,7 +410,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            7,
+            8,
             'holdouts_42h')
 
         self.assert_records({
@@ -432,7 +432,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            751,
+            759,
             'holdouts_24h')
 
         self.assert_simple_and_connected()
