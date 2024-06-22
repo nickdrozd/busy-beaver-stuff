@@ -126,7 +126,7 @@ class TuringTest(TestCase):
     def assert_could_halt(self, prog: str):
         self.assertFalse(
             cant_halt(prog),
-            f'halt false positive: {prog}')
+            f'halt false positive: "{prog}"')
 
     def assert_cant_halt(self, prog: str):
         self.assertTrue(
