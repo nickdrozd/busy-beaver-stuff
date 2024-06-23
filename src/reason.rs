@@ -10,41 +10,44 @@ use crate::{
 
 /**************************************/
 
-#[derive(Clone, Copy)]
-enum TermType {
-    Halt,
-    Blank,
-    Spinout,
+#[pyfunction]
+pub fn cant_halt_py(prog: &str) -> bool {
+    cant_halt(&tcompile(prog))
 }
 
 #[pyfunction]
-pub fn cant_halt(prog: &str) -> bool {
-    cant_reach(prog, TermType::Halt)
+pub fn cant_blank_py(prog: &str) -> bool {
+    cant_blank(&tcompile(prog))
 }
 
 #[pyfunction]
-pub fn cant_blank(prog: &str) -> bool {
-    cant_reach(prog, TermType::Blank)
+pub fn cant_spin_out_py(prog: &str) -> bool {
+    cant_spin_out(&tcompile(prog))
 }
 
-#[pyfunction]
-pub fn cant_spin_out(prog: &str) -> bool {
-    cant_reach(prog, TermType::Spinout)
+/**************************************/
+
+pub fn cant_halt(comp: &CompProg) -> bool {
+    cant_reach(comp, halt_configs(comp))
+}
+
+pub fn cant_blank(comp: &CompProg) -> bool {
+    cant_reach(comp, erase_configs(comp))
+}
+
+pub fn cant_spin_out(comp: &CompProg) -> bool {
+    cant_reach(comp, zero_reflexive_configs(comp))
 }
 
 /**************************************/
 
 type Step = u64;
 
-fn cant_reach(prog: &str, term_type: TermType) -> bool {
-    let comp = tcompile(prog);
-
-    let mut configs: Vec<(Step, State, Backstepper)> =
-        match term_type {
-            TermType::Halt => halt_configs,
-            TermType::Blank => erase_configs,
-            TermType::Spinout => zero_reflexive_configs,
-        }(&comp)
+fn cant_reach(
+    comp: &CompProg,
+    configs: Vec<(State, Backstepper)>,
+) -> bool {
+    let mut configs: Vec<(Step, State, Backstepper)> = configs
         .into_iter()
         .map(|(state, tape)| (1, state, tape))
         .collect();
@@ -81,7 +84,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
         // println!("{step} | {state} | {tape}");
 
-        for (&(next_state, next_color), &(print, shift, trans)) in &comp
+        for (&(next_state, next_color), &(print, shift, trans)) in comp
         {
             if trans != state {
                 continue;

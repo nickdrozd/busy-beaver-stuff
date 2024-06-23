@@ -46,7 +46,7 @@ mod rust_stuff {
             show_instr, show_slot, show_state, tcompile,
         },
         prover::PastConfigs,
-        reason::{cant_blank, cant_halt, cant_spin_out},
+        reason::{cant_blank_py, cant_halt_py, cant_spin_out_py},
         rules::{InfiniteRule, RuleLimit, UnknownRule},
         tree::tree_progs,
     };

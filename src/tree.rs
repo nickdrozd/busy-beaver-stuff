@@ -227,9 +227,7 @@ fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
         let (states, colors) = params;
 
         (colors == 2 || states * colors < 10)
-            && (if halt { cant_halt } else { cant_spin_out })(
-                &show_comp(comp, Some(params)),
-            )
+            && (if halt { cant_halt } else { cant_spin_out })(comp)
     }
 }
 
