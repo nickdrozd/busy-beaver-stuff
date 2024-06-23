@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashMap as Dict;
 
 use pyo3::{pyclass, pyfunction, pymethods};
 
@@ -10,7 +10,7 @@ use crate::{
 
 type Step = u64;
 
-type Blanks = HashMap<State, Step>;
+type Blanks = Dict<State, Step>;
 
 /**************************************/
 

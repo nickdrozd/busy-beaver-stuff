@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashMap as Dict;
 
 use pyo3::{pyclass, pymethods};
 
@@ -69,7 +69,7 @@ impl PastConfig {
 
 #[pyclass]
 pub struct PastConfigs {
-    configs: HashMap<State, PastConfig>,
+    configs: Dict<State, PastConfig>,
 }
 
 #[pymethods]
@@ -77,7 +77,7 @@ impl PastConfigs {
     #[new]
     fn new(state: State, cycle: Cycle) -> Self {
         Self {
-            configs: HashMap::from([(state, PastConfig::new(cycle))]),
+            configs: Dict::from([(state, PastConfig::new(cycle))]),
         }
     }
 

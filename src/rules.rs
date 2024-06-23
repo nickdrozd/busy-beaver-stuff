@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashMap as Dict;
 
 use pyo3::{create_exception, exceptions::PyException};
 
@@ -19,7 +19,7 @@ pub enum Op {
     Plus(Diff),
 }
 
-pub type Rule = HashMap<Index, Op>;
+pub type Rule = Dict<Index, Op>;
 
 /**************************************/
 

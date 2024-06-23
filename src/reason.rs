@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap as Dict, HashSet as Set};
 
 use pyo3::pyfunction;
 
@@ -57,7 +57,7 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
     let (colors, entry_points, program) = rparse(prog);
 
-    let mut seen: HashMap<State, HashSet<Tape>> = HashMap::new();
+    let mut seen: Dict<State, Set<Tape>> = Dict::new();
 
     let run = match term_type {
         TermType::Halt => run_halt,
@@ -202,11 +202,11 @@ fn zero_reflexive_configs(prog: &str) -> Vec<Config> {
 
 /**************************************/
 
-type Graph = HashMap<State, Vec<State>>;
-type Program = HashMap<State, Vec<Instr>>;
+type Graph = Dict<State, Vec<State>>;
+type Program = Dict<State, Vec<Instr>>;
 
 fn entry_points(program: &Program) -> Graph {
-    let mut exits: HashMap<State, HashSet<State>> = HashMap::new();
+    let mut exits: Dict<State, Set<State>> = Dict::new();
 
     for (state, instrs) in program {
         exits.insert(
@@ -320,7 +320,7 @@ fn run_blank(
     mut tape: Tape,
     mut state: State,
 ) -> Option<Step> {
-    let mut blanks: HashMap<State, Step> = HashMap::new();
+    let mut blanks: Dict<State, Step> = Dict::new();
 
     let mut step = 0;
 
