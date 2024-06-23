@@ -4,7 +4,7 @@ use pyo3::pyfunction;
 
 use crate::{
     instrs::{Color, CompProg, Instr, Shift, State},
-    parse::{parse, parse_to_vec, tcompile},
+    parse::{parse_to_vec, tcompile},
     tape::BasicTape as Tape,
 };
 
@@ -37,11 +37,13 @@ pub fn cant_spin_out(prog: &str) -> bool {
 type Step = u64;
 
 fn cant_reach(prog: &str, term_type: TermType) -> bool {
+    let comp = tcompile(prog);
+
     let mut configs: Vec<(Step, State, Tape)> = match term_type {
         TermType::Halt => halt_configs,
         TermType::Blank => erase_configs,
         TermType::Spinout => zero_reflexive_configs,
-    }(prog)
+    }(&comp)
     .into_iter()
     .map(|(state, tape)| (1, state, tape))
     .collect();
@@ -49,8 +51,6 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
     if configs.is_empty() {
         return true;
     }
-
-    let comp = tcompile(prog);
 
     let max_steps = 11;
     let max_cycles = 25;
@@ -153,49 +153,40 @@ fn cant_reach(prog: &str, term_type: TermType) -> bool {
 
 type Config = (State, Tape);
 
-fn halt_configs(prog: &str) -> Vec<Config> {
-    parse(prog)
-        .enumerate()
-        .flat_map(|(state, instrs)| {
-            instrs.enumerate().filter_map(move |(color, instr)| {
-                instr.is_none().then_some((
-                    state as State,
-                    Tape::init(color as Color),
-                ))
-            })
+fn halt_configs(comp: &CompProg) -> Vec<Config> {
+    let mut configs = vec![];
+
+    let (max_state, max_color) = comp
+        .keys()
+        .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
+
+    for state in 0..=max_state {
+        for color in 0..=max_color {
+            if !comp.contains_key(&(state, color)) {
+                configs.push((state, Tape::init(color)));
+            }
+        }
+    }
+
+    configs
+}
+
+fn erase_configs(comp: &CompProg) -> Vec<Config> {
+    comp.iter()
+        .filter_map(|(&(state, color), &instr)| match instr {
+            (0, _, _) if color != 0 => Some((state, Tape::init(color))),
+            _ => None,
         })
         .collect()
 }
 
-fn erase_configs(prog: &str) -> Vec<Config> {
-    parse(prog)
-        .enumerate()
-        .flat_map(|(state, instrs)| {
-            instrs.enumerate().filter_map(move |(color, instr)| {
-                match instr {
-                    Some((0, _, _)) if color != 0 => Some((
-                        state as State,
-                        Tape::init(color as Color),
-                    )),
-                    _ => None,
-                }
-            })
-        })
-        .collect()
-}
-
-fn zero_reflexive_configs(prog: &str) -> Vec<Config> {
-    parse(prog)
-        .enumerate()
-        .filter_map(|(state, mut instrs)| {
-            instrs.next().and_then(|instr| {
-                if let Some((_, _, tr)) = instr {
-                    if tr == state as State {
-                        return Some((state as State, Tape::init(0)));
-                    }
-                }
-                None
-            })
+fn zero_reflexive_configs(comp: &CompProg) -> Vec<Config> {
+    comp.iter()
+        .filter_map(|(&slot, &(_, _, trans))| match slot {
+            (state, 0) if trans == state => {
+                Some((state, Tape::init(0)))
+            },
+            _ => None,
         })
         .collect()
 }
