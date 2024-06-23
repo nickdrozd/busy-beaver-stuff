@@ -1,4 +1,4 @@
-use std::collections::HashMap as Dict;
+use std::collections::BTreeMap as Dict;
 
 use pyo3::{create_exception, exceptions::PyException};
 

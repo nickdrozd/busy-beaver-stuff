@@ -1,4 +1,4 @@
-use std::collections::{HashMap as Dict, HashSet as Set};
+use std::collections::{BTreeMap as Dict, HashMap, HashSet as Set};
 
 use pyo3::pyfunction;
 
@@ -320,7 +320,7 @@ fn run_blank(
     mut tape: Tape,
     mut state: State,
 ) -> Option<Step> {
-    let mut blanks: Dict<State, Step> = Dict::new();
+    let mut blanks: HashMap<State, Step> = HashMap::new();
 
     let mut step = 0;
 

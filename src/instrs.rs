@@ -1,4 +1,4 @@
-use std::collections::HashMap as Dict;
+use std::collections::BTreeMap as Dict;
 
 pub type Color = u64;
 pub type State = u64;
