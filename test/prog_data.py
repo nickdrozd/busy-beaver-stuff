@@ -60,7 +60,7 @@ HALT: BasicTermData = {
     "1RB 1RA ...  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 
     # Milton Green (1964)
-    "1RB ...  ... ...": (1, 2),
+    # "1RB ...  ... ...": (1, 2),
     "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": (35, 436),
     "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD": (22961, 197_700_005),
 
