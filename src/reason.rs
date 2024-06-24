@@ -28,23 +28,26 @@ pub fn cant_spin_out_py(prog: &str) -> bool {
 /**************************************/
 
 pub fn cant_halt(comp: &CompProg) -> bool {
-    cant_reach(comp, halt_configs(comp))
+    cant_reach(comp, halt_configs)
 }
 
 pub fn cant_blank(comp: &CompProg) -> bool {
-    cant_reach(comp, erase_configs(comp))
+    cant_reach(comp, erase_configs)
 }
 
 pub fn cant_spin_out(comp: &CompProg) -> bool {
-    cant_reach(comp, zero_reflexive_configs(comp))
+    cant_reach(comp, zero_reflexive_configs)
 }
 
 /**************************************/
 
 type Config = (State, Backstepper);
 
-fn cant_reach(comp: &CompProg, configs: Vec<Config>) -> bool {
-    let mut configs: Vec<(u16, State, Backstepper)> = configs
+fn cant_reach(
+    comp: &CompProg,
+    get_configs: impl Fn(&CompProg) -> Vec<Config>,
+) -> bool {
+    let mut configs: Vec<(u16, State, Backstepper)> = get_configs(comp)
         .into_iter()
         .map(|(state, tape)| (1, state, tape))
         .collect();
