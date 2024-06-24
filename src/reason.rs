@@ -41,7 +41,7 @@ pub fn cant_spin_out(comp: &CompProg) -> bool {
 
 /**************************************/
 
-type Step = u64;
+type Step = u16;
 
 fn cant_reach(
     comp: &CompProg,
