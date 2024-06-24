@@ -41,10 +41,9 @@ pub fn cant_spin_out(comp: &CompProg) -> bool {
 
 /**************************************/
 
-fn cant_reach(
-    comp: &CompProg,
-    configs: Vec<(State, Backstepper)>,
-) -> bool {
+type Config = (State, Backstepper);
+
+fn cant_reach(comp: &CompProg, configs: Vec<Config>) -> bool {
     let mut configs: Vec<(u16, State, Backstepper)> = configs
         .into_iter()
         .map(|(state, tape)| (1, state, tape))
@@ -138,8 +137,6 @@ fn cant_reach(
 }
 
 /**************************************/
-
-type Config = (State, Backstepper);
 
 fn halt_configs(comp: &CompProg) -> Vec<Config> {
     let mut configs = vec![];
