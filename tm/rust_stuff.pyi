@@ -22,6 +22,8 @@ Shift = bool
 Slot = tuple[State, Color]
 Instr = tuple[Color, Shift, State]
 
+Params = tuple[State, Color]
+
 CompProg = dict[Slot, Instr]
 
 LetterState = str
@@ -46,7 +48,7 @@ def show_instr(instr: Instr | None) -> str: ...
 
 def show_comp_py(
         comp: CompProg,
-        params: tuple[int, int] | None = None,
+        params: Params | None = None,
 ) -> str: ...
 
 def init_prog(states: int, colors: int) -> str: ...
@@ -124,8 +126,6 @@ def cant_blank_py(prog: str) -> bool: ...
 def cant_spin_out_py(prog: str) -> bool: ...
 
 ## tree ################################
-
-Params = tuple[int, int]
 
 def tree_progs(
         params: Params,

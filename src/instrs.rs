@@ -7,4 +7,6 @@ pub type Shift = bool;
 pub type Slot = (State, Color);
 pub type Instr = (Color, Shift, State);
 
+pub type Params = (State, Color);
+
 pub type CompProg = Dict<Slot, Instr>;

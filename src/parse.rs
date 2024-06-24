@@ -1,6 +1,8 @@
 use pyo3::pyfunction;
 
-use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
+use crate::instrs::{
+    Color, CompProg, Instr, Params, Shift, Slot, State,
+};
 
 const UNDF: char = '.';
 
@@ -100,17 +102,11 @@ fn read_instr(instr: &str) -> Option<Instr> {
 
 #[pyfunction]
 #[allow(clippy::needless_pass_by_value)]
-pub fn show_comp_py(
-    comp: CompProg,
-    params: Option<(State, Color)>,
-) -> String {
+pub fn show_comp_py(comp: CompProg, params: Option<Params>) -> String {
     show_comp(&comp, params)
 }
 
-pub fn show_comp(
-    comp: &CompProg,
-    params: Option<(State, Color)>,
-) -> String {
+pub fn show_comp(comp: &CompProg, params: Option<Params>) -> String {
     let (max_state, max_color) = params.unwrap_or_else(|| {
         let (ms, mx) = comp.iter().fold(
             (1, 1),

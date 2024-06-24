@@ -8,7 +8,7 @@ use pyo3::pyfunction;
 use rayon::prelude::*;
 
 use crate::{
-    instrs::{Color, CompProg, Instr, Slot, State},
+    instrs::{Color, CompProg, Instr, Params, Slot, State},
     parse::show_comp,
     tape::BasicTape as Tape,
 };
@@ -69,7 +69,6 @@ fn run_for_undefined(
 /**************************************/
 
 type Slots = u64;
-type Params = (State, Color);
 type Config<'t> = (State, &'t mut Tape);
 
 fn leaf<F>(
