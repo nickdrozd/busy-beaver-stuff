@@ -1,5 +1,4 @@
 import os
-from functools import reduce
 
 
 RUN_SLOW = os.environ.get('RUN_SLOW')
@@ -16,13 +15,3 @@ def read_progs(name: str) -> set[str]:
 def read_holdouts(name: str) -> set[str]:
     return read_progs(
         f'holdouts_{name}')
-
-
-def get_holdouts() -> list[str]:
-    return sorted(
-        reduce(
-            lambda acc, cat: acc | read_holdouts(cat), # type: ignore
-            ('32q', '23q', '42h', '42q', '24h'),
-            set(),
-        )
-    )

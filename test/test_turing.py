@@ -16,7 +16,7 @@ from test.lin_rec import (
     run_loose_linrec_machine,
     StrictLinRecMachine,
 )
-from test.utils import get_holdouts, read_holdouts, RUN_SLOW
+from test.utils import read_holdouts, RUN_SLOW
 
 from tm.macro import (
     tcompile,
@@ -308,18 +308,6 @@ class Reason(TuringTest):
                 self.assert_cant_halt(prog)
                 self.assert_cant_blank(prog)
                 self.assert_cant_spin_out(prog)
-
-
-class Holdouts(TestCase):
-    def test_holdouts(self):
-        self.assertEqual(
-            len(holdouts := get_holdouts()),
-            894)
-
-        for prog in holdouts:
-            self.assertFalse(
-                quick_term_or_rec(prog, 1_000),
-                prog)
 
 
 class Simple(TuringTest):

@@ -82,8 +82,9 @@ CG = test.test_code
 TP = test.test_tape
 NUM = test.test_num
 RUL = test.test_rules
+HOLD = test.test_holdouts
 
-SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(RUL) $(TP) $(COV) $(NUM)
+SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(RUL) $(TP) $(COV) $(NUM) $(HOLD)
 
 PYTEST = $(PYTHON) -m unittest
 
