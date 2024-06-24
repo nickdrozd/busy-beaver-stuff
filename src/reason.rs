@@ -4,7 +4,7 @@ use std::collections::{BTreeMap as Dict, HashSet as Set};
 use pyo3::pyfunction;
 
 use crate::{
-    instrs::{Color, CompProg, Shift, State},
+    instrs::{Color, CompProg, Instr, Shift, Slot, State},
     parse::tcompile,
 };
 
@@ -59,6 +59,8 @@ fn cant_reach(
 
     let mut seen: Dict<State, Set<Backstepper>> = Dict::new();
 
+    let entrypoints = get_entrypoints(comp);
+
     for _ in 0..max_cycles {
         let Some((step, state, tape)) = configs.pop() else {
             return true;
@@ -82,12 +84,11 @@ fn cant_reach(
 
         // println!("{step} | {state} | {tape}");
 
-        for (&(next_state, next_color), &(print, shift, trans)) in comp
-        {
-            if trans != state {
-                continue;
-            }
+        let Some(instrs) = entrypoints.get(&state) else {
+            continue;
+        };
 
+        for &((next_state, next_color), (print, shift, _)) in instrs {
             match tape.check_step(shift, print) {
                 None => continue,
                 Some(at_edge) => {
@@ -153,6 +154,17 @@ fn zero_reflexive_configs(comp: &CompProg) -> Vec<Config> {
             _ => None,
         })
         .collect()
+}
+
+fn get_entrypoints(comp: &CompProg) -> Dict<State, Vec<(Slot, Instr)>> {
+    let mut entrypoints: Dict<State, Vec<(Slot, Instr)>> = Dict::new();
+
+    for (&slot, &instr) in comp {
+        let (_, _, state) = instr;
+        entrypoints.entry(state).or_default().push((slot, instr));
+    }
+
+    entrypoints
 }
 
 /**************************************/
