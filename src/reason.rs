@@ -41,13 +41,11 @@ pub fn cant_spin_out(comp: &CompProg) -> bool {
 
 /**************************************/
 
-type Step = u16;
-
 fn cant_reach(
     comp: &CompProg,
     configs: Vec<(State, Backstepper)>,
 ) -> bool {
-    let mut configs: Vec<(Step, State, Backstepper)> = configs
+    let mut configs: Vec<(u16, State, Backstepper)> = configs
         .into_iter()
         .map(|(state, tape)| (1, state, tape))
         .collect();
