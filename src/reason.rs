@@ -62,7 +62,7 @@ fn cant_reach(
     let entrypoints = get_entrypoints(comp);
 
     for _ in 0..max_cycles {
-        let Some((step, state, tape)) = configs.pop() else {
+        let Some((step, state, mut tape)) = configs.pop() else {
             return true;
         };
 
@@ -88,6 +88,10 @@ fn cant_reach(
             continue;
         };
 
+        let Some((last_instr, instrs)) = instrs.split_last() else {
+            continue;
+        };
+
         for &((next_state, next_color), (print, shift, _)) in instrs {
             match tape.check_step(shift, print) {
                 None => continue,
@@ -106,6 +110,27 @@ fn cant_reach(
             next_tape.backstep(shift, next_color);
 
             configs.push((next_step, next_state, next_tape));
+        }
+
+        {
+            let &((next_state, next_color), (print, shift, _)) =
+                last_instr;
+
+            match tape.check_step(shift, print) {
+                None => continue,
+                Some(at_edge) => {
+                    if at_edge
+                        && state == next_state
+                        && tape.scan == next_color
+                    {
+                        return false;
+                    }
+                },
+            }
+
+            tape.backstep(shift, next_color);
+
+            configs.push((next_step, next_state, tape));
         }
     }
 
