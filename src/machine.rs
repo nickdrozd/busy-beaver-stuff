@@ -15,8 +15,8 @@ type Blanks = Dict<State, Step>;
 /**************************************/
 
 #[allow(non_camel_case_types)]
-#[pyclass]
-#[derive(Clone)]
+#[pyclass(eq, eq_int)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum TermRes {
     xlimit,
     infrul,
@@ -42,6 +42,7 @@ pub struct MachineResult {
 #[pymethods]
 impl MachineResult {
     #[new]
+    #[pyo3(signature = (result, steps, cycles, marks, blanks, last_slot))]
     const fn new(
         result: TermRes,
         steps: Step,

@@ -48,6 +48,7 @@ const fn read_shift(shift: char) -> Shift {
 }
 
 #[pyfunction]
+#[pyo3(signature = (state))]
 pub const fn show_state(state: Option<State>) -> char {
     match state {
         None => UNDF,
@@ -75,6 +76,7 @@ pub fn read_slot(slot: &str) -> Slot {
 }
 
 #[pyfunction]
+#[pyo3(signature = (instr))]
 pub fn show_instr(instr: Option<Instr>) -> String {
     match instr {
         None => "...".to_owned(),
@@ -101,6 +103,7 @@ fn read_instr(instr: &str) -> Option<Instr> {
 }
 
 #[pyfunction]
+#[pyo3(signature = (comp, params=None))]
 #[allow(clippy::needless_pass_by_value)]
 pub fn show_comp_py(comp: CompProg, params: Option<Params>) -> String {
     show_comp(&comp, params)

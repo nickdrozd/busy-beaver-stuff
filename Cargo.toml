@@ -8,7 +8,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rayon = "1.10"
-pyo3 = { version = "= 0.21.0", features = ["extension-module", "experimental-declarative-modules"] }
+pyo3 = { version = "= 0.22", features = ["extension-module"] }
 
 [profile.release]
 lto = true
