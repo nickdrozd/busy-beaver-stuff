@@ -221,13 +221,9 @@ use crate::{
 };
 
 #[cfg(test)]
-fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
-    quick_term_or_rec(comp, 50, true) || {
-        let (states, colors) = params;
-
-        (colors == 2 || states * colors < 10)
-            && (if halt { cant_halt } else { cant_spin_out })(comp)
-    }
+fn skip(comp: &CompProg, _params: Params, halt: bool) -> bool {
+    quick_term_or_rec(comp, 50, true)
+        || if halt { cant_halt } else { cant_spin_out }(comp)
 }
 
 #[cfg(test)]
@@ -285,7 +281,7 @@ fn test_tree_slow() {
         //
         ((5, 2), 1, 3_260_409),
         //
-        ((2, 5), 1, 13_073_485),
+        ((2, 5), 1, 13_068_856),
         //
         ((3, 3), 1, 2_254_379),
         ((3, 3), 0, 5_989_168),
