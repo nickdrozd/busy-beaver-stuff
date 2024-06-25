@@ -90,9 +90,7 @@ fn cant_reach(
             continue;
         };
 
-        let Some((last_instr, instrs)) = instrs.split_last() else {
-            continue;
-        };
+        let (last_instr, instrs) = instrs.split_last().unwrap();
 
         for &((next_state, next_color), (print, shift, _)) in instrs {
             match tape.check_step(shift, print) {
