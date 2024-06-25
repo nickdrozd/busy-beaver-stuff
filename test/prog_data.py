@@ -1255,6 +1255,7 @@ DO_HALT: set[str] = {
     "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA ...",  # 10^1730
 
     # 2/5
+    "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ...",  # ???
     "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",  # 10^19017
     "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...",  # 10^704
     "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA ...",  # 10^211
