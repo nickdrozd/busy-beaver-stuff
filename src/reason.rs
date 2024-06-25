@@ -288,7 +288,10 @@ impl Backstepper {
 
         let (required, at_edge) = match &pull[0] {
             Square::Unknown => {
-                return Some(false);
+                return Some(matches!(
+                    (if shift { &self.rspan } else { &self.lspan })[0],
+                    Square::Known(_)
+                ));
             },
             Square::Blanks => (0, true),
             Square::Known(color) => (*color, false),
