@@ -49,14 +49,14 @@ fn cant_reach(
 ) -> bool {
     let mut configs: Vec<(u16, State, Backstepper)> = get_configs(comp)
         .into_iter()
-        .map(|(state, tape)| (1, state, tape))
+        .map(|(state, tape)| (0, state, tape))
         .collect();
 
     if configs.is_empty() {
         return true;
     }
 
-    let max_steps = 11;
+    let max_steps = 10;
     let max_cycles = 25;
 
     let mut seen: Dict<State, Set<Backstepper>> = Dict::new();
