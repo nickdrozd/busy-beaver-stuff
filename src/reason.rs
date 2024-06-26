@@ -56,8 +56,8 @@ fn cant_reach(
         return true;
     }
 
-    let max_steps = 10;
-    let max_cycles = 25;
+    let max_steps = 23;
+    let max_cycles = 81;
 
     let mut seen: Dict<State, Set<Backstepper>> = Dict::new();
 
