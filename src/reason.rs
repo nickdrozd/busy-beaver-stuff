@@ -56,7 +56,6 @@ fn cant_reach(
         return true;
     }
 
-    let max_steps = 23;
     let max_cycles = 81;
 
     let mut seen: Dict<State, Set<Backstepper>> = Dict::new();
@@ -67,12 +66,6 @@ fn cant_reach(
         let Some((step, state, mut tape)) = configs.pop() else {
             return true;
         };
-
-        let next_step = 1 + step;
-
-        if next_step > max_steps {
-            return false;
-        }
 
         if seen.entry(state).or_default().contains(&tape) {
             continue;
@@ -109,7 +102,7 @@ fn cant_reach(
 
             next_tape.backstep(shift, next_color);
 
-            configs.push((next_step, next_state, next_tape));
+            configs.push((1 + step, next_state, next_tape));
         }
 
         {
@@ -130,7 +123,7 @@ fn cant_reach(
 
             tape.backstep(shift, next_color);
 
-            configs.push((next_step, next_state, tape));
+            configs.push((1 + step, next_state, tape));
         }
     }
 
