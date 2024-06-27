@@ -59,6 +59,8 @@ fn cant_reach(
 
     let entrypoints = get_entrypoints(comp);
 
+    configs.retain(|(state, _)| entrypoints.contains_key(state));
+
     for _ in 0..max_cycles {
         let Some((state, mut tape)) = configs.pop_front() else {
             return true;
