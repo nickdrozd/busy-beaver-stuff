@@ -47,11 +47,7 @@ fn cant_reach(
     comp: &CompProg,
     get_configs: impl Fn(&CompProg) -> Vec<Config>,
 ) -> bool {
-    let mut configs: VecDeque<(u16, State, Backstepper)> =
-        get_configs(comp)
-            .into_iter()
-            .map(|(state, tape)| (0, state, tape))
-            .collect();
+    let mut configs: VecDeque<Config> = get_configs(comp).into();
 
     if configs.is_empty() {
         return true;
@@ -64,7 +60,7 @@ fn cant_reach(
     let entrypoints = get_entrypoints(comp);
 
     for _ in 0..max_cycles {
-        let Some((step, state, mut tape)) = configs.pop_front() else {
+        let Some((state, mut tape)) = configs.pop_front() else {
             return true;
         };
 
@@ -86,7 +82,7 @@ fn cant_reach(
 
         let (last_instr, instrs) = instrs.split_last().unwrap();
 
-        // println!("{step} | {state} | {tape}");
+        // println!("{state} | {tape}");
 
         for &((next_state, next_color), (print, shift, _)) in instrs {
             match tape.check_step(shift, print) {
@@ -105,7 +101,7 @@ fn cant_reach(
 
             next_tape.backstep(shift, next_color);
 
-            configs.push_back((1 + step, next_state, next_tape));
+            configs.push_back((next_state, next_tape));
         }
 
         {
@@ -126,7 +122,7 @@ fn cant_reach(
 
             tape.backstep(shift, next_color);
 
-            configs.push_back((1 + step, next_state, tape));
+            configs.push_back((next_state, tape));
         }
     }
 
