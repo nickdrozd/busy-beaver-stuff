@@ -185,6 +185,45 @@ fn get_entrypoints(comp: &CompProg) -> Dict<State, Vec<(Slot, Instr)>> {
     entrypoints
 }
 
+#[test]
+fn test_entrypoints() {
+    assert_eq!(
+        get_entrypoints(&tcompile(
+            "1RB ...  0LC ...  1RC 1LD  0LC 0LD"
+        )),
+        Dict::from([
+            (1, vec![((0, 0), (1, true, 1))]),
+            (
+                2,
+                vec![
+                    ((1, 0), (0, false, 2)),
+                    ((2, 0), (1, true, 2)),
+                    ((3, 0), (0, false, 2))
+                ]
+            ),
+            (3, vec![((2, 1), (1, false, 3)), ((3, 1), (0, false, 3))]),
+        ]),
+    );
+
+    assert_eq!(
+        get_entrypoints(&tcompile(
+            "1RB ...  0LC ...  1RC 1LD  0LC 0LB"
+        )),
+        Dict::from([
+            (1, vec![((0, 0), (1, true, 1)), ((3, 1), (0, false, 1))]),
+            (
+                2,
+                vec![
+                    ((1, 0), (0, false, 2)),
+                    ((2, 0), (1, true, 2)),
+                    ((3, 0), (0, false, 2))
+                ]
+            ),
+            (3, vec![((2, 1), (1, false, 3))]),
+        ]),
+    );
+}
+
 /**************************************/
 
 #[derive(Clone, PartialEq, Eq, Hash)]
