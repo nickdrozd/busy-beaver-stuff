@@ -78,11 +78,8 @@ fn cant_reach(
             blanks.insert(state);
         }
 
-        let Some(instrs) = entrypoints.get(&state) else {
-            continue;
-        };
-
-        let (last_instr, instrs) = instrs.split_last().unwrap();
+        let (last_instr, instrs) =
+            entrypoints[&state].split_last().unwrap();
 
         // println!("{state} | {tape}");
 
@@ -182,6 +179,20 @@ fn get_entrypoints(comp: &CompProg) -> Dict<State, Vec<(Slot, Instr)>> {
         entrypoints.entry(state).or_default().push((slot, instr));
     }
 
+    for _ in 0..entrypoints.len() {
+        let reached: Vec<State> = entrypoints.keys().copied().collect();
+
+        for instrs in entrypoints.values_mut() {
+            instrs.retain(|((state, _), _)| reached.contains(state));
+        }
+
+        entrypoints.retain(|_, instrs| !instrs.is_empty());
+
+        if entrypoints.len() == reached.len() {
+            break;
+        }
+    }
+
     entrypoints
 }
 
@@ -192,15 +203,7 @@ fn test_entrypoints() {
             "1RB ...  0LC ...  1RC 1LD  0LC 0LD"
         )),
         Dict::from([
-            (1, vec![((0, 0), (1, true, 1))]),
-            (
-                2,
-                vec![
-                    ((1, 0), (0, false, 2)),
-                    ((2, 0), (1, true, 2)),
-                    ((3, 0), (0, false, 2))
-                ]
-            ),
+            (2, vec![((2, 0), (1, true, 2)), ((3, 0), (0, false, 2))]),
             (3, vec![((2, 1), (1, false, 3)), ((3, 1), (0, false, 3))]),
         ]),
     );
@@ -210,7 +213,7 @@ fn test_entrypoints() {
             "1RB ...  0LC ...  1RC 1LD  0LC 0LB"
         )),
         Dict::from([
-            (1, vec![((0, 0), (1, true, 1)), ((3, 1), (0, false, 1))]),
+            (1, vec![((3, 1), (0, false, 1))]),
             (
                 2,
                 vec![
