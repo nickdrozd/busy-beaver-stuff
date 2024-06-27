@@ -78,13 +78,13 @@ fn cant_reach(
             return false;
         }
 
-        // println!("{step} | {state} | {tape}");
-
         let Some(instrs) = entrypoints.get(&state) else {
             continue;
         };
 
         let (last_instr, instrs) = instrs.split_last().unwrap();
+
+        // println!("{step} | {state} | {tape}");
 
         for &((next_state, next_color), (print, shift, _)) in instrs {
             match tape.check_step(shift, print) {
