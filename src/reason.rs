@@ -59,7 +59,7 @@ fn cant_reach(
 
     let max_cycles = 81;
 
-    let mut seen: Dict<State, Set<Backstepper>> = Dict::new();
+    let mut blanks = Set::new();
 
     let entrypoints = get_entrypoints(comp);
 
@@ -68,14 +68,16 @@ fn cant_reach(
             return true;
         };
 
-        if seen.entry(state).or_default().contains(&tape) {
-            continue;
-        }
+        if tape.blank() {
+            if state == 0 {
+                return false;
+            }
 
-        seen.get_mut(&state).unwrap().insert(tape.clone());
+            if blanks.contains(&state) {
+                continue;
+            }
 
-        if state == 0 && tape.blank() {
-            return false;
+            blanks.insert(state);
         }
 
         let Some(instrs) = entrypoints.get(&state) else {
@@ -196,8 +198,7 @@ enum Square {
 impl Square {
     const fn blank(&self) -> bool {
         match self {
-            Self::Blanks => true,
-            Self::Unknown => false,
+            Self::Blanks | Self::Unknown => true,
             Self::Known(color) => *color == 0,
         }
     }
