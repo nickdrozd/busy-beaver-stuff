@@ -287,7 +287,7 @@ class Reason(TuringTest):
             self.assert_cant_spin_out(prog)
 
     def test_recur(self):
-        for prog in RECURS:
+        for prog in RECURS | INFRUL:
             self.assert_cant_halt(prog)
             self.assert_cant_spin_out(prog)
 
