@@ -45,9 +45,9 @@ type Config = (State, Backstepper);
 
 fn cant_reach(
     comp: &CompProg,
-    get_configs: impl Fn(&CompProg) -> Vec<Config>,
+    get_configs: impl Fn(&CompProg) -> VecDeque<Config>,
 ) -> bool {
-    let mut configs: VecDeque<Config> = get_configs(comp).into();
+    let mut configs = get_configs(comp);
 
     if configs.is_empty() {
         return true;
@@ -131,8 +131,8 @@ fn cant_reach(
 
 /**************************************/
 
-fn halt_configs(comp: &CompProg) -> Vec<Config> {
-    let mut configs = vec![];
+fn halt_configs(comp: &CompProg) -> VecDeque<Config> {
+    let mut configs = VecDeque::new();
 
     let (max_state, max_color) = comp
         .keys()
@@ -141,7 +141,8 @@ fn halt_configs(comp: &CompProg) -> Vec<Config> {
     for state in 0..=max_state {
         for color in 0..=max_color {
             if !comp.contains_key(&(state, color)) {
-                configs.push((state, Backstepper::init_halt(color)));
+                configs
+                    .push_back((state, Backstepper::init_halt(color)));
             }
         }
     }
@@ -149,7 +150,7 @@ fn halt_configs(comp: &CompProg) -> Vec<Config> {
     configs
 }
 
-fn erase_configs(comp: &CompProg) -> Vec<Config> {
+fn erase_configs(comp: &CompProg) -> VecDeque<Config> {
     comp.iter()
         .filter_map(|(&(state, color), &instr)| match instr {
             (0, _, _) if color != 0 => {
@@ -160,7 +161,7 @@ fn erase_configs(comp: &CompProg) -> Vec<Config> {
         .collect()
 }
 
-fn zero_reflexive_configs(comp: &CompProg) -> Vec<Config> {
+fn zero_reflexive_configs(comp: &CompProg) -> VecDeque<Config> {
     comp.iter()
         .filter_map(|(&slot, &(_, shift, trans))| match slot {
             (state, 0) if trans == state => {
