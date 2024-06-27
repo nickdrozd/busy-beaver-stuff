@@ -1,5 +1,5 @@
 use core::{fmt, iter::once};
-use std::collections::{BTreeMap as Dict, HashSet as Set};
+use std::collections::{BTreeMap as Dict, HashSet as Set, VecDeque};
 
 use pyo3::pyfunction;
 
@@ -47,10 +47,11 @@ fn cant_reach(
     comp: &CompProg,
     get_configs: impl Fn(&CompProg) -> Vec<Config>,
 ) -> bool {
-    let mut configs: Vec<(u16, State, Backstepper)> = get_configs(comp)
-        .into_iter()
-        .map(|(state, tape)| (0, state, tape))
-        .collect();
+    let mut configs: VecDeque<(u16, State, Backstepper)> =
+        get_configs(comp)
+            .into_iter()
+            .map(|(state, tape)| (0, state, tape))
+            .collect();
 
     if configs.is_empty() {
         return true;
@@ -63,7 +64,7 @@ fn cant_reach(
     let entrypoints = get_entrypoints(comp);
 
     for _ in 0..max_cycles {
-        let Some((step, state, mut tape)) = configs.pop() else {
+        let Some((step, state, mut tape)) = configs.pop_front() else {
             return true;
         };
 
@@ -102,7 +103,7 @@ fn cant_reach(
 
             next_tape.backstep(shift, next_color);
 
-            configs.push((1 + step, next_state, next_tape));
+            configs.push_back((1 + step, next_state, next_tape));
         }
 
         {
@@ -123,7 +124,7 @@ fn cant_reach(
 
             tape.backstep(shift, next_color);
 
-            configs.push((1 + step, next_state, tape));
+            configs.push_back((1 + step, next_state, tape));
         }
     }
 
