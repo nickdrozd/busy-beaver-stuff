@@ -138,7 +138,11 @@ fn branch<F>(
         return;
     }
 
-    for next_instr in instrs {
+    let avail_params = (avail_states, avail_colors);
+
+    let (last_instr, instrs) = instrs.split_last().unwrap();
+
+    for &next_instr in instrs {
         prog.insert(slot, next_instr);
 
         branch(
@@ -146,7 +150,24 @@ fn branch<F>(
             prog,
             (slot_state, tape.clone()),
             sim_lim,
-            (avail_states, avail_colors),
+            avail_params,
+            params,
+            next_remaining_slots,
+            harvester,
+        );
+
+        prog.remove(&slot);
+    }
+
+    {
+        prog.insert(slot, *last_instr);
+
+        branch(
+            *last_instr,
+            prog,
+            (slot_state, tape),
+            sim_lim,
+            avail_params,
             params,
             next_remaining_slots,
             harvester,
