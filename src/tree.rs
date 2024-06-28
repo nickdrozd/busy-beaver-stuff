@@ -227,20 +227,22 @@ fn skip(comp: &CompProg, _params: Params, halt: bool) -> bool {
 }
 
 #[cfg(test)]
-fn assert_tree(params: Params, halt: u8, leaves: u64) {
-    let halt = halt != 0;
+fn assert_tree(params: Params, halt: u8, expected: u64) {
+    let halt_flag = halt != 0;
 
-    let leaf_count = set_val(0);
+    let holdout_count = set_val(0);
 
-    build_tree(params, halt, 100, &|prog| {
-        if skip(prog, params, halt) {
+    build_tree(params, halt_flag, 100, &|prog| {
+        if skip(prog, params, halt_flag) {
             return;
         }
 
-        *access(&leaf_count) += 1;
+        *access(&holdout_count) += 1;
     });
 
-    assert_eq!(get_val(leaf_count), leaves);
+    let result = get_val(holdout_count);
+
+    assert_eq!(result, expected, "({params:?}, {halt}, {result})");
 }
 
 #[cfg(test)]
