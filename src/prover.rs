@@ -34,6 +34,8 @@ impl PastConfig {
 
         self.cycles.remove(0);
 
+        // println!("{e} {d} {c} {b} {a}");
+
         for i in 1..=4 {
             let p1 = a - (b * i);
             let p2 = b - (c * i);
