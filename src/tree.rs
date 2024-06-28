@@ -123,25 +123,33 @@ fn branch<F>(
         avail_colors += 1;
     }
 
+    let instrs = make_instrs(avail_states, avail_colors);
+
     let next_remaining_slots = remaining_slots - 1;
 
-    for next_instr in make_instrs(avail_states, avail_colors) {
+    if next_remaining_slots == 0 {
+        for next_instr in instrs {
+            prog.insert(slot, next_instr);
+            leaf(prog, params, harvester);
+            prog.remove(&slot);
+        }
+
+        return;
+    }
+
+    for next_instr in instrs {
         prog.insert(slot, next_instr);
 
-        if next_remaining_slots == 0 {
-            leaf(prog, params, harvester);
-        } else {
-            branch(
-                next_instr,
-                prog,
-                (slot_state, &mut tape.clone()),
-                sim_lim,
-                (avail_states, avail_colors),
-                params,
-                next_remaining_slots,
-                harvester,
-            );
-        }
+        branch(
+            next_instr,
+            prog,
+            (slot_state, &mut tape.clone()),
+            sim_lim,
+            (avail_states, avail_colors),
+            params,
+            next_remaining_slots,
+            harvester,
+        );
 
         prog.remove(&slot);
     }
