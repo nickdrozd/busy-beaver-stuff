@@ -227,12 +227,15 @@ fn skip(comp: &CompProg, _params: Params, halt: bool) -> bool {
 }
 
 #[cfg(test)]
-fn assert_tree(params: Params, halt: u8, expected: u64) {
+fn assert_tree(params: Params, halt: u8, expected: (u64, u64)) {
     let halt_flag = halt != 0;
 
     let holdout_count = set_val(0);
+    let visited_count = set_val(0);
 
     build_tree(params, halt_flag, 100, &|prog| {
+        *access(&visited_count) += 1;
+
         if skip(prog, params, halt_flag) {
             return;
         }
@@ -240,9 +243,9 @@ fn assert_tree(params: Params, halt: u8, expected: u64) {
         *access(&holdout_count) += 1;
     });
 
-    let result = get_val(holdout_count);
+    let result = (get_val(holdout_count), get_val(visited_count));
 
-    assert_eq!(result, expected, "({params:?}, {halt}, {result})");
+    assert_eq!(result, expected, "({params:?}, {halt}, {result:?})");
 }
 
 #[cfg(test)]
@@ -250,8 +253,8 @@ macro_rules! assert_trees {
     ( $( ( $params:expr, $halt:expr, $leaves:expr ) ),* $(,)? ) => {
         {
             vec![$( ($params, $halt, $leaves) ),*]
-                .par_iter().for_each(|&(params, halt, leaves)| {
-                assert_tree(params, halt, leaves);
+                .par_iter().for_each(|&(params, halt, expected)| {
+                assert_tree(params, halt, expected);
             });
         }
     };
@@ -260,14 +263,14 @@ macro_rules! assert_trees {
 #[test]
 fn test_tree() {
     assert_trees![
-        ((2, 2), 1, 0),
-        ((2, 2), 0, 0),
+        ((2, 2), 1, (0, 36)),
+        ((2, 2), 0, (0, 106)),
         //
-        ((3, 2), 1, 26),
-        ((3, 2), 0, 51),
+        ((3, 2), 1, (26, 3_140)),
+        ((3, 2), 0, (51, 13_128)),
         //
-        ((2, 3), 1, 135),
-        ((2, 3), 0, 143),
+        ((2, 3), 1, (135, 2_447)),
+        ((2, 3), 0, (143, 9_168)),
     ];
 }
 
@@ -275,18 +278,18 @@ fn test_tree() {
 #[ignore]
 fn test_tree_slow() {
     assert_trees![
-        ((4, 2), 1, 6_769),
-        ((4, 2), 0, 16_591),
+        ((4, 2), 1, (6_769, 467_142)),
+        ((4, 2), 0, (16_591, 2_291_637)),
         //
-        ((2, 4), 1, 30_522),
-        ((2, 4), 0, 90_555),
+        ((2, 4), 1, (30_522, 312_627)),
+        ((2, 4), 0, (90_555, 1_718_772)),
         //
-        ((5, 2), 1, 3_241_166),
+        ((5, 2), 1, (3_241_166, 95_309_237)),
         //
-        ((2, 5), 1, 13_068_856),
+        ((2, 5), 1, (13_068_856, 70_004_752)),
         //
-        ((3, 3), 1, 2_253_979),
-        ((3, 3), 0, 5_986_467),
+        ((3, 3), 1, (2_253_979, 25_305_355)),
+        ((3, 3), 0, (5_986_467, 149_297_456)),
     ];
 }
 
