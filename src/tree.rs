@@ -137,7 +137,7 @@ fn branch<F>(
                 (slot_state, &mut tape.clone()),
                 sim_lim,
                 (avail_states, avail_colors),
-                (max_states, max_colors),
+                params,
                 next_remaining_slots,
                 harvester,
             );
