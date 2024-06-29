@@ -108,13 +108,10 @@ class TestTree(TestCase):
                 str,
                 tuple[int, str]],
     ):
-        for cat, (exp_step, exp_prog) in expected.items():
-            res_step, res_prog = RESULTS[cat]
-
-            self.assertEqual(res_step, exp_step)
-
-            self.assertTrue(
-                res_prog == exp_prog)
+        for cat, exp in expected.items():
+            self.assertEqual(
+                exp,
+                RESULTS[cat])
 
     def assert_cant_terminate(self) -> None:
         for prog in self.progs:
