@@ -324,10 +324,17 @@ fn test_tree_slow() {
 }
 
 #[test]
-fn test_progs() {
+fn test_print() {
+    let halt = 0;
     let params = (3, 2);
 
-    build_tree(params, true, 100, &|comp| {
+    let halt = halt != 0;
+
+    build_tree(params, halt, 300, &|comp| {
+        if skip(comp, params, halt) {
+            return;
+        }
+
         println!("{}", show_comp(comp, Some(params)));
     });
 }
