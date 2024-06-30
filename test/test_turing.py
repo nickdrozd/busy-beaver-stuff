@@ -309,6 +309,13 @@ class Reason(TuringTest):
                 self.assert_cant_blank(prog)
                 self.assert_cant_spin_out(prog)
 
+    def test_unreasonable(self):
+        self.assertEqual(
+            UNREASONABLE,
+            CANT_HALT_FALSE_NEGATIVES
+                & CANT_BLANK_FALSE_NEGATIVES
+                & CANT_SPIN_OUT_FALSE_NEGATIVES)
+
 
 class Simple(TuringTest):
     machine: QuickMachineResult
