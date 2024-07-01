@@ -295,6 +295,12 @@ pub struct HeadTape {
     tape: BasicTape,
 }
 
+impl Display for HeadTape {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "({}) {}", self.head, self.tape)
+    }
+}
+
 impl HeadTape {
     pub fn init_stepped() -> Self {
         Self {
