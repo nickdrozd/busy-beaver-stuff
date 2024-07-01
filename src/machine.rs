@@ -7,7 +7,7 @@ use crate::{
     parse::tcompile,
     prover::{Prover, ProverResult},
     rules::apply_rule,
-    tape::{BasicTape as Tape, Count, HeadTape},
+    tape::{Alignment, BasicTape as Tape, Count, HeadTape},
 };
 
 type Step = u64;
@@ -386,8 +386,10 @@ pub fn quick_term_or_rec(
 
     let mut tape = HeadTape::init_stepped();
 
+    let head = tape.head();
+
     let (mut ref_state, mut ref_tape, mut leftmost, mut rightmost) =
-        (state, tape.clone(), tape.head, tape.head);
+        (state, tape.clone(), head, head);
 
     let mut reset = 1;
 
@@ -411,7 +413,7 @@ pub fn quick_term_or_rec(
         if reset == 0 {
             ref_state = curr_state;
             ref_tape = tape.clone();
-            let head = ref_tape.head;
+            let head = ref_tape.head();
             leftmost = head;
             rightmost = head;
             reset = cycle;
@@ -421,7 +423,7 @@ pub fn quick_term_or_rec(
 
         tape.step(shift, color, same);
 
-        let curr = tape.head;
+        let curr = tape.head();
 
         if curr < leftmost {
             leftmost = curr;

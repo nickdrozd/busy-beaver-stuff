@@ -355,10 +355,9 @@ impl<B: Block> IndexTape for Tape<B> {
 type Pos = isize;
 type TapeSlice = Vec<Color>;
 
-#[expect(clippy::partial_pub_fields)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct HeadTape {
-    pub head: Pos,
+    head: Pos,
     tape: BasicTape,
 }
 
@@ -374,10 +373,6 @@ impl HeadTape {
             head: 1,
             tape: tape! { 0, [(1, 1)], [] },
         }
-    }
-
-    pub const fn scan(&self) -> Color {
-        self.tape.scan
     }
 
     pub fn at_edge(&self, edge: Shift) -> bool {
@@ -401,8 +396,14 @@ impl HeadTape {
 
         stepped
     }
+}
 
-    pub fn aligns_with(
+pub trait Alignment {
+    fn scan(&self) -> Color;
+    fn head(&self) -> Pos;
+    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice;
+
+    fn aligns_with(
         &self,
         prev: &Self,
         leftmost: Pos,
@@ -412,7 +413,7 @@ impl HeadTape {
             return false;
         }
 
-        let diff = self.head - prev.head;
+        let diff = self.head() - prev.head();
 
         #[expect(clippy::comparison_chain)]
         let (slice1, slice2) = if diff > 0 {
@@ -429,11 +430,43 @@ impl HeadTape {
         slice1 == slice2
     }
 
+    fn get_ltr(&self, start: Pos) -> TapeSlice {
+        self.get_slice(start, true)
+    }
+
+    fn get_rtl(&self, start: Pos) -> TapeSlice {
+        self.get_slice(start, false)
+    }
+
+    fn get_cnt(&self, start: Pos, stop: Pos) -> TapeSlice {
+        let head = self.head();
+
+        assert!(start <= head && head <= stop);
+
+        if start == head {
+            self.get_ltr(start)
+        } else if head == stop {
+            self.get_rtl(start)
+        } else {
+            [self.get_rtl(head - 1), self.get_ltr(head)].concat()
+        }
+    }
+}
+
+impl Alignment for HeadTape {
+    fn scan(&self) -> Color {
+        self.tape.scan
+    }
+
+    fn head(&self) -> Pos {
+        self.head
+    }
+
     fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
         let (lspan, rspan, diff) = if ltr {
-            (&self.tape.lspan, &self.tape.rspan, self.head - start)
+            (&self.tape.lspan, &self.tape.rspan, self.head() - start)
         } else {
-            (&self.tape.rspan, &self.tape.lspan, start - self.head)
+            (&self.tape.rspan, &self.tape.lspan, start - self.head())
         };
 
         let mut tape = TapeSlice::new();
@@ -459,28 +492,6 @@ impl HeadTape {
         }
 
         tape
-    }
-
-    fn get_ltr(&self, start: Pos) -> TapeSlice {
-        self.get_slice(start, true)
-    }
-
-    fn get_rtl(&self, start: Pos) -> TapeSlice {
-        self.get_slice(start, false)
-    }
-
-    fn get_cnt(&self, start: Pos, stop: Pos) -> TapeSlice {
-        let head = self.head;
-
-        assert!(start <= head && head <= stop);
-
-        if start == head {
-            self.get_ltr(start)
-        } else if head == stop {
-            self.get_rtl(start)
-        } else {
-            [self.get_rtl(head - 1), self.get_ltr(head)].concat()
-        }
     }
 }
 
