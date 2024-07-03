@@ -245,14 +245,29 @@ pub fn tree_progs(
 /**************************************/
 
 #[cfg(test)]
-use crate::{
-    machine::quick_term_or_rec,
-    reason::{cant_halt, cant_spin_out},
+use {
+    crate::{
+        machine::quick_term_or_rec,
+        reason::{cant_halt, cant_spin_out},
+    },
+    std::collections::BTreeSet as Set,
 };
 
 #[cfg(test)]
-fn skip(comp: &CompProg, _params: Params, halt: bool) -> bool {
-    quick_term_or_rec(comp, 50, true)
+fn incomplete(comp: &CompProg, params: Params) -> bool {
+    let (states, colors) = params;
+
+    let (used_states, used_colors): (Set<State>, Set<Color>) =
+        comp.values().map(|(pr, _, tr)| (tr, pr)).unzip();
+
+    used_states.len() != states as usize
+        || used_colors.len() != colors as usize
+}
+
+#[cfg(test)]
+fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
+    incomplete(comp, params)
+        || quick_term_or_rec(comp, 50, true)
         || if halt { cant_halt } else { cant_spin_out }(comp)
 }
 
@@ -296,11 +311,11 @@ fn test_tree() {
         ((2, 2), 1, (0, 36)),
         ((2, 2), 0, (0, 106)),
         //
-        ((3, 2), 1, (26, 3_140)),
-        ((3, 2), 0, (51, 13_128)),
+        ((3, 2), 1, (21, 3_140)),
+        ((3, 2), 0, (44, 13_128)),
         //
-        ((2, 3), 1, (135, 2_447)),
-        ((2, 3), 0, (143, 9_168)),
+        ((2, 3), 1, (85, 2_447)),
+        ((2, 3), 0, (117, 9_168)),
     ];
 }
 
@@ -308,20 +323,20 @@ fn test_tree() {
 #[ignore]
 fn test_tree_slow() {
     assert_trees![
-        ((4, 2), 1, (6_769, 467_142)),
-        ((4, 2), 0, (16_591, 2_291_637)),
+        ((4, 2), 1, (6_329, 467_142)),
+        ((4, 2), 0, (15_968, 2_291_637)),
         //
-        ((2, 4), 1, (30_537, 312_642)),
-        ((2, 4), 0, (90_625, 1_719_237)),
+        ((2, 4), 1, (19_987, 312_642)),
+        ((2, 4), 0, (70_614, 1_719_237)),
         //
-        ((5, 2), 1, (3_241_609, 95_310_168)),
-        // ((5, 2), 0, (8_432_447, 534_798_275)),
+        ((5, 2), 1, (3_188_444, 95_310_168)),
+        // ((5, 2), 0, (8_302_219, 534_798_275)),
         //
-        ((2, 5), 1, (13_092_636, 70_028_531)),
-        // ((2, 5), 0, (60_254_590, 515_051_756)),
+        ((2, 5), 1, (9_551_762, 70_028_531)),
+        // ((2, 5), 0, (45_934_961, 515_051_756)),
         //
-        ((3, 3), 1, (2_254_846, 25_306_222)),
-        ((3, 3), 0, (5_996_298, 149_365_898)),
+        ((3, 3), 1, (2_029_404, 25_306_222)),
+        ((3, 3), 0, (5_710_117, 149_365_898)),
     ];
 }
 
