@@ -2,6 +2,7 @@ use core::{
     cmp::{max, min},
     fmt::Debug,
 };
+
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use pyo3::pyfunction;

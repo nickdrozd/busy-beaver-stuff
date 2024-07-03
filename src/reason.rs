@@ -1,4 +1,5 @@
 use core::{fmt, iter::once};
+
 use std::collections::{BTreeMap as Dict, HashSet as Set, VecDeque};
 
 use pyo3::pyfunction;
