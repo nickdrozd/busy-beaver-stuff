@@ -220,8 +220,10 @@ def make_rule(*countses: Counts) -> Rule | None:
             except UnknownRule:
                 return None
 
-            if diff is not None:
-                rule[s, i] = diff
+            if diff is None:
+                continue
+
+            rule[s, i] = diff
 
     if all(diff >= 0
            for diff in rule.values()
