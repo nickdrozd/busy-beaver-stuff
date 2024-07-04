@@ -14,7 +14,7 @@ type Blanks = Dict<State, Step>;
 
 /**************************************/
 
-#[allow(non_camel_case_types)]
+#[expect(non_camel_case_types)]
 #[pyclass(eq, eq_int)]
 #[derive(Clone, PartialEq, Eq)]
 pub enum TermRes {

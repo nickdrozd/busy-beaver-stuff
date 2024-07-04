@@ -1,7 +1,9 @@
+#[cfg(test)]
 use std::collections::BTreeMap as Dict;
 
 use pyo3::{create_exception, exceptions::PyException};
 
+#[cfg(test)]
 use crate::tape::{Count, Index, IndexTape};
 
 /**************************************/
@@ -12,17 +14,21 @@ create_exception!(rules, RuleLimit, PyException);
 
 /**************************************/
 
+#[cfg(test)]
 pub type Diff = i32;
 
+#[cfg(test)]
 #[derive(PartialEq, Eq)]
 pub enum Op {
     Plus(Diff),
 }
 
+#[cfg(test)]
 pub type Rule = Dict<Index, Op>;
 
 /**************************************/
 
+#[cfg(test)]
 fn count_apps(
     rule: &Rule,
     tape: &impl IndexTape,
@@ -60,6 +66,7 @@ fn count_apps(
     apps
 }
 
+#[cfg(test)]
 pub fn apply_rule(
     rule: &Rule,
     tape: &mut impl IndexTape,
@@ -84,6 +91,7 @@ pub fn apply_rule(
     Some(times)
 }
 
+#[cfg(test)]
 fn apply_plus(count: Count, diff: Diff, times: Count) -> Count {
     let diff: Count = diff.unsigned_abs().into();
 

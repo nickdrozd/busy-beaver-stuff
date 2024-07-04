@@ -88,7 +88,6 @@ fn leaf<F>(
     harvester(prog);
 }
 
-#[allow(clippy::too_many_arguments)]
 fn branch<F>(
     instr: Instr,
     prog: &mut CompProg,

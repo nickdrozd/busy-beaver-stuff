@@ -104,7 +104,7 @@ fn read_instr(instr: &str) -> Option<Instr> {
 
 #[pyfunction]
 #[pyo3(signature = (comp, params=None))]
-#[allow(clippy::needless_pass_by_value)]
+#[expect(clippy::needless_pass_by_value)]
 pub fn show_comp_py(comp: CompProg, params: Option<Params>) -> String {
     show_comp(&comp, params)
 }

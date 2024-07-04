@@ -261,11 +261,13 @@ impl<B: Block> Tape<B> {
 
 pub type Index = (Shift, usize);
 
+#[cfg(test)]
 pub trait IndexTape {
     fn get_count(&self, index: &Index) -> Count;
     fn set_count(&mut self, index: &Index, val: Count);
 }
 
+#[cfg(test)]
 impl<B: Block> IndexTape for Tape<B> {
     fn get_count(&self, &(side, pos): &Index) -> Count {
         let span = if side { &self.rspan } else { &self.lspan };
@@ -342,7 +344,7 @@ impl HeadTape {
     ) -> bool {
         let diff = self.head - prev.head;
 
-        #[allow(clippy::comparison_chain)]
+        #[expect(clippy::comparison_chain)]
         let (slice1, slice2) = if diff > 0 {
             (prev.get_ltr(leftmost), self.get_ltr(leftmost + diff))
         } else if diff < 0 {
@@ -367,7 +369,7 @@ impl HeadTape {
         let mut tape = TapeSlice::new();
 
         if diff > 0 {
-            #[allow(clippy::cast_sign_loss)]
+            #[expect(clippy::cast_sign_loss)]
             let mut remaining = diff as Count;
             for block in lspan {
                 let count = block.count.min(remaining);
@@ -581,6 +583,7 @@ impl EnumTape {
     }
 }
 
+#[cfg(test)]
 impl IndexTape for EnumTape {
     fn get_count(&self, index: &Index) -> Count {
         self.tape.get_count(index)
@@ -590,8 +593,6 @@ impl IndexTape for EnumTape {
         self.tape.set_count(index, val);
     }
 }
-
-/**************************************/
 
 /**************************************/
 

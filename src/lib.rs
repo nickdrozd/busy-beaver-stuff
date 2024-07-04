@@ -4,15 +4,12 @@
     clippy::pedantic,
     clippy::get_unwrap,
     clippy::str_to_string,
+    clippy::allow_attributes,
     clippy::std_instead_of_core,
-    // clippy::std_instead_of_alloc,
-    // clippy::pattern_type_mismatch,
     clippy::if_then_some_else_none,
     clippy::redundant_type_annotations
 )]
-#![allow(
-    dead_code,
-    non_local_definitions,
+#![expect(
     clippy::if_not_else,
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,

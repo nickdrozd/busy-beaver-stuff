@@ -17,7 +17,7 @@ impl PastConfig {
         }
     }
 
-    #[allow(clippy::many_single_char_names)]
+    #[expect(clippy::many_single_char_names)]
     pub fn next_deltas(
         &mut self,
         cycle: Cycle,
