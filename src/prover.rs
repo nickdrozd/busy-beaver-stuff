@@ -4,7 +4,7 @@ use pyo3::{pyclass, pymethods};
 
 use crate::instrs::State;
 
-type Cycle = u32;
+type Cycle = i32;
 
 struct PastConfig {
     cycles: Vec<Cycle>,
