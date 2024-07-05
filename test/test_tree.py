@@ -370,6 +370,8 @@ def capture_24(prog: str) -> None:
 
 ########################################
 
+MAXINF_42Q = 12_262
+
 def capture_42q(prog: str) -> None:
     if 'D' not in prog:
         return
@@ -384,7 +386,7 @@ def capture_42q(prog: str) -> None:
         prog,
         opt_macro = 1_000,
         params = PARAMS_42,
-    ).run(10_000)
+    ).run(MAXINF_42Q)
 
     if machine.simple_termination or machine.infrul:
         return
@@ -443,5 +445,5 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            115,
+            102,
             'holdouts_42q')
