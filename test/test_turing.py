@@ -1005,36 +1005,6 @@ class Prover(RunProver):
                 str(self.machine.limrul).startswith(reason))
 
     def test_prover_false_positive(self):
-        self.run_bb(
-            "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
-            analyze = False)
-
-        self.assert_marks(237)
-        self.assert_cycles(546)
-
-        ########################################
-
-        prog = "1RB 0RD  1LC 0RA  1LA 1LB  ... 0RC"
-
-        self.run_bb(
-            prog,
-            normal = False,
-        )
-
-        self.assertIsNotNone(
-            self.machine.undfnd)
-
-        self.run_bb(
-            prog,
-            backsym = 1,
-            normal = False,
-        )
-
-        self.assertIsNone(
-            self.machine.undfnd)
-
-        ########################################
-
         prog = "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE"
 
         for backsym in range(0, 7):
@@ -1139,9 +1109,9 @@ class Prover(RunProver):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 109837,
-            "divs": 13610,
-            "exps": 110582,
-            "muls": 11607,
-            "totl": 245636,
+            "adds": 109769,
+            "divs": 13612,
+            "exps": 110575,
+            "muls": 11595,
+            "totl": 245551,
         })

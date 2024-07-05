@@ -143,6 +143,14 @@ class Prover:
         if (rule := make_rule(tape.counts, *counts)) is None:
             return None
 
+        if (len(rule) == 2
+                and tape.span_lens == (1, 1)
+                and all(isinstance(val, int) for val in rule.values())
+                and len(set(
+                    abs(val) for val in rule.values()
+                    if isinstance(val, int))) == 1):
+            return None
+
         past_configs.delete_configs(state)
 
         self.set_rule(

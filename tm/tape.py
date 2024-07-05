@@ -89,6 +89,10 @@ class Tape:
         )
 
     @property
+    def span_lens(self) -> tuple[int, int]:
+        return len(self.lspan), len(self.rspan)
+
+    @property
     def counts(self) -> Counts:
         return (
             [block.count for block in self.lspan],

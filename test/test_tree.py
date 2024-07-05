@@ -309,7 +309,7 @@ class Fast(TestTree):
 ########################################
 
 PARAMS_42 = 4, 2
-MAXINF_42H = 13_690
+MAXINF_42H = 12_586
 
 def capture_42h(prog: str) -> None:
     if 'D' not in prog:
@@ -370,7 +370,7 @@ def capture_24(prog: str) -> None:
 
 ########################################
 
-MAXINF_42Q = 12_262
+MAXINF_42Q = 13_977
 
 def capture_42q(prog: str) -> None:
     if 'D' not in prog:
@@ -417,7 +417,7 @@ class Slow(TestTree):
             'spnout': (171, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'halted': (107, "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA"),
             # pylint: disable = line-too-long
-            'infrul': (MAXINF_42H, "1RB 0LD  1LC 1RA  ... 1LA  0RA 1LD"),
+            'infrul': (MAXINF_42H, "1RB 0LD  0LC 1RA  ... 1LA  0RA 1LD"),
         })
 
         self.assert_simple_and_connected()
