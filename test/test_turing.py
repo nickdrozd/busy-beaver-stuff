@@ -287,7 +287,7 @@ class Reason(TuringTest):
             self.assert_cant_spin_out(prog)
 
     def test_recur(self):
-        for prog in RECURS | INFRUL:
+        for prog in RECURS | INFRUL | set(ALGEBRA['infrul']):
             self.assert_cant_halt(prog)
             self.assert_cant_spin_out(prog)
 
@@ -991,6 +991,16 @@ class Prover(RunProver):
                 self.assertIn(
                     prog,
                     SUSPECTED_RULES)
+
+    def test_infrul(self):
+        for prog in INFRUL:
+            self.run_bb(
+                prog,
+                opt_macro = 400,
+                normal = False)
+
+            self.assertIsNotNone(
+                self.machine.infrul)
 
     def test_rule_limit(self):
         for prog, reason in RULE_LIMIT.items():

@@ -892,6 +892,9 @@ KERNEL = {
     "1RB 1RC  1LC 0LD  0RA 1LB  1RD 0LA": 3,
     "1RB 0LC  1RD 0RA  0LB 0LA  1LC 0RA": 3,
     "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA": 3,
+    "1RB 0LD  1LC 0RA  1LA 1LB  1LD 0LC": 3,
+    "1RB 1RC  1LC 0LD  1RA 0LB  ... 0LA": 3,
+    "1RB 1RC  1LC 0RD  1RA 0LB  1RD 0RA": 3,
 
     # Quasihalt
     "1RB 0LC  1RC 1LD  1RD 0RB  0LB 1LA": 3,
@@ -2197,7 +2200,7 @@ ALGEBRA_PROGS = {
     for prog in progs
 }
 
-INFRUL: set[str] = set(ALGEBRA['infrul']) | {
+INFRUL: set[str] = {
     "1RB 1LA  0LA 0RB",
 
     "1RB 0LA ...  1LB 2LA 0RB",
