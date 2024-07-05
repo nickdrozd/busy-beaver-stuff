@@ -1009,6 +1009,7 @@ CANT_BLANK_MAX_STEPS: set[str] = {
 CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1LB  1LA 0RB",
     "1RB 0LB  1LA 0RB",
+    "1RB 1LA  0LA 0RB",
 
     "1RB ...  0LC 0RB  1LC 1LA",
     "1RB 0RA  0RC ...  1LC 0LA",
@@ -1110,6 +1111,7 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 0LA  0RC 1LA  1RD 0RD  1LB 1RB",
     "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
     "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
+    "1RB 1LA  0LA 1LC  0LD 0LC  1RD 1RB",
 
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA",
@@ -1250,6 +1252,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB",
     "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
     "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
+    "1RB 1LA  0LA 1LC  0LD 0LC  1RD 1RB",
 
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA",
     "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA",
@@ -2188,15 +2191,21 @@ ALGEBRA_PROGS = {
 }
 
 INFRUL: set[str] = set(ALGEBRA['infrul']) | {
+    "1RB 1LA  0LA 0RB",
+
     "1RB 0LA ...  1LB 2LA 0RB",
+    "1RB 2LA 0RB  1LB 1LA 1RA",
 
     "1RB ...  0LC 0RB  1LC 1LA",
+    "1RB 1LA  0LB 1RC  1LA 0RB",
 
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
 
     "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
     "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
     "1RB 1RC  1LC 0LD  1RA 0LB  ... 0LA",
+    "1RB 0LD  1LC 1RA  ... 1LA  0RA 1LD",
+    "1RB 1LA  0LA 1LC  0LD 0LC  1RD 1RB",
 }
 
 HALTERS = set(
