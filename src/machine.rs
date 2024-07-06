@@ -373,11 +373,6 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
 
 /**************************************/
 
-#[pyfunction]
-pub fn quick_term_or_rec_py(prog: &str, sim_lim: u32) -> bool {
-    quick_term_or_rec(&tcompile(prog), sim_lim, false)
-}
-
 pub fn quick_term_or_rec(
     comp: &CompProg,
     sim_lim: u32,

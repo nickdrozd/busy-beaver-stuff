@@ -2,29 +2,7 @@ use core::{fmt, iter::once};
 
 use std::collections::{BTreeMap as Dict, HashSet as Set, VecDeque};
 
-use pyo3::pyfunction;
-
-use crate::{
-    instrs::{Color, CompProg, Instr, Shift, Slot, State},
-    parse::tcompile,
-};
-
-/**************************************/
-
-#[pyfunction]
-pub fn cant_halt_py(prog: &str) -> bool {
-    cant_halt(&tcompile(prog))
-}
-
-#[pyfunction]
-pub fn cant_blank_py(prog: &str) -> bool {
-    cant_blank(&tcompile(prog))
-}
-
-#[pyfunction]
-pub fn cant_spin_out_py(prog: &str) -> bool {
-    cant_spin_out(&tcompile(prog))
-}
+use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
 
 /**************************************/
 
@@ -196,6 +174,9 @@ fn get_entrypoints(comp: &CompProg) -> Dict<State, Vec<(Slot, Instr)>> {
 
     entrypoints
 }
+
+#[cfg(test)]
+use crate::parse::tcompile;
 
 #[test]
 fn test_entrypoints() {

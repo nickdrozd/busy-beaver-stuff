@@ -27,23 +27,75 @@ mod rules;
 mod tape;
 mod tree;
 
+/**************************************/
+
+mod wrappers {
+    use pyo3::pyfunction;
+
+    use crate::{
+        blocks::opt_block,
+        instrs::{CompProg, Params},
+        machine::quick_term_or_rec,
+        parse::{show_comp, tcompile},
+        reason::{cant_blank, cant_halt, cant_spin_out},
+    };
+
+    #[pyfunction]
+    pub fn py_cant_halt(prog: &str) -> bool {
+        cant_halt(&tcompile(prog))
+    }
+
+    #[pyfunction]
+    pub fn py_cant_blank(prog: &str) -> bool {
+        cant_blank(&tcompile(prog))
+    }
+
+    #[pyfunction]
+    pub fn py_cant_spin_out(prog: &str) -> bool {
+        cant_spin_out(&tcompile(prog))
+    }
+
+    #[pyfunction]
+    pub fn py_opt_block(prog: &str, steps: usize) -> usize {
+        opt_block(&tcompile(prog), steps)
+    }
+
+    #[pyfunction]
+    pub fn py_quick_term_or_rec(prog: &str, sim_lim: u32) -> bool {
+        quick_term_or_rec(&tcompile(prog), sim_lim, false)
+    }
+
+    #[pyfunction]
+    #[pyo3(signature = (comp, params=None))]
+    #[expect(clippy::needless_pass_by_value)]
+    pub fn py_show_comp(
+        comp: CompProg,
+        params: Option<Params>,
+    ) -> String {
+        show_comp(&comp, params)
+    }
+}
+
+/**************************************/
+
 use pyo3::pymodule;
 
 #[pymodule]
 mod rust_stuff {
     #[pymodule_export]
     use crate::{
-        blocks::opt_block_py,
         machine::{
-            quick_term_or_rec_py, run_prover, run_quick_machine,
-            MachineResult, TermRes,
+            run_prover, run_quick_machine, MachineResult, TermRes,
         },
         parse::{
-            read_instr, read_slot, show_comp_py, show_instr, show_slot,
-            show_state, tcompile,
+            read_instr, read_slot, show_instr, show_slot, show_state,
+            tcompile,
         },
         prover::PastConfigs,
-        reason::{cant_blank_py, cant_halt_py, cant_spin_out_py},
         tree::tree_progs,
+        wrappers::{
+            py_cant_blank, py_cant_halt, py_cant_spin_out,
+            py_opt_block, py_quick_term_or_rec, py_show_comp,
+        },
     };
 }

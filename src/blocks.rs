@@ -1,8 +1,5 @@
-use pyo3::pyfunction;
-
 use crate::{
     instrs::{Color, CompProg, Shift},
-    parse::tcompile,
     tape::BasicTape,
 };
 
@@ -110,9 +107,4 @@ pub fn opt_block(comp: &CompProg, steps: usize) -> usize {
     }
 
     opt_size
-}
-
-#[pyfunction]
-pub fn opt_block_py(prog: &str, steps: usize) -> usize {
-    opt_block(&tcompile(prog), steps)
 }

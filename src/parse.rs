@@ -98,13 +98,6 @@ pub fn read_instr(instr: &str) -> Option<Instr> {
     Some((read_color(color), read_shift(shift), read_state(state)))
 }
 
-#[pyfunction]
-#[pyo3(signature = (comp, params=None))]
-#[expect(clippy::needless_pass_by_value)]
-pub fn show_comp_py(comp: CompProg, params: Option<Params>) -> String {
-    show_comp(&comp, params)
-}
-
 pub fn show_comp(comp: &CompProg, params: Option<Params>) -> String {
     let (max_state, max_color) = params.unwrap_or_else(|| {
         let (ms, mx) = comp.iter().fold(
