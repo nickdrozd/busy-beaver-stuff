@@ -19,11 +19,6 @@ pub fn parse(
 }
 
 #[pyfunction]
-pub fn parse_to_vec(prog: &str) -> Vec<Vec<Option<Instr>>> {
-    parse(prog).map(Iterator::collect).collect()
-}
-
-#[pyfunction]
 pub fn tcompile(prog: &str) -> CompProg {
     parse(prog)
         .enumerate()
@@ -89,7 +84,8 @@ pub fn show_instr(instr: Option<Instr>) -> String {
     }
 }
 
-fn read_instr(instr: &str) -> Option<Instr> {
+#[pyfunction]
+pub fn read_instr(instr: &str) -> Option<Instr> {
     if instr.contains(UNDF) {
         return None;
     }
@@ -161,18 +157,6 @@ fn test_instr() {
     for instr in instrs {
         assert_eq!(instr, show_instr(read_instr(instr)));
     }
-}
-
-#[test]
-fn test_parse() {
-    assert_eq!(
-        vec![
-            vec![Some((1, true, 1)), None],
-            vec![Some((1, false, 1)), Some((0, true, 2))],
-            vec![Some((1, false, 2)), Some((1, false, 0))],
-        ],
-        parse_to_vec("1RB ...  1LB 0RC  1LC 1LA"),
-    );
 }
 
 #[test]
