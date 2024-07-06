@@ -200,8 +200,8 @@ impl<B: Block> Tape<B> {
                 .sum::<Count>()
     }
 
-    pub fn blocks(&self) -> Count {
-        (self.lspan.len() + self.rspan.len()) as Count
+    pub fn blocks(&self) -> usize {
+        self.lspan.len() + self.rspan.len()
     }
 
     pub fn counts(&self) -> Counts {
