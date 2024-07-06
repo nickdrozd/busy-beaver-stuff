@@ -3,7 +3,6 @@
 from tm.rust_stuff import (
     tcompile,
     read_slot,
-    init_prog,
 )
 
 Color = int

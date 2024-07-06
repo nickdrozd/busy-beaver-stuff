@@ -136,20 +136,6 @@ pub fn show_comp(comp: &CompProg, params: Option<Params>) -> String {
 
 /**************************************/
 
-#[pyfunction]
-pub fn init_prog(states: usize, colors: usize) -> String {
-    let mut prog = vec![vec!["..."; colors]; states];
-
-    prog[0][0] = "1RB";
-
-    prog.iter()
-        .map(|state| state.join(" "))
-        .collect::<Vec<String>>()
-        .join("  ")
-}
-
-/**************************************/
-
 #[test]
 fn test_state() {
     let states = ['A', 'B', 'C'];
@@ -187,20 +173,6 @@ fn test_parse() {
         ],
         parse_to_vec("1RB ...  1LB 0RC  1LC 1LA"),
     );
-}
-
-#[test]
-fn test_init() {
-    let inits = [
-        (2, 3, "1RB ... ...  ... ... ..."),
-        (3, 2, "1RB ...  ... ...  ... ..."),
-        (2, 4, "1RB ... ... ...  ... ... ... ..."),
-        (4, 2, "1RB ...  ... ...  ... ...  ... ..."),
-    ];
-
-    for (states, colors, expected) in inits {
-        assert_eq!(init_prog(states, colors), expected);
-    }
 }
 
 #[test]

@@ -51,8 +51,6 @@ def show_comp_py(
         params: Params | None = None,
 ) -> str: ...
 
-def init_prog(states: int, colors: int) -> str: ...
-
 ## machine #############################
 
 class TermRes(Enum):

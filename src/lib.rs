@@ -39,8 +39,8 @@ mod rust_stuff {
             MachineResult, TermRes,
         },
         parse::{
-            init_prog, parse_to_vec, read_slot, show_comp_py,
-            show_instr, show_slot, show_state, tcompile,
+            parse_to_vec, read_slot, show_comp_py, show_instr,
+            show_slot, show_state, tcompile,
         },
         prover::PastConfigs,
         reason::{cant_blank_py, cant_halt_py, cant_spin_out_py},

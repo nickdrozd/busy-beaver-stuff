@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from tools import parse
 from tm.show import show_instr
-from tm.parse import init_prog
 
 if TYPE_CHECKING:
     from typing import Self
@@ -26,6 +25,17 @@ def expand(prog: str) -> str:
          ])
         for state in prog.strip().split('_')
     ])
+
+
+def init_prog(states: int, colors: int) -> str:
+    prog = [
+        ["..." for _ in range(colors)]
+        for _ in range(states)
+    ]
+
+    prog[0][0] = "1RB"
+
+    return '  '.join(' '.join(state) for state in prog)
 
 
 def normalize(prog: str) -> str:
