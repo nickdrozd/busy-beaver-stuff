@@ -1,14 +1,6 @@
 use std::collections::BTreeMap as Dict;
 
-use pyo3::{create_exception, exceptions::PyException};
-
 use crate::tape::{Count, Counts, Index, IndexTape};
-
-/**************************************/
-
-create_exception!(rules, UnknownRule, PyException);
-create_exception!(rules, InfiniteRule, PyException);
-create_exception!(rules, RuleLimit, PyException);
 
 /**************************************/
 

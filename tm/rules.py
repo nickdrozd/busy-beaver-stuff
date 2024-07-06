@@ -8,8 +8,8 @@ from tm.num import (
     Add, Mul, Div, Exp,
     ExpModLimit, ModDepthLimit,
 )
-from tm.rust_stuff import RuleLimit, UnknownRule, InfiniteRule
 
+########################################
 
 Plus = int
 
@@ -31,12 +31,22 @@ if TYPE_CHECKING:
 RULE_DESCENT: int = 50
 
 
+class RuleLimit(Exception):
+    pass
+
+class UnknownRule(Exception):
+    pass
+
+class InfiniteRule(Exception):
+    pass
+
 class SuspectedRule(Exception):
     pass
 
 
 POSSIBLE_RULE_PAIRS = (3, 2), (5, 3), (5, 2), (5, 4), (4, 3)
 
+########################################
 
 def calculate_diff(*counts: Count) -> Op | None:
     count_1, *rest = counts

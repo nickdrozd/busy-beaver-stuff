@@ -44,7 +44,6 @@ mod rust_stuff {
         },
         prover::PastConfigs,
         reason::{cant_blank_py, cant_halt_py, cant_spin_out_py},
-        rules::{InfiniteRule, RuleLimit, UnknownRule},
         tree::tree_progs,
     };
 }
