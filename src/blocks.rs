@@ -91,15 +91,12 @@ fn compr_eff(tape: &[Color], k: usize) -> usize {
     compr_size
 }
 
-#[pyfunction]
-pub fn opt_block(prog: &str, steps: usize) -> usize {
-    let comp = tcompile(prog);
-
-    let Some(max_blocks_step) = measure_blocks(&comp, steps) else {
+pub fn opt_block(comp: &CompProg, steps: usize) -> usize {
+    let Some(max_blocks_step) = measure_blocks(comp, steps) else {
         return 1;
     };
 
-    let tape = unroll_tape(&comp, max_blocks_step);
+    let tape = unroll_tape(comp, max_blocks_step);
 
     let mut opt_size = 1;
     let mut min_comp = 1 + tape.len();
@@ -113,4 +110,9 @@ pub fn opt_block(prog: &str, steps: usize) -> usize {
     }
 
     opt_size
+}
+
+#[pyfunction]
+pub fn opt_block_py(prog: &str, steps: usize) -> usize {
+    opt_block(&tcompile(prog), steps)
 }

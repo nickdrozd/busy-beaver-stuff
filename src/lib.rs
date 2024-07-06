@@ -33,7 +33,7 @@ use pyo3::pymodule;
 mod rust_stuff {
     #[pymodule_export]
     use crate::{
-        blocks::opt_block,
+        blocks::opt_block_py,
         machine::{
             quick_term_or_rec_py, run_prover, run_quick_machine,
             MachineResult, TermRes,

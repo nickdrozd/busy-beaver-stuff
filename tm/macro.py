@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from tm.show import show_comp
 from tm.parse import tcompile
-from tm.rust_stuff import opt_block
+from tm.rust_stuff import opt_block_py as opt_block
 
 if TYPE_CHECKING:
     from tm.parse import Color, State, Slot, Instr, CompProg, Params

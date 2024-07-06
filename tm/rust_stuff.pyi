@@ -119,7 +119,7 @@ Rule = dict[Index, Op]
 
 ## blocks ##############################
 
-def opt_block(prog: str, steps: int) -> int: ...
+def opt_block_py(prog: str, steps: int) -> int: ...
 
 ## reason ##############################
 
