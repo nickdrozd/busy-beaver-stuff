@@ -124,14 +124,14 @@ class TestTree(TestCase):
     def assert_cant_terminate(self) -> None:
         for prog in self.progs:
             self.assertTrue(
-                cant_halt(prog))
+                cant_halt(prog, 0))
 
             if prog not in CANT_BLANK_FALSE_NEGATIVES:
                 self.assertTrue(
-                    cant_blank(prog))
+                    cant_blank(prog, 2))
 
             self.assertTrue(
-                cant_spin_out(prog))
+                cant_spin_out(prog, 3))
 
     def assert_simple_and_connected(self) -> None:
         for graph in map(Graph, self.progs):
@@ -342,7 +342,7 @@ def capture_42h(prog: str) -> None:
             add_result(prog, machine)
             return
 
-    if cant_halt(prog):
+    if cant_halt(prog, 10):
         return
 
     PROGS.put(prog)
@@ -368,7 +368,7 @@ def capture_24(prog: str) -> None:
         if machine.xlimit is None:
             return
 
-    if cant_halt(prog):
+    if cant_halt(prog, 10):
         return
 
     if quick_term_or_rec(prog, 10_000):
@@ -384,7 +384,7 @@ def capture_42q(prog: str) -> None:
     if 'D' not in prog:
         return
 
-    if cant_spin_out(prog):
+    if cant_spin_out(prog, 12):
         return
 
     if quick_term_or_rec(prog, 1_000):

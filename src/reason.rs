@@ -4,18 +4,20 @@ use std::collections::{BTreeMap as Dict, HashSet as Set, VecDeque};
 
 use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
 
+pub type Cycles = usize;
+
 /**************************************/
 
-pub fn cant_halt(comp: &CompProg) -> bool {
-    cant_reach(comp, halt_configs)
+pub fn cant_halt(comp: &CompProg, cycles: Cycles) -> bool {
+    cant_reach(comp, cycles, halt_configs)
 }
 
-pub fn cant_blank(comp: &CompProg) -> bool {
-    cant_reach(comp, erase_configs)
+pub fn cant_blank(comp: &CompProg, cycles: Cycles) -> bool {
+    cant_reach(comp, cycles, erase_configs)
 }
 
-pub fn cant_spin_out(comp: &CompProg) -> bool {
-    cant_reach(comp, zero_reflexive_configs)
+pub fn cant_spin_out(comp: &CompProg, cycles: Cycles) -> bool {
+    cant_reach(comp, cycles, zero_reflexive_configs)
 }
 
 /**************************************/
@@ -24,6 +26,7 @@ type Config = (State, Backstepper);
 
 fn cant_reach(
     comp: &CompProg,
+    cycles: Cycles,
     get_configs: impl Fn(&CompProg) -> VecDeque<Config>,
 ) -> bool {
     let mut configs = get_configs(comp);
@@ -32,15 +35,13 @@ fn cant_reach(
         return true;
     }
 
-    let max_cycles = 81;
-
     let mut blanks = Set::new();
 
     let entrypoints = get_entrypoints(comp);
 
     configs.retain(|(state, _)| entrypoints.contains_key(state));
 
-    for _ in 0..max_cycles {
+    for _ in 0..cycles {
         let Some((state, mut tape)) = configs.pop_front() else {
             return true;
         };

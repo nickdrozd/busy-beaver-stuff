@@ -37,22 +37,22 @@ mod wrappers {
         instrs::{CompProg, Params},
         machine::quick_term_or_rec,
         parse::{show_comp, tcompile},
-        reason::{cant_blank, cant_halt, cant_spin_out},
+        reason::{cant_blank, cant_halt, cant_spin_out, Cycles},
     };
 
     #[pyfunction]
-    pub fn py_cant_halt(prog: &str) -> bool {
-        cant_halt(&tcompile(prog))
+    pub fn py_cant_halt(prog: &str, cycles: Cycles) -> bool {
+        cant_halt(&tcompile(prog), cycles)
     }
 
     #[pyfunction]
-    pub fn py_cant_blank(prog: &str) -> bool {
-        cant_blank(&tcompile(prog))
+    pub fn py_cant_blank(prog: &str, cycles: Cycles) -> bool {
+        cant_blank(&tcompile(prog), cycles)
     }
 
     #[pyfunction]
-    pub fn py_cant_spin_out(prog: &str) -> bool {
-        cant_spin_out(&tcompile(prog))
+    pub fn py_cant_spin_out(prog: &str, cycles: Cycles) -> bool {
+        cant_spin_out(&tcompile(prog), cycles)
     }
 
     #[pyfunction]

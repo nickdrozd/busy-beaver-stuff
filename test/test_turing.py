@@ -57,6 +57,9 @@ if TYPE_CHECKING:
     )
 
 
+COULD_REACH = 1_000
+
+
 class TuringTest(TestCase):
     machine: BasicMachine
 
@@ -125,35 +128,35 @@ class TuringTest(TestCase):
 
     def assert_could_halt(self, prog: str):
         self.assertFalse(
-            cant_halt(prog),
+            cant_halt(prog, cycles = COULD_REACH),
             f'halt false positive: "{prog}"')
 
-    def assert_cant_halt(self, prog: str):
+    def assert_cant_halt(self, prog: str, cycles: int):
         self.assertTrue(
-            cant_halt(prog)
+            cant_halt(prog, cycles)
                 or prog in CANT_HALT_FALSE_NEGATIVES,
             f'halt false negative: "{prog}"')
 
     def assert_could_blank(self, prog: str):
         self.assertFalse(
-            cant_blank(prog),
+            cant_blank(prog, cycles = COULD_REACH),
             f'blank false positive: "{prog}"')
 
-    def assert_cant_blank(self, prog: str):
+    def assert_cant_blank(self, prog: str, cycles: int):
         self.assertTrue(
-            cant_blank(prog)
+            cant_blank(prog, cycles)
                 or prog in CANT_BLANK_FALSE_NEGATIVES
                 or Machine(prog).run(sim_lim = 10).blanks,
             f'blank false negative: "{prog}"')
 
     def assert_could_spin_out(self, prog: str):
         self.assertFalse(
-            cant_spin_out(prog),
+            cant_spin_out(prog, cycles = COULD_REACH),
             f'spin out false positive: "{prog}"')
 
-    def assert_cant_spin_out(self, prog: str):
+    def assert_cant_spin_out(self, prog: str, cycles: int):
         self.assertTrue(
-            cant_spin_out(prog)
+            cant_spin_out(prog, cycles)
                 or prog in CANT_SPIN_OUT_FALSE_NEGATIVES,
             f'spin out false negative: "{prog}"')
 
@@ -235,19 +238,19 @@ class Reason(TuringTest):
 
         for bigfoot in BIGFOOT:
             for ext in branch_last(bigfoot):
-                self.assert_cant_blank(ext)
+                self.assert_cant_blank(ext, 9)
 
         for hydra in HYDRA:
             self.assert_could_blank(hydra)
-            self.assert_cant_spin_out(hydra)
+            self.assert_cant_spin_out(hydra, 0)
 
         for hydra in ANTIHYDRA:
-            self.assert_cant_blank(hydra)
-            self.assert_cant_spin_out(hydra)
+            self.assert_cant_blank(hydra, 3)
+            self.assert_cant_spin_out(hydra, 0)
 
     def test_blank(self):
         for prog in DONT_BLANK:
-            self.assert_cant_blank(prog)
+            self.assert_cant_blank(prog, 2)
 
         for prog in BLANKERS:
             self.assert_simple(prog)
@@ -255,8 +258,8 @@ class Reason(TuringTest):
 
     def test_max_steps(self):
         for prog in CANT_BLANK_MAX_STEPS:
-            self.assert_cant_blank(prog)
-            self.assert_cant_spin_out(prog)
+            self.assert_cant_blank(prog, 81)
+            self.assert_cant_spin_out(prog, 3)
 
     def test_false_negatives(self):
         for prog in CANT_HALT_FALSE_NEGATIVES:
@@ -276,7 +279,7 @@ class Reason(TuringTest):
             self.assert_could_halt(prog)
 
         for prog in SPINNERS | RECURS:
-            self.assert_cant_halt(prog)
+            self.assert_cant_halt(prog, 4)
 
     def test_spinout(self):
         for prog in SPINNERS:
@@ -288,15 +291,15 @@ class Reason(TuringTest):
             self.assert_could_spin_out(prog)
 
         for prog in DONT_SPIN_OUT | HALTERS | RECURS:
-            self.assert_cant_spin_out(prog)
+            self.assert_cant_spin_out(prog, 6)
 
     def test_recur(self):
         for prog in RECURS | INFRUL | set(ALGEBRA['infrul']):
-            self.assert_cant_halt(prog)
-            self.assert_cant_spin_out(prog)
+            self.assert_cant_halt(prog, 3)
+            self.assert_cant_spin_out(prog, 6)
 
             if prog not in BLANKERS:
-                self.assert_cant_blank(prog)
+                self.assert_cant_blank(prog, 81)
 
     def test_holdouts(self):
         for cat in ('42h', '24h'):
@@ -304,14 +307,14 @@ class Reason(TuringTest):
                 self.assert_could_halt(prog)
 
         for prog in read_holdouts('42q'):
-            self.assert_cant_halt(prog)
+            self.assert_cant_halt(prog, 1)
             self.assert_could_spin_out(prog)
 
         for cat in ('32q', '23q'):
             for prog in read_holdouts(cat):
-                self.assert_cant_halt(prog)
-                self.assert_cant_blank(prog)
-                self.assert_cant_spin_out(prog)
+                self.assert_cant_halt(prog, 0)
+                self.assert_cant_blank(prog, 2)
+                self.assert_cant_spin_out(prog, 3)
 
     def test_unreasonable(self):
         self.assertEqual(
@@ -379,7 +382,7 @@ class Simple(TuringTest):
 
                     if prog[0] != '0' and marks > 2:
                         self.assertEqual(blanks, {})
-                        self.assert_cant_blank(prog)
+                        self.assert_cant_blank(prog, 16)
 
             else:
                 self.assert_marks(0)
@@ -390,11 +393,11 @@ class Simple(TuringTest):
 
             if self.machine.undfnd is not None:
                 self.assert_could_halt(prog)
-                self.assert_cant_spin_out(prog)
+                self.assert_cant_spin_out(prog, 6)
 
             else:
                 self.assert_could_spin_out(prog)
-                self.assert_cant_halt(prog)
+                self.assert_cant_halt(prog, 4)
 
                 self.assertTrue(
                     (graph := Graph(prog)).is_zero_reflexive
@@ -504,14 +507,14 @@ class Recur(TuringTest):
 
             self.assertGreater(period, 1)
 
-            self.assert_cant_halt(prog)
-            self.assert_cant_spin_out(prog)
+            self.assert_cant_halt(prog, 3)
+            self.assert_cant_spin_out(prog, 6)
 
             if blank:
                 self.assert_could_blank(prog)
             else:
                 if prog not in BLANKERS:
-                    self.assert_cant_blank(prog)
+                    self.assert_cant_blank(prog, 81)
                 assert steps is not None
                 self.verify_lin_rec(prog, steps, period)
 
@@ -974,13 +977,13 @@ class Prover(RunProver):
             if result < 5:
                 self.assert_could_blank(prog)
             else:
-                self.assert_cant_blank(prog)
+                self.assert_cant_blank(prog, 14)
 
             if self.machine.undfnd is not None:
-                self.assert_cant_spin_out(prog)
+                self.assert_cant_spin_out(prog, 3)
                 self.assert_could_halt(prog)
             else:
-                self.assert_cant_halt(prog)
+                self.assert_cant_halt(prog, 0)
 
                 try:
                     self.assert_could_spin_out(prog)

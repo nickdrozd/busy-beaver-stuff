@@ -45,14 +45,14 @@ def run_print(prog: str) -> None:
 
 
 def filter_halt(prog: str) -> None:
-    if cant_halt(prog):
+    if cant_halt(prog, cycles = 100):
         return
 
     run_print(prog)
 
 
 def filter_spin_out(prog: str) -> None:
-    if cant_spin_out(prog):
+    if cant_spin_out(prog, cycles = 100):
         return
 
     run_print(prog)

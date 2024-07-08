@@ -268,7 +268,7 @@ fn incomplete(comp: &CompProg, params: Params) -> bool {
 fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
     incomplete(comp, params)
         || quick_term_or_rec(comp, 100, true)
-        || if halt { cant_halt } else { cant_spin_out }(comp)
+        || if halt { cant_halt } else { cant_spin_out }(comp, 81)
         || run_for_infrul(comp, 50)
 }
 
