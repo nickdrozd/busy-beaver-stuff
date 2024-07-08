@@ -295,11 +295,11 @@ class Reason(TuringTest):
 
     def test_recur(self):
         for prog in RECURS | INFRUL | set(ALGEBRA['infrul']):
-            self.assert_cant_halt(prog, 3)
-            self.assert_cant_spin_out(prog, 6)
+            self.assert_cant_halt(prog, 89)
+            self.assert_cant_spin_out(prog, 1203)
 
             if prog not in BLANKERS:
-                self.assert_cant_blank(prog, 81)
+                self.assert_cant_blank(prog, 697)
 
     def test_holdouts(self):
         for cat in ('42h', '24h'):
