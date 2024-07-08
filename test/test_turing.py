@@ -241,6 +241,10 @@ class Reason(TuringTest):
             self.assert_could_blank(hydra)
             self.assert_cant_spin_out(hydra)
 
+        for hydra in ANTIHYDRA:
+            self.assert_cant_blank(hydra)
+            self.assert_cant_spin_out(hydra)
+
     def test_blank(self):
         for prog in DONT_BLANK:
             self.assert_cant_blank(prog)
