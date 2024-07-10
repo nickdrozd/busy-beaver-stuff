@@ -21,18 +21,18 @@ pub enum ProverResult {
     Got(Rule),
 }
 
-pub struct Prover {
-    prog: CompProg,
+pub struct Prover<'p> {
+    prog: &'p CompProg,
 
     rules: BTreeMap<Slot, Vec<(MinSig, Rule)>>,
 
     configs: HashMap<Signature, PastConfigs>,
 }
 
-impl Prover {
-    pub fn new(prog: &CompProg) -> Self {
+impl<'p> Prover<'p> {
+    pub fn new(prog: &'p CompProg) -> Self {
         Self {
-            prog: prog.clone(),
+            prog,
             rules: BTreeMap::new(),
             configs: HashMap::new(),
         }
