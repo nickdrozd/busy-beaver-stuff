@@ -3,7 +3,8 @@ use std::collections::{BTreeMap, BTreeSet as Set, HashMap};
 use pyo3::{pyclass, pymethods};
 
 use crate::{
-    instrs::{CompProg, Slot, State},
+    instrs::{Slot, State},
+    macros::GetInstr,
     rules::{apply_rule, make_rule, Diff, Op, Rule},
     tape::{BasicTape, EnumTape, GetSig, Signature},
 };
@@ -21,16 +22,16 @@ pub enum ProverResult {
     Got(Rule),
 }
 
-pub struct Prover<'p> {
-    prog: &'p CompProg,
+pub struct Prover<'p, Prog: GetInstr> {
+    prog: &'p Prog,
 
     rules: BTreeMap<Slot, Vec<(MinSig, Rule)>>,
 
     configs: HashMap<Signature, PastConfigs>,
 }
 
-impl<'p> Prover<'p> {
-    pub fn new(prog: &'p CompProg) -> Self {
+impl<'p, Prog: GetInstr> Prover<'p, Prog> {
+    pub fn new(prog: &'p Prog) -> Self {
         Self {
             prog,
             rules: BTreeMap::new(),
@@ -98,8 +99,8 @@ impl<'p> Prover<'p> {
                 }
             }
 
-            let &(color, shift, next_state) =
-                self.prog.get(&(state, tape.scan))?;
+            let (color, shift, next_state) =
+                self.prog.get_instr(&(state, tape.scan))?;
 
             tape.step(shift, color, state == next_state);
 
@@ -124,7 +125,7 @@ impl<'p> Prover<'p> {
             }
 
             let (color, shift, next_state) =
-                self.prog[&(state, tape.scan())];
+                self.prog.get_instr(&(state, tape.scan())).unwrap();
 
             tape.step(shift, color, state == next_state);
 

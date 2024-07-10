@@ -21,6 +21,7 @@ mod blocks;
 mod graph;
 mod instrs;
 mod machine;
+mod macros;
 mod parse;
 mod prover;
 mod reason;

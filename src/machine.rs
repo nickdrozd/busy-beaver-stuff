@@ -160,7 +160,10 @@ impl MachineResult {
 /**************************************/
 
 #[cfg(test)]
-pub fn run_for_infrul(comp: &CompProg, sim_lim: Step) -> bool {
+use crate::macros::GetInstr;
+
+#[cfg(test)]
+pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: Step) -> bool {
     let mut tape = Tape::init(0);
 
     let mut prover = Prover::new(comp);
@@ -188,7 +191,8 @@ pub fn run_for_infrul(comp: &CompProg, sim_lim: Step) -> bool {
 
         let slot = (state, tape.scan);
 
-        let Some(&(color, shift, next_state)) = comp.get(&slot) else {
+        let Some((color, shift, next_state)) = comp.get_instr(&slot)
+        else {
             return false;
         };
 
