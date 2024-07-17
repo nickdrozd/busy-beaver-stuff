@@ -94,6 +94,7 @@ class TestGraph(TestCase):
                 graph.is_dispersed or '.' in prog,
                 prog)
 
+    def test_kernel(self):
         for prog, kernel in KERNEL.items():
             graph = Graph(prog)
 
