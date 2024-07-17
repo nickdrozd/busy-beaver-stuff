@@ -88,21 +88,38 @@ class Graph:
 
     @cached_property
     def is_strongly_connected(self) -> bool:
-        for state in self.states:
-            reachable_from_x = set(self.arrows[state])
+        all_states = set(self.states)
 
-            for _ in self.states:
-                reachable_from_x |= {
-                    node
-                    for connection in reachable_from_x
-                    if connection in self.arrows
-                    for node in self.arrows[connection]
-                }
+        exitpoints = {
+            state: {
+                conn
+                for conn in conns
+                if conn is not None and conn != state
+            }
+            for state, conns in self.arrows.items()
+        }
 
-            if not reachable_from_x >= set(self.states):
-                return False
+        if any(not conns for conns in exitpoints.values()):
+            return False
 
-        return True
+        reached = set()
+
+        todo = exitpoints[0].copy()
+
+        for _ in self.states:  # no-branch
+            try:
+                state = todo.pop()
+            except KeyError:
+                break
+
+            reached.add(state)
+
+            if reached == all_states:
+                return True
+
+            todo |= exitpoints[state] - reached
+
+        return False
 
     @cached_property
     def reflexive_states(self) -> set[State]:
