@@ -72,13 +72,11 @@ fn run_for_undefined(
 type Slots = u64;
 type Config = (State, Tape);
 
-fn leaf<F>(
+fn leaf(
     prog: &CompProg,
     (max_state, max_color): Params,
-    harvester: &F,
-) where
-    F: Fn(&CompProg),
-{
+    harvester: &impl Fn(&CompProg),
+) {
     if prog.values().all(|(_, _, state)| 1 + state < max_state)
         || prog.values().all(|(color, _, _)| 1 + color < max_color)
     {
@@ -88,7 +86,7 @@ fn leaf<F>(
     harvester(prog);
 }
 
-fn branch<F>(
+fn branch(
     instr: Instr,
     prog: &mut CompProg,
     (state, mut tape): Config,
@@ -96,10 +94,8 @@ fn branch<F>(
     (mut avail_states, mut avail_colors): Params,
     params: Params,
     remaining_slots: Slots,
-    harvester: &F,
-) where
-    F: Fn(&CompProg),
-{
+    harvester: &impl Fn(&CompProg),
+) {
     let (max_states, max_colors) = params;
 
     let Ok(Some(slot)) =
@@ -179,14 +175,12 @@ fn branch<F>(
 
 /**************************************/
 
-fn build_tree<F>(
+fn build_tree(
     (states, colors): Params,
     halt: bool,
     sim_lim: Step,
-    harvester: &F,
-) where
-    F: Fn(&CompProg) + Sync,
-{
+    harvester: &(impl Fn(&CompProg) + Sync),
+) {
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
