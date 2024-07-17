@@ -9,18 +9,11 @@ const UNDF: char = '.';
 const LEFT: char = 'L';
 const RIGHT: char = 'R';
 
-pub fn parse(
-    prog: &str,
-) -> impl Iterator<Item = impl Iterator<Item = Option<Instr>> + '_> + '_
-{
+#[pyfunction]
+pub fn tcompile(prog: &str) -> CompProg {
     prog.trim()
         .split("  ")
         .map(|instrs| instrs.split(' ').map(read_instr))
-}
-
-#[pyfunction]
-pub fn tcompile(prog: &str) -> CompProg {
-    parse(prog)
         .enumerate()
         .flat_map(|(state, instrs)| {
             instrs.enumerate().filter_map(move |(color, instr)| {
