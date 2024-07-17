@@ -121,10 +121,8 @@ class TuringTest(TestCase):
     def assert_connected(self, prog: str):
         self.assertTrue(
             Graph(prog).is_strongly_connected
-            or prog in MODULAR
-            or 'A' not in prog
-            or '...' in prog
-        )
+                or prog in MODULAR,
+            prog)
 
     def assert_could_halt(self, prog: str):
         self.assertFalse(
@@ -330,12 +328,12 @@ class Simple(TuringTest):
     def run_bb(
             self,
             prog: str,
-            normal: bool = True,
-            decomp: bool = True,
+            analyze: bool = True,
     ):
         print(prog)
 
-        self.analyze(prog, normal = normal, decomp = decomp)
+        if analyze:
+            self.analyze(prog, normal = True, decomp = True)
 
         self.machine = run_quick_machine(prog)
 
@@ -349,7 +347,7 @@ class Simple(TuringTest):
     def test_undefined(self):
         for sequence in UNDEFINED.values():
             for partial, expected in sequence.items():
-                self.run_bb(partial, normal = False, decomp = False)
+                self.run_bb(partial, analyze = False)
 
                 self.assert_undefined(expected)
 
