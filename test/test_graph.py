@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from test.prog_data import GRAPHS, SPAGHETTI, KERNEL
+from test.prog_data import GRAPHS, SPAGHETTI, KERNEL, MODULAR
 
 from tools.graph import Graph
 from tm.show import show_state
@@ -106,3 +106,13 @@ class TestGraph(TestCase):
             self.assertFalse(
                 graph.is_dispersed and graph.is_irreflexive,
                 prog)
+
+    def test_modular(self):
+        for prog in MODULAR:
+            graph = Graph(prog)
+
+            self.assertFalse(
+                graph.is_strongly_connected)
+
+            self.assertTrue(
+                graph.is_simple)
