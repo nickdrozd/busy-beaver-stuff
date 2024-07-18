@@ -33,7 +33,7 @@ impl BlockMeasure {
             self.max_blocks_step = self.steps;
         }
 
-        let _ = self.tape.step(shift, color, skip);
+        self.tape.step(shift, color, skip);
     }
 }
 

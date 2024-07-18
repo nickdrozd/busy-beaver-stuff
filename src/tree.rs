@@ -55,7 +55,7 @@ fn run_for_undefined(
             return Err(());
         }
 
-        let _ = tape.step(shift, color, same);
+        tape.step(shift, color, same);
 
         if tape.blank() {
             return Err(());

@@ -674,7 +674,7 @@ impl BasicTape {
         assert!(matches!(shift, 0 | 1));
         assert!(matches!(skip, 0 | 1));
 
-        let _ = self.step(shift != 0, color, skip != 0);
+        self.step(shift != 0, color, skip != 0);
     }
 }
 
@@ -856,7 +856,7 @@ impl EnumTape {
         assert!(matches!(shift, 0 | 1));
         assert!(matches!(skip, 0 | 1));
 
-        let _ = self.step(shift != 0, color, skip != 0);
+        self.step(shift != 0, color, skip != 0);
     }
 }
 
