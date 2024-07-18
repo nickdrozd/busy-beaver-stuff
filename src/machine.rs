@@ -427,10 +427,6 @@ pub fn quick_term_or_rec(
                 continue;
             }
 
-            if tape.scan() != init_tape.scan() {
-                continue;
-            }
-
             if tape.aligns_with(&init_tape, leftmost, rightmost) {
                 return true;
             }

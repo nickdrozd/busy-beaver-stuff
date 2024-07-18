@@ -408,6 +408,10 @@ impl HeadTape {
         leftmost: Pos,
         rightmost: Pos,
     ) -> bool {
+        if self.scan() != prev.scan() {
+            return false;
+        }
+
         let diff = self.head - prev.head;
 
         #[expect(clippy::comparison_chain)]
