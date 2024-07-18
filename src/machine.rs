@@ -380,9 +380,10 @@ pub fn quick_term_or_rec(
 ) -> bool {
     let mut state = 1;
 
-    let mut tape = HeadTape::init_stepped();
+    let mut step = 1;
+    let mut cycle = 1;
 
-    let (mut step, mut cycle) = (1, 1);
+    let mut tape = HeadTape::init_stepped();
 
     while cycle < sim_lim {
         let steps_reset = 2 * step;
@@ -408,12 +409,6 @@ pub fn quick_term_or_rec(
 
             let stepped = tape.step(shift, color, same);
 
-            step += stepped;
-
-            cycle += 1;
-
-            state = next_state;
-
             let curr = tape.head;
 
             if curr < leftmost {
@@ -421,6 +416,12 @@ pub fn quick_term_or_rec(
             } else if rightmost < curr {
                 rightmost = curr;
             }
+
+            step += stepped;
+
+            cycle += 1;
+
+            state = next_state;
 
             if state != init_state {
                 continue;
