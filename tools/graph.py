@@ -87,7 +87,7 @@ class Graph:
         ) == tuple(sorted(positions))
 
     @cached_property
-    def is_strongly_connected(self) -> bool:
+    def is_connected(self) -> bool:
         all_states = set(self.states)
 
         exitpoints = {

@@ -22,7 +22,7 @@ class TestGraph(TestCase):
 
     def assert_connected(self, conn: int):
         (self.assertTrue
-         if self.graph.is_strongly_connected else
+         if self.graph.is_connected else
          self.assertFalse)(
              bool(conn))
 
@@ -112,7 +112,7 @@ class TestGraph(TestCase):
             graph = Graph(prog)
 
             self.assertFalse(
-                graph.is_strongly_connected)
+                graph.is_connected)
 
             self.assertTrue(
                 graph.is_simple)

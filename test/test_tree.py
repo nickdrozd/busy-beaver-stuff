@@ -137,7 +137,7 @@ class TestTree(TestCase):
         for graph in map(Graph, self.progs):
             self.assertTrue(
                 graph.is_simple
-                and graph.is_strongly_connected)
+                    and graph.is_connected)
 
 
 def add_result(prog: str, machine: BasicMachine) -> None:

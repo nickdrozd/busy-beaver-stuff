@@ -120,7 +120,7 @@ class TuringTest(TestCase):
 
     def assert_connected(self, prog: str):
         self.assertTrue(
-            Graph(prog).is_strongly_connected
+            Graph(prog).is_connected
                 or prog in MODULAR,
             prog)
 
