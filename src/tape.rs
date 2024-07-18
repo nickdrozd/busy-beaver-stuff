@@ -111,6 +111,7 @@ pub trait GetSig {
 
 /**************************************/
 
+#[expect(clippy::partial_pub_fields)]
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Tape<B: Block> {
     pub scan: Color,
@@ -354,6 +355,7 @@ impl<B: Block> IndexTape for Tape<B> {
 type Pos = isize;
 type TapeSlice = Vec<Color>;
 
+#[expect(clippy::partial_pub_fields)]
 #[derive(Clone)]
 pub struct HeadTape {
     pub head: Pos,
