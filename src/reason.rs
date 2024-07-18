@@ -1,3 +1,5 @@
+#![expect(clippy::if_not_else)]
+
 use core::{fmt, iter::once};
 
 use std::collections::{BTreeMap as Dict, HashSet as Set, VecDeque};

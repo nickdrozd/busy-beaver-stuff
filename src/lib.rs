@@ -11,9 +11,7 @@
     clippy::redundant_type_annotations
 )]
 #![expect(
-    clippy::if_not_else,
     clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
     clippy::module_name_repetitions,
     clippy::redundant_pub_crate
 )]

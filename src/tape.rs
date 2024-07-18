@@ -390,6 +390,7 @@ impl HeadTape {
     ) -> Count {
         let stepped = self.tape.step(shift, color, skip);
 
+        #[expect(clippy::cast_possible_wrap)]
         if shift {
             self.head += stepped as Pos;
         } else {
