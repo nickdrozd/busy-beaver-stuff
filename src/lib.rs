@@ -5,6 +5,7 @@
     clippy::get_unwrap,
     clippy::str_to_string,
     clippy::allow_attributes,
+    clippy::unwrap_in_result,
     clippy::std_instead_of_core,
     clippy::if_then_some_else_none,
     clippy::redundant_type_annotations

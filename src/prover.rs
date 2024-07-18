@@ -173,8 +173,7 @@ impl<'p> Prover<'p> {
         let deltas = {
             let (d1, d2, d3) = self
                 .configs
-                .get_mut(&sig)
-                .unwrap()
+                .get_mut(&sig)?
                 .next_deltas(state, cycle)?;
 
             vec![d1, d2, d3]
@@ -232,7 +231,7 @@ impl<'p> Prover<'p> {
             return None;
         }
 
-        self.configs.get_mut(&sig).unwrap().delete_configs(state);
+        self.configs.get_mut(&sig)?.delete_configs(state);
 
         self.set_rule(
             rule.clone(),
