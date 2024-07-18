@@ -18,6 +18,7 @@
 )]
 
 mod blocks;
+mod graph;
 mod instrs;
 mod machine;
 mod parse;
@@ -34,7 +35,8 @@ mod wrappers {
 
     use crate::{
         blocks::opt_block,
-        instrs::{CompProg, Params},
+        graph::is_connected,
+        instrs::{CompProg, Params, State},
         machine::quick_term_or_rec,
         parse::{show_comp, tcompile},
         reason::{cant_blank, cant_halt, cant_spin_out, Cycles},
@@ -53,6 +55,11 @@ mod wrappers {
     #[pyfunction]
     pub fn py_cant_spin_out(prog: &str, cycles: Cycles) -> bool {
         cant_spin_out(&tcompile(prog), cycles)
+    }
+
+    #[pyfunction]
+    pub fn py_is_connected(prog: &str, states: State) -> bool {
+        is_connected(&tcompile(prog), states)
     }
 
     #[pyfunction]
@@ -95,7 +102,8 @@ mod rust_stuff {
         tree::tree_progs,
         wrappers::{
             py_cant_blank, py_cant_halt, py_cant_spin_out,
-            py_opt_block, py_quick_term_or_rec, py_show_comp,
+            py_is_connected, py_opt_block, py_quick_term_or_rec,
+            py_show_comp,
         },
     };
 }

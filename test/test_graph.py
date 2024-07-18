@@ -5,6 +5,7 @@ from test.prog_data import GRAPHS, SPAGHETTI, KERNEL, MODULAR
 
 from tools.graph import Graph
 from tm.show import show_state
+from tm.rust_stuff import py_is_connected as is_connected
 
 
 class TestGraph(TestCase):
@@ -123,7 +124,13 @@ class TestGraph(TestCase):
             self.assertTrue(
                 Graph(prog).is_connected)
 
+            self.assertTrue(
+                is_connected(prog, 5))
+
     def test_unconnected(self):
         for prog in read_progs('unconnected'):
             self.assertFalse(
                 Graph(prog).is_connected)
+
+            self.assertFalse(
+                is_connected(prog, 5))

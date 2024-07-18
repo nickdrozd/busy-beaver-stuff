@@ -241,6 +241,7 @@ pub fn tree_progs(
 #[cfg(test)]
 use {
     crate::{
+        graph::is_connected,
         machine::{quick_term_or_rec, run_for_infrul},
         reason::{cant_halt, cant_spin_out},
     },
@@ -261,7 +262,10 @@ fn incomplete(comp: &CompProg, params: Params) -> bool {
 
 #[cfg(test)]
 fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
+    let (states, _) = params;
+
     incomplete(comp, params)
+        || (states >= 4 && !is_connected(comp, states))
         || quick_term_or_rec(comp, 100, true)
         || if halt { cant_halt } else { cant_spin_out }(comp, 81)
         || run_for_infrul(comp, 50)
@@ -320,13 +324,13 @@ fn test_tree() {
 fn test_tree_slow() {
     assert_trees![
         ((4, 2), 1, (3_979, 467_142)),
-        ((4, 2), 0, (7_330, 2_291_637)),
+        ((4, 2), 0, (7_222, 2_291_637)),
         //
         ((2, 4), 1, (21_645, 312_642)),
         ((2, 4), 0, (54_464, 1_719_237)),
         //
-        ((5, 2), 1, (1_407_639, 95_310_168)),
-        // ((5, 2), 0, (3_512_294?, 534_798_275)),
+        ((5, 2), 1, (1_404_349, 95_310_168)),
+        // ((5, 2), 0, (3_490_304?, 534_798_275)),
         //
         ((2, 5), 1, (7_263_752, 70_028_531)),
         // ((2, 5), 0, (31_931_123?, 515_051_756)),
