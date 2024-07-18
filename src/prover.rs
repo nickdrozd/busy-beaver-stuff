@@ -123,11 +123,8 @@ impl<'p> Prover<'p> {
                 }
             }
 
-            let Some(&(color, shift, next_state)) =
-                self.prog.get(&(state, tape.scan()))
-            else {
-                panic!();
-            };
+            let (color, shift, next_state) =
+                self.prog[&(state, tape.scan())];
 
             tape.step(shift, color, state == next_state);
 
