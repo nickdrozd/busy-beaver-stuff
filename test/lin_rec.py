@@ -284,7 +284,7 @@ def init_stepped() -> HeadTape:
 ########################################
 
 if TYPE_CHECKING:
-    Tapes = dict[int, PtrTape]
+    Tapes = dict[int, PtrTape | None]
 
 
 @dataclass(slots = True)
@@ -337,6 +337,9 @@ class History:
     ) -> RecRes | None:
         tape1 = self.tapes[steps]
         tape2 = self.tapes[recur]
+
+        assert tape1 is not None
+        assert tape2 is not None
 
         positions = self.positions
 

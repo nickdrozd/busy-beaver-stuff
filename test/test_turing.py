@@ -604,13 +604,13 @@ class Recur(TuringTest):
             print_prog = False,
             sim_lim = 1 + runtime,
             samples = {
-                steps - 1      : None,  # type: ignore[dict-item]
-                steps          : None,  # type: ignore[dict-item]
-                steps + 1      : None,  # type: ignore[dict-item]
-                recur - 1      : None,  # type: ignore[dict-item]
-                recur          : None,  # type: ignore[dict-item]
-                recur + 1      : None,  # type: ignore[dict-item]
-                recur + period : None,  # type: ignore[dict-item]
+                steps - 1      : None,
+                steps          : None,
+                steps + 1      : None,
+                recur - 1      : None,
+                recur          : None,
+                recur + 1      : None,
+                recur + period : None,
             },
         )
 
