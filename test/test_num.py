@@ -20,10 +20,10 @@ if TYPE_CHECKING:
 
 
 CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
-    "adds": ADDS,  # type: ignore[dict-item]
-    "muls": MULS,  # type: ignore[dict-item]
-    "divs": DIVS,  # type: ignore[dict-item]
-    "exps": EXPS,  # type: ignore[dict-item]
+    "adds": ADDS,
+    "muls": MULS,
+    "divs": DIVS,
+    "exps": EXPS,
 }
 
 
@@ -195,19 +195,19 @@ class TestNum(TestCase):
 
         self.assertIn(
             7 * Exp(2, 3),
-            expr)  # type: ignore[arg-type]
+            expr)
 
         self.assertNotIn(
             -4 + (7 * Exp(2, 3)),
-            expr)  # type: ignore[arg-type]
+            expr)
 
         self.assertNotIn(
             (-4 + (7 * Exp(2, 3))) // 3,
-            expr)  # type: ignore[arg-type]
+            expr)
 
         self.assertNotIn(
             expr,
-            Tet(10, 2))  # type: ignore[arg-type]
+            Tet(10, 2))
 
     def test_depth(self):
         self.assert_depth(Exp(3, 3), 1)
