@@ -17,6 +17,9 @@ class ModDepthLimit(Exception):
     pass
 
 
+type Count = int | Num  # pylint: disable = used-before-assignment
+
+
 ADDS: dict[Count, dict[Num, Add]] = defaultdict(dict)
 MULS: dict[Count, dict[Num, Mul]] = defaultdict(dict)
 DIVS: dict[Num, dict[int, Div]] = defaultdict(dict)
@@ -2229,9 +2232,6 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
         raise ExpModLimit(f'({base} ** {exp}) % {mod}')
 
 ########################################
-
-Count = int | Num
-
 
 TRUNCATE_COUNT = 10 ** 12
 
