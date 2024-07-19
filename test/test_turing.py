@@ -8,8 +8,7 @@ from unittest import TestCase, expectedFailure, skip, skipUnless
 
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
-# pylint: disable-next = line-too-long
-from test.test_num import assert_num_counts, clear_caches  # type: ignore[attr-defined]
+from test.test_num import assert_num_counts, clear_caches
 from test.machine import QuickMachineResult, run_quick_machine
 from test.lin_rec import (
     LinRecSampler,

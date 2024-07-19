@@ -32,7 +32,7 @@ def clear_caches() -> None:
         cache.clear()
 
 
-def assert_num_counts(expected: dict[str, int]):
+def assert_num_counts(expected: dict[str, int]) -> None:
     err = None
 
     num_counts = {
