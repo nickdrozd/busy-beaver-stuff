@@ -5,8 +5,6 @@ use crate::instrs::{CompProg, State};
 /**************************************/
 
 pub fn is_connected(prog: &CompProg, states: State) -> bool {
-    let all_states: Set<State> = (0..states).collect();
-
     let exitpoints = get_exitpoints(prog);
 
     if exitpoints.len() < states as usize {
@@ -22,15 +20,15 @@ pub fn is_connected(prog: &CompProg, states: State) -> bool {
             break;
         };
 
+        if state == 0 {
+            return true;
+        }
+
         if reached.contains(&state) {
             continue;
         }
 
         reached.insert(state);
-
-        if reached == all_states {
-            return true;
-        }
 
         for &exit in &exitpoints[&state] {
             if !reached.contains(&exit) && !todo.contains(&exit) {

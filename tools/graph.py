@@ -88,8 +88,6 @@ class Graph:
 
     @cached_property
     def is_connected(self) -> bool:
-        all_states = set(self.states)
-
         exitpoints = {
             state: {
                 conn
@@ -104,7 +102,7 @@ class Graph:
 
         reached = set()
 
-        todo = exitpoints[max(all_states)].copy()
+        todo = exitpoints[max(self.states)].copy()
 
         for _ in self.states:  # no-branch
             try:
@@ -112,10 +110,10 @@ class Graph:
             except KeyError:
                 break
 
-            reached.add(state)
-
-            if reached == all_states:
+            if state == 0:
                 return True
+
+            reached.add(state)
 
             todo |= exitpoints[state] - reached
 
