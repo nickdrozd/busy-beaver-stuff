@@ -104,7 +104,7 @@ class Graph:
 
         reached = set()
 
-        todo = exitpoints[0].copy()
+        todo = exitpoints[max(all_states)].copy()
 
         for _ in self.states:  # no-branch
             try:

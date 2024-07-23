@@ -1,4 +1,4 @@
-from unittest import TestCase, expectedFailure
+from unittest import TestCase
 
 from test.prog_data import CONNECTED, UNCONNECTED
 from test.prog_data import GRAPHS, SPAGHETTI, KERNEL, MODULAR
@@ -123,7 +123,6 @@ class TestGraph(TestCase):
             self.assertTrue(
                 Graph(prog).is_connected)
 
-    @expectedFailure
     def test_unconnected(self):
         for prog in UNCONNECTED:
             self.assertFalse(
