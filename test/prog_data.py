@@ -2558,3 +2558,17 @@ GRAPHS: dict[
         {A: {B, C}, B: {A, C}, C: {B, D}, D: {A, E}, E: {D, E}},
     ),
 }
+
+CONNECTED = {
+    "1RB 1LA  0RC 0RD  0LC 1LA  0RE 0LA  1RA ...",
+    "1RB 0LB  1RC 1LD  0LA 0LE  0LA 1LE  ... 1RA",
+    "1RB 1LA  0LA 0LC  1RE 1RD  0RB 1RC  0RD ...",
+    "1RB 0LB  1RC 1LD  0LA 1RA  0LE 0LA  0RA ...",
+}
+
+UNCONNECTED = {
+    "1RB 0LC  0LB 1LA  0LD 1RE  1LE ...  0RC 0LD",
+    "1RB 1LA  0LA 0LC  0RE 1LD  0LC 0RE  1RD ...",
+    "1RB 0LC  0LB 1LA  0LD 0LE  1RC 1LD  ... 1RD",
+    "1RB 1LA  0LA 0LC  1LE 1LD  0LC 0RE  1RD ...",
+}
