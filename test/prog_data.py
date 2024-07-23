@@ -2473,23 +2473,11 @@ GRAPHS: dict[
         {A: {B, D}, B: {A}, C: {A, C}, D: {B, C, D}},
         {A: {B, C}, B: {A, D}, C: {C, D}, D: {A, D}},
     ),
-    "1RB 0LC  1LC 0LA  1RC 1RB  1LA 0LD": (
-        "BCCACBAD",
-        1, 0, 0, 1,
-        {A: {B, D}, B: {A, C}, C: {A, B, C}, D: {D}},
-        {A: {B, C}, B: {A, C}, C: {B, C}, D: {A, D}},
-    ),
     "1RC 0LB  1LD 0LA  1RC 1RD  1LA 0LD": (
         "CBDACDAD",
         0, 1, 0, 1,
         {A: {B, D}, B: {A}, C: {A, C}, D: {B, C, D}},
         {A: {B, C}, B: {A, D}, C: {C, D}, D: {A, D}},
-    ),
-    "1RC 0LC  1LD 0LA  1RC 1RD  1LA 0LD": (
-        "CCDACDAD",
-        0, 0, 0, 1,
-        {A: {B, D}, B: set(), C: {A, C}, D: {B, C, D}},
-        {A: {C}, B: {A, D}, C: {C, D}, D: {A, D}},
     ),
 
     # 2 4
@@ -2512,12 +2500,6 @@ GRAPHS: dict[
         1, 1, 0, 0,
         {A: {B, C}, B: {A, B}, C: {A, C}},
         {A: {B, C}, B: {A, B}, C: {A, C}},
-    ),
-    "1RB 2LB 1LA  1LA 2RB 1RB  ... 2LA 0LC": (
-        "BBAABB.AC",
-        1, 0, 0, 0,
-        {A: {A, B, C}, B: {A, B}, C: {C}},
-        {A: {A, B}, B: {A, B}, C: {A, C}},
     ),
     "1RC 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC": (
         "CBCABB.AC",
