@@ -439,6 +439,9 @@ pub fn quick_term_or_rec(
 
 /**************************************/
 
+#[cfg(test)]
+use crate::macros::make_block_macro;
+
 #[test]
 fn test_prover() {
     assert_eq!(
@@ -466,4 +469,13 @@ fn test_prover() {
             last_slot: None
         }
     );
+
+    assert!(!run_for_infrul(
+        &make_block_macro(
+            &tcompile("1RB 1LA ... 3LA  2LA 3RB 3LA 0RA"),
+            (2, 4),
+            4,
+        ),
+        1000,
+    ));
 }

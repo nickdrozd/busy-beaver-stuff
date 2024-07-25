@@ -31,11 +31,20 @@ fn calculate_diff(
         return None;
     }
 
-    let diff_1 = b - a;
-    let diff_2 = c - b;
+    let Some(diff_1) = b.checked_sub(a) else {
+        return Some(DiffResult::Unknown);
+    };
+
+    let Some(diff_2) = c.checked_sub(b) else {
+        return Some(DiffResult::Unknown);
+    };
 
     if diff_1 == diff_2 && diff_2 == (d - c) {
         return Some(DiffResult::Got(Op::Plus(diff_1)));
+    }
+
+    if a == 0 || b == 0 {
+        return Some(DiffResult::Unknown);
     }
 
     let divmod1 = (b / a, b % a);
@@ -148,7 +157,7 @@ pub fn apply_rule(
                     assert!(plus < 0);
                     min_res
                 } else {
-                    apply_plus(tape.get_count(pos), plus, times)
+                    apply_plus(tape.get_count(pos), plus, times)?
                 }
             },
             Op::Mult(_) => unimplemented!(),
@@ -160,8 +169,10 @@ pub fn apply_rule(
     Some(times)
 }
 
-fn apply_plus(count: Count, diff: Diff, times: Count) -> Count {
+fn apply_plus(count: Count, diff: Diff, times: Count) -> Option<Count> {
     let diff: Count = diff.unsigned_abs().into();
 
-    count + (diff * times)
+    let mult = diff.checked_mul(times)?;
+
+    Some(count + mult)
 }
