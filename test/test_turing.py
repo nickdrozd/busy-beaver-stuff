@@ -1051,7 +1051,7 @@ class Prover(RunProver):
             for prog, (cycles, est, string, rulapp) in progs.items():
                 self.run_bb(
                     prog,
-                    opt_macro = 2000,
+                    opt_macro = 3000,
                     analyze = False,
                     backsym = REQUIRES_BACKSYM.get(prog),
                     print_prog = not show,
@@ -1123,9 +1123,9 @@ class Prover(RunProver):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 109769,
+            "adds": 109880,
             "divs": 13612,
-            "exps": 110575,
-            "muls": 11595,
-            "totl": 245551,
+            "exps": 110582,
+            "muls": 11623,
+            "totl": 245697,
         })
