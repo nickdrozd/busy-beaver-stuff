@@ -479,3 +479,9 @@ fn test_prover() {
         1000,
     ));
 }
+
+#[test]
+#[should_panic]
+fn test_overflow() {
+    run_prover("1RB 2LA 3LA 2RA  0LA ... 2RB 3RB", 10_000);
+}

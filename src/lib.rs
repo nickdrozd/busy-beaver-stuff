@@ -16,6 +16,7 @@
     clippy::module_name_repetitions,
     clippy::redundant_pub_crate
 )]
+#![allow(clippy::should_panic_without_expect)]
 
 mod blocks;
 mod graph;
