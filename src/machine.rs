@@ -470,7 +470,7 @@ fn test_prover() {
         }
     );
 
-    assert!(!run_for_infrul(
+    assert!(run_for_infrul(
         &make_block_macro(
             &tcompile("1RB 1LA ... 3LA  2LA 3RB 3LA 0RA"),
             (2, 4),
