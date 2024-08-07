@@ -36,6 +36,7 @@ class TestLinRado(TestCase):
             states: int,
             colors: int,
             halt: int,
+            *,
             strict: int,
             loose: int,
             rejects: list[str] | None = None,
@@ -58,8 +59,8 @@ class TestLinRado(TestCase):
         # h
         self.run_lin_rado(
             2, 2, 1,
-            6,
-            8,
+            strict = 6,
+            loose = 8,
         )
 
         self.assert_progs_count(
@@ -68,8 +69,8 @@ class TestLinRado(TestCase):
         # q
         self.run_lin_rado(
             2, 2, 0,
-            13,
-            22,
+            strict = 13,
+            loose = 22,
             rejects = [],
         )
 
@@ -87,8 +88,8 @@ class TestLinRado(TestCase):
     def test_32h(self):
         self.run_lin_rado(
             3, 2, 1,
-            29,
-            45,
+            strict = 29,
+            loose = 45,
             rejects = NOT_CONNECTED_32,
         )
 
