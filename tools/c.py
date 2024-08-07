@@ -70,12 +70,13 @@ def make_if_else(st: State, in0: Instr, in1: Instr) -> str:
     _, _, tr0 = in0
     _, _, tr1 = in1
 
-    if st in (tr0, tr1):
-        return make_while(st, in0, in1)
-
-    return IF_TEMPLATE.format(
-        indent(6, make_instruction(st, 0, in0)),
-        indent(6, make_instruction(st, 1, in1)),
+    return (
+        make_while(st, in0, in1, mark = False) if st == tr0 else
+        make_while(st, in1, in0, mark =  True) if st == tr1 else
+        IF_TEMPLATE.format(
+            indent(6, make_instruction(st, 0, in0)),
+            indent(6, make_instruction(st, 1, in1)),
+        )
     )
 
 
@@ -92,17 +93,15 @@ IF_TEMPLATE = \
 '''
 
 
-def make_while(st: State, in0: Instr, in1: Instr) -> str:
-    _, _, tr0 = in0
-
-    if tr0 == st:
-        test = 'BLANK'
-        loop = make_instruction(st, 0, in0, skip_trans = True)
-        rest = make_instruction(st, 1, in1)
-    else:
-        test = '!BLANK'
-        loop = make_instruction(st, 1, in1, skip_trans = True)
-        rest = make_instruction(st, 0, in0)
+def make_while(
+        st: State,
+        loop_in: Instr,
+        rest_in: Instr,
+        mark: bool,
+) -> str:
+    test = 'BLANK' if not mark else '!BLANK'
+    loop = make_instruction(st, int(mark), loop_in, skip_trans = True)
+    rest = make_instruction(st, 1 - int(mark), rest_in)
 
     return WHILE_TEMPLATE.format(
         test,
