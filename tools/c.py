@@ -33,12 +33,13 @@ def make_n_way_write(pr: Color) -> str:
 def make_instruction(
         st: State,
         co: Color,
-        pr: Color,
-        sh: Shift,
-        tr: State | None,
+        instr: Instr,
         *,
         binary: bool = True,
+        skip_trans: bool = False,
 ) -> list[str]:
+    pr, sh, tr = instr
+
     lines = [
         make_comment(st, co),
         make_shift(sh),
@@ -54,7 +55,7 @@ def make_instruction(
             )(pr)
         )
 
-    if tr is not None:
+    if not skip_trans:
         lines.append(
             make_trans(tr))
 
@@ -73,8 +74,8 @@ def make_if_else(st: State, in0: Instr, in1: Instr) -> str:
         return make_while(st, in0, in1)
 
     return IF_TEMPLATE.format(
-        indent(6, make_instruction(st, 0, *in0)),
-        indent(6, make_instruction(st, 1, *in1)),
+        indent(6, make_instruction(st, 0, in0)),
+        indent(6, make_instruction(st, 1, in1)),
     )
 
 
@@ -92,17 +93,16 @@ IF_TEMPLATE = \
 
 
 def make_while(st: State, in0: Instr, in1: Instr) -> str:
-    pr0, sh0, tr0 = in0
-    pr1, sh1,   _ = in1
+    _, _, tr0 = in0
 
     if tr0 == st:
         test = 'BLANK'
-        loop = make_instruction(st, 0, pr0, sh0, None)
-        rest = make_instruction(st, 1, *in1)
+        loop = make_instruction(st, 0, in0, skip_trans = True)
+        rest = make_instruction(st, 1, in1)
     else:
         test = '!BLANK'
-        loop = make_instruction(st, 1, pr1, sh1, None)
-        rest = make_instruction(st, 0, *in0)
+        loop = make_instruction(st, 1, in1, skip_trans = True)
+        rest = make_instruction(st, 0, in0)
 
     return WHILE_TEMPLATE.format(
         test,
@@ -141,7 +141,7 @@ SWITCH_TEMPLATE = \
 def make_case(st: State, co: Color, instr: Instr) -> str:
     return CASE_TEMPLATE.format(
         co,
-        indent(6, make_instruction(st, co, *instr, binary = False)),
+        indent(6, make_instruction(st, co, instr, binary = False)),
     )
 
 
