@@ -37,7 +37,8 @@ def make_instruction(
         sh: Shift,
         tr: State | None,
         indent: int,
-        binary: bool,
+        *,
+        binary: bool = True,
 ) -> str:
     lines = [
         make_comment(st, co),
@@ -69,8 +70,8 @@ def make_if_else(st: State, in0: Instr, in1: Instr) -> str:
         return make_while(st, in0, in1)
 
     return IF_TEMPLATE.format(
-        make_instruction(st, 0, *in0, 6, True),
-        make_instruction(st, 1, *in1, 6, True),
+        make_instruction(st, 0, *in0, 6),
+        make_instruction(st, 1, *in1, 6),
     )
 
 
@@ -93,12 +94,12 @@ def make_while(st: State, in0: Instr, in1: Instr) -> str:
 
     if tr0 == st:
         test = 'BLANK'
-        loop = make_instruction(st, 0, pr0, sh0, None, 4, True)
-        rest = make_instruction(st, 1, *in1, 2, True)
+        loop = make_instruction(st, 0, pr0, sh0, None, 4)
+        rest = make_instruction(st, 1, *in1, 2)
     else:
         test = '!BLANK'
-        loop = make_instruction(st, 1, pr1, sh1, None, 4, True)
-        rest = make_instruction(st, 0, *in0, 2, True)
+        loop = make_instruction(st, 1, pr1, sh1, None, 4)
+        rest = make_instruction(st, 0, *in0, 2)
 
     return WHILE_TEMPLATE.format(test, loop, rest)
 
@@ -133,7 +134,7 @@ SWITCH_TEMPLATE = \
 def make_case(st: State, co: Color, instr: Instr) -> str:
     return CASE_TEMPLATE.format(
         co,
-        make_instruction(st, co, *instr, 6, False),
+        make_instruction(st, co, *instr, 6, binary = False),
     )
 
 
