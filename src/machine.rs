@@ -420,11 +420,9 @@ pub fn quick_term_or_rec(
 
             state = next_state;
 
-            if state != init_state {
-                continue;
-            }
-
-            if tape.aligns_with(&init_tape, leftmost, rightmost) {
+            if state == init_state
+                && tape.aligns_with(&init_tape, leftmost, rightmost)
+            {
                 return true;
             }
         }
