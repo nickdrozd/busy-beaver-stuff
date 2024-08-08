@@ -384,50 +384,54 @@ pub fn quick_term_or_rec(
 ) -> bool {
     let mut state = 1;
 
-    let mut cycle = 1;
-
     let mut tape = HeadTape::init_stepped();
 
-    while cycle < sim_lim {
-        let (mut leftmost, mut rightmost) = (tape.head, tape.head);
+    let (mut ref_state, mut ref_tape, mut leftmost, mut rightmost) =
+        (state, tape.clone(), tape.head, tape.head);
 
-        let init_state = state;
+    let mut reset = 1;
 
-        let init_tape = tape.clone();
-
-        for _ in 0..cycle {
-            let Some(&(color, shift, next_state)) =
-                comp.get(&(state, tape.scan()))
-            else {
-                return drop_halt;
-            };
-
-            let same = state == next_state;
-
-            if same && tape.at_edge(shift) {
-                return true;
-            }
-
-            tape.step(shift, color, same);
-
-            state = next_state;
-
-            let curr = tape.head;
-
-            if curr < leftmost {
-                leftmost = curr;
-            } else if rightmost < curr {
-                rightmost = curr;
-            }
-
-            if state == init_state
-                && tape.aligns_with(&init_tape, leftmost, rightmost)
-            {
-                return true;
-            }
+    for cycle in 1..sim_lim {
+        if reset == 0 {
+            ref_state = state;
+            ref_tape = tape.clone();
+            let head = ref_tape.head;
+            leftmost = head;
+            rightmost = head;
+            reset = cycle;
         }
 
-        cycle *= 2;
+        reset -= 1;
+
+        let Some(&(color, shift, next_state)) =
+            comp.get(&(state, tape.scan()))
+        else {
+            return drop_halt;
+        };
+
+        let same = state == next_state;
+
+        if same && tape.at_edge(shift) {
+            return true;
+        }
+
+        tape.step(shift, color, same);
+
+        state = next_state;
+
+        let curr = tape.head;
+
+        if curr < leftmost {
+            leftmost = curr;
+        } else if rightmost < curr {
+            rightmost = curr;
+        }
+
+        if state == ref_state
+            && tape.aligns_with(&ref_tape, leftmost, rightmost)
+        {
+            return true;
+        }
     }
 
     false

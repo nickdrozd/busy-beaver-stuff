@@ -356,7 +356,7 @@ type Pos = isize;
 type TapeSlice = Vec<Color>;
 
 #[expect(clippy::partial_pub_fields)]
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct HeadTape {
     pub head: Pos,
     tape: BasicTape,
