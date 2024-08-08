@@ -410,6 +410,8 @@ pub fn quick_term_or_rec(
 
             tape.step(shift, color, same);
 
+            state = next_state;
+
             let curr = tape.head;
 
             if curr < leftmost {
@@ -417,8 +419,6 @@ pub fn quick_term_or_rec(
             } else if rightmost < curr {
                 rightmost = curr;
             }
-
-            state = next_state;
 
             if state == init_state
                 && tape.aligns_with(&init_tape, leftmost, rightmost)
