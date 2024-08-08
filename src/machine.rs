@@ -392,8 +392,24 @@ pub fn quick_term_or_rec(
     let mut reset = 1;
 
     for cycle in 1..sim_lim {
+        let Some(&(color, shift, next_state)) =
+            comp.get(&(state, tape.scan()))
+        else {
+            return drop_halt;
+        };
+
+        let curr_state = state;
+
+        state = next_state;
+
+        let same = curr_state == next_state;
+
+        if same && tape.at_edge(shift) {
+            return true;
+        }
+
         if reset == 0 {
-            ref_state = state;
+            ref_state = curr_state;
             ref_tape = tape.clone();
             let head = ref_tape.head;
             leftmost = head;
@@ -403,21 +419,7 @@ pub fn quick_term_or_rec(
 
         reset -= 1;
 
-        let Some(&(color, shift, next_state)) =
-            comp.get(&(state, tape.scan()))
-        else {
-            return drop_halt;
-        };
-
-        let same = state == next_state;
-
-        if same && tape.at_edge(shift) {
-            return true;
-        }
-
         tape.step(shift, color, same);
-
-        state = next_state;
 
         let curr = tape.head;
 
