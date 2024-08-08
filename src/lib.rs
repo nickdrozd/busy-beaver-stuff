@@ -70,7 +70,7 @@ mod wrappers {
     }
 
     #[pyfunction]
-    pub fn py_quick_term_or_rec(prog: &str, sim_lim: u32) -> bool {
+    pub fn py_quick_term_or_rec(prog: &str, sim_lim: usize) -> bool {
         quick_term_or_rec(&tcompile(prog), sim_lim, false)
     }
 

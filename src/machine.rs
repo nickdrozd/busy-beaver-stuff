@@ -379,7 +379,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
 
 pub fn quick_term_or_rec(
     comp: &CompProg,
-    sim_lim: u32,
+    sim_lim: usize,
     drop_halt: bool,
 ) -> bool {
     let mut state = 1;
