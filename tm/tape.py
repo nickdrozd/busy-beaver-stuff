@@ -245,14 +245,11 @@ class EnumTape:
 
         side, offset = enums
 
-        # pylint: disable = confusing-consecutive-elif, consider-using-max-builtin, else-if-used
+        s_offset = ('r' if side else 'l') + '_offset'
 
-        if side:
-            if offset > self.r_offset:
-                self.r_offset = offset
-        else:
-            if offset > self.l_offset:
-                self.l_offset = offset
+        # pylint: disable = bad-builtin
+        if offset > getattr(self, s_offset):
+            setattr(self, s_offset, offset)
 
     def get_count(self, index: Index) -> Count:
         side, pos = index
