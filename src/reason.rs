@@ -1,5 +1,3 @@
-#![expect(clippy::if_not_else)]
-
 use core::{fmt, iter::once};
 
 use std::collections::{BTreeMap as Dict, HashSet as Set, VecDeque};
@@ -305,7 +303,7 @@ impl Backstepper {
     }
 
     fn check_step(&self, shift: Shift, print: Color) -> Option<bool> {
-        let pull = if !shift { &self.rspan } else { &self.lspan };
+        let pull = if shift { &self.lspan } else { &self.rspan };
 
         let (required, at_edge) = match &pull[0] {
             Square::Unknown => {
@@ -318,18 +316,14 @@ impl Backstepper {
             Square::Known(color) => (*color, false),
         };
 
-        if print != required {
-            None
-        } else {
-            Some(at_edge)
-        }
+        (print == required).then_some(at_edge)
     }
 
     fn backstep(&mut self, shift: Shift, read: Color) {
-        let (pull, push) = if !shift {
-            (&mut self.rspan, &mut self.lspan)
-        } else {
+        let (pull, push) = if shift {
             (&mut self.lspan, &mut self.rspan)
+        } else {
+            (&mut self.rspan, &mut self.lspan)
         };
 
         if let Square::Known(_) = &pull[0] {
