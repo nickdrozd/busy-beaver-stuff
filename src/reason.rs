@@ -67,7 +67,7 @@ fn cant_reach(
                 continue;
             };
 
-            if at_edge && state == next_state && tape.scan == next_color
+            if at_edge && tape.scan == next_color && state == next_state
             {
                 return false;
             }
