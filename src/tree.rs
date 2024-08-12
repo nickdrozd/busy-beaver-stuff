@@ -270,9 +270,9 @@ fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
 
     incomplete(comp, params)
         || (states >= 4 && !is_connected(comp, states))
-        || cant_reach(comp, 5)
+        || cant_reach(comp, 2)
         || quick_term_or_rec(comp, 301, true)
-        || cant_reach(comp, 81)
+        || cant_reach(comp, 25)
         || {
             let steps = 306;
 
@@ -352,7 +352,7 @@ fn test_tree_slow() {
         // ((2, 5), 0, (31_264_702?, 515_051_756)),
         //
         ((3, 3), 1, (291_965, 25_306_222)),
-        ((3, 3), 0, (813_786, 149_365_898)),
+        ((3, 3), 0, (813_789, 149_365_898)),
     ];
 }
 

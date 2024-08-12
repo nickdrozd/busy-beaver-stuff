@@ -1,38 +1,38 @@
 use core::{fmt, iter::once};
 
-use std::collections::{BTreeMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, HashSet};
 
 use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
 
-pub type Cycles = usize;
+pub type Depth = usize;
 
-const MAX_STACK_DEPTH: usize = 40;
+const MAX_STACK_DEPTH: Depth = 30;
 
 /**************************************/
 
-pub fn cant_halt(comp: &CompProg, cycles: Cycles) -> bool {
-    cant_reach(comp, cycles, halt_configs)
+pub fn cant_halt(comp: &CompProg, depth: Depth) -> bool {
+    cant_reach(comp, depth, halt_configs)
 }
 
-pub fn cant_blank(comp: &CompProg, cycles: Cycles) -> bool {
-    cant_reach(comp, cycles, erase_configs)
+pub fn cant_blank(comp: &CompProg, depth: Depth) -> bool {
+    cant_reach(comp, depth, erase_configs)
 }
 
-pub fn cant_spin_out(comp: &CompProg, cycles: Cycles) -> bool {
-    cant_reach(comp, cycles, zero_reflexive_configs)
+pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> bool {
+    cant_reach(comp, depth, zero_reflexive_configs)
 }
 
 /**************************************/
 
 type Config = (State, Backstepper);
 
-type Configs = VecDeque<Config>;
+type Configs = Vec<Config>;
 type Blanks = HashSet<State>;
 type Entrypoints = BTreeMap<State, Vec<(Slot, Instr)>>;
 
 fn cant_reach(
     comp: &CompProg,
-    cycles: Cycles,
+    depth: Depth,
     get_configs: impl Fn(&CompProg) -> Configs,
 ) -> bool {
     let mut configs = get_configs(comp);
@@ -47,18 +47,43 @@ fn cant_reach(
 
     configs.retain(|(state, _)| entrypoints.contains_key(state));
 
-    for _ in 0..cycles {
-        match configs.len() {
+    for _level in 0..depth {
+        // for (state, tape) in &configs {
+        //     println!("{_level} | {state} | {tape}");
+        // }
+        // println!("");
+
+        let Some(valid_steps) =
+            get_valid_steps(&mut configs, &mut blanks, &entrypoints)
+        else {
+            return false;
+        };
+
+        match valid_steps.len() {
             0 => return true,
             n if MAX_STACK_DEPTH < n => return false,
             _ => {},
         }
 
-        let (state, mut tape) = configs.pop_front().unwrap();
+        configs = step_configs(valid_steps);
+    }
 
+    false
+}
+
+type ValidatedSteps = Vec<(Vec<(State, Color, Shift)>, Backstepper)>;
+
+fn get_valid_steps(
+    configs: &mut Configs,
+    blanks: &mut Blanks,
+    entrypoints: &Entrypoints,
+) -> Option<ValidatedSteps> {
+    let mut checked = ValidatedSteps::new();
+
+    for (state, tape) in configs.drain(..) {
         if tape.blank() {
             if state == 0 {
-                return false;
+                return None;
             }
 
             if blanks.contains(&state) {
@@ -79,24 +104,34 @@ fn cant_reach(
 
             if at_edge && tape.scan == next_color && state == next_state
             {
-                return false;
+                return None;
             }
 
             good_steps.push((next_state, next_color, shift));
         }
 
-        let Some((last_instr, instrs)) = good_steps.split_last() else {
+        if good_steps.is_empty() {
             continue;
-        };
+        }
 
-        // println!("{state} | {tape}");
+        checked.push((good_steps, tape));
+    }
+
+    Some(checked)
+}
+
+fn step_configs(configs: ValidatedSteps) -> Configs {
+    let mut stepped = Configs::new();
+
+    for (instrs, mut tape) in configs {
+        let (last_instr, instrs) = instrs.split_last().unwrap();
 
         for &(next_state, next_color, shift) in instrs {
             let mut next_tape = tape.clone();
 
             next_tape.backstep(shift, next_color);
 
-            configs.push_back((next_state, next_tape));
+            stepped.push((next_state, next_tape));
         }
 
         {
@@ -104,11 +139,11 @@ fn cant_reach(
 
             tape.backstep(shift, next_color);
 
-            configs.push_back((next_state, tape));
+            stepped.push((next_state, tape));
         }
     }
 
-    false
+    stepped
 }
 
 /**************************************/
@@ -123,8 +158,7 @@ fn halt_configs(comp: &CompProg) -> Configs {
     for state in 0..=max_state {
         for color in 0..=max_color {
             if !comp.contains_key(&(state, color)) {
-                configs
-                    .push_back((state, Backstepper::init_halt(color)));
+                configs.push((state, Backstepper::init_halt(color)));
             }
         }
     }

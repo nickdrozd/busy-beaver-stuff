@@ -160,32 +160,32 @@ class TestFloss(TestCase):
         self.assertFalse(
             cant_halt(
                 "1RB 0RA  1LA ...",
-                cycles = 3))
+                depth = 3))
 
         self.assertFalse(
             cant_blank(
                 "1RB 0RA  1LB 1LA",
-                cycles = 1))
+                depth = 1))
 
         self.assertTrue(
             cant_blank(
                 "1RB 2LA 1LA  2LA 2RB 0RA",
-                cycles = 2))
+                depth = 2))
 
         self.assertFalse(
             cant_spin_out(
                 "1RB 0RB 0LB  1LB 2RA 1LA",
-                cycles = 7))
+                depth = 7))
 
         self.assertTrue(
             cant_spin_out(
                 "1RB 1LA  0LA 0RC  0LA 1RB",
-                cycles = 0))
+                depth = 0))
 
         self.assertFalse(
             cant_halt(
                 "1RB ...  1LC 0RC  1RA 0LC",
-                cycles = 1_000))
+                depth = 1_000))
 
         _ = list(instr_seq(
             "1RB 1LB  1LA ..."))
