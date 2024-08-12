@@ -58,24 +58,30 @@ fn cant_reach(
             blanks.insert(state);
         }
 
-        let (last_instr, instrs) =
-            entrypoints[&state].split_last().unwrap();
+        let mut good_steps = vec![];
+
+        for &((next_state, next_color), (print, shift, _)) in
+            &entrypoints[&state]
+        {
+            let Some(at_edge) = tape.check_step(shift, print) else {
+                continue;
+            };
+
+            if at_edge && state == next_state && tape.scan == next_color
+            {
+                return false;
+            }
+
+            good_steps.push((next_state, next_color, shift));
+        }
+
+        let Some((last_instr, instrs)) = good_steps.split_last() else {
+            continue;
+        };
 
         // println!("{state} | {tape}");
 
-        for &((next_state, next_color), (print, shift, _)) in instrs {
-            match tape.check_step(shift, print) {
-                None => continue,
-                Some(at_edge) => {
-                    if at_edge
-                        && state == next_state
-                        && tape.scan == next_color
-                    {
-                        return false;
-                    }
-                },
-            }
-
+        for &(next_state, next_color, shift) in instrs {
             let mut next_tape = tape.clone();
 
             next_tape.backstep(shift, next_color);
@@ -84,20 +90,7 @@ fn cant_reach(
         }
 
         {
-            let &((next_state, next_color), (print, shift, _)) =
-                last_instr;
-
-            match tape.check_step(shift, print) {
-                None => continue,
-                Some(at_edge) => {
-                    if at_edge
-                        && state == next_state
-                        && tape.scan == next_color
-                    {
-                        return false;
-                    }
-                },
-            }
+            let &(next_state, next_color, shift) = last_instr;
 
             tape.backstep(shift, next_color);
 
