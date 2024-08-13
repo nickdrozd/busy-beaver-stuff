@@ -1,6 +1,6 @@
 use core::{fmt, iter::once};
 
-use std::collections::{BTreeMap as Dict, HashSet as Set, VecDeque};
+use std::collections::{BTreeMap, HashSet, VecDeque};
 
 use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
 
@@ -24,10 +24,14 @@ pub fn cant_spin_out(comp: &CompProg, cycles: Cycles) -> bool {
 
 type Config = (State, Backstepper);
 
+type Configs = VecDeque<Config>;
+type Blanks = HashSet<State>;
+type Entrypoints = BTreeMap<State, Vec<(Slot, Instr)>>;
+
 fn cant_reach(
     comp: &CompProg,
     cycles: Cycles,
-    get_configs: impl Fn(&CompProg) -> VecDeque<Config>,
+    get_configs: impl Fn(&CompProg) -> Configs,
 ) -> bool {
     let mut configs = get_configs(comp);
 
@@ -35,7 +39,7 @@ fn cant_reach(
         return true;
     }
 
-    let mut blanks = Set::new();
+    let mut blanks = Blanks::new();
 
     let entrypoints = get_entrypoints(comp);
 
@@ -103,8 +107,8 @@ fn cant_reach(
 
 /**************************************/
 
-fn halt_configs(comp: &CompProg) -> VecDeque<Config> {
-    let mut configs = VecDeque::new();
+fn halt_configs(comp: &CompProg) -> Configs {
+    let mut configs = Configs::new();
 
     let (max_state, max_color) = comp
         .keys()
@@ -122,7 +126,7 @@ fn halt_configs(comp: &CompProg) -> VecDeque<Config> {
     configs
 }
 
-fn erase_configs(comp: &CompProg) -> VecDeque<Config> {
+fn erase_configs(comp: &CompProg) -> Configs {
     comp.iter()
         .filter_map(|(&(state, color), &instr)| match instr {
             (0, _, _) if color != 0 => {
@@ -133,7 +137,7 @@ fn erase_configs(comp: &CompProg) -> VecDeque<Config> {
         .collect()
 }
 
-fn zero_reflexive_configs(comp: &CompProg) -> VecDeque<Config> {
+fn zero_reflexive_configs(comp: &CompProg) -> Configs {
     comp.iter()
         .filter_map(|(&slot, &(_, shift, trans))| match slot {
             (state, 0) if trans == state => {
@@ -144,8 +148,8 @@ fn zero_reflexive_configs(comp: &CompProg) -> VecDeque<Config> {
         .collect()
 }
 
-fn get_entrypoints(comp: &CompProg) -> Dict<State, Vec<(Slot, Instr)>> {
-    let mut entrypoints: Dict<State, Vec<(Slot, Instr)>> = Dict::new();
+fn get_entrypoints(comp: &CompProg) -> Entrypoints {
+    let mut entrypoints = Entrypoints::new();
 
     for (&slot, &instr) in comp {
         let (_, _, state) = instr;
@@ -178,7 +182,7 @@ fn test_entrypoints() {
         get_entrypoints(&tcompile(
             "1RB ...  0LC ...  1RC 1LD  0LC 0LD"
         )),
-        Dict::from([
+        Entrypoints::from([
             (2, vec![((2, 0), (1, true, 2)), ((3, 0), (0, false, 2))]),
             (3, vec![((2, 1), (1, false, 3)), ((3, 1), (0, false, 3))]),
         ]),
@@ -188,7 +192,7 @@ fn test_entrypoints() {
         get_entrypoints(&tcompile(
             "1RB ...  0LC ...  1RC 1LD  0LC 0LB"
         )),
-        Dict::from([
+        Entrypoints::from([
             (1, vec![((3, 1), (0, false, 1))]),
             (
                 2,
