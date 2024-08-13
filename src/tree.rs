@@ -311,12 +311,10 @@ fn assert_tree(params: Params, halt: u8, expected: (u64, u64)) {
 #[cfg(test)]
 macro_rules! assert_trees {
     ( $( ( $params:expr, $halt:expr, $leaves:expr ) ),* $(,)? ) => {
-        {
-            vec![$( ($params, $halt, $leaves) ),*]
-                .par_iter().for_each(|&(params, halt, expected)| {
+        vec![$( ($params, $halt, $leaves) ),*]
+            .par_iter().for_each(|&(params, halt, expected)| {
                 assert_tree(params, halt, expected);
             });
-        }
     };
 }
 

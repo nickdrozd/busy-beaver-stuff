@@ -776,12 +776,10 @@ macro_rules! rule {
         $ ( ( $ shift : expr, $ index : expr ) => $ diff : expr ), *
         $ ( , ) *
     ) => {
-        {
-            let mut _rule = Rule::new();
-            $ ( _rule.insert(( $ shift == 1, $ index ), Op::Plus( $ diff )); ) *
-            _rule
-        }
-    };
+        Rule::from([
+            $ ( (( $ shift == 1, $ index ), Op::Plus( $ diff )) ), *
+        ])
+    }
 }
 
 #[cfg(test)]

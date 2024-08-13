@@ -105,18 +105,16 @@ fn test_exitpoints() {
 
 #[cfg(test)]
 macro_rules! assert_connected {
-    ($input:expr, $states:expr) => {{
-        let prog = tcompile($input);
-        assert!(is_connected(&prog, $states));
-    }};
+    ($input:expr, $states:expr) => {
+        assert!(is_connected(&tcompile($input), $states));
+    };
 }
 
 #[cfg(test)]
 macro_rules! assert_unconnected {
-    ($input:expr, $states:expr) => {{
-        let prog = tcompile($input);
-        assert!(!is_connected(&prog, $states));
-    }};
+    ($input:expr, $states:expr) => {
+        assert!(!is_connected(&tcompile($input), $states));
+    };
 }
 
 #[test]
