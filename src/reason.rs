@@ -6,6 +6,8 @@ use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
 
 pub type Cycles = usize;
 
+const MAX_STACK_DEPTH: usize = 40;
+
 /**************************************/
 
 pub fn cant_halt(comp: &CompProg, cycles: Cycles) -> bool {
@@ -46,9 +48,13 @@ fn cant_reach(
     configs.retain(|(state, _)| entrypoints.contains_key(state));
 
     for _ in 0..cycles {
-        let Some((state, mut tape)) = configs.pop_front() else {
-            return true;
-        };
+        match configs.len() {
+            0 => return true,
+            n if MAX_STACK_DEPTH < n => return false,
+            _ => {},
+        }
+
+        let (state, mut tape) = configs.pop_front().unwrap();
 
         if tape.blank() {
             if state == 0 {
