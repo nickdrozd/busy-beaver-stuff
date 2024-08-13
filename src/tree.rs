@@ -266,10 +266,13 @@ fn incomplete(comp: &CompProg, params: Params) -> bool {
 fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
     let (states, _) = params;
 
+    let cant_reach = if halt { cant_halt } else { cant_spin_out };
+
     incomplete(comp, params)
         || (states >= 4 && !is_connected(comp, states))
+        || cant_reach(comp, 5)
         || quick_term_or_rec(comp, 301, true)
-        || if halt { cant_halt } else { cant_spin_out }(comp, 81)
+        || cant_reach(comp, 81)
         || {
             let steps = 306;
 
