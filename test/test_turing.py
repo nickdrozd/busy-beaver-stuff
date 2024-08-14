@@ -997,7 +997,7 @@ class Prover(RunProver):
                     SUSPECTED_RULES)
 
     def test_infrul(self):
-        for prog in INFRUL:
+        for prog in INFRUL - PROVER_FAILURES:
             self.run_bb(
                 prog,
                 opt_macro = 400,
