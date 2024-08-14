@@ -370,3 +370,17 @@ fn test_print() {
         println!("{}", comp.show(Some(params)));
     });
 }
+
+#[test]
+fn test_skip() {
+    let progs = [];
+
+    let halt = 0;
+    let params = (3, 2);
+
+    let halt = halt != 0;
+
+    for prog in progs {
+        assert!(skip(&CompProg::from_str(prog), params, halt));
+    }
+}
