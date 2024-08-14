@@ -3,8 +3,7 @@ use std::collections::BTreeMap as Dict;
 use pyo3::{pyclass, pyfunction, pymethods};
 
 use crate::{
-    instrs::{CompProg, Slot, State},
-    parse::tcompile,
+    instrs::{tcompile, CompProg, Slot, State},
     prover::{Prover, ProverResult},
     rules::apply_rule,
     tape::{Alignment, BasicTape as Tape, Count, HeadTape},

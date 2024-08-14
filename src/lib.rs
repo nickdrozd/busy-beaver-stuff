@@ -23,7 +23,6 @@ mod graph;
 mod instrs;
 mod machine;
 mod macros;
-mod parse;
 mod prover;
 mod reason;
 mod rules;
@@ -38,9 +37,8 @@ mod wrappers {
     use crate::{
         blocks::opt_block,
         graph::is_connected,
-        instrs::{CompProg, Params, State},
+        instrs::{show_comp, tcompile, CompProg, Params, State},
         machine::quick_term_or_rec,
-        parse::{show_comp, tcompile},
         reason::{cant_blank, cant_halt, cant_spin_out, Depth},
     };
 
@@ -93,12 +91,12 @@ use pyo3::pymodule;
 mod rust_stuff {
     #[pymodule_export]
     use crate::{
-        machine::{
-            run_prover, run_quick_machine, MachineResult, TermRes,
-        },
-        parse::{
+        instrs::{
             read_instr, read_slot, show_instr, show_slot, show_state,
             tcompile,
+        },
+        machine::{
+            run_prover, run_quick_machine, MachineResult, TermRes,
         },
         prover::PastConfigs,
         tree::tree_progs,

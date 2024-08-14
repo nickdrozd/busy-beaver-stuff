@@ -214,7 +214,7 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 }
 
 #[cfg(test)]
-use crate::parse::tcompile;
+use crate::instrs::tcompile;
 
 #[test]
 fn test_entrypoints() {

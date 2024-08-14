@@ -9,8 +9,7 @@ use pyo3::pyfunction;
 use rayon::prelude::*;
 
 use crate::{
-    instrs::{Color, CompProg, Instr, Params, Slot, State},
-    parse::show_comp,
+    instrs::{show_comp, Color, CompProg, Instr, Params, Slot, State},
     tape::BasicTape as Tape,
 };
 

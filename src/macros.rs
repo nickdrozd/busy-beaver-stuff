@@ -393,7 +393,7 @@ impl TapeColorConverter {
 /**************************************/
 
 #[cfg(test)]
-use crate::parse::tcompile;
+use crate::instrs::tcompile;
 
 #[test]
 fn test_macro() {
