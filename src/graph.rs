@@ -64,7 +64,7 @@ fn get_exitpoints(prog: &CompProg) -> Dict<State, Vec<State>> {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::tcompile;
+use crate::instrs::Parse;
 
 #[cfg(test)]
 macro_rules! dict_from {
@@ -79,7 +79,7 @@ macro_rules! dict_from {
 macro_rules! assert_exitpoints {
     ($input:expr, { $($key:expr => [$($val:expr),*]),* $(,)? }) => {
         assert_eq!(
-            get_exitpoints(&tcompile($input)),
+            get_exitpoints(&CompProg::from_str($input)),
             dict_from! { $($key => [$($val),*]),* },
         );
     }
@@ -106,14 +106,14 @@ fn test_exitpoints() {
 #[cfg(test)]
 macro_rules! assert_connected {
     ($input:expr, $states:expr) => {
-        assert!(is_connected(&tcompile($input), $states));
+        assert!(is_connected(&CompProg::from_str($input), $states));
     };
 }
 
 #[cfg(test)]
 macro_rules! assert_unconnected {
     ($input:expr, $states:expr) => {
-        assert!(!is_connected(&tcompile($input), $states));
+        assert!(!is_connected(&CompProg::from_str($input), $states));
     };
 }
 

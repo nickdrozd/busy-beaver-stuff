@@ -9,7 +9,7 @@ use pyo3::pyfunction;
 use rayon::prelude::*;
 
 use crate::{
-    instrs::{show_comp, Color, CompProg, Instr, Params, Slot, State},
+    instrs::{Color, CompProg, Instr, Params, Parse, Slot, State},
     tape::BasicTape as Tape,
 };
 
@@ -229,7 +229,7 @@ pub fn tree_progs(
     let progs = set_val(vec![]);
 
     build_tree(params, halt, sim_lim, &|comp| {
-        access(&progs).push(show_comp(comp, Some(params)));
+        access(&progs).push(comp.show(Some(params)));
     });
 
     get_val(progs)
@@ -367,6 +367,6 @@ fn test_print() {
             return;
         }
 
-        println!("{}", show_comp(comp, Some(params)));
+        println!("{}", comp.show(Some(params)));
     });
 }

@@ -24,20 +24,51 @@ const RIGHT: char = 'R';
 
 /**************************************/
 
-#[pyfunction]
-pub fn tcompile(prog: &str) -> CompProg {
-    prog.trim()
-        .split("  ")
-        .map(|instrs| instrs.split(' ').map(read_instr))
-        .enumerate()
-        .flat_map(|(state, instrs)| {
-            instrs.enumerate().filter_map(move |(color, instr)| {
-                instr.map(|instr| {
-                    ((state as State, color as Color), instr)
+pub trait Parse {
+    fn from_str(prog: &str) -> Self;
+    fn show(&self, params: Option<Params>) -> String;
+}
+
+impl Parse for CompProg {
+    fn from_str(prog: &str) -> Self {
+        prog.trim()
+            .split("  ")
+            .map(|instrs| instrs.split(' ').map(read_instr))
+            .enumerate()
+            .flat_map(|(state, instrs)| {
+                instrs.enumerate().filter_map(move |(color, instr)| {
+                    instr.map(|instr| {
+                        ((state as State, color as Color), instr)
+                    })
                 })
             })
-        })
-        .collect()
+            .collect()
+    }
+
+    fn show(&self, params: Option<Params>) -> String {
+        let (max_state, max_color) = params.unwrap_or_else(|| {
+            let (ms, mx) = self.iter().fold(
+                (1, 1),
+                |(ms, mc), (&(ss, sc), &(ic, _, is))| {
+                    (ms.max(ss).max(is), mc.max(sc).max(ic))
+                },
+            );
+
+            (1 + ms, 1 + mx)
+        });
+
+        (0..max_state)
+            .map(|state| {
+                (0..max_color)
+                    .map(|color| {
+                        show_instr(self.get(&(state, color)).copied())
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .collect::<Vec<_>>()
+            .join("  ")
+    }
 }
 
 /**************************************/
@@ -106,31 +137,6 @@ pub fn read_instr(instr: &str) -> Option<Instr> {
     Some((read_color(color), read_shift(shift), read_state(state)))
 }
 
-pub fn show_comp(comp: &CompProg, params: Option<Params>) -> String {
-    let (max_state, max_color) = params.unwrap_or_else(|| {
-        let (ms, mx) = comp.iter().fold(
-            (1, 1),
-            |(ms, mc), (&(ss, sc), &(ic, _, is))| {
-                (ms.max(ss).max(is), mc.max(sc).max(ic))
-            },
-        );
-
-        (1 + ms, 1 + mx)
-    });
-
-    (0..max_state)
-        .map(|state| {
-            (0..max_color)
-                .map(|color| {
-                    show_instr(comp.get(&(state, color)).copied())
-                })
-                .collect::<Vec<_>>()
-                .join(" ")
-        })
-        .collect::<Vec<_>>()
-        .join("  ")
-}
-
 /**************************************/
 
 #[test]
@@ -178,7 +184,7 @@ fn test_comp() {
     ];
 
     for prog in progs {
-        assert_eq!(show_comp(&tcompile(prog), None), prog);
+        assert_eq!(CompProg::from_str(prog).show(None), prog);
     }
 
     let underspecified = [
@@ -189,18 +195,18 @@ fn test_comp() {
     ];
 
     for (prog, params) in underspecified {
-        assert_eq!(show_comp(&tcompile(prog), Some(params)), prog);
+        assert_eq!(CompProg::from_str(prog).show(Some(params)), prog);
     }
 
     let prog_11_4 = "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...";
 
     assert_eq!(
-        show_comp(&tcompile(prog_11_4), Some((11, 4))),
+        CompProg::from_str(prog_11_4).show(Some((11, 4))),
         prog_11_4,
     );
 
     assert_eq!(
-        show_comp(&tcompile(prog_11_4), Some((11, 5))),
+        CompProg::from_str(prog_11_4).show(Some((11, 5))),
         "1RB ... ... ... ...  2LC 3RD ... ... ...  1LA 3RD 1LE 4RD ...  ... ... 1RF ... ...  1RF 2LG 2LE 2RH ...  3RI 2RH 3RJ ... ...  1LE ... ... 2LC ...  2LE 2RK 2RH ... ...  1LE ... ... ... ...  0RI 1RF 0RJ ... ...  2RB ... 2RF ... ...",
     );
 }

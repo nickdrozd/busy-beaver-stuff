@@ -393,11 +393,13 @@ impl TapeColorConverter {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::tcompile;
+use crate::instrs::Parse;
 
 #[test]
 fn test_macro() {
-    let comp = tcompile("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
+    let comp = CompProg::from_str(
+        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
+    );
 
     let block = make_block_macro(&comp, (5, 2), 3);
 

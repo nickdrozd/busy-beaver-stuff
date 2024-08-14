@@ -214,12 +214,12 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 }
 
 #[cfg(test)]
-use crate::instrs::tcompile;
+use crate::instrs::Parse;
 
 #[test]
 fn test_entrypoints() {
     assert_eq!(
-        get_entrypoints(&tcompile(
+        get_entrypoints(&CompProg::from_str(
             "1RB ...  0LC ...  1RC 1LD  0LC 0LD"
         )),
         Entrypoints::from([
@@ -229,7 +229,7 @@ fn test_entrypoints() {
     );
 
     assert_eq!(
-        get_entrypoints(&tcompile(
+        get_entrypoints(&CompProg::from_str(
             "1RB ...  0LC ...  1RC 1LD  0LC 0LB"
         )),
         Entrypoints::from([

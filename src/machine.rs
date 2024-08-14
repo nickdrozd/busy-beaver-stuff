@@ -3,7 +3,7 @@ use std::collections::BTreeMap as Dict;
 use pyo3::{pyclass, pyfunction, pymethods};
 
 use crate::{
-    instrs::{tcompile, CompProg, Slot, State},
+    instrs::{CompProg, Parse, Slot, State},
     prover::{Prover, ProverResult},
     rules::apply_rule,
     tape::{Alignment, BasicTape as Tape, Count, HeadTape},
@@ -214,7 +214,7 @@ pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: Step) -> bool {
 #[pyfunction]
 #[pyo3(signature = (prog, sim_lim=100_000_000))]
 pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
-    let comp = tcompile(prog);
+    let comp = CompProg::from_str(prog);
 
     let mut tape = Tape::init(0);
 
@@ -311,7 +311,7 @@ pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
 #[pyfunction]
 #[pyo3(signature = (prog, sim_lim=100_000_000))]
 pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
-    let comp = tcompile(prog);
+    let comp = CompProg::from_str(prog);
 
     let mut tape = Tape::init(0);
 
@@ -475,7 +475,7 @@ fn test_prover() {
 
     assert!(run_for_infrul(
         &make_block_macro(
-            &tcompile("1RB 1LA ... 3LA  2LA 3RB 3LA 0RA"),
+            &CompProg::from_str("1RB 1LA ... 3LA  2LA 3RB 3LA 0RA"),
             (2, 4),
             4,
         ),

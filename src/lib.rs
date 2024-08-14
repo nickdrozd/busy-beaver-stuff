@@ -37,39 +37,39 @@ mod wrappers {
     use crate::{
         blocks::opt_block,
         graph::is_connected,
-        instrs::{show_comp, tcompile, CompProg, Params, State},
+        instrs::{CompProg, Params, Parse, State},
         machine::quick_term_or_rec,
         reason::{cant_blank, cant_halt, cant_spin_out, Depth},
     };
 
     #[pyfunction]
     pub fn py_cant_halt(prog: &str, depth: Depth) -> bool {
-        cant_halt(&tcompile(prog), depth)
+        cant_halt(&CompProg::from_str(prog), depth)
     }
 
     #[pyfunction]
     pub fn py_cant_blank(prog: &str, depth: Depth) -> bool {
-        cant_blank(&tcompile(prog), depth)
+        cant_blank(&CompProg::from_str(prog), depth)
     }
 
     #[pyfunction]
     pub fn py_cant_spin_out(prog: &str, depth: Depth) -> bool {
-        cant_spin_out(&tcompile(prog), depth)
+        cant_spin_out(&CompProg::from_str(prog), depth)
     }
 
     #[pyfunction]
     pub fn py_is_connected(prog: &str, states: State) -> bool {
-        is_connected(&tcompile(prog), states)
+        is_connected(&CompProg::from_str(prog), states)
     }
 
     #[pyfunction]
     pub fn py_opt_block(prog: &str, steps: usize) -> usize {
-        opt_block(&tcompile(prog), steps)
+        opt_block(&CompProg::from_str(prog), steps)
     }
 
     #[pyfunction]
     pub fn py_quick_term_or_rec(prog: &str, sim_lim: usize) -> bool {
-        quick_term_or_rec(&tcompile(prog), sim_lim, false)
+        quick_term_or_rec(&CompProg::from_str(prog), sim_lim, false)
     }
 
     #[pyfunction]
@@ -80,6 +80,18 @@ mod wrappers {
         params: Option<Params>,
     ) -> String {
         show_comp(&comp, params)
+    }
+
+    #[pyfunction]
+    pub fn tcompile(prog: &str) -> CompProg {
+        CompProg::from_str(prog)
+    }
+
+    pub fn show_comp(
+        comp: &CompProg,
+        params: Option<Params>,
+    ) -> String {
+        comp.show(params)
     }
 }
 
@@ -93,7 +105,6 @@ mod rust_stuff {
     use crate::{
         instrs::{
             read_instr, read_slot, show_instr, show_slot, show_state,
-            tcompile,
         },
         machine::{
             run_prover, run_quick_machine, MachineResult, TermRes,
@@ -103,7 +114,7 @@ mod rust_stuff {
         wrappers::{
             py_cant_blank, py_cant_halt, py_cant_spin_out,
             py_is_connected, py_opt_block, py_quick_term_or_rec,
-            py_show_comp,
+            py_show_comp, tcompile,
         },
     };
 }
