@@ -352,8 +352,8 @@ impl<B: Block> IndexTape for Tape<B> {
 
 /**************************************/
 
-type Pos = isize;
-type TapeSlice = Vec<Color>;
+pub type Pos = isize;
+pub type TapeSlice = Vec<Color>;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct HeadTape {
@@ -399,9 +399,16 @@ impl HeadTape {
 }
 
 pub trait Alignment {
-    fn scan(&self) -> Color;
     fn head(&self) -> Pos;
-    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice;
+
+    fn scan(&self) -> Color {
+        unimplemented!()
+    }
+
+    #[expect(unused_variables)]
+    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
+        unimplemented!()
+    }
 
     fn aligns_with(
         &self,

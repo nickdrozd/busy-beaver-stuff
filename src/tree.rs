@@ -269,7 +269,7 @@ fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
 
     incomplete(comp, params)
         || (states >= 4 && !is_connected(comp, states))
-        || cant_reach(comp, 2)
+        || cant_reach(comp, 1)
         || quick_term_or_rec(comp, 301, true)
         || cant_reach(comp, 25)
         || {

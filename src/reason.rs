@@ -1,8 +1,14 @@
-use core::{fmt, iter::once};
+use core::{cell::RefCell, fmt, iter::once};
 
-use std::collections::{BTreeMap, HashSet};
+use std::{
+    collections::{BTreeMap, HashSet},
+    rc::Rc,
+};
 
-use crate::instrs::{Color, CompProg, Instr, Shift, Slot, State};
+use crate::{
+    instrs::{Color, CompProg, Instr, Shift, Slot, State},
+    tape::{Alignment, Pos, TapeSlice},
+};
 
 pub type Depth = usize;
 
@@ -24,7 +30,68 @@ pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> bool {
 
 /**************************************/
 
-type Config = (State, Backstepper);
+struct Config {
+    state: State,
+    tape: Backstepper,
+    recs: usize,
+    prev: Option<Rc<RefCell<Config>>>,
+}
+
+impl Alignment for Config {
+    fn head(&self) -> Pos {
+        self.tape.head
+    }
+
+    fn aligns_with(
+        &self,
+        prev: &Self,
+        leftmost: Pos,
+        rightmost: Pos,
+    ) -> bool {
+        self.state == prev.state
+            && self.tape.aligns_with(&prev.tape, leftmost, rightmost)
+    }
+}
+
+impl Config {
+    const fn new(state: State, tape: Backstepper) -> Self {
+        Self {
+            state,
+            tape,
+            recs: 0,
+            prev: None,
+        }
+    }
+
+    fn lin_rec(&self) -> bool {
+        let head = self.head();
+        let mut leftmost = head;
+        let mut rightmost = head;
+
+        let mut current = self.prev.clone();
+
+        #[expect(clippy::assigning_clones)]
+        while let Some(prev_rc) = current {
+            let config = prev_rc.borrow();
+
+            let pos = config.head();
+
+            if pos < leftmost {
+                leftmost = pos;
+            } else if rightmost < pos {
+                rightmost = pos;
+            }
+
+            if self.aligns_with(&config, leftmost, rightmost) {
+                return true;
+            }
+
+            current = config.prev.clone();
+        }
+
+        false
+    }
+}
 
 type Configs = Vec<Config>;
 type Blanks = HashSet<State>;
@@ -45,11 +112,11 @@ fn cant_reach(
 
     let entrypoints = get_entrypoints(comp);
 
-    configs.retain(|(state, _)| entrypoints.contains_key(state));
+    configs.retain(|config| entrypoints.contains_key(&config.state));
 
     for _level in 0..depth {
-        // for (state, tape) in &configs {
-        //     println!("{_level} | {state} | {tape}");
+        // for config in &configs {
+        //     println!("{_level} | {} | {}", config.state, config.tape);
         // }
         // println!("");
 
@@ -65,13 +132,17 @@ fn cant_reach(
             _ => {},
         }
 
-        configs = step_configs(valid_steps);
+        let Some(stepped) = step_configs(valid_steps) else {
+            return false;
+        };
+
+        configs = stepped;
     }
 
     false
 }
 
-type ValidatedSteps = Vec<(Vec<(State, Color, Shift)>, Backstepper)>;
+type ValidatedSteps = Vec<(Vec<(State, Color, Shift)>, Config)>;
 
 fn get_valid_steps(
     configs: &mut Configs,
@@ -80,7 +151,14 @@ fn get_valid_steps(
 ) -> Option<ValidatedSteps> {
     let mut checked = ValidatedSteps::new();
 
-    for (state, tape) in configs.drain(..) {
+    for config in configs.drain(..) {
+        let Config {
+            state,
+            ref tape,
+            prev: _,
+            recs: _,
+        } = config;
+
         if tape.blank() {
             if state == 0 {
                 return None;
@@ -114,36 +192,43 @@ fn get_valid_steps(
             continue;
         }
 
-        checked.push((good_steps, tape));
+        checked.push((good_steps, config));
     }
 
     Some(checked)
 }
 
-fn step_configs(configs: ValidatedSteps) -> Configs {
+fn step_configs(configs: ValidatedSteps) -> Option<Configs> {
     let mut stepped = Configs::new();
 
-    for (instrs, mut tape) in configs {
-        let (last_instr, instrs) = instrs.split_last().unwrap();
+    for (instrs, config) in configs {
+        let config_rc = Rc::new(RefCell::new(config));
 
-        for &(next_state, next_color, shift) in instrs {
-            let mut next_tape = tape.clone();
+        for (next_state, next_color, shift) in instrs {
+            let mut next_tape = config_rc.borrow().tape.clone();
 
             next_tape.backstep(shift, next_color);
 
-            stepped.push((next_state, next_tape));
-        }
+            let mut next_config = Config {
+                state: next_state,
+                tape: next_tape,
+                prev: Some(config_rc.clone()),
+                recs: config_rc.borrow().recs,
+            };
 
-        {
-            let &(next_state, next_color, shift) = last_instr;
+            if next_config.lin_rec() {
+                next_config.recs += 1;
 
-            tape.backstep(shift, next_color);
+                if next_config.recs > 1 {
+                    return None;
+                }
+            }
 
-            stepped.push((next_state, tape));
+            stepped.push(next_config);
         }
     }
 
-    stepped
+    Some(stepped)
 }
 
 /**************************************/
@@ -158,7 +243,10 @@ fn halt_configs(comp: &CompProg) -> Configs {
     for state in 0..=max_state {
         for color in 0..=max_color {
             if !comp.contains_key(&(state, color)) {
-                configs.push((state, Backstepper::init_halt(color)));
+                configs.push(Config::new(
+                    state,
+                    Backstepper::init_halt(color),
+                ));
             }
         }
     }
@@ -170,7 +258,7 @@ fn erase_configs(comp: &CompProg) -> Configs {
     comp.iter()
         .filter_map(|(&(state, color), &instr)| match instr {
             (0, _, _) if color != 0 => {
-                Some((state, Backstepper::init_blank(color)))
+                Some(Config::new(state, Backstepper::init_blank(color)))
             },
             _ => None,
         })
@@ -180,9 +268,10 @@ fn erase_configs(comp: &CompProg) -> Configs {
 fn zero_reflexive_configs(comp: &CompProg) -> Configs {
     comp.iter()
         .filter_map(|(&slot, &(_, shift, trans))| match slot {
-            (state, 0) if trans == state => {
-                Some((state, Backstepper::init_spinout(shift)))
-            },
+            (state, 0) if trans == state => Some(Config::new(
+                state,
+                Backstepper::init_spinout(shift),
+            )),
             _ => None,
         })
         .collect()
@@ -280,6 +369,7 @@ struct Backstepper {
     scan: Color,
     lspan: Vec<Square>,
     rspan: Vec<Square>,
+    head: Pos,
 }
 
 impl fmt::Display for Backstepper {
@@ -305,6 +395,7 @@ impl Backstepper {
             scan,
             lspan: vec![Square::Unknown],
             rspan: vec![Square::Unknown],
+            head: 0,
         }
     }
 
@@ -313,6 +404,7 @@ impl Backstepper {
             scan,
             lspan: vec![Square::Blanks],
             rspan: vec![Square::Blanks],
+            head: 0,
         }
     }
 
@@ -327,6 +419,7 @@ impl Backstepper {
             scan: 0,
             lspan: vec![l_val],
             rspan: vec![r_val],
+            head: 0,
         }
     }
 
@@ -358,8 +451,10 @@ impl Backstepper {
 
     fn backstep(&mut self, shift: Shift, read: Color) {
         let (pull, push) = if shift {
+            self.head -= 1;
             (&mut self.lspan, &mut self.rspan)
         } else {
+            self.head += 1;
             (&mut self.rspan, &mut self.lspan)
         };
 
@@ -374,6 +469,59 @@ impl Backstepper {
         self.scan = read;
     }
 }
+
+impl Alignment for Backstepper {
+    fn scan(&self) -> Color {
+        self.scan
+    }
+
+    fn head(&self) -> Pos {
+        self.head
+    }
+
+    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
+        let (lspan, rspan, diff) = if ltr {
+            (&self.lspan, &self.rspan, self.head() - start)
+        } else {
+            (&self.rspan, &self.lspan, start - self.head())
+        };
+
+        let mut tape = TapeSlice::new();
+
+        if diff > 0 {
+            #[expect(clippy::cast_sign_loss)]
+            let diff = diff as usize;
+
+            for square in lspan.iter().take(diff) {
+                tape.push(match square {
+                    Square::Blanks => 0,
+                    Square::Known(color) => *color,
+                    Square::Unknown => continue,
+                });
+            }
+
+            let rem = diff - tape.iter().len();
+
+            if rem > 0 {
+                tape.extend(vec![0; rem]);
+            }
+        }
+
+        tape.push(self.scan());
+
+        for square in rspan {
+            tape.push(match square {
+                Square::Blanks => 0,
+                Square::Known(color) => *color,
+                Square::Unknown => continue,
+            });
+        }
+
+        tape
+    }
+}
+
+/**************************************/
 
 #[cfg(test)]
 impl Backstepper {
