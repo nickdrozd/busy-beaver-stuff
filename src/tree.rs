@@ -262,7 +262,7 @@ fn incomplete(comp: &CompProg, params: Params) -> bool {
 }
 
 #[cfg(test)]
-fn skip(comp: &CompProg, params: Params, halt: bool) -> bool {
+fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
     let (states, _) = params;
 
     let cant_reach = if halt { cant_halt } else { cant_spin_out };
@@ -298,7 +298,7 @@ fn assert_tree(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if skip(prog, params, halt_flag) {
+        if skip_all(prog, params, halt_flag) {
             return;
         }
 
@@ -355,6 +355,71 @@ fn test_tree_slow() {
     ];
 }
 
+#[cfg(test)]
+fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
+    let halt_flag = halt != 0;
+
+    let holdout_count = set_val(0);
+    let visited_count = set_val(0);
+
+    let cant_reach = if halt_flag { cant_halt } else { cant_spin_out };
+
+    build_tree(params, halt_flag, 300, &|prog| {
+        *access(&visited_count) += 1;
+
+        if cant_reach(prog, 115) {
+            return;
+        }
+
+        *access(&holdout_count) += 1;
+    });
+
+    let result = (get_val(holdout_count), get_val(visited_count));
+
+    assert_eq!(result, expected, "({params:?}, {halt}, {result:?})");
+}
+
+#[cfg(test)]
+macro_rules! assert_reason_results {
+    ( $( ( $params:expr, $halt:expr, $leaves:expr ) ),* $(,)? ) => {
+        vec![$( ($params, $halt, $leaves) ),*]
+            .par_iter().for_each(|&(params, halt, expected)| {
+                assert_reason(params, halt, expected);
+            });
+    };
+}
+
+#[test]
+fn test_reason() {
+    assert_reason_results![
+        ((2, 2), 1, (20, 36)),
+        ((2, 2), 0, (13, 106)),
+        //
+        ((3, 2), 1, (2_009, 3_140)),
+        ((3, 2), 0, (1_551, 13_128)),
+        //
+        ((2, 3), 1, (2_313, 2_447)),
+        ((2, 3), 0, (1_605, 9_168)),
+        //
+        ((4, 2), 1, (296_913, 467_142)),
+        ((4, 2), 0, (277_277, 2_291_637)),
+        //
+        ((2, 4), 1, (310_621, 312_642)),
+        ((2, 4), 0, (406_828, 1_719_237)),
+        //
+        ((5, 2), 1, (59_952_063, 95_310_168)),
+        ((5, 2), 0, (66_728_554, 534_798_275)),
+        //
+        ((2, 5), 1, (69_849_036, 70_028_531)),
+        ((2, 5), 0, (137_507_422, 515_051_756)),
+        //
+        ((3, 3), 1, (24_358_778, 25_306_222)),
+        ((3, 3), 0, (28_543_483, 149_365_898)),
+    ];
+}
+
+/**************************************/
+
 #[test]
 fn test_print() {
     let halt = 0;
@@ -363,7 +428,7 @@ fn test_print() {
     let halt = halt != 0;
 
     build_tree(params, halt, 300, &|comp| {
-        if skip(comp, params, halt) {
+        if skip_all(comp, params, halt) {
             return;
         }
 
@@ -372,7 +437,7 @@ fn test_print() {
 }
 
 #[test]
-fn test_skip() {
+fn test_skip_all() {
     let progs = [];
 
     let halt = 0;
@@ -381,6 +446,6 @@ fn test_skip() {
     let halt = halt != 0;
 
     for prog in progs {
-        assert!(skip(&CompProg::from_str(prog), params, halt));
+        assert!(skip_all(&CompProg::from_str(prog), params, halt));
     }
 }
