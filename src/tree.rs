@@ -250,8 +250,14 @@ use {
 };
 
 #[cfg(test)]
-fn incomplete(comp: &CompProg, params: Params) -> bool {
+fn incomplete(comp: &CompProg, params: Params, halt: bool) -> bool {
     let (states, colors) = params;
+
+    let dimension = (states * colors) as usize;
+
+    if comp.len() < (if halt { dimension - 1 } else { dimension }) {
+        return true;
+    }
 
     let (used_states, used_colors): (Set<State>, Set<Color>) =
         comp.values().map(|(pr, _, tr)| (tr, pr)).unzip();
@@ -267,7 +273,7 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
 
     let cant_reach = if halt { cant_halt } else { cant_spin_out };
 
-    incomplete(comp, params)
+    incomplete(comp, params, halt)
         || (states >= 4 && !is_connected(comp, states))
         || cant_reach(comp, 1)
         || quick_term_or_rec(comp, 301, true)
@@ -329,14 +335,14 @@ fn test_tree() {
         ((3, 2), 1, (0, 3_140)),
         ((3, 2), 0, (0, 13_128)),
         //
-        ((2, 3), 1, (22, 2_447)),
-        ((2, 3), 0, (19, 9_168)),
+        ((2, 3), 1, (21, 2_447)),
+        ((2, 3), 0, (15, 9_168)),
         //
-        ((4, 2), 1, (357, 467_142)),
-        ((4, 2), 0, (1_439, 2_291_637)),
+        ((4, 2), 1, (353, 467_142)),
+        ((4, 2), 0, (1_380, 2_291_637)),
         //
-        ((2, 4), 1, (5_168, 312_642)),
-        ((2, 4), 0, (16_839, 1_719_357)),
+        ((2, 4), 1, (4_931, 312_642)),
+        ((2, 4), 0, (16_042, 1_719_357)),
     ];
 }
 
@@ -344,14 +350,14 @@ fn test_tree() {
 #[ignore]
 fn test_tree_slow() {
     assert_trees![
-        ((5, 2), 1, (234_920, 95_310_282)),
+        ((5, 2), 1, (229_495, 95_310_282)),
         // ((5, 2), 0, (3_345_642?, 534_798_275)),
         //
-        ((2, 5), 1, (2_404_928, 70_032_629)),
+        ((2, 5), 1, (2_321_824, 70_032_629)),
         // ((2, 5), 0, (31_264_702?, 515_051_756)),
         //
-        ((3, 3), 1, (292_027, 25_306_290)),
-        ((3, 3), 0, (815_027, 149_378_138)),
+        ((3, 3), 1, (281_270, 25_306_290)),
+        ((3, 3), 0, (782_543, 149_378_138)),
     ];
 }
 
