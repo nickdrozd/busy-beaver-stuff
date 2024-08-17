@@ -309,6 +309,8 @@ fn assert_tree(params: Params, halt: u8, expected: (u64, u64)) {
         }
 
         *access(&holdout_count) += 1;
+
+        // println!("{}", prog.show(Some(params)));
     });
 
     let result = (get_val(holdout_count), get_val(visited_count));
@@ -378,6 +380,8 @@ fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
         }
 
         *access(&holdout_count) += 1;
+
+        // println!("{}", prog.show(Some(params)));
     });
 
     let result = (get_val(holdout_count), get_val(visited_count));
@@ -422,36 +426,4 @@ fn test_reason() {
         ((3, 3), 1, (24_358_778, 25_306_222)),
         ((3, 3), 0, (28_543_483, 149_365_898)),
     ];
-}
-
-/**************************************/
-
-#[test]
-fn test_print() {
-    let halt = 0;
-    let params = (3, 2);
-
-    let halt = halt != 0;
-
-    build_tree(params, halt, 300, &|comp| {
-        if skip_all(comp, params, halt) {
-            return;
-        }
-
-        println!("{}", comp.show(Some(params)));
-    });
-}
-
-#[test]
-fn test_skip_all() {
-    let progs = [];
-
-    let halt = 0;
-    let params = (3, 2);
-
-    let halt = halt != 0;
-
-    for prog in progs {
-        assert!(skip_all(&CompProg::from_str(prog), params, halt));
-    }
 }
