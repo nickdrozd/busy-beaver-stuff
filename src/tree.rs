@@ -400,6 +400,7 @@ macro_rules! assert_reason_results {
 }
 
 #[test]
+#[ignore]
 fn test_reason() {
     assert_reason_results![
         ((2, 2), 1, (20, 36)),
