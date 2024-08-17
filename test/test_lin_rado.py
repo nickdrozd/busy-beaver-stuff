@@ -194,8 +194,8 @@ NOT_CONNECTED_32 = [
     BC_LOOP,
 ]
 
-LR_NOT_BRADY = read_progs('lr_not_brady')
-BRADY_HOLDOUTS = read_progs('brady_holdouts')
+LR_NOT_BRADY = read_progs('lr/not_brady')
+BRADY_HOLDOUTS = read_progs('lr/brady_holdouts')
 
 LIN_EXAMPLES = {
     "1RB ...  0RC 1LB  1LA 0RB",  # total recurrence (blank)

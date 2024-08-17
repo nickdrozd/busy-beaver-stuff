@@ -18,12 +18,12 @@ class TestCode(TestCase):
         for prog, name in TEST_FILES.items():
             print(prog)
 
-            with open(f'test/data/c/{name}.c.test') as test:
+            with open(f'data/c/{name}.c.test') as test:
                 self.assertEqual(
                     test.read(),
                     make_c(prog) + '\n')
 
-            with open(f'test/data/dot/{name}.dot') as test:
+            with open(f'data/dot/{name}.dot') as test:
                 self.assertEqual(
                     test.read(),
                     make_dot(prog) + '\n')

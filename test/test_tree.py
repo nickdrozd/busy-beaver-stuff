@@ -104,7 +104,7 @@ class TestTree(TestCase):
 
         self.assertEqual(
             self.progs,
-            read_progs(progfile))
+            read_progs(f'tree/{progfile}'))
 
         self.assertEqual(
             count,

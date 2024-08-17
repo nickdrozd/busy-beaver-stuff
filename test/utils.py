@@ -5,7 +5,7 @@ RUN_SLOW = os.environ.get('RUN_SLOW')
 
 
 def read_progs(name: str) -> set[str]:
-    with open(f'test/data/{name}.prog') as holdouts:
+    with open(f'data/{name}.prog') as holdouts:
         return set(
             prog.strip()
             for prog in holdouts.readlines()
@@ -14,4 +14,4 @@ def read_progs(name: str) -> set[str]:
 
 def read_holdouts(name: str) -> set[str]:
     return read_progs(
-        f'holdouts_{name}')
+        f'tree/holdouts_{name}')

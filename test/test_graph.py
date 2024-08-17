@@ -120,7 +120,7 @@ class TestGraph(TestCase):
                 graph.is_simple)
 
     def test_connected(self):
-        for prog in read_progs('connected'):
+        for prog in read_progs('graph/connected'):
             self.assertTrue(
                 Graph(prog).is_connected)
 
@@ -128,7 +128,7 @@ class TestGraph(TestCase):
                 is_connected(prog, 5))
 
     def test_unconnected(self):
-        for prog in read_progs('unconnected'):
+        for prog in read_progs('graph/unconnected'):
             self.assertFalse(
                 Graph(prog).is_connected)
 
