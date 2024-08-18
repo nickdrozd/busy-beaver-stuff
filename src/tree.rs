@@ -400,7 +400,6 @@ macro_rules! assert_reason_results {
 }
 
 #[test]
-#[ignore]
 fn test_reason() {
     assert_reason_results![
         ((2, 2), 1, (20, 36)),
@@ -417,7 +416,13 @@ fn test_reason() {
         //
         ((2, 4), 1, (310_621, 312_642)),
         ((2, 4), 0, (406_828, 1_719_237)),
-        //
+    ];
+}
+
+#[test]
+#[ignore]
+fn test_reason_slow() {
+    assert_reason_results![
         ((5, 2), 1, (59_952_063, 95_310_168)),
         ((5, 2), 0, (66_728_554, 534_798_275)),
         //
