@@ -245,9 +245,8 @@ class Add(Num):
         if isinstance(other, Add):
             l, lo = self.l, other.l
 
-            assert isinstance(l, int) and isinstance(lo, int)
-
-            return (l - lo) + (self.r - other.r)
+            if isinstance(l, int) and isinstance(lo, int):
+                return (l - lo) + (self.r - other.r)
 
         return self + -other
 
