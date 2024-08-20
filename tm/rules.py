@@ -133,7 +133,8 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
         match sub:
             case Add():
-                assert isinstance(l := sub.l, int)
+                if not isinstance(l := sub.l, int):
+                    raise RuleLimit('sub_add')
 
                 descent.append(
                     ('+', -l))

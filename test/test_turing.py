@@ -1123,9 +1123,9 @@ class Prover(RunProver):
                 print('    },\n')
 
         assert_num_counts({
-            "adds": 110605,
+            "adds": 110907,
             "divs": 13612,
-            "exps": 110617,
-            "muls": 11683,
-            "totl": 246517,
+            "exps": 110647,
+            "muls": 11747,
+            "totl": 246913,
         })
