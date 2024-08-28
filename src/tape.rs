@@ -685,6 +685,7 @@ impl IndexTape for EnumTape {
 
 #[cfg(test)]
 impl BasicTape {
+    #[track_caller]
     fn assert(&self, marks: Count, tape_str: &str, sig: &Signature) {
         assert_eq!(self.marks(), marks);
         assert_eq!(self.blank(), marks == 0);
@@ -694,6 +695,7 @@ impl BasicTape {
         assert_eq!(self.signature(), *sig);
     }
 
+    #[track_caller]
     fn tstep(&mut self, shift: u8, color: Color, skip: u8) {
         assert!(matches!(shift, 0 | 1));
         assert!(matches!(skip, 0 | 1));
@@ -854,6 +856,7 @@ fn test_apply_2() {
 
 #[cfg(test)]
 impl EnumTape {
+    #[track_caller]
     fn assert(
         &self,
         tape_str: &str,
@@ -874,6 +877,7 @@ impl EnumTape {
         });
     }
 
+    #[track_caller]
     fn tstep(&mut self, shift: u8, color: Color, skip: u8) {
         assert!(matches!(shift, 0 | 1));
         assert!(matches!(skip, 0 | 1));

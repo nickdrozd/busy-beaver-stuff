@@ -525,10 +525,12 @@ impl Alignment for Backstepper {
 
 #[cfg(test)]
 impl Backstepper {
+    #[track_caller]
     fn assert(&self, exp: &str) {
         assert_eq!(self.to_string(), exp);
     }
 
+    #[track_caller]
     fn tbackstep(
         &mut self,
         shift: u8,
