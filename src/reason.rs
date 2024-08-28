@@ -342,7 +342,7 @@ fn test_entrypoints() {
 enum Square {
     Blanks,
     Unknown,
-    Known(u64),
+    Known(Color),
 }
 
 impl Square {
