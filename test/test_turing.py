@@ -1000,7 +1000,7 @@ class Prover(RunProver):
         for prog in INFRUL - PROVER_FAILURES:
             self.run_bb(
                 prog,
-                opt_macro = 400,
+                opt_macro = 2_000,
                 normal = False)
 
             self.assertIsNotNone(
