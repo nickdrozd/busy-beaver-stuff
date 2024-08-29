@@ -334,6 +334,26 @@ class Reason(TuringTest):
                 & CANT_BLANK_FALSE_NEGATIVES
                 & CANT_SPIN_OUT_FALSE_NEGATIVES)
 
+    def test_omnireasonable(self):
+        run = 100
+
+        for prog, (halt, blank, spin) in OMNIREASONABLE.items():
+            self.assertEqual(
+                INFRUL,
+                INFRUL | set(OMNIREASONABLE))
+
+            self.assertEqual(
+                halt,
+                cant_halt(prog, run))
+
+            self.assertEqual(
+                blank,
+                cant_blank(prog, run))
+
+            self.assertEqual(
+                spin,
+                cant_spin_out(prog, run))
+
 
 class Simple(TuringTest):
     machine: QuickMachineResult
