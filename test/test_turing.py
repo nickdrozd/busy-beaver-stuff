@@ -253,11 +253,6 @@ class Reason(TuringTest):
             self.assert_simple(prog)
             self.assert_could_blank(prog)
 
-    def test_max_steps(self):
-        for prog in CANT_BLANK_MAX_STEPS:
-            self.assert_cant_blank(prog, 23)
-            self.assert_cant_spin_out(prog, 2)
-
     def test_false_negatives(self):
         for prog in CANT_HALT_FALSE_NEGATIVES:
             self.assertNotIn(prog, HALTERS)
@@ -312,6 +307,25 @@ class Reason(TuringTest):
                 self.assert_cant_halt(prog, 0)
                 self.assert_cant_blank(prog, 1)
                 self.assert_cant_spin_out(prog, 2)
+
+    def test_steps(self):
+        for cat, data in CANT_REACH_STEPS.items():
+            cant_reach = (
+                cant_halt if cat == "halt" else
+                cant_blank if cat == "blank" else
+                cant_spin_out if cat == "spinout" else
+                None
+            )
+
+            assert cant_reach is not None
+
+            for prog, steps in data.items():
+                self.assertEqual(
+                    cant_reach(prog, steps),
+                    steps - 1)
+
+                self.assertIsNone(
+                    cant_reach(prog, steps - 1))
 
     def test_unreasonable(self):
         self.assertEqual(
