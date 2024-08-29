@@ -1456,8 +1456,6 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     "1RB 2LA 0RB  0LB 1LA 0RA",
     "1RB ... 0RB  2LB 2LA 0RA",
     "1RB 2LA 0RB  2LB 1LA 0RA",
-
-    # slow
     "1RB ... ...  2LB 1RB 1LB",
     "1RB 1RA 0RB  2LB 1LA 1LB",
 
