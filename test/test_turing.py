@@ -334,6 +334,10 @@ class Reason(TuringTest):
                 & CANT_BLANK_FALSE_NEGATIVES
                 & CANT_SPIN_OUT_FALSE_NEGATIVES)
 
+        self.assertEqual(
+            INFRUL,
+            INFRUL | UNREASONABLE)
+
     def test_omnireasonable(self):
         run = 100
 
