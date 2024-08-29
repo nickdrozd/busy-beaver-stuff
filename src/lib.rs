@@ -39,21 +39,21 @@ mod wrappers {
         graph::is_connected,
         instrs::{CompProg, Params, Parse, State},
         machine::quick_term_or_rec,
-        reason::{cant_blank, cant_halt, cant_spin_out, Depth},
+        reason::{cant_blank, cant_halt, cant_spin_out, Depth, Step},
     };
 
     #[pyfunction]
-    pub fn py_cant_halt(prog: &str, depth: Depth) -> bool {
+    pub fn py_cant_halt(prog: &str, depth: Depth) -> Option<Step> {
         cant_halt(&CompProg::from_str(prog), depth)
     }
 
     #[pyfunction]
-    pub fn py_cant_blank(prog: &str, depth: Depth) -> bool {
+    pub fn py_cant_blank(prog: &str, depth: Depth) -> Option<Step> {
         cant_blank(&CompProg::from_str(prog), depth)
     }
 
     #[pyfunction]
-    pub fn py_cant_spin_out(prog: &str, depth: Depth) -> bool {
+    pub fn py_cant_spin_out(prog: &str, depth: Depth) -> Option<Step> {
         cant_spin_out(&CompProg::from_str(prog), depth)
     }
 

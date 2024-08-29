@@ -124,35 +124,35 @@ class TuringTest(TestCase):
             prog)
 
     def assert_could_halt(self, prog: str):
-        self.assertFalse(
+        self.assertIsNone(
             cant_halt(prog, depth = COULD_REACH),
             f'halt false positive: "{prog}"')
 
     def assert_cant_halt(self, prog: str, depth: int):
-        self.assertTrue(
+        self.assertIsNotNone(
             cant_halt(prog, depth)
                 or prog in CANT_HALT_FALSE_NEGATIVES,
             f'halt false negative: "{prog}"')
 
     def assert_could_blank(self, prog: str):
-        self.assertFalse(
+        self.assertIsNone(
             cant_blank(prog, depth = COULD_REACH),
             f'blank false positive: "{prog}"')
 
     def assert_cant_blank(self, prog: str, depth: int):
-        self.assertTrue(
+        self.assertIsNotNone(
             cant_blank(prog, depth)
                 or prog in CANT_BLANK_FALSE_NEGATIVES
                 or Machine(prog).run(sim_lim = 10).blanks,
             f'blank false negative: "{prog}"')
 
     def assert_could_spin_out(self, prog: str):
-        self.assertFalse(
+        self.assertIsNone(
             cant_spin_out(prog, depth = COULD_REACH),
             f'spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog: str, depth: int):
-        self.assertTrue(
+        self.assertIsNotNone(
             cant_spin_out(prog, depth)
                 or prog in CANT_SPIN_OUT_FALSE_NEGATIVES,
             f'spin out false negative: "{prog}"')

@@ -158,32 +158,32 @@ class TestFloss(TestCase):
         )
 
     def test_reasoner(self):
-        self.assertFalse(
+        self.assertIsNone(
             cant_halt(
                 "1RB 0RA  1LA ...",
                 depth = 3))
 
-        self.assertFalse(
+        self.assertIsNone(
             cant_blank(
                 "1RB 0RA  1LB 1LA",
                 depth = 1))
 
-        self.assertTrue(
+        self.assertIsNotNone(
             cant_blank(
                 "1RB 2LA 1LA  2LA 2RB 0RA",
                 depth = 2))
 
-        self.assertFalse(
+        self.assertIsNone(
             cant_spin_out(
                 "1RB 0RB 0LB  1LB 2RA 1LA",
                 depth = 7))
 
-        self.assertTrue(
+        self.assertIsNotNone(
             cant_spin_out(
                 "1RB 1LA  0LA 0RC  0LA 1RB",
                 depth = 0))
 
-        self.assertFalse(
+        self.assertIsNone(
             cant_halt(
                 "1RB ...  1LC 0RC  1RA 0LC",
                 depth = 1_000))

@@ -10,21 +10,22 @@ use crate::{
     tape::{Alignment, Pos, TapeSlice},
 };
 
+pub type Step = usize;
 pub type Depth = usize;
 
 const MAX_STACK_DEPTH: Depth = 30;
 
 /**************************************/
 
-pub fn cant_halt(comp: &CompProg, depth: Depth) -> bool {
+pub fn cant_halt(comp: &CompProg, depth: Depth) -> Option<Step> {
     cant_reach(comp, depth, halt_configs)
 }
 
-pub fn cant_blank(comp: &CompProg, depth: Depth) -> bool {
+pub fn cant_blank(comp: &CompProg, depth: Depth) -> Option<Step> {
     cant_reach(comp, depth, erase_configs)
 }
 
-pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> bool {
+pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> Option<Step> {
     cant_reach(comp, depth, zero_reflexive_configs)
 }
 
@@ -101,11 +102,11 @@ fn cant_reach(
     comp: &CompProg,
     depth: Depth,
     get_configs: impl Fn(&CompProg) -> Configs,
-) -> bool {
+) -> Option<Step> {
     let mut configs = get_configs(comp);
 
     if configs.is_empty() {
-        return true;
+        return Some(0);
     }
 
     let mut blanks = Blanks::new();
@@ -114,32 +115,25 @@ fn cant_reach(
 
     configs.retain(|config| entrypoints.contains_key(&config.state));
 
-    for _level in 0..depth {
+    for step in 0..depth {
         // for config in &configs {
-        //     println!("{_level} | {} | {}", config.state, config.tape);
+        //     println!("{step} | {} | {}", config.state, config.tape);
         // }
         // println!("");
 
-        let Some(valid_steps) =
-            get_valid_steps(&mut configs, &mut blanks, &entrypoints)
-        else {
-            return false;
-        };
+        let valid_steps =
+            get_valid_steps(&mut configs, &mut blanks, &entrypoints)?;
 
         match valid_steps.len() {
-            0 => return true,
-            n if MAX_STACK_DEPTH < n => return false,
+            0 => return Some(step),
+            n if MAX_STACK_DEPTH < n => return None,
             _ => {},
         }
 
-        let Some(stepped) = step_configs(valid_steps) else {
-            return false;
-        };
-
-        configs = stepped;
+        configs = step_configs(valid_steps)?;
     }
 
-    false
+    None
 }
 
 type ValidatedSteps = Vec<(Vec<(State, Color, Shift)>, Config)>;

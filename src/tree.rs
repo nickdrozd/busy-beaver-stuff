@@ -275,9 +275,9 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
 
     incomplete(comp, params, halt)
         || (states >= 4 && !is_connected(comp, states))
-        || cant_reach(comp, 1)
+        || cant_reach(comp, 1).is_some()
         || quick_term_or_rec(comp, 301, true)
-        || cant_reach(comp, 25)
+        || cant_reach(comp, 25).is_some()
         || {
             let steps = 306;
 
@@ -375,7 +375,7 @@ fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if cant_reach(prog, 115) {
+        if let Some(__) = cant_reach(prog, 115) {
             return;
         }
 
