@@ -268,6 +268,20 @@ fn incomplete(comp: &CompProg, params: Params, halt: bool) -> bool {
 }
 
 #[cfg(test)]
+fn check_inf(
+    comp: &CompProg,
+    params: Params,
+    blocks: usize,
+    steps: Step,
+) -> bool {
+    if blocks == 1 {
+        run_for_infrul(comp, steps)
+    } else {
+        run_for_infrul(&make_block_macro(comp, params, blocks), steps)
+    }
+}
+
+#[cfg(test)]
 fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
     let (states, _) = params;
 
@@ -278,20 +292,7 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
         || cant_reach(comp, 1).is_some()
         || quick_term_or_rec(comp, 301, true)
         || cant_reach(comp, 25).is_some()
-        || {
-            let steps = 306;
-
-            let blocks = opt_block(comp, 300);
-
-            if blocks == 1 {
-                run_for_infrul(comp, steps)
-            } else {
-                run_for_infrul(
-                    &make_block_macro(comp, params, blocks),
-                    steps,
-                )
-            }
-        }
+        || check_inf(comp, params, opt_block(comp, 300), 306)
 }
 
 #[cfg(test)]
