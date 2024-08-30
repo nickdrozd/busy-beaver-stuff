@@ -1083,6 +1083,8 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
         "1RB 0RD  1LC 0LA  0RA 1LB  1RE 0LB  0LB 1RD": 583,
         "1RB 0RD  1LC 0LA  0RA 1LB  1RE 0LB  1LE 1RD": 659,
         "1RB 0LC  1LC 0RD  0RE 1LA  0LA 1RD  0RB 1LB": 796,
+        "1RB 0RB  1RC 1RA  1LC 0LD  0RA 0LE  1LD 1LE": 1331,
+        "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE": 1331,
     },
 }
 
