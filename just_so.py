@@ -5,12 +5,12 @@ from multiprocessing import Pool
 from tm.reason import cant_halt, cant_blank, cant_spin_out
 
 
-CYCLES = 1_000
+CYCLES = 2_000
 CANT_REACH = cant_spin_out
 
 
 def worker(prog: str) -> None:
-    if CANT_REACH(prog, CYCLES):
+    if CANT_REACH(prog, CYCLES) is not None:
         return
 
     print(prog)
