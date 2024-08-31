@@ -31,7 +31,7 @@ pub fn make_block_macro<P: GetInstr>(
     MacroProg::new(prog, BlockLogic::new(blocks, params))
 }
 
-fn make_backsymbol_macro<P: GetInstr>(
+pub fn make_backsymbol_macro<P: GetInstr>(
     prog: &P,
     params: Params,
     backsymbols: usize,
@@ -218,7 +218,7 @@ impl<'p, P: GetInstr, L: Logic> MacroProg<'p, P, L> {
 
 /**************************************/
 
-struct BacksymbolLogic {
+pub struct BacksymbolLogic {
     cells: usize,
     base_states: usize,
     base_colors: usize,
