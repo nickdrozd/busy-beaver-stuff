@@ -159,7 +159,7 @@ impl MachineResult {
 /**************************************/
 
 #[cfg(test)]
-use crate::macros::GetInstr;
+use crate::instrs::GetInstr;
 
 #[cfg(test)]
 pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: Step) -> bool {

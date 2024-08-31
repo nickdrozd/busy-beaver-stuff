@@ -3,8 +3,7 @@ use std::collections::{BTreeMap, BTreeSet as Set, HashMap};
 use pyo3::{pyclass, pymethods};
 
 use crate::{
-    instrs::{Slot, State},
-    macros::GetInstr,
+    instrs::{GetInstr, Slot, State},
     rules::{apply_rule, make_rule, Diff, Op, Rule},
     tape::{BasicTape, EnumTape, GetSig, Signature},
 };

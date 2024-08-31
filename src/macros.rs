@@ -4,22 +4,12 @@ use core::{cell::RefCell, iter::once};
 
 use std::collections::BTreeMap as Dict;
 
-use crate::instrs::{Color, CompProg, Instr, Params, Slot, State};
+use crate::instrs::{
+    Color, CompProg, GetInstr, Instr, Params, Slot, State,
+};
 
 type Tape = Vec<Color>;
 type Config = (State, (bool, Tape));
-
-/**************************************/
-
-pub trait GetInstr {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr>;
-}
-
-impl GetInstr for CompProg {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
-        self.get(slot).copied()
-    }
-}
 
 /**************************************/
 
