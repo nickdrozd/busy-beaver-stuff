@@ -439,3 +439,23 @@ fn test_reason_slow() {
         ((3, 3), 0, (28_543_483, 149_365_898)),
     ];
 }
+
+/**************************************/
+
+#[test]
+fn test_skip() {
+    let progs = ["1RB 1LE  1RD 0RA  0LA 1RB  1LA 0RC  0LE 1LC"];
+
+    let halt = 0;
+    let params = (5, 2);
+
+    let halt = halt != 0;
+
+    for prog in progs {
+        let comp = CompProg::from_str(prog);
+
+        println!("{}", comp.show(Some(params)));
+
+        assert!(skip_all(&comp, params, halt));
+    }
+}
