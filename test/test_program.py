@@ -1,8 +1,9 @@
 from unittest import TestCase
 
-from test.prog_data import NORMALIZE, EXPAND
+from test.prog_data import NORMALIZE, EXPAND, TNF
 
 from tools.normalize import normalize, expand
+from tools.tree_norm import tree_norm
 
 
 class TestProgram(TestCase):
@@ -19,3 +20,9 @@ class TestProgram(TestCase):
                 expand(compact),
                 expanded,
             )
+
+    def test_tnf(self):
+        for lex, tnf in TNF.items():
+            self.assertEqual(
+                tnf,
+                tree_norm(lex))
