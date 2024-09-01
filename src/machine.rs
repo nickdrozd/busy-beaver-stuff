@@ -3,7 +3,7 @@ use std::collections::BTreeMap as Dict;
 use pyo3::{pyclass, pyfunction, pymethods};
 
 use crate::{
-    instrs::{CompProg, GetInstr, Parse, Slot, State},
+    instrs::{CompProg, Parse, Slot, State},
     prover::{Prover, ProverResult},
     rules::apply_rule,
     tape::{Alignment, BasicTape as Tape, Count, HeadTape},
@@ -157,6 +157,9 @@ impl MachineResult {
 }
 
 /**************************************/
+
+#[cfg(test)]
+use crate::instrs::GetInstr;
 
 #[cfg(test)]
 pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: Step) -> bool {
@@ -374,7 +377,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
 /**************************************/
 
 pub fn quick_term_or_rec(
-    comp: &impl GetInstr,
+    comp: &CompProg,
     sim_lim: usize,
     drop_halt: bool,
 ) -> bool {
@@ -390,8 +393,8 @@ pub fn quick_term_or_rec(
     let mut reset = 1;
 
     for cycle in 1..sim_lim {
-        let Some((color, shift, next_state)) =
-            comp.get_instr(&(state, tape.scan()))
+        let Some(&(color, shift, next_state)) =
+            comp.get(&(state, tape.scan()))
         else {
             return drop_halt;
         };
