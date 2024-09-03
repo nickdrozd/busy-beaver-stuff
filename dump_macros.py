@@ -11,10 +11,12 @@ if __name__ == '__main__':
             base,
             opt_macro = 2_000,
             backsym = None,
-        ).run()
+        )
 
         if not isinstance(macro := machine.program, MacroProg):
             continue
+
+        machine.run()
 
         prog = show_comp(macro.instrs)
 
