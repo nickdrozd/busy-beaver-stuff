@@ -56,7 +56,7 @@ if TYPE_CHECKING:
     )
 
 
-COULD_REACH = 25
+COULD_REACH = 2_000
 
 
 class TuringTest(TestCase):
