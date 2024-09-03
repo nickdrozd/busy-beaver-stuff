@@ -1,4 +1,4 @@
-use core::{cell::RefCell, fmt, iter::once};
+use core::{fmt, iter::once};
 
 use std::{
     collections::{BTreeMap, HashSet},
@@ -35,7 +35,7 @@ struct Config {
     state: State,
     tape: Backstepper,
     recs: usize,
-    prev: Option<Rc<RefCell<Config>>>,
+    prev: Option<Rc<Config>>,
 }
 
 impl Alignment for Config {
@@ -72,9 +72,7 @@ impl Config {
         let mut current = self.prev.clone();
 
         #[expect(clippy::assigning_clones)]
-        while let Some(prev_rc) = current {
-            let config = prev_rc.borrow();
-
+        while let Some(config) = current {
             let pos = config.head();
 
             if pos < leftmost {
@@ -196,10 +194,10 @@ fn step_configs(configs: ValidatedSteps) -> Option<Configs> {
     let mut stepped = Configs::new();
 
     for (instrs, config) in configs {
-        let config_rc = Rc::new(RefCell::new(config));
+        let config_rc = Rc::new(config);
 
         for (next_state, next_color, shift) in instrs {
-            let mut next_tape = config_rc.borrow().tape.clone();
+            let mut next_tape = config_rc.tape.clone();
 
             next_tape.backstep(shift, next_color);
 
@@ -207,7 +205,7 @@ fn step_configs(configs: ValidatedSteps) -> Option<Configs> {
                 state: next_state,
                 tape: next_tape,
                 prev: Some(config_rc.clone()),
-                recs: config_rc.borrow().recs,
+                recs: config_rc.recs,
             };
 
             if next_config.lin_rec() {
