@@ -122,28 +122,3 @@ mutmut :
 
 profile :
 	$(MAKE) -C perf
-
-## Program files (non-phony) ###########
-
-TIME = time -p
-TREE = $(PYTHON) tree_gen.py
-
-3-2.prog :
-	$(TIME) $(TREE) 3 2 | sort > $@
-
-2-3.prog :
-	$(TIME) $(TREE) 2 3 | sort > $@
-
-4-2.prog :
-	$(TIME) $(TREE) 4 2 | tee $@
-	sort -o $@ $@
-
-2-4.prog :
-	$(TIME) $(TREE) 2 4 | tee $@
-	sort -o $@ $@
-
-5-2.prog :
-	$(TIME) $(TREE) 5 2 > $@
-
-generate : 3-2.prog 2-3.prog
-	wc -l *.prog
