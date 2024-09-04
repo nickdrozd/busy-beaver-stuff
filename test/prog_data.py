@@ -196,6 +196,7 @@ SPINOUT_BLANK = {
     "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": ({'B','C','D'},  171),
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD": ({'D'},           77),
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA": ({'C'},           66),
+    "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB": ({'C', 'D'}, 9),
 
     # 2/4
     "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": ({'B'}, 1012664081),
@@ -975,6 +976,7 @@ MODULAR = {
     "1RB ...  1LB 1RC  0LC 0RB",
     "1RB ...  1LC 0LC  1RC 0LB",
     "1RB ...  1LC 0RB  1LB 1RC",
+    "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB",
     "1RB ...  0LC 0LB  1RC 1RD  0LE 1RB  1LB 1LE",
     "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  0LC 1LE",
     "1RB ...  0LC 1LB  1RC 1RD  1LB 1RE  0LC 0LE",
@@ -1193,6 +1195,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB ...  1LC 0RB  0LC 0LD  1RD 1RA",
     "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
     "1RB 0RD  1LC 0RA  1LA 1LB  ... 0RC",
+    "1RB 1LA  1LA 1RC  ... 0RD  0LA 1RD",
 
     "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE",
     "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA",
@@ -2572,6 +2575,7 @@ INFRUL: set[str] = {
     "1RB 0LC  1RC 0LD  1LD 0RB  0LA 0LA",
     "1RB ...  0LC 0LD  0RC 1LD  1LA 0RB",
     "1RB 0RC  1LB 1RC  0LD 0RB  ... 1LA",
+    "1RB 1LA  1LA 1RC  ... 0RD  0LA 1RD",
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
     "1RB 0LA  0RC 1LA  1RD 1RE  1RE ...  1LB 1LA",
