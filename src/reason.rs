@@ -13,7 +13,7 @@ use crate::{
 pub type Step = usize;
 pub type Depth = usize;
 
-const MAX_STACK_DEPTH: Depth = 30;
+const MAX_STACK_DEPTH: Depth = 31;
 
 /**************************************/
 
