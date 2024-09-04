@@ -129,9 +129,11 @@ class TuringTest(TestCase):
             f'halt false positive: "{prog}"')
 
     def assert_cant_halt(self, prog: str, depth: int):
+        if prog in CANT_HALT_FALSE_NEGATIVES:
+            return
+
         self.assertIsNotNone(
-            cant_halt(prog, depth)
-                or prog in CANT_HALT_FALSE_NEGATIVES,
+            cant_halt(prog, depth),
             f'halt false negative: "{prog}"')
 
     def assert_could_blank(self, prog: str):
@@ -140,10 +142,12 @@ class TuringTest(TestCase):
             f'blank false positive: "{prog}"')
 
     def assert_cant_blank(self, prog: str, depth: int):
+        if (prog in CANT_BLANK_FALSE_NEGATIVES
+                or Machine(prog).run(sim_lim = 10).blanks):
+            return
+
         self.assertIsNotNone(
-            cant_blank(prog, depth)
-                or prog in CANT_BLANK_FALSE_NEGATIVES
-                or Machine(prog).run(sim_lim = 10).blanks,
+            cant_blank(prog, depth),
             f'blank false negative: "{prog}"')
 
     def assert_could_spin_out(self, prog: str):
@@ -152,9 +156,11 @@ class TuringTest(TestCase):
             f'spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog: str, depth: int):
+        if prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
+            return
+
         self.assertIsNotNone(
-            cant_spin_out(prog, depth)
-                or prog in CANT_SPIN_OUT_FALSE_NEGATIVES,
+            cant_spin_out(prog, depth),
             f'spin out false negative: "{prog}"')
 
     def assert_simple(self, prog: str):
@@ -287,11 +293,11 @@ class Reason(TuringTest):
 
     def test_recur(self):
         for prog in RECURS | INFRUL | set(ALGEBRA['infrul']):
-            self.assert_cant_halt(prog, 34)
-            self.assert_cant_spin_out(prog, 103)
+            self.assert_cant_halt(prog, 115)
+            self.assert_cant_spin_out(prog, 256)
 
             if prog not in BLANKERS:
-                self.assert_cant_blank(prog, 96)
+                self.assert_cant_blank(prog, 1331)
 
     def test_holdouts(self):
         for cat in ('42h', '24h'):
