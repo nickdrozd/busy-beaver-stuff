@@ -56,7 +56,7 @@ if TYPE_CHECKING:
     )
 
 
-COULD_REACH = 2_000
+REASON_LIMIT = 2_000
 
 
 class TuringTest(TestCase):
@@ -125,7 +125,7 @@ class TuringTest(TestCase):
 
     def assert_could_halt(self, prog: str):
         self.assertIsNone(
-            cant_halt(prog, depth = COULD_REACH),
+            cant_halt(prog, depth = REASON_LIMIT),
             f'halt false positive: "{prog}"')
 
     def assert_cant_halt(self, prog: str, depth: int):
@@ -138,7 +138,7 @@ class TuringTest(TestCase):
 
     def assert_could_blank(self, prog: str):
         self.assertIsNone(
-            cant_blank(prog, depth = COULD_REACH),
+            cant_blank(prog, depth = REASON_LIMIT),
             f'blank false positive: "{prog}"')
 
     def assert_cant_blank(self, prog: str, depth: int):
@@ -152,7 +152,7 @@ class TuringTest(TestCase):
 
     def assert_could_spin_out(self, prog: str):
         self.assertIsNone(
-            cant_spin_out(prog, depth = COULD_REACH),
+            cant_spin_out(prog, depth = REASON_LIMIT),
             f'spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog: str, depth: int):
@@ -346,15 +346,13 @@ class Reason(TuringTest):
 
     def test_reason_only(self):
         for prog in REASON_ONLY:
-            self.assert_cant_halt(prog, COULD_REACH)
-            self.assert_cant_blank(prog, COULD_REACH)
-            self.assert_cant_spin_out(prog, COULD_REACH)
+            self.assert_cant_halt(prog, REASON_LIMIT)
+            self.assert_cant_blank(prog, REASON_LIMIT)
+            self.assert_cant_spin_out(prog, REASON_LIMIT)
 
             self.assertNotIn(prog, INFRUL)
 
     def test_omnireasonable(self):
-        run = 100
-
         for prog, (halt, blank, spin) in OMNIREASONABLE.items():
             self.assertEqual(
                 INFRUL,
@@ -362,15 +360,15 @@ class Reason(TuringTest):
 
             self.assertEqual(
                 halt,
-                cant_halt(prog, run))
+                cant_halt(prog, REASON_LIMIT))
 
             self.assertEqual(
                 blank,
-                cant_blank(prog, run))
+                cant_blank(prog, REASON_LIMIT))
 
             self.assertEqual(
                 spin,
-                cant_spin_out(prog, run))
+                cant_spin_out(prog, REASON_LIMIT))
 
 
 class Simple(TuringTest):
