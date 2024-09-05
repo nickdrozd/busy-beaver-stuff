@@ -1176,6 +1176,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
     "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
     "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
+    "1RB ... 0RB ...  2LB 3RA 0RA 0RA",
 
     "1RB 1RC  1LC 0LD  1RA 0LB  ... 0LA",
     "1RB ...  1LC 0RB  0LC 0LD  0RD 1RA",
@@ -1539,6 +1540,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
     "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
     "1RB 0RB 1RA 3LA  2LB 2RB 3RB 0LA",
+    "1RB ... 0RB ...  2LB 3RA 0RA 0RA",
 
     "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB",
 
@@ -2547,6 +2549,7 @@ INFRUL: set[str] = {
     "1RB 0RB  1LC 0RA  1LC 1LA",
     "1RB 0RC  1LB 1RA  0RB 0RA",
 
+    "1RB ... 0RB ...  2LB 3RA 0RA 0RA",
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
     "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
     "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
