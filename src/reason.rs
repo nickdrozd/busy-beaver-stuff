@@ -422,14 +422,15 @@ impl Backstepper {
     }
 
     fn check_step(&self, shift: Shift, print: Color) -> Option<bool> {
-        let pull = if shift { &self.lspan } else { &self.rspan };
+        let (pull, push) = if shift {
+            (&self.lspan, &self.rspan)
+        } else {
+            (&self.rspan, &self.lspan)
+        };
 
         let (required, at_edge) = match &pull[0] {
             Square::Unknown => {
-                return Some(matches!(
-                    (if shift { &self.rspan } else { &self.lspan })[0],
-                    Square::Known(_)
-                ));
+                return Some(matches!(push[0], Square::Known(_)));
             },
             Square::Blanks => (0, true),
             Square::Known(color) => (*color, false),
