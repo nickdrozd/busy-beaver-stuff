@@ -2748,6 +2748,10 @@ UNREASONABLE: set[str] = {
     "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
 }
 
+REASON_ONLY: set[str] = {
+    "1RB 0LD  1LC 0RE  ... 1LD  1LA 1LD  1RA 0RA",
+}
+
 OMNIREASONABLE: dict[str, tuple[int, int, int]] = {
     "1RB ...  0LC 0LD  0RC 1LD  1LA 0RB": (6,  8, 10),
     "1RB 0RC  1LB 1RC  0LD 0RB  ... 1LA": (2, 11, 12),

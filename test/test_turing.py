@@ -344,6 +344,14 @@ class Reason(TuringTest):
             INFRUL,
             INFRUL | UNREASONABLE)
 
+    def test_reason_only(self):
+        for prog in REASON_ONLY:
+            self.assert_cant_halt(prog, COULD_REACH)
+            self.assert_cant_blank(prog, COULD_REACH)
+            self.assert_cant_spin_out(prog, COULD_REACH)
+
+            self.assertNotIn(prog, INFRUL)
+
     def test_omnireasonable(self):
         run = 100
 
@@ -1048,6 +1056,16 @@ class Prover(RunProver):
                 normal = False)
 
             self.assertIsNotNone(
+                self.machine.infrul)
+
+        for prog in REASON_ONLY:
+            self.run_bb(
+                prog,
+                opt_macro = 2_400,
+                sim_lim = 10_000,
+                normal = False)
+
+            self.assertIsNone(
                 self.machine.infrul)
 
     def test_rule_limit(self):
