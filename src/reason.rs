@@ -145,10 +145,7 @@ fn get_valid_steps(
 
     for config in configs.drain(..) {
         let Config {
-            state,
-            ref tape,
-            prev: _,
-            recs: _,
+            state, ref tape, ..
         } = config;
 
         if tape.blank() {

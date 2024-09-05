@@ -9,6 +9,7 @@
     clippy::partial_pub_fields,
     clippy::std_instead_of_core,
     clippy::if_then_some_else_none,
+    clippy::unneeded_field_pattern,
     clippy::redundant_type_annotations
 )]
 #![expect(
