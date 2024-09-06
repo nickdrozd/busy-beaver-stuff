@@ -27,6 +27,12 @@ pub trait Block: Display {
     }
 
     fn dec_count(&mut self);
+
+    fn show(&self, f: &mut Formatter) -> Result {
+        let (color, count) = (self.get_color(), self.get_count());
+
+        write!(f, "{color}^{count}")
+    }
 }
 
 #[derive(Copy, Clone, Eq, Hash, PartialEq)]
@@ -67,7 +73,7 @@ impl Block for BasicBlock {
 
 impl Display for BasicBlock {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}^{}", self.color, self.count)
+        self.show(f)
     }
 }
 
@@ -547,7 +553,7 @@ impl Block for EnumBlock {
 
 impl Display for EnumBlock {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}^{}", self.color, self.count)
+        self.show(f)
     }
 }
 
