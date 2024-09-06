@@ -31,7 +31,15 @@ pub trait Block: Display {
     fn show(&self, f: &mut Formatter) -> Result {
         let (color, count) = (self.get_color(), self.get_count());
 
-        write!(f, "{color}^{count}")
+        write!(
+            f,
+            "{}",
+            if count == 1 {
+                format!("{color}")
+            } else {
+                format!("{color}^{count}")
+            }
+        )
     }
 }
 
@@ -739,7 +747,7 @@ fn test_init() {
 
     let mut tape = Tape::init_stepped();
 
-    tape.assert(1, "1^1 [0]", &sig![0, [[1]], []]);
+    tape.assert(1, "1 [0]", &sig![0, [[1]], []]);
 
     tape.tstep(1, 1, 0);
 
@@ -747,7 +755,7 @@ fn test_init() {
 
     tape.tstep(0, 0, 0);
 
-    tape.assert(2, "1^1 [1]", &sig![1, [[1]], []]);
+    tape.assert(2, "1 [1]", &sig![1, [[1]], []]);
 
     tape.tstep(0, 0, 1);
 
@@ -764,20 +772,12 @@ fn test_clone() {
     copy_1.tstep(0, 2, 0);
     copy_2.tstep(1, 1, 0);
 
-    copy_1.assert(
-        6,
-        "1^1 0^1 [1] 2^2 1^2",
-        &sig![1, [[0], [1]], [2, 1]],
-    );
-    copy_2.assert(
-        6,
-        "1^1 0^1 1^2 [2] 1^2",
-        &sig![2, [1, [0], [1]], [1]],
-    );
+    copy_1.assert(6, "1 0 [1] 2^2 1^2", &sig![1, [[0], [1]], [2, 1]]);
+    copy_2.assert(6, "1 0 1^2 [2] 1^2", &sig![2, [1, [0], [1]], [1]]);
 
     tape.assert(
         6,
-        "1^1 0^1 1^1 [2] 2^1 1^2",
+        "1 0 1 [2] 2 1^2",
         &sig![2, [[1], [0], [1]], [[2], 1]],
     );
 }
@@ -824,7 +824,7 @@ fn test_apply_1() {
 
     tape.assert(
         42,
-        "2^24 1^12 [3] 4^1 5^2 6^2",
+        "2^24 1^12 [3] 4 5^2 6^2",
         &sig![3, [1, 2], [[4], 5, 6]],
     );
 }
@@ -839,7 +839,7 @@ fn test_apply_2() {
 
     tape.assert(
         73,
-        "4^2 [4] 5^60 2^1 4^1 5^7 1^1",
+        "4^2 [4] 5^60 2 4 5^7 1",
         &sig![4, [4], [5, [2], [4], 5, [1]]],
     );
 
@@ -853,7 +853,7 @@ fn test_apply_2() {
 
     tape.assert(
         131,
-        "4^118 [4] 5^2 2^1 4^1 5^7 1^1",
+        "4^118 [4] 5^2 2 4 5^7 1",
         &sig![4, [4], [5, [2], [4], 5, [1]]],
     );
 }
@@ -917,35 +917,35 @@ fn test_offsets_1() {
         []
     };
 
-    tape.assert("2^1 3^11 4^1 1^11 [0]", (0, 0), (0, 0));
+    tape.assert("2 3^11 4 1^11 [0]", (0, 0), (0, 0));
 
     tape.tstep(0, 0, 0);
 
-    tape.assert("2^1 3^11 4^1 1^10 [1]", (1, 0), (0, 0));
+    tape.assert("2 3^11 4 1^10 [1]", (1, 0), (0, 0));
 
     tape.tstep(0, 2, 1);
 
-    tape.assert("2^1 3^11 [4] 2^11", (2, 0), (0, 0));
+    tape.assert("2 3^11 [4] 2^11", (2, 0), (0, 0));
 
     tape.tstep(0, 2, 1);
 
-    tape.assert("2^1 3^10 [3] 2^12", (3, 0), (0, 0));
+    tape.assert("2 3^10 [3] 2^12", (3, 0), (0, 0));
 
     tape.tstep(0, 2, 0);
 
-    tape.assert("2^1 3^9 [3] 2^13", (3, 0), (0, 0));
+    tape.assert("2 3^9 [3] 2^13", (3, 0), (0, 0));
 
     tape.tstep(1, 4, 0);
 
-    tape.assert("2^1 3^9 4^1 [2] 2^12", (3, 0), (0, 0));
+    tape.assert("2 3^9 4 [2] 2^12", (3, 0), (0, 0));
 
     tape.tstep(1, 1, 1);
 
-    tape.assert("2^1 3^9 4^1 1^13 [0]", (3, 0), (0, 1));
+    tape.assert("2 3^9 4 1^13 [0]", (3, 0), (0, 1));
 
     tape.tstep(1, 1, 0);
 
-    tape.assert("2^1 3^9 4^1 1^14 [0]", (3, 0), (0, 1));
+    tape.assert("2 3^9 4 1^14 [0]", (3, 0), (0, 1));
 }
 
 #[test]
@@ -956,7 +956,7 @@ fn test_offsets_2() {
 
     tape.tstep(0, 5, 0);
 
-    tape.assert("3^6 2^414422564 [2] 5^1", (1, 0), (0, 0));
+    tape.assert("3^6 2^414422564 [2] 5", (1, 0), (0, 0));
 
     tape.tstep(0, 5, 1);
 
@@ -964,7 +964,7 @@ fn test_offsets_2() {
 
     tape.tstep(1, 2, 0);
 
-    tape.assert("3^5 2^1 [5] 5^414422565", (2, 0), (0, 0));
+    tape.assert("3^5 2 [5] 5^414422565", (2, 0), (0, 0));
 
     tape.tstep(1, 2, 1);
 
@@ -986,7 +986,7 @@ fn test_edges_1() {
 
     tape.tstep(0, 1, 0);
 
-    tape.assert("[0] 1^1", (0, 0), (1, 0));
+    tape.assert("[0] 1", (0, 0), (1, 0));
 }
 
 #[test]

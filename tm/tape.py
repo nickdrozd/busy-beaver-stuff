@@ -30,7 +30,13 @@ class Block:
     count: Count
 
     def __str__(self) -> str:
-        return f"{self.color}^{show_number(self.count)}"
+        color, count = self.color, self.count
+
+        return (
+            f"{color}"
+            if count == 1 else
+            f"{color}^{show_number(count)}"
+        )
 
     def clone(self) -> Block:
         return Block(self.color, self.count)
