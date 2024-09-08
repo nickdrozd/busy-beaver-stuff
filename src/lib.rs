@@ -4,6 +4,7 @@
     clippy::pedantic,
     clippy::get_unwrap,
     clippy::str_to_string,
+    clippy::clone_on_ref_ptr,
     clippy::allow_attributes,
     clippy::unwrap_in_result,
     clippy::partial_pub_fields,

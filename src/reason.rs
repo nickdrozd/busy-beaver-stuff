@@ -201,7 +201,7 @@ fn step_configs(configs: ValidatedSteps) -> Option<Configs> {
             let mut next_config = Config {
                 state: next_state,
                 tape: next_tape,
-                prev: Some(config_rc.clone()),
+                prev: Some(Rc::clone(&config_rc)),
                 recs: config_rc.recs,
             };
 
