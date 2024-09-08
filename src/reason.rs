@@ -191,18 +191,18 @@ fn step_configs(configs: ValidatedSteps) -> Option<Configs> {
     let mut stepped = Configs::new();
 
     for (instrs, config) in configs {
-        let config_rc = Rc::new(config);
+        let config = Rc::new(config);
 
         for (next_state, next_color, shift) in instrs {
-            let mut next_tape = config_rc.tape.clone();
+            let mut next_tape = config.tape.clone();
 
             next_tape.backstep(shift, next_color);
 
             let mut next_config = Config {
                 state: next_state,
                 tape: next_tape,
-                prev: Some(Rc::clone(&config_rc)),
-                recs: config_rc.recs,
+                prev: Some(Rc::clone(&config)),
+                recs: config.recs,
             };
 
             if next_config.lin_rec() {
