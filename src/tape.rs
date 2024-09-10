@@ -153,7 +153,7 @@ impl<B: Block> Display for Tape<B> {
     }
 }
 
-impl GetSig for BasicTape {
+impl<B: Block> GetSig for Tape<B> {
     fn scan(&self) -> Color {
         self.scan
     }
@@ -173,11 +173,7 @@ impl GetSig for EnumTape {
     }
 
     fn signature(&self) -> Signature {
-        Signature {
-            scan: self.scan(),
-            lspan: self.tape.lspan.iter().map(Into::into).collect(),
-            rspan: self.tape.rspan.iter().map(Into::into).collect(),
-        }
+        self.tape.signature()
     }
 }
 
