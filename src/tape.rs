@@ -87,6 +87,59 @@ impl Display for BasicBlock {
 
 /**************************************/
 
+#[derive(Clone, Hash, PartialEq, Eq)]
+struct Span<B: Block>(Vec<B>);
+
+impl<B: Block> Span<B> {
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn blank(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    fn signature(&self) -> Vec<ColorCount> {
+        self.0.iter().map(Into::into).collect()
+    }
+
+    fn sig_compatible(&self, span: &SigSpan) -> bool {
+        self.0
+            .iter()
+            .take(span.len())
+            .zip(span.iter())
+            .all(|(bk, cc)| bk.get_color() == cc.get_color())
+    }
+
+    fn marks(&self) -> Count {
+        self.0
+            .iter()
+            .filter(|block| block.get_color() != 0)
+            .map(Block::get_count)
+            .sum::<Count>()
+    }
+
+    fn counts(&self) -> Vec<Count> {
+        self.0.iter().map(B::get_count).collect()
+    }
+
+    fn unroll(
+        &self,
+    ) -> impl DoubleEndedIterator<Item = Color> + use<'_, B> {
+        self.0.iter().flat_map(|block| {
+            repeat(block.get_color()).take(block.get_count() as usize)
+        })
+    }
+
+    fn string_iter(
+        &self,
+    ) -> impl DoubleEndedIterator<Item = String> + use<'_, B> {
+        self.0.iter().map(ToString::to_string)
+    }
+}
+
+/**************************************/
+
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum ColorCount {
     Just(Color),
@@ -111,11 +164,13 @@ impl<B: Block> From<&B> for ColorCount {
     }
 }
 
+type SigSpan = Vec<ColorCount>;
+
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Signature {
     pub scan: Color,
-    pub lspan: Vec<ColorCount>,
-    pub rspan: Vec<ColorCount>,
+    pub lspan: SigSpan,
+    pub rspan: SigSpan,
 }
 
 pub trait GetSig {
@@ -130,8 +185,8 @@ pub trait GetSig {
 pub struct Tape<B: Block> {
     pub scan: Color,
 
-    lspan: Vec<B>,
-    rspan: Vec<B>,
+    lspan: Span<B>,
+    rspan: Span<B>,
 }
 
 pub type BasicTape = Tape<BasicBlock>;
@@ -142,11 +197,10 @@ impl<B: Block> Display for Tape<B> {
             f,
             "{}",
             self.lspan
-                .iter()
-                .map(ToString::to_string)
+                .string_iter()
                 .rev()
                 .chain(once(format!("[{}]", self.scan)))
-                .chain(self.rspan.iter().map(ToString::to_string))
+                .chain(self.rspan.string_iter())
                 .collect::<Vec<_>>()
                 .join(" ")
         )
@@ -161,8 +215,8 @@ impl<B: Block> GetSig for Tape<B> {
     fn signature(&self) -> Signature {
         Signature {
             scan: self.scan,
-            lspan: self.lspan.iter().map(Into::into).collect(),
-            rspan: self.rspan.iter().map(Into::into).collect(),
+            lspan: self.lspan.signature(),
+            rspan: self.rspan.signature(),
         }
     }
 }
@@ -185,8 +239,8 @@ macro_rules! tape {
     ) => {
         Tape {
             scan: $ scan,
-            lspan: vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ],
-            rspan: vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ],
+            lspan: Span ( vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ] ),
+            rspan: Span ( vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ] ),
         }
     };
 }
@@ -202,13 +256,8 @@ impl<B: Block> Tape<B> {
 
     pub fn marks(&self) -> Count {
         Count::from(self.scan != 0)
-            + self
-                .lspan
-                .iter()
-                .chain(self.rspan.iter())
-                .filter(|block| block.get_color() != 0)
-                .map(Block::get_count)
-                .sum::<Count>()
+            + self.lspan.marks()
+            + self.rspan.marks()
     }
 
     pub fn blocks(&self) -> usize {
@@ -216,10 +265,7 @@ impl<B: Block> Tape<B> {
     }
 
     pub fn counts(&self) -> Counts {
-        (
-            self.lspan.iter().map(B::get_count).collect(),
-            self.rspan.iter().map(B::get_count).collect(),
-        )
+        (self.lspan.counts(), self.rspan.counts())
     }
 
     pub fn span_lens(&self) -> (usize, usize) {
@@ -228,11 +274,11 @@ impl<B: Block> Tape<B> {
 
     pub fn at_edge(&self, edge: Shift) -> bool {
         self.scan == 0
-            && (if edge { &self.rspan } else { &self.lspan }).is_empty()
+            && (if edge { &self.rspan } else { &self.lspan }).blank()
     }
 
     pub fn blank(&self) -> bool {
-        self.scan == 0 && self.lspan.is_empty() && self.rspan.is_empty()
+        self.scan == 0 && self.lspan.blank() && self.rspan.blank()
     }
 
     pub fn sig_compatible(
@@ -242,32 +288,16 @@ impl<B: Block> Tape<B> {
         self.scan == *scan
             && self.lspan.len() >= lspan.len()
             && self.rspan.len() >= rspan.len()
-            && self
-                .lspan
-                .iter()
-                .take(lspan.len())
-                .zip(lspan.iter())
-                .all(|(bk, cc)| bk.get_color() == cc.get_color())
-            && self
-                .rspan
-                .iter()
-                .take(rspan.len())
-                .zip(rspan.iter())
-                .all(|(bk, cc)| bk.get_color() == cc.get_color())
+            && self.lspan.sig_compatible(lspan)
+            && self.rspan.sig_compatible(rspan)
     }
 
     pub fn unroll(&self) -> Vec<Color> {
-        let left_colors = self.lspan.iter().rev().flat_map(|block| {
-            repeat(block.get_color()).take(block.get_count() as usize)
-        });
-
-        let right_colors = self.rspan.iter().flat_map(|block| {
-            repeat(block.get_color()).take(block.get_count() as usize)
-        });
-
-        left_colors
+        self.lspan
+            .unroll()
+            .rev()
             .chain(once(self.scan))
-            .chain(right_colors)
+            .chain(self.rspan.unroll())
             .collect()
     }
 
@@ -284,25 +314,25 @@ impl<B: Block> Tape<B> {
         };
 
         let mut push_block = (skip
-            && !pull.is_empty()
-            && pull[0].get_color() == self.scan)
-            .then(|| pull.remove(0));
+            && !pull.blank()
+            && pull.0[0].get_color() == self.scan)
+            .then(|| pull.0.remove(0));
 
         let stepped = push_block
             .as_ref()
             .map_or_else(|| 1, |block| 1 + block.get_count());
 
-        let next_scan = if pull.is_empty() {
+        let next_scan = if pull.blank() {
             0
         } else {
-            let next_pull = &mut pull[0];
+            let next_pull = &mut pull.0[0];
 
             let pull_color = next_pull.get_color();
 
             if next_pull.get_count() > 1 {
                 next_pull.dec_count();
             } else {
-                let mut popped = pull.remove(0);
+                let mut popped = pull.0.remove(0);
 
                 if push_block.is_none() {
                     popped.set_count(0);
@@ -313,9 +343,9 @@ impl<B: Block> Tape<B> {
             pull_color
         };
 
-        if !push.is_empty() && push[0].get_color() == color {
-            push[0].add_count(stepped);
-        } else if !push.is_empty() || color != 0 {
+        if !push.blank() && push.0[0].get_color() == color {
+            push.0[0].add_count(stepped);
+        } else if !push.blank() || color != 0 {
             if let Some(block) = &mut push_block {
                 block.set_color(color);
                 block.inc_count();
@@ -324,7 +354,7 @@ impl<B: Block> Tape<B> {
             }
 
             if let Some(block) = push_block {
-                push.insert(0, block);
+                push.0.insert(0, block);
             }
         }
 
@@ -347,7 +377,7 @@ impl<B: Block> IndexTape for Tape<B> {
     fn get_count(&self, &(side, pos): &Index) -> Count {
         let span = if side { &self.rspan } else { &self.lspan };
 
-        span[pos].get_count()
+        span.0[pos].get_count()
     }
 
     fn set_count(&mut self, &(side, pos): &Index, val: Count) {
@@ -357,7 +387,7 @@ impl<B: Block> IndexTape for Tape<B> {
             &mut self.lspan
         };
 
-        span[pos].set_count(val);
+        span.0[pos].set_count(val);
     }
 }
 
@@ -492,7 +522,7 @@ impl Alignment for HeadTape {
         if diff > 0 {
             #[expect(clippy::cast_sign_loss)]
             let mut remaining = diff as Count;
-            for block in lspan {
+            for block in &lspan.0 {
                 let count = block.count.min(remaining);
                 tape.extend(vec![block.color; count as usize]);
                 remaining -= count;
@@ -505,7 +535,7 @@ impl Alignment for HeadTape {
 
         tape.push(self.scan());
 
-        for block in rspan {
+        for block in &rspan.0 {
             tape.extend(vec![block.color; block.count as usize]);
         }
 
@@ -583,26 +613,30 @@ impl From<&BasicTape> for EnumTape {
         Self {
             tape: Tape {
                 scan: tape.scan,
-                lspan: tape
-                    .lspan
-                    .iter()
-                    .enumerate()
-                    .map(|(i, block)| EnumBlock {
-                        color: block.get_color(),
-                        count: block.get_count(),
-                        index: Some((false, 1 + i)),
-                    })
-                    .collect(),
-                rspan: tape
-                    .rspan
-                    .iter()
-                    .enumerate()
-                    .map(|(i, block)| EnumBlock {
-                        color: block.get_color(),
-                        count: block.get_count(),
-                        index: Some((true, 1 + i)),
-                    })
-                    .collect(),
+                lspan: Span(
+                    tape.lspan
+                        .0
+                        .iter()
+                        .enumerate()
+                        .map(|(i, block)| EnumBlock {
+                            color: block.get_color(),
+                            count: block.get_count(),
+                            index: Some((false, 1 + i)),
+                        })
+                        .collect(),
+                ),
+                rspan: Span(
+                    tape.rspan
+                        .0
+                        .iter()
+                        .enumerate()
+                        .map(|(i, block)| EnumBlock {
+                            color: block.get_color(),
+                            count: block.get_count(),
+                            index: Some((true, 1 + i)),
+                        })
+                        .collect(),
+                ),
             },
 
             l_offset: Cell::new(0),
@@ -644,23 +678,23 @@ impl EnumTape {
             (&self.tape.lspan, &self.tape.rspan)
         };
 
-        if pull.is_empty() {
+        if pull.blank() {
             self.touch_edge(shift);
         } else {
-            let near_block = &pull[0];
+            let near_block = &pull.0[0];
             self.check_offsets(near_block);
 
             if skip && near_block.color == self.tape.scan {
                 if pull.len() == 1 {
                     self.touch_edge(shift);
                 } else {
-                    self.check_offsets(&pull[1]);
+                    self.check_offsets(&pull.0[1]);
                 }
             }
         }
 
-        if !push.is_empty() {
-            let opp = &push[0];
+        if !push.blank() {
+            let opp = &push.0[0];
 
             if color == opp.color {
                 self.check_offsets(opp);
@@ -897,8 +931,8 @@ macro_rules! enum_tape {
         EnumTape::from(
             &BasicTape {
                 scan: $ scan,
-                lspan: vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ],
-                rspan: vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ],
+                lspan: Span ( vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ] ),
+                rspan: Span ( vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ] ),
             }
         )
     };
