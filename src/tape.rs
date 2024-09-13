@@ -235,9 +235,10 @@ impl<B: Block> Tape<B> {
         self.scan == 0 && self.lspan.is_empty() && self.rspan.is_empty()
     }
 
-    pub fn sig_compatible(&self, sig: &Signature) -> bool {
-        let Signature { scan, lspan, rspan } = sig;
-
+    pub fn sig_compatible(
+        &self,
+        Signature { scan, lspan, rspan }: &Signature,
+    ) -> bool {
         self.scan == *scan
             && self.lspan.len() >= lspan.len()
             && self.rspan.len() >= rspan.len()
