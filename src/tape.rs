@@ -136,6 +136,65 @@ impl<B: Block> Span<B> {
     ) -> impl DoubleEndedIterator<Item = String> + use<'_, B> {
         self.0.iter().map(ToString::to_string)
     }
+
+    fn pull(
+        &mut self,
+        scan: Color,
+        skip: bool,
+    ) -> (Color, Count, Option<B>) {
+        let mut push_block =
+            (skip && !self.blank() && self.0[0].get_color() == scan)
+                .then(|| self.0.remove(0));
+
+        let stepped = push_block
+            .as_ref()
+            .map_or_else(|| 1, |block| 1 + block.get_count());
+
+        let next_scan = if self.blank() {
+            0
+        } else {
+            let next_pull = &mut self.0[0];
+
+            let pull_color = next_pull.get_color();
+
+            if next_pull.get_count() > 1 {
+                next_pull.dec_count();
+            } else {
+                let mut popped = self.0.remove(0);
+
+                if push_block.is_none() {
+                    popped.set_count(0);
+                    push_block = Some(popped);
+                }
+            }
+
+            pull_color
+        };
+
+        (next_scan, stepped, push_block)
+    }
+
+    fn push(
+        &mut self,
+        print: Color,
+        stepped: Count,
+        mut push_block: Option<B>,
+    ) {
+        if !self.blank() && self.0[0].get_color() == print {
+            self.0[0].add_count(stepped);
+        } else if !self.blank() || print != 0 {
+            if let Some(block) = &mut push_block {
+                block.set_color(print);
+                block.inc_count();
+            } else {
+                push_block = Some(Block::new(print, 1));
+            }
+
+            if let Some(block) = push_block {
+                self.0.insert(0, block);
+            }
+        }
+    }
 }
 
 /**************************************/
@@ -313,50 +372,10 @@ impl<B: Block> Tape<B> {
             (&mut self.lspan, &mut self.rspan)
         };
 
-        let mut push_block = (skip
-            && !pull.blank()
-            && pull.0[0].get_color() == self.scan)
-            .then(|| pull.0.remove(0));
+        let (next_scan, stepped, push_block) =
+            pull.pull(self.scan, skip);
 
-        let stepped = push_block
-            .as_ref()
-            .map_or_else(|| 1, |block| 1 + block.get_count());
-
-        let next_scan = if pull.blank() {
-            0
-        } else {
-            let next_pull = &mut pull.0[0];
-
-            let pull_color = next_pull.get_color();
-
-            if next_pull.get_count() > 1 {
-                next_pull.dec_count();
-            } else {
-                let mut popped = pull.0.remove(0);
-
-                if push_block.is_none() {
-                    popped.set_count(0);
-                    push_block = Some(popped);
-                }
-            }
-
-            pull_color
-        };
-
-        if !push.blank() && push.0[0].get_color() == color {
-            push.0[0].add_count(stepped);
-        } else if !push.blank() || color != 0 {
-            if let Some(block) = &mut push_block {
-                block.set_color(color);
-                block.inc_count();
-            } else {
-                push_block = Some(Block::new(color, 1));
-            }
-
-            if let Some(block) = push_block {
-                push.0.insert(0, block);
-            }
-        }
+        push.push(color, stepped, push_block);
 
         self.scan = next_scan;
 
