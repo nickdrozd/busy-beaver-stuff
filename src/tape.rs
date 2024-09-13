@@ -580,31 +580,29 @@ impl Display for EnumTape {
 
 impl From<&BasicTape> for EnumTape {
     fn from(tape: &BasicTape) -> Self {
-        let mut lspan = vec![];
-
-        for (i, block) in tape.lspan.iter().enumerate() {
-            lspan.push(EnumBlock {
-                color: block.get_color(),
-                count: block.get_count(),
-                index: Some((false, 1 + i)),
-            });
-        }
-
-        let mut rspan = vec![];
-
-        for (i, block) in tape.rspan.iter().enumerate() {
-            rspan.push(EnumBlock {
-                color: block.get_color(),
-                count: block.get_count(),
-                index: Some((true, 1 + i)),
-            });
-        }
-
         Self {
             tape: Tape {
                 scan: tape.scan,
-                lspan,
-                rspan,
+                lspan: tape
+                    .lspan
+                    .iter()
+                    .enumerate()
+                    .map(|(i, block)| EnumBlock {
+                        color: block.get_color(),
+                        count: block.get_count(),
+                        index: Some((false, 1 + i)),
+                    })
+                    .collect(),
+                rspan: tape
+                    .rspan
+                    .iter()
+                    .enumerate()
+                    .map(|(i, block)| EnumBlock {
+                        color: block.get_color(),
+                        count: block.get_count(),
+                        index: Some((true, 1 + i)),
+                    })
+                    .collect(),
             },
 
             l_offset: Cell::new(0),
