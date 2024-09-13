@@ -897,8 +897,8 @@ macro_rules! enum_tape {
         EnumTape::from(
             &BasicTape {
                 scan: $ scan,
-                lspan: vec! [ $ ( BasicBlock::new( $ lspan.0, $ lspan.1) ), * ],
-                rspan: vec! [ $ ( BasicBlock::new( $ rspan.0, $ rspan.1) ), * ],
+                lspan: vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ],
+                rspan: vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ],
             }
         )
     };
