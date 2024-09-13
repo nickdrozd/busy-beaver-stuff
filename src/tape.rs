@@ -143,8 +143,8 @@ impl<B: Block> Display for Tape<B> {
             "{}",
             self.lspan
                 .iter()
-                .rev()
                 .map(ToString::to_string)
+                .rev()
                 .chain(once(format!("[{}]", self.scan)))
                 .chain(self.rspan.iter().map(ToString::to_string))
                 .collect::<Vec<_>>()
