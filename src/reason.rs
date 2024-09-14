@@ -452,7 +452,7 @@ impl Backstepper {
             pull.remove(0);
         }
 
-        if !(self.scan == 0 && push[0] == Square::Blanks) {
+        if self.scan != 0 || push[0] != Square::Blanks {
             push.insert(0, Square::Known(self.scan));
         }
 
