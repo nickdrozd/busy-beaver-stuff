@@ -15,16 +15,11 @@ pub trait Block: Display {
     fn new(color: Color, count: Count) -> Self;
 
     fn get_color(&self) -> Color;
-    fn set_color(&mut self, color: Color);
 
     fn get_count(&self) -> Count;
     fn set_count(&mut self, count: Count);
 
     fn add_count(&mut self, count: Count);
-
-    fn inc_count(&mut self) {
-        self.add_count(1);
-    }
 
     fn dec_count(&mut self);
 
@@ -56,10 +51,6 @@ impl Block for BasicBlock {
 
     fn get_color(&self) -> Color {
         self.color
-    }
-
-    fn set_color(&mut self, color: Color) {
-        self.color = color;
     }
 
     fn get_count(&self) -> Count {
@@ -137,18 +128,12 @@ impl<B: Block> Span<B> {
         self.0.iter().map(ToString::to_string)
     }
 
-    fn pull(
-        &mut self,
-        scan: Color,
-        skip: bool,
-    ) -> (Color, Count, Option<B>) {
-        let mut push_block =
+    fn pull(&mut self, scan: Color, skip: bool) -> (Color, Count) {
+        let stepped =
             (skip && !self.blank() && self.0[0].get_color() == scan)
-                .then(|| self.0.remove(0));
-
-        let stepped = push_block
-            .as_ref()
-            .map_or_else(|| 1, |block| 1 + block.get_count());
+                .then(|| self.0.remove(0))
+                .as_ref()
+                .map_or_else(|| 1, |block| 1 + block.get_count());
 
         let next_scan = if self.blank() {
             0
@@ -160,39 +145,28 @@ impl<B: Block> Span<B> {
             if next_pull.get_count() > 1 {
                 next_pull.dec_count();
             } else {
-                let mut popped = self.0.remove(0);
-
-                if push_block.is_none() {
-                    popped.set_count(0);
-                    push_block = Some(popped);
-                }
+                self.0.remove(0);
             }
 
             pull_color
         };
 
-        (next_scan, stepped, push_block)
+        (next_scan, stepped)
     }
 
-    fn push(
-        &mut self,
-        print: Color,
-        stepped: Count,
-        mut push_block: Option<B>,
-    ) {
-        if !self.blank() && self.0[0].get_color() == print {
-            self.0[0].add_count(stepped);
-        } else if !self.blank() || print != 0 {
-            if let Some(block) = &mut push_block {
-                block.set_color(print);
-                block.inc_count();
-            } else {
-                push_block = Some(Block::new(print, 1));
+    fn push(&mut self, print: Color, stepped: Count) {
+        if self.blank() {
+            if print != 0 {
+                self.0.insert(0, Block::new(print, stepped));
             }
 
-            if let Some(block) = push_block {
-                self.0.insert(0, block);
-            }
+            return;
+        }
+
+        if self.0[0].get_color() == print {
+            self.0[0].add_count(stepped);
+        } else {
+            self.0.insert(0, Block::new(print, stepped));
         }
     }
 }
@@ -372,10 +346,9 @@ impl<B: Block> Tape<B> {
             (&mut self.lspan, &mut self.rspan)
         };
 
-        let (next_scan, stepped, push_block) =
-            pull.pull(self.scan, skip);
+        let (next_scan, stepped) = pull.pull(self.scan, skip);
 
-        push.push(color, stepped, push_block);
+        push.push(color, stepped);
 
         self.scan = next_scan;
 
@@ -582,10 +555,6 @@ impl Block for EnumBlock {
 
     fn get_color(&self) -> Color {
         self.color
-    }
-
-    fn set_color(&mut self, color: Color) {
-        self.color = color;
     }
 
     fn get_count(&self) -> Count {
