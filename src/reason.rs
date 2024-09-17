@@ -440,12 +440,10 @@ impl Backstepper {
     }
 
     fn backstep(&mut self, shift: Shift, read: Color) {
-        let (pull, push) = if shift {
-            self.head -= 1;
-            (&mut self.lspan, &mut self.rspan)
+        let (stepped, pull, push) = if shift {
+            (-1, &mut self.lspan, &mut self.rspan)
         } else {
-            self.head += 1;
-            (&mut self.rspan, &mut self.lspan)
+            (1, &mut self.rspan, &mut self.lspan)
         };
 
         if let Square::Known(_) = &pull[0] {
@@ -457,6 +455,8 @@ impl Backstepper {
         }
 
         self.scan = read;
+
+        self.head += stepped;
     }
 }
 
