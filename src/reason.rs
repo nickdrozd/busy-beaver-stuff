@@ -292,7 +292,7 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 }
 
 #[cfg(test)]
-use crate::instrs::Parse;
+use crate::instrs::Parse as _;
 
 #[test]
 fn test_entrypoints() {

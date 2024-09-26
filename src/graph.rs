@@ -64,7 +64,7 @@ fn get_exitpoints(prog: &CompProg) -> Dict<State, Vec<State>> {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::Parse;
+use crate::instrs::Parse as _;
 
 #[cfg(test)]
 macro_rules! dict_from {

@@ -8,6 +8,7 @@
     clippy::allow_attributes,
     clippy::unwrap_in_result,
     clippy::partial_pub_fields,
+    clippy::unused_trait_names,
     clippy::std_instead_of_core,
     clippy::if_then_some_else_none,
     clippy::unneeded_field_pattern,
@@ -39,7 +40,7 @@ mod wrappers {
     use crate::{
         blocks::opt_block,
         graph::is_connected,
-        instrs::{CompProg, Params, Parse, State},
+        instrs::{CompProg, Params, Parse as _, State},
         machine::quick_term_or_rec,
         reason::{cant_blank, cant_halt, cant_spin_out, Depth, Step},
     };

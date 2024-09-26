@@ -3,10 +3,10 @@ use std::collections::BTreeMap as Dict;
 use pyo3::{pyclass, pyfunction, pymethods};
 
 use crate::{
-    instrs::{CompProg, Parse, Slot, State},
+    instrs::{CompProg, Parse as _, Slot, State},
     prover::{Prover, ProverResult},
     rules::apply_rule,
-    tape::{Alignment, BasicTape as Tape, Count, HeadTape},
+    tape::{Alignment as _, BasicTape as Tape, Count, HeadTape},
 };
 
 type Step = u64;

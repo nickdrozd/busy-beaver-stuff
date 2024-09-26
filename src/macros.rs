@@ -383,7 +383,7 @@ impl TapeColorConverter {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::Parse;
+use crate::instrs::Parse as _;
 
 #[test]
 fn test_macro() {
