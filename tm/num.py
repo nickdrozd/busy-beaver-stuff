@@ -143,11 +143,13 @@ def make_add(l: Count, r: Num) -> Add:
     if isinstance(l, Num) and l.depth > r.depth:  # no-cover
         l, r = r, l
 
+    adds = ADDS[l]
+
     try:
-        return (adds := ADDS[l])[r]
-    except KeyError:
-        adds[r] = Add(l, r)  # pylint: disable = used-before-assignment
         return adds[r]
+    except KeyError:
+        adds[r] = (add := Add(l, r))
+        return add
 
 class Add(Num):
     l: Count
@@ -334,11 +336,13 @@ def make_mul(l: Count, r: Num) -> Mul:
     if isinstance(l, Num) and l.depth > r.depth:
         l, r = r, l
 
+    muls = MULS[l]
+
     try:
-        return (muls := MULS[l])[r]
-    except KeyError:
-        muls[r] = Mul(l, r)  # pylint: disable = used-before-assignment
         return muls[r]
+    except KeyError:
+        muls[r] = (mul := Mul(l, r))
+        return mul
 
 
 class Mul(Num):
@@ -641,11 +645,13 @@ class Mul(Num):
 
 
 def make_div(num: Num, den: int) -> Div:
+    divs = DIVS[num]
+
     try:
-        return (divs := DIVS[num])[den]
-    except KeyError:
-        divs[den] = Div(num, den)  # pylint: disable = used-before-assignment
         return divs[den]
+    except KeyError:
+        divs[den] = (div := Div(num, den))
+        return div
 
 
 class Div(Num):
@@ -805,11 +811,13 @@ def make_exp(base: int, exp: Count) -> Exp:
         exp *= int(log(base, root))
         base = int(root)
 
+    exps = EXPS[base]
+
     try:
-        return (exps := EXPS[base])[exp]
-    except KeyError:
-        exps[exp] = Exp(base, exp)  # pylint: disable = used-before-assignment
         return exps[exp]
+    except KeyError:
+        exps[exp] = (exp_expr := Exp(base, exp))
+        return exp_expr
 
 
 class Exp(Num):
