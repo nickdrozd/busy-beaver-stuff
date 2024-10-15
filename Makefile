@@ -62,11 +62,9 @@ lint : clippy rust
 
 MYPY = $(PYTHON) -m mypy
 
-GENERIC = --enable-incomplete-feature=NewGenericSyntax
-
 type :
 	$(MYPY) --version
-	$(MYPY) $(GENERIC) $(MODULES)
+	$(MYPY) $(MODULES)
 
 MYPYC = $(PYTHON) -m mypyc
 
@@ -74,7 +72,7 @@ TEST_COMPILE = test/utils.py test/lin_rec.py test/machine.py
 
 compile : rust
 	$(MYPYC) --version
-	$(MYPYC) $(GENERIC) tm tools $(TEST_COMPILE) --exclude rust_stuff
+	$(MYPYC) tm tools $(TEST_COMPILE) --exclude rust_stuff
 
 TUR = test.test_turing
 PROG = test.test_program
