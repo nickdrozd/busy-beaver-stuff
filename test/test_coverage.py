@@ -3,7 +3,6 @@
 from unittest import TestCase
 
 from tm.machine import Machine, quick_term_or_rec
-from tm.tree import run_tree_gen
 from tm.reason import (
     cant_halt,
     cant_blank,
@@ -215,12 +214,3 @@ class TestFloss(TestCase):
                 "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ..."
             ).run().susrul,
             (5, 2))
-
-    def test_tree(self):
-        # pylint: disable = no-self-use
-        run_tree_gen(
-            steps = 10,
-            halt = True,
-            output = print,
-            params = (2, 2),
-        )

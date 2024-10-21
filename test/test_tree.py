@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from unittest import TestCase, skipUnless, expectedFailure
-from multiprocessing import Queue, Manager
+from multiprocessing import Queue, Manager, Pool
 from typing import TYPE_CHECKING
 
 from test.utils import read_progs, RUN_SLOW
@@ -10,7 +10,6 @@ from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 
 from tools.graph import Graph
 
-from tm.tree import run_tree_gen
 from tm.macro import opt_block
 from tm.machine import (
     Machine,
@@ -22,10 +21,11 @@ from tm.reason import (
     cant_blank,
     cant_spin_out,
 )
+from tm.rust_stuff import tree_progs
 
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from test.lin_rec import QuickMachineResult
 
@@ -35,6 +35,21 @@ if TYPE_CHECKING:
 
     Q = Queue[str]
 
+########################################
+
+def run_tree_gen(
+        steps: int,
+        halt: bool,
+        params: Params,
+        output: Callable[[str], None],
+) -> None:
+    with Pool() as pool:
+        pool.map(
+            output,
+            tree_progs(
+                params, halt, steps))
+
+########################################
 
 def queue_to_set(queue: Q) -> set[str]:
     out = set()
