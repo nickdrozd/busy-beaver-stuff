@@ -13,7 +13,7 @@ def worker(prog: str) -> None:
     if CANT_REACH(prog, CYCLES) is not None:
         return
 
-    print(prog)
+    print(prog.strip())
 
 
 if __name__ == '__main__':
