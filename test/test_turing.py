@@ -274,6 +274,7 @@ class Reason(TuringTest):
 
     def test_halt(self):
         for prog in HALTERS:
+            self.assert_simple(prog)
             self.assert_could_halt(prog)
 
         for prog in SPINNERS | RECURS:
@@ -293,6 +294,7 @@ class Reason(TuringTest):
 
     def test_recur(self):
         for prog in RECURS | INFRUL | set(ALGEBRA['infrul']):
+            self.assert_simple(prog)
             self.assert_cant_halt(prog, 115)
             self.assert_cant_spin_out(prog, 256)
 
