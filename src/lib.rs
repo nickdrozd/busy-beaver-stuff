@@ -16,7 +16,6 @@
 )]
 #![expect(
     clippy::cast_possible_truncation,
-    clippy::module_name_repetitions,
     clippy::redundant_pub_crate
 )]
 #![allow(clippy::should_panic_without_expect)]
