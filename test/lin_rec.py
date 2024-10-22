@@ -10,6 +10,7 @@ from test.machine import QuickMachineResult, TermRes
 from tm.parse import tcompile
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from typing import Self
 
     from tm.parse import Color, Shift, State, Slot, CompProg
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     RecRes = tuple[int, int]
     LinRec = tuple[int | None, int]
 
-    TapeSlice = list[Color]
+    TapeSlice = Iterator[Color]
 
 ########################################
 
@@ -44,7 +45,7 @@ class PtrTape:
             ],
         )
 
-    def get_ltr(self, start: int) -> TapeSlice:
+    def get_ltr(self, start: int) -> list[Color]:
         start += self.init
 
         return (
@@ -53,7 +54,7 @@ class PtrTape:
             [0] * ldiff + self.tape
         )
 
-    def get_rtl(self, stop: int) -> TapeSlice:
+    def get_rtl(self, stop: int) -> list[Color]:
         stop += self.init + 1
 
         return (
@@ -62,7 +63,7 @@ class PtrTape:
             self.tape[ : stop - rdiff ] + [0] * rdiff
         )
 
-    def get_cnt(self, start: int, stop: int) -> TapeSlice:
+    def get_cnt(self, start: int, stop: int) -> list[Color]:
         start += self.init
         stop += self.init + 1
 
@@ -209,53 +210,49 @@ class HeadTape:
             lspan, rspan = self.rspan, self.lspan
             diff = start - self.head
 
-        tape: TapeSlice = []
-
         if diff > 0:
+            index = -1
+
             for block in lspan:
                 if diff <= (count := block.count):
-                    tape.extend(
-                        [block.color] * diff)
+                    for _ in range(diff):
+                        yield block.color
 
                     break
 
-                tape.extend(
-                    [block.color] * count)
-
                 diff -= count
+                index += 1
 
-            else:
-                assert diff > 0
+            if index > -1:
+                for block in lspan[index::-1]:
+                    for _ in range(block.count):
+                        yield block.color
 
-                tape.extend(
-                    [0] * diff)
-
-            tape.reverse()
-
-        tape.append(self.scan)
+        yield self.scan
 
         for block in rspan:
-            tape.extend(
-                [block.color] * block.count)
-
-        return tape
+            for _ in range(block.count):
+                yield block.color
 
     def get_ltr(self, start: int) -> TapeSlice:
-        return self.get_slice(start, ltr = True)
+        yield from self.get_slice(start, ltr = True)
 
     def get_rtl(self, start: int) -> TapeSlice:
-        return self.get_slice(start, ltr = False)
+        yield from self.get_slice(start, ltr = False)
 
     def get_cnt(self, start: int, stop: int) -> TapeSlice:
         assert start <= (head := self.head) <= stop
 
         if start == head:
-            return self.get_ltr(start)
+            yield from self.get_ltr(start)
+            return
 
         if stop == head:
-            return self.get_rtl(start)
+            yield from self.get_rtl(start)
+            return
 
-        return self.get_rtl(head - 1) + self.get_ltr(head)
+        yield from self.get_rtl(head - 1)
+        yield from self.get_ltr(head)
 
     def aligns_with(
             self,
@@ -275,7 +272,7 @@ class HeadTape:
             slice1 = prev.get_cnt(leftmost, rightmost)
             slice2 = self.get_cnt(leftmost, rightmost)
 
-        return slice1 == slice2
+        return all(c1 == c2 for c1, c2 in zip(slice1, slice2))
 
 
 def init_stepped() -> HeadTape:
