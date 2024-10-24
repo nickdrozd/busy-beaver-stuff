@@ -228,8 +228,6 @@ class HeadTape:
                     for _ in range(block.count):
                         yield block.color
 
-        yield self.scan
-
         for block in rspan:
             for _ in range(block.count):
                 yield block.color
