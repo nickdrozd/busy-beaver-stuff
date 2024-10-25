@@ -154,6 +154,11 @@ impl MachineResult {
             _ => None,
         }
     }
+
+    #[getter]
+    fn result(&self) -> TermRes {
+        self.result.clone()
+    }
 }
 
 /**************************************/
