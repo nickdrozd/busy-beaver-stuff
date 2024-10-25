@@ -9,7 +9,6 @@ from unittest import TestCase, expectedFailure, skip, skipUnless
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 from test.test_num import assert_num_counts, clear_caches
-from test.machine import QuickMachineResult, run_quick_machine
 from test.lin_rec import (
     LinRecSampler,
     run_loose_linrec_machine,
@@ -35,6 +34,10 @@ from tm.machine import (
     Machine,
     quick_term_or_rec,
 )
+from tm.rust_stuff import (
+    MachineResult,
+    run_quick_machine,
+)
 
 from tools import get_params
 from tools.graph import Graph
@@ -50,7 +53,7 @@ if TYPE_CHECKING:
 
     BasicMachine = (
         Machine
-        | QuickMachineResult
+        | MachineResult
         | StrictLinRecMachine
         | LinRecSampler
     )
@@ -67,7 +70,7 @@ class TuringTest(TestCase):
     def assert_marks(self, marks: int):
         assert isinstance(
             self.machine,
-            Machine | QuickMachineResult)
+            Machine | MachineResult)
 
         try:
             self.assertEqual(
@@ -374,7 +377,7 @@ class Reason(TuringTest):
 
 
 class Simple(TuringTest):
-    machine: QuickMachineResult
+    machine: MachineResult
 
     def run_bb(
             self,

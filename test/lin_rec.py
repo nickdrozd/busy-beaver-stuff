@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from test.machine import QuickMachineResult, TermRes
-
 from tm.parse import tcompile
+from tm.rust_stuff import TermRes, MachineResult
 
 if TYPE_CHECKING:
     from typing import Self
@@ -548,7 +547,7 @@ class LinRecSampler(LinRecMachine):
 def run_loose_linrec_machine(
         program: str,
         sim_lim: int = 100_000_000,
-) -> QuickMachineResult:
+) -> MachineResult:
     # pylint: disable = while-used, too-many-locals
     blanks = {}
 
@@ -630,7 +629,7 @@ def run_loose_linrec_machine(
     else:
         result = TermRes.xlimit
 
-    return QuickMachineResult(
+    return MachineResult(
         result = result,
         steps = step,
         cycles = cycle,

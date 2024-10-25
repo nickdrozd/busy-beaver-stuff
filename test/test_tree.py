@@ -27,11 +27,11 @@ from tm.rust_stuff import tree_progs
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from test.lin_rec import QuickMachineResult
+    from test.lin_rec import MachineResult
 
     from tm.machine import Params
 
-    BasicMachine = Machine | QuickMachineResult
+    BasicMachine = Machine | MachineResult
 
     Q = Queue[str]
 

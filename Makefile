@@ -68,7 +68,7 @@ type :
 
 MYPYC = $(PYTHON) -m mypyc
 
-TEST_COMPILE = test/utils.py test/lin_rec.py test/machine.py
+TEST_COMPILE = test/utils.py test/lin_rec.py
 
 compile : rust
 	$(MYPYC) --version
