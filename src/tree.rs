@@ -295,6 +295,26 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
         || check_inf(comp, params, opt_block(comp, 300), 306)
 }
 
+#[test]
+fn test_skip() {
+    let progs = [];
+
+    let halt = 0;
+    let params = (5, 2);
+
+    let halt = halt != 0;
+
+    for prog in progs {
+        let comp = CompProg::from_str(prog);
+
+        println!("{}", comp.show(Some(params)));
+
+        assert!(skip_all(&comp, params, halt));
+    }
+}
+
+/**************************************/
+
 #[cfg(test)]
 fn assert_tree(params: Params, halt: u8, expected: (u64, u64)) {
     let halt_flag = halt != 0;
@@ -363,6 +383,8 @@ fn test_tree_slow() {
         ((3, 3), 0, (588_967, 149_378_138)),
     ];
 }
+
+/**************************************/
 
 #[cfg(test)]
 fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
@@ -437,20 +459,56 @@ fn test_reason_slow() {
 
 /**************************************/
 
+#[cfg(test)]
+fn assert_linrec(params: Params, halt: u8, expected: (u64, u64)) {
+    let halt_flag = halt != 0;
+
+    let holdout_count = set_val(0);
+    let visited_count = set_val(0);
+
+    build_tree(params, halt_flag, 300, &|prog| {
+        *access(&visited_count) += 1;
+
+        if quick_term_or_rec(prog, 1_000, halt_flag) {
+            return;
+        }
+
+        *access(&holdout_count) += 1;
+
+        // println!("{}", prog.show(Some(params)));
+    });
+
+    let result = (get_val(holdout_count), get_val(visited_count));
+
+    assert_eq!(result, expected, "({params:?}, {halt}, {result:?})");
+}
+
+#[cfg(test)]
+macro_rules! assert_linrec_results {
+    ( $( ( $params:expr, $halt:expr, $leaves:expr ) ),* $(,)? ) => {
+        vec![$( ($params, $halt, $leaves) ),*]
+            .par_iter().for_each(|&(params, halt, expected)| {
+                assert_linrec(params, halt, expected);
+            });
+    };
+}
+
 #[test]
-fn test_skip() {
-    let progs = [];
-
-    let halt = 0;
-    let params = (5, 2);
-
-    let halt = halt != 0;
-
-    for prog in progs {
-        let comp = CompProg::from_str(prog);
-
-        println!("{}", comp.show(Some(params)));
-
-        assert!(skip_all(&comp, params, halt));
-    }
+fn test_linrec() {
+    assert_linrec_results![
+        ((2, 2), 1, (0, 36)),
+        ((2, 2), 0, (4, 106)),
+        //
+        ((3, 2), 1, (58, 3_140)),
+        ((3, 2), 0, (715, 13_128)),
+        //
+        ((2, 3), 1, (133, 2_447)),
+        ((2, 3), 0, (1_040, 9_168)),
+        //
+        ((4, 2), 1, (12_290, 467_142)),
+        ((4, 2), 0, (145_118, 2_291_637)),
+        //
+        ((2, 4), 1, (25_129, 312_642)),
+        ((2, 4), 0, (258_711, 1_719_237)),
+    ];
 }
