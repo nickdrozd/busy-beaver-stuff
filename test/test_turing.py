@@ -9,6 +9,7 @@ from unittest import TestCase, expectedFailure, skip, skipUnless
 # pylint: disable-next = wildcard-import, unused-wildcard-import
 from test.prog_data import *
 from test.test_num import assert_num_counts, clear_caches
+from test.test_holdouts import LR_FALSE_POSITIVES
 from test.lin_rec import (
     LinRecSampler,
     run_loose_linrec_machine,
@@ -519,6 +520,34 @@ class Recur(TuringTest):
             self.machine = Machine(prog).run()
 
         self.analyze(prog)
+
+    def test_lr_false_positives(self):
+        steps = 1_000
+
+        for progs in LR_FALSE_POSITIVES.values():
+            for prog in progs:
+                self.assertIsNotNone(
+                    StrictLinRecMachine(prog).run(steps).xlimit)
+
+        for prog in LR_FALSE_POSITIVES["py"]:
+            # good
+            self.assertFalse(
+                quick_term_or_rec(prog, steps),
+                prog)
+
+            # bad
+            self.assertIsNone(
+                run_loose_linrec_machine(prog, steps).xlimit)
+
+        for prog in LR_FALSE_POSITIVES["rs"]:
+            # bad
+            self.assertTrue(
+                quick_term_or_rec(prog, steps),
+                prog)
+
+            # bad
+            self.assertIsNone(
+                run_loose_linrec_machine(prog, steps).xlimit)
 
     def test_recur(self):
         self._test_recur(

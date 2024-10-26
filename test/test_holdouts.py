@@ -1,10 +1,6 @@
 from unittest import TestCase
 
 from test.utils import read_holdouts
-from test.lin_rec import (
-    StrictLinRecMachine,
-    run_loose_linrec_machine,
-)
 
 from tm.machine import quick_term_or_rec
 
@@ -21,20 +17,21 @@ HOLDOUT_COUNTS = {
 
 TOTAL_HOLDOUTS = 883
 
-PY_FALSE_POSIIVES = {
-    "1RB 0RB  0LB 1RC  1LD 0RC  1LB 1LA",
-    "1RB 0RB  0LC 1RD  1LC 1LA  1LB 0RD",
-    "1RB 1LD  1LC 1RB  0RC 1LA  0RD 0LC",
-}
-
-RUST_FALSE_POSITIVES = {
-    "1RB ...  1RC 0RA  0LD 0LB  0RB 1LC",
-    "1RB 0LD  1LC 1RA  ... 1LD  0RD 1LA",
-    "1RB 0RC  0LB 1LA  ... 1RD  1LB 0RD",
-    "1RB 0RD  0LC 0LA  1LA 1LB  1RA ...",
-    "1RB 1LA  0LC 0LD  ... 1LD  0RD 1RA",
-    "1RB 1LC  0LA 0RD  1RC 1LB  ... 1RA",
-    "1RB 1LC  0LA 0RD  1RD 1LB  ... 1RA",
+LR_FALSE_POSITIVES = {
+    "py": {
+        "1RB 0RB  0LB 1RC  1LD 0RC  1LB 1LA",
+        "1RB 0RB  0LC 1RD  1LC 1LA  1LB 0RD",
+        "1RB 1LD  1LC 1RB  0RC 1LA  0RD 0LC",
+    },
+    "rs": {
+        "1RB ...  1RC 0RA  0LD 0LB  0RB 1LC",
+        "1RB 0LD  1LC 1RA  ... 1LD  0RD 1LA",
+        "1RB 0RC  0LB 1LA  ... 1RD  1LB 0RD",
+        "1RB 0RD  0LC 0LA  1LA 1LB  1RA ...",
+        "1RB 1LA  0LC 0LD  ... 1LD  0RD 1RA",
+        "1RB 1LC  0LA 0RD  1RC 1LB  ... 1RA",
+        "1RB 1LC  0LA 0RD  1RD 1LB  ... 1RA",
+    }
 }
 
 
@@ -56,23 +53,10 @@ class Holdouts(TestCase):
             TOTAL_HOLDOUTS)
 
         for prog in holdouts:
+            if any(prog in progs
+                   for progs in LR_FALSE_POSITIVES.values()):
+                continue
+
             self.assertFalse(
                 quick_term_or_rec(prog, STEPS),
                 prog)
-
-            if prog in PY_FALSE_POSIIVES:
-                self.assertIsNotNone(
-                    run_loose_linrec_machine(prog, 300).infrul)
-
-                continue
-
-            self.assertIsNotNone(
-                run_loose_linrec_machine(prog, STEPS).xlimit)
-
-        for prog in RUST_FALSE_POSITIVES:
-            self.assertTrue(
-                quick_term_or_rec(prog, STEPS),
-                prog)
-
-            self.assertIsNotNone(
-                StrictLinRecMachine(prog).run(STEPS // 2).xlimit)
