@@ -38,22 +38,6 @@ struct Config {
     prev: Option<Rc<Config>>,
 }
 
-impl Alignment for Config {
-    fn head(&self) -> Pos {
-        self.tape.head
-    }
-
-    fn aligns_with(
-        &self,
-        prev: &Self,
-        leftmost: Pos,
-        rightmost: Pos,
-    ) -> bool {
-        self.state == prev.state
-            && self.tape.aligns_with(&prev.tape, leftmost, rightmost)
-    }
-}
-
 impl Config {
     const fn new(state: State, tape: Backstepper) -> Self {
         Self {
@@ -65,7 +49,7 @@ impl Config {
     }
 
     fn lin_rec(&self) -> bool {
-        let head = self.head();
+        let head = self.tape.head();
         let mut leftmost = head;
         let mut rightmost = head;
 
@@ -73,7 +57,7 @@ impl Config {
 
         #[expect(clippy::assigning_clones)]
         while let Some(config) = current {
-            let pos = config.head();
+            let pos = config.tape.head();
 
             if pos < leftmost {
                 leftmost = pos;
@@ -81,7 +65,13 @@ impl Config {
                 rightmost = pos;
             }
 
-            if self.aligns_with(&config, leftmost, rightmost) {
+            if self.state == config.state
+                && self.tape.aligns_with(
+                    &config.tape,
+                    leftmost,
+                    rightmost,
+                )
+            {
                 return true;
             }
 

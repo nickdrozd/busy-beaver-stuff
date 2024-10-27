@@ -433,15 +433,9 @@ impl HeadTape {
 
 pub trait Alignment {
     fn head(&self) -> Pos;
+    fn scan(&self) -> Color;
 
-    fn scan(&self) -> Color {
-        unimplemented!()
-    }
-
-    #[expect(unused_variables)]
-    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
-        unimplemented!()
-    }
+    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice;
 
     fn aligns_with(
         &self,
