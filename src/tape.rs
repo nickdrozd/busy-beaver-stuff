@@ -435,7 +435,18 @@ pub trait Alignment: Eq {
     fn head(&self) -> Pos;
     fn scan(&self) -> Color;
 
+    fn l_len(&self) -> usize;
+    fn r_len(&self) -> usize;
+
     fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice;
+
+    fn get_ltr(&self, start: Pos) -> TapeSlice {
+        self.get_slice(start, true)
+    }
+
+    fn get_rtl(&self, start: Pos) -> TapeSlice {
+        self.get_slice(start, false)
+    }
 
     fn aligns_with(
         &self,
@@ -450,23 +461,21 @@ pub trait Alignment: Eq {
         let diff = self.head() - prev.head();
 
         #[expect(clippy::comparison_chain)]
-        let (slice1, slice2) = if diff > 0 {
-            (prev.get_ltr(leftmost), self.get_ltr(leftmost + diff))
+        if 0 < diff {
+            self.r_len() == prev.r_len()
+                && self.l_len() >= prev.l_len()
+                && prev.get_ltr(leftmost)
+                    == self.get_ltr(leftmost + diff)
         } else if diff < 0 {
-            (prev.get_rtl(rightmost), self.get_rtl(rightmost + diff))
+            self.l_len() == prev.l_len()
+                && self.r_len() >= prev.r_len()
+                && prev.get_rtl(rightmost)
+                    == self.get_rtl(rightmost + diff)
         } else {
-            return self == prev;
-        };
-
-        slice1 == slice2
-    }
-
-    fn get_ltr(&self, start: Pos) -> TapeSlice {
-        self.get_slice(start, true)
-    }
-
-    fn get_rtl(&self, start: Pos) -> TapeSlice {
-        self.get_slice(start, false)
+            self.l_len() == prev.l_len()
+                && self.r_len() == prev.r_len()
+                && self == prev
+        }
     }
 }
 
@@ -477,6 +486,14 @@ impl Alignment for HeadTape {
 
     fn head(&self) -> Pos {
         self.head
+    }
+
+    fn l_len(&self) -> usize {
+        self.tape.lspan.len()
+    }
+
+    fn r_len(&self) -> usize {
+        self.tape.rspan.len()
     }
 
     fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {

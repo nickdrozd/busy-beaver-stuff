@@ -459,6 +459,14 @@ impl Alignment for Backstepper {
         self.head
     }
 
+    fn l_len(&self) -> usize {
+        self.lspan.len()
+    }
+
+    fn r_len(&self) -> usize {
+        self.rspan.len()
+    }
+
     fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
         let (lspan, rspan, diff) = if ltr {
             (&self.lspan, &self.rspan, self.head() - start)
