@@ -431,12 +431,15 @@ impl HeadTape {
     }
 }
 
-pub trait Alignment: Eq {
+pub trait Alignment {
     fn head(&self) -> Pos;
     fn scan(&self) -> Color;
 
     fn l_len(&self) -> usize;
     fn r_len(&self) -> usize;
+
+    fn l_eq(&self, prev: &Self) -> bool;
+    fn r_eq(&self, prev: &Self) -> bool;
 
     fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice;
 
@@ -464,17 +467,20 @@ pub trait Alignment: Eq {
         if 0 < diff {
             self.r_len() == prev.r_len()
                 && self.l_len() >= prev.l_len()
+                && self.r_eq(prev)
                 && prev.get_ltr(leftmost)
                     == self.get_ltr(leftmost + diff)
         } else if diff < 0 {
             self.l_len() == prev.l_len()
                 && self.r_len() >= prev.r_len()
+                && self.l_eq(prev)
                 && prev.get_rtl(rightmost)
                     == self.get_rtl(rightmost + diff)
         } else {
             self.l_len() == prev.l_len()
                 && self.r_len() == prev.r_len()
-                && self == prev
+                && self.l_eq(prev)
+                && self.r_eq(prev)
         }
     }
 }
@@ -494,6 +500,14 @@ impl Alignment for HeadTape {
 
     fn r_len(&self) -> usize {
         self.tape.rspan.len()
+    }
+
+    fn l_eq(&self, prev: &Self) -> bool {
+        self.tape.lspan == prev.tape.lspan
+    }
+
+    fn r_eq(&self, prev: &Self) -> bool {
+        self.tape.rspan == prev.tape.rspan
     }
 
     fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
