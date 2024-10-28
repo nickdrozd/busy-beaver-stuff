@@ -245,17 +245,6 @@ class HeadTape:
     def get_rtl(self, start: int) -> TapeSlice:
         return self.get_slice(start, ltr = False)
 
-    def get_cnt(self, start: int, stop: int) -> TapeSlice:
-        assert start <= (head := self.head) <= stop
-
-        if start == head:
-            return self.get_ltr(start)
-
-        if stop == head:
-            return self.get_rtl(start)
-
-        return self.get_rtl(head - 1) + self.get_ltr(head)
-
     def aligns_with(
             self,
             prev: HeadTape,
@@ -271,8 +260,7 @@ class HeadTape:
             slice2 = self.get_rtl(rightmost + diff)
 
         else:
-            slice1 = prev.get_cnt(leftmost, rightmost)
-            slice2 = self.get_cnt(leftmost, rightmost)
+            return self == prev
 
         return slice1 == slice2
 

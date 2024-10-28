@@ -431,7 +431,7 @@ impl HeadTape {
     }
 }
 
-pub trait Alignment {
+pub trait Alignment: Eq {
     fn head(&self) -> Pos;
     fn scan(&self) -> Color;
 
@@ -455,10 +455,7 @@ pub trait Alignment {
         } else if diff < 0 {
             (prev.get_rtl(rightmost), self.get_rtl(rightmost + diff))
         } else {
-            (
-                prev.get_cnt(leftmost, rightmost),
-                self.get_cnt(leftmost, rightmost),
-            )
+            return self == prev;
         };
 
         slice1 == slice2
@@ -470,20 +467,6 @@ pub trait Alignment {
 
     fn get_rtl(&self, start: Pos) -> TapeSlice {
         self.get_slice(start, false)
-    }
-
-    fn get_cnt(&self, start: Pos, stop: Pos) -> TapeSlice {
-        let head = self.head();
-
-        assert!(start <= head && head <= stop);
-
-        if start == head {
-            self.get_ltr(start)
-        } else if head == stop {
-            self.get_rtl(start)
-        } else {
-            [self.get_rtl(head - 1), self.get_ltr(head)].concat()
-        }
     }
 }
 

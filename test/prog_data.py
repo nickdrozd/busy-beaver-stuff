@@ -574,6 +574,19 @@ RECUR_TOO_SLOW = {
     "1RB 1LC  0LA 1RD  0RB 0LC  1LA 0RD": (119_120_230_102,     966_716),
 }
 
+LR_NEGATIVES = {
+    "1RB 0RB  0LB 1RC  1LD 0RC  1LB 1LA",
+    "1RB 0RB  0LC 1RD  1LC 1LA  1LB 0RD",
+    "1RB 1LD  1LC 1RB  0RC 1LA  0RD 0LC",
+    "1RB ...  1RC 0RA  0LD 0LB  0RB 1LC",
+    "1RB 0LD  1LC 1RA  ... 1LD  0RD 1LA",
+    "1RB 0RC  0LB 1LA  ... 1RD  1LB 0RD",
+    "1RB 0RD  0LC 0LA  1LA 1LB  1RA ...",
+    "1RB 1LA  0LC 0LD  ... 1LD  0RD 1RA",
+    "1RB 1LC  0LA 0RD  1RC 1LB  ... 1RA",
+    "1RB 1LC  0LA 0RD  1RD 1LB  ... 1RA",
+}
+
 UNDEFINED = {
     # 4/2 blb, sb
     "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": {
