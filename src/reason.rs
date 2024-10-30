@@ -124,7 +124,7 @@ fn cant_reach(
     None
 }
 
-type ValidatedSteps = Vec<(Vec<(State, Color, Shift)>, Config)>;
+type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 
 fn get_valid_steps(
     configs: &mut Configs,
@@ -164,7 +164,7 @@ fn get_valid_steps(
                 return None;
             }
 
-            good_steps.push((next_state, next_color, shift));
+            good_steps.push((next_color, shift, next_state));
         }
 
         if good_steps.is_empty() {
@@ -183,7 +183,7 @@ fn step_configs(configs: ValidatedSteps) -> Option<Configs> {
     for (instrs, config) in configs {
         let config = Rc::new(config);
 
-        for (next_state, next_color, shift) in instrs {
+        for (next_color, shift, next_state) in instrs {
             let mut next_tape = config.tape.clone();
 
             next_tape.backstep(shift, next_color);
