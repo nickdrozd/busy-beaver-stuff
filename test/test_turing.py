@@ -621,12 +621,11 @@ class Recur(TuringTest):
 
                 self.assert_quasihalt(qsihlt)
 
-            if steps is None or steps < 100_000:
-                self.assertIsNotNone(
-                    run_loose_linrec_machine(prog, 100_000).infrul)
+            self.assertIsNotNone(
+                run_loose_linrec_machine(prog, 1_000_000).infrul)
 
-                self.assertTrue(
-                    quick_term_or_rec(prog, 100_000))
+            self.assertTrue(
+                quick_term_or_rec(prog, 1_000_000))
 
     def assert_lin_rec(self, steps: int, recur: int):
         assert isinstance(self.machine, LinRecSampler)
