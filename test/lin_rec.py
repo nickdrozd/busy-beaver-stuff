@@ -229,10 +229,6 @@ class HeadTape:
                 tape.extend(
                     [0] * diff)
 
-            tape.reverse()
-
-        tape.append(self.scan)
-
         for block in rspan:
             tape.extend(
                 [block.color] * block.count)

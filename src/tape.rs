@@ -530,10 +530,7 @@ impl Alignment for HeadTape {
             if remaining > 0 {
                 tape.extend(vec![0; remaining as usize]);
             }
-            tape.reverse();
         }
-
-        tape.push(self.scan());
 
         for block in &rspan.0 {
             tape.extend(vec![block.color; block.count as usize]);
