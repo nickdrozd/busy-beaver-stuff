@@ -317,28 +317,17 @@ fn test_entrypoints() {
 
 /**************************************/
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-enum Square {
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+enum TapeEnd {
     Blanks,
     Unknown,
-    Known(Color),
 }
 
-impl Square {
-    const fn blank(&self) -> bool {
-        match self {
-            Self::Blanks | Self::Unknown => true,
-            Self::Known(color) => *color == 0,
-        }
-    }
-}
-
-impl fmt::Display for Square {
+impl fmt::Display for TapeEnd {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Blanks => write!(f, "0+"),
             Self::Unknown => write!(f, "?"),
-            Self::Known(color) => write!(f, "{color}"),
         }
     }
 }
@@ -346,16 +335,19 @@ impl fmt::Display for Square {
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct Backstepper {
     scan: Color,
-    lspan: Vec<Square>,
-    rspan: Vec<Square>,
+    lspan: Vec<Color>,
+    rspan: Vec<Color>,
     head: Pos,
+    l_end: TapeEnd,
+    r_end: TapeEnd,
 }
 
 impl fmt::Display for Backstepper {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{}",
+            "{} {} {}",
+            self.l_end,
             self.lspan
                 .iter()
                 .rev()
@@ -363,42 +355,49 @@ impl fmt::Display for Backstepper {
                 .chain(once(format!("[{}]", self.scan)))
                 .chain(self.rspan.iter().map(ToString::to_string))
                 .collect::<Vec<_>>()
-                .join(" ")
+                .join(" "),
+            self.r_end,
         )
     }
 }
 
 impl Backstepper {
-    fn init_halt(scan: Color) -> Self {
+    const fn init_halt(scan: Color) -> Self {
         Self {
             scan,
-            lspan: vec![Square::Unknown],
-            rspan: vec![Square::Unknown],
+            lspan: vec![],
+            rspan: vec![],
             head: 0,
+            l_end: TapeEnd::Unknown,
+            r_end: TapeEnd::Unknown,
         }
     }
 
-    fn init_blank(scan: Color) -> Self {
+    const fn init_blank(scan: Color) -> Self {
         Self {
             scan,
-            lspan: vec![Square::Blanks],
-            rspan: vec![Square::Blanks],
+            lspan: vec![],
+            rspan: vec![],
             head: 0,
+            l_end: TapeEnd::Blanks,
+            r_end: TapeEnd::Blanks,
         }
     }
 
-    fn init_spinout(dir: Shift) -> Self {
-        let (l_val, r_val) = if dir {
-            (Square::Unknown, Square::Blanks)
+    const fn init_spinout(dir: Shift) -> Self {
+        let (l_end, r_end) = if dir {
+            (TapeEnd::Unknown, TapeEnd::Blanks)
         } else {
-            (Square::Blanks, Square::Unknown)
+            (TapeEnd::Blanks, TapeEnd::Unknown)
         };
 
         Self {
             scan: 0,
-            lspan: vec![l_val],
-            rspan: vec![r_val],
+            lspan: vec![],
+            rspan: vec![],
             head: 0,
+            l_end,
+            r_end,
         }
     }
 
@@ -408,40 +407,43 @@ impl Backstepper {
                 .lspan
                 .iter()
                 .chain(self.rspan.iter())
-                .all(Square::blank)
+                .all(|&color| color == 0)
     }
 
     fn check_step(&self, shift: Shift, print: Color) -> Option<bool> {
-        let (pull, push) = if shift {
-            (&self.lspan, &self.rspan)
+        let (pull, pull_end, push) = if shift {
+            (&self.lspan, self.l_end, &self.rspan)
         } else {
-            (&self.rspan, &self.lspan)
+            (&self.rspan, self.r_end, &self.lspan)
         };
 
-        let (required, at_edge) = match &pull[0] {
-            Square::Unknown => {
-                return Some(matches!(push[0], Square::Known(_)));
-            },
-            Square::Blanks => (0, true),
-            Square::Known(color) => (*color, false),
+        let (required, at_edge) = if let Some(color) = pull.first() {
+            (*color, false)
+        } else if pull_end == TapeEnd::Blanks {
+            (0, true)
+        } else {
+            return Some(!push.is_empty());
         };
 
         (print == required).then_some(at_edge)
     }
 
     fn backstep(&mut self, shift: Shift, read: Color) {
-        let (stepped, pull, push) = if shift {
-            (-1, &mut self.lspan, &mut self.rspan)
+        let (stepped, pull, push, push_end) = if shift {
+            (-1, &mut self.lspan, &mut self.rspan, self.r_end)
         } else {
-            (1, &mut self.rspan, &mut self.lspan)
+            (1, &mut self.rspan, &mut self.lspan, self.l_end)
         };
 
-        if let Square::Known(_) = &pull[0] {
+        if !pull.is_empty() {
             pull.remove(0);
         }
 
-        if self.scan != 0 || push[0] != Square::Blanks {
-            push.insert(0, Square::Known(self.scan));
+        if self.scan != 0
+            || !push.is_empty()
+            || push_end == TapeEnd::Unknown
+        {
+            push.insert(0, self.scan);
         }
 
         self.scan = read;
@@ -488,12 +490,8 @@ impl Alignment for Backstepper {
             #[expect(clippy::cast_sign_loss)]
             let diff = diff as usize;
 
-            for square in lspan.iter().take(diff) {
-                tape.push(match square {
-                    Square::Blanks => 0,
-                    Square::Known(color) => *color,
-                    Square::Unknown => continue,
-                });
+            for cell in lspan.iter().take(diff) {
+                tape.push(*cell);
             }
 
             let rem = diff - tape.iter().len();
@@ -505,13 +503,7 @@ impl Alignment for Backstepper {
 
         tape.push(self.scan());
 
-        for square in rspan {
-            tape.push(match square {
-                Square::Blanks => 0,
-                Square::Known(color) => *color,
-                Square::Unknown => continue,
-            });
-        }
+        tape.extend(rspan);
 
         tape
     }
