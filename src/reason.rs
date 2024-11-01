@@ -351,10 +351,46 @@ impl fmt::Display for TapeEnd {
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
+struct Block {
+    color: Color,
+    count: usize,
+}
+
+impl Block {
+    const fn new(color: Color) -> Self {
+        Self { color, count: 1 }
+    }
+
+    fn increment(&mut self) {
+        self.count += 1;
+    }
+
+    fn decrement(&mut self) {
+        self.count -= 1;
+    }
+}
+
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (color, count) = (self.color, self.count);
+
+        write!(
+            f,
+            "{}",
+            if count == 1 {
+                format!("{color}")
+            } else {
+                format!("{color}^{count}")
+            }
+        )
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Backstepper {
     scan: Color,
-    lspan: Vec<Color>,
-    rspan: Vec<Color>,
+    lspan: Vec<Block>,
+    rspan: Vec<Block>,
     head: Pos,
     l_end: TapeEnd,
     r_end: TapeEnd,
@@ -425,7 +461,7 @@ impl Backstepper {
                 .lspan
                 .iter()
                 .chain(self.rspan.iter())
-                .all(|&color| color == 0)
+                .all(|block| block.color == 0)
     }
 
     fn check_step(&self, shift: Shift, print: Color) -> Option<bool> {
@@ -435,8 +471,8 @@ impl Backstepper {
             (&self.rspan, self.r_end, &self.lspan)
         };
 
-        let (required, at_edge) = if let Some(color) = pull.first() {
-            (*color, false)
+        let (required, at_edge) = if let Some(block) = pull.first() {
+            (block.color, false)
         } else if pull_end == TapeEnd::Blanks {
             (0, true)
         } else {
@@ -453,15 +489,29 @@ impl Backstepper {
             (1, &mut self.rspan, &mut self.lspan, self.l_end)
         };
 
-        if !pull.is_empty() {
-            pull.remove(0);
+        if let Some(block) = pull.first_mut() {
+            if block.count == 1 {
+                pull.remove(0);
+            } else {
+                block.decrement();
+            }
         }
 
         if self.scan != 0
             || !push.is_empty()
             || push_end == TapeEnd::Unknown
         {
-            push.insert(0, self.scan);
+            let color = self.scan;
+
+            if let Some(block) = push.first_mut() {
+                if block.color == color {
+                    block.increment()
+                } else {
+                    push.insert(0, Block::new(color));
+                }
+            } else {
+                push.insert(0, Block::new(color));
+            }
         }
 
         self.scan = read;
@@ -506,22 +556,20 @@ impl Alignment for Backstepper {
 
         if diff > 0 {
             #[expect(clippy::cast_sign_loss)]
-            let diff = diff as usize;
-
-            for cell in lspan.iter().take(diff) {
-                tape.push(*cell);
+            let mut remaining = diff as usize;
+            for block in lspan {
+                let count = (block.count).min(remaining);
+                tape.extend(vec![block.color; count]);
+                remaining -= count;
             }
-
-            let rem = diff - tape.iter().len();
-
-            if rem > 0 {
-                tape.extend(vec![0; rem]);
+            if remaining > 0 {
+                tape.extend(vec![0; remaining]);
             }
         }
 
-        tape.push(self.scan());
-
-        tape.extend(rspan);
+        for block in rspan {
+            tape.extend(vec![block.color; block.count]);
+        }
 
         tape
     }
@@ -631,5 +679,5 @@ fn test_backstep_spinout() {
     tape.tbackstep(1, 0, 0, true);
     tape.tbackstep(1, 0, 0, true);
 
-    tape.assert("? [0] 0 1 2 2 0+");
+    tape.assert("? [0] 0 1 2^2 0+");
 }
