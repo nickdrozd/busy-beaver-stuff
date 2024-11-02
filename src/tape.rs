@@ -155,16 +155,16 @@ impl<B: Block> Span<B> {
     }
 
     fn push(&mut self, print: Color, stepped: Count) {
-        if self.blank() {
+        let Some(block) = self.0.first_mut() else {
             if print != 0 {
                 self.0.insert(0, Block::new(print, stepped));
             }
 
             return;
-        }
+        };
 
-        if self.0[0].get_color() == print {
-            self.0[0].add_count(stepped);
+        if block.get_color() == print {
+            block.add_count(stepped);
         } else {
             self.0.insert(0, Block::new(print, stepped));
         }
