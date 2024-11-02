@@ -281,7 +281,7 @@ class Reason(TuringTest):
             self.assert_could_halt(prog)
 
         for prog in SPINNERS | RECURS:
-            self.assert_cant_halt(prog, 3)
+            self.assert_cant_halt(prog, 46)
 
     def test_spinout(self):
         for prog in SPINNERS:
@@ -448,7 +448,7 @@ class Simple(TuringTest):
 
             else:
                 self.assert_could_spin_out(prog)
-                self.assert_cant_halt(prog, 4)
+                self.assert_cant_halt(prog, 46)
 
                 self.assertTrue(
                     (graph := Graph(prog)).is_zero_reflexive
