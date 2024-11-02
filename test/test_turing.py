@@ -320,15 +320,14 @@ class Reason(TuringTest):
                 self.assert_cant_spin_out(prog, 2)
 
     def test_steps(self):
-        for cat, data in CANT_REACH_STEPS.items():
-            cant_reach = (
-                cant_halt if cat == "halt" else
-                cant_blank if cat == "blank" else
-                cant_spin_out if cat == "spinout" else
-                None
-            )
+        cant_reaches = {
+            "halt": cant_halt,
+            "blank": cant_blank,
+            "spinout": cant_spin_out,
+        }
 
-            assert cant_reach is not None
+        for cat, data in CANT_REACH_STEPS.items():
+            cant_reach = cant_reaches[cat]
 
             for prog, steps in data.items():
                 self.assertEqual(
