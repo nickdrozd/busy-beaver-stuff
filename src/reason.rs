@@ -503,15 +503,11 @@ impl Backstepper {
         {
             let color = self.scan;
 
-            if let Some(block) = push.first_mut() {
-                if block.color == color {
-                    block.increment()
-                } else {
-                    push.insert(0, Block::new(color));
-                }
+            if !push.is_empty() && push[0].color == color {
+                push[0].increment();
             } else {
                 push.insert(0, Block::new(color));
-            }
+            };
         }
 
         self.scan = read;
