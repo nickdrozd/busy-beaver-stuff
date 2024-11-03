@@ -104,10 +104,13 @@ fn cant_reach(
     configs.retain(|config| entrypoints.contains_key(&config.state));
 
     for step in 0..depth {
-        // for config in &configs {
-        //     println!("{step} | {} | {}", config.state, config.tape);
-        // }
-        // println!("");
+        #[cfg(all(not(test), debug_assertions))]
+        {
+            for config in &configs {
+                println!("{step} | {} | {}", config.state, config.tape);
+            }
+            println!();
+        }
 
         let valid_steps =
             get_valid_steps(&mut configs, &mut blanks, &entrypoints)?;

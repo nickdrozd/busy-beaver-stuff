@@ -29,6 +29,10 @@ rust :
 	cargo build --release
 	cp target/release/librust_stuff.so $(RUST_STUFF)
 
+dev :
+	cargo build
+	cp target/debug/librust_stuff.so $(RUST_STUFF)
+
 clippy :
 	cargo --version
 	cargo clippy --all-targets
