@@ -82,6 +82,21 @@ impl Config {
     }
 }
 
+#[cfg(all(not(test), debug_assertions))]
+use crate::instrs::show_slot;
+
+#[cfg(all(not(test), debug_assertions))]
+impl fmt::Display for Config {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let tape = &self.tape;
+        let slot = show_slot((self.state, tape.scan));
+
+        write!(f, "{slot} | {tape}")
+    }
+}
+
+/**************************************/
+
 type Configs = Vec<Config>;
 type Blanks = HashSet<State>;
 type Entrypoints = BTreeMap<State, Vec<(Slot, Instr)>>;
@@ -107,7 +122,7 @@ fn cant_reach(
         #[cfg(all(not(test), debug_assertions))]
         {
             for config in &configs {
-                println!("{step} | {} | {}", config.state, config.tape);
+                println!("{step} | {config}");
             }
             println!();
         }
