@@ -112,11 +112,15 @@ fn cant_reach(
         return Some(0);
     }
 
-    let mut blanks = Blanks::new();
-
     let entrypoints = get_entrypoints(comp);
 
     configs.retain(|config| entrypoints.contains_key(&config.state));
+
+    let mut blanks: Blanks = configs
+        .iter()
+        .filter(|config| config.tape.blank())
+        .map(|config| config.state)
+        .collect();
 
     for step in 0..depth {
         #[cfg(all(not(test), debug_assertions))]
@@ -127,8 +131,7 @@ fn cant_reach(
             println!();
         }
 
-        let valid_steps =
-            get_valid_steps(&mut configs, &mut blanks, &entrypoints)?;
+        let valid_steps = get_valid_steps(&mut configs, &entrypoints)?;
 
         match valid_steps.len() {
             0 => return Some(step),
@@ -136,7 +139,7 @@ fn cant_reach(
             _ => {},
         }
 
-        configs = step_configs(valid_steps)?;
+        configs = step_configs(valid_steps, &mut blanks)?;
     }
 
     None
@@ -146,7 +149,6 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 
 fn get_valid_steps(
     configs: &mut Configs,
-    blanks: &mut Blanks,
     entrypoints: &Entrypoints,
 ) -> Option<ValidatedSteps> {
     let mut checked = ValidatedSteps::new();
@@ -155,18 +157,6 @@ fn get_valid_steps(
         let Config {
             state, ref tape, ..
         } = config;
-
-        if tape.blank() {
-            if state == 0 {
-                return None;
-            }
-
-            if blanks.contains(&state) {
-                continue;
-            }
-
-            blanks.insert(state);
-        }
 
         let mut good_steps = vec![];
 
@@ -195,7 +185,10 @@ fn get_valid_steps(
     Some(checked)
 }
 
-fn step_configs(configs: ValidatedSteps) -> Option<Configs> {
+fn step_configs(
+    configs: ValidatedSteps,
+    blanks: &mut Blanks,
+) -> Option<Configs> {
     let mut stepped = Configs::new();
 
     for (instrs, config) in configs {
@@ -205,6 +198,18 @@ fn step_configs(configs: ValidatedSteps) -> Option<Configs> {
             let mut next_tape = config.tape.clone();
 
             next_tape.backstep(shift, next_color);
+
+            if next_tape.blank() {
+                if next_state == 0 {
+                    return None;
+                }
+
+                if blanks.contains(&next_state) {
+                    continue;
+                }
+
+                blanks.insert(next_state);
+            }
 
             let mut next_config = Config {
                 state: next_state,
