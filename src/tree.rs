@@ -398,7 +398,7 @@ fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if let Some(__) = cant_reach(prog, 115) {
+        if let Some(__) = cant_reach(prog, 256) {
             return;
         }
 
@@ -447,13 +447,13 @@ fn test_reason() {
 fn test_reason_slow() {
     assert_reason_results![
         ((5, 2), 1, (59_952_063, 95_310_168)),
-        ((5, 2), 0, (66_728_542, 534_798_275)),
+        ((5, 2), 0, (66_728_533, 534_798_275)),
         //
         ((2, 5), 1, (69_849_036, 70_028_531)),
         ((2, 5), 0, (137_507_422, 515_051_756)),
         //
         ((3, 3), 1, (24_358_778, 25_306_222)),
-        ((3, 3), 0, (28_543_483, 149_365_898)),
+        ((3, 3), 0, (28_543_482, 149_365_898)),
     ];
 }
 
