@@ -194,26 +194,26 @@ fn step_configs(
     for (instrs, config) in configs {
         let config = Rc::new(config);
 
-        for (next_color, shift, next_state) in instrs {
-            let mut next_tape = config.tape.clone();
+        for (color, shift, state) in instrs {
+            let mut tape = config.tape.clone();
 
-            next_tape.backstep(shift, next_color);
+            tape.backstep(shift, color);
 
-            if next_tape.blank() {
-                if next_state == 0 {
+            if tape.blank() {
+                if state == 0 {
                     return None;
                 }
 
-                if blanks.contains(&next_state) {
+                if blanks.contains(&state) {
                     continue;
                 }
 
-                blanks.insert(next_state);
+                blanks.insert(state);
             }
 
             let mut next_config = Config {
-                state: next_state,
-                tape: next_tape,
+                state,
+                tape,
                 prev: Some(Rc::clone(&config)),
                 recs: config.recs,
             };
