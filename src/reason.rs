@@ -682,3 +682,24 @@ fn test_backstep_spinout() {
 
     tape.assert("? [0] 0 1 2^2 0+");
 }
+
+#[test]
+fn test_backstep_required() {
+    let mut tape = Backstepper {
+        scan: 1,
+
+        lspan: vec![],
+        l_end: TapeEnd::Blanks,
+
+        rspan: vec![Block::new(1), Block::new(0)],
+        r_end: TapeEnd::Unknown,
+
+        head: 0,
+    };
+
+    tape.assert("0+ [1] 1 0 ?");
+
+    tape.tbackstep(0, 1, 0, true);
+
+    tape.assert("0+ 1 [0] 0 ?");
+}
