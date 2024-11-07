@@ -320,6 +320,16 @@ macro_rules! assert_entrypoints {
 #[test]
 fn test_entrypoints() {
     assert_entrypoints!(
+        "1RB ...  1LB 0RB",
+        [
+            1 => vec![
+                ((1, 0), (1, false, 1)),
+                ((1, 1), (0, true, 1)),
+            ]
+        ]
+    );
+
+    assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LD",
         [
             2 => vec![
