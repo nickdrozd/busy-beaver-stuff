@@ -307,34 +307,43 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 #[cfg(test)]
 use crate::instrs::Parse as _;
 
+#[cfg(test)]
+macro_rules! assert_entrypoints {
+    ($prog:expr, [$($state:expr => $instrs:expr),*]) => {
+        assert_eq!(
+            get_entrypoints(&CompProg::from_str($prog)),
+            Entrypoints::from([ $(($state, $instrs)),* ])
+        );
+    };
+}
+
 #[test]
 fn test_entrypoints() {
-    assert_eq!(
-        get_entrypoints(&CompProg::from_str(
-            "1RB ...  0LC ...  1RC 1LD  0LC 0LD"
-        )),
-        Entrypoints::from([
-            (2, vec![((2, 0), (1, true, 2)), ((3, 0), (0, false, 2))]),
-            (3, vec![((2, 1), (1, false, 3)), ((3, 1), (0, false, 3))]),
-        ]),
+    assert_entrypoints!(
+        "1RB ...  0LC ...  1RC 1LD  0LC 0LD",
+        [
+            2 => vec![
+                ((2, 0), (1, true, 2)),
+                ((3, 0), (0, false, 2)),
+            ],
+            3 => vec![
+                ((2, 1), (1, false, 3)),
+                ((3, 1), (0, false, 3)),
+            ]
+        ]
     );
 
-    assert_eq!(
-        get_entrypoints(&CompProg::from_str(
-            "1RB ...  0LC ...  1RC 1LD  0LC 0LB"
-        )),
-        Entrypoints::from([
-            (1, vec![((3, 1), (0, false, 1))]),
-            (
-                2,
-                vec![
-                    ((1, 0), (0, false, 2)),
-                    ((2, 0), (1, true, 2)),
-                    ((3, 0), (0, false, 2))
-                ]
-            ),
-            (3, vec![((2, 1), (1, false, 3))]),
-        ]),
+    assert_entrypoints!(
+        "1RB ...  0LC ...  1RC 1LD  0LC 0LB",
+        [
+            1 => vec![((3, 1), (0, false, 1))],
+            2 => vec![
+                ((1, 0), (0, false, 2)),
+                ((2, 0), (1, true, 2)),
+                ((3, 0), (0, false, 2))
+            ],
+            3 => vec![((2, 1), (1, false, 3))]
+        ]
     );
 }
 
