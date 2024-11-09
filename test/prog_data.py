@@ -20,6 +20,7 @@ HALT: BasicTermData = {
     "1RB 1LC  1RC ...  1LA 0LB": (6, 11),  # sigma
 
     # 2/3 BB
+    "1RB 0RB ...  2LA ... 0LB": (1,  7),
     "1RB 2LB ...  2LA 2RB 1LB": (9, 38),
     "1RB 0LB ...  2LA 1RB 1RA": (8, 29),
     "0LB 2RB ...  1RA 1LB 1LA": (6, 27),
@@ -499,9 +500,6 @@ RECUR_BLANK_BEFORE_PERIOD = {
     "1RB 1LB  1LA 1RC  0RB 0LC",
     "1RB 1RC  1LC 0LB  1RA 1LA",
     "1RB 1LB  0LC 0RB  1RA 1LA",
-
-    # 2/3
-    "1RB 0RB ...  2LA ... 0LB",
 
     # 4/2
     "1RB 0RB  1LC 0LC  1RA 0LD  1LB 0LB",
@@ -2772,13 +2770,18 @@ SPINNERS = set(
     | PROVER_SPINOUT
 ) | DO_SPIN_OUT
 
-RECURS = set(
-    RECUR_COMPACT
-    | RECUR_DIFFUSE
-    | RECUR_SLOW
-    | RECUR_TOO_SLOW
-    | QUASIHALT
-) | PROVER_QUASIHALT
+RECURS = (
+    PROVER_QUASIHALT
+    | RECUR_BLANK_BEFORE_PERIOD
+    | set(
+        RECUR_COMPACT
+        | RECUR_DIFFUSE
+        | RECUR_SLOW
+        | RECUR_TOO_SLOW
+        | QUASIHALT
+        | RECUR_BLANK_IN_PERIOD
+    )
+)
 
 UNREASONABLE: set[str] = {
     "1RB 0LA ...  1LB 2LA 0RB",
