@@ -27,6 +27,8 @@ from tm.reason import (
     cant_halt,
     cant_blank,
     cant_spin_out,
+
+    segment_cant_halt,
 )
 from tm.machine import (
     show_slot,
@@ -373,6 +375,31 @@ class Reason(TuringTest):
             self.assertEqual(
                 spin,
                 cant_spin_out(prog, REASON_LIMIT))
+
+
+class Segment(TuringTest):
+    def assert_segment_could_halt(self, prog: str, segs: int):
+        self.assertIsNone(
+            segment_cant_halt(prog, segs))
+
+    def assert_segment_cant_halt(self, prog: str, segs: int):
+        try:
+            self.assertIsNotNone(
+                segment_cant_halt(prog, segs))
+        except AssertionError:
+            self.assertIn(prog, SEGMENT_FALSE_NEGATIVES)
+
+    def test_halt(self):
+        limit = 5
+
+        for prog in HALTERS:
+            self.assert_segment_could_halt(prog, limit)
+
+        for prog in NONHALTERS:
+            self.assert_segment_cant_halt(prog, limit)
+
+        for prog in SEGMENT_FALSE_NEGATIVES:
+            self.assert_segment_could_halt(prog, limit)
 
 
 class Simple(TuringTest):

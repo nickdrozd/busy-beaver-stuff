@@ -28,6 +28,7 @@ mod macros;
 mod prover;
 mod reason;
 mod rules;
+mod segment;
 mod tape;
 mod tree;
 
@@ -42,6 +43,7 @@ mod wrappers {
         instrs::{CompProg, Params, Parse as _, State},
         machine::quick_term_or_rec,
         reason::{cant_blank, cant_halt, cant_spin_out, Depth, Step},
+        segment::segment_cant_halt,
     };
 
     #[pyfunction]
@@ -72,6 +74,22 @@ mod wrappers {
     #[pyfunction]
     pub fn py_quick_term_or_rec(prog: &str, sim_lim: usize) -> bool {
         quick_term_or_rec(&CompProg::from_str(prog), sim_lim, false)
+    }
+
+    #[pyfunction]
+    pub fn py_segment_cant_halt(
+        prog: &str,
+        segs: usize,
+    ) -> Option<usize> {
+        let prog = &CompProg::from_str(prog);
+
+        let (states, colors) = prog
+            .keys()
+            .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
+
+        let params = (1 + states, 1 + colors);
+
+        segment_cant_halt(prog, params, segs)
     }
 
     #[pyfunction]
@@ -116,7 +134,7 @@ mod rust_stuff {
         wrappers::{
             py_cant_blank, py_cant_halt, py_cant_spin_out,
             py_is_connected, py_opt_block, py_quick_term_or_rec,
-            py_show_comp, tcompile,
+            py_segment_cant_halt, py_show_comp, tcompile,
         },
     };
 }

@@ -245,6 +245,7 @@ use {
         machine::{quick_term_or_rec, run_for_infrul},
         macros::{make_backsymbol_macro, make_block_macro},
         reason::{cant_halt, cant_spin_out},
+        segment::segment_cant_halt,
     },
     std::collections::BTreeSet as Set,
 };
@@ -293,6 +294,7 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
         || quick_term_or_rec(comp, 301, true)
         || cant_reach(comp, 25).is_some()
         || check_inf(comp, params, opt_block(comp, 300), 306)
+        || (halt && segment_cant_halt(comp, params, 2).is_some())
 }
 
 #[test]
@@ -358,13 +360,13 @@ fn test_tree() {
         ((3, 2), 1, (0, 3_140)),
         ((3, 2), 0, (0, 13_128)),
         //
-        ((2, 3), 1, (4, 2_447)),
+        ((2, 3), 1, (0, 2_447)),
         ((2, 3), 0, (13, 9_168)),
         //
-        ((4, 2), 1, (186, 467_142)),
+        ((4, 2), 1, (166, 467_142)),
         ((4, 2), 0, (853, 2_291_637)),
         //
-        ((2, 4), 1, (3_706, 312_642)),
+        ((2, 4), 1, (844, 312_642)),
         ((2, 4), 0, (11_733, 1_719_357)),
     ];
 }
@@ -373,13 +375,13 @@ fn test_tree() {
 #[ignore]
 fn test_tree_slow() {
     assert_trees![
-        ((5, 2), 1, (146_459, 95_310_282)),
+        ((5, 2), 1, (132_278, 95_310_282)),
         // ((5, 2), 0, (528_729?, 534_813_722)),
         //
-        ((2, 5), 1, (1_893_564, 70_032_629)),
+        ((2, 5), 1, (897_132, 70_032_629)),
         // ((2, 5), 0, (11_995_036?, 515_255_468)),
         //
-        ((3, 3), 1, (189_306, 25_306_290)),
+        ((3, 3), 1, (97_179, 25_306_290)),
         ((3, 3), 0, (589_367, 149_378_138)),
     ];
 }
@@ -510,5 +512,56 @@ fn test_linrec() {
         //
         ((2, 4), 1, (25_152, 312_642)),
         ((2, 4), 0, (258_834, 1_719_237)),
+    ];
+}
+
+/**************************************/
+
+#[cfg(test)]
+fn assert_segment(params: Params, halt: u8, expected: (u64, u64)) {
+    let halt_flag = halt != 0;
+
+    let holdout_count = set_val(0);
+    let visited_count = set_val(0);
+
+    build_tree(params, halt_flag, 300, &|prog| {
+        *access(&visited_count) += 1;
+
+        if segment_cant_halt(prog, params, 2).is_some() {
+            return;
+        }
+
+        *access(&holdout_count) += 1;
+
+        // println!("{}", prog.show(Some(params)));
+    });
+
+    let result = (get_val(holdout_count), get_val(visited_count));
+
+    assert_eq!(result, expected, "({params:?}, {halt}, {result:?})");
+}
+
+#[cfg(test)]
+macro_rules! assert_segment_results {
+    ( $( ( $params:expr, $halt:expr, $leaves:expr ) ),* $(,)? ) => {
+        vec![$( ($params, $halt, $leaves) ),*]
+            .par_iter().for_each(|&(params, halt, expected)| {
+                assert_segment(params, halt, expected);
+            });
+    };
+}
+
+#[test]
+fn test_segment() {
+    assert_segment_results![
+        ((2, 2), 1, (11, 36)),
+        //
+        ((3, 2), 1, (1_550, 3_140)),
+        //
+        ((2, 3), 1, (1_085, 2_447)),
+        //
+        ((4, 2), 1, (272_068, 467_142)),
+        //
+        ((2, 4), 1, (199_441, 312_642)),
     ];
 }
