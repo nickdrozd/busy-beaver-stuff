@@ -42,18 +42,16 @@ fn all_segments_reached(
     halts: &Halts,
     edges: &Edges,
 ) -> bool {
-    let mut configs = init_configs(seg);
+    let mut configs = Configs::new(seg, halts);
 
-    let mut tracker = Tracker::new(seg, halts);
-
-    'next_config: while let Some(mut config) = configs.pop() {
-        if tracker.check_seen(&config) {
+    'next_config: while let Some(mut config) = configs.todo.pop() {
+        if configs.check_seen(&config) {
             continue;
         }
 
         while let Some(slot) = config.slot() {
             let Some(instr) = prog.get(&slot) else {
-                if tracker.check_reached(&config) {
+                if configs.check_reached(&config) {
                     return true;
                 }
 
@@ -62,23 +60,19 @@ fn all_segments_reached(
 
             config.step(instr);
 
-            if tracker.check_seen(&config) {
+            if configs.check_seen(&config) {
                 continue 'next_config;
             }
         }
 
-        if tracker.check_reached(&config) {
+        if configs.check_reached(&config) {
             return true;
         }
 
-        configs.extend(config.edge_branches(edges));
+        configs.todo.extend(config.edge_branches(edges));
     }
 
     false
-}
-
-fn init_configs(seg: Segments) -> Vec<Config> {
-    (0..seg).map(|pos| Config::init(seg, pos)).collect()
 }
 
 fn halts_and_edges(
@@ -113,17 +107,19 @@ fn halts_and_edges(
 
 type Pos = usize;
 
-struct Tracker {
+struct Configs {
     seg: Segments,
 
+    todo: Vec<Config>,
     seen: Set<Config>,
     reached: Dict<State, Set<Pos>>,
 }
 
-impl Tracker {
+impl Configs {
     fn new(seg: Segments, halts: &Halts) -> Self {
         Self {
             seg,
+            todo: (0..seg).map(|pos| Config::init(seg, pos)).collect(),
             seen: Set::new(),
             reached: halts
                 .iter()
