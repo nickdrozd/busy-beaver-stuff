@@ -44,7 +44,7 @@ fn all_segments_reached(
 ) -> bool {
     let mut configs = Configs::new(seg, halts);
 
-    'next_config: while let Some(mut config) = configs.todo.pop() {
+    'next_config: while let Some(mut config) = configs.next() {
         if configs.check_seen(&config) {
             continue;
         }
@@ -146,6 +146,14 @@ impl Configs {
         reached.insert(config.tape.pos());
 
         reached.len() == self.seg
+    }
+}
+
+impl Iterator for Configs {
+    type Item = Config;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.todo.pop()
     }
 }
 
