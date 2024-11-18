@@ -387,7 +387,10 @@ class Segment(TuringTest):
             self.assertIsNotNone(
                 segment_cant_halt(prog, segs))
         except AssertionError:
-            self.assertIn(prog, SEGMENT_FALSE_NEGATIVES)
+            self.assertIn(
+                prog,
+                SEGMENT_FALSE_NEGATIVES
+                    | set(SEGMENT_STEPS))
 
     def test_halt(self):
         limit = 8
@@ -400,6 +403,11 @@ class Segment(TuringTest):
 
         for prog in SEGMENT_FALSE_NEGATIVES:
             self.assert_segment_could_halt(prog, limit)
+
+        for prog, steps in SEGMENT_STEPS.items():
+            self.assertEqual(
+                steps,
+                segment_cant_halt(prog, 20))
 
 
 class Simple(TuringTest):

@@ -1638,7 +1638,6 @@ SEGMENT_FALSE_NEGATIVES = {
 
     "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC",
     "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
-    "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...",
     "1RB 1LA  0LA 1RC  1RA 1RD  ... 0RE  0LA 1RC",
     "1RB 1LA  0LC 0LB  1RC 1RD  1RE 1RB  1LA ...",
     "1RB 1LE  1LC 1RD  1LB 1RC  1LA 0RD  ... 0LA",
@@ -1654,11 +1653,16 @@ SEGMENT_FALSE_NEGATIVES = {
     "1RB 0RC  0RC 0LD  1RD 1RA  1RE 0LA  1LF ...  1LB 1LF",
     "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...",
     "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  ... 0RD",
-    "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD",
 
     "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
 
     "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
+}
+
+SEGMENT_STEPS: dict[str, int] = {
+    "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": 9,
+
+    "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD": 10,
 }
 
 DO_HALT: set[str] = {

@@ -24,7 +24,7 @@ pub fn segment_cant_halt(
 
     for seg in 2..=segs {
         if !all_segments_reached(prog, 2 + seg, &halts, &edges) {
-            return Some(segs);
+            return Some(seg);
         }
     }
 
