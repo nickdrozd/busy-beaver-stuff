@@ -390,7 +390,7 @@ class Segment(TuringTest):
             self.assertIn(prog, SEGMENT_FALSE_NEGATIVES)
 
     def test_halt(self):
-        limit = 5
+        limit = 8
 
         for prog in HALTERS:
             self.assert_segment_could_halt(prog, limit)
