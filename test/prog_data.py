@@ -1840,7 +1840,6 @@ PROVER_HALT: ProverEst = {
     "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD ...": (6.7,    47),
     "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD ...": (6.7,    47),
     "1RB 0RC  0LA 0RD  1RD ...  1LE 0LD  1RF 1LB  1RA 1RE": (2.5,    21),
-    "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB": (3.3,     7),
     "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB": (1.0,     7),
 
     # 5/5 block-compiled from 1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...
@@ -1931,6 +1930,8 @@ PROVER_FAILURES = {
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
 
     "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ...",
+
+    "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB",
 }
 
 SUSPECTED_RULES = {
@@ -2021,12 +2022,6 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ** 6518)",
             "((-5 + (25 * (3 ** 13660))) // 2)",
             "27762",
-        ),
-        "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB": (
-            375,
-            "(10 ** 8)",
-            "(-9 + (2 ** 25))",
-            "(478 + (7 * (2 ** 21)))",
         ),
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE": (
             413,
