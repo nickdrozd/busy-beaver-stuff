@@ -2544,7 +2544,7 @@ ALGEBRA_PROGS = {
     for prog in progs
 }
 
-INFRUL: set[str] = {
+INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 0LA  1LA ...",
     "1RB 1LA  0LA 0RB",
 
@@ -2790,6 +2790,8 @@ RECURS = (
         | RECUR_BLANK_IN_PERIOD
     )
 )
+
+NONHALTERS = SPINNERS | RECURS | INFRUL
 
 UNREASONABLE: set[str] = {
     "1RB 0LA ...  1LB 2LA 0RB",

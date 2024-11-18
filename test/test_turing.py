@@ -280,8 +280,8 @@ class Reason(TuringTest):
             self.assert_simple(prog)
             self.assert_could_halt(prog)
 
-        for prog in SPINNERS | RECURS:
-            self.assert_cant_halt(prog, 46)
+        for prog in NONHALTERS:
+            self.assert_cant_halt(prog, 115)
 
     def test_spinout(self):
         for prog in SPINNERS:
@@ -292,11 +292,11 @@ class Reason(TuringTest):
 
             self.assert_could_spin_out(prog)
 
-        for prog in DONT_SPIN_OUT | HALTERS | RECURS:
-            self.assert_cant_spin_out(prog, 2)
+        for prog in DONT_SPIN_OUT | HALTERS | RECURS | INFRUL:
+            self.assert_cant_spin_out(prog, 256)
 
     def test_recur(self):
-        for prog in RECURS | INFRUL | set(ALGEBRA['infrul']):
+        for prog in RECURS | INFRUL:
             self.assert_simple(prog)
             self.assert_cant_halt(prog, 115)
             self.assert_cant_spin_out(prog, 256)
@@ -1064,7 +1064,7 @@ class Prover(RunProver):
         for prog in INFRUL - PROVER_FAILURES:
             self.run_bb(
                 prog,
-                opt_macro = 2_400,
+                opt_macro = 3_000,
                 normal = False)
 
             self.assertIsNotNone(
