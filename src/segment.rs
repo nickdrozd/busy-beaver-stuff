@@ -45,10 +45,6 @@ fn all_segments_reached(
     let mut configs = Configs::new(seg, halts);
 
     'next_config: while let Some(mut config) = configs.next() {
-        if configs.check_seen(&config) {
-            continue;
-        }
-
         while let Some(slot) = config.slot() {
             let Some(instr) = prog.get(&slot) else {
                 if configs.check_reached(&config) {
@@ -153,7 +149,13 @@ impl Iterator for Configs {
     type Item = Config;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.todo.pop()
+        while let Some(config) = self.todo.pop() {
+            if !self.check_seen(&config) {
+                return Some(config);
+            }
+        }
+
+        None
     }
 }
 
