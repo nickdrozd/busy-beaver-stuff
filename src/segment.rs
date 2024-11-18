@@ -107,7 +107,7 @@ struct Configs {
     seg: Segments,
 
     todo: Vec<Config>,
-    seen: Set<Config>,
+    seen: Dict<State, Set<Tape>>,
     reached: Dict<State, Set<Pos>>,
 }
 
@@ -116,7 +116,7 @@ impl Configs {
         Self {
             seg,
             todo: (0..seg).map(|pos| Config::init(seg, pos)).collect(),
-            seen: Set::new(),
+            seen: Dict::new(),
             reached: halts
                 .iter()
                 .map(|&state| (state, Set::new()))
@@ -124,12 +124,14 @@ impl Configs {
         }
     }
 
-    fn check_seen(&mut self, config: &Config) -> bool {
-        if self.seen.contains(config) {
+    fn check_seen(&mut self, Config { state, tape }: &Config) -> bool {
+        let seen = self.seen.entry(*state).or_default();
+
+        if seen.contains(tape) {
             return true;
         }
 
-        self.seen.insert(config.clone());
+        seen.insert(tape.clone());
 
         false
     }
