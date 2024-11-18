@@ -3,7 +3,7 @@ use core::{
     iter::once,
 };
 
-use std::collections::{HashMap as Dict, HashSet as Set};
+use std::collections::{BTreeMap as Dict, HashSet as Set};
 
 use crate::instrs::{
     show_state, Color, CompProg, Instr, Params, Shift, Slot, State,
