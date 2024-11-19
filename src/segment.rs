@@ -157,19 +157,13 @@ impl Configs {
 
         for &(shift, next_state) in edges.get(&state).unwrap() {
             if next_state != state {
-                let config = Config {
-                    state: next_state,
-                    tape: tape.clone(),
-                };
+                let config = Config::new(next_state, tape.clone());
 
                 self.todo.push(config);
             }
 
             if shift != side {
-                let mut config = Config {
-                    state: next_state,
-                    tape: tape.clone(),
-                };
+                let mut config = Config::new(next_state, tape.clone());
 
                 config.tape.step_in(shift);
 
@@ -202,11 +196,12 @@ struct Config {
 }
 
 impl Config {
+    fn new(state: State, tape: Tape) -> Self {
+        Self { state, tape }
+    }
+
     fn init(seg: Segments, pos: Pos) -> Self {
-        Self {
-            state: 0,
-            tape: Tape::init(seg, pos),
-        }
+        Self::new(0, Tape::init(seg, pos))
     }
 
     fn slot(&self) -> Option<Slot> {
