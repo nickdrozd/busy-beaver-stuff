@@ -1200,6 +1200,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 2LB 1RB  1LA 0RA ...",
     "1RB 2LB 1RB  2LA ... 0RA",
     "1RB 2RB 1LA  0LA 2RA ...",
+    "1RB 2RA 1LA  2LA 2RB ...",
 
     "1RB 1LA ... 3LA  2LA 3RB 3LA 0RA",
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
@@ -1618,6 +1619,7 @@ SEGMENT_FALSE_NEGATIVES = {
     "1RB ... 0RB  2LB 2LA 0RA",
     "1RB 2LA 0LA  1LA ... 2RA",
     "1RB 2LA 1RB  1LA ... 1RA",
+    "1RB 2RA 1LA  2LA 2RB ...",
 
     "1RB ...  0LC 0RB  1LC 1LA",
     "1RB ...  1LC 0RB  1LB 1LA",
@@ -2618,6 +2620,7 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 2LB 1RB  1LA 0RA ...",
     "1RB 2LB 1RB  2LA ... 0RA",
     "1RB 2RB 1LA  0LA 2RA ...",
+    "1RB 2RA 1LA  2LA 2RB ...",
 
     "1RB ...  0LC 0RA  0RA 1LB",
     "1RB ...  0LC 0RA  1LA 1LB",
