@@ -1662,6 +1662,37 @@ SEGMENT_FALSE_NEGATIVES = {
 }
 
 SEGMENT_STEPS: dict[str, int] = {
+    "1RB ... 0RA  1LB 2LA 2RB": 8,
+    "1RB 0RB ...  1LB 2RA 0LA": 8,
+    "1RB ... 1LB  2LB 2RA 0LB": 9,
+
+    "1RB ...  1RC 0RA  1LC 0LB": 11,
+
+    "1RB 0LB ... 0RA  2LA 3LA 1LB 3RB": 10,
+    "1RB 2LA 3RB 0LB  0LB 1LA 0RA ...": 11,
+
+    "1RB 0RC  1LB 0LC  0LD 0RD  1RA ...": 13,
+    "1RB 0LD  1LC 0LA  0RA 0LB  1RC ...": 13,
+    "1RB 0RD  1LB 0LC  1LD 0RA  1RA ...": 13,
+    "1RB 0RD  1LB 0LC  1LD 0RD  1RA ...": 13,
+    "1RB 0RD  0RC ...  0LD 1RA  1LC 0LC": 13,
+    "1RB 0LC  1LC ...  1LD 0LB  1RD 0RA": 13,
+    "1RB 0RA  1LC 0LD  1RA 0LB  ... 1LB": 13,
+    "1RB 0LC  1LA 0RC  1LB 0RD  1RC ...": 13,
+    "1RB 1LD  0RC 1RC  1LA 0RA  ... 0LC": 13,
+    "1RB 1LA  0LA 0RC  1RD 0LA  1RA ...": 14,
+    "1RB 0LB  1LA 1RC  0RC 0LD  0RA ...": 14,
+    "1RB 0RA  1LC 1RD  1LA 0LB  ... 1RC": 14,
+    "1RB 0RC  0LB 1LC  1RA 1LD  0LB ...": 14,
+    "1RB 0LC  1LA 0RD  1LB ...  0RC 0RB": 14,
+    "1RB 0RA  1LC ...  0LD 0LB  1RD 0LA": 15,
+    "1RB 1LD  1LC ...  0RA 0LB  1RD 0RC": 15,
+    "1RB 1RC  1LB 0RA  1RD ...  1LD 0LB": 15,
+    "1RB ...  1LC 0RA  0LD 0LB  1RC 1RD": 16,
+    "1RB ...  1LC 0RB  0LD 0LB  1RD 0RA": 16,
+    "1RB 1LC  0RC 0LA  1LA 0RD  ... 1RA": 16,
+    "1RB ...  1LC 0RA  0RD 0LB  1LA 0LD": 17,
+
     "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": 9,
 
     "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD": 10,
