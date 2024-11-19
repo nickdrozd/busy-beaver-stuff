@@ -65,7 +65,7 @@ fn all_segments_reached(
             return true;
         }
 
-        configs.todo.extend(config.edge_branches(edges));
+        configs.branch(config, edges);
     }
 
     false
@@ -145,6 +145,36 @@ impl Configs {
 
         reached.len() == self.seg
     }
+
+    fn branch(
+        &mut self,
+        Config { state, tape }: Config,
+        edges: &Edges,
+    ) {
+        let side = tape.side();
+
+        for &(shift, next_state) in edges.get(&state).unwrap() {
+            if next_state != state {
+                let config = Config {
+                    state: next_state,
+                    tape: tape.clone(),
+                };
+
+                self.todo.push(config);
+            }
+
+            if shift != side {
+                let mut config = Config {
+                    state: next_state,
+                    tape: tape.clone(),
+                };
+
+                config.tape.step_in(shift);
+
+                self.todo.push(config);
+            }
+        }
+    }
 }
 
 impl Iterator for Configs {
@@ -184,36 +214,6 @@ impl Config {
     fn step(&mut self, &(print, shift, state): &Instr) {
         self.state = state;
         self.tape.step(shift, print);
-    }
-
-    fn edge_branches(&self, edges: &Edges) -> Vec<Self> {
-        let mut configs = vec![];
-
-        let side = self.tape.side();
-
-        for &(shift, state) in edges.get(&self.state).unwrap() {
-            if state != self.state {
-                let config = Self {
-                    state,
-                    tape: self.tape.clone(),
-                };
-
-                configs.push(config);
-            }
-
-            if shift != side {
-                let mut config = Self {
-                    state,
-                    tape: self.tape.clone(),
-                };
-
-                config.tape.step_in(shift);
-
-                configs.push(config);
-            }
-        }
-
-        configs
     }
 }
 
