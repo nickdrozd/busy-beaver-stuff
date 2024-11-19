@@ -157,15 +157,19 @@ impl Configs {
 
         for &(shift, next_state) in edges.get(&state).unwrap() {
             if next_state != state {
-                let config = Config::new(next_state, tape.clone());
+                let next_tape = tape.clone();
+
+                let config = Config::new(next_state, next_tape);
 
                 self.todo.push(config);
             }
 
             if shift != side {
-                let mut config = Config::new(next_state, tape.clone());
+                let mut next_tape = tape.clone();
 
-                config.tape.step_in(shift);
+                next_tape.step_in(shift);
+
+                let config = Config::new(next_state, next_tape);
 
                 self.todo.push(config);
             }
@@ -196,6 +200,7 @@ struct Config {
 }
 
 impl Config {
+    #[expect(clippy::missing_const_for_fn)]
     fn new(state: State, tape: Tape) -> Self {
         Self { state, tape }
     }
