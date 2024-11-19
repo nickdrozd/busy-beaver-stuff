@@ -23,6 +23,9 @@ pub fn segment_cant_halt(
     let (halts, edges) = halts_and_edges(prog, params);
 
     (2..=segs).find(|seg| {
+        #[cfg(all(not(test), debug_assertions))]
+        println!();
+
         !all_segments_reached(prog, 2 + seg, &halts, &edges)
     })
 }
@@ -41,6 +44,9 @@ fn all_segments_reached(
     let mut configs = Configs::new(seg, halts);
 
     'next_config: while let Some(mut config) = configs.next() {
+        #[cfg(all(not(test), debug_assertions))]
+        println!("{config}");
+
         while let Some(slot) = config.slot() {
             let Some(instr) = prog.get(&slot) else {
                 if configs.check_reached(&config) {
