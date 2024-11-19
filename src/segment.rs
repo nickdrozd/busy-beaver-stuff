@@ -22,13 +22,9 @@ pub fn segment_cant_halt(
 
     let (halts, edges) = halts_and_edges(prog, params);
 
-    for seg in 2..=segs {
-        if !all_segments_reached(prog, 2 + seg, &halts, &edges) {
-            return Some(seg);
-        }
-    }
-
-    None
+    (2..=segs).find(|seg| {
+        !all_segments_reached(prog, 2 + seg, &halts, &edges)
+    })
 }
 
 /**************************************/
