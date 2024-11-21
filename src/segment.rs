@@ -20,28 +20,20 @@ pub fn segment_cant_halt(
 ) -> Option<Segments> {
     assert!(segs >= 2);
 
-    let (halts, edges) = halts_and_edges(prog, params);
+    let prog = AnalyzedProg::new(prog, params);
 
     (2..=segs).find(|seg| {
         #[cfg(all(not(test), debug_assertions))]
         println!();
 
-        !all_segments_reached(prog, 2 + seg, &halts, &edges)
+        !all_segments_reached(&prog, 2 + seg)
     })
 }
 
 /**************************************/
 
-type Halts = Set<State>;
-type Edges = Dict<State, Vec<(Shift, State)>>;
-
-fn all_segments_reached(
-    prog: &CompProg,
-    seg: Segments,
-    halts: &Halts,
-    edges: &Edges,
-) -> bool {
-    let mut configs = Configs::new(seg, halts);
+fn all_segments_reached(prog: &AnalyzedProg, seg: Segments) -> bool {
+    let mut configs = Configs::new(seg, prog);
 
     'next_config: while let Some(mut config) = configs.next() {
         #[cfg(all(not(test), debug_assertions))]
@@ -67,38 +59,10 @@ fn all_segments_reached(
             return true;
         }
 
-        configs.branch(config, edges);
+        configs.branch(config, prog);
     }
 
     false
-}
-
-fn halts_and_edges(
-    prog: &CompProg,
-    (states, colors): Params,
-) -> (Halts, Edges) {
-    let mut halts = Halts::new();
-    let mut edges = Edges::new();
-
-    for state in 0..states {
-        let mut instrs = Set::new();
-
-        for color in 0..colors {
-            if let Some(&(_, shift, next)) = prog.get(&(state, color)) {
-                instrs.insert((shift, next));
-            } else {
-                halts.insert(state);
-            }
-        }
-
-        let mut instrs: Vec<_> = instrs.into_iter().collect();
-
-        instrs.sort_unstable();
-
-        edges.insert(state, instrs);
-    }
-
-    (halts, edges)
 }
 
 /**************************************/
@@ -115,13 +79,14 @@ struct Configs {
 }
 
 impl Configs {
-    fn new(seg: Segments, halts: &Halts) -> Self {
+    fn new(seg: Segments, prog: &AnalyzedProg) -> Self {
         Self {
             seg,
             todo: (0..seg).map(|pos| Config::init(seg, pos)).collect(),
             seen: Dict::new(),
             blanks: Dict::new(),
-            reached: halts
+            reached: prog
+                .halts
                 .iter()
                 .map(|&state| (state, Set::new()))
                 .collect(),
@@ -165,11 +130,11 @@ impl Configs {
     fn branch(
         &mut self,
         Config { state, tape }: Config,
-        edges: &Edges,
+        prog: &AnalyzedProg,
     ) {
         let side = tape.side();
 
-        for &(shift, next_state) in &edges[&state] {
+        for &(shift, next_state) in &prog.edges[&state] {
             if next_state != state {
                 let next_tape = tape.clone();
 
@@ -359,6 +324,47 @@ impl Display for Tape {
 
 /**************************************/
 
+struct AnalyzedProg<'p> {
+    prog: &'p CompProg,
+    halts: Set<State>,
+    edges: Dict<State, Vec<(Shift, State)>>,
+}
+
+impl<'p> AnalyzedProg<'p> {
+    fn get(&self, slot: &Slot) -> Option<&Instr> {
+        self.prog.get(slot)
+    }
+
+    fn new(prog: &'p CompProg, (states, colors): Params) -> Self {
+        let mut halts = Set::new();
+        let mut edges = Dict::new();
+
+        for state in 0..states {
+            let mut instrs = Set::new();
+
+            for color in 0..colors {
+                if let Some(&(_, shift, next)) =
+                    prog.get(&(state, color))
+                {
+                    instrs.insert((shift, next));
+                } else {
+                    halts.insert(state);
+                }
+            }
+
+            let mut instrs: Vec<_> = instrs.into_iter().collect();
+
+            instrs.sort_unstable();
+
+            edges.insert(state, instrs);
+        }
+
+        Self { prog, halts, edges }
+    }
+}
+
+/**************************************/
+
 #[cfg(test)]
 use crate::instrs::Parse as _;
 
@@ -449,7 +455,7 @@ fn test_halt_states() {
 
     for ((prog, params), states) in progs {
         assert_eq!(
-            halts_and_edges(&CompProg::from_str(prog), params).0,
+            AnalyzedProg::new(&CompProg::from_str(prog), params).halts,
             states.into_iter().collect::<Set<_>>(),
         );
     }
