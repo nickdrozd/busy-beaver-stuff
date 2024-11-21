@@ -5,8 +5,11 @@ use core::{
 
 use std::collections::{BTreeMap as Dict, HashSet as Set};
 
-use crate::instrs::{
-    show_state, Color, CompProg, Instr, Params, Shift, Slot, State,
+use crate::{
+    instrs::{
+        show_state, Color, CompProg, Instr, Params, Shift, Slot, State,
+    },
+    tape::{BasicBlock as Block, Block as _, Count},
 };
 
 type Segments = usize;
@@ -480,15 +483,15 @@ impl Display for Config {
 /**************************************/
 
 #[derive(PartialEq, Eq, Hash, Clone)]
-struct Span(Vec<Color>);
+struct Span(Vec<Block>);
 
 impl Span {
     fn blank(&self) -> bool {
-        self.0.iter().all(|&c| c == 0)
+        self.0.iter().all(|&block| block.color == 0)
     }
 
     fn len(&self) -> usize {
-        self.0.len()
+        self.0.iter().map(|block| block.count as Pos).sum()
     }
 
     fn is_empty(&self) -> bool {
@@ -496,21 +499,52 @@ impl Span {
     }
 
     fn push(&mut self, print: Color) {
-        self.0.insert(0, print);
+        if self.is_empty() {
+            self.0.insert(0, Block::new(print, 1));
+            return;
+        }
+
+        let block = &mut self.0[0];
+
+        if block.color == print {
+            block.increment();
+        } else {
+            self.0.insert(0, Block::new(print, 1));
+        }
     }
 
     fn pull(&mut self) -> Option<Color> {
         if self.is_empty() {
-            None
-        } else {
-            Some(self.0.remove(0))
+            return None;
         }
+
+        let block = &mut self.0[0];
+
+        let color = block.color;
+
+        if block.count == 1 {
+            self.0.remove(0);
+        } else {
+            block.decrement();
+        }
+
+        Some(color)
     }
 
     fn take(&mut self) -> Color {
         assert!(!self.is_empty());
 
-        self.0.remove(0)
+        let block = &mut self.0[0];
+
+        let color = block.color;
+
+        if block.count == 1 {
+            self.0.remove(0);
+        } else {
+            block.decrement();
+        }
+
+        color
     }
 }
 
@@ -526,14 +560,31 @@ impl Tape {
         assert!(seg >= 4);
         assert!(pos <= seg);
 
-        let cells = seg - 2;
+        let seg = seg as Count;
+        let pos = pos as Count;
+        let cells = (seg - 2) as Count;
 
         let (scan, lspan, rspan) = if pos == 0 {
-            (None, vec![], vec![0; cells])
+            (None, vec![], vec![Block::new(0, cells)])
         } else if pos == seg - 1 {
-            (None, vec![0; cells], vec![])
+            (None, vec![Block::new(0, cells)], vec![])
         } else {
-            (Some(0), vec![0; pos - 1], vec![0; cells - pos])
+            let mut lspan = vec![];
+            let mut rspan = vec![];
+
+            let l_count = pos - 1;
+
+            if l_count > 0 {
+                lspan.push(Block::new(0, l_count));
+            }
+
+            let r_count = cells - pos;
+
+            if r_count > 0 {
+                rspan.push(Block::new(0, r_count));
+            }
+
+            (Some(0), lspan, rspan)
         };
 
         Self {
@@ -717,13 +768,13 @@ impl Config {
 #[test]
 fn test_init() {
     let configs = [
-        "A | [-] 0 0 0 0 0",
-        "A | [0] 0 0 0 0",
-        "A | 0 [0] 0 0 0",
-        "A | 0 0 [0] 0 0",
-        "A | 0 0 0 [0] 0",
-        "A | 0 0 0 0 [0]",
-        "A | 0 0 0 0 0 [-]",
+        "A | [-] 0^5",
+        "A | [0] 0^4",
+        "A | 0 [0] 0^3",
+        "A | 0^2 [0] 0^2",
+        "A | 0^3 [0] 0",
+        "A | 0^4 [0]",
+        "A | 0^5 [-]",
     ];
 
     for (pos, config_str) in configs.iter().enumerate() {
@@ -739,11 +790,11 @@ fn test_init() {
 fn test_step_in() {
     let mut config = Config::init(7, 6);
 
-    config.assert("A | 0 0 0 0 0 [-]");
+    config.assert("A | 0^5 [-]");
 
     config.tape.step_in(false);
 
-    config.assert("A | 0 0 0 0 [0]");
+    config.assert("A | 0^4 [0]");
 }
 
 #[test]
@@ -812,15 +863,34 @@ fn test_cant_halt() {
     }
 }
 
+#[cfg(test)]
+macro_rules! tape {
+    (
+        $ scan : expr,
+        [ $ ( $ lspan : expr ), * ],
+        [ $ ( $ rspan : expr ), * ]
+    ) => {
+        Tape {
+            scan: Some( $ scan ),
+            lspan: Span ( vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ] ),
+            rspan: Span ( vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ] ),
+        }
+    };
+}
+
+#[cfg(test)]
+impl Tape {
+    #[track_caller]
+    fn assert(&self, expected: &str) {
+        assert_eq!(self.to_string(), expected);
+    }
+}
+
 #[test]
 fn test_step_edge() {
-    let mut tape = Tape {
-        scan: Some(0),
-        lspan: Span(vec![]),
-        rspan: Span(vec![1]),
-    };
+    let mut tape = tape! { 0, [], [(1, 1)] };
 
     tape.step(false, 1);
 
-    assert_eq!(tape.to_string(), "[-] 1 1");
+    tape.assert("[-] 1^2");
 }
