@@ -21,7 +21,7 @@ pub trait Block: Display {
 
     fn add_count(&mut self, count: Count);
 
-    fn dec_count(&mut self);
+    fn decrement(&mut self);
 
     fn show(&self, f: &mut Formatter) -> Result {
         let (color, count) = (self.get_color(), self.get_count());
@@ -65,7 +65,7 @@ impl Block for BasicBlock {
         self.count += count;
     }
 
-    fn dec_count(&mut self) {
+    fn decrement(&mut self) {
         self.count -= 1;
     }
 }
@@ -143,7 +143,7 @@ impl<B: Block> Span<B> {
             let pull_color = next_pull.get_color();
 
             if next_pull.get_count() > 1 {
-                next_pull.dec_count();
+                next_pull.decrement();
             } else {
                 self.0.remove(0);
             }
@@ -574,7 +574,7 @@ impl Block for EnumBlock {
         self.count += count;
     }
 
-    fn dec_count(&mut self) {
+    fn decrement(&mut self) {
         self.count -= 1;
     }
 }
