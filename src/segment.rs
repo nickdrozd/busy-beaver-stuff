@@ -474,3 +474,16 @@ fn test_cant_halt() {
         );
     }
 }
+
+#[test]
+fn test_step_edge() {
+    let mut tape = Tape {
+        scan: Some(0),
+        lspan: vec![],
+        rspan: vec![1],
+    };
+
+    tape.step(false, 1);
+
+    assert_eq!(tape.to_string(), "[-] 1 1");
+}
