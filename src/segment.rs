@@ -275,11 +275,9 @@ impl Tape {
             &mut self.lspan
         };
 
-        self.scan = if pull.is_empty() {
-            None
-        } else {
-            Some(pull.remove(0))
-        };
+        assert!(!pull.is_empty());
+
+        self.scan = Some(pull.remove(0));
     }
 
     fn step(&mut self, shift: Shift, print: Color) {
