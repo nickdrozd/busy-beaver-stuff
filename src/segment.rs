@@ -169,7 +169,7 @@ impl Configs {
     ) {
         let side = tape.side();
 
-        for &(shift, next_state) in edges.get(&state).unwrap() {
+        for &(shift, next_state) in &edges[&state] {
             if next_state != state {
                 let next_tape = tape.clone();
 
