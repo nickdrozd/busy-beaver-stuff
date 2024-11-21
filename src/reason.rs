@@ -7,7 +7,10 @@ use std::{
 
 use crate::{
     instrs::{Color, CompProg, Instr, Shift, Slot, State},
-    tape::{Alignment, Pos, TapeSlice},
+    tape::{
+        Alignment, BasicBlock as Block, Block as _, Count, Pos,
+        TapeSlice,
+    },
 };
 
 pub type Step = usize;
@@ -375,42 +378,6 @@ impl fmt::Display for TapeEnd {
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
-struct Block {
-    color: Color,
-    count: usize,
-}
-
-impl Block {
-    const fn new(color: Color) -> Self {
-        Self { color, count: 1 }
-    }
-
-    fn increment(&mut self) {
-        self.count += 1;
-    }
-
-    fn decrement(&mut self) {
-        self.count -= 1;
-    }
-}
-
-impl fmt::Display for Block {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (color, count) = (self.color, self.count);
-
-        write!(
-            f,
-            "{}",
-            if count == 1 {
-                format!("{color}")
-            } else {
-                format!("{color}^{count}")
-            }
-        )
-    }
-}
-
-#[derive(Clone, PartialEq, Eq, Hash)]
 struct Backstepper {
     scan: Color,
     lspan: Vec<Block>,
@@ -530,7 +497,7 @@ impl Backstepper {
             if !push.is_empty() && push[0].color == color {
                 push[0].increment();
             } else {
-                push.insert(0, Block::new(color));
+                push.insert(0, Block::new(color, 1));
             };
         }
 
@@ -576,19 +543,19 @@ impl Alignment for Backstepper {
 
         if diff > 0 {
             #[expect(clippy::cast_sign_loss)]
-            let mut remaining = diff as usize;
+            let mut remaining = diff as Count;
             for block in lspan {
                 let count = (block.count).min(remaining);
-                tape.extend(vec![block.color; count]);
+                tape.extend(vec![block.color; count as usize]);
                 remaining -= count;
             }
             if remaining > 0 {
-                tape.extend(vec![0; remaining]);
+                tape.extend(vec![0; remaining as usize]);
             }
         }
 
         for block in rspan {
-            tape.extend(vec![block.color; block.count]);
+            tape.extend(vec![block.color; block.count as usize]);
         }
 
         tape
@@ -710,7 +677,7 @@ fn test_backstep_required() {
         lspan: vec![],
         l_end: TapeEnd::Blanks,
 
-        rspan: vec![Block::new(1), Block::new(0)],
+        rspan: vec![Block::new(1, 1), Block::new(0, 1)],
         r_end: TapeEnd::Unknown,
 
         head: 0,
