@@ -110,6 +110,7 @@ struct Configs {
 
     todo: Vec<Config>,
     seen: Dict<State, Set<Tape>>,
+    blanks: Dict<State, Set<Pos>>,
     reached: Dict<State, Set<Pos>>,
 }
 
@@ -119,6 +120,7 @@ impl Configs {
             seg,
             todo: (0..seg).map(|pos| Config::init(seg, pos)).collect(),
             seen: Dict::new(),
+            blanks: Dict::new(),
             reached: halts
                 .iter()
                 .map(|&state| (state, Set::new()))
@@ -127,13 +129,25 @@ impl Configs {
     }
 
     fn check_seen(&mut self, Config { state, tape }: &Config) -> bool {
-        let seen = self.seen.entry(*state).or_default();
+        if tape.blank() {
+            let blanks = self.blanks.entry(*state).or_default();
 
-        if seen.contains(tape) {
-            return true;
+            let pos = tape.pos();
+
+            if blanks.contains(&pos) {
+                return true;
+            }
+
+            blanks.insert(pos);
+        } else {
+            let seen = self.seen.entry(*state).or_default();
+
+            if seen.contains(tape) {
+                return true;
+            }
+
+            seen.insert(tape.clone());
         }
-
-        seen.insert(tape.clone());
 
         false
     }
@@ -260,6 +274,15 @@ impl Tape {
                 rspan: vec![0; cells - pos],
             }
         }
+    }
+
+    fn blank(&self) -> bool {
+        matches!(self.scan, Some(0) | None)
+            && self
+                .lspan
+                .iter()
+                .chain(self.rspan.iter())
+                .all(|&c| c == 0)
     }
 
     fn pos(&self) -> Pos {
