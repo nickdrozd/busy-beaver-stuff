@@ -207,10 +207,45 @@ impl Display for Config {
 /**************************************/
 
 #[derive(PartialEq, Eq, Hash, Clone)]
+struct Span(Vec<Color>);
+
+impl Span {
+    fn blank(&self) -> bool {
+        self.0.iter().all(|&c| c == 0)
+    }
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    fn push(&mut self, print: Color) {
+        self.0.insert(0, print);
+    }
+
+    fn pull(&mut self) -> Option<Color> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.0.remove(0))
+        }
+    }
+
+    fn take(&mut self) -> Color {
+        assert!(!self.is_empty());
+
+        self.0.remove(0)
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone)]
 struct Tape {
     scan: Option<Color>,
-    lspan: Vec<Color>,
-    rspan: Vec<Color>,
+    lspan: Span,
+    rspan: Span,
 }
 
 impl Tape {
@@ -220,34 +255,25 @@ impl Tape {
 
         let cells = seg - 2;
 
-        if pos == 0 {
-            Self {
-                scan: None,
-                lspan: vec![],
-                rspan: vec![0; cells],
-            }
+        let (scan, lspan, rspan) = if pos == 0 {
+            (None, vec![], vec![0; cells])
         } else if pos == seg - 1 {
-            Self {
-                scan: None,
-                lspan: vec![0; cells],
-                rspan: vec![],
-            }
+            (None, vec![0; cells], vec![])
         } else {
-            Self {
-                scan: Some(0),
-                lspan: vec![0; pos - 1],
-                rspan: vec![0; cells - pos],
-            }
+            (Some(0), vec![0; pos - 1], vec![0; cells - pos])
+        };
+
+        Self {
+            scan,
+            lspan: Span(lspan),
+            rspan: Span(rspan),
         }
     }
 
     fn blank(&self) -> bool {
         matches!(self.scan, Some(0) | None)
-            && self
-                .lspan
-                .iter()
-                .chain(self.rspan.iter())
-                .all(|&c| c == 0)
+            && self.lspan.blank()
+            && self.rspan.blank()
     }
 
     fn pos(&self) -> Pos {
@@ -275,9 +301,7 @@ impl Tape {
             &mut self.lspan
         };
 
-        assert!(!pull.is_empty());
-
-        self.scan = Some(pull.remove(0));
+        self.scan = Some(pull.take());
     }
 
     fn step(&mut self, shift: Shift, print: Color) {
@@ -287,13 +311,9 @@ impl Tape {
             (&mut self.lspan, &mut self.rspan)
         };
 
-        push.insert(0, print);
+        push.push(print);
 
-        self.scan = if pull.is_empty() {
-            None
-        } else {
-            Some(pull.remove(0))
-        };
+        self.scan = pull.pull();
     }
 }
 
@@ -303,6 +323,7 @@ impl Display for Tape {
             f,
             "{}",
             self.lspan
+                .0
                 .iter()
                 .map(ToString::to_string)
                 .rev()
@@ -313,7 +334,7 @@ impl Display for Tape {
                         |scan| scan.to_string()
                     )
                 )))
-                .chain(self.rspan.iter().map(ToString::to_string))
+                .chain(self.rspan.0.iter().map(ToString::to_string))
                 .collect::<Vec<_>>()
                 .join(" ")
         )
@@ -479,8 +500,8 @@ fn test_cant_halt() {
 fn test_step_edge() {
     let mut tape = Tape {
         scan: Some(0),
-        lspan: vec![],
-        rspan: vec![1],
+        lspan: Span(vec![]),
+        rspan: Span(vec![1]),
     };
 
     tape.step(false, 1);
