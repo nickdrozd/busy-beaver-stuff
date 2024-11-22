@@ -11,11 +11,11 @@ HOLDOUT_COUNTS = {
     '32q': 3,
     '23q': 9,
     '42h': 3,
-    '42q': 106,
+    '42q': 94,
     '24h': 37,
 }
 
-TOTAL_HOLDOUTS = 158
+TOTAL_HOLDOUTS = 146
 
 
 class Holdouts(TestCase):

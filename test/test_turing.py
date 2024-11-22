@@ -470,12 +470,9 @@ class Segment(TuringTest):
             self.assert_could_spin_out_segment(prog)
 
         for prog in DONT_SPIN_OUT | HALTERS | RECURS | INFRUL:
-            self.assert_segment_cant_spin_out(prog, 14)
+            self.assert_segment_cant_spin_out(prog, 9)
 
         for prog in SEGMENT_SPINOUT_FALSE_NEGATIVES | UNREASONABLE:
-            if prog == "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...":
-                continue
-
             self.assert_could_spin_out_segment(prog)
 
         for prog, steps in SEGMENT_STEPS['spinout'].items():

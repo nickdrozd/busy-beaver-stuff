@@ -395,8 +395,8 @@ impl Config {
     }
 
     fn step(&mut self, &(print, shift, state): &Instr) {
+        self.tape.step(shift, print, state == self.state);
         self.state = state;
-        self.tape.step(shift, print);
     }
 
     fn spinout(&self, &(_, shift, state): &Instr) -> bool {
@@ -498,37 +498,49 @@ impl Span {
         self.len() == 0
     }
 
-    fn push(&mut self, print: Color) {
+    fn push(&mut self, print: Color, stepped: Count) {
         if self.is_empty() {
-            self.0.insert(0, Block::new(print, 1));
+            self.0.insert(0, Block::new(print, stepped));
             return;
         }
 
         let block = &mut self.0[0];
 
         if block.color == print {
-            block.increment();
+            block.add_count(stepped);
         } else {
-            self.0.insert(0, Block::new(print, 1));
+            self.0.insert(0, Block::new(print, stepped));
         }
     }
 
-    fn pull(&mut self) -> Option<Color> {
-        if self.is_empty() {
-            return None;
-        }
+    fn pull(
+        &mut self,
+        scan: Color,
+        skip: bool,
+    ) -> (Option<Color>, Count) {
+        let stepped =
+            (skip && !self.is_empty() && self.0[0].get_color() == scan)
+                .then(|| self.0.remove(0))
+                .as_ref()
+                .map_or_else(|| 1, |block| 1 + block.get_count());
 
-        let block = &mut self.0[0];
-
-        let color = block.color;
-
-        if block.count == 1 {
-            self.0.remove(0);
+        let next_scan = if self.is_empty() {
+            None
         } else {
-            block.decrement();
-        }
+            let next_pull = &mut self.0[0];
 
-        Some(color)
+            let pull_color = next_pull.get_color();
+
+            if next_pull.get_count() > 1 {
+                next_pull.decrement();
+            } else {
+                self.0.remove(0);
+            }
+
+            Some(pull_color)
+        };
+
+        (next_scan, stepped)
     }
 
     fn take(&mut self) -> Color {
@@ -633,16 +645,18 @@ impl Tape {
         self.scan = Some(pull.take());
     }
 
-    fn step(&mut self, shift: Shift, print: Color) {
+    fn step(&mut self, shift: Shift, print: Color, skip: bool) {
         let (pull, push) = if shift {
             (&mut self.rspan, &mut self.lspan)
         } else {
             (&mut self.lspan, &mut self.rspan)
         };
 
-        push.push(print);
+        let (next_scan, stepped) = pull.pull(self.scan.unwrap(), skip);
 
-        self.scan = pull.pull();
+        push.push(print, stepped);
+
+        self.scan = next_scan;
     }
 }
 
@@ -890,7 +904,25 @@ impl Tape {
 fn test_step_edge() {
     let mut tape = tape! { 0, [], [(1, 1)] };
 
-    tape.step(false, 1);
+    tape.step(false, 1, false);
 
+    tape.assert("[-] 1^2");
+}
+
+#[test]
+fn test_skip() {
+    let mut tape = tape! { 1, [(1, 20)], [] };
+    tape.assert("1^20 [1]");
+    tape.step(false, 0, true);
+    tape.assert("[-] 0^21");
+
+    let mut tape = tape! { 1, [(1, 20)], [] };
+    tape.assert("1^20 [1]");
+    tape.step(false, 1, true);
+    tape.assert("[-] 1^21");
+
+    let mut tape = tape! { 0, [(0, 1)], [] };
+    tape.assert("0 [0]");
+    tape.step(false, 1, true);
     tape.assert("[-] 1^2");
 }
