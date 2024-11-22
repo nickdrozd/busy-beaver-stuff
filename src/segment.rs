@@ -50,7 +50,7 @@ fn all_segments_reached(prog: &AnalyzedProg, seg: Segments) -> bool {
 
             config.step(instr);
 
-            if configs.check_seen(&config) {
+            if configs.check_seen(config.state, &config.tape) {
                 continue 'next_config;
             }
         }
@@ -93,9 +93,9 @@ impl Configs {
         }
     }
 
-    fn check_seen(&mut self, Config { state, tape }: &Config) -> bool {
+    fn check_seen(&mut self, state: State, tape: &Tape) -> bool {
         if tape.blank() {
-            let blanks = self.blanks.entry(*state).or_default();
+            let blanks = self.blanks.entry(state).or_default();
 
             let pos = tape.pos();
 
@@ -105,7 +105,7 @@ impl Configs {
 
             blanks.insert(pos);
         } else {
-            let seen = self.seen.entry(*state).or_default();
+            let seen = self.seen.entry(state).or_default();
 
             if seen.contains(tape) {
                 return true;
@@ -135,7 +135,9 @@ impl Configs {
         let side = tape.side();
 
         for &(shift, next_state) in &prog.edges[&state] {
-            if next_state != state {
+            if next_state != state
+                && !self.check_seen(next_state, &tape)
+            {
                 let next_tape = tape.clone();
 
                 let config = Config::new(next_state, next_tape);
@@ -148,9 +150,11 @@ impl Configs {
 
                 next_tape.step_in(shift);
 
-                let config = Config::new(next_state, next_tape);
+                if !self.check_seen(next_state, &next_tape) {
+                    let config = Config::new(next_state, next_tape);
 
-                self.todo.push(config);
+                    self.todo.push(config);
+                }
             }
         }
     }
@@ -160,13 +164,7 @@ impl Iterator for Configs {
     type Item = Config;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(config) = self.todo.pop() {
-            if !self.check_seen(&config) {
-                return Some(config);
-            }
-        }
-
-        None
+        self.todo.pop()
     }
 }
 
