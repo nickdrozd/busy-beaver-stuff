@@ -82,7 +82,7 @@ impl Configs {
     fn new(seg: Segments, prog: &AnalyzedProg) -> Self {
         Self {
             seg,
-            todo: (0..seg).map(|pos| Config::init(seg, pos)).collect(),
+            todo: vec![],
             seen: Dict::new(),
             blanks: Dict::new(),
             reached: prog
@@ -91,6 +91,16 @@ impl Configs {
                 .map(|&state| (state, Set::new()))
                 .collect(),
         }
+    }
+
+    fn next_init(&mut self) -> Option<Config> {
+        let blanks = self.blanks.entry(0).or_default();
+
+        let pos = (0..self.seg).find(|pos| !blanks.contains(pos))?;
+
+        blanks.insert(pos);
+
+        Some(Config::init(self.seg, pos))
     }
 
     fn check_seen(&mut self, state: State, tape: &Tape) -> bool {
@@ -164,7 +174,7 @@ impl Iterator for Configs {
     type Item = Config;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.todo.pop()
+        self.todo.pop().or_else(|| self.next_init())
     }
 }
 
