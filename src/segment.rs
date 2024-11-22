@@ -22,18 +22,16 @@ pub fn segment_cant_halt(
 
     let prog = AnalyzedProg::new(prog, params);
 
-    (2..=segs).find(|seg| {
-        #[cfg(all(not(test), debug_assertions))]
-        println!();
-
-        !all_segments_reached(&prog, 2 + seg)
-    })
+    (2..=segs).find(|seg| !all_segments_reached(&prog, 2 + seg))
 }
 
 /**************************************/
 
 fn all_segments_reached(prog: &AnalyzedProg, seg: Segments) -> bool {
     let mut configs = Configs::new(seg, prog);
+
+    #[cfg(all(not(test), debug_assertions))]
+    println!();
 
     'next_config: while let Some(mut config) = configs.next() {
         #[cfg(all(not(test), debug_assertions))]
