@@ -117,6 +117,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 0LC  1LA 0RC  1RC 1RB": (5, 49),
     "1RB 0LC  0RC 0RC  1LC 1LA": (5, 48),
     "1RB 1LC  0RC ...  1LC 0LA": (5, 27),
+    "1RB 0LC  0RC ...  1LC 0RA": (1,  6),
 
     # 2/3
     "1RB 2LB 1LA  2LB 2RA 0RA": ( 8, 59),  # BBB(2, 3)
@@ -126,6 +127,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 1LB 1RA  2LB 2LA 0RA": ( 6, 23),
     "1RB 2RA 2LB  0LB 1LA 1RA": ( 4, 23),
     "1RB 2LB ...  1LB 2LA 1RB": ( 5, 17),
+    "1RB ... 1LB  2LB 2RA 0LB": ( 1,  5),
 
     # 4/2
     "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819),  # BBB sigma
@@ -349,6 +351,7 @@ RECUR_COMPACT = {
     "1RB 0LB  1LC 0RC  1RA 1LA": ( 38, 21),
     "1RB 1LA  0RC 0RA  1LC 0LA": ( 17, 36),
     "1RB ...  1LC 0RC  1RA 0LC": ( 16,  5),
+    "1RB ...  1LC 0RB  1LA 1LC": ( 16,  5),
     "1RB ...  1LC 1RA  1LA 0LC": ( 12,  8),
     "1RB ...  1LB 0LC  1LA 1RA": ( 12,  7),
     "1RB 1LB  0RC 0RB  1LC 0LA": (  4, 38),
@@ -377,6 +380,7 @@ RECUR_COMPACT = {
     "1RB 2LA 2RB  1LB 1LA 1RA": ( 39,  2),
     "1RB 2LA 0RB  2LA ... 1RA": ( 35,  8),
     "1RB 2LA 1RB  1LB 1LA 2RA": ( 24, 46),
+    "1RB 1LB 0RB  1LA 2RB ...": ( 23,  3),
     "1RB 1LA 2LB  1LA 2RA 0LB": ( 20, 48),
     "1RB 2RB 2LA  1LB 1RA 0LA": ( 14, 54),
     "1RB 2LA 1RB  1LB 1LA 0RA": (  7, 46),
@@ -1156,6 +1160,8 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
 
 CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 0RA  1LA ...",
+    "1RB ...  0LB 0LA",
+    "1RB ...  1LB 0LA",
 
     "1RB ...  0LC 0RB  1LC 1LA",
     "1RB ...  1LC 1RA  1LA 0LC",
@@ -1175,6 +1181,8 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 1RC  1LC ...  0RA 0LB",
     "1RB 1RC  0LA 0RA  0LB ...",
     "1RB ...  1RC 0RA  1LC 0LB",
+    "1RB ...  1LC 0RB  1LA 1LC",
+    "1RB 0LC  0RC ...  1LC 0RA",
 
     "1RB 2LB ...  1LB 2LA 1RB",
     "1RB 0LA ...  1LB 2LA 0RB",
@@ -1205,6 +1213,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 0RB ...  1LB 2RA 0LA",
     "1RB ... 1LB  2LB 2RA 0LB",
     "1RB ... 0RA  1LB 2LA 2RB",
+    "1RB 1LB 0RB  1LA 2RB ...",
 
     "1RB 1LA ... 3LA  2LA 3RB 3LA 0RA",
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
@@ -1213,6 +1222,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB ... 0RB ...  2LB 3RA 0RA 0RA",
     "1RB 0LB ... 0RA  2LA 3LA 1LB 3RB",
     "1RB 2LA 3RB 0LB  0LB 1LA 0RA ...",
+    "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",
 
     "1RB 1RC  1LC 0LD  1RA 0LB  ... 0LA",
     "1RB ...  1LC 0RB  0LC 0LD  0RD 1RA",
@@ -1324,6 +1334,7 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB ...  1LC 1RA  0RA 0LC",
     "1RB 1LC  0LA 0RB  1LA ...",
     "1RB 0LA  0RC 1RC  1LA ...",
+    "1RB ...  1LC 0RB  1LA 1LC",
 
     "1RB 2LA 0RB  0LB 1LA 0RA",
     "1RB 2LA 1LB  0LA 0RB 1RA",
@@ -1645,19 +1656,23 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 
 SEGMENT_FALSE_NEGATIVES = {
     "1RB ... 0RB  2LB 2LA 0RA",
+    "1RB 1LB 0RB  1LA 2RB ...",
     "1RB 2LA 0LA  1LA ... 2RA",
     "1RB 2LA 1RB  1LA ... 1RA",
     "1RB 2RA 1LA  2LA 2RB ...",
 
     "1RB ...  0LC 0RB  1LC 1LA",
+    "1RB ...  1LC 0RB  1LA 1LC",
     "1RB ...  1LC 0RB  1LB 1LA",
     "1RB ...  1LC 0RC  1RA 0LC",
     "1RB ...  1LC 1RA  0RA 0LC",
     "1RB ...  1LC 1RA  1LA 0LC",
     "1RB 0LB  1LC 1RB  ... 1LA",
     "1RB 0LC  0LC 1RA  ... 1LA",
+    "1RB 0LC  0RC ...  1LC 0RA",
     "1RB 1LC  0LA 0RB  1LA ...",
 
+    "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",
     "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
     "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
 
@@ -2036,6 +2051,8 @@ RULE_LIMIT = {
 }
 
 PROVER_FAILURES = {
+    "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",
+
     "1RB 1RC 0RC  1RC 0LA 1LB  2LC 2RA 1LB",
     "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC",
 
@@ -2654,6 +2671,8 @@ ALGEBRA_PROGS = {
 INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 0LA  1LA ...",
     "1RB 1LA  0LA 0RB",
+    "1RB ...  0LB 0LA",
+    "1RB ...  1LB 0LA",
 
     "1RB 0LA ...  1LB 2LA 0RB",
     "1RB 2LA 0RB  1LB 1LA 1RA",
@@ -2711,6 +2730,7 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 1LA ... 3LA  2LA 3RB 3LA 0RA",
     "1RB 2LA 3LA 0RB  0LA 2RB 1LB 3RB",
     "1RB 0RB 1RA 3LA  2LB 2RB 3RB 0LA",
+    "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",
 
     "1RB 0LA  0RC 1RC  1RD 1LA  1LA ...",
     "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
