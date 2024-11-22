@@ -39,6 +39,10 @@ fn all_segments_reached(prog: &AnalyzedProg, seg: Segments) -> bool {
 
         while let Some(slot) = config.slot() {
             let Some(instr) = prog.get(&slot) else {
+                if config.init {
+                    return true;
+                }
+
                 if configs.check_reached(&config) {
                     return true;
                 }
@@ -137,7 +141,7 @@ impl Configs {
 
     fn branch(
         &mut self,
-        Config { state, tape }: Config,
+        Config { state, tape, .. }: Config,
         prog: &AnalyzedProg,
     ) {
         let side = tape.side();
@@ -148,7 +152,7 @@ impl Configs {
             {
                 let next_tape = tape.clone();
 
-                let config = Config::new(next_state, next_tape);
+                let config = Config::new(next_state, next_tape, false);
 
                 self.todo.push(config);
             }
@@ -159,7 +163,10 @@ impl Configs {
                 next_tape.step_in(shift);
 
                 if !self.check_seen(next_state, &next_tape) {
-                    let config = Config::new(next_state, next_tape);
+                    let init = next_state == 0 && next_tape.blank();
+
+                    let config =
+                        Config::new(next_state, next_tape, init);
 
                     self.todo.push(config);
                 }
@@ -182,16 +189,18 @@ impl Iterator for Configs {
 struct Config {
     state: State,
     tape: Tape,
+
+    init: bool,
 }
 
 impl Config {
     #[expect(clippy::missing_const_for_fn)]
-    fn new(state: State, tape: Tape) -> Self {
-        Self { state, tape }
+    fn new(state: State, tape: Tape, init: bool) -> Self {
+        Self { state, tape, init }
     }
 
     fn init(seg: Segments, pos: Pos) -> Self {
-        Self::new(0, Tape::init(seg, pos))
+        Self::new(0, Tape::init(seg, pos), true)
     }
 
     fn slot(&self) -> Option<Slot> {
