@@ -22,12 +22,28 @@ pub fn segment_cant_halt(
 
     let prog = AnalyzedProg::new(prog, params);
 
-    (2..=segs).find(|seg| !all_segments_reached(&prog, 2 + seg))
+    for seg in 2..=segs {
+        match all_segments_reached(&prog, 2 + seg) {
+            None => return Some(seg),
+            Some(SearchResult::Halted) => return None,
+            Some(SearchResult::Reached) => continue,
+        }
+    }
+
+    None
 }
 
 /**************************************/
 
-fn all_segments_reached(prog: &AnalyzedProg, seg: Segments) -> bool {
+enum SearchResult {
+    Halted,
+    Reached,
+}
+
+fn all_segments_reached(
+    prog: &AnalyzedProg,
+    seg: Segments,
+) -> Option<SearchResult> {
     let mut configs = Configs::new(seg, prog);
 
     #[cfg(all(not(test), debug_assertions))]
@@ -40,11 +56,11 @@ fn all_segments_reached(prog: &AnalyzedProg, seg: Segments) -> bool {
         while let Some(slot) = config.slot() {
             let Some(instr) = prog.get(&slot) else {
                 if config.init {
-                    return true;
+                    return Some(SearchResult::Halted);
                 }
 
                 if configs.check_reached(&config) {
-                    return true;
+                    return Some(SearchResult::Reached);
                 }
 
                 continue 'next_config;
@@ -58,13 +74,13 @@ fn all_segments_reached(prog: &AnalyzedProg, seg: Segments) -> bool {
         }
 
         if configs.check_reached(&config) {
-            return true;
+            return Some(SearchResult::Reached);
         }
 
         configs.branch(config, prog);
     }
 
-    false
+    None
 }
 
 /**************************************/
