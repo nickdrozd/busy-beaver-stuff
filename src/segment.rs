@@ -73,7 +73,8 @@ fn all_segments_reached(
 
             config.step(instr);
 
-            if configs.check_seen(config.state, &config.tape) {
+            if configs.check_seen(config.state, &config.tape).is_none()
+            {
                 continue 'next_config;
             }
         }
@@ -126,14 +127,20 @@ impl Configs {
         Some(Config::init(self.seg, pos))
     }
 
-    fn check_seen(&mut self, state: State, tape: &Tape) -> bool {
-        if tape.blank() {
+    fn check_seen(
+        &mut self,
+        state: State,
+        tape: &Tape,
+    ) -> Option<bool> {
+        let blank = tape.blank();
+
+        if blank {
             let blanks = self.blanks.entry(state).or_default();
 
             let pos = tape.pos();
 
             if blanks.contains(&pos) {
-                return true;
+                return None;
             }
 
             blanks.insert(pos);
@@ -141,13 +148,13 @@ impl Configs {
             let seen = self.seen.entry(state).or_default();
 
             if seen.contains(tape) {
-                return true;
+                return None;
             }
 
             seen.insert(tape.clone());
         }
 
-        false
+        Some(blank && state == 0)
     }
 
     fn check_reached(&mut self, config: &Config) -> bool {
@@ -168,14 +175,15 @@ impl Configs {
         let side = tape.side();
 
         for &(shift, next_state) in &prog.edges[&state] {
-            if next_state != state
-                && !self.check_seen(next_state, &tape)
-            {
-                let next_tape = tape.clone();
+            if next_state != state {
+                if let Some(init) = self.check_seen(next_state, &tape) {
+                    let next_tape = tape.clone();
 
-                let config = Config::new(next_state, next_tape, false);
+                    let config =
+                        Config::new(next_state, next_tape, init);
 
-                self.todo.push(config);
+                    self.todo.push(config);
+                }
             }
 
             if shift != side {
@@ -183,9 +191,9 @@ impl Configs {
 
                 next_tape.step_in(shift);
 
-                if !self.check_seen(next_state, &next_tape) {
-                    let init = next_state == 0 && next_tape.blank();
-
+                if let Some(init) =
+                    self.check_seen(next_state, &next_tape)
+                {
                     let config =
                         Config::new(next_state, next_tape, init);
 
