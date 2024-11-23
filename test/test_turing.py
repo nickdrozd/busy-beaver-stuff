@@ -407,7 +407,7 @@ class Segment(TuringTest):
         for prog, steps in SEGMENT_STEPS.items():
             self.assertEqual(
                 steps,
-                segment_cant_halt(prog, 20))
+                segment_cant_halt(prog, steps))
 
 
 class Simple(TuringTest):
