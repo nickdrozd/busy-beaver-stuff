@@ -1690,9 +1690,9 @@ SEGMENT_FALSE_NEGATIVES = {
 }
 
 SEGMENT_STEPS: dict[str, int] = {
+    "1RB ... 1LB  2LB 2RA 0LB": 5,
     "1RB ... 0RA  1LB 2LA 2RB": 8,
     "1RB 0RB ...  1LB 2RA 0LA": 8,
-    "1RB ... 1LB  2LB 2RA 0LB": 9,
 
     "1RB ...  1RC 0RA  1LC 0LB": 11,
 

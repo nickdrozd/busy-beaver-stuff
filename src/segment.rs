@@ -24,9 +24,9 @@ pub fn segment_cant_halt(
 
     for seg in 2..=segs {
         match all_segments_reached(&prog, 2 + seg) {
-            None => return Some(seg),
-            Some(SearchResult::Halted) => return None,
             Some(SearchResult::Reached) => continue,
+            Some(SearchResult::Halted) => return None,
+            None | Some(SearchResult::Spinout) => return Some(seg),
         }
     }
 
@@ -37,6 +37,7 @@ pub fn segment_cant_halt(
 
 enum SearchResult {
     Halted,
+    Spinout,
     Reached,
 }
 
@@ -65,6 +66,10 @@ fn all_segments_reached(
 
                 continue 'next_config;
             };
+
+            if config.init && config.spinout(instr) {
+                return Some(SearchResult::Spinout);
+            }
 
             config.step(instr);
 
@@ -227,6 +232,10 @@ impl Config {
         self.state = state;
         self.tape.step(shift, print);
     }
+
+    fn spinout(&self, &(_, shift, state): &Instr) -> bool {
+        self.state == state && self.tape.at_edge(shift)
+    }
 }
 
 impl Display for Config {
@@ -305,6 +314,11 @@ impl Tape {
         matches!(self.scan, Some(0) | None)
             && self.lspan.blank()
             && self.rspan.blank()
+    }
+
+    fn at_edge(&self, edge: Shift) -> bool {
+        self.scan == Some(0)
+            && (if edge { &self.rspan } else { &self.lspan }).blank()
     }
 
     fn pos(&self) -> Pos {
