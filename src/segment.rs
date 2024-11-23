@@ -13,6 +13,16 @@ type Segments = usize;
 
 /**************************************/
 
+enum SearchResult {
+    Halted,
+    Spinout,
+    Reached,
+    Nothing,
+}
+
+#[expect(clippy::enum_glob_use)]
+use SearchResult::*;
+
 pub fn segment_cant_halt(
     prog: &CompProg,
     params: Params,
@@ -24,9 +34,9 @@ pub fn segment_cant_halt(
 
     for seg in 2..=segs {
         match all_segments_reached(&prog, 2 + seg) {
-            Some(SearchResult::Reached) => continue,
-            Some(SearchResult::Halted) => return None,
-            None | Some(SearchResult::Spinout) => return Some(seg),
+            Reached => continue,
+            Halted => return None,
+            Nothing | Spinout => return Some(seg),
         }
     }
 
@@ -35,16 +45,10 @@ pub fn segment_cant_halt(
 
 /**************************************/
 
-enum SearchResult {
-    Halted,
-    Spinout,
-    Reached,
-}
-
 fn all_segments_reached(
     prog: &AnalyzedProg,
     seg: Segments,
-) -> Option<SearchResult> {
+) -> SearchResult {
     let mut configs = Configs::new(seg, prog);
 
     #[cfg(all(not(test), debug_assertions))]
@@ -57,18 +61,18 @@ fn all_segments_reached(
         while let Some(slot) = config.slot() {
             let Some(instr) = prog.get(&slot) else {
                 if config.init {
-                    return Some(SearchResult::Halted);
+                    return Halted;
                 }
 
                 if configs.check_reached(&config) {
-                    return Some(SearchResult::Reached);
+                    return Reached;
                 }
 
                 continue 'next_config;
             };
 
             if config.init && config.spinout(instr) {
-                return Some(SearchResult::Spinout);
+                return Spinout;
             }
 
             config.step(instr);
@@ -80,13 +84,13 @@ fn all_segments_reached(
         }
 
         if configs.check_reached(&config) {
-            return Some(SearchResult::Reached);
+            return Reached;
         }
 
         configs.branch(config, prog);
     }
 
-    None
+    Nothing
 }
 
 /**************************************/
