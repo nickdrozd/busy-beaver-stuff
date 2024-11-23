@@ -1669,7 +1669,6 @@ SEGMENT_FALSE_NEGATIVES = {
     "1RB ...  1LC 1RA  1LA 0LC",
     "1RB 0LB  1LC 1RB  ... 1LA",
     "1RB 0LC  0LC 1RA  ... 1LA",
-    "1RB 0LC  0RC ...  1LC 0RA",
     "1RB 1LC  0LA 0RB  1LA ...",
 
     "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",

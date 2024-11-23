@@ -175,22 +175,9 @@ impl Configs {
         reached.len() == self.seg
     }
 
-    fn branch(
-        &mut self,
-        Config { state, tape, .. }: Config,
-        prog: &AnalyzedProg,
-    ) {
-        for &next_state in &prog.diffs[&state] {
-            let Some(init) = self.check_seen(next_state, &tape) else {
-                continue;
-            };
-
-            let next_tape = tape.clone();
-
-            let config = Config::new(next_state, next_tape, init);
-
-            self.add_todo(config);
-        }
+    fn branch(&mut self, mut config: Config, prog: &AnalyzedProg) {
+        let tape = &config.tape;
+        let state = config.state;
 
         let shift = !tape.side();
 
@@ -205,6 +192,33 @@ impl Configs {
             };
 
             let config = Config::new(next_state, next_tape, init);
+
+            self.add_todo(config);
+        }
+
+        let Some((last_next, diffs)) = prog.diffs[&state].split_last()
+        else {
+            return;
+        };
+
+        for &next_state in diffs {
+            let Some(init) = self.check_seen(next_state, tape) else {
+                continue;
+            };
+
+            let next_tape = tape.clone();
+
+            let config = Config::new(next_state, next_tape, init);
+
+            self.add_todo(config);
+        }
+
+        if let Some(init) = self.check_seen(*last_next, tape) {
+            config.state = *last_next;
+
+            if init {
+                config.init = init;
+            }
 
             self.add_todo(config);
         }
