@@ -117,6 +117,10 @@ impl Configs {
         }
     }
 
+    fn add_todo(&mut self, config: Config) {
+        self.todo.push(config);
+    }
+
     fn next_init(&mut self) -> Option<Config> {
         let blanks = self.blanks.entry(0).or_default();
 
@@ -182,7 +186,7 @@ impl Configs {
                     let config =
                         Config::new(next_state, next_tape, init);
 
-                    self.todo.push(config);
+                    self.add_todo(config);
                 }
             }
 
@@ -197,7 +201,7 @@ impl Configs {
                     let config =
                         Config::new(next_state, next_tape, init);
 
-                    self.todo.push(config);
+                    self.add_todo(config);
                 }
             }
         }
