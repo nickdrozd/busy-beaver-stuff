@@ -180,34 +180,33 @@ impl Configs {
         Config { state, tape, .. }: Config,
         prog: &AnalyzedProg,
     ) {
-        let side = tape.side();
+        for &next_state in &prog.diffs[&state] {
+            let Some(init) = self.check_seen(next_state, &tape) else {
+                continue;
+            };
 
-        for &(shift, next_state) in &prog.edges[&state] {
-            if next_state != state {
-                if let Some(init) = self.check_seen(next_state, &tape) {
-                    let next_tape = tape.clone();
+            let next_tape = tape.clone();
 
-                    let config =
-                        Config::new(next_state, next_tape, init);
+            let config = Config::new(next_state, next_tape, init);
 
-                    self.add_todo(config);
-                }
-            }
+            self.add_todo(config);
+        }
 
-            if shift != side {
-                let mut next_tape = tape.clone();
+        let shift = !tape.side();
 
-                next_tape.step_in(shift);
+        for &next_state in &prog.dirs[&state][&shift] {
+            let mut next_tape = tape.clone();
 
-                if let Some(init) =
-                    self.check_seen(next_state, &next_tape)
-                {
-                    let config =
-                        Config::new(next_state, next_tape, init);
+            next_tape.step_in(shift);
 
-                    self.add_todo(config);
-                }
-            }
+            let Some(init) = self.check_seen(next_state, &next_tape)
+            else {
+                continue;
+            };
+
+            let config = Config::new(next_state, next_tape, init);
+
+            self.add_todo(config);
         }
     }
 }
@@ -407,7 +406,8 @@ impl Display for Tape {
 struct AnalyzedProg<'p> {
     prog: &'p CompProg,
     halts: Set<State>,
-    edges: Dict<State, Vec<(Shift, State)>>,
+    diffs: Dict<State, Vec<State>>,
+    dirs: Dict<State, Dict<bool, Vec<State>>>,
 }
 
 impl<'p> AnalyzedProg<'p> {
@@ -417,29 +417,52 @@ impl<'p> AnalyzedProg<'p> {
 
     fn new(prog: &'p CompProg, (states, colors): Params) -> Self {
         let mut halts = Set::new();
-        let mut edges = Dict::new();
+
+        let mut dirs = Dict::new();
+        let mut diffs = Dict::new();
 
         for state in 0..states {
-            let mut instrs = Set::new();
+            let mut diff = Set::new();
+            let mut lefts = Set::new();
+            let mut rights = Set::new();
 
             for color in 0..colors {
-                if let Some(&(_, shift, next)) =
-                    prog.get(&(state, color))
-                {
-                    instrs.insert((shift, next));
-                } else {
+                let Some(&(_, shift, next)) = prog.get(&(state, color))
+                else {
                     halts.insert(state);
+                    continue;
+                };
+
+                if next != state {
+                    diff.insert(next);
                 }
+
+                (if shift { &mut rights } else { &mut lefts })
+                    .insert(next);
             }
 
-            let mut instrs: Vec<_> = instrs.into_iter().collect();
+            let mut diff: Vec<_> = diff.into_iter().collect();
+            diff.sort_unstable();
+            diffs.insert(state, diff);
 
-            instrs.sort_unstable();
+            let mut lefts: Vec<_> = lefts.into_iter().collect();
+            lefts.sort_unstable();
 
-            edges.insert(state, instrs);
+            let mut rights: Vec<_> = rights.into_iter().collect();
+            rights.sort_unstable();
+
+            dirs.insert(
+                state,
+                Dict::from([(false, lefts), (true, rights)]),
+            );
         }
 
-        Self { prog, halts, edges }
+        Self {
+            prog,
+            halts,
+            diffs,
+            dirs,
+        }
     }
 }
 
