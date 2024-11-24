@@ -527,7 +527,7 @@ fn assert_segment(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if segment_cant_halt(prog, params, 6).is_some() {
+        if segment_cant_halt(prog, params, 22).is_some() {
             return;
         }
 
@@ -556,12 +556,12 @@ fn test_segment() {
     assert_segment_results![
         ((2, 2), 1, (10, 36)),
         //
-        ((3, 2), 1, (1_034, 3_140)),
+        ((3, 2), 1, (1_028, 3_140)),
         //
-        ((2, 3), 1, (690, 2_447)),
+        ((2, 3), 1, (684, 2_447)),
         //
-        ((4, 2), 1, (145_395, 467_142)),
+        ((4, 2), 1, (139_814, 467_142)),
         //
-        ((2, 4), 1, (119_027, 312_642)),
+        ((2, 4), 1, (115_914, 312_642)),
     ];
 }
