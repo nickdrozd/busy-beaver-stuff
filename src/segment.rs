@@ -11,9 +11,12 @@ use crate::instrs::{
 
 type Segments = usize;
 
+const MAX_DEPTH: usize = 8_000;
+
 /**************************************/
 
 enum SearchResult {
+    Limit,
     Halted,
     Spinout,
     Reached,
@@ -35,7 +38,7 @@ pub fn segment_cant_halt(
     for seg in 2..=segs {
         match all_segments_reached(&prog, 2 + seg) {
             Reached => continue,
-            Halted => return None,
+            Limit | Halted => return None,
             Nothing | Spinout => return Some(seg),
         }
     }
@@ -88,6 +91,10 @@ fn all_segments_reached(
         }
 
         configs.branch(config, prog);
+
+        if configs.check_depth() {
+            return Limit;
+        }
     }
 
     Nothing
@@ -123,6 +130,11 @@ impl Configs {
 
     fn add_todo(&mut self, config: Config) {
         self.todo.push(config);
+    }
+
+    fn check_depth(&self) -> bool {
+        self.todo.len() > MAX_DEPTH
+            || self.seen.values().any(|seen| seen.len() > MAX_DEPTH)
     }
 
     fn next_init(&mut self) -> Option<Config> {
