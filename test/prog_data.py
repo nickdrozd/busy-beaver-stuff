@@ -35,6 +35,10 @@ HALT: BasicTermData = {
     "1RB 1LC  0LD 0RD  ... 0LA  1LD 1LA": (11,  84),
     "1RB 0LC  1LD 1RB  ... 0RB  1LC 1LA": ( 4,  12),
     "1RB 1LA  1RC 0RD  1LA 1RD  ... 0LA": ( 4,  11),
+    "1RB 0LA  0RC 1LD  0RD ...  1LA 1RD": ( 4,  19),
+    "1RB ...  1LC 1RA  1LD 1RC  0RB 0LD": ( 3,  12),
+    "1RB 0LA  0RC 0LD  0RD ...  1LA 1RD": ( 3,  11),
+    "1RB ...  1LC 0RA  1LD 1RC  0RB 0LD": ( 2,  12),
 
     # 2/4
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (2050, 3932964),  # BB
@@ -382,6 +386,7 @@ RECUR_COMPACT = {
     "1RB 2LA 1RB  1LB 1LA 2RA": ( 24, 46),
     "1RB 1LB 0RB  1LA 2RB ...": ( 23,  3),
     "1RB 1LA 2LB  1LA 2RA 0LB": ( 20, 48),
+    "1RB 0LB 0RB  1LA 2RB ...": ( 15,  3),
     "1RB 2RB 2LA  1LB 1RA 0LA": ( 14, 54),
     "1RB 2LA 1RB  1LB 1LA 0RA": (  7, 46),
     "1RB 0RA 1LB  2LA 2RB 0LA": (  6, 48),
@@ -1214,6 +1219,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB ... 1LB  2LB 2RA 0LB",
     "1RB ... 0RA  1LB 2LA 2RB",
     "1RB 1LB 0RB  1LA 2RB ...",
+    "1RB 0LB 0RB  1LA 2RB ...",
 
     "1RB 1LA ... 3LA  2LA 3RB 3LA 0RA",
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
@@ -1288,6 +1294,8 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 1RD  1LC 0LB  1LA 0RA  0RC ...",
     "1RB 0LD  1LC 0RA  0LC 1LA  0RB ...",
     "1RB ...  1RC 0RA  1RD 0LB  1LD 0LC",
+    "1RB ...  0LC 0RA  1LD 1RC  0RB 0LD",
+    "1RB ...  0LC 1RA  1LD 1RC  0RB 0LD",
 
     "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE",
     "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA",
@@ -1462,6 +1470,11 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 0LA  0RC 1RC  1RD 1LA  1LB ...",
     "1RB 0RB  1LC 0LD  1LB 1RA  0RD 0LC",
     "1RB 0LD  1LC 1RA  0RB 0LC  ... 1LA",
+    "1RB ...  0LC 0RA  1LD 1RC  0RB 0LD",
+    "1RB ...  0LC 1RA  1LD 1RC  0RB 0LD",
+    "1RB 0LA  0RC 1LD  0RD ...  1LA 1RD",
+    "1RB ...  1LC 1RA  1LD 1RC  0RB 0LD",
+    "1RB 0LA  0RC 0LD  0RD ...  1LA 1RD",
 
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA",
@@ -1678,6 +1691,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 
 SEGMENT_FALSE_NEGATIVES = {
     "1RB ... 0RB  2LB 2LA 0RA",
+    "1RB 0LB 0RB  1LA 2RB ...",
     "1RB 1LB 0RB  1LA 2RB ...",
     "1RB 2LA 0LA  1LA ... 2RA",
     "1RB 2LA 1RB  1LA ... 1RA",
@@ -1701,6 +1715,8 @@ SEGMENT_FALSE_NEGATIVES = {
     "1RB 0LD  1LC 1RA  0RB 0LC  ... 1LA",
     "1RB 1LA  1LA 1RC  ... 0RD  0LA 1RD",
     "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
+    "1RB ...  0LC 1RA  1LD 1RC  0RB 0LD",
+    "1RB ...  0LC 0RA  1LD 1RC  0RB 0LD",
 
     "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC",
     "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
@@ -2822,6 +2838,8 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 1LD  1LB 0RC  0LA 1RC  1RD 1LB",
     "1RB 0LD  1LC 1RA  0RB 0LC  ... 1LA",
     "1RB 1LA  0LA 0RC  1RD 0LA  1RA ...",
+    "1RB ...  0LC 0RA  1LD 1RC  0RB 0LD",
+    "1RB ...  0LC 1RA  1LD 1RC  0RB 0LD",
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
     "1RB 0LA  0RC 1LA  1RD 1RE  1RE ...  1LB 1LA",
