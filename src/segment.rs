@@ -18,6 +18,7 @@ const MAX_DEPTH: usize = 8_000;
 enum SearchResult {
     Limit,
     Halted,
+    Repeat,
     Spinout,
     Reached,
     Nothing,
@@ -39,7 +40,7 @@ pub fn segment_cant_halt(
         match all_segments_reached(&prog, 2 + seg) {
             Reached => continue,
             Limit | Halted => return None,
-            Nothing | Spinout => return Some(seg),
+            Nothing | Spinout | Repeat => return Some(seg),
         }
     }
 
@@ -57,33 +58,16 @@ fn all_segments_reached(
     #[cfg(all(not(test), debug_assertions))]
     println!();
 
-    'next_config: while let Some(mut config) = configs.next() {
+    while let Some(mut config) = configs.next() {
         #[cfg(all(not(test), debug_assertions))]
         println!("{config}");
 
-        while let Some(slot) = config.slot() {
-            let Some(instr) = prog.get(&slot) else {
-                if config.init {
-                    return Halted;
-                }
-
-                if configs.check_reached(&config) {
-                    return Reached;
-                }
-
-                continue 'next_config;
-            };
-
-            if config.init && config.spinout(instr) {
-                return Spinout;
+        if let Some(result) = config.run_to_edge(prog, &mut configs) {
+            if matches!(result, Halted | Reached | Spinout) {
+                return result;
             }
 
-            config.step(instr);
-
-            if configs.check_seen(config.state, &config.tape).is_none()
-            {
-                continue 'next_config;
-            }
+            continue;
         }
 
         if configs.check_reached(&config) {
@@ -276,6 +260,38 @@ impl Config {
 
     fn spinout(&self, &(_, shift, state): &Instr) -> bool {
         self.state == state && self.tape.at_edge(shift)
+    }
+
+    fn run_to_edge(
+        &mut self,
+        prog: &AnalyzedProg,
+        configs: &mut Configs,
+    ) -> Option<SearchResult> {
+        while let Some(slot) = self.slot() {
+            let Some(instr) = prog.get(&slot) else {
+                if self.init {
+                    return Some(Halted);
+                }
+
+                if configs.check_reached(self) {
+                    return Some(Reached);
+                }
+
+                return Some(Nothing);
+            };
+
+            if self.init && self.spinout(instr) {
+                return Some(Spinout);
+            }
+
+            self.step(instr);
+
+            if configs.check_seen(self.state, &self.tape).is_none() {
+                return Some(Repeat);
+            }
+        }
+
+        None
     }
 }
 
