@@ -262,11 +262,15 @@ impl Config {
         self.state == state && self.tape.at_edge(shift)
     }
 
+    #[expect(clippy::unwrap_in_result)]
     fn run_to_edge(
         &mut self,
         prog: &AnalyzedProg,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
+        let mut step = false;
+        let mut copy = self.clone();
+
         while let Some(slot) = self.slot() {
             let Some(instr) = prog.get(&slot) else {
                 if self.init {
@@ -286,9 +290,20 @@ impl Config {
 
             self.step(instr);
 
-            if configs.check_seen(self.state, &self.tape).is_none() {
+            if !step {
+                step = true;
+                continue;
+            }
+
+            let instr = prog.get(&copy.slot().unwrap()).unwrap();
+
+            copy.step(instr);
+
+            if copy == *self {
                 return Some(Repeat);
             }
+
+            step = false;
         }
 
         None
