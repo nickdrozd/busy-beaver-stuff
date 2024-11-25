@@ -268,6 +268,8 @@ impl Config {
         prog: &AnalyzedProg,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
+        self.tape.scan?;
+
         let mut step = false;
         let mut copy = self.clone();
 
