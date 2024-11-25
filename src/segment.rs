@@ -11,7 +11,7 @@ use crate::instrs::{
 
 type Segments = usize;
 
-const MAX_DEPTH: usize = 8_000;
+const MAX_DEPTH: usize = 4_000;
 
 /**************************************/
 
