@@ -63,7 +63,7 @@ fn all_segments_reached(
         println!("{config}");
 
         if let Some(result) = config.run_to_edge(prog, &mut configs) {
-            if matches!(result, Halted | Reached | Spinout) {
+            if matches!(result, Halted | Repeat | Reached | Spinout) {
                 return result;
             }
 
@@ -300,7 +300,7 @@ impl Config {
             copy.step(instr);
 
             if copy == *self {
-                return Some(Repeat);
+                return Some(if self.init { Repeat } else { Nothing });
             }
 
             step = false;
