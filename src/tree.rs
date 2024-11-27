@@ -292,7 +292,7 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
         || (states >= 4 && !is_connected(comp, states))
         || cant_reach(comp, 1).is_some()
         || quick_term_or_rec(comp, 301, true)
-        || cant_reach(comp, 25).is_some()
+        || cant_reach(comp, 256).is_some()
         || check_inf(comp, params, opt_block(comp, 300), 306)
         || (halt && segment_cant_halt(comp, params, 2).is_some())
 }
@@ -382,7 +382,7 @@ fn test_tree_slow() {
         // ((2, 5), 0, (11_995_036?, 515_255_468)),
         //
         ((3, 3), 1, (97_179, 25_306_290)),
-        ((3, 3), 0, (589_367, 149_378_138)),
+        ((3, 3), 0, (589_362, 149_378_138)),
     ];
 }
 
