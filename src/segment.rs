@@ -212,9 +212,7 @@ impl Configs {
         if let Some(init) = self.check_seen(*last_next, tape) {
             config.state = *last_next;
 
-            if init {
-                config.init = init;
-            }
+            config.init = init;
 
             self.add_todo(config);
         }
