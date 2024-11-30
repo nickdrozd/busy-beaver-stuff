@@ -53,7 +53,10 @@ fn all_segments_reached(
     prog: &AnalyzedProg,
     seg: Segments,
 ) -> SearchResult {
-    let mut configs = Configs::new(seg, prog);
+    let mut configs = Configs::new(seg, &prog.halts);
+
+    let branches = &prog.branches;
+    let prog = prog.prog;
 
     #[cfg(all(not(test), debug_assertions))]
     println!();
@@ -74,7 +77,7 @@ fn all_segments_reached(
             return Reached;
         }
 
-        let (diffs, dirs) = &prog.branches[&config.state];
+        let (diffs, dirs) = &branches[&config.state];
 
         configs.branch_in(&config.tape, dirs);
 
@@ -102,14 +105,13 @@ struct Configs {
 }
 
 impl Configs {
-    fn new(seg: Segments, prog: &AnalyzedProg) -> Self {
+    fn new(seg: Segments, halts: &Halts) -> Self {
         Self {
             seg,
             todo: vec![],
             seen: Dict::new(),
             blanks: Dict::new(),
-            reached: prog
-                .halts
+            reached: halts
                 .iter()
                 .map(|&state| (state, Set::new()))
                 .collect(),
@@ -266,7 +268,7 @@ impl Config {
     #[expect(clippy::unwrap_in_result)]
     fn run_to_edge(
         &mut self,
-        prog: &AnalyzedProg,
+        prog: &CompProg,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
         self.tape.scan?;
@@ -463,20 +465,17 @@ impl Display for Tape {
 
 /**************************************/
 
+type Halts = Set<State>;
 type Diffs = Vec<State>;
 type Dirs = Dict<bool, Vec<State>>;
 
 struct AnalyzedProg<'p> {
     prog: &'p CompProg,
-    halts: Set<State>,
+    halts: Halts,
     branches: Dict<State, (Diffs, Dirs)>,
 }
 
 impl<'p> AnalyzedProg<'p> {
-    fn get(&self, slot: &Slot) -> Option<&Instr> {
-        self.prog.get(slot)
-    }
-
     fn new(prog: &'p CompProg, (states, colors): Params) -> Self {
         let mut halts = Set::new();
 
