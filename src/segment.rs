@@ -74,9 +74,11 @@ fn all_segments_reached(
             return Reached;
         }
 
-        configs.branch_in(&config, prog);
+        let (diffs, dirs) = &prog.branches[&config.state];
 
-        configs.branch_out(config, prog);
+        configs.branch_in(&config.tape, dirs);
+
+        configs.branch_out(config, diffs);
 
         if configs.check_depth() {
             return Limit;
@@ -173,45 +175,39 @@ impl Configs {
         reached.len() == self.seg
     }
 
-    fn branch_in(&mut self, config: &Config, prog: &AnalyzedProg) {
-        let tape = &config.tape;
-        let state = config.state;
-
+    fn branch_in(&mut self, tape: &Tape, dirs: &Dirs) {
         let shift = !tape.side();
 
-        for &next_state in &prog.dirs[&state][&shift] {
+        for &state in &dirs[&shift] {
             let mut next_tape = tape.clone();
 
             next_tape.step_in(shift);
 
-            let Some(init) = self.check_seen(next_state, &next_tape)
-            else {
+            let Some(init) = self.check_seen(state, &next_tape) else {
                 continue;
             };
 
-            let config = Config::new(next_state, next_tape, init);
+            let config = Config::new(state, next_tape, init);
 
             self.add_todo(config);
         }
     }
 
-    fn branch_out(&mut self, mut config: Config, prog: &AnalyzedProg) {
+    fn branch_out(&mut self, mut config: Config, diffs: &Diffs) {
         let tape = &config.tape;
-        let state = config.state;
 
-        let Some((last_next, diffs)) = prog.diffs[&state].split_last()
-        else {
+        let Some((last_next, diffs)) = diffs.split_last() else {
             return;
         };
 
-        for &next_state in diffs {
-            let Some(init) = self.check_seen(next_state, tape) else {
+        for &state in diffs {
+            let Some(init) = self.check_seen(state, tape) else {
                 continue;
             };
 
             let next_tape = tape.clone();
 
-            let config = Config::new(next_state, next_tape, init);
+            let config = Config::new(state, next_tape, init);
 
             self.add_todo(config);
         }
@@ -467,11 +463,13 @@ impl Display for Tape {
 
 /**************************************/
 
+type Diffs = Vec<State>;
+type Dirs = Dict<bool, Vec<State>>;
+
 struct AnalyzedProg<'p> {
     prog: &'p CompProg,
     halts: Set<State>,
-    diffs: Dict<State, Vec<State>>,
-    dirs: Dict<State, Dict<bool, Vec<State>>>,
+    branches: Dict<State, (Diffs, Dirs)>,
 }
 
 impl<'p> AnalyzedProg<'p> {
@@ -482,8 +480,7 @@ impl<'p> AnalyzedProg<'p> {
     fn new(prog: &'p CompProg, (states, colors): Params) -> Self {
         let mut halts = Set::new();
 
-        let mut dirs = Dict::new();
-        let mut diffs = Dict::new();
+        let mut branches = Dict::new();
 
         for state in 0..states {
             let mut diff = Set::new();
@@ -507,7 +504,6 @@ impl<'p> AnalyzedProg<'p> {
 
             let mut diff: Vec<_> = diff.into_iter().collect();
             diff.sort_unstable();
-            diffs.insert(state, diff);
 
             let mut lefts: Vec<_> = lefts.into_iter().collect();
             lefts.sort_unstable();
@@ -515,17 +511,16 @@ impl<'p> AnalyzedProg<'p> {
             let mut rights: Vec<_> = rights.into_iter().collect();
             rights.sort_unstable();
 
-            dirs.insert(
+            branches.insert(
                 state,
-                Dict::from([(false, lefts), (true, rights)]),
+                (diff, Dict::from([(false, lefts), (true, rights)])),
             );
         }
 
         Self {
             prog,
             halts,
-            diffs,
-            dirs,
+            branches,
         }
     }
 }
