@@ -74,7 +74,9 @@ fn all_segments_reached(
             return Reached;
         }
 
-        configs.branch(config, prog);
+        configs.branch_in(&config, prog);
+
+        configs.branch_out(config, prog);
 
         if configs.check_depth() {
             return Limit;
@@ -171,7 +173,7 @@ impl Configs {
         reached.len() == self.seg
     }
 
-    fn branch(&mut self, mut config: Config, prog: &AnalyzedProg) {
+    fn branch_in(&mut self, config: &Config, prog: &AnalyzedProg) {
         let tape = &config.tape;
         let state = config.state;
 
@@ -191,6 +193,11 @@ impl Configs {
 
             self.add_todo(config);
         }
+    }
+
+    fn branch_out(&mut self, mut config: Config, prog: &AnalyzedProg) {
+        let tape = &config.tape;
+        let state = config.state;
 
         let Some((last_next, diffs)) = prog.diffs[&state].split_last()
         else {
