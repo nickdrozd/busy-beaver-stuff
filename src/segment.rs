@@ -21,7 +21,6 @@ enum SearchResult {
     Repeat,
     Spinout,
     Reached,
-    Nothing,
 }
 
 #[expect(clippy::enum_glob_use)]
@@ -37,10 +36,14 @@ pub fn segment_cant_halt(
     let prog = AnalyzedProg::new(prog, params);
 
     for seg in 2..=segs {
-        match all_segments_reached(&prog, 2 + seg) {
+        let Some(result) = all_segments_reached(&prog, 2 + seg) else {
+            return Some(seg);
+        };
+
+        match result {
             Reached => continue,
             Limit | Halted => return None,
-            Nothing | Spinout | Repeat => return Some(seg),
+            Spinout | Repeat => return Some(seg),
         }
     }
 
@@ -52,7 +55,7 @@ pub fn segment_cant_halt(
 fn all_segments_reached(
     prog: &AnalyzedProg,
     seg: Segments,
-) -> SearchResult {
+) -> Option<SearchResult> {
     let mut configs = Configs::new(seg, &prog.halts);
 
     let branches = &prog.branches;
@@ -65,16 +68,36 @@ fn all_segments_reached(
         #[cfg(all(not(test), debug_assertions))]
         println!("{config}");
 
-        if let Some(result) = config.run_to_edge(prog, &mut configs) {
-            if matches!(result, Halted | Repeat | Reached | Spinout) {
-                return result;
-            }
+        if let Some(result) = config.run_to_edge(prog) {
+            match result {
+                Halted => {
+                    if config.init {
+                        return Some(Halted);
+                    }
 
-            continue;
+                    if configs.check_reached(&config) {
+                        return Some(Reached);
+                    }
+
+                    continue;
+                },
+
+                Repeat if config.init => {
+                    return Some(Repeat);
+                },
+
+                Spinout => {
+                    return Some(Spinout);
+                },
+
+                _ => {
+                    continue;
+                },
+            }
         }
 
         if configs.check_reached(&config) {
-            return Reached;
+            return Some(Reached);
         }
 
         let (diffs, dirs) = &branches[&config.state];
@@ -84,11 +107,11 @@ fn all_segments_reached(
         configs.branch_out(config, diffs);
 
         if configs.check_depth() {
-            return Limit;
+            return Some(Limit);
         }
     }
 
-    Nothing
+    None
 }
 
 /**************************************/
@@ -266,11 +289,7 @@ impl Config {
     }
 
     #[expect(clippy::unwrap_in_result)]
-    fn run_to_edge(
-        &mut self,
-        prog: &CompProg,
-        configs: &mut Configs,
-    ) -> Option<SearchResult> {
+    fn run_to_edge(&mut self, prog: &CompProg) -> Option<SearchResult> {
         self.tape.scan?;
 
         let mut step = false;
@@ -278,15 +297,7 @@ impl Config {
 
         while let Some(slot) = self.slot() {
             let Some(instr) = prog.get(&slot) else {
-                if self.init {
-                    return Some(Halted);
-                }
-
-                if configs.check_reached(self) {
-                    return Some(Reached);
-                }
-
-                return Some(Nothing);
+                return Some(Halted);
             };
 
             if self.init && self.spinout(instr) {
@@ -305,7 +316,7 @@ impl Config {
             copy.step(instr);
 
             if copy == *self {
-                return Some(if self.init { Repeat } else { Nothing });
+                return Some(Repeat);
             }
 
             step = false;
