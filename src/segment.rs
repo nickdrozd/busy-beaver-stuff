@@ -310,18 +310,20 @@ impl Config {
 
             self.step(instr);
 
-            if !self.init {
-                let &(print, _, state) = instr;
+            let &(print, _, state) = instr;
 
-                if state == 0 && print == 0 && self.tape.blank() {
-                    self.init = true;
-
-                    configs
-                        .blanks
-                        .entry(0)
-                        .or_default()
-                        .insert(self.tape.pos());
+            if state == 0 && print == 0 && self.tape.blank() {
+                if self.init {
+                    return Some(Repeat);
                 }
+
+                self.init = true;
+
+                configs
+                    .blanks
+                    .entry(0)
+                    .or_default()
+                    .insert(self.tape.pos());
             }
 
             if !step {
