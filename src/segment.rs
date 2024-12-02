@@ -251,7 +251,7 @@ impl Iterator for Configs {
     type Item = Config;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.todo.pop().or_else(|| self.next_init())
+        self.next_init().or_else(|| self.todo.pop())
     }
 }
 
