@@ -68,7 +68,7 @@ fn all_segments_reached(
         #[cfg(all(not(test), debug_assertions))]
         println!("{config}");
 
-        if let Some(result) = config.run_to_edge(prog) {
+        if let Some(result) = config.run_to_edge(prog, &mut configs) {
             match result {
                 Halted => {
                     if config.init {
@@ -289,7 +289,11 @@ impl Config {
     }
 
     #[expect(clippy::unwrap_in_result)]
-    fn run_to_edge(&mut self, prog: &CompProg) -> Option<SearchResult> {
+    fn run_to_edge(
+        &mut self,
+        prog: &CompProg,
+        configs: &mut Configs,
+    ) -> Option<SearchResult> {
         self.tape.scan?;
 
         let mut step = false;
@@ -306,6 +310,20 @@ impl Config {
 
             self.step(instr);
 
+            if !self.init {
+                let &(print, _, state) = instr;
+
+                if state == 0 && print == 0 && self.tape.blank() {
+                    self.init = true;
+
+                    configs
+                        .blanks
+                        .entry(0)
+                        .or_default()
+                        .insert(self.tape.pos());
+                }
+            }
+
             if !step {
                 step = true;
                 continue;
@@ -315,7 +333,7 @@ impl Config {
 
             copy.step(instr);
 
-            if copy == *self {
+            if copy.state == self.state && copy.tape == self.tape {
                 return Some(Repeat);
             }
 
