@@ -188,6 +188,7 @@ SPINOUT_BLANK = {
     "1RB 1LA  1LA 1LC  1RC 0LC": ({'C'}, 20),
     "1RB 0LC  1LB 1LA  1RC 0LC": ({'C'}, 20),
     "1RB ...  1LC 0LC  1RC 0LB": ({'B', 'C'}, 20),
+    "1RB ...  1LB 0RC  ... 0RB": ({'B'},  4),
 
     # 2/3
     "1RB 2RA 2RB  2LB 1LA 0RB": ({'B'}, 29),
@@ -499,6 +500,7 @@ RECUR_BLANK_IN_PERIOD = {
     "1RB 2LA 0RB  1LA 0LB 1RA": (None,  4),
 
     # 2/4
+    "1RB 2RB 0LB ...  1LA 2LB 3RA 0LA": (0, 7),
     "1RB 0RA ... 0LA  2LB 3LA 1LA 3RB": (0, 12),
     "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA": (0, 224),
     "1RB 2LA 0RA 1LA  3LA 0LB 1RA 2LA": (None, 52),
@@ -1009,6 +1011,7 @@ MODULAR = {
     # incomplete
     "1RB ...  1LB 0RB",
     "1RB ... ...  2LB 1RB 1LB",
+    "1RB ...  1LB 0RC  ... 0RB",
     "1RB ...  1LB 0LC  1RC 1RB",
     "1RB ...  1LB 1LC  1RC 0RB",
     "1RB ...  1LB 1RC  0LC 0RB",
@@ -1169,6 +1172,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB ...  0LB 0LA",
     "1RB ...  1LB 0LA",
 
+    "1RB ...  1LB 0RC  ... 0RB",
     "1RB ...  0LC 0RB  1LC 1LA",
     "1RB ...  1LC 1RA  1LA 0LC",
     "1RB ...  1LC 0RC  1RA 0LC",
@@ -1240,6 +1244,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 1LA ... 1RB  2LA 3LB 1RB 0RA",
     "1RB 0LB 0RB ...  2LB 3RA 1RA 0LA",
     "1RB 0RA ... 0LA  2LB 3LA 1LA 3RB",
+    "1RB 2RB 0LB ...  1LA 2LB 3RA 0LA",
 
     "1RB 1RC  1LC 0LD  1RA 0LB  ... 0LA",
     "1RB ...  1LC 0RB  0LC 0LD  0RD 1RA",
@@ -1715,6 +1720,7 @@ SEGMENT_FALSE_NEGATIVES = {
 
     "1RB ...  0LC 0RB  1LC 1LA",
     "1RB ...  0RC 0RB  1LC 1LA",
+    "1RB ...  1LB 0RC  ... 0RB",
     "1RB ...  1LC 0RB  1LA 1LC",
     "1RB ...  1LC 0RB  1LB 1LA",
     "1RB ...  1LC 0RC  1RA 0LC",
