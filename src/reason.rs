@@ -132,7 +132,7 @@ fn cant_reach(
                 println!("{step} | {config}");
             }
             println!();
-        }
+        };
 
         let valid_steps = get_valid_steps(&mut configs, &entrypoints)?;
 
