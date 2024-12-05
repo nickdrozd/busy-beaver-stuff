@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest import TestCase, skipUnless, expectedFailure
+from unittest import TestCase, skipUnless
 from multiprocessing import Queue, Manager, Pool
 from typing import TYPE_CHECKING
 
@@ -445,7 +445,6 @@ class Slow(TestTree):
 
         self.assert_simple_and_connected()
 
-    @expectedFailure
     def test_24(self):
         run_tree_gen(
             steps = 100,
@@ -455,7 +454,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            759,
+            749,
             'holdouts_24h')
 
         self.assert_simple_and_connected()
