@@ -20,6 +20,8 @@ from tm.reason import (
     cant_halt,
     cant_blank,
     cant_spin_out,
+
+    segment_cant_halt,
 )
 from tm.rust_stuff import tree_progs
 
@@ -360,6 +362,9 @@ def capture_42h(prog: str) -> None:
     if cant_halt(prog, 10) is not None:
         return
 
+    if segment_cant_halt(prog, 2) is not None:
+        return
+
     PROGS.put(prog)
 
 ########################################
@@ -386,7 +391,13 @@ def capture_24(prog: str) -> None:
     if cant_halt(prog, 10) is not None:
         return
 
+    if segment_cant_halt(prog, 2) is not None:
+        return
+
     if quick_term_or_rec(prog, 10_000):
+        return
+
+    if segment_cant_halt(prog, 8) is not None:
         return
 
     PROGS.put(prog)
@@ -432,7 +443,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            8,
+            3,
             'holdouts_42h')
 
         self.assert_records({
@@ -454,7 +465,7 @@ class Slow(TestTree):
         )
 
         self.assert_progs(
-            749,
+            37,
             'holdouts_24h')
 
         self.assert_simple_and_connected()

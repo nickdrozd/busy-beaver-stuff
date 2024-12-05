@@ -281,7 +281,7 @@ class Reason(TuringTest):
     def test_holdouts(self):
         for cat in ('42h', '24h'):
             for prog in read_holdouts(cat):
-                self.assert_could_halt_backward(prog)
+                self.assert_could_halt(prog)
 
         for prog in read_holdouts('42q'):
             self.assert_cant_halt(prog, 1)

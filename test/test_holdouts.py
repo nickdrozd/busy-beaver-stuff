@@ -10,12 +10,12 @@ STEPS = 1_000
 HOLDOUT_COUNTS = {
     '32q': 3,
     '23q': 9,
-    '42h': 8,
+    '42h': 3,
     '42q': 106,
-    '24h': 749,
+    '24h': 37,
 }
 
-TOTAL_HOLDOUTS = 875
+TOTAL_HOLDOUTS = 158
 
 
 class Holdouts(TestCase):
