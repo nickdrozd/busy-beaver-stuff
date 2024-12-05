@@ -69,6 +69,8 @@ class TuringTest(TestCase):
 
     maxDiff = None
 
+    ########################################
+
     def assert_marks(self, marks: int):
         assert isinstance(
             self.machine,
@@ -111,6 +113,8 @@ class TuringTest(TestCase):
             expected,
             (step, show_slot(slot)))
 
+    ########################################
+
     def assert_normal(self, prog: str):
         self.assertTrue(
             Graph(prog).is_normal,
@@ -127,6 +131,37 @@ class TuringTest(TestCase):
             Graph(prog).is_connected
                 or prog in MODULAR,
             prog)
+
+    def assert_simple(self, prog: str):
+        self.assertTrue(
+            (graph := Graph(prog)).is_simple
+                or prog in SPAGHETTI
+                or prog in KERNEL,
+            f'not simple: "{prog}": {len(graph.reduced)},')
+
+    def analyze(
+            self,
+            prog: str,
+            normal: bool = True,
+            decomp: bool = True,
+    ) -> None:
+        if normal:
+            self.assert_normal(prog)
+
+        self.assert_simple(prog)
+        self.assert_connected(prog)
+
+        if decomp and prog != "1RB ...  ... ...":
+            self.assertEqual(
+                prog,
+                show_comp(
+                    comp := tcompile(prog),
+                    params = prog_params(comp)))
+
+        _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
+        _ = Machine(prog, backsym = 1).run(sim_lim = 10)
+
+    ########################################
 
     def assert_could_halt(self, prog: str):
         self.assertIsNone(
@@ -168,104 +203,9 @@ class TuringTest(TestCase):
             cant_spin_out(prog, depth),
             f'spin out false negative: "{prog}"')
 
-    def assert_simple(self, prog: str):
-        self.assertTrue(
-            (graph := Graph(prog)).is_simple
-                or prog in SPAGHETTI
-                or prog in KERNEL,
-            f'not simple: "{prog}": {len(graph.reduced)},')
-
-    def analyze(
-            self,
-            prog: str,
-            normal: bool = True,
-            decomp: bool = True,
-    ) -> None:
-        if normal:
-            self.assert_normal(prog)
-
-        self.assert_simple(prog)
-        self.assert_connected(prog)
-
-        if decomp and prog != "1RB ...  ... ...":
-            self.assertEqual(
-                prog,
-                show_comp(
-                    comp := tcompile(prog),
-                    params = prog_params(comp)))
-
-        _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
-        _ = Machine(prog, backsym = 1).run(sim_lim = 10)
-
-
-def branch_last(prog: str) -> list[str]:
-    comp = tcompile(prog)
-
-    states, colors = get_params(prog)
-
-    all_slots = set(product(range(states), range(colors)))
-
-    open_slots = all_slots - set(comp.keys())
-
-    assert len(open_slots) == 1
-
-    open_slot = list(open_slots)[0]
-
-    all_instrs = product(
-        range(colors),
-        (True, False),
-        range(states),
-    )
-
-    return [
-        show_comp(comp | { open_slot : instr })
-        for instr in all_instrs
-    ]
-
+########################################
 
 class Reason(TuringTest):
-    def test_cryptids(self):
-        for cryptid in CRYPTIDS:
-            self.assert_could_halt(cryptid)
-
-        for mother in MOTHER:
-            for ext in branch_last(mother):
-                self.assert_could_blank(ext)
-                self.assert_could_spin_out(ext)
-
-        for bigfoot in BIGFOOT:
-            for ext in branch_last(bigfoot):
-                self.assert_cant_blank(ext, 7)
-
-        for hydra in HYDRA:
-            self.assert_could_blank(hydra)
-            self.assert_cant_spin_out(hydra, 0)
-
-        for hydra in ANTIHYDRA:
-            self.assert_cant_blank(hydra, 1)
-            self.assert_cant_spin_out(hydra, 0)
-
-    def test_blank(self):
-        for prog in DONT_BLANK:
-            self.assert_cant_blank(prog, 1)
-
-        for prog in BLANKERS:
-            self.assert_simple(prog)
-            self.assert_could_blank(prog)
-
-    def test_false_negatives(self):
-        for prog in CANT_HALT_FALSE_NEGATIVES:
-            self.assertNotIn(prog, HALTERS)
-            self.assert_could_halt(prog)
-
-        for prog in CANT_BLANK_FALSE_NEGATIVES:
-            self.assertNotIn(prog, BLANKERS)
-            self.assert_could_blank(prog)
-
-        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
-            self.assertNotIn(prog, SPINNERS)
-            self.assert_could_spin_out(prog)
-
     def test_halt(self):
         for prog in HALTERS:
             self.assert_simple(prog)
@@ -286,6 +226,14 @@ class Reason(TuringTest):
         for prog in DONT_SPIN_OUT | HALTERS | RECURS | INFRUL:
             self.assert_cant_spin_out(prog, 256)
 
+    def test_blank(self):
+        for prog in DONT_BLANK:
+            self.assert_cant_blank(prog, 1)
+
+        for prog in BLANKERS:
+            self.assert_simple(prog)
+            self.assert_could_blank(prog)
+
     def test_recur(self):
         for prog in RECURS | INFRUL:
             self.assert_simple(prog)
@@ -294,6 +242,19 @@ class Reason(TuringTest):
 
             if prog not in BLANKERS:
                 self.assert_cant_blank(prog, 1331)
+
+    def test_false_negatives(self):
+        for prog in CANT_HALT_FALSE_NEGATIVES:
+            self.assertNotIn(prog, HALTERS)
+            self.assert_could_halt(prog)
+
+        for prog in CANT_BLANK_FALSE_NEGATIVES:
+            self.assertNotIn(prog, BLANKERS)
+            self.assert_could_blank(prog)
+
+        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
+            self.assertNotIn(prog, SPINNERS)
+            self.assert_could_spin_out(prog)
 
     def test_holdouts(self):
         for cat in ('42h', '24h'):
@@ -309,6 +270,27 @@ class Reason(TuringTest):
                 self.assert_cant_halt(prog, 0)
                 self.assert_cant_blank(prog, 1)
                 self.assert_cant_spin_out(prog, 2)
+
+    def test_cryptids(self):
+        for cryptid in CRYPTIDS:
+            self.assert_could_halt(cryptid)
+
+        for mother in MOTHER:
+            for ext in branch_last(mother):
+                self.assert_could_blank(ext)
+                self.assert_could_spin_out(ext)
+
+        for bigfoot in BIGFOOT:
+            for ext in branch_last(bigfoot):
+                self.assert_cant_blank(ext, 7)
+
+        for hydra in HYDRA:
+            self.assert_could_blank(hydra)
+            self.assert_cant_spin_out(hydra, 0)
+
+        for hydra in ANTIHYDRA:
+            self.assert_cant_blank(hydra, 1)
+            self.assert_cant_spin_out(hydra, 0)
 
     def test_steps(self):
         cant_reaches = {
@@ -398,6 +380,32 @@ class Segment(TuringTest):
                 steps,
                 segment_cant_halt(prog, steps))
 
+
+def branch_last(prog: str) -> list[str]:
+    comp = tcompile(prog)
+
+    states, colors = get_params(prog)
+
+    all_slots = set(product(range(states), range(colors)))
+
+    open_slots = all_slots - set(comp.keys())
+
+    assert len(open_slots) == 1
+
+    open_slot = list(open_slots)[0]
+
+    all_instrs = product(
+        range(colors),
+        (True, False),
+        range(states),
+    )
+
+    return [
+        show_comp(comp | { open_slot : instr })
+        for instr in all_instrs
+    ]
+
+########################################
 
 class Simple(TuringTest):
     machine: MachineResult
@@ -516,6 +524,7 @@ class SimpleSlow(Simple):
         self._test_spinout(SPINOUT_SLOW)
         self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
 
+########################################
 
 class Recur(TuringTest):
     prog: str
@@ -730,6 +739,7 @@ class RecurSlow(Recur):
     def test_recur(self):
         self._test_recur(RECUR_SLOW, quick = False)
 
+########################################
 
 class RunProver(TuringTest):
     machine: Machine
