@@ -3035,13 +3035,11 @@ NONHALTERS = (
 )
 
 UNREASONABLE: set[str] = {
-    "1RB 0LA ...  1LB 2LA 0RB",
     "1RB ... 0RB  2LB 2LA 0RA",
 
     "1RB ...  0LC 0RB  1LC 1LA",
     "1RB ...  0RC 0RB  1LC 1LA",
 
-    "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
     "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
     "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
 

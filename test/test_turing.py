@@ -337,7 +337,8 @@ class Reason(TuringTest):
             UNREASONABLE,
             CANT_HALT_FALSE_NEGATIVES
                 & CANT_BLANK_FALSE_NEGATIVES
-                & CANT_SPIN_OUT_FALSE_NEGATIVES)
+                & CANT_SPIN_OUT_FALSE_NEGATIVES
+                & SEGMENT_FALSE_NEGATIVES)
 
         self.assertEqual(
             INFRUL,
@@ -378,13 +379,16 @@ class Segment(TuringTest):
         for prog in NONHALTERS:
             self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
 
-        for prog in SEGMENT_FALSE_NEGATIVES:
+        for prog in SEGMENT_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_halt_segment(prog)
 
         for prog, steps in SEGMENT_STEPS.items():
             self.assertEqual(
                 steps,
                 segment_cant_halt(prog, steps))
+
+        for prog in OMNIREASONABLE:
+            self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
 
 
 def branch_last(prog: str) -> list[str]:
