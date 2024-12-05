@@ -224,17 +224,6 @@ def branch_last(prog: str) -> list[str]:
 
 
 class Reason(TuringTest):
-    def test_undefined(self):
-        for prog, sequence in UNDEFINED.items():
-            self.assertEqual(
-                sequence,
-                {
-                    partial: (step, show_slot(slot))
-                    for partial, step, slot in
-                    instr_seq(prog)
-                },
-            )
-
     def test_cryptids(self):
         for cryptid in CRYPTIDS:
             self.assert_could_halt(cryptid)
@@ -438,6 +427,16 @@ class Simple(TuringTest):
                 self.run_bb(partial, analyze = False)
 
                 self.assert_undefined(expected)
+
+        for prog, sequence in UNDEFINED.items():
+            self.assertEqual(
+                sequence,
+                {
+                    partial: (step, show_slot(slot))
+                    for partial, step, slot in
+                    instr_seq(prog)
+                },
+            )
 
     def _test_simple_terminate(
             self,
