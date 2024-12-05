@@ -165,6 +165,10 @@ class TuringTest(TestCase):
     ########################################
 
     def assert_could_halt(self, prog: str):
+        self.assert_could_halt_backward(prog)
+        self.assert_could_halt_segment(prog)
+
+    def assert_could_halt_backward(self, prog: str):
         self.assertIsNone(
             cant_halt(prog, depth = REASON_LIMIT),
             f'halt false positive: "{prog}"')
@@ -177,7 +181,7 @@ class TuringTest(TestCase):
             cant_halt(prog, depth),
             f'halt false negative: "{prog}"')
 
-    def assert_segment_could_halt(self, prog: str):
+    def assert_could_halt_segment(self, prog: str):
         self.assertIsNone(
             segment_cant_halt(prog, segs = SEGMENT_LIMIT),
             f'segment halt false positive: "{prog}"')
@@ -227,7 +231,7 @@ class Reason(TuringTest):
     def test_halt(self):
         for prog in HALTERS:
             self.assert_simple(prog)
-            self.assert_could_halt(prog)
+            self.assert_could_halt_backward(prog)
 
         for prog in NONHALTERS:
             self.assert_cant_halt(prog, 115)
@@ -264,7 +268,7 @@ class Reason(TuringTest):
     def test_false_negatives(self):
         for prog in CANT_HALT_FALSE_NEGATIVES:
             self.assertNotIn(prog, HALTERS)
-            self.assert_could_halt(prog)
+            self.assert_could_halt_backward(prog)
 
         for prog in CANT_BLANK_FALSE_NEGATIVES:
             self.assertNotIn(prog, BLANKERS)
@@ -277,7 +281,7 @@ class Reason(TuringTest):
     def test_holdouts(self):
         for cat in ('42h', '24h'):
             for prog in read_holdouts(cat):
-                self.assert_could_halt(prog)
+                self.assert_could_halt_backward(prog)
 
         for prog in read_holdouts('42q'):
             self.assert_cant_halt(prog, 1)
@@ -369,13 +373,13 @@ class Reason(TuringTest):
 class Segment(TuringTest):
     def test_halt(self):
         for prog in HALTERS:
-            self.assert_segment_could_halt(prog)
+            self.assert_could_halt_segment(prog)
 
         for prog in NONHALTERS:
             self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
 
         for prog in SEGMENT_FALSE_NEGATIVES:
-            self.assert_segment_could_halt(prog)
+            self.assert_could_halt_segment(prog)
 
         for prog, steps in SEGMENT_STEPS.items():
             self.assertEqual(
