@@ -62,6 +62,7 @@ if TYPE_CHECKING:
 
 
 REASON_LIMIT = 2_000
+SEGMENT_LIMIT = 8
 
 
 class TuringTest(TestCase):
@@ -175,6 +176,23 @@ class TuringTest(TestCase):
         self.assertIsNotNone(
             cant_halt(prog, depth),
             f'halt false negative: "{prog}"')
+
+    def assert_segment_could_halt(self, prog: str):
+        self.assertIsNone(
+            segment_cant_halt(prog, segs = SEGMENT_LIMIT),
+            f'segment halt false positive: "{prog}"')
+
+    def assert_segment_cant_halt(self, prog: str, segs: int):
+        if prog in SEGMENT_FALSE_NEGATIVES:
+            assert prog not in SEGMENT_STEPS
+            return
+
+        if prog in set(SEGMENT_STEPS):
+            return
+
+        self.assertIsNotNone(
+            segment_cant_halt(prog, segs),
+            f'segment halt false negative: "{prog}"')
 
     def assert_could_blank(self, prog: str):
         self.assertIsNone(
@@ -349,31 +367,15 @@ class Reason(TuringTest):
 
 
 class Segment(TuringTest):
-    def assert_segment_could_halt(self, prog: str, segs: int):
-        self.assertIsNone(
-            segment_cant_halt(prog, segs))
-
-    def assert_segment_cant_halt(self, prog: str, segs: int):
-        try:
-            self.assertIsNotNone(
-                segment_cant_halt(prog, segs))
-        except AssertionError:
-            self.assertIn(
-                prog,
-                SEGMENT_FALSE_NEGATIVES
-                    | set(SEGMENT_STEPS))
-
     def test_halt(self):
-        limit = 8
-
         for prog in HALTERS:
-            self.assert_segment_could_halt(prog, limit)
+            self.assert_segment_could_halt(prog)
 
         for prog in NONHALTERS:
-            self.assert_segment_cant_halt(prog, limit)
+            self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
 
         for prog in SEGMENT_FALSE_NEGATIVES:
-            self.assert_segment_could_halt(prog, limit)
+            self.assert_segment_could_halt(prog)
 
         for prog, steps in SEGMENT_STEPS.items():
             self.assertEqual(
