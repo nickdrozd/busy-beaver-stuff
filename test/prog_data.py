@@ -923,6 +923,7 @@ KERNEL = {
     "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA": 3,  # 10^18
 
     # Recur
+    "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC": 3,
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": 3, # 158491, 17620 Boyd
     "1RB 1LC  1LD 0LC  0LB 0RA  1RD 1RA": 3, # 157757, 17620 iso
     "1RB 0LC  1RD 1LD  1LB 1LA  1RC 0RA": 3,
@@ -1313,6 +1314,11 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB ...  1RC 0RA  1LD 0LB  0LA 0LC",
     "1RB 1LA  1RC 0RB  0LC 1LD  ... 0LA",
     "1RB 1LA  1RC 0RB  1LC 1LD  ... 0LA",
+    "1RB ...  0RC 0LA  1RD 0LD  1LC 0LB",
+    "1RB 0LD  1RC 0RD  0LA ...  0RA 1LA",
+    "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB",
+    "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC",
+    "1RB 0LB  1LA 0LC  0RA 0LD  1RC ...",
 
     "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE",
     "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA",
@@ -1496,6 +1502,7 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB ...  1RC 1LB  0LD 0RC  1LA 1LD",
     "1RB 1LA  1RC 0RB  0LC 1LD  ... 0LA",
     "1RB 1LA  1RC 0RB  1LC 1LD  ... 0LA",
+    "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB",
 
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA",
@@ -1788,6 +1795,11 @@ SEGMENT_STEPS: dict[str, int] = {
     "1RB 2LA 3RA 0LB  2LA ... 2RB 2LA": 18,
 
     "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD":  5,
+    "1RB 0LD  1RC 0RD  0LA ...  0RA 1LA":  7,
+    "1RB 0LB  1LA 0LC  0RA 0LD  1RC ...": 10,
+    "1RB ...  0RC 0LA  1RD 0LD  1LC 0LB": 10,
+    "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB": 13,
+    "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC": 13,
     "1RB 0RC  1LB 0LC  0LD 0RD  1RA ...": 13,
     "1RB 0LD  1LC 0LA  0RA 0LB  1RC ...": 13,
     "1RB 0RD  1LB 0LC  1LD 0RA  1RA ...": 13,
@@ -2880,6 +2892,11 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB ...  1RC 1LB  0LD 0RC  1LA 1LD",
     "1RB 1LA  1RC 0RB  0LC 1LD  ... 0LA",
     "1RB 1LA  1RC 0RB  1LC 1LD  ... 0LA",
+    "1RB ...  0RC 0LA  1RD 0LD  1LC 0LB",
+    "1RB 0LD  1RC 0RD  0LA ...  0RA 1LA",
+    "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB",
+    "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC",
+    "1RB 0LB  1LA 0LC  0RA 0LD  1RC ...",
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
     "1RB 0LA  0RC 1LA  1RD 1RE  1RE ...  1LB 1LA",
