@@ -27,6 +27,9 @@ pub enum TermRes {
     mulrul,
 }
 
+use ProverResult::*;
+use TermRes::*;
+
 /**************************************/
 
 #[pyclass]
@@ -96,7 +99,7 @@ impl MachineResult {
     #[getter]
     const fn undfnd(&self) -> Option<(Step, Slot)> {
         match self.result {
-            TermRes::undfnd => {
+            undfnd => {
                 if let Some(slot) = self.last_slot {
                     Some((self.steps, slot))
                 } else {
@@ -110,7 +113,7 @@ impl MachineResult {
     #[getter]
     const fn simple_termination(&self) -> Option<Step> {
         match self.result {
-            TermRes::undfnd | TermRes::spnout => Some(self.steps),
+            undfnd | spnout => Some(self.steps),
             _ => None,
         }
     }
@@ -118,7 +121,7 @@ impl MachineResult {
     #[getter]
     const fn halted(&self) -> Option<Step> {
         match self.result {
-            TermRes::undfnd => Some(self.steps),
+            undfnd => Some(self.steps),
             _ => None,
         }
     }
@@ -126,7 +129,7 @@ impl MachineResult {
     #[getter]
     const fn infrul(&self) -> Option<Step> {
         match self.result {
-            TermRes::infrul => Some(self.steps),
+            infrul => Some(self.steps),
             _ => None,
         }
     }
@@ -134,7 +137,7 @@ impl MachineResult {
     #[getter]
     const fn spnout(&self) -> Option<Step> {
         match self.result {
-            TermRes::spnout => Some(self.steps),
+            spnout => Some(self.steps),
             _ => None,
         }
     }
@@ -142,7 +145,7 @@ impl MachineResult {
     #[getter]
     const fn xlimit(&self) -> Option<Step> {
         match self.result {
-            TermRes::xlimit => Some(self.steps),
+            xlimit => Some(self.steps),
             _ => None,
         }
     }
@@ -150,7 +153,7 @@ impl MachineResult {
     #[getter]
     const fn cfglim(&self) -> Option<Step> {
         match self.result {
-            TermRes::cfglim => Some(self.steps),
+            cfglim => Some(self.steps),
             _ => None,
         }
     }
@@ -177,15 +180,13 @@ pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: Step) -> bool {
     for cycle in 0..sim_lim {
         match prover.try_rule(cycle as i32, state, &tape) {
             None => {},
-            Some(
-                ProverResult::ConfigLimit | ProverResult::MultRule,
-            ) => {
+            Some(ConfigLimit | MultRule) => {
                 return false;
             },
-            Some(ProverResult::InfiniteRule) => {
+            Some(InfiniteRule) => {
                 return true;
             },
-            Some(ProverResult::Got(rule)) => {
+            Some(Got(rule)) => {
                 if apply_rule(&rule, &mut tape).is_some() {
                     // println!("--> applying rule: {:?}", rule);
                     continue;
@@ -238,22 +239,22 @@ pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
     for cycle in 0..sim_lim {
         match prover.try_rule(cycle as i32, state, &tape) {
             None => {},
-            Some(ProverResult::ConfigLimit) => {
+            Some(ConfigLimit) => {
                 cycles = cycle;
-                result = Some(TermRes::cfglim);
+                result = Some(cfglim);
                 break;
             },
-            Some(ProverResult::InfiniteRule) => {
+            Some(InfiniteRule) => {
                 cycles = cycle;
-                result = Some(TermRes::infrul);
+                result = Some(infrul);
                 break;
             },
-            Some(ProverResult::MultRule) => {
+            Some(MultRule) => {
                 cycles = cycle;
-                result = Some(TermRes::mulrul);
+                result = Some(mulrul);
                 break;
             },
-            Some(ProverResult::Got(rule)) => {
+            Some(Got(rule)) => {
                 if let Some(times) = apply_rule(&rule, &mut tape) {
                     // println!("--> applying rule: {:?}", rule);
                     rulapp += times;
@@ -266,7 +267,7 @@ pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
 
         let Some(&(color, shift, next_state)) = comp.get(&slot) else {
             cycles = cycle;
-            result = Some(TermRes::undfnd);
+            result = Some(undfnd);
             last_slot = Some(slot);
             break;
         };
@@ -275,7 +276,7 @@ pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
 
         if same && tape.at_edge(shift) {
             cycles = cycle;
-            result = Some(TermRes::spnout);
+            result = Some(spnout);
             break;
         }
 
@@ -287,21 +288,21 @@ pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
 
         if color == 0 && tape.blank() {
             if blanks.contains_key(&state) {
-                result = Some(TermRes::infrul);
+                result = Some(infrul);
                 break;
             }
 
             blanks.insert(state, steps);
 
             if state == 0 {
-                result = Some(TermRes::infrul);
+                result = Some(infrul);
                 break;
             }
         }
     }
 
     MachineResult {
-        result: result.unwrap_or(TermRes::xlimit),
+        result: result.unwrap_or(xlimit),
         steps,
         cycles,
         marks: tape.marks(),
@@ -334,7 +335,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
 
         let Some(&(color, shift, next_state)) = comp.get(&slot) else {
             cycles = cycle;
-            result = Some(TermRes::undfnd);
+            result = Some(undfnd);
             last_slot = Some(slot);
             break;
         };
@@ -343,7 +344,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
 
         if same && tape.at_edge(shift) {
             cycles = cycle;
-            result = Some(TermRes::spnout);
+            result = Some(spnout);
             break;
         }
 
@@ -355,21 +356,21 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
 
         if color == 0 && tape.blank() {
             if blanks.contains_key(&state) {
-                result = Some(TermRes::infrul);
+                result = Some(infrul);
                 break;
             }
 
             blanks.insert(state, steps);
 
             if state == 0 {
-                result = Some(TermRes::infrul);
+                result = Some(infrul);
                 break;
             }
         }
     }
 
     MachineResult {
-        result: result.unwrap_or(TermRes::xlimit),
+        result: result.unwrap_or(xlimit),
         steps,
         cycles,
         marks: tape.marks(),
@@ -455,7 +456,7 @@ fn test_prover() {
     assert_eq!(
         run_prover("1RB 2LA 1RA 1RA  1LB 1LA 3RB ...", 1000),
         MachineResult {
-            result: TermRes::undfnd,
+            result: undfnd,
             steps: 36686,
             cycles: 397,
             marks: 2050,
@@ -468,7 +469,7 @@ fn test_prover() {
     assert_eq!(
         run_prover("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", 1000),
         MachineResult {
-            result: TermRes::spnout,
+            result: spnout,
             steps: 56459,
             cycles: 229,
             marks: 0,

@@ -179,21 +179,21 @@ pub enum ColorCount {
     Mult(Color),
 }
 
+use ColorCount::*;
+
 impl ColorCount {
     const fn get_color(&self) -> Color {
         match self {
-            Self::Just(color) | Self::Mult(color) => *color,
+            Just(color) | Mult(color) => *color,
         }
     }
 }
 
 impl<B: Block> From<&B> for ColorCount {
     fn from(block: &B) -> Self {
-        (if block.get_count() == 1 {
-            Self::Just
-        } else {
-            Self::Mult
-        })(block.get_color())
+        (if block.get_count() == 1 { Just } else { Mult })(
+            block.get_color(),
+        )
     }
 }
 
@@ -755,11 +755,11 @@ macro_rules! sig {
     };
 
     ( @_ [ $ num : expr ] ) => {
-        ColorCount::Just( $ num )
+        Just( $ num )
     };
 
     ( @_ $ num : expr ) => {
-        ColorCount::Mult( $ num )
+        Mult( $ num )
     };
 }
 

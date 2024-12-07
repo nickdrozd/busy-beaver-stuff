@@ -21,6 +21,9 @@ enum DiffResult {
     Unknown,
 }
 
+use DiffResult::*;
+use Op::*;
+
 fn calculate_diff(
     a: Count,
     b: Count,
@@ -34,29 +37,29 @@ fn calculate_diff(
     let (a, b, c, d) = (a as Diff, b as Diff, c as Diff, d as Diff);
 
     let Some(diff_1) = b.checked_sub(a) else {
-        return Some(DiffResult::Unknown);
+        return Some(Unknown);
     };
 
     let Some(diff_2) = c.checked_sub(b) else {
-        return Some(DiffResult::Unknown);
+        return Some(Unknown);
     };
 
     if diff_1 == diff_2 && diff_2 == (d - c) {
-        return Some(DiffResult::Got(Op::Plus(diff_1)));
+        return Some(Got(Plus(diff_1)));
     }
 
     if a == 0 || b == 0 {
-        return Some(DiffResult::Unknown);
+        return Some(Unknown);
     }
 
     let divmod1 = (b / a, b % a);
     let divmod2 = (c / b, c % b);
 
     if divmod1 == divmod2 && divmod2 == (d / c, d % c) {
-        return Some(DiffResult::Got(Op::Mult(divmod1)));
+        return Some(Got(Mult(divmod1)));
     }
 
-    Some(DiffResult::Unknown)
+    Some(Unknown)
 }
 
 pub fn make_rule(
@@ -89,10 +92,10 @@ pub fn make_rule(
             };
 
             match diff {
-                DiffResult::Unknown => {
+                Unknown => {
                     return None;
                 },
-                DiffResult::Got(op) => {
+                Got(op) => {
                     rule.insert((s == 1, i), op);
                 },
             }
@@ -111,9 +114,7 @@ fn count_apps(
     let mut apps: Option<(Count, Index, Count)> = None;
 
     for (pos, diff) in rule {
-        let Op::Plus(diff) = *diff else {
-            unimplemented!()
-        };
+        let Plus(diff) = *diff else { unimplemented!() };
 
         if diff >= 0 {
             continue;
@@ -154,9 +155,7 @@ pub fn apply_rule(
     let (times, min_pos, min_res) = count_apps(rule, tape)?;
 
     for (pos, diff) in rule {
-        let Op::Plus(plus) = *diff else {
-            unimplemented!()
-        };
+        let Plus(plus) = *diff else { unimplemented!() };
 
         let result = if *pos == min_pos {
             assert!(plus < 0);

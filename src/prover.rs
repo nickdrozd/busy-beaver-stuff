@@ -21,6 +21,9 @@ pub enum ProverResult {
     Got(Rule),
 }
 
+use Op::*;
+use ProverResult::*;
+
 pub struct Prover<'p, Prog: GetInstr> {
     prog: &'p Prog,
 
@@ -153,13 +156,13 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
 
         if let Some(known_rule) = self.get_rule(state, tape, Some(&sig))
         {
-            return Some(ProverResult::Got((*known_rule).clone()));
+            return Some(Got((*known_rule).clone()));
         }
 
         #[expect(clippy::map_entry)]
         if !self.configs.contains_key(&sig) {
             if self.config_count() > 100_000 {
-                return Some(ProverResult::ConfigLimit);
+                return Some(ConfigLimit);
             }
 
             self.configs.insert(sig, PastConfigs::new(state, cycle));
@@ -203,23 +206,23 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
 
         if !rule
             .values()
-            .any(|diff| matches!(diff, Op::Plus(plus) if *plus < 0))
+            .any(|diff| matches!(diff, Plus(plus) if *plus < 0))
         {
-            return Some(ProverResult::InfiniteRule);
+            return Some(InfiniteRule);
         }
 
-        if rule.values().any(|diff| matches!(diff, Op::Mult(_))) {
-            return Some(ProverResult::MultRule);
+        if rule.values().any(|diff| matches!(diff, Mult(_))) {
+            return Some(MultRule);
         }
 
         if rule.len() == 2
             && tape.span_lens() == (1, 1)
-            && rule.values().all(|diff| matches!(diff, Op::Plus(_)))
+            && rule.values().all(|diff| matches!(diff, Plus(_)))
             && rule
                 .values()
                 .map(|diff| match diff {
-                    Op::Plus(diff) => diff.abs(),
-                    Op::Mult(_) => 0,
+                    Plus(diff) => diff.abs(),
+                    Mult(_) => 0,
                 })
                 .collect::<Set<Diff>>()
                 .len()
@@ -238,7 +241,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
 
         // println!("--> proved rule: {:?}", rule);
 
-        Some(ProverResult::Got(rule))
+        Some(Got(rule))
     }
 }
 

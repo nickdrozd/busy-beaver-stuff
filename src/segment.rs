@@ -23,7 +23,6 @@ enum SearchResult {
     Reached,
 }
 
-#[expect(clippy::enum_glob_use)]
 use SearchResult::*;
 
 pub fn segment_cant_halt(

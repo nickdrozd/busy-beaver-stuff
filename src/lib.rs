@@ -16,7 +16,8 @@
 )]
 #![expect(
     clippy::cast_possible_truncation,
-    clippy::redundant_pub_crate
+    clippy::redundant_pub_crate,
+    clippy::enum_glob_use
 )]
 #![allow(clippy::should_panic_without_expect)]
 
