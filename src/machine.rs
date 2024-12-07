@@ -98,58 +98,38 @@ impl MachineResult {
 
     #[getter]
     fn undfnd(&self) -> Option<(Step, Slot)> {
-        match self.result {
-            undfnd => Some((self.steps, self.last_slot?)),
-            _ => None,
-        }
+        matches!(self.result, undfnd)
+            .then_some((self.steps, self.last_slot?))
     }
 
     #[getter]
-    const fn simple_termination(&self) -> Option<Step> {
-        match self.result {
-            undfnd | spnout => Some(self.steps),
-            _ => None,
-        }
+    fn simple_termination(&self) -> Option<Step> {
+        matches!(self.result, undfnd | spnout).then_some(self.steps)
     }
 
     #[getter]
-    const fn halted(&self) -> Option<Step> {
-        match self.result {
-            undfnd => Some(self.steps),
-            _ => None,
-        }
+    fn halted(&self) -> Option<Step> {
+        matches!(self.result, undfnd).then_some(self.steps)
     }
 
     #[getter]
-    const fn infrul(&self) -> Option<Step> {
-        match self.result {
-            infrul => Some(self.steps),
-            _ => None,
-        }
+    fn infrul(&self) -> Option<Step> {
+        matches!(self.result, infrul).then_some(self.steps)
     }
 
     #[getter]
-    const fn spnout(&self) -> Option<Step> {
-        match self.result {
-            spnout => Some(self.steps),
-            _ => None,
-        }
+    fn spnout(&self) -> Option<Step> {
+        matches!(self.result, spnout).then_some(self.steps)
     }
 
     #[getter]
-    const fn xlimit(&self) -> Option<Step> {
-        match self.result {
-            xlimit => Some(self.steps),
-            _ => None,
-        }
+    fn xlimit(&self) -> Option<Step> {
+        matches!(self.result, xlimit).then_some(self.steps)
     }
 
     #[getter]
-    const fn cfglim(&self) -> Option<Step> {
-        match self.result {
-            cfglim => Some(self.steps),
-            _ => None,
-        }
+    fn cfglim(&self) -> Option<Step> {
+        matches!(self.result, cfglim).then_some(self.steps)
     }
 
     #[getter]
