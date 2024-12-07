@@ -152,20 +152,21 @@ pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: Step) -> bool {
     let mut state = 0;
 
     for cycle in 0..sim_lim {
-        match prover.try_rule(cycle as i32, state, &tape) {
-            None => {},
-            Some(ConfigLimit | MultRule) => {
-                return false;
-            },
-            Some(InfiniteRule) => {
-                return true;
-            },
-            Some(Got(rule)) => {
-                if apply_rule(&rule, &mut tape).is_some() {
-                    // println!("--> applying rule: {:?}", rule);
-                    continue;
-                }
-            },
+        if let Some(res) = prover.try_rule(cycle as i32, state, &tape) {
+            match res {
+                ConfigLimit | MultRule => {
+                    return false;
+                },
+                InfiniteRule => {
+                    return true;
+                },
+                Got(rule) => {
+                    if apply_rule(&rule, &mut tape).is_some() {
+                        // println!("--> applying rule: {:?}", rule);
+                        continue;
+                    }
+                },
+            }
         }
 
         let slot = (state, tape.scan);
