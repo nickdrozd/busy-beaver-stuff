@@ -97,15 +97,9 @@ impl MachineResult {
     }
 
     #[getter]
-    const fn undfnd(&self) -> Option<(Step, Slot)> {
+    fn undfnd(&self) -> Option<(Step, Slot)> {
         match self.result {
-            undfnd => {
-                if let Some(slot) = self.last_slot {
-                    Some((self.steps, slot))
-                } else {
-                    panic!()
-                }
-            },
+            undfnd => Some((self.steps, self.last_slot?)),
             _ => None,
         }
     }
