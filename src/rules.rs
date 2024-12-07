@@ -22,14 +22,16 @@ enum DiffResult {
 }
 
 fn calculate_diff(
-    a: Diff,
-    b: Diff,
-    c: Diff,
-    d: Diff,
+    a: Count,
+    b: Count,
+    c: Count,
+    d: Count,
 ) -> Option<DiffResult> {
     if a == b && b == c && c == d {
         return None;
     }
+
+    let (a, b, c, d) = (a as Diff, b as Diff, c as Diff, d as Diff);
 
     let Some(diff_1) = b.checked_sub(a) else {
         return Some(DiffResult::Unknown);
@@ -82,9 +84,7 @@ pub fn make_rule(
 
     for (s, spans) in countses.iter().enumerate() {
         for (i, &(a, b, c, d)) in spans.iter().enumerate() {
-            match calculate_diff(
-                a as Diff, b as Diff, c as Diff, d as Diff,
-            ) {
+            match calculate_diff(a, b, c, d) {
                 None => continue,
                 Some(DiffResult::Unknown) => {
                     return None;
