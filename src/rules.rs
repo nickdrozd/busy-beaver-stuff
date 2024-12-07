@@ -154,16 +154,15 @@ pub fn apply_rule(
     let (times, min_pos, min_res) = count_apps(rule, tape)?;
 
     for (pos, diff) in rule {
-        let result = match *diff {
-            Op::Plus(plus) => {
-                if *pos == min_pos {
-                    assert!(plus < 0);
-                    min_res
-                } else {
-                    apply_plus(tape.get_count(pos), plus, times)?
-                }
-            },
-            Op::Mult(_) => unimplemented!(),
+        let Op::Plus(plus) = *diff else {
+            unimplemented!()
+        };
+
+        let result = if *pos == min_pos {
+            assert!(plus < 0);
+            min_res
+        } else {
+            apply_plus(tape.get_count(pos), plus, times)?
         };
 
         tape.set_count(pos, result);
