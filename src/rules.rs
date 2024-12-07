@@ -84,12 +84,15 @@ pub fn make_rule(
 
     for (s, spans) in countses.iter().enumerate() {
         for (i, &(a, b, c, d)) in spans.iter().enumerate() {
-            match calculate_diff(a, b, c, d) {
-                None => continue,
-                Some(DiffResult::Unknown) => {
+            let Some(diff) = calculate_diff(a, b, c, d) else {
+                continue;
+            };
+
+            match diff {
+                DiffResult::Unknown => {
                     return None;
                 },
-                Some(DiffResult::Got(op)) => {
+                DiffResult::Got(op) => {
                     rule.insert((s == 1, i), op);
                 },
             }
