@@ -201,10 +201,10 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             &counts[2],
         )?;
 
-        if !rule.values().any(|diff| match diff {
-            Op::Plus(plus) => *plus < 0,
-            Op::Mult(_) => false,
-        }) {
+        if !rule
+            .values()
+            .any(|diff| matches!(diff, Op::Plus(plus) if *plus < 0))
+        {
             return Some(ProverResult::InfiniteRule);
         }
 
