@@ -67,7 +67,7 @@ HALT: BasicTermData = {
     "1RB 1RA ...  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 
     # Milton Green (1964)
-    # "1RB ...  ... ...": (1, 2),
+    "1RB ...  ... ...": (1, 2),
     "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": (35, 436),
     "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD": (22961, 197_700_005),
 
@@ -398,6 +398,7 @@ RECUR_COMPACT = {
     "1RB 0RA 1LB  2LA 2RB 0LA": (  6, 48),
     "1RB 0RA 2LB  2LA 0LA 1RA": (  5, 28),
     "1RB 1RA 0RB  2LB 1LA 1LB": (  4, 23),
+    "1RB ... ...  2LB 0LA ...": (  4,  3),
     "1RB 2LA 0LB  1LA 2RA 2RB": (  3, 35),
     "1RB 2LB 2LA  1LA 2RB 0RA": (  1, 35),
     "1RB 2LB 0RA  1LA 2RB 2RA": (  0, 60),
@@ -1017,6 +1018,7 @@ MODULAR = {
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
 
     # incomplete
+    "1RB ...  ... ...",
     "1RB ...  0LB 0LB",
     "1RB ...  1LB 0RB",
     "1RB ... ...  2LB 1RB 1LB",
@@ -1206,6 +1208,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 0LC  0RC ...  1LC 0RA",
     "1RB ...  0RC 0RB  1LC 1LA",
 
+    "1RB ... ...  2LB 0LA ...",
     "1RB 2LB ...  1LB 2LA 1RB",
     "1RB 0LA ...  1LB 2LA 0RB",
     "1RB 2LA 0RB  2LA ... 1RA",
@@ -3142,6 +3145,9 @@ OMNIREASONABLE: dict[str, tuple[int, int, int]] = {
 ## test program ######################################################
 
 NORMALIZE = {
+    "1RB ... ...  2LB 0LA ...": {
+        "1RB ... ...  2LB 0LA ...",
+    },
     "1RB 2LA 1RA 1LA  3LA ... 2RB 2RA": {
         "1RB 3LA 1LA 1RA  2LA ... 3RA 3RB",
         "2RB 2RA 1LA 2LA  3LA 1RB ... 1RA",

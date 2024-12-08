@@ -126,8 +126,9 @@ def prog_params(comp: GetInstr) -> Params:
     else:
         assert isinstance(comp, dict)
 
-        base_states = len(set(map(lambda s: s[0], comp)))
-        base_colors = len(set(map(lambda s: s[1], comp)))
+        # pylint: disable = line-too-long
+        base_states = len(range(1 + max(map(lambda s: s[2], comp.values()))))
+        base_colors = len(range(1 + max(map(lambda s: s[0], comp.values()))))
 
     return base_states, base_colors
 

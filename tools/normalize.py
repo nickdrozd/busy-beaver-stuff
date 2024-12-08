@@ -201,6 +201,9 @@ class Normalizer:
             state
             for state, switch in self.prog.items()
             if all(switch[color] is None for color in self.colors)
+                and all(instr is None or instr[2] != state
+                      for sw in self.prog.values()
+                      for instr in sw.values())
         }
 
         for state in states_to_del:
@@ -214,6 +217,11 @@ class Normalizer:
     def cut_unused_colors(self) -> None:
         for color in self.colors:
             if any(sw[color] is not None for sw in self.prog.values()):
+                continue
+
+            if any(instr is not None and instr[0] == color
+                   for sw in self.prog.values()
+                   for instr in sw.values()):
                 continue
 
             for switch in self.prog.values():

@@ -123,8 +123,7 @@ class TuringTest(TestCase):
 
         self.assertTrue(
             prog == normalize(prog)
-                or prog.startswith('0')
-                or prog == "1RB ...  ... ...",
+                or prog.startswith('0'),
             prog)
 
     def assert_connected(self, prog: str):
@@ -152,7 +151,7 @@ class TuringTest(TestCase):
         self.assert_simple(prog)
         self.assert_connected(prog)
 
-        if decomp and prog != "1RB ...  ... ...":
+        if decomp:
             self.assertEqual(
                 prog,
                 show_comp(
@@ -169,6 +168,9 @@ class TuringTest(TestCase):
         self.assert_could_halt_segment(prog)
 
     def assert_could_halt_backward(self, prog: str):
+        if prog == "1RB ...  ... ...":
+            return
+
         self.assertIsNone(
             cant_halt(prog, depth = REASON_LIMIT),
             f'halt false positive: "{prog}"')
