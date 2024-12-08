@@ -121,7 +121,10 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 0LC  1LA 0RC  1RC 1RB": (5, 49),
     "1RB 0LC  0RC 0RC  1LC 1LA": (5, 48),
     "1RB 1LC  0RC ...  1LC 0LA": (5, 27),
+    "1RB 1LB  0LC 0LA  0LC 1LA": (1,  7),
     "1RB 0LC  0RC ...  1LC 0RA": (1,  6),
+    "1RB 1LA  0LA 0LC  0LC 1LC": (1,  6),
+    "1RB ...  1LC ...  0LC 0LB": (2,  4),
 
     # 2/3
     "1RB 2LB 1LA  2LB 2RA 0RA": ( 8, 59),  # BBB(2, 3)
@@ -176,6 +179,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
 
 SPINOUT_BLANK = {
     # 2/2
+    "1RB ...  0LB 0LB": ({'B'}, 3),
     "1RB ...  1LB 0RB": ({'B'}, 4),
 
     # 3/2
@@ -389,6 +393,7 @@ RECUR_COMPACT = {
     "1RB 1LA 2LB  1LA 2RA 0LB": ( 20, 48),
     "1RB 0LB 0RB  1LA 2RB ...": ( 15,  3),
     "1RB 2RB 2LA  1LB 1RA 0LA": ( 14, 54),
+    "1RB 2LA ...  0LB 1LA 0LA": ( 11,  3),
     "1RB 2LA 1RB  1LB 1LA 0RA": (  7, 46),
     "1RB 0RA 1LB  2LA 2RB 0LA": (  6, 48),
     "1RB 0RA 2LB  2LA 0LA 1RA": (  5, 28),
@@ -489,6 +494,7 @@ RECUR_BLANK_IN_PERIOD = {
     "1RB 1RB  1LA 0LB": (None, 4),
 
     # 3/2
+    "1RB 0LA  1RC ...  0LC 0LA": (0, 5),
     "1RB 1RC  0LA 0RA  0LB ...": (0, 5),
     "1RB 1LB  0RC 1LA  1LA 0RA": (0, 21),
     "1RB ...  0RC 1LB  1LA 0RB": (None, 10),
@@ -1003,6 +1009,7 @@ MODULAR = {
     "1RB 1LA  1LA 1RC  1LC 0RC",
     "1RB 1LA  1LA 1LC  1RC 0LC",
     "1RB 0LC  1LB 1LA  1RC 0LC",
+    "1RB 1LA  0LA 0LC  0LC 1LC",
 
     # constructed from BB(3) sigma champ
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD",
@@ -1010,9 +1017,11 @@ MODULAR = {
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
 
     # incomplete
+    "1RB ...  0LB 0LB",
     "1RB ...  1LB 0RB",
     "1RB ... ...  2LB 1RB 1LB",
     "1RB ...  1LB 0RC  ... 0RB",
+    "1RB ...  1LC ...  0LC 0LB",
     "1RB ...  1LB 0LC  1RC 1RB",
     "1RB ...  1LB 1LC  1RC 0RB",
     "1RB ...  1LB 1RC  0LC 0RB",
@@ -1173,6 +1182,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB ...  0LB 0LA",
     "1RB ...  1LB 0LA",
 
+    "1RB ...  1LC ...  0LC 0LB",
     "1RB ...  1LB 0RC  ... 0RB",
     "1RB ...  0LC 0RB  1LC 1LA",
     "1RB ...  1LC 1RA  1LA 0LC",
@@ -1232,6 +1242,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 2LB 0RB  2LA ... 2RA",
     "1RB ... 0LB  2LB 2RA 1LA",
     "1RB ... 2RB  2LB 2LA 0RA",
+    "1RB 2LA ...  0LB 1LA 0LA",
 
     "1RB 1LA ... 3LA  2LA 3RB 3LA 0RA",
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
@@ -1421,6 +1432,7 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1LA 0LA  1LA 2RA ...",
     "1RB 1LB ...  2LA 0RB 1RB",
     "1RB 2LA 0LA  0LA ... 2RA",
+    "1RB 2LA ...  0LB 1LA 0LA",
 
     "1RB 1LC  1LD 0RB  ... 0LD  1RA 1LA",
     "1RB 0LA  1LC 1LD  1RD 1LB  1RA 0RD",
