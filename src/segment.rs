@@ -15,20 +15,37 @@ const MAX_DEPTH: usize = 4_000;
 
 /**************************************/
 
-enum SearchResult {
-    Limit,
-    Halted,
-    Repeat,
+#[derive(PartialEq, Eq)]
+enum Goal {
+    Halt,
+    #[expect(dead_code)]
+    Blank,
     Spinout,
-    Reached,
 }
 
+enum SearchResult {
+    Limit,
+    Repeat,
+    Reached,
+    Found(Goal),
+}
+
+use Goal::*;
 use SearchResult::*;
 
 pub fn segment_cant_halt(
     prog: &CompProg,
     params: Params,
     segs: Segments,
+) -> Option<Segments> {
+    segment_cant_reach(prog, params, segs, &Halt)
+}
+
+fn segment_cant_reach(
+    prog: &CompProg,
+    params: Params,
+    segs: Segments,
+    goal: &Goal,
 ) -> Option<Segments> {
     assert!(segs >= 2);
 
@@ -41,8 +58,9 @@ pub fn segment_cant_halt(
 
         match result {
             Reached => continue,
-            Limit | Halted => return None,
-            Spinout | Repeat => return Some(seg),
+            Limit => return None,
+            Repeat => return Some(seg),
+            Found(found) => return (found != *goal).then_some(seg),
         }
     }
 
@@ -69,9 +87,13 @@ fn all_segments_reached(
 
         if let Some(result) = config.run_to_edge(prog, &mut configs) {
             match result {
-                Halted => {
+                Repeat if config.init => {
+                    return Some(Repeat);
+                },
+
+                Found(Halt) => {
                     if config.init {
-                        return Some(Halted);
+                        return Some(Found(Halt));
                     }
 
                     if configs.check_reached(&config) {
@@ -81,12 +103,8 @@ fn all_segments_reached(
                     continue;
                 },
 
-                Repeat if config.init => {
-                    return Some(Repeat);
-                },
-
-                Spinout => {
-                    return Some(Spinout);
+                Found(Spinout) => {
+                    return Some(Found(Spinout));
                 },
 
                 _ => {
@@ -307,11 +325,11 @@ impl Config {
 
         while let Some(slot) = self.slot() {
             let Some(instr) = prog.get(&slot) else {
-                return Some(Halted);
+                return Some(Found(Halt));
             };
 
             if self.init && self.spinout(instr) {
-                return Some(Spinout);
+                return Some(Found(Spinout));
             }
 
             self.step(instr);
