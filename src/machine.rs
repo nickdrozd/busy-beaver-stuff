@@ -30,6 +30,18 @@ pub enum TermRes {
 use ProverResult::*;
 use TermRes::*;
 
+#[expect(clippy::fallible_impl_from)]
+impl From<ProverResult> for TermRes {
+    fn from(prover_result: ProverResult) -> Self {
+        match prover_result {
+            ConfigLimit => cfglim,
+            InfiniteRule => infrul,
+            MultRule => mulrul,
+            Got(_) => panic!(),
+        }
+    }
+}
+
 /**************************************/
 
 #[pyclass]
@@ -213,22 +225,6 @@ pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
 
     for cycle in 0..sim_lim {
         match prover.try_rule(cycle, state, &tape) {
-            None => {},
-            Some(ConfigLimit) => {
-                cycles = cycle;
-                result = Some(cfglim);
-                break;
-            },
-            Some(InfiniteRule) => {
-                cycles = cycle;
-                result = Some(infrul);
-                break;
-            },
-            Some(MultRule) => {
-                cycles = cycle;
-                result = Some(mulrul);
-                break;
-            },
             Some(Got(rule)) => {
                 if let Some(times) = apply_rule(&rule, &mut tape) {
                     // println!("--> applying rule: {:?}", rule);
@@ -236,6 +232,12 @@ pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
                     continue;
                 }
             },
+            Some(res) => {
+                cycles = cycle;
+                result = Some(res.into());
+                break;
+            },
+            None => {},
         }
 
         let slot = (state, tape.scan);
