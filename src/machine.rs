@@ -152,7 +152,7 @@ pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: Step) -> bool {
     let mut state = 0;
 
     for cycle in 0..sim_lim {
-        if let Some(res) = prover.try_rule(cycle as i32, state, &tape) {
+        if let Some(res) = prover.try_rule(cycle, state, &tape) {
             match res {
                 ConfigLimit | MultRule => {
                     return false;
@@ -212,7 +212,7 @@ pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
     let mut last_slot: Option<Slot> = None;
 
     for cycle in 0..sim_lim {
-        match prover.try_rule(cycle as i32, state, &tape) {
+        match prover.try_rule(cycle, state, &tape) {
             None => {},
             Some(ConfigLimit) => {
                 cycles = cycle;

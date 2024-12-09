@@ -148,10 +148,12 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
 
     pub fn try_rule(
         &mut self,
-        cycle: Cycle,
+        cycle: u64,
         state: State,
         tape: &BasicTape,
     ) -> Option<ProverResult> {
+        let cycle = cycle as Cycle;
+
         let sig = tape.signature();
 
         if let Some(known_rule) = self.get_rule(state, tape, Some(&sig))
