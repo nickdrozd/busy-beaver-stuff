@@ -5,7 +5,7 @@ use pyo3::{pyclass, pyfunction, pymethods};
 use crate::{
     instrs::{CompProg, Parse as _, Slot, State},
     prover::{Prover, ProverResult},
-    rules::apply_rule,
+    rules::ApplyRule as _,
     tape::{Alignment as _, BasicTape as Tape, Count, HeadTape},
 };
 
@@ -173,7 +173,7 @@ pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: Step) -> bool {
                     return true;
                 },
                 Got(rule) => {
-                    if apply_rule(&rule, &mut tape).is_some() {
+                    if tape.apply_rule(&rule).is_some() {
                         // println!("--> applying rule: {:?}", rule);
                         continue;
                     }
@@ -226,7 +226,7 @@ pub fn run_prover(prog: &str, sim_lim: Step) -> MachineResult {
     for cycle in 0..sim_lim {
         match prover.try_rule(cycle, state, &tape) {
             Some(Got(rule)) => {
-                if let Some(times) = apply_rule(&rule, &mut tape) {
+                if let Some(times) = tape.apply_rule(&rule) {
                     // println!("--> applying rule: {:?}", rule);
                     rulapp += times;
                     continue;

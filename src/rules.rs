@@ -107,68 +107,68 @@ pub fn make_rule(
 
 /**************************************/
 
-fn count_apps(
-    rule: &Rule,
-    tape: &impl IndexTape,
-) -> Option<(Count, Index, Count)> {
-    let mut apps: Option<(Count, Index, Count)> = None;
+pub trait ApplyRule: IndexTape {
+    fn apply_rule(&mut self, rule: &Rule) -> Option<Count> {
+        let (times, min_pos, min_res) = self.count_apps(rule)?;
 
-    for (pos, diff) in rule {
-        let Plus(diff) = *diff else { unimplemented!() };
+        for (pos, diff) in rule {
+            let Plus(plus) = *diff else { unimplemented!() };
 
-        if diff >= 0 {
-            continue;
+            let result = if *pos == min_pos {
+                assert!(plus < 0);
+                min_res
+            } else {
+                apply_plus(self.get_count(pos), plus, times)?
+            };
+
+            self.set_count(pos, result);
         }
 
-        let count = tape.get_count(pos);
-        let absdiff: Count = diff.unsigned_abs().into();
+        Some(times)
+    }
 
-        if absdiff >= count {
-            return None;
-        }
+    fn count_apps(&self, rule: &Rule) -> Option<(Count, Index, Count)> {
+        let mut apps: Option<(Count, Index, Count)> = None;
 
-        let div = count / absdiff;
-        let rem = count % absdiff;
+        for (pos, diff) in rule {
+            let Plus(diff) = *diff else { unimplemented!() };
 
-        let (times, min_res) = if rem > 0 {
-            (div, rem)
-        } else {
-            (div - 1, absdiff)
-        };
+            if diff >= 0 {
+                continue;
+            }
 
-        if let Some((curr, _, _)) = apps {
-            if times < curr {
+            let count = self.get_count(pos);
+            let absdiff: Count = diff.unsigned_abs().into();
+
+            if absdiff >= count {
+                return None;
+            }
+
+            let div = count / absdiff;
+            let rem = count % absdiff;
+
+            let (times, min_res) = if rem > 0 {
+                (div, rem)
+            } else {
+                (div - 1, absdiff)
+            };
+
+            if let Some((curr, _, _)) = apps {
+                if times < curr {
+                    apps = Some((times, *pos, min_res));
+                }
+            } else {
                 apps = Some((times, *pos, min_res));
             }
-        } else {
-            apps = Some((times, *pos, min_res));
         }
-    }
 
-    apps
+        apps
+    }
 }
 
-pub fn apply_rule(
-    rule: &Rule,
-    tape: &mut impl IndexTape,
-) -> Option<Count> {
-    let (times, min_pos, min_res) = count_apps(rule, tape)?;
+impl<T: IndexTape> ApplyRule for T {}
 
-    for (pos, diff) in rule {
-        let Plus(plus) = *diff else { unimplemented!() };
-
-        let result = if *pos == min_pos {
-            assert!(plus < 0);
-            min_res
-        } else {
-            apply_plus(tape.get_count(pos), plus, times)?
-        };
-
-        tape.set_count(pos, result);
-    }
-
-    Some(times)
-}
+/**************************************/
 
 fn apply_plus(count: Count, diff: Diff, times: Count) -> Option<Count> {
     let diff: Count = diff.unsigned_abs().into();

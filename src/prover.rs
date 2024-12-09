@@ -4,7 +4,7 @@ use pyo3::{pyclass, pymethods};
 
 use crate::{
     instrs::{GetInstr, Slot, State},
-    rules::{apply_rule, make_rule, Diff, Op, Rule},
+    rules::{make_rule, ApplyRule as _, Diff, Op, Rule},
     tape::{BasicTape, EnumTape, GetSig, Signature},
 };
 
@@ -96,7 +96,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
     ) -> Option<State> {
         for _ in 0..steps {
             if let Some(rule) = self.get_rule(state, tape, None) {
-                if apply_rule(rule, tape).is_some() {
+                if tape.apply_rule(rule).is_some() {
                     continue;
                 }
             }
@@ -121,7 +121,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
     ) -> MinSig {
         for _ in 0..steps {
             if let Some(rule) = self.get_rule(state, &tape, None) {
-                if apply_rule(rule, &mut tape).is_some() {
+                if tape.apply_rule(rule).is_some() {
                     continue;
                 }
             }

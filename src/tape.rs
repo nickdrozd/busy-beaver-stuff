@@ -820,7 +820,7 @@ macro_rules! rule {
 }
 
 #[cfg(test)]
-use crate::rules::{apply_rule, Rule};
+use crate::rules::{ApplyRule as _, Rule};
 
 #[test]
 fn test_apply_1() {
@@ -836,13 +836,10 @@ fn test_apply_1() {
         &sig![3, [1, 2], [4, 5, 6]],
     );
 
-    apply_rule(
-        &rule![
-            (0, 1) => 3,
-            (1, 0) => -2,
-        ],
-        &mut tape,
-    );
+    tape.apply_rule(&rule![
+        (0, 1) => 3,
+        (1, 0) => -2,
+    ]);
 
     tape.assert(
         42,
@@ -865,13 +862,10 @@ fn test_apply_2() {
         &sig![4, [4], [5, [2], [4], 5, [1]]],
     );
 
-    apply_rule(
-        &rule![
-            (0, 0) => 4,
-            (1, 0) => -2,
-        ],
-        &mut tape,
-    );
+    tape.apply_rule(&rule![
+        (0, 0) => 4,
+        (1, 0) => -2,
+    ]);
 
     tape.assert(
         131,
