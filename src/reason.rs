@@ -157,20 +157,20 @@ fn get_valid_steps(
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
-        let Config {
-            state, ref tape, ..
-        } = config;
+        let Config { state, tape, .. } = &config;
 
         let mut good_steps = vec![];
 
         for &((next_state, next_color), (print, shift, _)) in
-            &entrypoints[&state]
+            &entrypoints[state]
         {
             let Some(at_edge) = tape.check_step(shift, print) else {
                 continue;
             };
 
-            if at_edge && tape.scan == next_color && state == next_state
+            if at_edge
+                && tape.scan == next_color
+                && *state == next_state
             {
                 return None;
             }

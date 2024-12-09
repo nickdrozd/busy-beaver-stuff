@@ -3,6 +3,7 @@
     clippy::nursery,
     clippy::pedantic,
     clippy::get_unwrap,
+    clippy::ref_patterns,
     clippy::str_to_string,
     clippy::clone_on_ref_ptr,
     clippy::allow_attributes,
