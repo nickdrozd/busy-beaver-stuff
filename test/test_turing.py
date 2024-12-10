@@ -251,8 +251,8 @@ class Reason(TuringTest):
             self.assert_cant_spin_out(prog, 256)
 
     def test_blank(self):
-        for prog in DONT_BLANK:
-            self.assert_cant_blank(prog, 1)
+        for prog in NONBLANKERS:
+            self.assert_cant_blank(prog, 23)
 
         for prog in BLANKERS:
             self.assert_simple(prog)

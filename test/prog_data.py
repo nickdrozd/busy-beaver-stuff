@@ -1379,6 +1379,7 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 0LB  1LA 0RB",
     "1RB 1LA  0LA 0RB",
 
+    "1RB ...  1LC ...  0LC 0LB",
     "1RB ...  0LC 0RB  1LC 1LA",
     "1RB 0RA  0RC ...  1LC 0LA",
     "1RB ...  1LC 0RB  1LB 1RC",
@@ -1403,7 +1404,9 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 0LA  0RC 1RC  1LA ...",
     "1RB ...  1LC 0RB  1LA 1LC",
     "1RB ...  0RC 0RB  1LC 1LA",
+    "1RB 0LC  0RC ...  1LC 0RA",
 
+    "1RB ... 1LB  2LB 2RA 0LB",
     "1RB 2LA 0RB  0LB 1LA 0RA",
     "1RB 2LA 1LB  0LA 0RB 1RA",
     "1RB 2LA 0LA  1LA 2RA 1RB",
@@ -1911,6 +1914,8 @@ DONT_BLANK: set[str] = {
 }
 
 DO_BLANK: set[str] = {
+    "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA",
+
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
     "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE",  # 10^30
     "1RB 1RA  1LC 0RB  1LE 0LD  1RA 1RE  1LB 0RA",  # 10^31
@@ -1936,6 +1941,8 @@ DO_BLANK: set[str] = {
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA",  # 10^14006 TNF
 
     "1RB 0LE  1RC 1RA  1RD 0LA  0LA 1LD  0RB 1LA",  # algebra
+
+    "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
 }
 
 DO_SPIN_OUT: set[str] = {
@@ -3045,17 +3052,19 @@ SPINNERS = set(
     | PROVER_SPINOUT
 ) | DO_SPIN_OUT
 
+RECUR_NO_BLANK = set(
+    RECUR_COMPACT
+    | RECUR_DIFFUSE
+    | RECUR_SLOW
+    | RECUR_TOO_SLOW
+)
+
 RECURS = (
     PROVER_QUASIHALT
+    | set(QUASIHALT)
+    | RECUR_NO_BLANK
+    | set(RECUR_BLANK_IN_PERIOD)
     | RECUR_BLANK_BEFORE_PERIOD
-    | set(
-        RECUR_COMPACT
-        | RECUR_DIFFUSE
-        | RECUR_SLOW
-        | RECUR_TOO_SLOW
-        | QUASIHALT
-        | RECUR_BLANK_IN_PERIOD
-    )
 )
 
 NONHALTERS = (
@@ -3065,6 +3074,15 @@ NONHALTERS = (
     | set(SEGMENT_STEPS)
     | set(CANT_REACH_STEPS['halt'])
 )
+
+NONBLANKERS = (
+    DONT_BLANK
+    | set(SPINOUT | SPINOUT_SLOW)
+    | RECUR_NO_BLANK
+    | {prog for prog, marks in PROVER_SPINOUT.items()
+           if not isinstance(marks, int) or marks > 3}
+    | {prog for prog, (marks, _) in HALT.items() if marks > 3}
+) - DO_BLANK
 
 UNREASONABLE: set[str] = {
     "1RB ... 0RB  2LB 2LA 0RA",
