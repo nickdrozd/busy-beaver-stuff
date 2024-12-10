@@ -506,6 +506,12 @@ RECUR_BLANK_IN_PERIOD = {
     "1RB 1LA 2RB  2LA 2RA 0LB": (None, 16),
     "1RB 2LA 0RB  1LA 0LB 1RA": (None,  4),
 
+    # 4/2
+    "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC": (None, 4),
+    "1RB 1LB  1LA 0RC  0LD 0RB  0LC ...": (None, 6),
+    "1RB 1LB  1LA 1RC  0LD 0RB  ... 0LC": (None, 6),
+    "1RB 1LC  1LA 0RD  1LA ...  0LD 0RB": (None, 5),
+
     # 2/4
     "1RB 2RB 0LB ...  1LA 2LB 3RA 0LA": (0, 7),
     "1RB 0RA ... 0LA  2LB 3LA 1LA 3RB": (0, 12),
@@ -1333,6 +1339,10 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB",
     "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC",
     "1RB 0LB  1LA 0LC  0RA 0LD  1RC ...",
+    "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC",
+    "1RB 1LB  1LA 1RC  0LD 0RB  ... 0LC",
+    "1RB 1LB  1LA 0RC  0LD 0RB  0LC ...",
+    "1RB 1LC  1LA 0RD  1LA ...  0LD 0RB",
 
     "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE",
     "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA",
@@ -1692,6 +1702,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     "1RB 1RC  1LC 0RD  1RA 0LB  1RD 0RA",
     "1RB 1RA  1LC 0RA  0LC 1LD  1RB 1LC",
     "1RB 1LD  1LB 0RC  0LA 1RC  1RD 1LB",
+    "1RB 1LC  1LA 0RD  1LA ...  0LD 0RB",
 
     "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA",
     "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA",
