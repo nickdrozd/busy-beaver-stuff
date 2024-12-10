@@ -60,11 +60,11 @@ fn all_segments_reached(
     let branches = &prog.branches;
     let prog = prog.prog;
 
-    #[cfg(all(not(test), debug_assertions))]
+    #[cfg(debug_assertions)]
     println!();
 
     while let Some(mut config) = configs.next() {
-        #[cfg(all(not(test), debug_assertions))]
+        #[cfg(debug_assertions)]
         println!("{config}");
 
         if let Some(result) = config.run_to_edge(prog, &mut configs) {

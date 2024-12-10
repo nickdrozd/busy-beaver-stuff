@@ -85,10 +85,10 @@ impl Config {
     }
 }
 
-#[cfg(all(not(test), debug_assertions))]
+#[cfg(debug_assertions)]
 use crate::instrs::show_slot;
 
-#[cfg(all(not(test), debug_assertions))]
+#[cfg(debug_assertions)]
 impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let tape = &self.tape;
@@ -126,7 +126,7 @@ fn cant_reach(
         .collect();
 
     for step in 0..depth {
-        #[cfg(all(not(test), debug_assertions))]
+        #[cfg(debug_assertions)]
         {
             for config in &configs {
                 println!("{step} | {config}");
