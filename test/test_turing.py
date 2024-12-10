@@ -30,7 +30,7 @@ from tm.reason import (
     cant_spin_out,
 
     segment_cant_halt,
-    # segment_cant_blank,
+    segment_cant_blank,
     # segment_cant_spin_out,
 )
 from tm.machine import (
@@ -214,11 +214,9 @@ class TuringTest(TestCase):
             f'blank false positive: "{prog}"')
 
     def assert_could_blank_segment(self, prog: str):
-        pass
-
-        # self.assertIsNone(
-        #     segment_cant_blank(prog, segs = SEGMENT_LIMIT),
-        #     f'segment blank false positive: "{prog}"')
+        self.assertIsNone(
+            segment_cant_blank(prog, segs = SEGMENT_LIMIT),
+            f'segment blank false positive: "{prog}"')
 
     def assert_cant_blank(self, prog: str, depth: int):
         if (prog in CANT_BLANK_FALSE_NEGATIVES
@@ -229,8 +227,7 @@ class TuringTest(TestCase):
             cant_blank(prog, depth),
             f'blank false negative: "{prog}"')
 
-    # pylint: disable = no-self-use
-    def assert_segment_cant_blank(self, prog: str, _segs: int):
+    def assert_segment_cant_blank(self, prog: str, segs: int):
         if prog in SEGMENT_BLANK_FALSE_NEGATIVES:
             assert prog not in SEGMENT_STEPS['blank']
             return
@@ -238,9 +235,9 @@ class TuringTest(TestCase):
         if prog in set(SEGMENT_STEPS['blank']):
             return
 
-        # self.assertIsNotNone(
-        #     segment_cant_blank(prog, segs),
-        #     f'segment blank false negative: "{prog}"')
+        self.assertIsNotNone(
+            segment_cant_blank(prog, segs),
+            f'segment blank false negative: "{prog}"')
 
     ########################################
 
@@ -328,7 +325,7 @@ class Reason(TuringTest):
 
         for prog in CANT_BLANK_FALSE_NEGATIVES:
             self.assertNotIn(prog, BLANKERS)
-            self.assert_could_blank(prog)
+            self.assert_could_blank_backward(prog)
 
         for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
             self.assertNotIn(prog, SPINNERS)
@@ -354,7 +351,9 @@ class Reason(TuringTest):
             self.assert_could_halt(cryptid)
 
         for ext in branch_last(MOTHER):
-            self.assert_could_blank(ext)
+            if ext in BLANKERS:
+                self.assert_could_blank(ext)
+
             self.assert_could_spin_out(ext)
 
         for bigfoot in BIGFOOT:
@@ -393,7 +392,8 @@ class Reason(TuringTest):
             CANT_HALT_FALSE_NEGATIVES
                 & CANT_BLANK_FALSE_NEGATIVES
                 & CANT_SPIN_OUT_FALSE_NEGATIVES
-                & SEGMENT_HALT_FALSE_NEGATIVES)
+                & SEGMENT_HALT_FALSE_NEGATIVES
+                & SEGMENT_BLANK_FALSE_NEGATIVES)
 
         self.assertEqual(
             INFRUL,
@@ -447,10 +447,21 @@ class Segment(TuringTest):
 
     def test_blank(self):
         for prog in NONBLANKERS:
-            self.assert_segment_cant_blank(prog, 2)
+            self.assert_segment_cant_blank(prog, SEGMENT_LIMIT)
 
         for prog in BLANKERS:
             self.assert_could_blank(prog)
+
+        for prog in SEGMENT_BLANK_FALSE_NEGATIVES | UNREASONABLE:
+            self.assert_could_blank_segment(prog)
+
+        for prog, steps in SEGMENT_STEPS['blank'].items():
+            self.assertEqual(
+                steps,
+                segment_cant_blank(prog, steps))
+
+        for prog in OMNIREASONABLE:
+            self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
 
     def test_spinout(self):
         for prog in SPINNERS:

@@ -18,7 +18,6 @@ const MAX_DEPTH: usize = 4_000;
 #[derive(PartialEq, Eq)]
 enum Goal {
     Halt,
-    #[expect(dead_code)]
     Blank,
     Spinout,
 }
@@ -42,11 +41,11 @@ pub fn segment_cant_halt(
 }
 
 pub fn segment_cant_blank(
-    _prog: &CompProg,
-    _params: Params,
-    _segs: Segments,
+    prog: &CompProg,
+    params: Params,
+    segs: Segments,
 ) -> Option<Segments> {
-    unimplemented!()
+    segment_cant_reach(prog, params, segs, &Blank)
 }
 
 pub fn segment_cant_spin_out(
@@ -108,7 +107,13 @@ fn all_segments_reached(
         {
             match result {
                 Repeat if config.init => {
-                    return Some(Repeat);
+                    return Some(
+                        if goal == &Blank && config.tape.blank() {
+                            Found(Blank)
+                        } else {
+                            Repeat
+                        },
+                    );
                 },
 
                 Found(Halt) => {
@@ -116,7 +121,19 @@ fn all_segments_reached(
                         return Some(Found(Halt));
                     }
 
-                    if configs.check_reached(&config) {
+                    if goal == &Halt
+                        && configs.check_reached(&config, goal)
+                    {
+                        return Some(Reached);
+                    }
+
+                    continue;
+                },
+
+                Found(Blank) => {
+                    assert!(goal == &Blank);
+
+                    if configs.check_reached(&config, goal) {
                         return Some(Reached);
                     }
 
@@ -133,7 +150,13 @@ fn all_segments_reached(
             }
         }
 
-        if configs.check_reached(&config) {
+        let reached = match goal {
+            Halt => true,
+            Blank => config.tape.blank(),
+            Spinout => false,
+        };
+
+        if reached && configs.check_reached(&config, goal) {
             return Some(Reached);
         }
 
@@ -228,7 +251,15 @@ impl Configs {
         Some(blank && state == 0)
     }
 
-    fn check_reached(&mut self, config: &Config) -> bool {
+    fn check_reached(&mut self, config: &Config, goal: &Goal) -> bool {
+        match goal {
+            Halt => self.check_reached_halt(config),
+            Blank => self.check_reached_blank(config),
+            Spinout => false,
+        }
+    }
+
+    fn check_reached_halt(&mut self, config: &Config) -> bool {
         let Some(reached) = self.reached.get_mut(&config.state) else {
             return false;
         };
@@ -236,6 +267,21 @@ impl Configs {
         reached.insert(config.tape.pos());
 
         reached.len() == self.seg
+    }
+
+    fn check_reached_blank(&mut self, config: &Config) -> bool {
+        let Some(blanks) = self.blanks.get_mut(&config.state) else {
+            return false;
+        };
+
+        blanks.insert(config.tape.pos());
+
+        self.blanks
+            .values()
+            .flat_map(|set| set.iter())
+            .collect::<Set<_>>()
+            .len()
+            == self.seg
     }
 
     fn branch_in(&mut self, tape: &Tape, dirs: &Dirs, blank: bool) {
@@ -336,7 +382,7 @@ impl Config {
     fn run_to_edge(
         &mut self,
         prog: &CompProg,
-        _goal: &Goal,
+        goal: &Goal,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
         self.tape.scan?;
@@ -374,6 +420,10 @@ impl Config {
                     .entry(state)
                     .or_default()
                     .insert(self.tape.pos());
+
+                if goal == &Blank {
+                    return Some(Found(Blank));
+                }
             }
 
             if !step {
