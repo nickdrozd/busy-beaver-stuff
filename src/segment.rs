@@ -41,6 +41,22 @@ pub fn segment_cant_halt(
     segment_cant_reach(prog, params, segs, &Halt)
 }
 
+pub fn segment_cant_blank(
+    _prog: &CompProg,
+    _params: Params,
+    _segs: Segments,
+) -> Option<Segments> {
+    unimplemented!()
+}
+
+pub fn segment_cant_spin_out(
+    _prog: &CompProg,
+    _params: Params,
+    _segs: Segments,
+) -> Option<Segments> {
+    unimplemented!()
+}
+
 fn segment_cant_reach(
     prog: &CompProg,
     params: Params,
@@ -52,7 +68,8 @@ fn segment_cant_reach(
     let prog = AnalyzedProg::new(prog, params);
 
     for seg in 2..=segs {
-        let Some(result) = all_segments_reached(&prog, 2 + seg) else {
+        let Some(result) = all_segments_reached(&prog, 2 + seg, goal)
+        else {
             return Some(seg);
         };
 
@@ -72,6 +89,7 @@ fn segment_cant_reach(
 fn all_segments_reached(
     prog: &AnalyzedProg,
     seg: Segments,
+    goal: &Goal,
 ) -> Option<SearchResult> {
     let mut configs = Configs::new(seg, &prog.halts);
 
@@ -85,7 +103,9 @@ fn all_segments_reached(
         #[cfg(debug_assertions)]
         println!("{config}");
 
-        if let Some(result) = config.run_to_edge(prog, &mut configs) {
+        if let Some(result) =
+            config.run_to_edge(prog, goal, &mut configs)
+        {
             match result {
                 Repeat if config.init => {
                     return Some(Repeat);
@@ -316,6 +336,7 @@ impl Config {
     fn run_to_edge(
         &mut self,
         prog: &CompProg,
+        _goal: &Goal,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
         self.tape.scan?;

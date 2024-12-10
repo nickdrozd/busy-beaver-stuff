@@ -30,6 +30,8 @@ from tm.reason import (
     cant_spin_out,
 
     segment_cant_halt,
+    # segment_cant_blank,
+    # segment_cant_spin_out,
 )
 from tm.machine import (
     show_slot,
@@ -193,17 +195,30 @@ class TuringTest(TestCase):
             f'segment halt false positive: "{prog}"')
 
     def assert_segment_cant_halt(self, prog: str, segs: int):
-        if prog in SEGMENT_FALSE_NEGATIVES:
+        if prog in SEGMENT_HALT_FALSE_NEGATIVES:
             return
 
         self.assertIsNotNone(
             segment_cant_halt(prog, segs),
             f'segment halt false negative: "{prog}"')
 
+    ########################################
+
     def assert_could_blank(self, prog: str):
+        self.assert_could_blank_backward(prog)
+        self.assert_could_blank_segment(prog)
+
+    def assert_could_blank_backward(self, prog: str):
         self.assertIsNone(
             cant_blank(prog, depth = REASON_LIMIT),
             f'blank false positive: "{prog}"')
+
+    def assert_could_blank_segment(self, prog: str):
+        pass
+
+        # self.assertIsNone(
+        #     segment_cant_blank(prog, segs = SEGMENT_LIMIT),
+        #     f'segment blank false positive: "{prog}"')
 
     def assert_cant_blank(self, prog: str, depth: int):
         if (prog in CANT_BLANK_FALSE_NEGATIVES
@@ -214,10 +229,36 @@ class TuringTest(TestCase):
             cant_blank(prog, depth),
             f'blank false negative: "{prog}"')
 
+    # pylint: disable = no-self-use
+    def assert_segment_cant_blank(self, prog: str, _segs: int):
+        if prog in SEGMENT_BLANK_FALSE_NEGATIVES:
+            assert prog not in SEGMENT_STEPS['blank']
+            return
+
+        if prog in set(SEGMENT_STEPS['blank']):
+            return
+
+        # self.assertIsNotNone(
+        #     segment_cant_blank(prog, segs),
+        #     f'segment blank false negative: "{prog}"')
+
+    ########################################
+
     def assert_could_spin_out(self, prog: str):
+        self.assert_could_spin_out_backward(prog)
+        self.assert_could_spin_out_segment(prog)
+
+    def assert_could_spin_out_backward(self, prog: str):
         self.assertIsNone(
             cant_spin_out(prog, depth = REASON_LIMIT),
             f'spin out false positive: "{prog}"')
+
+    def assert_could_spin_out_segment(self, prog: str):
+        pass
+
+        # self.assertIsNone(
+        #     segment_cant_spin_out(prog, segs = SEGMENT_LIMIT),
+        #     f'segment spin out false positive: "{prog}"')
 
     def assert_cant_spin_out(self, prog: str, depth: int):
         if prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
@@ -226,6 +267,19 @@ class TuringTest(TestCase):
         self.assertIsNotNone(
             cant_spin_out(prog, depth),
             f'spin out false negative: "{prog}"')
+
+    # pylint: disable = no-self-use
+    def assert_segment_cant_spin_out(self, prog: str, _segs: int):
+        if prog in SEGMENT_SPINOUT_FALSE_NEGATIVES:
+            assert prog not in SEGMENT_STEPS['spinout']
+            return
+
+        if prog in set(SEGMENT_STEPS['spinout']):
+            return
+
+        # self.assertIsNotNone(
+        #     segment_cant_blank(prog, segs),
+        #     f'segment blank false negative: "{prog}"')
 
 ########################################
 
@@ -339,7 +393,7 @@ class Reason(TuringTest):
             CANT_HALT_FALSE_NEGATIVES
                 & CANT_BLANK_FALSE_NEGATIVES
                 & CANT_SPIN_OUT_FALSE_NEGATIVES
-                & SEGMENT_FALSE_NEGATIVES)
+                & SEGMENT_HALT_FALSE_NEGATIVES)
 
         self.assertEqual(
             INFRUL,
@@ -380,16 +434,33 @@ class Segment(TuringTest):
         for prog in NONHALTERS:
             self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
 
-        for prog in SEGMENT_FALSE_NEGATIVES | UNREASONABLE:
+        for prog in SEGMENT_HALT_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_halt_segment(prog)
 
-        for prog, steps in SEGMENT_STEPS.items():
+        for prog, steps in SEGMENT_STEPS['halt'].items():
             self.assertEqual(
                 steps,
                 segment_cant_halt(prog, steps))
 
         for prog in OMNIREASONABLE:
             self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
+
+    def test_blank(self):
+        for prog in NONBLANKERS:
+            self.assert_segment_cant_blank(prog, 2)
+
+        for prog in BLANKERS:
+            self.assert_could_blank(prog)
+
+    def test_spinout(self):
+        for prog in SPINNERS:
+            if prog in MACRO_SPINOUT:
+                continue
+
+            self.assert_could_spin_out(prog)
+
+        for prog in DONT_SPIN_OUT | HALTERS | RECURS | INFRUL:
+            self.assert_segment_cant_spin_out(prog, 2)
 
 
 def branch_last(prog: str) -> list[str]:

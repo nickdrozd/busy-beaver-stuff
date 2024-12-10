@@ -1754,7 +1754,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
 }
 
-SEGMENT_FALSE_NEGATIVES = {
+SEGMENT_HALT_FALSE_NEGATIVES = {
     "1RB ... 0RB  2LB 2LA 0RA",
     "1RB 0LB ...  2LA 1LA 1RA",
     "1RB 0LB 0RB  1LA 2RB ...",
@@ -1816,68 +1816,78 @@ SEGMENT_FALSE_NEGATIVES = {
     "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
 }
 
-SEGMENT_STEPS: dict[str, int] = {
-    "1RB ... 1LB  2LB 2RA 0LB": 3,
-    "1RB ... 0RA  1LB 2LA 2RB": 8,
-    "1RB 0RB ...  1LB 2RA 0LA": 8,
+SEGMENT_BLANK_FALSE_NEGATIVES: set[str] = set()
 
-    "1RB ...  1RC 0RA  1LC 0LB": 11,
+SEGMENT_SPINOUT_FALSE_NEGATIVES: set[str] = set()
 
-    "1RB 0LB ... 0RA  2LA 3LA 1LB 3RB": 10,
-    "1RB 2LA 3RB 0LB  0LB 1LA 0RA ...": 11,
-    "1RB 0LB 0RB ...  2LB 3RA 1RA 0LA": 16,
-    "1RB 1LA ... 1RB  2LA 3LB 1RB 0RA": 18,
-    "1RB 2LA 3RA 0LB  2LA ... 2RB 2LA": 18,
+SEGMENT_STEPS: dict[str, dict[str, int]] = {
+    "halt": {
+        "1RB ... 1LB  2LB 2RA 0LB": 3,
+        "1RB ... 0RA  1LB 2LA 2RB": 8,
+        "1RB 0RB ...  1LB 2RA 0LA": 8,
 
-    "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD":  5,
-    "1RB 0LD  1RC 0RD  0LA ...  0RA 1LA":  7,
-    "1RB 0LB  1LA 0LC  0RA 0LD  1RC ...": 10,
-    "1RB ...  0RC 0LA  1RD 0LD  1LC 0LB": 10,
-    "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB": 13,
-    "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC": 13,
-    "1RB 0RC  1LB 0LC  0LD 0RD  1RA ...": 13,
-    "1RB 0LD  1LC 0LA  0RA 0LB  1RC ...": 13,
-    "1RB 0RD  1LB 0LC  1LD 0RA  1RA ...": 13,
-    "1RB 0RD  1LB 0LC  1LD 0RD  1RA ...": 13,
-    "1RB 0RD  0RC ...  0LD 1RA  1LC 0LC": 13,
-    "1RB 0LC  1LC ...  1LD 0LB  1RD 0RA": 13,
-    "1RB 0RA  1LC 0LD  1RA 0LB  ... 1LB": 13,
-    "1RB 0LC  1LA 0RC  1LB 0RD  1RC ...": 13,
-    "1RB 1LD  0RC 1RC  1LA 0RA  ... 0LC": 13,
-    "1RB 1LA  0LA 0RC  1RD 0LA  1RA ...": 14,
-    "1RB 0LB  1LA 1RC  0RC 0LD  0RA ...": 14,
-    "1RB 0RA  1LC 1RD  1LA 0LB  ... 1RC": 14,
-    "1RB 0RC  0LB 1LC  1RA 1LD  0LB ...": 14,
-    "1RB 0LC  1LA 0RD  1LB ...  0RC 0RB": 14,
-    "1RB 0RA  1LC ...  0LD 0LB  1RD 0LA": 15,
-    "1RB 1LD  1LC ...  0RA 0LB  1RD 0RC": 15,
-    "1RB 1RC  1LB 0RA  1RD ...  1LD 0LB": 15,
-    "1RB ...  1LC 0RA  0LD 0LB  1RC 1RD": 16,
-    "1RB ...  1LC 0RB  0LD 0LB  1RD 0RA": 16,
-    "1RB 1LC  0RC 0LA  1LA 0RD  ... 1RA": 16,
-    "1RB 0LD  0RC 0RA  1LB 1LC  1LA ...": 16,
-    "1RB 0LC  1RC 0LD  1LA 0RB  ... 0LB": 16,
-    "1RB ...  1RC 0RD  1LC 0LD  1RC 0RA": 16,
-    "1RB ...  1RC 1RD  1LD 0RA  1LD 0LC": 16,
-    "1RB 1RD  1LC 0LB  1LA 0RA  0RC ...": 16,
-    "1RB 1RD  1LC 1RB  0LB 0RA  1RC ...": 16,
-    "1RB 0LD  1LC 0RA  0LC 1LA  0RB ...": 16,
-    "1RB 0LD  1LC 0RB  0LA 1LA  0LC ...": 16,
-    "1RB ...  1RC 0RA  1RD 0LB  1LD 0LC": 16,
-    "1RB ...  1LC 0RA  0RD 0LB  1LA 0LD": 17,
-    "1RB 0LD  0RC 0RB  1RD 0RA  1LA ...": 17,
-    "1RB 0RA  1LC ...  1RD 0LB  0LA 0RC": 17,
-    "1RB 0RC  1LC ...  1RD 0LB  0RA 0RD": 17,
-    "1RB ...  1LC 0RA  0LD 0LC  1LA 0LB": 17,
-    "1RB 1LC  0RC 0RA  0LD ...  1LD 1LA": 18,
-    "1RB 1RC  1LC 0RA  1LD 0LB  1RA ...": 18,
-    "1RB ...  1RC 1RD  1LD 0RB  1LA 0LC": 18,
-    "1RB 0LD  1RC 0RA  1LD ...  1LA 1LB": 18,
-    "1RB ...  1LC 0LB  1RD 1LA  0RB 0RD": 22,
+        "1RB ...  1RC 0RA  1LC 0LB": 11,
 
-    "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": 9,
+        "1RB 0LB ... 0RA  2LA 3LA 1LB 3RB": 10,
+        "1RB 2LA 3RB 0LB  0LB 1LA 0RA ...": 11,
+        "1RB 0LB 0RB ...  2LB 3RA 1RA 0LA": 16,
+        "1RB 1LA ... 1RB  2LA 3LB 1RB 0RA": 18,
+        "1RB 2LA 3RA 0LB  2LA ... 2RB 2LA": 18,
 
-    "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD": 10,
+        "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD":  5,
+        "1RB 0LD  1RC 0RD  0LA ...  0RA 1LA":  7,
+        "1RB 0LB  1LA 0LC  0RA 0LD  1RC ...": 10,
+        "1RB ...  0RC 0LA  1RD 0LD  1LC 0LB": 10,
+        "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB": 13,
+        "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC": 13,
+        "1RB 0RC  1LB 0LC  0LD 0RD  1RA ...": 13,
+        "1RB 0LD  1LC 0LA  0RA 0LB  1RC ...": 13,
+        "1RB 0RD  1LB 0LC  1LD 0RA  1RA ...": 13,
+        "1RB 0RD  1LB 0LC  1LD 0RD  1RA ...": 13,
+        "1RB 0RD  0RC ...  0LD 1RA  1LC 0LC": 13,
+        "1RB 0LC  1LC ...  1LD 0LB  1RD 0RA": 13,
+        "1RB 0RA  1LC 0LD  1RA 0LB  ... 1LB": 13,
+        "1RB 0LC  1LA 0RC  1LB 0RD  1RC ...": 13,
+        "1RB 1LD  0RC 1RC  1LA 0RA  ... 0LC": 13,
+        "1RB 1LA  0LA 0RC  1RD 0LA  1RA ...": 14,
+        "1RB 0LB  1LA 1RC  0RC 0LD  0RA ...": 14,
+        "1RB 0RA  1LC 1RD  1LA 0LB  ... 1RC": 14,
+        "1RB 0RC  0LB 1LC  1RA 1LD  0LB ...": 14,
+        "1RB 0LC  1LA 0RD  1LB ...  0RC 0RB": 14,
+        "1RB 0RA  1LC ...  0LD 0LB  1RD 0LA": 15,
+        "1RB 1LD  1LC ...  0RA 0LB  1RD 0RC": 15,
+        "1RB 1RC  1LB 0RA  1RD ...  1LD 0LB": 15,
+        "1RB ...  1LC 0RA  0LD 0LB  1RC 1RD": 16,
+        "1RB ...  1LC 0RB  0LD 0LB  1RD 0RA": 16,
+        "1RB 1LC  0RC 0LA  1LA 0RD  ... 1RA": 16,
+        "1RB 0LD  0RC 0RA  1LB 1LC  1LA ...": 16,
+        "1RB 0LC  1RC 0LD  1LA 0RB  ... 0LB": 16,
+        "1RB ...  1RC 0RD  1LC 0LD  1RC 0RA": 16,
+        "1RB ...  1RC 1RD  1LD 0RA  1LD 0LC": 16,
+        "1RB 1RD  1LC 0LB  1LA 0RA  0RC ...": 16,
+        "1RB 1RD  1LC 1RB  0LB 0RA  1RC ...": 16,
+        "1RB 0LD  1LC 0RA  0LC 1LA  0RB ...": 16,
+        "1RB 0LD  1LC 0RB  0LA 1LA  0LC ...": 16,
+        "1RB ...  1RC 0RA  1RD 0LB  1LD 0LC": 16,
+        "1RB ...  1LC 0RA  0RD 0LB  1LA 0LD": 17,
+        "1RB 0LD  0RC 0RB  1RD 0RA  1LA ...": 17,
+        "1RB 0RA  1LC ...  1RD 0LB  0LA 0RC": 17,
+        "1RB 0RC  1LC ...  1RD 0LB  0RA 0RD": 17,
+        "1RB ...  1LC 0RA  0LD 0LC  1LA 0LB": 17,
+        "1RB 1LC  0RC 0RA  0LD ...  1LD 1LA": 18,
+        "1RB 1RC  1LC 0RA  1LD 0LB  1RA ...": 18,
+        "1RB ...  1RC 1RD  1LD 0RB  1LA 0LC": 18,
+        "1RB 0LD  1RC 0RA  1LD ...  1LA 1LB": 18,
+        "1RB ...  1LC 0LB  1RD 1LA  0RB 0RD": 22,
+
+        "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": 9,
+
+        "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD": 10,
+    },
+
+    "blank": {},
+
+    "spinout": {},
 }
 
 DO_HALT: set[str] = {
@@ -3094,7 +3104,7 @@ NONHALTERS = (
     SPINNERS
     | RECURS
     | INFRUL
-    | set(SEGMENT_STEPS)
+    | set(SEGMENT_STEPS['halt'])
     | set(CANT_REACH_STEPS['halt'])
 )
 
