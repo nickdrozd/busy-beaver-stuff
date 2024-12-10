@@ -151,7 +151,7 @@ class TuringTest(TestCase):
         self.assert_simple(prog)
         self.assert_connected(prog)
 
-        if decomp:
+        if decomp and prog not in NONNORMAL:
             self.assertEqual(
                 prog,
                 show_comp(
