@@ -309,6 +309,9 @@ impl Config {
 
             self.step(instr);
 
+            #[cfg(debug_assertions)]
+            println!("    {self}");
+
             let &(print, _, state) = instr;
 
             if print == 0 && self.tape.blank() {
