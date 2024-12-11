@@ -242,9 +242,9 @@ use {
     crate::{
         blocks::opt_block,
         graph::is_connected,
-        machine::{quick_term_or_rec, run_for_infrul},
+        machine::{quick_term_or_rec, run_for_infrul, run_prover},
         macros::{make_backsymbol_macro, make_block_macro},
-        reason::{cant_halt, cant_spin_out},
+        reason::{cant_blank, cant_halt, cant_spin_out},
         segment::segment_cant_halt,
     },
     std::collections::BTreeSet as Set,
@@ -569,5 +569,62 @@ fn test_segment_slow() {
         ((4, 2), 1, (139_169, 467_142)),
         //
         ((2, 4), 1, (114_934, 312_642)),
+    ];
+}
+
+/**************************************/
+
+#[cfg(test)]
+fn assert_blank(params: Params, expected: (u64, u64)) {
+    let holdout_count = set_val(0);
+    let visited_count = set_val(0);
+
+    build_tree(params, false, 300, &|prog| {
+        *access(&visited_count) += 1;
+
+        let run = 700;
+
+        if cant_blank(prog, 44).is_some()
+            || quick_term_or_rec(prog, run, true)
+            || check_inf(prog, params, opt_block(prog, 300), run as u64)
+            || !run_prover(&prog.show(Some(params)), run as u64)
+                .blanks
+                .is_empty()
+        {
+            return;
+        }
+
+        *access(&holdout_count) += 1;
+
+        // println!("{}", prog.show(Some(params)));
+    });
+
+    let result = (get_val(holdout_count), get_val(visited_count));
+
+    assert_eq!(result, expected, "({params:?}, {result:?})");
+}
+
+#[cfg(test)]
+macro_rules! assert_blank_results {
+    ( $( ( $params:expr, $leaves:expr ) ),* $(,)? ) => {
+        vec![$( ($params, $leaves) ),*]
+            .par_iter().for_each(|&(params, expected)| {
+                assert_blank(params, expected);
+            });
+    };
+}
+
+#[test]
+fn test_blank() {
+    assert_blank_results![
+        ((2, 2), (0, 106)),
+        //
+        ((3, 2), (3, 13_128)),
+        //
+        ((2, 3), (35, 9_168)),
+        //
+        ((4, 2), (2_208, 2_291_637)),
+        //
+        ((2, 4), (14_815, 1_719_237)),
     ];
 }

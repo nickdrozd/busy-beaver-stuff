@@ -47,16 +47,16 @@ impl From<ProverResult> for TermRes {
 #[pyclass]
 #[derive(Debug, PartialEq, Eq)]
 pub struct MachineResult {
-    result: TermRes,
+    pub result: TermRes,
 
-    steps: Step,
-    cycles: Step,
-    marks: Count,
-    rulapp: Count,
+    pub steps: Step,
+    pub cycles: Step,
+    pub marks: Count,
+    pub rulapp: Count,
 
-    blanks: Blanks,
+    pub blanks: Blanks,
 
-    last_slot: Option<Slot>,
+    pub last_slot: Option<Slot>,
 }
 
 #[pymethods]
