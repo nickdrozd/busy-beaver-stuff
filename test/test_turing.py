@@ -252,7 +252,7 @@ class Reason(TuringTest):
 
     def test_blank(self):
         for prog in NONBLANKERS:
-            self.assert_cant_blank(prog, 23)
+            self.assert_cant_blank(prog, 1331)
 
         for prog in BLANKERS:
             self.assert_simple(prog)

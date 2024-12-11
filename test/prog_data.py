@@ -3099,6 +3099,7 @@ NONBLANKERS = (
     | {prog for prog, marks in PROVER_SPINOUT.items()
            if not isinstance(marks, int) or marks > 3}
     | {prog for prog, (marks, _) in HALT.items() if marks > 3}
+    | set(CANT_REACH_STEPS['blank'])
 ) - DO_BLANK
 
 UNREASONABLE: set[str] = {
