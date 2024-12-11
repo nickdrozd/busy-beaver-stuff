@@ -101,9 +101,11 @@ fn all_segments_reached(
 
         let (diffs, dirs) = &branches[&config.state];
 
-        configs.branch_in(&config.tape, dirs);
+        let blank = config.tape.blank();
 
-        configs.branch_out(config, diffs);
+        configs.branch_in(&config.tape, dirs, blank);
+
+        configs.branch_out(config, diffs, blank);
 
         if configs.check_depth() {
             return Some(Limit);
@@ -163,9 +165,8 @@ impl Configs {
         &mut self,
         state: State,
         tape: &Tape,
+        blank: bool,
     ) -> Option<bool> {
-        let blank = tape.blank();
-
         if blank {
             let blanks = self.blanks.entry(state).or_default();
 
@@ -199,7 +200,7 @@ impl Configs {
         reached.len() == self.seg
     }
 
-    fn branch_in(&mut self, tape: &Tape, dirs: &Dirs) {
+    fn branch_in(&mut self, tape: &Tape, dirs: &Dirs, blank: bool) {
         let shift = !tape.side();
 
         for &state in &dirs[&shift] {
@@ -207,7 +208,8 @@ impl Configs {
 
             next_tape.step_in(shift);
 
-            let Some(init) = self.check_seen(state, &next_tape) else {
+            let Some(init) = self.check_seen(state, &next_tape, blank)
+            else {
                 continue;
             };
 
@@ -217,7 +219,12 @@ impl Configs {
         }
     }
 
-    fn branch_out(&mut self, mut config: Config, diffs: &Diffs) {
+    fn branch_out(
+        &mut self,
+        mut config: Config,
+        diffs: &Diffs,
+        blank: bool,
+    ) {
         let tape = &config.tape;
 
         let Some((last_next, diffs)) = diffs.split_last() else {
@@ -225,7 +232,7 @@ impl Configs {
         };
 
         for &state in diffs {
-            let Some(init) = self.check_seen(state, tape) else {
+            let Some(init) = self.check_seen(state, tape, blank) else {
                 continue;
             };
 
@@ -236,7 +243,7 @@ impl Configs {
             self.add_todo(config);
         }
 
-        if let Some(init) = self.check_seen(*last_next, tape) {
+        if let Some(init) = self.check_seen(*last_next, tape, blank) {
             config.state = *last_next;
 
             config.init = init;
