@@ -284,7 +284,7 @@ class Reason(TuringTest):
     def test_halt(self):
         for prog in HALTERS:
             self.assert_simple(prog)
-            self.assert_could_halt_backward(prog)
+            self.assert_could_halt(prog)
 
         for prog in NONHALTERS:
             self.assert_cant_halt(prog, 115)
