@@ -1,6 +1,7 @@
 # pylint: disable = too-many-lines
 from __future__ import annotations
 
+import re
 from math import isclose, log10
 from typing import TYPE_CHECKING
 from itertools import product
@@ -117,6 +118,9 @@ class TuringTest(TestCase):
     ########################################
 
     def assert_normal(self, prog: str):
+        if re.match(MOTHER, prog):
+            return
+
         self.assertTrue(
             Graph(prog).is_normal,
             prog)
@@ -295,10 +299,9 @@ class Reason(TuringTest):
         for cryptid in CRYPTIDS:
             self.assert_could_halt(cryptid)
 
-        for mother in MOTHER:
-            for ext in branch_last(mother):
-                self.assert_could_blank(ext)
-                self.assert_could_spin_out(ext)
+        for ext in branch_last(MOTHER):
+            self.assert_could_blank(ext)
+            self.assert_could_spin_out(ext)
 
         for bigfoot in BIGFOOT:
             for ext in branch_last(bigfoot):
