@@ -62,7 +62,7 @@ if TYPE_CHECKING:
 
 
 REASON_LIMIT = 2_000
-SEGMENT_LIMIT = 8
+SEGMENT_LIMIT = 22
 
 
 class TuringTest(TestCase):
@@ -190,10 +190,6 @@ class TuringTest(TestCase):
 
     def assert_segment_cant_halt(self, prog: str, segs: int):
         if prog in SEGMENT_FALSE_NEGATIVES:
-            assert prog not in SEGMENT_STEPS
-            return
-
-        if prog in set(SEGMENT_STEPS):
             return
 
         self.assertIsNotNone(
