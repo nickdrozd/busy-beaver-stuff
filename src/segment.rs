@@ -49,11 +49,11 @@ pub fn segment_cant_blank(
 }
 
 pub fn segment_cant_spin_out(
-    _prog: &CompProg,
-    _params: Params,
-    _segs: Segments,
+    prog: &CompProg,
+    params: Params,
+    segs: Segments,
 ) -> Option<Segments> {
-    unimplemented!()
+    segment_cant_reach(prog, params, segs, &Spinout)
 }
 
 fn segment_cant_reach(
@@ -90,10 +90,9 @@ fn all_segments_reached(
     seg: Segments,
     goal: &Goal,
 ) -> Option<SearchResult> {
-    let mut configs = Configs::new(seg, &prog.halts);
+    let mut configs = Configs::new(prog, seg, goal);
 
     let branches = &prog.branches;
-    let prog = prog.prog;
 
     #[cfg(debug_assertions)]
     println!();
@@ -103,7 +102,7 @@ fn all_segments_reached(
         println!("{config}");
 
         if let Some(result) =
-            config.run_to_edge(prog, goal, &mut configs)
+            config.run_to_edge(prog.prog, goal, &mut configs)
         {
             match result {
                 Repeat if config.init => {
@@ -141,7 +140,17 @@ fn all_segments_reached(
                 },
 
                 Found(Spinout) => {
-                    return Some(Found(Spinout));
+                    if config.init {
+                        return Some(Found(Spinout));
+                    }
+
+                    assert!(goal == &Spinout);
+
+                    if configs.check_reached(&config, goal) {
+                        return Some(Reached);
+                    }
+
+                    continue;
                 },
 
                 _ => {
@@ -150,13 +159,19 @@ fn all_segments_reached(
             }
         }
 
-        let reached = match goal {
+        let goal_tape = match goal {
             Halt => true,
             Blank => config.tape.blank(),
-            Spinout => false,
+            Spinout => {
+                if let Some(&shift) = prog.spinouts.get(&config.state) {
+                    shift == config.tape.side() || config.tape.blank()
+                } else {
+                    false
+                }
+            },
         };
 
-        if reached && configs.check_reached(&config, goal) {
+        if goal_tape && configs.check_reached(&config, goal) {
             return Some(Reached);
         }
 
@@ -190,16 +205,27 @@ struct Configs {
 }
 
 impl Configs {
-    fn new(seg: Segments, halts: &Halts) -> Self {
+    fn new(prog: &AnalyzedProg, seg: Segments, goal: &Goal) -> Self {
+        let reached = match goal {
+            Blank => Dict::new(),
+            Halt => prog
+                .halts
+                .iter()
+                .map(|&state| (state, Set::new()))
+                .collect(),
+            Spinout => prog
+                .spinouts
+                .keys()
+                .map(|&state| (state, Set::new()))
+                .collect(),
+        };
+
         Self {
             seg,
             todo: vec![],
             seen: Dict::new(),
             blanks: Dict::new(),
-            reached: halts
-                .iter()
-                .map(|&state| (state, Set::new()))
-                .collect(),
+            reached,
         }
     }
 
@@ -252,14 +278,10 @@ impl Configs {
     }
 
     fn check_reached(&mut self, config: &Config, goal: &Goal) -> bool {
-        match goal {
-            Halt => self.check_reached_halt(config),
-            Blank => self.check_reached_blank(config),
-            Spinout => false,
+        if goal == &Blank {
+            return self.check_reached_blank(config);
         }
-    }
 
-    fn check_reached_halt(&mut self, config: &Config) -> bool {
         let Some(reached) = self.reached.get_mut(&config.state) else {
             return false;
         };
@@ -395,7 +417,10 @@ impl Config {
                 return Some(Found(Halt));
             };
 
-            if self.init && self.spinout(instr) {
+            if (self.init || goal == &Spinout)
+                && self.spinout(instr)
+                && (self.init || configs.check_reached(self, goal))
+            {
                 return Some(Found(Spinout));
             }
 
@@ -597,18 +622,22 @@ impl Display for Tape {
 /**************************************/
 
 type Halts = Set<State>;
+type Spinouts = Dict<State, Shift>;
+
 type Diffs = Vec<State>;
 type Dirs = Dict<bool, Vec<State>>;
 
 struct AnalyzedProg<'p> {
     prog: &'p CompProg,
     halts: Halts,
+    spinouts: Spinouts,
     branches: Dict<State, (Diffs, Dirs)>,
 }
 
 impl<'p> AnalyzedProg<'p> {
     fn new(prog: &'p CompProg, (states, colors): Params) -> Self {
         let mut halts = Set::new();
+        let mut spinouts = Dict::new();
 
         let mut branches = Dict::new();
 
@@ -624,7 +653,11 @@ impl<'p> AnalyzedProg<'p> {
                     continue;
                 };
 
-                if next != state {
+                if next == state {
+                    if color == 0 {
+                        spinouts.insert(next, shift);
+                    }
+                } else {
                     diff.insert(next);
                 }
 
@@ -650,6 +683,7 @@ impl<'p> AnalyzedProg<'p> {
         Self {
             prog,
             halts,
+            spinouts,
             branches,
         }
     }
@@ -736,19 +770,28 @@ fn test_seg_tape() {
 }
 
 #[test]
-fn test_halt_states() {
+fn test_reached_states() {
     let progs = [
-        (("1RB 1RC  0LA 0RA  0LB ...", (3, 2)), vec![2]),
-        (("1RB ...  1LB 0RC  1LC 1LA", (3, 2)), vec![0]),
-        (("1RB ... ...  2LB 1RB 1LB", (2, 3)), vec![0]),
-        (("1RB 0RB ...  2LA ... 0LB", (2, 3)), vec![0, 1]),
-        (("1RB ... 0RB ...  2LB 3RA 0RA 0RA", (2, 4)), vec![0]),
+        (("1RB 1RC  0LA 0RA  0LB ...", (3, 2)), vec![2], vec![]),
+        (("1RB ...  1LB 0RC  1LC 1LA", (3, 2)), vec![0], vec![1, 2]),
+        (("1RB ... ...  2LB 1RB 1LB", (2, 3)), vec![0], vec![1]),
+        (("1RB 0RB ...  2LA ... 0LB", (2, 3)), vec![0, 1], vec![]),
+        (
+            ("1RB ... 0RB ...  2LB 3RA 0RA 0RA", (2, 4)),
+            vec![0],
+            vec![1],
+        ),
     ];
 
-    for ((prog, params), states) in progs {
+    for ((prog, params), halts, spinouts) in progs {
+        let comp = CompProg::from_str(prog);
+        let prog = AnalyzedProg::new(&comp, params);
+
+        assert_eq!(prog.halts, halts.into_iter().collect::<Set<_>>());
+
         assert_eq!(
-            AnalyzedProg::new(&CompProg::from_str(prog), params).halts,
-            states.into_iter().collect::<Set<_>>(),
+            prog.spinouts.keys().copied().collect::<Set<_>>(),
+            spinouts.into_iter().collect::<Set<_>>()
         );
     }
 }

@@ -245,7 +245,10 @@ use {
         machine::{quick_term_or_rec, run_for_infrul, run_prover},
         macros::{make_backsymbol_macro, make_block_macro},
         reason::{cant_blank, cant_halt, cant_spin_out},
-        segment::{segment_cant_blank, segment_cant_halt},
+        segment::{
+            segment_cant_blank, segment_cant_halt,
+            segment_cant_spin_out,
+        },
     },
     std::collections::BTreeSet as Set,
 };
@@ -287,6 +290,11 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
     let (states, _) = params;
 
     let cant_reach = if halt { cant_halt } else { cant_spin_out };
+    let segment_cant_reach = if halt {
+        segment_cant_halt
+    } else {
+        segment_cant_spin_out
+    };
 
     incomplete(comp, params, halt)
         || (states >= 4 && !is_connected(comp, states))
@@ -294,7 +302,7 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
         || quick_term_or_rec(comp, 301, true)
         || cant_reach(comp, 256).is_some()
         || check_inf(comp, params, opt_block(comp, 300), 306)
-        || (halt && segment_cant_halt(comp, params, 3).is_some())
+        || segment_cant_reach(comp, params, 3).is_some()
 }
 
 #[test]
@@ -524,10 +532,18 @@ fn assert_segment(params: Params, halt: u8, expected: (u64, u64)) {
     let holdout_count = set_val(0);
     let visited_count = set_val(0);
 
+    let cant_reach = if halt_flag {
+        segment_cant_halt
+    } else {
+        segment_cant_spin_out
+    };
+
+    let segs = if halt_flag { 22 } else { 8 };
+
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if segment_cant_halt(prog, params, 22).is_some() {
+        if cant_reach(prog, params, segs).is_some() {
             return;
         }
 
@@ -555,10 +571,13 @@ macro_rules! assert_segment_results {
 fn test_segment() {
     assert_segment_results![
         ((2, 2), 1, (10, 36)),
+        ((2, 2), 0, (33, 106)),
         //
         ((3, 2), 1, (1_027, 3_140)),
+        ((3, 2), 0, (3_843, 13_128)),
         //
         ((2, 3), 1, (684, 2_447)),
+        ((2, 3), 0, (3_239, 9_168)),
     ];
 }
 
@@ -567,8 +586,10 @@ fn test_segment() {
 fn test_segment_slow() {
     assert_segment_results![
         ((4, 2), 1, (139_169, 467_142)),
+        ((4, 2), 0, (695_517, 2_291_637)),
         //
         ((2, 4), 1, (114_934, 312_642)),
+        ((2, 4), 0, (565_460, 1_719_357)),
     ];
 }
 

@@ -22,6 +22,7 @@ from tm.reason import (
     cant_spin_out,
 
     segment_cant_halt,
+    segment_cant_spin_out,
 )
 from tm.rust_stuff import tree_progs
 
@@ -426,6 +427,9 @@ def capture_42q(prog: str) -> None:
         return
 
     if quick_term_or_rec(prog, 40_000):
+        return
+
+    if segment_cant_spin_out(prog, 8) is not None:
         return
 
     PROGS.put(prog)
