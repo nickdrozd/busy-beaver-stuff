@@ -283,7 +283,6 @@ class TuringTest(TestCase):
 class Reason(TuringTest):
     def test_halt(self):
         for prog in HALTERS:
-            self.assert_simple(prog)
             self.assert_could_halt(prog)
 
         for prog in NONHALTERS:
@@ -291,8 +290,6 @@ class Reason(TuringTest):
 
     def test_spinout(self):
         for prog in SPINNERS:
-            self.assert_simple(prog)
-
             if prog in MACRO_SPINOUT:
                 continue
 
@@ -306,12 +303,10 @@ class Reason(TuringTest):
             self.assert_cant_blank(prog, 1331)
 
         for prog in BLANKERS:
-            self.assert_simple(prog)
             self.assert_could_blank(prog)
 
     def test_recur(self):
         for prog in RECURS | INFRUL:
-            self.assert_simple(prog)
             self.assert_cant_halt(prog, 115)
             self.assert_cant_spin_out(prog, 256)
 
@@ -424,6 +419,10 @@ class Reason(TuringTest):
             self.assertEqual(
                 spin,
                 cant_spin_out(prog, REASON_LIMIT))
+
+    def test_simple(self):
+        for prog in HALTERS | SPINNERS | RECURS | INFRUL:
+            self.assert_simple(prog)
 
 
 class Segment(TuringTest):
