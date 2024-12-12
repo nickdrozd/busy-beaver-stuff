@@ -2271,6 +2271,7 @@ DONT_BLANK: set[str] = {
 DO_BLANK: set[str] = {
     "1RB 0RB ...  2LA ... 0LB",
 
+    "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA",
     "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA",
 
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
@@ -2350,14 +2351,6 @@ DONT_SPIN_OUT: set[str] = {
 MACRO_SPINOUT: set[str] = {
     "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
 }
-
-BLANKERS = (
-    {prog: None for prog in DO_BLANK}
-    | SPINOUT_BLANK
-    | SPINOUT_BLANK_SLOW
-    | RECUR_BLANK_IN_PERIOD
-    | {prog: None for prog in RECUR_BLANK_BEFORE_PERIOD}
-)
 
 DIFFUSE = {
     # 5/2
@@ -2561,6 +2554,7 @@ SUSPECTED_RULES = {
 
     "1RB ... 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC",
     "1RB 2LD ...  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
+    "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...",
 
     "1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA",
     "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",
@@ -3434,6 +3428,16 @@ NONHALTERS = (
     | INFRUL
     | set(SEGMENT_STEPS['halt'])
     | set(CANT_REACH_STEPS['halt'])
+)
+
+BLANKERS = (
+    DO_BLANK
+    | set(SPINOUT_BLANK
+        | SPINOUT_BLANK_SLOW
+        | RECUR_BLANK_IN_PERIOD)
+    | RECUR_BLANK_BEFORE_PERIOD
+    | {prog for prog, marks in PROVER_SPINOUT.items()
+           if marks == 0}
 )
 
 NONBLANKERS = (
