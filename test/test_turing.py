@@ -326,11 +326,11 @@ class Reason(TuringTest):
     def test_holdouts(self):
         for cat in ('42h', '24h'):
             for prog in read_holdouts(cat):
-                self.assert_could_halt(prog)
+                self.assert_could_halt_backward(prog)
 
         for prog in read_holdouts('42q'):
             self.assert_cant_halt(prog, 1)
-            self.assert_could_spin_out(prog)
+            self.assert_could_spin_out_backward(prog)
 
         for cat in ('32q', '23q'):
             for prog in read_holdouts(cat):
@@ -485,6 +485,21 @@ class Segment(TuringTest):
 
         for prog in OMNIREASONABLE:
             self.assert_segment_cant_spin_out(prog, SEGMENT_LIMIT)
+
+    def test_holdouts(self):
+        for cat in ('42h', '24h'):
+            for prog in read_holdouts(cat):
+                self.assert_could_halt_segment(prog)
+
+        for prog in read_holdouts('42q'):
+            self.assert_segment_cant_halt(prog, 2)
+            self.assert_could_spin_out_segment(prog)
+
+        for cat in ('32q', '23q'):
+            for prog in read_holdouts(cat):
+                self.assert_segment_cant_halt(prog, 2)
+                self.assert_segment_cant_blank(prog, 2)
+                self.assert_segment_cant_spin_out(prog, 3)
 
 
 def branch_last(prog: str) -> list[str]:
