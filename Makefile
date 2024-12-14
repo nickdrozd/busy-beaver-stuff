@@ -45,9 +45,9 @@ test-rust :
 	$(CARGO_VERSION)
 	$(CARGO_TEST)
 
-test-rust-all :
+test-rust-slow :
 	$(CARGO_VERSION)
-	$(CARGO_TEST) -- --include-ignored
+	$(CARGO_TEST) -- --nocapture --ignored
 
 clean-rust :
 	cargo clean
@@ -99,7 +99,7 @@ PYTEST = $(PYTHON) -m unittest
 test : test-rust
 	$(PYTEST) discover -v
 
-test-all : test-rust-all compile
+test-all : test-rust compile
 	RUN_SLOW=1 $(MAKE) test
 
 tree : compile

@@ -41,6 +41,21 @@ jobs:
           make coverage
           make test-all
 
+  Ubuntu-Rust-Slow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          rustup default nightly
+          rustup component add clippy
+          rustup update
+
+      - name: Test Rust
+        run: make test-rust-slow
+
   Mac-Idris:
     runs-on: macos-latest
 
