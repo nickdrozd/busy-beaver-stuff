@@ -69,6 +69,12 @@ fn segment_cant_reach(
 
     let prog = AnalyzedProg::new(prog, params);
 
+    if (goal == &Halt && prog.halts.is_empty())
+        || (goal == &Spinout && prog.spinouts.is_empty())
+    {
+        return Some(0);
+    }
+
     for seg in 2..=segs {
         let Some(result) = all_segments_reached(&prog, 2 + seg, goal)
         else {
