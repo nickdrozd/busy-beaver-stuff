@@ -243,8 +243,7 @@ impl Configs {
     }
 
     fn check_depth(&self) -> bool {
-        self.todo.len() > MAX_DEPTH
-            || self.seen.values().any(|seen| seen.len() > MAX_DEPTH)
+        self.seen.values().any(|seen| seen.len() > MAX_DEPTH)
     }
 
     fn next_init(&mut self) -> Option<Config> {
