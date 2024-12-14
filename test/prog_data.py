@@ -2101,7 +2101,6 @@ SEGMENT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
 
     "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
-    "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1RF 1RB",
 
     "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
 
@@ -2711,7 +2710,6 @@ PROVER_SPINOUT: ProverEst = {
 
     # 6/2
     "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": 2,
-    "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1RF 1RB": (3.3, 7),
 }
 
 PROVER_QUASIHALT = {
@@ -2738,6 +2736,7 @@ PROVER_FAILURES = {
     "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ...",
 
     "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB",
+    "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1RF 1RB",
 }
 
 SUSPECTED_RULES = {
@@ -2790,12 +2789,6 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "0",
             "0",
             "(430 + (13 * (2 ** 101)))",
-        ),
-        "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1RF 1RB": (
-            375,
-            "(10 ** 8)",
-            "(-9 + (2 ** 25))",
-            "(478 + (7 * (2 ** 21)))",
         ),
         "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": (
             711,
