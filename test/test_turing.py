@@ -470,7 +470,7 @@ class Segment(TuringTest):
             self.assert_could_spin_out_segment(prog)
 
         for prog in DONT_SPIN_OUT | HALTERS | RECURS | INFRUL:
-            self.assert_segment_cant_spin_out(prog, 9)
+            self.assert_segment_cant_spin_out(prog, 26)
 
         for prog in SEGMENT_SPINOUT_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_spin_out_segment(prog)
