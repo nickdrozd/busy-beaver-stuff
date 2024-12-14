@@ -33,17 +33,21 @@ dev :
 	cargo build
 	cp target/debug/librust_stuff.so $(RUST_STUFF)
 
+CARGO_VERSION = cargo --version
+
 clippy :
-	cargo --version
+	$(CARGO_VERSION)
 	cargo clippy --all-targets
 
+CARGO_TEST = cargo test
+
 test-rust :
-	cargo --version
-	cargo test
+	$(CARGO_VERSION)
+	$(CARGO_TEST)
 
 test-rust-all :
-	cargo --version
-	cargo test -- --include-ignored
+	$(CARGO_VERSION)
+	$(CARGO_TEST) -- --include-ignored
 
 clean-rust :
 	cargo clean
