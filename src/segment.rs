@@ -14,7 +14,7 @@ use crate::{
 
 type Segments = usize;
 
-const MAX_DEPTH: usize = 4_000;
+const MAX_DEPTH: usize = 3_000;
 
 /**************************************/
 
