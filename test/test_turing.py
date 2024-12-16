@@ -1146,7 +1146,7 @@ class Prover(RunProver):
 
     def _test_prover_est(self, prog_data: ProverEst):
         for prog, marks in prog_data.items():
-            if prog in PROVER_FAILURES:
+            if prog in FAILURES:
                 continue
 
             if prog in PROVER_HALT_TOO_SLOW and not RUN_SLOW:
@@ -1226,11 +1226,16 @@ class Prover(RunProver):
                     SUSPECTED_RULES)
 
     def test_infrul(self):
-        for prog in INFRUL - PROVER_FAILURES:
+        for prog in INFRUL:
             self.run_bb(
                 prog,
-                opt_macro = 3_000,
-                normal = False)
+                normal = False,
+                **(
+                    {'opt_macro': 3_000}  # type: ignore[arg-type]
+                    if (blocks := MACRO_FAILURES.get(prog)) is None else
+                    {'blocks': blocks}
+                ),
+            )
 
             self.assertIsNotNone(
                 self.machine.infrul)
@@ -1249,7 +1254,7 @@ class Prover(RunProver):
         for prog, reason in RULE_LIMIT.items():
             self.run_bb(
                 prog,
-                print_prog = prog not in PROVER_FAILURES,
+                print_prog = prog not in FAILURES,
                 normal = False,
                 opt_macro = 1600,
             )
