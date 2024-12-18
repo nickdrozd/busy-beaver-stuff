@@ -34,72 +34,6 @@ pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> Option<Step> {
 
 /**************************************/
 
-struct Config {
-    state: State,
-    tape: Backstepper,
-    recs: usize,
-    prev: Option<Rc<Config>>,
-}
-
-impl Config {
-    const fn new(state: State, tape: Backstepper) -> Self {
-        Self {
-            state,
-            tape,
-            recs: 0,
-            prev: None,
-        }
-    }
-
-    fn lin_rec(&self) -> bool {
-        let head = self.tape.head();
-        let mut leftmost = head;
-        let mut rightmost = head;
-
-        let mut current = self.prev.clone();
-
-        #[expect(clippy::assigning_clones)]
-        while let Some(config) = current {
-            let pos = config.tape.head();
-
-            if pos < leftmost {
-                leftmost = pos;
-            } else if rightmost < pos {
-                rightmost = pos;
-            }
-
-            if self.state == config.state
-                && self.tape.aligns_with(
-                    &config.tape,
-                    leftmost,
-                    rightmost,
-                )
-            {
-                return true;
-            }
-
-            current = config.prev.clone();
-        }
-
-        false
-    }
-}
-
-#[cfg(debug_assertions)]
-use crate::instrs::show_slot;
-
-#[cfg(debug_assertions)]
-impl fmt::Display for Config {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let tape = &self.tape;
-        let slot = show_slot((self.state, tape.scan));
-
-        write!(f, "{slot} | {tape}")
-    }
-}
-
-/**************************************/
-
 type Configs = Vec<Config>;
 type Blanks = HashSet<State>;
 type Entrypoints = BTreeMap<State, Vec<(Slot, Instr)>>;
@@ -358,6 +292,72 @@ fn test_entrypoints() {
             3 => vec![((2, 1), (1, false, 3))]
         ]
     );
+}
+
+/**************************************/
+
+struct Config {
+    state: State,
+    tape: Backstepper,
+    recs: usize,
+    prev: Option<Rc<Config>>,
+}
+
+impl Config {
+    const fn new(state: State, tape: Backstepper) -> Self {
+        Self {
+            state,
+            tape,
+            recs: 0,
+            prev: None,
+        }
+    }
+
+    fn lin_rec(&self) -> bool {
+        let head = self.tape.head();
+        let mut leftmost = head;
+        let mut rightmost = head;
+
+        let mut current = self.prev.clone();
+
+        #[expect(clippy::assigning_clones)]
+        while let Some(config) = current {
+            let pos = config.tape.head();
+
+            if pos < leftmost {
+                leftmost = pos;
+            } else if rightmost < pos {
+                rightmost = pos;
+            }
+
+            if self.state == config.state
+                && self.tape.aligns_with(
+                    &config.tape,
+                    leftmost,
+                    rightmost,
+                )
+            {
+                return true;
+            }
+
+            current = config.prev.clone();
+        }
+
+        false
+    }
+}
+
+#[cfg(debug_assertions)]
+use crate::instrs::show_slot;
+
+#[cfg(debug_assertions)]
+impl fmt::Display for Config {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let tape = &self.tape;
+        let slot = show_slot((self.state, tape.scan));
+
+        write!(f, "{slot} | {tape}")
+    }
 }
 
 /**************************************/
