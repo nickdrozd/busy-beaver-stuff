@@ -53,17 +53,17 @@ mod wrappers {
 
     #[pyfunction]
     pub fn py_cant_halt(prog: &str, depth: Depth) -> Option<Step> {
-        cant_halt(&CompProg::from_str(prog), depth)
+        cant_halt(&CompProg::from_str(prog), depth).ok()
     }
 
     #[pyfunction]
     pub fn py_cant_blank(prog: &str, depth: Depth) -> Option<Step> {
-        cant_blank(&CompProg::from_str(prog), depth)
+        cant_blank(&CompProg::from_str(prog), depth).ok()
     }
 
     #[pyfunction]
     pub fn py_cant_spin_out(prog: &str, depth: Depth) -> Option<Step> {
-        cant_spin_out(&CompProg::from_str(prog), depth)
+        cant_spin_out(&CompProg::from_str(prog), depth).ok()
     }
 
     #[pyfunction]

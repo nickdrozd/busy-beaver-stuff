@@ -20,15 +20,29 @@ const MAX_STACK_DEPTH: Depth = 46;
 
 /**************************************/
 
-pub fn cant_halt(comp: &CompProg, depth: Depth) -> Option<Step> {
+pub enum BackwardError {
+    Init,
+    LinRec,
+    Spinout,
+    StepLimit,
+    DepthLimit,
+}
+
+use BackwardError::*;
+
+pub type BackwardResult = Result<Step, BackwardError>;
+
+/**************************************/
+
+pub fn cant_halt(comp: &CompProg, depth: Depth) -> BackwardResult {
     cant_reach(comp, depth, halt_configs)
 }
 
-pub fn cant_blank(comp: &CompProg, depth: Depth) -> Option<Step> {
+pub fn cant_blank(comp: &CompProg, depth: Depth) -> BackwardResult {
     cant_reach(comp, depth, erase_configs)
 }
 
-pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> Option<Step> {
+pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> BackwardResult {
     cant_reach(comp, depth, zero_reflexive_configs)
 }
 
@@ -42,11 +56,11 @@ fn cant_reach(
     comp: &CompProg,
     depth: Depth,
     get_configs: impl Fn(&CompProg) -> Configs,
-) -> Option<Step> {
+) -> BackwardResult {
     let mut configs = get_configs(comp);
 
     if configs.is_empty() {
-        return Some(0);
+        return Ok(0);
     }
 
     let entrypoints = get_entrypoints(comp);
@@ -71,15 +85,15 @@ fn cant_reach(
         let valid_steps = get_valid_steps(&mut configs, &entrypoints)?;
 
         match valid_steps.len() {
-            0 => return Some(step),
-            n if MAX_STACK_DEPTH < n => return None,
+            0 => return Ok(step),
+            n if MAX_STACK_DEPTH < n => return Err(DepthLimit),
             _ => {},
         }
 
         configs = step_configs(valid_steps, &mut blanks)?;
     }
 
-    None
+    Err(StepLimit)
 }
 
 type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
@@ -87,7 +101,7 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-) -> Option<ValidatedSteps> {
+) -> Result<ValidatedSteps, BackwardError> {
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
@@ -106,7 +120,7 @@ fn get_valid_steps(
                 && tape.scan == next_color
                 && *state == next_state
             {
-                return None;
+                return Err(Spinout);
             }
 
             good_steps.push((next_color, shift, next_state));
@@ -119,13 +133,13 @@ fn get_valid_steps(
         checked.push((good_steps, config));
     }
 
-    Some(checked)
+    Ok(checked)
 }
 
 fn step_configs(
     configs: ValidatedSteps,
     blanks: &mut Blanks,
-) -> Option<Configs> {
+) -> Result<Configs, BackwardError> {
     let mut stepped = Configs::new();
 
     for (instrs, config) in configs {
@@ -138,7 +152,7 @@ fn step_configs(
 
             if tape.blank() {
                 if state == 0 {
-                    return None;
+                    return Err(Init);
                 }
 
                 if blanks.contains(&state) {
@@ -159,7 +173,7 @@ fn step_configs(
                 next_config.recs += 1;
 
                 if next_config.recs > 1 {
-                    return None;
+                    return Err(LinRec);
                 }
             }
 
@@ -167,7 +181,7 @@ fn step_configs(
         }
     }
 
-    Some(stepped)
+    Ok(stepped)
 }
 
 /**************************************/
