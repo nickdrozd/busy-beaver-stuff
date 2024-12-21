@@ -25,21 +25,23 @@ idris :
 
 RUST_STUFF = tm/rust_stuff.so
 
+CARGO = PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo
+
 rust :
-	cargo build --release
+	$(CARGO) build --release
 	cp target/release/librust_stuff.so $(RUST_STUFF)
 
 dev :
-	cargo build
+	$(CARGO) build
 	cp target/debug/librust_stuff.so $(RUST_STUFF)
 
 CARGO_VERSION = cargo --version
 
 clippy :
 	$(CARGO_VERSION)
-	cargo clippy --all-targets
+	$(CARGO) clippy --all-targets
 
-CARGO_TEST = cargo test
+CARGO_TEST = $(CARGO) test
 
 test-rust :
 	$(CARGO_VERSION)
