@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from unittest import TestCase, skipUnless
-from multiprocessing import Queue, Manager, Pool
+from multiprocessing import Queue, Manager, Pool, set_start_method
 from typing import TYPE_CHECKING
 
 from test.utils import read_progs, RUN_SLOW
@@ -37,6 +37,10 @@ if TYPE_CHECKING:
     BasicMachine = Machine | MachineResult
 
     Q = Queue[str]
+
+########################################
+
+set_start_method('fork')
 
 ########################################
 
