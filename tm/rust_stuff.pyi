@@ -51,7 +51,7 @@ def py_show_comp(
 
 ## machine #############################
 
-class TermRes(Enum):
+class TermRes(Enum):  # type: ignore[misc]
     undfnd: int
     spnout: int
     halted: int
