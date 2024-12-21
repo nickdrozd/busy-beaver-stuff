@@ -103,8 +103,6 @@ RESULTS: dict[str, tuple[int, str]]
 class TestTree(TestCase):
     progs: set[str]
 
-    results: dict[str, tuple[int, str]]
-
     def setUp(self):
         global PROGS, RESULTS  # pylint: disable = global-statement
 
