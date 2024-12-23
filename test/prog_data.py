@@ -112,6 +112,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 0LB  1LB 1LA": (2, 6),
     "1RB 1LB  0LB 1LA": (2, 6),
     "1RB 0LB  0LB 1LA": (1, 6),
+    "1RB 1LA  0LB 1LB": (1, 3),
 
     # 3/2
     "1RB 0LB  1LA 0RC  1LC 1LA": (6, 55),  # BBB(3, 2)
@@ -494,6 +495,7 @@ RECUR_BLANK_IN_PERIOD = {
     "1RB 1LA  0LA 0LB": (0, 7),
     "1RB 0LA  1LB 1RA": (0, 5),
     "1RB 0RA  1LA ...": (0, 4),
+    "1RB ...  0LB 0RA": (0, 3),
     "1RB 0RB  1LA 0LB": (None, 4),
     "1RB 1RB  1LA 0LB": (None, 4),
 
@@ -1009,6 +1011,8 @@ KERNEL = {
 }
 
 MODULAR = {
+    "1RB 1LA  0LB 1LB",
+
     "1RB 1LB  1LA 1LC  1RC 0LC",  # BLB(3) | 34
     "1RB 1LB  1LA 1RC  1LC 0RC",
     "1RB 1LB  1LA 0LC  1RC 0LC",
@@ -1189,6 +1193,7 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
 CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB 0RA  1LA ...",
     "1RB ...  0LB 0LA",
+    "1RB ...  0LB 0RA",
     "1RB ...  1LB 0LA",
 
     "1RB ...  1LC ...  0LC 0LB",
@@ -1253,6 +1258,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     "1RB ... 0LB  2LB 2RA 1LA",
     "1RB ... 2RB  2LB 2LA 0RA",
     "1RB 2LA ...  0LB 1LA 0LA",
+    "1RB 1LA ...  2LB 1RB 0LA",
 
     "1RB 1LA ... 3LA  2LA 3RB 3LA 0RA",
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
@@ -3306,10 +3312,11 @@ ALGEBRA_PROGS = {
 }
 
 INFRUL: set[str] = set(ALGEBRA['infrul']) | {
-    "1RB 0LA  1LA ...",
-    "1RB 1LA  0LA 0RB",
     "1RB ...  0LB 0LA",
     "1RB ...  1LB 0LA",
+    "1RB 0LA  1LA ...",
+    "1RB 1RB  0LA ...",
+    "1RB 1LA  0LA 0RB",
 
     "1RB 0LA ...  1LB 2LA 0RB",
     "1RB 2LA 0RB  1LB 1LA 1RA",
@@ -3346,6 +3353,7 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 2RA 2LB  1LB 2LA 0RA",
     "1RB 2RB 2LA  0LB 1LA 0RB",
     "1RB 2RB 2LA  2LB 1LA 0RB",
+    "1RB 1LA ...  2LB 1RB 0LA",
 
     "1RB ...  0LC 0RA  0RA 1LB",
     "1RB ...  0LC 0RA  1LA 1LB",

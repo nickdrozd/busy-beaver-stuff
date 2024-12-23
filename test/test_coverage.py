@@ -2,13 +2,7 @@
 
 from unittest import TestCase
 
-from tm.machine import Machine, quick_term_or_rec
-from tm.reason import (
-    cant_halt,
-    cant_blank,
-    cant_spin_out,
-)
-
+from tm.machine import Machine
 from tools.instr_seq import instr_seq
 
 
@@ -94,35 +88,10 @@ class TestFloss(TestCase):
                 "1RB 1LA  1RC 0LB  0LB ..."
             ).run().blanks)
 
-        self.assertTrue(
-            quick_term_or_rec(
-                "1RB 1LA  0LB 1LB",
-                50))
-
-        self.assertTrue(
-            quick_term_or_rec(
-                "1RB 1RB  0LA ...",
-                10))
-
-        self.assertFalse(
-            quick_term_or_rec(
-                "1RB 1RA  1RC 0RD  1LE 0RA  ... 0RB  1LB 1LE",
-                100_000_000))
-
         self.assertIsNotNone(
             Machine(
                 "1RB ...  0LB 0RA"
             ).run())
-
-        self.assertFalse(
-            quick_term_or_rec(
-                "1RB ...  0LB 1LA",
-                10))
-
-        self.assertFalse(
-            quick_term_or_rec(
-                "1RB 1LA ...  2LB 1RB 0LA",
-                50))
 
     def test_prover(self):
         progs = (
@@ -155,37 +124,6 @@ class TestFloss(TestCase):
         ).run(
             sim_lim = 800
         )
-
-    def test_reasoner(self):
-        self.assertIsNone(
-            cant_halt(
-                "1RB 0RA  1LA ...",
-                depth = 3))
-
-        self.assertIsNone(
-            cant_blank(
-                "1RB 0RA  1LB 1LA",
-                depth = 1))
-
-        self.assertIsNotNone(
-            cant_blank(
-                "1RB 2LA 1LA  2LA 2RB 0RA",
-                depth = 2))
-
-        self.assertIsNone(
-            cant_spin_out(
-                "1RB 0RB 0LB  1LB 2RA 1LA",
-                depth = 7))
-
-        self.assertIsNotNone(
-            cant_spin_out(
-                "1RB 1LA  0LA 0RC  0LA 1RB",
-                depth = 0))
-
-        self.assertIsNone(
-            cant_halt(
-                "1RB ...  1LC 0RC  1RA 0LC",
-                depth = 1_000))
 
     def test_instr_seq(self):
         progs = (
