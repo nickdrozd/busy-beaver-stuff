@@ -325,6 +325,15 @@ class Reason(TuringTest):
             self.assertNotIn(prog, SPINNERS)
             self.assert_could_spin_out_backward(prog)
 
+        totals = {
+            188: CANT_HALT_FALSE_NEGATIVES,
+            272: CANT_BLANK_FALSE_NEGATIVES,
+            95: CANT_SPIN_OUT_FALSE_NEGATIVES,
+        }
+
+        for total, cat in totals.items():
+            self.assertEqual(len(cat), total)
+
     def test_holdouts(self):
         for cat in ('42h', '24h'):
             for prog in read_holdouts(cat):
