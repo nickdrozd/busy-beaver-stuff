@@ -187,11 +187,14 @@ class TestFloss(TestCase):
                 "1RB ...  1LC 0RC  1RA 0LC",
                 depth = 1_000))
 
-        _ = list(instr_seq(
-            "1RB 1LB  1LA ..."))
+    def test_instr_seq(self):
+        progs = (
+            "1RB 1LB  1LA ...",
+            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD",
+        )
 
-        _ = list(instr_seq(
-            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"))
+        for prog in progs:
+            self.assertTrue(bool(list(instr_seq(prog))))
 
     def test_mixed_divs(self):
         self.assertIsNotNone(
