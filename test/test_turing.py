@@ -313,17 +313,23 @@ class Reason(TuringTest):
                 self.assert_cant_blank(prog, 1331)
 
     def test_false_negatives(self):
-        for prog in CANT_HALT_FALSE_NEGATIVES:
-            self.assertNotIn(prog, HALTERS)
-            self.assert_could_halt_backward(prog)
+        for cat, progs in CANT_HALT_FALSE_NEGATIVES_CATS.items():
+            for prog in progs:
+                self.assertEqual(
+                    cat,
+                    str(cant_halt(prog, depth = REASON_LIMIT)))
 
-        for prog in CANT_BLANK_FALSE_NEGATIVES:
-            self.assertNotIn(prog, BLANKERS)
-            self.assert_could_blank_backward(prog)
+        for cat, progs in CANT_BLANK_FALSE_NEGATIVES_CATS.items():
+            for prog in progs:
+                self.assertEqual(
+                    cat,
+                    str(cant_blank(prog, depth = REASON_LIMIT)))
 
-        for prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
-            self.assertNotIn(prog, SPINNERS)
-            self.assert_could_spin_out_backward(prog)
+        for cat, progs in CANT_SPIN_OUT_FALSE_NEGATIVES_CATS.items():
+            for prog in progs:
+                self.assertEqual(
+                    cat,
+                    str(cant_spin_out(prog, depth = REASON_LIMIT)))
 
         totals = {
             188: CANT_HALT_FALSE_NEGATIVES,
@@ -331,7 +337,7 @@ class Reason(TuringTest):
             95: CANT_SPIN_OUT_FALSE_NEGATIVES,
         }
 
-        for total, cat in totals.items():
+        for total, cat in totals.items():  # type: ignore[assignment]
             self.assertEqual(len(cat), total)
 
     def test_holdouts(self):
