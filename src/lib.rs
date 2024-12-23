@@ -37,33 +37,83 @@ mod tree;
 /**************************************/
 
 mod wrappers {
-    use pyo3::pyfunction;
+    use pyo3::{pyclass, pyfunction, pymethods};
 
     use crate::{
         blocks::opt_block,
         graph::is_connected,
         instrs::{CompProg, Params, Parse as _, State},
         machine::quick_term_or_rec,
-        reason::{cant_blank, cant_halt, cant_spin_out, Depth, Step},
+        reason::{
+            cant_blank, cant_halt, cant_spin_out, BackwardError::*,
+            BackwardResult as BackwardResultRs, Depth, Step,
+        },
         segment::{
             segment_cant_blank, segment_cant_halt,
             segment_cant_spin_out,
         },
     };
 
-    #[pyfunction]
-    pub fn py_cant_halt(prog: &str, depth: Depth) -> Option<Step> {
-        cant_halt(&CompProg::from_str(prog), depth).ok()
+    #[expect(non_camel_case_types)]
+    #[pyclass]
+    pub enum BackwardResult {
+        refuted { step: Step },
+        init {},
+        linrec {},
+        spinout {},
+        step_limit {},
+        depth_limit {},
+    }
+
+    use BackwardResult::*;
+
+    #[pymethods]
+    impl BackwardResult {
+        const fn is_refuted(&self) -> bool {
+            matches!(self, Self::refuted { .. })
+        }
+
+        const fn __str__(&self) -> &str {
+            match self {
+                refuted { .. } => "refuted",
+                init {} => "init",
+                linrec {} => "linrec",
+                spinout {} => "spinout",
+                step_limit {} => "step_limit",
+                depth_limit {} => "depth_limit",
+            }
+        }
+    }
+
+    impl From<BackwardResultRs> for BackwardResult {
+        fn from(result: BackwardResultRs) -> Self {
+            match result {
+                Ok(step) => Self::refuted { step },
+                Err(Init) => Self::init {},
+                Err(LinRec) => Self::linrec {},
+                Err(Spinout) => Self::spinout {},
+                Err(StepLimit) => Self::step_limit {},
+                Err(DepthLimit) => Self::depth_limit {},
+            }
+        }
     }
 
     #[pyfunction]
-    pub fn py_cant_blank(prog: &str, depth: Depth) -> Option<Step> {
-        cant_blank(&CompProg::from_str(prog), depth).ok()
+    pub fn py_cant_halt(prog: &str, depth: Depth) -> BackwardResult {
+        cant_halt(&CompProg::from_str(prog), depth).into()
     }
 
     #[pyfunction]
-    pub fn py_cant_spin_out(prog: &str, depth: Depth) -> Option<Step> {
-        cant_spin_out(&CompProg::from_str(prog), depth).ok()
+    pub fn py_cant_blank(prog: &str, depth: Depth) -> BackwardResult {
+        cant_blank(&CompProg::from_str(prog), depth).into()
+    }
+
+    #[pyfunction]
+    pub fn py_cant_spin_out(
+        prog: &str,
+        depth: Depth,
+    ) -> BackwardResult {
+        cant_spin_out(&CompProg::from_str(prog), depth).into()
     }
 
     #[pyfunction]
@@ -173,6 +223,7 @@ mod rust_stuff {
             py_is_connected, py_opt_block, py_quick_term_or_rec,
             py_segment_cant_blank, py_segment_cant_halt,
             py_segment_cant_spin_out, py_show_comp, tcompile,
+            BackwardResult,
         },
     };
 }

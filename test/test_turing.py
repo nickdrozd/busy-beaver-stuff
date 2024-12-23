@@ -25,6 +25,8 @@ from tm.macro import (
     prog_params,
 )
 from tm.reason import (
+    BackwardResult,
+
     cant_halt,
     cant_blank,
     cant_spin_out,
@@ -177,16 +179,16 @@ class TuringTest(TestCase):
         if prog == "1RB ...  ... ...":
             return
 
-        self.assertIsNone(
-            cant_halt(prog, depth = REASON_LIMIT),
+        self.assertFalse(
+            cant_halt(prog, depth = REASON_LIMIT).is_refuted(),
             f'halt false positive: "{prog}"')
 
     def assert_cant_halt(self, prog: str, depth: int):
         if prog in CANT_HALT_FALSE_NEGATIVES:
             return
 
-        self.assertIsNotNone(
-            cant_halt(prog, depth),
+        self.assertTrue(
+            cant_halt(prog, depth).is_refuted(),
             f'halt false negative: "{prog}"')
 
     def assert_could_halt_segment(self, prog: str):
@@ -212,8 +214,8 @@ class TuringTest(TestCase):
         self.assert_could_blank_segment(prog)
 
     def assert_could_blank_backward(self, prog: str):
-        self.assertIsNone(
-            cant_blank(prog, depth = REASON_LIMIT),
+        self.assertFalse(
+            cant_blank(prog, depth = REASON_LIMIT).is_refuted(),
             f'blank false positive: "{prog}"')
 
     def assert_could_blank_segment(self, prog: str):
@@ -226,8 +228,8 @@ class TuringTest(TestCase):
                 or Machine(prog).run(sim_lim = 10).blanks):
             return
 
-        self.assertIsNotNone(
-            cant_blank(prog, depth),
+        self.assertTrue(
+            cant_blank(prog, depth).is_refuted(),
             f'blank false negative: "{prog}"')
 
     def assert_segment_cant_blank(self, prog: str, segs: int):
@@ -249,8 +251,8 @@ class TuringTest(TestCase):
         self.assert_could_spin_out_segment(prog)
 
     def assert_could_spin_out_backward(self, prog: str):
-        self.assertIsNone(
-            cant_spin_out(prog, depth = REASON_LIMIT),
+        self.assertFalse(
+            cant_spin_out(prog, depth = REASON_LIMIT).is_refuted(),
             f'spin out false positive: "{prog}"')
 
     def assert_could_spin_out_segment(self, prog: str):
@@ -262,8 +264,8 @@ class TuringTest(TestCase):
         if prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
             return
 
-        self.assertIsNotNone(
-            cant_spin_out(prog, depth),
+        self.assertTrue(
+            cant_spin_out(prog, depth).is_refuted(),
             f'spin out false negative: "{prog}"')
 
     def assert_segment_cant_spin_out(self, prog: str, segs: int):
@@ -380,11 +382,12 @@ class Reason(TuringTest):
 
             for prog, steps in data.items():
                 self.assertEqual(
-                    cant_reach(prog, steps),
+                    cant_reach(prog, steps).step,
                     steps - 1)
 
-                self.assertIsNone(
-                    cant_reach(prog, steps - 1))
+                self.assertIsInstance(
+                    cant_reach(prog, steps - 1),
+                    BackwardResult.step_limit)
 
     def test_unreasonable(self):
         self.assertEqual(
@@ -416,15 +419,15 @@ class Reason(TuringTest):
 
             self.assertEqual(
                 halt,
-                cant_halt(prog, REASON_LIMIT))
+                cant_halt(prog, REASON_LIMIT).step)
 
             self.assertEqual(
                 blank,
-                cant_blank(prog, REASON_LIMIT))
+                cant_blank(prog, REASON_LIMIT).step)
 
             self.assertEqual(
                 spin,
-                cant_spin_out(prog, REASON_LIMIT))
+                cant_spin_out(prog, REASON_LIMIT).step)
 
     def test_simple(self):
         for prog in HALTERS | SPINNERS | RECURS | INFRUL:

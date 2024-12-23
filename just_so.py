@@ -39,7 +39,7 @@ if __name__ == '__main__':
         CANT_REACH = segment_cant_halt  # type: ignore[assignment]
 
     for prog in sys.stdin:
-        if CANT_REACH(prog, CYCLES) is not None:
+        if (result := CANT_REACH(prog, CYCLES)).is_refuted():
             continue
 
-        print(prog.strip())
+        print(result)
