@@ -1,6 +1,5 @@
 import sys
 import argparse
-from multiprocessing import Pool
 
 from tm.reason import (
     cant_halt,
@@ -13,13 +12,6 @@ from tm.reason import (
 
 CYCLES = 2_000
 CANT_REACH = cant_spin_out
-
-
-def worker(prog: str) -> None:
-    if CANT_REACH(prog, CYCLES) is not None:
-        return
-
-    print(prog.strip())
 
 
 if __name__ == '__main__':
@@ -46,5 +38,8 @@ if __name__ == '__main__':
         CYCLES = 20
         CANT_REACH = segment_cant_halt  # type: ignore[assignment]
 
-    with Pool() as pool:
-        pool.map(worker, sys.stdin)
+    for prog in sys.stdin:
+        if CANT_REACH(prog, CYCLES) is not None:
+            continue
+
+        print(prog.strip())
