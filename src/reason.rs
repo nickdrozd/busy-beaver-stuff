@@ -20,17 +20,22 @@ const MAX_STACK_DEPTH: Depth = 46;
 
 /**************************************/
 
-pub enum BackwardError {
+pub enum BackwardResult {
     Init,
     LinRec,
     Spinout,
     StepLimit,
     DepthLimit,
+    Refuted(Step),
 }
 
-use BackwardError::*;
+use BackwardResult::*;
 
-pub type BackwardResult = Result<Step, BackwardError>;
+impl BackwardResult {
+    pub const fn is_refuted(&self) -> bool {
+        matches!(self, Refuted(_))
+    }
+}
 
 /**************************************/
 
@@ -60,7 +65,7 @@ fn cant_reach(
     let mut configs = get_configs(comp);
 
     if configs.is_empty() {
-        return Ok(0);
+        return Refuted(0);
     }
 
     let entrypoints = get_entrypoints(comp);
@@ -82,18 +87,25 @@ fn cant_reach(
             println!();
         };
 
-        let valid_steps = get_valid_steps(&mut configs, &entrypoints)?;
+        let valid_steps =
+            match get_valid_steps(&mut configs, &entrypoints) {
+                Ok(steps) => steps,
+                Err(err) => return err,
+            };
 
         match valid_steps.len() {
-            0 => return Ok(step),
-            n if MAX_STACK_DEPTH < n => return Err(DepthLimit),
+            0 => return Refuted(step),
+            n if MAX_STACK_DEPTH < n => return DepthLimit,
             _ => {},
         }
 
-        configs = step_configs(valid_steps, &mut blanks)?;
+        configs = match step_configs(valid_steps, &mut blanks) {
+            Ok(configs) => configs,
+            Err(err) => return err,
+        };
     }
 
-    Err(StepLimit)
+    StepLimit
 }
 
 type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
@@ -101,7 +113,7 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-) -> Result<ValidatedSteps, BackwardError> {
+) -> Result<ValidatedSteps, BackwardResult> {
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
@@ -139,7 +151,7 @@ fn get_valid_steps(
 fn step_configs(
     configs: ValidatedSteps,
     blanks: &mut Blanks,
-) -> Result<Configs, BackwardError> {
+) -> Result<Configs, BackwardResult> {
     let mut stepped = Configs::new();
 
     for (instrs, config) in configs {

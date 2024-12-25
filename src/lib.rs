@@ -45,8 +45,9 @@ mod wrappers {
         instrs::{CompProg, Params, Parse as _, State},
         machine::quick_term_or_rec,
         reason::{
-            cant_blank, cant_halt, cant_spin_out, BackwardError::*,
-            BackwardResult as BackwardResultRs, Depth, Step,
+            cant_blank, cant_halt, cant_spin_out,
+            BackwardResult as BackwardResultRs, BackwardResult::*,
+            Depth, Step,
         },
         segment::{
             segment_cant_blank, segment_cant_halt,
@@ -88,12 +89,12 @@ mod wrappers {
     impl From<BackwardResultRs> for BackwardResult {
         fn from(result: BackwardResultRs) -> Self {
             match result {
-                Ok(step) => Self::refuted { step },
-                Err(Init) => Self::init {},
-                Err(LinRec) => Self::linrec {},
-                Err(Spinout) => Self::spinout {},
-                Err(StepLimit) => Self::step_limit {},
-                Err(DepthLimit) => Self::depth_limit {},
+                Refuted(step) => Self::refuted { step },
+                Init => Self::init {},
+                LinRec => Self::linrec {},
+                Spinout => Self::spinout {},
+                StepLimit => Self::step_limit {},
+                DepthLimit => Self::depth_limit {},
             }
         }
     }

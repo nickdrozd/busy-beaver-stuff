@@ -298,9 +298,9 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
 
     incomplete(comp, params, halt)
         || (states >= 4 && !is_connected(comp, states))
-        || cant_reach(comp, 1).is_ok()
+        || cant_reach(comp, 1).is_refuted()
         || quick_term_or_rec(comp, 301, true)
-        || cant_reach(comp, 256).is_ok()
+        || cant_reach(comp, 256).is_refuted()
         || check_inf(comp, params, opt_block(comp, 300), 306)
         || segment_cant_reach(comp, params, 3).is_some()
 }
@@ -408,7 +408,7 @@ fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if let Ok(__) = cant_reach(prog, 256) {
+        if cant_reach(prog, 256).is_refuted() {
             return;
         }
 
@@ -605,7 +605,7 @@ fn assert_blank(params: Params, expected: (u64, u64)) {
 
         let run = 700;
 
-        if cant_blank(prog, 44).is_ok()
+        if cant_blank(prog, 44).is_refuted()
             || quick_term_or_rec(prog, run, true)
             || check_inf(prog, params, opt_block(prog, 300), run as u64)
             || !run_prover(&prog.show(Some(params)), run as u64)
