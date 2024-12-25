@@ -74,6 +74,10 @@ mod wrappers {
             matches!(self, Self::refuted { .. })
         }
 
+        const fn is_settled(&self) -> bool {
+            matches!(self, Self::refuted { .. } | init {})
+        }
+
         const fn __str__(&self) -> &str {
             match self {
                 refuted { .. } => "refuted",

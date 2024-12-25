@@ -32,8 +32,8 @@ pub enum BackwardResult {
 use BackwardResult::*;
 
 impl BackwardResult {
-    pub const fn is_refuted(&self) -> bool {
-        matches!(self, Refuted(_))
+    pub const fn is_settled(&self) -> bool {
+        matches!(self, Refuted(_) | Init)
     }
 }
 

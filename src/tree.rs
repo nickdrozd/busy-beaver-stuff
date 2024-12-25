@@ -298,9 +298,9 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
 
     incomplete(comp, params, halt)
         || (states >= 4 && !is_connected(comp, states))
-        || cant_reach(comp, 1).is_refuted()
+        || cant_reach(comp, 1).is_settled()
         || quick_term_or_rec(comp, 301, true)
-        || cant_reach(comp, 256).is_refuted()
+        || cant_reach(comp, 256).is_settled()
         || check_inf(comp, params, opt_block(comp, 300), 306)
         || segment_cant_reach(comp, params, 3).is_some()
 }
@@ -408,7 +408,7 @@ fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if cant_reach(prog, 256).is_refuted() {
+        if cant_reach(prog, 256).is_settled() {
             return;
         }
 
@@ -435,19 +435,19 @@ macro_rules! assert_reason_results {
 #[test]
 fn test_reason() {
     assert_reason_results![
-        ((2, 2), 1, (20, 36)),
+        ((2, 2), 1, (18, 36)),
         ((2, 2), 0, (13, 106)),
         //
-        ((3, 2), 1, (2_009, 3_140)),
-        ((3, 2), 0, (1_551, 13_128)),
+        ((3, 2), 1, (1_886, 3_140)),
+        ((3, 2), 0, (1_502, 13_128)),
         //
-        ((2, 3), 1, (2_313, 2_447)),
+        ((2, 3), 1, (2_307, 2_447)),
         ((2, 3), 0, (1_605, 9_168)),
         //
-        ((4, 2), 1, (296_913, 467_142)),
-        ((4, 2), 0, (277_277, 2_291_637)),
+        ((4, 2), 1, (289_361, 467_142)),
+        ((4, 2), 0, (274_315, 2_291_637)),
         //
-        ((2, 4), 1, (310_621, 312_642)),
+        ((2, 4), 1, (310_597, 312_642)),
         ((2, 4), 0, (406_828, 1_719_237)),
     ];
 }
@@ -456,14 +456,14 @@ fn test_reason() {
 #[ignore]
 fn test_reason_slow() {
     assert_reason_results![
-        ((5, 2), 1, (59_952_063, 95_310_168)),
-        ((5, 2), 0, (66_728_533, 534_798_275)),
+        ((5, 2), 1, (59_262_312, 95_310_168)),
+        ((5, 2), 0, (66_415_144, 534_798_275)),
         //
-        ((2, 5), 1, (69_849_036, 70_028_531)),
+        ((2, 5), 1, (69_848_916, 70_028_531)),
         ((2, 5), 0, (137_507_422, 515_051_756)),
         //
-        ((3, 3), 1, (24_358_778, 25_306_222)),
-        ((3, 3), 0, (28_543_482, 149_365_898)),
+        ((3, 3), 1, (24_341_612, 25_306_222)),
+        ((3, 3), 0, (28_534_586, 149_365_898)),
     ];
 }
 
@@ -605,7 +605,7 @@ fn assert_blank(params: Params, expected: (u64, u64)) {
 
         let run = 700;
 
-        if cant_blank(prog, 44).is_refuted()
+        if cant_blank(prog, 44).is_settled()
             || quick_term_or_rec(prog, run, true)
             || check_inf(prog, params, opt_block(prog, 300), run as u64)
             || !run_prover(&prog.show(Some(params)), run as u64)
