@@ -33,6 +33,7 @@ HALT: BasicTermData = {
     "1RB 0RC  1LA 1RA  ... 1RD  1LD 0LB": (13,  96),  # sigma
     "1RB 1LB  0LC 0RD  ... 1LA  1RA 0LA": ( 6,  96),
     "1RB 1LC  0LD 0RD  ... 0LA  1LD 1LA": (11,  84),
+    "1RB 1RC  0LA 1LD  1LB 0RC  0RA ...": ( 4,  24),
     "1RB 0LC  1LD 1RB  ... 0RB  1LC 1LA": ( 4,  12),
     "1RB 1LA  1RC 0RD  1LA 1RD  ... 0LA": ( 4,  11),
     "1RB 0LA  0RC 1LD  0RD ...  1LA 1RD": ( 4,  19),
@@ -147,6 +148,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": (32,  581),
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,  536),
     "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,  444),
+    "1RB 0RB  1LC 0LC  0RC 0LD  1RA 1LD": ( 2,   45),
     "1RB 1LB  1LA 1RC  1RC 0LD  0RB 1LD": ( 1,   37),
     "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": ( 1,   15),
     "1RB ...  0RC 1LC  1LC 0RD  0LB 1RD": ( 1,   13),
@@ -217,6 +219,7 @@ SPINOUT_BLANK = {
     "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": ({'B','C','D'},  171),
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD": ({'D'},           77),
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA": ({'C'},           66),
+    "1RB 1LC  0LB 1LA  1RC 0LD  0RC 1LD": ({'C', 'D'}, 26),
     "1RB 0RB  0RC 0LD  1LC 1RD  0RA 1LD": ({'B', 'C'}, 17),
     "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB": ({'C', 'D'}, 9),
 
@@ -1023,6 +1026,8 @@ MODULAR = {
     "1RB 0LC  1LB 1LA  1RC 0LC",
     "1RB 1LA  0LA 0LC  0LC 1LC",
 
+    "1RB 1LC  0LB 1LA  1RC 0LD  0RC 1LD",
+
     # constructed from BB(3) sigma champ
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD",
     # constructed from BB(3) shift champ
@@ -1635,6 +1640,7 @@ CANT_BLANK_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 0RA  1RC 0LB  1LD 0RD  1RA 1LB",
         "1RB 0RA  1RC 0LD  0LB 1RA  0LA 1LD",
         "1RB 0RA  1RC 0RB  1LD 1LC  1RA 0LC",
+        "1RB 0RB  1LC 0LC  0RC 0LD  1RA 1LD",
         "1RB 0RB  1LC 0LD  1LB 1RA  0RD 0LC",
         "1RB 0RC  1LC 0RA  0LC 0LD  1RD 1RB",
         "1RB 0RC  1LD 0RB  1RA 0LC  0LA 1LC",
@@ -1655,6 +1661,7 @@ CANT_BLANK_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA",
         "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
         "1RB 1RA  1LC 0RB  1RC 0LD  1LA 1LD",
+        "1RB 1RC  0LA 1LD  1LB 0RC  0RA ...",
         "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD",
         "1RB 1RC  1LC 0RB  1LD 0RA  1RA 0LB",
         "1RB 1RC  1LC 0RB  1RA 0LD  0LC 1LD",
@@ -1859,6 +1866,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
         "1RB 0RB  1LB 1LC  1RA 0LD  1LC 0LA",
         "1RB 0LC  1RD 0RB  1LC 1LA  1RC 1RA",
+        "1RB 1LD  1RC 0RC  0LA 0RA  0LD 1LB",
 
         "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB",
 
