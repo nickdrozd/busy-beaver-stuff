@@ -183,7 +183,7 @@ class TuringTest(TestCase):
             cant_halt(prog, depth = REASON_LIMIT).is_refuted(),
             f'halt false positive: "{prog}"')
 
-    def assert_cant_halt(self, prog: str, depth: int):
+    def assert_cant_halt_backward(self, prog: str, depth: int):
         if prog in CANT_HALT_FALSE_NEGATIVES:
             return
 
@@ -199,7 +199,7 @@ class TuringTest(TestCase):
             segment_cant_halt(prog, segs = SEGMENT_LIMIT),
             f'segment halt false positive: "{prog}"')
 
-    def assert_segment_cant_halt(self, prog: str, segs: int):
+    def assert_cant_halt_segment(self, prog: str, segs: int):
         if prog in SEGMENT_HALT_FALSE_NEGATIVES:
             return
 
@@ -223,7 +223,7 @@ class TuringTest(TestCase):
             segment_cant_blank(prog, segs = SEGMENT_LIMIT),
             f'segment blank false positive: "{prog}"')
 
-    def assert_cant_blank(self, prog: str, depth: int):
+    def assert_cant_blank_backward(self, prog: str, depth: int):
         if (prog in CANT_BLANK_FALSE_NEGATIVES
                 or Machine(prog).run(sim_lim = 10).blanks):
             return
@@ -232,7 +232,7 @@ class TuringTest(TestCase):
             cant_blank(prog, depth).is_refuted(),
             f'blank false negative: "{prog}"')
 
-    def assert_segment_cant_blank(self, prog: str, segs: int):
+    def assert_cant_blank_segment(self, prog: str, segs: int):
         if prog in SEGMENT_BLANK_FALSE_NEGATIVES:
             assert prog not in SEGMENT_STEPS['blank']
             return
@@ -260,7 +260,7 @@ class TuringTest(TestCase):
             segment_cant_spin_out(prog, segs = SEGMENT_LIMIT),
             f'segment spin out false positive: "{prog}"')
 
-    def assert_cant_spin_out(self, prog: str, depth: int):
+    def assert_cant_spin_out_backward(self, prog: str, depth: int):
         if prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
             return
 
@@ -268,7 +268,7 @@ class TuringTest(TestCase):
             cant_spin_out(prog, depth).is_refuted(),
             f'spin out false negative: "{prog}"')
 
-    def assert_segment_cant_spin_out(self, prog: str, segs: int):
+    def assert_cant_spin_out_segment(self, prog: str, segs: int):
         if prog in SEGMENT_SPINOUT_FALSE_NEGATIVES:
             assert prog not in SEGMENT_STEPS['spinout']
             return
@@ -282,35 +282,35 @@ class TuringTest(TestCase):
 class Reason(TuringTest):
     def test_halt(self):
         for prog in HALTERS:
-            self.assert_could_halt(prog)
+            self.assert_could_halt_backward(prog)
 
         for prog in NONHALTERS:
-            self.assert_cant_halt(prog, 115)
+            self.assert_cant_halt_backward(prog, 115)
 
     def test_spinout(self):
         for prog in SPINNERS:
             if prog in MACRO_SPINOUT:
                 continue
 
-            self.assert_could_spin_out(prog)
+            self.assert_could_spin_out_backward(prog)
 
         for prog in DONT_SPIN_OUT | HALTERS | RECURS | INFRUL:
-            self.assert_cant_spin_out(prog, 256)
+            self.assert_cant_spin_out_backward(prog, 256)
 
     def test_blank(self):
         for prog in NONBLANKERS:
-            self.assert_cant_blank(prog, 1331)
+            self.assert_cant_blank_backward(prog, 1331)
 
         for prog in BLANKERS:
-            self.assert_could_blank(prog)
+            self.assert_could_blank_backward(prog)
 
     def test_recur(self):
         for prog in RECURS | INFRUL:
-            self.assert_cant_halt(prog, 115)
-            self.assert_cant_spin_out(prog, 256)
+            self.assert_cant_halt_backward(prog, 115)
+            self.assert_cant_spin_out_backward(prog, 256)
 
             if prog not in BLANKERS:
-                self.assert_cant_blank(prog, 1331)
+                self.assert_cant_blank_backward(prog, 1331)
 
     def test_false_negatives(self):
         for cat, progs in CANT_HALT_FALSE_NEGATIVES_CATS.items():
@@ -346,14 +346,14 @@ class Reason(TuringTest):
                 self.assert_could_halt_backward(prog)
 
         for prog in read_holdouts('42q'):
-            self.assert_cant_halt(prog, 1)
+            self.assert_cant_halt_backward(prog, 1)
             self.assert_could_spin_out_backward(prog)
 
         for cat in ('32q', '23q'):
             for prog in read_holdouts(cat):
-                self.assert_cant_halt(prog, 0)
-                self.assert_cant_blank(prog, 1)
-                self.assert_cant_spin_out(prog, 2)
+                self.assert_cant_halt_backward(prog, 0)
+                self.assert_cant_blank_backward(prog, 1)
+                self.assert_cant_spin_out_backward(prog, 2)
 
     def test_cryptids(self):
         for cryptid in CRYPTIDS:
@@ -364,26 +364,26 @@ class Reason(TuringTest):
             self.assert_could_spin_out_backward(ext)
 
             if ext in INFRUL:
-                self.assert_segment_cant_blank(ext, 14)
-                self.assert_segment_cant_spin_out(ext, 14)
+                self.assert_cant_blank_segment(ext, 14)
+                self.assert_cant_spin_out_segment(ext, 14)
 
             if ext in BLANKERS:
                 self.assert_could_blank_segment(ext)
             elif ext in SPINNERS:
                 self.assert_could_spin_out_segment(ext)
-                self.assert_segment_cant_blank(ext, 14)
+                self.assert_cant_blank_segment(ext, 14)
 
         for bigfoot in BIGFOOT:
             for ext in branch_last(bigfoot):
-                self.assert_cant_blank(ext, 7)
+                self.assert_cant_blank_backward(ext, 7)
 
         for hydra in HYDRA:
             self.assert_could_blank(hydra)
-            self.assert_cant_spin_out(hydra, 0)
+            self.assert_cant_spin_out_backward(hydra, 0)
 
         for hydra in ANTIHYDRA:
-            self.assert_cant_blank(hydra, 1)
-            self.assert_cant_spin_out(hydra, 0)
+            self.assert_cant_blank_backward(hydra, 1)
+            self.assert_cant_spin_out_backward(hydra, 0)
 
     def test_steps(self):
         cant_reaches = {
@@ -420,9 +420,9 @@ class Reason(TuringTest):
 
     def test_reason_only(self):
         for prog in REASON_ONLY:
-            self.assert_cant_halt(prog, REASON_LIMIT)
-            self.assert_cant_blank(prog, REASON_LIMIT)
-            self.assert_cant_spin_out(prog, REASON_LIMIT)
+            self.assert_cant_halt_backward(prog, REASON_LIMIT)
+            self.assert_cant_blank_backward(prog, REASON_LIMIT)
+            self.assert_cant_spin_out_backward(prog, REASON_LIMIT)
 
             self.assertNotIn(prog, INFRUL)
 
@@ -455,7 +455,7 @@ class Segment(TuringTest):
             self.assert_could_halt_segment(prog)
 
         for prog in NONHALTERS:
-            self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
+            self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
 
         for prog in SEGMENT_HALT_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_halt_segment(prog)
@@ -466,11 +466,11 @@ class Segment(TuringTest):
                 segment_cant_halt(prog, steps))
 
         for prog in OMNIREASONABLE:
-            self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
+            self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
 
     def test_blank(self):
         for prog in NONBLANKERS:
-            self.assert_segment_cant_blank(prog, SEGMENT_LIMIT)
+            self.assert_cant_blank_segment(prog, SEGMENT_LIMIT)
 
         for prog in BLANKERS:
             self.assert_could_blank(prog)
@@ -484,14 +484,14 @@ class Segment(TuringTest):
                 segment_cant_blank(prog, steps))
 
         for prog in OMNIREASONABLE:
-            self.assert_segment_cant_halt(prog, SEGMENT_LIMIT)
+            self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
 
     def test_spinout(self):
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_segment(prog)
 
         for prog in DONT_SPIN_OUT | HALTERS | RECURS | INFRUL:
-            self.assert_segment_cant_spin_out(prog, 26)
+            self.assert_cant_spin_out_segment(prog, 26)
 
         for prog in SEGMENT_SPINOUT_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_spin_out_segment(prog)
@@ -502,7 +502,7 @@ class Segment(TuringTest):
                 segment_cant_spin_out(prog, steps))
 
         for prog in OMNIREASONABLE:
-            self.assert_segment_cant_spin_out(prog, SEGMENT_LIMIT)
+            self.assert_cant_spin_out_segment(prog, SEGMENT_LIMIT)
 
     def test_holdouts(self):
         for cat in ('42h', '24h'):
@@ -510,14 +510,14 @@ class Segment(TuringTest):
                 self.assert_could_halt_segment(prog)
 
         for prog in read_holdouts('42q'):
-            self.assert_segment_cant_halt(prog, 2)
+            self.assert_cant_halt_segment(prog, 2)
             self.assert_could_spin_out_segment(prog)
 
         for cat in ('32q', '23q'):
             for prog in read_holdouts(cat):
-                self.assert_segment_cant_halt(prog, 2)
-                self.assert_segment_cant_blank(prog, 2)
-                self.assert_segment_cant_spin_out(prog, 3)
+                self.assert_cant_halt_segment(prog, 2)
+                self.assert_cant_blank_segment(prog, 2)
+                self.assert_cant_spin_out_segment(prog, 3)
 
 
 def branch_last(prog: str) -> list[str]:
@@ -614,7 +614,7 @@ class Simple(TuringTest):
 
                     if prog[0] != '0' and marks > 2:
                         self.assertEqual(blanks, {})
-                        self.assert_cant_blank(prog, 16)
+                        self.assert_cant_blank_backward(prog, 16)
 
             else:
                 self.assert_marks(0)
@@ -625,11 +625,11 @@ class Simple(TuringTest):
 
             if self.machine.undfnd is not None:
                 self.assert_could_halt(prog)
-                self.assert_cant_spin_out(prog, 6)
+                self.assert_cant_spin_out_backward(prog, 6)
 
             else:
                 self.assert_could_spin_out(prog)
-                self.assert_cant_halt(prog, 46)
+                self.assert_cant_halt_backward(prog, 46)
 
                 self.assertTrue(
                     (graph := Graph(prog)).is_zero_reflexive
@@ -751,14 +751,14 @@ class Recur(TuringTest):
 
             self.assertGreater(period, 1)
 
-            self.assert_cant_halt(prog, 3)
-            self.assert_cant_spin_out(prog, 6)
+            self.assert_cant_halt_backward(prog, 3)
+            self.assert_cant_spin_out_backward(prog, 6)
 
             if blank:
                 self.assert_could_blank(prog)
             else:
                 if prog not in BLANKERS:
-                    self.assert_cant_blank(prog, 81)
+                    self.assert_cant_blank_backward(prog, 81)
                 assert steps is not None
                 self.verify_lin_rec(prog, steps, period)
 
@@ -1221,13 +1221,13 @@ class Prover(RunProver):
             if result < 5:
                 self.assert_could_blank(prog)
             else:
-                self.assert_cant_blank(prog, 14)
+                self.assert_cant_blank_backward(prog, 14)
 
             if self.machine.undfnd is not None:
-                self.assert_cant_spin_out(prog, 3)
+                self.assert_cant_spin_out_backward(prog, 3)
                 self.assert_could_halt(prog)
             else:
-                self.assert_cant_halt(prog, 0)
+                self.assert_cant_halt_backward(prog, 0)
 
                 try:
                     self.assert_could_spin_out(prog)
