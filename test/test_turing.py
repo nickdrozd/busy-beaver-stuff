@@ -332,9 +332,9 @@ class Reason(TuringTest):
                     str(cant_spin_out(prog, depth = REASON_LIMIT)))
 
         totals = {
-            209: CANT_HALT_FALSE_NEGATIVES,
-            274: CANT_BLANK_FALSE_NEGATIVES,
-            117: CANT_SPIN_OUT_FALSE_NEGATIVES,
+            219: CANT_HALT_FALSE_NEGATIVES,
+            278: CANT_BLANK_FALSE_NEGATIVES,
+            123: CANT_SPIN_OUT_FALSE_NEGATIVES,
         }
 
         for total, cat in totals.items():  # type: ignore[assignment]
