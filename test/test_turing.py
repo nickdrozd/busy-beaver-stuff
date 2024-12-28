@@ -334,7 +334,7 @@ class Reason(TuringTest):
         totals = {
             219: CANT_HALT_FALSE_NEGATIVES,
             278: CANT_BLANK_FALSE_NEGATIVES,
-            139: CANT_SPIN_OUT_FALSE_NEGATIVES,
+            195: CANT_SPIN_OUT_FALSE_NEGATIVES,
         }
 
         for total, cat in totals.items():  # type: ignore[assignment]
