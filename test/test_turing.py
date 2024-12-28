@@ -294,7 +294,7 @@ class Reason(TuringTest):
 
             self.assert_could_spin_out_backward(prog)
 
-        for prog in DONT_SPIN_OUT | HALTERS | RECURS | INFRUL:
+        for prog in NONSPINNERS:
             self.assert_cant_spin_out_backward(prog, 256)
 
     def test_blank(self):
@@ -334,7 +334,7 @@ class Reason(TuringTest):
         totals = {
             219: CANT_HALT_FALSE_NEGATIVES,
             278: CANT_BLANK_FALSE_NEGATIVES,
-            123: CANT_SPIN_OUT_FALSE_NEGATIVES,
+            139: CANT_SPIN_OUT_FALSE_NEGATIVES,
         }
 
         for total, cat in totals.items():  # type: ignore[assignment]
@@ -490,7 +490,7 @@ class Segment(TuringTest):
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_segment(prog)
 
-        for prog in DONT_SPIN_OUT | HALTERS | RECURS | INFRUL:
+        for prog in NONSPINNERS:
             self.assert_cant_spin_out_segment(prog, 26)
 
         for prog in SEGMENT_SPINOUT_FALSE_NEGATIVES | UNREASONABLE:
