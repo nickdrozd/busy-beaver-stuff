@@ -115,9 +115,8 @@ pub fn py_cant_spin_out(prog: &str, depth: Depth) -> BackwardResult {
 
 /***************************************/
 
-#[pyfunction]
-pub fn py_segment_cant_halt(prog: &str, segs: usize) -> Option<usize> {
-    let prog = &CompProg::from_str(prog);
+fn get_comp(prog: &str) -> (CompProg, Params) {
+    let prog = CompProg::from_str(prog);
 
     let (states, colors) = prog
         .keys()
@@ -125,20 +124,21 @@ pub fn py_segment_cant_halt(prog: &str, segs: usize) -> Option<usize> {
 
     let params = (1 + states, 1 + colors);
 
-    segment_cant_halt(prog, params, segs)
+    (prog, params)
+}
+
+#[pyfunction]
+pub fn py_segment_cant_halt(prog: &str, segs: usize) -> Option<usize> {
+    let (comp, params) = get_comp(prog);
+
+    segment_cant_halt(&comp, params, segs)
 }
 
 #[pyfunction]
 pub fn py_segment_cant_blank(prog: &str, segs: usize) -> Option<usize> {
-    let prog = &CompProg::from_str(prog);
+    let (comp, params) = get_comp(prog);
 
-    let (states, colors) = prog
-        .keys()
-        .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
-
-    let params = (1 + states, 1 + colors);
-
-    segment_cant_blank(prog, params, segs)
+    segment_cant_blank(&comp, params, segs)
 }
 
 #[pyfunction]
@@ -146,13 +146,7 @@ pub fn py_segment_cant_spin_out(
     prog: &str,
     segs: usize,
 ) -> Option<usize> {
-    let prog = &CompProg::from_str(prog);
+    let (comp, params) = get_comp(prog);
 
-    let (states, colors) = prog
-        .keys()
-        .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
-
-    let params = (1 + states, 1 + colors);
-
-    segment_cant_spin_out(prog, params, segs)
+    segment_cant_spin_out(&comp, params, segs)
 }
