@@ -302,7 +302,7 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
         || quick_term_or_rec(comp, 301, true)
         || cant_reach(comp, 256).is_settled()
         || check_inf(comp, params, opt_block(comp, 300), 306)
-        || segment_cant_reach(comp, params, 3).is_some()
+        || segment_cant_reach(comp, params, 3).is_refuted()
 }
 
 #[test]
@@ -543,7 +543,7 @@ fn assert_segment(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if cant_reach(prog, params, segs).is_some() {
+        if cant_reach(prog, params, segs).is_refuted() {
             return;
         }
 
@@ -570,14 +570,14 @@ macro_rules! assert_segment_results {
 #[test]
 fn test_segment() {
     assert_segment_results![
-        ((2, 2), 1, (10, 36)),
-        ((2, 2), 0, (15, 106)),
+        ((2, 2), 1, (21, 36)),
+        ((2, 2), 0, (28, 106)),
         //
-        ((3, 2), 1, (1_027, 3_140)),
-        ((3, 2), 0, (1_362, 13_128)),
+        ((3, 2), 1, (1_245, 3_140)),
+        ((3, 2), 0, (2_045, 13_128)),
         //
-        ((2, 3), 1, (684, 2_447)),
-        ((2, 3), 0, (907, 9_168)),
+        ((2, 3), 1, (892, 2_447)),
+        ((2, 3), 0, (1_396, 9_168)),
     ];
 }
 
@@ -585,11 +585,11 @@ fn test_segment() {
 #[ignore]
 fn test_segment_slow() {
     assert_segment_results![
-        ((4, 2), 1, (139_175, 467_142)),
-        ((4, 2), 0, (222_047, 2_291_637)),
+        ((4, 2), 1, (161_731, 467_142)),
+        ((4, 2), 0, (280_689, 2_291_637)),
         //
-        ((2, 4), 1, (114_955, 312_642)),
-        ((2, 4), 0, (166_146, 1_719_237)),
+        ((2, 4), 1, (130_046, 312_642)),
+        ((2, 4), 0, (202_779, 1_719_237)),
     ];
 }
 
@@ -611,7 +611,7 @@ fn assert_blank(params: Params, expected: (u64, u64)) {
             || !run_prover(&prog.show(Some(params)), run as u64)
                 .blanks
                 .is_empty()
-            || segment_cant_blank(prog, params, 11).is_some()
+            || segment_cant_blank(prog, params, 11).is_refuted()
         {
             return;
         }

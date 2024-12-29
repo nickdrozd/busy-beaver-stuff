@@ -12,6 +12,7 @@ use crate::{
     },
     segment::{
         segment_cant_blank, segment_cant_halt, segment_cant_spin_out,
+        SegmentResult as SegmentResultRs,
     },
 };
 
@@ -115,6 +116,43 @@ pub fn py_cant_spin_out(prog: &str, depth: Depth) -> BackwardResult {
 
 /***************************************/
 
+#[expect(non_camel_case_types)]
+#[pyclass]
+pub enum SegmentResult {
+    halt {},
+    blank {},
+    repeat {},
+    spinout {},
+    depth_limit {},
+    segment_limit {},
+    refuted { step: Step },
+}
+
+#[pymethods]
+impl SegmentResult {
+    const fn is_refuted(&self) -> bool {
+        matches!(self, Self::refuted { .. })
+    }
+
+    const fn is_settled(&self) -> bool {
+        !matches!(self, Self::depth_limit {} | Self::segment_limit {})
+    }
+}
+
+impl From<SegmentResultRs> for SegmentResult {
+    fn from(result: SegmentResultRs) -> Self {
+        match result {
+            SegmentResultRs::Halt => Self::halt {},
+            SegmentResultRs::Blank => Self::blank {},
+            SegmentResultRs::Repeat => Self::repeat {},
+            SegmentResultRs::Spinout => Self::spinout {},
+            SegmentResultRs::DepthLimit => Self::depth_limit {},
+            SegmentResultRs::SegmentLimit => Self::segment_limit {},
+            SegmentResultRs::Refuted(step) => Self::refuted { step },
+        }
+    }
+}
+
 fn get_comp(prog: &str) -> (CompProg, Params) {
     let prog = CompProg::from_str(prog);
 
@@ -128,25 +166,25 @@ fn get_comp(prog: &str) -> (CompProg, Params) {
 }
 
 #[pyfunction]
-pub fn py_segment_cant_halt(prog: &str, segs: usize) -> Option<usize> {
+pub fn py_segment_cant_halt(prog: &str, segs: usize) -> SegmentResult {
     let (comp, params) = get_comp(prog);
 
-    segment_cant_halt(&comp, params, segs)
+    segment_cant_halt(&comp, params, segs).into()
 }
 
 #[pyfunction]
-pub fn py_segment_cant_blank(prog: &str, segs: usize) -> Option<usize> {
+pub fn py_segment_cant_blank(prog: &str, segs: usize) -> SegmentResult {
     let (comp, params) = get_comp(prog);
 
-    segment_cant_blank(&comp, params, segs)
+    segment_cant_blank(&comp, params, segs).into()
 }
 
 #[pyfunction]
 pub fn py_segment_cant_spin_out(
     prog: &str,
     segs: usize,
-) -> Option<usize> {
+) -> SegmentResult {
     let (comp, params) = get_comp(prog);
 
-    segment_cant_spin_out(&comp, params, segs)
+    segment_cant_spin_out(&comp, params, segs).into()
 }

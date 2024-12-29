@@ -515,6 +515,7 @@ RECUR_BLANK_IN_PERIOD = {
     "1RB 2LA 0RB  1LA 0LB 1RA": (None,  4),
 
     # 4/2
+    "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD": (0, 21),
     "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC": (None, 4),
     "1RB 1LB  1LA 0RC  0LD 0RB  0LC ...": (None, 6),
     "1RB 1LB  1LA 1RC  0LD 0RB  ... 0LC": (None, 6),
@@ -2211,6 +2212,15 @@ SEGMENT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 2RB 3LA 2RA  1LB 1LA 2LB 3RA",
     "1RB 2RB 3LB 0RA  1LA 3RB 2LA 2RA",
     "1RB 2RB 3RB 2LA  1LB 3RA 0LA 0RA",
+    "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RA",
+    "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA",
+    "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA",
+    "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA",
+    "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB",
+    "1RB 0RB 0LA 2LB  1LB 2LA 3RB 1RA",
+    "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB",
+    "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA",
+    "1RB 2RA 3LB 2LA  1LB 3LA 3RA 1RB",
 
     "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
     "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA",
@@ -2301,6 +2311,11 @@ SEGMENT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1RC  1LC 0RB  1RA 0LD  0LC 1LD",
     "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB",
     "1RB 1RC  1LD 1RD  1LB 0RA  1LA 0LC",
+    "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB",
+    "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA",
+    "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD",
+    "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA",
+    "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB",
 
     "1RB ... 1LB  1LB 1RC 0RC  2LA 2RC 0LB",
     "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
@@ -2380,11 +2395,17 @@ SEGMENT_BLANK_FALSE_NEGATIVES: set[str] = {
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",
     "1RB 1RC  1LC 0RC  1RA 0LD  0LE 1LD  1LA 0RA",
     "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
+    "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  ... 1RD",
+    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB ...",
+
+    "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
+    "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
 
     "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
 
     "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC",
 
+    "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
     "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD",
 }
 
@@ -2463,7 +2484,6 @@ SEGMENT_SPINOUT_FALSE_NEGATIVES: set[str] = {
 
 SEGMENT_STEPS: dict[str, dict[str, int]] = {
     "halt": {
-        "1RB ... 1LB  2LB 2RA 0LB": 3,
         "1RB ... 0RA  1LB 2LA 2RB": 8,
         "1RB 0RB ...  1LB 2RA 0LA": 8,
 
@@ -2485,7 +2505,6 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
         "1RB 2LA 3RA 0LB  2LA ... 2RB 2LA": 18,
 
         "1RB 0RD  1LC 0LB  ... 1RA  1LB 1RD":  4,
-        "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD":  5,
         "1RB 0LD  1RC 0RD  0LA ...  0RA 1LA":  7,
         "1RB 0LB  1LA 0LC  0RA 0LD  1RC ...": 10,
         "1RB ...  0RC 0LA  1RD 0LD  1LC 0LB": 10,
@@ -2533,50 +2552,6 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
         "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": 9,
 
         "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD": 10,
-    },
-
-    "blank": {
-        "1RB 0LC  0LC 0RC  1LC 1LA": 9,
-        "1RB 0LC  1LA 0RC  1RC 1RB": 9,
-        "1RB 0LC  0RC 0RC  1LC 1LA": 9,
-        "1RB 0LC  1LB 0RC  1LC 1LA": 9,
-
-        "1RB 2LB ...  2LA 2RB 1LB": 9,
-        "1RB 2LB 1LA  2LB 2RA 0RA": 9,
-        "1RB 2LB 1RA  2LB 2LA 0RA": 11,
-
-        "1RB 1LB  0LC 0RD  ... 1LA  1RA 0LA": 10,
-        "1RB 1LC  1LD 0RB  ... 0LD  1RA 1LA": 12,
-        "1RB 1LC  0LD 0RD  ... 0LA  1LD 1LA": 13,
-        "1RB 0RC  1LA 1RA  ... 1RD  1LD 0LB": 14,
-        "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": 14,
-        "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": 23,
-        "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": 28,
-        "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA": 30,
-        "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": 43,
-        "1RB 1LB  1RC 0LD  0RD 0RA  1LD 0LA": 47,
-
-        "1RB 2RA 3LA 1LB  0LB 2LA 3RA 1RB": 33,
-        "1RB 0RB 0LA 2LB  1LB 2LA 3RB 1RA": 33,
-        "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB": 33,
-        "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA": 38,
-        "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA": 39,
-        "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA": 40,
-        "1RB 2RB 3LA 2RA  1LB 1LA 1LB 3RA": 43,
-        "1RB 2RA 3LB 2LA  1LB 3LA 3RA 1RB": 45,
-        "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA": 48,
-
-        "1RB 1RA  1LC 0LD  0RA 1LB  ... 0LE  1RC 1RB": 21,
-        "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  ... 1RD": 24,
-        "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB ...": 28,
-
-        "1RB 1LB 2LB  1RC 1LA 0RA  1LA 2RA ...":  9,
-        "1RB 1RA ...  1LC 1LC 2LA  2RA 1LB 1LA": 12,
-
-        "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": 35,
-        "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD": 43,
-
-        "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...": 36,
     },
 
     "spinout": {
@@ -2686,7 +2661,6 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
         "1RB 0RB  1LB 1LC  1RA 0LD  1LC 0LA": 26,
 
         "1RB 0RC 2LA  1LA 2LB 0LA  2RC 2RB 1LB": 5,
-        "1RB 0RB 2LA  2LB 2RC 0RC  0LB 1RC 1LA": 6,
         "1RB 2RA 0RB  1LC 0LA 2RB  2LC 2LA 1RA": 5,
 
         "1RB 0RB  1RC 0LD  1LC 1RB  0RA 1LE  1LD 1LA": 3,
@@ -3955,7 +3929,6 @@ NONBLANKERS = (
     | {prog for prog, marks in PROVER_SPINOUT.items()
            if not isinstance(marks, int) or marks > 3}
     | {prog for prog, (marks, _) in HALT.items() if marks > 3}
-    | set(SEGMENT_STEPS['blank'])
     | set(CANT_REACH_STEPS['blank'])
 ) - DO_BLANK
 

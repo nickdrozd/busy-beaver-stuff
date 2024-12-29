@@ -12,9 +12,52 @@ use crate::{
     tape::{BasicBlock as Block, Block as _, Count},
 };
 
+pub type Step = usize;
 type Segments = usize;
 
 const MAX_DEPTH: usize = 3_000;
+
+/**************************************/
+
+pub enum SegmentResult {
+    Halt,
+    Blank,
+    Repeat,
+    Spinout,
+    DepthLimit,
+    SegmentLimit,
+    Refuted(Step),
+}
+
+impl SegmentResult {
+    pub const fn is_refuted(&self) -> bool {
+        matches!(self, Self::Refuted(_))
+    }
+}
+
+pub fn segment_cant_halt(
+    prog: &CompProg,
+    params: Params,
+    segs: Segments,
+) -> SegmentResult {
+    segment_cant_reach(prog, params, segs, &Halt)
+}
+
+pub fn segment_cant_blank(
+    prog: &CompProg,
+    params: Params,
+    segs: Segments,
+) -> SegmentResult {
+    segment_cant_reach(prog, params, segs, &Blank)
+}
+
+pub fn segment_cant_spin_out(
+    prog: &CompProg,
+    params: Params,
+    segs: Segments,
+) -> SegmentResult {
+    segment_cant_reach(prog, params, segs, &Spinout)
+}
 
 /**************************************/
 
@@ -35,28 +78,14 @@ enum SearchResult {
 use Goal::*;
 use SearchResult::*;
 
-pub fn segment_cant_halt(
-    prog: &CompProg,
-    params: Params,
-    segs: Segments,
-) -> Option<Segments> {
-    segment_cant_reach(prog, params, segs, &Halt)
-}
-
-pub fn segment_cant_blank(
-    prog: &CompProg,
-    params: Params,
-    segs: Segments,
-) -> Option<Segments> {
-    segment_cant_reach(prog, params, segs, &Blank)
-}
-
-pub fn segment_cant_spin_out(
-    prog: &CompProg,
-    params: Params,
-    segs: Segments,
-) -> Option<Segments> {
-    segment_cant_reach(prog, params, segs, &Spinout)
+impl From<Goal> for SegmentResult {
+    fn from(goal: Goal) -> Self {
+        match goal {
+            Halt => Self::Halt,
+            Blank => Self::Blank,
+            Spinout => Self::Spinout,
+        }
+    }
 }
 
 fn segment_cant_reach(
@@ -64,7 +93,7 @@ fn segment_cant_reach(
     params: Params,
     segs: Segments,
     goal: &Goal,
-) -> Option<Segments> {
+) -> SegmentResult {
     assert!(segs >= 2);
 
     let prog = AnalyzedProg::new(prog, params);
@@ -72,24 +101,24 @@ fn segment_cant_reach(
     if (goal == &Halt && prog.halts.is_empty())
         || (goal == &Spinout && prog.spinouts.is_empty())
     {
-        return Some(0);
+        return SegmentResult::Refuted(0);
     }
 
     for seg in 2..=segs {
         let Some(result) = all_segments_reached(&prog, 2 + seg, goal)
         else {
-            return Some(seg);
+            return SegmentResult::Refuted(seg);
         };
 
         match result {
             Reached => continue,
-            Limit => return None,
-            Repeat => return Some(seg),
-            Found(found) => return (found != *goal).then_some(seg),
+            Limit => return SegmentResult::DepthLimit,
+            Repeat => return SegmentResult::Repeat,
+            Found(found) => return found.into(),
         }
     }
 
-    None
+    SegmentResult::SegmentLimit
 }
 
 /**************************************/
@@ -862,22 +891,6 @@ fn test_reached_states() {
         assert_eq!(
             prog.spinouts.keys().copied().collect::<Set<_>>(),
             spinouts.into_iter().collect::<Set<_>>()
-        );
-    }
-}
-
-#[test]
-fn test_cant_halt() {
-    let results = [
-        ("1RB ...  ... ...", (2, 2), None),
-        ("1RB ...  1LB 0RC  1LC 1LA", (3, 2), None),
-        ("1RB 1RC  0LA 0RA  0LB ...", (3, 2), Some(2)),
-    ];
-
-    for (prog, params, result) in results {
-        assert_eq!(
-            result,
-            segment_cant_halt(&CompProg::from_str(prog), params, 2),
         );
     }
 }

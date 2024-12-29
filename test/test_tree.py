@@ -365,7 +365,7 @@ def capture_42h(prog: str) -> None:
     if cant_halt(prog, 10).is_refuted():
         return
 
-    if segment_cant_halt(prog, 2) is not None:
+    if segment_cant_halt(prog, 2).is_refuted():
         return
 
     PROGS.put(prog)
@@ -394,13 +394,13 @@ def capture_24(prog: str) -> None:
     if cant_halt(prog, 10).is_refuted():
         return
 
-    if segment_cant_halt(prog, 2) is not None:
+    if segment_cant_halt(prog, 2).is_refuted():
         return
 
     if quick_term_or_rec(prog, 10_000):
         return
 
-    if segment_cant_halt(prog, 8) is not None:
+    if segment_cant_halt(prog, 8).is_refuted():
         return
 
     PROGS.put(prog)
@@ -431,7 +431,7 @@ def capture_42q(prog: str) -> None:
     if quick_term_or_rec(prog, 40_000):
         return
 
-    if segment_cant_spin_out(prog, 8) is not None:
+    if segment_cant_spin_out(prog, 8).is_refuted():
         return
 
     PROGS.put(prog)
