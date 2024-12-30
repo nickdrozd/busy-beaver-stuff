@@ -495,6 +495,9 @@ class Segment(TuringTest):
                     steps,
                     cant_reach(prog, steps))
 
+                self.assertIsNone(
+                    cant_reach(prog, steps - 1))
+
     def test_omnireasonable(self):
         for prog in OMNIREASONABLE:
             self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
