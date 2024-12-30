@@ -460,14 +460,6 @@ class Segment(TuringTest):
         for prog in SEGMENT_HALT_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_halt_segment(prog)
 
-        for prog, steps in SEGMENT_STEPS['halt'].items():
-            self.assertEqual(
-                steps,
-                segment_cant_halt(prog, steps))
-
-        for prog in OMNIREASONABLE:
-            self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
-
     def test_blank(self):
         for prog in NONBLANKERS:
             self.assert_cant_blank_segment(prog, SEGMENT_LIMIT)
@@ -477,14 +469,6 @@ class Segment(TuringTest):
 
         for prog in SEGMENT_BLANK_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_blank_segment(prog)
-
-        for prog, steps in SEGMENT_STEPS['blank'].items():
-            self.assertEqual(
-                steps,
-                segment_cant_blank(prog, steps))
-
-        for prog in OMNIREASONABLE:
-            self.assert_cant_blank_segment(prog, SEGMENT_LIMIT)
 
     def test_spinout(self):
         for prog in SPINNERS - MACRO_SPINOUT:
@@ -496,12 +480,25 @@ class Segment(TuringTest):
         for prog in SEGMENT_SPINOUT_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_spin_out_segment(prog)
 
-        for prog, steps in SEGMENT_STEPS['spinout'].items():
-            self.assertEqual(
-                steps,
-                segment_cant_spin_out(prog, steps))
+    def test_steps(self):
+        cant_reaches = {
+            "halt": segment_cant_halt,
+            "blank": segment_cant_blank,
+            "spinout": segment_cant_spin_out,
+        }
 
+        for cat, data in SEGMENT_STEPS.items():
+            cant_reach = cant_reaches[cat]
+
+            for prog, steps in data.items():
+                self.assertEqual(
+                    steps,
+                    cant_reach(prog, steps))
+
+    def test_omnireasonable(self):
         for prog in OMNIREASONABLE:
+            self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
+            self.assert_cant_blank_segment(prog, SEGMENT_LIMIT)
             self.assert_cant_spin_out_segment(prog, SEGMENT_LIMIT)
 
     def test_holdouts(self):
