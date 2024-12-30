@@ -484,7 +484,7 @@ class Segment(TuringTest):
                 segment_cant_blank(prog, steps))
 
         for prog in OMNIREASONABLE:
-            self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
+            self.assert_cant_blank_segment(prog, SEGMENT_LIMIT)
 
     def test_spinout(self):
         for prog in SPINNERS - MACRO_SPINOUT:
