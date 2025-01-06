@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from unittest import TestCase
-
 import re
 from itertools import product
 from typing import TYPE_CHECKING
+from unittest import TestCase
 
-from test.utils import read_progs
 from test.lin_rec import StrictLinRecMachine
-
-from tm.show import show_state
+from test.utils import read_progs
 from tm.machine import quick_term_or_rec
+from tm.show import show_state
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -44,8 +42,7 @@ class TestLinRado(TestCase):
         self.progs_strict, self.progs_loose = set(), set()
 
         for prog in yield_programs(states, colors, bool(halt), rejects):
-            # pylint: disable = redefined-loop-name
-            prog = prog.replace('1R_', '...')
+            prog = prog.replace('1R_', '...')  # noqa: PLW2901
 
             if not quick_term_or_rec(prog, loose):
                 self.progs_loose.add(prog)

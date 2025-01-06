@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from tm.show import show_state
 from tools import parse
@@ -50,11 +50,11 @@ class Graph:
     @property
     def exit_points(self) -> ConGraph:
         return {
-            state: set(
+            state: {
                 conn
                 for conn in connections
                 if conn is not None
-            )
+            }
             for state, connections in self.arrows.items()
         }
 

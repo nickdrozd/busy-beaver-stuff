@@ -1,8 +1,7 @@
-# pylint: disable = line-too-long
-
 from unittest import TestCase
 
-from tm.rules import apply_mult, apply_ops, make_exp as Exp
+from tm.rules import apply_mult, apply_ops
+from tm.rules import make_exp as Exp
 
 
 def apply_loop(count: int, times: int, mul: int, add: int) -> int:

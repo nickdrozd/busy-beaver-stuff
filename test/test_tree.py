@@ -1,37 +1,32 @@
 from __future__ import annotations
 
-from unittest import TestCase, skipUnless
-from multiprocessing import Queue, Manager, Pool, set_start_method
+from multiprocessing import Manager, Pool, Queue, set_start_method
 from typing import TYPE_CHECKING
+from unittest import TestCase, skipUnless
 
-from test.utils import read_progs, RUN_SLOW
 from test.lin_rec import run_loose_linrec_machine
 from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
-
-from tools.graph import Graph
-
-from tm.macro import opt_block
+from test.utils import RUN_SLOW, read_progs
 from tm.machine import (
     Machine,
-    run_prover,
     quick_term_or_rec,
+    run_prover,
 )
+from tm.macro import opt_block
 from tm.reason import (
-    cant_halt,
     cant_blank,
+    cant_halt,
     cant_spin_out,
-
     segment_cant_halt,
     segment_cant_spin_out,
 )
 from tm.rust_stuff import tree_progs
-
+from tools.graph import Graph
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
     from test.lin_rec import MachineResult
-
     from tm.machine import Params
 
     BasicMachine = Machine | MachineResult
@@ -108,7 +103,7 @@ class TestTree(TestCase):
     progs: set[str]
 
     def setUp(self):
-        global PROGS, RESULTS  # pylint: disable = global-statement
+        global PROGS, RESULTS  # noqa: PLW0603
 
         PROGS = Queue()
 
@@ -456,7 +451,6 @@ class Slow(TestTree):
             'blanks': (169, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'spnout': (171, "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD"),
             'halted': (107, "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA"),
-            # pylint: disable = line-too-long
             'infrul': (MAXINF_42H, "1RB 0LD  0LC 1RA  ... 1LA  0RA 1LD"),
         })
 

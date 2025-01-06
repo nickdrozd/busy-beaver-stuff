@@ -1,8 +1,7 @@
 import sys
 
-from tm.macro import show_comp, MacroProg
 from tm.machine import Machine
-
+from tm.macro import MacroProg, show_comp
 from tools.normalize import normalize
 
 if __name__ == '__main__':

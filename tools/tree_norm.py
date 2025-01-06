@@ -1,5 +1,4 @@
 from tm.tape import Tape
-
 from tools.normalize import Normalizer
 
 

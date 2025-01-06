@@ -1,5 +1,4 @@
-# type: ignore
-# pylint: disable = line-too-long, too-many-lines
+# type: ignore  # noqa: PGH003
 # pylint: disable = pointless-statement, expression-not-assigned
 
 from __future__ import annotations
@@ -8,11 +7,16 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 from tm.num import (
+    ADDS,
+    DIVS,
+    EXPS,
+    MULS,
+    ExpModLimit,
     Tet,
     show_number,
-    ExpModLimit,
+)
+from tm.num import (
     make_exp as Exp,
-    ADDS, MULS, DIVS, EXPS,
 )
 
 if TYPE_CHECKING:
@@ -109,7 +113,7 @@ class TestNum(TestCase):
 
             self.assertEqual(
                 val,
-                eval(str(num)))  # pylint: disable = eval-used
+                eval(str(num)))  # pylint: disable = eval-used  # noqa: S307
 
         if rep is not None:
             self.assertEqual(rep, str(num))

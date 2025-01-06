@@ -1,4 +1,4 @@
-# pylint: disable = line-too-long, too-many-lines, consider-using-namedtuple-or-dataclass
+# pylint: disable = consider-using-namedtuple-or-dataclass
 
 ## test turing #######################################################
 

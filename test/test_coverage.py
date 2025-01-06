@@ -1,5 +1,3 @@
-# pylint: disable = line-too-long
-
 from unittest import TestCase
 
 from tm.machine import Machine

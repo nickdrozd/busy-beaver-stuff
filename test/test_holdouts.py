@@ -1,9 +1,7 @@
 from unittest import TestCase
 
 from test.utils import read_holdouts
-
 from tm.machine import quick_term_or_rec
-
 
 STEPS = 1_000
 

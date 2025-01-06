@@ -1,7 +1,7 @@
-import sys
 import shlex
-import tempfile
 import subprocess
+import sys
+import tempfile
 
 from tools.dot import make_dot
 
@@ -12,5 +12,8 @@ if __name__ == '__main__':
         with open(path, 'w') as temp:
             temp.write(make_dot(prog))
 
-        subprocess.call(shlex.split(
-            f'dot {path} -T png -o {prog.replace(" ", "_")}.png'))
+        subprocess.call(  # noqa: S603
+            shlex.split(
+                f'dot {path} -T png -o {prog.replace(" ", "_")}.png'
+            )
+        )

@@ -1,14 +1,12 @@
-import sys
 import argparse
+import sys
 
 from tm.reason import (
-    cant_halt,
     cant_blank,
+    cant_halt,
     cant_spin_out,
-
     segment_cant_halt,
 )
-
 
 CYCLES = 2_000
 CANT_REACH = cant_spin_out

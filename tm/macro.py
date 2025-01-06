@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Protocol
 from collections import defaultdict
+from typing import TYPE_CHECKING, Protocol
 
-from tm.show import show_comp
 from tm.parse import tcompile
 from tm.rust_stuff import py_opt_block as opt_block
+from tm.show import show_comp
 
 if TYPE_CHECKING:
-    from tm.parse import Color, State, Slot, Instr, CompProg, Params
+    from tm.parse import Color, CompProg, Instr, Params, Slot, State
 
     Tape = tuple[Color, ...]
     Config = tuple[State, tuple[bool, Tape]]
@@ -126,9 +126,8 @@ def prog_params(comp: GetInstr) -> Params:
     else:
         assert isinstance(comp, dict)
 
-        # pylint: disable = line-too-long
-        base_states = len(range(1 + max(map(lambda s: s[2], comp.values()))))
-        base_colors = len(range(1 + max(map(lambda s: s[0], comp.values()))))
+        base_states = len(range(1 + max(s[2] for s in comp.values())))
+        base_colors = len(range(1 + max(s[0] for s in comp.values())))
 
     return base_states, base_colors
 
@@ -352,9 +351,9 @@ class BacksymbolLogic:
         backspan = self.converter.color_to_tape(backsymbol)
 
         return state, (
-            (False, (macro_color,) + backspan)
+            (False, (macro_color, *backspan))
             if at_right else
-            ( True, backspan + (macro_color,))
+            ( True, (*backspan, macro_color))
         )
 
     def reconstruct_outputs(self, config: Config) -> Instr:

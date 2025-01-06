@@ -1,7 +1,7 @@
-import sys
 import argparse
+import sys
 
-from tools.normalize import normalize, expand
+from tools.normalize import expand, normalize
 from tools.tree_norm import tree_norm
 
 if __name__ == '__main__':

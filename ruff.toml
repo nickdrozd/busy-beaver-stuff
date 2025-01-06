@@ -1,0 +1,43 @@
+line-length = 72
+
+[lint]
+select = ["ALL"]
+
+ignore = [
+    "ANN204",   # none annotation for __init__
+    "COM812",   # missing trailing commas
+    "D",        # docstrings
+    "E741",     # ambiguous variable name
+    "EM",       # exception strings
+    "ERA001",   # commented-out code
+    "FBT001",   # boolean positional arg
+    "FBT002",   # boolean default arg
+    "N",        # naming
+    "PLR2004",  # magic value comparison
+    "PTH123",   # Path.open
+    "PYI",      # pyi / typing
+    "Q000",     # double quotes
+    "RUF018",   # assertion assignment
+    "S101",     # assertions
+    "SIM300",   # yoda comparison
+    "T201",     # print
+    "TRY003",   # exception messages
+]
+
+[lint.per-file-ignores]
+"test/**" = [
+    "ANN",      # missing annotations
+    "E501",     # line too long
+    "PT009",    # unittest assertions
+    "PT027",    # unittest assert raise
+]
+
+[lint.pylint]
+max-args       =  7  # c
+max-locals     = 19  # machine
+max-returns    =  7  # prover
+max-branches   = 23  # num
+max-statements = 70  # machine
+
+[lint.mccabe]
+max-complexity = 26  # num

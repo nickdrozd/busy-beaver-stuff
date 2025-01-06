@@ -1,59 +1,54 @@
-# pylint: disable = too-many-lines
+# ruff: noqa: F405
 from __future__ import annotations
 
 import re
+from itertools import product
 from math import isclose, log10
 from typing import TYPE_CHECKING
-from itertools import product
 from unittest import TestCase, expectedFailure, skip, skipUnless
 
-# pylint: disable-next = wildcard-import, unused-wildcard-import
-from test.prog_data import *
-from test.test_num import assert_num_counts, clear_caches
 from test.lin_rec import (
     LinRecSampler,
-    run_loose_linrec_machine,
     StrictLinRecMachine,
+    run_loose_linrec_machine,
 )
-from test.utils import read_holdouts, RUN_SLOW
-
+from test.prog_data import *  # noqa: F403
+from test.test_num import assert_num_counts, clear_caches
+from test.utils import RUN_SLOW, read_holdouts
+from tm.machine import (
+    Machine,
+    quick_term_or_rec,
+    show_number,
+    show_slot,
+)
 from tm.macro import (
-    tcompile,
-    show_comp,
-    opt_block,
     MacroProg,
+    opt_block,
     prog_params,
+    show_comp,
+    tcompile,
 )
 from tm.reason import (
     BackwardResult,
-
-    cant_halt,
     cant_blank,
+    cant_halt,
     cant_spin_out,
-
-    segment_cant_halt,
     segment_cant_blank,
+    segment_cant_halt,
     segment_cant_spin_out,
-)
-from tm.machine import (
-    show_slot,
-    show_number,
-    Machine,
-    quick_term_or_rec,
 )
 from tm.rust_stuff import (
     MachineResult,
     run_quick_machine,
 )
-
 from tools import get_params
 from tools.graph import Graph
 from tools.instr_seq import instr_seq
 from tools.normalize import normalize
 
 if TYPE_CHECKING:
-    from typing import Any
     from collections.abc import Mapping
+    from typing import Any
 
     from test.lin_rec import Tapes
     from tm.machine import Count
@@ -89,7 +84,6 @@ class TuringTest(TestCase):
         except AssertionError:
             try:
                 self.assertEqual(
-                    # pylint: disable = used-before-assignment
                     actual_marks,
                     marks - 1)
             except AssertionError:
@@ -253,7 +247,6 @@ class TuringTest(TestCase):
 
     def assert_could_spin_out_segment(self, prog: str):
         self.assertFalse(
-            # pylint: disable = line-too-long
             segment_cant_spin_out(prog, segs = SEGMENT_LIMIT).is_refuted(),
             f'segment spin out false positive: "{prog}"')
 
@@ -528,7 +521,7 @@ def branch_last(prog: str) -> list[str]:
 
     assert len(open_slots) == 1
 
-    open_slot = list(open_slots)[0]
+    open_slot = next(iter(open_slots))
 
     all_instrs = product(
         range(colors),
@@ -739,8 +732,7 @@ class Recur(TuringTest):
     ):
         for prog, (steps, period) in prog_data.items():
             if isinstance(period, tuple):
-                # pylint: disable = redefined-loop-name
-                period, qsihlt_diff = period
+                period, qsihlt_diff = period  # noqa: PLW2901
             else:
                 qsihlt_diff = 0
 
@@ -1280,7 +1272,7 @@ class Prover(RunProver):
     def test_prover_false_positive(self):
         prog = "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE"
 
-        for backsym in range(0, 7):
+        for backsym in range(0, 7):  # noqa: PIE808
             self.run_bb(
                 prog,
                 backsym = backsym or None,

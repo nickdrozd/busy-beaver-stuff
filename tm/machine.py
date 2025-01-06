@@ -2,19 +2,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from tm.macro import MacroInfLoop, make_macro
+from tm.prover import ConfigLimit, Prover
+from tm.rules import InfiniteRule, RuleLimit, SuspectedRule, apply_rule
+from tm.rust_stuff import (
+    py_quick_term_or_rec as quick_term_or_rec,  # noqa: F401
+)
+from tm.rust_stuff import run_prover  # noqa: F401
+from tm.show import show_comp, show_slot
 from tm.tape import Tape, show_number
-from tm.prover import Prover, ConfigLimit
-from tm.show import show_slot, show_comp
-from tm.macro import make_macro, MacroInfLoop
-from tm.rules import apply_rule, RuleLimit, InfiniteRule, SuspectedRule
-# pylint: disable-next = unused-import, line-too-long
-from tm.rust_stuff import run_prover, py_quick_term_or_rec as quick_term_or_rec  # noqa: F401
 
 if TYPE_CHECKING:
     from typing import Self
 
+    from tm.macro import GetInstr, Params, Slot, State
     from tm.tape import Count
-    from tm.macro import State, Slot, GetInstr, Params
 
     Undfnd = tuple[int, Slot]
 

@@ -1,8 +1,7 @@
 from unittest import TestCase
 
-from test.prog_data import NORMALIZE, EXPAND, TNF
-
-from tools.normalize import normalize, expand
+from test.prog_data import EXPAND, NORMALIZE, TNF
+from tools.normalize import expand, normalize
 from tools.tree_norm import tree_norm
 
 

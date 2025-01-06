@@ -1,11 +1,10 @@
 from unittest import TestCase
 
+from test.prog_data import GRAPHS, KERNEL, MODULAR, SPAGHETTI
 from test.utils import read_progs
-from test.prog_data import GRAPHS, SPAGHETTI, KERNEL, MODULAR
-
-from tools.graph import Graph
-from tm.show import show_state
 from tm.rust_stuff import py_is_connected as is_connected
+from tm.show import show_state
+from tools.graph import Graph
 
 
 class TestGraph(TestCase):
@@ -59,7 +58,6 @@ class TestGraph(TestCase):
         )
 
     def test_graph(self):
-        # pylint: disable = line-too-long
         for prog, (flat, norm, conn, irr, zrefl, entries, exits) in GRAPHS.items():
             self.graph = Graph(prog)
 
@@ -74,10 +72,10 @@ class TestGraph(TestCase):
             self.assert_entry_points(entries)
             self.assert_exit_points(exits)
 
-            self.assertTrue((
+            self.assertTrue(
                 self.graph.zero_reflexive_states
                 <= self.graph.reflexive_states
-            ))
+            )
 
             if len(self.graph.states) == 2:
                 self.assertTrue(

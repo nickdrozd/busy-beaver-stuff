@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tm.tape import Tape
-
 from tools.normalize import Normalizer
 
 if TYPE_CHECKING:

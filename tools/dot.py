@@ -1,4 +1,5 @@
-from tools.graph import Graph, show_state as conv
+from tools.graph import Graph
+from tools.graph import show_state as conv
 
 COLORS = (
     'blue',

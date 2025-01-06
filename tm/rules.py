@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol
 from itertools import pairwise
+from typing import TYPE_CHECKING, Protocol
 
 from tm.num import (
+    Add,
+    Div,
+    Exp,
+    ExpModLimit,
+    ModDepthLimit,
+    Mul,
     make_exp,
-    Add, Mul, Div, Exp,
-    ExpModLimit, ModDepthLimit,
 )
 
 ########################################
@@ -14,8 +18,8 @@ from tm.num import (
 Plus = int
 
 if TYPE_CHECKING:
-    from tm.num import Num, Count
-    from tm.tape import Index, Counts
+    from tm.num import Count, Num
+    from tm.tape import Counts, Index
 
     Mult = tuple[int, int]
 
@@ -74,20 +78,16 @@ def calculate_diff(*counts: Count) -> Op | None:
     _, cnt3, cnt4 = rest
 
     if not isinstance(count_1, int):
-        assert (
-            not isinstance(count_2, int)
-            and not isinstance(cnt3, int)
-            and not isinstance(cnt4, int)
-        )
+        assert not isinstance(count_2, int)
+        assert not isinstance(cnt3, int)
+        assert not isinstance(cnt4, int)
 
         return calculate_op_seq(count_1, count_2, cnt3, cnt4)
 
-    assert (
-        isinstance(count_1, int)
-        and isinstance(count_2, int)
-        and isinstance(cnt3, int)
-        and isinstance(cnt4, int)
-    )
+    assert isinstance(count_1, int)
+    assert isinstance(count_2, int)
+    assert isinstance(cnt3, int)
+    assert isinstance(cnt4, int)
 
     div, mod = divmod(count_2, count_1)
 
@@ -242,7 +242,7 @@ def make_rule(*countses: Counts) -> Rule | None:
 
         # print(f'inf: {rule}')
 
-        raise InfiniteRule()
+        raise InfiniteRule
 
     return rule
 
@@ -303,7 +303,7 @@ def apply_rule(rule: Rule, tape: IndexTape) -> Count | None:
                     assert diff < 0
                     result = min_res
             case ops:
-                result = apply_ops(count, times, ops) # type: ignore
+                result = apply_ops(count, times, ops) # type: ignore[arg-type]
 
         tape.set_count(pos, result)
 

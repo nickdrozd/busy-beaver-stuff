@@ -3,12 +3,13 @@ import sys
 from tm.show import show_slot
 from tools.instr_seq import instr_seq
 
+
 def format_sequence(prog: str) -> None:
     print(f'    "{prog.strip()}": {{')
 
     for partial, step, slot in instr_seq(prog):
         print(
-            "        \"{}\": ({:2d}, '{}'),".format(
+            "        \"{}\": ({:2d}, '{}'),".format(  # noqa: UP032
                 partial,
                 step,
                 show_slot(slot),

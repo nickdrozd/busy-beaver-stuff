@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import sys
-
 from functools import reduce
 from typing import TYPE_CHECKING
 
-from test.utils import read_holdouts  # noqa: F401
+from test.utils import read_holdouts
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
 
 def profile(function: Null) -> Null:
     def wrapper() -> None:
-        import yappi  # type: ignore
+        import yappi  # type: ignore[import-not-found]
 
         yappi.set_clock_type('cpu')
         yappi.start()
@@ -36,7 +35,7 @@ def profile(function: Null) -> Null:
 def get_holdouts() -> list[str]:
     return sorted(
         reduce(
-            lambda acc, cat: acc | read_holdouts(cat), # type: ignore
+            lambda acc, cat: acc | read_holdouts(cat), # type: ignore[arg-type, operator, return-value]
             ('32q', '23q', '42h', '42q', '24h'),
             set(),
         )

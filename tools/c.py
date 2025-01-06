@@ -1,3 +1,4 @@
+# ruff: noqa: Q001
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,8 +7,8 @@ from tm.show import show_state
 from tools import parse
 
 if TYPE_CHECKING:
+    from tm.parse import Color, Instr, Shift, State
     from tools import Switch
-    from tm.parse import Color, Shift, State, Instr
 
 
 def make_comment(st: State, co: Color) -> str:

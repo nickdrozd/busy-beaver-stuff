@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tools import parse
 from tm.show import show_instr
+from tools import parse
 
 if TYPE_CHECKING:
-    from typing import Self
     from collections.abc import Iterator
+    from typing import Self
 
+    from tm.parse import Color, Instr, Slot, State
     from tools import Switch
-    from tm.parse import Color, State, Slot, Instr
 
 
 def expand(prog: str) -> str:
@@ -172,7 +172,7 @@ class Normalizer:
                     self.swap_colors(color, norm)
 
                 todo = rest
-            else:
+            else:  # noqa: PLW0120
                 break
 
         return self

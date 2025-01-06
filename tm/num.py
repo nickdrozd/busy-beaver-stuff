@@ -1,13 +1,15 @@
+# ruff: noqa: E501, SIM102, PLR0911
 # pylint: disable = confusing-consecutive-elif, too-many-try-statements
-# pylint: disable = too-many-lines, too-many-return-statements, too-complex
+# pylint: disable = too-complex
 
 from __future__ import annotations
 
 import itertools
 from abc import abstractmethod
-from math import sqrt, floor, ceil, log, log2, log10, gcd as pgcd
-from functools import cache
 from collections import defaultdict
+from functools import cache
+from math import ceil, floor, log, log2, log10, sqrt
+from math import gcd as pgcd
 
 
 class ExpModLimit(Exception):
@@ -17,7 +19,7 @@ class ModDepthLimit(Exception):
     pass
 
 
-type Count = int | Num  # pylint: disable = used-before-assignment
+type Count = int | Num
 
 
 ADDS: dict[Count, dict[Num, Add]] = defaultdict(dict)
@@ -391,7 +393,6 @@ class Mul(Num):
         r_dig = self.r.digits()
 
         return r_dig + (
-            # pylint: disable = used-before-assignment
             l.digits()
             if not isinstance(l := self.l, int) else
             round(log10(l))
@@ -446,7 +447,8 @@ class Mul(Num):
             if isinstance(l, int):
                 return -l * r
 
-            assert isinstance(l, Exp) and isinstance(r, Add), self
+            assert isinstance(l, Exp), self
+            assert isinstance(r, Add), self
 
             return l * -r
 
@@ -475,7 +477,7 @@ class Mul(Num):
 
             if l != -1 and l == lo:
                 if (not isinstance(nr := r + ro, Add)  # no-branch
-                        or (nr.l != r and nr.l != ro)):
+                        or (nr.l != r and nr.l != ro)):  # noqa: PLR1714
                     return l * nr
 
             if l == ro:
@@ -519,7 +521,7 @@ class Mul(Num):
             if lo.depth < self.depth:
                 return lo + (self + ro)
 
-        elif isinstance(other, Exp):
+        elif isinstance(other, Exp):  # noqa: SIM114
             return other + self
 
         elif isinstance(other, Div):
@@ -598,9 +600,11 @@ class Mul(Num):
                 return l < ro
 
             if self.is_exp_coef and other.is_exp_coef:
-                # pylint: disable = line-too-long, no-else-return
-                assert isinstance(l, int) and isinstance(lo, int)
-                assert isinstance(r, Exp) and isinstance(ro, Exp)
+                # pylint: disable = no-else-return
+                assert isinstance(l, int)
+                assert isinstance(lo, int)
+                assert isinstance(r, Exp)
+                assert isinstance(ro, Exp)
 
                 assert (base := r.base) == ro.base
 
@@ -613,7 +617,7 @@ class Mul(Num):
 
                     return ceil(l / lo) <= (base ** diff)  # type: ignore[no-any-return]
 
-                else:
+                else:  # noqa: RET505
                     if not isinstance(diff := rexp - roexp, int):  # no-branch
                         return False  # no-cover
 
@@ -866,7 +870,7 @@ class Exp(Num):
 
         return round(log10(self.base) * 10 ** log10(exp))
 
-    def __mod__(self, mod: int) -> int:
+    def __mod__(self, mod: int) -> int:  # noqa: PLR0912
         if mod == 1:
             return 0
 
@@ -2235,8 +2239,7 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     try:
         return values[period]
     except KeyError:
-        # pylint: disable = raise-missing-from
-        raise ExpModLimit(f'({base} ** {exp}) % {mod}')
+        raise ExpModLimit(f'({base} ** {exp}) % {mod}')  # noqa: B904
 
 ########################################
 

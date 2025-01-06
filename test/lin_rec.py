@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from copy import copy
-from typing import TYPE_CHECKING
 from collections import defaultdict
+from copy import copy
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from tm.parse import tcompile
-from tm.rust_stuff import TermRes, MachineResult
+from tm.rust_stuff import MachineResult, TermRes
 
 if TYPE_CHECKING:
     from typing import Self
 
-    from tm.parse import Color, Shift, State, Slot, CompProg
     from tm.machine import Undfnd
+    from tm.parse import Color, CompProg, Shift, Slot, State
 
     RecRes = tuple[int, int]
     LinRec = tuple[int | None, int]
@@ -128,9 +128,12 @@ class HeadTape:
 
     def __str__(self) -> str:
         return ' '.join(
-            list(map(str, reversed(self.lspan)))
-            + [f'[{self.scan} ({self.head})]']
-            + list(map(str, self.rspan)))
+            [
+                *list(map(str, reversed(self.lspan))),
+                f"[{self.scan} ({self.head})]",
+                *list(map(str, self.rspan))
+            ]
+        )
 
     def copy(self) -> HeadTape:
         return HeadTape(
@@ -425,7 +428,7 @@ class StrictLinRecMachine(LinRecMachine):
         step: int = 0
         state: State = 0
 
-        for cycle in range(sim_lim or 1_000_000):
+        for cycle in range(sim_lim or 1_000_000):  # noqa: B007
             slot: Slot = state, tape.scan
 
             if step >= check_rec:
@@ -498,7 +501,7 @@ class LinRecSampler(LinRecMachine):
         step: int = 0
         state: State = 0
 
-        for cycle in range(sim_lim or 1_000_000):
+        for cycle in range(sim_lim or 1_000_000):  # noqa: B007
             slot: Slot = state, tape.scan
 
             if step in self.history.tapes:
@@ -513,7 +516,7 @@ class LinRecSampler(LinRecMachine):
 
             color, shift, next_state = instr
 
-            step += tape.step(shift, color, False)
+            step += tape.step(shift, color, skip = False)
 
             state = next_state
 

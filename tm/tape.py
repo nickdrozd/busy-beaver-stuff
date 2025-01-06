@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from tm.num import show_number
 
@@ -69,9 +69,12 @@ class Tape:
 
     def __str__(self) -> str:
         return ' '.join(
-            list(map(str, reversed(self.lspan)))
-            + [f'[{self.scan}]']
-            + list(map(str, self.rspan)))
+            [
+                *list(map(str, reversed(self.lspan))),
+                f"[{self.scan}]",
+                *list(map(str, self.rspan))
+            ]
+        )
 
     @property
     def blank(self) -> bool:

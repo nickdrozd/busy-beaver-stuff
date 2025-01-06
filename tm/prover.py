@@ -6,9 +6,9 @@ from tm.rules import apply_rule, make_rule
 from tm.rust_stuff import PastConfigs
 
 if TYPE_CHECKING:
+    from tm.macro import GetInstr, Slot, State
     from tm.rules import Rule
-    from tm.macro import State, Slot, GetInstr
-    from tm.tape import Signature, Tape, EnumTape
+    from tm.tape import EnumTape, Signature, Tape
 
     MinSig = tuple[Signature, tuple[bool, bool]]
 
@@ -74,7 +74,7 @@ class Prover:
             tape: Tape | EnumTape,
     ) -> State | None:
         for _ in range(steps):
-            if (rule := self.get_rule(state, tape)) is not None:
+            if (rule := self.get_rule(state, tape)) is not None:  # noqa: SIM102
                 if apply_rule(rule, tape) is not None:
                     continue
 
@@ -146,9 +146,9 @@ class Prover:
         if (len(rule) == 2
                 and tape.span_lens == (1, 1)
                 and all(isinstance(val, int) for val in rule.values())
-                and len(set(
+                and len({
                     abs(val) for val in rule.values()
-                    if isinstance(val, int))) == 1):
+                    if isinstance(val, int)}) == 1):
             return None
 
         past_configs.delete_configs(state)

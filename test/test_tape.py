@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from unittest import TestCase
 from typing import TYPE_CHECKING
+from unittest import TestCase
 
-from tm.tape import Tape, Block
 from tm.rules import apply_rule
+from tm.tape import Block, Tape
 
 if TYPE_CHECKING:
     from tm.rules import Rule
