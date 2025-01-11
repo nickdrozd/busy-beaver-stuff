@@ -450,7 +450,6 @@ class Segment(TuringTest):
         for prog in SEGMENT_HALT_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_halt_segment(prog)
 
-    @skip('')
     def test_blank(self):
         for prog in NONBLANKERS:
             self.assert_cant_blank_segment(prog, SEGMENT_LIMIT)
