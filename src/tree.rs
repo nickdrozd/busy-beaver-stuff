@@ -245,10 +245,7 @@ use {
         machine::{quick_term_or_rec, run_for_infrul, run_prover},
         macros::{make_backsymbol_macro, make_block_macro},
         reason::{cant_blank, cant_halt, cant_spin_out},
-        segment::{
-            segment_cant_blank, segment_cant_halt,
-            segment_cant_spin_out,
-        },
+        segment::{segment_cant_halt, segment_cant_spin_out},
     },
     std::collections::BTreeSet as Set,
 };
@@ -611,7 +608,6 @@ fn assert_blank(params: Params, expected: (u64, u64)) {
             || !run_prover(&prog.show(Some(params)), run as u64)
                 .blanks
                 .is_empty()
-            || segment_cant_blank(prog, params, 11).is_refuted()
         {
             return;
         }
