@@ -1,6 +1,6 @@
 # ruff: noqa: E501, SIM102, PLR0911
-# pylint: disable = confusing-consecutive-elif, too-many-try-statements
-# pylint: disable = too-complex
+# pylint: disable = too-complex, too-many-try-statements
+# pylint: disable = confusing-consecutive-elif, used-before-assignment
 
 from __future__ import annotations
 

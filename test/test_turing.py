@@ -77,10 +77,10 @@ class TuringTest(TestCase):
             self.machine,
             Machine | MachineResult)
 
+        actual_marks = self.machine.marks
+
         try:
-            self.assertEqual(
-                actual_marks := self.machine.marks,
-                marks)
+            self.assertEqual(actual_marks, marks)
         except AssertionError:
             try:
                 self.assertEqual(
