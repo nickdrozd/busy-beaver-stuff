@@ -380,13 +380,13 @@ class BacksymbolLogic:
 
 BLOCKS: dict[
     Params,
-    dict[int, BlockLogic]
+    dict[int, BlockLogic],
 ] = defaultdict(dict)
 
 
 BACKSYMS: dict[
     Params,
-    dict[int, BacksymbolLogic]
+    dict[int, BacksymbolLogic],
 ] = defaultdict(dict)
 
 

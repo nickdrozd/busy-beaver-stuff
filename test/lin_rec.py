@@ -131,8 +131,8 @@ class HeadTape:
             [
                 *list(map(str, reversed(self.lspan))),
                 f"[{self.scan} ({self.head})]",
-                *list(map(str, self.rspan))
-            ]
+                *list(map(str, self.rspan)),
+            ],
         )
 
     def copy(self) -> HeadTape:
@@ -292,7 +292,7 @@ class History:
                     slot: copy(steps)
                     for slot, steps in self.slots.items()
                 },
-            )
+            ),
         )
 
     def add_slot_at_step(self, step: int, slot: Slot) -> None:

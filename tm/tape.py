@@ -73,8 +73,8 @@ class Tape:
             [
                 *list(map(str, reversed(self.lspan))),
                 f"[{self.scan}]",
-                *list(map(str, self.rspan))
-            ]
+                *list(map(str, self.rspan)),
+            ],
         )
 
     @property
