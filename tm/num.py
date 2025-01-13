@@ -1203,7 +1203,7 @@ class Tet(Num):
     def __hash__(self) -> int:
         return id(self)
 
-    def digits(self) -> int:
+    def digits(self) -> int:  # noqa: PLR6301
         raise OverflowError
 
     def estimate(self) -> Tet:

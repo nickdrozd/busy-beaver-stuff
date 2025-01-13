@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import starmap
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
@@ -22,8 +23,8 @@ class TestTape(TestCase):
     ) -> None:
         self.tape = Tape(
             scan = scan,
-            lspan = [Block(color, count) for color, count in lspan],
-            rspan = [Block(color, count) for color, count in rspan],
+            lspan = list(starmap(Block, lspan)),
+            rspan = list(starmap(Block, rspan)),
         )
 
     def assert_tape(self, tape_str: str):
@@ -106,8 +107,8 @@ class TestEnum(TestCase):
     ) -> None:
         self.tape = Tape(
             scan = scan,
-            lspan = [Block(color, count) for color, count in lspan],
-            rspan = [Block(color, count) for color, count in rspan],
+            lspan = list(starmap(Block, lspan)),
+            rspan = list(starmap(Block, rspan)),
         ).to_enum()
 
     def step(self, shift: int, color: int, skip: int) -> None:

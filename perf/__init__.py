@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 def profile(function: Null) -> Null:
     def wrapper() -> None:
-        import yappi  # type: ignore  # noqa: PGH003
+        import yappi  # type: ignore  # noqa: PGH003, PLC0415
 
         yappi.set_clock_type('cpu')
         yappi.start()

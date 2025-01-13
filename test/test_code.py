@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 from tools.c import make_c
@@ -18,12 +19,10 @@ class TestCode(TestCase):
         for prog, name in TEST_FILES.items():
             print(prog)
 
-            with open(f'data/c/{name}.c.test') as test:
-                self.assertEqual(
-                    test.read(),
-                    make_c(prog) + '\n')
+            self.assertEqual(
+                Path(f"data/c/{name}.c.test").read_text(),
+                make_c(prog) + '\n')
 
-            with open(f'data/dot/{name}.dot') as test:
-                self.assertEqual(
-                    test.read(),
-                    make_dot(prog) + '\n')
+            self.assertEqual(
+                Path(f"data/dot/{name}.dot").read_text(),
+                make_dot(prog) + '\n')

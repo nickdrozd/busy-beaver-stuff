@@ -102,7 +102,7 @@ RESULTS: dict[str, tuple[int, str]]
 class TestTree(TestCase):
     progs: set[str]
 
-    def setUp(self):
+    def setUp(self):  # noqa: PLR6301
         global PROGS, RESULTS  # noqa: PLW0603
 
         PROGS = Queue()

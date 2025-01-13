@@ -1,7 +1,8 @@
 import shlex
-import subprocess
+import subprocess  # noqa: S404
 import sys
 import tempfile
+from pathlib import Path
 
 from tools.dot import make_dot
 
@@ -9,8 +10,8 @@ if __name__ == '__main__':
     _, path = tempfile.mkstemp()
 
     for prog in sys.stdin:
-        with open(path, 'w') as temp:
-            temp.write(make_dot(prog))
+        Path(path).write_text(
+            make_dot(prog))
 
         subprocess.call(  # noqa: S603
             shlex.split(
