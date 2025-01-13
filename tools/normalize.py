@@ -172,8 +172,6 @@ class Normalizer:
                     self.swap_colors(color, norm)
 
                 todo = rest
-            else:  # noqa: PLW0120
-                break
 
         return self
 
