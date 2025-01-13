@@ -141,7 +141,7 @@ class Machine:
     def run(
         self,
         sim_lim: int = 100_000_000,
-        watch_tape: bool = False,
+        watch_tape: bool = False,  # noqa: FBT001, FBT002
     ) -> Self:
         comp = self.program
 

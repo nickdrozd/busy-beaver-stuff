@@ -1068,7 +1068,7 @@ class Prover(RunProver):
     def assert_close(
             self,
             this: int,
-            that: int | float,
+            that: int | float,  # noqa: PYI041
             rel_tol: float,
     ):
         self.assertTrue(

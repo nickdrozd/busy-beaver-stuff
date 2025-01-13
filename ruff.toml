@@ -11,17 +11,12 @@ ignore = [
     "CPY001",   # copyright
     "D",        # docstrings
     "E",        # whitespace
-    "E741",     # ambiguous variable name
     "EM",       # exception strings
     "ERA001",   # commented-out code
-    "FBT001",   # boolean positional arg
-    "FBT002",   # boolean default arg
     "N",        # naming
     "PLR0904",  # too many public methods
     "PLR2004",  # magic value comparison
     "PLW1514",  # open encoding
-    "PTH123",   # Path.open
-    "PYI",      # pyi / typing
     "Q000",     # double quotes
     "RUF018",   # assertion assignment
     "S101",     # assertions
@@ -34,6 +29,8 @@ ignore = [
 "test/**" = [
     "ANN",      # missing annotations
     "E501",     # line too long
+    "FBT001",   # boolean positional arg
+    "FBT002",   # boolean default arg
     "PT009",    # unittest assertions
     "PT027",    # unittest assert raise
 ]

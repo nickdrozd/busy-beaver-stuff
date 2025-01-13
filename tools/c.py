@@ -98,7 +98,7 @@ def make_while(
         st: State,
         loop_in: Instr,
         rest_in: Instr,
-        mark: bool,
+        mark: bool,  # noqa: FBT001
 ) -> str:
     test = 'BLANK' if not mark else '!BLANK'
     loop = make_instruction(st, int(mark), loop_in, skip_trans = True)

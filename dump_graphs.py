@@ -1,5 +1,6 @@
+# ruff: noqa: S404, S603
 import shlex
-import subprocess  # noqa: S404
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -13,7 +14,7 @@ if __name__ == '__main__':
         Path(path).write_text(
             make_dot(prog))
 
-        subprocess.call(  # noqa: S603
+        subprocess.call(
             shlex.split(
                 f'dot {path} -T png -o {prog.replace(" ", "_")}.png'
             )
