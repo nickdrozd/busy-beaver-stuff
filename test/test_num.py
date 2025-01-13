@@ -1,5 +1,4 @@
 # type: ignore  # noqa: PGH003
-# pylint: disable = pointless-statement, expression-not-assigned
 
 from __future__ import annotations
 
@@ -1491,6 +1490,8 @@ class TestNum(TestCase):
             Tet(10, 3) * Exp(10, 10),
             "(10 ↑↑ 3)")
 
+    def test_tet_error(self):
+        # pylint: disable = expression-not-assigned
         with self.assertRaises(NotImplementedError):
             int(Tet(10, 3))
 
@@ -1575,6 +1576,7 @@ class TestNum(TestCase):
             "(5 * (2 ** (-259 + (2 ** (2 ** 258)))))")
 
     def test_recursion_error(self):
+        # pylint: disable = pointless-statement
         num1 = (
             253398
             + (130 * (2 ** ((61 + (13 * Exp(2, 803))) // 15)))
