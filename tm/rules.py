@@ -21,15 +21,15 @@ if TYPE_CHECKING:
     from tm.num import Count, Num
     from tm.tape import Counts, Index
 
-    Mult = tuple[int, int]
+    type Mult = tuple[int, int]
 
-    OpSeq = tuple[tuple[str, int], ...]
+    type OpSeq = tuple[tuple[str, int], ...]
 
-    Op = Plus | Mult | OpSeq
+    type Op = Plus | Mult | OpSeq
 
-    Rule = dict[Index, Op]
+    type Rule = dict[Index, Op]
 
-    Apps = tuple[Count, Index, int]
+    type Apps = tuple[Count, Index, int]
 
 
 RULE_DESCENT: int = 50

@@ -1,16 +1,19 @@
+from typing import TYPE_CHECKING
+
 # ruff: noqa: F401
 from tm.rust_stuff import (
     read_slot,
     tcompile,
 )
 
-Color = int
-State = int
-Shift = bool
+if TYPE_CHECKING:
+    type Color = int
+    type State = int
+    type Shift = bool
 
-Slot = tuple[State, Color]
-Instr = tuple[Color, Shift, State]
+    type Slot = tuple[State, Color]
+    type Instr = tuple[Color, Shift, State]
 
-CompProg = dict[Slot, Instr]
+    type CompProg = dict[Slot, Instr]
 
-Params = tuple[int, int]
+    type Params = tuple[int, int]

@@ -15,16 +15,16 @@ class PastConfigs:
 
 ## parse ###############################
 
-Color = int
-State = int
-Shift = bool
+type Color = int
+type State = int
+type Shift = bool
 
-Slot = tuple[State, Color]
-Instr = tuple[Color, Shift, State]
+type Slot = tuple[State, Color]
+type Instr = tuple[Color, Shift, State]
 
-Params = tuple[State, Color]
+type Params = tuple[State, Color]
 
-CompProg = dict[Slot, Instr]
+type CompProg = dict[Slot, Instr]
 
 def tcompile(program: str) -> CompProg: ...
 
@@ -105,13 +105,13 @@ def py_quick_term_or_rec(prog: str, sim_lim: int) -> bool: ...
 
 Plus = int
 
-Mult = tuple[int, int]
+type Mult = tuple[int, int]
 
-Op = Plus | Mult
+type Op = Plus | Mult
 
-Index = tuple[int, int]
+type Index = tuple[int, int]
 
-Rule = dict[Index, Op]
+type Rule = dict[Index, Op]
 
 ## blocks ##############################
 
