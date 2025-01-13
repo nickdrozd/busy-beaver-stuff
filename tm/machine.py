@@ -110,12 +110,12 @@ class Machine:
 
         return f"{self.prog_str} || {' | '.join(info)}"
 
-    def show_tape(
+    def config_str(
             self,
             step: int,
             cycle: int,
             state: int,
-    ) -> None:
+    ) -> str:
         info = [
             f'{cycle: 5d}',
             show_slot((state, self.tape.scan)),
@@ -124,7 +124,7 @@ class Machine:
 
         info.insert(1, f'{step : 3d}' if step != -1 else '...')
 
-        print(' | '.join(info))
+        return ' | '.join(info)
 
     @property
     def simple_termination(self) -> Count | None:
@@ -158,7 +158,7 @@ class Machine:
         for cycle in range(sim_lim):
 
             if watch_tape:
-                self.show_tape(step, cycle, state)
+                print(self.config_str(step, cycle, state))
 
             try:
                 rule = self.prover.try_rule(cycle, state, tape)
@@ -231,6 +231,6 @@ class Machine:
         self.cycles = cycle
 
         if watch_tape and (bool(self.undfnd) or bool(self.blanks)):
-            self.show_tape(step, 1 + cycle, state)
+            print(self.config_str(step, 1 + cycle, state))
 
         return self
