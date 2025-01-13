@@ -111,10 +111,10 @@ fn segment_cant_reach(
         };
 
         match result {
-            Reached => continue,
             Limit => return SegmentResult::DepthLimit,
             Repeat => return SegmentResult::Repeat,
             Found(found) => return found.into(),
+            Reached => {},
         }
     }
 
