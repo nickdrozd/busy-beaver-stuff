@@ -16,13 +16,13 @@ pub type Step = u64;
 
 /**************************************/
 
+const SHIFTS: [bool; 2] = [false, true];
+
 fn make_instrs(states: State, colors: Color) -> Vec<Instr> {
     let mut instrs = vec![];
 
-    let shifts = [false, true];
-
     for color in 0..colors {
-        for shift in shifts {
+        for shift in SHIFTS {
             for state in 0..states {
                 instrs.push((color, shift, state));
             }
