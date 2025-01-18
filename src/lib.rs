@@ -53,13 +53,12 @@ mod rust_stuff {
             run_prover, run_quick_machine, MachineResult, TermRes,
         },
         prover::PastConfigs,
-        tree::tree_progs,
         wrappers::{
             py_cant_blank, py_cant_halt, py_cant_spin_out,
             py_is_connected, py_opt_block, py_quick_term_or_rec,
             py_segment_cant_blank, py_segment_cant_halt,
             py_segment_cant_spin_out, py_show_comp, tcompile,
-            BackwardResult,
+            tree_progs, BackwardResult,
         },
     };
 }

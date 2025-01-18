@@ -14,6 +14,7 @@ use crate::{
         segment_cant_blank, segment_cant_halt, segment_cant_spin_out,
         SegmentResult as SegmentResultRs,
     },
+    tree::{access, build_tree, get_val, set_val, Step as TreeStep},
 };
 
 /***************************************/
@@ -187,4 +188,21 @@ pub fn py_segment_cant_spin_out(
     let (comp, params) = get_comp(prog);
 
     segment_cant_spin_out(&comp, params, segs).into()
+}
+
+/***************************************/
+
+#[pyfunction]
+pub fn tree_progs(
+    params: Params,
+    halt: bool,
+    sim_lim: TreeStep,
+) -> Vec<String> {
+    let progs = set_val(vec![]);
+
+    build_tree(params, halt, sim_lim, &|comp| {
+        access(&progs).push(comp.show(Some(params)));
+    });
+
+    get_val(progs)
 }

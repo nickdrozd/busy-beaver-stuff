@@ -5,11 +5,10 @@ use core::{
 
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use pyo3::pyfunction;
 use rayon::prelude::*;
 
 use crate::{
-    instrs::{Color, CompProg, Instr, Params, Parse as _, Slot, State},
+    instrs::{Color, CompProg, Instr, Params, Slot, State},
     tape::BasicTape as Tape,
 };
 
@@ -216,21 +215,4 @@ pub fn access<T>(basket: &Basket<T>) -> MutexGuard<'_, T> {
 
 pub fn get_val<T: Debug>(basket: Basket<T>) -> T {
     Arc::try_unwrap(basket).unwrap().into_inner().unwrap()
-}
-
-/**************************************/
-
-#[pyfunction]
-pub fn tree_progs(
-    params: Params,
-    halt: bool,
-    sim_lim: Step,
-) -> Vec<String> {
-    let progs = set_val(vec![]);
-
-    build_tree(params, halt, sim_lim, &|comp| {
-        access(&progs).push(comp.show(Some(params)));
-    });
-
-    get_val(progs)
 }
