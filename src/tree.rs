@@ -34,35 +34,44 @@ fn make_instrs(states: State, colors: Color) -> Vec<Instr> {
 
 /**************************************/
 
+enum RunResult {
+    Limit,
+    Blank,
+    Spinout,
+    Undefined(Slot),
+}
+
+use RunResult::*;
+
 fn run_for_undefined(
     comp: &CompProg,
     mut state: State,
     tape: &mut Tape,
     sim_lim: Step,
-) -> Result<Option<Slot>, ()> {
+) -> RunResult {
     for _ in 0..sim_lim {
         let slot = (state, tape.scan);
 
         let Some(&(color, shift, next_state)) = comp.get(&slot) else {
-            return Ok(Some(slot));
+            return Undefined(slot);
         };
 
         let same = state == next_state;
 
         if same && tape.at_edge(shift) {
-            return Err(());
+            return Spinout;
         }
 
         tape.step(shift, color, same);
 
         if tape.blank() {
-            return Err(());
+            return Blank;
         }
 
         state = next_state;
     }
 
-    Ok(None)
+    Limit
 }
 
 /**************************************/
@@ -96,7 +105,7 @@ fn branch(
 ) {
     let (max_states, max_colors) = params;
 
-    let Ok(Some(slot)) =
+    let Undefined(slot) =
         run_for_undefined(prog, state, &mut tape, sim_lim)
     else {
         leaf(prog, params, harvester);
