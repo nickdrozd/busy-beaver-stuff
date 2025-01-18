@@ -35,6 +35,9 @@ mod tape;
 mod tree;
 mod wrappers;
 
+#[cfg(test)]
+mod test;
+
 /**************************************/
 
 use pyo3::pymodule;
