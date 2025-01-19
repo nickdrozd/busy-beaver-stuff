@@ -60,7 +60,7 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
     incomplete(comp, params, halt)
         || (states >= 4 && !is_connected(comp, states))
         || cant_reach(comp, 1).is_settled()
-        || quick_term_or_rec(comp, 301, true)
+        || quick_term_or_rec(comp, 301).is_settled()
         || cant_reach(comp, 256).is_settled()
         || check_inf(comp, params, opt_block(comp, 300), 306)
         || segment_cant_reach(comp, params, 3).is_refuted()
@@ -235,7 +235,13 @@ fn assert_linrec(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if quick_term_or_rec(prog, 1_000, halt_flag) {
+        let result = quick_term_or_rec(prog, 1_000);
+
+        if if halt_flag {
+            result.is_settled()
+        } else {
+            result.is_recur()
+        } {
             return;
         }
 
@@ -358,7 +364,7 @@ fn assert_blank(params: Params, expected: (u64, u64)) {
         let run = 700;
 
         if cant_blank(prog, 44).is_settled()
-            || quick_term_or_rec(prog, run, true)
+            || quick_term_or_rec(prog, run).is_settled()
             || check_inf(prog, params, opt_block(prog, 300), run as u64)
             || !run_prover(&prog.show(Some(params)), run as u64)
                 .blanks

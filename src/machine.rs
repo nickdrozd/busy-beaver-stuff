@@ -359,11 +359,26 @@ pub fn run_quick_machine(prog: &str, sim_lim: Step) -> MachineResult {
 
 /**************************************/
 
-pub fn quick_term_or_rec(
-    comp: &CompProg,
-    sim_lim: usize,
-    drop_halt: bool,
-) -> bool {
+pub enum RecRes {
+    Limit,
+    Recur,
+    Spinout,
+    #[expect(dead_code)]
+    Undefined(Slot),
+}
+
+impl RecRes {
+    #[cfg(test)]
+    pub const fn is_settled(&self) -> bool {
+        !matches!(self, Self::Limit)
+    }
+
+    pub const fn is_recur(&self) -> bool {
+        matches!(self, Self::Recur | Self::Spinout)
+    }
+}
+
+pub fn quick_term_or_rec(comp: &CompProg, sim_lim: usize) -> RecRes {
     let mut state = 1;
 
     let mut tape = HeadTape::init_stepped();
@@ -376,10 +391,10 @@ pub fn quick_term_or_rec(
     let mut reset = 1;
 
     for cycle in 1..sim_lim {
-        let Some(&(color, shift, next_state)) =
-            comp.get(&(state, tape.scan()))
-        else {
-            return drop_halt;
+        let slot = (state, tape.scan());
+
+        let Some(&(color, shift, next_state)) = comp.get(&slot) else {
+            return RecRes::Undefined(slot);
         };
 
         let curr_state = state;
@@ -389,7 +404,7 @@ pub fn quick_term_or_rec(
         let same = curr_state == next_state;
 
         if same && tape.at_edge(shift) {
-            return true;
+            return RecRes::Spinout;
         }
 
         if reset == 0 {
@@ -416,11 +431,11 @@ pub fn quick_term_or_rec(
         if state == ref_state
             && tape.aligns_with(&ref_tape, leftmost, rightmost)
         {
-            return true;
+            return RecRes::Recur;
         }
     }
 
-    false
+    RecRes::Limit
 }
 
 /**************************************/

@@ -31,7 +31,7 @@ pub fn py_opt_block(prog: &str, steps: usize) -> usize {
 
 #[pyfunction]
 pub fn py_quick_term_or_rec(prog: &str, sim_lim: usize) -> bool {
-    quick_term_or_rec(&CompProg::from_str(prog), sim_lim, false)
+    quick_term_or_rec(&CompProg::from_str(prog), sim_lim).is_recur()
 }
 
 #[pyfunction]
