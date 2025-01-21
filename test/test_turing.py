@@ -227,9 +227,6 @@ class TuringTest(TestCase):
             f'blank false negative: "{prog}"')
 
     def assert_cant_blank_segment(self, prog: str, segs: int):
-        if prog in SEGMENT_BLANK_FALSE_NEGATIVES:
-            return
-
         self.assertTrue(
             segment_cant_blank(prog, segs).is_settled(),
             f'segment blank false negative: "{prog}"')
@@ -401,7 +398,6 @@ class Reason(TuringTest):
                 & CANT_BLANK_FALSE_NEGATIVES
                 & CANT_SPIN_OUT_FALSE_NEGATIVES
                 & SEGMENT_HALT_FALSE_NEGATIVES
-                & SEGMENT_BLANK_FALSE_NEGATIVES
                 & SEGMENT_SPINOUT_FALSE_NEGATIVES)
 
         self.assertEqual(
@@ -450,16 +446,6 @@ class Segment(TuringTest):
         for prog in SEGMENT_HALT_FALSE_NEGATIVES | UNREASONABLE:
             self.assert_could_halt_segment(prog)
 
-    def test_blank(self):
-        for prog in NONBLANKERS:
-            self.assert_cant_blank_segment(prog, SEGMENT_LIMIT)
-
-        for prog in BLANKERS:
-            self.assert_could_blank(prog)
-
-        for prog in SEGMENT_BLANK_FALSE_NEGATIVES | UNREASONABLE:
-            self.assert_could_blank_segment(prog)
-
     def test_spinout(self):
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_segment(prog)
@@ -490,7 +476,6 @@ class Segment(TuringTest):
     def test_omnireasonable(self):
         for prog in OMNIREASONABLE:
             self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
-            self.assert_cant_blank_segment(prog, SEGMENT_LIMIT)
             self.assert_cant_spin_out_segment(prog, SEGMENT_LIMIT)
 
     def test_holdouts(self):
@@ -505,7 +490,6 @@ class Segment(TuringTest):
         for cat in ('32q', '23q'):
             for prog in read_holdouts(cat):
                 self.assert_cant_halt_segment(prog, 2)
-                self.assert_cant_blank_segment(prog, 2)
                 self.assert_cant_spin_out_segment(prog, 3)
 
 
