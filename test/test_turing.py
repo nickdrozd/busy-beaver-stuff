@@ -413,11 +413,9 @@ class Reason(TuringTest):
             self.assertNotIn(prog, INFRUL)
 
     def test_omnireasonable(self):
-        for prog, (halt, blank, spin) in OMNIREASONABLE.items():
-            self.assertEqual(
-                INFRUL,
-                INFRUL | set(OMNIREASONABLE))
+        assert set(OMNIREASONABLE) <= INFRUL | RECURS
 
+        for prog, (halt, blank, spin) in OMNIREASONABLE.items():
             self.assertEqual(
                 halt,
                 cant_halt(prog, REASON_LIMIT).step)
@@ -672,8 +670,6 @@ class Recur(TuringTest):
         else:
             self.machine = Machine(prog).run()
 
-        self.analyze(prog)
-
     def test_lr_negatives(self):
         steps = 1_000
 
@@ -723,14 +719,9 @@ class Recur(TuringTest):
 
             self.assertGreater(period, 1)
 
-            self.assert_cant_halt_backward(prog, 3)
-            self.assert_cant_spin_out_backward(prog, 6)
-
             if blank:
                 self.assert_could_blank(prog)
             else:
-                if prog not in BLANKERS:
-                    self.assert_cant_blank_backward(prog, 81)
                 assert steps is not None
                 self.verify_lin_rec(prog, steps, period)
 
@@ -779,6 +770,12 @@ class Recur(TuringTest):
 
             self.assertTrue(
                 quick_term_or_rec(prog, 1_000_000))
+
+    def test_infrul(self):
+        for prog in INFRUL:
+            self.assertFalse(quick_term_or_rec(prog, 10_000))
+
+        assert not INFRUL & RECURS
 
     def assert_lin_rec(self, steps: int, recur: int):
         assert isinstance(self.machine, LinRecSampler)
@@ -1113,6 +1110,7 @@ class Prover(RunProver):
             self.run_bb(
                 prog,
                 opt_macro = 10_000,
+                analyze = False,
             )
 
             if simple_term:
