@@ -128,6 +128,51 @@ impl<B: Block> Span<B> {
         self.0.iter().map(ToString::to_string)
     }
 
+    pub fn compare_take(&self, prev: &Self, mut take: usize) -> bool {
+        let mut s_blocks = self.0.iter();
+        let mut p_blocks = prev.0.iter();
+
+        let mut s_block = s_blocks.next();
+        let mut p_block = p_blocks.next();
+
+        let mut s_rem = s_block.map_or(0, Block::get_count) as usize;
+        let mut p_rem = p_block.map_or(0, Block::get_count) as usize;
+
+        while take > 0 {
+            match (s_block, p_block) {
+                (None, None) => return true,
+                (Some(sb), Some(ob)) => {
+                    if sb.get_color() != ob.get_color() {
+                        return false;
+                    }
+
+                    let min = take.min(s_rem.min(p_rem));
+
+                    s_rem -= min;
+                    p_rem -= min;
+                    take -= min;
+
+                    if s_rem == 0 {
+                        s_block = s_blocks.next();
+                        s_rem = s_block.map_or(0, Block::get_count)
+                            as usize;
+                    }
+
+                    if p_rem == 0 {
+                        p_block = p_blocks.next();
+                        p_rem = p_block.map_or(0, Block::get_count)
+                            as usize;
+                    }
+                },
+                _ => {
+                    return false;
+                },
+            }
+        }
+
+        true
+    }
+
     fn pull(&mut self, scan: Color, skip: bool) -> (Color, Count) {
         let stepped =
             (skip && !self.blank() && self.0[0].get_color() == scan)
@@ -386,7 +431,6 @@ impl<B: Block> IndexTape for Tape<B> {
 /**************************************/
 
 pub type Pos = isize;
-pub type TapeSlice = Vec<Color>;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct HeadTape {
@@ -406,6 +450,14 @@ impl HeadTape {
             head: 1,
             tape: tape! { 0, [(1, 1)], [] },
         }
+    }
+
+    pub const fn head(&self) -> Pos {
+        self.head
+    }
+
+    pub const fn scan(&self) -> Color {
+        self.tape.scan
     }
 
     pub fn at_edge(&self, edge: Shift) -> bool {
@@ -441,16 +493,10 @@ pub trait Alignment {
     fn l_eq(&self, prev: &Self) -> bool;
     fn r_eq(&self, prev: &Self) -> bool;
 
-    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice;
+    fn l_compare_take(&self, prev: &Self, take: usize) -> bool;
+    fn r_compare_take(&self, prev: &Self, take: usize) -> bool;
 
-    fn get_ltr(&self, start: Pos) -> TapeSlice {
-        self.get_slice(start, true)
-    }
-
-    fn get_rtl(&self, start: Pos) -> TapeSlice {
-        self.get_slice(start, false)
-    }
-
+    #[expect(clippy::suspicious_operation_groupings)]
     fn aligns_with(
         &self,
         prev: &Self,
@@ -461,37 +507,29 @@ pub trait Alignment {
             return false;
         }
 
-        let diff = self.head() - prev.head();
-
-        #[expect(clippy::comparison_chain)]
-        if 0 < diff {
-            self.r_len() == prev.r_len()
-                && self.l_len() >= prev.l_len()
-                && self.r_eq(prev)
-                && prev.get_ltr(leftmost)
-                    == self.get_ltr(leftmost + diff)
-        } else if diff < 0 {
-            self.l_len() == prev.l_len()
-                && self.r_len() >= prev.r_len()
-                && self.l_eq(prev)
-                && prev.get_rtl(rightmost)
-                    == self.get_rtl(rightmost + diff)
-        } else {
-            self.l_len() == prev.l_len()
-                && self.r_len() == prev.r_len()
-                && self.l_eq(prev)
-                && self.r_eq(prev)
+        if self.l_len() != prev.l_len() && self.r_len() != prev.r_len()
+        {
+            return false;
         }
+
+        let p_head = prev.head();
+
+        let (l_take, r_take): (usize, usize) =
+            (p_head.abs_diff(leftmost), p_head.abs_diff(rightmost));
+
+        self.l_compare_take(prev, l_take)
+            && self.r_compare_take(prev, r_take)
+            && (self.l_eq(prev) || self.r_eq(prev))
     }
 }
 
 impl Alignment for HeadTape {
-    fn scan(&self) -> Color {
-        self.tape.scan
-    }
-
     fn head(&self) -> Pos {
         self.head
+    }
+
+    fn scan(&self) -> Color {
+        self.tape.scan
     }
 
     fn l_len(&self) -> usize {
@@ -510,33 +548,12 @@ impl Alignment for HeadTape {
         self.tape.rspan == prev.tape.rspan
     }
 
-    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
-        let (lspan, rspan, diff) = if ltr {
-            (&self.tape.lspan, &self.tape.rspan, self.head() - start)
-        } else {
-            (&self.tape.rspan, &self.tape.lspan, start - self.head())
-        };
+    fn l_compare_take(&self, prev: &Self, take: usize) -> bool {
+        self.tape.lspan.compare_take(&prev.tape.lspan, take)
+    }
 
-        let mut tape = TapeSlice::new();
-
-        if diff > 0 {
-            #[expect(clippy::cast_sign_loss)]
-            let mut remaining = diff as Count;
-            for block in &lspan.0 {
-                let count = block.count.min(remaining);
-                tape.extend(vec![block.color; count as usize]);
-                remaining -= count;
-            }
-            if remaining > 0 {
-                tape.extend(vec![0; remaining as usize]);
-            }
-        }
-
-        for block in &rspan.0 {
-            tape.extend(vec![block.color; block.count as usize]);
-        }
-
-        tape
+    fn r_compare_take(&self, prev: &Self, take: usize) -> bool {
+        self.tape.rspan.compare_take(&prev.tape.rspan, take)
     }
 }
 

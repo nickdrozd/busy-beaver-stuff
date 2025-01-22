@@ -8,8 +8,8 @@ use std::{
 use crate::{
     instrs::{Color, CompProg, Instr, Shift, Slot, State},
     tape::{
-        Alignment, BasicBlock as Block, Block as _, Count, Pos,
-        Span as GenSpan, TapeSlice,
+        Alignment, BasicBlock as Block, Block as _, Pos,
+        Span as GenSpan,
     },
 };
 
@@ -574,41 +574,12 @@ impl Alignment for Backstepper {
         self.rspan == prev.rspan
     }
 
-    fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
-        let (lspan, rspan, diff) = if ltr {
-            (
-                &self.lspan.span.0,
-                &self.rspan.span.0,
-                self.head() - start,
-            )
-        } else {
-            (
-                &self.rspan.span.0,
-                &self.lspan.span.0,
-                start - self.head(),
-            )
-        };
+    fn l_compare_take(&self, prev: &Self, take: usize) -> bool {
+        self.lspan.span.compare_take(&prev.lspan.span, take)
+    }
 
-        let mut tape = TapeSlice::new();
-
-        if diff > 0 {
-            #[expect(clippy::cast_sign_loss)]
-            let mut remaining = diff as Count;
-            for block in lspan {
-                let count = (block.count).min(remaining);
-                tape.extend(vec![block.color; count as usize]);
-                remaining -= count;
-            }
-            if remaining > 0 {
-                tape.extend(vec![0; remaining as usize]);
-            }
-        }
-
-        for block in rspan {
-            tape.extend(vec![block.color; block.count as usize]);
-        }
-
-        tape
+    fn r_compare_take(&self, prev: &Self, take: usize) -> bool {
+        self.rspan.span.compare_take(&prev.rspan.span, take)
     }
 }
 
