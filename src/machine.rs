@@ -486,3 +486,26 @@ fn test_prover() {
 fn test_overflow() {
     run_prover("1RB 2LA 3LA 2RA  0LA ... 2RB 3RB", 10_000);
 }
+
+/**************************************/
+
+#[cfg(test)]
+const REC_PROGS: [(&str, bool); 5] = [
+    ("1RB ...  0LB 0LA", true),
+    ("1RB 1LA  0LA 0RB", false),
+    ("1RB 1LA  0LA 1RB", false),
+    ("1RB 0LB  1LA 0RA", false),
+    ("1RB 1LA  1LA 1RB", false),
+];
+
+#[test]
+fn test_rec() {
+    for (prog, expected) in REC_PROGS {
+        assert_eq!(
+            quick_term_or_rec(&CompProg::from_str(prog), 100)
+                .is_recur(),
+            expected,
+            "{prog}",
+        );
+    }
+}
