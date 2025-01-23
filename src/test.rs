@@ -235,7 +235,7 @@ fn assert_linrec(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        let result = quick_term_or_rec(prog, 1_000);
+        let result = quick_term_or_rec(prog, LINREC);
 
         if if halt_flag {
             result.is_settled()
@@ -263,6 +263,8 @@ macro_rules! assert_linrec_results {
             });
     };
 }
+
+const LINREC: usize = 1_000;
 
 #[test]
 fn test_linrec() {
