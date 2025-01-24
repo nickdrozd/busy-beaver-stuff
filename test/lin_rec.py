@@ -126,6 +126,10 @@ class HeadTape:
         self.rspan = rspan or []
         self.head = head
 
+    @classmethod
+    def init_stepped(cls) -> Self:
+        return cls([HeadBlock(1, 1)], 0, [], head = 1)
+
     def __str__(self) -> str:
         return ' '.join(
             [
@@ -262,10 +266,6 @@ class HeadTape:
             return self == prev
 
         return slice1 == slice2
-
-
-def init_stepped() -> HeadTape:
-    return HeadTape([HeadBlock(1, 1)], 0, [], head = 1)
 
 ########################################
 
@@ -544,7 +544,7 @@ def run_loose_linrec_machine(
 
     step = 1
 
-    tape = init_stepped()
+    tape = HeadTape.init_stepped()
 
     cycle = 1
 
