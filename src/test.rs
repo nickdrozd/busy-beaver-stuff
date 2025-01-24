@@ -17,6 +17,10 @@ use std::collections::BTreeSet as Set;
 
 /**************************************/
 
+const TREE_LIM: u64 = 876;
+
+/**************************************/
+
 fn incomplete(comp: &CompProg, params: Params, halt: bool) -> bool {
     let (states, colors) = params;
 
@@ -92,7 +96,7 @@ fn assert_tree(params: Params, halt: u8, expected: (u64, u64)) {
     let holdout_count = set_val(0);
     let visited_count = set_val(0);
 
-    build_tree(params, halt_flag, 876, &|prog| {
+    build_tree(params, halt_flag, TREE_LIM, &|prog| {
         *access(&visited_count) += 1;
 
         if skip_all(prog, params, halt_flag) {
@@ -232,7 +236,7 @@ fn assert_linrec(params: Params, halt: u8, expected: (u64, u64)) {
     let holdout_count = set_val(0);
     let visited_count = set_val(0);
 
-    build_tree(params, halt_flag, 300, &|prog| {
+    build_tree(params, halt_flag, TREE_LIM, &|prog| {
         *access(&visited_count) += 1;
 
         let result = quick_term_or_rec(prog, LINREC);
@@ -282,7 +286,7 @@ fn test_linrec() {
         ((4, 2), 0, (145_766, 2_291_637)),
         //
         ((2, 4), 1, (25_134, 312_642)),
-        ((2, 4), 0, (257_476, 1_719_237)),
+        ((2, 4), 0, (257_568, 1_719_357)),
     ];
 }
 
@@ -302,7 +306,7 @@ fn assert_segment(params: Params, halt: u8, expected: (u64, u64)) {
 
     let segs = if halt_flag { 22 } else { 8 };
 
-    build_tree(params, halt_flag, 300, &|prog| {
+    build_tree(params, halt_flag, TREE_LIM, &|prog| {
         *access(&visited_count) += 1;
 
         if cant_reach(prog, params, segs).is_refuted() {
@@ -350,7 +354,7 @@ fn test_segment_slow() {
         ((4, 2), 0, (280_689, 2_291_637)),
         //
         ((2, 4), 1, (130_046, 312_642)),
-        ((2, 4), 0, (202_779, 1_719_237)),
+        ((2, 4), 0, (202_795, 1_719_357)),
     ];
 }
 
@@ -360,7 +364,7 @@ fn assert_blank(params: Params, expected: (u64, u64)) {
     let holdout_count = set_val(0);
     let visited_count = set_val(0);
 
-    build_tree(params, false, 300, &|prog| {
+    build_tree(params, false, TREE_LIM, &|prog| {
         *access(&visited_count) += 1;
 
         let run = 700;
@@ -405,6 +409,6 @@ fn test_blank() {
         //
         ((4, 2), (2_206, 2_291_637)),
         //
-        ((2, 4), (14_815, 1_719_237)),
+        ((2, 4), (14_831, 1_719_357)),
     ];
 }
