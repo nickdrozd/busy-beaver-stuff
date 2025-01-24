@@ -83,10 +83,10 @@ impl Display for BasicBlock {
 /**************************************/
 
 #[derive(Clone, Hash, PartialEq, Eq)]
-struct Span<B: Block>(Vec<B>);
+pub struct Span<B: Block>(pub Vec<B>);
 
 impl<B: Block> Span<B> {
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.0.len()
     }
 
@@ -124,7 +124,7 @@ impl<B: Block> Span<B> {
         })
     }
 
-    fn string_iter(&self) -> impl DoubleEndedIterator<Item = String> {
+    pub fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> {
         self.0.iter().map(ToString::to_string)
     }
 
@@ -230,10 +230,10 @@ impl<B: Block> Display for Tape<B> {
             f,
             "{}",
             self.lspan
-                .string_iter()
+                .str_iter()
                 .rev()
                 .chain(once(format!("[{}]", self.scan)))
-                .chain(self.rspan.string_iter())
+                .chain(self.rspan.str_iter())
                 .collect::<Vec<_>>()
                 .join(" ")
         )

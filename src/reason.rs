@@ -9,7 +9,7 @@ use crate::{
     instrs::{Color, CompProg, Instr, Shift, Slot, State},
     tape::{
         Alignment, BasicBlock as Block, Block as _, Count, Pos,
-        TapeSlice,
+        Span as GenSpan, TapeSlice,
     },
 };
 
@@ -403,14 +403,39 @@ impl fmt::Display for TapeEnd {
     }
 }
 
+/**************************************/
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct Span {
+    span: GenSpan<Block>,
+    end: TapeEnd,
+}
+
+impl Span {
+    const fn new(blocks: Vec<Block>, end: TapeEnd) -> Self {
+        Self {
+            span: GenSpan(blocks),
+            end,
+        }
+    }
+
+    fn blank(&self) -> bool {
+        self.span.0.iter().all(|block| block.color == 0)
+    }
+
+    fn len(&self) -> usize {
+        self.span.len()
+    }
+}
+
+/**************************************/
+
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct Backstepper {
     scan: Color,
-    lspan: Vec<Block>,
-    rspan: Vec<Block>,
+    lspan: Span,
+    rspan: Span,
     head: Pos,
-    l_end: TapeEnd,
-    r_end: TapeEnd,
 }
 
 impl fmt::Display for Backstepper {
@@ -418,16 +443,16 @@ impl fmt::Display for Backstepper {
         write!(
             f,
             "{} {} {}",
-            self.l_end,
+            self.lspan.end,
             self.lspan
-                .iter()
+                .span
+                .str_iter()
                 .rev()
-                .map(ToString::to_string)
                 .chain(once(format!("[{}]", self.scan)))
-                .chain(self.rspan.iter().map(ToString::to_string))
+                .chain(self.rspan.span.str_iter())
                 .collect::<Vec<_>>()
                 .join(" "),
-            self.r_end,
+            self.rspan.end,
         )
     }
 }
@@ -436,22 +461,18 @@ impl Backstepper {
     const fn init_halt(scan: Color) -> Self {
         Self {
             scan,
-            lspan: vec![],
-            rspan: vec![],
+            lspan: Span::new(vec![], TapeEnd::Unknown),
+            rspan: Span::new(vec![], TapeEnd::Unknown),
             head: 0,
-            l_end: TapeEnd::Unknown,
-            r_end: TapeEnd::Unknown,
         }
     }
 
     const fn init_blank(scan: Color) -> Self {
         Self {
             scan,
-            lspan: vec![],
-            rspan: vec![],
+            lspan: Span::new(vec![], TapeEnd::Blanks),
+            rspan: Span::new(vec![], TapeEnd::Blanks),
             head: 0,
-            l_end: TapeEnd::Blanks,
-            r_end: TapeEnd::Blanks,
         }
     }
 
@@ -464,66 +485,61 @@ impl Backstepper {
 
         Self {
             scan: 0,
-            lspan: vec![],
-            rspan: vec![],
+            lspan: Span::new(vec![], l_end),
+            rspan: Span::new(vec![], r_end),
             head: 0,
-            l_end,
-            r_end,
         }
     }
 
     fn blank(&self) -> bool {
-        self.scan == 0
-            && self
-                .lspan
-                .iter()
-                .chain(self.rspan.iter())
-                .all(|block| block.color == 0)
+        self.scan == 0 && self.lspan.blank() && self.rspan.blank()
     }
 
     fn check_step(&self, shift: Shift, print: Color) -> Option<bool> {
-        let (pull, pull_end, push) = if shift {
-            (&self.lspan, self.l_end, &self.rspan)
+        let (pull, push) = if shift {
+            (&self.lspan, &self.rspan)
         } else {
-            (&self.rspan, self.r_end, &self.lspan)
+            (&self.rspan, &self.lspan)
         };
 
-        let (required, at_edge) = if let Some(block) = pull.first() {
-            (block.color, false)
-        } else if pull_end == TapeEnd::Blanks {
-            (0, true)
-        } else {
-            return Some(!push.is_empty());
-        };
+        let (required, at_edge) =
+            if let Some(block) = pull.span.0.first() {
+                (block.color, false)
+            } else if pull.end == TapeEnd::Blanks {
+                (0, true)
+            } else {
+                return Some(!push.span.0.is_empty());
+            };
 
         (print == required).then_some(at_edge)
     }
 
     fn backstep(&mut self, shift: Shift, read: Color) {
-        let (stepped, pull, push, push_end) = if shift {
-            (-1, &mut self.lspan, &mut self.rspan, self.r_end)
+        let (stepped, pull, push) = if shift {
+            (-1, &mut self.lspan, &mut self.rspan)
         } else {
-            (1, &mut self.rspan, &mut self.lspan, self.l_end)
+            (1, &mut self.rspan, &mut self.lspan)
         };
 
-        if let Some(block) = pull.first_mut() {
+        if let Some(block) = pull.span.0.first_mut() {
             if block.count == 1 {
-                pull.remove(0);
+                pull.span.0.remove(0);
             } else {
                 block.decrement();
             }
         }
 
         if self.scan != 0
-            || !push.is_empty()
-            || push_end == TapeEnd::Unknown
+            || !push.span.0.is_empty()
+            || push.end == TapeEnd::Unknown
         {
             let color = self.scan;
 
-            if !push.is_empty() && push[0].color == color {
-                push[0].increment();
+            if !push.span.0.is_empty() && push.span.0[0].color == color
+            {
+                push.span.0[0].increment();
             } else {
-                push.insert(0, Block::new(color, 1));
+                push.span.0.insert(0, Block::new(color, 1));
             };
         }
 
@@ -560,9 +576,17 @@ impl Alignment for Backstepper {
 
     fn get_slice(&self, start: Pos, ltr: bool) -> TapeSlice {
         let (lspan, rspan, diff) = if ltr {
-            (&self.lspan, &self.rspan, self.head() - start)
+            (
+                &self.lspan.span.0,
+                &self.rspan.span.0,
+                self.head() - start,
+            )
         } else {
-            (&self.rspan, &self.lspan, start - self.head())
+            (
+                &self.rspan.span.0,
+                &self.lspan.span.0,
+                start - self.head(),
+            )
         };
 
         let mut tape = TapeSlice::new();
@@ -699,13 +723,11 @@ fn test_backstep_spinout() {
 fn test_backstep_required() {
     let mut tape = Backstepper {
         scan: 1,
-
-        lspan: vec![],
-        l_end: TapeEnd::Blanks,
-
-        rspan: vec![Block::new(1, 1), Block::new(0, 1)],
-        r_end: TapeEnd::Unknown,
-
+        lspan: Span::new(vec![], TapeEnd::Blanks),
+        rspan: Span::new(
+            vec![Block::new(1, 1), Block::new(0, 1)],
+            TapeEnd::Unknown,
+        ),
         head: 0,
     };
 
