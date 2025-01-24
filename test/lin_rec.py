@@ -138,7 +138,7 @@ class HeadTape:
             ],
         )
 
-    def copy(self) -> HeadTape:
+    def clone(self) -> HeadTape:
         return HeadTape(
             [HeadBlock(blk.color, blk.count) for blk in self.lspan],
             self.scan,
@@ -544,7 +544,7 @@ def run_loose_linrec_machine(
 
         init_state = state
 
-        init_tape = tape.copy()
+        init_tape = tape.clone()
 
         while step < steps_reset and cycle < sim_lim:
             try:
