@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from copy import copy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -281,19 +280,6 @@ class History:
 
     slots: dict[Slot, list[int]] = field(
         default_factory = lambda: defaultdict(list))
-
-    def copy(self) -> History:
-        return History(
-            tapes = copy(self.tapes),
-            positions = copy(self.positions),
-            slots = defaultdict(
-                list,
-                {
-                    slot: copy(steps)
-                    for slot, steps in self.slots.items()
-                },
-            ),
-        )
 
     def add_slot_at_step(self, step: int, slot: Slot) -> None:
         self.slots[slot].append(step)
