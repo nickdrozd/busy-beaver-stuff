@@ -132,40 +132,32 @@ impl<B: Block> Span<B> {
         let mut s_blocks = self.0.iter();
         let mut p_blocks = prev.0.iter();
 
-        let mut s_block = s_blocks.next();
-        let mut p_block = p_blocks.next();
-
-        let mut s_rem = s_block.map_or(0, Block::get_count) as usize;
-        let mut p_rem = p_block.map_or(0, Block::get_count) as usize;
+        let mut s_next = s_blocks.next();
+        let mut p_next = p_blocks.next();
 
         while take > 0 {
-            match (s_block, p_block) {
+            match (s_next, p_next) {
                 (None, None) => return true,
-                (Some(sb), Some(ob)) => {
-                    if sb.get_color() != ob.get_color() {
+                (None, Some(_)) | (Some(_), None) => return false,
+                (Some(s_block), Some(p_block)) => {
+                    if s_block.get_color() != p_block.get_color() {
                         return false;
                     }
 
+                    let s_rem = s_block.get_count() as usize;
+                    let p_rem = p_block.get_count() as usize;
+
                     let min = take.min(s_rem.min(p_rem));
 
-                    s_rem -= min;
-                    p_rem -= min;
                     take -= min;
 
-                    if s_rem == 0 {
-                        s_block = s_blocks.next();
-                        s_rem = s_block.map_or(0, Block::get_count)
-                            as usize;
+                    if s_rem == min {
+                        s_next = s_blocks.next();
                     }
 
-                    if p_rem == 0 {
-                        p_block = p_blocks.next();
-                        p_rem = p_block.map_or(0, Block::get_count)
-                            as usize;
+                    if p_rem == min {
+                        p_next = p_blocks.next();
                     }
-                },
-                _ => {
-                    return false;
                 },
             }
         }
