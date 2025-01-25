@@ -496,7 +496,7 @@ pub trait Alignment {
     fn l_compare_take(&self, prev: &Self, take: usize) -> bool;
     fn r_compare_take(&self, prev: &Self, take: usize) -> bool;
 
-    #[expect(clippy::suspicious_operation_groupings)]
+    #[expect(clippy::comparison_chain)]
     fn aligns_with(
         &self,
         prev: &Self,
@@ -517,9 +517,16 @@ pub trait Alignment {
         let (l_take, r_take): (usize, usize) =
             (p_head.abs_diff(leftmost), p_head.abs_diff(rightmost));
 
-        self.l_compare_take(prev, l_take)
-            && self.r_compare_take(prev, r_take)
-            && (self.l_eq(prev) || self.r_eq(prev))
+        let diff = self.head() - p_head;
+
+        if 0 < diff {
+            self.l_compare_take(prev, l_take) && self.r_eq(prev)
+        } else if diff < 0 {
+            self.r_compare_take(prev, r_take) && self.l_eq(prev)
+        } else {
+            self.l_compare_take(prev, l_take)
+                && self.r_compare_take(prev, r_take)
+        }
     }
 }
 

@@ -1489,6 +1489,7 @@ CANT_HALT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 1LD  1LC 0RB  0LC 0RA  1LA ...",
         "1RB 1RC  1LC 0LD  1RA 0LB  ... 0LA",
         "1RB 1RC  1LC 0RA  1LD 0LB  1RA ...",
+        "1RB 1LD  1LC 0RA  1LA 0LB  0RB ...",
 
         "1RB 1LA  0LA 1RC  1RA 1RD  ... 0RE  0LA 1RC",
         "1RB 1LB  1LC 0RE  0LD 0RA  1RA 0LD  ... 0RC",
@@ -1650,6 +1651,7 @@ CANT_BLANK_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 2RA 3RB 0LB  1LB 1LA 0LA 3LA",
 
         "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB",
+        "1RB 1LD  1LC 0RA  1LA 0LB  0RB ...",
         "1RB 0LC  0LD 1RD  0LA 0RD  1RA 1LA",
         "1RB 0LC  0RC 1LD  1RD 0LA  1LB 1LA",
         "1RB 0LC  0RD 0RC  1LD 0RB  1LA 0LC",
@@ -2227,6 +2229,7 @@ SEGMENT_HALT_FALSE_NEGATIVES = {
     "1RB 1LA  0RC 0RB  1LC 1LD  0LA ...",
     "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
     "1RB 1LD  1LC 0RB  0LC 0RA  1LA ...",
+    "1RB 1LD  1LC 0RA  1LA 0LB  0RB ...",
 
     "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC",
     "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
@@ -2567,6 +2570,7 @@ DO_BLANK: set[str] = {
 
     "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA",
     "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA",
+    "1RB ...  0LC 0RB  0LD 1LC  1RA 0RB",
 
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
     "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE",  # 10^30
@@ -3539,6 +3543,8 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB ...  1RC 1LB  0LD 0RC  1LA 1LD",
     "1RB 1LA  1RC 0RB  0LC 1LD  ... 0LA",
     "1RB 1LA  1RC 0RB  1LC 1LD  ... 0LA",
+    "1RB ...  0LC 0RB  0LD 1LC  1RA 0RB",
+    "1RB 1LD  1LC 0RA  1LA 0LB  0RB ...",
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
     "1RB 0LC  1LA 1RC  1RA 0LD  0RE 1LD  ... 0RA",
