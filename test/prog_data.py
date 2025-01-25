@@ -1447,6 +1447,9 @@ CANT_HALT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 1LC  0LA 0RB  1LA ...",
         "1RB 1RC  0LA 0RA  0LB ...",
         "1RB 1RC  1LC ...  0RA 0LB",
+        "1RB 1LC  1LC 1RB  ... 1LA",
+        "1RB 1LA  1LA 1RC  ... 1RB",
+        "1RB 0LC  1LB 1RA  ... 1LA",
 
         "1RB ... 0RB ...  2LB 3RA 0RA 0RA",
 
@@ -2029,6 +2032,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 0LB  1LA 1RC  0RC 0RA",
         "1RB ...  0LC 0RB  1LC 1LA",
         "1RB 1LB  0RC 0RB  1LC 0LA",
+        "1RB 0RC  0RC ...  1LC 0LA",
 
         "1RB 2RA 3RB 0LB  1LB 1LA 0LA 3LA",
         "1RB 2RB 2LA 0LB  2LB 2RB 3RB 2LA",
@@ -2194,6 +2198,9 @@ SEGMENT_HALT_FALSE_NEGATIVES = {
     "1RB ...  1LC 1RA  1LA 0LC",
     "1RB 0LB  1LC 1RB  ... 1LA",
     "1RB 0LC  0LC 1RA  ... 1LA",
+    "1RB 0LC  1LB 1RA  ... 1LA",
+    "1RB 1LA  1LA 1RC  ... 1RB",
+    "1RB 1LC  1LC 1RB  ... 1LA",
     "1RB 1LC  0LA 0RB  1LA ...",
 
     "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",
@@ -2258,6 +2265,7 @@ SEGMENT_SPINOUT_FALSE_NEGATIVES: set[str] = {
 
     "1RB ...  0LC 0RB  1LC 1LA",
     "1RB ...  0RC 0RB  1LC 1LA",
+    "1RB 0RC  0RC ...  1LC 0LA",
     "1RB 0LB  0LC 0LA  1RC 1LB",
     "1RB 0RB  0RC 0RA  1LC 1RB",
     "1RB 0RB  1LC 0RA  1LC 1LA",
@@ -3497,6 +3505,17 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 0RB  1LC 0RA  1LC 1LA",
     "1RB 0RC  1LB 1RA  0RB 0RA",
     "1RB ...  0RC 0RB  1LC 1LA",
+    "1RB ...  0RC 1LB  1LA 0LA",
+    "1RB 0LC  1LB 1RA  ... 1LA",
+    "1RB 0RB  1LC ...  0LA 1RC",
+    "1RB 0RC  0RC ...  1LC 0LA",
+    "1RB 0RC  1LA 1RB  ... 1LB",
+    "1RB 1LA  0LA 0LC  ... 1RA",
+    "1RB 1LA  1LA 0LC  ... 1RA",
+    "1RB 1LA  1LA 1RC  ... 1RB",
+    "1RB 1LA  1LC 0LC  ... 1RA",
+    "1RB 1LC  1LC 1RB  ... 1LA",
+    "1RB 1RC  0RC ...  1LC 0LA",
 
     "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
     "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
