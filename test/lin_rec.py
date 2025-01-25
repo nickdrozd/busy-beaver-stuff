@@ -249,7 +249,7 @@ class HeadTape:
 
     def aligns_with(
             self,
-            prev: HeadTape,
+            prev: Self,
             leftmost: int,
             rightmost: int,
     ) -> bool:
