@@ -444,14 +444,6 @@ impl HeadTape {
         }
     }
 
-    pub const fn head(&self) -> Pos {
-        self.head
-    }
-
-    pub const fn scan(&self) -> Color {
-        self.tape.scan
-    }
-
     pub fn at_edge(&self, edge: Shift) -> bool {
         self.tape.at_edge(edge)
     }
