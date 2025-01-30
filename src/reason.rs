@@ -55,7 +55,8 @@ pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> BackwardResult {
 
 type Configs = Vec<Config>;
 type Blanks = HashSet<State>;
-type Entrypoints = BTreeMap<State, Vec<(Slot, Instr)>>;
+type Entries = Vec<(Slot, Instr)>;
+type Entrypoints = BTreeMap<State, (Entries, Entries)>;
 
 fn cant_reach(
     comp: &CompProg,
@@ -121,19 +122,24 @@ fn get_valid_steps(
 
         let mut good_steps = vec![];
 
-        for &((next_state, next_color), (print, shift, _)) in
-            &entrypoints[state]
-        {
-            let Some(at_edge) = tape.check_step(shift, print) else {
+        let (same, diff) = &entrypoints[state];
+
+        for &((next_state, next_color), (print, shift, _)) in same {
+            let Some(at_edge) = tape.check_edge(shift, print) else {
                 continue;
             };
 
-            if at_edge
-                && tape.scan == next_color
-                && *state == next_state
-            {
+            if at_edge && tape.scan == next_color {
                 return Err(Spinout);
             }
+
+            good_steps.push((next_color, shift, next_state));
+        }
+
+        for &((next_state, next_color), (print, shift, _)) in diff {
+            if !tape.check_step(shift, print) {
+                continue;
+            };
 
             good_steps.push((next_color, shift, next_state));
         }
@@ -247,17 +253,25 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 
     for (&slot, &instr) in comp {
         let (_, _, state) = instr;
-        entrypoints.entry(state).or_default().push((slot, instr));
+        let (same, diff) = entrypoints.entry(state).or_default();
+
+        if slot.0 == state {
+            same.push((slot, instr));
+        } else {
+            diff.push((slot, instr));
+        }
     }
 
     for _ in 0..entrypoints.len() {
         let reached: Vec<State> = entrypoints.keys().copied().collect();
 
-        for instrs in entrypoints.values_mut() {
-            instrs.retain(|((state, _), _)| reached.contains(state));
+        for (_, diff) in entrypoints.values_mut() {
+            diff.retain(|((state, _), _)| reached.contains(state));
         }
 
-        entrypoints.retain(|_, instrs| !instrs.is_empty());
+        entrypoints.retain(|_, (same, diff)| {
+            !same.is_empty() || !diff.is_empty()
+        });
 
         if entrypoints.len() == reached.len() {
             break;
@@ -285,37 +299,39 @@ fn test_entrypoints() {
     assert_entrypoints!(
         "1RB ...  1LB 0RB",
         [
-            1 => vec![
+            1 => (vec![
                 ((1, 0), (1, false, 1)),
                 ((1, 1), (0, true, 1)),
-            ]
+            ], vec![])
         ]
     );
 
     assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LD",
         [
-            2 => vec![
-                ((2, 0), (1, true, 2)),
-                ((3, 0), (0, false, 2)),
-            ],
-            3 => vec![
-                ((2, 1), (1, false, 3)),
-                ((3, 1), (0, false, 3)),
-            ]
+            2 => (
+                vec![((2, 0), (1, true, 2))],
+                vec![((3, 0), (0, false, 2))],
+            ),
+            3 => (
+                vec![((3, 1), (0, false, 3))],
+                vec![((2, 1), (1, false, 3))],
+            )
         ]
     );
 
     assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LB",
         [
-            1 => vec![((3, 1), (0, false, 1))],
-            2 => vec![
-                ((1, 0), (0, false, 2)),
-                ((2, 0), (1, true, 2)),
-                ((3, 0), (0, false, 2))
-            ],
-            3 => vec![((2, 1), (1, false, 3))]
+            1 => (vec![], vec![((3, 1), (0, false, 1))]),
+            2 => (
+                vec![((2, 0), (1, true, 2))],
+                vec![
+                    ((1, 0), (0, false, 2)),
+                    ((3, 0), (0, false, 2))
+                ],
+            ),
+            3 => (vec![], vec![((2, 1), (1, false, 3))])
         ]
     );
 }
@@ -495,7 +511,20 @@ impl Backstepper {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
     }
 
-    fn check_step(&self, shift: Shift, print: Color) -> Option<bool> {
+    fn check_step(&self, shift: Shift, print: Color) -> bool {
+        let pull = if shift { &self.lspan } else { &self.rspan };
+
+        print
+            == if let Some(block) = pull.span.0.first() {
+                block.color
+            } else if pull.end == TapeEnd::Blanks {
+                0
+            } else {
+                return true;
+            }
+    }
+
+    fn check_edge(&self, shift: Shift, print: Color) -> Option<bool> {
         let (pull, push) = if shift {
             (&self.lspan, &self.rspan)
         } else {
@@ -604,7 +633,7 @@ impl Backstepper {
 
         let shift = shift != 0;
 
-        let result = self.check_step(shift, print).is_some();
+        let result = self.check_edge(shift, print).is_some();
 
         assert_eq!(result, success);
 
@@ -720,13 +749,13 @@ fn test_spinout() {
 
     tape.assert("0+ [1] 0^2 ?");
 
-    assert_eq!(tape.check_step(false, 1), None);
-    assert_eq!(tape.check_step(true, 0), Some(true));
+    assert_eq!(tape.check_edge(false, 1), None);
+    assert_eq!(tape.check_edge(true, 0), Some(true));
 
     tape.rspan.span.0.insert(0, Block::new(1, 0));
 
     tape.assert("0+ [1] 1^0 0^2 ?");
 
-    assert_eq!(tape.check_step(false, 1), Some(false));
-    assert_eq!(tape.check_step(true, 0), Some(true));
+    assert_eq!(tape.check_edge(false, 1), Some(false));
+    assert_eq!(tape.check_edge(true, 0), Some(true));
 }
