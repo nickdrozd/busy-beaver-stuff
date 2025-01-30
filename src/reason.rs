@@ -708,3 +708,25 @@ fn test_backstep_required() {
 
     tape.assert("0+ 1 [0] 0 ?");
 }
+
+#[test]
+fn test_spinout() {
+    let mut tape = Backstepper {
+        scan: 1,
+        head: 0,
+        lspan: Span::new(vec![], TapeEnd::Blanks),
+        rspan: Span::new(vec![Block::new(0, 2)], TapeEnd::Unknown),
+    };
+
+    tape.assert("0+ [1] 0^2 ?");
+
+    assert_eq!(tape.check_step(false, 1), None);
+    assert_eq!(tape.check_step(true, 0), Some(true));
+
+    tape.rspan.span.0.insert(0, Block::new(1, 0));
+
+    tape.assert("0+ [1] 1^0 0^2 ?");
+
+    assert_eq!(tape.check_step(false, 1), Some(false));
+    assert_eq!(tape.check_step(true, 0), Some(true));
+}
