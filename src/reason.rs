@@ -124,16 +124,36 @@ fn get_valid_steps(
 
         let (same, diff) = &entrypoints[state];
 
+        let mut spinouts = HashSet::new();
+
         for &((next_state, next_color), (print, shift, _)) in same {
             let Some(at_edge) = tape.check_edge(shift, print) else {
                 continue;
             };
 
             if at_edge && tape.scan == next_color {
-                return Err(Spinout);
+                spinouts.insert(shift);
+                continue;
             }
 
             good_steps.push((next_color, shift, next_state));
+        }
+
+        if !spinouts.is_empty() {
+            if diff.is_empty() {
+                return Err(Spinout);
+            }
+
+            assert_eq!(spinouts.len(), 1);
+
+            let shift = *spinouts.iter().next().unwrap();
+
+            let indef_steps =
+                get_indefinite_steps(shift, &config, diff)?;
+
+            assert!(!indef_steps.0.is_empty());
+
+            checked.push(indef_steps);
         }
 
         for &((next_state, next_color), (print, shift, _)) in diff {
@@ -154,11 +174,51 @@ fn get_valid_steps(
     Ok(checked)
 }
 
+fn get_indefinite_steps(
+    push: Shift,
+    config: &Config,
+    entrypoints: &Entries,
+) -> Result<(Vec<Instr>, Config), BackwardResult> {
+    if entrypoints.iter().any(|&(_, (_, shift, _))| shift == push) {
+        return Err(Spinout);
+    }
+
+    let mut steps = vec![];
+
+    let mut tape = config.tape.clone();
+
+    tape.push_indef(push);
+
+    for &((next_state, next_color), (print, shift, _)) in entrypoints {
+        assert!(shift != push);
+
+        if !tape.check_step(shift, print) {
+            continue;
+        }
+
+        steps.push((next_color, shift, next_state));
+    }
+
+    if steps.is_empty() {
+        return Err(Spinout);
+    }
+
+    Ok((steps, Config::new(config.state, tape)))
+}
+
 fn step_configs(
     configs: ValidatedSteps,
     blanks: &mut Blanks,
 ) -> Result<Configs, BackwardResult> {
     let mut stepped = Configs::new();
+
+    if configs.iter().any(|(instrs, config)| {
+        instrs
+            .iter()
+            .any(|&(_, shift, _)| config.tape.pulls_indef(shift))
+    }) {
+        return Err(Spinout);
+    }
 
     for (instrs, config) in configs {
         let config = Rc::new(config);
@@ -179,6 +239,8 @@ fn step_configs(
 
                 blanks.insert(state);
             }
+
+            assert!(!tape.has_indef());
 
             let mut next_config = Config {
                 state,
@@ -356,6 +418,10 @@ impl Config {
     }
 
     fn lin_rec(&self) -> bool {
+        if self.tape.has_indef() {
+            return false;
+        }
+
         let head = self.tape.head();
         let mut leftmost = head;
         let mut rightmost = head;
@@ -441,6 +507,10 @@ impl Span {
 
     fn len(&self) -> usize {
         self.span.len()
+    }
+
+    fn has_indef(&self) -> bool {
+        self.span.0.iter().any(|block| block.count == 0)
     }
 }
 
@@ -543,6 +613,21 @@ impl Backstepper {
         (print == required).then_some(at_edge)
     }
 
+    fn has_indef(&self) -> bool {
+        self.lspan.has_indef() || self.rspan.has_indef()
+    }
+
+    #[expect(clippy::missing_const_for_fn)]
+    fn pulls_indef(&self, shift: Shift) -> bool {
+        let pull = if shift { &self.lspan } else { &self.rspan };
+
+        let Some(block) = pull.span.0.first() else {
+            return false;
+        };
+
+        block.count == 0
+    }
+
     fn backstep(&mut self, shift: Shift, read: Color) {
         let (stepped, pull, push) = if shift {
             (-1, &mut self.lspan, &mut self.rspan)
@@ -566,7 +651,10 @@ impl Backstepper {
 
             if !push.span.0.is_empty() && push.span.0[0].color == color
             {
-                push.span.0[0].increment();
+                let block = &mut push.span.0[0];
+                if block.count != 0 {
+                    block.increment();
+                }
             } else {
                 push.span.push_block(color, 1);
             }
@@ -575,6 +663,31 @@ impl Backstepper {
         self.scan = read;
 
         self.head += stepped;
+    }
+
+    fn push_indef(&mut self, shift: Shift) {
+        let push = if shift {
+            &mut self.rspan
+        } else {
+            &mut self.lspan
+        };
+
+        let scan = self.scan;
+
+        if scan == 0 && matches!(push.end, TapeEnd::Blanks) {
+            return;
+        }
+
+        let blocks = &mut push.span;
+
+        if let Some(block) = blocks.0.first_mut() {
+            if block.color == scan {
+                block.count = 0;
+                return;
+            }
+        }
+
+        blocks.push_block(scan, 0);
     }
 }
 
@@ -752,7 +865,7 @@ fn test_spinout() {
     assert_eq!(tape.check_edge(false, 1), None);
     assert_eq!(tape.check_edge(true, 0), Some(true));
 
-    tape.rspan.span.push_block(1, 0);
+    tape.push_indef(true);
 
     tape.assert("0+ [1] 1.. 0^2 ?");
 
