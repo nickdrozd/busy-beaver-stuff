@@ -568,7 +568,7 @@ impl Backstepper {
             {
                 push.span.0[0].increment();
             } else {
-                push.span.0.insert(0, Block::new(color, 1));
+                push.span.push_block(color, 1);
             }
         }
 
@@ -752,7 +752,7 @@ fn test_spinout() {
     assert_eq!(tape.check_edge(false, 1), None);
     assert_eq!(tape.check_edge(true, 0), Some(true));
 
-    tape.rspan.span.0.insert(0, Block::new(1, 0));
+    tape.rspan.span.push_block(1, 0);
 
     tape.assert("0+ [1] 1^0 0^2 ?");
 

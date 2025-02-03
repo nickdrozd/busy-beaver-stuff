@@ -532,9 +532,13 @@ impl Span {
         self.len() == 0
     }
 
+    fn push_block(&mut self, color: Color, count: Count) {
+        self.0.insert(0, Block::new(color, count));
+    }
+
     fn push(&mut self, print: Color, stepped: Count) {
         if self.is_empty() {
-            self.0.insert(0, Block::new(print, stepped));
+            self.push_block(print, stepped);
             return;
         }
 
@@ -543,7 +547,7 @@ impl Span {
         if block.color == print {
             block.add_count(stepped);
         } else {
-            self.0.insert(0, Block::new(print, stepped));
+            self.push_block(print, stepped);
         }
     }
 
