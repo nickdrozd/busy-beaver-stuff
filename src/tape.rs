@@ -33,10 +33,10 @@ pub trait Block: Display {
         write!(
             f,
             "{}",
-            if count == 1 {
-                format!("{color}")
-            } else {
-                format!("{color}^{count}")
+            match count {
+                1 => format!("{color}"),
+                0 => format!("{color}.."),
+                _ => format!("{color}^{count}"),
             }
         )
     }

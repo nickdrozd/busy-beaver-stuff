@@ -754,7 +754,7 @@ fn test_spinout() {
 
     tape.rspan.span.push_block(1, 0);
 
-    tape.assert("0+ [1] 1^0 0^2 ?");
+    tape.assert("0+ [1] 1.. 0^2 ?");
 
     assert_eq!(tape.check_edge(false, 1), Some(false));
     assert_eq!(tape.check_edge(true, 0), Some(true));
