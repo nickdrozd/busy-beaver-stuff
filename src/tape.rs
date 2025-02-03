@@ -1,7 +1,7 @@
 use core::{
     cell::Cell,
     fmt::{Display, Formatter, Result},
-    iter::{once, repeat},
+    iter::{once, repeat_n},
 };
 
 use crate::instrs::{Color, Shift};
@@ -120,7 +120,7 @@ impl<B: Block> Span<B> {
 
     fn unroll(&self) -> impl DoubleEndedIterator<Item = Color> {
         self.0.iter().flat_map(|block| {
-            repeat(block.get_color()).take(block.get_count() as usize)
+            repeat_n(block.get_color(), block.get_count() as usize)
         })
     }
 
