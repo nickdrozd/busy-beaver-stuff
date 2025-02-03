@@ -461,7 +461,7 @@ impl HeadTape {
             self.head += stepped as Pos;
         } else {
             self.head -= stepped as Pos;
-        };
+        }
 
         stepped
     }

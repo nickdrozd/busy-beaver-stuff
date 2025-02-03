@@ -139,7 +139,7 @@ fn get_valid_steps(
         for &((next_state, next_color), (print, shift, _)) in diff {
             if !tape.check_step(shift, print) {
                 continue;
-            };
+            }
 
             good_steps.push((next_color, shift, next_state));
         }
@@ -569,7 +569,7 @@ impl Backstepper {
                 push.span.0[0].increment();
             } else {
                 push.span.0.insert(0, Block::new(color, 1));
-            };
+            }
         }
 
         self.scan = read;
