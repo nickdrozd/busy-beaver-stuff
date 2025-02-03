@@ -16,12 +16,8 @@
     clippy::unneeded_field_pattern,
     clippy::redundant_type_annotations
 )]
-#![expect(
-    clippy::cast_possible_truncation,
-    clippy::redundant_pub_crate,
-    clippy::enum_glob_use
-)]
-#![allow(clippy::should_panic_without_expect)]
+#![expect(clippy::cast_possible_truncation)]
+#![allow(clippy::enum_glob_use, clippy::should_panic_without_expect)]
 
 mod blocks;
 mod graph;
