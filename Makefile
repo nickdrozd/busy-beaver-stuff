@@ -98,7 +98,7 @@ SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(RUL) $(TP) $(COV) $(NUM) $(HOLD)
 
 PYTEST = $(PYTHON) -m unittest
 
-test : test-rust
+test :
 	$(PYTEST) discover -v
 
 test-all : test-rust compile
