@@ -52,6 +52,7 @@ if TYPE_CHECKING:
 
     from test.lin_rec import Tapes
     from tm.machine import Count
+    from tm.reason import BackwardReasoner as BR
 
     BasicMachine = (
         Machine
@@ -264,6 +265,22 @@ class TuringTest(TestCase):
             segment_cant_spin_out(prog, segs).is_settled(),
             f'segment spin out false negative: "{prog}"')
 
+    ########################################
+
+    def assert_backwards_cat(self, prog: str, cat: str, reasoner: BR):
+        self.assertEqual(
+            cat,
+            str(reasoner(prog, REASON_LIMIT)))
+
+    def assert_halt_cat(self, prog: str, cat: str):
+        self.assert_backwards_cat(prog, cat, cant_halt)
+
+    def assert_blank_cat(self, prog: str, cat: str):
+        self.assert_backwards_cat(prog, cat, cant_blank)
+
+    def assert_spinout_cat(self, prog: str, cat: str):
+        self.assert_backwards_cat(prog, cat, cant_spin_out)
+
 ########################################
 
 class Reason(TuringTest):
@@ -302,21 +319,15 @@ class Reason(TuringTest):
     def test_false_negatives(self):
         for cat, progs in CANT_HALT_FALSE_NEGATIVES_CATS.items():
             for prog in progs:
-                self.assertEqual(
-                    cat,
-                    str(cant_halt(prog, depth = REASON_LIMIT)))
+                self.assert_halt_cat(prog, cat)
 
         for cat, progs in CANT_BLANK_FALSE_NEGATIVES_CATS.items():
             for prog in progs:
-                self.assertEqual(
-                    cat,
-                    str(cant_blank(prog, depth = REASON_LIMIT)))
+                self.assert_blank_cat(prog, cat)
 
         for cat, progs in CANT_SPIN_OUT_FALSE_NEGATIVES_CATS.items():
             for prog in progs:
-                self.assertEqual(
-                    cat,
-                    str(cant_spin_out(prog, depth = REASON_LIMIT)))
+                self.assert_spinout_cat(prog, cat)
 
         totals = {
             226: CANT_HALT_FALSE_NEGATIVES,
