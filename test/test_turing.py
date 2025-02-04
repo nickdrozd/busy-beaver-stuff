@@ -443,6 +443,32 @@ class Reason(TuringTest):
         for prog in HALTERS | SPINNERS | RECURS | INFRUL:
             self.assert_simple(prog)
 
+    def test_recalcitrant(self):
+        progs = (
+            "1RB 0LC  1LB 1LA  1RC 0LC",
+            "1RB 2RA 1LA 0RB  2LB 3LA 0RB 2RA",
+            "1RB 0LB  0RC 0LC  0RD 1LC  1LD 0LA",
+            "1RB 2RA 0RB  2LB 1LC 0LA  1LA 2RA 2LA",
+            "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  1RA 1LD",
+            "1RB 1LE  1RC 0RA  0LD 0LC  1RD 1RE  1LB 0RB",
+        )
+
+        errors = []
+
+        for prog in progs:
+            try:
+                self.assert_could_spin_out_backward(prog)
+            except AssertionError:
+                errors.append(prog)
+
+        if not errors:
+            return
+
+        for error in errors:
+            print(error)
+
+        raise AssertionError
+
 
 class Segment(TuringTest):
     def test_halt(self):
