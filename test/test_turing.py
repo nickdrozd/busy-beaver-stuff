@@ -1134,7 +1134,7 @@ class Prover(RunProver):
             backsym = 2,
         )
 
-    def _test_prover(  # type: ignore[misc]
+    def _test_prover(  # type: ignore[explicit-any]
             self,
             prog_data: Mapping[str, Any],
             blank: bool = False,
