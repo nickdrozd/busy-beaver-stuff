@@ -14,6 +14,7 @@ ignore = [
     "EM",       # exception strings
     "ERA001",   # commented-out code
     "N",        # naming
+    "PERF203",  # try in loop
     "PLR0904",  # too many public methods
     "PLR2004",  # magic value comparison
     "PLW1514",  # open encoding
