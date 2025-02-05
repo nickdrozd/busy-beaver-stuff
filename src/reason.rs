@@ -141,6 +141,8 @@ fn get_valid_steps(
 
         if !spinouts.is_empty() {
             if diff.is_empty() {
+                #[cfg(debug_assertions)]
+                println!("~~ empty diff");
                 return Err(Spinout);
             }
 
@@ -180,6 +182,8 @@ fn get_indefinite_steps(
     entrypoints: &Entries,
 ) -> Result<(Vec<Instr>, Config), BackwardResult> {
     if entrypoints.iter().any(|&(_, (_, shift, _))| shift == push) {
+        #[cfg(debug_assertions)]
+        println!("~~ shift == push");
         return Err(Spinout);
     }
 
@@ -200,6 +204,8 @@ fn get_indefinite_steps(
     }
 
     if steps.is_empty() {
+        #[cfg(debug_assertions)]
+        println!("~~ empty steps");
         return Err(Spinout);
     }
 
@@ -217,6 +223,8 @@ fn step_configs(
             .iter()
             .any(|&(_, shift, _)| config.tape.pulls_indef(shift))
     }) {
+        #[cfg(debug_assertions)]
+        println!("~~ pulls indef");
         return Err(Spinout);
     }
 
