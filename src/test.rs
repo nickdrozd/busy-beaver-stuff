@@ -159,6 +159,8 @@ fn test_tree_slow() {
 
 /**************************************/
 
+use crate::reason::BackwardResult;
+
 fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
     let halt_flag = halt != 0;
 
@@ -170,7 +172,15 @@ fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         *access(&visited_count) += 1;
 
-        if cant_reach(prog, 256).is_settled() {
+        let result = cant_reach(prog, 256);
+
+        if let BackwardResult::Refuted(steps) = result {
+            if steps >= 256 {
+                println!("{steps} -- {}", prog.show(Some(params)));
+            }
+        }
+
+        if result.is_settled() {
             return;
         }
 
