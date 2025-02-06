@@ -686,16 +686,7 @@ impl Backstepper {
             return;
         }
 
-        let blocks = &mut push.span;
-
-        if let Some(block) = blocks.0.first_mut() {
-            if block.color == scan {
-                block.count = 0;
-                return;
-            }
-        }
-
-        blocks.push_block(scan, 0);
+        push.span.push_block(scan, 0);
     }
 }
 
