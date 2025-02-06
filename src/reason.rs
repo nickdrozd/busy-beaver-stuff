@@ -23,8 +23,6 @@ const MAX_STACK_DEPTH: Depth = 46;
 pub enum BackwardResult {
     Init,
     LinRec,
-    #[expect(non_camel_case_types)]
-    Spinout_empty_diff,
     Spinout,
     StepLimit,
     DepthLimit,
@@ -142,10 +140,6 @@ fn get_valid_steps(
         }
 
         if !spinouts.is_empty() {
-            if diff.is_empty() {
-                return Err(Spinout_empty_diff);
-            }
-
             assert_eq!(spinouts.len(), 1);
 
             let shift = *spinouts.iter().next().unwrap();
@@ -339,10 +333,6 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
             diff.retain(|((state, _), _)| reached.contains(state));
         }
 
-        entrypoints.retain(|_, (same, diff)| {
-            !same.is_empty() || !diff.is_empty()
-        });
-
         if entrypoints.len() == reached.len() {
             break;
         }
@@ -379,9 +369,10 @@ fn test_entrypoints() {
     assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LD",
         [
+            1 => (vec![], vec![]),
             2 => (
                 vec![((2, 0), (1, true, 2))],
-                vec![((3, 0), (0, false, 2))],
+                vec![((1, 0), (0, false, 2)), ((3, 0), (0, false, 2))],
             ),
             3 => (
                 vec![((3, 1), (0, false, 3))],
