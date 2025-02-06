@@ -330,9 +330,9 @@ class Reason(TuringTest):
                 self.assert_spinout_cat(prog, cat)
 
         totals = {
-            226: CANT_HALT_FALSE_NEGATIVES,
-            281: CANT_BLANK_FALSE_NEGATIVES,
-            200: CANT_SPIN_OUT_FALSE_NEGATIVES,
+            229: CANT_HALT_FALSE_NEGATIVES,
+            287: CANT_BLANK_FALSE_NEGATIVES,
+            207: CANT_SPIN_OUT_FALSE_NEGATIVES,
         }
 
         for total, cat in totals.items():  # type: ignore[assignment]

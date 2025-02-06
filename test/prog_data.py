@@ -257,6 +257,9 @@ SPINOUT_BLANK = {
     # 3/3
     "1RB 2RC 2RA  0LC 1RA 2RB  2LC 1LA 0RB": ({'B', 'C'}, 606),
 
+    # 2/5
+    "1RB 2RA 0RB 2RB 3RB  0LB 4LA 3LA 0RB 1RA": ({'B'}, 21),
+
     # 5/2
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RB 0LA": ({'B', 'C', 'D'}, 379),
     "1RB 1LB  1LA 0LC  1RA 0LD  0RE 1LD  1RE 0RB": ({'B', 'D', 'E'}, 734),
@@ -463,6 +466,8 @@ RECUR_COMPACT = {
     "1RB 2LB 0RA  1LA 2RB 2RA": (  0, 60),
     "1RB 2LB 0RA  1LA 1RB 2RA": (  0, 48),
     "1RB 2LA 1LB  0LA 0RB 1RA": (  0, 47),
+    "1RB 0RB ...  2LB 0RB 2LA": (3, 4),
+    "1RB 0RB ...  1LB 2LA 0RB": (2, 11),
 
     # 4/2
     "1RB 1LA  0RC 1RC  1LD 0RB  0LD 1LA": (586388, 104),
@@ -575,7 +580,9 @@ RECUR_COMPACT = {
     "1RB 2RA 3RB 1LB  1LB 1LA 0LA 3LA": ( 48, 18),
     "1RB 3RB 1LB 1LA  0LB 2RB 3LA 1LA": ( 42, 26),
     "1RB 0RB 1RA 3LA  2LB 2RB 3RB 0LA": ( 33, 51),
+    "1RB 2LA 3RB 0RB  0LB 1LA 1RA 0RB": ( 30, 19),
     "1RB 2LB 1RA 2LA  2LB 3LA 0RA 2RA": ( 24, 34),
+    "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...": (  3, 17),
     "1RB 2LA 3LA 0RB  0LA 2RB 1LB 3RB": ( 1, 20),
     "1RB 2RA 3RB 2LB  2LB 3LA 0LA 2LA": ( 0, 10),
     "1RB ... 0RB ...  2LB 3RA 0RA 0RA": ( 0, 9),
@@ -610,6 +617,7 @@ RECUR_COMPACT = {
     "1RB 1RA 0RB 4LA 4LB  2LB 2RB 3RB 2LA 0LA": (12, 96),
     "1RB 0RB 1RB 2RA 4LA  2LA 3RB 3LB 4RB 0LA": (4, 51),
     "1RB 0RB 3RA 1RB 4LA  2LA 2RB 3LB 4RB 0LA": (4, 51),
+    "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA": (2, 22),
 
     # 5/2
     "1RB 1RC  1LC 0RC  1RA 0LD  0LE 1LD  1LA 0RA": ( 77, 180),
@@ -1584,6 +1592,8 @@ CANT_HALT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 2LA ...  0LB 1LA 0LA",
         "1RB 2LB ...  1LB 2LA 1RB",
         "1RB 2RA 1LA  2LA 2RB ...",
+        "1RB 0RB ...  1LB 2LA 0RB",
+        "1RB 0RB ...  2LB 0RB 2LA",
 
         "1RB ...  0LC 0RB  1LC 1LA",
         "1RB ...  0RC 0RB  1LC 1LA",
@@ -1613,6 +1623,7 @@ CANT_HALT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 3LA 1LA 1RB  2LB 2RA ... 3RB",
         "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
         "1RB 3LB ... 1LA  2LA 3RB 0RA 2LA",
+        "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...",
 
         "1RB ...  0LC 1RC  0RC 1LD  1LA 0LD",
         "1RB ...  1LC 0LB  1RD 1LA  0RB 0RD",
@@ -1799,6 +1810,8 @@ CANT_BLANK_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 2RB 2LA  0LA 0RB 1LA",
         "1RB 2RB 2LA  0LB 1LA 0RB",
         "1RB 2RB 2LA  2LB 1LA 0RB",
+        "1RB 0RB ...  1LB 2LA 0RB",
+        "1RB 0RB ...  2LB 0RB 2LA",
 
         "1RB ...  0LC 0RB  1LC 1LA",
         "1RB ...  0RC 0RB  1LC 1LA",
@@ -1863,6 +1876,9 @@ CANT_BLANK_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
         "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
         "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
+        "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...",
+        "1RB 2LA 3RB 0RB  1LB 1LA 1RA 0RB",
+        "1RB 2LA 3RB 0RB  0LB 1LA 1RA 0RB",
 
         "1RB ...  0LC 0RA  1LD 1RC  0RB 0LD",
         "1RB ...  0LC 1RA  1LD 1RC  0RB 0LD",
@@ -1933,6 +1949,7 @@ CANT_BLANK_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 2RC 1LA  2LA 1RB 0RB  2RB 2RA 1LC",
 
         "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",
+        "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA",
 
         "1RB ...  1RC 1LC  1LD 0RE  0RA 0LD  0LB 1RE",
         "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
@@ -2092,6 +2109,8 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 2RA 2LB  1LB 2LA 0RA",
         "1RB 2RB 2LA  0LB 1LA 0RB",
         "1RB 2RB 2LA  2LB 1LA 0RB",
+        "1RB 0RB ...  1LB 2LA 0RB",
+        "1RB 0RB ...  2LB 0RB 2LA",
 
         "1RB ...  0RC 0RB  1LC 1LA",
         "1RB 1LB  0LC 0RC  1LC 1LA",
@@ -2188,6 +2207,9 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 3RA 1LA 1LB  2LB 2RA 0LB 0LB",
         "1RB 0RA 1RA 1LB  2LB 3LA 2RA 1RB",
         "1RB 3RA 3RA 0LB  1LB 2LA 0RB 2LA",
+        "1RB 2LA 3RB 0RB  0LB 1LA 1RA 0RB",
+        "1RB 2LA 3RB 0RB  1LB 1LA 1RA 0RB",
+        "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...",
 
         "1RB ...  0LB 1LC  1RD 1LD  1LD 0RC",
         "1RB ...  1LB 0LC  1RC 0RD  1LD 1LC",
@@ -2216,6 +2238,8 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",
         "1RB 2RA 0RB 4LA 3LB  2LB 2RB 3RB 2LA 0LA",
         "1RB 1RA 0RB 4LA 4LB  2LB 2RB 3RB 2LA 0LA",
+        "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA",
+        "1RB 2RA 0RB 2RB 3RB  0LB 4LA 3LA 0RB 1RA",
 
         "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RA 0LA",
         "1RB 0RD  0RC 0RB  1LC 0LA  0RA 1RE  0LB 1RB",
@@ -2383,6 +2407,7 @@ SEGMENT_SPINOUT_FALSE_NEGATIVES: set[str] = {
 
     "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",
     "1RB 3LA 1LA 4LA 1RA  2LB 2RA ... 0RA 0RB",
+    "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA",
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
     "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
@@ -2911,6 +2936,7 @@ MACRO_FAILURES = {
     "1RB 2RB 2LA  2LB 1LA 0RB": 0,
 
     "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...": 0,
+    "1RB 2LA 3RB 0RB  1LB 1LA 1RA 0RB": 0,
 
     "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC": 0,
 
@@ -3608,6 +3634,7 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
     "1RB 1LA ... 3LA  2LA 3RB 3LA 0RA",
     "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",
+    "1RB 2LA 3RB 0RB  1LB 1LA 1RA 0RB",
 
     "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
     "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
