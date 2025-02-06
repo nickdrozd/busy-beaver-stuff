@@ -657,11 +657,11 @@ impl Backstepper {
         {
             let color = self.scan;
 
-            if !push.span.0.is_empty() && push.span.0[0].color == color
-            {
-                let block = &mut push.span.0[0];
-                if block.count != 0 {
+            if let Some(block) = push.span.0.first_mut() {
+                if block.color == color && block.count != 0 {
                     block.increment();
+                } else {
+                    push.span.push_block(color, 1);
                 }
             } else {
                 push.span.push_block(color, 1);
