@@ -161,11 +161,18 @@ fn test_tree_slow() {
 
 use crate::reason::BackwardResult;
 
-fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
+fn assert_reason(
+    params: Params,
+    halt: u8,
+    expected: (usize, (u64, u64)),
+) {
     let halt_flag = halt != 0;
+
+    let (max_refuted, _) = expected;
 
     let holdout_count = set_val(0);
     let visited_count = set_val(0);
+    let refuted_steps = set_val(0);
 
     let cant_reach = if halt_flag { cant_halt } else { cant_spin_out };
 
@@ -175,8 +182,12 @@ fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
         let result = cant_reach(prog, 256);
 
         if let BackwardResult::Refuted(steps) = result {
-            if steps >= 256 {
-                println!("{steps} -- {}", prog.show(Some(params)));
+            if steps > max_refuted {
+                println!("\"{}\": {steps},", prog.show(Some(params)));
+            }
+
+            if steps > *access(&refuted_steps) {
+                *access(&refuted_steps) = steps;
             }
         }
 
@@ -189,7 +200,10 @@ fn assert_reason(params: Params, halt: u8, expected: (u64, u64)) {
         // println!("{}", prog.show(Some(params)));
     });
 
-    let result = (get_val(holdout_count), get_val(visited_count));
+    let result = (
+        get_val(refuted_steps),
+        (get_val(holdout_count), get_val(visited_count)),
+    );
 
     assert_eq!(result, expected, "({params:?}, {halt}, {result:?})");
 }
@@ -206,20 +220,20 @@ macro_rules! assert_reason_results {
 #[test]
 fn test_reason() {
     assert_reason_results![
-        ((2, 2), 1, (18, 36)),
-        ((2, 2), 0, (12, 106)),
+        ((2, 2), 1, (2, (18, 36))),
+        ((2, 2), 0, (1, (12, 106))),
         //
-        ((3, 2), 1, (1_886, 3_140)),
-        ((3, 2), 0, (1_443, 13_128)),
+        ((3, 2), 1, (12, (1_886, 3_140))),
+        ((3, 2), 0, (7, (1_443, 13_128))),
         //
-        ((2, 3), 1, (2_307, 2_447)),
-        ((2, 3), 0, (1_604, 9_168)),
+        ((2, 3), 1, (4, (2_307, 2_447))),
+        ((2, 3), 0, (1, (1_604, 9_168))),
         //
-        ((4, 2), 1, (289_337, 467_142)),
-        ((4, 2), 0, (265_852, 2_291_637)),
+        ((4, 2), 1, (45, (289_337, 467_142))),
+        ((4, 2), 0, (38, (265_852, 2_291_637))),
         //
-        ((2, 4), 1, (310_597, 312_642)),
-        ((2, 4), 0, (406_828, 1_719_237)),
+        ((2, 4), 1, (6, (310_597, 312_642))),
+        ((2, 4), 0, (1, (406_828, 1_719_237))),
     ];
 }
 
@@ -227,14 +241,14 @@ fn test_reason() {
 #[ignore]
 fn test_reason_slow() {
     assert_reason_results![
-        ((5, 2), 1, (59_261_120, 95_310_168)),
-        ((5, 2), 0, (64_621_235, 534_798_275)),
+        ((5, 2), 1, (114, (59_261_120, 95_310_168))),
+        ((5, 2), 0, (255, (64_621_235, 534_798_275))),
         //
-        ((2, 5), 1, (69_848_916, 70_028_531)),
-        ((2, 5), 0, (137_507_422, 515_051_756)),
+        ((2, 5), 1, (8, (69_848_916, 70_028_531))),
+        ((2, 5), 0, (1, (137_507_422, 515_051_756))),
         //
-        ((3, 3), 1, (24_341_599, 25_306_222)),
-        ((3, 3), 0, (28_293_698, 149_365_898)),
+        ((3, 3), 1, (49, (24_341_599, 25_306_222))),
+        ((3, 3), 0, (124, (28_293_698, 149_365_898))),
     ];
 }
 

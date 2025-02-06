@@ -1292,6 +1292,20 @@ MODULAR = {
 
 CANT_REACH_STEPS: dict[str, dict[str, int]] = {
     "halt": {
+        "1RB 0LA  1LA ...": 3,
+
+        "1RB 2RB 0LA  1LA 2LA ...": 5,
+        "1RB 2RB 0LA  2LA ... 1LA": 5,
+
+        "1RB 2RB 3RB 0LA  1LA 2LA 3LA ...": 7,
+        "1RB 2RB 3RB 0LA  1LA 3LA ... 2LA": 7,
+        "1RB 2RB 3RB 0LA  2LA ... 3LA 1LA": 7,
+        "1RB 2RB 3RB 0LA  2LA 3LA 1LA ...": 7,
+        "1RB 3RB 0LA 2RB  2LA ... 3LA 1LA": 7,
+        "1RB 3RB 0LA 2RB  2LA 3LA 1LA ...": 7,
+
+        "1RB 0LA  0RC 1RC  1LA ...": 13,
+
         "1RB 2RB 3RB 4RB 0LA  1LA 2LA 3LA 4LA ...": 9,
         "1RB 2RB 3RB 4RB 0LA  1LA 2LA 4LA ... 3LA": 9,
         "1RB 2RB 3RB 4RB 0LA  1LA 3LA ... 4LA 2LA": 9,
@@ -1338,8 +1352,13 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
     },
 
     "spinout": {
+        "1RB ...  1LB 0LC  1RA 0RB": 8,
+        "1RB 0LC  0LB 1LA  1RC 0RB": 8,
+        "1RB 0LC  1LB 1LA  1RC 0RB": 8,
+
         "1RB 0RC  1LB 1RC  0LD 0RB  0RA 1LD": 25,
         "1RB 0RB  1LC 0LD  1LB 1RA  0RD 0LC": 29,
+        "1RB 1LD  0RC 1RC  1LC 1LA  0LD 0RA": 39,
 
         "1RB 0LB 2RC  1LA 1LC 2RC  1RC 2LA 0LA": 103,
         "1RB 1RC 0RC  1LC 1RC 2LA  2RC 2LB 0LB": 125,
