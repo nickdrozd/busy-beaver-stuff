@@ -23,6 +23,8 @@ const MAX_STACK_DEPTH: Depth = 46;
 pub enum BackwardResult {
     Init,
     LinRec,
+    #[expect(non_camel_case_types)]
+    Spinout_empty_diff,
     Spinout,
     StepLimit,
     DepthLimit,
@@ -141,9 +143,7 @@ fn get_valid_steps(
 
         if !spinouts.is_empty() {
             if diff.is_empty() {
-                #[cfg(debug_assertions)]
-                println!("~~ empty diff");
-                return Err(Spinout);
+                return Err(Spinout_empty_diff);
             }
 
             assert_eq!(spinouts.len(), 1);

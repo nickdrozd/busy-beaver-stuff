@@ -59,6 +59,7 @@ pub enum BackwardResult {
     init {},
     linrec {},
     spinout {},
+    spinout_empty_diff {},
     step_limit {},
     depth_limit {},
 }
@@ -81,6 +82,7 @@ impl BackwardResult {
             init {} => "init",
             linrec {} => "linrec",
             spinout {} => "spinout",
+            spinout_empty_diff {} => "spinout_empty_diff",
             step_limit {} => "step_limit",
             depth_limit {} => "depth_limit",
         }
@@ -94,6 +96,7 @@ impl From<BackwardResultRs> for BackwardResult {
             Init => Self::init {},
             LinRec => Self::linrec {},
             Spinout => Self::spinout {},
+            Spinout_empty_diff => Self::spinout_empty_diff {},
             StepLimit => Self::step_limit {},
             DepthLimit => Self::depth_limit {},
         }

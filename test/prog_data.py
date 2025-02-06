@@ -2051,8 +2051,10 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
     },
-    "spinout": {
+    "spinout_empty_diff": {
         "1RB ... ...  2LB 1RB 1LB",
+    },
+    "spinout": {
         "1RB ... 0LB  2LB 2RA 1LA",
         "1RB ... 0RB  2LB 2RA 0LA",
         "1RB 0LA ...  1LB 2LA 0RB",
