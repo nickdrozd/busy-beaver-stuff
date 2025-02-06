@@ -151,6 +151,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": (32,  581),
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,  536),
     "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,  444),
+    "1RB ...  0LB 1LC  1RD 1LD  1LD 0RC": ( 3,   13),
     "1RB 0RB  1LC 0LC  0RC 0LD  1RA 1LD": ( 2,   45),
     "1RB 1LB  1LA 1RC  1RC 0LD  0RB 1LD": ( 1,   37),
     "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": ( 1,   15),
@@ -354,6 +355,7 @@ QUASIHALT = {
     "1RB 1LA  0LA 0RC  1RD 0LA  1RA ...": ( 20, 7),
     "1RB 0LB  1RC 0LD  1LA 0RB  0RC 1LD": ( 12, 3),
     "1RB 0RB  1LC 0LD  1LB 1RA  0RD 0LC": ( 10, 2),
+    "1RB ...  1LB 0LC  1RC 0RD  1LD 1LC": (5, 13),
 
     # 5/2
     "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE": (221032, (2, 1)),
@@ -1258,6 +1260,8 @@ MODULAR = {
     "1RB ...  1LC 0RB  0LC 1RB",
     "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB",
     "1RB ...  0RC 1LC  1LC 0RD  0LB 1RD",
+    "1RB ...  0LB 1LC  1RD 1LD  1LD 0RC",
+    "1RB ...  1LB 0LC  1RC 0RD  1LD 1LC",
     "1RB ...  0LC 0LB  1RC 1RD  0LE 1RB  1LB 1LE",
     "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  0LC 1LE",
     "1RB ...  0LC 1LB  1RC 1RD  1LB 1RE  0LC 0LE",
@@ -2053,6 +2057,9 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
     },
     "spinout_empty_diff": {
         "1RB ... ...  2LB 1RB 1LB",
+
+        "1RB ...  0LB 1LC  1RD 1LD  1LD 0RC",
+        "1RB ...  1LB 0LC  1RC 0RD  1LD 1LC",
     },
     "spinout": {
         "1RB ... 0LB  2LB 2RA 1LA",
