@@ -242,22 +242,27 @@ fn step_configs(
                 blanks.insert(state);
             }
 
-            assert!(!tape.has_indef());
+            let next_config =
+                if tape.has_indef() || config.tape.has_indef() {
+                    panic!()
+                } else {
+                    let mut next_config = Config {
+                        state,
+                        tape,
+                        prev: Some(Rc::clone(&config)),
+                        recs: config.recs,
+                    };
 
-            let mut next_config = Config {
-                state,
-                tape,
-                prev: Some(Rc::clone(&config)),
-                recs: config.recs,
-            };
+                    if next_config.lin_rec() {
+                        next_config.recs += 1;
 
-            if next_config.lin_rec() {
-                next_config.recs += 1;
+                        if next_config.recs > 1 {
+                            return Err(LinRec);
+                        }
+                    }
 
-                if next_config.recs > 1 {
-                    return Err(LinRec);
-                }
-            }
+                    next_config
+                };
 
             stepped.push(next_config);
         }
