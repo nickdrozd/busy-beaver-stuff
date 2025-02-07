@@ -1,5 +1,5 @@
 use core::{
-    fmt::{Display, Formatter, Result},
+    fmt::{self, Display, Formatter},
     iter::once,
 };
 
@@ -509,7 +509,7 @@ impl Config {
 }
 
 impl Display for Config {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{} | {}", show_state(Some(self.state)), self.tape)
     }
 }
@@ -699,7 +699,7 @@ impl Tape {
 }
 
 impl Display for Tape {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
             "{}",

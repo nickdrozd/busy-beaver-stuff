@@ -1,6 +1,6 @@
 use core::{
     cell::Cell,
-    fmt::{Display, Formatter, Result},
+    fmt::{self, Display, Formatter},
     iter::{once, repeat_n},
 };
 
@@ -27,7 +27,7 @@ pub trait Block: Display {
 
     fn decrement(&mut self);
 
-    fn show(&self, f: &mut Formatter) -> Result {
+    fn show(&self, f: &mut Formatter) -> fmt::Result {
         let (color, count) = (self.get_color(), self.get_count());
 
         write!(
@@ -75,7 +75,7 @@ impl Block for BasicBlock {
 }
 
 impl Display for BasicBlock {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.show(f)
     }
 }
@@ -266,7 +266,7 @@ pub struct Tape<B: Block> {
 pub type BasicTape = Tape<BasicBlock>;
 
 impl<B: Block> Display for Tape<B> {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
             "{}",
@@ -435,7 +435,7 @@ pub struct HeadTape {
 }
 
 impl Display for HeadTape {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "({}) {}", self.head, self.tape)
     }
 }
@@ -592,7 +592,7 @@ impl Block for EnumBlock {
 }
 
 impl Display for EnumBlock {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.show(f)
     }
 }
@@ -608,7 +608,7 @@ pub struct EnumTape {
 }
 
 impl Display for EnumTape {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", self.tape)
     }
 }
