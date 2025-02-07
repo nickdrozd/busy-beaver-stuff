@@ -723,6 +723,82 @@ impl Alignment for Backstepper {
 /**************************************/
 
 #[cfg(test)]
+impl From<&str> for TapeEnd {
+    fn from(s: &str) -> Self {
+        match s {
+            "0+" => Self::Blanks,
+            "?" => Self::Unknown,
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[cfg(test)]
+#[expect(clippy::fallible_impl_from)]
+impl From<&str> for Block {
+    fn from(s: &str) -> Self {
+        let (color, count) = if s.ends_with("..") {
+            (s.trim_end_matches("..").parse().unwrap(), 0)
+        } else if s.contains('^') {
+            let parts: Vec<&str> = s.split('^').collect();
+            (parts[0].parse().unwrap(), parts[1].parse().unwrap())
+        } else {
+            (s.parse().unwrap(), 1)
+        };
+
+        Self { color, count }
+    }
+}
+
+#[cfg(test)]
+#[expect(clippy::fallible_impl_from)]
+impl From<&str> for Backstepper {
+    fn from(s: &str) -> Self {
+        let parts: Vec<&str> = s.split_whitespace().collect();
+
+        let l_end = parts[0].into();
+
+        let lspan: Vec<Block> = parts[1..]
+            .iter()
+            .take_while(|&&s| !s.starts_with('['))
+            .map(|&s| s.into())
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
+
+        let scan = parts
+            .iter()
+            .find(|&&s| s.starts_with('['))
+            .and_then(|s| {
+                s.trim_matches(|c| c == '[' || c == ']').parse().ok()
+            })
+            .unwrap();
+
+        let rspan_start = parts
+            .iter()
+            .position(|&s| s.starts_with('['))
+            .map_or(parts.len(), |pos| pos + 1);
+
+        let r_end = (*parts.last().unwrap()).into();
+
+        let rspan: Vec<Block> = parts[rspan_start..parts.len() - 1]
+            .iter()
+            .map(|&s| s.into())
+            .collect();
+
+        Self {
+            scan,
+            head: 0,
+            lspan: Span::new(lspan, l_end),
+            rspan: Span::new(rspan, r_end),
+        }
+    }
+}
+
+/**************************************/
+
+#[cfg(test)]
 impl Backstepper {
     #[track_caller]
     fn assert(&self, exp: &str) {
@@ -829,15 +905,7 @@ fn test_backstep_spinout() {
 
 #[test]
 fn test_backstep_required() {
-    let mut tape = Backstepper {
-        scan: 1,
-        lspan: Span::new(vec![], TapeEnd::Blanks),
-        rspan: Span::new(
-            vec![Block::new(1, 1), Block::new(0, 1)],
-            TapeEnd::Unknown,
-        ),
-        head: 0,
-    };
+    let mut tape: Backstepper = "0+ [1] 1 0 ?".into();
 
     tape.assert("0+ [1] 1 0 ?");
 
@@ -848,12 +916,7 @@ fn test_backstep_required() {
 
 #[test]
 fn test_spinout() {
-    let mut tape = Backstepper {
-        scan: 1,
-        head: 0,
-        lspan: Span::new(vec![], TapeEnd::Blanks),
-        rspan: Span::new(vec![Block::new(0, 2)], TapeEnd::Unknown),
-    };
+    let mut tape: Backstepper = "0+ [1] 0^2 ?".into();
 
     tape.assert("0+ [1] 0^2 ?");
 
@@ -866,4 +929,23 @@ fn test_spinout() {
 
     assert_eq!(tape.check_edge(false, 1), Some(false));
     assert_eq!(tape.check_edge(true, 0), Some(true));
+}
+
+#[test]
+fn test_parse() {
+    let tapes = [
+        "? 2 1^2 [5] 3^3 0+",
+        "0+ 2 1^2 [5] 3^3 ?",
+        "0+ 2 1^2 [5] 3^3 0+",
+        "? 2 3^11 4 1^11 [0] ?",
+        "? 2 3^11 4 1^11 [0] 0+",
+        "0+ 2 3^11 4 1^11 [0] ?",
+        "? 4^118 [4] 5^2 2 4 5^7 1 0+",
+        "? 4^118 [4] 5^2 2 4 5^7 1 0+",
+        "0+ 4^118 [4] 5^2 2 4 5^7 1 0+",
+    ];
+
+    for tape in tapes {
+        Into::<Backstepper>::into(tape).assert(tape);
+    }
 }
