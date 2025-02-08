@@ -326,28 +326,46 @@ class Reason(TuringTest):
                 self.assert_cant_blank_backward(prog, 1331)
 
     def test_false_negatives(self):
+        totals = {'halt': {}, 'blanks': {}, 'spinout': {}}
+
         for cat, progs in CANT_HALT_FALSE_NEGATIVES_CATS.items():
+            totals['halt'][cat] = len(progs)
+
             for prog in progs:
                 self.assert_halt_cat(prog, cat)
 
         for cat, progs in CANT_BLANK_FALSE_NEGATIVES_CATS.items():
+            totals['blanks'][cat] = len(progs)
+
             for prog in progs:
                 self.assert_blank_cat(prog, cat)
 
         for cat, progs in CANT_SPIN_OUT_FALSE_NEGATIVES_CATS.items():
+            totals['spinout'][cat] = len(progs)
+
             for prog in progs:
                 self.assert_spinout_cat(prog, cat)
 
-        totals = {
-            248: CANT_HALT_FALSE_NEGATIVES,
-            296: CANT_BLANK_FALSE_NEGATIVES,
-            214: CANT_SPIN_OUT_FALSE_NEGATIVES,
-        }
-
-        for total, cat in totals.items():  # type: ignore[assignment]
-            self.assertEqual(len(cat), total)
-
-        self.assertNotIn('init', BACKWARD_FALSE_NEGATIVE_CATS)
+        self.assertEqual(
+            totals, {
+                'halt': {
+                    'step_limit': 1,
+                    'depth_limit': 21,
+                    'linrec': 100,
+                    'spinout': 126,
+                },
+                'blanks': {
+                    'linrec': 54,
+                    'spinout': 242,
+                },
+                'spinout': {
+                    'step_limit': 10,
+                    'depth_limit': 12,
+                    'linrec': 32,
+                    'spinout': 160,
+                },
+            },
+            totals)
 
     def test_holdouts(self):
         for cat in ('42h', '24h'):
