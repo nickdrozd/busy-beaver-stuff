@@ -347,15 +347,35 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 }
 
 #[cfg(test)]
-use crate::instrs::Parse as _;
+use crate::instrs::{read_instr, read_slot, read_state, Parse as _};
+
+#[cfg(test)]
+fn read_entry(entry: &str) -> (Slot, Instr) {
+    let (slot, instr) = entry.split_once(':').unwrap();
+    (read_slot(slot), read_instr(instr).unwrap())
+}
 
 #[cfg(test)]
 macro_rules! assert_entrypoints {
-    ($prog:expr, [$($state:expr => $instrs:expr),*]) => {
-        assert_eq!(
-            get_entrypoints(&CompProg::from_str($prog)),
-            Entrypoints::from([ $(($state, $instrs)),* ])
-        );
+    ($prog:expr, [$($state:expr => ($same:expr, $diff:expr)),*]) => {
+        {
+            let mut entrypoints = Entrypoints::new();
+
+            $(
+                entrypoints.insert(
+                    read_state($state),
+                    (
+                        $same.into_iter().map(read_entry).collect(),
+                        $diff.into_iter().map(read_entry).collect(),
+                    ),
+                );
+            )*
+
+            assert_eq!(
+                entrypoints,
+                get_entrypoints(&CompProg::from_str($prog)),
+            );
+        }
     };
 }
 
@@ -364,40 +384,25 @@ fn test_entrypoints() {
     assert_entrypoints!(
         "1RB ...  1LB 0RB",
         [
-            1 => (vec![
-                ((1, 0), (1, false, 1)),
-                ((1, 1), (0, true, 1)),
-            ], vec![])
+            'B' => (["B0:1LB", "B1:0RB"], [])
         ]
     );
 
     assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LD",
         [
-            1 => (vec![], vec![]),
-            2 => (
-                vec![((2, 0), (1, true, 2))],
-                vec![((1, 0), (0, false, 2)), ((3, 0), (0, false, 2))],
-            ),
-            3 => (
-                vec![((3, 1), (0, false, 3))],
-                vec![((2, 1), (1, false, 3))],
-            )
+            'B' => ([], []),
+            'C' => (["C0:1RC"], ["B0:0LC", "D0:0LC"]),
+            'D' => (["D1:0LD"], ["C1:1LD"])
         ]
     );
 
     assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LB",
         [
-            1 => (vec![], vec![((3, 1), (0, false, 1))]),
-            2 => (
-                vec![((2, 0), (1, true, 2))],
-                vec![
-                    ((1, 0), (0, false, 2)),
-                    ((3, 0), (0, false, 2))
-                ],
-            ),
-            3 => (vec![], vec![((2, 1), (1, false, 3))])
+            'B' => ([], ["D1:0LB"]),
+            'C' => (["C0:1RC"], ["B0:0LC", "D0:0LC"]),
+            'D' => ([], ["C1:1LD"])
         ]
     );
 }

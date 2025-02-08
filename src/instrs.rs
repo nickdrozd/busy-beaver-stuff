@@ -102,7 +102,7 @@ pub const fn show_state(state: Option<State>) -> char {
     }
 }
 
-fn read_state(state: char) -> State {
+pub fn read_state(state: char) -> State {
     State::from(state as u8 - 65)
 }
 
