@@ -273,9 +273,13 @@ class TuringTest(TestCase):
     ########################################
 
     def assert_backwards_cat(self, prog: str, cat: str, reasoner: BR):
-        self.assertEqual(
-            cat,
-            str(reasoner(prog, REASON_LIMIT)))
+        result = str(reasoner(prog, REASON_LIMIT))
+
+        try:
+            self.assertEqual(cat, result)
+        except AssertionError:
+            print(f'{cat} -> {result} -- "{prog}"')
+            raise
 
     def assert_halt_cat(self, prog: str, cat: str):
         self.assert_backwards_cat(prog, cat, cant_halt)
