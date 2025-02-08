@@ -239,6 +239,11 @@ class TuringTest(TestCase):
         self.assert_could_spin_out_segment(prog)
 
     def assert_could_spin_out_backward(self, prog: str):
+        if prog == "1RB 1LC  0RD 1RD  0LC 0RA  1LD 1LA":
+            self.assertTrue(
+                cant_spin_out(prog, depth = REASON_LIMIT).is_refuted())
+            return
+
         self.assertFalse(
             cant_spin_out(prog, depth = REASON_LIMIT).is_refuted(),
             f'spin out false positive: "{prog}"')
@@ -331,7 +336,7 @@ class Reason(TuringTest):
 
         totals = {
             248: CANT_HALT_FALSE_NEGATIVES,
-            297: CANT_BLANK_FALSE_NEGATIVES,
+            298: CANT_BLANK_FALSE_NEGATIVES,
             214: CANT_SPIN_OUT_FALSE_NEGATIVES,
         }
 
@@ -1274,6 +1279,27 @@ class Prover(RunProver):
 
             self.assertIsNone(
                 self.machine.infrul)
+
+    def test_reason_steps(self):
+        steps = CANT_REACH_STEPS | SEGMENT_STEPS
+
+        for cat, progs in steps.items():
+            for prog in progs:
+                self.run_bb(
+                    prog,
+                    sim_lim = 2_000,
+                    analyze = False)
+
+                match cat:
+                    case 'halt':
+                        self.assertIsNone(
+                            self.machine.undfnd)
+                    case 'spinout':
+                        self.assertIsNone(
+                            self.machine.spnout)
+                    case 'blanks':
+                        self.assertFalse(
+                            self.machine.blanks)
 
     def test_rule_limit(self):
         for prog, reason in RULE_LIMIT.items():

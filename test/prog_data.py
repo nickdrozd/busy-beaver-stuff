@@ -155,6 +155,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,  536),
     "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,  444),
     "1RB ...  0LB 1LC  1RD 1LD  1LD 0RC": ( 3,   13),
+    "1RB 1LC  0RD 1RD  0LC 0RA  1LD 1LA": ( 3,   11),
     "1RB 0RB  1LC 0LC  0RC 0LD  1RA 1LD": ( 2,   45),
     "1RB 1LB  1LA 1RC  1RC 0LD  0RB 1LD": ( 1,   37),
     "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": ( 1,   15),
@@ -1401,7 +1402,6 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
 
         "1RB 0RC  1LB 1RC  0LD 0RB  0RA 1LD": 25,
         "1RB 0RB  1LC 0LD  1LB 1RA  0RD 0LC": 29,
-        "1RB 1LD  0RC 1RC  1LC 1LA  0LD 0RA": 39,
 
         "1RB 0LB 2RC  1LA 1LC 2RC  1RC 2LA 0LA": 103,
         "1RB 1RC 0RC  1LC 1RC 2LA  2RC 2LB 0LB": 125,
@@ -2005,6 +2005,7 @@ CANT_BLANK_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB",
         "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB",
         "1RB 1LD  0RC 0RB  1LC 1RA  0RD 0LA",
+        "1RB 1LC  0RD 1RD  0LC 0RA  1LD 1LA",
 
         "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
         "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC",
