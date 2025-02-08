@@ -146,12 +146,14 @@ fn get_valid_steps(
 
             let shift = *spinouts.iter().next().unwrap();
 
-            let indef_steps =
-                get_indefinite_steps(shift, &config, diff)?;
+            for entries in [diff, same] {
+                let indef_steps =
+                    get_indefinite_steps(shift, &config, entries)?;
 
-            assert!(!indef_steps.0.is_empty());
+                assert!(!indef_steps.0.is_empty());
 
-            checked.push(indef_steps);
+                checked.push(indef_steps);
+            }
         }
 
         for &((state, color), (print, shift)) in diff {

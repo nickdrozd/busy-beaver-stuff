@@ -239,11 +239,6 @@ class TuringTest(TestCase):
         self.assert_could_spin_out_segment(prog)
 
     def assert_could_spin_out_backward(self, prog: str):
-        if prog == "1RB 1LC  0RD 1RD  0LC 0RA  1LD 1LA":
-            self.assertTrue(
-                cant_spin_out(prog, depth = REASON_LIMIT).is_refuted())
-            return
-
         self.assertFalse(
             cant_spin_out(prog, depth = REASON_LIMIT).is_refuted(),
             f'spin out false positive: "{prog}"')
@@ -326,7 +321,8 @@ class Reason(TuringTest):
                 self.assert_cant_blank_backward(prog, 1331)
 
     def test_false_negatives(self):
-        totals = {'halt': {}, 'blanks': {}, 'spinout': {}}
+        totals: dict[str, dict[str, int]] = {
+            'halt': {}, 'blanks': {}, 'spinout': {}}
 
         for cat, progs in CANT_HALT_FALSE_NEGATIVES_CATS.items():
             totals['halt'][cat] = len(progs)
@@ -356,13 +352,13 @@ class Reason(TuringTest):
                 },
                 'blanks': {
                     'linrec': 54,
-                    'spinout': 242,
+                    'spinout': 253,
                 },
                 'spinout': {
                     'step_limit': 10,
                     'depth_limit': 12,
-                    'linrec': 32,
-                    'spinout': 160,
+                    'linrec': 26,
+                    'spinout': 205,
                 },
             },
             totals)
