@@ -714,10 +714,14 @@ impl Backstepper {
         };
 
         if let Some(block) = pull.span.0.first_mut() {
-            if block.count == 1 {
-                pull.span.0.remove(0);
-            } else {
-                block.decrement();
+            match block.count {
+                1 => {
+                    pull.span.0.remove(0);
+                },
+                0 => {},
+                _ => {
+                    block.decrement();
+                },
             }
         }
 
@@ -1025,7 +1029,6 @@ fn test_parse() {
 }
 
 #[test]
-#[should_panic]
 fn test_backstep_indef() {
     let mut tape: Backstepper = "0+ [1] 1.. 0^2 ?".into();
 
