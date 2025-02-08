@@ -147,14 +147,12 @@ fn get_valid_steps(
 
             let shift = *spinouts.iter().next().unwrap();
 
-            for entries in [diff, same] {
-                let indef_steps =
-                    get_indefinite_steps(shift, &config, entries)?;
+            let indef_steps =
+                get_indefinite_steps(shift, &config, diff, same)?;
 
-                assert!(!indef_steps.0.is_empty());
+            assert!(!indef_steps.0.is_empty());
 
-                checked.push(indef_steps);
-            }
+            checked.push(indef_steps);
         }
 
         for &((state, color), (print, shift)) in diff {
@@ -178,9 +176,10 @@ fn get_valid_steps(
 fn get_indefinite_steps(
     push: Shift,
     config: &Config,
-    entrypoints: &Entries,
+    diff: &Entries,
+    same: &Entries,
 ) -> Result<(Vec<Instr>, Config), BackwardResult> {
-    if entrypoints.iter().any(|&(_, (_, shift))| shift == push) {
+    if diff.iter().any(|&(_, (_, shift))| shift == push) {
         #[cfg(debug_assertions)]
         println!("~~ shift == push");
         return Err(Spinout);
@@ -192,14 +191,14 @@ fn get_indefinite_steps(
 
     tape.push_indef(push)?;
 
-    for &((state, color), (print, shift)) in entrypoints {
-        assert!(shift != push);
+    for entries in [diff, same] {
+        for &((state, color), (print, shift)) in entries {
+            if !tape.check_step(shift, print) {
+                continue;
+            }
 
-        if !tape.check_step(shift, print) {
-            continue;
+            steps.push((color, shift, state));
         }
-
-        steps.push((color, shift, state));
     }
 
     if steps.is_empty() {
@@ -249,7 +248,7 @@ fn step_configs(
 
             let next_config =
                 if tape.has_indef() || config.tape.has_indef() {
-                    panic!()
+                    Config::new(state, tape)
                 } else {
                     let mut next_config = Config {
                         state,
