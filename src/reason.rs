@@ -55,7 +55,9 @@ pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> BackwardResult {
 
 type Configs = Vec<Config>;
 type Blanks = HashSet<State>;
-type Entries = Vec<(Slot, Instr)>;
+
+type Entry = (Slot, (Color, Shift));
+type Entries = Vec<Entry>;
 type Entrypoints = BTreeMap<State, (Entries, Entries)>;
 
 fn cant_reach(
@@ -126,7 +128,7 @@ fn get_valid_steps(
 
         let mut spinouts = HashSet::new();
 
-        for &((next_state, next_color), (print, shift, _)) in same {
+        for &((next_state, next_color), (print, shift)) in same {
             let Some(at_edge) = tape.check_edge(shift, print) else {
                 continue;
             };
@@ -152,7 +154,7 @@ fn get_valid_steps(
             checked.push(indef_steps);
         }
 
-        for &((next_state, next_color), (print, shift, _)) in diff {
+        for &((next_state, next_color), (print, shift)) in diff {
             if !tape.check_step(shift, print) {
                 continue;
             }
@@ -175,7 +177,7 @@ fn get_indefinite_steps(
     config: &Config,
     entrypoints: &Entries,
 ) -> Result<(Vec<Instr>, Config), BackwardResult> {
-    if entrypoints.iter().any(|&(_, (_, shift, _))| shift == push) {
+    if entrypoints.iter().any(|&(_, (_, shift))| shift == push) {
         #[cfg(debug_assertions)]
         println!("~~ shift == push");
         return Err(Spinout);
@@ -187,7 +189,7 @@ fn get_indefinite_steps(
 
     tape.push_indef(push);
 
-    for &((next_state, next_color), (print, shift, _)) in entrypoints {
+    for &((next_state, next_color), (print, shift)) in entrypoints {
         assert!(shift != push);
 
         if !tape.check_step(shift, print) {
@@ -322,11 +324,11 @@ fn zero_reflexive_configs(comp: &CompProg) -> Configs {
 fn get_entrypoints(comp: &CompProg) -> Entrypoints {
     let mut entrypoints = Entrypoints::new();
 
-    for (&slot, &instr) in comp {
-        let (_, _, state) = instr;
+    for (&slot, &(color, shift, state)) in comp {
         let (same, diff) = entrypoints.entry(state).or_default();
 
-        (if slot.0 == state { same } else { diff }).push((slot, instr));
+        (if slot.0 == state { same } else { diff })
+            .push((slot, (color, shift)));
     }
 
     for _ in 0..entrypoints.len() {
@@ -345,12 +347,19 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 }
 
 #[cfg(test)]
-use crate::instrs::{read_instr, read_slot, read_state, Parse as _};
+use crate::instrs::{
+    read_color, read_shift, read_slot, read_state, Parse as _,
+};
 
 #[cfg(test)]
-fn read_entry(entry: &str) -> (Slot, Instr) {
+fn read_entry(entry: &str) -> Entry {
     let (slot, instr) = entry.split_once(':').unwrap();
-    (read_slot(slot), read_instr(instr).unwrap())
+
+    let mut chars = instr.chars();
+    let color = chars.next().unwrap();
+    let shift = chars.next().unwrap();
+
+    (read_slot(slot), (read_color(color), read_shift(shift)))
 }
 
 #[cfg(test)]
@@ -382,22 +391,22 @@ fn test_entrypoints() {
     assert_entrypoints!(
         "1RB ...  1LB 0RB",
         [
-            'B' => (["B0:1LB", "B1:0RB"], [])
+            'B' => (["B0:1L", "B1:0R"], [])
         ]
     );
 
     assert_entrypoints!(
         "1RB ... ...  0LB 2RB 0RB",
         [
-            'B' => (["B0:0LB", "B1:2RB", "B2:0RB"], [])
+            'B' => (["B0:0L", "B1:2R", "B2:0R"], [])
         ]
     );
 
     assert_entrypoints!(
         "1RB 0RB 1RA  1LB 2RB 0LA",
         [
-            'A' => (["A2:1RA"], ["B2:0LA"]),
-            'B' => (["B0:1LB", "B1:2RB"], ["A0:1RB", "A1:0RB"])
+            'A' => (["A2:1R"], ["B2:0L"]),
+            'B' => (["B0:1L", "B1:2R"], ["A0:1R", "A1:0R"])
         ]
     );
 
@@ -413,17 +422,17 @@ fn test_entrypoints() {
     assert_entrypoints!(
         "1RB 0LC  1LB 1LA  1RC 0LC",
         [
-            'A' => ([], ["B1:1LA"]),
-            'B' => (["B0:1LB"], ["A0:1RB"]),
-            'C' => (["C0:1RC", "C1:0LC"], ["A1:0LC"])
+            'A' => ([], ["B1:1L"]),
+            'B' => (["B0:1L"], ["A0:1R"]),
+            'C' => (["C0:1R", "C1:0L"], ["A1:0L"])
         ]
     );
 
     assert_entrypoints!(
         "1RB 2RA 0RB 2RB  1LB 3RB 3LA 0LA",
         [
-            'A' => (["A1:2RA"], ["B2:3LA", "B3:0LA"]),
-            'B' => (["B0:1LB", "B1:3RB"], ["A0:1RB", "A2:0RB", "A3:2RB"])
+            'A' => (["A1:2R"], ["B2:3L", "B3:0L"]),
+            'B' => (["B0:1L", "B1:3R"], ["A0:1R", "A2:0R", "A3:2R"])
         ]
     );
 
@@ -431,38 +440,38 @@ fn test_entrypoints() {
         "1RB ...  0LC ...  1RC 1LD  0LC 0LD",
         [
             'B' => ([], []),
-            'C' => (["C0:1RC"], ["B0:0LC", "D0:0LC"]),
-            'D' => (["D1:0LD"], ["C1:1LD"])
+            'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
+            'D' => (["D1:0L"], ["C1:1L"])
         ]
     );
 
     assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LB",
         [
-            'B' => ([], ["D1:0LB"]),
-            'C' => (["C0:1RC"], ["B0:0LC", "D0:0LC"]),
-            'D' => ([], ["C1:1LD"])
+            'B' => ([], ["D1:0L"]),
+            'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
+            'D' => ([], ["C1:1L"])
         ]
     );
 
     assert_entrypoints!(
         "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA",
         [
-            'A' => ([], ["D1:1LA"]),
-            'B' => (["B1:1RB"], ["A0:1RB"]),
-            'C' => (["C1:0RC"], ["A1:1LC"]),
-            'D' => (["D0:1LD"], ["B0:1RD", "C0:0RD"])
+            'A' => ([], ["D1:1L"]),
+            'B' => (["B1:1R"], ["A0:1R"]),
+            'C' => (["C1:0R"], ["A1:1L"]),
+            'D' => (["D0:1L"], ["B0:1R", "C0:0R"])
         ]
     );
 
     assert_entrypoints!(
         "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB",
         [
-            'A' => ([], ["D1:1LA", "E0:1LA"]),
-            'B' => ([], ["A0:1RB", "E1:0LB"]),
-            'C' => ([], ["A1:1LC", "B0:0LC"]),
-            'D' => ([], ["B1:0RD", "C0:1RD"]),
-            'E' => ([], ["C1:1LE", "D0:1RE"])
+            'A' => ([], ["D1:1L", "E0:1L"]),
+            'B' => ([], ["A0:1R", "E1:0L"]),
+            'C' => ([], ["A1:1L", "B0:0L"]),
+            'D' => ([], ["B1:0R", "C0:1R"]),
+            'E' => ([], ["C1:1L", "D0:1R"])
         ]
     );
 }

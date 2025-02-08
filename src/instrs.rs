@@ -85,11 +85,11 @@ impl Parse for CompProg {
 
 /**************************************/
 
-fn read_color(color: char) -> Color {
+pub fn read_color(color: char) -> Color {
     color.to_digit(10).unwrap().into()
 }
 
-const fn read_shift(shift: char) -> Shift {
+pub const fn read_shift(shift: char) -> Shift {
     shift == RIGHT
 }
 
