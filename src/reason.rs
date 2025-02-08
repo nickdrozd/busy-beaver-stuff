@@ -122,23 +122,23 @@ fn get_valid_steps(
     for config in configs.drain(..) {
         let Config { state, tape, .. } = &config;
 
-        let mut good_steps = vec![];
+        let mut steps = vec![];
 
         let (same, diff) = &entrypoints[state];
 
         let mut spinouts = HashSet::new();
 
-        for &((next_state, next_color), (print, shift)) in same {
+        for &((state, color), (print, shift)) in same {
             let Some(at_edge) = tape.check_edge(shift, print) else {
                 continue;
             };
 
-            if at_edge && tape.scan == next_color {
+            if at_edge && tape.scan == color {
                 spinouts.insert(shift);
                 continue;
             }
 
-            good_steps.push((next_color, shift, next_state));
+            steps.push((color, shift, state));
         }
 
         if !spinouts.is_empty() {
@@ -154,19 +154,19 @@ fn get_valid_steps(
             checked.push(indef_steps);
         }
 
-        for &((next_state, next_color), (print, shift)) in diff {
+        for &((state, color), (print, shift)) in diff {
             if !tape.check_step(shift, print) {
                 continue;
             }
 
-            good_steps.push((next_color, shift, next_state));
+            steps.push((color, shift, state));
         }
 
-        if good_steps.is_empty() {
+        if steps.is_empty() {
             continue;
         }
 
-        checked.push((good_steps, config));
+        checked.push((steps, config));
     }
 
     Ok(checked)
@@ -189,14 +189,14 @@ fn get_indefinite_steps(
 
     tape.push_indef(push);
 
-    for &((next_state, next_color), (print, shift)) in entrypoints {
+    for &((state, color), (print, shift)) in entrypoints {
         assert!(shift != push);
 
         if !tape.check_step(shift, print) {
             continue;
         }
 
-        steps.push((next_color, shift, next_state));
+        steps.push((color, shift, state));
     }
 
     if steps.is_empty() {
