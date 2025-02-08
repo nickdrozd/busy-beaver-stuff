@@ -317,6 +317,8 @@ fn zero_reflexive_configs(comp: &CompProg) -> Configs {
         .collect()
 }
 
+/**************************************/
+
 fn get_entrypoints(comp: &CompProg) -> Entrypoints {
     let mut entrypoints = Entrypoints::new();
 
@@ -389,6 +391,47 @@ fn test_entrypoints() {
     );
 
     assert_entrypoints!(
+        "1RB ... ...  0LB 2RB 0RB",
+        [
+            'B' => (["B0:0LB", "B1:2RB", "B2:0RB"], [])
+        ]
+    );
+
+    assert_entrypoints!(
+        "1RB 0RB 1RA  1LB 2RB 0LA",
+        [
+            'A' => (["A2:1RA"], ["B2:0LA"]),
+            'B' => (["B0:1LB", "B1:2RB"], ["A0:1RB", "A1:0RB"])
+        ]
+    );
+
+    assert_entrypoints!(
+        "1RB 1LB  1LA 1LC  1RC 0LC",
+        [
+            'A' => ([], ["B0:1L"]),
+            'B' => ([], ["A0:1R", "A1:1L"]),
+            'C' => (["C0:1R", "C1:0L"], ["B1:1L"])
+        ]
+    );
+
+    assert_entrypoints!(
+        "1RB 0LC  1LB 1LA  1RC 0LC",
+        [
+            'A' => ([], ["B1:1LA"]),
+            'B' => (["B0:1LB"], ["A0:1RB"]),
+            'C' => (["C0:1RC", "C1:0LC"], ["A1:0LC"])
+        ]
+    );
+
+    assert_entrypoints!(
+        "1RB 2RA 0RB 2RB  1LB 3RB 3LA 0LA",
+        [
+            'A' => (["A1:2RA"], ["B2:3LA", "B3:0LA"]),
+            'B' => (["B0:1LB", "B1:3RB"], ["A0:1RB", "A2:0RB", "A3:2RB"])
+        ]
+    );
+
+    assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LD",
         [
             'B' => ([], []),
@@ -403,6 +446,27 @@ fn test_entrypoints() {
             'B' => ([], ["D1:0LB"]),
             'C' => (["C0:1RC"], ["B0:0LC", "D0:0LC"]),
             'D' => ([], ["C1:1LD"])
+        ]
+    );
+
+    assert_entrypoints!(
+        "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA",
+        [
+            'A' => ([], ["D1:1LA"]),
+            'B' => (["B1:1RB"], ["A0:1RB"]),
+            'C' => (["C1:0RC"], ["A1:1LC"]),
+            'D' => (["D0:1LD"], ["B0:1RD", "C0:0RD"])
+        ]
+    );
+
+    assert_entrypoints!(
+        "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB",
+        [
+            'A' => ([], ["D1:1LA", "E0:1LA"]),
+            'B' => ([], ["A0:1RB", "E1:0LB"]),
+            'C' => ([], ["A1:1LC", "B0:0LC"]),
+            'D' => ([], ["B1:0RD", "C0:1RD"]),
+            'E' => ([], ["C1:1LE", "D0:1RE"])
         ]
     );
 }
