@@ -1023,3 +1023,13 @@ fn test_parse() {
         Into::<Backstepper>::into(tape).assert(tape);
     }
 }
+
+#[test]
+#[should_panic]
+fn test_backstep_indef() {
+    let mut tape: Backstepper = "0+ [1] 1.. 0^2 ?".into();
+
+    tape.backstep(false, 1);
+
+    tape.assert("0+ 1 [1] 1.. 0^2 ?");
+}
