@@ -1754,10 +1754,6 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
 }
 
 CANT_BLANK_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
-    "init": {
-        "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB",
-        "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD",
-    },
     "linrec": {
         "1RB ... 0RB  2LB 2LA 0RA",
         "1RB 0LB 1RA  1LB 2RB 0LA",
@@ -2335,6 +2331,12 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     for progs in CANT_SPIN_OUT_FALSE_NEGATIVES_CATS.values()
     for prog in progs
 }
+
+BACKWARD_FALSE_NEGATIVE_CATS = (
+    CANT_SPIN_OUT_FALSE_NEGATIVES_CATS.keys()
+    | CANT_BLANK_FALSE_NEGATIVES_CATS.keys()
+    | CANT_HALT_FALSE_NEGATIVES_CATS.keys()
+)
 
 SEGMENT_HALT_FALSE_NEGATIVES = {
     "1RB ... 0RB  2LB 2LA 0RA",

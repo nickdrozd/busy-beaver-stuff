@@ -220,7 +220,7 @@ class TuringTest(TestCase):
 
     def assert_cant_blank_backward(self, prog: str, depth: int):
         if (prog in CANT_BLANK_FALSE_NEGATIVES
-                or Machine(prog).run(sim_lim = 10).blanks):
+                or Machine(prog).run(sim_lim = 30).blanks):
             return
 
         self.assertTrue(
@@ -336,12 +336,14 @@ class Reason(TuringTest):
 
         totals = {
             248: CANT_HALT_FALSE_NEGATIVES,
-            298: CANT_BLANK_FALSE_NEGATIVES,
+            296: CANT_BLANK_FALSE_NEGATIVES,
             214: CANT_SPIN_OUT_FALSE_NEGATIVES,
         }
 
         for total, cat in totals.items():  # type: ignore[assignment]
             self.assertEqual(len(cat), total)
+
+        self.assertNotIn('init', BACKWARD_FALSE_NEGATIVE_CATS)
 
     def test_holdouts(self):
         for cat in ('42h', '24h'):
