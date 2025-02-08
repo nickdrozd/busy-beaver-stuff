@@ -326,11 +326,7 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
         let (_, _, state) = instr;
         let (same, diff) = entrypoints.entry(state).or_default();
 
-        if slot.0 == state {
-            same.push((slot, instr));
-        } else {
-            diff.push((slot, instr));
-        }
+        (if slot.0 == state { same } else { diff }).push((slot, instr));
     }
 
     for _ in 0..entrypoints.len() {
