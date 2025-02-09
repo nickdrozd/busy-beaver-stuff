@@ -20,6 +20,7 @@ const MAX_STACK_DEPTH: Depth = 46;
 
 /**************************************/
 
+#[derive(Debug)]
 pub enum BackwardResult {
     Init,
     LinRec,
@@ -189,7 +190,7 @@ fn get_indefinite_steps(
 
     let mut tape = config.tape.clone();
 
-    tape.push_indef(push);
+    tape.push_indef(push)?;
 
     for &((state, color), (print, shift)) in entrypoints {
         assert!(shift != push);
@@ -592,6 +593,13 @@ impl Span {
     fn has_indef(&self) -> bool {
         self.span.0.iter().any(|block| block.count == 0)
     }
+
+    fn has_indef_color(&self, color: Color) -> bool {
+        self.span
+            .0
+            .iter()
+            .any(|block| block.count == 0 && block.color == color)
+    }
 }
 
 /**************************************/
@@ -749,7 +757,10 @@ impl Backstepper {
         self.head += stepped;
     }
 
-    fn push_indef(&mut self, shift: Shift) {
+    fn push_indef(
+        &mut self,
+        shift: Shift,
+    ) -> Result<(), BackwardResult> {
         let push = if shift {
             &mut self.rspan
         } else {
@@ -758,15 +769,23 @@ impl Backstepper {
 
         let scan = self.scan;
 
+        if push.has_indef_color(scan) {
+            #[cfg(debug_assertions)]
+            println!("~~ already has indef");
+            return Err(Spinout);
+        }
+
         if let Some(block) = push.span.0.first() {
             if block.color == scan {
-                return;
+                return Ok(());
             }
         } else if scan == 0 && matches!(push.end, TapeEnd::Blanks) {
-            return;
+            return Ok(());
         }
 
         push.span.push_block(scan, 0);
+
+        Ok(())
     }
 }
 
@@ -1007,7 +1026,7 @@ fn test_spinout() {
     assert_eq!(tape.check_edge(false, 1), None);
     assert_eq!(tape.check_edge(true, 0), Some(true));
 
-    tape.push_indef(true);
+    tape.push_indef(true).unwrap();
 
     tape.assert("0+ [1] 1.. 0^2 ?");
 
@@ -1047,21 +1066,20 @@ fn test_backstep_indef() {
 fn test_push_indef() {
     let mut tape: Backstepper = "0+ 1 [0] ?".into();
 
-    tape.push_indef(false);
+    tape.push_indef(false).unwrap();
 
     tape.assert("0+ 1 0.. [0] ?");
 
-    tape.push_indef(false);
+    assert!(tape.push_indef(false).is_err());
 
     tape.assert("0+ 1 0.. [0] ?");
 
     tape.scan = 1;
-    tape.push_indef(false);
+    tape.push_indef(false).unwrap();
 
     tape.assert("0+ 1 0.. 1.. [1] ?");
 
     tape.scan = 0;
-    tape.push_indef(false);
 
-    tape.assert("0+ 1 0.. 1.. 0.. [0] ?");
+    assert!(tape.push_indef(false).is_err());
 }
