@@ -1038,3 +1038,16 @@ fn test_backstep_indef() {
 
     tape.assert("0+ 1 [1] 1.. 0^2 ?");
 }
+
+#[test]
+fn test_push_indef() {
+    let mut tape: Backstepper = "0+ 1 [0] ?".into();
+
+    tape.push_indef(false);
+
+    tape.assert("0+ 1 [0] ?");
+
+    tape.push_indef(false);
+
+    tape.assert("0+ 1 [0] ?");
+}
