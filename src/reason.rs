@@ -758,7 +758,11 @@ impl Backstepper {
 
         let scan = self.scan;
 
-        if scan == 0 && matches!(push.end, TapeEnd::Blanks) {
+        if let Some(block) = push.span.0.first() {
+            if block.color == scan {
+                return;
+            }
+        } else if scan == 0 && matches!(push.end, TapeEnd::Blanks) {
             return;
         }
 
@@ -1045,9 +1049,19 @@ fn test_push_indef() {
 
     tape.push_indef(false);
 
-    tape.assert("0+ 1 [0] ?");
+    tape.assert("0+ 1 0.. [0] ?");
 
     tape.push_indef(false);
 
-    tape.assert("0+ 1 [0] ?");
+    tape.assert("0+ 1 0.. [0] ?");
+
+    tape.scan = 1;
+    tape.push_indef(false);
+
+    tape.assert("0+ 1 0.. 1.. [1] ?");
+
+    tape.scan = 0;
+    tape.push_indef(false);
+
+    tape.assert("0+ 1 0.. 1.. 0.. [0] ?");
 }
