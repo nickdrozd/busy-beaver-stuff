@@ -150,9 +150,9 @@ fn get_valid_steps(
             let indef_steps =
                 get_indefinite_steps(shift, &config, diff, same)?;
 
-            assert!(!indef_steps.0.is_empty());
-
-            checked.push(indef_steps);
+            if !indef_steps.0.is_empty() {
+                checked.push(indef_steps);
+            }
         }
 
         for &((state, color), (print, shift)) in diff {
@@ -179,12 +179,6 @@ fn get_indefinite_steps(
     diff: &Entries,
     same: &Entries,
 ) -> Result<(Vec<Instr>, Config), BackwardResult> {
-    if diff.iter().any(|&(_, (_, shift))| shift == push) {
-        #[cfg(debug_assertions)]
-        println!("~~ shift == push");
-        return Err(Spinout);
-    }
-
     let mut steps = vec![];
 
     let mut tape = config.tape.clone();
@@ -199,12 +193,6 @@ fn get_indefinite_steps(
 
             steps.push((color, shift, state));
         }
-    }
-
-    if steps.is_empty() {
-        #[cfg(debug_assertions)]
-        println!("~~ empty steps");
-        return Err(Spinout);
     }
 
     Ok((steps, Config::new(config.state, tape)))
