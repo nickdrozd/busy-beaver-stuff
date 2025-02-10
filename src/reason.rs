@@ -251,7 +251,7 @@ fn step_configs(
                     if next_config.lin_rec() {
                         next_config.recs += 1;
 
-                        if next_config.recs > 1 {
+                        if next_config.recs > 2 {
                             return Err(LinRec);
                         }
                     }

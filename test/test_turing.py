@@ -346,19 +346,19 @@ class Reason(TuringTest):
             totals, {
                 'halt': {
                     'step_limit': 1,
-                    'depth_limit': 21,
-                    'linrec': 108,
-                    'spinout': 118,
+                    'depth_limit': 22,
+                    'linrec': 100,
+                    'spinout': 125,
                 },
                 'blanks': {
-                    'linrec': 54,
+                    'linrec': 53,
                     'spinout': 254,
                 },
                 'spinout': {
                     'step_limit': 1,
                     'depth_limit': 6,
-                    'linrec': 64,
-                    'spinout': 167,
+                    'linrec': 27,
+                    'spinout': 204,
                 },
             },
             totals)
