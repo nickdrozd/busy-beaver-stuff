@@ -58,8 +58,13 @@ HALT: BasicTermData = {
     "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721561),
 
     # 3/3
+    "1RB 2RB 1LC  1LA 2RB 1LB  ... 2RB 2LA": (256, 39252),
     "1RB 2RA 2RC  1LC ... 1LA  1RA 2LB 1LC": (36089, 310341163),
     "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
+
+    # 2/5
+    "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA": (62, 3178),
+    "1RB 2LB 1RB 3LB ...  2LA 4LB 3RB 0RA 1RB": (67, 3293),
 
     # Copy of 2/4 BB
     "1RB 1LC ...  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
@@ -211,6 +216,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0LE 0LA": (7, 57),
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  1LE 0LA": (7, 57),
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": (19670, 193023636),
+    "1RB ...  0RC 0RD  1LC 1LA  0RC 0LE  1LD 0RC": (33, 1199),
 
     # 10/2 backsym-compile from 5/2 spaghetti
     "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA": (1, 10675),
@@ -1748,6 +1754,10 @@ CANT_HALT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 2LB ...  2LA 1RC 1LB  2RC 0LB 1LC",
         "1RB 2LC ...  2LA 1RC 1LB  2RC 0LB 1LC",
 
+        "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA",
+        "1RB 2LB 1RB 3LB ...  2LA 4LB 3RB 0RA 1RB",
+
+        "1RB ...  0RC 0RD  1LC 1LA  0RC 0LE  1LD 0RC",
         "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE",
         "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC",
         "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
@@ -2359,6 +2369,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 1RA  1LC 0RA  0LC 1LD  1RB 1LC",
         "1RB 1RC  1LC 0RD  1RA 0LB  1RD 0RA",
         "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA",
+        "1RB 0RC  0RC 1RA  1LC 0LD  1RA 0RC",
 
         "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB",
 
@@ -2538,6 +2549,7 @@ SEGMENT_SPINOUT_FALSE_NEGATIVES: set[str] = {
     "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD",
     "1RB 1RC  1LC 0RD  1RA 0LB  1RD 0RA",
     "1RB 1RD  1LC 0RD  1RC 0RA  1LD 0LB",
+    "1RB 0RC  0RC 1RA  1LC 0LD  1RA 0RC",
 
     "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB",
 
@@ -3818,6 +3830,7 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 1RD  0LB 1LC  0LD 1RA  0RA 0RB",
     "1RB 1RD  1LB 0LC  1LD 0RB  0RA 1LC",
     "1RB 1RD  1LC 0RD  1RC 0RA  1LD 0LB",
+    "1RB 0RC  0RC 1RA  1LC 0LD  1RA 0RC",
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
     "1RB 0LC  1LA 1RC  1RA 0LD  0RE 1LD  ... 0RA",

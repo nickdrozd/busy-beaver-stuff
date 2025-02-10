@@ -348,7 +348,7 @@ class Reason(TuringTest):
                     'step_limit': 1,
                     'depth_limit': 22,
                     'linrec': 100,
-                    'spinout': 125,
+                    'spinout': 128,
                 },
                 'blanks': {
                     'linrec': 53,
@@ -358,7 +358,7 @@ class Reason(TuringTest):
                     'step_limit': 1,
                     'depth_limit': 6,
                     'linrec': 27,
-                    'spinout': 204,
+                    'spinout': 205,
                 },
             },
             totals)
