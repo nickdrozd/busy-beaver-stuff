@@ -352,7 +352,7 @@ class Reason(TuringTest):
                 },
                 'blanks': {
                     'linrec': 54,
-                    'spinout': 253,
+                    'spinout': 254,
                 },
                 'spinout': {
                     'step_limit': 10,
