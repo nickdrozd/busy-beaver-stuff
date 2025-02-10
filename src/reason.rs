@@ -207,17 +207,11 @@ fn step_configs(
 ) -> Result<Configs, BackwardResult> {
     let mut stepped = Configs::new();
 
-    if configs.iter().any(|(instrs, config)| {
-        instrs
-            .iter()
-            .any(|&(_, shift, _)| config.tape.pulls_indef(shift))
-    }) {
-        #[cfg(debug_assertions)]
-        println!("~~ pulls indef");
-        return Err(Spinout);
-    }
-
     for (instrs, config) in configs {
+        let (pulls_indef, instrs): (Vec<_>, Vec<_>) = instrs
+            .into_iter()
+            .partition(|&(_, shift, _)| config.tape.pulls_indef(shift));
+
         let config = Rc::new(config);
 
         for (color, shift, state) in instrs {
@@ -260,6 +254,12 @@ fn step_configs(
                 };
 
             stepped.push(next_config);
+        }
+
+        if !pulls_indef.is_empty() {
+            #[cfg(debug_assertions)]
+            println!("~~ pulls indef");
+            return Err(Spinout);
         }
     }
 
