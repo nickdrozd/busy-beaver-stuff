@@ -2124,12 +2124,6 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
 
 CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
     "depth_limit": {
-        "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB",
-        "1RB ...  0RC 1LB  1LC 0RD  0LB 1RD",
-        "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD",
-        "1RB ...  1LB 1RC  0LD 0RB  1LD 0RC",
-        "1RB ...  1LC 1LC  0RD 0LB  1RD 0LC",
-        "1RB ...  1RC 1LC  0LB 1RD  0RD 0LC",
         "1RB 0LB  1LB 0LC  0RD 1LC  1RD 1RA",
         "1RB 0RB  0LC 1RB  1LC 1LD  1LA 0RA",
         "1RB 0RC  1LA 0RA  0LD 1RC  1LD 1LB",
@@ -2138,16 +2132,6 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
         "1RB 1LC  1LA 0LD  1RC 0LB  0RC 1LB",
     },
     "step_limit": {
-        "1RB ...  1LB 0RC  0LB 1RC",
-
-        "1RB ...  0RC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  0RC ...  1LC 0RD  0LC 1RD",
-        "1RB ...  1LB 0RC  0LD 1RC  ... 1LB",
-        "1RB ...  1LC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  1LC ...  0RD 1LC  1RD 0LC",
-        "1RB ...  1LC ...  1RC 0LD  0RC 1LD",
-        "1RB ...  1RC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  1RC ...  1LC 0RD  0LC 1RD",
         "1RB 1LD  1LB 0RC  0LA 1RC  1RD 1LB",
     },
     "linrec": {

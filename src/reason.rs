@@ -125,7 +125,10 @@ fn get_valid_steps(
 
         let mut steps = vec![];
 
-        let (same, diff) = &entrypoints[state];
+        let Some((same, diff)) = entrypoints.get(state) else {
+            assert!(*state == 0);
+            continue;
+        };
 
         let mut spinouts = HashSet::new();
 
@@ -321,18 +324,6 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
             .push((slot, (color, shift)));
     }
 
-    for _ in 0..entrypoints.len() {
-        let reached: Vec<State> = entrypoints.keys().copied().collect();
-
-        for (_, diff) in entrypoints.values_mut() {
-            diff.retain(|((state, _), _)| reached.contains(state));
-        }
-
-        if entrypoints.len() == reached.len() {
-            break;
-        }
-    }
-
     entrypoints
 }
 
@@ -381,14 +372,14 @@ fn test_entrypoints() {
     assert_entrypoints!(
         "1RB ...  1LB 0RB",
         [
-            'B' => (["B0:1L", "B1:0R"], [])
+            'B' => (["B0:1L", "B1:0R"], ["A0:1RB"])
         ]
     );
 
     assert_entrypoints!(
         "1RB ... ...  0LB 2RB 0RB",
         [
-            'B' => (["B0:0L", "B1:2R", "B2:0R"], [])
+            'B' => (["B0:0L", "B1:2R", "B2:0R"], ["A0:1RB"])
         ]
     );
 
@@ -429,7 +420,7 @@ fn test_entrypoints() {
     assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LD",
         [
-            'B' => ([], []),
+            'B' => ([], ["A0:1RB"]),
             'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
             'D' => (["D1:0L"], ["C1:1L"])
         ]
@@ -438,7 +429,7 @@ fn test_entrypoints() {
     assert_entrypoints!(
         "1RB ...  0LC ...  1RC 1LD  0LC 0LB",
         [
-            'B' => ([], ["D1:0L"]),
+            'B' => ([], ["A0:1RB", "D1:0L"]),
             'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
             'D' => ([], ["C1:1L"])
         ]
