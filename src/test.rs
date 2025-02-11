@@ -183,7 +183,11 @@ fn assert_reason(
 
         if let BackwardResult::Refuted(steps) = result {
             if steps > max_refuted {
-                println!("\"{}\": {steps},", prog.show(Some(params)));
+                println!(
+                    "        \"{}\": {},",
+                    prog.show(Some(params)),
+                    1 + steps,
+                );
             }
 
             if steps > *access(&refuted_steps) {
