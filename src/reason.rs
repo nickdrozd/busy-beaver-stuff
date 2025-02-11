@@ -91,11 +91,11 @@ fn cant_reach(
             println!();
         };
 
-        let valid_steps =
-            match get_valid_steps(&mut configs, &entrypoints) {
-                Ok(steps) => steps,
-                Err(err) => return err,
-            };
+        let Some(valid_steps) =
+            get_valid_steps(&mut configs, &entrypoints)
+        else {
+            return Spinout;
+        };
 
         match valid_steps.len() {
             0 => return Refuted(step),
@@ -117,7 +117,7 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-) -> Result<ValidatedSteps, BackwardResult> {
+) -> Option<ValidatedSteps> {
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
@@ -173,7 +173,7 @@ fn get_valid_steps(
         checked.push((steps, config));
     }
 
-    Ok(checked)
+    Some(checked)
 }
 
 fn get_indefinite_steps(
@@ -181,12 +181,14 @@ fn get_indefinite_steps(
     config: &Config,
     diff: &Entries,
     same: &Entries,
-) -> Result<(Vec<Instr>, Config), BackwardResult> {
+) -> Option<(Vec<Instr>, Config)> {
     let mut steps = vec![];
 
     let mut tape = config.tape.clone();
 
-    tape.push_indef(push)?;
+    if !tape.push_indef(push) {
+        return None;
+    }
 
     for entries in [diff, same] {
         for &((state, color), (print, shift)) in entries {
@@ -198,7 +200,7 @@ fn get_indefinite_steps(
         }
     }
 
-    Ok((steps, Config::new(config.state, tape)))
+    Some((steps, Config::new(config.state, tape)))
 }
 
 fn step_configs(
@@ -742,10 +744,7 @@ impl Backstepper {
         self.head += stepped;
     }
 
-    fn push_indef(
-        &mut self,
-        shift: Shift,
-    ) -> Result<(), BackwardResult> {
+    fn push_indef(&mut self, shift: Shift) -> bool {
         let push = if shift {
             &mut self.rspan
         } else {
@@ -755,22 +754,20 @@ impl Backstepper {
         let scan = self.scan;
 
         if push.has_indef_color(scan) {
-            #[cfg(debug_assertions)]
-            println!("~~ already has indef");
-            return Err(Spinout);
+            return false;
         }
 
         if let Some(block) = push.span.0.first() {
             if block.color == scan {
-                return Ok(());
+                return true;
             }
         } else if scan == 0 && matches!(push.end, TapeEnd::Blanks) {
-            return Ok(());
+            return true;
         }
 
         push.span.push_block(scan, 0);
 
-        Ok(())
+        true
     }
 }
 
@@ -1011,7 +1008,7 @@ fn test_spinout() {
     assert_eq!(tape.check_edge(false, 1), None);
     assert_eq!(tape.check_edge(true, 0), Some(true));
 
-    tape.push_indef(true).unwrap();
+    tape.push_indef(true);
 
     tape.assert("0+ [1] 1.. 0^2 ?");
 
@@ -1051,20 +1048,20 @@ fn test_backstep_indef() {
 fn test_push_indef() {
     let mut tape: Backstepper = "0+ 1 [0] ?".into();
 
-    tape.push_indef(false).unwrap();
+    tape.push_indef(false);
 
     tape.assert("0+ 1 0.. [0] ?");
 
-    assert!(tape.push_indef(false).is_err());
+    assert!(!tape.push_indef(false));
 
     tape.assert("0+ 1 0.. [0] ?");
 
     tape.scan = 1;
-    tape.push_indef(false).unwrap();
+    tape.push_indef(false);
 
     tape.assert("0+ 1 0.. 1.. [1] ?");
 
     tape.scan = 0;
 
-    assert!(tape.push_indef(false).is_err());
+    assert!(!tape.push_indef(false));
 }
