@@ -344,7 +344,7 @@ class Reason(TuringTest):
         if results != BACKWARD_FALSE_NEGATIVES:
             dump = {
                 term: {
-                    cat: sorted(progs, key = len)
+                    cat: sorted(sorted(progs), key = len)
                     for cat, progs in cats.items()
                 }
                 for term, cats in results.items()
