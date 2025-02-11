@@ -2417,6 +2417,12 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     for prog in progs
 }
 
+BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
+    'halt': CANT_HALT_FALSE_NEGATIVES_CATS,
+    'blank': CANT_BLANK_FALSE_NEGATIVES_CATS,
+    'spinout': CANT_SPIN_OUT_FALSE_NEGATIVES_CATS,
+}
+
 ########################################
 
 SEGMENT_HALT_FALSE_NEGATIVES = {

@@ -265,26 +265,6 @@ class TuringTest(TestCase):
             segment_cant_spin_out(prog, segs).is_settled(),
             f'segment spin out false negative: "{prog}"')
 
-    ########################################
-
-    def assert_backwards_cat(self, prog: str, cat: str, reasoner: BR):
-        result = str(reasoner(prog, REASON_LIMIT))
-
-        try:
-            self.assertEqual(cat, result)
-        except AssertionError:
-            print(f'{cat} -> {result} -- "{prog}"')
-            raise
-
-    def assert_halt_cat(self, prog: str, cat: str):
-        self.assert_backwards_cat(prog, cat, cant_halt)
-
-    def assert_blank_cat(self, prog: str, cat: str):
-        self.assert_backwards_cat(prog, cat, cant_blank)
-
-    def assert_spinout_cat(self, prog: str, cat: str):
-        self.assert_backwards_cat(prog, cat, cant_spin_out)
-
 ########################################
 
 BACKWARD_REASONERS: dict[str, BR] = {
@@ -328,25 +308,22 @@ class Reason(TuringTest):
 
     def test_false_negatives(self):
         totals: dict[str, dict[str, int]] = {
-            'halt': {}, 'blanks': {}, 'spinout': {}}
+            'halt': {}, 'blank': {}, 'spinout': {}}
 
-        for cat, progs in CANT_HALT_FALSE_NEGATIVES_CATS.items():
-            totals['halt'][cat] = len(progs)
+        for term, cats in BACKWARD_FALSE_NEGATIVES.items():
+            reasoner = BACKWARD_REASONERS[term]
 
-            for prog in progs:
-                self.assert_halt_cat(prog, cat)
+            for cat, progs in cats.items():
+                for prog in progs:
+                    totals[term][cat] = len(progs)
 
-        for cat, progs in CANT_BLANK_FALSE_NEGATIVES_CATS.items():
-            totals['blanks'][cat] = len(progs)
+                    result = str(reasoner(prog, REASON_LIMIT))
 
-            for prog in progs:
-                self.assert_blank_cat(prog, cat)
-
-        for cat, progs in CANT_SPIN_OUT_FALSE_NEGATIVES_CATS.items():
-            totals['spinout'][cat] = len(progs)
-
-            for prog in progs:
-                self.assert_spinout_cat(prog, cat)
+                    try:
+                        self.assertEqual(cat, result)
+                    except AssertionError:
+                        print(f'{cat} -> {result} -- "{prog}"')
+                        raise
 
         self.assertEqual(
             totals, {
@@ -356,7 +333,7 @@ class Reason(TuringTest):
                     'linrec': 100,
                     'spinout': 128,
                 },
-                'blanks': {
+                'blank': {
                     'linrec': 53,
                     'spinout': 254,
                 },
