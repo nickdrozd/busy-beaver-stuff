@@ -1,5 +1,7 @@
 # pylint: disable = consider-using-namedtuple-or-dataclass
 
+from typing import Literal
+
 ## test turing #######################################################
 
 BasicTermData = dict[str, tuple[int, int]]
@@ -1369,6 +1371,8 @@ MODULAR = {
     "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
 }
 
+########################################
+
 CANT_REACH_STEPS: dict[str, dict[str, int]] = {
     "halt": {
         "1RB 0LA  1LA ...": 3,
@@ -1503,7 +1507,17 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
     },
 }
 
-CANT_HALT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
+type BackwardCats = dict[
+    Literal[
+        "linrec",
+        "spinout",
+        "step_limit",
+        "depth_limit",
+    ],
+    set[str],
+]
+
+CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
     "step_limit": {
         "1RB 1LA  0RC 0RD  0LD ...  0LA 1RD",
     },
@@ -1788,7 +1802,7 @@ CANT_HALT_FALSE_NEGATIVES: set[str] = {
     for prog in progs
 }
 
-CANT_BLANK_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
+CANT_BLANK_FALSE_NEGATIVES_CATS: BackwardCats = {
     "linrec": {
         "1RB ... 0RB  2LB 2LA 0RA",
         "1RB 0LB 1RA  1LB 2RB 0LA",
@@ -2131,7 +2145,7 @@ CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     for prog in progs
 }
 
-CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: dict[str, set[str]] = {
+CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: BackwardCats = {
     "depth_limit": {
         "1RB 0LB  1LB 0LC  0RD 1LC  1RD 1RA",
         "1RB 0RB  0LC 1RB  1LC 1LD  1LA 0RA",
@@ -2402,6 +2416,8 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
     for progs in CANT_SPIN_OUT_FALSE_NEGATIVES_CATS.values()
     for prog in progs
 }
+
+########################################
 
 SEGMENT_HALT_FALSE_NEGATIVES = {
     "1RB ... 0RB  2LB 2LA 0RA",
