@@ -388,16 +388,35 @@ fn test_segment_slow() {
 
 /**************************************/
 
-fn assert_blank(params: Params, expected: (u64, u64)) {
+fn assert_blank(params: Params, expected: (usize, (u64, u64))) {
+    let (max_refuted, _) = expected;
+
     let holdout_count = set_val(0);
     let visited_count = set_val(0);
+    let refuted_steps = set_val(0);
 
     build_tree(params, false, TREE_LIM, &|prog| {
         *access(&visited_count) += 1;
 
         let run = 700;
 
-        if cant_blank(prog, 44).is_settled()
+        let backward = cant_blank(prog, 44);
+
+        if let BackwardResult::Refuted(steps) = backward {
+            if steps > max_refuted {
+                println!(
+                    "        \"{}\": {},",
+                    prog.show(Some(params)),
+                    1 + steps,
+                );
+            }
+
+            if steps > *access(&refuted_steps) {
+                *access(&refuted_steps) = steps;
+            }
+        }
+
+        if backward.is_settled()
             || quick_term_or_rec(prog, run).is_settled()
             || check_inf(prog, params, opt_block(prog, 300), run as u64)
             || !run_prover(&prog.show(Some(params)), run as u64)
@@ -412,7 +431,10 @@ fn assert_blank(params: Params, expected: (u64, u64)) {
         // println!("{}", prog.show(Some(params)));
     });
 
-    let result = (get_val(holdout_count), get_val(visited_count));
+    let result = (
+        get_val(refuted_steps),
+        (get_val(holdout_count), get_val(visited_count)),
+    );
 
     assert_eq!(result, expected, "({params:?}, {result:?})");
 }
@@ -429,14 +451,14 @@ macro_rules! assert_blank_results {
 #[test]
 fn test_blank() {
     assert_blank_results![
-        ((2, 2), (0, 106)),
+        ((2, 2), (1, (0, 106))),
         //
-        ((3, 2), (3, 13_128)),
+        ((3, 2), (13, (3, 13_128))),
         //
-        ((2, 3), (35, 9_168)),
+        ((2, 3), (6, (35, 9_168))),
         //
-        ((4, 2), (2_205, 2_291_637)),
+        ((4, 2), (43, (2_205, 2_291_637))),
         //
-        ((2, 4), (14_833, 1_719_357)),
+        ((2, 4), (33, (14_833, 1_719_357))),
     ];
 }

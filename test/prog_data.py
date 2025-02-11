@@ -1487,6 +1487,15 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
     },
 
     "blank": {
+        "1RB 0LB 2RA  1LA 2RB 0RA": 7,
+        "1RB 0RB 2LA  1LB 2RB 0LA": 7,
+        "1RB 2LA 0LB  1LA 0RA 2LB": 7,
+
+        "1RB 0LB  1RC 0RC  1LC 0LA": 11,
+        "1RB 0LC  1LC 0LA  0RA 1LB": 11,
+        "1RB 1LC  1LA 0LA  1RC 0RB": 13,
+        "1RB 0RB  1RC 0LA  1LC 1LA": 14,
+
         "1RB 2LA 3LA 0RB  0LA 2RB 1LB 3RB": 30,
         "1RB 0RB 1RA 3LA  2LB 2RB 3RB 0LA": 34,
 
