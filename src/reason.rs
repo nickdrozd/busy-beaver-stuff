@@ -311,8 +311,7 @@ fn zero_reflexive_configs(comp: &CompProg) -> Configs {
 fn get_blanks(configs: &Configs) -> Blanks {
     configs
         .iter()
-        .filter(|config| config.tape.blank())
-        .map(|config| config.state)
+        .filter_map(|cfg| cfg.tape.blank().then_some(cfg.state))
         .collect()
 }
 
