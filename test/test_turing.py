@@ -1,7 +1,9 @@
 # ruff: noqa: F405
 from __future__ import annotations
 
+import json
 import re
+from collections import defaultdict
 from itertools import product
 from math import isclose, log10
 from typing import TYPE_CHECKING
@@ -307,44 +309,55 @@ class Reason(TuringTest):
                 self.assert_cant_blank_backward(prog, 1331)
 
     def test_false_negatives(self):
-        totals: dict[str, dict[str, int]] = {
-            'halt': {}, 'blank': {}, 'spinout': {}}
+        results: dict[str, BackwardCats] = {
+            'halt': defaultdict(set),
+            'blank': defaultdict(set),
+            'spinout': defaultdict(set),
+        }
 
         for term, cats in BACKWARD_FALSE_NEGATIVES.items():
+            term_results = results[term]
             reasoner = BACKWARD_REASONERS[term]
 
-            for cat, progs in cats.items():
+            for progs in cats.values():
                 for prog in progs:
-                    totals[term][cat] = len(progs)
-
                     result = str(reasoner(prog, REASON_LIMIT))
 
-                    try:
-                        self.assertEqual(cat, result)
-                    except AssertionError:
-                        print(f'{cat} -> {result} -- "{prog}"')
-                        raise
+                    term_results[result].add(prog)  # type: ignore[index]
 
-        self.assertEqual(
-            totals, {
-                'halt': {
-                    'step_limit': 1,
-                    'depth_limit': 22,
-                    'linrec': 100,
-                    'spinout': 129,
-                },
-                'blank': {
-                    'linrec': 53,
-                    'spinout': 254,
-                },
-                'spinout': {
-                    'step_limit': 1,
-                    'depth_limit': 6,
-                    'linrec': 27,
-                    'spinout': 205,
-                },
-            },
-            totals)
+        def assert_counts(data: dict[str, BackwardCats]):
+            counts = {
+                term: {
+                    cat: len(progs)
+                    for cat, progs in cats.items()
+                }
+                for term, cats in data.items()
+            }
+
+            if counts != BACKWARD_FALSE_NEGATIVES_COUNTS:
+                print(json.dumps(counts, indent = 4))
+                raise AssertionError
+
+        assert_counts(BACKWARD_FALSE_NEGATIVES)
+        assert_counts(results)
+
+        if results != BACKWARD_FALSE_NEGATIVES:
+            dump = {
+                term: {
+                    cat: sorted(progs, key = len)
+                    for cat, progs in cats.items()
+                }
+                for term, cats in results.items()
+            }
+
+            for term, cats in dump.items():  # type: ignore[assignment]
+                print(f'--> {term}')
+                print(json.dumps(cats, indent = 4))
+                print()
+
+            raise AssertionError
+
+        _ = self
 
     def test_holdouts(self):
         for cat in ('42h', '24h'):

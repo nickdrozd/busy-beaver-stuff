@@ -2455,6 +2455,25 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
     'spinout': CANT_SPIN_OUT_FALSE_NEGATIVES_CATS,
 }
 
+BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
+    'halt': {
+        'step_limit': 1,
+        'depth_limit': 22,
+        'linrec': 100,
+        'spinout': 129,
+    },
+    'blank': {
+        'linrec': 53,
+        'spinout': 254,
+    },
+    'spinout': {
+        'step_limit': 1,
+        'depth_limit': 6,
+        'linrec': 27,
+        'spinout': 205,
+    },
+}
+
 ########################################
 
 SEGMENT_HALT_FALSE_NEGATIVES = {
