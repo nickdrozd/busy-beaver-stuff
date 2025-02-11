@@ -287,6 +287,12 @@ class TuringTest(TestCase):
 
 ########################################
 
+BACKWARD_REASONERS: dict[str, BR] = {
+    "halt": cant_halt,
+    "blank": cant_blank,
+    "spinout": cant_spin_out,
+}
+
 class Reason(TuringTest):
     def test_halt(self):
         for prog in HALTERS:
@@ -409,14 +415,8 @@ class Reason(TuringTest):
             self.assert_cant_spin_out_backward(hydra, 0)
 
     def test_steps(self):
-        cant_reaches = {
-            "halt": cant_halt,
-            "blank": cant_blank,
-            "spinout": cant_spin_out,
-        }
-
         for cat, data in CANT_REACH_STEPS.items():
-            cant_reach = cant_reaches[cat]
+            cant_reach = BACKWARD_REASONERS[cat]
 
             for prog, steps in data.items():
                 self.assertEqual(
