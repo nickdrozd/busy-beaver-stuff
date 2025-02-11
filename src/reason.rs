@@ -601,11 +601,18 @@ impl Span {
         self.span.0.iter().any(|block| block.count == 0)
     }
 
-    fn has_indef_color(&self, color: Color) -> bool {
-        self.span
-            .0
-            .iter()
-            .any(|block| block.count == 0 && block.color == color)
+    fn has_indef_span(&self, color: Color) -> bool {
+        for block in &self.span.0 {
+            if block.color != color {
+                return false;
+            }
+
+            if block.count == 0 {
+                return true;
+            }
+        }
+
+        false
     }
 }
 
@@ -773,7 +780,7 @@ impl Backstepper {
 
         let scan = self.scan;
 
-        if push.has_indef_color(scan) {
+        if push.has_indef_span(scan) {
             return false;
         }
 
@@ -1082,6 +1089,13 @@ fn test_push_indef() {
     tape.assert("0+ 1 0.. 1.. [1] ?");
 
     tape.scan = 0;
+    tape.push_indef(false);
+
+    tape.assert("0+ 1 0.. 1.. 0.. [0] ?");
+
+    tape.backstep(false, 0);
+
+    tape.assert("0+ 1 0.. 1.. 0.. 0 [0] ?");
 
     assert!(!tape.push_indef(false));
 }
