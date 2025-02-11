@@ -82,6 +82,8 @@ fn cant_reach(
 
     let mut blanks = get_blanks(&configs);
 
+    let mut indef_steps = ValidatedSteps::new();
+
     for step in 0..depth {
         #[cfg(debug_assertions)]
         {
@@ -104,10 +106,21 @@ fn cant_reach(
         }
 
         configs = match step_configs(valid_steps, &mut blanks) {
-            Ok(configs) => configs,
             Err(err) => return err,
+            Ok((configs, indefs)) => {
+                if !indefs.is_empty() {
+                    indef_steps.extend(indefs);
+
+                    #[cfg(debug_assertions)]
+                    println!("~~ indef steps: {}", indef_steps.len());
+                }
+
+                configs
+            },
         };
     }
+
+    assert!(indef_steps.is_empty());
 
     StepLimit
 }
@@ -206,13 +219,19 @@ fn get_indefinite_steps(
 fn step_configs(
     configs: ValidatedSteps,
     blanks: &mut Blanks,
-) -> Result<Configs, BackwardResult> {
+) -> Result<(Configs, ValidatedSteps), BackwardResult> {
     let mut stepped = Configs::new();
+
+    let mut indef_steps = ValidatedSteps::new();
 
     for (instrs, config) in configs {
         let (pulls_indef, instrs): (Vec<_>, Vec<_>) = instrs
             .into_iter()
             .partition(|&(_, shift, _)| config.tape.pulls_indef(shift));
+
+        if !pulls_indef.is_empty() {
+            indef_steps.push((pulls_indef, config.clone()));
+        }
 
         let config = Rc::new(config);
 
@@ -257,15 +276,9 @@ fn step_configs(
 
             stepped.push(next_config);
         }
-
-        if !pulls_indef.is_empty() {
-            #[cfg(debug_assertions)]
-            println!("~~ pulls indef");
-            return Err(Spinout);
-        }
     }
 
-    Ok(stepped)
+    Ok((stepped, indef_steps))
 }
 
 /**************************************/
@@ -468,6 +481,7 @@ fn test_entrypoints() {
 
 /**************************************/
 
+#[derive(Clone)]
 struct Config {
     state: State,
     tape: Backstepper,
