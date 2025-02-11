@@ -76,11 +76,7 @@ fn cant_reach(
 
     configs.retain(|config| entrypoints.contains_key(&config.state));
 
-    let mut blanks: Blanks = configs
-        .iter()
-        .filter(|config| config.tape.blank())
-        .map(|config| config.state)
-        .collect();
+    let mut blanks = get_blanks(&configs);
 
     for step in 0..depth {
         #[cfg(debug_assertions)]
@@ -309,6 +305,14 @@ fn zero_reflexive_configs(comp: &CompProg) -> Configs {
             )),
             _ => None,
         })
+        .collect()
+}
+
+fn get_blanks(configs: &Configs) -> Blanks {
+    configs
+        .iter()
+        .filter(|config| config.tape.blank())
+        .map(|config| config.state)
         .collect()
 }
 
