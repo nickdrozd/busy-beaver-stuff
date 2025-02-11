@@ -331,7 +331,7 @@ class Reason(TuringTest):
                     'step_limit': 1,
                     'depth_limit': 22,
                     'linrec': 100,
-                    'spinout': 128,
+                    'spinout': 129,
                 },
                 'blank': {
                     'linrec': 53,

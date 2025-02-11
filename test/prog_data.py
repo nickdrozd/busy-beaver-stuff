@@ -55,6 +55,7 @@ HALT: BasicTermData = {
 
     # 5/2 BB
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (4098, 47176870),
+    "1RB 1LA  1RC 1LD  1RE 1RD  ... 0LB  0LA 1RC": ( 164,    15588),
 
     # 5/5 block-compiled from 5/2
     "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721561),
@@ -138,7 +139,14 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 0LC  0RC ...  1LC 0RA": (1,  6),
     "1RB 1LA  0LA 0LC  0LC 1LC": (1,  6),
     "1RB ...  1LC ...  0LC 0LB": (2,  4),
-    "1RB ...  1LB 0RC  0LB 1RC": (0, 7),
+    "1RB ...  1LB 0RC  0LB 1RC": (0,  7),
+    "1RB 0RB  1LB 1RC  0LA 0LB": (0,  7),
+    "1RB 0RB  0LB 1RC  1LB 0LA": (0,  7),
+    "1RB 0LC  0LB 1LC  1RA 0RB": (0,  6),
+    "1RB 0RB  1LB 1RC  ... 0LA": (0,  5),
+    "1RB 0LC  1LB 1RA  ... 0RB": (0,  5),
+    "1RB 0RB  0LB 1LC  0RA ...": (0,  5),
+    "1RB 0RB  0LB 1RC  0LA ...": (0,  5),
 
     # 2/3
     "1RB 2LB 1LA  2LB 2RA 0RA": ( 8, 59),  # BBB(2, 3)
@@ -214,6 +222,15 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 2LB ...  2LA 1RC 1LB  2RC 0LB 1LC": (1, 565),
     "1RB 2LC ...  2LA 1RC 1LB  2RC 0LB 1LC": (1, 553),
 
+    # 2/5
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 1LB": (1, 9),
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 2LB": (1, 9),
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 3LB": (1, 9),
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 4LB": (1, 9),
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB": (0, 9),
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB": (0, 9),
+    "1RB ... ... ... ...  0LB 2RB 3RB 4LB ...": (1, 7),
+
     # 5/2
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0LE 0LA": (7, 57),
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  1LE 0LA": (7, 57),
@@ -242,6 +259,13 @@ SPINOUT_BLANK = {
     "1RB 1LA  1LA 1LC  1RC 0LC": ({'C'}, 20),
     "1RB 0LC  1LB 1LA  1RC 0LC": ({'C'}, 20),
     "1RB ...  1LC 0LC  1RC 0LB": ({'B', 'C'}, 20),
+    "1RB 0RB  0LB 1RC  1LB 0LA": ({'B'},  7),
+    "1RB 0RB  1LB 1RC  0LA 0LB": ({'B'},  7),
+    "1RB 0LC  0LB 1LC  1RA 0RB": ({'B'},  6),
+    "1RB 0LC  1LB 1RA  ... 0RB": ({'B'},  5),
+    "1RB 0RB  0LB 1LC  0RA ...": ({'B'},  5),
+    "1RB 0RB  0LB 1RC  0LA ...": ({'B'},  5),
+    "1RB 0RB  1LB 1RC  ... 0LA": ({'B'},  5),
     "1RB ...  1LB 0RC  ... 0RB": ({'B'},  4),
 
     # 2/3
@@ -1343,6 +1367,13 @@ MODULAR = {
     "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD",
     "1RB ...  1LC ...  1RC 0LD  0RC 1LD",
     "1RB ...  0RC ...  0LD 1RC  1LD 0RC",
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 1LB",
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 2LB",
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 3LB",
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 4LB",
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
+    "1RB ... ... ... ...  0LB 2RB 3RB 4LB ...",
     "1RB ...  0LC 0LB  1RC 1RD  0LE 1RB  1LB 1LE",
     "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  0LC 1LE",
     "1RB ...  0LC 1LB  1RC 1RD  1LB 1RE  0LC 0LE",
@@ -1692,6 +1723,7 @@ CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB ...  1LC ...  0LC 0LB",
         "1RB ...  1LC 0RB  1LA 1LC",
         "1RB ...  1LC 1RA  1LA 0LC",
+        "1RB 0RB  0LB 1LC  0RA ...",
 
         "1RB 0LB ... 0RA  2LA 3LA 1LB 3RB",
         "1RB 0LB 0RB ...  2LB 3RA 1RA 0LA",
