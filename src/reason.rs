@@ -76,6 +76,10 @@ fn cant_reach(
 
     configs.retain(|config| entrypoints.contains_key(&config.state));
 
+    if configs.is_empty() {
+        return Refuted(0);
+    }
+
     let mut blanks = get_blanks(&configs);
 
     for step in 0..depth {
