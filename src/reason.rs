@@ -574,6 +574,15 @@ impl fmt::Display for TapeEnd {
     }
 }
 
+impl TapeEnd {
+    const fn matches_color(self, print: Color) -> bool {
+        match self {
+            Self::Blanks => print == 0,
+            Self::Unknown => true,
+        }
+    }
+}
+
 /**************************************/
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -600,6 +609,13 @@ impl Span {
 
     fn has_indef(&self) -> bool {
         self.span.0.iter().any(|block| block.count == 0)
+    }
+
+    fn matches_color(&self, print: Color) -> bool {
+        self.span.0.first().map_or_else(
+            || self.end.matches_color(print),
+            |block| block.color == print,
+        )
     }
 
     fn has_indef_span(&self, color: Color) -> bool {
@@ -685,16 +701,8 @@ impl Backstepper {
     }
 
     fn check_step(&self, shift: Shift, print: Color) -> bool {
-        let pull = if shift { &self.lspan } else { &self.rspan };
-
-        print
-            == if let Some(block) = pull.span.0.first() {
-                block.color
-            } else if pull.end == TapeEnd::Blanks {
-                0
-            } else {
-                return true;
-            }
+        (if shift { &self.lspan } else { &self.rspan })
+            .matches_color(print)
     }
 
     fn check_edge(&self, shift: Shift, print: Color) -> Option<bool> {
