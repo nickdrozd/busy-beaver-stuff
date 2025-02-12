@@ -108,12 +108,7 @@ fn cant_reach(
         configs = match step_configs(valid_steps, &mut blanks) {
             Err(err) => return err,
             Ok((configs, indefs)) => {
-                if !indefs.is_empty() {
-                    indef_steps.extend(indefs);
-
-                    #[cfg(debug_assertions)]
-                    println!("~~ indef steps: {}", indef_steps.len());
-                }
+                indef_steps.extend(indefs);
 
                 configs
             },
