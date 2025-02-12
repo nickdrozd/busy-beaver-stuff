@@ -121,10 +121,6 @@ fn cant_reach(
         };
     }
 
-    if !indef_steps.is_empty() {
-        return Spinout;
-    }
-
     StepLimit
 }
 

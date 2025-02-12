@@ -1546,6 +1546,7 @@ type BackwardCats = dict[
 
 CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
     "step_limit": {
+        "1RB 0LD  1LC ...  1RD 1RC  1LD 1RA",
         "1RB 1LA  0RC 0RD  0LD ...  0LA 1RD",
     },
     "depth_limit": {
@@ -1771,7 +1772,6 @@ CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
         "1RB 0LC  1LC ...  1LD 0LB  1RD 0RA",
         "1RB 0LD  0RC 0RB  1RD 0RA  1LA ...",
-        "1RB 0LD  1LC ...  1RD 1RC  1LD 1RA",
         "1RB 0RA  1LC ...  0LD 0LB  1RD 0LA",
         "1RB 0RA  1LC ...  1RD 0LB  0LA 0RC",
         "1RB 0RA  1LC 1RD  1LA 0LB  ... 1RC",
@@ -2411,10 +2411,10 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
 
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
     "halt": {
-        "step_limit": 1,
+        "step_limit": 2,
         "depth_limit": 22,
         "linrec": 107,
-        "spinout": 148,
+        "spinout": 147,
     },
     "blank": {
         "linrec": 54,

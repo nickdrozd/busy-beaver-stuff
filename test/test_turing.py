@@ -413,14 +413,9 @@ class Reason(TuringTest):
                     cant_reach(prog, steps).step,
                     steps - 1)
 
-                try:
-                    self.assertIsInstance(
-                        cant_reach(prog, steps - 1),
-                        BackwardResult.step_limit)
-                except AssertionError:
-                    self.assertIsInstance(
-                        cant_reach(prog, steps - 1),
-                        BackwardResult.spinout)
+                self.assertIsInstance(
+                    cant_reach(prog, steps - 1),
+                    BackwardResult.step_limit)
 
     def test_unreasonable(self):
         self.assertEqual(
