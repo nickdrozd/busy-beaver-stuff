@@ -1572,6 +1572,13 @@ CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB 1LA  1RC 0RD  1LD ...  0LA 1RD",
         "1RB 1LA  1RC 0RD  1RD ...  0LA 1RD",
         "1RB 1LA  1RC 1RD  0LA 1RC  ... 0RC",
+        "1RB 1LA 3RB 0RB ...  0LB 2RB 3RB 4LA 1RB",
+        "1RB 1LA 4RB ... 0RB  0LB 2RB 3LA 4RB 1RB",
+        "1RB 1RA 3RB 4LA 2LA  2LA 4LA 1LA ... 4RB",
+        "1RB 2RB 2LA 0RB ...  0LB 2RB 3RB 4LA 1RB",
+        "1RB 2RB 4RB ... 4LA  1LA 1LB 3LA 4RB 2RB",
+        "1RB 2RB 4RB ... 4LA  2LA 3LA 2LB 4RB 1RB",
+        "1RB 3RB ... 3LA 0RB  0LB 2LA 3RB 4RB 1RB",
     },
     "linrec": {
         "1RB ...  0LB 0LA",
@@ -1796,17 +1803,10 @@ CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB 2LC ...  2LA 1RC 1LB  2RC 0LB 1LC",
         "1RB 2LC 2LA  1LC 0LA 0RB  0RB 2RB ...",
         "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA",
-        "1RB 1LA 3RB 0RB ...  0LB 2RB 3RB 4LA 1RB",
-        "1RB 1LA 4RB ... 0RB  0LB 2RB 3LA 4RB 1RB",
         "1RB 1RA 3LA 4LA 2RB  2LA ... 4LA 3RB 3LA",
         "1RB 1RA 3RB 4LA 2LA  2LA ... 3LA 4LA 4RB",
-        "1RB 1RA 3RB 4LA 2LA  2LA 4LA 1LA ... 4RB",
         "1RB 2LB 1RB 3LB ...  2LA 4LB 3RB 0RA 1RB",
-        "1RB 2RB 2LA 0RB ...  0LB 2RB 3RB 4LA 1RB",
         "1RB 2RB 4RB ... 4LA  0LB 2RB 3LA 4RB 1RB",
-        "1RB 2RB 4RB ... 4LA  1LA 1LB 3LA 4RB 2RB",
-        "1RB 2RB 4RB ... 4LA  2LA 3LA 2LB 4RB 1RB",
-        "1RB 3RB ... 3LA 0RB  0LB 2LA 3RB 4RB 1RB",
         "1RB 3RB ... 4RB 4LA  0LB 2LA 3RB 4RB 1RB",
         "1RB 3RB ... 4RB 4LA  2LA 3LA 2LB 4RB 1RB",
         "1RB 3RB ... 4RB 4LA  2LA 4RB 2LB 1LA 3RB",
@@ -2148,6 +2148,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
         "1RB 0RD  1LC 0LC  0RA 1LB  1RD 0LB",
         "1RB 1LC  1LA 0LD  1RC 0LB  0RC 1LB",
+        "1RB 3RA 3LA 3LA 0RB  0LB 2LA 1RB 4RB 0LA",
     },
     "step_limit": {
         "1RB 1LD  1LB 0RC  0LA 1RC  1RD 1LB",
@@ -2382,7 +2383,6 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB 2RA 4LA 0RB ...  0LB 2LA 3LA 0LA 3RB",
         "1RB 2RA 4RA 0RB 3RB  0LB 2LA 3LA 4LA 0LA",
         "1RB 3LA 1LA 4LA 1RA  2LB 2RA ... 0RA 0RB",
-        "1RB 3RA 3LA 3LA 0RB  0LB 2LA 1RB 4RB 0LA",
         "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA",
         "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",
         "1RB 0RD  0RC 0RB  1LC 0LA  0RA 1RE  0LB 1RB",
@@ -2412,9 +2412,9 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
     "halt": {
         "step_limit": 2,
-        "depth_limit": 22,
+        "depth_limit": 29,
         "linrec": 107,
-        "spinout": 147,
+        "spinout": 140,
     },
     "blank": {
         "linrec": 54,
@@ -2422,9 +2422,9 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
     },
     "spinout": {
         "step_limit": 1,
-        "depth_limit": 6,
+        "depth_limit": 7,
         "linrec": 31,
-        "spinout": 208,
+        "spinout": 207,
     },
 }
 

@@ -116,6 +116,10 @@ fn cant_reach(
             Ok((configs, indefs)) => {
                 indef_steps.extend(indefs);
 
+                if indef_steps.len() > MAX_STACK_DEPTH {
+                    return DepthLimit;
+                }
+
                 configs
             },
         };
