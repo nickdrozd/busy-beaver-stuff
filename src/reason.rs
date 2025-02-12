@@ -100,7 +100,13 @@ fn cant_reach(
         };
 
         match valid_steps.len() {
-            0 => return Refuted(step),
+            0 => {
+                if !indef_steps.is_empty() {
+                    return Spinout;
+                }
+
+                return Refuted(step);
+            },
             n if MAX_STACK_DEPTH < n => return DepthLimit,
             _ => {},
         }
