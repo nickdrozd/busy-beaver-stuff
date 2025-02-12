@@ -712,16 +712,20 @@ impl Backstepper {
             (&self.rspan, &self.lspan)
         };
 
-        let (required, at_edge) =
-            if let Some(block) = pull.span.0.first() {
-                (block.color, false)
-            } else if pull.end == TapeEnd::Blanks {
-                (0, true)
-            } else {
-                return Some(!push.span.0.is_empty());
-            };
+        if !pull.matches_color(print) {
+            return None;
+        }
 
-        (print == required).then_some(at_edge)
+        if !pull.span.0.is_empty() {
+            return Some(false);
+        }
+
+        let at_edge = match pull.end {
+            TapeEnd::Blanks => true,
+            TapeEnd::Unknown => !push.span.0.is_empty(),
+        };
+
+        Some(at_edge)
     }
 
     fn has_indef(&self) -> bool {
