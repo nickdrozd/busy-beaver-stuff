@@ -120,7 +120,9 @@ fn cant_reach(
         };
     }
 
-    assert!(indef_steps.is_empty());
+    if !indef_steps.is_empty() {
+        return Spinout;
+    }
 
     StepLimit
 }
@@ -205,6 +207,10 @@ fn get_indefinite_steps(
 
     for entries in [diff, same] {
         for &((state, color), (print, shift)) in entries {
+            if shift == push && print == config.tape.scan {
+                continue;
+            }
+
             if !tape.check_step(shift, print) {
                 continue;
             }
