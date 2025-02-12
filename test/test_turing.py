@@ -371,7 +371,7 @@ class Reason(TuringTest):
         for cat in ('32q', '23q'):
             for prog in read_holdouts(cat):
                 self.assert_cant_halt_backward(prog, 0)
-                self.assert_cant_blank_backward(prog, 1)
+                self.assert_cant_blank_backward(prog, 2)
                 self.assert_cant_spin_out_backward(prog, 2)
 
     def test_cryptids(self):
@@ -1220,7 +1220,7 @@ class Prover(RunProver):
                 self.assert_cant_blank_backward(prog, 14)
 
             if self.machine.undfnd is not None:
-                self.assert_cant_spin_out_backward(prog, 3)
+                self.assert_cant_spin_out_backward(prog, 5)
                 self.assert_could_halt(prog)
             else:
                 self.assert_cant_halt_backward(prog, 0)

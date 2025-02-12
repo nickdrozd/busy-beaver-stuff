@@ -93,11 +93,7 @@ fn cant_reach(
             println!();
         };
 
-        let Some(valid_steps) =
-            get_valid_steps(&mut configs, &entrypoints)
-        else {
-            return Spinout;
-        };
+        let valid_steps = get_valid_steps(&mut configs, &entrypoints);
 
         match valid_steps.len() {
             0 => {
@@ -133,7 +129,7 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-) -> Option<ValidatedSteps> {
+) -> ValidatedSteps {
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
@@ -166,11 +162,12 @@ fn get_valid_steps(
 
             let shift = *spinouts.iter().next().unwrap();
 
-            let indef_steps =
-                get_indefinite_steps(shift, &config, diff, same)?;
-
-            if !indef_steps.0.is_empty() {
-                checked.push(indef_steps);
+            if let Some(indef_steps) =
+                get_indefinite_steps(shift, &config, diff, same)
+            {
+                if !indef_steps.0.is_empty() {
+                    checked.push(indef_steps);
+                }
             }
         }
 
@@ -189,7 +186,7 @@ fn get_valid_steps(
         checked.push((steps, config));
     }
 
-    Some(checked)
+    checked
 }
 
 fn get_indefinite_steps(
