@@ -165,9 +165,7 @@ fn get_valid_steps(
             if let Some(indef_steps) =
                 get_indefinite_steps(shift, &config, diff, same)
             {
-                if !indef_steps.0.is_empty() {
-                    checked.push(indef_steps);
-                }
+                checked.push(indef_steps);
             }
         }
 
@@ -217,6 +215,10 @@ fn get_indefinite_steps(
 
             steps.push((color, shift, state));
         }
+    }
+
+    if steps.is_empty() {
+        return None;
     }
 
     Some((steps, Config::new(config.state, tape)))
