@@ -198,13 +198,15 @@ fn get_indefinite_steps(
     diff: &Entries,
     same: &Entries,
 ) -> Option<(Vec<Instr>, Config)> {
+    if !config.tape.check_indef(push) {
+        return None;
+    }
+
     let mut steps = vec![];
 
     let mut tape = config.tape.clone();
 
-    if !tape.push_indef(push) {
-        return None;
-    }
+    tape.push_indef(push);
 
     for entries in [diff, same] {
         for &((state, color), (print, shift)) in entries {
@@ -785,7 +787,13 @@ impl Backstepper {
         self.head += stepped;
     }
 
-    fn push_indef(&mut self, shift: Shift) -> bool {
+    fn check_indef(&self, shift: Shift) -> bool {
+        let push = if shift { &self.rspan } else { &self.lspan };
+
+        !push.has_indef_span(self.scan)
+    }
+
+    fn push_indef(&mut self, shift: Shift) {
         let push = if shift {
             &mut self.rspan
         } else {
@@ -794,21 +802,15 @@ impl Backstepper {
 
         let scan = self.scan;
 
-        if push.has_indef_span(scan) {
-            return false;
-        }
-
         if let Some(block) = push.span.0.first() {
             if block.color == scan {
-                return true;
+                return;
             }
         } else if scan == 0 && matches!(push.end, TapeEnd::Blanks) {
-            return true;
+            return;
         }
 
         push.span.push_block(scan, 0);
-
-        true
     }
 }
 
@@ -1093,7 +1095,7 @@ fn test_push_indef() {
 
     tape.assert("0+ 1 0.. [0] ?");
 
-    assert!(!tape.push_indef(false));
+    assert!(!tape.check_indef(false));
 
     tape.assert("0+ 1 0.. [0] ?");
 
@@ -1111,5 +1113,5 @@ fn test_push_indef() {
 
     tape.assert("0+ 1 0.. 1.. 0.. 0 [0] ?");
 
-    assert!(!tape.push_indef(false));
+    assert!(!tape.check_indef(false));
 }
