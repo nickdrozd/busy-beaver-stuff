@@ -149,8 +149,8 @@ fn get_valid_steps(
                 continue;
             }
 
-            if tape.check_spinout(shift, color) {
-                if tape.check_indef(shift) {
+            if let Some(keep) = tape.check_spinout(shift, color) {
+                if keep {
                     spinouts.insert(shift);
                 }
 
@@ -703,11 +703,11 @@ impl Backstepper {
             .matches_color(print)
     }
 
-    fn check_spinout(&self, shift: Shift, read: Color) -> bool {
+    fn check_spinout(&self, shift: Shift, read: Color) -> Option<bool> {
         let scan = self.scan;
 
         if scan != read {
-            return false;
+            return None;
         }
 
         let (pull, push) = if shift {
@@ -717,14 +717,11 @@ impl Backstepper {
         };
 
         if !pull.span.0.is_empty() {
-            return false;
+            return None;
         }
 
-        if matches!(pull.end, TapeEnd::Blanks) {
-            return true;
-        }
-
-        !push.span.0.is_empty()
+        (matches!(pull.end, TapeEnd::Blanks) || !push.span.0.is_empty())
+            .then_some(!push.matches_color(self.scan))
     }
 
     fn has_indef(&self) -> bool {
@@ -781,12 +778,6 @@ impl Backstepper {
         self.scan = read;
 
         self.head += stepped;
-    }
-
-    fn check_indef(&self, shift: Shift) -> bool {
-        let push = if shift { &self.rspan } else { &self.lspan };
-
-        !push.matches_color(self.scan)
     }
 
     fn push_indef(&mut self, shift: Shift) {
@@ -1035,14 +1026,14 @@ fn test_spinout() {
     tape.assert("0+ [1] 0^2 ?");
 
     assert!(!tape.check_step(false, 1));
-    assert!(tape.check_spinout(true, 1));
+    assert!(tape.check_spinout(true, 1).is_some());
 
     tape.push_indef(true);
 
     tape.assert("0+ [1] 1.. 0^2 ?");
 
-    assert!(!tape.check_spinout(false, 1));
-    assert!(tape.check_spinout(true, 1));
+    assert!(tape.check_spinout(false, 1).is_none());
+    assert!(tape.check_spinout(true, 1).is_some());
 }
 
 #[test]
@@ -1081,8 +1072,6 @@ fn test_push_indef() {
 
     tape.assert("0+ 1 0.. [0] ?");
 
-    assert!(!tape.check_indef(false));
-
     tape.assert("0+ 1 0.. [0] ?");
 
     tape.scan = 1;
@@ -1098,6 +1087,4 @@ fn test_push_indef() {
     tape.backstep(false, 0);
 
     tape.assert("0+ 1 0.. 1.. 0.. 0 [0] ?");
-
-    assert!(!tape.check_indef(false));
 }
