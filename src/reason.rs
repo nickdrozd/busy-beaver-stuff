@@ -197,24 +197,36 @@ fn get_indefinite_steps(
         return None;
     }
 
-    let mut steps = vec![];
+    let mut checked_entries = Entries::new();
+
+    for entries in [diff, same] {
+        for &entry in entries {
+            let (_, (print, shift)) = entry;
+
+            if shift == push && print == config.tape.scan {
+                continue;
+            }
+
+            checked_entries.push(entry);
+        }
+    }
+
+    if checked_entries.is_empty() {
+        return None;
+    }
 
     let mut tape = config.tape.clone();
 
     tape.push_indef(push);
 
-    for entries in [diff, same] {
-        for &((state, color), (print, shift)) in entries {
-            if shift == push && print == config.tape.scan {
-                continue;
-            }
+    let mut steps = vec![];
 
-            if !tape.check_step(shift, print) {
-                continue;
-            }
-
-            steps.push((color, shift, state));
+    for ((state, color), (print, shift)) in checked_entries {
+        if !tape.check_step(shift, print) {
+            continue;
         }
+
+        steps.push((color, shift, state));
     }
 
     if steps.is_empty() {
