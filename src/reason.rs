@@ -149,11 +149,11 @@ fn get_valid_steps(
         let mut spinouts = HashSet::new();
 
         for &((state, color), (print, shift)) in same {
-            let Some(at_edge) = tape.check_edge(shift, print) else {
+            if !tape.check_step(shift, print) {
                 continue;
-            };
+            }
 
-            if at_edge && tape.scan == color {
+            if tape.scan == color && tape.check_edge(shift) {
                 spinouts.insert(shift);
                 continue;
             }
@@ -705,27 +705,22 @@ impl Backstepper {
             .matches_color(print)
     }
 
-    fn check_edge(&self, shift: Shift, print: Color) -> Option<bool> {
+    fn check_edge(&self, shift: Shift) -> bool {
         let (pull, push) = if shift {
             (&self.lspan, &self.rspan)
         } else {
             (&self.rspan, &self.lspan)
         };
 
-        if !pull.matches_color(print) {
-            return None;
-        }
-
         if !pull.span.0.is_empty() {
-            return Some(false);
+            return false;
         }
 
-        let at_edge = match pull.end {
-            TapeEnd::Blanks => true,
-            TapeEnd::Unknown => !push.span.0.is_empty(),
-        };
+        if matches!(pull.end, TapeEnd::Blanks) {
+            return true;
+        }
 
-        Some(at_edge)
+        !push.span.0.is_empty()
     }
 
     fn has_indef(&self) -> bool {
@@ -942,11 +937,11 @@ impl Backstepper {
 
         let shift = shift != 0;
 
-        let result = self.check_edge(shift, print).is_some();
+        let step = self.check_step(shift, print);
 
-        assert_eq!(result, success);
+        assert_eq!(step, success);
 
-        if !result {
+        if !step {
             return;
         }
 
@@ -1045,15 +1040,15 @@ fn test_spinout() {
 
     tape.assert("0+ [1] 0^2 ?");
 
-    assert_eq!(tape.check_edge(false, 1), None);
-    assert_eq!(tape.check_edge(true, 0), Some(true));
+    assert!(!tape.check_step(false, 1));
+    assert!(tape.check_edge(true));
 
     tape.push_indef(true);
 
     tape.assert("0+ [1] 1.. 0^2 ?");
 
-    assert_eq!(tape.check_edge(false, 1), Some(false));
-    assert_eq!(tape.check_edge(true, 0), Some(true));
+    assert!(!tape.check_edge(false));
+    assert!(tape.check_edge(true));
 }
 
 #[test]
