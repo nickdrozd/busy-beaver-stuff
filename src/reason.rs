@@ -150,7 +150,10 @@ fn get_valid_steps(
             }
 
             if tape.check_spinout(shift, color) {
-                spinouts.insert(shift);
+                if tape.check_indef(shift) {
+                    spinouts.insert(shift);
+                }
+
                 continue;
             }
 
@@ -193,10 +196,6 @@ fn get_indefinite_steps(
     diff: &Entries,
     same: &Entries,
 ) -> Option<(Vec<Instr>, Config)> {
-    if !config.tape.check_indef(push) {
-        return None;
-    }
-
     let mut checked_entries = Entries::new();
 
     for entries in [diff, same] {
