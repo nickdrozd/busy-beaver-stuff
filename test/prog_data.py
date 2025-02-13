@@ -585,6 +585,7 @@ RECUR_COMPACT = {
     "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC": ( 5, 19),
     "1RB 0RA  1LC 1RA  1LD 0LC  1LA 0RB": (     5, 244),
     "1RB 1LA  1LC 0RA  1LD 0LC  1RA 0LA": (     5, 385),
+    "1RB 0LD  1LC ...  1RD 1RC  1LD 1RA": (0, 9),
     "1RB 1LC  1LA 1RC  0RD 0LA  1RA 0RB": ( 3, 42),
     "1RB 0RC  1RC 1LD  1LB 0LD  0RA 0LB": ( 3, 10),
     "1RB 1LD  1LB 0RC  0LA 1RC  1RD 1LB": ( 2, 6),
@@ -1416,6 +1417,7 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
         "1RB 2LA ...  2LA 0RB 0LB": 7,
         "1RB 2LA ...  2LA 0RB 1LB": 7,
         "1RB 2RA 2RB  2LA ... 2LA": 7,
+        "1RB 1RB ...  0LB 2RB 1LA": 8,
 
         "1RB 0LA  0RC 1RC  1LA ...": 13,
 
@@ -1435,6 +1437,7 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
         "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": 46,
         "1RB 0LA  0RC 1RC  1RD 1LA  1LB ...": 46,
 
+        "1RB 0RA 3LA 4RB 2LA  2LA ... 3LA 4LA 4RB": 34,
         "1RB 3RB ... 3LA 4RB  1LB 2LA 0LA 4RB 3LA": 35,
         "1RB 2RA 0RB 4LA 3RB  2LA ... 3LA 3RB 4LA": 35,
         "1RB 1RB 0RB 2RB ...  2LA 3RB 3LA 4LA 1LB": 36,
@@ -1455,14 +1458,29 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
         "1RB 1RC 2LA  1LA 2RB 1LC  ... 0RB 1LA": 52,
         "1RB 2LA 1RC  1LA 1LC 2RB  ... 0LA 1RB": 52,
         "1RB 2LA 0RC  2LA ... 1RC  1LA 0LB 2RC": 54,
+        "1RB 0RC 0LA  2RC 2RB 2LA  2LA ... 1LA": 55,
         "1RB 0LC 1RA  2LC 1LC ...  2RA 1LC 0RB": 59,
         "1RB 0RC 0LA  2LA 2RB 2RC  0LA ... 1LA": 59,
         "1RB 0RC 2LA  2RC 2RB 0LA  1LA ... 2LA": 59,
 
-        "1RB ...  1RC 1LC  1LD 0RE  0RA 0LD  0LB 1RE": 105,
-        "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LB ...": 107,
-        "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": 115,
-        "1RB 0RB  1RC 1LE  1RD 1LA  1LB ...  0LE 0RA": 115,
+        "1RB 1LA  0RC 1RC  1RD 1RE  0LA ...  0LC 0RE": 150,
+        "1RB 1LA  1LC 1RC  1RE 1RD  0LC 0RD  0LA ...": 152,
+        "1RB 1LA  0LA 1RC  0RD 1RE  0LA ...  0LA 0RE": 159,
+        "1RB 1LA  0LA 1RC  1RD 1RE  0LC ...  0LA 0RE": 159,
+        "1RB 1RC  0LA ...  0LD 0RC  1RE 1LD  0LD 1RA": 159,
+        "1RB ...  1LC 0RB  1LD 1RB  1LE 0LA  0LE 1RB": 159,
+        "1RB ...  1LC 0LA  0LC 1RD  1LE 0RD  1LB 1RD": 159,
+        "1RB 1LA  0LA 1RC  1RD 1RE  0LE ...  0LA 0RE": 169,
+        "1RB ...  0LB 1RC  1LD 0RC  1LE 1RC  1LB 0LA": 169,
+        "1RB 1RE  0LC ...  1RD 1LC  0LA 1RA  0LC 0RE": 169,
+        "1RB 1LA  0LC 1RC  1RE 1RD  0LA 0RD  0LA ...": 169,
+        "1RB ...  1LC 0RB  1LD 0RD  1LE 1LA  0LE 1RB": 170,
+        "1RB 1LA  0LA 1RC  0RD 1RE  0LA ...  0LC 0RE": 179,
+        "1RB 1RC  0LA ...  0LD 0RC  1RE 1LD  0LA 1RA": 179,
+        "1RB 1LA  0LC 1RC  1RE 1RD  0LA 0RD  0LC ...": 179,
+        "1RB 1LA  0LC 1RC  0RE 1RD  0LA 0RD  0LA ...": 189,
+        "1RB 1LA  0LC 1RC  1RE 1RD  0LA 0RD  0LD ...": 199,
+        "1RB ...  1LC 0LA  0LC 1RD  1LE 0RD  1LB 0RB": 200,
     },
 
     "spinout": {
@@ -1480,6 +1498,7 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
 
         "1RB 0RC  1LB 1RC  0LD 0RB  0RA 1LD": 25,
         "1RB 0RB  1LC 0LD  1LB 1RA  0RD 0LC": 29,
+        "1RB 0LD  1RC 0RB  1LC 0LA  1RD 1LA": 36,
 
         "1RB 0LB 2RC  1LA 1LC 2RC  1RC 2LA 0LA": 103,
         "1RB 1RC 0RC  1LC 1RC 2LA  2RC 2LB 0LB": 125,
@@ -1592,7 +1611,6 @@ type BackwardCats = dict[
 
 CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
     "step_limit": {
-        "1RB 0LD  1LC ...  1RD 1RC  1LD 1RA",
         "1RB 1LA  0RC 0RD  0LD ...  0LA 1RD",
     },
     "depth_limit": {
@@ -1830,6 +1848,7 @@ CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB ...  1LC 1RD  1LA 0LC  0RD 0LA",
         "1RB ...  1RC 1LB  0LD 0RC  1LA 1LD",
         "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
+        "1RB 0LD  1LC ...  1RD 1RC  1LD 1RA",
         "1RB 0RD  1LC 0LB  ... 1RA  1LB 1RD",
         "1RB 1LA  0RC 0RB  1LC 1LD  0LA ...",
         "1RB 1LA  1RC 0RB  0LC 1LD  ... 0LA",
@@ -2067,8 +2086,6 @@ CANT_SPIN_OUT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB 1LC  1LA 0LD  1RC 0LB  0RC 1LB",
         "1RB 1LC  1LA 1LD  1LB 0LD  1RD 0RC",
         "1RB 1LC  1LB 0LC  1RD 0LD  0RA 0RB",
-        "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
-        "1RB 1RA  0RC 0LB  0RD 1RA  1LD 0LA",
         "1RB 1RA  1LB 1LC  1RD 0LD  0RB 0RA",
         "1RB 1RC  1LB 0LC  0LD 0RB  1RD 0RA",
         "1RB 1RD  1LB 0LC  1LD 0RB  0RA 1LC",
@@ -2258,10 +2275,10 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
 
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
     "halt": {
-        "step_limit": 2,
+        "step_limit": 1,
         "depth_limit": 42,
         "linrec": 158,
-        "spinout": 58,
+        "spinout": 59,
     },
     "blank": {
         "depth_limit": 1,
@@ -2270,7 +2287,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
     },
     "spinout": {
         "step_limit": 1,
-        "depth_limit": 42,
+        "depth_limit": 40,
         "linrec": 122,
         "spinout": 41,
     },
@@ -2331,15 +2348,20 @@ SEGMENT_HALT_FALSE_NEGATIVES = {
     "1RB 1LD  1LC 0RB  0LC 0RA  1LA ...",
     "1RB 1LD  1LC 0RA  1LA 0LB  0RB ...",
 
+    "1RB ...  0LB 1RC  1LD 0RC  1LE 1RC  1LB 0LA",
+    "1RB ...  1LC 0LA  0LC 1RD  1LE 0RD  1LB 0RB",
+    "1RB ...  1LC 0LA  0LC 1RD  1LE 0RD  1LB 1RD",
+    "1RB ...  1LC 0RB  1LD 0RD  1LE 1LA  0LE 1RB",
+    "1RB ...  1LC 0RB  1LD 1RB  1LE 0LA  0LE 1RB",
     "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC",
     "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
     "1RB 1LA  0LA 1RC  1RA 1RD  ... 0RE  0LA 1RC",
     "1RB 1LA  0LC 0LB  1RC 1RD  1RE 1RB  1LA ...",
+    "1RB 1LD  0RC 0LC  0RD 1RA  1LE ...  0RA 0LE",
     "1RB 1LE  1LC 1RD  1LB 1RC  1LA 0RD  ... 0LA",
     "1RB 1RC  0LD ...  0LE 0LC  1LE 1LD  1RE 1RA",
     "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA",
     "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA",
-    "1RB 1LD  0RC 0LC  0RD 1RA  1LE ...  0RA 0LE",
 
     "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
 
@@ -3703,7 +3725,6 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 1RD  1LB 0LC  1LD 0RB  0RA 1LC",
     "1RB 1RD  1LC 0RD  1RC 0RA  1LD 0LB",
     "1RB 0RC  0RC 1RA  1LC 0LD  1RA 0RC",
-    "1RB 0LD  1LC ...  1RD 1RC  1LD 1RA",
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
     "1RB 0LC  1LA 1RC  1RA 0LD  0RE 1LD  ... 0RA",

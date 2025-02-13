@@ -787,7 +787,17 @@ impl Backstepper {
     fn check_indef(&self, shift: Shift) -> bool {
         let push = if shift { &self.rspan } else { &self.lspan };
 
-        !push.has_indef_span(self.scan)
+        let scan = self.scan;
+
+        if let Some(block) = push.span.0.first() {
+            if block.color == scan {
+                return false;
+            }
+        } else if scan == 0 && matches!(push.end, TapeEnd::Blanks) {
+            return false;
+        }
+
+        !push.has_indef_span(scan)
     }
 
     fn push_indef(&mut self, shift: Shift) {
@@ -797,17 +807,7 @@ impl Backstepper {
             &mut self.lspan
         };
 
-        let scan = self.scan;
-
-        if let Some(block) = push.span.0.first() {
-            if block.color == scan {
-                return;
-            }
-        } else if scan == 0 && matches!(push.end, TapeEnd::Blanks) {
-            return;
-        }
-
-        push.span.push_block(scan, 0);
+        push.span.push_block(self.scan, 0);
     }
 }
 
