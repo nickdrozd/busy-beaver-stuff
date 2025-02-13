@@ -142,28 +142,19 @@ fn get_valid_steps(
             continue;
         };
 
-        let mut spinouts = HashSet::new();
-
         for &((state, color), (print, shift)) in same {
             if !tape.check_step(shift, print) {
                 continue;
             }
 
-            if let Some(keep) = tape.check_spinout(shift, color) {
-                if keep {
-                    spinouts.insert(shift);
-                }
+            let Some(keep) = tape.check_spinout(shift, color) else {
+                steps.push((color, shift, state));
+                continue;
+            };
 
+            if !keep {
                 continue;
             }
-
-            steps.push((color, shift, state));
-        }
-
-        if !spinouts.is_empty() {
-            assert_eq!(spinouts.len(), 1);
-
-            let shift = *spinouts.iter().next().unwrap();
 
             if let Some(indef_steps) =
                 get_indefinite_steps(shift, &config, diff, same)
