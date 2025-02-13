@@ -153,7 +153,7 @@ fn get_valid_steps(
                 continue;
             }
 
-            if tape.scan == color && tape.check_edge(shift) {
+            if tape.check_spinout(shift, color) {
                 spinouts.insert(shift);
                 continue;
             }
@@ -705,7 +705,13 @@ impl Backstepper {
             .matches_color(print)
     }
 
-    fn check_edge(&self, shift: Shift) -> bool {
+    fn check_spinout(&self, shift: Shift, read: Color) -> bool {
+        let scan = self.scan;
+
+        if scan != read {
+            return false;
+        }
+
         let (pull, push) = if shift {
             (&self.lspan, &self.rspan)
         } else {
@@ -1041,14 +1047,14 @@ fn test_spinout() {
     tape.assert("0+ [1] 0^2 ?");
 
     assert!(!tape.check_step(false, 1));
-    assert!(tape.check_edge(true));
+    assert!(tape.check_spinout(true, 1));
 
     tape.push_indef(true);
 
     tape.assert("0+ [1] 1.. 0^2 ?");
 
-    assert!(!tape.check_edge(false));
-    assert!(tape.check_edge(true));
+    assert!(!tape.check_spinout(false, 1));
+    assert!(tape.check_spinout(true, 1));
 }
 
 #[test]
