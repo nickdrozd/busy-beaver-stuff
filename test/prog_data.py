@@ -158,6 +158,8 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 2RA 2LB  0LB 1LA 1RA": ( 4, 23),
     "1RB 2LB ...  1LB 2LA 1RB": ( 5, 17),
     "1RB 0LA 0RB  1LB 2RB 2RA": ( 1, 13),
+    "1RB ... 2LB  2LB 2RA 0RA": ( 1,  6),
+    "1RB 1LB ...  1LB 2RA 0RA": ( 1,  6),
     "1RB ... 1LB  2LB 2RA 0LB": ( 1,  5),
     "1RB ... ...  0LB 2RB 0RB": ( 0,  5),
 
@@ -274,6 +276,7 @@ SPINOUT_BLANK = {
     # 2/3
     "1RB 2RA 2RB  2LB 1LA 0RB": ({'B'}, 29),
     "1RB 2RB 2RA  2LB 1LA 0RB": ({'B'}, 24),
+    "1RB 0RA 0RB  2LB 0RB 2LA": ({'B'},  8),
     "1RB ... ...  2LB 0RB 0RB": ({'B'},  4),
 
     # 4/2
@@ -1442,6 +1445,7 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
         "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": 46,
         "1RB 0LA  0RC 1RC  1RD 1LA  1LB ...": 46,
 
+        "1RB 0RA 3LA 4RB 2LA  2LA ... 3LA 4LA 2RB": 33,
         "1RB 0RA 3LA 4RB 2LA  2LA ... 3LA 4LA 4RB": 33,
         "1RB 3RB ... 3LA 4RB  1LB 2LA 0LA 4RB 3LA": 34,
         "1RB 2RA 0RB 4LA 3RB  2LA ... 3LA 3RB 4LA": 34,
@@ -1451,6 +1455,7 @@ CANT_REACH_STEPS: dict[str, dict[str, int]] = {
         "1RB 3RA 0RB 0LA 2RB  2LA ... 4LA ... 3LA": 41,
         "1RB 0RA 3LA 4RB 0LA  2LA ... 4LA 3LA 2RB": 40,
         "1RB 0RA 3RB 2LA 0LA  2LA ... 4LA 3RB 3LA": 47,
+        "1RB 0RA 2LA 4RB 0LA  2LA ... 3LA 4LA 2RB": 50,
 
         "1RB 0LA 0RB  2RC 1RC 1LA  1LA 2LA ...": 50,
         "1RB 0LA 0RB  2RC 2LA 1RC  2LA ... 1LA": 50,
@@ -1672,6 +1677,7 @@ CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB ... 0RB  2LB 2LA 0RA",
         "1RB ... 0RB  2LB 2RA 0LA",
         "1RB ... 1LB  2LB 2RA 0LB",
+        "1RB ... 2LB  2LB 2RA 0RA",
         "1RB ... 2RB  2LB 2LA 0RA",
         "1RB 0LA ...  1LB 2LA 0RB",
         "1RB 0LB ...  1LA 2RA 1LA",
@@ -1684,6 +1690,7 @@ CANT_HALT_FALSE_NEGATIVES_CATS: BackwardCats = {
         "1RB 1LA 0LA  1LA 2RA ...",
         "1RB 1LA 0LA  2LA 0RA ...",
         "1RB 1LA 0LA  2LA 2RA ...",
+        "1RB 1LB ...  1LB 2RA 0RA",
         "1RB 1LB ...  2LA 0RB 1RB",
         "1RB 1LB 0RB  1LA 2RB ...",
         "1RB 2LA ...  0LB 1LA 0LA",
@@ -2292,7 +2299,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
     "halt": {
         "step_limit": 1,
         "depth_limit": 42,
-        "linrec": 153,
+        "linrec": 155,
         "spinout": 56,
     },
     "blank": {
@@ -3773,7 +3780,6 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
 
     "1RB 2LA 0RB  2LB 1LA 0RC  0LB 2RC 1RC",
     "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC",
-
 }
 
 HALTERS = set(
