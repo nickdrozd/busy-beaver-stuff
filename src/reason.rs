@@ -189,11 +189,16 @@ fn get_indefinite_steps(
 ) -> Option<(Vec<Instr>, Config)> {
     let mut checked_entries = Entries::new();
 
+    let scan = config.tape.scan;
+
     for entries in [diff, same] {
         for &entry in entries {
-            let (_, (print, shift)) = entry;
+            let ((state, color), (print, shift)) = entry;
 
-            if shift == push && print == config.tape.scan {
+            if shift == push
+                && (print == scan
+                    || (color == scan && state == config.state))
+            {
                 continue;
             }
 
