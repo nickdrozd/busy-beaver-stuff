@@ -513,8 +513,6 @@ impl Config {
     }
 
     fn lin_rec(&self) -> bool {
-        assert!(!self.tape.has_indef());
-
         let head = self.tape.head();
         let mut leftmost = head;
         let mut rightmost = head;
@@ -524,8 +522,6 @@ impl Config {
         #[expect(clippy::assigning_clones)]
         while let Some(config) = current {
             let pos = config.tape.head();
-
-            assert!(!config.tape.has_indef());
 
             if pos < leftmost {
                 leftmost = pos;
