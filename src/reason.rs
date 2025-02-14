@@ -26,7 +26,6 @@ const MAX_STACK_DEPTH: Depth = 28;
 pub enum BackwardResult {
     Init,
     LinRec,
-    Spinout,
     StepLimit,
     DepthLimit,
     Refuted(Step),
@@ -84,8 +83,6 @@ fn cant_reach(
 
     let mut blanks = get_blanks(&configs);
 
-    let mut indef_steps = ValidatedSteps::new();
-
     for step in 0..depth {
         #[cfg(debug_assertions)]
         {
@@ -98,28 +95,14 @@ fn cant_reach(
         let valid_steps = get_valid_steps(&mut configs, &entrypoints);
 
         match valid_steps.len() {
-            0 => {
-                if !indef_steps.is_empty() {
-                    return Spinout;
-                }
-
-                return Refuted(step);
-            },
+            0 => return Refuted(step),
             n if MAX_STACK_DEPTH < n => return DepthLimit,
             _ => {},
         }
 
         configs = match step_configs(valid_steps, &mut blanks) {
             Err(err) => return err,
-            Ok((configs, indefs)) => {
-                indef_steps.extend(indefs);
-
-                if indef_steps.len() > MAX_STACK_DEPTH {
-                    return DepthLimit;
-                }
-
-                configs
-            },
+            Ok(configs) => configs,
         };
     }
 
@@ -236,50 +219,58 @@ fn get_indef(
 fn step_configs(
     configs: ValidatedSteps,
     blanks: &mut Blanks,
-) -> Result<(Configs, ValidatedSteps), BackwardResult> {
+) -> Result<Configs, BackwardResult> {
     let mut stepped = Configs::new();
 
-    let mut indef_steps = ValidatedSteps::new();
-
     for (instrs, config) in configs {
-        let (pulls_indef, instrs): (Vec<_>, Vec<_>) = instrs
-            .into_iter()
-            .partition(|&(_, shift, _)| config.tape.pulls_indef(shift));
-
-        if !pulls_indef.is_empty() {
-            indef_steps.push((pulls_indef, config.clone()));
-        }
-
         let config = Rc::new(config);
 
         for (color, shift, state) in instrs {
-            let mut tape = config.tape.clone();
+            let mut tapes = vec![config.tape.clone()];
 
-            tape.backstep(shift, color);
+            if let Some((one, skip)) = config.tape.branch_indef(
+                shift,
+                (state == config.state).then_some(color),
+            ) {
+                tapes.push(one);
 
-            if tape.blank() {
-                if state == 0 {
-                    return Err(Init);
+                if let Some(skip) = skip {
+                    stepped.push(Config::descendant(
+                        config.state,
+                        skip,
+                        &config,
+                    ));
                 }
-
-                if blanks.contains(&state) {
-                    continue;
-                }
-
-                blanks.insert(state);
             }
 
-            let next_config = Config::descendant(state, tape, &config);
+            for mut tape in tapes {
+                tape.backstep(shift, color);
 
-            if next_config.recs > MAX_RECS {
-                return Err(LinRec);
+                if tape.blank() {
+                    if state == 0 {
+                        return Err(Init);
+                    }
+
+                    if blanks.contains(&state) {
+                        continue;
+                    }
+
+                    blanks.insert(state);
+                }
+
+                let next_config =
+                    Config::descendant(state, tape, &config);
+
+                if next_config.recs > MAX_RECS {
+                    return Err(LinRec);
+                }
+
+                stepped.push(next_config);
             }
-
-            stepped.push(next_config);
         }
     }
 
-    Ok((stepped, indef_steps))
+    Ok(stepped)
 }
 
 /**************************************/
@@ -749,15 +740,56 @@ impl Backstepper {
             .then_some(!push.matches_color(self.scan))
     }
 
-    #[expect(clippy::missing_const_for_fn)]
-    fn pulls_indef(&self, shift: Shift) -> bool {
-        let pull = if shift { &self.lspan } else { &self.rspan };
+    fn branch_indef(
+        &self,
+        shift: Shift,
+        skip_color: Option<Color>,
+    ) -> Option<(Self, Option<Self>)> {
+        {
+            let pull = if shift { &self.lspan } else { &self.rspan };
 
-        let Some(block) = pull.span.0.first() else {
-            return false;
+            if pull.span.0.first()?.count != 0 {
+                return None;
+            }
+        }
+
+        let one = {
+            let mut indef = self.clone();
+
+            let pull = if shift {
+                &mut indef.lspan
+            } else {
+                &mut indef.rspan
+            };
+
+            pull.span.0[0].set_count(1);
+
+            indef
         };
 
-        block.count == 0
+        let skip = skip_color.map(|color| {
+            let mut indef = self.clone();
+
+            let (pull, push) = if shift {
+                (&mut indef.lspan, &mut indef.rspan)
+            } else {
+                (&mut indef.rspan, &mut indef.lspan)
+            };
+
+            push.push(indef.scan, 1);
+
+            let block = pull.span.0.remove(0);
+
+            assert!(block.count == 0);
+
+            push.span.push_block(color, 0);
+
+            indef.scan = color;
+
+            indef
+        });
+
+        Some((one, skip))
     }
 
     fn backstep(&mut self, shift: Shift, read: Color) {
