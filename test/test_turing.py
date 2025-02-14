@@ -338,7 +338,6 @@ class Reason(TuringTest):
                 print(json.dumps(counts, indent = 4))
                 raise AssertionError
 
-        assert_counts(BACKWARD_FALSE_NEGATIVES)
         assert_counts(results)
 
         if results != BACKWARD_FALSE_NEGATIVES:
@@ -350,12 +349,11 @@ class Reason(TuringTest):
                 for term, cats in results.items()
             }
 
-            for term, cats in dump.items():  # type: ignore[assignment]
-                print(f'--> {term}')
-                print(json.dumps(cats, indent = 4))
-                print()
+            print(json.dumps(dump, indent = 4))
 
             raise AssertionError
+
+        assert_counts(BACKWARD_FALSE_NEGATIVES)
 
         _ = self
 
