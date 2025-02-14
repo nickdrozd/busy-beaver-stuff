@@ -156,10 +156,8 @@ fn get_valid_steps(
                 continue;
             }
 
-            if let Some(indef_steps) =
-                get_indefinite_steps(shift, &config, diff, same)
-            {
-                checked.push(indef_steps);
+            if let Some(indef) = get_indef(shift, &config, diff, same) {
+                checked.push(indef);
             }
         }
 
@@ -181,7 +179,7 @@ fn get_valid_steps(
     checked
 }
 
-fn get_indefinite_steps(
+fn get_indef(
     push: Shift,
     config: &Config,
     diff: &Entries,
