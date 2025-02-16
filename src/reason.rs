@@ -265,27 +265,20 @@ fn step_configs(
                 blanks.insert(state);
             }
 
-            let next_config =
-                if tape.has_indef() || config.tape.has_indef() {
-                    Config::new(state, tape)
-                } else {
-                    let mut next_config = Config {
-                        state,
-                        tape,
-                        prev: Some(Rc::clone(&config)),
-                        recs: config.recs,
-                    };
+            let mut next_config = Config {
+                state,
+                tape,
+                prev: Some(Rc::clone(&config)),
+                recs: config.recs,
+            };
 
-                    if next_config.lin_rec() {
-                        next_config.recs += 1;
+            if next_config.lin_rec() {
+                next_config.recs += 1;
 
-                        if next_config.recs > 2 {
-                            return Err(LinRec);
-                        }
-                    }
-
-                    next_config
-                };
+                if next_config.recs > 2 {
+                    return Err(LinRec);
+                }
+            }
 
             stepped.push(next_config);
         }
@@ -609,10 +602,6 @@ impl Span {
         self.span.len()
     }
 
-    fn has_indef(&self) -> bool {
-        self.span.0.iter().any(|block| block.count == 0)
-    }
-
     fn matches_color(&self, print: Color) -> bool {
         self.span.0.first().map_or_else(
             || self.end.matches_color(print),
@@ -712,10 +701,6 @@ impl Backstepper {
 
         (matches!(pull.end, TapeEnd::Blanks) || !push.span.0.is_empty())
             .then_some(!push.matches_color(self.scan))
-    }
-
-    fn has_indef(&self) -> bool {
-        self.lspan.has_indef() || self.rspan.has_indef()
     }
 
     #[expect(clippy::missing_const_for_fn)]

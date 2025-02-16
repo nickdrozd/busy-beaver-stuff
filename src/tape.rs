@@ -147,6 +147,10 @@ impl<B: Block> Span<B> {
                     let s_rem = s_block.get_count() as usize;
                     let p_rem = p_block.get_count() as usize;
 
+                    if s_rem == 0 || p_rem == 0 {
+                        return false;
+                    }
+
                     let min = take.min(s_rem.min(p_rem));
 
                     take -= min;
