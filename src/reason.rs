@@ -142,6 +142,14 @@ fn get_valid_steps(
             continue;
         };
 
+        for &((state, color), (print, shift)) in diff {
+            if !tape.check_step(shift, print) {
+                continue;
+            }
+
+            steps.push((color, shift, state));
+        }
+
         for &((state, color), (print, shift)) in same {
             if !tape.check_step(shift, print) {
                 continue;
@@ -159,14 +167,6 @@ fn get_valid_steps(
             if let Some(indef) = get_indef(shift, &config, diff, same) {
                 checked.push(indef);
             }
-        }
-
-        for &((state, color), (print, shift)) in diff {
-            if !tape.check_step(shift, print) {
-                continue;
-            }
-
-            steps.push((color, shift, state));
         }
 
         if steps.is_empty() {
