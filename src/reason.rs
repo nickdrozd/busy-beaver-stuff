@@ -265,20 +265,7 @@ fn step_configs(
                 blanks.insert(state);
             }
 
-            let mut next_config = Config {
-                state,
-                tape,
-                prev: Some(Rc::clone(&config)),
-                recs: config.recs,
-            };
-
-            if next_config.lin_rec() {
-                next_config.recs += 1;
-
-                if next_config.recs > 2 {
-                    return Err(LinRec);
-                }
-            }
+            let next_config = Config::descendant(state, tape, &config)?;
 
             stepped.push(next_config);
         }
@@ -503,6 +490,29 @@ impl Config {
             recs: 0,
             prev: None,
         }
+    }
+
+    fn descendant(
+        state: State,
+        tape: Backstepper,
+        prev: &Rc<Self>,
+    ) -> Result<Self, BackwardResult> {
+        let mut config = Self {
+            state,
+            tape,
+            recs: prev.recs,
+            prev: Some(Rc::clone(prev)),
+        };
+
+        if config.lin_rec() {
+            config.recs += 1;
+
+            if config.recs > 2 {
+                return Err(LinRec);
+            }
+        }
+
+        Ok(config)
     }
 
     fn lin_rec(&self) -> bool {
