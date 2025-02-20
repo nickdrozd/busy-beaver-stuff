@@ -226,7 +226,12 @@ fn get_indef(
         return None;
     }
 
-    Some((steps, Config::new(config.state, tape)))
+    let next_config = Config::new(config.state, tape);
+
+    #[cfg(debug_assertions)]
+    println!("~ | {next_config}");
+
+    Some((steps, next_config))
 }
 
 fn step_configs(
