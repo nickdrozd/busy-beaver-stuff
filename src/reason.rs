@@ -8,7 +8,7 @@ use std::{
 use crate::{
     instrs::{Color, CompProg, Instr, Shift, Slot, State},
     tape::{
-        Alignment, BasicBlock as Block, Block as _, Pos,
+        Alignment, BasicBlock as Block, Block as _, Count, Pos,
         Span as GenSpan,
     },
 };
@@ -638,10 +638,10 @@ impl Span {
     }
 
     #[expect(clippy::collapsible_else_if)]
-    fn push(&mut self, color: Color) {
+    fn push(&mut self, color: Color, count: Count) {
         if let Some(block) = self.span.0.first_mut() {
             if block.color == color && block.count != 0 {
-                block.increment();
+                block.add_count(count);
                 return;
             }
         } else {
@@ -650,7 +650,7 @@ impl Span {
             }
         }
 
-        self.span.push_block(color, 1);
+        self.span.push_block(color, count);
     }
 }
 
@@ -767,7 +767,7 @@ impl Backstepper {
 
         pull.pull();
 
-        push.push(self.scan);
+        push.push(self.scan, 1);
 
         self.scan = read;
 

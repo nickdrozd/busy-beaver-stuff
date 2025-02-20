@@ -21,10 +21,6 @@ pub trait Block: Display {
 
     fn add_count(&mut self, count: Count);
 
-    fn increment(&mut self) {
-        self.add_count(1);
-    }
-
     fn decrement(&mut self);
 
     fn show(&self, f: &mut Formatter) -> fmt::Result {
