@@ -620,6 +620,37 @@ impl Span {
             |block| block.color == print,
         )
     }
+
+    fn pull(&mut self) {
+        if let Some(block) = self.span.0.first_mut() {
+            match block.count {
+                1 => {
+                    self.span.0.remove(0);
+                },
+                0 => {},
+                _ => {
+                    block.decrement();
+                },
+            }
+        }
+    }
+
+    fn push(&mut self, scan: Color) {
+        if scan != 0
+            || !self.span.0.is_empty()
+            || self.end == TapeEnd::Unknown
+        {
+            if let Some(block) = self.span.0.first_mut() {
+                if block.color == scan && block.count != 0 {
+                    block.increment();
+                } else {
+                    self.span.push_block(scan, 1);
+                }
+            } else {
+                self.span.push_block(scan, 1);
+            }
+        }
+    }
 }
 
 /**************************************/
@@ -733,34 +764,9 @@ impl Backstepper {
             (1, &mut self.rspan, &mut self.lspan)
         };
 
-        if let Some(block) = pull.span.0.first_mut() {
-            match block.count {
-                1 => {
-                    pull.span.0.remove(0);
-                },
-                0 => {},
-                _ => {
-                    block.decrement();
-                },
-            }
-        }
+        pull.pull();
 
-        if self.scan != 0
-            || !push.span.0.is_empty()
-            || push.end == TapeEnd::Unknown
-        {
-            let color = self.scan;
-
-            if let Some(block) = push.span.0.first_mut() {
-                if block.color == color && block.count != 0 {
-                    block.increment();
-                } else {
-                    push.span.push_block(color, 1);
-                }
-            } else {
-                push.span.push_block(color, 1);
-            }
-        }
+        push.push(self.scan);
 
         self.scan = read;
 
