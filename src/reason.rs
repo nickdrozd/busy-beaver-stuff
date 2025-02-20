@@ -191,12 +191,9 @@ fn get_indef(
 
     for entries in [diff, same] {
         for &entry in entries {
-            let ((state, color), (print, shift)) = entry;
+            let ((state, color), (_, shift)) = entry;
 
-            if shift == push
-                && (print == scan
-                    || (color == scan && state == config.state))
-            {
+            if state == config.state && shift == push && scan == color {
                 continue;
             }
 
