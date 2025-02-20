@@ -195,20 +195,20 @@ impl<B: Block> Span<B> {
         (next_scan, stepped)
     }
 
+    #[expect(clippy::collapsible_else_if)]
     fn push(&mut self, print: Color, stepped: Count) {
-        let Some(block) = self.0.first_mut() else {
-            if print != 0 {
-                self.push_block(print, stepped);
+        if let Some(block) = self.0.first_mut() {
+            if block.get_color() == print {
+                block.add_count(stepped);
+                return;
             }
-
-            return;
-        };
-
-        if block.get_color() == print {
-            block.add_count(stepped);
         } else {
-            self.push_block(print, stepped);
+            if print == 0 {
+                return;
+            }
         }
+
+        self.push_block(print, stepped);
     }
 
     pub fn push_block(&mut self, color: Color, count: Count) {

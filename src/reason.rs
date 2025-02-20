@@ -622,34 +622,35 @@ impl Span {
     }
 
     fn pull(&mut self) {
-        if let Some(block) = self.span.0.first_mut() {
-            match block.count {
-                1 => {
-                    self.span.0.remove(0);
-                },
-                0 => {},
-                _ => {
-                    block.decrement();
-                },
-            }
+        let Some(block) = self.span.0.first_mut() else {
+            return;
+        };
+
+        match block.count {
+            1 => {
+                self.span.0.remove(0);
+            },
+            0 => {},
+            _ => {
+                block.decrement();
+            },
         }
     }
 
-    fn push(&mut self, scan: Color) {
-        if scan != 0
-            || !self.span.0.is_empty()
-            || self.end == TapeEnd::Unknown
-        {
-            if let Some(block) = self.span.0.first_mut() {
-                if block.color == scan && block.count != 0 {
-                    block.increment();
-                } else {
-                    self.span.push_block(scan, 1);
-                }
-            } else {
-                self.span.push_block(scan, 1);
+    #[expect(clippy::collapsible_else_if)]
+    fn push(&mut self, color: Color) {
+        if let Some(block) = self.span.0.first_mut() {
+            if block.color == color && block.count != 0 {
+                block.increment();
+                return;
+            }
+        } else {
+            if color == 0 && self.end == TapeEnd::Blanks {
+                return;
             }
         }
+
+        self.span.push_block(color, 1);
     }
 }
 

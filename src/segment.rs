@@ -537,18 +537,14 @@ impl Span {
     }
 
     fn push(&mut self, print: Color, stepped: Count) {
-        if self.is_empty() {
-            self.push_block(print, stepped);
-            return;
+        if let Some(block) = self.0.first_mut() {
+            if block.color == print {
+                block.add_count(stepped);
+                return;
+            }
         }
 
-        let block = &mut self.0[0];
-
-        if block.color == print {
-            block.add_count(stepped);
-        } else {
-            self.push_block(print, stepped);
-        }
+        self.push_block(print, stepped);
     }
 
     fn pull(
