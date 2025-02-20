@@ -70,24 +70,6 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
         || segment_cant_reach(comp, params, 3).is_refuted()
 }
 
-#[test]
-fn test_skip() {
-    let progs = [];
-
-    let halt = 0;
-    let params = (5, 2);
-
-    let halt = halt != 0;
-
-    for prog in progs {
-        let comp = CompProg::from_str(prog);
-
-        println!("{}", comp.show(Some(params)));
-
-        assert!(skip_all(&comp, params, halt));
-    }
-}
-
 /**************************************/
 
 fn assert_tree(params: Params, halt: u8, expected: (u64, u64)) {
