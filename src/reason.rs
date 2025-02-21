@@ -14,8 +14,10 @@ use crate::{
 };
 
 pub type Step = usize;
+pub type Recs = usize;
 pub type Depth = usize;
 
+const MAX_RECS: Recs = 2;
 const MAX_STACK_DEPTH: Depth = 28;
 
 /**************************************/
@@ -269,7 +271,7 @@ fn step_configs(
 
             let next_config = Config::descendant(state, tape, &config);
 
-            if next_config.recs > 2 {
+            if next_config.recs > MAX_RECS {
                 return Err(LinRec);
             }
 
@@ -484,7 +486,7 @@ fn test_entrypoints() {
 struct Config {
     state: State,
     tape: Backstepper,
-    recs: usize,
+    recs: Recs,
     prev: Option<Rc<Config>>,
 }
 
