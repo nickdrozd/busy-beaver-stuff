@@ -234,12 +234,24 @@ fn step_configs(
             ) {
                 tapes.push(one);
 
-                if let Some(skip) = skip {
-                    stepped.push(Config::descendant(
-                        config.state,
-                        skip,
-                        &config,
-                    ));
+                if let Some(skips) = skip {
+                    let skip_configs: Vec<Config> = skips
+                        .into_iter()
+                        .map(|skip| {
+                            Config::descendant(
+                                config.state,
+                                skip,
+                                &config,
+                            )
+                        })
+                        .collect();
+
+                    #[cfg(debug_assertions)]
+                    for config in &skip_configs {
+                        println!("= | {config}");
+                    }
+
+                    stepped.extend(skip_configs);
                 }
             }
 
@@ -744,7 +756,7 @@ impl Backstepper {
         &self,
         shift: Shift,
         skip_color: Option<Color>,
-    ) -> Option<(Self, Option<Self>)> {
+    ) -> Option<(Self, Option<Vec<Self>>)> {
         {
             let pull = if shift { &self.lspan } else { &self.rspan };
 
@@ -767,7 +779,13 @@ impl Backstepper {
             indef
         };
 
-        let skip = skip_color.map(|color| {
+        let Some(color) = skip_color else {
+            return Some((one, None));
+        };
+
+        let skips = {
+            let mut indefs = vec![];
+
             let mut indef = self.clone();
 
             let (pull, push) = if shift {
@@ -786,10 +804,25 @@ impl Backstepper {
 
             indef.scan = color;
 
-            indef
-        });
+            let mut skip_one = self.clone();
 
-        Some((one, skip))
+            let push = if shift {
+                &mut skip_one.rspan
+            } else {
+                &mut skip_one.lspan
+            };
+
+            push.push(color, 1);
+
+            skip_one.scan = color;
+
+            indefs.push(indef);
+            indefs.push(skip_one);
+
+            indefs
+        };
+
+        Some((one, Some(skips)))
     }
 
     fn backstep(&mut self, shift: Shift, read: Color) {
