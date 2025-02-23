@@ -9,7 +9,7 @@ from tm.rust_stuff import (
     py_quick_term_or_rec as quick_term_or_rec,  # noqa: F401
 )
 from tm.rust_stuff import run_prover  # noqa: F401
-from tm.show import show_comp, show_slot
+from tm.show import show_comp, show_slot, show_state
 from tm.tape import Tape, show_number
 
 if TYPE_CHECKING:
@@ -107,6 +107,15 @@ class Machine:
 
             info.append(
                 f'RULAPP: {rulapp_disp}')
+
+        if self.blanks:
+            blanks = {
+                show_state(state): step
+                for state, step in self.blanks.items()
+            }
+
+            info.append(
+                f'BLANKS: {blanks}')
 
         return f"{self.prog_str} || {' | '.join(info)}"
 
