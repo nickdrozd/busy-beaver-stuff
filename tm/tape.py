@@ -148,14 +148,14 @@ class Tape:
                     if isinstance(color, tuple) else
                     color
                 ) for block, color in zip(
-                    self.lspan[:len(lspan)], lspan))
+                    self.lspan[:len(lspan)], lspan, strict = True))
             and all(
                 block.color == (
                     color[0]
                     if isinstance(color, tuple) else
                     color
                 ) for block, color in zip(
-                    self.rspan[:len(rspan)], rspan))
+                    self.rspan[:len(rspan)], rspan, strict = True))
         )
 
     def step(self, shift: Shift, color: Color, skip: bool) -> Count:
