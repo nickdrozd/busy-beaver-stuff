@@ -249,15 +249,19 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
 
 /**************************************/
 
+const PAST_CONFIG_LIMIT: usize = 5;
+
 struct PastConfig {
     cycles: Vec<Cycle>,
 }
 
 impl PastConfig {
     fn new(cycle: Cycle) -> Self {
-        Self {
-            cycles: vec![cycle],
-        }
+        let mut cycles = Vec::with_capacity(PAST_CONFIG_LIMIT);
+
+        cycles.push(cycle);
+
+        Self { cycles }
     }
 
     #[expect(clippy::many_single_char_names)]
