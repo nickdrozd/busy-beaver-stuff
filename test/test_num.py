@@ -47,7 +47,7 @@ def assert_num_counts(expected: dict[str, int]) -> None:
         assert num_counts == expected, num_counts
     except AssertionError:  # no-cover
         err = [
-            f'            "{cat}": {val},'
+            f'    "{cat}": {val},'
             for cat, val in sorted(num_counts.items())
         ]
     finally:

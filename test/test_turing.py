@@ -1399,10 +1399,5 @@ class Prover(RunProver):
             if show:
                 print('    },\n')
 
-        assert_num_counts({
-            "adds": 110874,
-            "divs": 13612,
-            "exps": 110646,
-            "muls": 11745,
-            "totl": 246877,
-        })
+        assert_num_counts(
+            ALGEBRA_NUM_COUNTS)

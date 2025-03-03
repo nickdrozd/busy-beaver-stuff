@@ -3155,6 +3155,16 @@ REQUIRES_BACKSYM = {
     "1RB 1LD  0RC ...  1RD 0LA  1RE 1RF  1LC 1LE  1RA 0RD": 1,
 }
 
+########################################
+
+ALGEBRA_NUM_COUNTS = {
+    "adds": 110874,
+    "divs": 13612,
+    "exps": 110646,
+    "muls": 11745,
+    "totl": 246877,
+}
+
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     "spinout": {
         "1RB 0LB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": (
