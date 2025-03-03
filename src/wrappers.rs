@@ -58,6 +58,7 @@ pub enum BackwardResult {
     refuted { step: Step },
     init {},
     linrec {},
+    spinout {},
     step_limit {},
     depth_limit {},
 }
@@ -79,6 +80,7 @@ impl BackwardResult {
             refuted { .. } => "refuted",
             init {} => "init",
             linrec {} => "linrec",
+            spinout {} => "spinout",
             step_limit {} => "step_limit",
             depth_limit {} => "depth_limit",
         }
@@ -91,6 +93,7 @@ impl From<BackwardResultRs> for BackwardResult {
             Refuted(step) => Self::refuted { step },
             Init => Self::init {},
             LinRec => Self::linrec {},
+            Spinout => Self::spinout {},
             StepLimit => Self::step_limit {},
             DepthLimit => Self::depth_limit {},
         }
