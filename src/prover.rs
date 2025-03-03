@@ -161,7 +161,6 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             return Some(Got((*known_rule).clone()));
         }
 
-        #[expect(clippy::map_entry)]
         if !self.configs.contains_key(&sig) {
             if self.config_count() > 100_000 {
                 return Some(ConfigLimit);
