@@ -281,7 +281,7 @@ class Reason(TuringTest):
             self.assert_could_halt_backward(prog)
 
         for prog in NONHALTERS:
-            self.assert_cant_halt_backward(prog, 207)
+            self.assert_cant_halt_backward(prog, 200)
 
     def test_spinout(self):
         for prog in SPINNERS:
@@ -291,7 +291,7 @@ class Reason(TuringTest):
             self.assert_could_spin_out_backward(prog)
 
         for prog in NONSPINNERS:
-            self.assert_cant_spin_out_backward(prog, 272)
+            self.assert_cant_spin_out_backward(prog, 256)
 
     def test_blank(self):
         for prog in NONBLANKERS:
