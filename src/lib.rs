@@ -20,6 +20,7 @@
 #![allow(clippy::enum_glob_use, clippy::should_panic_without_expect)]
 
 mod blocks;
+mod cps;
 mod graph;
 mod instrs;
 mod machine;
@@ -52,6 +53,7 @@ mod rust_stuff {
         prover::PastConfigs,
         wrappers::{
             py_cant_blank, py_cant_halt, py_cant_spin_out,
+            py_cps_cant_blank, py_cps_cant_halt, py_cps_cant_spin_out,
             py_is_connected, py_opt_block, py_quick_term_or_rec,
             py_segment_cant_blank, py_segment_cant_halt,
             py_segment_cant_spin_out, py_show_comp, tcompile,

@@ -7,6 +7,7 @@ use crate::{
 
 use crate::{
     blocks::opt_block,
+    cps::{cps_cant_blank, cps_cant_halt, cps_cant_spin_out},
     graph::is_connected,
     machine::{quick_term_or_rec, run_for_infrul, run_prover},
     macros::{make_backsymbol_macro, make_block_macro},
@@ -60,12 +61,18 @@ fn skip_all(comp: &CompProg, params: Params, halt: bool) -> bool {
     } else {
         segment_cant_spin_out
     };
+    let cps_cant_reach = if halt {
+        cps_cant_halt
+    } else {
+        cps_cant_spin_out
+    };
 
     incomplete(comp, params, halt)
         || (states >= 4 && !is_connected(comp, states))
         || cant_reach(comp, 1).is_settled()
         || quick_term_or_rec(comp, 600).is_settled()
         || cant_reach(comp, 256).is_settled()
+        || cps_cant_reach(comp, 7)
         || check_inf(comp, params, opt_block(comp, 300), 306)
         || segment_cant_reach(comp, params, 3).is_refuted()
 }
@@ -114,13 +121,13 @@ fn test_tree() {
         ((3, 2), 0, (0, 13_128)),
         //
         ((2, 3), 1, (0, 2_447)),
-        ((2, 3), 0, (9, 9_168)),
+        ((2, 3), 0, (7, 9_168)),
         //
-        ((4, 2), 1, (114, 467_142)),
-        ((4, 2), 0, (637, 2_291_637)),
+        ((4, 2), 1, (49, 467_142)),
+        ((4, 2), 0, (507, 2_291_637)),
         //
-        ((2, 4), 1, (540, 312_642)),
-        ((2, 4), 0, (6_885, 1_719_357)),
+        ((2, 4), 1, (113, 312_642)),
+        ((2, 4), 0, (5_570, 1_719_357)),
     ];
 }
 
@@ -401,6 +408,7 @@ fn assert_blank(params: Params, expected: (usize, (u64, u64))) {
         if backward.is_settled()
             || quick_term_or_rec(prog, run).is_settled()
             || check_inf(prog, params, opt_block(prog, 300), run as u64)
+            || cps_cant_blank(prog, 5)
             || !run_prover(&prog.show(Some(params)), run as u64)
                 .blanks
                 .is_empty()
@@ -437,10 +445,10 @@ fn test_blank() {
         //
         ((3, 2), (13, (0, 13_128))),
         //
-        ((2, 3), (15, (14, 9_168))),
+        ((2, 3), (15, (8, 9_168))),
         //
-        ((4, 2), (43, (837, 2_291_637))),
+        ((4, 2), (43, (628, 2_291_637))),
         //
-        ((2, 4), (40, (8_243, 1_719_357))),
+        ((2, 4), (40, (2_088, 1_719_357))),
     ];
 }

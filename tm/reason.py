@@ -9,6 +9,10 @@ from tm.rust_stuff import (
     py_segment_cant_halt as segment_cant_halt,
     py_segment_cant_blank as segment_cant_blank,
     py_segment_cant_spin_out as segment_cant_spin_out,
+
+    py_cps_cant_halt as cps_cant_halt,
+    py_cps_cant_blank as cps_cant_blank,
+    py_cps_cant_spin_out as cps_cant_spin_out,
 )
 
 from typing import TYPE_CHECKING

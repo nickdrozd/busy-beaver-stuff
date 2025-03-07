@@ -35,6 +35,9 @@ from tm.reason import (
     cant_blank,
     cant_halt,
     cant_spin_out,
+    cps_cant_blank,
+    cps_cant_halt,
+    cps_cant_spin_out,
     segment_cant_blank,
     segment_cant_halt,
     segment_cant_spin_out,
@@ -64,6 +67,7 @@ if TYPE_CHECKING:
     )
 
 
+CPS_LIMIT = 8
 REASON_LIMIT = 2_000
 SEGMENT_LIMIT = 22
 
@@ -204,6 +208,23 @@ class TuringTest(TestCase):
             segment_cant_halt(prog, segs).is_settled(),
             f'segment halt false negative: "{prog}"')
 
+    def assert_could_halt_cps(self, prog: str):
+        if '...' not in prog:
+            return
+
+        self.assertFalse(
+            cps_cant_halt(prog, CPS_LIMIT))
+
+    def assert_cant_halt_cps(self, prog: str, segs: int):
+        if '...' not in prog:
+            return
+
+        if prog in CPS_FALSE_NEGATIVES['halt']:
+            return
+
+        self.assertTrue(
+            cps_cant_halt(prog, segs))
+
     ########################################
 
     def assert_could_blank(self, prog: str):
@@ -233,6 +254,17 @@ class TuringTest(TestCase):
         self.assertTrue(
             segment_cant_blank(prog, segs).is_settled(),
             f'segment blank false negative: "{prog}"')
+
+    def assert_could_blank_cps(self, prog: str):
+        self.assertFalse(
+            cps_cant_blank(prog, CPS_LIMIT))
+
+    def assert_cant_blank_cps(self, prog: str, segs: int):
+        if prog in CPS_FALSE_NEGATIVES['blank']:
+            return
+
+        self.assertTrue(
+            cps_cant_blank(prog, segs))
 
     ########################################
 
@@ -266,6 +298,17 @@ class TuringTest(TestCase):
         self.assertTrue(
             segment_cant_spin_out(prog, segs).is_settled(),
             f'segment spin out false negative: "{prog}"')
+
+    def assert_could_spin_out_cps(self, prog: str):
+        self.assertFalse(
+            cps_cant_spin_out(prog, CPS_LIMIT))
+
+    def assert_cant_spin_out_cps(self, prog: str, segs: int):
+        if prog in CPS_FALSE_NEGATIVES['spinout']:
+            return
+
+        self.assertTrue(
+            cps_cant_spin_out(prog, segs))
 
 ########################################
 
@@ -538,6 +581,53 @@ def branch_last(prog: str) -> list[str]:
         show_comp(comp | { open_slot : instr })
         for instr in all_instrs
     ]
+
+########################################
+
+class Cps(TuringTest):
+    def test_halt(self):
+        for prog in HALTERS:
+            self.assert_could_halt_cps(prog)
+
+        for prog in NONHALTERS:
+            if '...' not in prog:
+                continue
+
+            self.assert_cant_halt_cps(prog, 8)
+
+    def test_blank(self):
+        for prog in BLANKERS:
+            self.assert_could_blank_cps(prog)
+
+        for prog in NONBLANKERS:
+            self.assert_cant_blank_cps(prog, 8)
+
+    def test_spinout(self):
+        for prog in SPINNERS:
+            self.assert_could_spin_out_cps(prog)
+
+        for prog in NONSPINNERS:
+            self.assert_cant_spin_out_cps(prog, 8)
+
+    def test_false_negatives(self):
+        counts = {
+            cat: len(progs)
+            for cat, progs in CPS_FALSE_NEGATIVES.items()
+        }
+
+        self.assertEqual(
+            CPS_FALSE_POSITIVE_COUNTS,
+            counts,
+            json.dumps(counts, indent = 4))
+
+        for prog in CPS_FALSE_NEGATIVES['halt']:
+            self.assert_could_halt_cps(prog)
+
+        for prog in CPS_FALSE_NEGATIVES['blank']:
+            self.assert_could_blank_cps(prog)
+
+        for prog in CPS_FALSE_NEGATIVES['spinout']:
+            self.assert_could_spin_out_cps(prog)
 
 ########################################
 
