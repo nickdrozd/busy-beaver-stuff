@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from test.prog_data import EXPAND, NORMALIZE, TNF
-from tools.normalize import expand, normalize
+from tools.normalize import compact, expand, normalize
 from tools.tree_norm import tree_norm
 
 
@@ -14,11 +14,22 @@ class TestProgram(TestCase):
                     normalize(dev))
 
     def test_expand(self):
-        for compact, expanded in EXPAND.items():
+        for compacted, expanded in EXPAND.items():
             self.assertEqual(
-                expand(compact),
+                expand(compacted),
+                expanded)
+
+            self.assertEqual(
+                compact(expanded),
+                compacted.replace('1RZ', '---'))
+
+            self.assertEqual(
                 expanded,
-            )
+                expand(expanded))
+
+            self.assertEqual(
+                compacted,
+                compact(compacted))
 
     def test_tnf(self):
         for lex, tnf in TNF.items():

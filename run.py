@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from tm.machine import Machine
+from tools.normalize import expand
 
 
 def parse_args() -> argparse.Namespace:
@@ -40,7 +41,7 @@ if __name__ == '__main__':
 
     args = parse_args()
 
-    for i, prog in enumerate(p.strip() for p in sys.stdin):
+    for i, prog in enumerate(map(expand, sys.stdin)):
         machine = Machine(
             prog,
             opt_macro = args.macro,

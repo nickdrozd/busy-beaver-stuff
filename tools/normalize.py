@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 
 
 def expand(prog: str) -> str:
-    assert ' ' not in prog
+    if ' ' in prog:
+        return prog
 
     return '  '.join([
         ' '.join([
@@ -25,6 +26,13 @@ def expand(prog: str) -> str:
          ])
         for state in prog.strip().split('_')
     ])
+
+
+def compact(prog: str) -> str:
+    if ' ' not in prog:
+        return prog
+
+    return prog.replace('.', '-').replace('  ', '_').replace(' ', '')
 
 
 def init_prog(states: int, colors: int) -> str:
