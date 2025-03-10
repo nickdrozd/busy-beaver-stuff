@@ -82,11 +82,11 @@ impl Display for BasicBlock {
 pub struct Span<B: Block>(pub Vec<B>);
 
 impl<B: Block> Span<B> {
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.0.len()
     }
 
-    fn blank(&self) -> bool {
+    const fn blank(&self) -> bool {
         self.0.is_empty()
     }
 
@@ -334,7 +334,7 @@ impl<B: Block> Tape<B> {
             + self.rspan.marks()
     }
 
-    pub fn blocks(&self) -> usize {
+    pub const fn blocks(&self) -> usize {
         self.lspan.len() + self.rspan.len()
     }
 
@@ -342,16 +342,16 @@ impl<B: Block> Tape<B> {
         (self.lspan.counts(), self.rspan.counts())
     }
 
-    pub fn span_lens(&self) -> (usize, usize) {
+    pub const fn span_lens(&self) -> (usize, usize) {
         (self.lspan.len(), self.rspan.len())
     }
 
-    pub fn at_edge(&self, edge: Shift) -> bool {
+    pub const fn at_edge(&self, edge: Shift) -> bool {
         self.scan == 0
             && (if edge { &self.rspan } else { &self.lspan }).blank()
     }
 
-    pub fn blank(&self) -> bool {
+    pub const fn blank(&self) -> bool {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
     }
 
@@ -448,7 +448,7 @@ impl HeadTape {
         }
     }
 
-    pub fn at_edge(&self, edge: Shift) -> bool {
+    pub const fn at_edge(&self, edge: Shift) -> bool {
         self.tape.at_edge(edge)
     }
 

@@ -612,7 +612,7 @@ impl Span {
         self.span.0.iter().all(|block| block.color == 0)
     }
 
-    fn len(&self) -> usize {
+    const fn len(&self) -> usize {
         self.span.len()
     }
 
