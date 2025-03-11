@@ -1,3 +1,4 @@
+target-version = "py313"
 line-length = 72
 
 [lint]
