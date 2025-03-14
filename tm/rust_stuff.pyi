@@ -117,6 +117,14 @@ type Rule = dict[Index, Op]
 
 def py_opt_block(prog: str, steps: int) -> int: ...
 
+## tree ################################
+
+def tree_progs(
+        params: Params,
+        halt: bool,
+        sim_lim: int,
+) -> list[str]: ...
+
 ## reason ##############################
 
 def py_is_connected(prog: str, states: int) -> bool: ...
@@ -166,11 +174,3 @@ class SegmentResult:
 def py_segment_cant_halt(prog: str, segs: int) -> SegmentResult: ...
 def py_segment_cant_blank(prog: str, segs: int) -> SegmentResult: ...
 def py_segment_cant_spin_out(prog: str, segs: int) -> SegmentResult: ...
-
-## tree ################################
-
-def tree_progs(
-        params: Params,
-        halt: bool,
-        sim_lim: int,
-) -> list[str]: ...
