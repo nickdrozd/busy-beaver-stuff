@@ -98,14 +98,17 @@ fn cps_cant_reach(
             }
 
             for color in colors {
-                let push_clone = push.clone();
-                let mut pull_clone = pull.clone();
-                pull_clone.last = color;
-
                 let next_config = Config {
                     state: next_state,
                     tape: Tape::from_spans(
-                        tape.scan, push_clone, pull_clone, shift,
+                        tape.scan,
+                        push.clone(),
+                        {
+                            let mut pull_clone = pull.clone();
+                            pull_clone.last = color;
+                            pull_clone
+                        },
+                        shift,
                     ),
                 };
 
