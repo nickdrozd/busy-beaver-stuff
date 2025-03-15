@@ -97,6 +97,8 @@ fn cps_cant_reach(
                 return false;
             }
 
+            let (last_color, colors) = colors.split_last().unwrap();
+
             for color in colors {
                 let next_config = Config {
                     state: next_state,
@@ -105,7 +107,7 @@ fn cps_cant_reach(
                         push.clone(),
                         {
                             let mut pull_clone = pull.clone();
-                            pull_clone.last = color;
+                            pull_clone.last = *color;
                             pull_clone
                         },
                         shift,
@@ -120,6 +122,24 @@ fn cps_cant_reach(
                 todo.push(next_config);
                 update = true;
             }
+
+            {
+                let next_config = Config {
+                    state: next_state,
+                    tape: {
+                        pull.last = *last_color;
+                        tape
+                    },
+                };
+
+                if configs.seen.contains(&next_config) {
+                    continue;
+                }
+
+                configs.seen.insert(next_config.clone());
+                todo.push(next_config);
+                update = true;
+            };
         }
 
         if !update {
