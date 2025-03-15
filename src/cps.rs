@@ -110,14 +110,8 @@ fn cps_cant_reach(
                 };
 
                 if configs.seen.contains(&next_config) {
-                    #[cfg(debug_assertions)]
-                    println!("xxx {next_config}");
-
                     continue;
                 }
-
-                #[cfg(debug_assertions)]
-                println!("--> {next_config}");
 
                 configs.seen.insert(next_config.clone());
                 todo.push(next_config.clone());
