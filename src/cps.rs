@@ -117,7 +117,7 @@ fn cps_cant_reach(
                 }
 
                 configs.seen.insert(next_config.clone());
-                todo.push(next_config.clone());
+                todo.push(next_config);
                 update = true;
             }
         }
