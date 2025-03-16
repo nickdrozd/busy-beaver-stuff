@@ -4,7 +4,7 @@ use std::collections::{BTreeMap as Dict, HashSet as Set};
 
 use crate::instrs::{show_slot, Color, CompProg, Shift, State};
 
-type Segments = usize;
+type Radius = usize;
 
 const MAX_STEPS: usize = 1_000;
 const MAX_DEPTH: usize = 100_000;
@@ -20,32 +20,28 @@ enum Goal {
 
 use Goal::*;
 
-pub fn cps_cant_halt(prog: &CompProg, segs: Segments) -> bool {
-    cps_run(prog, segs, &Halt)
+pub fn cps_cant_halt(prog: &CompProg, rad: Radius) -> bool {
+    cps_run(prog, rad, &Halt)
 }
 
-pub fn cps_cant_blank(prog: &CompProg, segs: Segments) -> bool {
-    cps_run(prog, segs, &Blank)
+pub fn cps_cant_blank(prog: &CompProg, rad: Radius) -> bool {
+    cps_run(prog, rad, &Blank)
 }
 
-pub fn cps_cant_spin_out(prog: &CompProg, segs: Segments) -> bool {
-    cps_run(prog, segs, &Spinout)
+pub fn cps_cant_spin_out(prog: &CompProg, rad: Radius) -> bool {
+    cps_run(prog, rad, &Spinout)
 }
 
 /**************************************/
 
-fn cps_run(prog: &CompProg, segs: Segments, goal: &Goal) -> bool {
-    assert!(segs > 1);
+fn cps_run(prog: &CompProg, rad: Radius, goal: &Goal) -> bool {
+    assert!(rad > 1);
 
-    (2..segs).any(|seg| cps_cant_reach(prog, seg, goal))
+    (2..rad).any(|seg| cps_cant_reach(prog, seg, goal))
 }
 
-fn cps_cant_reach(
-    prog: &CompProg,
-    segs: Segments,
-    goal: &Goal,
-) -> bool {
-    let mut configs = Configs::init(segs);
+fn cps_cant_reach(prog: &CompProg, rad: Radius, goal: &Goal) -> bool {
+    let mut configs = Configs::init(rad);
 
     for _ in 1..MAX_STEPS {
         let mut todo: Vec<Config> =
@@ -164,14 +160,14 @@ struct Configs {
 }
 
 impl Configs {
-    fn init(segs: Segments) -> Self {
+    fn init(rad: Radius) -> Self {
         let mut configs = Self {
             seen: Set::new(),
             lspans: Dict::new(),
             rspans: Dict::new(),
         };
 
-        let init = Config::init(segs);
+        let init = Config::init(rad);
 
         configs.lspans.add_span(&init.tape.lspan);
         configs.rspans.add_span(&init.tape.rspan);
@@ -215,10 +211,10 @@ struct Config {
 }
 
 impl Config {
-    fn init(segs: Segments) -> Self {
+    fn init(rad: Radius) -> Self {
         Self {
             state: 0,
-            tape: Tape::init(segs),
+            tape: Tape::init(rad),
         }
     }
 }
@@ -242,11 +238,11 @@ struct Tape {
 }
 
 impl Tape {
-    fn init(segs: Segments) -> Self {
+    fn init(rad: Radius) -> Self {
         Self {
             scan: 0,
-            lspan: Span::init(segs),
-            rspan: Span::init(segs),
+            lspan: Span::init(rad),
+            rspan: Span::init(rad),
         }
     }
 
@@ -294,11 +290,11 @@ struct Span {
 }
 
 impl Span {
-    fn init(segs: Segments) -> Self {
-        assert!(segs > 0);
+    fn init(rad: Radius) -> Self {
+        assert!(rad > 0);
 
         Self {
-            span: vec![0; segs - 1],
+            span: vec![0; rad - 1],
             last: 0,
         }
     }
