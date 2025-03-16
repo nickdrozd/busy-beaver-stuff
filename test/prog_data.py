@@ -2795,8 +2795,8 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
 
 CPS_FALSE_POSITIVE_COUNTS = {
     "halt": 45,
-    "blank": 141,
-    "spinout": 584,
+    "blank": 142,
+    "spinout": 585,
 }
 
 CPS_FALSE_NEGATIVES = {
@@ -2874,6 +2874,7 @@ CPS_FALSE_NEGATIVES = {
         "1RB ...  1LC ...  0LC 0LB",
         "1RB 0RB  0LB 1RC  0LA ...",
         "1RB 0LA  0RC 1LA  1LC 0RB",
+        "1RB 2LA 3LB 0RA  0LA 3LB 1RA 2RB",
         "1RB 2LB 0LA 1LA  2LA 3RA 1RB 0LB",
         "1RB 2LB 0RA 2LB  2LA 3LA 0LB 3RA",
         "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB",
@@ -3526,6 +3527,7 @@ CPS_FALSE_NEGATIVES = {
         "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
         "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA",
         "1RB 0RB  0LC 1RD  1LA 1LC  0LE 1RA  1LE 0RD",
+        "1RB 2LB 4RB 1LA 1RB ...  1LA 3RA 5RA 4LB 0RA 4LA",
         "1RB 2LA ... 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA",
         "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ...",
         "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...",

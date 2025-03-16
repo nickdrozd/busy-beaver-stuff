@@ -7,6 +7,7 @@ use crate::instrs::{show_slot, Color, CompProg, Shift, State};
 type Segments = usize;
 
 const MAX_STEPS: usize = 1_000;
+const MAX_DEPTH: usize = 100_000;
 
 /**************************************/
 
@@ -140,6 +141,10 @@ fn cps_cant_reach(
                 todo.push(next_config);
                 update = true;
             };
+
+            if configs.seen.len() > MAX_DEPTH {
+                return false;
+            }
         }
 
         if !update {
