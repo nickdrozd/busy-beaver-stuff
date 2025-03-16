@@ -6,7 +6,7 @@ use crate::instrs::{show_slot, Color, CompProg, Shift, State};
 
 type Radius = usize;
 
-const MAX_STEPS: usize = 1_000;
+const MAX_LOOPS: usize = 1_000;
 const MAX_DEPTH: usize = 100_000;
 
 /**************************************/
@@ -43,7 +43,7 @@ fn cps_run(prog: &CompProg, rad: Radius, goal: &Goal) -> bool {
 fn cps_cant_reach(prog: &CompProg, rad: Radius, goal: &Goal) -> bool {
     let mut configs = Configs::init(rad);
 
-    for _ in 1..MAX_STEPS {
+    for _ in 0..MAX_LOOPS {
         let mut todo: Vec<Config> =
             configs.seen.clone().into_iter().collect();
 
