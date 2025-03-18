@@ -58,15 +58,15 @@ fn check_inf(
 /**************************************/
 
 macro_rules! assert_trees {
-    ( $( ( ($params:expr, $halt:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
+    ( $( ( ($params:expr, $halt:expr, $tree:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
         vec![
             $( (
-                ($params, $halt, $leaves),
+                ($params, $halt, $tree, $leaves),
                 Box::new($pipeline) as Box<dyn Fn(&CompProg, Params) -> bool + Sync>
             ) ),*]
             .par_iter()
-            .for_each(|&((params, halt, expected), ref pipeline)| {
-                assert_tree(params, halt, expected, pipeline);
+            .for_each(|&((params, halt, tree, expected), ref pipeline)| {
+                assert_tree(params, halt, tree, expected, pipeline);
             });
     };
 }
@@ -74,6 +74,7 @@ macro_rules! assert_trees {
 fn assert_tree(
     params: Params,
     halt: u8,
+    tree: u64,
     expected: (u64, u64),
     pipeline: impl Fn(&CompProg, Params) -> bool + Sync,
 ) {
@@ -86,7 +87,7 @@ fn assert_tree(
     //     return;
     // }
 
-    build_tree(params, halt_flag, TREE_LIM, &|prog| {
+    build_tree(params, halt_flag, tree, &|prog| {
         *access(&visited_count) += 1;
 
         if incomplete(prog, params, halt_flag) {
@@ -111,14 +112,14 @@ fn assert_tree(
 fn test_tree() {
     assert_trees![
         (
-            ((2, 2), 1, (0, 36)),
+            ((2, 2), 1, 2, (0, 36)),
             //
             |prog: &CompProg, _: Params| {
                 quick_term_or_rec(prog, 8).is_settled()
             }
         ),
         (
-            ((2, 2), 0, (0, 106)),
+            ((2, 2), 0, 4, (0, 106)),
             //
             |prog: &CompProg, _: Params| {
                 cant_spin_out(prog, 0).is_settled()
@@ -126,7 +127,7 @@ fn test_tree() {
             }
         ),
         (
-            ((3, 2), 1, (0, 3_140)),
+            ((3, 2), 1, 12, (0, 3_140)),
             //
             |prog: &CompProg, _: Params| {
                 quick_term_or_rec(prog, 40).is_settled()
@@ -136,7 +137,7 @@ fn test_tree() {
             }
         ),
         (
-            ((3, 2), 0, (0, 13_128)),
+            ((3, 2), 0, 13, (0, 13_128)),
             //
             |prog: &CompProg, params: Params| {
                 quick_term_or_rec(prog, 206).is_settled()
@@ -147,7 +148,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 3), 1, (0, 2_447)),
+            ((2, 3), 1, 7, (0, 2_447)),
             //
             |prog: &CompProg, _: Params| {
                 quick_term_or_rec(prog, 301).is_settled()
@@ -157,7 +158,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 3), 0, (6, 9_168)),
+            ((2, 3), 0, 20, (6, 9_168)),
             //
             |prog: &CompProg, params: Params| {
                 quick_term_or_rec(prog, 301).is_settled()
@@ -168,7 +169,7 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 1, (26, 467_142)),
+            ((4, 2), 1, 25, (26, 467_142)),
             //
             |prog: &CompProg, _: Params| {
                 !is_connected(prog, 4)
@@ -179,7 +180,7 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 0, (390, 2_291_637)),
+            ((4, 2), 0, 99, (390, 2_291_637)),
             //
             |prog: &CompProg, params: Params| {
                 !is_connected(prog, 4)
@@ -192,7 +193,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 1, (72, 312_642)),
+            ((2, 4), 1, 109, (72, 312_642)),
             //
             |prog: &CompProg, _: Params| {
                 cant_halt(prog, 0).is_settled()
@@ -202,7 +203,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 0, (2_799, 1_719_357)),
+            ((2, 4), 0, 876, (2_799, 1_719_357)),
             //
             |prog: &CompProg, prms: Params| {
                 cant_spin_out(prog, 2).is_settled()
@@ -221,7 +222,7 @@ fn test_tree() {
 fn test_tree_slow() {
     assert_trees![
         (
-            ((3, 3), 1, (11_011, 25_306_290)),
+            ((3, 3), 1, TREE_LIM, (11_011, 25_306_290)),
             //
             |prog: &CompProg, prms: Params| {
                 cant_halt(prog, 1).is_settled()
@@ -232,7 +233,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((3, 3), 0, (148_022, 149_378_138)),
+            ((3, 3), 0, TREE_LIM, (148_022, 149_378_138)),
             //
             |prog: &CompProg, prms: Params| {
                 cant_spin_out(prog, 1).is_settled()
@@ -244,7 +245,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((5, 2), 1, (17_465, 95_310_282)),
+            ((5, 2), 1, TREE_LIM, (17_465, 95_310_282)),
             //
             |prog: &CompProg, prms: Params| {
                 !is_connected(prog, 5)
@@ -256,7 +257,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((5, 2), 0, (174_050, 534_813_722)),
+            ((5, 2), 0, TREE_LIM, (174_050, 534_813_722)),
             //
             |prog: &CompProg, prms: Params| {
                 !is_connected(prog, 5)
@@ -269,7 +270,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((2, 5), 1, (106_319, 70_032_629)),
+            ((2, 5), 1, TREE_LIM, (106_319, 70_032_629)),
             //
             |prog: &CompProg, prms: Params| {
                 cant_halt(prog, 1).is_settled()
@@ -280,7 +281,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((2, 5), 0, (1_855_227, 515_255_468)),
+            ((2, 5), 0, TREE_LIM, (1_855_227, 515_255_468)),
             //
             |prog: &CompProg, prms: Params| {
                 cant_spin_out(prog, 1).is_settled()
