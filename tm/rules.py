@@ -177,7 +177,8 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
         match sup:
             case Add():
-                assert isinstance(l := sup.l, int)
+                if not isinstance(l := sup.l, int):
+                    raise RuleLimit('sup_add')
 
                 ascent.append(
                     ('+', l))
