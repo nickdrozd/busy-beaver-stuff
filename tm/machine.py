@@ -102,7 +102,7 @@ class Machine:
             rulapp_disp = (
                 show_number(self.rulapp)
                 if isinstance(self.rulapp, int) else
-                "..."
+                self.rulapp.estimate()
             )
 
             info.append(
