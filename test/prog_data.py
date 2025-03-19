@@ -1208,6 +1208,7 @@ SPAGHETTI = {
     "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB",  # 0, 294
     "1RB 0LC  0RC 1LD  1RD 0LA  1LB 1LA",  # 0, 294
 
+    "1RB 2LB 2LC  1LA 2RC 1LB  0RC 2RB 0LA",
     "1RB 2RC 2RA  0LC 1RA 2RB  2LC 1LA 0RB",
 }
 
@@ -2022,6 +2023,8 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
             "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
             "1RB 1RC  0LC 0RB  1LD 1LB  0RD 1LA",
             "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
+            "1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC",
+            "1RB 0LB 2LA  1LA 2RC 0LB  2RC 2RB 0LC",
             "1RB 0RA 3LA 2LA 0LA  2LA 0RB 4LB 2RB 4RA",
             "1RB 0RB 0RA 3LA 0LA  2LB 2RB 3RB 4LA 4RA",
             "1RB 1RB 0RB 3LA 0LA  2LA 2RA 3RB 4LB 4RA",
@@ -2368,20 +2371,20 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
         "step_limit": 1,
         "depth_limit": 45,
         "spinout": 93,
-        "linrec": 155
+        "linrec": 155,
     },
     "blank": {
         "depth_limit": 2,
         "step_limit": 3,
-        "spinout": 133,
-        "linrec": 71
+        "spinout": 135,
+        "linrec": 71,
     },
     "spinout": {
         "step_limit": 4,
         "depth_limit": 24,
         "spinout": 70,
-        "linrec": 115
-    }
+        "linrec": 115,
+    },
 }
 
 CANT_HALT_FALSE_NEGATIVES: set[str] = {
@@ -2802,7 +2805,7 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
 
 CPS_FALSE_POSITIVE_COUNTS = {
     "halt": 45,
-    "blank": 144,
+    "blank": 147,
     "spinout": 586,
 }
 
@@ -2961,6 +2964,9 @@ CPS_FALSE_NEGATIVES = {
         "1RB 1LA 1LC  0LB 2RB 1RC  1LA 1RC 1LB",
         "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC",
         "1RB 2RA 1LC  2LB 0RB 2LA  2RB 0LB 1LA",
+        "1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC",
+        "1RB 2LB 2LC  1LA 2RC 1LB  0RC 2RB 0LA",
+        "1RB 0LB 2LA  1LA 2RC 0LB  2RC 2RB 0LC",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 4LB",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 2LB",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 1LB",
@@ -3851,6 +3857,11 @@ PROVER_SPINOUT: ProverEst = {
     "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": 414095476548,
 
     # 3/3
+    "1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC": "(2 ** (4 + (2 **",
+    "1RB 2LB 2LC  1LA 2RC 1LB  0RC 2RB 0LA": "(-6 + (5 * (2 **",
+    "1RB 0LB 2LA  1LA 2RC 0LB  2RC 2RB 0LC": "(2 ** 19)",
+    "1RB 2RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": 0,
+    "1RB 2LA 0LB  2LA 1LB 0LC  1RC 0LC 1RA": 0,
     "1RB 0LB 1LA  2LC 2LB 2LB  2RC 2RA 0LC": 0,
     "1RB 2RA 0RB  2LA 0RA 1RC  1LC 0RC 0LA": 0,
     "1RB 2RA 0RB  2LA 1RA 1RC  1LC 0RC 0LA": 0,
@@ -3970,15 +3981,39 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 111956,
-    "divs": 13749,
-    "exps": 110762,
-    "muls": 11967,
-    "totl": 248434,
+    "adds": 112162,
+    "divs": 13752,
+    "exps": 110814,
+    "muls": 12035,
+    "totl": 248763,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     "spinout": {
+        "1RB 0LB 2LA  1LA 2RC 0LB  2RC 2RB 0LC": (
+            180,
+            "(10 ** 6)",
+            "(2 ** 19)",
+            "(477 + (2 ** 18))",
+        ),
+        "1RB 2LB 2LC  1LA 2RC 1LB  0RC 2RB 0LA": (
+            536,
+            "(10 ** 5)",
+            "(-3 + (5 * (2 ** 12)))",
+            "(578 + (5 * (2 ** 11)))",
+        ),
+        "1RB 2LA 0LB  2LA 1LB 0LC  1RC 0LC 1RA": (
+            113,
+            "0",
+            "0",
+            "(124 + (9 * (2 ** 15)))",
+        ),
+        "1RB 2RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": (
+            136,
+            "0",
+            "0",
+            "((571 + (13 * (2 ** 15))) // 3)",
+        ),
         "1RB 0LB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": (
             129,
             "0",
@@ -3996,6 +4031,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "0",
             "0",
             "(430 + (13 * (2 ** 101)))",
+        ),
+        "1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC": (
+            538,
+            "(10 ↑↑ 7)",
+            "(2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** 20)))))))))))",
+            "(474 + ((2 ** 19) * (3 + ((2 ** (-16 + (2 ** 20))) * (3 + ((2 ** ((2 ** 20) * (-1 + (2 ** (-16 + (2 ** 20)))))) * (3 + ((2 ** ((2 ** (4 + (2 ** 20))) * (-1 + (2 ** ((2 ** 20) * (-1 + (2 ** (-16 + (2 ** 20))))))))) * (3 + ((2 ** ((2 ** (4 + (2 ** (4 + (2 ** 20))))) * (-1 + (2 ** ((2 ** (4 + (2 ** 20))) * (-1 + (2 ** ((2 ** 20) * (-1 + (2 ** (-16 + (2 ** 20)))))))))))) * (3 + (2 ** ((2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** 20))))))) * (-1 + (2 ** ((2 ** (4 + (2 ** (4 + (2 ** 20))))) * (-1 + (2 ** ((2 ** (4 + (2 ** 20))) * (-1 + (2 ** ((2 ** 20) * (-1 + (2 ** (-16 + (2 ** 20))))))))))))))))))))))))))",
         ),
         "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": (
             711,
