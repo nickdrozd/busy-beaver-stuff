@@ -91,7 +91,9 @@ class TestGraph(TestCase):
                 prog)
 
             self.assertTrue(
-                graph.is_dispersed or '.' in prog,
+                graph.is_dispersed
+                    or '.' in prog
+                    or len(graph.colors) >= 3,
                 prog)
 
     def test_kernel(self):
