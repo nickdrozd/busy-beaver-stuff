@@ -1283,7 +1283,8 @@ class Prover(RunProver):
                 self.assertEqual(result, marks)
             elif isinstance(marks, str):
                 self.assertTrue(
-                    str(result).startswith(marks))
+                    str(result).startswith(marks),
+                    f'    "{prog}": "{str(result)}",')
             else:
                 digits, exp = marks
 
