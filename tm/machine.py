@@ -177,6 +177,9 @@ class Machine:
             except RuleLimit as lim:
                 self.limrul = str(lim)
                 break
+            except NotImplementedError as lim:
+                self.limrul = str(lim)
+                break
             except ConfigLimit:  # no-cover
                 self.cfglim = step
                 break

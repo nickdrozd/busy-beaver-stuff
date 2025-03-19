@@ -94,6 +94,7 @@ class TestFloss(TestCase):
     def test_prover(self):
         progs = (
             "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
+            "1RB 2LA 0RA  1LB 2RB 2RC  2LC 1LA 1LC",
             "1RB 0LD  1LB 0RC  0RE 1LD  1LA ...  0RB 0LC",
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
             "1RB 0LC  1LC 1RA  1LD 0LD  0LE 0LC  1RE 0RB",
