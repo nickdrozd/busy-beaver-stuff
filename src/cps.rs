@@ -13,16 +13,24 @@ const MAX_DEPTH: usize = 100_000;
 
 /**************************************/
 
-pub fn cps_cant_halt(prog: &CompProg, rad: Radius) -> bool {
-    cps_run(prog, rad, &Halt)
+pub trait Cps {
+    fn cps_cant_halt(&self, rad: Radius) -> bool;
+    fn cps_cant_blank(&self, rad: Radius) -> bool;
+    fn cps_cant_spin_out(&self, rad: Radius) -> bool;
 }
 
-pub fn cps_cant_blank(prog: &CompProg, rad: Radius) -> bool {
-    cps_run(prog, rad, &Blank)
-}
+impl Cps for CompProg {
+    fn cps_cant_halt(&self, rad: Radius) -> bool {
+        cps_run(self, rad, &Halt)
+    }
 
-pub fn cps_cant_spin_out(prog: &CompProg, rad: Radius) -> bool {
-    cps_run(prog, rad, &Spinout)
+    fn cps_cant_blank(&self, rad: Radius) -> bool {
+        cps_run(self, rad, &Blank)
+    }
+
+    fn cps_cant_spin_out(&self, rad: Radius) -> bool {
+        cps_run(self, rad, &Spinout)
+    }
 }
 
 /**************************************/
