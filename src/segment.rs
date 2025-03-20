@@ -38,28 +38,52 @@ impl SegmentResult {
     }
 }
 
-pub fn segment_cant_halt(
-    prog: &CompProg,
-    params: Params,
-    segs: Segments,
-) -> SegmentResult {
-    segment_cant_reach(prog, params, segs, &Halt)
+/**************************************/
+
+pub trait Segment {
+    fn seg_cant_halt(
+        &self,
+        params: Params,
+        segs: Segments,
+    ) -> SegmentResult;
+
+    fn seg_cant_blank(
+        &self,
+        params: Params,
+        segs: Segments,
+    ) -> SegmentResult;
+
+    fn seg_cant_spin_out(
+        &self,
+        params: Params,
+        segs: Segments,
+    ) -> SegmentResult;
 }
 
-pub fn segment_cant_blank(
-    prog: &CompProg,
-    params: Params,
-    segs: Segments,
-) -> SegmentResult {
-    segment_cant_reach(prog, params, segs, &Blank)
-}
+impl Segment for CompProg {
+    fn seg_cant_halt(
+        &self,
+        params: Params,
+        segs: Segments,
+    ) -> SegmentResult {
+        segment_cant_reach(self, params, segs, &Halt)
+    }
 
-pub fn segment_cant_spin_out(
-    prog: &CompProg,
-    params: Params,
-    segs: Segments,
-) -> SegmentResult {
-    segment_cant_reach(prog, params, segs, &Spinout)
+    fn seg_cant_blank(
+        &self,
+        params: Params,
+        segs: Segments,
+    ) -> SegmentResult {
+        segment_cant_reach(self, params, segs, &Blank)
+    }
+
+    fn seg_cant_spin_out(
+        &self,
+        params: Params,
+        segs: Segments,
+    ) -> SegmentResult {
+        segment_cant_reach(self, params, segs, &Spinout)
+    }
 }
 
 /**************************************/

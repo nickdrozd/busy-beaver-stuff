@@ -8,10 +8,7 @@ use crate::{
     machine::{quick_term_or_rec, run_for_infrul, run_prover},
     macros::{make_backsymbol_macro, make_block_macro},
     reason::Backward as _,
-    segment::{
-        segment_cant_halt as seg_cant_halt,
-        segment_cant_spin_out as seg_cant_spin_out,
-    },
+    segment::Segment as _,
     tree::{access, build_tree, get_val, set_val, Step},
 };
 
@@ -142,7 +139,7 @@ fn test_tree() {
                 quick_term_or_rec(prog, 301).is_settled()
                     || prog.cant_spin_out(2).is_settled()
                     || prog.cps_cant_spin_out(5)
-                    || seg_cant_spin_out(prog, params, 6).is_refuted()
+                    || prog.seg_cant_spin_out(params, 6).is_refuted()
                     || run_for_infrul(prog, 474)
             }
         ),
@@ -166,7 +163,7 @@ fn test_tree() {
                     || quick_term_or_rec(prog, 1_000).is_settled()
                     || prog.cant_spin_out(11).is_settled()
                     || prog.cps_cant_spin_out(9)
-                    || seg_cant_spin_out(prog, params, 7).is_refuted()
+                    || prog.seg_cant_spin_out(params, 7).is_refuted()
                     || run_for_infrul(prog, 1_000)
             }
         ),
@@ -176,7 +173,7 @@ fn test_tree() {
             |prog: &CompProg, prms: Params| {
                 prog.cant_halt(0).is_settled()
                     || quick_term_or_rec(prog, 800).is_settled()
-                    || seg_cant_halt(prog, prms, 5).is_refuted()
+                    || prog.seg_cant_halt(prms, 5).is_refuted()
                     || prog.cps_cant_halt(7)
                     || check_inf(prog, prms, opt_block(prog, 300), 500)
             }
@@ -189,7 +186,7 @@ fn test_tree() {
                     || quick_term_or_rec(prog, 2_000).is_settled()
                     || prog.cant_spin_out(7).is_settled()
                     || prog.cps_cant_spin_out(6)
-                    || seg_cant_spin_out(prog, prms, 4).is_refuted()
+                    || prog.seg_cant_spin_out(prms, 4).is_refuted()
                     || check_inf(prog, prms, opt_block(prog, 300), 500)
             }
         ),
@@ -218,7 +215,7 @@ fn test_tree_slow() {
                 prog.cant_spin_out(1).is_settled()
                     || quick_term_or_rec(prog, 2_000).is_settled()
                     || prog.cant_spin_out(73).is_settled()
-                    || seg_cant_spin_out(prog, prms, 5).is_refuted()
+                    || prog.seg_cant_spin_out(prms, 5).is_refuted()
                     || check_inf(prog, prms, opt_block(prog, 300), 500)
                     || prog.cps_cant_spin_out(8)
             }
@@ -244,7 +241,7 @@ fn test_tree_slow() {
                     || quick_term_or_rec(prog, 3_000).is_settled()
                     || prog.cant_spin_out(30).is_settled()
                     || prog.cps_cant_spin_out(5)
-                    || seg_cant_spin_out(prog, prms, 5).is_refuted()
+                    || prog.seg_cant_spin_out(prms, 5).is_refuted()
                     || check_inf(prog, prms, opt_block(prog, 300), 500)
             }
         ),
@@ -254,7 +251,7 @@ fn test_tree_slow() {
             |prog: &CompProg, prms: Params| {
                 prog.cant_halt(1).is_settled()
                     || quick_term_or_rec(prog, 3_000).is_settled()
-                    || seg_cant_halt(prog, prms, 5).is_refuted()
+                    || prog.seg_cant_halt(prms, 5).is_refuted()
                     || prog.cps_cant_halt(5)
                     || check_inf(prog, prms, opt_block(prog, 300), 500)
             }
@@ -266,7 +263,7 @@ fn test_tree_slow() {
                 prog.cant_spin_out(1).is_settled()
                     || quick_term_or_rec(prog, 3_000).is_settled()
                     || prog.cant_spin_out(20).is_settled()
-                    || seg_cant_spin_out(prog, prms, 5).is_refuted()
+                    || prog.seg_cant_spin_out(prms, 5).is_refuted()
                     || prog.cps_cant_spin_out(5)
                     || check_inf(prog, prms, opt_block(prog, 300), 500)
             }

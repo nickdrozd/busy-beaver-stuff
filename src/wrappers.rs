@@ -10,10 +10,7 @@ use crate::{
         Backward as _, BackwardResult as BackwardResultRs,
         BackwardResult::*, Depth, Step,
     },
-    segment::{
-        segment_cant_blank, segment_cant_halt, segment_cant_spin_out,
-        SegmentResult as SegmentResultRs,
-    },
+    segment::{Segment as _, SegmentResult as SegmentResultRs},
     tree::{access, build_tree, get_val, set_val, Step as TreeStep},
 };
 
@@ -170,14 +167,14 @@ fn get_comp(prog: &str) -> (CompProg, Params) {
 pub fn py_segment_cant_halt(prog: &str, segs: usize) -> SegmentResult {
     let (comp, params) = get_comp(prog);
 
-    segment_cant_halt(&comp, params, segs).into()
+    comp.seg_cant_halt(params, segs).into()
 }
 
 #[pyfunction]
 pub fn py_segment_cant_blank(prog: &str, segs: usize) -> SegmentResult {
     let (comp, params) = get_comp(prog);
 
-    segment_cant_blank(&comp, params, segs).into()
+    comp.seg_cant_blank(params, segs).into()
 }
 
 #[pyfunction]
@@ -187,7 +184,7 @@ pub fn py_segment_cant_spin_out(
 ) -> SegmentResult {
     let (comp, params) = get_comp(prog);
 
-    segment_cant_spin_out(&comp, params, segs).into()
+    comp.seg_cant_spin_out(params, segs).into()
 }
 
 /***************************************/
