@@ -1,14 +1,12 @@
-use rayon::prelude::*;
+use std::collections::BTreeSet as Set;
 
-use crate::{
-    instrs::{Color, CompProg, Params, Parse as _, State},
-    tree::{access, build_tree, get_val, set_val, Step},
-};
+use rayon::prelude::*;
 
 use crate::{
     blocks::opt_block,
     cps::{cps_cant_blank, cps_cant_halt, cps_cant_spin_out},
     graph::is_connected,
+    instrs::{Color, CompProg, Params, Parse as _, State},
     machine::{quick_term_or_rec, run_for_infrul, run_prover},
     macros::{make_backsymbol_macro, make_block_macro},
     reason::{cant_blank, cant_halt, cant_spin_out},
@@ -16,8 +14,8 @@ use crate::{
         segment_cant_halt as seg_cant_halt,
         segment_cant_spin_out as seg_cant_spin_out,
     },
+    tree::{access, build_tree, get_val, set_val, Step},
 };
-use std::collections::BTreeSet as Set;
 
 /**************************************/
 
