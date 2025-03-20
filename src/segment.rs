@@ -8,9 +8,12 @@ use std::collections::{BTreeMap as Dict, HashSet as Set};
 use crate::{
     instrs::{
         show_state, Color, CompProg, Instr, Params, Shift, Slot, State,
+        Term,
     },
     tape::{BasicBlock as Block, Block as _, Count},
 };
+
+use Term::*;
 
 pub type Step = usize;
 type Segments = usize;
@@ -61,25 +64,17 @@ pub fn segment_cant_spin_out(
 
 /**************************************/
 
-#[derive(PartialEq, Eq)]
-enum Goal {
-    Halt,
-    Blank,
-    Spinout,
-}
-
 enum SearchResult {
     Limit,
     Repeat,
     Reached,
-    Found(Goal),
+    Found(Term),
 }
 
-use Goal::*;
 use SearchResult::*;
 
-impl From<Goal> for SegmentResult {
-    fn from(goal: Goal) -> Self {
+impl From<Term> for SegmentResult {
+    fn from(goal: Term) -> Self {
         match goal {
             Halt => Self::Halt,
             Blank => Self::Blank,
@@ -92,7 +87,7 @@ fn segment_cant_reach(
     prog: &CompProg,
     params: Params,
     segs: Segments,
-    goal: &Goal,
+    goal: &Term,
 ) -> SegmentResult {
     assert!(segs >= 2);
 
@@ -126,7 +121,7 @@ fn segment_cant_reach(
 fn all_segments_reached(
     prog: &AnalyzedProg,
     seg: Segments,
-    goal: &Goal,
+    goal: &Term,
 ) -> Option<SearchResult> {
     let mut configs = Configs::new(prog, seg, goal);
 
@@ -243,7 +238,7 @@ struct Configs {
 }
 
 impl Configs {
-    fn new(prog: &AnalyzedProg, seg: Segments, goal: &Goal) -> Self {
+    fn new(prog: &AnalyzedProg, seg: Segments, goal: &Term) -> Self {
         let reached = match goal {
             Blank => Dict::new(),
             Halt => prog
@@ -314,7 +309,7 @@ impl Configs {
         Some(blank && state == 0)
     }
 
-    fn check_reached(&mut self, config: &Config, goal: &Goal) -> bool {
+    fn check_reached(&mut self, config: &Config, goal: &Term) -> bool {
         if goal == &Blank {
             return self.check_reached_blank(config);
         }
@@ -441,7 +436,7 @@ impl Config {
     fn run_to_edge(
         &mut self,
         prog: &CompProg,
-        goal: &Goal,
+        goal: &Term,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
         self.tape.scan?;

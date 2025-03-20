@@ -2,7 +2,9 @@ use core::{fmt, iter::once};
 
 use std::collections::{BTreeMap as Dict, HashSet as Set};
 
-use crate::instrs::{show_slot, Color, CompProg, Shift, State};
+use crate::instrs::{show_slot, Color, CompProg, Shift, State, Term};
+
+use Term::*;
 
 type Radius = usize;
 
@@ -10,15 +12,6 @@ const MAX_LOOPS: usize = 1_000;
 const MAX_DEPTH: usize = 100_000;
 
 /**************************************/
-
-#[derive(PartialEq, Eq)]
-enum Goal {
-    Halt,
-    Blank,
-    Spinout,
-}
-
-use Goal::*;
 
 pub fn cps_cant_halt(prog: &CompProg, rad: Radius) -> bool {
     cps_run(prog, rad, &Halt)
@@ -34,13 +27,13 @@ pub fn cps_cant_spin_out(prog: &CompProg, rad: Radius) -> bool {
 
 /**************************************/
 
-fn cps_run(prog: &CompProg, rad: Radius, goal: &Goal) -> bool {
+fn cps_run(prog: &CompProg, rad: Radius, goal: &Term) -> bool {
     assert!(rad > 1);
 
     (2..rad).any(|seg| cps_cant_reach(prog, seg, goal))
 }
 
-fn cps_cant_reach(prog: &CompProg, rad: Radius, goal: &Goal) -> bool {
+fn cps_cant_reach(prog: &CompProg, rad: Radius, goal: &Term) -> bool {
     let mut configs = Configs::init(rad);
 
     for _ in 0..MAX_LOOPS {

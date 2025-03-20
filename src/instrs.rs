@@ -20,6 +20,15 @@ pub type CompProg = Dict<Slot, Instr>;
 
 /**************************************/
 
+#[derive(PartialEq, Eq)]
+pub enum Term {
+    Halt,
+    Blank,
+    Spinout,
+}
+
+/**************************************/
+
 pub trait GetInstr {
     fn get_instr(&self, slot: &Slot) -> Option<Instr>;
 }
