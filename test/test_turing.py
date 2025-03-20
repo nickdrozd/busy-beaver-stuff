@@ -1386,6 +1386,13 @@ class Prover(RunProver):
             self.assertTrue(
                 str(self.machine.limrul).startswith(reason))
 
+    def test_bad_number(self):
+        self.run_bb(
+            "1RB 2LC 1RA  1LA 1LC 2RB  0LB 2LA 0RC")
+
+        with self.assertRaises(ValueError):
+            print(self.machine)
+
     def test_prover_false_positive(self):
         prog = "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE"
 
