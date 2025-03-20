@@ -42,16 +42,24 @@ impl BackwardResult {
 
 /**************************************/
 
-pub fn cant_halt(comp: &CompProg, depth: Depth) -> BackwardResult {
-    cant_reach(comp, depth, halt_configs)
+pub trait Backward {
+    fn cant_halt(&self, depth: Depth) -> BackwardResult;
+    fn cant_blank(&self, depth: Depth) -> BackwardResult;
+    fn cant_spin_out(&self, depth: Depth) -> BackwardResult;
 }
 
-pub fn cant_blank(comp: &CompProg, depth: Depth) -> BackwardResult {
-    cant_reach(comp, depth, erase_configs)
-}
+impl Backward for CompProg {
+    fn cant_halt(&self, depth: Depth) -> BackwardResult {
+        cant_reach(self, depth, halt_configs)
+    }
 
-pub fn cant_spin_out(comp: &CompProg, depth: Depth) -> BackwardResult {
-    cant_reach(comp, depth, zero_reflexive_configs)
+    fn cant_blank(&self, depth: Depth) -> BackwardResult {
+        cant_reach(self, depth, erase_configs)
+    }
+
+    fn cant_spin_out(&self, depth: Depth) -> BackwardResult {
+        cant_reach(self, depth, zero_reflexive_configs)
+    }
 }
 
 /**************************************/

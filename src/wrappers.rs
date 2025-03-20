@@ -7,9 +7,8 @@ use crate::{
     instrs::{CompProg, Params, Parse as _, State},
     machine::quick_term_or_rec,
     reason::{
-        cant_blank, cant_halt, cant_spin_out,
-        BackwardResult as BackwardResultRs, BackwardResult::*, Depth,
-        Step,
+        Backward as _, BackwardResult as BackwardResultRs,
+        BackwardResult::*, Depth, Step,
     },
     segment::{
         segment_cant_blank, segment_cant_halt, segment_cant_spin_out,
@@ -103,17 +102,17 @@ impl From<BackwardResultRs> for BackwardResult {
 
 #[pyfunction]
 pub fn py_cant_halt(prog: &str, depth: Depth) -> BackwardResult {
-    cant_halt(&CompProg::from_str(prog), depth).into()
+    CompProg::from_str(prog).cant_halt(depth).into()
 }
 
 #[pyfunction]
 pub fn py_cant_blank(prog: &str, depth: Depth) -> BackwardResult {
-    cant_blank(&CompProg::from_str(prog), depth).into()
+    CompProg::from_str(prog).cant_blank(depth).into()
 }
 
 #[pyfunction]
 pub fn py_cant_spin_out(prog: &str, depth: Depth) -> BackwardResult {
-    cant_spin_out(&CompProg::from_str(prog), depth).into()
+    CompProg::from_str(prog).cant_spin_out(depth).into()
 }
 
 /***************************************/
