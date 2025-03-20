@@ -1,12 +1,10 @@
-use std::collections::BTreeSet as Set;
-
 use rayon::prelude::*;
 
 use crate::{
     blocks::opt_block,
     cps::{cps_cant_blank, cps_cant_halt, cps_cant_spin_out},
     graph::is_connected,
-    instrs::{Color, CompProg, Params, Parse as _, State},
+    instrs::{CompProg, Params, Parse as _},
     machine::{quick_term_or_rec, run_for_infrul, run_prover},
     macros::{make_backsymbol_macro, make_block_macro},
     reason::{cant_blank, cant_halt, cant_spin_out},
@@ -22,23 +20,6 @@ use crate::{
 const TREE_LIM: u64 = 876;
 
 /**************************************/
-
-fn incomplete(comp: &CompProg, params: Params, halt: bool) -> bool {
-    let (states, colors) = params;
-
-    let dimension = (states * colors) as usize;
-
-    if comp.len() < (if halt { dimension - 1 } else { dimension }) {
-        return true;
-    }
-
-    let (used_states, used_colors): (Set<State>, Set<Color>) =
-        comp.values().map(|(pr, _, tr)| (tr, pr)).unzip();
-
-    (colors == 2 && !used_colors.contains(&0))
-        || (0..states).any(|state| !used_states.contains(&state))
-        || (1..colors).any(|color| !used_colors.contains(&color))
-}
 
 fn check_inf(
     comp: &CompProg,
@@ -88,7 +69,7 @@ fn assert_tree(
     build_tree(params, halt_flag, tree, &|prog| {
         *access(&visited_count) += 1;
 
-        if incomplete(prog, params, halt_flag) {
+        if prog.incomplete(params, halt_flag) {
             return;
         }
 

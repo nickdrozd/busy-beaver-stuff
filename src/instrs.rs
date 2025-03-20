@@ -1,5 +1,8 @@
 use std::collections::BTreeMap as Dict;
 
+#[cfg(test)]
+use std::collections::BTreeSet as Set;
+
 use pyo3::pyfunction;
 
 /**************************************/
@@ -39,6 +42,9 @@ const RIGHT: char = 'R';
 pub trait Parse {
     fn from_str(prog: &str) -> Self;
     fn show(&self, params: Option<Params>) -> String;
+
+    #[cfg(test)]
+    fn incomplete(&self, params: Params, halt: bool) -> bool;
 }
 
 impl Parse for CompProg {
@@ -80,6 +86,24 @@ impl Parse for CompProg {
             })
             .collect::<Vec<_>>()
             .join("  ")
+    }
+
+    #[cfg(test)]
+    fn incomplete(&self, params: Params, halt: bool) -> bool {
+        let (states, colors) = params;
+
+        let dimension = (states * colors) as usize;
+
+        if self.len() < (if halt { dimension - 1 } else { dimension }) {
+            return true;
+        }
+
+        let (used_states, used_colors): (Set<State>, Set<Color>) =
+            self.values().map(|(pr, _, tr)| (tr, pr)).unzip();
+
+        (colors == 2 && !used_colors.contains(&0))
+            || (0..states).any(|state| !used_states.contains(&state))
+            || (1..colors).any(|color| !used_colors.contains(&color))
     }
 }
 
