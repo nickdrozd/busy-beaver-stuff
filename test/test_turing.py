@@ -1432,6 +1432,8 @@ class Prover(RunProver):
                     print_prog = not show,
                 )
 
+                assert self.machine.is_algebraic
+
                 if self.machine.undfnd is not None:
                     self.assertEqual(term, 'halt', prog)
 

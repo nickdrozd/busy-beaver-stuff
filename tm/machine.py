@@ -147,6 +147,13 @@ class Machine:
     def marks(self) -> Count:
         return self.tape.marks
 
+    @property
+    def is_algebraic(self) -> bool:
+        return (
+            not isinstance(self.rulapp, int)
+            or not isinstance(self.marks, int)
+        )
+
     def run(
         self,
         sim_lim: int = 100_000_000,
