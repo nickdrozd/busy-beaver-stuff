@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 def expand(prog: str) -> str:
+    prog = prog.strip()
+
     if ' ' in prog:
         return prog
 
@@ -24,7 +26,7 @@ def expand(prog: str) -> str:
             instr
             for i in range(0, len(state), 3)
          ])
-        for state in prog.strip().split('_')
+        for state in prog.split('_')
     ])
 
 
