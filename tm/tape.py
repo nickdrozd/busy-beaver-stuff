@@ -140,8 +140,8 @@ class Tape:
 
         return (
             self.scan == scan
-            and len(self.lspan) >= len(lspan)
-            and len(self.rspan) >= len(rspan)
+            and len(self.lspan) == len(lspan)
+            and len(self.rspan) == len(rspan)
             and all(
                 block.color == (
                     color[0]

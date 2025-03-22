@@ -235,9 +235,6 @@ def make_rule(*countses: Counts) -> Rule | None:
     second_diff = False
 
     for s, spans in enumerate(zip(*countses, strict = True)):
-        if len({len(span) for span in spans}) != 1:
-            return None
-
         for i, counts in enumerate(zip(*spans, strict = True)):
             try:
                 diff = calculate_diff(*counts)
