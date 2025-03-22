@@ -36,3 +36,10 @@ class TestProgram(TestCase):
             self.assertEqual(
                 tnf,
                 tree_norm(lex))
+
+    def test_tnf_0rb(self):
+        prog = "0RB 1RE  1LC ...  0LD 0LC  1RD 1LA  1LB 0RE"
+
+        self.assertEqual(
+            tree_norm(normalize(prog)),
+            "1RB ...  0RC 0RB  1LC 1RD  0LA 1LE  1RA 0LE")
