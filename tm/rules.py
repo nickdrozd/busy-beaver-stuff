@@ -47,6 +47,9 @@ class InfiniteRule(Exception):
 class SuspectedRule(Exception):
     pass
 
+class SecondDiffRule(Exception):
+    pass
+
 
 POSSIBLE_RULE_PAIRS = (3, 2), (5, 3), (5, 2), (5, 4), (4, 3)
 
@@ -118,6 +121,10 @@ def calculate_diff(*counts: Count) -> Op | None:
                 == (cnt3 - count_2 * add // sub)
                 == (cnt4 - cnt3 * add // sub)):
             raise SuspectedRule(add, sub)
+
+    if len({y - x for x, y in pairwise(
+            [y - x for x, y in pairwise(counts)])}) == 1:
+        raise SecondDiffRule
 
     raise UnknownRule
 
@@ -225,6 +232,8 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 def make_rule(*countses: Counts) -> Rule | None:
     rule = {}
 
+    second_diff = False
+
     for s, spans in enumerate(zip(*countses, strict = True)):
         if len({len(span) for span in spans}) != 1:
             return None
@@ -232,6 +241,9 @@ def make_rule(*countses: Counts) -> Rule | None:
         for i, counts in enumerate(zip(*spans, strict = True)):
             try:
                 diff = calculate_diff(*counts)
+            except SecondDiffRule:
+                second_diff = True
+                continue
             except UnknownRule:
                 return None
 
@@ -247,6 +259,9 @@ def make_rule(*countses: Counts) -> Rule | None:
         # print(f'inf: {rule}')
 
         raise InfiniteRule
+
+    if second_diff:  # no-cover
+        raise UnknownRule
 
     return rule
 

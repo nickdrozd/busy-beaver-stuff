@@ -2807,7 +2807,7 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
 CPS_FALSE_POSITIVE_COUNTS = {
     "halt": 45,
     "blank": 147,
-    "spinout": 586,
+    "spinout": 587,
 }
 
 CPS_FALSE_NEGATIVES = {
@@ -3144,6 +3144,7 @@ CPS_FALSE_NEGATIVES = {
         "1RB ...  0LC 0RB  1LC 1LA",
         "1RB 0LB  1LC 1RB  ... 1LA",
         "1RB 1LA  1LA 0LC  ... 1RA",
+        "1RB 0LA 1LA 0RA  2LB 2RB 3RB 0LA",
         "1RB 0LA 3RB 2LA  2LB 1RA 0RB 1LA",
         "1RB 3LA 1LA 1LA  0LB 2LA 3RA 0RB",
         "1RB 2LA 0LB 2RA  1LA 1RA 3RB 2LB",
@@ -4772,6 +4773,8 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
 
     "1RB 2LA 0RB  2LB 1LA 0RC  0LB 2RC 1RC",
     "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC",
+
+    "1RB 0LA 1LA 0RA  2LB 2RB 3RB 0LA",
 }
 
 HALTERS = set(
