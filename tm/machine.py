@@ -98,11 +98,11 @@ class Machine:
             f"TPCFGS: {self.prover.config_count}",
         ]
 
-        if self.rulapp:
+        if rulapp := self.rulapp:
             rulapp_disp = (
-                show_number(self.rulapp)
-                if isinstance(self.rulapp, int) else
-                self.rulapp.estimate()
+                show_number(rulapp)
+                if isinstance(rulapp, int) else
+                rulapp.estimate()
             )
 
             info.append(

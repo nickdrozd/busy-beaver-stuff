@@ -1284,7 +1284,7 @@ class Prover(RunProver):
             elif isinstance(marks, str):
                 self.assertTrue(
                     str(result).startswith(marks),
-                    f'    "{prog}": "{str(result)}",')
+                    f'    "{prog}": "{result}",')
             else:
                 digits, exp = marks
 
