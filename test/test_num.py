@@ -29,11 +29,11 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 
 
 NUM_COUNTS = {
-    "adds": 2287,
+    "adds": 2290,
     "divs": 2082,
-    "exps": 1259,
-    "muls": 1412,
-    "totl": 7040,
+    "exps": 1261,
+    "muls": 1415,
+    "totl": 7048,
 }
 
 
@@ -149,8 +149,11 @@ class TestNum(TestCase):
             self,
             val1: Count,
             val2: Count,
-            comps: tuple[Count, Count],
+            comps: tuple[Count, Count] | None = None,
     ):
+        if comps is None:
+            comps = (val1, val2)
+
         with self.assertRaises(NotImplementedError) as ctx:
             self.assertLess(val1, val2)
 
@@ -991,6 +994,10 @@ class TestNum(TestCase):
         self.assertFalse(
             ((Exp(2, 88) * (-1 + (2 ** ((-256 + Exp(2, 88)) // 3)))) + ((2 ** ((8 + Exp(2, 88)) // 3)) * (-1 + (2 ** ((Exp(2, 88) * (-1 + (2 ** ((-256 + Exp(2, 88)) // 3)))) // 3)))))
                 < (Exp(2, 88) * (-1 + (2 ** ((-256 + Exp(2, 88)) // 3)))))
+
+        self.assert_less_not_implemented(
+            ((3 + (9 * Exp(2, 13))) * Exp(2, (-7 + (73731 * Exp(2, 2))))),
+            (73731 * Exp(2, 2)))
 
     def test_exp_add(self):
         self.assert_num(
