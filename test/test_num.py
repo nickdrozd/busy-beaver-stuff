@@ -28,6 +28,15 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 }
 
 
+NUM_COUNTS = {
+    "adds": 2287,
+    "divs": 2082,
+    "exps": 1259,
+    "muls": 1412,
+    "totl": 7040,
+}
+
+
 def clear_caches() -> None:
     for cache in CACHES.values():
         cache.clear()
@@ -67,13 +76,8 @@ class TestNum(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        assert_num_counts({
-            "adds": 2287,
-            "divs": 2082,
-            "exps": 1259,
-            "muls": 1412,
-            "totl": 7040,
-        })
+        assert_num_counts(
+            NUM_COUNTS)
 
     def assert_mod(
             self,
