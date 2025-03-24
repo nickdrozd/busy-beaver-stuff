@@ -757,7 +757,6 @@ impl Backstepper {
             .then_some(!push.matches_color(self.scan))
     }
 
-    #[expect(clippy::missing_const_for_fn)]
     fn pulls_indef(&self, shift: Shift) -> bool {
         let pull = if shift { &self.lspan } else { &self.rspan };
 
