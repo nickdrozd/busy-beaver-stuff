@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    instrs::{Color, CompProg, Instr, Shift, Slot, State},
+    instrs::{Color, CompProg, Instr, Parse as _, Shift, Slot, State},
     tape::{
         Alignment, BasicBlock as Block, Block as _, Count, Pos,
         Span as GenSpan,
@@ -293,45 +293,28 @@ fn step_configs(
 /**************************************/
 
 fn halt_configs(comp: &CompProg) -> Configs {
-    let mut configs = Configs::new();
-
-    let (max_state, max_color) = comp
-        .keys()
-        .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
-
-    for state in 0..=max_state {
-        for color in 0..=max_color {
-            if !comp.contains_key(&(state, color)) {
-                configs.push(Config::new(
-                    state,
-                    Backstepper::init_halt(color),
-                ));
-            }
-        }
-    }
-
-    configs
+    comp.halt_slots()
+        .iter()
+        .map(|&(state, color)| {
+            Config::new(state, Backstepper::init_halt(color))
+        })
+        .collect()
 }
 
 fn erase_configs(comp: &CompProg) -> Configs {
-    comp.iter()
-        .filter_map(|(&(state, color), &instr)| match instr {
-            (0, _, _) if color != 0 => {
-                Some(Config::new(state, Backstepper::init_blank(color)))
-            },
-            _ => None,
+    comp.erase_slots()
+        .iter()
+        .map(|&(state, color)| {
+            Config::new(state, Backstepper::init_blank(color))
         })
         .collect()
 }
 
 fn zero_reflexive_configs(comp: &CompProg) -> Configs {
-    comp.iter()
-        .filter_map(|(&slot, &(_, shift, trans))| match slot {
-            (state, 0) if trans == state => Some(Config::new(
-                state,
-                Backstepper::init_spinout(shift),
-            )),
-            _ => None,
+    comp.zr_shifts()
+        .iter()
+        .map(|&(state, shift)| {
+            Config::new(state, Backstepper::init_spinout(shift))
         })
         .collect()
 }
@@ -359,9 +342,7 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 }
 
 #[cfg(test)]
-use crate::instrs::{
-    read_color, read_shift, read_slot, read_state, Parse as _,
-};
+use crate::instrs::{read_color, read_shift, read_slot, read_state};
 
 #[cfg(test)]
 fn read_entry(entry: &str) -> Entry {

@@ -1,7 +1,4 @@
-use std::collections::BTreeMap as Dict;
-
-#[cfg(test)]
-use std::collections::BTreeSet as Set;
+use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
 use pyo3::pyfunction;
 
@@ -52,6 +49,10 @@ pub trait Parse {
     fn from_str(prog: &str) -> Self;
     fn show(&self, params: Option<Params>) -> String;
 
+    fn halt_slots(&self) -> Set<Slot>;
+    fn erase_slots(&self) -> Set<Slot>;
+    fn zr_shifts(&self) -> Set<(State, Shift)>;
+
     #[cfg(test)]
     fn incomplete(&self, params: Params, halt: bool) -> bool;
 }
@@ -95,6 +96,44 @@ impl Parse for CompProg {
             })
             .collect::<Vec<_>>()
             .join("  ")
+    }
+
+    fn halt_slots(&self) -> Set<Slot> {
+        let mut slots = Set::new();
+
+        let (max_state, max_color) = self
+            .keys()
+            .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
+
+        for state in 0..=max_state {
+            for color in 0..=max_color {
+                let slot = (state, color);
+
+                if !self.contains_key(&slot) {
+                    slots.insert(slot);
+                }
+            }
+        }
+
+        slots
+    }
+
+    fn erase_slots(&self) -> Set<Slot> {
+        self.iter()
+            .filter_map(|(&(state, color), &instr)| match instr {
+                (0, _, _) if color != 0 => Some((state, color)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn zr_shifts(&self) -> Set<(State, Shift)> {
+        self.iter()
+            .filter_map(|(&slot, &(_, shift, trans))| match slot {
+                (state, 0) if trans == state => Some((state, shift)),
+                _ => None,
+            })
+            .collect()
     }
 
     #[cfg(test)]
