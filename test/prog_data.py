@@ -4450,11 +4450,15 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 0LA 1LA 0RA  2LB 2RB 3RB 0LA",
 }
 
+MAYBE_HALTERS = {
+    "1RB 2LC 1RC  2LC ... 2RB  2LA 0LB 0RA",
+}
+
 HALTERS = set(
     HALT
     | HALT_SLOW
     | PROVER_HALT
-) | DO_HALT
+) | DO_HALT | MAYBE_HALTERS
 
 SPINNERS = set(
     SPINOUT
