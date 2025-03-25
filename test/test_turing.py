@@ -327,10 +327,7 @@ class Reason(TuringTest):
             self.assert_cant_halt_backward(prog, 200)
 
     def test_spinout(self):
-        for prog in SPINNERS:
-            if prog in MACRO_SPINOUT:
-                continue
-
+        for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_backward(prog)
 
         for prog in NONSPINNERS:
@@ -603,7 +600,7 @@ class Cps(TuringTest):
             self.assert_cant_blank_cps(prog, 8)
 
     def test_spinout(self):
-        for prog in SPINNERS:
+        for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_cps(prog)
 
         for prog in NONSPINNERS:
