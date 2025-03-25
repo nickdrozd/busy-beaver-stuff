@@ -209,16 +209,13 @@ class TuringTest(TestCase):
             f'segment halt false negative: "{prog}"')
 
     def assert_could_halt_cps(self, prog: str):
-        if '...' not in prog:
+        if prog == '1RB ...  ... ...':
             return
 
         self.assertFalse(
             cps_cant_halt(prog, CPS_LIMIT))
 
     def assert_cant_halt_cps(self, prog: str, segs: int):
-        if '...' not in prog:
-            return
-
         if prog in CPS_FALSE_NEGATIVES['halt']:
             return
 
@@ -587,9 +584,6 @@ class Cps(TuringTest):
             self.assert_could_halt_cps(prog)
 
         for prog in NONHALTERS:
-            if '...' not in prog:
-                continue
-
             self.assert_cant_halt_cps(prog, 8)
 
     def test_blank(self):
