@@ -432,6 +432,7 @@ QUASIHALT = {
     "1RB 1LD  0RC 1LA  0LD 1RC  0RE 0LA  1LA 0RB": ( 22, 6),
     "1RB 0RE  0RC 0LA  1RD 1LA  1LE ...  1RE 0LC": ( 17, 3),
     "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB": ( 10, 3),
+    "0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD": ( 11, 8),
     "1RB 0RB  0RC 1LA  0RD 0LE  1LB ...  1LE 0RA": (9, 4),
     "1RB 0RD  1RC 1LE  0LA ...  1LD 0RE  1LA 0RB": (7, 5),
     "1RB 0LD  1RC 0RD  1RD ...  1LE 0LB  0LE 1RA": (7, 5),
@@ -1896,6 +1897,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
             "1RB 1RD  1LC 1RB  0LB 0RA  1RC ...",
             "1RB 2LB ...  2LA 1RC 1LB  2RC 0LB 1LC",
             "1RB 2LC ...  2LA 1RC 1LB  2RC 0LB 1LC",
+            "0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD",
             "1RB 1LA  0LA 1RC  1RA 1RD  ... 0RE  0LA 1RC",
             "1RB 1LB  1LC 0RE  0LD 0RA  1RA 0LD  ... 0RC",
             "1RB 1LC  0LA 0RD  1LA 1LE  1RB 1LE  0LC ...",
@@ -2372,7 +2374,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
         "step_limit": 1,
         "depth_limit": 45,
         "spinout": 93,
-        "linrec": 155,
+        "linrec": 156,
     },
     "blank": {
         "depth_limit": 2,
@@ -2439,6 +2441,8 @@ SEGMENT_HALT_FALSE_NEGATIVES = {
     "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
     "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
 
+    "1RB 0RB  1LC 1RB  ... 0LD  1RA 1LD",
+    "1RB 1LA  1LA 0RC  1LD 1RC  ... 0LA",
     "1RB ...  0LC 0RA  1LD 1RC  0RB 0LD",
     "1RB ...  0LC 1RA  1LD 1RC  0RB 0LD",
     "1RB ...  0LC 1RC  0RC 1LD  1LA 0LD",
@@ -2805,7 +2809,7 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
 ########################################
 
 CPS_FALSE_POSITIVE_COUNTS = {
-    "halt": 40,
+    "halt": 42,
     "blank": 113,
     "spinout": 266,
 }
@@ -2827,6 +2831,8 @@ CPS_FALSE_NEGATIVES = {
         "1RB 0LB  1LC 1RB  ... 1LA",
         "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
         "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
+        "1RB 0RB  1LC 1RB  ... 0LD  1RA 1LD",
+        "1RB 1LA  1LA 0RC  1LD 1RC  ... 0LA",
         "1RB 1LA  1LA 1RC  ... 0RD  0LA 1RD",
         "1RB 0LD  1LC 1RA  0RB 0LC  ... 1LA",
         "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
@@ -4343,6 +4349,8 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",
     "1RB 2LA 3RB 0RB  1LB 1LA 1RA 0RB",
 
+    "1RB 0RB  1LC 1RB  ... 0LD  1RA 1LD",
+    "1RB 1LA  1LA 0RC  1LD 1RC  ... 0LA",
     "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
     "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
     "1RB 1RC  1LC 0LD  1RA 0LB  ... 0LA",
