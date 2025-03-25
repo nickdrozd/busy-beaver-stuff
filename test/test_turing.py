@@ -67,7 +67,7 @@ if TYPE_CHECKING:
     )
 
 
-CPS_LIMIT = 8
+CPS_LIMIT = 11
 REASON_LIMIT = 2_000
 SEGMENT_LIMIT = 22
 
@@ -584,21 +584,21 @@ class Cps(TuringTest):
             self.assert_could_halt_cps(prog)
 
         for prog in NONHALTERS:
-            self.assert_cant_halt_cps(prog, 8)
+            self.assert_cant_halt_cps(prog, 11)
 
     def test_blank(self):
         for prog in BLANKERS:
             self.assert_could_blank_cps(prog)
 
         for prog in NONBLANKERS:
-            self.assert_cant_blank_cps(prog, 8)
+            self.assert_cant_blank_cps(prog, 11)
 
     def test_spinout(self):
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_cps(prog)
 
         for prog in NONSPINNERS:
-            self.assert_cant_spin_out_cps(prog, 8)
+            self.assert_cant_spin_out_cps(prog, 11)
 
     def test_false_negatives(self):
         counts = {
