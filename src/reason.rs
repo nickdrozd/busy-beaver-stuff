@@ -6,7 +6,9 @@ use std::{
 };
 
 use crate::{
-    instrs::{Color, CompProg, Instr, Parse as _, Shift, Slot, State},
+    instrs::{
+        Color, CompProg, GetInstr as _, Instr, Shift, Slot, State,
+    },
     tape::{
         Alignment, BasicBlock as Block, Block as _, Count, Pos,
         Span as GenSpan,
@@ -336,7 +338,9 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 }
 
 #[cfg(test)]
-use crate::instrs::{read_color, read_shift, read_slot, read_state};
+use crate::instrs::{
+    read_color, read_shift, read_slot, read_state, Parse as _,
+};
 
 #[cfg(test)]
 fn read_entry(entry: &str) -> Entry {

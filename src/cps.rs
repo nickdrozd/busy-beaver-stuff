@@ -3,7 +3,7 @@ use core::{fmt, iter::once};
 use std::collections::{BTreeMap as Dict, HashSet as Set};
 
 use crate::instrs::{
-    show_slot, Color, CompProg, Parse as _, Shift, State, Term,
+    show_slot, Color, CompProg, GetInstr as _, Shift, State, Term,
 };
 
 use Term::*;

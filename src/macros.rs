@@ -2,10 +2,10 @@
 
 use core::{cell::RefCell, iter::once};
 
-use std::collections::BTreeMap as Dict;
+use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
 use crate::instrs::{
-    Color, CompProg, GetInstr, Instr, Params, Slot, State,
+    Color, CompProg, GetInstr, Instr, Params, Shift, Slot, State,
 };
 
 type Tape = Vec<Color>;
@@ -128,6 +128,23 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
         self.instrs.borrow_mut().insert(*slot, instr);
 
         Some(instr)
+    }
+
+    fn halt_slots(&self) -> Set<Slot> {
+        self.instrs.borrow().halt_slots()
+    }
+
+    fn erase_slots(&self) -> Set<Slot> {
+        self.instrs.borrow().erase_slots()
+    }
+
+    fn zr_shifts(&self) -> Set<(State, Shift)> {
+        self.instrs.borrow().zr_shifts()
+    }
+
+    #[cfg(test)]
+    fn incomplete(&self, _params: Params, _halt: bool) -> bool {
+        unimplemented!()
     }
 }
 

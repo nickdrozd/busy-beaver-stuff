@@ -4,7 +4,7 @@ use crate::{
     blocks::opt_block,
     cps::Cps as _,
     graph::is_connected,
-    instrs::{CompProg, Params, Parse as _},
+    instrs::{CompProg, GetInstr as _, Params, Parse as _},
     machine::{quick_term_or_rec, run_for_infrul, run_prover},
     macros::{make_backsymbol_macro, make_block_macro},
     reason::Backward as _,

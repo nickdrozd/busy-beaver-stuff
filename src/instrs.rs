@@ -28,26 +28,6 @@ pub enum Term {
 
 pub trait GetInstr {
     fn get_instr(&self, slot: &Slot) -> Option<Instr>;
-}
-
-impl GetInstr for CompProg {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
-        self.get(slot).copied()
-    }
-}
-
-/**************************************/
-
-const UNDF: char = '.';
-
-const LEFT: char = 'L';
-const RIGHT: char = 'R';
-
-/**************************************/
-
-pub trait Parse {
-    fn from_str(prog: &str) -> Self;
-    fn show(&self, params: Option<Params>) -> String;
 
     fn halt_slots(&self) -> Set<Slot>;
     fn erase_slots(&self) -> Set<Slot>;
@@ -57,45 +37,9 @@ pub trait Parse {
     fn incomplete(&self, params: Params, halt: bool) -> bool;
 }
 
-impl Parse for CompProg {
-    fn from_str(prog: &str) -> Self {
-        prog.trim()
-            .split("  ")
-            .map(|instrs| instrs.split(' ').map(read_instr))
-            .enumerate()
-            .flat_map(|(state, instrs)| {
-                instrs.enumerate().filter_map(move |(color, instr)| {
-                    instr.map(|instr| {
-                        ((state as State, color as Color), instr)
-                    })
-                })
-            })
-            .collect()
-    }
-
-    fn show(&self, params: Option<Params>) -> String {
-        let (max_state, max_color) = params.unwrap_or_else(|| {
-            let (ms, mx) = self.iter().fold(
-                (1, 1),
-                |(ms, mc), (&(ss, sc), &(ic, _, is))| {
-                    (ms.max(ss).max(is), mc.max(sc).max(ic))
-                },
-            );
-
-            (1 + ms, 1 + mx)
-        });
-
-        (0..max_state)
-            .map(|state| {
-                (0..max_color)
-                    .map(|color| {
-                        show_instr(self.get(&(state, color)).copied())
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            })
-            .collect::<Vec<_>>()
-            .join("  ")
+impl GetInstr for CompProg {
+    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
+        self.get(slot).copied()
     }
 
     fn halt_slots(&self) -> Set<Slot> {
@@ -152,6 +96,62 @@ impl Parse for CompProg {
         (colors == 2 && !used_colors.contains(&0))
             || (0..states).any(|state| !used_states.contains(&state))
             || (1..colors).any(|color| !used_colors.contains(&color))
+    }
+}
+
+/**************************************/
+
+const UNDF: char = '.';
+
+const LEFT: char = 'L';
+const RIGHT: char = 'R';
+
+/**************************************/
+
+pub trait Parse {
+    fn from_str(prog: &str) -> Self;
+    fn show(&self, params: Option<Params>) -> String;
+}
+
+impl Parse for CompProg {
+    fn from_str(prog: &str) -> Self {
+        prog.trim()
+            .split("  ")
+            .map(|instrs| instrs.split(' ').map(read_instr))
+            .enumerate()
+            .flat_map(|(state, instrs)| {
+                instrs.enumerate().filter_map(move |(color, instr)| {
+                    instr.map(|instr| {
+                        ((state as State, color as Color), instr)
+                    })
+                })
+            })
+            .collect()
+    }
+
+    fn show(&self, params: Option<Params>) -> String {
+        let (max_state, max_color) = params.unwrap_or_else(|| {
+            let (ms, mx) = self.iter().fold(
+                (1, 1),
+                |(ms, mc), (&(ss, sc), &(ic, _, is))| {
+                    (ms.max(ss).max(is), mc.max(sc).max(ic))
+                },
+            );
+
+            (1 + ms, 1 + mx)
+        });
+
+        (0..max_state)
+            .map(|state| {
+                (0..max_color)
+                    .map(|color| {
+                        show_instr(self.get(&(state, color)).copied())
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .collect::<Vec<_>>()
+            .join("  ")
     }
 }
 
