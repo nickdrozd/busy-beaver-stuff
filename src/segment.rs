@@ -147,7 +147,8 @@ fn all_segments_reached(
     seg: Segments,
     goal: &Term,
 ) -> Option<SearchResult> {
-    let mut configs = Configs::new(prog, seg, goal);
+    let mut configs =
+        Configs::new(&prog.halts, &prog.spinouts, seg, goal);
 
     let branches = &prog.branches;
 
@@ -262,16 +263,18 @@ struct Configs {
 }
 
 impl Configs {
-    fn new(prog: &AnalyzedProg, seg: Segments, goal: &Term) -> Self {
+    fn new(
+        halts: &Halts,
+        spinouts: &Spinouts,
+        seg: Segments,
+        goal: &Term,
+    ) -> Self {
         let reached = match goal {
             Blank => Dict::new(),
-            Halt => prog
-                .halts
-                .iter()
-                .map(|&state| (state, Set::new()))
-                .collect(),
-            Spinout => prog
-                .spinouts
+            Halt => {
+                halts.iter().map(|&state| (state, Set::new())).collect()
+            },
+            Spinout => spinouts
                 .keys()
                 .map(|&state| (state, Set::new()))
                 .collect(),
