@@ -40,6 +40,33 @@ pub fn is_connected(prog: &CompProg, states: State) -> bool {
     false
 }
 
+#[cfg(test)]
+use crate::instrs::Parse as _;
+
+#[cfg(test)]
+const UNCONNECTED: [(&str, State); 2] = [
+    ("1RB 1LB  1LA 1LC  1RC 0LC", 3),
+    ("1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD", 5),
+];
+
+#[cfg(test)]
+const CONNECTED: [(&str, State); 3] = [
+    ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", 4),
+    ("1RB 0LB  0LC 0RD  1RD 1LB  1LE 0RA  ... 1LA", 5),
+    ("1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC", 5),
+];
+
+#[test]
+fn test_connected() {
+    for (prog, states) in UNCONNECTED {
+        assert!(!is_connected(&CompProg::from_str(prog), states));
+    }
+
+    for (prog, states) in CONNECTED {
+        assert!(is_connected(&CompProg::from_str(prog), states));
+    }
+}
+
 /**************************************/
 
 fn get_exitpoints(prog: &CompProg) -> Dict<State, Vec<State>> {
@@ -60,11 +87,6 @@ fn get_exitpoints(prog: &CompProg) -> Dict<State, Vec<State>> {
 
     exitpoints
 }
-
-/**************************************/
-
-#[cfg(test)]
-use crate::instrs::Parse as _;
 
 #[cfg(test)]
 macro_rules! dict_from {
@@ -101,34 +123,4 @@ fn test_exitpoints() {
         "1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC",
         { 0 => [1], 1 => [2, 4], 2 => [3], 3 => [0, 1], 4 => [2, 3] }
     );
-}
-
-#[cfg(test)]
-macro_rules! assert_connected {
-    ($input:expr, $states:expr) => {
-        assert!(is_connected(&CompProg::from_str($input), $states));
-    };
-}
-
-#[cfg(test)]
-macro_rules! assert_unconnected {
-    ($input:expr, $states:expr) => {
-        assert!(!is_connected(&CompProg::from_str($input), $states));
-    };
-}
-
-#[test]
-fn test_connected() {
-    assert_unconnected!("1RB 1LB  1LA 1LC  1RC 0LC", 3);
-
-    assert_unconnected!(
-        "1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD",
-        5
-    );
-
-    assert_connected!("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", 4);
-
-    assert_connected!("1RB 0LB  0LC 0RD  1RD 1LB  1LE 0RA  ... 1LA", 5);
-
-    assert_connected!("1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC", 5);
 }
