@@ -295,27 +295,21 @@ fn step_configs(
 fn halt_configs(comp: &CompProg) -> Configs {
     comp.halt_slots()
         .iter()
-        .map(|&(state, color)| {
-            Config::new(state, Backstepper::init_halt(color))
-        })
+        .map(|&(state, color)| Config::init_halt(state, color))
         .collect()
 }
 
 fn erase_configs(comp: &CompProg) -> Configs {
     comp.erase_slots()
         .iter()
-        .map(|&(state, color)| {
-            Config::new(state, Backstepper::init_blank(color))
-        })
+        .map(|&(state, color)| Config::init_blank(state, color))
         .collect()
 }
 
 fn zero_reflexive_configs(comp: &CompProg) -> Configs {
     comp.zr_shifts()
         .iter()
-        .map(|&(state, shift)| {
-            Config::new(state, Backstepper::init_spinout(shift))
-        })
+        .map(|&(state, shift)| Config::init_spinout(state, shift))
         .collect()
 }
 
@@ -487,6 +481,18 @@ impl Config {
             recs: 0,
             prev: None,
         }
+    }
+
+    const fn init_halt(state: State, color: Color) -> Self {
+        Self::new(state, Backstepper::init_halt(color))
+    }
+
+    const fn init_blank(state: State, color: Color) -> Self {
+        Self::new(state, Backstepper::init_blank(color))
+    }
+
+    const fn init_spinout(state: State, shift: Shift) -> Self {
+        Self::new(state, Backstepper::init_spinout(shift))
     }
 
     fn descendant(
