@@ -33,6 +33,8 @@ pub trait GetInstr {
     fn erase_slots(&self) -> Set<Slot>;
     fn zr_shifts(&self) -> Set<(State, Shift)>;
 
+    fn params(&self) -> Params;
+
     #[cfg(test)]
     fn incomplete(&self, params: Params, halt: bool) -> bool;
 }
@@ -45,9 +47,7 @@ impl GetInstr for CompProg {
     fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
-        let (max_state, max_color) = self
-            .keys()
-            .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
+        let (max_state, max_color) = self.params();
 
         for state in 0..=max_state {
             for color in 0..=max_color {
@@ -78,6 +78,11 @@ impl GetInstr for CompProg {
                 _ => None,
             })
             .collect()
+    }
+
+    fn params(&self) -> Params {
+        self.keys()
+            .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)))
     }
 
     #[cfg(test)]

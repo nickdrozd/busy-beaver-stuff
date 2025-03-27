@@ -142,6 +142,13 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
         self.instrs.borrow().zr_shifts()
     }
 
+    fn params(&self) -> Params {
+        (
+            self.logic.macro_states() as State,
+            self.logic.macro_colors() as Color,
+        )
+    }
+
     #[cfg(test)]
     fn incomplete(&self, _params: Params, _halt: bool) -> bool {
         unimplemented!()
