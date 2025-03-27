@@ -7,8 +7,8 @@ use std::collections::{BTreeMap as Dict, HashSet as Set};
 
 use crate::{
     instrs::{
-        show_state, Color, CompProg, Instr, Params, Shift, Slot, State,
-        Term,
+        show_state, Color, CompProg, GetInstr, Instr, Params, Shift,
+        Slot, State, Term,
     },
     tape::{BasicBlock as Block, Block as _, Count},
 };
@@ -462,7 +462,7 @@ impl Config {
     #[expect(clippy::unwrap_in_result)]
     fn run_to_edge(
         &mut self,
-        prog: &CompProg,
+        prog: &impl GetInstr,
         goal: &Term,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
@@ -472,23 +472,23 @@ impl Config {
         let mut copy = self.clone();
 
         while let Some(slot) = self.slot() {
-            let Some(instr) = prog.get(&slot) else {
+            let Some(instr) = prog.get_instr(&slot) else {
                 return Some(Found(Halt));
             };
 
             if (self.init || goal == &Spinout)
-                && self.spinout(instr)
+                && self.spinout(&instr)
                 && (self.init || configs.check_reached(self, goal))
             {
                 return Some(Found(Spinout));
             }
 
-            self.step(instr);
+            self.step(&instr);
 
             #[cfg(debug_assertions)]
             println!("    {self}");
 
-            let &(print, _, state) = instr;
+            let (print, _, state) = instr;
 
             if print == 0 && self.tape.blank() {
                 if state == 0 {
@@ -515,9 +515,9 @@ impl Config {
                 continue;
             }
 
-            let instr = prog.get(&copy.slot().unwrap()).unwrap();
+            let instr = prog.get_instr(&copy.slot().unwrap()).unwrap();
 
-            copy.step(instr);
+            copy.step(&instr);
 
             if copy.state == self.state && copy.tape == self.tape {
                 return Some(Repeat);
@@ -768,7 +768,8 @@ impl<'p> AnalyzedProg<'p> {
             let mut rights = Set::new();
 
             for color in 0..colors {
-                let Some(&(_, shift, next)) = prog.get(&(state, color))
+                let Some((_, shift, next)) =
+                    prog.get_instr(&(state, color))
                 else {
                     halts.insert(state);
                     continue;
