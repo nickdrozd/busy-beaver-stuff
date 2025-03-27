@@ -69,8 +69,10 @@ fn test_connected() {
 
 /**************************************/
 
-fn get_exitpoints(prog: &CompProg) -> Dict<State, Vec<State>> {
-    let mut exitpoints: Dict<State, Vec<State>> = Dict::new();
+type Exitpoints = Dict<State, Vec<State>>;
+
+fn get_exitpoints(prog: &CompProg) -> Exitpoints {
+    let mut exitpoints = Exitpoints::new();
 
     for (&(src, _), &(_, _, dst)) in prog {
         if src == dst {
