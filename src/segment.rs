@@ -7,8 +7,8 @@ use std::collections::{BTreeMap as Dict, HashSet as Set};
 
 use crate::{
     instrs::{
-        show_state, Color, CompProg, GetInstr, Instr, Params, Shift,
-        Slot, State, Term,
+        show_state, Color, GetInstr, Instr, Params, Shift, Slot, State,
+        Term,
     },
     tape::{BasicBlock as Block, Block as _, Count},
 };
@@ -60,7 +60,7 @@ pub trait Segment {
     ) -> SegmentResult;
 }
 
-impl Segment for CompProg {
+impl<P: GetInstr> Segment for P {
     fn seg_cant_halt(
         &self,
         params: Params,
@@ -108,7 +108,7 @@ impl From<Term> for SegmentResult {
 }
 
 fn segment_cant_reach(
-    prog: &CompProg,
+    prog: &impl GetInstr,
     params: Params,
     segs: Segments,
     goal: &Term,
@@ -142,8 +142,8 @@ fn segment_cant_reach(
 
 /**************************************/
 
-fn all_segments_reached(
-    prog: &AnalyzedProg,
+fn all_segments_reached<P: GetInstr>(
+    prog: &AnalyzedProg<P>,
     seg: Segments,
     goal: &Term,
 ) -> Option<SearchResult> {
@@ -748,15 +748,15 @@ type Spinouts = Dict<State, Shift>;
 type Diffs = Vec<State>;
 type Dirs = Dict<bool, Vec<State>>;
 
-struct AnalyzedProg<'p> {
-    prog: &'p CompProg,
+struct AnalyzedProg<'p, P: GetInstr> {
+    prog: &'p P,
     halts: Halts,
     spinouts: Spinouts,
     branches: Dict<State, (Diffs, Dirs)>,
 }
 
-impl<'p> AnalyzedProg<'p> {
-    fn new(prog: &'p CompProg, (states, colors): Params) -> Self {
+impl<'p, P: GetInstr> AnalyzedProg<'p, P> {
+    fn new(prog: &'p P, (states, colors): Params) -> Self {
         let mut halts = Set::new();
         let mut spinouts = Dict::new();
 
@@ -814,7 +814,7 @@ impl<'p> AnalyzedProg<'p> {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::Parse as _;
+use crate::instrs::{CompProg, Parse as _};
 
 #[cfg(test)]
 impl Tape {
