@@ -2,9 +2,7 @@ use core::{fmt, iter::once};
 
 use std::collections::{BTreeMap as Dict, HashSet as Set};
 
-use crate::instrs::{
-    show_slot, Color, CompProg, GetInstr as _, Shift, State, Term,
-};
+use crate::instrs::{show_slot, Color, GetInstr, Shift, State, Term};
 
 use Term::*;
 
@@ -21,7 +19,7 @@ pub trait Cps {
     fn cps_cant_spin_out(&self, rad: Radius) -> bool;
 }
 
-impl Cps for CompProg {
+impl<T: GetInstr> Cps for T {
     fn cps_cant_halt(&self, rad: Radius) -> bool {
         if self.halt_slots().is_empty() {
             return true;
@@ -49,13 +47,17 @@ impl Cps for CompProg {
 
 /**************************************/
 
-fn cps_run(prog: &CompProg, rad: Radius, goal: &Term) -> bool {
+fn cps_run(prog: &impl GetInstr, rad: Radius, goal: &Term) -> bool {
     assert!(rad > 1);
 
     (2..rad).any(|seg| cps_cant_reach(prog, seg, goal))
 }
 
-fn cps_cant_reach(prog: &CompProg, rad: Radius, goal: &Term) -> bool {
+fn cps_cant_reach(
+    prog: &impl GetInstr,
+    rad: Radius,
+    goal: &Term,
+) -> bool {
     let mut configs = Configs::init(rad);
 
     for _ in 0..MAX_LOOPS {
@@ -67,8 +69,8 @@ fn cps_cant_reach(prog: &CompProg, rad: Radius, goal: &Term) -> bool {
         while let Some(config) = todo.pop() {
             let Config { state, mut tape } = config;
 
-            let Some(&(print, shift, next_state)) =
-                prog.get(&(state, tape.scan))
+            let Some((print, shift, next_state)) =
+                prog.get_instr(&(state, tape.scan))
             else {
                 match goal {
                     Halt => return false,
