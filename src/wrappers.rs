@@ -3,6 +3,7 @@ use pyo3::{pyclass, pyfunction, pymethods};
 use crate::{
     blocks::opt_block,
     cps::Cps as _,
+    ctl::Ctl as _,
     graph::is_connected,
     instrs::{CompProg, Params, Parse as _, State},
     machine::quick_term_or_rec,
@@ -202,6 +203,23 @@ pub fn py_cps_cant_blank(prog: &str, segs: usize) -> bool {
 #[pyfunction]
 pub fn py_cps_cant_spin_out(prog: &str, segs: usize) -> bool {
     CompProg::from_str(prog).cps_cant_spin_out(segs)
+}
+
+/***************************************/
+
+#[pyfunction]
+pub fn py_ctl_cant_halt(prog: &str, steps: usize) -> bool {
+    CompProg::from_str(prog).ctl_cant_halt(steps)
+}
+
+#[pyfunction]
+pub fn py_ctl_cant_blank(prog: &str, steps: usize) -> bool {
+    CompProg::from_str(prog).ctl_cant_blank(steps)
+}
+
+#[pyfunction]
+pub fn py_ctl_cant_spin_out(prog: &str, steps: usize) -> bool {
+    CompProg::from_str(prog).ctl_cant_spin_out(steps)
 }
 
 /***************************************/

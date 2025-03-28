@@ -191,7 +191,7 @@ impl<B: Block> Span<B> {
         (next_scan, stepped)
     }
 
-    fn push(&mut self, print: Color, stepped: Count) {
+    pub fn push(&mut self, print: Color, stepped: Count) {
         match self.0.first_mut() {
             Some(block) if block.get_color() == print => {
                 block.add_count(stepped);
@@ -250,13 +250,12 @@ pub trait GetSig {
 
 /**************************************/
 
-#[expect(clippy::partial_pub_fields)]
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Tape<B: Block> {
     pub scan: Color,
 
-    lspan: Span<B>,
-    rspan: Span<B>,
+    pub lspan: Span<B>,
+    pub rspan: Span<B>,
 }
 
 pub type BasicTape = Tape<BasicBlock>;

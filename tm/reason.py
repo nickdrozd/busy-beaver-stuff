@@ -13,6 +13,10 @@ from tm.rust_stuff import (
     py_cps_cant_halt as cps_cant_halt,
     py_cps_cant_blank as cps_cant_blank,
     py_cps_cant_spin_out as cps_cant_spin_out,
+
+    py_ctl_cant_halt as ctl_cant_halt,
+    py_ctl_cant_blank as ctl_cant_blank,
+    py_ctl_cant_spin_out as ctl_cant_spin_out,
 )
 
 from typing import TYPE_CHECKING
