@@ -1252,6 +1252,8 @@ KERNEL = {
     "1RB 1LC  1RD 0RA  ... 1LE  1LA 0RE  0LA 1RB": 3,  # partial
     "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA": 3,  # 10^18
 
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1RE  1LF 0RB  0RC 0RE": 4,
+
     # Recur
     "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC": 3,
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": 3, # 158491, 17620 Boyd
@@ -3556,6 +3558,7 @@ PROVER_SPINOUT: ProverEst = {
 
     # 6/2
     "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": 2,
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1RE  1LF 0RB  0RC 0RE": 0,
 }
 
 PROVER_QUASIHALT = {
@@ -3629,11 +3632,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 112258,
-    "divs": 13780,
-    "exps": 110833,
-    "muls": 12047,
-    "totl": 248918,
+    "adds": 112520,
+    "divs": 13990,
+    "exps": 110840,
+    "muls": 12053,
+    "totl": 249403,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -3691,6 +3694,13 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "1",
             "1",
             "(1231 + (7 * (2 ** 9)))",
+        ),
+
+        "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1RE  1LF 0RB  0RC 0RE": (
+            999,
+            "0",
+            "0",
+            "(???)",
         ),
     },
 
@@ -3909,6 +3919,20 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             1799,
             "(10 ↑↑ 3)",
             "((52 + (13 * (2 ** ((151 + (13 * (2 ** 803))) // 15)))) // 3)",
+            "(???)",
+        ),
+
+        "1RB 0LD  1RC 0RF  1LC 1LA  0LE 0RE  1LF 0RB  0RC 0RE": (
+            1123,
+            "(10 ↑↑ 16)",
+            "((-491 + (3 ** ((45 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** 11)) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 2)",
+            "(???)",
+        ),
+
+        "1RB 0LD  1RC 0RF  1LC 1LA  0LE 0RD  1LF 0RB  0RC 0RE": (
+            1136,
+            "2",
+            "2",
             "(???)",
         ),
     },
