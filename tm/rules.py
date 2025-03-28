@@ -10,6 +10,7 @@ from tm.num import (
     ExpModLimit,
     ModDepthLimit,
     Mul,
+    PeriodLimit,
     make_exp,
 )
 
@@ -284,8 +285,10 @@ def count_apps(rule: Rule, tape: IndexTape) -> Apps | None:
             div, rem = divmod(count, absdiff)
         except ExpModLimit as exp:
             raise RuleLimit(f'count_apps: {exp}') from exp
-        except ModDepthLimit as dep:
-            raise RuleLimit(f'depth-limit: {dep}') from dep
+        except ModDepthLimit as mod:
+            raise RuleLimit(f'depth-limit: {mod}') from mod
+        except PeriodLimit as per:
+            raise RuleLimit(f'period-limit: {per}') from per
 
         times, min_res = (
             (div, rem)

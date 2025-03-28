@@ -18,6 +18,9 @@ class ExpModLimit(Exception):
 class ModDepthLimit(Exception):
     pass
 
+class PeriodLimit(Exception):
+    pass
+
 
 type Count = int | Num
 
@@ -1343,6 +1346,10 @@ def find_period(base: int, mod: int) -> int:
         return 0
 
     val = 1
+
+    if mod >= 2 ** 24:
+        raise PeriodLimit(f'{base} ** ... % {mod}')
+
     for period in range(1, mod):
         val *= base
         val %= mod
