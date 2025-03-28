@@ -509,3 +509,17 @@ fn test_rec() {
         );
     }
 }
+
+/**************************************/
+
+#[cfg(test)]
+use crate::macros::make_backsymbol_macro;
+
+#[test]
+fn test_macro_loop() {
+    let prog = CompProg::from_str("1RB 0RA 1LB  2LA 2RB 0LA");
+    let block = make_block_macro(&prog, (2, 3), 3);
+    let back = make_backsymbol_macro(&block, (2, 3), 1);
+
+    assert!(!run_for_infrul(&back, 1000));
+}
