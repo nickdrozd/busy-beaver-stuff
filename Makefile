@@ -3,7 +3,7 @@
 all : machines idris lint test tools
 
 clean-python :
-	rm -rf __pycache__ **/__pycache__ .mypy_cache .mutmut-cache .ruff_cache .coverage* html* build/ *.so **/*.so classes.png packages.png
+	rm -rf __pycache__ **/__pycache__ .mypy_cache .mutmut-cache .ruff_cache .coverage* html* build/ *.so **/*.so classes.png packages.png mypyc_annotation.html
 
 clean : clean-python clean-rust
 	$(MAKE) -C machines clean
@@ -83,6 +83,10 @@ TEST_COMPILE = test/utils.py test/lin_rec.py
 compile : rust
 	$(MYPYC) --version
 	$(MYPYC) tm tools $(TEST_COMPILE) --exclude rust_stuff
+
+mypyc-report : rust
+	$(MYPYC) --version
+	$(MYPYC) tm tools --exclude rust_stuff -a mypyc-report.html
 
 TUR = test.test_turing
 PROG = test.test_program
