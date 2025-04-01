@@ -10,6 +10,7 @@ from collections import defaultdict
 from functools import cache
 from math import ceil, floor, log, log2, log10, sqrt
 from math import gcd as pgcd
+from typing import Final
 
 
 class ExpModLimit(Exception):
@@ -2250,9 +2251,9 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
 
 ########################################
 
-TRUNCATE_COUNT = 10 ** 12
+TRUNCATE_COUNT: Final[int] = 10 ** 12
 
-MAX_LEAVES = 120
+MAX_LEAVES: Final[int] = 120
 
 def show_number(num: Count) -> str:
     if isinstance(num, int):

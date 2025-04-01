@@ -13,7 +13,7 @@ from tm.show import show_comp, show_slot, show_state
 from tm.tape import Tape, show_number
 
 if TYPE_CHECKING:
-    from typing import Self
+    from typing import Final, Self
 
     from tm.macro import GetInstr, Params, Slot, State
     from tm.tape import Count
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     Result = str | int | Undfnd
 
 
-TERM_CATS = (
+TERM_CATS: Final[tuple[str, ...]] = (
     'cfglim',
     'infrul',
     'limrul',

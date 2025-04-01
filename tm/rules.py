@@ -19,6 +19,8 @@ from tm.num import (
 Plus = int
 
 if TYPE_CHECKING:
+    from typing import Final
+
     from tm.num import Count, Num
     from tm.tape import Counts, Index
 
@@ -33,7 +35,7 @@ if TYPE_CHECKING:
     type Apps = tuple[Count, Index, int]
 
 
-RULE_DESCENT: int = 50
+RULE_DESCENT: Final[int] = 50
 
 
 class RuleLimit(Exception):
@@ -52,7 +54,8 @@ class SecondDiffRule(Exception):
     pass
 
 
-POSSIBLE_RULE_PAIRS = (3, 2), (5, 3), (5, 2), (5, 4), (4, 3)
+POSSIBLE_RULE_PAIRS: Final[tuple[tuple[int, int], ...]] = (
+    (3, 2), (5, 3), (5, 2), (5, 4), (4, 3))
 
 ########################################
 
