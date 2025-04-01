@@ -653,11 +653,11 @@ impl From<&BasicTape> for EnumTape {
 }
 
 impl EnumTape {
-    pub fn offsets(&self) -> (usize, usize) {
+    pub const fn offsets(&self) -> (usize, usize) {
         (self.l_offset.get(), self.r_offset.get())
     }
 
-    pub fn edges(&self) -> (bool, bool) {
+    pub const fn edges(&self) -> (bool, bool) {
         (self.l_edge.get(), self.r_edge.get())
     }
 
