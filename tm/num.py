@@ -1,4 +1,4 @@
-# ruff: noqa: E501, SIM102, PLR0911
+# ruff: noqa: SIM102, PLR0911
 # pylint: disable = too-complex, too-many-try-statements
 # pylint: disable = confusing-consecutive-elif, used-before-assignment
 
