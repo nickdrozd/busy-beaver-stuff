@@ -206,9 +206,10 @@ impl AddSpan for Spans {
     fn add_span(&mut self, span: &Span) {
         if let Some(colors) = self.get_mut(&span.span) {
             colors.insert(span.last);
-        } else {
-            self.insert(span.span.clone(), Set::from([span.last]));
+            return;
         }
+
+        self.insert(span.span.clone(), Set::from([span.last]));
     }
 
     fn get_colors(&self, span: &Span) -> Vec<Color> {

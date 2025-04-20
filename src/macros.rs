@@ -382,24 +382,22 @@ impl TapeColorConverter {
     }
 
     fn tape_to_color(&self, tape: Tape) -> Color {
-        let mut tc_cache = self.tc_cache.borrow_mut();
-
-        if let Some(&color) = tc_cache.get(&tape) {
-            color
-        } else {
-            let color = tape.iter().rev().enumerate().fold(
-                0,
-                |acc, (place, &value)| {
-                    acc + value * self.base_colors.pow(place as u32)
-                },
-            );
-
-            tc_cache.insert(tape.clone(), color);
-
-            self.ct_cache.borrow_mut().insert(color, tape);
-
-            color
+        if let Some(&color) = self.tc_cache.borrow().get(&tape) {
+            return color;
         }
+
+        let color = tape.iter().rev().enumerate().fold(
+            0,
+            |acc, (place, &value)| {
+                acc + value * self.base_colors.pow(place as u32)
+            },
+        );
+
+        self.tc_cache.borrow_mut().insert(tape.clone(), color);
+
+        self.ct_cache.borrow_mut().insert(color, tape);
+
+        color
     }
 }
 

@@ -666,13 +666,15 @@ impl EnumTape {
     }
 
     fn check_offsets(&self, block: &EnumBlock) {
-        if let Some((side, offset)) = block.index {
-            let s_offset =
-                if side { &self.r_offset } else { &self.l_offset };
+        let Some((side, offset)) = block.index else {
+            return;
+        };
 
-            if offset > s_offset.get() {
-                s_offset.set(offset);
-            }
+        let s_offset =
+            if side { &self.r_offset } else { &self.l_offset };
+
+        if offset > s_offset.get() {
+            s_offset.set(offset);
         }
     }
 
