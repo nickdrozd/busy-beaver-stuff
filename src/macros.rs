@@ -360,32 +360,31 @@ trait Logic: Sized {
 struct TapeColorConverter {
     base_colors: Color,
 
-    color_to_tape_cache: RefCell<Dict<Color, Tape>>,
-    tape_to_color_cache: RefCell<Dict<Tape, Color>>,
+    ct_cache: RefCell<Dict<Color, Tape>>,
+    tc_cache: RefCell<Dict<Tape, Color>>,
 }
 
 impl TapeColorConverter {
     fn new(base_colors: Color, cells: usize) -> Self {
-        let mut color_to_tape_cache = Dict::new();
+        let mut ct_cache = Dict::new();
 
-        color_to_tape_cache.insert(0, vec![0; cells]);
+        ct_cache.insert(0, vec![0; cells]);
 
         Self {
             base_colors,
-            color_to_tape_cache: RefCell::new(color_to_tape_cache),
-            tape_to_color_cache: RefCell::new(Dict::new()),
+            ct_cache: RefCell::new(ct_cache),
+            tc_cache: RefCell::new(Dict::new()),
         }
     }
 
     fn color_to_tape(&self, color: Color) -> Tape {
-        self.color_to_tape_cache.borrow()[&color].clone()
+        self.ct_cache.borrow()[&color].clone()
     }
 
     fn tape_to_color(&self, tape: Tape) -> Color {
-        let mut tape_to_color_cache =
-            self.tape_to_color_cache.borrow_mut();
+        let mut tc_cache = self.tc_cache.borrow_mut();
 
-        if let Some(&color) = tape_to_color_cache.get(&tape) {
+        if let Some(&color) = tc_cache.get(&tape) {
             color
         } else {
             let color = tape.iter().rev().enumerate().fold(
@@ -395,9 +394,9 @@ impl TapeColorConverter {
                 },
             );
 
-            tape_to_color_cache.insert(tape.clone(), color);
+            tc_cache.insert(tape.clone(), color);
 
-            self.color_to_tape_cache.borrow_mut().insert(color, tape);
+            self.ct_cache.borrow_mut().insert(color, tape);
 
             color
         }
