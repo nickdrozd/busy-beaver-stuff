@@ -95,10 +95,10 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         tape: &mut BasicTape,
     ) -> Option<State> {
         for _ in 0..steps {
-            if let Some(rule) = self.get_rule(state, tape, None) {
-                if tape.apply_rule(rule).is_some() {
-                    continue;
-                }
+            if let Some(rule) = self.get_rule(state, tape, None)
+                && tape.apply_rule(rule).is_some()
+            {
+                continue;
             }
 
             let (color, shift, next_state) =
@@ -120,10 +120,10 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         sig: &Signature,
     ) -> MinSig {
         for _ in 0..steps {
-            if let Some(rule) = self.get_rule(state, &tape, None) {
-                if tape.apply_rule(rule).is_some() {
-                    continue;
-                }
+            if let Some(rule) = self.get_rule(state, &tape, None)
+                && tape.apply_rule(rule).is_some()
+            {
+                continue;
             }
 
             let (color, shift, next_state) =
