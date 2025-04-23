@@ -638,20 +638,16 @@ impl Span {
         }
     }
 
-    #[expect(clippy::collapsible_else_if)]
     fn push(&mut self, color: Color, count: Count) {
-        if let Some(block) = self.span.0.first_mut() {
-            if block.color == color && block.count != 0 {
+        match self.span.0.first_mut() {
+            Some(block) if block.color == color && block.count != 0 => {
                 block.add_count(count);
-                return;
-            }
-        } else {
-            if color == 0 && self.end == TapeEnd::Blanks {
-                return;
-            }
+            },
+            None if color == 0 && self.end == TapeEnd::Blanks => {},
+            _ => {
+                self.span.push_block(color, count);
+            },
         }
-
-        self.span.push_block(color, count);
     }
 }
 
