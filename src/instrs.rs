@@ -44,6 +44,11 @@ impl GetInstr for CompProg {
         self.get(slot).copied()
     }
 
+    fn params(&self) -> Params {
+        self.keys()
+            .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)))
+    }
+
     fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
@@ -78,11 +83,6 @@ impl GetInstr for CompProg {
                 _ => None,
             })
             .collect()
-    }
-
-    fn params(&self) -> Params {
-        self.keys()
-            .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)))
     }
 
     #[cfg(test)]
@@ -298,4 +298,18 @@ fn test_comp() {
         CompProg::from_str(prog_11_4).show(Some((11, 5))),
         "1RB ... ... ... ...  2LC 3RD ... ... ...  1LA 3RD 1LE 4RD ...  ... ... 1RF ... ...  1RF 2LG 2LE 2RH ...  3RI 2RH 3RJ ... ...  1LE ... ... 2LC ...  2LE 2RK 2RH ... ...  1LE ... ... ... ...  0RI 1RF 0RJ ... ...  2RB ... 2RF ... ...",
     );
+}
+
+#[cfg(test)]
+const PARAMS: &[(&str, Params)] = &[
+    ("1RB 2LA 1RA 1RA  1LB 1LA 3RB ...", (1, 3)),
+    ("1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA", (3, 1)),
+    ("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA", (4, 1)),
+];
+
+#[test]
+fn test_params() {
+    for &(prog, params) in PARAMS {
+        assert_eq!(CompProg::from_str(prog).params(), params);
+    }
 }
