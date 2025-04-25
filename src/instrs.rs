@@ -45,8 +45,11 @@ impl GetInstr for CompProg {
     }
 
     fn params(&self) -> Params {
-        self.keys()
-            .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)))
+        let (states, colors) = self
+            .keys()
+            .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
+
+        (1 + states, 1 + colors)
     }
 
     fn halt_slots(&self) -> Set<Slot> {
@@ -54,8 +57,8 @@ impl GetInstr for CompProg {
 
         let (max_state, max_color) = self.params();
 
-        for state in 0..=max_state {
-            for color in 0..=max_color {
+        for state in 0..max_state {
+            for color in 0..max_color {
                 let slot = (state, color);
 
                 if !self.contains_key(&slot) {
@@ -302,9 +305,9 @@ fn test_comp() {
 
 #[cfg(test)]
 const PARAMS: &[(&str, Params)] = &[
-    ("1RB 2LA 1RA 1RA  1LB 1LA 3RB ...", (1, 3)),
-    ("1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA", (3, 1)),
-    ("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA", (4, 1)),
+    ("1RB 2LA 1RA 1RA  1LB 1LA 3RB ...", (2, 4)),
+    ("1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA", (4, 2)),
+    ("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA", (5, 2)),
 ];
 
 #[test]
