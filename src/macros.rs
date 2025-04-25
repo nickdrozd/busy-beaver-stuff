@@ -407,7 +407,7 @@ impl TapeColorConverter {
 use crate::instrs::Parse as _;
 
 #[test]
-fn test_macro() {
+fn test_nest() {
     let comp = CompProg::from_str(
         "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
     );
@@ -417,4 +417,26 @@ fn test_macro() {
     let _ = make_backsymbol_macro(&comp, (5, 2), 3);
 
     let _ = make_backsymbol_macro(&block, (5, 2), 3);
+}
+
+#[cfg(test)]
+const MACROS: &[(Slot, Instr)] = &[
+    ((0, 0), (1, true, 2)),
+    ((2, 0), (2, false, 1)),
+    ((1, 1), (2, false, 5)),
+    ((5, 0), (1, true, 6)),
+    ((6, 2), (2, false, 1)),
+];
+
+#[test]
+fn test_macro() {
+    let comp = CompProg::from_str(
+        "0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD",
+    );
+
+    let block = make_block_macro(&comp, (5, 2), 2);
+
+    for &(slot, instr) in MACROS {
+        assert_eq!(Some(instr), block.get_instr(&slot));
+    }
 }
