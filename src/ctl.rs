@@ -17,9 +17,10 @@ use Term::*;
 
 type Steps = usize;
 
-const COUNT_LIMIT: Count = 3;
-const DEPTH_LIMIT: usize = 30;
-const CONFIG_LIMIT: usize = 100;
+const OPT_BLOCK: usize = 500;
+const COUNT_LIMIT: Count = 2;
+const DEPTH_LIMIT: usize = 20;
+const CONFIG_LIMIT: usize = 1_000;
 
 /**************************************/
 
@@ -35,7 +36,7 @@ impl Ctl for CompProg {
             return true;
         }
 
-        let blocks = opt_block(self, 300);
+        let blocks = opt_block(self, OPT_BLOCK);
 
         if blocks == 1 {
             ctl_run(self, steps, &Halt)
@@ -61,7 +62,7 @@ impl Ctl for CompProg {
             return true;
         }
 
-        let blocks = opt_block(self, 300);
+        let blocks = opt_block(self, OPT_BLOCK);
 
         if blocks == 1 {
             ctl_run(self, steps, &Spinout)

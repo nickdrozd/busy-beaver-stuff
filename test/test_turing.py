@@ -71,7 +71,7 @@ if TYPE_CHECKING:
 
 
 CPS_LIMIT = 11
-CTL_LIMIT = 500
+CTL_LIMIT = 300
 REASON_LIMIT = 2_000
 SEGMENT_LIMIT = 22
 
@@ -668,21 +668,21 @@ class Ctl(TuringTest):
             self.assert_could_halt_ctl(prog)
 
         for prog in NONHALTERS:
-            self.assert_cant_halt_ctl(prog, 185)
+            self.assert_cant_halt_ctl(prog, 163)
 
     def test_blank(self):
         for prog in BLANKERS:
             self.assert_could_blank_ctl(prog)
 
         for prog in NONBLANKERS:
-            self.assert_cant_blank_ctl(prog, 232)
+            self.assert_cant_blank_ctl(prog, 61)
 
     def test_spinout(self):
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_ctl(prog)
 
         for prog in NONSPINNERS:
-            self.assert_cant_spin_out_ctl(prog, 183)
+            self.assert_cant_spin_out_ctl(prog, 118)
 
     def test_false_negatives(self):
         counts = {
