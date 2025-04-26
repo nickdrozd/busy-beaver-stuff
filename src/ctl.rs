@@ -104,6 +104,13 @@ fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: &Term) -> bool {
             println!("running: {config}");
         }
 
+        if seen.len() > CONFIG_LIMIT {
+            #[cfg(debug_assertions)]
+            println!("seen limit");
+
+            return false;
+        }
+
         if seen.contains(&config) {
             #[cfg(debug_assertions)]
             println!("seen in loop: {config}");
