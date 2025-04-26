@@ -1,4 +1,4 @@
-use core::fmt;
+use core::{cell::Cell, fmt};
 
 use std::collections::HashSet as Set;
 
@@ -18,9 +18,22 @@ use Term::*;
 type Steps = usize;
 
 const OPT_BLOCK: usize = 500;
-const COUNT_LIMIT: Count = 2;
 const DEPTH_LIMIT: usize = 20;
 const CONFIG_LIMIT: usize = 1_000;
+
+/**************************************/
+
+thread_local! {
+    static COUNT_LIMIT: Cell<Count> = const { Cell::new(0) };
+}
+
+pub fn set_count_limit(limit: Count) {
+    COUNT_LIMIT.with(|cell| cell.set(limit));
+}
+
+pub fn get_count_limit() -> Count {
+    COUNT_LIMIT.with(Cell::get)
+}
 
 /**************************************/
 
@@ -76,6 +89,13 @@ impl Ctl for CompProg {
     }
 }
 
+fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: &Term) -> bool {
+    (2..3).any(|lim| {
+        set_count_limit(lim);
+        run(prog, steps, goal)
+    })
+}
+
 /**************************************/
 
 enum RunResult {
@@ -88,7 +108,7 @@ enum RunResult {
 
 use RunResult::*;
 
-fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: &Term) -> bool {
+fn run(prog: &impl GetInstr, steps: Steps, goal: &Term) -> bool {
     let mut todo = vec![Config::init()];
 
     let mut seen: Set<Config> = Set::new();
@@ -278,11 +298,11 @@ impl Config {
 
         let block = pull.0.first_mut().unwrap();
 
-        assert!(block.count > COUNT_LIMIT);
+        assert!(block.count > get_count_limit());
 
         block.set_to_limit();
 
-        assert!(block.count == COUNT_LIMIT);
+        assert!(block.count == get_count_limit());
 
         clone
     }
@@ -332,7 +352,7 @@ impl Span {
             return Some(0);
         };
 
-        if block.count > COUNT_LIMIT {
+        if block.count > get_count_limit() {
             return None;
         }
 
@@ -391,7 +411,7 @@ impl BlockTrait for LimitBlock {
 
     fn decrement(&mut self) {
         assert!(2 <= self.count);
-        assert!(self.count <= COUNT_LIMIT);
+        assert!(self.count <= get_count_limit());
 
         self.count -= 1;
     }
@@ -405,7 +425,7 @@ impl BlockTrait for LimitBlock {
             match count {
                 1 => format!("{color}"),
                 0 => format!("{color}.."),
-                c if c >= COUNT_LIMIT => format!("{color}+"),
+                c if c >= get_count_limit() => format!("{color}+"),
                 _ => format!("{color}^{count}"),
             }
         )
@@ -419,8 +439,8 @@ impl fmt::Display for LimitBlock {
 }
 
 impl LimitBlock {
-    const fn inc_with_limit(&mut self) {
-        if self.count > COUNT_LIMIT {
+    fn inc_with_limit(&mut self) {
+        if self.count > get_count_limit() {
             return;
         }
 
@@ -428,8 +448,10 @@ impl LimitBlock {
     }
 
     fn set_to_limit(&mut self) {
-        assert!(self.count > COUNT_LIMIT);
+        let count_limit = get_count_limit();
 
-        self.count = COUNT_LIMIT;
+        assert!(self.count > count_limit);
+
+        self.count = count_limit;
     }
 }
