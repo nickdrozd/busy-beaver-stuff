@@ -3252,9 +3252,9 @@ CPS_FALSE_NEGATIVES = {
 ########################################
 
 CTL_FALSE_POSITIVE_COUNTS = {
-    "halt": 101,
+    "halt": 100,
     "blank": 418,
-    "spinout": 252,
+    "spinout": 251,
 }
 
 CTL_FALSE_NEGATIVES = {
@@ -3270,7 +3270,6 @@ CTL_FALSE_NEGATIVES = {
         "1RB 0LB  1LC 1RB  ... 1LA",
         "1RB 1LA  1LA 1RC  ... 1RB",
         "1RB 1LC  0LA 0RB  1LA ...",
-        "1RB 1LC  0RC ...  1LC 0LA",
         "1RB 1LC  1LC 1RB  ... 1LA",
         "1RB 2LA 0RB ...  2LB 3LA 1RA 1LA",
         "1RB 2LA 1LA 1RB  1LB 2RA 3RB ...",
@@ -3944,7 +3943,6 @@ CTL_FALSE_NEGATIVES = {
         "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
         "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA",
         "1RB 1LB  1LA 1LC  0RC 0LD  1RD 0RB",
-        "1RB 1LC  0LD 0RD  ... 0LA  1LD 1LA",
         "1RB 1LC  1LA 1LD  1LB 0LD  1RD 0RC",
         "1RB 1LC  1LD 0LC  0LB 0RA  1RD 1RA",
         "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA",

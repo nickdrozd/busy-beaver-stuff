@@ -37,18 +37,21 @@ impl BlockMeasure {
     }
 }
 
-fn measure_blocks(comp: &CompProg, steps: usize) -> Option<usize> {
+fn measure_blocks(comp: &CompProg, steps: usize) -> usize {
     let mut state = 0;
     let mut tape = BlockMeasure::new();
 
     for _ in 0..steps {
-        let &(color, shift, next_state) =
-            comp.get(&(state, tape.tape.scan))?;
+        let Some(&(color, shift, next_state)) =
+            comp.get(&(state, tape.tape.scan))
+        else {
+            break;
+        };
 
         let same = state == next_state;
 
         if same && tape.tape.at_edge(shift) {
-            return None;
+            break;
         }
 
         tape.step(shift, color, same);
@@ -56,7 +59,7 @@ fn measure_blocks(comp: &CompProg, steps: usize) -> Option<usize> {
         state = next_state;
     }
 
-    Some(tape.max_blocks_step)
+    tape.max_blocks_step
 }
 
 fn unroll_tape(comp: &CompProg, steps: usize) -> Vec<Color> {
@@ -89,9 +92,7 @@ fn compr_eff(tape: &[Color], k: usize) -> usize {
 }
 
 pub fn opt_block(comp: &CompProg, steps: usize) -> usize {
-    let Some(max_blocks_step) = measure_blocks(comp, steps) else {
-        return 1;
-    };
+    let max_blocks_step = measure_blocks(comp, steps);
 
     let tape = unroll_tape(comp, max_blocks_step);
 
