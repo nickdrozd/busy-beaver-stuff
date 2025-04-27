@@ -42,8 +42,8 @@ fn measure_blocks(comp: &CompProg, steps: usize) -> Option<usize> {
     let mut tape = BlockMeasure::new();
 
     for _ in 0..steps {
-        let (color, shift, next_state) =
-            *(comp.get(&(state, tape.tape.scan))?);
+        let &(color, shift, next_state) =
+            comp.get(&(state, tape.tape.scan))?;
 
         let same = state == next_state;
 
