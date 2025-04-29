@@ -20,7 +20,7 @@ type Steps = usize;
 const OPT_BLOCK: usize = 500;
 const COUNT_LIMIT: Count = 2;
 const DEPTH_LIMIT: usize = 20;
-const CONFIG_LIMIT: usize = 1_000;
+const CONFIG_LIMIT: usize = 3_000;
 
 /**************************************/
 
