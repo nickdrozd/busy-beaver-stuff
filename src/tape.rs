@@ -7,7 +7,6 @@ use core::{
 use crate::instrs::{Color, Shift};
 
 pub type Count = u64;
-pub type Counts = (Vec<Count>, Vec<Count>);
 
 /**************************************/
 
@@ -333,7 +332,7 @@ impl<B: Block> Tape<B> {
         self.lspan.len() + self.rspan.len()
     }
 
-    pub fn counts(&self) -> Counts {
+    pub fn counts(&self) -> (Vec<Count>, Vec<Count>) {
         (self.lspan.counts(), self.rspan.counts())
     }
 

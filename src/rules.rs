@@ -1,6 +1,6 @@
 use std::collections::BTreeMap as Dict;
 
-use crate::tape::{Count, Counts, Index, IndexTape};
+use crate::tape::{Count, Index, IndexTape};
 
 /**************************************/
 
@@ -61,6 +61,8 @@ fn calculate_diff(
 
     Some(Unknown)
 }
+
+type Counts = (Vec<Count>, Vec<Count>);
 
 pub fn make_rule(
     (l1, r1): &Counts,
