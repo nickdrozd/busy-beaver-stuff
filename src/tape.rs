@@ -38,7 +38,7 @@ pub trait Block: Display {
     }
 }
 
-#[derive(Copy, Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct BasicBlock {
     pub color: Color,
     pub count: Count,
