@@ -8,9 +8,7 @@ use crate::{
         show_slot, Color, CompProg, GetInstr, Instr, Shift, State, Term,
     },
     macros::make_block_macro,
-    tape::{
-        Block as BlockTrait, Count, Span as GenSpan, Tape as GenTape,
-    },
+    tape::{Block, Count, Span as GenSpan, Tape as GenTape},
 };
 
 use Term::*;
@@ -375,7 +373,7 @@ struct LimitBlock {
     count: Count,
 }
 
-impl BlockTrait for LimitBlock {
+impl Block for LimitBlock {
     fn new(color: Color, count: Count) -> Self {
         Self { color, count }
     }
