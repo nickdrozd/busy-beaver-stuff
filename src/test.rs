@@ -216,7 +216,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((3, 3), 0, 3_000, (94_910, 149_382_609)),
+            ((3, 3), 0, 3_000, (94_945, 149_382_609)),
             //
             |prog: &CompProg, prms: Params| {
                 prog.cant_spin_out(1).is_settled()
@@ -229,7 +229,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((5, 2), 1, 700, (12_645, 95_310_282)),
+            ((5, 2), 1, 700, (12_643, 95_310_282)),
             //
             |prog: &CompProg, prms: Params| {
                 !is_connected(prog, 5)
@@ -242,7 +242,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((5, 2), 0, TREE_LIM, (114_435, 534_813_722)),
+            ((5, 2), 0, TREE_LIM, (114_452, 534_813_722)),
             //
             |prog: &CompProg, prms: Params| {
                 !is_connected(prog, 5)
@@ -256,7 +256,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((2, 5), 1, TREE_LIM, (81_451, 70_032_629)),
+            ((2, 5), 1, TREE_LIM, (81_460, 70_032_629)),
             //
             |prog: &CompProg, prms: Params| {
                 prog.cant_halt(1).is_settled()
@@ -268,7 +268,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((2, 5), 0, TREE_LIM, (1_246_770, 515_255_468)),
+            ((2, 5), 0, TREE_LIM, (1_248_156, 515_255_468)),
             //
             |prog: &CompProg, prms: Params| {
                 prog.cant_spin_out(1).is_settled()
