@@ -64,13 +64,10 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             None => &tape.signature(),
         };
 
-        for (min_sig, rule) in rules {
-            if sig.matches(min_sig) {
-                return Some(rule);
-            }
-        }
-
-        None
+        rules
+            .iter()
+            .find(|(min_sig, _)| sig.matches(min_sig))
+            .map(|(_, rule)| rule)
     }
 
     fn run_simulator(
