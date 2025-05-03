@@ -247,6 +247,8 @@ pub trait GetSig {
     fn signature(&self) -> Signature;
 }
 
+pub type MinSig = (Signature, (bool, bool));
+
 /**************************************/
 
 #[derive(Clone, Eq, Hash, PartialEq)]
@@ -647,11 +649,11 @@ impl From<&BasicTape> for EnumTape {
 }
 
 impl EnumTape {
-    pub const fn offsets(&self) -> (usize, usize) {
+    const fn offsets(&self) -> (usize, usize) {
         (self.l_offset.get(), self.r_offset.get())
     }
 
-    pub const fn edges(&self) -> (bool, bool) {
+    const fn edges(&self) -> (bool, bool) {
         (self.l_edge.get(), self.r_edge.get())
     }
 
@@ -712,6 +714,19 @@ impl EnumTape {
         self.check_step(shift, color, skip);
 
         self.tape.step(shift, color, skip)
+    }
+
+    pub fn get_min_sig(&self, sig: &Signature) -> MinSig {
+        let (lmax, rmax) = self.offsets();
+
+        (
+            Signature {
+                scan: sig.scan,
+                lspan: sig.lspan[..lmax].to_vec(),
+                rspan: sig.rspan[..rmax].to_vec(),
+            },
+            self.edges(),
+        )
     }
 }
 

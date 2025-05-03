@@ -5,12 +5,10 @@ use pyo3::{pyclass, pymethods};
 use crate::{
     instrs::{GetInstr, Slot, State},
     rules::{make_rule, ApplyRule as _, Diff, Op, Rule},
-    tape::{BasicTape, EnumTape, GetSig, Signature},
+    tape::{BasicTape, EnumTape, GetSig, MinSig, Signature},
 };
 
 type Cycle = i32;
-
-type MinSig = (Signature, (bool, bool));
 
 /**************************************/
 
@@ -134,16 +132,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             state = next_state;
         }
 
-        let (lmax, rmax) = tape.offsets();
-
-        (
-            Signature {
-                scan: sig.scan,
-                lspan: sig.lspan[..lmax].to_vec(),
-                rspan: sig.rspan[..rmax].to_vec(),
-            },
-            tape.edges(),
-        )
+        tape.get_min_sig(sig)
     }
 
     pub fn try_rule(
