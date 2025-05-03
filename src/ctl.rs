@@ -8,7 +8,9 @@ use crate::{
         show_slot, Color, CompProg, GetInstr, Instr, Shift, State, Term,
     },
     macros::make_block_macro,
-    tape::{Block, Count, Span as GenSpan, Tape as GenTape},
+    tape::{
+        BigCount as Count, Block, Span as GenSpan, Tape as GenTape,
+    },
 };
 
 use Term::*;

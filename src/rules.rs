@@ -1,6 +1,6 @@
 use std::collections::BTreeMap as Dict;
 
-use crate::tape::{Count, Index, IndexTape};
+use crate::tape::{BigCount as Count, Index, IndexTape};
 
 /**************************************/
 

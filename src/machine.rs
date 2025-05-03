@@ -6,7 +6,9 @@ use crate::{
     instrs::{CompProg, Parse as _, Slot, State},
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{Alignment as _, BasicTape as Tape, Count, HeadTape},
+    tape::{
+        Alignment as _, BasicTape as Tape, BigCount as Count, HeadTape,
+    },
 };
 
 type Step = u64;

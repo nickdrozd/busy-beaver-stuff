@@ -10,8 +10,8 @@ use crate::{
         Color, CompProg, GetInstr as _, Instr, Shift, Slot, State,
     },
     tape::{
-        Alignment, BasicBlock as Block, Block as _, Count, Pos,
-        Span as GenSpan,
+        Alignment, BasicBlock as Block, BigCount as Count, Block as _,
+        Pos, Span as GenSpan,
     },
 };
 

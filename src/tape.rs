@@ -6,7 +6,9 @@ use core::{
 
 use crate::instrs::{Color, Shift};
 
-pub type Count = u64;
+pub type BigCount = u64;
+
+type Count = BigCount;
 
 /**************************************/
 
