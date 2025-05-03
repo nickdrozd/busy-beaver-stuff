@@ -1,4 +1,4 @@
-use std::collections::BTreeMap as Dict;
+use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
 use crate::tape::{BigCount as Count, Index, IndexTape};
 
@@ -12,7 +12,52 @@ pub enum Op {
     Mult((Diff, Diff)),
 }
 
-pub type Rule = Dict<Index, Op>;
+/**************************************/
+
+#[derive(Clone)]
+pub struct Rule(Dict<Index, Op>);
+
+impl Rule {
+    #[expect(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self(Dict::new())
+    }
+
+    #[cfg(test)]
+    pub fn from_triples(triples: &[(Index, Diff)]) -> Self {
+        Self(
+            triples
+                .iter()
+                .map(|&(index, diff)| (index, Op::Plus(diff)))
+                .collect(),
+        )
+    }
+
+    pub fn is_infinite(&self) -> bool {
+        !self
+            .0
+            .values()
+            .any(|diff| matches!(diff, Plus(plus) if *plus < 0))
+    }
+
+    pub fn is_mult(&self) -> bool {
+        self.0.values().any(|diff| matches!(diff, Mult(_)))
+    }
+
+    pub fn has_two_values_same(&self) -> bool {
+        self.0.len() == 2
+            && self
+                .0
+                .values()
+                .map(|diff| match diff {
+                    Plus(diff) => diff.abs(),
+                    Mult(_) => unreachable!(),
+                })
+                .collect::<Set<Diff>>()
+                .len()
+                == 1
+    }
+}
 
 /**************************************/
 
@@ -98,7 +143,7 @@ pub fn make_rule(
                     return None;
                 },
                 Got(op) => {
-                    rule.insert((s == 1, i), op);
+                    rule.0.insert((s == 1, i), op);
                 },
             }
         }
@@ -113,7 +158,7 @@ pub trait ApplyRule: IndexTape {
     fn apply_rule(&mut self, rule: &Rule) -> Option<Count> {
         let (times, min_pos, min_res) = self.count_apps(rule)?;
 
-        for (pos, diff) in rule {
+        for (pos, diff) in &rule.0 {
             let Plus(plus) = *diff else { unimplemented!() };
 
             let result = if *pos == min_pos {
@@ -132,7 +177,7 @@ pub trait ApplyRule: IndexTape {
     fn count_apps(&self, rule: &Rule) -> Option<(Count, Index, Count)> {
         let mut apps: Option<(Count, Index, Count)> = None;
 
-        for (pos, diff) in rule {
+        for (pos, diff) in &rule.0 {
             let Plus(diff) = *diff else { unimplemented!() };
 
             if diff >= 0 {

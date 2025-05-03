@@ -846,7 +846,7 @@ fn test_clone() {
 }
 
 #[cfg(test)]
-use crate::rules::Op;
+use crate::rules::{ApplyRule as _, Rule};
 
 #[cfg(test)]
 macro_rules! rule {
@@ -854,14 +854,11 @@ macro_rules! rule {
         $ ( ( $ shift : expr, $ index : expr ) => $ diff : expr ), *
         $ ( , ) *
     ) => {
-        Rule::from([
-            $ ( (( $ shift == 1, $ index ), Op::Plus( $ diff )) ), *
+        Rule::from_triples(&[
+            $ ( (( $ shift == 1, $ index ), $ diff ) ), *
         ])
     }
 }
-
-#[cfg(test)]
-use crate::rules::{ApplyRule as _, Rule};
 
 #[test]
 fn test_apply_1() {

@@ -1,10 +1,10 @@
-use std::collections::{BTreeMap, BTreeSet as Set, HashMap};
+use std::collections::{BTreeMap, HashMap};
 
 use pyo3::{pyclass, pymethods};
 
 use crate::{
     instrs::{GetInstr, Slot, State},
-    rules::{make_rule, ApplyRule as _, Diff, Op, Rule},
+    rules::{make_rule, ApplyRule as _, Rule},
     tape::{BasicTape, EnumTape, GetSig, MinSig, Signature},
 };
 
@@ -19,7 +19,6 @@ pub enum ProverResult {
     Got(Rule),
 }
 
-use Op::*;
 use ProverResult::*;
 
 pub struct Prover<'p, Prog: GetInstr> {
@@ -178,29 +177,15 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             &counts[2],
         )?;
 
-        if !rule
-            .values()
-            .any(|diff| matches!(diff, Plus(plus) if *plus < 0))
-        {
+        if rule.is_infinite() {
             return Some(InfiniteRule);
         }
 
-        if rule.values().any(|diff| matches!(diff, Mult(_))) {
+        if rule.is_mult() {
             return Some(MultRule);
         }
 
-        if tape.length_one_spans()
-            && rule.len() == 2
-            && rule
-                .values()
-                .map(|diff| match diff {
-                    Plus(diff) => diff.abs(),
-                    Mult(_) => unreachable!(),
-                })
-                .collect::<Set<Diff>>()
-                .len()
-                == 1
-        {
+        if tape.length_one_spans() && rule.has_two_values_same() {
             return None;
         }
 
