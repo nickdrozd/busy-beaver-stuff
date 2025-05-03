@@ -138,14 +138,11 @@ pub fn make_rule(
                 continue;
             };
 
-            match diff {
-                Unknown => {
-                    return None;
-                },
-                Got(op) => {
-                    rule.0.insert((s == 1, i), op);
-                },
-            }
+            let Got(op) = diff else {
+                return None;
+            };
+
+            rule.0.insert((s == 1, i), op);
         }
     }
 
