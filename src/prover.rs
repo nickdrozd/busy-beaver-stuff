@@ -189,8 +189,8 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             return Some(MultRule);
         }
 
-        if rule.len() == 2
-            && tape.span_lens() == (1, 1)
+        if tape.length_one_spans()
+            && rule.len() == 2
             && rule.values().all(|diff| matches!(diff, Plus(_)))
             && rule
                 .values()

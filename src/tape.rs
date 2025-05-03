@@ -356,10 +356,6 @@ impl<B: Block> Tape<B> {
         (self.lspan.counts(), self.rspan.counts())
     }
 
-    pub const fn span_lens(&self) -> (usize, usize) {
-        (self.lspan.len(), self.rspan.len())
-    }
-
     pub const fn at_edge(&self, edge: Shift) -> bool {
         self.scan == 0
             && (if edge { &self.rspan } else { &self.lspan }).blank()
@@ -367,6 +363,10 @@ impl<B: Block> Tape<B> {
 
     pub const fn blank(&self) -> bool {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
+    }
+
+    pub const fn length_one_spans(&self) -> bool {
+        self.lspan.len() == 1 && self.rspan.len() == 1
     }
 
     pub fn sig_compatible(

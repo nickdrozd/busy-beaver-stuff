@@ -143,8 +143,8 @@ class Prover:
         if (rule := make_rule(tape.counts, *counts)) is None:
             return None
 
-        if (len(rule) == 2
-                and tape.span_lens == (1, 1)
+        if (tape.length_one_spans
+                and len(rule) == 2
                 and all(isinstance(val, int) for val in rule.values())
                 and len({
                     abs(val) for val in rule.values()

@@ -99,8 +99,8 @@ class Tape:
         )
 
     @property
-    def span_lens(self) -> tuple[int, int]:
-        return len(self.lspan), len(self.rspan)
+    def length_one_spans(self) -> bool:
+        return len(self.lspan) == 1 and len(self.rspan) == 1
 
     @property
     def counts(self) -> Counts:
