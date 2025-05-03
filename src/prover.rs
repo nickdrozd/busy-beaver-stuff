@@ -191,12 +191,11 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
 
         if tape.length_one_spans()
             && rule.len() == 2
-            && rule.values().all(|diff| matches!(diff, Plus(_)))
             && rule
                 .values()
                 .map(|diff| match diff {
                     Plus(diff) => diff.abs(),
-                    Mult(_) => 0,
+                    Mult(_) => unreachable!(),
                 })
                 .collect::<Set<Diff>>()
                 .len()
