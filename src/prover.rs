@@ -64,21 +64,8 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             None => &tape.signature(),
         };
 
-        for ((Signature { scan, lspan, rspan }, (lex, rex)), rule) in
-            rules
-        {
-            if *scan == sig.scan
-                && (if *lex {
-                    lspan == &sig.lspan
-                } else {
-                    sig.lspan.starts_with(lspan)
-                })
-                && (if *rex {
-                    rspan == &sig.rspan
-                } else {
-                    sig.rspan.starts_with(rspan)
-                })
-            {
+        for (min_sig, rule) in rules {
+            if sig.matches(min_sig) {
                 return Some(rule);
             }
         }

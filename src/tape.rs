@@ -249,6 +249,22 @@ pub trait GetSig {
 
 pub type MinSig = (Signature, (bool, bool));
 
+impl Signature {
+    pub fn matches(&self, (other, (lex, rex)): &MinSig) -> bool {
+        self.scan == other.scan
+            && (if *lex {
+                self.lspan == other.lspan
+            } else {
+                self.lspan.starts_with(&other.lspan)
+            })
+            && (if *rex {
+                self.rspan == other.rspan
+            } else {
+                self.rspan.starts_with(&other.rspan)
+            })
+    }
+}
+
 /**************************************/
 
 #[derive(Clone, Eq, Hash, PartialEq)]
