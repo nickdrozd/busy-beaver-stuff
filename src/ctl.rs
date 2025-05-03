@@ -388,10 +388,6 @@ impl Block for LimitBlock {
         self.count
     }
 
-    fn set_count(&mut self, _: Count) {
-        unimplemented!()
-    }
-
     fn add_count(&mut self, _: Count) {
         unimplemented!()
     }

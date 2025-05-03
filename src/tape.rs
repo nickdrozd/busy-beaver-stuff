@@ -18,7 +18,6 @@ pub trait Block: Display {
     fn get_color(&self) -> Color;
 
     fn get_count(&self) -> Count;
-    fn set_count(&mut self, count: Count);
 
     fn add_count(&mut self, count: Count);
 
@@ -56,10 +55,6 @@ impl Block for BasicBlock {
 
     fn get_count(&self) -> Count {
         self.count
-    }
-
-    fn set_count(&mut self, count: Count) {
-        self.count = count;
     }
 
     fn add_count(&mut self, count: Count) {
@@ -415,12 +410,28 @@ impl<B: Block> Tape<B> {
 
 pub type Index = (Shift, usize);
 
+trait IndexBlock: Block {
+    fn set_count(&mut self, count: Count);
+}
+
+impl IndexBlock for BasicBlock {
+    fn set_count(&mut self, count: Count) {
+        self.count = count;
+    }
+}
+
+impl IndexBlock for EnumBlock {
+    fn set_count(&mut self, count: Count) {
+        self.count = count;
+    }
+}
+
 pub trait IndexTape {
     fn get_count(&self, index: &Index) -> Count;
     fn set_count(&mut self, index: &Index, val: Count);
 }
 
-impl<B: Block> IndexTape for Tape<B> {
+impl<B: IndexBlock> IndexTape for Tape<B> {
     fn get_count(&self, &(side, pos): &Index) -> Count {
         let span = if side { &self.rspan } else { &self.lspan };
 
@@ -590,10 +601,6 @@ impl Block for EnumBlock {
 
     fn get_count(&self) -> Count {
         self.count
-    }
-
-    fn set_count(&mut self, count: Count) {
-        self.count = count;
     }
 
     fn add_count(&mut self, count: Count) {
