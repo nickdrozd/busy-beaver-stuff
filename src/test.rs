@@ -6,7 +6,7 @@ use crate::{
     ctl::Ctl as _,
     graph::is_connected,
     instrs::{CompProg, GetInstr as _, Params, Parse as _},
-    machine::{quick_term_or_rec, run_for_infrul, run_prover},
+    machine::{quick_term_or_rec, run_for_infrul},
     macros::{make_backsymbol_macro, make_block_macro},
     reason::Backward as _,
     segment::Segment as _,
@@ -483,9 +483,6 @@ fn assert_blank(params: Params, expected: (usize, (u64, u64))) {
             || check_inf(prog, params, opt_block(prog, 300), run as u64)
             || prog.ctl_cant_blank(100)
             || prog.cps_cant_blank(5)
-            || !run_prover(&prog.show(Some(params)), run as u64)
-                .blanks
-                .is_empty()
         {
             return;
         }
@@ -521,8 +518,8 @@ fn test_blank() {
         //
         ((2, 3), (15, (8, 9_168))),
         //
-        ((4, 2), (43, (619, 2_291_637))),
+        ((4, 2), (43, (631, 2_291_637))),
         //
-        ((2, 4), (40, (2_078, 1_719_357))),
+        ((2, 4), (40, (2_084, 1_719_357))),
     ];
 }

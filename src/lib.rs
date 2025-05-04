@@ -52,9 +52,7 @@ mod rust_stuff {
         instrs::{
             read_instr, read_slot, show_instr, show_slot, show_state,
         },
-        machine::{
-            run_prover, run_quick_machine, MachineResult, TermRes,
-        },
+        machine::{run_quick_machine, MachineResult, TermRes},
         prover::PastConfigs,
         wrappers::{
             py_cant_blank, py_cant_halt, py_cant_spin_out,

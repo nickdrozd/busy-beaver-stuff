@@ -18,7 +18,6 @@ pub enum Op {
 pub struct Rule(Dict<Index, Op>);
 
 impl Rule {
-    #[expect(clippy::new_without_default)]
     pub const fn new() -> Self {
         Self(Dict::new())
     }

@@ -7,12 +7,7 @@ from unittest import TestCase, skipUnless
 from test.lin_rec import run_loose_linrec_machine
 from test.prog_data import CANT_BLANK_FALSE_NEGATIVES
 from test.utils import RUN_SLOW, read_progs
-from tm.machine import (
-    Machine,
-    quick_term_or_rec,
-    run_prover,
-)
-from tm.macro import opt_block
+from tm.machine import Machine, quick_term_or_rec
 from tm.reason import (
     cant_blank,
     cant_halt,
@@ -73,16 +68,13 @@ def run_variations(
     if lin_rec is not None:
         yield run_loose_linrec_machine(prog, lin_rec)
 
-    if opt_block(prog, block_steps) == 1:
-        yield run_prover(prog, sim_lim)
-    else:
-        yield Machine(
-            prog,
-            opt_macro = block_steps,
-            params = params,
-        ).run(
-            sim_lim = sim_lim,
-        )
+    yield Machine(
+        prog,
+        opt_macro = block_steps,
+        params = params,
+    ).run(
+        sim_lim = sim_lim,
+    )
 
     yield Machine(
         prog,
