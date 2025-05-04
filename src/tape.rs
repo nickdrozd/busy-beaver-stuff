@@ -422,7 +422,7 @@ impl IndexBlock for BasicBlock {
 
 impl IndexBlock for EnumBlock {
     fn set_count(&mut self, count: Count) {
-        self.count = count;
+        self.block.set_count(count);
     }
 }
 
@@ -580,41 +580,38 @@ impl Alignment for HeadTape {
 /**************************************/
 
 struct EnumBlock {
-    color: Color,
-    count: Count,
-
+    block: BasicBlock,
     index: Option<Index>,
 }
 
 impl Block for EnumBlock {
     fn new(color: Color, count: Count) -> Self {
         Self {
-            color,
-            count,
+            block: BasicBlock::new(color, count),
             index: None,
         }
     }
 
     fn get_color(&self) -> Color {
-        self.color
+        self.block.get_color()
     }
 
     fn get_count(&self) -> Count {
-        self.count
+        self.block.get_count()
     }
 
     fn add_count(&mut self, count: Count) {
-        self.count += count;
+        self.block.add_count(count);
     }
 
     fn decrement(&mut self) {
-        self.count -= 1;
+        self.block.decrement();
     }
 }
 
 impl Display for EnumBlock {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.show(f)
+        self.block.show(f)
     }
 }
 
@@ -645,8 +642,7 @@ impl From<&BasicTape> for EnumTape {
                         .iter()
                         .enumerate()
                         .map(|(i, block)| EnumBlock {
-                            color: block.get_color(),
-                            count: block.get_count(),
+                            block: block.clone(),
                             index: Some((false, 1 + i)),
                         })
                         .collect(),
@@ -657,8 +653,7 @@ impl From<&BasicTape> for EnumTape {
                         .iter()
                         .enumerate()
                         .map(|(i, block)| EnumBlock {
-                            color: block.get_color(),
-                            count: block.get_count(),
+                            block: block.clone(),
                             index: Some((true, 1 + i)),
                         })
                         .collect(),
@@ -712,7 +707,7 @@ impl EnumTape {
             let near_block = &pull.0[0];
             self.check_offsets(near_block);
 
-            if skip && near_block.color == self.tape.scan {
+            if skip && near_block.get_color() == self.tape.scan {
                 if pull.len() == 1 {
                     self.touch_edge(shift);
                 } else {
@@ -724,7 +719,7 @@ impl EnumTape {
         if !push.blank() {
             let opp = &push.0[0];
 
-            if color == opp.color {
+            if color == opp.get_color() {
                 self.check_offsets(opp);
             }
         }
