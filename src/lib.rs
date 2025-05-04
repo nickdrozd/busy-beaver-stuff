@@ -26,6 +26,7 @@
 mod blocks;
 mod cps;
 mod ctl;
+mod export;
 mod graph;
 mod instrs;
 mod machine;
@@ -36,7 +37,6 @@ mod rules;
 mod segment;
 mod tape;
 mod tree;
-mod wrappers;
 
 #[cfg(test)]
 mod test;
@@ -49,12 +49,7 @@ use pyo3::pymodule;
 mod rust_stuff {
     #[pymodule_export]
     use crate::{
-        instrs::{
-            read_instr, read_slot, show_instr, show_slot, show_state,
-        },
-        machine::{run_quick_machine, MachineResult, TermRes},
-        prover::PastConfigs,
-        wrappers::{
+        export::{
             py_cant_blank, py_cant_halt, py_cant_spin_out,
             py_cps_cant_blank, py_cps_cant_halt, py_cps_cant_spin_out,
             py_ctl_cant_blank, py_ctl_cant_halt, py_ctl_cant_spin_out,
@@ -63,5 +58,10 @@ mod rust_stuff {
             py_segment_cant_spin_out, py_show_comp, tcompile,
             tree_progs, BackwardResult,
         },
+        instrs::{
+            read_instr, read_slot, show_instr, show_slot, show_state,
+        },
+        machine::{run_quick_machine, MachineResult, TermRes},
+        prover::PastConfigs,
     };
 }
