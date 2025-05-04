@@ -9,7 +9,7 @@ use rayon::prelude::*;
 
 use crate::{
     instrs::{Color, CompProg, Instr, Params, Slot, State},
-    tape::BasicTape as Tape,
+    tape::{BasicTape as Tape, MachineTape as _},
 };
 
 pub type Step = u64;

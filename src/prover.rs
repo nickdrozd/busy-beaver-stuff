@@ -4,8 +4,10 @@ use pyo3::{pyclass, pymethods};
 
 use crate::{
     instrs::{GetInstr, Slot, State},
-    rules::{make_rule, ApplyRule as _, Rule},
-    tape::{BasicTape, EnumTape, GetSig, MinSig, Signature},
+    rules::{make_rule, ApplyRule, Rule},
+    tape::{
+        BasicTape, EnumTape, GetSig, MachineTape, MinSig, Signature,
+    },
 };
 
 type Cycle = i32;
@@ -73,7 +75,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         &self,
         steps: Cycle,
         mut state: State,
-        tape: &mut BasicTape,
+        tape: &mut (impl ApplyRule + GetSig + MachineTape),
     ) -> Option<State> {
         for _ in 0..steps {
             if let Some(rule) = self.get_rule(state, tape, None)
@@ -83,7 +85,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             }
 
             let (color, shift, next_state) =
-                self.prog.get_instr(&(state, tape.scan))?;
+                self.prog.get_instr(&(state, tape.scan()))?;
 
             tape.step(shift, color, state == next_state);
 
@@ -96,24 +98,11 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
     fn get_min_sig(
         &self,
         steps: Cycle,
-        mut state: State,
+        state: State,
         mut tape: EnumTape,
         sig: &Signature,
     ) -> MinSig {
-        for _ in 0..steps {
-            if let Some(rule) = self.get_rule(state, &tape, None)
-                && tape.apply_rule(rule).is_some()
-            {
-                continue;
-            }
-
-            let (color, shift, next_state) =
-                self.prog.get_instr(&(state, tape.scan())).unwrap();
-
-            tape.step(shift, color, state == next_state);
-
-            state = next_state;
-        }
+        self.run_simulator(steps, state, &mut tape);
 
         tape.get_min_sig(sig)
     }

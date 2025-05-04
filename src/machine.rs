@@ -8,6 +8,7 @@ use crate::{
     rules::ApplyRule as _,
     tape::{
         Alignment as _, BasicTape as Tape, BigCount as Count, HeadTape,
+        MachineTape as _,
     },
 };
 

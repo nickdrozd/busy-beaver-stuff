@@ -383,8 +383,15 @@ impl<B: Block> Tape<B> {
             .chain(self.rspan.unroll())
             .collect()
     }
+}
 
-    pub fn step(
+pub trait MachineTape {
+    fn step(&mut self, shift: Shift, color: Color, skip: bool)
+        -> Count;
+}
+
+impl<B: Block> MachineTape for Tape<B> {
+    fn step(
         &mut self,
         shift: Shift,
         color: Color,
@@ -725,17 +732,6 @@ impl EnumTape {
         }
     }
 
-    pub fn step(
-        &mut self,
-        shift: Shift,
-        color: Color,
-        skip: bool,
-    ) -> Count {
-        self.check_step(shift, color, skip);
-
-        self.tape.step(shift, color, skip)
-    }
-
     pub fn get_min_sig(&self, sig: &Signature) -> MinSig {
         let (lmax, rmax) = self.offsets();
 
@@ -757,6 +753,19 @@ impl IndexTape for EnumTape {
 
     fn set_count(&mut self, index: &Index, val: Count) {
         self.tape.set_count(index, val);
+    }
+}
+
+impl MachineTape for EnumTape {
+    fn step(
+        &mut self,
+        shift: Shift,
+        color: Color,
+        skip: bool,
+    ) -> Count {
+        self.check_step(shift, color, skip);
+
+        self.tape.step(shift, color, skip)
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::{
     instrs::{Color, CompProg, Shift},
-    tape::BasicTape,
+    tape::{BasicTape, MachineTape as _},
 };
 
 struct BlockMeasure {
