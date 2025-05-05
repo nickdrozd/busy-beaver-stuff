@@ -577,7 +577,6 @@ impl Span {
         let stepped =
             (skip && !self.is_empty() && self.0[0].get_color() == scan)
                 .then(|| self.0.remove(0))
-                .as_ref()
                 .map_or_else(|| 1, |block| 1 + block.get_count());
 
         let next_scan = if self.is_empty() {
