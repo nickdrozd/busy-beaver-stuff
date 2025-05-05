@@ -98,14 +98,6 @@ impl<B: Block> Span<B> {
             .all(|(bk, cc)| bk.get_color() == cc.get_color())
     }
 
-    fn marks(&self) -> Count {
-        self.0
-            .iter()
-            .filter(|block| block.get_color() != 0)
-            .map(Block::get_count)
-            .sum::<Count>()
-    }
-
     fn counts(&self) -> Vec<Count> {
         self.0.iter().map(B::get_count).collect()
     }
@@ -335,12 +327,6 @@ impl<B: Block> Tape<B> {
 
     pub fn init_stepped() -> Self {
         tape! { 0, [(1, 1)], [] }
-    }
-
-    pub fn marks(&self) -> Count {
-        Count::from(self.scan != 0)
-            + self.lspan.marks()
-            + self.rspan.marks()
     }
 
     pub const fn blocks(&self) -> usize {
