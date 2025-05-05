@@ -191,23 +191,23 @@ pub fn build_tree(
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
-    make_instrs(init_states, init_colors).par_iter().for_each(
-        |&next_instr| {
-            branch(
-                next_instr,
-                &mut CompProg::from([
-                    ((0, 0), (1, true, 1)),
-                    ((1, 0), next_instr),
-                ]),
-                (1, Tape::init_stepped()),
-                sim_lim,
-                (init_states, init_colors),
-                (states, colors),
-                (states * colors) - 1 - (1 + Slots::from(halt)),
-                harvester,
-            );
-        },
-    );
+    let init_instrs = make_instrs(init_states, init_colors);
+
+    init_instrs.par_iter().for_each(|&next_instr| {
+        branch(
+            next_instr,
+            &mut CompProg::from([
+                ((0, 0), (1, true, 1)),
+                ((1, 0), next_instr),
+            ]),
+            (1, Tape::init_stepped()),
+            sim_lim,
+            (init_states, init_colors),
+            (states, colors),
+            (states * colors) - 1 - (1 + Slots::from(halt)),
+            harvester,
+        );
+    });
 }
 
 /**************************************/
