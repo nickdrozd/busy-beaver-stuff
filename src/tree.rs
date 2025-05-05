@@ -18,18 +18,39 @@ pub type Step = usize;
 
 const SHIFTS: [bool; 2] = [false, true];
 
-fn make_instrs(states: State, colors: Color) -> Vec<Instr> {
-    let mut instrs = vec![];
+type InstrTable = Vec<Vec<Vec<Instr>>>;
 
-    for color in 0..colors {
-        for shift in SHIFTS {
-            for state in 0..states {
-                instrs.push((color, shift, state));
+fn make_instr_table(
+    max_states: State,
+    max_colors: Color,
+) -> InstrTable {
+    let max_states = max_states as usize;
+    let max_colors = max_colors as usize;
+
+    let mut table = vec![vec![vec![]; 1 + max_colors]; 1 + max_states];
+
+    #[expect(clippy::needless_range_loop)]
+    for states in 2..=max_states {
+        for colors in 2..=max_colors {
+            let mut instrs = Vec::with_capacity(colors * 2 * states);
+
+            for color in 0..colors {
+                for &shift in &SHIFTS {
+                    for state in 0..states {
+                        instrs.push((
+                            color as Color,
+                            shift,
+                            state as State,
+                        ));
+                    }
+                }
             }
+
+            table[states][colors] = instrs;
         }
     }
 
-    instrs
+    table
 }
 
 /**************************************/
@@ -93,6 +114,7 @@ fn leaf(
     harvester(prog);
 }
 
+#[expect(clippy::too_many_arguments)]
 fn branch(
     instr: Instr,
     prog: &mut CompProg,
@@ -101,6 +123,7 @@ fn branch(
     (mut avail_states, mut avail_colors): Params,
     params: Params,
     remaining_slots: Slots,
+    instr_table: &InstrTable,
     harvester: &impl Fn(&CompProg),
 ) {
     let (max_states, max_colors) = params;
@@ -127,13 +150,14 @@ fn branch(
         avail_colors += 1;
     }
 
-    let instrs = make_instrs(avail_states, avail_colors);
+    let instrs =
+        &instr_table[avail_states as usize][avail_colors as usize];
 
     let next_remaining_slots = remaining_slots - 1;
 
     if next_remaining_slots == 0 {
         for next_instr in instrs {
-            prog.insert(slot, next_instr);
+            prog.insert(slot, *next_instr);
             leaf(prog, params, harvester);
             prog.remove(&slot);
         }
@@ -156,6 +180,7 @@ fn branch(
             avail_params,
             params,
             next_remaining_slots,
+            instr_table,
             harvester,
         );
 
@@ -173,6 +198,7 @@ fn branch(
             avail_params,
             params,
             next_remaining_slots,
+            instr_table,
             harvester,
         );
 
@@ -191,7 +217,10 @@ pub fn build_tree(
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
-    let init_instrs = make_instrs(init_states, init_colors);
+    let instr_table = make_instr_table(states, colors);
+
+    let init_instrs =
+        &instr_table[init_states as usize][init_colors as usize];
 
     init_instrs.par_iter().for_each(|&next_instr| {
         branch(
@@ -205,6 +234,7 @@ pub fn build_tree(
             (init_states, init_colors),
             (states, colors),
             (states * colors) - 1 - (1 + Slots::from(halt)),
+            &instr_table,
             harvester,
         );
     });
