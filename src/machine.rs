@@ -12,7 +12,7 @@ use crate::{
 use ProverResult::*;
 
 #[expect(dead_code)]
-pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: u64) -> bool {
+pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: usize) -> bool {
     let mut tape = Tape::init(0);
 
     let mut prover = Prover::new(comp);

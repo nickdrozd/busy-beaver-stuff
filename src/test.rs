@@ -15,7 +15,7 @@ use crate::{
 
 /**************************************/
 
-const TREE_LIM: u64 = 876;
+const TREE_LIM: Step = 876;
 
 /**************************************/
 
@@ -51,7 +51,7 @@ macro_rules! assert_trees {
 fn assert_tree(
     params: Params,
     halt: u8,
-    tree: u64,
+    tree: Step,
     expected: (u64, u64),
     pipeline: impl Fn(&CompProg, Params) -> bool + Sync,
 ) {
@@ -480,7 +480,7 @@ fn assert_blank(params: Params, expected: (usize, (u64, u64))) {
 
         if backward.is_settled()
             || quick_term_or_rec(prog, run).is_settled()
-            || check_inf(prog, params, opt_block(prog, 300), run as u64)
+            || check_inf(prog, params, opt_block(prog, 300), run)
             || prog.ctl_cant_blank(100)
             || prog.cps_cant_blank(5)
         {

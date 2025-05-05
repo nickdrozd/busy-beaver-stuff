@@ -109,10 +109,11 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
 
     pub fn try_rule(
         &mut self,
-        cycle: u64,
+        cycle: usize,
         state: State,
         tape: &BasicTape,
     ) -> Option<ProverResult> {
+        #[expect(clippy::cast_possible_wrap)]
         let cycle = cycle as Cycle;
 
         let sig = tape.signature();

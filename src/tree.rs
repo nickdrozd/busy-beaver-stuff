@@ -12,7 +12,7 @@ use crate::{
     tape::{BasicTape as Tape, MachineTape as _},
 };
 
-pub type Step = u64;
+pub type Step = usize;
 
 /**************************************/
 
