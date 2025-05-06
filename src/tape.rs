@@ -469,12 +469,7 @@ impl HeadTape {
         self.tape.at_edge(edge)
     }
 
-    pub fn step(
-        &mut self,
-        shift: Shift,
-        color: Color,
-        skip: bool,
-    ) -> Count {
+    pub fn step(&mut self, shift: Shift, color: Color, skip: bool) {
         let stepped = self.tape.step(shift, color, skip);
 
         #[expect(clippy::cast_possible_wrap)]
@@ -483,8 +478,6 @@ impl HeadTape {
         } else {
             self.head -= stepped as Pos;
         }
-
-        stepped
     }
 }
 
