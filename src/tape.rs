@@ -756,6 +756,26 @@ impl MachineTape for EnumTape {
 
 /**************************************/
 
+impl Span<BasicBlock> {
+    fn marks(&self) -> BigCount {
+        self.0
+            .iter()
+            .filter(|block| block.color != 0)
+            .map(|block| block.count)
+            .sum::<BigCount>()
+    }
+}
+
+impl BasicTape {
+    pub fn marks(&self) -> BigCount {
+        BigCount::from(self.scan != 0)
+            + self.lspan.marks()
+            + self.rspan.marks()
+    }
+}
+
+/**************************************/
+
 #[cfg(test)]
 impl BasicTape {
     #[track_caller]

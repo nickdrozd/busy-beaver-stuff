@@ -243,27 +243,7 @@ pub fn tree_progs(
 
 use std::collections::BTreeMap as Dict;
 
-use crate::tape::{
-    BasicBlock, BasicTape as Tape, BigCount, MachineTape as _, Span,
-};
-
-impl Span<BasicBlock> {
-    fn marks(&self) -> BigCount {
-        self.0
-            .iter()
-            .filter(|block| block.color != 0)
-            .map(|block| block.count)
-            .sum::<BigCount>()
-    }
-}
-
-impl Tape {
-    pub fn marks(&self) -> BigCount {
-        BigCount::from(self.scan != 0)
-            + self.lspan.marks()
-            + self.rspan.marks()
-    }
-}
+use crate::tape::{BasicTape as Tape, BigCount, MachineTape as _};
 
 type BigStep = u64;
 
