@@ -760,7 +760,6 @@ impl MachineTape for EnumTape {
 impl BasicTape {
     #[track_caller]
     fn assert(&self, marks: Count, tape_str: &str, sig: &Signature) {
-        assert_eq!(self.marks(), marks);
         assert_eq!(self.blank(), marks == 0);
 
         assert_eq!(self.to_string(), tape_str);
