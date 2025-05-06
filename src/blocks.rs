@@ -1,10 +1,10 @@
 use crate::{
     instrs::{Color, CompProg, Shift},
-    tape::{BasicTape, MachineTape as _},
+    tape::{BigTape as Tape, MachineTape as _},
 };
 
 struct BlockMeasure {
-    tape: BasicTape,
+    tape: Tape,
 
     steps: usize,
     max_blocks: usize,
@@ -15,7 +15,7 @@ struct BlockMeasure {
 impl BlockMeasure {
     const fn new() -> Self {
         Self {
-            tape: BasicTape::init(0),
+            tape: Tape::init(0),
 
             steps: 0,
             max_blocks: 0,
@@ -64,7 +64,7 @@ fn measure_blocks(comp: &CompProg, steps: usize) -> usize {
 
 fn unroll_tape(comp: &CompProg, steps: usize) -> Vec<Color> {
     let mut state = 0;
-    let mut tape = BasicTape::init(0);
+    let mut tape = Tape::init(0);
 
     for _ in 0..steps {
         let instr = comp[&(state, tape.scan)];

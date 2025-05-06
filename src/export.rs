@@ -243,7 +243,7 @@ pub fn tree_progs(
 
 use std::collections::BTreeMap as Dict;
 
-use crate::tape::{BasicTape as Tape, BigCount, MachineTape as _};
+use crate::tape::{BigCount, BigTape as Tape, MachineTape as _};
 
 type BigStep = u64;
 

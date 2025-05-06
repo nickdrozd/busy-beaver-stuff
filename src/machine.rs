@@ -2,9 +2,7 @@ use crate::{
     instrs::{CompProg, GetInstr, Slot, State},
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{
-        Alignment as _, BasicTape as Tape, HeadTape, MachineTape as _,
-    },
+    tape::{Alignment as _, BigTape, HeadTape, MachineTape as _},
 };
 
 /**************************************/
@@ -13,7 +11,7 @@ use ProverResult::*;
 
 #[expect(dead_code)]
 pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: usize) -> bool {
-    let mut tape = Tape::init(0);
+    let mut tape = BigTape::init(0);
 
     let mut prover = Prover::new(comp);
 

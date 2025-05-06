@@ -263,7 +263,7 @@ pub struct Tape<B: Block> {
     pub rspan: Span<B>,
 }
 
-pub type BasicTape = Tape<BasicBlock>;
+pub type BigTape = Tape<BasicBlock>;
 
 impl<B: Block> Display for Tape<B> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -448,7 +448,7 @@ pub type Pos = isize;
 #[derive(Clone, PartialEq, Eq)]
 pub struct HeadTape {
     head: Pos,
-    tape: BasicTape,
+    tape: BigTape,
 }
 
 impl Display for HeadTape {
@@ -616,8 +616,8 @@ impl Display for EnumTape {
     }
 }
 
-impl From<&BasicTape> for EnumTape {
-    fn from(tape: &BasicTape) -> Self {
+impl From<&BigTape> for EnumTape {
+    fn from(tape: &BigTape) -> Self {
         Self {
             tape: Tape {
                 scan: tape.scan,
@@ -759,7 +759,7 @@ impl Span<BasicBlock> {
     }
 }
 
-impl BasicTape {
+impl BigTape {
     pub fn marks(&self) -> BigCount {
         BigCount::from(self.scan != 0)
             + self.lspan.marks()
@@ -770,7 +770,7 @@ impl BasicTape {
 /**************************************/
 
 #[cfg(test)]
-impl BasicTape {
+impl BigTape {
     #[track_caller]
     fn assert(&self, marks: Count, tape_str: &str, sig: &Signature) {
         assert_eq!(self.blank(), marks == 0);
@@ -962,7 +962,7 @@ macro_rules! enum_tape {
         [ $ ( $ rspan : expr ), * ]
     ) => {
         EnumTape::from(
-            &BasicTape {
+            &BigTape {
                 scan: $ scan,
                 lspan: Span ( vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ] ),
                 rspan: Span ( vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ] ),

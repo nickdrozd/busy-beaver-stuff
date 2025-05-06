@@ -5,9 +5,7 @@ use pyo3::{pyclass, pymethods};
 use crate::{
     instrs::{GetInstr, Slot, State},
     rules::{make_rule, ApplyRule, Rule},
-    tape::{
-        BasicTape, EnumTape, GetSig, MachineTape, MinSig, Signature,
-    },
+    tape::{BigTape, EnumTape, GetSig, MachineTape, MinSig, Signature},
 };
 
 type Cycle = i32;
@@ -111,7 +109,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         &mut self,
         cycle: usize,
         state: State,
-        tape: &BasicTape,
+        tape: &BigTape,
     ) -> Option<ProverResult> {
         #[expect(clippy::cast_possible_wrap)]
         let cycle = cycle as Cycle;
