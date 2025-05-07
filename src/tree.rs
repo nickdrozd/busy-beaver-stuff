@@ -97,7 +97,7 @@ fn run_for_undefined(
 
 /**************************************/
 
-type Slots = u64;
+type Slots = u8;
 type Config = (State, Tape);
 
 fn leaf(
@@ -233,7 +233,7 @@ pub fn build_tree(
             sim_lim,
             (init_states, init_colors),
             (states, colors),
-            (states * colors) - 1 - (1 + Slots::from(halt)),
+            ((states * colors) as Slots) - 1 - (1 + Slots::from(halt)),
             &instr_table,
             harvester,
         );
