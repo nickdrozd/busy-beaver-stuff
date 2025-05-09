@@ -284,7 +284,7 @@ impl Config {
 
         let block = pull.0.first_mut().unwrap();
 
-        assert!(block.count > COUNT_LIMIT);
+        assert!(block.count == 0);
 
         block.set_to_limit();
 
@@ -336,7 +336,7 @@ impl Span<Block> {
             return Some(0);
         };
 
-        if block.count > COUNT_LIMIT {
+        if block.count == 0 {
             return None;
         }
 
@@ -368,15 +368,19 @@ impl Span<Block> {
 
 impl Block {
     const fn inc_with_limit(&mut self) {
-        if self.count > COUNT_LIMIT {
-            return;
+        match self.count {
+            0 => {},
+            c if c >= COUNT_LIMIT => {
+                self.count = 0;
+            },
+            _ => {
+                self.count += 1;
+            },
         }
-
-        self.count += 1;
     }
 
     fn set_to_limit(&mut self) {
-        assert!(self.count > COUNT_LIMIT);
+        assert!(self.count == 0);
 
         self.count = COUNT_LIMIT;
     }
