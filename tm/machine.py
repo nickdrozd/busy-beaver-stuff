@@ -180,11 +180,8 @@ class Machine:
             except InfiniteRule:
                 self.infrul = step
                 break
-            except RuleLimit as lim:
+            except (RuleLimit, NotImplementedError) as lim:
                 self.limrul = str(lim)
-                break
-            except NotImplementedError as nie:
-                self.limrul = str(nie)
                 break
             except ConfigLimit:  # no-cover
                 self.cfglim = step
