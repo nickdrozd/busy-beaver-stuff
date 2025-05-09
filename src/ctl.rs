@@ -9,7 +9,8 @@ use crate::{
     },
     macros::make_block_macro,
     tape::{
-        BigCount as Count, Block, Span as GenSpan, Tape as GenTape,
+        BasicBlock as Block, BigCount as Count, BigTape as Tape,
+        Block as _, Span,
     },
 };
 
@@ -152,8 +153,6 @@ fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: &Term) -> bool {
 }
 
 /**************************************/
-
-type Tape = GenTape<LimitBlock>;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct Config {
@@ -331,9 +330,7 @@ impl Tape {
 
 /**************************************/
 
-type Span = GenSpan<LimitBlock>;
-
-impl Span {
+impl Span<Block> {
     fn pull_with_limit(&mut self) -> Option<Color> {
         let Some(block) = self.0.first_mut() else {
             return Some(0);
@@ -369,59 +366,7 @@ impl Span {
 
 /**************************************/
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct LimitBlock {
-    color: Color,
-    count: Count,
-}
-
-impl Block for LimitBlock {
-    fn new(color: Color, count: Count) -> Self {
-        Self { color, count }
-    }
-
-    fn get_color(&self) -> Color {
-        self.color
-    }
-
-    fn get_count(&self) -> Count {
-        self.count
-    }
-
-    fn add_count(&mut self, _: Count) {
-        unimplemented!()
-    }
-
-    fn decrement(&mut self) {
-        assert!(2 <= self.count);
-        assert!(self.count <= COUNT_LIMIT);
-
-        self.count -= 1;
-    }
-
-    fn show(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (color, count) = (self.get_color(), self.get_count());
-
-        write!(
-            f,
-            "{}",
-            match count {
-                1 => format!("{color}"),
-                0 => format!("{color}.."),
-                c if c >= COUNT_LIMIT => format!("{color}+"),
-                _ => format!("{color}^{count}"),
-            }
-        )
-    }
-}
-
-impl fmt::Display for LimitBlock {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.show(f)
-    }
-}
-
-impl LimitBlock {
+impl Block {
     const fn inc_with_limit(&mut self) {
         if self.count > COUNT_LIMIT {
             return;
