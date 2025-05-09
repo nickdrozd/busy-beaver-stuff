@@ -1,5 +1,6 @@
 #![deny(
     clippy::all,
+    clippy::panic,
     clippy::nursery,
     clippy::pedantic,
     clippy::get_unwrap,
@@ -17,11 +18,7 @@
     clippy::redundant_type_annotations
 )]
 #![expect(clippy::cast_possible_truncation)]
-#![allow(
-    clippy::enum_glob_use,
-    clippy::ignore_without_reason,
-    clippy::should_panic_without_expect
-)]
+#![allow(clippy::enum_glob_use)]
 
 mod blocks;
 mod cps;

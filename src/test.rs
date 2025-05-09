@@ -200,7 +200,7 @@ fn test_tree() {
 }
 
 #[test]
-#[ignore]
+#[ignore = ""]
 fn test_tree_slow() {
     assert_trees![
         (

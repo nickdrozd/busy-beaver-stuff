@@ -30,15 +30,15 @@ ignore = [
 [lint.per-file-ignores]
 "test/**" = [
     "ANN",      # missing annotations
-    "E501",     # line too long
     "FBT001",   # boolean positional arg
     "FBT002",   # boolean default arg
+	"PLR0913",  # too many arguments
     "PT009",    # unittest assertions
     "PT027",    # unittest assert raise
 ]
 
 [lint.pylint]
-max-args       =  7  # c
+max-args       =  5  # c
 max-locals     = 19  # machine
 max-returns    =  7  # prover
 max-branches   = 23  # num

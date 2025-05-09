@@ -1,6 +1,5 @@
 # ruff: noqa: SIM102, PLR0911
-# pylint: disable = too-complex, too-many-try-statements
-# pylint: disable = confusing-consecutive-elif
+# pylint: disable = too-many-try-statements, confusing-consecutive-elif
 
 import itertools
 from abc import abstractmethod
@@ -602,7 +601,6 @@ class Mul(Num):
                 return l < ro
 
             if self.is_exp_coef and other.is_exp_coef:
-                # pylint: disable = no-else-return
                 assert isinstance(l, int)
                 assert isinstance(lo, int)
                 assert isinstance(r, Exp)
@@ -613,6 +611,7 @@ class Mul(Num):
                 if (rexp := r.exp) == (roexp := ro.exp):  # no-ranch
                     return l < lo  # no-cover
 
+                # pylint: disable = no-else-return
                 if rexp < roexp:
                     if not isinstance(diff := roexp - rexp, int):  # no-branch
                         return True  # no-cover

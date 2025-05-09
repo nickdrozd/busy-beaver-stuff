@@ -220,7 +220,7 @@ impl PastConfig {
         }
 
         let [e, d, c, b, a] = self.cycles[..] else {
-            panic!();
+            unreachable!();
         };
 
         self.cycles.remove(0);

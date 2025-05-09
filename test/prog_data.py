@@ -1,5 +1,3 @@
-# pylint: disable = consider-using-namedtuple-or-dataclass
-
 from typing import Literal
 
 ## test turing #######################################################
