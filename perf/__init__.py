@@ -1,7 +1,5 @@
 # pylint: skip-file
 
-from __future__ import annotations
-
 import sys
 from functools import reduce
 from typing import TYPE_CHECKING

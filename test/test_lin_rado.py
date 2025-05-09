@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 from itertools import product
 from typing import TYPE_CHECKING

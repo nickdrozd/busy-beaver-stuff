@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from multiprocessing import Manager, Pool, Queue, set_start_method
 from typing import TYPE_CHECKING
 from unittest import TestCase, skipUnless

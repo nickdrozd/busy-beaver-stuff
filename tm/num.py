@@ -1,8 +1,6 @@
 # ruff: noqa: SIM102, PLR0911
 # pylint: disable = too-complex, too-many-try-statements
-# pylint: disable = confusing-consecutive-elif, used-before-assignment
-
-from __future__ import annotations
+# pylint: disable = confusing-consecutive-elif
 
 import itertools
 from abc import abstractmethod

@@ -1,6 +1,4 @@
 # ruff: noqa: Q001
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 from tm.show import show_state

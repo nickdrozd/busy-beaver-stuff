@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from abc import abstractmethod
 from collections import defaultdict
 from typing import TYPE_CHECKING, Protocol

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from itertools import starmap
 from typing import TYPE_CHECKING
 from unittest import TestCase
