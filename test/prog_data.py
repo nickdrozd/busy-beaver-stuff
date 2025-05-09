@@ -2813,7 +2813,7 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
 
 ########################################
 
-CPS_FALSE_POSITIVE_COUNTS = {
+CPS_FALSE_NEGATIVE_COUNTS = {
     "halt": 42,
     "blank": 113,
     "spinout": 266,
@@ -3251,7 +3251,7 @@ CPS_FALSE_NEGATIVES = {
 
 ########################################
 
-CTL_FALSE_POSITIVE_COUNTS = {
+CTL_FALSE_NEGATIVE_COUNTS = {
     "halt": 100,
     "blank": 416,
     "spinout": 244,

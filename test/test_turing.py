@@ -647,7 +647,7 @@ class Cps(TuringTest):
         }
 
         self.assertEqual(
-            CPS_FALSE_POSITIVE_COUNTS,
+            CPS_FALSE_NEGATIVE_COUNTS,
             counts,
             json.dumps(counts, indent = 4))
 
@@ -691,7 +691,7 @@ class Ctl(TuringTest):
         }
 
         self.assertEqual(
-            CTL_FALSE_POSITIVE_COUNTS,
+            CTL_FALSE_NEGATIVE_COUNTS,
             counts,
             json.dumps(counts, indent = 4))
 
