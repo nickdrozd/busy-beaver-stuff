@@ -320,8 +320,8 @@ macro_rules! tape {
 }
 
 impl<B: Block> Tape<B> {
-    pub const fn init(scan: Color) -> Self {
-        tape! { scan, [], [] }
+    pub const fn init() -> Self {
+        tape! { 0, [], [] }
     }
 
     pub fn init_stepped() -> Self {
@@ -814,7 +814,7 @@ macro_rules! sig {
 
 #[test]
 fn test_init() {
-    Tape::init(0).assert(0, "[0]", &sig![0, [], []]);
+    Tape::init().assert(0, "[0]", &sig![0, [], []]);
 
     let mut tape = Tape::init_stepped();
 

@@ -362,7 +362,7 @@ pub fn run_quick_machine(
 ) -> MachineResult {
     let comp = CompProg::from_str(prog);
 
-    let mut tape = Tape::init(0);
+    let mut tape = Tape::init();
 
     let mut blanks = Blanks::new();
 

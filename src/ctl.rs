@@ -174,7 +174,7 @@ impl Config {
     const fn init() -> Self {
         Self {
             state: 0,
-            tape: Tape::init(0),
+            tape: Tape::init(),
         }
     }
 
