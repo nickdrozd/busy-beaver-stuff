@@ -6,6 +6,8 @@ use core::{
 
 use crate::instrs::{Color, Shift};
 
+/**************************************/
+
 pub type BigCount = u64;
 
 type Count = BigCount;
@@ -39,12 +41,12 @@ pub trait Block: Display {
 }
 
 #[derive(Clone, Eq, Hash, PartialEq)]
-pub struct BasicBlock {
+pub struct BigBlock {
     pub color: Color,
-    pub count: Count,
+    pub count: BigCount,
 }
 
-impl Block for BasicBlock {
+impl Block for BigBlock {
     fn new(color: Color, count: Count) -> Self {
         Self { color, count }
     }
@@ -66,7 +68,7 @@ impl Block for BasicBlock {
     }
 }
 
-impl Display for BasicBlock {
+impl Display for BigBlock {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.show(f)
     }
@@ -77,9 +79,13 @@ impl Display for BasicBlock {
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Span<B: Block>(pub Vec<B>);
 
-pub type BigSpan = Span<BasicBlock>;
+pub type BigSpan = Span<BigBlock>;
 
 impl<B: Block> Span<B> {
+    pub const fn new(blocks: Vec<B>) -> Self {
+        Self(blocks)
+    }
+
     pub const fn len(&self) -> usize {
         self.0.len()
     }
@@ -259,7 +265,7 @@ pub struct Tape<B: Block> {
     pub rspan: Span<B>,
 }
 
-pub type BigTape = Tape<BasicBlock>;
+pub type BigTape = Tape<BigBlock>;
 
 impl<B: Block> Display for Tape<B> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -389,7 +395,7 @@ trait IndexBlock: Block {
     fn set_count(&mut self, count: Count);
 }
 
-impl IndexBlock for BasicBlock {
+impl IndexBlock for BigBlock {
     fn set_count(&mut self, count: Count) {
         self.count = count;
     }
@@ -548,14 +554,14 @@ impl Alignment for HeadTape {
 /**************************************/
 
 struct EnumBlock {
-    block: BasicBlock,
+    block: BigBlock,
     index: Option<Index>,
 }
 
 impl Block for EnumBlock {
     fn new(color: Color, count: Count) -> Self {
         Self {
-            block: BasicBlock::new(color, count),
+            block: BigBlock::new(color, count),
             index: None,
         }
     }
@@ -732,7 +738,7 @@ impl MachineTape for EnumTape {
 
 /**************************************/
 
-impl Span<BasicBlock> {
+impl BigSpan {
     fn marks(&self) -> BigCount {
         self.0
             .iter()

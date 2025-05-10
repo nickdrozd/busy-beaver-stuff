@@ -10,7 +10,7 @@ use crate::{
         show_state, Color, GetInstr, Instr, Params, Shift, Slot, State,
         Term,
     },
-    tape::{BasicBlock as Block, BigCount as Count, Block as _},
+    tape::{BigBlock as Block, BigCount as Count, Block as _},
 };
 
 use Term::*;

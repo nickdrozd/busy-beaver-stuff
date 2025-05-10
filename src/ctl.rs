@@ -9,8 +9,8 @@ use crate::{
     },
     macros::make_block_macro,
     tape::{
-        BasicBlock as Block, BigCount as Count, BigTape as Tape,
-        Block as _, Span,
+        BigBlock as Block, BigCount as Count, BigSpan as Span,
+        BigTape as Tape, Block as _,
     },
 };
 
@@ -330,7 +330,7 @@ impl Tape {
 
 /**************************************/
 
-impl Span<Block> {
+impl Span {
     fn pull_with_limit(&mut self) -> Option<Color> {
         let Some(block) = self.0.first_mut() else {
             return Some(0);

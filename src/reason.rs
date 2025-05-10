@@ -10,8 +10,8 @@ use crate::{
         Color, CompProg, GetInstr as _, Instr, Shift, Slot, State,
     },
     tape::{
-        Alignment, BasicBlock as Block, BigCount as Count, Block as _,
-        Pos, Span as GenSpan,
+        Alignment, BigBlock as Block, BigCount as Count, BigSpan,
+        Block as _, Pos,
     },
 };
 
@@ -595,14 +595,14 @@ impl TapeEnd {
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct Span {
-    span: GenSpan<Block>,
+    span: BigSpan,
     end: TapeEnd,
 }
 
 impl Span {
     const fn new(blocks: Vec<Block>, end: TapeEnd) -> Self {
         Self {
-            span: GenSpan(blocks),
+            span: BigSpan::new(blocks),
             end,
         }
     }
