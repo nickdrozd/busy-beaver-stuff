@@ -2130,6 +2130,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
             "1RB 0RA  1LC 0LB  0LE 0LD  1LB 0LC  1RE 1RA",
             "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA",
             "1RB 0RD  0RC 0RB  1LC 0LA  0RA 1RE  0LB 1RB",
+            "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ...  2RA 1LB 0RD",
             "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA ...",
             "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...",
             "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC ... 0LC",
@@ -2383,7 +2384,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
         "depth_limit": 2,
         "step_limit": 3,
         "spinout": 135,
-        "linrec": 71,
+        "linrec": 72,
     },
     "spinout": {
         "step_limit": 4,
@@ -4115,10 +4116,6 @@ DO_BLANK: set[str] = {
     "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA",  # 10^14006
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA",  # 10^14006 TNF
 
-    "1RB 0LE  1RC 1RA  1RD 0LA  0LA 1LD  0RB 1LA",  # algebra
-
-    "1RB ... 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC",
-
     "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
 }
 
@@ -4227,7 +4224,7 @@ PROVER_HALT: ProverEst = {
 
     # 4/3
     "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD": "(2 + (3 * (2 ** (2 +",
-    "1RB ... 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC": (1.3, 7036),
+    "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ...  2RA 1LB 0RD": (1.3, 7036),
     "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...": (1.3, 7036),
     "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA ...": (4.2, 6034),
     "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (8.9, 4931),
@@ -4386,7 +4383,7 @@ SUSPECTED_RULES = {
     "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ...",
     "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ...",
 
-    "1RB ... 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC",
+    "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ...  2RA 1LB 0RD",
     "1RB 2LD ...  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
     "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...",
 
@@ -4896,8 +4893,8 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "((-13 + (7 * (2 ** ((8 + (7 * (2 ** ((8 + (7 * (2 ** ((8 + (7 * (2 ** ((8 + (7 * (2 ** 9560))) // 3)))) // 3)))) // 3)))) // 3)))) // 3)",
             "((64211 + ((7 * (2 ** ((5 + (7 * (2 ** ((8 + (7 * (2 ** ((8 + (7 * (2 ** 9560))) // 3)))) // 3)))) // 3))) + (((7 * (2 ** ((5 + (7 * (2 ** ((8 + (7 * (2 ** 9560))) // 3)))) // 3))) + (((7 * (2 ** ((5 + (7 * (2 ** 9560))) // 3))) + ((2 ** 9560) * (7 + (7 * (2 ** ((-28675 + (7 * (2 ** 9560))) // 3)))))) + (7 * (2 ** ((5 + (7 * (2 ** ((8 + (7 * (2 ** 9560))) // 3)))) // 3))))) + (7 * (2 ** ((5 + (7 * (2 ** ((8 + (7 * (2 ** ((8 + (7 * (2 ** 9560))) // 3)))) // 3)))) // 3)))))) // 3)",
         ),
-        "1RB 0LE  1RC 1RA  1RD 0LA  0LA 1LD  0RB 1LA": (
-            664,
+        "1RB 1RC  1RD 0LC  1RA 0LE  0LC 1LD  0RA 1LC": (
+            658,
             "(10 ↑↑ 6)",
             "(-2 + (3 * (2 ** (-5 + (3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** 764)))))))))))))))",
             "(1506 + ((3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** 764))))))))))) + (((3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** 764)))))))) + (((3 * (2 ** (-4 + (3 * (2 ** 764))))) + ((2 ** 763) * (9 + (3 * (2 ** (-768 + (3 * (2 ** 764)))))))) + (3 * (2 ** (-5 + (3 * (2 ** (-4 + (3 * (2 ** 764)))))))))) + (3 * (2 ** (-5 + (3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** 764))))))))))))))",
