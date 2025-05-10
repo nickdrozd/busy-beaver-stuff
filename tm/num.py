@@ -1338,6 +1338,8 @@ def gcd(l: int, r: Count) -> int:
     return base ** blog  # type: ignore[no-any-return]
 
 
+MOD_PERIOD_LIMIT = 2 ** 24
+
 @cache
 def find_period(base: int, mod: int) -> int:
     if base == 2 and mod == 2 * (3 ** round(log(mod / 2, 3))):
@@ -1345,7 +1347,7 @@ def find_period(base: int, mod: int) -> int:
 
     val = 1
 
-    if mod >= 2 ** 24:
+    if mod >= MOD_PERIOD_LIMIT:
         raise PeriodLimit(f'{base} ** ... % {mod}')
 
     for period in range(1, mod):
