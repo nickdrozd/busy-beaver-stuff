@@ -1,7 +1,7 @@
 use core::{
     cell::Cell,
     fmt::{self, Display, Formatter},
-    iter::{once, repeat_n},
+    iter::once,
 };
 
 use crate::instrs::{Color, Shift};
@@ -77,6 +77,8 @@ impl Display for BasicBlock {
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Span<B: Block>(pub Vec<B>);
 
+pub type BigSpan = Span<BasicBlock>;
+
 impl<B: Block> Span<B> {
     pub const fn len(&self) -> usize {
         self.0.len()
@@ -100,12 +102,6 @@ impl<B: Block> Span<B> {
 
     fn counts(&self) -> Vec<Count> {
         self.0.iter().map(B::get_count).collect()
-    }
-
-    fn unroll(&self) -> impl DoubleEndedIterator<Item = Color> {
-        self.0.iter().flat_map(|block| {
-            repeat_n(block.get_color(), block.get_count() as usize)
-        })
     }
 
     pub fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> {
@@ -328,10 +324,6 @@ impl<B: Block> Tape<B> {
         tape! { 0, [(1, 1)], [] }
     }
 
-    pub const fn blocks(&self) -> usize {
-        self.lspan.len() + self.rspan.len()
-    }
-
     pub fn counts(&self) -> (Vec<Count>, Vec<Count>) {
         (self.lspan.counts(), self.rspan.counts())
     }
@@ -358,15 +350,6 @@ impl<B: Block> Tape<B> {
             && self.rspan.len() >= rspan.len()
             && self.lspan.sig_compatible(lspan)
             && self.rspan.sig_compatible(rspan)
-    }
-
-    pub fn unroll(&self) -> Vec<Color> {
-        self.lspan
-            .unroll()
-            .rev()
-            .chain(once(self.scan))
-            .chain(self.rspan.unroll())
-            .collect()
     }
 }
 

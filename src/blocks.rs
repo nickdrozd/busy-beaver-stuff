@@ -1,7 +1,36 @@
+use core::iter::{once, repeat_n};
+
 use crate::{
     instrs::{Color, CompProg, Shift},
-    tape::{BigTape as Tape, MachineTape as _},
+    tape::{BigSpan as Span, BigTape as Tape, MachineTape as _},
 };
+
+/**************************************/
+
+impl Span {
+    fn unroll(&self) -> impl DoubleEndedIterator<Item = Color> {
+        self.0.iter().flat_map(|block| {
+            repeat_n(block.color, block.count as usize)
+        })
+    }
+}
+
+impl Tape {
+    const fn blocks(&self) -> usize {
+        self.lspan.len() + self.rspan.len()
+    }
+
+    fn unroll(&self) -> Vec<Color> {
+        self.lspan
+            .unroll()
+            .rev()
+            .chain(once(self.scan))
+            .chain(self.rspan.unroll())
+            .collect()
+    }
+}
+
+/**************************************/
 
 struct BlockMeasure {
     tape: Tape,
@@ -36,6 +65,8 @@ impl BlockMeasure {
         self.tape.step(shift, color, skip);
     }
 }
+
+/**************************************/
 
 fn measure_blocks(comp: &CompProg, steps: usize) -> usize {
     let mut state = 0;
@@ -90,6 +121,8 @@ fn compr_eff(tape: &[Color], k: usize) -> usize {
 
     compr_size
 }
+
+/**************************************/
 
 pub fn opt_block(comp: &CompProg, steps: usize) -> usize {
     let max_blocks_step = measure_blocks(comp, steps);
