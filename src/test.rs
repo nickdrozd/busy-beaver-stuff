@@ -67,10 +67,6 @@ fn assert_tree(
     build_tree(params, halt_flag, tree, &|prog| {
         *access(&visited_count) += 1;
 
-        if prog.incomplete(params, halt_flag) {
-            return;
-        }
-
         if pipeline(prog, params) {
             return;
         }
@@ -86,6 +82,7 @@ fn assert_tree(
 }
 
 #[test]
+#[expect(clippy::too_many_lines)]
 fn test_tree() {
     assert_trees![
         (
@@ -172,7 +169,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 1, 109, (33, 312_642)),
+            ((2, 4), 1, 109, (37, 312_642)),
             //
             |prog: &CompProg, prms: Params| {
                 prog.cant_halt(0).is_settled()
@@ -184,7 +181,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 0, 876, (1_399, 1_719_357)),
+            ((2, 4), 0, 876, (1_412, 1_719_357)),
             //
             |prog: &CompProg, prms: Params| {
                 prog.cant_spin_out(2).is_settled()
@@ -194,6 +191,10 @@ fn test_tree() {
                     || prog.cps_cant_spin_out(6)
                     || prog.seg_cant_spin_out(prms, 4).is_refuted()
                     || check_inf(prog, prms, opt_block(prog, 300), 1000)
+                    || (prog.incomplete(prms, false) && {
+                        prog.seg_cant_halt(prms, 5).is_refuted()
+                            || prog.cps_cant_halt(6)
+                    })
             }
         ),
     ];
