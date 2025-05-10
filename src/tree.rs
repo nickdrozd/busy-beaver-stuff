@@ -8,7 +8,9 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use rayon::prelude::*;
 
 use crate::{
-    instrs::{Color, CompProg, Instr, Params, Slot, State},
+    instrs::{
+        Color, CompProg, GetInstr as _, Instr, Params, Slot, State,
+    },
     tape::{BigTape as Tape, MachineTape as _},
 };
 
@@ -102,12 +104,10 @@ type Config = (State, Tape);
 
 fn leaf(
     prog: &CompProg,
-    (max_state, max_color): Params,
+    params: Params,
     harvester: &impl Fn(&CompProg),
 ) {
-    if prog.values().all(|(_, _, state)| 1 + state < max_state)
-        || prog.values().all(|(color, _, _)| 1 + color < max_color)
-    {
+    if prog.params_unreached(params) {
         return;
     }
 
