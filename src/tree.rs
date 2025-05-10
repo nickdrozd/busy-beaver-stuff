@@ -11,7 +11,7 @@ use crate::{
     instrs::{
         Color, CompProg, GetInstr as _, Instr, Params, Slot, State,
     },
-    tape::{BigTape as Tape, MachineTape as _},
+    tape::{MachineTape as _, MedTape as Tape},
 };
 
 pub type Step = usize;

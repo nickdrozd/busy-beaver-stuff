@@ -1,4 +1,4 @@
-use core::{fmt, iter::once};
+use core::{fmt, iter::once, marker::PhantomData};
 
 use std::{
     collections::{BTreeMap, HashSet},
@@ -10,8 +10,8 @@ use crate::{
         Color, CompProg, GetInstr as _, Instr, Shift, Slot, State,
     },
     tape::{
-        Alignment, BigBlock as Block, BigCount as Count, BigSpan,
-        Block as _, Pos,
+        Alignment, Block as _, LilBlock as Block, LilCount as Count,
+        Pos, Span as GenSpan,
     },
 };
 
@@ -595,14 +595,14 @@ impl TapeEnd {
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct Span {
-    span: BigSpan,
+    span: GenSpan<Count, Block>,
     end: TapeEnd,
 }
 
 impl Span {
     const fn new(blocks: Vec<Block>, end: TapeEnd) -> Self {
         Self {
-            span: BigSpan::new(blocks),
+            span: GenSpan(blocks, PhantomData::<Count>),
             end,
         }
     }

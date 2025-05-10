@@ -8,6 +8,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rayon = "*"
+num-traits = "*"
 pyo3 = { version = "*", features = ["extension-module"] }
 
 [profile.release]

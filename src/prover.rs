@@ -5,7 +5,10 @@ use pyo3::{pyclass, pymethods};
 use crate::{
     instrs::{GetInstr, Slot, State},
     rules::{make_rule, ApplyRule, Rule},
-    tape::{BigTape, EnumTape, GetSig, MachineTape, MinSig, Signature},
+    tape::{
+        BigCount, BigTape, EnumTape, GetSig, MachineTape, MinSig,
+        Signature,
+    },
 };
 
 type Cycle = i32;
@@ -73,7 +76,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         &self,
         steps: Cycle,
         mut state: State,
-        tape: &mut (impl ApplyRule + GetSig + MachineTape),
+        tape: &mut (impl ApplyRule + GetSig + MachineTape<BigCount>),
     ) -> Option<State> {
         for _ in 0..steps {
             if let Some(rule) = self.get_rule(state, tape, None)
