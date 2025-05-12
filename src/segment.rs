@@ -586,10 +586,10 @@ impl Span {
 
             let pull_color = next_pull.get_color();
 
-            if next_pull.get_count() > 1 {
-                next_pull.decrement();
-            } else {
+            if next_pull.is_single() {
                 self.0.remove(0);
+            } else {
+                next_pull.decrement();
             }
 
             Some(pull_color)

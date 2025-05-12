@@ -25,6 +25,14 @@ pub trait Block: Display {
 
     fn decrement(&mut self);
 
+    fn is_single(&self) -> bool {
+        self.get_count() == 1
+    }
+
+    fn is_indef(&self) -> bool {
+        self.get_count() == 0
+    }
+
     fn show(&self, f: &mut Formatter) -> fmt::Result {
         let (color, count) = (self.get_color(), self.get_count());
 
@@ -168,10 +176,10 @@ impl<B: Block> Span<B> {
 
             let pull_color = next_pull.get_color();
 
-            if next_pull.get_count() > 1 {
-                next_pull.decrement();
-            } else {
+            if next_pull.is_single() {
                 self.0.remove(0);
+            } else {
+                next_pull.decrement();
             }
 
             pull_color
@@ -217,9 +225,7 @@ impl ColorCount {
 
 impl<B: Block> From<&B> for ColorCount {
     fn from(block: &B) -> Self {
-        (if block.get_count() == 1 { Just } else { Mult })(
-            block.get_color(),
-        )
+        (if block.is_single() { Just } else { Mult })(block.get_color())
     }
 }
 

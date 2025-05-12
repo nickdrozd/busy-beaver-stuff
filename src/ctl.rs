@@ -284,7 +284,7 @@ impl Config {
 
         let block = pull.0.first_mut().unwrap();
 
-        assert!(block.count == 0);
+        assert!(block.is_indef());
 
         block.set_to_limit();
 
@@ -336,7 +336,7 @@ impl Span {
             return Some(0);
         };
 
-        if block.count == 0 {
+        if block.is_indef() {
             return None;
         }
 
@@ -380,7 +380,7 @@ impl Block {
     }
 
     fn set_to_limit(&mut self) {
-        assert!(self.count == 0);
+        assert!(self.is_indef());
 
         self.count = COUNT_LIMIT;
     }

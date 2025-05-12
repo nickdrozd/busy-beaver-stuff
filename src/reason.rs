@@ -751,7 +751,7 @@ impl Backstepper {
             return false;
         };
 
-        block.count == 0
+        block.is_indef()
     }
 
     fn backstep(&mut self, shift: Shift, read: Color) {
