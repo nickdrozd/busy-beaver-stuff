@@ -106,18 +106,6 @@ impl<B: Block> Span<B> {
         self.0.iter().map(Into::into).collect()
     }
 
-    fn sig_compatible(&self, span: &SigSpan) -> bool {
-        self.0
-            .iter()
-            .take(span.len())
-            .zip(span.iter())
-            .all(|(bk, cc)| bk.get_color() == cc.get_color())
-    }
-
-    fn counts(&self) -> Vec<Count> {
-        self.0.iter().map(B::get_count).collect()
-    }
-
     pub fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> {
         self.0.iter().map(ToString::to_string)
     }
@@ -336,10 +324,6 @@ impl<B: Block> Tape<B> {
         tape! { 0, [(1, 1)], [] }
     }
 
-    pub fn counts(&self) -> (Vec<Count>, Vec<Count>) {
-        (self.lspan.counts(), self.rspan.counts())
-    }
-
     pub const fn at_edge(&self, edge: Shift) -> bool {
         self.scan == 0
             && (if edge { &self.rspan } else { &self.lspan }).blank()
@@ -347,21 +331,6 @@ impl<B: Block> Tape<B> {
 
     pub const fn blank(&self) -> bool {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
-    }
-
-    pub const fn length_one_spans(&self) -> bool {
-        self.lspan.len() == 1 && self.rspan.len() == 1
-    }
-
-    pub fn sig_compatible(
-        &self,
-        Signature { scan, lspan, rspan }: &Signature,
-    ) -> bool {
-        self.scan == *scan
-            && self.lspan.len() >= lspan.len()
-            && self.rspan.len() >= rspan.len()
-            && self.lspan.sig_compatible(lspan)
-            && self.rspan.sig_compatible(rspan)
     }
 }
 
@@ -752,6 +721,18 @@ impl BigSpan {
             .map(|block| block.count)
             .sum::<BigCount>()
     }
+
+    fn counts(&self) -> Vec<Count> {
+        self.0.iter().map(BigBlock::get_count).collect()
+    }
+
+    fn sig_compatible(&self, span: &SigSpan) -> bool {
+        self.0
+            .iter()
+            .take(span.len())
+            .zip(span.iter())
+            .all(|(bk, cc)| bk.get_color() == cc.get_color())
+    }
 }
 
 impl BigTape {
@@ -759,6 +740,24 @@ impl BigTape {
         BigCount::from(self.scan != 0)
             + self.lspan.marks()
             + self.rspan.marks()
+    }
+
+    pub const fn length_one_spans(&self) -> bool {
+        self.lspan.len() == 1 && self.rspan.len() == 1
+    }
+    pub fn counts(&self) -> (Vec<Count>, Vec<Count>) {
+        (self.lspan.counts(), self.rspan.counts())
+    }
+
+    pub fn sig_compatible(
+        &self,
+        Signature { scan, lspan, rspan }: &Signature,
+    ) -> bool {
+        self.scan == *scan
+            && self.lspan.len() >= lspan.len()
+            && self.rspan.len() >= rspan.len()
+            && self.lspan.sig_compatible(lspan)
+            && self.rspan.sig_compatible(rspan)
     }
 }
 
