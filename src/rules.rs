@@ -89,7 +89,14 @@ fn calculate_diff(
         return Some(Unknown);
     };
 
-    if diff_1 == diff_2 && diff_2 == (d - c) {
+    if diff_1 == diff_2
+        && diff_2 == {
+            let Some(diff_3) = d.checked_sub(c) else {
+                return Some(Unknown);
+            };
+            diff_3
+        }
+    {
         return Some(Got(Plus(diff_1)));
     }
 
