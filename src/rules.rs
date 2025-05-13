@@ -1,13 +1,14 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
+use num_bigint::BigInt;
 use num_integer::Integer as _;
-use num_traits::{Signed as _, Zero as _};
+use num_traits::{CheckedMul as _, One as _, Signed as _, Zero as _};
 
 use crate::tape::{BigCount as Count, Index, IndexTape};
 
 /**************************************/
 
-pub type Diff = i32;
+pub type Diff = BigInt;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Op {
@@ -26,11 +27,13 @@ impl Rule {
     }
 
     #[cfg(test)]
-    pub fn from_triples(triples: &[(Index, Diff)]) -> Self {
+    pub fn from_triples(triples: &[(Index, i8)]) -> Self {
         Self(
             triples
                 .iter()
-                .map(|&(index, diff)| (index, Op::Plus(diff)))
+                .map(|&(index, diff)| {
+                    (index, Op::Plus(Diff::from(diff)))
+                })
                 .collect(),
         )
     }
@@ -71,28 +74,33 @@ use DiffResult::*;
 use Op::*;
 
 fn calculate_diff(
-    a: Count,
-    b: Count,
-    c: Count,
-    d: Count,
+    a: &Count,
+    b: &Count,
+    c: &Count,
+    d: &Count,
 ) -> Option<DiffResult> {
     if a == b && b == c && c == d {
         return None;
     }
 
-    let (a, b, c, d) = (a as Diff, b as Diff, c as Diff, d as Diff);
+    let (a, b, c, d): (Diff, Diff, Diff, Diff) = (
+        a.clone().into(),
+        b.clone().into(),
+        c.clone().into(),
+        d.clone().into(),
+    );
 
-    let Some(diff_1) = b.checked_sub(a) else {
+    let Some(diff_1) = b.checked_sub(&a) else {
         return Some(Unknown);
     };
 
-    let Some(diff_2) = c.checked_sub(b) else {
+    let Some(diff_2) = c.checked_sub(&b) else {
         return Some(Unknown);
     };
 
     if diff_1 == diff_2
         && diff_2 == {
-            let Some(diff_3) = d.checked_sub(c) else {
+            let Some(diff_3) = d.checked_sub(&c) else {
                 return Some(Unknown);
             };
             diff_3
@@ -128,20 +136,24 @@ pub fn make_rule(
             .zip(l2.iter())
             .zip(l3.iter())
             .zip(l4.iter())
-            .map(|(((a, b), c), d)| (*a, *b, *c, *d))
+            .map(|(((a, b), c), d)| {
+                (a.clone(), b.clone(), c.clone(), d.clone())
+            })
             .collect(),
         r1.iter()
             .zip(r2.iter())
             .zip(r3.iter())
             .zip(r4.iter())
-            .map(|(((a, b), c), d)| (*a, *b, *c, *d))
+            .map(|(((a, b), c), d)| {
+                (a.clone(), b.clone(), c.clone(), d.clone())
+            })
             .collect(),
     ];
 
     let mut rule = Rule::new();
 
     for (s, spans) in countses.iter().enumerate() {
-        for (i, &(a, b, c, d)) in spans.iter().enumerate() {
+        for (i, (a, b, c, d)) in spans.iter().enumerate() {
             let Some(diff) = calculate_diff(a, b, c, d) else {
                 continue;
             };
@@ -164,13 +176,13 @@ pub trait ApplyRule: IndexTape {
         let (times, min_pos, min_res) = self.count_apps(rule)?;
 
         for (pos, diff) in &rule.0 {
-            let Plus(plus) = *diff else { unimplemented!() };
+            let Plus(plus) = diff else { unimplemented!() };
 
             let result = if *pos == min_pos {
                 assert!(plus.is_negative());
-                min_res
+                min_res.clone()
             } else {
-                apply_plus(self.get_count(pos), plus, times)?
+                apply_plus(self.get_count(pos), plus, &times)?
             };
 
             self.set_count(pos, result);
@@ -183,14 +195,14 @@ pub trait ApplyRule: IndexTape {
         let mut apps: Option<(Count, Index, Count)> = None;
 
         for (pos, diff) in &rule.0 {
-            let Plus(diff) = *diff else { unimplemented!() };
+            let Plus(diff) = diff else { unimplemented!() };
 
-            if diff >= 0 {
+            if !diff.is_negative() {
                 continue;
             }
 
             let count = self.get_count(pos);
-            let absdiff: Count = diff.unsigned_abs().into();
+            let absdiff = diff.abs().to_biguint()?;
 
             if absdiff >= count {
                 return None;
@@ -199,14 +211,14 @@ pub trait ApplyRule: IndexTape {
             let (div, rem) = count.div_rem(&absdiff);
 
             let (times, min_res) = if rem.is_zero() {
-                (div - 1, absdiff)
+                (div - Count::one(), absdiff)
             } else {
-                assert!(0 < rem);
+                assert!(Count::zero() < rem);
                 (div, rem)
             };
 
-            if let Some((curr, _, _)) = apps {
-                if times < curr {
+            if let Some((curr, _, _)) = apps.as_ref() {
+                if &times < curr {
                     apps = Some((times, *pos, min_res));
                 }
             } else {
@@ -222,10 +234,12 @@ impl<T: IndexTape> ApplyRule for T {}
 
 /**************************************/
 
-fn apply_plus(count: Count, diff: Diff, times: Count) -> Option<Count> {
-    let diff: Count = diff.unsigned_abs().into();
-
-    let mult = diff.checked_mul(times)?;
+fn apply_plus(
+    count: Count,
+    diff: &Diff,
+    times: &Count,
+) -> Option<Count> {
+    let mult = diff.abs().to_biguint()?.checked_mul(times)?;
 
     Some(count + mult)
 }

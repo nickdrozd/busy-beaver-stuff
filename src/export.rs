@@ -245,7 +245,7 @@ use std::collections::BTreeMap as Dict;
 
 use crate::tape::{BigCount, BigTape as Tape, MachineTape as _};
 
-type BigStep = u64;
+type BigStep = BigCount;
 
 type Blanks = Dict<State, BigStep>;
 
@@ -298,18 +298,18 @@ impl MachineResult {
     }
 
     #[getter]
-    const fn cycles(&self) -> BigStep {
-        self.cycles
+    fn cycles(&self) -> BigStep {
+        self.cycles.clone()
     }
 
     #[getter]
-    const fn steps(&self) -> BigStep {
-        self.steps
+    fn steps(&self) -> BigStep {
+        self.steps.clone()
     }
 
     #[getter]
-    const fn marks(&self) -> BigCount {
-        self.marks
+    fn marks(&self) -> BigCount {
+        self.marks.clone()
     }
 
     #[getter]
@@ -356,10 +356,7 @@ impl MachineResult {
 
 #[pyfunction]
 #[pyo3(signature = (prog, sim_lim=100_000_000))]
-pub fn run_quick_machine(
-    prog: &str,
-    sim_lim: BigStep,
-) -> MachineResult {
+pub fn run_quick_machine(prog: &str, sim_lim: usize) -> MachineResult {
     let comp = CompProg::from_str(prog);
 
     let mut tape = Tape::init();
@@ -367,8 +364,9 @@ pub fn run_quick_machine(
     let mut blanks = Blanks::new();
 
     let mut state = 0;
-    let mut steps = 0;
     let mut cycles = 0;
+
+    let mut steps = BigCount::ZERO;
 
     let mut result: Option<TermRes> = None;
     let mut last_slot: Option<Slot> = None;
@@ -403,7 +401,7 @@ pub fn run_quick_machine(
                 break;
             }
 
-            blanks.insert(state, steps);
+            blanks.insert(state, steps.clone());
 
             if state == 0 {
                 result = Some(infrul);
@@ -415,7 +413,7 @@ pub fn run_quick_machine(
     MachineResult {
         result: result.unwrap_or(xlimit),
         steps,
-        cycles,
+        cycles: cycles.into(),
         marks: tape.marks(),
         last_slot,
         blanks,

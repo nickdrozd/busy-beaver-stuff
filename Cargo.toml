@@ -8,9 +8,10 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rayon = "*"
+num-bigint = "*"
 num-traits = "*"
 num-integer = "*"
-pyo3 = { version = "*", features = ["extension-module"] }
+pyo3 = { version = "*", features = ["extension-module", "num-bigint"] }
 
 [profile.release]
 lto = true

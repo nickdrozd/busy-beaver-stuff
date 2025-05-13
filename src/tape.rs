@@ -7,6 +7,7 @@ use core::{
     ops::{AddAssign, SubAssign},
 };
 
+use num_bigint::BigUint;
 use num_traits::Num;
 
 use crate::instrs::{Color, Shift};
@@ -15,13 +16,12 @@ use crate::instrs::{Color, Shift};
 
 pub type LilCount = u8;
 pub type MedCount = u16;
-pub type BigCount = u64;
+pub type BigCount = BigUint;
 
 /**************************************/
 
 pub trait Countable:
     Num
-    + Copy
     + Clone
     + Eq
     + Hash
@@ -98,7 +98,7 @@ impl<Count: Countable> Block<Count> for BasicBlock<Count> {
     }
 
     fn get_count(&self) -> Count {
-        self.count
+        self.count.clone()
     }
 
     fn add_count(&mut self, count: Count) {
@@ -407,7 +407,7 @@ impl<Count: Countable, B: Block<Count>> MachineTape<Count>
 
         let (next_scan, stepped) = pull.pull(self.scan, skip);
 
-        push.push(color, stepped);
+        push.push(color, stepped.clone());
 
         self.scan = next_scan;
 
@@ -773,7 +773,7 @@ impl Span<BigCount, BigBlock> {
         self.0
             .iter()
             .filter(|block| !block.blank())
-            .map(|block| block.count)
+            .map(|block| block.count.clone())
             .sum::<BigCount>()
     }
 }
@@ -827,6 +827,9 @@ impl BigTape {
 }
 
 #[cfg(test)]
+use num_bigint::BigInt;
+
+#[cfg(test)]
 macro_rules! tape {
     (
         $ scan : expr,
@@ -835,8 +838,8 @@ macro_rules! tape {
     ) => {
         BigTape {
             scan: $ scan,
-            lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, $ lspan.1) ), * ] , PhantomData::<BigCount>),
-            rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, $ rspan.1) ), * ] , PhantomData::<BigCount>),
+            lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
+            rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
         }
     };
 }
@@ -1016,8 +1019,8 @@ macro_rules! enum_tape {
         EnumTape::from(
             &BigTape {
                 scan: $ scan,
-                lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, $ lspan.1) ), * ] , PhantomData::<BigCount>),
-                rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, $ rspan.1) ), * ] , PhantomData::<BigCount>),
+                lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
+                rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
             }
         )
     };
