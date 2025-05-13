@@ -4,6 +4,8 @@ use core::{cell::RefCell, iter::once};
 
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
+use num_integer::Integer as _;
+
 use crate::instrs::{
     Color, CompProg, GetInstr, Instr, Params, Shift, Slot, State,
 };
@@ -83,8 +85,7 @@ impl Logic for BlockLogic {
         &self,
         (macro_state, macro_color): Slot,
     ) -> Config {
-        let state = macro_state / 2;
-        let right_edge = macro_state % 2;
+        let (state, right_edge) = macro_state.div_rem(&2);
 
         (
             state,
@@ -290,13 +291,12 @@ impl Logic for BacksymbolLogic {
         &self,
         (macro_state, macro_color): Slot,
     ) -> Config {
-        let (st_co, at_right) = (macro_state / 2, macro_state % 2);
+        let (st_co, at_right) = macro_state.div_rem(&2);
 
-        let state = st_co / self.backsymbols as Color;
+        let (state, color) =
+            st_co.div_rem(&(self.backsymbols as Color));
 
-        let backspan = self
-            .converter
-            .color_to_tape(st_co % self.backsymbols as Color);
+        let backspan = self.converter.color_to_tape(color);
 
         (
             state,

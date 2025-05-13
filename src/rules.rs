@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
+use num_integer::Integer as _;
 use num_traits::{Signed as _, Zero as _};
 
 use crate::tape::{BigCount as Count, Index, IndexTape};
@@ -104,10 +105,10 @@ fn calculate_diff(
         return Some(Unknown);
     }
 
-    let divmod1 = (b / a, b % a);
-    let divmod2 = (c / b, c % b);
+    let divmod1 = b.div_rem(&a);
+    let divmod2 = c.div_rem(&b);
 
-    if divmod1 == divmod2 && divmod2 == (d / c, d % c) {
+    if divmod1 == divmod2 && divmod2 == d.div_rem(&c) {
         return Some(Got(Mult(divmod1)));
     }
 
@@ -195,8 +196,7 @@ pub trait ApplyRule: IndexTape {
                 return None;
             }
 
-            let div = count / absdiff;
-            let rem = count % absdiff;
+            let (div, rem) = count.div_rem(&absdiff);
 
             let (times, min_res) = if rem.is_zero() {
                 (div - 1, absdiff)
