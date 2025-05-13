@@ -320,32 +320,32 @@ impl MachineResult {
     #[getter]
     fn undfnd(&self) -> Option<(BigStep, Slot)> {
         matches!(self.result, undfnd)
-            .then_some((self.steps, self.last_slot?))
+            .then_some((self.steps(), self.last_slot?))
     }
 
     #[getter]
     fn simple_termination(&self) -> Option<BigStep> {
-        matches!(self.result, undfnd | spnout).then_some(self.steps)
+        matches!(self.result, undfnd | spnout).then_some(self.steps())
     }
 
     #[getter]
     fn halted(&self) -> Option<BigStep> {
-        matches!(self.result, undfnd).then_some(self.steps)
+        matches!(self.result, undfnd).then_some(self.steps())
     }
 
     #[getter]
     fn infrul(&self) -> Option<BigStep> {
-        matches!(self.result, infrul).then_some(self.steps)
+        matches!(self.result, infrul).then_some(self.steps())
     }
 
     #[getter]
     fn spnout(&self) -> Option<BigStep> {
-        matches!(self.result, spnout).then_some(self.steps)
+        matches!(self.result, spnout).then_some(self.steps())
     }
 
     #[getter]
     fn xlimit(&self) -> Option<BigStep> {
-        matches!(self.result, xlimit).then_some(self.steps)
+        matches!(self.result, xlimit).then_some(self.steps())
     }
 
     #[getter]
