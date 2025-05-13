@@ -543,7 +543,7 @@ struct Span(Vec<Block>);
 
 impl Span {
     fn blank(&self) -> bool {
-        self.0.iter().all(|block| block.color == 0)
+        self.0.iter().all(Block::blank)
     }
 
     fn len(&self) -> usize {

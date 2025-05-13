@@ -33,6 +33,10 @@ pub trait Block: Display {
         self.get_count() == 0
     }
 
+    fn blank(&self) -> bool {
+        self.get_color() == 0
+    }
+
     fn show(&self, f: &mut Formatter) -> fmt::Result {
         let (color, count) = (self.get_color(), self.get_count());
 
@@ -717,7 +721,7 @@ impl BigSpan {
     fn marks(&self) -> BigCount {
         self.0
             .iter()
-            .filter(|block| block.color != 0)
+            .filter(|block| !block.blank())
             .map(|block| block.count)
             .sum::<BigCount>()
     }

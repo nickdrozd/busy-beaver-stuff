@@ -608,7 +608,7 @@ impl Span {
     }
 
     fn blank(&self) -> bool {
-        self.span.0.iter().all(|block| block.color == 0)
+        self.span.0.iter().all(Block::blank)
     }
 
     const fn len(&self) -> usize {
