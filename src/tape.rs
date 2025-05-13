@@ -456,7 +456,7 @@ impl HeadTape {
     pub fn init_stepped() -> Self {
         Self {
             head: 1,
-            tape: tape! { 0, [(1, 1)], [] },
+            tape: BigTape::init_stepped(),
         }
     }
 
