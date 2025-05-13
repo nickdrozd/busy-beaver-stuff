@@ -190,10 +190,11 @@ pub trait ApplyRule: IndexTape {
             let div = count / absdiff;
             let rem = count % absdiff;
 
-            let (times, min_res) = if rem > 0 {
-                (div, rem)
-            } else {
+            let (times, min_res) = if rem == 0 {
                 (div - 1, absdiff)
+            } else {
+                assert!(0 < rem);
+                (div, rem)
             };
 
             if let Some((curr, _, _)) = apps {
