@@ -1,5 +1,7 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
+use num_traits::{Signed as _, Zero as _};
+
 use crate::tape::{BigCount as Count, Index, IndexTape};
 
 /**************************************/
@@ -33,10 +35,9 @@ impl Rule {
     }
 
     pub fn is_infinite(&self) -> bool {
-        !self
-            .0
-            .values()
-            .any(|diff| matches!(diff, Plus(plus) if *plus < 0))
+        !self.0.values().any(
+            |diff| matches!(diff, Plus(plus) if plus.is_negative()),
+        )
     }
 
     pub fn is_mult(&self) -> bool {
@@ -92,7 +93,7 @@ fn calculate_diff(
         return Some(Got(Plus(diff_1)));
     }
 
-    if a == 0 || b == 0 {
+    if a.is_zero() || b.is_zero() {
         return Some(Unknown);
     }
 
@@ -158,7 +159,7 @@ pub trait ApplyRule: IndexTape {
             let Plus(plus) = *diff else { unimplemented!() };
 
             let result = if *pos == min_pos {
-                assert!(plus < 0);
+                assert!(plus.is_negative());
                 min_res
             } else {
                 apply_plus(self.get_count(pos), plus, times)?
@@ -190,7 +191,7 @@ pub trait ApplyRule: IndexTape {
             let div = count / absdiff;
             let rem = count % absdiff;
 
-            let (times, min_res) = if rem == 0 {
+            let (times, min_res) = if rem.is_zero() {
                 (div - 1, absdiff)
             } else {
                 assert!(0 < rem);
