@@ -125,7 +125,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         }
 
         if !self.configs.contains_key(&sig) {
-            if self.config_count() > 100_000 {
+            if self.config_count() > 1_000 {
                 return Some(ConfigLimit);
             }
 

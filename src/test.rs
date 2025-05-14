@@ -155,7 +155,7 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 0, 99, (102, 2_291_637)),
+            ((4, 2), 0, 99, (104, 2_291_637)),
             //
             |prog: &CompProg, prms: Params| {
                 !is_connected(prog, 4)
@@ -169,7 +169,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 1, 109, (37, 312_642)),
+            ((2, 4), 1, 109, (43, 312_642)),
             //
             |prog: &CompProg, prms: Params| {
                 prog.cant_halt(0).is_settled()
