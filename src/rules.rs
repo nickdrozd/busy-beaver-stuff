@@ -182,7 +182,7 @@ pub trait ApplyRule: IndexTape {
                 assert!(plus.is_negative());
                 min_res.clone()
             } else {
-                apply_plus(self.get_count(pos), plus, &times)?
+                apply_plus(self.get_count(pos), &times, plus)?
             };
 
             self.set_count(pos, result);
@@ -236,8 +236,8 @@ impl<T: IndexTape> ApplyRule for T {}
 
 fn apply_plus(
     count: Count,
-    diff: &Diff,
     times: &Count,
+    diff: &Diff,
 ) -> Option<Count> {
     let mult = diff.abs().to_biguint()?.checked_mul(times)?;
 
