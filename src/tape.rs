@@ -41,13 +41,13 @@ impl Countable for BigCount {}
 /**************************************/
 
 pub trait Block<Count: Countable>: Display {
-    fn new(color: Color, count: Count) -> Self;
+    fn new(color: Color, count: &Count) -> Self;
 
     fn get_color(&self) -> Color;
 
-    fn get_count(&self) -> Count;
+    fn get_count(&self) -> &Count;
 
-    fn add_count(&mut self, count: Count);
+    fn add_count(&mut self, count: &Count);
 
     fn decrement(&mut self);
 
@@ -89,20 +89,23 @@ pub type MedBlock = BasicBlock<MedCount>;
 pub type BigBlock = BasicBlock<BigCount>;
 
 impl<Count: Countable> Block<Count> for BasicBlock<Count> {
-    fn new(color: Color, count: Count) -> Self {
-        Self { color, count }
+    fn new(color: Color, count: &Count) -> Self {
+        Self {
+            color,
+            count: count.clone(),
+        }
     }
 
     fn get_color(&self) -> Color {
         self.color
     }
 
-    fn get_count(&self) -> Count {
-        self.count.clone()
+    fn get_count(&self) -> &Count {
+        &self.count
     }
 
-    fn add_count(&mut self, count: Count) {
-        self.count += count;
+    fn add_count(&mut self, count: &Count) {
+        self.count += count.clone();
     }
 
     fn decrement(&mut self) {
@@ -143,7 +146,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
                 .then(|| self.0.remove(0))
                 .map_or_else(
                     || Count::one(),
-                    |block| Count::one() + block.get_count(),
+                    |block| Count::one() + block.get_count().clone(),
                 );
 
         let next_scan = if self.blank() {
@@ -165,7 +168,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         (next_scan, stepped)
     }
 
-    pub fn push(&mut self, print: Color, stepped: Count) {
+    pub fn push(&mut self, print: Color, stepped: &Count) {
         match self.0.first_mut() {
             Some(block) if block.get_color() == print => {
                 block.add_count(stepped);
@@ -177,7 +180,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         }
     }
 
-    pub fn push_block(&mut self, color: Color, count: Count) {
+    pub fn push_block(&mut self, color: Color, count: &Count) {
         self.0.insert(0, Block::new(color, count));
     }
 }
@@ -186,7 +189,10 @@ pub type MedSpan = Span<MedCount, MedBlock>;
 
 impl<B: Block<BigCount>> Span<BigCount, B> {
     fn counts(&self) -> Vec<BigCount> {
-        self.0.iter().map(B::get_count).collect()
+        self.0
+            .iter()
+            .map(|block| block.get_count().clone())
+            .collect()
     }
 
     fn signature(&self) -> Vec<ColorCount> {
@@ -219,8 +225,10 @@ impl<C: Countable + Into<usize>, B: Block<C>> Span<C, B> {
                         return false;
                     }
 
-                    let s_rem = s_block.get_count().into();
-                    let p_rem = p_block.get_count().into();
+                    let s_rem: usize =
+                        s_block.get_count().clone().into();
+                    let p_rem: usize =
+                        p_block.get_count().clone().into();
 
                     if s_rem == 0 || p_rem == 0 {
                         return false;
@@ -368,7 +376,7 @@ impl<Count: Countable, B: Block<Count>> Tape<Count, B> {
         Self {
             scan: 0,
             lspan: Span(
-                vec![B::new(1, Count::one())],
+                vec![B::new(1, &Count::one())],
                 PhantomData::<Count>,
             ),
             rspan: Span(vec![], PhantomData::<Count>),
@@ -407,7 +415,7 @@ impl<Count: Countable, B: Block<Count>> MachineTape<Count>
 
         let (next_scan, stepped) = pull.pull(self.scan, skip);
 
-        push.push(color, stepped.clone());
+        push.push(color, &stepped);
 
         self.scan = next_scan;
 
@@ -436,12 +444,12 @@ impl IndexBlock for EnumBlock {
 }
 
 pub trait IndexTape {
-    fn get_count(&self, index: &Index) -> BigCount;
+    fn get_count(&self, index: &Index) -> &BigCount;
     fn set_count(&mut self, index: &Index, val: BigCount);
 }
 
 impl<B: Block<BigCount> + IndexBlock> IndexTape for Tape<BigCount, B> {
-    fn get_count(&self, &(side, pos): &Index) -> BigCount {
+    fn get_count(&self, &(side, pos): &Index) -> &BigCount {
         let span = if side { &self.rspan } else { &self.lspan };
 
         span.0[pos].get_count()
@@ -587,7 +595,7 @@ struct EnumBlock {
 }
 
 impl Block<BigCount> for EnumBlock {
-    fn new(color: Color, count: BigCount) -> Self {
+    fn new(color: Color, count: &BigCount) -> Self {
         Self {
             block: BigBlock::new(color, count),
             index: None,
@@ -598,11 +606,11 @@ impl Block<BigCount> for EnumBlock {
         self.block.get_color()
     }
 
-    fn get_count(&self) -> BigCount {
+    fn get_count(&self) -> &BigCount {
         self.block.get_count()
     }
 
-    fn add_count(&mut self, count: BigCount) {
+    fn add_count(&mut self, count: &BigCount) {
         self.block.add_count(count);
     }
 
@@ -744,7 +752,7 @@ impl EnumTape {
 }
 
 impl IndexTape for EnumTape {
-    fn get_count(&self, index: &Index) -> BigCount {
+    fn get_count(&self, index: &Index) -> &BigCount {
         self.tape.get_count(index)
     }
 
@@ -838,8 +846,8 @@ macro_rules! tape {
     ) => {
         BigTape {
             scan: $ scan,
-            lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
-            rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
+            lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
+            rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
         }
     };
 }
@@ -1019,8 +1027,8 @@ macro_rules! enum_tape {
         EnumTape::from(
             &BigTape {
                 scan: $ scan,
-                lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
-                rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
+                lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
+                rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
             }
         )
     };

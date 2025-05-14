@@ -204,7 +204,7 @@ pub trait ApplyRule: IndexTape {
             let count = self.get_count(pos);
             let absdiff = diff.abs().to_biguint()?;
 
-            if absdiff >= count {
+            if absdiff >= *count {
                 return None;
             }
 
@@ -235,7 +235,7 @@ impl<T: IndexTape> ApplyRule for T {}
 /**************************************/
 
 fn apply_plus(
-    count: Count,
+    count: &Count,
     times: &Count,
     diff: &Diff,
 ) -> Option<Count> {

@@ -641,11 +641,11 @@ impl Span {
     fn push(&mut self, color: Color, count: Count) {
         match self.span.0.first_mut() {
             Some(block) if block.color == color && block.count != 0 => {
-                block.add_count(count);
+                block.add_count(&count);
             },
             None if color == 0 && self.end == TapeEnd::Blanks => {},
             _ => {
-                self.span.push_block(color, count);
+                self.span.push_block(color, &count);
             },
         }
     }
@@ -777,7 +777,7 @@ impl Backstepper {
             &mut self.lspan
         };
 
-        push.span.push_block(self.scan, 0);
+        push.span.push_block(self.scan, &0);
     }
 }
 

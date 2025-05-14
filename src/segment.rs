@@ -555,14 +555,14 @@ impl Span {
     }
 
     fn push_block(&mut self, color: Color, count: Count) {
-        self.0.insert(0, Block::new(color, count));
+        self.0.insert(0, Block::new(color, &count));
     }
 
     fn push(&mut self, print: Color, stepped: Count) {
         if let Some(block) = self.0.first_mut()
             && block.color == print
         {
-            block.add_count(stepped);
+            block.add_count(&stepped);
             return;
         }
 
@@ -632,9 +632,9 @@ impl Tape {
         let cells = (seg - 2) as Count;
 
         let (scan, lspan, rspan) = if pos == 0 {
-            (None, vec![], vec![Block::new(0, cells)])
+            (None, vec![], vec![Block::new(0, &cells)])
         } else if pos == seg - 1 {
-            (None, vec![Block::new(0, cells)], vec![])
+            (None, vec![Block::new(0, &cells)], vec![])
         } else {
             let mut lspan = vec![];
             let mut rspan = vec![];
@@ -642,13 +642,13 @@ impl Tape {
             let l_count = pos - 1;
 
             if l_count > 0 {
-                lspan.push(Block::new(0, l_count));
+                lspan.push(Block::new(0, &l_count));
             }
 
             let r_count = cells - pos;
 
             if r_count > 0 {
-                rspan.push(Block::new(0, r_count));
+                rspan.push(Block::new(0, &r_count));
             }
 
             (Some(0), lspan, rspan)
@@ -926,8 +926,8 @@ macro_rules! tape {
     ) => {
         Tape {
             scan: Some( $ scan ),
-            lspan: Span ( vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ] ),
-            rspan: Span ( vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ] ),
+            lspan: Span ( vec! [ $ ( Block::new( $ lspan.0, & $ lspan.1) ), * ] ),
+            rspan: Span ( vec! [ $ ( Block::new( $ rspan.0, & $ rspan.1) ), * ] ),
         }
     };
 }

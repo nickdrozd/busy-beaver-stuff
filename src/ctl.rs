@@ -358,7 +358,7 @@ impl Span<Count, Block> {
             },
             None if print == 0 => {},
             _ => {
-                self.push_block(print, 1);
+                self.push_block(print, &1);
             },
         }
     }
