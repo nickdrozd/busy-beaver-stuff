@@ -217,11 +217,7 @@ pub trait ApplyRule: IndexTape {
                 (div, rem)
             };
 
-            if let Some((curr, _, _)) = apps.as_ref() {
-                if &times < curr {
-                    apps = Some((times, *pos, min_res));
-                }
-            } else {
+            if apps.as_ref().is_none_or(|(curr, _, _)| times < *curr) {
                 apps = Some((times, *pos, min_res));
             }
         }
