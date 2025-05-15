@@ -20,7 +20,7 @@ pub enum Op {
 
 /**************************************/
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Rule(Dict<Index, Op>);
 
 impl Rule {
