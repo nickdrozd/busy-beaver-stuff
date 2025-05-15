@@ -265,10 +265,10 @@ fn apply_mult(
 ) -> Option<Count> {
     let term = mul.pow(times.to_u32()?);
 
-    let term_minus_mul = &term - mul;
-    let mul_minus_one = mul - Count::one();
-    let additional_value =
-        add * (Count::one() + (term_minus_mul / mul_minus_one));
-
-    Some(count * term + additional_value)
+    Some(
+        (count * &term)
+            + (add
+                * (Count::one()
+                    + ((&term - mul) / (mul - Count::one())))),
+    )
 }
