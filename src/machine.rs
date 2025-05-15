@@ -7,10 +7,45 @@ use crate::{
 
 /**************************************/
 
+pub enum RunResult {
+    Recur,
+    Spinout,
+    MultRule,
+    InfiniteRule,
+    #[expect(dead_code)]
+    Undefined(Slot),
+    StepLimit,
+    ConfigLimit,
+}
+
+#[expect(dead_code)]
+impl RunResult {
+    pub const fn is_settled(&self) -> bool {
+        !matches!(self, Self::StepLimit | Self::ConfigLimit)
+    }
+
+    pub const fn is_recur(&self) -> bool {
+        matches!(self, Self::Recur | Self::Spinout)
+    }
+
+    pub const fn is_infinite(&self) -> bool {
+        matches!(self, Self::InfiniteRule)
+    }
+
+    pub const fn is_mult(&self) -> bool {
+        matches!(self, Self::MultRule)
+    }
+}
+
+/**************************************/
+
 use ProverResult::*;
 
 #[expect(dead_code)]
-pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: usize) -> bool {
+pub fn run_for_infrul(
+    comp: &impl GetInstr,
+    sim_lim: usize,
+) -> RunResult {
     let mut tape = BigTape::init();
 
     let mut prover = Prover::new(comp);
@@ -20,11 +55,14 @@ pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: usize) -> bool {
     for cycle in 0..sim_lim {
         if let Some(res) = prover.try_rule(cycle, state, &tape) {
             match res {
-                ConfigLimit | MultRule => {
-                    return false;
+                ConfigLimit => {
+                    return RunResult::ConfigLimit;
+                },
+                MultRule => {
+                    return RunResult::MultRule;
                 },
                 InfiniteRule => {
-                    return true;
+                    return RunResult::InfiniteRule;
                 },
                 Got(rule) => {
                     if tape.apply_rule(&rule).is_some() {
@@ -39,13 +77,13 @@ pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: usize) -> bool {
 
         let Some((color, shift, next_state)) = comp.get_instr(&slot)
         else {
-            return false;
+            return RunResult::Undefined(slot);
         };
 
         let same = state == next_state;
 
         if same && tape.at_edge(shift) {
-            return false;
+            return RunResult::Spinout;
         }
 
         tape.step(shift, color, same);
@@ -53,31 +91,12 @@ pub fn run_for_infrul(comp: &impl GetInstr, sim_lim: usize) -> bool {
         state = next_state;
     }
 
-    false
+    RunResult::StepLimit
 }
 
 /**************************************/
 
-pub enum RecRes {
-    Limit,
-    Recur,
-    Spinout,
-    #[expect(dead_code)]
-    Undefined(Slot),
-}
-
-impl RecRes {
-    #[cfg(test)]
-    pub const fn is_settled(&self) -> bool {
-        !matches!(self, Self::Limit)
-    }
-
-    pub const fn is_recur(&self) -> bool {
-        matches!(self, Self::Recur | Self::Spinout)
-    }
-}
-
-pub fn quick_term_or_rec(comp: &CompProg, sim_lim: usize) -> RecRes {
+pub fn quick_term_or_rec(comp: &CompProg, sim_lim: usize) -> RunResult {
     let mut state = 1;
 
     let mut tape = HeadTape::init_stepped();
@@ -93,7 +112,7 @@ pub fn quick_term_or_rec(comp: &CompProg, sim_lim: usize) -> RecRes {
         let slot = (state, tape.scan());
 
         let Some(&(color, shift, next_state)) = comp.get(&slot) else {
-            return RecRes::Undefined(slot);
+            return RunResult::Undefined(slot);
         };
 
         let curr_state = state;
@@ -103,7 +122,7 @@ pub fn quick_term_or_rec(comp: &CompProg, sim_lim: usize) -> RecRes {
         let same = curr_state == next_state;
 
         if same && tape.at_edge(shift) {
-            return RecRes::Spinout;
+            return RunResult::Spinout;
         }
 
         if reset == 0 {
@@ -130,11 +149,11 @@ pub fn quick_term_or_rec(comp: &CompProg, sim_lim: usize) -> RecRes {
         if state == ref_state
             && tape.aligns_with(&ref_tape, leftmost, rightmost)
         {
-            return RecRes::Recur;
+            return RunResult::Recur;
         }
     }
 
-    RecRes::Limit
+    RunResult::StepLimit
 }
 
 /**************************************/
@@ -174,17 +193,18 @@ fn test_macro_loop() {
     let block = make_block_macro(&prog, (2, 3), 3);
     let back = make_backsymbol_macro(&block, (2, 3), 1);
 
-    assert!(!run_for_infrul(&back, 1000));
+    assert!(!run_for_infrul(&back, 1000).is_infinite());
 }
 
 /**************************************/
 
 #[test]
 fn test_mult_rule() {
-    assert!(!run_for_infrul(
+    assert!(run_for_infrul(
         &CompProg::from_str(
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
         ),
         10_000,
-    ));
+    )
+    .is_mult());
 }

@@ -31,7 +31,13 @@ fn check_inf(
         run_for_infrul(comp, steps)
     } else {
         run_for_infrul(&make_block_macro(comp, params, blocks), steps)
-    }) || run_for_infrul(&make_backsymbol_macro(comp, params, 1), steps)
+    })
+    .is_infinite()
+        || run_for_infrul(
+            &make_backsymbol_macro(comp, params, 1),
+            steps,
+        )
+        .is_infinite()
 }
 
 /**************************************/
@@ -109,7 +115,7 @@ fn test_tree() {
                 quick_term_or_rec(prog, 40).is_settled()
                     || prog.cant_halt(3).is_settled()
                     || prog.ctl_cant_halt(16)
-                    || run_for_infrul(prog, 187)
+                    || run_for_infrul(prog, 187).is_infinite()
             }
         ),
         (
@@ -119,7 +125,7 @@ fn test_tree() {
                 quick_term_or_rec(prog, 206).is_settled()
                     || prog.cant_spin_out(4).is_settled()
                     || prog.ctl_cant_spin_out(15)
-                    || run_for_infrul(prog, 236)
+                    || run_for_infrul(prog, 236).is_infinite()
                     || check_inf(prog, params, 100, 40)
             }
         ),
@@ -130,7 +136,7 @@ fn test_tree() {
                 quick_term_or_rec(prog, 301).is_settled()
                     || prog.ctl_cant_halt(41)
                     || prog.cps_cant_halt(3)
-                    || run_for_infrul(prog, 159)
+                    || run_for_infrul(prog, 159).is_infinite()
             }
         ),
         (
