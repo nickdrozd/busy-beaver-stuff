@@ -997,9 +997,10 @@ fn test_apply_2() {
     );
 }
 
+#[should_panic(expected = "not implemented")]
 #[test]
 fn test_apply_3() {
-    let tape = tape! {
+    let mut tape = tape! {
         0,
         [(1, 152), (2, 655_345), (3, 1)],
         []
@@ -1019,6 +1020,8 @@ fn test_apply_3() {
     let (times, _, _) = tape.count_apps(&rule).unwrap();
 
     assert_eq!(times, 327_672_u32.into());
+
+    tape.apply_rule(&rule);
 }
 
 /**************************************/

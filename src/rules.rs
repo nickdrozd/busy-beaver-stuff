@@ -175,13 +175,18 @@ pub trait ApplyRule: IndexTape {
         let (times, min_pos, min_res) = self.count_apps(rule)?;
 
         for (pos, diff) in &rule.0 {
-            let Plus(plus) = diff else { unimplemented!() };
-
-            let result = if *pos == min_pos {
-                assert!(plus.is_negative());
-                min_res.clone()
-            } else {
-                apply_plus(self.get_count(pos), &times, plus)?
+            let result = match diff {
+                Mult((mul, add)) => {
+                    apply_mult(self.get_count(pos), &times, mul, add)
+                },
+                Plus(plus) => {
+                    if *pos == min_pos {
+                        assert!(plus.is_negative());
+                        min_res.clone()
+                    } else {
+                        apply_plus(self.get_count(pos), &times, plus)?
+                    }
+                },
             };
 
             self.set_count(pos, result);
@@ -239,4 +244,13 @@ fn apply_plus(
     let mult = diff.abs().to_biguint()?.checked_mul(times)?;
 
     Some(count + mult)
+}
+
+fn apply_mult(
+    _count: &Count,
+    _times: &Count,
+    _mul: &Diff,
+    _add: &Diff,
+) -> Count {
+    unimplemented!()
 }
