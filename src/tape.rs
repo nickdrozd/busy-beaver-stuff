@@ -917,16 +917,23 @@ fn test_clone() {
 }
 
 #[cfg(test)]
-use crate::rules::{ApplyRule as _, Rule};
+use crate::rules::{ApplyRule as _, Diff, Op, Rule};
+
+#[cfg(test)]
+macro_rules! plus {
+    ($diff:expr) => {
+        Op::Plus(Diff::from($diff))
+    };
+}
 
 #[cfg(test)]
 macro_rules! rule {
     (
-        $ ( ( $ shift : expr, $ index : expr ) => $ diff : expr ), *
+        $ ( ( $ shift : expr, $ index : expr ) => $ op : expr ), *
         $ ( , ) *
     ) => {
         Rule::from_triples(&[
-            $ ( (( $ shift == 1, $ index ), $ diff ) ), *
+            $ ( (( $ shift == 1, $ index ), $ op ) ), *
         ])
     }
 }
@@ -946,8 +953,8 @@ fn test_apply_1() {
     );
 
     tape.apply_rule(&rule![
-        (0, 1) => 3,
-        (1, 0) => -2,
+        (0, 1) => plus!(3),
+        (1, 0) => plus!(-2),
     ]);
 
     tape.assert(
@@ -972,8 +979,8 @@ fn test_apply_2() {
     );
 
     tape.apply_rule(&rule![
-        (0, 0) => 4,
-        (1, 0) => -2,
+        (0, 0) => plus!(4),
+        (1, 0) => plus!(-2),
     ]);
 
     tape.assert(

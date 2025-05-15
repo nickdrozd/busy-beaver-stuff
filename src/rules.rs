@@ -27,13 +27,12 @@ impl Rule {
     }
 
     #[cfg(test)]
-    pub fn from_triples(triples: &[(Index, i8)]) -> Self {
+    #[expect(clippy::ref_patterns)]
+    pub fn from_triples(triples: &[(Index, Op)]) -> Self {
         Self(
             triples
                 .iter()
-                .map(|&(index, diff)| {
-                    (index, Op::Plus(Diff::from(diff)))
-                })
+                .map(|&(index, ref op)| (index, op.clone()))
                 .collect(),
         )
     }
