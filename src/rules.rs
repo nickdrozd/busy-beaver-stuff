@@ -45,6 +45,7 @@ impl Rule {
         )
     }
 
+    #[expect(dead_code)]
     pub fn is_mult(&self) -> bool {
         self.0.values().any(|diff| matches!(diff, Mult(_)))
     }

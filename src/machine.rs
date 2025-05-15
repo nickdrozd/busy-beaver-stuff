@@ -10,7 +10,6 @@ use crate::{
 pub enum RunResult {
     Recur,
     Spinout,
-    MultRule,
     InfiniteRule,
     #[expect(dead_code)]
     Undefined(Slot),
@@ -30,10 +29,6 @@ impl RunResult {
 
     pub const fn is_infinite(&self) -> bool {
         matches!(self, Self::InfiniteRule)
-    }
-
-    pub const fn is_mult(&self) -> bool {
-        matches!(self, Self::MultRule)
     }
 }
 
@@ -57,9 +52,6 @@ pub fn run_for_infrul(
             match res {
                 ConfigLimit => {
                     return RunResult::ConfigLimit;
-                },
-                MultRule => {
-                    return RunResult::MultRule;
                 },
                 InfiniteRule => {
                     return RunResult::InfiniteRule;
@@ -206,5 +198,5 @@ fn test_mult_rule() {
         ),
         10_000,
     )
-    .is_mult());
+    .is_settled());
 }
