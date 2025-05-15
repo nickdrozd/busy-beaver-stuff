@@ -176,3 +176,15 @@ fn test_macro_loop() {
 
     assert!(!run_for_infrul(&back, 1000));
 }
+
+/**************************************/
+
+#[test]
+fn test_mult_rule() {
+    assert!(!run_for_infrul(
+        &CompProg::from_str(
+            "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
+        ),
+        10_000,
+    ));
+}
