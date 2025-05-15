@@ -15,7 +15,8 @@
     clippy::std_instead_of_core,
     clippy::if_then_some_else_none,
     clippy::unneeded_field_pattern,
-    clippy::redundant_type_annotations
+    clippy::redundant_type_annotations,
+    clippy::decimal_literal_representation
 )]
 #![expect(clippy::cast_possible_truncation)]
 #![allow(clippy::enum_glob_use)]
