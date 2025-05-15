@@ -13,7 +13,7 @@ pub type Diff = BigInt;
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Op {
     Plus(Diff),
-    Mult((Diff, Diff)),
+    Mult((Count, Count)),
 }
 
 /**************************************/
@@ -116,7 +116,15 @@ fn calculate_diff(
     let divmod2 = c.div_rem(&b);
 
     if divmod1 == divmod2 && divmod2 == d.div_rem(&c) {
-        return Some(Got(Mult(divmod1)));
+        let (mul, add) = divmod1;
+
+        assert!(mul.is_positive());
+        assert!(!add.is_negative());
+
+        let (mul, add) =
+            (mul.to_biguint().unwrap(), add.to_biguint().unwrap());
+
+        return Some(Got(Mult((mul, add))));
     }
 
     Some(Unknown)
@@ -249,8 +257,8 @@ fn apply_plus(
 fn apply_mult(
     _count: &Count,
     _times: &Count,
-    _mul: &Diff,
-    _add: &Diff,
+    _mul: &Count,
+    _add: &Count,
 ) -> Count {
     unimplemented!()
 }

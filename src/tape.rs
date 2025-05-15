@@ -929,7 +929,10 @@ macro_rules! plus {
 #[cfg(test)]
 macro_rules! mult {
     ($mul:expr, $add:expr) => {
-        Op::Mult((Diff::from($mul), Diff::from($add)))
+        Op::Mult((
+            BigCount::from($mul as u8),
+            BigCount::from($add as u8),
+        ))
     };
 }
 
