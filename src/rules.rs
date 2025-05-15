@@ -55,9 +55,9 @@ impl Rule {
             && self
                 .0
                 .values()
-                .map(|diff| match diff {
-                    Plus(diff) => diff.abs(),
-                    Mult(_) => unreachable!(),
+                .filter_map(|diff| match diff {
+                    Plus(diff) => Some(diff.abs()),
+                    Mult(_) => None,
                 })
                 .collect::<Set<Diff>>()
                 .len()
@@ -188,7 +188,7 @@ pub trait ApplyRule: IndexTape {
         for (pos, diff) in &rule.0 {
             let result = match diff {
                 Mult((mul, add)) => {
-                    apply_mult(self.get_count(pos), &times, mul, add)
+                    apply_mult(self.get_count(pos), &times, mul, add)?
                 },
                 Plus(plus) => {
                     if *pos == min_pos {
@@ -262,13 +262,13 @@ fn apply_mult(
     times: &Count,
     mul: &Count,
     add: &Count,
-) -> Count {
-    let term = mul.pow(times.to_u32().unwrap());
+) -> Option<Count> {
+    let term = mul.pow(times.to_u32()?);
 
     let term_minus_mul = &term - mul;
     let mul_minus_one = mul - Count::one();
     let additional_value =
         add * (Count::one() + (term_minus_mul / mul_minus_one));
 
-    count * term + additional_value
+    Some(count * term + additional_value)
 }
