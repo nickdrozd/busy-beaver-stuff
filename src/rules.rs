@@ -2,7 +2,9 @@ use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
 use num_bigint::BigInt;
 use num_integer::Integer as _;
-use num_traits::{CheckedMul as _, One as _, Signed as _, Zero as _};
+use num_traits::{
+    CheckedMul as _, One as _, Signed as _, ToPrimitive as _, Zero as _,
+};
 
 use crate::tape::{BigCount as Count, Index, IndexTape};
 
@@ -255,10 +257,17 @@ fn apply_plus(
 }
 
 fn apply_mult(
-    _count: &Count,
-    _times: &Count,
-    _mul: &Count,
-    _add: &Count,
+    count: &Count,
+    times: &Count,
+    mul: &Count,
+    add: &Count,
 ) -> Count {
-    unimplemented!()
+    let term = mul.pow(times.to_u32().unwrap());
+
+    let term_minus_mul = &term - mul;
+    let mul_minus_one = mul - Count::one();
+    let additional_value =
+        add * (Count::one() + (term_minus_mul / mul_minus_one));
+
+    count * term + additional_value
 }

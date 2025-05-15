@@ -1000,7 +1000,6 @@ fn test_apply_2() {
     );
 }
 
-#[should_panic(expected = "not implemented")]
 #[test]
 fn test_apply_3() {
     let mut tape = tape! {
@@ -1025,6 +1024,32 @@ fn test_apply_3() {
     assert_eq!(times, 327_672_u32.into());
 
     tape.apply_rule(&rule);
+}
+
+#[test]
+fn test_apply_4() {
+    let mut tape = tape! {
+        2,
+        [(2, 506)],
+        [(2, 1), (1, 1), (0, 10), (1, 1)]
+    };
+
+    tape.assert(
+        510,
+        "2^506 [2] 2 1 0^10 1",
+        &sig![2, [2], [[2], [1], 0, [1]]],
+    );
+
+    tape.apply_rule(&rule![
+        (0, 0) => mult!(2, 6),
+        (1, 2) => plus!(-1),
+    ]);
+
+    tape.assert(
+        262_142,
+        "2^262138 [2] 2 1 0 1",
+        &sig![2, [2], [[2], [1], [0], [1]]],
+    );
 }
 
 /**************************************/
