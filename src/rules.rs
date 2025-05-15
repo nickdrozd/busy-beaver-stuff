@@ -194,7 +194,9 @@ pub trait ApplyRule: IndexTape {
         let mut apps: Option<(Count, Index, Count)> = None;
 
         for (pos, diff) in &rule.0 {
-            let Plus(diff) = diff else { unimplemented!() };
+            let Plus(diff) = diff else {
+                continue;
+            };
 
             if !diff.is_negative() {
                 continue;

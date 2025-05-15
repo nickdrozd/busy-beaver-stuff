@@ -817,7 +817,7 @@ impl BigTape {
 #[cfg(test)]
 impl BigTape {
     #[track_caller]
-    fn assert(&self, marks: u8, tape_str: &str, sig: &Signature) {
+    fn assert(&self, marks: u32, tape_str: &str, sig: &Signature) {
         assert_eq!(self.blank(), marks == 0);
 
         assert_eq!(self.to_string(), tape_str);
@@ -927,6 +927,13 @@ macro_rules! plus {
 }
 
 #[cfg(test)]
+macro_rules! mult {
+    ($mul:expr, $add:expr) => {
+        Op::Mult((Diff::from($mul), Diff::from($add)))
+    };
+}
+
+#[cfg(test)]
 macro_rules! rule {
     (
         $ ( ( $ shift : expr, $ index : expr ) => $ op : expr ), *
@@ -988,6 +995,30 @@ fn test_apply_2() {
         "4^118 [4] 5^2 2 4 5^7 1",
         &sig![4, [4], [5, [2], [4], 5, [1]]],
     );
+}
+
+#[test]
+fn test_apply_3() {
+    let tape = tape! {
+        0,
+        [(1, 152), (2, 655_345), (3, 1)],
+        []
+    };
+
+    tape.assert(
+        655_498,
+        "3 2^655345 1^152 [0]",
+        &sig![0, [1, 2, [3]], []],
+    );
+
+    let rule = rule! [
+        (0, 1) => plus!(-2),
+        (0, 0) => mult!(2, 8),
+    ];
+
+    let (times, _, _) = tape.count_apps(&rule).unwrap();
+
+    assert_eq!(times, 327_672_u32.into());
 }
 
 /**************************************/
