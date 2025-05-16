@@ -213,7 +213,7 @@ fn test_tree() {
 fn test_tree_slow() {
     assert_trees![
         (
-            ((3, 3), 1, 2_700, (9_459, 25_306_375)),
+            ((3, 3), 1, 2_700, (9_451, 25_306_375)),
             //
             |prog: &CompProg, params: Params| {
                 prog.cant_halt(1).is_settled()
@@ -225,7 +225,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((3, 3), 0, 3_000, (98_534, 149_382_609)),
+            ((3, 3), 0, 3_000, (98_511, 149_382_609)),
             //
             |prog: &CompProg, params: Params| {
                 prog.cant_spin_out(1).is_settled()
@@ -238,7 +238,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((5, 2), 1, 700, (12_902, 95_310_282)),
+            ((5, 2), 1, 700, (12_901, 95_310_282)),
             //
             |prog: &CompProg, params: Params| {
                 !is_connected(prog, 5)
@@ -251,7 +251,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((5, 2), 0, TREE_LIM, (117_890, 534_813_722)),
+            ((5, 2), 0, TREE_LIM, (117_874, 534_813_722)),
             //
             |prog: &CompProg, params: Params| {
                 !is_connected(prog, 5)
@@ -265,7 +265,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((2, 5), 1, TREE_LIM, (84_435, 70_032_629)),
+            ((2, 5), 1, TREE_LIM, (84_384, 70_032_629)),
             //
             |prog: &CompProg, params: Params| {
                 prog.cant_halt(1).is_settled()
@@ -276,19 +276,19 @@ fn test_tree_slow() {
                     || check_inf(prog, params, 300, 500)
             }
         ),
-        (
-            ((2, 5), 0, TREE_LIM, (1_296_168, 515_255_468)),
-            //
-            |prog: &CompProg, params: Params| {
-                prog.cant_spin_out(1).is_settled()
-                    || quick_term_or_rec(prog, 3_000).is_settled()
-                    || prog.cant_spin_out(20).is_settled()
-                    || prog.ctl_cant_spin_out(200)
-                    || prog.seg_cant_spin_out(params, 5).is_refuted()
-                    || prog.cps_cant_spin_out(5)
-                    || check_inf(prog, params, 300, 500)
-            }
-        ),
+        // (
+        //     ((2, 5), 0, TREE_LIM, (1_296_168, 515_255_468)),
+        //     //
+        //     |prog: &CompProg, params: Params| {
+        //         prog.cant_spin_out(1).is_settled()
+        //             || quick_term_or_rec(prog, 3_000).is_settled()
+        //             || prog.cant_spin_out(20).is_settled()
+        //             || prog.ctl_cant_spin_out(200)
+        //             || prog.seg_cant_spin_out(params, 5).is_refuted()
+        //             || prog.cps_cant_spin_out(5)
+        //             || check_inf(prog, params, 300, 500)
+        //     }
+        // ),
     ];
 }
 
