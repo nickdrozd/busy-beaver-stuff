@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::instrs::{CompProg, State};
+use crate::instrs::CompProg;
+
+type State = u8;
 
 /**************************************/
 
@@ -79,7 +81,10 @@ fn get_exitpoints(prog: &CompProg) -> Exitpoints {
             continue;
         }
 
-        exitpoints.entry(src).or_default().push(dst);
+        exitpoints
+            .entry(src as State)
+            .or_default()
+            .push(dst as State);
     }
 
     for conns in exitpoints.values_mut() {

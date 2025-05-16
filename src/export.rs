@@ -18,7 +18,7 @@ use crate::{
 /***************************************/
 
 #[pyfunction]
-pub fn py_is_connected(prog: &str, states: State) -> bool {
+pub fn py_is_connected(prog: &str, states: u8) -> bool {
     is_connected(&CompProg::from_str(prog), states)
 }
 
