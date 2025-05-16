@@ -1024,6 +1024,8 @@ fn test_apply_3() {
     assert_eq!(times, 327_672_u32.into());
 
     tape.apply_rule(&rule);
+
+    assert_eq!(tape.to_string().len(), 98652);
 }
 
 #[test]
