@@ -21,16 +21,7 @@ pub type BigCount = BigUint;
 /**************************************/
 
 pub trait Countable:
-    Num
-    + Clone
-    + Eq
-    + Hash
-    + PartialOrd
-    + Ord
-    + Display
-    + Debug
-    + AddAssign
-    + SubAssign
+    Clone + Display + Num + AddAssign + SubAssign
 {
 }
 
@@ -275,7 +266,7 @@ impl<B: Block<BigCount>> From<&B> for ColorCount {
 
 type SigSpan = Vec<ColorCount>;
 
-#[derive(PartialEq, Eq, Debug, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Signature {
     pub scan: Color,
     pub lspan: SigSpan,
@@ -466,7 +457,7 @@ impl<B: Block<BigCount> + IndexBlock> IndexTape for Tape<BigCount, B> {
 
 pub type Pos = isize;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct HeadTape {
     head: Pos,
     tape: MedTape,

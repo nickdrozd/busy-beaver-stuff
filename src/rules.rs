@@ -12,7 +12,7 @@ use crate::tape::{BigCount as Count, Index, IndexTape};
 
 pub type Diff = BigInt;
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub enum Op {
     Plus(Diff),
     Mult((Count, Count)),
