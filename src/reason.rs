@@ -584,10 +584,7 @@ impl fmt::Display for TapeEnd {
 
 impl TapeEnd {
     const fn matches_color(&self, print: Color) -> bool {
-        match self {
-            Self::Blanks => print == 0,
-            Self::Unknown => true,
-        }
+        print == 0 || matches!(self, Self::Unknown)
     }
 }
 
