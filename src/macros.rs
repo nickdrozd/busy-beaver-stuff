@@ -158,6 +158,10 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
     fn incomplete(&self, _params: Params, _halt: bool) -> bool {
         unimplemented!()
     }
+
+    fn init_stepped(_: Instr) -> Self {
+        unimplemented!()
+    }
 }
 
 #[expect(private_bounds)]

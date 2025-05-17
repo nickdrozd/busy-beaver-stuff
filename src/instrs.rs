@@ -29,6 +29,8 @@ pub enum Term {
 pub trait GetInstr {
     fn get_instr(&self, slot: &Slot) -> Option<Instr>;
 
+    fn init_stepped(next_instr: Instr) -> Self;
+
     fn halt_slots(&self) -> Set<Slot>;
     fn erase_slots(&self) -> Set<Slot>;
     fn zr_shifts(&self) -> Set<(State, Shift)>;
@@ -44,6 +46,10 @@ pub trait GetInstr {
 impl GetInstr for CompProg {
     fn get_instr(&self, slot: &Slot) -> Option<Instr> {
         self.get(slot).copied()
+    }
+
+    fn init_stepped(next_instr: Instr) -> Self {
+        Self::from([((0, 0), (1, true, 1)), ((1, 0), next_instr)])
     }
 
     fn params(&self) -> Params {

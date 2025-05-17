@@ -225,10 +225,7 @@ pub fn build_tree(
     init_instrs.par_iter().for_each(|&next_instr| {
         branch(
             next_instr,
-            &mut CompProg::from([
-                ((0, 0), (1, true, 1)),
-                ((1, 0), next_instr),
-            ]),
+            &mut CompProg::init_stepped(next_instr),
             (1, Tape::init_stepped()),
             sim_lim,
             (init_states, init_colors),
