@@ -62,20 +62,6 @@ pub trait Block<Count: Countable>: Display {
     fn blank(&self) -> bool {
         self.get_color() == 0
     }
-
-    fn show(&self, f: &mut Formatter) -> fmt::Result {
-        let (color, count) = (self.get_color(), self.get_count());
-
-        write!(
-            f,
-            "{}",
-            match count {
-                c if c.is_one() => format!("{color}"),
-                c if c.is_zero() => format!("{color}.."),
-                _ => format!("{color}^{count}"),
-            }
-        )
-    }
 }
 
 #[derive(Clone, Eq, Hash, PartialEq)]
@@ -115,7 +101,17 @@ impl<Count: Countable> Block<Count> for BasicBlock<Count> {
 
 impl<Count: Countable> Display for BasicBlock<Count> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.show(f)
+        let (color, count) = (self.get_color(), self.get_count());
+
+        write!(
+            f,
+            "{}",
+            match count {
+                c if c.is_one() => format!("{color}"),
+                c if c.is_zero() => format!("{color}.."),
+                _ => format!("{color}^{count}"),
+            }
+        )
     }
 }
 
@@ -621,7 +617,7 @@ impl Block<BigCount> for EnumBlock {
 
 impl Display for EnumBlock {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.block.show(f)
+        write!(f, "{}", self.block)
     }
 }
 
