@@ -1,7 +1,5 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use pyo3::pyfunction;
-
 /**************************************/
 
 pub type Color = u64;
@@ -186,7 +184,6 @@ pub const fn read_shift(shift: char) -> Shift {
     shift == RIGHT
 }
 
-#[pyfunction]
 pub const fn show_state(state: Option<State>) -> char {
     match state {
         None => UNDF,
@@ -213,7 +210,6 @@ impl Parse for Slot {
     }
 }
 
-#[pyfunction]
 pub fn show_instr(instr: Option<Instr>) -> String {
     match instr {
         None => "...".to_owned(),
@@ -226,7 +222,6 @@ pub fn show_instr(instr: Option<Instr>) -> String {
     }
 }
 
-#[pyfunction]
 pub fn read_instr(instr: &str) -> Option<Instr> {
     if instr.contains(UNDF) {
         return None;

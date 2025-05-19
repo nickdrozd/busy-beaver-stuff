@@ -52,12 +52,11 @@ mod rust_stuff {
             py_cps_cant_blank, py_cps_cant_halt, py_cps_cant_spin_out,
             py_ctl_cant_blank, py_ctl_cant_halt, py_ctl_cant_spin_out,
             py_is_connected, py_opt_block, py_quick_term_or_rec,
-            py_segment_cant_blank, py_segment_cant_halt,
-            py_segment_cant_spin_out, run_quick_machine, show_comp,
-            show_slot, tcompile, tree_progs, BackwardResult,
-            MachineResult, TermRes,
+            py_read_instr, py_segment_cant_blank, py_segment_cant_halt,
+            py_segment_cant_spin_out, py_show_instr, py_show_state,
+            run_quick_machine, show_comp, show_slot, tcompile,
+            tree_progs, BackwardResult, MachineResult, TermRes,
         },
-        instrs::{read_instr, show_instr, show_state},
         prover::PastConfigs,
     };
 }

@@ -5,7 +5,10 @@ use crate::{
     cps::Cps as _,
     ctl::Ctl as _,
     graph::is_connected,
-    instrs::{CompProg, Params, Parse as _, Slot, State},
+    instrs::{
+        read_instr, show_instr, show_state, CompProg, Instr, Params,
+        Parse as _, Slot, State,
+    },
     machine::quick_term_or_rec,
     reason::{
         Backward as _, BackwardResult as BackwardResultRs,
@@ -46,6 +49,21 @@ pub fn show_comp(comp: CompProg) -> String {
 #[pyfunction]
 pub fn tcompile(prog: &str) -> CompProg {
     CompProg::read(prog)
+}
+
+#[pyfunction]
+pub const fn py_show_state(state: Option<State>) -> char {
+    show_state(state)
+}
+
+#[pyfunction]
+pub fn py_show_instr(instr: Option<Instr>) -> String {
+    show_instr(instr)
+}
+
+#[pyfunction]
+pub fn py_read_instr(instr: &str) -> Option<Instr> {
+    read_instr(instr)
 }
 
 /***************************************/
