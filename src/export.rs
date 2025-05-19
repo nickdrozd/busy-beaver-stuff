@@ -278,7 +278,6 @@ pub struct MachineResult {
 #[pymethods]
 impl MachineResult {
     #[new]
-    #[pyo3(signature = (result, steps, cycles, marks, blanks, last_slot))]
     const fn new(
         result: TermRes,
         steps: BigStep,

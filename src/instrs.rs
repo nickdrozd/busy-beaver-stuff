@@ -187,7 +187,6 @@ pub const fn read_shift(shift: char) -> Shift {
 }
 
 #[pyfunction]
-#[pyo3(signature = (state))]
 pub const fn show_state(state: Option<State>) -> char {
     match state {
         None => UNDF,
@@ -215,7 +214,6 @@ impl Parse for Slot {
 }
 
 #[pyfunction]
-#[pyo3(signature = (instr))]
 pub fn show_instr(instr: Option<Instr>) -> String {
     match instr {
         None => "...".to_owned(),
