@@ -131,7 +131,7 @@ const RIGHT: char = 'R';
 
 pub trait Parse {
     fn read(prog: &str) -> Self;
-    fn show(&self, params: Option<Params>) -> String;
+    fn show(&self) -> String;
 }
 
 impl Parse for CompProg {
@@ -150,8 +150,8 @@ impl Parse for CompProg {
             .collect()
     }
 
-    fn show(&self, params: Option<Params>) -> String {
-        let (max_state, max_color) = params.unwrap_or_else(|| {
+    fn show(&self) -> String {
+        let (max_state, max_color) = {
             let (ms, mx) = self.iter().fold(
                 (1, 1),
                 |(ms, mc), (&(ss, sc), &(ic, _, is))| {
@@ -160,7 +160,7 @@ impl Parse for CompProg {
             );
 
             (1 + ms, 1 + mx)
-        });
+        };
 
         (0..max_state)
             .map(|state| {
@@ -289,29 +289,13 @@ fn test_comp() {
     ];
 
     for prog in progs {
-        assert_eq!(CompProg::read(prog).show(None), prog);
-    }
-
-    let underspecified = [
-        ("1RB ... ...  ... ... ...", (2, 3)),
-        ("1RB ... ... ...  ... ... ... ...", (2, 4)),
-        ("1RB ...  ... ...  ... ...", (3, 2)),
-        ("1RB ...  ... ...  ... ...  ... ...", (4, 2)),
-    ];
-
-    for (prog, params) in underspecified {
-        assert_eq!(CompProg::read(prog).show(Some(params)), prog);
+        assert_eq!(CompProg::read(prog).show(), prog);
     }
 
     let prog_11_4 = "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...";
 
     assert_eq!(
-        CompProg::read(prog_11_4).show(Some((11, 4))),
-        prog_11_4,
-    );
-
-    assert_eq!(
-        CompProg::read(prog_11_4).show(Some((11, 5))),
+        CompProg::read(prog_11_4).show(),
         "1RB ... ... ... ...  2LC 3RD ... ... ...  1LA 3RD 1LE 4RD ...  ... ... 1RF ... ...  1RF 2LG 2LE 2RH ...  3RI 2RH 3RJ ... ...  1LE ... ... 2LC ...  2LE 2RK 2RH ... ...  1LE ... ... ... ...  0RI 1RF 0RJ ... ...  2RB ... 2RF ... ...",
     );
 }

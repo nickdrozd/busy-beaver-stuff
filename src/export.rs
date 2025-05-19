@@ -33,19 +33,14 @@ pub fn py_quick_term_or_rec(prog: &str, sim_lim: usize) -> bool {
 }
 
 #[pyfunction]
-#[pyo3(signature = (comp, params=None))]
 #[expect(clippy::needless_pass_by_value)]
-pub fn py_show_comp(comp: CompProg, params: Option<Params>) -> String {
-    show_comp(&comp, params)
+pub fn show_comp(comp: CompProg) -> String {
+    comp.show()
 }
 
 #[pyfunction]
 pub fn tcompile(prog: &str) -> CompProg {
     CompProg::read(prog)
-}
-
-pub fn show_comp(comp: &CompProg, params: Option<Params>) -> String {
-    comp.show(params)
 }
 
 /***************************************/
@@ -233,7 +228,7 @@ pub fn tree_progs(
     let progs = set_val(vec![]);
 
     build_tree(params, halt, sim_lim, &|comp| {
-        access(&progs).push(comp.show(Some(params)));
+        access(&progs).push(comp.show());
     });
 
     get_val(progs)

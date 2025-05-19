@@ -322,11 +322,7 @@ fn assert_reason(
 
         if let BackwardResult::Refuted(steps) = result {
             if steps > max_refuted {
-                println!(
-                    "        \"{}\": {},",
-                    prog.show(Some(params)),
-                    1 + steps,
-                );
+                println!("        \"{}\": {},", prog.show(), 1 + steps);
             }
 
             if steps > *access(&refuted_steps) {
@@ -460,11 +456,7 @@ fn assert_blank(params: Params, expected: (usize, (u64, u64))) {
 
         if let BackwardResult::Refuted(steps) = backward {
             if steps > max_refuted {
-                println!(
-                    "        \"{}\": {},",
-                    prog.show(Some(params)),
-                    1 + steps,
-                );
+                println!("        \"{}\": {},", prog.show(), 1 + steps);
             }
 
             if steps > *access(&refuted_steps) {

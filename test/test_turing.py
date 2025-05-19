@@ -24,7 +24,6 @@ from tm.machine import (
 from tm.macro import (
     MacroProg,
     opt_block,
-    prog_params,
     show_comp,
     tcompile,
 )
@@ -165,9 +164,7 @@ class TuringTest(TestCase):
         if decomp and prog not in NONNORMAL:
             self.assertEqual(
                 prog,
-                show_comp(
-                    comp := tcompile(prog),
-                    params = prog_params(comp)))
+                show_comp(tcompile(prog)))
 
         _ = Machine(prog,  blocks = 2).run(sim_lim = 10)
         _ = Machine(prog, backsym = 1).run(sim_lim = 10)
