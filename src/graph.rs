@@ -61,11 +61,11 @@ const CONNECTED: [(&str, State); 3] = [
 #[test]
 fn test_connected() {
     for (prog, states) in UNCONNECTED {
-        assert!(!is_connected(&CompProg::from_str(prog), states));
+        assert!(!is_connected(&CompProg::read(prog), states));
     }
 
     for (prog, states) in CONNECTED {
-        assert!(is_connected(&CompProg::from_str(prog), states));
+        assert!(is_connected(&CompProg::read(prog), states));
     }
 }
 
@@ -108,7 +108,7 @@ macro_rules! dict_from {
 macro_rules! assert_exitpoints {
     ($input:expr, { $($key:expr => [$($val:expr),*]),* $(,)? }) => {
         assert_eq!(
-            get_exitpoints(&CompProg::from_str($input)),
+            get_exitpoints(&CompProg::read($input)),
             dict_from! { $($key => [$($val),*]),* },
         );
     }

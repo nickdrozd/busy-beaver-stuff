@@ -166,8 +166,7 @@ const REC_PROGS: [(&str, bool); 5] = [
 fn test_rec() {
     for (prog, expected) in REC_PROGS {
         assert_eq!(
-            quick_term_or_rec(&CompProg::from_str(prog), 100)
-                .is_recur(),
+            quick_term_or_rec(&CompProg::read(prog), 100).is_recur(),
             expected,
             "{prog}",
         );
@@ -181,7 +180,7 @@ use crate::macros::{make_backsymbol_macro, make_block_macro};
 
 #[test]
 fn test_macro_loop() {
-    let prog = CompProg::from_str("1RB 0RA 1LB  2LA 2RB 0LA");
+    let prog = CompProg::read("1RB 0RA 1LB  2LA 2RB 0LA");
     let block = make_block_macro(&prog, (2, 3), 3);
     let back = make_backsymbol_macro(&block, (2, 3), 1);
 
@@ -193,7 +192,7 @@ fn test_macro_loop() {
 #[test]
 fn test_mult_rule() {
     assert!(run_for_infrul(
-        &CompProg::from_str(
+        &CompProg::read(
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
         ),
         10_000,

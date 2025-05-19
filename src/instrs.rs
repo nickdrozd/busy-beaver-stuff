@@ -130,12 +130,12 @@ const RIGHT: char = 'R';
 /**************************************/
 
 pub trait Parse {
-    fn from_str(prog: &str) -> Self;
+    fn read(prog: &str) -> Self;
     fn show(&self, params: Option<Params>) -> String;
 }
 
 impl Parse for CompProg {
-    fn from_str(prog: &str) -> Self {
+    fn read(prog: &str) -> Self {
         prog.trim()
             .split("  ")
             .map(|instrs| instrs.split(' ').map(read_instr))
@@ -289,7 +289,7 @@ fn test_comp() {
     ];
 
     for prog in progs {
-        assert_eq!(CompProg::from_str(prog).show(None), prog);
+        assert_eq!(CompProg::read(prog).show(None), prog);
     }
 
     let underspecified = [
@@ -300,18 +300,18 @@ fn test_comp() {
     ];
 
     for (prog, params) in underspecified {
-        assert_eq!(CompProg::from_str(prog).show(Some(params)), prog);
+        assert_eq!(CompProg::read(prog).show(Some(params)), prog);
     }
 
     let prog_11_4 = "1RB ... ... ...  2LC 3RD ... ...  1LA 3RD 1LE 4RD  ... ... 1RF ...  1RF 2LG 2LE 2RH  3RI 2RH 3RJ ...  1LE ... ... 2LC  2LE 2RK 2RH ...  1LE ... ... ...  0RI 1RF 0RJ ...  2RB ... 2RF ...";
 
     assert_eq!(
-        CompProg::from_str(prog_11_4).show(Some((11, 4))),
+        CompProg::read(prog_11_4).show(Some((11, 4))),
         prog_11_4,
     );
 
     assert_eq!(
-        CompProg::from_str(prog_11_4).show(Some((11, 5))),
+        CompProg::read(prog_11_4).show(Some((11, 5))),
         "1RB ... ... ... ...  2LC 3RD ... ... ...  1LA 3RD 1LE 4RD ...  ... ... 1RF ... ...  1RF 2LG 2LE 2RH ...  3RI 2RH 3RJ ... ...  1LE ... ... 2LC ...  2LE 2RK 2RH ... ...  1LE ... ... ... ...  0RI 1RF 0RJ ... ...  2RB ... 2RF ... ...",
     );
 }
@@ -326,6 +326,6 @@ const PARAMS: &[(&str, Params)] = &[
 #[test]
 fn test_params() {
     for &(prog, params) in PARAMS {
-        assert_eq!(CompProg::from_str(prog).params(), params);
+        assert_eq!(CompProg::read(prog).params(), params);
     }
 }

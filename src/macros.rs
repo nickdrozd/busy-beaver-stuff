@@ -416,9 +416,8 @@ use crate::instrs::Parse as _;
 
 #[test]
 fn test_nest() {
-    let comp = CompProg::from_str(
-        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
-    );
+    let comp =
+        CompProg::read("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
 
     let block = make_block_macro(&comp, (5, 2), 3);
 
@@ -438,9 +437,8 @@ const MACROS: &[(Slot, Instr)] = &[
 
 #[test]
 fn test_macro() {
-    let comp = CompProg::from_str(
-        "0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD",
-    );
+    let comp =
+        CompProg::read("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD");
 
     let block = make_block_macro(&comp, (5, 2), 2);
 

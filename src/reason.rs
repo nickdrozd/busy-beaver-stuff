@@ -371,7 +371,7 @@ macro_rules! assert_entrypoints {
 
             assert_eq!(
                 entrypoints,
-                get_entrypoints(&CompProg::from_str($prog)),
+                get_entrypoints(&CompProg::read($prog)),
             );
         }
     };

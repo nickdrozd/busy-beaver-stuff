@@ -19,17 +19,17 @@ use crate::{
 
 #[pyfunction]
 pub fn py_is_connected(prog: &str, states: u8) -> bool {
-    is_connected(&CompProg::from_str(prog), states)
+    is_connected(&CompProg::read(prog), states)
 }
 
 #[pyfunction]
 pub fn py_opt_block(prog: &str, steps: usize) -> usize {
-    opt_block(&CompProg::from_str(prog), steps)
+    opt_block(&CompProg::read(prog), steps)
 }
 
 #[pyfunction]
 pub fn py_quick_term_or_rec(prog: &str, sim_lim: usize) -> bool {
-    quick_term_or_rec(&CompProg::from_str(prog), sim_lim).is_recur()
+    quick_term_or_rec(&CompProg::read(prog), sim_lim).is_recur()
 }
 
 #[pyfunction]
@@ -41,7 +41,7 @@ pub fn py_show_comp(comp: CompProg, params: Option<Params>) -> String {
 
 #[pyfunction]
 pub fn tcompile(prog: &str) -> CompProg {
-    CompProg::from_str(prog)
+    CompProg::read(prog)
 }
 
 pub fn show_comp(comp: &CompProg, params: Option<Params>) -> String {
@@ -100,17 +100,17 @@ impl From<BackwardResultRs> for BackwardResult {
 
 #[pyfunction]
 pub fn py_cant_halt(prog: &str, depth: Depth) -> BackwardResult {
-    CompProg::from_str(prog).cant_halt(depth).into()
+    CompProg::read(prog).cant_halt(depth).into()
 }
 
 #[pyfunction]
 pub fn py_cant_blank(prog: &str, depth: Depth) -> BackwardResult {
-    CompProg::from_str(prog).cant_blank(depth).into()
+    CompProg::read(prog).cant_blank(depth).into()
 }
 
 #[pyfunction]
 pub fn py_cant_spin_out(prog: &str, depth: Depth) -> BackwardResult {
-    CompProg::from_str(prog).cant_spin_out(depth).into()
+    CompProg::read(prog).cant_spin_out(depth).into()
 }
 
 /***************************************/
@@ -153,7 +153,7 @@ impl From<SegmentResultRs> for SegmentResult {
 }
 
 fn get_comp(prog: &str) -> (CompProg, Params) {
-    let prog = CompProg::from_str(prog);
+    let prog = CompProg::read(prog);
 
     let (states, colors) = prog
         .keys()
@@ -192,34 +192,34 @@ pub fn py_segment_cant_spin_out(
 
 #[pyfunction]
 pub fn py_cps_cant_halt(prog: &str, segs: usize) -> bool {
-    CompProg::from_str(prog).cps_cant_halt(segs)
+    CompProg::read(prog).cps_cant_halt(segs)
 }
 
 #[pyfunction]
 pub fn py_cps_cant_blank(prog: &str, segs: usize) -> bool {
-    CompProg::from_str(prog).cps_cant_blank(segs)
+    CompProg::read(prog).cps_cant_blank(segs)
 }
 
 #[pyfunction]
 pub fn py_cps_cant_spin_out(prog: &str, segs: usize) -> bool {
-    CompProg::from_str(prog).cps_cant_spin_out(segs)
+    CompProg::read(prog).cps_cant_spin_out(segs)
 }
 
 /***************************************/
 
 #[pyfunction]
 pub fn py_ctl_cant_halt(prog: &str, steps: usize) -> bool {
-    CompProg::from_str(prog).ctl_cant_halt(steps)
+    CompProg::read(prog).ctl_cant_halt(steps)
 }
 
 #[pyfunction]
 pub fn py_ctl_cant_blank(prog: &str, steps: usize) -> bool {
-    CompProg::from_str(prog).ctl_cant_blank(steps)
+    CompProg::read(prog).ctl_cant_blank(steps)
 }
 
 #[pyfunction]
 pub fn py_ctl_cant_spin_out(prog: &str, steps: usize) -> bool {
-    CompProg::from_str(prog).ctl_cant_spin_out(steps)
+    CompProg::read(prog).ctl_cant_spin_out(steps)
 }
 
 /***************************************/
@@ -357,7 +357,7 @@ impl MachineResult {
 #[pyfunction]
 #[pyo3(signature = (prog, sim_lim=100_000_000))]
 pub fn run_quick_machine(prog: &str, sim_lim: usize) -> MachineResult {
-    let comp = CompProg::from_str(prog);
+    let comp = CompProg::read(prog);
 
     let mut tape = Tape::init();
 
