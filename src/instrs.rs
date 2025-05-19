@@ -264,7 +264,7 @@ fn test_slot() {
 
 #[test]
 fn test_instr() {
-    let instrs = ["1RB", "2LC"];
+    let instrs = ["1RB", "2LC", "..."];
 
     for instr in instrs {
         assert_eq!(instr, show_instr(read_instr(instr)));
