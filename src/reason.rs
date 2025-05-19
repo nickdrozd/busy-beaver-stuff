@@ -7,7 +7,8 @@ use std::{
 
 use crate::{
     instrs::{
-        Color, CompProg, GetInstr as _, Instr, Shift, Slot, State,
+        Color, CompProg, GetInstr as _, Instr, Parse as _, Shift, Slot,
+        State,
     },
     tape::{
         Alignment, Block as _, LilBlock as Block, LilCount as Count,
@@ -338,9 +339,7 @@ fn get_entrypoints(comp: &CompProg) -> Entrypoints {
 }
 
 #[cfg(test)]
-use crate::instrs::{
-    read_color, read_shift, read_slot, read_state, Parse as _,
-};
+use crate::instrs::{read_color, read_shift, read_state};
 
 #[cfg(test)]
 fn read_entry(entry: &str) -> Entry {
@@ -350,7 +349,7 @@ fn read_entry(entry: &str) -> Entry {
     let color = chars.next().unwrap();
     let shift = chars.next().unwrap();
 
-    (read_slot(slot), (read_color(color), read_shift(shift)))
+    (Slot::read(slot), (read_color(color), read_shift(shift)))
 }
 
 #[cfg(test)]
@@ -552,14 +551,10 @@ impl Config {
     }
 }
 
-#[cfg(debug_assertions)]
-use crate::instrs::show_slot;
-
-#[cfg(debug_assertions)]
 impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let tape = &self.tape;
-        let slot = show_slot((self.state, tape.scan));
+        let slot = (self.state, tape.scan).show();
 
         write!(f, "{slot} | {tape}")
     }

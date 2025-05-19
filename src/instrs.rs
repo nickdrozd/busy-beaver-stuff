@@ -130,7 +130,7 @@ const RIGHT: char = 'R';
 /**************************************/
 
 pub trait Parse {
-    fn read(prog: &str) -> Self;
+    fn read(input: &str) -> Self;
     fn show(&self) -> String;
 }
 
@@ -199,19 +199,19 @@ pub fn read_state(state: char) -> State {
     State::from(state as u8 - 65)
 }
 
-#[pyfunction]
-pub fn show_slot(slot: Slot) -> String {
-    let (state, color) = slot;
-    format!("{}{}", show_state(Some(state)), color)
-}
+impl Parse for Slot {
+    fn read(slot: &str) -> Self {
+        let mut chars = slot.chars();
+        let state = chars.next().unwrap();
+        let color = chars.next().unwrap();
 
-#[cfg(test)]
-pub fn read_slot(slot: &str) -> Slot {
-    let mut chars = slot.chars();
-    let state = chars.next().unwrap();
-    let color = chars.next().unwrap();
+        (read_state(state), read_color(color))
+    }
 
-    (read_state(state), read_color(color))
+    fn show(&self) -> String {
+        let &(state, color) = self;
+        format!("{}{}", show_state(Some(state)), color)
+    }
 }
 
 #[pyfunction]
@@ -258,7 +258,7 @@ fn test_slot() {
     let slots = ["A0", "A1", "A2", "B0", "B1", "B2", "C0", "C1", "C2"];
 
     for slot in slots {
-        assert_eq!(slot, show_slot(read_slot(slot)));
+        assert_eq!(slot, Slot::read(slot).show());
     }
 }
 

@@ -2,7 +2,7 @@ use core::{fmt, iter::once};
 
 use std::collections::{BTreeMap as Dict, HashSet as Set};
 
-use crate::instrs::{show_slot, Color, GetInstr, Shift, State, Term};
+use crate::instrs::{Color, GetInstr, Parse as _, Shift, State, Term};
 
 use Term::*;
 
@@ -240,7 +240,7 @@ impl Config {
 impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let tape = &self.tape;
-        let slot = show_slot((self.state, tape.scan));
+        let slot = (self.state, tape.scan).show();
 
         write!(f, "{slot} | {tape}")
     }

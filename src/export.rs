@@ -33,6 +33,11 @@ pub fn py_quick_term_or_rec(prog: &str, sim_lim: usize) -> bool {
 }
 
 #[pyfunction]
+pub fn show_slot(slot: Slot) -> String {
+    slot.show()
+}
+
+#[pyfunction]
 #[expect(clippy::needless_pass_by_value)]
 pub fn show_comp(comp: CompProg) -> String {
     comp.show()

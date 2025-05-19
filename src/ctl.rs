@@ -5,7 +5,8 @@ use std::collections::HashSet as Set;
 use crate::{
     blocks::opt_block,
     instrs::{
-        show_slot, Color, CompProg, GetInstr, Instr, Shift, State, Term,
+        Color, CompProg, GetInstr, Instr, Parse as _, Shift, State,
+        Term,
     },
     macros::make_block_macro,
     tape::{
@@ -163,7 +164,7 @@ struct Config {
 impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let tape = &self.tape;
-        let slot = show_slot((self.state, tape.scan));
+        let slot = (self.state, tape.scan).show();
 
         write!(f, "{slot} | {tape}")
     }
