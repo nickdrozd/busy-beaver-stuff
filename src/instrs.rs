@@ -205,7 +205,7 @@ pub fn show_slot(slot: Slot) -> String {
     format!("{}{}", show_state(Some(state)), color)
 }
 
-#[pyfunction]
+#[cfg(test)]
 pub fn read_slot(slot: &str) -> Slot {
     let mut chars = slot.chars();
     let state = chars.next().unwrap();

@@ -1,10 +1,7 @@
 from typing import TYPE_CHECKING
 
 # ruff: noqa: F401
-from tm.rust_stuff import (
-    read_slot,
-    tcompile,
-)
+from tm.rust_stuff import tcompile
 
 if TYPE_CHECKING:
     type Color = int

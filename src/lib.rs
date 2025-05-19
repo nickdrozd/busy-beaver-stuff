@@ -57,9 +57,7 @@ mod rust_stuff {
             tcompile, tree_progs, BackwardResult, MachineResult,
             TermRes,
         },
-        instrs::{
-            read_instr, read_slot, show_instr, show_slot, show_state,
-        },
+        instrs::{read_instr, show_instr, show_slot, show_state},
         prover::PastConfigs,
     };
 }
