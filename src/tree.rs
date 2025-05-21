@@ -66,12 +66,13 @@ enum RunResult {
 
 use RunResult::*;
 
-fn run_for_undefined(
+fn run(
     comp: &CompProg,
-    mut state: State,
-    tape: &mut Tape,
+    config: &mut Config,
     sim_lim: Step,
 ) -> RunResult {
+    let &mut (mut state, ref mut tape) = config;
+
     for _ in 0..sim_lim {
         let slot = (state, tape.scan);
 
@@ -116,27 +117,23 @@ fn leaf(
 
 #[expect(clippy::too_many_arguments)]
 fn branch(
-    instr: Instr,
     prog: &mut CompProg,
-    (state, mut tape): Config,
+    mut config: Config,
     sim_lim: Step,
+    &(instr_color, _, instr_state): &Instr,
     (mut avail_states, mut avail_colors): Params,
     params: Params,
     remaining_slots: Slots,
     instr_table: &InstrTable,
     harvester: &impl Fn(&CompProg),
 ) {
-    let (max_states, max_colors) = params;
-
-    let Undefined(slot) =
-        run_for_undefined(prog, state, &mut tape, sim_lim)
-    else {
+    let Undefined(slot) = run(prog, &mut config, sim_lim) else {
         leaf(prog, params, harvester);
         return;
     };
 
     let (slot_state, slot_color) = slot;
-    let (instr_color, _, instr_state) = instr;
+    let (max_states, max_colors) = params;
 
     if avail_states < max_states
         && 1 + max(slot_state, instr_state) == avail_states
@@ -169,14 +166,16 @@ fn branch(
 
     let (last_instr, instrs) = instrs.split_last().unwrap();
 
+    let (_, tape) = config;
+
     for &next_instr in instrs {
         prog.insert(slot, next_instr);
 
         branch(
-            next_instr,
             prog,
             (slot_state, tape.clone()),
             sim_lim,
+            &next_instr,
             avail_params,
             params,
             next_remaining_slots,
@@ -191,10 +190,10 @@ fn branch(
         prog.insert(slot, *last_instr);
 
         branch(
-            *last_instr,
             prog,
             (slot_state, tape),
             sim_lim,
+            last_instr,
             avail_params,
             params,
             next_remaining_slots,
@@ -224,10 +223,10 @@ pub fn build_tree(
 
     init_instrs.par_iter().for_each(|&next_instr| {
         branch(
-            next_instr,
             &mut CompProg::init_stepped(next_instr),
             (1, Tape::init_stepped()),
             sim_lim,
+            &next_instr,
             (init_states, init_colors),
             (states, colors),
             ((states * colors) as Slots) - 1 - (1 + Slots::from(halt)),
