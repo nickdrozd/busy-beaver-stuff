@@ -5596,6 +5596,12 @@ GRAPHS: dict[
         {A: {B, D}, B: {A}, C: {A, C}, D: {B, C, D}},
         {A: {B, C}, B: {A, D}, C: {C, D}, D: {A, D}},
     ),
+    "1RB 0LA  1RC 1LA  0LB 0LD  ... 0RD": (
+        "BACABD.D",
+        1, 0, 0, 0,
+        {A: {A, B}, B: {A, C}, C: {B}, D: {D, C}},
+        {A: {B, A}, B: {A, C}, C: {B, D}, D: {D}},
+    ),
 
     # 2 4
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (
