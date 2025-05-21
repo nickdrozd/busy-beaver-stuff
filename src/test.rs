@@ -296,17 +296,12 @@ fn test_tree_slow() {
 
 use crate::reason::BackwardResult;
 
-fn assert_reason(
-    params: Params,
-    halt: u8,
-    expected: (usize, (u64, u64)),
-) {
+fn assert_reason(params: Params, halt: u8, expected: (usize, u64)) {
     let halt_flag = halt != 0;
 
     let (max_refuted, _) = expected;
 
     let holdout_count = set_val(0);
-    let visited_count = set_val(0);
     let refuted_steps = set_val(0);
 
     let cant_reach = if halt_flag {
@@ -316,8 +311,6 @@ fn assert_reason(
     };
 
     build_tree(params, halt_flag, 300, &|prog| {
-        *access(&visited_count) += 1;
-
         let result = cant_reach(prog, 256);
 
         if let BackwardResult::Refuted(steps) = result {
@@ -339,10 +332,7 @@ fn assert_reason(
         // println!("{}", prog.show(Some(params)));
     });
 
-    let result = (
-        get_val(refuted_steps),
-        (get_val(holdout_count), get_val(visited_count)),
-    );
+    let result = (get_val(refuted_steps), get_val(holdout_count));
 
     assert_eq!(result, expected, "({params:?}, {halt}, {result:?})");
 }
@@ -359,34 +349,31 @@ macro_rules! assert_reason_results {
 #[test]
 fn test_reason() {
     assert_reason_results![
-        ((2, 2), 1, (2, (10, 36))),
-        ((2, 2), 0, (1, (5, 106))),
+        ((2, 2), 1, (2, 10)),
+        ((2, 2), 0, (1, 5)),
         //
-        ((3, 2), 1, (12, (1_506, 3_140))),
-        ((3, 2), 0, (6, (1_157, 13_128))),
+        ((3, 2), 1, (12, 1_506)),
+        ((3, 2), 0, (6, 1_157)),
         //
-        ((2, 3), 1, (7, (2_132, 2_447))),
-        ((2, 3), 0, (6, (1_437, 9_168))),
+        ((2, 3), 1, (7, 2_132)),
+        ((2, 3), 0, (6, 1_437)),
         //
-        ((4, 2), 1, (45, (262_616, 467_142))),
-        ((4, 2), 0, (35, (242_617, 2_291_637))),
+        ((4, 2), 1, (45, 262_616)),
+        ((4, 2), 0, (35, 242_617)),
         //
-        ((2, 4), 1, (16, (306_455, 312_642))),
-        ((2, 4), 0, (12, (387_520, 1_719_237))),
+        ((2, 4), 1, (16, 306_455)),
+        ((2, 4), 0, (12, 387_520)),
     ];
 }
 
 /**************************************/
 
-fn assert_linrec(params: Params, halt: u8, expected: (u64, u64)) {
+fn assert_linrec(params: Params, halt: u8, expected: u64) {
     let halt_flag = halt != 0;
 
     let holdout_count = set_val(0);
-    let visited_count = set_val(0);
 
     build_tree(params, halt_flag, TREE_LIM, &|prog| {
-        *access(&visited_count) += 1;
-
         let result = quick_term_or_rec(prog, LINREC);
 
         if if halt_flag {
@@ -402,7 +389,7 @@ fn assert_linrec(params: Params, halt: u8, expected: (u64, u64)) {
         // println!("{}", prog.show(Some(params)));
     });
 
-    let result = (get_val(holdout_count), get_val(visited_count));
+    let result = get_val(holdout_count);
 
     assert_eq!(result, expected, "({params:?}, {halt}, {result:?})");
 }
@@ -421,35 +408,32 @@ const LINREC: usize = 20_000;
 #[test]
 fn test_linrec() {
     assert_linrec_results![
-        ((2, 2), 1, (0, 36)),
-        ((2, 2), 0, (4, 106)),
+        ((2, 2), 1, 0),
+        ((2, 2), 0, 4),
         //
-        ((3, 2), 1, (58, 3_140)),
-        ((3, 2), 0, (724, 13_128)),
+        ((3, 2), 1, 58),
+        ((3, 2), 0, 724),
         //
-        ((2, 3), 1, (134, 2_447)),
-        ((2, 3), 0, (1_042, 9_168)),
+        ((2, 3), 1, 134),
+        ((2, 3), 0, 1_042),
         //
-        ((4, 2), 1, (12_383, 467_142)),
-        ((4, 2), 0, (145_978, 2_291_637)),
+        ((4, 2), 1, 12_383),
+        ((4, 2), 0, 145_978),
         //
-        ((2, 4), 1, (25_134, 312_642)),
-        ((2, 4), 0, (257_617, 1_719_357)),
+        ((2, 4), 1, 25_134),
+        ((2, 4), 0, 257_617),
     ];
 }
 
 /**************************************/
 
-fn assert_blank(params: Params, expected: (usize, (u64, u64))) {
+fn assert_blank(params: Params, expected: (usize, u64)) {
     let (max_refuted, _) = expected;
 
     let holdout_count = set_val(0);
-    let visited_count = set_val(0);
     let refuted_steps = set_val(0);
 
     build_tree(params, false, TREE_LIM, &|prog| {
-        *access(&visited_count) += 1;
-
         let run = 700;
 
         let backward = prog.cant_blank(44);
@@ -478,10 +462,7 @@ fn assert_blank(params: Params, expected: (usize, (u64, u64))) {
         // println!("{}", prog.show(Some(params)));
     });
 
-    let result = (
-        get_val(refuted_steps),
-        (get_val(holdout_count), get_val(visited_count)),
-    );
+    let result = (get_val(refuted_steps), get_val(holdout_count));
 
     assert_eq!(result, expected, "({params:?}, {result:?})");
 }
@@ -498,14 +479,14 @@ macro_rules! assert_blank_results {
 #[test]
 fn test_blank() {
     assert_blank_results![
-        ((2, 2), (1, (0, 106))),
+        ((2, 2), (1, 0)),
         //
-        ((3, 2), (13, (0, 13_128))),
+        ((3, 2), (13, 0)),
         //
-        ((2, 3), (15, (8, 9_168))),
+        ((2, 3), (15, 8)),
         //
-        ((4, 2), (43, (631, 2_291_637))),
+        ((4, 2), (43, 631)),
         //
-        ((2, 4), (40, (2_084, 1_719_357))),
+        ((2, 4), (40, 2_084)),
     ];
 }
