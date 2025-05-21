@@ -127,9 +127,13 @@ fn branch(
     instr_table: &InstrTable,
     harvester: &impl Fn(&CompProg),
 ) {
-    let Undefined(slot) = run(prog, &mut config, sim_lim) else {
-        leaf(prog, params, harvester);
-        return;
+    let slot = match run(prog, &mut config, sim_lim) {
+        Undefined(slot) => slot,
+        Blank | Spinout => return,
+        Limit => {
+            leaf(prog, params, harvester);
+            return;
+        },
     };
 
     let (slot_state, slot_color) = slot;
