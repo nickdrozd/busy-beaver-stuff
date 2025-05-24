@@ -24,6 +24,7 @@ pub enum Op {
 pub struct Rule(Dict<Index, Op>);
 
 impl Rule {
+    #[expect(clippy::new_without_default)]
     pub const fn new() -> Self {
         Self(Dict::new())
     }
@@ -45,7 +46,6 @@ impl Rule {
         )
     }
 
-    #[expect(dead_code)]
     pub fn is_mult(&self) -> bool {
         self.0.values().any(|diff| matches!(diff, Mult(_)))
     }

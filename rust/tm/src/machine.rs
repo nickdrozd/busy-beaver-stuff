@@ -11,13 +11,11 @@ pub enum RunResult {
     Recur,
     Spinout,
     InfiniteRule,
-    #[expect(dead_code)]
     Undefined(Slot),
     StepLimit,
     ConfigLimit,
 }
 
-#[expect(dead_code)]
 impl RunResult {
     pub const fn is_settled(&self) -> bool {
         !matches!(self, Self::StepLimit | Self::ConfigLimit)
@@ -36,7 +34,6 @@ impl RunResult {
 
 use ProverResult::*;
 
-#[expect(dead_code)]
 pub fn run_for_infrul(
     comp: &impl GetInstr,
     sim_lim: usize,

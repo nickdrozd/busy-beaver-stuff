@@ -115,6 +115,7 @@ pub struct Span<C: Countable, B: Block<C>>(
 );
 
 impl<Count: Countable, B: Block<Count>> Span<Count, B> {
+    #[expect(clippy::len_without_is_empty)]
     pub const fn len(&self) -> usize {
         self.0.len()
     }

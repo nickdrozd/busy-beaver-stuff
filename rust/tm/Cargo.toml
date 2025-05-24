@@ -1,0 +1,14 @@
+[package]
+name = "tm"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+rayon = "*"
+num-bigint = "*"
+num-traits = "*"
+num-integer = "*"
+pyo3 = { version = "*", features = ["extension-module", "num-bigint"] }

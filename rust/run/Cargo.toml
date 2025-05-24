@@ -1,0 +1,8 @@
+[package]
+name = "run"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rayon = "*"
+tm = { path = "../tm" }

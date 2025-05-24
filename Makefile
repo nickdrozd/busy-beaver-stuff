@@ -1,4 +1,4 @@
-.PHONY : all clean clean-python compile coverage generate idris lint machines profile special test test-all type
+.PHONY : all clean clean-python compile coverage generate idris lint machines profile rust special test test-all type
 
 all : machines idris lint test tools
 
@@ -25,8 +25,8 @@ idris :
 
 CARGO = PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo
 
-BUILD = $(CARGO) build
-BUILD_TARGET = target/release/librust_stuff.so
+BUILD = $(CARGO) build --package export
+BUILD_TARGET = target/release/libexport.so
 
 PYEXTENSIONS = tm/rust_stuff.so
 
@@ -52,9 +52,9 @@ test-rust :
 	$(CARGO_VERSION)
 	$(CARGO_TEST)
 
-test-rust-slow :
+run :
 	$(CARGO_VERSION)
-	$(CARGO_TEST) -- --nocapture --ignored
+	$(CARGO) run --release -p run
 
 clean-rust :
 	cargo clean

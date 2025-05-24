@@ -1,17 +1,11 @@
-[package]
-name = "rust-stuff"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+    "rust/tm",
+    "rust/run",
+    "rust/export",
+]
 
-[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-rayon = "*"
-num-bigint = "*"
-num-traits = "*"
-num-integer = "*"
-pyo3 = { version = "*", features = ["extension-module", "num-bigint"] }
+resolver = "2"
 
 [profile.release]
 lto = true

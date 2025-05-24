@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-use crate::{
+use tm::{
     blocks::opt_block,
     cps::Cps as _,
     ctl::Ctl as _,
@@ -89,7 +89,6 @@ fn assert_tree(
     assert_eq!(result, expected, "({params:?}, {halt}, {result:?})");
 }
 
-#[test]
 #[expect(clippy::too_many_lines)]
 fn test_tree() {
     assert_trees![
@@ -208,8 +207,6 @@ fn test_tree() {
     ];
 }
 
-#[test]
-#[ignore = ""]
 fn test_tree_slow() {
     assert_trees![
         (
@@ -294,7 +291,7 @@ fn test_tree_slow() {
 
 /**************************************/
 
-use crate::reason::BackwardResult;
+use tm::reason::BackwardResult;
 
 fn assert_reason(params: Params, halt: u8, expected: (usize, u64)) {
     let halt_flag = halt != 0;
@@ -346,7 +343,6 @@ macro_rules! assert_reason_results {
     };
 }
 
-#[test]
 fn test_reason() {
     assert_reason_results![
         ((2, 2), 1, (2, 10)),
@@ -405,7 +401,6 @@ macro_rules! assert_linrec_results {
 
 const LINREC: usize = 20_000;
 
-#[test]
 fn test_linrec() {
     assert_linrec_results![
         ((2, 2), 1, 0),
@@ -476,7 +471,6 @@ macro_rules! assert_blank_results {
     };
 }
 
-#[test]
 fn test_blank() {
     assert_blank_results![
         ((2, 2), (1, 0)),
@@ -489,4 +483,23 @@ fn test_blank() {
         //
         ((2, 4), (40, 2_084)),
     ];
+}
+
+/**************************************/
+
+fn main() {
+    println!("tree fast");
+    test_tree();
+
+    println!("reason");
+    test_reason();
+
+    println!("blank");
+    test_blank();
+
+    println!("linrec");
+    test_linrec();
+
+    println!("tree slow");
+    test_tree_slow();
 }

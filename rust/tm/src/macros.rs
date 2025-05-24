@@ -154,7 +154,6 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
         unimplemented!()
     }
 
-    #[cfg(test)]
     fn incomplete(&self, _params: Params, _halt: bool) -> bool {
         unimplemented!()
     }

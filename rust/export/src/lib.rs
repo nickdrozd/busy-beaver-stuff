@@ -1,6 +1,6 @@
-use pyo3::{pyclass, pyfunction, pymethods};
+use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
-use crate::{
+use tm::{
     blocks::opt_block,
     cps::Cps as _,
     ctl::Ctl as _,
@@ -261,7 +261,7 @@ pub fn tree_progs(
 
 use std::collections::BTreeMap as Dict;
 
-use crate::tape::{BigCount, BigTape as Tape, MachineTape as _};
+use tm::tape::{BigCount, BigTape as Tape, MachineTape as _};
 
 type BigStep = BigCount;
 
@@ -435,4 +435,24 @@ pub fn run_quick_machine(prog: &str, sim_lim: usize) -> MachineResult {
         last_slot,
         blanks,
     }
+}
+
+/**************************************/
+
+#[pymodule]
+mod rust_stuff {
+    #[pymodule_export]
+    use {
+        crate::{
+            py_cant_blank, py_cant_halt, py_cant_spin_out,
+            py_cps_cant_blank, py_cps_cant_halt, py_cps_cant_spin_out,
+            py_ctl_cant_blank, py_ctl_cant_halt, py_ctl_cant_spin_out,
+            py_is_connected, py_opt_block, py_quick_term_or_rec,
+            py_read_instr, py_segment_cant_blank, py_segment_cant_halt,
+            py_segment_cant_spin_out, py_show_instr, py_show_state,
+            run_quick_machine, show_comp, show_slot, tcompile,
+            tree_progs, BackwardResult, MachineResult, TermRes,
+        },
+        tm::prover::PastConfigs,
+    };
 }
