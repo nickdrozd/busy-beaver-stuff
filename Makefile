@@ -23,17 +23,22 @@ idris :
 
 ## Rust ################################
 
-RUST_STUFF = tm/rust_stuff.so
-
 CARGO = PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo
 
+BUILD = $(CARGO) build
+BUILD_TARGET = target/release/librust_stuff.so
+
+PYEXTENSIONS = tm/rust_stuff.so
+
+MOVE_BUILD = cp $(BUILD_TARGET) $(PYEXTENSIONS)
+
 rust :
-	$(CARGO) build --release
-	cp target/release/librust_stuff.so $(RUST_STUFF)
+	$(BUILD) --release
+	$(MOVE_BUILD)
 
 dev :
-	$(CARGO) build
-	cp target/debug/librust_stuff.so $(RUST_STUFF)
+	$(BUILD)
+	$(MOVE_BUILD)
 
 CARGO_VERSION = cargo --version
 
