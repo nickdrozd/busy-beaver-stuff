@@ -25,7 +25,9 @@ idris :
 
 CARGO = cargo
 
-BUILD = $(CARGO) build
+RUSTFLAGS = RUSTFLAGS="-C target-cpu=native"
+
+BUILD = $(RUSTFLAGS) $(CARGO) build
 BUILD_TARGET = target/release/libexport.so
 
 PYEXTENSIONS = tm/rust_stuff.so
@@ -54,17 +56,17 @@ test-rust :
 
 run :
 	$(CARGO_VERSION)
-	$(CARGO) run --release -p run
+	$(RUSTFLAGS) $(CARGO) run --release -p run
 
 run-all:
 	$(CARGO_VERSION)
-	$(CARGO) run --release -p run -- --all
+	$(RUSTFLAGS) $(CARGO) run --release -p run -- --all
 
 time :
 	$(CARGO_VERSION)
 	$(BUILD) --release --package run
-	time -p cargo run --release -p run
-	RAYON_NUM_THREADS=1 time -p cargo run --release -p run
+	$(RUSTFLAGS) time -p cargo run --release -p run
+	$(RUSTFLAGS) RAYON_NUM_THREADS=1 time -p cargo run --release -p run
 
 clean-rust :
 	cargo clean
