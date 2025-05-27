@@ -25,7 +25,7 @@ idris :
 
 CARGO = cargo
 
-BUILD = $(CARGO) build --package export
+BUILD = $(CARGO) build
 BUILD_TARGET = target/release/libexport.so
 
 PYEXTENSIONS = tm/rust_stuff.so
@@ -33,11 +33,11 @@ PYEXTENSIONS = tm/rust_stuff.so
 MOVE_BUILD = cp $(BUILD_TARGET) $(PYEXTENSIONS)
 
 rust :
-	$(BUILD) --release
+	$(BUILD) --release --package export
 	$(MOVE_BUILD)
 
 dev :
-	$(BUILD)
+	$(BUILD) --package export
 	$(MOVE_BUILD)
 
 CARGO_VERSION = cargo --version
@@ -59,6 +59,12 @@ run :
 run-all:
 	$(CARGO_VERSION)
 	$(CARGO) run --release -p run -- --all
+
+time :
+	$(CARGO_VERSION)
+	$(BUILD) --release --package run
+	time -p cargo run --release -p run
+	RAYON_NUM_THREADS=1 time -p cargo run --release -p run
 
 clean-rust :
 	cargo clean
