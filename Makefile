@@ -23,7 +23,7 @@ idris :
 
 ## Rust ################################
 
-CARGO = PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo
+CARGO = cargo
 
 BUILD = $(CARGO) build --package export
 BUILD_TARGET = target/release/libexport.so
