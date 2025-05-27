@@ -38,3 +38,8 @@ pub mod rules;
 pub mod segment;
 pub mod tape;
 pub mod tree;
+
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;

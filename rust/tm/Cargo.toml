@@ -9,6 +9,7 @@ crate-type = ["lib"]
 [dependencies]
 ahash = "*"
 rayon = "*"
+mimalloc= "*"
 num-bigint = "*"
 num-traits = "*"
 num-integer = "*"
