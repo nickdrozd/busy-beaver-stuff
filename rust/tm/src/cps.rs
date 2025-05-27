@@ -170,6 +170,8 @@ fn cps_cant_reach(
 
 /**************************************/
 
+type Spans = Dict<Vec<Color>, Set<Color>>;
+
 struct Configs {
     seen: Set<Config>,
     lspans: Spans,
@@ -194,8 +196,6 @@ impl Configs {
         configs
     }
 }
-
-type Spans = Dict<Vec<Color>, Set<Color>>;
 
 trait AddSpan {
     fn add_span(&mut self, span: &Span);

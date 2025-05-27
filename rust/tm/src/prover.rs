@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap as Dict};
 
 use pyo3::{pyclass, pymethods};
 
@@ -28,7 +28,7 @@ pub struct Prover<'p, Prog: GetInstr> {
 
     rules: BTreeMap<Slot, Vec<(MinSig, Rule)>>,
 
-    configs: HashMap<Signature, PastConfigs>,
+    configs: Dict<Signature, PastConfigs>,
 }
 
 impl<'p, Prog: GetInstr> Prover<'p, Prog> {
@@ -36,7 +36,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         Self {
             prog,
             rules: BTreeMap::new(),
-            configs: HashMap::new(),
+            configs: Dict::new(),
         }
     }
 

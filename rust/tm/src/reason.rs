@@ -1,7 +1,7 @@
 use core::{fmt, iter::once, marker::PhantomData};
 
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap as Dict, HashSet as Set},
     rc::Rc,
 };
 
@@ -68,11 +68,11 @@ impl Backward for CompProg {
 /**************************************/
 
 type Configs = Vec<Config>;
-type Blanks = HashSet<State>;
+type Blanks = Set<State>;
 
 type Entry = (Slot, (Color, Shift));
 type Entries = Vec<Entry>;
-type Entrypoints = BTreeMap<State, (Entries, Entries)>;
+type Entrypoints = Dict<State, (Entries, Entries)>;
 
 fn cant_reach(
     comp: &CompProg,
