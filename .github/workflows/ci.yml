@@ -54,7 +54,7 @@ jobs:
           rustup update
 
       - name: Test Rust
-        run: make run
+        run: make run-all
 
   Mac-Idris:
     runs-on: macos-latest

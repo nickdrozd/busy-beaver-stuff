@@ -1,3 +1,5 @@
+use std::env;
+
 use rayon::prelude::*;
 
 use tm::{
@@ -490,6 +492,12 @@ fn test_blank() {
 fn main() {
     println!("tree fast");
     test_tree();
+
+    let args: Vec<String> = env::args().collect();
+
+    if !args.contains(&"--all".to_string()) {
+        return;
+    }
 
     println!("reason");
     test_reason();

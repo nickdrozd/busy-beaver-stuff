@@ -56,6 +56,10 @@ run :
 	$(CARGO_VERSION)
 	$(CARGO) run --release -p run
 
+run-all:
+	$(CARGO_VERSION)
+	$(CARGO) run --release -p run -- --all
+
 clean-rust :
 	cargo clean
 
