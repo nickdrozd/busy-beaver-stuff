@@ -3,7 +3,9 @@ use core::{
     iter::once,
 };
 
-use std::collections::{BTreeMap as Dict, HashSet as Set};
+use std::collections::BTreeMap as Dict;
+
+use ahash::AHashSet as Set;
 
 use crate::{
     instrs::{

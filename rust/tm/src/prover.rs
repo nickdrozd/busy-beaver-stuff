@@ -1,4 +1,6 @@
-use std::collections::{BTreeMap, HashMap as Dict};
+use std::collections::BTreeMap;
+
+use ahash::AHashMap as Dict;
 
 use pyo3::{pyclass, pymethods};
 

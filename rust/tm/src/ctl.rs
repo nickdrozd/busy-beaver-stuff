@@ -1,6 +1,6 @@
 use core::fmt;
 
-use std::collections::HashSet as Set;
+use ahash::AHashSet as Set;
 
 use crate::{
     blocks::opt_block,
