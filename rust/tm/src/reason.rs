@@ -1,7 +1,7 @@
 use core::{fmt, iter::once, marker::PhantomData};
 
 use std::{
-    collections::{BTreeMap as Dict, HashSet as Set},
+    collections::{BTreeMap as Dict, BTreeSet as Set},
     rc::Rc,
 };
 
