@@ -172,7 +172,8 @@ fn cps_cant_reach(
 
 /**************************************/
 
-type Spans = Dict<Vec<Color>, Set<Color>>;
+type Colors = Vec<Color>;
+type Spans = Dict<Vec<Color>, Colors>;
 
 struct Configs {
     seen: Set<Config>,
@@ -201,24 +202,24 @@ impl Configs {
 
 trait AddSpan {
     fn add_span(&mut self, span: &Span);
-    fn get_colors(&self, span: &Span) -> Vec<Color>;
+    fn get_colors(&self, span: &Span) -> &Colors;
 }
 
 impl AddSpan for Spans {
     fn add_span(&mut self, span: &Span) {
         if let Some(colors) = self.get_mut(&span.span) {
-            colors.insert(span.last);
+            if let Err(pos) = colors.binary_search(&span.last) {
+                colors.insert(pos, span.last);
+            }
+
             return;
         }
 
-        self.insert(span.span.clone(), Set::from([span.last]));
+        self.insert(span.span.clone(), vec![span.last]);
     }
 
-    fn get_colors(&self, span: &Span) -> Vec<Color> {
-        let mut colors: Vec<Color> =
-            self.get(&span.span).unwrap().iter().copied().collect();
-        colors.sort_unstable();
-        colors
+    fn get_colors(&self, span: &Span) -> &Colors {
+        self.get(&span.span).unwrap()
     }
 }
 
