@@ -7,6 +7,10 @@ type State = u8;
 /**************************************/
 
 pub fn is_connected(prog: &CompProg, states: State) -> bool {
+    if prog.values().all(|&(_, _, state)| state != 0) {
+        return false;
+    }
+
     let exitpoints = get_exitpoints(prog);
 
     if exitpoints.len() < states as usize {
