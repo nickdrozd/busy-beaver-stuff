@@ -13,9 +13,15 @@ pub fn is_connected(prog: &CompProg, states: State) -> bool {
         return false;
     }
 
+    let last_exits = &exitpoints[&(states - 1)];
+
+    if last_exits.contains(&0) {
+        return true;
+    }
+
     let mut reached: Set<State> = Set::new();
 
-    let mut todo: Vec<State> = exitpoints[&(states - 1)].clone();
+    let mut todo: Vec<State> = last_exits.clone();
 
     for _ in 0..states {
         let Some(state) = todo.pop() else {
