@@ -95,11 +95,13 @@ impl GetInstr for CompProg {
     }
 
     fn states_unreached(&self, max_state: State) -> bool {
-        self.values().all(|(_, _, state)| 1 + state < max_state)
+        max_state > 2
+            && self.values().all(|(_, _, state)| 1 + state < max_state)
     }
 
     fn colors_unreached(&self, max_color: Color) -> bool {
-        self.values().all(|(color, _, _)| 1 + color < max_color)
+        max_color > 2
+            && self.values().all(|(color, _, _)| 1 + color < max_color)
     }
 
     fn incomplete(&self, params: Params, halt: bool) -> bool {
