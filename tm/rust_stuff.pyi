@@ -106,14 +106,6 @@ type Rule = dict[Index, Op]
 
 def py_opt_block(prog: str, steps: int) -> int: ...
 
-## tree ################################
-
-def tree_progs(
-        params: Params,
-        halt: bool,
-        sim_lim: int,
-) -> list[str]: ...
-
 ## reason ##############################
 
 def py_is_connected(prog: str, states: int) -> bool: ...

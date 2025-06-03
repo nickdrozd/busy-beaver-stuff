@@ -1,4 +1,8 @@
-use std::env;
+use std::{
+    env,
+    fmt::Debug,
+    sync::{Arc, Mutex, MutexGuard},
+};
 
 use rayon::prelude::*;
 
@@ -12,8 +16,24 @@ use tm::{
     macros::{make_backsymbol_macro, make_block_macro},
     reason::Backward as _,
     segment::Segment as _,
-    tree::{access, build_tree, get_val, set_val, Step},
+    tree::{build_tree, Step},
 };
+
+/**************************************/
+
+type Basket<T> = Arc<Mutex<T>>;
+
+pub fn set_val<T>(val: T) -> Basket<T> {
+    Arc::new(Mutex::new(val))
+}
+
+pub fn access<T>(basket: &Basket<T>) -> MutexGuard<'_, T> {
+    basket.lock().unwrap()
+}
+
+pub fn get_val<T: Debug>(basket: Basket<T>) -> T {
+    Arc::try_unwrap(basket).unwrap().into_inner().unwrap()
+}
 
 /**************************************/
 

@@ -15,7 +15,6 @@ use tm::{
         BackwardResult::*, Depth, Step,
     },
     segment::{Segment as _, SegmentResult as SegmentResultRs},
-    tree::{access, build_tree, get_val, set_val, Step as TreeStep},
 };
 
 /***************************************/
@@ -242,23 +241,6 @@ pub fn py_ctl_cant_spin_out(prog: &str, steps: usize) -> bool {
 
 /***************************************/
 
-#[pyfunction]
-pub fn tree_progs(
-    params: Params,
-    halt: bool,
-    sim_lim: TreeStep,
-) -> Vec<String> {
-    let progs = set_val(vec![]);
-
-    build_tree(params, halt, sim_lim, &|comp| {
-        access(&progs).push(comp.show());
-    });
-
-    get_val(progs)
-}
-
-/**************************************/
-
 use std::collections::BTreeMap as Dict;
 
 use tm::tape::{BigCount, BigTape as Tape, MachineTape as _};
@@ -451,7 +433,7 @@ mod rust_stuff {
             py_read_instr, py_segment_cant_blank, py_segment_cant_halt,
             py_segment_cant_spin_out, py_show_instr, py_show_state,
             run_quick_machine, show_comp, show_slot, tcompile,
-            tree_progs, BackwardResult, MachineResult, TermRes,
+            BackwardResult, MachineResult, TermRes,
         },
         tm::prover::PastConfigs,
     };

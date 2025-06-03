@@ -126,10 +126,6 @@ test :
 test-all : test-rust compile
 	RUN_SLOW=1 $(MAKE) test
 
-tree : compile
-	RUN_SLOW=1 $(PYTEST) test.test_tree
-	$(MAKE) refresh
-
 COVERAGE = $(PYTHON) -m coverage
 
 coverage : rust
