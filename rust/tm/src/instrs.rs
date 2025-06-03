@@ -35,7 +35,8 @@ pub trait GetInstr {
 
     fn params(&self) -> Params;
 
-    fn params_unreached(&self, params: Params) -> bool;
+    fn states_unreached(&self, max_state: State) -> bool;
+    fn colors_unreached(&self, max_color: Color) -> bool;
 
     fn incomplete(&self, params: Params, halt: bool) -> bool;
 }
@@ -93,9 +94,12 @@ impl GetInstr for CompProg {
             .collect()
     }
 
-    fn params_unreached(&self, (max_state, max_color): Params) -> bool {
+    fn states_unreached(&self, max_state: State) -> bool {
         self.values().all(|(_, _, state)| 1 + state < max_state)
-            || self.values().all(|(color, _, _)| 1 + color < max_color)
+    }
+
+    fn colors_unreached(&self, max_color: Color) -> bool {
+        self.values().all(|(color, _, _)| 1 + color < max_color)
     }
 
     fn incomplete(&self, params: Params, halt: bool) -> bool {

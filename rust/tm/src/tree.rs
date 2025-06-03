@@ -105,10 +105,12 @@ type Config = (State, Tape);
 
 fn leaf(
     prog: &CompProg,
-    params: Params,
+    (max_state, max_color): Params,
     harvester: &impl Fn(&CompProg),
 ) {
-    if prog.params_unreached(params) {
+    if prog.states_unreached(max_state)
+        || prog.colors_unreached(max_color)
+    {
         return;
     }
 

@@ -150,7 +150,11 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
         )
     }
 
-    fn params_unreached(&self, _: Params) -> bool {
+    fn states_unreached(&self, _: State) -> bool {
+        unimplemented!()
+    }
+
+    fn colors_unreached(&self, _: Color) -> bool {
         unimplemented!()
     }
 
