@@ -11,6 +11,8 @@ use crate::{
 
 pub type Step = usize;
 
+type Slots = u8;
+
 /**************************************/
 
 const SHIFTS: [bool; 2] = [false, true];
@@ -95,7 +97,6 @@ fn run(
 
 /**************************************/
 
-type Slots = u8;
 type Config = (State, Tape);
 
 fn leaf(
@@ -214,6 +215,8 @@ pub fn build_tree(
     sim_lim: Step,
     harvester: &(impl Fn(&CompProg) + Sync),
 ) {
+    let slots = open_slots(states, colors, halt);
+
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
@@ -230,9 +233,15 @@ pub fn build_tree(
             &next_instr,
             (init_states, init_colors),
             (states, colors),
-            ((states * colors) as Slots) - 1 - (1 + Slots::from(halt)),
+            slots,
             &instr_table,
             harvester,
         );
     });
+}
+
+/**************************************/
+
+fn open_slots(states: State, colors: Color, halt: bool) -> Slots {
+    ((states * colors) as Slots) - Slots::from(halt) - 2
 }
