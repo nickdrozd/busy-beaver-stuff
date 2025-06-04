@@ -1,6 +1,5 @@
 __pycache__
 .mypy_cache
-.mutmut-cache
 *yappi*
 **/*.run
 *.pdf

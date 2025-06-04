@@ -1,9 +1,9 @@
-.PHONY : all clean clean-python compile coverage generate idris lint machines profile rust special test test-all type
+.PHONY : all clean clean-python compile coverage idris lint machines profile rust test test-all type
 
 all : machines idris lint test tools
 
 clean-python :
-	rm -rf __pycache__ **/__pycache__ .mypy_cache .mutmut-cache .ruff_cache .coverage* html* build/ *.so **/*.so classes.png packages.png mypyc_annotation.html
+	rm -rf __pycache__ **/__pycache__ .mypy_cache .ruff_cache .coverage* html* build/ *.so **/*.so classes.png packages.png mypyc_annotation.html
 
 clean : clean-python clean-rust
 	$(MAKE) -C machines clean
@@ -137,14 +137,6 @@ coverage : rust
 
 diagrams :
 	pyreverse --only-classnames --no-standalone --colorized -o png tm tools test perf
-
-# PYTHONPATH=$PYTHONPATH:tm make special target=tm/tape.py
-special :
-	specialist --target $(target) -m unittest $(TUR)
-
-mutmut :
-	-mutmut run
-	mutmut html
 
 profile :
 	$(MAKE) -C perf
