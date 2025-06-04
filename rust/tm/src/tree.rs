@@ -63,41 +63,48 @@ enum RunResult {
 
 use RunResult::*;
 
-fn run(
-    comp: &CompProg,
-    config: &mut Config,
-    sim_lim: Step,
-) -> RunResult {
-    let &mut (mut state, ref mut tape) = config;
+#[derive(Clone)]
+struct Config {
+    state: State,
+    tape: Tape,
+}
 
-    for _ in 0..sim_lim {
-        let slot = (state, tape.scan);
-
-        let Some(&(color, shift, next_state)) = comp.get(&slot) else {
-            return Undefined(slot);
-        };
-
-        let same = state == next_state;
-
-        if same && tape.at_edge(shift) {
-            return Spinout;
+impl Config {
+    fn init_stepped() -> Self {
+        Self {
+            state: 1,
+            tape: Tape::init_stepped(),
         }
-
-        tape.step(shift, color, same);
-
-        if tape.blank() {
-            return Blank;
-        }
-
-        state = next_state;
     }
 
-    Limit
+    fn run(&mut self, comp: &CompProg, sim_lim: Step) -> RunResult {
+        for _ in 0..sim_lim {
+            let slot = (self.state, self.tape.scan);
+
+            let Some(&(color, shift, state)) = comp.get(&slot) else {
+                return Undefined(slot);
+            };
+
+            let same = self.state == state;
+
+            if same && self.tape.at_edge(shift) {
+                return Spinout;
+            }
+
+            self.tape.step(shift, color, same);
+
+            if self.tape.blank() {
+                return Blank;
+            }
+
+            self.state = state;
+        }
+
+        Limit
+    }
 }
 
 /**************************************/
-
-type Config = (State, Tape);
 
 fn leaf(
     prog: &CompProg,
@@ -125,7 +132,7 @@ fn branch(
     instr_table: &InstrTable,
     harvester: &impl Fn(&CompProg),
 ) {
-    let slot = match run(prog, &mut config, sim_lim) {
+    let slot = match config.run(prog, sim_lim) {
         Undefined(slot) => slot,
         Blank | Spinout => return,
         Limit => {
@@ -164,18 +171,18 @@ fn branch(
         return;
     }
 
+    config.state = slot_state;
+
     let avail_params = (avail_states, avail_colors);
 
     let (last_instr, instrs) = instrs.split_last().unwrap();
-
-    let (_, tape) = config;
 
     for &next_instr in instrs {
         prog.insert(slot, next_instr);
 
         branch(
             prog,
-            (slot_state, tape.clone()),
+            config.clone(),
             sim_lim,
             &next_instr,
             avail_params,
@@ -193,7 +200,7 @@ fn branch(
 
         branch(
             prog,
-            (slot_state, tape),
+            config,
             sim_lim,
             last_instr,
             avail_params,
@@ -228,7 +235,7 @@ pub fn build_tree(
     init_instrs.par_iter().for_each(|&next_instr| {
         branch(
             &mut CompProg::init_stepped(next_instr),
-            (1, Tape::init_stepped()),
+            Config::init_stepped(),
             sim_lim,
             &next_instr,
             (init_states, init_colors),
