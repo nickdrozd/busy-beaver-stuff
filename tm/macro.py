@@ -7,7 +7,7 @@ from tm.rust_stuff import py_opt_block as opt_block
 from tm.show import show_comp
 
 if TYPE_CHECKING:
-    from tm.parse import Color, CompProg, Instr, Params, Slot, State
+    from tm.parse import Color, Instr, Params, Prog, Slot, State
 
     Tape = tuple[Color, ...]
     Config = tuple[State, tuple[bool, Tape]]
@@ -132,7 +132,7 @@ def prog_params(comp: GetInstr) -> Params:
 
 class MacroProg:
     comp: GetInstr
-    instrs: CompProg
+    instrs: Prog
 
     sim_lim: int
 

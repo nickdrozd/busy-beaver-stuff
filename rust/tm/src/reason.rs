@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     instrs::{
-        Color, CompProg, GetInstr as _, Instr, Parse as _, Shift, Slot,
+        Color, GetInstr as _, Instr, Parse as _, Prog, Shift, Slot,
         State,
     },
     tape::{
@@ -51,7 +51,7 @@ pub trait Backward {
     fn cant_spin_out(&self, depth: Depth) -> BackwardResult;
 }
 
-impl Backward for CompProg {
+impl Backward for Prog {
     fn cant_halt(&self, depth: Depth) -> BackwardResult {
         cant_reach(self, depth, halt_configs)
     }
@@ -75,9 +75,9 @@ type Entries = Vec<Entry>;
 type Entrypoints = Dict<State, (Entries, Entries)>;
 
 fn cant_reach(
-    comp: &CompProg,
+    comp: &Prog,
     depth: Depth,
-    get_configs: impl Fn(&CompProg) -> Configs,
+    get_configs: impl Fn(&Prog) -> Configs,
 ) -> BackwardResult {
     let mut configs = get_configs(comp);
 
@@ -295,21 +295,21 @@ fn step_configs(
 
 /**************************************/
 
-fn halt_configs(comp: &CompProg) -> Configs {
+fn halt_configs(comp: &Prog) -> Configs {
     comp.halt_slots()
         .iter()
         .map(|&(state, color)| Config::init_halt(state, color))
         .collect()
 }
 
-fn erase_configs(comp: &CompProg) -> Configs {
+fn erase_configs(comp: &Prog) -> Configs {
     comp.erase_slots()
         .iter()
         .map(|&(state, color)| Config::init_blank(state, color))
         .collect()
 }
 
-fn zero_reflexive_configs(comp: &CompProg) -> Configs {
+fn zero_reflexive_configs(comp: &Prog) -> Configs {
     comp.zr_shifts()
         .iter()
         .map(|&(state, shift)| Config::init_spinout(state, shift))
@@ -325,7 +325,7 @@ fn get_blanks(configs: &Configs) -> Blanks {
 
 /**************************************/
 
-fn get_entrypoints(comp: &CompProg) -> Entrypoints {
+fn get_entrypoints(comp: &Prog) -> Entrypoints {
     let mut entrypoints = Entrypoints::new();
 
     for (&slot, &(color, shift, state)) in comp {
@@ -370,7 +370,7 @@ macro_rules! assert_entrypoints {
 
             assert_eq!(
                 entrypoints,
-                get_entrypoints(&CompProg::read($prog)),
+                get_entrypoints(&Prog::read($prog)),
             );
         }
     };

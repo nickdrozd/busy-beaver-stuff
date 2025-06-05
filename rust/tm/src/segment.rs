@@ -815,7 +815,7 @@ impl<'p, P: GetInstr> AnalyzedProg<'p, P> {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::{CompProg, Parse as _};
+use crate::instrs::{Parse as _, Prog};
 
 #[cfg(test)]
 impl Tape {
@@ -871,7 +871,7 @@ fn test_step_in() {
 
 #[test]
 fn test_seg_tape() {
-    let prog = CompProg::read("1RB 1RC  0LA 0RA  0LB ...");
+    let prog = Prog::read("1RB 1RC  0LA 0RA  0LB ...");
 
     let mut config = Config::init(4, 1);
 
@@ -907,7 +907,7 @@ fn test_reached_states() {
     ];
 
     for ((prog, params), halts, spinouts) in progs {
-        let comp = CompProg::read(prog);
+        let comp = Prog::read(prog);
         let prog = AnalyzedProg::new(&comp, params);
 
         assert_eq!(prog.halts, halts.into_iter().collect::<Set<_>>());

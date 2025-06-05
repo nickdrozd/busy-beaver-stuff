@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from typing import Self
 
     from tm.machine import Undfnd
-    from tm.parse import Color, CompProg, Shift, Slot, State
+    from tm.parse import Color, Prog, Shift, Slot, State
 
     RecRes = tuple[int, int]
     LinRec = tuple[int | None, int]
@@ -370,7 +370,7 @@ class BeepHistory(History):
 
 
 class LinRecMachine:
-    comp: CompProg
+    comp: Prog
 
     tape: HeadTape
     steps: int

@@ -5,8 +5,7 @@ use ahash::AHashSet as Set;
 use crate::{
     blocks::opt_block,
     instrs::{
-        Color, CompProg, GetInstr, Instr, Parse as _, Shift, State,
-        Term,
+        Color, GetInstr, Instr, Parse as _, Prog, Shift, State, Term,
     },
     macros::make_block_macro,
     tape::{
@@ -32,7 +31,7 @@ pub trait Ctl {
     fn ctl_cant_spin_out(&self, steps: Steps) -> bool;
 }
 
-impl Ctl for CompProg {
+impl Ctl for Prog {
     fn ctl_cant_halt(&self, steps: Steps) -> bool {
         if self.halt_slots().is_empty() {
             return true;

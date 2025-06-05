@@ -6,8 +6,8 @@ use tm::{
     ctl::Ctl as _,
     graph::is_connected,
     instrs::{
-        read_instr, show_instr, show_state, CompProg, Instr, Params,
-        Parse as _, Slot, State,
+        read_instr, show_instr, show_state, Instr, Params, Parse as _,
+        Prog, Slot, State,
     },
     machine::quick_term_or_rec,
     reason::{
@@ -21,17 +21,17 @@ use tm::{
 
 #[pyfunction]
 pub fn py_is_connected(prog: &str, states: u8) -> bool {
-    is_connected(&CompProg::read(prog), states)
+    is_connected(&Prog::read(prog), states)
 }
 
 #[pyfunction]
 pub fn py_opt_block(prog: &str, steps: usize) -> usize {
-    opt_block(&CompProg::read(prog), steps)
+    opt_block(&Prog::read(prog), steps)
 }
 
 #[pyfunction]
 pub fn py_quick_term_or_rec(prog: &str, sim_lim: usize) -> bool {
-    quick_term_or_rec(&CompProg::read(prog), sim_lim).is_recur()
+    quick_term_or_rec(&Prog::read(prog), sim_lim).is_recur()
 }
 
 #[pyfunction]
@@ -41,13 +41,13 @@ pub fn show_slot(slot: Slot) -> String {
 
 #[pyfunction]
 #[expect(clippy::needless_pass_by_value)]
-pub fn show_comp(comp: CompProg) -> String {
+pub fn show_comp(comp: Prog) -> String {
     comp.show()
 }
 
 #[pyfunction]
-pub fn tcompile(prog: &str) -> CompProg {
-    CompProg::read(prog)
+pub fn tcompile(prog: &str) -> Prog {
+    Prog::read(prog)
 }
 
 #[pyfunction]
@@ -117,17 +117,17 @@ impl From<BackwardResultRs> for BackwardResult {
 
 #[pyfunction]
 pub fn py_cant_halt(prog: &str, depth: Depth) -> BackwardResult {
-    CompProg::read(prog).cant_halt(depth).into()
+    Prog::read(prog).cant_halt(depth).into()
 }
 
 #[pyfunction]
 pub fn py_cant_blank(prog: &str, depth: Depth) -> BackwardResult {
-    CompProg::read(prog).cant_blank(depth).into()
+    Prog::read(prog).cant_blank(depth).into()
 }
 
 #[pyfunction]
 pub fn py_cant_spin_out(prog: &str, depth: Depth) -> BackwardResult {
-    CompProg::read(prog).cant_spin_out(depth).into()
+    Prog::read(prog).cant_spin_out(depth).into()
 }
 
 /***************************************/
@@ -169,8 +169,8 @@ impl From<SegmentResultRs> for SegmentResult {
     }
 }
 
-fn get_comp(prog: &str) -> (CompProg, Params) {
-    let prog = CompProg::read(prog);
+fn get_comp(prog: &str) -> (Prog, Params) {
+    let prog = Prog::read(prog);
 
     let (states, colors) = prog
         .keys()
@@ -209,34 +209,34 @@ pub fn py_segment_cant_spin_out(
 
 #[pyfunction]
 pub fn py_cps_cant_halt(prog: &str, segs: usize) -> bool {
-    CompProg::read(prog).cps_cant_halt(segs)
+    Prog::read(prog).cps_cant_halt(segs)
 }
 
 #[pyfunction]
 pub fn py_cps_cant_blank(prog: &str, segs: usize) -> bool {
-    CompProg::read(prog).cps_cant_blank(segs)
+    Prog::read(prog).cps_cant_blank(segs)
 }
 
 #[pyfunction]
 pub fn py_cps_cant_spin_out(prog: &str, segs: usize) -> bool {
-    CompProg::read(prog).cps_cant_spin_out(segs)
+    Prog::read(prog).cps_cant_spin_out(segs)
 }
 
 /***************************************/
 
 #[pyfunction]
 pub fn py_ctl_cant_halt(prog: &str, steps: usize) -> bool {
-    CompProg::read(prog).ctl_cant_halt(steps)
+    Prog::read(prog).ctl_cant_halt(steps)
 }
 
 #[pyfunction]
 pub fn py_ctl_cant_blank(prog: &str, steps: usize) -> bool {
-    CompProg::read(prog).ctl_cant_blank(steps)
+    Prog::read(prog).ctl_cant_blank(steps)
 }
 
 #[pyfunction]
 pub fn py_ctl_cant_spin_out(prog: &str, steps: usize) -> bool {
-    CompProg::read(prog).ctl_cant_spin_out(steps)
+    Prog::read(prog).ctl_cant_spin_out(steps)
 }
 
 /***************************************/
@@ -356,7 +356,7 @@ impl MachineResult {
 #[pyfunction]
 #[pyo3(signature = (prog, sim_lim=100_000_000))]
 pub fn run_quick_machine(prog: &str, sim_lim: usize) -> MachineResult {
-    let comp = CompProg::read(prog);
+    let comp = Prog::read(prog);
 
     let mut tape = Tape::init();
 

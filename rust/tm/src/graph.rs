@@ -1,12 +1,12 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::instrs::CompProg;
+use crate::instrs::Prog;
 
 type State = u8;
 
 /**************************************/
 
-pub fn is_connected(prog: &CompProg, states: State) -> bool {
+pub fn is_connected(prog: &Prog, states: State) -> bool {
     if prog.values().all(|&(_, _, state)| state != 0) {
         return false;
     }
@@ -73,11 +73,11 @@ const CONNECTED: [(&str, State); 3] = [
 #[test]
 fn test_connected() {
     for (prog, states) in UNCONNECTED {
-        assert!(!is_connected(&CompProg::read(prog), states));
+        assert!(!is_connected(&Prog::read(prog), states));
     }
 
     for (prog, states) in CONNECTED {
-        assert!(is_connected(&CompProg::read(prog), states));
+        assert!(is_connected(&Prog::read(prog), states));
     }
 }
 
@@ -85,7 +85,7 @@ fn test_connected() {
 
 type Exitpoints = Dict<State, Vec<State>>;
 
-fn get_exitpoints(prog: &CompProg) -> Exitpoints {
+fn get_exitpoints(prog: &Prog) -> Exitpoints {
     let mut exitpoints = Exitpoints::new();
 
     for (&(src, _), &(_, _, dst)) in prog {
@@ -120,7 +120,7 @@ macro_rules! dict_from {
 macro_rules! assert_exitpoints {
     ($input:expr, { $($key:expr => [$($val:expr),*]),* $(,)? }) => {
         assert_eq!(
-            get_exitpoints(&CompProg::read($input)),
+            get_exitpoints(&Prog::read($input)),
             dict_from! { $($key => [$($val),*]),* },
         );
     }

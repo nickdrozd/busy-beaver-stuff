@@ -1,7 +1,7 @@
 use core::iter::{once, repeat_n};
 
 use crate::{
-    instrs::{Color, CompProg, Shift},
+    instrs::{Color, Prog, Shift},
     tape::{MachineTape as _, MedSpan as Span, MedTape as Tape},
 };
 
@@ -68,7 +68,7 @@ impl BlockMeasure {
 
 /**************************************/
 
-fn measure_blocks(comp: &CompProg, steps: usize) -> usize {
+fn measure_blocks(comp: &Prog, steps: usize) -> usize {
     let mut state = 0;
     let mut tape = BlockMeasure::new();
 
@@ -93,7 +93,7 @@ fn measure_blocks(comp: &CompProg, steps: usize) -> usize {
     tape.max_blocks_step
 }
 
-fn unroll_tape(comp: &CompProg, steps: usize) -> Vec<Color> {
+fn unroll_tape(comp: &Prog, steps: usize) -> Vec<Color> {
     let mut state = 0;
     let mut tape = Tape::init();
 
@@ -124,7 +124,7 @@ fn compr_eff(tape: &[Color], k: usize) -> usize {
 
 /**************************************/
 
-pub fn opt_block(comp: &CompProg, steps: usize) -> usize {
+pub fn opt_block(comp: &Prog, steps: usize) -> usize {
     let max_blocks_step = measure_blocks(comp, steps);
 
     let tape = unroll_tape(comp, max_blocks_step);

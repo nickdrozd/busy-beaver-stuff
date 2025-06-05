@@ -11,6 +11,6 @@ if TYPE_CHECKING:
     type Slot = tuple[State, Color]
     type Instr = tuple[Color, Shift, State]
 
-    type CompProg = dict[Slot, Instr]
+    type Prog = dict[Slot, Instr]
 
     type Params = tuple[int, int]

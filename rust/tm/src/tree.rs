@@ -3,9 +3,7 @@ use core::cmp::{max, min};
 use rayon::prelude::*;
 
 use crate::{
-    instrs::{
-        Color, CompProg, GetInstr as _, Instr, Params, Slot, State,
-    },
+    instrs::{Color, GetInstr as _, Instr, Params, Prog, Slot, State},
     tape::{MachineTape as _, MedTape as Tape},
 };
 
@@ -74,7 +72,7 @@ impl Config {
         }
     }
 
-    fn run(&mut self, comp: &CompProg, sim_lim: Step) -> RunResult {
+    fn run(&mut self, comp: &Prog, sim_lim: Step) -> RunResult {
         for _ in 0..sim_lim {
             let slot = (self.state, self.tape.scan);
 
@@ -104,9 +102,9 @@ impl Config {
 /**************************************/
 
 fn leaf(
-    prog: &CompProg,
+    prog: &Prog,
     (max_state, max_color): Params,
-    harvester: &impl Fn(&CompProg),
+    harvester: &impl Fn(&Prog),
 ) {
     if prog.states_unreached(max_state)
         || prog.colors_unreached(max_color)
@@ -119,7 +117,7 @@ fn leaf(
 
 #[expect(clippy::too_many_arguments)]
 fn branch(
-    prog: &mut CompProg,
+    prog: &mut Prog,
     mut config: Config,
     sim_lim: Step,
     &(instr_color, _, instr_state): &Instr,
@@ -127,7 +125,7 @@ fn branch(
     params @ (max_states, max_colors): Params,
     remaining_slots: Slots,
     instr_table: &InstrTable,
-    harvester: &impl Fn(&CompProg),
+    harvester: &impl Fn(&Prog),
 ) {
     let slot @ (slot_state, slot_color) =
         match config.run(prog, sim_lim) {
@@ -215,7 +213,7 @@ pub fn build_tree(
     params @ (states, colors): Params,
     halt: bool,
     sim_lim: Step,
-    harvester: &(impl Fn(&CompProg) + Sync),
+    harvester: &(impl Fn(&Prog) + Sync),
 ) {
     let slots = open_slots(states, colors, halt);
 
@@ -230,7 +228,7 @@ pub fn build_tree(
 
     init_instrs.par_iter().for_each(|&next_instr| {
         branch(
-            &mut CompProg::init_stepped(next_instr),
+            &mut Prog::init_stepped(next_instr),
             Config::init_stepped(),
             sim_lim,
             &next_instr,

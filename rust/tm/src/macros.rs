@@ -7,7 +7,7 @@ use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 use num_integer::Integer as _;
 
 use crate::instrs::{
-    Color, CompProg, GetInstr, Instr, Params, Shift, Slot, State,
+    Color, GetInstr, Instr, Params, Prog, Shift, Slot, State,
 };
 
 type Tape = Vec<Color>;
@@ -115,7 +115,7 @@ pub struct MacroProg<'p, P: GetInstr, L: Logic> {
     prog: &'p P,
     logic: L,
 
-    instrs: RefCell<CompProg>,
+    instrs: RefCell<Prog>,
 }
 
 impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
@@ -420,7 +420,7 @@ use crate::instrs::Parse as _;
 #[test]
 fn test_nest() {
     let comp =
-        CompProg::read("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
+        Prog::read("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
 
     let block = make_block_macro(&comp, (5, 2), 3);
 
@@ -441,7 +441,7 @@ const MACROS: &[(Slot, Instr)] = &[
 #[test]
 fn test_macro() {
     let comp =
-        CompProg::read("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD");
+        Prog::read("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD");
 
     let block = make_block_macro(&comp, (5, 2), 2);
 
