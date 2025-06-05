@@ -20,12 +20,9 @@ const SHIFTS: [bool; 2] = [false, true];
 type InstrTable = Vec<Vec<Vec<Instr>>>;
 
 fn make_instr_table(
-    max_states: State,
-    max_colors: Color,
+    max_states: usize,
+    max_colors: usize,
 ) -> InstrTable {
-    let max_states = max_states as usize;
-    let max_colors = max_colors as usize;
-
     let mut table = vec![vec![vec![]; 1 + max_colors]; 1 + max_states];
 
     #[expect(clippy::needless_range_loop)]
@@ -227,7 +224,8 @@ pub fn build_tree(
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
-    let instr_table = make_instr_table(states, colors);
+    let instr_table =
+        make_instr_table(states as usize, colors as usize);
 
     let init_instrs =
         &instr_table[init_states as usize][init_colors as usize];
