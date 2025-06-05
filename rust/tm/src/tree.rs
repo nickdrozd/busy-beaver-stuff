@@ -124,22 +124,20 @@ fn branch(
     sim_lim: Step,
     &(instr_color, _, instr_state): &Instr,
     (mut avail_states, mut avail_colors): Params,
-    params: Params,
+    params @ (max_states, max_colors): Params,
     remaining_slots: Slots,
     instr_table: &InstrTable,
     harvester: &impl Fn(&CompProg),
 ) {
-    let slot = match config.run(prog, sim_lim) {
-        Undefined(slot) => slot,
-        Blank | Spinout => return,
-        Limit => {
-            leaf(prog, params, harvester);
-            return;
-        },
-    };
-
-    let (slot_state, slot_color) = slot;
-    let (max_states, max_colors) = params;
+    let slot @ (slot_state, slot_color) =
+        match config.run(prog, sim_lim) {
+            Undefined(slot) => slot,
+            Blank | Spinout => return,
+            Limit => {
+                leaf(prog, params, harvester);
+                return;
+            },
+        };
 
     if avail_states < max_states
         && 1 + max(slot_state, instr_state) == avail_states
@@ -214,7 +212,7 @@ fn branch(
 /**************************************/
 
 pub fn build_tree(
-    (states, colors): Params,
+    params @ (states, colors): Params,
     halt: bool,
     sim_lim: Step,
     harvester: &(impl Fn(&CompProg) + Sync),
@@ -237,7 +235,7 @@ pub fn build_tree(
             sim_lim,
             &next_instr,
             (init_states, init_colors),
-            (states, colors),
+            params,
             slots,
             &instr_table,
             harvester,

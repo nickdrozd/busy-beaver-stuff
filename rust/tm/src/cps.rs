@@ -68,9 +68,7 @@ fn cps_cant_reach(
 
         let mut update = false;
 
-        while let Some(config) = todo.pop() {
-            let Config { state, mut tape } = config;
-
+        while let Some(Config { state, mut tape }) = todo.pop() {
             let Some((print, shift, next_state)) =
                 prog.get_instr(&(state, tape.scan))
             else {
