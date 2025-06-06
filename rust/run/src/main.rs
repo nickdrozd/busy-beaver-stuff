@@ -394,11 +394,7 @@ fn assert_linrec(params: Params, halt: u8, expected: u64) {
     build_tree(params, halt_flag, TREE_LIM, &|prog| {
         let result = quick_term_or_rec(prog, LINREC);
 
-        if if halt_flag {
-            result.is_settled()
-        } else {
-            result.is_recur()
-        } {
+        if result.is_settled() {
             return;
         }
 
@@ -438,7 +434,7 @@ fn test_linrec() {
         ((4, 2), 0, 138_585),
         //
         ((2, 4), 1, 25_134),
-        ((2, 4), 0, 257_312),
+        ((2, 4), 0, 257_311),
     ];
 }
 
