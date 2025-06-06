@@ -11,13 +11,16 @@ use tm::{
     cps::Cps as _,
     ctl::Ctl as _,
     graph::is_connected,
-    instrs::{GetInstr as _, Params, Parse as _, Prog},
+    instrs::{GetInstr as _, Params, Prog},
     machine::{quick_term_or_rec, run_for_infrul},
     macros::{make_backsymbol_macro, make_block_macro},
     reason::Backward as _,
     segment::Segment as _,
     tree::{build_tree, Step},
 };
+
+#[expect(unused_imports)]
+use tm::instrs::Parse as _;
 
 /**************************************/
 
@@ -103,7 +106,7 @@ fn assert_tree(
 
         *access(&holdout_count) += 1;
 
-        // println!("{}", prog.show(Some(params)));
+        // println!("{}", prog.show());
     });
 
     let result = (get_val(holdout_count), get_val(visited_count));
@@ -318,8 +321,6 @@ use tm::reason::BackwardResult;
 fn assert_reason(params: Params, halt: u8, expected: (usize, u64)) {
     let halt_flag = halt != 0;
 
-    let (max_refuted, _) = expected;
-
     let holdout_count = set_val(0);
     let refuted_steps = set_val(0);
 
@@ -332,14 +333,10 @@ fn assert_reason(params: Params, halt: u8, expected: (usize, u64)) {
     build_tree(params, halt_flag, 300, &|prog| {
         let result = cant_reach(prog, 256);
 
-        if let BackwardResult::Refuted(steps) = result {
-            if steps > max_refuted {
-                println!("        \"{}\": {},", prog.show(), 1 + steps);
-            }
-
-            if steps > *access(&refuted_steps) {
-                *access(&refuted_steps) = steps;
-            }
+        if let BackwardResult::Refuted(steps) = result
+            && steps > *access(&refuted_steps)
+        {
+            *access(&refuted_steps) = steps;
         }
 
         if result.is_settled() {
@@ -348,7 +345,7 @@ fn assert_reason(params: Params, halt: u8, expected: (usize, u64)) {
 
         *access(&holdout_count) += 1;
 
-        // println!("{}", prog.show(Some(params)));
+        // println!("{}", prog.show());
     });
 
     let result = (get_val(refuted_steps), get_val(holdout_count));
@@ -398,7 +395,7 @@ fn assert_linrec(params: Params, expected: u64) {
 
         *access(&holdout_count) += 1;
 
-        // println!("{}", prog.show(Some(params)));
+        // println!("{}", prog.show());
     });
 
     let result = get_val(holdout_count);
@@ -430,8 +427,6 @@ fn test_linrec() {
 /**************************************/
 
 fn assert_blank(params: Params, expected: (usize, u64)) {
-    let (max_refuted, _) = expected;
-
     let holdout_count = set_val(0);
     let refuted_steps = set_val(0);
 
@@ -440,14 +435,10 @@ fn assert_blank(params: Params, expected: (usize, u64)) {
 
         let backward = prog.cant_blank(44);
 
-        if let BackwardResult::Refuted(steps) = backward {
-            if steps > max_refuted {
-                println!("        \"{}\": {},", prog.show(), 1 + steps);
-            }
-
-            if steps > *access(&refuted_steps) {
-                *access(&refuted_steps) = steps;
-            }
+        if let BackwardResult::Refuted(steps) = backward
+            && steps > *access(&refuted_steps)
+        {
+            *access(&refuted_steps) = steps;
         }
 
         if backward.is_settled()
@@ -461,7 +452,7 @@ fn assert_blank(params: Params, expected: (usize, u64)) {
 
         *access(&holdout_count) += 1;
 
-        // println!("{}", prog.show(Some(params)));
+        // println!("{}", prog.show());
     });
 
     let result = (get_val(refuted_steps), get_val(holdout_count));
