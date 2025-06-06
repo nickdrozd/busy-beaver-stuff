@@ -10,9 +10,9 @@ use ahash::AHashSet as Set;
 use crate::{
     instrs::{
         show_state, Color, GetInstr, Instr, Params, Shift, Slot, State,
-        Term,
     },
     tape::{Block as _, LilBlock as Block, LilCount as Count},
+    Term,
 };
 
 use Term::*;

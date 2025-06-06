@@ -4,14 +4,13 @@ use ahash::AHashSet as Set;
 
 use crate::{
     blocks::opt_block,
-    instrs::{
-        Color, GetInstr, Instr, Parse as _, Prog, Shift, State, Term,
-    },
+    instrs::{Color, GetInstr, Instr, Parse as _, Prog, Shift, State},
     macros::make_block_macro,
     tape::{
         Block as _, LilBlock as Block, LilCount as Count,
         LilTape as Tape, Span,
     },
+    Term,
 };
 
 use Term::*;

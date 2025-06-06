@@ -44,3 +44,12 @@ use mimalloc::MiMalloc;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
+
+/**************************************/
+
+#[derive(PartialEq, Eq)]
+pub enum Term {
+    Halt,
+    Blank,
+    Spinout,
+}
