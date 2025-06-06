@@ -19,7 +19,7 @@ pub fn make_block_macro<P: GetInstr>(
     prog: &P,
     params: Params,
     blocks: usize,
-) -> MacroProg<P, BlockLogic> {
+) -> MacroProg<'_, P, BlockLogic> {
     MacroProg::new(prog, BlockLogic::new(blocks, params))
 }
 
@@ -27,7 +27,7 @@ pub fn make_backsymbol_macro<P: GetInstr>(
     prog: &P,
     params: Params,
     backsymbols: usize,
-) -> MacroProg<P, BacksymbolLogic> {
+) -> MacroProg<'_, P, BacksymbolLogic> {
     MacroProg::new(prog, BacksymbolLogic::new(backsymbols, params))
 }
 

@@ -13,6 +13,7 @@
     clippy::partial_pub_fields,
     clippy::unused_trait_names,
     clippy::std_instead_of_core,
+    mismatched_lifetime_syntaxes,
     clippy::if_then_some_else_none,
     clippy::unneeded_field_pattern,
     clippy::redundant_type_annotations,
