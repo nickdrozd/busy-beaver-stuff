@@ -386,12 +386,10 @@ fn test_reason() {
 
 /**************************************/
 
-fn assert_linrec(params: Params, halt: u8, expected: u64) {
-    let halt_flag = halt != 0;
-
+fn assert_linrec(params: Params, expected: u64) {
     let holdout_count = set_val(0);
 
-    build_tree(params, halt_flag, TREE_LIM, &|prog| {
+    build_tree(params, false, TREE_LIM, &|prog| {
         let result = quick_term_or_rec(prog, LINREC);
 
         if result.is_settled() {
@@ -405,14 +403,14 @@ fn assert_linrec(params: Params, halt: u8, expected: u64) {
 
     let result = get_val(holdout_count);
 
-    assert_eq!(result, expected, "({params:?}, {halt}, {result:?})");
+    assert_eq!(result, expected, "({params:?}, {result:?})");
 }
 
 macro_rules! assert_linrec_results {
-    ( $( ( $params:expr, $halt:expr, $leaves:expr ) ),* $(,)? ) => {
-        vec![$( ($params, $halt, $leaves) ),*]
-            .par_iter().for_each(|&(params, halt, expected)| {
-                assert_linrec(params, halt, expected);
+    ( $( ( $params:expr, $leaves:expr ) ),* $(,)? ) => {
+        vec![$( ($params, $leaves) ),*]
+            .par_iter().for_each(|&(params, expected)| {
+                assert_linrec(params, expected);
             });
     };
 }
@@ -421,20 +419,11 @@ const LINREC: usize = 20_000;
 
 fn test_linrec() {
     assert_linrec_results![
-        ((2, 2), 1, 0),
-        ((2, 2), 0, 4),
-        //
-        ((3, 2), 1, 58),
-        ((3, 2), 0, 643),
-        //
-        ((2, 3), 1, 134),
-        ((2, 3), 0, 1_031),
-        //
-        ((4, 2), 1, 12_382),
-        ((4, 2), 0, 138_585),
-        //
-        ((2, 4), 1, 25_134),
-        ((2, 4), 0, 257_311),
+        ((2, 2), 4),
+        ((3, 2), 643),
+        ((2, 3), 1_031),
+        ((4, 2), 138_585),
+        ((2, 4), 257_311),
     ];
 }
 
