@@ -1239,6 +1239,8 @@ KERNEL = {
     "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...": 3,
     "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0RF  1RA 1LC": 3,
 
+    "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": 3,
+
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": 3,
 
     # Spinout
@@ -2145,6 +2147,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
             "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  ... 0RD",
             "1RB 1LC  0RC 1RE  1LD 1RA  0RE 0LF  1RC 0RD  1LE 1LD",
             "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...",
+            "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE",
             "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  0LG 1LC",
         },
     },
@@ -2384,7 +2387,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
         "depth_limit": 2,
         "step_limit": 3,
         "spinout": 135,
-        "linrec": 72,
+        "linrec": 73,
     },
     "spinout": {
         "step_limit": 4,
@@ -4263,6 +4266,9 @@ PROVER_HALT: ProverEst = {
     "1RB 0RC  0LA 0RD  1RD ...  1LE 0LD  1RF 1LB  1RA 1RE": (2.5,    21),
     "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB": (1.0,     7),
 
+    # 7/2
+    "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": "(684 + (2 ** (???)))",  # 10^^519
+
     # 5/5 block-compiled from 1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": (6.0, 39456),
 
@@ -4407,11 +4413,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 112715,
+    "adds": 116179,
     "divs": 14161,
-    "exps": 110863,
-    "muls": 12083,
-    "totl": 249822,
+    "exps": 113837,
+    "muls": 15543,
+    "totl": 259720,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -4623,6 +4629,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ↑↑ 10)",
             "(1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))))))))))))))))))))))",
             "(81 + (((((3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))) + ((3 * (2 ** (3 * (2 ** (1 + (3 * (2 ** 25))))))) + ((3 * (2 ** (1 + (3 * (2 ** 25))))) + ((2 ** 24) * (9 + (3 * (2 ** (-24 + (3 * (2 ** 25)))))))))) + (3 * (2 ** (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25))))))))))) + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))))))) + (3 * (2 ** (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))))))))))))))))))))))",
+        ),
+        "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": (
+            3532,
+            "(10 ↑↑ 519)",
+            "(???)",
+            "(???)",
         ),
     },
 
