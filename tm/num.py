@@ -317,7 +317,8 @@ class Add(Num):
                 return r < lo
 
             if isinstance(l, int) and isinstance(lo, int):
-                return r < ro
+                if abs(l - lo) < 3:
+                    return r < ro
 
             if l < lo and r < lo:  # no-branch
                 return True

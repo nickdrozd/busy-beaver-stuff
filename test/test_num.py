@@ -825,7 +825,7 @@ class TestNum(TestCase):
             1,
             (1 + Exp(2, 3)) // 3)
 
-        self.assert_less(
+        self.assert_less_not_implemented(
             49 + (13 * Exp(2, 15)),
             113 + (13 * Exp(2, 16)))
 
@@ -867,10 +867,13 @@ class TestNum(TestCase):
                 3 ** Exp(3, 5),
             ))
 
-        self.assert_less(
+        self.assert_less_not_implemented(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
             -1 + (Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5)))))),
-            estimate = True)
+            (
+                (-10 + Exp(2, 5)),
+                (-5 + (2 ** Exp(2, 5))),
+            ))
 
         self.assert_less(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
