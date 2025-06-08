@@ -1496,7 +1496,7 @@ class Prover(RunProver):
             for prog, (cycles, est, string, rulapp) in progs.items():
                 self.run_bb(
                     prog,
-                    opt_macro = 3000,
+                    opt_macro = 4000,
                     analyze = False,
                     backsym = REQUIRES_BACKSYM.get(prog),
                     print_prog = not show,

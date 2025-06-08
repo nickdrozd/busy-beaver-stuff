@@ -1238,8 +1238,11 @@ KERNEL = {
     "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0LA  1RA 1LC": 3,
     "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...": 3,
     "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0RF  1RA 1LC": 3,
+    "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  ... 1RA": 3,
 
     "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": 3,
+    "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF": 3,
+    "1RB 0LG  0RC ...  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": 4,
 
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": 3,
 
@@ -2372,6 +2375,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",
             "1RB 1RC  0RD 0RA  1LE 0LF  0RC 0RA  1LE 0LF  0LG 0RD  0RA 1LE",
+            "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
         },
     },
 }
@@ -2393,7 +2397,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
         "step_limit": 4,
         "depth_limit": 24,
         "spinout": 70,
-        "linrec": 115,
+        "linrec": 116,
     },
 }
 
@@ -2621,6 +2625,7 @@ SEGMENT_SPINOUT_FALSE_NEGATIVES: set[str] = {
 
     "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
     "1RB 1RC  0RD 0RA  1LE 0LF  0RC 0RA  1LE 0LF  0LG 0RD  0RA 1LE",
+    "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
 
     "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
 
@@ -2818,7 +2823,7 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
 CPS_FALSE_NEGATIVE_COUNTS = {
     "halt": 42,
     "blank": 113,
-    "spinout": 266,
+    "spinout": 267,
 }
 
 CPS_FALSE_NEGATIVES = {
@@ -3246,6 +3251,7 @@ CPS_FALSE_NEGATIVES = {
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
         "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
+        "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
     },
@@ -3256,7 +3262,7 @@ CPS_FALSE_NEGATIVES = {
 CTL_FALSE_NEGATIVE_COUNTS = {
     "halt": 100,
     "blank": 416,
-    "spinout": 244,
+    "spinout": 246,
 }
 
 CTL_FALSE_NEGATIVES = {
@@ -4023,6 +4029,8 @@ CTL_FALSE_NEGATIVES = {
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",
         "1RB 0RD  0RC 0LD  1RD ...  1LE 1LF  1RB 1LD  1RF 0RA",
         "1RB 0RF  0LB 1LC  1LD 0RC  1LE ...  1LF 0LD  1RA 0LE",
+        "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  ... 1RA",
+        "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
     },
@@ -4032,6 +4040,7 @@ CTL_FALSE_NEGATIVES = {
 
 DO_HALT: set[str] = {
     # 3/4
+    "1RB ... 1LA 2RB  1RC 3RC 1LA 2LB  2LB 2RC 1LC 3RB",  # superpowers(10)
     "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC",  # 2^[15]5 + 14
     "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC",  # 10^^2048
 
@@ -4051,6 +4060,8 @@ DO_HALT: set[str] = {
 
     # 6/2
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",  # 10^^15
+    "1RB 0LF  1RC 1RB  1LD 0RA  1LB 0LE  ... 0LC  1LA 1LF",  # 10^^7
+    "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  ... 1RA",  # 10^^7
     "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD",  # 10^^5
     "1RB ...  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA",  # 10^1292913985
     "1RB ...  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA",  # 10^197282
@@ -4060,6 +4071,10 @@ DO_HALT: set[str] = {
     "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE ...",  # 10^2879
     "1RB 0RF  0LB 1LC  1LD 0RC  1LE ...  1LF 0LD  1RA 0LE",  # 10^1762
     "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA ...",  # 10^1730
+
+    # 7/2
+    "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",  # 2 ^11 2 ^11 3
+    "1RB 1RF  0RC 1RG  1LD 1LE  0LE 1LD  0RF 0LC  1RA 0LC  0RF ...",  # 10^^286
 
     # 2/5
     "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ...",  # 10 ↑↑ 4
@@ -4268,6 +4283,7 @@ PROVER_HALT: ProverEst = {
 
     # 7/2
     "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": "(684 + (2 ** (???)))",  # 10^^519
+    "1RB 0LG  0RC ...  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": "(3 + (5 * (3 ** (???))))",  # 10^^134
 
     # 5/5 block-compiled from 1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": (6.0, 39456),
@@ -4413,11 +4429,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 112590,
-    "divs": 14064,
-    "exps": 111140,
-    "muls": 10578,
-    "totl": 248372,
+    "adds": 113724,
+    "divs": 14082,
+    "exps": 111456,
+    "muls": 10959,
+    "totl": 250221,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -4636,6 +4652,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(???)",
             "(???)",
         ),
+        "1RB 0LG  0RC ...  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": (
+            3258,
+            "(10 ↑↑ 134)",
+            "(???)",
+            "(???)",
+        ),
     },
 
     "count_apps: (2 ** ((153 + (2 ** 37)) // 5)) % 100": {
@@ -4671,6 +4693,15 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ↑↑ 3)",
             "((7908 + (87 * (27 ** ((75 + (29 * (27 ** 66))) // 13)))) // 13)",
             "((389477598 + ((87 * (27 ** ((75 + (29 * (27 ** 66))) // 13))) + ((87 * (27 ** ((75 + (29 * (27 ** 66))) // 13))) + ((29 * (27 ** ((75 + (29 * (27 ** 66))) // 13))) + ((29 * (27 ** ((75 + (29 * (27 ** 66))) // 13))) + ((261 * (27 ** ((62 + (29 * (27 ** 66))) // 13))) + ((261 * (27 ** ((62 + (29 * (27 ** 66))) // 13))) + ((261 * (27 ** ((62 + (29 * (27 ** 66))) // 13))) + ((27 ** 65) * (8874 + (261 * (27 ** ((-783 + (29 * (27 ** 66))) // 13))))))))))))) // 26)",
+        ),
+    },
+
+    "ops_times: (-7 + (2 ** 16))": {
+        "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF": (
+            5672,
+            "(10 ↑↑ 4)",
+            "(23 + ((2 ** 16) * (3 + (3 * (2 ** (-16 + (2 ** (2 ** 16))))))))",
+            "(511 + ((3 * (2 ** (2 ** (2 ** 16)))) + ((2 ** 16) * (19 + ((2 ** (-17 + (2 ** 16))) * (17 + (9 * (2 ** ((2 ** 16) * (-1 + (2 ** (-16 + (2 ** 16)))))))))))))",
         ),
     },
 
@@ -4814,6 +4845,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ** 18)",
             "(206 + ((2 ** 6) * (1 + ((2 ** 7) * (1 + ((2 ** 8) * (1 + ((2 ** 9) * (9 + (33820809 * (2 ** 4)))))))))))",
             "(23221 + (((2 ** 7) * (1 + ((2 ** 8) * (1 + ((2 ** 9) * (9 + (33820809 * (2 ** 4)))))))) + (((2 ** 8) * (1 + ((2 ** 9) * (9 + (33820809 * (2 ** 4)))))) + (((2 ** 9) * (9 + (33820809 * (2 ** 4)))) + ((33820809 * (2 ** 4)) + ((33820809 * (2 ** 3)) + ((33820809 * (2 ** 3)) + ((((((2 ** 6) * (3 + (2 ** 7))) + ((2 ** 5) * (1 + ((2 ** 6) * (1 + (2 ** 7)))))) + ((2 ** 4) * (1 + ((2 ** 5) * (1 + ((2 ** 6) * (1 + (2 ** 7)))))))) + ((2 ** 3) * (1 + ((2 ** 4) * (1 + ((2 ** 5) * (1 + ((2 ** 6) * (1 + (2 ** 7)))))))))) + ((2 ** 2) * (1 + ((2 ** 3) * (1 + ((2 ** 4) * (1 + ((2 ** 5) * (1 + ((2 ** 6) * (1 + (2 ** 7)))))))))))))))))))",
+        ),
+        "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  ... 1RA": (
+            20877,
+            "(10 ** 301)",
+            "(547 + ((2 ** 164) * (4 + ((2 ** 165) * (4 + ((2 ** 166) * (4 + ((2 ** 167) * (4 + ((2 ** 168) * (4 + (2 ** 171))))))))))))",
+            "133323",
         ),
     },
 
@@ -5248,6 +5285,7 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
 MAYBE_HALTERS = {
     "1RB 2LC 1RC  2LC ... 2RB  2LA 0LB 0RA",
     "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  ... 0RA",
+    "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 1LD  ... 0LC",
 }
 
 HALTERS = set(
