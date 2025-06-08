@@ -251,10 +251,13 @@ def make_rule(*countses: Counts) -> Rule | None:
 
             rule[s, i] = diff
 
-    if all(diff >= 0
-           for diff in rule.values()
-           if isinstance(diff, Plus)):
+    for diff in rule.values():
+        if not isinstance(diff, Plus):
+            continue
 
+        if diff < 0:
+            break
+    else:
         # print(f'inf: {rule}')
 
         raise InfiniteRule
