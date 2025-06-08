@@ -235,6 +235,12 @@ class Add(Num):
         if isinstance(l, int):
             return l + (other + r)
 
+        if r == other:
+            return (2 * r) + l
+
+        if l == other:
+            return (2 * l) + r
+
         if other.depth < l.depth <= 8:
             return (other + l) + r
 
