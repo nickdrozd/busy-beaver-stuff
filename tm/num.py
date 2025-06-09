@@ -817,6 +817,11 @@ def make_exp(base: int, exp: Count) -> Exp:
             exp *= 3
             break
 
+        if base == 27:
+            base = 3
+            exp *= 3
+            break
+
         if floor(root := sqrt(base)) != ceil(root):
             break
 
