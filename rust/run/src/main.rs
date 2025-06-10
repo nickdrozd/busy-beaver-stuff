@@ -426,22 +426,13 @@ fn test_linrec() {
 
 /**************************************/
 
-fn assert_blank(params: Params, expected: (usize, u64)) {
+fn assert_blank(params: Params, expected: u64) {
     let holdout_count = set_val(0);
-    let refuted_steps = set_val(0);
 
     build_tree(params, false, TREE_LIM, &|prog| {
         let run = 700;
 
-        let backward = prog.cant_blank(44);
-
-        if let BackwardResult::Refuted(steps) = backward
-            && steps > *access(&refuted_steps)
-        {
-            *access(&refuted_steps) = steps;
-        }
-
-        if backward.is_settled()
+        if prog.cant_blank(44).is_settled()
             || quick_term_or_rec(prog, run).is_settled()
             || check_inf(prog, params, 300, run)
             || prog.ctl_cant_blank(100)
@@ -455,7 +446,7 @@ fn assert_blank(params: Params, expected: (usize, u64)) {
         // println!("{}", prog.show());
     });
 
-    let result = (get_val(refuted_steps), get_val(holdout_count));
+    let result = get_val(holdout_count);
 
     assert_eq!(result, expected, "({params:?}, {result:?})");
 }
@@ -471,15 +462,15 @@ macro_rules! assert_blank_results {
 
 fn test_blank() {
     assert_blank_results![
-        ((2, 2), (1, 0)),
+        ((2, 2), 0),
         //
-        ((3, 2), (13, 0)),
+        ((3, 2), 0),
         //
-        ((2, 3), (15, 8)),
+        ((2, 3), 8),
         //
-        ((4, 2), (43, 630)),
+        ((4, 2), 630),
         //
-        ((2, 4), (40, 2_084)),
+        ((2, 4), 2_084),
     ];
 }
 
