@@ -7,14 +7,10 @@ members = [
 
 resolver = "2"
 
-[profile.release]
-lto = true
-codegen-units = 1
-
-[profile.test]
-opt-level = 3
-debug-assertions = false
-
 [profile.dev]
 debug = true
 incremental = true
+
+[profile.release]
+lto = true
+codegen-units = 1
