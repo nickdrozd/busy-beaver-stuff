@@ -133,6 +133,14 @@ fn test_tree() {
             }
         ),
         (
+            ((2, 2), 0, 4, (0, 91)),
+            //
+            |prog: &Prog, _: Params| {
+                prog.cant_blank(3).is_settled()
+                    || quick_term_or_rec(prog, 15).is_settled()
+            }
+        ),
+        (
             ((3, 2), 1, 12, (0, 3_030)),
             //
             |prog: &Prog, _: Params| {
@@ -154,6 +162,17 @@ fn test_tree() {
             }
         ),
         (
+            ((3, 2), 0, 13, (3, 12_470)),
+            //
+            |prog: &Prog, _: Params| {
+                prog.cant_blank(14).is_settled()
+                    || quick_term_or_rec(prog, 206).is_settled()
+                    || prog.ctl_cant_blank(25)
+                    || prog.cps_cant_blank(6)
+                    || run_for_infrul(prog, 236).is_infinite()
+            }
+        ),
+        (
             ((2, 3), 1, 7, (0, 2_395)),
             //
             |prog: &Prog, _: Params| {
@@ -172,6 +191,16 @@ fn test_tree() {
                     || prog.ctl_cant_spin_out(83)
                     || prog.seg_cant_spin_out(params, 5).is_refuted()
                     || check_inf(prog, params, 300, 1000)
+            }
+        ),
+        (
+            ((2, 3), 0, 20, (11, 8_848)),
+            //
+            |prog: &Prog, _: Params| {
+                prog.cant_blank(16).is_settled()
+                    || quick_term_or_rec(prog, 115).is_settled()
+                    || prog.ctl_cant_blank(32)
+                    || prog.cps_cant_blank(7)
             }
         ),
         (
@@ -201,6 +230,18 @@ fn test_tree() {
             }
         ),
         (
+            ((4, 2), 0, 99, (262, 2_222_970)),
+            //
+            |prog: &Prog, params: Params| {
+                !is_connected(prog, 4)
+                    || prog.cant_blank(55).is_settled()
+                    || quick_term_or_rec(prog, 1_000).is_settled()
+                    || prog.ctl_cant_blank(60)
+                    || prog.cps_cant_blank(9)
+                    || check_inf(prog, params, 300, 3000)
+            }
+        ),
+        (
             ((2, 4), 1, 109, (43, 310_211)),
             //
             |prog: &Prog, params: Params| {
@@ -227,6 +268,17 @@ fn test_tree() {
                         prog.seg_cant_halt(params, 5).is_refuted()
                             || prog.cps_cant_halt(6)
                     })
+            }
+        ),
+        (
+            ((2, 4), 0, 876, (1_650, 1_698_539)),
+            //
+            |prog: &Prog, params: Params| {
+                prog.cant_blank(58).is_settled()
+                    || quick_term_or_rec(prog, 2_000).is_settled()
+                    || prog.ctl_cant_blank(120)
+                    || prog.cps_cant_blank(5)
+                    || check_inf(prog, params, 300, 1000)
             }
         ),
     ];
@@ -426,56 +478,6 @@ fn test_linrec() {
 
 /**************************************/
 
-fn assert_blank(params: Params, expected: u64) {
-    let holdout_count = set_val(0);
-
-    build_tree(params, false, TREE_LIM, &|prog| {
-        let run = 700;
-
-        if prog.cant_blank(44).is_settled()
-            || quick_term_or_rec(prog, run).is_settled()
-            || check_inf(prog, params, 300, run)
-            || prog.ctl_cant_blank(100)
-            || prog.cps_cant_blank(5)
-        {
-            return;
-        }
-
-        *access(&holdout_count) += 1;
-
-        // println!("{}", prog.show());
-    });
-
-    let result = get_val(holdout_count);
-
-    assert_eq!(result, expected, "({params:?}, {result:?})");
-}
-
-macro_rules! assert_blank_results {
-    ( $( ( $params:expr, $leaves:expr ) ),* $(,)? ) => {
-        vec![$( ($params, $leaves) ),*]
-            .par_iter().for_each(|&(params, expected)| {
-                assert_blank(params, expected);
-            });
-    };
-}
-
-fn test_blank() {
-    assert_blank_results![
-        ((2, 2), 0),
-        //
-        ((3, 2), 0),
-        //
-        ((2, 3), 8),
-        //
-        ((4, 2), 630),
-        //
-        ((2, 4), 2_084),
-    ];
-}
-
-/**************************************/
-
 fn main() {
     println!("tree fast");
     test_tree();
@@ -488,9 +490,6 @@ fn main() {
 
     println!("reason");
     test_reason();
-
-    println!("blank");
-    test_blank();
 
     println!("linrec");
     test_linrec();
