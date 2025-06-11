@@ -6,8 +6,7 @@ use tm::{
     ctl::Ctl as _,
     graph::is_connected,
     instrs::{
-        read_instr, show_instr, show_state, Instr, Params, Parse as _,
-        Prog, Slot, State,
+        show_state, Instr, Params, Parse as _, Prog, Slot, State,
     },
     machine::quick_term_or_rec,
     reason::{
@@ -55,13 +54,13 @@ pub const fn py_show_state(state: Option<State>) -> char {
 }
 
 #[pyfunction]
-pub fn py_show_instr(instr: Option<Instr>) -> String {
-    show_instr(instr)
+pub fn show_instr(instr: Option<Instr>) -> String {
+    instr.show()
 }
 
 #[pyfunction]
-pub fn py_read_instr(instr: &str) -> Option<Instr> {
-    read_instr(instr)
+pub fn read_instr(instr: &str) -> Option<Instr> {
+    Option::<Instr>::read(instr)
 }
 
 /***************************************/
@@ -429,10 +428,10 @@ mod rust_stuff {
             py_cps_cant_blank, py_cps_cant_halt, py_cps_cant_spin_out,
             py_ctl_cant_blank, py_ctl_cant_halt, py_ctl_cant_spin_out,
             py_is_connected, py_opt_block, py_quick_term_or_rec,
-            py_read_instr, py_segment_cant_blank, py_segment_cant_halt,
-            py_segment_cant_spin_out, py_show_instr, py_show_state,
-            run_quick_machine, show_comp, show_slot, tcompile,
-            BackwardResult, MachineResult, TermRes,
+            py_segment_cant_blank, py_segment_cant_halt,
+            py_segment_cant_spin_out, py_show_state, read_instr,
+            run_quick_machine, show_comp, show_instr, show_slot,
+            tcompile, BackwardResult, MachineResult, TermRes,
         },
         tm::prover::PastConfigs,
     };

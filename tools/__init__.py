@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from tm.rust_stuff import py_read_instr as read_instr
+from tm.rust_stuff import read_instr
 
 if TYPE_CHECKING:
     from tm.parse import Color, Instr, Params

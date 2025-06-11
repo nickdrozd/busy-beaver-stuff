@@ -131,7 +131,7 @@ impl Parse for Prog {
     fn read(prog: &str) -> Self {
         prog.trim()
             .split("  ")
-            .map(|instrs| instrs.split(' ').map(read_instr))
+            .map(|instrs| instrs.split(' ').map(Option::<Instr>::read))
             .enumerate()
             .flat_map(|(state, instrs)| {
                 instrs.enumerate().filter_map(move |(color, instr)| {
@@ -159,7 +159,7 @@ impl Parse for Prog {
             .map(|state| {
                 (0..max_color)
                     .map(|color| {
-                        show_instr(self.get(&(state, color)).copied())
+                        self.get(&(state, color)).copied().show()
                     })
                     .collect::<Vec<_>>()
                     .join(" ")
@@ -205,29 +205,41 @@ impl Parse for Slot {
     }
 }
 
-pub fn show_instr(instr: Option<Instr>) -> String {
-    match instr {
-        None => "...".to_owned(),
-        Some((color, shift, trans)) => format!(
+impl Parse for Instr {
+    fn read(instr: &str) -> Self {
+        let mut chars = instr.chars();
+
+        let color = chars.next().unwrap();
+        let shift = chars.next().unwrap();
+        let state = chars.next().unwrap();
+
+        (read_color(color), read_shift(shift), read_state(state))
+    }
+
+    fn show(&self) -> String {
+        let &(color, shift, state) = self;
+
+        format!(
             "{}{}{}",
             color,
             if shift { RIGHT } else { LEFT },
-            show_state(Some(trans))
-        ),
+            show_state(Some(state))
+        )
     }
 }
 
-pub fn read_instr(instr: &str) -> Option<Instr> {
-    if instr.contains(UNDF) {
-        return None;
+impl Parse for Option<Instr> {
+    fn read(instr: &str) -> Self {
+        if instr.contains(UNDF) {
+            return None;
+        }
+
+        Some(Instr::read(instr))
     }
 
-    let mut chars = instr.chars();
-    let color = chars.next().unwrap();
-    let shift = chars.next().unwrap();
-    let state = chars.next().unwrap();
-
-    Some((read_color(color), read_shift(shift), read_state(state)))
+    fn show(&self) -> String {
+        self.map_or_else(|| "...".to_owned(), |instr| instr.show())
+    }
 }
 
 /**************************************/
@@ -252,11 +264,15 @@ fn test_slot() {
 
 #[test]
 fn test_instr() {
-    let instrs = ["1RB", "2LC", "..."];
+    let instrs = ["1RB", "2LC"];
 
     for instr in instrs {
-        assert_eq!(instr, show_instr(read_instr(instr)));
+        assert_eq!(instr, Instr::read(instr).show());
     }
+
+    let undfnd = "...";
+
+    assert_eq!(undfnd, Option::<Instr>::read(undfnd).show());
 }
 
 #[test]

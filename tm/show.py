@@ -2,6 +2,6 @@
 from tm.rust_stuff import (
     show_comp,
     show_slot,
-    py_show_instr as show_instr,
+    show_instr,
     py_show_state as show_state,
 )
