@@ -12,10 +12,10 @@ use crate::{
         show_state, Color, GetInstr, Instr, Params, Shift, Slot, State,
     },
     tape::{Block as _, LilBlock as Block, LilCount as Count},
-    Term,
+    Goal,
 };
 
-use Term::*;
+use Goal::*;
 
 pub type Step = usize;
 type Segments = usize;
@@ -94,13 +94,13 @@ enum SearchResult {
     Limit,
     Repeat,
     Reached,
-    Found(Term),
+    Found(Goal),
 }
 
 use SearchResult::*;
 
-impl From<Term> for SegmentResult {
-    fn from(goal: Term) -> Self {
+impl From<Goal> for SegmentResult {
+    fn from(goal: Goal) -> Self {
         match goal {
             Halt => Self::Halt,
             Blank => Self::Blank,
@@ -113,7 +113,7 @@ fn segment_cant_reach(
     prog: &impl GetInstr,
     params: Params,
     segs: Segments,
-    goal: &Term,
+    goal: &Goal,
 ) -> SegmentResult {
     assert!(segs >= 2);
 
@@ -147,7 +147,7 @@ fn segment_cant_reach(
 fn all_segments_reached<P: GetInstr>(
     prog: &AnalyzedProg<P>,
     seg: Segments,
-    goal: &Term,
+    goal: &Goal,
 ) -> Option<SearchResult> {
     let mut configs =
         Configs::new(&prog.halts, &prog.spinouts, seg, goal);
@@ -269,7 +269,7 @@ impl Configs {
         halts: &Halts,
         spinouts: &Spinouts,
         seg: Segments,
-        goal: &Term,
+        goal: &Goal,
     ) -> Self {
         let reached = match goal {
             Blank => Dict::new(),
@@ -338,7 +338,7 @@ impl Configs {
         Some(blank && state == 0)
     }
 
-    fn check_reached(&mut self, config: &Config, goal: &Term) -> bool {
+    fn check_reached(&mut self, config: &Config, goal: &Goal) -> bool {
         if goal == &Blank {
             return self.check_reached_blank(config);
         }
@@ -464,7 +464,7 @@ impl Config {
     fn run_to_edge(
         &mut self,
         prog: &impl GetInstr,
-        goal: &Term,
+        goal: &Goal,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
         self.tape.scan?;

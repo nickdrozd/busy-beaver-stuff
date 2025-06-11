@@ -10,10 +10,10 @@ use crate::{
         Block as _, LilBlock as Block, LilCount as Count,
         LilTape as Tape, Span,
     },
-    Term,
+    Goal,
 };
 
-use Term::*;
+use Goal::*;
 
 type Steps = usize;
 
@@ -88,7 +88,7 @@ enum RunResult {
 
 use RunResult::*;
 
-fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: &Term) -> bool {
+fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: &Goal) -> bool {
     let mut todo = vec![Config::init()];
 
     let mut seen: Set<Config> = Set::new();
@@ -180,7 +180,7 @@ impl Config {
         &mut self,
         prog: &impl GetInstr,
         steps: Steps,
-        goal: &Term,
+        goal: &Goal,
         seen: &mut Set<Self>,
     ) -> RunResult {
         for _ in 0..steps {

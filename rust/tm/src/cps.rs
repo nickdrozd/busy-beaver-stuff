@@ -6,10 +6,10 @@ use ahash::AHashSet as Set;
 
 use crate::{
     instrs::{Color, GetInstr, Parse as _, Shift, State},
-    Term,
+    Goal,
 };
 
-use Term::*;
+use Goal::*;
 
 type Radius = usize;
 
@@ -52,7 +52,7 @@ impl<T: GetInstr> Cps for T {
 
 /**************************************/
 
-fn cps_run(prog: &impl GetInstr, rad: Radius, goal: &Term) -> bool {
+fn cps_run(prog: &impl GetInstr, rad: Radius, goal: &Goal) -> bool {
     assert!(rad > 1);
 
     (2..rad).any(|seg| cps_cant_reach(prog, seg, goal))
@@ -61,7 +61,7 @@ fn cps_run(prog: &impl GetInstr, rad: Radius, goal: &Term) -> bool {
 fn cps_cant_reach(
     prog: &impl GetInstr,
     rad: Radius,
-    goal: &Term,
+    goal: &Goal,
 ) -> bool {
     let mut configs = Configs::init(rad);
 

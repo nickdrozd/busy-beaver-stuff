@@ -48,7 +48,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 /**************************************/
 
 #[derive(PartialEq, Eq)]
-pub enum Term {
+pub enum Goal {
     Halt,
     Blank,
     Spinout,
