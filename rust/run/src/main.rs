@@ -108,7 +108,6 @@ fn assert_tree(
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
 
-#[expect(clippy::too_many_lines)]
 fn test_tree() {
     assert_trees![
         (

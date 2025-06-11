@@ -439,8 +439,7 @@ struct Config {
 }
 
 impl Config {
-    #[expect(clippy::missing_const_for_fn)]
-    fn new(state: State, tape: Tape, init: bool) -> Self {
+    const fn new(state: State, tape: Tape, init: bool) -> Self {
         Self { state, tape, init }
     }
 

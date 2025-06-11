@@ -40,7 +40,6 @@ pub fn show_slot(slot: Slot) -> String {
 }
 
 #[pyfunction]
-#[expect(clippy::needless_pass_by_value)]
 pub fn show_comp(comp: Prog) -> String {
     comp.show()
 }
