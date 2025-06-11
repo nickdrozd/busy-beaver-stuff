@@ -190,7 +190,7 @@ impl Config {
             let slot = (self.state, self.tape.scan);
 
             let Some(instr) = prog.get_instr(&slot) else {
-                return if matches!(goal, &Halt) {
+                return if goal.is_halt() {
                     #[cfg(debug_assertions)]
                     println!("halt reached");
 
@@ -225,7 +225,7 @@ impl Config {
             }
 
             if self.step(&instr) {
-                if self.tape.blank() && matches!(goal, &Blank) {
+                if self.tape.blank() && goal.is_blank() {
                     #[cfg(debug_assertions)]
                     println!("blank reached");
 

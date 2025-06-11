@@ -119,8 +119,8 @@ fn segment_cant_reach(
 
     let prog = AnalyzedProg::new(prog, params);
 
-    if (goal == &Halt && prog.halts.is_empty())
-        || (goal == &Spinout && prog.spinouts.is_empty())
+    if (goal.is_halt() && prog.halts.is_empty())
+        || (goal.is_spinout() && prog.spinouts.is_empty())
     {
         return SegmentResult::Refuted(0);
     }
@@ -167,7 +167,7 @@ fn all_segments_reached<P: GetInstr>(
             match result {
                 Repeat if config.init => {
                     return Some(
-                        if goal == &Blank && config.tape.blank() {
+                        if goal.is_blank() && config.tape.blank() {
                             Found(Blank)
                         } else {
                             Repeat
@@ -180,7 +180,7 @@ fn all_segments_reached<P: GetInstr>(
                         return Some(Found(Halt));
                     }
 
-                    if goal == &Halt
+                    if goal.is_halt()
                         && configs.check_reached(&config, goal)
                     {
                         return Some(Reached);
@@ -190,7 +190,7 @@ fn all_segments_reached<P: GetInstr>(
                 },
 
                 Found(Blank) => {
-                    assert!(goal == &Blank);
+                    assert!(goal.is_blank());
 
                     if configs.check_reached(&config, goal) {
                         return Some(Reached);
@@ -204,7 +204,7 @@ fn all_segments_reached<P: GetInstr>(
                         return Some(Found(Spinout));
                     }
 
-                    assert!(goal == &Spinout);
+                    assert!(goal.is_spinout());
 
                     if configs.check_reached(&config, goal) {
                         return Some(Reached);
@@ -339,7 +339,7 @@ impl Configs {
     }
 
     fn check_reached(&mut self, config: &Config, goal: &Goal) -> bool {
-        if goal == &Blank {
+        if goal.is_blank() {
             return self.check_reached_blank(config);
         }
 
@@ -477,7 +477,7 @@ impl Config {
                 return Some(Found(Halt));
             };
 
-            if (self.init || goal == &Spinout)
+            if (self.init || goal.is_spinout())
                 && self.spinout(&instr)
                 && (self.init || configs.check_reached(self, goal))
             {
@@ -506,7 +506,7 @@ impl Config {
                     .or_default()
                     .insert(self.tape.pos());
 
-                if goal == &Blank {
+                if goal.is_blank() {
                     return Some(Found(Blank));
                 }
             }

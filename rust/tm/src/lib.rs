@@ -47,9 +47,22 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 /**************************************/
 
-#[derive(PartialEq, Eq)]
 pub enum Goal {
     Halt,
     Blank,
     Spinout,
+}
+
+impl Goal {
+    pub const fn is_halt(&self) -> bool {
+        matches!(self, Self::Halt)
+    }
+
+    pub const fn is_blank(&self) -> bool {
+        matches!(self, Self::Blank)
+    }
+
+    pub const fn is_spinout(&self) -> bool {
+        matches!(self, Self::Spinout)
+    }
 }

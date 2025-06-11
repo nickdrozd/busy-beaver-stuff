@@ -101,7 +101,7 @@ fn cps_cant_reach(
 
             let colors = pull_spans.get_colors(pull);
 
-            if *goal != Halt
+            if !goal.is_halt()
                 && colors.contains(&0)
                 && tape.scan == 0
                 && pull.blank_span()
