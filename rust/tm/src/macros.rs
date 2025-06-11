@@ -1,5 +1,3 @@
-#![expect(dead_code)]
-
 use core::{cell::RefCell, iter::once};
 
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
@@ -51,10 +49,6 @@ impl Logic for BlockLogic {
 
             converter: TapeColorConverter::new(base_colors, cells),
         }
-    }
-
-    fn name() -> &'static str {
-        "block"
     }
 
     fn cells(&self) -> usize {
@@ -266,10 +260,6 @@ impl Logic for BacksymbolLogic {
         }
     }
 
-    fn name() -> &'static str {
-        "backsymbol"
-    }
-
     fn cells(&self) -> usize {
         self.cells
     }
@@ -349,8 +339,6 @@ impl Logic for BacksymbolLogic {
 
 trait Logic: Sized {
     fn new(cells: usize, params: Params) -> Self;
-
-    fn name() -> &'static str;
 
     fn cells(&self) -> usize;
 
