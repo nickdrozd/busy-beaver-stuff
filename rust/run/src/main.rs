@@ -375,7 +375,7 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
         _ => unreachable!(),
     };
 
-    build_tree(params, goal == 0, 300, &|prog| {
+    build_tree(params, goal == 0, TREE_LIM, &|prog| {
         let result = cant_reach(prog, 256);
 
         if let BackwardResult::Refuted(steps) = result
@@ -426,8 +426,8 @@ fn test_reason() {
         ((4, 2), 2, (50, 494_958)),
         //
         ((2, 4), 0, (16, 304_330)),
-        ((2, 4), 1, (12, 370_706)),
-        ((2, 4), 2, (57, 358_384)),
+        ((2, 4), 1, (12, 370_726)),
+        ((2, 4), 2, (57, 358_434)),
     ];
 }
 
