@@ -66,3 +66,14 @@ impl Goal {
         matches!(self, Self::Spinout)
     }
 }
+
+impl From<u8> for Goal {
+    fn from(goal: u8) -> Self {
+        match goal {
+            0 => Self::Halt,
+            1 => Self::Spinout,
+            2 => Self::Blank,
+            _ => unreachable!(),
+        }
+    }
+}

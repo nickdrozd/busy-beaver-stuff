@@ -91,7 +91,7 @@ fn assert_tree(
     let holdout_count = set_val(0);
     let visited_count = set_val(0);
 
-    build_tree(params, goal == 0, tree, &|prog| {
+    build_tree(params, Some(goal), tree, &|prog| {
         *access(&visited_count) += 1;
 
         if pipeline(prog, params) {
@@ -374,7 +374,7 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
         _ => unreachable!(),
     };
 
-    build_tree(params, goal == 0, TREE_LIM, &|prog| {
+    build_tree(params, Some(goal), TREE_LIM, &|prog| {
         let result = cant_reach(prog, 256);
 
         if let BackwardResult::Refuted(steps) = result
@@ -435,7 +435,7 @@ fn test_reason() {
 fn assert_linrec(params: Params, expected: u64) {
     let holdout_count = set_val(0);
 
-    build_tree(params, false, TREE_LIM, &|prog| {
+    build_tree(params, None, TREE_LIM, &|prog| {
         let result = quick_term_or_rec(prog, LINREC);
 
         if result.is_settled() {

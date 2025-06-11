@@ -5,6 +5,7 @@ use rayon::prelude::*;
 use crate::{
     instrs::{Color, GetInstr as _, Instr, Params, Prog, Slot, State},
     tape::{MachineTape as _, MedTape as Tape},
+    Goal,
 };
 
 pub type Step = usize;
@@ -211,11 +212,15 @@ fn branch(
 
 pub fn build_tree(
     params @ (states, colors): Params,
-    halt: bool,
+    goal: Option<u8>,
     sim_lim: Step,
     harvester: &(impl Fn(&Prog) + Sync),
 ) {
-    let slots = open_slots(states, colors, halt);
+    let slots = open_slots(
+        states,
+        colors,
+        goal.is_some_and(|goal| Goal::from(goal).is_halt()),
+    );
 
     let init_states = min(3, states);
     let init_colors = min(3, colors);
