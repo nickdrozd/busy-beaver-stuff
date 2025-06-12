@@ -118,7 +118,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 2), 1, 4, (0, 89)),
+            ((2, 2), 1, 4, (0, 36)),
             //
             |prog: &Prog, _: Params| {
                 prog.cant_spin_out(0).is_settled()
@@ -176,7 +176,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 3), 1, 20, (2, 8_847)),
+            ((2, 3), 1, 20, (2, 3_580)),
             //
             |prog: &Prog, params: Params| {
                 quick_term_or_rec(prog, 301).is_settled()
@@ -247,7 +247,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 1, 876, (1_412, 1_698_539)),
+            ((2, 4), 1, 876, (1_412, 614_151)),
             //
             |prog: &Prog, params: Params| {
                 prog.cant_spin_out(2).is_settled()

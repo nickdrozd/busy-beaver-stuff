@@ -233,6 +233,12 @@ pub fn build_tree(
 
     init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
 
+    if states == 2
+        && goal.is_some_and(|goal| Goal::from(goal).is_spinout())
+    {
+        init_instrs.retain(|instr| matches!(instr, (_, _, 1)));
+    }
+
     init_instrs.par_iter().for_each(|&next_instr| {
         branch(
             &mut Prog::init_stepped(next_instr),
