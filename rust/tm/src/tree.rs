@@ -228,8 +228,10 @@ pub fn build_tree(
     let instr_table =
         make_instr_table(states as usize, colors as usize);
 
-    let init_instrs =
-        &instr_table[init_states as usize][init_colors as usize];
+    let mut init_instrs =
+        instr_table[init_states as usize][init_colors as usize].clone();
+
+    init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
 
     init_instrs.par_iter().for_each(|&next_instr| {
         branch(

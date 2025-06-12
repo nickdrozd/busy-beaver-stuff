@@ -111,14 +111,14 @@ fn assert_tree(
 fn test_tree() {
     assert_trees![
         (
-            ((2, 2), 0, 2, (0, 34)),
+            ((2, 2), 0, 2, (0, 32)),
             //
             |prog: &Prog, _: Params| {
                 quick_term_or_rec(prog, 8).is_settled()
             }
         ),
         (
-            ((2, 2), 1, 4, (0, 91)),
+            ((2, 2), 1, 4, (0, 89)),
             //
             |prog: &Prog, _: Params| {
                 prog.cant_spin_out(0).is_settled()
@@ -126,7 +126,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 2), 2, 4, (0, 91)),
+            ((2, 2), 2, 4, (0, 89)),
             //
             |prog: &Prog, _: Params| {
                 prog.cant_blank(3).is_settled()
@@ -166,7 +166,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 3), 0, 7, (0, 2_395)),
+            ((2, 3), 0, 7, (0, 2_394)),
             //
             |prog: &Prog, _: Params| {
                 quick_term_or_rec(prog, 301).is_settled()
@@ -176,7 +176,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 3), 1, 20, (2, 8_848)),
+            ((2, 3), 1, 20, (2, 8_847)),
             //
             |prog: &Prog, params: Params| {
                 quick_term_or_rec(prog, 301).is_settled()
@@ -187,7 +187,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 3), 2, 20, (11, 8_848)),
+            ((2, 3), 2, 20, (11, 8_847)),
             //
             |prog: &Prog, _: Params| {
                 prog.cant_blank(16).is_settled()
