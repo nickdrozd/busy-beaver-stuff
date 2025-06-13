@@ -200,7 +200,7 @@ class TuringTest(TestCase):
             f'segment halt false positive: "{prog}"')
 
     def assert_cant_halt_segment(self, prog: str, segs: int):
-        if prog in SEGMENT_HALT_FALSE_NEGATIVES:
+        if prog in SEGMENT_FALSE_NEGATIVES['halt']:
             return
 
         self.assertTrue(
@@ -312,7 +312,7 @@ class TuringTest(TestCase):
             f'spin out false negative: "{prog}"')
 
     def assert_cant_spin_out_segment(self, prog: str, segs: int):
-        if prog in SEGMENT_SPINOUT_FALSE_NEGATIVES:
+        if prog in SEGMENT_FALSE_NEGATIVES['spinout']:
             assert prog not in SEGMENT_STEPS['spinout']
             return
 
@@ -524,9 +524,6 @@ class Segment(TuringTest):
         for prog in NONHALTERS:
             self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
 
-        for prog in SEGMENT_HALT_FALSE_NEGATIVES:
-            self.assert_could_halt_segment(prog)
-
     def test_spinout(self):
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_segment(prog)
@@ -534,7 +531,21 @@ class Segment(TuringTest):
         for prog in NONSPINNERS:
             self.assert_cant_spin_out_segment(prog, 26)
 
-        for prog in SEGMENT_SPINOUT_FALSE_NEGATIVES:
+    def test_false_negatives(self):
+        counts = {
+            cat: len(progs)
+            for cat, progs in SEGMENT_FALSE_NEGATIVES.items()
+        }
+
+        self.assertEqual(
+            SEGMENT_FALSE_NEGATIVE_COUNTS,
+            counts,
+            json.dumps(counts, indent = 4))
+
+        for prog in SEGMENT_FALSE_NEGATIVES['halt']:
+            self.assert_could_halt_segment(prog)
+
+        for prog in SEGMENT_FALSE_NEGATIVES['spinout']:
             self.assert_could_spin_out_segment(prog)
 
     def test_steps(self):
