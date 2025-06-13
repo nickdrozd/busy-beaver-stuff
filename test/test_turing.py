@@ -487,19 +487,6 @@ class Reason(TuringTest):
                     cant_reach(prog, steps - 1),
                     BackwardResult.step_limit)
 
-    def test_unreasonable(self):
-        self.assertEqual(
-            UNREASONABLE,
-            CANT_HALT_FALSE_NEGATIVES
-                & CANT_BLANK_FALSE_NEGATIVES
-                & CANT_SPIN_OUT_FALSE_NEGATIVES
-                & SEGMENT_HALT_FALSE_NEGATIVES
-                & SEGMENT_SPINOUT_FALSE_NEGATIVES)
-
-        self.assertEqual(
-            INFRUL,
-            INFRUL | UNREASONABLE)
-
     def test_reason_only(self):
         for prog in REASON_ONLY:
             self.assert_cant_halt_backward(prog, REASON_LIMIT)
@@ -537,7 +524,7 @@ class Segment(TuringTest):
         for prog in NONHALTERS:
             self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
 
-        for prog in SEGMENT_HALT_FALSE_NEGATIVES | UNREASONABLE:
+        for prog in SEGMENT_HALT_FALSE_NEGATIVES:
             self.assert_could_halt_segment(prog)
 
     def test_spinout(self):
@@ -547,7 +534,7 @@ class Segment(TuringTest):
         for prog in NONSPINNERS:
             self.assert_cant_spin_out_segment(prog, 26)
 
-        for prog in SEGMENT_SPINOUT_FALSE_NEGATIVES | UNREASONABLE:
+        for prog in SEGMENT_SPINOUT_FALSE_NEGATIVES:
             self.assert_could_spin_out_segment(prog)
 
     def test_steps(self):

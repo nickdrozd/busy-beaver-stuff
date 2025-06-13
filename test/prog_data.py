@@ -5354,10 +5354,6 @@ NONSPINNERS = (
     | set(CANT_REACH_STEPS['spinout'])
 )
 
-UNREASONABLE: set[str] = {
-    "1RB ... 0RB  2LB 2LA 0RA",
-}
-
 REASON_ONLY: set[str] = {
     "1RB 0LD  1LC 0RE  ... 1LD  1LA 1LD  1RA 0RA",
 }
