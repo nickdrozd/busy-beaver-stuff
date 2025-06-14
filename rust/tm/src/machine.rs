@@ -18,7 +18,11 @@ pub enum RunResult {
 
 impl RunResult {
     pub const fn is_settled(&self) -> bool {
-        !matches!(self, Self::StepLimit | Self::ConfigLimit)
+        self.is_recur() || self.is_infinite() || self.is_undefined()
+    }
+
+    pub const fn is_undefined(&self) -> bool {
+        matches!(self, Self::Undefined(_))
     }
 
     pub const fn is_recur(&self) -> bool {
