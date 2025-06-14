@@ -292,7 +292,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((3, 3), 1, 3_000, (98_497, 147_230_805)),
+            ((3, 3), 1, 3_000, (98_498, 147_230_805)),
             //
             |prog: &Prog, params: Params| {
                 prog.cant_spin_out(1).is_settled()

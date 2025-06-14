@@ -20,6 +20,7 @@ type Cycle = i32;
 pub enum ProverResult {
     ConfigLimit,
     InfiniteRule,
+    MultRule,
     Got(Rule),
 }
 
@@ -171,6 +172,10 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
 
         if rule.is_infinite() {
             return Some(InfiniteRule);
+        }
+
+        if rule.is_mult() {
+            return Some(MultRule);
         }
 
         if tape.length_one_spans() && rule.has_two_values_same() {

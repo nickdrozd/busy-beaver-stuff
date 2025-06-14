@@ -10,6 +10,7 @@ use crate::{
 pub enum RunResult {
     Recur,
     Spinout,
+    MultRule,
     InfiniteRule,
     Undefined(Slot),
     StepLimit,
@@ -31,6 +32,10 @@ impl RunResult {
 
     pub const fn is_infinite(&self) -> bool {
         matches!(self, Self::InfiniteRule)
+    }
+
+    pub const fn is_mult(&self) -> bool {
+        matches!(self, Self::MultRule)
     }
 }
 
@@ -56,6 +61,9 @@ pub fn run_for_infrul(
                 },
                 InfiniteRule => {
                     return RunResult::InfiniteRule;
+                },
+                MultRule => {
+                    return RunResult::MultRule;
                 },
                 Got(rule) => {
                     if tape.apply_rule(&rule).is_some() {
@@ -198,5 +206,5 @@ fn test_mult_rule() {
         ),
         10_000,
     )
-    .is_settled());
+    .is_mult());
 }
