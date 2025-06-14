@@ -56,17 +56,12 @@ test-rust :
 
 run :
 	$(CARGO_VERSION)
-	$(RUSTFLAGS) $(CARGO) run --release -p run
+	$(BUILD) --release --package run
+	$(RUSTFLAGS) time -p cargo run --release -p run
 
 run-all:
 	$(CARGO_VERSION)
 	$(RUSTFLAGS) $(CARGO) run --release -p run -- --all
-
-time :
-	$(CARGO_VERSION)
-	$(BUILD) --release --package run
-	$(RUSTFLAGS) time -p cargo run --release -p run
-	$(RUSTFLAGS) RAYON_NUM_THREADS=1 time -p cargo run --release -p run
 
 clean-rust :
 	cargo clean
