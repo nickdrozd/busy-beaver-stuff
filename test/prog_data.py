@@ -1218,6 +1218,7 @@ KERNEL = {
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 3,  # 134467 Uwe
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": 3,  # partial
     "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA": 3,
+    "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA": 3,
 
     "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC ... 0LC": 3,
     "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": 3,
@@ -1749,6 +1750,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
             "1RB 4RB ... 3LA 3RB  0LB 2LA 3RB 4RB 1RB",
             "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE",
             "1RB ...  0RC 0RD  1LC 1LA  0RC 0LE  1LD 0RC",
+            "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
             "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC",
             "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
             "1RB 1LA  0LC 0LB  1RC 1RD  1RE 1RB  1LA ...",
@@ -2366,6 +2368,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
             "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD",
             "1RB 1RC  1LC 0RD  1RA 0LB  1RD 0RA",
             "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",
+            "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
             "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
@@ -2384,7 +2387,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
     "halt": {
         "step_limit": 1,
         "depth_limit": 45,
-        "spinout": 93,
+        "spinout": 94,
         "linrec": 156,
     },
     "blank": {
@@ -2397,7 +2400,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
         "step_limit": 4,
         "depth_limit": 24,
         "spinout": 70,
-        "linrec": 116,
+        "linrec": 117,
     },
 }
 
@@ -2422,8 +2425,8 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 ########################################
 
 SEGMENT_FALSE_NEGATIVE_COUNTS = {
-    "halt": 89,
-    "spinout": 98,
+    "halt": 90,
+    "spinout": 99,
 }
 
 SEGMENT_FALSE_NEGATIVES = {
@@ -2492,6 +2495,7 @@ SEGMENT_FALSE_NEGATIVES = {
         "1RB 1RC  0LD ...  0LE 0LC  1LE 1LD  1RE 1RA",
         "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA",
         "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA",
+        "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
         "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
         "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 0RF  1LA 0LA",
@@ -2607,6 +2611,7 @@ SEGMENT_FALSE_NEGATIVES = {
         "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RA 0LA",
         "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB",
         "1RB 0RE  1LC 0LB  0RA 1LD  1LB 0LA  1RE 0LC",
+        "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
         "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
@@ -2809,9 +2814,9 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
 ########################################
 
 CPS_FALSE_NEGATIVE_COUNTS = {
-    "halt": 42,
+    "halt": 43,
     "blank": 113,
-    "spinout": 267,
+    "spinout": 268,
 }
 
 CPS_FALSE_NEGATIVES = {
@@ -2849,6 +2854,7 @@ CPS_FALSE_NEGATIVES = {
         "1RB 1LD  0RC 0LC  0RD 1RA  1LE ...  0RA 0LE",
         "1RB 1LE  1LC 1RD  1LB 1RC  1LA 0RD  ... 0LA",
         "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
+        "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
         "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  ... 0RD",
         "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0LA  1RA 1LC",
@@ -3228,6 +3234,7 @@ CPS_FALSE_NEGATIVES = {
         "0RB 0LA  1RC ...  0LC 1RD  0LD 1RE  1LA 0LE",
         "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
         "1RB 0RB  0LC 1RD  1LA 1LC  0LE 1RA  1LE 0RD",
+        "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA",
         "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD",
         "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  0RB 2RA 2RD",
@@ -3248,9 +3255,9 @@ CPS_FALSE_NEGATIVES = {
 ########################################
 
 CTL_FALSE_NEGATIVE_COUNTS = {
-    "halt": 100,
+    "halt": 101,
     "blank": 416,
-    "spinout": 246,
+    "spinout": 247,
 }
 
 CTL_FALSE_NEGATIVES = {
@@ -3339,6 +3346,7 @@ CTL_FALSE_NEGATIVES = {
         "1RB 1LA  0LC 1RC  1RE 1RD  0LA 0RD  0LD ...",
         "1RB 1LB  1LA 0RC  ... 0RD  1RD 0RE  1LE 0LA",
         "1RB 1LD  0RC 0LC  0RD 1RA  1LE ...  0RA 0LE",
+        "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
         "1RB ...  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE",
         "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
@@ -4008,6 +4016,7 @@ CTL_FALSE_NEGATIVES = {
         "1RB 1LC  0LA 0RD  1LA 1RB  0LE 1RC  1LE 0RB",
         "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RA 0LA",
         "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
+        "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA",
         "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
         "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  0RB 2RA 2RD",
@@ -5263,6 +5272,7 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 0LD  1RC 0LA  1LD 0RA  1LE 1RE  0RC 1LC",
     "1RB 1LE  1LC 1RD  1LB 1RC  1LA 0RD  ... 0LA",
     "1RB 1LD  0RC 0LC  0RD 1RA  1LE ...  0RA 0LE",
+    "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
 
     "1RB 2LA 0RB  2LB 1LA 0RC  0LB 2RC 1RC",
     "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC",
