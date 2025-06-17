@@ -6,7 +6,8 @@ use tm::{
     ctl::Ctl as _,
     graph::is_connected,
     instrs::{
-        show_state, Instr, Params, Parse as _, Prog, Slot, State,
+        show_state, GetInstr as _, Instr, Params, Parse as _, Prog,
+        Slot, State,
     },
     machine::quick_term_or_rec,
     reason::{
@@ -207,34 +208,70 @@ pub fn py_segment_cant_spin_out(
 
 #[pyfunction]
 pub fn py_cps_cant_halt(prog: &str, segs: usize) -> bool {
-    Prog::read(prog).cps_cant_halt(segs)
+    let prog = Prog::read(prog);
+
+    if prog.halt_slots().is_empty() {
+        return true;
+    }
+
+    prog.cps_cant_halt(segs)
 }
 
 #[pyfunction]
 pub fn py_cps_cant_blank(prog: &str, segs: usize) -> bool {
-    Prog::read(prog).cps_cant_blank(segs)
+    let prog = Prog::read(prog);
+
+    if prog.erase_slots().is_empty() {
+        return true;
+    }
+
+    prog.cps_cant_blank(segs)
 }
 
 #[pyfunction]
 pub fn py_cps_cant_spin_out(prog: &str, segs: usize) -> bool {
-    Prog::read(prog).cps_cant_spin_out(segs)
+    let prog = Prog::read(prog);
+
+    if prog.zr_shifts().is_empty() {
+        return true;
+    }
+
+    prog.cps_cant_spin_out(segs)
 }
 
 /***************************************/
 
 #[pyfunction]
 pub fn py_ctl_cant_halt(prog: &str, steps: usize) -> bool {
-    Prog::read(prog).ctl_cant_halt(steps)
+    let prog = Prog::read(prog);
+
+    if prog.halt_slots().is_empty() {
+        return true;
+    }
+
+    prog.ctl_cant_halt(steps)
 }
 
 #[pyfunction]
 pub fn py_ctl_cant_blank(prog: &str, steps: usize) -> bool {
-    Prog::read(prog).ctl_cant_blank(steps)
+    let prog = Prog::read(prog);
+
+    if prog.erase_slots().is_empty() {
+        return true;
+    }
+
+    prog.ctl_cant_blank(steps)
 }
 
 #[pyfunction]
 pub fn py_ctl_cant_spin_out(prog: &str, steps: usize) -> bool {
-    Prog::read(prog).ctl_cant_spin_out(steps)
+    let prog = Prog::read(prog);
+
+    if prog.zr_shifts().is_empty() {
+        return true;
+    }
+
+    prog.ctl_cant_spin_out(steps)
 }
 
 /***************************************/

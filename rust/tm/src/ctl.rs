@@ -32,10 +32,6 @@ pub trait Ctl {
 
 impl Ctl for Prog {
     fn ctl_cant_halt(&self, steps: Steps) -> bool {
-        if self.halt_slots().is_empty() {
-            return true;
-        }
-
         let blocks = opt_block(self, OPT_BLOCK);
 
         if blocks == 1 {
@@ -50,18 +46,10 @@ impl Ctl for Prog {
     }
 
     fn ctl_cant_blank(&self, steps: Steps) -> bool {
-        if self.erase_slots().is_empty() {
-            return true;
-        }
-
         ctl_run(self, steps, &Blank)
     }
 
     fn ctl_cant_spin_out(&self, steps: Steps) -> bool {
-        if self.zr_shifts().is_empty() {
-            return true;
-        }
-
         let blocks = opt_block(self, OPT_BLOCK);
 
         if blocks == 1 {

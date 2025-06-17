@@ -26,26 +26,14 @@ pub trait Cps {
 
 impl<T: GetInstr> Cps for T {
     fn cps_cant_halt(&self, rad: Radius) -> bool {
-        if self.halt_slots().is_empty() {
-            return true;
-        }
-
         cps_run(self, rad, &Halt)
     }
 
     fn cps_cant_blank(&self, rad: Radius) -> bool {
-        if self.erase_slots().is_empty() {
-            return true;
-        }
-
         cps_run(self, rad, &Blank)
     }
 
     fn cps_cant_spin_out(&self, rad: Radius) -> bool {
-        if self.zr_shifts().is_empty() {
-            return true;
-        }
-
         cps_run(self, rad, &Spinout)
     }
 }
