@@ -233,7 +233,7 @@ class TuringTest(TestCase):
             return
 
         self.assertTrue(
-            ctl_cant_halt(prog, segs))
+            ctl_cant_halt(prog, segs), prog)
 
     ########################################
 
