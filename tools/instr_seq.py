@@ -16,7 +16,7 @@ def instr_seq(prog: str) -> Iterator[tuple[str, int, Slot]]:
         states := len(program.states),
         colors := len(program.colors))
 
-    for _ in range(states * colors - 1):  # no-branch
+    for _ in range(states * colors - 1):
         if (result := run_for_undefined(partial)) is None:
             break
 
@@ -37,7 +37,7 @@ def run_for_undefined(prog: Normalizer) -> Undfnd | None:
 
     state = 0
 
-    for _ in range(100_000_000):  # no-branch
+    for _ in range(100_000):
         try:
             instr = prog[state, tape.scan]
         except KeyError:
@@ -56,4 +56,4 @@ def run_for_undefined(prog: Normalizer) -> Undfnd | None:
 
         state = next_state
 
-    return None  # no-cover
+    return None
