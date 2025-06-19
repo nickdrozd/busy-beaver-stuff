@@ -40,14 +40,10 @@ impl Prog {
         }
     }
 
-    pub fn init_stepped(next_instr: Instr, params: Params) -> Self {
-        Self::new(
-            Instrs::from([
-                ((0, 0), (1, true, 1)),
-                ((1, 0), next_instr),
-            ]),
-            Some(params),
-        )
+    pub fn init_stepped(params: Params) -> Self {
+        let instrs = Instrs::from([((0, 0), (1, true, 1))]);
+
+        Self::new(instrs, Some(params))
     }
 
     pub const fn params(&self) -> Params {

@@ -230,9 +230,15 @@ pub fn build_tree(
         init_instrs.retain(|instr| matches!(instr, (_, _, 1)));
     }
 
+    let init_slot = (1, 0);
+
     init_instrs.par_iter().for_each(|&next_instr| {
+        let mut prog = Prog::init_stepped(params);
+
+        prog.instrs.insert(init_slot, next_instr);
+
         branch(
-            &mut Prog::init_stepped(next_instr, params),
+            &mut prog,
             Config::init_stepped(),
             sim_lim,
             &next_instr,
@@ -241,6 +247,8 @@ pub fn build_tree(
             &instr_table,
             harvester,
         );
+
+        prog.instrs.remove(&init_slot);
     });
 }
 
