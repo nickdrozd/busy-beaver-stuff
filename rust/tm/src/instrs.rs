@@ -46,10 +46,6 @@ impl Prog {
         Self::new(instrs, Some(params))
     }
 
-    pub const fn params(&self) -> Params {
-        (self.states, self.colors)
-    }
-
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
@@ -123,12 +119,17 @@ impl Prog {
 }
 
 pub trait GetInstr {
+    fn params(&self) -> Params;
     fn get_instr(&self, slot: &Slot) -> Option<Instr>;
 }
 
 impl GetInstr for Prog {
     fn get_instr(&self, slot: &Slot) -> Option<Instr> {
         self.instrs.get(slot).copied()
+    }
+
+    fn params(&self) -> Params {
+        (self.states, self.colors)
     }
 }
 

@@ -37,11 +37,7 @@ impl Ctl for Prog {
         if blocks == 1 {
             ctl_run(self, steps, &Halt)
         } else {
-            ctl_run(
-                &make_block_macro(self, self.params(), blocks),
-                steps,
-                &Halt,
-            )
+            ctl_run(&make_block_macro(self, blocks), steps, &Halt)
         }
     }
 
@@ -55,11 +51,7 @@ impl Ctl for Prog {
         if blocks == 1 {
             ctl_run(self, steps, &Spinout)
         } else {
-            ctl_run(
-                &make_block_macro(self, self.params(), blocks),
-                steps,
-                &Spinout,
-            )
+            ctl_run(&make_block_macro(self, blocks), steps, &Spinout)
         }
     }
 }
