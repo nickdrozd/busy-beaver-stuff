@@ -6,10 +6,7 @@ use std::{
 };
 
 use crate::{
-    instrs::{
-        Color, GetInstr as _, Instr, Parse as _, Prog, Shift, Slot,
-        State,
-    },
+    instrs::{Color, Instr, Parse as _, Prog, Shift, Slot, State},
     tape::{
         Alignment, Block as _, LilBlock as Block, LilCount as Count,
         Pos, Span as GenSpan,
@@ -328,7 +325,7 @@ fn get_blanks(configs: &Configs) -> Blanks {
 fn get_entrypoints(comp: &Prog) -> Entrypoints {
     let mut entrypoints = Entrypoints::new();
 
-    for (&slot, &(color, shift, state)) in comp {
+    for (&slot, &(color, shift, state)) in &comp.instrs {
         let (same, diff) = entrypoints.entry(state).or_default();
 
         (if slot.0 == state { same } else { diff })

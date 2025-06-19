@@ -7,7 +7,7 @@ type State = u8;
 /**************************************/
 
 pub fn is_connected(prog: &Prog, states: State) -> bool {
-    if prog.values().all(|&(_, _, state)| state != 0) {
+    if prog.instrs.values().all(|&(_, _, state)| state != 0) {
         return false;
     }
 
@@ -88,7 +88,7 @@ type Exitpoints = Dict<State, Vec<State>>;
 fn get_exitpoints(prog: &Prog) -> Exitpoints {
     let mut exitpoints = Exitpoints::new();
 
-    for (&(src, _), &(_, _, dst)) in prog {
+    for (&(src, _), &(_, _, dst)) in &prog.instrs {
         if src == dst {
             continue;
         }

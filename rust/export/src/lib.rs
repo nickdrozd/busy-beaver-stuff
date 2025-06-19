@@ -6,8 +6,8 @@ use tm::{
     ctl::Ctl as _,
     graph::is_connected,
     instrs::{
-        show_state, GetInstr as _, Instr, Params, Parse as _, Prog,
-        Slot, State,
+        show_state, GetInstr as _, Instr, Instrs, Params, Parse as _,
+        Prog, Slot, State,
     },
     machine::quick_term_or_rec,
     reason::{
@@ -40,13 +40,13 @@ pub fn show_slot(slot: Slot) -> String {
 }
 
 #[pyfunction]
-pub fn show_comp(comp: Prog) -> String {
-    comp.show()
+pub fn show_comp(comp: Instrs) -> String {
+    Prog::new(comp, None).show()
 }
 
 #[pyfunction]
-pub fn tcompile(prog: &str) -> Prog {
-    Prog::read(prog)
+pub fn tcompile(prog: &str) -> Instrs {
+    Prog::read(prog).instrs
 }
 
 #[pyfunction]
@@ -172,6 +172,7 @@ fn get_comp(prog: &str) -> (Prog, Params) {
     let prog = Prog::read(prog);
 
     let (states, colors) = prog
+        .instrs
         .keys()
         .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
 

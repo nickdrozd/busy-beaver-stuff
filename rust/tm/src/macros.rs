@@ -1,11 +1,11 @@
 use core::{cell::RefCell, iter::once};
 
-use std::collections::{BTreeMap as Dict, BTreeSet as Set};
+use std::collections::BTreeMap as Dict;
 
 use num_integer::Integer as _;
 
 use crate::instrs::{
-    Color, GetInstr, Instr, Params, Prog, Shift, Slot, State,
+    Color, GetInstr, Instr, Instrs, Params, Slot, State,
 };
 
 type Tape = Vec<Color>;
@@ -109,7 +109,7 @@ pub struct MacroProg<'p, P: GetInstr, L: Logic> {
     prog: &'p P,
     logic: L,
 
-    instrs: RefCell<Prog>,
+    instrs: RefCell<Instrs>,
 }
 
 impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
@@ -124,41 +124,6 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
 
         Some(instr)
     }
-
-    fn halt_slots(&self) -> Set<Slot> {
-        self.instrs.borrow().halt_slots()
-    }
-
-    fn erase_slots(&self) -> Set<Slot> {
-        self.instrs.borrow().erase_slots()
-    }
-
-    fn zr_shifts(&self) -> Set<(State, Shift)> {
-        self.instrs.borrow().zr_shifts()
-    }
-
-    fn params(&self) -> Params {
-        (
-            self.logic.macro_states() as State,
-            self.logic.macro_colors() as Color,
-        )
-    }
-
-    fn states_unreached(&self, _: State) -> bool {
-        unimplemented!()
-    }
-
-    fn colors_unreached(&self, _: Color) -> bool {
-        unimplemented!()
-    }
-
-    fn incomplete(&self, _: Params, _: bool) -> bool {
-        unimplemented!()
-    }
-
-    fn init_stepped(_: Instr) -> Self {
-        unimplemented!()
-    }
 }
 
 #[expect(private_bounds)]
@@ -169,6 +134,14 @@ impl<'p, P: GetInstr, L: Logic> MacroProg<'p, P, L> {
             logic,
             instrs: RefCell::new(Dict::new()),
         }
+    }
+
+    #[expect(dead_code)]
+    fn params(&self) -> Params {
+        (
+            self.logic.macro_states() as State,
+            self.logic.macro_colors() as Color,
+        )
     }
 
     fn calculate_instr(&self, slot: Slot) -> Option<Instr> {
@@ -403,7 +376,7 @@ impl TapeColorConverter {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::Parse as _;
+use crate::instrs::{Parse as _, Prog};
 
 #[test]
 fn test_nest() {

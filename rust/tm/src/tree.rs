@@ -103,28 +103,20 @@ impl Config {
 
 /**************************************/
 
-fn leaf(
-    prog: &Prog,
-    (max_state, max_color): Params,
-    harvester: &impl Fn(&Prog),
-) {
-    if prog.states_unreached(max_state)
-        || prog.colors_unreached(max_color)
-    {
+fn leaf(prog: &Prog, harvester: &impl Fn(&Prog)) {
+    if prog.states_unreached() || prog.colors_unreached() {
         return;
     }
 
     harvester(prog);
 }
 
-#[expect(clippy::too_many_arguments)]
 fn branch(
     prog: &mut Prog,
     mut config: Config,
     sim_lim: Step,
     &(instr_color, _, instr_state): &Instr,
     (mut avail_states, mut avail_colors): Params,
-    params @ (max_states, max_colors): Params,
     remaining_slots: Slots,
     instr_table: &InstrTable,
     harvester: &impl Fn(&Prog),
@@ -134,18 +126,18 @@ fn branch(
             Undefined(slot) => slot,
             Blank | Spinout => return,
             Limit => {
-                leaf(prog, params, harvester);
+                leaf(prog, harvester);
                 return;
             },
         };
 
-    if avail_states < max_states
+    if avail_states < prog.states
         && 1 + max(slot_state, instr_state) == avail_states
     {
         avail_states += 1;
     }
 
-    if avail_colors < max_colors
+    if avail_colors < prog.colors
         && 1 + max(slot_color, instr_color) == avail_colors
     {
         avail_colors += 1;
@@ -158,9 +150,9 @@ fn branch(
 
     if next_remaining_slots == 0 {
         for next_instr in instrs {
-            prog.insert(slot, *next_instr);
-            leaf(prog, params, harvester);
-            prog.remove(&slot);
+            prog.instrs.insert(slot, *next_instr);
+            leaf(prog, harvester);
+            prog.instrs.remove(&slot);
         }
 
         return;
@@ -173,7 +165,7 @@ fn branch(
     let (last_instr, instrs) = instrs.split_last().unwrap();
 
     for &next_instr in instrs {
-        prog.insert(slot, next_instr);
+        prog.instrs.insert(slot, next_instr);
 
         branch(
             prog,
@@ -181,17 +173,16 @@ fn branch(
             sim_lim,
             &next_instr,
             avail_params,
-            params,
             next_remaining_slots,
             instr_table,
             harvester,
         );
 
-        prog.remove(&slot);
+        prog.instrs.remove(&slot);
     }
 
     {
-        prog.insert(slot, *last_instr);
+        prog.instrs.insert(slot, *last_instr);
 
         branch(
             prog,
@@ -199,13 +190,12 @@ fn branch(
             sim_lim,
             last_instr,
             avail_params,
-            params,
             next_remaining_slots,
             instr_table,
             harvester,
         );
 
-        prog.remove(&slot);
+        prog.instrs.remove(&slot);
     }
 }
 
@@ -242,12 +232,11 @@ pub fn build_tree(
 
     init_instrs.par_iter().for_each(|&next_instr| {
         branch(
-            &mut Prog::init_stepped(next_instr),
+            &mut Prog::init_stepped(next_instr, params),
             Config::init_stepped(),
             sim_lim,
             &next_instr,
             (init_states, init_colors),
-            params,
             slots,
             &instr_table,
             harvester,
