@@ -6,8 +6,8 @@ use tm::{
     ctl::Ctl as _,
     graph::is_connected,
     instrs::{
-        show_state, GetInstr as _, Instr, Instrs, Params, Parse as _,
-        Prog, Slot, State,
+        show_state, GetInstr as _, Instr, Instrs, Parse as _, Prog,
+        Slot, State,
     },
     machine::quick_term_or_rec,
     reason::{
@@ -168,31 +168,14 @@ impl From<SegmentResultRs> for SegmentResult {
     }
 }
 
-fn get_comp(prog: &str) -> (Prog, Params) {
-    let prog = Prog::read(prog);
-
-    let (states, colors) = prog
-        .instrs
-        .keys()
-        .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
-
-    let params = (1 + states, 1 + colors);
-
-    (prog, params)
-}
-
 #[pyfunction]
 pub fn py_segment_cant_halt(prog: &str, segs: usize) -> SegmentResult {
-    let (comp, params) = get_comp(prog);
-
-    comp.seg_cant_halt(params, segs).into()
+    Prog::read(prog).seg_cant_halt(segs).into()
 }
 
 #[pyfunction]
 pub fn py_segment_cant_blank(prog: &str, segs: usize) -> SegmentResult {
-    let (comp, params) = get_comp(prog);
-
-    comp.seg_cant_blank(params, segs).into()
+    Prog::read(prog).seg_cant_blank(segs).into()
 }
 
 #[pyfunction]
@@ -200,9 +183,7 @@ pub fn py_segment_cant_spin_out(
     prog: &str,
     segs: usize,
 ) -> SegmentResult {
-    let (comp, params) = get_comp(prog);
-
-    comp.seg_cant_spin_out(params, segs).into()
+    Prog::read(prog).seg_cant_spin_out(segs).into()
 }
 
 /***************************************/

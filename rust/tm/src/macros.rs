@@ -15,18 +15,19 @@ type Config = (State, (bool, Tape));
 
 pub fn make_block_macro<P: GetInstr>(
     prog: &P,
-    params: Params,
     blocks: usize,
 ) -> MacroProg<'_, P, BlockLogic> {
-    MacroProg::new(prog, BlockLogic::new(blocks, params))
+    MacroProg::new(prog, BlockLogic::new(blocks, prog.params()))
 }
 
 pub fn make_backsymbol_macro<P: GetInstr>(
     prog: &P,
-    params: Params,
     backsymbols: usize,
 ) -> MacroProg<'_, P, BacksymbolLogic> {
-    MacroProg::new(prog, BacksymbolLogic::new(backsymbols, params))
+    MacroProg::new(
+        prog,
+        BacksymbolLogic::new(backsymbols, prog.params()),
+    )
 }
 
 /**************************************/
@@ -124,6 +125,13 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
 
         Some(instr)
     }
+
+    fn params(&self) -> Params {
+        (
+            self.logic.macro_states() as State,
+            self.logic.macro_colors() as Color,
+        )
+    }
 }
 
 #[expect(private_bounds)]
@@ -134,14 +142,6 @@ impl<'p, P: GetInstr, L: Logic> MacroProg<'p, P, L> {
             logic,
             instrs: RefCell::new(Dict::new()),
         }
-    }
-
-    #[expect(dead_code)]
-    fn params(&self) -> Params {
-        (
-            self.logic.macro_states() as State,
-            self.logic.macro_colors() as Color,
-        )
     }
 
     fn calculate_instr(&self, slot: Slot) -> Option<Instr> {
@@ -383,11 +383,11 @@ fn test_nest() {
     let comp =
         Prog::read("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
 
-    let block = make_block_macro(&comp, (5, 2), 3);
+    let block = make_block_macro(&comp, 3);
 
-    let _ = make_backsymbol_macro(&comp, (5, 2), 3);
+    let _ = make_backsymbol_macro(&comp, 3);
 
-    let _ = make_backsymbol_macro(&block, (5, 2), 3);
+    let _ = make_backsymbol_macro(&block, 3);
 }
 
 #[cfg(test)]
@@ -404,7 +404,7 @@ fn test_macro() {
     let comp =
         Prog::read("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD");
 
-    let block = make_block_macro(&comp, (5, 2), 2);
+    let block = make_block_macro(&comp, 2);
 
     for &(slot, instr) in MACROS {
         assert_eq!(Some(instr), block.get_instr(&slot));
