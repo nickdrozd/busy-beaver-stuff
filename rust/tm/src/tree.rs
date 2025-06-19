@@ -77,7 +77,8 @@ impl Config {
         for _ in 0..sim_lim {
             let slot = (self.state, self.tape.scan);
 
-            let Some(&(color, shift, state)) = comp.get(&slot) else {
+            let Some((color, shift, state)) = comp.get_instr(&slot)
+            else {
                 return Undefined(slot);
             };
 

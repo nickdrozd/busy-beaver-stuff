@@ -112,7 +112,8 @@ pub fn quick_term_or_rec(comp: &Prog, sim_lim: usize) -> RunResult {
     for cycle in 1..sim_lim {
         let slot = (state, tape.scan());
 
-        let Some(&(color, shift, next_state)) = comp.get(&slot) else {
+        let Some((color, shift, next_state)) = comp.get_instr(&slot)
+        else {
             return RunResult::Undefined(slot);
         };
 
