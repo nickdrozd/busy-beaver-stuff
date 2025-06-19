@@ -408,7 +408,8 @@ pub fn run_quick_machine(prog: &str, sim_lim: usize) -> MachineResult {
     for cycle in 0..sim_lim {
         let slot = (state, tape.scan);
 
-        let Some(&(color, shift, next_state)) = comp.get(&slot) else {
+        let Some((color, shift, next_state)) = comp.get_instr(&slot)
+        else {
             cycles = cycle;
             result = Some(undfnd);
             last_slot = Some(slot);

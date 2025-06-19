@@ -881,7 +881,7 @@ fn test_seg_tape() {
     while let Some(scan) = config.tape.scan() {
         seen.insert(config.clone());
 
-        config.step(&prog[&(config.state, scan)]);
+        config.step(&prog.get_instr(&(config.state, scan)).unwrap());
     }
 
     assert!(config.tape.side());
