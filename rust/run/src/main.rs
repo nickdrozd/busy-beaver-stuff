@@ -11,7 +11,7 @@ use tm::{
     cps::Cps as _,
     ctl::Ctl as _,
     graph::is_connected,
-    instrs::{GetInstr as _, Params, Prog},
+    instrs::{Params, Prog},
     machine::{quick_term_or_rec, run_for_infrul},
     macros::{make_backsymbol_macro, make_block_macro},
     reason::Backward as _,
@@ -257,7 +257,7 @@ fn test_tree() {
                     || prog.cps_cant_spin_out(6)
                     || prog.seg_cant_spin_out(params, 4).is_refuted()
                     || check_inf(prog, params, 300, 1000)
-                    || (prog.incomplete(params, false) && {
+                    || (prog.incomplete(false) && {
                         prog.seg_cant_halt(params, 5).is_refuted()
                             || prog.cps_cant_halt(6)
                     })

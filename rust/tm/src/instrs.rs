@@ -11,45 +11,50 @@ pub type Instr = (Color, Shift, State);
 
 pub type Params = (State, Color);
 
-pub type Prog = Dict<Slot, Instr>;
+pub type Instrs = Dict<Slot, Instr>;
 
 /**************************************/
 
-pub trait GetInstr {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr>;
+pub struct Prog {
+    pub instrs: Instrs,
 
-    fn init_stepped(next_instr: Instr) -> Self;
-
-    fn halt_slots(&self) -> Set<Slot>;
-    fn erase_slots(&self) -> Set<Slot>;
-    fn zr_shifts(&self) -> Set<(State, Shift)>;
-
-    fn params(&self) -> Params;
-
-    fn states_unreached(&self, max_state: State) -> bool;
-    fn colors_unreached(&self, max_color: Color) -> bool;
-
-    fn incomplete(&self, params: Params, halt: bool) -> bool;
+    pub states: State,
+    pub colors: Color,
 }
 
-impl GetInstr for Prog {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
-        self.get(slot).copied()
+impl Prog {
+    pub fn new(instrs: Instrs, params: Option<Params>) -> Self {
+        let (states, colors) = params.unwrap_or_else(|| {
+            let (states, colors) =
+                instrs.keys().fold((0, 0), |acc, &(a, b)| {
+                    (acc.0.max(a), acc.1.max(b))
+                });
+
+            (1 + states, 1 + colors)
+        });
+
+        Self {
+            instrs,
+            states,
+            colors,
+        }
     }
 
-    fn init_stepped(next_instr: Instr) -> Self {
-        Self::from([((0, 0), (1, true, 1)), ((1, 0), next_instr)])
+    pub fn init_stepped(next_instr: Instr, params: Params) -> Self {
+        Self::new(
+            Instrs::from([
+                ((0, 0), (1, true, 1)),
+                ((1, 0), next_instr),
+            ]),
+            Some(params),
+        )
     }
 
-    fn params(&self) -> Params {
-        let (states, colors) = self
-            .keys()
-            .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
-
-        (1 + states, 1 + colors)
+    pub const fn params(&self) -> Params {
+        (self.states, self.colors)
     }
 
-    fn halt_slots(&self) -> Set<Slot> {
+    pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
         let (max_state, max_color) = self.params();
@@ -58,7 +63,7 @@ impl GetInstr for Prog {
             for color in 0..max_color {
                 let slot = (state, color);
 
-                if !self.contains_key(&slot) {
+                if !self.instrs.contains_key(&slot) {
                     slots.insert(slot);
                 }
             }
@@ -67,8 +72,9 @@ impl GetInstr for Prog {
         slots
     }
 
-    fn erase_slots(&self) -> Set<Slot> {
-        self.iter()
+    pub fn erase_slots(&self) -> Set<Slot> {
+        self.instrs
+            .iter()
             .filter_map(|(&(state, color), &instr)| match instr {
                 (0, _, _) if color != 0 => Some((state, color)),
                 _ => None,
@@ -76,8 +82,9 @@ impl GetInstr for Prog {
             .collect()
     }
 
-    fn zr_shifts(&self) -> Set<(State, Shift)> {
-        self.iter()
+    pub fn zr_shifts(&self) -> Set<(State, Shift)> {
+        self.instrs
+            .iter()
             .filter_map(|(&slot, &(_, shift, trans))| match slot {
                 (state, 0) if trans == state => Some((state, shift)),
                 _ => None,
@@ -85,31 +92,47 @@ impl GetInstr for Prog {
             .collect()
     }
 
-    fn states_unreached(&self, max_state: State) -> bool {
-        max_state > 2
-            && self.values().all(|(_, _, state)| 1 + state < max_state)
+    pub fn states_unreached(&self) -> bool {
+        self.states > 2
+            && self
+                .instrs
+                .values()
+                .all(|(_, _, state)| 1 + state < self.states)
     }
 
-    fn colors_unreached(&self, max_color: Color) -> bool {
-        max_color > 2
-            && self.values().all(|(color, _, _)| 1 + color < max_color)
+    pub fn colors_unreached(&self) -> bool {
+        self.colors > 2
+            && self
+                .instrs
+                .values()
+                .all(|(color, _, _)| 1 + color < self.colors)
     }
 
-    fn incomplete(&self, params: Params, halt: bool) -> bool {
-        let (states, colors) = params;
+    pub fn incomplete(&self, halt: bool) -> bool {
+        let (states, colors) = self.params();
 
-        let dimension = (states * colors) as usize;
+        let dim = (states * colors) as usize;
 
-        if self.len() < (if halt { dimension - 1 } else { dimension }) {
+        if self.instrs.len() < (if halt { dim - 1 } else { dim }) {
             return true;
         }
 
         let (used_states, used_colors): (Set<State>, Set<Color>) =
-            self.values().map(|(pr, _, tr)| (tr, pr)).unzip();
+            self.instrs.values().map(|(pr, _, tr)| (tr, pr)).unzip();
 
         (colors == 2 && !used_colors.contains(&0))
             || (0..states).any(|state| !used_states.contains(&state))
             || (1..colors).any(|color| !used_colors.contains(&color))
+    }
+}
+
+pub trait GetInstr {
+    fn get_instr(&self, slot: &Slot) -> Option<Instr>;
+}
+
+impl GetInstr for Prog {
+    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
+        self.instrs.get(slot).copied()
     }
 }
 
@@ -129,7 +152,8 @@ pub trait Parse {
 
 impl Parse for Prog {
     fn read(prog: &str) -> Self {
-        prog.trim()
+        let instrs = prog
+            .trim()
             .split("  ")
             .map(|instrs| instrs.split(' ').map(Option::<Instr>::read))
             .enumerate()
@@ -140,12 +164,14 @@ impl Parse for Prog {
                     })
                 })
             })
-            .collect()
+            .collect();
+
+        Self::new(instrs, None)
     }
 
     fn show(&self) -> String {
         let (max_state, max_color) = {
-            let (ms, mx) = self.iter().fold(
+            let (ms, mx) = self.instrs.iter().fold(
                 (1, 1),
                 |(ms, mc), (&(ss, sc), &(ic, _, is))| {
                     (ms.max(ss).max(is), mc.max(sc).max(ic))
