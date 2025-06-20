@@ -1,4 +1,4 @@
-use core::cmp::{max, min};
+use core::cmp::min;
 
 use rayon::prelude::*;
 
@@ -121,25 +121,20 @@ fn branch(
     instr_table: &InstrTable,
     harvester: &impl Fn(&Prog),
 ) {
-    let slot @ (slot_state, slot_color) =
-        match config.run(prog, sim_lim) {
-            Undefined(slot) => slot,
-            Blank | Spinout => return,
-            Limit => {
-                leaf(prog, harvester);
-                return;
-            },
-        };
+    let slot @ (slot_state, _) = match config.run(prog, sim_lim) {
+        Undefined(slot) => slot,
+        Blank | Spinout => return,
+        Limit => {
+            leaf(prog, harvester);
+            return;
+        },
+    };
 
-    if avail_states < prog.states
-        && 1 + max(slot_state, instr_state) == avail_states
-    {
+    if avail_states < prog.states && 1 + instr_state == avail_states {
         avail_states += 1;
     }
 
-    if avail_colors < prog.colors
-        && 1 + max(slot_color, instr_color) == avail_colors
-    {
+    if avail_colors < prog.colors && 1 + instr_color == avail_colors {
         avail_colors += 1;
     }
 
