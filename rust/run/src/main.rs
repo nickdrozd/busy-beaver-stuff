@@ -19,7 +19,7 @@ use tm::{
     tree::{build_tree, Step},
 };
 
-#[expect(unused_imports)]
+#[allow(unused_imports)]
 use tm::instrs::Parse as _;
 
 /**************************************/
