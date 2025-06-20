@@ -207,11 +207,9 @@ pub fn build_tree(
     sim_lim: Step,
     harvester: &(impl Fn(&Prog) + Sync),
 ) {
-    let slots = open_slots(
-        states,
-        colors,
-        goal.is_some_and(|goal| Goal::from(goal).is_halt()),
-    );
+    let halt = goal.is_some_and(|goal| Goal::from(goal).is_halt());
+
+    let slots = ((states * colors) as Slots) - Slots::from(halt) - 2;
 
     let init_states = min(3, states);
     let init_colors = min(3, colors);
@@ -250,10 +248,4 @@ pub fn build_tree(
 
         prog.instrs.remove(&init_slot);
     });
-}
-
-/**************************************/
-
-fn open_slots(states: State, colors: Color, halt: bool) -> Slots {
-    ((states * colors) as Slots) - Slots::from(halt) - 2
 }
