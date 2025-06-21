@@ -28,7 +28,8 @@ CARGO = cargo
 RUSTFLAGS = RUSTFLAGS="-C target-cpu=native"
 
 BUILD = $(RUSTFLAGS) $(CARGO) build
-BUILD_TARGET = target/release/libexport.so
+REL_TARGET = target/release/libexport.so
+DEV_TARGET = target/debug/libexport.so
 
 PYEXTENSIONS = tm/rust_stuff.so
 
@@ -36,11 +37,11 @@ MOVE_BUILD = cp $(BUILD_TARGET) $(PYEXTENSIONS)
 
 rust :
 	$(BUILD) --release --package export
-	$(MOVE_BUILD)
+	cp $(REL_TARGET) $(PYEXTENSIONS)
 
 dev :
 	$(BUILD) --package export
-	$(MOVE_BUILD)
+	cp $(DEV_TARGET) $(PYEXTENSIONS)
 
 CARGO_VERSION = cargo --version
 
