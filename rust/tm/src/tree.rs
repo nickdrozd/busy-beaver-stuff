@@ -106,9 +106,11 @@ impl Config {
 struct TreeProg<'h> {
     prog: Prog,
 
-    harvester: &'h dyn Fn(&Prog),
-
     remaining_slots: Slots,
+
+    avail_params: Vec<Params>,
+
+    harvester: &'h dyn Fn(&Prog),
 }
 
 impl<'h> TreeProg<'h> {
@@ -124,21 +126,56 @@ impl<'h> TreeProg<'h> {
         let remaining_slots =
             ((states * colors) as Slots) - Slots::from(halt) - 2;
 
+        let init_avail = (min(3, states), min(3, colors));
+
+        let avail_params = vec![init_avail];
+
         Self {
             prog,
-            harvester,
             remaining_slots,
+            avail_params,
+            harvester,
         }
+    }
+
+    fn avail_params(&self) -> Params {
+        *self.avail_params.last().unwrap()
+    }
+
+    fn update_avail(
+        &mut self,
+        (slot_state, slot_color): &Slot,
+        (instr_color, _, instr_state): &Instr,
+    ) {
+        let (mut avail_states, mut avail_colors) = self.avail_params();
+
+        if avail_states < self.prog.states
+            && 1 + max(slot_state, instr_state) == avail_states
+        {
+            avail_states += 1;
+        }
+
+        if avail_colors < self.prog.colors
+            && 1 + max(slot_color, instr_color) == avail_colors
+        {
+            avail_colors += 1;
+        }
+
+        self.avail_params.push((avail_states, avail_colors));
     }
 
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
         self.remaining_slots -= 1;
+
+        self.update_avail(slot, instr);
 
         self.prog.instrs.insert(*slot, *instr);
     }
 
     fn remove(&mut self, slot: &Slot) {
         self.prog.instrs.remove(slot);
+
+        self.avail_params.pop();
 
         self.remaining_slots += 1;
     }
@@ -161,11 +198,9 @@ impl TreeProg<'_> {
         &mut self,
         mut config: Config,
         sim_lim: Step,
-        &(instr_color, _, instr_state): &Instr,
-        (mut avail_states, mut avail_colors): Params,
         instr_table: &InstrTable,
     ) {
-        let slot @ (slot_state, slot_color) =
+        let slot @ (slot_state, _) =
             match config.run(&self.prog, sim_lim) {
                 Undefined(slot) => slot,
                 Blank | Spinout => return,
@@ -175,17 +210,7 @@ impl TreeProg<'_> {
                 },
             };
 
-        if avail_states < self.prog.states
-            && 1 + max(slot_state, instr_state) == avail_states
-        {
-            avail_states += 1;
-        }
-
-        if avail_colors < self.prog.colors
-            && 1 + max(slot_color, instr_color) == avail_colors
-        {
-            avail_colors += 1;
-        }
+        let (avail_states, avail_colors) = self.avail_params();
 
         let instrs =
             &instr_table[avail_states as usize][avail_colors as usize];
@@ -202,20 +227,12 @@ impl TreeProg<'_> {
 
         config.state = slot_state;
 
-        let avail_params = (avail_states, avail_colors);
-
         let (last_instr, instrs) = instrs.split_last().unwrap();
 
         for next_instr in instrs {
             self.insert(&slot, next_instr);
 
-            self.branch(
-                config.clone(),
-                sim_lim,
-                next_instr,
-                avail_params,
-                instr_table,
-            );
+            self.branch(config.clone(), sim_lim, instr_table);
 
             self.remove(&slot);
         }
@@ -223,13 +240,7 @@ impl TreeProg<'_> {
         {
             self.insert(&slot, last_instr);
 
-            self.branch(
-                config,
-                sim_lim,
-                last_instr,
-                avail_params,
-                instr_table,
-            );
+            self.branch(config, sim_lim, instr_table);
 
             self.remove(&slot);
         }
@@ -268,13 +279,7 @@ pub fn build_tree(
 
         prog.insert(&init_slot, &next_instr);
 
-        prog.branch(
-            Config::init_stepped(),
-            sim_lim,
-            &next_instr,
-            (init_states, init_colors),
-            &instr_table,
-        );
+        prog.branch(Config::init_stepped(), sim_lim, &instr_table);
 
         prog.remove(&init_slot);
     });
