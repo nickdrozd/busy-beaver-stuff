@@ -103,14 +103,17 @@ impl Config {
 
 /**************************************/
 
-struct TreeProg {
+struct TreeProg<'h> {
     prog: Prog,
+
+    harvester: &'h dyn Fn(&Prog),
 }
 
-impl TreeProg {
-    fn init_stepped(params: Params) -> Self {
+impl<'h> TreeProg<'h> {
+    fn init(params: Params, harvester: &'h dyn Fn(&Prog)) -> Self {
         Self {
             prog: Prog::init_stepped(params),
+            harvester,
         }
     }
 
@@ -125,15 +128,15 @@ impl TreeProg {
 
 /**************************************/
 
-impl TreeProg {
-    fn leaf(&self, harvester: &impl Fn(&Prog)) {
+impl TreeProg<'_> {
+    fn leaf(&self) {
         let prog = &self.prog;
 
         if prog.states_unreached() || prog.colors_unreached() {
             return;
         }
 
-        harvester(prog);
+        (self.harvester)(prog);
     }
 
     fn branch(
@@ -144,14 +147,13 @@ impl TreeProg {
         (mut avail_states, mut avail_colors): Params,
         remaining_slots: Slots,
         instr_table: &InstrTable,
-        harvester: &impl Fn(&Prog),
     ) {
         let slot @ (slot_state, slot_color) =
             match config.run(&self.prog, sim_lim) {
                 Undefined(slot) => slot,
                 Blank | Spinout => return,
                 Limit => {
-                    self.leaf(harvester);
+                    self.leaf();
                     return;
                 },
             };
@@ -176,7 +178,7 @@ impl TreeProg {
         if next_remaining_slots == 0 {
             for next_instr in instrs {
                 self.insert(&slot, next_instr);
-                self.leaf(harvester);
+                self.leaf();
                 self.remove(&slot);
             }
 
@@ -199,7 +201,6 @@ impl TreeProg {
                 avail_params,
                 next_remaining_slots,
                 instr_table,
-                harvester,
             );
 
             self.remove(&slot);
@@ -215,7 +216,6 @@ impl TreeProg {
                 avail_params,
                 next_remaining_slots,
                 instr_table,
-                harvester,
             );
 
             self.remove(&slot);
@@ -255,7 +255,7 @@ pub fn build_tree(
     let init_slot = (1, 0);
 
     init_instrs.par_iter().for_each(|&next_instr| {
-        let mut prog = TreeProg::init_stepped(params);
+        let mut prog = TreeProg::init(params, harvester);
 
         prog.insert(&init_slot, &next_instr);
 
@@ -266,7 +266,6 @@ pub fn build_tree(
             (init_states, init_colors),
             slots,
             &instr_table,
-            harvester,
         );
 
         prog.remove(&init_slot);
