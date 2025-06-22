@@ -110,6 +110,8 @@ struct TreeProg<'h> {
 
     avail_params: Vec<Params>,
 
+    sim_lim: Step,
+
     harvester: &'h dyn Fn(&Prog),
 }
 
@@ -117,6 +119,7 @@ impl<'h> TreeProg<'h> {
     fn init(
         params @ (states, colors): Params,
         goal: Option<u8>,
+        sim_lim: Step,
         harvester: &'h dyn Fn(&Prog),
     ) -> Self {
         let prog = Prog::init_stepped(params);
@@ -134,6 +137,7 @@ impl<'h> TreeProg<'h> {
             prog,
             remaining_slots,
             avail_params,
+            sim_lim,
             harvester,
         }
     }
@@ -194,14 +198,9 @@ impl TreeProg<'_> {
         (self.harvester)(prog);
     }
 
-    fn branch(
-        &mut self,
-        mut config: Config,
-        sim_lim: Step,
-        instr_table: &InstrTable,
-    ) {
+    fn branch(&mut self, mut config: Config, instr_table: &InstrTable) {
         let slot @ (slot_state, _) =
-            match config.run(&self.prog, sim_lim) {
+            match config.run(&self.prog, self.sim_lim) {
                 Undefined(slot) => slot,
                 Blank | Spinout => return,
                 Limit => {
@@ -232,7 +231,7 @@ impl TreeProg<'_> {
         for next_instr in instrs {
             self.insert(&slot, next_instr);
 
-            self.branch(config.clone(), sim_lim, instr_table);
+            self.branch(config.clone(), instr_table);
 
             self.remove(&slot);
         }
@@ -240,7 +239,7 @@ impl TreeProg<'_> {
         {
             self.insert(&slot, last_instr);
 
-            self.branch(config, sim_lim, instr_table);
+            self.branch(config, instr_table);
 
             self.remove(&slot);
         }
@@ -275,11 +274,11 @@ pub fn build_tree(
     let init_slot = (1, 0);
 
     init_instrs.par_iter().for_each(|&next_instr| {
-        let mut prog = TreeProg::init(params, goal, harvester);
+        let mut prog = TreeProg::init(params, goal, sim_lim, harvester);
 
         prog.insert(&init_slot, &next_instr);
 
-        prog.branch(Config::init_stepped(), sim_lim, &instr_table);
+        prog.branch(Config::init_stepped(), &instr_table);
 
         prog.remove(&init_slot);
     });
