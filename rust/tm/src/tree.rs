@@ -107,22 +107,40 @@ struct TreeProg<'h> {
     prog: Prog,
 
     harvester: &'h dyn Fn(&Prog),
+
+    remaining_slots: Slots,
 }
 
 impl<'h> TreeProg<'h> {
-    fn init(params: Params, harvester: &'h dyn Fn(&Prog)) -> Self {
+    fn init(
+        params @ (states, colors): Params,
+        goal: Option<u8>,
+        harvester: &'h dyn Fn(&Prog),
+    ) -> Self {
+        let prog = Prog::init_stepped(params);
+
+        let halt = goal.is_some_and(|goal| Goal::from(goal).is_halt());
+
+        let remaining_slots =
+            ((states * colors) as Slots) - Slots::from(halt) - 2;
+
         Self {
-            prog: Prog::init_stepped(params),
+            prog,
             harvester,
+            remaining_slots,
         }
     }
 
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
+        self.remaining_slots -= 1;
+
         self.prog.instrs.insert(*slot, *instr);
     }
 
     fn remove(&mut self, slot: &Slot) {
         self.prog.instrs.remove(slot);
+
+        self.remaining_slots += 1;
     }
 }
 
@@ -145,7 +163,6 @@ impl TreeProg<'_> {
         sim_lim: Step,
         &(instr_color, _, instr_state): &Instr,
         (mut avail_states, mut avail_colors): Params,
-        remaining_slots: Slots,
         instr_table: &InstrTable,
     ) {
         let slot @ (slot_state, slot_color) =
@@ -173,9 +190,7 @@ impl TreeProg<'_> {
         let instrs =
             &instr_table[avail_states as usize][avail_colors as usize];
 
-        let next_remaining_slots = remaining_slots - 1;
-
-        if next_remaining_slots == 0 {
+        if self.remaining_slots == 0 {
             for next_instr in instrs {
                 self.insert(&slot, next_instr);
                 self.leaf();
@@ -199,7 +214,6 @@ impl TreeProg<'_> {
                 sim_lim,
                 next_instr,
                 avail_params,
-                next_remaining_slots,
                 instr_table,
             );
 
@@ -214,7 +228,6 @@ impl TreeProg<'_> {
                 sim_lim,
                 last_instr,
                 avail_params,
-                next_remaining_slots,
                 instr_table,
             );
 
@@ -231,10 +244,6 @@ pub fn build_tree(
     sim_lim: Step,
     harvester: &(impl Fn(&Prog) + Sync),
 ) {
-    let halt = goal.is_some_and(|goal| Goal::from(goal).is_halt());
-
-    let slots = ((states * colors) as Slots) - Slots::from(halt) - 2;
-
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
@@ -255,7 +264,7 @@ pub fn build_tree(
     let init_slot = (1, 0);
 
     init_instrs.par_iter().for_each(|&next_instr| {
-        let mut prog = TreeProg::init(params, harvester);
+        let mut prog = TreeProg::init(params, goal, harvester);
 
         prog.insert(&init_slot, &next_instr);
 
@@ -264,7 +273,6 @@ pub fn build_tree(
             sim_lim,
             &next_instr,
             (init_states, init_colors),
-            slots,
             &instr_table,
         );
 
