@@ -149,21 +149,34 @@ pub trait Parse {
 
 impl Parse for Prog {
     fn read(prog: &str) -> Self {
-        let instrs = prog
+        let split = prog
             .trim()
             .split("  ")
-            .map(|instrs| instrs.split(' ').map(Option::<Instr>::read))
+            .map(|instrs| {
+                instrs
+                    .split(' ')
+                    .map(Option::<Instr>::read)
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+
+        let params = (split.len() as State, split[0].len() as Color);
+
+        let instrs = split
+            .iter()
             .enumerate()
             .flat_map(|(state, instrs)| {
-                instrs.enumerate().filter_map(move |(color, instr)| {
-                    instr.map(|instr| {
-                        ((state as State, color as Color), instr)
-                    })
-                })
+                instrs.iter().enumerate().filter_map(
+                    move |(color, instr)| {
+                        instr.map(|instr| {
+                            ((state as State, color as Color), instr)
+                        })
+                    },
+                )
             })
             .collect();
 
-        Self::new(instrs, None)
+        Self::new(instrs, Some(params))
     }
 
     fn show(&self) -> String {
@@ -343,11 +356,11 @@ fn test_params() {
 fn test_halt_slots() {
     assert_eq!(
         Prog::read("1RB ...  0RC ...  0LA ...").halt_slots(),
-        Set::from([])
+        Set::from([(0, 1), (1, 1), (2, 1)])
     );
 
     assert_eq!(
         Prog::read("1RB 0LA ...  2LA ... ...").halt_slots(),
-        Set::from([(1, 1)])
+        Set::from([(0, 2), (1, 1), (1, 2)])
     );
 }

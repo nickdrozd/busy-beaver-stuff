@@ -1665,6 +1665,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
             "1RB 1LA  1RC 1RD  0LA 1RC  ... 0RC",
             "1RB 1LC 2RB  0LA 2LB 0RB  1RA 2LC ...",
             "1RB 2LA ...  1RC 1LA 2RC  0LB 2LC 0RC",
+            "1RB ... ... ... ...  0LB 2RB 3RB 4LB ...",
             "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA",
             "1RB 1LA 3RB 0RB ...  0LB 2RB 3RB 4LA 1RB",
             "1RB 1LA 4RB ... 0RB  0LB 2RB 3LA 4RB 1RB",
@@ -2387,7 +2388,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
     "halt": {
         "step_limit": 1,
-        "depth_limit": 46,
+        "depth_limit": 47,
         "spinout": 94,
         "linrec": 157,
     },
