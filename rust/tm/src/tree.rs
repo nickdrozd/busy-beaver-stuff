@@ -113,6 +113,8 @@ struct TreeProg<'h> {
     sim_lim: Step,
 
     harvester: &'h dyn Fn(&Prog),
+
+    instr_table: &'h InstrTable,
 }
 
 impl<'h> TreeProg<'h> {
@@ -121,6 +123,7 @@ impl<'h> TreeProg<'h> {
         goal: Option<Goal>,
         sim_lim: Step,
         harvester: &'h dyn Fn(&Prog),
+        instr_table: &'h InstrTable,
     ) -> Self {
         let prog = Prog::init_stepped(params);
 
@@ -139,6 +142,7 @@ impl<'h> TreeProg<'h> {
             avail_params,
             sim_lim,
             harvester,
+            instr_table,
         }
     }
 
@@ -184,13 +188,10 @@ impl<'h> TreeProg<'h> {
         self.remaining_slots += 1;
     }
 
-    fn avail_instrs<'i>(
-        &self,
-        instr_table: &'i InstrTable,
-    ) -> &'i [Instr] {
+    fn avail_instrs(&self) -> &'h [Instr] {
         let (avail_states, avail_colors) = self.avail_params();
 
-        &instr_table[avail_states as usize][avail_colors as usize]
+        &self.instr_table[avail_states as usize][avail_colors as usize]
     }
 
     fn with_instr(
@@ -220,7 +221,7 @@ impl TreeProg<'_> {
         (self.harvester)(prog);
     }
 
-    fn branch(&mut self, mut config: Config, instr_table: &InstrTable) {
+    fn branch(&mut self, mut config: Config) {
         let slot @ (slot_state, _) =
             match config.run(&self.prog, self.sim_lim) {
                 Undefined(slot) => slot,
@@ -231,7 +232,7 @@ impl TreeProg<'_> {
                 },
             };
 
-        let instrs = self.avail_instrs(instr_table);
+        let instrs = self.avail_instrs();
 
         if self.remaining_slots == 0 {
             for next_instr in instrs {
@@ -249,12 +250,12 @@ impl TreeProg<'_> {
 
         for next_instr in instrs {
             self.with_instr(&slot, next_instr, |prog| {
-                prog.branch(config.clone(), instr_table);
+                prog.branch(config.clone());
             });
         }
 
         self.with_instr(&slot, last_instr, |prog| {
-            prog.branch(config, instr_table);
+            prog.branch(config);
         });
     }
 }
@@ -287,10 +288,16 @@ pub fn build_tree(
     let init_slot = (1, 0);
 
     init_instrs.par_iter().for_each(|&next_instr| {
-        let mut prog = TreeProg::init(params, goal, sim_lim, harvester);
+        let mut prog = TreeProg::init(
+            params,
+            goal,
+            sim_lim,
+            harvester,
+            &instr_table,
+        );
 
         prog.with_instr(&init_slot, &next_instr, |prog| {
-            prog.branch(Config::init_stepped(), &instr_table);
+            prog.branch(Config::init_stepped());
         });
     });
 }
