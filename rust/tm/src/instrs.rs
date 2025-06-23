@@ -320,6 +320,20 @@ fn test_comp() {
     for prog in progs {
         assert_eq!(Prog::read(prog).show(), prog);
     }
+
+    let incomplete_4_2 = "1RB 0LB  0LC 0RA  1LA 1LC  ... ...";
+
+    assert_eq!(
+        Prog::read(incomplete_4_2).show(),
+        "1RB 0LB  0LC 0RA  1LA 1LC"
+    );
+
+    let incomplete_2_4 = "1RB 2LB 2LB ...  1LA 2RB 2LA ...";
+
+    assert_eq!(
+        Prog::read(incomplete_2_4).show(),
+        "1RB 2LB 2LB  1LA 2RB 2LA"
+    );
 }
 
 #[cfg(test)]
