@@ -171,20 +171,9 @@ impl Parse for Prog {
     }
 
     fn show(&self) -> String {
-        let (max_state, max_color) = {
-            let (ms, mx) = self.instrs.iter().fold(
-                (1, 1),
-                |(ms, mc), (&(ss, sc), &(ic, _, is))| {
-                    (ms.max(ss).max(is), mc.max(sc).max(ic))
-                },
-            );
-
-            (1 + ms, 1 + mx)
-        };
-
-        (0..max_state)
+        (0..self.states)
             .map(|state| {
-                (0..max_color)
+                (0..self.colors)
                     .map(|color| self.get_instr(&(state, color)).show())
                     .collect::<Vec<_>>()
                     .join(" ")
@@ -310,6 +299,8 @@ fn test_comp() {
         "1RB ... ...  2LB 1RB 1LB",
         "1RB 0RB ...  2LA ... 0LB",
         "1RB ...  1LB 0RC  1LC 1LA",
+        "1RB 2LB 2LB ...  1LA 2RB 2LA ...",
+        "1RB 0LB  0LC 0RA  1LA 1LC  ... ...",
         "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB",
         "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
         "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",
@@ -320,20 +311,6 @@ fn test_comp() {
     for prog in progs {
         assert_eq!(Prog::read(prog).show(), prog);
     }
-
-    let incomplete_4_2 = "1RB 0LB  0LC 0RA  1LA 1LC  ... ...";
-
-    assert_eq!(
-        Prog::read(incomplete_4_2).show(),
-        "1RB 0LB  0LC 0RA  1LA 1LC"
-    );
-
-    let incomplete_2_4 = "1RB 2LB 2LB ...  1LA 2RB 2LA ...";
-
-    assert_eq!(
-        Prog::read(incomplete_2_4).show(),
-        "1RB 2LB 2LB  1LA 2RB 2LA"
-    );
 }
 
 #[cfg(test)]
