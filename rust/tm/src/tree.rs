@@ -183,6 +183,19 @@ impl<'h> TreeProg<'h> {
 
         self.remaining_slots += 1;
     }
+
+    fn with_instr(
+        &mut self,
+        slot: &Slot,
+        instr: &Instr,
+        body: impl FnOnce(&mut Self),
+    ) {
+        self.insert(slot, instr);
+
+        body(self);
+
+        self.remove(slot);
+    }
 }
 
 /**************************************/
@@ -216,9 +229,9 @@ impl TreeProg<'_> {
 
         if self.remaining_slots == 0 {
             for next_instr in instrs {
-                self.insert(&slot, next_instr);
-                self.leaf();
-                self.remove(&slot);
+                self.with_instr(&slot, next_instr, |prog| {
+                    prog.leaf();
+                });
             }
 
             return;
@@ -229,20 +242,14 @@ impl TreeProg<'_> {
         let (last_instr, instrs) = instrs.split_last().unwrap();
 
         for next_instr in instrs {
-            self.insert(&slot, next_instr);
-
-            self.branch(config.clone(), instr_table);
-
-            self.remove(&slot);
+            self.with_instr(&slot, next_instr, |prog| {
+                prog.branch(config.clone(), instr_table);
+            });
         }
 
-        {
-            self.insert(&slot, last_instr);
-
-            self.branch(config, instr_table);
-
-            self.remove(&slot);
-        }
+        self.with_instr(&slot, last_instr, |prog| {
+            prog.branch(config, instr_table);
+        });
     }
 }
 
@@ -276,10 +283,8 @@ pub fn build_tree(
     init_instrs.par_iter().for_each(|&next_instr| {
         let mut prog = TreeProg::init(params, goal, sim_lim, harvester);
 
-        prog.insert(&init_slot, &next_instr);
-
-        prog.branch(Config::init_stepped(), &instr_table);
-
-        prog.remove(&init_slot);
+        prog.with_instr(&init_slot, &next_instr, |prog| {
+            prog.branch(Config::init_stepped(), &instr_table);
+        });
     });
 }
