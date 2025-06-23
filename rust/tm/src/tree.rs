@@ -211,6 +211,10 @@ impl<'h> TreeProg<'h> {
 /**************************************/
 
 impl TreeProg<'_> {
+    const fn final_slot(&self) -> bool {
+        self.remaining_slots == 0
+    }
+
     fn leaf(&self) {
         let prog = &self.prog;
 
@@ -234,7 +238,7 @@ impl TreeProg<'_> {
 
         let instrs = self.avail_instrs();
 
-        if self.remaining_slots == 0 {
+        if self.final_slot() {
             for next_instr in instrs {
                 self.with_instr(&slot, next_instr, |prog| {
                     prog.leaf();
