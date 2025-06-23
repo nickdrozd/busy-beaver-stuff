@@ -118,13 +118,13 @@ struct TreeProg<'h> {
 impl<'h> TreeProg<'h> {
     fn init(
         params @ (states, colors): Params,
-        goal: Option<u8>,
+        goal: Option<Goal>,
         sim_lim: Step,
         harvester: &'h dyn Fn(&Prog),
     ) -> Self {
         let prog = Prog::init_stepped(params);
 
-        let halt = goal.is_some_and(|goal| Goal::from(goal).is_halt());
+        let halt = goal.is_some_and(|goal| goal.is_halt());
 
         let remaining_slots =
             ((states * colors) as Slots) - Slots::from(halt) - 2;
@@ -267,6 +267,8 @@ pub fn build_tree(
     sim_lim: Step,
     harvester: &(impl Fn(&Prog) + Sync),
 ) {
+    let goal = goal.map(Goal::from);
+
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
@@ -278,9 +280,7 @@ pub fn build_tree(
 
     init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
 
-    if states == 2
-        && goal.is_some_and(|goal| Goal::from(goal).is_spinout())
-    {
+    if states == 2 && goal.is_some_and(|goal| goal.is_spinout()) {
         init_instrs.retain(|instr| matches!(instr, (_, _, 1)));
     }
 
