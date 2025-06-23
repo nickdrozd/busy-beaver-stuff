@@ -219,14 +219,12 @@ impl TreeProg<'_> {
         config.run(&self.prog, self.sim_lim)
     }
 
-    fn leaf(&self) {
-        let prog = &self.prog;
+    fn incomplete(&self) -> bool {
+        self.prog.states_unreached() || self.prog.colors_unreached()
+    }
 
-        if prog.states_unreached() || prog.colors_unreached() {
-            return;
-        }
-
-        (self.harvester)(prog);
+    fn harvest(&self) {
+        (self.harvester)(&self.prog);
     }
 
     fn branch(&mut self, mut config: Config) {
@@ -234,7 +232,10 @@ impl TreeProg<'_> {
             Undefined(slot) => slot,
             Blank | Spinout => return,
             Limit => {
-                self.leaf();
+                if !self.incomplete() {
+                    self.harvest();
+                }
+
                 return;
             },
         };
@@ -244,7 +245,7 @@ impl TreeProg<'_> {
         if self.final_slot() {
             for next_instr in instrs {
                 self.with_instr(&slot, next_instr, |prog| {
-                    prog.leaf();
+                    prog.harvest();
                 });
             }
 
