@@ -3,7 +3,9 @@ use core::cmp::{max, min};
 use rayon::prelude::*;
 
 use crate::{
-    instrs::{Color, GetInstr as _, Instr, Params, Prog, Slot, State},
+    instrs::{
+        Color, GetInstr as _, Instr, Params, Parse, Prog, Slot, State,
+    },
     tape::{MachineTape as _, MedTape as Tape},
     Goal,
 };
@@ -115,6 +117,16 @@ struct TreeProg<'h> {
     harvester: &'h dyn Fn(&Prog),
 
     instr_table: &'h InstrTable,
+}
+
+impl Parse for TreeProg<'_> {
+    fn read(_: &str) -> Self {
+        unreachable!()
+    }
+
+    fn show(&self) -> String {
+        self.prog.show()
+    }
 }
 
 impl<'h> TreeProg<'h> {
@@ -232,8 +244,12 @@ impl TreeProg<'_> {
             Undefined(slot) => slot,
             Blank | Spinout => return,
             Limit => {
+                #[expect(clippy::if_not_else)]
                 if !self.incomplete() {
+                    // println!("{}", self.show());
                     self.harvest();
+                } else {
+                    // println!("{}", self.show());
                 }
 
                 return;
