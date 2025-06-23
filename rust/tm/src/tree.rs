@@ -215,6 +215,10 @@ impl TreeProg<'_> {
         self.remaining_slots == 0
     }
 
+    fn run(&self, config: &mut Config) -> RunResult {
+        config.run(&self.prog, self.sim_lim)
+    }
+
     fn leaf(&self) {
         let prog = &self.prog;
 
@@ -226,15 +230,14 @@ impl TreeProg<'_> {
     }
 
     fn branch(&mut self, mut config: Config) {
-        let slot @ (slot_state, _) =
-            match config.run(&self.prog, self.sim_lim) {
-                Undefined(slot) => slot,
-                Blank | Spinout => return,
-                Limit => {
-                    self.leaf();
-                    return;
-                },
-            };
+        let slot @ (slot_state, _) = match self.run(&mut config) {
+            Undefined(slot) => slot,
+            Blank | Spinout => return,
+            Limit => {
+                self.leaf();
+                return;
+            },
+        };
 
         let instrs = self.avail_instrs();
 
