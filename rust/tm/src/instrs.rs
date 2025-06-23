@@ -23,16 +23,7 @@ pub struct Prog {
 }
 
 impl Prog {
-    pub fn new(instrs: Instrs, params: Option<Params>) -> Self {
-        let (states, colors) = params.unwrap_or_else(|| {
-            let (states, colors) =
-                instrs.keys().fold((0, 0), |acc, &(a, b)| {
-                    (acc.0.max(a), acc.1.max(b))
-                });
-
-            (1 + states, 1 + colors)
-        });
-
+    pub const fn new(instrs: Instrs, (states, colors): Params) -> Self {
         Self {
             instrs,
             states,
@@ -43,7 +34,7 @@ impl Prog {
     pub fn init_stepped(params: Params) -> Self {
         let instrs = Instrs::from([((0, 0), (1, true, 1))]);
 
-        Self::new(instrs, Some(params))
+        Self::new(instrs, params)
     }
 
     pub fn halt_slots(&self) -> Set<Slot> {
@@ -176,7 +167,7 @@ impl Parse for Prog {
             })
             .collect();
 
-        Self::new(instrs, Some(params))
+        Self::new(instrs, params)
     }
 
     fn show(&self) -> String {

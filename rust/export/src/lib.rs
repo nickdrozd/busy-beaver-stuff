@@ -41,7 +41,11 @@ pub fn show_slot(slot: Slot) -> String {
 
 #[pyfunction]
 pub fn show_comp(comp: Instrs) -> String {
-    Prog::new(comp, None).show()
+    let (states, colors) = comp
+        .keys()
+        .fold((0, 0), |acc, &(a, b)| (acc.0.max(a), acc.1.max(b)));
+
+    Prog::new(comp, (1 + states, 1 + colors)).show()
 }
 
 #[pyfunction]
