@@ -35,23 +35,23 @@ impl Ctl for Prog {
         let blocks = opt_block(self, OPT_BLOCK);
 
         if blocks == 1 {
-            ctl_run(self, steps, &Halt)
+            ctl_run(self, steps, Halt)
         } else {
-            ctl_run(&make_block_macro(self, blocks), steps, &Halt)
+            ctl_run(&make_block_macro(self, blocks), steps, Halt)
         }
     }
 
     fn ctl_cant_blank(&self, steps: Steps) -> bool {
-        ctl_run(self, steps, &Blank)
+        ctl_run(self, steps, Blank)
     }
 
     fn ctl_cant_spin_out(&self, steps: Steps) -> bool {
         let blocks = opt_block(self, OPT_BLOCK);
 
         if blocks == 1 {
-            ctl_run(self, steps, &Spinout)
+            ctl_run(self, steps, Spinout)
         } else {
-            ctl_run(&make_block_macro(self, blocks), steps, &Spinout)
+            ctl_run(&make_block_macro(self, blocks), steps, Spinout)
         }
     }
 }
@@ -68,7 +68,7 @@ enum RunResult {
 
 use RunResult::*;
 
-fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: &Goal) -> bool {
+fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: Goal) -> bool {
     let mut todo = vec![Config::init()];
 
     let mut seen: Set<Config> = Set::new();
@@ -160,7 +160,7 @@ impl Config {
         &mut self,
         prog: &impl GetInstr,
         steps: Steps,
-        goal: &Goal,
+        goal: Goal,
         seen: &mut Set<Self>,
     ) -> RunResult {
         for _ in 0..steps {

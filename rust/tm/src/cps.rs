@@ -26,21 +26,21 @@ pub trait Cps {
 
 impl<T: GetInstr> Cps for T {
     fn cps_cant_halt(&self, rad: Radius) -> bool {
-        cps_run(self, rad, &Halt)
+        cps_run(self, rad, Halt)
     }
 
     fn cps_cant_blank(&self, rad: Radius) -> bool {
-        cps_run(self, rad, &Blank)
+        cps_run(self, rad, Blank)
     }
 
     fn cps_cant_spin_out(&self, rad: Radius) -> bool {
-        cps_run(self, rad, &Spinout)
+        cps_run(self, rad, Spinout)
     }
 }
 
 /**************************************/
 
-fn cps_run(prog: &impl GetInstr, rad: Radius, goal: &Goal) -> bool {
+fn cps_run(prog: &impl GetInstr, rad: Radius, goal: Goal) -> bool {
     assert!(rad > 1);
 
     (2..rad).any(|seg| cps_cant_reach(prog, seg, goal))
@@ -49,7 +49,7 @@ fn cps_run(prog: &impl GetInstr, rad: Radius, goal: &Goal) -> bool {
 fn cps_cant_reach(
     prog: &impl GetInstr,
     rad: Radius,
-    goal: &Goal,
+    goal: Goal,
 ) -> bool {
     let mut configs = Configs::init(rad);
 

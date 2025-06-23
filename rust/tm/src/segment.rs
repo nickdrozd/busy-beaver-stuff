@@ -52,15 +52,15 @@ pub trait Segment {
 
 impl<P: GetInstr> Segment for P {
     fn seg_cant_halt(&self, segs: Segments) -> SegmentResult {
-        segment_cant_reach(self, self.params(), segs, &Halt)
+        segment_cant_reach(self, self.params(), segs, Halt)
     }
 
     fn seg_cant_blank(&self, segs: Segments) -> SegmentResult {
-        segment_cant_reach(self, self.params(), segs, &Blank)
+        segment_cant_reach(self, self.params(), segs, Blank)
     }
 
     fn seg_cant_spin_out(&self, segs: Segments) -> SegmentResult {
-        segment_cant_reach(self, self.params(), segs, &Spinout)
+        segment_cant_reach(self, self.params(), segs, Spinout)
     }
 }
 
@@ -89,7 +89,7 @@ fn segment_cant_reach(
     prog: &impl GetInstr,
     params: Params,
     segs: Segments,
-    goal: &Goal,
+    goal: Goal,
 ) -> SegmentResult {
     assert!(segs >= 2);
 
@@ -123,7 +123,7 @@ fn segment_cant_reach(
 fn all_segments_reached<P: GetInstr>(
     prog: &AnalyzedProg<P>,
     seg: Segments,
-    goal: &Goal,
+    goal: Goal,
 ) -> Option<SearchResult> {
     let mut configs =
         Configs::new(&prog.halts, &prog.spinouts, seg, goal);
@@ -245,7 +245,7 @@ impl Configs {
         halts: &Halts,
         spinouts: &Spinouts,
         seg: Segments,
-        goal: &Goal,
+        goal: Goal,
     ) -> Self {
         let reached = match goal {
             Blank => Dict::new(),
@@ -314,7 +314,7 @@ impl Configs {
         Some(blank && state == 0)
     }
 
-    fn check_reached(&mut self, config: &Config, goal: &Goal) -> bool {
+    fn check_reached(&mut self, config: &Config, goal: Goal) -> bool {
         if goal.is_blank() {
             return self.check_reached_blank(config);
         }
@@ -440,7 +440,7 @@ impl Config {
     fn run_to_edge(
         &mut self,
         prog: &impl GetInstr,
-        goal: &Goal,
+        goal: Goal,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
         self.tape.scan?;

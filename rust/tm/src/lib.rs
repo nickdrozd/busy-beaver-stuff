@@ -47,6 +47,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 /**************************************/
 
+#[derive(Clone, Copy)]
 pub enum Goal {
     Halt,
     Blank,
