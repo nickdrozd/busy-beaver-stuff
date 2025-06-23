@@ -184,6 +184,15 @@ impl<'h> TreeProg<'h> {
         self.remaining_slots += 1;
     }
 
+    fn avail_instrs<'i>(
+        &self,
+        instr_table: &'i InstrTable,
+    ) -> &'i [Instr] {
+        let (avail_states, avail_colors) = self.avail_params();
+
+        &instr_table[avail_states as usize][avail_colors as usize]
+    }
+
     fn with_instr(
         &mut self,
         slot: &Slot,
@@ -222,10 +231,7 @@ impl TreeProg<'_> {
                 },
             };
 
-        let (avail_states, avail_colors) = self.avail_params();
-
-        let instrs =
-            &instr_table[avail_states as usize][avail_colors as usize];
+        let instrs = self.avail_instrs(instr_table);
 
         if self.remaining_slots == 0 {
             for next_instr in instrs {
