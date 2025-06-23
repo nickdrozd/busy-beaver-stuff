@@ -338,3 +338,16 @@ fn test_params() {
         assert_eq!(Prog::read(prog).params(), params);
     }
 }
+
+#[test]
+fn test_halt_slots() {
+    assert_eq!(
+        Prog::read("1RB ...  0RC ...  0LA ...").halt_slots(),
+        Set::from([])
+    );
+
+    assert_eq!(
+        Prog::read("1RB 0LA ...  2LA ... ...").halt_slots(),
+        Set::from([(1, 1)])
+    );
+}
