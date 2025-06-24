@@ -105,106 +105,32 @@ impl Config {
 
 /**************************************/
 
-struct TreeProg<'h> {
-    prog: Prog,
+trait Brancher<'h> {
+    fn prog(&self) -> &Prog;
+    fn sim_lim(&self) -> Step;
+    fn remaining_slots(&self) -> Slots;
+    fn harvester(&self) -> &'h dyn Fn(&Prog);
 
-    remaining_slots: Slots,
-
-    avail_params: Vec<Params>,
-
-    sim_lim: Step,
-
-    harvester: &'h dyn Fn(&Prog),
-
-    instr_table: &'h InstrTable,
-}
-
-impl Parse for TreeProg<'_> {
-    fn read(_: &str) -> Self {
-        unreachable!()
+    fn final_slot(&self) -> bool {
+        self.remaining_slots() == 0
     }
 
-    fn show(&self) -> String {
-        self.prog.show()
-    }
-}
-
-impl<'h> TreeProg<'h> {
-    fn init(
-        params @ (states, colors): Params,
-        goal: Option<Goal>,
-        sim_lim: Step,
-        harvester: &'h dyn Fn(&Prog),
-        instr_table: &'h InstrTable,
-    ) -> Self {
-        let prog = Prog::init_stepped(params);
-
-        let halt = goal.is_some_and(|goal| goal.is_halt());
-
-        let remaining_slots =
-            ((states * colors) as Slots) - Slots::from(halt) - 2;
-
-        let init_avail = (min(3, states), min(3, colors));
-
-        let avail_params = vec![init_avail];
-
-        Self {
-            prog,
-            remaining_slots,
-            avail_params,
-            sim_lim,
-            harvester,
-            instr_table,
-        }
+    fn run(&self, config: &mut Config) -> RunResult {
+        config.run(self.prog(), self.sim_lim())
     }
 
-    fn avail_params(&self) -> Params {
-        *self.avail_params.last().unwrap()
+    fn incomplete(&self) -> bool {
+        self.prog().states_unreached() || self.prog().colors_unreached()
     }
 
-    fn update_avail(
-        &mut self,
-        (slot_state, slot_color): &Slot,
-        (instr_color, _, instr_state): &Instr,
-    ) {
-        let (mut avail_states, mut avail_colors) = self.avail_params();
-
-        if avail_states < self.prog.states
-            && 1 + max(slot_state, instr_state) == avail_states
-        {
-            avail_states += 1;
-        }
-
-        if avail_colors < self.prog.colors
-            && 1 + max(slot_color, instr_color) == avail_colors
-        {
-            avail_colors += 1;
-        }
-
-        self.avail_params.push((avail_states, avail_colors));
+    fn harvest(&self) {
+        (self.harvester())(self.prog());
     }
 
-    fn insert(&mut self, slot: &Slot, instr: &Instr) {
-        self.remaining_slots -= 1;
+    fn avail_instrs(&self) -> &'h [Instr];
 
-        self.update_avail(slot, instr);
-
-        self.prog.instrs.insert(*slot, *instr);
-    }
-
-    fn remove(&mut self, slot: &Slot) {
-        self.prog.instrs.remove(slot);
-
-        self.avail_params.pop();
-
-        self.remaining_slots += 1;
-    }
-
-    fn avail_instrs(&self) -> &'h [Instr] {
-        let (avail_states, avail_colors) = self.avail_params();
-
-        &self.instr_table[avail_states as usize][avail_colors as usize]
-    }
+    fn insert(&mut self, slot: &Slot, instr: &Instr);
+    fn remove(&mut self, slot: &Slot);
 
     fn with_instr(
         &mut self,
@@ -217,26 +143,6 @@ impl<'h> TreeProg<'h> {
         body(self);
 
         self.remove(slot);
-    }
-}
-
-/**************************************/
-
-impl TreeProg<'_> {
-    const fn final_slot(&self) -> bool {
-        self.remaining_slots == 0
-    }
-
-    fn run(&self, config: &mut Config) -> RunResult {
-        config.run(&self.prog, self.sim_lim)
-    }
-
-    fn incomplete(&self) -> bool {
-        self.prog.states_unreached() || self.prog.colors_unreached()
-    }
-
-    fn harvest(&self) {
-        (self.harvester)(&self.prog);
     }
 
     fn branch(&mut self, mut config: Config) {
@@ -281,6 +187,124 @@ impl TreeProg<'_> {
         self.with_instr(&slot, last_instr, |prog| {
             prog.branch(config);
         });
+    }
+}
+
+impl<'h, T: Brancher<'h>> Parse for T {
+    fn read(_: &str) -> Self {
+        unreachable!()
+    }
+
+    fn show(&self) -> String {
+        self.prog().show()
+    }
+}
+
+/**************************************/
+
+struct TreeProg<'h> {
+    prog: Prog,
+    sim_lim: Step,
+    remaining_slots: Slots,
+    harvester: &'h dyn Fn(&Prog),
+
+    avail_params: Vec<Params>,
+    instr_table: &'h InstrTable,
+}
+
+impl<'h> TreeProg<'h> {
+    fn init(
+        params @ (states, colors): Params,
+        goal: Option<Goal>,
+        sim_lim: Step,
+        harvester: &'h dyn Fn(&Prog),
+        instr_table: &'h InstrTable,
+    ) -> Self {
+        let prog = Prog::init_stepped(params);
+
+        let halt = goal.is_some_and(|goal| goal.is_halt());
+
+        let remaining_slots =
+            ((states * colors) as Slots) - Slots::from(halt) - 2;
+
+        let init_avail = (min(3, states), min(3, colors));
+
+        let avail_params = vec![init_avail];
+
+        Self {
+            prog,
+            sim_lim,
+            remaining_slots,
+            harvester,
+            avail_params,
+            instr_table,
+        }
+    }
+
+    fn avail_params(&self) -> Params {
+        *self.avail_params.last().unwrap()
+    }
+
+    fn update_avail(
+        &mut self,
+        (slot_state, slot_color): &Slot,
+        (instr_color, _, instr_state): &Instr,
+    ) {
+        let (mut avail_states, mut avail_colors) = self.avail_params();
+
+        if avail_states < self.prog.states
+            && 1 + max(slot_state, instr_state) == avail_states
+        {
+            avail_states += 1;
+        }
+
+        if avail_colors < self.prog.colors
+            && 1 + max(slot_color, instr_color) == avail_colors
+        {
+            avail_colors += 1;
+        }
+
+        self.avail_params.push((avail_states, avail_colors));
+    }
+}
+
+impl<'h> Brancher<'h> for TreeProg<'h> {
+    fn prog(&self) -> &Prog {
+        &self.prog
+    }
+
+    fn sim_lim(&self) -> Step {
+        self.sim_lim
+    }
+
+    fn remaining_slots(&self) -> Slots {
+        self.remaining_slots
+    }
+
+    fn harvester(&self) -> &'h dyn Fn(&Prog) {
+        self.harvester
+    }
+
+    fn insert(&mut self, slot: &Slot, instr: &Instr) {
+        self.remaining_slots -= 1;
+
+        self.update_avail(slot, instr);
+
+        self.prog.instrs.insert(*slot, *instr);
+    }
+
+    fn remove(&mut self, slot: &Slot) {
+        self.prog.instrs.remove(slot);
+
+        self.avail_params.pop();
+
+        self.remaining_slots += 1;
+    }
+
+    fn avail_instrs(&self) -> &'h [Instr] {
+        let (avail_states, avail_colors) = self.avail_params();
+
+        &self.instr_table[avail_states as usize][avail_colors as usize]
     }
 }
 
