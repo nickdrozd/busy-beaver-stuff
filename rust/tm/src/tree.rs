@@ -333,8 +333,6 @@ pub fn build_tree(
         init_instrs.retain(|instr| matches!(instr, (_, _, 1)));
     }
 
-    let init_slot = (1, 0);
-
     init_instrs.par_iter().for_each(|&next_instr| {
         let mut prog = TreeProg::init(
             params,
@@ -344,7 +342,7 @@ pub fn build_tree(
             &instr_table,
         );
 
-        prog.with_instr(&init_slot, &next_instr, |prog| {
+        prog.with_instr(&(1, 0), &next_instr, |prog| {
             prog.branch(Config::init_stepped());
         });
     });
