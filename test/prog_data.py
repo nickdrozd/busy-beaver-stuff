@@ -1239,6 +1239,10 @@ KERNEL = {
     "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...": 3,
     "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0RF  1RA 1LC": 3,
     "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  ... 1RA": 3,
+    "1RB ...  1LC 0RF  1RE 0LD  0LC 1RB  1RA 1RE  1RE 0RD": 3,
+    "1RB 0LE  1RC 1RB  1RD ...  1LA 0RF  0LA 1RD  1RB 0RE": 3,
+    "1RB 0RF  1RC 1RB  1RD ...  1LE 0RA  1RB 0LF  0LE 1RD": 3,
+    "1RB 1RA  1RC ...  1LD 0RF  1RA 0LE  0LD 1RC  1RA 0RE": 3,
 
     "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": 3,
     "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF": 3,
@@ -4068,6 +4072,10 @@ DO_HALT: set[str] = {
     "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ...",  # 10^^24
 
     # 6/2
+    "1RB ...  1LC 0RF  1RE 0LD  0LC 1RB  1RA 1RE  1RE 0RD",  # 2^^2^^2^^9
+    "1RB 0LE  1RC 1RB  1RD ...  1LA 0RF  0LA 1RD  1RB 0RE",  # 2^^2^^2^^9
+    "1RB 0RF  1RC 1RB  1RD ...  1LE 0RA  1RB 0LF  0LE 1RD",  # 2^^2^^2^^9
+    "1RB 1RA  1RC ...  1LD 0RF  1RA 0LE  0LD 1RC  1RA 0RE",  # 2^^2^^2^^9
     "1RB 1LC  1LA 1RD  1LA 0LA  1LD 0RE  0RF 1RB  ... 1LB",  # 10^^10^7
     "1RB 1LC  1LA 1RD  1LA 0LA  1LD 0RE  0RF 1RB  ... 1LC",  # 10^^10^7
     "1RB 1LC  1LA 1RD  1LA 0LA  1LF 0RE  0RF 1RB  ... 1LB",  # 10^^10^7
@@ -4445,11 +4453,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 115981,
+    "adds": 116333,
     "divs": 14514,
-    "exps": 112384,
-    "muls": 13181,
-    "totl": 256060,
+    "exps": 112400,
+    "muls": 13289,
+    "totl": 256536,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -4867,6 +4875,30 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ** 301)",
             "(547 + ((2 ** 164) * (4 + ((2 ** 165) * (4 + ((2 ** 166) * (4 + ((2 ** 167) * (4 + ((2 ** 168) * (4 + (2 ** 171))))))))))))",
             "133323",
+        ),
+        "1RB ...  1LC 0RF  1RE 0LD  0LC 1RB  1RA 1RE  1RE 0RD": (
+            11321,
+            "(10 ** 70)",
+            "(93 + ((2 ** 55) * (16 + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
+            "(33190 + ((2 ** 55) * ((~10^54) + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
+        ),
+        "1RB 0LE  1RC 1RB  1RD ...  1LA 0RF  0LA 1RD  1RB 0RE": (
+            10272,
+            "(10 ** 70)",
+            "(91 + ((2 ** 55) * (16 + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
+            "(33195 + ((~10^51) * (2 ** 63)))",
+        ),
+        "1RB 0RF  1RC 1RB  1RD ...  1LE 0RA  1RB 0LF  0LE 1RD": (
+            10272,
+            "(10 ** 70)",
+            "(91 + ((2 ** 55) * (16 + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
+            "(33195 + ((~10^51) * (2 ** 63)))",
+        ),
+        "1RB 1RA  1RC ...  1LD 0RF  1RA 0LE  0LD 1RC  1RA 0RE": (
+            11323,
+            "(10 ** 70)",
+            "(93 + ((2 ** 55) * (16 + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
+            "(33190 + ((2 ** 55) * ((~10^54) + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
         ),
     },
 
