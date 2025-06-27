@@ -4,7 +4,8 @@ use rayon::prelude::*;
 
 use crate::{
     instrs::{
-        Color, GetInstr as _, Instr, Params, Parse, Prog, Slot, State,
+        Color, GetInstr as _, Instr, Params, Parse, Prog, Shift, Slot,
+        State,
     },
     tape::{MachineTape as _, MedTape as Tape},
     Goal,
@@ -16,7 +17,7 @@ type Slots = u8;
 
 /**************************************/
 
-const SHIFTS: [bool; 2] = [false, true];
+const SHIFTS: [Shift; 2] = [false, true];
 
 type InstrTable = Vec<Vec<Vec<Instr>>>;
 
