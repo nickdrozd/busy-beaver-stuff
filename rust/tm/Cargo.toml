@@ -9,8 +9,8 @@ crate-type = ["lib"]
 [dependencies]
 ahash = "*"
 rayon = "*"
-mimalloc= "*"
+mimalloc = "*"
 num-bigint = "*"
 num-traits = "*"
 num-integer = "*"
-pyo3 = { version = "*", features = ["extension-module", "num-bigint"] }
+pyo3 = { version = "*", features = ["num-bigint"] }

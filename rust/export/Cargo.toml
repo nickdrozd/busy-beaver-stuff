@@ -8,4 +8,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 tm = { path = "../tm" }
-pyo3 = { version = "*", features = ["extension-module", "num-bigint"] }
+pyo3 = { version = "*", features = ["extension-module"] }
