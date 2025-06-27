@@ -1170,6 +1170,35 @@ UNDEFINED = {
         "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB ...": ( 23, 'E1'),
         "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB 1RE": ( 27, 'B1'),
     },
+
+    "1RB 1LD  1RC 0RB  0LD 1RA  1LB 1LC": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
+        "1RB ...  1RC ...  0LD ...  ... ...": ( 3, 'D1'),
+        "1RB ...  1RC ...  0LD ...  ... 1LC": ( 4, 'C1'),
+        "1RB ...  1RC ...  0LD 1RA  ... 1LC": ( 5, 'A1'),
+        "1RB 1LD  1RC ...  0LD 1RA  ... 1LC": ( 8, 'D0'),
+        "1RB 1LD  1RC ...  0LD 1RA  1LB 1LC": (12, 'B1'),
+    },
+
+    "1RB 1LD  0RC 1LA  0LC 1LA  0LA 1LA": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  0RC ...  ... ...  ... ...": ( 2, 'C0'),
+        "1RB ...  0RC ...  0LC ...  ... ...": ( 4, 'C1'),
+        "1RB ...  0RC ...  0LC 1LA  ... ...": ( 6, 'B1'),
+        "1RB ...  0RC 1LA  0LC 1LA  ... ...": ( 7, 'A1'),
+        "1RB 1LD  0RC 1LA  0LC 1LA  ... ...": ( 8, 'D0'),
+        "1RB 1LD  0RC 1LA  0LC 1LA  0LA ...": (15, 'D1'),
+    },
+
+    "1RB 1LA  1RC 1LB  0LA 1LD  ... 1LA": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
+        "1RB ...  1RC ...  0LA ...  ... ...": ( 3, 'A1'),
+        "1RB 1LA  1RC ...  0LA ...  ... ...": ( 6, 'B1'),
+        "1RB 1LA  1RC 1LB  0LA ...  ... ...": ( 9, 'C1'),
+        "1RB 1LA  1RC 1LB  0LA 1LD  ... ...": (10, 'D1'),
+    },
 }
 
 MOTHER = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
@@ -2039,6 +2068,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
             "1RB 1LC  1LB 1RC  0LD 0RC  1LA 0RA",
             "1RB 1LC  1RC 0LA  0LD 0RC  0RB 1LA",
             "1RB 1LC  1RC 0LA  0RD 0LC  1LA 0RB",
+            "1RB 1LD  1RC 0RB  0LD 1RA  1LB 1LC",
             "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
             "1RB 1RC  0LC 0RB  1LD 1LB  0RD 1LA",
             "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
@@ -2399,7 +2429,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
     "blank": {
         "depth_limit": 2,
         "step_limit": 3,
-        "spinout": 135,
+        "spinout": 136,
         "linrec": 73,
     },
     "spinout": {
@@ -3266,7 +3296,7 @@ CPS_FALSE_NEGATIVES = {
 
 CTL_FALSE_NEGATIVE_COUNTS = {
     "halt": 103,
-    "blank": 416,
+    "blank": 417,
     "spinout": 251,
 }
 
@@ -3657,6 +3687,7 @@ CTL_FALSE_NEGATIVES = {
         "1RB 1LC  1RC 0LD  1LA 0RB  0RC 1LD",
         "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA",
         "1RB 1LD  0RC 0RB  1LC 1RA  0RD 0LA",
+        "1RB 1LD  1RC 0RB  0LD 1RA  1LB 1LC",
         "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
         "1RB 1RA  1LC 0LD  1RA 0LB  0LB 0RA",
         "1RB 1RA  1LC 0RB  1RC 0LD  1LA 1LD",
