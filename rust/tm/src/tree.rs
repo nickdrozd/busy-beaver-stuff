@@ -19,7 +19,8 @@ type Slots = u8;
 
 const SHIFTS: [Shift; 2] = [false, true];
 
-type InstrTable = Vec<Vec<Vec<Instr>>>;
+type Instrs = Vec<Instr>;
+type InstrTable = Vec<Vec<Instrs>>;
 
 fn make_instr_table(
     max_states: usize,
