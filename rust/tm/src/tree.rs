@@ -105,7 +105,7 @@ impl Config {
 
 /**************************************/
 
-trait Brancher<'h> {
+trait Tree<'h> {
     fn prog(&self) -> &Prog;
     fn sim_lim(&self) -> Step;
     fn remaining_slots(&self) -> Slots;
@@ -190,7 +190,7 @@ trait Brancher<'h> {
     }
 }
 
-impl<'h, T: Brancher<'h>> Parse for T {
+impl<'h, T: Tree<'h>> Parse for T {
     fn read(_: &str) -> Self {
         unreachable!()
     }
@@ -202,7 +202,7 @@ impl<'h, T: Brancher<'h>> Parse for T {
 
 /**************************************/
 
-struct TreeProg<'h> {
+struct BasicTree<'h> {
     prog: Prog,
     sim_lim: Step,
     remaining_slots: Slots,
@@ -212,7 +212,7 @@ struct TreeProg<'h> {
     instr_table: &'h InstrTable,
 }
 
-impl<'h> TreeProg<'h> {
+impl<'h> BasicTree<'h> {
     fn init(
         params @ (states, colors): Params,
         halt: bool,
@@ -266,7 +266,7 @@ impl<'h> TreeProg<'h> {
     }
 }
 
-impl<'h> Brancher<'h> for TreeProg<'h> {
+impl<'h> Tree<'h> for BasicTree<'h> {
     fn prog(&self) -> &Prog {
         &self.prog
     }
@@ -334,7 +334,7 @@ pub fn build_tree(
     }
 
     init_instrs.par_iter().for_each(|&next_instr| {
-        let mut prog = TreeProg::init(
+        let mut prog = BasicTree::init(
             params,
             halt,
             sim_lim,
