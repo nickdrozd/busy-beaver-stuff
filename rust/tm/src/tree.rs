@@ -105,26 +105,81 @@ impl Config {
 
 /**************************************/
 
-trait Tree<'h> {
-    fn prog(&self) -> &Prog;
-    fn sim_lim(&self) -> Step;
-    fn remaining_slots(&self) -> Slots;
-    fn harvester(&self) -> &'h dyn Fn(&Prog);
+struct TreeCore<'h> {
+    prog: Prog,
+    sim_lim: Step,
+    remaining_slots: Slots,
+    harvester: &'h dyn Fn(&Prog),
+}
 
-    fn final_slot(&self) -> bool {
-        self.remaining_slots() == 0
+impl<'h> TreeCore<'h> {
+    fn init(
+        params @ (states, colors): Params,
+        halt: bool,
+        sim_lim: Step,
+        harvester: &'h dyn Fn(&Prog),
+    ) -> Self {
+        let prog = Prog::init_stepped(params);
+
+        let remaining_slots =
+            ((states * colors) as Slots) - Slots::from(halt) - 2;
+
+        Self {
+            prog,
+            sim_lim,
+            remaining_slots,
+            harvester,
+        }
+    }
+
+    const fn final_slot(&self) -> bool {
+        self.remaining_slots == 0
     }
 
     fn run(&self, config: &mut Config) -> RunResult {
-        config.run(self.prog(), self.sim_lim())
+        config.run(&self.prog, self.sim_lim)
     }
 
     fn incomplete(&self) -> bool {
-        self.prog().states_unreached() || self.prog().colors_unreached()
+        self.prog.states_unreached() || self.prog.colors_unreached()
     }
 
     fn harvest(&self) {
-        (self.harvester())(self.prog());
+        (self.harvester)(&self.prog);
+    }
+
+    fn insert(&mut self, slot: &Slot, instr: &Instr) {
+        self.remaining_slots -= 1;
+
+        self.prog.instrs.insert(*slot, *instr);
+    }
+
+    fn remove(&mut self, slot: &Slot) {
+        self.prog.instrs.remove(slot);
+
+        self.remaining_slots += 1;
+    }
+}
+
+/**************************************/
+
+trait Tree<'h> {
+    fn core(&self) -> &TreeCore<'_>;
+
+    fn final_slot(&self) -> bool {
+        self.core().final_slot()
+    }
+
+    fn run(&self, config: &mut Config) -> RunResult {
+        self.core().run(config)
+    }
+
+    fn incomplete(&self) -> bool {
+        self.core().incomplete()
+    }
+
+    fn harvest(&self) {
+        self.core().harvest();
     }
 
     fn avail_instrs(&self) -> &'h [Instr];
@@ -196,17 +251,14 @@ impl<'h, T: Tree<'h>> Parse for T {
     }
 
     fn show(&self) -> String {
-        self.prog().show()
+        self.core().prog.show()
     }
 }
 
 /**************************************/
 
 struct BasicTree<'h> {
-    prog: Prog,
-    sim_lim: Step,
-    remaining_slots: Slots,
-    harvester: &'h dyn Fn(&Prog),
+    core: TreeCore<'h>,
 
     avail_params: Vec<Params>,
     instr_table: &'h InstrTable,
@@ -220,20 +272,14 @@ impl<'h> BasicTree<'h> {
         harvester: &'h dyn Fn(&Prog),
         instr_table: &'h InstrTable,
     ) -> Self {
-        let prog = Prog::init_stepped(params);
-
-        let remaining_slots =
-            ((states * colors) as Slots) - Slots::from(halt) - 2;
+        let core = TreeCore::init(params, halt, sim_lim, harvester);
 
         let init_avail = (min(3, states), min(3, colors));
 
         let avail_params = vec![init_avail];
 
         Self {
-            prog,
-            sim_lim,
-            remaining_slots,
-            harvester,
+            core,
             avail_params,
             instr_table,
         }
@@ -250,13 +296,15 @@ impl<'h> BasicTree<'h> {
     ) {
         let (mut avail_states, mut avail_colors) = self.avail_params();
 
-        if avail_states < self.prog.states
+        let prog = &self.core.prog;
+
+        if avail_states < prog.states
             && 1 + max(slot_state, instr_state) == avail_states
         {
             avail_states += 1;
         }
 
-        if avail_colors < self.prog.colors
+        if avail_colors < prog.colors
             && 1 + max(slot_color, instr_color) == avail_colors
         {
             avail_colors += 1;
@@ -267,36 +315,20 @@ impl<'h> BasicTree<'h> {
 }
 
 impl<'h> Tree<'h> for BasicTree<'h> {
-    fn prog(&self) -> &Prog {
-        &self.prog
-    }
-
-    fn sim_lim(&self) -> Step {
-        self.sim_lim
-    }
-
-    fn remaining_slots(&self) -> Slots {
-        self.remaining_slots
-    }
-
-    fn harvester(&self) -> &'h dyn Fn(&Prog) {
-        self.harvester
+    fn core(&self) -> &TreeCore<'_> {
+        &self.core
     }
 
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
-        self.remaining_slots -= 1;
+        self.core.insert(slot, instr);
 
         self.update_avail(slot, instr);
-
-        self.prog.instrs.insert(*slot, *instr);
     }
 
     fn remove(&mut self, slot: &Slot) {
-        self.prog.instrs.remove(slot);
+        self.core.remove(slot);
 
         self.avail_params.pop();
-
-        self.remaining_slots += 1;
     }
 
     fn avail_instrs(&self) -> &'h [Instr] {
