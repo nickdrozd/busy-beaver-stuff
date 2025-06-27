@@ -33,7 +33,7 @@ fn make_instr_table(
             let mut instrs = Vec::with_capacity(colors * 2 * states);
 
             for color in 0..colors {
-                for &shift in &SHIFTS {
+                for shift in SHIFTS {
                     for state in 0..states {
                         instrs.push((
                             color as Color,
