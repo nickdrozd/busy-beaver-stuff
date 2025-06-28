@@ -4,7 +4,6 @@ use tm::{
     blocks::opt_block,
     cps::Cps as _,
     ctl::Ctl as _,
-    graph::is_connected,
     instrs::{
         show_state, GetInstr as _, Instr, Instrs, Parse as _, Prog,
         Slot, State,
@@ -20,8 +19,8 @@ use tm::{
 /***************************************/
 
 #[pyfunction]
-pub fn py_is_connected(prog: &str, states: u8) -> bool {
-    is_connected(&Prog::read(prog), states)
+pub fn py_is_connected(prog: &str) -> bool {
+    Prog::read(prog).is_connected()
 }
 
 #[pyfunction]

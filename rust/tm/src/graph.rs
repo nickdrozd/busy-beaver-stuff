@@ -1,83 +1,87 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::instrs::Prog;
+use crate::instrs::{Instrs, Prog};
 
 type State = u8;
 
 /**************************************/
 
-pub fn is_connected(prog: &Prog, states: State) -> bool {
-    if prog.instrs.values().all(|&(_, _, state)| state != 0) {
-        return false;
-    }
+impl Prog {
+    pub fn is_connected(&self) -> bool {
+        if self.instrs.values().all(|&(_, _, state)| state != 0) {
+            return false;
+        }
 
-    let exitpoints = get_exitpoints(prog);
+        let states = self.states as State;
 
-    if exitpoints.len() < states as usize {
-        return false;
-    }
+        let exitpoints = get_exitpoints(&self.instrs);
 
-    let last_state = states - 1;
+        if exitpoints.len() < states as usize {
+            return false;
+        }
 
-    let last_exits = &exitpoints[&last_state];
+        let last_state = states - 1;
 
-    if last_exits.contains(&0) {
-        return true;
-    }
+        let last_exits = &exitpoints[&last_state];
 
-    let mut reached: Set<State> = Set::from([last_state]);
-
-    let mut todo: Vec<State> = last_exits.clone();
-
-    for _ in 0..states {
-        let Some(state) = todo.pop() else {
-            break;
-        };
-
-        if state == 0 {
+        if last_exits.contains(&0) {
             return true;
         }
 
-        if reached.contains(&state) {
-            continue;
-        }
+        let mut reached: Set<State> = Set::from([last_state]);
 
-        reached.insert(state);
+        let mut todo: Vec<State> = last_exits.clone();
 
-        for &exit in &exitpoints[&state] {
-            if !reached.contains(&exit) && !todo.contains(&exit) {
-                todo.push(exit);
+        for _ in 0..states {
+            let Some(state) = todo.pop() else {
+                break;
+            };
+
+            if state == 0 {
+                return true;
+            }
+
+            if reached.contains(&state) {
+                continue;
+            }
+
+            reached.insert(state);
+
+            for &exit in &exitpoints[&state] {
+                if !reached.contains(&exit) && !todo.contains(&exit) {
+                    todo.push(exit);
+                }
             }
         }
-    }
 
-    false
+        false
+    }
 }
 
 #[cfg(test)]
 use crate::instrs::Parse as _;
 
 #[cfg(test)]
-const UNCONNECTED: [(&str, State); 2] = [
-    ("1RB 1LB  1LA 1LC  1RC 0LC", 3),
-    ("1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD", 5),
+const UNCONNECTED: [&str; 2] = [
+    ("1RB 1LB  1LA 1LC  1RC 0LC"),
+    ("1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD"),
 ];
 
 #[cfg(test)]
-const CONNECTED: [(&str, State); 3] = [
-    ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", 4),
-    ("1RB 0LB  0LC 0RD  1RD 1LB  1LE 0RA  ... 1LA", 5),
-    ("1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC", 5),
+const CONNECTED: [&str; 3] = [
+    ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA"),
+    ("1RB 0LB  0LC 0RD  1RD 1LB  1LE 0RA  ... 1LA"),
+    ("1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC"),
 ];
 
 #[test]
 fn test_connected() {
-    for (prog, states) in UNCONNECTED {
-        assert!(!is_connected(&Prog::read(prog), states));
+    for prog in UNCONNECTED {
+        assert!(!Prog::read(prog).is_connected());
     }
 
-    for (prog, states) in CONNECTED {
-        assert!(is_connected(&Prog::read(prog), states));
+    for prog in CONNECTED {
+        assert!(Prog::read(prog).is_connected());
     }
 }
 
@@ -85,10 +89,10 @@ fn test_connected() {
 
 type Exitpoints = Dict<State, Vec<State>>;
 
-fn get_exitpoints(prog: &Prog) -> Exitpoints {
+fn get_exitpoints(instrs: &Instrs) -> Exitpoints {
     let mut exitpoints = Exitpoints::new();
 
-    for (&(src, _), &(_, _, dst)) in &prog.instrs {
+    for (&(src, _), &(_, _, dst)) in instrs {
         if src == dst {
             continue;
         }
@@ -120,7 +124,7 @@ macro_rules! dict_from {
 macro_rules! assert_exitpoints {
     ($input:expr, { $($key:expr => [$($val:expr),*]),* $(,)? }) => {
         assert_eq!(
-            get_exitpoints(&Prog::read($input)),
+            get_exitpoints(&Prog::read($input).instrs),
             dict_from! { $($key => [$($val),*]),* },
         );
     }

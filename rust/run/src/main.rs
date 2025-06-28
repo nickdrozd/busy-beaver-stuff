@@ -10,7 +10,6 @@ use tm::{
     blocks::opt_block,
     cps::Cps as _,
     ctl::Ctl as _,
-    graph::is_connected,
     instrs::{Params, Prog},
     machine::{quick_term_or_rec, run_for_infrul},
     macros::{make_backsymbol_macro, make_block_macro},
@@ -223,7 +222,7 @@ fn test_tree() {
             ((4, 2), 0, 25, (13, 458_588)),
             //
             |prog: &Prog| {
-                !is_connected(prog, 4)
+                !prog.is_connected()
                     || quick_term_or_rec(prog, 200).is_settled()
                     || prog.cant_halt(11).is_settled()
                     || prog.ctl_cant_halt(84)
@@ -235,7 +234,7 @@ fn test_tree() {
             ((4, 2), 1, 99, (104, 2_222_970)),
             //
             |prog: &Prog| {
-                !is_connected(prog, 4)
+                !prog.is_connected()
                     || prog.cant_spin_out(1).is_settled()
                     || quick_term_or_rec(prog, 1_000).is_settled()
                     || prog.cant_spin_out(11).is_settled()
@@ -249,7 +248,7 @@ fn test_tree() {
             ((4, 2), 2, 99, (262, 2_222_970)),
             //
             |prog: &Prog| {
-                !is_connected(prog, 4)
+                !prog.is_connected()
                     || prog.cant_blank(55).is_settled()
                     || quick_term_or_rec(prog, 1_000).is_settled()
                     || prog.ctl_cant_blank(60)
@@ -261,7 +260,7 @@ fn test_tree() {
             ((4, 2), 3, 99, (135_122, 2_222_970)),
             //
             |prog: &Prog| {
-                !is_connected(prog, 4)
+                !prog.is_connected()
                     || quick_term_or_rec(prog, 5_000).is_settled()
             }
         ),
@@ -346,7 +345,7 @@ fn test_tree_slow() {
             ((5, 2), 0, 700, (12_900, 94_160_306)),
             //
             |prog: &Prog| {
-                !is_connected(prog, 5)
+                !prog.is_connected()
                     || prog.cant_halt(1).is_settled()
                     || quick_term_or_rec(prog, 1_000).is_settled()
                     || prog.cant_halt(44).is_settled()
@@ -359,7 +358,7 @@ fn test_tree_slow() {
             ((5, 2), 1, TREE_LIM, (117_874, 523_722_375)),
             //
             |prog: &Prog| {
-                !is_connected(prog, 5)
+                !prog.is_connected()
                     || prog.cant_spin_out(2).is_settled()
                     || quick_term_or_rec(prog, 3_000).is_settled()
                     || prog.cant_spin_out(30).is_settled()
