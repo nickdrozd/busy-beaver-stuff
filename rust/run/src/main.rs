@@ -142,6 +142,11 @@ fn test_tree() {
             }
         ),
         (
+            ((2, 2), 3, 4, (4, 89)),
+            //
+            |prog: &Prog| { quick_term_or_rec(prog, 19).is_settled() }
+        ),
+        (
             ((3, 2), 0, 12, (0, 3_030)),
             //
             |prog: &Prog| {
@@ -174,6 +179,11 @@ fn test_tree() {
             }
         ),
         (
+            ((3, 2), 3, 13, (643, 12_470)),
+            //
+            |prog: &Prog| { quick_term_or_rec(prog, 206).is_settled() }
+        ),
+        (
             ((2, 3), 0, 7, (0, 2_394)),
             //
             |prog: &Prog| {
@@ -203,6 +213,11 @@ fn test_tree() {
                     || prog.ctl_cant_blank(32)
                     || prog.cps_cant_blank(7)
             }
+        ),
+        (
+            ((2, 3), 3, 20, (1_031, 8_847)),
+            //
+            |prog: &Prog| { quick_term_or_rec(prog, 301).is_settled() }
         ),
         (
             ((4, 2), 0, 25, (13, 458_588)),
@@ -243,6 +258,14 @@ fn test_tree() {
             }
         ),
         (
+            ((4, 2), 3, 99, (135_122, 2_222_970)),
+            //
+            |prog: &Prog| {
+                !is_connected(prog, 4)
+                    || quick_term_or_rec(prog, 5_000).is_settled()
+            }
+        ),
+        (
             ((2, 4), 0, 109, (43, 310_211)),
             //
             |prog: &Prog| {
@@ -280,6 +303,13 @@ fn test_tree() {
                     || prog.ctl_cant_blank(120)
                     || prog.cps_cant_blank(5)
                     || check_inf(prog, 300, 1000)
+            }
+        ),
+        (
+            ((2, 4), 3, 876, (257_525, 1_698_539)),
+            //
+            |prog: &Prog| {
+                quick_term_or_rec(prog, 5_000).is_settled()
             }
         ),
     ];
@@ -440,49 +470,6 @@ fn test_reason() {
 
 /**************************************/
 
-fn assert_linrec(params: Params, expected: u64) {
-    let holdout_count = set_val(0);
-
-    build_tree(params, get_goal(3), TREE_LIM, &|prog| {
-        let result = quick_term_or_rec(prog, LINREC);
-
-        if result.is_settled() {
-            return;
-        }
-
-        *access(&holdout_count) += 1;
-
-        // println!("{}", prog.show());
-    });
-
-    let result = get_val(holdout_count);
-
-    assert_eq!(result, expected, "({params:?}, {result:?})");
-}
-
-macro_rules! assert_linrec_results {
-    ( $( ( $params:expr, $leaves:expr ) ),* $(,)? ) => {
-        vec![$( ($params, $leaves) ),*]
-            .par_iter().for_each(|&(params, expected)| {
-                assert_linrec(params, expected);
-            });
-    };
-}
-
-const LINREC: usize = 20_000;
-
-fn test_linrec() {
-    assert_linrec_results![
-        ((2, 2), 4),
-        ((3, 2), 643),
-        ((2, 3), 1_031),
-        ((4, 2), 138_585),
-        ((2, 4), 257_311),
-    ];
-}
-
-/**************************************/
-
 fn main() {
     println!("tree fast");
     test_tree();
@@ -495,9 +482,6 @@ fn main() {
 
     println!("reason");
     test_reason();
-
-    println!("linrec");
-    test_linrec();
 
     println!("tree slow");
     test_tree_slow();
