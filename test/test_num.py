@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 Exp = ExpT.make
 
 
-CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
+CACHES: dict[str, dict[Count, dict[Count, Count]]] = {  # ty: ignore[invalid-assignment]
     "adds": Add.instances,   # type: ignore[dict-item]
     "muls": Mul.instances,   # type: ignore[dict-item]
     "divs": Div.instances,   # type: ignore[dict-item]
@@ -177,15 +177,15 @@ class TestNum(TestCase):
 
         self.assertIn(
             7 * Exp(2, 3),
-            expr)  # type: ignore[arg-type]
+            expr)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         self.assertNotIn(
             -4 + (7 * Exp(2, 3)),
-            expr)  # type: ignore[arg-type]
+            expr)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         self.assertNotIn(
             (-4 + (7 * Exp(2, 3))) // 3,
-            expr)  # type: ignore[arg-type]
+            expr)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         self.assertNotIn(
             expr,

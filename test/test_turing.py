@@ -526,7 +526,7 @@ class Reason(TuringTest):
                 for prog in progs:
                     result = str(reasoner(prog, REASON_LIMIT))
 
-                    term_results[result].add(prog)  # type: ignore[index]
+                    term_results[result].add(prog)  # type: ignore[index]  # ty: ignore[invalid-argument-type]
 
         def assert_counts(data: dict[Goal, BackwardCats]):
             counts = {
@@ -540,7 +540,7 @@ class Reason(TuringTest):
             if counts != BACKWARD_FALSE_NEGATIVES_COUNTS:
                 print(json.dumps(counts, indent = 4))
                 for cat, res in data.items():
-                    if progs := res['refuted']:  # type: ignore[index]
+                    if progs := res['refuted']:  # type: ignore[index]  # ty: ignore[invalid-argument-type]
                         print(cat)
                         for prog in progs:
                             print(prog)
@@ -1729,7 +1729,7 @@ class Prover(RunProver):
                     isinstance(
                         macro := self.machine.program,
                         MacroProg)):
-                result *= macro.cells
+                result *= macro.cells  # ty: ignore[unresolved-attribute]
 
             if isinstance(marks, int):
                 self.assertEqual(result, marks)
@@ -1786,7 +1786,7 @@ class Prover(RunProver):
             self.run_bb(
                 prog,
                 normal = False,
-                **(
+                **(  # ty: ignore[invalid-argument-type]
                     {'opt_macro': 3_000}  # type: ignore[arg-type]
                     if (blocks := MACRO_FAILURES.get(prog)) is None else
                     {'blocks': blocks}
@@ -1940,7 +1940,7 @@ class Prover(RunProver):
                             if isinstance(marks, int) else
                             marks.estimate())
                         if marks != -1 else
-                        str(self.machine.rulapp.estimate())  # type: ignore[union-attr]
+                        str(self.machine.rulapp.estimate())  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
                     )
                 except NotImplementedError as err:
                     estimate = err.args[0]

@@ -84,9 +84,12 @@ lint : clippy rust
 	$(PYLINT) --version
 	$(PYLINT) --enable-all-extensions $(MODULES) --ignore-patterns=.*.pyi
 
+TY = $(PYTHON) -m ty
 MYPY = $(PYTHON) -m mypy
 
 type :
+	$(TY) --version
+	$(TY) check $(MODULES)
 	$(MYPY) --version
 	$(MYPY) $(MODULES)
 
