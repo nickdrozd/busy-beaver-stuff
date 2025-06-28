@@ -320,7 +320,8 @@ fn test_tree_slow() {
             ((3, 3), 0, 2_700, (9_449, 25_028_837)),
             //
             |prog: &Prog| {
-                prog.cant_halt(1).is_settled()
+                !prog.is_connected()
+                    || prog.cant_halt(1).is_settled()
                     || quick_term_or_rec(prog, 1_200).is_settled()
                     || prog.cant_halt(9).is_settled()
                     || prog.ctl_cant_halt(200)
@@ -329,10 +330,11 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((3, 3), 1, 3_000, (98_498, 147_230_805)),
+            ((3, 3), 1, 3_000, (98_400, 147_230_805)),
             //
             |prog: &Prog| {
-                prog.cant_spin_out(1).is_settled()
+                !prog.is_connected()
+                    || prog.cant_spin_out(1).is_settled()
                     || quick_term_or_rec(prog, 2_000).is_settled()
                     || prog.cant_spin_out(73).is_settled()
                     || prog.ctl_cant_spin_out(200)
