@@ -110,6 +110,7 @@ impl Config {
 struct TreeCore<'h> {
     prog: Prog,
     sim_lim: Step,
+    avail_params: Vec<Params>,
     remaining_slots: Slots,
     harvester: &'h dyn Fn(&Prog),
 }
@@ -123,12 +124,17 @@ impl<'h> TreeCore<'h> {
     ) -> Self {
         let prog = Prog::init_stepped(params);
 
+        let init_avail = (min(3, states), min(3, colors));
+
+        let avail_params = vec![init_avail];
+
         let remaining_slots =
             ((states * colors) as Slots) - Slots::from(halt) - 2;
 
         Self {
             prog,
             sim_lim,
+            avail_params,
             remaining_slots,
             harvester,
         }
@@ -154,12 +160,44 @@ impl<'h> TreeCore<'h> {
         self.remaining_slots -= 1;
 
         self.prog.instrs.insert(*slot, *instr);
+
+        self.update_avail(slot, instr);
     }
 
     fn remove(&mut self, slot: &Slot) {
+        self.avail_params.pop();
+
         self.prog.instrs.remove(slot);
 
         self.remaining_slots += 1;
+    }
+
+    fn avail_params(&self) -> Params {
+        *self.avail_params.last().unwrap()
+    }
+
+    fn update_avail(
+        &mut self,
+        (slot_state, slot_color): &Slot,
+        (instr_color, _, instr_state): &Instr,
+    ) {
+        let (mut avail_states, mut avail_colors) = self.avail_params();
+
+        let prog = &self.prog;
+
+        if avail_states < prog.states
+            && 1 + max(slot_state, instr_state) == avail_states
+        {
+            avail_states += 1;
+        }
+
+        if avail_colors < prog.colors
+            && 1 + max(slot_color, instr_color) == avail_colors
+        {
+            avail_colors += 1;
+        }
+
+        self.avail_params.push((avail_states, avail_colors));
     }
 }
 
@@ -262,13 +300,12 @@ impl<'h, T: Tree<'h>> Parse for T {
 struct BasicTree<'h> {
     core: TreeCore<'h>,
 
-    avail_params: Vec<Params>,
     instr_table: &'h InstrTable,
 }
 
 impl<'h> BasicTree<'h> {
     fn init(
-        params @ (states, colors): Params,
+        params: Params,
         halt: bool,
         sim_lim: Step,
         harvester: &'h dyn Fn(&Prog),
@@ -276,43 +313,7 @@ impl<'h> BasicTree<'h> {
     ) -> Self {
         let core = TreeCore::init(params, halt, sim_lim, harvester);
 
-        let init_avail = (min(3, states), min(3, colors));
-
-        let avail_params = vec![init_avail];
-
-        Self {
-            core,
-            avail_params,
-            instr_table,
-        }
-    }
-
-    fn avail_params(&self) -> Params {
-        *self.avail_params.last().unwrap()
-    }
-
-    fn update_avail(
-        &mut self,
-        (slot_state, slot_color): &Slot,
-        (instr_color, _, instr_state): &Instr,
-    ) {
-        let (mut avail_states, mut avail_colors) = self.avail_params();
-
-        let prog = &self.core.prog;
-
-        if avail_states < prog.states
-            && 1 + max(slot_state, instr_state) == avail_states
-        {
-            avail_states += 1;
-        }
-
-        if avail_colors < prog.colors
-            && 1 + max(slot_color, instr_color) == avail_colors
-        {
-            avail_colors += 1;
-        }
-
-        self.avail_params.push((avail_states, avail_colors));
+        Self { core, instr_table }
     }
 }
 
@@ -323,18 +324,14 @@ impl<'h> Tree<'h> for BasicTree<'h> {
 
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
         self.core.insert(slot, instr);
-
-        self.update_avail(slot, instr);
     }
 
     fn remove(&mut self, slot: &Slot) {
         self.core.remove(slot);
-
-        self.avail_params.pop();
     }
 
     fn avail_instrs(&self) -> &'h [Instr] {
-        let (avail_states, avail_colors) = self.avail_params();
+        let (avail_states, avail_colors) = self.core.avail_params();
 
         &self.instr_table[avail_states as usize][avail_colors as usize]
     }
