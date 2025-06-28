@@ -402,7 +402,7 @@ class Mul(Num):
             l, r = r, l
 
             if r.neg:
-                l, r = -l, -r  # type: ignore[assignment]
+                l, r = -l, -r  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
         assert r.pos
 

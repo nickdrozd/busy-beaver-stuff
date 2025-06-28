@@ -104,7 +104,7 @@ def calculate_diff(*counts: Count) -> Op | None:
     div, mod = divmod(count_2, count_1)
 
     divmods = tuple(
-        (bef, aft, *divmod(aft, bef))  # type: ignore[operator]
+        (bef, aft, *divmod(aft, bef))  # type: ignore[operator] # ty: ignore[no-matching-overload]
         for bef, aft in pairwise(rest)
     )
 

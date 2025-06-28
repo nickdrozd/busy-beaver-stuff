@@ -28,7 +28,7 @@ def make_macro(
         opt_macro: int | None = None,
         params: Params | None = None,
 ) -> GetInstr:
-    comp: GetInstr = tcompile(prog)
+    comp: GetInstr = tcompile(prog)  # ty: ignore[invalid-assignment]
 
     if opt_macro is not None:
         blocks = opt_block(prog, opt_macro)
@@ -46,10 +46,10 @@ def make_macro(
         comp = make_backsymbol_macro(comp, backsym, params)
 
     if transcript is not None:
-        comp = make_transcript_macro(comp, transcript)
+        comp = make_transcript_macro(comp, transcript)  # ty: ignore[invalid-assignment]
 
     if lru_history:
-        comp = make_lru_macro(comp)
+        comp = make_lru_macro(comp)  # ty: ignore[invalid-assignment]
 
     return comp
 
@@ -132,8 +132,8 @@ def prog_params(comp: GetInstr) -> Params:
     else:
         assert isinstance(comp, dict)
 
-        base_states = len(range(1 + max(s[2] for s in comp.values())))
-        base_colors = len(range(1 + max(s[0] for s in comp.values())))
+        base_states = len(range(1 + max(s[2] for s in comp.values())))  # ty: ignore[not-subscriptable]
+        base_colors = len(range(1 + max(s[0] for s in comp.values())))  # ty: ignore[not-subscriptable]
 
     return base_states, base_colors
 
@@ -162,7 +162,7 @@ class MacroProg:
 
     def __str__(self) -> str:
         comp_str = (
-            show_comp(comp)
+            show_comp(comp)  # ty: ignore[invalid-argument-type]
             if isinstance(comp := self.comp, dict) else
             str(comp)
         )

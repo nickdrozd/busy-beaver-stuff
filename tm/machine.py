@@ -86,7 +86,7 @@ class Machine:
     @property
     def prog_str(self) -> str:
         return (
-            show_comp(comp)
+            show_comp(comp)  # ty: ignore[invalid-argument-type]
             if isinstance(comp := self.program, dict) else
             str(comp)
         )
@@ -195,7 +195,7 @@ class Machine:
         loops = (
             {True: set(), False: set()}
             if not isinstance(comp, dict) else
-            blank_loops(comp)
+            blank_loops(comp)  # ty: ignore[invalid-argument-type]
         )
 
         step: int = 0

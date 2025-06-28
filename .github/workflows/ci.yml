@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pylint mypy[mypyc] coverage ruff
+          pip install pylint mypy[mypyc] coverage ruff ty
 
           rustup default nightly
           rustup component add clippy
