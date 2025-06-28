@@ -344,6 +344,11 @@ fn test_tree_slow() {
             }
         ),
         (
+            ((3, 3), 2, 3_000, (121_986_422, 147_230_805)),
+            //
+            |prog: &Prog| { prog.cant_blank(0).is_settled() }
+        ),
+        (
             ((5, 2), 0, 700, (12_900, 94_160_306)),
             //
             |prog: &Prog| {
@@ -369,6 +374,11 @@ fn test_tree_slow() {
                     || prog.seg_cant_spin_out(5).is_refuted()
                     || check_inf(prog, 300, 500)
             }
+        ),
+        (
+            ((5, 2), 2, TREE_LIM, (497_221_881, 523_722_375)),
+            //
+            |prog: &Prog| { prog.cant_blank(0).is_settled() }
         ),
         (
             ((2, 5), 0, TREE_LIM, (84_396, 69_757_168)),
