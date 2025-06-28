@@ -344,12 +344,10 @@ impl<'h> Tree<'h> for BasicTree<'h> {
 
 pub fn build_tree(
     params @ (states, colors): Params,
-    goal: Option<u8>,
+    goal: Option<Goal>,
     sim_lim: Step,
     harvester: &(impl Fn(&Prog) + Sync),
 ) {
-    let goal = goal.map(Goal::from);
-
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
