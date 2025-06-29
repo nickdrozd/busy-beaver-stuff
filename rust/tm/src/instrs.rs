@@ -58,9 +58,8 @@ impl Prog {
     pub fn erase_slots(&self) -> Set<Slot> {
         self.instrs
             .iter()
-            .filter_map(|(&(state, color), &instr)| match instr {
-                (0, _, _) if color != 0 => Some((state, color)),
-                _ => None,
+            .filter_map(|(&slot @ (_, co), &(pr, _, _))| {
+                (co != 0 && pr == 0).then_some(slot)
             })
             .collect()
     }
@@ -68,9 +67,8 @@ impl Prog {
     pub fn zr_shifts(&self) -> Set<(State, Shift)> {
         self.instrs
             .iter()
-            .filter_map(|(&slot, &(_, shift, trans))| match slot {
-                (state, 0) if trans == state => Some((state, shift)),
-                _ => None,
+            .filter_map(|(&slot, &(_, sh, st))| {
+                (slot == (st, 0)).then_some((st, sh))
             })
             .collect()
     }
