@@ -339,16 +339,14 @@ impl<'h> Tree<'h> for BasicTree<'h> {
 
 /**************************************/
 
-pub fn build_tree(
+fn build_all(
     params @ (states, colors): Params,
-    goal: Option<Goal>,
+    halt: bool,
     sim_lim: Step,
     harvester: &(impl Fn(&Prog) + Sync),
 ) {
     let init_states = min(3, states);
     let init_colors = min(3, colors);
-
-    let halt = goal.is_some_and(|goal| goal.is_halt());
 
     let instr_table =
         make_instr_table(states as usize, colors as usize);
@@ -357,10 +355,6 @@ pub fn build_tree(
         instr_table[init_states as usize][init_colors as usize].clone();
 
     init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
-
-    if states == 2 && goal.is_some_and(|goal| goal.is_spinout()) {
-        init_instrs.retain(|instr| matches!(instr, (_, _, 1)));
-    }
 
     init_instrs.par_iter().for_each(|&next_instr| {
         let mut prog = BasicTree::init(
@@ -375,4 +369,68 @@ pub fn build_tree(
             prog.branch(Config::init_stepped());
         });
     });
+}
+
+fn build_blank(
+    params: Params,
+    sim_lim: Step,
+    harvester: &(impl Fn(&Prog) + Sync),
+) {
+    build_all(params, false, sim_lim, harvester);
+}
+
+fn build_spinout(
+    params @ (states, colors): Params,
+    sim_lim: Step,
+    harvester: &(impl Fn(&Prog) + Sync),
+) {
+    let init_states = min(3, states);
+    let init_colors = min(3, colors);
+
+    let instr_table =
+        make_instr_table(states as usize, colors as usize);
+
+    let mut init_instrs =
+        instr_table[init_states as usize][init_colors as usize].clone();
+
+    init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
+
+    if states == 2 {
+        init_instrs.retain(|instr| matches!(instr, (_, _, 1)));
+    }
+
+    init_instrs.par_iter().for_each(|&next_instr| {
+        let mut prog = BasicTree::init(
+            params,
+            false,
+            sim_lim,
+            harvester,
+            &instr_table,
+        );
+
+        prog.with_instr(&(1, 0), &next_instr, |prog| {
+            prog.branch(Config::init_stepped());
+        });
+    });
+}
+
+/**************************************/
+
+pub fn build_tree(
+    params: Params,
+    goal: Option<Goal>,
+    sim_lim: Step,
+    harvester: &(impl Fn(&Prog) + Sync),
+) {
+    match goal {
+        Some(Goal::Halt) | None => {
+            build_all(params, goal.is_some(), sim_lim, harvester);
+        },
+        Some(Goal::Blank) => {
+            build_blank(params, sim_lim, harvester);
+        },
+        Some(Goal::Spinout) => {
+            build_spinout(params, sim_lim, harvester);
+        },
+    }
 }
