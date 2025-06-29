@@ -52,6 +52,26 @@ fn make_instr_table(
     table
 }
 
+type BlankInstrTable = [InstrTable; 2];
+
+fn make_blank_table(
+    max_states: usize,
+    max_colors: usize,
+) -> BlankInstrTable {
+    let table = make_instr_table(max_states, max_colors);
+
+    let mut partial = table.clone();
+
+    #[expect(clippy::needless_range_loop)]
+    for states in 2..=max_states {
+        for colors in 2..=max_colors {
+            partial[states][colors].retain(|&(co, _, _)| co == 0);
+        }
+    }
+
+    [table, partial]
+}
+
 /**************************************/
 
 enum RunResult {
@@ -222,7 +242,7 @@ trait Tree<'h> {
         self.core().harvest();
     }
 
-    fn avail_instrs(&self) -> &'h [Instr];
+    fn avail_instrs(&self, slot: &Slot) -> &'h [Instr];
 
     fn insert(&mut self, slot: &Slot, instr: &Instr);
     fn remove(&mut self, slot: &Slot);
@@ -257,7 +277,7 @@ trait Tree<'h> {
             },
         };
 
-        let instrs = self.avail_instrs();
+        let instrs = self.avail_instrs(&slot);
 
         if self.final_slot() {
             for next_instr in instrs {
@@ -330,10 +350,110 @@ impl<'h> Tree<'h> for BasicTree<'h> {
         self.core.remove(slot);
     }
 
-    fn avail_instrs(&self) -> &'h [Instr] {
+    fn avail_instrs(&self, _: &Slot) -> &'h [Instr] {
         let (avail_states, avail_colors) = self.core.avail_params();
 
         &self.instr_table[avail_states as usize][avail_colors as usize]
+    }
+}
+
+/**************************************/
+
+struct BlankTree<'h> {
+    core: TreeCore<'h>,
+
+    avail_params: Vec<(Params, Option<Slots>)>,
+    instr_table: &'h BlankInstrTable,
+}
+
+impl<'h> BlankTree<'h> {
+    fn init(
+        params @ (states, colors): Params,
+        sim_lim: Step,
+        harvester: &'h dyn Fn(&Prog),
+        instr_table: &'h BlankInstrTable,
+    ) -> Self {
+        let core = TreeCore::init(params, false, sim_lim, harvester);
+
+        let init_avail = (min(3, states), min(3, colors));
+
+        let blank_slots = Some((states * (colors - 1)) as Slots);
+
+        let avail_params = vec![(init_avail, blank_slots)];
+
+        Self {
+            core,
+            avail_params,
+            instr_table,
+        }
+    }
+
+    fn avail_params(&self) -> (Params, Option<Slots>) {
+        *self.avail_params.last().unwrap()
+    }
+
+    fn update_avail(
+        &mut self,
+        (slot_state, slot_color): &Slot,
+        (instr_color, _, instr_state): &Instr,
+    ) {
+        let ((mut avail_states, mut avail_colors), mut avail_blanks) =
+            self.avail_params();
+
+        let prog = &self.core.prog;
+
+        if avail_states < prog.states
+            && 1 + max(slot_state, instr_state) == avail_states
+        {
+            avail_states += 1;
+        }
+
+        if avail_colors < prog.colors
+            && 1 + max(slot_color, instr_color) == avail_colors
+        {
+            avail_colors += 1;
+        }
+
+        if let Some(remaining) = avail_blanks
+            && *slot_color != 0
+        {
+            if *instr_color == 0 {
+                avail_blanks = None;
+            } else {
+                avail_blanks = Some(remaining - 1);
+            }
+        }
+
+        self.avail_params
+            .push(((avail_states, avail_colors), avail_blanks));
+    }
+}
+
+impl<'h> Tree<'h> for BlankTree<'h> {
+    fn core(&self) -> &TreeCore<'_> {
+        &self.core
+    }
+
+    fn insert(&mut self, slot: &Slot, instr: &Instr) {
+        self.core.insert(slot, instr);
+
+        self.update_avail(slot, instr);
+    }
+
+    fn remove(&mut self, slot: &Slot) {
+        self.core.remove(slot);
+
+        self.avail_params.pop();
+    }
+
+    fn avail_instrs(&self, &(_, color): &Slot) -> &'h [Instr] {
+        let ((avail_states, avail_colors), erase_remaining) =
+            self.avail_params();
+
+        let erase_required = color != 0 && erase_remaining == Some(1);
+
+        &self.instr_table[usize::from(erase_required)]
+            [avail_states as usize][avail_colors as usize]
     }
 }
 
@@ -372,11 +492,30 @@ fn build_all(
 }
 
 fn build_blank(
-    params: Params,
+    params @ (states, colors): Params,
     sim_lim: Step,
     harvester: &(impl Fn(&Prog) + Sync),
 ) {
-    build_all(params, false, sim_lim, harvester);
+    let init_states = min(3, states);
+    let init_colors = min(3, colors);
+
+    let instr_table =
+        make_blank_table(states as usize, colors as usize);
+
+    let mut init_instrs = instr_table[usize::from(false)]
+        [init_states as usize][init_colors as usize]
+        .clone();
+
+    init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
+
+    init_instrs.par_iter().for_each(|&next_instr| {
+        let mut prog =
+            BlankTree::init(params, sim_lim, harvester, &instr_table);
+
+        prog.with_instr(&(1, 0), &next_instr, |prog| {
+            prog.branch(Config::init_stepped());
+        });
+    });
 }
 
 fn build_spinout(
@@ -433,4 +572,85 @@ pub fn build_tree(
             build_spinout(params, sim_lim, harvester);
         },
     }
+}
+
+/**************************************/
+
+#[cfg(test)]
+impl BlankTree<'_> {
+    fn tinsert(&mut self, slot: &Slot, instr: &str) {
+        self.insert(slot, &Instr::read(instr));
+    }
+
+    #[track_caller]
+    fn assert_erase(&self, erase: Option<Slots>) {
+        assert_eq!(erase, self.avail_params().1);
+    }
+
+    #[track_caller]
+    fn assert_instrs(&self, len: usize, slot: &Slot) {
+        assert_eq!(len, self.avail_instrs(slot).len());
+    }
+
+    #[track_caller]
+    fn insert_assert(
+        &mut self,
+        slot: &str,
+        instr: &str,
+        erase: Option<Slots>,
+        len: usize,
+    ) {
+        let slot = Slot::read(slot);
+
+        self.tinsert(&slot, instr);
+        self.assert_erase(erase);
+        self.assert_instrs(len, &slot);
+    }
+}
+
+#[test]
+fn test_blank_tree_1() {
+    // "1RB 1LD  1RC 0RB  0LD 1RA  1LB 1LC": {
+    //     "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+    //     "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
+    //     "1RB ...  1RC ...  0LD ...  ... ...": ( 3, 'D1'),
+    //     "1RB ...  1RC ...  0LD ...  ... 1LC": ( 4, 'C1'),
+    //     "1RB ...  1RC ...  0LD 1RA  ... 1LC": ( 5, 'A1'),
+    //     "1RB 1LD  1RC ...  0LD 1RA  ... 1LC": ( 8, 'D0'),
+    //     "1RB 1LD  1RC ...  0LD 1RA  1LB 1LC": (12, 'B1'),
+    // },
+
+    let table = make_blank_table(4, 2);
+
+    let mut tree = BlankTree::init((4, 2), 100, &|_| {}, &table);
+
+    tree.insert_assert("B0", "1RC", Some(4), 16);
+    tree.insert_assert("C0", "0LD", Some(4), 16);
+    tree.insert_assert("D1", "1LC", Some(3), 16);
+    tree.insert_assert("C1", "1RA", Some(2), 16);
+    tree.insert_assert("A1", "1LD", Some(1), 8);
+    tree.insert_assert("D0", "1LB", Some(1), 16);
+}
+
+#[test]
+fn test_blank_tree_2() {
+    // "1RB 1LA  1RC 1LB  0LA 1LD  ... 1LA": {
+    //     "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+    //     "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
+    //     "1RB ...  1RC ...  0LA ...  ... ...": ( 3, 'A1'),
+    //     "1RB 1LA  1RC ...  0LA ...  ... ...": ( 6, 'B1'),
+    //     "1RB 1LA  1RC 1LB  0LA ...  ... ...": ( 9, 'C1'),
+    //     "1RB 1LA  1RC 1LB  0LA 1LD  ... ...": (10, 'D1'),
+    // },
+
+    let table = make_blank_table(4, 2);
+
+    let mut tree = BlankTree::init((4, 2), 100, &|_| {}, &table);
+
+    tree.insert_assert("B0", "1RC", Some(4), 16);
+    tree.insert_assert("C0", "0LA", Some(4), 16);
+    tree.insert_assert("A1", "1LA", Some(3), 16);
+    tree.insert_assert("B1", "1LB", Some(2), 16);
+    tree.insert_assert("C1", "1LD", Some(1), 8);
+    tree.insert_assert("D1", "1LA", Some(0), 16);
 }

@@ -133,7 +133,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 2), 2, 4, (0, 89)),
+            ((2, 2), 2, 4, (0, 61)),
             //
             |prog: &Prog| {
                 prog.cant_blank(3).is_settled()
@@ -167,7 +167,7 @@ fn test_tree() {
             }
         ),
         (
-            ((3, 2), 2, 13, (3, 12_470)),
+            ((3, 2), 2, 13, (3, 10_175)),
             //
             |prog: &Prog| {
                 prog.cant_blank(14).is_settled()
@@ -204,7 +204,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 3), 2, 20, (11, 8_847)),
+            ((2, 3), 2, 20, (11, 6_047)),
             //
             |prog: &Prog| {
                 prog.cant_blank(16).is_settled()
@@ -245,7 +245,7 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 2, 99, (262, 2_222_970)),
+            ((4, 2), 2, 99, (262, 2_014_818)),
             //
             |prog: &Prog| {
                 !prog.is_connected()
@@ -294,7 +294,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 2, 876, (1_650, 1_698_539)),
+            ((2, 4), 2, 876, (1_650, 1_189_715)),
             //
             |prog: &Prog| {
                 prog.cant_blank(58).is_settled()
@@ -332,7 +332,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((5, 2), 2, TREE_LIM, (476_395_037, 523_722_375)),
+            ((5, 2), 2, TREE_LIM, (476_395_037, 501_259_494)),
             //
             |prog: &Prog| {
                 !prog.is_connected() || prog.cant_blank(0).is_settled()
@@ -354,7 +354,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((3, 3), 2, 3_000, (121_596_738, 147_230_805)),
+            ((3, 3), 2, 3_000, (121_596_738, 125_217_382)),
             //
             |prog: &Prog| {
                 !prog.is_connected() || prog.cant_blank(0).is_settled()
@@ -371,7 +371,7 @@ fn test_tree_slow() {
             |prog: &Prog| { prog.cant_spin_out(0).is_settled() }
         ),
         (
-            ((2, 5), 2, TREE_LIM, (349_660_714, 512_062_665)),
+            ((2, 5), 2, TREE_LIM, (349_660_714, 366_167_817)),
             //
             |prog: &Prog| { prog.cant_blank(0).is_settled() }
         ),
