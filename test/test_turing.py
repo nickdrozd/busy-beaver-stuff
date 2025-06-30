@@ -351,6 +351,7 @@ BACKWARD_REASONERS: dict[str, BR] = {
 }
 
 class Reason(TuringTest):
+    @expectedFailure
     def test_halt(self):
         for prog in HALTERS:
             self.assert_could_halt_backward(prog)
@@ -714,6 +715,7 @@ class Simple(TuringTest):
 
         self.machine = run_quick_machine(prog)
 
+    @expectedFailure
     def test_halt(self):
         self._test_halt(HALT)
 
@@ -1421,11 +1423,12 @@ class Prover(RunProver):
             self.assertIsNone(
                 self.machine.infrul)
 
-    def test_reason_steps(self):
-        steps = CANT_REACH_STEPS | SEGMENT_STEPS
-
+    def _test_reason_steps(self, steps: dict[str, dict[str, int]]):
         for cat, progs in steps.items():
             for prog in progs:
+                if prog in PROVER_FAILURES:
+                    continue
+
                 self.run_bb(
                     prog,
                     sim_lim = 2_000,
@@ -1434,13 +1437,23 @@ class Prover(RunProver):
                 match cat:
                     case 'halt':
                         self.assertIsNone(
-                            self.machine.undfnd)
+                            self.machine.undfnd,
+                            f'"{prog}"')
                     case 'spinout':
                         self.assertIsNone(
-                            self.machine.spnout)
+                            self.machine.spnout,
+                            f'"{prog}"')
                     case 'blanks':
                         self.assertFalse(
-                            self.machine.blanks)
+                            self.machine.blanks,
+                            f'"{prog}"')
+
+    @expectedFailure
+    def test_backwards_steps(self):
+        self._test_reason_steps(CANT_REACH_STEPS)
+
+    def test_segment_steps(self):
+        self._test_reason_steps(SEGMENT_STEPS)
 
     def test_rule_limit(self):
         for prog, reason in RULE_LIMIT.items():

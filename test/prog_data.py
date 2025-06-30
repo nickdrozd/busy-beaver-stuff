@@ -60,6 +60,9 @@ HALT: BasicTermData = {
     "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721561),
 
     # 3/3
+    "1RB 2LA 1RC  1LA 1LC 2RB  ... 0LA 1RB": (5, 39),
+    "1RB 1RC 2LA  1LA 2RB 1LC  ... 0RB 1LA": (6, 43),
+    "1RB 2LA 0RC  2LA ... 1RC  1LA 0LB 2RC": (5, 51),
     "1RB 2RB 1LC  1LA 2RB 1LB  ... 2RB 2LA": (256, 39252),
     "1RB 2RA 2RC  1LC ... 1LA  1RA 2LB 1LC": (36089, 310341163),
     "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
@@ -1243,6 +1246,10 @@ SPAGHETTI = {
 
 KERNEL = {
     # Halt
+    "1RB 1RC 2LA  1LA 2RB 1LC  ... 0RB 1LA": 3,
+    "1RB 2LA 0RC  2LA ... 1RC  1LA 0LB 2RC": 3,
+    "1RB 2LA 1RC  1LA 1LC 2RB  ... 0LA 1RB": 3,
+
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 3,  # 134467 Uwe
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": 3,  # partial
     "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA": 3,
@@ -4446,6 +4453,8 @@ PROVER_FAILURES = {
 
     "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ...",
 
+    "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
+    "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
 }
 
 FAILURES = set(MACRO_FAILURES) | PROVER_FAILURES
