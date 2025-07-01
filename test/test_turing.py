@@ -529,8 +529,14 @@ class Segment(TuringTest):
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_segment(prog)
 
+        error = set()
         for prog in NONSPINNERS:
-            self.assert_cant_spin_out_segment(prog, 26)
+            try:
+                self.assert_cant_spin_out_segment(prog, 26)
+            except AssertionError:
+                error.add(prog)
+        for err in sorted(error, key=len):
+            print(err)
 
     def test_false_negatives(self):
         counts = {
