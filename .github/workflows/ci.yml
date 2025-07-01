@@ -41,7 +41,7 @@ jobs:
           make coverage
           make test-all
 
-  Ubuntu-Rust-Slow:
+  Ubuntu-Rust:
     runs-on: ubuntu-latest
 
     steps:
@@ -53,8 +53,17 @@ jobs:
           rustup component add clippy
           rustup update
 
-      - name: Test Rust
-        run: make run-all
+      - name: Lint
+        run: |
+          make clippy
+
+      - name: Unit
+        run: |
+          make test-rust
+
+      - name: Run
+        run: |
+          make run-all
 
   Mac-Idris:
     runs-on: macos-latest

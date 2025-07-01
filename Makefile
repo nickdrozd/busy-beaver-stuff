@@ -119,7 +119,7 @@ PYTEST = $(PYTHON) -m unittest
 test :
 	$(PYTEST) discover -v
 
-test-all : test-rust compile
+test-all : compile
 	RUN_SLOW=1 $(MAKE) test
 
 COVERAGE = $(PYTHON) -m coverage
