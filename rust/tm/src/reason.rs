@@ -165,12 +165,8 @@ fn get_valid_steps(
                 continue;
             }
 
-            let Some(keep) = tape.check_spinout(shift, color) else {
+            if !tape.check_spinout(shift, color) {
                 steps.push((color, shift, state));
-                continue;
-            };
-
-            if !keep {
                 continue;
             }
 
@@ -712,25 +708,14 @@ impl Backstepper {
             .matches_color(print)
     }
 
-    fn check_spinout(&self, shift: Shift, read: Color) -> Option<bool> {
-        let scan = self.scan;
-
-        if scan != read {
-            return None;
+    const fn check_spinout(&self, shift: Shift, read: Color) -> bool {
+        if self.scan != read {
+            return false;
         }
 
-        let (pull, push) = if shift {
-            (&self.lspan, &self.rspan)
-        } else {
-            (&self.rspan, &self.lspan)
-        };
+        let pull = if shift { &self.lspan } else { &self.rspan };
 
-        if !pull.span.0.is_empty() {
-            return None;
-        }
-
-        (matches!(pull.end, TapeEnd::Blanks) || !push.span.0.is_empty())
-            .then_some(!push.matches_color(self.scan))
+        pull.span.0.is_empty()
     }
 
     fn pulls_indef(&self, shift: Shift) -> bool {
@@ -1005,14 +990,14 @@ fn test_spinout() {
     tape.assert("0+ [1] 0^2 ?");
 
     assert!(!tape.check_step(false, 1));
-    assert!(tape.check_spinout(true, 1).is_some());
+    assert!(tape.check_spinout(true, 1));
 
     tape.push_indef(true);
 
     tape.assert("0+ [1] 1.. 0^2 ?");
 
-    assert!(tape.check_spinout(false, 1).is_none());
-    assert!(tape.check_spinout(true, 1).is_some());
+    assert!(!tape.check_spinout(false, 1));
+    assert!(tape.check_spinout(true, 1));
 }
 
 #[test]

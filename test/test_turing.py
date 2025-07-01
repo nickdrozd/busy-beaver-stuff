@@ -351,7 +351,6 @@ BACKWARD_REASONERS: dict[str, BR] = {
 }
 
 class Reason(TuringTest):
-    @expectedFailure
     def test_halt(self):
         for prog in HALTERS:
             self.assert_could_halt_backward(prog)
@@ -721,7 +720,6 @@ class Simple(TuringTest):
 
         self.machine = run_quick_machine(prog)
 
-    @expectedFailure
     def test_halt(self):
         self._test_halt(HALT)
 
@@ -775,7 +773,7 @@ class Simple(TuringTest):
 
                     if prog[0] != '0' and marks > 2:
                         self.assertEqual(blanks, {})
-                        self.assert_cant_blank_backward(prog, 16)
+                        self.assert_cant_blank_backward(prog, 19)
 
             else:
                 self.assert_marks(0)
@@ -1454,7 +1452,6 @@ class Prover(RunProver):
                             self.machine.blanks,
                             f'"{prog}"')
 
-    @expectedFailure
     def test_backwards_steps(self):
         self._test_reason_steps(CANT_REACH_STEPS)
 
