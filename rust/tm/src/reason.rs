@@ -196,9 +196,7 @@ fn get_indef(
     let scan = config.tape.scan;
 
     for entries in [diff, same] {
-        for &entry in entries {
-            let ((state, color), (_, shift)) = entry;
-
+        for &entry @ ((state, color), (_, shift)) in entries {
             if state == config.state && shift == push && scan == color {
                 continue;
             }
@@ -321,10 +319,10 @@ fn get_blanks(configs: &Configs) -> Blanks {
 fn get_entrypoints(comp: &Prog) -> Entrypoints {
     let mut entrypoints = Entrypoints::new();
 
-    for (&slot, &(color, shift, state)) in &comp.instrs {
+    for (&slot @ (read, _), &(color, shift, state)) in &comp.instrs {
         let (same, diff) = entrypoints.entry(state).or_default();
 
-        (if slot.0 == state { same } else { diff })
+        (if read == state { same } else { diff })
             .push((slot, (color, shift)));
     }
 
