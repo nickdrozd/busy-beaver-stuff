@@ -153,7 +153,7 @@ fn get_valid_steps(
         };
 
         for &((state, color), (print, shift)) in diff {
-            if !tape.check_step(shift, print) {
+            if !tape.is_valid_step(shift, print) {
                 continue;
             }
 
@@ -161,11 +161,11 @@ fn get_valid_steps(
         }
 
         for &((state, color), (print, shift)) in same {
-            if !tape.check_step(shift, print) {
+            if !tape.is_valid_step(shift, print) {
                 continue;
             }
 
-            if !tape.check_spinout(shift, color) {
+            if !tape.is_spinout(shift, color) {
                 steps.push((color, shift, state));
                 continue;
             }
@@ -218,7 +218,7 @@ fn get_indef(
     let mut steps = vec![];
 
     for ((state, color), (print, shift)) in checked_entries {
-        if !tape.check_step(shift, print) {
+        if !tape.is_valid_step(shift, print) {
             continue;
         }
 
@@ -703,12 +703,12 @@ impl Backstepper {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
     }
 
-    fn check_step(&self, shift: Shift, print: Color) -> bool {
+    fn is_valid_step(&self, shift: Shift, print: Color) -> bool {
         (if shift { &self.lspan } else { &self.rspan })
             .matches_color(print)
     }
 
-    const fn check_spinout(&self, shift: Shift, read: Color) -> bool {
+    const fn is_spinout(&self, shift: Shift, read: Color) -> bool {
         if self.scan != read {
             return false;
         }
@@ -886,7 +886,7 @@ impl Backstepper {
 
         let shift = shift != 0;
 
-        let step = self.check_step(shift, print);
+        let step = self.is_valid_step(shift, print);
 
         assert_eq!(step, success);
 
@@ -989,15 +989,15 @@ fn test_spinout() {
 
     tape.assert("0+ [1] 0^2 ?");
 
-    assert!(!tape.check_step(false, 1));
-    assert!(tape.check_spinout(true, 1));
+    assert!(!tape.is_valid_step(false, 1));
+    assert!(tape.is_spinout(true, 1));
 
     tape.push_indef(true);
 
     tape.assert("0+ [1] 1.. 0^2 ?");
 
-    assert!(!tape.check_spinout(false, 1));
-    assert!(tape.check_spinout(true, 1));
+    assert!(!tape.is_spinout(false, 1));
+    assert!(tape.is_spinout(true, 1));
 }
 
 #[test]
