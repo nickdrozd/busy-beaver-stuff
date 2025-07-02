@@ -381,7 +381,7 @@ class Reason(TuringTest):
                 self.assert_cant_blank_backward(prog, 1331)
 
     def test_false_negatives(self):
-        results: dict[str, BackwardCats] = {
+        results: dict[Goal, BackwardCats] = {
             'halt': defaultdict(set),
             'blank': defaultdict(set),
             'spinout': defaultdict(set),
@@ -397,7 +397,7 @@ class Reason(TuringTest):
 
                     term_results[result].add(prog)  # type: ignore[index]
 
-        def assert_counts(data: dict[str, BackwardCats]):
+        def assert_counts(data: dict[Goal, BackwardCats]):
             counts = {
                 term: {
                     cat: len(progs)
@@ -1427,7 +1427,7 @@ class Prover(RunProver):
             self.assertIsNone(
                 self.machine.infrul)
 
-    def _test_reason_steps(self, steps: dict[str, dict[str, int]]):
+    def _test_reason_steps(self, steps: dict[Goal, dict[str, int]]):
         for cat, progs in steps.items():
             for prog in progs:
                 if prog in PROVER_FAILURES:
@@ -1447,7 +1447,7 @@ class Prover(RunProver):
                         self.assertIsNone(
                             self.machine.spnout,
                             f'"{prog}"')
-                    case 'blanks':
+                    case 'blank':
                         self.assertFalse(
                             self.machine.blanks,
                             f'"{prog}"')

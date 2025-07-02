@@ -1,5 +1,11 @@
 from typing import Literal
 
+Goal = Literal[
+    "halt",
+    "blank",
+    "spinout",
+]
+
 ## test turing #######################################################
 
 BasicTermData = dict[str, tuple[int, int]]
@@ -1469,7 +1475,7 @@ MODULAR = {
 
 ########################################
 
-CANT_REACH_STEPS: dict[str, dict[str, int]] = {
+CANT_REACH_STEPS: dict[Goal, dict[str, int]] = {
     "halt": {
         "1RB 0LA  1LA ...": 3,
 
@@ -1644,7 +1650,7 @@ type BackwardCats = dict[
     set[str],
 ]
 
-BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
+BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
     "halt": {
         "step_limit": {
             "1RB 1LA  0RC 0RD  0LD ...  0LA 1RD",
@@ -2547,7 +2553,7 @@ BACKWARD_FALSE_NEGATIVES: dict[str, BackwardCats] = {
     },
 }
 
-BACKWARD_FALSE_NEGATIVES_COUNTS: dict[str, dict[str, int]] = {
+BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
         "step_limit": 1,
         "depth_limit": 47,
@@ -2588,12 +2594,12 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 
 ########################################
 
-SEGMENT_FALSE_NEGATIVE_COUNTS = {
+SEGMENT_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 92,
     "spinout": 100,
 }
 
-SEGMENT_FALSE_NEGATIVES = {
+SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
     "halt": {
         "1RB ... 0RB  2LB 2LA 0RA",
         "1RB 0LB ...  2LA 1LA 1RA",
@@ -2792,7 +2798,7 @@ SEGMENT_FALSE_NEGATIVES = {
     },
 }
 
-SEGMENT_STEPS: dict[str, dict[str, int]] = {
+SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
     "halt": {
         "1RB ... 0RA  1LB 2LA 2RB": 8,
         "1RB 0RB ...  1LB 2RA 0LA": 8,
@@ -2980,13 +2986,13 @@ SEGMENT_STEPS: dict[str, dict[str, int]] = {
 
 ########################################
 
-CPS_FALSE_NEGATIVE_COUNTS = {
+CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 45,
     "blank": 113,
     "spinout": 286,
 }
 
-CPS_FALSE_NEGATIVES = {
+CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
     "halt": {
         "1RB ... 0RB  2LB 2LA 0RA",
         "1RB 2LA 1RB  1LA ... 1RA",
@@ -3441,13 +3447,13 @@ CPS_FALSE_NEGATIVES = {
 
 ########################################
 
-CTL_FALSE_NEGATIVE_COUNTS = {
+CTL_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 104,
     "blank": 417,
     "spinout": 265,
 }
 
-CTL_FALSE_NEGATIVES = {
+CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
     "halt": {
         "1RB ... 0RB  2LB 2LA 0RA",
         "1RB 0RB ...  1LB 2RA 0LA",
