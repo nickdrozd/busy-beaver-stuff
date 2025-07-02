@@ -1475,7 +1475,7 @@ MODULAR = {
 
 ########################################
 
-CANT_REACH_STEPS: dict[Goal, dict[str, int]] = {
+BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
     "halt": {
         "1RB 0LA  1LA ...": 3,
 
@@ -5583,7 +5583,7 @@ NONHALTERS = (
     | RECURS
     | INFRUL
     | set(SEGMENT_STEPS['halt'])
-    | set(CANT_REACH_STEPS['halt'])
+    | set(BACKWARD_STEPS['halt'])
 )
 
 BLANKERS = (
@@ -5603,7 +5603,7 @@ NONBLANKERS = (
     | {prog for prog, marks in PROVER_SPINOUT.items()
            if not isinstance(marks, int) or marks > 3}
     | {prog for prog, (marks, _) in HALT.items() if marks > 3}
-    | set(CANT_REACH_STEPS['blank'])
+    | set(BACKWARD_STEPS['blank'])
 ) - DO_BLANK
 
 NONSPINNERS = (
@@ -5612,7 +5612,7 @@ NONSPINNERS = (
     | RECURS
     | INFRUL
     | set(SEGMENT_STEPS['spinout'])
-    | set(CANT_REACH_STEPS['spinout'])
+    | set(BACKWARD_STEPS['spinout'])
 )
 
 REASON_ONLY: set[str] = {

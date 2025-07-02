@@ -475,7 +475,7 @@ class Reason(TuringTest):
             self.assert_cant_spin_out_backward(hydra, 0)
 
     def test_steps(self):
-        for cat, data in CANT_REACH_STEPS.items():
+        for cat, data in BACKWARD_STEPS.items():
             cant_reach = BACKWARD_REASONERS[cat]
 
             for prog, steps in data.items():
@@ -1453,7 +1453,7 @@ class Prover(RunProver):
                             f'"{prog}"')
 
     def test_backwards_steps(self):
-        self._test_reason_steps(CANT_REACH_STEPS)
+        self._test_reason_steps(BACKWARD_STEPS)
 
     def test_segment_steps(self):
         self._test_reason_steps(SEGMENT_STEPS)
