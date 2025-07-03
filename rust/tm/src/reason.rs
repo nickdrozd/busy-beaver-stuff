@@ -92,7 +92,7 @@ fn cant_reach(
 
     let mut blanks = get_blanks(&configs);
 
-    let mut indef_steps = ValidatedSteps::new();
+    let mut indef_steps = 0;
 
     for step in 1..=depth {
         #[cfg(debug_assertions)]
@@ -107,7 +107,7 @@ fn cant_reach(
 
         match valid_steps.len() {
             0 => {
-                if !indef_steps.is_empty() {
+                if indef_steps > 0 {
                     return Spinout;
                 }
 
@@ -120,9 +120,9 @@ fn cant_reach(
         configs = match step_configs(valid_steps, &mut blanks) {
             Err(err) => return err,
             Ok((configs, indefs)) => {
-                indef_steps.extend(indefs);
+                indef_steps += indefs;
 
-                if indef_steps.len() > MAX_STACK_DEPTH {
+                if indef_steps > MAX_STACK_DEPTH {
                     return DepthLimit;
                 }
 
@@ -238,10 +238,10 @@ fn get_indef(
 fn step_configs(
     configs: ValidatedSteps,
     blanks: &mut Blanks,
-) -> Result<(Configs, ValidatedSteps), BackwardResult> {
+) -> Result<(Configs, usize), BackwardResult> {
     let mut stepped = Configs::new();
 
-    let mut indef_steps = ValidatedSteps::new();
+    let mut indef_steps = 0;
 
     for (instrs, config) in configs {
         let (pulls_indef, instrs): (Vec<_>, Vec<_>) = instrs
@@ -249,7 +249,7 @@ fn step_configs(
             .partition(|&(_, shift, _)| config.tape.pulls_indef(shift));
 
         if !pulls_indef.is_empty() {
-            indef_steps.push((pulls_indef, config.clone()));
+            indef_steps += 1;
 
             if instrs.is_empty() {
                 continue;
