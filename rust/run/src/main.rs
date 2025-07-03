@@ -11,7 +11,7 @@ use tm::{
     cps::Cps as _,
     ctl::Ctl as _,
     instrs::{Params, Prog},
-    machine::{term_or_rec, run_for_infrul},
+    machine::run_for_infrul,
     macros::{make_backsymbol_macro, make_block_macro},
     reason::Backward as _,
     segment::Segment as _,
@@ -121,7 +121,7 @@ fn test_tree() {
             //
             |prog: &Prog| {
                 //
-                term_or_rec(prog, 8).is_settled()
+                prog.term_or_rec(8).is_settled()
             }
         ),
         (
@@ -129,7 +129,7 @@ fn test_tree() {
             //
             |prog: &Prog| {
                 prog.cant_spin_out(0).is_settled()
-                    || term_or_rec(prog, 16).is_settled()
+                    || prog.term_or_rec(16).is_settled()
             }
         ),
         (
@@ -137,19 +137,19 @@ fn test_tree() {
             //
             |prog: &Prog| {
                 prog.cant_blank(3).is_settled()
-                    || term_or_rec(prog, 15).is_settled()
+                    || prog.term_or_rec(15).is_settled()
             }
         ),
         (
             ((2, 2), 3, 4, (4, 89)),
             //
-            |prog: &Prog| { term_or_rec(prog, 19).is_settled() }
+            |prog: &Prog| { prog.term_or_rec(19).is_settled() }
         ),
         (
             ((3, 2), 0, 12, (0, 3_030)),
             //
             |prog: &Prog| {
-                term_or_rec(prog, 40).is_settled()
+                prog.term_or_rec(40).is_settled()
                     || prog.cant_halt(3).is_settled()
                     || prog.ctl_cant_halt(16)
                     || run_for_infrul(prog, 187).is_infinite()
@@ -159,7 +159,7 @@ fn test_tree() {
             ((3, 2), 1, 13, (4, 12_470)),
             //
             |prog: &Prog| {
-                term_or_rec(prog, 206).is_settled()
+                prog.term_or_rec(206).is_settled()
                     || prog.cant_spin_out(4).is_settled()
                     || prog.ctl_cant_spin_out(15)
                     || run_for_infrul(prog, 236).is_infinite()
@@ -171,7 +171,7 @@ fn test_tree() {
             //
             |prog: &Prog| {
                 prog.cant_blank(14).is_settled()
-                    || term_or_rec(prog, 206).is_settled()
+                    || prog.term_or_rec(206).is_settled()
                     || prog.ctl_cant_blank(25)
                     || prog.cps_cant_blank(6)
                     || run_for_infrul(prog, 236).is_infinite()
@@ -180,13 +180,13 @@ fn test_tree() {
         (
             ((3, 2), 3, 13, (643, 12_470)),
             //
-            |prog: &Prog| { term_or_rec(prog, 206).is_settled() }
+            |prog: &Prog| { prog.term_or_rec(206).is_settled() }
         ),
         (
             ((2, 3), 0, 7, (0, 2_394)),
             //
             |prog: &Prog| {
-                term_or_rec(prog, 301).is_settled()
+                prog.term_or_rec(301).is_settled()
                     || prog.ctl_cant_halt(41)
                     || prog.cps_cant_halt(3)
                     || run_for_infrul(prog, 159).is_infinite()
@@ -196,7 +196,7 @@ fn test_tree() {
             ((2, 3), 1, 20, (3, 3_580)),
             //
             |prog: &Prog| {
-                term_or_rec(prog, 301).is_settled()
+                prog.term_or_rec(301).is_settled()
                     || prog.cant_spin_out(2).is_settled()
                     || prog.ctl_cant_spin_out(83)
                     || prog.seg_cant_spin_out(5).is_refuted()
@@ -208,7 +208,7 @@ fn test_tree() {
             //
             |prog: &Prog| {
                 prog.cant_blank(16).is_settled()
-                    || term_or_rec(prog, 115).is_settled()
+                    || prog.term_or_rec(115).is_settled()
                     || prog.ctl_cant_blank(32)
                     || prog.cps_cant_blank(7)
             }
@@ -216,14 +216,14 @@ fn test_tree() {
         (
             ((2, 3), 3, 20, (1_031, 8_847)),
             //
-            |prog: &Prog| { term_or_rec(prog, 301).is_settled() }
+            |prog: &Prog| { prog.term_or_rec(301).is_settled() }
         ),
         (
             ((4, 2), 0, 25, (13, 458_588)),
             //
             |prog: &Prog| {
                 !prog.is_connected()
-                    || term_or_rec(prog, 200).is_settled()
+                    || prog.term_or_rec(200).is_settled()
                     || prog.cant_halt(11).is_settled()
                     || prog.ctl_cant_halt(84)
                     || prog.cps_cant_halt(9)
@@ -236,7 +236,7 @@ fn test_tree() {
             |prog: &Prog| {
                 !prog.is_connected()
                     || prog.cant_spin_out(1).is_settled()
-                    || term_or_rec(prog, 1_000).is_settled()
+                    || prog.term_or_rec(1_000).is_settled()
                     || prog.cant_spin_out(11).is_settled()
                     || prog.ctl_cant_spin_out(114)
                     || prog.cps_cant_spin_out(9)
@@ -250,7 +250,7 @@ fn test_tree() {
             |prog: &Prog| {
                 !prog.is_connected()
                     || prog.cant_blank(55).is_settled()
-                    || term_or_rec(prog, 1_000).is_settled()
+                    || prog.term_or_rec(1_000).is_settled()
                     || prog.ctl_cant_blank(60)
                     || prog.cps_cant_blank(9)
                     || check_inf(prog, 300, 3000)
@@ -261,7 +261,7 @@ fn test_tree() {
             //
             |prog: &Prog| {
                 !prog.is_connected()
-                    || term_or_rec(prog, 5_000).is_settled()
+                    || prog.term_or_rec(5_000).is_settled()
             }
         ),
         (
@@ -269,7 +269,7 @@ fn test_tree() {
             //
             |prog: &Prog| {
                 prog.cant_halt(0).is_settled()
-                    || term_or_rec(prog, 800).is_settled()
+                    || prog.term_or_rec(800).is_settled()
                     || prog.seg_cant_halt(2).is_refuted()
                     || prog.ctl_cant_halt(96)
                     || prog.cps_cant_halt(6)
@@ -281,7 +281,7 @@ fn test_tree() {
             //
             |prog: &Prog| {
                 prog.cant_spin_out(2).is_settled()
-                    || term_or_rec(prog, 2_000).is_settled()
+                    || prog.term_or_rec(2_000).is_settled()
                     || prog.cant_spin_out(7).is_settled()
                     || prog.ctl_cant_spin_out(186)
                     || prog.cps_cant_spin_out(6)
@@ -298,7 +298,7 @@ fn test_tree() {
             //
             |prog: &Prog| {
                 prog.cant_blank(58).is_settled()
-                    || term_or_rec(prog, 2_000).is_settled()
+                    || prog.term_or_rec(2_000).is_settled()
                     || prog.ctl_cant_blank(120)
                     || prog.cps_cant_blank(5)
                     || check_inf(prog, 300, 1000)
@@ -307,9 +307,7 @@ fn test_tree() {
         (
             ((2, 4), 3, 876, (257_525, 1_698_539)),
             //
-            |prog: &Prog| {
-                term_or_rec(prog, 5_000).is_settled()
-            }
+            |prog: &Prog| { prog.term_or_rec(5_000).is_settled() }
         ),
     ];
 }

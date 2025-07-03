@@ -97,65 +97,68 @@ pub fn run_for_infrul(
 
 /**************************************/
 
-pub fn term_or_rec(comp: &Prog, sim_lim: usize) -> RunResult {
-    let mut state = 1;
+impl Prog {
+    pub fn term_or_rec(&self, sim_lim: usize) -> RunResult {
+        let mut state = 1;
 
-    let mut tape = HeadTape::init_stepped();
+        let mut tape = HeadTape::init_stepped();
 
-    let head = tape.head();
+        let head = tape.head();
 
-    let (mut ref_state, mut ref_tape, mut leftmost, mut rightmost) =
-        (state, tape.clone(), head, head);
+        let (mut ref_state, mut ref_tape, mut leftmost, mut rightmost) =
+            (state, tape.clone(), head, head);
 
-    let mut reset = 1;
+        let mut reset = 1;
 
-    for cycle in 1..sim_lim {
-        let slot = (state, tape.scan());
+        for cycle in 1..sim_lim {
+            let slot = (state, tape.scan());
 
-        let Some((color, shift, next_state)) = comp.get_instr(&slot)
-        else {
-            return RunResult::Undefined(slot);
-        };
+            let Some((color, shift, next_state)) =
+                self.get_instr(&slot)
+            else {
+                return RunResult::Undefined(slot);
+            };
 
-        let curr_state = state;
+            let curr_state = state;
 
-        state = next_state;
+            state = next_state;
 
-        let same = curr_state == next_state;
+            let same = curr_state == next_state;
 
-        if same && tape.at_edge(shift) {
-            return RunResult::Spinout;
+            if same && tape.at_edge(shift) {
+                return RunResult::Spinout;
+            }
+
+            if reset == 0 {
+                ref_state = curr_state;
+                ref_tape = tape.clone();
+                let head = ref_tape.head();
+                leftmost = head;
+                rightmost = head;
+                reset = cycle;
+            }
+
+            reset -= 1;
+
+            tape.step(shift, color, same);
+
+            let curr = tape.head();
+
+            if curr < leftmost {
+                leftmost = curr;
+            } else if rightmost < curr {
+                rightmost = curr;
+            }
+
+            if state == ref_state
+                && tape.aligns_with(&ref_tape, leftmost, rightmost)
+            {
+                return RunResult::Recur;
+            }
         }
 
-        if reset == 0 {
-            ref_state = curr_state;
-            ref_tape = tape.clone();
-            let head = ref_tape.head();
-            leftmost = head;
-            rightmost = head;
-            reset = cycle;
-        }
-
-        reset -= 1;
-
-        tape.step(shift, color, same);
-
-        let curr = tape.head();
-
-        if curr < leftmost {
-            leftmost = curr;
-        } else if rightmost < curr {
-            rightmost = curr;
-        }
-
-        if state == ref_state
-            && tape.aligns_with(&ref_tape, leftmost, rightmost)
-        {
-            return RunResult::Recur;
-        }
+        RunResult::StepLimit
     }
-
-    RunResult::StepLimit
 }
 
 /**************************************/
@@ -176,7 +179,7 @@ const REC_PROGS: [(&str, bool); 5] = [
 fn test_rec() {
     for (prog, expected) in REC_PROGS {
         assert_eq!(
-            term_or_rec(&Prog::read(prog), 100).is_recur(),
+            Prog::read(prog).term_or_rec(100).is_recur(),
             expected,
             "{prog}",
         );
