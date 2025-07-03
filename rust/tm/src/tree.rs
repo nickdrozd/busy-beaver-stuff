@@ -362,7 +362,7 @@ impl<'h> Tree<'h> for BasicTree<'h> {
 struct BlankTree<'h> {
     core: TreeCore<'h>,
 
-    avail_params: Vec<(Params, Option<Slots>)>,
+    avail_blanks: Vec<Option<Slots>>,
     instr_table: &'h BlankInstrTable,
 }
 
@@ -375,44 +375,28 @@ impl<'h> BlankTree<'h> {
     ) -> Self {
         let core = TreeCore::init(params, false, sim_lim, harvester);
 
-        let init_avail = (min(3, states), min(3, colors));
-
         let blank_slots = Some((states * (colors - 1)) as Slots);
 
-        let avail_params = vec![(init_avail, blank_slots)];
+        let avail_blanks = vec![blank_slots];
 
         Self {
             core,
-            avail_params,
+            avail_blanks,
             instr_table,
         }
     }
 
-    fn avail_params(&self) -> (Params, Option<Slots>) {
-        *self.avail_params.last().unwrap()
+    #[expect(clippy::unwrap_in_result)]
+    fn avail_blanks(&self) -> Option<Slots> {
+        *self.avail_blanks.last().unwrap()
     }
 
-    fn update_avail(
+    fn update_blanks(
         &mut self,
-        (slot_state, slot_color): &Slot,
-        (instr_color, _, instr_state): &Instr,
+        (_, slot_color): &Slot,
+        (instr_color, _, _): &Instr,
     ) {
-        let ((mut avail_states, mut avail_colors), mut avail_blanks) =
-            self.avail_params();
-
-        let prog = &self.core.prog;
-
-        if avail_states < prog.states
-            && 1 + max(slot_state, instr_state) == avail_states
-        {
-            avail_states += 1;
-        }
-
-        if avail_colors < prog.colors
-            && 1 + max(slot_color, instr_color) == avail_colors
-        {
-            avail_colors += 1;
-        }
+        let mut avail_blanks = self.avail_blanks();
 
         if let Some(remaining) = avail_blanks
             && *slot_color != 0
@@ -424,8 +408,7 @@ impl<'h> BlankTree<'h> {
             }
         }
 
-        self.avail_params
-            .push(((avail_states, avail_colors), avail_blanks));
+        self.avail_blanks.push(avail_blanks);
     }
 }
 
@@ -437,18 +420,19 @@ impl<'h> Tree<'h> for BlankTree<'h> {
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
         self.core.insert(slot, instr);
 
-        self.update_avail(slot, instr);
+        self.update_blanks(slot, instr);
     }
 
     fn remove(&mut self, slot: &Slot) {
         self.core.remove(slot);
 
-        self.avail_params.pop();
+        self.avail_blanks.pop();
     }
 
     fn avail_instrs(&self, &(_, color): &Slot) -> &'h [Instr] {
-        let ((avail_states, avail_colors), erase_remaining) =
-            self.avail_params();
+        let (avail_states, avail_colors) = self.core.avail_params();
+
+        let erase_remaining = self.avail_blanks();
 
         let erase_required = color != 0 && erase_remaining == Some(1);
 
@@ -584,7 +568,7 @@ impl BlankTree<'_> {
 
     #[track_caller]
     fn assert_erase(&self, erase: Option<Slots>) {
-        assert_eq!(erase, self.avail_params().1);
+        assert_eq!(erase, self.avail_blanks());
     }
 
     #[track_caller]
