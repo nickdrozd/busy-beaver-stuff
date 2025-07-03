@@ -18,7 +18,7 @@ use tm::{
 /***************************************/
 
 #[pyfunction]
-pub fn py_is_connected(prog: &str) -> bool {
+pub fn is_connected(prog: &str) -> bool {
     Prog::read(prog).is_connected()
 }
 
@@ -118,17 +118,17 @@ impl From<BackwardResultRs> for BackwardResult {
 }
 
 #[pyfunction]
-pub fn py_cant_halt(prog: &str, depth: Depth) -> BackwardResult {
+pub fn cant_halt(prog: &str, depth: Depth) -> BackwardResult {
     Prog::read(prog).cant_halt(depth).into()
 }
 
 #[pyfunction]
-pub fn py_cant_blank(prog: &str, depth: Depth) -> BackwardResult {
+pub fn cant_blank(prog: &str, depth: Depth) -> BackwardResult {
     Prog::read(prog).cant_blank(depth).into()
 }
 
 #[pyfunction]
-pub fn py_cant_spin_out(prog: &str, depth: Depth) -> BackwardResult {
+pub fn cant_spin_out(prog: &str, depth: Depth) -> BackwardResult {
     Prog::read(prog).cant_spin_out(depth).into()
 }
 
@@ -172,27 +172,24 @@ impl From<SegmentResultRs> for SegmentResult {
 }
 
 #[pyfunction]
-pub fn py_segment_cant_halt(prog: &str, segs: usize) -> SegmentResult {
+pub fn segment_cant_halt(prog: &str, segs: usize) -> SegmentResult {
     Prog::read(prog).seg_cant_halt(segs).into()
 }
 
 #[pyfunction]
-pub fn py_segment_cant_blank(prog: &str, segs: usize) -> SegmentResult {
+pub fn segment_cant_blank(prog: &str, segs: usize) -> SegmentResult {
     Prog::read(prog).seg_cant_blank(segs).into()
 }
 
 #[pyfunction]
-pub fn py_segment_cant_spin_out(
-    prog: &str,
-    segs: usize,
-) -> SegmentResult {
+pub fn segment_cant_spin_out(prog: &str, segs: usize) -> SegmentResult {
     Prog::read(prog).seg_cant_spin_out(segs).into()
 }
 
 /***************************************/
 
 #[pyfunction]
-pub fn py_cps_cant_halt(prog: &str, segs: usize) -> bool {
+pub fn cps_cant_halt(prog: &str, segs: usize) -> bool {
     let prog = Prog::read(prog);
 
     if prog.halt_slots().is_empty() {
@@ -203,7 +200,7 @@ pub fn py_cps_cant_halt(prog: &str, segs: usize) -> bool {
 }
 
 #[pyfunction]
-pub fn py_cps_cant_blank(prog: &str, segs: usize) -> bool {
+pub fn cps_cant_blank(prog: &str, segs: usize) -> bool {
     let prog = Prog::read(prog);
 
     if prog.erase_slots().is_empty() {
@@ -214,7 +211,7 @@ pub fn py_cps_cant_blank(prog: &str, segs: usize) -> bool {
 }
 
 #[pyfunction]
-pub fn py_cps_cant_spin_out(prog: &str, segs: usize) -> bool {
+pub fn cps_cant_spin_out(prog: &str, segs: usize) -> bool {
     let prog = Prog::read(prog);
 
     if prog.zr_shifts().is_empty() {
@@ -227,7 +224,7 @@ pub fn py_cps_cant_spin_out(prog: &str, segs: usize) -> bool {
 /***************************************/
 
 #[pyfunction]
-pub fn py_ctl_cant_halt(prog: &str, steps: usize) -> bool {
+pub fn ctl_cant_halt(prog: &str, steps: usize) -> bool {
     let prog = Prog::read(prog);
 
     if prog.halt_slots().is_empty() {
@@ -238,7 +235,7 @@ pub fn py_ctl_cant_halt(prog: &str, steps: usize) -> bool {
 }
 
 #[pyfunction]
-pub fn py_ctl_cant_blank(prog: &str, steps: usize) -> bool {
+pub fn ctl_cant_blank(prog: &str, steps: usize) -> bool {
     let prog = Prog::read(prog);
 
     if prog.erase_slots().is_empty() {
@@ -249,7 +246,7 @@ pub fn py_ctl_cant_blank(prog: &str, steps: usize) -> bool {
 }
 
 #[pyfunction]
-pub fn py_ctl_cant_spin_out(prog: &str, steps: usize) -> bool {
+pub fn ctl_cant_spin_out(prog: &str, steps: usize) -> bool {
     let prog = Prog::read(prog);
 
     if prog.zr_shifts().is_empty() {
@@ -447,14 +444,14 @@ mod rust_stuff {
     #[pymodule_export]
     use {
         crate::{
-            py_cant_blank, py_cant_halt, py_cant_spin_out,
-            py_cps_cant_blank, py_cps_cant_halt, py_cps_cant_spin_out,
-            py_ctl_cant_blank, py_ctl_cant_halt, py_ctl_cant_spin_out,
-            py_is_connected, py_opt_block, py_segment_cant_blank,
-            py_segment_cant_halt, py_segment_cant_spin_out,
-            py_show_state, read_instr, run_quick_machine, show_comp,
-            show_instr, show_slot, tcompile, term_or_rec,
-            BackwardResult, MachineResult, TermRes,
+            cant_blank, cant_halt, cant_spin_out, cps_cant_blank,
+            cps_cant_halt, cps_cant_spin_out, ctl_cant_blank,
+            ctl_cant_halt, ctl_cant_spin_out, is_connected,
+            py_opt_block, py_show_state, read_instr, run_quick_machine,
+            segment_cant_blank, segment_cant_halt,
+            segment_cant_spin_out, show_comp, show_instr, show_slot,
+            tcompile, term_or_rec, BackwardResult, MachineResult,
+            TermRes,
         },
         tm::prover::PastConfigs,
     };

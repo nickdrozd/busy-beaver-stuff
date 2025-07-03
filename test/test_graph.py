@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from test.prog_data import GRAPHS, KERNEL, MODULAR, SPAGHETTI
 from test.utils import read_progs
-from tm.rust_stuff import py_is_connected as is_connected
+from tm.rust_stuff import is_connected
 from tm.show import show_state
 from tools.graph import Graph
 
