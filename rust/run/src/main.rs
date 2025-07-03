@@ -11,7 +11,6 @@ use tm::{
     ctl::Ctl as _,
     instrs::{Params, Prog},
     machine::run_for_infrul,
-    macros::Macro as _,
     reason::Backward as _,
     segment::Segment as _,
     tree::{build_tree, Step},
@@ -53,21 +52,6 @@ fn get_goal(goal: u8) -> Option<Goal> {
         3 => None,
         _ => unreachable!(),
     }
-}
-
-/**************************************/
-
-fn check_inf(prog: &Prog, block_steps: usize, steps: Step) -> bool {
-    let blocks = prog.opt_block(block_steps);
-
-    (if blocks == 1 {
-        run_for_infrul(prog, steps)
-    } else {
-        run_for_infrul(&prog.make_block_macro(blocks), steps)
-    })
-    .is_infinite()
-        || run_for_infrul(&prog.make_backsymbol_macro(1), steps)
-            .is_infinite()
 }
 
 /**************************************/
@@ -162,7 +146,7 @@ fn test_tree() {
                     || prog.cant_spin_out(4).is_settled()
                     || prog.ctl_cant_spin_out(15)
                     || run_for_infrul(prog, 236).is_infinite()
-                    || check_inf(prog, 100, 40)
+                    || prog.check_inf(100, 40)
             }
         ),
         (
@@ -199,7 +183,7 @@ fn test_tree() {
                     || prog.cant_spin_out(2).is_settled()
                     || prog.ctl_cant_spin_out(83)
                     || prog.seg_cant_spin_out(5).is_refuted()
-                    || check_inf(prog, 300, 1000)
+                    || prog.check_inf(300, 1000)
             }
         ),
         (
@@ -226,7 +210,7 @@ fn test_tree() {
                     || prog.cant_halt(11).is_settled()
                     || prog.ctl_cant_halt(84)
                     || prog.cps_cant_halt(9)
-                    || check_inf(prog, 300, 1364)
+                    || prog.check_inf(300, 1364)
             }
         ),
         (
@@ -240,7 +224,7 @@ fn test_tree() {
                     || prog.ctl_cant_spin_out(114)
                     || prog.cps_cant_spin_out(9)
                     || prog.seg_cant_spin_out(7).is_refuted()
-                    || check_inf(prog, 300, 7000)
+                    || prog.check_inf(300, 7000)
             }
         ),
         (
@@ -252,7 +236,7 @@ fn test_tree() {
                     || prog.term_or_rec(1_000).is_settled()
                     || prog.ctl_cant_blank(60)
                     || prog.cps_cant_blank(9)
-                    || check_inf(prog, 300, 3000)
+                    || prog.check_inf(300, 3000)
             }
         ),
         (
@@ -272,7 +256,7 @@ fn test_tree() {
                     || prog.seg_cant_halt(2).is_refuted()
                     || prog.ctl_cant_halt(96)
                     || prog.cps_cant_halt(6)
-                    || check_inf(prog, 300, 7000)
+                    || prog.check_inf(300, 7000)
             }
         ),
         (
@@ -285,7 +269,7 @@ fn test_tree() {
                     || prog.ctl_cant_spin_out(186)
                     || prog.cps_cant_spin_out(6)
                     || prog.seg_cant_spin_out(4).is_refuted()
-                    || check_inf(prog, 300, 1000)
+                    || prog.check_inf(300, 1000)
                     || (prog.incomplete(false) && {
                         prog.seg_cant_halt(5).is_refuted()
                             || prog.cps_cant_halt(6)
@@ -300,7 +284,7 @@ fn test_tree() {
                     || prog.term_or_rec(2_000).is_settled()
                     || prog.ctl_cant_blank(120)
                     || prog.cps_cant_blank(5)
-                    || check_inf(prog, 300, 1000)
+                    || prog.check_inf(300, 1000)
             }
         ),
         (

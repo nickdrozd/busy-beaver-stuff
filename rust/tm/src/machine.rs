@@ -1,5 +1,6 @@
 use crate::{
     instrs::{GetInstr, Prog, Slot, State},
+    macros::Macro as _,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
     tape::{Alignment as _, BigTape, HeadTape, MachineTape as _},
@@ -98,6 +99,19 @@ pub fn run_for_infrul(
 /**************************************/
 
 impl Prog {
+    pub fn check_inf(&self, block_steps: usize, steps: usize) -> bool {
+        let blocks = self.opt_block(block_steps);
+
+        (if blocks == 1 {
+            run_for_infrul(self, steps)
+        } else {
+            run_for_infrul(&self.make_block_macro(blocks), steps)
+        })
+        .is_infinite()
+            || run_for_infrul(&self.make_backsymbol_macro(1), steps)
+                .is_infinite()
+    }
+
     pub fn term_or_rec(&self, sim_lim: usize) -> RunResult {
         let mut state = 1;
 
@@ -187,9 +201,6 @@ fn test_rec() {
 }
 
 /**************************************/
-
-#[cfg(test)]
-use crate::macros::Macro as _;
 
 #[test]
 fn test_macro_loop() {
