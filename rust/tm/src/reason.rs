@@ -250,6 +250,10 @@ fn step_configs(
 
         if !pulls_indef.is_empty() {
             indef_steps.push((pulls_indef, config.clone()));
+
+            if instrs.is_empty() {
+                continue;
+            }
         }
 
         let config = Rc::new(config);
