@@ -13,22 +13,26 @@ type Config = (State, (bool, Tape));
 
 /**************************************/
 
-pub fn make_block_macro<P: GetInstr>(
-    prog: &P,
-    blocks: usize,
-) -> MacroProg<'_, BlockLogic> {
-    MacroProg::new(prog, BlockLogic::new(blocks, prog.params()))
+pub trait Macro: GetInstr + Sized {
+    fn make_block_macro(
+        &self,
+        blocks: usize,
+    ) -> MacroProg<'_, BlockLogic> {
+        MacroProg::new(self, BlockLogic::new(blocks, self.params()))
+    }
+
+    fn make_backsymbol_macro(
+        &self,
+        backsymbols: usize,
+    ) -> MacroProg<'_, BacksymbolLogic> {
+        MacroProg::new(
+            self,
+            BacksymbolLogic::new(backsymbols, self.params()),
+        )
+    }
 }
 
-pub fn make_backsymbol_macro<P: GetInstr>(
-    prog: &P,
-    backsymbols: usize,
-) -> MacroProg<'_, BacksymbolLogic> {
-    MacroProg::new(
-        prog,
-        BacksymbolLogic::new(backsymbols, prog.params()),
-    )
-}
+impl<T: GetInstr> Macro for T {}
 
 /**************************************/
 
@@ -380,14 +384,14 @@ use crate::instrs::{Parse as _, Prog};
 
 #[test]
 fn test_nest() {
-    let comp =
+    let prog =
         Prog::read("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
 
-    let block = make_block_macro(&comp, 3);
+    let block = prog.make_block_macro(3);
 
-    let _ = make_backsymbol_macro(&comp, 3);
+    let _ = prog.make_backsymbol_macro(3);
 
-    let _ = make_backsymbol_macro(&block, 3);
+    let _ = block.make_backsymbol_macro(3);
 }
 
 #[cfg(test)]
@@ -401,10 +405,10 @@ const MACROS: &[(Slot, Instr)] = &[
 
 #[test]
 fn test_macro() {
-    let comp =
+    let prog =
         Prog::read("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD");
 
-    let block = make_block_macro(&comp, 2);
+    let block = prog.make_block_macro(2);
 
     for &(slot, instr) in MACROS {
         assert_eq!(Some(instr), block.get_instr(&slot));

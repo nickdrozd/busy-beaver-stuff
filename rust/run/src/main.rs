@@ -12,7 +12,7 @@ use tm::{
     ctl::Ctl as _,
     instrs::{Params, Prog},
     machine::run_for_infrul,
-    macros::{make_backsymbol_macro, make_block_macro},
+    macros::Macro as _,
     reason::Backward as _,
     segment::Segment as _,
     tree::{build_tree, Step},
@@ -64,10 +64,10 @@ fn check_inf(comp: &Prog, block_steps: usize, steps: Step) -> bool {
     (if blocks == 1 {
         run_for_infrul(comp, steps)
     } else {
-        run_for_infrul(&make_block_macro(comp, blocks), steps)
+        run_for_infrul(&comp.make_block_macro(blocks), steps)
     })
     .is_infinite()
-        || run_for_infrul(&make_backsymbol_macro(comp, 1), steps)
+        || run_for_infrul(&comp.make_backsymbol_macro(1), steps)
             .is_infinite()
 }
 

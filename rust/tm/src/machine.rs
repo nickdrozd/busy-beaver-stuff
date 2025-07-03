@@ -189,13 +189,13 @@ fn test_rec() {
 /**************************************/
 
 #[cfg(test)]
-use crate::macros::{make_backsymbol_macro, make_block_macro};
+use crate::macros::Macro as _;
 
 #[test]
 fn test_macro_loop() {
     let prog = Prog::read("1RB 0RA 1LB  2LA 2RB 0LA");
-    let block = make_block_macro(&prog, 3);
-    let back = make_backsymbol_macro(&block, 1);
+    let block = prog.make_block_macro(3);
+    let back = block.make_backsymbol_macro(1);
 
     assert!(!run_for_infrul(&back, 1000).is_infinite());
 }

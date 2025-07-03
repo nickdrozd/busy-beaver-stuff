@@ -5,7 +5,7 @@ use ahash::AHashSet as Set;
 use crate::{
     blocks::opt_block,
     instrs::{Color, GetInstr, Instr, Parse as _, Prog, Shift, State},
-    macros::make_block_macro,
+    macros::Macro as _,
     tape::{
         Block as _, LilBlock as Block, LilCount as Count,
         LilTape as Tape, Span,
@@ -37,7 +37,7 @@ impl Ctl for Prog {
         if blocks == 1 {
             ctl_run(self, steps, Halt)
         } else {
-            ctl_run(&make_block_macro(self, blocks), steps, Halt)
+            ctl_run(&self.make_block_macro(blocks), steps, Halt)
         }
     }
 
@@ -51,7 +51,7 @@ impl Ctl for Prog {
         if blocks == 1 {
             ctl_run(self, steps, Spinout)
         } else {
-            ctl_run(&make_block_macro(self, blocks), steps, Spinout)
+            ctl_run(&self.make_block_macro(blocks), steps, Spinout)
         }
     }
 }
