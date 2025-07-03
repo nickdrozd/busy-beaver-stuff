@@ -16,14 +16,14 @@ type Config = (State, (bool, Tape));
 pub fn make_block_macro<P: GetInstr>(
     prog: &P,
     blocks: usize,
-) -> MacroProg<'_, P, BlockLogic> {
+) -> MacroProg<'_, BlockLogic> {
     MacroProg::new(prog, BlockLogic::new(blocks, prog.params()))
 }
 
 pub fn make_backsymbol_macro<P: GetInstr>(
     prog: &P,
     backsymbols: usize,
-) -> MacroProg<'_, P, BacksymbolLogic> {
+) -> MacroProg<'_, BacksymbolLogic> {
     MacroProg::new(
         prog,
         BacksymbolLogic::new(backsymbols, prog.params()),
@@ -106,14 +106,14 @@ impl Logic for BlockLogic {
 /**************************************/
 
 #[expect(private_bounds)]
-pub struct MacroProg<'p, P: GetInstr, L: Logic> {
-    prog: &'p P,
+pub struct MacroProg<'p, L: Logic> {
+    prog: &'p dyn GetInstr,
     logic: L,
 
     instrs: RefCell<Instrs>,
 }
 
-impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
+impl<L: Logic> GetInstr for MacroProg<'_, L> {
     fn get_instr(&self, slot: &Slot) -> Option<Instr> {
         if let Some(&instr) = self.instrs.borrow().get(slot) {
             return Some(instr);
@@ -135,8 +135,8 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
 }
 
 #[expect(private_bounds)]
-impl<'p, P: GetInstr, L: Logic> MacroProg<'p, P, L> {
-    const fn new(prog: &'p P, logic: L) -> Self {
+impl<'p, L: Logic> MacroProg<'p, L> {
+    const fn new(prog: &'p dyn GetInstr, logic: L) -> Self {
         Self {
             prog,
             logic,
