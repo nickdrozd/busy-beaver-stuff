@@ -7,7 +7,6 @@ use std::{
 use rayon::prelude::*;
 
 use tm::{
-    blocks::opt_block,
     cps::Cps as _,
     ctl::Ctl as _,
     instrs::{Params, Prog},
@@ -58,16 +57,16 @@ fn get_goal(goal: u8) -> Option<Goal> {
 
 /**************************************/
 
-fn check_inf(comp: &Prog, block_steps: usize, steps: Step) -> bool {
-    let blocks = opt_block(comp, block_steps);
+fn check_inf(prog: &Prog, block_steps: usize, steps: Step) -> bool {
+    let blocks = prog.opt_block(block_steps);
 
     (if blocks == 1 {
-        run_for_infrul(comp, steps)
+        run_for_infrul(prog, steps)
     } else {
-        run_for_infrul(&comp.make_block_macro(blocks), steps)
+        run_for_infrul(&prog.make_block_macro(blocks), steps)
     })
     .is_infinite()
-        || run_for_infrul(&comp.make_backsymbol_macro(1), steps)
+        || run_for_infrul(&prog.make_backsymbol_macro(1), steps)
             .is_infinite()
 }
 

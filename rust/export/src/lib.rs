@@ -1,7 +1,6 @@
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
-    blocks::opt_block,
     cps::Cps as _,
     ctl::Ctl as _,
     instrs::{
@@ -23,8 +22,8 @@ pub fn is_connected(prog: &str) -> bool {
 }
 
 #[pyfunction]
-pub fn py_opt_block(prog: &str, steps: usize) -> usize {
-    opt_block(&Prog::read(prog), steps)
+pub fn opt_block(prog: &str, steps: usize) -> usize {
+    Prog::read(prog).opt_block(steps)
 }
 
 #[pyfunction]
@@ -446,8 +445,8 @@ mod rust_stuff {
         crate::{
             cant_blank, cant_halt, cant_spin_out, cps_cant_blank,
             cps_cant_halt, cps_cant_spin_out, ctl_cant_blank,
-            ctl_cant_halt, ctl_cant_spin_out, is_connected,
-            py_opt_block, py_show_state, read_instr, run_quick_machine,
+            ctl_cant_halt, ctl_cant_spin_out, is_connected, opt_block,
+            py_show_state, read_instr, run_quick_machine,
             segment_cant_blank, segment_cant_halt,
             segment_cant_spin_out, show_comp, show_instr, show_slot,
             tcompile, term_or_rec, BackwardResult, MachineResult,

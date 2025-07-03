@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Protocol
 
 from tm.parse import tcompile
-from tm.rust_stuff import py_opt_block as opt_block
+from tm.rust_stuff import opt_block
 from tm.show import show_comp
 
 if TYPE_CHECKING:

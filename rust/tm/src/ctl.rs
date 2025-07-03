@@ -3,7 +3,6 @@ use core::fmt;
 use ahash::AHashSet as Set;
 
 use crate::{
-    blocks::opt_block,
     instrs::{Color, GetInstr, Instr, Parse as _, Prog, Shift, State},
     macros::Macro as _,
     tape::{
@@ -32,7 +31,7 @@ pub trait Ctl {
 
 impl Ctl for Prog {
     fn ctl_cant_halt(&self, steps: Steps) -> bool {
-        let blocks = opt_block(self, OPT_BLOCK);
+        let blocks = self.opt_block(OPT_BLOCK);
 
         if blocks == 1 {
             ctl_run(self, steps, Halt)
@@ -46,7 +45,7 @@ impl Ctl for Prog {
     }
 
     fn ctl_cant_spin_out(&self, steps: Steps) -> bool {
-        let blocks = opt_block(self, OPT_BLOCK);
+        let blocks = self.opt_block(OPT_BLOCK);
 
         if blocks == 1 {
             ctl_run(self, steps, Spinout)

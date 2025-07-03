@@ -104,7 +104,7 @@ type Rule = dict[Index, Op]
 
 ## blocks ##############################
 
-def py_opt_block(prog: str, steps: int) -> int: ...
+def opt_block(prog: str, steps: int) -> int: ...
 
 ## reason ##############################
 
