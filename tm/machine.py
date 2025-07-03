@@ -4,7 +4,7 @@ from tm.macro import MacroInfLoop, make_macro
 from tm.prover import ConfigLimit, Prover
 from tm.rules import InfiniteRule, RuleLimit, SuspectedRule, apply_rule
 from tm.rust_stuff import (
-    py_quick_term_or_rec as quick_term_or_rec,  # noqa: F401
+    py_term_or_rec as term_or_rec,  # noqa: F401
 )
 from tm.show import show_comp, show_slot, show_state
 from tm.tape import Tape, show_number

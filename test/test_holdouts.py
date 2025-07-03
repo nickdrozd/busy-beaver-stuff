@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from test.utils import read_holdouts
-from tm.machine import quick_term_or_rec
+from tm.machine import term_or_rec
 
 STEPS = 1_000
 
@@ -35,5 +35,5 @@ class Holdouts(TestCase):
 
         for prog in holdouts:
             self.assertFalse(
-                quick_term_or_rec(prog, STEPS),
+                term_or_rec(prog, STEPS),
                 prog)

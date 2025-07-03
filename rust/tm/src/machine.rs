@@ -97,7 +97,7 @@ pub fn run_for_infrul(
 
 /**************************************/
 
-pub fn quick_term_or_rec(comp: &Prog, sim_lim: usize) -> RunResult {
+pub fn term_or_rec(comp: &Prog, sim_lim: usize) -> RunResult {
     let mut state = 1;
 
     let mut tape = HeadTape::init_stepped();
@@ -176,7 +176,7 @@ const REC_PROGS: [(&str, bool); 5] = [
 fn test_rec() {
     for (prog, expected) in REC_PROGS {
         assert_eq!(
-            quick_term_or_rec(&Prog::read(prog), 100).is_recur(),
+            term_or_rec(&Prog::read(prog), 100).is_recur(),
             expected,
             "{prog}",
         );

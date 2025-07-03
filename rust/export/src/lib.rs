@@ -8,7 +8,7 @@ use tm::{
         show_state, GetInstr as _, Instr, Instrs, Parse as _, Prog,
         Slot, State,
     },
-    machine::quick_term_or_rec,
+    machine::term_or_rec,
     reason::{
         Backward as _, BackwardResult as BackwardResultRs,
         BackwardResult::*, Depth, Step,
@@ -29,8 +29,8 @@ pub fn py_opt_block(prog: &str, steps: usize) -> usize {
 }
 
 #[pyfunction]
-pub fn py_quick_term_or_rec(prog: &str, sim_lim: usize) -> bool {
-    quick_term_or_rec(&Prog::read(prog), sim_lim).is_recur()
+pub fn py_term_or_rec(prog: &str, sim_lim: usize) -> bool {
+    term_or_rec(&Prog::read(prog), sim_lim).is_recur()
 }
 
 #[pyfunction]
@@ -451,9 +451,9 @@ mod rust_stuff {
             py_cant_blank, py_cant_halt, py_cant_spin_out,
             py_cps_cant_blank, py_cps_cant_halt, py_cps_cant_spin_out,
             py_ctl_cant_blank, py_ctl_cant_halt, py_ctl_cant_spin_out,
-            py_is_connected, py_opt_block, py_quick_term_or_rec,
-            py_segment_cant_blank, py_segment_cant_halt,
-            py_segment_cant_spin_out, py_show_state, read_instr,
+            py_is_connected, py_opt_block, py_segment_cant_blank,
+            py_segment_cant_halt, py_segment_cant_spin_out,
+            py_show_state, py_term_or_rec, read_instr,
             run_quick_machine, show_comp, show_instr, show_slot,
             tcompile, BackwardResult, MachineResult, TermRes,
         },

@@ -17,9 +17,9 @@ from test.test_num import assert_num_counts, clear_caches
 from test.utils import RUN_SLOW, read_holdouts
 from tm.machine import (
     Machine,
-    quick_term_or_rec,
     show_number,
     show_slot,
+    term_or_rec,
 )
 from tm.macro import (
     MacroProg,
@@ -863,7 +863,7 @@ class Recur(TuringTest):
 
         for prog in LR_NEGATIVES:
             self.assertFalse(
-                quick_term_or_rec(prog, steps),
+                term_or_rec(prog, steps),
                 prog)
 
             self.assertIsNotNone(
@@ -917,7 +917,7 @@ class Recur(TuringTest):
                 print(prog)
 
                 self.assertTrue(
-                    quick_term_or_rec(
+                    term_or_rec(
                         prog,
                         1_000_000,
                     ),
@@ -957,11 +957,11 @@ class Recur(TuringTest):
                 run_loose_linrec_machine(prog, 1_000_000).infrul)
 
             self.assertTrue(
-                quick_term_or_rec(prog, 1_000_000))
+                term_or_rec(prog, 1_000_000))
 
     def test_infrul(self):
         for prog in INFRUL:
-            self.assertFalse(quick_term_or_rec(prog, 10_000))
+            self.assertFalse(term_or_rec(prog, 10_000))
 
         assert not INFRUL & RECURS
 

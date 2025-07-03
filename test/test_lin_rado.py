@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from test.lin_rec import StrictLinRecMachine
 from test.utils import read_progs
-from tm.machine import quick_term_or_rec
+from tm.machine import term_or_rec
 from tm.show import show_state
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ class TestLinRado(TestCase):
         for prog in yield_programs(states, colors, bool(halt), rejects):
             prog = prog.replace('1R_', '...')  # noqa: PLW2901
 
-            if not quick_term_or_rec(prog, loose):
+            if not term_or_rec(prog, loose):
                 self.progs_loose.add(prog)
 
             if StrictLinRecMachine(prog).run(
