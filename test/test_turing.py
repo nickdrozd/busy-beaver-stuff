@@ -481,7 +481,7 @@ class Reason(TuringTest):
             for prog, steps in data.items():
                 self.assertEqual(
                     cant_reach(prog, steps).step,
-                    steps - 1)
+                    steps)
 
                 self.assertIsInstance(
                     cant_reach(prog, steps - 1),
@@ -500,15 +500,15 @@ class Reason(TuringTest):
 
         for prog, (halt, blank, spin) in OMNIREASONABLE.items():
             self.assertEqual(
-                halt,
+                1 + halt,
                 cant_halt(prog, REASON_LIMIT).step)
 
             self.assertEqual(
-                blank,
+                1 + blank,
                 cant_blank(prog, REASON_LIMIT).step)
 
             self.assertEqual(
-                spin,
+                1 + spin,
                 cant_spin_out(prog, REASON_LIMIT).step)
 
     def test_simple(self):

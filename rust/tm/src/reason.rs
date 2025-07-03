@@ -94,7 +94,7 @@ fn cant_reach(
 
     let mut indef_steps = ValidatedSteps::new();
 
-    for step in 0..depth {
+    for step in 1..=depth {
         #[cfg(debug_assertions)]
         {
             for config in &configs {
