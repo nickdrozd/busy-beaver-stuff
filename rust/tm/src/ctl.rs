@@ -3,13 +3,13 @@ use core::fmt;
 use ahash::AHashSet as Set;
 
 use crate::{
+    Goal,
     instrs::{Color, GetInstr, Instr, Parse as _, Prog, Shift, State},
     macros::Macro as _,
     tape::{
         Block as _, LilBlock as Block, LilCount as Count,
         LilTape as Tape, Span,
     },
-    Goal,
 };
 
 use Goal::*;

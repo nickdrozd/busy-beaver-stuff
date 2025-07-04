@@ -215,11 +215,13 @@ fn test_macro_loop() {
 
 #[test]
 fn test_mult_rule() {
-    assert!(run_for_infrul(
-        &Prog::read(
-            "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
-        ),
-        10_000,
-    )
-    .is_mult());
+    assert!(
+        run_for_infrul(
+            &Prog::read(
+                "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
+            ),
+            10_000,
+        )
+        .is_mult()
+    );
 }

@@ -3,12 +3,12 @@ use core::cmp::{max, min};
 use rayon::prelude::*;
 
 use crate::{
+    Goal,
     instrs::{
         Color, GetInstr as _, Instr, Params, Parse, Prog, Shift, Slot,
         State,
     },
     tape::{MachineTape as _, MedTape as Tape},
-    Goal,
 };
 
 pub type Step = usize;

@@ -4,8 +4,8 @@ use tm::{
     cps::Cps as _,
     ctl::Ctl as _,
     instrs::{
-        show_state, GetInstr as _, Instr, Instrs, Parse as _, Prog,
-        Slot, State,
+        GetInstr as _, Instr, Instrs, Parse as _, Prog, Slot, State,
+        show_state,
     },
     reason::{
         Backward as _, BackwardResult as BackwardResultRs,
@@ -443,14 +443,13 @@ mod rust_stuff {
     #[pymodule_export]
     use {
         crate::{
-            cant_blank, cant_halt, cant_spin_out, cps_cant_blank,
-            cps_cant_halt, cps_cant_spin_out, ctl_cant_blank,
-            ctl_cant_halt, ctl_cant_spin_out, is_connected, opt_block,
-            py_show_state, read_instr, run_quick_machine,
-            segment_cant_blank, segment_cant_halt,
-            segment_cant_spin_out, show_comp, show_instr, show_slot,
-            tcompile, term_or_rec, BackwardResult, MachineResult,
-            TermRes,
+            BackwardResult, MachineResult, TermRes, cant_blank,
+            cant_halt, cant_spin_out, cps_cant_blank, cps_cant_halt,
+            cps_cant_spin_out, ctl_cant_blank, ctl_cant_halt,
+            ctl_cant_spin_out, is_connected, opt_block, py_show_state,
+            read_instr, run_quick_machine, segment_cant_blank,
+            segment_cant_halt, segment_cant_spin_out, show_comp,
+            show_instr, show_slot, tcompile, term_or_rec,
         },
         tm::prover::PastConfigs,
     };

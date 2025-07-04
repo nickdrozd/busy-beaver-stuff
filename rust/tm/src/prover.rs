@@ -6,7 +6,7 @@ use pyo3::{pyclass, pymethods};
 
 use crate::{
     instrs::{GetInstr, Slot, State},
-    rules::{make_rule, ApplyRule, Rule},
+    rules::{ApplyRule, Rule, make_rule},
     tape::{
         BigCount, BigTape, EnumTape, GetSig, MachineTape, MinSig,
         Signature,

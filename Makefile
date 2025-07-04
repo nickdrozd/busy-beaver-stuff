@@ -47,6 +47,7 @@ CARGO_VERSION = cargo --version
 
 clippy :
 	$(CARGO_VERSION)
+	$(CARGO) fmt --check
 	$(CARGO) clippy --all-targets
 
 CARGO_TEST = $(CARGO) test

@@ -5,8 +5,8 @@ use std::collections::BTreeMap as Dict;
 use ahash::AHashSet as Set;
 
 use crate::{
-    instrs::{Color, GetInstr, Parse as _, Shift, State},
     Goal,
+    instrs::{Color, GetInstr, Parse as _, Shift, State},
 };
 
 use Goal::*;

@@ -8,11 +8,11 @@ use std::collections::BTreeMap as Dict;
 use ahash::AHashSet as Set;
 
 use crate::{
+    Goal,
     instrs::{
-        show_state, Color, GetInstr, Instr, Params, Shift, Slot, State,
+        Color, GetInstr, Instr, Params, Shift, Slot, State, show_state,
     },
     tape::{Block as _, LilBlock as Block, LilCount as Count},
-    Goal,
 };
 
 use Goal::*;

@@ -7,14 +7,14 @@ use std::{
 use rayon::prelude::*;
 
 use tm::{
+    Goal,
     cps::Cps as _,
     ctl::Ctl as _,
     instrs::{Params, Prog},
     machine::run_for_infrul,
     reason::Backward as _,
     segment::Segment as _,
-    tree::{build_tree, Step},
-    Goal,
+    tree::{Step, build_tree},
 };
 
 #[allow(unused_imports)]

@@ -383,7 +383,7 @@ impl<Count: Countable, B: Block<Count>> Tape<Count, B> {
 
 pub trait MachineTape<Count: Countable> {
     fn step(&mut self, shift: Shift, color: Color, skip: bool)
-        -> Count;
+    -> Count;
 }
 
 impl<Count: Countable, B: Block<Count>> MachineTape<Count>
