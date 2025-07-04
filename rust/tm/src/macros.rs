@@ -13,18 +13,18 @@ type Config = (State, (bool, Tape));
 
 /**************************************/
 
+type BlockMacro<'p> = MacroProg<'p, BlockLogic>;
+type BacksymbolMacro<'p> = MacroProg<'p, BacksymbolLogic>;
+
 pub trait Macro: GetInstr + Sized {
-    fn make_block_macro(
-        &self,
-        blocks: usize,
-    ) -> MacroProg<'_, BlockLogic> {
+    fn make_block_macro(&self, blocks: usize) -> BlockMacro<'_> {
         MacroProg::new(self, BlockLogic::new(blocks, self.params()))
     }
 
     fn make_backsymbol_macro(
         &self,
         backsymbols: usize,
-    ) -> MacroProg<'_, BacksymbolLogic> {
+    ) -> BacksymbolMacro<'_> {
         MacroProg::new(
             self,
             BacksymbolLogic::new(backsymbols, self.params()),
