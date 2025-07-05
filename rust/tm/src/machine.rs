@@ -135,8 +135,7 @@ impl Prog {
         for cycle in 1..sim_lim {
             let slot = (state, tape.scan());
 
-            let Some((color, shift, next_state)) =
-                self.get_instr(&slot)
+            let Some(&(color, shift, next_state)) = self.get(&slot)
             else {
                 return RunResult::Undefined(slot);
             };

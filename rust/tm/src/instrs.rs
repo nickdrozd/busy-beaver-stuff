@@ -37,6 +37,10 @@ impl Prog {
         Self::new(instrs, params)
     }
 
+    pub fn get(&self, slot: &Slot) -> Option<&Instr> {
+        self.instrs.get(slot)
+    }
+
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 

@@ -4,10 +4,7 @@ use rayon::prelude::*;
 
 use crate::{
     Goal,
-    instrs::{
-        Color, GetInstr as _, Instr, Params, Parse, Prog, Shift, Slot,
-        State,
-    },
+    instrs::{Color, Instr, Params, Parse, Prog, Shift, Slot, State},
     tape::{MachineTape as _, MedTape as Tape},
 };
 
@@ -101,8 +98,7 @@ impl Config {
         for _ in 0..sim_lim {
             let slot = (self.state, self.tape.scan);
 
-            let Some((color, shift, state)) = prog.get_instr(&slot)
-            else {
+            let Some(&(color, shift, state)) = prog.get(&slot) else {
                 return Undefined(slot);
             };
 

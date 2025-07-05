@@ -1,7 +1,7 @@
 use core::iter::{once, repeat_n};
 
 use crate::{
-    instrs::{Color, GetInstr as _, Prog, Shift},
+    instrs::{Color, Prog, Shift},
     tape::{MachineTape as _, MedSpan as Span, MedTape as Tape},
 };
 
@@ -93,8 +93,8 @@ impl Prog {
         let mut tape = BlockMeasure::new();
 
         for _ in 0..steps {
-            let Some((color, shift, next_state)) =
-                self.get_instr(&(state, tape.tape.scan))
+            let Some(&(color, shift, next_state)) =
+                self.get(&(state, tape.tape.scan))
             else {
                 break;
             };
@@ -118,9 +118,8 @@ impl Prog {
         let mut tape = Tape::init();
 
         for _ in 0..steps {
-            let instr = self.get_instr(&(state, tape.scan)).unwrap();
-
-            let (color, shift, next_state) = instr;
+            let &(color, shift, next_state) =
+                self.get(&(state, tape.scan)).unwrap();
 
             tape.step(shift, color, state == next_state);
 
