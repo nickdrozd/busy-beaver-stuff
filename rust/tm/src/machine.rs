@@ -53,12 +53,12 @@ impl RunResult {
 use ProverResult::*;
 
 pub fn run_for_infrul(
-    comp: &impl GetInstr,
+    prog: &impl GetInstr,
     sim_lim: usize,
 ) -> RunResult {
     let mut tape = BigTape::init();
 
-    let mut prover = Prover::new(comp);
+    let mut prover = Prover::new(prog);
 
     let mut state: State = 0;
 
@@ -85,7 +85,7 @@ pub fn run_for_infrul(
 
         let slot = (state, tape.scan);
 
-        let Some((color, shift, next_state)) = comp.get_instr(&slot)
+        let Some((color, shift, next_state)) = prog.get_instr(&slot)
         else {
             return RunResult::Undefined(slot);
         };

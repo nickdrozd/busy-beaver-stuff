@@ -72,17 +72,17 @@ type Entries = Vec<Entry>;
 type Entrypoints = Dict<State, (Entries, Entries)>;
 
 fn cant_reach(
-    comp: &Prog,
+    prog: &Prog,
     depth: Depth,
     get_configs: impl Fn(&Prog) -> Configs,
 ) -> BackwardResult {
-    let mut configs = get_configs(comp);
+    let mut configs = get_configs(prog);
 
     if configs.is_empty() {
         return Refuted(0);
     }
 
-    let entrypoints = get_entrypoints(comp);
+    let entrypoints = get_entrypoints(prog);
 
     configs.retain(|config| entrypoints.contains_key(&config.state));
 
@@ -290,22 +290,22 @@ fn step_configs(
 
 /**************************************/
 
-fn halt_configs(comp: &Prog) -> Configs {
-    comp.halt_slots()
+fn halt_configs(prog: &Prog) -> Configs {
+    prog.halt_slots()
         .iter()
         .map(|&(state, color)| Config::init_halt(state, color))
         .collect()
 }
 
-fn erase_configs(comp: &Prog) -> Configs {
-    comp.erase_slots()
+fn erase_configs(prog: &Prog) -> Configs {
+    prog.erase_slots()
         .iter()
         .map(|&(state, color)| Config::init_blank(state, color))
         .collect()
 }
 
-fn zero_reflexive_configs(comp: &Prog) -> Configs {
-    comp.zr_shifts()
+fn zero_reflexive_configs(prog: &Prog) -> Configs {
+    prog.zr_shifts()
         .iter()
         .map(|&(state, shift)| Config::init_spinout(state, shift))
         .collect()
@@ -320,10 +320,10 @@ fn get_blanks(configs: &Configs) -> Blanks {
 
 /**************************************/
 
-fn get_entrypoints(comp: &Prog) -> Entrypoints {
+fn get_entrypoints(prog: &Prog) -> Entrypoints {
     let mut entrypoints = Entrypoints::new();
 
-    for (&slot @ (read, _), &(color, shift, state)) in &comp.instrs {
+    for (&slot @ (read, _), &(color, shift, state)) in &prog.instrs {
         let (same, diff) = entrypoints.entry(state).or_default();
 
         (if read == state { same } else { diff })

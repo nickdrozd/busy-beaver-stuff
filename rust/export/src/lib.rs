@@ -372,7 +372,7 @@ impl MachineResult {
 #[pyfunction]
 #[pyo3(signature = (prog, sim_lim=100_000_000))]
 pub fn run_quick_machine(prog: &str, sim_lim: usize) -> MachineResult {
-    let comp = Prog::read(prog);
+    let prog = Prog::read(prog);
 
     let mut tape = Tape::init();
 
@@ -389,7 +389,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: usize) -> MachineResult {
     for cycle in 0..sim_lim {
         let slot = (state, tape.scan);
 
-        let Some((color, shift, next_state)) = comp.get_instr(&slot)
+        let Some((color, shift, next_state)) = prog.get_instr(&slot)
         else {
             cycles = cycle;
             result = Some(undfnd);
