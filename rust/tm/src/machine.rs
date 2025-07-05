@@ -9,6 +9,7 @@ use crate::{
 /**************************************/
 
 pub enum RunResult {
+    Blank,
     Recur,
     Spinout,
     MultRule,
@@ -20,11 +21,18 @@ pub enum RunResult {
 
 impl RunResult {
     pub const fn is_settled(&self) -> bool {
-        self.is_recur() || self.is_infinite() || self.is_undefined()
+        self.is_recur()
+            || self.is_infinite()
+            || self.is_undefined()
+            || self.is_blank()
     }
 
     pub const fn is_undefined(&self) -> bool {
         matches!(self, Self::Undefined(_))
+    }
+
+    pub const fn is_blank(&self) -> bool {
+        matches!(self, Self::Blank)
     }
 
     pub const fn is_recur(&self) -> bool {
@@ -156,6 +164,10 @@ impl Prog {
 
             tape.step(shift, color, same);
 
+            if tape.blank() {
+                return RunResult::Blank;
+            }
+
             let curr = tape.head();
 
             if curr < leftmost {
@@ -181,8 +193,11 @@ impl Prog {
 use crate::instrs::Parse as _;
 
 #[cfg(test)]
-const REC_PROGS: [(&str, bool); 5] = [
-    ("1RB ...  0LB 0LA", true),
+const REC_PROGS: [(&str, bool); 8] = [
+    ("1RB 0LB  1LA 0RB", true),
+    ("1RB 1LB  1LA 1RA", true),
+    ("1RB 0RB  1LB 1RA", true),
+    ("1RB ...  0LB 0LA", false),
     ("1RB 1LA  0LA 0RB", false),
     ("1RB 1LA  0LA 1RB", false),
     ("1RB 0LB  1LA 0RA", false),

@@ -482,6 +482,10 @@ impl HeadTape {
         self.tape.at_edge(edge)
     }
 
+    pub const fn blank(&self) -> bool {
+        self.tape.blank()
+    }
+
     pub fn step(&mut self, shift: Shift, color: Color, skip: bool) {
         let stepped = self.tape.step(shift, color, skip);
 

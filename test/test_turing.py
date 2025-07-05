@@ -957,7 +957,8 @@ class Recur(TuringTest):
                 run_loose_linrec_machine(prog, 1_000_000).infrul)
 
             self.assertTrue(
-                term_or_rec(prog, 1_000_000))
+                term_or_rec(prog, 1_000_000)
+                    or self.machine.blanks)
 
     def test_infrul(self):
         for prog in INFRUL:
