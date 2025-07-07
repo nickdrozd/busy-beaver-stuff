@@ -2598,7 +2598,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 
 SEGMENT_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 92,
-    "spinout": 100,
+    "spinout": 101,
 }
 
 SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -2769,6 +2769,7 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1RC  1LC 0RD  1RA 0LB  1RD 0RA",
         "1RB 1RD  1LC 0RD  1RC 0RA  1LD 0LB",
         "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB",
+        "1RB 1RA 2RC  2LB 2LA 0RC  0RC 0LA 1LC",
         "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",
         "1RB 3LA 1LA 4LA 1RA  2LB 2RA ... 0RA 0RB",
         "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA",
