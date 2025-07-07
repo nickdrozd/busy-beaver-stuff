@@ -7,7 +7,7 @@ from tools import parse
 if TYPE_CHECKING:
     from tm.parse import Color, State
 
-    ConGraph = dict[State, set[State]]
+    type ConGraph = dict[State, set[State]]
 
 
 class Graph:

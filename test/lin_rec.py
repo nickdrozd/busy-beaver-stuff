@@ -11,10 +11,10 @@ if TYPE_CHECKING:
     from tm.machine import Undfnd
     from tm.parse import Color, Prog, Shift, Slot, State
 
-    RecRes = tuple[int, int]
-    LinRec = tuple[int | None, int]
+    type RecRes = tuple[int, int]
+    type LinRec = tuple[int | None, int]
 
-    TapeSlice = list[Color]
+    type TapeSlice = list[Color]
 
 ########################################
 
@@ -267,7 +267,7 @@ class HeadTape:
 ########################################
 
 if TYPE_CHECKING:
-    Tapes = dict[int, PtrTape | None]
+    type Tapes = dict[int, PtrTape | None]
 
 
 @dataclass(slots = True)

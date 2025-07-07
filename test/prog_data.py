@@ -1,6 +1,6 @@
 from typing import Literal
 
-Goal = Literal[
+type Goal = Literal[
     "halt",
     "blank",
     "spinout",
@@ -8,7 +8,7 @@ Goal = Literal[
 
 ## test turing #######################################################
 
-BasicTermData = dict[str, tuple[int, int]]
+type BasicTermData = dict[str, tuple[int, int]]
 
 HALT: BasicTermData = {
     # 2/2 BB
@@ -4436,7 +4436,7 @@ DIFFUSE = {
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC":    118,  # boyd
 }
 
-ProverEst = dict[
+type ProverEst = dict[
     str,
     int | tuple[float, int] | str,
 ]

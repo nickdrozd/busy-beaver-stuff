@@ -5,7 +5,7 @@ from tm.rust_stuff import read_instr
 if TYPE_CHECKING:
     from tm.parse import Color, Instr, Params
 
-    Switch = dict[Color, Instr | None]
+    type Switch = dict[Color, Instr | None]
 
 ########################################
 
