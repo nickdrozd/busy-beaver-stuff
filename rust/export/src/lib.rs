@@ -28,7 +28,7 @@ pub fn opt_block(prog: &str, steps: usize) -> usize {
 
 #[pyfunction]
 pub fn term_or_rec(prog: &str, sim_lim: usize) -> bool {
-    Prog::read(prog).term_or_rec(sim_lim).is_recur()
+    Prog::read(prog).term_or_rec(sim_lim).is_settled()
 }
 
 #[pyfunction]

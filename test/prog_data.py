@@ -455,7 +455,6 @@ QUASIHALT = {
 
 RECUR_COMPACT = {
     # 2/2
-    "1RB ...  0LB 0LA": (0, 3),
     "1RB ...  1LB 0LA": (0, 3),
     "1RB 0LA  1LA ...": (0, 3),
     "1RB 1RB  0LA ...": (1, 2),
@@ -670,12 +669,10 @@ RECUR_COMPACT = {
     "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...": (  3, 17),
     "1RB 2LA 3LA 0RB  0LA 2RB 1LB 3RB": ( 1, 20),
     "1RB 2RA 3RB 2LB  2LB 3LA 0LA 2LA": ( 0, 10),
-    "1RB ... 0RB ...  2LB 3RA 0RA 0RA": ( 0, 9),
     "1RB 3RA 0RB 0RA  0LB 2LA 1LA 2RB": (15, 9),
     "1RB 0RA 3RB 0LA  2LA ... 3LA 2LA": (5, 12),
     "1RB 0RA 3RB 0LA  2LA ... 3LA 3LA": (11, 6),
     "1RB 1RB 0RB ...  2LA 2RB 3LA 1LB": (5, 7),
-    "1RB 3RA 0RB 0LA  2LA ... 3LA ...": (0, 11),
     "1RB 3RB 1LA 2RA  2LA 0LA 2LA ...": (4, 7),
     "1RB 3RB ... ...  2LA 0RB 3LB 1LA": (6, 7),
     "1RB 2RB ... 1RB  2LB 3LA 3RB 0LA": (10, 13),
@@ -771,13 +768,11 @@ RECUR_COMPACT = {
     "1RB ...  0RC 0LA  0LD 0RE  1LB 0LB  1LE 1RC": ( 1, 21),
     "1RB 1RE  1LC 0LA  1LA 0RD  0LB 1LB  0RE 0LD": ( 0, 13),
     "1RB 1RC  1LC 0RB  0RC 0LD  1LA 0LE  0LA ...": ( 0, 14),
-    "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD": ( 0, 29),
     "1RB 0RE  1LC 0LC  1LA 0LD  1RD 0LA  0RB ...": ( 0, 14),
     "1RB 0RE  0LC 1RD  1LC 1LD  1RE 0RA  0LA 0RB": ( 0, 21),
     "1RB 0RB  1RC 0RD  1LA 0LE  1LD 0RC  0LA ...": ( 0, 19),
     "1RB 0RB  0RC 1RD  1LC 0RD  0LA 0LE  1LA ...": ( 0, 14),
     "1RB 0RB  0RC 0LE  0RD 1LA  1LD 1RC  0LA ...": ( 0, 19),
-    "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB": ( 0, 18),
     "1RB 0LC  1LC 0RD  0RE 1LA  0LA 1RD  0RB 1LB": ( 0, 31),
     "1RB 0LC  1LC 0LA  0RA 0LD  0RE 1LB  1RE 1RB": ( 0, 17),
     "1RB 0LA  1RC ...  0RD 1LE  1LC 1RD  0RA 1LA": ( 0, 194),
@@ -811,6 +806,7 @@ RECUR_BLANK_IN_PERIOD = {
     "1RB 0LA  1LB 1RA": (0, 5),
     "1RB 0RA  1LA ...": (0, 4),
     "1RB ...  0LB 0RA": (0, 3),
+    "1RB ...  0LB 0LA": (0, 3),
     "1RB 0RB  1LA 0LB": (None, 4),
     "1RB 1RB  1LA 0LB": (None, 4),
 
@@ -835,9 +831,15 @@ RECUR_BLANK_IN_PERIOD = {
 
     # 2/4
     "1RB 2RB 0LB ...  1LA 2LB 3RA 0LA": (0, 7),
+    "1RB ... 0RB ...  2LB 3RA 0RA 0RA": (0, 9),
+    "1RB 3RA 0RB 0LA  2LA ... 3LA ...": (0, 11),
     "1RB 0RA ... 0LA  2LB 3LA 1LA 3RB": (0, 12),
     "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA": (0, 224),
     "1RB 2LA 0RA 1LA  3LA 0LB 1RA 2LA": (None, 52),
+
+    # 5/2
+    "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD": (0, 29),
+    "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB": (0, 18),
 }
 
 RECUR_BLANK_BEFORE_PERIOD = {
@@ -4332,6 +4334,7 @@ DO_BLANK: set[str] = {
     "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA",
     "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA",
     "1RB ...  0LC 0RB  0LD 1LC  1RA 0RB",
+    "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
 
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
     "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE",  # 10^30
