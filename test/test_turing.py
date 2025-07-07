@@ -711,6 +711,7 @@ class Simple(TuringTest):
     def run_bb(
             self,
             prog: str,
+            sim_lim: int = 100_000_000,
             analyze: bool = True,
     ):
         print(prog)
@@ -718,7 +719,7 @@ class Simple(TuringTest):
         if analyze:
             self.analyze(prog, normal = True, decomp = True)
 
-        self.machine = run_quick_machine(prog)
+        self.machine = run_quick_machine(prog, sim_lim)
 
     def test_halt(self):
         self._test_halt(HALT)
