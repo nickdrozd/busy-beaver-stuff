@@ -722,14 +722,26 @@ class Simple(TuringTest):
         self._test_spinout(SPINOUT)
         self._test_spinout(SPINOUT_BLANK, blank = True)
 
-    def test_undefined(self):
-        for sequence in UNDEFINED.values():
+    def test_instr_seqs(self):
+        self._test_instr_seqs(INSTR_SEQS)
+
+    def test_blank_after_tree(self):
+        self._test_instr_seqs(BLANK_AFTER_TREE)
+
+        for prog in BLANK_AFTER_TREE:
+            self.run_bb(prog, sim_lim = 100)
+
+            self.assertTrue(
+                self.machine.blanks)
+
+    def _test_instr_seqs(self, instr_seqs: InstrSeqs):
+        for sequence in instr_seqs.values():
             for partial, expected in sequence.items():
                 self.run_bb(partial, analyze = False)
 
                 self.assert_undefined(expected)
 
-        for prog, sequence in UNDEFINED.items():
+        for prog, sequence in instr_seqs.items():
             self.assertEqual(
                 sequence,
                 {

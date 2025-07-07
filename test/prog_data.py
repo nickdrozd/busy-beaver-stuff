@@ -941,7 +941,9 @@ LR_NEGATIVES = {
     "1RB 1LC  0LA 0RD  1RD 1LB  ... 1RA",
 }
 
-UNDEFINED = {
+type InstrSeqs = dict[str, dict[str, tuple[int, str]]]
+
+INSTR_SEQS: InstrSeqs = {
     # 4/2 blb, sb
     "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": {
         "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
@@ -1209,6 +1211,49 @@ UNDEFINED = {
         "1RB 1LA  1RC ...  0LA ...  ... ...": ( 6, 'B1'),
         "1RB 1LA  1RC 1LB  0LA ...  ... ...": ( 9, 'C1'),
         "1RB 1LA  1RC 1LB  0LA 1LD  ... ...": (10, 'D1'),
+    },
+}
+
+BLANK_AFTER_TREE: InstrSeqs = {
+    "1RB 0RB ...  2LA ... 0LB": {
+        "1RB ... ...  ... ... ...": ( 1, 'B0'),
+        "1RB ... ...  2LA ... ...": ( 2, 'A1'),
+        "1RB 0RB ...  2LA ... ...": ( 3, 'B2'),
+        "1RB 0RB ...  2LA ... 0LB": ( 7, 'B1'),
+    },
+    "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  0RC ...  ... ...  ... ...": ( 2, 'C0'),
+        "1RB ...  0RC ...  1LD ...  ... ...": ( 3, 'D0'),
+        "1RB ...  0RC ...  1LD ...  0LD ...": ( 4, 'D1'),
+        "1RB ...  0RC ...  1LD ...  0LD 0RA": ( 6, 'B1'),
+        "1RB ...  0RC 1LD  1LD ...  0LD 0RA": ( 8, 'A1'),
+    },
+    "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
+        "1RB ...  1RC ...  1LA ...  ... ...": ( 3, 'A1'),
+        "1RB 0RB  1RC ...  1LA ...  ... ...": ( 4, 'B1'),
+        "1RB 0RB  1RC 1LD  1LA ...  ... ...": ( 5, 'D0'),
+        "1RB 0RB  1RC 1LD  1LA ...  0LD ...": ( 6, 'D1'),
+    },
+    "1RB ...  0LC 0RB  0LD 1LC  1RA 0RB": {
+        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  0LC ...  ... ...  ... ...": ( 2, 'C1'),
+        "1RB ...  0LC ...  ... 1LC  ... ...": ( 3, 'C0'),
+        "1RB ...  0LC ...  0LD 1LC  ... ...": ( 4, 'D0'),
+        "1RB ...  0LC ...  0LD 1LC  1RA ...": ( 6, 'B1'),
+        "1RB ...  0LC 0RB  0LD 1LC  1RA ...": ( 9, 'D1'),
+    },
+    "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA": {
+        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
+        "1RB ...  1LC ...  ... ...  ... ...  ... ...": ( 2, 'C1'),
+        "1RB ...  1LC ...  ... 0LB  ... ...  ... ...": ( 4, 'C0'),
+        "1RB ...  1LC ...  0LD 0LB  ... ...  ... ...": ( 5, 'D0'),
+        "1RB ...  1LC ...  0LD 0LB  0LE ...  ... ...": ( 6, 'E0'),
+        "1RB ...  1LC ...  0LD 0LB  0LE ...  1RE ...": ( 9, 'E1'),
+        "1RB ...  1LC ...  0LD 0LB  0LE ...  1RE 1RA": (11, 'B1'),
+        "1RB ...  1LC 0LD  0LD 0LB  0LE ...  1RE 1RA": (12, 'D1'),
     },
 }
 
@@ -4330,13 +4375,6 @@ DONT_BLANK: set[str] = {
 }
 
 DO_BLANK: set[str] = {
-    "1RB 0RB ...  2LA ... 0LB",
-
-    "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA",
-    "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA",
-    "1RB ...  0LC 0RB  0LD 1LC  1RA 0RB",
-    "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
-
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
     "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE",  # 10^30
     "1RB 1RA  1LC 0RB  1LE 0LD  1RA 1RE  1LB 0RA",  # 10^31
@@ -5594,6 +5632,7 @@ BLANKERS = (
     DO_BLANK
     | set(SPINOUT_BLANK
         | SPINOUT_BLANK_SLOW
+        | BLANK_AFTER_TREE
         | RECUR_BLANK_IN_PERIOD)
     | RECUR_BLANK_BEFORE_PERIOD
     | {prog for prog, marks in PROVER_SPINOUT.items()
@@ -5608,7 +5647,7 @@ NONBLANKERS = (
            if not isinstance(marks, int) or marks > 3}
     | {prog for prog, (marks, _) in HALT.items() if marks > 3}
     | set(BACKWARD_STEPS['blank'])
-) - DO_BLANK
+) - BLANKERS
 
 NONSPINNERS = (
     DONT_SPIN_OUT
