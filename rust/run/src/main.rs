@@ -1,8 +1,4 @@
-use std::{
-    env,
-    fmt::Debug,
-    sync::{Arc, Mutex, MutexGuard},
-};
+use std::env;
 
 use rayon::prelude::*;
 
@@ -21,21 +17,9 @@ use tm::{
 #[allow(unused_imports)]
 use tm::instrs::Parse as _;
 
-/**************************************/
+mod basket;
 
-type Basket<T> = Arc<Mutex<T>>;
-
-pub fn set_val<T>(val: T) -> Basket<T> {
-    Arc::new(Mutex::new(val))
-}
-
-pub fn access<T>(basket: &Basket<T>) -> MutexGuard<'_, T> {
-    basket.lock().unwrap()
-}
-
-pub fn get_val<T: Debug>(basket: Basket<T>) -> T {
-    Arc::try_unwrap(basket).unwrap().into_inner().unwrap()
-}
+use basket::{access, get_val, set_val};
 
 /**************************************/
 
