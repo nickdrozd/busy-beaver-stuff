@@ -3,16 +3,18 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
 };
 
-type Basket<T> = Arc<Mutex<T>>;
+pub struct Basket<T>(Arc<Mutex<T>>);
 
-pub fn set_val<T>(val: T) -> Basket<T> {
-    Arc::new(Mutex::new(val))
-}
+impl<T: Debug> Basket<T> {
+    pub fn set(val: T) -> Self {
+        Self(Arc::new(Mutex::new(val)))
+    }
 
-pub fn access<T>(basket: &Basket<T>) -> MutexGuard<'_, T> {
-    basket.lock().unwrap()
-}
+    pub fn access(&self) -> MutexGuard<'_, T> {
+        self.0.lock().unwrap()
+    }
 
-pub fn get_val<T: Debug>(basket: Basket<T>) -> T {
-    Arc::try_unwrap(basket).unwrap().into_inner().unwrap()
+    pub fn get(self) -> T {
+        Arc::try_unwrap(self.0).unwrap().into_inner().unwrap()
+    }
 }
