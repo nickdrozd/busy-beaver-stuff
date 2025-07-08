@@ -62,22 +62,22 @@ fn assert_tree(
     expected: (u64, u64),
     pipeline: impl Fn(&Prog) -> bool + Sync,
 ) {
-    let holdout_count = set_val(0);
-    let visited_count = set_val(0);
+    let holdout = set_val(0);
+    let visited = set_val(0);
 
     build_tree(params, get_goal(goal), tree, &|prog| {
-        *access(&visited_count) += 1;
+        *access(&visited) += 1;
 
         if pipeline(prog) {
             return;
         }
 
-        *access(&holdout_count) += 1;
+        *access(&holdout) += 1;
 
         // println!("{}", prog.show());
     });
 
-    let result = (get_val(holdout_count), get_val(visited_count));
+    let result = (get_val(holdout), get_val(visited));
 
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
@@ -349,8 +349,8 @@ fn test_tree_slow() {
 use tm::reason::BackwardResult;
 
 fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
-    let holdout_count = set_val(0);
-    let refuted_steps = set_val(0);
+    let holdout = set_val(0);
+    let refuted = set_val(0);
 
     let cant_reach = match goal {
         0 => Prog::cant_halt,
@@ -363,7 +363,7 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
         let result = cant_reach(prog, 256);
 
         if let BackwardResult::Refuted(steps) = result {
-            let mut curr_max = access(&refuted_steps);
+            let mut curr_max = access(&refuted);
 
             if steps > *curr_max {
                 *curr_max = steps;
@@ -374,12 +374,12 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
             return;
         }
 
-        *access(&holdout_count) += 1;
+        *access(&holdout) += 1;
 
         // println!("{}", prog.show());
     });
 
-    let result = (get_val(refuted_steps), get_val(holdout_count));
+    let result = (get_val(refuted), get_val(holdout));
 
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
