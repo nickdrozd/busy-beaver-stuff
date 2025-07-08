@@ -113,6 +113,9 @@ class TuringTest(TestCase):
             self.machine.cycles,
             cycles)
 
+    def assert_no_init_blank(self) -> None:
+        self.assertNotIn(0, self.machine.blanks)
+
     def assert_undefined(self, expected: tuple[int, str]):
         assert (undfnd := self.machine.undfnd) is not None
         step, slot = undfnd
@@ -722,6 +725,11 @@ class Simple(TuringTest):
         self._test_spinout(SPINOUT)
         self._test_spinout(SPINOUT_BLANK, blank = True)
 
+    def test_init_blank(self):
+        for prog, steps in INIT_BLANK.items():
+            self.run_bb(prog, sim_lim = steps, analyze = False)
+            self.assertEqual(self.machine.blanks[0], steps)
+
     def test_instr_seqs(self):
         self._test_instr_seqs(INSTR_SEQS)
 
@@ -788,6 +796,7 @@ class Simple(TuringTest):
                 self.assertEqual(
                     marks, {chr(blank + 65) for blank in blanks})
                 self.assert_could_blank(prog)
+                self.assert_no_init_blank()
 
             if self.machine.undfnd is not None:
                 self.assert_could_halt(prog)
@@ -944,6 +953,8 @@ class Recur(TuringTest):
                         steps
                     ) - qsihlt_diff,
                 )
+
+            self.assert_no_init_blank()
 
             if blank:
                 self.assertTrue(
@@ -1317,6 +1328,9 @@ class Prover(RunProver):
 
                 self.assert_marks(
                     0 if blank else prog_data[prog][0])
+
+                if blank:
+                    self.assert_no_init_blank()
             else:
                 self.assertTrue(
                     self.machine.infrul
@@ -1386,6 +1400,7 @@ class Prover(RunProver):
 
             if result < 5:
                 self.assert_could_blank(prog)
+                self.assert_no_init_blank()
             else:
                 self.assert_cant_blank_backward(prog, 14)
 

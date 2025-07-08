@@ -403,6 +403,48 @@ SPINOUT_BLANK_SLOW = {
         {'C', 'E', 'F', 'D'}, 65538552),
 }
 
+INIT_BLANK = {
+    "1RB ...  0LB 0RA": 3,
+    "1RB ...  0LB 0LA": 3,
+    "1RB 0RA  1LA ...": 4,
+    "1RB 0LA  1LB 1RA": 5,
+    "1RB 0RA  0LB 1LA": 7,
+    "1RB 1LA  0LA 0LB": 7,
+    "1RB 0RA  1LB 1LA": 8,
+
+    "1RB 0LA  1RC ...  0LC 0LA": 5,
+    "1RB 1RC  0LA 0RA  0LB ...": 5,
+    "1RB 0LA  0LC 1RA  1LA 1LB": 18,
+    "1RB 0LA  1LB 0LC  1RA 1RC": 18,
+    "1RB 1LB  0RC 1LA  1LA 0RA": 21,
+
+    "1RB 0RA 1LA  1LB 2RB 1LA": 20,
+    "1RB 2LB 0LA  1LA 0RB 2RA": 20,
+    "1RB 0RA 1LB  2LA 2LB 0LA": 21,
+    "1RB 0RA 2RB  2LA 1LB 1LA": 21,
+    "1RB 2RB 0RA  1LB 2LA 1LA": 21,
+    "1RB 2RB 0RA  2LA 1LA 1LB": 27,
+
+    "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD": 21,
+    "1RB 0RA  1RC 1RD  0LD 0LC  1LA 1LC": 77,
+    "1RB 1LC  1RC 0LD  1LA 0RB  0LB 0RA": 78,
+    "1RB 1LC  1RC 0RD  1LA 0LB  0LD 0RA": 84,
+    "1RB 0RA  1LC 1RD  1RD 1LD  1LA 0LC": 88,
+    "1RB 0RA  1LC 0RD  1LA 1LB  0LC 1RD": 90,
+    "1RB 0RA  1LC 0RB  0LD 1LD  1LA 0LA": 121,
+
+    "1RB 2RB 0LB ...  1LA 2LB 3RA 0LA": 7,
+    "1RB ... 0RB ...  2LB 3RA 0RA 0RA": 9,
+    "1RB 3RA 0RB 0LA  2LA ... 3LA ...": 11,
+    "1RB 0RA ... 0LA  2LB 3LA 1LA 3RB": 12,
+    "1RB 3RB 0LA 2RA  2LB 0RB 3LA 1LA": 136,
+    "1RB 0RA 3LB 1LA  2LA 2LB 0LA 2RA": 139,
+    "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA": 224,
+
+    "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB": 18,
+    "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD": 29,
+}
+
 QUASIHALT = {
     # 3/2
     "1RB 1RC  1LC 0LB  1RA 1LA": (22,  2),  # center, >BB
@@ -800,46 +842,25 @@ RECUR_DIFFUSE = {
 
 RECUR_BLANK_IN_PERIOD = {
     # 2/2
-    "1RB 0RA  1LB 1LA": (0, 8),
-    "1RB 0RA  0LB 1LA": (0, 7),
-    "1RB 1LA  0LA 0LB": (0, 7),
-    "1RB 0LA  1LB 1RA": (0, 5),
-    "1RB 0RA  1LA ...": (0, 4),
-    "1RB ...  0LB 0RA": (0, 3),
-    "1RB ...  0LB 0LA": (0, 3),
     "1RB 0RB  1LA 0LB": (None, 4),
     "1RB 1RB  1LA 0LB": (None, 4),
 
     # 3/2
-    "1RB 0LA  1RC ...  0LC 0LA": (0, 5),
-    "1RB 1RC  0LA 0RA  0LB ...": (0, 5),
-    "1RB 1LB  0RC 1LA  1LA 0RA": (0, 21),
     "1RB ...  0RC 1LB  1LA 0RB": (None, 10),
     "1RB 0LB  1LA 1LC  0RC 0RB": (None,  7),
 
     # 2/3
-    "1RB 2RB 0RA  2LA 1LA 1LB": (0, 27),
     "1RB 1LA 2RB  2LA 2RA 0LB": (None, 16),
     "1RB 2LA 0RB  1LA 0LB 1RA": (None,  4),
 
     # 4/2
-    "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD": (0, 21),
     "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC": (None, 4),
     "1RB 1LB  1LA 0RC  0LD 0RB  0LC ...": (None, 6),
     "1RB 1LB  1LA 1RC  0LD 0RB  ... 0LC": (None, 6),
     "1RB 1LC  1LA 0RD  1LA ...  0LD 0RB": (None, 5),
 
     # 2/4
-    "1RB 2RB 0LB ...  1LA 2LB 3RA 0LA": (0, 7),
-    "1RB ... 0RB ...  2LB 3RA 0RA 0RA": (0, 9),
-    "1RB 3RA 0RB 0LA  2LA ... 3LA ...": (0, 11),
-    "1RB 0RA ... 0LA  2LB 3LA 1LA 3RB": (0, 12),
-    "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA": (0, 224),
     "1RB 2LA 0RA 1LA  3LA 0LB 1RA 2LA": (None, 52),
-
-    # 5/2
-    "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD": (0, 29),
-    "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB": (0, 18),
 }
 
 RECUR_BLANK_BEFORE_PERIOD = {
