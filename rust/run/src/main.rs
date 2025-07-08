@@ -419,6 +419,18 @@ fn test_reason() {
 
 /**************************************/
 
+fn test_collect() {
+    let progs = Basket::set(vec![]);
+
+    build_tree((2, 2), None, 4, &|prog| {
+        progs.access().push(prog.show());
+    });
+
+    assert_eq!(progs.get().len(), 89);
+}
+
+/**************************************/
+
 fn main() {
     println!("tree fast");
     test_tree();
@@ -428,6 +440,9 @@ fn main() {
     if !args.contains(&"--all".to_string()) {
         return;
     }
+
+    println!("collect");
+    test_collect();
 
     println!("reason");
     test_reason();
