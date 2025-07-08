@@ -380,7 +380,7 @@ impl TapeColorConverter {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::{Parse as _, Prog};
+use crate::{instrs::Parse as _, prog::Prog};
 
 #[test]
 fn test_nest() {

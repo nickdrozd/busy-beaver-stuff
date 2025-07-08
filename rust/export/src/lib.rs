@@ -4,9 +4,10 @@ use tm::{
     cps::Cps as _,
     ctl::Ctl as _,
     instrs::{
-        GetInstr as _, Instr, Instrs, Parse as _, Prog, Slot, State,
+        GetInstr as _, Instr, Instrs, Parse as _, Slot, State,
         show_state,
     },
+    prog::Prog,
     reason::{
         Backward as _, BackwardResult as BackwardResultRs,
         BackwardResult::*, Depth, Step,

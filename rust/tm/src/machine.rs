@@ -1,6 +1,7 @@
 use crate::{
-    instrs::{GetInstr, Prog, Slot, State},
+    instrs::{GetInstr, Slot, State},
     macros::Macro as _,
+    prog::Prog,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
     tape::{Alignment as _, BigTape, HeadTape, MachineTape as _},

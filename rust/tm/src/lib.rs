@@ -33,6 +33,7 @@ pub mod graph;
 pub mod instrs;
 pub mod machine;
 pub mod macros;
+pub mod prog;
 pub mod prover;
 pub mod reason;
 pub mod rules;

@@ -4,7 +4,8 @@ use rayon::prelude::*;
 
 use crate::{
     Goal,
-    instrs::{Color, Instr, Params, Parse, Prog, Shift, Slot, State},
+    instrs::{Color, Instr, Params, Parse, Shift, Slot, State},
+    prog::Prog,
     tape::{MachineTape as _, MedTape as Tape},
 };
 

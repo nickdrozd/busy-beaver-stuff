@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::instrs::{Instrs, Prog};
+use crate::{instrs::Instrs, prog::Prog};
 
 type State = u8;
 

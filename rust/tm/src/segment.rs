@@ -790,7 +790,7 @@ impl<'p, P: GetInstr> AnalyzedProg<'p, P> {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::{Parse as _, Prog};
+use crate::{instrs::Parse as _, prog::Prog};
 
 #[cfg(test)]
 impl Tape {

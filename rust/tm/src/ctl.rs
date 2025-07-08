@@ -4,8 +4,9 @@ use ahash::AHashSet as Set;
 
 use crate::{
     Goal,
-    instrs::{Color, GetInstr, Instr, Parse as _, Prog, Shift, State},
+    instrs::{Color, GetInstr, Instr, Parse as _, Shift, State},
     macros::Macro as _,
+    prog::Prog,
     tape::{
         Block as _, LilBlock as Block, LilCount as Count,
         LilTape as Tape, Span,
