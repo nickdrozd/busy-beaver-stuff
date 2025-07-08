@@ -362,10 +362,12 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
     build_tree(params, get_goal(goal), TREE_LIM, &|prog| {
         let result = cant_reach(prog, 256);
 
-        if let BackwardResult::Refuted(steps) = result
-            && steps > *access(&refuted_steps)
-        {
-            *access(&refuted_steps) = steps;
+        if let BackwardResult::Refuted(steps) = result {
+            let mut curr_max = access(&refuted_steps);
+
+            if steps > *curr_max {
+                *curr_max = steps;
+            }
         }
 
         if result.is_settled() {
