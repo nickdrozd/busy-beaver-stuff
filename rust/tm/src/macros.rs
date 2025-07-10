@@ -314,7 +314,7 @@ impl Logic for BacksymbolLogic {
 
 /**************************************/
 
-trait Logic: Sized {
+trait Logic {
     fn new(cells: usize, params: Params) -> Self;
 
     fn cells(&self) -> usize;
