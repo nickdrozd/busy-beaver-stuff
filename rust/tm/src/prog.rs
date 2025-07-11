@@ -35,10 +35,8 @@ impl Prog {
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
-        let (max_state, max_color) = self.params();
-
-        for state in 0..max_state {
-            for color in 0..max_color {
+        for state in 0..self.states {
+            for color in 0..self.colors {
                 let slot = (state, color);
 
                 if !self.instrs.contains_key(&slot) {
