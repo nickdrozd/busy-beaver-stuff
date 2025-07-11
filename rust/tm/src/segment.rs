@@ -9,7 +9,8 @@ use ahash::AHashSet as Set;
 
 use crate::{
     Goal,
-    instrs::{Color, GetInstr, Instr, Shift, Slot, State, show_state},
+    instrs::{Color, Instr, Shift, Slot, State, show_state},
+    prog::Prog,
     tape::{Block as _, LilBlock as Block, LilCount as Count},
 };
 
@@ -48,7 +49,7 @@ pub trait Segment {
     fn seg_cant_spin_out(&self, segs: Segments) -> SegmentResult;
 }
 
-impl<P: GetInstr> Segment for P {
+impl Segment for Prog {
     fn seg_cant_halt(&self, segs: Segments) -> SegmentResult {
         segment_cant_reach(self, segs, Halt)
     }
@@ -84,7 +85,7 @@ impl From<Goal> for SegmentResult {
 }
 
 fn segment_cant_reach(
-    prog: &impl GetInstr,
+    prog: &Prog,
     segs: Segments,
     goal: Goal,
 ) -> SegmentResult {
@@ -117,8 +118,8 @@ fn segment_cant_reach(
 
 /**************************************/
 
-fn all_segments_reached<P: GetInstr>(
-    prog: &AnalyzedProg<P>,
+fn all_segments_reached(
+    prog: &AnalyzedProg,
     seg: Segments,
     goal: Goal,
 ) -> Option<SearchResult> {
@@ -436,7 +437,7 @@ impl Config {
     #[expect(clippy::unwrap_in_result)]
     fn run_to_edge(
         &mut self,
-        prog: &impl GetInstr,
+        prog: &Prog,
         goal: Goal,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
@@ -446,7 +447,7 @@ impl Config {
         let mut copy = self.clone();
 
         while let Some(slot) = self.slot() {
-            let Some(instr) = prog.get_instr(&slot) else {
+            let Some(&instr) = prog.get(&slot) else {
                 return Some(Found(Halt));
             };
 
@@ -489,9 +490,9 @@ impl Config {
                 continue;
             }
 
-            let instr = prog.get_instr(&copy.slot().unwrap()).unwrap();
+            let instr = prog.get(&copy.slot().unwrap()).unwrap();
 
-            copy.step(&instr);
+            copy.step(instr);
 
             if copy.state == self.state && copy.tape == self.tape {
                 return Some(Repeat);
@@ -721,30 +722,27 @@ type Spinouts = Dict<State, Shift>;
 type Diffs = Vec<State>;
 type Dirs = Dict<bool, Vec<State>>;
 
-struct AnalyzedProg<'p, P: GetInstr> {
-    prog: &'p P,
+struct AnalyzedProg<'p> {
+    prog: &'p Prog,
     halts: Halts,
     spinouts: Spinouts,
     branches: Dict<State, (Diffs, Dirs)>,
 }
 
-impl<'p, P: GetInstr> AnalyzedProg<'p, P> {
-    fn new(prog: &'p P) -> Self {
-        let (states, colors) = prog.params();
-
+impl<'p> AnalyzedProg<'p> {
+    fn new(prog: &'p Prog) -> Self {
         let mut halts = Set::new();
         let mut spinouts = Dict::new();
 
         let mut branches = Dict::new();
 
-        for state in 0..states {
+        for state in 0..prog.states {
             let mut diff = Set::new();
             let mut lefts = Set::new();
             let mut rights = Set::new();
 
-            for color in 0..colors {
-                let Some((_, shift, next)) =
-                    prog.get_instr(&(state, color))
+            for color in 0..prog.colors {
+                let Some(&(_, shift, next)) = prog.get(&(state, color))
                 else {
                     halts.insert(state);
                     continue;
@@ -789,7 +787,7 @@ impl<'p, P: GetInstr> AnalyzedProg<'p, P> {
 /**************************************/
 
 #[cfg(test)]
-use crate::{instrs::Parse as _, prog::Prog};
+use crate::instrs::Parse as _;
 
 #[cfg(test)]
 impl Tape {
@@ -856,7 +854,7 @@ fn test_seg_tape() {
     while let Some(scan) = config.tape.scan() {
         seen.insert(config.clone());
 
-        config.step(&prog.get_instr(&(config.state, scan)).unwrap());
+        config.step(prog.get(&(config.state, scan)).unwrap());
     }
 
     assert!(config.tape.side());
