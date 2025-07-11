@@ -9,9 +9,7 @@ use ahash::AHashSet as Set;
 
 use crate::{
     Goal,
-    instrs::{
-        Color, GetInstr, Instr, Params, Shift, Slot, State, show_state,
-    },
+    instrs::{Color, GetInstr, Instr, Shift, Slot, State, show_state},
     tape::{Block as _, LilBlock as Block, LilCount as Count},
 };
 
@@ -52,15 +50,15 @@ pub trait Segment {
 
 impl<P: GetInstr> Segment for P {
     fn seg_cant_halt(&self, segs: Segments) -> SegmentResult {
-        segment_cant_reach(self, self.params(), segs, Halt)
+        segment_cant_reach(self, segs, Halt)
     }
 
     fn seg_cant_blank(&self, segs: Segments) -> SegmentResult {
-        segment_cant_reach(self, self.params(), segs, Blank)
+        segment_cant_reach(self, segs, Blank)
     }
 
     fn seg_cant_spin_out(&self, segs: Segments) -> SegmentResult {
-        segment_cant_reach(self, self.params(), segs, Spinout)
+        segment_cant_reach(self, segs, Spinout)
     }
 }
 
@@ -87,13 +85,12 @@ impl From<Goal> for SegmentResult {
 
 fn segment_cant_reach(
     prog: &impl GetInstr,
-    params: Params,
     segs: Segments,
     goal: Goal,
 ) -> SegmentResult {
     assert!(segs >= 2);
 
-    let prog = AnalyzedProg::new(prog, params);
+    let prog = AnalyzedProg::new(prog);
 
     if (goal.is_halt() && prog.halts.is_empty())
         || (goal.is_spinout() && prog.spinouts.is_empty())
@@ -732,7 +729,9 @@ struct AnalyzedProg<'p, P: GetInstr> {
 }
 
 impl<'p, P: GetInstr> AnalyzedProg<'p, P> {
-    fn new(prog: &'p P, (states, colors): Params) -> Self {
+    fn new(prog: &'p P) -> Self {
+        let (states, colors) = prog.params();
+
         let mut halts = Set::new();
         let mut spinouts = Dict::new();
 
@@ -870,20 +869,16 @@ fn test_seg_tape() {
 #[test]
 fn test_reached_states() {
     let progs = [
-        (("1RB 1RC  0LA 0RA  0LB ...", (3, 2)), vec![2], vec![]),
-        (("1RB ...  1LB 0RC  1LC 1LA", (3, 2)), vec![0], vec![1, 2]),
-        (("1RB ... ...  2LB 1RB 1LB", (2, 3)), vec![0], vec![1]),
-        (("1RB 0RB ...  2LA ... 0LB", (2, 3)), vec![0, 1], vec![]),
-        (
-            ("1RB ... 0RB ...  2LB 3RA 0RA 0RA", (2, 4)),
-            vec![0],
-            vec![1],
-        ),
+        ("1RB 1RC  0LA 0RA  0LB ...", vec![2], vec![]),
+        ("1RB ...  1LB 0RC  1LC 1LA", vec![0], vec![1, 2]),
+        ("1RB ... ...  2LB 1RB 1LB", vec![0], vec![1]),
+        ("1RB 0RB ...  2LA ... 0LB", vec![0, 1], vec![]),
+        ("1RB ... 0RB ...  2LB 3RA 0RA 0RA", vec![0], vec![1]),
     ];
 
-    for ((prog, params), halts, spinouts) in progs {
+    for (prog, halts, spinouts) in progs {
         let comp = Prog::read(prog);
-        let prog = AnalyzedProg::new(&comp, params);
+        let prog = AnalyzedProg::new(&comp);
 
         assert_eq!(prog.halts, halts.into_iter().collect::<Set<_>>());
 
