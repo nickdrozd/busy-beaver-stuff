@@ -221,23 +221,15 @@ impl<'h> TreeCore<'h> {
 /**************************************/
 
 trait Tree<'h> {
-    fn core(&self) -> &TreeCore<'_>;
+    fn prog(&self) -> &Prog;
 
-    fn final_slot(&self) -> bool {
-        self.core().final_slot()
-    }
+    fn harvest(&self);
 
-    fn run(&self, config: &mut Config) -> RunResult {
-        self.core().run(config)
-    }
+    fn final_slot(&self) -> bool;
 
-    fn incomplete(&self) -> bool {
-        self.core().incomplete()
-    }
+    fn incomplete(&self) -> bool;
 
-    fn harvest(&self) {
-        self.core().harvest();
-    }
+    fn run(&self, config: &mut Config) -> RunResult;
 
     fn avail_instrs(&self, slot: &Slot) -> &'h [Instr];
 
@@ -308,7 +300,7 @@ impl<'h, T: Tree<'h>> Parse for T {
     }
 
     fn show(&self) -> String {
-        self.core().prog.show()
+        self.prog().show()
     }
 }
 
@@ -335,8 +327,24 @@ impl<'h> BasicTree<'h> {
 }
 
 impl<'h> Tree<'h> for BasicTree<'h> {
-    fn core(&self) -> &TreeCore<'_> {
-        &self.core
+    fn prog(&self) -> &Prog {
+        &self.core.prog
+    }
+
+    fn harvest(&self) {
+        self.core.harvest();
+    }
+
+    fn final_slot(&self) -> bool {
+        self.core.final_slot()
+    }
+
+    fn incomplete(&self) -> bool {
+        self.core.incomplete()
+    }
+
+    fn run(&self, config: &mut Config) -> RunResult {
+        self.core.run(config)
     }
 
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
@@ -410,8 +418,24 @@ impl<'h> BlankTree<'h> {
 }
 
 impl<'h> Tree<'h> for BlankTree<'h> {
-    fn core(&self) -> &TreeCore<'_> {
-        &self.core
+    fn prog(&self) -> &Prog {
+        &self.core.prog
+    }
+
+    fn harvest(&self) {
+        self.core.harvest();
+    }
+
+    fn final_slot(&self) -> bool {
+        self.core.final_slot()
+    }
+
+    fn incomplete(&self) -> bool {
+        self.core.incomplete()
+    }
+
+    fn run(&self, config: &mut Config) -> RunResult {
+        self.core.run(config)
     }
 
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
