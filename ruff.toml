@@ -7,7 +7,6 @@ select = ["ALL"]
 preview = true
 
 ignore = [
-    "ANN204",   # none annotation for __init__
     "COM812",   # missing trailing commas
     "CPY001",   # copyright
     "D",        # docstrings
@@ -15,7 +14,6 @@ ignore = [
     "EM",       # exception strings
     "ERA001",   # commented-out code
     "N",        # naming
-    "PERF203",  # try in loop
     "PLR0904",  # too many public methods
     "PLR2004",  # magic value comparison
     "PLW1514",  # open encoding
@@ -46,3 +44,6 @@ max-statements = 70  # machine
 
 [lint.mccabe]
 max-complexity = 26  # num
+
+[lint.flake8-annotations]
+mypy-init-return = true
