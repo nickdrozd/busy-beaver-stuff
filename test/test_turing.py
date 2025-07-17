@@ -759,6 +759,17 @@ class Simple(TuringTest):
                 },
             )
 
+    def test_limited(self):
+        for instrs, progs in LIMITED.items():
+            for prog, steps in progs.items():
+                self.assertEqual(instrs, len(tcompile(prog)))
+
+                self.run_bb(prog, analyze = False)
+
+                self.assertEqual(
+                    steps,
+                    self.machine.simple_termination)
+
     def _test_simple_terminate(
             self,
             prog_data: Mapping[str, tuple[int | set[str], int]],

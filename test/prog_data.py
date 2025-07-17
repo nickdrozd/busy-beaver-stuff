@@ -1278,6 +1278,39 @@ BLANK_AFTER_TREE: InstrSeqs = {
     },
 }
 
+LIMITED: dict[int, dict[str, int]] = {
+    1: {
+        "1RB ...  ... ...": 1,
+    },
+
+    2: {
+        "0RB ...  1LA ...": 3,
+    },
+
+    3: {
+        "1RB 1LB  1LA ...": 5,
+    },
+
+    4: {
+        "1RB ...  0RC ...  1LC 0LA": 16,
+    },
+
+    5: {
+        "1RB ... ...  2LB 0RB 1LC  1LA ... ...": 33,
+
+        "1RB 2LB ...  2LA 2RB 1LB": 37,
+    },
+
+    6: {
+        "1RB 3LA 1RA 0LA  2LA ... ... 3RA": 123,
+    },
+
+    7: {
+        "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": 3932963,
+        "1RB 2LA 1RA  1LC 1LA 2RB  ... 1LA ...": 3932963,
+    },
+}
+
 MOTHER = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
 
 BIGFOOT = {
