@@ -11,7 +11,7 @@ use tm::{
     prog::Prog,
     reason::Backward as _,
     segment::Segment as _,
-    tree::{Step, build_tree},
+    tree::{Step, build_limited, build_tree},
 };
 
 #[allow(unused_imports)]
@@ -431,15 +431,104 @@ fn test_collect() {
 
 /**************************************/
 
+fn assert_limited(
+    instrs: u64,
+    tree: Step,
+    expected: (u64, u64),
+    pipeline: impl Fn(&Prog) -> bool + Sync,
+) {
+    let holdout = Basket::set(0);
+    let visited = Basket::set(0);
+
+    build_limited((instrs, instrs), instrs as u8, tree, &|prog| {
+        *visited.access() += 1;
+
+        if pipeline(prog) {
+            return;
+        }
+
+        *holdout.access() += 1;
+
+        // println!("{}", prog.show());
+    });
+
+    let result = (holdout.get(), visited.get());
+
+    assert_eq!(result, expected);
+}
+
+macro_rules! assert_limited_results {
+    ( $( ( ($instrs:expr, $tree:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
+        vec![
+            $( (
+                ($instrs,$tree, $leaves),
+                Box::new($pipeline) as Box<dyn Fn(&Prog) -> bool + Sync>
+            ) ),*]
+            .par_iter()
+            .for_each(|&((instrs, tree, expected), ref pipeline)| {
+                assert_limited(instrs, tree, expected, pipeline);
+            });
+    };
+}
+
+fn test_limited() {
+    assert_limited_results![
+        (
+            (4, 100, (724, 5_444)),
+            //
+            |prog: &Prog| {
+                //
+                prog.cant_halt(7).is_settled()
+                    || prog.ctl_cant_halt(100)
+            }
+        ),
+        (
+            (5, 300, (48_101, 161_024)),
+            //
+            |prog: &Prog| {
+                //
+                prog.cant_halt(9).is_settled()
+                    || prog.ctl_cant_halt(100)
+                    || prog.cps_cant_halt(4)
+            }
+        ),
+        (
+            (6, 1_000, (2_623_369, 5_857_888)),
+            //
+            |prog: &Prog| {
+                //
+                prog.cant_halt(13).is_settled()
+                    || prog.ctl_cant_halt(200)
+                    || prog.cps_cant_halt(4)
+            }
+        ),
+        (
+            (7, 2_000, (173_840_874, 256_221_202)),
+            //
+            |prog: &Prog| {
+                //
+                prog.cant_halt(13).is_settled()
+                    || prog.ctl_cant_halt(200)
+                    || prog.cps_cant_halt(4)
+            }
+        ),
+    ];
+}
+
+/**************************************/
+
 fn main() {
-    println!("tree fast");
-    test_tree();
+    println!("tree limited");
+    test_limited();
 
     let args: Vec<String> = env::args().collect();
 
     if !args.contains(&"--all".to_string()) {
         return;
     }
+
+    println!("tree fast");
+    test_tree();
 
     println!("collect");
     test_collect();

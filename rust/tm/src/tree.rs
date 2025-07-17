@@ -135,7 +135,7 @@ struct TreeCore<'h> {
 impl<'h> TreeCore<'h> {
     fn init(
         params @ (states, colors): Params,
-        halt: bool,
+        halt: Slots,
         sim_lim: Step,
         harvester: &'h dyn Fn(&Prog),
     ) -> Self {
@@ -145,8 +145,7 @@ impl<'h> TreeCore<'h> {
 
         let avail_params = vec![init_avail];
 
-        let remaining_slots =
-            ((states * colors) as Slots) - Slots::from(halt) - 2;
+        let remaining_slots = ((states * colors) as Slots) - halt - 2;
 
         Self {
             prog,
@@ -315,7 +314,7 @@ struct BasicTree<'h> {
 impl<'h> BasicTree<'h> {
     fn init(
         params: Params,
-        halt: bool,
+        halt: Slots,
         sim_lim: Step,
         harvester: &'h dyn Fn(&Prog),
         instr_table: &'h InstrTable,
@@ -378,7 +377,7 @@ impl<'h> BlankTree<'h> {
         harvester: &'h dyn Fn(&Prog),
         instr_table: &'h BlankInstrTable,
     ) -> Self {
-        let core = TreeCore::init(params, false, sim_lim, harvester);
+        let core = TreeCore::init(params, 0, sim_lim, harvester);
 
         let blank_slots = Some((states * (colors - 1)) as Slots);
 
@@ -466,7 +465,7 @@ impl<'h> Tree<'h> for BlankTree<'h> {
 
 fn build_all(
     params @ (states, colors): Params,
-    halt: bool,
+    halt: Slots,
     sim_lim: Step,
     harvester: &(impl Fn(&Prog) + Sync),
 ) {
@@ -546,7 +545,7 @@ fn build_spinout(
     init_instrs.par_iter().for_each(|&next_instr| {
         let mut prog = BasicTree::init(
             params,
-            false,
+            0,
             sim_lim,
             harvester,
             &instr_table,
@@ -568,7 +567,12 @@ pub fn build_tree(
 ) {
     match goal {
         Some(Goal::Halt) | None => {
-            build_all(params, goal.is_some(), sim_lim, harvester);
+            build_all(
+                params,
+                Slots::from(goal.is_some()),
+                sim_lim,
+                harvester,
+            );
         },
         Some(Goal::Blank) => {
             build_blank(params, sim_lim, harvester);
@@ -577,4 +581,15 @@ pub fn build_tree(
             build_spinout(params, sim_lim, harvester);
         },
     }
+}
+
+pub fn build_limited(
+    params @ (states, colors): Params,
+    instrs: Slots,
+    sim_lim: Step,
+    harvester: &(impl Fn(&Prog) + Sync),
+) {
+    let dimension = (states * colors) as Slots;
+
+    build_all(params, dimension - instrs, sim_lim, harvester);
 }
