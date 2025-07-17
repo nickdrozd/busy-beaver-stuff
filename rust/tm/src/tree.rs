@@ -124,20 +124,20 @@ impl Config {
 
 /**************************************/
 
-struct TreeCore<'h, H: Fn(&Prog)> {
+struct TreeCore<'h> {
     prog: Prog,
     sim_lim: Step,
     avail_params: Vec<Params>,
     remaining_slots: Slots,
-    harvester: &'h H,
+    harvester: &'h dyn Fn(&Prog),
 }
 
-impl<'h, H: Fn(&Prog)> TreeCore<'h, H> {
+impl<'h> TreeCore<'h> {
     fn init(
         params @ (states, colors): Params,
         halt: bool,
         sim_lim: Step,
-        harvester: &'h H,
+        harvester: &'h dyn Fn(&Prog),
     ) -> Self {
         let prog = Prog::init_stepped(params);
 
@@ -306,18 +306,18 @@ impl<'h, T: Tree<'h>> Parse for T {
 
 /**************************************/
 
-struct BasicTree<'h, H: Fn(&Prog)> {
-    core: TreeCore<'h, H>,
+struct BasicTree<'h> {
+    core: TreeCore<'h>,
 
     instr_table: &'h InstrTable,
 }
 
-impl<'h, H: Fn(&Prog)> BasicTree<'h, H> {
+impl<'h> BasicTree<'h> {
     fn init(
         params: Params,
         halt: bool,
         sim_lim: Step,
-        harvester: &'h H,
+        harvester: &'h dyn Fn(&Prog),
         instr_table: &'h InstrTable,
     ) -> Self {
         let core = TreeCore::init(params, halt, sim_lim, harvester);
@@ -326,7 +326,7 @@ impl<'h, H: Fn(&Prog)> BasicTree<'h, H> {
     }
 }
 
-impl<'h, H: Fn(&Prog)> Tree<'h> for BasicTree<'h, H> {
+impl<'h> Tree<'h> for BasicTree<'h> {
     fn prog(&self) -> &Prog {
         &self.core.prog
     }
@@ -364,18 +364,18 @@ impl<'h, H: Fn(&Prog)> Tree<'h> for BasicTree<'h, H> {
 
 /**************************************/
 
-struct BlankTree<'h, H: Fn(&Prog)> {
-    core: TreeCore<'h, H>,
+struct BlankTree<'h> {
+    core: TreeCore<'h>,
 
     avail_blanks: Vec<Option<Slots>>,
     instr_table: &'h BlankInstrTable,
 }
 
-impl<'h, H: Fn(&Prog)> BlankTree<'h, H> {
+impl<'h> BlankTree<'h> {
     fn init(
         params @ (states, colors): Params,
         sim_lim: Step,
-        harvester: &'h H,
+        harvester: &'h dyn Fn(&Prog),
         instr_table: &'h BlankInstrTable,
     ) -> Self {
         let core = TreeCore::init(params, false, sim_lim, harvester);
@@ -417,7 +417,7 @@ impl<'h, H: Fn(&Prog)> BlankTree<'h, H> {
     }
 }
 
-impl<'h, H: Fn(&Prog)> Tree<'h> for BlankTree<'h, H> {
+impl<'h> Tree<'h> for BlankTree<'h> {
     fn prog(&self) -> &Prog {
         &self.core.prog
     }
