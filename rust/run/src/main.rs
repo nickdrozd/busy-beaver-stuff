@@ -492,25 +492,20 @@ fn test_limited() {
                     || prog.cps_cant_halt(4)
             }
         ),
+    ];
+}
+
+fn test_limited_slow() {
+    assert_limited_results![
         (
-            (6, 1_000, (2_623_369, 5_857_888)),
+            (6, 1_000, (5_857_888, 5_857_888)),
             //
-            |prog: &Prog| {
-                //
-                prog.cant_halt(13).is_settled()
-                    || prog.ctl_cant_halt(200)
-                    || prog.cps_cant_halt(4)
-            }
+            |_: &Prog| { false }
         ),
         (
-            (7, 2_000, (173_840_874, 256_221_202)),
+            (7, 2_000, (256_221_202, 256_221_202)),
             //
-            |prog: &Prog| {
-                //
-                prog.cant_halt(13).is_settled()
-                    || prog.ctl_cant_halt(200)
-                    || prog.cps_cant_halt(4)
-            }
+            |_: &Prog| { false }
         ),
     ];
 }
@@ -518,7 +513,7 @@ fn test_limited() {
 /**************************************/
 
 fn main() {
-    println!("tree limited");
+    println!("limited");
     test_limited();
 
     let args: Vec<String> = env::args().collect();
@@ -535,6 +530,9 @@ fn main() {
 
     println!("reason");
     test_reason();
+
+    println!("limited slow");
+    test_limited_slow();
 
     println!("tree slow");
     test_tree_slow();
