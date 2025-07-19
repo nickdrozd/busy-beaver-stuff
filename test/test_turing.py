@@ -760,15 +760,30 @@ class Simple(TuringTest):
             )
 
     def test_limited(self):
-        for instrs, progs in LIMITED.items():
-            for prog, steps in progs.items():
-                self.assertEqual(instrs, len(tcompile(prog)))
+        for goal, limited in LIMITED.items():
+            for instrs, progs in limited.items():
+                for prog, steps in progs.items():
+                    self.assertEqual(instrs, len(tcompile(prog)))
 
-                self.run_bb(prog, analyze = False)
+                    self.run_bb(prog, analyze = False)
 
-                self.assertEqual(
-                    steps,
-                    self.machine.simple_termination)
+                    match goal:
+                        case 'blank':
+                            self.assertEqual(
+                                steps,
+                                min(self.machine.blanks.values()))
+
+                        case 'halt':
+                            assert (undfnd := self.machine.undfnd)
+
+                            self.assertEqual(
+                                steps,
+                                undfnd[0])
+
+                        case 'spinout':
+                            self.assertEqual(
+                                steps,
+                                self.machine.spnout)
 
     def _test_simple_terminate(
             self,
