@@ -1280,32 +1280,30 @@ BLANK_AFTER_TREE: InstrSeqs = {
 
 LIMITED: dict[Goal, dict[int, dict[str, int]]] = {
     "halt": {
-        1: {
-            "1RB ...  ... ...": 1,
-        },
-
-        2: {
-            "0RB ...  1LA ...": 3,
-        },
-
-        3: {
-            "1RB 1LB  1LA ...": 5,
-        },
-
         4: {
+            "1RB ... ...  1LB 2LA 0RB": 11,
+            "1RB 0LB ...  2LA ... 1RA": 11,
+            "1RB 2RA ...  1LB 1LA ...": 11,
+            "1RB 2LA ...  0LA ... 1RA": 12,
             "1RB ...  0RC ...  1LC 0LA": 16,
         },
-
         5: {
+            "1RB ... ...  2LB 2RC 0LA  ... ... 0RB": 24,
+            "1RB ... ...  2LC ... ...  2RC 0LC 1RA": 24,
+            "1RB 2LA ...  1LB 1LA 0RA": 25,
+            "1RB 0LB ...  2LA 1RB 1RA": 28,
             "1RB ... ...  2LB 0RB 1LC  1LA ... ...": 33,
-
             "1RB 2LB ...  2LA 2RB 1LB": 37,
         },
-
         6: {
+            "1RB ... ...  0RC 2LB ...  1LC 1LA 0LA": 64,
+            "1RB ... ...  1LB 0LC ...  1RC 2RA 1RB": 65,
+            "1RB 2LA 0LA 1RA  3LA ... 3RA ...": 65,
+            "1RB ... ...  1LC 0RA ...  2RC 0LC 1RA": 67,
+            "1RB ... 0RC  2LC ... ...  2RC 0LC 1RA": 76,
+            "1RB 2LA 3LA ...  2LA ... 0RA 2RB": 77,
             "1RB 3LA 1RA 0LA  2LA ... ... 3RA": 123,
         },
-
         7: {
             "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": 3932963,
             "1RB 2LA 1RA  1LC 1LA 2RB  ... 1LA ...": 3932963,
@@ -1336,23 +1334,10 @@ LIMITED: dict[Goal, dict[int, dict[str, int]]] = {
             "1RB 2LA 0RB  1LA 0LB 1RA": 77,
         },
         7: {
-            # "1RB 1RC  0RC ...  1LD 0LA  1LC 0RD": 107,
-            "1RB ... ... ...  1RC ... ... ...  1RD ... ... ...  2LD 3RD 0RD 2RD": 120,
-            "1RB ... ... ...  2RC ... ... ...  2RD ... ... ...  3LD 0LB 3RD 0RD": 132,
-            "1RB ...  0RC 1RB  1LC 1LD  0RB 0RD": 131,
-            "1RB ...  0LC 0LB  0LD 1LC  1RD 1RB": 133,
-            "1RB ...  0LC 1LB  1RC 1RD  0LB 0LD": 135,
-            "1RB ... ...  2LC 2LB 1RB  2RC 1LB 0LC": 138,
             "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": 169,
-            "1RB ... ...  2RC 2RB 1LB  2LC 2RB 0RC": 173,
-            "1RB ... ... ...  2RC ... ... 2RB  3LC 0RB 3RC 0RC": 180,
-            "1RB ... ... ...  1LC ... ... 2LC  3RC 2LB 3LC 0LC": 188,
-            "1RB ... ... ...  2RC ... ... 1LB  3LC 0RB 3RC 0RC": 204,
-            "1RB ... ... ...  2RC ... ... 2RB  3LC 3RB 3RC 0RC": 213,
-            "1RB ... ... ...  1LC ... 2LC ...  2RC 3LB 0LC 2LB": 215,
-            "1RB ... ...  1RC ... ...  1LC 2RC 0RD  0RC 0RD ...": 233,
-            "1RB ... ... ...  0RC ... 0RB ...  2LC 2RC 3RC 0RB": 235,
-            "1RB ... ... ...  2RC ... ... 2RB  3LC 2RB 3RC 0RC": 248,
+            "1RB ... ...  1RC ... ...  1LC 2RC 0RD  0RC 2LD ...": 427,
+            "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC": 429,
+            "1RB ... ...  1RC ... ...  0RD 2LC ...  1LD 2RD 0RC": 808,
         },
     },
 }
