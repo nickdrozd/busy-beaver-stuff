@@ -1340,6 +1340,47 @@ LIMITED: dict[Goal, dict[int, dict[str, int]]] = {
             "1RB ... ...  1RC ... ...  0RD 2LC ...  1LD 2RD 0RC": 808,
         },
     },
+
+    "spinout": {
+        4: {
+            "1RB ...  1LC ...  1RC 0LC": 8,
+            "1RB ... ...  2LB 2RB 0RB": 9,
+            "1RB ...  1RC ...  1LC 0RC": 12,
+        },
+        5: {
+            "1RB ...  1LC 0LC  1RC 0LB": 20,
+            "1RB ... ...  2RC ... ...  2LC 2RC 0RC": 21,
+            "1RB ... ...  1LC ... ...  2RC 2LC 0LC": 22,
+            "1RB ...  1RC ...  1RD ...  1LD 0RD": 24,
+            "1RB ... ...  2LC ... ...  2RC 2LB 0LC": 25,
+            "1RB ... ...  2RC ... ...  2LC 2LB 0RC": 25,
+            "1RB 1LC  0RC ...  1LC 0LA": 27,
+            "1RB ... ...  1RC ... ...  2LC 2RC 0RC": 30,
+        },
+        6: {
+            "1RB ... ...  1RC ... ...  1RD ... ...  2LD 2RD 0RD": 63,
+            "1RB ... ... ...  2LC ... ... ...  3RC 2LB 3LC 0LC": 64,
+            "1RB ... ... ...  2RC ... ... ...  3LC 2LB 3RC 0RC": 64,
+            "1RB ... ...  0RC 0LC ...  1LC 2LB 0LA": 66,
+            "1RB ... ...  2RC ... 2RB  2LC 2RB 0RC": 68,
+            "1RB 0LC ...  0RC ... ...  2LC 0LA 1RC": 76,
+            "1RB ... ...  1LC ... 2LC  2RC 2LB 0LC": 77,
+            "1RB ... ...  2LC ... 0RC  2RC 0LC 1RB": 93,
+            "1RB ... ...  2LB 0RB 1LC  2RB ... 0LB": 96,
+        },
+        7: {
+            "1RB ... ...  1RC ... ...  1LC 2RC 0RD  0RC 2LD ...": 428,
+            "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC": 430,
+            "1RB ... 2LC  2LC ... 0RC  2RC 0LC 1RA": 446,
+            "1RB 0LC ...  1LB 2LA 0RB  1RA 2LB ...": 451,
+            "1RB 2RB ...  1LC 0RC ...  1RC 2RA 0LC": 520,
+            "1RB 2RB 3LA ...  2LB 3LA 1LB 2RB": 555,
+            "1RB ... ...  1RC ... ...  0RD 2LC ...  1LD 2RD 0RC": 809,
+            "1RB ... ...  0RC 2RB 1LB  2LC 1LA 2LC": 1235,
+            "1RB ... ...  2RC 2RB 1LB  2LC 1RB 2LC": 1464,
+            "1RB ... ...  1LB 1RC 2LB  2RB 2RC 1LC": 1478,
+        },
+    },
 }
 
 MOTHER = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
