@@ -125,6 +125,7 @@ class TestFloss(TestCase):
         others = (
             "1RB 0LA 1LA 0RA  2LB 2RB 3RB 0LA",
             "1RB 2RA 1LB 2LA  2LA 3RB 1LB 2RA",
+            "1RB 2LA 1RA  0RC 0RB 0LC  1LC 0LA 2RC",
             "1RB 0LD  1LB 0RC  0RE 1LD  1LA ...  0RB 0LC",
         )
 
@@ -132,7 +133,7 @@ class TestFloss(TestCase):
             print(prog)
 
             Machine(prog).run(
-                sim_lim = 821
+                sim_lim = 5592
             )
 
     def test_instr_seq(self):

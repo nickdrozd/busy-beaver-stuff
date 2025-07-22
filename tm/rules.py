@@ -262,8 +262,8 @@ def make_rule(*countses: Counts) -> Rule | None:
 
         raise InfiniteRule
 
-    if second_diff:  # no-cover
-        raise UnknownRule
+    if second_diff:
+        raise SecondDiffRule
 
     return rule
 
