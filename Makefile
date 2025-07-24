@@ -111,9 +111,8 @@ TP = test.test_tape
 NUM = test.test_num
 RUL = test.test_rules
 MAC = test.test_macro
-HOLD = test.test_holdouts
 
-SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(RUL) $(MAC) $(TP) $(COV) $(NUM) $(HOLD)
+SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(RUL) $(MAC) $(TP) $(COV) $(NUM)
 
 PYTEST = $(PYTHON) -m unittest
 

@@ -4,8 +4,3 @@ def read_progs(name: str) -> set[str]:
             prog.strip()
             for prog in holdouts
         }
-
-
-def read_holdouts(name: str) -> set[str]:
-    return read_progs(
-        f'tree/holdouts_{name}')
