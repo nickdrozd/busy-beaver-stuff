@@ -1,7 +1,6 @@
 from unittest import TestCase
 
 from test.prog_data import GRAPHS, KERNEL, MODULAR, SPAGHETTI
-from test.utils import read_progs
 from tm.rust_stuff import is_connected
 from tm.show import show_state
 from tools.graph import Graph
@@ -134,3 +133,11 @@ class TestGraph(TestCase):
 
             self.assertFalse(
                 is_connected(prog))
+
+
+def read_progs(name: str) -> set[str]:
+    with open(f'data/graph/{name}.prog') as progs:  # noqa: PTH123
+        return {
+            prog.strip()
+            for prog in progs
+        }
