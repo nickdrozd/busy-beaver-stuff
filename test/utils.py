@@ -1,8 +1,3 @@
-import os
-
-RUN_SLOW = os.environ.get('RUN_SLOW')
-
-
 def read_progs(name: str) -> set[str]:
     with open(f'data/{name}.prog') as holdouts:  # noqa: PTH123
         return {

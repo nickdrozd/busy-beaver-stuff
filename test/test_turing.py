@@ -1,5 +1,6 @@
 # ruff: noqa: F405
 import json
+import os
 import re
 from collections import defaultdict
 from itertools import product
@@ -14,7 +15,7 @@ from test.lin_rec import (
 )
 from test.prog_data import *  # noqa: F403
 from test.test_num import assert_num_counts, clear_caches
-from test.utils import RUN_SLOW, read_holdouts
+from test.utils import read_holdouts
 from tm.machine import (
     Machine,
     show_number,
@@ -65,6 +66,8 @@ if TYPE_CHECKING:
         | StrictLinRecMachine
         | LinRecSampler
     )
+
+RUN_SLOW = os.environ.get('RUN_SLOW')
 
 
 CPS_LIMIT = 11
