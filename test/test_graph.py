@@ -1,7 +1,6 @@
 from unittest import TestCase
 
 from test.prog_data import GRAPHS, KERNEL, MODULAR, SPAGHETTI
-from test.utils import read_progs
 from tm.rust_stuff import is_connected
 from tm.show import show_state
 from tools.graph import Graph
@@ -120,7 +119,7 @@ class TestGraph(TestCase):
                 graph.is_simple)
 
     def test_connected(self):
-        for prog in read_progs('graph/connected'):
+        for prog in read_progs('connected'):
             self.assertTrue(
                 Graph(prog).is_connected)
 
@@ -128,9 +127,17 @@ class TestGraph(TestCase):
                 is_connected(prog))
 
     def test_unconnected(self):
-        for prog in read_progs('graph/unconnected'):
+        for prog in read_progs('unconnected'):
             self.assertFalse(
                 Graph(prog).is_connected)
 
             self.assertFalse(
                 is_connected(prog))
+
+
+def read_progs(name: str) -> set[str]:
+    with open(f'data/graph/{name}.prog') as progs:  # noqa: PTH123
+        return {
+            prog.strip()
+            for prog in progs
+        }

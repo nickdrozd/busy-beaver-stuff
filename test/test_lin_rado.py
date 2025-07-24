@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 from test.lin_rec import StrictLinRecMachine
-from test.utils import read_progs
 from tm.machine import term_or_rec
 from tm.show import show_state
 
@@ -99,6 +98,14 @@ class TestLinRado(TestCase):
             BRADY_HOLDOUTS | LR_NOT_BRADY)
 
 
+def read_progs(name: str) -> set[str]:
+    with open(f'data/lr/{name}.prog') as holdouts:  # noqa: PTH123
+        return {
+            prog.strip()
+            for prog in holdouts
+        }
+
+
 LR_HOLDOUTS = {
     # Lot 1
     0o73037233,
@@ -189,8 +196,8 @@ NOT_CONNECTED_32 = [
     BC_LOOP,
 ]
 
-LR_NOT_BRADY = read_progs('lr/not_brady')
-BRADY_HOLDOUTS = read_progs('lr/brady_holdouts')
+LR_NOT_BRADY = read_progs('not_brady')
+BRADY_HOLDOUTS = read_progs('brady_holdouts')
 
 LIN_EXAMPLES = {
     "1RB ...  0RC 1LB  1LA 0RB",  # total recurrence (blank)

@@ -92,11 +92,9 @@ type :
 
 MYPYC = $(PYTHON) -m mypyc
 
-TEST_COMPILE = test/utils.py test/lin_rec.py
-
 compile : rust
 	$(MYPYC) --version
-	$(MYPYC) tm tools $(TEST_COMPILE) --exclude rust_stuff
+	$(MYPYC) tm tools test/lin_rec.py --exclude rust_stuff
 
 mypyc-report : rust
 	$(MYPYC) --version
