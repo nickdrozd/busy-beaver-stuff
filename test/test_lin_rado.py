@@ -99,7 +99,7 @@ class TestLinRado(TestCase):
 
 
 def read_progs(name: str) -> set[str]:
-    with open(f'data/lr/{name}.prog') as holdouts:  # noqa: PTH123
+    with open(f'test/data/lr/{name}.prog') as holdouts:  # noqa: PTH123
         return {
             prog.strip()
             for prog in holdouts

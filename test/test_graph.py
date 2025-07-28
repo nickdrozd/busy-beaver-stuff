@@ -136,7 +136,7 @@ class TestGraph(TestCase):
 
 
 def read_progs(name: str) -> set[str]:
-    with open(f'data/graph/{name}.prog') as progs:  # noqa: PTH123
+    with open(f'test/data/graph/{name}.prog') as progs:  # noqa: PTH123
         return {
             prog.strip()
             for prog in progs

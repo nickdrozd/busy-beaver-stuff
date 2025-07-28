@@ -20,9 +20,9 @@ class TestCode(TestCase):
             print(prog)
 
             self.assertEqual(
-                Path(f"data/c/{name}.c.test").read_text(),
+                Path(f"test/data/c/{name}.c.test").read_text(),
                 make_c(prog) + '\n')
 
             self.assertEqual(
-                Path(f"data/dot/{name}.dot").read_text(),
+                Path(f"test/data/dot/{name}.dot").read_text(),
                 make_dot(prog) + '\n')
