@@ -53,17 +53,29 @@ impl Backward for Prog {
     fn cant_halt(&self, depth: Depth) -> BackwardResult {
         let halt_slots = self.halt_slots();
 
+        if halt_slots.is_empty() {
+            return Refuted(0);
+        }
+
         cant_reach(self, depth, halt_configs(&halt_slots))
     }
 
     fn cant_blank(&self, depth: Depth) -> BackwardResult {
         let erase_slots = self.erase_slots();
 
+        if erase_slots.is_empty() {
+            return Refuted(0);
+        }
+
         cant_reach(self, depth, erase_configs(&erase_slots))
     }
 
     fn cant_spin_out(&self, depth: Depth) -> BackwardResult {
         let zr_shifts = self.zr_shifts();
+
+        if zr_shifts.is_empty() {
+            return Refuted(0);
+        }
 
         cant_reach(self, depth, zero_reflexive_configs(&zr_shifts))
     }
@@ -83,10 +95,6 @@ fn cant_reach(
     depth: Depth,
     mut configs: Configs,
 ) -> BackwardResult {
-    if configs.is_empty() {
-        return Refuted(0);
-    }
-
     let entrypoints = get_entrypoints(prog);
 
     configs.retain(|config| entrypoints.contains_key(&config.state));
