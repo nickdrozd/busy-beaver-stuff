@@ -373,6 +373,7 @@ macro_rules! assert_entrypoints {
 }
 
 #[test]
+#[expect(clippy::cognitive_complexity)]
 fn test_entrypoints() {
     assert_entrypoints!(
         "1RB ...  1LB 0RB",
@@ -389,10 +390,36 @@ fn test_entrypoints() {
     );
 
     assert_entrypoints!(
+        "1RB ... 2LB  2LB 2RA 0RA",
+        [
+            'A' => ([], ["B1:2R", "B2:0R"]),
+            'B' => (["B0:2L"], ["A0:1R", "A2:2L"])
+        ]
+    );
+
+    assert_entrypoints!(
         "1RB 0RB 1RA  1LB 2RB 0LA",
         [
             'A' => (["A2:1R"], ["B2:0L"]),
             'B' => (["B0:1L", "B1:2R"], ["A0:1R", "A1:0R"])
+        ]
+    );
+
+    assert_entrypoints!(
+        "1RB 1RC  0LA 1RA  0LB ...",
+        [
+            'A' => ([], ["B0:0L", "B1:1R"]),
+            'B' => ([], ["A0:1R", "C0:0L"]),
+            'C' => ([], ["A1:1R"])
+        ]
+    );
+
+    assert_entrypoints!(
+        "1RB ...  0LB 1RC  0LC 1RA",
+        [
+            'A' => ([], ["C1:1R"]),
+            'B' => (["B0:0L"], ["A0:1R"]),
+            'C' => (["C0:0L"], ["B1:1R"])
         ]
     );
 
