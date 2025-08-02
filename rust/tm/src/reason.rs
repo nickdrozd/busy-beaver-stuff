@@ -51,15 +51,21 @@ pub trait Backward {
 
 impl Backward for Prog {
     fn cant_halt(&self, depth: Depth) -> BackwardResult {
-        cant_reach(self, depth, halt_configs(self))
+        let halt_slots = self.halt_slots();
+
+        cant_reach(self, depth, halt_configs(&halt_slots))
     }
 
     fn cant_blank(&self, depth: Depth) -> BackwardResult {
-        cant_reach(self, depth, erase_configs(self))
+        let erase_slots = self.erase_slots();
+
+        cant_reach(self, depth, erase_configs(&erase_slots))
     }
 
     fn cant_spin_out(&self, depth: Depth) -> BackwardResult {
-        cant_reach(self, depth, zero_reflexive_configs(self))
+        let zr_shifts = self.zr_shifts();
+
+        cant_reach(self, depth, zero_reflexive_configs(&zr_shifts))
     }
 }
 
@@ -289,22 +295,22 @@ fn step_configs(
 
 /**************************************/
 
-fn halt_configs(prog: &Prog) -> Configs {
-    prog.halt_slots()
+fn halt_configs(halt_slots: &Set<Slot>) -> Configs {
+    halt_slots
         .iter()
         .map(|&(state, color)| Config::init_halt(state, color))
         .collect()
 }
 
-fn erase_configs(prog: &Prog) -> Configs {
-    prog.erase_slots()
+fn erase_configs(erase_slots: &Set<Slot>) -> Configs {
+    erase_slots
         .iter()
         .map(|&(state, color)| Config::init_blank(state, color))
         .collect()
 }
 
-fn zero_reflexive_configs(prog: &Prog) -> Configs {
-    prog.zr_shifts()
+fn zero_reflexive_configs(zr_shifts: &Set<(State, Shift)>) -> Configs {
+    zr_shifts
         .iter()
         .map(|&(state, shift)| Config::init_spinout(state, shift))
         .collect()
