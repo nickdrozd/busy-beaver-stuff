@@ -53,7 +53,18 @@ impl Backward for Prog {
     fn cant_halt(&self, depth: Depth) -> BackwardResult {
         let halt_slots = self.halt_slots();
 
-        if halt_slots.is_empty() {
+        if halt_slots.iter().all(|&(st, co)| {
+            co != 0
+                && self
+                    .instrs
+                    .values()
+                    .filter_map(|&(pr, sh, tr)| {
+                        (pr == co || tr == st).then_some(sh)
+                    })
+                    .collect::<Set<_>>()
+                    .len()
+                    == 1
+        }) {
             return Refuted(0);
         }
 
