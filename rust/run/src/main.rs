@@ -474,40 +474,47 @@ macro_rules! assert_limited_results {
 fn test_limited() {
     assert_limited_results![
         (
-            (4, 100, (724, 5_444)),
+            (4, 4, (0, 5_444)),
             //
             |prog: &Prog| {
                 //
-                prog.cant_halt(7).is_settled()
-                    || prog.ctl_cant_halt(100)
+                prog.term_or_rec(24).is_settled()
+                    || prog.ctl_cant_halt(13)
+                    || prog.cps_cant_halt(3)
             }
         ),
         (
-            (5, 300, (48_101, 161_024)),
+            (5, 12, (13, 161_024)),
             //
             |prog: &Prog| {
                 //
-                prog.cant_halt(9).is_settled()
-                    || prog.ctl_cant_halt(100)
-                    || prog.cps_cant_halt(4)
+                prog.term_or_rec(301).is_settled()
+                    || prog.ctl_cant_halt(25)
+                    || prog.cps_cant_halt(3)
+            }
+        ),
+        (
+            (6, 22, (526, 5_857_888)),
+            //
+            |prog: &Prog| {
+                prog.term_or_rec(304).is_settled()
+                    || prog.ctl_cant_halt(76)
+                    || prog.cps_cant_halt(5)
             }
         ),
     ];
 }
 
 fn test_limited_slow() {
-    assert_limited_results![
-        (
-            (6, 1_000, (5_857_888, 5_857_888)),
-            //
-            |_: &Prog| { false }
-        ),
-        (
-            (7, 2_000, (256_221_202, 256_221_202)),
-            //
-            |_: &Prog| { false }
-        ),
-    ];
+    assert_limited_results![(
+        (7, 109, (22_996, 256_221_202)),
+        //
+        |prog: &Prog| {
+            prog.term_or_rec(1000).is_settled()
+                || prog.ctl_cant_halt(100)
+                || prog.cps_cant_halt(4)
+        }
+    ),];
 }
 
 /**************************************/
