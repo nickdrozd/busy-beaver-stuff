@@ -51,15 +51,15 @@ pub trait Backward {
 
 impl Backward for Prog {
     fn cant_halt(&self, depth: Depth) -> BackwardResult {
-        cant_reach(self, depth, halt_configs)
+        cant_reach(self, depth, halt_configs(self))
     }
 
     fn cant_blank(&self, depth: Depth) -> BackwardResult {
-        cant_reach(self, depth, erase_configs)
+        cant_reach(self, depth, erase_configs(self))
     }
 
     fn cant_spin_out(&self, depth: Depth) -> BackwardResult {
-        cant_reach(self, depth, zero_reflexive_configs)
+        cant_reach(self, depth, zero_reflexive_configs(self))
     }
 }
 
@@ -75,10 +75,8 @@ type Entrypoints = Dict<State, (Entries, Entries)>;
 fn cant_reach(
     prog: &Prog,
     depth: Depth,
-    get_configs: impl Fn(&Prog) -> Configs,
+    mut configs: Configs,
 ) -> BackwardResult {
-    let mut configs = get_configs(prog);
-
     if configs.is_empty() {
         return Refuted(0);
     }
