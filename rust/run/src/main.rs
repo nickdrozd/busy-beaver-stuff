@@ -432,7 +432,7 @@ fn test_collect() {
 /**************************************/
 
 fn assert_limited(
-    instrs: u64,
+    instrs: u8,
     tree: Step,
     expected: (u64, u64),
     pipeline: impl Fn(&Prog) -> bool + Sync,
@@ -440,7 +440,9 @@ fn assert_limited(
     let holdout = Basket::set(0);
     let visited = Basket::set(0);
 
-    build_limited((instrs, instrs), instrs as u8, tree, &|prog| {
+    let params = (instrs.into(), instrs.into());
+
+    build_limited(params, instrs, tree, &|prog| {
         *visited.access() += 1;
 
         if pipeline(prog) {
