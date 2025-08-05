@@ -115,19 +115,53 @@ pub struct MacroProg<'p, P: GetInstr, L: Logic> {
     logic: L,
 
     instrs: RefCell<Instrs>,
+
+    states: RefCell<Vec<State>>,
+    colors: RefCell<Vec<Color>>,
 }
 
 impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
-        if let Some(&instr) = self.instrs.borrow().get(slot) {
-            return Some(instr);
-        }
+    fn get_instr(&self, &(in_state, in_color): &Slot) -> Option<Instr> {
+        let slot = (
+            self.states.borrow()[in_state as usize],
+            self.colors.borrow()[in_color as usize],
+        );
 
-        let instr = self.calculate_instr(*slot)?;
+        let (out_color, shift, out_state) = {
+            if let Some(&instr) = self.instrs.borrow().get(&slot) {
+                instr
+            } else {
+                let instr = self.calculate_instr(slot)?;
 
-        self.instrs.borrow_mut().insert(*slot, instr);
+                self.instrs.borrow_mut().insert(slot, instr);
 
-        Some(instr)
+                instr
+            }
+        };
+
+        let fwd_state = {
+            let mut states = self.states.borrow_mut();
+
+            states.iter().position(|&s| s == out_state).unwrap_or_else(
+                || {
+                    states.push(out_state);
+                    states.len() - 1
+                },
+            ) as State
+        };
+
+        let fwd_color = {
+            let mut colors = self.colors.borrow_mut();
+
+            colors.iter().position(|&s| s == out_color).unwrap_or_else(
+                || {
+                    colors.push(out_color);
+                    colors.len() - 1
+                },
+            ) as Color
+        };
+
+        Some((fwd_color, shift, fwd_state))
     }
 
     fn params(&self) -> Params {
@@ -145,6 +179,8 @@ impl<'p, P: GetInstr, L: Logic> MacroProg<'p, P, L> {
             prog,
             logic,
             instrs: Dict::new().into(),
+            states: vec![0].into(),
+            colors: vec![0].into(),
         }
     }
 
@@ -396,11 +432,11 @@ fn test_nest() {
 
 #[cfg(test)]
 const MACROS: &[(Slot, Instr)] = &[
-    ((0, 0), (1, true, 2)),
-    ((2, 0), (2, false, 1)),
-    ((1, 1), (2, false, 5)),
-    ((5, 0), (1, true, 6)),
-    ((6, 2), (2, false, 1)),
+    ((0, 0), (1, true, 1)),
+    ((1, 0), (2, false, 2)),
+    ((2, 1), (2, false, 3)),
+    ((3, 0), (1, true, 4)),
+    ((4, 2), (2, false, 2)),
 ];
 
 #[test]
