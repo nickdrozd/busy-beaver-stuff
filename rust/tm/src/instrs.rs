@@ -36,8 +36,8 @@ pub trait Parse {
 
 /**************************************/
 
-pub fn read_color(color: char) -> Color {
-    color.to_digit(10).unwrap().into()
+pub const fn read_color(color: char) -> Color {
+    color.to_digit(10).unwrap() as Color
 }
 
 pub const fn read_shift(shift: char) -> Shift {
