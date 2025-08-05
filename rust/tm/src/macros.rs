@@ -39,8 +39,8 @@ impl<T: GetInstr> Macro for T {}
 pub struct BlockLogic {
     cells: usize,
 
-    base_colors: usize,
-    base_states: usize,
+    base_colors: Color,
+    base_states: State,
 
     converter: TapeColorConverter,
 }
@@ -49,8 +49,8 @@ impl Logic for BlockLogic {
     fn new(cells: usize, (base_states, base_colors): Params) -> Self {
         Self {
             cells,
-            base_states: base_states as usize,
-            base_colors: base_colors as usize,
+            base_states,
+            base_colors,
 
             converter: TapeColorConverter::new(base_colors, cells),
         }
@@ -60,24 +60,26 @@ impl Logic for BlockLogic {
         self.cells
     }
 
-    fn base_states(&self) -> usize {
+    fn base_states(&self) -> State {
         self.base_states
     }
 
-    fn base_colors(&self) -> usize {
+    fn base_colors(&self) -> Color {
         self.base_colors
     }
 
-    fn macro_states(&self) -> usize {
+    fn macro_states(&self) -> State {
         2 * self.base_states()
     }
 
-    fn macro_colors(&self) -> usize {
+    fn macro_colors(&self) -> Color {
         self.base_colors().pow(self.cells() as u32)
     }
 
     fn sim_lim(&self) -> usize {
-        self.base_states() * self.cells() * self.macro_colors()
+        self.cells()
+            * self.base_states() as usize
+            * self.macro_colors() as usize
     }
 
     fn deconstruct_inputs(
@@ -253,8 +255,8 @@ impl<'p, P: GetInstr, L: Logic> MacroProg<'p, P, L> {
 
 pub struct BacksymbolLogic {
     cells: usize,
-    base_states: usize,
-    base_colors: usize,
+    base_states: State,
+    base_colors: Color,
     backsymbols: usize,
 
     converter: TapeColorConverter,
@@ -264,8 +266,8 @@ impl Logic for BacksymbolLogic {
     fn new(cells: usize, (base_states, base_colors): Params) -> Self {
         Self {
             cells,
-            base_states: base_states as usize,
-            base_colors: base_colors as usize,
+            base_states,
+            base_colors,
 
             backsymbols: (base_colors as usize).pow(cells as u32),
 
@@ -277,24 +279,24 @@ impl Logic for BacksymbolLogic {
         self.cells
     }
 
-    fn base_states(&self) -> usize {
+    fn base_states(&self) -> State {
         self.base_states
     }
 
-    fn base_colors(&self) -> usize {
+    fn base_colors(&self) -> Color {
         self.base_colors
     }
 
-    fn macro_states(&self) -> usize {
-        2 * self.base_states * self.backsymbols
+    fn macro_states(&self) -> State {
+        2 * self.base_states * self.backsymbols as State
     }
 
-    fn macro_colors(&self) -> usize {
+    fn macro_colors(&self) -> Color {
         self.base_colors
     }
 
     fn sim_lim(&self) -> usize {
-        self.macro_states() * self.macro_colors()
+        self.macro_states() as usize * self.macro_colors() as usize
     }
 
     fn deconstruct_inputs(
@@ -355,11 +357,11 @@ trait Logic {
 
     fn cells(&self) -> usize;
 
-    fn base_states(&self) -> usize;
-    fn base_colors(&self) -> usize;
+    fn base_states(&self) -> State;
+    fn base_colors(&self) -> Color;
 
-    fn macro_states(&self) -> usize;
-    fn macro_colors(&self) -> usize;
+    fn macro_states(&self) -> State;
+    fn macro_colors(&self) -> Color;
 
     fn sim_lim(&self) -> usize;
 
