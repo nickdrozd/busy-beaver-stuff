@@ -138,6 +138,9 @@ class MacroProg:
 
     logic: Logic
 
+    states: list[State]
+    colors: list[Color]
+
     def __init__(self, comp: GetInstr, logic: Logic):
         self.comp = comp
         self.instrs = {}
@@ -145,6 +148,9 @@ class MacroProg:
         self.logic = logic
 
         self.sim_lim = self.logic.sim_lim
+
+        self.states = [0]
+        self.colors = [0]
 
     def __str__(self) -> str:
         comp_str = (
@@ -168,6 +174,10 @@ class MacroProg:
         return self.logic.cells
 
     def __getitem__(self, slot: Slot) -> Instr:
+        in_state, in_color = slot
+
+        slot = self.states[in_state], self.colors[in_color]
+
         try:
             instr = self.instrs[slot]
         except KeyError:
@@ -175,7 +185,21 @@ class MacroProg:
 
             self.instrs[slot] = instr
 
-        return instr
+        out_color, shift, out_state = instr
+
+        try:
+            fwd_color = self.colors.index(out_color)
+        except ValueError:
+            self.colors.append(out_color)
+            fwd_color = len(self.colors) - 1
+
+        try:
+            fwd_state = self.states.index(out_state)
+        except ValueError:
+            self.states.append(out_state)
+            fwd_state = len(self.states) - 1
+
+        return fwd_color, shift, fwd_state
 
     def calculate_instr(self, slot: Slot) -> Instr:
         return self.logic.reconstruct_outputs(

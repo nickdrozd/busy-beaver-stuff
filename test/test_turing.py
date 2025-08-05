@@ -1153,11 +1153,10 @@ class Macro(RunProver):
 
         self.assert_macro_cells(41)
 
-        with self.assertRaises(OverflowError):
-            self.run_bb(
-                "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
-                opt_macro = 4_000,
-                watch_tape = True)
+        self.run_bb(
+            "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
+            opt_macro = 4_000,
+            watch_tape = True)
 
     def test_backsym_overflow(self):
         self.run_bb(
