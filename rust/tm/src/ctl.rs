@@ -5,7 +5,6 @@ use ahash::AHashSet as Set;
 use crate::{
     Goal,
     instrs::{Color, GetInstr, Instr, Parse as _, Shift, State},
-    macros::Macro as _,
     prog::Prog,
     tape::{
         Block as _, LilBlock as Block, LilCount as Count,

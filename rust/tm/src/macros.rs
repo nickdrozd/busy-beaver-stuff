@@ -4,8 +4,9 @@ use std::collections::BTreeMap as Dict;
 
 use num_integer::Integer as _;
 
-use crate::instrs::{
-    Color, GetInstr, Instr, Instrs, Params, Slot, State,
+use crate::{
+    instrs::{Color, GetInstr, Instr, Instrs, Params, Slot, State},
+    prog::Prog,
 };
 
 type Tape = Vec<Color>;
@@ -13,26 +14,24 @@ type Config = (State, (bool, Tape));
 
 /**************************************/
 
-type BlockMacro<'p, P> = MacroProg<'p, P, BlockLogic>;
-type BacksymbolMacro<'p, P> = MacroProg<'p, P, BacksymbolLogic>;
+type BlockMacro<'p> = MacroProg<'p, BlockLogic>;
+type BacksymbolMacro<'p> = MacroProg<'p, BacksymbolLogic>;
 
-pub trait Macro: GetInstr + Sized {
-    fn make_block_macro(&self, blocks: usize) -> BlockMacro<'_, Self> {
+impl Prog {
+    pub fn make_block_macro(&self, blocks: usize) -> BlockMacro<'_> {
         MacroProg::new(self, BlockLogic::new(blocks, self.params()))
     }
 
-    fn make_backsymbol_macro(
+    pub fn make_backsymbol_macro(
         &self,
         backsymbols: usize,
-    ) -> BacksymbolMacro<'_, Self> {
+    ) -> BacksymbolMacro<'_> {
         MacroProg::new(
             self,
             BacksymbolLogic::new(backsymbols, self.params()),
         )
     }
 }
-
-impl<T: GetInstr> Macro for T {}
 
 /**************************************/
 
@@ -112,8 +111,8 @@ impl Logic for BlockLogic {
 /**************************************/
 
 #[expect(private_bounds)]
-pub struct MacroProg<'p, P: GetInstr, L: Logic> {
-    prog: &'p P,
+pub struct MacroProg<'p, L: Logic> {
+    prog: &'p Prog,
     logic: L,
 
     instrs: RefCell<Instrs>,
@@ -122,7 +121,7 @@ pub struct MacroProg<'p, P: GetInstr, L: Logic> {
     colors: RefCell<Vec<Color>>,
 }
 
-impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
+impl<L: Logic> GetInstr for MacroProg<'_, L> {
     fn get_instr(&self, &(in_state, in_color): &Slot) -> Option<Instr> {
         let slot = (
             self.states.borrow()[in_state as usize],
@@ -175,8 +174,8 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
 }
 
 #[expect(private_bounds)]
-impl<'p, P: GetInstr, L: Logic> MacroProg<'p, P, L> {
-    fn new(prog: &'p P, logic: L) -> Self {
+impl<'p, L: Logic> MacroProg<'p, L> {
+    fn new(prog: &'p Prog, logic: L) -> Self {
         Self {
             prog,
             logic,
@@ -418,18 +417,16 @@ impl TapeColorConverter {
 /**************************************/
 
 #[cfg(test)]
-use crate::{instrs::Parse as _, prog::Prog};
+use crate::instrs::Parse as _;
 
 #[test]
 fn test_nest() {
     let prog =
         Prog::read("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
 
-    let block = prog.make_block_macro(3);
+    let _ = prog.make_block_macro(3);
 
     let _ = prog.make_backsymbol_macro(3);
-
-    let _ = block.make_backsymbol_macro(3);
 }
 
 #[cfg(test)]

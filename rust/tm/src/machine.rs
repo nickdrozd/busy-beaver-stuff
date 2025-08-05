@@ -1,6 +1,5 @@
 use crate::{
     instrs::{GetInstr, Slot, State},
-    macros::Macro as _,
     prog::Prog,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
@@ -213,17 +212,6 @@ fn test_rec() {
             "{prog}",
         );
     }
-}
-
-/**************************************/
-
-#[test]
-fn test_macro_loop() {
-    let prog = Prog::read("1RB 0RA 1LB  2LA 2RB 0LA");
-    let block = prog.make_block_macro(3);
-    let back = block.make_backsymbol_macro(1);
-
-    assert!(!run_for_infrul(&back, 1000).is_infinite());
 }
 
 /**************************************/
