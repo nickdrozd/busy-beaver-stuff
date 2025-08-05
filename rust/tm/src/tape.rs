@@ -664,10 +664,10 @@ impl From<&BigTape> for EnumTape {
                 ),
             },
 
-            l_offset: Cell::new(0),
-            r_offset: Cell::new(0),
-            l_edge: Cell::new(false),
-            r_edge: Cell::new(false),
+            l_offset: 0.into(),
+            r_offset: 0.into(),
+            l_edge: false.into(),
+            r_edge: false.into(),
         }
     }
 }

@@ -140,11 +140,11 @@ impl<P: GetInstr, L: Logic> GetInstr for MacroProg<'_, P, L> {
 
 #[expect(private_bounds)]
 impl<'p, P: GetInstr, L: Logic> MacroProg<'p, P, L> {
-    const fn new(prog: &'p P, logic: L) -> Self {
+    fn new(prog: &'p P, logic: L) -> Self {
         Self {
             prog,
             logic,
-            instrs: RefCell::new(Dict::new()),
+            instrs: Dict::new().into(),
         }
     }
 
@@ -348,8 +348,8 @@ impl TapeColorConverter {
 
         Self {
             base_colors,
-            ct_cache: RefCell::new(ct_cache),
-            tc_cache: RefCell::new(Dict::new()),
+            ct_cache: ct_cache.into(),
+            tc_cache: Dict::new().into(),
         }
     }
 
