@@ -204,8 +204,8 @@ impl<'p, L: Logic> MacroProg<'p, L> {
         'step: for _ in 0..self.logic.sim_lim() {
             let scan = tape[pos];
 
-            let (color, shift, next_state) =
-                self.prog.get_instr(&(state, scan))?;
+            let &(color, shift, next_state) =
+                self.prog.get(&(state, scan))?;
 
             if next_state != state {
                 state = next_state;
