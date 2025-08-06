@@ -83,6 +83,8 @@ fn assert_tree(
 }
 
 fn test_tree() {
+    println!("tree fast");
+
     assert_trees![
         (
             ((2, 2), 0, 2, (0, 32)),
@@ -281,6 +283,8 @@ fn test_tree() {
 }
 
 fn test_tree_slow() {
+    println!("tree slow");
+
     assert_trees![
         (
             ((5, 2), 0, 700, (77_897_792, 94_160_306)),
@@ -394,6 +398,8 @@ macro_rules! assert_reason_results {
 }
 
 fn test_reason() {
+    println!("reason");
+
     assert_reason_results![
         ((2, 2), 0, (3, 6)),
         ((2, 2), 1, (2, 7)),
@@ -420,6 +426,8 @@ fn test_reason() {
 /**************************************/
 
 fn test_collect() {
+    println!("collect");
+
     let progs = Basket::set(vec![]);
 
     build_tree((2, 2), None, 4, &|prog| {
@@ -474,6 +482,8 @@ macro_rules! assert_limited_results {
 }
 
 fn test_limited() {
+    println!("limited");
+
     assert_limited_results![
         (
             (4, 4, (0, 5_444)),
@@ -508,6 +518,8 @@ fn test_limited() {
 }
 
 fn test_limited_slow() {
+    println!("limited slow");
+
     assert_limited_results![(
         (7, 109, (22_996, 256_221_202)),
         //
@@ -522,7 +534,6 @@ fn test_limited_slow() {
 /**************************************/
 
 fn main() {
-    println!("limited");
     test_limited();
 
     let args: Vec<String> = env::args().collect();
@@ -531,18 +542,13 @@ fn main() {
         return;
     }
 
-    println!("tree fast");
     test_tree();
 
-    println!("collect");
     test_collect();
 
-    println!("reason");
     test_reason();
 
-    println!("limited slow");
     test_limited_slow();
 
-    println!("tree slow");
     test_tree_slow();
 }
