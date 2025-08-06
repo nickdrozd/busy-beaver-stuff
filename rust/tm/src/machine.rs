@@ -228,3 +228,11 @@ fn test_mult_rule() {
         .is_mult()
     );
 }
+
+#[test]
+fn test_check_inf() {
+    assert!(
+        Prog::read("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
+            .check_inf(300, 209)
+    );
+}
