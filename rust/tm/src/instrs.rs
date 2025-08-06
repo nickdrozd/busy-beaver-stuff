@@ -16,7 +16,6 @@ pub type Instrs = Dict<Slot, Instr>;
 /**************************************/
 
 pub trait GetInstr {
-    fn params(&self) -> Params;
     fn get_instr(&self, slot: &Slot) -> Option<Instr>;
 }
 

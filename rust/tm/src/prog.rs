@@ -22,6 +22,10 @@ impl Prog {
         }
     }
 
+    pub const fn params(&self) -> Params {
+        (self.states, self.colors)
+    }
+
     pub fn init_stepped(params: Params) -> Self {
         let instrs = Instrs::from([((0, 0), (1, true, 1))]);
 
@@ -105,10 +109,6 @@ impl Prog {
 impl GetInstr for Prog {
     fn get_instr(&self, slot: &Slot) -> Option<Instr> {
         self.instrs.get(slot).copied()
-    }
-
-    fn params(&self) -> Params {
-        (self.states, self.colors)
     }
 }
 

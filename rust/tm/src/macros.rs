@@ -164,13 +164,6 @@ impl<L: Logic> GetInstr for MacroProg<'_, L> {
 
         Some((fwd_color, shift, fwd_state))
     }
-
-    fn params(&self) -> Params {
-        (
-            self.logic.macro_states() as State,
-            self.logic.macro_colors() as Color,
-        )
-    }
 }
 
 #[expect(private_bounds)]
@@ -183,6 +176,14 @@ impl<'p, L: Logic> MacroProg<'p, L> {
             states: vec![0].into(),
             colors: vec![0].into(),
         }
+    }
+
+    #[expect(dead_code)]
+    fn params(&self) -> Params {
+        (
+            self.logic.macro_states() as State,
+            self.logic.macro_colors() as Color,
+        )
     }
 
     fn calculate_instr(&self, slot: Slot) -> Option<Instr> {
