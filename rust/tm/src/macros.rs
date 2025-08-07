@@ -1,3 +1,5 @@
+#![deny(clippy::cast_possible_truncation)]
+
 use core::{cell::RefCell, iter::once};
 
 use std::collections::BTreeMap as Dict;
@@ -72,13 +74,13 @@ impl Logic for BlockLogic {
     }
 
     fn macro_colors(&self) -> Color {
-        self.base_colors().pow(self.cells() as u32)
+        self.base_colors().pow(u32::try_from(self.cells()).unwrap())
     }
 
     fn sim_lim(&self) -> usize {
         self.cells()
-            * self.base_states() as usize
-            * self.macro_colors() as usize
+            * usize::try_from(self.base_states()).unwrap()
+            * usize::try_from(self.macro_colors()).unwrap()
     }
 
     fn deconstruct_inputs(
@@ -122,6 +124,7 @@ pub struct MacroProg<'p, L: Logic> {
 }
 
 impl<L: Logic> GetInstr for MacroProg<'_, L> {
+    #[expect(clippy::cast_possible_truncation)]
     fn get_instr(&self, &(in_state, in_color): &Slot) -> Option<Instr> {
         let slot = (
             self.states.borrow()[in_state as usize],
@@ -269,7 +272,8 @@ impl Logic for BacksymbolLogic {
             base_states,
             base_colors,
 
-            backsymbols: (base_colors as usize).pow(cells as u32),
+            backsymbols: (usize::try_from(base_colors).unwrap())
+                .pow(u32::try_from(cells).unwrap()),
 
             converter: TapeColorConverter::new(base_colors, cells),
         }
@@ -296,7 +300,8 @@ impl Logic for BacksymbolLogic {
     }
 
     fn sim_lim(&self) -> usize {
-        self.macro_states() as usize * self.macro_colors() as usize
+        usize::try_from(self.macro_states()).unwrap()
+            * usize::try_from(self.macro_colors()).unwrap()
     }
 
     fn deconstruct_inputs(
@@ -403,7 +408,10 @@ impl TapeColorConverter {
         let color = tape.iter().rev().enumerate().fold(
             0,
             |acc, (place, &value)| {
-                acc + value * self.base_colors.pow(place as u32)
+                acc + value
+                    * self
+                        .base_colors
+                        .pow(u32::try_from(place).unwrap())
             },
         );
 
