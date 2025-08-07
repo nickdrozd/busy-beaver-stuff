@@ -247,7 +247,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 1, 876, (1_549, 614_151)),
+            ((2, 4), 1, 876, (1_626, 614_151)),
             //
             |prog: &Prog| {
                 prog.cant_spin_out(2).is_settled()
@@ -257,10 +257,6 @@ fn test_tree() {
                     || prog.cps_cant_spin_out(6)
                     || prog.seg_cant_spin_out(4).is_refuted()
                     || prog.check_inf(300, 1000)
-                    || (prog.incomplete(false) && {
-                        prog.seg_cant_halt(5).is_refuted()
-                            || prog.cps_cant_halt(6)
-                    })
             }
         ),
         (
