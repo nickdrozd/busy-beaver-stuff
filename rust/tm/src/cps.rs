@@ -6,7 +6,8 @@ use ahash::AHashSet as Set;
 
 use crate::{
     Goal,
-    instrs::{Color, GetInstr, Parse as _, Shift, State},
+    instrs::{Color, Parse as _, Shift, State},
+    prog::Prog,
 };
 
 use Goal::*;
@@ -24,7 +25,7 @@ pub trait Cps {
     fn cps_cant_spin_out(&self, rad: Radius) -> bool;
 }
 
-impl<T: GetInstr> Cps for T {
+impl Cps for Prog {
     fn cps_cant_halt(&self, rad: Radius) -> bool {
         cps_run(self, rad, Halt)
     }
@@ -40,17 +41,13 @@ impl<T: GetInstr> Cps for T {
 
 /**************************************/
 
-fn cps_run(prog: &impl GetInstr, rad: Radius, goal: Goal) -> bool {
+fn cps_run(prog: &Prog, rad: Radius, goal: Goal) -> bool {
     assert!(rad > 1);
 
     (2..rad).any(|seg| cps_cant_reach(prog, seg, goal))
 }
 
-fn cps_cant_reach(
-    prog: &impl GetInstr,
-    rad: Radius,
-    goal: Goal,
-) -> bool {
+fn cps_cant_reach(prog: &Prog, rad: Radius, goal: Goal) -> bool {
     let mut configs = Configs::init(rad);
 
     for _ in 0..MAX_LOOPS {
@@ -60,8 +57,8 @@ fn cps_cant_reach(
         let mut update = false;
 
         while let Some(Config { state, mut tape }) = todo.pop() {
-            let Some((print, shift, next_state)) =
-                prog.get_instr(&(state, tape.scan))
+            let Some(&(print, shift, next_state)) =
+                prog.get(&(state, tape.scan))
             else {
                 match goal {
                     Halt => return false,
