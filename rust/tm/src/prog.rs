@@ -34,6 +34,7 @@ impl Instrs {
             .sum()
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> + '_ {
         self.table.iter().enumerate().flat_map(|(s, row)| {
             row.iter().enumerate().filter_map(move |(c, opt)| {
@@ -103,6 +104,7 @@ impl Prog {
         self.instrs.values()
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
@@ -172,6 +174,7 @@ impl Prog {
 /**************************************/
 
 impl Parse for Prog {
+    #[expect(clippy::cast_possible_truncation)]
     fn read(prog: &str) -> Self {
         let rows: Vec<Vec<Option<Instr>>> = prog
             .trim()

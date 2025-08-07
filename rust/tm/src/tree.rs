@@ -21,29 +21,28 @@ type Instrs = Vec<Instr>;
 type InstrTable = Vec<Vec<Instrs>>;
 
 fn make_instr_table(
-    max_states: usize,
-    max_colors: usize,
+    max_states: State,
+    max_colors: Color,
 ) -> InstrTable {
-    let mut table = vec![vec![vec![]; 1 + max_colors]; 1 + max_states];
+    let mut table = vec![
+        vec![vec![]; 1 + max_colors as usize];
+        1 + max_states as usize
+    ];
 
-    #[expect(clippy::needless_range_loop)]
     for states in 2..=max_states {
         for colors in 2..=max_colors {
-            let mut instrs = Vec::with_capacity(colors * 2 * states);
+            let mut instrs =
+                Vec::with_capacity((colors * 2 * states).into());
 
             for color in 0..colors {
                 for shift in SHIFTS {
                     for state in 0..states {
-                        instrs.push((
-                            color as Color,
-                            shift,
-                            state as State,
-                        ));
+                        instrs.push((color, shift, state));
                     }
                 }
             }
 
-            table[states][colors] = instrs;
+            table[states as usize][colors as usize] = instrs;
         }
     }
 
@@ -53,17 +52,17 @@ fn make_instr_table(
 type BlankInstrTable = [InstrTable; 2];
 
 fn make_blank_table(
-    max_states: usize,
-    max_colors: usize,
+    max_states: State,
+    max_colors: Color,
 ) -> BlankInstrTable {
     let table = make_instr_table(max_states, max_colors);
 
     let mut partial = table.clone();
 
-    #[expect(clippy::needless_range_loop)]
     for states in 2..=max_states {
         for colors in 2..=max_colors {
-            partial[states][colors].retain(|&(co, _, _)| co == 0);
+            partial[states as usize][colors as usize]
+                .retain(|&(co, _, _)| co == 0);
         }
     }
 
@@ -512,8 +511,7 @@ fn build_all(
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
-    let instr_table =
-        make_instr_table(states as usize, colors as usize);
+    let instr_table = make_instr_table(states, colors);
 
     let mut init_instrs =
         instr_table[init_states as usize][init_colors as usize].clone();
@@ -543,8 +541,7 @@ fn build_blank(
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
-    let instr_table =
-        make_blank_table(states as usize, colors as usize);
+    let instr_table = make_blank_table(states, colors);
 
     let mut init_instrs = instr_table[usize::from(false)]
         [init_states as usize][init_colors as usize]
@@ -570,8 +567,7 @@ fn build_spinout(
     let init_states = min(3, states);
     let init_colors = min(3, colors);
 
-    let instr_table =
-        make_instr_table(states as usize, colors as usize);
+    let instr_table = make_instr_table(states, colors);
 
     let mut init_instrs =
         instr_table[init_states as usize][init_colors as usize].clone();

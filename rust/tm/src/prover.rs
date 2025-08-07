@@ -117,7 +117,10 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         state: State,
         tape: &BigTape,
     ) -> Option<ProverResult> {
-        #[expect(clippy::cast_possible_wrap)]
+        #[expect(
+            clippy::cast_possible_wrap,
+            clippy::cast_possible_truncation
+        )]
         let cycle = cycle as Cycle;
 
         let sig = tape.signature();

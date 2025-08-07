@@ -588,6 +588,7 @@ struct Tape {
 }
 
 impl Tape {
+    #[expect(clippy::cast_possible_truncation)]
     fn init(seg: Segments, pos: Pos) -> Self {
         assert!(seg >= 4);
         assert!(pos <= seg);

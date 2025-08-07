@@ -1,5 +1,3 @@
-#![deny(clippy::cast_possible_truncation)]
-
 use core::{cell::RefCell, iter::once};
 
 use std::collections::BTreeMap as Dict;

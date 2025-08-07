@@ -23,6 +23,7 @@ pub trait Parse {
 
 /**************************************/
 
+#[expect(clippy::cast_possible_truncation)]
 pub const fn read_color(color: char) -> Color {
     color.to_digit(10).unwrap() as Color
 }
