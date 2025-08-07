@@ -534,7 +534,7 @@ fn test_limited_slow() {
 /**************************************/
 
 fn main() {
-    test_limited();
+    test_tree();
 
     let args: Vec<String> = env::args().collect();
 
@@ -542,7 +542,7 @@ fn main() {
         return;
     }
 
-    test_tree();
+    test_limited();
 
     test_collect();
 
