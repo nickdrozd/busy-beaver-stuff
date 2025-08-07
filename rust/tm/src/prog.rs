@@ -148,7 +148,9 @@ impl Parse for Prog {
         (0..self.states)
             .map(|state| {
                 (0..self.colors)
-                    .map(|color| self.get_instr(&(state, color)).show())
+                    .map(|color| {
+                        self.instrs.get(&(state, color)).show()
+                    })
                     .collect::<Vec<_>>()
                     .join(" ")
             })

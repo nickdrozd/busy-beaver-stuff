@@ -106,6 +106,16 @@ impl Parse for Option<Instr> {
     }
 }
 
+impl Parse for Option<&Instr> {
+    fn read(_: &str) -> Self {
+        unreachable!()
+    }
+
+    fn show(&self) -> String {
+        self.map_or_else(|| "...".to_owned(), |&instr| instr.show())
+    }
+}
+
 /**************************************/
 
 #[test]
