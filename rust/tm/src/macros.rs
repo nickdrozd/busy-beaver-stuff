@@ -463,6 +463,10 @@ impl<L: Logic> MacroProg<'_, L> {
         assert_eq!(mac_states, states);
         assert_eq!(mac_colors, colors);
     }
+
+    pub fn rep_params(&self) -> (usize, usize) {
+        (self.states.borrow().len(), self.colors.borrow().len())
+    }
 }
 
 #[test]

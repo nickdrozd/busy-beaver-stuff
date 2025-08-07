@@ -244,6 +244,23 @@ fn test_check_inf() {
 }
 
 #[test]
+fn test_macro_excess() {
+    let prog = Prog::read("1RB 2LA 2RB 3RA  1LB 1RA 3LB 0RB");
+
+    let blocks = prog.opt_block(300);
+
+    assert_eq!(blocks, 7);
+
+    let mac = prog.make_block_macro(blocks);
+
+    mac.assert_params((4, 0x4000));
+
+    assert!(matches!(run_for_infrul(&mac, 976), RunResult::StepLimit));
+
+    assert_eq!(mac.rep_params(), (4, 281));
+}
+
+#[test]
 #[should_panic(expected = "attempt to multiply with overflow")]
 fn test_macro_overflow() {
     assert!(
