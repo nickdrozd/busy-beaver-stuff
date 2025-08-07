@@ -235,4 +235,9 @@ fn test_check_inf() {
         Prog::read("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
             .check_inf(300, 209)
     );
+
+    assert!(
+        Prog::read("1RB 0LA 3LB 1RA  2LB 3LA 0RB 2RA")
+            .check_inf(300, 756)
+    );
 }
