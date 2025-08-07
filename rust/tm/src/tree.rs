@@ -172,20 +172,28 @@ impl<'h> TreeCore<'h> {
         (self.harvester)(&self.prog);
     }
 
-    fn insert(&mut self, slot: &Slot, instr: &Instr) {
+    fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
         self.remaining_slots -= 1;
 
-        self.prog.instrs.insert(*slot, *instr);
+        self.insert(slot, instr);
 
         self.update_avail(slot, instr);
     }
 
-    fn remove(&mut self, slot: &Slot) {
+    fn remove_and_update(&mut self, slot: &Slot) {
         self.avail_params.pop();
 
-        self.prog.instrs.remove(slot);
+        self.remove(slot);
 
         self.remaining_slots += 1;
+    }
+
+    fn insert(&mut self, slot: &Slot, instr: &Instr) {
+        self.prog.instrs.insert(*slot, *instr);
+    }
+
+    fn remove(&mut self, slot: &Slot) {
+        self.prog.instrs.remove(slot);
     }
 
     fn avail_params(&self) -> Params {
@@ -232,10 +240,26 @@ trait Tree<'h> {
 
     fn avail_instrs(&self, slot: &Slot) -> &'h [Instr];
 
+    fn insert_and_update(&mut self, slot: &Slot, instr: &Instr);
+    fn remove_and_update(&mut self, slot: &Slot);
+
     fn insert(&mut self, slot: &Slot, instr: &Instr);
     fn remove(&mut self, slot: &Slot);
 
     fn with_instr(
+        &mut self,
+        slot: &Slot,
+        instr: &Instr,
+        body: impl FnOnce(&mut Self),
+    ) {
+        self.insert_and_update(slot, instr);
+
+        body(self);
+
+        self.remove_and_update(slot);
+    }
+
+    fn with_insert(
         &mut self,
         slot: &Slot,
         instr: &Instr,
@@ -269,7 +293,7 @@ trait Tree<'h> {
 
         if self.final_slot() {
             for next_instr in instrs {
-                self.with_instr(&slot, next_instr, |prog| {
+                self.with_insert(&slot, next_instr, |prog| {
                     prog.harvest();
                 });
             }
@@ -344,6 +368,14 @@ impl<'h> Tree<'h> for BasicTree<'h> {
 
     fn run(&self, config: &mut Config) -> RunResult {
         self.core.run(config)
+    }
+
+    fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
+        self.core.insert_and_update(slot, instr);
+    }
+
+    fn remove_and_update(&mut self, slot: &Slot) {
+        self.core.remove_and_update(slot);
     }
 
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
@@ -437,16 +469,24 @@ impl<'h> Tree<'h> for BlankTree<'h> {
         self.core.run(config)
     }
 
-    fn insert(&mut self, slot: &Slot, instr: &Instr) {
-        self.core.insert(slot, instr);
+    fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
+        self.core.insert_and_update(slot, instr);
 
         self.update_blanks(slot, instr);
     }
 
-    fn remove(&mut self, slot: &Slot) {
-        self.core.remove(slot);
+    fn remove_and_update(&mut self, slot: &Slot) {
+        self.core.remove_and_update(slot);
 
         self.avail_blanks.pop();
+    }
+
+    fn insert(&mut self, slot: &Slot, instr: &Instr) {
+        self.core.insert(slot, instr);
+    }
+
+    fn remove(&mut self, slot: &Slot) {
+        self.core.remove(slot);
     }
 
     fn avail_instrs(&self, &(_, color): &Slot) -> &'h [Instr] {
