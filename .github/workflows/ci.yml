@@ -61,7 +61,7 @@ jobs:
 
       - name: Unit
         run: |
-          make test-rust
+          make trust
 
       - name: Run
         run: |

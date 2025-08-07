@@ -11,7 +11,7 @@ clean : clean-python clean-rust
 
 refresh : clean-python rust
 
-quick-check : refresh test-rust lint coverage
+quick-check : refresh trust lint coverage
 
 ## Odd langs ###########################
 
@@ -52,7 +52,7 @@ clippy :
 
 CARGO_TEST = $(CARGO) test
 
-test-rust :
+trust :
 	$(CARGO_VERSION)
 	$(CARGO_TEST)
 
