@@ -5,10 +5,7 @@
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
-    instrs::{
-        GetInstr as _, Instr, Instrs, Parse as _, Slot, State,
-        show_state,
-    },
+    instrs::{Instr, Instrs, Parse as _, Slot, State, show_state},
     prog::Prog,
     reason::{
         BackwardResult as BackwardResultRs, BackwardResult::*, Depth,
@@ -391,8 +388,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: usize) -> MachineResult {
     for cycle in 0..sim_lim {
         let slot = (state, tape.scan);
 
-        let Some((color, shift, next_state)) = prog.get_instr(&slot)
-        else {
+        let Some(&(color, shift, next_state)) = prog.get(&slot) else {
             cycles = cycle;
             result = Some(undfnd);
             last_slot = Some(slot);
