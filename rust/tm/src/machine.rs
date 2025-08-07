@@ -241,3 +241,12 @@ fn test_check_inf() {
             .check_inf(300, 756)
     );
 }
+
+#[test]
+#[should_panic(expected = "attempt to multiply with overflow")]
+fn test_macro_overflow() {
+    assert!(
+        !Prog::read("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...")
+            .check_inf(3_219, 118)
+    );
+}
