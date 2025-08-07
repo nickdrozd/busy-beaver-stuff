@@ -5,18 +5,16 @@
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
-    cps::Cps as _,
-    ctl::Ctl as _,
     instrs::{
         GetInstr as _, Instr, Instrs, Parse as _, Slot, State,
         show_state,
     },
     prog::Prog,
     reason::{
-        Backward as _, BackwardResult as BackwardResultRs,
-        BackwardResult::*, Depth, Step,
+        BackwardResult as BackwardResultRs, BackwardResult::*, Depth,
+        Step,
     },
-    segment::{Segment as _, SegmentResult as SegmentResultRs},
+    segment::SegmentResult as SegmentResultRs,
 };
 
 /***************************************/

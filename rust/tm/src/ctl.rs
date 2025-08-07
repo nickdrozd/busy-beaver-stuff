@@ -23,14 +23,8 @@ const CONFIG_LIMIT: usize = 3_000;
 
 /**************************************/
 
-pub trait Ctl {
-    fn ctl_cant_halt(&self, steps: Steps) -> bool;
-    fn ctl_cant_blank(&self, steps: Steps) -> bool;
-    fn ctl_cant_spin_out(&self, steps: Steps) -> bool;
-}
-
-impl Ctl for Prog {
-    fn ctl_cant_halt(&self, steps: Steps) -> bool {
+impl Prog {
+    pub fn ctl_cant_halt(&self, steps: Steps) -> bool {
         let blocks = self.opt_block(OPT_BLOCK);
 
         if blocks == 1 {
@@ -40,11 +34,11 @@ impl Ctl for Prog {
         }
     }
 
-    fn ctl_cant_blank(&self, steps: Steps) -> bool {
+    pub fn ctl_cant_blank(&self, steps: Steps) -> bool {
         ctl_run(self, steps, Blank)
     }
 
-    fn ctl_cant_spin_out(&self, steps: Steps) -> bool {
+    pub fn ctl_cant_spin_out(&self, steps: Steps) -> bool {
         let blocks = self.opt_block(OPT_BLOCK);
 
         if blocks == 1 {

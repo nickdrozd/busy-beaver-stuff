@@ -8,13 +8,9 @@ use rayon::prelude::*;
 
 use tm::{
     Goal,
-    cps::Cps as _,
-    ctl::Ctl as _,
     instrs::Params,
     machine::run_for_infrul,
     prog::Prog,
-    reason::Backward as _,
-    segment::Segment as _,
     tree::{Step, build_limited, build_tree},
 };
 

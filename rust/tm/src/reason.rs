@@ -43,14 +43,8 @@ impl BackwardResult {
 
 /**************************************/
 
-pub trait Backward {
-    fn cant_halt(&self, depth: Depth) -> BackwardResult;
-    fn cant_blank(&self, depth: Depth) -> BackwardResult;
-    fn cant_spin_out(&self, depth: Depth) -> BackwardResult;
-}
-
-impl Backward for Prog {
-    fn cant_halt(&self, depth: Depth) -> BackwardResult {
+impl Prog {
+    pub fn cant_halt(&self, depth: Depth) -> BackwardResult {
         let halt_slots = self.halt_slots();
 
         if halt_slots.iter().all(|&(st, co)| {
@@ -71,7 +65,7 @@ impl Backward for Prog {
         cant_reach(self, depth, halt_configs(&halt_slots))
     }
 
-    fn cant_blank(&self, depth: Depth) -> BackwardResult {
+    pub fn cant_blank(&self, depth: Depth) -> BackwardResult {
         let erase_slots = self.erase_slots();
 
         if erase_slots.is_empty() {
@@ -81,7 +75,7 @@ impl Backward for Prog {
         cant_reach(self, depth, erase_configs(&erase_slots))
     }
 
-    fn cant_spin_out(&self, depth: Depth) -> BackwardResult {
+    pub fn cant_spin_out(&self, depth: Depth) -> BackwardResult {
         let zr_shifts = self.zr_shifts();
 
         if zr_shifts.is_empty() {

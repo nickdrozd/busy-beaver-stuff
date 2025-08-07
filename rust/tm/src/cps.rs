@@ -19,33 +19,27 @@ const MAX_DEPTH: usize = 100_000;
 
 /**************************************/
 
-pub trait Cps {
-    fn cps_cant_halt(&self, rad: Radius) -> bool;
-    fn cps_cant_blank(&self, rad: Radius) -> bool;
-    fn cps_cant_spin_out(&self, rad: Radius) -> bool;
-}
-
-impl Cps for Prog {
-    fn cps_cant_halt(&self, rad: Radius) -> bool {
-        cps_run(self, rad, Halt)
+impl Prog {
+    pub fn cps_cant_halt(&self, rad: Radius) -> bool {
+        self.cps_run(rad, Halt)
     }
 
-    fn cps_cant_blank(&self, rad: Radius) -> bool {
-        cps_run(self, rad, Blank)
+    pub fn cps_cant_blank(&self, rad: Radius) -> bool {
+        self.cps_run(rad, Blank)
     }
 
-    fn cps_cant_spin_out(&self, rad: Radius) -> bool {
-        cps_run(self, rad, Spinout)
+    pub fn cps_cant_spin_out(&self, rad: Radius) -> bool {
+        self.cps_run(rad, Spinout)
+    }
+
+    fn cps_run(&self, rad: Radius, goal: Goal) -> bool {
+        assert!(rad > 1);
+
+        (2..rad).any(|seg| cps_cant_reach(self, seg, goal))
     }
 }
 
 /**************************************/
-
-fn cps_run(prog: &Prog, rad: Radius, goal: Goal) -> bool {
-    assert!(rad > 1);
-
-    (2..rad).any(|seg| cps_cant_reach(prog, seg, goal))
-}
 
 fn cps_cant_reach(prog: &Prog, rad: Radius, goal: Goal) -> bool {
     let mut configs = Configs::init(rad);

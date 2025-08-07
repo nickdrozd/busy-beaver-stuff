@@ -41,24 +41,16 @@ impl SegmentResult {
 
 /**************************************/
 
-pub trait Segment {
-    fn seg_cant_halt(&self, segs: Segments) -> SegmentResult;
-
-    fn seg_cant_blank(&self, segs: Segments) -> SegmentResult;
-
-    fn seg_cant_spin_out(&self, segs: Segments) -> SegmentResult;
-}
-
-impl Segment for Prog {
-    fn seg_cant_halt(&self, segs: Segments) -> SegmentResult {
+impl Prog {
+    pub fn seg_cant_halt(&self, segs: Segments) -> SegmentResult {
         segment_cant_reach(self, segs, Halt)
     }
 
-    fn seg_cant_blank(&self, segs: Segments) -> SegmentResult {
+    pub fn seg_cant_blank(&self, segs: Segments) -> SegmentResult {
         segment_cant_reach(self, segs, Blank)
     }
 
-    fn seg_cant_spin_out(&self, segs: Segments) -> SegmentResult {
+    pub fn seg_cant_spin_out(&self, segs: Segments) -> SegmentResult {
         segment_cant_reach(self, segs, Spinout)
     }
 }
