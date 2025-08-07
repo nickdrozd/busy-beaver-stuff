@@ -181,14 +181,6 @@ impl<'p, L: Logic> MacroProg<'p, L> {
         }
     }
 
-    #[expect(dead_code)]
-    fn params(&self) -> Params {
-        (
-            self.logic.macro_states() as State,
-            self.logic.macro_colors() as Color,
-        )
-    }
-
     fn calculate_instr(&self, slot: Slot) -> Option<Instr> {
         Some(self.logic.reconstruct_outputs(
             self.run_simulator(self.logic.deconstruct_inputs(slot))?,
@@ -428,14 +420,33 @@ impl TapeColorConverter {
 #[cfg(test)]
 use crate::instrs::Parse as _;
 
+#[cfg(test)]
+#[expect(private_bounds)]
+impl<L: Logic> MacroProg<'_, L> {
+    fn params(&self) -> Params {
+        (self.logic.macro_states(), self.logic.macro_colors())
+    }
+
+    pub fn assert_params(&self, (states, colors): (State, Color)) {
+        let (mac_states, mac_colors) = self.params();
+
+        assert_eq!(mac_states, states);
+        assert_eq!(mac_colors, colors);
+    }
+}
+
 #[test]
-fn test_nest() {
+fn test_params() {
     let prog =
         Prog::read("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
 
-    let _ = prog.make_block_macro(3);
+    let block = prog.make_block_macro(3);
 
-    let _ = prog.make_backsymbol_macro(3);
+    block.assert_params((10, 8));
+
+    let backs = prog.make_backsymbol_macro(3);
+
+    backs.assert_params((80, 2));
 }
 
 #[cfg(test)]
@@ -453,6 +464,8 @@ fn test_macro() {
         Prog::read("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD");
 
     let block = prog.make_block_macro(2);
+
+    block.assert_params((10, 4));
 
     for &(slot, instr) in MACROS {
         assert_eq!(Some(instr), block.get_instr(&slot));
