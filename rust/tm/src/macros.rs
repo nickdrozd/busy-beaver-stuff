@@ -86,7 +86,10 @@ impl Logic for BlockLogic {
     }
 
     fn macro_colors(&self) -> Color {
-        self.base_colors().pow(u32::try_from(self.cells()).unwrap())
+        let base = self.base_colors();
+        let exp = u32::try_from(self.cells()).unwrap();
+
+        base.pow(exp)
     }
 
     fn sim_lim(&self) -> usize {
@@ -294,8 +297,13 @@ impl Logic for BacksymbolLogic {
             base_states,
             base_colors,
 
-            backsymbols: (usize::try_from(base_colors).unwrap())
-                .pow(u32::try_from(cells).unwrap()),
+            backsymbols: {
+                #[expect(clippy::cast_possible_truncation)]
+                let base = base_colors as usize;
+                let exp = u32::try_from(cells).unwrap();
+
+                base.pow(exp)
+            },
 
             converter: TapeColorConverter::new(base_colors, cells),
         }
@@ -430,10 +438,12 @@ impl TapeColorConverter {
         let color = tape.iter().rev().enumerate().fold(
             0,
             |acc, (place, &value)| {
-                acc + value
-                    * self
-                        .base_colors
-                        .pow(u32::try_from(place).unwrap())
+                acc + value * {
+                    let base = self.base_colors;
+                    let exp = u32::try_from(place).unwrap();
+
+                    base.pow(exp)
+                }
             },
         );
 
