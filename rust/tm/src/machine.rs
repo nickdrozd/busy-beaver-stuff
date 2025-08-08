@@ -250,3 +250,13 @@ fn test_macro_overflow() {
             .check_inf(3_219, 118)
     );
 }
+
+#[test]
+fn test_macro_loop() {
+    assert!(
+        Prog::read(
+            "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF"
+        )
+        .check_inf(200, 500)
+    );
+}
