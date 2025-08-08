@@ -1,3 +1,7 @@
+#![deny(clippy::all, clippy::nursery, clippy::pedantic)]
+#![expect(clippy::too_many_lines)]
+#![allow(clippy::enum_glob_use)]
+
 use std::env;
 
 use rayon::prelude::*;
@@ -532,6 +536,7 @@ fn test_limited_slow() {
 fn main() {
     test_tree();
 
+    #[expect(clippy::needless_collect)]
     let args: Vec<String> = env::args().collect();
 
     if !args.contains(&"--all".to_string()) {
