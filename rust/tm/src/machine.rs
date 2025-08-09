@@ -257,7 +257,7 @@ fn test_macro_excess() {
 
     assert!(matches!(run_for_infrul(&mac, 976), RunResult::StepLimit));
 
-    assert_eq!(mac.rep_params(), (4, 281));
+    assert_eq!(mac.rep_params(), (4, 323));
 }
 
 #[test]

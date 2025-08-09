@@ -1,8 +1,9 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::{instrs::Instrs, prog::Prog};
-
-type State = u8;
+use crate::{
+    instrs::{Instrs, State},
+    prog::Prog,
+};
 
 /**************************************/
 
@@ -12,7 +13,7 @@ impl Prog {
             return false;
         }
 
-        let states = self.states as State;
+        let states = self.states;
 
         let exitpoints = get_exitpoints(&self.instrs);
 
@@ -97,10 +98,7 @@ fn get_exitpoints(instrs: &Instrs) -> Exitpoints {
             continue;
         }
 
-        exitpoints
-            .entry(src as State)
-            .or_default()
-            .push(dst as State);
+        exitpoints.entry(src).or_default().push(dst);
     }
 
     for conns in exitpoints.values_mut() {

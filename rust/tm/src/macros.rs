@@ -7,9 +7,17 @@ use std::collections::BTreeMap as Dict;
 use num_integer::Integer as _;
 
 use crate::{
-    instrs::{Color, Instr, Instrs, Params, Slot, State},
+    instrs::{Color, Instr, Params, Shift, Slot, State},
     prog::Prog,
 };
+
+type MacroColor = u64;
+type MacroState = u64;
+
+type MacroSlot = (MacroState, MacroColor);
+type MacroInstr = (MacroColor, Shift, MacroState);
+
+type MacroInstrs = Dict<MacroSlot, MacroInstr>;
 
 type Tape = Vec<Color>;
 type Config = (State, (bool, Tape));
@@ -81,12 +89,12 @@ impl Logic for BlockLogic {
         self.base_colors
     }
 
-    fn macro_states(&self) -> State {
-        2 * self.base_states()
+    fn macro_states(&self) -> MacroState {
+        MacroState::from(2 * self.base_states())
     }
 
-    fn macro_colors(&self) -> Color {
-        let base = self.base_colors();
+    fn macro_colors(&self) -> MacroColor {
+        let base = MacroColor::from(self.base_colors());
         let exp = u32::try_from(self.cells()).unwrap();
 
         base.pow(exp)
@@ -94,21 +102,21 @@ impl Logic for BlockLogic {
 
     fn sim_lim(&self) -> usize {
         self.cells()
-            * usize::try_from(self.base_states()).unwrap()
+            * self.base_states() as usize
             * usize::try_from(self.macro_colors()).unwrap()
     }
 
     fn deconstruct_inputs(
         &self,
-        (macro_state, macro_color): Slot,
+        (macro_state, macro_color): MacroSlot,
     ) -> Config {
-        let (state, right_edge) = macro_state.div_rem(&2);
+        let (state, right_edge) = macro_state.div_rem(&2_u8.into());
 
         (
-            state,
+            State::try_from(state).unwrap(),
             (
                 right_edge == 1,
-                self.converter.color_to_tape(macro_color),
+                self.converter.color_to_tape(&macro_color),
             ),
         )
     }
@@ -116,11 +124,11 @@ impl Logic for BlockLogic {
     fn reconstruct_outputs(
         &self,
         (state, (right_edge, tape)): Config,
-    ) -> Instr {
+    ) -> MacroInstr {
         (
             self.converter.tape_to_color(tape),
             right_edge,
-            (2 * state) + State::from(!right_edge),
+            MacroState::from(2 * state) + MacroState::from(!right_edge),
         )
     }
 }
@@ -132,15 +140,15 @@ pub struct MacroProg<'p, L: Logic> {
     prog: &'p Prog,
     logic: L,
 
-    instrs: RefCell<Instrs>,
+    instrs: RefCell<MacroInstrs>,
 
-    states: RefCell<Vec<State>>,
-    colors: RefCell<Vec<Color>>,
+    states: RefCell<Vec<MacroState>>,
+    colors: RefCell<Vec<MacroColor>>,
 }
 
 impl<L: Logic> GetInstr for MacroProg<'_, L> {
     fn get_instr(&self, slot: &Slot) -> Option<Instr> {
-        let slot = self.convert_slot(slot);
+        let slot: MacroSlot = self.convert_slot(slot);
 
         let (color, shift, state) = {
             if let Some(&instr) = self.instrs.borrow().get(&slot) {
@@ -174,15 +182,15 @@ impl<'p, L: Logic> MacroProg<'p, L> {
         }
     }
 
-    #[expect(clippy::cast_possible_truncation)]
-    fn convert_slot(&self, &(state, color): &Slot) -> Slot {
+    fn convert_slot(&self, &(state, color): &Slot) -> MacroSlot {
         (
-            self.states.borrow()[state as usize],
-            self.colors.borrow()[color as usize],
+            MacroState::from(self.states.borrow()[state as usize]),
+            MacroColor::from(self.colors.borrow()[color as usize]),
         )
     }
 
-    fn convert_state(&self, state: State) -> State {
+    #[expect(clippy::cast_possible_truncation)]
+    fn convert_state(&self, state: MacroState) -> State {
         let mut states = self.states.borrow_mut();
 
         let pos = states
@@ -196,7 +204,8 @@ impl<'p, L: Logic> MacroProg<'p, L> {
         pos as State
     }
 
-    fn convert_color(&self, color: Color) -> Color {
+    #[expect(clippy::cast_possible_truncation)]
+    fn convert_color(&self, color: MacroColor) -> Color {
         let mut colors = self.colors.borrow_mut();
 
         let pos = colors
@@ -210,11 +219,11 @@ impl<'p, L: Logic> MacroProg<'p, L> {
         pos as Color
     }
 
-    fn cache_instr(&self, slot: Slot, instr: Instr) {
+    fn cache_instr(&self, slot: MacroSlot, instr: MacroInstr) {
         self.instrs.borrow_mut().insert(slot, instr);
     }
 
-    fn calculate_instr(&self, slot: Slot) -> Option<Instr> {
+    fn calculate_instr(&self, slot: MacroSlot) -> Option<MacroInstr> {
         Some(self.logic.reconstruct_outputs(
             self.run_simulator(self.logic.deconstruct_inputs(slot))?,
         ))
@@ -298,7 +307,6 @@ impl Logic for BacksymbolLogic {
             base_colors,
 
             backsymbols: {
-                #[expect(clippy::cast_possible_truncation)]
                 let base = base_colors as usize;
                 let exp = u32::try_from(cells).unwrap();
 
@@ -321,12 +329,15 @@ impl Logic for BacksymbolLogic {
         self.base_colors
     }
 
-    fn macro_states(&self) -> State {
-        2 * self.base_states * self.backsymbols as State
+    fn macro_states(&self) -> MacroState {
+        MacroState::from(
+            2 * self.base_states
+                * State::try_from(self.backsymbols).unwrap(),
+        )
     }
 
-    fn macro_colors(&self) -> Color {
-        self.base_colors
+    fn macro_colors(&self) -> MacroColor {
+        MacroColor::from(self.base_colors)
     }
 
     fn sim_lim(&self) -> usize {
@@ -336,14 +347,19 @@ impl Logic for BacksymbolLogic {
 
     fn deconstruct_inputs(
         &self,
-        (macro_state, macro_color): Slot,
+        (macro_state, macro_color): MacroSlot,
     ) -> Config {
-        let (st_co, at_right) = macro_state.div_rem(&2);
+        let macro_color = Color::try_from(macro_color).unwrap();
 
-        let (state, color) =
-            st_co.div_rem(&(self.backsymbols as Color));
+        let (st_co, at_right) = macro_state.div_rem(&2_u8.into());
 
-        let backspan = self.converter.color_to_tape(color);
+        let st_co = State::try_from(st_co).unwrap();
+
+        let (state, color) = st_co
+            .div_rem(&(Color::try_from(self.backsymbols).unwrap()));
+
+        let backspan =
+            self.converter.color_to_tape(&MacroColor::from(color));
 
         (
             state,
@@ -364,7 +380,7 @@ impl Logic for BacksymbolLogic {
     fn reconstruct_outputs(
         &self,
         (state, (right_edge, tape)): Config,
-    ) -> Instr {
+    ) -> MacroInstr {
         let shift = !right_edge;
 
         let (backspan, macro_color) = if shift {
@@ -376,11 +392,15 @@ impl Logic for BacksymbolLogic {
         };
 
         (
-            macro_color,
+            MacroColor::from(macro_color),
             shift,
-            Color::from(shift)
-                + (2 * ((state * (self.backsymbols as Color))
-                    + self.converter.tape_to_color(backspan))),
+            MacroColor::from(shift)
+                + (MacroColor::from(2_u8)
+                    * (MacroColor::from(
+                        state
+                            * (Color::try_from(self.backsymbols)
+                                .unwrap()),
+                    ) + self.converter.tape_to_color(backspan))),
         )
     }
 }
@@ -395,13 +415,13 @@ trait Logic {
     fn base_states(&self) -> State;
     fn base_colors(&self) -> Color;
 
-    fn macro_states(&self) -> State;
-    fn macro_colors(&self) -> Color;
+    fn macro_states(&self) -> MacroState;
+    fn macro_colors(&self) -> MacroColor;
 
     fn sim_lim(&self) -> usize;
 
-    fn deconstruct_inputs(&self, slot: Slot) -> Config;
-    fn reconstruct_outputs(&self, config: Config) -> Instr;
+    fn deconstruct_inputs(&self, slot: MacroSlot) -> Config;
+    fn reconstruct_outputs(&self, config: Config) -> MacroInstr;
 }
 
 /**************************************/
@@ -409,8 +429,8 @@ trait Logic {
 struct TapeColorConverter {
     base_colors: Color,
 
-    ct_cache: RefCell<Dict<Color, Tape>>,
-    tc_cache: RefCell<Dict<Tape, Color>>,
+    ct_cache: RefCell<Dict<MacroColor, Tape>>,
+    tc_cache: RefCell<Dict<Tape, MacroColor>>,
 }
 
 impl TapeColorConverter {
@@ -421,31 +441,33 @@ impl TapeColorConverter {
 
         Self {
             base_colors,
-            ct_cache: ct_cache.into(),
+            ct_cache: RefCell::new(ct_cache),
             tc_cache: Dict::new().into(),
         }
     }
 
-    fn color_to_tape(&self, color: Color) -> Tape {
-        self.ct_cache.borrow()[&color].clone()
+    fn color_to_tape(&self, color: &MacroColor) -> Tape {
+        self.ct_cache.borrow()[color].clone()
     }
 
-    fn tape_to_color(&self, tape: Tape) -> Color {
+    fn tape_to_color(&self, tape: Tape) -> MacroColor {
         if let Some(&color) = self.tc_cache.borrow().get(&tape) {
             return color;
         }
 
-        let color = tape.iter().rev().enumerate().fold(
-            0,
-            |acc, (place, &value)| {
+        let color = tape
+            .iter()
+            .map(|c| MacroColor::from(*c))
+            .rev()
+            .enumerate()
+            .fold(MacroColor::MIN, |acc, (place, value)| {
                 acc + value * {
-                    let base = self.base_colors;
+                    let base = MacroColor::from(self.base_colors);
                     let exp = u32::try_from(place).unwrap();
 
                     base.pow(exp)
                 }
-            },
-        );
+            });
 
         self.tc_cache.borrow_mut().insert(tape.clone(), color);
 
@@ -463,15 +485,15 @@ use crate::instrs::Parse as _;
 #[cfg(test)]
 #[expect(private_bounds)]
 impl<L: Logic> MacroProg<'_, L> {
-    fn params(&self) -> Params {
+    fn params(&self) -> (MacroState, MacroColor) {
         (self.logic.macro_states(), self.logic.macro_colors())
     }
 
-    pub fn assert_params(&self, (states, colors): (State, Color)) {
+    pub fn assert_params(&self, (states, colors): (u16, u16)) {
         let (mac_states, mac_colors) = self.params();
 
-        assert_eq!(mac_states, states);
-        assert_eq!(mac_colors, colors);
+        assert_eq!(mac_states, MacroState::from(states));
+        assert_eq!(mac_colors, MacroColor::from(colors));
     }
 
     pub fn rep_params(&self) -> (usize, usize) {

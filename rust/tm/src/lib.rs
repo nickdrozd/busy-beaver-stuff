@@ -20,6 +20,7 @@
     clippy::decimal_literal_representation
 )]
 #![expect(
+    clippy::trivially_copy_pass_by_ref,
     clippy::cast_possible_truncation,
     clippy::must_use_candidate,
     clippy::missing_panics_doc

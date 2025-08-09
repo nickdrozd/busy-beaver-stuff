@@ -2,8 +2,8 @@ use std::collections::BTreeMap as Dict;
 
 /**************************************/
 
-pub type Color = u64;
-pub type State = u64;
+pub type Color = u8;
+pub type State = u8;
 pub type Shift = bool;
 
 pub type Slot = (State, Color);
@@ -40,7 +40,7 @@ pub const fn read_shift(shift: char) -> Shift {
 pub const fn show_state(state: Option<State>) -> char {
     match state {
         None => UNDF,
-        Some(s) => (s as u8 + 65) as char,
+        Some(s) => (s + 65) as char,
     }
 }
 

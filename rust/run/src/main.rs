@@ -444,9 +444,7 @@ fn assert_limited(
     let holdout = Basket::set(0);
     let visited = Basket::set(0);
 
-    let params = (instrs.into(), instrs.into());
-
-    build_limited(params, instrs, tree, &|prog| {
+    build_limited((instrs, instrs), instrs, tree, &|prog| {
         *visited.access() += 1;
 
         if pipeline(prog) {
