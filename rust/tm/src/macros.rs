@@ -7,12 +7,24 @@ use std::collections::BTreeMap as Dict;
 use num_integer::Integer as _;
 
 use crate::{
-    instrs::{Color, GetInstr, Instr, Instrs, Params, Slot, State},
+    instrs::{Color, Instr, Instrs, Params, Slot, State},
     prog::Prog,
 };
 
 type Tape = Vec<Color>;
 type Config = (State, (bool, Tape));
+
+/**************************************/
+
+pub trait GetInstr {
+    fn get_instr(&self, slot: &Slot) -> Option<Instr>;
+}
+
+impl GetInstr for Prog {
+    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
+        self.instrs.get(slot).copied()
+    }
+}
 
 /**************************************/
 

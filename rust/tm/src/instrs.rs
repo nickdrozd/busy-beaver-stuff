@@ -15,12 +15,6 @@ pub type Instrs = Dict<Slot, Instr>;
 
 /**************************************/
 
-pub trait GetInstr {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr>;
-}
-
-/**************************************/
-
 const UNDF: char = '.';
 
 const LEFT: char = 'L';

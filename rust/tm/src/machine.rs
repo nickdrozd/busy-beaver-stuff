@@ -1,5 +1,6 @@
 use crate::{
-    instrs::{GetInstr, Slot, State},
+    instrs::{Slot, State},
+    macros::GetInstr,
     prog::Prog,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,

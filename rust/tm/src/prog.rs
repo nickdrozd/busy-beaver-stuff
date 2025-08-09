@@ -1,7 +1,7 @@
 use std::collections::BTreeSet as Set;
 
 use crate::instrs::{
-    Color, GetInstr, Instr, Instrs, Params, Parse, Shift, Slot, State,
+    Color, Instr, Instrs, Params, Parse, Shift, Slot, State,
 };
 
 /**************************************/
@@ -105,12 +105,6 @@ impl Prog {
 }
 
 /**************************************/
-
-impl GetInstr for Prog {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
-        self.instrs.get(slot).copied()
-    }
-}
 
 impl Parse for Prog {
     fn read(prog: &str) -> Self {
