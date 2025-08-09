@@ -136,48 +136,26 @@ pub struct MacroProg<'p, L: Logic> {
 }
 
 impl<L: Logic> GetInstr for MacroProg<'_, L> {
-    #[expect(clippy::cast_possible_truncation)]
-    fn get_instr(&self, &(in_state, in_color): &Slot) -> Option<Instr> {
-        let slot = (
-            self.states.borrow()[in_state as usize],
-            self.colors.borrow()[in_color as usize],
-        );
+    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
+        let slot = self.convert_slot(slot);
 
-        let (out_color, shift, out_state) = {
+        let (color, shift, state) = {
             if let Some(&instr) = self.instrs.borrow().get(&slot) {
                 instr
             } else {
                 let instr = self.calculate_instr(slot)?;
 
-                self.instrs.borrow_mut().insert(slot, instr);
+                self.cache_instr(slot, instr);
 
                 instr
             }
         };
 
-        let fwd_state = {
-            let mut states = self.states.borrow_mut();
-
-            states.iter().position(|&s| s == out_state).unwrap_or_else(
-                || {
-                    states.push(out_state);
-                    states.len() - 1
-                },
-            ) as State
-        };
-
-        let fwd_color = {
-            let mut colors = self.colors.borrow_mut();
-
-            colors.iter().position(|&s| s == out_color).unwrap_or_else(
-                || {
-                    colors.push(out_color);
-                    colors.len() - 1
-                },
-            ) as Color
-        };
-
-        Some((fwd_color, shift, fwd_state))
+        Some((
+            self.convert_color(color),
+            shift,
+            self.convert_state(state),
+        ))
     }
 }
 
@@ -191,6 +169,46 @@ impl<'p, L: Logic> MacroProg<'p, L> {
             states: vec![0].into(),
             colors: vec![0].into(),
         }
+    }
+
+    #[expect(clippy::cast_possible_truncation)]
+    fn convert_slot(&self, &(state, color): &Slot) -> Slot {
+        (
+            self.states.borrow()[state as usize],
+            self.colors.borrow()[color as usize],
+        )
+    }
+
+    fn convert_state(&self, state: State) -> State {
+        let mut states = self.states.borrow_mut();
+
+        let pos = states
+            .iter()
+            .position(|s| *s == state)
+            .unwrap_or_else(|| {
+                states.push(state);
+                states.len() - 1
+            });
+
+        pos as State
+    }
+
+    fn convert_color(&self, color: Color) -> Color {
+        let mut colors = self.colors.borrow_mut();
+
+        let pos = colors
+            .iter()
+            .position(|s| *s == color)
+            .unwrap_or_else(|| {
+                colors.push(color);
+                colors.len() - 1
+            });
+
+        pos as Color
+    }
+
+    fn cache_instr(&self, slot: Slot, instr: Instr) {
+        self.instrs.borrow_mut().insert(slot, instr);
     }
 
     fn calculate_instr(&self, slot: Slot) -> Option<Instr> {
