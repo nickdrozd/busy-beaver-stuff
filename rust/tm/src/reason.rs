@@ -340,7 +340,7 @@ fn get_blanks(configs: &Configs) -> Blanks {
 fn get_entrypoints(prog: &Prog) -> Entrypoints {
     let mut entrypoints = Entrypoints::new();
 
-    for (&slot @ (read, _), &(color, shift, state)) in prog.iter() {
+    for (slot @ (read, _), &(color, shift, state)) in prog.iter() {
         let (same, diff) = entrypoints.entry(state).or_default();
 
         (if read == state { same } else { diff })

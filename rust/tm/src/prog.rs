@@ -1,8 +1,53 @@
-use std::collections::{BTreeMap as Dict, BTreeSet as Set};
+use std::collections::BTreeSet as Set;
 
 use crate::instrs::{Color, Instr, Params, Parse, Shift, Slot, State};
 
-pub type Instrs = Dict<Slot, Instr>;
+/**************************************/
+
+struct Instrs {
+    table: Vec<Vec<Option<Instr>>>,
+}
+
+impl Instrs {
+    fn new((states, colors): Params) -> Self {
+        Self {
+            table: vec![vec![None; colors as usize]; states as usize],
+        }
+    }
+
+    fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
+        self.table[state as usize][color as usize].as_ref()
+    }
+
+    fn insert(&mut self, (state, color): Slot, instr: Instr) {
+        self.table[state as usize][color as usize] = Some(instr);
+    }
+
+    fn remove(&mut self, &(state, color): &Slot) {
+        self.table[state as usize][color as usize] = None;
+    }
+
+    fn len(&self) -> usize {
+        self.table
+            .iter()
+            .map(|row| row.iter().filter(|cell| cell.is_some()).count())
+            .sum()
+    }
+
+    fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> + '_ {
+        self.table.iter().enumerate().flat_map(|(s, row)| {
+            row.iter().enumerate().filter_map(move |(c, opt)| {
+                opt.as_ref().map(|instr| ((s as u8, c as u8), instr))
+            })
+        })
+    }
+
+    fn values(&self) -> impl Iterator<Item = &Instr> + '_ {
+        self.table
+            .iter()
+            .flat_map(|row| row.iter().filter_map(|opt| opt.as_ref()))
+    }
+}
 
 /**************************************/
 
@@ -14,7 +59,7 @@ pub struct Prog {
 }
 
 impl Prog {
-    pub const fn new(instrs: Instrs, (states, colors): Params) -> Self {
+    const fn new(instrs: Instrs, (states, colors): Params) -> Self {
         Self {
             instrs,
             states,
@@ -31,7 +76,9 @@ impl Prog {
     }
 
     pub fn init_stepped(params: Params) -> Self {
-        let instrs = Instrs::from([((0, 0), (1, true, 1))]);
+        let mut instrs = Instrs::new(params);
+
+        instrs.insert((0, 0), (1, true, 1));
 
         Self::new(instrs, params)
     }
@@ -48,7 +95,7 @@ impl Prog {
         self.instrs.remove(slot);
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&Slot, &Instr)> {
+    pub fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> {
         self.instrs.iter()
     }
 
@@ -59,12 +106,10 @@ impl Prog {
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
-        for state in 0..self.states {
-            for color in 0..self.colors {
-                let slot = (state, color);
-
-                if !self.instrs.contains_key(&slot) {
-                    slots.insert(slot);
+        for (state, colors) in self.instrs.table.iter().enumerate() {
+            for (color, entry) in colors.iter().enumerate() {
+                if entry.is_none() {
+                    slots.insert((state as State, color as Color));
                 }
             }
         }
@@ -75,7 +120,7 @@ impl Prog {
     pub fn erase_slots(&self) -> Set<Slot> {
         self.instrs
             .iter()
-            .filter_map(|(&slot @ (_, co), &(pr, _, _))| {
+            .filter_map(|(slot @ (_, co), &(pr, _, _))| {
                 (co != 0 && pr == 0).then_some(slot)
             })
             .collect()
@@ -84,7 +129,7 @@ impl Prog {
     pub fn zr_shifts(&self) -> Set<(State, Shift)> {
         self.instrs
             .iter()
-            .filter_map(|(&slot, &(_, sh, st))| {
+            .filter_map(|(slot, &(_, sh, st))| {
                 (slot == (st, 0)).then_some((st, sh))
             })
             .collect()
@@ -128,34 +173,33 @@ impl Prog {
 
 impl Parse for Prog {
     fn read(prog: &str) -> Self {
-        let split = prog
+        let rows: Vec<Vec<Option<Instr>>> = prog
             .trim()
             .split("  ")
-            .map(|instrs| {
-                instrs
-                    .split(' ')
-                    .map(Option::<Instr>::read)
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
-
-        let params = (split.len() as State, split[0].len() as Color);
-
-        let instrs = split
-            .iter()
-            .enumerate()
-            .flat_map(|(state, instrs)| {
-                instrs.iter().enumerate().filter_map(
-                    move |(color, instr)| {
-                        instr.map(|instr| {
-                            ((state as State, color as Color), instr)
-                        })
-                    },
-                )
+            .map(|row| {
+                row.split(' ').map(Option::<Instr>::read).collect()
             })
             .collect();
 
-        Self::new(instrs, params)
+        let states: State = rows.len() as State;
+
+        let colors: Color = rows.first().map_or(0, Vec::len) as Color;
+
+        let mut instrs = Instrs::new((states, colors));
+
+        for (s, row) in rows.into_iter().enumerate() {
+            for (c, cell) in row.into_iter().enumerate() {
+                if let Some(instr) = cell {
+                    instrs.insert((s as State, c as Color), instr);
+                }
+            }
+        }
+
+        Self {
+            instrs,
+            states,
+            colors,
+        }
     }
 
     fn show(&self) -> String {

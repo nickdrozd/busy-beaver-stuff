@@ -90,7 +90,7 @@ type Exitpoints = Dict<State, Vec<State>>;
 fn get_exitpoints(prog: &Prog) -> Exitpoints {
     let mut exitpoints = Exitpoints::new();
 
-    for (&(src, _), &(_, _, dst)) in prog.iter() {
+    for ((src, _), &(_, _, dst)) in prog.iter() {
         if src == dst {
             continue;
         }

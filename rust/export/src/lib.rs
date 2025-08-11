@@ -6,7 +6,7 @@ use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
     instrs::{Instr, Parse as _, Slot, State, show_state},
-    prog::{Instrs, Prog},
+    prog::Prog,
     reason::{
         BackwardResult as BackwardResultRs, BackwardResult::*, Depth,
         Step,
@@ -36,6 +36,9 @@ pub fn show_slot(slot: Slot) -> String {
     slot.show()
 }
 
+type Instrs = Dict<Slot, Instr>;
+
+#[expect(clippy::needless_pass_by_value)]
 #[pyfunction]
 pub fn show_comp(comp: Instrs) -> String {
     let (states, colors) =
@@ -43,7 +46,15 @@ pub fn show_comp(comp: Instrs) -> String {
             (acc.0.max(a).max(d), acc.1.max(b).max(c))
         });
 
-    Prog::new(comp, (1 + states, 1 + colors)).show()
+    (0..=states)
+        .map(|state| {
+            (0..=colors)
+                .map(|color| comp.get(&(state, color)).show())
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .collect::<Vec<_>>()
+        .join("  ")
 }
 
 #[pyfunction]
@@ -51,7 +62,7 @@ pub fn tcompile(prog: &str) -> Instrs {
     let mut instrs = Instrs::new();
 
     for (slot, instr) in Prog::read(prog).iter() {
-        instrs.insert(*slot, *instr);
+        instrs.insert(slot, *instr);
     }
 
     instrs
