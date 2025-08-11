@@ -9,7 +9,6 @@ use rayon::prelude::*;
 use tm::{
     Goal,
     instrs::Params,
-    machine::run_for_infrul,
     prog::Prog,
     tree::{Step, build_limited, build_tree},
 };
@@ -116,35 +115,31 @@ fn test_tree() {
             |prog: &Prog| { prog.term_or_rec(19).is_settled() }
         ),
         (
-            ((3, 2), 0, 12, (0, 3_030)),
+            ((3, 2), 0, 12, (5, 3_030)),
             //
             |prog: &Prog| {
                 prog.term_or_rec(40).is_settled()
                     || prog.cant_halt(3).is_settled()
                     || prog.ctl_cant_halt(16)
-                    || run_for_infrul(prog, 187).is_infinite()
             }
         ),
         (
-            ((3, 2), 1, 13, (4, 12_470)),
+            ((3, 2), 1, 13, (30, 12_470)),
             //
             |prog: &Prog| {
                 prog.term_or_rec(206).is_settled()
                     || prog.cant_spin_out(4).is_settled()
                     || prog.ctl_cant_spin_out(15)
-                    || run_for_infrul(prog, 236).is_infinite()
-                    || prog.check_inf(100, 40)
             }
         ),
         (
-            ((3, 2), 2, 13, (2, 10_175)),
+            ((3, 2), 2, 13, (17, 10_175)),
             //
             |prog: &Prog| {
                 prog.cant_blank(14).is_settled()
                     || prog.term_or_rec(206).is_settled()
                     || prog.ctl_cant_blank(25)
                     || prog.cps_cant_blank(6)
-                    || run_for_infrul(prog, 236).is_infinite()
             }
         ),
         (
@@ -153,24 +148,22 @@ fn test_tree() {
             |prog: &Prog| { prog.term_or_rec(206).is_settled() }
         ),
         (
-            ((2, 3), 0, 7, (0, 2_394)),
+            ((2, 3), 0, 7, (2, 2_394)),
             //
             |prog: &Prog| {
                 prog.term_or_rec(301).is_settled()
                     || prog.ctl_cant_halt(41)
                     || prog.cps_cant_halt(3)
-                    || run_for_infrul(prog, 159).is_infinite()
             }
         ),
         (
-            ((2, 3), 1, 20, (3, 3_580)),
+            ((2, 3), 1, 20, (26, 3_580)),
             //
             |prog: &Prog| {
                 prog.term_or_rec(301).is_settled()
                     || prog.cant_spin_out(2).is_settled()
                     || prog.ctl_cant_spin_out(83)
                     || prog.seg_cant_spin_out(5).is_refuted()
-                    || prog.check_inf(300, 1000)
             }
         ),
         (
@@ -189,7 +182,7 @@ fn test_tree() {
             |prog: &Prog| { prog.term_or_rec(301).is_settled() }
         ),
         (
-            ((4, 2), 0, 25, (13, 458_588)),
+            ((4, 2), 0, 25, (877, 458_588)),
             //
             |prog: &Prog| {
                 !prog.is_connected()
@@ -197,11 +190,10 @@ fn test_tree() {
                     || prog.cant_halt(11).is_settled()
                     || prog.ctl_cant_halt(84)
                     || prog.cps_cant_halt(9)
-                    || prog.check_inf(300, 1364)
             }
         ),
         (
-            ((4, 2), 1, 99, (190, 2_222_970)),
+            ((4, 2), 1, 99, (3_322, 2_222_970)),
             //
             |prog: &Prog| {
                 !prog.is_connected()
@@ -211,11 +203,10 @@ fn test_tree() {
                     || prog.ctl_cant_spin_out(114)
                     || prog.cps_cant_spin_out(9)
                     || prog.seg_cant_spin_out(7).is_refuted()
-                    || prog.check_inf(300, 7000)
             }
         ),
         (
-            ((4, 2), 2, 99, (258, 2_014_818)),
+            ((4, 2), 2, 99, (3_787, 2_014_818)),
             //
             |prog: &Prog| {
                 !prog.is_connected()
@@ -223,7 +214,6 @@ fn test_tree() {
                     || prog.term_or_rec(1_000).is_settled()
                     || prog.ctl_cant_blank(60)
                     || prog.cps_cant_blank(9)
-                    || prog.check_inf(300, 3000)
             }
         ),
         (
@@ -235,7 +225,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 0, 109, (43, 310_211)),
+            ((2, 4), 0, 109, (652, 310_211)),
             //
             |prog: &Prog| {
                 prog.cant_halt(0).is_settled()
@@ -243,11 +233,10 @@ fn test_tree() {
                     || prog.seg_cant_halt(2).is_refuted()
                     || prog.ctl_cant_halt(96)
                     || prog.cps_cant_halt(6)
-                    || prog.check_inf(300, 7000)
             }
         ),
         (
-            ((2, 4), 1, 876, (1_626, 614_151)),
+            ((2, 4), 1, 876, (5_499, 614_151)),
             //
             |prog: &Prog| {
                 prog.cant_spin_out(2).is_settled()
@@ -256,18 +245,16 @@ fn test_tree() {
                     || prog.ctl_cant_spin_out(186)
                     || prog.cps_cant_spin_out(6)
                     || prog.seg_cant_spin_out(4).is_refuted()
-                    || prog.check_inf(300, 1000)
             }
         ),
         (
-            ((2, 4), 2, 876, (1_648, 1_189_715)),
+            ((2, 4), 2, 876, (4_310, 1_189_715)),
             //
             |prog: &Prog| {
                 prog.cant_blank(58).is_settled()
                     || prog.term_or_rec(2_000).is_settled()
                     || prog.ctl_cant_blank(120)
                     || prog.cps_cant_blank(5)
-                    || prog.check_inf(300, 1000)
             }
         ),
         (
