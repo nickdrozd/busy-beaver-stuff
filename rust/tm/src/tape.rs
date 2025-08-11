@@ -8,7 +8,7 @@ use core::{
 };
 
 use num_bigint::BigUint;
-use num_traits::Num;
+use num_traits::{One, Zero};
 
 use crate::instrs::{Color, Shift};
 
@@ -21,7 +21,7 @@ pub type BigCount = BigUint;
 /**************************************/
 
 pub trait Countable:
-    Clone + Display + Num + AddAssign + SubAssign
+    Clone + Display + Eq + Zero + One + AddAssign + SubAssign
 {
 }
 
