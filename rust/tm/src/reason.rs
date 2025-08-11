@@ -559,9 +559,8 @@ impl Config {
         let mut leftmost = head;
         let mut rightmost = head;
 
-        let mut current = self.prev.clone();
+        let mut current = self.prev.as_deref();
 
-        #[expect(clippy::assigning_clones)]
         while let Some(config) = current {
             let pos = config.tape.head();
 
@@ -581,7 +580,7 @@ impl Config {
                 return true;
             }
 
-            current = config.prev.clone();
+            current = config.prev.as_deref();
         }
 
         false
