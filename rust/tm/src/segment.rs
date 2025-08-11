@@ -286,11 +286,9 @@ impl Configs {
 
             let pos = tape.pos();
 
-            if blanks.contains(&pos) {
+            if !blanks.insert(pos) {
                 return None;
             }
-
-            blanks.insert(pos);
         } else {
             let seen = self.seen.entry(state).or_default();
 

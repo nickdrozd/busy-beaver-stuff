@@ -285,11 +285,9 @@ fn step_configs(
                     return Err(Init);
                 }
 
-                if blanks.contains(&state) {
+                if !blanks.insert(state) {
                     continue;
                 }
-
-                blanks.insert(state);
             }
 
             let next_config = Config::descendant(state, tape, &config);
