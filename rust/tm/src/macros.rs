@@ -30,7 +30,7 @@ pub trait GetInstr {
 
 impl GetInstr for Prog {
     fn get_instr(&self, slot: &Slot) -> Option<Instr> {
-        self.instrs.get(slot).copied()
+        self.get(slot).copied()
     }
 }
 

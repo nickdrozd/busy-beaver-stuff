@@ -50,7 +50,6 @@ impl Prog {
         if halt_slots.iter().all(|&(st, co)| {
             co != 0
                 && self
-                    .instrs
                     .values()
                     .filter_map(|&(pr, sh, tr)| {
                         (pr == co || tr == st).then_some(sh)
@@ -341,7 +340,7 @@ fn get_blanks(configs: &Configs) -> Blanks {
 fn get_entrypoints(prog: &Prog) -> Entrypoints {
     let mut entrypoints = Entrypoints::new();
 
-    for (&slot @ (read, _), &(color, shift, state)) in &prog.instrs {
+    for (&slot @ (read, _), &(color, shift, state)) in prog.iter() {
         let (same, diff) = entrypoints.entry(state).or_default();
 
         (if read == state { same } else { diff })

@@ -48,7 +48,13 @@ pub fn show_comp(comp: Instrs) -> String {
 
 #[pyfunction]
 pub fn tcompile(prog: &str) -> Instrs {
-    Prog::read(prog).instrs
+    let mut instrs = Instrs::new();
+
+    for (slot, instr) in Prog::read(prog).iter() {
+        instrs.insert(*slot, *instr);
+    }
+
+    instrs
 }
 
 #[pyfunction]

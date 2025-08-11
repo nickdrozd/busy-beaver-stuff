@@ -189,11 +189,11 @@ impl<'h> TreeCore<'h> {
     }
 
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
-        self.prog.instrs.insert(*slot, *instr);
+        self.prog.insert(slot, instr);
     }
 
     fn remove(&mut self, slot: &Slot) {
-        self.prog.instrs.remove(slot);
+        self.prog.remove(slot);
     }
 
     fn avail_params(&self) -> Params {
@@ -207,15 +207,15 @@ impl<'h> TreeCore<'h> {
     ) {
         let (mut avail_states, mut avail_colors) = self.avail_params();
 
-        let prog = &self.prog;
+        let (states, colors) = self.prog.params();
 
-        if avail_states < prog.states
+        if avail_states < states
             && 1 + max(slot_state, instr_state) == avail_states
         {
             avail_states += 1;
         }
 
-        if avail_colors < prog.colors
+        if avail_colors < colors
             && 1 + max(slot_color, instr_color) == avail_colors
         {
             avail_colors += 1;

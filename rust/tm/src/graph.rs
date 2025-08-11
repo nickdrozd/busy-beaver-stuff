@@ -6,11 +6,11 @@ use crate::{instrs::State, prog::Prog};
 
 impl Prog {
     pub fn is_connected(&self) -> bool {
-        if self.instrs.values().all(|&(_, _, state)| state != 0) {
+        if self.values().all(|&(_, _, state)| state != 0) {
             return false;
         }
 
-        let states = self.states;
+        let states = self.states();
 
         let exitpoints = get_exitpoints(self);
 
@@ -90,7 +90,7 @@ type Exitpoints = Dict<State, Vec<State>>;
 fn get_exitpoints(prog: &Prog) -> Exitpoints {
     let mut exitpoints = Exitpoints::new();
 
-    for (&(src, _), &(_, _, dst)) in &prog.instrs {
+    for (&(src, _), &(_, _, dst)) in prog.iter() {
         if src == dst {
             continue;
         }

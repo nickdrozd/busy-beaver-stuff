@@ -7,10 +7,10 @@ pub type Instrs = Dict<Slot, Instr>;
 /**************************************/
 
 pub struct Prog {
-    pub instrs: Instrs,
+    instrs: Instrs,
 
-    pub states: State,
-    pub colors: Color,
+    states: State,
+    colors: Color,
 }
 
 impl Prog {
@@ -20,6 +20,10 @@ impl Prog {
             states,
             colors,
         }
+    }
+
+    pub const fn states(&self) -> State {
+        self.states
     }
 
     pub const fn params(&self) -> Params {
@@ -34,6 +38,22 @@ impl Prog {
 
     pub fn get(&self, slot: &Slot) -> Option<&Instr> {
         self.instrs.get(slot)
+    }
+
+    pub fn insert(&mut self, slot: &Slot, instr: &Instr) {
+        self.instrs.insert(*slot, *instr);
+    }
+
+    pub fn remove(&mut self, slot: &Slot) {
+        self.instrs.remove(slot);
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&Slot, &Instr)> {
+        self.instrs.iter()
+    }
+
+    pub fn values(&self) -> impl Iterator<Item = &Instr> {
+        self.instrs.values()
     }
 
     pub fn halt_slots(&self) -> Set<Slot> {
