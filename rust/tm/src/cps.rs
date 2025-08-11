@@ -1,8 +1,6 @@
 use core::{fmt, iter::once};
 
-use std::collections::BTreeMap as Dict;
-
-use ahash::AHashSet as Set;
+use ahash::{AHashMap as Dict, AHashSet as Set};
 
 use crate::{
     Goal,
