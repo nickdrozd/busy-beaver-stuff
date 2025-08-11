@@ -1,9 +1,6 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::{
-    instrs::{Instrs, State},
-    prog::Prog,
-};
+use crate::{instrs::State, prog::Prog};
 
 /**************************************/
 
@@ -15,7 +12,7 @@ impl Prog {
 
         let states = self.states;
 
-        let exitpoints = get_exitpoints(&self.instrs);
+        let exitpoints = get_exitpoints(self);
 
         if exitpoints.len() < states as usize {
             return false;
@@ -90,10 +87,10 @@ fn test_connected() {
 
 type Exitpoints = Dict<State, Vec<State>>;
 
-fn get_exitpoints(instrs: &Instrs) -> Exitpoints {
+fn get_exitpoints(prog: &Prog) -> Exitpoints {
     let mut exitpoints = Exitpoints::new();
 
-    for (&(src, _), &(_, _, dst)) in instrs {
+    for (&(src, _), &(_, _, dst)) in &prog.instrs {
         if src == dst {
             continue;
         }
@@ -122,7 +119,7 @@ macro_rules! dict_from {
 macro_rules! assert_exitpoints {
     ($input:expr, { $($key:expr => [$($val:expr),*]),* $(,)? }) => {
         assert_eq!(
-            get_exitpoints(&Prog::read($input).instrs),
+            get_exitpoints(&Prog::read($input)),
             dict_from! { $($key => [$($val),*]),* },
         );
     }

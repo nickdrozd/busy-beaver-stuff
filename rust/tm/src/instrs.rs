@@ -1,7 +1,3 @@
-use std::collections::BTreeMap as Dict;
-
-/**************************************/
-
 pub type Color = u8;
 pub type State = u8;
 pub type Shift = bool;
@@ -10,8 +6,6 @@ pub type Slot = (State, Color);
 pub type Instr = (Color, Shift, State);
 
 pub type Params = (State, Color);
-
-pub type Instrs = Dict<Slot, Instr>;
 
 /**************************************/
 

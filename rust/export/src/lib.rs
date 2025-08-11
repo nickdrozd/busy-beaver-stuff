@@ -5,8 +5,8 @@
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
-    instrs::{Instr, Instrs, Parse as _, Slot, State, show_state},
-    prog::Prog,
+    instrs::{Instr, Parse as _, Slot, State, show_state},
+    prog::{Instrs, Prog},
     reason::{
         BackwardResult as BackwardResultRs, BackwardResult::*, Depth,
         Step,

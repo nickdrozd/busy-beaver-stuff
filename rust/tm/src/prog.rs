@@ -1,8 +1,8 @@
-use std::collections::BTreeSet as Set;
+use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::instrs::{
-    Color, Instr, Instrs, Params, Parse, Shift, Slot, State,
-};
+use crate::instrs::{Color, Instr, Params, Parse, Shift, Slot, State};
+
+pub type Instrs = Dict<Slot, Instr>;
 
 /**************************************/
 
