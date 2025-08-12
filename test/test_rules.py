@@ -1,7 +1,11 @@
+from typing import TYPE_CHECKING
 from unittest import TestCase
 
 from tm.rules import apply_mult, apply_ops
 from tm.rules import make_exp as Exp
+
+if TYPE_CHECKING:
+    from tm.rules import OpSeq
 
 
 def apply_loop(count: int, times: int, mul: int, add: int) -> int:
@@ -37,7 +41,7 @@ class TestApply(TestCase):
 
         count3 = (-4 + (7 * (2 ** ((8 + (7 * (2 ** ((8 + (7 * Exp(2, 3))) // 3)))) // 3)))) // 3
 
-        ops = (
+        ops: OpSeq = (
             ('*', 3),
             ('+', 4),
             ('+', 8),
@@ -61,7 +65,7 @@ class TestApply(TestCase):
 
         times = 32764
 
-        ops = (
+        ops: OpSeq = (
             ('+', 6),
             ('~', 2),
             ('+', 3),

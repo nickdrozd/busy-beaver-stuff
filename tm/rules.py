@@ -1,5 +1,5 @@
 from itertools import pairwise
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Literal, Protocol
 
 from tm.num import (
     Add,
@@ -24,7 +24,9 @@ if TYPE_CHECKING:
 
     type Mult = tuple[int, int]
 
-    type OpSeq = tuple[tuple[str, int], ...]
+    type OpSym = Literal['+', '*', '//', '**', '~']
+
+    type OpSeq = tuple[tuple[OpSym, int], ...]
 
     type Op = Plus | Mult | OpSeq
 
@@ -134,7 +136,7 @@ def calculate_diff(*counts: Count) -> Op | None:
 def calculate_op_seq(*counts: Num) -> OpSeq:
     sub, sup, *_ = counts
 
-    descent = []
+    descent: list[tuple[OpSym, int]] = []
 
     for _ in range(RULE_DESCENT):  # no-branch
         if sub in sup:
@@ -178,7 +180,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
         raise RuleLimit(  # no-cover
             'subexpression descent')
 
-    ascent = []
+    ascent: list[tuple[OpSym, int]] = []
 
     for _ in range(RULE_DESCENT):  # no-branch
         if sup == sub:
@@ -222,7 +224,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
         raise RuleLimit(  # no-cover
             'superexpression descent')
 
-    ops = tuple(descent) + tuple(reversed(ascent))
+    ops: OpSeq = tuple(descent) + tuple(reversed(ascent))
 
     if any(apply_ops(bef, 1, ops) != aft
            for bef, aft in pairwise(counts[1:])):  # no-cover
@@ -345,6 +347,8 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
 
     if add == 0:
         return count * exp
+
+    assert 1 < mul
 
     return (
         count * exp
