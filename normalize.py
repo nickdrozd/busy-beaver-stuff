@@ -20,4 +20,4 @@ if __name__ == '__main__':
             normalize
         )
 
-        print(normalizer(prog))
+        print(normalizer(prog.strip()))
