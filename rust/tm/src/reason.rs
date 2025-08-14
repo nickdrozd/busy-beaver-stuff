@@ -758,7 +758,7 @@ impl Backstepper {
 
         let pull = if shift { &self.lspan } else { &self.rspan };
 
-        pull.span.0.is_empty()
+        pull.span.is_empty()
     }
 
     fn pulls_indef(&self, shift: Shift) -> bool {
