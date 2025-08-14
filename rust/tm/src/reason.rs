@@ -1,4 +1,4 @@
-use core::{fmt, iter::once, marker::PhantomData};
+use core::{fmt, iter::once};
 
 use std::{
     collections::{BTreeMap as Dict, BTreeSet as Set},
@@ -630,7 +630,7 @@ struct Span {
 impl Span {
     const fn new(blocks: Vec<Block>, end: TapeEnd) -> Self {
         Self {
-            span: GenSpan(blocks, PhantomData::<Count>),
+            span: GenSpan::new(blocks),
             end,
         }
     }

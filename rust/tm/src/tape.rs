@@ -115,6 +115,10 @@ pub struct Span<C: Countable, B: Block<C>>(
 );
 
 impl<Count: Countable, B: Block<Count>> Span<Count, B> {
+    pub const fn new(blocks: Vec<B>) -> Self {
+        Self(blocks, PhantomData::<Count>)
+    }
+
     pub const fn len(&self) -> usize {
         self.0.len()
     }
@@ -358,19 +362,16 @@ impl<Count: Countable, B: Block<Count>> Tape<Count, B> {
     pub const fn init() -> Self {
         Self {
             scan: 0,
-            lspan: Span(vec![], PhantomData::<Count>),
-            rspan: Span(vec![], PhantomData::<Count>),
+            lspan: Span::new(vec![]),
+            rspan: Span::new(vec![]),
         }
     }
 
     pub fn init_stepped() -> Self {
         Self {
             scan: 0,
-            lspan: Span(
-                vec![B::new(1, &Count::one())],
-                PhantomData::<Count>,
-            ),
-            rspan: Span(vec![], PhantomData::<Count>),
+            lspan: Span::new(vec![B::new(1, &Count::one())]),
+            rspan: Span::new(vec![]),
         }
     }
 
@@ -641,7 +642,7 @@ impl From<&BigTape> for EnumTape {
         Self {
             tape: Tape {
                 scan: tape.scan,
-                lspan: Span(
+                lspan: Span::new(
                     tape.lspan
                         .0
                         .iter()
@@ -651,9 +652,8 @@ impl From<&BigTape> for EnumTape {
                             index: Some((false, 1 + i)),
                         })
                         .collect(),
-                    PhantomData::<BigCount>,
                 ),
-                rspan: Span(
+                rspan: Span::new(
                     tape.rspan
                         .0
                         .iter()
@@ -663,7 +663,6 @@ impl From<&BigTape> for EnumTape {
                             index: Some((true, 1 + i)),
                         })
                         .collect(),
-                    PhantomData::<BigCount>,
                 ),
             },
 
@@ -841,8 +840,8 @@ macro_rules! tape {
     ) => {
         BigTape {
             scan: $ scan,
-            lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
-            rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
+            lspan: Span::new( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] ),
+            rspan: Span::new( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] ),
         }
     };
 }
@@ -1093,8 +1092,8 @@ macro_rules! enum_tape {
         EnumTape::from(
             &BigTape {
                 scan: $ scan,
-                lspan: Span ( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
-                rspan: Span ( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] , PhantomData::<BigCount>),
+                lspan: Span::new( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] ),
+                rspan: Span::new( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] ),
             }
         )
     };
