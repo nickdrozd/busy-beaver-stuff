@@ -129,7 +129,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     }
 
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &B> {
-        self.0.iter()
+        self.0.iter().rev()
     }
 
     pub fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> {
@@ -179,19 +179,23 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     }
 
     pub fn push_block(&mut self, color: Color, count: &Count) {
-        self.0.insert(0, Block::new(color, count));
+        self.0.push(Block::new(color, count));
     }
 
     pub fn pop_block(&mut self) -> B {
-        self.0.remove(0)
+        self.0.pop().unwrap()
     }
 
     pub fn first(&self) -> Option<&B> {
-        self.0.first()
+        self.0.last()
     }
 
     pub fn first_mut(&mut self) -> Option<&mut B> {
-        self.0.first_mut()
+        self.0.last_mut()
+    }
+
+    const fn last_pos(&self) -> usize {
+        self.0.len() - 1
     }
 }
 
@@ -199,13 +203,15 @@ impl<C: Countable, B: Block<C>> IndexTrait<usize> for Span<C, B> {
     type Output = B;
 
     fn index(&self, pos: usize) -> &Self::Output {
-        &self.0[pos]
+        &self.0[self.last_pos() - pos]
     }
 }
 
 impl<C: Countable, B: Block<C>> IndexMut<usize> for Span<C, B> {
     fn index_mut(&mut self, pos: usize) -> &mut Self::Output {
-        &mut self.0[pos]
+        let last_pos = self.last_pos();
+
+        &mut self.0[last_pos - pos]
     }
 }
 
@@ -664,26 +670,31 @@ impl Display for EnumTape {
 
 impl From<&BigTape> for EnumTape {
     fn from(tape: &BigTape) -> Self {
+        let l_len = tape.lspan.len();
+        let r_len = tape.rspan.len();
+
         Self {
             tape: Tape {
                 scan: tape.scan,
                 lspan: Span::new(
                     tape.lspan
                         .iter()
+                        .rev()
                         .enumerate()
                         .map(|(i, block)| EnumBlock {
                             block: block.clone(),
-                            index: Some((false, 1 + i)),
+                            index: Some((false, l_len - i)),
                         })
                         .collect(),
                 ),
                 rspan: Span::new(
                     tape.rspan
                         .iter()
+                        .rev()
                         .enumerate()
                         .map(|(i, block)| EnumBlock {
                             block: block.clone(),
-                            index: Some((true, 1 + i)),
+                            index: Some((true, r_len - i)),
                         })
                         .collect(),
                 ),
@@ -869,8 +880,8 @@ macro_rules! tape {
     ) => {
         BigTape {
             scan: $ scan,
-            lspan: Span::new( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] ),
-            rspan: Span::new( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] ),
+            lspan: Span::new( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ].into_iter().rev().collect() ),
+            rspan: Span::new( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ].into_iter().rev().collect() ),
         }
     };
 }

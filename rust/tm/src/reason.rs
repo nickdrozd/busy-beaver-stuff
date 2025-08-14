@@ -876,7 +876,6 @@ impl From<&str> for Backstepper {
             .map(|&s| s.into())
             .collect::<Vec<_>>()
             .into_iter()
-            .rev()
             .collect();
 
         let scan = parts
@@ -897,6 +896,7 @@ impl From<&str> for Backstepper {
         let rspan: Vec<Block> = parts[rspan_start..parts.len() - 1]
             .iter()
             .map(|&s| s.into())
+            .rev()
             .collect();
 
         Self {
