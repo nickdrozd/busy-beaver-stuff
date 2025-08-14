@@ -109,10 +109,7 @@ impl<Count: Countable> Display for BasicBlock<Count> {
 /**************************************/
 
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub struct Span<C: Countable, B: Block<C>>(
-    pub Vec<B>,
-    pub PhantomData<C>,
-);
+pub struct Span<C: Countable, B: Block<C>>(Vec<B>, PhantomData<C>);
 
 impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     pub const fn new(blocks: Vec<B>) -> Self {
