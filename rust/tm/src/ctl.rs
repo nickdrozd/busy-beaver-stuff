@@ -255,7 +255,7 @@ impl Config {
             &mut clone.tape.lspan
         };
 
-        let block = pull.0.first_mut().unwrap();
+        let block = &mut pull.0[0];
 
         assert!(block.is_indef());
 
