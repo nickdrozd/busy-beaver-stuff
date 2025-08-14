@@ -657,7 +657,7 @@ impl Span {
 
         match block.count {
             1 => {
-                self.span.0.remove(0);
+                self.span.pop_block();
             },
             0 => {},
             _ => {

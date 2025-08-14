@@ -316,7 +316,7 @@ impl Span<Count, Block> {
         let color = block.color;
 
         if block.count == 1 {
-            self.0.remove(0);
+            self.pop_block();
         } else {
             block.decrement();
         }

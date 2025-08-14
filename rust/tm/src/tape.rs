@@ -138,7 +138,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     fn pull(&mut self, scan: Color, skip: bool) -> (Color, Count) {
         let stepped =
             (skip && !self.blank() && self.0[0].get_color() == scan)
-                .then(|| self.0.remove(0))
+                .then(|| self.pop_block())
                 .map_or_else(
                     || Count::one(),
                     |block| Count::one() + block.get_count().clone(),
@@ -152,7 +152,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
             let pull_color = next_pull.get_color();
 
             if next_pull.is_single() {
-                self.0.remove(0);
+                self.pop_block();
             } else {
                 next_pull.decrement();
             }
@@ -177,6 +177,10 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
 
     pub fn push_block(&mut self, color: Color, count: &Count) {
         self.0.insert(0, Block::new(color, count));
+    }
+
+    pub fn pop_block(&mut self) -> B {
+        self.0.remove(0)
     }
 }
 
