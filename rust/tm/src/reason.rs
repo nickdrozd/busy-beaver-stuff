@@ -636,7 +636,7 @@ impl Span {
     }
 
     fn blank(&self) -> bool {
-        self.span.0.iter().all(Block::blank)
+        self.span.iter().all(Block::blank)
     }
 
     const fn len(&self) -> usize {

@@ -10,7 +10,7 @@ use crate::{
 
 impl Span {
     fn unroll(&self) -> impl DoubleEndedIterator<Item = Color> {
-        self.0.iter().flat_map(|block| {
+        self.iter().flat_map(|block| {
             repeat_n(block.color, block.count as usize)
         })
     }

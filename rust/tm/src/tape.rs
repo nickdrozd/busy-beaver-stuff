@@ -131,8 +131,12 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         self.0.is_empty()
     }
 
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &B> {
+        self.0.iter()
+    }
+
     pub fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> {
-        self.0.iter().map(ToString::to_string)
+        self.iter().map(ToString::to_string)
     }
 
     fn pull(&mut self, scan: Color, skip: bool) -> (Color, Count) {
@@ -210,19 +214,15 @@ pub type MedSpan = Span<MedCount, MedBlock>;
 
 impl<B: Block<BigCount>> Span<BigCount, B> {
     fn counts(&self) -> Vec<BigCount> {
-        self.0
-            .iter()
-            .map(|block| block.get_count().clone())
-            .collect()
+        self.iter().map(|block| block.get_count().clone()).collect()
     }
 
     fn signature(&self) -> Vec<ColorCount> {
-        self.0.iter().map(Into::into).collect()
+        self.iter().map(Into::into).collect()
     }
 
     fn sig_compatible(&self, span: &SigSpan) -> bool {
-        self.0
-            .iter()
+        self.iter()
             .take(span.len())
             .zip(span.iter())
             .all(|(bk, cc)| bk.get_color() == cc.get_color())
@@ -231,8 +231,8 @@ impl<B: Block<BigCount>> Span<BigCount, B> {
 
 impl<C: Countable + Into<usize>, B: Block<C>> Span<C, B> {
     pub fn compare_take(&self, prev: &Self, mut take: usize) -> bool {
-        let mut s_blocks = self.0.iter();
-        let mut p_blocks = prev.0.iter();
+        let mut s_blocks = self.iter();
+        let mut p_blocks = prev.iter();
 
         let mut s_next = s_blocks.next();
         let mut p_next = p_blocks.next();
@@ -670,7 +670,6 @@ impl From<&BigTape> for EnumTape {
                 scan: tape.scan,
                 lspan: Span::new(
                     tape.lspan
-                        .0
                         .iter()
                         .enumerate()
                         .map(|(i, block)| EnumBlock {
@@ -681,7 +680,6 @@ impl From<&BigTape> for EnumTape {
                 ),
                 rspan: Span::new(
                     tape.rspan
-                        .0
                         .iter()
                         .enumerate()
                         .map(|(i, block)| EnumBlock {
@@ -798,8 +796,7 @@ impl MachineTape<BigCount> for EnumTape {
 
 impl Span<BigCount, BigBlock> {
     fn marks(&self) -> BigCount {
-        self.0
-            .iter()
+        self.iter()
             .filter(|block| !block.blank())
             .map(|block| block.count.clone())
             .sum::<BigCount>()
