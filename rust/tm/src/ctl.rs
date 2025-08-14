@@ -255,7 +255,7 @@ impl Config {
             &mut clone.tape.lspan
         };
 
-        let block = &mut pull.0[0];
+        let block = &mut pull[0];
 
         assert!(block.is_indef());
 
@@ -297,7 +297,7 @@ impl Tape {
 
         push.push_with_limit(print);
 
-        self.scan = pull.0[0].color;
+        self.scan = pull[0].color;
     }
 }
 

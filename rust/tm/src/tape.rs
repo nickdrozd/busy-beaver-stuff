@@ -4,7 +4,7 @@ use core::{
     hash::Hash,
     iter::once,
     marker::PhantomData,
-    ops::{AddAssign, SubAssign},
+    ops::{AddAssign, Index as IndexTrait, IndexMut, SubAssign},
 };
 
 use num_bigint::BigUint;
@@ -137,7 +137,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
 
     fn pull(&mut self, scan: Color, skip: bool) -> (Color, Count) {
         let stepped =
-            (skip && !self.blank() && self.0[0].get_color() == scan)
+            (skip && !self.blank() && self[0].get_color() == scan)
                 .then(|| self.pop_block())
                 .map_or_else(
                     || Count::one(),
@@ -147,7 +147,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         let next_scan = if self.blank() {
             0
         } else {
-            let next_pull = &mut self.0[0];
+            let next_pull = &mut self[0];
 
             let pull_color = next_pull.get_color();
 
@@ -189,6 +189,20 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
 
     pub fn first_mut(&mut self) -> Option<&mut B> {
         self.0.first_mut()
+    }
+}
+
+impl<C: Countable, B: Block<C>> IndexTrait<usize> for Span<C, B> {
+    type Output = B;
+
+    fn index(&self, pos: usize) -> &Self::Output {
+        &self.0[pos]
+    }
+}
+
+impl<C: Countable, B: Block<C>> IndexMut<usize> for Span<C, B> {
+    fn index_mut(&mut self, pos: usize) -> &mut Self::Output {
+        &mut self.0[pos]
     }
 }
 
@@ -456,7 +470,7 @@ impl<B: Block<BigCount> + IndexBlock> IndexTape for Tape<BigCount, B> {
     fn get_count(&self, &(side, pos): &Index) -> &BigCount {
         let span = if side { &self.rspan } else { &self.lspan };
 
-        span.0[pos].get_count()
+        span[pos].get_count()
     }
 
     fn set_count(&mut self, &(side, pos): &Index, val: BigCount) {
@@ -466,7 +480,7 @@ impl<B: Block<BigCount> + IndexBlock> IndexTape for Tape<BigCount, B> {
             &mut self.lspan
         };
 
-        span.0[pos].set_count(val);
+        span[pos].set_count(val);
     }
 }
 
@@ -722,20 +736,20 @@ impl EnumTape {
         if pull.blank() {
             self.touch_edge(shift);
         } else {
-            let near_block = &pull.0[0];
+            let near_block = &pull[0];
             self.check_offsets(near_block);
 
             if skip && near_block.get_color() == self.tape.scan {
                 if pull.len() == 1 {
                     self.touch_edge(shift);
                 } else {
-                    self.check_offsets(&pull.0[1]);
+                    self.check_offsets(&pull[1]);
                 }
             }
         }
 
         if !push.blank() {
-            let opp = &push.0[0];
+            let opp = &push[0];
 
             if color == opp.get_color() {
                 self.check_offsets(opp);
