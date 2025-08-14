@@ -164,7 +164,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     }
 
     pub fn push(&mut self, print: Color, stepped: &Count) {
-        match self.0.first_mut() {
+        match self.first_mut() {
             Some(block) if block.get_color() == print => {
                 block.add_count(stepped);
             },
@@ -181,6 +181,14 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
 
     pub fn pop_block(&mut self) -> B {
         self.0.remove(0)
+    }
+
+    pub fn first(&self) -> Option<&B> {
+        self.0.first()
+    }
+
+    pub fn first_mut(&mut self) -> Option<&mut B> {
+        self.0.first_mut()
     }
 }
 

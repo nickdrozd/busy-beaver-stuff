@@ -644,14 +644,14 @@ impl Span {
     }
 
     fn matches_color(&self, print: Color) -> bool {
-        self.span.0.first().map_or_else(
+        self.span.first().map_or_else(
             || self.end.matches_color(print),
             |block| block.color == print,
         )
     }
 
     fn pull(&mut self) {
-        let Some(block) = self.span.0.first_mut() else {
+        let Some(block) = self.span.first_mut() else {
             return;
         };
 
@@ -667,7 +667,7 @@ impl Span {
     }
 
     fn push(&mut self, color: Color, count: Count) {
-        match self.span.0.first_mut() {
+        match self.span.first_mut() {
             Some(block) if block.color == color && block.count != 0 => {
                 block.add_count(&count);
             },
@@ -764,7 +764,7 @@ impl Backstepper {
     fn pulls_indef(&self, shift: Shift) -> bool {
         let pull = if shift { &self.lspan } else { &self.rspan };
 
-        let Some(block) = pull.span.0.first() else {
+        let Some(block) = pull.span.first() else {
             return false;
         };
 
