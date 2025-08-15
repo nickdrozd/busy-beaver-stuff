@@ -1106,18 +1106,8 @@ impl EnumTape {
 
 #[cfg(test)]
 macro_rules! enum_tape {
-    (
-        $ scan : expr,
-        [ $ ( $ lspan : expr ), * ],
-        [ $ ( $ rspan : expr ), * ]
-    ) => {
-        EnumTape::from(
-            &BigTape {
-                scan: $ scan,
-                lspan: Span::new( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ] ),
-                rspan: Span::new( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ] ),
-            }
-        )
+    ( $ scan : expr, [ $( $ lspan : expr ),* ], [ $( $ rspan : expr ),* ]) => {
+        EnumTape::from ( & tape! { $ scan, [ $( $ lspan ),* ], [ $( $ rspan ),* ] } )
     };
 }
 
