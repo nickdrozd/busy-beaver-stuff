@@ -838,7 +838,14 @@ impl BigTape {
 
         assert_eq!(self.to_string(), tape_str);
 
-        assert_eq!(self.signature(), *sig);
+        let signature = self.signature();
+
+        assert_eq!(signature, *sig);
+
+        assert!(
+            signature
+                .matches(&EnumTape::from(self).get_min_sig(&signature))
+        );
     }
 
     #[track_caller]
@@ -1180,6 +1187,30 @@ fn test_offsets_3() {
     tape.tstep(0, 1, 0);
 
     tape.assert("3^8 [3] 1^11", (1, 1), (0, 0));
+}
+
+#[test]
+fn test_offsets_4() {
+    let mut tape = enum_tape! {
+        28,
+        [(30, 6), (6, 1)],
+        [(27, 5), (12, 1)]
+    };
+
+    tape.assert("6 30^6 [28] 27^5 12", (0, 0), (0, 0));
+
+    let sig = tape.signature();
+
+    tape.tstep(1, 29, 0);
+    tape.tstep(0, 28, 0);
+    tape.tstep(1, 30, 0);
+
+    tape.assert("6 30^7 [28] 27^4 12", (1, 1), (0, 0));
+
+    assert_eq!(
+        tape.get_min_sig(&sig),
+        (sig![28, [30], [27]], (false, false))
+    );
 }
 
 #[test]
