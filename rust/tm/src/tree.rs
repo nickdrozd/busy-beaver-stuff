@@ -144,7 +144,7 @@ impl<'h> TreeCore<'h> {
 
         let avail_params = vec![init_avail];
 
-        let remaining_slots = ((states * colors) as Slots) - halt - 2;
+        let remaining_slots = (states * colors) - halt - 2;
 
         Self {
             prog,
@@ -410,7 +410,7 @@ impl<'h> BlankTree<'h> {
     ) -> Self {
         let core = TreeCore::init(params, 0, sim_lim, harvester);
 
-        let blank_slots = Some((states * (colors - 1)) as Slots);
+        let blank_slots = Some(states * (colors - 1));
 
         let avail_blanks = vec![blank_slots];
 
@@ -625,7 +625,7 @@ pub fn build_limited(
     sim_lim: Step,
     harvester: &(impl Fn(&Prog) + Sync),
 ) {
-    let dimension = (states * colors) as Slots;
+    let dimension = states * colors;
 
     build_all(params, dimension - instrs, sim_lim, harvester);
 }

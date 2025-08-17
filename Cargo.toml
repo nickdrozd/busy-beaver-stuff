@@ -16,6 +16,7 @@ lto = true
 codegen-units = 1
 
 [workspace.lints.rust]
+trivial_numeric_casts = "deny"
 mismatched_lifetime_syntaxes = "deny"
 
 [workspace.lints.clippy]

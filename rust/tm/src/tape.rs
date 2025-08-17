@@ -963,6 +963,7 @@ macro_rules! plus {
 #[cfg(test)]
 macro_rules! mult {
     ($mul:expr, $add:expr) => {
+        #[expect(trivial_numeric_casts)]
         Op::Mult((
             BigCount::from($mul as u8),
             BigCount::from($add as u8),

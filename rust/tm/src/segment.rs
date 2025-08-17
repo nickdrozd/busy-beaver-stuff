@@ -595,7 +595,7 @@ impl Tape {
 
         let seg = seg as Count;
         let pos = pos as Count;
-        let cells = (seg - 2) as Count;
+        let cells = seg - 2;
 
         let (scan, lspan, rspan) = if pos == 0 {
             (None, vec![], vec![Block::new(0, &cells)])
