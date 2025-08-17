@@ -872,7 +872,7 @@ impl From<&str> for Backstepper {
 
         let lspan: Vec<Block> = parts[1..]
             .iter()
-            .take_while(|&&s| !s.starts_with('['))
+            .take_while(|s| !s.starts_with('['))
             .map(|&s| s.into())
             .collect::<Vec<_>>()
             .into_iter()
@@ -880,7 +880,7 @@ impl From<&str> for Backstepper {
 
         let scan = parts
             .iter()
-            .find(|&&s| s.starts_with('['))
+            .find(|s| s.starts_with('['))
             .and_then(|s| {
                 s.trim_matches(|c| c == '[' || c == ']').parse().ok()
             })
