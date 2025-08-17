@@ -40,6 +40,7 @@ fn get_goal(goal: u8) -> Option<Goal> {
 
 macro_rules! assert_trees {
     ( $( ( ($params:expr, $goal:expr, $tree:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
+        #[expect(trivial_casts)]
         vec![
             $( (
                 ($params, $goal, $tree, $leaves),
@@ -448,6 +449,7 @@ fn assert_limited(
 
 macro_rules! assert_limited_results {
     ( $( ( ($instrs:expr, $tree:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
+        #[expect(trivial_casts)]
         vec![
             $( (
                 ($instrs,$tree, $leaves),

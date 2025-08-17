@@ -16,9 +16,32 @@ lto = true
 codegen-units = 1
 
 [workspace.lints.rust]
+unused = "deny"
+warnings = "deny"
+unit_bindings = "deny"
+trivial_casts = "deny"
+if_let_rescope = "deny"
+let_underscore = "deny"
+keyword_idents = "deny"
+linker_messages = "deny"
 unreachable_pub = "deny"
+unused_lifetimes = "deny"
+nonstandard_style = "deny"
+unused_macro_rules = "deny"
+future_incompatible = "deny"
+refining_impl_trait = "deny"
+redundant_lifetimes = "deny"
+tail_expr_drop_order = "deny"
+meta_variable_misuse = "deny"
+single_use_lifetimes = "deny"
 trivial_numeric_casts = "deny"
-mismatched_lifetime_syntaxes = "deny"
+impl_trait_overcaptures = "deny"
+rust_2018_compatibility = "deny"
+rust_2021_compatibility = "deny"
+rust_2024_compatibility = "deny"
+variant_size_differences = "deny"
+ambiguous_negative_literals = "deny"
+impl_trait_redundant_captures = "deny"
 
 [workspace.lints.clippy]
 all = "deny"
