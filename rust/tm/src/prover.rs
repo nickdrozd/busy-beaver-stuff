@@ -218,7 +218,7 @@ impl PastConfig {
     }
 
     #[expect(clippy::many_single_char_names)]
-    pub fn next_deltas(
+    fn next_deltas(
         &mut self,
         cycle: Cycle,
     ) -> Option<(Cycle, Cycle, Cycle)> {
