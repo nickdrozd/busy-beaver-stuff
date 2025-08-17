@@ -126,10 +126,10 @@ impl Prog {
 
         let mut tape = HeadTape::init_stepped();
 
-        let head = tape.head();
+        let init_head = tape.head();
 
         let (mut ref_state, mut ref_tape, mut leftmost, mut rightmost) =
-            (state, tape.clone(), head, head);
+            (state, tape.clone(), init_head, init_head);
 
         let mut reset = 1;
 

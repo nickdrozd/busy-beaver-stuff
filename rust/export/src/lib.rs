@@ -1,3 +1,5 @@
+#![expect(clippy::shadow_unrelated)]
+
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{

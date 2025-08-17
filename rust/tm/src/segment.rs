@@ -369,9 +369,9 @@ impl Configs {
 
             let next_tape = tape.clone();
 
-            let config = Config::new(state, next_tape, init);
+            let todo = Config::new(state, next_tape, init);
 
-            self.add_todo(config);
+            self.add_todo(todo);
         }
 
         if let Some(init) = self.check_seen(*last_next, tape, blank) {
@@ -480,9 +480,7 @@ impl Config {
                 continue;
             }
 
-            let instr = prog.get(&copy.slot().unwrap()).unwrap();
-
-            copy.step(instr);
+            copy.step(prog.get(&copy.slot().unwrap()).unwrap());
 
             if copy.state == self.state && copy.tape == self.tape {
                 return Some(Repeat);
@@ -869,12 +867,12 @@ fn test_reached_states() {
 
     for (prog, halts, spinouts) in progs {
         let comp = Prog::read(prog);
-        let prog = AnalyzedProg::new(&comp);
+        let anal = AnalyzedProg::new(&comp);
 
-        assert_eq!(prog.halts, halts.into_iter().collect::<Set<_>>());
+        assert_eq!(anal.halts, halts.into_iter().collect::<Set<_>>());
 
         assert_eq!(
-            prog.spinouts.keys().copied().collect::<Set<_>>(),
+            anal.spinouts.keys().copied().collect::<Set<_>>(),
             spinouts.into_iter().collect::<Set<_>>()
         );
     }
@@ -912,6 +910,7 @@ fn test_step_edge() {
     tape.assert("[-] 1^2");
 }
 
+#[expect(clippy::shadow_unrelated)]
 #[test]
 fn test_skip() {
     let mut tape = tape! { 1, [(1, 20)], [] };

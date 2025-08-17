@@ -136,14 +136,14 @@ fn cant_reach(
 
         configs = match step_configs(valid_steps, &mut blanks) {
             Err(err) => return err,
-            Ok((configs, indefs)) => {
+            Ok((stepped, indefs)) => {
                 indef_steps += indefs;
 
                 if indef_steps > MAX_STACK_DEPTH {
                     return DepthLimit;
                 }
 
-                configs
+                stepped
             },
         };
     }
@@ -169,21 +169,21 @@ fn get_valid_steps(
             continue;
         };
 
-        for &((state, color), (print, shift)) in diff {
+        for &((next_state, color), (print, shift)) in diff {
             if !tape.is_valid_step(shift, print) {
                 continue;
             }
 
-            steps.push((color, shift, state));
+            steps.push((color, shift, next_state));
         }
 
-        for &((state, color), (print, shift)) in same {
+        for &((next_state, color), (print, shift)) in same {
             if !tape.is_valid_step(shift, print) {
                 continue;
             }
 
             if !tape.is_spinout(shift, color) {
-                steps.push((color, shift, state));
+                steps.push((color, shift, next_state));
                 continue;
             }
 
@@ -872,30 +872,30 @@ impl From<&str> for Backstepper {
 
         let lspan: Vec<Block> = parts[1..]
             .iter()
-            .take_while(|s| !s.starts_with('['))
-            .map(|&s| s.into())
+            .take_while(|p| !p.starts_with('['))
+            .map(|&p| p.into())
             .collect::<Vec<_>>()
             .into_iter()
             .collect();
 
         let scan = parts
             .iter()
-            .find(|s| s.starts_with('['))
-            .and_then(|s| {
-                s.trim_matches(|c| c == '[' || c == ']').parse().ok()
+            .find(|p| p.starts_with('['))
+            .and_then(|p| {
+                p.trim_matches(|c| c == '[' || c == ']').parse().ok()
             })
             .unwrap();
 
         let rspan_start = parts
             .iter()
-            .position(|&s| s.starts_with('['))
+            .position(|&p| p.starts_with('['))
             .map_or(parts.len(), |pos| pos + 1);
 
         let r_end = (*parts.last().unwrap()).into();
 
         let rspan: Vec<Block> = parts[rspan_start..parts.len() - 1]
             .iter()
-            .map(|&s| s.into())
+            .map(|&p| p.into())
             .rev()
             .collect();
 
