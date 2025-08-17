@@ -1,7 +1,3 @@
-#![deny(clippy::all, clippy::nursery, clippy::pedantic)]
-#![expect(clippy::must_use_candidate)]
-#![allow(clippy::enum_glob_use)]
-
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{

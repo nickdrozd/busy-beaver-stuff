@@ -1,30 +1,4 @@
-#![deny(
-    clippy::all,
-    clippy::panic,
-    clippy::nursery,
-    clippy::pedantic,
-    clippy::get_unwrap,
-    clippy::ref_patterns,
-    clippy::str_to_string,
-    clippy::clone_on_ref_ptr,
-    clippy::same_name_method,
-    clippy::allow_attributes,
-    clippy::unwrap_in_result,
-    clippy::partial_pub_fields,
-    clippy::unused_trait_names,
-    clippy::std_instead_of_core,
-    mismatched_lifetime_syntaxes,
-    clippy::if_then_some_else_none,
-    clippy::unneeded_field_pattern,
-    clippy::redundant_type_annotations,
-    clippy::decimal_literal_representation
-)]
-#![expect(
-    clippy::trivially_copy_pass_by_ref,
-    clippy::must_use_candidate,
-    clippy::missing_panics_doc
-)]
-#![allow(clippy::enum_glob_use)]
+#![expect(clippy::trivially_copy_pass_by_ref)]
 
 pub mod blocks;
 pub mod cps;

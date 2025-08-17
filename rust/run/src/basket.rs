@@ -1,7 +1,6 @@
-use std::{
-    fmt::Debug,
-    sync::{Arc, Mutex, MutexGuard},
-};
+use core::fmt::Debug;
+
+use std::sync::{Arc, Mutex, MutexGuard};
 
 pub struct Basket<T>(Arc<Mutex<T>>);
 

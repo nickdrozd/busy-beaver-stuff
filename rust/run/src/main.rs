@@ -1,6 +1,5 @@
-#![deny(clippy::all, clippy::nursery, clippy::pedantic)]
+#![allow(unused_imports)]
 #![expect(clippy::too_many_lines)]
-#![allow(clippy::enum_glob_use)]
 
 use std::env;
 
@@ -13,7 +12,6 @@ use tm::{
     tree::{Step, build_limited, build_tree},
 };
 
-#[allow(unused_imports)]
 use tm::instrs::Parse as _;
 
 mod basket;
@@ -520,7 +518,7 @@ fn main() {
     #[expect(clippy::needless_collect)]
     let args: Vec<String> = env::args().collect();
 
-    if !args.contains(&"--all".to_string()) {
+    if !args.contains(&"--all".to_owned()) {
         return;
     }
 

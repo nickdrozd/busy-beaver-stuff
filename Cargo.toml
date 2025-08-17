@@ -14,3 +14,30 @@ incremental = true
 [profile.release]
 lto = true
 codegen-units = 1
+
+[workspace.lints.rust]
+mismatched_lifetime_syntaxes = "deny"
+
+[workspace.lints.clippy]
+all = "deny"
+panic = "deny"
+nursery = "deny"
+pedantic = "deny"
+get_unwrap = "deny"
+ref_patterns = "deny"
+str_to_string = "deny"
+clone_on_ref_ptr = "deny"
+same_name_method = "deny"
+allow_attributes = "deny"
+unwrap_in_result = "deny"
+partial_pub_fields = "deny"
+unused_trait_names = "deny"
+std_instead_of_core = "deny"
+if_then_some_else_none = "deny"
+unneeded_field_pattern = "deny"
+redundant_type_annotations = "deny"
+decimal_literal_representation = "deny"
+
+enum_glob_use = { level = "allow", priority = 1 }
+must_use_candidate = { level = "allow", priority = 1 }
+missing_panics_doc = { level = "allow", priority = 1 }
