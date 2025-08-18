@@ -89,7 +89,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             }
 
             let (color, shift, next_state) =
-                self.prog.get_instr((state, tape.scan()))?;
+                self.prog.get_instr(&(state, tape.scan()))?;
 
             tape.step(shift, color, state == next_state);
 

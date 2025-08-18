@@ -23,11 +23,11 @@ type Config = (State, (bool, Tape));
 /**************************************/
 
 pub trait GetInstr {
-    fn get_instr(&self, slot: Slot) -> Option<Instr>;
+    fn get_instr(&self, slot: &Slot) -> Option<Instr>;
 }
 
 impl GetInstr for Prog {
-    fn get_instr(&self, slot: Slot) -> Option<Instr> {
+    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
         self.get(slot).copied()
     }
 }
@@ -145,7 +145,7 @@ pub struct MacroProg<'p, L: Logic> {
 }
 
 impl<L: Logic> GetInstr for MacroProg<'_, L> {
-    fn get_instr(&self, slot: Slot) -> Option<Instr> {
+    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
         let slot: MacroSlot = self.convert_slot(slot);
 
         let (color, shift, state) = {
@@ -180,7 +180,7 @@ impl<'p, L: Logic> MacroProg<'p, L> {
         }
     }
 
-    fn convert_slot(&self, (state, color): Slot) -> MacroSlot {
+    fn convert_slot(&self, &(state, color): &Slot) -> MacroSlot {
         (
             MacroState::from(self.states.borrow()[state as usize]),
             MacroColor::from(self.colors.borrow()[color as usize]),
@@ -241,7 +241,7 @@ impl<'p, L: Logic> MacroProg<'p, L> {
             let scan = tape[pos];
 
             let &(color, shift, next_state) =
-                self.prog.get((state, scan))?;
+                self.prog.get(&(state, scan))?;
 
             if next_state != state {
                 state = next_state;
@@ -444,7 +444,6 @@ impl TapeColorConverter {
         }
     }
 
-    #[expect(clippy::trivially_copy_pass_by_ref)]
     fn color_to_tape(&self, color: &MacroColor) -> Tape {
         self.ct_cache.borrow()[color].clone()
     }
@@ -533,6 +532,6 @@ fn test_macro() {
     block.assert_params((10, 4));
 
     for &(slot, instr) in MACROS {
-        assert_eq!(Some(instr), block.get_instr(slot));
+        assert_eq!(Some(instr), block.get_instr(&slot));
     }
 }

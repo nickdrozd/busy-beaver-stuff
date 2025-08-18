@@ -1,3 +1,5 @@
+#![expect(clippy::trivially_copy_pass_by_ref)]
+
 pub mod blocks;
 pub mod cps;
 pub mod ctl;

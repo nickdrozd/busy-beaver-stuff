@@ -163,7 +163,7 @@ impl Config {
 
             let slot = (self.state, self.tape.scan);
 
-            let Some(instr) = prog.get_instr(slot) else {
+            let Some(instr) = prog.get_instr(&slot) else {
                 return if goal.is_halt() {
                     #[cfg(debug_assertions)]
                     println!("halt reached");
@@ -226,7 +226,6 @@ impl Config {
         StepLimit
     }
 
-    #[expect(clippy::trivially_copy_pass_by_ref)]
     fn step(&mut self, &(print, shift, state): &Instr) -> bool {
         if !self.tape.step_with_limit(shift, print) {
             return false;
@@ -237,7 +236,6 @@ impl Config {
         true
     }
 
-    #[expect(clippy::trivially_copy_pass_by_ref)]
     fn branch_step(&mut self, &(print, shift, state): &Instr) -> Self {
         let branch = self.branch_clone(shift);
 
