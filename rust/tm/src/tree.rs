@@ -1,3 +1,5 @@
+#![deny(clippy::trivially_copy_pass_by_ref)]
+
 use core::cmp::{max, min};
 
 use rayon::prelude::*;
@@ -171,7 +173,7 @@ impl<'h> TreeCore<'h> {
         (self.harvester)(&self.prog);
     }
 
-    fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
+    fn insert_and_update(&mut self, slot: Slot, instr: Instr) {
         self.remaining_slots -= 1;
 
         self.insert(slot, instr);
@@ -179,7 +181,7 @@ impl<'h> TreeCore<'h> {
         self.update_avail(slot, instr);
     }
 
-    fn remove_and_update(&mut self, slot: &Slot) {
+    fn remove_and_update(&mut self, slot: Slot) {
         self.avail_params.pop();
 
         self.remove(slot);
@@ -187,12 +189,12 @@ impl<'h> TreeCore<'h> {
         self.remaining_slots += 1;
     }
 
-    fn insert(&mut self, slot: &Slot, instr: &Instr) {
-        self.prog.insert(slot, instr);
+    fn insert(&mut self, slot: Slot, instr: Instr) {
+        self.prog.insert(&slot, &instr);
     }
 
-    fn remove(&mut self, slot: &Slot) {
-        self.prog.remove(slot);
+    fn remove(&mut self, slot: Slot) {
+        self.prog.remove(&slot);
     }
 
     fn avail_params(&self) -> Params {
@@ -201,8 +203,8 @@ impl<'h> TreeCore<'h> {
 
     fn update_avail(
         &mut self,
-        (slot_state, slot_color): &Slot,
-        (instr_color, _, instr_state): &Instr,
+        (slot_state, slot_color): Slot,
+        (instr_color, _, instr_state): Instr,
     ) {
         let (mut avail_states, mut avail_colors) = self.avail_params();
 
@@ -237,18 +239,18 @@ trait Tree<'h> {
 
     fn run(&self, config: &mut Config) -> RunResult;
 
-    fn avail_instrs(&self, slot: &Slot) -> &'h [Instr];
+    fn avail_instrs(&self, slot: Slot) -> &'h [Instr];
 
-    fn insert_and_update(&mut self, slot: &Slot, instr: &Instr);
-    fn remove_and_update(&mut self, slot: &Slot);
+    fn insert_and_update(&mut self, slot: Slot, instr: Instr);
+    fn remove_and_update(&mut self, slot: Slot);
 
-    fn insert(&mut self, slot: &Slot, instr: &Instr);
-    fn remove(&mut self, slot: &Slot);
+    fn insert(&mut self, slot: Slot, instr: Instr);
+    fn remove(&mut self, slot: Slot);
 
     fn with_instr(
         &mut self,
-        slot: &Slot,
-        instr: &Instr,
+        slot: Slot,
+        instr: Instr,
         body: impl FnOnce(&mut Self),
     ) {
         self.insert_and_update(slot, instr);
@@ -260,8 +262,8 @@ trait Tree<'h> {
 
     fn with_insert(
         &mut self,
-        slot: &Slot,
-        instr: &Instr,
+        slot: Slot,
+        instr: Instr,
         body: impl FnOnce(&mut Self),
     ) {
         self.insert(slot, instr);
@@ -288,11 +290,11 @@ trait Tree<'h> {
             },
         };
 
-        let instrs = self.avail_instrs(&slot);
+        let instrs = self.avail_instrs(slot);
 
         if self.final_slot() {
             for next_instr in instrs {
-                self.with_insert(&slot, next_instr, |prog| {
+                self.with_insert(slot, *next_instr, |prog| {
                     prog.harvest();
                 });
             }
@@ -305,12 +307,12 @@ trait Tree<'h> {
         let (last_instr, instrs) = instrs.split_last().unwrap();
 
         for next_instr in instrs {
-            self.with_instr(&slot, next_instr, |prog| {
+            self.with_instr(slot, *next_instr, |prog| {
                 prog.branch(config.clone());
             });
         }
 
-        self.with_instr(&slot, last_instr, |prog| {
+        self.with_instr(slot, *last_instr, |prog| {
             prog.branch(config);
         });
     }
@@ -369,23 +371,23 @@ impl<'h> Tree<'h> for BasicTree<'h> {
         self.core.run(config)
     }
 
-    fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
+    fn insert_and_update(&mut self, slot: Slot, instr: Instr) {
         self.core.insert_and_update(slot, instr);
     }
 
-    fn remove_and_update(&mut self, slot: &Slot) {
+    fn remove_and_update(&mut self, slot: Slot) {
         self.core.remove_and_update(slot);
     }
 
-    fn insert(&mut self, slot: &Slot, instr: &Instr) {
+    fn insert(&mut self, slot: Slot, instr: Instr) {
         self.core.insert(slot, instr);
     }
 
-    fn remove(&mut self, slot: &Slot) {
+    fn remove(&mut self, slot: Slot) {
         self.core.remove(slot);
     }
 
-    fn avail_instrs(&self, _: &Slot) -> &'h [Instr] {
+    fn avail_instrs(&self, _: Slot) -> &'h [Instr] {
         let (avail_states, avail_colors) = self.core.avail_params();
 
         &self.instr_table[avail_states as usize][avail_colors as usize]
@@ -428,15 +430,15 @@ impl<'h> BlankTree<'h> {
 
     fn update_blanks(
         &mut self,
-        (_, slot_color): &Slot,
-        (instr_color, _, _): &Instr,
+        (_, slot_color): Slot,
+        (instr_color, _, _): Instr,
     ) {
         let mut avail_blanks = self.avail_blanks();
 
         if let Some(remaining) = avail_blanks
-            && *slot_color != 0
+            && slot_color != 0
         {
-            if *instr_color == 0 {
+            if instr_color == 0 {
                 avail_blanks = None;
             } else {
                 avail_blanks = Some(remaining - 1);
@@ -468,27 +470,27 @@ impl<'h> Tree<'h> for BlankTree<'h> {
         self.core.run(config)
     }
 
-    fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
+    fn insert_and_update(&mut self, slot: Slot, instr: Instr) {
         self.core.insert_and_update(slot, instr);
 
         self.update_blanks(slot, instr);
     }
 
-    fn remove_and_update(&mut self, slot: &Slot) {
+    fn remove_and_update(&mut self, slot: Slot) {
         self.core.remove_and_update(slot);
 
         self.avail_blanks.pop();
     }
 
-    fn insert(&mut self, slot: &Slot, instr: &Instr) {
+    fn insert(&mut self, slot: Slot, instr: Instr) {
         self.core.insert(slot, instr);
     }
 
-    fn remove(&mut self, slot: &Slot) {
+    fn remove(&mut self, slot: Slot) {
         self.core.remove(slot);
     }
 
-    fn avail_instrs(&self, &(_, color): &Slot) -> &'h [Instr] {
+    fn avail_instrs(&self, (_, color): Slot) -> &'h [Instr] {
         let (avail_states, avail_colors) = self.core.avail_params();
 
         let erase_remaining = self.avail_blanks();
@@ -527,7 +529,7 @@ fn build_all(
             &instr_table,
         );
 
-        prog.with_instr(&(1, 0), &next_instr, |prog| {
+        prog.with_instr((1, 0), next_instr, |prog| {
             prog.branch(Config::init_stepped());
         });
     });
@@ -553,7 +555,7 @@ fn build_blank(
         let mut prog =
             BlankTree::init(params, sim_lim, harvester, &instr_table);
 
-        prog.with_instr(&(1, 0), &next_instr, |prog| {
+        prog.with_instr((1, 0), next_instr, |prog| {
             prog.branch(Config::init_stepped());
         });
     });
@@ -587,7 +589,7 @@ fn build_spinout(
             &instr_table,
         );
 
-        prog.with_instr(&(1, 0), &next_instr, |prog| {
+        prog.with_instr((1, 0), next_instr, |prog| {
             prog.branch(Config::init_stepped());
         });
     });
