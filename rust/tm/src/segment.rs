@@ -415,11 +415,13 @@ impl Config {
         Some((self.state, self.tape.scan?))
     }
 
+    #[expect(clippy::trivially_copy_pass_by_ref)]
     fn step(&mut self, &(print, shift, state): &Instr) {
         self.tape.step(shift, print, state == self.state);
         self.state = state;
     }
 
+    #[expect(clippy::trivially_copy_pass_by_ref)]
     fn spinout(&self, &(_, shift, state): &Instr) -> bool {
         self.state == state && self.tape.at_edge(shift)
     }
@@ -437,7 +439,7 @@ impl Config {
         let mut copy = self.clone();
 
         while let Some(slot) = self.slot() {
-            let Some(&instr) = prog.get(&slot) else {
+            let Some(&instr) = prog.get(slot) else {
                 return Some(Found(Halt));
             };
 
@@ -480,7 +482,7 @@ impl Config {
                 continue;
             }
 
-            copy.step(prog.get(&copy.slot().unwrap()).unwrap());
+            copy.step(prog.get(copy.slot().unwrap()).unwrap());
 
             if copy.state == self.state && copy.tape == self.tape {
                 return Some(Repeat);
@@ -733,7 +735,7 @@ impl<'p> AnalyzedProg<'p> {
             let mut rights = Set::new();
 
             for color in 0..colors {
-                let Some(&(_, shift, next)) = prog.get(&(state, color))
+                let Some(&(_, shift, next)) = prog.get((state, color))
                 else {
                     halts.insert(state);
                     continue;
@@ -845,7 +847,7 @@ fn test_seg_tape() {
     while let Some(scan) = config.tape.scan() {
         seen.insert(config.clone());
 
-        config.step(prog.get(&(config.state, scan)).unwrap());
+        config.step(prog.get((config.state, scan)).unwrap());
     }
 
     assert!(config.tape.side());

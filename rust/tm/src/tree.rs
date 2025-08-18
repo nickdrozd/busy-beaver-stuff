@@ -100,7 +100,7 @@ impl Config {
         for _ in 0..sim_lim {
             let slot = (self.state, self.tape.scan);
 
-            let Some(&(color, shift, state)) = prog.get(&slot) else {
+            let Some(&(color, shift, state)) = prog.get(slot) else {
                 return Undefined(slot);
             };
 
@@ -190,11 +190,11 @@ impl<'h> TreeCore<'h> {
     }
 
     fn insert(&mut self, slot: Slot, instr: Instr) {
-        self.prog.insert(&slot, &instr);
+        self.prog.insert(slot, instr);
     }
 
     fn remove(&mut self, slot: Slot) {
-        self.prog.remove(&slot);
+        self.prog.remove(slot);
     }
 
     fn avail_params(&self) -> Params {

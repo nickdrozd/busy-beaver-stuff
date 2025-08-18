@@ -86,7 +86,7 @@ pub fn run_for_infrul(
 
         let slot = (state, tape.scan);
 
-        let Some((color, shift, next_state)) = prog.get_instr(&slot)
+        let Some((color, shift, next_state)) = prog.get_instr(slot)
         else {
             return RunResult::Undefined(slot);
         };
@@ -136,7 +136,7 @@ impl Prog {
         for cycle in 1..sim_lim {
             let slot = (state, tape.scan());
 
-            let Some(&(color, shift, next_state)) = self.get(&slot)
+            let Some(&(color, shift, next_state)) = self.get(slot)
             else {
                 return RunResult::Undefined(slot);
             };

@@ -15,7 +15,7 @@ impl Instrs {
         }
     }
 
-    fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
+    fn get(&self, (state, color): Slot) -> Option<&Instr> {
         self.table[state as usize][color as usize].as_ref()
     }
 
@@ -23,7 +23,7 @@ impl Instrs {
         self.table[state as usize][color as usize] = Some(instr);
     }
 
-    fn remove(&mut self, &(state, color): &Slot) {
+    fn remove(&mut self, (state, color): Slot) {
         self.table[state as usize][color as usize] = None;
     }
 
@@ -84,15 +84,15 @@ impl Prog {
         Self::new(instrs, params)
     }
 
-    pub fn get(&self, slot: &Slot) -> Option<&Instr> {
+    pub fn get(&self, slot: Slot) -> Option<&Instr> {
         self.instrs.get(slot)
     }
 
-    pub fn insert(&mut self, slot: &Slot, instr: &Instr) {
-        self.instrs.insert(*slot, *instr);
+    pub fn insert(&mut self, slot: Slot, instr: Instr) {
+        self.instrs.insert(slot, instr);
     }
 
-    pub fn remove(&mut self, slot: &Slot) {
+    pub fn remove(&mut self, slot: Slot) {
         self.instrs.remove(slot);
     }
 
@@ -209,9 +209,7 @@ impl Parse for Prog {
         (0..self.states)
             .map(|state| {
                 (0..self.colors)
-                    .map(|color| {
-                        self.instrs.get(&(state, color)).show()
-                    })
+                    .map(|color| self.instrs.get((state, color)).show())
                     .collect::<Vec<_>>()
                     .join(" ")
             })

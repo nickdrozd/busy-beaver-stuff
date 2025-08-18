@@ -95,7 +95,7 @@ impl Prog {
 
         for _ in 0..steps {
             let Some(&(color, shift, next_state)) =
-                self.get(&(state, tape.tape.scan))
+                self.get((state, tape.tape.scan))
             else {
                 break;
             };
@@ -120,7 +120,7 @@ impl Prog {
 
         for _ in 0..steps {
             let &(color, shift, next_state) =
-                self.get(&(state, tape.scan)).unwrap();
+                self.get((state, tape.scan)).unwrap();
 
             tape.step(shift, color, state == next_state);
 

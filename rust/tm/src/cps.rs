@@ -50,7 +50,7 @@ fn cps_cant_reach(prog: &Prog, rad: Radius, goal: Goal) -> bool {
 
         while let Some(Config { state, mut tape }) = todo.pop() {
             let Some(&(print, shift, next_state)) =
-                prog.get(&(state, tape.scan))
+                prog.get((state, tape.scan))
             else {
                 match goal {
                     Halt => return false,
