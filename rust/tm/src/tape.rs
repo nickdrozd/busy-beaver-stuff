@@ -109,15 +109,21 @@ impl<Count: Countable> Display for BasicBlock<Count> {
 /**************************************/
 
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub struct Span<C: Countable, B: Block<C>>(Vec<B>, PhantomData<C>);
+pub struct Span<C: Countable, B: Block<C>> {
+    blocks: Vec<B>,
+    _use_c: PhantomData<C>,
+}
 
 impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     pub const fn new(blocks: Vec<B>) -> Self {
-        Self(blocks, PhantomData::<Count>)
+        Self {
+            blocks,
+            _use_c: PhantomData::<Count>,
+        }
     }
 
     pub const fn len(&self) -> usize {
-        self.0.len()
+        self.blocks.len()
     }
 
     pub const fn is_empty(&self) -> bool {
@@ -125,11 +131,11 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     }
 
     const fn blank(&self) -> bool {
-        self.0.is_empty()
+        self.blocks.is_empty()
     }
 
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &B> {
-        self.0.iter().rev()
+        self.blocks.iter().rev()
     }
 
     pub fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> {
@@ -179,23 +185,23 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     }
 
     pub fn push_block(&mut self, color: Color, count: &Count) {
-        self.0.push(Block::new(color, count));
+        self.blocks.push(Block::new(color, count));
     }
 
     pub fn pop_block(&mut self) -> B {
-        self.0.pop().unwrap()
+        self.blocks.pop().unwrap()
     }
 
     pub fn first(&self) -> Option<&B> {
-        self.0.last()
+        self.blocks.last()
     }
 
     pub fn first_mut(&mut self) -> Option<&mut B> {
-        self.0.last_mut()
+        self.blocks.last_mut()
     }
 
     const fn last_pos(&self) -> usize {
-        self.0.len() - 1
+        self.blocks.len() - 1
     }
 }
 
@@ -203,7 +209,7 @@ impl<C: Countable, B: Block<C>> IndexTrait<usize> for Span<C, B> {
     type Output = B;
 
     fn index(&self, pos: usize) -> &Self::Output {
-        &self.0[self.last_pos() - pos]
+        &self.blocks[self.last_pos() - pos]
     }
 }
 
@@ -211,7 +217,7 @@ impl<C: Countable, B: Block<C>> IndexMut<usize> for Span<C, B> {
     fn index_mut(&mut self, pos: usize) -> &mut Self::Output {
         let last_pos = self.last_pos();
 
-        &mut self.0[last_pos - pos]
+        &mut self.blocks[last_pos - pos]
     }
 }
 
