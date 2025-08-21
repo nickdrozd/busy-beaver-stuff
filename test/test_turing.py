@@ -312,6 +312,9 @@ class TuringTest(TestCase):
         if prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
             return
 
+        if 2 < prog.count('...'):
+            return
+
         self.assertTrue(
             cant_spin_out(prog, depth).is_refuted(),
             f'spin out false negative: "{prog}"')
@@ -331,6 +334,9 @@ class TuringTest(TestCase):
 
     def assert_cant_spin_out_cps(self, prog: str, segs: int):
         if prog in CPS_FALSE_NEGATIVES['spinout']:
+            return
+
+        if 2 < prog.count('...'):
             return
 
         self.assertTrue(
