@@ -872,7 +872,16 @@ impl BigTape {
 }
 
 #[cfg(test)]
-use num_bigint::BigInt;
+impl BigSpan {
+    fn from_data(data: Vec<(Color, usize)>) -> Self {
+        Self::new(
+            data.into_iter()
+                .map(|(cr, ct)| BigBlock::new(cr, &BigCount::from(ct)))
+                .rev()
+                .collect(),
+        )
+    }
+}
 
 #[cfg(test)]
 macro_rules! tape {
@@ -883,8 +892,8 @@ macro_rules! tape {
     ) => {
         BigTape {
             scan: $ scan,
-            lspan: Span::new( vec! [ $ ( BigBlock::new( $ lspan.0, & BigInt::from($ lspan.1).to_biguint().unwrap()) ), * ].into_iter().rev().collect() ),
-            rspan: Span::new( vec! [ $ ( BigBlock::new( $ rspan.0, & BigInt::from($ rspan.1).to_biguint().unwrap()) ), * ].into_iter().rev().collect() ),
+            lspan: Span::from_data(vec! [ $ ( $ lspan ), * ]),
+            rspan: Span::from_data(vec! [ $ ( $ rspan ), * ]),
         }
     };
 }
