@@ -631,7 +631,7 @@ struct Span {
 impl Span {
     const fn init_blank(end: TapeEnd) -> Self {
         Self {
-            span: tape::Span::new(vec![]),
+            span: tape::Span::init_blank(),
             end,
         }
     }

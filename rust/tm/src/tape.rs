@@ -674,36 +674,33 @@ impl Display for EnumTape {
     }
 }
 
+type BigSpan = Span<BigCount, BigBlock>;
+type EnumSpan = Span<BigCount, EnumBlock>;
+
+impl EnumSpan {
+    fn from(span: &BigSpan, side: Shift) -> Self {
+        let len = span.len();
+
+        Self::new(
+            span.iter()
+                .rev()
+                .enumerate()
+                .map(|(i, block)| EnumBlock {
+                    block: block.clone(),
+                    index: Some((side, len - i)),
+                })
+                .collect(),
+        )
+    }
+}
+
 impl From<&BigTape> for EnumTape {
     fn from(tape: &BigTape) -> Self {
-        let l_len = tape.lspan.len();
-        let r_len = tape.rspan.len();
-
         Self {
             tape: Tape {
                 scan: tape.scan,
-                lspan: Span::new(
-                    tape.lspan
-                        .iter()
-                        .rev()
-                        .enumerate()
-                        .map(|(i, block)| EnumBlock {
-                            block: block.clone(),
-                            index: Some((false, l_len - i)),
-                        })
-                        .collect(),
-                ),
-                rspan: Span::new(
-                    tape.rspan
-                        .iter()
-                        .rev()
-                        .enumerate()
-                        .map(|(i, block)| EnumBlock {
-                            block: block.clone(),
-                            index: Some((true, r_len - i)),
-                        })
-                        .collect(),
-                ),
+                lspan: EnumSpan::from(&tape.lspan, false),
+                rspan: EnumSpan::from(&tape.rspan, true),
             },
 
             l_offset: 0.into(),
