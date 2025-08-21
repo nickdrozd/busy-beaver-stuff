@@ -122,6 +122,14 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         }
     }
 
+    pub const fn init_blank() -> Self {
+        Self::new(vec![])
+    }
+
+    pub fn init_stepped() -> Self {
+        Self::new(vec![B::new(1, &Count::one())])
+    }
+
     pub const fn len(&self) -> usize {
         self.blocks.len()
     }
@@ -399,16 +407,16 @@ impl<Count: Countable, B: Block<Count>> Tape<Count, B> {
     pub const fn init() -> Self {
         Self {
             scan: 0,
-            lspan: Span::new(vec![]),
-            rspan: Span::new(vec![]),
+            lspan: Span::init_blank(),
+            rspan: Span::init_blank(),
         }
     }
 
     pub fn init_stepped() -> Self {
         Self {
             scan: 0,
-            lspan: Span::new(vec![B::new(1, &Count::one())]),
-            rspan: Span::new(vec![]),
+            lspan: Span::init_stepped(),
+            rspan: Span::init_blank(),
         }
     }
 

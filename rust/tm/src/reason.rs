@@ -629,9 +629,9 @@ struct Span {
 }
 
 impl Span {
-    const fn new(blocks: Vec<Block>, end: TapeEnd) -> Self {
+    const fn init_blank(end: TapeEnd) -> Self {
         Self {
-            span: tape::Span::new(blocks),
+            span: tape::Span::new(vec![]),
             end,
         }
     }
@@ -713,8 +713,8 @@ impl Backstepper {
     const fn init_halt(scan: Color) -> Self {
         Self {
             scan,
-            lspan: Span::new(vec![], TapeEnd::Unknown),
-            rspan: Span::new(vec![], TapeEnd::Unknown),
+            lspan: Span::init_blank(TapeEnd::Unknown),
+            rspan: Span::init_blank(TapeEnd::Unknown),
             head: 0,
         }
     }
@@ -722,8 +722,8 @@ impl Backstepper {
     const fn init_blank(scan: Color) -> Self {
         Self {
             scan,
-            lspan: Span::new(vec![], TapeEnd::Blanks),
-            rspan: Span::new(vec![], TapeEnd::Blanks),
+            lspan: Span::init_blank(TapeEnd::Blanks),
+            rspan: Span::init_blank(TapeEnd::Blanks),
             head: 0,
         }
     }
@@ -737,8 +737,8 @@ impl Backstepper {
 
         Self {
             scan: 0,
-            lspan: Span::new(vec![], l_end),
-            rspan: Span::new(vec![], r_end),
+            lspan: Span::init_blank(l_end),
+            rspan: Span::init_blank(r_end),
             head: 0,
         }
     }
@@ -860,6 +860,16 @@ impl From<&str> for Block {
         };
 
         Self { color, count }
+    }
+}
+
+#[cfg(test)]
+impl Span {
+    const fn new(blocks: Vec<Block>, end: TapeEnd) -> Self {
+        Self {
+            span: tape::Span::new(blocks),
+            end,
+        }
     }
 }
 
