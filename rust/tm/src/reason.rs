@@ -8,9 +8,10 @@ use std::{
 use crate::{
     instrs::{Color, Instr, Parse as _, Shift, Slot, State},
     prog::Prog,
+    tape,
     tape::{
         Alignment, Block as _, LilBlock as Block, LilCount as Count,
-        Pos, Span as GenSpan,
+        Pos,
     },
 };
 
@@ -623,14 +624,14 @@ impl TapeEnd {
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct Span {
-    span: GenSpan<Count, Block>,
+    span: tape::Span<Count, Block>,
     end: TapeEnd,
 }
 
 impl Span {
     const fn new(blocks: Vec<Block>, end: TapeEnd) -> Self {
         Self {
-            span: GenSpan::new(blocks),
+            span: tape::Span::new(blocks),
             end,
         }
     }
