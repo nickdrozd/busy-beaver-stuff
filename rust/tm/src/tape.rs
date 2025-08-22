@@ -32,13 +32,13 @@ impl Countable for BigCount {}
 /**************************************/
 
 pub trait Block<Count: Countable>: Display {
-    fn new(color: Color, count: &Count) -> Self;
+    fn new(color: Color, count: Count) -> Self;
 
     fn get_color(&self) -> Color;
 
     fn get_count(&self) -> &Count;
 
-    fn add_count(&mut self, count: &Count);
+    fn add_count(&mut self, count: Count);
 
     fn decrement(&mut self);
 
@@ -66,11 +66,8 @@ pub type MedBlock = BasicBlock<MedCount>;
 pub type BigBlock = BasicBlock<BigCount>;
 
 impl<Count: Countable> Block<Count> for BasicBlock<Count> {
-    fn new(color: Color, count: &Count) -> Self {
-        Self {
-            color,
-            count: count.clone(),
-        }
+    fn new(color: Color, count: Count) -> Self {
+        Self { color, count }
     }
 
     fn get_color(&self) -> Color {
@@ -81,8 +78,8 @@ impl<Count: Countable> Block<Count> for BasicBlock<Count> {
         &self.count
     }
 
-    fn add_count(&mut self, count: &Count) {
-        self.count += count.clone();
+    fn add_count(&mut self, count: Count) {
+        self.count += count;
     }
 
     fn decrement(&mut self) {
@@ -127,7 +124,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     }
 
     pub fn init_stepped() -> Self {
-        Self::new(vec![B::new(1, &Count::one())])
+        Self::new(vec![B::new(1, Count::one())])
     }
 
     pub const fn len(&self) -> usize {
@@ -183,16 +180,16 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     pub fn push(&mut self, print: Color, stepped: &Count) {
         match self.first_mut() {
             Some(block) if block.get_color() == print => {
-                block.add_count(stepped);
+                block.add_count(stepped.clone());
             },
             None if print == 0 => {},
             _ => {
-                self.push_block(print, stepped);
+                self.push_block(print, stepped.clone());
             },
         }
     }
 
-    pub fn push_block(&mut self, color: Color, count: &Count) {
+    pub fn push_block(&mut self, color: Color, count: Count) {
         self.blocks.push(Block::new(color, count));
     }
 
@@ -628,7 +625,7 @@ struct EnumBlock {
 }
 
 impl Block<BigCount> for EnumBlock {
-    fn new(color: Color, count: &BigCount) -> Self {
+    fn new(color: Color, count: BigCount) -> Self {
         Self {
             block: BigBlock::new(color, count),
             index: None,
@@ -643,7 +640,7 @@ impl Block<BigCount> for EnumBlock {
         self.block.get_count()
     }
 
-    fn add_count(&mut self, count: &BigCount) {
+    fn add_count(&mut self, count: BigCount) {
         self.block.add_count(count);
     }
 
@@ -876,7 +873,7 @@ impl BigSpan {
     fn from_data(data: Vec<(Color, usize)>) -> Self {
         Self::new(
             data.into_iter()
-                .map(|(cr, ct)| BigBlock::new(cr, &BigCount::from(ct)))
+                .map(|(cr, ct)| BigBlock::new(cr, BigCount::from(ct)))
                 .rev()
                 .collect(),
         )
