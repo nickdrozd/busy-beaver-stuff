@@ -77,6 +77,10 @@ impl Prog {
         Self::new(instrs, params)
     }
 
+    pub fn print(&self) {
+        println!("{}", self.show());
+    }
+
     pub fn get(&self, slot: &Slot) -> Option<&Instr> {
         self.instrs.get(slot)
     }

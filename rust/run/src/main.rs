@@ -1,4 +1,3 @@
-#![allow(unused_imports)]
 #![expect(clippy::too_many_lines)]
 
 use std::env;
@@ -11,8 +10,6 @@ use tm::{
     prog::Prog,
     tree::{Step, build_limited, build_tree},
 };
-
-use tm::instrs::Parse as _;
 
 mod basket;
 
@@ -72,7 +69,7 @@ fn assert_tree(
 
         *holdout.access() += 1;
 
-        // println!("{}", prog.show());
+        // prog.print();
     });
 
     let result = (holdout.get(), visited.get());
@@ -362,7 +359,7 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
 
         *holdout.access() += 1;
 
-        // println!("{}", prog.show());
+        // prog.print();
     });
 
     let result = (refuted.get(), holdout.get());
@@ -407,6 +404,8 @@ fn test_reason() {
 
 /**************************************/
 
+use tm::instrs::Parse as _;
+
 fn test_collect() {
     println!("collect");
 
@@ -439,7 +438,7 @@ fn assert_limited(
 
         *holdout.access() += 1;
 
-        // println!("{}", prog.show());
+        // prog.print();
     });
 
     let result = (holdout.get(), visited.get());

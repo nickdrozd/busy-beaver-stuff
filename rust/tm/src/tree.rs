@@ -4,7 +4,7 @@ use rayon::prelude::*;
 
 use crate::{
     Goal,
-    instrs::{Color, Instr, Params, Parse, Shift, Slot, State},
+    instrs::{Color, Instr, Params, Shift, Slot, State},
     prog::Prog,
     tape::{MachineTape as _, MedTape as Tape},
 };
@@ -272,10 +272,9 @@ trait Tree<'h> {
             Limit => {
                 #[expect(clippy::if_not_else)]
                 if !self.prog().incomplete() {
-                    // println!("{}", self.show());
                     self.harvest();
                 } else {
-                    // println!("{}", self.show());
+                    // self.prog().print();
                 }
 
                 return;
@@ -307,16 +306,6 @@ trait Tree<'h> {
         self.with_instr(&slot, last_instr, |prog| {
             prog.branch(config);
         });
-    }
-}
-
-impl<'h, T: Tree<'h>> Parse for T {
-    fn read(_: &str) -> Self {
-        unreachable!()
-    }
-
-    fn show(&self) -> String {
-        self.prog().show()
     }
 }
 
