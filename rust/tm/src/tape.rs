@@ -425,14 +425,13 @@ impl<Count: Countable, B: Block<Count>> Tape<Count, B> {
     pub const fn blank(&self) -> bool {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
     }
-}
 
-pub trait MachineTape<C: Countable> {
-    fn step(&mut self, shift: Shift, color: Color, skip: bool) -> C;
-}
-
-impl<C: Countable, B: Block<C>> MachineTape<C> for Tape<C, B> {
-    fn step(&mut self, shift: Shift, color: Color, skip: bool) -> C {
+    pub fn step(
+        &mut self,
+        shift: Shift,
+        color: Color,
+        skip: bool,
+    ) -> Count {
         let (pull, push) = if shift {
             (&mut self.rspan, &mut self.lspan)
         } else {
@@ -446,6 +445,16 @@ impl<C: Countable, B: Block<C>> MachineTape<C> for Tape<C, B> {
         self.scan = next_scan;
 
         stepped
+    }
+}
+
+pub trait MachineTape {
+    fn mstep(&mut self, shift: Shift, color: Color, skip: bool);
+}
+
+impl<C: Countable, B: Block<C>> MachineTape for Tape<C, B> {
+    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
+        self.step(shift, color, skip);
     }
 }
 
@@ -789,16 +798,11 @@ impl IndexTape for EnumTape {
     }
 }
 
-impl MachineTape<BigCount> for EnumTape {
-    fn step(
-        &mut self,
-        shift: Shift,
-        color: Color,
-        skip: bool,
-    ) -> BigCount {
+impl MachineTape for EnumTape {
+    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
         self.check_step(shift, color, skip);
 
-        self.tape.step(shift, color, skip)
+        self.tape.step(shift, color, skip);
     }
 }
 
@@ -1128,7 +1132,7 @@ impl EnumTape {
         assert!(matches!(shift, 0 | 1));
         assert!(matches!(skip, 0 | 1));
 
-        self.step(shift != 0, color, skip != 0);
+        self.mstep(shift != 0, color, skip != 0);
     }
 }
 

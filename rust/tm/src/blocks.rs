@@ -3,7 +3,7 @@ use core::iter::{once, repeat_n};
 use crate::{
     instrs::{Color, Shift},
     prog::Prog,
-    tape::{MachineTape as _, MedSpan as Span, MedTape as Tape},
+    tape::{MedSpan as Span, MedTape as Tape},
 };
 
 /**************************************/

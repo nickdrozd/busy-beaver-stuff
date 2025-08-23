@@ -4,7 +4,7 @@ use crate::{
     prog::Prog,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{Alignment as _, BigTape, HeadTape, MachineTape as _},
+    tape::{Alignment as _, BigTape, HeadTape},
 };
 
 /**************************************/

@@ -6,7 +6,7 @@ use crate::{
     Goal,
     instrs::{Color, Instr, Params, Shift, Slot, State},
     prog::Prog,
-    tape::{MachineTape as _, MedTape as Tape},
+    tape::MedTape as Tape,
 };
 
 pub type Step = usize;

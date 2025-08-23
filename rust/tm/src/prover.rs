@@ -8,10 +8,7 @@ use crate::{
     instrs::{Slot, State},
     macros::GetInstr,
     rules::{ApplyRule, Rule, make_rule},
-    tape::{
-        BigCount, BigTape, EnumTape, GetSig, MachineTape, MinSig,
-        Signature,
-    },
+    tape::{BigTape, EnumTape, GetSig, MachineTape, MinSig, Signature},
 };
 
 type Cycle = i32;
@@ -79,7 +76,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         &self,
         steps: Cycle,
         mut state: State,
-        tape: &mut (impl ApplyRule + GetSig + MachineTape<BigCount>),
+        tape: &mut (impl ApplyRule + GetSig + MachineTape),
     ) -> Option<State> {
         for _ in 0..steps {
             if let Some(rule) = self.get_rule(state, tape, None)
@@ -91,7 +88,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             let (color, shift, next_state) =
                 self.prog.get_instr(&(state, tape.scan()))?;
 
-            tape.step(shift, color, state == next_state);
+            tape.mstep(shift, color, state == next_state);
 
             state = next_state;
         }
