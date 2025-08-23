@@ -27,13 +27,6 @@ impl Instrs {
         self.table[state as usize][color as usize] = None;
     }
 
-    fn len(&self) -> usize {
-        self.table
-            .iter()
-            .map(|row| row.iter().filter(|cell| cell.is_some()).count())
-            .sum()
-    }
-
     #[expect(clippy::cast_possible_truncation)]
     fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> + '_ {
         self.table.iter().enumerate().flat_map(|(s, row)| {
@@ -153,21 +146,8 @@ impl Prog {
                 .all(|(color, _, _)| 1 + color < self.colors)
     }
 
-    pub fn incomplete(&self, halt: bool) -> bool {
-        let (states, colors) = self.params();
-
-        let dim = (states * colors) as usize;
-
-        if self.instrs.len() < (if halt { dim - 1 } else { dim }) {
-            return true;
-        }
-
-        let (used_states, used_colors): (Set<State>, Set<Color>) =
-            self.instrs.values().map(|(pr, _, tr)| (tr, pr)).unzip();
-
-        (colors == 2 && !used_colors.contains(&0))
-            || (0..states).any(|state| !used_states.contains(&state))
-            || (1..colors).any(|color| !used_colors.contains(&color))
+    pub fn incomplete(&self) -> bool {
+        self.states_unreached() || self.colors_unreached()
     }
 }
 

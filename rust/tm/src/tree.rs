@@ -163,10 +163,6 @@ impl<'h> TreeCore<'h> {
         config.run(&self.prog, self.sim_lim)
     }
 
-    fn incomplete(&self) -> bool {
-        self.prog.states_unreached() || self.prog.colors_unreached()
-    }
-
     fn harvest(&self) {
         (self.harvester)(&self.prog);
     }
@@ -233,8 +229,6 @@ trait Tree<'h> {
 
     fn final_slot(&self) -> bool;
 
-    fn incomplete(&self) -> bool;
-
     fn run(&self, config: &mut Config) -> RunResult;
 
     fn avail_instrs(&self, slot: &Slot) -> &'h [Instr];
@@ -277,7 +271,7 @@ trait Tree<'h> {
             Blank | Spinout => return,
             Limit => {
                 #[expect(clippy::if_not_else)]
-                if !self.incomplete() {
+                if !self.prog().incomplete() {
                     // println!("{}", self.show());
                     self.harvest();
                 } else {
@@ -359,10 +353,6 @@ impl<'h> Tree<'h> for BasicTree<'h> {
 
     fn final_slot(&self) -> bool {
         self.core.final_slot()
-    }
-
-    fn incomplete(&self) -> bool {
-        self.core.incomplete()
     }
 
     fn run(&self, config: &mut Config) -> RunResult {
@@ -458,10 +448,6 @@ impl<'h> Tree<'h> for BlankTree<'h> {
 
     fn final_slot(&self) -> bool {
         self.core.final_slot()
-    }
-
-    fn incomplete(&self) -> bool {
-        self.core.incomplete()
     }
 
     fn run(&self, config: &mut Config) -> RunResult {
