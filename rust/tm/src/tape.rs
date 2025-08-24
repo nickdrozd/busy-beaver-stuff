@@ -177,7 +177,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         (next_scan, stepped)
     }
 
-    pub fn push(&mut self, print: Color, stepped: &Count) {
+    fn push(&mut self, print: Color, stepped: &Count) {
         match self.first_mut() {
             Some(block) if block.get_color() == print => {
                 block.add_count(stepped.clone());
