@@ -607,10 +607,12 @@ enum TapeEnd {
 
 impl fmt::Display for TapeEnd {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Blanks => write!(f, "0+"),
-            Self::Unknown => write!(f, "?"),
-        }
+        let fmt = match self {
+            Self::Blanks => "0+",
+            Self::Unknown => "?",
+        };
+
+        write!(f, "{fmt}")
     }
 }
 

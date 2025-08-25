@@ -91,15 +91,13 @@ impl<Count: Countable> Display for BasicBlock<Count> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let (color, count) = (self.get_color(), self.get_count());
 
-        write!(
-            f,
-            "{}",
-            match count {
-                c if c.is_one() => format!("{color}"),
-                c if c.is_zero() => format!("{color}.."),
-                _ => format!("{color}^{count}"),
-            }
-        )
+        let fmt = match count {
+            c if c.is_one() => format!("{color}"),
+            c if c.is_zero() => format!("{color}.."),
+            _ => format!("{color}^{count}"),
+        };
+
+        write!(f, "{fmt}")
     }
 }
 
