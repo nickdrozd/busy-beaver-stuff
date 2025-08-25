@@ -147,6 +147,26 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         self.iter().map(ToString::to_string)
     }
 
+    pub fn push_block(&mut self, color: Color, count: Count) {
+        self.blocks.push(Block::new(color, count));
+    }
+
+    pub fn pop_block(&mut self) -> B {
+        self.blocks.pop().unwrap()
+    }
+
+    pub fn first(&self) -> Option<&B> {
+        self.blocks.last()
+    }
+
+    pub fn first_mut(&mut self) -> Option<&mut B> {
+        self.blocks.last_mut()
+    }
+
+    const fn last_pos(&self) -> usize {
+        self.blocks.len() - 1
+    }
+
     fn pull(&mut self, scan: Color, skip: bool) -> (Color, Count) {
         let stepped = (skip
             && self
@@ -187,26 +207,6 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
                 self.push_block(print, stepped.clone());
             },
         }
-    }
-
-    pub fn push_block(&mut self, color: Color, count: Count) {
-        self.blocks.push(Block::new(color, count));
-    }
-
-    pub fn pop_block(&mut self) -> B {
-        self.blocks.pop().unwrap()
-    }
-
-    pub fn first(&self) -> Option<&B> {
-        self.blocks.last()
-    }
-
-    pub fn first_mut(&mut self) -> Option<&mut B> {
-        self.blocks.last_mut()
-    }
-
-    const fn last_pos(&self) -> usize {
-        self.blocks.len() - 1
     }
 }
 
