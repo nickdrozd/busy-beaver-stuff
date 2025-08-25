@@ -8,10 +8,9 @@ use std::{
 use crate::{
     instrs::{Color, Instr, Parse as _, Shift, Slot, State},
     prog::Prog,
-    tape,
     tape::{
-        Alignment, Block as _, LilBlock as Block, LilCount as Count,
-        Pos,
+        self, Alignment, Block as _, LilBlock as Block,
+        LilCount as Count, Pos,
     },
 };
 
@@ -511,7 +510,7 @@ struct Config {
     state: State,
     tape: Backstepper,
     recs: Recs,
-    prev: Option<Rc<Config>>,
+    prev: Option<Rc<Self>>,
 }
 
 impl Config {
