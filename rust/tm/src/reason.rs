@@ -600,25 +600,6 @@ enum TapeEnd {
     Unknown,
 }
 
-impl fmt::Display for TapeEnd {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let fmt = match self {
-            Self::Blanks => "0+",
-            Self::Unknown => "?",
-        };
-
-        write!(f, "{fmt}")
-    }
-}
-
-impl TapeEnd {
-    const fn matches_color(&self, print: Color) -> bool {
-        print == 0 || matches!(self, Self::Unknown)
-    }
-}
-
-/**************************************/
-
 type SpanT = tape::Span<Count, Block>;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -635,6 +616,13 @@ impl Span {
         }
     }
 
+    const fn end_str(&self) -> &str {
+        match self.end {
+            TapeEnd::Blanks => "0+",
+            TapeEnd::Unknown => "?",
+        }
+    }
+
     fn blank(&self) -> bool {
         self.span.iter().all(Block::blank)
     }
@@ -645,7 +633,10 @@ impl Span {
 
     fn matches_color(&self, print: Color) -> bool {
         self.span.first().map_or_else(
-            || self.end.matches_color(print),
+            || match self.end {
+                TapeEnd::Blanks => print == 0,
+                TapeEnd::Unknown => true,
+            },
             |block| block.color == print,
         )
     }
@@ -698,7 +689,7 @@ impl fmt::Display for Tape {
         write!(
             f,
             "{} {} {}",
-            self.lspan.end,
+            self.lspan.end_str(),
             self.lspan
                 .span
                 .str_iter()
@@ -707,7 +698,7 @@ impl fmt::Display for Tape {
                 .chain(self.rspan.span.str_iter())
                 .collect::<Vec<_>>()
                 .join(" "),
-            self.rspan.end,
+            self.rspan.end_str(),
         )
     }
 }
