@@ -609,10 +609,17 @@ struct Span {
 }
 
 impl Span {
-    const fn init(end: TapeEnd) -> Self {
+    const fn init_blank() -> Self {
         Self {
             span: SpanT::init_blank(),
-            end,
+            end: TapeEnd::Blanks,
+        }
+    }
+
+    const fn init_unknown() -> Self {
+        Self {
+            span: SpanT::init_blank(),
+            end: TapeEnd::Unknown,
         }
     }
 
@@ -707,8 +714,8 @@ impl Tape {
     const fn init_halt(scan: Color) -> Self {
         Self {
             scan,
-            lspan: Span::init(TapeEnd::Unknown),
-            rspan: Span::init(TapeEnd::Unknown),
+            lspan: Span::init_unknown(),
+            rspan: Span::init_unknown(),
             head: 0,
         }
     }
@@ -716,8 +723,8 @@ impl Tape {
     const fn init_blank(scan: Color) -> Self {
         Self {
             scan,
-            lspan: Span::init(TapeEnd::Blanks),
-            rspan: Span::init(TapeEnd::Blanks),
+            lspan: Span::init_blank(),
+            rspan: Span::init_blank(),
             head: 0,
         }
     }
@@ -733,8 +740,8 @@ impl Tape {
     const fn init_r_spinout() -> Self {
         Self {
             scan: 0,
-            lspan: Span::init(TapeEnd::Unknown),
-            rspan: Span::init(TapeEnd::Blanks),
+            lspan: Span::init_unknown(),
+            rspan: Span::init_blank(),
             head: 0,
         }
     }
@@ -742,8 +749,8 @@ impl Tape {
     const fn init_l_spinout() -> Self {
         Self {
             scan: 0,
-            lspan: Span::init(TapeEnd::Blanks),
-            rspan: Span::init(TapeEnd::Unknown),
+            lspan: Span::init_blank(),
+            rspan: Span::init_unknown(),
             head: 0,
         }
     }
@@ -841,17 +848,6 @@ impl Alignment for Tape {
 /**************************************/
 
 #[cfg(test)]
-impl From<&str> for TapeEnd {
-    fn from(s: &str) -> Self {
-        match s {
-            "0+" => Self::Blanks,
-            "?" => Self::Unknown,
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[cfg(test)]
 #[expect(clippy::fallible_impl_from)]
 impl From<&str> for Block {
     fn from(s: &str) -> Self {
@@ -870,11 +866,18 @@ impl From<&str> for Block {
 
 #[cfg(test)]
 impl Span {
-    const fn new(blocks: Vec<Block>, end: TapeEnd) -> Self {
-        Self {
-            span: SpanT::new(blocks),
-            end,
+    fn new(end: &str, blocks: Vec<Block>) -> Self {
+        let mut span = (match end {
+            "0+" => Self::init_blank,
+            "?" => Self::init_unknown,
+            _ => unreachable!(),
+        })();
+
+        for block in blocks {
+            span.span.push_block(block.color, block.count);
         }
+
+        span
     }
 }
 
@@ -884,9 +887,11 @@ impl From<&str> for Tape {
     fn from(s: &str) -> Self {
         let parts: Vec<&str> = s.split_whitespace().collect();
 
-        let l_end = parts[0].into();
+        let l_end = parts[0];
 
-        let lspan: Vec<Block> = parts[1..]
+        assert!(matches!(l_end, "?" | "0+"));
+
+        let l_blocks: Vec<Block> = parts[1..]
             .iter()
             .take_while(|p| !p.starts_with('['))
             .map(|&p| p.into())
@@ -907,9 +912,11 @@ impl From<&str> for Tape {
             .position(|&p| p.starts_with('['))
             .map_or(parts.len(), |pos| pos + 1);
 
-        let r_end = (*parts.last().unwrap()).into();
+        let r_end = *parts.last().unwrap();
 
-        let rspan: Vec<Block> = parts[rspan_start..parts.len() - 1]
+        assert!(matches!(l_end, "?" | "0+"));
+
+        let r_blocks: Vec<Block> = parts[rspan_start..parts.len() - 1]
             .iter()
             .map(|&p| p.into())
             .rev()
@@ -918,8 +925,8 @@ impl From<&str> for Tape {
         Self {
             scan,
             head: 0,
-            lspan: Span::new(lspan, l_end),
-            rspan: Span::new(rspan, r_end),
+            lspan: Span::new(l_end, l_blocks),
+            rspan: Span::new(r_end, r_blocks),
         }
     }
 }
