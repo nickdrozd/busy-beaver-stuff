@@ -508,13 +508,13 @@ fn test_entrypoints() {
 #[derive(Clone)]
 struct Config {
     state: State,
-    tape: Backstepper,
+    tape: Tape,
     recs: Recs,
     prev: Option<Rc<Self>>,
 }
 
 impl Config {
-    const fn new(state: State, tape: Backstepper) -> Self {
+    const fn new(state: State, tape: Tape) -> Self {
         Self {
             state,
             tape,
@@ -524,22 +524,18 @@ impl Config {
     }
 
     const fn init_halt(state: State, color: Color) -> Self {
-        Self::new(state, Backstepper::init_halt(color))
+        Self::new(state, Tape::init_halt(color))
     }
 
     const fn init_blank(state: State, color: Color) -> Self {
-        Self::new(state, Backstepper::init_blank(color))
+        Self::new(state, Tape::init_blank(color))
     }
 
     const fn init_spinout(state: State, shift: Shift) -> Self {
-        Self::new(state, Backstepper::init_spinout(shift))
+        Self::new(state, Tape::init_spinout(shift))
     }
 
-    fn descendant(
-        state: State,
-        tape: Backstepper,
-        prev: &Rc<Self>,
-    ) -> Self {
+    fn descendant(state: State, tape: Tape, prev: &Rc<Self>) -> Self {
         let mut config = Self {
             state,
             tape,
@@ -623,16 +619,18 @@ impl TapeEnd {
 
 /**************************************/
 
+type SpanT = tape::Span<Count, Block>;
+
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct Span {
-    span: tape::Span<Count, Block>,
+    span: SpanT,
     end: TapeEnd,
 }
 
 impl Span {
-    const fn init_blank(end: TapeEnd) -> Self {
+    const fn init(end: TapeEnd) -> Self {
         Self {
-            span: tape::Span::init_blank(),
+            span: SpanT::init_blank(),
             end,
         }
     }
@@ -688,14 +686,14 @@ impl Span {
 /**************************************/
 
 #[derive(Clone, PartialEq, Eq, Hash)]
-struct Backstepper {
+struct Tape {
     scan: Color,
     lspan: Span,
     rspan: Span,
     head: Pos,
 }
 
-impl fmt::Display for Backstepper {
+impl fmt::Display for Tape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -714,12 +712,12 @@ impl fmt::Display for Backstepper {
     }
 }
 
-impl Backstepper {
+impl Tape {
     const fn init_halt(scan: Color) -> Self {
         Self {
             scan,
-            lspan: Span::init_blank(TapeEnd::Unknown),
-            rspan: Span::init_blank(TapeEnd::Unknown),
+            lspan: Span::init(TapeEnd::Unknown),
+            rspan: Span::init(TapeEnd::Unknown),
             head: 0,
         }
     }
@@ -727,8 +725,8 @@ impl Backstepper {
     const fn init_blank(scan: Color) -> Self {
         Self {
             scan,
-            lspan: Span::init_blank(TapeEnd::Blanks),
-            rspan: Span::init_blank(TapeEnd::Blanks),
+            lspan: Span::init(TapeEnd::Blanks),
+            rspan: Span::init(TapeEnd::Blanks),
             head: 0,
         }
     }
@@ -742,8 +740,8 @@ impl Backstepper {
 
         Self {
             scan: 0,
-            lspan: Span::init_blank(l_end),
-            rspan: Span::init_blank(r_end),
+            lspan: Span::init(l_end),
+            rspan: Span::init(r_end),
             head: 0,
         }
     }
@@ -804,7 +802,7 @@ impl Backstepper {
     }
 }
 
-impl Alignment for Backstepper {
+impl Alignment for Tape {
     fn scan(&self) -> Color {
         self.scan
     }
@@ -872,7 +870,7 @@ impl From<&str> for Block {
 impl Span {
     const fn new(blocks: Vec<Block>, end: TapeEnd) -> Self {
         Self {
-            span: tape::Span::new(blocks),
+            span: SpanT::new(blocks),
             end,
         }
     }
@@ -880,7 +878,7 @@ impl Span {
 
 #[cfg(test)]
 #[expect(clippy::fallible_impl_from)]
-impl From<&str> for Backstepper {
+impl From<&str> for Tape {
     fn from(s: &str) -> Self {
         let parts: Vec<&str> = s.split_whitespace().collect();
 
@@ -927,7 +925,7 @@ impl From<&str> for Backstepper {
 /**************************************/
 
 #[cfg(test)]
-impl Backstepper {
+impl Tape {
     #[track_caller]
     fn assert(&self, exp: &str) {
         assert_eq!(self.to_string(), exp);
@@ -959,7 +957,7 @@ impl Backstepper {
 
 #[test]
 fn test_backstep_halt() {
-    let mut tape = Backstepper::init_halt(2);
+    let mut tape = Tape::init_halt(2);
 
     tape.assert("? [2] ?");
 
@@ -982,7 +980,7 @@ fn test_backstep_halt() {
 
 #[test]
 fn test_backstep_blank() {
-    let mut tape = Backstepper::init_blank(2);
+    let mut tape = Tape::init_blank(2);
 
     tape.assert("0+ [2] 0+");
 
@@ -1007,7 +1005,7 @@ fn test_backstep_blank() {
 
 #[test]
 fn test_backstep_spinout() {
-    let mut tape = Backstepper::init_spinout(true);
+    let mut tape = Tape::init_spinout(true);
 
     tape.assert("? [0] 0+");
 
@@ -1033,7 +1031,7 @@ fn test_backstep_spinout() {
 
 #[test]
 fn test_backstep_required() {
-    let mut tape: Backstepper = "0+ [1] 1 0 ?".into();
+    let mut tape: Tape = "0+ [1] 1 0 ?".into();
 
     tape.assert("0+ [1] 1 0 ?");
 
@@ -1044,7 +1042,7 @@ fn test_backstep_required() {
 
 #[test]
 fn test_spinout() {
-    let mut tape: Backstepper = "0+ [1] 0^2 ?".into();
+    let mut tape: Tape = "0+ [1] 0^2 ?".into();
 
     tape.assert("0+ [1] 0^2 ?");
 
@@ -1074,13 +1072,13 @@ fn test_parse() {
     ];
 
     for tape in tapes {
-        Into::<Backstepper>::into(tape).assert(tape);
+        Into::<Tape>::into(tape).assert(tape);
     }
 }
 
 #[test]
 fn test_backstep_indef() {
-    let mut tape: Backstepper = "0+ [1] 1.. 0^2 ?".into();
+    let mut tape: Tape = "0+ [1] 1.. 0^2 ?".into();
 
     tape.backstep(false, 1);
 
@@ -1089,7 +1087,7 @@ fn test_backstep_indef() {
 
 #[test]
 fn test_push_indef() {
-    let mut tape: Backstepper = "0+ 1 [0] ?".into();
+    let mut tape: Tape = "0+ 1 [0] ?".into();
 
     tape.push_indef(false);
 
