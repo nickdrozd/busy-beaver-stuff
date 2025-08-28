@@ -723,16 +723,27 @@ impl Tape {
     }
 
     const fn init_spinout(dir: Shift) -> Self {
-        let (l_end, r_end) = if dir {
-            (TapeEnd::Unknown, TapeEnd::Blanks)
+        if dir {
+            Self::init_r_spinout()
         } else {
-            (TapeEnd::Blanks, TapeEnd::Unknown)
-        };
+            Self::init_l_spinout()
+        }
+    }
 
+    const fn init_r_spinout() -> Self {
         Self {
             scan: 0,
-            lspan: Span::init(l_end),
-            rspan: Span::init(r_end),
+            lspan: Span::init(TapeEnd::Unknown),
+            rspan: Span::init(TapeEnd::Blanks),
+            head: 0,
+        }
+    }
+
+    const fn init_l_spinout() -> Self {
+        Self {
+            scan: 0,
+            lspan: Span::init(TapeEnd::Blanks),
+            rspan: Span::init(TapeEnd::Unknown),
             head: 0,
         }
     }
