@@ -439,7 +439,7 @@ impl TapeColorConverter {
 
         Self {
             base_colors,
-            ct_cache: RefCell::new(ct_cache),
+            ct_cache: ct_cache.into(),
             tc_cache: Dict::new().into(),
         }
     }
