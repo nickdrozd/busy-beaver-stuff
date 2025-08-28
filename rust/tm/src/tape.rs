@@ -129,11 +129,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         self.blocks.len()
     }
 
-    pub const fn is_empty(&self) -> bool {
-        self.blank()
-    }
-
-    const fn blank(&self) -> bool {
+    pub const fn blank(&self) -> bool {
         self.blocks.is_empty()
     }
 

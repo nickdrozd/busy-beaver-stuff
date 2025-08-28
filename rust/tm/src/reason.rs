@@ -764,7 +764,7 @@ impl Tape {
 
         let pull = if shift { &self.lspan } else { &self.rspan };
 
-        pull.span.is_empty()
+        pull.span.blank()
     }
 
     fn pulls_indef(&self, shift: Shift) -> bool {
