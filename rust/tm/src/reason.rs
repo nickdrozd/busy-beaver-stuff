@@ -88,7 +88,7 @@ impl Prog {
 /**************************************/
 
 type Configs = Vec<Config>;
-type Blanks = Set<State>;
+type BlankStates = Set<State>;
 
 type Entry = (Slot, (Color, Shift));
 type Entries = Vec<Entry>;
@@ -254,7 +254,7 @@ fn get_indef(
 
 fn step_configs(
     configs: ValidatedSteps,
-    blanks: &mut Blanks,
+    blanks: &mut BlankStates,
 ) -> Result<(Configs, usize), BackwardResult> {
     let mut stepped = Configs::new();
 
@@ -326,7 +326,7 @@ fn zero_reflexive_configs(zr_shifts: &Set<(State, Shift)>) -> Configs {
         .collect()
 }
 
-fn get_blanks(configs: &Configs) -> Blanks {
+fn get_blanks(configs: &Configs) -> BlankStates {
     configs
         .iter()
         .filter_map(|cfg| cfg.tape.blank().then_some(cfg.state))
