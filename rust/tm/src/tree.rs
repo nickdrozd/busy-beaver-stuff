@@ -3,9 +3,8 @@ use core::cmp::{max, min};
 use rayon::prelude::*;
 
 use crate::{
-    Goal,
+    Goal, Prog,
     instrs::{Color, Instr, Params, Shift, Slot, State},
-    prog::Prog,
     tape::MedTape as Tape,
 };
 

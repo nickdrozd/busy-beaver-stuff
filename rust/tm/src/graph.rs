@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::{instrs::State, prog::Prog};
+use crate::{Prog, instrs::State};
 
 /**************************************/
 

@@ -3,9 +3,8 @@ use core::{fmt, iter::once};
 use ahash::{AHashMap as Dict, AHashSet as Set};
 
 use crate::{
-    Goal,
+    Goal, Prog,
     instrs::{Color, Parse as _, Shift, State},
-    prog::Prog,
 };
 
 use Goal::*;

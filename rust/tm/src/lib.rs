@@ -1,5 +1,7 @@
 #![expect(clippy::trivially_copy_pass_by_ref)]
 
+/**************************************/
+
 pub mod blocks;
 pub mod cps;
 pub mod ctl;
@@ -15,10 +17,16 @@ pub mod segment;
 pub mod tape;
 pub mod tree;
 
+/**************************************/
+
 use mimalloc::MiMalloc;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
+
+/**************************************/
+
+pub use crate::prog::Prog;
 
 /**************************************/
 

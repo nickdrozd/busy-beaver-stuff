@@ -8,9 +8,8 @@ use std::collections::BTreeMap as Dict;
 use ahash::AHashSet as Set;
 
 use crate::{
-    Goal,
+    Goal, Prog,
     instrs::{Color, Instr, Shift, Slot, State, show_state},
-    prog::Prog,
     tape::{Block as _, LilBlock as Block, LilCount as Count},
 };
 

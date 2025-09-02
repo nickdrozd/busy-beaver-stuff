@@ -5,9 +5,8 @@ use std::env;
 use rayon::prelude::*;
 
 use tm::{
-    Goal,
+    Goal, Prog,
     instrs::Params,
-    prog::Prog,
     tree::{Step, build_limited, build_tree},
 };
 

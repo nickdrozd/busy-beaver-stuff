@@ -3,8 +3,8 @@
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
+    Prog,
     instrs::{Instr, Parse as _, Slot, State, show_state},
-    prog::Prog,
     reason::{
         BackwardResult as BackwardResultRs, BackwardResult::*, Depth,
         Step,

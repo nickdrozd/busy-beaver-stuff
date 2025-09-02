@@ -5,8 +5,8 @@ use std::collections::BTreeMap as Dict;
 use num_integer::Integer as _;
 
 use crate::{
+    Prog,
     instrs::{Color, Instr, Params, Shift, Slot, State},
-    prog::Prog,
 };
 
 type MacroColor = u64;
