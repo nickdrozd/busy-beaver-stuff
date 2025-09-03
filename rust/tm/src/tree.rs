@@ -93,9 +93,13 @@ impl Config {
         }
     }
 
+    const fn slot(&self) -> Slot {
+        (self.state, self.tape.scan)
+    }
+
     fn run(&mut self, prog: &Prog, sim_lim: Step) -> RunResult {
         for _ in 0..sim_lim {
-            let slot = (self.state, self.tape.scan);
+            let slot = self.slot();
 
             let Some(&(color, shift, state)) = prog.get(&slot) else {
                 return Undefined(slot);
