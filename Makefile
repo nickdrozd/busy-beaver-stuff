@@ -100,18 +100,6 @@ mypyc-report : rust
 	$(MYPYC) --version
 	$(MYPYC) tm tools --exclude rust_stuff -a mypyc-report.html
 
-TUR = test.test_turing
-PROG = test.test_program
-GRAPH = test.test_graph
-COV = test.test_coverage
-CG = test.test_code
-TP = test.test_tape
-NUM = test.test_num
-RUL = test.test_rules
-MAC = test.test_macro
-
-SHORT_TESTS = $(PROG) $(GRAPH) $(CG) $(RUL) $(MAC) $(TP) $(COV) $(NUM)
-
 PYTEST = $(PYTHON) -m unittest
 
 test :
@@ -122,9 +110,11 @@ test-all : compile
 
 COVERAGE = $(PYTHON) -m coverage
 
+COV_TESTS = test.test_coverage test.test_program test.test_num
+
 coverage : rust
 	$(COVERAGE) --version
-	$(COVERAGE) run -m unittest -v $(SHORT_TESTS)
+	$(COVERAGE) run -m unittest -v $(COV_TESTS)
 
 	$(COVERAGE) combine --quiet
 	$(COVERAGE) html
