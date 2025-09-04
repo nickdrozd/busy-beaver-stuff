@@ -47,16 +47,8 @@ impl Prog {
     pub fn cant_halt(&self, depth: Depth) -> BackwardResult {
         let halt_slots = self.halt_slots();
 
-        if halt_slots.iter().all(|&(st, co)| {
-            co != 0
-                && self
-                    .values()
-                    .filter_map(|&(pr, sh, tr)| {
-                        (pr == co || tr == st).then_some(sh)
-                    })
-                    .collect::<Set<_>>()
-                    .len()
-                    == 1
+        if halt_slots.iter().all(|&slot @ (_, co)| {
+            co != 0 && !self.reaches_from_both_sides(slot)
         }) {
             return Refuted(0);
         }

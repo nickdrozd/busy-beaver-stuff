@@ -153,6 +153,27 @@ impl Prog {
     pub fn incomplete(&self) -> bool {
         self.states_unreached() || self.colors_unreached()
     }
+
+    pub fn reaches_from_both_sides(&self, (st, co): Slot) -> bool {
+        let mut side = None;
+
+        for &(pr, sh, tr) in self.values() {
+            if pr != co && tr != st {
+                continue;
+            }
+
+            let Some(sd) = side else {
+                side = Some(sh);
+                continue;
+            };
+
+            if sd != sh {
+                return true;
+            }
+        }
+
+        false
+    }
 }
 
 /**************************************/
