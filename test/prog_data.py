@@ -4648,6 +4648,7 @@ PROVER_HALT: ProverEst = {
     "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ...": (9.3,  30),
     "1RB 2LA 1RA 2RB 2LB  0LA 3RA 4RB ... 1RA": (4.0,  30),
     "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ...": (3.2,  26),
+    "1RB 3LB ... 0RB 1LA  2LA 4RB 1RA 0LB 1LB": (8.2,   3),
 
     # 2/6
     "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB ... 3RB 4LA": "(14 + (2 ** (-1",  # 10 ^^ 70
@@ -4668,6 +4669,7 @@ PROVER_HALT: ProverEst = {
     # 3/4
     "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "(4 + (2 ** (???)))",
     "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC": "((-5 + (3 ** ((-5 + (3 **",
+    "1RB 1LA ... ...  1RC 3LB 1RB 0LC  2LA 2LC ... 3LC": (1.2, 443682),
     "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC": (3.7, 6518),
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC": (2.2, 2372),
     "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB": (1.7, 1301),
@@ -4675,6 +4677,9 @@ PROVER_HALT: ProverEst = {
     "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA": (2.1,  628),
     "1RB 0RB 3LC 1RC  0RC ... 2RC 3RC  1LB 2LA 3LA 2RB": (4.6,  434),
     "1RB 1LA 1LB 1RA  0LA 2RB 2LC ...  3RB 2LB 1RC 0RC": (2.4,   26),
+
+    # 3/5
+    "1RB 4RB 1RA 0RA ...  2LC ... 2RB ... ...  2LA 2LC 3RC ... ...": (5.8, 8),
 
     # 6/2
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": "((-11 + (3 ** ((13",  # 10^^15
@@ -4844,11 +4849,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 117929,
-    "divs": 15288,
-    "exps": 112555,
-    "muls": 13608,
-    "totl": 259380,
+    "adds": 117974,
+    "divs": 15327,
+    "exps": 112564,
+    "muls": 13620,
+    "totl": 259485,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -4917,6 +4922,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "halt": {
+        "1RB 3LB ... 0RB 1LA  2LA 4RB 1RA 0LB 1LB": (
+            546,
+            "(10 ** 4)",
+            "(28 + (2 ** 13))",
+            "(477 + (2 ** 12))",
+        ),
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": (
             152,
             "(10 ** 45)",
@@ -4970,6 +4981,18 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ↑↑ 3)",
             "((-5 + (3 ** ((-5 + (3 ** 1642)) // 4))) // 2)",
             "((15017 + (5 * (3 ** 1641))) // 4)",
+        ),
+        "1RB 4RB 1RA 0RA ...  2LC ... 2RB ... ...  2LA 2LC 3RC ... ...": (
+            162,
+            "(10 ** 9)",
+            "((-5 + (3 ** 19)) // 2)",
+            "539",
+        ),
+        "1RB 1LA ... ...  1RC 3LB 1RB 0LC  2LA 2LC ... 3LC": (
+            344,
+            "(10 ** 443682)",
+            "((-17 + (13 * (5 ** 634766))) // 4)",
+            "((1905225 + (39 * (5 ** 634764))) // 2)",
         ),
         "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": (
             683,
