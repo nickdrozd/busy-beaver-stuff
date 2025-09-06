@@ -124,6 +124,7 @@ fn calculate_diff(
         assert!(mul.is_positive());
         assert!(!add.is_negative());
 
+        #[expect(clippy::unwrap_in_result)]
         let (mul, add) =
             (mul.to_biguint().unwrap(), add.to_biguint().unwrap());
 
