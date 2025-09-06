@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from tm.rules import apply_rule, make_rule
+from tm.rules import Plus, apply_rule, make_rule
 from tm.rust_stuff import PastConfigs
 
 if TYPE_CHECKING:
@@ -29,6 +29,15 @@ class Prover:
         self.prog = prog
         self.rules = {}
         self.configs = {}
+
+    @property
+    def has_mult_rules(self) -> bool:
+        return any(
+            not isinstance(diff, Plus)
+            for rules in self.rules.values()
+            for (_, rule) in rules
+            for diff in rule.values()
+        )
 
     @property
     def config_count(self) -> int:

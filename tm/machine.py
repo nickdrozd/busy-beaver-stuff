@@ -150,10 +150,7 @@ class Machine:
 
     @property
     def is_algebraic(self) -> bool:
-        return (
-            not isinstance(self.rulapp, int)
-            or not isinstance(self.marks, int)
-        )
+        return self.prover.has_mult_rules
 
     def run(
         self,
