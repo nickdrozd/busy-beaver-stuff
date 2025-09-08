@@ -56,7 +56,7 @@ class Num:
             except OverflowError:
                 est = Tet(10, tower)
             else:
-                est = make_exp(10, digits)
+                est = Exp.make(10, digits)
 
         return -est if self < 0 else est
 
@@ -139,24 +139,25 @@ class Num:
     def __floordiv__(self, other: Count) -> Count: ...
 
     def __rpow__(self, other: int) -> Exp | Tet:
-        return make_exp(other, self)
+        return Exp.make(other, self)
 
-
-def make_add(l: Count, r: Num) -> Add:
-    if isinstance(l, Num) and l.depth > r.depth:
-        l, r = r, l
-
-    adds = ADDS[l]
-
-    try:
-        return adds[r]
-    except KeyError:
-        adds[r] = (add := Add(l, r))
-        return add
 
 class Add(Num):
     l: Count
     r: Num
+
+    @staticmethod
+    def make(l: Count, r: Num) -> Add:
+        if isinstance(l, Num) and l.depth > r.depth:
+            l, r = r, l
+
+        adds = ADDS[l]
+
+        try:
+            return adds[r]
+        except KeyError:
+            adds[r] = (add := Add(l, r))
+            return add
 
     def __init__(self, l: Count, r: Num):
         self.l = l
@@ -209,7 +210,7 @@ class Add(Num):
         if isinstance(l := self.l, int):
             return (l + other) + self.r
 
-        return make_add(other, self)
+        return Add.make(other, self)
 
     def __add__(self, other: Count) -> Count:
         l, r = self.l, self.r
@@ -219,7 +220,7 @@ class Add(Num):
                 return self
 
             if not isinstance(l, int):
-                return make_add(other, self)
+                return Add.make(other, self)
 
             return (l + other) + r
 
@@ -244,7 +245,7 @@ class Add(Num):
         if other.depth < l.depth <= 8:
             return (other + l) + r
 
-        return make_add(self, other)
+        return Add.make(self, other)
 
     def __sub__(self, other: Count) -> Count:
         if other == 0:
@@ -265,7 +266,7 @@ class Add(Num):
         if isinstance(other, int):
             return other * self
 
-        return make_mul(self, other)
+        return Mul.make(self, other)
 
     def __rmul__(self, other: int) -> Count:
         match other:
@@ -290,7 +291,7 @@ class Add(Num):
         if (((lgcd := gcd(other, l := self.l)) == 1
                 or (rgcd := gcd(other, r := self.r))) == 1
                 or (div := gcd(lgcd, rgcd)) == 1):
-            return make_div(self, other)
+            return Div.make(self, other)
 
         return ((l // div) + (r // div)) // (other // div)
 
@@ -342,22 +343,22 @@ class Add(Num):
         raise NotImplementedError(self, other)
 
 
-def make_mul(l: Count, r: Num) -> Mul:
-    if isinstance(l, Num) and l.depth > r.depth:
-        l, r = r, l
-
-    muls = MULS[l]
-
-    try:
-        return muls[r]
-    except KeyError:
-        muls[r] = (mul := Mul(l, r))
-        return mul
-
-
 class Mul(Num):
     l: Count
     r: Num
+
+    @staticmethod
+    def make(l: Count, r: Num) -> Mul:
+        if isinstance(l, Num) and l.depth > r.depth:
+            l, r = r, l
+
+        muls = MULS[l]
+
+        try:
+            return muls[r]
+        except KeyError:
+            muls[r] = (mul := Mul(l, r))
+            return mul
 
     def __init__(self, l: Count, r: Num):
         if l < 0:
@@ -469,11 +470,11 @@ class Mul(Num):
         if other == 0:
             return self
 
-        return make_add(other, self)
+        return Add.make(other, self)
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, int):
-            return self if other == 0 else make_add(other, self)
+            return self if other == 0 else Add.make(other, self)
 
         l, r = self.l, self.r
 
@@ -538,7 +539,7 @@ class Mul(Num):
         if l == -1 and other == r:  # no-cover
             return 0
 
-        return make_add(self, other)
+        return Add.make(self, other)
 
     def __sub__(self, other: Count) -> Count:
         l, r = self.l, self.r
@@ -584,7 +585,7 @@ class Mul(Num):
         if (rgcd := gcd(other, r)) > 1:
             return (l * (r // rgcd)) // (other // rgcd)
 
-        return make_div(self, other)
+        return Div.make(self, other)
 
     def __lt__(self, other: Count) -> bool:
         l, r = self.l, self.r
@@ -656,19 +657,19 @@ class Mul(Num):
         return super().__lt__(other)
 
 
-def make_div(num: Num, den: int) -> Div:
-    divs = DIVS[num]
-
-    try:
-        return divs[den]
-    except KeyError:
-        divs[den] = (div := Div(num, den))
-        return div
-
-
 class Div(Num):
     num: Num
     den: int
+
+    @staticmethod
+    def make(num: Num, den: int) -> Div:
+        divs = DIVS[num]
+
+        try:
+            return divs[den]
+        except KeyError:
+            divs[den] = (div := Div(num, den))
+            return div
 
     def __init__(self, num: Num, den: int):
         assert den > 0
@@ -791,7 +792,7 @@ class Div(Num):
         num, den = self.num, self.den
 
         if (cden := gcd(other, num)) == 1:
-            return make_div(num, other * den)
+            return Div.make(num, other * den)
 
         return (num // cden) // ((other // cden) * den)
 
@@ -807,39 +808,39 @@ class Div(Num):
         return self.num < other.num
 
 
-def make_exp(base: int, exp: Count) -> Exp:
-    for _ in itertools.count():
-        if not isinstance(base, int) or base <= 1:
-            break
-
-        if base == 8:
-            base = 2
-            exp *= 3
-            break
-
-        if base == 27:
-            base = 3
-            exp *= 3
-            break
-
-        if floor(root := sqrt(base)) != ceil(root):
-            break
-
-        exp *= int(log(base, root))
-        base = int(root)
-
-    exps = EXPS[base]
-
-    try:
-        return exps[exp]
-    except KeyError:
-        exps[exp] = (exp_expr := Exp(base, exp))
-        return exp_expr
-
-
 class Exp(Num):
     base: int
     exp: Count
+
+    @staticmethod
+    def make(base: int, exp: Count) -> Exp:
+        for _ in itertools.count():
+            if not isinstance(base, int) or base <= 1:
+                break
+
+            if base == 8:
+                base = 2
+                exp *= 3
+                break
+
+            if base == 27:
+                base = 3
+                exp *= 3
+                break
+
+            if floor(root := sqrt(base)) != ceil(root):
+                break
+
+            exp *= int(log(base, root))
+            base = int(root)
+
+        exps = EXPS[base]
+
+        try:
+            return exps[exp]
+        except KeyError:
+            exps[exp] = (exp_expr := Exp(base, exp))
+            return exp_expr
 
     def __init__(self, base: int, exp: Count):
         self.base = base
@@ -967,11 +968,11 @@ class Exp(Num):
         if other == 0:
             return self
 
-        return make_add(other, self)
+        return Add.make(other, self)
 
     def __add__(self, other: Count) -> Count:
         if isinstance(other, int):
-            return self if other == 0 else make_add(other, self)
+            return self if other == 0 else Add.make(other, self)
 
         if isinstance(other, Mul):
             l, r = other.l, other.r
@@ -1001,7 +1002,7 @@ class Exp(Num):
                 sexp, oexp = self.exp, other.exp
 
                 if sexp == oexp:
-                    return make_exp(2, 1 + sexp)
+                    return Exp.make(2, 1 + sexp)
 
             try:
                 return add_exponents((self, 1), (other, 1))
@@ -1015,7 +1016,7 @@ class Exp(Num):
             if isinstance(other.l, int):
                 return other.l + (self + other.r)
 
-        return make_add(self, other)
+        return Add.make(self, other)
 
     def __sub__(self, other: Count) -> Count:
         if other == 0:
@@ -1030,7 +1031,7 @@ class Exp(Num):
             return add_exponents((self, 1), (other, -1))
 
         if isinstance(other, int):
-            return make_add(-other, self)
+            return Add.make(-other, self)
 
         return self + -other
 
@@ -1053,7 +1054,7 @@ class Exp(Num):
         if isinstance(other, Exp):
             assert (base := self.base) == other.base
 
-            return make_exp(base, self.exp + other.exp)
+            return Exp.make(base, self.exp + other.exp)
 
         if isinstance(other, Add):
             return (self * other.l) + (self * other.r)
@@ -1071,7 +1072,7 @@ class Exp(Num):
         if self.multiplies_with(r):
             return l * (self * r)
 
-        return make_mul(self, other) # no-cover
+        return Mul.make(self, other) # no-cover
 
     def __rmul__(self, other: int) -> Count:
         if other == 0:
@@ -1081,7 +1082,7 @@ class Exp(Num):
             return self
 
         if other == -1:
-            return make_mul(-1, self)
+            return Mul.make(-1, self)
 
         base = self.base
 
@@ -1089,7 +1090,7 @@ class Exp(Num):
             return -(-other * self)
 
         if other % base != 0:
-            return make_mul(other, self)
+            return Mul.make(other, self)
 
         exp = self.exp
 
@@ -1100,7 +1101,7 @@ class Exp(Num):
 
             other //= base
 
-        return other * make_exp(base, exp)
+        return other * Exp.make(base, exp)
 
     def __floordiv__(self, other: Count) -> Count:
         if other == 1:
@@ -1119,7 +1120,7 @@ class Exp(Num):
                 case 1:
                     return base
                 case _:
-                    return make_exp(base, diff)
+                    return Exp.make(base, diff)
 
         for i in itertools.count():
             if other % base != 0:
@@ -1132,12 +1133,12 @@ class Exp(Num):
             assert base > other
             assert base % other == 0
 
-            return (base // other) * make_exp(base, exp - 1)
+            return (base // other) * Exp.make(base, exp - 1)
 
         return (
             1 if exp == 0 else
             base if exp == 1 else
-            make_exp(base, exp)
+            Exp.make(base, exp)
         )
 
     def __lt__(self, other: Count) -> bool:
@@ -1195,7 +1196,7 @@ class Exp(Num):
         raise NotImplementedError(self, other)
 
     def __pow__(self, other: Count) -> Exp:
-        return make_exp(self.base, self.exp * other)
+        return Exp.make(self.base, self.exp * other)
 
 
 class Tet(Num):
@@ -1240,7 +1241,7 @@ class Tet(Num):
 
     def __rpow__(self, other: int) -> Exp | Tet:
         if other != self.base:
-            return make_exp(other, self)
+            return Exp.make(other, self)
 
         return Tet(self.base, 1 + self.height)
 
@@ -1303,7 +1304,7 @@ def add_exponents(
     diff_exp = (
         base ** diff
         if (diff := r_pow - l_pow) < 1_000 else
-        make_exp(base, diff)
+        Exp.make(base, diff)
     )
 
     return (l_co + (r_co * diff_exp)) * l_exp

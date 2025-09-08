@@ -10,12 +10,12 @@ from tm.num import (
     Tet,
     show_number,
 )
-from tm.num import (
-    make_exp as Exp,
-)
+from tm.num import Exp as ExpT
 
 if TYPE_CHECKING:
     from tm.num import Count
+
+Exp = ExpT.make
 
 
 CACHES: dict[str, dict[Count, dict[Count, Count]]] = {

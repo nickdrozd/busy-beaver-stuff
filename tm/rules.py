@@ -9,7 +9,6 @@ from tm.num import (
     ModDepthLimit,
     Mul,
     PeriodLimit,
-    make_exp,
 )
 
 ########################################
@@ -342,7 +341,7 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
     exp: int | Exp = (
         mul
         if times == 1 else
-        make_exp(mul, times)
+        Exp.make(mul, times)
     )
 
     if add == 0:
@@ -376,7 +375,7 @@ def apply_ops(count: Count, times: Count, ops: OpSeq) -> Count:
 
                 case '**':
                     result = (
-                        make_exp(val, result)
+                        Exp.make(val, result)
                         if isinstance(result, int) else
                         val ** result
                     )

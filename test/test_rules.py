@@ -1,11 +1,13 @@
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
+from tm.rules import Exp as ExpT
 from tm.rules import apply_mult, apply_ops
-from tm.rules import make_exp as Exp
 
 if TYPE_CHECKING:
     from tm.rules import OpSeq
+
+Exp = ExpT.make
 
 
 def apply_loop(count: int, times: int, mul: int, add: int) -> int:
