@@ -2,11 +2,10 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 from tm.num import (
-    ADDS,
-    DIVS,
-    EXPS,
-    MULS,
+    Add,
+    Div,
     ExpModLimit,
+    Mul,
     Tet,
     show_number,
 )
@@ -19,10 +18,10 @@ Exp = ExpT.make
 
 
 CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
-    "adds": ADDS,
-    "muls": MULS,
-    "divs": DIVS,
-    "exps": EXPS,
+    "adds": Add.instances,
+    "muls": Mul.instances,
+    "divs": Div.instances,
+    "exps": ExpT.instances,
 }
 
 

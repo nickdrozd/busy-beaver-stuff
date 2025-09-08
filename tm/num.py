@@ -7,7 +7,7 @@ from collections import defaultdict
 from functools import cache
 from math import ceil, floor, log, log2, log10, sqrt
 from math import gcd as pgcd
-from typing import Final
+from typing import ClassVar, Final, Self
 
 
 class ExpModLimit(Exception):
@@ -21,12 +21,6 @@ class PeriodLimit(Exception):
 
 
 type Count = int | Num
-
-
-ADDS: dict[Count, dict[Num, Add]] = defaultdict(dict)
-MULS: dict[Count, dict[Num, Mul]] = defaultdict(dict)
-DIVS: dict[Num, dict[int, Div]] = defaultdict(dict)
-EXPS: dict[int, dict[Count, Exp]] = defaultdict(dict)
 
 
 class Num:
@@ -146,12 +140,19 @@ class Add(Num):
     l: Count
     r: Num
 
+    instances: ClassVar[
+        dict[
+            Count,
+            dict[Num, Self],
+        ]
+    ] = defaultdict(dict)
+
     @staticmethod
     def make(l: Count, r: Num) -> Add:
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
-        adds = ADDS[l]
+        adds = Add.instances[l]
 
         try:
             return adds[r]
@@ -347,12 +348,19 @@ class Mul(Num):
     l: Count
     r: Num
 
+    instances: ClassVar[
+        dict[
+            Count,
+            dict[Num, Self],
+        ]
+    ] = defaultdict(dict)
+
     @staticmethod
     def make(l: Count, r: Num) -> Mul:
         if isinstance(l, Num) and l.depth > r.depth:
             l, r = r, l
 
-        muls = MULS[l]
+        muls = Mul.instances[l]
 
         try:
             return muls[r]
@@ -661,9 +669,16 @@ class Div(Num):
     num: Num
     den: int
 
+    instances: ClassVar[
+        dict[
+            Num,
+            dict[int, Self],
+        ]
+    ] = defaultdict(dict)
+
     @staticmethod
     def make(num: Num, den: int) -> Div:
-        divs = DIVS[num]
+        divs = Div.instances[num]
 
         try:
             return divs[den]
@@ -812,6 +827,13 @@ class Exp(Num):
     base: int
     exp: Count
 
+    instances: ClassVar [
+        dict[
+            int,
+            dict[Count, Self],
+        ]
+    ] = defaultdict(dict)
+
     @staticmethod
     def make(base: int, exp: Count) -> Exp:
         for _ in itertools.count():
@@ -834,7 +856,7 @@ class Exp(Num):
             exp *= int(log(base, root))
             base = int(root)
 
-        exps = EXPS[base]
+        exps = Exp.instances[base]
 
         try:
             return exps[exp]
