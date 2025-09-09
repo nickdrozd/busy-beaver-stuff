@@ -273,11 +273,8 @@ trait Tree<'h> {
             Undefined(slot) => slot,
             Blank | Spinout => return,
             Limit => {
-                #[expect(clippy::if_not_else)]
                 if !self.prog().incomplete() {
                     self.harvest();
-                } else {
-                    // self.prog().print();
                 }
 
                 return;
