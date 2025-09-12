@@ -517,7 +517,7 @@ class Mul(Num):
 
                     try:
                         return add_exponents((r, l), (lo, ro))
-                    except NotImplementedError:  # no-cover
+                    except NotImplementedError:
                         pass
 
         elif isinstance(other, Add):
