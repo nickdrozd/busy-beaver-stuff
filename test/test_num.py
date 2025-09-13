@@ -18,10 +18,10 @@ Exp = ExpT.make
 
 
 CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
-    "adds": Add.instances,
-    "muls": Mul.instances,
-    "divs": Div.instances,
-    "exps": ExpT.instances,
+    "adds": Add.instances,   # type: ignore[dict-item]
+    "muls": Mul.instances,   # type: ignore[dict-item]
+    "divs": Div.instances,   # type: ignore[dict-item]
+    "exps": ExpT.instances,  # type: ignore[dict-item]
 }
 
 
@@ -200,19 +200,19 @@ class TestNum(TestCase):
 
         self.assertIn(
             7 * Exp(2, 3),
-            expr)
+            expr)  # type: ignore[arg-type]
 
         self.assertNotIn(
             -4 + (7 * Exp(2, 3)),
-            expr)
+            expr)  # type: ignore[arg-type]
 
         self.assertNotIn(
             (-4 + (7 * Exp(2, 3))) // 3,
-            expr)
+            expr)  # type: ignore[arg-type]
 
         self.assertNotIn(
             expr,
-            Tet(10, 2))
+            Tet(10, 2))  # type: ignore[arg-type]
 
     def test_depth(self):
         self.assert_depth(Exp(3, 3), 1)
