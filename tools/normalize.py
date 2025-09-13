@@ -85,7 +85,7 @@ class Normalizer:
     def __getitem__(self, slot: Slot) -> Instr:
         state, color = slot
 
-        if (instr := self.prog[state][color]) is None:  # no-cover
+        if (instr := self.prog[state][color]) is None:
             raise KeyError(slot)
 
         return instr
@@ -167,7 +167,7 @@ class Normalizer:
         return self
 
     def normalize_colors(self) -> Self:
-        for _ in self.colors:  # no-branch
+        for _ in self.colors:
             todo = sorted(self.colors)[1:]
 
             for color, _, _ in self.used_instructions:

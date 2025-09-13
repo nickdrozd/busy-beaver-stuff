@@ -102,7 +102,7 @@ class Graph:
 
         todo = exitpoints[max(self.states)].copy()
 
-        for _ in self.states:  # no-branch
+        for _ in self.states:
             try:
                 state = todo.pop()
             except KeyError:

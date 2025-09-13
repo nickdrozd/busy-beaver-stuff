@@ -80,9 +80,9 @@ class Num:
                 pass
 
             try:
-                if self <= l and r > 0:  # no-branch
-                    return True  # no-cover
-            except NotImplementedError:  # no-cover
+                if self <= l and r > 0:  # no-cover
+                    return True
+            except NotImplementedError:
                 pass
 
             if self == r:
@@ -143,7 +143,7 @@ class Num:
 
 
 def make_add(l: Count, r: Num) -> Add:
-    if isinstance(l, Num) and l.depth > r.depth:  # no-cover
+    if isinstance(l, Num) and l.depth > r.depth:
         l, r = r, l
 
     adds = ADDS[l]
@@ -218,7 +218,7 @@ class Add(Num):
             if other == 0:
                 return self
 
-            if not isinstance(l, int):  # no-cover
+            if not isinstance(l, int):
                 return make_add(other, self)
 
             return (l + other) + r
@@ -229,7 +229,7 @@ class Add(Num):
             if isinstance(lo, int):
                 return (lo + l) + (r + ro)
 
-            if self == lo:  # no-cover
+            if self == lo:
                 return (2 * self) + ro
 
         if isinstance(l, int):
@@ -301,16 +301,16 @@ class Add(Num):
             if isinstance(l, int):
                 return r < 0
 
-            if l < 0 and r < 0:  # no-cover
+            if l < 0 and r < 0:
                 return True
 
-            if 0 < l and 0 < r:  # no-branch
+            if 0 < l and 0 < r:
                 return False
 
         elif isinstance(other, Add):
             lo, ro = other.l, other.r
 
-            if self == ro:  # no-cover
+            if self == ro:
                 return lo > 0
 
             if l == lo:
@@ -326,7 +326,7 @@ class Add(Num):
                 if abs(l - lo) < 3:
                     return r < ro
 
-            if l < lo and r < lo:  # no-branch
+            if l < lo and r < lo:
                 return True
 
         if other == r:
@@ -615,19 +615,19 @@ class Mul(Num):
 
                 assert (base := r.base) == ro.base
 
-                if (rexp := r.exp) == (roexp := ro.exp):  # no-ranch
+                if (rexp := r.exp) == (roexp := ro.exp):
                     return l < lo  # no-cover
 
                 # pylint: disable = no-else-return
                 if rexp < roexp:
-                    if not isinstance(diff := roexp - rexp, int):  # no-branch
-                        return True  # no-cover
+                    if not isinstance(diff := roexp - rexp, int):
+                        return True
 
                     return ceil(l / lo) <= (base ** diff)  # type: ignore[no-any-return]
 
                 else:  # noqa: RET505
-                    if not isinstance(diff := rexp - roexp, int):  # no-branch
-                        return False  # no-cover
+                    if not isinstance(diff := rexp - roexp, int):
+                        return False
 
                     return ceil(lo / l) > (base ** diff)  # type: ignore[no-any-return]
 
@@ -991,7 +991,7 @@ class Exp(Num):
 
                 try:
                     return add_exponents((self, 1), (l, r))
-                except NotImplementedError:  # no-cover
+                except NotImplementedError:
                     pass
 
         elif isinstance(other, Exp):
@@ -1068,7 +1068,7 @@ class Exp(Num):
         if self.multiplies_with(l):
             return (self * l) * r
 
-        if self.multiplies_with(r):  # no-branch
+        if self.multiplies_with(r):
             return l * (self * r)
 
         return make_mul(self, other) # no-cover
@@ -1174,13 +1174,13 @@ class Exp(Num):
             try:
                 if self <= r and l > 0:
                     return True
-            except NotImplementedError:  # no-cover
+            except NotImplementedError:
                 pass
 
             try:
                 if self <= l and r > 0:  # no-branch
                     return True
-            except NotImplementedError:  # no-cover
+            except NotImplementedError:
                 pass
 
             if self == r:  # no-cover
@@ -1192,7 +1192,7 @@ class Exp(Num):
         elif isinstance(other, Tet):  # no-branch
             return other > self
 
-        raise NotImplementedError(self, other)  # no-cover
+        raise NotImplementedError(self, other)
 
     def __pow__(self, other: Count) -> Exp:
         return make_exp(self.base, self.exp * other)
@@ -1373,7 +1373,7 @@ def find_period(base: int, mod: int) -> int:
 
 
 def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
-    if base != 2 or 2 * (3 ** round(log(mod / 2, 3))) != mod: # no-cover
+    if base != 2 or 2 * (3 ** round(log(mod / 2, 3))) != mod:
         raise ExpModLimit(
             f'({base} ** {exp}) % {mod}')
 

@@ -216,7 +216,7 @@ class MacroProg:
 
         pos = cells - 1 if right_edge else 0
 
-        for _ in range(self.sim_lim):  # no-branch
+        for _ in range(self.sim_lim):
             color, shift, next_state = \
                 self.comp[state, scan := tape[pos]]
 

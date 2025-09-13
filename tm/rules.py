@@ -138,7 +138,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
     descent: list[tuple[OpSym, int]] = []
 
-    for _ in range(RULE_DESCENT):  # no-branch
+    for _ in range(RULE_DESCENT):
         if sub in sup:
             break
 
@@ -182,7 +182,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
     ascent: list[tuple[OpSym, int]] = []
 
-    for _ in range(RULE_DESCENT):  # no-branch
+    for _ in range(RULE_DESCENT):
         if sup == sub:
             break
 
@@ -336,7 +336,7 @@ def apply_rule(rule: Rule, tape: IndexTape) -> Count | None:
 
 
 def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
-    if not isinstance(count, int) and count.depth > 20:  # no-cover
+    if not isinstance(count, int) and count.depth > 20:
         raise RuleLimit('count-depth')
 
     exp: int | Exp = (
