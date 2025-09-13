@@ -30,6 +30,11 @@ class PeriodLimit(Exception):
         super().__init__(
             f'{base} ** ... % {mod}')
 
+class LtNotImplemented(NotImplementedError):
+    def __init__(self, l: Count, r: Count):
+        super().__init__(
+            f'{l} < {r}')
+
 ########################################
 
 class Num:
@@ -98,7 +103,7 @@ class Num:
             if isinstance(l, int) and abs(l) < 10:
                 return self < r
 
-        raise NotImplementedError(self, other)
+        raise LtNotImplemented(self, other)
 
     def __le__(self, other: Count) -> bool:
         return self == other or self < other
@@ -350,7 +355,7 @@ class Add(Num):
         elif other == l:
             return r < 0
 
-        raise NotImplementedError(self, other)
+        raise LtNotImplemented(self, other)
 
 
 class Mul(Num):
@@ -651,7 +656,7 @@ class Mul(Num):
 
         if l < 0:
             if other < 0:  # no-cover
-                raise NotImplementedError(self, other)
+                raise LtNotImplemented(self, other)
 
             return True
 
@@ -824,7 +829,7 @@ class Div(Num):
             return self.num < 0
 
         if not isinstance(other, Div):
-            raise NotImplementedError(self, other)
+            raise LtNotImplemented(self, other)
 
         assert self.den == other.den, (self, other)
 
@@ -1223,7 +1228,7 @@ class Exp(Num):
         elif isinstance(other, Tet):  # no-branch
             return other > self
 
-        raise NotImplementedError(self, other)
+        raise LtNotImplemented(self, other)
 
     def __pow__(self, other: Count) -> Exp:
         return Exp.make(self.base, self.exp * other)
@@ -1281,7 +1286,7 @@ class Tet(Num):
 
         if isinstance(other, Tet):
             if not self.base == other.base:
-                raise NotImplementedError(self, other)
+                raise LtNotImplemented(self, other)
 
             return self.height < other.height
 
@@ -1290,7 +1295,7 @@ class Tet(Num):
         if isinstance(other.exp, int) and 2 < self.height:
             return False
 
-        raise NotImplementedError(self, other)
+        raise LtNotImplemented(self, other)
 
     def __add__(self, other: Count) -> Count:
         return self

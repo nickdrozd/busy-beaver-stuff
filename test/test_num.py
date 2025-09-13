@@ -146,20 +146,12 @@ class TestNum(TestCase):
             self,
             val1: Count,
             val2: Count,
-            comps: tuple[Count, Count] | None = None,
+            msg: str,
     ):
-        if comps is None:
-            comps = (val1, val2)
-
         with self.assertRaises(NotImplementedError) as ctx:
             self.assertLess(val1, val2)
 
-        self.assertEqual(comps, ctx.exception.args)
-
-        comp1, comp2 = comps
-
-        with self.assertRaises(NotImplementedError):
-            self.assertLess(comp1, comp2)
+        self.assertEqual(msg, ctx.exception.args[0])
 
     def assert_mod_error(
             self,
@@ -844,7 +836,8 @@ class TestNum(TestCase):
 
         self.assert_less_not_implemented(
             49 + (13 * Exp(2, 15)),
-            113 + (13 * Exp(2, 16)))
+            113 + (13 * Exp(2, 16)),
+            "(49 + (13 * (2 ** 15))) < (113 + (13 * (2 ** 16)))")
 
         self.assertFalse(
             Exp(10, 3 + Exp(10, Exp(10, 3)))
@@ -858,10 +851,7 @@ class TestNum(TestCase):
         self.assert_less_not_implemented(
             Exp(2, 13) * (-1 + Exp(2, 13)),
             2 ** (-3 + Exp(2, 13)),
-            (
-                8191 * Exp(2, 13),
-                2 ** (-3 + Exp(2, 13)),
-            ))
+            "(8191 * (2 ** 13)) < (2 ** (-3 + (2 ** 13)))")
 
         self.assert_less(
             15 * Exp(2, 86),
@@ -879,18 +869,12 @@ class TestNum(TestCase):
         self.assert_less_not_implemented(
             Exp(3, 5) * (-243 + (3 ** Exp(3, 5))),
             3 ** Exp(3, 5),
-            (
-                Exp(3, 10) * (-1 + (3 ** (-5 + Exp(3, 5)))),
-                3 ** Exp(3, 5),
-            ))
+            "((3 ** 10) * (-1 + (3 ** (-5 + (3 ** 5))))) < (3 ** (3 ** 5))")
 
         self.assert_less_not_implemented(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
             -1 + (Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5)))))),
-            (
-                (-10 + Exp(2, 5)),
-                (-5 + (2 ** Exp(2, 5))),
-            ))
+            "(-10 + (2 ** 5)) < (-5 + (2 ** (2 ** 5)))")
 
         self.assert_less(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
@@ -966,18 +950,12 @@ class TestNum(TestCase):
         self.assert_less_not_implemented(
             Tet(10, 2),
             Exp(2, 5),
-            (
-                Tet(10, 2),
-                Exp(2, 5),
-            ))
+            "(10 ↑↑ 2) < (2 ** 5)")
 
         self.assert_less_not_implemented(
             Tet(10, 2),
             Tet(8, 3),
-            (
-                Tet(10, 2),
-                Tet(8, 3),
-            ))
+            "(10 ↑↑ 2) < (8 ↑↑ 3)")
 
         self.assert_less(
             Exp(2, 13),
@@ -995,10 +973,7 @@ class TestNum(TestCase):
         self.assert_less_not_implemented(
             Exp(2, 10) * (4 + Exp(2, 13)),
             Exp(2, 13),
-            (
-                2049 * Exp(2, 12),
-                Exp(2, 13),
-            ))
+            "(2049 * (2 ** 12)) < (2 ** 13)")
 
         self.assert_less(
             2 ** (Exp(2, 19) * (-1 + (2 ** (-17 + Exp(2, 19))))),
@@ -1015,11 +990,13 @@ class TestNum(TestCase):
 
         self.assert_less_not_implemented(
             ((3 + (9 * Exp(2, 13))) * Exp(2, (-7 + (73731 * Exp(2, 2))))),
-            (73731 * Exp(2, 2)))
+            (73731 * Exp(2, 2)),
+            "((3 + (9 * (2 ** 13))) * (2 ** (-7 + (73731 * (2 ** 2))))) < (73731 * (2 ** 2))")
 
         self.assert_less_not_implemented(
             (258 + Exp(2, 14)),
-            (525 + Exp(2, 15)))
+            (525 + Exp(2, 15)),
+            "(258 + (2 ** 14)) < (525 + (2 ** 15))")
 
         self.assert_less(
             -Exp(10, 10020),
@@ -1027,7 +1004,8 @@ class TestNum(TestCase):
 
         self.assert_less_not_implemented(
             ((-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))))),
-            0)
+            0,
+            "((-63 * (2 ** (525 + (2 ** 15)))) + ((2 ** 14) * (1 + (2 ** (258 + (2 ** 14)))))) < 0")
 
     def test_exp_add(self):
         self.assert_num(
