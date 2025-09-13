@@ -281,6 +281,9 @@ class Add(Num):
         if isinstance(other, int):
             return other * self
 
+        assert isinstance(self.l, int)
+        assert isinstance(other, Exp)
+
         return Mul.make(self, other)
 
     def __rmul__(self, other: int) -> Count:
