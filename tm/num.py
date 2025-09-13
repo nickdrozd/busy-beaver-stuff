@@ -328,7 +328,7 @@ class Add(Num):
                 if abs(l - lo) < 3:
                     return r < ro
 
-            if l < lo and r < lo:
+            if 0 < ro and l < lo and r < lo:
                 return True
 
         if other == r:
