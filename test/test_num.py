@@ -135,12 +135,10 @@ class TestNum(TestCase):
                 int(val2))
 
         else:
-            assert not isinstance(val1, int)
-            assert not isinstance(val2, int)
+            est1 = val1.estimate() if not isinstance(val1, int) else val1
+            est2 = val2.estimate() if not isinstance(val2, int) else val2
 
-            self.assertLessEqual(
-                val1.estimate(),
-                val2.estimate())
+            self.assertLessEqual(est1, est2)
 
     def assert_less_not_implemented(
             self,
