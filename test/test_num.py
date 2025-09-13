@@ -1000,8 +1000,18 @@ class TestNum(TestCase):
             -Exp(10, 10020),
             Exp(10, 5014))
 
+        self.assert_less(
+            -63 * (2 ** (525 + Exp(2, 15))),
+            0,
+            estimate = True)
+
+        self.assert_less(
+            0,
+            Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))),
+            estimate = True)
+
         self.assert_less_not_implemented(
-            ((-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))))),
+            (-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14)))))),
             0,
             "(525 + (2 ** 15)) < (258 + (2 ** 14))")
 
