@@ -670,11 +670,8 @@ class Mul(Num):
 
             return True
 
-        try:
-            if (other <= l and 0 < r) or (other <= r and 0 < l):
-                return False
-        except NotImplementedError:
-            pass
+        if (other <= l and 0 < r) or (other <= r and 0 < l):
+            return False
 
         if (l < other and r < 0) or (r < other and l < 0):
             return True
