@@ -323,6 +323,13 @@ class Add(Num):
             if 0 < l and 0 < r:
                 return False
 
+            if other == 0:
+                if l < 0 < r:
+                    return r < -l
+
+                if r < 0 < l:  # no-branch
+                    return l < -r
+
         elif isinstance(other, Add):
             lo, ro = other.l, other.r
 

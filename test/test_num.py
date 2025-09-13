@@ -29,8 +29,8 @@ NUM_COUNTS = {
     "adds": 2298,
     "divs": 2082,
     "exps": 1267,
-    "muls": 1419,
-    "totl": 7066,
+    "muls": 1421,
+    "totl": 7068,
 }
 
 
@@ -1003,7 +1003,7 @@ class TestNum(TestCase):
         self.assert_less_not_implemented(
             ((-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))))),
             0,
-            "((-63 * (2 ** (525 + (2 ** 15)))) + ((2 ** 14) * (1 + (2 ** (258 + (2 ** 14)))))) < 0")
+            "(525 + (2 ** 15)) < (258 + (2 ** 14))")
 
     def test_exp_add(self):
         self.assert_num(
