@@ -9,19 +9,28 @@ from math import ceil, floor, log, log2, log10, sqrt
 from math import gcd as pgcd
 from typing import ClassVar, Final, Self
 
-
-class ExpModLimit(Exception):
-    pass
-
-class ModDepthLimit(Exception):
-    pass
-
-class PeriodLimit(Exception):
-    pass
-
+########################################
 
 type Count = int | Num
 
+########################################
+
+class ExpModLimit(Exception):
+    def __init__(self, base: int, exp: Count, mod: int):
+        super().__init__(
+            f'({base} ** {exp}) % {mod}')
+
+class ModDepthLimit(Exception):
+    def __init__(self, num: Num, mod: int):
+        super().__init__(
+            f'{num} % {mod}')
+
+class PeriodLimit(Exception):
+    def __init__(self, base: int, mod: int):
+        super().__init__(
+            f'{base} ** ... % {mod}')
+
+########################################
 
 class Num:
     depth: int
@@ -718,8 +727,7 @@ class Div(Num):
             return 0
 
         if self.num.depth > 200:
-            raise ModDepthLimit(
-                f'{self} % {mod}')
+            raise ModDepthLimit(self, mod)
 
         div, rem = divmod(
             self.num % (mod * self.den),
@@ -1383,7 +1391,7 @@ def find_period(base: int, mod: int) -> int:
     val = 1
 
     if mod >= MOD_PERIOD_LIMIT:
-        raise PeriodLimit(f'{base} ** ... % {mod}')
+        raise PeriodLimit(base, mod)
 
     for period in range(1, mod):
         val *= base
@@ -1397,8 +1405,7 @@ def find_period(base: int, mod: int) -> int:
 
 def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
     if base != 2 or 2 * (3 ** round(log(mod / 2, 3))) != mod:
-        raise ExpModLimit(
-            f'({base} ** {exp}) % {mod}')
+        raise ExpModLimit(base, exp, mod)
 
     period = exp % (mod // 3)
 
@@ -2276,12 +2283,12 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
                 1541776226: 153477472,
             }
         case _:  # no-cover
-            raise ExpModLimit(f'({base} ** {exp}) % {mod}')
+            raise ExpModLimit(base, exp, mod)
 
     try:
         return values[period]
     except KeyError:
-        raise ExpModLimit(f'({base} ** {exp}) % {mod}')  # noqa: B904
+        raise ExpModLimit(base, exp, mod)  # noqa: B904
 
 ########################################
 

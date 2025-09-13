@@ -1,3 +1,5 @@
+# ruff: noqa: TRY003
+
 from itertools import pairwise
 from typing import TYPE_CHECKING, Literal, Protocol
 

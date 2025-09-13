@@ -22,7 +22,6 @@ ignore = [
     "S101",     # assertions
     "SIM300",   # yoda comparison
     "T201",     # print
-    "TRY003",   # exception messages
 ]
 
 [lint.per-file-ignores]
