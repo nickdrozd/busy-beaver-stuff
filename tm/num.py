@@ -31,7 +31,8 @@ class PeriodLimit(Exception):
             f'{base} ** ... % {mod}')
 
 def raise_lt_not_implemented(l: Count, r: Count) -> Never:
-    raise NotImplementedError(f'{l} < {r}')
+    raise NotImplementedError(
+        f'{type(l).__name__}.__lt__: {l} < {r}')
 
 ########################################
 

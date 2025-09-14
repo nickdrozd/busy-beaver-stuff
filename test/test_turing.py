@@ -1575,11 +1575,14 @@ class Prover(RunProver):
 
                 marks = self.machine.marks
 
-                estimate = show_number(
-                    marks
-                    if isinstance(marks, int) else
-                    marks.estimate()
-                )
+                try:
+                    estimate = show_number(
+                        marks
+                        if isinstance(marks, int) else
+                        marks.estimate()
+                    )
+                except NotImplementedError as err:
+                    estimate = err.args[0]
 
                 show_rulapp = show_number(self.machine.rulapp)
 

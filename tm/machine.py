@@ -57,6 +57,8 @@ class Machine:
     limrul: str | None = None
     susrul: tuple[int, int] | None = None
 
+    errors: str | None = None
+
     rulapp: Count = 0
 
     def __init__(
@@ -100,11 +102,15 @@ class Machine:
         ]
 
         if rulapp := self.rulapp:
-            rulapp_disp = (
-                show_number(rulapp)
-                if isinstance(rulapp, int) else
-                rulapp.estimate()
-            )
+            if isinstance(rulapp, int):
+                rulapp_disp = show_number(rulapp)
+            else:
+                try:
+                    rulapp_disp = str(rulapp.estimate())
+                except NotImplementedError as err:
+                    err = err.args[0]
+                    self.errors = err
+                    rulapp_disp = err
 
             info.append(
                 f'RULAPP: {rulapp_disp}')
@@ -117,6 +123,10 @@ class Machine:
 
             info.append(
                 f'BLANKS: {blanks}')
+
+        if errors := self.errors:
+            info.append(
+                f'ERRORS: {errors}')
 
         return f"{self.prog_str} || {' | '.join(info)}"
 

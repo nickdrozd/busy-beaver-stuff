@@ -149,7 +149,7 @@ class TestNum(TestCase):
         with self.assertRaises(NotImplementedError) as ctx:
             self.assertLess(val1, val2)
 
-        self.assertEqual(msg, ctx.exception.args[0])
+        self.assertEqual(msg, ctx.exception.args[0].split(': ')[1])
 
     def assert_mod_error(
             self,
