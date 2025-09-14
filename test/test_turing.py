@@ -1575,7 +1575,7 @@ class Prover(RunProver):
 
                 marks = self.machine.marks
 
-                estimate = (
+                estimate = show_number(
                     marks
                     if isinstance(marks, int) else
                     marks.estimate()
@@ -1588,7 +1588,7 @@ class Prover(RunProver):
                         f'        "{prog}": (',
                         f'            {self.machine.cycles},',
                         f'            "{estimate}",',
-                        f'            "{marks}",',
+                        f'            "{show_number(marks)}",',
                         f'            "{show_rulapp}",',
                         '        ),',
                     ]))
@@ -1604,8 +1604,8 @@ class Prover(RunProver):
 
                 self.assertEqual(
                     est,
-                    show_number(
-                        estimate))
+                    estimate,
+                    prog)
 
                 self.assertEqual(
                     rulapp,
