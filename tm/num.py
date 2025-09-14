@@ -387,8 +387,13 @@ class Mul(Num):
 
     @staticmethod
     def make(l: Count, r: Num) -> Mul:
-        if isinstance(l, Num) and l.depth > r.depth:
+        if not isinstance(l, int) and l.depth > r.depth:
             l, r = r, l
+
+            if r.neg:
+                l, r = -l, -r  # type: ignore[assignment]
+
+        assert r.pos
 
         muls = Mul.instances[l]
 
@@ -399,12 +404,7 @@ class Mul(Num):
             return mul
 
     def __init__(self, l: Count, r: Num):
-        if l < 0:
-            assert r.pos
-
-        if r.neg:
-            assert not isinstance(l, int)
-            assert l.pos
+        assert r.pos
 
         self.l = l
         self.r = r
@@ -626,6 +626,7 @@ class Mul(Num):
         l, r = self.l, self.r
 
         if isinstance(other, int):
+            assert r.pos
             return l < 0
 
         if isinstance(other, Mul):
@@ -673,10 +674,10 @@ class Mul(Num):
 
             return True
 
-        if (other <= l and r.pos) or (other <= r and 0 < l):
+        if other <= l or (other <= r and 0 < l):
             return False
 
-        if (l < other and r.neg) or (r < other and l < 0):
+        if r < other and l < 0:
             return True
 
         if isinstance(other, Exp):
