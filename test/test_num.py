@@ -151,6 +151,12 @@ class TestNum(TestCase):
 
         self.assertEqual(msg, ctx.exception.args[0])
 
+    def assert_estimate_not_implemented(self, val: Count, msg: str):
+        with self.assertRaises(NotImplementedError) as ctx:
+            self.assert_estimate(val, 0)
+
+        self.assertEqual(msg, ctx.exception.args[0])
+
     def assert_mod_error(
             self,
             num: Count,
@@ -333,20 +339,17 @@ class TestNum(TestCase):
             Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))),
             Exp(10, 5014))
 
-        with self.assertRaises(NotImplementedError):
-            self.assert_estimate(
-                (-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14)))))),
-                0)
+        self.assert_estimate_not_implemented(
+            (-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14)))))),
+            "(258 + (2 ** 14)) < (525 + (2 ** 15))")
 
-        with self.assertRaises(NotImplementedError):
-            self.assert_estimate(
-                Exp(2, 14) * (1 + ((2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))))),
-                0)
+        self.assert_estimate_not_implemented(
+            Exp(2, 14) * (1 + ((2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))))),
+            "(525 + (2 ** 15)) < (272 + (2 ** 14))")
 
-        with self.assertRaises(NotImplementedError):
-            self.assert_estimate(
-                (2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))),
-                0)
+        self.assert_estimate_not_implemented(
+            (2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))),
+            "(511 + (2 ** 15)) < (258 + (2 ** 14))")
 
     def test_abs(self):
         self.assert_abs(
