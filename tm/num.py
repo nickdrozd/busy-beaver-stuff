@@ -680,15 +680,9 @@ class Mul(Num):
         if other <= l or (other <= r and 0 < l):
             return False
 
-        if r < other and l < 0:
-            return True
-
         if isinstance(other, Exp):
             if 0 < l < 10:
                 return r < other
-
-        if 0 < l and isinstance(r, Add) and r.l == -1 and r.r == other:
-            return False
 
         return super().__lt__(other)
 
@@ -1206,11 +1200,15 @@ class Exp(Num):
             if self == l:
                 return r.pos
 
-            if isinstance(l, int):  # no-branch
-                return self < r
+            assert isinstance(l, int)
 
-        elif isinstance(other, Mul):
+            return self < r
+
+        if isinstance(other, Mul):
             l, r = other.l, other.r
+
+            if (r.pos and self <= l) or (0 < l and self <= r):
+                return True
 
             if isinstance(l, Exp):
                 assert l.base == base
@@ -1224,28 +1222,9 @@ class Exp(Num):
                 if r.exp <= exp:
                     return (self // r) < l
 
-            try:
-                if self <= r and l > 0:
-                    return True
-            except NotImplementedError:
-                pass
+        assert isinstance(other, Tet)
 
-            try:
-                if self <= l and r.pos:  # no-branch
-                    return True
-            except NotImplementedError:
-                pass
-
-            if self == r:  # no-cover
-                return 0 < l
-
-            if self == l:  # no-cover
-                return r.pos
-
-        elif isinstance(other, Tet):  # no-branch
-            return other > self
-
-        raise_lt_not_implemented(self, other)
+        return other > self
 
     def __pow__(self, other: Count) -> Exp:
         return Exp.make(self.base, self.exp * other)

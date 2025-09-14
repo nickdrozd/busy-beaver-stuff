@@ -26,11 +26,11 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 
 
 NUM_COUNTS = {
-    "adds": 2311,
+    "adds": 2303,
     "divs": 2082,
-    "exps": 1264,
-    "muls": 1429,
-    "totl": 7086,
+    "exps": 1256,
+    "muls": 1427,
+    "totl": 7068,
 }
 
 
