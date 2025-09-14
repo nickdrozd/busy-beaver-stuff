@@ -4,7 +4,7 @@
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
-from functools import cache
+from functools import cache, cached_property
 from math import ceil, floor, log, log2, log10, sqrt
 from math import gcd as pgcd
 from typing import ClassVar, Final, Never, Self
@@ -64,16 +64,24 @@ class Num:
             else:
                 est = Exp.make(10, digits)
 
-        return -est if self < 0 else est
+        return -est if self.neg else est
 
     @abstractmethod
     def digits(self) -> int: ...
+
+    @cached_property
+    def pos(self) -> bool:
+        return 0 < self
+
+    @cached_property
+    def neg(self) -> bool:
+        return self < 0
 
     @abstractmethod
     def __neg__(self) -> Count: ...
 
     def __abs__(self) -> Count:
-        return -self if self < 0 else self
+        return -self if self.neg else self
 
     def __eq__(self, other: object) -> bool:
         return other is self
@@ -89,7 +97,7 @@ class Num:
                 pass
 
             try:
-                if self <= l and r > 0:  # no-cover
+                if self <= l and r.pos:  # no-cover
                     return True
             except NotImplementedError:
                 pass
@@ -98,7 +106,7 @@ class Num:
                 return 0 < l
 
             if self == l:  # no-cover
-                return 0 < r
+                return r.pos
 
         if isinstance(other, Add):
             if isinstance(l, int) and abs(l) < 10:
@@ -319,19 +327,19 @@ class Add(Num):
 
         if isinstance(other, int):
             if isinstance(l, int):
-                return r < 0
+                return r.neg
 
-            if l < 0 and r < 0:
+            if l.neg and r.neg:
                 return True
 
-            if 0 < l and 0 < r:
+            if l.pos and r.pos:
                 return False
 
             if other == 0:
-                if l < 0 < r:
+                if l.neg and r.pos:
                     return r < -l
 
-                if r < 0 < l:  # no-branch
+                if r.neg and l.pos:
                     return l < -r
 
         elif isinstance(other, Add):
@@ -353,7 +361,7 @@ class Add(Num):
                 if abs(l - lo) < 3:
                     return r < ro
 
-            if 0 < ro and l < lo and r < lo:
+            if ro.pos and l < lo and r < lo:
                 return True
 
         if other == r:
@@ -364,7 +372,7 @@ class Add(Num):
                 return r < other
 
         elif other == l:
-            return r < 0
+            return r.neg
 
         raise_lt_not_implemented(self, other)
 
@@ -395,11 +403,11 @@ class Mul(Num):
 
     def __init__(self, l: Count, r: Num):
         if l < 0:
-            assert r > 0
+            assert r.pos
 
-        if r < 0:
-            assert l > 0
-            assert isinstance(l, Num)
+        if r.neg:
+            assert not isinstance(l, int)
+            assert l.pos
 
         self.l = l
         self.r = r
@@ -666,15 +674,15 @@ class Mul(Num):
                     return ceil(lo / l) > (base ** diff)  # type: ignore[no-any-return]
 
         if l < 0:
-            if other < 0:  # no-cover
+            if other.neg:  # no-cover
                 raise_lt_not_implemented(self, other)
 
             return True
 
-        if (other <= l and 0 < r) or (other <= r and 0 < l):
+        if (other <= l and r.pos) or (other <= r and 0 < l):
             return False
 
-        if (l < other and r < 0) or (r < other and l < 0):
+        if (l < other and r.neg) or (r < other and l < 0):
             return True
 
         if isinstance(other, Exp):
@@ -834,7 +842,7 @@ class Div(Num):
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, int):
-            return self.num < 0
+            return self.num.neg
 
         if not isinstance(other, Div):
             raise_lt_not_implemented(self, other)
@@ -1222,7 +1230,7 @@ class Exp(Num):
                 pass
 
             try:
-                if self <= l and r > 0:  # no-branch
+                if self <= l and r.pos:  # no-branch
                     return True
             except NotImplementedError:
                 pass
@@ -1231,7 +1239,7 @@ class Exp(Num):
                 return 0 < l
 
             if self == l:  # no-cover
-                return 0 < r
+                return r.pos
 
         elif isinstance(other, Tet):  # no-branch
             return other > self
