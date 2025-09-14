@@ -266,9 +266,6 @@ class Add(Num):
         if l == other:
             return (2 * l) + r
 
-        if other.depth < l.depth <= 8:
-            return (other + l) + r
-
         return Add.make(self, other)
 
     def __sub__(self, other: Count) -> Count:
@@ -567,9 +564,6 @@ class Mul(Num):
                 if isinstance(ro, Mul):
                     if ro.l == l:
                         return lo + (self + ro)
-
-            if lo.depth < self.depth:
-                return lo + (self + ro)
 
         elif isinstance(other, Exp):  # noqa: SIM114
             return other + self
