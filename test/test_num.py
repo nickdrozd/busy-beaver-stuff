@@ -185,6 +185,9 @@ class TestNum(TestCase):
             str(est) if isinstance(estimate, str) else est,
             est)
 
+    def assert_abs(self, val: Count, exp: Count):
+        self.assertEqual(abs(val), exp)
+
     def test_subexpression(self):
         expr = (-4 + (7 * (2 ** ((8 + (7 * Exp(2, 3))) // 3)))) // 3
 
@@ -334,6 +337,15 @@ class TestNum(TestCase):
             self.assert_estimate(
                 (-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14)))))),
                 0)
+
+    def test_abs(self):
+        self.assert_abs(
+            -63 * (2 ** (525 + Exp(2, 15))),
+            63 * (2 ** (525 + Exp(2, 15))))
+
+        self.assert_abs(
+            Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))),
+            Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))))
 
     def test_add(self):
         self.assert_num((5 * Exp(2, 3)) - 0, 40)

@@ -74,6 +74,9 @@ class Num:
     @abstractmethod
     def __neg__(self) -> Count: ...
 
+    def __abs__(self) -> Count:
+        return -self if self < 0 else self
+
     def __eq__(self, other: object) -> bool:
         return other is self
 
