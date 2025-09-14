@@ -26,11 +26,11 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 
 
 NUM_COUNTS = {
-    "adds": 2297,
+    "adds": 2301,
     "divs": 2082,
-    "exps": 1266,
-    "muls": 1421,
-    "totl": 7066,
+    "exps": 1268,
+    "muls": 1422,
+    "totl": 7073,
 }
 
 
@@ -336,6 +336,16 @@ class TestNum(TestCase):
         with self.assertRaises(NotImplementedError):
             self.assert_estimate(
                 (-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14)))))),
+                0)
+
+        with self.assertRaises(NotImplementedError):
+            self.assert_estimate(
+                Exp(2, 14) * (1 + ((2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))))),
+                0)
+
+        with self.assertRaises(NotImplementedError):
+            self.assert_estimate(
+                (2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))),
                 0)
 
     def test_abs(self):
@@ -1026,6 +1036,24 @@ class TestNum(TestCase):
             (-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14)))))),
             0,
             "(258 + (2 ** 14)) < (525 + (2 ** 15))")
+
+        self.assert_less_not_implemented(
+            Exp(2, 14) * (1 + ((2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))))),
+            0,
+            "(525 + (2 ** 15)) < (272 + (2 ** 14))")
+
+        self.assert_less(
+            0,
+            2 ** (258 + Exp(2, 14)))
+
+        self.assert_less(
+            1 + (-63 * (2 ** (253 + Exp(2, 14)))),
+            0)
+
+        self.assert_less_not_implemented(
+            (2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))),
+            0,
+            "(511 + (2 ** 15)) < (258 + (2 ** 14))")
 
     def test_exp_add(self):
         self.assert_num(
