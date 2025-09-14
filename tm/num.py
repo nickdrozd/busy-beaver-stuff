@@ -358,10 +358,6 @@ class Add(Num):
             if l == ro:  # no-cover
                 return r < lo
 
-            if isinstance(l, int) and isinstance(lo, int):
-                if abs(l - lo) < 3:
-                    return r < ro
-
             if ro.pos and l < lo and r < lo:
                 return True
 
