@@ -1204,27 +1204,28 @@ class Exp(Num):
 
             return self < r
 
-        if isinstance(other, Mul):
-            l, r = other.l, other.r
+        if isinstance(other, Tet):
+            return other > self
 
-            if (r.pos and self <= l) or (0 < l and self <= r):
-                return True
+        assert isinstance(other, Mul)
 
-            if isinstance(l, Exp):
-                assert l.base == base
+        l, r = other.l, other.r
 
-                if l.exp <= exp:
-                    return (self // l) < r
+        if (r.pos and self <= l) or (0 < l and self <= r):
+            return True
 
-            if isinstance(r, Exp):
-                assert r.base == base
+        if isinstance(l, Exp):
+            assert l.base == base
+            assert l.exp <= exp
 
-                if r.exp <= exp:
-                    return (self // r) < l
+            return (self // l) < r
 
-        assert isinstance(other, Tet)
+        assert isinstance(r, Exp)
 
-        return other > self
+        assert r.base == base
+        assert r.exp <= exp
+
+        return (self // r) < l
 
     def __pow__(self, other: Count) -> Exp:
         return Exp.make(self.base, self.exp * other)
