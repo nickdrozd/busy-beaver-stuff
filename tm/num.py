@@ -361,6 +361,9 @@ class Add(Num):
             if ro.pos and l < lo and r < lo:
                 return True
 
+            if l < lo and r < ro:
+                return True
+
         if other == r:
             return l < 0
 

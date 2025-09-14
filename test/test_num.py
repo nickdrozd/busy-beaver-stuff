@@ -26,11 +26,11 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 
 
 NUM_COUNTS = {
-    "adds": 2306,
+    "adds": 2305,
     "divs": 2082,
     "exps": 1262,
-    "muls": 1412,
-    "totl": 7062,
+    "muls": 1421,
+    "totl": 7070,
 }
 
 
@@ -148,12 +148,6 @@ class TestNum(TestCase):
     ):
         with self.assertRaises(NotImplementedError) as ctx:
             self.assertLess(val1, val2)
-
-        self.assertEqual(msg, ctx.exception.args[0])
-
-    def assert_estimate_not_implemented(self, val: Count, msg: str):
-        with self.assertRaises(NotImplementedError) as ctx:
-            self.assert_estimate(val, 0)
 
         self.assertEqual(msg, ctx.exception.args[0])
 
@@ -339,17 +333,17 @@ class TestNum(TestCase):
             Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))),
             Exp(10, 5014))
 
-        self.assert_estimate_not_implemented(
+        self.assert_estimate(
             (-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14)))))),
-            "(258 + (2 ** 14)) < (525 + (2 ** 15))")
+            "-(10 ** 10024)")
 
-        self.assert_estimate_not_implemented(
+        self.assert_estimate(
             Exp(2, 14) * (1 + ((2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))))),
-            "(525 + (2 ** 15)) < (272 + (2 ** 14))")
+            "-(10 ** 10024)")
 
-        self.assert_estimate_not_implemented(
+        self.assert_estimate(
             (2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))),
-            "(511 + (2 ** 15)) < (258 + (2 ** 14))")
+            "-(10 ** 10020)")
 
     def test_abs(self):
         self.assert_abs(
@@ -359,6 +353,11 @@ class TestNum(TestCase):
         self.assert_abs(
             Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))),
             Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))))
+
+        self.assert_num(
+            (-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14)))))),
+            "-(10 ** 10024)",
+            "(-(2 ** 14) * (-1 + ((2 ** (258 + (2 ** 14))) * (-1 + (63 * (2 ** (253 + (2 ** 14))))))))")
 
     def test_add(self):
         self.assert_num((5 * Exp(2, 3)) - 0, 40)
@@ -857,10 +856,9 @@ class TestNum(TestCase):
             1,
             (1 + Exp(2, 3)) // 3)
 
-        self.assert_less_not_implemented(
+        self.assert_less(
             49 + (13 * Exp(2, 15)),
-            113 + (13 * Exp(2, 16)),
-            "(49 + (13 * (2 ** 15))) < (113 + (13 * (2 ** 16)))")
+            113 + (13 * Exp(2, 16)))
 
         self.assertFalse(
             Exp(10, 3 + Exp(10, Exp(10, 3)))
@@ -894,10 +892,10 @@ class TestNum(TestCase):
             3 ** Exp(3, 5),
             "((3 ** 10) * (-1 + (3 ** (-5 + (3 ** 5))))) < (3 ** (3 ** 5))")
 
-        self.assert_less_not_implemented(
+        self.assert_less(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
             -1 + (Exp(2, 5) * (-1 + (2 ** (-5 + (2 ** Exp(2, 5)))))),
-            "(-10 + (2 ** 5)) < (-5 + (2 ** (2 ** 5)))")
+            estimate = True)
 
         self.assert_less(
             Exp(2, 5) * (-1 + (2 ** (-5 + Exp(2, 5)))),
@@ -942,7 +940,7 @@ class TestNum(TestCase):
         self.assert_less_not_implemented(
             -(Exp(2, 11760) * (1 + Exp(2, 5879))) + (Exp(2, 20578) * (-1 + (11 * Exp(2, 1469)))),
             (Exp(2, 44097) * (-1 + (11 * Exp(2, 1469)))) + -(Exp(2, 23520) * (1 + (Exp(2, 11759) * (1 + Exp(2, 5879))))),
-            "((-(2 ** 11760) * (1 + (2 ** 5879))) + ((2 ** 20578) * (-1 + (11 * (2 ** 1469))))) < (((2 ** 44097) * (-1 + (11 * (2 ** 1469)))) + (-(2 ** 23520) + (-(2 ** 35279) * (1 + (2 ** 5879)))))")
+            "(-(2 ** 23520) + (-(2 ** 35279) * (1 + (2 ** 5879)))) < (2 ** 20578)")
 
         self.assert_less(
             Exp(2, 3),
@@ -1016,10 +1014,9 @@ class TestNum(TestCase):
             (73731 * Exp(2, 2)),
             "(73731 * (2 ** 2)) < (2 ** (-7 + (73731 * (2 ** 2))))")
 
-        self.assert_less_not_implemented(
+        self.assert_less(
             (258 + Exp(2, 14)),
-            (525 + Exp(2, 15)),
-            "(258 + (2 ** 14)) < (525 + (2 ** 15))")
+            (525 + Exp(2, 15)))
 
         self.assert_less(
             -Exp(10, 10020),
@@ -1035,15 +1032,13 @@ class TestNum(TestCase):
             Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14))))),
             estimate = True)
 
-        self.assert_less_not_implemented(
+        self.assert_less(
             (-63 * (2 ** (525 + Exp(2, 15)))) + (Exp(2, 14) * (1 + (2 ** (258 + (Exp(2, 14)))))),
-            0,
-            "(258 + (2 ** 14)) < (525 + (2 ** 15))")
+            0)
 
-        self.assert_less_not_implemented(
+        self.assert_less(
             Exp(2, 14) * (1 + ((2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))))),
-            0,
-            "(525 + (2 ** 15)) < (272 + (2 ** 14))")
+            0)
 
         self.assert_less(
             0,
@@ -1053,10 +1048,9 @@ class TestNum(TestCase):
             1 + (-63 * (2 ** (253 + Exp(2, 14)))),
             0)
 
-        self.assert_less_not_implemented(
+        self.assert_less(
             (2 ** (258 + Exp(2, 14))) * (1 + (-63 * (2 ** (253 + Exp(2, 14))))),
-            0,
-            "(511 + (2 ** 15)) < (258 + (2 ** 14))")
+            0)
 
     def test_exp_add(self):
         self.assert_num(
