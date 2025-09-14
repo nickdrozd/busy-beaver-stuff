@@ -1207,6 +1207,9 @@ class Exp(Num):
         if isinstance(other, Add):
             l, r = other.l, other.r
 
+            if self == l:
+                return r.pos
+
             if isinstance(l, int):  # no-branch
                 return self < r
 
