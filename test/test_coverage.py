@@ -136,6 +136,9 @@ class TestFloss(TestCase):
                 sim_lim = 5592
             )
 
+        error = "1RB 2RA 1LB 0RC  2LA 3LB 1LA ...  ... 1RB ... 2RC"
+        print(Machine(error).run())
+
     def test_instr_seq(self):
         progs = (
             "1RB 1LB  1LA ...",
