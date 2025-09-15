@@ -1,5 +1,5 @@
 # ruff: noqa: SIM102, PLR0911
-# pylint: disable = too-many-try-statements, confusing-consecutive-elif
+# pylint: disable = confusing-consecutive-elif
 
 import itertools
 from abc import abstractmethod
@@ -95,23 +95,13 @@ class Num:
         if isinstance(other, Add | Mul):
             l, r = other.l, other.r
 
-            try:
-                if self <= r and l > 0:
-                    return True
-            except NotImplementedError:
-                pass
-
-            try:
-                if self <= l and r.pos:  # no-cover
-                    return True
-            except NotImplementedError:
-                pass
+            if self <= r and l > 0:
+                return True
 
             if self == r:
                 return 0 < l
 
-            if self == l:  # no-cover
-                return r.pos
+            assert self != l
 
         if isinstance(other, Add):
             if isinstance(l, int) and abs(l) < 10:
@@ -224,8 +214,7 @@ class Add(Num):
         )
 
     def __mod__(self, mod: int) -> int:
-        if mod == 1:  # no-cover
-            return 0
+        assert mod != 1
 
         return ((self.l % mod) + (self.r % mod)) % mod
 
@@ -248,8 +237,7 @@ class Add(Num):
             if other == 0:
                 return self
 
-            if not isinstance(l, int):
-                return Add.make(other, self)
+            assert isinstance(l, int)
 
             return (l + other) + r
 
@@ -261,6 +249,8 @@ class Add(Num):
 
             if self == lo:
                 return (2 * self) + ro
+
+            assert self != ro
 
         if isinstance(l, int):
             return l + (other + r)
@@ -277,8 +267,7 @@ class Add(Num):
         if other == 0:
             return self
 
-        if self == other:
-            return 0
+        assert self != other
 
         if isinstance(other, Add):
             l, lo = self.l, other.l
@@ -299,7 +288,7 @@ class Add(Num):
 
     def __rmul__(self, other: int) -> Count:
         match other:
-            case 0:  # no-cover
+            case 0:
                 return 0
 
             case 1:
@@ -341,7 +330,7 @@ class Add(Num):
                 if l.neg and r.pos:
                     return r < -l
 
-                if r.neg and l.pos:
+                if r.neg and l.pos:  # no-branch
                     return l < -r
 
         elif isinstance(other, Add):
@@ -355,12 +344,6 @@ class Add(Num):
 
             if r == ro:
                 return l < lo
-
-            if l == ro:  # no-cover
-                return r < lo
-
-            if ro.pos and l < lo and r < lo:
-                return True
 
             if l < lo and r < ro:
                 return True
@@ -451,16 +434,11 @@ class Mul(Num):
             -round(log10(-l))
         )
 
-    @property
-    def is_exp_coef(self) -> bool:
-        return isinstance(self.r, Exp) and isinstance(self.l, int)
-
     def __neg__(self) -> Count:
         return -(self.l) * self.r
 
     def __mod__(self, mod: int) -> int:
-        if mod == 1:  # no-cover
-            return 0
+        assert mod != 1
 
         if (l_mod := self.l % mod) == 0:
             return 0
@@ -492,8 +470,7 @@ class Mul(Num):
         l, r = self.l, self.r
 
         if other == -1:
-            if l == -1:  # no-cover
-                return r
+            assert l != -1
 
             if isinstance(l, int):
                 return -l * r
@@ -548,11 +525,7 @@ class Mul(Num):
 
                 if isinstance(lo, Exp):
                     assert r.base == lo.base
-
-                    try:
-                        return add_exponents((r, l), (lo, ro))
-                    except NotImplementedError:
-                        pass
+                    return add_exponents((r, l), (lo, ro))
 
         elif isinstance(other, Add):
             lo, ro = other.l, other.r
@@ -560,8 +533,8 @@ class Mul(Num):
             if isinstance(lo, int):
                 return lo + (ro + self)
 
-            if l != -1:  # no-branch
-                if isinstance(lo, Mul):  # no-branch
+            if l != -1:
+                if isinstance(lo, Mul):
                     if lo.l == l:
                         return (self + lo) + ro
 
@@ -602,7 +575,7 @@ class Mul(Num):
             return -other + self
 
         elif isinstance(other, Add):
-            if self == other.r:  # no-branch
+            if self == other.r:
                 return -(other.l)
 
         if other == l:
@@ -642,40 +615,7 @@ class Mul(Num):
             if r == ro:
                 return l < lo
 
-            if l == ro:  # no-cover
-                return r < lo
-
-            if r == lo:  # no-cover
-                return l < ro
-
-            if self.is_exp_coef and other.is_exp_coef:
-                assert isinstance(l, int)
-                assert isinstance(lo, int)
-                assert isinstance(r, Exp)
-                assert isinstance(ro, Exp)
-
-                assert (base := r.base) == ro.base
-
-                if (rexp := r.exp) == (roexp := ro.exp):
-                    return l < lo  # no-cover
-
-                # pylint: disable = no-else-return
-                if rexp < roexp:
-                    if not isinstance(diff := roexp - rexp, int):
-                        return True
-
-                    return ceil(l / lo) <= (base ** diff)  # type: ignore[no-any-return]
-
-                else:  # noqa: RET505
-                    if not isinstance(diff := rexp - roexp, int):
-                        return False
-
-                    return ceil(lo / l) > (base ** diff)  # type: ignore[no-any-return]
-
-        if l < 0:
-            if other.neg:  # no-cover
-                raise_lt_not_implemented(self, other)
-
+        if l < 0 and other.pos:
             return True
 
         if other <= l or (other <= r and 0 < l):
@@ -807,10 +747,9 @@ class Div(Num):
         return (num * other) // den
 
     def __rmul__(self, other: int) -> Count:
-        match other:
-            case 0:  # no-cover
-                return 0
+        assert other != 0
 
+        match other:
             case 1:
                 return self
 
@@ -973,7 +912,7 @@ class Exp(Num):
                 if mod == 6:
                     return 3
 
-                if int(log_mod := log2(mod)) == log_mod:  # no-branch
+                if int(log_mod := log2(mod)) == log_mod:
                     exp %= int(2 ** (int(log_mod) - 2))
 
             case 6:
@@ -1159,7 +1098,7 @@ class Exp(Num):
             assert other.exp <= exp, (self, other)
 
             match (diff := exp - other.exp):
-                case 0:
+                case 0:  # no-cover
                     return 1
                 case 1:
                     return base
@@ -1344,8 +1283,7 @@ def add_exponents(
 
 
 def gcd(l: int, r: Count) -> int:
-    if l == 1:  # no-cover
-        return 1
+    assert l != 1
 
     if isinstance(r, int):
         return pgcd(l, r)
@@ -2281,7 +2219,7 @@ def exp_mod_special_cases(mod: int, base: int, exp: Num) -> int:
                 265395215: 626536238,
                 766935248: 153477472,
             }
-        case 6973568802:  # no-branch
+        case 6973568802:
             values = {
                 1541776226: 153477472,
             }

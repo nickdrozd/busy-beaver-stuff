@@ -98,6 +98,7 @@ class TestFloss(TestCase):
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
             "1RB 0LC  1LC 1RA  1LD 0LD  0LE 0LC  1RE 0RB",
             "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
+            "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA",
             "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...",
             "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA",
             "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ...  1RA 2LD 1RD",
@@ -105,6 +106,7 @@ class TestFloss(TestCase):
             "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
             "1RB 1LD  0RC ...  1RD 0LA  1RE 1RF  1LC 1LE  1RA 0RD",
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE 0LB  1LF 0RB  0RC 0RE",
+            "1RB 1LC  1LA 1RF  0LD 0LA  0RE 1LF  1LA 1RE  ... 0RE",
             "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
         )
 

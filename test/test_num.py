@@ -28,9 +28,9 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 NUM_COUNTS = {
     "adds": 2303,
     "divs": 2082,
-    "exps": 1256,
+    "exps": 1254,
     "muls": 1427,
-    "totl": 7068,
+    "totl": 7066,
 }
 
 
@@ -874,13 +874,10 @@ class TestNum(TestCase):
             2 ** (-3 + Exp(2, 13)),
             "(8191 * (2 ** 13)) < (2 ** (-3 + (2 ** 13)))")
 
-        self.assert_less(
+        self.assert_less_not_implemented(
             15 * Exp(2, 86),
-            9 * Exp(2, 87))
-
-        self.assertFalse(
-            9 * Exp(2, 87)
-                < 15 * Exp(2, 86))
+            9 * Exp(2, 87),
+            "(15 * (2 ** 86)) < (2 ** 87)")
 
         self.assert_less(
             -Exp(10, 14050258128),
@@ -986,10 +983,10 @@ class TestNum(TestCase):
             Exp(2, 13),
             Exp(2, 12) * (1 + Exp(2, 11)))
 
-        self.assert_less(
+        self.assert_less_not_implemented(
             Exp(2, 7) * (4 + (Exp(2, 8) * (4 + (Exp(2, 9) * (4 + (Exp(2, 10) * (4 + Exp(2, 13)))))))),
             Exp(2, 6) * (4 + (Exp(2, 7) * (4 + (Exp(2, 8) * (4 + (Exp(2, 9) * (4 + (Exp(2, 10) * (4 + Exp(2, 13)))))))))),
-            estimate = True)
+            "((~10^14) * (2 ** 8)) < (2 ** 9)")
 
         self.assert_less_not_implemented(
             Exp(2, 10) * (4 + Exp(2, 13)),
@@ -1012,7 +1009,7 @@ class TestNum(TestCase):
         self.assert_less_not_implemented(
             ((3 + (9 * Exp(2, 13))) * Exp(2, (-7 + (73731 * Exp(2, 2))))),
             (73731 * Exp(2, 2)),
-            "(73731 * (2 ** 2)) < (2 ** (-7 + (73731 * (2 ** 2))))")
+            "(73731 * (2 ** 2)) < (2 ** 13)")
 
         self.assert_less(
             (258 + Exp(2, 14)),
