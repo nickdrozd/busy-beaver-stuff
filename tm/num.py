@@ -237,7 +237,8 @@ class Add(Num):
             if other == 0:
                 return self
 
-            assert isinstance(l, int)
+            if not isinstance(l, int):
+                return Add.make(other, self)
 
             return (l + other) + r
 
@@ -250,7 +251,8 @@ class Add(Num):
             if self == lo:
                 return (2 * self) + ro
 
-            assert self != ro
+            if self == ro:
+                return lo + (2 * self)
 
         if isinstance(l, int):
             return l + (other + r)
@@ -267,7 +269,8 @@ class Add(Num):
         if other == 0:
             return self
 
-        assert self != other
+        if self == other:
+            return 0
 
         if isinstance(other, Add):
             l, lo = self.l, other.l
