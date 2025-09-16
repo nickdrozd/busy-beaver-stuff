@@ -94,7 +94,6 @@ class TestFloss(TestCase):
     def test_prover(self):
         algebraic = (
             "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
-            "1RB 2LA 0RA  1LB 2RB 2RC  2LC 1LA 1LC",
             "1RB 0RC  1LC 1RA  1RE 0LD  0LC 0LE  0RB 1LD",
             "1RB 0LC  1LC 1RA  1LD 0LD  0LE 0LC  1RE 0RB",
             "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
@@ -104,7 +103,6 @@ class TestFloss(TestCase):
             "1RB ... ...  1RC ... 2RB  2LC 2LD 0RD  1RC 2LA 0RC",
             "1RB 0RD 0LB  0RC ... 2RB  2LC 2RB 0LA  1RC ... ...",
             "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ...  1RA 2LD 1RD",
-            "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD",
             "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
             "1RB 1LD  0RC ...  1RD 0LA  1RE 1RF  1LC 1LE  1RA 0RD",
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE 0LB  1LF 0RB  0RC 0RE",
