@@ -251,8 +251,13 @@ class Add(Num):
             if self == lo:
                 return (2 * self) + ro
 
-            if self == ro:
+            if self == ro:  # no-cover
                 return lo + (2 * self)
+
+            if l == -lo:
+                return r + ro
+
+            assert r != -ro
 
         if isinstance(l, int):
             return l + (other + r)
@@ -269,7 +274,7 @@ class Add(Num):
         if other == 0:
             return self
 
-        if self == other:
+        if self == other:  # no-cover
             return 0
 
         if isinstance(other, Add):

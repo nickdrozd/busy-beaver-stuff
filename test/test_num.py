@@ -28,9 +28,9 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 NUM_COUNTS = {
     "adds": 2313,
     "divs": 2082,
-    "exps": 1260,
-    "muls": 1430,
-    "totl": 7085,
+    "exps": 1259,
+    "muls": 1435,
+    "totl": 7089,
 }
 
 
@@ -402,8 +402,7 @@ class TestNum(TestCase):
 
         self.assert_num(
             ((2 ** Exp(2, 16)) + (2 ** (1 + Exp(2, 16)))) + (-(2 ** Exp(2, 16)) + -(2 ** (1 + Exp(2, 16)))),
-            "(10 ** 19729)",
-            "(((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) + (-(2 ** (2 ** 16)) + -(2 ** (1 + (2 ** 16)))))")
+            0)
 
     def test_div(self):
         self.assert_num(
