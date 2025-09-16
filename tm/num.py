@@ -263,7 +263,7 @@ class Add(Num):
             return l + (other + r)
 
         if r == other:
-            return (2 * r) + l
+            return l + (2 * r)
 
         if l == other:
             return (2 * l) + r

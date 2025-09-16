@@ -213,7 +213,7 @@ class Machine:
                     step = -1
                     try:
                         self.rulapp += times
-                    except NotImplementedError as err:
+                    except NotImplementedError as err:  # no-cover
                         self.errors = err.args[0]
                         break
                     continue
