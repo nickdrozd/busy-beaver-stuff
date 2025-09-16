@@ -101,6 +101,7 @@ class TestFloss(TestCase):
             "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA",
             "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...",
             "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA",
+            "1RB ... ...  1RC ... 2RB  2LC 2LD 0RD  1RC 2LA 0RC",
             "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ...  1RA 2LD 1RD",
             "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD",
             "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",

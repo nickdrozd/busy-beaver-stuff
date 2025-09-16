@@ -26,11 +26,11 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 
 
 NUM_COUNTS = {
-    "adds": 2303,
+    "adds": 2306,
     "divs": 2082,
-    "exps": 1254,
-    "muls": 1427,
-    "totl": 7066,
+    "exps": 1255,
+    "muls": 1428,
+    "totl": 7071,
 }
 
 
@@ -1052,6 +1052,11 @@ class TestNum(TestCase):
         self.assert_less(
             Exp(2, 14) + ((-127 * (2 ** (271 + Exp(2, 14)))) + (-(2 ** (271 + Exp(2, 14))) * (-129 + (63 * (2 ** (254 + Exp(2, 14))))))),
             Exp(2, 14))
+
+        self.assert_less_not_implemented(
+            -18 + (5 * (2 ** (-3 + (5 * Exp(2, 17))))),
+            -20 + (5 * Exp(2, 17)),
+            "(-18 + (5 * (2 ** (-3 + (5 * (2 ** 17)))))) < (-20 + (5 * (2 ** 17)))")
 
     def test_exp_add(self):
         self.assert_num(

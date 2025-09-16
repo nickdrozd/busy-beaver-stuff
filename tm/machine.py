@@ -211,7 +211,11 @@ class Machine:
                 if times is not None:
                     # print(f'--> applied rule: {rule}')
                     step = -1
-                    self.rulapp += times
+                    try:
+                        self.rulapp += times
+                    except NotImplementedError as err:
+                        self.errors = err.args[0]
+                        break
                     continue
 
             try:
