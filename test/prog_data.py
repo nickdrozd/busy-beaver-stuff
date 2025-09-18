@@ -1480,6 +1480,7 @@ KERNEL = {
 
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC": 3,
 
+    "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD": 4,
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": 4,  # Pavel, BB6
     "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...": 4,  # Shawn
     "1RB 0RC  0RC 0LD  1RD 1RA  1RE 0LA  1LF ...  1LB 1LF": 4,
@@ -2109,6 +2110,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD",
             "1RB 1LC  1LA 0LD  1RB 0LA  ... 1LE  1RF 0LB  1RB 0RE",
             "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 0LB  ... 0LC",
+            "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
             "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
         },
     },
@@ -2219,6 +2221,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC",
             "1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC",
             "1RB 0LB 2LA  1LA 2RC 0LB  2RC 2RB 0LC",
+            "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
             "1RB 0RA 3LA 2LA 0LA  2LA 0RB 4LB 2RB 4RA",
             "1RB 0RB 0RA 3LA 0LA  2LB 2RB 3RB 4LA 4RA",
             "1RB 1RB 0RB 3LA 0LA  2LA 2RA 3RB 4LB 4RA",
@@ -2333,6 +2336,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...",
             "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  ... 0RD",
             "1RB 1LC  0RC 1RE  1LD 1RA  0RE 0LF  1RC 0RD  1LE 1LD",
+            "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
             "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...",
             "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE",
             "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  0LG 1LC",
@@ -2545,6 +2549,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC",
             "1RB 0RC 2LA  1LA 2LB 0LA  2RC 2RB 1LB",
             "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB",
+            "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
             "1RB 1RC 0RC  1LC 1RC 2LA  2RC 2LB 0LB",
             "1RB 2LA 0RB  2LB 1LA 0RC  0LB 2RC 1RC",
             "1RB 2RA 0RB  1LC 0LA 2RB  2LC 2LA 1RA",
@@ -2709,8 +2714,10 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0RA  1LC 0LB  0LE 0LD  1LB 0LC  1RE 1RA",
+            "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
             "1RB 0RD  0RC 0RB  1LC 0LA  0RA 1RE  0LB 1RB",
             "1RB 0RD  1LC 1LE  1RD 1LB  0LD 1RA  0LA 1LC",
+            "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",
             "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
@@ -2724,19 +2731,19 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
         "step_limit": 1,
         "depth_limit": 43,
         "spinout": 61,
-        "linrec": 147,
+        "linrec": 148,
     },
     "blank": {
         "depth_limit": 2,
         "step_limit": 3,
-        "spinout": 137,
-        "linrec": 74,
+        "spinout": 138,
+        "linrec": 75,
     },
     "spinout": {
         "step_limit": 2,
         "depth_limit": 39,
-        "spinout": 236,
-        "linrec": 92,
+        "spinout": 237,
+        "linrec": 94,
     },
 }
 
@@ -2761,8 +2768,8 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 ########################################
 
 SEGMENT_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 95,
-    "spinout": 103,
+    "halt": 96,
+    "spinout": 106,
 }
 
 SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -2850,6 +2857,7 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB ...  1LC 1RD  1LD 1LC  1LE 0RD  1RF 0LE  1RA 0LE",
         "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1RD 0LF",
         "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 1LD  1LD 0LF",
+        "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
         "1RB 0LC  0RC 0RF  1RD 0LA  0LE 0RC  1LE 1LA  0RD ...",
         "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
         "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 0LB  1LD 0LF",
@@ -2939,6 +2947,7 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1RD  1LC 0RD  1RC 0RA  1LD 0LB",
         "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB",
         "1RB 1RA 2RC  2LB 2LA 0RC  0RC 0LA 1LC",
+        "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
         "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",
         "1RB 3LA 1LA 4LA 1RA  2LB 2RA ... 0RA 0RB",
         "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA",
@@ -2950,9 +2959,11 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
         "1RB 0RA  1LC 0LB  0LE 0LD  1LB 0LC  1RE 1RA",
         "1RB 0RB  0LC 1RD  1LA 1LC  0LE 1RA  1LE 0RD",
+        "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
         "1RB 0RC  1RC 0RA  1LB 0RD  0LE 1RD  1LE 1LB",
         "1RB 0RD  0RC 0RB  1LC 0LA  0RA 1RE  0LB 1RB",
         "1RB 0RD  1LC 0RC  0LE 1RD  1RA 0RB  1LE 1LA",
+        "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
         "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RA 0LA",
         "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB",
         "1RB 0RE  1LC 0LB  0RA 1LD  1LB 0LA  1RE 0LC",
@@ -3161,7 +3172,7 @@ SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
 CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 48,
     "blank": 113,
-    "spinout": 296,
+    "spinout": 299,
 }
 
 CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3571,6 +3582,7 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC",
         "1RB 0RB 2LA  2LB 2RC 0RC  0LB 1RC 1LA",
         "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB",
+        "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
         "1RB 2LA 0RB  2LB 1LA 0RC  0LB 2RC 1RC",
         "1RB 2LA 1LC  1LA 2RA 0LB  0LC 0RB 2RC",
         "1RB 2LA 1LC  1LA 2RA 2LB  0LC 0RB 2RC",
@@ -3613,6 +3625,8 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
         "1RB 0RB  0LC 1RD  1LA 1LC  0LE 1RA  1LE 0RD",
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
+        "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
+        "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
         "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA",
         "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD",
         "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  0RB 2RA 2RD",
@@ -3633,9 +3647,9 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
 ########################################
 
 CTL_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 111,
+    "halt": 112,
     "blank": 417,
-    "spinout": 271,
+    "spinout": 274,
 }
 
 CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3750,6 +3764,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD",
         "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
         "1RB 1LC  1LA 0LD  1RB 0LA  ... 1LE  1RF 0LB  1RB 0RE",
+        "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
         "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD",
     },
     "blank": {
@@ -4364,6 +4379,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC",
         "1RB 0RC 2LA  1LA 2LB 0LA  2RC 2RB 1LB",
         "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB",
+        "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
         "1RB 2LA 0RB  2LB 1LA 0RC  0LB 2RC 1RC",
         "1RB 2RA 0RB  1LC 0LA 2RB  2LC 2LA 1RA",
         "1RB 1LA 3LB 1LB 0RB  2LB 2RA 4RB 2RB 4RA",
@@ -4408,6 +4424,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0RB  1RC 0RD  1LA 0LE  1LD 0RC  0LA ...",
         "1RB 0RC  1LC 0LD  0RB 1RC  1LE ...  1LE 0RA",
         "1RB 0RC  1RC 0RA  1LB 0RD  0LE 1RD  1LE 1LB",
+        "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
         "1RB 0RD  0RC 0RB  1LC 0LA  0RA 1RE  0LB 1RB",
         "1RB 0RD  1LC 0LA  0RA 1LB  1RE 0LB  1LE 1RD",
         "1RB 0RD  1LC 0LE  0LC 1RA  0RB 1LA  ... 0LA",
@@ -4423,6 +4440,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LB  1LA 0RC  ... 0RD  1RD 0RE  1LE 0LA",
         "1RB 1LC  0LA ...  0RD 0RE  0LD 1RE  1RA 0LC",
         "1RB 1LC  0LA 0RD  1LA 1RB  0LE 1RC  1LE 0RB",
+        "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
         "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RA 0LA",
         "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
         "1RB 1RE  0LC 1LD  1RD 1LB  0RE 0RA  1RE 1LC",
@@ -4806,11 +4824,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 114976,
+    "adds": 114988,
     "divs": 15202,
-    "exps": 112082,
-    "muls": 12000,
-    "totl": 254260,
+    "exps": 112087,
+    "muls": 12019,
+    "totl": 254296,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -5192,15 +5210,6 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
         ),
     },
 
-    "sub_add": {
-        "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE": (
-            3314,
-            "(10 ↑↑ 6)",
-            "(59 + (((((2 ** 50) * (3 + (3 * (2 ** (-48 + (3 * (2 ** 50))))))) + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** 50))))))))) + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** 50)))))))))))) + (3 * (2 ** (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** 50)))))))))))))))",
-            "(???)",
-        ),
-    },
-
     "sub_mul": {
         "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA": (
             2447,
@@ -5213,12 +5222,6 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ** 7078)",
             "(23540 + ((2 ** 11760) * (-1 + ((2 ** 5879) * (-1 + ((2 ** 2939) * (-1 + ((~10^441) * (2 ** 1469)))))))))",
             "(???)",
-        ),
-        "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD": (
-            12327,
-            "9",
-            "9",
-            "(21880 + ((((2 ** 138) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136))))))))) + (((2 ** 136) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136))))))))) + ((((2 ** 137) * (1 + (2 ** (1 + (2 ** 136))))) + ((2 ** 138) * (3 + (5 * (2 ** (-1 + (2 ** 136))))))) + ((2 ** 137) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136)))))))))))) + ((2 ** 137) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + ((2 ** (1 + (2 ** (137 + (2 ** 136))))) + (2 ** (2 + ((2 ** (137 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136))))))))))))))))",
         ),
     },
 
@@ -5258,22 +5261,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
         ),
     },
 
-    "sup_add": {
-        "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": (
-            163,
-            "1",
-            "1",
-            "((501 + ((((3 * (2 ** 16)) + ((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16))))) + (3 * (2 ** (((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) // 3)))) + ((2 ** (2 ** (((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) // 3))) + (2 ** (1 + (2 ** (((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) // 3))))))) // 3)",
-        ),
-    },
-
     "sup_mul": {
-        "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD": (
-            847,
-            "(10 ** 5335)",
-            "(29548 + ((2 ** 14772) * (-9849 + ((~10^147) * (2 ** 2460)))))",
-            "(124519 + (((2 ** 14771) * (-9849 + ((~10^147) * (2 ** 2460)))) + (((2 ** 14770) * (-9849 + ((~10^147) * (2 ** 2460)))) + (((~10^147) * (2 ** 2459)) + (((2 ** 2458) * (-1641 + ((~10^24) * (2 ** 408)))) + (((~10^24) * (2 ** 407)) + (((2 ** 406) * (-273 + (19923 * (2 ** 66)))) + ((19923 * (2 ** 65)) + ((2 ** 7) * (-(~10^19) + (39 * (2 ** 66))))))))))))",
-        ),
         "1RB 2LA 3LA 2LA  3LB 3RA 0RA 0RB": (
             7733,
             "(10 ** 12)",
@@ -5370,6 +5358,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "infrul": {
+        "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": (
+            163,
+            "1",
+            "1",
+            "((501 + ((((3 * (2 ** 16)) + ((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16))))) + (3 * (2 ** (((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) // 3)))) + ((2 ** (2 ** (((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) // 3))) + (2 ** (1 + (2 ** (((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) // 3))))))) // 3)",
+        ),
         "1RB 1LA ...  1RC 2LB 1RB  2LA 2LC 0LC": (
             399,
             "(10 ↑↑ 6)",
@@ -5441,6 +5435,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ↑↑ 6)",
             "(-4 + (3 ** (3 ** (1 + (3 ** (1 + (3 ** (1 + (3 ** 730)))))))))",
             "((5526 + ((4 * (3 ** (1 + (3 ** (1 + (3 ** (1 + (3 ** 730)))))))) + (((3 ** (1 + (3 ** (1 + (3 ** 730))))) * (2 + (2 * (3 ** (-1 + ((3 ** (1 + (3 ** 730))) * (-1 + (3 ** ((3 ** 730) * (-1 + (3 ** (-729 + (3 ** 730))))))))))))) + ((3 ** 729) * (14 + ((3 ** (-728 + (3 ** (1 + (3 ** 730))))) + ((3 ** (-728 + (3 ** (1 + (3 ** 730))))) + ((3 ** (-729 + (3 ** 730))) * (14 + (2 * (3 ** ((3 ** 730) * (-1 + (3 ** (-729 + (3 ** 730)))))))))))))))) // 2)",
+        ),
+        "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD": (
+            847,
+            "(10 ** 5335)",
+            "(29548 + ((2 ** 14772) * (-9849 + ((~10^147) * (2 ** 2460)))))",
+            "(124519 + (((2 ** 14771) * (-9849 + ((~10^147) * (2 ** 2460)))) + (((2 ** 14770) * (-9849 + ((~10^147) * (2 ** 2460)))) + (((~10^147) * (2 ** 2459)) + (((2 ** 2458) * (-1641 + ((~10^24) * (2 ** 408)))) + (((~10^24) * (2 ** 407)) + (((2 ** 406) * (-273 + (19923 * (2 ** 66)))) + ((19923 * (2 ** 65)) + ((2 ** 7) * (-(~10^19) + (39 * (2 ** 66))))))))))))",
         ),
         "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB": (
             1076,
@@ -5538,6 +5538,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(-5 + (3 * (2 ** (-2 + (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** 65536))))))))))))",
             "(???)",
         ),
+        "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE": (
+            3314,
+            "(10 ↑↑ 6)",
+            "(59 + (((((2 ** 50) * (3 + (3 * (2 ** (-48 + (3 * (2 ** 50))))))) + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** 50))))))))) + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** 50)))))))))))) + (3 * (2 ** (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** 50)))))))))))))))",
+            "(???)",
+        ),
         "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0RF  1RA 1LC": (
             3782,
             "(10 ↑↑ 16)",
@@ -5567,6 +5573,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ↑↑ 25)",
             "((1 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** 16))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)",
             "(???)",
+        ),
+        "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD": (
+            12327,
+            "9",
+            "9",
+            "(21880 + ((((2 ** 138) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136))))))))) + (((2 ** 136) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136))))))))) + ((((2 ** 137) * (1 + (2 ** (1 + (2 ** 136))))) + ((2 ** 138) * (3 + (5 * (2 ** (-1 + (2 ** 136))))))) + ((2 ** 137) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136)))))))))))) + ((2 ** 137) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + ((2 ** (1 + (2 ** (137 + (2 ** 136))))) + (2 ** (2 + ((2 ** (137 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136))))))))))))))))",
         ),
     },
 

@@ -54,6 +54,9 @@ class SuspectedRule(Exception):
 class SecondDiffRule(Exception):
     pass
 
+class UnhandledOp(RuleLimit):
+    pass
+
 
 POSSIBLE_RULE_PAIRS: Final[tuple[tuple[int, int], ...]] = (
     (3, 2), (5, 3), (5, 2), (5, 4), (4, 3))
@@ -146,7 +149,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
         match sub:
             case Add():
                 if not isinstance(l := sub.l, int):
-                    raise RuleLimit('sub_add')
+                    raise UnhandledOp('sub_add')
 
                 descent.append(
                     ('+', -l))
@@ -155,7 +158,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
             case Mul():
                 if not isinstance(l := sub.l, int):
-                    raise RuleLimit('sub_mul')
+                    raise UnhandledOp('sub_mul')
 
                 descent.append(
                     ('//', l))
@@ -170,7 +173,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
             case Exp():  # no-branch
                 if isinstance(exp := sub.exp, int):
-                    raise RuleLimit('sub_exp')
+                    raise UnhandledOp('sub_exp')
 
                 descent.append(
                     ('~', sub.base))
@@ -178,7 +181,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
                 sub = exp
 
     else:
-        raise RuleLimit(  # no-cover
+        raise UnhandledOp(  # no-cover
             'subexpression descent')
 
     ascent: list[tuple[OpSym, int]] = []
@@ -190,7 +193,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
         match sup:
             case Add():
                 if not isinstance(l := sup.l, int):
-                    raise RuleLimit('sup_add')
+                    raise UnhandledOp('sup_add')
 
                 ascent.append(
                     ('+', l))
@@ -199,7 +202,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
             case Mul():
                 if not isinstance(l := sup.l, int):
-                    raise RuleLimit('sup_mul')
+                    raise UnhandledOp('sup_mul')
 
                 ascent.append(
                     ('*', l))
@@ -214,7 +217,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
 
             case Exp():
                 if isinstance(exp := sup.exp, int):  # no-cover
-                    raise RuleLimit('sup_exp')
+                    raise UnhandledOp('sup_exp')
 
                 ascent.append(
                     ('**', sup.base))
@@ -222,7 +225,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
                 sup = exp
 
     else:
-        raise RuleLimit(  # no-cover
+        raise UnhandledOp(  # no-cover
             'superexpression descent')
 
     ops: OpSeq = tuple(descent) + tuple(reversed(ascent))
@@ -239,6 +242,8 @@ def make_rule(*countses: Counts) -> Rule | None:
 
     second_diff = False
 
+    unhandled_op: UnhandledOp | None = None
+
     for s, spans in enumerate(zip(*countses, strict = True)):
         for i, counts in enumerate(zip(*spans, strict = True)):
             try:
@@ -248,6 +253,10 @@ def make_rule(*countses: Counts) -> Rule | None:
                 continue
             except UnknownRule:
                 return None
+            except UnhandledOp as err:
+                assert unhandled_op is None
+                unhandled_op = err
+                continue
 
             if diff is None:
                 continue
@@ -266,7 +275,11 @@ def make_rule(*countses: Counts) -> Rule | None:
         raise InfiniteRule
 
     if second_diff:
+        assert unhandled_op is None
         raise SecondDiffRule
+
+    if unhandled_op:
+        raise unhandled_op
 
     return rule
 

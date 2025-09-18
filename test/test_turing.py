@@ -340,7 +340,7 @@ class TuringTest(TestCase):
             return
 
         self.assertTrue(
-            cps_cant_spin_out(prog, segs))
+            cps_cant_spin_out(prog, segs), prog)
 
     def assert_could_spin_out_ctl(self, prog: str):
         self.assertFalse(
