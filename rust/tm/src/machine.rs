@@ -1,6 +1,5 @@
 use crate::{
-    Prog,
-    instrs::{Slot, State},
+    Prog, Slot, State,
     macros::GetInstr,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
@@ -190,7 +189,7 @@ impl Prog {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::Parse as _;
+use crate::Parse as _;
 
 #[cfg(test)]
 const REC_PROGS: [(&str, bool); 8] = [

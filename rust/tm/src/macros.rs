@@ -4,10 +4,7 @@ use std::collections::BTreeMap as Dict;
 
 use num_integer::Integer as _;
 
-use crate::{
-    Prog,
-    instrs::{Color, Instr, Params, Shift, Slot, State},
-};
+use crate::{Color, Instr, Params, Prog, Shift, Slot, State};
 
 type MacroColor = u64;
 type MacroState = u64;
@@ -478,7 +475,7 @@ impl TapeColorConverter {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::Parse as _;
+use crate::Parse as _;
 
 #[cfg(test)]
 #[expect(private_bounds)]

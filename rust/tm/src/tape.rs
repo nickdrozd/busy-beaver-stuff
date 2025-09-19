@@ -10,7 +10,7 @@ use core::{
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
 
-use crate::instrs::{Color, Shift};
+use crate::{Color, Shift};
 
 /**************************************/
 

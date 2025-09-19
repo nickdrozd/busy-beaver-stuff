@@ -5,8 +5,7 @@ use std::env;
 use rayon::prelude::*;
 
 use tm::{
-    Goal, Prog,
-    instrs::Params,
+    Goal, Params, Prog,
     tree::{Step, build_limited, build_tree},
 };
 
@@ -403,7 +402,7 @@ fn test_reason() {
 
 /**************************************/
 
-use tm::instrs::Parse as _;
+use tm::Parse as _;
 
 fn test_collect() {
     println!("collect");

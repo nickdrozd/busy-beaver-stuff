@@ -5,7 +5,7 @@ use ahash::AHashMap as Dict;
 use pyo3::{pyclass, pymethods};
 
 use crate::{
-    instrs::{Slot, State},
+    Slot, State,
     macros::GetInstr,
     rules::{ApplyRule, Rule, make_rule},
     tape::{BigTape, EnumTape, GetSig, MachineTape, MinSig, Signature},

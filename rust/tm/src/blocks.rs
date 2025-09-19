@@ -1,8 +1,7 @@
 use core::iter::{once, repeat_n};
 
 use crate::{
-    Prog,
-    instrs::{Color, Shift},
+    Color, Prog, Shift,
     tape::{MedSpan as Span, MedTape as Tape},
 };
 

@@ -1,6 +1,6 @@
 use std::collections::BTreeSet as Set;
 
-use crate::instrs::{Color, Instr, Params, Parse, Shift, Slot, State};
+use crate::{Color, Instr, Params, Parse, Shift, Slot, State};
 
 /**************************************/
 

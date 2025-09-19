@@ -2,10 +2,7 @@ use core::{fmt, iter::once};
 
 use ahash::{AHashMap as Dict, AHashSet as Set};
 
-use crate::{
-    Goal, Prog,
-    instrs::{Color, Parse as _, Shift, State},
-};
+use crate::{Color, Goal, Parse as _, Prog, Shift, State};
 
 use Goal::*;
 

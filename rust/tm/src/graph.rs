@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::{Prog, instrs::State};
+use crate::{Prog, State};
 
 /**************************************/
 
@@ -57,7 +57,7 @@ impl Prog {
 }
 
 #[cfg(test)]
-use crate::instrs::Parse as _;
+use crate::Parse as _;
 
 #[cfg(test)]
 const UNCONNECTED: [&str; 2] = [

@@ -6,8 +6,7 @@ use std::{
 };
 
 use crate::{
-    Prog,
-    instrs::{Color, Instr, Parse as _, Shift, Slot, State},
+    Color, Instr, Parse as _, Prog, Shift, Slot, State,
     tape::{
         self, Alignment, Block as _, LilBlock as Block,
         LilCount as Count, Pos,

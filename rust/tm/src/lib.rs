@@ -26,7 +26,10 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 /**************************************/
 
-pub use crate::prog::Prog;
+pub use crate::{
+    instrs::{Color, Instr, Params, Parse, Shift, Slot, State},
+    prog::Prog,
+};
 
 /**************************************/
 

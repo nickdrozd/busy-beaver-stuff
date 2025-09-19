@@ -8,8 +8,8 @@ use std::collections::BTreeMap as Dict;
 use ahash::AHashSet as Set;
 
 use crate::{
-    Goal, Prog,
-    instrs::{Color, Instr, Shift, Slot, State, show_state},
+    Color, Goal, Instr, Prog, Shift, Slot, State,
+    instrs::show_state,
     tape::{Block as _, LilBlock as Block, LilCount as Count},
 };
 
@@ -777,7 +777,7 @@ impl<'p> AnalyzedProg<'p> {
 /**************************************/
 
 #[cfg(test)]
-use crate::instrs::Parse as _;
+use crate::Parse as _;
 
 #[cfg(test)]
 impl Tape {

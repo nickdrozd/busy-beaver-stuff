@@ -3,8 +3,7 @@ use core::fmt;
 use ahash::AHashSet as Set;
 
 use crate::{
-    Goal, Prog,
-    instrs::{Color, Instr, Parse as _, Shift, State},
+    Color, Goal, Instr, Parse as _, Prog, Shift, State,
     macros::GetInstr,
     tape::{
         Block as _, LilBlock as Block, LilCount as Count,
