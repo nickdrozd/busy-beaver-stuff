@@ -1,6 +1,8 @@
 use std::collections::BTreeSet as Set;
 
-use crate::{Color, Instr, Params, Parse, Shift, Slot, State};
+use crate::{Color, Instr, Parse, Shift, Slot, State};
+
+pub type Params = (State, Color);
 
 /**************************************/
 

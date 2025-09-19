@@ -5,8 +5,6 @@ pub type Shift = bool;
 pub type Slot = (State, Color);
 pub type Instr = (Color, Shift, State);
 
-pub type Params = (State, Color);
-
 /**************************************/
 
 const UNDF: char = '.';
