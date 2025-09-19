@@ -402,9 +402,9 @@ fn test_reason() {
 
 /**************************************/
 
-use tm::Parse as _;
-
 fn test_collect() {
+    use tm::Parse as _;
+
     println!("collect");
 
     let progs = Basket::set(vec![]);
