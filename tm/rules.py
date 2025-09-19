@@ -254,8 +254,8 @@ def make_rule(*countses: Counts) -> Rule | None:
             except UnknownRule:
                 return None
             except UnhandledOp as err:
-                assert unhandled_op is None
-                unhandled_op = err
+                if unhandled_op is None:
+                    unhandled_op = err
                 continue
 
             if diff is None:
@@ -372,7 +372,10 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
 
 def apply_ops(count: Count, times: Count, ops: OpSeq) -> Count:
     if not isinstance(times, int):
-        raise RuleLimit(f'ops_times: {times}')
+        if Exp.make(10, 5) < times.estimate():  # no-branch
+            raise RuleLimit(f'ops_times: {times}')
+
+        times = int(times)  # no-cover
 
     result = count
 

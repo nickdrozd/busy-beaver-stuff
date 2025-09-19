@@ -1573,13 +1573,19 @@ class Prover(RunProver):
                         self.machine.limrul,
                         prog)
 
-                marks = self.machine.marks
+                try:
+                    marks = self.machine.marks
+                except RecursionError:
+                    marks = -1
 
                 try:
-                    estimate = show_number(
-                        marks
-                        if isinstance(marks, int) else
-                        marks.estimate()
+                    estimate = (
+                        show_number(
+                            marks
+                            if isinstance(marks, int) else
+                            marks.estimate())
+                        if marks != -1 else
+                        str(self.machine.rulapp.estimate())  # type: ignore[union-attr]
                     )
                 except NotImplementedError as err:
                     estimate = err.args[0]
