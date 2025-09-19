@@ -103,13 +103,13 @@ impl Prog {
         self.instrs.values()
     }
 
-    #[expect(clippy::cast_possible_truncation)]
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
         for (state, colors) in self.instrs.table.iter().enumerate() {
             for (color, entry) in colors.iter().enumerate() {
                 if entry.is_none() {
+                    #[expect(clippy::cast_possible_truncation)]
                     slots.insert((state as State, color as Color));
                 }
             }
