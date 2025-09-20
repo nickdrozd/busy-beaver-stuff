@@ -1337,10 +1337,10 @@ def find_period(base: int, mod: int) -> int:
     if base == 2 and mod == 2 * (3 ** round(log(mod / 2, 3))):
         return 0
 
-    val = 1
-
     if mod >= MOD_PERIOD_LIMIT:
         raise PeriodLimit(base, mod)
+
+    val = 1
 
     for period in range(1, mod):
         val *= base
