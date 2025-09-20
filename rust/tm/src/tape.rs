@@ -452,6 +452,16 @@ impl<C: Countable, B: Block<C>> MachineTape for Tape<C, B> {
     }
 }
 
+pub trait TapeLike: Display {
+    fn scan(&self) -> Color;
+}
+
+impl<C: Countable, B: Block<C>> TapeLike for Tape<C, B> {
+    fn scan(&self) -> Color {
+        self.scan
+    }
+}
+
 /**************************************/
 
 pub type Index = (Shift, usize);
@@ -505,6 +515,12 @@ pub struct HeadTape {
     tape: MedTape,
 }
 
+impl TapeLike for HeadTape {
+    fn scan(&self) -> Color {
+        self.tape.scan()
+    }
+}
+
 impl Display for HeadTape {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "({}) {}", self.head, self.tape)
@@ -539,9 +555,8 @@ impl HeadTape {
     }
 }
 
-pub trait Alignment {
+pub trait Alignment: TapeLike {
     fn head(&self) -> Pos;
-    fn scan(&self) -> Color;
 
     fn l_len(&self) -> usize;
     fn r_len(&self) -> usize;
@@ -589,10 +604,6 @@ pub trait Alignment {
 impl Alignment for HeadTape {
     fn head(&self) -> Pos {
         self.head
-    }
-
-    fn scan(&self) -> Color {
-        self.tape.scan
     }
 
     fn l_len(&self) -> usize {

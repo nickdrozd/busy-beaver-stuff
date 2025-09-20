@@ -3,7 +3,7 @@ use crate::{
     macros::GetInstr,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{Alignment as _, BigTape, HeadTape},
+    tape::{Alignment as _, BigTape, HeadTape, TapeLike as _},
 };
 
 /**************************************/
@@ -83,7 +83,7 @@ pub fn run_for_infrul(
             }
         }
 
-        let slot = (state, tape.scan);
+        let slot = (state, tape.scan());
 
         let Some((color, shift, next_state)) = prog.get_instr(&slot)
         else {
