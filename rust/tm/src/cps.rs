@@ -2,7 +2,7 @@ use core::{fmt, iter::once};
 
 use ahash::{AHashMap as Dict, AHashSet as Set};
 
-use crate::{Color, Goal, Parse as _, Prog, Shift, State};
+use crate::{Color, Goal, Prog, Shift, config};
 
 use Goal::*;
 
@@ -199,11 +199,7 @@ impl AddSpan for Spans {
 
 /**************************************/
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct Config {
-    state: State,
-    tape: Tape,
-}
+type Config = config::Config<Tape>;
 
 impl Config {
     fn init(rad: Radius) -> Self {
@@ -211,15 +207,6 @@ impl Config {
             state: 0,
             tape: Tape::init(rad),
         }
-    }
-}
-
-impl fmt::Display for Config {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let tape = &self.tape;
-        let slot = (self.state, tape.scan).show();
-
-        write!(f, "{slot} | {tape}")
     }
 }
 
@@ -251,6 +238,12 @@ impl Tape {
             if shift { (push, pull) } else { (pull, push) };
 
         Self { scan, lspan, rspan }
+    }
+}
+
+impl config::TapeLike for Tape {
+    fn scan(&self) -> Color {
+        self.scan
     }
 }
 

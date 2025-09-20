@@ -3,7 +3,7 @@ use core::cmp::{max, min};
 use rayon::prelude::*;
 
 use crate::{
-    Color, Goal, Instr, Params, Prog, Shift, Slot, State,
+    Color, Goal, Instr, Params, Prog, Shift, Slot, State, config,
     tape::MedTape as Tape,
 };
 
@@ -78,11 +78,7 @@ enum RunResult {
 
 use RunResult::*;
 
-#[derive(Clone)]
-struct Config {
-    state: State,
-    tape: Tape,
-}
+type Config = config::Config<Tape>;
 
 impl Config {
     fn init_stepped() -> Self {
@@ -90,10 +86,6 @@ impl Config {
             state: 1,
             tape: Tape::init_stepped(),
         }
-    }
-
-    const fn slot(&self) -> Slot {
-        (self.state, self.tape.scan)
     }
 
     fn run(&mut self, prog: &Prog, sim_lim: Step) -> RunResult {

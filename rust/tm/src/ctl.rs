@@ -1,9 +1,7 @@
-use core::fmt;
-
 use ahash::AHashSet as Set;
 
 use crate::{
-    Color, Goal, Instr, Parse as _, Prog, Shift, State,
+    Color, Goal, Instr, Prog, Shift, config,
     macros::GetInstr,
     tape::{
         Block as _, LilBlock as Block, LilCount as Count,
@@ -125,20 +123,7 @@ fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: Goal) -> bool {
 
 /**************************************/
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct Config {
-    state: State,
-    tape: Tape,
-}
-
-impl fmt::Display for Config {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let tape = &self.tape;
-        let slot = (self.state, tape.scan).show();
-
-        write!(f, "{slot} | {tape}")
-    }
-}
+type Config = config::Config<Tape>;
 
 impl Config {
     const fn init() -> Self {
@@ -159,9 +144,7 @@ impl Config {
             #[cfg(debug_assertions)]
             println!("{self}");
 
-            let slot = (self.state, self.tape.scan);
-
-            let Some(instr) = prog.get_instr(&slot) else {
+            let Some(instr) = prog.get_instr(&self.slot()) else {
                 return if goal.is_halt() {
                     #[cfg(debug_assertions)]
                     println!("halt reached");
