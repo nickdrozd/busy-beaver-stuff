@@ -4824,11 +4824,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 311961,
-    "divs": 15212,
-    "exps": 275961,
-    "muls": 143166,
-    "totl": 746300,
+    "adds": 315661,
+    "divs": 18512,
+    "exps": 276461,
+    "muls": 144166,
+    "totl": 754800,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -5593,8 +5593,8 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
 
     "depth-limit: ((-17 + (5 * (2 ** (???)))) // 3) % 4": {
         "1RB 1LD  0RC ...  1RD 0LA  1RE 1RF  1LC 1LE  1RA 0RD": (
-            5074,
-            "(10 ↑↑ 52)",
+            12874,
+            "(10 ↑↑ 152)",
             "(???)",
             "(???)",
         ),

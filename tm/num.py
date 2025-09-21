@@ -688,7 +688,7 @@ class Div(Num):
         if mod == 1:
             return 0
 
-        if self.num.depth > 200:
+        if self.num.depth > 600:
             raise ModDepthLimit(self, mod)
 
         div, rem = divmod(
