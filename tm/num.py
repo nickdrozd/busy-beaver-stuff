@@ -929,7 +929,7 @@ class Exp(Num):
                 if mod == 12:  # no-branch
                     return 1 if exp % 2 == 0 else 7
 
-        if (period := find_period(base, mod)) > 0:
+        if (period := find_period(base, mod, exp)) > 0:
             exp %= period
 
         if exp == 0:
@@ -1332,7 +1332,7 @@ def gcd(l: int, r: Count) -> int:
 MOD_PERIOD_LIMIT = 2 ** 24
 
 @cache
-def find_period(base: int, mod: int) -> int:
+def find_period(base: int, mod: int, exp: int) -> int:
     if base == 2 and mod == 2 * (3 ** round(log(mod / 2, 3))):
         return 0
 
@@ -1341,7 +1341,7 @@ def find_period(base: int, mod: int) -> int:
 
     val = 1
 
-    for period in range(1, mod):
+    for period in range(1, min(mod, exp)):
         val *= base
         val %= mod
 
