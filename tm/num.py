@@ -891,8 +891,6 @@ class Exp(Num):
 
         exp = self.exp
 
-        assert 1 < exp
-
         match base:
             case 2:
                 match mod:
@@ -943,11 +941,12 @@ class Exp(Num):
         res = 1
 
         for _ in itertools.count():
-            if exp <= 0 or res <= 0:
+            if exp == 0:
                 break
 
             if (exp % 2) == 1:
                 res = (res * base) % mod
+                assert 0 < res < mod
 
             exp //= 2
 
