@@ -4629,16 +4629,16 @@ PROVER_HALT: ProverEst = {
     "1RB 3LB ... 0RB 1LA  2LA 4RB 1RA 0LB 1LB": (8.2,   3),
 
     # 2/6
-    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...": "((376 + (61 *",    # 10 ^^ 90
-    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB ... 3RB 4LA": "(14 + (2 ** (-1",  # 10 ^^ 70
+    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...": "(10 ↑↑ 91)",
+    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB ... 3RB 4LA": "(10 ↑↑ 70)",
     "1RB 2LA ... 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (1.9, 4933),
     "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ...": (6.9, 4931),
     "1RB 2LB 4RB 1LA 1RB ...  1LA 3RA 5RA 4LB 0RA 4LA": (8.6,  821),
     "1RB 0RB 3LA 5LA ... 4LB  1LA 2RB 3LA 4LB 3RB 3RA": (1.9,   27),
 
     # 4/3
-    "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ...  1RA 2LD 1RD": "((251 + (29 * (3",
-    "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD": "(2 + (3 * (2 ** (2 +",
+    "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ...  1RA 2LD 1RD": "(10 ↑↑ 149)",
+    "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD": "(10 ↑↑ 10)",
     "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ...  2RA 1LB 0RD": (1.3, 7036),
     "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...": (1.3, 7036),
     "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA ...": (4.2, 6034),
@@ -4647,13 +4647,13 @@ PROVER_HALT: ProverEst = {
     "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC ... 0LC": (4.0, 3860),
 
     # 3/4
-    "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "(4 + (2 ** (???)))",
-    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC": "((-5 + (3 ** ((-5 + (3 **",
+    "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "(10 ↑↑ 2049)",
+    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC": "(10 ↑↑ 3)",
     "1RB 1LA ... ...  1RC 3LB 1RB 0LC  2LA 2LC ... 3LC": (1.2, 443682),
     "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC": (3.7, 6518),
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC": (2.2, 2372),
     "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB": (1.7, 1301),
-    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC": "((-11 + (3 ** 1642)) // 2)",
+    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC": (1.3, 783),
     "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA": (2.1,  628),
     "1RB 0RB 3LC 1RC  0RC ... 2RC 3RC  1LB 2LA 3LA 2RB": (4.6,  434),
     "1RB 1LA 1LB 1RA  0LA 2RB 2LC ...  3RB 2LB 1RC 0RC": (2.4,   26),
@@ -4662,9 +4662,9 @@ PROVER_HALT: ProverEst = {
     "1RB 4RB 1RA 0RA ...  2LC ... 2RB ... ...  2LA 2LC 3RC ... ...": (5.8, 8),
 
     # 6/2
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": "((-11 + (3 ** ((13",  # 10^^15
-    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD": "((38 + (19 * (2 **",  # 10^^5
-    "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  ... 1LC": "((46 + (49 * (2 **",  # ???
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": "(10 ↑↑ 16)",
+    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD": "(10 ↑↑ 5)",
+    "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  ... 1LC": "(10 ↑↑ 5)",
     "1RB ...  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (1.7, 646_456_993),
     "1RB ...  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2.0, 98641),
     "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...": (6.0, 39456),
@@ -4685,17 +4685,17 @@ PROVER_HALT: ProverEst = {
     "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB": (1.0,     7),
 
     # 7/2
-    "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": "(684 + (2 ** (???)))",  # 10^^519
-    "1RB 0LG  0RC ...  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": "(3 + (5 * (3 ** (???))))",  # 10^^134
+    "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": "(10 ↑↑ 519)",
+    "1RB 0LG  0RC ...  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": "(10 ↑↑ 134)",
 
     # 5/5 block-compiled from 1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": (6.0, 39456),
 
     # Green-8
-    "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": "((-3 + (7 *",
+    "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": (8.2, 44),
 
     # Green-9
-    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": "((-5 + (7 * (3",
+    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": "(10 ↑↑ 30)",
 }
 
 PROVER_SPINOUT: ProverEst = {
@@ -4704,9 +4704,9 @@ PROVER_SPINOUT: ProverEst = {
     "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": 414095476548,
 
     # 3/3
-    "1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC": "(2 ** (4 + (2 **",
-    "1RB 2LB 2LC  1LA 2RC 1LB  0RC 2RB 0LA": "(-6 + (5 * (2 **",
-    "1RB 0LB 2LA  1LA 2RC 0LB  2RC 2RB 0LC": "(2 ** 19)",
+    "1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC": "(10 ↑↑ 7)",
+    "1RB 2LB 2LC  1LA 2RC 1LB  0RC 2RB 0LA": (4.0, 4),
+    "1RB 0LB 2LA  1LA 2RC 0LB  2RC 2RB 0LC": (5.2, 5),
     "1RB 2RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": 0,
     "1RB 2LA 0LB  2LA 1LB 0LC  1RC 0LC 1RA": 0,
     "1RB 0LB 1LA  2LC 2LB 2LB  2RC 2RA 0LC": 0,

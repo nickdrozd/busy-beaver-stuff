@@ -1387,9 +1387,9 @@ class Prover(RunProver):
             if isinstance(marks, int):
                 self.assertEqual(result, marks)
             elif isinstance(marks, str):
-                self.assertTrue(
-                    str(result).startswith(marks),
-                    f'    "{prog}": "{result}",')
+                assert '↑↑' in marks
+                assert not isinstance(result, int)
+                self.assertEqual(marks, str(result.estimate()))
             else:
                 digits, exp = marks
 
