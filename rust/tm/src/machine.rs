@@ -1,9 +1,12 @@
 use crate::{
     Prog, Slot, State,
+    config::Config,
     macros::GetInstr,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{Alignment as _, BigTape, HeadTape, Scan as _},
+    tape::{
+        Alignment as _, BigTape, HeadTape, MedTape, Pos, Scan as _,
+    },
 };
 
 /**************************************/
@@ -186,6 +189,92 @@ impl Prog {
 
         StepLimit
     }
+
+    pub fn run_transcript(
+        &self,
+        sim_lim: usize,
+        config: &mut Config<MedTape>,
+    ) -> RunResult {
+        let mut pos = 0;
+
+        let mut transcript = vec![];
+
+        for _ in 0..sim_lim {
+            let slot = config.slot();
+
+            transcript.push((slot, pos));
+
+            let Some(&(color, shift, state)) = self.get(&slot) else {
+                return Undefined(slot);
+            };
+
+            if state == config.state && config.tape.at_edge(shift) {
+                return Spinout;
+            }
+
+            #[expect(clippy::cast_possible_wrap)]
+            let stepped = config.tape.step(shift, color, false) as Pos;
+
+            if shift {
+                pos += stepped;
+            } else {
+                pos -= stepped;
+            }
+
+            if config.tape.blank() {
+                return Blank;
+            }
+
+            config.state = state;
+        }
+
+        if has_recurrence(&transcript) {
+            return Recur;
+        }
+
+        StepLimit
+    }
+}
+
+type Transcript = Vec<(Slot, Pos)>;
+
+fn has_recurrence(transcript: &Transcript) -> bool {
+    fn find_reps(t: &Transcript) -> Option<(usize, usize)> {
+        let len = t.len();
+
+        if len < 2 {
+            return None;
+        }
+
+        for seq in 1..=len / 2 {
+            let prev = len - 2 * seq;
+            let curr = len - seq;
+
+            let prev_slots = t[prev..curr].iter().map(|(s, _)| s);
+            let curr_slots = t[curr..].iter().map(|(s, _)| s);
+
+            if prev_slots.eq(curr_slots) {
+                return Some((prev, curr));
+            }
+        }
+
+        None
+    }
+
+    let Some((prev, curr)) = find_reps(transcript) else {
+        return false;
+    };
+
+    if transcript[prev].1 == transcript[curr].1 {
+        return true;
+    }
+
+    // placeholder for your future logic
+    unimplemented!(
+        "handle recurrence starting at prev={}, curr={}",
+        prev,
+        curr
+    );
 }
 
 /**************************************/
@@ -214,6 +303,15 @@ fn test_rec() {
             "{prog}",
         );
     }
+}
+
+#[test]
+fn test_transcript() {
+    assert!(
+        Prog::read("1RB 1RD  0LB 1LC  1RC 1LD  0LC 1LA")
+            .run_transcript(16, &mut Config::init_stepped())
+            .is_recur()
+    );
 }
 
 /**************************************/
