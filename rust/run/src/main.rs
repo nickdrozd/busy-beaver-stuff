@@ -1,4 +1,4 @@
-#![expect(clippy::too_many_lines)]
+#![expect(clippy::too_many_lines, clippy::collapsible_if)]
 
 use std::env;
 
@@ -184,7 +184,13 @@ fn test_tree() {
         (
             ((4, 2), 0, 25, (877, 458_588)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, config: PassConfig<'_>| {
+                if let PassConfig::Owned(config) = config {
+                    if prog.run_transcript(config, 10).is_settled() {
+                        return true;
+                    }
+                }
+
                 !prog.is_connected()
                     || prog.term_or_rec(200).is_settled()
                     || prog.cant_halt(11).is_settled()
@@ -195,7 +201,13 @@ fn test_tree() {
         (
             ((4, 2), 1, 99, (3_322, 2_222_970)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, config: PassConfig<'_>| {
+                if let PassConfig::Owned(config) = config {
+                    if prog.run_transcript(config, 10).is_settled() {
+                        return true;
+                    }
+                }
+
                 !prog.is_connected()
                     || prog.cant_spin_out(1).is_settled()
                     || prog.term_or_rec(1_000).is_settled()
@@ -208,7 +220,13 @@ fn test_tree() {
         (
             ((4, 2), 2, 99, (3_787, 2_014_818)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, config: PassConfig<'_>| {
+                if let PassConfig::Owned(config) = config {
+                    if prog.run_transcript(config, 10).is_settled() {
+                        return true;
+                    }
+                }
+
                 !prog.is_connected()
                     || prog.cant_blank(55).is_settled()
                     || prog.term_or_rec(1_000).is_settled()
@@ -219,7 +237,13 @@ fn test_tree() {
         (
             ((4, 2), 3, 99, (134_743, 2_222_970)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, config: PassConfig<'_>| {
+                if let PassConfig::Owned(config) = config {
+                    if prog.run_transcript(config, 10).is_settled() {
+                        return true;
+                    }
+                }
+
                 !prog.is_connected()
                     || prog.term_or_rec(5_000).is_settled()
             }
@@ -227,7 +251,13 @@ fn test_tree() {
         (
             ((2, 4), 0, 109, (652, 310_211)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, config: PassConfig<'_>| {
+                if let PassConfig::Owned(config) = config {
+                    if prog.run_transcript(config, 10).is_settled() {
+                        return true;
+                    }
+                }
+
                 prog.cant_halt(0).is_settled()
                     || prog.term_or_rec(800).is_settled()
                     || prog.seg_cant_halt(2).is_refuted()
@@ -238,7 +268,13 @@ fn test_tree() {
         (
             ((2, 4), 1, 876, (5_499, 614_151)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, config: PassConfig<'_>| {
+                if let PassConfig::Owned(config) = config {
+                    if prog.run_transcript(config, 10).is_settled() {
+                        return true;
+                    }
+                }
+
                 prog.cant_spin_out(2).is_settled()
                     || prog.term_or_rec(2_000).is_settled()
                     || prog.cant_spin_out(7).is_settled()
@@ -250,7 +286,13 @@ fn test_tree() {
         (
             ((2, 4), 2, 876, (4_310, 1_189_715)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, config: PassConfig<'_>| {
+                if let PassConfig::Owned(config) = config {
+                    if prog.run_transcript(config, 10).is_settled() {
+                        return true;
+                    }
+                }
+
                 prog.cant_blank(58).is_settled()
                     || prog.term_or_rec(2_000).is_settled()
                     || prog.ctl_cant_blank(120)
@@ -260,7 +302,13 @@ fn test_tree() {
         (
             ((2, 4), 3, 876, (257_465, 1_698_539)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, config: PassConfig<'_>| {
+                if let PassConfig::Owned(config) = config {
+                    if prog.run_transcript(config, 10).is_settled() {
+                        return true;
+                    }
+                }
+
                 prog.term_or_rec(5_000).is_settled()
             }
         ),

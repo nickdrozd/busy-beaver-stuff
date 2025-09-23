@@ -1,9 +1,12 @@
 use crate::{
     Prog, Slot, State,
+    config::Config,
     macros::GetInstr,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{Alignment as _, BigTape, HeadTape, TapeLike as _},
+    tape::{
+        Alignment as _, BigTape, HeadTape, MedTape, Pos, TapeLike as _,
+    },
 };
 
 /**************************************/
@@ -178,6 +181,60 @@ impl Prog {
             if state == ref_state
                 && tape.aligns_with(&ref_tape, leftmost, rightmost)
             {
+                return RunResult::Recur;
+            }
+        }
+
+        RunResult::StepLimit
+    }
+
+    pub fn run_transcript(
+        &self,
+        mut config: Config<MedTape>,
+        sim_lim: usize,
+    ) -> RunResult {
+        let mut pos = 0;
+
+        let mut transcript = vec![];
+
+        for _ in 0..sim_lim {
+            let slot = config.slot();
+
+            transcript.push((slot, pos));
+
+            let Some(&(color, shift, state)) = self.get(&slot) else {
+                return RunResult::Undefined(slot);
+            };
+
+            let same = config.state == state;
+
+            if same && config.tape.at_edge(shift) {
+                return RunResult::Spinout;
+            }
+
+            let stepped = config.tape.step(shift, color, same);
+
+            #[expect(clippy::cast_possible_wrap)]
+            if shift {
+                pos += stepped as Pos;
+            } else {
+                pos -= stepped as Pos;
+            }
+
+            if config.tape.blank() {
+                return RunResult::Blank;
+            }
+
+            config.state = state;
+        }
+
+        let len = transcript.len();
+
+        for seq in 1..=len / 2 {
+            let curr = &transcript[len - seq..];
+            let prev = &transcript[len - 2 * seq..len - seq];
+
+            if curr == prev {
                 return RunResult::Recur;
             }
         }
