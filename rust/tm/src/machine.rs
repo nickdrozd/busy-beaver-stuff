@@ -1,9 +1,12 @@
 use crate::{
     Prog, Slot, State,
+    config::Config,
     macros::GetInstr,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{Alignment as _, BigTape, HeadTape, Scan as _},
+    tape::{
+        Alignment as _, BigTape, HeadTape, MedTape, Pos, Scan as _,
+    },
 };
 
 /**************************************/
@@ -186,6 +189,119 @@ impl Prog {
 
         StepLimit
     }
+
+    pub fn run_transcript(
+        &self,
+        sim_lim: usize,
+        config: &mut Config<MedTape>,
+    ) -> RunResult {
+        let mut pos = 0;
+
+        let mut transcript = vec![];
+
+        for _ in 0..sim_lim {
+            let slot = config.slot();
+
+            transcript.push((slot, pos));
+
+            let Some(&(color, shift, state)) = self.get(&slot) else {
+                return Undefined(slot);
+            };
+
+            if state == config.state && config.tape.at_edge(shift) {
+                return Spinout;
+            }
+
+            #[expect(clippy::cast_possible_wrap)]
+            let stepped = config.tape.step(shift, color, false) as Pos;
+
+            if shift {
+                pos += stepped;
+            } else {
+                pos -= stepped;
+            }
+
+            if config.tape.blank() {
+                return Blank;
+            }
+
+            config.state = state;
+        }
+
+        if has_recurrence(&transcript) {
+            return Recur;
+        }
+
+        StepLimit
+    }
+}
+
+type Transcript = Vec<(Slot, Pos)>;
+
+fn has_recurrence(transcript: &Transcript) -> bool {
+    let t = transcript.len();
+
+    let min_max = |e: usize| -> (Pos, Pos) {
+        assert!(0 < e);
+
+        let mut it = transcript[..e].iter().map(|&(_, p)| p);
+        let first = it.next().unwrap();
+
+        let (mut min_p, mut max_p) = (first, first);
+
+        for p in it {
+            if p < min_p {
+                min_p = p;
+            } else if max_p < p {
+                max_p = p;
+            }
+        }
+
+        (min_p, max_p)
+    };
+
+    for l in 1..=t / 2 {
+        let k = t - l;
+
+        let mut offset = l - 1;
+
+        for i in 0..k {
+            let end_l = t - i;
+            let end_k = k - i;
+
+            let (slot_l, pos_l) = transcript[end_l - 1];
+            let (slot_k, pos_k) = transcript[end_k - 1];
+
+            if slot_l != slot_k {
+                break;
+            }
+
+            if i == offset {
+                if pos_l == pos_k {
+                    return true;
+                }
+
+                let (min_l, max_l) = min_max(end_l);
+                let (min_k, max_k) = min_max(end_k);
+
+                if pos_l == min_l && pos_k == min_k {
+                    return true;
+                }
+
+                if pos_l == max_l && pos_k == max_k {
+                    return true;
+                }
+
+                offset += 1;
+
+                if k <= offset {
+                    break;
+                }
+            }
+        }
+    }
+
+    false
 }
 
 /**************************************/
@@ -218,6 +334,14 @@ fn test_rec() {
     for &(prog, expected) in REC_PROGS {
         assert_eq!(
             Prog::read(prog).term_or_rec(301).is_recur(),
+            expected,
+            "{prog}",
+        );
+
+        assert_eq!(
+            Prog::read(prog)
+                .run_transcript(280, &mut Config::init_stepped())
+                .is_recur(),
             expected,
             "{prog}",
         );

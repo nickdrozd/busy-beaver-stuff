@@ -4,6 +4,7 @@ use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
     Instr, Parse as _, Prog, Slot, State,
+    config::Config,
     instrs::show_state,
     reason::{
         BackwardResult as BackwardResultRs, BackwardResult::*, Depth,
@@ -27,6 +28,13 @@ pub fn opt_block(prog: &str, steps: usize) -> usize {
 #[pyfunction]
 pub fn term_or_rec(prog: &str, sim_lim: usize) -> bool {
     Prog::read(prog).term_or_rec(sim_lim).is_settled()
+}
+
+#[pyfunction]
+pub fn run_transcript(prog: &str, sim_lim: usize) -> bool {
+    Prog::read(prog)
+        .run_transcript(sim_lim, &mut Config::init_stepped())
+        .is_settled()
 }
 
 #[pyfunction]
@@ -460,9 +468,10 @@ mod rust_stuff {
             cant_halt, cant_spin_out, cps_cant_blank, cps_cant_halt,
             cps_cant_spin_out, ctl_cant_blank, ctl_cant_halt,
             ctl_cant_spin_out, is_connected, opt_block, py_show_state,
-            read_instr, run_quick_machine, segment_cant_blank,
-            segment_cant_halt, segment_cant_spin_out, show_comp,
-            show_instr, show_slot, tcompile, term_or_rec,
+            read_instr, run_quick_machine, run_transcript,
+            segment_cant_blank, segment_cant_halt,
+            segment_cant_spin_out, show_comp, show_instr, show_slot,
+            tcompile, term_or_rec,
         },
         tm::prover::PastConfigs,
     };

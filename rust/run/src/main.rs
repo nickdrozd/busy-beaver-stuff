@@ -82,32 +82,36 @@ fn test_tree() {
         (
             ((2, 2), 0, 2, (0, 31)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, mut config: PassConfig<'_>| {
                 //
-                prog.term_or_rec(8).is_settled()
+                prog.run_transcript(9, config.to_mut()).is_settled()
             }
         ),
         (
             ((2, 2), 1, 4, (0, 36)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, mut config: PassConfig<'_>| {
                 prog.cant_spin_out(0).is_settled()
-                    || prog.term_or_rec(16).is_settled()
+                    || prog
+                        .run_transcript(18, config.to_mut())
+                        .is_settled()
             }
         ),
         (
             ((2, 2), 2, 4, (0, 61)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, mut config: PassConfig<'_>| {
                 prog.cant_blank(3).is_settled()
-                    || prog.term_or_rec(15).is_settled()
+                    || prog
+                        .run_transcript(10, config.to_mut())
+                        .is_settled()
             }
         ),
         (
             ((2, 2), 3, 4, (4, 89)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.term_or_rec(19).is_settled()
+            |prog: &Prog, mut config: PassConfig<'_>| {
+                prog.run_transcript(18, config.to_mut()).is_settled()
             }
         ),
         (

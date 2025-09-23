@@ -17,6 +17,7 @@ from test.prog_data import *  # noqa: F403
 from test.test_num import assert_num_counts, clear_caches
 from tm.machine import (
     Machine,
+    run_transcript,
     show_number,
     show_slot,
     term_or_rec,
@@ -887,6 +888,10 @@ class Recur(TuringTest):
                 term_or_rec(prog, steps),
                 prog)
 
+            self.assertFalse(
+                run_transcript(prog, steps),
+                prog)
+
             self.assertIsNotNone(
                 run_loose_linrec_machine(prog, steps).xlimit)
 
@@ -985,6 +990,7 @@ class Recur(TuringTest):
     def test_infrul(self):
         for prog in INFRUL - BLANKERS:
             self.assertFalse(term_or_rec(prog, 10_000))
+            self.assertFalse(run_transcript(prog, 1_000))
 
         assert not INFRUL & RECURS
 
