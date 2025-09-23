@@ -1,5 +1,7 @@
 use core::cmp::{max, min};
 
+use std::borrow::Cow;
+
 use rayon::prelude::*;
 
 use crate::{
@@ -80,6 +82,8 @@ use RunResult::*;
 
 type Config = config::Config<Tape>;
 
+pub type PassConfig<'c> = Cow<'c, Config>;
+
 impl Config {
     fn init_stepped() -> Self {
         Self {
@@ -122,7 +126,7 @@ struct TreeCore<'h> {
     sim_lim: Step,
     avail_params: Vec<Params>,
     remaining_slots: Slots,
-    harvester: &'h dyn Fn(&Prog),
+    harvester: &'h dyn Fn(&Prog, PassConfig),
 }
 
 impl<'h> TreeCore<'h> {
@@ -130,7 +134,7 @@ impl<'h> TreeCore<'h> {
         params @ (states, colors): Params,
         halt: Slots,
         sim_lim: Step,
-        harvester: &'h dyn Fn(&Prog),
+        harvester: &'h dyn Fn(&Prog, PassConfig),
     ) -> Self {
         let prog = Prog::init_stepped(params);
 
@@ -157,8 +161,8 @@ impl<'h> TreeCore<'h> {
         config.run(&self.prog, self.sim_lim)
     }
 
-    fn harvest(&self) {
-        (self.harvester)(&self.prog);
+    fn harvest(&self, config: PassConfig<'_>) {
+        (self.harvester)(&self.prog, config);
     }
 
     fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
@@ -219,7 +223,7 @@ impl<'h> TreeCore<'h> {
 trait Tree<'h> {
     fn prog(&self) -> &Prog;
 
-    fn harvest(&self);
+    fn harvest(&self, config: PassConfig<'_>);
 
     fn final_slot(&self) -> bool;
 
@@ -265,7 +269,7 @@ trait Tree<'h> {
             Blank | Spinout => return,
             Limit => {
                 if !self.prog().incomplete() {
-                    self.harvest();
+                    self.harvest(PassConfig::Owned(config));
                 }
 
                 return;
@@ -277,7 +281,7 @@ trait Tree<'h> {
         if self.final_slot() {
             for next_instr in instrs {
                 self.with_insert(&slot, next_instr, |prog| {
-                    prog.harvest();
+                    prog.harvest(PassConfig::Borrowed(&config));
                 });
             }
 
@@ -313,7 +317,7 @@ impl<'h> BasicTree<'h> {
         params: Params,
         halt: Slots,
         sim_lim: Step,
-        harvester: &'h dyn Fn(&Prog),
+        harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
         instr_table: &'h InstrTable,
     ) -> Self {
         let core = TreeCore::init(params, halt, sim_lim, harvester);
@@ -327,8 +331,8 @@ impl<'h> Tree<'h> for BasicTree<'h> {
         &self.core.prog
     }
 
-    fn harvest(&self) {
-        self.core.harvest();
+    fn harvest(&self, config: PassConfig<'_>) {
+        self.core.harvest(config);
     }
 
     fn final_slot(&self) -> bool {
@@ -375,7 +379,7 @@ impl<'h> BlankTree<'h> {
     fn init(
         params @ (states, colors): Params,
         sim_lim: Step,
-        harvester: &'h dyn Fn(&Prog),
+        harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
         instr_table: &'h BlankInstrTable,
     ) -> Self {
         let core = TreeCore::init(params, 0, sim_lim, harvester);
@@ -422,8 +426,8 @@ impl<'h> Tree<'h> for BlankTree<'h> {
         &self.core.prog
     }
 
-    fn harvest(&self) {
-        self.core.harvest();
+    fn harvest(&self, config: PassConfig<'_>) {
+        self.core.harvest(config);
     }
 
     fn final_slot(&self) -> bool {
@@ -472,7 +476,7 @@ fn build_all(
     params @ (states, colors): Params,
     halt: Slots,
     sim_lim: Step,
-    harvester: &(impl Fn(&Prog) + Sync),
+    harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
     let init_states = min(3, states);
     let init_colors = min(3, colors);
@@ -502,7 +506,7 @@ fn build_all(
 fn build_blank(
     params @ (states, colors): Params,
     sim_lim: Step,
-    harvester: &(impl Fn(&Prog) + Sync),
+    harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
     let init_states = min(3, states);
     let init_colors = min(3, colors);
@@ -528,7 +532,7 @@ fn build_blank(
 fn build_spinout(
     params @ (states, colors): Params,
     sim_lim: Step,
-    harvester: &(impl Fn(&Prog) + Sync),
+    harvester: &(impl Fn(&Prog, PassConfig) + Sync),
 ) {
     let init_states = min(3, states);
     let init_colors = min(3, colors);
@@ -565,7 +569,7 @@ pub fn build_tree(
     params: Params,
     goal: Option<Goal>,
     sim_lim: Step,
-    harvester: &(impl Fn(&Prog) + Sync),
+    harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
     match goal {
         Some(Goal::Halt) | None => {
@@ -589,7 +593,7 @@ pub fn build_limited(
     params @ (states, colors): Params,
     instrs: Slots,
     sim_lim: Step,
-    harvester: &(impl Fn(&Prog) + Sync),
+    harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
     let dimension = states * colors;
 
