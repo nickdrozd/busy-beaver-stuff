@@ -544,13 +544,13 @@ impl HeadTape {
     }
 
     pub fn step(&mut self, shift: Shift, color: Color, skip: bool) {
-        let stepped = self.tape.step(shift, color, skip);
-
         #[expect(clippy::cast_possible_wrap)]
+        let stepped = self.tape.step(shift, color, skip) as Pos;
+
         if shift {
-            self.head += stepped as Pos;
+            self.head += stepped;
         } else {
-            self.head -= stepped as Pos;
+            self.head -= stepped;
         }
     }
 }
