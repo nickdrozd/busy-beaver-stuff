@@ -276,7 +276,8 @@ trait Tree<'h> {
             },
         };
 
-        let instrs = self.avail_instrs(&slot);
+        let (last_instr, instrs) =
+            self.avail_instrs(&slot).split_last().unwrap();
 
         if self.final_slot() {
             for next_instr in instrs {
@@ -285,12 +286,14 @@ trait Tree<'h> {
                 });
             }
 
+            self.with_insert(&slot, last_instr, |prog| {
+                prog.harvest(PassConfig::Owned(config));
+            });
+
             return;
         }
 
         config.state = slot_state;
-
-        let (last_instr, instrs) = instrs.split_last().unwrap();
 
         for next_instr in instrs {
             self.with_instr(&slot, next_instr, |prog| {
