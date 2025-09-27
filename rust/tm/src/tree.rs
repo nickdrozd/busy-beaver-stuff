@@ -287,7 +287,9 @@ trait Tree<'h> {
             }
 
             self.with_insert(&slot, last_instr, |prog| {
-                prog.harvest(PassConfig::Owned(config));
+                if matches!(config.run(prog.prog(), 2), Limit) {
+                    prog.harvest(PassConfig::Owned(config));
+                }
             });
 
             return;
