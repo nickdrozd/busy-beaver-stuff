@@ -683,12 +683,15 @@ class Div(Num):
         if mod == 1:
             return 0
 
-        if self.num.depth > 600:  # no-cover
+        num, den = self.num, self.den
+
+        if num.depth > 600:  # no-cover
             raise ModDepthLimit(self, mod)
 
-        div, rem = divmod(
-            self.num % (mod * self.den),
-            self.den)
+        if (inv := inv_mod(den, mod)) is not None:
+            return (inv * (num % mod)) % mod
+
+        div, rem = divmod(num % (mod * den), den)
 
         assert rem == 0
 
@@ -886,7 +889,7 @@ class Exp(Num):
 
         return round(log10(self.base) * 10 ** log10(exp))
 
-    def __mod__(self, mod: int) -> int:  # noqa: PLR0912
+    def __mod__(self, mod: int) -> int:
         if mod == 1:
             return 0
 
@@ -914,23 +917,16 @@ class Exp(Num):
                     case 12:
                         return 4 if exp % 2 == 0 else 8
 
-                    case 30:
-                        match exp % 4:
-                            case 3:
-                                return 8
-                            case 0:  # no-cover
-                                return 15
-                            case 1:  # no-cover
-                                return 2
-                            case 2:  # no-cover
-                                return 4
-
             case 3:
                 if mod == 6:
                     return 3
 
-                if int(log_mod := log2(mod)) == log_mod:
-                    exp %= int(2 ** (int(log_mod) - 2))
+                assert int(log_mod := log2(mod)) == log_mod
+
+                exp %= 2 ** (int(log_mod) - 2)
+
+                if exp == 0:
+                    return 1
 
             case 6:
                 if mod == 10:  # no-branch
@@ -947,9 +943,6 @@ class Exp(Num):
 
         if (period := find_period(base, mod, exp)) > 0:
             exp %= period
-
-        if exp == 0:
-            return 1
 
         res = 1
 
@@ -1340,6 +1333,20 @@ def gcd(l: int, r: Count) -> int:
         over //= base
 
     return base ** blog  # type: ignore[no-any-return]
+
+
+def inv_mod(a: int, m: int) -> int | None:
+    def egcd(a: int, b: int) -> tuple[int, int, int]:
+        if b == 0:
+            return (a, 1, 0)
+
+        g, x1, y1 = egcd(b, a % b)
+
+        return g, y1, x1 - (a // b) * y1
+
+    g, x, _ = egcd(a % m, m)
+
+    return None if g != 1 else x % m
 
 
 MOD_PERIOD_LIMIT = 2 ** 24
