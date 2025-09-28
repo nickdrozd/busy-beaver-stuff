@@ -207,6 +207,9 @@ class Machine:
                 except RuleLimit as lim:
                     self.limrul = str(lim)
                     break
+                except NotImplementedError as err:
+                    self.errors = err.args[0]
+                    break
 
                 if times is not None:
                     # print(f'--> applied rule: {rule}')
