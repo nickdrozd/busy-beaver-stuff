@@ -944,21 +944,9 @@ class Exp(Num):
         if (period := find_period(base, mod, exp)) > 0:
             exp %= period
 
-        res = 1
+        assert isinstance(exp, int)
 
-        for _ in itertools.count():
-            if exp == 0:
-                break
-
-            if (exp % 2) == 1:
-                res = (res * base) % mod
-                assert 0 < res < mod
-
-            exp //= 2
-
-            base = (base ** 2) % mod
-
-        return res
+        return pow(base, exp, mod)
 
     def __radd__(self, other: int) -> Count:
         if other == 0:
