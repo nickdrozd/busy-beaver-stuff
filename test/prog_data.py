@@ -4830,11 +4830,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 332974,
-    "divs": 33032,
-    "exps": 277390,
-    "muls": 146465,
-    "totl": 789861,
+    "adds": 333184,
+    "divs": 33092,
+    "exps": 277409,
+    "muls": 146565,
+    "totl": 790250,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -5103,10 +5103,10 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
         ),
     },
 
-    "period-limit: 2 ** ... % 39062500": {
+    "period-limit: 2 ** ... % 48828125": {
         "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ...": (
-            6437,
-            "(10 ↑↑ 9)",
+            6915,
+            "(10 ↑↑ 10)",
             "(???)",
             "(???)",
         ),

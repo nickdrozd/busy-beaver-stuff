@@ -941,8 +941,14 @@ class Exp(Num):
         if k0 < exp:
             exp = k0 + (exp - k0) % kp
 
-        if (period := find_period(base, mod, exp)) > 0:
-            exp %= period
+        try:  # pylint: disable = too-many-try-statements
+            if (period := find_period(base, mod, exp)) > 0:
+                exp %= period
+        except PeriodLimit:
+            if (crt_res := crt(Exp.make(base, exp), mod)) is not None:
+                return crt_res
+
+            raise
 
         assert isinstance(exp, int)
 
@@ -1378,6 +1384,29 @@ def carmichael(mod: int) -> tuple[int, int]:
             max_k = k
 
     return res, max_k
+
+
+def crt(n: Count, mod: int) -> int | None:
+    assert mod != 1
+
+    moduli = [p ** k for (p, k) in prime_factors(mod)]
+
+    if len(moduli) == 1:
+        return None
+
+    m0, *rest = moduli
+
+    r: int = n % m0
+    m: int = m0
+
+    for mi in rest:
+        ai = n % mi
+        inv = inv_mod(m % mi, mi)
+        t = ((ai - r) % mi) * inv % mi
+        r = (r + m * t) % (m * mi)
+        m *= mi
+
+    return r
 
 
 PRIMES = [
