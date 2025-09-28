@@ -1365,6 +1365,9 @@ def find_period(base: int, mod: int, exp: int) -> int:
 
 
 def carmichael(mod: int) -> tuple[int, int]:
+    def lcm(a : int, b : int) -> int:
+        return a * b // pgcd(a, b)
+
     res, max_k = 1, 1
 
     for p, k in prime_factors(mod):
@@ -1380,10 +1383,6 @@ def carmichael(mod: int) -> tuple[int, int]:
             max_k = k
 
     return res, max_k
-
-
-def lcm(a : int, b : int) -> int:
-    return a * b // pgcd(a, b)
 
 
 PRIMES = [
