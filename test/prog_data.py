@@ -4633,6 +4633,7 @@ PROVER_HALT: ProverEst = {
     "1RB 3LB ... 0RB 1LA  2LA 4RB 1RA 0LB 1LB": (8.2,   3),
 
     # 2/6
+    "1RB 2LA ... 1RB 5RB 0RB  2LA 4RA 3LB 5LB 5RA 4LB": "(10 ↑↑ 19892)",
     "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...": "(10 ↑↑ 91)",
     "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB ... 3RB 4LA": "(10 ↑↑ 70)",
     "1RB 2LA ... 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (1.9, 4933),
@@ -4838,11 +4839,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 328449,
-    "divs": 27550,
-    "exps": 277463,
-    "muls": 145893,
-    "totl": 779355,
+    "adds": 359568,
+    "divs": 47700,
+    "exps": 297442,
+    "muls": 166118,
+    "totl": 870828,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -5118,6 +5119,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
         "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...": (
             66587,
             "(10 ↑↑ 91)",
+            "(???)",
+            "(???)",
+        ),
+        "1RB 2LA ... 1RB 5RB 0RB  2LA 4RA 3LB 5LB 5RA 4LB": (
+            4825,
+            "(10 ↑↑ 19892)",
             "(???)",
             "(???)",
         ),
