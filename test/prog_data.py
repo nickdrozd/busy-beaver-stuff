@@ -4838,11 +4838,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 334995,
-    "divs": 33102,
+    "adds": 333954,
+    "divs": 32447,
     "exps": 278223,
     "muls": 147421,
-    "totl": 793741,
+    "totl": 792045,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {

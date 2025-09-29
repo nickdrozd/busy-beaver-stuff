@@ -363,7 +363,7 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
 
     return (
         count * exp
-        + add * (1 + ((exp - mul) // (mul - 1)))
+        + (add * ((exp - 1) // (mul - 1)))
     )
 
 
