@@ -1567,6 +1567,9 @@ class Prover(RunProver):
                 elif self.machine.infrul is not None:
                     self.assertEqual(term, 'infrul', prog)
 
+                elif (errors := self.machine.errors) is not None:
+                    self.assertEqual(term, errors, prog)
+
                 else:
                     self.assertEqual(
                         term,

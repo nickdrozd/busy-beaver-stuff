@@ -1147,8 +1147,6 @@ class Exp(Num):
             if self == l:
                 return r.pos
 
-            assert isinstance(l, int)
-
             return self < r
 
         if isinstance(other, Tet):
