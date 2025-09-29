@@ -921,12 +921,11 @@ class Exp(Num):
                 if mod == 6:
                     return 3
 
-                assert int(log_mod := log2(mod)) == log_mod
+                if int(log_mod := log2(mod)) == log_mod:
+                    exp %= 2 ** (int(log_mod) - 2)
 
-                exp %= 2 ** (int(log_mod) - 2)
-
-                if exp == 0:
-                    return 1
+                    if exp == 0:
+                        return 1
 
             case 6:
                 if mod == 10:  # no-branch
