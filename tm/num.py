@@ -15,11 +15,6 @@ type Count = int | Num
 
 ########################################
 
-class ModDepthLimit(Exception):
-    def __init__(self, num: Num, mod: int):
-        super().__init__(  # no-cover
-            f'{num} % {mod}')
-
 class PeriodLimit(Exception):
     def __init__(self, base: int, mod: int):
         super().__init__(
@@ -684,9 +679,6 @@ class Div(Num):
             return 0
 
         num, den = self.num, self.den
-
-        if num.depth > 600:  # no-cover
-            raise ModDepthLimit(self, mod)
 
         if (inv := inv_mod(den, mod)) is not None:
             return (inv * (num % mod)) % mod
