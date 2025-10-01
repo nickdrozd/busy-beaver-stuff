@@ -52,56 +52,60 @@ impl RunResult {
 
 use ProverResult::*;
 
-pub fn run_for_infrul(
-    prog: &impl GetInstr,
-    sim_lim: usize,
-) -> RunResult {
-    let mut tape = BigTape::init();
+trait RunProver {
+    fn run_prover(&self, sim_lim: usize) -> RunResult;
+}
 
-    let mut prover = Prover::new(prog);
+impl<T: GetInstr> RunProver for T {
+    fn run_prover(&self, sim_lim: usize) -> RunResult {
+        let mut tape = BigTape::init();
 
-    let mut state: State = 0;
+        let mut prover = Prover::new(self);
 
-    for cycle in 0..sim_lim {
-        if let Some(res) = prover.try_rule(cycle, state, &tape) {
-            match res {
-                ConfigLimit => {
-                    return RunResult::ConfigLimit;
-                },
-                InfiniteRule => {
-                    return RunResult::InfiniteRule;
-                },
-                MultRule => {
-                    return RunResult::MultRule;
-                },
-                Got(rule) => {
-                    if tape.apply_rule(&rule).is_some() {
-                        // println!("--> applying rule: {:?}", rule);
-                        continue;
-                    }
-                },
+        let mut state: State = 0;
+
+        for cycle in 0..sim_lim {
+            if let Some(res) = prover.try_rule(cycle, state, &tape) {
+                match res {
+                    ConfigLimit => {
+                        return RunResult::ConfigLimit;
+                    },
+                    InfiniteRule => {
+                        return RunResult::InfiniteRule;
+                    },
+                    MultRule => {
+                        return RunResult::MultRule;
+                    },
+                    Got(rule) => {
+                        if tape.apply_rule(&rule).is_some() {
+                            // println!("--> applying rule: {:?}", rule);
+                            continue;
+                        }
+                    },
+                }
             }
+
+            let slot = (state, tape.scan());
+
+            let Some((color, shift, next_state)) =
+                self.get_instr(&slot)
+            else {
+                return RunResult::Undefined(slot);
+            };
+
+            let same = state == next_state;
+
+            if same && tape.at_edge(shift) {
+                return RunResult::Spinout;
+            }
+
+            tape.step(shift, color, same);
+
+            state = next_state;
         }
 
-        let slot = (state, tape.scan());
-
-        let Some((color, shift, next_state)) = prog.get_instr(&slot)
-        else {
-            return RunResult::Undefined(slot);
-        };
-
-        let same = state == next_state;
-
-        if same && tape.at_edge(shift) {
-            return RunResult::Spinout;
-        }
-
-        tape.step(shift, color, same);
-
-        state = next_state;
+        RunResult::StepLimit
     }
-
-    RunResult::StepLimit
 }
 
 /**************************************/
@@ -111,12 +115,14 @@ impl Prog {
         let blocks = self.opt_block(block_steps);
 
         (if blocks == 1 {
-            run_for_infrul(self, steps)
+            self.run_prover(steps)
         } else {
-            run_for_infrul(&self.make_block_macro(blocks), steps)
+            self.make_block_macro(blocks).run_prover(steps)
         })
         .is_infinite()
-            || run_for_infrul(&self.make_backsymbol_macro(1), steps)
+            || self
+                .make_backsymbol_macro(1)
+                .run_prover(steps)
                 .is_infinite()
     }
 
@@ -219,12 +225,10 @@ fn test_rec() {
 #[test]
 fn test_mult_rule() {
     assert!(
-        run_for_infrul(
-            &Prog::read(
-                "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
-            ),
-            10_000,
+        Prog::read(
+            "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
         )
+        .run_prover(10_000)
         .is_mult()
     );
 }
@@ -254,7 +258,7 @@ fn test_macro_excess() {
 
     mac.assert_params((4, 0x4000));
 
-    assert!(matches!(run_for_infrul(&mac, 976), RunResult::StepLimit));
+    assert!(matches!(mac.run_prover(976), RunResult::StepLimit));
 
     assert_eq!(mac.rep_params(), (4, 323));
 }
