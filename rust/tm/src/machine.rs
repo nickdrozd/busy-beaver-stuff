@@ -19,6 +19,8 @@ pub enum RunResult {
     ConfigLimit,
 }
 
+use RunResult::*;
+
 impl RunResult {
     pub const fn is_settled(&self) -> bool {
         self.is_recur()
@@ -50,8 +52,6 @@ impl RunResult {
 
 /**************************************/
 
-use ProverResult::*;
-
 trait RunProver {
     fn run_prover(&self, sim_lim: usize) -> RunResult;
 }
@@ -67,16 +67,16 @@ impl<T: GetInstr> RunProver for T {
         for cycle in 0..sim_lim {
             if let Some(res) = prover.try_rule(cycle, state, &tape) {
                 match res {
-                    ConfigLimit => {
-                        return RunResult::ConfigLimit;
+                    ProverResult::ConfigLimit => {
+                        return ConfigLimit;
                     },
-                    InfiniteRule => {
-                        return RunResult::InfiniteRule;
+                    ProverResult::InfiniteRule => {
+                        return InfiniteRule;
                     },
-                    MultRule => {
-                        return RunResult::MultRule;
+                    ProverResult::MultRule => {
+                        return MultRule;
                     },
-                    Got(rule) => {
+                    ProverResult::Got(rule) => {
                         if tape.apply_rule(&rule).is_some() {
                             // println!("--> applying rule: {:?}", rule);
                             continue;
@@ -90,13 +90,13 @@ impl<T: GetInstr> RunProver for T {
             let Some((color, shift, next_state)) =
                 self.get_instr(&slot)
             else {
-                return RunResult::Undefined(slot);
+                return Undefined(slot);
             };
 
             let same = state == next_state;
 
             if same && tape.at_edge(shift) {
-                return RunResult::Spinout;
+                return Spinout;
             }
 
             tape.step(shift, color, same);
@@ -104,7 +104,7 @@ impl<T: GetInstr> RunProver for T {
             state = next_state;
         }
 
-        RunResult::StepLimit
+        StepLimit
     }
 }
 
@@ -143,7 +143,7 @@ impl Prog {
 
             let Some(&(color, shift, next_state)) = self.get(&slot)
             else {
-                return RunResult::Undefined(slot);
+                return Undefined(slot);
             };
 
             let curr_state = state;
@@ -153,7 +153,7 @@ impl Prog {
             let same = curr_state == next_state;
 
             if same && tape.at_edge(shift) {
-                return RunResult::Spinout;
+                return Spinout;
             }
 
             if reset == 0 {
@@ -170,7 +170,7 @@ impl Prog {
             tape.step(shift, color, same);
 
             if tape.blank() {
-                return RunResult::Blank;
+                return Blank;
             }
 
             let curr = tape.head();
@@ -184,11 +184,11 @@ impl Prog {
             if state == ref_state
                 && tape.aligns_with(&ref_tape, leftmost, rightmost)
             {
-                return RunResult::Recur;
+                return Recur;
             }
         }
 
-        RunResult::StepLimit
+        StepLimit
     }
 }
 
@@ -258,7 +258,7 @@ fn test_macro_excess() {
 
     mac.assert_params((4, 0x4000));
 
-    assert!(matches!(mac.run_prover(976), RunResult::StepLimit));
+    assert!(matches!(mac.run_prover(976), StepLimit));
 
     assert_eq!(mac.rep_params(), (4, 323));
 }
