@@ -120,10 +120,6 @@ impl Prog {
             self.make_block_macro(blocks).run_prover(steps)
         })
         .is_infinite()
-            || self
-                .make_backsymbol_macro(1)
-                .run_prover(steps)
-                .is_infinite()
     }
 
     pub fn term_or_rec(&self, sim_lim: usize) -> RunResult {
@@ -278,6 +274,8 @@ fn test_macro_loop() {
         Prog::read(
             "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF"
         )
-        .check_inf(200, 500)
+        .make_backsymbol_macro(1)
+        .run_prover(500)
+        .is_infinite()
     );
 }
