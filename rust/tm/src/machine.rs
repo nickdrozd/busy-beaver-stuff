@@ -111,7 +111,7 @@ impl<T: GetInstr> RunProver for T {
 /**************************************/
 
 impl Prog {
-    pub fn check_inf(&self, block_steps: usize, steps: usize) -> bool {
+    pub fn check_inf(&self, steps: usize, block_steps: usize) -> bool {
         let blocks = self.opt_block(block_steps);
 
         (if blocks == 1 {
@@ -233,12 +233,12 @@ fn test_mult_rule() {
 fn test_check_inf() {
     assert!(
         Prog::read("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
-            .check_inf(300, 209)
+            .check_inf(209, 209)
     );
 
     assert!(
         Prog::read("1RB 0LA 3LB 1RA  2LB 3LA 0RB 2RA")
-            .check_inf(300, 756)
+            .check_inf(756, 300)
     );
 }
 
@@ -264,7 +264,7 @@ fn test_macro_excess() {
 fn test_macro_overflow() {
     assert!(
         !Prog::read("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...")
-            .check_inf(3_219, 118)
+            .check_inf(118, 3_219)
     );
 }
 
