@@ -139,10 +139,11 @@ fn test_tree() {
             }
         ),
         (
-            ((3, 2), 3, 13, (640, 12_353)),
+            ((3, 2), 3, 13, (25, 12_353)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.term_or_rec(206).is_settled()
+                    || prog.check_inf(50, 500)
             }
         ),
         (
@@ -175,10 +176,11 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 3), 3, 20, (1_031, 8_844)),
+            ((2, 3), 3, 20, (63, 8_844)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.term_or_rec(301).is_settled()
+                    || prog.check_inf(50, 1_000)
             }
         ),
         (
@@ -217,11 +219,12 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 3, 99, (134_743, 2_208_026)),
+            ((4, 2), 3, 99, (7_945, 2_208_026)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected()
                     || prog.term_or_rec(5_000).is_settled()
+                    || prog.check_inf(200, 2_000)
             }
         ),
         (
@@ -258,10 +261,11 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 3, 876, (257_465, 1_698_504)),
+            ((2, 4), 3, 876, (39_533, 1_698_504)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.term_or_rec(5_000).is_settled()
+                    || prog.check_inf(200, 1_000)
             }
         ),
     ];
