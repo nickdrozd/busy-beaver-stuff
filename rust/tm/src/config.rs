@@ -1,4 +1,4 @@
-use core::fmt;
+use core::fmt::{self, Display};
 
 use std::borrow::Cow;
 
@@ -17,7 +17,7 @@ pub type PassConfig<'c> = Cow<'c, MedConfig>;
 /**************************************/
 
 #[derive(Clone, PartialEq, Eq, Hash)]
-pub struct Config<Tape: Scan> {
+pub struct Config<Tape> {
     pub state: State,
     pub tape: Tape,
 }
@@ -39,7 +39,7 @@ impl<Tape: Scan> Config<Tape> {
     }
 }
 
-impl<Tape: Scan> fmt::Display for Config<Tape> {
+impl<Tape: Scan + Display> Display for Config<Tape> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let tape = &self.tape;
         let slot = self.slot().show();

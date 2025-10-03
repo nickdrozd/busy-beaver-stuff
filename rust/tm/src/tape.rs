@@ -452,7 +452,7 @@ impl<C: Countable, B: Block<C>> MachineTape for Tape<C, B> {
     }
 }
 
-pub trait Scan: Display {
+pub trait Scan {
     fn scan(&self) -> Color;
 }
 
