@@ -5,8 +5,8 @@ use std::borrow::Cow;
 use rayon::prelude::*;
 
 use crate::{
-    Color, Goal, Instr, Params, Prog, Shift, Slot, State, config,
-    tape::MedTape as Tape,
+    Color, Goal, Instr, Params, Prog, Shift, Slot, State,
+    config::MedConfig as Config,
 };
 
 pub type Step = usize;
@@ -80,18 +80,9 @@ enum RunResult {
 
 use RunResult::*;
 
-type Config = config::Config<Tape>;
-
 pub type PassConfig<'c> = Cow<'c, Config>;
 
 impl Config {
-    fn init_stepped() -> Self {
-        Self {
-            state: 1,
-            tape: Tape::init_stepped(),
-        }
-    }
-
     fn run(&mut self, prog: &Prog, sim_lim: Step) -> RunResult {
         for _ in 0..sim_lim {
             let slot = self.slot();

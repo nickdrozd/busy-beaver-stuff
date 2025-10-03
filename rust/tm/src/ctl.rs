@@ -1,7 +1,8 @@
 use ahash::AHashSet as Set;
 
 use crate::{
-    Color, Goal, Instr, Prog, Shift, config,
+    Color, Goal, Instr, Prog, Shift,
+    config::LilConfig as Config,
     macros::GetInstr,
     tape::{
         Block as _, LilBlock as Block, LilCount as Count,
@@ -122,8 +123,6 @@ fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: Goal) -> bool {
 }
 
 /**************************************/
-
-type Config = config::Config<Tape>;
 
 impl Config {
     const fn init() -> Self {

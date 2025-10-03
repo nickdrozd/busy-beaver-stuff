@@ -1,8 +1,14 @@
 use core::fmt;
 
-use crate::{Parse as _, Slot, State};
+use crate::{
+    Parse as _, Slot, State,
+    tape::{LilTape, MedTape},
+};
 
 pub use crate::tape::TapeLike;
+
+pub type LilConfig = Config<LilTape>;
+pub type MedConfig = Config<MedTape>;
 
 /**************************************/
 
@@ -11,6 +17,17 @@ pub struct Config<Tape: TapeLike> {
     pub state: State,
     pub tape: Tape,
 }
+
+impl MedConfig {
+    pub fn init_stepped() -> Self {
+        Self {
+            state: 1,
+            tape: MedTape::init_stepped(),
+        }
+    }
+}
+
+/**************************************/
 
 impl<Tape: TapeLike> Config<Tape> {
     pub fn slot(&self) -> Slot {
