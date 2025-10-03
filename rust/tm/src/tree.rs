@@ -1,13 +1,13 @@
 use core::cmp::{max, min};
 
-use std::borrow::Cow;
-
 use rayon::prelude::*;
 
 use crate::{
     Color, Goal, Instr, Params, Prog, Shift, Slot, State,
     config::MedConfig as Config,
 };
+
+pub use crate::config::PassConfig;
 
 pub type Step = usize;
 
@@ -79,8 +79,6 @@ enum RunResult {
 }
 
 use RunResult::*;
-
-pub type PassConfig<'c> = Cow<'c, Config>;
 
 impl Config {
     fn run(&mut self, prog: &Prog, sim_lim: Step) -> RunResult {

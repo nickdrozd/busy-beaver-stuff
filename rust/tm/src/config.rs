@@ -1,5 +1,7 @@
 use core::fmt;
 
+use std::borrow::Cow;
+
 use crate::{
     Parse as _, Slot, State,
     tape::{LilTape, MedTape},
@@ -9,6 +11,8 @@ pub use crate::tape::TapeLike;
 
 pub type LilConfig = Config<LilTape>;
 pub type MedConfig = Config<MedTape>;
+
+pub type PassConfig<'c> = Cow<'c, MedConfig>;
 
 /**************************************/
 
