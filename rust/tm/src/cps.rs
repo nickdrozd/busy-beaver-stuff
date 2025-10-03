@@ -241,7 +241,7 @@ impl Tape {
     }
 }
 
-impl config::TapeLike for Tape {
+impl config::Scan for Tape {
     fn scan(&self) -> Color {
         self.scan
     }

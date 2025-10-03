@@ -9,7 +9,7 @@ use crate::{
     Color, Instr, Parse as _, Prog, Shift, Slot, State,
     tape::{
         self, Alignment, Block as _, LilBlock as Block,
-        LilCount as Count, Pos, TapeLike,
+        LilCount as Count, Pos, Scan,
     },
 };
 
@@ -684,7 +684,7 @@ struct Tape {
     head: Pos,
 }
 
-impl TapeLike for Tape {
+impl Scan for Tape {
     fn scan(&self) -> Color {
         self.scan
     }

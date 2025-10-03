@@ -7,7 +7,7 @@ use crate::{
     tape::{LilTape, MedTape},
 };
 
-pub use crate::tape::TapeLike;
+pub use crate::tape::Scan;
 
 pub type LilConfig = Config<LilTape>;
 pub type MedConfig = Config<MedTape>;
@@ -17,7 +17,7 @@ pub type PassConfig<'c> = Cow<'c, MedConfig>;
 /**************************************/
 
 #[derive(Clone, PartialEq, Eq, Hash)]
-pub struct Config<Tape: TapeLike> {
+pub struct Config<Tape: Scan> {
     pub state: State,
     pub tape: Tape,
 }
@@ -33,13 +33,13 @@ impl MedConfig {
 
 /**************************************/
 
-impl<Tape: TapeLike> Config<Tape> {
+impl<Tape: Scan> Config<Tape> {
     pub fn slot(&self) -> Slot {
         (self.state, self.tape.scan())
     }
 }
 
-impl<Tape: TapeLike> fmt::Display for Config<Tape> {
+impl<Tape: Scan> fmt::Display for Config<Tape> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let tape = &self.tape;
         let slot = self.slot().show();

@@ -3,7 +3,7 @@ use crate::{
     macros::GetInstr,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{Alignment as _, BigTape, HeadTape, TapeLike as _},
+    tape::{Alignment as _, BigTape, HeadTape, Scan as _},
 };
 
 /**************************************/

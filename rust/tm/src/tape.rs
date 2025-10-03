@@ -452,11 +452,11 @@ impl<C: Countable, B: Block<C>> MachineTape for Tape<C, B> {
     }
 }
 
-pub trait TapeLike: Display {
+pub trait Scan: Display {
     fn scan(&self) -> Color;
 }
 
-impl<C: Countable, B: Block<C>> TapeLike for Tape<C, B> {
+impl<C: Countable, B: Block<C>> Scan for Tape<C, B> {
     fn scan(&self) -> Color {
         self.scan
     }
@@ -515,7 +515,7 @@ pub struct HeadTape {
     tape: MedTape,
 }
 
-impl TapeLike for HeadTape {
+impl Scan for HeadTape {
     fn scan(&self) -> Color {
         self.tape.scan()
     }
@@ -555,7 +555,7 @@ impl HeadTape {
     }
 }
 
-pub trait Alignment: TapeLike {
+pub trait Alignment: Scan {
     fn head(&self) -> Pos;
 
     fn l_len(&self) -> usize;
