@@ -27,9 +27,9 @@ CACHES: dict[str, dict[Count, dict[Count, Count]]] = {
 NUM_COUNTS = {
     "adds": 2319,
     "divs": 2088,
-    "exps": 1259,
+    "exps": 1260,
     "muls": 1435,
-    "totl": 7101,
+    "totl": 7102,
 }
 
 
@@ -1693,3 +1693,5 @@ class TestNum(TestCase):
             "(2 ** ((-17 + (61 * (2 ** 71))) // 9))")
 
         self.assert_mod(num, 4374, 2384, skip_num = True)
+
+        self.assert_mod(Exp(6, 12438), 3, 0)
