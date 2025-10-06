@@ -239,42 +239,36 @@ impl Prog {
 type Transcript = Vec<(Slot, Pos)>;
 
 fn has_recurrence(transcript: &Transcript) -> bool {
-    fn find_reps(t: &Transcript) -> Option<(usize, usize)> {
-        let len = t.len();
+    let len = transcript.len();
 
-        if len < 2 {
-            return None;
-        }
+    for l in 1..=len / 2 {
+        let k = len - l;
 
-        for seq in 1..=len / 2 {
-            let prev = len - 2 * seq;
-            let curr = len - seq;
+        let mut offset = 0;
 
-            let prev_slots = t[prev..curr].iter().map(|(s, _)| s);
-            let curr_slots = t[curr..].iter().map(|(s, _)| s);
+        let mut i = 0;
 
-            if prev_slots.eq(curr_slots) {
-                return Some((prev, curr));
+        while i < l && i < k {
+            let (slot_l, pos_l) = transcript[l - i];
+            let (slot_k, pos_k) = transcript[k - i];
+
+            if slot_l != slot_k {
+                break;
             }
+
+            if i == l + offset - 1 {
+                if pos_l == pos_k {
+                    return true;
+                }
+
+                offset += 1;
+            }
+
+            i += 1;
         }
-
-        None
     }
 
-    let Some((prev, curr)) = find_reps(transcript) else {
-        return false;
-    };
-
-    if transcript[prev].1 == transcript[curr].1 {
-        return true;
-    }
-
-    // placeholder for your future logic
-    unimplemented!(
-        "handle recurrence starting at prev={}, curr={}",
-        prev,
-        curr
-    );
+    false
 }
 
 /**************************************/
@@ -299,6 +293,14 @@ fn test_rec() {
     for (prog, expected) in REC_PROGS {
         assert_eq!(
             Prog::read(prog).term_or_rec(100).is_recur(),
+            expected,
+            "{prog}",
+        );
+
+        assert_eq!(
+            Prog::read(prog)
+                .run_transcript(100, &mut Config::init_stepped())
+                .is_recur(),
             expected,
             "{prog}",
         );
