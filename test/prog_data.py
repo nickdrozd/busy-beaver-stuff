@@ -1894,6 +1894,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB ... ... ... ...  0LB 2RB 3RB 4LB ...",
             "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA",
             "1RB 2LB 1RB 3LB ...  2LA 4LB 3RB 0RA 1RB",
+            "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
             "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
             "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC",
             "1RB ... ... ...  2LC ... ... ...  3RC 2LB 3LC 0LC",
@@ -2392,6 +2393,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 2RA 3LA ... 0RB  0LB 2LA 1RB 4RB 0LA",
             "1RB 2RA 4LA 0RB ...  0LB 2LA 3LA 0LA 3RB",
             "1RB 3RA 3LA 3LA 0RB  0LB 2LA 1RB 4RB 0LA",
+            "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         },
         "spinout": {
             "1RB 0RB  1LB 1RA",
@@ -2734,7 +2736,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
         "step_limit": 1,
-        "depth_limit": 43,
+        "depth_limit": 44,
         "spinout": 61,
         "linrec": 150,
     },
@@ -2746,7 +2748,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     },
     "spinout": {
         "step_limit": 2,
-        "depth_limit": 39,
+        "depth_limit": 40,
         "spinout": 237,
         "linrec": 94,
     },
@@ -2773,7 +2775,7 @@ CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
 ########################################
 
 SEGMENT_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 97,
+    "halt": 98,
     "spinout": 106,
 }
 
@@ -2848,6 +2850,7 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA",
         "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA",
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
+        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
         "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB",
         "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
@@ -3176,9 +3179,9 @@ SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
 ########################################
 
 CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 49,
+    "halt": 50,
     "blank": 113,
-    "spinout": 299,
+    "spinout": 300,
 }
 
 CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3221,6 +3224,7 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LE  1LC 1RD  1LB 1RC  1LA 0RD  ... 0LA",
         "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC",
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
+        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB",
         "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
         "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  ... 0RD",
@@ -3634,6 +3638,7 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
         "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
+        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA",
         "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD",
         "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  0RB 2RA 2RD",
@@ -3654,9 +3659,9 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
 ########################################
 
 CTL_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 114,
+    "halt": 115,
     "blank": 417,
-    "spinout": 274,
+    "spinout": 275,
 }
 
 CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3755,6 +3760,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LB  1LA 0RC  ... 0RD  1RD 0RE  1LE 0LA",
         "1RB 1LD  0RC 0LC  0RD 1RA  1LE ...  0RA 0LE",
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
+        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB",
         "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
         "1RB ...  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE",
@@ -4453,6 +4459,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RA 0LA",
         "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
         "1RB 1RE  0LC 1LD  1RD 1LB  0RE 0RA  1RE 1LC",
+        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA",
         "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
         "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  0RB 2RA 2RD",
@@ -4839,11 +4846,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 359568,
-    "divs": 47700,
-    "exps": 297442,
-    "muls": 166118,
-    "totl": 870828,
+    "adds": 360137,
+    "divs": 48223,
+    "exps": 297487,
+    "muls": 166215,
+    "totl": 872062,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -5572,6 +5579,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             3782,
             "(10 ↑↑ 16)",
             "(1 + (5 * (3 ** (-4 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** 13)))))))))))))))))))))))))))))))))))))))))))))",
+            "(???)",
+        ),
+        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...": (
+            4505,
+            "(10 ↑↑ 6)",
+            "((23 + (2 * (6 ** ((-28 + (8 * (6 ** ((-23 + (8 * (6 ** ((-23 + (8 * (6 ** ((-23 + (8 * (6 ** 12437))) // 5)))) // 5)))) // 5)))) // 5)))) // 5)",
             "(???)",
         ),
         "1RB 1LC  0RC 1RE  1LD 1RA  0RE 0LF  1RC 0RD  1LE 1LD": (
