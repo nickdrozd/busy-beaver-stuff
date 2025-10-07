@@ -909,21 +909,20 @@ fn test_step_edge() {
     tape.assert("[-] 1^2");
 }
 
-#[expect(clippy::shadow_unrelated)]
 #[test]
 fn test_skip() {
-    let mut tape = tape! { 1, [(1, 20)], [] };
-    tape.assert("1^20 [1]");
-    tape.step(false, 0, true);
-    tape.assert("[-] 0^21");
+    let mut tape1 = tape! { 1, [(1, 20)], [] };
+    tape1.assert("1^20 [1]");
+    tape1.step(false, 0, true);
+    tape1.assert("[-] 0^21");
 
-    let mut tape = tape! { 1, [(1, 20)], [] };
-    tape.assert("1^20 [1]");
-    tape.step(false, 1, true);
-    tape.assert("[-] 1^21");
+    let mut tape2 = tape! { 1, [(1, 20)], [] };
+    tape2.assert("1^20 [1]");
+    tape2.step(false, 1, true);
+    tape2.assert("[-] 1^21");
 
-    let mut tape = tape! { 0, [(0, 1)], [] };
-    tape.assert("0 [0]");
-    tape.step(false, 1, true);
-    tape.assert("[-] 1^2");
+    let mut tape3 = tape! { 0, [(0, 1)], [] };
+    tape3.assert("0 [0]");
+    tape3.step(false, 1, true);
+    tape3.assert("[-] 1^2");
 }
