@@ -567,7 +567,6 @@ pub trait Alignment: Scan {
     fn l_compare_take(&self, prev: &Self, take: usize) -> bool;
     fn r_compare_take(&self, prev: &Self, take: usize) -> bool;
 
-    #[expect(clippy::comparison_chain)]
     fn aligns_with(
         &self,
         prev: &Self,
@@ -590,6 +589,7 @@ pub trait Alignment: Scan {
 
         let diff = self.head() - p_head;
 
+        #[expect(clippy::comparison_chain)]
         if 0 < diff {
             self.l_compare_take(prev, l_take) && self.r_eq(prev)
         } else if diff < 0 {
