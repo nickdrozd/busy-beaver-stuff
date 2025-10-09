@@ -36,6 +36,7 @@ HALT: BasicTermData = {
     "1RB 1LA 1LB  0LA 2RA ...": (6, 26),
     "1RB 2LA ...  1LB 1LA 0RA": (6, 26),
     "1RB 1RA ...  1LB 2LA 0RB": (4, 12),
+    "1RB 1LA ...  2LA 1LB 2RA": (5, 10),
 
     # 4/2 BB
     "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": (13, 107),  # shift
@@ -43,6 +44,7 @@ HALT: BasicTermData = {
     "1RB 0RC  1LA 1RA  ... 1RD  1LD 0LB": (13,  96),  # sigma
     "1RB 1LB  0LC 0RD  ... 1LA  1RA 0LA": ( 6,  96),
     "1RB 1LC  0LD 0RD  ... 0LA  1LD 1LA": (11,  84),
+    "1RB ...  1LC 1LB  0RD 1RD  1LA 1RC": ( 9,  39),
     "1RB 1RC  0LA 1LD  1LB 0RC  0RA ...": ( 4,  24),
     "1RB 0LC  1LD 1RB  ... 0RB  1LC 1LA": ( 4,  12),
     "1RB 1LA  1RC 0RD  1LA 1RD  ... 0LA": ( 4,  11),
@@ -61,6 +63,7 @@ HALT: BasicTermData = {
     # 5/2 BB
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (4098, 47176870),
     "1RB 1LA  1RC 1LD  1RE 1RD  ... 0LB  0LA 1RC": ( 164,    15588),
+    "1RB 1RC  1LC 1LD  1LD 1RA  0LA 1LE  ... 1LB": (  23,      151),
 
     # 5/5 block-compiled from 5/2
     "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721561),
@@ -1468,6 +1471,7 @@ KERNEL = {
     "1RB 2LA 0RC  2LA ... 1RC  1LA 0LB 2RC": 3,
     "1RB 2LA 1RC  1LA 1LC 2RB  ... 0LA 1RB": 3,
 
+    "1RB 1RC  1LC 1LD  1LD 1RA  0LA 1LE  ... 1LB": 4,
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 3,  # 134467 Uwe
     "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": 3,  # partial
     "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA": 3,
