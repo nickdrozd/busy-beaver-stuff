@@ -194,7 +194,7 @@ impl Prog {
 use crate::Parse as _;
 
 #[cfg(test)]
-const REC_PROGS: [(&str, bool); 8] = [
+const REC_PROGS: &[(&str, bool)] = &[
     ("1RB 0LB  1LA 0RB", true),
     ("1RB 1LB  1LA 1RA", true),
     ("1RB 0RB  1LB 1RA", true),
@@ -207,7 +207,7 @@ const REC_PROGS: [(&str, bool); 8] = [
 
 #[test]
 fn test_rec() {
-    for (prog, expected) in REC_PROGS {
+    for &(prog, expected) in REC_PROGS {
         assert_eq!(
             Prog::read(prog).term_or_rec(100).is_recur(),
             expected,
