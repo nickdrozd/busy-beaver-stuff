@@ -61,15 +61,15 @@ use crate::Parse as _;
 
 #[cfg(test)]
 const UNCONNECTED: [&str; 2] = [
-    ("1RB 1LB  1LA 1LC  1RC 0LC"),
-    ("1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD"),
+    "1RB 1LB  1LA 1LC  1RC 0LC",
+    "1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD",
 ];
 
 #[cfg(test)]
 const CONNECTED: [&str; 3] = [
-    ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA"),
-    ("1RB 0LB  0LC 0RD  1RD 1LB  1LE 0RA  ... 1LA"),
-    ("1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC"),
+    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA",
+    "1RB 0LB  0LC 0RD  1RD 1LB  1LE 0RA  ... 1LA",
+    "1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC",
 ];
 
 #[test]
