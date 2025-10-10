@@ -203,13 +203,21 @@ const REC_PROGS: &[(&str, bool)] = &[
     ("1RB 1LA  0LA 1RB", false),
     ("1RB 0LB  1LA 0RA", false),
     ("1RB 1LA  1LA 1RB", false),
+    ("1RB 0LA ...  1LB 2LA 0RB", true),
+    ("1RB 1LB 2LA  1LA 2RB 0RA", true),
+    ("1RB 1LB  0RC 0LA  1LC 0LA", true),
+    ("1RB 1LA  1LC 1RC  1LA 0RB", true),
+    ("1RB 0LB  1LA 0RC  1RB ...", false),
+    ("1RB 1LA  1LA 1RC  ... 1RB", false),
+    ("1RB 1RC  1LC ...  0RA 0LB", false),
+    ("1RB 1RD  0LB 1LC  1RC 1LD  0LC 1LA", true),
 ];
 
 #[test]
 fn test_rec() {
     for &(prog, expected) in REC_PROGS {
         assert_eq!(
-            Prog::read(prog).term_or_rec(100).is_recur(),
+            Prog::read(prog).term_or_rec(301).is_recur(),
             expected,
             "{prog}",
         );
