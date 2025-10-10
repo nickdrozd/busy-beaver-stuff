@@ -1,5 +1,3 @@
-#![expect(unreachable_pub)]
-
 use core::fmt::Debug;
 
 use std::sync::{Arc, Mutex, MutexGuard};

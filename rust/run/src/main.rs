@@ -9,7 +9,7 @@ use tm::{
     tree::{PassConfig, Step, build_limited, build_tree},
 };
 
-mod basket;
+pub mod basket;
 
 use basket::Basket;
 
