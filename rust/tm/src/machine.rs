@@ -324,6 +324,7 @@ const REC_PROGS: &[(&str, bool)] = &[
     ("1RB 1LB  0RC 0LA  1LC 0LA", true),
     ("1RB 1LA  1LC 1RC  1LA 0RB", true),
     ("1RB 0LB  1LA 0RC  1RB ...", false),
+    ("1RB 0LC  1LA 1RC  1RC 1RB", false),
     ("1RB 1LA  1LA 1RC  ... 1RB", false),
     ("1RB 1RC  1LC ...  0RA 0LB", false),
     ("1RB 1RD  0LB 1LC  1RC 1LD  0LC 1LA", true),
@@ -344,6 +345,29 @@ fn test_rec() {
                 .is_recur(),
             expected,
             "{prog}",
+        );
+    }
+}
+
+#[test]
+fn test_transcript_config() {
+    let prog = Prog::read("1RB 0LC  1LA 1RC  1RC 1RB");
+
+    for steps in 0..100 {
+        assert!(
+            !prog
+                .run_transcript(steps, &mut Config::init_stepped())
+                .is_settled()
+        );
+
+        let mut config = Config::init_stepped();
+        config.tape.lspan[0].count += 4;
+
+        assert_eq!(config.to_string(), "B0 | 1^5 [0]");
+
+        assert_eq!(
+            (7..=14).contains(&steps),
+            prog.run_transcript(steps, &mut config).is_settled(),
         );
     }
 }
