@@ -853,14 +853,14 @@ impl BigTape {
 #[cfg(test)]
 impl BigTape {
     #[track_caller]
-    fn assert(&self, marks: u32, tape_str: &str, sig: &Signature) {
+    fn assert(&self, marks: u32, tape_str: &str, sig: &str) {
         assert_eq!(self.blank(), marks == 0);
 
         assert_eq!(self.to_string(), tape_str);
 
         let signature = self.signature();
 
-        assert_eq!(signature, *sig);
+        assert_eq!(signature, sig.into());
 
         assert!(
             signature
@@ -905,47 +905,72 @@ macro_rules! tape {
 }
 
 #[cfg(test)]
-macro_rules! sig {
-    (
-        $ scan : expr,
-        [ $ ( $ lspan : tt ), * ],
-        [ $ ( $ rspan : tt ), * ]
-    ) => {
-        Signature {
-            scan: $ scan,
-            lspan: vec![ $ ( sig!( @_ $ lspan ) ), * ],
-            rspan: vec![ $ ( sig!( @_ $ rspan ) ), * ],
-        }
-    };
+#[expect(clippy::fallible_impl_from)]
+impl From<&str> for Signature {
+    fn from(s: &str) -> Self {
+        let parts: Vec<&str> = s.split_whitespace().collect();
 
-    ( @_ [ $ num : expr ] ) => {
-        Just( $ num )
-    };
+        let lspan: Vec<ColorCount> = parts
+            .iter()
+            .take_while(|p| !p.starts_with('['))
+            .map(|&p| p.into())
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
 
-    ( @_ $ num : expr ) => {
-        Mult( $ num )
-    };
+        let scan = parts
+            .iter()
+            .find(|p| p.starts_with('['))
+            .and_then(|p| {
+                p.trim_matches(|c| c == '[' || c == ']').parse().ok()
+            })
+            .unwrap();
+
+        let rspan_start = parts
+            .iter()
+            .position(|&p| p.starts_with('['))
+            .map_or(parts.len(), |pos| pos + 1);
+
+        let rspan: Vec<ColorCount> =
+            parts[rspan_start..].iter().map(|&p| p.into()).collect();
+
+        Self { scan, lspan, rspan }
+    }
+}
+
+#[cfg(test)]
+#[expect(clippy::fallible_impl_from)]
+impl From<&str> for ColorCount {
+    fn from(s: &str) -> Self {
+        s.strip_prefix('(')
+            .and_then(|s| s.strip_suffix(')'))
+            .map_or_else(
+                || Mult(s.parse().unwrap()),
+                |t| Just(t.parse().unwrap()),
+            )
+    }
 }
 
 #[test]
 fn test_init() {
-    Tape::init().assert(0, "[0]", &sig![0, [], []]);
+    Tape::init().assert(0, "[0]", "[0]");
 
     let mut tape = Tape::init_stepped();
 
-    tape.assert(1, "1 [0]", &sig![0, [[1]], []]);
+    tape.assert(1, "1 [0]", "(1) [0]");
 
     tape.tstep(1, 1, 0);
 
-    tape.assert(2, "1^2 [0]", &sig![0, [1], []]);
+    tape.assert(2, "1^2 [0]", "1 [0]");
 
     tape.tstep(0, 0, 0);
 
-    tape.assert(2, "1 [1]", &sig![1, [[1]], []]);
+    tape.assert(2, "1 [1]", "(1) [1]");
 
     tape.tstep(0, 0, 1);
 
-    tape.assert(0, "[0]", &sig![0, [], []]);
+    tape.assert(0, "[0]", "[0]");
 }
 
 #[test]
@@ -958,14 +983,10 @@ fn test_clone() {
     copy_1.tstep(0, 2, 0);
     copy_2.tstep(1, 1, 0);
 
-    copy_1.assert(6, "1 0 [1] 2^2 1^2", &sig![1, [[0], [1]], [2, 1]]);
-    copy_2.assert(6, "1 0 1^2 [2] 1^2", &sig![2, [1, [0], [1]], [1]]);
+    copy_1.assert(6, "1 0 [1] 2^2 1^2", "(1) (0) [1] 2 1");
+    copy_2.assert(6, "1 0 1^2 [2] 1^2", "(1) (0) 1 [2] 1");
 
-    tape.assert(
-        6,
-        "1 0 1 [2] 2 1^2",
-        &sig![2, [[1], [0], [1]], [[2], 1]],
-    );
+    tape.assert(6, "1 0 1 [2] 2 1^2", "(1) (0) (1) [2] (2) 1");
 }
 
 #[cfg(test)]
@@ -1009,22 +1030,14 @@ fn test_apply_1() {
         [(4, 15), (5, 2), (6, 2)]
     };
 
-    tape.assert(
-        35,
-        "2^3 1^12 [3] 4^15 5^2 6^2",
-        &sig![3, [1, 2], [4, 5, 6]],
-    );
+    tape.assert(35, "2^3 1^12 [3] 4^15 5^2 6^2", "2 1 [3] 4 5 6");
 
     tape.apply_rule(&rule![
         (0, 1) => plus!(3),
         (1, 0) => plus!(-2),
     ]);
 
-    tape.assert(
-        42,
-        "2^24 1^12 [3] 4 5^2 6^2",
-        &sig![3, [1, 2], [[4], 5, 6]],
-    );
+    tape.assert(42, "2^24 1^12 [3] 4 5^2 6^2", "2 1 [3] (4) 5 6");
 }
 
 #[test]
@@ -1035,11 +1048,7 @@ fn test_apply_2() {
         [(5, 60), (2, 1), (4, 1), (5, 7), (1, 1)]
     };
 
-    tape.assert(
-        73,
-        "4^2 [4] 5^60 2 4 5^7 1",
-        &sig![4, [4], [5, [2], [4], 5, [1]]],
-    );
+    tape.assert(73, "4^2 [4] 5^60 2 4 5^7 1", "4 [4] 5 (2) (4) 5 (1)");
 
     tape.apply_rule(&rule![
         (0, 0) => plus!(4),
@@ -1049,7 +1058,7 @@ fn test_apply_2() {
     tape.assert(
         131,
         "4^118 [4] 5^2 2 4 5^7 1",
-        &sig![4, [4], [5, [2], [4], 5, [1]]],
+        "4 [4] 5 (2) (4) 5 (1)",
     );
 }
 
@@ -1061,11 +1070,7 @@ fn test_apply_3() {
         []
     };
 
-    tape.assert(
-        655_498,
-        "3 2^655345 1^152 [0]",
-        &sig![0, [1, 2, [3]], []],
-    );
+    tape.assert(655_498, "3 2^655345 1^152 [0]", "(3) 2 1 [0]");
 
     let rule = rule! [
         (0, 1) => plus!(-2),
@@ -1089,11 +1094,7 @@ fn test_apply_4() {
         [(2, 1), (1, 1), (0, 10), (1, 1)]
     };
 
-    tape.assert(
-        510,
-        "2^506 [2] 2 1 0^10 1",
-        &sig![2, [2], [[2], [1], 0, [1]]],
-    );
+    tape.assert(510, "2^506 [2] 2 1 0^10 1", "2 [2] (2) (1) 0 (1)");
 
     tape.apply_rule(&rule![
         (0, 0) => mult!(2, 6),
@@ -1103,7 +1104,7 @@ fn test_apply_4() {
     tape.assert(
         0x0003_FFFE,
         "2^262138 [2] 2 1 0 1",
-        &sig![2, [2], [[2], [1], [0], [1]]],
+        "2 [2] (2) (1) (0) (1)",
     );
 }
 
@@ -1239,7 +1240,7 @@ fn test_offsets_4() {
 
     assert_eq!(
         tape.get_min_sig(&sig),
-        (sig![28, [30], [27]], (false, false))
+        ("30 [28] 27".into(), (false, false))
     );
 }
 
