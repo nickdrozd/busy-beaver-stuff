@@ -1016,9 +1016,7 @@ macro_rules! rule {
         $ ( ( $ shift : expr, $ index : expr ) => $ op : expr ), *
         $ ( , ) *
     ) => {
-        Rule::from_triples(&[
-            $ ( (( $ shift == 1, $ index ), $ op ) ), *
-        ])
+        Rule([$ ( (( $ shift == 1, $ index ), $ op ) ), *].into())
     }
 }
 

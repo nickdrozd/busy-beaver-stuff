@@ -21,23 +21,12 @@ pub enum Op {
 /**************************************/
 
 #[derive(Clone, Debug)]
-pub struct Rule(Dict<Index, Op>);
+pub struct Rule(pub Dict<Index, Op>);
 
 impl Rule {
     #[expect(clippy::new_without_default)]
     pub const fn new() -> Self {
         Self(Dict::new())
-    }
-
-    #[cfg(test)]
-    #[expect(clippy::ref_patterns)]
-    pub fn from_triples(triples: &[(Index, Op)]) -> Self {
-        Self(
-            triples
-                .iter()
-                .map(|&(index, ref op)| (index, op.clone()))
-                .collect(),
-        )
     }
 
     pub fn is_infinite(&self) -> bool {
