@@ -107,20 +107,11 @@ fn get_exitpoints(prog: &Prog) -> Exitpoints {
 }
 
 #[cfg(test)]
-macro_rules! dict_from {
-    ($( $key:expr => [ $( $val:expr ),* ] ),* $(,)?) => {
-        Dict::from(
-            [$(($key, vec![$($val),*]),)*]
-        )
-    }
-}
-
-#[cfg(test)]
 macro_rules! assert_exitpoints {
     ($input:expr, { $($key:expr => [$($val:expr),*]),* $(,)? }) => {
         assert_eq!(
             get_exitpoints(&Prog::read($input)),
-            dict_from! { $($key => [$($val),*]),* },
+            Dict::from( [$(($key, vec![$($val),*]),)*] ),
         );
     }
 }
