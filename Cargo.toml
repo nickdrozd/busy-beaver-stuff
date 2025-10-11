@@ -67,4 +67,6 @@ decimal_literal_representation = "deny"
 enum_glob_use = { level = "allow", priority = 1 }
 must_use_candidate = { level = "allow", priority = 1 }
 missing_panics_doc = { level = "allow", priority = 1 }
+fallible_impl_from = { level = "allow", priority = 1 }
+new_without_default = { level = "allow", priority = 1 }
 len_without_is_empty = { level = "allow", priority = 1 }

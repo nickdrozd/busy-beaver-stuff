@@ -844,7 +844,6 @@ impl Alignment for Tape {
 /**************************************/
 
 #[cfg(test)]
-#[expect(clippy::fallible_impl_from)]
 impl From<&str> for Block {
     fn from(s: &str) -> Self {
         let (color, count) = if s.ends_with("..") {
@@ -878,7 +877,6 @@ impl Span {
 }
 
 #[cfg(test)]
-#[expect(clippy::fallible_impl_from)]
 impl From<&str> for Tape {
     fn from(s: &str) -> Self {
         let parts: Vec<&str> = s.split_whitespace().collect();

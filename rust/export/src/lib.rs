@@ -1,4 +1,4 @@
-#![expect(clippy::shadow_unrelated)]
+#![expect(clippy::shadow_unrelated, non_camel_case_types)]
 
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
@@ -88,7 +88,6 @@ pub fn read_instr(instr: &str) -> Option<Instr> {
 
 /***************************************/
 
-#[expect(non_camel_case_types)]
 #[pyclass]
 pub enum BackwardResult {
     refuted { step: Steps },
@@ -155,7 +154,6 @@ pub fn cant_spin_out(prog: &str, steps: Steps) -> BackwardResult {
 
 use tm::segment::Segments;
 
-#[expect(non_camel_case_types)]
 #[pyclass]
 pub enum SegmentResult {
     halt {},
@@ -292,7 +290,6 @@ type BigStep = BigCount;
 
 type Blanks = Dict<State, BigStep>;
 
-#[expect(non_camel_case_types)]
 #[pyclass(eq, eq_int)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TermRes {

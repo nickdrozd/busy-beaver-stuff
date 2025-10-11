@@ -425,7 +425,7 @@ class Mul(Num):
         r_dig = self.r.digits()
 
         return r_dig + (
-            l.digits()
+            l.digits()  # pylint: disable = used-before-assignment
             if not isinstance(l := self.l, int) else
             round(log10(l))
             if l > 0 else

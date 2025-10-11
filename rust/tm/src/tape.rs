@@ -905,7 +905,6 @@ macro_rules! tape {
 }
 
 #[cfg(test)]
-#[expect(clippy::fallible_impl_from)]
 impl From<&str> for Signature {
     fn from(s: &str) -> Self {
         let parts: Vec<&str> = s.split_whitespace().collect();
@@ -940,7 +939,6 @@ impl From<&str> for Signature {
 }
 
 #[cfg(test)]
-#[expect(clippy::fallible_impl_from)]
 impl From<&str> for ColorCount {
     fn from(s: &str) -> Self {
         s.strip_prefix('(')
