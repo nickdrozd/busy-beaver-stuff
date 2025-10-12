@@ -3,13 +3,10 @@
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
-    Instr, Parse as _, Prog, Slot, State,
+    Instr, Parse as _, Prog, Slot, State, Steps,
     config::Config,
     instrs::show_state,
-    reason::{
-        BackwardResult as BackwardResultRs, BackwardResult::*, Depth,
-        Step,
-    },
+    reason::{BackwardResult as BackwardResultRs, BackwardResult::*},
     segment::SegmentResult as SegmentResultRs,
 };
 
@@ -21,17 +18,17 @@ pub fn is_connected(prog: &str) -> bool {
 }
 
 #[pyfunction]
-pub fn opt_block(prog: &str, steps: usize) -> usize {
+pub fn opt_block(prog: &str, steps: Steps) -> usize {
     Prog::read(prog).opt_block(steps)
 }
 
 #[pyfunction]
-pub fn term_or_rec(prog: &str, sim_lim: usize) -> bool {
+pub fn term_or_rec(prog: &str, sim_lim: Steps) -> bool {
     Prog::read(prog).term_or_rec(sim_lim).is_settled()
 }
 
 #[pyfunction]
-pub fn run_transcript(prog: &str, sim_lim: usize) -> bool {
+pub fn run_transcript(prog: &str, sim_lim: Steps) -> bool {
     Prog::read(prog)
         .run_transcript(sim_lim, &mut Config::init_stepped())
         .is_settled()
@@ -94,7 +91,7 @@ pub fn read_instr(instr: &str) -> Option<Instr> {
 #[expect(non_camel_case_types)]
 #[pyclass]
 pub enum BackwardResult {
-    refuted { step: Step },
+    refuted { step: Steps },
     init {},
     linrec {},
     spinout {},
@@ -140,21 +137,23 @@ impl From<BackwardResultRs> for BackwardResult {
 }
 
 #[pyfunction]
-pub fn cant_halt(prog: &str, depth: Depth) -> BackwardResult {
-    Prog::read(prog).cant_halt(depth).into()
+pub fn cant_halt(prog: &str, steps: Steps) -> BackwardResult {
+    Prog::read(prog).cant_halt(steps).into()
 }
 
 #[pyfunction]
-pub fn cant_blank(prog: &str, depth: Depth) -> BackwardResult {
-    Prog::read(prog).cant_blank(depth).into()
+pub fn cant_blank(prog: &str, steps: Steps) -> BackwardResult {
+    Prog::read(prog).cant_blank(steps).into()
 }
 
 #[pyfunction]
-pub fn cant_spin_out(prog: &str, depth: Depth) -> BackwardResult {
-    Prog::read(prog).cant_spin_out(depth).into()
+pub fn cant_spin_out(prog: &str, steps: Steps) -> BackwardResult {
+    Prog::read(prog).cant_spin_out(steps).into()
 }
 
 /***************************************/
+
+use tm::segment::Segments;
 
 #[expect(non_camel_case_types)]
 #[pyclass]
@@ -165,7 +164,7 @@ pub enum SegmentResult {
     spinout {},
     depth_limit {},
     segment_limit {},
-    refuted { step: Step },
+    refuted { step: Segments },
 }
 
 #[pymethods]
@@ -194,59 +193,64 @@ impl From<SegmentResultRs> for SegmentResult {
 }
 
 #[pyfunction]
-pub fn segment_cant_halt(prog: &str, segs: usize) -> SegmentResult {
+pub fn segment_cant_halt(prog: &str, segs: Segments) -> SegmentResult {
     Prog::read(prog).seg_cant_halt(segs).into()
 }
 
 #[pyfunction]
-pub fn segment_cant_blank(prog: &str, segs: usize) -> SegmentResult {
+pub fn segment_cant_blank(prog: &str, segs: Segments) -> SegmentResult {
     Prog::read(prog).seg_cant_blank(segs).into()
 }
 
 #[pyfunction]
-pub fn segment_cant_spin_out(prog: &str, segs: usize) -> SegmentResult {
+pub fn segment_cant_spin_out(
+    prog: &str,
+    segs: Segments,
+) -> SegmentResult {
     Prog::read(prog).seg_cant_spin_out(segs).into()
 }
 
 /***************************************/
 
+use tm::cps::Radius;
+
 #[pyfunction]
-pub fn cps_cant_halt(prog: &str, segs: usize) -> bool {
+pub fn cps_cant_halt(prog: &str, rad: Radius) -> bool {
     let prog = Prog::read(prog);
 
     if prog.halt_slots().is_empty() {
         return true;
     }
 
-    prog.cps_cant_halt(segs)
+    prog.cps_cant_halt(rad)
 }
 
 #[pyfunction]
-pub fn cps_cant_blank(prog: &str, segs: usize) -> bool {
+pub fn cps_cant_blank(prog: &str, rad: Radius) -> bool {
     let prog = Prog::read(prog);
 
     if prog.erase_slots().is_empty() {
         return true;
     }
 
-    prog.cps_cant_blank(segs)
+    prog.cps_cant_blank(rad)
 }
 
 #[pyfunction]
-pub fn cps_cant_spin_out(prog: &str, segs: usize) -> bool {
+pub fn cps_cant_spin_out(prog: &str, rad: Radius) -> bool {
     let prog = Prog::read(prog);
 
     if prog.zr_shifts().is_empty() {
         return true;
     }
 
-    prog.cps_cant_spin_out(segs)
+    prog.cps_cant_spin_out(rad)
 }
 
 /***************************************/
 
 #[pyfunction]
-pub fn ctl_cant_halt(prog: &str, steps: usize) -> bool {
+pub fn ctl_cant_halt(prog: &str, steps: Steps) -> bool {
     let prog = Prog::read(prog);
 
     if prog.halt_slots().is_empty() {
@@ -257,7 +261,7 @@ pub fn ctl_cant_halt(prog: &str, steps: usize) -> bool {
 }
 
 #[pyfunction]
-pub fn ctl_cant_blank(prog: &str, steps: usize) -> bool {
+pub fn ctl_cant_blank(prog: &str, steps: Steps) -> bool {
     let prog = Prog::read(prog);
 
     if prog.erase_slots().is_empty() {
@@ -268,7 +272,7 @@ pub fn ctl_cant_blank(prog: &str, steps: usize) -> bool {
 }
 
 #[pyfunction]
-pub fn ctl_cant_spin_out(prog: &str, steps: usize) -> bool {
+pub fn ctl_cant_spin_out(prog: &str, steps: Steps) -> bool {
     let prog = Prog::read(prog);
 
     if prog.zr_shifts().is_empty() {
@@ -393,7 +397,7 @@ impl MachineResult {
 }
 
 #[pyfunction]
-pub fn run_quick_machine(prog: &str, sim_lim: usize) -> MachineResult {
+pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
     let prog = Prog::read(prog);
 
     let mut tape = Tape::init();

@@ -34,6 +34,10 @@ pub use crate::{
 
 /**************************************/
 
+pub type Steps = usize;
+
+/**************************************/
+
 #[derive(Clone, Copy)]
 pub enum Goal {
     Halt,

@@ -6,7 +6,7 @@ use crate::{Color, Goal, Prog, Shift, config};
 
 use Goal::*;
 
-type Radius = usize;
+pub type Radius = usize;
 
 const MAX_LOOPS: usize = 1_000;
 const MAX_DEPTH: usize = 100_000;

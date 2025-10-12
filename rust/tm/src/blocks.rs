@@ -1,7 +1,7 @@
 use core::iter::{once, repeat_n};
 
 use crate::{
-    Color, Prog, Shift,
+    Color, Prog, Shift, Steps,
     tape::{MedSpan as Span, MedTape as Tape},
 };
 
@@ -35,7 +35,7 @@ impl Tape {
 struct BlockMeasure {
     tape: Tape,
 
-    steps: usize,
+    steps: Steps,
     max_blocks: usize,
 
     max_blocks_step: usize,
@@ -69,7 +69,7 @@ impl BlockMeasure {
 /**************************************/
 
 impl Prog {
-    pub fn opt_block(&self, steps: usize) -> usize {
+    pub fn opt_block(&self, steps: Steps) -> usize {
         let max_blocks_step = self.measure_blocks(steps);
 
         let tape = self.unroll_tape(max_blocks_step);
@@ -88,7 +88,7 @@ impl Prog {
         opt_size
     }
 
-    fn measure_blocks(&self, steps: usize) -> usize {
+    fn measure_blocks(&self, steps: Steps) -> usize {
         let mut state = 0;
         let mut tape = BlockMeasure::new();
 
@@ -113,7 +113,7 @@ impl Prog {
         tape.max_blocks_step
     }
 
-    fn unroll_tape(&self, steps: usize) -> Vec<Color> {
+    fn unroll_tape(&self, steps: Steps) -> Vec<Color> {
         let mut state = 0;
         let mut tape = Tape::init();
 

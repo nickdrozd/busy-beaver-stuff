@@ -3,13 +3,11 @@ use core::cmp::{max, min};
 use rayon::prelude::*;
 
 use crate::{
-    Color, Goal, Instr, Params, Prog, Shift, Slot, State,
+    Color, Goal, Instr, Params, Prog, Shift, Slot, State, Steps,
     config::MedConfig as Config,
 };
 
 pub use crate::config::PassConfig;
-
-pub type Step = usize;
 
 type Slots = u8;
 
@@ -81,7 +79,7 @@ enum RunResult {
 use RunResult::*;
 
 impl Config {
-    fn run(&mut self, prog: &Prog, sim_lim: Step) -> RunResult {
+    fn run(&mut self, prog: &Prog, sim_lim: Steps) -> RunResult {
         for _ in 0..sim_lim {
             let slot = self.slot();
 
@@ -112,7 +110,7 @@ impl Config {
 
 struct TreeCore<'h> {
     prog: Prog,
-    sim_lim: Step,
+    sim_lim: Steps,
     avail_params: Vec<Params>,
     remaining_slots: Slots,
     harvester: &'h dyn Fn(&Prog, PassConfig),
@@ -122,7 +120,7 @@ impl<'h> TreeCore<'h> {
     fn init(
         params @ (states, colors): Params,
         halt: Slots,
-        sim_lim: Step,
+        sim_lim: Steps,
         harvester: &'h dyn Fn(&Prog, PassConfig),
     ) -> Self {
         let prog = Prog::init_stepped(params);
@@ -310,7 +308,7 @@ impl<'h> BasicTree<'h> {
     fn init(
         params: Params,
         halt: Slots,
-        sim_lim: Step,
+        sim_lim: Steps,
         harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
         instr_table: &'h InstrTable,
     ) -> Self {
@@ -372,7 +370,7 @@ struct BlankTree<'h> {
 impl<'h> BlankTree<'h> {
     fn init(
         params @ (states, colors): Params,
-        sim_lim: Step,
+        sim_lim: Steps,
         harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
         instr_table: &'h BlankInstrTable,
     ) -> Self {
@@ -469,7 +467,7 @@ impl<'h> Tree<'h> for BlankTree<'h> {
 fn build_all(
     params @ (states, colors): Params,
     halt: Slots,
-    sim_lim: Step,
+    sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
     let init_states = min(3, states);
@@ -499,7 +497,7 @@ fn build_all(
 
 fn build_blank(
     params @ (states, colors): Params,
-    sim_lim: Step,
+    sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
     let init_states = min(3, states);
@@ -525,7 +523,7 @@ fn build_blank(
 
 fn build_spinout(
     params @ (states, colors): Params,
-    sim_lim: Step,
+    sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig) + Sync),
 ) {
     let init_states = min(3, states);
@@ -562,7 +560,7 @@ fn build_spinout(
 pub fn build_tree(
     params: Params,
     goal: Option<Goal>,
-    sim_lim: Step,
+    sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
     match goal {
@@ -586,7 +584,7 @@ pub fn build_tree(
 pub fn build_limited(
     params @ (states, colors): Params,
     instrs: Slots,
-    sim_lim: Step,
+    sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
     let dimension = states * colors;

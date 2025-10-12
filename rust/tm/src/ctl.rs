@@ -1,7 +1,7 @@
 use ahash::AHashSet as Set;
 
 use crate::{
-    Color, Goal, Instr, Prog, Shift,
+    Color, Goal, Instr, Prog, Shift, Steps,
     config::LilConfig as Config,
     macros::GetInstr,
     tape::{
@@ -11,8 +11,6 @@ use crate::{
 };
 
 use Goal::*;
-
-type Steps = usize;
 
 const OPT_BLOCK: usize = 500;
 const COUNT_LIMIT: Count = 2;

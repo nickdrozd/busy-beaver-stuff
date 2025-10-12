@@ -15,8 +15,7 @@ use crate::{
 
 use Goal::*;
 
-pub type Step = usize;
-type Segments = usize;
+pub type Segments = usize;
 
 const MAX_DEPTH: usize = 3_000;
 
@@ -29,7 +28,7 @@ pub enum SegmentResult {
     Spinout,
     DepthLimit,
     SegmentLimit,
-    Refuted(Step),
+    Refuted(Segments),
 }
 
 impl SegmentResult {

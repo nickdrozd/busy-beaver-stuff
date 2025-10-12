@@ -6,19 +6,17 @@ use std::{
 };
 
 use crate::{
-    Color, Instr, Parse as _, Prog, Shift, Slot, State,
+    Color, Instr, Parse as _, Prog, Shift, Slot, State, Steps,
     tape::{
         self, Alignment, Block as _, LilBlock as Block,
         LilCount as Count, Pos, Scan,
     },
 };
 
-pub type Step = usize;
 pub type Recs = usize;
-pub type Depth = usize;
 
 const MAX_RECS: Recs = 2;
-const MAX_STACK_DEPTH: Depth = 28;
+const MAX_STACK_DEPTH: usize = 28;
 
 /**************************************/
 
@@ -29,7 +27,7 @@ pub enum BackwardResult {
     Spinout,
     StepLimit,
     DepthLimit,
-    Refuted(Step),
+    Refuted(Steps),
 }
 
 use BackwardResult::*;
@@ -47,7 +45,7 @@ impl BackwardResult {
 /**************************************/
 
 impl Prog {
-    pub fn cant_halt(&self, depth: Depth) -> BackwardResult {
+    pub fn cant_halt(&self, steps: Steps) -> BackwardResult {
         let mut halt_slots = self.halt_slots();
 
         halt_slots.retain(|&slot @ (_, co)| {
@@ -58,27 +56,27 @@ impl Prog {
             return Refuted(0);
         }
 
-        cant_reach(self, depth, halt_configs(&halt_slots))
+        cant_reach(self, steps, halt_configs(&halt_slots))
     }
 
-    pub fn cant_blank(&self, depth: Depth) -> BackwardResult {
+    pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
         let erase_slots = self.erase_slots();
 
         if erase_slots.is_empty() {
             return Refuted(0);
         }
 
-        cant_reach(self, depth, erase_configs(&erase_slots))
+        cant_reach(self, steps, erase_configs(&erase_slots))
     }
 
-    pub fn cant_spin_out(&self, depth: Depth) -> BackwardResult {
+    pub fn cant_spin_out(&self, steps: Steps) -> BackwardResult {
         let zr_shifts = self.zr_shifts();
 
         if zr_shifts.is_empty() {
             return Refuted(0);
         }
 
-        cant_reach(self, depth, zero_reflexive_configs(&zr_shifts))
+        cant_reach(self, steps, zero_reflexive_configs(&zr_shifts))
     }
 }
 
@@ -93,7 +91,7 @@ type Entrypoints = Dict<State, (Entries, Entries)>;
 
 fn cant_reach(
     prog: &Prog,
-    depth: Depth,
+    steps: Steps,
     mut configs: Configs,
 ) -> BackwardResult {
     let entrypoints = get_entrypoints(prog);
@@ -108,7 +106,7 @@ fn cant_reach(
 
     let mut indef_steps = 0;
 
-    for step in 1..=depth {
+    for step in 1..=steps {
         #[cfg(debug_assertions)]
         {
             for config in &configs {

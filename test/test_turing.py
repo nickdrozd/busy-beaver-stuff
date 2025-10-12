@@ -186,7 +186,7 @@ class TuringTest(TestCase):
             return
 
         self.assertFalse(
-            cant_halt(prog, depth = REASON_LIMIT).is_refuted(),
+            cant_halt(prog, steps = REASON_LIMIT).is_refuted(),
             f'halt false positive: "{prog}"')
 
     def assert_cant_halt_backward(self, prog: str, depth: int):
@@ -249,7 +249,7 @@ class TuringTest(TestCase):
 
     def assert_could_blank_backward(self, prog: str):
         self.assertFalse(
-            cant_blank(prog, depth = REASON_LIMIT).is_refuted(),
+            cant_blank(prog, steps = REASON_LIMIT).is_refuted(),
             f'blank false positive: "{prog}"')
 
     def assert_could_blank_segment(self, prog: str):
@@ -301,7 +301,7 @@ class TuringTest(TestCase):
 
     def assert_could_spin_out_backward(self, prog: str):
         self.assertFalse(
-            cant_spin_out(prog, depth = REASON_LIMIT).is_refuted(),
+            cant_spin_out(prog, steps = REASON_LIMIT).is_refuted(),
             f'spin out false positive: "{prog}"')
 
     def assert_could_spin_out_segment(self, prog: str):

@@ -1,5 +1,5 @@
 use crate::{
-    Prog, Slot, State,
+    Prog, Slot, State, Steps,
     config::Config,
     macros::GetInstr,
     prover::{Prover, ProverResult},
@@ -56,11 +56,11 @@ impl RunResult {
 /**************************************/
 
 trait RunProver {
-    fn run_prover(&self, sim_lim: usize) -> RunResult;
+    fn run_prover(&self, sim_lim: Steps) -> RunResult;
 }
 
 impl<T: GetInstr> RunProver for T {
-    fn run_prover(&self, sim_lim: usize) -> RunResult {
+    fn run_prover(&self, sim_lim: Steps) -> RunResult {
         let mut tape = BigTape::init();
 
         let mut prover = Prover::new(self);
@@ -114,7 +114,7 @@ impl<T: GetInstr> RunProver for T {
 /**************************************/
 
 impl Prog {
-    pub fn check_inf(&self, steps: usize, block_steps: usize) -> bool {
+    pub fn check_inf(&self, steps: Steps, block_steps: Steps) -> bool {
         let blocks = self.opt_block(block_steps);
 
         (if blocks == 1 {
@@ -125,7 +125,7 @@ impl Prog {
         .is_infinite()
     }
 
-    pub fn term_or_rec(&self, sim_lim: usize) -> RunResult {
+    pub fn term_or_rec(&self, sim_lim: Steps) -> RunResult {
         let mut state = 1;
 
         let mut tape = HeadTape::init_stepped();
@@ -192,7 +192,7 @@ impl Prog {
 
     pub fn run_transcript(
         &self,
-        sim_lim: usize,
+        sim_lim: Steps,
         config: &mut Config<MedTape>,
     ) -> RunResult {
         let mut pos = 0;

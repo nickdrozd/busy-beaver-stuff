@@ -5,8 +5,8 @@ use std::env;
 use rayon::prelude::*;
 
 use tm::{
-    Goal, Params, Prog,
-    tree::{PassConfig, Step, build_limited, build_tree},
+    Goal, Params, Prog, Steps,
+    tree::{PassConfig, build_limited, build_tree},
 };
 
 pub mod basket;
@@ -15,7 +15,7 @@ use basket::Basket;
 
 /**************************************/
 
-const TREE_LIM: Step = 876;
+const TREE_LIM: Steps = 876;
 
 /**************************************/
 
@@ -51,7 +51,7 @@ macro_rules! assert_trees {
 fn assert_tree(
     params: Params,
     goal: u8,
-    tree: Step,
+    tree: Steps,
     expected: (u64, u64),
     pipeline: impl Fn(&Prog, PassConfig<'_>) -> bool + Sync,
 ) {
@@ -442,7 +442,7 @@ fn test_collect() {
 
 fn assert_limited(
     instrs: u8,
-    tree: Step,
+    tree: Steps,
     expected: (u64, u64),
     pipeline: impl Fn(&Prog, PassConfig<'_>) -> bool + Sync,
 ) {
