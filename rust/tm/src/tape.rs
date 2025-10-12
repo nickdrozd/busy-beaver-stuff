@@ -317,8 +317,7 @@ pub struct Signature {
     pub rspan: SigSpan,
 }
 
-pub trait GetSig {
-    fn scan(&self) -> Color;
+pub trait GetSig: Scan {
     fn signature(&self) -> Signature;
 }
 
@@ -371,24 +370,22 @@ impl<C: Countable, B: Block<C>> Display for Tape<C, B> {
 }
 
 impl<B: Block<BigCount>> GetSig for Tape<BigCount, B> {
-    fn scan(&self) -> Color {
-        self.scan
-    }
-
     fn signature(&self) -> Signature {
         Signature {
-            scan: self.scan,
+            scan: self.scan(),
             lspan: self.lspan.signature(),
             rspan: self.rspan.signature(),
         }
     }
 }
 
-impl GetSig for EnumTape {
+impl Scan for EnumTape {
     fn scan(&self) -> Color {
         self.tape.scan
     }
+}
 
+impl GetSig for EnumTape {
     fn signature(&self) -> Signature {
         self.tape.signature()
     }
