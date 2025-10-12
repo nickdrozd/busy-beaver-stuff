@@ -243,7 +243,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 1, 876, (5_499, 614_144)),
+            ((2, 4), 1, TREE_LIM, (5_499, 614_144)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.cant_spin_out(2).is_refuted()
@@ -255,7 +255,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 2, 876, (4_310, 1_189_458)),
+            ((2, 4), 2, TREE_LIM, (4_310, 1_189_458)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.cant_blank(58).is_refuted()
@@ -265,7 +265,7 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 3, 876, (39_533, 1_698_504)),
+            ((2, 4), 3, TREE_LIM, (39_533, 1_698_504)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.term_or_rec(5_000).is_settled()
