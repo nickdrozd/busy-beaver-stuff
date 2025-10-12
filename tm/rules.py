@@ -327,7 +327,7 @@ def apply_rule(rule: Rule, tape: IndexTape) -> Count | None:
         count = tape.get_count(pos)
 
         match diff:
-            case (int(mul), int(add)):
+            case (int() as mul, int() as add):
                 result = apply_mult(count, times, mul, add)
             case Plus():
                 if pos != min_pos:
@@ -335,8 +335,8 @@ def apply_rule(rule: Rule, tape: IndexTape) -> Count | None:
                 else:
                     assert diff < 0
                     result = min_res
-            case ops:
-                result = apply_ops(count, times, ops) # type: ignore[arg-type]
+            case tuple() as ops:  # no-branch
+                result = apply_ops(count, times, ops)
 
         tape.set_count(pos, result)
 
