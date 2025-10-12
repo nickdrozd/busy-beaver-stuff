@@ -21,7 +21,7 @@ type InstrTable = Vec<Vec<Instrs>>;
 fn make_instr_table(
     max_states: State,
     max_colors: Color,
-) -> InstrTable {
+) -> (Instrs, InstrTable) {
     let mut table = vec![
         vec![vec![]; 1 + max_colors as usize];
         1 + max_states as usize
@@ -44,7 +44,15 @@ fn make_instr_table(
         }
     }
 
-    table
+    let init_states = min(3, max_states);
+    let init_colors = min(3, max_colors);
+
+    let mut init_instrs =
+        table[init_states as usize][init_colors as usize].clone();
+
+    init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
+
+    (init_instrs, table)
 }
 
 type BlankInstrTable = [InstrTable; 2];
@@ -52,8 +60,8 @@ type BlankInstrTable = [InstrTable; 2];
 fn make_blank_table(
     max_states: State,
     max_colors: Color,
-) -> BlankInstrTable {
-    let table = make_instr_table(max_states, max_colors);
+) -> (Instrs, BlankInstrTable) {
+    let (init_instrs, table) = make_instr_table(max_states, max_colors);
 
     let mut partial = table.clone();
 
@@ -64,7 +72,7 @@ fn make_blank_table(
         }
     }
 
-    [table, partial]
+    (init_instrs, [table, partial])
 }
 
 /**************************************/
@@ -470,15 +478,7 @@ fn build_all(
     sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
-    let init_states = min(3, states);
-    let init_colors = min(3, colors);
-
-    let instr_table = make_instr_table(states, colors);
-
-    let mut init_instrs =
-        instr_table[init_states as usize][init_colors as usize].clone();
-
-    init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
+    let (init_instrs, instr_table) = make_instr_table(states, colors);
 
     init_instrs.par_iter().for_each(|&next_instr| {
         let mut prog = BasicTree::init(
@@ -500,16 +500,7 @@ fn build_blank(
     sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
-    let init_states = min(3, states);
-    let init_colors = min(3, colors);
-
-    let instr_table = make_blank_table(states, colors);
-
-    let mut init_instrs = instr_table[usize::from(false)]
-        [init_states as usize][init_colors as usize]
-        .clone();
-
-    init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
+    let (init_instrs, instr_table) = make_blank_table(states, colors);
 
     init_instrs.par_iter().for_each(|&next_instr| {
         let mut prog =
@@ -526,15 +517,8 @@ fn build_spinout(
     sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig) + Sync),
 ) {
-    let init_states = min(3, states);
-    let init_colors = min(3, colors);
-
-    let instr_table = make_instr_table(states, colors);
-
-    let mut init_instrs =
-        instr_table[init_states as usize][init_colors as usize].clone();
-
-    init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
+    let (mut init_instrs, instr_table) =
+        make_instr_table(states, colors);
 
     if states == 2 {
         init_instrs.retain(|instr| matches!(instr, (_, _, 1)));
