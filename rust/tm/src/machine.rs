@@ -325,7 +325,9 @@ const REC_PROGS: &[(&str, bool)] = &[
     ("1RB 1LA  1LC 1RC  1LA 0RB", true),
     ("1RB 0LB  1LA 0RC  1RB ...", false),
     ("1RB 0LC  1LA 1RC  1RC 1RB", false),
+    ("1RB 1LA  0LA 1RC  1LA 0RB", false),
     ("1RB 1LA  1LA 1RC  ... 1RB", false),
+    ("1RB 1LB  0LC 0RC  1RA 1LA", false),
     ("1RB 1RC  1LC ...  0RA 0LB", false),
     ("1RB 1RD  0LB 1LC  1RC 1LD  0LC 1LA", true),
 ];

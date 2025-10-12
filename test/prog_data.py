@@ -5684,6 +5684,8 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 1LB 2RA  1LB 2RB 0LA",
     "1RB 0RB 1LB  1LB 2LA 2RA",
 
+    "1RB 1LA  0LA 1RC  1LA 0RB",
+    "1RB 1LB  0LC 0RC  1RA 1LA",
     "1RB ...  0LC 0RA  0RA 1LB",
     "1RB ...  0LC 0RA  1LA 1LB",
     "1RB ...  1LC 0RA  0RB 0LB",
