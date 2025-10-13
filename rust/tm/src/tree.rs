@@ -153,26 +153,22 @@ impl<'h> TreeCore<'h> {
 
     fn update_avail(
         &mut self,
-        (slot_state, slot_color): &Slot,
-        (instr_color, _, instr_state): &Instr,
+        (slot_st, slot_co): &Slot,
+        (instr_co, _, instr_st): &Instr,
     ) {
-        let (mut avail_states, mut avail_colors) = self.avail_params();
+        let (mut av_st, mut av_co) = self.avail_params();
 
-        let (states, colors) = self.prog.params();
+        let (max_st, max_co) = self.prog.params();
 
-        if avail_states < states
-            && 1 + max(slot_state, instr_state) == avail_states
-        {
-            avail_states += 1;
+        if av_st < max_st && 1 + max(slot_st, instr_st) == av_st {
+            av_st += 1;
         }
 
-        if avail_colors < colors
-            && 1 + max(slot_color, instr_color) == avail_colors
-        {
-            avail_colors += 1;
+        if av_co < max_co && 1 + max(slot_co, instr_co) == av_co {
+            av_co += 1;
         }
 
-        self.avail_params.push((avail_states, avail_colors));
+        self.avail_params.push((av_st, av_co));
     }
 }
 
@@ -329,9 +325,9 @@ impl<'h> Tree<'h> for BasicTree<'h> {
     }
 
     fn avail_instrs(&self, _: &Slot) -> &'h [Instr] {
-        let (avail_states, avail_colors) = self.core.avail_params();
+        let (st, co) = self.core.avail_params();
 
-        &self.instr_table[avail_states as usize][avail_colors as usize]
+        &self.instr_table[st as usize][co as usize]
     }
 }
 
@@ -419,14 +415,11 @@ impl<'h> Tree<'h> for BlankTree<'h> {
     }
 
     fn avail_instrs(&self, &(_, color): &Slot) -> &'h [Instr] {
-        let (avail_states, avail_colors) = self.core.avail_params();
+        let (st, co) = self.core.avail_params();
 
-        let erase_remaining = self.avail_blanks();
-
-        let erase_required = color != 0 && erase_remaining == Some(1);
-
-        &self.instr_table[usize::from(erase_required)]
-            [avail_states as usize][avail_colors as usize]
+        &self.instr_table
+            [usize::from(color != 0 && self.avail_blanks() == Some(1))]
+            [st as usize][co as usize]
     }
 }
 
