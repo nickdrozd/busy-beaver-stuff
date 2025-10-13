@@ -79,6 +79,57 @@ fn make_blank_table(
 
 /**************************************/
 
+trait AvailInstrs<'h> {
+    fn avail_instrs(&self, slot: &Slot, params: Params) -> &'h [Instr];
+}
+
+struct BasicInstrs<'h> {
+    instr_table: &'h InstrTable,
+}
+
+impl<'h> AvailInstrs<'h> for BasicInstrs<'h> {
+    fn avail_instrs(&self, _: &Slot, (st, co): Params) -> &'h [Instr] {
+        &self.instr_table[st as usize][co as usize]
+    }
+}
+
+struct BlankInstrs<'h> {
+    instr_table: &'h BlankInstrTable,
+    avail_blanks: Vec<Option<Slots>>,
+}
+
+impl BlankInstrs<'_> {
+    #[expect(clippy::unwrap_in_result)]
+    fn avail_blanks(&self) -> Option<Slots> {
+        *self.avail_blanks.last().unwrap()
+    }
+
+    fn update_blanks(&mut self, &(_, sc): &Slot, &(pr, _, _): &Instr) {
+        let next = if pr == 0 && sc != 0 {
+            None
+        } else {
+            self.avail_blanks()
+                .map(|rem| if sc != 0 { rem - 1 } else { rem })
+        };
+
+        self.avail_blanks.push(next);
+    }
+}
+
+impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
+    fn avail_instrs(
+        &self,
+        &(_, pr): &Slot,
+        (st, co): Params,
+    ) -> &'h [Instr] {
+        &self.instr_table
+            [usize::from(pr != 0 && self.avail_blanks() == Some(1))]
+            [st as usize][co as usize]
+    }
+}
+
+/**************************************/
+
 struct TreeCore<'h> {
     prog: Prog,
     sim_lim: Steps,
@@ -273,8 +324,7 @@ trait Tree<'h> {
 
 struct BasicTree<'h> {
     core: TreeCore<'h>,
-
-    instr_table: &'h InstrTable,
+    instrs: BasicInstrs<'h>,
 }
 
 impl<'h> BasicTree<'h> {
@@ -287,7 +337,9 @@ impl<'h> BasicTree<'h> {
     ) -> Self {
         let core = TreeCore::init(params, halt, sim_lim, harvester);
 
-        Self { core, instr_table }
+        let instrs = BasicInstrs { instr_table };
+
+        Self { core, instrs }
     }
 }
 
@@ -324,10 +376,8 @@ impl<'h> Tree<'h> for BasicTree<'h> {
         self.core.remove(slot);
     }
 
-    fn avail_instrs(&self, _: &Slot) -> &'h [Instr] {
-        let (st, co) = self.core.avail_params();
-
-        &self.instr_table[st as usize][co as usize]
+    fn avail_instrs(&self, slot: &Slot) -> &'h [Instr] {
+        self.instrs.avail_instrs(slot, self.core.avail_params())
     }
 }
 
@@ -335,9 +385,7 @@ impl<'h> Tree<'h> for BasicTree<'h> {
 
 struct BlankTree<'h> {
     core: TreeCore<'h>,
-
-    avail_blanks: Vec<Option<Slots>>,
-    instr_table: &'h BlankInstrTable,
+    instrs: BlankInstrs<'h>,
 }
 
 impl<'h> BlankTree<'h> {
@@ -349,31 +397,12 @@ impl<'h> BlankTree<'h> {
     ) -> Self {
         let core = TreeCore::init(params, 0, sim_lim, harvester);
 
-        let blank_slots = Some(states * (colors - 1));
-
-        let avail_blanks = vec![blank_slots];
-
-        Self {
-            core,
-            avail_blanks,
+        let instrs = BlankInstrs {
             instr_table,
-        }
-    }
-
-    #[expect(clippy::unwrap_in_result)]
-    fn avail_blanks(&self) -> Option<Slots> {
-        *self.avail_blanks.last().unwrap()
-    }
-
-    fn update_blanks(&mut self, &(_, sc): &Slot, &(pr, _, _): &Instr) {
-        let next = if pr == 0 && sc != 0 {
-            None
-        } else {
-            self.avail_blanks()
-                .map(|rem| if sc != 0 { rem - 1 } else { rem })
+            avail_blanks: vec![Some(states * (colors - 1))],
         };
 
-        self.avail_blanks.push(next);
+        Self { core, instrs }
     }
 }
 
@@ -396,14 +425,12 @@ impl<'h> Tree<'h> for BlankTree<'h> {
 
     fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
         self.core.insert_and_update(slot, instr);
-
-        self.update_blanks(slot, instr);
+        self.instrs.update_blanks(slot, instr);
     }
 
     fn remove_and_update(&mut self, slot: &Slot) {
         self.core.remove_and_update(slot);
-
-        self.avail_blanks.pop();
+        self.instrs.avail_blanks.pop();
     }
 
     fn insert(&mut self, slot: &Slot, instr: &Instr) {
@@ -414,12 +441,8 @@ impl<'h> Tree<'h> for BlankTree<'h> {
         self.core.remove(slot);
     }
 
-    fn avail_instrs(&self, &(_, color): &Slot) -> &'h [Instr] {
-        let (st, co) = self.core.avail_params();
-
-        &self.instr_table
-            [usize::from(color != 0 && self.avail_blanks() == Some(1))]
-            [st as usize][co as usize]
+    fn avail_instrs(&self, slot: &Slot) -> &'h [Instr] {
+        self.instrs.avail_instrs(slot, self.core.avail_params())
     }
 }
 
