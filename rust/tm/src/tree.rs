@@ -187,7 +187,7 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
     fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
         self.remaining_slots -= 1;
 
-        self.insert(slot, instr);
+        self.prog.insert(slot, instr);
 
         self.update_avail(slot, instr);
 
@@ -197,19 +197,11 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
     fn remove_and_update(&mut self, slot: &Slot) {
         self.avail_params.pop();
 
-        self.remove(slot);
+        self.prog.remove(slot);
 
         self.remaining_slots += 1;
 
         self.instrs.on_remove();
-    }
-
-    fn insert(&mut self, slot: &Slot, instr: &Instr) {
-        self.prog.insert(slot, instr);
-    }
-
-    fn remove(&mut self, slot: &Slot) {
-        self.prog.remove(slot);
     }
 
     fn avail_params(&self) -> Params {
@@ -240,7 +232,7 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
         self.avail_params.push((av_st, av_co));
     }
 
-    fn with_instr(
+    fn with_update(
         &mut self,
         slot: &Slot,
         instr: &Instr,
@@ -259,11 +251,11 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
         instr: &Instr,
         body: impl FnOnce(&mut Self),
     ) {
-        self.insert(slot, instr);
+        self.prog.insert(slot, instr);
 
         body(self);
 
-        self.remove(slot);
+        self.prog.remove(slot);
     }
 
     fn branch(&mut self, mut config: Config) {
@@ -307,12 +299,12 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
         config.state = slot_state;
 
         for next_instr in instrs {
-            self.with_instr(&slot, next_instr, |prog| {
+            self.with_update(&slot, next_instr, |prog| {
                 prog.branch(config.clone());
             });
         }
 
-        self.with_instr(&slot, last_instr, |prog| {
+        self.with_update(&slot, last_instr, |prog| {
             prog.branch(config);
         });
     }
@@ -362,7 +354,7 @@ fn kick_off_branch<'h, AvIn: AvailInstrs<'h>>(
     make_tree: impl Sync + Fn() -> Tree<'h, AvIn>,
 ) {
     init_instrs.par_iter().for_each(|&next_instr| {
-        make_tree().with_instr(
+        make_tree().with_update(
             &(1, 0),
             &next_instr,
             |tree: &mut Tree<_>| {
