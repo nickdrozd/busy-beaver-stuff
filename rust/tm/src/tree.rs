@@ -369,24 +369,15 @@ impl<'h> BlankTree<'h> {
         *self.avail_blanks.last().unwrap()
     }
 
-    fn update_blanks(
-        &mut self,
-        (_, slot_color): &Slot,
-        (instr_color, _, _): &Instr,
-    ) {
-        let mut avail_blanks = self.avail_blanks();
+    fn update_blanks(&mut self, &(_, sc): &Slot, &(pr, _, _): &Instr) {
+        let next = if pr == 0 && sc != 0 {
+            None
+        } else {
+            self.avail_blanks()
+                .map(|rem| if sc != 0 { rem - 1 } else { rem })
+        };
 
-        if let Some(remaining) = avail_blanks
-            && *slot_color != 0
-        {
-            if *instr_color == 0 {
-                avail_blanks = None;
-            } else {
-                avail_blanks = Some(remaining - 1);
-            }
-        }
-
-        self.avail_blanks.push(avail_blanks);
+        self.avail_blanks.push(next);
     }
 }
 
