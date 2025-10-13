@@ -4,12 +4,14 @@ use rayon::prelude::*;
 
 use crate::{
     Color, Goal, Instr, Params, Prog, Shift, Slot, State, Steps,
-    config::MedConfig as Config,
+    config::MedConfig as Config, machine::RunResult,
 };
 
 pub use crate::config::PassConfig;
 
 type Slots = u8;
+
+use RunResult::*;
 
 /**************************************/
 
@@ -77,45 +79,6 @@ fn make_blank_table(
 
 /**************************************/
 
-enum RunResult {
-    Limit,
-    Blank,
-    Spinout,
-    Undefined(Slot),
-}
-
-use RunResult::*;
-
-impl Config {
-    fn run(&mut self, prog: &Prog, sim_lim: Steps) -> RunResult {
-        for _ in 0..sim_lim {
-            let slot = self.slot();
-
-            let Some(&(color, shift, state)) = prog.get(&slot) else {
-                return Undefined(slot);
-            };
-
-            let same = self.state == state;
-
-            if same && self.tape.at_edge(shift) {
-                return Spinout;
-            }
-
-            self.tape.step(shift, color, same);
-
-            if self.tape.blank() {
-                return Blank;
-            }
-
-            self.state = state;
-        }
-
-        Limit
-    }
-}
-
-/**************************************/
-
 struct TreeCore<'h> {
     prog: Prog,
     sim_lim: Steps,
@@ -153,7 +116,7 @@ impl<'h> TreeCore<'h> {
     }
 
     fn run(&self, config: &mut Config) -> RunResult {
-        config.run(&self.prog, self.sim_lim)
+        self.prog.run_basic(self.sim_lim, config)
     }
 
     fn harvest(&self, config: PassConfig<'_>) {
@@ -262,12 +225,15 @@ trait Tree<'h> {
         let slot @ (slot_state, _) = match self.run(&mut config) {
             Undefined(slot) => slot,
             Blank | Spinout => return,
-            Limit => {
+            StepLimit => {
                 if !self.prog().incomplete() {
                     self.harvest(PassConfig::Owned(config));
                 }
 
                 return;
+            },
+            _ => {
+                unreachable!()
             },
         };
 
@@ -282,7 +248,10 @@ trait Tree<'h> {
             }
 
             self.with_insert(&slot, last_instr, |prog| {
-                if matches!(config.run(prog.prog(), 2), Limit) {
+                if matches!(
+                    prog.prog().run_basic(2, &mut config),
+                    StepLimit
+                ) {
                     prog.harvest(PassConfig::Owned(config));
                 }
             });

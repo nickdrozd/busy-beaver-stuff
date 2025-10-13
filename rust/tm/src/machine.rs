@@ -114,6 +114,36 @@ impl<T: GetInstr> RunProver for T {
 /**************************************/
 
 impl Prog {
+    pub fn run_basic(
+        &self,
+        sim_lim: Steps,
+        config: &mut Config<MedTape>,
+    ) -> RunResult {
+        for _ in 0..sim_lim {
+            let slot = config.slot();
+
+            let Some(&(color, shift, state)) = self.get(&slot) else {
+                return Undefined(slot);
+            };
+
+            let same = config.state == state;
+
+            if same && config.tape.at_edge(shift) {
+                return Spinout;
+            }
+
+            config.tape.step(shift, color, same);
+
+            if config.tape.blank() {
+                return Blank;
+            }
+
+            config.state = state;
+        }
+
+        StepLimit
+    }
+
     pub fn check_inf(&self, steps: Steps, block_steps: Steps) -> bool {
         let blocks = self.opt_block(block_steps);
 
