@@ -77,6 +77,37 @@ fn make_blank_table(
     (init_instrs, [table, partial])
 }
 
+type SpinoutInstrTable = [InstrTable; 2];
+
+fn make_spinout_table(
+    max_states: State,
+    max_colors: Color,
+) -> (Instrs, SpinoutInstrTable) {
+    let (init_instrs, plain) = make_instr_table(max_states, max_colors);
+
+    let mut spins: InstrTable =
+        vec![
+            vec![Vec::new(); 1 + max_colors as usize];
+            1 + max_states as usize
+        ];
+
+    for read_state in 0..max_states {
+        for colors in 2..=max_colors {
+            let mut instrs = Vec::with_capacity((colors * 2).into());
+
+            for color in 0..colors {
+                for shift in SHIFTS {
+                    instrs.push((color, shift, read_state));
+                }
+            }
+
+            spins[1 + read_state as usize][colors as usize] = instrs;
+        }
+    }
+
+    (init_instrs, [plain, spins])
+}
+
 /**************************************/
 
 trait AvailInstrs<'h> {
@@ -132,6 +163,51 @@ impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
 
     fn on_remove(&mut self) {
         self.avail_blanks.pop();
+    }
+}
+
+struct SpinoutInstrs<'h> {
+    instr_table: &'h SpinoutInstrTable,
+    avail_spinouts: Vec<Option<Slots>>,
+}
+
+impl SpinoutInstrs<'_> {
+    #[expect(clippy::unwrap_in_result)]
+    fn avail_spinouts(&self) -> Option<Slots> {
+        *self.avail_spinouts.last().unwrap()
+    }
+}
+
+impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
+    fn avail_instrs(
+        &self,
+        &(read_state, read_color): &Slot,
+        (states, colors): Params,
+    ) -> &'h [Instr] {
+        let spinout =
+            read_color == 0 && self.avail_spinouts() == Some(1);
+
+        &(if spinout {
+            &self.instr_table[1][1 + read_state as usize]
+        } else {
+            &self.instr_table[0][states as usize]
+        })[colors as usize]
+    }
+
+    fn on_insert(&mut self, &(st, co): &Slot, &(_, _, tr): &Instr) {
+        let next = if co != 0 {
+            self.avail_spinouts()
+        } else if st == tr {
+            None
+        } else {
+            self.avail_spinouts().map(|rem| rem - 1)
+        };
+
+        self.avail_spinouts.push(next);
+    }
+
+    fn on_remove(&mut self) {
+        self.avail_spinouts.pop();
     }
 }
 
@@ -349,6 +425,26 @@ impl<'h> BlankTree<'h> {
 
 /**************************************/
 
+type SpinoutTree<'h> = Tree<'h, SpinoutInstrs<'h>>;
+
+impl<'h> SpinoutTree<'h> {
+    fn make(
+        params @ (states, _): Params,
+        sim_lim: Steps,
+        harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
+        instr_table: &'h SpinoutInstrTable,
+    ) -> Self {
+        let instrs = SpinoutInstrs {
+            instr_table,
+            avail_spinouts: vec![Some(states - 1)],
+        };
+
+        Self::init(params, 0, instrs, sim_lim, harvester)
+    }
+}
+
+/**************************************/
+
 fn kick_off_branch<'h, AvIn: AvailInstrs<'h>>(
     init_instrs: &Instrs,
     make_tree: impl Sync + Fn() -> Tree<'h, AvIn>,
@@ -394,15 +490,21 @@ fn build_spinout(
     sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig) + Sync),
 ) {
-    let (mut init_instrs, instr_table) =
-        make_instr_table(states, colors);
+    let (init_instrs, instr_table) = make_spinout_table(states, colors);
+
+    let (init_spins, init_other) =
+        init_instrs.into_iter().partition(|&(_, _, tr)| tr == 1);
+
+    kick_off_branch(&init_spins, || {
+        BasicTree::make(params, 0, sim_lim, harvester, &instr_table[0])
+    });
 
     if states == 2 {
-        init_instrs.retain(|instr| matches!(instr, (_, _, 1)));
+        return;
     }
 
-    kick_off_branch(&init_instrs, || {
-        BasicTree::make(params, 0, sim_lim, harvester, &instr_table)
+    kick_off_branch(&init_other, || {
+        SpinoutTree::make(params, sim_lim, harvester, &instr_table)
     });
 }
 
