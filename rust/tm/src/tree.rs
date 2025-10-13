@@ -566,12 +566,14 @@ pub fn build_tree(
 }
 
 pub fn build_limited(
-    params @ (states, colors): Params,
     instrs: Slots,
     sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
-    let dimension = states * colors;
-
-    build_all(params, dimension - instrs, sim_lim, harvester);
+    build_all(
+        (instrs, instrs),
+        (instrs * instrs) - instrs,
+        sim_lim,
+        harvester,
+    );
 }
