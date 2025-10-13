@@ -472,6 +472,17 @@ impl<'h> Tree<'h> for BlankTree<'h> {
 
 /**************************************/
 
+fn kick_off_branch<'h, T: Tree<'h>>(
+    init_instrs: &Instrs,
+    make_tree: impl Sync + Fn() -> T,
+) {
+    init_instrs.par_iter().for_each(|&next_instr| {
+        make_tree().with_instr(&(1, 0), &next_instr, |prog: &mut T| {
+            prog.branch(Config::init_stepped());
+        });
+    });
+}
+
 fn build_all(
     params @ (states, colors): Params,
     halt: Slots,
@@ -480,18 +491,8 @@ fn build_all(
 ) {
     let (init_instrs, instr_table) = make_instr_table(states, colors);
 
-    init_instrs.par_iter().for_each(|&next_instr| {
-        let mut prog = BasicTree::init(
-            params,
-            halt,
-            sim_lim,
-            harvester,
-            &instr_table,
-        );
-
-        prog.with_instr(&(1, 0), &next_instr, |prog| {
-            prog.branch(Config::init_stepped());
-        });
+    kick_off_branch(&init_instrs, || {
+        BasicTree::init(params, halt, sim_lim, harvester, &instr_table)
     });
 }
 
@@ -502,13 +503,8 @@ fn build_blank(
 ) {
     let (init_instrs, instr_table) = make_blank_table(states, colors);
 
-    init_instrs.par_iter().for_each(|&next_instr| {
-        let mut prog =
-            BlankTree::init(params, sim_lim, harvester, &instr_table);
-
-        prog.with_instr(&(1, 0), &next_instr, |prog| {
-            prog.branch(Config::init_stepped());
-        });
+    kick_off_branch(&init_instrs, || {
+        BlankTree::init(params, sim_lim, harvester, &instr_table)
     });
 }
 
@@ -524,18 +520,8 @@ fn build_spinout(
         init_instrs.retain(|instr| matches!(instr, (_, _, 1)));
     }
 
-    init_instrs.par_iter().for_each(|&next_instr| {
-        let mut prog = BasicTree::init(
-            params,
-            0,
-            sim_lim,
-            harvester,
-            &instr_table,
-        );
-
-        prog.with_instr(&(1, 0), &next_instr, |prog| {
-            prog.branch(Config::init_stepped());
-        });
+    kick_off_branch(&init_instrs, || {
+        BasicTree::init(params, 0, sim_lim, harvester, &instr_table)
     });
 }
 
