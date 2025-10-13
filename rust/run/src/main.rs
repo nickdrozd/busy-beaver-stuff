@@ -536,10 +536,7 @@ fn test_limited_slow() {
 fn main() {
     test_tree();
 
-    #[expect(clippy::needless_collect)]
-    let args: Vec<String> = env::args().collect();
-
-    if !args.contains(&"--all".to_owned()) {
+    if !env::args().any(|x| x == "--all") {
         return;
     }
 
