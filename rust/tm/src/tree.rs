@@ -350,8 +350,15 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
             },
         };
 
-        let (last_instr, instrs) =
-            self.avail_instrs(&slot).split_last().unwrap();
+        let mut avail_instrs: Vec<_> = self.avail_instrs(&slot).into();
+
+        if config.tape.scan == 0 {
+            avail_instrs.retain(|&(_, shift, state)| {
+                !(config.state == state && config.tape.at_edge(shift))
+            });
+        }
+
+        let (last_instr, instrs) = avail_instrs.split_last().unwrap();
 
         if self.final_slot() {
             for next_instr in instrs {

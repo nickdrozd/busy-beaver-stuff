@@ -115,7 +115,7 @@ fn test_tree() {
             }
         ),
         (
-            ((3, 2), 0, 12, (5, 2_930)),
+            ((3, 2), 0, 12, (5, 2_866)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.term_or_rec(40).is_settled()
@@ -124,7 +124,7 @@ fn test_tree() {
             }
         ),
         (
-            ((3, 2), 1, 13, (30, 4_444)),
+            ((3, 2), 1, 13, (30, 4_182)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.term_or_rec(206).is_settled()
@@ -133,7 +133,7 @@ fn test_tree() {
             }
         ),
         (
-            ((3, 2), 2, 13, (17, 10_046)),
+            ((3, 2), 2, 13, (17, 9_857)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.cant_blank(14).is_refuted()
@@ -143,7 +143,7 @@ fn test_tree() {
             }
         ),
         (
-            ((3, 2), 3, 13, (25, 12_353)),
+            ((3, 2), 3, 13, (25, 12_093)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.term_or_rec(206).is_settled()
@@ -188,7 +188,7 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 0, 25, (877, 448_563)),
+            ((4, 2), 0, 25, (877, 436_707)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected()
@@ -199,7 +199,7 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 1, 99, (3_322, 809_952)),
+            ((4, 2), 1, 99, (3_322, 763_360)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected()
@@ -212,7 +212,7 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 2, 99, (3_787, 1_999_945)),
+            ((4, 2), 2, 99, (3_787, 1_958_144)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected()
@@ -223,7 +223,7 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 3, 99, (7_945, 2_208_026)),
+            ((4, 2), 3, 99, (7_945, 2_159_748)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected()
@@ -280,14 +280,14 @@ fn test_tree_slow() {
 
     assert_trees![
         (
-            ((5, 2), 0, 700, (77_183_719, 92_727_997)),
+            ((5, 2), 0, 700, (76_001_415, 90_640_739)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected() || prog.cant_halt(0).is_refuted()
             }
         ),
         (
-            ((5, 2), 1, TREE_LIM, (164_402_961, 191_371_340)),
+            ((5, 2), 1, TREE_LIM, (156_524_271, 182_001_222)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected()
@@ -295,21 +295,21 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((5, 2), 2, TREE_LIM, (474_746_985, 498_923_643)),
+            ((5, 2), 2, TREE_LIM, (466_769_118, 489_586_785)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected() || prog.cant_blank(0).is_refuted()
             }
         ),
         (
-            ((3, 3), 0, 2_700, (21_020_663, 24_785_306)),
+            ((3, 3), 0, 2_700, (20_839_530, 24_530_903)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected() || prog.cant_halt(0).is_refuted()
             }
         ),
         (
-            ((3, 3), 1, 3_000, (51_375_220, 52_644_070)),
+            ((3, 3), 1, 3_000, (50_251_651, 51_465_598)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected()
@@ -317,7 +317,7 @@ fn test_tree_slow() {
             }
         ),
         (
-            ((3, 3), 2, 3_000, (121_258_803, 124_861_783)),
+            ((3, 3), 2, 3_000, (120_454_619, 124_021_513)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected() || prog.cant_blank(0).is_refuted()
@@ -404,17 +404,17 @@ fn test_reason() {
         ((2, 2), 1, (2, 10)),
         ((2, 2), 2, (2, 18)),
         //
-        ((3, 2), 0, (13, 1_770)),
-        ((3, 2), 1, (7, 1_995)),
-        ((3, 2), 2, (14, 2_575)),
+        ((3, 2), 0, (13, 1_754)),
+        ((3, 2), 1, (7, 1_733)),
+        ((3, 2), 2, (14, 2_533)),
         //
         ((2, 3), 0, (8, 1_458)),
         ((2, 3), 1, (2, 1_632)),
         ((2, 3), 2, (16, 1_697)),
         //
-        ((4, 2), 0, (46, 275_464)),
-        ((4, 2), 1, (15, 408_157)),
-        ((4, 2), 2, (51, 506_110)),
+        ((4, 2), 0, (46, 269_423)),
+        ((4, 2), 1, (15, 361_565)),
+        ((4, 2), 2, (51, 497_355)),
         //
         ((2, 4), 0, (17, 257_376)),
         ((2, 4), 1, (8, 416_615)),
@@ -486,7 +486,7 @@ fn test_limited() {
 
     assert_limited_results![
         (
-            (4, 4, (0, 5_248)),
+            (4, 4, (0, 5_020)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 //
@@ -496,7 +496,7 @@ fn test_limited() {
             }
         ),
         (
-            (5, 12, (13, 156_627)),
+            (5, 12, (13, 152_521)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 //
@@ -506,7 +506,7 @@ fn test_limited() {
             }
         ),
         (
-            (6, 22, (526, 5_726_886)),
+            (6, 22, (526, 5_589_007)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.term_or_rec(304).is_settled()
@@ -521,7 +521,7 @@ fn test_limited_slow() {
     println!("limited slow");
 
     assert_limited_results![(
-        (7, 109, (22_996, 251_356_358)),
+        (7, 109, (22_996, 246_864_648)),
         //
         |prog: &Prog, _config: PassConfig<'_>| {
             prog.term_or_rec(1000).is_settled()
