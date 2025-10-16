@@ -4,7 +4,6 @@ use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
     Instr, Parse as _, Prog, Slot, State, Steps,
-    config::Config,
     instrs::show_state,
     reason::{BackwardResult as BackwardResultRs, BackwardResult::*},
     segment::SegmentResult as SegmentResultRs,

@@ -38,7 +38,7 @@ impl Instrs {
         })
     }
 
-    fn values(&self) -> impl Iterator<Item = &Instr> + '_ {
+    fn instrs(&self) -> impl Iterator<Item = &Instr> + '_ {
         self.table
             .iter()
             .flat_map(|row| row.iter().filter_map(|opt| opt.as_ref()))
@@ -47,40 +47,36 @@ impl Instrs {
 
 /**************************************/
 
+#[expect(clippy::partial_pub_fields)]
 pub struct Prog {
     instrs: Instrs,
 
-    states: State,
-    colors: Color,
+    pub states: State,
+    pub colors: Color,
+
+    pub dimension: u8,
 }
 
 impl Prog {
-    const fn new(instrs: Instrs, (states, colors): Params) -> Self {
+    const fn new(instrs: Instrs, states: State, colors: Color) -> Self {
         Self {
             instrs,
             states,
             colors,
+            dimension: states * colors,
         }
-    }
-
-    pub const fn states(&self) -> State {
-        self.states
     }
 
     pub const fn params(&self) -> Params {
         (self.states, self.colors)
     }
 
-    pub const fn dimension(&self) -> u8 {
-        self.states * self.colors
-    }
-
-    pub fn init_stepped(params: Params) -> Self {
+    pub fn init_stepped(params @ (states, colors): Params) -> Self {
         let mut instrs = Instrs::new(params);
 
         instrs.insert((0, 0), (1, true, 1));
 
-        Self::new(instrs, params)
+        Self::new(instrs, states, colors)
     }
 
     pub fn print(&self) {
@@ -103,8 +99,8 @@ impl Prog {
         self.instrs.iter()
     }
 
-    pub fn values(&self) -> impl Iterator<Item = &Instr> {
-        self.instrs.values()
+    pub fn instrs(&self) -> impl Iterator<Item = &Instr> {
+        self.instrs.instrs()
     }
 
     pub fn halt_slots(&self) -> Set<Slot> {
@@ -142,18 +138,12 @@ impl Prog {
 
     pub fn states_unreached(&self) -> bool {
         self.states > 2
-            && self
-                .instrs
-                .values()
-                .all(|(_, _, state)| 1 + state < self.states)
+            && self.instrs().all(|(_, _, tr)| 1 + tr < self.states)
     }
 
     pub fn colors_unreached(&self) -> bool {
         self.colors > 2
-            && self
-                .instrs
-                .values()
-                .all(|(color, _, _)| 1 + color < self.colors)
+            && self.instrs().all(|(pr, _, _)| 1 + pr < self.colors)
     }
 
     pub fn incomplete(&self) -> bool {
@@ -163,7 +153,7 @@ impl Prog {
     pub fn reaches_from_both_sides(&self, (st, co): Slot) -> bool {
         let mut side = None;
 
-        for &(pr, sh, tr) in self.values() {
+        for &(pr, sh, tr) in self.instrs() {
             if pr != co && tr != st {
                 continue;
             }
@@ -209,11 +199,7 @@ impl Parse for Prog {
             }
         }
 
-        Self {
-            instrs,
-            states,
-            colors,
-        }
+        Self::new(instrs, states, colors)
     }
 
     fn show(&self) -> String {

@@ -6,11 +6,11 @@ use crate::{Prog, State};
 
 impl Prog {
     pub fn is_connected(&self) -> bool {
-        if self.values().all(|&(_, _, state)| state != 0) {
+        if self.instrs().all(|&(_, _, state)| state != 0) {
             return false;
         }
 
-        let states = self.states();
+        let states = self.states;
 
         let exitpoints = get_exitpoints(self);
 
