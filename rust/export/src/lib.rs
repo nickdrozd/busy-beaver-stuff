@@ -29,9 +29,7 @@ pub fn term_or_rec(prog: &str, sim_lim: Steps) -> bool {
 
 #[pyfunction]
 pub fn run_transcript(prog: &str, sim_lim: Steps) -> bool {
-    Prog::read(prog)
-        .run_transcript(sim_lim, &mut Config::init_stepped())
-        .is_settled()
+    Prog::read(prog).run_transcript_fresh(sim_lim).is_settled()
 }
 
 #[pyfunction]

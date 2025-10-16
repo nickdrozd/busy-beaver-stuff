@@ -220,6 +220,10 @@ impl Prog {
         StepLimit
     }
 
+    pub fn run_transcript_fresh(&self, sim_lim: Steps) -> RunResult {
+        self.run_transcript(sim_lim, &mut Config::init_stepped())
+    }
+
     pub fn run_transcript(
         &self,
         sim_lim: Steps,
@@ -372,9 +376,7 @@ fn test_rec() {
         );
 
         assert_eq!(
-            Prog::read(prog)
-                .run_transcript(280, &mut Config::init_stepped())
-                .is_recur(),
+            Prog::read(prog).run_transcript_fresh(280).is_recur(),
             expected,
             "{prog}",
         );
@@ -386,11 +388,7 @@ fn test_transcript_config() {
     let prog = Prog::read("1RB 0LC  1LA 1RC  1RC 1RB");
 
     for steps in 0..100 {
-        assert!(
-            !prog
-                .run_transcript(steps, &mut Config::init_stepped())
-                .is_settled()
-        );
+        assert!(!prog.run_transcript_fresh(steps).is_settled());
 
         let mut config = Config::init_stepped();
         config.tape.lspan[0].count += 4;
