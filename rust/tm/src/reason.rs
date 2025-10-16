@@ -56,7 +56,7 @@ impl Prog {
             return Refuted(0);
         }
 
-        cant_reach(self, steps, halt_configs(&halt_slots))
+        cant_reach(self, steps, halt_slots, halt_configs)
     }
 
     pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
@@ -66,7 +66,7 @@ impl Prog {
             return Refuted(0);
         }
 
-        cant_reach(self, steps, erase_configs(&erase_slots))
+        cant_reach(self, steps, erase_slots, erase_configs)
     }
 
     pub fn cant_spin_out(&self, steps: Steps) -> BackwardResult {
@@ -76,7 +76,7 @@ impl Prog {
             return Refuted(0);
         }
 
-        cant_reach(self, steps, zero_reflexive_configs(&zr_shifts))
+        cant_reach(self, steps, zr_shifts, zero_reflexive_configs)
     }
 }
 
@@ -89,18 +89,21 @@ type Entry = (Slot, (Color, Shift));
 type Entries = Vec<Entry>;
 type Entrypoints = Dict<State, (Entries, Entries)>;
 
-fn cant_reach(
+fn cant_reach<T: Ord>(
     prog: &Prog,
     steps: Steps,
-    mut configs: Configs,
+    mut slots: Set<(State, T)>,
+    get_configs: impl Fn(&Set<(State, T)>) -> Configs,
 ) -> BackwardResult {
     let entrypoints = get_entrypoints(prog);
 
-    configs.retain(|config| entrypoints.contains_key(&config.state));
+    slots.retain(|(state, _)| entrypoints.contains_key(state));
 
-    if configs.is_empty() {
+    if slots.is_empty() {
         return Refuted(0);
     }
+
+    let mut configs = get_configs(&slots);
 
     let mut blanks = get_blanks(&configs);
 
