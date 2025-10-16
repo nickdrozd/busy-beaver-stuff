@@ -356,6 +356,9 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
             avail_instrs.retain(|&(_, shift, state)| {
                 !(config.state == state && config.tape.at_edge(shift))
             });
+        } else if config.tape.lspan.blank() && config.tape.rspan.blank()
+        {
+            avail_instrs.retain(|&(pr, _, _)| pr != 0);
         }
 
         let (last_instr, instrs) = avail_instrs.split_last().unwrap();
