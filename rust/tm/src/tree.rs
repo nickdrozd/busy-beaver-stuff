@@ -372,7 +372,10 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
 
             self.with_insert(&slot, last_instr, |tree| {
                 if matches!(
-                    tree.prog.run_basic(2, &mut config),
+                    tree.prog.run_basic(
+                        tree.prog.dimension().into(),
+                        &mut config,
+                    ),
                     StepLimit
                 ) {
                     tree.harvest(PassConfig::Owned(config));

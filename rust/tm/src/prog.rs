@@ -71,6 +71,10 @@ impl Prog {
         (self.states, self.colors)
     }
 
+    pub const fn dimension(&self) -> u8 {
+        self.states * self.colors
+    }
+
     pub fn init_stepped(params: Params) -> Self {
         let mut instrs = Instrs::new(params);
 
