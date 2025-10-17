@@ -180,18 +180,14 @@ impl Prog {
                 return Undefined(slot);
             };
 
-            let curr_state = state;
-
-            state = next_state;
-
-            let same = curr_state == next_state;
+            let same = state == next_state;
 
             if same && tape.at_edge(shift) {
                 return Spinout;
             }
 
             if reset == 0 {
-                ref_state = curr_state;
+                ref_state = state;
                 ref_tape = tape.clone();
                 let head = ref_tape.head();
                 leftmost = head;
@@ -215,11 +211,13 @@ impl Prog {
                 rightmost = curr;
             }
 
-            if state == ref_state
+            if next_state == ref_state
                 && tape.aligns_with(&ref_tape, leftmost, rightmost)
             {
                 return Recur;
             }
+
+            state = next_state;
         }
 
         StepLimit
