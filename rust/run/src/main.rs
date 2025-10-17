@@ -80,31 +80,27 @@ fn test_tree() {
 
     assert_trees![
         (
-            ((2, 2), 0, 2, (0, 23)),
+            ((2, 2), 0, 2, (9, 23)),
             //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                //
-                prog.run_transcript(9, config.to_mut()).is_settled()
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_halt(3).is_refuted() || prog.ctl_cant_halt(11)
             }
         ),
         (
-            ((2, 2), 1, 4, (0, 32)),
+            ((2, 2), 1, 4, (5, 32)),
             //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                prog.cant_spin_out(0).is_refuted()
-                    || prog
-                        .run_transcript(18, config.to_mut())
-                        .is_settled()
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_spin_out(2).is_refuted()
+                    || prog.ctl_cant_spin_out(6)
+                    || prog.cps_cant_spin_out(3)
             }
         ),
         (
-            ((2, 2), 2, 4, (0, 53)),
+            ((2, 2), 2, 4, (5, 53)),
             //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                prog.cant_blank(3).is_refuted()
-                    || prog
-                        .run_transcript(10, config.to_mut())
-                        .is_settled()
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_blank(2).is_refuted()
+                    || prog.ctl_cant_blank(14)
             }
         ),
         (
@@ -115,31 +111,30 @@ fn test_tree() {
             }
         ),
         (
-            ((3, 2), 0, 12, (5, 2_650)),
+            ((3, 2), 0, 12, (850, 2_650)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.term_or_rec(40).is_settled()
-                    || prog.cant_halt(3).is_refuted()
-                    || prog.ctl_cant_halt(16)
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_halt(13).is_refuted()
+                    || prog.ctl_cant_halt(31)
+                    || prog.cps_cant_halt(4)
             }
         ),
         (
-            ((3, 2), 1, 13, (30, 3_979)),
+            ((3, 2), 1, 13, (517, 3_979)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.term_or_rec(206).is_settled()
-                    || prog.cant_spin_out(4).is_refuted()
-                    || prog.ctl_cant_spin_out(15)
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_spin_out(7).is_refuted()
+                    || prog.ctl_cant_spin_out(54)
+                    || prog.cps_cant_spin_out(7)
             }
         ),
         (
-            ((3, 2), 2, 13, (17, 9_442)),
+            ((3, 2), 2, 13, (669, 9_442)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_blank(14).is_refuted()
-                    || prog.term_or_rec(206).is_settled()
-                    || prog.ctl_cant_blank(25)
-                    || prog.cps_cant_blank(6)
+                    || prog.ctl_cant_blank(42)
+                    || prog.cps_cant_blank(10)
             }
         ),
         (
@@ -151,32 +146,31 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 3), 0, 7, (2, 2_264)),
+            ((2, 3), 0, 7, (548, 2_264)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.term_or_rec(301).is_settled()
-                    || prog.ctl_cant_halt(41)
-                    || prog.cps_cant_halt(3)
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_halt(8).is_refuted()
+                    || prog.ctl_cant_halt(60)
+                    || prog.cps_cant_halt(4)
             }
         ),
         (
-            ((2, 3), 1, 20, (26, 3_486)),
+            ((2, 3), 1, 20, (551, 3_486)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.term_or_rec(301).is_settled()
-                    || prog.cant_spin_out(2).is_refuted()
-                    || prog.ctl_cant_spin_out(83)
-                    || prog.seg_cant_spin_out(5).is_refuted()
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_spin_out(2).is_refuted()
+                    || prog.ctl_cant_spin_out(100)
+                    || prog.cps_cant_spin_out(5)
+                    || prog.seg_cant_spin_out(7).is_refuted()
             }
         ),
         (
-            ((2, 3), 2, 20, (11, 5_891)),
+            ((2, 3), 2, 20, (177, 5_891)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_blank(16).is_settled()
-                    || prog.term_or_rec(115).is_settled()
-                    || prog.ctl_cant_blank(32)
-                    || prog.cps_cant_blank(7)
+                    || prog.ctl_cant_blank(60)
+                    || prog.cps_cant_blank(9)
             }
         ),
         (
@@ -188,37 +182,30 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 0, 25, (877, 421_591)),
+            ((4, 2), 0, 25, (115_953, 421_591)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected()
-                    || prog.term_or_rec(200).is_settled()
-                    || prog.cant_halt(11).is_refuted()
-                    || prog.ctl_cant_halt(84)
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_halt(46).is_refuted()
+                    || prog.ctl_cant_halt(130)
                     || prog.cps_cant_halt(9)
             }
         ),
         (
-            ((4, 2), 1, 99, (3_322, 743_986)),
+            ((4, 2), 1, 99, (89_168, 743_986)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected()
-                    || prog.cant_spin_out(1).is_refuted()
-                    || prog.term_or_rec(1_000).is_settled()
-                    || prog.cant_spin_out(11).is_refuted()
-                    || prog.ctl_cant_spin_out(114)
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_spin_out(15).is_refuted()
+                    || prog.ctl_cant_spin_out(190)
                     || prog.cps_cant_spin_out(9)
-                    || prog.seg_cant_spin_out(7).is_refuted()
+                    || prog.seg_cant_spin_out(8).is_refuted()
             }
         ),
         (
-            ((4, 2), 2, 99, (3_787, 1_923_161)),
+            ((4, 2), 2, 99, (113_529, 1_923_161)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected()
-                    || prog.cant_blank(55).is_refuted()
-                    || prog.term_or_rec(1_000).is_settled()
-                    || prog.ctl_cant_blank(60)
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_blank(51).is_refuted()
+                    || prog.ctl_cant_blank(130)
                     || prog.cps_cant_blank(9)
             }
         ),
@@ -232,35 +219,30 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 0, 109, (652, 301_646)),
+            ((2, 4), 0, 109, (88_142, 301_646)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.cant_halt(0).is_refuted()
-                    || prog.term_or_rec(800).is_settled()
-                    || prog.seg_cant_halt(2).is_refuted()
-                    || prog.ctl_cant_halt(96)
-                    || prog.cps_cant_halt(6)
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_halt(17).is_refuted()
+                    || prog.ctl_cant_halt(190)
+                    || prog.cps_cant_halt(5)
             }
         ),
         (
-            ((2, 4), 1, TREE_LIM, (5_499, 610_085)),
+            ((2, 4), 1, TREE_LIM, (95_642, 610_085)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.cant_spin_out(2).is_refuted()
-                    || prog.term_or_rec(2_000).is_settled()
-                    || prog.cant_spin_out(7).is_refuted()
-                    || prog.ctl_cant_spin_out(186)
-                    || prog.cps_cant_spin_out(6)
-                    || prog.seg_cant_spin_out(4).is_refuted()
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_spin_out(8).is_refuted()
+                    || prog.ctl_cant_spin_out(300)
+                    || prog.cps_cant_spin_out(5)
+                    || prog.seg_cant_spin_out(5).is_refuted()
             }
         ),
         (
-            ((2, 4), 2, TREE_LIM, (4_310, 1_182_719)),
+            ((2, 4), 2, TREE_LIM, (34_630, 1_182_719)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.cant_blank(58).is_refuted()
-                    || prog.term_or_rec(2_000).is_settled()
-                    || prog.ctl_cant_blank(120)
+            |prog: &Prog, _: PassConfig<'_>| {
+                prog.cant_blank(51).is_refuted()
+                    || prog.ctl_cant_blank(200)
                     || prog.cps_cant_blank(5)
             }
         ),
