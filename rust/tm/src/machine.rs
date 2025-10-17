@@ -159,41 +159,33 @@ impl Prog {
     }
 
     pub fn term_or_rec(&self, sim_lim: Steps) -> RunResult {
-        let mut state = 1;
-
-        let mut tape = MedTape::init_stepped();
+        let mut config = Config::init_stepped();
 
         let mut head = 1;
 
-        let (
-            mut ref_state,
-            mut ref_tape,
-            mut ref_head,
-            mut leftmost,
-            mut rightmost,
-        ) = (state, tape.clone(), head, head, head);
+        let (mut ref_config, mut ref_head, mut leftmost, mut rightmost) =
+            (config.clone(), head, head, head);
 
         let mut reset = 1;
 
         for cycle in 1..sim_lim {
-            let slot = (state, tape.scan());
+            let slot = config.slot();
 
             let Some(&(color, shift, next_state)) = self.get(&slot)
             else {
                 return Undefined(slot);
             };
 
-            let same = state == next_state;
+            let same = config.state == next_state;
 
-            if same && tape.at_edge(shift) {
+            if same && config.tape.at_edge(shift) {
                 return Spinout;
             }
 
             if 0 < reset {
                 reset -= 1;
             } else {
-                ref_state = state;
-                ref_tape = tape.clone();
+                ref_config = config.clone();
                 ref_head = head;
                 leftmost = head;
                 rightmost = head;
@@ -201,7 +193,7 @@ impl Prog {
             }
 
             #[expect(clippy::cast_possible_wrap)]
-            let stepped = tape.step(shift, color, same) as Pos;
+            let stepped = config.tape.step(shift, color, same) as Pos;
 
             if shift {
                 head += stepped;
@@ -209,7 +201,7 @@ impl Prog {
                 head -= stepped;
             }
 
-            if tape.blank() {
+            if config.tape.blank() {
                 return Blank;
             }
 
@@ -219,9 +211,9 @@ impl Prog {
                 rightmost = head;
             }
 
-            if next_state == ref_state
-                && (head, &tape).aligns_with(
-                    &(ref_head, &ref_tape),
+            if next_state == ref_config.state
+                && (head, &config.tape).aligns_with(
+                    &(ref_head, &ref_config.tape),
                     leftmost,
                     rightmost,
                 )
@@ -229,7 +221,7 @@ impl Prog {
                 return Recur;
             }
 
-            state = next_state;
+            config.state = next_state;
         }
 
         StepLimit
