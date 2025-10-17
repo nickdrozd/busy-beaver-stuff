@@ -186,16 +186,16 @@ impl Prog {
                 return Spinout;
             }
 
-            if reset == 0 {
+            if 0 < reset {
+                reset -= 1;
+            } else {
                 ref_state = state;
                 ref_tape = tape.clone();
                 let head = ref_tape.head();
                 leftmost = head;
                 rightmost = head;
-                reset = cycle;
+                reset = cycle - 1;
             }
-
-            reset -= 1;
 
             tape.step(shift, color, same);
 
