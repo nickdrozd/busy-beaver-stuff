@@ -147,12 +147,17 @@ impl Prog {
     pub fn check_inf(&self, steps: Steps, block_steps: Steps) -> bool {
         let blocks = self.opt_block(block_steps);
 
-        (if blocks == 1 {
+        let result = if blocks == 1 {
             self.run_prover(steps)
         } else {
             self.make_block_macro(blocks).run_prover(steps)
-        })
-        .is_infinite()
+        };
+
+        // if result.is_mult() {
+        //     self.print();
+        // }
+
+        result.is_infinite()
     }
 
     pub fn term_or_rec(&self, sim_lim: Steps) -> RunResult {
