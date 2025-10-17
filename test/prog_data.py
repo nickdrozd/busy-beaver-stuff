@@ -4747,6 +4747,9 @@ PROVER_SPINOUT: ProverEst = {
     "1RB 2RA 0RB  2LB 1LC 0LA  1LA 2RA 2LA": 7086608,
     "1RB 0LB 0RB  2RC 0RA 1RB  2LC 1LB 0RC": 0,
 
+    # 2/5
+    "1RB 2RA 4RA 2RB 1LA  2LB 3LA 0RB 1LA 2LA" : 0,
+
     # 5/2
     "1RB 1LE  1RC 0RA  0LD 0LC  1RD 1RE  1LB 0RB": 1195275720475,
     "1RB 0LE  1RC 1LB  0RD 0RB  1LD 0LE  0RC 1LA": 44776124,
@@ -4854,11 +4857,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 361010,
+    "adds": 361019,
     "divs": 48223,
     "exps": 297897,
     "muls": 166666,
-    "totl": 873796,
+    "totl": 873805,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -4904,6 +4907,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "0",
             "0",
             "(430 + (13 * (2 ** 101)))",
+        ),
+        "1RB 2RA 4RA 2RB 1LA  2LB 3LA 0RB 1LA 2LA": (
+            297,
+            "0",
+            "0",
+            "(610 + (13 * (2 ** 101)))",
         ),
         "1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC": (
             538,
