@@ -506,52 +506,6 @@ impl<B: Block<BigCount> + IndexBlock> IndexTape for Tape<BigCount, B> {
 
 pub type Pos = isize;
 
-#[derive(Clone)]
-pub struct HeadTape {
-    head: Pos,
-    tape: MedTape,
-}
-
-impl Scan for HeadTape {
-    fn scan(&self) -> Color {
-        self.tape.scan()
-    }
-}
-
-impl Display for HeadTape {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "({}) {}", self.head, self.tape)
-    }
-}
-
-impl HeadTape {
-    pub fn init_stepped() -> Self {
-        Self {
-            head: 1,
-            tape: MedTape::init_stepped(),
-        }
-    }
-
-    pub const fn at_edge(&self, edge: Shift) -> bool {
-        self.tape.at_edge(edge)
-    }
-
-    pub const fn blank(&self) -> bool {
-        self.tape.blank()
-    }
-
-    pub fn step(&mut self, shift: Shift, color: Color, skip: bool) {
-        #[expect(clippy::cast_possible_wrap)]
-        let stepped = self.tape.step(shift, color, skip) as Pos;
-
-        if shift {
-            self.head += stepped;
-        } else {
-            self.head -= stepped;
-        }
-    }
-}
-
 pub trait Alignment: Scan {
     fn head(&self) -> Pos;
 
@@ -598,33 +552,41 @@ pub trait Alignment: Scan {
     }
 }
 
-impl Alignment for HeadTape {
+type HeadTape<'t> = (Pos, &'t MedTape);
+
+impl Scan for HeadTape<'_> {
+    fn scan(&self) -> Color {
+        self.1.scan
+    }
+}
+
+impl Alignment for HeadTape<'_> {
     fn head(&self) -> Pos {
-        self.head
+        self.0
     }
 
     fn l_len(&self) -> usize {
-        self.tape.lspan.len()
+        self.1.lspan.len()
     }
 
     fn r_len(&self) -> usize {
-        self.tape.rspan.len()
+        self.1.rspan.len()
     }
 
     fn l_eq(&self, prev: &Self) -> bool {
-        self.tape.lspan == prev.tape.lspan
+        self.1.lspan == prev.1.lspan
     }
 
     fn r_eq(&self, prev: &Self) -> bool {
-        self.tape.rspan == prev.tape.rspan
+        self.1.rspan == prev.1.rspan
     }
 
     fn l_compare_take(&self, prev: &Self, take: usize) -> bool {
-        self.tape.lspan.compare_take(&prev.tape.lspan, take)
+        self.1.lspan.compare_take(&prev.1.lspan, take)
     }
 
     fn r_compare_take(&self, prev: &Self, take: usize) -> bool {
-        self.tape.rspan.compare_take(&prev.tape.rspan, take)
+        self.1.rspan.compare_take(&prev.1.rspan, take)
     }
 }
 

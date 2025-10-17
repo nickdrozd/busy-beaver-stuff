@@ -4,9 +4,7 @@ use crate::{
     macros::GetInstr,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{
-        Alignment as _, BigTape, HeadTape, MedTape, Pos, Scan as _,
-    },
+    tape::{Alignment as _, BigTape, MedTape, Pos, Scan as _},
 };
 
 /**************************************/
@@ -163,12 +161,17 @@ impl Prog {
     pub fn term_or_rec(&self, sim_lim: Steps) -> RunResult {
         let mut state = 1;
 
-        let mut tape = HeadTape::init_stepped();
+        let mut tape = MedTape::init_stepped();
 
-        let init_head = tape.head();
+        let mut head = 1;
 
-        let (mut ref_state, mut ref_tape, mut leftmost, mut rightmost) =
-            (state, tape.clone(), init_head, init_head);
+        let (
+            mut ref_state,
+            mut ref_tape,
+            mut ref_head,
+            mut leftmost,
+            mut rightmost,
+        ) = (state, tape.clone(), head, head, head);
 
         let mut reset = 1;
 
@@ -191,28 +194,37 @@ impl Prog {
             } else {
                 ref_state = state;
                 ref_tape = tape.clone();
-                let head = ref_tape.head();
+                ref_head = head;
                 leftmost = head;
                 rightmost = head;
                 reset = cycle - 1;
             }
 
-            tape.step(shift, color, same);
+            #[expect(clippy::cast_possible_wrap)]
+            let stepped = tape.step(shift, color, same) as Pos;
+
+            if shift {
+                head += stepped;
+            } else {
+                head -= stepped;
+            }
 
             if tape.blank() {
                 return Blank;
             }
 
-            let curr = tape.head();
-
-            if curr < leftmost {
-                leftmost = curr;
-            } else if rightmost < curr {
-                rightmost = curr;
+            if head < leftmost {
+                leftmost = head;
+            } else if rightmost < head {
+                rightmost = head;
             }
 
             if next_state == ref_state
-                && tape.aligns_with(&ref_tape, leftmost, rightmost)
+                && (head, &tape).aligns_with(
+                    &(ref_head, &ref_tape),
+                    leftmost,
+                    rightmost,
+                )
             {
                 return Recur;
             }
