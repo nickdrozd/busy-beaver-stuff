@@ -281,7 +281,7 @@ pub fn ctl_cant_spin_out(prog: &str, steps: Steps) -> bool {
 
 use std::collections::BTreeMap as Dict;
 
-use tm::tape::{BigCount, BigTape as Tape};
+use tm::tape::{BigCount, BigTape as Tape, Init as _};
 
 type BigStep = BigCount;
 

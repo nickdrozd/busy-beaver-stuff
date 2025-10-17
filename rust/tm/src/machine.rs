@@ -4,7 +4,9 @@ use crate::{
     macros::GetInstr,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{Alignment as _, BigTape, MedTape, Pos, Scan as _},
+    tape::{
+        Alignment as _, BigTape, Init as _, MedTape, Pos, Scan as _,
+    },
 };
 
 /**************************************/
@@ -159,7 +161,7 @@ impl Prog {
     }
 
     pub fn term_or_rec(&self, sim_lim: Steps) -> RunResult {
-        let mut config = Config::init_stepped();
+        let mut config: Config<MedTape> = Config::init_stepped();
 
         let mut head = 1;
 
@@ -397,7 +399,7 @@ fn test_transcript_config() {
     for steps in 0..100 {
         assert!(!prog.run_transcript_fresh(steps).is_settled());
 
-        let mut config = Config::init_stepped();
+        let mut config: Config<MedTape> = Config::init_stepped();
         config.tape.lspan[0].count += 4;
 
         assert_eq!(config.to_string(), "B0 | 1^5 [0]");

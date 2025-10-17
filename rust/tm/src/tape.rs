@@ -392,22 +392,6 @@ impl GetSig for EnumTape {
 }
 
 impl<Count: Countable, B: Block<Count>> Tape<Count, B> {
-    pub const fn init() -> Self {
-        Self {
-            scan: 0,
-            lspan: Span::init_blank(),
-            rspan: Span::init_blank(),
-        }
-    }
-
-    pub fn init_stepped() -> Self {
-        Self {
-            scan: 0,
-            lspan: Span::init_stepped(),
-            rspan: Span::init_blank(),
-        }
-    }
-
     pub const fn at_edge(&self, edge: Shift) -> bool {
         self.scan == 0
             && (if edge { &self.rspan } else { &self.lspan }).blank()
@@ -456,6 +440,29 @@ pub trait Scan {
 impl<C: Countable, B: Block<C>> Scan for Tape<C, B> {
     fn scan(&self) -> Color {
         self.scan
+    }
+}
+
+pub trait Init {
+    fn init() -> Self;
+    fn init_stepped() -> Self;
+}
+
+impl<C: Countable, B: Block<C>> Init for Tape<C, B> {
+    fn init() -> Self {
+        Self {
+            scan: 0,
+            lspan: Span::init_blank(),
+            rspan: Span::init_blank(),
+        }
+    }
+
+    fn init_stepped() -> Self {
+        Self {
+            scan: 0,
+            lspan: Span::init_stepped(),
+            rspan: Span::init_blank(),
+        }
     }
 }
 

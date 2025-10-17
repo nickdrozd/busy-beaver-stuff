@@ -2,7 +2,7 @@ use core::iter::{once, repeat_n};
 
 use crate::{
     Color, Prog, Shift, Steps,
-    tape::{MedSpan as Span, MedTape as Tape},
+    tape::{Init as _, MedSpan as Span, MedTape as Tape},
 };
 
 /**************************************/
@@ -42,7 +42,7 @@ struct BlockMeasure {
 }
 
 impl BlockMeasure {
-    const fn new() -> Self {
+    fn new() -> Self {
         Self {
             tape: Tape::init(),
 

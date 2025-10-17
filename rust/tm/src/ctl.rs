@@ -123,13 +123,6 @@ fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: Goal) -> bool {
 /**************************************/
 
 impl Config {
-    const fn init() -> Self {
-        Self {
-            state: 0,
-            tape: Tape::init(),
-        }
-    }
-
     fn run(
         &mut self,
         prog: &impl GetInstr,

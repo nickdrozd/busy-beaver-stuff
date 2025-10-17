@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 use crate::{
     Parse as _, Slot, State,
-    tape::{LilTape, MedTape},
+    tape::{Init, LilTape, MedTape},
 };
 
 pub use crate::tape::Scan;
@@ -22,11 +22,18 @@ pub struct Config<Tape> {
     pub tape: Tape,
 }
 
-impl MedConfig {
+impl<Tape: Init> Config<Tape> {
+    pub fn init() -> Self {
+        Self {
+            state: 0,
+            tape: Tape::init(),
+        }
+    }
+
     pub fn init_stepped() -> Self {
         Self {
             state: 1,
-            tape: MedTape::init_stepped(),
+            tape: Tape::init_stepped(),
         }
     }
 }
