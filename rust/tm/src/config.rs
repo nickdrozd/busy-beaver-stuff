@@ -4,13 +4,14 @@ use std::borrow::Cow;
 
 use crate::{
     Parse as _, Slot, State,
-    tape::{Init, LilTape, MedTape},
+    tape::{BigTape, Init, LilTape, MedTape},
 };
 
 pub use crate::tape::Scan;
 
 pub type LilConfig = Config<LilTape>;
 pub type MedConfig = Config<MedTape>;
+pub type BigConfig = Config<BigTape>;
 
 pub type PassConfig<'c> = Cow<'c, MedConfig>;
 

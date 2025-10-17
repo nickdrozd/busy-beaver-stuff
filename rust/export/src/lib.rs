@@ -281,7 +281,7 @@ pub fn ctl_cant_spin_out(prog: &str, steps: Steps) -> bool {
 
 use std::collections::BTreeMap as Dict;
 
-use tm::tape::{BigCount, BigTape as Tape, Init as _};
+use tm::{config::BigConfig, tape::BigCount};
 
 type BigStep = BigCount;
 
@@ -394,11 +394,10 @@ impl MachineResult {
 pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
     let prog = Prog::read(prog);
 
-    let mut tape = Tape::init();
+    let mut config = BigConfig::init();
 
     let mut blanks = Blanks::new();
 
-    let mut state = 0;
     let mut cycles = 0;
 
     let mut steps = BigCount::ZERO;
@@ -407,7 +406,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
     let mut last_slot: Option<Slot> = None;
 
     for cycle in 0..sim_lim {
-        let slot = (state, tape.scan);
+        let slot = config.slot();
 
         let Some(&(color, shift, next_state)) = prog.get(&slot) else {
             cycles = cycle;
@@ -416,29 +415,29 @@ pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
             break;
         };
 
-        let same = state == next_state;
+        let same = config.state == next_state;
 
-        if same && tape.at_edge(shift) {
+        if same && config.tape.at_edge(shift) {
             cycles = cycle;
             result = Some(spnout);
             break;
         }
 
-        let stepped = tape.step(shift, color, same);
+        let stepped = config.tape.step(shift, color, same);
 
         steps += stepped;
 
-        state = next_state;
+        config.state = next_state;
 
-        if color == 0 && tape.blank() {
-            if blanks.contains_key(&state) {
+        if color == 0 && config.tape.blank() {
+            if blanks.contains_key(&config.state) {
                 result = Some(infrul);
                 break;
             }
 
-            blanks.insert(state, steps.clone());
+            blanks.insert(config.state, steps.clone());
 
-            if state == 0 {
+            if config.state == 0 {
                 result = Some(infrul);
                 break;
             }
@@ -449,7 +448,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
         result: result.unwrap_or(xlimit),
         steps,
         cycles: cycles.into(),
-        marks: tape.marks(),
+        marks: config.tape.marks(),
         last_slot,
         blanks,
     }

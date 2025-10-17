@@ -6,9 +6,10 @@ use pyo3::{pyclass, pymethods};
 
 use crate::{
     Slot, State,
+    config::BigConfig,
     macros::GetInstr,
     rules::{ApplyRule, Rule, make_rule},
-    tape::{BigTape, EnumTape, GetSig, MachineTape, MinSig, Signature},
+    tape::{EnumTape, GetSig, MachineTape, MinSig, Signature},
 };
 
 type Cycle = i32;
@@ -111,14 +112,16 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
     pub fn try_rule(
         &mut self,
         cycle: usize,
-        state: State,
-        tape: &BigTape,
+        config: &BigConfig,
     ) -> Option<ProverResult> {
         #[expect(
             clippy::cast_possible_wrap,
             clippy::cast_possible_truncation
         )]
         let cycle = cycle as Cycle;
+
+        let tape = &config.tape;
+        let state = config.state;
 
         let sig = tape.signature();
 

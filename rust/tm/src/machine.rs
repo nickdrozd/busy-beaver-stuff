@@ -1,12 +1,10 @@
 use crate::{
-    Prog, Slot, State, Steps,
-    config::Config,
+    Prog, Slot, Steps,
+    config::{BigConfig, MedConfig},
     macros::GetInstr,
     prover::{Prover, ProverResult},
     rules::ApplyRule as _,
-    tape::{
-        Alignment as _, BigTape, Init as _, MedTape, Pos, Scan as _,
-    },
+    tape::{Alignment as _, Pos},
 };
 
 /**************************************/
@@ -61,14 +59,12 @@ trait RunProver {
 
 impl<T: GetInstr> RunProver for T {
     fn run_prover(&self, sim_lim: Steps) -> RunResult {
-        let mut tape = BigTape::init();
+        let mut config = BigConfig::init();
 
         let mut prover = Prover::new(self);
 
-        let mut state: State = 0;
-
         for cycle in 0..sim_lim {
-            if let Some(res) = prover.try_rule(cycle, state, &tape) {
+            if let Some(res) = prover.try_rule(cycle, &config) {
                 match res {
                     ProverResult::ConfigLimit => {
                         return ConfigLimit;
@@ -80,7 +76,7 @@ impl<T: GetInstr> RunProver for T {
                         return MultRule;
                     },
                     ProverResult::Got(rule) => {
-                        if tape.apply_rule(&rule).is_some() {
+                        if config.tape.apply_rule(&rule).is_some() {
                             // println!("--> applying rule: {:?}", rule);
                             continue;
                         }
@@ -88,7 +84,7 @@ impl<T: GetInstr> RunProver for T {
                 }
             }
 
-            let slot = (state, tape.scan());
+            let slot = config.slot();
 
             let Some((color, shift, next_state)) =
                 self.get_instr(&slot)
@@ -96,15 +92,15 @@ impl<T: GetInstr> RunProver for T {
                 return Undefined(slot);
             };
 
-            let same = state == next_state;
+            let same = config.state == next_state;
 
-            if same && tape.at_edge(shift) {
+            if same && config.tape.at_edge(shift) {
                 return Spinout;
             }
 
-            tape.step(shift, color, same);
+            config.tape.step(shift, color, same);
 
-            state = next_state;
+            config.state = next_state;
         }
 
         StepLimit
@@ -117,7 +113,7 @@ impl Prog {
     pub fn run_basic(
         &self,
         sim_lim: Steps,
-        config: &mut Config<MedTape>,
+        config: &mut MedConfig,
     ) -> RunResult {
         for _ in 0..sim_lim {
             let slot = config.slot();
@@ -161,7 +157,7 @@ impl Prog {
     }
 
     pub fn term_or_rec(&self, sim_lim: Steps) -> RunResult {
-        let mut config: Config<MedTape> = Config::init_stepped();
+        let mut config = MedConfig::init_stepped();
 
         let mut head = 1;
 
@@ -230,13 +226,13 @@ impl Prog {
     }
 
     pub fn run_transcript_fresh(&self, sim_lim: Steps) -> RunResult {
-        self.run_transcript(sim_lim, &mut Config::init_stepped())
+        self.run_transcript(sim_lim, &mut MedConfig::init_stepped())
     }
 
     pub fn run_transcript(
         &self,
         sim_lim: Steps,
-        config: &mut Config<MedTape>,
+        config: &mut MedConfig,
     ) -> RunResult {
         let mut pos = 0;
 
@@ -399,7 +395,7 @@ fn test_transcript_config() {
     for steps in 0..100 {
         assert!(!prog.run_transcript_fresh(steps).is_settled());
 
-        let mut config: Config<MedTape> = Config::init_stepped();
+        let mut config = MedConfig::init_stepped();
         config.tape.lspan[0].count += 4;
 
         assert_eq!(config.to_string(), "B0 | 1^5 [0]");
