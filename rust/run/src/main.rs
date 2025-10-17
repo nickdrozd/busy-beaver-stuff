@@ -107,7 +107,7 @@ fn test_tree() {
             ((2, 2), 3, 4, (4, 81)),
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
-                prog.run_transcript(18, config.to_mut()).is_settled()
+                prog.term_or_rec(16, config.to_mut()).is_settled()
             }
         ),
         (
@@ -140,8 +140,8 @@ fn test_tree() {
         (
             ((3, 2), 3, 13, (25, 11_687)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.term_or_rec(206).is_settled()
+            |prog: &Prog, mut config: PassConfig<'_>| {
+                prog.term_or_rec(190, config.to_mut()).is_settled()
                     || prog.check_inf(500, 50)
             }
         ),
@@ -176,8 +176,8 @@ fn test_tree() {
         (
             ((2, 3), 3, 20, (63, 8_700)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.term_or_rec(301).is_settled()
+            |prog: &Prog, mut config: PassConfig<'_>| {
+                prog.term_or_rec(290, config.to_mut()).is_settled()
                     || prog.check_inf(1_000, 50)
             }
         ),
@@ -210,12 +210,18 @@ fn test_tree() {
             }
         ),
         (
-            ((4, 2), 3, 99, (7_945, 2_125_270)),
+            ((4, 2), 3, 99, (7_944, 2_125_270)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected()
-                    || prog.term_or_rec(5_000).is_settled()
+            |prog: &Prog, mut config: PassConfig<'_>| {
+                if !prog.is_connected() {
+                    return true;
+                }
+
+                let config = config.to_mut();
+
+                prog.term_or_rec(500, config).is_settled()
                     || prog.check_inf(2_000, 200)
+                    || prog.term_or_rec(4_710, config).is_settled()
             }
         ),
         (
@@ -247,11 +253,14 @@ fn test_tree() {
             }
         ),
         (
-            ((2, 4), 3, TREE_LIM, (39_533, 1_691_774)),
+            ((2, 4), 3, TREE_LIM, (39_526, 1_691_774)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.term_or_rec(5_000).is_settled()
+            |prog: &Prog, mut config: PassConfig<'_>| {
+                let config = config.to_mut();
+
+                prog.term_or_rec(500, config).is_settled()
                     || prog.check_inf(1_000, 200)
+                    || prog.term_or_rec(4_600, config).is_settled()
             }
         ),
     ];
@@ -470,9 +479,9 @@ fn test_limited() {
         (
             (4, 4, (0, 4_867)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, mut config: PassConfig<'_>| {
                 //
-                prog.term_or_rec(24).is_settled()
+                prog.term_or_rec(16, config.to_mut()).is_settled()
                     || prog.cant_halt(0).is_refuted()
                     || prog.ctl_cant_halt(13)
             }
@@ -480,9 +489,9 @@ fn test_limited() {
         (
             (5, 12, (13, 150_322)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
+            |prog: &Prog, mut config: PassConfig<'_>| {
                 //
-                prog.term_or_rec(301).is_settled()
+                prog.term_or_rec(301, config.to_mut()).is_settled()
                     || prog.ctl_cant_halt(25)
                     || prog.cps_cant_halt(3)
             }
@@ -490,8 +499,8 @@ fn test_limited() {
         (
             (6, 22, (526, 5_543_646)),
             //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.term_or_rec(304).is_settled()
+            |prog: &Prog, mut config: PassConfig<'_>| {
+                prog.term_or_rec(304, config.to_mut()).is_settled()
                     || prog.ctl_cant_halt(76)
                     || prog.cps_cant_halt(5)
             }
@@ -505,10 +514,11 @@ fn test_limited_slow() {
     assert_limited_results![(
         (7, 109, (22_996, 245_724_778)),
         //
-        |prog: &Prog, _config: PassConfig<'_>| {
-            prog.term_or_rec(1000).is_settled()
+        |prog: &Prog, mut config: PassConfig<'_>| {
+            prog.term_or_rec(100, config.to_mut()).is_settled()
                 || prog.ctl_cant_halt(100)
                 || prog.cps_cant_halt(4)
+                || prog.term_or_rec(1_000, config.to_mut()).is_settled()
         }
     ),];
 }

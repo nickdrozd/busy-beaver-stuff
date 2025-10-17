@@ -156,9 +156,15 @@ impl Prog {
         result.is_infinite()
     }
 
-    pub fn term_or_rec(&self, sim_lim: Steps) -> RunResult {
-        let mut config = MedConfig::init_stepped();
+    pub fn term_or_rec_fresh(&self, sim_lim: Steps) -> RunResult {
+        self.term_or_rec(sim_lim, &mut MedConfig::init_stepped())
+    }
 
+    pub fn term_or_rec(
+        &self,
+        sim_lim: Steps,
+        config: &mut MedConfig,
+    ) -> RunResult {
         let mut head = 1;
 
         let (mut ref_config, mut ref_head, mut leftmost, mut rightmost) =
@@ -375,7 +381,7 @@ const REC_PROGS: &[(&str, bool)] = &[
 fn test_rec() {
     for &(prog, expected) in REC_PROGS {
         assert_eq!(
-            Prog::read(prog).term_or_rec(301).is_recur(),
+            Prog::read(prog).term_or_rec_fresh(301).is_recur(),
             expected,
             "{prog}",
         );
