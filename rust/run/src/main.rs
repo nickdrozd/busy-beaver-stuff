@@ -520,14 +520,14 @@ fn test_limited() {
     ];
 }
 
-fn test_limited_slow() {
-    println!("limited slow");
+fn test_8_instr() {
+    let visited = Basket::set(0_u64);
 
-    assert_limited_results![(
-        (8, 500, (12_806_454_997, 12_806_454_997)),
-        //
-        |_: &Prog, _: PassConfig<'_>| { false }
-    ),];
+    build_limited(8, 500, &|_, _| {
+        *visited.access() += 1;
+    });
+
+    assert_eq!(visited.get(), 12_806_454_997);
 }
 
 /**************************************/
@@ -545,7 +545,7 @@ fn main() {
 
     test_reason();
 
-    test_limited_slow();
-
     test_tree_slow();
+
+    test_8_instr();
 }
