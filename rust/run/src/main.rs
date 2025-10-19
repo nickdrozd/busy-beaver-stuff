@@ -505,6 +505,18 @@ fn test_limited() {
                     || prog.cps_cant_halt(5)
             }
         ),
+        (
+            (7, 109, (22_996, 245_724_778)),
+            //
+            |prog: &Prog, mut config: PassConfig<'_>| {
+                let config = config.to_mut();
+
+                prog.term_or_rec(100, config).is_settled()
+                    || prog.ctl_cant_halt(100)
+                    || prog.cps_cant_halt(4)
+                    || prog.term_or_rec(1_000, config).is_settled()
+            }
+        ),
     ];
 }
 
@@ -512,14 +524,9 @@ fn test_limited_slow() {
     println!("limited slow");
 
     assert_limited_results![(
-        (7, 109, (22_996, 245_724_778)),
+        (8, 500, (12_806_454_997, 12_806_454_997)),
         //
-        |prog: &Prog, mut config: PassConfig<'_>| {
-            prog.term_or_rec(100, config.to_mut()).is_settled()
-                || prog.ctl_cant_halt(100)
-                || prog.cps_cant_halt(4)
-                || prog.term_or_rec(1_000, config.to_mut()).is_settled()
-        }
+        |_: &Prog, _: PassConfig<'_>| { false }
     ),];
 }
 
