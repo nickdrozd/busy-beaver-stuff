@@ -17,6 +17,14 @@ impl Instrs {
         }
     }
 
+    fn init_norm(params: Params) -> Self {
+        let mut instrs = Self::new(params);
+
+        instrs.insert((0, 0), (1, true, 1));
+
+        instrs
+    }
+
     fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
         self.table[state as usize][color as usize].as_ref()
     }
@@ -71,12 +79,8 @@ impl Prog {
         (self.states, self.colors)
     }
 
-    pub fn init_stepped(params @ (states, colors): Params) -> Self {
-        let mut instrs = Instrs::new(params);
-
-        instrs.insert((0, 0), (1, true, 1));
-
-        Self::new(instrs, states, colors)
+    pub fn init_norm(params @ (states, colors): Params) -> Self {
+        Self::new(Instrs::init_norm(params), states, colors)
     }
 
     pub fn print(&self) {

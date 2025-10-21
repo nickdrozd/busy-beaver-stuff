@@ -230,7 +230,7 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
         sim_lim: Steps,
         harvester: &'h dyn Fn(&Prog, PassConfig),
     ) -> Self {
-        let prog = Prog::init_stepped(params);
+        let prog = Prog::init_norm(params);
 
         let init_avail = (min(3, states), min(3, colors));
 
