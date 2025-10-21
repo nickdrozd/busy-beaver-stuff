@@ -95,7 +95,7 @@ fn cant_reach<T: Ord>(
     mut slots: Set<(State, T)>,
     get_configs: impl Fn(&Set<(State, T)>) -> Configs,
 ) -> BackwardResult {
-    let entrypoints = get_entrypoints(prog);
+    let entrypoints = prog.get_entrypoints();
 
     slots.retain(|(state, _)| entrypoints.contains_key(state));
 
@@ -333,17 +333,19 @@ fn get_blanks(configs: &Configs) -> BlankStates {
 
 /**************************************/
 
-fn get_entrypoints(prog: &Prog) -> Entrypoints {
-    let mut entrypoints = Entrypoints::new();
+impl Prog {
+    fn get_entrypoints(&self) -> Entrypoints {
+        let mut entrypoints = Entrypoints::new();
 
-    for (slot @ (read, _), &(color, shift, state)) in prog.iter() {
-        let (same, diff) = entrypoints.entry(state).or_default();
+        for (slot @ (read, _), &(color, shift, state)) in self.iter() {
+            let (same, diff) = entrypoints.entry(state).or_default();
 
-        (if read == state { same } else { diff })
-            .push((slot, (color, shift)));
+            (if read == state { same } else { diff })
+                .push((slot, (color, shift)));
+        }
+
+        entrypoints
     }
-
-    entrypoints
 }
 
 #[cfg(test)]
@@ -378,7 +380,7 @@ macro_rules! assert_entrypoints {
 
             assert_eq!(
                 entrypoints,
-                get_entrypoints(&Prog::read($prog)),
+                Prog::read($prog).get_entrypoints(),
             );
         }
     };

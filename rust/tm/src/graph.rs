@@ -12,7 +12,7 @@ impl Prog {
 
         let states = self.states;
 
-        let exitpoints = get_exitpoints(self);
+        let exitpoints = self.get_exitpoints();
 
         if exitpoints.len() < states as usize {
             return false;
@@ -87,30 +87,32 @@ fn test_connected() {
 
 type Exitpoints = Dict<State, Vec<State>>;
 
-fn get_exitpoints(prog: &Prog) -> Exitpoints {
-    let mut exitpoints = Exitpoints::new();
+impl Prog {
+    fn get_exitpoints(&self) -> Exitpoints {
+        let mut exitpoints = Exitpoints::new();
 
-    for ((src, _), &(_, _, dst)) in prog.iter() {
-        if src == dst {
-            continue;
+        for ((src, _), &(_, _, dst)) in self.iter() {
+            if src == dst {
+                continue;
+            }
+
+            exitpoints.entry(src).or_default().push(dst);
         }
 
-        exitpoints.entry(src).or_default().push(dst);
-    }
+        for conns in exitpoints.values_mut() {
+            conns.sort_unstable();
+            conns.dedup();
+        }
 
-    for conns in exitpoints.values_mut() {
-        conns.sort_unstable();
-        conns.dedup();
+        exitpoints
     }
-
-    exitpoints
 }
 
 #[cfg(test)]
 macro_rules! assert_exitpoints {
     ($input:expr, { $($key:expr => [$($val:expr),*]),* $(,)? }) => {
         assert_eq!(
-            get_exitpoints(&Prog::read($input)),
+            Prog::read($input).get_exitpoints(),
             Dict::from( [$(($key, vec![$($val),*]),)*] ),
         );
     }
