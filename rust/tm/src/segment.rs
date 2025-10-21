@@ -126,7 +126,7 @@ fn all_segments_reached(
         println!("{config}");
 
         if let Some(result) =
-            config.run_to_edge(prog.prog, goal, &mut configs)
+            prog.prog.run_to_edge(&mut config, goal, &mut configs)
         {
             match result {
                 Repeat if config.init => {
@@ -421,52 +421,54 @@ impl Config {
     fn spinout(&self, &(_, shift, state): &Instr) -> bool {
         self.state == state && self.tape.at_edge(shift)
     }
+}
 
+impl Prog {
     #[expect(clippy::unwrap_in_result)]
     fn run_to_edge(
-        &mut self,
-        prog: &Prog,
+        &self,
+        config: &mut Config,
         goal: Goal,
         configs: &mut Configs,
     ) -> Option<SearchResult> {
-        self.tape.scan?;
+        config.tape.scan?;
 
         let mut step = false;
-        let mut copy = self.clone();
+        let mut copy = config.clone();
 
-        while let Some(slot) = self.slot() {
-            let Some(&instr) = prog.get(&slot) else {
+        while let Some(slot) = config.slot() {
+            let Some(&instr) = self.get(&slot) else {
                 return Some(Found(Halt));
             };
 
-            if (self.init || goal.is_spinout())
-                && self.spinout(&instr)
-                && (self.init || configs.check_reached(self, goal))
+            if (config.init || goal.is_spinout())
+                && config.spinout(&instr)
+                && (config.init || configs.check_reached(config, goal))
             {
                 return Some(Found(Spinout));
             }
 
-            self.step(&instr);
+            config.step(&instr);
 
             #[cfg(debug_assertions)]
-            println!("    {self}");
+            println!("    {config}");
 
             let (print, _, state) = instr;
 
-            if print == 0 && self.tape.blank() {
+            if print == 0 && config.tape.blank() {
                 if state == 0 {
-                    if self.init {
+                    if config.init {
                         return Some(Repeat);
                     }
 
-                    self.init = true;
+                    config.init = true;
                 }
 
                 configs
                     .blanks
                     .entry(state)
                     .or_default()
-                    .insert(self.tape.pos());
+                    .insert(config.tape.pos());
 
                 if goal.is_blank() {
                     return Some(Found(Blank));
@@ -478,9 +480,9 @@ impl Config {
                 continue;
             }
 
-            copy.step(prog.get(&copy.slot().unwrap()).unwrap());
+            copy.step(self.get(&copy.slot().unwrap()).unwrap());
 
-            if copy.state == self.state && copy.tape == self.tape {
+            if copy.state == config.state && copy.tape == config.tape {
                 return Some(Repeat);
             }
 
