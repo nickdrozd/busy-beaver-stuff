@@ -39,7 +39,7 @@ max-args       =  5  # c
 max-locals     = 19  # machine
 max-returns    =  7  # prover
 max-branches   = 23  # num
-max-statements = 74  # machine
+max-statements = 78  # machine
 
 [lint.mccabe]
 max-complexity = 26  # num

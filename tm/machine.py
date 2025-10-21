@@ -236,7 +236,11 @@ class Machine:
                 self.spnout = step
                 break
 
-            stepped = tape.step(shift, color, same)
+            try:
+                stepped = tape.step(shift, color, same)
+            except NotImplementedError as err:
+                self.errors = err.args[0]
+                break
 
             if step != -1:
                 assert isinstance(stepped, int)
