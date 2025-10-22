@@ -790,6 +790,11 @@ impl Tape {
 
         self.scan
     }
+
+    #[track_caller]
+    fn assert(&self, expected: &str) {
+        assert_eq!(self.to_string(), expected);
+    }
 }
 
 #[cfg(test)]
@@ -891,14 +896,6 @@ macro_rules! tape {
             rspan: Span ( vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ] ),
         }
     };
-}
-
-#[cfg(test)]
-impl Tape {
-    #[track_caller]
-    fn assert(&self, expected: &str) {
-        assert_eq!(self.to_string(), expected);
-    }
 }
 
 #[test]
