@@ -123,8 +123,7 @@ impl Prog {
     }
 
     pub fn erase_slots(&self) -> Set<Slot> {
-        self.instrs
-            .iter()
+        self.iter()
             .filter_map(|(slot @ (_, co), &(pr, _, _))| {
                 (co != 0 && pr == 0).then_some(slot)
             })
@@ -132,8 +131,7 @@ impl Prog {
     }
 
     pub fn zr_shifts(&self) -> Set<(State, Shift)> {
-        self.instrs
-            .iter()
+        self.iter()
             .filter_map(|(slot, &(_, sh, st))| {
                 (slot == (st, 0)).then_some((st, sh))
             })
@@ -210,9 +208,7 @@ impl Parse for Prog {
         (0..self.states)
             .map(|state| {
                 (0..self.colors)
-                    .map(|color| {
-                        self.instrs.get(&(state, color)).show()
-                    })
+                    .map(|color| self.get(&(state, color)).show())
                     .collect::<Vec<_>>()
                     .join(" ")
             })
