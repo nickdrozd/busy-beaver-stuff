@@ -38,7 +38,7 @@ impl Instrs {
     }
 
     #[expect(clippy::cast_possible_truncation)]
-    fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> + '_ {
+    fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> {
         self.table.iter().enumerate().flat_map(|(s, row)| {
             row.iter().enumerate().filter_map(move |(c, opt)| {
                 opt.as_ref().map(|instr| ((s as u8, c as u8), instr))
@@ -46,7 +46,7 @@ impl Instrs {
         })
     }
 
-    fn instrs(&self) -> impl Iterator<Item = &Instr> + '_ {
+    fn instrs(&self) -> impl Iterator<Item = &Instr> {
         self.table
             .iter()
             .flat_map(|row| row.iter().filter_map(|opt| opt.as_ref()))
