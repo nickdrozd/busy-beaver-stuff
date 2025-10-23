@@ -46,33 +46,15 @@ impl BackwardResult {
 
 impl Prog {
     pub fn cant_halt(&self, steps: Steps) -> BackwardResult {
-        let halt_slots = self.halt_slots();
-
-        if halt_slots.is_empty() {
-            return Refuted(0);
-        }
-
-        cant_reach(self, steps, halt_slots, halt_configs)
+        cant_reach(self, steps, self.halt_slots(), halt_configs)
     }
 
     pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
-        let erase_slots = self.erase_slots();
-
-        if erase_slots.is_empty() {
-            return Refuted(0);
-        }
-
-        cant_reach(self, steps, erase_slots, erase_configs)
+        cant_reach(self, steps, self.erase_slots(), erase_configs)
     }
 
     pub fn cant_spin_out(&self, steps: Steps) -> BackwardResult {
-        let zr_shifts = self.zr_shifts();
-
-        if zr_shifts.is_empty() {
-            return Refuted(0);
-        }
-
-        cant_reach(self, steps, zr_shifts, zero_reflexive_configs)
+        cant_reach(self, steps, self.zr_shifts(), zero_ref_configs)
     }
 }
 
@@ -91,6 +73,10 @@ fn cant_reach<T: Ord>(
     mut slots: Set<(State, T)>,
     get_configs: impl Fn(&Set<(State, T)>) -> Configs,
 ) -> BackwardResult {
+    if slots.is_empty() {
+        return Refuted(0);
+    }
+
     let entrypoints = prog.get_entrypoints();
 
     slots.retain(|(state, _)| entrypoints.contains_key(state));
@@ -313,7 +299,7 @@ fn erase_configs(erase_slots: &Set<Slot>) -> Configs {
         .collect()
 }
 
-fn zero_reflexive_configs(zr_shifts: &Set<(State, Shift)>) -> Configs {
+fn zero_ref_configs(zr_shifts: &Set<(State, Shift)>) -> Configs {
     zr_shifts
         .iter()
         .map(|&(state, shift)| Config::init_spinout(state, shift))
