@@ -29,12 +29,14 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 pub use crate::{
     instrs::{Color, Instr, Parse, Shift, Slot, State},
-    prog::{Params, Prog},
+    prog::Prog,
 };
 
 /**************************************/
 
 pub type Steps = usize;
+
+pub type Params = (State, Color);
 
 /**************************************/
 

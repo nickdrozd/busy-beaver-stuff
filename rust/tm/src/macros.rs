@@ -4,7 +4,7 @@ use std::collections::BTreeMap as Dict;
 
 use num_integer::Integer as _;
 
-use crate::{Color, Instr, Params, Prog, Shift, Slot, State};
+use crate::{Color, Instr, Prog, Shift, Slot, State};
 
 type MacroColor = u64;
 type MacroState = u64;
@@ -36,7 +36,10 @@ type BacksymbolMacro<'p> = MacroProg<'p, BacksymbolLogic>;
 
 impl Prog {
     pub fn make_block_macro(&self, blocks: usize) -> BlockMacro<'_> {
-        MacroProg::new(self, BlockLogic::new(blocks, self.params()))
+        MacroProg::new(
+            self,
+            BlockLogic::new(blocks, self.states, self.colors),
+        )
     }
 
     pub fn make_backsymbol_macro(
@@ -45,7 +48,7 @@ impl Prog {
     ) -> BacksymbolMacro<'_> {
         MacroProg::new(
             self,
-            BacksymbolLogic::new(backsymbols, self.params()),
+            BacksymbolLogic::new(backsymbols, self.states, self.colors),
         )
     }
 }
@@ -62,7 +65,11 @@ pub struct BlockLogic {
 }
 
 impl Logic for BlockLogic {
-    fn new(cells: usize, (base_states, base_colors): Params) -> Self {
+    fn new(
+        cells: usize,
+        base_states: State,
+        base_colors: Color,
+    ) -> Self {
         Self {
             cells,
             base_states,
@@ -295,7 +302,11 @@ pub struct BacksymbolLogic {
 }
 
 impl Logic for BacksymbolLogic {
-    fn new(cells: usize, (base_states, base_colors): Params) -> Self {
+    fn new(
+        cells: usize,
+        base_states: State,
+        base_colors: Color,
+    ) -> Self {
         Self {
             cells,
             base_states,
@@ -403,7 +414,7 @@ impl Logic for BacksymbolLogic {
 /**************************************/
 
 trait Logic {
-    fn new(cells: usize, params: Params) -> Self;
+    fn new(cells: usize, states: State, colors: Color) -> Self;
 
     fn cells(&self) -> usize;
 

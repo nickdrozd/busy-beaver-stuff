@@ -295,13 +295,15 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
     ) {
         let (mut av_st, mut av_co) = self.avail_params();
 
-        let (max_st, max_co) = self.prog.params();
-
-        if av_st < max_st && 1 + max(slot_st, instr_st) == av_st {
+        if av_st < self.prog.states
+            && 1 + max(slot_st, instr_st) == av_st
+        {
             av_st += 1;
         }
 
-        if av_co < max_co && 1 + max(slot_co, instr_co) == av_co {
+        if av_co < self.prog.colors
+            && 1 + max(slot_co, instr_co) == av_co
+        {
             av_co += 1;
         }
 

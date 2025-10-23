@@ -725,14 +725,12 @@ impl<'p> AnalyzedProg<'p> {
 
         let mut branches = Dict::new();
 
-        let (states, colors) = prog.params();
-
-        for state in 0..states {
+        for state in 0..prog.states {
             let mut diff = Set::new();
             let mut lefts = Set::new();
             let mut rights = Set::new();
 
-            for color in 0..colors {
+            for color in 0..prog.colors {
                 let Some(&(_, shift, next)) = prog.get(&(state, color))
                 else {
                     halts.insert(state);

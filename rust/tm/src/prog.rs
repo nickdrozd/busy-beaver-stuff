@@ -2,8 +2,6 @@ use std::collections::BTreeSet as Set;
 
 use crate::{Color, Instr, Parse, Shift, Slot, State};
 
-pub type Params = (State, Color);
-
 /**************************************/
 
 #[expect(clippy::partial_pub_fields)]
@@ -24,10 +22,6 @@ impl Prog {
             colors,
             dimension: states * colors,
         }
-    }
-
-    pub const fn params(&self) -> Params {
-        (self.states, self.colors)
     }
 
     pub fn init_norm(states: State, colors: Color) -> Self {
@@ -180,6 +174,17 @@ impl Parse for Prog {
 }
 
 /**************************************/
+
+#[cfg(test)]
+use crate::Params;
+
+#[cfg(test)]
+impl Prog {
+    pub const fn params(&self) -> Params {
+        (self.states, self.colors)
+    }
+}
+
 #[test]
 fn test_prog() {
     let progs = [
