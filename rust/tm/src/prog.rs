@@ -6,58 +6,9 @@ pub type Params = (State, Color);
 
 /**************************************/
 
-struct Instrs {
-    table: Vec<Vec<Option<Instr>>>,
-}
-
-impl Instrs {
-    fn new((states, colors): Params) -> Self {
-        Self {
-            table: vec![vec![None; colors as usize]; states as usize],
-        }
-    }
-
-    fn init_norm(params: Params) -> Self {
-        let mut instrs = Self::new(params);
-
-        instrs.insert((0, 0), (1, true, 1));
-
-        instrs
-    }
-
-    fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
-        self.table[state as usize][color as usize].as_ref()
-    }
-
-    fn insert(&mut self, (state, color): Slot, instr: Instr) {
-        self.table[state as usize][color as usize] = Some(instr);
-    }
-
-    fn remove(&mut self, &(state, color): &Slot) {
-        self.table[state as usize][color as usize] = None;
-    }
-
-    #[expect(clippy::cast_possible_truncation)]
-    fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> {
-        self.table.iter().enumerate().flat_map(|(s, row)| {
-            row.iter().enumerate().filter_map(move |(c, opt)| {
-                opt.as_ref().map(|instr| ((s as u8, c as u8), instr))
-            })
-        })
-    }
-
-    fn instrs(&self) -> impl Iterator<Item = &Instr> {
-        self.table
-            .iter()
-            .flat_map(|row| row.iter().filter_map(|opt| opt.as_ref()))
-    }
-}
-
-/**************************************/
-
 #[expect(clippy::partial_pub_fields)]
 pub struct Prog {
-    instrs: Instrs,
+    table: Vec<Vec<Option<Instr>>>,
 
     pub states: State,
     pub colors: Color,
@@ -66,9 +17,9 @@ pub struct Prog {
 }
 
 impl Prog {
-    const fn new(instrs: Instrs, states: State, colors: Color) -> Self {
+    fn new(states: State, colors: Color) -> Self {
         Self {
-            instrs,
+            table: vec![vec![None; colors as usize]; states as usize],
             states,
             colors,
             dimension: states * colors,
@@ -79,38 +30,49 @@ impl Prog {
         (self.states, self.colors)
     }
 
-    pub fn init_norm(params @ (states, colors): Params) -> Self {
-        Self::new(Instrs::init_norm(params), states, colors)
+    pub fn init_norm(states: State, colors: Color) -> Self {
+        let mut prog = Self::new(states, colors);
+
+        prog.insert(&(0, 0), &(1, true, 1));
+
+        prog
     }
 
     pub fn print(&self) {
         println!("{}", self.show());
     }
 
-    pub fn get(&self, slot: &Slot) -> Option<&Instr> {
-        self.instrs.get(slot)
+    pub fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
+        self.table[state as usize][color as usize].as_ref()
     }
 
-    pub fn insert(&mut self, slot: &Slot, instr: &Instr) {
-        self.instrs.insert(*slot, *instr);
+    pub fn insert(&mut self, &(state, color): &Slot, instr: &Instr) {
+        self.table[state as usize][color as usize] = Some(*instr);
     }
 
-    pub fn remove(&mut self, slot: &Slot) {
-        self.instrs.remove(slot);
+    pub fn remove(&mut self, &(state, color): &Slot) {
+        self.table[state as usize][color as usize] = None;
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     pub fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> {
-        self.instrs.iter()
+        self.table.iter().enumerate().flat_map(|(s, row)| {
+            row.iter().enumerate().filter_map(move |(c, opt)| {
+                opt.as_ref().map(|instr| ((s as u8, c as u8), instr))
+            })
+        })
     }
 
     pub fn instrs(&self) -> impl Iterator<Item = &Instr> {
-        self.instrs.instrs()
+        self.table
+            .iter()
+            .flat_map(|row| row.iter().filter_map(|opt| opt.as_ref()))
     }
 
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
-        for (state, colors) in self.instrs.table.iter().enumerate() {
+        for (state, colors) in self.table.iter().enumerate() {
             for (color, entry) in colors.iter().enumerate() {
                 if entry.is_none() {
                     #[expect(clippy::cast_possible_truncation)]
@@ -178,8 +140,8 @@ impl Prog {
 
 impl Parse for Prog {
     #[expect(clippy::cast_possible_truncation)]
-    fn read(prog: &str) -> Self {
-        let rows: Vec<Vec<Option<Instr>>> = prog
+    fn read(prog_str: &str) -> Self {
+        let rows: Vec<Vec<Option<Instr>>> = prog_str
             .trim()
             .split("  ")
             .map(|row| {
@@ -191,17 +153,17 @@ impl Parse for Prog {
 
         let colors: Color = rows.first().map_or(0, Vec::len) as Color;
 
-        let mut instrs = Instrs::new((states, colors));
+        let mut prog = Self::new(states, colors);
 
         for (s, row) in rows.into_iter().enumerate() {
             for (c, cell) in row.into_iter().enumerate() {
                 if let Some(instr) = cell {
-                    instrs.insert((s as State, c as Color), instr);
+                    prog.insert(&(s as State, c as Color), &instr);
                 }
             }
         }
 
-        Self::new(instrs, states, colors)
+        prog
     }
 
     fn show(&self) -> String {

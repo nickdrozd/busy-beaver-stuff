@@ -224,13 +224,13 @@ struct Tree<'h, AvIn: AvailInstrs<'h>> {
 
 impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
     fn init(
-        params @ (states, colors): Params,
+        (states, colors): Params,
         halt: Slots,
         instrs: AvIn,
         sim_lim: Steps,
         harvester: &'h dyn Fn(&Prog, PassConfig),
     ) -> Self {
-        let prog = Prog::init_norm(params);
+        let prog = Prog::init_norm(states, colors);
 
         let init_avail = (min(3, states), min(3, colors));
 
