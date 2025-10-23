@@ -236,7 +236,7 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
 
         let avail_params = vec![init_avail];
 
-        let remaining_slots = (states * colors) - halt - 2;
+        let remaining_slots = prog.dimension - halt - 2;
 
         Self {
             prog,
