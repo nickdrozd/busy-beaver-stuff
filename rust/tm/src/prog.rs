@@ -63,15 +63,26 @@ impl Prog {
             .flat_map(|row| row.iter().filter_map(|opt| opt.as_ref()))
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
         for (state, colors) in self.table.iter().enumerate() {
             for (color, entry) in colors.iter().enumerate() {
-                if entry.is_none() {
-                    #[expect(clippy::cast_possible_truncation)]
-                    slots.insert((state as State, color as Color));
+                if entry.is_some() {
+                    continue;
                 }
+
+                if color != 0
+                    && !self.reaches_both_sides(
+                        state as State,
+                        color as Color,
+                    )
+                {
+                    continue;
+                }
+
+                slots.insert((state as State, color as Color));
             }
         }
 
@@ -108,7 +119,7 @@ impl Prog {
         self.states_unreached() || self.colors_unreached()
     }
 
-    pub fn reaches_from_both_sides(&self, (st, co): Slot) -> bool {
+    pub fn reaches_both_sides(&self, st: State, co: Color) -> bool {
         let mut side = None;
 
         for &(pr, sh, tr) in self.instrs() {
@@ -227,11 +238,11 @@ fn test_params() {
 fn test_halt_slots() {
     assert_eq!(
         Prog::read("1RB ...  0RC ...  0LA ...").halt_slots(),
-        Set::from([(0, 1), (1, 1), (2, 1)])
+        Set::from([(0, 1)])
     );
 
     assert_eq!(
         Prog::read("1RB 0LA ...  2LA ... ...").halt_slots(),
-        Set::from([(0, 2), (1, 1), (1, 2)])
+        Set::from([(1, 2)])
     );
 }

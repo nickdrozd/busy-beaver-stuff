@@ -46,11 +46,7 @@ impl BackwardResult {
 
 impl Prog {
     pub fn cant_halt(&self, steps: Steps) -> BackwardResult {
-        let mut halt_slots = self.halt_slots();
-
-        halt_slots.retain(|&slot @ (_, co)| {
-            co == 0 || self.reaches_from_both_sides(slot)
-        });
+        let halt_slots = self.halt_slots();
 
         if halt_slots.is_empty() {
             return Refuted(0);
