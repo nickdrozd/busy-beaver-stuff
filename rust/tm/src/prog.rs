@@ -67,17 +67,21 @@ impl Prog {
 
     #[expect(clippy::cast_possible_truncation)]
     pub fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> {
-        self.table.iter().enumerate().flat_map(|(s, row)| {
-            row.iter().enumerate().filter_map(move |(c, opt)| {
-                opt.as_ref().map(|instr| ((s as u8, c as u8), instr))
-            })
+        self.table.iter().enumerate().flat_map(|(state, colors)| {
+            colors.iter().enumerate().filter_map(
+                move |(color, maybe)| {
+                    maybe.as_ref().map(|instr| {
+                        ((state as u8, color as u8), instr)
+                    })
+                },
+            )
         })
     }
 
     pub fn instrs(&self) -> impl Iterator<Item = &Instr> {
         self.table
             .iter()
-            .flat_map(|row| row.iter().filter_map(Option::as_ref))
+            .flat_map(|colors| colors.iter().filter_map(Option::as_ref))
     }
 
     #[expect(clippy::cast_possible_truncation)]
@@ -164,7 +168,7 @@ impl Parse for Prog {
     fn read(prog: &str) -> Self {
         prog.trim()
             .split("  ")
-            .map(|row| row.split(' ').map(Parse::read).collect())
+            .map(|colors| colors.split(' ').map(Parse::read).collect())
             .collect::<Vec<_>>()
             .into()
     }

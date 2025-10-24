@@ -1,3 +1,5 @@
 excessive-nesting-threshold = 6
 too-many-arguments-threshold = 8
 cognitive-complexity-threshold = 13
+
+disallowed-names = ["row", "rows", ".."]
