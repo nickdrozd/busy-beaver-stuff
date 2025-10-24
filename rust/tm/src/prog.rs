@@ -60,7 +60,7 @@ impl Prog {
     pub fn instrs(&self) -> impl Iterator<Item = &Instr> {
         self.table
             .iter()
-            .flat_map(|row| row.iter().filter_map(|opt| opt.as_ref()))
+            .flat_map(|row| row.iter().filter_map(Option::as_ref))
     }
 
     #[expect(clippy::cast_possible_truncation)]
@@ -149,9 +149,7 @@ impl Parse for Prog {
         let rows: Vec<Vec<Option<Instr>>> = prog_str
             .trim()
             .split("  ")
-            .map(|row| {
-                row.split(' ').map(Option::<Instr>::read).collect()
-            })
+            .map(|row| row.split(' ').map(Parse::read).collect())
             .collect();
 
         let states: State = rows.len() as State;
