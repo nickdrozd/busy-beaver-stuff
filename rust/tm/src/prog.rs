@@ -4,14 +4,31 @@ use crate::{Color, Instr, Parse, Shift, Slot, State};
 
 /**************************************/
 
+type Table = Vec<Vec<Option<Instr>>>;
+
 #[expect(clippy::partial_pub_fields)]
 pub struct Prog {
-    table: Vec<Vec<Option<Instr>>>,
+    table: Table,
 
     pub states: State,
     pub colors: Color,
 
     pub dimension: u8,
+}
+
+impl From<Table> for Prog {
+    #[expect(clippy::cast_possible_truncation)]
+    fn from(table: Table) -> Self {
+        let states = table.len() as State;
+        let colors = table.first().map_or(0, Vec::len) as Color;
+
+        Self {
+            table,
+            states,
+            colors,
+            dimension: states * colors,
+        }
+    }
 }
 
 impl Prog {
@@ -144,29 +161,12 @@ impl Prog {
 /**************************************/
 
 impl Parse for Prog {
-    #[expect(clippy::cast_possible_truncation)]
-    fn read(prog_str: &str) -> Self {
-        let rows: Vec<Vec<Option<Instr>>> = prog_str
-            .trim()
+    fn read(prog: &str) -> Self {
+        prog.trim()
             .split("  ")
             .map(|row| row.split(' ').map(Parse::read).collect())
-            .collect();
-
-        let states: State = rows.len() as State;
-
-        let colors: Color = rows.first().map_or(0, Vec::len) as Color;
-
-        let mut prog = Self::new(states, colors);
-
-        for (s, row) in rows.into_iter().enumerate() {
-            for (c, cell) in row.into_iter().enumerate() {
-                if let Some(instr) = cell {
-                    prog.insert(&(s as State, c as Color), &instr);
-                }
-            }
-        }
-
-        prog
+            .collect::<Vec<_>>()
+            .into()
     }
 
     fn show(&self) -> String {
