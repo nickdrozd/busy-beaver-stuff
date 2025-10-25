@@ -213,7 +213,7 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
 
 /**************************************/
 
-struct Tree<'h, AvIn: AvailInstrs<'h>> {
+struct Tree<'h, AvIn> {
     prog: Prog,
     instrs: AvIn,
     sim_lim: Steps,
@@ -222,7 +222,7 @@ struct Tree<'h, AvIn: AvailInstrs<'h>> {
     harvester: &'h dyn Fn(&Prog, PassConfig),
 }
 
-impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
+impl<'h, 'i, AvIn: AvailInstrs<'i>> Tree<'h, AvIn> {
     fn init(
         (states, colors): Params,
         halt: Slots,
@@ -284,7 +284,7 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
         *self.avail_params.last().unwrap()
     }
 
-    fn avail_instrs(&self, slot: &Slot) -> &'h [Instr] {
+    fn avail_instrs(&self, slot: &Slot) -> &'i [Instr] {
         self.instrs.avail_instrs(slot, self.avail_params())
     }
 
@@ -403,15 +403,15 @@ impl<'h, AvIn: AvailInstrs<'h>> Tree<'h, AvIn> {
 
 /**************************************/
 
-type BasicTree<'h> = Tree<'h, BasicInstrs<'h>>;
+type BasicTree<'h, 'i> = Tree<'h, BasicInstrs<'i>>;
 
-impl<'h> BasicTree<'h> {
+impl<'h, 'i> BasicTree<'h, 'i> {
     fn make(
         params: Params,
         halt: Slots,
         sim_lim: Steps,
         harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
-        instr_table: &'h InstrTable,
+        instr_table: &'i InstrTable,
     ) -> Self {
         let instrs = BasicInstrs { instr_table };
 
@@ -420,14 +420,14 @@ impl<'h> BasicTree<'h> {
 }
 /**************************************/
 
-type BlankTree<'h> = Tree<'h, BlankInstrs<'h>>;
+type BlankTree<'h, 'i> = Tree<'h, BlankInstrs<'i>>;
 
-impl<'h> BlankTree<'h> {
+impl<'h, 'i> BlankTree<'h, 'i> {
     fn make(
         params @ (states, colors): Params,
         sim_lim: Steps,
         harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
-        instr_table: &'h BlankInstrTable,
+        instr_table: &'i BlankInstrTable,
     ) -> Self {
         let instrs = BlankInstrs {
             instr_table,
@@ -440,14 +440,14 @@ impl<'h> BlankTree<'h> {
 
 /**************************************/
 
-type SpinoutTree<'h> = Tree<'h, SpinoutInstrs<'h>>;
+type SpinoutTree<'h, 'i> = Tree<'h, SpinoutInstrs<'i>>;
 
-impl<'h> SpinoutTree<'h> {
+impl<'h, 'i> SpinoutTree<'h, 'i> {
     fn make(
         params @ (states, _): Params,
         sim_lim: Steps,
         harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
-        instr_table: &'h SpinoutInstrTable,
+        instr_table: &'i SpinoutInstrTable,
     ) -> Self {
         let instrs = SpinoutInstrs {
             instr_table,
@@ -460,7 +460,7 @@ impl<'h> SpinoutTree<'h> {
 
 /**************************************/
 
-fn kick_off_branch<'h, AvIn: AvailInstrs<'h>>(
+fn kick_off_branch<'h, 'i, AvIn: AvailInstrs<'i>>(
     init_instrs: &Instrs,
     make_tree: impl Sync + Fn() -> Tree<'h, AvIn>,
 ) {
