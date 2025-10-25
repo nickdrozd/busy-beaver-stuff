@@ -1,5 +1,6 @@
 use core::cmp::{max, min};
 
+use ahash::HashMap as Dict;
 use rayon::prelude::*;
 
 use crate::{
@@ -8,6 +9,8 @@ use crate::{
 };
 
 pub use crate::config::PassConfig;
+
+pub type TreeResult<Harv> = Dict<Instr, Harv>;
 
 type Slots = u8;
 
@@ -213,22 +216,28 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
 
 /**************************************/
 
-struct Tree<'h, AvIn> {
+pub trait Harvester: Send {
+    fn harvest(&mut self, prog: &Prog, config: PassConfig<'_>);
+}
+
+/**************************************/
+
+struct Tree<AvIn, Harv> {
     prog: Prog,
     instrs: AvIn,
     sim_lim: Steps,
     avail_params: Vec<Params>,
     remaining_slots: Slots,
-    harvester: &'h dyn Fn(&Prog, PassConfig),
+    harvester: Harv,
 }
 
-impl<'h, 'i, AvIn: AvailInstrs<'i>> Tree<'h, AvIn> {
+impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
     fn init(
         (states, colors): Params,
         halt: Slots,
         instrs: AvIn,
         sim_lim: Steps,
-        harvester: &'h dyn Fn(&Prog, PassConfig),
+        harvester: Harv,
     ) -> Self {
         let prog = Prog::init_norm(states, colors);
 
@@ -256,8 +265,8 @@ impl<'h, 'i, AvIn: AvailInstrs<'i>> Tree<'h, AvIn> {
         self.prog.run_basic(self.sim_lim, config)
     }
 
-    fn harvest(&self, config: PassConfig<'_>) {
-        (self.harvester)(&self.prog, config);
+    fn harvest(&mut self, config: PassConfig<'_>) {
+        self.harvester.harvest(&self.prog, config);
     }
 
     fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
@@ -403,14 +412,14 @@ impl<'h, 'i, AvIn: AvailInstrs<'i>> Tree<'h, AvIn> {
 
 /**************************************/
 
-type BasicTree<'h, 'i> = Tree<'h, BasicInstrs<'i>>;
+type BasicTree<'i, H> = Tree<BasicInstrs<'i>, H>;
 
-impl<'h, 'i> BasicTree<'h, 'i> {
+impl<'i, Harv: Harvester> BasicTree<'i, Harv> {
     fn make(
         params: Params,
         halt: Slots,
         sim_lim: Steps,
-        harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
+        harvester: Harv,
         instr_table: &'i InstrTable,
     ) -> Self {
         let instrs = BasicInstrs { instr_table };
@@ -420,13 +429,13 @@ impl<'h, 'i> BasicTree<'h, 'i> {
 }
 /**************************************/
 
-type BlankTree<'h, 'i> = Tree<'h, BlankInstrs<'i>>;
+type BlankTree<'i, Harv> = Tree<BlankInstrs<'i>, Harv>;
 
-impl<'h, 'i> BlankTree<'h, 'i> {
+impl<'i, Harv: Harvester> BlankTree<'i, Harv> {
     fn make(
         params @ (states, colors): Params,
         sim_lim: Steps,
-        harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
+        harvester: Harv,
         instr_table: &'i BlankInstrTable,
     ) -> Self {
         let instrs = BlankInstrs {
@@ -440,13 +449,13 @@ impl<'h, 'i> BlankTree<'h, 'i> {
 
 /**************************************/
 
-type SpinoutTree<'h, 'i> = Tree<'h, SpinoutInstrs<'i>>;
+type SpinoutTree<'i, Harv> = Tree<SpinoutInstrs<'i>, Harv>;
 
-impl<'h, 'i> SpinoutTree<'h, 'i> {
+impl<'i, Harv: Harvester> SpinoutTree<'i, Harv> {
     fn make(
         params @ (states, _): Params,
         sim_lim: Steps,
-        harvester: &'h dyn Fn(&Prog, PassConfig<'_>),
+        harvester: Harv,
         instr_table: &'i SpinoutInstrTable,
     ) -> Self {
         let instrs = SpinoutInstrs {
@@ -460,7 +469,7 @@ impl<'h, 'i> SpinoutTree<'h, 'i> {
 
 /**************************************/
 
-impl<'i, AvIn: AvailInstrs<'i>> Tree<'_, AvIn> {
+impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
     fn init_branch(&mut self, instr: &Instr) {
         self.with_update(&(1, 0), instr, |tree: &mut Self| {
             tree.branch(Config::init_stepped());
@@ -468,98 +477,115 @@ impl<'i, AvIn: AvailInstrs<'i>> Tree<'_, AvIn> {
     }
 }
 
-fn run_branch<'h, 'i, AvIn: AvailInstrs<'i>>(
+fn run_branch<'i, AvIn: AvailInstrs<'i>, Harv: Harvester>(
     init_instrs: &Instrs,
-    make_tree: impl Sync + Fn() -> Tree<'h, AvIn>,
-) {
-    init_instrs.par_iter().for_each(|instr| {
-        make_tree().init_branch(instr);
-    });
+    make_tree: impl Sync + Fn() -> Tree<AvIn, Harv>,
+) -> TreeResult<Harv> {
+    init_instrs
+        .par_iter()
+        .map(|instr| {
+            let mut tree = make_tree();
+
+            tree.init_branch(instr);
+
+            (*instr, tree.harvester)
+        })
+        .collect()
 }
 
-fn run_all(
+fn run_all<Harv: Harvester>(
     params @ (states, colors): Params,
     halt: Slots,
     sim_lim: Steps,
-    harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
-) {
+    harvester: impl Sync + Fn() -> Harv,
+) -> TreeResult<Harv> {
     let (init_instrs, instr_table) = make_instr_table(states, colors);
 
     run_branch(&init_instrs, || {
-        BasicTree::make(params, halt, sim_lim, harvester, &instr_table)
-    });
+        BasicTree::make(
+            params,
+            halt,
+            sim_lim,
+            harvester(),
+            &instr_table,
+        )
+    })
 }
 
-fn run_blank(
+fn run_blank<Harv: Harvester>(
     params @ (states, colors): Params,
     sim_lim: Steps,
-    harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
-) {
+    harvester: impl Sync + Fn() -> Harv,
+) -> TreeResult<Harv> {
     let (init_instrs, instr_table) = make_blank_table(states, colors);
 
     run_branch(&init_instrs, || {
-        BlankTree::make(params, sim_lim, harvester, &instr_table)
-    });
+        BlankTree::make(params, sim_lim, harvester(), &instr_table)
+    })
 }
 
-fn run_spinout(
+fn run_spinout<Harv: Harvester>(
     params @ (states, colors): Params,
     sim_lim: Steps,
-    harvester: &(impl Fn(&Prog, PassConfig) + Sync),
-) {
+    harvester: impl Sync + Fn() -> Harv,
+) -> TreeResult<Harv> {
     let (init_instrs, instr_table) = make_spinout_table(states, colors);
 
     let (init_spins, init_other) =
         init_instrs.into_iter().partition(|&(_, _, tr)| tr == 1);
 
-    run_branch(&init_spins, || {
-        BasicTree::make(params, 0, sim_lim, harvester, &instr_table[0])
+    let mut spins_result = run_branch(&init_spins, || {
+        BasicTree::make(
+            params,
+            0,
+            sim_lim,
+            harvester(),
+            &instr_table[0],
+        )
     });
 
     if states == 2 {
-        return;
+        return spins_result;
     }
 
-    run_branch(&init_other, || {
-        SpinoutTree::make(params, sim_lim, harvester, &instr_table)
+    let other_result = run_branch(&init_other, || {
+        SpinoutTree::make(params, sim_lim, harvester(), &instr_table)
     });
+
+    spins_result.extend(other_result);
+
+    spins_result
 }
 
 /**************************************/
 
-pub fn run_params(
+pub fn run_params<Harv: Harvester>(
     params: Params,
     goal: Option<Goal>,
     sim_lim: Steps,
-    harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
-) {
+    harvester: impl Sync + Fn() -> Harv,
+) -> TreeResult<Harv> {
     match goal {
-        Some(Goal::Halt) | None => {
-            run_all(
-                params,
-                Slots::from(goal.is_some()),
-                sim_lim,
-                harvester,
-            );
-        },
-        Some(Goal::Blank) => {
-            run_blank(params, sim_lim, harvester);
-        },
-        Some(Goal::Spinout) => {
-            run_spinout(params, sim_lim, harvester);
-        },
+        Some(Goal::Halt) | None => run_all(
+            params,
+            Slots::from(goal.is_some()),
+            sim_lim,
+            harvester,
+        ),
+        Some(Goal::Blank) => run_blank(params, sim_lim, harvester),
+        Some(Goal::Spinout) => run_spinout(params, sim_lim, harvester),
     }
 }
 
-pub fn run_instrs(
+pub fn run_instrs<Harv: Harvester>(
     instrs: Slots,
     sim_lim: Steps,
-    harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
-) {
+    harvester: impl Sync + Fn() -> Harv,
+) -> TreeResult<Harv> {
     run_all(
         (instrs, instrs),
         (instrs * instrs) - instrs,
         sim_lim,
         harvester,
-    );
+    )
 }

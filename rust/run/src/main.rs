@@ -7,9 +7,9 @@ use tm::{
     tree::{PassConfig, run_instrs, run_params},
 };
 
-pub mod basket;
+pub mod harvesters;
 
-use basket::Basket;
+use harvesters::{Collector, HoldoutVisited, ReasonHarvester, Visited};
 
 /**************************************/
 
@@ -37,7 +37,7 @@ macro_rules! assert_params_list {
         vec![
             $( (
                 ($params, $goal, $steps, $leaves),
-                Box::new($pipeline) as Box<dyn Fn(&Prog, PassConfig<'_>) -> bool + Sync>
+                Box::new($pipeline) as Box<dyn Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool>
             ) ),*]
             .par_iter()
             .for_each(|&((params, goal, steps, expected), ref pipeline)| {
@@ -51,24 +51,13 @@ fn assert_params(
     goal: u8,
     steps: Steps,
     expected: (u64, u64),
-    pipeline: impl Fn(&Prog, PassConfig<'_>) -> bool + Sync,
+    pipeline: &(impl Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool),
 ) {
-    let holdout = Basket::set(0);
-    let visited = Basket::set(0);
-
-    run_params(params, get_goal(goal), steps, &|prog, config| {
-        *visited.access() += 1;
-
-        if pipeline(prog, config) {
-            return;
-        }
-
-        *holdout.access() += 1;
-
-        // prog.print();
+    let results = run_params(params, get_goal(goal), steps, || {
+        HoldoutVisited::new(pipeline)
     });
 
-    let result = (holdout.get(), visited.get());
+    let result = HoldoutVisited::combine(&results);
 
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
@@ -339,12 +328,7 @@ fn test_params_slow() {
 
 /**************************************/
 
-use tm::reason::BackwardResult;
-
 fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
-    let holdout = Basket::set(0);
-    let refuted = Basket::set(0);
-
     let cant_reach = match goal {
         0 => Prog::cant_halt,
         1 => Prog::cant_spin_out,
@@ -352,27 +336,11 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
         _ => unreachable!(),
     };
 
-    run_params(params, get_goal(goal), TREE_LIM, &|prog, _| {
-        let result = cant_reach(prog, 256);
-
-        if let BackwardResult::Refuted(steps) = result {
-            let mut curr_max = refuted.access();
-
-            if steps > *curr_max {
-                *curr_max = steps;
-            }
-        }
-
-        if result.is_refuted() {
-            return;
-        }
-
-        *holdout.access() += 1;
-
-        // prog.print();
+    let results = run_params(params, get_goal(goal), TREE_LIM, || {
+        ReasonHarvester::new(cant_reach)
     });
 
-    let result = (refuted.get(), holdout.get());
+    let result = ReasonHarvester::combine(&results);
 
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
@@ -415,17 +383,13 @@ fn test_reason() {
 /**************************************/
 
 fn test_collect() {
-    use tm::Parse as _;
-
     println!("collect");
 
-    let progs = Basket::set(vec![]);
+    let results = run_params((2, 2), None, 4, Collector::new);
 
-    run_params((2, 2), None, 4, &|prog, _| {
-        progs.access().push(prog.show());
-    });
+    let result = Collector::combine(&results);
 
-    assert_eq!(progs.get().len(), 81);
+    assert_eq!(result.len(), 81);
 }
 
 /**************************************/
@@ -434,24 +398,12 @@ fn assert_instrs(
     instrs: u8,
     steps: Steps,
     expected: (u64, u64),
-    pipeline: impl Fn(&Prog, PassConfig<'_>) -> bool + Sync,
+    pipeline: &(impl Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool),
 ) {
-    let holdout = Basket::set(0);
-    let visited = Basket::set(0);
+    let results =
+        run_instrs(instrs, steps, || HoldoutVisited::new(pipeline));
 
-    run_instrs(instrs, steps, &|prog, config| {
-        *visited.access() += 1;
-
-        if pipeline(prog, config) {
-            return;
-        }
-
-        *holdout.access() += 1;
-
-        // prog.print();
-    });
-
-    let result = (holdout.get(), visited.get());
+    let result = HoldoutVisited::combine(&results);
 
     assert_eq!(result, expected);
 }
@@ -462,7 +414,7 @@ macro_rules! assert_instrs_list {
         vec![
             $( (
                 ($instrs,$steps, $leaves),
-                Box::new($pipeline) as Box<dyn Fn(&Prog, PassConfig<'_>) -> bool + Sync>
+                Box::new($pipeline) as Box<dyn Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool>
             ) ),*]
             .par_iter()
             .for_each(|&((instrs, steps, expected), ref pipeline)| {
@@ -520,13 +472,11 @@ fn test_instrs() {
 }
 
 fn test_8_instr() {
-    let visited = Basket::set(0_u64);
+    let results = run_instrs(8, 500, Visited::new);
 
-    run_instrs(8, 500, &|_, _| {
-        *visited.access() += 1;
-    });
+    let result = Visited::combine(&results);
 
-    assert_eq!(visited.get(), 12_806_454_997);
+    assert_eq!(result, 12_806_454_997);
 }
 
 /**************************************/
