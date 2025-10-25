@@ -468,7 +468,7 @@ impl<'i, AvIn: AvailInstrs<'i>> Tree<'_, AvIn> {
     }
 }
 
-fn kick_off_branch<'h, 'i, AvIn: AvailInstrs<'i>>(
+fn run_branch<'h, 'i, AvIn: AvailInstrs<'i>>(
     init_instrs: &Instrs,
     make_tree: impl Sync + Fn() -> Tree<'h, AvIn>,
 ) {
@@ -477,7 +477,7 @@ fn kick_off_branch<'h, 'i, AvIn: AvailInstrs<'i>>(
     });
 }
 
-fn build_all(
+fn run_all(
     params @ (states, colors): Params,
     halt: Slots,
     sim_lim: Steps,
@@ -485,24 +485,24 @@ fn build_all(
 ) {
     let (init_instrs, instr_table) = make_instr_table(states, colors);
 
-    kick_off_branch(&init_instrs, || {
+    run_branch(&init_instrs, || {
         BasicTree::make(params, halt, sim_lim, harvester, &instr_table)
     });
 }
 
-fn build_blank(
+fn run_blank(
     params @ (states, colors): Params,
     sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
     let (init_instrs, instr_table) = make_blank_table(states, colors);
 
-    kick_off_branch(&init_instrs, || {
+    run_branch(&init_instrs, || {
         BlankTree::make(params, sim_lim, harvester, &instr_table)
     });
 }
 
-fn build_spinout(
+fn run_spinout(
     params @ (states, colors): Params,
     sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig) + Sync),
@@ -512,7 +512,7 @@ fn build_spinout(
     let (init_spins, init_other) =
         init_instrs.into_iter().partition(|&(_, _, tr)| tr == 1);
 
-    kick_off_branch(&init_spins, || {
+    run_branch(&init_spins, || {
         BasicTree::make(params, 0, sim_lim, harvester, &instr_table[0])
     });
 
@@ -520,14 +520,14 @@ fn build_spinout(
         return;
     }
 
-    kick_off_branch(&init_other, || {
+    run_branch(&init_other, || {
         SpinoutTree::make(params, sim_lim, harvester, &instr_table)
     });
 }
 
 /**************************************/
 
-pub fn build_tree(
+pub fn run_params(
     params: Params,
     goal: Option<Goal>,
     sim_lim: Steps,
@@ -535,7 +535,7 @@ pub fn build_tree(
 ) {
     match goal {
         Some(Goal::Halt) | None => {
-            build_all(
+            run_all(
                 params,
                 Slots::from(goal.is_some()),
                 sim_lim,
@@ -543,20 +543,20 @@ pub fn build_tree(
             );
         },
         Some(Goal::Blank) => {
-            build_blank(params, sim_lim, harvester);
+            run_blank(params, sim_lim, harvester);
         },
         Some(Goal::Spinout) => {
-            build_spinout(params, sim_lim, harvester);
+            run_spinout(params, sim_lim, harvester);
         },
     }
 }
 
-pub fn build_limited(
+pub fn run_instrs(
     instrs: Slots,
     sim_lim: Steps,
     harvester: &(impl Fn(&Prog, PassConfig<'_>) + Sync),
 ) {
-    build_all(
+    run_all(
         (instrs, instrs),
         (instrs * instrs) - instrs,
         sim_lim,

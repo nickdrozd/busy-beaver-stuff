@@ -6,7 +6,7 @@ use rayon::prelude::*;
 
 use tm::{
     Goal, Params, Prog, Steps,
-    tree::{PassConfig, build_limited, build_tree},
+    tree::{PassConfig, run_instrs, run_params},
 };
 
 pub mod basket;
@@ -33,32 +33,32 @@ fn get_goal(goal: u8) -> Option<Goal> {
 
 /**************************************/
 
-macro_rules! assert_trees {
-    ( $( ( ($params:expr, $goal:expr, $tree:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
+macro_rules! assert_params_list {
+    ( $( ( ($params:expr, $goal:expr, $steps:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
         #[expect(trivial_casts)]
         vec![
             $( (
-                ($params, $goal, $tree, $leaves),
+                ($params, $goal, $steps, $leaves),
                 Box::new($pipeline) as Box<dyn Fn(&Prog, PassConfig<'_>) -> bool + Sync>
             ) ),*]
             .par_iter()
-            .for_each(|&((params, goal, tree, expected), ref pipeline)| {
-                assert_tree(params, goal, tree, expected, pipeline);
+            .for_each(|&((params, goal, steps, expected), ref pipeline)| {
+                assert_params(params, goal, steps, expected, pipeline);
             });
     };
 }
 
-fn assert_tree(
+fn assert_params(
     params: Params,
     goal: u8,
-    tree: Steps,
+    steps: Steps,
     expected: (u64, u64),
     pipeline: impl Fn(&Prog, PassConfig<'_>) -> bool + Sync,
 ) {
     let holdout = Basket::set(0);
     let visited = Basket::set(0);
 
-    build_tree(params, get_goal(goal), tree, &|prog, config| {
+    run_params(params, get_goal(goal), steps, &|prog, config| {
         *visited.access() += 1;
 
         if pipeline(prog, config) {
@@ -75,10 +75,10 @@ fn assert_tree(
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
 
-fn test_tree() {
-    println!("tree fast");
+fn test_params() {
+    println!("params fast");
 
-    assert_trees![
+    assert_params_list![
         (
             ((2, 2), 0, 2, (9, 23)),
             //
@@ -266,10 +266,10 @@ fn test_tree() {
     ];
 }
 
-fn test_tree_slow() {
-    println!("tree slow");
+fn test_params_slow() {
+    println!("params slow");
 
-    assert_trees![
+    assert_params_list![
         (
             ((5, 2), 0, 700, (74_494_706, 88_801_216)),
             //
@@ -353,7 +353,7 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
         _ => unreachable!(),
     };
 
-    build_tree(params, get_goal(goal), TREE_LIM, &|prog, _| {
+    run_params(params, get_goal(goal), TREE_LIM, &|prog, _| {
         let result = cant_reach(prog, 256);
 
         if let BackwardResult::Refuted(steps) = result {
@@ -378,7 +378,7 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
 
-macro_rules! assert_reason_results {
+macro_rules! assert_reason_list {
     ( $( ( $params:expr, $goal:expr, $leaves:expr ) ),* $(,)? ) => {
         vec![$( ($params, $goal, $leaves) ),*]
             .par_iter().for_each(|&(params, goal, expected)| {
@@ -390,7 +390,7 @@ macro_rules! assert_reason_results {
 fn test_reason() {
     println!("reason");
 
-    assert_reason_results![
+    assert_reason_list![
         ((2, 2), 0, (3, 13)),
         ((2, 2), 1, (2, 8)),
         ((2, 2), 2, (2, 10)),
@@ -422,7 +422,7 @@ fn test_collect() {
 
     let progs = Basket::set(vec![]);
 
-    build_tree((2, 2), None, 4, &|prog, _| {
+    run_params((2, 2), None, 4, &|prog, _| {
         progs.access().push(prog.show());
     });
 
@@ -431,16 +431,16 @@ fn test_collect() {
 
 /**************************************/
 
-fn assert_limited(
+fn assert_instrs(
     instrs: u8,
-    tree: Steps,
+    steps: Steps,
     expected: (u64, u64),
     pipeline: impl Fn(&Prog, PassConfig<'_>) -> bool + Sync,
 ) {
     let holdout = Basket::set(0);
     let visited = Basket::set(0);
 
-    build_limited(instrs, tree, &|prog, config| {
+    run_instrs(instrs, steps, &|prog, config| {
         *visited.access() += 1;
 
         if pipeline(prog, config) {
@@ -457,25 +457,25 @@ fn assert_limited(
     assert_eq!(result, expected);
 }
 
-macro_rules! assert_limited_results {
-    ( $( ( ($instrs:expr, $tree:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
+macro_rules! assert_instrs_list {
+    ( $( ( ($instrs:expr, $steps:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
         #[expect(trivial_casts)]
         vec![
             $( (
-                ($instrs,$tree, $leaves),
+                ($instrs,$steps, $leaves),
                 Box::new($pipeline) as Box<dyn Fn(&Prog, PassConfig<'_>) -> bool + Sync>
             ) ),*]
             .par_iter()
-            .for_each(|&((instrs, tree, expected), ref pipeline)| {
-                assert_limited(instrs, tree, expected, pipeline);
+            .for_each(|&((instrs, steps, expected), ref pipeline)| {
+                assert_instrs(instrs, steps, expected, pipeline);
             });
     };
 }
 
-fn test_limited() {
-    println!("limited");
+fn test_instrs() {
+    println!("instrs");
 
-    assert_limited_results![
+    assert_instrs_list![
         (
             (4, 4, (0, 4_867)),
             //
@@ -523,7 +523,7 @@ fn test_limited() {
 fn test_8_instr() {
     let visited = Basket::set(0_u64);
 
-    build_limited(8, 500, &|_, _| {
+    run_instrs(8, 500, &|_, _| {
         *visited.access() += 1;
     });
 
@@ -533,19 +533,19 @@ fn test_8_instr() {
 /**************************************/
 
 fn main() {
-    test_tree();
+    test_params();
 
     if !env::args().any(|x| x == "--all") {
         return;
     }
 
-    test_limited();
+    test_instrs();
 
     test_collect();
 
     test_reason();
 
-    test_tree_slow();
+    test_params_slow();
 
     test_8_instr();
 }
