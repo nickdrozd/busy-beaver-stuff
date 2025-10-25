@@ -83,20 +83,12 @@ impl Logic for BlockLogic {
         self.cells
     }
 
-    fn base_states(&self) -> State {
-        self.base_states
-    }
-
-    fn base_colors(&self) -> Color {
-        self.base_colors
-    }
-
     fn macro_states(&self) -> MacroState {
-        MacroState::from(2 * self.base_states())
+        MacroState::from(2 * self.base_states)
     }
 
     fn macro_colors(&self) -> MacroColor {
-        let base = MacroColor::from(self.base_colors());
+        let base = MacroColor::from(self.base_colors);
         let exp = u32::try_from(self.cells()).unwrap();
 
         base.pow(exp)
@@ -104,7 +96,7 @@ impl Logic for BlockLogic {
 
     fn sim_lim(&self) -> usize {
         self.cells()
-            * self.base_states() as usize
+            * self.base_states as usize
             * usize::try_from(self.macro_colors()).unwrap()
     }
 
@@ -327,14 +319,6 @@ impl Logic for BacksymbolLogic {
         self.cells
     }
 
-    fn base_states(&self) -> State {
-        self.base_states
-    }
-
-    fn base_colors(&self) -> Color {
-        self.base_colors
-    }
-
     fn macro_states(&self) -> MacroState {
         MacroState::from(
             2 * self.base_states
@@ -417,9 +401,6 @@ trait Logic {
     fn new(cells: usize, states: State, colors: Color) -> Self;
 
     fn cells(&self) -> usize;
-
-    fn base_states(&self) -> State;
-    fn base_colors(&self) -> Color;
 
     fn macro_states(&self) -> MacroState;
     fn macro_colors(&self) -> MacroColor;
