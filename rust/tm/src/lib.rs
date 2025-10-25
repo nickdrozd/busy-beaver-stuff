@@ -36,7 +36,9 @@ pub use crate::{
 
 pub type Steps = usize;
 
-pub type Params = (State, Color);
+pub type States = usize;
+pub type Colors = usize;
+pub type Params = (States, Colors);
 
 /**************************************/
 

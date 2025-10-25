@@ -4,8 +4,8 @@ use ahash::HashMap as Dict;
 use rayon::prelude::*;
 
 use crate::{
-    Color, Goal, Instr, Params, Prog, Shift, Slot, State, Steps,
-    config::MedConfig as Config, machine::RunResult,
+    Color, Colors, Goal, Instr, Params, Prog, Shift, Slot, State,
+    States, Steps, config::MedConfig as Config, machine::RunResult,
 };
 
 pub use crate::config::PassConfig;
@@ -23,37 +23,34 @@ const SHIFTS: [Shift; 2] = [false, true];
 type Instrs = Vec<Instr>;
 type InstrTable = Vec<Vec<Instrs>>;
 
+#[expect(clippy::needless_range_loop)]
+#[expect(clippy::cast_possible_truncation)]
 fn make_instr_table(
-    max_states: State,
-    max_colors: Color,
+    max_states: States,
+    max_colors: Colors,
 ) -> (Instrs, InstrTable) {
-    let mut table = vec![
-        vec![vec![]; 1 + max_colors as usize];
-        1 + max_states as usize
-    ];
+    let mut table = vec![vec![vec![]; 1 + max_colors]; 1 + max_states];
 
     for states in 2..=max_states {
         for colors in 2..=max_colors {
-            let mut instrs =
-                Vec::with_capacity((colors * 2 * states).into());
+            let mut instrs = Vec::with_capacity(colors * 2 * states);
 
-            for color in 0..colors {
+            for color in 0..colors as Color {
                 for shift in SHIFTS {
-                    for state in 0..states {
+                    for state in 0..states as State {
                         instrs.push((color, shift, state));
                     }
                 }
             }
 
-            table[states as usize][colors as usize] = instrs;
+            table[states][colors] = instrs;
         }
     }
 
     let init_states = min(3, max_states);
     let init_colors = min(3, max_colors);
 
-    let mut init_instrs =
-        table[init_states as usize][init_colors as usize].clone();
+    let mut init_instrs = table[init_states][init_colors].clone();
 
     init_instrs.retain(|instr| !matches!(instr, (_, true, 0 | 1)));
 
@@ -62,9 +59,10 @@ fn make_instr_table(
 
 type BlankInstrTable = [InstrTable; 2];
 
+#[expect(clippy::needless_range_loop)]
 fn make_blank_table(
-    max_states: State,
-    max_colors: Color,
+    max_states: States,
+    max_colors: Colors,
 ) -> (Instrs, BlankInstrTable) {
     let (init_instrs, table) = make_instr_table(max_states, max_colors);
 
@@ -72,8 +70,7 @@ fn make_blank_table(
 
     for states in 2..=max_states {
         for colors in 2..=max_colors {
-            partial[states as usize][colors as usize]
-                .retain(|&(co, _, _)| co == 0);
+            partial[states][colors].retain(|&(co, _, _)| co == 0);
         }
     }
 
@@ -82,29 +79,28 @@ fn make_blank_table(
 
 type SpinoutInstrTable = [InstrTable; 2];
 
+#[expect(clippy::needless_range_loop)]
+#[expect(clippy::cast_possible_truncation)]
 fn make_spinout_table(
-    max_states: State,
-    max_colors: Color,
+    max_states: States,
+    max_colors: Colors,
 ) -> (Instrs, SpinoutInstrTable) {
     let (init_instrs, plain) = make_instr_table(max_states, max_colors);
 
     let mut spins: InstrTable =
-        vec![
-            vec![Vec::new(); 1 + max_colors as usize];
-            1 + max_states as usize
-        ];
+        vec![vec![Vec::new(); 1 + max_colors]; 1 + max_states];
 
-    for read_state in 0..max_states {
+    for read in 0..max_states {
         for colors in 2..=max_colors {
-            let mut instrs = Vec::with_capacity((colors * 2).into());
+            let mut instrs = Vec::with_capacity(colors * 2);
 
-            for color in 0..colors {
+            for color in 0..colors as Color {
                 for shift in SHIFTS {
-                    instrs.push((color, shift, read_state));
+                    instrs.push((color, shift, read as State));
                 }
             }
 
-            spins[1 + read_state as usize][colors as usize] = instrs;
+            spins[1 + read][colors] = instrs;
         }
     }
 
@@ -126,7 +122,7 @@ struct BasicInstrs<'h> {
 
 impl<'h> AvailInstrs<'h> for BasicInstrs<'h> {
     fn avail_instrs(&self, _: &Slot, (st, co): Params) -> &'h [Instr] {
-        &self.instr_table[st as usize][co as usize]
+        &self.instr_table[st][co]
     }
 }
 
@@ -149,8 +145,8 @@ impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
         (st, co): Params,
     ) -> &'h [Instr] {
         &self.instr_table
-            [usize::from(pr != 0 && self.avail_blanks() == Some(1))]
-            [st as usize][co as usize]
+            [usize::from(pr != 0 && self.avail_blanks() == Some(1))][st]
+            [co]
     }
 
     fn on_insert(&mut self, &(_, sc): &Slot, &(pr, _, _): &Instr) {
@@ -193,8 +189,8 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
         &(if spinout {
             &self.instr_table[1][1 + read_state as usize]
         } else {
-            &self.instr_table[0][states as usize]
-        })[colors as usize]
+            &self.instr_table[0][states]
+        })[colors]
     }
 
     fn on_insert(&mut self, &(st, co): &Slot, &(_, _, tr): &Instr) {
@@ -245,7 +241,8 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
 
         let avail_params = vec![init_avail];
 
-        let remaining_slots = prog.dimension - halt - 2;
+        #[expect(clippy::cast_possible_truncation)]
+        let remaining_slots = prog.dimension as Slots - halt - 2;
 
         Self {
             prog,
@@ -297,6 +294,7 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
         self.instrs.avail_instrs(slot, self.avail_params())
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     fn update_avail(
         &mut self,
         (slot_st, slot_co): &Slot,
@@ -305,13 +303,13 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
         let (mut av_st, mut av_co) = self.avail_params();
 
         if av_st < self.prog.states
-            && 1 + max(slot_st, instr_st) == av_st
+            && 1 + max(slot_st, instr_st) == av_st as State
         {
             av_st += 1;
         }
 
         if av_co < self.prog.colors
-            && 1 + max(slot_co, instr_co) == av_co
+            && 1 + max(slot_co, instr_co) == av_co as Color
         {
             av_co += 1;
         }
@@ -383,10 +381,8 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
 
             self.with_insert(&slot, last_instr, |tree| {
                 if matches!(
-                    tree.prog.run_basic(
-                        tree.prog.dimension.into(),
-                        &mut config,
-                    ),
+                    tree.prog
+                        .run_basic(tree.prog.dimension, &mut config),
                     StepLimit
                 ) {
                     tree.harvest(PassConfig::Owned(config));
@@ -438,9 +434,12 @@ impl<'i, Harv: Harvester> BlankTree<'i, Harv> {
         harvester: Harv,
         instr_table: &'i BlankInstrTable,
     ) -> Self {
+        #[expect(clippy::cast_possible_truncation)]
+        let avail_blanks = vec![Some((states * (colors - 1)) as Slots)];
+
         let instrs = BlankInstrs {
             instr_table,
-            avail_blanks: vec![Some(states * (colors - 1))],
+            avail_blanks,
         };
 
         Self::init(params, 0, instrs, sim_lim, harvester)
@@ -458,9 +457,12 @@ impl<'i, Harv: Harvester> SpinoutTree<'i, Harv> {
         harvester: Harv,
         instr_table: &'i SpinoutInstrTable,
     ) -> Self {
+        #[expect(clippy::cast_possible_truncation)]
+        let avail_spinouts = vec![Some((states - 1) as Slots)];
+
         let instrs = SpinoutInstrs {
             instr_table,
-            avail_spinouts: vec![Some(states - 1)],
+            avail_spinouts,
         };
 
         Self::init(params, 0, instrs, sim_lim, harvester)
@@ -583,7 +585,7 @@ pub fn run_instrs<Harv: Harvester>(
     harvester: impl Sync + Fn() -> Harv,
 ) -> TreeResult<Harv> {
     run_all(
-        (instrs, instrs),
+        (instrs.into(), instrs.into()),
         (instrs * instrs) - instrs,
         sim_lim,
         harvester,

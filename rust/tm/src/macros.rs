@@ -4,7 +4,7 @@ use std::collections::BTreeMap as Dict;
 
 use num_integer::Integer as _;
 
-use crate::{Color, Instr, Prog, Shift, Slot, State};
+use crate::{Color, Colors, Instr, Prog, Shift, Slot, State, States};
 
 type MacroColor = u64;
 type MacroState = u64;
@@ -58,8 +58,8 @@ impl Prog {
 pub struct BlockLogic {
     cells: usize,
 
-    base_colors: Color,
-    base_states: State,
+    base_colors: Colors,
+    base_states: States,
 
     converter: TapeColorConverter,
 }
@@ -67,8 +67,8 @@ pub struct BlockLogic {
 impl Logic for BlockLogic {
     fn new(
         cells: usize,
-        base_states: State,
-        base_colors: Color,
+        base_states: States,
+        base_colors: Colors,
     ) -> Self {
         Self {
             cells,
@@ -84,11 +84,11 @@ impl Logic for BlockLogic {
     }
 
     fn macro_states(&self) -> MacroState {
-        MacroState::from(2 * self.base_states)
+        2 * self.base_states as MacroState
     }
 
     fn macro_colors(&self) -> MacroColor {
-        let base = MacroColor::from(self.base_colors);
+        let base = self.base_colors as MacroColor;
         let exp = u32::try_from(self.cells()).unwrap();
 
         base.pow(exp)
@@ -96,7 +96,7 @@ impl Logic for BlockLogic {
 
     fn sim_lim(&self) -> usize {
         self.cells()
-            * self.base_states as usize
+            * self.base_states
             * usize::try_from(self.macro_colors()).unwrap()
     }
 
@@ -286,8 +286,8 @@ impl<'p, L: Logic> MacroProg<'p, L> {
 
 pub struct BacksymbolLogic {
     cells: usize,
-    base_states: State,
-    base_colors: Color,
+    base_states: States,
+    base_colors: Colors,
     backsymbols: usize,
 
     converter: TapeColorConverter,
@@ -296,8 +296,8 @@ pub struct BacksymbolLogic {
 impl Logic for BacksymbolLogic {
     fn new(
         cells: usize,
-        base_states: State,
-        base_colors: Color,
+        base_states: States,
+        base_colors: Colors,
     ) -> Self {
         Self {
             cells,
@@ -305,7 +305,7 @@ impl Logic for BacksymbolLogic {
             base_colors,
 
             backsymbols: {
-                let base = base_colors as usize;
+                let base = base_colors;
                 let exp = u32::try_from(cells).unwrap();
 
                 base.pow(exp)
@@ -320,14 +320,11 @@ impl Logic for BacksymbolLogic {
     }
 
     fn macro_states(&self) -> MacroState {
-        MacroState::from(
-            2 * self.base_states
-                * State::try_from(self.backsymbols).unwrap(),
-        )
+        (2 * self.base_states * self.backsymbols) as MacroState
     }
 
     fn macro_colors(&self) -> MacroColor {
-        MacroColor::from(self.base_colors)
+        self.base_colors as MacroColor
     }
 
     fn sim_lim(&self) -> usize {
@@ -398,7 +395,7 @@ impl Logic for BacksymbolLogic {
 /**************************************/
 
 trait Logic {
-    fn new(cells: usize, states: State, colors: Color) -> Self;
+    fn new(cells: usize, states: States, colors: Colors) -> Self;
 
     fn cells(&self) -> usize;
 
@@ -414,14 +411,14 @@ trait Logic {
 /**************************************/
 
 struct TapeColorConverter {
-    base_colors: Color,
+    base_colors: Colors,
 
     ct_cache: RefCell<Dict<MacroColor, Tape>>,
     tc_cache: RefCell<Dict<Tape, MacroColor>>,
 }
 
 impl TapeColorConverter {
-    fn new(base_colors: Color, cells: usize) -> Self {
+    fn new(base_colors: Colors, cells: usize) -> Self {
         let mut ct_cache = Dict::new();
 
         ct_cache.insert(0, vec![0; cells]);
@@ -449,7 +446,7 @@ impl TapeColorConverter {
             .enumerate()
             .fold(MacroColor::MIN, |acc, (place, value)| {
                 acc + value * {
-                    let base = MacroColor::from(self.base_colors);
+                    let base = self.base_colors as MacroColor;
                     let exp = u32::try_from(place).unwrap();
 
                     base.pow(exp)

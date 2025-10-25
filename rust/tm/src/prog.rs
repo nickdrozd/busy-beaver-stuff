@@ -1,6 +1,6 @@
 use std::collections::BTreeSet as Set;
 
-use crate::{Color, Instr, Parse, Shift, Slot, State};
+use crate::{Color, Colors, Instr, Parse, Shift, Slot, State, States};
 
 /**************************************/
 
@@ -10,17 +10,16 @@ type Table = Vec<Vec<Option<Instr>>>;
 pub struct Prog {
     table: Table,
 
-    pub states: State,
-    pub colors: Color,
+    pub states: States,
+    pub colors: Colors,
 
-    pub dimension: u8,
+    pub dimension: usize,
 }
 
 impl From<Table> for Prog {
-    #[expect(clippy::cast_possible_truncation)]
     fn from(table: Table) -> Self {
-        let states = table.len() as State;
-        let colors = table.first().map_or(0, Vec::len) as Color;
+        let states = table.len();
+        let colors = table.first().map_or(0, Vec::len);
 
         Self {
             table,
@@ -32,16 +31,16 @@ impl From<Table> for Prog {
 }
 
 impl Prog {
-    fn new(states: State, colors: Color) -> Self {
+    fn new(states: States, colors: Colors) -> Self {
         Self {
-            table: vec![vec![None; colors as usize]; states as usize],
+            table: vec![vec![None; colors]; states],
             states,
             colors,
             dimension: states * colors,
         }
     }
 
-    pub fn init_norm(states: State, colors: Color) -> Self {
+    pub fn init_norm(states: States, colors: Colors) -> Self {
         let mut prog = Self::new(states, colors);
 
         prog.insert(&(0, 0), &(1, true, 1));
@@ -126,14 +125,20 @@ impl Prog {
             .collect()
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     pub fn states_unreached(&self) -> bool {
         self.states > 2
-            && self.instrs().all(|(_, _, tr)| 1 + tr < self.states)
+            && self
+                .instrs()
+                .all(|(_, _, tr)| 1 + tr < self.states as State)
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     pub fn colors_unreached(&self) -> bool {
         self.colors > 2
-            && self.instrs().all(|(pr, _, _)| 1 + pr < self.colors)
+            && self
+                .instrs()
+                .all(|(pr, _, _)| 1 + pr < self.colors as Color)
     }
 
     pub fn incomplete(&self) -> bool {
@@ -173,10 +178,11 @@ impl Parse for Prog {
             .into()
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     fn show(&self) -> String {
-        (0..self.states)
+        (0..self.states as State)
             .map(|state| {
-                (0..self.colors)
+                (0..self.colors as Color)
                     .map(|color| self.get(&(state, color)).show())
                     .collect::<Vec<_>>()
                     .join(" ")

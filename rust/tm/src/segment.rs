@@ -726,11 +726,17 @@ impl<'p> AnalyzedProg<'p> {
         let mut branches = Dict::new();
 
         for state in 0..prog.states {
+            #[expect(clippy::cast_possible_truncation)]
+            let state = state as State;
+
             let mut diff = Set::new();
             let mut lefts = Set::new();
             let mut rights = Set::new();
 
             for color in 0..prog.colors {
+                #[expect(clippy::cast_possible_truncation)]
+                let color = color as Color;
+
                 let Some(&(_, shift, next)) = prog.get(&(state, color))
                 else {
                     halts.insert(state);

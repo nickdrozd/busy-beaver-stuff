@@ -14,11 +14,12 @@ impl Prog {
 
         let exitpoints = self.get_exitpoints();
 
-        if exitpoints.len() < states as usize {
+        if exitpoints.len() < states {
             return false;
         }
 
-        let last_state = states - 1;
+        #[expect(clippy::cast_possible_truncation)]
+        let last_state = (states as State) - 1;
 
         let last_exits = &exitpoints[&last_state];
 
