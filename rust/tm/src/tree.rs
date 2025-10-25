@@ -460,18 +460,20 @@ impl<'h, 'i> SpinoutTree<'h, 'i> {
 
 /**************************************/
 
+impl<'i, AvIn: AvailInstrs<'i>> Tree<'_, AvIn> {
+    fn init_branch(&mut self, instr: &Instr) {
+        self.with_update(&(1, 0), instr, |tree: &mut Self| {
+            tree.branch(Config::init_stepped());
+        });
+    }
+}
+
 fn kick_off_branch<'h, 'i, AvIn: AvailInstrs<'i>>(
     init_instrs: &Instrs,
     make_tree: impl Sync + Fn() -> Tree<'h, AvIn>,
 ) {
     init_instrs.par_iter().for_each(|instr| {
-        make_tree().with_update(
-            &(1, 0),
-            instr,
-            |tree: &mut Tree<_>| {
-                tree.branch(Config::init_stepped());
-            },
-        );
+        make_tree().init_branch(instr);
     });
 }
 
