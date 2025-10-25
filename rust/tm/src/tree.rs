@@ -464,10 +464,10 @@ fn kick_off_branch<'h, 'i, AvIn: AvailInstrs<'i>>(
     init_instrs: &Instrs,
     make_tree: impl Sync + Fn() -> Tree<'h, AvIn>,
 ) {
-    init_instrs.par_iter().for_each(|&next_instr| {
+    init_instrs.par_iter().for_each(|instr| {
         make_tree().with_update(
             &(1, 0),
-            &next_instr,
+            instr,
             |tree: &mut Tree<_>| {
                 tree.branch(Config::init_stepped());
             },
