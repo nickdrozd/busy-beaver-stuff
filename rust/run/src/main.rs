@@ -1,5 +1,3 @@
-#![expect(clippy::too_many_lines)]
-
 use std::env;
 
 use rayon::prelude::*;
@@ -75,6 +73,7 @@ fn assert_params(
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
 
+#[expect(clippy::too_many_lines)]
 fn test_params() {
     println!("params fast");
 
