@@ -1,7 +1,6 @@
-use tm::{
-    Prog,
-    tree::{Harvester, PassConfig, TreeResult},
-};
+use tm::{Prog, tree::TreeResult};
+
+pub use tm::tree::{Harvester, PassConfig};
 
 /**************************************/
 
@@ -13,10 +12,6 @@ impl Visited {
     pub const fn new() -> Self {
         Self { visited: 0 }
     }
-
-    pub fn combine(results: &TreeResult<Self>) -> u64 {
-        results.values().map(|harv| harv.visited).sum()
-    }
 }
 
 impl Harvester for Visited {
@@ -24,6 +19,12 @@ impl Harvester for Visited {
         self.visited += 1;
 
         // prog.print();
+    }
+
+    type Output = u64;
+
+    fn combine(results: &TreeResult<Self>) -> Self::Output {
+        results.values().map(|harv| harv.visited).sum()
     }
 }
 
@@ -37,13 +38,6 @@ impl Collector {
     pub const fn new() -> Self {
         Self { progs: vec![] }
     }
-
-    pub fn combine(results: &TreeResult<Self>) -> Vec<String> {
-        results
-            .values()
-            .flat_map(|harv| harv.progs.clone())
-            .collect()
-    }
 }
 
 use tm::Parse as _;
@@ -51,6 +45,15 @@ use tm::Parse as _;
 impl Harvester for Collector {
     fn harvest(&mut self, prog: &Prog, _: PassConfig<'_>) {
         self.progs.push(prog.show());
+    }
+
+    type Output = Vec<String>;
+
+    fn combine(results: &TreeResult<Self>) -> Self::Output {
+        results
+            .values()
+            .flat_map(|harv| harv.progs.clone())
+            .collect()
     }
 }
 
@@ -71,15 +74,6 @@ impl<P: Fn(&Prog, PassConfig<'_>) -> bool> HoldoutVisited<P> {
             pipeline,
         }
     }
-
-    pub fn combine(results: &TreeResult<Self>) -> (u64, u64) {
-        results
-            .values()
-            .map(|harv| (harv.holdout, harv.visited))
-            .fold((0, 0), |(acc1, acc2), (v1, v2)| {
-                (acc1 + v1, acc2 + v2)
-            })
-    }
 }
 
 impl<P: Send + Fn(&Prog, PassConfig<'_>) -> bool> Harvester
@@ -95,6 +89,17 @@ impl<P: Send + Fn(&Prog, PassConfig<'_>) -> bool> Harvester
         self.holdout += 1;
 
         // prog.print();
+    }
+
+    type Output = (u64, u64);
+
+    fn combine(results: &TreeResult<Self>) -> Self::Output {
+        results
+            .values()
+            .map(|harv| (harv.holdout, harv.visited))
+            .fold((0, 0), |(acc1, acc2), (v1, v2)| {
+                (acc1 + v1, acc2 + v2)
+            })
     }
 }
 
@@ -118,15 +123,6 @@ impl<R: Fn(&Prog, usize) -> BackwardResult> ReasonHarvester<R> {
             cant_reach,
         }
     }
-
-    pub fn combine(results: &TreeResult<Self>) -> (usize, u64) {
-        results
-            .values()
-            .map(|harv| (harv.refuted, harv.holdout))
-            .fold((0, 0), |(r_acc, h_acc), (r_val, h_val)| {
-                (r_acc.max(r_val), h_acc + h_val)
-            })
-    }
 }
 
 impl<R: Send + Sync + Fn(&Prog, usize) -> BackwardResult> Harvester
@@ -148,5 +144,16 @@ impl<R: Send + Sync + Fn(&Prog, usize) -> BackwardResult> Harvester
         self.holdout += 1;
 
         // prog.print();
+    }
+
+    type Output = (usize, u64);
+
+    fn combine(results: &TreeResult<Self>) -> Self::Output {
+        results
+            .values()
+            .map(|harv| (harv.refuted, harv.holdout))
+            .fold((0, 0), |(r_acc, h_acc), (r_val, h_val)| {
+                (r_acc.max(r_val), h_acc + h_val)
+            })
     }
 }

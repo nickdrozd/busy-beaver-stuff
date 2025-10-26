@@ -2,14 +2,14 @@ use std::env;
 
 use rayon::prelude::*;
 
-use tm::{
-    Goal, Params, Prog, Steps,
-    tree::{PassConfig, run_instrs, run_params},
-};
+use tm::{Goal, Params, Prog, Steps};
 
 pub mod harvesters;
 
-use harvesters::{Collector, HoldoutVisited, ReasonHarvester, Visited};
+use harvesters::{
+    Collector, Harvester as _, HoldoutVisited, PassConfig,
+    ReasonHarvester, Visited,
+};
 
 /**************************************/
 
@@ -53,11 +53,12 @@ fn assert_params(
     expected: (u64, u64),
     pipeline: &(impl Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool),
 ) {
-    let results = run_params(params, get_goal(goal), steps, || {
-        HoldoutVisited::new(pipeline)
-    });
-
-    let result = HoldoutVisited::combine(&results);
+    let result = HoldoutVisited::run_params(
+        params,
+        get_goal(goal),
+        steps,
+        || HoldoutVisited::new(pipeline),
+    );
 
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
@@ -336,11 +337,12 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
         _ => unreachable!(),
     };
 
-    let results = run_params(params, get_goal(goal), TREE_LIM, || {
-        ReasonHarvester::new(cant_reach)
-    });
-
-    let result = ReasonHarvester::combine(&results);
+    let result = ReasonHarvester::run_params(
+        params,
+        get_goal(goal),
+        TREE_LIM,
+        || ReasonHarvester::new(cant_reach),
+    );
 
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
@@ -385,9 +387,7 @@ fn test_reason() {
 fn test_collect() {
     println!("collect");
 
-    let results = run_params((2, 2), None, 4, Collector::new);
-
-    let result = Collector::combine(&results);
+    let result = Collector::run_params((2, 2), None, 4, Collector::new);
 
     assert_eq!(result.len(), 81);
 }
@@ -400,10 +400,9 @@ fn assert_instrs(
     expected: (u64, u64),
     pipeline: &(impl Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool),
 ) {
-    let results =
-        run_instrs(instrs, steps, || HoldoutVisited::new(pipeline));
-
-    let result = HoldoutVisited::combine(&results);
+    let result = HoldoutVisited::run_instrs(instrs, steps, || {
+        HoldoutVisited::new(pipeline)
+    });
 
     assert_eq!(result, expected);
 }
@@ -472,9 +471,7 @@ fn test_instrs() {
 }
 
 fn test_8_instr() {
-    let results = run_instrs(8, 500, Visited::new);
-
-    let result = Visited::combine(&results);
+    let result = Visited::run_instrs(8, 500, Visited::new);
 
     assert_eq!(result, 12_806_454_997);
 }

@@ -212,12 +212,6 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
 
 /**************************************/
 
-pub trait Harvester: Send {
-    fn harvest(&mut self, prog: &Prog, config: PassConfig<'_>);
-}
-
-/**************************************/
-
 struct Tree<AvIn, Harv> {
     prog: Prog,
     instrs: AvIn,
@@ -540,33 +534,47 @@ fn run_spinout<Harv: Harvester>(
 
 /**************************************/
 
-pub fn run_params<Harv: Harvester>(
-    params: Params,
-    goal: Option<Goal>,
-    sim_lim: Steps,
-    harvester: impl Sync + Fn() -> Harv,
-) -> TreeResult<Harv> {
-    match goal {
-        Some(Goal::Halt) | None => run_all(
-            params,
-            Slots::from(goal.is_some()),
+pub trait Harvester: Send + Sized {
+    fn harvest(&mut self, prog: &Prog, config: PassConfig<'_>);
+
+    type Output;
+
+    fn combine(results: &TreeResult<Self>) -> Self::Output;
+
+    fn run_params(
+        params: Params,
+        goal: Option<Goal>,
+        sim_lim: Steps,
+        harvester: impl Sync + Fn() -> Self,
+    ) -> Self::Output {
+        let results = match goal {
+            Some(Goal::Halt) | None => run_all(
+                params,
+                Slots::from(goal.is_some()),
+                sim_lim,
+                harvester,
+            ),
+            Some(Goal::Blank) => run_blank(params, sim_lim, harvester),
+            Some(Goal::Spinout) => {
+                run_spinout(params, sim_lim, harvester)
+            },
+        };
+
+        Self::combine(&results)
+    }
+
+    fn run_instrs(
+        instrs: Slots,
+        sim_lim: Steps,
+        harvester: impl Sync + Fn() -> Self,
+    ) -> Self::Output {
+        let results = run_all(
+            (instrs.into(), instrs.into()),
+            (instrs * instrs) - instrs,
             sim_lim,
             harvester,
-        ),
-        Some(Goal::Blank) => run_blank(params, sim_lim, harvester),
-        Some(Goal::Spinout) => run_spinout(params, sim_lim, harvester),
-    }
-}
+        );
 
-pub fn run_instrs<Harv: Harvester>(
-    instrs: Slots,
-    sim_lim: Steps,
-    harvester: impl Sync + Fn() -> Harv,
-) -> TreeResult<Harv> {
-    run_all(
-        (instrs.into(), instrs.into()),
-        (instrs * instrs) - instrs,
-        sim_lim,
-        harvester,
-    )
+        Self::combine(&results)
+    }
 }
