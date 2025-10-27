@@ -175,11 +175,12 @@ impl Parse for Prog {
             .into()
     }
 
-    #[expect(clippy::cast_possible_truncation)]
     fn show(&self) -> String {
-        (0..self.states as State)
+        let (states, colors) = self.max_reached();
+
+        (0..=states)
             .map(|state| {
-                (0..self.colors as Color)
+                (0..=colors)
                     .map(|color| self.get(&(state, color)).show())
                     .collect::<Vec<_>>()
                     .join(" ")
@@ -211,8 +212,6 @@ fn test_prog() {
         "1RB ... ...  2LB 1RB 1LB",
         "1RB 0RB ...  2LA ... 0LB",
         "1RB ...  1LB 0RC  1LC 1LA",
-        "1RB 2LB 2LB ...  1LA 2RB 2LA ...",
-        "1RB 0LB  0LC 0RA  1LA 1LC  ... ...",
         "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB",
         "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
         "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",
@@ -242,19 +241,19 @@ fn test_params() {
 #[cfg(test)]
 const SPARSE_SHOW: &[(&str, &str)] = &[
     (
+        "1RB 2LB 2LB  1LA 2RB 2LA",
         "1RB 2LB 2LB ...  1LA 2RB 2LA ...",
-        "1RB 2LB 2LB ...  1LA 2RB 2LA ...",
     ),
     (
+        "1RB 0LB  0LC 0RA  1LA 1LC",
         "1RB 0LB  0LC 0RA  1LA 1LC  ... ...",
-        "1RB 0LB  0LC 0RA  1LA 1LC  ... ...",
     ),
     (
-        "1RB 1LD ... ... ... ... ... ...  0RC 0LA ... ... ... ... ... ...  0LC 1LA ... ... ... ... ... ...  0LA 0LA ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
+        "1RB 1LD  0RC 0LA  0LC 1LA  0LA 0LA",
         "1RB 1LD ... ... ... ... ... ...  0RC 0LA ... ... ... ... ... ...  0LC 1LA ... ... ... ... ... ...  0LA 0LA ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
     ),
     (
-        "1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
+        "1RB ... ... ...  2LB 0LC ... ...  0LD ... ... ...  0LE ... ... ...  0LF ... ... ...  1LG ... ... ...  3RC ... ... ...",
         "1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
     ),
 ];
