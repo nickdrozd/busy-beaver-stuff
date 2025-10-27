@@ -83,6 +83,23 @@ impl Prog {
             .flat_map(|colors| colors.iter().filter_map(Option::as_ref))
     }
 
+    pub fn max_reached(&self) -> (State, Color) {
+        let mut st = 1;
+        let mut co = 1;
+
+        for &(pr, _, tr) in self.instrs() {
+            if co < pr {
+                co = pr;
+            }
+
+            if st < tr {
+                st = tr;
+            }
+        }
+
+        (st, co)
+    }
+
     #[expect(clippy::cast_possible_truncation)]
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
