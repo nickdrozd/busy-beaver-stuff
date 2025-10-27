@@ -100,7 +100,7 @@ fn test_params() {
             }
         ),
         (
-            ((3, 2), 0, 12, (850, 2_650)),
+            ((3, 2), 0, 12, (850, 2_721)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_halt(13).is_refuted()
@@ -109,7 +109,7 @@ fn test_params() {
             }
         ),
         (
-            ((3, 2), 1, 13, (517, 3_979)),
+            ((3, 2), 1, 13, (517, 4_050)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_spin_out(7).is_refuted()
@@ -118,7 +118,7 @@ fn test_params() {
             }
         ),
         (
-            ((3, 2), 2, 13, (669, 9_442)),
+            ((3, 2), 2, 13, (669, 9_513)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_blank(14).is_refuted()
@@ -127,7 +127,7 @@ fn test_params() {
             }
         ),
         (
-            ((3, 2), 3, 13, (25, 11_687)),
+            ((3, 2), 3, 13, (25, 11_758)),
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
                 prog.term_or_rec(190, config.to_mut()).is_settled()
@@ -135,7 +135,7 @@ fn test_params() {
             }
         ),
         (
-            ((2, 3), 0, 7, (548, 2_264)),
+            ((2, 3), 0, 7, (548, 2_335)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_halt(8).is_refuted()
@@ -144,7 +144,7 @@ fn test_params() {
             }
         ),
         (
-            ((2, 3), 1, 20, (551, 3_486)),
+            ((2, 3), 1, 20, (551, 3_510)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_spin_out(2).is_refuted()
@@ -154,7 +154,7 @@ fn test_params() {
             }
         ),
         (
-            ((2, 3), 2, 20, (177, 5_891)),
+            ((2, 3), 2, 20, (177, 5_962)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_blank(16).is_settled()
@@ -163,7 +163,7 @@ fn test_params() {
             }
         ),
         (
-            ((2, 3), 3, 20, (63, 8_700)),
+            ((2, 3), 3, 20, (63, 8_771)),
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
                 prog.term_or_rec(290, config.to_mut()).is_settled()
@@ -171,7 +171,7 @@ fn test_params() {
             }
         ),
         (
-            ((4, 2), 0, 25, (115_953, 421_591)),
+            ((4, 2), 0, 25, (115_958, 432_318)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_halt(46).is_refuted()
@@ -180,7 +180,7 @@ fn test_params() {
             }
         ),
         (
-            ((4, 2), 1, 99, (89_168, 743_986)),
+            ((4, 2), 1, 99, (89_189, 754_707)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_spin_out(15).is_refuted()
@@ -190,7 +190,7 @@ fn test_params() {
             }
         ),
         (
-            ((4, 2), 2, 99, (113_529, 1_923_161)),
+            ((4, 2), 2, 99, (113_581, 1_933_882)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_blank(51).is_refuted()
@@ -199,7 +199,7 @@ fn test_params() {
             }
         ),
         (
-            ((4, 2), 3, 99, (7_944, 2_125_270)),
+            ((4, 2), 3, 99, (7_944, 2_135_991)),
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
                 if !prog.is_connected() {
@@ -214,7 +214,7 @@ fn test_params() {
             }
         ),
         (
-            ((2, 4), 0, 109, (88_142, 301_646)),
+            ((2, 4), 0, 109, (88_144, 309_759)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_halt(17).is_refuted()
@@ -223,7 +223,7 @@ fn test_params() {
             }
         ),
         (
-            ((2, 4), 1, TREE_LIM, (95_642, 610_085)),
+            ((2, 4), 1, TREE_LIM, (95_695, 613_031)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_spin_out(8).is_refuted()
@@ -233,7 +233,7 @@ fn test_params() {
             }
         ),
         (
-            ((2, 4), 2, TREE_LIM, (34_630, 1_182_719)),
+            ((2, 4), 2, TREE_LIM, (34_679, 1_190_832)),
             //
             |prog: &Prog, _: PassConfig<'_>| {
                 prog.cant_blank(51).is_refuted()
@@ -242,7 +242,7 @@ fn test_params() {
             }
         ),
         (
-            ((2, 4), 3, TREE_LIM, (39_526, 1_691_774)),
+            ((2, 4), 3, TREE_LIM, (39_630, 1_699_887)),
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
                 let config = config.to_mut();
@@ -260,14 +260,14 @@ fn test_params_slow() {
 
     assert_params_list![
         (
-            ((5, 2), 0, 700, (74_494_706, 88_801_216)),
+            ((5, 2), 0, 700, (74_494_706, 90_773_891)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected() || prog.cant_halt(0).is_refuted()
             }
         ),
         (
-            ((5, 2), 1, TREE_LIM, (154_212_276, 179_122_791)),
+            ((5, 2), 1, TREE_LIM, (154_212_276, 181_095_466)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected()
@@ -275,21 +275,21 @@ fn test_params_slow() {
             }
         ),
         (
-            ((5, 2), 2, TREE_LIM, (462_449_446, 484_739_381)),
+            ((5, 2), 2, TREE_LIM, (462_449_446, 486_712_056)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected() || prog.cant_blank(0).is_refuted()
             }
         ),
         (
-            ((3, 3), 0, 2_700, (20_404_758, 24_038_936)),
+            ((3, 3), 0, 2_700, (20_414_169, 24_057_699)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected() || prog.cant_halt(0).is_refuted()
             }
         ),
         (
-            ((3, 3), 1, 3_000, (49_824_481, 51_017_475)),
+            ((3, 3), 1, 3_000, (49_827_266, 51_028_928)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected()
@@ -297,28 +297,28 @@ fn test_params_slow() {
             }
         ),
         (
-            ((3, 3), 2, 3_000, (119_728_901, 123_276_016)),
+            ((3, 3), 2, 3_000, (119_736_603, 123_294_779)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected() || prog.cant_blank(0).is_refuted()
             }
         ),
         (
-            ((2, 5), 0, TREE_LIM, (64_921_591, 68_394_214)),
+            ((2, 5), 0, TREE_LIM, (66_518_040, 69_999_829)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.cant_halt(0).is_refuted()
             }
         ),
         (
-            ((2, 5), 1, TREE_LIM, (162_541_326, 162_541_326)),
+            ((2, 5), 1, TREE_LIM, (163_068_753, 163_068_753)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.cant_spin_out(0).is_refuted()
             }
         ),
         (
-            ((2, 5), 2, TREE_LIM, (348_948_850, 365_455_953)),
+            ((2, 5), 2, TREE_LIM, (349_990_911, 367_061_568)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.cant_blank(0).is_refuted()
@@ -364,21 +364,21 @@ fn test_reason() {
         ((2, 2), 1, (2, 8)),
         ((2, 2), 2, (2, 10)),
         //
-        ((3, 2), 0, (13, 1_656)),
-        ((3, 2), 1, (7, 1_610)),
-        ((3, 2), 2, (14, 2_130)),
+        ((3, 2), 0, (13, 1_659)),
+        ((3, 2), 1, (7, 1_613)),
+        ((3, 2), 2, (14, 2_135)),
         //
-        ((2, 3), 0, (8, 1_360)),
-        ((2, 3), 1, (2, 1_567)),
-        ((2, 3), 2, (16, 1_557)),
+        ((2, 3), 0, (8, 1_407)),
+        ((2, 3), 1, (2, 1_570)),
+        ((2, 3), 2, (16, 1_562)),
         //
-        ((4, 2), 0, (46, 260_381)),
-        ((4, 2), 1, (15, 347_209)),
-        ((4, 2), 2, (51, 464_990)),
+        ((4, 2), 0, (46, 261_123)),
+        ((4, 2), 1, (15, 348_308)),
+        ((4, 2), 2, (51, 466_446)),
         //
-        ((2, 4), 0, (17, 250_283)),
-        ((2, 4), 1, (8, 413_173)),
-        ((2, 4), 2, (58, 353_532)),
+        ((2, 4), 0, (17, 257_695)),
+        ((2, 4), 1, (8, 414_229)),
+        ((2, 4), 2, (58, 354_879)),
     ];
 }
 
@@ -427,7 +427,7 @@ fn test_instrs() {
 
     assert_instrs_list![
         (
-            (4, 4, (0, 4_867)),
+            (4, 4, (0, 4_909)),
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
                 //
@@ -437,7 +437,7 @@ fn test_instrs() {
             }
         ),
         (
-            (5, 12, (13, 150_322)),
+            (5, 12, (13, 151_351)),
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
                 //
@@ -447,7 +447,7 @@ fn test_instrs() {
             }
         ),
         (
-            (6, 22, (526, 5_543_646)),
+            (6, 22, (539, 5_568_167)),
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
                 prog.term_or_rec(304, config.to_mut()).is_settled()
@@ -456,7 +456,7 @@ fn test_instrs() {
             }
         ),
         (
-            (7, 109, (22_996, 245_724_778)),
+            (7, 109, (23_537, 246_492_765)),
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
                 let config = config.to_mut();
@@ -473,7 +473,7 @@ fn test_instrs() {
 fn test_8_instr() {
     let result = Visited::run_instrs(8, 500, Visited::new);
 
-    assert_eq!(result, 12_806_454_997);
+    assert_eq!(result, 12_835_863_274);
 }
 
 /**************************************/

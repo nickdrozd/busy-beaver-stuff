@@ -342,10 +342,7 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
             Undefined(slot) => slot,
             Blank | Spinout => return,
             StepLimit => {
-                if !self.prog.incomplete() {
-                    self.harvest(PassConfig::Owned(config));
-                }
-
+                self.harvest(PassConfig::Owned(config));
                 return;
             },
             _ => {

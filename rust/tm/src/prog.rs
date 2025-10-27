@@ -125,26 +125,6 @@ impl Prog {
             .collect()
     }
 
-    #[expect(clippy::cast_possible_truncation)]
-    pub fn states_unreached(&self) -> bool {
-        self.states > 2
-            && self
-                .instrs()
-                .all(|(_, _, tr)| 1 + tr < self.states as State)
-    }
-
-    #[expect(clippy::cast_possible_truncation)]
-    pub fn colors_unreached(&self) -> bool {
-        self.colors > 2
-            && self
-                .instrs()
-                .all(|(pr, _, _)| 1 + pr < self.colors as Color)
-    }
-
-    pub fn incomplete(&self) -> bool {
-        self.states_unreached() || self.colors_unreached()
-    }
-
     pub fn reaches_both_sides(&self, st: State, co: Color) -> bool {
         let mut side = None;
 
