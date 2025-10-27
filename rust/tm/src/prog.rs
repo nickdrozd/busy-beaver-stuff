@@ -100,26 +100,25 @@ impl Prog {
         (st, co)
     }
 
-    #[expect(clippy::cast_possible_truncation)]
     pub fn halt_slots(&self) -> Set<Slot> {
         let mut slots = Set::new();
 
-        for (state, colors) in self.table.iter().enumerate() {
-            for (color, entry) in colors.iter().enumerate() {
-                if entry.is_some() {
+        let (states, colors) = self.max_reached();
+
+        for state in 0..=states {
+            for color in 0..=colors {
+                let slot = (state, color);
+
+                if self.get(&slot).is_some() {
                     continue;
                 }
 
-                if color != 0
-                    && !self.reaches_both_sides(
-                        state as State,
-                        color as Color,
-                    )
+                if color != 0 && !self.reaches_both_sides(state, color)
                 {
                     continue;
                 }
 
-                slots.insert((state as State, color as Color));
+                slots.insert(slot);
             }
         }
 
@@ -279,11 +278,11 @@ fn test_halt_slots() {
 
     assert_eq!(
         Prog::read("1RB 1LD ... ... ... ... ... ...  0RC 0LA ... ... ... ... ... ...  0LC 1LA ... ... ... ... ... ...  0LA 0LA ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
-        Set::from([(2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (4, 0), (4, 1), (5, 0), (5, 1), (6, 0), (6, 1), (7, 0), (7, 1)]),
+        Set::from([]),
     );
 
     assert_eq!(
         Prog::read("1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
-        Set::from([(0, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (3, 1), (3, 3), (4, 1), (4, 3), (5, 1), (5, 3), (6, 1), (6, 3), (7, 0), (7, 1)]),
+        Set::from([(0, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 3), (4, 1), (4, 3), (5, 1), (5, 3), (6, 1), (6, 3)]),
     );
 }

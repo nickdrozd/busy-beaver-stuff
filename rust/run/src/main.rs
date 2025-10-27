@@ -282,7 +282,7 @@ fn test_params_slow() {
             }
         ),
         (
-            ((3, 3), 0, 2_700, (20_414_169, 24_057_699)),
+            ((3, 3), 0, 2_700, (20_405_865, 24_057_699)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 !prog.is_connected() || prog.cant_halt(0).is_refuted()
@@ -304,7 +304,7 @@ fn test_params_slow() {
             }
         ),
         (
-            ((2, 5), 0, TREE_LIM, (66_518_040, 69_999_829)),
+            ((2, 5), 0, TREE_LIM, (65_073_270, 69_999_829)),
             //
             |prog: &Prog, _config: PassConfig<'_>| {
                 prog.cant_halt(0).is_refuted()
@@ -368,7 +368,7 @@ fn test_reason() {
         ((3, 2), 1, (7, 1_613)),
         ((3, 2), 2, (14, 2_135)),
         //
-        ((2, 3), 0, (8, 1_407)),
+        ((2, 3), 0, (8, 1_363)),
         ((2, 3), 1, (2, 1_570)),
         ((2, 3), 2, (16, 1_562)),
         //
@@ -376,7 +376,7 @@ fn test_reason() {
         ((4, 2), 1, (15, 348_308)),
         ((4, 2), 2, (51, 466_446)),
         //
-        ((2, 4), 0, (17, 257_695)),
+        ((2, 4), 0, (17, 250_990)),
         ((2, 4), 1, (8, 414_229)),
         ((2, 4), 2, (58, 354_879)),
     ];
@@ -442,6 +442,7 @@ fn test_instrs() {
             |prog: &Prog, mut config: PassConfig<'_>| {
                 //
                 prog.term_or_rec(301, config.to_mut()).is_settled()
+                    || prog.cant_halt(2).is_refuted()
                     || prog.ctl_cant_halt(25)
                     || prog.cps_cant_halt(3)
             }
@@ -451,6 +452,7 @@ fn test_instrs() {
             //
             |prog: &Prog, mut config: PassConfig<'_>| {
                 prog.term_or_rec(304, config.to_mut()).is_settled()
+                    || prog.cant_halt(2).is_refuted()
                     || prog.ctl_cant_halt(76)
                     || prog.cps_cant_halt(5)
             }
@@ -462,6 +464,7 @@ fn test_instrs() {
                 let config = config.to_mut();
 
                 prog.term_or_rec(100, config).is_settled()
+                    || prog.cant_halt(2).is_refuted()
                     || prog.ctl_cant_halt(100)
                     || prog.cps_cant_halt(4)
                     || prog.term_or_rec(1_000, config).is_settled()
