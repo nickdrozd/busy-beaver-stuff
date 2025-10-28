@@ -59,15 +59,17 @@ impl Harvester for Collector {
 
 /**************************************/
 
-pub struct HoldoutVisited<P> {
+pub type Pipeline = fn(&Prog, PassConfig<'_>) -> bool;
+
+pub struct HoldoutVisited {
     holdout: u64,
     visited: u64,
 
-    pipeline: P,
+    pipeline: Pipeline,
 }
 
-impl<P: Fn(&Prog, PassConfig<'_>) -> bool> HoldoutVisited<P> {
-    pub const fn new(pipeline: P) -> Self {
+impl HoldoutVisited {
+    pub const fn new(pipeline: Pipeline) -> Self {
         Self {
             holdout: 0,
             visited: 0,
@@ -76,9 +78,7 @@ impl<P: Fn(&Prog, PassConfig<'_>) -> bool> HoldoutVisited<P> {
     }
 }
 
-impl<P: Send + Fn(&Prog, PassConfig<'_>) -> bool> Harvester
-    for HoldoutVisited<P>
-{
+impl Harvester for HoldoutVisited {
     fn harvest(&mut self, prog: &Prog, config: PassConfig<'_>) {
         self.visited += 1;
 
@@ -105,17 +105,19 @@ impl<P: Send + Fn(&Prog, PassConfig<'_>) -> bool> Harvester
 
 /**************************************/
 
-pub struct ReasonHarvester<R> {
+use tm::reason::BackwardResult;
+
+type Reasoner = fn(&Prog, usize) -> BackwardResult;
+
+pub struct ReasonHarvester {
     holdout: u64,
     refuted: usize,
 
-    cant_reach: R,
+    cant_reach: Reasoner,
 }
 
-use tm::reason::BackwardResult;
-
-impl<R: Fn(&Prog, usize) -> BackwardResult> ReasonHarvester<R> {
-    pub const fn new(cant_reach: R) -> Self {
+impl ReasonHarvester {
+    pub const fn new(cant_reach: Reasoner) -> Self {
         Self {
             holdout: 0,
             refuted: 0,
@@ -125,9 +127,7 @@ impl<R: Fn(&Prog, usize) -> BackwardResult> ReasonHarvester<R> {
     }
 }
 
-impl<R: Send + Sync + Fn(&Prog, usize) -> BackwardResult> Harvester
-    for ReasonHarvester<R>
-{
+impl Harvester for ReasonHarvester {
     fn harvest(&mut self, prog: &Prog, _: PassConfig<'_>) {
         let result = (self.cant_reach)(prog, 256);
 

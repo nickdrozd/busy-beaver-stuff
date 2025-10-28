@@ -7,7 +7,7 @@ use tm::{Goal, Params, Prog, Steps};
 pub mod harvesters;
 
 use harvesters::{
-    Collector, Harvester as _, HoldoutVisited, PassConfig,
+    Collector, Harvester as _, HoldoutVisited, PassConfig, Pipeline,
     ReasonHarvester, Visited,
 };
 
@@ -34,13 +34,9 @@ fn get_goal(goal: u8) -> Option<Goal> {
 macro_rules! assert_params_list {
     ( $( ( ($params:expr, $goal:expr, $steps:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
         #[expect(trivial_casts)]
-        vec![
-            $( (
-                ($params, $goal, $steps, $leaves),
-                Box::new($pipeline) as Box<dyn Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool>
-            ) ),*]
+        vec![ $( ( ( $params, $goal, $steps, $leaves), $pipeline as Pipeline ) ),* ]
             .par_iter()
-            .for_each(|&((params, goal, steps, expected), ref pipeline)| {
+            .for_each(|&((params, goal, steps, expected), pipeline)| {
                 assert_params(params, goal, steps, expected, pipeline);
             });
     };
@@ -51,7 +47,7 @@ fn assert_params(
     goal: u8,
     steps: Steps,
     expected: (u64, u64),
-    pipeline: &(impl Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool),
+    pipeline: Pipeline,
 ) {
     let result = HoldoutVisited::run_params(
         params,
@@ -398,7 +394,7 @@ fn assert_instrs(
     instrs: u8,
     steps: Steps,
     expected: (u64, u64),
-    pipeline: &(impl Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool),
+    pipeline: Pipeline,
 ) {
     let result = HoldoutVisited::run_instrs(instrs, steps, || {
         HoldoutVisited::new(pipeline)
@@ -410,13 +406,9 @@ fn assert_instrs(
 macro_rules! assert_instrs_list {
     ( $( ( ($instrs:expr, $steps:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
         #[expect(trivial_casts)]
-        vec![
-            $( (
-                ($instrs,$steps, $leaves),
-                Box::new($pipeline) as Box<dyn Send + Sync + Fn(&Prog, PassConfig<'_>) -> bool>
-            ) ),*]
+        vec![ $( (($instrs,$steps, $leaves), $pipeline as Pipeline ) ),* ]
             .par_iter()
-            .for_each(|&((instrs, steps, expected), ref pipeline)| {
+            .for_each(|&((instrs, steps, expected), pipeline)| {
                 assert_instrs(instrs, steps, expected, pipeline);
             });
     };
