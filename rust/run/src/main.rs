@@ -59,266 +59,233 @@ fn assert_params(
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
 }
 
-#[expect(clippy::too_many_lines)]
+fn params_2_2_0(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_halt(3).is_refuted() || prog.ctl_cant_halt(11)
+}
+
+fn params_2_2_1(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_spin_out(2).is_refuted()
+        || prog.ctl_cant_spin_out(6)
+        || prog.cps_cant_spin_out(3)
+}
+
+fn params_2_2_2(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_blank(2).is_refuted() || prog.ctl_cant_blank(14)
+}
+
+fn params_2_2_3(prog: &Prog, mut config: PassConfig<'_>) -> bool {
+    prog.term_or_rec(16, config.to_mut()).is_settled()
+}
+
+//
+
+fn params_3_2_0(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_halt(13).is_refuted()
+        || prog.ctl_cant_halt(31)
+        || prog.cps_cant_halt(4)
+}
+
+fn params_3_2_1(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_spin_out(7).is_refuted()
+        || prog.ctl_cant_spin_out(54)
+        || prog.cps_cant_spin_out(7)
+}
+fn params_3_2_2(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_blank(14).is_refuted()
+        || prog.ctl_cant_blank(42)
+        || prog.cps_cant_blank(10)
+}
+fn params_3_2_3(prog: &Prog, mut config: PassConfig<'_>) -> bool {
+    prog.term_or_rec(190, config.to_mut()).is_settled()
+        || prog.check_inf(500, 50)
+}
+
+//
+
+fn params_2_3_0(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_halt(8).is_refuted()
+        || prog.ctl_cant_halt(60)
+        || prog.cps_cant_halt(4)
+}
+
+fn params_2_3_1(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_spin_out(2).is_refuted()
+        || prog.ctl_cant_spin_out(100)
+        || prog.cps_cant_spin_out(5)
+        || prog.seg_cant_spin_out(7).is_refuted()
+}
+
+fn params_2_3_2(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_blank(16).is_settled()
+        || prog.ctl_cant_blank(60)
+        || prog.cps_cant_blank(9)
+}
+
+fn params_2_3_3(prog: &Prog, mut config: PassConfig<'_>) -> bool {
+    prog.term_or_rec(290, config.to_mut()).is_settled()
+        || prog.check_inf(1_000, 50)
+}
+
+//
+
+fn params_4_2_0(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_halt(46).is_refuted()
+        || prog.ctl_cant_halt(130)
+        || prog.cps_cant_halt(9)
+}
+
+fn params_4_2_1(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_spin_out(15).is_refuted()
+        || prog.ctl_cant_spin_out(190)
+        || prog.cps_cant_spin_out(9)
+        || prog.seg_cant_spin_out(8).is_refuted()
+}
+
+fn params_4_2_2(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_blank(51).is_refuted()
+        || prog.ctl_cant_blank(130)
+        || prog.cps_cant_blank(9)
+}
+
+fn params_4_2_3(prog: &Prog, mut config: PassConfig<'_>) -> bool {
+    if !prog.is_connected() {
+        return true;
+    }
+
+    let config = config.to_mut();
+
+    prog.term_or_rec(500, config).is_settled()
+        || prog.check_inf(2_000, 200)
+        || prog.term_or_rec(4_710, config).is_settled()
+}
+
+//
+
+fn params_2_4_0(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_halt(17).is_refuted()
+        || prog.ctl_cant_halt(190)
+        || prog.cps_cant_halt(5)
+}
+
+fn params_2_4_1(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_spin_out(8).is_refuted()
+        || prog.ctl_cant_spin_out(300)
+        || prog.cps_cant_spin_out(5)
+        || prog.seg_cant_spin_out(5).is_refuted()
+}
+
+fn params_2_4_2(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_blank(51).is_refuted()
+        || prog.ctl_cant_blank(200)
+        || prog.cps_cant_blank(5)
+}
+
+fn params_2_4_3(prog: &Prog, mut config: PassConfig<'_>) -> bool {
+    let config = config.to_mut();
+
+    prog.term_or_rec(500, config).is_settled()
+        || prog.check_inf(1_000, 200)
+        || prog.term_or_rec(4_600, config).is_settled()
+}
+
 fn test_params() {
     println!("params fast");
 
     assert_params_list![
-        (
-            ((2, 2), 0, 2, (9, 23)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_halt(3).is_refuted() || prog.ctl_cant_halt(11)
-            }
-        ),
-        (
-            ((2, 2), 1, 4, (5, 32)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_spin_out(2).is_refuted()
-                    || prog.ctl_cant_spin_out(6)
-                    || prog.cps_cant_spin_out(3)
-            }
-        ),
-        (
-            ((2, 2), 2, 4, (5, 53)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_blank(2).is_refuted()
-                    || prog.ctl_cant_blank(14)
-            }
-        ),
-        (
-            ((2, 2), 3, 4, (4, 81)),
-            //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                prog.term_or_rec(16, config.to_mut()).is_settled()
-            }
-        ),
-        (
-            ((3, 2), 0, 12, (850, 2_721)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_halt(13).is_refuted()
-                    || prog.ctl_cant_halt(31)
-                    || prog.cps_cant_halt(4)
-            }
-        ),
-        (
-            ((3, 2), 1, 13, (517, 4_050)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_spin_out(7).is_refuted()
-                    || prog.ctl_cant_spin_out(54)
-                    || prog.cps_cant_spin_out(7)
-            }
-        ),
-        (
-            ((3, 2), 2, 13, (669, 9_513)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_blank(14).is_refuted()
-                    || prog.ctl_cant_blank(42)
-                    || prog.cps_cant_blank(10)
-            }
-        ),
-        (
-            ((3, 2), 3, 13, (25, 11_758)),
-            //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                prog.term_or_rec(190, config.to_mut()).is_settled()
-                    || prog.check_inf(500, 50)
-            }
-        ),
-        (
-            ((2, 3), 0, 7, (548, 2_335)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_halt(8).is_refuted()
-                    || prog.ctl_cant_halt(60)
-                    || prog.cps_cant_halt(4)
-            }
-        ),
-        (
-            ((2, 3), 1, 20, (551, 3_510)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_spin_out(2).is_refuted()
-                    || prog.ctl_cant_spin_out(100)
-                    || prog.cps_cant_spin_out(5)
-                    || prog.seg_cant_spin_out(7).is_refuted()
-            }
-        ),
-        (
-            ((2, 3), 2, 20, (177, 5_962)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_blank(16).is_settled()
-                    || prog.ctl_cant_blank(60)
-                    || prog.cps_cant_blank(9)
-            }
-        ),
-        (
-            ((2, 3), 3, 20, (63, 8_771)),
-            //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                prog.term_or_rec(290, config.to_mut()).is_settled()
-                    || prog.check_inf(1_000, 50)
-            }
-        ),
-        (
-            ((4, 2), 0, 25, (115_958, 432_318)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_halt(46).is_refuted()
-                    || prog.ctl_cant_halt(130)
-                    || prog.cps_cant_halt(9)
-            }
-        ),
-        (
-            ((4, 2), 1, 99, (89_189, 754_707)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_spin_out(15).is_refuted()
-                    || prog.ctl_cant_spin_out(190)
-                    || prog.cps_cant_spin_out(9)
-                    || prog.seg_cant_spin_out(8).is_refuted()
-            }
-        ),
-        (
-            ((4, 2), 2, 99, (113_581, 1_933_882)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_blank(51).is_refuted()
-                    || prog.ctl_cant_blank(130)
-                    || prog.cps_cant_blank(9)
-            }
-        ),
-        (
-            ((4, 2), 3, 99, (7_944, 2_135_991)),
-            //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                if !prog.is_connected() {
-                    return true;
-                }
-
-                let config = config.to_mut();
-
-                prog.term_or_rec(500, config).is_settled()
-                    || prog.check_inf(2_000, 200)
-                    || prog.term_or_rec(4_710, config).is_settled()
-            }
-        ),
-        (
-            ((2, 4), 0, 109, (88_144, 309_759)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_halt(17).is_refuted()
-                    || prog.ctl_cant_halt(190)
-                    || prog.cps_cant_halt(5)
-            }
-        ),
-        (
-            ((2, 4), 1, TREE_LIM, (95_695, 613_031)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_spin_out(8).is_refuted()
-                    || prog.ctl_cant_spin_out(300)
-                    || prog.cps_cant_spin_out(5)
-                    || prog.seg_cant_spin_out(5).is_refuted()
-            }
-        ),
-        (
-            ((2, 4), 2, TREE_LIM, (34_679, 1_190_832)),
-            //
-            |prog: &Prog, _: PassConfig<'_>| {
-                prog.cant_blank(51).is_refuted()
-                    || prog.ctl_cant_blank(200)
-                    || prog.cps_cant_blank(5)
-            }
-        ),
-        (
-            ((2, 4), 3, TREE_LIM, (39_630, 1_699_887)),
-            //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                let config = config.to_mut();
-
-                prog.term_or_rec(500, config).is_settled()
-                    || prog.check_inf(1_000, 200)
-                    || prog.term_or_rec(4_600, config).is_settled()
-            }
-        ),
+        (((2, 2), 0, 2, (9, 23)), params_2_2_0),
+        (((2, 2), 1, 4, (5, 32)), params_2_2_1),
+        (((2, 2), 2, 4, (5, 53)), params_2_2_2),
+        (((2, 2), 3, 4, (4, 81)), params_2_2_3),
+        //
+        (((3, 2), 0, 12, (850, 2_721)), params_3_2_0),
+        (((3, 2), 1, 13, (517, 4_050)), params_3_2_1),
+        (((3, 2), 2, 13, (669, 9_513)), params_3_2_2),
+        (((3, 2), 3, 13, (25, 11_758)), params_3_2_3),
+        //
+        (((2, 3), 0, 7, (548, 2_335)), params_2_3_0),
+        (((2, 3), 1, 20, (551, 3_510)), params_2_3_1),
+        (((2, 3), 2, 20, (177, 5_962)), params_2_3_2),
+        (((2, 3), 3, 20, (63, 8_771)), params_2_3_3),
+        //
+        (((4, 2), 0, 25, (115_958, 432_318)), params_4_2_0),
+        (((4, 2), 1, 99, (89_189, 754_707)), params_4_2_1),
+        (((4, 2), 2, 99, (113_581, 1_933_882)), params_4_2_2),
+        (((4, 2), 3, 99, (7_944, 2_135_991)), params_4_2_3),
+        //
+        (((2, 4), 0, 109, (88_144, 309_759)), params_2_4_0),
+        (((2, 4), 1, TREE_LIM, (95_695, 613_031)), params_2_4_1),
+        (((2, 4), 2, TREE_LIM, (34_679, 1_190_832)), params_2_4_2),
+        (((2, 4), 3, TREE_LIM, (39_630, 1_699_887)), params_2_4_3),
     ];
+}
+
+fn params_5_2_0(prog: &Prog, _: PassConfig<'_>) -> bool {
+    !prog.is_connected() || prog.cant_halt(0).is_refuted()
+}
+
+fn params_5_2_1(prog: &Prog, _: PassConfig<'_>) -> bool {
+    !prog.is_connected() || prog.cant_spin_out(0).is_refuted()
+}
+
+fn params_5_2_2(prog: &Prog, _: PassConfig<'_>) -> bool {
+    !prog.is_connected() || prog.cant_blank(0).is_refuted()
+}
+
+//
+
+fn params_3_3_0(prog: &Prog, _: PassConfig<'_>) -> bool {
+    !prog.is_connected() || prog.cant_halt(0).is_refuted()
+}
+
+fn params_3_3_1(prog: &Prog, _: PassConfig<'_>) -> bool {
+    !prog.is_connected() || prog.cant_spin_out(0).is_refuted()
+}
+
+fn params_3_3_2(prog: &Prog, _: PassConfig<'_>) -> bool {
+    !prog.is_connected() || prog.cant_blank(0).is_refuted()
+}
+
+//
+
+fn params_2_5_0(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_halt(0).is_refuted()
+}
+
+fn params_2_5_1(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_spin_out(0).is_refuted()
+}
+
+fn params_2_5_2(prog: &Prog, _: PassConfig<'_>) -> bool {
+    prog.cant_blank(0).is_refuted()
 }
 
 fn test_params_slow() {
     println!("params slow");
 
     assert_params_list![
-        (
-            ((5, 2), 0, 700, (74_494_706, 90_773_891)),
-            //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected() || prog.cant_halt(0).is_refuted()
-            }
-        ),
+        (((5, 2), 0, 700, (74_494_706, 90_773_891)), params_5_2_0),
         (
             ((5, 2), 1, TREE_LIM, (154_212_276, 181_095_466)),
-            //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected()
-                    || prog.cant_spin_out(0).is_refuted()
-            }
+            params_5_2_1
         ),
         (
             ((5, 2), 2, TREE_LIM, (462_449_446, 486_712_056)),
-            //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected() || prog.cant_blank(0).is_refuted()
-            }
+            params_5_2_2
         ),
-        (
-            ((3, 3), 0, 2_700, (20_405_865, 24_057_699)),
-            //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected() || prog.cant_halt(0).is_refuted()
-            }
-        ),
-        (
-            ((3, 3), 1, 3_000, (49_827_266, 51_028_928)),
-            //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected()
-                    || prog.cant_spin_out(0).is_refuted()
-            }
-        ),
-        (
-            ((3, 3), 2, 3_000, (119_736_603, 123_294_779)),
-            //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                !prog.is_connected() || prog.cant_blank(0).is_refuted()
-            }
-        ),
+        (((3, 3), 0, 2_700, (20_405_865, 24_057_699)), params_3_3_0),
+        (((3, 3), 1, 3_000, (49_827_266, 51_028_928)), params_3_3_1),
+        (((3, 3), 2, 3_000, (119_736_603, 123_294_779)), params_3_3_2),
         (
             ((2, 5), 0, TREE_LIM, (65_073_270, 69_999_829)),
-            //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.cant_halt(0).is_refuted()
-            }
+            params_2_5_0
         ),
         (
             ((2, 5), 1, TREE_LIM, (163_068_753, 163_068_753)),
-            //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.cant_spin_out(0).is_refuted()
-            }
+            params_2_5_1
         ),
         (
             ((2, 5), 2, TREE_LIM, (349_990_911, 367_061_568)),
-            //
-            |prog: &Prog, _config: PassConfig<'_>| {
-                prog.cant_blank(0).is_refuted()
-            }
+            params_2_5_2
         ),
     ];
 }
@@ -414,54 +381,44 @@ macro_rules! assert_instrs_list {
     };
 }
 
+fn instrs_4(prog: &Prog, mut config: PassConfig<'_>) -> bool {
+    prog.term_or_rec(16, config.to_mut()).is_settled()
+        || prog.cant_halt(0).is_refuted()
+        || prog.ctl_cant_halt(13)
+}
+
+fn instrs_5(prog: &Prog, mut config: PassConfig<'_>) -> bool {
+    prog.term_or_rec(301, config.to_mut()).is_settled()
+        || prog.cant_halt(2).is_refuted()
+        || prog.ctl_cant_halt(25)
+        || prog.cps_cant_halt(3)
+}
+
+fn instrs_6(prog: &Prog, mut config: PassConfig<'_>) -> bool {
+    prog.term_or_rec(304, config.to_mut()).is_settled()
+        || prog.cant_halt(2).is_refuted()
+        || prog.ctl_cant_halt(76)
+        || prog.cps_cant_halt(5)
+}
+
+fn instrs_7(prog: &Prog, mut config: PassConfig<'_>) -> bool {
+    let config = config.to_mut();
+
+    prog.term_or_rec(100, config).is_settled()
+        || prog.cant_halt(2).is_refuted()
+        || prog.ctl_cant_halt(100)
+        || prog.cps_cant_halt(4)
+        || prog.term_or_rec(1_000, config).is_settled()
+}
+
 fn test_instrs() {
     println!("instrs");
 
     assert_instrs_list![
-        (
-            (4, 4, (0, 4_909)),
-            //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                //
-                prog.term_or_rec(16, config.to_mut()).is_settled()
-                    || prog.cant_halt(0).is_refuted()
-                    || prog.ctl_cant_halt(13)
-            }
-        ),
-        (
-            (5, 12, (13, 151_351)),
-            //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                //
-                prog.term_or_rec(301, config.to_mut()).is_settled()
-                    || prog.cant_halt(2).is_refuted()
-                    || prog.ctl_cant_halt(25)
-                    || prog.cps_cant_halt(3)
-            }
-        ),
-        (
-            (6, 22, (539, 5_568_167)),
-            //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                prog.term_or_rec(304, config.to_mut()).is_settled()
-                    || prog.cant_halt(2).is_refuted()
-                    || prog.ctl_cant_halt(76)
-                    || prog.cps_cant_halt(5)
-            }
-        ),
-        (
-            (7, 109, (23_537, 246_492_765)),
-            //
-            |prog: &Prog, mut config: PassConfig<'_>| {
-                let config = config.to_mut();
-
-                prog.term_or_rec(100, config).is_settled()
-                    || prog.cant_halt(2).is_refuted()
-                    || prog.ctl_cant_halt(100)
-                    || prog.cps_cant_halt(4)
-                    || prog.term_or_rec(1_000, config).is_settled()
-            }
-        ),
+        ((4, 4, (0, 4_909)), instrs_4),
+        ((5, 12, (13, 151_351)), instrs_5),
+        ((6, 22, (539, 5_568_167)), instrs_6),
+        ((7, 109, (23_537, 246_492_765)), instrs_7),
     ];
 }
 
