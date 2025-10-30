@@ -196,7 +196,7 @@ pub trait ApplyRule: IndexTape {
     }
 
     fn count_apps(&self, rule: &Rule) -> Option<(Count, Index, Count)> {
-        let mut apps: Option<(Count, Index, Count)> = None;
+        let mut apps = None;
 
         for (pos, diff) in &rule.0 {
             let Plus(diff) = diff else {
