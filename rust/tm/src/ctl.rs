@@ -274,7 +274,7 @@ impl Tape {
 
 /**************************************/
 
-impl Span<Count, Block> {
+impl Span<Block> {
     fn pull_with_limit(&mut self) -> Option<Color> {
         let Some(block) = self.first_mut() else {
             return Some(0);

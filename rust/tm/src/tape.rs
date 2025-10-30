@@ -3,7 +3,6 @@ use core::{
     fmt::{self, Debug, Display, Formatter},
     hash::Hash,
     iter::once,
-    marker::PhantomData,
     ops::{AddAssign, Index as IndexTrait, IndexMut, SubAssign},
 };
 
@@ -31,16 +30,18 @@ impl Countable for BigCount {}
 
 /**************************************/
 
-pub trait Block<Count: Countable>: Display {
-    fn new(color: Color, count: Count) -> Self;
+pub trait Block: Display {
+    type Count: Countable;
+
+    fn new(color: Color, count: Self::Count) -> Self;
 
     fn get_color(&self) -> Color;
 
-    fn get_count(&self) -> &Count;
+    fn get_count(&self) -> &Self::Count;
 
-    fn add_count(&mut self, count: Count);
+    fn add_count(&mut self, count: Self::Count);
 
-    fn set_count(&mut self, count: Count);
+    fn set_count(&mut self, count: Self::Count);
 
     fn decrement(&mut self);
 
@@ -67,7 +68,9 @@ pub type LilBlock = BasicBlock<LilCount>;
 pub type MedBlock = BasicBlock<MedCount>;
 pub type BigBlock = BasicBlock<BigCount>;
 
-impl<Count: Countable> Block<Count> for BasicBlock<Count> {
+impl<Count: Countable> Block for BasicBlock<Count> {
+    type Count = Count;
+
     fn new(color: Color, count: Count) -> Self {
         Self { color, count }
     }
@@ -110,17 +113,13 @@ impl<Count: Countable> Display for BasicBlock<Count> {
 /**************************************/
 
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub struct Span<C: Countable, B: Block<C>> {
+pub struct Span<B: Block> {
     blocks: Vec<B>,
-    _use_c: PhantomData<C>,
 }
 
-impl<Count: Countable, B: Block<Count>> Span<Count, B> {
+impl<B: Block> Span<B> {
     pub const fn new(blocks: Vec<B>) -> Self {
-        Self {
-            blocks,
-            _use_c: PhantomData::<Count>,
-        }
+        Self { blocks }
     }
 
     pub const fn init_blank() -> Self {
@@ -128,7 +127,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     }
 
     pub fn init_stepped() -> Self {
-        Self::new(vec![B::new(1, Count::one())])
+        Self::new(vec![B::new(1, B::Count::one())])
     }
 
     pub const fn len(&self) -> usize {
@@ -147,7 +146,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         self.iter().map(ToString::to_string)
     }
 
-    pub fn push_block(&mut self, color: Color, count: Count) {
+    pub fn push_block(&mut self, color: Color, count: B::Count) {
         self.blocks.push(Block::new(color, count));
     }
 
@@ -167,14 +166,14 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         self.blocks.len() - 1
     }
 
-    fn pull(&mut self, scan: Color, skip: bool) -> (Color, Count) {
+    fn pull(&mut self, scan: Color, skip: bool) -> (Color, B::Count) {
         let stepped = (skip
             && self
                 .first()
                 .is_some_and(|block| block.get_color() == scan))
         .then(|| self.pop_block())
-        .map_or_else(Count::one, |block| {
-            Count::one() + block.get_count().clone()
+        .map_or_else(B::Count::one, |block| {
+            B::Count::one() + block.get_count().clone()
         });
 
         let next_scan = if self.blank() {
@@ -196,7 +195,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
         (next_scan, stepped)
     }
 
-    fn push(&mut self, print: Color, stepped: &Count) {
+    fn push(&mut self, print: Color, stepped: &B::Count) {
         match self.first_mut() {
             Some(block) if block.get_color() == print => {
                 block.add_count(stepped.clone());
@@ -209,7 +208,7 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
     }
 }
 
-impl<C: Countable, B: Block<C>> IndexTrait<usize> for Span<C, B> {
+impl<B: Block> IndexTrait<usize> for Span<B> {
     type Output = B;
 
     fn index(&self, pos: usize) -> &Self::Output {
@@ -217,7 +216,7 @@ impl<C: Countable, B: Block<C>> IndexTrait<usize> for Span<C, B> {
     }
 }
 
-impl<C: Countable, B: Block<C>> IndexMut<usize> for Span<C, B> {
+impl<B: Block> IndexMut<usize> for Span<B> {
     fn index_mut(&mut self, pos: usize) -> &mut Self::Output {
         let last_pos = self.last_pos();
 
@@ -225,10 +224,10 @@ impl<C: Countable, B: Block<C>> IndexMut<usize> for Span<C, B> {
     }
 }
 
-pub type MedSpan = Span<MedCount, MedBlock>;
+pub type MedSpan = Span<MedBlock>;
 
-impl<B: Block<BigCount>> Span<BigCount, B> {
-    fn counts(&self) -> Vec<BigCount> {
+impl<B: Block> Span<B> {
+    fn counts(&self) -> Vec<B::Count> {
         self.iter().map(|block| block.get_count().clone()).collect()
     }
 
@@ -244,7 +243,17 @@ impl<B: Block<BigCount>> Span<BigCount, B> {
     }
 }
 
-impl<C: Countable + Copy + Into<usize>, B: Block<C>> Span<C, B> {
+pub trait UsizeBlock: Block {
+    fn count_usize(&self) -> usize;
+}
+
+impl<C: Countable + Copy + Into<usize>> UsizeBlock for BasicBlock<C> {
+    fn count_usize(&self) -> usize {
+        self.count.into()
+    }
+}
+
+impl<B: UsizeBlock> Span<B> {
     pub fn compare_take(&self, prev: &Self, mut take: usize) -> bool {
         let mut s_blocks = self.iter();
         let mut p_blocks = prev.iter();
@@ -261,8 +270,8 @@ impl<C: Countable + Copy + Into<usize>, B: Block<C>> Span<C, B> {
                         return false;
                     }
 
-                    let s_rem: usize = (*s_block.get_count()).into();
-                    let p_rem: usize = (*p_block.get_count()).into();
+                    let s_rem = s_block.count_usize();
+                    let p_rem = p_block.count_usize();
 
                     if s_rem == 0 || p_rem == 0 {
                         return false;
@@ -305,7 +314,7 @@ impl ColorCount {
     }
 }
 
-impl<B: Block<BigCount>> From<&B> for ColorCount {
+impl<B: Block> From<&B> for ColorCount {
     fn from(block: &B) -> Self {
         (if block.is_single() { Just } else { Mult })(block.get_color())
     }
@@ -345,18 +354,18 @@ impl Signature {
 /**************************************/
 
 #[derive(Clone, Eq, Hash, PartialEq)]
-pub struct Tape<C: Countable, B: Block<C>> {
+pub struct Tape<B: Block> {
     pub scan: Color,
 
-    pub lspan: Span<C, B>,
-    pub rspan: Span<C, B>,
+    pub lspan: Span<B>,
+    pub rspan: Span<B>,
 }
 
-pub type LilTape = Tape<LilCount, LilBlock>;
-pub type MedTape = Tape<MedCount, MedBlock>;
-pub type BigTape = Tape<BigCount, BigBlock>;
+pub type LilTape = Tape<LilBlock>;
+pub type MedTape = Tape<MedBlock>;
+pub type BigTape = Tape<BigBlock>;
 
-impl<C: Countable, B: Block<C>> Display for Tape<C, B> {
+impl<B: Block> Display for Tape<B> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
@@ -372,7 +381,7 @@ impl<C: Countable, B: Block<C>> Display for Tape<C, B> {
     }
 }
 
-impl<B: Block<BigCount>> GetSig for Tape<BigCount, B> {
+impl<B: Block> GetSig for Tape<B> {
     fn signature(&self) -> Signature {
         Signature {
             scan: self.scan(),
@@ -394,7 +403,7 @@ impl GetSig for EnumTape {
     }
 }
 
-impl<Count: Countable, B: Block<Count>> Tape<Count, B> {
+impl<B: Block> Tape<B> {
     pub const fn at_edge(&self, edge: Shift) -> bool {
         self.scan == 0
             && (if edge { &self.rspan } else { &self.lspan }).blank()
@@ -409,7 +418,7 @@ impl<Count: Countable, B: Block<Count>> Tape<Count, B> {
         shift: Shift,
         color: Color,
         skip: bool,
-    ) -> Count {
+    ) -> B::Count {
         let (pull, push) = if shift {
             (&mut self.rspan, &mut self.lspan)
         } else {
@@ -430,7 +439,7 @@ pub trait MachineTape {
     fn mstep(&mut self, shift: Shift, color: Color, skip: bool);
 }
 
-impl<C: Countable, B: Block<C>> MachineTape for Tape<C, B> {
+impl<B: Block> MachineTape for Tape<B> {
     fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
         self.step(shift, color, skip);
     }
@@ -440,7 +449,7 @@ pub trait Scan {
     fn scan(&self) -> Color;
 }
 
-impl<C: Countable, B: Block<C>> Scan for Tape<C, B> {
+impl<B: Block> Scan for Tape<B> {
     fn scan(&self) -> Color {
         self.scan
     }
@@ -451,7 +460,7 @@ pub trait Init {
     fn init_stepped() -> Self;
 }
 
-impl<C: Countable, B: Block<C>> Init for Tape<C, B> {
+impl<B: Block> Init for Tape<B> {
     fn init() -> Self {
         Self {
             scan: 0,
@@ -478,7 +487,7 @@ pub trait IndexTape {
     fn set_count(&mut self, index: &Index, val: BigCount);
 }
 
-impl<B: Block<BigCount>> IndexTape for Tape<BigCount, B> {
+impl IndexTape for Tape<BigBlock> {
     fn get_count(&self, &(side, pos): &Index) -> &BigCount {
         let span = if side { &self.rspan } else { &self.lspan };
 
@@ -591,7 +600,9 @@ struct EnumBlock {
     index: Option<Index>,
 }
 
-impl Block<BigCount> for EnumBlock {
+impl Block for EnumBlock {
+    type Count = BigCount;
+
     fn new(color: Color, count: BigCount) -> Self {
         Self {
             block: BigBlock::new(color, count),
@@ -627,7 +638,7 @@ impl Display for EnumBlock {
 }
 
 pub struct EnumTape {
-    tape: Tape<BigCount, EnumBlock>,
+    tape: Tape<EnumBlock>,
 
     l_offset: Cell<usize>,
     r_offset: Cell<usize>,
@@ -642,8 +653,8 @@ impl Display for EnumTape {
     }
 }
 
-type BigSpan = Span<BigCount, BigBlock>;
-type EnumSpan = Span<BigCount, EnumBlock>;
+type BigSpan = Span<BigBlock>;
+type EnumSpan = Span<EnumBlock>;
 
 impl EnumSpan {
     fn from(span: &BigSpan, side: Shift) -> Self {
@@ -750,6 +761,24 @@ impl EnumTape {
     }
 }
 
+impl IndexTape for Tape<EnumBlock> {
+    fn get_count(&self, &(side, pos): &Index) -> &BigCount {
+        let span = if side { &self.rspan } else { &self.lspan };
+
+        span[pos].get_count()
+    }
+
+    fn set_count(&mut self, &(side, pos): &Index, val: BigCount) {
+        let span = if side {
+            &mut self.rspan
+        } else {
+            &mut self.lspan
+        };
+
+        span[pos].set_count(val);
+    }
+}
+
 impl IndexTape for EnumTape {
     fn get_count(&self, index: &Index) -> &BigCount {
         self.tape.get_count(index)
@@ -770,7 +799,7 @@ impl MachineTape for EnumTape {
 
 /**************************************/
 
-impl Span<BigCount, BigBlock> {
+impl Span<BigBlock> {
     fn marks(&self) -> BigCount {
         self.iter()
             .filter(|block| !block.blank())

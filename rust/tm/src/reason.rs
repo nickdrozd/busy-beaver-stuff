@@ -7,10 +7,7 @@ use std::{
 
 use crate::{
     Color, Instr, Parse as _, Prog, Shift, Slot, State, Steps,
-    tape::{
-        self, Alignment, Block as _, LilBlock as Block,
-        LilCount as Count, Pos, Scan,
-    },
+    tape::{self, Alignment, Block as _, LilBlock as Block, Pos, Scan},
 };
 
 pub type Recs = usize;
@@ -581,7 +578,7 @@ enum TapeEnd {
     Unknown,
 }
 
-type SpanT = tape::Span<Count, Block>;
+type SpanT = tape::Span<Block>;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct Span {
