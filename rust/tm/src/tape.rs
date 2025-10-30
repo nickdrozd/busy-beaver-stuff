@@ -244,7 +244,7 @@ impl<B: Block<BigCount>> Span<BigCount, B> {
     }
 }
 
-impl<C: Countable + Into<usize>, B: Block<C>> Span<C, B> {
+impl<C: Countable + Copy + Into<usize>, B: Block<C>> Span<C, B> {
     pub fn compare_take(&self, prev: &Self, mut take: usize) -> bool {
         let mut s_blocks = self.iter();
         let mut p_blocks = prev.iter();
@@ -261,10 +261,8 @@ impl<C: Countable + Into<usize>, B: Block<C>> Span<C, B> {
                         return false;
                     }
 
-                    let s_rem: usize =
-                        s_block.get_count().clone().into();
-                    let p_rem: usize =
-                        p_block.get_count().clone().into();
+                    let s_rem: usize = (*s_block.get_count()).into();
+                    let p_rem: usize = (*p_block.get_count()).into();
 
                     if s_rem == 0 || p_rem == 0 {
                         return false;
