@@ -167,10 +167,9 @@ impl<Count: Countable, B: Block<Count>> Span<Count, B> {
                 .first()
                 .is_some_and(|block| block.get_color() == scan))
         .then(|| self.pop_block())
-        .map_or_else(
-            || Count::one(),
-            |block| Count::one() + block.get_count().clone(),
-        );
+        .map_or_else(Count::one, |block| {
+            Count::one() + block.get_count().clone()
+        });
 
         let next_scan = if self.blank() {
             0
