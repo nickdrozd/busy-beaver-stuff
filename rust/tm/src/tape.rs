@@ -40,6 +40,8 @@ pub trait Block<Count: Countable>: Display {
 
     fn add_count(&mut self, count: Count);
 
+    fn set_count(&mut self, count: Count);
+
     fn decrement(&mut self);
 
     fn is_single(&self) -> bool {
@@ -84,6 +86,10 @@ impl<Count: Countable> Block<Count> for BasicBlock<Count> {
 
     fn decrement(&mut self) {
         self.count -= Count::one();
+    }
+
+    fn set_count(&mut self, count: Count) {
+        self.count = count;
     }
 }
 
@@ -469,28 +475,12 @@ impl<C: Countable, B: Block<C>> Init for Tape<C, B> {
 
 pub type Index = (Shift, usize);
 
-trait IndexBlock: Block<BigCount> {
-    fn set_count(&mut self, count: BigCount);
-}
-
-impl IndexBlock for BigBlock {
-    fn set_count(&mut self, count: BigCount) {
-        self.count = count;
-    }
-}
-
-impl IndexBlock for EnumBlock {
-    fn set_count(&mut self, count: BigCount) {
-        self.block.set_count(count);
-    }
-}
-
 pub trait IndexTape {
     fn get_count(&self, index: &Index) -> &BigCount;
     fn set_count(&mut self, index: &Index, val: BigCount);
 }
 
-impl<B: Block<BigCount> + IndexBlock> IndexTape for Tape<BigCount, B> {
+impl<B: Block<BigCount>> IndexTape for Tape<BigCount, B> {
     fn get_count(&self, &(side, pos): &Index) -> &BigCount {
         let span = if side { &self.rspan } else { &self.lspan };
 
@@ -625,6 +615,10 @@ impl Block<BigCount> for EnumBlock {
 
     fn decrement(&mut self) {
         self.block.decrement();
+    }
+
+    fn set_count(&mut self, count: BigCount) {
+        self.block.set_count(count);
     }
 }
 
