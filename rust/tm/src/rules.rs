@@ -64,21 +64,17 @@ use DiffResult::*;
 use Op::*;
 
 fn calculate_diff(
-    a: &Count,
-    b: &Count,
-    c: &Count,
-    d: &Count,
+    a: Count,
+    b: Count,
+    c: Count,
+    d: Count,
 ) -> Option<DiffResult> {
     if a == b && b == c && c == d {
         return None;
     }
 
-    let (a, b, c, d): (Diff, Diff, Diff, Diff) = (
-        a.clone().into(),
-        b.clone().into(),
-        c.clone().into(),
-        d.clone().into(),
-    );
+    let (a, b, c, d): (Diff, Diff, Diff, Diff) =
+        (a.into(), b.into(), c.into(), d.into());
 
     let Some(diff_1) = b.checked_sub(&a) else {
         return Some(Unknown);
@@ -151,8 +147,8 @@ pub fn make_rule(
 
     let mut rule = Rule::new();
 
-    for (s, spans) in countses.iter().enumerate() {
-        for (i, (a, b, c, d)) in spans.iter().enumerate() {
+    for (s, spans) in countses.into_iter().enumerate() {
+        for (i, (a, b, c, d)) in spans.into_iter().enumerate() {
             let Some(diff) = calculate_diff(a, b, c, d) else {
                 continue;
             };
