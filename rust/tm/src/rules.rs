@@ -239,7 +239,11 @@ fn apply_plus(
 ) -> Option<Count> {
     let mult = diff.abs().to_biguint()?.checked_mul(times)?;
 
-    Some(count + mult)
+    Some(if diff.is_negative() {
+        count - mult
+    } else {
+        count + mult
+    })
 }
 
 fn apply_mult(
