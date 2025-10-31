@@ -2,8 +2,21 @@ use core::iter::{once, repeat_n};
 
 use crate::{
     Color, Prog, Shift, Steps,
-    tape::{Init as _, MedSpan as Span, MedTape as Tape},
+    config::Config,
+    tape::{Init, MedSpan as Span, MedTape as Tape, Scan},
 };
+
+type UnrolledTape = Vec<Color>;
+
+/**************************************/
+
+impl Prog {
+    pub fn opt_block(&self, steps: Steps) -> usize {
+        let unrolled = self.unroll_at_max_blocks(steps);
+
+        get_compr(&unrolled)
+    }
+}
 
 /**************************************/
 
@@ -20,7 +33,7 @@ impl Tape {
         self.lspan.len() + self.rspan.len()
     }
 
-    fn unroll(&self) -> Vec<Color> {
+    fn unroll(&self) -> UnrolledTape {
         self.lspan
             .unroll()
             .rev()
@@ -41,8 +54,14 @@ struct BlockMeasure {
     max_blocks_step: usize,
 }
 
-impl BlockMeasure {
-    fn new() -> Self {
+impl Scan for BlockMeasure {
+    fn scan(&self) -> Color {
+        self.tape.scan()
+    }
+}
+
+impl Init for BlockMeasure {
+    fn init() -> Self {
         Self {
             tape: Tape::init(),
 
@@ -52,6 +71,12 @@ impl BlockMeasure {
         }
     }
 
+    fn init_stepped() -> Self {
+        unimplemented!()
+    }
+}
+
+impl BlockMeasure {
     fn step(&mut self, shift: Shift, color: Color, skip: bool) {
         self.steps += 1;
 
@@ -69,68 +94,51 @@ impl BlockMeasure {
 /**************************************/
 
 impl Prog {
-    pub fn opt_block(&self, steps: Steps) -> usize {
-        let max_blocks_step = self.measure_blocks(steps);
-
-        let tape = self.unroll_tape(max_blocks_step);
-
-        let mut opt_size = 1;
-        let mut min_comp = 1 + tape.len();
-
-        for block_size in 1..tape.len() / 2 {
-            let compr_size = compr_eff(&tape, block_size);
-            if compr_size < min_comp {
-                min_comp = compr_size;
-                opt_size = block_size;
-            }
-        }
-
-        opt_size
+    fn unroll_at_max_blocks(&self, steps: Steps) -> UnrolledTape {
+        self.run_and_unroll(self.max_block_step(steps))
     }
 
-    fn measure_blocks(&self, steps: Steps) -> usize {
-        let mut state = 0;
-        let mut tape = BlockMeasure::new();
+    fn max_block_step(&self, steps: Steps) -> Steps {
+        let mut config: Config<BlockMeasure> = Config::init();
 
         for _ in 0..steps {
             let Some(&(color, shift, next_state)) =
-                self.get(&(state, tape.tape.scan))
+                self.get(&config.slot())
             else {
                 break;
             };
 
-            let same = state == next_state;
+            let same = config.state == next_state;
 
-            if same && tape.tape.at_edge(shift) {
+            if same && config.tape.tape.at_edge(shift) {
                 break;
             }
 
-            tape.step(shift, color, same);
+            config.tape.step(shift, color, same);
 
-            state = next_state;
+            config.state = next_state;
         }
 
-        tape.max_blocks_step
+        config.tape.max_blocks_step
     }
 
-    fn unroll_tape(&self, steps: Steps) -> Vec<Color> {
-        let mut state = 0;
-        let mut tape = Tape::init();
+    fn run_and_unroll(&self, steps: Steps) -> UnrolledTape {
+        let mut config: Config<Tape> = Config::init();
 
         for _ in 0..steps {
             let &(color, shift, next_state) =
-                self.get(&(state, tape.scan)).unwrap();
+                self.get(&config.slot()).unwrap();
 
-            tape.step(shift, color, state == next_state);
+            config.tape.step(shift, color, config.state == next_state);
 
-            state = next_state;
+            config.state = next_state;
         }
 
-        tape.unroll()
+        config.tape.unroll()
     }
 }
 
-fn compr_eff(tape: &[Color], k: usize) -> usize {
+fn compr_eff(tape: &UnrolledTape, k: usize) -> usize {
     let mut compr_size = tape.len();
 
     for i in (0..tape.len() - 2 * k).step_by(k) {
@@ -140,4 +148,19 @@ fn compr_eff(tape: &[Color], k: usize) -> usize {
     }
 
     compr_size
+}
+
+fn get_compr(tape: &UnrolledTape) -> usize {
+    let mut opt_size = 1;
+    let mut min_comp = 1 + tape.len();
+
+    for block_size in 1..tape.len() / 2 {
+        let compr_size = compr_eff(tape, block_size);
+        if compr_size < min_comp {
+            min_comp = compr_size;
+            opt_size = block_size;
+        }
+    }
+
+    opt_size
 }
