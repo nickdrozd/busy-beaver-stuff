@@ -116,23 +116,36 @@ trait AvailInstrs<'h> {
     fn on_remove(&mut self) {}
 }
 
-struct AvailStack<T>(Vec<T>);
+struct AvailStack<T>(Vec<(usize, T)>);
 
-impl<T: Copy> AvailStack<T> {
+impl<T: Copy + Eq> AvailStack<T> {
     fn new(val: T) -> Self {
-        Self(vec![val])
+        Self(vec![(1, val)])
     }
 
     fn top(&self) -> T {
-        *self.0.last().unwrap()
+        self.0.last().unwrap().1
     }
 
     fn push(&mut self, val: T) {
-        self.0.push(val);
+        if let Some((n, top)) = self.0.last_mut()
+            && *top == val
+        {
+            *n += 1;
+            return;
+        }
+
+        self.0.push((1, val));
     }
 
     fn pop(&mut self) {
-        self.0.pop();
+        let (n, _) = self.0.last_mut().unwrap();
+
+        if *n > 1 {
+            *n -= 1;
+        } else {
+            self.0.pop();
+        }
     }
 }
 
