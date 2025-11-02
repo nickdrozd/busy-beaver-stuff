@@ -560,7 +560,7 @@ Cast Integer ColorSpan where
       cast (mod n 10) :: cast t
 
 Cast Integer BlockSpan where
-  cast = cast . the ColorSpan . cast
+  cast = cast . cast {to=ColorSpan}
 
 Cast BlockSpan Integer where
-  cast = cast . the ColorSpan . cast
+  cast = cast . cast {to=ColorSpan}
