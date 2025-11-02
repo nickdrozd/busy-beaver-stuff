@@ -267,13 +267,15 @@ struct Tree<AvIn, Harv> {
 
 impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
     fn init(
-        (states, colors): Params,
+        params @ (states, colors): Params,
         halt: Slots,
-        instrs: AvIn,
+        instr_table: &'i AvIn::Table,
         sim_lim: Steps,
         harvester: Harv,
     ) -> Self {
         let prog = Prog::init_norm(states, colors);
+
+        let instrs = AvIn::new(params, instr_table);
 
         let init_avail = (min(3, states), min(3, colors));
 
@@ -447,9 +449,7 @@ impl<'i, Harv: Harvester> Tree<BasicInstrs<'i>, Harv> {
         harvester: Harv,
         instr_table: &'i InstrTable,
     ) -> Self {
-        let instrs = BasicInstrs::new(params, instr_table);
-
-        Self::init(params, halt, instrs, sim_lim, harvester)
+        Self::init(params, halt, instr_table, sim_lim, harvester)
     }
 }
 
@@ -460,9 +460,7 @@ impl<'i, Harv: Harvester> Tree<BlankInstrs<'i>, Harv> {
         harvester: Harv,
         instr_table: &'i BlankInstrTable,
     ) -> Self {
-        let instrs = BlankInstrs::new(params, instr_table);
-
-        Self::init(params, 0, instrs, sim_lim, harvester)
+        Self::init(params, 0, instr_table, sim_lim, harvester)
     }
 }
 
@@ -473,9 +471,7 @@ impl<'i, Harv: Harvester> Tree<SpinoutInstrs<'i>, Harv> {
         harvester: Harv,
         instr_table: &'i SpinoutInstrTable,
     ) -> Self {
-        let instrs = SpinoutInstrs::new(params, instr_table);
-
-        Self::init(params, 0, instrs, sim_lim, harvester)
+        Self::init(params, 0, instr_table, sim_lim, harvester)
     }
 }
 
