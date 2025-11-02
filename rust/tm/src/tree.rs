@@ -110,6 +110,10 @@ fn make_spinout_table(
 /**************************************/
 
 trait AvailInstrs<'h> {
+    type Table;
+
+    fn new(params: Params, instr_table: &'h Self::Table) -> Self;
+
     fn avail_instrs(&self, slot: &Slot, params: Params) -> &'h [Instr];
 
     fn on_insert(&mut self, _: &Slot, _: &Instr) {}
@@ -141,6 +145,12 @@ struct BasicInstrs<'h> {
 }
 
 impl<'h> AvailInstrs<'h> for BasicInstrs<'h> {
+    type Table = InstrTable;
+
+    fn new(_: Params, instr_table: &'h Self::Table) -> Self {
+        Self { instr_table }
+    }
+
     fn avail_instrs(&self, _: &Slot, (st, co): Params) -> &'h [Instr] {
         &self.instr_table[st][co]
     }
@@ -152,6 +162,21 @@ struct BlankInstrs<'h> {
 }
 
 impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
+    type Table = BlankInstrTable;
+
+    fn new(
+        (states, colors): Params,
+        instr_table: &'h Self::Table,
+    ) -> Self {
+        #[expect(clippy::cast_possible_truncation)]
+        let init_blanks = (states * (colors - 1)) as Slots;
+
+        Self {
+            instr_table,
+            avail_blanks: AvailStack::new(Some(init_blanks)),
+        }
+    }
+
     fn avail_instrs(
         &self,
         &(_, pr): &Slot,
@@ -185,6 +210,18 @@ struct SpinoutInstrs<'h> {
 }
 
 impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
+    type Table = SpinoutInstrTable;
+
+    fn new((states, _): Params, instr_table: &'h Self::Table) -> Self {
+        #[expect(clippy::cast_possible_truncation)]
+        let init_spins = (states - 1) as Slots;
+
+        Self {
+            instr_table,
+            avail_spinouts: AvailStack::new(Some(init_spins)),
+        }
+    }
+
     fn avail_instrs(
         &self,
         &(read_state, read_color): &Slot,
@@ -410,7 +447,7 @@ impl<'i, Harv: Harvester> Tree<BasicInstrs<'i>, Harv> {
         harvester: Harv,
         instr_table: &'i InstrTable,
     ) -> Self {
-        let instrs = BasicInstrs { instr_table };
+        let instrs = BasicInstrs::new(params, instr_table);
 
         Self::init(params, halt, instrs, sim_lim, harvester)
     }
@@ -418,19 +455,12 @@ impl<'i, Harv: Harvester> Tree<BasicInstrs<'i>, Harv> {
 
 impl<'i, Harv: Harvester> Tree<BlankInstrs<'i>, Harv> {
     fn blank(
-        params @ (states, colors): Params,
+        params: Params,
         sim_lim: Steps,
         harvester: Harv,
         instr_table: &'i BlankInstrTable,
     ) -> Self {
-        #[expect(clippy::cast_possible_truncation)]
-        let avail_blanks =
-            AvailStack::new(Some((states * (colors - 1)) as Slots));
-
-        let instrs = BlankInstrs {
-            instr_table,
-            avail_blanks,
-        };
+        let instrs = BlankInstrs::new(params, instr_table);
 
         Self::init(params, 0, instrs, sim_lim, harvester)
     }
@@ -438,19 +468,12 @@ impl<'i, Harv: Harvester> Tree<BlankInstrs<'i>, Harv> {
 
 impl<'i, Harv: Harvester> Tree<SpinoutInstrs<'i>, Harv> {
     fn spinout(
-        params @ (states, _): Params,
+        params: Params,
         sim_lim: Steps,
         harvester: Harv,
         instr_table: &'i SpinoutInstrTable,
     ) -> Self {
-        #[expect(clippy::cast_possible_truncation)]
-        let avail_spinouts =
-            AvailStack::new(Some((states - 1) as Slots));
-
-        let instrs = SpinoutInstrs {
-            instr_table,
-            avail_spinouts,
-        };
+        let instrs = SpinoutInstrs::new(params, instr_table);
 
         Self::init(params, 0, instrs, sim_lim, harvester)
     }
