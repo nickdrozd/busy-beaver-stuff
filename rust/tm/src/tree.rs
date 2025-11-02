@@ -110,7 +110,7 @@ fn make_spinout_table(
 /**************************************/
 
 trait AvailInstrs<'h> {
-    type Table;
+    type Table: Sync;
 
     fn new(params: Params, instr_table: &'h Self::Table) -> Self;
 
@@ -446,12 +446,22 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
 
     fn run_branch(
         init_instrs: &Instrs,
-        make_tree: impl Sync + Fn() -> Self,
+        params: Params,
+        halt: Slots,
+        sim_lim: Steps,
+        instr_table: &'i AvIn::Table,
+        harvester: impl Send + Sync + Fn() -> Harv,
     ) -> TreeResult<Harv> {
         init_instrs
             .par_iter()
             .map(|instr| {
-                let mut tree = make_tree();
+                let mut tree = Self::init(
+                    params,
+                    halt,
+                    sim_lim,
+                    harvester(),
+                    instr_table,
+                );
 
                 tree.init_branch(instr);
 
@@ -478,7 +488,7 @@ pub trait Harvester: Send + Sized {
         params: Params,
         goal: Option<Goal>,
         sim_lim: Steps,
-        harvester: impl Sync + Fn() -> Self,
+        harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> Self::Output {
         let results = match goal {
             Some(Goal::Halt) | None => Self::run_all(
@@ -501,7 +511,7 @@ pub trait Harvester: Send + Sized {
     fn run_instrs(
         instrs: Slots,
         sim_lim: Steps,
-        harvester: impl Sync + Fn() -> Self,
+        harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> Self::Output {
         let results = Self::run_all(
             (instrs.into(), instrs.into()),
@@ -517,33 +527,43 @@ pub trait Harvester: Send + Sized {
         params @ (states, colors): Params,
         halt: Slots,
         sim_lim: Steps,
-        harvester: impl Sync + Fn() -> Self,
+        harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> TreeResult<Self> {
         let (init_instrs, instr_table) =
             make_instr_table(states, colors);
 
-        BasicTree::run_branch(&init_instrs, || {
-            Tree::init(params, halt, sim_lim, harvester(), &instr_table)
-        })
+        BasicTree::run_branch(
+            &init_instrs,
+            params,
+            halt,
+            sim_lim,
+            &instr_table,
+            harvester,
+        )
     }
 
     fn run_blank(
         params @ (states, colors): Params,
         sim_lim: Steps,
-        harvester: impl Sync + Fn() -> Self,
+        harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> TreeResult<Self> {
         let (init_instrs, instr_table) =
             make_blank_table(states, colors);
 
-        BlankTree::run_branch(&init_instrs, || {
-            Tree::init(params, 0, sim_lim, harvester(), &instr_table)
-        })
+        BlankTree::run_branch(
+            &init_instrs,
+            params,
+            0,
+            sim_lim,
+            &instr_table,
+            harvester,
+        )
     }
 
     fn run_spinout(
         params @ (states, colors): Params,
         sim_lim: Steps,
-        harvester: impl Sync + Fn() -> Self,
+        harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> TreeResult<Self> {
         let (init_instrs, instr_table) =
             make_spinout_table(states, colors);
@@ -551,24 +571,27 @@ pub trait Harvester: Send + Sized {
         let (init_spins, init_other) =
             init_instrs.into_iter().partition(|&(_, _, tr)| tr == 1);
 
-        let mut spins_result =
-            BasicTree::run_branch(&init_spins, || {
-                Tree::init(
-                    params,
-                    0,
-                    sim_lim,
-                    harvester(),
-                    &instr_table[0],
-                )
-            });
+        let mut spins_result = BasicTree::run_branch(
+            &init_spins,
+            params,
+            0,
+            sim_lim,
+            &instr_table[0],
+            harvester,
+        );
 
         if states == 2 {
             return spins_result;
         }
 
-        let other_result = SpinoutTree::run_branch(&init_other, || {
-            Tree::init(params, 0, sim_lim, harvester(), &instr_table)
-        });
+        let other_result = SpinoutTree::run_branch(
+            &init_other,
+            params,
+            0,
+            sim_lim,
+            &instr_table,
+            harvester,
+        );
 
         spins_result.extend(other_result);
 

@@ -53,7 +53,7 @@ fn assert_params(
         params,
         get_goal(goal),
         steps,
-        || HoldoutVisited::new(pipeline),
+        &|| HoldoutVisited::new(pipeline),
     );
 
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
@@ -304,7 +304,7 @@ fn assert_reason(params: Params, goal: u8, expected: (usize, u64)) {
         params,
         get_goal(goal),
         TREE_LIM,
-        || ReasonHarvester::new(cant_reach),
+        &|| ReasonHarvester::new(cant_reach),
     );
 
     assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
@@ -350,7 +350,8 @@ fn test_reason() {
 fn test_collect() {
     println!("collect");
 
-    let result = Collector::run_params((2, 2), None, 4, Collector::new);
+    let result =
+        Collector::run_params((2, 2), None, 4, &Collector::new);
 
     assert_eq!(result.len(), 81);
 }
@@ -363,7 +364,7 @@ fn assert_instrs(
     expected: (u64, u64),
     pipeline: Pipeline,
 ) {
-    let result = HoldoutVisited::run_instrs(instrs, steps, || {
+    let result = HoldoutVisited::run_instrs(instrs, steps, &|| {
         HoldoutVisited::new(pipeline)
     });
 
@@ -423,7 +424,7 @@ fn test_instrs() {
 }
 
 fn test_8_instr() {
-    let result = Visited::run_instrs(8, 500, Visited::new);
+    let result = Visited::run_instrs(8, 500, &Visited::new);
 
     assert_eq!(result, 12_835_863_274);
 }
