@@ -116,6 +116,26 @@ trait AvailInstrs<'h> {
     fn on_remove(&mut self) {}
 }
 
+struct AvailStack<T>(Vec<T>);
+
+impl<T: Copy> AvailStack<T> {
+    fn new(val: T) -> Self {
+        Self(vec![val])
+    }
+
+    fn top(&self) -> T {
+        *self.0.last().unwrap()
+    }
+
+    fn push(&mut self, val: T) {
+        self.0.push(val);
+    }
+
+    fn pop(&mut self) {
+        self.0.pop();
+    }
+}
+
 struct BasicInstrs<'h> {
     instr_table: &'h InstrTable,
 }
@@ -128,14 +148,7 @@ impl<'h> AvailInstrs<'h> for BasicInstrs<'h> {
 
 struct BlankInstrs<'h> {
     instr_table: &'h BlankInstrTable,
-    avail_blanks: Vec<Option<Slots>>,
-}
-
-impl BlankInstrs<'_> {
-    #[expect(clippy::unwrap_in_result)]
-    fn avail_blanks(&self) -> Option<Slots> {
-        *self.avail_blanks.last().unwrap()
-    }
+    avail_blanks: AvailStack<Option<Slots>>,
 }
 
 impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
@@ -145,15 +158,16 @@ impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
         (st, co): Params,
     ) -> &'h [Instr] {
         &self.instr_table
-            [usize::from(pr != 0 && self.avail_blanks() == Some(1))][st]
-            [co]
+            [usize::from(pr != 0 && self.avail_blanks.top() == Some(1))]
+            [st][co]
     }
 
     fn on_insert(&mut self, &(_, sc): &Slot, &(pr, _, _): &Instr) {
         let next = if pr == 0 && sc != 0 {
             None
         } else {
-            self.avail_blanks()
+            self.avail_blanks
+                .top()
                 .map(|rem| if sc != 0 { rem - 1 } else { rem })
         };
 
@@ -167,14 +181,7 @@ impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
 
 struct SpinoutInstrs<'h> {
     instr_table: &'h SpinoutInstrTable,
-    avail_spinouts: Vec<Option<Slots>>,
-}
-
-impl SpinoutInstrs<'_> {
-    #[expect(clippy::unwrap_in_result)]
-    fn avail_spinouts(&self) -> Option<Slots> {
-        *self.avail_spinouts.last().unwrap()
-    }
+    avail_spinouts: AvailStack<Option<Slots>>,
 }
 
 impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
@@ -184,7 +191,7 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
         (states, colors): Params,
     ) -> &'h [Instr] {
         let spinout =
-            read_color == 0 && self.avail_spinouts() == Some(1);
+            read_color == 0 && self.avail_spinouts.top() == Some(1);
 
         &(if spinout {
             &self.instr_table[1][1 + read_state as usize]
@@ -195,11 +202,11 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
 
     fn on_insert(&mut self, &(st, co): &Slot, &(_, _, tr): &Instr) {
         let next = if co != 0 {
-            self.avail_spinouts()
+            self.avail_spinouts.top()
         } else if st == tr {
             None
         } else {
-            self.avail_spinouts().map(|rem| rem - 1)
+            self.avail_spinouts.top().map(|rem| rem - 1)
         };
 
         self.avail_spinouts.push(next);
@@ -216,7 +223,7 @@ struct Tree<AvIn, Harv> {
     prog: Prog,
     instrs: AvIn,
     sim_lim: Steps,
-    avail_params: Vec<Params>,
+    avail_params: AvailStack<Params>,
     remaining_slots: Slots,
     harvester: Harv,
 }
@@ -233,7 +240,7 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
 
         let init_avail = (min(3, states), min(3, colors));
 
-        let avail_params = vec![init_avail];
+        let avail_params = AvailStack::new(init_avail);
 
         #[expect(clippy::cast_possible_truncation)]
         let remaining_slots = prog.dimension as Slots - halt - 2;
@@ -280,12 +287,8 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
         self.instrs.on_remove();
     }
 
-    fn avail_params(&self) -> Params {
-        *self.avail_params.last().unwrap()
-    }
-
     fn avail_instrs(&self, slot: &Slot) -> &'i [Instr] {
-        self.instrs.avail_instrs(slot, self.avail_params())
+        self.instrs.avail_instrs(slot, self.avail_params.top())
     }
 
     #[expect(clippy::cast_possible_truncation)]
@@ -294,7 +297,7 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
         (slot_st, slot_co): &Slot,
         (instr_co, _, instr_st): &Instr,
     ) {
-        let (mut av_st, mut av_co) = self.avail_params();
+        let (mut av_st, mut av_co) = self.avail_params.top();
 
         if av_st < self.prog.states
             && 1 + max(slot_st, instr_st) == av_st as State
@@ -421,7 +424,8 @@ impl<'i, Harv: Harvester> Tree<BlankInstrs<'i>, Harv> {
         instr_table: &'i BlankInstrTable,
     ) -> Self {
         #[expect(clippy::cast_possible_truncation)]
-        let avail_blanks = vec![Some((states * (colors - 1)) as Slots)];
+        let avail_blanks =
+            AvailStack::new(Some((states * (colors - 1)) as Slots));
 
         let instrs = BlankInstrs {
             instr_table,
@@ -440,7 +444,8 @@ impl<'i, Harv: Harvester> Tree<SpinoutInstrs<'i>, Harv> {
         instr_table: &'i SpinoutInstrTable,
     ) -> Self {
         #[expect(clippy::cast_possible_truncation)]
-        let avail_spinouts = vec![Some((states - 1) as Slots)];
+        let avail_spinouts =
+            AvailStack::new(Some((states - 1) as Slots));
 
         let instrs = SpinoutInstrs {
             instr_table,
