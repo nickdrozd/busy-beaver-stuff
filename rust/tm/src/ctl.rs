@@ -67,23 +67,11 @@ fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: Goal) -> bool {
             return true;
         };
 
-        #[cfg(debug_assertions)]
-        {
-            println!("todo: {}", todo.len());
-            println!("running: {config}");
-        }
-
         if seen.len() > CONFIG_LIMIT {
-            #[cfg(debug_assertions)]
-            println!("seen limit");
-
             return false;
         }
 
         if seen.contains(&config) {
-            #[cfg(debug_assertions)]
-            println!("seen in loop: {config}");
-
             continue;
         }
 
@@ -98,24 +86,12 @@ fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: Goal) -> bool {
         };
 
         if todo.len() > DEPTH_LIMIT {
-            #[cfg(debug_assertions)]
-            println!("depth limit");
-
             return false;
-        }
-
-        #[cfg(debug_assertions)]
-        {
-            println!("adding: {config}");
-            println!("adding: {branched}");
         }
 
         todo.push(config);
         todo.push(branched);
     }
-
-    #[cfg(debug_assertions)]
-    println!("config limit");
 
     false
 }
@@ -131,19 +107,10 @@ impl Config {
         seen: &mut Set<Self>,
     ) -> RunResult {
         for _ in 0..steps {
-            #[cfg(debug_assertions)]
-            println!("{self}");
-
             let Some(instr) = prog.get_instr(&self.slot()) else {
                 return if goal.is_halt() {
-                    #[cfg(debug_assertions)]
-                    println!("halt reached");
-
                     Reached
                 } else {
-                    #[cfg(debug_assertions)]
-                    println!("unreachable");
-
                     Unreachable
                 };
             };
@@ -152,16 +119,8 @@ impl Config {
 
             if state == self.state && self.tape.at_edge(shift) {
                 return match goal {
-                    Spinout => {
-                        #[cfg(debug_assertions)]
-                        println!("spinout reached");
-
-                        Reached
-                    },
+                    Spinout => Reached,
                     Blank if self.tape.blank() => {
-                        #[cfg(debug_assertions)]
-                        println!("blank reached");
-
                         unreachable!();
                         // return Reached;
                     },
@@ -171,9 +130,6 @@ impl Config {
 
             if self.step(&instr) {
                 if self.tape.blank() && goal.is_blank() {
-                    #[cfg(debug_assertions)]
-                    println!("blank reached");
-
                     return Reached;
                 }
 
@@ -190,9 +146,6 @@ impl Config {
 
             return Branch(branched);
         }
-
-        #[cfg(debug_assertions)]
-        println!("step limit");
 
         StepLimit
     }

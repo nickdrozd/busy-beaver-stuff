@@ -118,13 +118,7 @@ fn all_segments_reached(
 
     let branches = &prog.branches;
 
-    #[cfg(debug_assertions)]
-    println!();
-
     while let Some(mut config) = configs.next() {
-        #[cfg(debug_assertions)]
-        println!("{config}");
-
         if let Some(result) =
             prog.prog.run_to_edge(&mut config, goal, &mut configs)
         {
@@ -449,9 +443,6 @@ impl Prog {
             }
 
             config.step(&instr);
-
-            #[cfg(debug_assertions)]
-            println!("    {config}");
 
             let (print, _, state) = instr;
 
