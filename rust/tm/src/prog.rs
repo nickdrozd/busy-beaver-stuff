@@ -101,28 +101,18 @@ impl Prog {
     }
 
     pub fn halt_slots(&self) -> Set<Slot> {
-        let mut slots = Set::new();
-
         let (states, colors) = self.max_reached();
 
-        for state in 0..=states {
-            for color in 0..=colors {
-                let slot = (state, color);
-
-                if self.get(&slot).is_some() {
-                    continue;
-                }
-
-                if color != 0 && !self.reaches_both_sides(state, color)
-                {
-                    continue;
-                }
-
-                slots.insert(slot);
-            }
-        }
-
-        slots
+        (0..=states)
+            .flat_map(|state| {
+                (0..=colors).map(move |color| (state, color))
+            })
+            .filter(|slot @ &(state, color)| {
+                self.get(slot).is_none()
+                    && (color == 0
+                        || self.reaches_both_sides(state, color))
+            })
+            .collect()
     }
 
     pub fn erase_slots(&self) -> Set<Slot> {
