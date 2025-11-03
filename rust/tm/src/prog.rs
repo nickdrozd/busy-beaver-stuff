@@ -19,7 +19,7 @@ pub struct Prog {
 impl From<Table> for Prog {
     fn from(table: Table) -> Self {
         let states = table.len();
-        let colors = table.first().map_or(0, Vec::len);
+        let colors = table.first().unwrap().len();
 
         Self {
             table,
