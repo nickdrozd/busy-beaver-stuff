@@ -112,7 +112,9 @@ fn make_spinout_table(
 trait AvailInstrs<'h> {
     type Table: Sync;
 
-    fn new(params: Params, instr_table: &'h Self::Table) -> Self;
+    fn new<const states: usize, const colors: usize>(
+        instr_table: &'h Self::Table,
+    ) -> Self;
 
     fn avail_instrs(&self, slot: &Slot, params: Params) -> &'h [Instr];
 
@@ -147,7 +149,9 @@ struct BasicInstrs<'h> {
 impl<'h> AvailInstrs<'h> for BasicInstrs<'h> {
     type Table = InstrTable;
 
-    fn new(_: Params, instr_table: &'h Self::Table) -> Self {
+    fn new<const states: usize, const colors: usize>(
+        instr_table: &'h Self::Table,
+    ) -> Self {
         Self { instr_table }
     }
 
@@ -164,8 +168,7 @@ struct BlankInstrs<'h> {
 impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
     type Table = BlankInstrTable;
 
-    fn new(
-        (states, colors): Params,
+    fn new<const states: usize, const colors: usize>(
         instr_table: &'h Self::Table,
     ) -> Self {
         let init_blanks = states * (colors - 1);
@@ -211,7 +214,9 @@ struct SpinoutInstrs<'h> {
 impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
     type Table = SpinoutInstrTable;
 
-    fn new((states, _): Params, instr_table: &'h Self::Table) -> Self {
+    fn new<const states: usize, const colors: usize>(
+        instr_table: &'h Self::Table,
+    ) -> Self {
         let init_spins = states - 1;
 
         Self {
@@ -264,8 +269,7 @@ struct Tree<AvIn, Harv> {
 }
 
 impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
-    fn init(
-        params @ (states, colors): Params,
+    fn init<const states: usize, const colors: usize>(
         halt: Slots,
         sim_lim: Steps,
         harvester: Harv,
@@ -273,7 +277,7 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
     ) -> Self {
         let prog = Prog::init_norm(states, colors);
 
-        let instrs = AvIn::new(params, instr_table);
+        let instrs = AvIn::new::<states, colors>(instr_table);
 
         let init_avail = (min(3, states), min(3, colors));
 
@@ -441,9 +445,8 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
         });
     }
 
-    fn run_branch(
+    fn run_branch<const states: usize, const colors: usize>(
         init_instrs: &Instrs,
-        params: Params,
         halt: Slots,
         sim_lim: Steps,
         instr_table: &'i AvIn::Table,
@@ -452,8 +455,7 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
         init_instrs
             .par_iter()
             .map(|instr| {
-                let mut tree = Self::init(
-                    params,
+                let mut tree = Self::init::<states, colors>(
                     halt,
                     sim_lim,
                     harvester(),
@@ -481,37 +483,33 @@ pub trait Harvester: Send + Sized {
 
     fn combine(results: &TreeResult<Self>) -> Self::Output;
 
-    fn run_params(
-        params: Params,
+    fn run_params<const states: usize, const colors: usize>(
         goal: Option<Goal>,
         sim_lim: Steps,
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> Self::Output {
         let results = match goal {
-            Some(Goal::Halt) | None => Self::run_all(
-                params,
+            Some(Goal::Halt) | None => Self::run_all::<states, colors>(
                 Slots::from(goal.is_some()),
                 sim_lim,
                 harvester,
             ),
             Some(Goal::Blank) => {
-                Self::run_blank(params, sim_lim, harvester)
+                Self::run_blank::<states, colors>(sim_lim, harvester)
             },
             Some(Goal::Spinout) => {
-                Self::run_spinout(params, sim_lim, harvester)
+                Self::run_spinout::<states, colors>(sim_lim, harvester)
             },
         };
 
         Self::combine(&results)
     }
 
-    fn run_instrs(
-        instrs: Slots,
+    fn run_instrs<const instrs: usize>(
         sim_lim: Steps,
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> Self::Output {
-        let results = Self::run_all(
-            (instrs, instrs),
+        let results = Self::run_all::<instrs, instrs>(
             (instrs * instrs) - instrs,
             sim_lim,
             harvester,
@@ -520,8 +518,7 @@ pub trait Harvester: Send + Sized {
         Self::combine(&results)
     }
 
-    fn run_all(
-        params @ (states, colors): Params,
+    fn run_all<const states: usize, const colors: usize>(
         halt: Slots,
         sim_lim: Steps,
         harvester: &(impl Send + Sync + Fn() -> Self),
@@ -529,9 +526,8 @@ pub trait Harvester: Send + Sized {
         let (init_instrs, instr_table) =
             make_instr_table(states, colors);
 
-        BasicTree::run_branch(
+        BasicTree::run_branch::<states, colors>(
             &init_instrs,
-            params,
             halt,
             sim_lim,
             &instr_table,
@@ -539,17 +535,15 @@ pub trait Harvester: Send + Sized {
         )
     }
 
-    fn run_blank(
-        params @ (states, colors): Params,
+    fn run_blank<const states: usize, const colors: usize>(
         sim_lim: Steps,
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> TreeResult<Self> {
         let (init_instrs, instr_table) =
             make_blank_table(states, colors);
 
-        BlankTree::run_branch(
+        BlankTree::run_branch::<states, colors>(
             &init_instrs,
-            params,
             0,
             sim_lim,
             &instr_table,
@@ -557,8 +551,7 @@ pub trait Harvester: Send + Sized {
         )
     }
 
-    fn run_spinout(
-        params @ (states, colors): Params,
+    fn run_spinout<const states: usize, const colors: usize>(
         sim_lim: Steps,
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> TreeResult<Self> {
@@ -568,9 +561,8 @@ pub trait Harvester: Send + Sized {
         let (init_spins, init_other) =
             init_instrs.into_iter().partition(|&(_, _, tr)| tr == 1);
 
-        let mut spins_result = BasicTree::run_branch(
+        let mut spins_result = BasicTree::run_branch::<states, colors>(
             &init_spins,
-            params,
             0,
             sim_lim,
             &instr_table[0],
@@ -581,9 +573,8 @@ pub trait Harvester: Send + Sized {
             return spins_result;
         }
 
-        let other_result = SpinoutTree::run_branch(
+        let other_result = SpinoutTree::run_branch::<states, colors>(
             &init_other,
-            params,
             0,
             sim_lim,
             &instr_table,

@@ -64,8 +64,7 @@ fn assert_params<const states: usize, const colors: usize>(
 ) {
     let params = (states, colors);
 
-    let result = HoldoutVisited::run_params(
-        params,
+    let result = HoldoutVisited::run_params::<states, colors>(
         get_goal(goal),
         steps,
         &|| HoldoutVisited::new(pipeline),
@@ -320,8 +319,7 @@ fn assert_reason<const states: usize, const colors: usize>(
         _ => unreachable!(),
     };
 
-    let result = ReasonHarvester::run_params(
-        params,
+    let result = ReasonHarvester::run_params::<states, colors>(
         get_goal(goal),
         TREE_LIM,
         &|| ReasonHarvester::new(cant_reach),
@@ -381,7 +379,7 @@ fn test_collect() {
     println!("collect");
 
     let result =
-        Collector::run_params((2, 2), None, 4, &Collector::new);
+        Collector::run_params::<2, 2>(None, 4, &Collector::new);
 
     assert_eq!(result.len(), 81);
 }
@@ -393,7 +391,7 @@ fn assert_instrs<const instrs: usize>(
     expected: (u64, u64),
     pipeline: Pipeline,
 ) {
-    let result = HoldoutVisited::run_instrs(instrs, steps, &|| {
+    let result = HoldoutVisited::run_instrs::<instrs>(steps, &|| {
         HoldoutVisited::new(pipeline)
     });
 
@@ -465,7 +463,7 @@ fn test_instrs() {
 }
 
 fn test_8_instr() {
-    let result = Visited::run_instrs(8, 500, &Visited::new);
+    let result = Visited::run_instrs::<8>(500, &Visited::new);
 
     assert_eq!(result, 12_835_863_274);
 }
