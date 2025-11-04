@@ -13,7 +13,7 @@ const MAX_DEPTH: usize = 100_000;
 
 /**************************************/
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn cps_cant_halt(&self, rad: Radius) -> bool {
         self.cps_run(rad, Halt)
     }
@@ -35,7 +35,11 @@ impl Prog {
 
 /**************************************/
 
-fn cps_cant_reach(prog: &Prog, rad: Radius, goal: Goal) -> bool {
+fn cps_cant_reach<const s: usize, const c: usize>(
+    prog: &Prog<s, c>,
+    rad: Radius,
+    goal: Goal,
+) -> bool {
     let mut configs = Configs::init(rad);
 
     for _ in 0..MAX_LOOPS {

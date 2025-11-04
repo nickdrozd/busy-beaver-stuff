@@ -10,7 +10,7 @@ type UnrolledTape = Vec<Color>;
 
 /**************************************/
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn opt_block(&self, steps: Steps) -> usize {
         let unrolled = self.unroll_at_max_blocks(steps);
 
@@ -93,7 +93,7 @@ impl BlockMeasure {
 
 /**************************************/
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     fn unroll_at_max_blocks(&self, steps: Steps) -> UnrolledTape {
         self.run_and_unroll(self.max_block_step(steps))
     }

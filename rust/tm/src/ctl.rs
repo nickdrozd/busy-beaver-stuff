@@ -19,7 +19,7 @@ const CONFIG_LIMIT: usize = 3_000;
 
 /**************************************/
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn ctl_cant_halt(&self, steps: Steps) -> bool {
         let blocks = self.opt_block(OPT_BLOCK);
 

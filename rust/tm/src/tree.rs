@@ -260,7 +260,7 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
 /**************************************/
 
 struct Tree<const states: usize, const colors: usize, AvIn, Harv> {
-    prog: Prog,
+    prog: Prog<states, colors>,
     instrs: AvIn,
     sim_lim: Steps,
     avail_params: AvailStack<Params>,
@@ -282,7 +282,7 @@ impl<
         harvester: Harv,
         instr_table: &'i AvIn::Table,
     ) -> Self {
-        let prog = Prog::init_norm(states, colors);
+        let prog = Prog::<states, colors>::init_norm();
 
         let instrs = AvIn::new::<states, colors>(instr_table);
 
@@ -290,7 +290,7 @@ impl<
 
         let avail_params = AvailStack::new(init_avail);
 
-        let remaining_slots = prog.dimension - halt - 2;
+        let remaining_slots = (states * colors) - halt - 2;
 
         Self {
             prog,
@@ -346,13 +346,13 @@ impl<
     ) {
         let (mut av_st, mut av_co) = self.avail_params.top();
 
-        if av_st < self.prog.states
+        if av_st < states
             && 1 + max(slot_st, instr_st) == av_st as State
         {
             av_st += 1;
         }
 
-        if av_co < self.prog.colors
+        if av_co < colors
             && 1 + max(slot_co, instr_co) == av_co as Color
         {
             av_co += 1;
@@ -422,8 +422,7 @@ impl<
 
             self.with_insert(&slot, last_instr, |tree| {
                 if matches!(
-                    tree.prog
-                        .run_basic(tree.prog.dimension, &mut config),
+                    tree.prog.run_basic(states * colors, &mut config),
                     StepLimit
                 ) {
                     tree.harvest(PassConfig::Owned(config));
@@ -487,7 +486,11 @@ type SpinoutTree<'i, const s: usize, const c: usize, H> =
 pub trait Harvester<const states: usize, const colors: usize>:
     Send + Sized
 {
-    fn harvest(&mut self, prog: &Prog, config: PassConfig<'_>);
+    fn harvest(
+        &mut self,
+        prog: &Prog<states, colors>,
+        config: PassConfig<'_>,
+    );
 
     type Output;
 
