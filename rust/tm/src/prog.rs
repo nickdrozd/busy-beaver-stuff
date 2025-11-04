@@ -1,3 +1,5 @@
+use core::fmt::{self, Display};
+
 use std::collections::BTreeSet as Set;
 
 use crate::{Color, Colors, Instr, Parse, Shift, Slot, State, States};
@@ -30,6 +32,26 @@ impl From<Table> for Prog {
     }
 }
 
+impl Display for Prog {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (states, colors) = self.max_reached();
+
+        write!(
+            f,
+            "{}",
+            (0..=states)
+                .map(|state| {
+                    (0..=colors)
+                        .map(|color| self.get(&(state, color)).show())
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                })
+                .collect::<Vec<_>>()
+                .join("  ")
+        )
+    }
+}
+
 impl Prog {
     fn new(states: States, colors: Colors) -> Self {
         Self {
@@ -56,22 +78,8 @@ impl Prog {
             .into()
     }
 
-    pub fn show(&self) -> String {
-        let (states, colors) = self.max_reached();
-
-        (0..=states)
-            .map(|state| {
-                (0..=colors)
-                    .map(|color| self.get(&(state, color)).show())
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            })
-            .collect::<Vec<_>>()
-            .join("  ")
-    }
-
     pub fn print(&self) {
-        println!("{}", self.show());
+        println!("{self}");
     }
 
     pub fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
@@ -205,7 +213,7 @@ fn test_prog() {
     ];
 
     for prog in progs {
-        assert_eq!(Prog::read(prog).show(), prog);
+        assert_eq!(Prog::read(prog).to_string(), prog);
     }
 }
 
@@ -246,7 +254,7 @@ const SPARSE_SHOW: &[(&str, &str)] = &[
 #[test]
 fn test_sparse_show() {
     for &(show, prog) in SPARSE_SHOW {
-        assert_eq!(Prog::read(prog).show(), show);
+        assert_eq!(Prog::read(prog).to_string(), show);
     }
 }
 

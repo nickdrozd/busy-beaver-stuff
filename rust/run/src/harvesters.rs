@@ -42,7 +42,7 @@ impl Collector {
 
 impl Harvester for Collector {
     fn harvest(&mut self, prog: &Prog, _: PassConfig<'_>) {
-        self.progs.push(prog.show());
+        self.progs.push(prog.to_string());
     }
 
     type Output = Vec<String>;
