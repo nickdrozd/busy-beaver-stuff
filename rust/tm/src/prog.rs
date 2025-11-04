@@ -48,6 +48,28 @@ impl Prog {
         prog
     }
 
+    pub fn read(prog: &str) -> Self {
+        prog.trim()
+            .split("  ")
+            .map(|colors| colors.split(' ').map(Parse::read).collect())
+            .collect::<Vec<_>>()
+            .into()
+    }
+
+    pub fn show(&self) -> String {
+        let (states, colors) = self.max_reached();
+
+        (0..=states)
+            .map(|state| {
+                (0..=colors)
+                    .map(|color| self.get(&(state, color)).show())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .collect::<Vec<_>>()
+            .join("  ")
+    }
+
     pub fn print(&self) {
         println!("{}", self.show());
     }
@@ -150,32 +172,6 @@ impl Prog {
         }
 
         false
-    }
-}
-
-/**************************************/
-
-impl Parse for Prog {
-    fn read(prog: &str) -> Self {
-        prog.trim()
-            .split("  ")
-            .map(|colors| colors.split(' ').map(Parse::read).collect())
-            .collect::<Vec<_>>()
-            .into()
-    }
-
-    fn show(&self) -> String {
-        let (states, colors) = self.max_reached();
-
-        (0..=states)
-            .map(|state| {
-                (0..=colors)
-                    .map(|color| self.get(&(state, color)).show())
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            })
-            .collect::<Vec<_>>()
-            .join("  ")
     }
 }
 

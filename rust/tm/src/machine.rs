@@ -352,9 +352,6 @@ fn has_recurrence(transcript: &Transcript) -> bool {
 /**************************************/
 
 #[cfg(test)]
-use crate::Parse as _;
-
-#[cfg(test)]
 const REC_PROGS: &[(&str, bool)] = &[
     ("1RB 0LB  1LA 0RB", true),
     ("1RB 1LB  1LA 1RA", true),

@@ -464,9 +464,6 @@ impl TapeColorConverter {
 /**************************************/
 
 #[cfg(test)]
-use crate::Parse as _;
-
-#[cfg(test)]
 #[expect(private_bounds)]
 impl<L: Logic> MacroProg<'_, L> {
     fn params(&self) -> (MacroState, MacroColor) {

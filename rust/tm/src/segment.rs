@@ -773,9 +773,6 @@ impl<'p> AnalyzedProg<'p> {
 /**************************************/
 
 #[cfg(test)]
-use crate::Parse as _;
-
-#[cfg(test)]
 impl Tape {
     #[track_caller]
     fn scan(&self) -> Option<Color> {

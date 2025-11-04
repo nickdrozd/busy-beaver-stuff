@@ -40,8 +40,6 @@ impl Collector {
     }
 }
 
-use tm::Parse as _;
-
 impl Harvester for Collector {
     fn harvest(&mut self, prog: &Prog, _: PassConfig<'_>) {
         self.progs.push(prog.show());

@@ -58,9 +58,6 @@ impl Prog {
 }
 
 #[cfg(test)]
-use crate::Parse as _;
-
-#[cfg(test)]
 const UNCONNECTED: &[&str] = &[
     "1RB 1LB  1LA 1LC  1RC 0LC",
     "1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD",
