@@ -41,7 +41,7 @@ impl BackwardResult {
 
 /**************************************/
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn cant_halt(&self, steps: Steps) -> BackwardResult {
         cant_reach(self, steps, self.halt_slots(), halt_configs)
     }
@@ -64,8 +64,8 @@ type Entry = (Slot, (Color, Shift));
 type Entries = Vec<Entry>;
 type Entrypoints = Dict<State, (Entries, Entries)>;
 
-fn cant_reach<T: Ord>(
-    prog: &Prog,
+fn cant_reach<const s: usize, const c: usize, T: Ord>(
+    prog: &Prog<s, c>,
     steps: Steps,
     mut slots: Set<(State, T)>,
     get_configs: impl Fn(&Set<(State, T)>) -> Configs,
@@ -312,7 +312,7 @@ fn get_blanks(configs: &Configs) -> BlankStates {
 
 /**************************************/
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     fn get_entrypoints(&self) -> Entrypoints {
         let mut entrypoints = Entrypoints::new();
 
@@ -343,7 +343,7 @@ fn read_entry(entry: &str) -> Entry {
 
 #[cfg(test)]
 macro_rules! assert_entrypoints {
-    ($($prog:literal => [$($state:literal => ($same:expr, $diff:expr)),* $(,)?]),* $(,)?) => {
+    ($(($prog:literal, ($s:literal, $c:literal)) => [$($state:literal => ($same:expr, $diff:expr)),* $(,)?]),* $(,)?) => {
         $({
             let mut entrypoints = Entrypoints::new();
 
@@ -359,7 +359,7 @@ macro_rules! assert_entrypoints {
 
             assert_eq!(
                 entrypoints,
-                Prog::from($prog).get_entrypoints(),
+                Prog::<$s, $c>::from($prog).get_entrypoints(),
             );
         })*
     };
@@ -368,61 +368,61 @@ macro_rules! assert_entrypoints {
 #[test]
 fn test_entrypoints() {
     assert_entrypoints!(
-        "1RB ...  1LB 0RB" => [
+        ("1RB ...  1LB 0RB", (2, 2)) => [
             'B' => (["B0:1L", "B1:0R"], ["A0:1RB"])
         ],
-        "1RB ... ...  0LB 2RB 0RB" => [
+        ("1RB ... ...  0LB 2RB 0RB", (2, 3)) => [
             'B' => (["B0:0L", "B1:2R", "B2:0R"], ["A0:1RB"])
         ],
-        "1RB ... 2LB  2LB 2RA 0RA" => [
+        ("1RB ... 2LB  2LB 2RA 0RA", (2, 3)) => [
             'A' => ([], ["B1:2R", "B2:0R"]),
             'B' => (["B0:2L"], ["A0:1R", "A2:2L"])
         ],
-        "1RB 0RB 1RA  1LB 2RB 0LA" => [
+        ("1RB 0RB 1RA  1LB 2RB 0LA", (2, 3)) => [
             'A' => (["A2:1R"], ["B2:0L"]),
             'B' => (["B0:1L", "B1:2R"], ["A0:1R", "A1:0R"])
         ],
-        "1RB 1RC  0LA 1RA  0LB ..." => [
+        ("1RB 1RC  0LA 1RA  0LB ...", (3, 2)) => [
             'A' => ([], ["B0:0L", "B1:1R"]),
             'B' => ([], ["A0:1R", "C0:0L"]),
             'C' => ([], ["A1:1R"])
         ],
-        "1RB ...  0LB 1RC  0LC 1RA" => [
+        ("1RB ...  0LB 1RC  0LC 1RA", (3, 2)) => [
             'A' => ([], ["C1:1R"]),
             'B' => (["B0:0L"], ["A0:1R"]),
             'C' => (["C0:0L"], ["B1:1R"])
         ],
-        "1RB 1LB  1LA 1LC  1RC 0LC" => [
+        ("1RB 1LB  1LA 1LC  1RC 0LC", (3, 2)) => [
             'A' => ([], ["B0:1L"]),
             'B' => ([], ["A0:1R", "A1:1L"]),
             'C' => (["C0:1R", "C1:0L"], ["B1:1L"])
         ],
-        "1RB 0LC  1LB 1LA  1RC 0LC" => [
+        ("1RB 0LC  1LB 1LA  1RC 0LC", (3, 2)) => [
             'A' => ([], ["B1:1L"]),
             'B' => (["B0:1L"], ["A0:1R"]),
             'C' => (["C0:1R", "C1:0L"], ["A1:0L"])
         ],
-        "1RB 2RA 0RB 2RB  1LB 3RB 3LA 0LA" => [
+        ("1RB 2RA 0RB 2RB  1LB 3RB 3LA 0LA", (2, 4)) => [
             'A' => (["A1:2R"], ["B2:3L", "B3:0L"]),
             'B' => (["B0:1L", "B1:3R"], ["A0:1R", "A2:0R", "A3:2R"])
         ],
-        "1RB ...  0LC ...  1RC 1LD  0LC 0LD" => [
+        ("1RB ...  0LC ...  1RC 1LD  0LC 0LD", (4, 2)) => [
             'B' => ([], ["A0:1RB"]),
             'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
             'D' => (["D1:0L"], ["C1:1L"])
         ],
-        "1RB ...  0LC ...  1RC 1LD  0LC 0LB" => [
+        ("1RB ...  0LC ...  1RC 1LD  0LC 0LB", (4, 2)) => [
             'B' => ([], ["A0:1RB", "D1:0L"]),
             'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
             'D' => ([], ["C1:1L"])
         ],
-        "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA" => [
+        ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", (4, 2)) => [
             'A' => ([], ["D1:1L"]),
             'B' => (["B1:1R"], ["A0:1R"]),
             'C' => (["C1:0R"], ["A1:1L"]),
             'D' => (["D0:1L"], ["B0:1R", "C0:0R"])
         ],
-        "1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB" => [
+        ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", (5, 2)) => [
             'A' => ([], ["D1:1L", "E0:1L"]),
             'B' => ([], ["A0:1R", "E1:0L"]),
             'C' => ([], ["A1:1L", "B0:0L"]),

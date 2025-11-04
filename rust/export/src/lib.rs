@@ -9,26 +9,77 @@ use tm::{
     segment::SegmentResult as SegmentResultRs,
 };
 
+/**************************************/
+
+macro_rules! parse {
+    ($prog:expr, $action:expr) => {{
+        let prog = $prog;
+
+        let mut split = prog.split("  ");
+
+        let colors = split.next().unwrap().split(" ").count();
+        let states = 1 + split.count();
+
+        match (states, colors) {
+            (2, 2) => $action(Prog::<2, 2>::from(prog)),
+            (3, 3) => $action(Prog::<3, 3>::from(prog)),
+            (4, 4) => $action(Prog::<4, 4>::from(prog)),
+            (5, 5) => $action(Prog::<5, 5>::from(prog)),
+
+            (3, 2) => $action(Prog::<3, 2>::from(prog)),
+            (4, 2) => $action(Prog::<4, 2>::from(prog)),
+            (5, 2) => $action(Prog::<5, 2>::from(prog)),
+            (6, 2) => $action(Prog::<6, 2>::from(prog)),
+            (7, 2) => $action(Prog::<7, 2>::from(prog)),
+            (8, 2) => $action(Prog::<8, 2>::from(prog)),
+            (9, 2) => $action(Prog::<9, 2>::from(prog)),
+
+            (2, 3) => $action(Prog::<2, 3>::from(prog)),
+            (2, 4) => $action(Prog::<2, 4>::from(prog)),
+            (2, 5) => $action(Prog::<2, 5>::from(prog)),
+            (2, 6) => $action(Prog::<2, 6>::from(prog)),
+
+            (4, 3) => $action(Prog::<4, 3>::from(prog)),
+            (5, 3) => $action(Prog::<5, 3>::from(prog)),
+
+            (3, 4) => $action(Prog::<3, 4>::from(prog)),
+            (5, 4) => $action(Prog::<5, 4>::from(prog)),
+            (7, 4) => $action(Prog::<7, 4>::from(prog)),
+            (8, 4) => $action(Prog::<8, 4>::from(prog)),
+
+            (3, 5) => $action(Prog::<3, 5>::from(prog)),
+
+            (10, 2) => $action(Prog::<10, 2>::from(prog)),
+
+            _ => panic!("({states}, {colors})"),
+        }
+    }};
+}
+
 /***************************************/
 
 #[pyfunction]
 pub fn is_connected(prog: &str) -> bool {
-    Prog::from(prog).is_connected()
+    parse!(prog, |p: Prog<_, _>| p.is_connected())
 }
 
 #[pyfunction]
 pub fn opt_block(prog: &str, steps: Steps) -> usize {
-    Prog::from(prog).opt_block(steps)
+    parse!(prog, |p: Prog<_, _>| p.opt_block(steps))
 }
 
 #[pyfunction]
 pub fn term_or_rec(prog: &str, sim_lim: Steps) -> bool {
-    Prog::from(prog).term_or_rec_fresh(sim_lim).is_settled()
+    parse!(prog, |p: Prog<_, _>| p
+        .term_or_rec_fresh(sim_lim)
+        .is_settled())
 }
 
 #[pyfunction]
 pub fn run_transcript(prog: &str, sim_lim: Steps) -> bool {
-    Prog::from(prog).run_transcript_fresh(sim_lim).is_settled()
+    parse!(prog, |p: Prog<_, _>| p
+        .run_transcript_fresh(sim_lim)
+        .is_settled())
 }
 
 #[pyfunction]
@@ -59,13 +110,15 @@ pub fn show_comp(comp: Instrs) -> String {
 
 #[pyfunction]
 pub fn tcompile(prog: &str) -> Instrs {
-    let mut instrs = Instrs::new();
+    parse!(prog, |p: Prog<_, _>| {
+        let mut instrs = Instrs::new();
 
-    for (slot, instr) in Prog::from(prog).iter() {
-        instrs.insert(slot, *instr);
-    }
+        for (slot, instr) in p.iter() {
+            instrs.insert(slot, *instr);
+        }
 
-    instrs
+        instrs
+    })
 }
 
 #[pyfunction]
@@ -134,17 +187,17 @@ impl From<BackwardResultRs> for BackwardResult {
 
 #[pyfunction]
 pub fn cant_halt(prog: &str, steps: Steps) -> BackwardResult {
-    Prog::from(prog).cant_halt(steps).into()
+    parse!(prog, |p: Prog<_, _>| p.cant_halt(steps).into())
 }
 
 #[pyfunction]
 pub fn cant_blank(prog: &str, steps: Steps) -> BackwardResult {
-    Prog::from(prog).cant_blank(steps).into()
+    parse!(prog, |p: Prog<_, _>| p.cant_blank(steps).into())
 }
 
 #[pyfunction]
 pub fn cant_spin_out(prog: &str, steps: Steps) -> BackwardResult {
-    Prog::from(prog).cant_spin_out(steps).into()
+    parse!(prog, |p: Prog<_, _>| p.cant_spin_out(steps).into())
 }
 
 /***************************************/
@@ -189,12 +242,12 @@ impl From<SegmentResultRs> for SegmentResult {
 
 #[pyfunction]
 pub fn segment_cant_halt(prog: &str, segs: Segments) -> SegmentResult {
-    Prog::from(prog).seg_cant_halt(segs).into()
+    parse!(prog, |p: Prog<_, _>| p.seg_cant_halt(segs).into())
 }
 
 #[pyfunction]
 pub fn segment_cant_blank(prog: &str, segs: Segments) -> SegmentResult {
-    Prog::from(prog).seg_cant_blank(segs).into()
+    parse!(prog, |p: Prog<_, _>| p.seg_cant_blank(segs).into())
 }
 
 #[pyfunction]
@@ -202,7 +255,7 @@ pub fn segment_cant_spin_out(
     prog: &str,
     segs: Segments,
 ) -> SegmentResult {
-    Prog::from(prog).seg_cant_spin_out(segs).into()
+    parse!(prog, |p: Prog<_, _>| p.seg_cant_spin_out(segs).into())
 }
 
 /***************************************/
@@ -211,70 +264,70 @@ use tm::cps::Radius;
 
 #[pyfunction]
 pub fn cps_cant_halt(prog: &str, rad: Radius) -> bool {
-    let prog = Prog::from(prog);
+    parse!(prog, |p: Prog<_, _>| {
+        if p.halt_slots().is_empty() {
+            return true;
+        }
 
-    if prog.halt_slots().is_empty() {
-        return true;
-    }
-
-    prog.cps_cant_halt(rad)
+        p.cps_cant_halt(rad)
+    })
 }
 
 #[pyfunction]
 pub fn cps_cant_blank(prog: &str, rad: Radius) -> bool {
-    let prog = Prog::from(prog);
+    parse!(prog, |p: Prog<_, _>| {
+        if p.erase_slots().is_empty() {
+            return true;
+        }
 
-    if prog.erase_slots().is_empty() {
-        return true;
-    }
-
-    prog.cps_cant_blank(rad)
+        p.cps_cant_blank(rad)
+    })
 }
 
 #[pyfunction]
 pub fn cps_cant_spin_out(prog: &str, rad: Radius) -> bool {
-    let prog = Prog::from(prog);
+    parse!(prog, |p: Prog<_, _>| {
+        if p.zr_shifts().is_empty() {
+            return true;
+        }
 
-    if prog.zr_shifts().is_empty() {
-        return true;
-    }
-
-    prog.cps_cant_spin_out(rad)
+        p.cps_cant_spin_out(rad)
+    })
 }
 
 /***************************************/
 
 #[pyfunction]
 pub fn ctl_cant_halt(prog: &str, steps: Steps) -> bool {
-    let prog = Prog::from(prog);
+    parse!(prog, |p: Prog<_, _>| {
+        if p.halt_slots().is_empty() {
+            return true;
+        }
 
-    if prog.halt_slots().is_empty() {
-        return true;
-    }
-
-    prog.ctl_cant_halt(steps)
+        p.ctl_cant_halt(steps)
+    })
 }
 
 #[pyfunction]
 pub fn ctl_cant_blank(prog: &str, steps: Steps) -> bool {
-    let prog = Prog::from(prog);
+    parse!(prog, |p: Prog<_, _>| {
+        if p.erase_slots().is_empty() {
+            return true;
+        }
 
-    if prog.erase_slots().is_empty() {
-        return true;
-    }
-
-    prog.ctl_cant_blank(steps)
+        p.ctl_cant_blank(steps)
+    })
 }
 
 #[pyfunction]
 pub fn ctl_cant_spin_out(prog: &str, steps: Steps) -> bool {
-    let prog = Prog::from(prog);
+    parse!(prog, |p: Prog<_, _>| {
+        if p.zr_shifts().is_empty() {
+            return true;
+        }
 
-    if prog.zr_shifts().is_empty() {
-        return true;
-    }
-
-    prog.ctl_cant_spin_out(steps)
+        p.ctl_cant_spin_out(steps)
+    })
 }
 
 /***************************************/
@@ -392,8 +445,13 @@ impl MachineResult {
 
 #[pyfunction]
 pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
-    let prog = Prog::from(prog);
+    parse!(prog, |p: Prog<_, _>| run_quick_machine_impl(&p, sim_lim))
+}
 
+pub fn run_quick_machine_impl<const s: usize, const c: usize>(
+    prog: &Prog<s, c>,
+    sim_lim: Steps,
+) -> MachineResult {
     let mut config = BigConfig::init();
 
     let mut blanks = Blanks::new();

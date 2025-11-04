@@ -4,7 +4,7 @@ use std::collections::BTreeMap as Dict;
 
 use num_integer::Integer as _;
 
-use crate::{Color, Colors, Instr, Prog, Shift, Slot, State, States};
+use crate::{Color, Instr, Prog, Shift, Slot, State};
 
 type MacroColor = u64;
 type MacroState = u64;
@@ -23,7 +23,7 @@ pub trait GetInstr {
     fn get_instr(&self, slot: &Slot) -> Option<Instr>;
 }
 
-impl GetInstr for Prog {
+impl<const s: usize, const c: usize> GetInstr for Prog<s, c> {
     fn get_instr(&self, slot: &Slot) -> Option<Instr> {
         self.get(slot).copied()
     }
@@ -31,51 +31,47 @@ impl GetInstr for Prog {
 
 /**************************************/
 
-type BlockMacro<'p> = MacroProg<'p, BlockLogic>;
-type BacksymbolMacro<'p> = MacroProg<'p, BacksymbolLogic>;
+type BlockMacro<'p, const s: usize, const c: usize> =
+    MacroProg<'p, s, c, BlockLogic<s, c>>;
 
-impl Prog {
-    pub fn make_block_macro(&self, blocks: usize) -> BlockMacro<'_> {
-        MacroProg::new(
-            self,
-            BlockLogic::new(blocks, self.states, self.colors),
-        )
+type BacksymbolMacro<'p, const s: usize, const c: usize> =
+    MacroProg<'p, s, c, BacksymbolLogic<s, c>>;
+
+impl<const states: usize, const colors: usize> Prog<states, colors> {
+    pub fn make_block_macro(
+        &self,
+        blocks: usize,
+    ) -> BlockMacro<'_, states, colors> {
+        MacroProg::new(self, BlockLogic::new(blocks))
     }
 
     pub fn make_backsymbol_macro(
         &self,
         backsymbols: usize,
-    ) -> BacksymbolMacro<'_> {
-        MacroProg::new(
-            self,
-            BacksymbolLogic::new(backsymbols, self.states, self.colors),
-        )
+    ) -> BacksymbolMacro<'_, states, colors> {
+        MacroProg::new(self, BacksymbolLogic::new(backsymbols))
     }
 }
 
 /**************************************/
 
-pub struct BlockLogic {
+pub struct BlockLogic<
+    const base_states: usize,
+    const base_colors: usize,
+> {
     cells: usize,
 
-    base_colors: Colors,
-    base_states: States,
-
-    converter: TapeColorConverter,
+    converter: TapeColorConverter<base_colors>,
 }
 
-impl Logic for BlockLogic {
-    fn new(
-        cells: usize,
-        base_states: States,
-        base_colors: Colors,
-    ) -> Self {
+impl<const base_states: usize, const base_colors: usize>
+    Logic<base_states, base_colors>
+    for BlockLogic<base_states, base_colors>
+{
+    fn new(cells: usize) -> Self {
         Self {
             cells,
-            base_states,
-            base_colors,
-
-            converter: TapeColorConverter::new(base_colors, cells),
+            converter: TapeColorConverter::new(cells),
         }
     }
 
@@ -84,11 +80,11 @@ impl Logic for BlockLogic {
     }
 
     fn macro_states(&self) -> MacroState {
-        2 * self.base_states as MacroState
+        2 * base_states as MacroState
     }
 
     fn macro_colors(&self) -> MacroColor {
-        let base = self.base_colors as MacroColor;
+        let base = base_colors as MacroColor;
         let exp = u32::try_from(self.cells()).unwrap();
 
         base.pow(exp)
@@ -96,7 +92,7 @@ impl Logic for BlockLogic {
 
     fn sim_lim(&self) -> usize {
         self.cells()
-            * self.base_states
+            * base_states
             * usize::try_from(self.macro_colors()).unwrap()
     }
 
@@ -130,8 +126,9 @@ impl Logic for BlockLogic {
 /**************************************/
 
 #[expect(private_bounds)]
-pub struct MacroProg<'p, L: Logic> {
-    prog: &'p Prog,
+pub struct MacroProg<'p, const s: usize, const c: usize, L: Logic<s, c>>
+{
+    prog: &'p Prog<s, c>,
     logic: L,
 
     instrs: RefCell<MacroInstrs>,
@@ -140,7 +137,9 @@ pub struct MacroProg<'p, L: Logic> {
     colors: RefCell<Vec<MacroColor>>,
 }
 
-impl<L: Logic> GetInstr for MacroProg<'_, L> {
+impl<const s: usize, const c: usize, L: Logic<s, c>> GetInstr
+    for MacroProg<'_, s, c, L>
+{
     fn get_instr(&self, slot: &Slot) -> Option<Instr> {
         let slot: MacroSlot = self.convert_slot(slot);
 
@@ -165,8 +164,10 @@ impl<L: Logic> GetInstr for MacroProg<'_, L> {
 }
 
 #[expect(private_bounds)]
-impl<'p, L: Logic> MacroProg<'p, L> {
-    fn new(prog: &'p Prog, logic: L) -> Self {
+impl<'p, const st: usize, const co: usize, L: Logic<st, co>>
+    MacroProg<'p, st, co, L>
+{
+    fn new(prog: &'p Prog<st, co>, logic: L) -> Self {
         Self {
             prog,
             logic,
@@ -284,25 +285,23 @@ impl<'p, L: Logic> MacroProg<'p, L> {
 
 /**************************************/
 
-pub struct BacksymbolLogic {
+pub struct BacksymbolLogic<
+    const base_states: usize,
+    const base_colors: usize,
+> {
     cells: usize,
-    base_states: States,
-    base_colors: Colors,
     backsymbols: usize,
 
-    converter: TapeColorConverter,
+    converter: TapeColorConverter<base_colors>,
 }
 
-impl Logic for BacksymbolLogic {
-    fn new(
-        cells: usize,
-        base_states: States,
-        base_colors: Colors,
-    ) -> Self {
+impl<const base_states: usize, const base_colors: usize>
+    Logic<base_states, base_colors>
+    for BacksymbolLogic<base_states, base_colors>
+{
+    fn new(cells: usize) -> Self {
         Self {
             cells,
-            base_states,
-            base_colors,
 
             backsymbols: {
                 let base = base_colors;
@@ -311,7 +310,7 @@ impl Logic for BacksymbolLogic {
                 base.pow(exp)
             },
 
-            converter: TapeColorConverter::new(base_colors, cells),
+            converter: TapeColorConverter::new(cells),
         }
     }
 
@@ -320,11 +319,11 @@ impl Logic for BacksymbolLogic {
     }
 
     fn macro_states(&self) -> MacroState {
-        (2 * self.base_states * self.backsymbols) as MacroState
+        (2 * base_states * self.backsymbols) as MacroState
     }
 
     fn macro_colors(&self) -> MacroColor {
-        self.base_colors as MacroColor
+        base_colors as MacroColor
     }
 
     fn sim_lim(&self) -> usize {
@@ -394,8 +393,8 @@ impl Logic for BacksymbolLogic {
 
 /**************************************/
 
-trait Logic {
-    fn new(cells: usize, states: States, colors: Colors) -> Self;
+trait Logic<const states: usize, const colors: usize> {
+    fn new(cells: usize) -> Self;
 
     fn cells(&self) -> usize;
 
@@ -410,21 +409,18 @@ trait Logic {
 
 /**************************************/
 
-struct TapeColorConverter {
-    base_colors: Colors,
-
+struct TapeColorConverter<const base_colors: usize> {
     ct_cache: RefCell<Dict<MacroColor, Tape>>,
     tc_cache: RefCell<Dict<Tape, MacroColor>>,
 }
 
-impl TapeColorConverter {
-    fn new(base_colors: Colors, cells: usize) -> Self {
+impl<const base_colors: usize> TapeColorConverter<base_colors> {
+    fn new(cells: usize) -> Self {
         let mut ct_cache = Dict::new();
 
         ct_cache.insert(0, vec![0; cells]);
 
         Self {
-            base_colors,
             ct_cache: ct_cache.into(),
             tc_cache: Dict::new().into(),
         }
@@ -446,7 +442,7 @@ impl TapeColorConverter {
             .enumerate()
             .fold(MacroColor::MIN, |acc, (place, value)| {
                 acc + value * {
-                    let base = self.base_colors as MacroColor;
+                    let base = base_colors as MacroColor;
                     let exp = u32::try_from(place).unwrap();
 
                     base.pow(exp)
@@ -465,7 +461,9 @@ impl TapeColorConverter {
 
 #[cfg(test)]
 #[expect(private_bounds)]
-impl<L: Logic> MacroProg<'_, L> {
+impl<const s: usize, const c: usize, L: Logic<s, c>>
+    MacroProg<'_, s, c, L>
+{
     fn params(&self) -> (MacroState, MacroColor) {
         (self.logic.macro_states(), self.logic.macro_colors())
     }
@@ -484,8 +482,9 @@ impl<L: Logic> MacroProg<'_, L> {
 
 #[test]
 fn test_params() {
-    let prog =
-        Prog::from("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
+    let prog = Prog::<5, 2>::from(
+        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
+    );
 
     let block = prog.make_block_macro(3);
 
@@ -507,8 +506,9 @@ const MACROS: &[(Slot, Instr)] = &[
 
 #[test]
 fn test_macro() {
-    let prog =
-        Prog::from("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD");
+    let prog = Prog::<5, 2>::from(
+        "0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD",
+    );
 
     let block = prog.make_block_macro(2);
 

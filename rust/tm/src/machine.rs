@@ -109,7 +109,7 @@ impl<T: GetInstr> RunProver for T {
 
 /**************************************/
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn run_basic(
         &self,
         sim_lim: Steps,
@@ -352,7 +352,7 @@ fn has_recurrence(transcript: &Transcript) -> bool {
 /**************************************/
 
 #[cfg(test)]
-const REC_PROGS: &[(&str, bool)] = &[
+const REC_PROGS_2_2: &[(&str, bool)] = &[
     ("1RB 0LB  1LA 0RB", true),
     ("1RB 1LB  1LA 1RA", true),
     ("1RB 0RB  1LB 1RA", true),
@@ -361,8 +361,16 @@ const REC_PROGS: &[(&str, bool)] = &[
     ("1RB 1LA  0LA 1RB", false),
     ("1RB 0LB  1LA 0RA", false),
     ("1RB 1LA  1LA 1RB", false),
+];
+
+#[cfg(test)]
+const REC_PROGS_2_3: &[(&str, bool)] = &[
     ("1RB 0LA ...  1LB 2LA 0RB", true),
     ("1RB 1LB 2LA  1LA 2RB 0RA", true),
+];
+
+#[cfg(test)]
+const REC_PROGS_3_2: &[(&str, bool)] = &[
     ("1RB 1LB  0RC 0LA  1LC 0LA", true),
     ("1RB 1LA  1LC 1RC  1LA 0RB", true),
     ("1RB 0LB  1LA 0RC  1RB ...", false),
@@ -371,29 +379,58 @@ const REC_PROGS: &[(&str, bool)] = &[
     ("1RB 1LA  1LA 1RC  ... 1RB", false),
     ("1RB 1LB  0LC 0RC  1RA 1LA", false),
     ("1RB 1RC  1LC ...  0RA 0LB", false),
-    ("1RB 1RD  0LB 1LC  1RC 1LD  0LC 1LA", true),
 ];
+
+#[cfg(test)]
+const REC_PROGS_4_2: &[(&str, bool)] =
+    &[("1RB 1RD  0LB 1LC  1RC 1LD  0LC 1LA", true)];
+
+#[cfg(test)]
+macro_rules! assert_rec {
+    ($prog:expr, ($s:expr, $c:expr), $expected:expr) => {{
+        let prog = $prog;
+        let expected = $expected;
+
+        assert_eq!(
+            Prog::<$s, $c>::from(prog)
+                .term_or_rec_fresh(301)
+                .is_recur(),
+            expected,
+            "{prog}",
+        );
+
+        assert_eq!(
+            Prog::<$s, $c>::from(prog)
+                .run_transcript_fresh(280)
+                .is_recur(),
+            expected,
+            "{prog}",
+        );
+    }};
+}
 
 #[test]
 fn test_rec() {
-    for &(prog, expected) in REC_PROGS {
-        assert_eq!(
-            Prog::from(prog).term_or_rec_fresh(301).is_recur(),
-            expected,
-            "{prog}",
-        );
+    for &(prog, expected) in REC_PROGS_2_2 {
+        assert_rec!(prog, (2, 2), expected);
+    }
 
-        assert_eq!(
-            Prog::from(prog).run_transcript_fresh(280).is_recur(),
-            expected,
-            "{prog}",
-        );
+    for &(prog, expected) in REC_PROGS_2_3 {
+        assert_rec!(prog, (2, 3), expected);
+    }
+
+    for &(prog, expected) in REC_PROGS_3_2 {
+        assert_rec!(prog, (3, 2), expected);
+    }
+
+    for &(prog, expected) in REC_PROGS_4_2 {
+        assert_rec!(prog, (4, 2), expected);
     }
 }
 
 #[test]
 fn test_transcript_config() {
-    let prog = Prog::from("1RB 0LC  1LA 1RC  1RC 1RB");
+    let prog = Prog::<3, 2>::from("1RB 0LC  1LA 1RC  1RC 1RB");
 
     for steps in 0..100 {
         assert!(!prog.run_transcript_fresh(steps).is_settled());
@@ -415,7 +452,7 @@ fn test_transcript_config() {
 #[test]
 fn test_mult_rule() {
     assert!(
-        Prog::from(
+        Prog::<6, 2>::from(
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
         )
         .run_prover(10_000)
@@ -426,19 +463,19 @@ fn test_mult_rule() {
 #[test]
 fn test_check_inf() {
     assert!(
-        Prog::from("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
+        Prog::<2, 4>::from("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
             .check_inf(209, 209)
     );
 
     assert!(
-        Prog::from("1RB 0LA 3LB 1RA  2LB 3LA 0RB 2RA")
+        Prog::<2, 4>::from("1RB 0LA 3LB 1RA  2LB 3LA 0RB 2RA")
             .check_inf(756, 300)
     );
 }
 
 #[test]
 fn test_macro_excess() {
-    let prog = Prog::from("1RB 2LA 2RB 3RA  1LB 1RA 3LB 0RB");
+    let prog = Prog::<2, 4>::from("1RB 2LA 2RB 3RA  1LB 1RA 3LB 0RB");
 
     let blocks = prog.opt_block(300);
 
@@ -457,7 +494,7 @@ fn test_macro_excess() {
 #[should_panic(expected = "attempt to multiply with overflow")]
 fn test_macro_overflow() {
     assert!(
-        !Prog::from("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...")
+        !Prog::<2, 4>::from("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...")
             .check_inf(118, 3_219)
     );
 }
@@ -465,7 +502,7 @@ fn test_macro_overflow() {
 #[test]
 fn test_macro_loop() {
     assert!(
-        Prog::from(
+        Prog::<6, 2>::from(
             "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF"
         )
         .make_backsymbol_macro(1)

@@ -15,7 +15,7 @@ impl<const s: usize, const c: usize> Visited<s, c> {
 }
 
 impl<const s: usize, const c: usize> Harvester<s, c> for Visited<s, c> {
-    fn harvest(&mut self, _: &Prog, _: PassConfig<'_>) {
+    fn harvest(&mut self, _: &Prog<s, c>, _: PassConfig<'_>) {
         self.visited += 1;
 
         // prog.print();
@@ -43,7 +43,7 @@ impl<const s: usize, const c: usize> Collector<s, c> {
 impl<const s: usize, const c: usize> Harvester<s, c>
     for Collector<s, c>
 {
-    fn harvest(&mut self, prog: &Prog, _: PassConfig<'_>) {
+    fn harvest(&mut self, prog: &Prog<s, c>, _: PassConfig<'_>) {
         self.progs.push(prog.to_string());
     }
 
@@ -59,17 +59,18 @@ impl<const s: usize, const c: usize> Harvester<s, c>
 
 /**************************************/
 
-pub type Pipeline = fn(&Prog, PassConfig<'_>) -> bool;
+pub type Pipeline<const s: usize, const c: usize> =
+    fn(&Prog<s, c>, PassConfig<'_>) -> bool;
 
 pub struct HoldoutVisited<const s: usize, const c: usize> {
     holdout: u64,
     visited: u64,
 
-    pipeline: Pipeline,
+    pipeline: Pipeline<s, c>,
 }
 
 impl<const s: usize, const c: usize> HoldoutVisited<s, c> {
-    pub const fn new(pipeline: Pipeline) -> Self {
+    pub const fn new(pipeline: Pipeline<s, c>) -> Self {
         Self {
             holdout: 0,
             visited: 0,
@@ -81,7 +82,7 @@ impl<const s: usize, const c: usize> HoldoutVisited<s, c> {
 impl<const s: usize, const c: usize> Harvester<s, c>
     for HoldoutVisited<s, c>
 {
-    fn harvest(&mut self, prog: &Prog, config: PassConfig<'_>) {
+    fn harvest(&mut self, prog: &Prog<s, c>, config: PassConfig<'_>) {
         self.visited += 1;
 
         if (self.pipeline)(prog, config) {
@@ -109,17 +110,18 @@ impl<const s: usize, const c: usize> Harvester<s, c>
 
 use tm::reason::BackwardResult;
 
-type Reasoner = fn(&Prog, usize) -> BackwardResult;
+type Reasoner<const s: usize, const c: usize> =
+    fn(&Prog<s, c>, usize) -> BackwardResult;
 
 pub struct ReasonHarvester<const s: usize, const c: usize> {
     holdout: u64,
     refuted: usize,
 
-    cant_reach: Reasoner,
+    cant_reach: Reasoner<s, c>,
 }
 
 impl<const s: usize, const c: usize> ReasonHarvester<s, c> {
-    pub const fn new(cant_reach: Reasoner) -> Self {
+    pub const fn new(cant_reach: Reasoner<s, c>) -> Self {
         Self {
             holdout: 0,
             refuted: 0,
@@ -132,7 +134,7 @@ impl<const s: usize, const c: usize> ReasonHarvester<s, c> {
 impl<const s: usize, const c: usize> Harvester<s, c>
     for ReasonHarvester<s, c>
 {
-    fn harvest(&mut self, prog: &Prog, _: PassConfig<'_>) {
+    fn harvest(&mut self, prog: &Prog<s, c>, _: PassConfig<'_>) {
         let result = (self.cant_reach)(prog, 256);
 
         if let BackwardResult::Refuted(steps) = result

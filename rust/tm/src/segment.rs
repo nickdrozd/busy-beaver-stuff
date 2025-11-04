@@ -39,7 +39,7 @@ impl SegmentResult {
 
 /**************************************/
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn seg_cant_halt(&self, segs: Segments) -> SegmentResult {
         segment_cant_reach(self, segs, Halt)
     }
@@ -74,8 +74,8 @@ impl From<Goal> for SegmentResult {
     }
 }
 
-fn segment_cant_reach(
-    prog: &Prog,
+fn segment_cant_reach<const s: usize, const c: usize>(
+    prog: &Prog<s, c>,
     segs: Segments,
     goal: Goal,
 ) -> SegmentResult {
@@ -108,8 +108,8 @@ fn segment_cant_reach(
 
 /**************************************/
 
-fn all_segments_reached(
-    prog: &AnalyzedProg,
+fn all_segments_reached<const s: usize, const c: usize>(
+    prog: &AnalyzedProg<s, c>,
     seg: Segments,
     goal: Goal,
 ) -> Option<SearchResult> {
@@ -417,7 +417,7 @@ impl Config {
     }
 }
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     #[expect(clippy::unwrap_in_result)]
     fn run_to_edge(
         &self,
@@ -702,21 +702,23 @@ type Spinouts = Dict<State, Shift>;
 type Diffs = Vec<State>;
 type Dirs = Dict<bool, Vec<State>>;
 
-struct AnalyzedProg<'p> {
-    prog: &'p Prog,
+struct AnalyzedProg<'p, const s: usize, const c: usize> {
+    prog: &'p Prog<s, c>,
     halts: Halts,
     spinouts: Spinouts,
     branches: Dict<State, (Diffs, Dirs)>,
 }
 
-impl<'p> AnalyzedProg<'p> {
-    fn new(prog: &'p Prog) -> Self {
+impl<'p, const states: usize, const colors: usize>
+    AnalyzedProg<'p, states, colors>
+{
+    fn new(prog: &'p Prog<states, colors>) -> Self {
         let mut halts = Set::new();
         let mut spinouts = Dict::new();
 
         let mut branches = Dict::new();
 
-        for state in 0..prog.states {
+        for state in 0..states {
             #[expect(clippy::cast_possible_truncation)]
             let state = state as State;
 
@@ -724,7 +726,7 @@ impl<'p> AnalyzedProg<'p> {
             let mut lefts = Set::new();
             let mut rights = Set::new();
 
-            for color in 0..prog.colors {
+            for color in 0..colors {
                 #[expect(clippy::cast_possible_truncation)]
                 let color = color as Color;
 
@@ -831,7 +833,7 @@ fn test_step_in() {
 
 #[test]
 fn test_seg_tape() {
-    let prog = Prog::from("1RB 1RC  0LA 0RA  0LB ...");
+    let prog = Prog::<3, 2>::from("1RB 1RC  0LA 0RA  0LB ...");
 
     let mut config = Config::init(4, 1);
 
@@ -854,11 +856,11 @@ fn test_seg_tape() {
 
 #[cfg(test)]
 macro_rules! assert_reached_states {
-    ( $( $prog:literal => ( [$($halt:expr),* $(,)?], [$($spinout:expr),* $(,)?] ) ),* $(,)? ) => {
+    ( $( ($prog:literal, ($s:literal, $c:literal)) => ( [$($halt:expr),* $(,)?], [$($spinout:expr),* $(,)?] ) ),* $(,)? ) => {
         $(
             {
-                let comp = Prog::from($prog);
-                let anal = AnalyzedProg::new(&comp);
+                let comp = Prog::<$s, $c>::from($prog);
+                let anal = AnalyzedProg::<$s, $c>::new(&comp);
 
                 assert_eq!(
                     anal.halts,
@@ -877,11 +879,11 @@ macro_rules! assert_reached_states {
 #[test]
 fn test_reached_states() {
     assert_reached_states!(
-        "1RB 1RC  0LA 0RA  0LB ..." => ([2], []),
-        "1RB ...  1LB 0RC  1LC 1LA" => ([0], [1, 2]),
-        "1RB ... ...  2LB 1RB 1LB" => ([0], [1]),
-        "1RB 0RB ...  2LA ... 0LB" => ([0, 1], []),
-        "1RB ... 0RB ...  2LB 3RA 0RA 0RA" => ([0], [1]),
+        ("1RB 1RC  0LA 0RA  0LB ...", (3, 2)) => ([2], []),
+        ("1RB ...  1LB 0RC  1LC 1LA", (3, 2)) => ([0], [1, 2]),
+        ("1RB ... ...  2LB 1RB 1LB", (2, 3)) => ([0], [1]),
+        ("1RB 0RB ...  2LA ... 0LB", (2, 3)) => ([0, 1], []),
+        ("1RB ... 0RB ...  2LB 3RA 0RA 0RA", (2, 4)) => ([0], [1]),
     );
 }
 

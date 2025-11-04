@@ -2,47 +2,38 @@ use core::fmt::{self, Display};
 
 use std::collections::BTreeSet as Set;
 
-use crate::{Color, Colors, Instr, Parse, Shift, Slot, State, States};
+use crate::{Color, Instr, Parse, Shift, Slot, State};
 
 /**************************************/
 
-type Table = Vec<Vec<Option<Instr>>>;
+type Table<const states: usize, const colors: usize> =
+    [[Option<Instr>; colors]; states];
 
-#[expect(clippy::partial_pub_fields)]
-pub struct Prog {
-    table: Table,
-
-    pub states: States,
-    pub colors: Colors,
-
-    pub dimension: usize,
+pub struct Prog<const states: usize, const colors: usize> {
+    table: Table<states, colors>,
 }
 
-impl From<Table> for Prog {
-    fn from(table: Table) -> Self {
-        let states = table.len();
-        let colors = table.first().unwrap().len();
-
-        Self {
-            table,
-            states,
-            colors,
-            dimension: states * colors,
-        }
+impl<const s: usize, const c: usize> From<Table<s, c>> for Prog<s, c> {
+    fn from(table: Table<s, c>) -> Self {
+        Self { table }
     }
 }
 
-impl From<&str> for Prog {
+impl<const s: usize, const c: usize> From<&str> for Prog<s, c> {
     fn from(prog: &str) -> Self {
-        prog.trim()
-            .split("  ")
-            .map(|colors| colors.split(' ').map(Parse::read).collect())
-            .collect::<Vec<_>>()
-            .into()
+        let mut table = [[None; c]; s];
+
+        for (i, colors) in prog.trim().split("  ").enumerate().take(s) {
+            for (j, instr) in colors.split(' ').enumerate().take(c) {
+                table[i][j] = Parse::read(instr);
+            }
+        }
+
+        Self { table }
     }
 }
 
-impl Display for Prog {
+impl<const s: usize, const c: usize> Display for Prog<s, c> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (states, colors) = self.max_reached();
 
@@ -62,18 +53,15 @@ impl Display for Prog {
     }
 }
 
-impl Prog {
-    fn new(states: States, colors: Colors) -> Self {
+impl<const states: usize, const colors: usize> Prog<states, colors> {
+    const fn new() -> Self {
         Self {
-            table: vec![vec![None; colors]; states],
-            states,
-            colors,
-            dimension: states * colors,
+            table: [[None; colors]; states],
         }
     }
 
-    pub fn init_norm(states: States, colors: Colors) -> Self {
-        let mut prog = Self::new(states, colors);
+    pub const fn init_norm() -> Self {
+        let mut prog = Self::new();
 
         prog.insert(&(0, 0), &(1, true, 1));
 
@@ -84,35 +72,37 @@ impl Prog {
         println!("{self}");
     }
 
-    pub fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
+    pub const fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
         self.table[state as usize][color as usize].as_ref()
     }
 
-    pub fn insert(&mut self, &(state, color): &Slot, instr: &Instr) {
+    pub const fn insert(
+        &mut self,
+        &(state, color): &Slot,
+        instr: &Instr,
+    ) {
         self.table[state as usize][color as usize] = Some(*instr);
     }
 
-    pub fn remove(&mut self, &(state, color): &Slot) {
+    pub const fn remove(&mut self, &(state, color): &Slot) {
         self.table[state as usize][color as usize] = None;
     }
 
     #[expect(clippy::cast_possible_truncation)]
     pub fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> {
-        self.table.iter().enumerate().flat_map(|(state, colors)| {
-            colors.iter().enumerate().filter_map(
-                move |(color, maybe)| {
-                    maybe.as_ref().map(|instr| {
-                        ((state as u8, color as u8), instr)
-                    })
-                },
-            )
+        self.table.iter().enumerate().flat_map(|(state, cos)| {
+            cos.iter().enumerate().filter_map(move |(color, maybe)| {
+                maybe
+                    .as_ref()
+                    .map(|instr| ((state as u8, color as u8), instr))
+            })
         })
     }
 
     pub fn instrs(&self) -> impl Iterator<Item = &Instr> {
         self.table
             .iter()
-            .flat_map(|colors| colors.iter().filter_map(Option::as_ref))
+            .flat_map(|cos| cos.iter().filter_map(Option::as_ref))
     }
 
     pub fn max_reached(&self) -> (State, Color) {
@@ -133,11 +123,11 @@ impl Prog {
     }
 
     pub fn halt_slots(&self) -> Set<Slot> {
-        let (states, colors) = self.max_reached();
+        let (states_reached, colors_reached) = self.max_reached();
 
-        (0..=states)
+        (0..=states_reached)
             .flat_map(|state| {
-                (0..=colors).map(move |color| (state, color))
+                (0..=colors_reached).map(move |color| (state, color))
             })
             .filter(|slot @ &(state, color)| {
                 self.get(slot).is_none()
@@ -188,97 +178,58 @@ impl Prog {
 /**************************************/
 
 #[cfg(test)]
-use crate::Params;
-
-#[cfg(test)]
-impl Prog {
-    pub const fn params(&self) -> Params {
-        (self.states, self.colors)
-    }
+macro_rules! assert_show {
+    ($prog:expr, ($s:expr, $c:expr), $show:expr) => {
+        assert_eq!(Prog::<$s, $c>::from($prog).to_string(), $show);
+    };
 }
-
-#[test]
-fn test_prog() {
-    let progs = [
-        "1RB ...  ... ...",
-        "1RB ...  1LA ...",
-        "1RB 1LB  1LA ...",
-        "1RB ... ...  2LB ... ...",
-        "1RB ... ...  2LB 1RB 1LB",
-        "1RB 0RB ...  2LA ... 0LB",
-        "1RB ...  1LB 0RC  1LC 1LA",
-        "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB",
-        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
-        "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",
-        "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
-        "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF",
-    ];
-
-    for prog in progs {
-        assert_eq!(Prog::from(prog).to_string(), prog);
-    }
-}
-
-#[cfg(test)]
-const PARAMS: &[(&str, Params)] = &[
-    ("1RB 2LA 1RA 1RA  1LB 1LA 3RB ...", (2, 4)),
-    ("1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA", (4, 2)),
-    ("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA", (5, 2)),
-];
-
-#[test]
-fn test_params() {
-    for &(prog, params) in PARAMS {
-        assert_eq!(Prog::from(prog).params(), params);
-    }
-}
-
-#[cfg(test)]
-const SPARSE_SHOW: &[(&str, &str)] = &[
-    (
-        "1RB 2LB 2LB  1LA 2RB 2LA",
-        "1RB 2LB 2LB ...  1LA 2RB 2LA ...",
-    ),
-    (
-        "1RB 0LB  0LC 0RA  1LA 1LC",
-        "1RB 0LB  0LC 0RA  1LA 1LC  ... ...",
-    ),
-    (
-        "1RB 1LD  0RC 0LA  0LC 1LA  0LA 0LA",
-        "1RB 1LD ... ... ... ... ... ...  0RC 0LA ... ... ... ... ... ...  0LC 1LA ... ... ... ... ... ...  0LA 0LA ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
-    ),
-    (
-        "1RB ... ... ...  2LB 0LC ... ...  0LD ... ... ...  0LE ... ... ...  0LF ... ... ...  1LG ... ... ...  3RC ... ... ...",
-        "1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
-    ),
-];
 
 #[test]
 fn test_sparse_show() {
-    for &(show, prog) in SPARSE_SHOW {
-        assert_eq!(Prog::from(prog).to_string(), show);
-    }
+    assert_show!(
+        "1RB 2LB 2LB ...  1LA 2RB 2LA ...",
+        (2, 4),
+        "1RB 2LB 2LB  1LA 2RB 2LA"
+    );
+
+    assert_show!(
+        "1RB 0LB  0LC 0RA  1LA 1LC  ... ...",
+        (4, 2),
+        "1RB 0LB  0LC 0RA  1LA 1LC"
+    );
+
+    assert_show!(
+        "1RB 1LD ... ... ... ... ... ...  0RC 0LA ... ... ... ... ... ...  0LC 1LA ... ... ... ... ... ...  0LA 0LA ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
+        (8, 8),
+        "1RB 1LD  0RC 0LA  0LC 1LA  0LA 0LA"
+    );
+
+    assert_show!(
+        "1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
+        (8, 8),
+        "1RB ... ... ...  2LB 0LC ... ...  0LD ... ... ...  0LE ... ... ...  0LF ... ... ...  1LG ... ... ...  3RC ... ... ..."
+    );
 }
 
 #[test]
 fn test_halt_slots() {
     assert_eq!(
-        Prog::from("1RB ...  0RC ...  0LA ...").halt_slots(),
+        Prog::<3, 2>::from("1RB ...  0RC ...  0LA ...").halt_slots(),
         Set::from([(0, 1)]),
     );
 
     assert_eq!(
-        Prog::from("1RB 0LA ...  2LA ... ...").halt_slots(),
+        Prog::<2, 3>::from("1RB 0LA ...  2LA ... ...").halt_slots(),
         Set::from([(1, 2)]),
     );
 
     assert_eq!(
-        Prog::from("1RB 1LD ... ... ... ... ... ...  0RC 0LA ... ... ... ... ... ...  0LC 1LA ... ... ... ... ... ...  0LA 0LA ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
+        Prog::<8, 8>::from("1RB 1LD ... ... ... ... ... ...  0RC 0LA ... ... ... ... ... ...  0LC 1LA ... ... ... ... ... ...  0LA 0LA ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
         Set::from([]),
     );
 
     assert_eq!(
-        Prog::from("1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
+        Prog::<8, 8>::from("1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
         Set::from([(0, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 3), (4, 1), (4, 3), (5, 1), (5, 3), (6, 1), (6, 3)]),
     );
 }

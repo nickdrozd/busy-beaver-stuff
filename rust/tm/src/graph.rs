@@ -4,13 +4,11 @@ use crate::{Prog, State};
 
 /**************************************/
 
-impl Prog {
+impl<const states: usize, const colors: usize> Prog<states, colors> {
     pub fn is_connected(&self) -> bool {
         if self.instrs().all(|&(_, _, state)| state != 0) {
             return false;
         }
-
-        let states = self.states;
 
         let exitpoints = self.get_exitpoints();
 
@@ -58,34 +56,44 @@ impl Prog {
 }
 
 #[cfg(test)]
-const UNCONNECTED: &[&str] = &[
-    "1RB 1LB  1LA 1LC  1RC 0LC",
-    "1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD",
-];
-
-#[cfg(test)]
-const CONNECTED: &[&str] = &[
-    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA",
-    "1RB 0LB  0LC 0RD  1RD 1LB  1LE 0RA  ... 1LA",
-    "1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC",
-];
+macro_rules! assert_connected {
+    ($prog:expr, ($s:expr, $c:expr), $conn:expr) => {{
+        let result = Prog::<$s, $c>::from($prog).is_connected();
+        assert!(if $conn { result } else { !result });
+    }};
+}
 
 #[test]
 fn test_connected() {
-    for &prog in UNCONNECTED {
-        assert!(!Prog::from(prog).is_connected());
-    }
+    assert_connected!("1RB 1LB  1LA 1LC  1RC 0LC", (3, 2), false);
+    assert_connected!(
+        "1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD",
+        (5, 2),
+        false
+    );
 
-    for &prog in CONNECTED {
-        assert!(Prog::from(prog).is_connected());
-    }
+    assert_connected!(
+        "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA",
+        (4, 2),
+        true
+    );
+    assert_connected!(
+        "1RB 0LB  0LC 0RD  1RD 1LB  1LE 0RA  ... 1LA",
+        (5, 2),
+        true
+    );
+    assert_connected!(
+        "1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC",
+        (5, 2),
+        true
+    );
 }
 
 /**************************************/
 
 type Exitpoints = Dict<State, Vec<State>>;
 
-impl Prog {
+impl<const s: usize, const c: usize> Prog<s, c> {
     fn get_exitpoints(&self) -> Exitpoints {
         let mut exitpoints = Exitpoints::new();
 
@@ -108,9 +116,9 @@ impl Prog {
 
 #[cfg(test)]
 macro_rules! assert_exitpoints {
-    ( $( $prog:literal => { $($key:literal => [$($val:expr),* $(,)?]),* $(,)? } ),* $(,)? ) => { $(
+    ( $( ($prog:literal, ($s:literal, $c:literal)) => { $($key:literal => [$($val:expr),* $(,)?]),* $(,)? } ),* $(,)? ) => { $(
         assert_eq!(
-            Prog::from($prog).get_exitpoints(),
+            Prog::<$s, $c>::from($prog).get_exitpoints(),
             Dict::from( [$(($key, vec![$($val),*]),)*] ),
         );
     )* };
@@ -119,17 +127,17 @@ macro_rules! assert_exitpoints {
 #[test]
 fn test_exitpoints() {
     assert_exitpoints!(
-        "1RB 1LB  1LA 1LC  1RC 0LC" => {
+        ("1RB 1LB  1LA 1LC  1RC 0LC", (3, 2)) => {
             0 => [1],
             1 => [0, 2],
         },
-        "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA" => {
+        ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", (4, 2)) => {
             0 => [1, 2],
             1 => [3],
             2 => [3],
             3 => [0],
         },
-        "1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC" => {
+        ("1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC", (5, 2)) => {
             0 => [1],
             1 => [2, 4],
             2 => [3],
