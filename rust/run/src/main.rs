@@ -388,7 +388,7 @@ fn test_collect() {
 
 /**************************************/
 
-fn assert_instrs<const instrs: u8>(
+fn assert_instrs<const instrs: usize>(
     steps: Steps,
     expected: (u64, u64),
     pipeline: Pipeline,

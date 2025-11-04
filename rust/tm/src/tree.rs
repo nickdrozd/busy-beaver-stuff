@@ -12,7 +12,7 @@ pub use crate::config::PassConfig;
 
 pub type TreeResult<Harv> = Dict<Instr, Harv>;
 
-type Slots = u8;
+type Slots = usize;
 
 use RunResult::*;
 
@@ -168,8 +168,7 @@ impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
         (states, colors): Params,
         instr_table: &'h Self::Table,
     ) -> Self {
-        #[expect(clippy::cast_possible_truncation)]
-        let init_blanks = (states * (colors - 1)) as Slots;
+        let init_blanks = states * (colors - 1);
 
         Self {
             instr_table,
@@ -213,8 +212,7 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
     type Table = SpinoutInstrTable;
 
     fn new((states, _): Params, instr_table: &'h Self::Table) -> Self {
-        #[expect(clippy::cast_possible_truncation)]
-        let init_spins = (states - 1) as Slots;
+        let init_spins = states - 1;
 
         Self {
             instr_table,
@@ -281,8 +279,7 @@ impl<'i, AvIn: AvailInstrs<'i>, Harv: Harvester> Tree<AvIn, Harv> {
 
         let avail_params = AvailStack::new(init_avail);
 
-        #[expect(clippy::cast_possible_truncation)]
-        let remaining_slots = prog.dimension as Slots - halt - 2;
+        let remaining_slots = prog.dimension - halt - 2;
 
         Self {
             prog,
@@ -514,7 +511,7 @@ pub trait Harvester: Send + Sized {
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> Self::Output {
         let results = Self::run_all(
-            (instrs.into(), instrs.into()),
+            (instrs, instrs),
             (instrs * instrs) - instrs,
             sim_lim,
             harvester,
