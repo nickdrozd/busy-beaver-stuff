@@ -4,9 +4,11 @@ use crate::{Color, Colors, Instr, Parse, Shift, Slot, State, States};
 
 /**************************************/
 
+type Table = Vec<Vec<Option<Instr>>>;
+
 #[expect(clippy::partial_pub_fields)]
 pub struct Prog {
-    table: Vec<Option<Instr>>,
+    table: Table,
 
     pub states: States,
     pub colors: Colors,
@@ -14,10 +16,24 @@ pub struct Prog {
     pub dimension: usize,
 }
 
+impl From<Table> for Prog {
+    fn from(table: Table) -> Self {
+        let states = table.len();
+        let colors = table.first().unwrap().len();
+
+        Self {
+            table,
+            states,
+            colors,
+            dimension: states * colors,
+        }
+    }
+}
+
 impl Prog {
     fn new(states: States, colors: Colors) -> Self {
         Self {
-            table: vec![None; states * colors],
+            table: vec![vec![None; colors]; states],
             states,
             colors,
             dimension: states * colors,
@@ -36,43 +52,35 @@ impl Prog {
         println!("{}", self.show());
     }
 
-    const fn index(&self, state: State, color: Color) -> usize {
-        (state as usize) * self.colors + (color as usize)
-    }
-
     pub fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
-        self.table[self.index(state, color)].as_ref()
+        self.table[state as usize][color as usize].as_ref()
     }
 
     pub fn insert(&mut self, &(state, color): &Slot, instr: &Instr) {
-        let index = self.index(state, color);
-
-        self.table[index] = Some(*instr);
+        self.table[state as usize][color as usize] = Some(*instr);
     }
 
     pub fn remove(&mut self, &(state, color): &Slot) {
-        let index = self.index(state, color);
-
-        self.table[index] = None;
+        self.table[state as usize][color as usize] = None;
     }
 
     #[expect(clippy::cast_possible_truncation)]
     pub fn iter(&self) -> impl Iterator<Item = (Slot, &Instr)> {
-        self.table.chunks_exact(self.colors).enumerate().flat_map(
-            move |(st, colors)| {
-                colors.iter().enumerate().filter_map(
-                    move |(co, maybe)| {
-                        maybe
-                            .as_ref()
-                            .map(|instr| ((st as u8, co as u8), instr))
-                    },
-                )
-            },
-        )
+        self.table.iter().enumerate().flat_map(|(state, colors)| {
+            colors.iter().enumerate().filter_map(
+                move |(color, maybe)| {
+                    maybe.as_ref().map(|instr| {
+                        ((state as u8, color as u8), instr)
+                    })
+                },
+            )
+        })
     }
 
     pub fn instrs(&self) -> impl Iterator<Item = &Instr> {
-        self.table.iter().filter_map(Option::as_ref)
+        self.table
+            .iter()
+            .flat_map(|colors| colors.iter().filter_map(Option::as_ref))
     }
 
     pub fn max_reached(&self) -> (State, Color) {
@@ -159,27 +167,11 @@ impl Prog {
 
 impl Parse for Prog {
     fn read(prog: &str) -> Self {
-        let instrs: Vec<Vec<Option<Instr>>> = prog
-            .trim()
+        prog.trim()
             .split("  ")
             .map(|colors| colors.split(' ').map(Parse::read).collect())
-            .collect();
-
-        let states = instrs.len();
-        let colors = instrs.first().unwrap().len();
-
-        let mut table = Vec::with_capacity(states * colors);
-
-        for entries in instrs {
-            table.extend(entries);
-        }
-
-        Self {
-            table,
-            states,
-            colors,
-            dimension: states * colors,
-        }
+            .collect::<Vec<_>>()
+            .into()
     }
 
     fn show(&self) -> String {
