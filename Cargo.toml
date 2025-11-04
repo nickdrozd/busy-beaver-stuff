@@ -43,6 +43,8 @@ variant_size_differences = "deny"
 ambiguous_negative_literals = "deny"
 impl_trait_redundant_captures = "deny"
 
+non_upper_case_globals = { level = "allow", priority = 1 }
+
 [workspace.lints.clippy]
 all = "deny"
 panic = "deny"
