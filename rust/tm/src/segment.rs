@@ -831,7 +831,7 @@ fn test_step_in() {
 
 #[test]
 fn test_seg_tape() {
-    let prog = Prog::read("1RB 1RC  0LA 0RA  0LB ...");
+    let prog = Prog::from("1RB 1RC  0LA 0RA  0LB ...");
 
     let mut config = Config::init(4, 1);
 
@@ -863,7 +863,7 @@ fn test_reached_states() {
     ];
 
     for (prog, halts, spinouts) in progs {
-        let comp = Prog::read(prog);
+        let comp = Prog::from(prog);
         let anal = AnalyzedProg::new(&comp);
 
         assert_eq!(anal.halts, halts.into_iter().collect::<Set<_>>());

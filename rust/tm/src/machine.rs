@@ -378,13 +378,13 @@ const REC_PROGS: &[(&str, bool)] = &[
 fn test_rec() {
     for &(prog, expected) in REC_PROGS {
         assert_eq!(
-            Prog::read(prog).term_or_rec_fresh(301).is_recur(),
+            Prog::from(prog).term_or_rec_fresh(301).is_recur(),
             expected,
             "{prog}",
         );
 
         assert_eq!(
-            Prog::read(prog).run_transcript_fresh(280).is_recur(),
+            Prog::from(prog).run_transcript_fresh(280).is_recur(),
             expected,
             "{prog}",
         );
@@ -393,7 +393,7 @@ fn test_rec() {
 
 #[test]
 fn test_transcript_config() {
-    let prog = Prog::read("1RB 0LC  1LA 1RC  1RC 1RB");
+    let prog = Prog::from("1RB 0LC  1LA 1RC  1RC 1RB");
 
     for steps in 0..100 {
         assert!(!prog.run_transcript_fresh(steps).is_settled());
@@ -415,7 +415,7 @@ fn test_transcript_config() {
 #[test]
 fn test_mult_rule() {
     assert!(
-        Prog::read(
+        Prog::from(
             "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
         )
         .run_prover(10_000)
@@ -426,19 +426,19 @@ fn test_mult_rule() {
 #[test]
 fn test_check_inf() {
     assert!(
-        Prog::read("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
+        Prog::from("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
             .check_inf(209, 209)
     );
 
     assert!(
-        Prog::read("1RB 0LA 3LB 1RA  2LB 3LA 0RB 2RA")
+        Prog::from("1RB 0LA 3LB 1RA  2LB 3LA 0RB 2RA")
             .check_inf(756, 300)
     );
 }
 
 #[test]
 fn test_macro_excess() {
-    let prog = Prog::read("1RB 2LA 2RB 3RA  1LB 1RA 3LB 0RB");
+    let prog = Prog::from("1RB 2LA 2RB 3RA  1LB 1RA 3LB 0RB");
 
     let blocks = prog.opt_block(300);
 
@@ -457,7 +457,7 @@ fn test_macro_excess() {
 #[should_panic(expected = "attempt to multiply with overflow")]
 fn test_macro_overflow() {
     assert!(
-        !Prog::read("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...")
+        !Prog::from("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...")
             .check_inf(118, 3_219)
     );
 }
@@ -465,7 +465,7 @@ fn test_macro_overflow() {
 #[test]
 fn test_macro_loop() {
     assert!(
-        Prog::read(
+        Prog::from(
             "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF"
         )
         .make_backsymbol_macro(1)

@@ -72,12 +72,12 @@ const CONNECTED: &[&str] = &[
 
 #[test]
 fn test_connected() {
-    for prog in UNCONNECTED {
-        assert!(!Prog::read(prog).is_connected());
+    for &prog in UNCONNECTED {
+        assert!(!Prog::from(prog).is_connected());
     }
 
-    for prog in CONNECTED {
-        assert!(Prog::read(prog).is_connected());
+    for &prog in CONNECTED {
+        assert!(Prog::from(prog).is_connected());
     }
 }
 
@@ -110,7 +110,7 @@ impl Prog {
 macro_rules! assert_exitpoints {
     ($input:expr, { $($key:expr => [$($val:expr),*]),* $(,)? }) => {
         assert_eq!(
-            Prog::read($input).get_exitpoints(),
+            Prog::from($input).get_exitpoints(),
             Dict::from( [$(($key, vec![$($val),*]),)*] ),
         );
     }

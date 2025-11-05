@@ -13,22 +13,22 @@ use tm::{
 
 #[pyfunction]
 pub fn is_connected(prog: &str) -> bool {
-    Prog::read(prog).is_connected()
+    Prog::from(prog).is_connected()
 }
 
 #[pyfunction]
 pub fn opt_block(prog: &str, steps: Steps) -> usize {
-    Prog::read(prog).opt_block(steps)
+    Prog::from(prog).opt_block(steps)
 }
 
 #[pyfunction]
 pub fn term_or_rec(prog: &str, sim_lim: Steps) -> bool {
-    Prog::read(prog).term_or_rec_fresh(sim_lim).is_settled()
+    Prog::from(prog).term_or_rec_fresh(sim_lim).is_settled()
 }
 
 #[pyfunction]
 pub fn run_transcript(prog: &str, sim_lim: Steps) -> bool {
-    Prog::read(prog).run_transcript_fresh(sim_lim).is_settled()
+    Prog::from(prog).run_transcript_fresh(sim_lim).is_settled()
 }
 
 #[pyfunction]
@@ -61,7 +61,7 @@ pub fn show_comp(comp: Instrs) -> String {
 pub fn tcompile(prog: &str) -> Instrs {
     let mut instrs = Instrs::new();
 
-    for (slot, instr) in Prog::read(prog).iter() {
+    for (slot, instr) in Prog::from(prog).iter() {
         instrs.insert(slot, *instr);
     }
 
@@ -134,17 +134,17 @@ impl From<BackwardResultRs> for BackwardResult {
 
 #[pyfunction]
 pub fn cant_halt(prog: &str, steps: Steps) -> BackwardResult {
-    Prog::read(prog).cant_halt(steps).into()
+    Prog::from(prog).cant_halt(steps).into()
 }
 
 #[pyfunction]
 pub fn cant_blank(prog: &str, steps: Steps) -> BackwardResult {
-    Prog::read(prog).cant_blank(steps).into()
+    Prog::from(prog).cant_blank(steps).into()
 }
 
 #[pyfunction]
 pub fn cant_spin_out(prog: &str, steps: Steps) -> BackwardResult {
-    Prog::read(prog).cant_spin_out(steps).into()
+    Prog::from(prog).cant_spin_out(steps).into()
 }
 
 /***************************************/
@@ -189,12 +189,12 @@ impl From<SegmentResultRs> for SegmentResult {
 
 #[pyfunction]
 pub fn segment_cant_halt(prog: &str, segs: Segments) -> SegmentResult {
-    Prog::read(prog).seg_cant_halt(segs).into()
+    Prog::from(prog).seg_cant_halt(segs).into()
 }
 
 #[pyfunction]
 pub fn segment_cant_blank(prog: &str, segs: Segments) -> SegmentResult {
-    Prog::read(prog).seg_cant_blank(segs).into()
+    Prog::from(prog).seg_cant_blank(segs).into()
 }
 
 #[pyfunction]
@@ -202,7 +202,7 @@ pub fn segment_cant_spin_out(
     prog: &str,
     segs: Segments,
 ) -> SegmentResult {
-    Prog::read(prog).seg_cant_spin_out(segs).into()
+    Prog::from(prog).seg_cant_spin_out(segs).into()
 }
 
 /***************************************/
@@ -211,7 +211,7 @@ use tm::cps::Radius;
 
 #[pyfunction]
 pub fn cps_cant_halt(prog: &str, rad: Radius) -> bool {
-    let prog = Prog::read(prog);
+    let prog = Prog::from(prog);
 
     if prog.halt_slots().is_empty() {
         return true;
@@ -222,7 +222,7 @@ pub fn cps_cant_halt(prog: &str, rad: Radius) -> bool {
 
 #[pyfunction]
 pub fn cps_cant_blank(prog: &str, rad: Radius) -> bool {
-    let prog = Prog::read(prog);
+    let prog = Prog::from(prog);
 
     if prog.erase_slots().is_empty() {
         return true;
@@ -233,7 +233,7 @@ pub fn cps_cant_blank(prog: &str, rad: Radius) -> bool {
 
 #[pyfunction]
 pub fn cps_cant_spin_out(prog: &str, rad: Radius) -> bool {
-    let prog = Prog::read(prog);
+    let prog = Prog::from(prog);
 
     if prog.zr_shifts().is_empty() {
         return true;
@@ -246,7 +246,7 @@ pub fn cps_cant_spin_out(prog: &str, rad: Radius) -> bool {
 
 #[pyfunction]
 pub fn ctl_cant_halt(prog: &str, steps: Steps) -> bool {
-    let prog = Prog::read(prog);
+    let prog = Prog::from(prog);
 
     if prog.halt_slots().is_empty() {
         return true;
@@ -257,7 +257,7 @@ pub fn ctl_cant_halt(prog: &str, steps: Steps) -> bool {
 
 #[pyfunction]
 pub fn ctl_cant_blank(prog: &str, steps: Steps) -> bool {
-    let prog = Prog::read(prog);
+    let prog = Prog::from(prog);
 
     if prog.erase_slots().is_empty() {
         return true;
@@ -268,7 +268,7 @@ pub fn ctl_cant_blank(prog: &str, steps: Steps) -> bool {
 
 #[pyfunction]
 pub fn ctl_cant_spin_out(prog: &str, steps: Steps) -> bool {
-    let prog = Prog::read(prog);
+    let prog = Prog::from(prog);
 
     if prog.zr_shifts().is_empty() {
         return true;
@@ -392,7 +392,7 @@ impl MachineResult {
 
 #[pyfunction]
 pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
-    let prog = Prog::read(prog);
+    let prog = Prog::from(prog);
 
     let mut config = BigConfig::init();
 

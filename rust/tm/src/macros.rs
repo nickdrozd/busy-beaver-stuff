@@ -485,7 +485,7 @@ impl<L: Logic> MacroProg<'_, L> {
 #[test]
 fn test_params() {
     let prog =
-        Prog::read("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
+        Prog::from("1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA");
 
     let block = prog.make_block_macro(3);
 
@@ -508,7 +508,7 @@ const MACROS: &[(Slot, Instr)] = &[
 #[test]
 fn test_macro() {
     let prog =
-        Prog::read("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD");
+        Prog::from("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD");
 
     let block = prog.make_block_macro(2);
 

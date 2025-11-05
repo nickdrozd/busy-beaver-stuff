@@ -359,7 +359,7 @@ macro_rules! assert_entrypoints {
 
             assert_eq!(
                 entrypoints,
-                Prog::read($prog).get_entrypoints(),
+                Prog::from($prog).get_entrypoints(),
             );
         }
     };

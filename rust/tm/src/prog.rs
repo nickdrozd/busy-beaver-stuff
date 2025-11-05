@@ -32,6 +32,16 @@ impl From<Table> for Prog {
     }
 }
 
+impl From<&str> for Prog {
+    fn from(prog: &str) -> Self {
+        prog.trim()
+            .split("  ")
+            .map(|colors| colors.split(' ').map(Parse::read).collect())
+            .collect::<Vec<_>>()
+            .into()
+    }
+}
+
 impl Display for Prog {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (states, colors) = self.max_reached();
@@ -68,14 +78,6 @@ impl Prog {
         prog.insert(&(0, 0), &(1, true, 1));
 
         prog
-    }
-
-    pub fn read(prog: &str) -> Self {
-        prog.trim()
-            .split("  ")
-            .map(|colors| colors.split(' ').map(Parse::read).collect())
-            .collect::<Vec<_>>()
-            .into()
     }
 
     pub fn print(&self) {
@@ -213,7 +215,7 @@ fn test_prog() {
     ];
 
     for prog in progs {
-        assert_eq!(Prog::read(prog).to_string(), prog);
+        assert_eq!(Prog::from(prog).to_string(), prog);
     }
 }
 
@@ -227,7 +229,7 @@ const PARAMS: &[(&str, Params)] = &[
 #[test]
 fn test_params() {
     for &(prog, params) in PARAMS {
-        assert_eq!(Prog::read(prog).params(), params);
+        assert_eq!(Prog::from(prog).params(), params);
     }
 }
 
@@ -254,29 +256,29 @@ const SPARSE_SHOW: &[(&str, &str)] = &[
 #[test]
 fn test_sparse_show() {
     for &(show, prog) in SPARSE_SHOW {
-        assert_eq!(Prog::read(prog).to_string(), show);
+        assert_eq!(Prog::from(prog).to_string(), show);
     }
 }
 
 #[test]
 fn test_halt_slots() {
     assert_eq!(
-        Prog::read("1RB ...  0RC ...  0LA ...").halt_slots(),
+        Prog::from("1RB ...  0RC ...  0LA ...").halt_slots(),
         Set::from([(0, 1)]),
     );
 
     assert_eq!(
-        Prog::read("1RB 0LA ...  2LA ... ...").halt_slots(),
+        Prog::from("1RB 0LA ...  2LA ... ...").halt_slots(),
         Set::from([(1, 2)]),
     );
 
     assert_eq!(
-        Prog::read("1RB 1LD ... ... ... ... ... ...  0RC 0LA ... ... ... ... ... ...  0LC 1LA ... ... ... ... ... ...  0LA 0LA ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
+        Prog::from("1RB 1LD ... ... ... ... ... ...  0RC 0LA ... ... ... ... ... ...  0LC 1LA ... ... ... ... ... ...  0LA 0LA ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
         Set::from([]),
     );
 
     assert_eq!(
-        Prog::read("1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
+        Prog::from("1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
         Set::from([(0, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 3), (4, 1), (4, 3), (5, 1), (5, 3), (6, 1), (6, 3)]),
     );
 }
