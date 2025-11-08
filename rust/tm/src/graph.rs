@@ -108,28 +108,33 @@ impl Prog {
 
 #[cfg(test)]
 macro_rules! assert_exitpoints {
-    ($input:expr, { $($key:expr => [$($val:expr),*]),* $(,)? }) => {
+    ( $( $prog:expr => { $($key:expr => [$($val:expr),* $(,)?]),* $(,)? } ),* $(,)? ) => { $(
         assert_eq!(
-            Prog::from($input).get_exitpoints(),
+            Prog::from($prog).get_exitpoints(),
             Dict::from( [$(($key, vec![$($val),*]),)*] ),
         );
-    }
+    )* };
 }
 
 #[test]
 fn test_exitpoints() {
     assert_exitpoints!(
-        "1RB 1LB  1LA 1LC  1RC 0LC",
-        { 0 => [1], 1 => [0, 2] }
-    );
-
-    assert_exitpoints!(
-        "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA",
-        { 0 => [1, 2], 1 => [3], 2 => [3], 3 => [0] }
-    );
-
-    assert_exitpoints!(
-        "1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC",
-        { 0 => [1], 1 => [2, 4], 2 => [3], 3 => [0, 1], 4 => [2, 3] }
+        "1RB 1LB  1LA 1LC  1RC 0LC" => {
+            0 => [1],
+            1 => [0, 2],
+        },
+        "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA" => {
+            0 => [1, 2],
+            1 => [3],
+            2 => [3],
+            3 => [0],
+        },
+        "1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC" => {
+            0 => [1],
+            1 => [2, 4],
+            2 => [3],
+            3 => [0, 1],
+            4 => [2, 3],
+        },
     );
 }
