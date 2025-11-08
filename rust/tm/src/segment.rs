@@ -852,27 +852,37 @@ fn test_seg_tape() {
     assert_eq!(seen.len(), 6);
 }
 
+#[cfg(test)]
+macro_rules! assert_reached_states {
+    ( $( $prog:expr => ( [$($halt:expr),* $(,)?], [$($spinout:expr),* $(,)?] ) ),* $(,)? ) => {
+        $(
+            {
+                let comp = Prog::from($prog);
+                let anal = AnalyzedProg::new(&comp);
+
+                assert_eq!(
+                    anal.halts,
+                    [$($halt),*].into_iter().collect::<Set<_>>(),
+                );
+
+                assert_eq!(
+                    anal.spinouts.keys().copied().collect::<Set<_>>(),
+                    [$($spinout),*].into_iter().collect::<Set<_>>(),
+                );
+            }
+        )*
+    };
+}
+
 #[test]
 fn test_reached_states() {
-    let progs = [
-        ("1RB 1RC  0LA 0RA  0LB ...", vec![2], vec![]),
-        ("1RB ...  1LB 0RC  1LC 1LA", vec![0], vec![1, 2]),
-        ("1RB ... ...  2LB 1RB 1LB", vec![0], vec![1]),
-        ("1RB 0RB ...  2LA ... 0LB", vec![0, 1], vec![]),
-        ("1RB ... 0RB ...  2LB 3RA 0RA 0RA", vec![0], vec![1]),
-    ];
-
-    for (prog, halts, spinouts) in progs {
-        let comp = Prog::from(prog);
-        let anal = AnalyzedProg::new(&comp);
-
-        assert_eq!(anal.halts, halts.into_iter().collect::<Set<_>>());
-
-        assert_eq!(
-            anal.spinouts.keys().copied().collect::<Set<_>>(),
-            spinouts.into_iter().collect::<Set<_>>()
-        );
-    }
+    assert_reached_states!(
+        "1RB 1RC  0LA 0RA  0LB ..." => ([2], []),
+        "1RB ...  1LB 0RC  1LC 1LA" => ([0], [1, 2]),
+        "1RB ... ...  2LB 1RB 1LB" => ([0], [1]),
+        "1RB 0RB ...  2LA ... 0LB" => ([0, 1], []),
+        "1RB ... 0RB ...  2LB 3RA 0RA 0RA" => ([0], [1]),
+    );
 }
 
 #[cfg(test)]
