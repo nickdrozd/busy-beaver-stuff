@@ -1,13 +1,11 @@
 use std::env;
 
-use rayon::prelude::*;
-
 use tm::{Goal, Prog, Steps};
 
 pub mod harvesters;
 
 use harvesters::{
-    Collector, Harvester as _, HoldoutVisited, PassConfig, Pipeline,
+    Collector, Harvester as _, HoldoutVisited, PassConfig,
     ReasonHarvester, Visited,
 };
 
@@ -31,46 +29,21 @@ fn get_goal(goal: u8) -> Option<Goal> {
 
 /**************************************/
 
-macro_rules! assert_params_list {
-    ( $( ( ($params:expr, $goal:expr, $steps:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
-        #[expect(trivial_casts)]
-        vec![ $( (
-            ($goal, $steps, $leaves),
-            $pipeline as Pipeline,
-            match $params {
-                (2, 2) => assert_params::<2,2>,
-                (3, 2) => assert_params::<3,2>,
-                (2, 3) => assert_params::<2,3>,
-                (3, 3) => assert_params::<3,3>,
-                (4, 2) => assert_params::<4,2>,
-                (2, 4) => assert_params::<2,4>,
-                (5, 2) => assert_params::<5,2>,
-                (2, 5) => assert_params::<2,5>,
-                _ => unreachable!(),
-            }
-        ) ),* ]
-            .par_iter()
-            .for_each(|&((goal, steps, expected), pipeline, check)| {
-                check(goal, steps, expected, pipeline);
-            });
-    };
-}
+macro_rules! assert_params {
+    ( $( ( ( ($states:expr, $colors:expr), $goal:expr, $steps:expr, $leaves:expr ), $pipeline:expr ) ),* $(,)? ) => {{
+        rayon::scope(|s| { $( s.spawn( move |_| {
+            let result = HoldoutVisited::<$states, $colors>::run_params(
+                get_goal($goal),
+                $steps,
+                &|| HoldoutVisited::new($pipeline),
+            );
 
-fn assert_params<const states: usize, const colors: usize>(
-    goal: u8,
-    steps: Steps,
-    expected: (u64, u64),
-    pipeline: Pipeline,
-) {
-    let params = (states, colors);
-
-    let result = HoldoutVisited::<states, colors>::run_params(
-        get_goal(goal),
-        steps,
-        &|| HoldoutVisited::new(pipeline),
-    );
-
-    assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
+            assert_eq!(
+                result, $leaves,
+                "(($states, $colors), $goal, {result:?})",
+            );
+        }); )* });
+    }};
 }
 
 fn params_2_2_0(prog: &Prog, _: PassConfig<'_>) -> bool {
@@ -205,7 +178,7 @@ fn params_2_4_3(prog: &Prog, mut config: PassConfig<'_>) -> bool {
 fn test_params() {
     println!("params fast");
 
-    assert_params_list![
+    assert_params![
         (((2, 2), 0, 2, (9, 23)), params_2_2_0),
         (((2, 2), 1, 4, (5, 32)), params_2_2_1),
         (((2, 2), 2, 4, (5, 53)), params_2_2_2),
@@ -276,7 +249,7 @@ fn params_2_5_2(prog: &Prog, _: PassConfig<'_>) -> bool {
 fn test_params_slow() {
     println!("params slow");
 
-    assert_params_list![
+    assert_params![
         (((5, 2), 0, 700, (74_494_706, 90_773_891)), params_5_2_0),
         (
             ((5, 2), 1, TREE_LIM, (154_212_276, 181_095_466)),
@@ -306,51 +279,34 @@ fn test_params_slow() {
 
 /**************************************/
 
-fn assert_reason<const states: usize, const colors: usize>(
-    goal: u8,
-    expected: (usize, u64),
-) {
-    let params = (states, colors);
-
-    let cant_reach = match goal {
-        0 => Prog::cant_halt,
-        1 => Prog::cant_spin_out,
-        2 => Prog::cant_blank,
-        _ => unreachable!(),
-    };
-
-    let result = ReasonHarvester::<states, colors>::run_params(
-        get_goal(goal),
-        TREE_LIM,
-        &|| ReasonHarvester::new(cant_reach),
-    );
-
-    assert_eq!(result, expected, "({params:?}, {goal}, {result:?})");
-}
-
-macro_rules! assert_reason_list {
-    ( $( ( $params:expr, $goal:expr, $leaves:expr ) ),* $(,)? ) => {
-        vec![$((
-            ($goal, $leaves),
-            match $params {
-                (2, 2) => assert_reason::<2,2>,
-                (3, 2) => assert_reason::<3,2>,
-                (2, 3) => assert_reason::<2,3>,
-                (4, 2) => assert_reason::<4,2>,
-                (2, 4) => assert_reason::<2,4>,
+macro_rules! assert_reason {
+    ( $( ( ($states:expr, $colors:expr), $goal:expr, $leaves:expr ) ),* $(,)? ) => {{
+        rayon::scope(|s| { $( s.spawn(move |_| {
+            let cant_reach = match $goal {
+                0 => Prog::cant_halt,
+                1 => Prog::cant_spin_out,
+                2 => Prog::cant_blank,
                 _ => unreachable!(),
-            }
-        )),*]
-            .par_iter().for_each(|&((goal, expected), check)| {
-                check(goal, expected);
-            });
-    };
+            };
+
+            let result = ReasonHarvester::<$states, $colors>::run_params(
+                get_goal($goal),
+                TREE_LIM,
+                &|| ReasonHarvester::new(cant_reach),
+            );
+
+            assert_eq!(
+                result, $leaves,
+                "(($states, $colors), $goal, {result:?})"
+            );
+        }); )* });
+    }};
 }
 
 fn test_reason() {
     println!("reason");
 
-    assert_reason_list![
+    assert_reason![
         ((2, 2), 0, (3, 13)),
         ((2, 2), 1, (2, 8)),
         ((2, 2), 2, (2, 10)),
@@ -386,40 +342,20 @@ fn test_collect() {
 
 /**************************************/
 
-fn assert_instrs<const instrs: usize>(
-    steps: Steps,
-    expected: (u64, u64),
-    pipeline: Pipeline,
-) {
-    let result = HoldoutVisited::<instrs, instrs>::run_instrs::<instrs>(
-        steps,
-        &|| HoldoutVisited::new(pipeline),
-    );
+macro_rules! assert_instrs {
+    ( $( ( ($instrs:literal, $steps:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {{
+        rayon::scope(|s| { $( s.spawn(move |_| {
+            let result = HoldoutVisited::<$instrs, $instrs>::run_instrs::<$instrs>(
+                $steps,
+                &|| HoldoutVisited::new($pipeline),
+            );
 
-    assert_eq!(result, expected);
-}
-
-macro_rules! assert_instrs_list {
-    ( $( ( ($instrs:expr, $steps:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {
-        #[expect(trivial_casts)]
-        vec![ $( (
-            ($steps, $leaves),
-            $pipeline as Pipeline,
-            match $instrs {
-                4 => assert_instrs::<4>,
-                5 => assert_instrs::<5>,
-                6 => assert_instrs::<6>,
-                7 => assert_instrs::<7>,
-                8 => assert_instrs::<8>,
-                9 => assert_instrs::<9>,
-                _ => unreachable!(),
-            }
-        ) ),* ]
-            .par_iter()
-            .for_each(|&((steps, expected), pipeline, check)| {
-                check(steps, expected, pipeline);
-            });
-    };
+            assert_eq!(
+                result, $leaves,
+                "($instrs, {result:?})",
+            );
+        }); )* });
+    }};
 }
 
 fn instrs_4(prog: &Prog, mut config: PassConfig<'_>) -> bool {
@@ -455,7 +391,7 @@ fn instrs_7(prog: &Prog, mut config: PassConfig<'_>) -> bool {
 fn test_instrs() {
     println!("instrs");
 
-    assert_instrs_list![
+    assert_instrs![
         ((4, 4, (0, 4_909)), instrs_4),
         ((5, 12, (13, 151_351)), instrs_5),
         ((6, 22, (539, 5_568_167)), instrs_6),
