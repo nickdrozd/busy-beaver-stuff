@@ -6,17 +6,8 @@ use crate::{Color, Instr, Parse, Shift, Slot, State};
 
 /**************************************/
 
-type Table<const states: usize, const colors: usize> =
-    [[Option<Instr>; colors]; states];
-
 pub struct Prog<const states: usize, const colors: usize> {
-    table: Table<states, colors>,
-}
-
-impl<const s: usize, const c: usize> From<Table<s, c>> for Prog<s, c> {
-    fn from(table: Table<s, c>) -> Self {
-        Self { table }
-    }
+    table: [[Option<Instr>; colors]; states],
 }
 
 impl<const s: usize, const c: usize> From<&str> for Prog<s, c> {
