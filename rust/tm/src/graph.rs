@@ -108,7 +108,7 @@ impl Prog {
 
 #[cfg(test)]
 macro_rules! assert_exitpoints {
-    ( $( $prog:expr => { $($key:expr => [$($val:expr),* $(,)?]),* $(,)? } ),* $(,)? ) => { $(
+    ( $( $prog:literal => { $($key:literal => [$($val:expr),* $(,)?]),* $(,)? } ),* $(,)? ) => { $(
         assert_eq!(
             Prog::from($prog).get_exitpoints(),
             Dict::from( [$(($key, vec![$($val),*]),)*] ),

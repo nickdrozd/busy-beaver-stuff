@@ -878,7 +878,7 @@ impl BigSpan {
 #[cfg(test)]
 macro_rules! tape {
     (
-        $ scan : expr,
+        $ scan : literal,
         [ $ ( $ lspan : expr ), * ],
         [ $ ( $ rspan : expr ), * ]
     ) => {
@@ -978,14 +978,14 @@ use crate::rules::{ApplyRule as _, Diff, Op, Rule};
 
 #[cfg(test)]
 macro_rules! plus {
-    ($diff:expr) => {
+    ($diff:literal) => {
         Op::Plus(Diff::from($diff))
     };
 }
 
 #[cfg(test)]
 macro_rules! mult {
-    ($mul:expr, $add:expr) => {
+    ($mul:literal, $add:literal) => {
         #[expect(trivial_numeric_casts)]
         Op::Mult((
             BigCount::from($mul as u8),
@@ -997,7 +997,7 @@ macro_rules! mult {
 #[cfg(test)]
 macro_rules! rule {
     (
-        $ ( ( $ shift : expr, $ index : expr ) => $ op : expr ), *
+        $ ( ( $ shift : literal, $ index : literal ) => $ op : expr ), *
         $ ( , ) *
     ) => {
         Rule([$ ( (( $ shift == 1, $ index ), $ op ) ), *].into())
@@ -1126,7 +1126,7 @@ impl EnumTape {
 
 #[cfg(test)]
 macro_rules! enum_tape {
-    ( $ scan : expr, [ $( $ lspan : expr ),* ], [ $( $ rspan : expr ),* ]) => {
+    ( $ scan : literal, [ $( $ lspan : expr ),* ], [ $( $ rspan : expr ),* ]) => {
         EnumTape::from ( & tape! { $ scan, [ $( $ lspan ),* ], [ $( $ rspan ),* ] } )
     };
 }

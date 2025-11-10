@@ -30,7 +30,7 @@ fn get_goal(goal: u8) -> Option<Goal> {
 /**************************************/
 
 macro_rules! assert_params {
-    ( $( ( ( ($states:expr, $colors:expr), $goal:expr, $steps:expr, $leaves:expr ), $pipeline:expr ) ),* $(,)? ) => {{
+    ( $( ( ( ($states:literal, $colors:literal), $goal:literal, $steps:expr, $leaves:expr ), $pipeline:expr ) ),* $(,)? ) => {{
         rayon::scope(|s| { $( s.spawn( move |_| {
             let result = HoldoutVisited::<$states, $colors>::run_params(
                 get_goal($goal),
@@ -280,7 +280,7 @@ fn test_params_slow() {
 /**************************************/
 
 macro_rules! assert_reason {
-    ( $( ( ($states:expr, $colors:expr), $goal:expr, $leaves:expr ) ),* $(,)? ) => {{
+    ( $( ( ($states:literal, $colors:literal), $goal:literal, $leaves:expr ) ),* $(,)? ) => {{
         rayon::scope(|s| { $( s.spawn(move |_| {
             let cant_reach = match $goal {
                 0 => Prog::cant_halt,
@@ -343,7 +343,7 @@ fn test_collect() {
 /**************************************/
 
 macro_rules! assert_instrs {
-    ( $( ( ($instrs:literal, $steps:expr, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {{
+    ( $( ( ($instrs:literal, $steps:literal, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {{
         rayon::scope(|s| { $( s.spawn(move |_| {
             let result = HoldoutVisited::<$instrs, $instrs>::run_instrs::<$instrs>(
                 $steps,

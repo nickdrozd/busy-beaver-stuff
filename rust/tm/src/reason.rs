@@ -343,7 +343,7 @@ fn read_entry(entry: &str) -> Entry {
 
 #[cfg(test)]
 macro_rules! assert_entrypoints {
-    ($($prog:expr => [$($state:expr => ($same:expr, $diff:expr)),* $(,)?]),* $(,)?) => {
+    ($($prog:literal => [$($state:literal => ($same:expr, $diff:expr)),* $(,)?]),* $(,)?) => {
         $({
             let mut entrypoints = Entrypoints::new();
 

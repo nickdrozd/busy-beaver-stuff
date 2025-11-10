@@ -854,7 +854,7 @@ fn test_seg_tape() {
 
 #[cfg(test)]
 macro_rules! assert_reached_states {
-    ( $( $prog:expr => ( [$($halt:expr),* $(,)?], [$($spinout:expr),* $(,)?] ) ),* $(,)? ) => {
+    ( $( $prog:literal => ( [$($halt:expr),* $(,)?], [$($spinout:expr),* $(,)?] ) ),* $(,)? ) => {
         $(
             {
                 let comp = Prog::from($prog);
@@ -888,7 +888,7 @@ fn test_reached_states() {
 #[cfg(test)]
 macro_rules! tape {
     (
-        $ scan : expr,
+        $ scan : literal,
         [ $ ( $ lspan : expr ), * ],
         [ $ ( $ rspan : expr ), * ]
     ) => {
