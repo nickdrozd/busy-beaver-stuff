@@ -2,7 +2,7 @@ use core::fmt::{self, Display};
 
 use std::collections::BTreeSet as Set;
 
-use crate::{Color, Instr, Parse, Shift, Slot, State};
+use crate::{Color, Instr, Shift, Slot, State, instrs::Parse};
 
 /**************************************/
 

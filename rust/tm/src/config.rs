@@ -3,7 +3,8 @@ use core::fmt::{self, Display};
 use std::borrow::Cow;
 
 use crate::{
-    Parse as _, Slot, State,
+    Slot, State,
+    instrs::Parse as _,
     tape::{BigTape, Init, LilTape, MedTape},
 };
 

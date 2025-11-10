@@ -28,7 +28,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 /**************************************/
 
 pub use crate::{
-    instrs::{Color, Instr, Parse, Shift, Slot, State},
+    instrs::{Color, Instr, Shift, Slot, State},
     prog::Prog,
 };
 
