@@ -4,7 +4,7 @@ use ahash::HashMap as Dict;
 use rayon::prelude::*;
 
 use crate::{
-    Color, Goal, Instr, Params, Prog, Shift, Slot, State, Steps,
+    Color, Goal, Instr, Prog, Shift, Slot, State, Steps,
     config::MedConfig as Config, machine::RunResult,
 };
 
@@ -13,6 +13,8 @@ pub use crate::config::PassConfig;
 pub type TreeResult<Harv> = Dict<Instr, Harv>;
 
 type Slots = usize;
+
+type Params = (usize, usize);
 
 use RunResult::*;
 
