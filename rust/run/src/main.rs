@@ -400,6 +400,8 @@ fn test_instrs() {
 }
 
 fn test_8_instr() {
+    println!("8 instrs");
+
     let result = Visited::<8, 8>::run_instrs::<8>(500, &Visited::new);
 
     assert_eq!(result, 12_835_863_274);
@@ -407,20 +409,22 @@ fn test_8_instr() {
 
 /**************************************/
 
+const TESTS: [fn(); 5] = [
+    test_collect,
+    test_reason,
+    test_8_instr,
+    test_instrs,
+    test_params,
+];
+
+use rayon::prelude::*;
+
 fn main() {
-    test_params();
+    TESTS.par_iter().for_each(|f| f());
 
     if !env::args().any(|x| x == "--all") {
         return;
     }
 
-    test_instrs();
-
-    test_collect();
-
-    test_reason();
-
     test_params_slow();
-
-    test_8_instr();
 }
