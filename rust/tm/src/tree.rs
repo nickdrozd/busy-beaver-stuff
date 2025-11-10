@@ -4,8 +4,8 @@ use ahash::HashMap as Dict;
 use rayon::prelude::*;
 
 use crate::{
-    Color, Colors, Goal, Instr, Params, Prog, Shift, Slot, State,
-    States, Steps, config::MedConfig as Config, machine::RunResult,
+    Color, Goal, Instr, Params, Prog, Shift, Slot, State, Steps,
+    config::MedConfig as Config, machine::RunResult,
 };
 
 pub use crate::config::PassConfig;
@@ -25,10 +25,10 @@ type InstrTable = Vec<Vec<Instrs>>;
 
 #[expect(clippy::needless_range_loop)]
 #[expect(clippy::cast_possible_truncation)]
-fn make_instr_table(
-    max_states: States,
-    max_colors: Colors,
-) -> (Instrs, InstrTable) {
+fn make_instr_table<
+    const max_states: usize,
+    const max_colors: usize,
+>() -> (Instrs, InstrTable) {
     let mut table = vec![vec![vec![]; 1 + max_colors]; 1 + max_states];
 
     for states in 2..=max_states {
@@ -60,11 +60,12 @@ fn make_instr_table(
 type BlankInstrTable = [InstrTable; 2];
 
 #[expect(clippy::needless_range_loop)]
-fn make_blank_table(
-    max_states: States,
-    max_colors: Colors,
-) -> (Instrs, BlankInstrTable) {
-    let (init_instrs, table) = make_instr_table(max_states, max_colors);
+fn make_blank_table<
+    const max_states: usize,
+    const max_colors: usize,
+>() -> (Instrs, BlankInstrTable) {
+    let (init_instrs, table) =
+        make_instr_table::<max_states, max_colors>();
 
     let mut partial = table.clone();
 
@@ -81,11 +82,12 @@ type SpinoutInstrTable = [InstrTable; 2];
 
 #[expect(clippy::needless_range_loop)]
 #[expect(clippy::cast_possible_truncation)]
-fn make_spinout_table(
-    max_states: States,
-    max_colors: Colors,
-) -> (Instrs, SpinoutInstrTable) {
-    let (init_instrs, plain) = make_instr_table(max_states, max_colors);
+fn make_spinout_table<
+    const max_states: usize,
+    const max_colors: usize,
+>() -> (Instrs, SpinoutInstrTable) {
+    let (init_instrs, plain) =
+        make_instr_table::<max_states, max_colors>();
 
     let mut spins: InstrTable =
         vec![vec![Vec::new(); 1 + max_colors]; 1 + max_states];
@@ -538,7 +540,7 @@ pub trait Harvester<const states: usize, const colors: usize>:
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> TreeResult<Self> {
         let (init_instrs, instr_table) =
-            make_instr_table(states, colors);
+            make_instr_table::<states, colors>();
 
         BasicTree::run_branch(
             &init_instrs,
@@ -554,7 +556,7 @@ pub trait Harvester<const states: usize, const colors: usize>:
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> TreeResult<Self> {
         let (init_instrs, instr_table) =
-            make_blank_table(states, colors);
+            make_blank_table::<states, colors>();
 
         BlankTree::run_branch(
             &init_instrs,
@@ -570,7 +572,7 @@ pub trait Harvester<const states: usize, const colors: usize>:
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> TreeResult<Self> {
         let (init_instrs, instr_table) =
-            make_spinout_table(states, colors);
+            make_spinout_table::<states, colors>();
 
         let (init_spins, init_other) =
             init_instrs.into_iter().partition(|&(_, _, tr)| tr == 1);
