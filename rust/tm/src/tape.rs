@@ -2,7 +2,7 @@ use core::{
     cell::Cell,
     fmt::{self, Debug, Display, Formatter},
     hash::Hash,
-    iter::once,
+    iter::{Sum, once},
     ops::{AddAssign, Index as IndexTrait, IndexMut, SubAssign},
 };
 
@@ -20,7 +20,15 @@ pub type BigCount = BigUint;
 /**************************************/
 
 pub trait Countable:
-    Clone + Display + Eq + Zero + One + AddAssign + SubAssign
+    AddAssign
+    + Clone
+    + Display
+    + Eq
+    + From<bool>
+    + One
+    + SubAssign
+    + Sum
+    + Zero
 {
 }
 
@@ -144,6 +152,13 @@ impl<B: Block> Span<B> {
 
     pub fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> {
         self.iter().map(ToString::to_string)
+    }
+
+    fn marks(&self) -> B::Count {
+        self.iter()
+            .filter(|block| !block.blank())
+            .map(|block| block.get_count().clone())
+            .sum()
     }
 
     pub fn push_block(&mut self, color: Color, count: B::Count) {
@@ -432,6 +447,30 @@ impl<B: Block> Tape<B> {
         self.scan = next_scan;
 
         stepped
+    }
+
+    pub fn marks(&self) -> B::Count {
+        B::Count::from(self.scan != 0)
+            + self.lspan.marks()
+            + self.rspan.marks()
+    }
+
+    pub const fn length_one_spans(&self) -> bool {
+        self.lspan.len() == 1 && self.rspan.len() == 1
+    }
+    pub fn counts(&self) -> (Vec<B::Count>, Vec<B::Count>) {
+        (self.lspan.counts(), self.rspan.counts())
+    }
+
+    pub fn sig_compatible(
+        &self,
+        Signature { scan, lspan, rspan }: &Signature,
+    ) -> bool {
+        self.scan == *scan
+            && self.lspan.len() >= lspan.len()
+            && self.rspan.len() >= rspan.len()
+            && self.lspan.sig_compatible(lspan)
+            && self.rspan.sig_compatible(rspan)
     }
 }
 
@@ -776,43 +815,6 @@ impl MachineTape for EnumTape {
         self.check_step(shift, color, skip);
 
         self.tape.step(shift, color, skip);
-    }
-}
-
-/**************************************/
-
-impl Span<BigBlock> {
-    fn marks(&self) -> BigCount {
-        self.iter()
-            .filter(|block| !block.blank())
-            .map(|block| block.count.clone())
-            .sum::<BigCount>()
-    }
-}
-
-impl BigTape {
-    pub fn marks(&self) -> BigCount {
-        BigCount::from(self.scan != 0)
-            + self.lspan.marks()
-            + self.rspan.marks()
-    }
-
-    pub const fn length_one_spans(&self) -> bool {
-        self.lspan.len() == 1 && self.rspan.len() == 1
-    }
-    pub fn counts(&self) -> (Vec<BigCount>, Vec<BigCount>) {
-        (self.lspan.counts(), self.rspan.counts())
-    }
-
-    pub fn sig_compatible(
-        &self,
-        Signature { scan, lspan, rspan }: &Signature,
-    ) -> bool {
-        self.scan == *scan
-            && self.lspan.len() >= lspan.len()
-            && self.rspan.len() >= rspan.len()
-            && self.lspan.sig_compatible(lspan)
-            && self.rspan.sig_compatible(rspan)
     }
 }
 
