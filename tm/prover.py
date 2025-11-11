@@ -6,9 +6,7 @@ from tm.rust_stuff import PastConfigs
 if TYPE_CHECKING:
     from tm.macro import GetInstr, Slot, State
     from tm.rules import Rule
-    from tm.tape import EnumTape, Signature, Tape
-
-    MinSig = tuple[Signature, tuple[bool, bool]]
+    from tm.tape import EnumTape, MinSig, Signature, Tape
 
 
 class ConfigLimit(Exception):
@@ -116,9 +114,7 @@ class Prover:
     ) -> MinSig:
         _ = self.run_simulator(steps, state, tape)
 
-        lmax, rmax = tape.offsets
-
-        return (sig[0], sig[1][:lmax], sig[2][:rmax]), tape.edges
+        return tape.get_min_sig(sig)
 
     def try_rule(
             self,

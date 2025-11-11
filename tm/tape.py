@@ -21,6 +21,8 @@ if TYPE_CHECKING:
         list[Count],
     ]
 
+    MinSig = tuple[Signature, tuple[bool, bool]]
+
 ########################################
 
 @dataclass(slots = True)
@@ -305,3 +307,8 @@ class EnumTape:
             self.check_offsets(opp)
 
         _ = self.tape.step(shift, color, skip)
+
+    def get_min_sig(self, sig: Signature) -> MinSig:
+        lmax, rmax = self.offsets
+
+        return (sig[0], sig[1][:lmax], sig[2][:rmax]), self.edges
