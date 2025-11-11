@@ -385,7 +385,7 @@ const REC_PROGS_4_2: &[(&str, bool)] =
 
 #[cfg(test)]
 macro_rules! assert_rec {
-    ($prog:expr, ($s:expr, $c:expr), $expected:expr) => {{
+    ($prog:ident, ($s:literal, $c:literal), $expected:ident) => {{
         let prog = $prog;
         let expected = $expected;
 

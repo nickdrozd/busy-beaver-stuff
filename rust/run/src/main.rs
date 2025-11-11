@@ -30,7 +30,7 @@ fn get_goal(goal: u8) -> Option<Goal> {
 /**************************************/
 
 macro_rules! assert_params {
-    ( $( ( ( ($states:literal, $colors:literal), $goal:literal, $steps:expr, $leaves:expr ), $pipeline:expr ) ),* $(,)? ) => {{
+    ( $( ( ( ($states:literal, $colors:literal), $goal:literal, $steps:expr, $leaves:expr ), $pipeline:ident ) ),* $(,)? ) => {{
         rayon::scope(|s| { $( s.spawn( move |_| {
             let result = HoldoutVisited::<$states, $colors>::run_params(
                 get_goal($goal),
@@ -343,7 +343,7 @@ fn test_collect() {
 /**************************************/
 
 macro_rules! assert_instrs {
-    ( $( ( ($instrs:literal, $steps:literal, $leaves:expr), $pipeline:expr ) ),* $(,)? ) => {{
+    ( $( ( ($instrs:literal, $steps:literal, $leaves:expr), $pipeline:ident ) ),* $(,)? ) => {{
         rayon::scope(|s| { $( s.spawn(move |_| {
             let result = HoldoutVisited::<$instrs, $instrs>::run_instrs::<$instrs>(
                 $steps,

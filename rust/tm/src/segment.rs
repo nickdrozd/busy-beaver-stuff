@@ -891,13 +891,13 @@ fn test_reached_states() {
 macro_rules! tape {
     (
         $ scan : literal,
-        [ $ ( $ lspan : expr ), * ],
-        [ $ ( $ rspan : expr ), * ]
+        [ $ ( ( $ lcolor : literal, $ lcount: literal ) ), * ],
+        [ $ ( ( $ rcolor : literal, $ rcount: literal ) ), * ]
     ) => {
         Tape {
             scan: Some( $ scan ),
-            lspan: Span ( vec! [ $ ( Block::new( $ lspan.0, $ lspan.1) ), * ] ),
-            rspan: Span ( vec! [ $ ( Block::new( $ rspan.0, $ rspan.1) ), * ] ),
+            lspan: Span ( vec! [ $ ( Block::new( $ lcolor, $ lcount ) ), * ] ),
+            rspan: Span ( vec! [ $ ( Block::new( $ rcolor, $ rcount ) ), * ] ),
         }
     };
 }

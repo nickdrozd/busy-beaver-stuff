@@ -170,7 +170,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
 #[cfg(test)]
 macro_rules! assert_show {
-    ($prog:expr, ($s:expr, $c:expr), $show:expr) => {
+    ($prog:literal, ($s:literal, $c:literal), $show:literal) => {
         assert_eq!(Prog::<$s, $c>::from($prog).to_string(), $show);
     };
 }

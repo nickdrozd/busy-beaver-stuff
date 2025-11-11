@@ -12,7 +12,7 @@ use tm::{
 /**************************************/
 
 macro_rules! parse {
-    ($prog:expr, $action:expr) => {{
+    ($prog:ident, $action:expr) => {{
         let prog = $prog;
 
         let mut split = prog.split("  ");

@@ -57,7 +57,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
 #[cfg(test)]
 macro_rules! assert_connected {
-    ($prog:expr, ($s:expr, $c:expr), $conn:expr) => {{
+    ($prog:literal, ($s:literal, $c:literal), $conn:literal) => {{
         let result = Prog::<$s, $c>::from($prog).is_connected();
         assert!(if $conn { result } else { !result });
     }};
