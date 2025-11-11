@@ -53,11 +53,7 @@ impl RunResult {
 
 /**************************************/
 
-pub trait RunProver: GetInstr {
-    fn run_prover(&self, sim_lim: Steps) -> RunResult;
-}
-
-impl<T: GetInstr> RunProver for T {
+pub trait RunProver: GetInstr + Sized {
     fn run_prover(&self, sim_lim: Steps) -> RunResult {
         let mut config = BigConfig::init();
 
@@ -106,6 +102,8 @@ impl<T: GetInstr> RunProver for T {
         StepLimit
     }
 }
+
+impl<T: GetInstr> RunProver for T {}
 
 /**************************************/
 
