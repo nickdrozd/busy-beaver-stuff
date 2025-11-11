@@ -6,10 +6,10 @@ use pyo3::{pyclass, pymethods};
 
 use crate::{
     Slot, State,
-    config::BigConfig,
+    config::{BigConfig, Config},
     macros::GetInstr,
     rules::{ApplyRule, Rule, make_rule},
-    tape::{BigTape, EnumTape, GetSig, MachineTape, MinSig, Signature},
+    tape::{EnumTape, GetSig, MachineTape, MinSig, Signature},
 };
 
 type Cycle = i32;
@@ -50,34 +50,35 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         &mut self,
         rule: &Rule,
         steps: Cycle,
-        state: State,
-        tape: &BigTape,
+        config: &BigConfig,
         sig: &Signature,
     ) {
-        let mut enum_tape: EnumTape = tape.into();
+        let mut enum_config: Config<EnumTape> = Config {
+            state: config.state,
+            tape: (&config.tape).into(),
+        };
 
-        self.run_simulator(steps, state, &mut enum_tape);
+        self.run_simulator(steps, &mut enum_config);
 
-        let min_sig = enum_tape.get_min_sig(sig);
+        let min_sig = enum_config.tape.get_min_sig(sig);
 
         self.rules
-            .entry((state, tape.scan))
+            .entry(config.slot())
             .or_default()
             .push((min_sig, rule.clone()));
     }
 
-    fn get_rule(
+    fn get_rule<T: GetSig>(
         &self,
-        state: State,
-        tape: &impl GetSig,
+        config: &Config<T>,
         sig: Option<&Signature>,
     ) -> Option<&Rule> {
-        let rules = self.rules.get(&(state, tape.scan()))?;
+        let rules = self.rules.get(&config.slot())?;
 
         #[expect(clippy::option_if_let_else)]
         let sig = match sig {
             Some(sig) => sig,
-            None => &tape.signature(),
+            None => &config.tape.signature(),
         };
 
         rules
@@ -86,28 +87,27 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             .map(|(_, rule)| rule)
     }
 
-    fn run_simulator(
+    fn run_simulator<T: ApplyRule + GetSig + MachineTape>(
         &self,
         steps: Cycle,
-        mut state: State,
-        tape: &mut (impl ApplyRule + GetSig + MachineTape),
+        config: &mut Config<T>,
     ) -> Option<State> {
         for _ in 0..steps {
-            if let Some(rule) = self.get_rule(state, tape, None)
-                && tape.apply_rule(rule).is_some()
+            if let Some(rule) = self.get_rule(config, None)
+                && config.tape.apply_rule(rule).is_some()
             {
                 continue;
             }
 
             let (color, shift, next_state) =
-                self.prog.get_instr(&(state, tape.scan()))?;
+                self.prog.get_instr(&config.slot())?;
 
-            tape.mstep(shift, color, state == next_state);
+            config.tape.mstep(shift, color, config.state == next_state);
 
-            state = next_state;
+            config.state = next_state;
         }
 
-        Some(state)
+        Some(config.state)
     }
 
     pub fn try_rule(
@@ -121,13 +121,9 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         )]
         let cycle = cycle as Cycle;
 
-        let tape = &config.tape;
-        let state = config.state;
+        let sig = config.tape.signature();
 
-        let sig = tape.signature();
-
-        if let Some(known_rule) = self.get_rule(state, tape, Some(&sig))
-        {
+        if let Some(known_rule) = self.get_rule(config, Some(&sig)) {
             return Some(Got((*known_rule).clone()));
         }
 
@@ -136,7 +132,8 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
                 return Some(ConfigLimit);
             }
 
-            self.configs.insert(sig, PastConfigs::new(state, cycle));
+            self.configs
+                .insert(sig, PastConfigs::new(config.state, cycle));
 
             return None;
         }
@@ -145,7 +142,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             let (d1, d2, d3) = self
                 .configs
                 .get_mut(&sig)?
-                .next_deltas(state, cycle)?;
+                .next_deltas(config.state, cycle)?;
 
             vec![d1, d2, d3]
         };
@@ -154,22 +151,22 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             return None;
         }
 
-        let mut tags = tape.clone();
+        let mut tags = config.clone();
 
         let mut counts = vec![];
 
         for delta in &deltas {
-            if self.run_simulator(*delta, state, &mut tags)? != state
-                || !tags.sig_compatible(&sig)
+            if self.run_simulator(*delta, &mut tags)? != config.state
+                || !tags.tape.sig_compatible(&sig)
             {
                 return None;
             }
 
-            counts.push(tags.counts());
+            counts.push(tags.tape.counts());
         }
 
         let rule = make_rule(
-            &tape.counts(),
+            &config.tape.counts(),
             &counts[0],
             &counts[1],
             &counts[2],
@@ -183,13 +180,14 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
             return Some(MultRule);
         }
 
-        if tape.length_one_spans() && rule.has_two_values_same() {
+        if config.tape.length_one_spans() && rule.has_two_values_same()
+        {
             return None;
         }
 
-        self.configs.get_mut(&sig)?.delete_configs(state);
+        self.configs.get_mut(&sig)?.delete_configs(config.state);
 
-        self.set_rule(&rule, deltas[0], state, tape, &sig);
+        self.set_rule(&rule, deltas[0], config, &sig);
 
         // println!("--> proved rule: {:?}", rule);
 
