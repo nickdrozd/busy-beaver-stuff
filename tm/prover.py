@@ -66,13 +66,22 @@ class Prover:
     def set_rule(
             self,
             rule: Rule,
+            steps: int,
             state: State,
-            sig: MinSig,
+            tape: Tape,
+            sig: Signature,
     ) -> None:
-        if (slot := (state, sig[0][0])) not in self.rules:
+        min_sig = self.get_min_sig(
+            steps,
+            state,
+            tape.to_enum(),
+            sig,
+        )
+
+        if (slot := (state, tape.scan)) not in self.rules:
             self.rules[slot] = []
 
-        self.rules[slot].append((sig, rule))
+        self.rules[slot].append((min_sig, rule))
 
     def run_simulator(
             self,
@@ -160,16 +169,7 @@ class Prover:
 
         past_configs.delete_configs(state)
 
-        self.set_rule(
-            rule,
-            state,
-            self.get_min_sig(
-                deltas[0],
-                state,
-                tape.to_enum(),
-                sig,
-            ),
-        )
+        self.set_rule(rule, deltas[0], state, tape, sig)
 
         # print(f'--> proved rule: {rule}')
 
