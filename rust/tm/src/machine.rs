@@ -53,7 +53,7 @@ impl RunResult {
 
 /**************************************/
 
-trait RunProver {
+pub trait RunProver: GetInstr {
     fn run_prover(&self, sim_lim: Steps) -> RunResult;
 }
 

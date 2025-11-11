@@ -7,7 +7,7 @@ use pyo3::{pyclass, pymethods};
 use crate::{
     Slot, State,
     config::{BigConfig, Config},
-    macros::GetInstr,
+    machine::RunProver,
     rules::{ApplyRule, Rule, make_rule},
     tape::{EnumTape, GetSig, MachineTape, MinSig, Signature},
 };
@@ -25,7 +25,7 @@ pub enum ProverResult {
 
 use ProverResult::*;
 
-pub struct Prover<'p, Prog: GetInstr> {
+pub struct Prover<'p, Prog: RunProver> {
     prog: &'p Prog,
 
     rules: BTreeMap<Slot, Vec<(MinSig, Rule)>>,
@@ -33,7 +33,7 @@ pub struct Prover<'p, Prog: GetInstr> {
     configs: Dict<Signature, PastConfigs>,
 }
 
-impl<'p, Prog: GetInstr> Prover<'p, Prog> {
+impl<'p, Prog: RunProver> Prover<'p, Prog> {
     pub fn new(prog: &'p Prog) -> Self {
         Self {
             prog,
