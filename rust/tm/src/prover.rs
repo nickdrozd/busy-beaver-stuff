@@ -46,11 +46,11 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         self.configs.len()
     }
 
-    fn set_rule(&mut self, rule: Rule, state: State, sig: MinSig) {
+    fn set_rule(&mut self, rule: &Rule, state: State, sig: MinSig) {
         self.rules
             .entry((state, sig.0.scan))
             .or_default()
-            .push((sig, rule));
+            .push((sig, rule.clone()));
     }
 
     fn get_rule(
@@ -189,7 +189,7 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         self.configs.get_mut(&sig)?.delete_configs(state);
 
         self.set_rule(
-            rule.clone(),
+            &rule,
             state,
             self.get_min_sig(deltas[0], state, tape.into(), &sig),
         );
