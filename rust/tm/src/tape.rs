@@ -642,7 +642,7 @@ struct EnumBlock {
 impl Block for EnumBlock {
     type Count = BigCount;
 
-    fn new(color: Color, count: BigCount) -> Self {
+    fn new(color: Color, count: Self::Count) -> Self {
         Self {
             block: BigBlock::new(color, count),
             index: None,
@@ -653,11 +653,11 @@ impl Block for EnumBlock {
         self.block.get_color()
     }
 
-    fn get_count(&self) -> &BigCount {
+    fn get_count(&self) -> &Self::Count {
         self.block.get_count()
     }
 
-    fn add_count(&mut self, count: BigCount) {
+    fn add_count(&mut self, count: Self::Count) {
         self.block.add_count(count);
     }
 
@@ -665,7 +665,7 @@ impl Block for EnumBlock {
         self.block.decrement();
     }
 
-    fn set_count(&mut self, count: BigCount) {
+    fn set_count(&mut self, count: Self::Count) {
         self.block.set_count(count);
     }
 }
