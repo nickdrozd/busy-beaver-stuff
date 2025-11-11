@@ -5,14 +5,12 @@ use ahash::AHashMap as Dict;
 use pyo3::{pyclass, pymethods};
 
 use crate::{
-    Slot, State,
+    Slot, State, Steps,
     config::{BigConfig, Config},
     machine::RunProver,
     rules::{ApplyRule, Rule, make_rule},
     tape::{EnumTape, GetSig, MachineTape, MinSig, Signature},
 };
-
-type Cycle = i32;
 
 /**************************************/
 
@@ -49,7 +47,7 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
     fn set_rule(
         &mut self,
         rule: &Rule,
-        steps: Cycle,
+        steps: Steps,
         config: &BigConfig,
         sig: &Signature,
     ) {
@@ -89,7 +87,7 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
 
     fn run_simulator<T: ApplyRule + GetSig + MachineTape>(
         &self,
-        steps: Cycle,
+        steps: Steps,
         config: &mut Config<T>,
     ) -> Option<State> {
         for _ in 0..steps {
@@ -115,12 +113,6 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
         cycle: usize,
         config: &BigConfig,
     ) -> Option<ProverResult> {
-        #[expect(
-            clippy::cast_possible_wrap,
-            clippy::cast_possible_truncation
-        )]
-        let cycle = cycle as Cycle;
-
         let sig = config.tape.signature();
 
         if let Some(known_rule) = self.get_rule(config, Some(&sig)) {
@@ -197,14 +189,16 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
 
 /**************************************/
 
+type Diff = i32;
+
 const PAST_CONFIG_LIMIT: usize = 5;
 
 struct PastConfig {
-    cycles: Vec<Cycle>,
+    cycles: Vec<Steps>,
 }
 
 impl PastConfig {
-    fn new(cycle: Cycle) -> Self {
+    fn new(cycle: Steps) -> Self {
         let mut cycles = Vec::with_capacity(PAST_CONFIG_LIMIT);
 
         cycles.push(cycle);
@@ -212,11 +206,16 @@ impl PastConfig {
         Self { cycles }
     }
 
-    #[expect(clippy::many_single_char_names)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_possible_wrap,
+        clippy::cast_sign_loss,
+        clippy::many_single_char_names
+    )]
     fn next_deltas(
         &mut self,
-        cycle: Cycle,
-    ) -> Option<(Cycle, Cycle, Cycle)> {
+        cycle: Steps,
+    ) -> Option<(Steps, Steps, Steps)> {
         self.cycles.push(cycle);
 
         if self.cycles.len() < 5 {
@@ -228,6 +227,12 @@ impl PastConfig {
         };
 
         self.cycles.remove(0);
+
+        let a = a as Diff;
+        let b = b as Diff;
+        let c = c as Diff;
+        let d = d as Diff;
+        let e = e as Diff;
 
         // println!("{e} {d} {c} {b} {a}");
 
@@ -257,7 +262,11 @@ impl PastConfig {
                 return None;
             }
 
-            return Some((nxt1 - a, nxt2 - nxt1, nxt3 - nxt2));
+            return Some((
+                (nxt1 - a) as Steps,
+                (nxt2 - nxt1) as Steps,
+                (nxt3 - nxt2) as Steps,
+            ));
         }
 
         None
@@ -272,7 +281,7 @@ pub struct PastConfigs {
 #[pymethods]
 impl PastConfigs {
     #[new]
-    fn new(state: State, cycle: Cycle) -> Self {
+    fn new(state: State, cycle: Steps) -> Self {
         Self {
             configs: BTreeMap::from([(state, PastConfig::new(cycle))]),
         }
@@ -281,8 +290,8 @@ impl PastConfigs {
     fn next_deltas(
         &mut self,
         state: State,
-        cycle: Cycle,
-    ) -> Option<(Cycle, Cycle, Cycle)> {
+        cycle: Steps,
+    ) -> Option<(Steps, Steps, Steps)> {
         self.configs
             .entry(state)
             .or_insert_with(|| PastConfig::new(cycle))
