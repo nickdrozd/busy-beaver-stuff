@@ -175,38 +175,55 @@ fn params_2_4_3(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
         || prog.term_or_rec(4_600, config).is_settled()
 }
 
-fn test_params() {
-    println!("params fast");
+fn test_deciders() {
+    println!("deciders");
 
     assert_params![
         (2, 2) => [
             0 => (params_2_2_0, 2, (9, 23)),
             1 => (params_2_2_1, 4, (5, 32)),
             2 => (params_2_2_2, 4, (5, 53)),
-            3 => (params_2_2_3, 4, (4, 81)),
         ],
         (3, 2) => [
             0 => (params_3_2_0, 12, (850, 2_721)),
             1 => (params_3_2_1, 13, (517, 4_050)),
             2 => (params_3_2_2, 13, (669, 9_513)),
-            3 => (params_3_2_3, 13, (25, 11_758)),
         ],
         (2, 3) => [
             0 => (params_2_3_0, 7, (548, 2_335)),
             1 => (params_2_3_1, 20, (551, 3_510)),
             2 => (params_2_3_2, 20, (177, 5_962)),
-            3 => (params_2_3_3, 20, (63, 8_771)),
         ],
         (4, 2) => [
             0 => (params_4_2_0, 25, (115_958, 432_318)),
             1 => (params_4_2_1, 99, (89_189, 754_707)),
             2 => (params_4_2_2, 99, (113_581, 1_933_882)),
-            3 => (params_4_2_3, 99, (7_944, 2_135_991)),
         ],
         (2, 4) => [
             0 => (params_2_4_0, 109, (88_144, 309_759)),
             1 => (params_2_4_1, TREE_LIM, (95_695, 613_031)),
             2 => (params_2_4_2, TREE_LIM, (34_679, 1_190_832)),
+        ],
+    ];
+}
+
+fn test_prover() {
+    println!("prover");
+
+    assert_params![
+        (2, 2) => [
+            3 => (params_2_2_3, 4, (4, 81)),
+        ],
+        (3, 2) => [
+            3 => (params_3_2_3, 13, (25, 11_758)),
+        ],
+        (2, 3) => [
+            3 => (params_2_3_3, 20, (63, 8_771)),
+        ],
+        (4, 2) => [
+            3 => (params_4_2_3, 99, (7_944, 2_135_991)),
+        ],
+        (2, 4) => [
             3 => (params_2_4_3, TREE_LIM, (39_623, 1_699_887)),
         ],
     ];
@@ -417,17 +434,19 @@ const TESTS: [fn(); 5] = [
     test_reason,
     test_8_instr,
     test_instrs,
-    test_params,
+    test_deciders,
 ];
 
 use rayon::prelude::*;
 
 fn main() {
-    TESTS.par_iter().for_each(|f| f());
+    test_prover();
 
     if !env::args().any(|x| x == "--all") {
         return;
     }
+
+    TESTS.par_iter().for_each(|f| f());
 
     test_params_slow();
 }
