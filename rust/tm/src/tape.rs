@@ -482,19 +482,19 @@ impl<B: Block> Init for Tape<B> {
 
 pub type Index = (Shift, usize);
 
-pub trait IndexTape {
-    fn get_count(&self, index: &Index) -> &BigCount;
-    fn set_count(&mut self, index: &Index, val: BigCount);
+pub trait IndexTape<Count: Countable> {
+    fn get_count(&self, index: &Index) -> &Count;
+    fn set_count(&mut self, index: &Index, val: Count);
 }
 
-impl IndexTape for Tape<BigBlock> {
-    fn get_count(&self, &(side, pos): &Index) -> &BigCount {
+impl<B: Block> IndexTape<B::Count> for Tape<B> {
+    fn get_count(&self, &(side, pos): &Index) -> &B::Count {
         let span = if side { &self.rspan } else { &self.lspan };
 
         span[pos].get_count()
     }
 
-    fn set_count(&mut self, &(side, pos): &Index, val: BigCount) {
+    fn set_count(&mut self, &(side, pos): &Index, val: B::Count) {
         let span = if side {
             &mut self.rspan
         } else {
@@ -761,25 +761,7 @@ impl EnumTape {
     }
 }
 
-impl IndexTape for Tape<EnumBlock> {
-    fn get_count(&self, &(side, pos): &Index) -> &BigCount {
-        let span = if side { &self.rspan } else { &self.lspan };
-
-        span[pos].get_count()
-    }
-
-    fn set_count(&mut self, &(side, pos): &Index, val: BigCount) {
-        let span = if side {
-            &mut self.rspan
-        } else {
-            &mut self.lspan
-        };
-
-        span[pos].set_count(val);
-    }
-}
-
-impl IndexTape for EnumTape {
+impl IndexTape<BigCount> for EnumTape {
     fn get_count(&self, index: &Index) -> &BigCount {
         self.tape.get_count(index)
     }

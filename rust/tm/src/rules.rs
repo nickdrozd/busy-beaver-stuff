@@ -166,7 +166,7 @@ pub fn make_rule(
 
 /**************************************/
 
-pub trait ApplyRule: IndexTape {
+pub trait ApplyRule: IndexTape<Count> {
     fn apply_rule(&mut self, rule: &Rule) -> Option<Count> {
         let (times, min_pos, min_res) = self.count_apps(rule)?;
 
@@ -228,7 +228,7 @@ pub trait ApplyRule: IndexTape {
     }
 }
 
-impl<T: IndexTape> ApplyRule for T {}
+impl<T: IndexTape<Count>> ApplyRule for T {}
 
 /**************************************/
 
