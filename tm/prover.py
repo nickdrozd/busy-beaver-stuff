@@ -69,12 +69,11 @@ class Prover:
             tape: Tape,
             sig: Signature,
     ) -> None:
-        min_sig = self.get_min_sig(
-            steps,
-            state,
-            tape.to_enum(),
-            sig,
-        )
+        enum_tape = tape.to_enum()
+
+        _ = self.run_simulator(steps, state, enum_tape)
+
+        min_sig = enum_tape.get_min_sig(sig)
 
         if (slot := (state, tape.scan)) not in self.rules:
             self.rules[slot] = []
@@ -104,17 +103,6 @@ class Prover:
             state = next_state
 
         return state
-
-    def get_min_sig(
-            self,
-            steps: int,
-            state: State,
-            tape: EnumTape,
-            sig: Signature,
-    ) -> MinSig:
-        _ = self.run_simulator(steps, state, tape)
-
-        return tape.get_min_sig(sig)
 
     def try_rule(
             self,

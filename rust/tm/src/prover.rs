@@ -54,7 +54,11 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         tape: &BigTape,
         sig: &Signature,
     ) {
-        let min_sig = self.get_min_sig(steps, state, tape.into(), sig);
+        let mut enum_tape: EnumTape = tape.into();
+
+        self.run_simulator(steps, state, &mut enum_tape);
+
+        let min_sig = enum_tape.get_min_sig(sig);
 
         self.rules
             .entry((state, tape.scan))
@@ -104,18 +108,6 @@ impl<'p, Prog: GetInstr> Prover<'p, Prog> {
         }
 
         Some(state)
-    }
-
-    fn get_min_sig(
-        &self,
-        steps: Cycle,
-        state: State,
-        mut tape: EnumTape,
-        sig: &Signature,
-    ) -> MinSig {
-        self.run_simulator(steps, state, &mut tape);
-
-        tape.get_min_sig(sig)
     }
 
     pub fn try_rule(
