@@ -57,10 +57,10 @@ pub trait RunProver: GetInstr + Sized {
     fn run_prover(&self, sim_lim: Steps) -> RunResult {
         let mut config = BigConfig::init();
 
-        let mut prover = Prover::new(self);
+        let mut prover = Prover::new();
 
         for cycle in 0..sim_lim {
-            if let Some(res) = prover.try_rule(cycle, &config) {
+            if let Some(res) = prover.try_rule(cycle, &config, self) {
                 match res {
                     ProverResult::ConfigLimit => {
                         return ConfigLimit;
@@ -106,7 +106,7 @@ pub trait RunProver: GetInstr + Sized {
         &self,
         steps: Steps,
         config: &mut Config<T>,
-        prover: &Prover<Self>,
+        prover: &Prover,
     ) -> Option<State> {
         for _ in 0..steps {
             if let Some(rule) = prover.get_rule(config, None)

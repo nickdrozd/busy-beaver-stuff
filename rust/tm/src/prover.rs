@@ -23,18 +23,15 @@ pub enum ProverResult {
 
 use ProverResult::*;
 
-pub struct Prover<'p, Prog: RunProver> {
-    prog: &'p Prog,
-
+pub struct Prover {
     rules: BTreeMap<Slot, Vec<(MinSig, Rule)>>,
 
     configs: Dict<Signature, PastConfigs>,
 }
 
-impl<'p, Prog: RunProver> Prover<'p, Prog> {
-    pub fn new(prog: &'p Prog) -> Self {
+impl Prover {
+    pub fn new() -> Self {
         Self {
-            prog,
             rules: BTreeMap::new(),
             configs: Dict::new(),
         }
@@ -50,13 +47,14 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
         steps: Steps,
         config: &BigConfig,
         sig: &Signature,
+        prog: &impl RunProver,
     ) {
         let mut enum_config: Config<EnumTape> = Config {
             state: config.state,
             tape: (&config.tape).into(),
         };
 
-        self.prog.run_rules(steps, &mut enum_config, self);
+        prog.run_rules(steps, &mut enum_config, self);
 
         let min_sig = enum_config.tape.get_min_sig(sig);
 
@@ -89,6 +87,7 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
         &mut self,
         cycle: usize,
         config: &BigConfig,
+        prog: &impl RunProver,
     ) -> Option<ProverResult> {
         let sig = config.tape.signature();
 
@@ -125,8 +124,7 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
         let mut counts = vec![];
 
         for delta in &deltas {
-            if self.prog.run_rules(*delta, &mut tags, self)?
-                != config.state
+            if prog.run_rules(*delta, &mut tags, self)? != config.state
                 || !tags.tape.sig_compatible(&sig)
             {
                 return None;
@@ -157,7 +155,7 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
 
         self.configs.get_mut(&sig)?.delete_configs(config.state);
 
-        self.set_rule(&rule, deltas[0], config, &sig);
+        self.set_rule(&rule, deltas[0], config, &sig, prog);
 
         // println!("--> proved rule: {:?}", rule);
 
