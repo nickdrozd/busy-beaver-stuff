@@ -8,8 +8,8 @@ use crate::{
     Slot, State, Steps,
     config::{BigConfig, Config},
     machine::RunProver,
-    rules::{ApplyRule, Rule, make_rule},
-    tape::{EnumTape, GetSig, MachineTape, MinSig, Signature},
+    rules::{Rule, make_rule},
+    tape::{EnumTape, GetSig, MinSig, Signature},
 };
 
 /**************************************/
@@ -56,7 +56,7 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
             tape: (&config.tape).into(),
         };
 
-        self.run_simulator(steps, &mut enum_config);
+        self.prog.run_rules(steps, &mut enum_config, self);
 
         let min_sig = enum_config.tape.get_min_sig(sig);
 
@@ -66,7 +66,7 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
             .push((min_sig, rule.clone()));
     }
 
-    fn get_rule<T: GetSig>(
+    pub fn get_rule<T: GetSig>(
         &self,
         config: &Config<T>,
         sig: Option<&Signature>,
@@ -83,29 +83,6 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
             .iter()
             .find(|(min_sig, _)| sig.matches(min_sig))
             .map(|(_, rule)| rule)
-    }
-
-    fn run_simulator<T: ApplyRule + GetSig + MachineTape>(
-        &self,
-        steps: Steps,
-        config: &mut Config<T>,
-    ) -> Option<State> {
-        for _ in 0..steps {
-            if let Some(rule) = self.get_rule(config, None)
-                && config.tape.apply_rule(rule).is_some()
-            {
-                continue;
-            }
-
-            let (color, shift, next_state) =
-                self.prog.get_instr(&config.slot())?;
-
-            config.tape.mstep(shift, color, config.state == next_state);
-
-            config.state = next_state;
-        }
-
-        Some(config.state)
     }
 
     pub fn try_rule(
@@ -148,7 +125,8 @@ impl<'p, Prog: RunProver> Prover<'p, Prog> {
         let mut counts = vec![];
 
         for delta in &deltas {
-            if self.run_simulator(*delta, &mut tags)? != config.state
+            if self.prog.run_rules(*delta, &mut tags, self)?
+                != config.state
                 || !tags.tape.sig_compatible(&sig)
             {
                 return None;

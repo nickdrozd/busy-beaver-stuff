@@ -1,10 +1,10 @@
 use crate::{
-    Prog, Slot, Steps,
-    config::{BigConfig, MedConfig},
+    Prog, Slot, State, Steps,
+    config::{BigConfig, Config, MedConfig},
     macros::GetInstr,
     prover::{Prover, ProverResult},
-    rules::ApplyRule as _,
-    tape::{Alignment as _, Pos},
+    rules::ApplyRule,
+    tape::{Alignment as _, GetSig, MachineTape, Pos},
 };
 
 /**************************************/
@@ -100,6 +100,30 @@ pub trait RunProver: GetInstr + Sized {
         }
 
         StepLimit
+    }
+
+    fn run_rules<T: ApplyRule + GetSig + MachineTape>(
+        &self,
+        steps: Steps,
+        config: &mut Config<T>,
+        prover: &Prover<Self>,
+    ) -> Option<State> {
+        for _ in 0..steps {
+            if let Some(rule) = prover.get_rule(config, None)
+                && config.tape.apply_rule(rule).is_some()
+            {
+                continue;
+            }
+
+            let (color, shift, next_state) =
+                self.get_instr(&config.slot())?;
+
+            config.tape.mstep(shift, color, config.state == next_state);
+
+            config.state = next_state;
+        }
+
+        Some(config.state)
     }
 }
 
