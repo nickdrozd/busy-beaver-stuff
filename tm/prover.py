@@ -125,6 +125,24 @@ class Prover:
         if (deltas := past_configs.next_deltas(state, cycle)) is None:
             return None
 
+        if (rule := self.prove_rule(deltas, state, tape, sig)) is None:
+            return None
+
+        past_configs.delete_configs(state)
+
+        self.set_rule(rule, deltas[0], state, tape, sig)
+
+        # print(f'--> proved rule: {rule}')
+
+        return rule
+
+    def prove_rule(
+            self,
+            deltas: tuple[int, int, int],
+            state: State,
+            tape: Tape,
+            sig: Signature,
+    ) -> Rule | None:
         tags = tape.clone()
 
         counts = []
@@ -150,11 +168,5 @@ class Prover:
                     abs(val) for val in rule.values()
                     if isinstance(val, int)}) == 1):
             return None
-
-        past_configs.delete_configs(state)
-
-        self.set_rule(rule, deltas[0], state, tape, sig)
-
-        # print(f'--> proved rule: {rule}')
 
         return rule

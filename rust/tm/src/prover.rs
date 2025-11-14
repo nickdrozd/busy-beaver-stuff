@@ -119,13 +119,33 @@ impl Prover {
             return None;
         }
 
+        let result = self.prove_rule(&deltas, config, &sig, prog)?;
+
+        if let Got(rule) = &result {
+            self.configs.get_mut(&sig)?.delete_configs(config.state);
+
+            self.set_rule(rule, deltas[0], config, &sig, prog);
+
+            // println!("--> proved rule: {:?}", rule);
+        }
+
+        Some(result)
+    }
+
+    fn prove_rule(
+        &self,
+        deltas: &Vec<Steps>,
+        config: &BigConfig,
+        sig: &Signature,
+        prog: &impl RunProver,
+    ) -> Option<ProverResult> {
         let mut tags = config.clone();
 
         let mut counts = vec![];
 
-        for delta in &deltas {
+        for delta in deltas {
             if prog.run_rules(*delta, &mut tags, self)? != config.state
-                || !tags.tape.sig_compatible(&sig)
+                || !tags.tape.sig_compatible(sig)
             {
                 return None;
             }
@@ -152,12 +172,6 @@ impl Prover {
         {
             return None;
         }
-
-        self.configs.get_mut(&sig)?.delete_configs(config.state);
-
-        self.set_rule(&rule, deltas[0], config, &sig, prog);
-
-        // println!("--> proved rule: {:?}", rule);
 
         Some(Got(rule))
     }
