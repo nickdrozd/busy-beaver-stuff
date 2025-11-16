@@ -219,10 +219,38 @@ impl<'h, const states: usize, const colors: usize>
     }
 }
 
+struct AvailBlanks(AvailStack<Option<Slots>>);
+
+impl AvailBlanks {
+    fn init(states: usize, colors: usize) -> Self {
+        let init_blanks = states * (colors - 1);
+
+        Self(AvailStack::new(Some(init_blanks)))
+    }
+
+    fn must_erase(&self, print: Color) -> bool {
+        print != 0 && self.0.top() == Some(1)
+    }
+
+    fn on_remove(&mut self) {
+        self.0.pop();
+    }
+
+    fn on_insert(&mut self, &(_, sc): &Slot, &(pr, _, _): &Instr) {
+        let next = if pr == 0 && sc != 0 {
+            None
+        } else {
+            self.0.top().map(|rem| if sc != 0 { rem - 1 } else { rem })
+        };
+
+        self.0.push(next);
+    }
+}
+
 struct BlankInstrs<'h> {
     instr_table: &'h BlankInstrTable,
     avail_params: AvailParams,
-    avail_blanks: AvailStack<Option<Slots>>,
+    avail_blanks: AvailBlanks,
 }
 
 impl<'h, const states: usize, const colors: usize>
@@ -233,52 +261,70 @@ impl<'h, const states: usize, const colors: usize>
     fn new(instr_table: &'h Self::Table) -> Self {
         let avail_params = AvailStack::init(states, colors);
 
-        let init_blanks = states * (colors - 1);
+        let avail_blanks = AvailBlanks::init(states, colors);
 
         Self {
             instr_table,
             avail_params,
-            avail_blanks: AvailStack::new(Some(init_blanks)),
+            avail_blanks,
         }
     }
 
     fn avail_instrs(&self, &(_, pr): &Slot) -> &'h [Instr] {
         let (st, co) = self.avail_params.avail();
 
-        &self.instr_table
-            [usize::from(pr != 0 && self.avail_blanks.top() == Some(1))]
-            [st][co]
+        let must_erase = self.avail_blanks.must_erase(pr);
+
+        &self.instr_table[usize::from(must_erase)][st][co]
     }
 
-    fn on_insert(
-        &mut self,
-        slot @ &(_, sc): &Slot,
-        instr @ &(pr, _, _): &Instr,
-    ) {
+    fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
         self.avail_params.on_insert::<states, colors>(slot, instr);
 
-        let next = if pr == 0 && sc != 0 {
-            None
-        } else {
-            self.avail_blanks
-                .top()
-                .map(|rem| if sc != 0 { rem - 1 } else { rem })
-        };
-
-        self.avail_blanks.push(next);
+        self.avail_blanks.on_insert(slot, instr);
     }
 
     fn on_remove(&mut self) {
-        self.avail_blanks.pop();
+        self.avail_blanks.on_remove();
 
         self.avail_params.on_remove();
+    }
+}
+
+struct AvailSpinouts(AvailStack<Option<Slots>>);
+
+impl AvailSpinouts {
+    fn init(states: usize, _: usize) -> Self {
+        let init_spins = states - 1;
+
+        Self(AvailStack::new(Some(init_spins)))
+    }
+
+    fn must_spin(&self, read_color: Color) -> bool {
+        read_color == 0 && self.0.top() == Some(1)
+    }
+
+    fn on_remove(&mut self) {
+        self.0.pop();
+    }
+
+    fn on_insert(&mut self, &(st, co): &Slot, &(_, _, tr): &Instr) {
+        let next = if co != 0 {
+            self.0.top()
+        } else if st == tr {
+            None
+        } else {
+            self.0.top().map(|rem| rem - 1)
+        };
+
+        self.0.push(next);
     }
 }
 
 struct SpinoutInstrs<'h> {
     instr_table: &'h SpinoutInstrTable,
     avail_params: AvailParams,
-    avail_spinouts: AvailStack<Option<Slots>>,
+    avail_spinouts: AvailSpinouts,
 }
 
 impl<'h, const states: usize, const colors: usize>
@@ -289,12 +335,12 @@ impl<'h, const states: usize, const colors: usize>
     fn new(instr_table: &'h Self::Table) -> Self {
         let avail_params = AvailStack::init(states, colors);
 
-        let init_spins = states - 1;
+        let avail_spinouts = AvailSpinouts::init(states, colors);
 
         Self {
             instr_table,
             avail_params,
-            avail_spinouts: AvailStack::new(Some(init_spins)),
+            avail_spinouts,
         }
     }
 
@@ -304,36 +350,21 @@ impl<'h, const states: usize, const colors: usize>
     ) -> &'h [Instr] {
         let (st, co) = self.avail_params.avail();
 
-        let spinout =
-            read_color == 0 && self.avail_spinouts.top() == Some(1);
-
-        &(if spinout {
+        &(if self.avail_spinouts.must_spin(read_color) {
             &self.instr_table[1][1 + read_state as usize]
         } else {
             &self.instr_table[0][st]
         })[co]
     }
 
-    fn on_insert(
-        &mut self,
-        slot @ &(st, co): &Slot,
-        instr @ &(_, _, tr): &Instr,
-    ) {
+    fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
         self.avail_params.on_insert::<states, colors>(slot, instr);
 
-        let next = if co != 0 {
-            self.avail_spinouts.top()
-        } else if st == tr {
-            None
-        } else {
-            self.avail_spinouts.top().map(|rem| rem - 1)
-        };
-
-        self.avail_spinouts.push(next);
+        self.avail_spinouts.on_insert(slot, instr);
     }
 
     fn on_remove(&mut self) {
-        self.avail_spinouts.pop();
+        self.avail_spinouts.on_remove();
 
         self.avail_params.on_remove();
     }
