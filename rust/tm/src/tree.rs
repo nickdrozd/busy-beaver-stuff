@@ -140,6 +140,10 @@ impl AvailParams {
         Self::new((min(3, states), min(3, colors)))
     }
 
+    fn avail(&self) -> Params {
+        self.top()
+    }
+
     fn on_remove(&mut self) {
         self.pop();
     }
@@ -175,7 +179,7 @@ trait AvailInstrs<'h, const states: usize, const colors: usize> {
 
     fn new(instr_table: &'h Self::Table) -> Self;
 
-    fn avail_instrs(&self, slot: &Slot, params: Params) -> &'h [Instr];
+    fn avail_instrs(&self, slot: &Slot) -> &'h [Instr];
 
     fn on_insert(&mut self, _: &Slot, _: &Instr) {}
     fn on_remove(&mut self) {}
@@ -183,6 +187,7 @@ trait AvailInstrs<'h, const states: usize, const colors: usize> {
 
 struct BasicInstrs<'h> {
     instr_table: &'h InstrTable,
+    avail_params: AvailParams,
 }
 
 impl<'h, const states: usize, const colors: usize>
@@ -191,16 +196,32 @@ impl<'h, const states: usize, const colors: usize>
     type Table = InstrTable;
 
     fn new(instr_table: &'h Self::Table) -> Self {
-        Self { instr_table }
+        let avail_params = AvailStack::init(states, colors);
+
+        Self {
+            instr_table,
+            avail_params,
+        }
     }
 
-    fn avail_instrs(&self, _: &Slot, (st, co): Params) -> &'h [Instr] {
+    fn avail_instrs(&self, _: &Slot) -> &'h [Instr] {
+        let (st, co) = self.avail_params.avail();
+
         &self.instr_table[st][co]
+    }
+
+    fn on_remove(&mut self) {
+        self.avail_params.on_remove();
+    }
+
+    fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
+        self.avail_params.on_insert::<states, colors>(slot, instr);
     }
 }
 
 struct BlankInstrs<'h> {
     instr_table: &'h BlankInstrTable,
+    avail_params: AvailParams,
     avail_blanks: AvailStack<Option<Slots>>,
 }
 
@@ -210,25 +231,32 @@ impl<'h, const states: usize, const colors: usize>
     type Table = BlankInstrTable;
 
     fn new(instr_table: &'h Self::Table) -> Self {
+        let avail_params = AvailStack::init(states, colors);
+
         let init_blanks = states * (colors - 1);
 
         Self {
             instr_table,
+            avail_params,
             avail_blanks: AvailStack::new(Some(init_blanks)),
         }
     }
 
-    fn avail_instrs(
-        &self,
-        &(_, pr): &Slot,
-        (st, co): Params,
-    ) -> &'h [Instr] {
+    fn avail_instrs(&self, &(_, pr): &Slot) -> &'h [Instr] {
+        let (st, co) = self.avail_params.avail();
+
         &self.instr_table
             [usize::from(pr != 0 && self.avail_blanks.top() == Some(1))]
             [st][co]
     }
 
-    fn on_insert(&mut self, &(_, sc): &Slot, &(pr, _, _): &Instr) {
+    fn on_insert(
+        &mut self,
+        slot @ &(_, sc): &Slot,
+        instr @ &(pr, _, _): &Instr,
+    ) {
+        self.avail_params.on_insert::<states, colors>(slot, instr);
+
         let next = if pr == 0 && sc != 0 {
             None
         } else {
@@ -242,11 +270,14 @@ impl<'h, const states: usize, const colors: usize>
 
     fn on_remove(&mut self) {
         self.avail_blanks.pop();
+
+        self.avail_params.on_remove();
     }
 }
 
 struct SpinoutInstrs<'h> {
     instr_table: &'h SpinoutInstrTable,
+    avail_params: AvailParams,
     avail_spinouts: AvailStack<Option<Slots>>,
 }
 
@@ -256,10 +287,13 @@ impl<'h, const states: usize, const colors: usize>
     type Table = SpinoutInstrTable;
 
     fn new(instr_table: &'h Self::Table) -> Self {
+        let avail_params = AvailStack::init(states, colors);
+
         let init_spins = states - 1;
 
         Self {
             instr_table,
+            avail_params,
             avail_spinouts: AvailStack::new(Some(init_spins)),
         }
     }
@@ -267,8 +301,9 @@ impl<'h, const states: usize, const colors: usize>
     fn avail_instrs(
         &self,
         &(read_state, read_color): &Slot,
-        (st, co): Params,
     ) -> &'h [Instr] {
+        let (st, co) = self.avail_params.avail();
+
         let spinout =
             read_color == 0 && self.avail_spinouts.top() == Some(1);
 
@@ -279,7 +314,13 @@ impl<'h, const states: usize, const colors: usize>
         })[co]
     }
 
-    fn on_insert(&mut self, &(st, co): &Slot, &(_, _, tr): &Instr) {
+    fn on_insert(
+        &mut self,
+        slot @ &(st, co): &Slot,
+        instr @ &(_, _, tr): &Instr,
+    ) {
+        self.avail_params.on_insert::<states, colors>(slot, instr);
+
         let next = if co != 0 {
             self.avail_spinouts.top()
         } else if st == tr {
@@ -293,6 +334,8 @@ impl<'h, const states: usize, const colors: usize>
 
     fn on_remove(&mut self) {
         self.avail_spinouts.pop();
+
+        self.avail_params.on_remove();
     }
 }
 
@@ -302,7 +345,6 @@ struct Tree<const states: usize, const colors: usize, AvIn, Harv> {
     prog: Prog<states, colors>,
     instrs: AvIn,
     sim_lim: Steps,
-    avail_params: AvailStack<Params>,
     remaining_slots: Slots,
     harvester: Harv,
 }
@@ -325,15 +367,12 @@ impl<
 
         let instrs = AvIn::new(instr_table);
 
-        let avail_params = AvailStack::init(states, colors);
-
         let remaining_slots = (states * colors) - halt - 2;
 
         Self {
             prog,
             instrs,
             sim_lim,
-            avail_params,
             remaining_slots,
             harvester,
         }
@@ -356,23 +395,15 @@ impl<
 
         self.prog.insert(slot, instr);
 
-        self.avail_params.on_insert::<states, colors>(slot, instr);
-
         self.instrs.on_insert(slot, instr);
     }
 
     fn remove_and_update(&mut self, slot: &Slot) {
-        self.avail_params.on_remove();
-
         self.prog.remove(slot);
 
         self.remaining_slots += 1;
 
         self.instrs.on_remove();
-    }
-
-    fn avail_instrs(&self, slot: &Slot) -> &'i [Instr] {
-        self.instrs.avail_instrs(slot, self.avail_params.top())
     }
 
     fn with_update(
@@ -414,7 +445,8 @@ impl<
             },
         };
 
-        let mut avail_instrs: Vec<_> = self.avail_instrs(&slot).into();
+        let mut avail_instrs: Vec<_> =
+            self.instrs.avail_instrs(&slot).into();
 
         if config.tape.scan == 0 {
             avail_instrs.retain(|&(_, shift, state)| {
