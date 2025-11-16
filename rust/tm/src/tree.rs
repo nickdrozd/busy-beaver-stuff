@@ -133,6 +133,41 @@ impl<T: Copy> AvailStack<T> {
     }
 }
 
+type AvailParams = AvailStack<Params>;
+
+impl AvailParams {
+    fn init(states: usize, colors: usize) -> Self {
+        Self::new((min(3, states), min(3, colors)))
+    }
+
+    fn on_remove(&mut self) {
+        self.pop();
+    }
+
+    #[expect(clippy::cast_possible_truncation)]
+    fn on_insert<const states: usize, const colors: usize>(
+        &mut self,
+        (slot_st, slot_co): &Slot,
+        (instr_co, _, instr_st): &Instr,
+    ) {
+        let (mut av_st, mut av_co) = self.top();
+
+        if av_st < states
+            && 1 + max(slot_st, instr_st) == av_st as State
+        {
+            av_st += 1;
+        }
+
+        if av_co < colors
+            && 1 + max(slot_co, instr_co) == av_co as Color
+        {
+            av_co += 1;
+        }
+
+        self.push((av_st, av_co));
+    }
+}
+
 /**************************************/
 
 trait AvailInstrs<'h> {
@@ -292,9 +327,7 @@ impl<
 
         let instrs = AvIn::new::<states, colors>(instr_table);
 
-        let init_avail = (min(3, states), min(3, colors));
-
-        let avail_params = AvailStack::new(init_avail);
+        let avail_params = AvailStack::init(states, colors);
 
         let remaining_slots = (states * colors) - halt - 2;
 
@@ -325,13 +358,13 @@ impl<
 
         self.prog.insert(slot, instr);
 
-        self.update_avail(slot, instr);
+        self.avail_params.on_insert::<states, colors>(slot, instr);
 
         self.instrs.on_insert(slot, instr);
     }
 
     fn remove_and_update(&mut self, slot: &Slot) {
-        self.avail_params.pop();
+        self.avail_params.on_remove();
 
         self.prog.remove(slot);
 
@@ -342,29 +375,6 @@ impl<
 
     fn avail_instrs(&self, slot: &Slot) -> &'i [Instr] {
         self.instrs.avail_instrs(slot, self.avail_params.top())
-    }
-
-    #[expect(clippy::cast_possible_truncation)]
-    fn update_avail(
-        &mut self,
-        (slot_st, slot_co): &Slot,
-        (instr_co, _, instr_st): &Instr,
-    ) {
-        let (mut av_st, mut av_co) = self.avail_params.top();
-
-        if av_st < states
-            && 1 + max(slot_st, instr_st) == av_st as State
-        {
-            av_st += 1;
-        }
-
-        if av_co < colors
-            && 1 + max(slot_co, instr_co) == av_co as Color
-        {
-            av_co += 1;
-        }
-
-        self.avail_params.push((av_st, av_co));
     }
 
     fn with_update(
