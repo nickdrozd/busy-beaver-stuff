@@ -113,19 +113,6 @@ fn make_spinout_table<
 
 /**************************************/
 
-trait AvailInstrs<'h> {
-    type Table: Sync;
-
-    fn new<const states: usize, const colors: usize>(
-        instr_table: &'h Self::Table,
-    ) -> Self;
-
-    fn avail_instrs(&self, slot: &Slot, params: Params) -> &'h [Instr];
-
-    fn on_insert(&mut self, _: &Slot, _: &Instr) {}
-    fn on_remove(&mut self) {}
-}
-
 struct AvailStack<T>(Vec<T>);
 
 impl<T: Copy> AvailStack<T> {
@@ -144,6 +131,21 @@ impl<T: Copy> AvailStack<T> {
     fn pop(&mut self) {
         self.0.pop();
     }
+}
+
+/**************************************/
+
+trait AvailInstrs<'h> {
+    type Table: Sync;
+
+    fn new<const states: usize, const colors: usize>(
+        instr_table: &'h Self::Table,
+    ) -> Self;
+
+    fn avail_instrs(&self, slot: &Slot, params: Params) -> &'h [Instr];
+
+    fn on_insert(&mut self, _: &Slot, _: &Instr) {}
+    fn on_remove(&mut self) {}
 }
 
 struct BasicInstrs<'h> {
