@@ -170,12 +170,10 @@ impl AvailParams {
 
 /**************************************/
 
-trait AvailInstrs<'h> {
+trait AvailInstrs<'h, const states: usize, const colors: usize> {
     type Table: Sync;
 
-    fn new<const states: usize, const colors: usize>(
-        instr_table: &'h Self::Table,
-    ) -> Self;
+    fn new(instr_table: &'h Self::Table) -> Self;
 
     fn avail_instrs(&self, slot: &Slot, params: Params) -> &'h [Instr];
 
@@ -187,12 +185,12 @@ struct BasicInstrs<'h> {
     instr_table: &'h InstrTable,
 }
 
-impl<'h> AvailInstrs<'h> for BasicInstrs<'h> {
+impl<'h, const states: usize, const colors: usize>
+    AvailInstrs<'h, states, colors> for BasicInstrs<'h>
+{
     type Table = InstrTable;
 
-    fn new<const states: usize, const colors: usize>(
-        instr_table: &'h Self::Table,
-    ) -> Self {
+    fn new(instr_table: &'h Self::Table) -> Self {
         Self { instr_table }
     }
 
@@ -206,12 +204,12 @@ struct BlankInstrs<'h> {
     avail_blanks: AvailStack<Option<Slots>>,
 }
 
-impl<'h> AvailInstrs<'h> for BlankInstrs<'h> {
+impl<'h, const states: usize, const colors: usize>
+    AvailInstrs<'h, states, colors> for BlankInstrs<'h>
+{
     type Table = BlankInstrTable;
 
-    fn new<const states: usize, const colors: usize>(
-        instr_table: &'h Self::Table,
-    ) -> Self {
+    fn new(instr_table: &'h Self::Table) -> Self {
         let init_blanks = states * (colors - 1);
 
         Self {
@@ -252,12 +250,12 @@ struct SpinoutInstrs<'h> {
     avail_spinouts: AvailStack<Option<Slots>>,
 }
 
-impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
+impl<'h, const states: usize, const colors: usize>
+    AvailInstrs<'h, states, colors> for SpinoutInstrs<'h>
+{
     type Table = SpinoutInstrTable;
 
-    fn new<const states: usize, const colors: usize>(
-        instr_table: &'h Self::Table,
-    ) -> Self {
+    fn new(instr_table: &'h Self::Table) -> Self {
         let init_spins = states - 1;
 
         Self {
@@ -269,7 +267,7 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
     fn avail_instrs(
         &self,
         &(read_state, read_color): &Slot,
-        (states, colors): Params,
+        (st, co): Params,
     ) -> &'h [Instr] {
         let spinout =
             read_color == 0 && self.avail_spinouts.top() == Some(1);
@@ -277,8 +275,8 @@ impl<'h> AvailInstrs<'h> for SpinoutInstrs<'h> {
         &(if spinout {
             &self.instr_table[1][1 + read_state as usize]
         } else {
-            &self.instr_table[0][states]
-        })[colors]
+            &self.instr_table[0][st]
+        })[co]
     }
 
     fn on_insert(&mut self, &(st, co): &Slot, &(_, _, tr): &Instr) {
@@ -313,7 +311,7 @@ impl<
     'i,
     const states: usize,
     const colors: usize,
-    AvIn: AvailInstrs<'i>,
+    AvIn: AvailInstrs<'i, states, colors>,
     Harv: Harvester<states, colors>,
 > Tree<states, colors, AvIn, Harv>
 {
@@ -325,7 +323,7 @@ impl<
     ) -> Self {
         let prog = Prog::<states, colors>::init_norm();
 
-        let instrs = AvIn::new::<states, colors>(instr_table);
+        let instrs = AvIn::new(instr_table);
 
         let avail_params = AvailStack::init(states, colors);
 
