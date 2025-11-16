@@ -370,6 +370,66 @@ impl<'h, const states: usize, const colors: usize>
     }
 }
 
+struct BasicInstrsSmall<'h, const STATES: usize, const COLORS: usize> {
+    instrs: &'h [Instr],
+}
+
+impl<'h, const states: usize, const colors: usize>
+    AvailInstrs<'h, states, colors>
+    for BasicInstrsSmall<'h, states, colors>
+{
+    type Table = InstrTable;
+
+    fn new(instr_table: &'h Self::Table) -> Self {
+        Self {
+            instrs: &instr_table[states][colors],
+        }
+    }
+
+    fn avail_instrs(&self, _slot: &Slot) -> &'h [Instr] {
+        self.instrs
+    }
+}
+
+struct BlankInstrsSmall<'h, const states: usize, const colors: usize> {
+    instrs: [&'h [Instr]; 2],
+    avail_blanks: AvailBlanks,
+}
+
+impl<'h, const states: usize, const colors: usize>
+    AvailInstrs<'h, states, colors>
+    for BlankInstrsSmall<'h, states, colors>
+{
+    type Table = BlankInstrTable;
+
+    fn new(instr_table: &'h Self::Table) -> Self {
+        let instrs = [
+            &instr_table[0][states][colors][..],
+            &instr_table[1][states][colors][..],
+        ];
+
+        let avail_blanks = AvailBlanks::init(states, colors);
+
+        Self {
+            instrs,
+            avail_blanks,
+        }
+    }
+
+    fn avail_instrs(&self, &(_, pr): &Slot) -> &'h [Instr] {
+        let must_erase = self.avail_blanks.must_erase(pr);
+        self.instrs[usize::from(must_erase)]
+    }
+
+    fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
+        self.avail_blanks.on_insert(slot, instr);
+    }
+
+    fn on_remove(&mut self) {
+        self.avail_blanks.on_remove();
+    }
+}
+
 /**************************************/
 
 struct Tree<const states: usize, const colors: usize, AvIn, Harv> {
@@ -554,8 +614,14 @@ impl<
 type BasicTree<'i, const s: usize, const c: usize, H> =
     Tree<s, c, BasicInstrs<'i>, H>;
 
+type BasicTreeSmall<'i, const s: usize, const c: usize, H> =
+    Tree<s, c, BasicInstrsSmall<'i, s, c>, H>;
+
 type BlankTree<'i, const s: usize, const c: usize, H> =
     Tree<s, c, BlankInstrs<'i>, H>;
+
+type BlankTreeSmall<'i, const s: usize, const c: usize, H> =
+    Tree<s, c, BlankInstrsSmall<'i, s, c>, H>;
 
 type SpinoutTree<'i, const s: usize, const c: usize, H> =
     Tree<s, c, SpinoutInstrs<'i>, H>;
@@ -619,13 +685,23 @@ pub trait Harvester<const states: usize, const colors: usize>:
         let (init_instrs, instr_table) =
             make_instr_table::<states, colors>();
 
-        BasicTree::run_branch(
-            &init_instrs,
-            halt,
-            sim_lim,
-            &instr_table,
-            harvester,
-        )
+        if states <= 3 && colors <= 3 {
+            BasicTreeSmall::run_branch(
+                &init_instrs,
+                halt,
+                sim_lim,
+                &instr_table,
+                harvester,
+            )
+        } else {
+            BasicTree::run_branch(
+                &init_instrs,
+                halt,
+                sim_lim,
+                &instr_table,
+                harvester,
+            )
+        }
     }
 
     fn run_blank(
@@ -635,13 +711,23 @@ pub trait Harvester<const states: usize, const colors: usize>:
         let (init_instrs, instr_table) =
             make_blank_table::<states, colors>();
 
-        BlankTree::run_branch(
-            &init_instrs,
-            0,
-            sim_lim,
-            &instr_table,
-            harvester,
-        )
+        if states <= 3 && colors <= 3 {
+            BlankTreeSmall::run_branch(
+                &init_instrs,
+                0,
+                sim_lim,
+                &instr_table,
+                harvester,
+            )
+        } else {
+            BlankTree::run_branch(
+                &init_instrs,
+                0,
+                sim_lim,
+                &instr_table,
+                harvester,
+            )
+        }
     }
 
     fn run_spinout(
