@@ -357,15 +357,13 @@ impl<
     Harv: Harvester<states, colors>,
 > Tree<states, colors, AvIn, Harv>
 {
-    fn init(
+    const fn init(
         halt: Slots,
         sim_lim: Steps,
         harvester: Harv,
-        instr_table: &'i AvIn::Table,
+        instrs: AvIn,
     ) -> Self {
         let prog = Prog::<states, colors>::init_norm();
-
-        let instrs = AvIn::new(instr_table);
 
         let remaining_slots = (states * colors) - halt - 2;
 
@@ -507,8 +505,12 @@ impl<
         init_instrs
             .par_iter()
             .map(|instr| {
-                let mut tree =
-                    Self::init(halt, sim_lim, harvester(), instr_table);
+                let mut tree = Self::init(
+                    halt,
+                    sim_lim,
+                    harvester(),
+                    AvIn::new(instr_table),
+                );
 
                 tree.init_branch(instr);
 
