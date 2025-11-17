@@ -404,8 +404,8 @@ impl<'h, const states: usize, const colors: usize>
 
     fn new(instr_table: &'h Self::Table) -> Self {
         let instrs = [
-            &instr_table[0][states][colors][..],
-            &instr_table[1][states][colors][..],
+            &*instr_table[0][states][colors],
+            &*instr_table[1][states][colors],
         ];
 
         let avail_blanks = AvailBlanks::init(states, colors);
