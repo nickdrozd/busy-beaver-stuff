@@ -117,10 +117,6 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             Ok((stepped, indefs)) => {
                 indef_steps += indefs;
 
-                if indef_steps > MAX_STACK_DEPTH {
-                    return DepthLimit;
-                }
-
                 stepped
             },
         };
