@@ -264,11 +264,7 @@ fn step_configs(
                 }
             }
 
-            let next_config = Config::descendant(state, tape, &config);
-
-            if next_config.recs > MAX_RECS {
-                return Err(LinRec);
-            }
+            let next_config = Config::descendant(state, tape, &config)?;
 
             stepped.push(next_config);
         }
@@ -461,7 +457,11 @@ impl Config {
         Self::new(state, Tape::init_spinout(shift))
     }
 
-    fn descendant(state: State, tape: Tape, prev: &Rc<Self>) -> Self {
+    fn descendant(
+        state: State,
+        tape: Tape,
+        prev: &Rc<Self>,
+    ) -> Result<Self, BackwardResult> {
         let mut config = Self {
             state,
             tape,
@@ -471,9 +471,13 @@ impl Config {
 
         if config.lin_rec() {
             config.recs += 1;
+
+            if config.recs > MAX_RECS {
+                return Err(LinRec);
+            }
         }
 
-        config
+        Ok(config)
     }
 
     fn lin_rec(&self) -> bool {
