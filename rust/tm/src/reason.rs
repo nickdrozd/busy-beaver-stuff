@@ -22,7 +22,6 @@ const MAX_STACK_DEPTH: usize = 28;
 pub enum BackwardResult {
     Init,
     LinRec,
-    Spinout,
     StepLimit,
     DepthLimit,
     Refuted(Steps),
@@ -87,8 +86,6 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut blanks = get_blanks(&configs);
 
-    let mut indef_steps = 0;
-
     for step in 1..=steps {
         #[cfg(debug_assertions)]
         {
@@ -101,24 +98,14 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         let valid_steps = get_valid_steps(&mut configs, &entrypoints);
 
         match valid_steps.len() {
-            0 => {
-                if indef_steps > 0 {
-                    return Spinout;
-                }
-
-                return Refuted(step);
-            },
+            0 => return Refuted(step),
             n if MAX_STACK_DEPTH < n => return DepthLimit,
             _ => {},
         }
 
         configs = match step_configs(valid_steps, &mut blanks) {
             Err(err) => return err,
-            Ok((stepped, indefs)) => {
-                indef_steps += indefs;
-
-                stepped
-            },
+            Ok(stepped) => stepped,
         };
     }
 
@@ -229,24 +216,12 @@ fn get_indef(
 fn step_configs(
     configs: ValidatedSteps,
     blanks: &mut BlankStates,
-) -> Result<(Configs, usize), BackwardResult> {
+) -> Result<Configs, BackwardResult> {
+    let configs = expand_indef(configs);
+
     let mut stepped = Configs::new();
 
-    let mut indef_steps = 0;
-
     for (instrs, config) in configs {
-        let (pulls_indef, instrs): (Vec<_>, Vec<_>) = instrs
-            .into_iter()
-            .partition(|&(_, shift, _)| config.tape.pulls_indef(shift));
-
-        if !pulls_indef.is_empty() {
-            indef_steps += 1;
-
-            if instrs.is_empty() {
-                continue;
-            }
-        }
-
         let config = Rc::new(config);
 
         for (color, shift, state) in instrs {
@@ -270,7 +245,75 @@ fn step_configs(
         }
     }
 
-    Ok((stepped, indef_steps))
+    Ok(stepped)
+}
+
+fn expand_indef(configs: ValidatedSteps) -> ValidatedSteps {
+    let mut expanded = ValidatedSteps::new();
+
+    for (instrs, config) in configs {
+        let mut def = vec![];
+        let mut indef_left = vec![];
+        let mut indef_right = vec![];
+
+        for instr @ (_, shift, _) in instrs {
+            if !config.tape.pulls_indef(shift) {
+                &mut def
+            } else if shift {
+                &mut indef_left
+            } else {
+                &mut indef_right
+            }
+            .push(instr);
+        }
+
+        if indef_left.is_empty() && indef_right.is_empty() {
+            expanded.push((def, config));
+            continue;
+        }
+
+        if !indef_left.is_empty() {
+            {
+                let mut count_1 = config.clone();
+
+                count_1.tape.lspan.set_head_to_one();
+
+                expanded.push((indef_left.clone(), count_1));
+            }
+
+            {
+                let mut count_0 = config.clone();
+
+                count_0.tape.lspan.push_single_head_color();
+
+                expanded.push((indef_left, count_0));
+            }
+        }
+
+        if !indef_right.is_empty() {
+            {
+                let mut count_1 = config.clone();
+
+                count_1.tape.rspan.set_head_to_one();
+
+                expanded.push((indef_right.clone(), count_1));
+            }
+
+            {
+                let mut count_0 = config.clone();
+
+                count_0.tape.rspan.push_single_head_color();
+
+                expanded.push((indef_right, count_0));
+            }
+        }
+
+        if !def.is_empty() {
+            expanded.push((def, config));
+        }
+    }
+
+    expanded
 }
 
 /**************************************/
@@ -606,8 +649,16 @@ impl Span {
         }
     }
 
+    fn push_single_head_color(&mut self) {
+        self.span.push_block(self.span.first().unwrap().color, 1);
+    }
+
     fn push_indef(&mut self, color: Color) {
         self.span.push_block(color, 0);
+    }
+
+    fn set_head_to_one(&mut self) {
+        self.span.first_mut().unwrap().count = 1;
     }
 }
 
