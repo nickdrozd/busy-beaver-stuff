@@ -87,8 +87,6 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut blanks = get_blanks(&configs);
 
-    let mut indef_steps = 0;
-
     for step in 1..=steps {
         #[cfg(debug_assertions)]
         {
@@ -101,24 +99,14 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         let valid_steps = get_valid_steps(&mut configs, &entrypoints);
 
         match valid_steps.len() {
-            0 => {
-                if indef_steps > 0 {
-                    return Spinout;
-                }
-
-                return Refuted(step);
-            },
+            0 => return Refuted(step),
             n if MAX_STACK_DEPTH < n => return DepthLimit,
             _ => {},
         }
 
         configs = match step_configs(valid_steps, &mut blanks) {
             Err(err) => return err,
-            Ok((stepped, indefs)) => {
-                indef_steps += indefs;
-
-                stepped
-            },
+            Ok(stepped) => stepped,
         };
     }
 
@@ -229,24 +217,12 @@ fn get_indef(
 fn step_configs(
     configs: ValidatedSteps,
     blanks: &mut BlankStates,
-) -> Result<(Configs, usize), BackwardResult> {
+) -> Result<Configs, BackwardResult> {
+    let configs = branch_indef(configs)?;
+
     let mut stepped = Configs::new();
 
-    let mut indef_steps = 0;
-
     for (instrs, config) in configs {
-        let (pulls_indef, instrs): (Vec<_>, Vec<_>) = instrs
-            .into_iter()
-            .partition(|&(_, shift, _)| config.tape.pulls_indef(shift));
-
-        if !pulls_indef.is_empty() {
-            indef_steps += 1;
-
-            if instrs.is_empty() {
-                continue;
-            }
-        }
-
         let config = Rc::new(config);
 
         for (color, shift, state) in instrs {
@@ -270,7 +246,51 @@ fn step_configs(
         }
     }
 
-    Ok((stepped, indef_steps))
+    Ok(stepped)
+}
+
+fn branch_indef(
+    configs: ValidatedSteps,
+) -> Result<ValidatedSteps, BackwardResult> {
+    let mut branched = ValidatedSteps::new();
+
+    for (instrs, config) in configs {
+        let mut indef_left = vec![];
+        let mut indef_right = vec![];
+
+        for instr @ &(_, shift, state) in &instrs {
+            if config.tape.pulls_indef(shift) {
+                if state == config.state {
+                    return Err(Spinout);
+                }
+
+                if shift {
+                    &mut indef_left
+                } else {
+                    &mut indef_right
+                }
+                .push(*instr);
+            }
+        }
+
+        if !indef_left.is_empty() {
+            let mut count_1 = config.clone();
+            count_1.tape.lspan.set_head_to_one();
+
+            branched.push((indef_left, count_1));
+        }
+
+        if !indef_right.is_empty() {
+            let mut count_1 = config.clone();
+            count_1.tape.rspan.set_head_to_one();
+
+            branched.push((indef_right, count_1));
+        }
+
+        branched.push((instrs, config));
+    }
+
+    Ok(branched)
 }
 
 /**************************************/
@@ -608,6 +628,10 @@ impl Span {
 
     fn push_indef(&mut self, color: Color) {
         self.span.push_block(color, 0);
+    }
+
+    fn set_head_to_one(&mut self) {
+        self.span.first_mut().unwrap().count = 1;
     }
 }
 
