@@ -137,13 +137,11 @@ impl<const s: usize, const c: usize> Harvester<s, c>
     fn harvest(&mut self, prog: &Prog<s, c>, _: PassConfig<'_>) {
         let result = (self.cant_reach)(prog, 256);
 
-        if let BackwardResult::Refuted(steps) = result
-            && self.refuted < steps
-        {
-            self.refuted = steps;
-        }
+        if let BackwardResult::Refuted(steps) = result {
+            if self.refuted < steps {
+                self.refuted = steps;
+            }
 
-        if result.is_refuted() {
             return;
         }
 
