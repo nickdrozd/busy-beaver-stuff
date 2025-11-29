@@ -40,7 +40,8 @@ macro_rules! assert_params {
 
             assert_eq!(
                 result, $leaves,
-                "(($states, $colors), $goal, {result:?})",
+                "(({}, {}), {}, {result:?})",
+                $states, $colors, $goal,
             );
         }); )* )* });
     }};
@@ -311,7 +312,8 @@ macro_rules! assert_reason {
 
             assert_eq!(
                 result, $leaves,
-                "(($states, $colors), $goal, {result:?})"
+                "(({}, {}), {}, {result:?})",
+                $states, $colors, $goal,
             );
         }); )* )*});
     }};
@@ -372,7 +374,8 @@ macro_rules! assert_instrs {
 
             assert_eq!(
                 result, $leaves,
-                "($instrs, {result:?})",
+                "({}, {result:?})",
+                $instrs,
             );
         }); )* });
     }};
