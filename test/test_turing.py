@@ -76,6 +76,13 @@ REASON_LIMIT = 2_000
 SEGMENT_LIMIT = 22
 
 
+def get_halt_6_2_holdouts() -> set[str]:
+    with open('test/data/holdouts/halt-6-2.prog') as progs:  # noqa: PTH123
+        return {prog.strip() for prog in progs}
+
+HALT_6_2_HOLDOUTS = get_halt_6_2_holdouts()
+
+
 class TuringTest(TestCase):
     machine: BasicMachine
 
@@ -392,6 +399,10 @@ class Reason(TuringTest):
             if prog not in BLANKERS:
                 self.assert_cant_blank_backward(prog, 1331)
 
+    def test_holdouts(self):
+        for prog in HALT_6_2_HOLDOUTS:
+            self.assert_could_halt_backward(prog)
+
     def test_false_negatives(self):
         results: dict[Goal, BackwardCats] = {
             'halt': defaultdict(set),
@@ -528,6 +539,10 @@ class Segment(TuringTest):
         for prog in NONSPINNERS:
             self.assert_cant_spin_out_segment(prog, 26)
 
+    def test_holdouts(self):
+        for prog in HALT_6_2_HOLDOUTS:
+            self.assert_could_halt_segment(prog)
+
     def test_false_negatives(self):
         counts = {
             cat: len(progs)
@@ -616,6 +631,10 @@ class Cps(TuringTest):
         for prog in NONSPINNERS:
             self.assert_cant_spin_out_cps(prog, 11)
 
+    def test_holdouts(self):
+        for prog in HALT_6_2_HOLDOUTS:
+            self.assert_could_halt_cps(prog)
+
     def test_false_negatives(self):
         counts = {
             cat: len(progs)
@@ -659,6 +678,10 @@ class Ctl(TuringTest):
 
         for prog in NONSPINNERS:
             self.assert_cant_spin_out_ctl(prog, 118)
+
+    def test_holdouts(self):
+        for prog in HALT_6_2_HOLDOUTS:
+            self.assert_could_halt_ctl(prog)
 
     def test_false_negatives(self):
         counts = {
