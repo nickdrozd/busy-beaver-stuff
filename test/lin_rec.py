@@ -398,7 +398,7 @@ class StrictLinRecMachine(LinRecMachine):
 
     def run(
         self,
-        sim_lim: int | None = None,
+        sim_lim: int = 1_000_000,
         check_rec: int = 0,
     ) -> Self:
         self.blanks = {}
@@ -412,14 +412,16 @@ class StrictLinRecMachine(LinRecMachine):
         step: int = 0
         state: State = 0
 
-        for cycle in range(sim_lim or 1_000_000):  # noqa: B007
+        for cycle in range(sim_lim):
             slot: Slot = state, tape.scan
 
             if step >= check_rec:
                 self.history.add_state_at_step(step, state)
                 self.history.add_tape_at_step(step, tape)
 
-                if self.check_rec(step, slot) is not None:
+                if (result := self.check_rec(step, slot)) is not None:
+                    self.linrec = result
+                    self.cycles = cycle
                     break
 
                 self.history.add_slot_at_step(step, slot)
@@ -428,6 +430,7 @@ class StrictLinRecMachine(LinRecMachine):
                 instr = comp[slot]
             except KeyError:
                 self.undfnd = step, slot
+                self.cycles = cycle
                 break
 
             color, shift, next_state = instr
@@ -441,8 +444,7 @@ class StrictLinRecMachine(LinRecMachine):
 
         else:
             self.xlimit = step
-
-        self.cycles = cycle
+            self.cycles = sim_lim
 
         return self
 
@@ -450,7 +452,7 @@ class StrictLinRecMachine(LinRecMachine):
         if (result := self.history.check_rec(step, slot)) is None:
             return None
 
-        self.linrec = start, rec = result
+        start, rec = result
 
         if rec == 1:
             self.spnout = step - 1
@@ -485,7 +487,7 @@ class LinRecSampler(LinRecMachine):
         step: int = 0
         state: State = 0
 
-        for cycle in range(sim_lim or 1_000_000):  # noqa: B007
+        for cycle in range(sim_lim):
             slot: Slot = state, tape.scan
 
             if step in self.history.tapes:
@@ -496,6 +498,7 @@ class LinRecSampler(LinRecMachine):
                 instr = comp[slot]
             except KeyError:
                 self.undfnd = step, slot
+                self.cycles = cycle
                 break
 
             color, shift, next_state = instr
@@ -509,8 +512,7 @@ class LinRecSampler(LinRecMachine):
 
         else:
             self.xlimit = step
-
-        self.cycles = cycle
+            self.cycles = sim_lim
 
         return self
 
@@ -599,6 +601,8 @@ def run_loose_linrec_machine(
 
     else:
         result = TermRes.xlimit
+
+    assert result is not None
 
     return MachineResult(
         result = result,

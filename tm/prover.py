@@ -87,9 +87,9 @@ class Prover:
             tape: Tape | EnumTape,
     ) -> State | None:
         for _ in range(steps):
-            if (rule := self.get_rule(state, tape)) is not None:  # noqa: SIM102
-                if apply_rule(rule, tape) is not None:
-                    continue
+            if ((rule := self.get_rule(state, tape)) is not None
+                    and apply_rule(rule, tape) is not None):
+                continue
 
             try:
                 instr = self.prog[state, tape.scan]

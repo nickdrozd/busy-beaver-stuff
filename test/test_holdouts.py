@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 def get_reason(goal: Goal) -> tuple[BR, set[str]]:
-    with open(f'test/data/holdouts/reason/{goal}.prog') as progs:  # noqa: PTH123
+    with open(f'test/data/holdouts/reason/{goal}.prog') as progs:
         return BACKWARD_REASONERS[goal], {prog.strip() for prog in progs}
 
 

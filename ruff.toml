@@ -29,9 +29,10 @@ ignore = [
     "ANN",      # missing annotations
     "FBT001",   # boolean positional arg
     "FBT002",   # boolean default arg
-	"PLR0913",  # too many arguments
+    "PLR0913",  # too many arguments
     "PT009",    # unittest assertions
     "PT027",    # unittest assert raise
+    "PTH123",   # Path.open
 ]
 
 [lint.pylint]

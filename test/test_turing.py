@@ -77,7 +77,7 @@ SEGMENT_LIMIT = 22
 
 
 def get_halt_6_2_holdouts() -> set[str]:
-    with open('test/data/holdouts/halt-6-2.prog') as progs:  # noqa: PTH123
+    with open('test/data/holdouts/halt-6-2.prog') as progs:
         return {prog.strip() for prog in progs}
 
 HALT_6_2_HOLDOUTS = get_halt_6_2_holdouts()
@@ -1294,7 +1294,7 @@ class Prover(RunProver):
     def assert_close(
             self,
             this: int,
-            that: int | float,  # noqa: PYI041
+            that: float,
             rel_tol: float,
     ):
         self.assertTrue(
@@ -1541,7 +1541,7 @@ class Prover(RunProver):
     def test_prover_false_positive(self):
         prog = "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE"
 
-        for backsym in range(0, 7):  # noqa: PIE808
+        for backsym in range(7):
             self.run_bb(
                 prog,
                 backsym = backsym or None,
