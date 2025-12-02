@@ -393,7 +393,7 @@ impl<const base_states: usize, const base_colors: usize>
         let shift = !right_edge;
 
         let (backspan, macro_color) = if shift {
-            let (rest, color) = tape.split_at(self.cells - 1);
+            let (rest, color) = tape.split_at(tape.len() - 1);
             (rest.to_vec(), color[0])
         } else {
             let (color, rest) = tape.split_at(1);
@@ -542,7 +542,6 @@ fn test_macro() {
     }
 }
 
-#[should_panic(expected = "(2, true, 3)")]
 #[test]
 fn test_backsym_reconstruct() {
     let logic = BacksymbolLogic::<2, 3>::new(2);
