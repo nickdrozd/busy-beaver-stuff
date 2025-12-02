@@ -1,4 +1,4 @@
-use core::{cell::RefCell, iter::once};
+use core::{cell::RefCell, iter::once, num::TryFromIntError};
 
 use std::collections::BTreeMap as Dict;
 
@@ -22,6 +22,7 @@ type Config = (State, (bool, Tape));
 #[derive(Debug, PartialEq, Eq)]
 pub enum MacroExc {
     InfLoop,
+    Conversion(TryFromIntError),
 }
 
 pub type GetInstrResult = Result<Option<Instr>, MacroExc>;
@@ -165,9 +166,9 @@ impl<const s: usize, const c: usize, L: Logic<s, c>> GetInstr
         };
 
         Ok(Some((
-            self.convert_color(color),
+            self.convert_color(color)?,
             shift,
-            self.convert_state(state),
+            self.convert_state(state)?,
         )))
     }
 }
@@ -193,8 +194,10 @@ impl<'p, const st: usize, const co: usize, L: Logic<st, co>>
         )
     }
 
-    #[expect(clippy::cast_possible_truncation)]
-    fn convert_state(&self, state: MacroState) -> State {
+    fn convert_state(
+        &self,
+        state: MacroState,
+    ) -> Result<State, MacroExc> {
         let mut states = self.states.borrow_mut();
 
         let pos = states
@@ -205,11 +208,13 @@ impl<'p, const st: usize, const co: usize, L: Logic<st, co>>
                 states.len() - 1
             });
 
-        pos as State
+        State::try_from(pos).map_err(MacroExc::Conversion)
     }
 
-    #[expect(clippy::cast_possible_truncation)]
-    fn convert_color(&self, color: MacroColor) -> Color {
+    fn convert_color(
+        &self,
+        color: MacroColor,
+    ) -> Result<Color, MacroExc> {
         let mut colors = self.colors.borrow_mut();
 
         let pos = colors
@@ -220,7 +225,7 @@ impl<'p, const st: usize, const co: usize, L: Logic<st, co>>
                 colors.len() - 1
             });
 
-        pos as Color
+        Color::try_from(pos).map_err(MacroExc::Conversion)
     }
 
     fn cache_instr(&self, slot: MacroSlot, instr: MacroInstr) {

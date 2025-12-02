@@ -18,6 +18,7 @@ pub enum RunResult {
     Undefined(Slot),
     StepLimit,
     ConfigLimit,
+    Error(MacroExc),
 }
 
 use RunResult::*;
@@ -85,6 +86,7 @@ pub trait RunProver: GetInstr + Sized {
             let (color, shift, next_state) = match self.get_instr(&slot)
             {
                 Err(MacroExc::InfLoop) => return InfiniteRule,
+                Err(err) => return Error(err),
                 Ok(None) => return Undefined(slot),
                 Ok(Some(instr)) => instr,
             };
@@ -508,9 +510,9 @@ fn test_macro_excess() {
 
     mac.assert_params((4, 0x4000));
 
-    assert!(matches!(mac.run_prover(976), StepLimit));
+    assert!(matches!(mac.run_prover(976), Error(_)));
 
-    assert_eq!(mac.rep_params(), (4, 323));
+    assert_eq!(mac.rep_params(), (4, 257));
 }
 
 #[test]
