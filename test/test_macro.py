@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from tm.macro import make_macro, opt_block
+from tm.macro import BacksymbolLogic, make_macro, opt_block
 
 MACROS = {
     ("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD", 2): {
@@ -20,6 +20,19 @@ class TestMacro(TestCase):
 
             for slot, instr in instrs.items():
                 self.assertEqual(macro[slot], instr)
+
+    def test_backsym_reconstruct(self):
+        logic = BacksymbolLogic(
+            cells = 2,
+            base_states = 2,
+            base_colors = 3)
+
+        config = 0, (False, (1, 2, 0))
+
+        instr = logic.reconstruct_outputs(config)
+
+        self.assertEqual(instr, (0, True, 11))
+
 
 
 BLOCKS = {

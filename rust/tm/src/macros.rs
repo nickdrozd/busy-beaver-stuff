@@ -541,3 +541,15 @@ fn test_macro() {
         assert_eq!(Ok(Some(instr)), block.get_instr(&slot));
     }
 }
+
+#[should_panic(expected = "(2, true, 3)")]
+#[test]
+fn test_backsym_reconstruct() {
+    let logic = BacksymbolLogic::<2, 3>::new(2);
+
+    let config = (0, (false, vec![1, 2, 0]));
+
+    let instr = logic.reconstruct_outputs(config);
+
+    assert_eq!(instr, (0, true, 11), "{instr:?}");
+}
