@@ -53,6 +53,7 @@ enum RunResult {
     StepLimit,
     Unreachable,
     Branch(Config),
+    Exception,
 }
 
 use RunResult::*;
@@ -81,7 +82,7 @@ fn ctl_run(prog: &impl GetInstr, steps: Steps, goal: Goal) -> bool {
 
         let branched = match result {
             Seen | Unreachable => continue,
-            Reached | StepLimit => return false,
+            Reached | StepLimit | Exception => return false,
             Branch(branched) => branched,
         };
 
@@ -107,15 +108,18 @@ impl Config {
         seen: &mut Set<Self>,
     ) -> RunResult {
         for _ in 0..steps {
-            let Some(instr @ (_, shift, state)) =
-                prog.get_instr(&self.slot())
-            else {
-                return if goal.is_halt() {
-                    Reached
-                } else {
-                    Unreachable
+            let instr @ (_, shift, state) =
+                match prog.get_instr(&self.slot()) {
+                    Err(_) => return Exception,
+                    Ok(None) => {
+                        return if goal.is_halt() {
+                            Reached
+                        } else {
+                            Unreachable
+                        };
+                    },
+                    Ok(Some(instr)) => instr,
                 };
-            };
 
             if state == self.state && self.tape.at_edge(shift) {
                 return match goal {

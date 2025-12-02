@@ -19,13 +19,20 @@ type Config = (State, (bool, Tape));
 
 /**************************************/
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum MacroExc {
+    InfLoop,
+}
+
+pub type GetInstrResult = Result<Option<Instr>, MacroExc>;
+
 pub trait GetInstr {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr>;
+    fn get_instr(&self, slot: &Slot) -> GetInstrResult;
 }
 
 impl<const s: usize, const c: usize> GetInstr for Prog<s, c> {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
-        self.get(slot).copied()
+    fn get_instr(&self, slot: &Slot) -> GetInstrResult {
+        Ok(self.get(slot).copied())
     }
 }
 
@@ -140,14 +147,16 @@ pub struct MacroProg<'p, const s: usize, const c: usize, L: Logic<s, c>>
 impl<const s: usize, const c: usize, L: Logic<s, c>> GetInstr
     for MacroProg<'_, s, c, L>
 {
-    fn get_instr(&self, slot: &Slot) -> Option<Instr> {
+    fn get_instr(&self, slot: &Slot) -> GetInstrResult {
         let slot: MacroSlot = self.convert_slot(slot);
 
         let (color, shift, state) = {
             if let Some(&instr) = self.instrs.borrow().get(&slot) {
                 instr
             } else {
-                let instr = self.calculate_instr(slot)?;
+                let Some(instr) = self.calculate_instr(slot)? else {
+                    return Ok(None);
+                };
 
                 self.cache_instr(slot, instr);
 
@@ -155,11 +164,11 @@ impl<const s: usize, const c: usize, L: Logic<s, c>> GetInstr
             }
         };
 
-        Some((
+        Ok(Some((
             self.convert_color(color),
             shift,
             self.convert_state(state),
-        ))
+        )))
     }
 }
 
@@ -218,16 +227,20 @@ impl<'p, const st: usize, const co: usize, L: Logic<st, co>>
         self.instrs.borrow_mut().insert(slot, instr);
     }
 
-    fn calculate_instr(&self, slot: MacroSlot) -> Option<MacroInstr> {
-        Some(self.logic.reconstruct_outputs(
-            self.run_simulator(self.logic.deconstruct_inputs(slot))?,
-        ))
+    fn calculate_instr(
+        &self,
+        slot: MacroSlot,
+    ) -> Result<Option<MacroInstr>, MacroExc> {
+        self.run_simulator(self.logic.deconstruct_inputs(slot))?
+            .map_or(Ok(None), |config| {
+                Ok(Some(self.logic.reconstruct_outputs(config)))
+            })
     }
 
     fn run_simulator(
         &self,
         (mut state, (right_edge, mut tape)): Config,
-    ) -> Option<Config> {
+    ) -> Result<Option<Config>, MacroExc> {
         let cells = tape.len();
 
         let mut pos = if right_edge { cells - 1 } else { 0 };
@@ -237,8 +250,11 @@ impl<'p, const st: usize, const co: usize, L: Logic<st, co>>
         'step: for _ in 0..self.logic.sim_lim() {
             let scan = tape[pos];
 
-            let &(color, shift, next_state) =
-                self.prog.get(&(state, scan))?;
+            let Some(&(color, shift, next_state)) =
+                self.prog.get(&(state, scan))
+            else {
+                return Ok(None);
+            };
 
             if next_state != state {
                 state = next_state;
@@ -279,7 +295,9 @@ impl<'p, const st: usize, const co: usize, L: Logic<st, co>>
             }
         }
 
-        side.map(|side| (state, (side, tape)))
+        side.map_or(Err(MacroExc::InfLoop), |side| {
+            Ok(Some((state, (side, tape))))
+        })
     }
 }
 
@@ -515,6 +533,6 @@ fn test_macro() {
     block.assert_params((10, 4));
 
     for &(slot, instr) in MACROS {
-        assert_eq!(Some(instr), block.get_instr(&slot));
+        assert_eq!(Ok(Some(instr)), block.get_instr(&slot));
     }
 }

@@ -1,7 +1,7 @@
 use crate::{
     Prog, Slot, State, Steps,
     config::{BigConfig, Config, MedConfig},
-    macros::GetInstr,
+    macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
     rules::ApplyRule,
     tape::{Alignment as _, GetSig, MachineTape, Pos},
@@ -82,10 +82,11 @@ pub trait RunProver: GetInstr + Sized {
 
             let slot = config.slot();
 
-            let Some((color, shift, next_state)) =
-                self.get_instr(&slot)
-            else {
-                return Undefined(slot);
+            let (color, shift, next_state) = match self.get_instr(&slot)
+            {
+                Err(MacroExc::InfLoop) => return InfiniteRule,
+                Ok(None) => return Undefined(slot),
+                Ok(Some(instr)) => instr,
             };
 
             let same = config.state == next_state;
@@ -116,7 +117,7 @@ pub trait RunProver: GetInstr + Sized {
             }
 
             let (color, shift, next_state) =
-                self.get_instr(&config.slot())?;
+                self.get_instr(&config.slot()).unwrap()?;
 
             config.tape.mstep(shift, color, config.state == next_state);
 
