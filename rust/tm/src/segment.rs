@@ -431,20 +431,19 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let mut copy = config.clone();
 
         while let Some(slot) = config.slot() {
-            let Some(&instr) = self.get(&slot) else {
+            let Some(instr @ &(print, _, state)) = self.get(&slot)
+            else {
                 return Some(Found(Halt));
             };
 
             if (config.init || goal.is_spinout())
-                && config.spinout(&instr)
+                && config.spinout(instr)
                 && (config.init || configs.check_reached(config, goal))
             {
                 return Some(Found(Spinout));
             }
 
-            config.step(&instr);
-
-            let (print, _, state) = instr;
+            config.step(instr);
 
             if print == 0 && config.tape.blank() {
                 if state == 0 {

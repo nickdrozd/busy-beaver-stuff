@@ -107,15 +107,15 @@ impl Config {
         seen: &mut Set<Self>,
     ) -> RunResult {
         for _ in 0..steps {
-            let Some(instr) = prog.get_instr(&self.slot()) else {
+            let Some(instr @ (_, shift, state)) =
+                prog.get_instr(&self.slot())
+            else {
                 return if goal.is_halt() {
                     Reached
                 } else {
                     Unreachable
                 };
             };
-
-            let (_, shift, state) = instr;
 
             if state == self.state && self.tape.at_edge(shift) {
                 return match goal {
