@@ -59,6 +59,17 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     ) -> BacksymbolMacro<'_, states, colors> {
         MacroProg::new(self, BacksymbolLogic::new(backsymbols))
     }
+
+    pub fn make_lru_macro(&self) -> HistoryMacro<'_, states, colors> {
+        HistoryMacro::new(self, update_lru)
+    }
+
+    pub fn make_transcript_macro(
+        &self,
+        steps: usize,
+    ) -> HistoryMacro<'_, states, colors> {
+        HistoryMacro::new(self, update_transcript(steps))
+    }
 }
 
 /**************************************/
@@ -551,4 +562,108 @@ fn test_backsym_reconstruct() {
     let instr = logic.reconstruct_outputs(config);
 
     assert_eq!(instr, (0, true, 11), "{instr:?}");
+}
+
+/**************************************/
+
+type History = Vec<Slot>;
+
+pub struct HistoryMacro<'p, const s: usize, const c: usize> {
+    prog: &'p Prog<s, c>,
+
+    colors: RefCell<Vec<(Color, History)>>,
+
+    updater: Box<dyn Fn(Slot, &History) -> History>,
+}
+
+impl<const s: usize, const c: usize> GetInstr
+    for HistoryMacro<'_, s, c>
+{
+    fn get_instr(
+        &self,
+        &(state, macro_color): &Slot,
+    ) -> GetInstrResult {
+        let (slot, updated) = {
+            let (color, past) =
+                &self.colors.borrow()[macro_color as usize];
+
+            let slot = (state, *color);
+
+            let updated = (self.updater)(slot, past);
+
+            (slot, updated)
+        };
+
+        let Some(&(print, shift, trans)) = self.prog.get(&slot) else {
+            return Ok(None);
+        };
+
+        let macro_print = self.encode(print, updated)?;
+
+        Ok(Some((macro_print, shift, trans)))
+    }
+}
+
+impl<'p, const s: usize, const c: usize> HistoryMacro<'p, s, c> {
+    fn new(
+        prog: &'p Prog<s, c>,
+        updater: impl 'static + Fn(Slot, &History) -> History,
+    ) -> Self {
+        let colors = vec![(0, vec![])];
+
+        Self {
+            prog,
+            colors: colors.into(),
+            updater: Box::new(updater),
+        }
+    }
+
+    fn encode(
+        &self,
+        print: Color,
+        history: History,
+    ) -> Result<Color, MacroExc> {
+        let new = (print, history);
+
+        let mut colors = self.colors.borrow_mut();
+
+        let index = if let Some((index, _)) =
+            colors.iter().enumerate().find(|&(_, entry)| *entry == new)
+        {
+            index
+        } else {
+            let index = colors.len();
+            colors.push(new);
+            index
+        };
+
+        Color::try_from(index).map_err(MacroExc::Conversion)
+    }
+}
+
+fn update_lru(slot: Slot, past: &History) -> History {
+    let mut history = past.clone();
+
+    if history.first() != Some(&slot) {
+        history.retain(|&s| s != slot);
+        history.insert(0, slot);
+    }
+
+    history
+}
+
+fn update_transcript(
+    steps: usize,
+) -> impl Fn(Slot, &History) -> History {
+    move |slot, past| {
+        let mut history = past.clone();
+
+        if steps <= history.len() {
+            history.pop();
+        }
+
+        history.insert(0, slot);
+
+        history
+    }
 }

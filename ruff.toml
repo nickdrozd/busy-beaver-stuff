@@ -36,7 +36,7 @@ ignore = [
 ]
 
 [lint.pylint]
-max-args       =  5  # c
+max-args       =  7  # macro
 max-locals     = 19  # machine
 max-returns    =  7  # prover
 max-branches   = 23  # num

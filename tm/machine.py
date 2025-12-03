@@ -67,6 +67,8 @@ class Machine:
             *,
             blocks: int | None = None,
             backsym: int | None = None,
+            transcript: int | None = None,
+            lru_history: bool = False,
             opt_macro: int | None = None,
             params: Params | None = None,
     ):
@@ -74,6 +76,8 @@ class Machine:
             prog,
             blocks = blocks,
             backsym = backsym,
+            transcript = transcript,
+            lru_history = lru_history,
             opt_macro = opt_macro,
             params = params,
         )

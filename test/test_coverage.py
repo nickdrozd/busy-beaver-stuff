@@ -80,6 +80,19 @@ class TestFloss(TestCase):
 
         print(machine)
 
+        for i in range(1, 4):
+            self.assertIsNotNone(
+                Machine(
+                    "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA",
+                    transcript = i,
+                ).run().spnout)
+
+        self.assertIsNotNone(
+            Machine(
+                "1RB 0LB  1LA 0RC  1LC 1LA",
+                lru_history = True,
+            ).run().spnout)
+
     def test_machine(self):
         self.assertIsNotNone(
             Machine(

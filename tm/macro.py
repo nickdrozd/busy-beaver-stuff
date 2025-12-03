@@ -23,6 +23,8 @@ def make_macro(
         *,
         blocks: int | None = None,
         backsym: int | None = None,
+        transcript: int | None = None,
+        lru_history: bool = False,
         opt_macro: int | None = None,
         params: Params | None = None,
 ) -> GetInstr:
@@ -42,6 +44,12 @@ def make_macro(
             params = prog_params(comp)
 
         comp = make_backsymbol_macro(comp, backsym, params)
+
+    if transcript is not None:
+        comp = make_transcript_macro(comp, transcript)
+
+    if lru_history:
+        comp = make_lru_macro(comp)
 
     return comp
 
@@ -428,3 +436,85 @@ def make_backsym(backsyms: int, params: Params) -> BacksymbolLogic:
     backsym = BacksymbolLogic(backsyms, *params)
     BACKSYMS[params][backsyms] = backsym
     return backsym
+
+########################################
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    History = list[Slot]
+    Updater = Callable[[Slot, History], History]
+
+
+class HistoryMacro:
+    prog: GetInstr
+
+    colors: list[tuple[Color, History]]
+
+    updater: Updater
+
+    def __init__(self, prog: GetInstr, updater: Updater):
+        self.prog = prog
+        self.colors = [(0, [])]
+        self.updater = updater
+
+    def __getitem__(self, macro_slot: Slot) -> Instr:
+        state, macro_color = macro_slot
+
+        color, past = self.colors[macro_color]
+
+        slot = state, color
+
+        updated = self.updater(slot, past)
+
+        pr, sh, tr = self.prog[slot]
+
+        macro_print = self.encode(pr, updated)
+
+        return macro_print, sh, tr
+
+    def encode(self, color: Color, history: History) -> Color:
+        new = (color, history)
+
+        for index, entry in enumerate(self.colors):
+            if entry == new:
+                return index
+
+        index = len(self.colors)
+
+        self.colors.append(new)
+
+        return index
+
+
+def update_lru(slot: Slot, past: History) -> History:
+    if past and past[0] == slot:
+        return past
+
+    history = [entry for entry in past if entry != slot]
+
+    history.insert(0, slot)
+
+    return history
+
+
+def update_transcript(steps: int) -> Callable[[Slot, History], History]:
+    def update(slot: Slot, past: History) -> History:
+        history = past.copy()
+
+        if steps <= len(history):
+            history.pop()
+
+        history.insert(0, slot)
+
+        return history
+
+    return update
+
+
+def make_transcript_macro(prog: GetInstr, steps: int) -> HistoryMacro:
+    return HistoryMacro(prog, update_transcript(steps))
+
+
+def make_lru_macro(prog: GetInstr) -> HistoryMacro:
+    return HistoryMacro(prog, update_lru)
