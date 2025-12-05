@@ -8,6 +8,7 @@ use Goal::*;
 
 pub type Radius = usize;
 
+const MAX_TODO: usize = 1_000;
 const MAX_DEPTH: usize = 100_000;
 
 /**************************************/
@@ -135,7 +136,7 @@ fn cps_cant_reach<const s: usize, const c: usize>(
             configs.l_watch.entry(pull_key).or_default().push(config);
         }
 
-        if configs.seen.len() > MAX_DEPTH {
+        if configs.at_capacity() {
             return false;
         }
     }
@@ -180,6 +181,10 @@ impl Configs {
         configs.todo.push(init);
 
         configs
+    }
+
+    fn at_capacity(&self) -> bool {
+        MAX_TODO < self.todo.len() || MAX_DEPTH < self.seen.len()
     }
 
     fn add_span(&mut self, shift: Shift, span: &Span) {

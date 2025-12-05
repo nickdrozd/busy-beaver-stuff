@@ -3083,8 +3083,8 @@ SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
 ########################################
 
 CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 50,
-    "blank": 114,
+    "halt": 51,
+    "blank": 130,
     "spinout": 302,
 }
 
@@ -3137,6 +3137,7 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0RF  1RA 1LC",
         "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
         "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...",
+        "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
         "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
         "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
         "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
@@ -3173,6 +3174,21 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 2LB 3RA 0LA  1LB 2RB 2LA 1LA",
         "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA",
         "1RB 2RA 2LA 3LB  0LB 1LA 3RB 0RA",
+        "1RB 2RA 3LA 0LA  1LB 2LA 0RB 3RA",
+        "1RB 2LA 0RB 1LB  2LA 3RA 3RB 0LB",
+        "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA",
+        "1RB 2LB 0LA 1LB  3LA 0RA 3RA 2RB",
+        "1RB 2LA 0RA 2LB  3LA 0LA 3RA 1RB",
+        "1RB 0RA 0LB 2RB  3LA 3RB 0LA 2RA",
+        "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA",
+        "1RB 0LC  0RD 0RC  1LD 0RB  1LA 0LC",
+        "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
+        "1RB 0LC  0RD 1RD  1LA 1LC  1RC 0RB",
+        "1RB 0LC  1RD 0RA  0LB 0LA  1LC 0RA",
+        "1RB 0LA  0RC 0RD  1LA 0RA  0LC 1RA",
+        "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC",
+        "1RB 1LC  1LD 0LC  0LB 0RA  1RD 1RA",
+        "1RB 0LA  1LC 0RA  0LD 1RD  1LA 0RB",
         "1RB 1LC  1LB 1RC  0LD 0RC  1LA 0RA",
         "1RB 0LC  1RD 0RD  1LA 0RC  1LB 1RC",
         "1RB 1LA  1RC 1LD  1RD 0RC  0LD 0LA",
@@ -3236,6 +3252,7 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0LB 2LA  1LA 2RC 0LB  2RC 2RB 0LC",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
+        "1RB 0LD  0RC 1RC  1LA 0LE  0RA 1LD  0LA 1RB",
         "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA",
         "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB ...",
         "1RB 1LE  1RC 0RA  0LD 0LC  1RD 1RE  1LB 0RB",
