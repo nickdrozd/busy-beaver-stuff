@@ -8,7 +8,6 @@ use Goal::*;
 
 pub type Radius = usize;
 
-const MAX_LOOPS: usize = 1_000;
 const MAX_DEPTH: usize = 100_000;
 
 /**************************************/
@@ -42,129 +41,134 @@ fn cps_cant_reach<const s: usize, const c: usize>(
 ) -> bool {
     let mut configs = Configs::init(rad);
 
-    for _ in 0..MAX_LOOPS {
-        let mut todo: Vec<Config> =
-            configs.seen.clone().into_iter().collect();
+    while let Some(config) = configs.todo.pop() {
+        let Config { state, mut tape } = config.clone();
 
-        let mut update = false;
-
-        while let Some(Config { state, mut tape }) = todo.pop() {
-            let Some(&(print, shift, next_state)) =
-                prog.get(&(state, tape.scan))
-            else {
-                match goal {
-                    Halt => return false,
-                    _ => continue,
-                };
+        let Some(&(print, shift, next_state)) =
+            prog.get(&(state, tape.scan))
+        else {
+            match goal {
+                Halt => return false,
+                _ => continue,
             };
+        };
 
-            let ((pull, pull_spans), (push, push_spans)) = if shift {
-                (
-                    (&mut tape.rspan, &configs.rspans),
-                    (&mut tape.lspan, &mut configs.lspans),
-                )
+        let (pull, push): (&mut Span, &mut Span) = if shift {
+            (&mut tape.rspan, &mut tape.lspan)
+        } else {
+            (&mut tape.lspan, &mut tape.rspan)
+        };
+
+        configs.add_span(shift, push);
+
+        push.push(print);
+        tape.scan = pull.pull();
+
+        let colors = {
+            if shift {
+                &configs.rspans
             } else {
-                (
-                    (&mut tape.lspan, &configs.lspans),
-                    (&mut tape.rspan, &mut configs.rspans),
-                )
+                &configs.lspans
+            }
+            .get_colors(pull)
+        };
+
+        if !goal.is_halt()
+            && colors.contains(&0)
+            && tape.scan == 0
+            && pull.blank_span()
+            && match goal {
+                Blank => push.all_blank(),
+                Spinout => state == next_state,
+                Halt => false,
+            }
+        {
+            return false;
+        }
+
+        let (last_color, colors) = colors.split_last().unwrap();
+
+        for color in colors {
+            let mut pull_clone = pull.clone();
+            pull_clone.last = *color;
+
+            let next_tape = Tape::from_spans(
+                tape.scan,
+                push.clone(),
+                pull_clone,
+                shift,
+            );
+
+            let next_config = Config {
+                state: next_state,
+                tape: next_tape,
             };
 
-            push_spans.add_span(push);
-
-            push.push(print);
-
-            tape.scan = pull.pull();
-
-            let colors = pull_spans.get_colors(pull);
-
-            if !goal.is_halt()
-                && colors.contains(&0)
-                && tape.scan == 0
-                && pull.blank_span()
-                && match goal {
-                    Blank => push.all_blank(),
-                    Spinout => state == next_state,
-                    Halt => false,
-                }
-            {
-                return false;
+            if configs.seen.contains(&next_config) {
+                continue;
             }
 
-            let (last_color, colors) = colors.split_last().unwrap();
+            configs.seen.insert(next_config.clone());
+            configs.todo.push(next_config);
+        }
 
-            for color in colors {
-                let next_config = Config {
-                    state: next_state,
-                    tape: Tape::from_spans(
-                        tape.scan,
-                        push.clone(),
-                        {
-                            let mut pull_clone = pull.clone();
-                            pull_clone.last = *color;
-                            pull_clone
-                        },
-                        shift,
-                    ),
-                };
+        let pull_key = pull.span.clone();
 
-                if configs.seen.contains(&next_config) {
-                    continue;
-                }
-
-                configs.seen.insert(next_config.clone());
-                todo.push(next_config);
-                update = true;
-            }
-
-            {
-                let next_config = Config {
-                    state: next_state,
-                    tape: {
-                        pull.last = *last_color;
-                        tape
-                    },
-                };
-
-                if configs.seen.contains(&next_config) {
-                    continue;
-                }
-
-                configs.seen.insert(next_config.clone());
-                todo.push(next_config);
-                update = true;
+        {
+            let next_config = Config {
+                state: next_state,
+                tape: {
+                    pull.last = *last_color;
+                    tape
+                },
             };
 
-            if configs.seen.len() > MAX_DEPTH {
-                return false;
+            if !configs.seen.contains(&next_config) {
+                configs.seen.insert(next_config.clone());
+                configs.todo.push(next_config);
             }
         }
 
-        if !update {
-            return true;
+        if shift {
+            configs.r_watch.entry(pull_key).or_default().push(config);
+        } else {
+            configs.l_watch.entry(pull_key).or_default().push(config);
+        }
+
+        if configs.seen.len() > MAX_DEPTH {
+            return false;
         }
     }
 
-    false
+    true
 }
 
 /**************************************/
 
 type Colors = Vec<Color>;
 type Spans = Dict<Vec<Color>, Colors>;
+type Watch = Dict<Vec<Color>, Vec<Config>>;
 
 struct Configs {
-    seen: Set<Config>,
     lspans: Spans,
     rspans: Spans,
+
+    seen: Set<Config>,
+    todo: Vec<Config>,
+
+    l_watch: Watch,
+    r_watch: Watch,
 }
 
 impl Configs {
     fn init(rad: Radius) -> Self {
         let mut configs = Self {
-            seen: Set::new(),
             lspans: Dict::new(),
             rspans: Dict::new(),
+            seen: Set::new(),
+            todo: Vec::new(),
+            l_watch: Dict::new(),
+            r_watch: Dict::new(),
         };
 
         let init = Config::init(rad);
@@ -172,28 +176,44 @@ impl Configs {
         configs.lspans.add_span(&init.tape.lspan);
         configs.rspans.add_span(&init.tape.rspan);
 
-        configs.seen.insert(init);
+        configs.seen.insert(init.clone());
+        configs.todo.push(init);
 
         configs
+    }
+
+    fn add_span(&mut self, shift: Shift, span: &Span) {
+        let (spans, watch) = if shift {
+            (&mut self.lspans, &mut self.l_watch)
+        } else {
+            (&mut self.rspans, &mut self.r_watch)
+        };
+
+        if spans.add_span(span)
+            && let Some(mut waiting) = watch.remove(&span.span)
+        {
+            self.todo.append(&mut waiting);
+        }
     }
 }
 
 trait AddSpan {
-    fn add_span(&mut self, span: &Span);
+    fn add_span(&mut self, span: &Span) -> bool;
     fn get_colors(&self, span: &Span) -> &Colors;
 }
 
 impl AddSpan for Spans {
-    fn add_span(&mut self, span: &Span) {
+    fn add_span(&mut self, span: &Span) -> bool {
         if let Some(colors) = self.get_mut(&span.span) {
             if let Err(pos) = colors.binary_search(&span.last) {
                 colors.insert(pos, span.last);
+                return true;
             }
-
-            return;
+            return false;
         }
 
         self.insert(span.span.clone(), vec![span.last]);
+        true
     }
 
     fn get_colors(&self, span: &Span) -> &Colors {
