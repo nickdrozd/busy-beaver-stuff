@@ -53,7 +53,7 @@ from tools.instr_seq import instr_seq
 from tools.normalize import normalize
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
     from typing import Any
 
     from test.lin_rec import Tapes
@@ -646,14 +646,27 @@ class Cps(TuringTest):
             counts,
             json.dumps(counts, indent = 4))
 
-        for prog in CPS_FALSE_NEGATIVES['halt']:
-            self.assert_could_halt_cps(prog)
+        cats: dict[Goal, tuple[set[str], Callable[[str], None]]] = {
+            'halt': (set(), self.assert_could_halt_cps),
+            'blank': (set(), self.assert_could_blank_cps),
+            'spinout': (set(), self.assert_could_spin_out_cps),
+        }
 
-        for prog in CPS_FALSE_NEGATIVES['blank']:
-            self.assert_could_blank_cps(prog)
+        for cat, (pos, cps_check) in cats.items():
+            for prog in CPS_FALSE_NEGATIVES[cat]:
+                try:
+                    cps_check(prog)
+                except AssertionError:
+                    pos.add(prog)
 
-        for prog in CPS_FALSE_NEGATIVES['spinout']:
-            self.assert_could_spin_out_cps(prog)
+        true_pos = {
+            cat: sorted(pos, key = len)
+            for cat, (pos, _) in cats.items()
+        }
+
+        if any(pos for pos in true_pos.values()):
+            print(json.dumps(true_pos, indent = 4))
+            raise AssertionError
 
 ########################################
 
