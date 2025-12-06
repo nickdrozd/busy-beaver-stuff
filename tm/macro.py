@@ -182,18 +182,16 @@ class MacroProg:
         return self.logic.cells
 
     def __getitem__(self, slot: Slot) -> Instr:
+        try:
+            return self.instrs[slot]
+        except KeyError:
+            pass
+
         in_state, in_color = slot
 
-        slot = self.states[in_state], self.colors[in_color]
+        macro_slot = self.states[in_state], self.colors[in_color]
 
-        try:
-            instr = self.instrs[slot]
-        except KeyError:
-            instr = self.calculate_instr(slot)
-
-            self.instrs[slot] = instr
-
-        out_color, shift, out_state = instr
+        out_color, shift, out_state = self.calculate_instr(macro_slot)
 
         try:
             fwd_color = self.colors.index(out_color)
@@ -207,7 +205,11 @@ class MacroProg:
             self.states.append(out_state)
             fwd_state = len(self.states) - 1
 
-        return fwd_color, shift, fwd_state
+        instr = fwd_color, shift, fwd_state
+
+        self.instrs[slot] = instr
+
+        return instr
 
     def calculate_instr(self, slot: Slot) -> Instr:
         return self.logic.reconstruct_outputs(
@@ -449,16 +451,24 @@ if TYPE_CHECKING:
 class HistoryMacro:
     prog: GetInstr
 
+    instrs: Prog
+
     colors: list[tuple[Color, History]]
 
     updater: Updater
 
     def __init__(self, prog: GetInstr, updater: Updater):
         self.prog = prog
+        self.instrs = {}
         self.colors = [(0, [])]
         self.updater = updater
 
     def __getitem__(self, macro_slot: Slot) -> Instr:
+        try:
+            return self.instrs[macro_slot]
+        except KeyError:
+            pass
+
         state, macro_color = macro_slot
 
         color, past = self.colors[macro_color]
@@ -471,7 +481,11 @@ class HistoryMacro:
 
         macro_print = self.encode(pr, updated)
 
-        return macro_print, sh, tr
+        macro_instr = macro_print, sh, tr
+
+        self.instrs[macro_slot] = macro_instr
+
+        return macro_instr
 
     def encode(self, color: Color, history: History) -> Color:
         new = (color, history)

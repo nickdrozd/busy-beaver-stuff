@@ -148,7 +148,7 @@ pub struct MacroProg<'p, const s: usize, const c: usize, L: Logic<s, c>>
     prog: &'p Prog<s, c>,
     logic: L,
 
-    instrs: RefCell<Dict<MacroSlot, MacroInstr>>,
+    instrs: RefCell<Dict<Slot, Instr>>,
 
     states: RefCell<Vec<MacroState>>,
     colors: RefCell<Vec<MacroColor>>,
@@ -158,27 +158,27 @@ impl<const s: usize, const c: usize, L: Logic<s, c>> GetInstr
     for MacroProg<'_, s, c, L>
 {
     fn get_instr(&self, slot: &Slot) -> GetInstrResult {
-        let slot: MacroSlot = self.convert_slot(slot);
+        if let Some(&instr) = self.instrs.borrow().get(slot) {
+            return Ok(Some(instr));
+        }
 
-        let (color, shift, state) = {
-            if let Some(&instr) = self.instrs.borrow().get(&slot) {
-                instr
-            } else {
-                let Some(instr) = self.calculate_instr(slot)? else {
-                    return Ok(None);
-                };
+        let macro_slot = self.convert_slot(slot);
 
-                self.instrs.borrow_mut().insert(slot, instr);
-
-                instr
-            }
+        let Some((macro_color, shift, macro_state)) =
+            self.calculate_instr(macro_slot)?
+        else {
+            return Ok(None);
         };
 
-        Ok(Some((
-            self.convert_color(color)?,
+        let instr = (
+            self.convert_color(macro_color)?,
             shift,
-            self.convert_state(state)?,
-        )))
+            self.convert_state(macro_state)?,
+        );
+
+        self.instrs.borrow_mut().insert(*slot, instr);
+
+        Ok(Some(instr))
     }
 }
 
@@ -565,6 +565,8 @@ type History = Vec<Slot>;
 pub struct HistoryMacro<'p, const s: usize, const c: usize> {
     prog: &'p Prog<s, c>,
 
+    instrs: RefCell<Dict<Slot, Instr>>,
+
     colors: RefCell<Vec<(Color, History)>>,
 
     updater: Box<dyn Fn(Slot, &History) -> History>,
@@ -575,8 +577,12 @@ impl<const s: usize, const c: usize> GetInstr
 {
     fn get_instr(
         &self,
-        &(state, macro_color): &Slot,
+        macro_slot @ &(state, macro_color): &Slot,
     ) -> GetInstrResult {
+        if let Some(&instr) = self.instrs.borrow().get(macro_slot) {
+            return Ok(Some(instr));
+        }
+
         let (slot, updated) = {
             let (color, past) =
                 &self.colors.borrow()[macro_color as usize];
@@ -594,7 +600,11 @@ impl<const s: usize, const c: usize> GetInstr
 
         let macro_print = self.encode(print, updated)?;
 
-        Ok(Some((macro_print, shift, trans)))
+        let macro_instr = (macro_print, shift, trans);
+
+        self.instrs.borrow_mut().insert(*macro_slot, macro_instr);
+
+        Ok(Some(macro_instr))
     }
 }
 
@@ -607,6 +617,7 @@ impl<'p, const s: usize, const c: usize> HistoryMacro<'p, s, c> {
 
         Self {
             prog,
+            instrs: Dict::new().into(),
             colors: colors.into(),
             updater: Box::new(updater),
         }
