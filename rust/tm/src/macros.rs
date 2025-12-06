@@ -12,8 +12,6 @@ type MacroState = u64;
 type MacroSlot = (MacroState, MacroColor);
 type MacroInstr = (MacroColor, Shift, MacroState);
 
-type MacroInstrs = Dict<MacroSlot, MacroInstr>;
-
 type Tape = Vec<Color>;
 type Config = (State, (bool, Tape));
 
@@ -150,7 +148,7 @@ pub struct MacroProg<'p, const s: usize, const c: usize, L: Logic<s, c>>
     prog: &'p Prog<s, c>,
     logic: L,
 
-    instrs: RefCell<MacroInstrs>,
+    instrs: RefCell<Dict<MacroSlot, MacroInstr>>,
 
     states: RefCell<Vec<MacroState>>,
     colors: RefCell<Vec<MacroColor>>,
@@ -170,7 +168,7 @@ impl<const s: usize, const c: usize, L: Logic<s, c>> GetInstr
                     return Ok(None);
                 };
 
-                self.cache_instr(slot, instr);
+                self.instrs.borrow_mut().insert(slot, instr);
 
                 instr
             }
@@ -237,10 +235,6 @@ impl<'p, const st: usize, const co: usize, L: Logic<st, co>>
             });
 
         Color::try_from(pos).map_err(MacroExc::Conversion)
-    }
-
-    fn cache_instr(&self, slot: MacroSlot, instr: MacroInstr) {
-        self.instrs.borrow_mut().insert(slot, instr);
     }
 
     fn calculate_instr(
