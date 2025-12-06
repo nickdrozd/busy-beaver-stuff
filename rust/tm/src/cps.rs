@@ -2,7 +2,7 @@ use core::{fmt, iter::once};
 
 use ahash::{AHashMap as Dict, AHashSet as Set};
 
-use crate::{Color, Goal, Prog, Shift, config};
+use crate::{Color, Goal, Prog, Shift, config, macros::GetInstr};
 
 use Goal::*;
 
@@ -35,8 +35,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
 /**************************************/
 
-fn cps_cant_reach<const s: usize, const c: usize>(
-    prog: &Prog<s, c>,
+fn cps_cant_reach(
+    prog: &impl GetInstr,
     rad: Radius,
     goal: Goal,
 ) -> bool {
@@ -45,14 +45,15 @@ fn cps_cant_reach<const s: usize, const c: usize>(
     while let Some(config) = configs.todo.pop() {
         let Config { state, mut tape } = config.clone();
 
-        let Some(&(print, shift, next_state)) =
-            prog.get(&(state, tape.scan))
-        else {
-            match goal {
-                Halt => return false,
-                _ => continue,
+        let (print, shift, next_state) =
+            match prog.get_instr(&(state, tape.scan)) {
+                Err(_) => return false,
+                Ok(None) => match goal {
+                    Halt => return false,
+                    _ => continue,
+                },
+                Ok(Some(instr)) => instr,
             };
-        };
 
         let (pull, push): (&mut Span, &mut Span) = if shift {
             (&mut tape.rspan, &mut tape.lspan)
