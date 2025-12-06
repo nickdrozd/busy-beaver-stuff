@@ -615,7 +615,7 @@ class Cps(TuringTest):
             self.assert_could_halt_cps(prog)
 
         for prog in NONHALTERS:
-            self.assert_cant_halt_cps(prog, 8)
+            self.assert_cant_halt_cps(prog, 7)
 
     def test_blank(self):
         for prog in BLANKERS:

@@ -29,7 +29,21 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     fn cps_run(&self, rad: Radius, goal: Goal) -> bool {
         assert!(rad > 1);
 
-        (2..rad).any(|seg| cps_cant_reach(self, seg, goal))
+        match goal {
+            Blank => {
+                (2..rad).any(|seg| cps_cant_reach(self, seg, goal))
+            },
+            Halt | Spinout => {
+                if cps_cant_reach(self, 2, goal)
+                    || cps_cant_reach(&self.make_lru_macro(), 2, goal)
+                {
+                    return true;
+                }
+
+                let prog = &self.make_transcript_macro(4);
+                (2..rad).any(|seg| cps_cant_reach(prog, seg, goal))
+            },
+        }
     }
 }
 

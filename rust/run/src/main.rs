@@ -184,23 +184,23 @@ fn test_deciders() {
             2 => (params_2_2_2, 4, (5, 53)),
         ],
         (3, 2) => [
-            0 => (params_3_2_0, 12, (850, 2_721)),
-            1 => (params_3_2_1, 13, (494, 4_050)),
+            0 => (params_3_2_0, 12, (845, 2_721)),
+            1 => (params_3_2_1, 13, (482, 4_050)),
             2 => (params_3_2_2, 13, (664, 9_513)),
         ],
         (2, 3) => [
-            0 => (params_2_3_0, 7, (548, 2_335)),
-            1 => (params_2_3_1, 20, (551, 3_510)),
+            0 => (params_2_3_0, 7, (546, 2_335)),
+            1 => (params_2_3_1, 20, (537, 3_510)),
             2 => (params_2_3_2, 20, (154, 5_962)),
         ],
         (4, 2) => [
-            0 => (params_4_2_0, 25, (115_958, 432_318)),
-            1 => (params_4_2_1, 99, (88_769, 754_707)),
+            0 => (params_4_2_0, 25, (115_046, 432_318)),
+            1 => (params_4_2_1, 99, (86_550, 754_707)),
             2 => (params_4_2_2, 99, (112_129, 1_933_882)),
         ],
         (2, 4) => [
-            0 => (params_2_4_0, 109, (88_144, 309_759)),
-            1 => (params_2_4_1, TREE_LIM, (95_726, 613_031)),
+            0 => (params_2_4_0, 109, (87_306, 309_759)),
+            1 => (params_2_4_1, TREE_LIM, (93_164, 613_031)),
             2 => (params_2_4_2, TREE_LIM, (33_974, 1_190_832)),
         ],
     ];
@@ -388,7 +388,6 @@ fn instrs_4(prog: &Prog<4, 4>, mut config: PassConfig<'_>) -> bool {
 fn instrs_5(prog: &Prog<5, 5>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(301, config.to_mut()).is_settled()
         || prog.cant_halt(2).is_refuted()
-        || prog.ctl_cant_halt(25)
         || prog.cps_cant_halt(3)
 }
 
@@ -396,7 +395,7 @@ fn instrs_6(prog: &Prog<6, 6>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(304, config.to_mut()).is_settled()
         || prog.cant_halt(2).is_refuted()
         || prog.ctl_cant_halt(76)
-        || prog.cps_cant_halt(5)
+        || prog.cps_cant_halt(3)
 }
 
 fn instrs_7(prog: &Prog<7, 7>, mut config: PassConfig<'_>) -> bool {
@@ -414,9 +413,9 @@ fn test_instrs() {
 
     assert_instrs![
         4 => (instrs_4, 4, (0, 4_909)),
-        5 => (instrs_5, 12, (13, 151_351)),
-        6 => (instrs_6, 22, (539, 5_568_167)),
-        7 => (instrs_7, 109, (23_537, 246_492_765)),
+        5 => (instrs_5, 12, (0, 151_351)),
+        6 => (instrs_6, 22, (3, 5_568_167)),
+        7 => (instrs_7, 109, (324, 246_492_765)),
     ];
 }
 
