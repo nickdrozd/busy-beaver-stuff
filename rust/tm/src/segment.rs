@@ -1,11 +1,10 @@
 use core::{
+    array,
     fmt::{self, Display, Formatter},
     iter::once,
 };
 
-use std::collections::BTreeMap as Dict;
-
-use ahash::AHashSet as Set;
+use ahash::{AHashMap as Dict, AHashSet as Set};
 
 use crate::{
     Color, Goal, Instr, Prog, Shift, Slot, State,
@@ -114,7 +113,7 @@ fn all_segments_reached<const s: usize, const c: usize>(
     goal: Goal,
 ) -> Option<SearchResult> {
     let mut configs =
-        Configs::new(&prog.halts, &prog.spinouts, seg, goal);
+        Configs::<s>::new(&prog.halts, &prog.spinouts, seg, goal);
 
     let branches = &prog.branches;
 
@@ -193,7 +192,7 @@ fn all_segments_reached<const s: usize, const c: usize>(
             return Some(Reached);
         }
 
-        let (diffs, dirs) = &branches[&config.state];
+        let (diffs, dirs) = &branches[config.state as usize];
 
         let blank = config.tape.blank();
 
@@ -213,39 +212,62 @@ fn all_segments_reached<const s: usize, const c: usize>(
 
 type Pos = usize;
 
-struct Configs {
+struct Configs<const S: usize> {
     seg: Segments,
 
     todo: Vec<Config>,
-    seen: Dict<State, Set<Tape>>,
-    blanks: Dict<State, Set<Pos>>,
-    reached: Dict<State, Set<Pos>>,
+    tape_ids: Dict<Tape, u32>,
+    next_tape_id: u32,
+    blanks: [Vec<bool>; S],
+    goal_states: [bool; S],
+    reached: [Vec<bool>; S],
+    reached_counts: [usize; S],
+    blank_union: Vec<bool>,
+    blank_union_count: usize,
+    seen_bits: [Vec<u64>; S],
+    seen_counts: [usize; S],
+    max_seen_len: usize,
+    next_init_pos: Pos,
 }
 
-impl Configs {
+impl<const S: usize> Configs<S> {
     fn new(
         halts: &Halts,
         spinouts: &Spinouts,
         seg: Segments,
         goal: Goal,
     ) -> Self {
-        let reached = match goal {
-            Blank => Dict::new(),
+        let mut goal_states = [false; S];
+
+        match goal {
+            Blank => {},
             Halt => {
-                halts.iter().map(|&state| (state, Set::new())).collect()
+                for &state in halts {
+                    goal_states[state as usize] = true;
+                }
             },
-            Spinout => spinouts
-                .keys()
-                .map(|&state| (state, Set::new()))
-                .collect(),
-        };
+            Spinout => {
+                for (&state, _) in spinouts {
+                    goal_states[state as usize] = true;
+                }
+            },
+        }
 
         Self {
             seg,
             todo: vec![],
-            seen: Dict::new(),
-            blanks: Dict::new(),
-            reached,
+            tape_ids: Dict::with_capacity(MAX_DEPTH * S),
+            next_tape_id: 0,
+            blanks: array::from_fn(|_| vec![false; seg]),
+            goal_states,
+            reached: array::from_fn(|_| vec![false; seg]),
+            reached_counts: [0; S],
+            blank_union: vec![false; seg],
+            blank_union_count: 0,
+            seen_bits: array::from_fn(|_| Vec::new()),
+            seen_counts: [0; S],
+            max_seen_len: 0,
+            next_init_pos: 0,
         }
     }
 
@@ -253,18 +275,79 @@ impl Configs {
         self.todo.push(config);
     }
 
-    fn check_depth(&self) -> bool {
-        self.seen.values().any(|seen| seen.len() > MAX_DEPTH)
+    const fn check_depth(&self) -> bool {
+        MAX_DEPTH < self.max_seen_len
     }
 
     fn next_init(&mut self) -> Option<Config> {
-        let blanks = self.blanks.entry(0).or_default();
+        let blanks0 = &mut self.blanks[0];
 
-        let pos = (0..self.seg).find(|pos| !blanks.contains(pos))?;
+        while self.next_init_pos < self.seg
+            && blanks0[self.next_init_pos]
+        {
+            self.next_init_pos += 1;
+        }
 
-        blanks.insert(pos);
+        if self.next_init_pos >= self.seg {
+            return None;
+        }
+
+        let pos = self.next_init_pos;
+        self.next_init_pos += 1;
+
+        blanks0[pos] = true;
+
+        if !self.blank_union[pos] {
+            self.blank_union[pos] = true;
+            self.blank_union_count += 1;
+        }
 
         Some(Config::init(self.seg, pos))
+    }
+
+    fn tape_id(&mut self, tape: &Tape) -> u32 {
+        if let Some(&id) = self.tape_ids.get(tape) {
+            id
+        } else {
+            let id = self.next_tape_id;
+            self.next_tape_id += 1;
+            self.tape_ids.insert(tape.clone(), id);
+            id
+        }
+    }
+
+    fn check_seen_nonblank_id(
+        &mut self,
+        state: State,
+        id: u32,
+    ) -> Option<bool> {
+        let idx = state as usize;
+        let bits = &mut self.seen_bits[idx];
+
+        let bit = id as usize;
+        let word_idx = bit >> 6;
+        let mask = 1_u64 << (bit & 63);
+
+        if word_idx >= bits.len() {
+            bits.resize(word_idx + 1, 0);
+        }
+
+        let word = &mut bits[word_idx];
+
+        if (*word & mask) != 0 {
+            return None;
+        }
+
+        *word |= mask;
+
+        let counts = &mut self.seen_counts[idx];
+        *counts += 1;
+
+        if self.max_seen_len < *counts {
+            self.max_seen_len = *counts;
+        }
+
+        Some(false)
     }
 
     fn check_seen(
@@ -274,24 +357,27 @@ impl Configs {
         blank: bool,
     ) -> Option<bool> {
         if blank {
-            let blanks = self.blanks.entry(state).or_default();
+            let blanks = &mut self.blanks[state as usize];
 
             let pos = tape.pos();
 
-            if !blanks.insert(pos) {
-                return None;
-            }
-        } else {
-            let seen = self.seen.entry(state).or_default();
-
-            if seen.contains(tape) {
+            if blanks[pos] {
                 return None;
             }
 
-            seen.insert(tape.clone());
+            blanks[pos] = true;
+
+            if !self.blank_union[pos] {
+                self.blank_union[pos] = true;
+                self.blank_union_count += 1;
+            }
+
+            return Some(state == 0);
         }
 
-        Some(blank && state == 0)
+        let id = self.tape_id(tape);
+
+        self.check_seen_nonblank_id(state, id)
     }
 
     fn check_reached(&mut self, config: &Config, goal: Goal) -> bool {
@@ -299,46 +385,98 @@ impl Configs {
             return self.check_reached_blank(config);
         }
 
-        let Some(reached) = self.reached.get_mut(&config.state) else {
+        let idx = config.state as usize;
+
+        if !self.goal_states[idx] {
             return false;
-        };
+        }
 
-        reached.insert(config.tape.pos());
+        let reached = &mut self.reached[idx];
 
-        reached.len() == self.seg
+        let pos = config.tape.pos();
+
+        if !reached[pos] {
+            reached[pos] = true;
+            self.reached_counts[idx] += 1;
+        }
+
+        self.reached_counts[idx] == self.seg
     }
 
     fn check_reached_blank(&mut self, config: &Config) -> bool {
-        let Some(blanks) = self.blanks.get_mut(&config.state) else {
-            return false;
-        };
+        let blanks = &mut self.blanks[config.state as usize];
 
-        blanks.insert(config.tape.pos());
+        let pos = config.tape.pos();
 
-        self.blanks
-            .values()
-            .flat_map(|set| set.iter())
-            .collect::<Set<_>>()
-            .len()
-            == self.seg
+        if !blanks[pos] {
+            blanks[pos] = true;
+
+            if !self.blank_union[pos] {
+                self.blank_union[pos] = true;
+                self.blank_union_count += 1;
+            }
+        }
+
+        self.blank_union_count == self.seg
     }
 
     fn branch_in(&mut self, tape: &Tape, dirs: &Dirs, blank: bool) {
         let shift = !tape.side();
 
-        for &state in &dirs[&shift] {
-            let mut next_tape = tape.clone();
+        let states = &dirs[usize::from(shift)];
 
-            next_tape.step_in(shift);
+        if states.is_empty() {
+            return;
+        }
 
-            let Some(init) = self.check_seen(state, &next_tape, blank)
-            else {
-                continue;
-            };
+        let mut stepped = tape.clone();
 
-            let config = Config::new(state, next_tape, init);
+        stepped.step_in(shift);
 
-            self.add_todo(config);
+        let Some((&last_state, rest)) = states.split_last() else {
+            return;
+        };
+
+        if blank {
+            for &state in rest {
+                let Some(init) = self.check_seen(state, &stepped, true)
+                else {
+                    continue;
+                };
+
+                let config = Config::new(state, stepped.clone(), init);
+
+                self.add_todo(config);
+            }
+
+            if let Some(init) =
+                self.check_seen(last_state, &stepped, true)
+            {
+                let config = Config::new(last_state, stepped, init);
+
+                self.add_todo(config);
+            }
+        } else {
+            let id = self.tape_id(&stepped);
+
+            for &state in rest {
+                let Some(init) = self.check_seen_nonblank_id(state, id)
+                else {
+                    continue;
+                };
+
+                let config = Config::new(state, stepped.clone(), init);
+
+                self.add_todo(config);
+            }
+
+            if let Some(init) =
+                self.check_seen_nonblank_id(last_state, id)
+            {
+                let config = Config::new(last_state, stepped, init);
+
+                self.add_todo(config);
+            }
         }
     }
 
@@ -354,29 +492,58 @@ impl Configs {
             return;
         };
 
-        for &state in diffs {
-            let Some(init) = self.check_seen(state, tape, blank) else {
-                continue;
-            };
+        if blank {
+            for &state in diffs {
+                let Some(init) = self.check_seen(state, tape, true)
+                else {
+                    continue;
+                };
 
-            let next_tape = tape.clone();
+                let next_tape = tape.clone();
 
-            let todo = Config::new(state, next_tape, init);
+                let todo = Config::new(state, next_tape, init);
 
-            self.add_todo(todo);
-        }
+                self.add_todo(todo);
+            }
 
-        if let Some(init) = self.check_seen(*last_next, tape, blank) {
-            config.state = *last_next;
+            if let Some(init) = self.check_seen(*last_next, tape, true)
+            {
+                config.state = *last_next;
 
-            config.init = init;
+                config.init = init;
 
-            self.add_todo(config);
+                self.add_todo(config);
+            }
+        } else {
+            let id = self.tape_id(tape);
+
+            for &state in diffs {
+                let Some(init) = self.check_seen_nonblank_id(state, id)
+                else {
+                    continue;
+                };
+
+                let next_tape = tape.clone();
+
+                let todo = Config::new(state, next_tape, init);
+
+                self.add_todo(todo);
+            }
+
+            if let Some(init) =
+                self.check_seen_nonblank_id(*last_next, id)
+            {
+                config.state = *last_next;
+
+                config.init = init;
+
+                self.add_todo(config);
+            }
         }
     }
 }
 
-impl Iterator for Configs {
+impl<const S: usize> Iterator for Configs<S> {
     type Item = Config;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -423,7 +590,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         &self,
         config: &mut Config,
         goal: Goal,
-        configs: &mut Configs,
+        configs: &mut Configs<s>,
     ) -> Option<SearchResult> {
         config.tape.scan?;
 
@@ -454,11 +621,18 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                     config.init = true;
                 }
 
-                configs
-                    .blanks
-                    .entry(state)
-                    .or_default()
-                    .insert(config.tape.pos());
+                let pos = config.tape.pos();
+
+                let blanks = &mut configs.blanks[state as usize];
+
+                if !blanks[pos] {
+                    blanks[pos] = true;
+
+                    if !configs.blank_union[pos] {
+                        configs.blank_union[pos] = true;
+                        configs.blank_union_count += 1;
+                    }
+                }
 
                 if goal.is_blank() {
                     return Some(Found(Blank));
@@ -492,30 +666,40 @@ impl Display for Config {
 /**************************************/
 
 #[derive(PartialEq, Eq, Hash, Clone)]
-struct Span(Vec<Block>);
+struct Span {
+    blocks: Vec<Block>,
+    len: Pos,
+}
 
 impl Span {
+    fn new(blocks: Vec<Block>) -> Self {
+        let len = blocks.iter().map(|block| block.count as Pos).sum();
+        Self { blocks, len }
+    }
+
     fn blank(&self) -> bool {
-        self.0.iter().all(Block::blank)
+        self.blocks.iter().all(Block::blank)
     }
 
-    fn len(&self) -> usize {
-        self.0.iter().map(|block| block.count as Pos).sum()
+    const fn len(&self) -> usize {
+        self.len
     }
 
-    fn is_empty(&self) -> bool {
-        self.len() == 0
+    const fn is_empty(&self) -> bool {
+        self.blocks.is_empty()
     }
 
     fn push_block(&mut self, color: Color, count: Count) {
-        self.0.insert(0, Block::new(color, count));
+        self.blocks.push(Block::new(color, count));
+        self.len += count as Pos;
     }
 
     fn push(&mut self, print: Color, stepped: Count) {
-        if let Some(block) = self.0.first_mut()
+        if let Some(block) = self.blocks.last_mut()
             && block.color == print
         {
             block.add_count(stepped);
+            self.len += stepped as Pos;
             return;
         }
 
@@ -527,42 +711,55 @@ impl Span {
         scan: Color,
         skip: bool,
     ) -> (Option<Color>, Count) {
-        let stepped =
-            (skip && !self.is_empty() && self.0[0].get_color() == scan)
-                .then(|| self.0.remove(0))
-                .map_or_else(|| 1, |block| 1 + block.get_count());
+        let mut stepped: Count = 1;
+        let mut removed: Pos = 0;
 
-        let next_scan = if self.is_empty() {
-            None
+        if skip
+            && !self.is_empty()
+            && self.blocks.last().unwrap().get_color() == scan
+        {
+            let block = self.blocks.pop().unwrap();
+            let count = *block.get_count() as Pos;
+            removed += count;
+            stepped += block.get_count();
+        }
+
+        if self.is_empty() {
+            self.len -= removed;
+            return (None, stepped);
+        }
+
+        let next_pull = self.blocks.last_mut().unwrap();
+
+        let pull_color = next_pull.get_color();
+
+        removed += 1;
+
+        if next_pull.is_single() {
+            self.blocks.pop();
         } else {
-            let next_pull = &mut self.0[0];
+            next_pull.decrement();
+        }
 
-            let pull_color = next_pull.get_color();
+        self.len -= removed;
 
-            if next_pull.is_single() {
-                self.0.remove(0);
-            } else {
-                next_pull.decrement();
-            }
-
-            Some(pull_color)
-        };
-
-        (next_scan, stepped)
+        (Some(pull_color), stepped)
     }
 
     fn take(&mut self) -> Color {
         assert!(!self.is_empty());
 
-        let block = &mut self.0[0];
+        let block = self.blocks.last_mut().unwrap();
 
         let color = block.color;
 
         if block.count == 1 {
-            self.0.remove(0);
+            self.blocks.pop();
         } else {
             block.decrement();
         }
+
+        self.len -= 1;
 
         color
     }
@@ -610,8 +807,8 @@ impl Tape {
 
         Self {
             scan,
-            lspan: Span(lspan),
-            rspan: Span(rspan),
+            lspan: Span::new(lspan),
+            rspan: Span::new(rspan),
         }
     }
 
@@ -667,6 +864,20 @@ impl Tape {
 
         self.scan = next_scan;
     }
+
+    #[cfg(test)]
+    #[track_caller]
+    fn from_spans(
+        scan: Color,
+        lblocks: Vec<Block>,
+        rblocks: Vec<Block>,
+    ) -> Self {
+        Self {
+            scan: Some(scan),
+            lspan: Span::new(lblocks),
+            rspan: Span::new(rblocks),
+        }
+    }
 }
 
 impl Display for Tape {
@@ -675,10 +886,9 @@ impl Display for Tape {
             f,
             "{}",
             self.lspan
-                .0
+                .blocks
                 .iter()
                 .map(ToString::to_string)
-                .rev()
                 .chain(once(format!(
                     "[{}]",
                     self.scan.map_or_else(
@@ -686,7 +896,13 @@ impl Display for Tape {
                         |scan| scan.to_string()
                     )
                 )))
-                .chain(self.rspan.0.iter().map(ToString::to_string))
+                .chain(
+                    self.rspan
+                        .blocks
+                        .iter()
+                        .rev()
+                        .map(ToString::to_string)
+                )
                 .collect::<Vec<_>>()
                 .join(" ")
         )
@@ -699,13 +915,13 @@ type Halts = Set<State>;
 type Spinouts = Dict<State, Shift>;
 
 type Diffs = Vec<State>;
-type Dirs = Dict<bool, Vec<State>>;
+type Dirs = [Vec<State>; 2];
 
 struct AnalyzedProg<'p, const s: usize, const c: usize> {
     prog: &'p Prog<s, c>,
     halts: Halts,
     spinouts: Spinouts,
-    branches: Dict<State, (Diffs, Dirs)>,
+    branches: [(Diffs, Dirs); s],
 }
 
 impl<'p, const states: usize, const colors: usize>
@@ -715,11 +931,13 @@ impl<'p, const states: usize, const colors: usize>
         let mut halts = Set::new();
         let mut spinouts = Dict::new();
 
-        let mut branches = Dict::new();
+        let mut branches: [(Diffs, Dirs); states] =
+            array::from_fn(|_| (Vec::new(), [Vec::new(), Vec::new()]));
 
-        for state in 0..states {
+        #[expect(clippy::needless_range_loop)]
+        for state_idx in 0..states {
             #[expect(clippy::cast_possible_truncation)]
-            let state = state as State;
+            let state = state_idx as State;
 
             let mut diff = Set::new();
             let mut lefts = Set::new();
@@ -756,10 +974,7 @@ impl<'p, const states: usize, const colors: usize>
             let mut rights: Vec<_> = rights.into_iter().collect();
             rights.sort_unstable();
 
-            branches.insert(
-                state,
-                (diff, Dict::from([(false, lefts), (true, rights)])),
-            );
+            branches[state_idx] = (diff, [lefts, rights]);
         }
 
         Self {
@@ -893,11 +1108,11 @@ macro_rules! tape {
         [ $ ( ( $ lcolor : literal, $ lcount: literal ) ), * ],
         [ $ ( ( $ rcolor : literal, $ rcount: literal ) ), * ]
     ) => {
-        Tape {
-            scan: Some( $ scan ),
-            lspan: Span ( vec! [ $ ( Block::new( $ lcolor, $ lcount ) ), * ] ),
-            rspan: Span ( vec! [ $ ( Block::new( $ rcolor, $ rcount ) ), * ] ),
-        }
+        Tape::from_spans(
+            $scan,
+            vec![ $( Block::new( $lcolor, $lcount ) ),* ],
+            vec![ $( Block::new( $rcolor, $rcount ) ),* ],
+        )
     };
 }
 
