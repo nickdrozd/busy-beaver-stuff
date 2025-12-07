@@ -197,7 +197,7 @@ class TuringTest(TestCase):
             f'halt false positive: "{prog}"')
 
     def assert_cant_halt_backward(self, prog: str, depth: int):
-        if prog in CANT_HALT_FALSE_NEGATIVES:
+        if prog in BACKWARD_CANT_HALT_FALSE_NEGATIVES:
             return
 
         self.assertTrue(
@@ -265,7 +265,7 @@ class TuringTest(TestCase):
             f'segment blank false positive: "{prog}"')
 
     def assert_cant_blank_backward(self, prog: str, depth: int):
-        if (prog in CANT_BLANK_FALSE_NEGATIVES
+        if (prog in BACKWARD_CANT_BLANK_FALSE_NEGATIVES
                 or Machine(prog).run(sim_lim = 30).blanks):
             return
 
@@ -317,7 +317,7 @@ class TuringTest(TestCase):
             f'segment spin out false positive: "{prog}"')
 
     def assert_cant_spin_out_backward(self, prog: str, depth: int):
-        if prog in CANT_SPIN_OUT_FALSE_NEGATIVES:
+        if prog in BACKWARD_CANT_SPIN_OUT_FALSE_NEGATIVES:
             return
 
         if 2 < prog.count('...'):
@@ -371,6 +371,9 @@ BACKWARD_REASONERS: dict[str, BR] = {
 
 class Reason(TuringTest):
     def test_halt(self):
+        self.assertFalse(
+            HALTERS & BACKWARD_CANT_HALT_FALSE_NEGATIVES)
+
         for prog in HALTERS:
             self.assert_could_halt_backward(prog)
 
@@ -378,6 +381,9 @@ class Reason(TuringTest):
             self.assert_cant_halt_backward(prog, 200)
 
     def test_spinout(self):
+        self.assertFalse(
+            SPINNERS & BACKWARD_CANT_SPIN_OUT_FALSE_NEGATIVES)
+
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_backward(prog)
 
@@ -385,6 +391,9 @@ class Reason(TuringTest):
             self.assert_cant_spin_out_backward(prog, 256)
 
     def test_blank(self):
+        self.assertFalse(
+            BLANKERS & BACKWARD_CANT_BLANK_FALSE_NEGATIVES)
+
         for prog in NONBLANKERS:
             self.assert_cant_blank_backward(prog, 1331)
 
@@ -526,6 +535,9 @@ class Reason(TuringTest):
 
 class Segment(TuringTest):
     def test_halt(self):
+        self.assertFalse(
+            HALTERS & SEGMENT_FALSE_NEGATIVES['halt'])
+
         for prog in HALTERS:
             self.assert_could_halt_segment(prog)
 
@@ -533,6 +545,9 @@ class Segment(TuringTest):
             self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
 
     def test_spinout(self):
+        self.assertFalse(
+            SPINNERS & SEGMENT_FALSE_NEGATIVES['spinout'])
+
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_segment(prog)
 
@@ -611,6 +626,9 @@ def branch_last(prog: str) -> list[str]:
 
 class Cps(TuringTest):
     def test_halt(self):
+        self.assertFalse(
+            HALTERS & CPS_FALSE_NEGATIVES['halt'])
+
         for prog in HALTERS:
             self.assert_could_halt_cps(prog)
 
@@ -618,6 +636,9 @@ class Cps(TuringTest):
             self.assert_cant_halt_cps(prog, 7)
 
     def test_blank(self):
+        self.assertFalse(
+            BLANKERS & CPS_FALSE_NEGATIVES['blank'])
+
         for prog in BLANKERS:
             self.assert_could_blank_cps(prog)
 
@@ -625,6 +646,9 @@ class Cps(TuringTest):
             self.assert_cant_blank_cps(prog, 11)
 
     def test_spinout(self):
+        self.assertFalse(
+            SPINNERS & CPS_FALSE_NEGATIVES['spinout'])
+
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_cps(prog)
 
@@ -672,6 +696,9 @@ class Cps(TuringTest):
 
 class Ctl(TuringTest):
     def test_halt(self):
+        self.assertFalse(
+            HALTERS & CTL_FALSE_NEGATIVES['halt'])
+
         for prog in HALTERS:
             self.assert_could_halt_ctl(prog)
 
@@ -679,6 +706,9 @@ class Ctl(TuringTest):
             self.assert_cant_halt_ctl(prog, 163)
 
     def test_blank(self):
+        self.assertFalse(
+            BLANKERS & CTL_FALSE_NEGATIVES['blank'])
+
         for prog in BLANKERS:
             self.assert_could_blank_ctl(prog)
 
@@ -686,6 +716,9 @@ class Ctl(TuringTest):
             self.assert_cant_blank_ctl(prog, 61)
 
     def test_spinout(self):
+        self.assertFalse(
+            SPINNERS & CTL_FALSE_NEGATIVES['spinout'])
+
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assert_could_spin_out_ctl(prog)
 
