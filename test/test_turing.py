@@ -75,13 +75,27 @@ CTL_LIMIT = 300
 REASON_LIMIT = 2_000
 SEGMENT_LIMIT = 22
 
+########################################
 
-def get_halt_6_2_holdouts() -> set[str]:
-    with open('test/data/holdouts/halt-6-2.prog') as progs:
-        return {prog.strip() for prog in progs}
+HALT_HOLDOUT_FILES = (
+    'halt-6-2',
+    'halt-7-instr',
+)
 
-HALT_6_2_HOLDOUTS = get_halt_6_2_holdouts()
 
+def get_holdouts() -> set[str]:
+    holdouts: set[str] = set()
+
+    for path in HALT_HOLDOUT_FILES:
+        with open(f'test/data/holdouts/{path}.prog') as progs:
+            holdouts.update(prog.strip() for prog in progs)
+
+    return holdouts
+
+
+HALT_HOLDOUTS = get_holdouts()
+
+########################################
 
 class TuringTest(TestCase):
     machine: BasicMachine
@@ -409,7 +423,7 @@ class Reason(TuringTest):
                 self.assert_cant_blank_backward(prog, 1331)
 
     def test_holdouts(self):
-        for prog in HALT_6_2_HOLDOUTS:
+        for prog in HALT_HOLDOUTS:
             self.assert_could_halt_backward(prog)
 
     def test_false_negatives(self):
@@ -555,7 +569,7 @@ class Segment(TuringTest):
             self.assert_cant_spin_out_segment(prog, 26)
 
     def test_holdouts(self):
-        for prog in HALT_6_2_HOLDOUTS:
+        for prog in HALT_HOLDOUTS:
             self.assert_could_halt_segment(prog)
 
     def test_false_negatives(self):
@@ -656,7 +670,7 @@ class Cps(TuringTest):
             self.assert_cant_spin_out_cps(prog, 11)
 
     def test_holdouts(self):
-        for prog in HALT_6_2_HOLDOUTS:
+        for prog in HALT_HOLDOUTS:
             self.assert_could_halt_cps(prog)
 
     def test_false_negatives(self):
@@ -726,7 +740,7 @@ class Ctl(TuringTest):
             self.assert_cant_spin_out_ctl(prog, 118)
 
     def test_holdouts(self):
-        for prog in HALT_6_2_HOLDOUTS:
+        for prog in HALT_HOLDOUTS:
             self.assert_could_halt_ctl(prog)
 
     def test_false_negatives(self):
