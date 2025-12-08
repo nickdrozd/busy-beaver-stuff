@@ -404,7 +404,7 @@ fn instrs_7(prog: &Prog<7, 7>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(100, config).is_settled()
         || prog.cant_halt(2).is_refuted()
         || prog.ctl_cant_halt(100)
-        || prog.cps_cant_halt(4)
+        || prog.cps_cant_halt(8)
         || prog.term_or_rec(1_000, config).is_settled()
 }
 
@@ -415,7 +415,7 @@ fn test_instrs() {
         4 => (instrs_4, 4, (0, 4_909)),
         5 => (instrs_5, 12, (0, 151_351)),
         6 => (instrs_6, 22, (3, 5_568_167)),
-        7 => (instrs_7, 109, (324, 246_492_765)),
+        7 => (instrs_7, 109, (281, 246_492_765)),
     ];
 }
 
