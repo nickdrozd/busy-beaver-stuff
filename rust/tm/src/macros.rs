@@ -1,4 +1,9 @@
-use core::{cell::RefCell, iter::once, num::TryFromIntError};
+use core::{
+    cell::RefCell,
+    fmt::{self, Display},
+    iter::once,
+    num::TryFromIntError,
+};
 
 use std::collections::BTreeMap as Dict;
 
@@ -25,7 +30,7 @@ pub enum MacroExc {
 
 pub type GetInstrResult = Result<Option<Instr>, MacroExc>;
 
-pub trait GetInstr {
+pub trait GetInstr: Display {
     fn get_instr(&self, slot: &Slot) -> GetInstrResult;
 }
 
@@ -152,6 +157,14 @@ pub struct MacroProg<'p, const s: usize, const c: usize, L: Logic<s, c>>
 
     states: RefCell<Vec<MacroState>>,
     colors: RefCell<Vec<MacroColor>>,
+}
+
+impl<const s: usize, const c: usize, L: Logic<s, c>> Display
+    for MacroProg<'_, s, c, L>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.prog)
+    }
 }
 
 impl<const s: usize, const c: usize, L: Logic<s, c>> GetInstr
@@ -570,6 +583,14 @@ pub struct HistoryMacro<'p, const s: usize, const c: usize> {
     colors: RefCell<Vec<(Color, History)>>,
 
     updater: Box<dyn Fn(Slot, &History) -> History>,
+}
+
+impl<const s: usize, const c: usize> Display
+    for HistoryMacro<'_, s, c>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.prog)
+    }
 }
 
 impl<const s: usize, const c: usize> GetInstr
