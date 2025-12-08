@@ -1,4 +1,4 @@
-use core::{fmt, iter::once};
+use core::fmt;
 
 use ahash::{AHashMap as Dict, AHashSet as Set};
 
@@ -56,9 +56,9 @@ fn cps_cant_reach(
 ) -> bool {
     let mut configs = Configs::init(rad);
 
-    while let Some(config) = configs.todo.pop() {
-        let Config { state, mut tape } = config.clone();
-
+    while let Some(config @ Config { state, mut tape }) =
+        configs.todo.pop()
+    {
         let (print, shift, next_state) =
             match prog.get_instr(&(state, tape.scan)) {
                 Err(_) => return false,
@@ -77,25 +77,22 @@ fn cps_cant_reach(
 
         configs.add_span(shift, push);
 
-        push.push(print);
-        tape.scan = pull.pull();
+        push.push(print, &mut configs.span_pool);
+        tape.scan = pull.pull(&mut configs.span_pool);
 
         let (last_color, colors) = {
-            let colors = {
-                if shift {
-                    &configs.rspans
-                } else {
-                    &configs.lspans
-                }
-                .get_colors(pull)
+            let colors = if shift {
+                configs.rspans.get_colors(pull)
+            } else {
+                configs.lspans.get_colors(pull)
             };
 
             if !goal.is_halt()
                 && colors.contains(&0)
                 && tape.scan == 0
-                && pull.blank_span()
+                && pull.blank_span(&configs.span_pool)
                 && match goal {
-                    Blank => push.all_blank(),
+                    Blank => push.all_blank(&configs.span_pool),
                     Spinout => state == next_state,
                     Halt => false,
                 }
@@ -109,13 +106,32 @@ fn cps_cant_reach(
         };
 
         for color in &colors {
-            let mut pull_clone = pull.clone();
+            let mut pull_clone = *pull;
             pull_clone.last = *color;
 
+            let next_tape =
+                Tape::from_spans(tape.scan, *push, pull_clone, shift);
+
+            let next_config = Config {
+                state: next_state,
+                tape: next_tape,
+            };
+
+            if configs.intern_config(&next_config) {
+                configs.todo.push(next_config);
+            }
+        }
+
+        let pull_key = pull.span;
+
+        {
             let next_tape = Tape::from_spans(
                 tape.scan,
-                push.clone(),
-                pull_clone,
+                *push,
+                Span {
+                    span: pull.span,
+                    last: last_color,
+                },
                 shift,
             );
 
@@ -124,27 +140,7 @@ fn cps_cant_reach(
                 tape: next_tape,
             };
 
-            if configs.seen.contains(&next_config) {
-                continue;
-            }
-
-            configs.seen.insert(next_config.clone());
-            configs.todo.push(next_config);
-        }
-
-        let pull_key = pull.span.clone();
-
-        {
-            let next_config = Config {
-                state: next_state,
-                tape: {
-                    pull.last = last_color;
-                    tape
-                },
-            };
-
-            if !configs.seen.contains(&next_config) {
-                configs.seen.insert(next_config.clone());
+            if configs.intern_config(&next_config) {
                 configs.todo.push(next_config);
             }
         }
@@ -165,11 +161,55 @@ fn cps_cant_reach(
 
 /**************************************/
 
+type SpanId = usize;
+
 type Colors = Vec<Color>;
-type Spans = Dict<Vec<Color>, Colors>;
-type Watch = Dict<Vec<Color>, Vec<Config>>;
+type Spans = Dict<SpanId, Colors>;
+type Watch = Dict<SpanId, Vec<Config>>;
+
+/**************************************/
+
+struct SpanPool {
+    spans: Vec<Colors>,
+    index: Dict<Colors, SpanId>,
+
+    push_cache: Dict<(SpanId, Color, Color), Span>,
+    pull_cache: Dict<(SpanId, Color), (Span, Color)>,
+}
+
+impl SpanPool {
+    fn new() -> Self {
+        Self {
+            spans: vec![],
+            index: Dict::new(),
+            push_cache: Dict::new(),
+            pull_cache: Dict::new(),
+        }
+    }
+
+    fn intern(&mut self, colors: Colors) -> SpanId {
+        if let Some(&id) = self.index.get(&colors) {
+            return id;
+        }
+
+        let id = self.spans.len();
+
+        self.spans.push(colors.clone());
+        self.index.insert(colors, id);
+
+        id
+    }
+
+    fn colors(&self, id: SpanId) -> &Colors {
+        &self.spans[id]
+    }
+}
+
+/**************************************/
 
 struct Configs {
+    span_pool: SpanPool,
+
     lspans: Spans,
     rspans: Spans,
 
@@ -183,6 +223,7 @@ struct Configs {
 impl Configs {
     fn init(rad: Radius) -> Self {
         let mut configs = Self {
+            span_pool: SpanPool::new(),
             lspans: Dict::new(),
             rspans: Dict::new(),
             seen: Set::new(),
@@ -191,7 +232,7 @@ impl Configs {
             r_watch: Dict::new(),
         };
 
-        let init = Config::init(rad);
+        let init = Config::init(rad, &mut configs.span_pool);
 
         configs.lspans.add_span(&init.tape.lspan);
         configs.rspans.add_span(&init.tape.rspan);
@@ -200,6 +241,10 @@ impl Configs {
         configs.todo.push(init);
 
         configs
+    }
+
+    fn intern_config(&mut self, config: &Config) -> bool {
+        self.seen.insert(config.clone())
     }
 
     fn at_capacity(&self) -> bool {
@@ -221,6 +266,8 @@ impl Configs {
     }
 }
 
+/**************************************/
+
 trait AddSpan {
     fn add_span(&mut self, span: &Span) -> bool;
     fn get_colors(&self, span: &Span) -> &Colors;
@@ -236,7 +283,7 @@ impl AddSpan for Spans {
             return false;
         }
 
-        self.insert(span.span.clone(), vec![span.last]);
+        self.insert(span.span, vec![span.last]);
         true
     }
 
@@ -250,17 +297,17 @@ impl AddSpan for Spans {
 type Config = config::Config<Tape>;
 
 impl Config {
-    fn init(rad: Radius) -> Self {
+    fn init(rad: Radius, pool: &mut SpanPool) -> Self {
         Self {
             state: 0,
-            tape: Tape::init(rad),
+            tape: Tape::init(rad, pool),
         }
     }
 }
 
 /**************************************/
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Tape {
     scan: Color,
     lspan: Span,
@@ -268,15 +315,15 @@ struct Tape {
 }
 
 impl Tape {
-    fn init(rad: Radius) -> Self {
+    fn init(rad: Radius, pool: &mut SpanPool) -> Self {
         Self {
             scan: 0,
-            lspan: Span::init(rad),
-            rspan: Span::init(rad),
+            lspan: Span::init(rad, pool),
+            rspan: Span::init(rad, pool),
         }
     }
 
-    fn from_spans(
+    const fn from_spans(
         scan: Color,
         push: Span,
         pull: Span,
@@ -299,82 +346,100 @@ impl fmt::Display for Tape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{}",
-            once(format!("{}", self.lspan.last))
-                .chain(
-                    self.lspan
-                        .span
-                        .iter()
-                        .rev()
-                        .map(ToString::to_string)
-                )
-                .chain(once(format!("[{}]", self.scan)))
-                .chain(self.rspan.span.iter().map(ToString::to_string))
-                .chain(once(format!("{}", self.rspan.last)))
-                .collect::<Vec<_>>()
-                .join(" ")
+            "L(pat={}, last={}) [{}] R(pat={}, last={})",
+            self.lspan.span,
+            self.lspan.last,
+            self.scan,
+            self.rspan.span,
+            self.rspan.last
         )
     }
 }
 
 /**************************************/
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Span {
-    span: Vec<Color>,
+    span: SpanId,
     last: Color,
 }
 
 impl Span {
-    fn init(rad: Radius) -> Self {
+    fn init(rad: Radius, pool: &mut SpanPool) -> Self {
         assert!(rad > 0);
 
         Self {
-            span: vec![0; rad - 1],
+            span: pool.intern(vec![0; rad - 1]),
             last: 0,
         }
     }
 
-    fn push(&mut self, color: Color) {
-        self.span.insert(0, color);
+    fn push(&mut self, color: Color, pool: &mut SpanPool) {
+        let key = (self.span, self.last, color);
 
-        self.last = self.span.pop().unwrap();
+        if let Some(&new_span) = pool.push_cache.get(&key) {
+            *self = new_span;
+            return;
+        }
+
+        let mut v = pool.colors(self.span).clone();
+
+        v.insert(0, color);
+        let new_last = v.pop().unwrap();
+
+        let new_span = Self {
+            span: pool.intern(v),
+            last: new_last,
+        };
+
+        pool.push_cache.insert(key, new_span);
+        *self = new_span;
     }
 
-    fn pull(&mut self) -> Color {
-        self.span.push(self.last);
+    fn pull(&mut self, pool: &mut SpanPool) -> Color {
+        let key = (self.span, self.last);
 
-        self.span.remove(0)
+        if let Some(&(new_span, pulled)) = pool.pull_cache.get(&key) {
+            *self = new_span;
+            return pulled;
+        }
+
+        let mut v = pool.colors(self.span).clone();
+
+        v.push(self.last);
+        let pulled = v.remove(0);
+
+        let new_span = Self {
+            span: pool.intern(v),
+            last: self.last,
+        };
+
+        pool.pull_cache.insert(key, (new_span, pulled));
+        *self = new_span;
+        pulled
     }
 
-    fn blank_span(&self) -> bool {
-        self.span.iter().all(|&c| c == 0)
+    fn blank_span(&self, pool: &SpanPool) -> bool {
+        pool.colors(self.span).iter().all(|&c| c == 0)
     }
 
-    fn all_blank(&self) -> bool {
-        self.last == 0 && self.blank_span()
+    fn all_blank(&self, pool: &SpanPool) -> bool {
+        self.last == 0 && self.blank_span(pool)
     }
 }
 
 #[test]
 fn test_span() {
-    let mut span = Span::init(3);
+    let mut pool = SpanPool::new();
+    let mut span = Span::init(3, &mut pool);
 
-    assert!(
-        span == Span {
-            span: vec![0, 0],
-            last: 0,
-        }
-    );
+    assert_eq!(pool.colors(span.span).as_slice(), &[0, 0]);
+    assert_eq!(span.last, 0);
 
-    span.push(1);
-    span.push(1);
-    span.push(0);
+    span.push(1, &mut pool);
+    span.push(1, &mut pool);
+    span.push(0, &mut pool);
 
-    assert!(
-        span == Span {
-            span: vec![0, 1],
-            last: 1,
-        }
-    );
+    assert_eq!(pool.colors(span.span).as_slice(), &[0, 1]);
+    assert_eq!(span.last, 1);
 }
