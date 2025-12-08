@@ -9,7 +9,7 @@ use Goal::*;
 pub type Radius = usize;
 
 const MAX_TODO: usize = 1_000;
-const MAX_DEPTH: usize = 100_000;
+const MAX_DEPTH: usize = 10_000;
 
 /**************************************/
 
