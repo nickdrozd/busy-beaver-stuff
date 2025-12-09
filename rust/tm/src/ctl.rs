@@ -80,11 +80,7 @@ fn ctl_run(
 
     let mut seen: Set<Config> = Set::new();
 
-    for _ in 0..CONFIG_LIMIT {
-        let Some(mut config) = todo.pop() else {
-            return true;
-        };
-
+    while let Some(mut config) = todo.pop() {
         if seen.len() > CONFIG_LIMIT {
             return false;
         }
@@ -112,7 +108,7 @@ fn ctl_run(
         todo.push(branched);
     }
 
-    false
+    true
 }
 
 /**************************************/
