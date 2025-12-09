@@ -3468,7 +3468,7 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
 
 CTL_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 77,
-    "blank": 319,
+    "blank": 320,
     "spinout": 192,
 }
 
@@ -3644,6 +3644,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 2LB 1LA 0LB  3LA 3RA 1RB 0RA",
         "1RB 2LB 1LA 0RB  3LA 2RA 3LB 1RB",
         "1RB 2LB 1LB 0RA  2LA 3RB 2RB 0LA",
+        "1RB 2LB 1RA 2LA  1LA 3RB 0RA 3LB",
         "1RB 2LB 1RA 3LA  2LA 0LA 3RB 1RA",
         "1RB 2LB 2RA 1RB  2LA 3LA 3LB 0RA",
         "1RB 2LB 3LA 0RB  2LA 1RA 1RB 2RA",

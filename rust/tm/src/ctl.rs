@@ -15,7 +15,7 @@ use Goal::*;
 const OPT_BLOCK: usize = 500;
 const COUNT_LIMIT: Count = 8;
 const DEPTH_LIMIT: usize = 20;
-const CONFIG_LIMIT: usize = 3_000;
+const CONFIG_LIMIT: usize = 2_000;
 
 /**************************************/
 
