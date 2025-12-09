@@ -9,6 +9,7 @@ use Goal::*;
 pub type Radius = usize;
 
 const MAX_TODO: usize = 1_000;
+const MAX_SPANS: usize = 1_000;
 const MAX_DEPTH: usize = 10_000;
 
 /**************************************/
@@ -248,7 +249,9 @@ impl Configs {
     }
 
     fn at_capacity(&self) -> bool {
-        MAX_TODO < self.todo.len() || MAX_DEPTH < self.seen.len()
+        MAX_TODO < self.todo.len()
+            || MAX_DEPTH < self.seen.len()
+            || MAX_SPANS < self.span_pool.spans.len()
     }
 
     fn add_span(&mut self, shift: Shift, span: &Span) {
