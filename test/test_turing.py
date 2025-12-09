@@ -70,7 +70,7 @@ if TYPE_CHECKING:
 RUN_SLOW = os.environ.get('RUN_SLOW')
 
 
-CPS_LIMIT = 28
+CPS_LIMIT = 33
 CTL_LIMIT = 300
 REASON_LIMIT = 2_000
 SEGMENT_LIMIT = 22
@@ -657,7 +657,7 @@ class Cps(TuringTest):
             self.assert_could_blank_cps(prog)
 
         for prog in NONBLANKERS:
-            self.assert_cant_blank_cps(prog, 28)
+            self.assert_cant_blank_cps(prog, 33)
 
     def test_spinout(self):
         self.assertFalse(

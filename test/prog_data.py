@@ -3080,7 +3080,7 @@ SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
 
 CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 7,
-    "blank": 105,
+    "blank": 103,
     "spinout": 261,
 }
 
@@ -3194,8 +3194,6 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0LE  1RC 1LB  0RD 0RB  1LD 0LE  0RC 1LA",
         "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB",
         "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",
-        "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
-        "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
         "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB",
         "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
