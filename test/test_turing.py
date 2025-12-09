@@ -754,14 +754,27 @@ class Ctl(TuringTest):
             counts,
             json.dumps(counts, indent = 4))
 
-        for prog in CTL_FALSE_NEGATIVES['halt']:
-            self.assert_could_halt_ctl(prog)
+        cats: dict[Goal, tuple[set[str], Callable[[str], None]]] = {
+            'halt': (set(), self.assert_could_halt_ctl),
+            'blank': (set(), self.assert_could_blank_ctl),
+            'spinout': (set(), self.assert_could_spin_out_ctl),
+        }
 
-        for prog in CTL_FALSE_NEGATIVES['blank']:
-            self.assert_could_blank_ctl(prog)
+        for cat, (pos, ctl_check) in cats.items():
+            for prog in CTL_FALSE_NEGATIVES[cat]:
+                try:
+                    ctl_check(prog)
+                except AssertionError:
+                    pos.add(prog)
 
-        for prog in CTL_FALSE_NEGATIVES['spinout']:
-            self.assert_could_spin_out_ctl(prog)
+        true_pos = {
+            cat: sorted(pos, key = len)
+            for cat, (pos, _) in cats.items()
+        }
+
+        if any(pos for pos in true_pos.values()):
+            print(json.dumps(true_pos, indent = 4))
+            raise AssertionError
 
 ########################################
 
