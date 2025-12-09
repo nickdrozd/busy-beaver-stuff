@@ -30,7 +30,7 @@ pub enum MacroExc {
 
 pub type GetInstrResult = Result<Option<Instr>, MacroExc>;
 
-pub trait GetInstr: Display {
+pub trait GetInstr: Display + Sized {
     fn get_instr(&self, slot: &Slot) -> GetInstrResult;
 }
 

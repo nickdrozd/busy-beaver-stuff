@@ -16,37 +16,35 @@ const MAX_DEPTH: usize = 10_000;
 
 impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn cps_cant_halt(&self, rad: Radius) -> bool {
-        self.cps_run(rad, Halt)
+        self.cps_run_macros(rad, Halt)
     }
 
     pub fn cps_cant_blank(&self, rad: Radius) -> bool {
-        self.cps_run(rad, Blank)
+        assert!(rad > 1);
+
+        self.cps_loop(rad, Blank)
     }
 
     pub fn cps_cant_spin_out(&self, rad: Radius) -> bool {
-        self.cps_run(rad, Spinout)
+        self.cps_run_macros(rad, Spinout)
     }
 
-    fn cps_run(&self, rad: Radius, goal: Goal) -> bool {
+    fn cps_run_macros(&self, rad: Radius, goal: Goal) -> bool {
         assert!(rad > 1);
 
-        match goal {
-            Blank => {
-                (2..rad).any(|seg| cps_cant_reach(self, seg, goal))
-            },
-            Halt | Spinout => {
-                if cps_cant_reach(self, 2, goal)
-                    || cps_cant_reach(&self.make_lru_macro(), 2, goal)
-                {
-                    return true;
-                }
-
-                let prog = &self.make_transcript_macro(4);
-                (2..rad).any(|seg| cps_cant_reach(prog, seg, goal))
-            },
-        }
+        self.make_transcript_macro(4).cps_loop(rad, goal)
+            || self.make_lru_macro().cps_loop(rad, goal)
+            || self.cps_loop(rad, goal)
     }
 }
+
+trait Cps: GetInstr {
+    fn cps_loop(&self, rad: Radius, goal: Goal) -> bool {
+        (2..rad).any(|seg| cps_cant_reach(self, seg, goal))
+    }
+}
+
+impl<P: GetInstr> Cps for P {}
 
 /**************************************/
 
