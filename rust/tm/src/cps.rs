@@ -80,31 +80,35 @@ fn cps_cant_reach(
         push.push(print);
         tape.scan = pull.pull();
 
-        let colors = {
-            if shift {
-                &configs.rspans
-            } else {
-                &configs.lspans
+        let (last_color, colors) = {
+            let colors = {
+                if shift {
+                    &configs.rspans
+                } else {
+                    &configs.lspans
+                }
+                .get_colors(pull)
+            };
+
+            if !goal.is_halt()
+                && colors.contains(&0)
+                && tape.scan == 0
+                && pull.blank_span()
+                && match goal {
+                    Blank => push.all_blank(),
+                    Spinout => state == next_state,
+                    Halt => false,
+                }
+            {
+                return false;
             }
-            .get_colors(pull)
+
+            let (last_color, colors) = colors.split_last().unwrap();
+
+            (*last_color, colors.to_vec())
         };
 
-        if !goal.is_halt()
-            && colors.contains(&0)
-            && tape.scan == 0
-            && pull.blank_span()
-            && match goal {
-                Blank => push.all_blank(),
-                Spinout => state == next_state,
-                Halt => false,
-            }
-        {
-            return false;
-        }
-
-        let (last_color, colors) = colors.split_last().unwrap();
-
-        for color in colors {
+        for color in &colors {
             let mut pull_clone = pull.clone();
             pull_clone.last = *color;
 
@@ -134,7 +138,7 @@ fn cps_cant_reach(
             let next_config = Config {
                 state: next_state,
                 tape: {
-                    pull.last = *last_color;
+                    pull.last = last_color;
                     tape
                 },
             };
