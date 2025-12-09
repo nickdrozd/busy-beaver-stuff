@@ -717,7 +717,7 @@ class Ctl(TuringTest):
             self.assert_could_halt_ctl(prog)
 
         for prog in NONHALTERS:
-            self.assert_cant_halt_ctl(prog, 163)
+            self.assert_cant_halt_ctl(prog, CTL_LIMIT)
 
     def test_blank(self):
         self.assertFalse(
@@ -727,7 +727,7 @@ class Ctl(TuringTest):
             self.assert_could_blank_ctl(prog)
 
         for prog in NONBLANKERS:
-            self.assert_cant_blank_ctl(prog, 61)
+            self.assert_cant_blank_ctl(prog, CTL_LIMIT)
 
     def test_spinout(self):
         self.assertFalse(
@@ -737,7 +737,7 @@ class Ctl(TuringTest):
             self.assert_could_spin_out_ctl(prog)
 
         for prog in NONSPINNERS:
-            self.assert_cant_spin_out_ctl(prog, 118)
+            self.assert_cant_spin_out_ctl(prog, CTL_LIMIT)
 
     def test_holdouts(self):
         for prog in HALT_HOLDOUTS:

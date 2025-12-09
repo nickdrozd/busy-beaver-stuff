@@ -67,14 +67,14 @@ fn params_2_2_3(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
 
 fn params_3_2_0(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_halt(13).is_refuted()
-        || prog.ctl_cant_halt(31)
+        || prog.ctl_cant_halt(20)
         || prog.cps_cant_halt(4)
 }
 
 fn params_3_2_1(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_spin_out(7).is_refuted()
-        || prog.ctl_cant_spin_out(54)
-        || prog.cps_cant_spin_out(7)
+        || prog.ctl_cant_spin_out(40)
+        || prog.cps_cant_spin_out(6)
 }
 fn params_3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_blank(14).is_refuted()
@@ -90,7 +90,7 @@ fn params_3_2_3(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
 
 fn params_2_3_0(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
     prog.cant_halt(8).is_refuted()
-        || prog.ctl_cant_halt(60)
+        || prog.ctl_cant_halt(50)
         || prog.cps_cant_halt(4)
 }
 
@@ -103,7 +103,7 @@ fn params_2_3_1(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
 
 fn params_2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
     prog.cant_blank(16).is_settled()
-        || prog.ctl_cant_blank(60)
+        || prog.ctl_cant_blank(50)
         || prog.cps_cant_blank(9)
 }
 
@@ -117,7 +117,7 @@ fn params_2_3_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
 fn params_4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_halt(46).is_refuted()
         || prog.ctl_cant_halt(130)
-        || prog.cps_cant_halt(9)
+        || prog.cps_cant_halt(8)
 }
 
 fn params_4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
@@ -150,7 +150,7 @@ fn params_4_2_3(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
 fn params_2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
     prog.cant_halt(17).is_refuted()
         || prog.ctl_cant_halt(190)
-        || prog.cps_cant_halt(13)
+        || prog.cps_cant_halt(12)
 }
 
 fn params_2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
@@ -185,23 +185,23 @@ fn test_deciders() {
         ],
         (3, 2) => [
             0 => (params_3_2_0, 12, (845, 2_721)),
-            1 => (params_3_2_1, 13, (480, 4_050)),
-            2 => (params_3_2_2, 13, (664, 9_513)),
+            1 => (params_3_2_1, 13, (479, 4_050)),
+            2 => (params_3_2_2, 13, (632, 9_513)),
         ],
         (2, 3) => [
             0 => (params_2_3_0, 7, (546, 2_335)),
-            1 => (params_2_3_1, 20, (537, 3_510)),
-            2 => (params_2_3_2, 20, (154, 5_962)),
+            1 => (params_2_3_1, 20, (532, 3_510)),
+            2 => (params_2_3_2, 20, (153, 5_962)),
         ],
         (4, 2) => [
             0 => (params_4_2_0, 25, (115_043, 432_318)),
-            1 => (params_4_2_1, 99, (86_491, 754_707)),
-            2 => (params_4_2_2, 99, (110_586, 1_933_882)),
+            1 => (params_4_2_1, 99, (85_432, 754_707)),
+            2 => (params_4_2_2, 99, (98_258, 1_933_882)),
         ],
         (2, 4) => [
             0 => (params_2_4_0, 109, (87_281, 309_759)),
-            1 => (params_2_4_1, TREE_LIM, (93_051, 613_031)),
-            2 => (params_2_4_2, TREE_LIM, (16_970, 1_190_832)),
+            1 => (params_2_4_1, TREE_LIM, (88_339, 613_031)),
+            2 => (params_2_4_2, TREE_LIM, (16_218, 1_190_832)),
         ],
     ];
 }
@@ -382,7 +382,7 @@ macro_rules! assert_instrs {
 fn instrs_4(prog: &Prog<4, 4>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(16, config.to_mut()).is_settled()
         || prog.cant_halt(0).is_refuted()
-        || prog.ctl_cant_halt(13)
+        || prog.ctl_cant_halt(11)
 }
 
 fn instrs_5(prog: &Prog<5, 5>, mut config: PassConfig<'_>) -> bool {
@@ -394,7 +394,7 @@ fn instrs_5(prog: &Prog<5, 5>, mut config: PassConfig<'_>) -> bool {
 fn instrs_6(prog: &Prog<6, 6>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(304, config.to_mut()).is_settled()
         || prog.cant_halt(2).is_refuted()
-        || prog.ctl_cant_halt(76)
+        || prog.ctl_cant_halt(41)
         || prog.cps_cant_halt(3)
 }
 
@@ -403,7 +403,7 @@ fn instrs_7(prog: &Prog<7, 7>, mut config: PassConfig<'_>) -> bool {
 
     prog.term_or_rec(100, config).is_settled()
         || prog.cant_halt(2).is_refuted()
-        || prog.ctl_cant_halt(100)
+        || prog.ctl_cant_halt(51)
         || prog.cps_cant_halt(7)
         || prog.term_or_rec(1_000, config).is_settled()
 }
