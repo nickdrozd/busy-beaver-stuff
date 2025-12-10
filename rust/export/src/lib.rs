@@ -22,9 +22,6 @@ macro_rules! parse {
 
         match (states, colors) {
             (2, 2) => $action(Prog::<2, 2>::from(prog)),
-            (3, 3) => $action(Prog::<3, 3>::from(prog)),
-            (4, 4) => $action(Prog::<4, 4>::from(prog)),
-            (5, 5) => $action(Prog::<5, 5>::from(prog)),
 
             (3, 2) => $action(Prog::<3, 2>::from(prog)),
             (4, 2) => $action(Prog::<4, 2>::from(prog)),
@@ -39,15 +36,24 @@ macro_rules! parse {
             (2, 5) => $action(Prog::<2, 5>::from(prog)),
             (2, 6) => $action(Prog::<2, 6>::from(prog)),
 
+            (3, 3) => $action(Prog::<3, 3>::from(prog)),
             (4, 3) => $action(Prog::<4, 3>::from(prog)),
             (5, 3) => $action(Prog::<5, 3>::from(prog)),
+            (6, 3) => $action(Prog::<6, 3>::from(prog)),
 
             (3, 4) => $action(Prog::<3, 4>::from(prog)),
+            (4, 4) => $action(Prog::<4, 4>::from(prog)),
             (5, 4) => $action(Prog::<5, 4>::from(prog)),
+            (6, 4) => $action(Prog::<6, 4>::from(prog)),
             (7, 4) => $action(Prog::<7, 4>::from(prog)),
             (8, 4) => $action(Prog::<8, 4>::from(prog)),
 
             (3, 5) => $action(Prog::<3, 5>::from(prog)),
+            (4, 5) => $action(Prog::<4, 5>::from(prog)),
+            (5, 5) => $action(Prog::<5, 5>::from(prog)),
+
+            (3, 6) => $action(Prog::<3, 6>::from(prog)),
+            (4, 6) => $action(Prog::<4, 6>::from(prog)),
 
             (10, 2) => $action(Prog::<10, 2>::from(prog)),
 
