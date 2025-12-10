@@ -6,7 +6,7 @@ pub mod harvesters;
 
 use harvesters::{
     Collector, Harvester as _, HoldoutVisited, PassConfig,
-    ReasonHarvester, Visited,
+    ReasonHarvester,
 };
 
 /**************************************/
@@ -419,23 +419,28 @@ fn test_instrs() {
     ];
 }
 
+fn instrs_8(prog: &Prog<8, 8>, mut config: PassConfig<'_>) -> bool {
+    let config = config.to_mut();
+
+    prog.term_or_rec(100, config).is_settled()
+        || prog.cant_halt(3).is_settled()
+        || prog.ctl_cant_halt(300)
+        || prog.cps_cant_halt(20)
+        || prog.term_or_rec(1_000, config).is_settled()
+}
+
 fn test_8_instr() {
     println!("8 instrs");
 
-    let result = Visited::<8, 8>::run_instrs::<8>(500, &Visited::new);
-
-    assert_eq!(result, 12_835_863_274);
+    assert_instrs![
+        8 => (instrs_8, 500, (12_624, 12_835_863_274)),
+    ];
 }
 
 /**************************************/
 
-const TESTS: [fn(); 5] = [
-    test_collect,
-    test_reason,
-    test_8_instr,
-    test_instrs,
-    test_deciders,
-];
+const TESTS: [fn(); 4] =
+    [test_collect, test_reason, test_instrs, test_deciders];
 
 use rayon::prelude::*;
 
@@ -448,5 +453,6 @@ fn main() {
 
     TESTS.par_iter().for_each(|f| f());
 
+    test_8_instr();
     test_params_slow();
 }
