@@ -28,19 +28,21 @@ impl<const s: usize, const c: usize> Display for Prog<s, c> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (states, colors) = self.max_reached();
 
-        write!(
-            f,
-            "{}",
-            (0..=states)
-                .map(|state| {
-                    (0..=colors)
-                        .map(|color| self.get(&(state, color)).show())
-                        .collect::<Vec<_>>()
-                        .join(" ")
-                })
-                .collect::<Vec<_>>()
-                .join("  ")
-        )
+        for state in 0..=states {
+            if 0 < state {
+                write!(f, "  ")?;
+            }
+
+            for color in 0..=colors {
+                if 0 < color {
+                    write!(f, " ")?;
+                }
+
+                write!(f, "{}", self.get(&(state, color)).show())?;
+            }
+        }
+
+        Ok(())
     }
 }
 
