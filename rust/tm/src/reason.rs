@@ -44,15 +44,19 @@ impl BackwardResult {
 
 impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn cant_halt(&self, steps: Steps) -> BackwardResult {
-        cant_reach(self, steps, self.halt_slots(), halt_configs)
+        let entrypoints = self.get_entrypoints();
+
+        let slots = self.halt_slots_parity_side(&entrypoints);
+
+        cant_reach(self, steps, slots, Some(entrypoints), halt_configs)
     }
 
     pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
-        cant_reach(self, steps, self.erase_slots(), erase_configs)
+        cant_reach(self, steps, self.erase_slots(), None, erase_configs)
     }
 
     pub fn cant_spin_out(&self, steps: Steps) -> BackwardResult {
-        cant_reach(self, steps, self.zr_shifts(), zero_ref_configs)
+        cant_reach(self, steps, self.zr_shifts(), None, zr_configs)
     }
 }
 
@@ -69,13 +73,15 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     prog: &Prog<s, c>,
     steps: Steps,
     mut slots: Set<(State, T)>,
+    entrypoints: Option<Entrypoints>,
     get_configs: impl Fn(&Set<(State, T)>) -> Configs,
 ) -> BackwardResult {
     if slots.is_empty() {
         return Refuted(0);
     }
 
-    let entrypoints = prog.get_entrypoints();
+    let entrypoints =
+        entrypoints.unwrap_or_else(|| prog.get_entrypoints());
 
     slots.retain(|(state, _)| entrypoints.contains_key(state));
 
@@ -309,7 +315,7 @@ fn erase_configs(erase_slots: &Set<Slot>) -> Configs {
         .collect()
 }
 
-fn zero_ref_configs(zr_shifts: &Set<(State, Shift)>) -> Configs {
+fn zr_configs(zr_shifts: &Set<(State, Shift)>) -> Configs {
     zr_shifts
         .iter()
         .map(|&(state, shift)| Config::init_spinout(state, shift))
@@ -1071,4 +1077,153 @@ fn test_push_indef() {
     tape.backstep(false, 0);
 
     tape.assert("0+ 1 0.. 1.. 0.. 0 [0] ?");
+}
+
+/**************************************/
+
+use std::collections::VecDeque;
+
+impl<const s: usize, const c: usize> Prog<s, c> {
+    fn indices_from_entrypoints(
+        entrypoints: &Entrypoints,
+    ) -> (Vec<Vec<usize>>, Vec<[Vec<usize>; 2]>, Vec<[Vec<usize>; 2]>)
+    {
+        // adj[u] -> v (control graph, ignore read color)
+        let mut adj: Vec<Vec<usize>> = vec![vec![]; s];
+
+        // preds[target][dir] = sources
+        let mut preds: Vec<[Vec<usize>; 2]> =
+            (0..s).map(|_| [vec![], vec![]]).collect();
+
+        // writers[printed_color][dir] = landing states (next_state)
+        let mut writers: Vec<[Vec<usize>; 2]> =
+            (0..c).map(|_| [vec![], vec![]]).collect();
+
+        for (&target, (same, diff)) in entrypoints {
+            let t = target as usize;
+            if t >= s {
+                continue;
+            }
+
+            for ((src, _scan), (pr, sh)) in
+                same.iter().chain(diff.iter())
+            {
+                let u = *src as usize;
+
+                if u >= s {
+                    continue;
+                }
+
+                let d = usize::from(*sh);
+
+                adj[u].push(t);
+                preds[t][d].push(u);
+
+                let co = *pr as usize;
+                if co < c {
+                    writers[co][d].push(t);
+                }
+            }
+        }
+
+        for u in 0..s {
+            adj[u].sort_unstable();
+            adj[u].dedup();
+        }
+        for t in 0..s {
+            for d in 0..2 {
+                preds[t][d].sort_unstable();
+                preds[t][d].dedup();
+            }
+        }
+        for co in 0..c {
+            for d in 0..2 {
+                writers[co][d].sort_unstable();
+                writers[co][d].dedup();
+            }
+        }
+
+        (adj, preds, writers)
+    }
+
+    #[expect(clippy::excessive_nesting, clippy::collapsible_else_if)]
+    fn even_reach_all_pairs(adj: &[Vec<usize>]) -> Vec<Vec<bool>> {
+        let mut even = vec![vec![false; s]; s];
+
+        for start in 0..s {
+            let mut seen_even = vec![false; s];
+            let mut seen_odd = vec![false; s];
+            let mut q = VecDeque::new();
+
+            seen_even[start] = true;
+            q.push_back((start, 0usize)); // parity 0=even,1=odd
+
+            while let Some((u, par)) = q.pop_front() {
+                for &v in &adj[u] {
+                    let npar = par ^ 1;
+                    if npar == 0 {
+                        if !seen_even[v] {
+                            seen_even[v] = true;
+                            q.push_back((v, 0));
+                        }
+                    } else {
+                        if !seen_odd[v] {
+                            seen_odd[v] = true;
+                            q.push_back((v, 1));
+                        }
+                    }
+                }
+            }
+            even[start] = seen_even;
+        }
+
+        even
+    }
+
+    fn slot_possible_nonzero(
+        h: usize,
+        co: usize,
+        even: &[Vec<bool>],
+        preds: &[[Vec<usize>; 2]],
+        writers: &[[Vec<usize>; 2]],
+    ) -> bool {
+        // ∃ writer dir w, landing state s0, predecessor p --(!w)--> h, with even path s0 -> p
+        for w in 0..2 {
+            let need = w ^ 1;
+            for &s0 in &writers[co][w] {
+                for &p in &preds[h][need] {
+                    if even[s0][p] {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    /// Halt slots filtered by parity+side (blank tape). co==0 kept (conservative).
+    pub fn halt_slots_parity_side(
+        &self,
+        entrypoints: &Entrypoints,
+    ) -> Set<Slot> {
+        let (adj, preds, writers) =
+            Self::indices_from_entrypoints(entrypoints);
+        let even = Self::even_reach_all_pairs(&adj);
+        let (max_st, max_co) = self.max_reached();
+
+        (0..=max_st)
+            .flat_map(|st| (0..=max_co).map(move |co| (st, co)))
+            .filter(|slot @ &(st, co)| {
+                self.get(slot).is_none()
+                    && (co == 0
+                        || Self::slot_possible_nonzero(
+                            st as usize,
+                            co as usize,
+                            &even,
+                            &preds,
+                            &writers,
+                        ))
+            })
+            .collect()
+    }
 }
