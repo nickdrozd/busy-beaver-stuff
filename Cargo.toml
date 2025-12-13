@@ -75,4 +75,5 @@ missing_errors_doc = { level = "allow", priority = 1 }
 missing_panics_doc = { level = "allow", priority = 1 }
 fallible_impl_from = { level = "allow", priority = 1 }
 new_without_default = { level = "allow", priority = 1 }
+needless_range_loop = { level = "allow", priority = 1 }
 len_without_is_empty = { level = "allow", priority = 1 }

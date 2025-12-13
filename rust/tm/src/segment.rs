@@ -934,7 +934,6 @@ impl<'p, const states: usize, const colors: usize>
         let mut branches: [(Diffs, Dirs); states] =
             array::from_fn(|_| (Vec::new(), [Vec::new(), Vec::new()]));
 
-        #[expect(clippy::needless_range_loop)]
         for state_idx in 0..states {
             #[expect(clippy::cast_possible_truncation)]
             let state = state_idx as State;

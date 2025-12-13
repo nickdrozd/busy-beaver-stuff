@@ -25,7 +25,6 @@ const SHIFTS: [Shift; 2] = [false, true];
 type Instrs = Vec<Instr>;
 type InstrTable = Vec<Vec<Instrs>>;
 
-#[expect(clippy::needless_range_loop)]
 #[expect(clippy::cast_possible_truncation)]
 fn make_instr_table<
     const max_states: usize,
@@ -61,7 +60,6 @@ fn make_instr_table<
 
 type BlankInstrTable = [InstrTable; 2];
 
-#[expect(clippy::needless_range_loop)]
 fn make_blank_table<
     const max_states: usize,
     const max_colors: usize,
@@ -82,7 +80,6 @@ fn make_blank_table<
 
 type SpinoutInstrTable = [InstrTable; 2];
 
-#[expect(clippy::needless_range_loop)]
 #[expect(clippy::cast_possible_truncation)]
 fn make_spinout_table<
     const max_states: usize,
