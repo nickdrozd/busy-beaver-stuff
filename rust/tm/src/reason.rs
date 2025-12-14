@@ -44,9 +44,10 @@ impl BackwardResult {
 
 impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn cant_halt(&self, steps: Steps) -> BackwardResult {
-        let entrypoints = self.get_entrypoints();
+        let (entrypoints, indices) =
+            self.build_entrypoints_and_indices();
 
-        let slots = self.halt_slots_parity_side(&entrypoints);
+        let slots = self.halt_slots_from_indices(&indices);
 
         cant_reach(self, steps, slots, Some(entrypoints), halt_configs)
     }
@@ -1081,82 +1082,95 @@ fn test_push_indef() {
 
 /**************************************/
 
+use core::array;
 use std::collections::VecDeque;
 
-impl<const s: usize, const c: usize> Prog<s, c> {
-    fn indices_from_entrypoints(
-        entrypoints: &Entrypoints,
-    ) -> (Vec<Vec<usize>>, Vec<[Vec<usize>; 2]>, Vec<[Vec<usize>; 2]>)
-    {
-        // adj[u] -> v (control graph, ignore read color)
-        let mut adj: Vec<Vec<usize>> = vec![vec![]; s];
+type Adj<const S: usize> = [Vec<usize>; S];
+type Preds<const S: usize> = [[Vec<usize>; 2]; S];
+type Writers<const C: usize> = [[Vec<usize>; 2]; C];
+type Indices<const S: usize, const C: usize> =
+    (Adj<S>, Preds<S>, Writers<C>);
 
-        // preds[target][dir] = sources
-        let mut preds: Vec<[Vec<usize>; 2]> =
-            (0..s).map(|_| [vec![], vec![]]).collect();
+fn indices_new<const S: usize, const C: usize>() -> Indices<S, C> {
+    (
+        array::from_fn(|_| vec![]),
+        array::from_fn(|_| array::from_fn(|_| vec![])),
+        array::from_fn(|_| array::from_fn(|_| vec![])),
+    )
+}
 
-        // writers[printed_color][dir] = landing states (next_state)
-        let mut writers: Vec<[Vec<usize>; 2]> =
-            (0..c).map(|_| [vec![], vec![]]).collect();
+fn indices_add<const S: usize, const C: usize>(
+    (adj, preds, writers): &mut Indices<S, C>,
+    u: usize,
+    v: usize,
+    dir: usize,
+    pr: usize,
+) {
+    adj[u].push(v);
+    preds[v][dir].push(u);
+    writers[pr][dir].push(v);
+}
 
-        for (&target, (same, diff)) in entrypoints {
-            let t = target as usize;
-            if t >= s {
+fn indices_finalize<const S: usize, const C: usize>(
+    (adj, preds, writers): &mut Indices<S, C>,
+) {
+    for u in 0..S {
+        adj[u].sort_unstable();
+        adj[u].dedup();
+        for d in 0..2 {
+            preds[u][d].sort_unstable();
+            preds[u][d].dedup();
+        }
+    }
+    for co in 0..C {
+        for d in 0..2 {
+            writers[co][d].sort_unstable();
+            writers[co][d].dedup();
+        }
+    }
+}
+
+impl<const S: usize, const C: usize> Prog<S, C> {
+    fn build_entrypoints_and_indices(
+        &self,
+    ) -> (Entrypoints, Indices<S, C>) {
+        let mut entrypoints = Entrypoints::new();
+
+        let mut idx = indices_new::<S, C>();
+
+        for (slot @ (read, _scan), &(pr, sh, next)) in self.iter() {
+            let u = read as usize;
+            let v = next as usize;
+            if u >= S || v >= S {
                 continue;
             }
 
-            for ((src, _scan), (pr, sh)) in
-                same.iter().chain(diff.iter())
-            {
-                let u = *src as usize;
+            let (same, diff) = entrypoints.entry(next).or_default();
+            (if read == next { same } else { diff })
+                .push((slot, (pr, sh)));
 
-                if u >= s {
-                    continue;
-                }
-
-                let d = usize::from(*sh);
-
-                adj[u].push(t);
-                preds[t][d].push(u);
-
-                let co = *pr as usize;
-                if co < c {
-                    writers[co][d].push(t);
-                }
+            let dir = usize::from(sh);
+            let pr = pr as usize;
+            if pr < C {
+                indices_add::<S, C>(&mut idx, u, v, dir, pr);
             }
         }
 
-        for u in 0..s {
-            adj[u].sort_unstable();
-            adj[u].dedup();
-        }
-        for t in 0..s {
-            for d in 0..2 {
-                preds[t][d].sort_unstable();
-                preds[t][d].dedup();
-            }
-        }
-        for co in 0..c {
-            for d in 0..2 {
-                writers[co][d].sort_unstable();
-                writers[co][d].dedup();
-            }
-        }
-
-        (adj, preds, writers)
+        indices_finalize::<S, C>(&mut idx);
+        (entrypoints, idx)
     }
 
     #[expect(clippy::excessive_nesting, clippy::collapsible_else_if)]
-    fn even_reach_all_pairs(adj: &[Vec<usize>]) -> Vec<Vec<bool>> {
-        let mut even = vec![vec![false; s]; s];
+    fn even_reach_all_pairs(adj: &Adj<S>) -> [[bool; S]; S] {
+        let mut even = [[false; S]; S];
 
-        for start in 0..s {
-            let mut seen_even = vec![false; s];
-            let mut seen_odd = vec![false; s];
-            let mut q = VecDeque::new();
+        for start in 0..S {
+            let mut seen_even = [false; S];
+            let mut seen_odd = [false; S];
+            let mut q: VecDeque<(usize, usize)> = VecDeque::new();
 
             seen_even[start] = true;
-            q.push_back((start, 0usize)); // parity 0=even,1=odd
+            q.push_back((start, 0));
 
             while let Some((u, par)) = q.pop_front() {
                 for &v in &adj[u] {
@@ -1174,6 +1188,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                     }
                 }
             }
+
             even[start] = seen_even;
         }
 
@@ -1183,11 +1198,10 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     fn slot_possible_nonzero(
         h: usize,
         co: usize,
-        even: &[Vec<bool>],
-        preds: &[[Vec<usize>; 2]],
-        writers: &[[Vec<usize>; 2]],
+        even: &[[bool; S]; S],
+        preds: &Preds<S>,
+        writers: &Writers<C>,
     ) -> bool {
-        // ∃ writer dir w, landing state s0, predecessor p --(!w)--> h, with even path s0 -> p
         for w in 0..2 {
             let need = w ^ 1;
             for &s0 in &writers[co][w] {
@@ -1201,14 +1215,12 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         false
     }
 
-    /// Halt slots filtered by parity+side (blank tape). co==0 kept (conservative).
-    pub fn halt_slots_parity_side(
+    fn halt_slots_from_indices(
         &self,
-        entrypoints: &Entrypoints,
+        (adj, preds, writers): &Indices<S, C>,
     ) -> Set<Slot> {
-        let (adj, preds, writers) =
-            Self::indices_from_entrypoints(entrypoints);
-        let even = Self::even_reach_all_pairs(&adj);
+        let even = &Self::even_reach_all_pairs(adj);
+
         let (max_st, max_co) = self.max_reached();
 
         (0..=max_st)
@@ -1219,9 +1231,9 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         || Self::slot_possible_nonzero(
                             st as usize,
                             co as usize,
-                            &even,
-                            &preds,
-                            &writers,
+                            even,
+                            preds,
+                            writers,
                         ))
             })
             .collect()
