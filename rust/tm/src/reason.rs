@@ -44,10 +44,9 @@ impl BackwardResult {
 
 impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn cant_halt(&self, steps: Steps) -> BackwardResult {
-        let (entrypoints, indices) =
-            self.build_entrypoints_and_indices();
+        let (entrypoints, idx) = self.build_entrypoints_and_indices();
 
-        let slots = self.halt_slots_from_indices(&indices);
+        let slots = self.halt_slots_disp_side(&idx);
 
         cant_reach(self, steps, slots, Some(entrypoints), halt_configs)
     }
@@ -1086,33 +1085,36 @@ use core::array;
 use std::collections::VecDeque;
 
 type Adj<const S: usize> = [Vec<usize>; S];
-type Preds<const S: usize> = [[Vec<usize>; 2]; S];
-type Writers<const C: usize> = [[Vec<usize>; 2]; C];
+type Preds<const S: usize> = [[Vec<usize>; 2]; S]; // preds[v][dir] -> u
+type Writers<const C: usize> = [[Vec<usize>; 2]; C]; // writers[color][dir] -> v
+type NextDir<const S: usize> = [[Vec<usize>; 2]; S]; // next[u][dir] -> v
 type Indices<const S: usize, const C: usize> =
-    (Adj<S>, Preds<S>, Writers<C>);
+    (Adj<S>, Preds<S>, Writers<C>, NextDir<S>);
 
 fn indices_new<const S: usize, const C: usize>() -> Indices<S, C> {
     (
-        array::from_fn(|_| vec![]),
-        array::from_fn(|_| array::from_fn(|_| vec![])),
-        array::from_fn(|_| array::from_fn(|_| vec![])),
+        array::from_fn(|_| Vec::new()),
+        array::from_fn(|_| array::from_fn(|_| Vec::new())),
+        array::from_fn(|_| array::from_fn(|_| Vec::new())),
+        array::from_fn(|_| array::from_fn(|_| Vec::new())),
     )
 }
 
 fn indices_add<const S: usize, const C: usize>(
-    (adj, preds, writers): &mut Indices<S, C>,
+    (adj, preds, writers, next): &mut Indices<S, C>,
     u: usize,
     v: usize,
-    dir: usize,
-    pr: usize,
+    dir: usize, // 0=L, 1=R   (Shift false/true)
+    pr: usize,  // printed color
 ) {
     adj[u].push(v);
     preds[v][dir].push(u);
     writers[pr][dir].push(v);
+    next[u][dir].push(v);
 }
 
 fn indices_finalize<const S: usize, const C: usize>(
-    (adj, preds, writers): &mut Indices<S, C>,
+    (adj, preds, writers, next): &mut Indices<S, C>,
 ) {
     for u in 0..S {
         adj[u].sort_unstable();
@@ -1120,6 +1122,8 @@ fn indices_finalize<const S: usize, const C: usize>(
         for d in 0..2 {
             preds[u][d].sort_unstable();
             preds[u][d].dedup();
+            next[u][d].sort_unstable();
+            next[u][d].dedup();
         }
     }
     for co in 0..C {
@@ -1130,26 +1134,182 @@ fn indices_finalize<const S: usize, const C: usize>(
     }
 }
 
+const fn gcd_i32(mut a: i32, mut b: i32) -> i32 {
+    a = a.abs();
+    b = b.abs();
+    while b != 0 {
+        let r = a % b;
+        a = b;
+        b = r;
+    }
+    a
+}
+
+/// Returns per-state:
+/// - `comp[id]` (0..k-1)
+/// - `g_of[state]` = SCC modulus g (0 means perfectly consistent potentials => only Δ=exact)
+/// - `res[state]` = dist mod g (if g>0) else dist (if g==0)
+#[expect(clippy::excessive_nesting)]
+fn scc_displacement_invariant<const S: usize>(
+    adj: &Adj<S>,
+    next: &NextDir<S>,
+) -> ([usize; S], [i32; S], [i32; S]) {
+    // 1) reachability for SCC by mutual reach (S<=16 => easy)
+    let mut reach = [[false; S]; S];
+    for start in 0..S {
+        let mut q = VecDeque::new();
+        reach[start][start] = true;
+        q.push_back(start);
+        while let Some(u) = q.pop_front() {
+            for &v in &adj[u] {
+                if !reach[start][v] {
+                    reach[start][v] = true;
+                    q.push_back(v);
+                }
+            }
+        }
+    }
+
+    // SCC partition by mutual reach
+    let mut comp = [usize::MAX; S];
+    let mut comps: Vec<Vec<usize>> = Vec::new();
+    for i in 0..S {
+        if comp[i] != usize::MAX {
+            continue;
+        }
+        let cid = comps.len();
+        let mut nodes = Vec::new();
+        for j in 0..S {
+            if reach[i][j] && reach[j][i] {
+                comp[j] = cid;
+                nodes.push(j);
+            }
+        }
+        comps.push(nodes);
+    }
+
+    // 2) for each SCC, compute g and dist[] by spanning traversal over labelled edges
+    let mut g_of = [0; S];
+    let mut res = [0; S];
+
+    for (cid, nodes) in comps.iter().enumerate() {
+        if nodes.is_empty() {
+            continue;
+        }
+
+        // membership test
+        let mut in_comp = [false; S];
+        for &v in nodes {
+            in_comp[v] = true;
+        }
+
+        // dist potentials (i32)
+        let mut dist: [Option<i32>; S] = [(); S].map(|()| None);
+        let root = nodes[0];
+        dist[root] = Some(0);
+
+        let mut q = VecDeque::new();
+        q.push_back(root);
+
+        let mut g = 0;
+
+        while let Some(u) = q.pop_front() {
+            let du = dist[u].unwrap();
+
+            for dir in 0..2 {
+                let w = if dir == 1 { 1 } else { -1 }; // R:+1, L:-1
+                for &v in &next[u][dir] {
+                    if !in_comp[v] {
+                        continue;
+                    }
+
+                    let dv_new = du + w;
+                    match dist[v] {
+                        None => {
+                            dist[v] = Some(dv_new);
+                            q.push_back(v);
+                        },
+                        Some(dv) => {
+                            // discrepancy gives a cycle displacement; accumulate gcd
+                            let diff = dv_new - dv;
+                            if diff != 0 {
+                                g = if g == 0 {
+                                    diff.abs()
+                                } else {
+                                    gcd_i32(g, diff)
+                                };
+                            }
+                        },
+                    }
+                }
+            }
+        }
+
+        // fill g/res per state in this SCC
+        for &v in nodes {
+            let dv = dist[v].unwrap_or(0);
+            g_of[v] = g;
+            res[v] = if g == 0 {
+                dv // exact potential class
+            } else {
+                // normalize to 0..g-1
+                let mut r = dv % g;
+                if r < 0 {
+                    r += g;
+                }
+                r
+            };
+            debug_assert_eq!(comp[v], cid);
+        }
+    }
+
+    (comp, g_of, res)
+}
+
+fn reachability<const S: usize>(adj: &Adj<S>) -> [[bool; S]; S] {
+    let mut reach = [[false; S]; S];
+
+    for start in 0..S {
+        let mut q = VecDeque::new();
+        reach[start][start] = true;
+        q.push_back(start);
+
+        while let Some(u) = q.pop_front() {
+            for &v in &adj[u] {
+                if !reach[start][v] {
+                    reach[start][v] = true;
+                    q.push_back(v);
+                }
+            }
+        }
+    }
+
+    reach
+}
+
 impl<const S: usize, const C: usize> Prog<S, C> {
     fn build_entrypoints_and_indices(
         &self,
     ) -> (Entrypoints, Indices<S, C>) {
         let mut entrypoints = Entrypoints::new();
-
         let mut idx = indices_new::<S, C>();
 
-        for (slot @ (read, _scan), &(pr, sh, next)) in self.iter() {
+        for (slot @ (read, _scan), &(pr, sh, next_state)) in self.iter()
+        {
             let u = read as usize;
-            let v = next as usize;
+            let v = next_state as usize;
             if u >= S || v >= S {
                 continue;
             }
 
-            let (same, diff) = entrypoints.entry(next).or_default();
-            (if read == next { same } else { diff })
+            // entrypoints (your existing structure)
+            let (same, diff) =
+                entrypoints.entry(next_state).or_default();
+            (if read == next_state { same } else { diff })
                 .push((slot, (pr, sh)));
 
-            let dir = usize::from(sh);
+            // indices
+            let dir = usize::from(sh); // true=R(1), false=L(0)
             let pr = pr as usize;
             if pr < C {
                 indices_add::<S, C>(&mut idx, u, v, dir, pr);
@@ -1160,66 +1320,16 @@ impl<const S: usize, const C: usize> Prog<S, C> {
         (entrypoints, idx)
     }
 
-    #[expect(clippy::excessive_nesting, clippy::collapsible_else_if)]
-    fn even_reach_all_pairs(adj: &Adj<S>) -> [[bool; S]; S] {
-        let mut even = [[false; S]; S];
-
-        for start in 0..S {
-            let mut seen_even = [false; S];
-            let mut seen_odd = [false; S];
-            let mut q: VecDeque<(usize, usize)> = VecDeque::new();
-
-            seen_even[start] = true;
-            q.push_back((start, 0));
-
-            while let Some((u, par)) = q.pop_front() {
-                for &v in &adj[u] {
-                    let npar = par ^ 1;
-                    if npar == 0 {
-                        if !seen_even[v] {
-                            seen_even[v] = true;
-                            q.push_back((v, 0));
-                        }
-                    } else {
-                        if !seen_odd[v] {
-                            seen_odd[v] = true;
-                            q.push_back((v, 1));
-                        }
-                    }
-                }
-            }
-
-            even[start] = seen_even;
-        }
-
-        even
-    }
-
-    fn slot_possible_nonzero(
-        h: usize,
-        co: usize,
-        even: &[[bool; S]; S],
-        preds: &Preds<S>,
-        writers: &Writers<C>,
-    ) -> bool {
-        for w in 0..2 {
-            let need = w ^ 1;
-            for &s0 in &writers[co][w] {
-                for &p in &preds[h][need] {
-                    if even[s0][p] {
-                        return true;
-                    }
-                }
-            }
-        }
-        false
-    }
-
-    fn halt_slots_from_indices(
+    /// Static halt-slot filter using SCC displacement invariant `g` (no arbitrary modulus).
+    #[expect(clippy::excessive_nesting)]
+    pub fn halt_slots_disp_side(
         &self,
-        (adj, preds, writers): &Indices<S, C>,
+        idx: &Indices<S, C>,
     ) -> Set<Slot> {
-        let even = &Self::even_reach_all_pairs(adj);
+        let (adj, preds, writers, next) = idx;
+        let (comp, _g_of, res) =
+            scc_displacement_invariant::<S>(adj, next);
+        let reach = reachability::<S>(adj);
 
         let (max_st, max_co) = self.max_reached();
 
@@ -1227,14 +1337,37 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             .flat_map(|st| (0..=max_co).map(move |co| (st, co)))
             .filter(|slot @ &(st, co)| {
                 self.get(slot).is_none()
-                    && (co == 0
-                        || Self::slot_possible_nonzero(
-                            st as usize,
-                            co as usize,
-                            even,
-                            preds,
-                            writers,
-                        ))
+                    && (co == 0 || {
+                        let h = st as usize;
+                        let co = co as usize;
+                        if h >= S || co >= C {
+                            return false;
+                        }
+
+                        for w in 0..2 {
+                            let need = w ^ 1;
+                            for &p in &preds[h][need] {
+                                for &s0 in &writers[co][w] {
+                                    // must be reachable at all
+                                    if !reach[s0][p] {
+                                        continue;
+                                    }
+
+                                    // only apply residue condition inside same SCC
+                                    if comp[s0] == comp[p] {
+                                        if res[s0] == res[p] {
+                                            return true;
+                                        }
+                                    } else {
+                                        // across SCCs: residue test is invalid, but reachability alone
+                                        // means "can't rule it out" (so keep the slot)
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                        false
+                    })
             })
             .collect()
     }
