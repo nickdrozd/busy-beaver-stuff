@@ -1145,127 +1145,6 @@ const fn gcd_i32(mut a: i32, mut b: i32) -> i32 {
     a
 }
 
-/// Returns per-state:
-/// - `comp[id]` (0..k-1)
-/// - `g_of[state]` = SCC modulus g (0 means perfectly consistent potentials => only Δ=exact)
-/// - `res[state]` = dist mod g (if g>0) else dist (if g==0)
-#[expect(clippy::excessive_nesting)]
-fn scc_displacement_invariant<const S: usize>(
-    adj: &Adj<S>,
-    next: &NextDir<S>,
-) -> ([usize; S], [i32; S], [i32; S]) {
-    // 1) reachability for SCC by mutual reach (S<=16 => easy)
-    let mut reach = [[false; S]; S];
-    for start in 0..S {
-        let mut q = VecDeque::new();
-        reach[start][start] = true;
-        q.push_back(start);
-        while let Some(u) = q.pop_front() {
-            for &v in &adj[u] {
-                if !reach[start][v] {
-                    reach[start][v] = true;
-                    q.push_back(v);
-                }
-            }
-        }
-    }
-
-    // SCC partition by mutual reach
-    let mut comp = [usize::MAX; S];
-    let mut comps: Vec<Vec<usize>> = Vec::new();
-    for i in 0..S {
-        if comp[i] != usize::MAX {
-            continue;
-        }
-        let cid = comps.len();
-        let mut nodes = Vec::new();
-        for j in 0..S {
-            if reach[i][j] && reach[j][i] {
-                comp[j] = cid;
-                nodes.push(j);
-            }
-        }
-        comps.push(nodes);
-    }
-
-    // 2) for each SCC, compute g and dist[] by spanning traversal over labelled edges
-    let mut g_of = [0; S];
-    let mut res = [0; S];
-
-    for (cid, nodes) in comps.iter().enumerate() {
-        if nodes.is_empty() {
-            continue;
-        }
-
-        // membership test
-        let mut in_comp = [false; S];
-        for &v in nodes {
-            in_comp[v] = true;
-        }
-
-        // dist potentials (i32)
-        let mut dist: [Option<i32>; S] = [(); S].map(|()| None);
-        let root = nodes[0];
-        dist[root] = Some(0);
-
-        let mut q = VecDeque::new();
-        q.push_back(root);
-
-        let mut g = 0;
-
-        while let Some(u) = q.pop_front() {
-            let du = dist[u].unwrap();
-
-            for dir in 0..2 {
-                let w = if dir == 1 { 1 } else { -1 }; // R:+1, L:-1
-                for &v in &next[u][dir] {
-                    if !in_comp[v] {
-                        continue;
-                    }
-
-                    let dv_new = du + w;
-                    match dist[v] {
-                        None => {
-                            dist[v] = Some(dv_new);
-                            q.push_back(v);
-                        },
-                        Some(dv) => {
-                            // discrepancy gives a cycle displacement; accumulate gcd
-                            let diff = dv_new - dv;
-                            if diff != 0 {
-                                g = if g == 0 {
-                                    diff.abs()
-                                } else {
-                                    gcd_i32(g, diff)
-                                };
-                            }
-                        },
-                    }
-                }
-            }
-        }
-
-        // fill g/res per state in this SCC
-        for &v in nodes {
-            let dv = dist[v].unwrap_or(0);
-            g_of[v] = g;
-            res[v] = if g == 0 {
-                dv // exact potential class
-            } else {
-                // normalize to 0..g-1
-                let mut r = dv % g;
-                if r < 0 {
-                    r += g;
-                }
-                r
-            };
-            debug_assert_eq!(comp[v], cid);
-        }
-    }
-
-    (comp, g_of, res)
-}
-
 fn reachability<const S: usize>(adj: &Adj<S>) -> [[bool; S]; S] {
     let mut reach = [[false; S]; S];
 
@@ -1285,6 +1164,330 @@ fn reachability<const S: usize>(adj: &Adj<S>) -> [[bool; S]; S] {
     }
 
     reach
+}
+
+/// Extract SCCs from mutual reachability matrix.
+/// Returns:
+/// - comp[state] in 0..k
+/// - masks[0..k) as bitmasks of SCC membership
+/// - k = number of SCCs
+fn scc_from_reach<const S: usize>(
+    reach: &[[bool; S]; S],
+) -> ([usize; S], [u16; S], usize) {
+    let mut comp = [usize::MAX; S];
+    let mut masks = [0u16; S];
+    let mut k = 0usize;
+
+    for i in 0..S {
+        if comp[i] != usize::MAX {
+            continue;
+        }
+        let cid = k;
+        k += 1;
+
+        let mut mask: u16 = 0;
+        for j in 0..S {
+            if reach[i][j] && reach[j][i] {
+                comp[j] = cid;
+                mask |= 1u16 << j;
+            }
+        }
+        masks[cid] = mask;
+    }
+
+    (comp, masks, k)
+}
+
+/// Compute DC residue `res` and SCC modulus `g_scc` using a spanning traversal in each SCC.
+/// Returns:
+/// - comp[state]
+/// - masks[0..k)
+/// - k
+/// - `g_scc[cid]`
+/// - res[state] (dist mod g if g>0 else exact dist)
+#[expect(clippy::excessive_nesting)]
+fn dc_meta<const S: usize>(
+    adj: &Adj<S>,
+    next: &NextDir<S>,
+) -> (
+    [[bool; S]; S],
+    [usize; S],
+    [u16; S],
+    usize,
+    [i32; S],
+    [i32; S],
+) {
+    // reach + SCCs
+    let reach = reachability::<S>(adj);
+    let (comp, masks, k) = scc_from_reach::<S>(&reach);
+
+    let mut g_scc = [0i32; S];
+    let mut res = [0i32; S];
+
+    for cid in 0..k {
+        let mask = masks[cid];
+        if mask == 0 {
+            continue;
+        }
+
+        // find a root in this SCC
+        let mut root = None;
+        for v in 0..S {
+            if ((mask >> v) & 1) == 1 {
+                root = Some(v);
+                break;
+            }
+        }
+        let Some(root) = root else { continue };
+
+        // dist potentials (i32)
+        let mut dist: [Option<i32>; S] = [(); S].map(|()| None);
+        dist[root] = Some(0);
+
+        let mut q = VecDeque::new();
+        q.push_back(root);
+
+        let mut g = 0i32;
+
+        while let Some(u) = q.pop_front() {
+            let du = dist[u].unwrap();
+
+            for dir in 0..2 {
+                let w = if dir == 1 { 1i32 } else { -1i32 }; // R:+1, L:-1
+                for &v in &next[u][dir] {
+                    if ((mask >> v) & 1) == 0 {
+                        continue;
+                    }
+
+                    let dv_new = du + w;
+                    match dist[v] {
+                        None => {
+                            dist[v] = Some(dv_new);
+                            q.push_back(v);
+                        },
+                        Some(dv) => {
+                            let diff = dv_new - dv;
+                            if diff != 0 {
+                                g = if g == 0 {
+                                    diff.abs()
+                                } else {
+                                    gcd_i32(g, diff)
+                                };
+                            }
+                        },
+                    }
+                }
+            }
+        }
+
+        g_scc[cid] = g;
+
+        for v in 0..S {
+            if ((mask >> v) & 1) == 0 {
+                continue;
+            }
+            let dv = dist[v].unwrap_or(0);
+            if g == 0 {
+                res[v] = dv; // exact
+            } else {
+                let mut r = dv % g;
+                if r < 0 {
+                    r += g;
+                }
+                res[v] = r;
+            }
+        }
+    }
+
+    (reach, comp, masks, k, g_scc, res)
+}
+
+/// Bellman-Ford negative-cycle detection inside SCC.
+/// If `negate` is true, weights are negated => detects positive cycles of original graph.
+fn has_neg_cycle_in_scc<const S: usize>(
+    mask: u16,
+    next: &NextDir<S>,
+    negate: bool,
+) -> bool {
+    // collect nodes of SCC into fixed array
+    let mut nodes = [0usize; S];
+    let mut n = 0usize;
+    for v in 0..S {
+        if ((mask >> v) & 1) == 1 {
+            nodes[n] = v;
+            n += 1;
+        }
+    }
+    if n == 0 {
+        return false;
+    }
+
+    let mut dist = [0i32; S]; // super-source initialization
+
+    for iter in 0..n {
+        let mut changed = false;
+
+        for i in 0..n {
+            let u = nodes[i];
+            let du = dist[u];
+
+            for dir in 0..2 {
+                let mut w = if dir == 1 { 1i32 } else { -1i32 };
+                if negate {
+                    w = -w;
+                }
+
+                for &v in &next[u][dir] {
+                    if ((mask >> v) & 1) == 0 {
+                        continue;
+                    }
+                    let nv = du + w;
+                    if nv < dist[v] {
+                        dist[v] = nv;
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if !changed {
+            return false;
+        }
+        if iter == n - 1 && changed {
+            return true; // still relaxable => negative cycle
+        }
+    }
+
+    false
+}
+
+/// Compute min displacement from `src` to all nodes in SCC (only sound/meaningful if no negative cycles).
+fn bf_min_row_in_scc<const S: usize>(
+    mask: u16,
+    next: &NextDir<S>,
+    src: usize,
+    out: &mut [i32; S],
+) {
+    const INF: i32 = 1_000_000;
+
+    // init
+    *out = [INF; S];
+    out[src] = 0;
+
+    // collect SCC nodes
+    let mut nodes = [0usize; S];
+    let mut n = 0usize;
+    for v in 0..S {
+        if ((mask >> v) & 1) == 1 {
+            nodes[n] = v;
+            n += 1;
+        }
+    }
+    if n == 0 {
+        return;
+    }
+
+    // relax n-1 times
+    for _ in 0..(n.saturating_sub(1)) {
+        let mut changed = false;
+
+        for i in 0..n {
+            let u = nodes[i];
+            let du = out[u];
+            if du == INF {
+                continue;
+            }
+
+            for dir in 0..2 {
+                let w = if dir == 1 { 1i32 } else { -1i32 };
+                for &v in &next[u][dir] {
+                    if ((mask >> v) & 1) == 0 {
+                        continue;
+                    }
+                    let nv = du + w;
+                    if nv < out[v] {
+                        out[v] = nv;
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if !changed {
+            break;
+        }
+    }
+}
+
+/// Compute max displacement from `src` to all nodes in SCC (only sound/meaningful if no positive cycles).
+/// Implemented as -min on negated weights.
+fn bf_max_row_no_pos_cycles_in_scc<const S: usize>(
+    mask: u16,
+    next: &NextDir<S>,
+    src: usize,
+    out: &mut [i32; S],
+) {
+    const INF: i32 = 1_000_000;
+
+    // temp min on negated weights
+    let mut dmin = [INF; S];
+    dmin[src] = 0;
+
+    // collect SCC nodes
+    let mut nodes = [0usize; S];
+    let mut n = 0usize;
+    for v in 0..S {
+        if ((mask >> v) & 1) == 1 {
+            nodes[n] = v;
+            n += 1;
+        }
+    }
+    if n == 0 {
+        *out = [0; S];
+        return;
+    }
+
+    // relax n-1 times
+    for _ in 0..(n.saturating_sub(1)) {
+        let mut changed = false;
+
+        for i in 0..n {
+            let u = nodes[i];
+            let du = dmin[u];
+            if du == INF {
+                continue;
+            }
+
+            for dir in 0..2 {
+                let w = if dir == 1 { -1i32 } else { 1i32 }; // NEGATED
+                for &v in &next[u][dir] {
+                    if ((mask >> v) & 1) == 0 {
+                        continue;
+                    }
+                    let nv = du + w;
+                    if nv < dmin[v] {
+                        dmin[v] = nv;
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if !changed {
+            break;
+        }
+    }
+
+    // convert to max: max = -min(negated)
+    let mut out_max = [0i32; S];
+    for v in 0..S {
+        if dmin[v] == INF {
+            out_max[v] = i32::MIN / 2;
+        } else {
+            out_max[v] = -dmin[v];
+        }
+    }
+    *out = out_max;
 }
 
 impl<const S: usize, const C: usize> Prog<S, C> {
@@ -1320,16 +1523,33 @@ impl<const S: usize, const C: usize> Prog<S, C> {
         (entrypoints, idx)
     }
 
-    /// Static halt-slot filter using SCC displacement invariant `g` (no arbitrary modulus).
+    /// Static halt-slot filter using DC + one-sided SCC drift pruning (sound).
     #[expect(clippy::excessive_nesting)]
     pub fn halt_slots_disp_side(
         &self,
         idx: &Indices<S, C>,
     ) -> Set<Slot> {
         let (adj, preds, writers, next) = idx;
-        let (comp, _g_of, res) =
-            scc_displacement_invariant::<S>(adj, next);
-        let reach = reachability::<S>(adj);
+
+        // DC meta (+ reach reused)
+        let (reach, comp, masks, k, g_scc, res) =
+            dc_meta::<S>(adj, next);
+
+        // SCC drift: does SCC have net-L (neg cycle) / net-R (pos cycle)?
+        // pos cycle detected by neg-cycle on negated weights.
+        let mut has_neg = [false; S];
+        let mut has_pos = [false; S];
+        for cid in 0..k {
+            let mask = masks[cid];
+            has_neg[cid] = has_neg_cycle_in_scc::<S>(mask, next, false);
+            has_pos[cid] = has_neg_cycle_in_scc::<S>(mask, next, true);
+        }
+
+        // lazy caches: rows for min/max displacement per src (computed only when needed)
+        let mut min_done = [false; S];
+        let mut max_done = [false; S];
+        let mut min_row = [[0i32; S]; S];
+        let mut max_row = [[0i32; S]; S];
 
         let (max_st, max_co) = self.max_reached();
 
@@ -1346,6 +1566,7 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
                         for w in 0..2 {
                             let need = w ^ 1;
+
                             for &p in &preds[h][need] {
                                 for &s0 in &writers[co][w] {
                                     // must be reachable at all
@@ -1353,19 +1574,69 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                                         continue;
                                     }
 
-                                    // only apply residue condition inside same SCC
-                                    if comp[s0] == comp[p] {
-                                        if res[s0] == res[p] {
-                                            return true;
-                                        }
-                                    } else {
-                                        // across SCCs: residue test is invalid, but reachability alone
-                                        // means "can't rule it out" (so keep the slot)
+                                    // across SCCs: still keep conservative
+                                    if comp[s0] != comp[p] {
                                         return true;
                                     }
+
+                                    // inside SCC: DC residue necessary
+                                    let cid = comp[p];
+                                    let g = g_scc[cid];
+
+                                    if res[s0] != res[p] {
+                                        continue;
+                                    }
+
+                                    // g==0 means exact potential; res equality already implies net displacement 0
+                                    if g == 0 {
+                                        return true;
+                                    }
+
+                                    // If SCC can pump both directions, DC congruence is the right granularity:
+                                    // don't try to “min/max” prune.
+                                    if has_pos[cid] && has_neg[cid] {
+                                        return true;
+                                    }
+
+                                    // One-sided SCC: try to prove 0 displacement impossible.
+                                    let mask = masks[cid];
+
+                                    if !has_neg[cid] {
+                                        // no negative cycles => min displacement is well-defined
+                                        if !min_done[s0] {
+                                            bf_min_row_in_scc::<S>(mask, next, s0, &mut min_row[s0]);
+                                            min_done[s0] = true;
+                                        }
+                                        let dmin = min_row[s0][p];
+                                        if dmin > 0 {
+                                            // every walk shifts right by >=1 => cannot return to same cell
+                                            continue;
+                                        }
+                                        return true;
+                                    }
+
+                                    if !has_pos[cid] {
+                                        // no positive cycles => max displacement is well-defined
+                                        if !max_done[s0] {
+                                            bf_max_row_no_pos_cycles_in_scc::<S>(
+                                                mask, next, s0, &mut max_row[s0]
+                                            );
+                                            max_done[s0] = true;
+                                        }
+                                        let dmax = max_row[s0][p];
+                                        if dmax < 0 {
+                                            // every walk shifts left by <=-1 => cannot return to same cell
+                                            continue;
+                                        }
+                                        return true;
+                                    }
+
+                                    // fallback conservative
+                                    return true;
                                 }
                             }
                         }
+
                         false
                     })
             })
