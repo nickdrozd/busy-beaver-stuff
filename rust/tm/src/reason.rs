@@ -52,6 +52,10 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     }
 
     pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
+        if self.cant_blank_unblankable_first_write() {
+            return BackwardResult::Refuted(0);
+        }
+
         cant_reach(self, steps, self.erase_slots(), None, erase_configs)
     }
 
@@ -1625,6 +1629,50 @@ fn semigroup_contains<const S: usize>(
     dist[r] <= tgt
 }
 
+type ColorMask = u64;
+
+fn color_rewrite_closure<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+) -> [ColorMask; C] {
+    // adj[a] is bitset of b such that a -> b is possible (reading a, printing b)
+    let mut adj = [0u64; C];
+
+    for ((_, read), &(pr, _, _)) in prog.iter() {
+        let a = read as usize;
+        let b = pr as usize;
+        if a < C && b < C {
+            adj[a] |= 1u64 << b;
+        }
+    }
+
+    // Transitive closure (Floyd-Warshall on bitsets).
+    // closure[a] = all colors reachable from a (including itself)
+    let mut clo = [0u64; C];
+    for a in 0..C {
+        clo[a] = adj[a] | (1u64 << a);
+    }
+
+    // Standard bitset transitive closure
+    // If a can reach k, then a can reach everything k can reach.
+    for k in 0..C {
+        let kset = clo[k];
+        for a in 0..C {
+            if (clo[a] >> k) & 1 == 1 {
+                clo[a] |= kset;
+            }
+        }
+    }
+
+    clo
+}
+
+fn color_can_reach_zero<const C: usize>(
+    closure: &[ColorMask; C],
+    a: usize,
+) -> bool {
+    a < C && ((closure[a] & 1u64) != 0) // bit 0 means color 0 reachable
+}
+
 impl<const S: usize, const C: usize> Prog<S, C> {
     fn build_entrypoints_and_indices(
         &self,
@@ -1823,5 +1871,24 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                     })
             })
             .collect()
+    }
+
+    fn cant_blank_unblankable_first_write(&self) -> bool {
+        let closure = color_rewrite_closure::<S, C>(self);
+
+        // Starting config: state 0 scanning 0
+        let Some(&(pr, _sh, _ns)) = self.get(&(0, 0)) else {
+            // If it halts immediately on blank, then blank is trivially reachable;
+            // so we cannot refute blanking here.
+            return false;
+        };
+
+        let pr = pr as usize;
+        if pr == 0 {
+            return false;
+        }
+
+        // If pr cannot evolve to 0 on that cell, tape can never become fully blank.
+        !color_can_reach_zero::<C>(&closure, pr)
     }
 }
