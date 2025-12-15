@@ -52,7 +52,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     }
 
     pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
-        if self.cant_blank_unerasable_forced_prefix() {
+        if self.cant_blank_by_color_graph() {
             return BackwardResult::Refuted(0);
         }
 
@@ -1631,6 +1631,19 @@ fn semigroup_contains<const S: usize>(
 
 type ColorMask = u64;
 
+fn printed_mask<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+) -> ColorMask {
+    let mut m = 0u64;
+    for ((_, _read), &(pr, _, _)) in prog.iter() {
+        let pr = pr as usize;
+        if pr < C {
+            m |= 1u64 << pr;
+        }
+    }
+    m
+}
+
 fn color_closure<const S: usize, const C: usize>(
     prog: &Prog<S, C>,
 ) -> [ColorMask; C] {
@@ -1877,106 +1890,15 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             .collect()
     }
 
-    fn cant_blank_unerasable_forced_prefix(&self) -> bool {
-        debug_assert!(S <= 32); // for seen bitset; your S<=16 anyway
-        debug_assert!(C <= 64);
-
-        // compute unerasables
+    fn cant_blank_by_color_graph(&self) -> bool {
         let clo = color_closure::<S, C>(self);
         let bad = unerasable_mask::<C>(&clo);
         if bad == 0 {
             return false;
         }
 
-        // Start step A0 (assumed exists; you said it's 1RB)
-        let Some(&(pr_a0, sh_a0, st_b)) = self.get(&(0u8, 0u8)) else {
-            return false;
-        };
+        let pr = printed_mask::<S, C>(self);
 
-        // If A0 doesn't write nonzero, this refuter is irrelevant.
-        let pr_a0 = pr_a0 as usize;
-        if pr_a0 == 0 {
-            return false;
-        }
-
-        // If that first-written symbol is unerasable => immediate refute
-        if (bad >> pr_a0) & 1 == 1 {
-            return true;
-        }
-
-        // If A0 doesn't move right, this particular forced-prefix analysis doesn't apply cleanly.
-        // (You said assume A0:1RB, so this will usually pass.)
-        if !sh_a0 {
-            return false;
-        }
-
-        // Small position->color map for what we've FORCEDLY written so far.
-        // At most O(S) distinct cells before either (a) we try to step onto a nonzero,
-        // or (b) 0-column state repeats.
-        let mut cells: Vec<(i32, u8)> = Vec::with_capacity(2 * S + 4);
-
-        // initial mark at cell 0
-        #[expect(clippy::cast_possible_truncation)]
-        cells.push((0, pr_a0 as u8));
-
-        // forced 0-run begins at B on cell +1 scanning 0
-        let mut state = st_b as usize;
-        if state >= S {
-            return false;
-        }
-        let mut pos: i32 = 1;
-
-        // remember first time each state appears on this forced-0 run
-        let mut seen_state = [i16::MIN; S];
-        let mut step: i16 = 0;
-
-        loop {
-            // stop once a 0-column state repeats: future forced-0 steps repeat same prints/dirs
-            if seen_state[state] != i16::MIN {
-                return false;
-            }
-            seen_state[state] = step;
-            step += 1;
-
-            // must have a 0-transition
-            #[expect(clippy::cast_possible_truncation)]
-            let Some(&(pr, sh, ns)) = self.get(&(state as u8, 0))
-            else {
-                // halting on a forced-0 step doesn't refute blanking
-                return false;
-            };
-
-            let pr_u = pr as usize;
-            if pr_u < C && pr_u > 0 && ((bad >> pr_u) & 1) == 1 {
-                // guaranteed to be written before any nonzero read happens => permanent nonblank
-                return true;
-            }
-
-            // write pr at current cell (overwrite)
-            if let Some((_, col)) =
-                cells.iter_mut().find(|(p, _)| *p == pos)
-            {
-                *col = pr;
-            } else {
-                cells.push((pos, pr));
-            }
-
-            // move
-            pos += if sh { 1 } else { -1 };
-
-            // If the next cell is already nonzero (from what we've written),
-            // then the *real* run must read nonzero next, so the forced-0 prefix ends here.
-            if let Some((_, col)) =
-                cells.iter().find(|(p, _)| *p == pos)
-                && *col != 0
-            {
-                return false; // we did not find an unerasable in the forced prefix
-            }
-
-            state = ns as usize;
-            if state >= S {
-                return false;
-            }
-        }
+        (pr & bad) != 0
     }
 }
