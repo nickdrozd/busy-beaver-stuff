@@ -68,7 +68,9 @@ multiple_inherent_impl = "deny"
 redundant_type_annotations = "deny"
 decimal_literal_representation = "deny"
 
+doc_markdown = { level = "allow", priority = 1 }
 enum_glob_use = { level = "allow", priority = 1 }
+too_many_lines = { level = "allow", priority = 1 }
 type_complexity = { level = "allow", priority = 1 }
 must_use_candidate = { level = "allow", priority = 1 }
 missing_errors_doc = { level = "allow", priority = 1 }
