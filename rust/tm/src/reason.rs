@@ -637,6 +637,13 @@ impl Span {
     }
 
     fn push_indef(&mut self, color: Color) {
+        if color == 0
+            && self.span.blank()
+            && self.end == TapeEnd::Blanks
+        {
+            return;
+        }
+
         self.span.push_block(color, 0);
     }
 
