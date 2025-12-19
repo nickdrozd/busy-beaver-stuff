@@ -97,6 +97,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut blanks = get_blanks(&configs);
 
+    let mut seen: Dict<Key, Vec<Tape>> = Dict::new();
+
     for step in 1..=steps {
         #[cfg(debug_assertions)]
         {
@@ -116,7 +118,17 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
         configs = match step_configs(valid_steps, &mut blanks) {
             Err(err) => return err,
-            Ok(stepped) => stepped,
+            Ok(stepped) => {
+                let mut kept = Configs::new();
+                for cfg in stepped {
+                    let k = cfg_key(&cfg);
+                    let entry = seen.entry(k).or_default();
+                    if antichain_insert(entry, cfg.tape.clone()) {
+                        kept.push(cfg);
+                    }
+                }
+                kept
+            },
         };
     }
 
@@ -1801,4 +1813,107 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
         }
     }
     out
+}
+
+impl TapeEnd {
+    const fn subsumes(&self, other: &Self) -> bool {
+        #[expect(clippy::match_same_arms)]
+        match (self, other) {
+            (Self::Unknown, _) => true,
+            (Self::Blanks, Self::Blanks) => true,
+            (Self::Blanks, Self::Unknown) => false,
+        }
+    }
+}
+
+#[expect(clippy::multiple_inherent_impl)]
+impl Span {
+    /// `self` subsumes `other` (self is more general / less constrained).
+    fn subsumes(&self, other: &Self) -> bool {
+        if !self.end.subsumes(&other.end) {
+            return false;
+        }
+        self.span_subsumes(&other.span)
+    }
+
+    /// Compare two block-spans from the head outward (your Span stores blocks starting at head side).
+    /// Rule (sound and simple):
+    /// - colors must match positionally
+    /// - count 0 means "indefinitely many" (≥1), so it subsumes any positive count
+    /// - positive count must match exactly (conservative but sound)
+    /// - if self runs out of blocks, it still subsumes if its end is Unknown or Blanks compatible
+    fn span_subsumes(&self, other: &SpanT) -> bool {
+        let mut it_a = self.span.iter(); // Blocks
+        let mut it_b = other.iter();
+
+        loop {
+            match (it_a.next(), it_b.next()) {
+                (None, None) => return true,
+                (Some(_), None) => {
+                    // self has extra constraints beyond other => does NOT subsume
+                    return false;
+                },
+                (None, Some(_)) => {
+                    // self ended earlier; it represents "nothing more specified".
+                    // Allowed only if self end is Unknown or (Blanks and remaining other blocks are all blank)
+                    match self.end {
+                        TapeEnd::Unknown => return true,
+                        TapeEnd::Blanks => {
+                            // remaining blocks on other must all be blank
+                            // we already consumed one from it_b via Some(_); check it + rest
+                            // easiest: false here, conservative; or implement full scan.
+                            return false;
+                        },
+                    }
+                },
+                (Some(a), Some(b)) => {
+                    if a.color != b.color {
+                        return false;
+                    }
+                    #[expect(clippy::match_same_arms)]
+                    match (a.count, b.count) {
+                        (0, 0) => {},           // both indefinite
+                        (0, _) => {}, // self indefinite subsumes any b>=1
+                        (_, 0) => return false, // self fixed cannot subsume indefinite
+                        (ac, bc) if ac == bc => {},
+                        _ => return false,
+                    }
+                },
+            }
+        }
+    }
+}
+
+#[expect(clippy::multiple_inherent_impl)]
+impl Tape {
+    /// `self` subsumes `other` (self is more general / less constrained).
+    fn subsumes(&self, other: &Self) -> bool {
+        self.scan == other.scan
+            && self.head == other.head
+            && self.lspan.subsumes(&other.lspan)
+            && self.rspan.subsumes(&other.rspan)
+    }
+}
+
+type Key = (State, Color, Pos);
+
+const fn cfg_key(cfg: &Config) -> Key {
+    (cfg.state, cfg.tape.scan, cfg.tape.head)
+}
+
+/// Maintain an antichain of tapes under `subsumes`.
+/// Returns true if `tape` was kept (i.e. not subsumed by existing).
+fn antichain_insert(set: &mut Vec<Tape>, tape: Tape) -> bool {
+    // If any existing subsumes new, drop new
+    for old in set.iter() {
+        if old.subsumes(&tape) {
+            return false;
+        }
+    }
+
+    // Remove any existing tapes subsumed by new
+    set.retain(|old| !tape.subsumes(old));
+
+    set.push(tape);
+    true
 }
