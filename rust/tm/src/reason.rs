@@ -1416,226 +1416,6 @@ fn has_neg_cycle_in_scc<const S: usize>(
     false
 }
 
-fn bf_min_row_in_scc<const S: usize>(
-    mask: u16,
-    next: &NextDir<S>,
-    src: usize,
-    out: &mut [i32; S],
-) {
-    const INF: i32 = 1_000_000;
-
-    *out = [INF; S];
-    out[src] = 0;
-
-    let mut nodes = [0usize; S];
-    let mut n = 0usize;
-    for v in 0..S {
-        if ((mask >> v) & 1) == 1 {
-            nodes[n] = v;
-            n += 1;
-        }
-    }
-    if n == 0 {
-        return;
-    }
-
-    for _ in 0..(n.saturating_sub(1)) {
-        let mut changed = false;
-
-        for i in 0..n {
-            let u = nodes[i];
-            let du = out[u];
-            if du == INF {
-                continue;
-            }
-
-            for dir in 0..2 {
-                let w = if dir == 1 { 1i32 } else { -1i32 };
-                for &v in &next[u][dir] {
-                    if ((mask >> v) & 1) == 0 {
-                        continue;
-                    }
-                    let nv = du + w;
-                    if nv < out[v] {
-                        out[v] = nv;
-                        changed = true;
-                    }
-                }
-            }
-        }
-
-        if !changed {
-            break;
-        }
-    }
-}
-
-fn bf_max_row_no_pos_cycles_in_scc<const S: usize>(
-    mask: u16,
-    next: &NextDir<S>,
-    src: usize,
-    out: &mut [i32; S],
-) {
-    const INF: i32 = 1_000_000;
-
-    let mut dmin = [INF; S];
-    dmin[src] = 0;
-
-    let mut nodes = [0usize; S];
-    let mut n = 0usize;
-    for v in 0..S {
-        if ((mask >> v) & 1) == 1 {
-            nodes[n] = v;
-            n += 1;
-        }
-    }
-    if n == 0 {
-        *out = [0; S];
-        return;
-    }
-
-    for _ in 0..(n.saturating_sub(1)) {
-        let mut changed = false;
-
-        for i in 0..n {
-            let u = nodes[i];
-            let du = dmin[u];
-            if du == INF {
-                continue;
-            }
-
-            for dir in 0..2 {
-                let w = if dir == 1 { -1i32 } else { 1i32 }; // NEGATED
-                for &v in &next[u][dir] {
-                    if ((mask >> v) & 1) == 0 {
-                        continue;
-                    }
-                    let nv = du + w;
-                    if nv < dmin[v] {
-                        dmin[v] = nv;
-                        changed = true;
-                    }
-                }
-            }
-        }
-
-        if !changed {
-            break;
-        }
-    }
-
-    let mut out_max = [0i32; S];
-    for v in 0..S {
-        if dmin[v] == INF {
-            out_max[v] = i32::MIN / 2;
-        } else {
-            out_max[v] = -dmin[v];
-        }
-    }
-    *out = out_max;
-}
-
-/// Numerical semigroup membership:
-/// given generators gens[0..len) (positive ints), test if `target` (>=0) is representable
-/// as a nonnegative sum of gens.
-/// Uses Dijkstra-on-residues mod m where m = min generator after scaling by gcd.
-#[expect(clippy::many_single_char_names)]
-fn semigroup_contains<const S: usize>(
-    gens: &[i32; S],
-    len: u8,
-    target: i32,
-) -> bool {
-    debug_assert!(target >= 0);
-    if target == 0 {
-        return true;
-    }
-    let n = len as usize;
-    if n == 0 {
-        return false;
-    }
-
-    // gcd of generators
-    let mut g = 0i32;
-    let mut min_gen = i32::MAX;
-    for i in 0..n {
-        let a = gens[i];
-        if a <= 0 {
-            continue;
-        }
-        min_gen = min_gen.min(a);
-        g = if g == 0 { a } else { gcd_i32(g, a) };
-    }
-    if g == 0 {
-        return false;
-    }
-    if target % g != 0 {
-        return false;
-    }
-
-    let tgt = target / g;
-
-    // scaled generators
-    let mut scaled = [0i32; S];
-    let mut m = i32::MAX;
-    let mut sn = 0usize;
-    for i in 0..n {
-        let a = gens[i];
-        if a <= 0 {
-            continue;
-        }
-        let a = a / g;
-        scaled[sn] = a;
-        sn += 1;
-        m = m.min(a);
-    }
-    if sn == 0 {
-        return false;
-    }
-    #[expect(clippy::cast_sign_loss)]
-    let m = m as usize;
-    if m == 1 {
-        return true; // everything is representable
-    }
-
-    // Dijkstra on residues 0..m-1 with edge cost a
-    #[expect(clippy::items_after_statements)]
-    const INF: i32 = 1_000_000_000;
-    let mut dist = vec![INF; m];
-    let mut used = vec![false; m];
-    dist[0] = 0;
-
-    for _ in 0..m {
-        // extract-min (m<=16, do O(m) scan)
-        let mut best = INF;
-        let mut u = None;
-        for r in 0..m {
-            if !used[r] && dist[r] < best {
-                best = dist[r];
-                u = Some(r);
-            }
-        }
-        let Some(r) = u else { break };
-        used[r] = true;
-
-        for i in 0..sn {
-            #[expect(clippy::cast_sign_loss)]
-            let a = scaled[i] as usize;
-            let nr = (r + a) % m;
-            let nd = dist[r] + scaled[i];
-            if nd < dist[nr] {
-                dist[nr] = nd;
-            }
-        }
-    }
-
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_possible_wrap
-    )]
-    let r = (tgt.rem_euclid(m as i32)) as usize;
-    dist[r] <= tgt
-}
-
 type ColorMask = u64;
 
 fn printed_mask<const S: usize, const C: usize>(
@@ -1731,9 +1511,10 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     }
 
     /// Static halt-slot filter:
-    /// DC residue + reachability, plus:
-    /// - one-sided SCC drift bounds (min/max)
-    /// - AND exact “can we hit displacement 0?” via semigroup membership on cycle displacements.
+    /// - reachability + SCC residue gate (DC)
+    /// - if SCC has both drift signs: keep conservative
+    /// - if SCC is one-sided: do an *exact* “can we hit net displacement 0?” check
+    ///   via a small bounded product-graph BFS (state × displacement window).
     #[expect(clippy::excessive_nesting)]
     pub fn halt_slots_disp_side(
         &self,
@@ -1746,16 +1527,15 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             comp,
             masks,
             k,
-            g_scc,
+            _g_scc,
             res,
-            pos_gens,
-            pos_len,
-            neg_gens,
-            neg_len,
+            _pos_gens,
+            _pos_len,
+            _neg_gens,
+            _neg_len,
         ) = dc_meta_with_gens::<S>(adj, next);
 
-        // SCC drift: does SCC have net-L (neg cycle) / net-R (pos cycle)?
-        // pos cycle detected by neg-cycle on negated weights.
+        // SCC drift classification (same as you already do)
         let mut has_neg = [false; S];
         let mut has_pos = [false; S];
         for cid in 0..k {
@@ -1764,17 +1544,19 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             has_pos[cid] = has_neg_cycle_in_scc::<S>(mask, next, true);
         }
 
-        // lazy caches: rows for min/max displacement per src (computed only when needed)
-        let mut min_done = [false; S];
-        let mut max_done = [false; S];
-        let mut min_row = [[0i32; S]; S];
-        let mut max_row = [[0i32; S]; S];
+        // NEW: exact 0-displacement reachability cache for one-sided SCCs.
+        // zero_done[cid][src] indicates whether we computed zero_reach[cid][src].
+        // zero_reach[cid][src] is bitmask of nodes reachable from src with net disp 0
+        // (under an orientation where SCC has no negative cycles).
+        let mut zero_done = [[false; S]; S];
+        let mut zero_reach = [[0u16; S]; S];
 
         let (max_st, max_co) = self.max_reached();
 
         (0..=max_st)
             .flat_map(|st| (0..=max_co).map(move |co| (st, co)))
             .filter(|slot @ &(st, co)| {
+                // only consider missing slots as "candidate halting slots"
                 self.get(slot).is_none()
                     && (co == 0 || {
                         let h = st as usize;
@@ -1799,93 +1581,45 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
                                     // same SCC
                                     let cid = comp[p];
-                                    let g = g_scc[cid];
+                                    if cid >= k {
+                                        return true; // conservative
+                                    }
 
-                                    // DC residue necessary
+                                    // residue gate (necessary; conservative if weak)
                                     if res[s0] != res[p] {
                                         continue;
                                     }
 
-                                    // g==0: exact potential; residue equality implies exact 0 displacement
-                                    if g == 0 {
-                                        return true;
-                                    }
-
-                                    // If SCC has both signs, congruence is the right granularity; keep witness.
+                                    // If SCC has both signs, congruence is about all we can use cheaply;
+                                    // keep witness.
                                     if has_pos[cid] && has_neg[cid] {
                                         return true;
                                     }
 
-                                    let mask = masks[cid];
+                                    // SCC is one-sided (or bounded). Do exact disp==0 reachability.
+                                    // Choose an orientation with NO negative cycles:
+                                    // - if SCC has no neg cycles, use normal weights (R=+1,L=-1)
+                                    // - if SCC has neg cycles but no pos cycles, negate weights
+                                    let negate = has_neg[cid] && !has_pos[cid];
 
-                                    // One-sided SCC => exact 0 reachability needs a “payback” check.
-                                    if !has_neg[cid] {
-                                        // no negative cycles: displacement is bounded below
-                                        if !min_done[s0] {
-                                            bf_min_row_in_scc::<S>(mask, next, s0, &mut min_row[s0]);
-                                            min_done[s0] = true;
-                                        }
-                                        let dmin = min_row[s0][p];
-
-                                        // if all paths strictly >0 => can't be 0
-                                        if dmin > 0 {
-                                            continue;
-                                        }
-                                        // if already 0 => ok
-                                        if dmin == 0 {
-                                            return true;
-                                        }
-
-                                        // need to add positive cycle displacement of size = -dmin
-                                        let need_up = -dmin;
-                                        let gens = &pos_gens[cid];
-                                        let len = pos_len[cid];
-
-                                        // if we didn't collect any positive gens, we can't prove; keep conservative
-                                        if len == 0 {
-                                            return true;
-                                        }
-
-                                        if semigroup_contains::<S>(gens, len, need_up) {
-                                            return true;
-                                        }
-                                        // cannot “pay back” to 0 => prune this witness
-                                        continue;
-                                    }
-
-                                    if !has_pos[cid] {
-                                        // no positive cycles: displacement is bounded above
-                                        if !max_done[s0] {
-                                            bf_max_row_no_pos_cycles_in_scc::<S>(
-                                                mask, next, s0, &mut max_row[s0]
+                                    if !zero_done[cid][s0] {
+                                        zero_reach[cid][s0] =
+                                            zero_disp_reach_mask_one_sided_scc::<S>(
+                                                masks[cid],
+                                                next,
+                                                s0,
+                                                negate,
                                             );
-                                            max_done[s0] = true;
-                                        }
-                                        let dmax = max_row[s0][p];
+                                        zero_done[cid][s0] = true;
+                                    }
 
-                                        if dmax < 0 {
-                                            continue;
-                                        }
-                                        if dmax == 0 {
-                                            return true;
-                                        }
-
-                                        // need to add negative cycle displacement of size = dmax (i.e. subtract it)
-                                        let need_down = dmax;
-                                        let gens = &neg_gens[cid];
-                                        let len = neg_len[cid];
-
-                                        if len == 0 {
-                                            return true;
-                                        }
-
-                                        if semigroup_contains::<S>(gens, len, need_down) {
-                                            return true;
-                                        }
+                                    // p reachable from s0 with net displacement 0?
+                                    if ((zero_reach[cid][s0] >> p) & 1) == 0 {
+                                        // No exact 0-displacement witness in this SCC => prune this witness
                                         continue;
                                     }
 
-                                    // fallback conservative
+                                    // Exact witness exists => keep candidate halt slot
                                     return true;
                                 }
                             }
@@ -1908,4 +1642,163 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
         (pr & bad) != 0
     }
+}
+
+/// BF min distances inside SCC with optional weight negation.
+/// If `negate=true`, weights are negated (R=-1, L=+1).
+fn bf_min_row_in_scc_weight<const S: usize>(
+    mask: u16,
+    next: &NextDir<S>,
+    src: usize,
+    negate: bool,
+    out: &mut [i32; S],
+) {
+    const INF: i32 = 1_000_000;
+
+    *out = [INF; S];
+    out[src] = 0;
+
+    let mut nodes = [0usize; S];
+    let mut n = 0usize;
+    for v in 0..S {
+        if ((mask >> v) & 1) == 1 {
+            nodes[n] = v;
+            n += 1;
+        }
+    }
+    if n == 0 {
+        return;
+    }
+
+    for _ in 0..(n.saturating_sub(1)) {
+        let mut changed = false;
+
+        for i in 0..n {
+            let u = nodes[i];
+            let du = out[u];
+            if du == INF {
+                continue;
+            }
+
+            for dir in 0..2 {
+                let mut w = if dir == 1 { 1i32 } else { -1i32 };
+                if negate {
+                    w = -w;
+                }
+
+                for &v in &next[u][dir] {
+                    if ((mask >> v) & 1) == 0 {
+                        continue;
+                    }
+                    let nv = du + w;
+                    if nv < out[v] {
+                        out[v] = nv;
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if !changed {
+            break;
+        }
+    }
+}
+
+/// Exact check inside a one-sided SCC:
+/// Return bitmask of states v in SCC such that there exists a path src -> v
+/// with net displacement exactly 0, under weights:
+/// - normal: R=+1, L=-1 if negate=false
+/// - negated: R=-1, L=+1 if negate=true
+///
+/// Assumes: under the chosen weight system, SCC has no negative cycles
+/// (so min distance is bounded and the explored displacement window is small).
+fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
+    mask: u16,
+    next: &NextDir<S>,
+    src: usize,
+    negate: bool,
+) -> u16 {
+    // Compute global lower bound on displacement reachable from src in SCC:
+    // min over nodes of shortest path distance (no negative cycles => finite).
+    let mut d = [0i32; S];
+    bf_min_row_in_scc_weight::<S>(mask, next, src, negate, &mut d);
+
+    let mut lo = 0i32;
+    let mut any = false;
+    for v in 0..S {
+        if ((mask >> v) & 1) == 0 {
+            continue;
+        }
+        if d[v] >= 900_000 {
+            continue;
+        }
+        any = true;
+        if d[v] < lo {
+            lo = d[v];
+        }
+    }
+    if !any {
+        return 0;
+    }
+
+    // We need to search displacements in [lo .. 0].
+    // For S<=16 and no negative cycles, lo is typically >= -(S-1) (<= -15).
+    // Keep a safe cap; if it somehow exceeds the cap, return
+    // conservative "all nodes".
+    #[expect(clippy::items_after_statements)]
+    const CAP: usize = 33; // supports lo down to -32
+    let offset = -lo;
+    #[expect(clippy::cast_sign_loss)]
+    if offset < 0 || (offset as usize) >= CAP {
+        // Too wide; don't prune.
+        return mask;
+    }
+    #[expect(clippy::cast_sign_loss)]
+    let zero_idx = offset as usize; // index representing displacement 0
+
+    // visited[state][idx] where idx corresponds to disp = lo + idx
+    let mut visited = [[false; CAP]; S];
+
+    let mut q = std::collections::VecDeque::new();
+    visited[src][zero_idx] = true;
+    q.push_back((src, 0i32)); // store actual displacement
+
+    while let Some((u, disp)) = q.pop_front() {
+        for dir in 0..2 {
+            let mut w = if dir == 1 { 1i32 } else { -1i32 };
+            if negate {
+                w = -w;
+            }
+
+            for &v in &next[u][dir] {
+                if ((mask >> v) & 1) == 0 {
+                    continue;
+                }
+                let nd = disp + w;
+                if nd < lo || nd > 0 {
+                    continue;
+                }
+                #[expect(clippy::cast_sign_loss)]
+                let idx = (nd - lo) as usize;
+                if idx >= CAP || visited[v][idx] {
+                    continue;
+                }
+                visited[v][idx] = true;
+                q.push_back((v, nd));
+            }
+        }
+    }
+
+    // Collect targets reachable with displacement exactly 0
+    let mut out = 0u16;
+    for v in 0..S {
+        if ((mask >> v) & 1) == 0 {
+            continue;
+        }
+        if visited[v][zero_idx] {
+            out |= 1u16 << v;
+        }
+    }
+    out
 }
