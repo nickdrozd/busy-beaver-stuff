@@ -1340,16 +1340,29 @@ def find_period(base: int, mod: int, exp: int) -> int:
     if mod >= MOD_PERIOD_LIMIT:
         raise PeriodLimit(base, mod)
 
-    val = 1
+    base_mod = base % mod
 
-    for period in range(1, min(mod, exp)):
-        val *= base
-        val %= mod
+    if pgcd(base_mod, mod) != 1:
+        return 0
 
-        if val == 1:
-            return period
+    lam, _ = carmichael(mod)
 
-    return 0
+    order = lam
+
+    for p, k in prime_factors(lam):
+        for _ in range(k):
+            if pow(base_mod, cand := order // p, mod) != 1:
+                break
+
+            order = cand
+
+    assert order < mod
+
+    return (
+        order
+        if 0 < order < exp else
+        0
+    )
 
 
 def carmichael(mod: int) -> tuple[int, int]:
