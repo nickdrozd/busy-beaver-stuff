@@ -934,7 +934,7 @@ class Exp(Num):
             if (period := find_period(base, mod, exp)) > 0:
                 exp %= period
         except PeriodLimit:
-            if (crt_res := crt(Exp.make(base, exp), mod)) is not None:
+            if (crt_res := crt(base, exp, mod)) is not None:
                 return crt_res
 
             raise
@@ -1386,13 +1386,15 @@ def carmichael(mod: int) -> tuple[int, int]:
     return res, max_k
 
 
-def crt(n: Count, mod: int) -> int | None:
+def crt(base: int, exp: Count, mod: int) -> int | None:
     assert mod != 1
 
     moduli = [p ** k for (p, k) in prime_factors(mod)]
 
     if len(moduli) == 1:
         return None
+
+    n = Exp.make(base, exp)
 
     m0, *rest = moduli
 
