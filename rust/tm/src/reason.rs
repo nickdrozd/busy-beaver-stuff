@@ -1193,8 +1193,8 @@ fn scc_from_reach<const S: usize>(
     reach: &[[bool; S]; S],
 ) -> ([usize; S], [u16; S], usize) {
     let mut comp = [usize::MAX; S];
-    let mut masks = [0u16; S];
-    let mut k = 0usize;
+    let mut masks = [0; S];
+    let mut k = 0;
 
     for i in 0..S {
         if comp[i] != usize::MAX {
@@ -1207,7 +1207,7 @@ fn scc_from_reach<const S: usize>(
         for j in 0..S {
             if reach[i][j] && reach[j][i] {
                 comp[j] = cid;
-                mask |= 1u16 << j;
+                mask |= 1 << j;
             }
         }
         masks[cid] = mask;
@@ -1259,13 +1259,13 @@ fn dc_meta_with_gens<const S: usize>(
     let reach = reachability::<S>(adj);
     let (comp, masks, k) = scc_from_reach::<S>(&reach);
 
-    let mut g_scc = [0i32; S];
-    let mut res = [0i32; S];
+    let mut g_scc = [0; S];
+    let mut res = [0; S];
 
-    let mut pos_gens = [[0i32; S]; S];
-    let mut pos_len = [0u8; S];
-    let mut neg_gens = [[0i32; S]; S];
-    let mut neg_len = [0u8; S];
+    let mut pos_gens = [[0; S]; S];
+    let mut pos_len = [0; S];
+    let mut neg_gens = [[0; S]; S];
+    let mut neg_len = [0; S];
 
     for cid in 0..k {
         let mask = masks[cid];
@@ -1294,13 +1294,13 @@ fn dc_meta_with_gens<const S: usize>(
         let mut q = VecDeque::new();
         q.push_back(root);
 
-        let mut g = 0i32;
+        let mut g = 0;
 
         while let Some(u) = q.pop_front() {
             let du = dist[u].unwrap();
 
             for dir in 0..2 {
-                let w = if dir == 1 { 1i32 } else { -1i32 }; // R:+1, L:-1
+                let w = if dir == 1 { 1 } else { -1 }; // R:+1, L:-1
 
                 for &v in &next[u][dir] {
                     if !in_comp[v] {
@@ -1377,8 +1377,8 @@ fn has_neg_cycle_in_scc<const S: usize>(
     next: &NextDir<S>,
     negate: bool,
 ) -> bool {
-    let mut nodes = [0usize; S];
-    let mut n = 0usize;
+    let mut nodes = [0; S];
+    let mut n = 0;
     for v in 0..S {
         if ((mask >> v) & 1) == 1 {
             nodes[n] = v;
@@ -1389,7 +1389,7 @@ fn has_neg_cycle_in_scc<const S: usize>(
         return false;
     }
 
-    let mut dist = [0i32; S];
+    let mut dist = [0; S];
 
     for iter in 0..n {
         let mut changed = false;
@@ -1399,7 +1399,7 @@ fn has_neg_cycle_in_scc<const S: usize>(
             let du = dist[u];
 
             for dir in 0..2 {
-                let mut w = if dir == 1 { 1i32 } else { -1i32 };
+                let mut w = if dir == 1 { 1 } else { -1 };
                 if negate {
                     w = -w;
                 }
@@ -1433,11 +1433,11 @@ type ColorMask = u64;
 fn printed_mask<const S: usize, const C: usize>(
     prog: &Prog<S, C>,
 ) -> ColorMask {
-    let mut m = 0u64;
+    let mut m = 0;
     for ((_, _read), &(pr, _, _)) in prog.iter() {
         let pr = pr as usize;
         if pr < C {
-            m |= 1u64 << pr;
+            m |= 1 << pr;
         }
     }
     m
@@ -1448,20 +1448,20 @@ fn color_closure<const S: usize, const C: usize>(
 ) -> [ColorMask; C] {
     debug_assert!(C <= 64);
 
-    let mut clo = [0u64; C];
+    let mut clo = [0; C];
 
     // direct edges: read -> print
     for ((_, read), &(pr, _, _)) in prog.iter() {
         let a = read as usize;
         let b = pr as usize;
         if a < C && b < C {
-            clo[a] |= 1u64 << b;
+            clo[a] |= 1 << b;
         }
     }
 
     // include self
     for a in 0..C {
-        clo[a] |= 1u64 << a;
+        clo[a] |= 1 << a;
     }
 
     // transitive closure (bitset Floyd)
@@ -1479,11 +1479,11 @@ fn color_closure<const S: usize, const C: usize>(
 
 fn unerasable_mask<const C: usize>(clo: &[ColorMask; C]) -> ColorMask {
     // bit i set => color i>0 cannot reach 0
-    let mut m = 0u64;
+    let mut m = 0;
     for a in 1..C {
-        let can0 = (clo[a] & 1u64) != 0; // bit0 is color 0
+        let can0 = (clo[a] & 1) != 0; // bit0 is color 0
         if !can0 {
-            m |= 1u64 << a;
+            m |= 1 << a;
         }
     }
     m
@@ -1561,7 +1561,7 @@ impl<const S: usize, const C: usize> Prog<S, C> {
         // zero_reach[cid][src] is bitmask of nodes reachable from src with net disp 0
         // (under an orientation where SCC has no negative cycles).
         let mut zero_done = [[false; S]; S];
-        let mut zero_reach = [[0u16; S]; S];
+        let mut zero_reach = [[0; S]; S];
 
         let (max_st, max_co) = self.max_reached();
 
@@ -1670,8 +1670,8 @@ fn bf_min_row_in_scc_weight<const S: usize>(
     *out = [INF; S];
     out[src] = 0;
 
-    let mut nodes = [0usize; S];
-    let mut n = 0usize;
+    let mut nodes = [0; S];
+    let mut n = 0;
     for v in 0..S {
         if ((mask >> v) & 1) == 1 {
             nodes[n] = v;
@@ -1693,7 +1693,7 @@ fn bf_min_row_in_scc_weight<const S: usize>(
             }
 
             for dir in 0..2 {
-                let mut w = if dir == 1 { 1i32 } else { -1i32 };
+                let mut w = if dir == 1 { 1 } else { -1 };
                 if negate {
                     w = -w;
                 }
@@ -1733,10 +1733,10 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
 ) -> u16 {
     // Compute global lower bound on displacement reachable from src in SCC:
     // min over nodes of shortest path distance (no negative cycles => finite).
-    let mut d = [0i32; S];
+    let mut d = [0; S];
     bf_min_row_in_scc_weight::<S>(mask, next, src, negate, &mut d);
 
-    let mut lo = 0i32;
+    let mut lo = 0;
     let mut any = false;
     for v in 0..S {
         if ((mask >> v) & 1) == 0 {
@@ -1774,11 +1774,11 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
 
     let mut q = std::collections::VecDeque::new();
     visited[src][zero_idx] = true;
-    q.push_back((src, 0i32)); // store actual displacement
+    q.push_back((src, 0)); // store actual displacement
 
     while let Some((u, disp)) = q.pop_front() {
         for dir in 0..2 {
-            let mut w = if dir == 1 { 1i32 } else { -1i32 };
+            let mut w = if dir == 1 { 1 } else { -1 };
             if negate {
                 w = -w;
             }
@@ -1803,13 +1803,13 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
     }
 
     // Collect targets reachable with displacement exactly 0
-    let mut out = 0u16;
+    let mut out = 0;
     for v in 0..S {
         if ((mask >> v) & 1) == 0 {
             continue;
         }
         if visited[v][zero_idx] {
-            out |= 1u16 << v;
+            out |= 1 << v;
         }
     }
     out
