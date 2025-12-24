@@ -174,11 +174,13 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             self.make_block_macro(blocks).run_prover(steps)
         };
 
-        // if result.is_mult() {
-        //     self.print();
-        // }
+        let inf = result.is_infinite();
 
-        result.is_infinite()
+        if !inf && result.is_mult() {
+            self.print();
+        }
+
+        inf
     }
 
     pub fn term_or_rec_fresh(&self, sim_lim: Steps) -> RunResult {

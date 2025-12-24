@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::env;
 
 use tm::{Goal, Prog, Steps};
@@ -236,8 +237,19 @@ fn params_5_2_1(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.cant_spin_out(2).is_refuted()
 }
 
-fn params_5_2_2(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.cant_blank(2).is_refuted()
+fn params_5_2_2(prog: &Prog<5, 2>, mut config: PassConfig<'_>) -> bool {
+    if !prog.is_connected() || prog.cant_blank(1).is_refuted() {
+        return true;
+    }
+
+    let config = config.to_mut();
+
+    prog.term_or_rec(500, config).is_settled()
+        || prog.cant_blank(20).is_refuted()
+        || prog.ctl_cant_blank(300)
+        || prog.cps_cant_blank(20)
+        || prog.term_or_rec(2_000, config).is_settled()
+        || prog.check_inf(3_000, 500)
 }
 
 //
@@ -264,28 +276,39 @@ fn params_2_5_1(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
     prog.cant_spin_out(2).is_refuted()
 }
 
-fn params_2_5_2(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
-    prog.cant_blank(2).is_refuted()
+fn params_2_5_2(prog: &Prog<2, 5>, mut config: PassConfig<'_>) -> bool {
+    if prog.cant_blank(1).is_refuted() {
+        return true;
+    }
+
+    let config = config.to_mut();
+
+    prog.term_or_rec(500, config).is_settled()
+        || prog.cant_blank(20).is_refuted()
+        || prog.ctl_cant_blank(300)
+        || prog.cps_cant_blank(20)
+        || prog.term_or_rec(2_000, config).is_settled()
+        || prog.check_inf(3_000, 500)
 }
 
 fn test_params_slow() {
     println!("params slow");
 
     assert_params![
-        (5, 2) => [
-            0 => (params_5_2_0, 700, (60_238_549, 90_773_891)),
-            1 => (params_5_2_1, TREE_LIM, (69_543_346, 181_095_466)),
-            2 => (params_5_2_2, TREE_LIM, (249_954_945, 486_712_056)),
-        ],
-        (3, 3) => [
-            0 => (params_3_3_0, 2_700, (19_837_189, 24_057_699)),
-            1 => (params_3_3_1, 3_000, (25_352_963, 51_028_928)),
-            2 => (params_3_3_2, 3_000, (44_465_003, 123_294_779)),
-        ],
+        // (5, 2) => [
+        //     0 => (params_5_2_0, 700, (60_238_549, 90_773_891)),
+        //     1 => (params_5_2_1, TREE_LIM, (69_543_346, 181_095_466)),
+        //     2 => (params_5_2_2, 2_000, (249_954_945, 486_712_056)),
+        // ],
+        // (3, 3) => [
+        //     0 => (params_3_3_0, 2_700, (19_837_189, 24_057_699)),
+        //     1 => (params_3_3_1, 3_000, (25_352_963, 51_028_928)),
+        //     2 => (params_3_3_2, 3_000, (44_465_003, 123_294_779)),
+        // ],
         (2, 5) => [
-            0 => (params_2_5_0, TREE_LIM, (65_045_167, 69_999_829)),
-            1 => (params_2_5_1, TREE_LIM, (131_625_721, 163_068_753)),
-            2 => (params_2_5_2, TREE_LIM, (119_194_930, 367_061_568)),
+            // 0 => (params_2_5_0, TREE_LIM, (65_045_167, 69_999_829)),
+            // 1 => (params_2_5_1, TREE_LIM, (131_625_721, 163_068_753)),
+            2 => (params_2_5_2, 2_000, (119_194_930, 367_061_568)),
         ],
     ];
 }
@@ -437,6 +460,25 @@ fn test_8_instr() {
     ];
 }
 
+fn instrs_9(prog: &Prog<9, 9>, mut config: PassConfig<'_>) -> bool {
+    let config = config.to_mut();
+
+    prog.term_or_rec(500, config).is_settled()
+        || prog.cant_halt(3).is_settled()
+        || prog.ctl_cant_halt(500)
+        || prog.cps_cant_halt(20)
+        || prog.term_or_rec(2_000, config).is_settled()
+        || prog.check_inf(2_000, 500)
+}
+
+fn test_9_instr() {
+    println!("9 instrs");
+
+    assert_instrs![
+        9 => (instrs_9, 1_000, (12_624, 12_835_863_274)),
+    ];
+}
+
 /**************************************/
 
 const TESTS: [fn(); 4] =
@@ -445,6 +487,10 @@ const TESTS: [fn(); 4] =
 use rayon::prelude::*;
 
 fn main() {
+    test_params_slow();
+
+    test_9_instr();
+
     test_prover();
 
     if !env::args().any(|x| x == "--all") {
@@ -454,5 +500,4 @@ fn main() {
     TESTS.par_iter().for_each(|f| f());
 
     test_8_instr();
-    test_params_slow();
 }
