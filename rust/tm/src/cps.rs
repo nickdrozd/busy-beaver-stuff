@@ -29,6 +29,22 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         self.cps_run_macros(rad, Spinout)
     }
 
+    /// Sound-but-incomplete CPS-based certifier for:
+    /// "cannot quasihalt" under your definition:
+    ///   no reachable state is visited only finitely often.
+    ///
+    /// Strategy:
+    /// 1) Run CPS closure for non-halting (Goal::Halt) while recording the CPS transition graph.
+    /// 2) On the resulting finite graph, require (very strong) universal liveness:
+    ///    for every reachable control-state q, every reachable bottom SCC has no cycle avoiding q.
+    pub fn cps_cant_quasihalt(&self, rad: Radius) -> bool {
+        assert!(rad > 1);
+
+        self.make_transcript_macro(4).cps_loop_qh(rad)
+            || self.make_lru_macro().cps_loop_qh(rad)
+            || self.cps_loop_qh(rad)
+    }
+
     fn cps_run_macros(&self, rad: Radius, goal: Goal) -> bool {
         assert!(rad > 1);
 
@@ -47,17 +63,72 @@ trait Cps: GetInstr {
 impl<P: GetInstr> Cps for P {}
 
 /**************************************/
+/* QH wrapper trait */
+
+trait CpsQh: GetInstr {
+    fn cps_loop_qh(&self, rad: Radius) -> bool {
+        (2..rad).any(|seg| cps_cant_quasihalt(self, seg))
+    }
+}
+impl<P: GetInstr> CpsQh for P {}
+
+/**************************************/
+/* Observer hook: default no-op */
+
+trait CpsObs {
+    fn see(&mut self, _c: &Config) {}
+    fn edge(&mut self, _from: &Config, _to: &Config) {}
+}
+
+struct NoObs;
+impl CpsObs for NoObs {}
+
+/**************************************/
+/* Public wrapper remains unchanged */
 
 fn cps_cant_reach(
     prog: &impl GetInstr,
     rad: Radius,
     goal: Goal,
 ) -> bool {
+    cps_cant_reach_obs(prog, rad, goal, &mut NoObs)
+}
+
+/**************************************/
+/* New: QH certifier built as wrapper around the same CPS exploration */
+
+fn cps_cant_quasihalt(prog: &impl GetInstr, rad: Radius) -> bool {
+    // First: CPS must certify "cannot halt" (otherwise cannot certify "cannot quasihalt").
+    let mut g = GraphObs::default();
+    if !cps_cant_reach_obs(prog, rad, Halt, &mut g) {
+        return false;
+    }
+
+    // Optional fast-path: if the CPS graph is functional (deterministic), we can
+    // just check that the unique eventual cycle contains all observed states.
+    if let Some(ok) = cant_quasihalt_functional_fastpath(&g) {
+        return ok;
+    }
+
+    cant_quasihalt_universal(&g)
+}
+
+/**************************************/
+/* Core CPS loop with observer (minimal changes inside) */
+
+fn cps_cant_reach_obs(
+    prog: &impl GetInstr,
+    rad: Radius,
+    goal: Goal,
+    obs: &mut impl CpsObs,
+) -> bool {
     let mut configs = Configs::init(rad);
 
     while let Some(config @ Config { state, mut tape }) =
         configs.todo.pop()
     {
+        obs.see(&config);
+
         let (print, shift, next_state) =
             match prog.get_instr(&(state, tape.scan)) {
                 Err(_) => return false,
@@ -116,6 +187,9 @@ fn cps_cant_reach(
                 tape: next_tape,
             };
 
+            // observer edge hook
+            obs.edge(&config, &next_config);
+
             if configs.intern_config(&next_config) {
                 configs.todo.push(next_config);
             }
@@ -139,6 +213,9 @@ fn cps_cant_reach(
                 tape: next_tape,
             };
 
+            // observer edge hook
+            obs.edge(&config, &next_config);
+
             if configs.intern_config(&next_config) {
                 configs.todo.push(next_config);
             }
@@ -156,6 +233,331 @@ fn cps_cant_reach(
     }
 
     true
+}
+
+/**************************************/
+/* Graph observer */
+
+#[derive(Default)]
+struct GraphObs {
+    id: Dict<Config, usize>,
+    nodes: Vec<Config>,
+    succ: Vec<Vec<usize>>,
+    states: Set<u8>,
+}
+
+impl GraphObs {
+    fn intern(&mut self, c: &Config) -> usize {
+        if let Some(&i) = self.id.get(c) {
+            return i;
+        }
+        let i = self.nodes.len();
+        self.nodes.push(c.clone());
+        self.id.insert(c.clone(), i);
+        self.succ.push(Vec::new());
+        self.states.insert(c.state);
+        i
+    }
+
+    fn dedup_edges(&mut self) {
+        for outs in &mut self.succ {
+            outs.sort_unstable();
+            outs.dedup();
+        }
+    }
+}
+
+impl CpsObs for GraphObs {
+    fn see(&mut self, c: &Config) {
+        let _ = self.intern(c);
+    }
+
+    fn edge(&mut self, from: &Config, to: &Config) {
+        let u = self.intern(from);
+        let v = self.intern(to);
+        self.succ[u].push(v);
+    }
+}
+
+/**************************************/
+/* QH checks on the recorded CPS graph */
+
+fn cant_quasihalt_functional_fastpath(g: &GraphObs) -> Option<bool> {
+    if g.nodes.is_empty() {
+        return Some(false);
+    }
+
+    // If any node has 0 or >1 successors, not functional.
+    for outs in &g.succ {
+        if outs.len() != 1 {
+            return None;
+        }
+    }
+
+    // Follow successors from start node 0 to find the eventual cycle.
+    let n = g.nodes.len();
+    let mut seen_step: Vec<Option<usize>> = vec![None; n];
+    let mut order: Vec<usize> = Vec::new();
+
+    let mut cur = 0usize;
+    let mut t = 0usize;
+
+    loop {
+        if let Some(prev) = seen_step[cur] {
+            // cycle is order[prev..]
+            let mut in_cycle = vec![false; 256];
+            for &u in &order[prev..] {
+                in_cycle[g.nodes[u].state as usize] = true;
+            }
+            let mut ever = vec![false; 256];
+            for &u in &order {
+                ever[g.nodes[u].state as usize] = true;
+            }
+            // If all states ever observed appear on the eventual cycle, then cannot quasihalt.
+            return Some(ever == in_cycle);
+        }
+        if t > n + 5 {
+            // Shouldn't happen in finite functional graph, but be safe.
+            return Some(false);
+        }
+        seen_step[cur] = Some(order.len());
+        order.push(cur);
+        cur = g.succ[cur][0];
+        t += 1;
+    }
+}
+
+fn cant_quasihalt_universal(g: &GraphObs) -> bool {
+    let mut g = GraphObs {
+        id: g.id.clone(),
+        nodes: g.nodes.clone(),
+        succ: g.succ.clone(),
+        states: g.states.clone(),
+    };
+    g.dedup_edges();
+
+    let n = g.nodes.len();
+    if n == 0 {
+        return false;
+    }
+
+    let (comp, comps) = scc_kosaraju(&g.succ);
+
+    // Identify bottom SCCs (no outgoing edges to other SCCs).
+    let mut is_bottom = vec![true; comps.len()];
+    for u in 0..n {
+        let cu = comp[u];
+        for &v in &g.succ[u] {
+            let cv = comp[v];
+            if cu != cv {
+                is_bottom[cu] = false;
+            }
+        }
+    }
+
+    // Precompute which SCCs are reachable from start (they should be, but keep safe).
+    let reachable = reachable_nodes(&g.succ, 0);
+    let mut scc_reachable = vec![false; comps.len()];
+    for u in 0..n {
+        if reachable[u] {
+            scc_reachable[comp[u]] = true;
+        }
+    }
+
+    // Stamp arrays to avoid reallocating per (bottom_scc, q) check.
+    let mut mark: Vec<u32> = vec![0; n];
+    let mut indeg: Vec<u32> = vec![0; n];
+    let mut stamp: u32 = 1;
+
+    // For every control state q observed anywhere in the reachable abstract graph,
+    // ensure: in every reachable bottom SCC, there is no directed cycle avoiding q.
+    for q in g.states {
+        for cid in 0..comps.len() {
+            if !scc_reachable[cid] || !is_bottom[cid] {
+                continue;
+            }
+            if has_cycle_avoiding_q(
+                &comps[cid],
+                &g.nodes,
+                &g.succ,
+                q,
+                &comp,
+                cid,
+                &mut mark,
+                &mut indeg,
+                &mut stamp,
+            ) {
+                return false;
+            }
+        }
+    }
+
+    true
+}
+
+/// Returns true iff there exists a directed cycle inside SCC `cid`
+/// using only nodes whose control-state != q.
+#[expect(clippy::too_many_arguments)]
+fn has_cycle_avoiding_q(
+    comp_nodes: &[usize],
+    nodes: &[Config],
+    succ: &[Vec<usize>],
+    q: u8,
+    comp: &[usize],
+    cid: usize,
+    mark: &mut [u32],
+    indeg: &mut [u32],
+    stamp: &mut u32,
+) -> bool {
+    // Build induced subgraph U = {u in SCC | state(u) != q}
+    *stamp = stamp.wrapping_add(1).max(1);
+    let cur = *stamp;
+
+    let mut u_list: Vec<usize> = Vec::new();
+    for &u in comp_nodes {
+        if nodes[u].state != q {
+            mark[u] = cur;
+            indeg[u] = 0;
+            u_list.push(u);
+        }
+    }
+
+    // Empty => no cycle avoiding q.
+    if u_list.is_empty() {
+        return false;
+    }
+
+    // Compute indegrees within U (restricted to edges staying in the same SCC and avoiding q).
+    for &u in &u_list {
+        for &v in &succ[u] {
+            if comp[v] != cid {
+                continue;
+            }
+            if mark[v] == cur {
+                indeg[v] = indeg[v].saturating_add(1);
+            }
+        }
+    }
+
+    // Kahn-style elimination: if we cannot remove all nodes, there is a directed cycle.
+    let mut queue: Vec<usize> = Vec::new();
+    for &u in &u_list {
+        if indeg[u] == 0 {
+            queue.push(u);
+        }
+    }
+
+    let mut removed = 0usize;
+    while let Some(u) = queue.pop() {
+        removed += 1;
+        for &v in &succ[u] {
+            if comp[v] != cid {
+                continue;
+            }
+            if mark[v] != cur {
+                continue;
+            }
+            // decrement indeg[v]
+            let d = indeg[v];
+            if d > 0 {
+                indeg[v] = d - 1;
+                if indeg[v] == 0 {
+                    queue.push(v);
+                }
+            }
+        }
+    }
+
+    removed != u_list.len()
+}
+
+/**************************************/
+/* Graph utilities: reachability + SCC */
+
+fn reachable_nodes(succ: &[Vec<usize>], start: usize) -> Vec<bool> {
+    let n = succ.len();
+    let mut vis = vec![false; n];
+    let mut stack = Vec::new();
+    vis[start] = true;
+    stack.push(start);
+    while let Some(u) = stack.pop() {
+        for &v in &succ[u] {
+            if !vis[v] {
+                vis[v] = true;
+                stack.push(v);
+            }
+        }
+    }
+    vis
+}
+
+/// Kosaraju SCC with iterative DFS (avoids recursion).
+/// Returns:
+/// - comp[u] = component id
+/// - comps[id] = list of nodes in that component
+fn scc_kosaraju(succ: &[Vec<usize>]) -> (Vec<usize>, Vec<Vec<usize>>) {
+    let n = succ.len();
+    let mut pred: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for u in 0..n {
+        for &v in &succ[u] {
+            pred[v].push(u);
+        }
+    }
+
+    // 1) finishing order on original graph
+    let mut seen = vec![false; n];
+    let mut order: Vec<usize> = Vec::with_capacity(n);
+
+    for root in 0..n {
+        if seen[root] {
+            continue;
+        }
+        // iterative DFS with explicit iterator index
+        let mut stack: Vec<(usize, usize)> = vec![(root, 0)];
+        seen[root] = true;
+
+        while let Some((u, i)) = stack.pop() {
+            if i < succ[u].len() {
+                // put frame back with incremented iterator index
+                stack.push((u, i + 1));
+                let v = succ[u][i];
+                if !seen[v] {
+                    seen[v] = true;
+                    stack.push((v, 0));
+                }
+            } else {
+                // finished u
+                order.push(u);
+            }
+        }
+    }
+
+    // 2) reverse finishing order and DFS on reversed graph
+    let mut comp = vec![usize::MAX; n];
+    let mut comps: Vec<Vec<usize>> = Vec::new();
+
+    for &root in order.iter().rev() {
+        if comp[root] != usize::MAX {
+            continue;
+        }
+        let cid = comps.len();
+        comps.push(Vec::new());
+
+        let mut stack = vec![root];
+        comp[root] = cid;
+
+        while let Some(u) = stack.pop() {
+            comps[cid].push(u);
+            for &v in &pred[u] {
+                if comp[v] == usize::MAX {
+                    comp[v] = cid;
+                    stack.push(v);
+                }
+            }
+        }
+    }
+
+    (comp, comps)
 }
 
 /**************************************/

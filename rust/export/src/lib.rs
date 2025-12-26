@@ -301,6 +301,11 @@ pub fn cps_cant_spin_out(prog: &str, rad: Radius) -> bool {
     })
 }
 
+#[pyfunction]
+pub fn cps_cant_quasihalt(prog: &str, rad: Radius) -> bool {
+    parse!(prog, |p: Prog<_, _>| { p.cps_cant_quasihalt(rad) })
+}
+
 /***************************************/
 
 #[pyfunction]
@@ -527,10 +532,10 @@ mod rust_stuff {
         crate::{
             BackwardResult, MachineResult, TermRes, cant_blank,
             cant_halt, cant_spin_out, cps_cant_blank, cps_cant_halt,
-            cps_cant_spin_out, ctl_cant_blank, ctl_cant_halt,
-            ctl_cant_spin_out, is_connected, opt_block, py_show_state,
-            read_instr, run_quick_machine, run_transcript,
-            segment_cant_blank, segment_cant_halt,
+            cps_cant_quasihalt, cps_cant_spin_out, ctl_cant_blank,
+            ctl_cant_halt, ctl_cant_spin_out, is_connected, opt_block,
+            py_show_state, read_instr, run_quick_machine,
+            run_transcript, segment_cant_blank, segment_cant_halt,
             segment_cant_spin_out, show_comp, show_instr, show_slot,
             tcompile, term_or_rec,
         },

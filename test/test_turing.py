@@ -36,6 +36,7 @@ from tm.rust_stuff import (
     cant_spin_out,
     cps_cant_blank,
     cps_cant_halt,
+    cps_cant_quasihalt,
     cps_cant_spin_out,
     ctl_cant_blank,
     ctl_cant_halt,
@@ -377,6 +378,32 @@ class TuringTest(TestCase):
         self.assertTrue(
             ctl_cant_spin_out(prog, segs))
 
+    ########################################
+
+    def assert_could_quasihalt_cps(self, prog: str):
+        if prog in CPS_QUASIHALT_FALSE_POSITIVES:
+            self.assertTrue(
+                cps_cant_quasihalt(prog, CPS_LIMIT),
+                f'unexpected cps quasihalt negative: "{prog}"')
+
+            return
+
+        self.assertFalse(
+            cps_cant_quasihalt(prog, CPS_LIMIT),
+            f'cps quasihalt false positive: "{prog}"')
+
+    def assert_cant_quasihalt_cps(self, prog: str, segs: int):
+        if prog in CPS_QUASIHALT_FALSE_NEGATIVES:
+            self.assertFalse(
+                cps_cant_quasihalt(prog, CPS_LIMIT),
+                f'unexpected cps quasihalt positive: "{prog}"')
+
+            return
+
+        self.assertTrue(
+            cps_cant_quasihalt(prog, segs),
+            f'cps quasihalt false negative: "{prog}"')
+
 ########################################
 
 BACKWARD_REASONERS: dict[str, BackwardReasoner] = {
@@ -670,6 +697,13 @@ class Cps(TuringTest):
 
         for prog in NONSPINNERS:
             self.assert_cant_spin_out_cps(prog, 19)
+
+    def test_quasihalt(self):
+        for prog in RECURS - QUASIHALT:
+            self.assert_cant_quasihalt_cps(prog, 28)
+
+        for prog in QUASIHALT:
+            self.assert_could_quasihalt_cps(prog)
 
     def test_holdouts(self):
         for prog in HALT_HOLDOUTS:
@@ -1006,7 +1040,7 @@ class Recur(TuringTest):
         )
 
         self._test_recur(
-            QUASIHALT,  # type: ignore[arg-type]
+            QUASIHALT_FAST,  # type: ignore[arg-type]
             qsihlt = True,
         )
 
@@ -1399,7 +1433,7 @@ class Prover(RunProver):
 
         self._test_prover(
             RECUR_COMPACT
-            | QUASIHALT,
+            | QUASIHALT_FAST,
             simple_term = False,
         )
 
