@@ -28,8 +28,9 @@ from tm.macro import (
     show_comp,
     tcompile,
 )
-from tm.reason import (
+from tm.rust_stuff import (
     BackwardResult,
+    MachineResult,
     cant_blank,
     cant_halt,
     cant_spin_out,
@@ -39,13 +40,10 @@ from tm.reason import (
     ctl_cant_blank,
     ctl_cant_halt,
     ctl_cant_spin_out,
+    run_quick_machine,
     segment_cant_blank,
     segment_cant_halt,
     segment_cant_spin_out,
-)
-from tm.rust_stuff import (
-    MachineResult,
-    run_quick_machine,
 )
 from tools import get_params
 from tools.graph import Graph
@@ -58,7 +56,11 @@ if TYPE_CHECKING:
 
     from test.lin_rec import Tapes
     from tm.machine import Count
-    from tm.reason import BackwardReasoner as BR
+
+    type BackwardReasoner = Callable[
+        [str, int],
+        BackwardResult,
+    ]
 
     BasicMachine = (
         Machine
@@ -377,7 +379,7 @@ class TuringTest(TestCase):
 
 ########################################
 
-BACKWARD_REASONERS: dict[str, BR] = {
+BACKWARD_REASONERS: dict[str, BackwardReasoner] = {
     "halt": cant_halt,
     "blank": cant_blank,
     "spinout": cant_spin_out,

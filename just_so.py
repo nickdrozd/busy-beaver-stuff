@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from tm.reason import (
+from tm.rust_stuff import (
     cant_blank,
     cant_halt,
     cant_spin_out,

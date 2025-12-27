@@ -8,10 +8,10 @@ from test.test_turing import (
 
 if TYPE_CHECKING:
     from test.prog_data import Goal
-    from test.test_turing import BR
+    from test.test_turing import BackwardReasoner
 
 
-def get_reason(goal: Goal) -> tuple[BR, set[str]]:
+def get_reason(goal: Goal) -> tuple[BackwardReasoner, set[str]]:
     with open(f'test/data/holdouts/reason/{goal}.prog') as progs:
         return BACKWARD_REASONERS[goal], {prog.strip() for prog in progs}
 
