@@ -659,7 +659,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
 impl Display for Config {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{} | {}", show_state(Some(self.state)), self.tape)
+        write!(f, "{} | {}", show_state(self.state), self.tape)
     }
 }
 

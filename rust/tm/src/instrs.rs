@@ -30,10 +30,14 @@ pub const fn read_shift(shift: char) -> Shift {
     shift == RIGHT
 }
 
-pub const fn show_state(state: Option<State>) -> char {
+pub const fn show_state(state: State) -> char {
+    (state + 65) as char
+}
+
+pub const fn show_state_maybe(state: Option<State>) -> char {
     match state {
         None => UNDF,
-        Some(s) => (s + 65) as char,
+        Some(s) => show_state(s),
     }
 }
 
@@ -52,7 +56,7 @@ impl Parse for Slot {
 
     fn show(&self) -> String {
         let &(state, color) = self;
-        format!("{}{}", show_state(Some(state)), color)
+        format!("{}{}", show_state(state), color)
     }
 }
 
@@ -74,7 +78,7 @@ impl Parse for Instr {
             "{}{}{}",
             color,
             if shift { RIGHT } else { LEFT },
-            show_state(Some(state))
+            show_state(state)
         )
     }
 }
@@ -110,7 +114,7 @@ fn test_state() {
     let states = ['A', 'B', 'C'];
 
     for state in states {
-        assert_eq!(state, show_state(Some(read_state(state))));
+        assert_eq!(state, show_state(read_state(state)));
     }
 }
 

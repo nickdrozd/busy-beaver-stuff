@@ -129,7 +129,7 @@ pub fn tcompile(prog: &str) -> Instrs {
 
 #[pyfunction]
 pub const fn show_state(state: Option<State>) -> char {
-    instrs::show_state(state)
+    instrs::show_state_maybe(state)
 }
 
 #[pyfunction]
