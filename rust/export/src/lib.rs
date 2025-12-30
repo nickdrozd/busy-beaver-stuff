@@ -4,7 +4,7 @@ use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
     Instr, Prog, Slot, State, Steps,
-    instrs::{Parse as _, show_state},
+    instrs::{self, Parse as _},
     reason::{BackwardResult as BackwardResultRs, BackwardResult::*},
     segment::SegmentResult as SegmentResultRs,
 };
@@ -128,8 +128,8 @@ pub fn tcompile(prog: &str) -> Instrs {
 }
 
 #[pyfunction]
-pub const fn py_show_state(state: Option<State>) -> char {
-    show_state(state)
+pub const fn show_state(state: Option<State>) -> char {
+    instrs::show_state(state)
 }
 
 #[pyfunction]
@@ -534,10 +534,10 @@ mod rust_stuff {
             cant_halt, cant_spin_out, cps_cant_blank, cps_cant_halt,
             cps_cant_quasihalt, cps_cant_spin_out, ctl_cant_blank,
             ctl_cant_halt, ctl_cant_spin_out, is_connected, opt_block,
-            py_show_state, read_instr, run_quick_machine,
-            run_transcript, segment_cant_blank, segment_cant_halt,
+            read_instr, run_quick_machine, run_transcript,
+            segment_cant_blank, segment_cant_halt,
             segment_cant_spin_out, show_comp, show_instr, show_slot,
-            tcompile, term_or_rec,
+            show_state, tcompile, term_or_rec,
         },
         tm::prover::PastConfigs,
     };
