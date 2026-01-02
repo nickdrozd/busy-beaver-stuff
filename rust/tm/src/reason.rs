@@ -93,6 +93,14 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         return Refuted(0);
     }
 
+    // Shift-side analysis:
+    // For some colors, the transition table itself proves they can never
+    // appear on one side of the head in any run from the blank tape.
+    // (Example: if a color is never written on an L-move, it cannot persist
+    // to the right of the head.) We use this as a *sound* pruning filter to
+    // avoid spurious backward configurations.
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+
     let mut configs = get_configs(&slots);
 
     let mut blanks = get_blanks(&configs);
@@ -116,7 +124,12 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             _ => {},
         }
 
-        configs = match step_configs(valid_steps, &mut blanks) {
+        configs = match step_configs::<c>(
+            valid_steps,
+            &mut blanks,
+            &forbid_left,
+            &forbid_right,
+        ) {
             Err(err) => return err,
             Ok(stepped) => {
                 let mut kept = Configs::new();
@@ -236,9 +249,11 @@ fn get_indef(
     Some((steps, next_config))
 }
 
-fn step_configs(
+fn step_configs<const c: usize>(
     configs: ValidatedSteps,
     blanks: &mut BlankStates,
+    forbid_left: &[bool; c],
+    forbid_right: &[bool; c],
 ) -> Result<Configs, BackwardResult> {
     let configs = branch_indef(configs)?;
 
@@ -251,6 +266,11 @@ fn step_configs(
             let mut tape = config.tape.clone();
 
             tape.backstep(shift, color);
+
+            // Prune configs that violate proven shift-side constraints.
+            if tape.violates_shift_side(forbid_left, forbid_right) {
+                continue;
+            }
 
             if tape.blank() {
                 if state == 0 {
@@ -359,6 +379,52 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         }
 
         entrypoints
+    }
+
+    /// Compute a *sound* shift-side restriction for each color.
+    ///
+    /// For a non-blank color `k != 0`:
+    /// - If the machine never writes `k` on an L-move, then `k` can never
+    ///   appear to the **right** of the head in any run from the blank tape.
+    /// - If the machine never writes `k` on an R-move, then `k` can never
+    ///   appear to the **left** of the head in any run from the blank tape.
+    ///
+    /// This is the classic invariant used in "shift-side" analysis: to get a
+    /// symbol to the opposite side of the head you must *cross* it, and
+    /// crossing requires leaving it behind via a move in that direction.
+    /// If that direction never writes the symbol, the symbol cannot survive
+    /// the crossing.
+    fn shift_side_forbidden(&self) -> ([bool; c], [bool; c]) {
+        // right_writes[k] == true if *any* transition writes k and moves R
+        // left_writes[k]  == true if *any* transition writes k and moves L
+        let mut right_writes = [false; c];
+        let mut left_writes = [false; c];
+
+        for (_slot, &(print, shift, _next)) in self.iter() {
+            let k = print as usize;
+            if k >= c {
+                continue;
+            }
+
+            if shift {
+                right_writes[k] = true;
+            } else {
+                left_writes[k] = true;
+            }
+        }
+
+        let mut forbid_left = [false; c];
+        let mut forbid_right = [false; c];
+
+        // Never forbid blanks (0) on either side.
+        for k in 1..c {
+            // If k is never written on an R-move, it cannot appear on the left.
+            forbid_left[k] = !right_writes[k];
+            // If k is never written on an L-move, it cannot appear on the right.
+            forbid_right[k] = !left_writes[k];
+        }
+
+        (forbid_left, forbid_right)
     }
 }
 
@@ -797,6 +863,29 @@ impl Tape {
         };
 
         push.push_indef(self.scan);
+    }
+
+    /// Returns true if this tape explicitly contains a color on a side that
+    /// has been proven impossible by shift-side analysis.
+    ///
+    /// Note: we only check *explicit* blocks in the spans. A `?` end still
+    /// means “unknown”, but shift-side analysis is used here purely as a
+    /// pruning filter to prevent generating configurations like `... [x] 1 ...`
+    /// when `1` is known to be impossible on the right.
+    fn violates_shift_side<const c: usize>(
+        &self,
+        forbid_left: &[bool; c],
+        forbid_right: &[bool; c],
+    ) -> bool {
+        self.lspan
+            .span
+            .iter()
+            .any(|b| forbid_left[b.color as usize])
+            || self
+                .rspan
+                .span
+                .iter()
+                .any(|b| forbid_right[b.color as usize])
     }
 }
 
