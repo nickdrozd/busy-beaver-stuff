@@ -2,8 +2,6 @@ use std::collections::BTreeMap;
 
 use ahash::AHashMap as Dict;
 
-use pyo3::{pyclass, pymethods};
-
 use crate::{
     Slot, State, Steps,
     config::{BigConfig, Config},
@@ -263,21 +261,18 @@ impl PastConfig {
     }
 }
 
-#[pyclass]
 pub struct PastConfigs {
     configs: BTreeMap<State, PastConfig>,
 }
 
-#[pymethods]
 impl PastConfigs {
-    #[new]
-    fn new(state: State, cycle: Steps) -> Self {
+    pub fn new(state: State, cycle: Steps) -> Self {
         Self {
             configs: BTreeMap::from([(state, PastConfig::new(cycle))]),
         }
     }
 
-    fn next_deltas(
+    pub fn next_deltas(
         &mut self,
         state: State,
         cycle: Steps,
@@ -288,7 +283,7 @@ impl PastConfigs {
             .next_deltas(cycle)
     }
 
-    fn delete_configs(&mut self, state: State) {
+    pub fn delete_configs(&mut self, state: State) {
         self.configs.remove(&state);
     }
 }

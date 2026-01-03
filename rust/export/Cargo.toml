@@ -11,4 +11,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 tm = { path = "../tm" }
-pyo3 = { version = "*", features = ["extension-module"] }
+pyo3 = { version = "*", features = ["num-bigint", "extension-module"] }

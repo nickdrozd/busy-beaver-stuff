@@ -525,20 +525,44 @@ pub fn run_quick_machine_impl<const s: usize, const c: usize>(
 
 /**************************************/
 
+use tm::prover::PastConfigs;
+
+#[pyclass(name = "PastConfigs")]
+struct PastConfigPy(PastConfigs);
+
+#[pymethods]
+impl PastConfigPy {
+    #[new]
+    fn new(state: State, cycle: Steps) -> Self {
+        Self(PastConfigs::new(state, cycle))
+    }
+
+    fn next_deltas(
+        &mut self,
+        state: State,
+        cycle: Steps,
+    ) -> Option<(Steps, Steps, Steps)> {
+        self.0.next_deltas(state, cycle)
+    }
+
+    fn delete_configs(&mut self, state: State) {
+        self.0.delete_configs(state);
+    }
+}
+
+/**************************************/
+
 #[pymodule]
 mod rust_stuff {
     #[pymodule_export]
-    use {
-        crate::{
-            BackwardResult, MachineResult, TermRes, cant_blank,
-            cant_halt, cant_spin_out, cps_cant_blank, cps_cant_halt,
-            cps_cant_quasihalt, cps_cant_spin_out, ctl_cant_blank,
-            ctl_cant_halt, ctl_cant_spin_out, is_connected, opt_block,
-            read_instr, run_quick_machine, run_transcript,
-            segment_cant_blank, segment_cant_halt,
-            segment_cant_spin_out, show_comp, show_instr, show_slot,
-            show_state, tcompile, term_or_rec,
-        },
-        tm::prover::PastConfigs,
+    use crate::{
+        BackwardResult, MachineResult, PastConfigPy, TermRes,
+        cant_blank, cant_halt, cant_spin_out, cps_cant_blank,
+        cps_cant_halt, cps_cant_quasihalt, cps_cant_spin_out,
+        ctl_cant_blank, ctl_cant_halt, ctl_cant_spin_out, is_connected,
+        opt_block, read_instr, run_quick_machine, run_transcript,
+        segment_cant_blank, segment_cant_halt, segment_cant_spin_out,
+        show_comp, show_instr, show_slot, show_state, tcompile,
+        term_or_rec,
     };
 }

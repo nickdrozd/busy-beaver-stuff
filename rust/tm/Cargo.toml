@@ -16,4 +16,3 @@ mimalloc = "*"
 num-bigint = "*"
 num-traits = "*"
 num-integer = "*"
-pyo3 = { version = "*", features = ["num-bigint"] }
