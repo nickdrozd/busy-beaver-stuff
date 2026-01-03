@@ -1,4 +1,5 @@
 use core::fmt;
+use std::collections::VecDeque;
 
 use ahash::{AHashMap as Dict, AHashSet as Set};
 
@@ -125,7 +126,7 @@ fn cps_cant_reach_obs(
     let mut configs = Configs::init(rad);
 
     while let Some(config @ Config { state, mut tape }) =
-        configs.todo.pop()
+        configs.todo.pop_front()
     {
         obs.see(&config);
 
@@ -191,7 +192,7 @@ fn cps_cant_reach_obs(
             obs.edge(&config, &next_config);
 
             if configs.intern_config(&next_config) {
-                configs.todo.push(next_config);
+                configs.todo.push_back(next_config);
             }
         }
 
@@ -217,7 +218,7 @@ fn cps_cant_reach_obs(
             obs.edge(&config, &next_config);
 
             if configs.intern_config(&next_config) {
-                configs.todo.push(next_config);
+                configs.todo.push_back(next_config);
             }
         }
 
@@ -615,7 +616,7 @@ struct Configs {
     rspans: Spans,
 
     seen: Set<Config>,
-    todo: Vec<Config>,
+    todo: VecDeque<Config>,
 
     l_watch: Watch,
     r_watch: Watch,
@@ -628,7 +629,7 @@ impl Configs {
             lspans: Dict::new(),
             rspans: Dict::new(),
             seen: Set::new(),
-            todo: Vec::new(),
+            todo: VecDeque::new(),
             l_watch: Dict::new(),
             r_watch: Dict::new(),
         };
@@ -639,7 +640,7 @@ impl Configs {
         configs.rspans.add_span(&init.tape.rspan);
 
         configs.seen.insert(init.clone());
-        configs.todo.push(init);
+        configs.todo.push_back(init);
 
         configs
     }
@@ -662,9 +663,9 @@ impl Configs {
         };
 
         if spans.add_span(span)
-            && let Some(mut waiting) = watch.remove(&span.span)
+            && let Some(waiting) = watch.remove(&span.span)
         {
-            self.todo.append(&mut waiting);
+            self.todo.extend(waiting);
         }
     }
 }
