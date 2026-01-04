@@ -255,7 +255,7 @@ impl GraphObs {
         let i = self.nodes.len();
         self.nodes.push(c.clone());
         self.id.insert(c.clone(), i);
-        self.succ.push(Vec::new());
+        self.succ.push(vec![]);
         self.states.insert(c.state);
         i
     }
@@ -270,7 +270,7 @@ impl GraphObs {
 
 impl CpsObs for GraphObs {
     fn see(&mut self, c: &Config) {
-        let _ = self.intern(c);
+        self.intern(c);
     }
 
     fn edge(&mut self, from: &Config, to: &Config) {
@@ -289,43 +289,32 @@ fn cant_quasihalt_functional_fastpath(g: &GraphObs) -> Option<bool> {
     }
 
     // If any node has 0 or >1 successors, not functional.
-    for outs in &g.succ {
-        if outs.len() != 1 {
-            return None;
-        }
+    if g.succ.iter().any(|outs| outs.len() != 1) {
+        return None;
     }
-
     // Follow successors from start node 0 to find the eventual cycle.
     let n = g.nodes.len();
     let mut seen_step: Vec<Option<usize>> = vec![None; n];
-    let mut order: Vec<usize> = Vec::new();
+    let mut order: Vec<usize> = vec![];
 
-    let mut cur = 0usize;
-    let mut t = 0usize;
+    let mut cur = 0;
 
-    loop {
+    for _ in 0..=n {
         if let Some(prev) = seen_step[cur] {
-            // cycle is order[prev..]
-            let mut in_cycle = vec![false; 256];
-            for &u in &order[prev..] {
-                in_cycle[g.nodes[u].state as usize] = true;
-            }
-            let mut ever = vec![false; 256];
-            for &u in &order {
-                ever[g.nodes[u].state as usize] = true;
-            }
-            // If all states ever observed appear on the eventual cycle, then cannot quasihalt.
-            return Some(ever == in_cycle);
+            // If all states ever observed appear on the eventual
+            // cycle, then cannot quasihalt.
+            return Some(order[..prev].iter().all(|&u| {
+                let s = g.nodes[u].state;
+                order[prev..].iter().any(|&v| g.nodes[v].state == s)
+            }));
         }
-        if t > n + 5 {
-            // Shouldn't happen in finite functional graph, but be safe.
-            return Some(false);
-        }
+
         seen_step[cur] = Some(order.len());
         order.push(cur);
         cur = g.succ[cur][0];
-        t += 1;
     }
+
+    Some(false)
 }
 
 fn cant_quasihalt_universal(g: &GraphObs) -> bool {
@@ -348,11 +337,8 @@ fn cant_quasihalt_universal(g: &GraphObs) -> bool {
     let mut is_bottom = vec![true; comps.len()];
     for u in 0..n {
         let cu = comp[u];
-        for &v in &g.succ[u] {
-            let cv = comp[v];
-            if cu != cv {
-                is_bottom[cu] = false;
-            }
+        if g.succ[u].iter().any(|&v| comp[v] != cu) {
+            is_bottom[cu] = false;
         }
     }
 
@@ -414,7 +400,7 @@ fn has_cycle_avoiding_q(
     *stamp = stamp.wrapping_add(1).max(1);
     let cur = *stamp;
 
-    let mut u_list: Vec<usize> = Vec::new();
+    let mut u_list: Vec<usize> = vec![];
     for &u in comp_nodes {
         if nodes[u].state != q {
             mark[u] = cur;
@@ -441,14 +427,14 @@ fn has_cycle_avoiding_q(
     }
 
     // Kahn-style elimination: if we cannot remove all nodes, there is a directed cycle.
-    let mut queue: Vec<usize> = Vec::new();
+    let mut queue: Vec<usize> = vec![];
     for &u in &u_list {
         if indeg[u] == 0 {
             queue.push(u);
         }
     }
 
-    let mut removed = 0usize;
+    let mut removed = 0;
     while let Some(u) = queue.pop() {
         removed += 1;
         for &v in &succ[u] {
@@ -478,7 +464,7 @@ fn has_cycle_avoiding_q(
 fn reachable_nodes(succ: &[Vec<usize>], start: usize) -> Vec<bool> {
     let n = succ.len();
     let mut vis = vec![false; n];
-    let mut stack = Vec::new();
+    let mut stack = vec![];
     vis[start] = true;
     stack.push(start);
     while let Some(u) = stack.pop() {
@@ -498,7 +484,7 @@ fn reachable_nodes(succ: &[Vec<usize>], start: usize) -> Vec<bool> {
 /// - comps[id] = list of nodes in that component
 fn scc_kosaraju(succ: &[Vec<usize>]) -> (Vec<usize>, Vec<Vec<usize>>) {
     let n = succ.len();
-    let mut pred: Vec<Vec<usize>> = vec![Vec::new(); n];
+    let mut pred: Vec<Vec<usize>> = vec![vec![]; n];
     for u in 0..n {
         for &v in &succ[u] {
             pred[v].push(u);
@@ -535,14 +521,14 @@ fn scc_kosaraju(succ: &[Vec<usize>]) -> (Vec<usize>, Vec<Vec<usize>>) {
 
     // 2) reverse finishing order and DFS on reversed graph
     let mut comp = vec![usize::MAX; n];
-    let mut comps: Vec<Vec<usize>> = Vec::new();
+    let mut comps: Vec<Vec<usize>> = vec![];
 
     for &root in order.iter().rev() {
         if comp[root] != usize::MAX {
             continue;
         }
         let cid = comps.len();
-        comps.push(Vec::new());
+        comps.push(vec![]);
 
         let mut stack = vec![root];
         comp[root] = cid;

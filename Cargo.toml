@@ -66,6 +66,7 @@ if_then_some_else_none = "deny"
 unneeded_field_pattern = "deny"
 multiple_inherent_impl = "deny"
 redundant_type_annotations = "deny"
+unseparated_literal_suffix = "deny"
 decimal_literal_representation = "deny"
 
 doc_markdown = { level = "allow", priority = 1 }

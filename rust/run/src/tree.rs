@@ -91,7 +91,7 @@ fn make_spinout_table<
         make_instr_table::<max_states, max_colors>();
 
     let mut spins: InstrTable =
-        vec![vec![Vec::new(); 1 + max_colors]; 1 + max_states];
+        vec![vec![vec![]; 1 + max_colors]; 1 + max_states];
 
     for read in 0..max_states {
         for colors in 2..=max_colors {

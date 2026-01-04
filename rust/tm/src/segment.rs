@@ -1,5 +1,5 @@
 use core::{
-    array,
+    array::from_fn,
     fmt::{self, Display, Formatter},
     iter::once,
 };
@@ -258,13 +258,13 @@ impl<const S: usize> Configs<S> {
             todo: vec![],
             tape_ids: Dict::with_capacity(MAX_DEPTH * S),
             next_tape_id: 0,
-            blanks: array::from_fn(|_| vec![false; seg]),
+            blanks: from_fn(|_| vec![false; seg]),
             goal_states,
-            reached: array::from_fn(|_| vec![false; seg]),
+            reached: from_fn(|_| vec![false; seg]),
             reached_counts: [0; S],
             blank_union: vec![false; seg],
             blank_union_count: 0,
-            seen_bits: array::from_fn(|_| Vec::new()),
+            seen_bits: from_fn(|_| vec![]),
             seen_counts: [0; S],
             max_seen_len: 0,
             next_init_pos: 0,
@@ -932,7 +932,7 @@ impl<'p, const states: usize, const colors: usize>
         let mut spinouts = Dict::new();
 
         let mut branches: [(Diffs, Dirs); states] =
-            array::from_fn(|_| (Vec::new(), [Vec::new(), Vec::new()]));
+            from_fn(|_| (vec![], [vec![], vec![]]));
 
         for state_idx in 0..states {
             #[expect(clippy::cast_possible_truncation)]

@@ -44,7 +44,7 @@ impl BackwardResult {
 
 impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn cant_halt(&self, steps: Steps) -> BackwardResult {
-        let (entrypoints, idx) = self.build_entrypoints_and_indices();
+        let (entrypoints, idx) = self.entrypoints_and_indices();
 
         let slots = self.halt_slots_disp_side(&idx);
 
@@ -53,7 +53,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
     pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
         if self.cant_blank_by_color_graph() {
-            return BackwardResult::Refuted(0);
+            return Refuted(0);
         }
 
         cant_reach(self, steps, self.erase_slots(), None, erase_configs)
@@ -94,11 +94,12 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     }
 
     // Shift-side analysis:
-    // For some colors, the transition table itself proves they can never
-    // appear on one side of the head in any run from the blank tape.
-    // (Example: if a color is never written on an L-move, it cannot persist
-    // to the right of the head.) We use this as a *sound* pruning filter to
-    // avoid spurious backward configurations.
+    // For some colors, the transition table itself proves they can
+    // never appear on one side of the head in any run from the blank
+    // tape. (Example: if a color is never written on an L-move, it
+    // cannot persist to the right of the head.) We use this as a
+    // *sound* pruning filter to avoid spurious backward
+    // configurations.
     let (forbid_left, forbid_right) = prog.shift_side_forbidden();
 
     let mut configs = get_configs(&slots);
@@ -385,32 +386,29 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     ///
     /// For a non-blank color `k != 0`:
     /// - If the machine never writes `k` on an L-move, then `k` can never
-    ///   appear to the **right** of the head in any run from the blank tape.
-    /// - If the machine never writes `k` on an R-move, then `k` can never
-    ///   appear to the **left** of the head in any run from the blank tape.
+    ///   appear to the **right** of the head in any run from the
+    ///   blank tape.
+    /// - If the machine never writes `k` on an R-move, then `k` can
+    ///   never appear to the **left** of the head in any run from the
+    ///   blank tape.
     ///
-    /// This is the classic invariant used in "shift-side" analysis: to get a
-    /// symbol to the opposite side of the head you must *cross* it, and
-    /// crossing requires leaving it behind via a move in that direction.
-    /// If that direction never writes the symbol, the symbol cannot survive
-    /// the crossing.
+    /// This is the classic invariant used in "shift-side" analysis:
+    /// to get a symbol to the opposite side of the head you must
+    /// *cross* it, and crossing requires leaving it behind via a move
+    /// in that direction. If that direction never writes the symbol,
+    /// the symbol cannot survive the crossing.
     fn shift_side_forbidden(&self) -> ([bool; c], [bool; c]) {
         // right_writes[k] == true if *any* transition writes k and moves R
         // left_writes[k]  == true if *any* transition writes k and moves L
-        let mut right_writes = [false; c];
         let mut left_writes = [false; c];
+        let mut right_writes = [false; c];
 
-        for (_slot, &(print, shift, _next)) in self.iter() {
-            let k = print as usize;
-            if k >= c {
-                continue;
-            }
-
-            if shift {
-                right_writes[k] = true;
+        for (_, &(print, shift, _)) in self.iter() {
+            (if shift {
+                &mut right_writes
             } else {
-                left_writes[k] = true;
-            }
+                &mut left_writes
+            })[print as usize] = true;
         }
 
         let mut forbid_left = [false; c];
@@ -865,13 +863,14 @@ impl Tape {
         push.push_indef(self.scan);
     }
 
-    /// Returns true if this tape explicitly contains a color on a side that
-    /// has been proven impossible by shift-side analysis.
+    /// Returns true if this tape explicitly contains a color on a
+    /// side that has been proven impossible by shift-side analysis.
     ///
-    /// Note: we only check *explicit* blocks in the spans. A `?` end still
-    /// means “unknown”, but shift-side analysis is used here purely as a
-    /// pruning filter to prevent generating configurations like `... [x] 1 ...`
-    /// when `1` is known to be impossible on the right.
+    /// Note: we only check *explicit* blocks in the spans. A `?` end
+    /// still means “unknown”, but shift-side analysis is used here
+    /// purely as a pruning filter to prevent generating
+    /// configurations like `... [x] 1 ...` when `1` is known to be
+    /// impossible on the right.
     fn violates_shift_side<const c: usize>(
         &self,
         forbid_left: &[bool; c],
@@ -1193,7 +1192,7 @@ fn test_push_indef() {
 
 /**************************************/
 
-use core::array;
+use core::array::from_fn;
 use std::collections::VecDeque;
 
 type Adj<const S: usize> = [Vec<usize>; S];
@@ -1205,24 +1204,27 @@ type Indices<const S: usize, const C: usize> =
 
 fn indices_new<const S: usize, const C: usize>() -> Indices<S, C> {
     (
-        array::from_fn(|_| Vec::new()),
-        array::from_fn(|_| array::from_fn(|_| Vec::new())),
-        array::from_fn(|_| array::from_fn(|_| Vec::new())),
-        array::from_fn(|_| array::from_fn(|_| Vec::new())),
+        from_fn(|_| vec![]),
+        from_fn(|_| from_fn(|_| vec![])),
+        from_fn(|_| from_fn(|_| vec![])),
+        from_fn(|_| from_fn(|_| vec![])),
     )
 }
 
 fn indices_add<const S: usize, const C: usize>(
     (adj, preds, writers, next): &mut Indices<S, C>,
-    u: usize,
-    v: usize,
-    dir: usize, // 0=L, 1=R   (Shift false/true)
-    pr: usize,  // printed color
+    st: State,
+    tr: State,
+    sh: Shift,
+    pr: Color,
 ) {
-    adj[u].push(v);
-    preds[v][dir].push(u);
-    writers[pr][dir].push(v);
-    next[u][dir].push(v);
+    let (st, tr, sh, pr) =
+        (st as usize, tr as usize, usize::from(sh), pr as usize);
+
+    adj[st].push(tr);
+    preds[tr][sh].push(st);
+    writers[pr][sh].push(tr);
+    next[st][sh].push(tr);
 }
 
 fn indices_finalize<const S: usize, const C: usize>(
@@ -1362,22 +1364,13 @@ fn dc_meta_with_gens<const S: usize>(
             continue;
         }
 
-        // find root
-        let mut root = None;
-        for v in 0..S {
-            if ((mask >> v) & 1) == 1 {
-                root = Some(v);
-                break;
-            }
-        }
-        let Some(root) = root else { continue };
+        let Some(root) = (0..S).find(|&v| (mask >> v) & 1 != 0) else {
+            continue;
+        };
 
-        let mut in_comp = [false; S];
-        for v in 0..S {
-            in_comp[v] = ((mask >> v) & 1) == 1;
-        }
+        let in_comp: [bool; S] = from_fn(|v| ((mask >> v) & 1) == 1);
 
-        let mut dist: [Option<i32>; S] = [(); S].map(|()| None);
+        let mut dist: [Option<i32>; S] = [None; S];
         dist[root] = Some(0);
 
         let mut q = VecDeque::new();
@@ -1460,7 +1453,8 @@ fn dc_meta_with_gens<const S: usize>(
 }
 
 /// Bellman-Ford negative-cycle detection inside SCC.
-/// If `negate` is true, weights are negated => detects positive cycles of original graph.
+/// If `negate` is true, weights are negated => detects positive
+/// cycles of original graph.
 fn has_neg_cycle_in_scc<const S: usize>(
     mask: u16,
     next: &NextDir<S>,
@@ -1579,35 +1573,20 @@ fn unerasable_mask<const C: usize>(clo: &[ColorMask; C]) -> ColorMask {
 }
 
 impl<const S: usize, const C: usize> Prog<S, C> {
-    fn build_entrypoints_and_indices(
-        &self,
-    ) -> (Entrypoints, Indices<S, C>) {
+    fn entrypoints_and_indices(&self) -> (Entrypoints, Indices<S, C>) {
         let mut entrypoints = Entrypoints::new();
         let mut idx = indices_new::<S, C>();
 
-        for (slot @ (read, _scan), &(pr, sh, next_state)) in self.iter()
-        {
-            let u = read as usize;
-            let v = next_state as usize;
-            if u >= S || v >= S {
-                continue;
-            }
+        for (slot @ (st, _), &(pr, sh, tr)) in self.iter() {
+            let (same, diff) = entrypoints.entry(tr).or_default();
 
-            // entrypoints (your existing structure)
-            let (same, diff) =
-                entrypoints.entry(next_state).or_default();
-            (if read == next_state { same } else { diff })
-                .push((slot, (pr, sh)));
+            (if st == tr { same } else { diff }).push((slot, (pr, sh)));
 
-            // indices
-            let dir = usize::from(sh); // true=R(1), false=L(0)
-            let pr = pr as usize;
-            if pr < C {
-                indices_add::<S, C>(&mut idx, u, v, dir, pr);
-            }
+            indices_add::<S, C>(&mut idx, st, tr, sh, pr);
         }
 
         indices_finalize::<S, C>(&mut idx);
+
         (entrypoints, idx)
     }
 
@@ -1825,23 +1804,13 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
     let mut d = [0; S];
     bf_min_row_in_scc_weight::<S>(mask, next, src, negate, &mut d);
 
-    let mut lo = 0;
-    let mut any = false;
-    for v in 0..S {
-        if ((mask >> v) & 1) == 0 {
-            continue;
-        }
-        if d[v] >= 900_000 {
-            continue;
-        }
-        any = true;
-        if d[v] < lo {
-            lo = d[v];
-        }
-    }
-    if !any {
-        return 0;
-    }
+    let lo_opt = (0..S)
+        .filter(|&v| (mask >> v) & 1 != 0)
+        .map(|v| d[v])
+        .filter(|&dv| dv < 900_000)
+        .min();
+
+    let Some(lo) = lo_opt else { return 0 };
 
     // We need to search displacements in [lo .. 0].
     // For S<=16 and no negative cycles, lo is typically >= -(S-1) (<= -15).
@@ -1861,7 +1830,7 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
     // visited[state][idx] where idx corresponds to disp = lo + idx
     let mut visited = [[false; CAP]; S];
 
-    let mut q = std::collections::VecDeque::new();
+    let mut q = VecDeque::new();
     visited[src][zero_idx] = true;
     q.push_back((src, 0)); // store actual displacement
 
@@ -1925,50 +1894,44 @@ impl Span {
         self.span_subsumes(&other.span)
     }
 
-    /// Compare two block-spans from the head outward (your Span stores blocks starting at head side).
+    /// Compare two block-spans from the head outward.
     /// Rule (sound and simple):
     /// - colors must match positionally
-    /// - count 0 means "indefinitely many" (≥1), so it subsumes any positive count
+    /// - count 0 means "indefinitely many" (≥1), so it subsumes any
+    ///   positive count
     /// - positive count must match exactly (conservative but sound)
-    /// - if self runs out of blocks, it still subsumes if its end is Unknown or Blanks compatible
+    /// - if self runs out of blocks, it still subsumes if its end is
+    ///   Unknown or Blanks compatible
     fn span_subsumes(&self, other: &SpanT) -> bool {
-        let mut it_a = self.span.iter(); // Blocks
-        let mut it_b = other.iter();
-
-        loop {
-            match (it_a.next(), it_b.next()) {
-                (None, None) => return true,
-                (Some(_), None) => {
-                    // self has extra constraints beyond other => does NOT subsume
-                    return false;
-                },
-                (None, Some(_)) => {
-                    // self ended earlier; it represents "nothing more specified".
-                    // Allowed only if self end is Unknown or (Blanks and remaining other blocks are all blank)
-                    match self.end {
-                        TapeEnd::Unknown => return true,
-                        TapeEnd::Blanks => {
-                            // remaining blocks on other must all be blank
-                            // we already consumed one from it_b via Some(_); check it + rest
-                            // easiest: false here, conservative; or implement full scan.
-                            return false;
-                        },
-                    }
-                },
-                (Some(a), Some(b)) => {
-                    if a.color != b.color {
-                        return false;
-                    }
-                    #[expect(clippy::match_same_arms)]
-                    match (a.count, b.count) {
-                        (0, 0) => {},           // both indefinite
-                        (0, _) => {}, // self indefinite subsumes any b>=1
-                        (_, 0) => return false, // self fixed cannot subsume indefinite
-                        (ac, bc) if ac == bc => {},
-                        _ => return false,
-                    }
-                },
+        // Compare common prefix
+        for (a, b) in self.span.iter().zip(other.iter()) {
+            if a.color != b.color {
+                return false;
             }
+            match (a.count, b.count) {
+                (0, _) => {},           // self indefinite subsumes any b
+                (_, 0) => return false, // self fixed cannot subsume indefinite
+                (ac, bc) if ac == bc => {},
+                _ => return false,
+            }
+        }
+
+        // Decide based on leftovers
+        let a_len = self.span.len();
+        let b_len = other.len();
+
+        // self has extra constraints beyond other => does NOT subsume
+        if a_len > b_len {
+            return false;
+        }
+
+        if a_len == b_len {
+            return true;
+        }
+
+        match self.end {
+            TapeEnd::Unknown => true,
+            TapeEnd::Blanks => false,
         }
     }
 }
@@ -1994,10 +1957,8 @@ const fn cfg_key(cfg: &Config) -> Key {
 /// Returns true if `tape` was kept (i.e. not subsumed by existing).
 fn antichain_insert(set: &mut Vec<Tape>, tape: Tape) -> bool {
     // If any existing subsumes new, drop new
-    for old in set.iter() {
-        if old.subsumes(&tape) {
-            return false;
-        }
+    if set.iter().any(|old| old.subsumes(&tape)) {
+        return false;
     }
 
     // Remove any existing tapes subsumed by new
