@@ -1,7 +1,6 @@
 use core::cmp::{max, min};
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::HashMap as Dict};
 
-use ahash::HashMap as Dict;
 use rayon::prelude::*;
 
 use crate::{
