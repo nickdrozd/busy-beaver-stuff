@@ -1,4 +1,5 @@
 use core::cmp::{max, min};
+use std::borrow::Cow;
 
 use ahash::HashMap as Dict;
 use rayon::prelude::*;
@@ -8,7 +9,7 @@ use crate::{
     config::MedConfig as Config, machine::RunResult,
 };
 
-pub use crate::config::PassConfig;
+pub type PassConfig<'c> = Cow<'c, Config>;
 
 pub type TreeResult<Harv> = Dict<Instr, Harv>;
 
