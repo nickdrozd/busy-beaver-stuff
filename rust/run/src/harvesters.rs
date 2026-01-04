@@ -1,6 +1,6 @@
-use tm::{Prog, tree::TreeResult};
+use tm::Prog;
 
-pub use tm::tree::{Harvester, PassConfig};
+use crate::tree::{Harvester, PassConfig, TreeResult};
 
 /**************************************/
 

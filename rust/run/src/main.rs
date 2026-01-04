@@ -3,11 +3,10 @@ use std::env;
 use tm::{Goal, Prog, Steps};
 
 pub mod harvesters;
+pub mod tree;
 
-use harvesters::{
-    Collector, Harvester as _, HoldoutVisited, PassConfig,
-    ReasonHarvester,
-};
+use harvesters::{Collector, HoldoutVisited, ReasonHarvester};
+use tree::{Harvester as _, PassConfig};
 
 /**************************************/
 

@@ -1,9 +1,11 @@
+#![expect(clippy::trivially_copy_pass_by_ref)]
+
 use core::cmp::{max, min};
 use std::{borrow::Cow, collections::HashMap as Dict};
 
 use rayon::prelude::*;
 
-use crate::{
+use tm::{
     Color, Goal, Instr, Prog, Shift, Slot, State, Steps,
     config::MedConfig as Config, machine::RunResult,
 };

@@ -16,7 +16,6 @@ pub mod reason;
 pub mod rules;
 pub mod segment;
 pub mod tape;
-pub mod tree;
 
 /**************************************/
 
