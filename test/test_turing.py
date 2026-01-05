@@ -483,6 +483,11 @@ class Reason(TuringTest):
 
             if counts != BACKWARD_FALSE_NEGATIVES_COUNTS:
                 print(json.dumps(counts, indent = 4))
+                for cat, res in data.items():
+                    if progs := res['refuted']:  # type: ignore[index]
+                        print(cat)
+                        for prog in progs:
+                            print(prog)
                 raise AssertionError
 
         assert_counts(results)
