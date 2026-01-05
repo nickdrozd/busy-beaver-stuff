@@ -22,7 +22,6 @@ const MAX_STACK_DEPTH: usize = 28;
 pub enum BackwardResult {
     Init,
     LinRec,
-    Spinout,
     StepLimit,
     DepthLimit,
     Refuted(Steps),
@@ -256,7 +255,7 @@ fn step_configs<const c: usize>(
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
 ) -> Result<Configs, BackwardResult> {
-    let configs = branch_indef(configs)?;
+    let configs = branch_indef(configs);
 
     let mut stepped = Configs::new();
 
@@ -292,21 +291,15 @@ fn step_configs<const c: usize>(
     Ok(stepped)
 }
 
-fn branch_indef(
-    configs: ValidatedSteps,
-) -> Result<ValidatedSteps, BackwardResult> {
+fn branch_indef(configs: ValidatedSteps) -> ValidatedSteps {
     let mut branched = ValidatedSteps::new();
 
     for (instrs, config) in configs {
         let mut indef_left = vec![];
         let mut indef_right = vec![];
 
-        for instr @ &(_, shift, state) in &instrs {
+        for instr @ &(_, shift, _) in &instrs {
             if config.tape.pulls_indef(shift) {
-                if state == config.state {
-                    return Err(Spinout);
-                }
-
                 if shift {
                     &mut indef_left
                 } else {
@@ -333,7 +326,7 @@ fn branch_indef(
         branched.push((instrs, config));
     }
 
-    Ok(branched)
+    branched
 }
 
 /**************************************/
