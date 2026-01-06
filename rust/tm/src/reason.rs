@@ -1,7 +1,7 @@
 use core::{fmt, iter::once};
 
 use std::{
-    collections::{BTreeMap as Dict, BTreeSet as Set},
+    collections::{BTreeMap as Dict, BTreeSet as Set, HashSet},
     rc::Rc,
 };
 
@@ -47,7 +47,14 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
         let slots = self.halt_slots_disp_side(&idx);
 
-        cant_reach(self, steps, slots, Some(entrypoints), halt_configs)
+        cant_reach(
+            self,
+            steps,
+            slots,
+            Some(entrypoints),
+            halt_configs,
+            false,
+        )
     }
 
     pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
@@ -55,11 +62,25 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             return Refuted(0);
         }
 
-        cant_reach(self, steps, self.erase_slots(), None, erase_configs)
+        cant_reach(
+            self,
+            steps,
+            self.erase_slots(),
+            None,
+            erase_configs,
+            true,
+        )
     }
 
     pub fn cant_spin_out(&self, steps: Steps) -> BackwardResult {
-        cant_reach(self, steps, self.zr_shifts(), None, zr_configs)
+        cant_reach(
+            self,
+            steps,
+            self.zr_shifts(),
+            None,
+            zr_configs,
+            false,
+        )
     }
 }
 
@@ -78,6 +99,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     mut slots: Set<(State, T)>,
     entrypoints: Option<Entrypoints>,
     get_configs: impl Fn(&Set<(State, T)>) -> Configs,
+    dedup_ignore_head: bool,
 ) -> BackwardResult {
     if slots.is_empty() {
         return Refuted(0);
@@ -107,6 +129,12 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut seen: Dict<Key, Vec<Tape>> = Dict::new();
 
+    // In blank-mode, we can safely deduplicate configurations up to
+    // translation: the absolute head position does not affect
+    // predecessor generation.
+    let mut processed: Option<HashSet<(State, TapeSig)>> =
+        dedup_ignore_head.then(HashSet::new);
+
     for step in 1..=steps {
         #[cfg(debug_assertions)]
         {
@@ -116,7 +144,11 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             println!();
         };
 
-        let valid_steps = get_valid_steps(&mut configs, &entrypoints);
+        let valid_steps = get_valid_steps(
+            &mut configs,
+            &entrypoints,
+            processed.as_mut(),
+        );
 
         match valid_steps.len() {
             0 => return Refuted(step),
@@ -153,11 +185,24 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
+    mut processed: Option<&mut HashSet<(State, TapeSig)>>,
 ) -> ValidatedSteps {
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
         let Config { state, tape, .. } = &config;
+
+        if let Some(set) = processed.as_deref_mut() {
+            let sig = TapeSig {
+                scan: tape.scan,
+                lspan: tape.lspan.clone(),
+                rspan: tape.rspan.clone(),
+            };
+
+            if !set.insert((*state, sig)) {
+                continue;
+            }
+        }
 
         let mut steps = vec![];
 
@@ -635,6 +680,13 @@ type SpanT = tape::Span<Block>;
 struct Span {
     span: SpanT,
     end: TapeEnd,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct TapeSig {
+    scan: Color,
+    lspan: Span,
+    rspan: Span,
 }
 
 impl Span {
