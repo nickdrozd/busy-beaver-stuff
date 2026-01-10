@@ -684,23 +684,19 @@ pub trait Harvester<const states: usize, const colors: usize>:
         let (init_instrs, instr_table) =
             make_instr_table::<states, colors>();
 
-        if states <= 3 && colors <= 3 {
-            BasicTreeSmall::run_branch(
-                &init_instrs,
-                halt,
-                sim_lim,
-                &instr_table,
-                harvester,
-            )
+        let basic_runner = if states <= 3 && colors <= 3 {
+            BasicTreeSmall::run_branch
         } else {
-            BasicTree::run_branch(
-                &init_instrs,
-                halt,
-                sim_lim,
-                &instr_table,
-                harvester,
-            )
-        }
+            BasicTree::run_branch
+        };
+
+        basic_runner(
+            &init_instrs,
+            halt,
+            sim_lim,
+            &instr_table,
+            harvester,
+        )
     }
 
     fn run_blank(
@@ -710,23 +706,13 @@ pub trait Harvester<const states: usize, const colors: usize>:
         let (init_instrs, instr_table) =
             make_blank_table::<states, colors>();
 
-        if states <= 3 && colors <= 3 {
-            BlankTreeSmall::run_branch(
-                &init_instrs,
-                0,
-                sim_lim,
-                &instr_table,
-                harvester,
-            )
+        let runner = if states <= 3 && colors <= 3 {
+            BlankTreeSmall::run_branch
         } else {
-            BlankTree::run_branch(
-                &init_instrs,
-                0,
-                sim_lim,
-                &instr_table,
-                harvester,
-            )
-        }
+            BlankTree::run_branch
+        };
+
+        runner(&init_instrs, 0, sim_lim, &instr_table, harvester)
     }
 
     fn run_spinout(
