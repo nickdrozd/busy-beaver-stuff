@@ -12,15 +12,19 @@ pub struct Prog<const states: usize, const colors: usize> {
 
 impl<const s: usize, const c: usize> From<&str> for Prog<s, c> {
     fn from(prog: &str) -> Self {
-        let mut table = [[None; c]; s];
+        let mut out = Self::new();
 
         for (i, colors) in prog.trim().split("  ").enumerate().take(s) {
             for (j, instr) in colors.split(' ').enumerate().take(c) {
-                table[i][j] = Parse::read(instr);
+                if let Some(parsed) = Parse::read(instr) {
+                    #[expect(clippy::cast_possible_truncation)]
+                    let slot = (i as State, j as Color);
+                    out.insert(&slot, &parsed);
+                }
             }
         }
 
-        Self { table }
+        out
     }
 }
 
