@@ -221,6 +221,21 @@ impl<B: Block> Span<B> {
             },
         }
     }
+
+    fn counts(&self) -> Vec<B::Count> {
+        self.iter().map(|block| block.get_count().clone()).collect()
+    }
+
+    fn signature(&self) -> Vec<ColorCount> {
+        self.iter().map(Into::into).collect()
+    }
+
+    fn sig_compatible(&self, span: &SigSpan) -> bool {
+        self.iter()
+            .take(span.len())
+            .zip(span.iter())
+            .all(|(bk, cc)| bk.get_color() == cc.get_color())
+    }
 }
 
 impl<B: Block> IndexTrait<usize> for Span<B> {
@@ -240,23 +255,6 @@ impl<B: Block> IndexMut<usize> for Span<B> {
 }
 
 pub type MedSpan = Span<MedBlock>;
-
-impl<B: Block> Span<B> {
-    fn counts(&self) -> Vec<B::Count> {
-        self.iter().map(|block| block.get_count().clone()).collect()
-    }
-
-    fn signature(&self) -> Vec<ColorCount> {
-        self.iter().map(Into::into).collect()
-    }
-
-    fn sig_compatible(&self, span: &SigSpan) -> bool {
-        self.iter()
-            .take(span.len())
-            .zip(span.iter())
-            .all(|(bk, cc)| bk.get_color() == cc.get_color())
-    }
-}
 
 pub trait UsizeBlock: Block {
     fn count_usize(&self) -> usize;

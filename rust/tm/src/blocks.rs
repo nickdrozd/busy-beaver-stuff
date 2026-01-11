@@ -93,6 +93,7 @@ impl BlockMeasure {
 
 /**************************************/
 
+#[expect(clippy::multiple_inherent_impl)]
 impl<const s: usize, const c: usize> Prog<s, c> {
     fn unroll_at_max_blocks(&self, steps: Steps) -> UnrolledTape {
         self.run_and_unroll(self.max_block_step(steps))

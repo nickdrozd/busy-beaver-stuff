@@ -406,6 +406,7 @@ fn get_blanks(configs: &Configs) -> BlankStates {
 
 /**************************************/
 
+#[expect(clippy::multiple_inherent_impl)]
 impl<const s: usize, const c: usize> Prog<s, c> {
     fn get_entrypoints(&self) -> Entrypoints {
         let mut entrypoints = Entrypoints::new();

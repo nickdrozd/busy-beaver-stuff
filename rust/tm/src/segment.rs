@@ -584,6 +584,7 @@ impl Config {
     }
 }
 
+#[expect(clippy::multiple_inherent_impl)]
 impl<const s: usize, const c: usize> Prog<s, c> {
     #[expect(clippy::unwrap_in_result)]
     fn run_to_edge(
