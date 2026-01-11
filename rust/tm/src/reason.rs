@@ -219,13 +219,13 @@ fn get_valid_steps(
             steps.push((color, shift, next_state));
         }
 
-        for &((next_state, color), (print, shift)) in same {
+        for &((_, color), (print, shift)) in same {
             if !tape.is_valid_step(shift, print) {
                 continue;
             }
 
             if !tape.is_spinout(shift, color) {
-                steps.push((color, shift, next_state));
+                steps.push((color, shift, *state));
                 continue;
             }
 
@@ -250,18 +250,14 @@ fn get_indef(
     diff: &Entries,
     same: &Entries,
 ) -> Option<(Vec<Instr>, Config)> {
-    let mut checked_entries = Entries::new();
+    let mut checked_entries = diff.clone();
 
-    let scan = config.tape.scan;
-
-    for entries in [diff, same] {
-        for &entry @ ((state, color), (_, shift)) in entries {
-            if state == config.state && shift == push && scan == color {
-                continue;
-            }
-
-            checked_entries.push(entry);
+    for &entry @ ((_, color), (_, shift)) in same {
+        if shift == push && color == config.tape.scan {
+            continue;
         }
+
+        checked_entries.push(entry);
     }
 
     if checked_entries.is_empty() {
