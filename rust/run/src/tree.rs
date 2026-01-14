@@ -60,26 +60,6 @@ fn make_instr_table<
     (init_instrs, table)
 }
 
-type BlankInstrTable = [InstrTable; 2];
-
-fn make_blank_table<
-    const max_states: usize,
-    const max_colors: usize,
->() -> (Instrs, BlankInstrTable) {
-    let (init_instrs, table) =
-        make_instr_table::<max_states, max_colors>();
-
-    let mut partial = table.clone();
-
-    for states in 2..=max_states {
-        for colors in 2..=max_colors {
-            partial[states][colors].retain(|&(co, _, _)| co == 0);
-        }
-    }
-
-    (init_instrs, [table, partial])
-}
-
 type SpinoutInstrTable = [InstrTable; 2];
 
 #[expect(clippy::cast_possible_truncation)]
@@ -247,7 +227,7 @@ impl AvailBlanks {
 }
 
 struct BlankInstrs<'h> {
-    instr_table: &'h BlankInstrTable,
+    instr_table: &'h InstrTable,
     avail_params: AvailParams,
     avail_blanks: AvailBlanks,
 }
@@ -255,7 +235,7 @@ struct BlankInstrs<'h> {
 impl<'h, const states: usize, const colors: usize>
     AvailInstrs<'h, states, colors> for BlankInstrs<'h>
 {
-    type Table = BlankInstrTable;
+    type Table = InstrTable;
 
     fn new(instr_table: &'h Self::Table) -> Self {
         let avail_params = AvailStack::init(states, colors);
@@ -272,9 +252,13 @@ impl<'h, const states: usize, const colors: usize>
     fn avail_instrs(&self, &(_, pr): &Slot) -> &'h [Instr] {
         let (st, co) = self.avail_params.avail();
 
-        let must_erase = self.avail_blanks.must_erase(pr);
+        let all = &self.instr_table[st][co];
 
-        &self.instr_table[usize::from(must_erase)][st][co]
+        if self.avail_blanks.must_erase(pr) {
+            &all[..2 * st]
+        } else {
+            all
+        }
     }
 
     fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
@@ -391,7 +375,8 @@ impl<'h, const states: usize, const colors: usize>
 }
 
 struct BlankInstrsSmall<'h, const states: usize, const colors: usize> {
-    instrs: [&'h [Instr]; 2],
+    instrs_all: &'h [Instr],
+    instrs_erase: &'h [Instr],
     avail_blanks: AvailBlanks,
 }
 
@@ -399,25 +384,27 @@ impl<'h, const states: usize, const colors: usize>
     AvailInstrs<'h, states, colors>
     for BlankInstrsSmall<'h, states, colors>
 {
-    type Table = BlankInstrTable;
+    type Table = InstrTable;
 
     fn new(instr_table: &'h Self::Table) -> Self {
-        let instrs = [
-            &*instr_table[0][states][colors],
-            &*instr_table[1][states][colors],
-        ];
+        let instrs_all = &instr_table[states][colors];
+        let instrs_erase = &instrs_all[..2 * states];
 
         let avail_blanks = AvailBlanks::init(states, colors);
 
         Self {
-            instrs,
+            instrs_all,
+            instrs_erase,
             avail_blanks,
         }
     }
 
     fn avail_instrs(&self, &(_, pr): &Slot) -> &'h [Instr] {
-        let must_erase = self.avail_blanks.must_erase(pr);
-        self.instrs[usize::from(must_erase)]
+        if self.avail_blanks.must_erase(pr) {
+            self.instrs_erase
+        } else {
+            self.instrs_all
+        }
     }
 
     fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
@@ -704,7 +691,7 @@ pub trait Harvester<const states: usize, const colors: usize>:
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> TreeResult<Self> {
         let (init_instrs, instr_table) =
-            make_blank_table::<states, colors>();
+            make_instr_table::<states, colors>();
 
         let runner = if states <= 3 && colors <= 3 {
             BlankTreeSmall::run_branch
