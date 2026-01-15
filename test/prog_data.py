@@ -1693,6 +1693,19 @@ MODULAR = {
     "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
 }
 
+CANT_QUASIHALT_STATIC = {
+    "1RB 1LB  1LA 1RA",
+
+    "1RB 0LB  1LC 0RC  1RA 1LA",
+    "1RB 0RB  1LC 0LC  1LA 1RA",
+    "1RB 0RB  1LC 0RC  0LA 1RA",
+    "1RB 0RB  1LC 1RC  0LA 1LA",
+    "1RB 1LB  0RC 1RC  1LA 0LA",
+
+    "1RB 0LB  1RC 1LC  1RD 1LD  0LA 0RA",
+    "1RB 1LB  1RC 1LC  0LD 0RD  1RA 0LA",
+}
+
 ########################################
 
 BACKWARD_STEPS: dict[Goal, dict[str, int]] = {

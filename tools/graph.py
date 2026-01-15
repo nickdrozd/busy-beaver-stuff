@@ -118,6 +118,49 @@ class Graph:
         return False
 
     @cached_property
+    def is_strict_cycle(self) -> bool:  # noqa: PLR0911
+        if (states := len(self.states)) == 0:
+            return False
+
+        next_state: list[int] = [0] * states
+
+        for st in self.states:
+            row = self.arrows[st]
+
+            if any(dst is None for dst in row):
+                return False
+
+            if (first := row[0]) is None:
+                return False
+
+            if any(dst != first for dst in row):
+                return False
+
+            if first == st:
+                return False
+
+            next_state[st] = first
+
+        seen = [False] * states
+        cur = 0
+        for _ in range(states):
+            if seen[cur]:
+                return False
+            seen[cur] = True
+            cur = next_state[cur]
+
+        if cur != 0:
+            return False
+
+        if any(not x for x in seen):
+            return False
+
+        return all(
+            next_state[i] == (i + 1) % states
+            for i in range(states)
+        )
+
+    @cached_property
     def reflexive_states(self) -> set[State]:
         return {
             state

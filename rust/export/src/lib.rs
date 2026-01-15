@@ -70,6 +70,13 @@ pub fn is_connected(prog: &str) -> bool {
 }
 
 #[pyfunction]
+pub fn is_strict_cycle(prog: &str) -> bool {
+    parse!(prog, |p: Prog<_, _>| p.is_strict_cycle())
+}
+
+/***************************************/
+
+#[pyfunction]
 pub fn opt_block(prog: &str, steps: Steps) -> usize {
     parse!(prog, |p: Prog<_, _>| p.opt_block(steps))
 }
@@ -557,9 +564,9 @@ mod rust_stuff {
         cant_blank, cant_halt, cant_spin_out, cps_cant_blank,
         cps_cant_halt, cps_cant_quasihalt, cps_cant_spin_out,
         ctl_cant_blank, ctl_cant_halt, ctl_cant_spin_out, is_connected,
-        opt_block, read_instr, run_quick_machine, run_transcript,
-        segment_cant_blank, segment_cant_halt, segment_cant_spin_out,
-        show_comp, show_instr, show_slot, show_state, tcompile,
-        term_or_rec,
+        is_strict_cycle, opt_block, read_instr, run_quick_machine,
+        run_transcript, segment_cant_blank, segment_cant_halt,
+        segment_cant_spin_out, show_comp, show_instr, show_slot,
+        show_state, tcompile, term_or_rec,
     };
 }

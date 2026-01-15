@@ -41,6 +41,7 @@ from tm.rust_stuff import (
     ctl_cant_blank,
     ctl_cant_halt,
     ctl_cant_spin_out,
+    is_strict_cycle,
     run_quick_machine,
     segment_cant_blank,
     segment_cant_halt,
@@ -969,6 +970,25 @@ class Simple(TuringTest):
             prog_data,
             blank = blank,
         )
+
+    def test_quasihalt(self):
+        for prog in CANT_QUASIHALT_STATIC:
+            self.assertTrue(
+                Graph(prog).is_strict_cycle)
+
+            self.assertTrue(
+                is_strict_cycle(prog))
+
+        for prog in QUASIHALT:
+            self.assertFalse(
+                Graph(prog).is_strict_cycle)
+
+            self.assertFalse(
+                is_strict_cycle(prog))
+
+        for prog in RECURS - QUASIHALT:
+            if Graph(prog).is_strict_cycle or is_strict_cycle(prog):
+                self.assertIn(prog, CANT_QUASIHALT_STATIC)
 
 
 @skipUnless(RUN_SLOW, '')

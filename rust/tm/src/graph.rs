@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap as Dict, BTreeSet as Set};
 
-use crate::{Prog, State};
+use crate::{Color, Prog, State};
 
 /**************************************/
 
@@ -53,6 +53,77 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
         false
     }
+
+    #[expect(clippy::cast_possible_truncation)]
+    pub fn is_strict_cycle(&self) -> bool {
+        let mut next = Vec::with_capacity(states);
+
+        for st in 0..states as State {
+            let mut dst: Option<State> = None;
+
+            for co in 0..(colors as Color) {
+                let Some(&(_, _, tr)) = self.get(&(st, co)) else {
+                    return false;
+                };
+
+                match dst {
+                    None => dst = Some(tr),
+                    Some(prev) if prev == tr => {},
+                    Some(_) => return false,
+                }
+            }
+
+            let Some(tr) = dst else {
+                return false;
+            };
+
+            if tr == st {
+                return false;
+            }
+
+            next.push(tr);
+        }
+
+        // Must be a single Hamiltonian cycle (covers all states exactly once).
+        let mut seen = vec![false; states];
+        let mut cur: State = 0;
+
+        for _ in 0..states {
+            let idx = cur as usize;
+            if seen[idx] {
+                return false;
+            }
+            seen[idx] = true;
+            cur = next[idx];
+        }
+
+        if cur != 0 {
+            return false;
+        }
+
+        if seen.iter().any(|&b| !b) {
+            return false;
+        }
+
+        // And the cycle order must be strictly increasing or strictly
+        // decreasing (with wraparound).
+        let forward = (0..states).all(|i| {
+            let want =
+                if i + 1 == states { 0 } else { (i + 1) as State };
+            next[i] == want
+        });
+
+        let backward = (0..states).all(|i| {
+            let want = if i == 0 {
+                (states - 1) as State
+            } else {
+                (i - 1) as State
+            };
+            next[i] == want
+        });
+
+        forward || backward
+    }
 }
 
 #[cfg(test)]
@@ -86,6 +157,31 @@ fn test_connected() {
         "1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC",
         (5, 2),
         true
+    );
+}
+
+/**************************************/
+
+#[cfg(test)]
+macro_rules! assert_strict_cycle {
+    ($prog:literal, ($s:literal, $c:literal), $ok:literal) => {{
+        let result = Prog::<$s, $c>::from($prog).is_strict_cycle();
+        assert!(if $ok { result } else { !result });
+    }};
+}
+
+#[test]
+fn test_strict_direction_cycle() {
+    assert_strict_cycle!(
+        "1RB 1LB  1RC 1LC  0LD 0RD  1RA 0LA",
+        (4, 2),
+        true
+    );
+
+    assert_strict_cycle!(
+        "1RB 1LB  0LC 0RD  0LC 1LA  1RA 0LA",
+        (4, 2),
+        false
     );
 }
 
