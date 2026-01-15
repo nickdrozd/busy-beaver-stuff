@@ -25,6 +25,7 @@ HALT: BasicTermData = {
     "1RB 1LA  0RC ...  1LC 0LA": (5, 20),
     "1RB 1RA  0RC ...  1LC 0LA": (5, 19),
     "1RB 0RA  0RC ...  1LC 0LA": (4, 19),
+    "1RB ...  0RC 1RB  1LC 1LA": (6, 13),
     "1RB 1LC  1RC ...  1LA 0LB": (6, 11),  # sigma
     "1RB 0LB  1LA 0RC  1LC ...": (4,  8),
 
@@ -2985,7 +2986,7 @@ SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
 CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 7,
     "blank": 102,
-    "spinout": 264,
+    "spinout": 265,
 }
 
 CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3140,6 +3141,7 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 2LA 0RB  1LB 2LA 1RA",
         "1RB 2LA 1LA  2LB 2RA 0RB",
         "1RB 0LB 1RA  1LB 2RB 0LA",
+        "1RB ...  0RC 1RB  1LC 1LA",
         "1RB 0LA  1RC ...  0LC 0LA",
         "1RB 0RC  0RC ...  1LC 0LA",
         "1RB 1LA  0RC ...  1LC 0LA",

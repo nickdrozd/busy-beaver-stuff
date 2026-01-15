@@ -7,6 +7,7 @@ CFLAGS += -Wall -Wextra -O3
 
 test : clean $(MACHINES)
 	$(MAKE) -C structured
+	$(MAKE) -C lin-bb3
 
 % : %.c
 	$(CC) $(CFLAGS) $< -o $@.run
@@ -15,3 +16,4 @@ test : clean $(MACHINES)
 clean :
 	$(RM) ${C_FILES:.c=.run}
 	$(MAKE) -C structured clean
+	$(MAKE) -C lin-bb3 clean
