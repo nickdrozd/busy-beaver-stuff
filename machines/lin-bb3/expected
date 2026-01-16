@@ -1,56 +1,56 @@
 Lin BB-3 normalized enumeration: 4 lots x 12^4 = 82,944 machines
 Phase 1: discard machines that stop in <= 21 shifts
-HOLDOUT lot=1 (no-recurrence) :: Serial=51251716  1RB 1RH  0LC 0RA  0RA 1LB
-HOLDOUT lot=1 (no-recurrence) :: Serial=52251716  1RB 1RH  0LC 0RA  1LA 1LB
-HOLDOUT lot=1 (no-recurrence) :: Serial=51261716  1RB 1RH  0LC 0RB  0RA 1LB
-HOLDOUT lot=1 (no-recurrence) :: Serial=46661716  1RB 1RH  0LC 0RB  1LC 1LA
-HALTED  stop@20 score=5 lot=1 :: Serial=46671716  1RB 1RH  0LC 0RC  1LC 1LA
-HOLDOUT lot=1 (no-recurrence) :: Serial=56361716  1RB 1RH  0LC 1RB  1LA 1LC
-HOLDOUT lot=1 (no-recurrence) :: Serial=46663716  1RB 1RH  0RC 0RB  1LC 1LA
-HOLDOUT lot=1 (no-recurrence) :: Serial=06323716  1RB 1RH  0RC 1LB  1LA 0LA
-HALTED  stop@14 score=6 lot=1 :: Serial=46763716  1RB 1RH  0RC 1RB  1LC 1LA
-HALTED  stop@21 score=5 lot=1 :: Serial=46675316  1RB 1RH  1LB 0RC  1LC 1LA
-HOLDOUT lot=1 (no-recurrence) :: Serial=11455716  1RB 1RH  1LC 0RA  0RB 0LB
-HOLDOUT lot=1 (no-recurrence) :: Serial=13455716  1RB 1RH  1LC 0RA  1RB 0LB
-HOLDOUT lot=1 (no-recurrence) :: Serial=46465716  1RB 1RH  1LC 0RB  1LB 1LA
-HOLDOUT lot=1 (no-recurrence) :: Serial=46665716  1RB 1RH  1LC 0RB  1LC 1LA
-HOLDOUT lot=1 (no-recurrence) :: Serial=15355716  1RB 1RH  1LC 1RA  0RA 0LC
-HOLDOUT lot=1 (no-recurrence) :: Serial=15365716  1RB 1RH  1LC 1RB  0RA 0LC
-HOLDOUT lot=1 (no-recurrence) :: Serial=56365716  1RB 1RH  1LC 1RB  1LA 1LC
+HOLDOUT lot=1 (no-recurrence) :: Serial=73032532  1RB 1RH  0LC 0RA  0RA 1LB
+HOLDOUT lot=1 (no-recurrence) :: Serial=73032632  1RB 1RH  0LC 0RA  1LA 1LB
+HOLDOUT lot=1 (no-recurrence) :: Serial=73033132  1RB 1RH  0LC 0RB  0RA 1LB
+HOLDOUT lot=1 (no-recurrence) :: Serial=73033271  1RB 1RH  0LC 0RB  1LC 1LA
+HALTED  stop@20 score=5 lot=1 :: Serial=73033671  1RB 1RH  0LC 0RC  1LC 1LA
+HOLDOUT lot=1 (no-recurrence) :: Serial=73037233  1RB 1RH  0LC 1RB  1LA 1LC
+HOLDOUT lot=1 (no-recurrence) :: Serial=73073271  1RB 1RH  0RC 0RB  1LC 1LA
+HOLDOUT lot=1 (no-recurrence) :: Serial=73075221  1RB 1RH  0RC 1LB  1LA 0LA
+HALTED  stop@14 score=6 lot=1 :: Serial=73077271  1RB 1RH  0RC 1RB  1LC 1LA
+HALTED  stop@21 score=5 lot=1 :: Serial=73123671  1RB 1RH  1LB 0RC  1LC 1LA
+HOLDOUT lot=1 (no-recurrence) :: Serial=73132542  1RB 1RH  1LC 0RA  0RB 0LB
+HOLDOUT lot=1 (no-recurrence) :: Serial=73132742  1RB 1RH  1LC 0RA  1RB 0LB
+HOLDOUT lot=1 (no-recurrence) :: Serial=73133251  1RB 1RH  1LC 0RB  1LB 1LA
+HOLDOUT lot=1 (no-recurrence) :: Serial=73133271  1RB 1RH  1LC 0RB  1LC 1LA
+HOLDOUT lot=1 (no-recurrence) :: Serial=73136523  1RB 1RH  1LC 1RA  0RA 0LC
+HOLDOUT lot=1 (no-recurrence) :: Serial=73137123  1RB 1RH  1LC 1RB  0RA 0LC
+HOLDOUT lot=1 (no-recurrence) :: Serial=73137233  1RB 1RH  1LC 1RB  1LA 1LC
 Lot 1: total=20736 stoppers<=21=5520 candidates=15216 pruned=4096 holdouts=14
-HOLDOUT lot=2 (no-recurrence) :: Serial=74345556  1RB 0RB  1LC 1RH  0LA 1RC
-HOLDOUT lot=2 (no-recurrence) :: Serial=06743576  1RB 0RC  0RC 1RH  1LC 0LA
-HALTED  stop@20 score=5 lot=2 :: Serial=06743636  1RB 1LA  0RC 1RH  1LC 0LA
-HALTED  stop@11 score=6 lot=2 :: Serial=12347676  1RB 1LC  1RC 1RH  1LA 0LB
-HOLDOUT lot=2 (no-recurrence) :: Serial=55341736  1RB 1RA  0LC 1RH  0RA 1LC
-HOLDOUT lot=2 (no-recurrence) :: Serial=57341736  1RB 1RA  0LC 1RH  1RA 1LC
-HOLDOUT lot=2 (no-recurrence) :: Serial=55345736  1RB 1RA  1LC 1RH  0RA 1LC
-HALTED  stop@12 score=6 lot=2 :: Serial=53345736  1RB 1RA  1LC 1RH  1RA 1LB
-HOLDOUT lot=2 (no-recurrence) :: Serial=57345736  1RB 1RA  1LC 1RH  1RA 1LC
-HOLDOUT lot=2 (no-recurrence) :: Serial=06743776  1RB 1RC  0RC 1RH  1LC 0LA
-HOLDOUT lot=2 (no-recurrence) :: Serial=11345776  1RB 1RC  1LC 1RH  0RA 0LB
-HALTED  stop@13 score=6 lot=2 :: Serial=13345776  1RB 1RC  1LC 1RH  1RA 0LB
+HOLDOUT lot=2 (no-recurrence) :: Serial=71536037  1RB 0RB  1LC 1RH  0LA 1RC
+HOLDOUT lot=2 (no-recurrence) :: Serial=71676261  1RB 0RC  0RC 1RH  1LC 0LA
+HALTED  stop@20 score=5 lot=2 :: Serial=72276261  1RB 1LA  0RC 1RH  1LC 0LA
+HALTED  stop@11 score=6 lot=2 :: Serial=72776222  1RB 1LC  1RC 1RH  1LA 0LB
+HOLDOUT lot=2 (no-recurrence) :: Serial=73236133  1RB 1RA  0LC 1RH  0RA 1LC
+HOLDOUT lot=2 (no-recurrence) :: Serial=73236333  1RB 1RA  0LC 1RH  1RA 1LC
+HOLDOUT lot=2 (no-recurrence) :: Serial=73336133  1RB 1RA  1LC 1RH  0RA 1LC
+HALTED  stop@12 score=6 lot=2 :: Serial=73336332  1RB 1RA  1LC 1RH  1RA 1LB
+HOLDOUT lot=2 (no-recurrence) :: Serial=73336333  1RB 1RA  1LC 1RH  1RA 1LC
+HOLDOUT lot=2 (no-recurrence) :: Serial=73676261  1RB 1RC  0RC 1RH  1LC 0LA
+HOLDOUT lot=2 (no-recurrence) :: Serial=73736122  1RB 1RC  1LC 1RH  0RA 0LB
+HALTED  stop@13 score=6 lot=2 :: Serial=73736322  1RB 1RC  1LC 1RH  1RA 0LB
 Lot 2: total=20736 stoppers<=21=6590 candidates=14146 pruned=0 holdouts=8
-HOLDOUT lot=3 (no-recurrence) :: Serial=47165456  1RB 0LB  1LC 1RB  1RH 1LA
-HOLDOUT lot=3 (no-recurrence) :: Serial=47151476  1RB 0LC  0LC 1RA  1RH 1LA
-HOLDOUT lot=3 (no-recurrence) :: Serial=47155076  1RB 0LC  1LB 1RA  1RH 1LA
-HOLDOUT lot=3 (no-recurrence) :: Serial=53164576  1RB 0RC  1LA 1RB  1RH 1LB
-HOLDOUT lot=3 (no-recurrence) :: Serial=67030636  1RB 1LA  0LA 0LC  1RH 1RA
-HOLDOUT lot=3 (no-recurrence) :: Serial=47161636  1RB 1LA  0LC 1RB  1RH 1LA
-HOLDOUT lot=3 (no-recurrence) :: Serial=67034636  1RB 1LA  1LA 0LC  1RH 1RA
-HOLDOUT lot=3 (no-recurrence) :: Serial=73174636  1RB 1LA  1LA 1RC  1RH 1RB
-HOLDOUT lot=3 (no-recurrence) :: Serial=67035636  1RB 1LA  1LC 0LC  1RH 1RA
-HOLDOUT lot=3 (no-recurrence) :: Serial=47165636  1RB 1LA  1LC 1RB  1RH 1LA
-HOLDOUT lot=3 (no-recurrence) :: Serial=67165636  1RB 1LA  1LC 1RB  1RH 1RA
-HOLDOUT lot=3 (no-recurrence) :: Serial=47165676  1RB 1LC  1LC 1RB  1RH 1LA
+HOLDOUT lot=3 (no-recurrence) :: Serial=70537311  1RB 0LB  1LC 1RB  1RH 1LA
+HOLDOUT lot=3 (no-recurrence) :: Serial=70636711  1RB 0LC  0LC 1RA  1RH 1LA
+HOLDOUT lot=3 (no-recurrence) :: Serial=70726711  1RB 0LC  1LB 1RA  1RH 1LA
+HOLDOUT lot=3 (no-recurrence) :: Serial=71717312  1RB 0RC  1LA 1RB  1RH 1LB
+HOLDOUT lot=3 (no-recurrence) :: Serial=72211715  1RB 1LA  0LA 0LC  1RH 1RA
+HOLDOUT lot=3 (no-recurrence) :: Serial=72237311  1RB 1LA  0LC 1RB  1RH 1LA
+HOLDOUT lot=3 (no-recurrence) :: Serial=72311715  1RB 1LA  1LA 0LC  1RH 1RA
+HOLDOUT lot=3 (no-recurrence) :: Serial=72317716  1RB 1LA  1LA 1RC  1RH 1RB
+HOLDOUT lot=3 (no-recurrence) :: Serial=72331715  1RB 1LA  1LC 0LC  1RH 1RA
+HOLDOUT lot=3 (no-recurrence) :: Serial=72337311  1RB 1LA  1LC 1RB  1RH 1LA
+HOLDOUT lot=3 (no-recurrence) :: Serial=72337315  1RB 1LA  1LC 1RB  1RH 1RA
+HOLDOUT lot=3 (no-recurrence) :: Serial=72737311  1RB 1LC  1LC 1RB  1RH 1LA
 Lot 3: total=20736 stoppers<=21=8133 candidates=12603 pruned=6144 holdouts=12
-HOLDOUT lot=4 (no-recurrence) :: Serial=63474456  1RB 0LB  1LA 0RC  1RB 1RH
-HOLDOUT lot=4 (no-recurrence) :: Serial=62250476  1RB 0LC  0LA 0RA  1LA 1RH
-HOLDOUT lot=4 (no-recurrence) :: Serial=62254476  1RB 0LC  1LA 0RA  1LA 1RH
-HOLDOUT lot=4 (no-recurrence) :: Serial=60367636  1RB 1LA  1RC 1RB  0LA 1RH
-HOLDOUT lot=4 (no-recurrence) :: Serial=62367636  1RB 1LA  1RC 1RB  1LA 1RH
-HOLDOUT lot=4 (no-recurrence) :: Serial=62260676  1RB 1LC  0LA 0RB  1LA 1RH
-HALTED  stop@13 score=6 lot=4 :: Serial=62564676  1RB 1LC  1LA 1RB  1LB 1RH
+HOLDOUT lot=4 (no-recurrence) :: Serial=70513754  1RB 0LB  1LA 0RC  1RB 1RH
+HOLDOUT lot=4 (no-recurrence) :: Serial=70612634  1RB 0LC  0LA 0RA  1LA 1RH
+HOLDOUT lot=4 (no-recurrence) :: Serial=70712634  1RB 0LC  1LA 0RA  1LA 1RH
+HOLDOUT lot=4 (no-recurrence) :: Serial=72377034  1RB 1LA  1RC 1RB  0LA 1RH
+HOLDOUT lot=4 (no-recurrence) :: Serial=72377234  1RB 1LA  1RC 1RB  1LA 1RH
+HOLDOUT lot=4 (no-recurrence) :: Serial=72613234  1RB 1LC  0LA 0RB  1LA 1RH
+HALTED  stop@13 score=6 lot=4 :: Serial=72717254  1RB 1LC  1LA 1RB  1LB 1RH
 Lot 4: total=20736 stoppers<=21=5830 candidates=14906 pruned=6144 holdouts=6
 
 === SUMMARY ===
@@ -64,7 +64,7 @@ Holdouts remaining: 40 (Lin reports 40)
 Stopped beyond 21 (should be 0): 0
 
 Best score observed: 6 (expected Sigma(3)=6)
-  achieved at 14 shifts by: Serial=46763716  1RB 1RH  0RC 1RB  1LC 1LA
+  achieved at 14 shifts by: Serial=73077271  1RB 1RH  0RC 1RB  1LC 1LA
 
 Max shifts among stoppers observed: 21 (expected SH(3)=21)
-  score at max shifts: 5, machine: Serial=46675316  1RB 1RH  1LB 0RC  1LC 1LA
+  score at max shifts: 5, machine: Serial=73123671  1RB 1RH  1LB 0RC  1LC 1LA

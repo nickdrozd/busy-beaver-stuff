@@ -159,24 +159,18 @@ static void line_to_tm(uint8_t w, char out[4]) {
     out[3] = '\0';
 }
 
-/* Pack Lin’s 6 line nibbles into a 24-bit word.
-   lines[] must be in order: A0,A1,B0,B1,C0,C1.
-*/
-static inline uint32_t lin_word24_from_lines(const uint8_t lines[6]) {
-    uint32_t w = 0;
-    w |= (uint32_t)(lines[0] & 0xF) << 0;   // A0
-    w |= (uint32_t)(lines[1] & 0xF) << 4;   // A1
-    w |= (uint32_t)(lines[2] & 0xF) << 8;   // B0
-    w |= (uint32_t)(lines[3] & 0xF) << 12;  // B1
-    w |= (uint32_t)(lines[4] & 0xF) << 16;  // C0
-    w |= (uint32_t)(lines[5] & 0xF) << 20;  // C1
-    return w;
+static inline uint32_t lin_serial24_from_lines(const uint8_t L[6]) {
+    // L order must be: A0 A1 B0 B1 C0 C1
+    return ((uint32_t)(L[0] & 0xF) << 20) |
+           ((uint32_t)(L[1] & 0xF) << 16) |
+           ((uint32_t)(L[2] & 0xF) << 12) |
+           ((uint32_t)(L[3] & 0xF) <<  8) |
+           ((uint32_t)(L[4] & 0xF) <<  4) |
+           ((uint32_t)(L[5] & 0xF) <<  0);
 }
 
-/* Print Lin serial number as 8 octal digits (leading zeros). */
-static inline void print_lin_serial_octal_from_lines(const uint8_t lines[6]) {
-    uint32_t w24 = lin_word24_from_lines(lines);
-    printf("%08o", w24);   // 24-bit word → 8 octal digits
+static inline void print_lin_serial_octal_from_lines(const uint8_t L[6]) {
+    printf("%08o", lin_serial24_from_lines(L));
 }
 
 static void print_machine_tm(const uint8_t lines[NUM_LINES]) {
