@@ -125,10 +125,8 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         forward || backward
     }
 
-    #[expect(clippy::cast_possible_truncation)]
     pub fn graph_cant_quasihalt(&self) -> bool {
         let start = 0;
-
         if start >= states {
             return false;
         }
@@ -147,79 +145,90 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             adj[u].dedup();
         }
 
+        // All states must be control-reachable; otherwise we cannot prove non-quasihalt.
         let reachable_all = reach_from(states, &adj, start);
         if reachable_all.iter().any(|&b| !b) {
             return false;
         }
 
-        // For each state t, if there exists a reachable directed
-        // cycle that avoids t, then there exists an infinite
-        // execution that (after some time) never returns to t.
+        // State `t` can be visited only finitely many times iff there exists an infinite suffix
+        // of the execution that never visits `t` again. Such a suffix must eventually remain
+        // within a cyclic SCC in the control graph with `t` removed.
+        //
+        // We conservatively treat *any* cyclic SCC as a possible trap, except that we can
+        // soundly rule out strictly one-directional SCCs (all internal shifts are L or all are R)
+        // that do NOT contain a cycle induced by the `read=0` transitions in that same direction.
+        //
+        // Soundness sketch (BB-from-blank):
+        // - In a one-direction SCC, the head position is strictly monotone, so no tape cell is revisited.
+        // - Starting from a blank tape, every newly visited cell is `0`, so from that point on only
+        //   `read=0` transitions can occur.
+        // - Therefore, an infinite run staying inside such an SCC requires a `read=0` cycle.
         for t in 0..states {
-            let mut ep: Exitpoints = Exitpoints::new();
-
+            // Active nodes: control-reachable and not equal to t.
+            let mut active = vec![false; states];
             for u in 0..states {
-                if u == t || !reachable_all[u] {
+                active[u] = reachable_all[u] && u != t;
+            }
+
+            // SCCs of the induced subgraph on `active` nodes.
+            for comp in sccs_masked(states, &adj, &active) {
+                if !scc_has_cycle(&comp, &adj) {
                     continue;
                 }
-                let su = u as State;
-                for &v in &adj[u] {
-                    if v == t || !reachable_all[v] {
-                        continue;
+
+                // Build a membership mask for this SCC.
+                let mut in_comp = vec![false; states];
+                for &u in &comp {
+                    if u < states {
+                        in_comp[u] = true;
                     }
-                    ep.entry(su).or_default().push(v as State);
                 }
-            }
 
-            for conns in ep.values_mut() {
-                conns.sort_unstable();
-                conns.dedup();
-            }
+                // Check whether the SCC contains both L and R internal shifts.
+                let mut has_l = false;
+                let mut has_r = false;
 
-            if has_cycle(states, &ep) {
-                return false;
+                for &u in &comp {
+                    #[expect(clippy::cast_possible_truncation)]
+                    let su = u as State;
+                    for read in 0..(colors as Color) {
+                        let Some(&(_write, sh, dst)) =
+                            self.get(&(su, read))
+                        else {
+                            continue;
+                        };
+                        let v = dst as usize;
+                        if v < states && active[v] && in_comp[v] {
+                            if sh {
+                                has_r = true;
+                            } else {
+                                has_l = true;
+                            }
+                            if has_l && has_r {
+                                // Bidirectional SCC: cannot be statically ruled out.
+                                return false;
+                            }
+                        }
+                    }
+                }
+
+                // Cyclic SCC but no internal transitions found: be conservative.
+                if !has_l && !has_r {
+                    return false;
+                }
+
+                // One-direction SCC: potentially a realizable trap only if it has a 0-cycle.
+                if has_zero_dir_cycle_in_comp::<states, colors>(
+                    self, &comp, has_r,
+                ) {
+                    return false;
+                }
             }
         }
 
         true
     }
-}
-
-fn has_cycle(states: usize, adj: &Exitpoints) -> bool {
-    fn dfs(u: usize, adj: &Exitpoints, mark: &mut [u8]) -> bool {
-        mark[u] = 1;
-
-        #[expect(clippy::cast_possible_truncation)]
-        let su = u as State;
-        if let Some(neis) = adj.get(&su) {
-            for &v_state in neis {
-                let v = v_state as usize;
-
-                // Back-edge => cycle
-                if mark[v] == 1 {
-                    return true;
-                }
-
-                if mark[v] == 0 && dfs(v, adj, mark) {
-                    return true;
-                }
-            }
-        }
-
-        mark[u] = 2;
-        false
-    }
-
-    // 0 = unvisited, 1 = visiting, 2 = done
-    let mut mark = vec![0; states];
-
-    for u in 0..states {
-        if mark[u] == 0 && dfs(u, adj, &mut mark) {
-            return true;
-        }
-    }
-
-    false
 }
 
 fn reach_from(
@@ -247,6 +256,165 @@ fn reach_from(
     }
 
     seen
+}
+
+/**************************************/
+
+/// Kosaraju SCC decomposition on a graph given as adjacency lists,
+/// restricted to `active` nodes.
+#[expect(clippy::items_after_statements)]
+fn sccs_masked(
+    states: usize,
+    adj: &[Vec<usize>],
+    active: &[bool],
+) -> Vec<Vec<usize>> {
+    let mut rev: Vec<Vec<usize>> = vec![Vec::new(); states];
+    for u in 0..states {
+        if !active[u] {
+            continue;
+        }
+        for &v in &adj[u] {
+            if v < states && active[v] {
+                rev[v].push(u);
+            }
+        }
+    }
+
+    let mut seen = vec![false; states];
+    let mut order = Vec::new();
+
+    fn dfs1(
+        u: usize,
+        adj: &[Vec<usize>],
+        active: &[bool],
+        seen: &mut [bool],
+        order: &mut Vec<usize>,
+    ) {
+        seen[u] = true;
+        for &v in &adj[u] {
+            if v < active.len() && active[v] && !seen[v] {
+                dfs1(v, adj, active, seen, order);
+            }
+        }
+        order.push(u);
+    }
+
+    for u in 0..states {
+        if active[u] && !seen[u] {
+            dfs1(u, adj, active, &mut seen, &mut order);
+        }
+    }
+
+    let mut comps: Vec<Vec<usize>> = Vec::new();
+    let mut comp_id = vec![usize::MAX; states];
+
+    fn dfs2(
+        u: usize,
+        rev: &[Vec<usize>],
+        active: &[bool],
+        cid: usize,
+        comp_id: &mut [usize],
+        comp: &mut Vec<usize>,
+    ) {
+        comp_id[u] = cid;
+        comp.push(u);
+        for &v in &rev[u] {
+            if active[v] && comp_id[v] == usize::MAX {
+                dfs2(v, rev, active, cid, comp_id, comp);
+            }
+        }
+    }
+
+    while let Some(u) = order.pop() {
+        if !active[u] || comp_id[u] != usize::MAX {
+            continue;
+        }
+        let cid = comps.len();
+        let mut comp = Vec::new();
+        dfs2(u, &rev, active, cid, &mut comp_id, &mut comp);
+        comps.push(comp);
+    }
+
+    comps
+}
+
+/// Whether an SCC contains a directed cycle in the induced subgraph.
+fn scc_has_cycle(comp: &[usize], adj: &[Vec<usize>]) -> bool {
+    if comp.len() >= 2 {
+        return true;
+    }
+    let u = comp[0];
+    adj[u].contains(&u)
+}
+
+/// In a strictly one-direction SCC, an infinite run from a blank tape
+/// is possible only if there is a `read=0` cycle whose transitions
+/// all have that same direction and stay within the SCC.
+fn has_zero_dir_cycle_in_comp<
+    const states: usize,
+    const colors: usize,
+>(
+    prog: &Prog<states, colors>,
+    comp: &[usize],
+    dir_is_r: bool,
+) -> bool {
+    let mut in_comp = vec![false; states];
+    for &u in comp {
+        if u < states {
+            in_comp[u] = true;
+        }
+    }
+
+    // next[u] = dst on read=0 if it stays in comp and moves in `dir_is_r`.
+    let mut next: Vec<Option<usize>> = vec![None; states];
+    for &u in comp {
+        #[expect(clippy::cast_possible_truncation)]
+        let su = u as State;
+        if let Some(&(_write, sh, dst)) = prog.get(&(su, 0))
+            && sh == dir_is_r
+        {
+            let v = dst as usize;
+            if v < states && in_comp[v] {
+                next[u] = Some(v);
+            }
+        }
+    }
+
+    // Detect a directed cycle in this partial functional graph.
+    // 0 = unvisited, 1 = visiting, 2 = done
+    let mut mark = vec![0; states];
+
+    for &start in comp {
+        if mark[start] != 0 {
+            continue;
+        }
+        let mut u = start;
+        let mut stack: Vec<usize> = Vec::new();
+
+        while in_comp[u] {
+            if mark[u] == 1 {
+                // back-edge in functional walk => cycle
+                return true;
+            }
+            if mark[u] == 2 {
+                break;
+            }
+
+            mark[u] = 1;
+            stack.push(u);
+
+            let Some(v) = next[u] else {
+                break;
+            };
+            u = v;
+        }
+
+        for x in stack {
+            mark[x] = 2;
+        }
+    }
+
+    false
 }
 
 /**************************************/
