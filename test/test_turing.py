@@ -383,13 +383,6 @@ class TuringTest(TestCase):
     ########################################
 
     def assert_could_quasihalt_cps(self, prog: str):
-        if prog in CPS_QUASIHALT_FALSE_POSITIVES:
-            self.assertTrue(
-                cps_cant_quasihalt(prog, CPS_LIMIT),
-                f'unexpected cps quasihalt negative: "{prog}"')
-
-            return
-
         self.assertFalse(
             cps_cant_quasihalt(prog, CPS_LIMIT),
             f'cps quasihalt false positive: "{prog}"')
@@ -707,7 +700,7 @@ class Cps(TuringTest):
 
     def test_quasihalt(self):
         for prog in RECURS - QUASIHALT:
-            self.assert_cant_quasihalt_cps(prog, 28)
+            self.assert_cant_quasihalt_cps(prog, 30)
 
         for prog in QUASIHALT:
             self.assert_could_quasihalt_cps(prog)

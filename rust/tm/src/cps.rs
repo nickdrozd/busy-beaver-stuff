@@ -35,9 +35,15 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     ///   no reachable state is visited only finitely often.
     ///
     /// Strategy:
-    /// 1) Run CPS closure for non-halting (Goal::Halt) while recording the CPS transition graph.
-    /// 2) On the resulting finite graph, require (very strong) universal liveness:
-    ///    for every reachable control-state q, every reachable bottom SCC has no cycle avoiding q.
+    /// 1) Run CPS closure for non-halting (Goal::Halt) while
+    ///    recording the CPS transition graph.
+    /// 2) On the resulting finite CPS over-approx graph, certify
+    ///    *non-quasihalt* by a sound sufficient condition: - for
+    ///    every control-state q, the induced subgraph on reachable
+    ///    nodes with state != q is acyclic (has no directed cycle).
+    ///    If a directed cycle exists avoiding q, then there exists an
+    ///    infinite path that can avoid q after some finite prefix, so
+    ///    we cannot certify.
     pub fn cps_cant_quasihalt(&self, rad: Radius) -> bool {
         assert!(rad > 1);
 
@@ -105,13 +111,16 @@ fn cps_cant_quasihalt(prog: &impl GetInstr, rad: Radius) -> bool {
         return false;
     }
 
+    // Deduplicate edges first; CPS expansion can add duplicates.
+    g.dedup_edges();
+
     // Optional fast-path: if the CPS graph is functional (deterministic), we can
     // just check that the unique eventual cycle contains all observed states.
     if let Some(ok) = cant_quasihalt_functional_fastpath(&g) {
         return ok;
     }
 
-    cant_quasihalt_universal(&g)
+    cant_quasihalt_no_avoidable_state_cycle(&g)
 }
 
 /**************************************/
@@ -317,149 +326,88 @@ fn cant_quasihalt_functional_fastpath(g: &GraphObs) -> Option<bool> {
     Some(false)
 }
 
-fn cant_quasihalt_universal(g: &GraphObs) -> bool {
-    let mut g = GraphObs {
-        id: g.id.clone(),
-        nodes: g.nodes.clone(),
-        succ: g.succ.clone(),
-        states: g.states.clone(),
-    };
-    g.dedup_edges();
-
+fn cant_quasihalt_no_avoidable_state_cycle(g: &GraphObs) -> bool {
     let n = g.nodes.len();
     if n == 0 {
         return false;
     }
 
-    let (comp, comps) = scc_kosaraju(&g.succ);
-
-    // Identify bottom SCCs (no outgoing edges to other SCCs).
-    let mut is_bottom = vec![true; comps.len()];
-    for u in 0..n {
-        let cu = comp[u];
-        if g.succ[u].iter().any(|&v| comp[v] != cu) {
-            is_bottom[cu] = false;
-        }
-    }
-
-    // Precompute which SCCs are reachable from start (they should be, but keep safe).
+    // Nodes reachable in the full abstract graph (paths may pass through q).
     let reachable = reachable_nodes(&g.succ, 0);
-    let mut scc_reachable = vec![false; comps.len()];
-    for u in 0..n {
-        if reachable[u] {
-            scc_reachable[comp[u]] = true;
-        }
-    }
 
-    // Stamp arrays to avoid reallocating per (bottom_scc, q) check.
-    let mut mark: Vec<u32> = vec![0; n];
-    let mut indeg: Vec<u32> = vec![0; n];
-    let mut stamp: u32 = 1;
-
-    // For every control state q observed anywhere in the reachable abstract graph,
-    // ensure: in every reachable bottom SCC, there is no directed cycle avoiding q.
-    for q in g.states {
-        for cid in 0..comps.len() {
-            if !scc_reachable[cid] || !is_bottom[cid] {
-                continue;
-            }
-            if has_cycle_avoiding_q(
-                &comps[cid],
-                &g.nodes,
-                &g.succ,
-                q,
-                &comp,
-                cid,
-                &mut mark,
-                &mut indeg,
-                &mut stamp,
-            ) {
-                return false;
-            }
+    // For each control-state q, check whether there exists any
+    // reachable directed cycle comprised only of nodes whose
+    // control-state != q.
+    for q in &g.states {
+        if induced_has_cycle_avoiding_q(g, &reachable, *q) {
+            return false;
         }
     }
 
     true
 }
 
-/// Returns true iff there exists a directed cycle inside SCC `cid`
-/// using only nodes whose control-state != q.
-#[expect(clippy::too_many_arguments)]
-fn has_cycle_avoiding_q(
-    comp_nodes: &[usize],
-    nodes: &[Config],
-    succ: &[Vec<usize>],
+fn induced_has_cycle_avoiding_q(
+    g: &GraphObs,
+    reachable: &[bool],
     q: u8,
-    comp: &[usize],
-    cid: usize,
-    mark: &mut [u32],
-    indeg: &mut [u32],
-    stamp: &mut u32,
 ) -> bool {
-    // Build induced subgraph U = {u in SCC | state(u) != q}
-    *stamp = stamp.wrapping_add(1).max(1);
-    let cur = *stamp;
-
-    let mut u_list: Vec<usize> = vec![];
-    for &u in comp_nodes {
-        if nodes[u].state != q {
-            mark[u] = cur;
-            indeg[u] = 0;
-            u_list.push(u);
+    let n = g.nodes.len();
+    let mut include = vec![false; n];
+    let mut count = 0;
+    for u in 0..n {
+        if reachable[u] && g.nodes[u].state != q {
+            include[u] = true;
+            count += 1;
         }
     }
 
-    // Empty => no cycle avoiding q.
-    if u_list.is_empty() {
+    if count == 0 {
         return false;
     }
 
-    // Compute indegrees within U (restricted to edges staying in the same SCC and avoiding q).
-    for &u in &u_list {
-        for &v in &succ[u] {
-            if comp[v] != cid {
-                continue;
-            }
-            if mark[v] == cur {
-                indeg[v] = indeg[v].saturating_add(1);
+    // Kahn-style cycle detection on the induced subgraph.
+    let mut indeg = vec![0; n];
+    for u in 0..n {
+        if !include[u] {
+            continue;
+        }
+        for &v in &g.succ[u] {
+            if include[v] {
+                indeg[v] += 1;
             }
         }
     }
 
-    // Kahn-style elimination: if we cannot remove all nodes, there is a directed cycle.
-    let mut queue: Vec<usize> = vec![];
-    for &u in &u_list {
-        if indeg[u] == 0 {
-            queue.push(u);
+    let mut stack = Vec::new();
+    for u in 0..n {
+        if include[u] && indeg[u] == 0 {
+            stack.push(u);
         }
     }
 
     let mut removed = 0;
-    while let Some(u) = queue.pop() {
+    while let Some(u) = stack.pop() {
         removed += 1;
-        for &v in &succ[u] {
-            if comp[v] != cid {
+        for &v in &g.succ[u] {
+            if !include[v] {
                 continue;
             }
-            if mark[v] != cur {
-                continue;
-            }
-            // decrement indeg[v]
             let d = indeg[v];
             if d > 0 {
                 indeg[v] = d - 1;
                 if indeg[v] == 0 {
-                    queue.push(v);
+                    stack.push(v);
                 }
             }
         }
     }
 
-    removed != u_list.len()
+    removed != count
 }
 
 /**************************************/
-/* Graph utilities: reachability + SCC */
+/* Graph utilities: reachability */
 
 fn reachable_nodes(succ: &[Vec<usize>], start: usize) -> Vec<bool> {
     let n = succ.len();
@@ -476,75 +424,6 @@ fn reachable_nodes(succ: &[Vec<usize>], start: usize) -> Vec<bool> {
         }
     }
     vis
-}
-
-/// Kosaraju SCC with iterative DFS (avoids recursion).
-/// Returns:
-/// - comp[u] = component id
-/// - comps[id] = list of nodes in that component
-fn scc_kosaraju(succ: &[Vec<usize>]) -> (Vec<usize>, Vec<Vec<usize>>) {
-    let n = succ.len();
-    let mut pred: Vec<Vec<usize>> = vec![vec![]; n];
-    for u in 0..n {
-        for &v in &succ[u] {
-            pred[v].push(u);
-        }
-    }
-
-    // 1) finishing order on original graph
-    let mut seen = vec![false; n];
-    let mut order: Vec<usize> = Vec::with_capacity(n);
-
-    for root in 0..n {
-        if seen[root] {
-            continue;
-        }
-        // iterative DFS with explicit iterator index
-        let mut stack: Vec<(usize, usize)> = vec![(root, 0)];
-        seen[root] = true;
-
-        while let Some((u, i)) = stack.pop() {
-            if i < succ[u].len() {
-                // put frame back with incremented iterator index
-                stack.push((u, i + 1));
-                let v = succ[u][i];
-                if !seen[v] {
-                    seen[v] = true;
-                    stack.push((v, 0));
-                }
-            } else {
-                // finished u
-                order.push(u);
-            }
-        }
-    }
-
-    // 2) reverse finishing order and DFS on reversed graph
-    let mut comp = vec![usize::MAX; n];
-    let mut comps: Vec<Vec<usize>> = vec![];
-
-    for &root in order.iter().rev() {
-        if comp[root] != usize::MAX {
-            continue;
-        }
-        let cid = comps.len();
-        comps.push(vec![]);
-
-        let mut stack = vec![root];
-        comp[root] = cid;
-
-        while let Some(u) = stack.pop() {
-            comps[cid].push(u);
-            for &v in &pred[u] {
-                if comp[v] == usize::MAX {
-                    comp[v] = cid;
-                    stack.push(v);
-                }
-            }
-        }
-    }
-
-    (comp, comps)
 }
 
 /**************************************/

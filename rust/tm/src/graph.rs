@@ -125,6 +125,10 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         forward || backward
     }
 
+    #[expect(
+        clippy::excessive_nesting,
+        clippy::cast_possible_truncation
+    )]
     pub fn graph_cant_quasihalt(&self) -> bool {
         let start = 0;
         if start >= states {
@@ -145,25 +149,32 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             adj[u].dedup();
         }
 
-        // All states must be control-reachable; otherwise we cannot prove non-quasihalt.
+        // All states must be control-reachable; otherwise we cannot
+        // prove non-quasihalt.
         let reachable_all = reach_from(states, &adj, start);
         if reachable_all.iter().any(|&b| !b) {
             return false;
         }
 
-        // State `t` can be visited only finitely many times iff there exists an infinite suffix
-        // of the execution that never visits `t` again. Such a suffix must eventually remain
+        // State `t` can be visited only finitely many times iff there
+        // exists an infinite suffix of the execution that never
+        // visits `t` again. Such a suffix must eventually remain
         // within a cyclic SCC in the control graph with `t` removed.
         //
-        // We conservatively treat *any* cyclic SCC as a possible trap, except that we can
-        // soundly rule out strictly one-directional SCCs (all internal shifts are L or all are R)
-        // that do NOT contain a cycle induced by the `read=0` transitions in that same direction.
+        // We conservatively treat *any* cyclic SCC as a possible
+        // trap, except that we can soundly rule out strictly
+        // one-directional SCCs (all internal shifts are L or all are
+        // R) that do NOT contain a cycle induced by the `read=0`
+        // transitions in that same direction.
         //
         // Soundness sketch (BB-from-blank):
-        // - In a one-direction SCC, the head position is strictly monotone, so no tape cell is revisited.
-        // - Starting from a blank tape, every newly visited cell is `0`, so from that point on only
-        //   `read=0` transitions can occur.
-        // - Therefore, an infinite run staying inside such an SCC requires a `read=0` cycle.
+        // - In a one-direction SCC, the head position is strictly
+        //   monotone, so no tape cell is revisited.
+        // - Starting from a blank tape, every newly visited cell is
+        //   `0`, so from that point on only `read=0` transitions can
+        //   occur.
+        // - Therefore, an infinite run staying inside such an SCC
+        //   requires a `read=0` cycle.
         for t in 0..states {
             // Active nodes: control-reachable and not equal to t.
             let mut active = vec![false; states];
@@ -190,7 +201,6 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                 let mut has_r = false;
 
                 for &u in &comp {
-                    #[expect(clippy::cast_possible_truncation)]
                     let su = u as State;
                     for read in 0..(colors as Color) {
                         let Some(&(_write, sh, dst)) =
