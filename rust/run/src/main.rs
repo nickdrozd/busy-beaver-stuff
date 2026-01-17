@@ -227,6 +227,50 @@ fn test_prover() {
     ];
 }
 
+//
+
+fn quasihalt_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+    prog.is_strict_cycle()
+}
+
+fn quasihalt_3_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+    prog.is_strict_cycle()
+}
+
+fn quasihalt_2_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+    prog.is_strict_cycle()
+}
+
+fn quasihalt_4_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+    prog.is_strict_cycle()
+}
+
+fn quasihalt_2_4(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+    prog.is_strict_cycle()
+}
+
+fn test_quasihalt() {
+    println!("quasihalt");
+
+    assert_params![
+        (2, 2) => [
+            3 => (quasihalt_2_2, 4, (67, 81)),
+        ],
+        (3, 2) => [
+            3 => (quasihalt_3_2, 13, (11_598, 11_758)),
+        ],
+        (2, 3) => [
+            3 => (quasihalt_2_3, 20, (8_631, 8_771)),
+        ],
+        (4, 2) => [
+            3 => (quasihalt_4_2, 99, (2_134_289, 2_135_991)),
+        ],
+        (2, 4) => [
+            3 => (quasihalt_2_4, TREE_LIM, (1_698_363, 1_699_887)),
+        ],
+    ];
+}
+
 fn params_5_2_0(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.cant_halt(2).is_refuted()
 }
@@ -438,13 +482,18 @@ fn test_8_instr() {
 
 /**************************************/
 
-const TESTS: [fn(); 4] =
-    [test_collect, test_reason, test_instrs, test_deciders];
+const TESTS: [fn(); 5] = [
+    test_collect,
+    test_deciders,
+    test_instrs,
+    test_prover,
+    test_reason,
+];
 
 use rayon::prelude::*;
 
 fn main() {
-    test_prover();
+    test_quasihalt();
 
     if !env::args().any(|x| x == "--all") {
         return;
