@@ -992,17 +992,21 @@ class Simple(TuringTest):
                 self.assertIn(prog, STRICT_CYCLE)
 
     def test_quasihalt(self):
+        assert not GRAPH_CANT_QUASIHALT & STRICT_CYCLE
+
         for prog in QUASIHALT:
             self.assertFalse(
                 graph_cant_quasihalt(prog))
 
-        for prog in STRICT_CYCLE:
+        cant_quasihalt = GRAPH_CANT_QUASIHALT | STRICT_CYCLE
+
+        for prog in cant_quasihalt:
             self.assertTrue(
                 graph_cant_quasihalt(prog))
 
         for prog in RECURS - QUASIHALT:
             if graph_cant_quasihalt(prog):
-                self.assertIn(prog, STRICT_CYCLE)
+                self.assertIn(prog, cant_quasihalt)
 
 
 @skipUnless(RUN_SLOW, '')

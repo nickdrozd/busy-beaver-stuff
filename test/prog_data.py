@@ -1697,6 +1697,8 @@ MODULAR = {
 STRICT_CYCLE = {
     "1RB 1LB  1LA 1RA",
 
+    "1RB 2LB 1RB  2LA 2RA 1RA",
+
     "1RB 0LB  1LC 0RC  1RA 1LA",
     "1RB 0RB  1LC 0LC  1LA 1RA",
     "1RB 0RB  1LC 0RC  0LA 1RA",
@@ -1705,6 +1707,13 @@ STRICT_CYCLE = {
 
     "1RB 0LB  1RC 1LC  1RD 1LD  0LA 0RA",
     "1RB 1LB  1RC 1LC  0LD 0RD  1RA 0LA",
+}
+
+GRAPH_CANT_QUASIHALT = {
+    "1RB 1RB  0LA ...",
+
+    "1RB 0LB ...  2LA 1LA 1RA",
+    "1RB 2LB 0RB  2LA ... 2RA",
 }
 
 ########################################

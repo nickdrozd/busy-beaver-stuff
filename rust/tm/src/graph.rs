@@ -125,10 +125,131 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         forward || backward
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     pub fn graph_cant_quasihalt(&self) -> bool {
-        self.is_strict_cycle()
+        let start = 0;
+
+        if start >= states {
+            return false;
+        }
+
+        // Control adjacency: union of next-states over all read symbols.
+        let mut adj: Vec<Vec<usize>> = vec![Vec::new(); states];
+        for ((src, _read), &(_write, _shift, dst)) in self.iter() {
+            let u = src as usize;
+            let v = dst as usize;
+            if u < states && v < states {
+                adj[u].push(v);
+            }
+        }
+        for u in 0..states {
+            adj[u].sort_unstable();
+            adj[u].dedup();
+        }
+
+        let reachable_all = reach_from(states, &adj, start);
+        if reachable_all.iter().any(|&b| !b) {
+            return false;
+        }
+
+        // For each state t, if there exists a reachable directed
+        // cycle that avoids t, then there exists an infinite
+        // execution that (after some time) never returns to t.
+        for t in 0..states {
+            let mut ep: Exitpoints = Exitpoints::new();
+
+            for u in 0..states {
+                if u == t || !reachable_all[u] {
+                    continue;
+                }
+                let su = u as State;
+                for &v in &adj[u] {
+                    if v == t || !reachable_all[v] {
+                        continue;
+                    }
+                    ep.entry(su).or_default().push(v as State);
+                }
+            }
+
+            for conns in ep.values_mut() {
+                conns.sort_unstable();
+                conns.dedup();
+            }
+
+            if has_cycle(states, &ep) {
+                return false;
+            }
+        }
+
+        true
     }
 }
+
+fn has_cycle(states: usize, adj: &Exitpoints) -> bool {
+    fn dfs(u: usize, adj: &Exitpoints, mark: &mut [u8]) -> bool {
+        mark[u] = 1;
+
+        #[expect(clippy::cast_possible_truncation)]
+        let su = u as State;
+        if let Some(neis) = adj.get(&su) {
+            for &v_state in neis {
+                let v = v_state as usize;
+
+                // Back-edge => cycle
+                if mark[v] == 1 {
+                    return true;
+                }
+
+                if mark[v] == 0 && dfs(v, adj, mark) {
+                    return true;
+                }
+            }
+        }
+
+        mark[u] = 2;
+        false
+    }
+
+    // 0 = unvisited, 1 = visiting, 2 = done
+    let mut mark = vec![0; states];
+
+    for u in 0..states {
+        if mark[u] == 0 && dfs(u, adj, &mut mark) {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn reach_from(
+    states: usize,
+    adj: &[Vec<usize>],
+    start: usize,
+) -> Vec<bool> {
+    let mut seen = vec![false; states];
+    if start >= states {
+        return seen;
+    }
+
+    let mut stack = vec![start];
+    while let Some(u) = stack.pop() {
+        if seen[u] {
+            continue;
+        }
+        seen[u] = true;
+        for &v in &adj[u] {
+            if v >= states || seen[v] {
+                continue;
+            }
+            stack.push(v);
+        }
+    }
+
+    seen
+}
+
+/**************************************/
 
 #[cfg(test)]
 macro_rules! assert_connected {
