@@ -296,9 +296,6 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
         true
     }
-
-    // NOTE: This file previously contained a duplicate copy of the
-    // `graph_cant_quasihalt_abs` method. Keep a single implementation.
 }
 
 fn reach_from(

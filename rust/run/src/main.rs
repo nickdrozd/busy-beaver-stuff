@@ -230,24 +230,29 @@ fn test_prover() {
 
 //
 
-fn quasihalt_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn qh_2_2(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt()
+        || prog.term_or_rec(5, config.to_mut()).is_settled()
 }
 
-fn quasihalt_3_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn qh_3_2(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt()
+        || prog.term_or_rec(50, config.to_mut()).is_settled()
 }
 
-fn quasihalt_2_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn qh_2_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt()
+        || prog.term_or_rec(200, config.to_mut()).is_settled()
 }
 
-fn quasihalt_4_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn qh_4_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt()
+        || prog.term_or_rec(1000, config.to_mut()).is_settled()
 }
 
-fn quasihalt_2_4(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn qh_2_4(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt()
+        || prog.term_or_rec(1000, config.to_mut()).is_settled()
 }
 
 fn test_quasihalt() {
@@ -255,19 +260,19 @@ fn test_quasihalt() {
 
     assert_params![
         (2, 2) => [
-            3 => (quasihalt_2_2, 4, (7, 81)),
+            3 => (qh_2_2, 4, (0, 81)),
         ],
         (3, 2) => [
-            3 => (quasihalt_3_2, 13, (3_262, 11_758)),
+            3 => (qh_3_2, 13, (454, 11_758)),
         ],
         (2, 3) => [
-            3 => (quasihalt_2_3, 20, (1_242, 8_771)),
+            3 => (qh_2_3, 20, (538, 8_771)),
         ],
         (4, 2) => [
-            3 => (quasihalt_4_2, 99, (798_071, 2_135_991)),
+            3 => (qh_4_2, 99, (133_784, 2_135_991)),
         ],
         (2, 4) => [
-            3 => (quasihalt_2_4, TREE_LIM, (297_670, 1_699_887)),
+            3 => (qh_2_4, TREE_LIM, (181_839, 1_699_887)),
         ],
     ];
 }
