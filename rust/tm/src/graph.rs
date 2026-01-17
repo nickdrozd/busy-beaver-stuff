@@ -124,6 +124,10 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
         forward || backward
     }
+
+    pub fn graph_cant_quasihalt(&self) -> bool {
+        self.is_strict_cycle()
+    }
 }
 
 #[cfg(test)]

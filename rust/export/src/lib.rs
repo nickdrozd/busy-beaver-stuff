@@ -74,6 +74,11 @@ pub fn is_strict_cycle(prog: &str) -> bool {
     parse!(prog, |p: Prog<_, _>| p.is_strict_cycle())
 }
 
+#[pyfunction]
+pub fn graph_cant_quasihalt(prog: &str) -> bool {
+    parse!(prog, |p: Prog<_, _>| { p.graph_cant_quasihalt() })
+}
+
 /***************************************/
 
 #[pyfunction]
@@ -563,10 +568,11 @@ mod rust_stuff {
         BackwardResult, MachineResult, PastConfigPy, TermRes,
         cant_blank, cant_halt, cant_spin_out, cps_cant_blank,
         cps_cant_halt, cps_cant_quasihalt, cps_cant_spin_out,
-        ctl_cant_blank, ctl_cant_halt, ctl_cant_spin_out, is_connected,
-        is_strict_cycle, opt_block, read_instr, run_quick_machine,
-        run_transcript, segment_cant_blank, segment_cant_halt,
-        segment_cant_spin_out, show_comp, show_instr, show_slot,
-        show_state, tcompile, term_or_rec,
+        ctl_cant_blank, ctl_cant_halt, ctl_cant_spin_out,
+        graph_cant_quasihalt, is_connected, is_strict_cycle, opt_block,
+        read_instr, run_quick_machine, run_transcript,
+        segment_cant_blank, segment_cant_halt, segment_cant_spin_out,
+        show_comp, show_instr, show_slot, show_state, tcompile,
+        term_or_rec,
     };
 }

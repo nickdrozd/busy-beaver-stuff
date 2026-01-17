@@ -1694,7 +1694,7 @@ MODULAR = {
     "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
 }
 
-CANT_QUASIHALT_STATIC = {
+STRICT_CYCLE = {
     "1RB 1LB  1LA 1RA",
 
     "1RB 0LB  1LC 0RC  1RA 1LA",

@@ -230,23 +230,23 @@ fn test_prover() {
 //
 
 fn quasihalt_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
-    prog.is_strict_cycle()
+    prog.graph_cant_quasihalt()
 }
 
 fn quasihalt_3_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
-    prog.is_strict_cycle()
+    prog.graph_cant_quasihalt()
 }
 
 fn quasihalt_2_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
-    prog.is_strict_cycle()
+    prog.graph_cant_quasihalt()
 }
 
 fn quasihalt_4_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
-    prog.is_strict_cycle()
+    prog.graph_cant_quasihalt()
 }
 
 fn quasihalt_2_4(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
-    prog.is_strict_cycle()
+    prog.graph_cant_quasihalt()
 }
 
 fn test_quasihalt() {
