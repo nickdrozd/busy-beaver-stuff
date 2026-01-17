@@ -1,4 +1,6 @@
-use std::collections::{BTreeMap as Dict, BTreeSet as Set};
+use std::collections::{
+    BTreeMap as Dict, BTreeSet as Set, HashMap, VecDeque,
+};
 
 use crate::{Color, Prog, State};
 
@@ -125,12 +127,23 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         forward || backward
     }
 
-    #[expect(
-        clippy::excessive_nesting,
-        clippy::cast_possible_truncation
-    )]
+    /// Sound (but incomplete) static proof that the program cannot quasihalt
+    /// (BusyBeaver convention: start state = 0 on an all-0 blank tape).
+    ///
+    /// Combines a fast control/SCC proof with a stronger (still static)
+    /// abstract-configuration graph refinement. If the refinement exceeds
+    /// resource limits, this returns `false` ("can't prove").
     pub fn graph_cant_quasihalt(&self) -> bool {
+        if self.graph_cant_quasihalt_fast() {
+            return true;
+        }
+        self.graph_cant_quasihalt_abs()
+    }
+
+    /// Fast sufficient condition (pure control/SCC + one-direction `read=0` cycle lemma).
+    fn graph_cant_quasihalt_fast(&self) -> bool {
         let start = 0;
+
         if start >= states {
             return false;
         }
@@ -149,96 +162,143 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             adj[u].dedup();
         }
 
-        // All states must be control-reachable; otherwise we cannot
-        // prove non-quasihalt.
         let reachable_all = reach_from(states, &adj, start);
         if reachable_all.iter().any(|&b| !b) {
             return false;
         }
 
-        // State `t` can be visited only finitely many times iff there
-        // exists an infinite suffix of the execution that never
-        // visits `t` again. Such a suffix must eventually remain
-        // within a cyclic SCC in the control graph with `t` removed.
+        // Shift-aware refinement:
+        // For each target state `t`, look for a *realizable* infinite trap that avoids `t`.
         //
-        // We conservatively treat *any* cyclic SCC as a possible
-        // trap, except that we can soundly rule out strictly
-        // one-directional SCCs (all internal shifts are L or all are
-        // R) that do NOT contain a cycle induced by the `read=0`
-        // transitions in that same direction.
+        // Any infinite execution that avoids `t` forever must eventually remain inside some SCC
+        // not containing `t`. We conservatively treat SCCs as traps, except that we can *rule out*
+        // certain SCCs that are strictly one-directional (all internal moves are L or all are R)
+        // **and** do not contain a cycle induced by the `read=0` transitions in that direction.
         //
-        // Soundness sketch (BB-from-blank):
-        // - In a one-direction SCC, the head position is strictly
-        //   monotone, so no tape cell is revisited.
-        // - Starting from a blank tape, every newly visited cell is
-        //   `0`, so from that point on only `read=0` transitions can
-        //   occur.
-        // - Therefore, an infinite run staying inside such an SCC
-        //   requires a `read=0` cycle.
+        // Why this extra rule is sound for BB-from-blank:
+        // - In a one-direction SCC, the head position is strictly monotone, so no tape cell is revisited.
+        // - Starting from a blank tape, every newly visited cell is `0`, so from that point on only
+        //   `read=0` transitions can occur. Thus an infinite run inside such an SCC requires a
+        //   `read=0` cycle with the same direction.
         for t in 0..states {
-            // Active nodes: control-reachable and not equal to t.
+            // Active nodes: reachable from start and not equal to t.
             let mut active = vec![false; states];
             for u in 0..states {
                 active[u] = reachable_all[u] && u != t;
             }
 
-            // SCCs of the induced subgraph on `active` nodes.
-            for comp in sccs_masked(states, &adj, &active) {
+            // Compute SCCs in the induced subgraph.
+            let sccs = sccs_masked(states, &adj, &active);
+
+            for comp in sccs {
                 if !scc_has_cycle(&comp, &adj) {
                     continue;
                 }
 
-                // Build a membership mask for this SCC.
-                let mut in_comp = vec![false; states];
-                for &u in &comp {
-                    if u < states {
-                        in_comp[u] = true;
-                    }
-                }
-
-                // Check whether the SCC contains both L and R internal shifts.
+                // Determine whether this SCC contains both L and R internal transitions.
                 let mut has_l = false;
                 let mut has_r = false;
 
-                for &u in &comp {
-                    let su = u as State;
-                    for read in 0..(colors as Color) {
-                        let Some(&(_write, sh, dst)) =
-                            self.get(&(su, read))
-                        else {
-                            continue;
-                        };
-                        let v = dst as usize;
-                        if v < states && active[v] && in_comp[v] {
-                            if sh {
-                                has_r = true;
-                            } else {
-                                has_l = true;
-                            }
-                            if has_l && has_r {
-                                // Bidirectional SCC: cannot be statically ruled out.
-                                return false;
-                            }
-                        }
+                // Also record which single direction it has (if any), so we can do the 0-cycle check.
+                for ((src, _read), &(_write, sh, dst)) in self.iter() {
+                    let u = src as usize;
+                    let v = dst as usize;
+                    if u >= states || v >= states {
+                        continue;
+                    }
+                    if !active[u] || !active[v] {
+                        continue;
+                    }
+                    if !comp_contains(&comp, u)
+                        || !comp_contains(&comp, v)
+                    {
+                        continue;
+                    }
+
+                    if sh {
+                        has_r = true;
+                    } else {
+                        has_l = true;
+                    }
+
+                    if has_l && has_r {
+                        // Bidirectional SCC: we cannot rule out an infinite bounded "bouncing" run.
+                        return false;
                     }
                 }
 
-                // Cyclic SCC but no internal transitions found: be conservative.
+                // If we have a (cyclic) SCC but saw no internal transitions from self.iter(),
+                // it's because those transitions are absent; conservatively treat as trap.
                 if !has_l && !has_r {
                     return false;
                 }
 
-                // One-direction SCC: potentially a realizable trap only if it has a 0-cycle.
+                // One-direction SCC: rule it out unless it contains a feasible `read=0` cycle
+                // in that same direction.
+                let dir_is_r = has_r; // if not R, must be L
                 if has_zero_dir_cycle_in_comp::<states, colors>(
-                    self, &comp, has_r,
+                    self, &comp, dir_is_r,
                 ) {
                     return false;
                 }
+
+                // Otherwise, this SCC cannot host an infinite avoidance run from blank tape.
             }
         }
 
         true
     }
+
+    /// Stronger sound proof using a finite abstract-configuration graph.
+    ///
+    /// This is purely static/symbolic: it explores a finite over-approximation
+    /// of reachable local tape windows and then checks for the existence of an
+    /// abstract cycle that avoids each control state.
+    fn graph_cant_quasihalt_abs(&self) -> bool {
+        // Modest defaults: keep the abstraction small and safe.
+        // Larger values are more powerful but can explode.
+        const MAX_TAPE: usize = 15;
+        const MAX_NODES: usize = 1_000;
+
+        // Encode wildcard as `colors`.
+        #[expect(clippy::cast_possible_truncation)]
+        let wild: u8 = colors as u8;
+        #[expect(clippy::cast_possible_truncation)]
+        let nstates: u8 = states as u8;
+        if states == 0 || colors == 0 {
+            return false;
+        }
+
+        let (nodes, adj) = build_abs_graph::<states, colors>(
+            self, MAX_TAPE, MAX_NODES, wild,
+        );
+
+        // If we hit the cap, we conservatively give up (no false proofs).
+        if nodes.is_empty() || nodes.len() >= MAX_NODES {
+            return false;
+        }
+
+        // All abstract nodes are reachable in the full graph by construction.
+        // For each control state t, we must consider *any* cycle that avoids t,
+        // even if reaching it required visiting t earlier (eventual avoidance).
+        // Therefore we MUST NOT recompute reachability on the filtered graph.
+        for t in 0..nstates {
+            let mut active = vec![true; nodes.len()];
+            for (i, cfg) in nodes.iter().enumerate() {
+                if cfg.state == t {
+                    active[i] = false;
+                }
+            }
+            if dyn_cycle_exists(&adj, &active) {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    // NOTE: This file previously contained a duplicate copy of the
+    // `graph_cant_quasihalt_abs` method. Keep a single implementation.
 }
 
 fn reach_from(
@@ -269,6 +329,224 @@ fn reach_from(
 }
 
 /**************************************/
+// Abstract configuration graph (sound static over-approx)
+
+/// Abstract tape symbol: `0..colors-1` are concrete, and `wild` means "unknown".
+///
+/// `left_unknown/right_unknown` indicate whether cells beyond the stored window
+/// may have been modified (unknown) or are still guaranteed blank 0.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+struct AbsCfg {
+    state: u8,
+    head: u8,
+    tape: Vec<u8>,
+    left_unknown: bool,
+    right_unknown: bool,
+}
+
+impl AbsCfg {
+    fn new_blank(start_state: u8) -> Self {
+        Self {
+            state: start_state,
+            head: 0,
+            tape: vec![0],
+            left_unknown: false,
+            right_unknown: false,
+        }
+    }
+}
+
+#[expect(clippy::cast_possible_truncation)]
+fn normalize_abs(cfg: &mut AbsCfg, max_tape: usize) {
+    if cfg.tape.is_empty() {
+        cfg.tape.push(0);
+        cfg.head = 0;
+        return;
+    }
+    if cfg.head as usize >= cfg.tape.len() {
+        cfg.head = (cfg.tape.len() - 1) as u8;
+    }
+
+    if cfg.tape.len() <= max_tape {
+        return;
+    }
+
+    let len = cfg.tape.len();
+    let head = cfg.head as usize;
+    let half = max_tape / 2;
+    let mut start = head.saturating_sub(half);
+    if start + max_tape > len {
+        start = len - max_tape;
+    }
+    let end = start + max_tape;
+
+    if start > 0 {
+        cfg.left_unknown = true;
+    }
+    if end < len {
+        cfg.right_unknown = true;
+    }
+
+    cfg.tape = cfg.tape[start..end].to_vec();
+    cfg.head = (head - start) as u8;
+}
+
+#[expect(clippy::cast_possible_truncation)]
+fn step_abs<const states: usize, const colors: usize>(
+    prog: &Prog<states, colors>,
+    cfg: &AbsCfg,
+    wild: u8,
+) -> Vec<AbsCfg> {
+    let head = cfg.head as usize;
+    if head >= cfg.tape.len() {
+        return vec![];
+    }
+
+    let cur = cfg.tape[head];
+    let mut reads: Vec<u8> = Vec::new();
+    if cur == wild {
+        for r in 0..(colors as u8) {
+            reads.push(r);
+        }
+    } else {
+        reads.push(cur);
+    }
+
+    let mut out: Vec<AbsCfg> = Vec::new();
+    for read in reads {
+        let st = cfg.state;
+        let co = read;
+        let Some(&(write, sh, dst)) = prog.get(&(st, co)) else {
+            continue;
+        };
+
+        let mut nxt = cfg.clone();
+        nxt.state = dst;
+        nxt.tape[head] = write;
+
+        // Move head and extend window if necessary.
+        if sh {
+            // Right
+            let new_head = head + 1;
+            if new_head >= nxt.tape.len() {
+                let new_cell = if nxt.right_unknown { wild } else { 0 };
+                nxt.tape.push(new_cell);
+            }
+            nxt.head = new_head as u8;
+        } else {
+            // Left
+            if head == 0 {
+                let new_cell = if nxt.left_unknown { wild } else { 0 };
+                nxt.tape.insert(0, new_cell);
+                nxt.head = 0;
+            } else {
+                nxt.head = (head - 1) as u8;
+            }
+        }
+
+        out.push(nxt);
+    }
+
+    out
+}
+
+fn build_abs_graph<const states: usize, const colors: usize>(
+    prog: &Prog<states, colors>,
+    max_tape: usize,
+    max_nodes: usize,
+    wild: u8,
+) -> (Vec<AbsCfg>, Vec<Vec<usize>>) {
+    let mut nodes: Vec<AbsCfg> = Vec::new();
+    let mut adj: Vec<Vec<usize>> = Vec::new();
+    let mut map: HashMap<AbsCfg, usize> = HashMap::new();
+    let mut q: VecDeque<usize> = VecDeque::new();
+
+    let mut start = AbsCfg::new_blank(0);
+    normalize_abs(&mut start, max_tape);
+    nodes.push(start.clone());
+    adj.push(Vec::new());
+    map.insert(start, 0);
+    q.push_back(0);
+
+    while let Some(u) = q.pop_front() {
+        if nodes.len() >= max_nodes {
+            break;
+        }
+
+        let succs = step_abs::<states, colors>(prog, &nodes[u], wild);
+        for mut vcfg in succs {
+            normalize_abs(&mut vcfg, max_tape);
+            let vid = if let Some(&id) = map.get(&vcfg) {
+                id
+            } else {
+                let id = nodes.len();
+                nodes.push(vcfg.clone());
+                adj.push(Vec::new());
+                map.insert(vcfg, id);
+                q.push_back(id);
+                id
+            };
+            adj[u].push(vid);
+        }
+        adj[u].sort_unstable();
+        adj[u].dedup();
+    }
+
+    (nodes, adj)
+}
+
+/// Iterative 3-color DFS cycle check on the induced subgraph of `active` nodes.
+///
+/// Returns true iff there is a directed cycle using only active nodes.
+fn dyn_cycle_exists(adj: &[Vec<usize>], active: &[bool]) -> bool {
+    let n = adj.len();
+    let mut color = vec![0; n]; // 0=unseen,1=visiting,2=done
+
+    for start in 0..n {
+        if !active[start] || color[start] != 0 {
+            continue;
+        }
+
+        // stack of (node, next_edge_index)
+        let mut stack: Vec<(usize, usize)> = Vec::new();
+        stack.push((start, 0));
+        color[start] = 1;
+
+        while let Some((u, ei)) = stack.pop() {
+            if ei >= adj[u].len() {
+                color[u] = 2;
+                continue;
+            }
+
+            // resume node u at next edge index
+            stack.push((u, ei + 1));
+            let v = adj[u][ei];
+            if v >= n || !active[v] {
+                continue;
+            }
+            match color[v] {
+                0 => {
+                    color[v] = 1;
+                    stack.push((v, 0));
+                },
+                1 => {
+                    // back-edge => cycle
+                    return true;
+                },
+                _ => {},
+            }
+        }
+    }
+
+    false
+}
+
+/**************************************/
+
+fn comp_contains(comp: &[usize], x: usize) -> bool {
+    // SCC sizes here are tiny (BB state counts), so linear scan is fine.
+    comp.contains(&x)
+}
 
 /// Kosaraju SCC decomposition on a graph given as adjacency lists,
 /// restricted to `active` nodes.
