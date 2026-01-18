@@ -2015,7 +2015,7 @@ GRAPH_CANT_QUASIHALT = {
 
 BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
     "halt": {
-        "1RB 0LA  1LA ...": 3,
+        "1RB 0LA  1LA ...": 2,
 
         "1RB 1RB ...  0LB 2RB 1LA": 8,
 
@@ -2029,11 +2029,11 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0LA  0RC 1RC  1RD 1LA  1LB ...": 46,
 
         "1RB 0RC ...  2LC 0RB 0LA  1LA 1LC ...": 2,
-        "1RB 0RC 0LA  2LA ... 0LC  2RB ... 2RC": 4,
+        "1RB 0RC 0LA  2LA ... 0LC  2RB ... 2RC": 2,
         "1RB 0RC 0LA  2RC ... 2RB  2LA ... 0LB": 2,
         "1RB 1RA ...  1LC 0LA ...  2RA 0LC 0RB": 2,
-        "1RB 1RA ...  1LC 0LA ...  2RB 0LC 0RA": 4,
-        "1RB 0LC 2LC  1LA 2RB ...  0RA 2RC 0LC": 61,
+        "1RB 1RA ...  1LC 0LA ...  2RB 0LC 0RA": 2,
+        "1RB 0LC 2LC  1LA 2RB ...  0RA 2RC 0LC": 60,
         "1RB 2LA ...  1LA 0RC 2RC  0LB 2LC 0RC": 61,
         "1RB 1LC 2RB  0LA 2LB 0RB  1RA 2LC ...": 62,
         "1RB 2LA ...  1RC 1LA 2RC  0LB 2LC 0RC": 62,
@@ -2045,14 +2045,14 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
 
         "1RB ...  1RC ...  1LD ...  1LE 1RD  0RA 0LE":  11,
         "1RB 0LA  0RC 1RE  0RD 1LA  1LE ...  1RC ...":  51,
-        "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LA ...": 101,
+        "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LA ...": 100,
         "1RB ...  1RC 1LC  1LD 0RE  0RA 0LD  0LB 1RE": 105,
         "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LB ...": 107,
         "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": 115,
         "1RB 0RB  1RC 1LE  1RD 1LA  1LB ...  0LE 0RA": 115,
         "1RB 0RB  0RC 1LE  1RD 0LC  1LA ...  0LE 0RA": 118,
 
-        "1RB ... 3LA 2LB  2LC ... 0RB 3LC  0RA 0LC ... ...": 3,
+        "1RB ... 3LA 2LB  2LC ... 0RB 3LC  0RA 0LC ... ...": 2,
 
         "1RB 1LC ...  2LC ... 0RD  0RA 0LC ...  0LA ... 1RD": 57,
         "1RB 1LA 1LD  2RC 1RC ...  0LA 0RC ...  ... 0RB ...": 58,
@@ -2061,14 +2061,14 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0LA ...  0RC 1RC ...  1RD 2LB 1LA  1LB ... ...": 62,
 
         "1RB ... 4RB ... 3RA  0LC ... 3RB ... ...  ... 2LA ... 4RA 2LC": 58,
-        "1RB 0RC ... ... 0LA  2LA ... 4RC 4RB ...  0LA ... 3LA ... ...": 59,
+        "1RB 0RC ... ... 0LA  2LA ... 4RC 4RB ...  0LA ... 3LA ... ...": 57,
 
         "1RB 0LA ...  0RC ... 1RE  0RD ... 2LA  2LE ... ...  1RC ... ...": 51,
         "1RB ... ...  1LB 2RC 0RC  ... 1RD ...  0LD 0RE ...  0LB ... ...": 59,
 
         "1RB ... ... ...  0LC ... ... ...  2LC 2RC 3RD 0RD  0LC ... 2RB ...": 51,
         "1RB ... ... ...  2LB 2RB 3RC 0RC  0LB ... 2RD ...  0LB ... ... ...": 51,
-        "1RB ... ... ...  0LC ... 2RD ...  2LC 2RC 3RB 0RB  0LC ... ... ...": 52,
+        "1RB ... ... ...  0LC ... 2RD ...  2LC 2RC 3RB 0RB  0LC ... ... ...": 51,
         "1RB 3LA 3LD ...  2RC ... ... 1RC  0LA ... ... 0RC  ... 0RB ... ...": 58,
         "1RB 2LA ... 3RC  0LA ... 3RB ...  0RB ... 0LD ...  ... ... ... 1RA": 2,
     },
@@ -2083,7 +2083,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0RB 0RA  1LB 2RA 1LA": 4,
         "1RB 0RB ...  1LB 2LA 0RB": 5,
         "1RB 0RA 0RB  2LB 2LA 1RA": 5,
-        "1RB 0RA 0RB  1LB 2LA 0RB": 7,
+        "1RB 0RA 0RB  1LB 2LA 0RB": 6,
 
         "1RB 1RC  1LB 1LA  0RC 0LA": 7,
         "1RB 1LB  1LB 0RC  1LC 1LA": 13,
@@ -2106,7 +2106,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0RB  1LC 0LD  1LB 1RA  0RD 0LC": 29,
         "1RB 0LD  1RC 0RB  1LC 0LA  1RD 1LA": 36,
 
-        "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC": 28,
+        "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC": 27,
         "1RB 1RA 2RC  2LB 2LA 0RC  0RC 0LA 1LC": 32,
         "1RB 2LA 1LC  1LA 2RA 2LB  0LC 0RB 2RC": 34,
         "1RB 0RC 2LA  1LA 2LB 0LA  2RC 2RB 1LB": 37,
@@ -2126,7 +2126,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1LD  0RC 1RD  1RD 0RE  0LA 1RE  1RE 1LA": 40,
         "1RB 1LA  1RC 1RD  0LA 1RE  1LE 0RC  0RE 0LB": 52,
         "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB": 145,
-        "1RB 1LC  0LA 0RD  1LA 1RB  0LE 1RC  1LE 0RB": 191,
+        "1RB 1LC  0LA 0RD  1LA 1RB  0LE 1RC  1LE 0RB": 189,
         "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD": 223,
     },
 
@@ -2181,20 +2181,20 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 2LA 3LB 1LB  0LA 2RB 3RB 0RB": 100,
 
         "1RB 0RC  1LB 0LC  0RD 0LD  1RA 0LA": 23,
-        "1RB 1LC  1LB 1RC  0LD 0RC  1LA 0RA": 24,
+        "1RB 1LC  1LB 1RC  0LD 0RC  1LA 0RA": 23,
         "1RB 1LC  1LA 1RC  0LD 0RB  0RB 0LA": 40,
         "1RB 0LB  1RC 0LD  1LA 0RB  0RC 1LD": 34,
         "1RB 0LC  1RC 0LD  1LA 0RB  0RC 1LD": 34,
         "1RB 1LC  1RC 0LD  1LA 0RB  0RC 1LD": 34,
-        "1RB 0LD  1LC 0RA  1RA 0LB  0RB 1LD": 34,
+        "1RB 0LD  1LC 0RA  1RA 0LB  0RB 1LD": 33,
         "1RB 0LC  1RC 0LD  1LD 0RB  0LA 0LA": 44,
         "1RB 0RB  0LC 0RB  1LD 1LB  0RD 1LA": 24,
         "1RB 1LA  1LC 1RD  1RA 1LB  0RC 0LD": 46,
         "1RB 1RC  0LC 0RB  1LD 1LB  0RD 1LA": 25,
-        "1RB 1LC  1RC 0LA  0RD 0LC  1LA 0RB": 42,
+        "1RB 1LC  1RC 0LA  0RD 0LC  1LA 0RB": 41,
         "1RB 1LA  0RC 0LD  1LC 0RA  1LB 0LD": 48,
         "1RB 0LA  1LC 1RC  0RD 0LC  0RB 1RA": 55,
-        "1RB 1LC  1RC 0LA  0LD 0RC  0RB 1LA": 40,
+        "1RB 1LC  1RC 0LA  0LD 0RC  0RB 1LA": 39,
         "1RB 0LA  1LC 0RD  0RB 0LC  1RA 1LA": 64,
         "1RB 0RA  1RC 0LB  0LD 1LA  0RB 1LC": 66,
         "1RB 0RA  1RC 0LB  0LD 1LA  1RD 1LC": 70,
@@ -2210,7 +2210,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
 
         "1RB 3LB 2LA 3LA 0RB  2LB 3RB 0LA 4RB 4RA": 154,
         "1RB 1RA 0RB 4LA 4LB  2LB 2RB 3RB 2LA 0LA": 118,
-        "1RB 2RA 0RB 4LA 3LB  2LB 2RB 3RB 2LA 0LA": 170,
+        "1RB 2RA 0RB 4LA 3LB  2LB 2RB 3RB 2LA 0LA": 169,
         "1RB 0RA 3LA 2LA 0LA  2LA 0RB 4LB 2RB 4RA": 200,
         "1RB 3RA 0LA 3LB 1LA  2LA 4RB 0LB 0RB 1RB": 200,
         "1RB 1RB 0RB 3LA 0LA  2LA 2RA 3RB 4LB 4RA": 206,
@@ -2615,7 +2615,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 1RA  1LC 0RB  1LB 1LD  0RA 0RE  0RB 1RE",
             "1RB 1RA  1LC 1RE  0RE 1LD  1RE 1LC  1LA 0LE",
             "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC",
-            "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC",
             "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA ...",
             "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...",
             "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ...  2RA 1LB 0RD",
@@ -2767,13 +2766,11 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 2RA 3RB 0LB  1LB 1LA 3RB 2LA",
             "1RB 2RA 3RB 1LB  1LB 1LA 0LA 3LA",
             "1RB 2RA 3RB 2LB  2LB 3LA 0LA 2LA",
-            "1RB 2RB 1LA 3LA  2LB 2RA 3RA 0LB",
             "1RB 2RB 1LA 3LA  2LB 3RB 2LB 2RA",
             "1RB 2RB 2LA 0LB  2LB 2RB 3RB 2LA",
             "1RB 3LA 1LA 1LA  0LB 2LA 3RA 0RB",
             "1RB 3LA 1LA 1RA  2LB 2RA 0RB 3RB",
             "1RB 3LA 3LA 1LA  0LB 2LA 3RA 0RB",
-            "1RB 3LA 3RA 1RB  1LB 2RB 0LA 0LB",
             "1RB 3LB 2RA 0LA  2LB 3LA 1RB 0RA",
             "1RB 3LB 3LA 0LA  1LB 2RB 2RA 1RA",
             "1RB 3RA 1LA 1LB  2LB 2RA 1LB 2LA",
@@ -2853,12 +2850,12 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "blank": {
         "step_limit": 3,
         "depth_limit": 9,
-        "linrec": 108,
+        "linrec": 107,
     },
     "spinout": {
         "step_limit": 4,
         "depth_limit": 65,
-        "linrec": 127,
+        "linrec": 125,
     },
 }
 
@@ -6961,10 +6958,10 @@ REASON_ONLY: set[str] = {
 }
 
 OMNIREASONABLE: dict[str, tuple[int, int, int]] = {
-    "1RB 0RB ...  1LC 2LC 0LA  0LC 2RA 1RB": (10,  3, 5),
-    "1RB 2RC ...  1LB 2RB 0RC  2LB 1RC 0LA": ( 2, 15, 2),
-    "1RB 2RB 1LA  1LB 2LA 0RC  ... 0LA 0LB": ( 6, 12, 2),
-    "1RB ... 1LB  1LB 1RC 0RC  2LA 2RC 0LB": ( 5, 12, 7),
+    "1RB 0RB ...  1LC 2LC 0LA  0LC 2RA 1RB": ( 9,  2, 4),
+    "1RB 2RC ...  1LB 2RB 0RC  2LB 1RC 0LA": ( 1, 15, 2),
+    "1RB 2RB 1LA  1LB 2LA 0RC  ... 0LA 0LB": ( 5, 11, 2),
+    "1RB ... 1LB  1LB 1RC 0RC  2LA 2RC 0LB": ( 1, 12, 7),
 
     "1RB 0LD  1RC 0RC  1LD 0LE  0LD 1RB  ... 0LA": (10, 10, 11),
     "1RB 0LB  0LB 1RC  1RD 0RD  1LB 0LE  ... 0LA": (11, 10, 11),

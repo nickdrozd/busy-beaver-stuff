@@ -93,6 +93,14 @@ type Entry = (Slot, (Color, Shift));
 type Entries = Vec<Entry>;
 type Entrypoints = Dict<State, (Entries, Entries)>;
 
+/// For each (state, scanned color), records which immediate neighbor
+/// colors are possible on each side in some run from the blank tape.
+///
+/// Indexing: adj[state][scan][side][neighbor] where side=0 is left,
+/// side=1 is right.
+type AdjPossible<const S: usize, const C: usize> =
+    [[[[bool; C]; 2]; C]; S];
+
 fn cant_reach<const s: usize, const c: usize, T: Ord>(
     prog: &Prog<s, c>,
     steps: Steps,
@@ -122,6 +130,15 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     // *sound* pruning filter to avoid spurious backward
     // configurations.
     let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+
+    // Optional *sound* adjacency reachability filter.
+    //
+    // We over-approximate the set of 3-cell windows (L,scan,R) that
+    // can appear around the head in each state when starting from the
+    // blank tape. If a generated predecessor configuration demands an
+    // immediate neighbor color that is impossible in this
+    // over-approximation, we can safely prune it.
+    let adj_possible = prog.adj_possible_from_blank();
 
     let mut configs = get_configs(&slots);
 
@@ -156,11 +173,12 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             _ => {},
         }
 
-        configs = match step_configs::<c>(
+        configs = match step_configs::<s, c>(
             valid_steps,
             &mut blanks,
             &forbid_left,
             &forbid_right,
+            &adj_possible,
         ) {
             Err(err) => return err,
             Ok(stepped) => {
@@ -290,11 +308,12 @@ fn get_indef(
     Some((steps, next_config))
 }
 
-fn step_configs<const c: usize>(
+fn step_configs<const s: usize, const c: usize>(
     configs: ValidatedSteps,
     blanks: &mut BlankStates,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
+    adj_possible: &AdjPossible<s, c>,
 ) -> Result<Configs, BackwardResult> {
     let configs = branch_indef(configs);
 
@@ -311,6 +330,26 @@ fn step_configs<const c: usize>(
             // Prune configs that violate proven shift-side constraints.
             if tape.violates_shift_side(forbid_left, forbid_right) {
                 continue;
+            }
+
+            // Optional adjacency pruning: if this predecessor
+            // configuration requires an immediate neighbor color that
+            // cannot occur (even in a sound over-approximation of
+            // reachable 3-cell windows from blank), prune it.
+            let st = state as usize;
+            let sc = tape.scan as usize;
+
+            if st < s && sc < c {
+                if let Some(lc) = tape.left_neighbor_color()
+                    && !adj_possible[st][sc][0][lc as usize]
+                {
+                    continue;
+                }
+                if let Some(rc) = tape.right_neighbor_color()
+                    && !adj_possible[st][sc][1][rc as usize]
+                {
+                    continue;
+                }
             }
 
             if tape.blank() {
@@ -458,6 +497,84 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         }
 
         (forbid_left, forbid_right)
+    }
+
+    /// Compute a sound over-approximation of which *immediate neighbor
+    /// colors* can appear next to the head in each (state, scanned
+    /// color), starting from the blank tape.
+    ///
+    /// We explore the abstract state space (q, L, S, R) where L and R
+    /// are the colors immediately to the left/right of the head, and S
+    /// is the scanned color. When the head moves off the 3-cell
+    /// window, we conservatively treat the newly exposed cell as
+    /// *unknown* (any color 0..c-1). This makes the analysis an
+    /// over-approximation, and therefore safe for pruning: if a
+    /// neighbor color is *not* possible here, it is not possible in any
+    /// concrete run from blank.
+    #[expect(clippy::cast_possible_truncation)]
+    fn adj_possible_from_blank(&self) -> AdjPossible<s, c> {
+        // Index helper for the compact visited table.
+        let idx = |q: usize, l: usize, sc: usize, r: usize| {
+            ((q * c + l) * c + sc) * c + r
+        };
+
+        let mut visited = vec![false; s * c * c * c];
+        let mut q = std::collections::VecDeque::new();
+
+        // Start from the true initial configuration: state 0 on blank
+        // tape (all zeros).
+        q.push_back((0, 0, 0, 0));
+        visited[idx(0, 0, 0, 0)] = true;
+
+        let mut possible = [[[[false; c]; 2]; c]; s];
+
+        while let Some((st, l, sc, r)) = q.pop_front() {
+            possible[st][sc][0][l] = true;
+            possible[st][sc][1][r] = true;
+
+            let st_state = st as State;
+            let sc_color = sc as Color;
+
+            let Some(&(print, shift, next_state)) =
+                self.get(&(st_state, sc_color))
+            else {
+                // Missing transition: treat as halting sink.
+                continue;
+            };
+
+            let p = print as usize;
+            let ns = next_state as usize;
+
+            if ns >= s {
+                continue;
+            }
+
+            if shift {
+                // Move Right: old scanned becomes left neighbor, old
+                // right becomes scanned, new right is unknown.
+                for new_r in 0..c {
+                    let n = (ns, p, r, new_r);
+                    let id = idx(n.0, n.1, n.2, n.3);
+                    if !visited[id] {
+                        visited[id] = true;
+                        q.push_back(n);
+                    }
+                }
+            } else {
+                // Move Left: old scanned becomes right neighbor, old
+                // left becomes scanned, new left is unknown.
+                for new_l in 0..c {
+                    let n = (ns, new_l, l, p);
+                    let id = idx(n.0, n.1, n.2, n.3);
+                    if !visited[id] {
+                        visited[id] = true;
+                        q.push_back(n);
+                    }
+                }
+            }
+        }
+
+        possible
     }
 }
 
@@ -852,6 +969,24 @@ impl Tape {
 
     fn blank(&self) -> bool {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
+    }
+
+    /// Return the immediate left neighbor color if it is determined by
+    /// this tape description. If the left side is completely unknown
+    /// (`?`) and there are no explicit blocks, returns None.
+    fn left_neighbor_color(&self) -> Option<Color> {
+        self.lspan.span.first().map(|b| b.color).or_else(|| {
+            matches!(self.lspan.end, TapeEnd::Blanks).then_some(0)
+        })
+    }
+
+    /// Return the immediate right neighbor color if it is determined by
+    /// this tape description. If the right side is completely unknown
+    /// (`?`) and there are no explicit blocks, returns None.
+    fn right_neighbor_color(&self) -> Option<Color> {
+        self.rspan.span.first().map(|b| b.color).or_else(|| {
+            matches!(self.rspan.end, TapeEnd::Blanks).then_some(0)
+        })
     }
 
     fn is_valid_step(&self, shift: Shift, print: Color) -> bool {
