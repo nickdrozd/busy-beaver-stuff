@@ -488,13 +488,15 @@ fn test_8_instr() {
 
 /**************************************/
 
-const TESTS: [fn(); 5] = [
+const FAST: [fn(); 5] = [
     test_collect,
     test_deciders,
     test_instrs,
     test_prover,
     test_reason,
 ];
+
+const SLOW: [fn(); 2] = [test_8_instr, test_params_slow];
 
 use rayon::prelude::*;
 
@@ -505,8 +507,7 @@ fn main() {
         return;
     }
 
-    TESTS.par_iter().for_each(|f| f());
+    FAST.par_iter().for_each(|f| f());
 
-    test_8_instr();
-    test_params_slow();
+    SLOW.par_iter().for_each(|f| f());
 }
