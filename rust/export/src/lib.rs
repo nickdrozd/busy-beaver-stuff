@@ -75,6 +75,21 @@ pub fn is_strict_cycle(prog: &str) -> bool {
 }
 
 #[pyfunction]
+pub fn graph_cant_halt(prog: &str) -> bool {
+    parse!(prog, |p: Prog<_, _>| { p.graph_cant_halt() })
+}
+
+#[pyfunction]
+pub fn graph_cant_blank(prog: &str) -> bool {
+    parse!(prog, |p: Prog<_, _>| { p.graph_cant_blank() })
+}
+
+#[pyfunction]
+pub fn graph_cant_spin_out(prog: &str) -> bool {
+    parse!(prog, |p: Prog<_, _>| { p.graph_cant_spin_out() })
+}
+
+#[pyfunction]
 pub fn graph_cant_quasihalt(prog: &str) -> bool {
     parse!(prog, |p: Prog<_, _>| { p.graph_cant_quasihalt() })
 }
@@ -569,7 +584,8 @@ mod rust_stuff {
         cant_blank, cant_halt, cant_spin_out, cps_cant_blank,
         cps_cant_halt, cps_cant_quasihalt, cps_cant_spin_out,
         ctl_cant_blank, ctl_cant_halt, ctl_cant_spin_out,
-        graph_cant_quasihalt, is_connected, is_strict_cycle, opt_block,
+        graph_cant_blank, graph_cant_halt, graph_cant_quasihalt,
+        graph_cant_spin_out, is_connected, is_strict_cycle, opt_block,
         read_instr, run_quick_machine, run_transcript,
         segment_cant_blank, segment_cant_halt, segment_cant_spin_out,
         show_comp, show_instr, show_slot, show_state, tcompile,

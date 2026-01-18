@@ -41,7 +41,10 @@ from tm.rust_stuff import (
     ctl_cant_blank,
     ctl_cant_halt,
     ctl_cant_spin_out,
+    graph_cant_blank,
+    graph_cant_halt,
     graph_cant_quasihalt,
+    graph_cant_spin_out,
     is_strict_cycle,
     run_quick_machine,
     segment_cant_blank,
@@ -965,6 +968,59 @@ class Simple(TuringTest):
             blank = blank,
         )
 
+
+@skipUnless(RUN_SLOW, '')
+class SimpleSlow(Simple):
+    @skip('')
+    def test_halt(self):
+        self._test_halt(HALT_SLOW)
+
+    def test_spinout(self):
+        self._test_spinout(SPINOUT_SLOW)
+        self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
+
+########################################
+
+class Graphx(TuringTest):
+    def test_halt(self):
+        for prog in HALTERS:
+            self.assertFalse(
+                graph_cant_halt(prog))
+
+        for prog in NONHALTERS:
+            if not graph_cant_halt(prog):
+                self.assertIn(prog, GRAPH_FALSE_NEGATIVES['halt'])
+
+        for prog in GRAPH_FALSE_NEGATIVES['halt']:
+            self.assertFalse(
+                graph_cant_halt(prog))
+
+    def test_blank(self):
+        for prog in BLANKERS:
+            self.assertFalse(
+                graph_cant_blank(prog))
+
+        for prog in NONBLANKERS:
+            if not graph_cant_blank(prog):
+                self.assertIn(prog, GRAPH_FALSE_NEGATIVES['blank'])
+
+        for prog in GRAPH_FALSE_NEGATIVES['blank']:
+            self.assertFalse(
+                graph_cant_blank(prog))
+
+    def test_spinout(self):
+        for prog in SPINNERS - MACRO_SPINOUT:
+            self.assertFalse(
+                graph_cant_spin_out(prog))
+
+        for prog in NONSPINNERS:
+            if not graph_cant_spin_out(prog):
+                self.assertIn(prog, GRAPH_FALSE_NEGATIVES['spinout'])
+
+        for prog in GRAPH_FALSE_NEGATIVES['spinout']:
+            self.assertFalse(
+                graph_cant_spin_out(prog))
+
     def test_strict_cycle(self):
         for prog in STRICT_CYCLE:
             self.assertTrue(
@@ -1000,17 +1056,6 @@ class Simple(TuringTest):
         for prog in RECURS - QUASIHALT:
             if graph_cant_quasihalt(prog):
                 self.assertIn(prog, cant_quasihalt)
-
-
-@skipUnless(RUN_SLOW, '')
-class SimpleSlow(Simple):
-    @skip('')
-    def test_halt(self):
-        self._test_halt(HALT_SLOW)
-
-    def test_spinout(self):
-        self._test_spinout(SPINOUT_SLOW)
-        self._test_spinout(SPINOUT_BLANK_SLOW, blank = True)
 
 ########################################
 

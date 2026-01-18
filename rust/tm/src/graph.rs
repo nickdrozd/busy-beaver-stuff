@@ -296,6 +296,176 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
         true
     }
+
+    /// Sound (but incomplete) static proof that the program cannot HALT
+    /// (i.e. cannot ever execute an undefined instruction slot), under the
+    /// BusyBeaver convention: start state = 0 on an all-0 blank tape.
+    ///
+    /// This is a *sufficient* condition only:
+    /// - `true`  => proved it cannot halt
+    /// - `false` => can't prove
+    pub fn graph_cant_halt(&self) -> bool {
+        if states == 0 {
+            return false;
+        }
+
+        // If there are no halting slots at all (within the reached bounds),
+        // then the program is total and cannot halt.
+        let halts = self.halt_slots();
+        if halts.is_empty() {
+            return true;
+        }
+
+        // Build control adjacency: union of next-states over all read symbols.
+        let mut adj: Vec<Vec<usize>> = vec![Vec::new(); states];
+        for ((src, _read), &(_write, _shift, dst)) in self.iter() {
+            let u = src as usize;
+            let v = dst as usize;
+            if u < states && v < states {
+                adj[u].push(v);
+            }
+        }
+        for u in 0..states {
+            adj[u].sort_unstable();
+            adj[u].dedup();
+        }
+
+        let reachable = reach_from(states, &adj, 0);
+
+        // Sufficient condition: every halting slot belongs to a control state
+        // that is unreachable from the start (even in the over-approx control graph).
+        // Then we can never arrive at that missing slot.
+        halts.iter().all(|&(st, _co)| {
+            let u = st as usize;
+            u >= states || !reachable[u]
+        })
+    }
+
+    /// Sound (but incomplete) static proof that the program cannot reach
+    /// the **fully blank tape** condition (all cells 0) at any time *after* the
+    /// initial start configuration.
+    ///
+    /// This matches the usual "blank tape" early-termination rule:
+    /// stop if the machine ever returns to an all-0 tape.
+    ///
+    /// - `true`  => proved it cannot blank (after time 0)
+    /// - `false` => can't prove
+    pub fn graph_cant_blank(&self) -> bool {
+        if self.graph_cant_blank_fast() {
+            return true;
+        }
+        self.graph_cant_blank_abs()
+    }
+
+    // Very cheap sufficient condition:
+    // If the program has **no erase moves** (no read!=0 -> write=0), then once it ever
+    // writes a nonzero symbol, the tape can never be fully blank again.
+    // So from the BB start, if (0,0) exists and writes nonzero, we can conclude.
+    fn graph_cant_blank_fast(&self) -> bool {
+        if states == 0 {
+            return false;
+        }
+
+        if !self.erase_slots().is_empty() {
+            return false;
+        }
+
+        let Some(&(pr, _sh, _tr)) = self.get(&(0, 0)) else {
+            // Immediate halt; not a "blank return".
+            return false;
+        };
+
+        pr != 0
+    }
+
+    // Stronger (still sound) check using the bounded abstract configuration graph.
+    //
+    // Soundness rule:
+    // If a truly blank tape is reachable, then within *any* finite window the
+    // tape contents are all `0`. Our abstraction may contain `wild` (unknown)
+    // cells that could also be `0`, so we must treat "all cells are {0,wild}" as
+    // compatible with a concrete blank tape.
+    fn graph_cant_blank_abs(&self) -> bool {
+        const MAX_TAPE: usize = 15;
+        const MAX_NODES: usize = 1_000;
+
+        if states == 0 || colors == 0 {
+            return false;
+        }
+
+        // Encode wildcard as `colors`.
+        #[expect(clippy::cast_possible_truncation)]
+        let wild: u8 = colors as u8;
+
+        let (nodes, _adj) = build_abs_graph::<states, colors>(
+            self, MAX_TAPE, MAX_NODES, wild,
+        );
+
+        // If we hit the cap, we conservatively give up.
+        if nodes.is_empty() || nodes.len() >= MAX_NODES {
+            return false;
+        }
+
+        // If any reachable abstract node after the start has no *known* nonzero
+        // symbol in the tracked window, then a concrete blank tape is still
+        // compatible with that abstract state.
+        for cfg in nodes.iter().skip(1) {
+            let blank_compatible =
+                cfg.tape.iter().all(|&x| x == 0 || x == wild);
+            if blank_compatible {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    /// Sound (but incomplete) static proof that the program cannot "spin out".
+    ///
+    /// The `prog.rs` helper `zr_shifts()` identifies *spinout triggers*:
+    /// states `s` that, on reading `0`, transition back to themselves
+    /// (`(s,0) -> (.., shift, s)`). Once such a transition is taken while
+    /// reading `0`, the machine can keep moving in that direction forever
+    /// on fresh blank cells.
+    ///
+    /// We use a simple sufficient condition: if no such trigger state is
+    /// reachable from the start (even in the over-approx control graph),
+    /// then spinout is impossible.
+    pub fn graph_cant_spin_out(&self) -> bool {
+        if states == 0 {
+            return false;
+        }
+
+        let spin_triggers = self.zr_shifts();
+        if spin_triggers.is_empty() {
+            return true;
+        }
+
+        // Control adjacency: union of next-states over all read symbols.
+        let mut adj: Vec<Vec<usize>> = vec![Vec::new(); states];
+        for ((src, _read), &(_write, _shift, dst)) in self.iter() {
+            let u = src as usize;
+            let v = dst as usize;
+            if u < states && v < states {
+                adj[u].push(v);
+            }
+        }
+        for u in 0..states {
+            adj[u].sort_unstable();
+            adj[u].dedup();
+        }
+        let reachable = reach_from(states, &adj, 0);
+
+        // If any spin-trigger state is reachable, we can't prove it can't spin out.
+        for (st, _sh) in spin_triggers {
+            let u = st as usize;
+            if u < states && reachable[u] {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 fn reach_from(
