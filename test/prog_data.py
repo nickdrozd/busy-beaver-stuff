@@ -5480,6 +5480,37 @@ GRAPH_FALSE_NEGATIVES = {
 
 ########################################
 
+FAR_FALSE_NEGATIVES = {
+    "halt": {
+        "1RB ... 0RB  2LB 2LA 0RA",
+        "1RB ... 2RB  1LB 2RB 2LA",
+        "1RB ... 2RB  2LB 2RB 2LA",
+        "1RB 2LA 1RB  1LA ... 1RA",
+        "1RB 2RA 1LA  2LA 2RB ...",
+        "1RB 0LB  1LC 1RB  ... 1LA",
+        "1RB 1LA  1LA 1RC  ... 1RB",
+        "1RB 1LC  1LC 1RB  ... 1LA",
+        "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
+        "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
+        "1RB 0LD  1LC 1RA  0RB 0LC  ... 1LA",
+        "1RB 0RB  1LC 1RB  ... 0LD  1RA 1LD",
+        "1RB 1LA  1LA 0RC  1LD 1RC  ... 0LA",
+        "1RB 1LA  1LA 1RC  ... 0RD  0LA 1RD",
+        "1RB 1LC 2RB  0LA 2LB 0RB  1RA 2LC ...",
+        "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
+        "1RB 1LA  0LA 1RC  1RA 1RD  ... 0RE  0LA 1RC",
+        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
+        "1RB 0RC  0RC 0LD  1RD 1RA  1RE 0LA  1LF ...  1LB 1LF",
+        "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...",
+        "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  ... 0RD",
+        "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
+    },
+    "blank": {},
+    "spinout": {},
+}
+
+########################################
+
 DO_HALT: set[str] = {
     # 3/4
     "1RB ... 1LA 2RB  1RC 3RC 1LA 2LB  2LB 2RC 1LC 3RB",  # superpowers(10)

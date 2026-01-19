@@ -442,8 +442,8 @@ fn instrs_5(prog: &Prog<5, 5>, mut config: PassConfig<'_>) -> bool {
 
 fn instrs_6(prog: &Prog<6, 6>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(304, config.to_mut()).is_settled()
-        || prog.cant_halt(6).is_refuted()
         || prog.ctl_cant_halt(41)
+        || prog.far_cant_halt(4)
         || prog.cps_cant_halt(3)
 }
 
@@ -453,6 +453,7 @@ fn instrs_7(prog: &Prog<7, 7>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(100, config).is_settled()
         || prog.cant_halt(11).is_refuted()
         || prog.ctl_cant_halt(51)
+        || prog.far_cant_halt(4)
         || prog.cps_cant_halt(7)
         || prog.term_or_rec(1_000, config).is_settled()
 }
@@ -464,7 +465,7 @@ fn test_instrs() {
         4 => (instrs_4, 4, (0, 4_909)),
         5 => (instrs_5, 12, (0, 151_351)),
         6 => (instrs_6, 22, (3, 5_568_167)),
-        7 => (instrs_7, 109, (216, 246_492_765)),
+        7 => (instrs_7, 109, (214, 246_492_765)),
     ];
 }
 
@@ -475,6 +476,7 @@ fn instrs_8(prog: &Prog<8, 8>, mut config: PassConfig<'_>) -> bool {
         || prog.cant_halt(3).is_settled()
         || prog.ctl_cant_halt(300)
         || prog.cps_cant_halt(20)
+        || prog.far_cant_halt(4)
         || prog.term_or_rec(1_000, config).is_settled()
 }
 
@@ -482,7 +484,7 @@ fn test_8_instr() {
     println!("8 instrs");
 
     assert_instrs![
-        8 => (instrs_8, 500, (12_597, 12_835_863_274)),
+        8 => (instrs_8, 500, (12_435, 12_835_863_274)),
     ];
 }
 

@@ -41,6 +41,9 @@ from tm.rust_stuff import (
     ctl_cant_blank,
     ctl_cant_halt,
     ctl_cant_spin_out,
+    far_cant_blank,
+    far_cant_halt,
+    far_cant_spin_out,
     graph_cant_blank,
     graph_cant_halt,
     graph_cant_quasihalt,
@@ -1056,6 +1059,61 @@ class Graphx(TuringTest):
         for prog in RECURS - QUASIHALT:
             if graph_cant_quasihalt(prog):
                 self.assertIn(prog, cant_quasihalt)
+
+########################################
+
+class Far(TuringTest):
+    def test_halt(self):
+        for prog in HALTERS:
+            self.assertFalse(
+                far_cant_halt(prog, 3))
+
+        for prog in NONHALTERS:
+            if not far_cant_halt(prog, 3):
+                self.assertIn(prog, FAR_FALSE_NEGATIVES['halt'])
+
+        for prog in FAR_FALSE_NEGATIVES['halt']:
+            self.assertFalse(
+                far_cant_halt(prog, 3))
+
+    @skip('')
+    def test_blank(self):
+        for prog in BLANKERS:
+            try:
+                self.assertFalse(
+                    far_cant_blank(prog, 3))
+            except AssertionError:
+                print(f'--> {prog}')
+
+        for prog in NONBLANKERS:
+            if not far_cant_blank(prog, 3):
+                print(f'       "{prog}",')
+        #         self.assertIn(prog, FAR_FALSE_NEGATIVES['blank'])
+
+        # for prog in FAR_FALSE_NEGATIVES['blank']:
+        #     self.assertFalse(
+        #         far_cant_blank(prog, 3))
+
+    @skip('')
+    def test_spinout(self):
+        for prog in SPINNERS:
+            try:
+                self.assertFalse(
+                    far_cant_spin_out(prog, 3))
+            except AssertionError:
+                print(f'--> {prog}')
+
+        for prog in NONSPINNERS:
+            if not far_cant_spin_out(prog, 3):
+                print(f'       "{prog}",')
+        #         self.assertIn(prog, FAR_FALSE_NEGATIVES['spinout'])
+
+        # for prog in FAR_FALSE_NEGATIVES['spinout']:
+        #     self.assertFalse(
+        #         far_cant_spin_out(prog, 3))
+
+    def test_quasihalt(self):
+        pass
 
 ########################################
 

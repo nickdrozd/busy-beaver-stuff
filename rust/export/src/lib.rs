@@ -367,6 +367,41 @@ pub fn ctl_cant_spin_out(prog: &str, steps: Steps) -> bool {
 
 /***************************************/
 
+#[pyfunction]
+pub fn far_cant_halt(prog: &str, steps: Steps) -> bool {
+    parse!(prog, |p: Prog<_, _>| {
+        if p.halt_slots().is_empty() {
+            return true;
+        }
+
+        p.far_cant_halt(steps)
+    })
+}
+
+#[pyfunction]
+pub fn far_cant_blank(prog: &str, steps: Steps) -> bool {
+    parse!(prog, |p: Prog<_, _>| {
+        if p.erase_slots().is_empty() {
+            return true;
+        }
+
+        p.far_cant_blank(steps)
+    })
+}
+
+#[pyfunction]
+pub fn far_cant_spin_out(prog: &str, steps: Steps) -> bool {
+    parse!(prog, |p: Prog<_, _>| {
+        if p.zr_shifts().is_empty() {
+            return true;
+        }
+
+        p.far_cant_spin_out(steps)
+    })
+}
+
+/***************************************/
+
 use std::collections::BTreeMap as Dict;
 
 use tm::{config::BigConfig, tape::BigCount};
@@ -584,6 +619,7 @@ mod rust_stuff {
         cant_blank, cant_halt, cant_spin_out, cps_cant_blank,
         cps_cant_halt, cps_cant_quasihalt, cps_cant_spin_out,
         ctl_cant_blank, ctl_cant_halt, ctl_cant_spin_out,
+        far_cant_blank, far_cant_halt, far_cant_spin_out,
         graph_cant_blank, graph_cant_halt, graph_cant_quasihalt,
         graph_cant_spin_out, is_connected, is_strict_cycle, opt_block,
         read_instr, run_quick_machine, run_transcript,
