@@ -6,7 +6,7 @@ use tm::{Goal, Prog, Steps};
 pub mod harvesters;
 pub mod tree;
 
-use harvesters::{Collector, HoldoutVisited, ReasonHarvester};
+use harvesters::{Collector, HoldoutVisited, ReasonHarvester, Visited};
 use tree::{Harvester as _, PassConfig};
 
 /**************************************/
@@ -486,6 +486,15 @@ fn test_8_instr() {
     ];
 }
 
+fn test_9_instr() {
+    println!("9 instrs");
+
+    assert_eq!(
+        Visited::<9, 9>::run_instrs::<9>(500, &Visited::new),
+        777_451_909_539,
+    );
+}
+
 /**************************************/
 
 const FAST: [fn(); 5] = [
@@ -496,7 +505,7 @@ const FAST: [fn(); 5] = [
     test_reason,
 ];
 
-const SLOW: [fn(); 2] = [test_8_instr, test_params_slow];
+const SLOW: [fn(); 3] = [test_8_instr, test_9_instr, test_params_slow];
 
 use rayon::prelude::*;
 
