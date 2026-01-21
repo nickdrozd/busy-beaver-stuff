@@ -472,35 +472,6 @@ impl<
         self.harvester.harvest(&self.prog, config);
     }
 
-    fn insert_and_update(&mut self, slot: &Slot, instr: &Instr) {
-        self.remaining_slots -= 1;
-
-        self.prog.insert(slot, instr);
-
-        self.instrs.on_insert(slot, instr);
-    }
-
-    fn remove_and_update(&mut self, slot: &Slot) {
-        self.prog.remove(slot);
-
-        self.remaining_slots += 1;
-
-        self.instrs.on_remove();
-    }
-
-    fn with_update(
-        &mut self,
-        slot: &Slot,
-        instr: &Instr,
-        body: impl FnOnce(&mut Self),
-    ) {
-        self.insert_and_update(slot, instr);
-
-        body(self);
-
-        self.remove_and_update(slot);
-    }
-
     fn branch(&mut self, mut config: Config) {
         let slot @ (slot_state, _) = match self.run(&mut config) {
             Undefined(slot) => slot,
@@ -550,21 +521,31 @@ impl<
 
         config.state = slot_state;
 
+        self.remaining_slots -= 1;
+
         for next_instr in instrs {
-            self.with_update(&slot, next_instr, |prog| {
-                prog.branch(config.clone());
-            });
+            self.prog.insert(&slot, next_instr);
+
+            self.instrs.on_insert(&slot, next_instr);
+
+            self.branch(config.clone());
+
+            self.instrs.on_remove();
         }
 
-        self.with_update(&slot, last_instr, |prog| {
-            prog.branch(config);
-        });
-    }
+        {
+            self.prog.insert(&slot, last_instr);
 
-    fn init_branch(&mut self, instr: &Instr) {
-        self.with_update(&(1, 0), instr, |tree: &mut Self| {
-            tree.branch(Config::init_stepped());
-        });
+            self.instrs.on_insert(&slot, last_instr);
+
+            self.branch(config);
+
+            self.instrs.on_remove();
+        }
+
+        self.prog.remove(&slot);
+
+        self.remaining_slots += 1;
     }
 
     fn run_branch(
@@ -584,13 +565,19 @@ impl<
                     AvIn::new(instr_table),
                 );
 
-                tree.init_branch(instr);
+                tree.remaining_slots -= 1;
+                tree.prog.insert(&INIT_SLOT, instr);
+                tree.instrs.on_insert(&INIT_SLOT, instr);
+
+                tree.branch(Config::init_stepped());
 
                 (*instr, tree.harvester)
             })
             .collect()
     }
 }
+
+const INIT_SLOT: Slot = (1, 0);
 
 type BasicTree<'i, const s: usize, const c: usize, H> =
     Tree<s, c, BasicInstrs<'i>, H>;
