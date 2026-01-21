@@ -501,19 +501,6 @@ impl<
         self.remove_and_update(slot);
     }
 
-    fn with_insert(
-        &mut self,
-        slot: &Slot,
-        instr: &Instr,
-        body: impl FnOnce(&mut Self),
-    ) {
-        self.prog.insert(slot, instr);
-
-        body(self);
-
-        self.prog.remove(slot);
-    }
-
     fn branch(&mut self, mut config: Config) {
         let slot @ (slot_state, _) = match self.run(&mut config) {
             Undefined(slot) => slot,
@@ -543,16 +530,20 @@ impl<
 
         if self.final_slot() {
             for next_instr in instrs {
-                self.with_insert(&slot, next_instr, |prog| {
-                    prog.harvest(PassConfig::Borrowed(&config));
-                });
+                self.prog.insert(&slot, next_instr);
+
+                self.harvest(PassConfig::Borrowed(&config));
             }
 
-            self.with_insert(&slot, last_instr, |tree| {
-                if tree.is_nontrivial(&mut config) {
-                    tree.harvest(PassConfig::Owned(config));
+            {
+                self.prog.insert(&slot, last_instr);
+
+                if self.is_nontrivial(&mut config) {
+                    self.harvest(PassConfig::Owned(config));
                 }
-            });
+            }
+
+            self.prog.remove(&slot);
 
             return;
         }
