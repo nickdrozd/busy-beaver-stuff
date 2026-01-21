@@ -461,6 +461,13 @@ impl<
         self.prog.run_basic(self.sim_lim, config)
     }
 
+    fn is_nontrivial(&self, config: &mut Config) -> bool {
+        matches!(
+            self.prog.run_basic(states * colors, config),
+            StepLimit,
+        )
+    }
+
     fn harvest(&mut self, config: PassConfig<'_>) {
         self.harvester.harvest(&self.prog, config);
     }
@@ -542,10 +549,7 @@ impl<
             }
 
             self.with_insert(&slot, last_instr, |tree| {
-                if matches!(
-                    tree.prog.run_basic(states * colors, &mut config),
-                    StepLimit
-                ) {
+                if tree.is_nontrivial(&mut config) {
                     tree.harvest(PassConfig::Owned(config));
                 }
             });
