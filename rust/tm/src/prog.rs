@@ -69,8 +69,13 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         println!("{self}");
     }
 
-    pub const fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
-        self.table[state as usize][color as usize].as_ref()
+    pub fn get(&self, &(state, color): &Slot) -> Option<&Instr> {
+        unsafe {
+            self.table
+                .get_unchecked(state as usize)
+                .get_unchecked(color as usize)
+        }
+        .as_ref()
     }
 
     pub const fn insert(
