@@ -6,6 +6,9 @@ use crate::{Color, Prog, State};
 
 /**************************************/
 
+const MAX_TAPE: usize = 15;
+const MAX_NODES: usize = 1_000;
+
 impl<const states: usize, const colors: usize> Prog<states, colors> {
     pub fn is_connected(&self) -> bool {
         if self.instrs().all(|&(_, _, state)| state != 0) {
@@ -127,42 +130,27 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         forward || backward
     }
 
-    /// Sound (but incomplete) static proof that the program cannot quasihalt
-    /// (BusyBeaver convention: start state = 0 on an all-0 blank tape).
-    ///
-    /// Combines a fast control/SCC proof with a stronger (still static)
-    /// abstract-configuration graph refinement. If the refinement exceeds
-    /// resource limits, this returns `false` ("can't prove").
     pub fn graph_cant_quasihalt(&self) -> bool {
-        if self.graph_cant_quasihalt_fast() {
-            return true;
-        }
-        self.graph_cant_quasihalt_abs()
+        self.graph_cant_quasihalt_fast()
+            || self.graph_cant_quasihalt_abs()
     }
 
     /// Fast sufficient condition (pure control/SCC + one-direction `read=0` cycle lemma).
     fn graph_cant_quasihalt_fast(&self) -> bool {
-        let start = 0;
-
-        if start >= states {
-            return false;
-        }
-
         // Control adjacency: union of next-states over all read symbols.
-        let mut adj: Vec<Vec<usize>> = vec![Vec::new(); states];
-        for ((src, _read), &(_write, _shift, dst)) in self.iter() {
-            let u = src as usize;
-            let v = dst as usize;
-            if u < states && v < states {
-                adj[u].push(v);
-            }
-        }
-        for u in 0..states {
-            adj[u].sort_unstable();
-            adj[u].dedup();
+        let mut adj: Vec<Vec<usize>> = vec![vec![]; states];
+
+        for ((src, _), &(_, _, dst)) in self.iter() {
+            adj[src as usize].push(dst as usize);
         }
 
-        let reachable_all = reach_from(states, &adj, start);
+        for st in 0..states {
+            adj[st].sort_unstable();
+            adj[st].dedup();
+        }
+
+        let reachable_all = Self::reach_from(&adj);
+
         if reachable_all.iter().any(|&b| !b) {
             return false;
         }
@@ -195,23 +183,20 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                     continue;
                 }
 
-                // Determine whether this SCC contains both L and R internal transitions.
                 let mut has_l = false;
                 let mut has_r = false;
 
-                // Also record which single direction it has (if any), so we can do the 0-cycle check.
-                for ((src, _read), &(_write, sh, dst)) in self.iter() {
+                // Also record which single direction it has (if any),
+                // so we can do the 0-cycle check.
+                for ((src, _), &(_, sh, dst)) in self.iter() {
                     let u = src as usize;
                     let v = dst as usize;
-                    if u >= states || v >= states {
-                        continue;
-                    }
+
                     if !active[u] || !active[v] {
                         continue;
                     }
-                    if !comp_contains(&comp, u)
-                        || !comp_contains(&comp, v)
-                    {
+
+                    if !comp.contains(&u) || !comp.contains(&v) {
                         continue;
                     }
 
@@ -221,28 +206,26 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                         has_l = true;
                     }
 
+                    // Bidirectional SCC: we cannot rule out an
+                    // infinite bounded "bouncing" run.
                     if has_l && has_r {
-                        // Bidirectional SCC: we cannot rule out an infinite bounded "bouncing" run.
                         return false;
                     }
                 }
 
-                // If we have a (cyclic) SCC but saw no internal transitions from self.iter(),
-                // it's because those transitions are absent; conservatively treat as trap.
+                // If we have a (cyclic) SCC but saw no internal
+                // transitions from self.iter(), it's because those
+                // transitions are absent; conservatively treat as
+                // trap.
                 if !has_l && !has_r {
                     return false;
                 }
 
-                // One-direction SCC: rule it out unless it contains a feasible `read=0` cycle
-                // in that same direction.
-                let dir_is_r = has_r; // if not R, must be L
-                if has_zero_dir_cycle_in_comp::<states, colors>(
-                    self, &comp, dir_is_r,
-                ) {
+                // One-direction SCC: rule it out unless it contains a
+                // feasible `read=0` cycle in that same direction.
+                if self.has_zero_dir_cycle_in_comp(&comp, has_r) {
                     return false;
                 }
-
-                // Otherwise, this SCC cannot host an infinite avoidance run from blank tape.
             }
         }
 
@@ -251,44 +234,32 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
     /// Stronger sound proof using a finite abstract-configuration graph.
     ///
-    /// This is purely static/symbolic: it explores a finite over-approximation
-    /// of reachable local tape windows and then checks for the existence of an
-    /// abstract cycle that avoids each control state.
+    /// This is purely static/symbolic: it explores a finite
+    /// over-approximation of reachable local tape windows and then
+    /// checks for the existence of an abstract cycle that avoids each
+    /// control state.
     fn graph_cant_quasihalt_abs(&self) -> bool {
-        // Modest defaults: keep the abstraction small and safe.
-        // Larger values are more powerful but can explode.
-        const MAX_TAPE: usize = 15;
-        const MAX_NODES: usize = 1_000;
-
-        // Encode wildcard as `colors`.
-        #[expect(clippy::cast_possible_truncation)]
-        let wild: u8 = colors as u8;
-        #[expect(clippy::cast_possible_truncation)]
-        let nstates: u8 = states as u8;
-        if states == 0 || colors == 0 {
-            return false;
-        }
-
-        let (nodes, adj) = build_abs_graph::<states, colors>(
-            self, MAX_TAPE, MAX_NODES, wild,
-        );
+        let (nodes, adj) = self.build_abs_graph();
 
         // If we hit the cap, we conservatively give up (no false proofs).
         if nodes.is_empty() || nodes.len() >= MAX_NODES {
             return false;
         }
 
-        // All abstract nodes are reachable in the full graph by construction.
-        // For each control state t, we must consider *any* cycle that avoids t,
-        // even if reaching it required visiting t earlier (eventual avoidance).
-        // Therefore we MUST NOT recompute reachability on the filtered graph.
-        for t in 0..nstates {
+        // All abstract nodes are reachable in the full graph by
+        // construction. For each control state t, we must consider
+        // *any* cycle that avoids t, even if reaching it required
+        // visiting t earlier (eventual avoidance). Therefore we MUST
+        // NOT recompute reachability on the filtered graph.
+        for st in 0..states {
             let mut active = vec![true; nodes.len()];
+
             for (i, cfg) in nodes.iter().enumerate() {
-                if cfg.state == t {
+                if cfg.state as usize == st {
                     active[i] = false;
                 }
             }
+
             if dyn_cycle_exists(&adj, &active) {
                 return false;
             }
@@ -305,73 +276,43 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     /// - `true`  => proved it cannot halt
     /// - `false` => can't prove
     pub fn graph_cant_halt(&self) -> bool {
-        if states == 0 {
-            return false;
-        }
-
-        // If there are no halting slots at all (within the reached bounds),
-        // then the program is total and cannot halt.
         let halts = self.halt_slots();
+
         if halts.is_empty() {
             return true;
         }
 
         // Build control adjacency: union of next-states over all read symbols.
-        let mut adj: Vec<Vec<usize>> = vec![Vec::new(); states];
-        for ((src, _read), &(_write, _shift, dst)) in self.iter() {
-            let u = src as usize;
-            let v = dst as usize;
-            if u < states && v < states {
-                adj[u].push(v);
-            }
+        let mut adj: Vec<Vec<usize>> = vec![vec![]; states];
+
+        for ((src, _), &(_, _, dst)) in self.iter() {
+            adj[src as usize].push(dst as usize);
         }
+
         for u in 0..states {
             adj[u].sort_unstable();
             adj[u].dedup();
         }
 
-        let reachable = reach_from(states, &adj, 0);
+        let reachable = Self::reach_from(&adj);
 
-        // Sufficient condition: every halting slot belongs to a control state
-        // that is unreachable from the start (even in the over-approx control graph).
-        // Then we can never arrive at that missing slot.
-        halts.iter().all(|&(st, _co)| {
-            let u = st as usize;
-            u >= states || !reachable[u]
-        })
+        // Sufficient condition: every halting slot belongs to a
+        // control state that is unreachable from the start (even in
+        // the over-approx control graph). Then we can never arrive at
+        // that missing slot.
+        halts.iter().all(|&(st, _)| !reachable[st as usize])
     }
 
-    /// Sound (but incomplete) static proof that the program cannot reach
-    /// the **fully blank tape** condition (all cells 0) at any time *after* the
-    /// initial start configuration.
-    ///
-    /// This matches the usual "blank tape" early-termination rule:
-    /// stop if the machine ever returns to an all-0 tape.
-    ///
-    /// - `true`  => proved it cannot blank (after time 0)
-    /// - `false` => can't prove
     pub fn graph_cant_blank(&self) -> bool {
-        if self.graph_cant_blank_fast() {
-            return true;
-        }
-        self.graph_cant_blank_abs()
+        self.graph_cant_blank_fast() || self.graph_cant_blank_abs()
     }
 
-    // Very cheap sufficient condition:
-    // If the program has **no erase moves** (no read!=0 -> write=0), then once it ever
-    // writes a nonzero symbol, the tape can never be fully blank again.
-    // So from the BB start, if (0,0) exists and writes nonzero, we can conclude.
     fn graph_cant_blank_fast(&self) -> bool {
-        if states == 0 {
-            return false;
-        }
-
         if !self.erase_slots().is_empty() {
             return false;
         }
 
-        let Some(&(pr, _sh, _tr)) = self.get(&(0, 0)) else {
-            // Immediate halt; not a "blank return".
+        let Some(&(pr, _, _)) = self.get(&(0, 0)) else {
             return false;
         };
 
@@ -386,20 +327,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     // cells that could also be `0`, so we must treat "all cells are {0,wild}" as
     // compatible with a concrete blank tape.
     fn graph_cant_blank_abs(&self) -> bool {
-        const MAX_TAPE: usize = 15;
-        const MAX_NODES: usize = 1_000;
-
-        if states == 0 || colors == 0 {
-            return false;
-        }
-
-        // Encode wildcard as `colors`.
-        #[expect(clippy::cast_possible_truncation)]
-        let wild: u8 = colors as u8;
-
-        let (nodes, _adj) = build_abs_graph::<states, colors>(
-            self, MAX_TAPE, MAX_NODES, wild,
-        );
+        let (nodes, _adj) = self.build_abs_graph();
 
         // If we hit the cap, we conservatively give up.
         if nodes.is_empty() || nodes.len() >= MAX_NODES {
@@ -410,9 +338,8 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         // symbol in the tracked window, then a concrete blank tape is still
         // compatible with that abstract state.
         for cfg in nodes.iter().skip(1) {
-            let blank_compatible =
-                cfg.tape.iter().all(|&x| x == 0 || x == wild);
-            if blank_compatible {
+            if cfg.tape.iter().all(|&x| x == 0 || x as usize == colors)
+            {
                 return false;
             }
         }
@@ -432,76 +359,241 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     /// reachable from the start (even in the over-approx control graph),
     /// then spinout is impossible.
     pub fn graph_cant_spin_out(&self) -> bool {
-        if states == 0 {
-            return false;
-        }
-
         let spin_triggers = self.zr_shifts();
+
         if spin_triggers.is_empty() {
             return true;
         }
 
         // Control adjacency: union of next-states over all read symbols.
-        let mut adj: Vec<Vec<usize>> = vec![Vec::new(); states];
-        for ((src, _read), &(_write, _shift, dst)) in self.iter() {
-            let u = src as usize;
-            let v = dst as usize;
-            if u < states && v < states {
-                adj[u].push(v);
-            }
+        let mut adj: Vec<Vec<usize>> = vec![vec![]; states];
+
+        for ((src, _), &(_, _, dst)) in self.iter() {
+            adj[src as usize].push(dst as usize);
         }
+
         for u in 0..states {
             adj[u].sort_unstable();
             adj[u].dedup();
         }
-        let reachable = reach_from(states, &adj, 0);
 
-        // If any spin-trigger state is reachable, we can't prove it can't spin out.
-        for (st, _sh) in spin_triggers {
-            let u = st as usize;
-            if u < states && reachable[u] {
+        let reachable = Self::reach_from(&adj);
+
+        for (st, _) in spin_triggers {
+            if reachable[st as usize] {
                 return false;
             }
         }
 
         true
     }
-}
 
-fn reach_from(
-    states: usize,
-    adj: &[Vec<usize>],
-    start: usize,
-) -> Vec<bool> {
-    let mut seen = vec![false; states];
-    if start >= states {
-        return seen;
+    fn build_abs_graph(&self) -> (Vec<AbsCfg>, Vec<Vec<usize>>) {
+        #[expect(clippy::cast_possible_truncation)]
+        let wild = colors as u8;
+        let mut nodes: Vec<AbsCfg> = vec![];
+        let mut adj: Vec<Vec<usize>> = vec![];
+        let mut map: HashMap<AbsCfg, usize> = HashMap::new();
+        let mut q: VecDeque<usize> = VecDeque::new();
+
+        let start = AbsCfg::new_blank();
+        nodes.push(start.clone());
+        adj.push(vec![]);
+        map.insert(start, 0);
+        q.push_back(0);
+
+        while let Some(u) = q.pop_front() {
+            if nodes.len() >= MAX_NODES {
+                break;
+            }
+
+            let succs = self.step_abs(&nodes[u], wild);
+
+            for mut vcfg in succs {
+                vcfg.normalize();
+
+                let vid = if let Some(&id) = map.get(&vcfg) {
+                    id
+                } else {
+                    let id = nodes.len();
+                    nodes.push(vcfg.clone());
+                    adj.push(vec![]);
+                    map.insert(vcfg, id);
+                    q.push_back(id);
+                    id
+                };
+
+                adj[u].push(vid);
+            }
+
+            adj[u].sort_unstable();
+            adj[u].dedup();
+        }
+
+        (nodes, adj)
     }
 
-    let mut stack = vec![start];
-    while let Some(u) = stack.pop() {
-        if seen[u] {
-            continue;
+    #[expect(clippy::cast_possible_truncation)]
+    fn step_abs(&self, cfg: &AbsCfg, wild: u8) -> Vec<AbsCfg> {
+        let head = cfg.head as usize;
+
+        if head >= cfg.tape.len() {
+            return vec![];
         }
-        seen[u] = true;
-        for &v in &adj[u] {
-            if v >= states || seen[v] {
+
+        let cur = cfg.tape[head];
+        let mut reads: Vec<u8> = vec![];
+
+        if cur == wild {
+            for r in 0..(colors as u8) {
+                reads.push(r);
+            }
+        } else {
+            reads.push(cur);
+        }
+
+        let mut out: Vec<AbsCfg> = vec![];
+
+        for read in reads {
+            let Some(&(write, sh, dst)) = self.get(&(cfg.state, read))
+            else {
+                continue;
+            };
+
+            let mut nxt = cfg.clone();
+            nxt.state = dst;
+            nxt.tape[head] = write;
+
+            // Move head and extend window if necessary.
+            if sh {
+                // Right
+                let new_head = head + 1;
+                if new_head >= nxt.tape.len() {
+                    let new_cell =
+                        if nxt.right_unknown { wild } else { 0 };
+                    nxt.tape.push(new_cell);
+                }
+                nxt.head = new_head as u8;
+            } else {
+                // Left
+                if head == 0 {
+                    let new_cell =
+                        if nxt.left_unknown { wild } else { 0 };
+                    nxt.tape.insert(0, new_cell);
+                    nxt.head = 0;
+                } else {
+                    nxt.head = (head - 1) as u8;
+                }
+            }
+
+            out.push(nxt);
+        }
+
+        out
+    }
+
+    fn reach_from(adj: &[Vec<usize>]) -> Vec<bool> {
+        let mut seen = vec![false; states];
+
+        let mut stack = vec![0];
+
+        while let Some(u) = stack.pop() {
+            if seen[u] {
                 continue;
             }
-            stack.push(v);
+
+            seen[u] = true;
+
+            for &v in &adj[u] {
+                if seen[v] {
+                    continue;
+                }
+
+                stack.push(v);
+            }
         }
+
+        seen
     }
 
-    seen
+    /// In a strictly one-direction SCC, an infinite run from a blank tape
+    /// is possible only if there is a `read=0` cycle whose transitions
+    /// all have that same direction and stay within the SCC.
+    fn has_zero_dir_cycle_in_comp(
+        &self,
+        comp: &[usize],
+        dir_is_r: bool,
+    ) -> bool {
+        let mut in_comp = vec![false; states];
+
+        for &u in comp {
+            if u < states {
+                in_comp[u] = true;
+            }
+        }
+
+        // next[u] = dst on read=0 if it stays in comp and moves in `dir_is_r`.
+        let mut next: Vec<Option<usize>> = vec![None; states];
+
+        for &u in comp {
+            #[expect(clippy::cast_possible_truncation)]
+            if let Some(&(_, sh, dst)) = self.get(&(u as State, 0))
+                && sh == dir_is_r
+            {
+                let v = dst as usize;
+                if v < states && in_comp[v] {
+                    next[u] = Some(v);
+                }
+            }
+        }
+
+        // Detect a directed cycle in this partial functional graph.
+        // 0 = unvisited, 1 = visiting, 2 = done
+        let mut mark = vec![0; states];
+
+        for &start in comp {
+            if mark[start] != 0 {
+                continue;
+            }
+            let mut u = start;
+            let mut stack: Vec<usize> = vec![];
+
+            while in_comp[u] {
+                if mark[u] == 1 {
+                    // back-edge in functional walk => cycle
+                    return true;
+                }
+                if mark[u] == 2 {
+                    break;
+                }
+
+                mark[u] = 1;
+                stack.push(u);
+
+                let Some(v) = next[u] else {
+                    break;
+                };
+                u = v;
+            }
+
+            for x in stack {
+                mark[x] = 2;
+            }
+        }
+
+        false
+    }
 }
 
 /**************************************/
 // Abstract configuration graph (sound static over-approx)
 
-/// Abstract tape symbol: `0..colors-1` are concrete, and `wild` means "unknown".
+/// Abstract tape symbol: `0..colors-1` are concrete,
+/// and `wild` means "unknown".
 ///
-/// `left_unknown/right_unknown` indicate whether cells beyond the stored window
-/// may have been modified (unknown) or are still guaranteed blank 0.
+/// `left_unknown/right_unknown` indicate whether cells beyond the
+/// stored window may have been modified (unknown) or are still
+/// guaranteed blank 0.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 struct AbsCfg {
     state: u8,
@@ -512,154 +604,54 @@ struct AbsCfg {
 }
 
 impl AbsCfg {
-    fn new_blank(start_state: u8) -> Self {
-        Self {
-            state: start_state,
+    fn new_blank() -> Self {
+        let mut cfg = Self {
+            state: 0,
             head: 0,
             tape: vec![0],
             left_unknown: false,
             right_unknown: false,
-        }
-    }
-}
-
-#[expect(clippy::cast_possible_truncation)]
-fn normalize_abs(cfg: &mut AbsCfg, max_tape: usize) {
-    if cfg.tape.is_empty() {
-        cfg.tape.push(0);
-        cfg.head = 0;
-        return;
-    }
-    if cfg.head as usize >= cfg.tape.len() {
-        cfg.head = (cfg.tape.len() - 1) as u8;
-    }
-
-    if cfg.tape.len() <= max_tape {
-        return;
-    }
-
-    let len = cfg.tape.len();
-    let head = cfg.head as usize;
-    let half = max_tape / 2;
-    let mut start = head.saturating_sub(half);
-    if start + max_tape > len {
-        start = len - max_tape;
-    }
-    let end = start + max_tape;
-
-    if start > 0 {
-        cfg.left_unknown = true;
-    }
-    if end < len {
-        cfg.right_unknown = true;
-    }
-
-    cfg.tape = cfg.tape[start..end].to_vec();
-    cfg.head = (head - start) as u8;
-}
-
-#[expect(clippy::cast_possible_truncation)]
-fn step_abs<const states: usize, const colors: usize>(
-    prog: &Prog<states, colors>,
-    cfg: &AbsCfg,
-    wild: u8,
-) -> Vec<AbsCfg> {
-    let head = cfg.head as usize;
-    if head >= cfg.tape.len() {
-        return vec![];
-    }
-
-    let cur = cfg.tape[head];
-    let mut reads: Vec<u8> = Vec::new();
-    if cur == wild {
-        for r in 0..(colors as u8) {
-            reads.push(r);
-        }
-    } else {
-        reads.push(cur);
-    }
-
-    let mut out: Vec<AbsCfg> = Vec::new();
-    for read in reads {
-        let st = cfg.state;
-        let co = read;
-        let Some(&(write, sh, dst)) = prog.get(&(st, co)) else {
-            continue;
         };
 
-        let mut nxt = cfg.clone();
-        nxt.state = dst;
-        nxt.tape[head] = write;
+        cfg.normalize();
 
-        // Move head and extend window if necessary.
-        if sh {
-            // Right
-            let new_head = head + 1;
-            if new_head >= nxt.tape.len() {
-                let new_cell = if nxt.right_unknown { wild } else { 0 };
-                nxt.tape.push(new_cell);
-            }
-            nxt.head = new_head as u8;
-        } else {
-            // Left
-            if head == 0 {
-                let new_cell = if nxt.left_unknown { wild } else { 0 };
-                nxt.tape.insert(0, new_cell);
-                nxt.head = 0;
-            } else {
-                nxt.head = (head - 1) as u8;
-            }
-        }
-
-        out.push(nxt);
+        cfg
     }
 
-    out
-}
-
-fn build_abs_graph<const states: usize, const colors: usize>(
-    prog: &Prog<states, colors>,
-    max_tape: usize,
-    max_nodes: usize,
-    wild: u8,
-) -> (Vec<AbsCfg>, Vec<Vec<usize>>) {
-    let mut nodes: Vec<AbsCfg> = Vec::new();
-    let mut adj: Vec<Vec<usize>> = Vec::new();
-    let mut map: HashMap<AbsCfg, usize> = HashMap::new();
-    let mut q: VecDeque<usize> = VecDeque::new();
-
-    let mut start = AbsCfg::new_blank(0);
-    normalize_abs(&mut start, max_tape);
-    nodes.push(start.clone());
-    adj.push(Vec::new());
-    map.insert(start, 0);
-    q.push_back(0);
-
-    while let Some(u) = q.pop_front() {
-        if nodes.len() >= max_nodes {
-            break;
+    #[expect(clippy::cast_possible_truncation)]
+    fn normalize(&mut self) {
+        if self.tape.is_empty() {
+            self.tape.push(0);
+            self.head = 0;
+            return;
+        }
+        if self.head as usize >= self.tape.len() {
+            self.head = (self.tape.len() - 1) as u8;
         }
 
-        let succs = step_abs::<states, colors>(prog, &nodes[u], wild);
-        for mut vcfg in succs {
-            normalize_abs(&mut vcfg, max_tape);
-            let vid = if let Some(&id) = map.get(&vcfg) {
-                id
-            } else {
-                let id = nodes.len();
-                nodes.push(vcfg.clone());
-                adj.push(Vec::new());
-                map.insert(vcfg, id);
-                q.push_back(id);
-                id
-            };
-            adj[u].push(vid);
+        if self.tape.len() <= MAX_TAPE {
+            return;
         }
-        adj[u].sort_unstable();
-        adj[u].dedup();
+
+        let len = self.tape.len();
+        let head = self.head as usize;
+        let half = MAX_TAPE / 2;
+        let mut start = head.saturating_sub(half);
+        if start + MAX_TAPE > len {
+            start = len - MAX_TAPE;
+        }
+        let end = start + MAX_TAPE;
+
+        if start > 0 {
+            self.left_unknown = true;
+        }
+        if end < len {
+            self.right_unknown = true;
+        }
+
+        self.tape = self.tape[start..end].to_vec();
+        self.head = (head - start) as u8;
     }
-
-    (nodes, adj)
 }
 
 /// Iterative 3-color DFS cycle check on the induced subgraph of `active` nodes.
@@ -675,7 +667,7 @@ fn dyn_cycle_exists(adj: &[Vec<usize>], active: &[bool]) -> bool {
         }
 
         // stack of (node, next_edge_index)
-        let mut stack: Vec<(usize, usize)> = Vec::new();
+        let mut stack: Vec<(usize, usize)> = vec![];
         stack.push((start, 0));
         color[start] = 1;
 
@@ -710,11 +702,6 @@ fn dyn_cycle_exists(adj: &[Vec<usize>], active: &[bool]) -> bool {
 
 /**************************************/
 
-fn comp_contains(comp: &[usize], x: usize) -> bool {
-    // SCC sizes here are tiny (BB state counts), so linear scan is fine.
-    comp.contains(&x)
-}
-
 /// Kosaraju SCC decomposition on a graph given as adjacency lists,
 /// restricted to `active` nodes.
 #[expect(clippy::items_after_statements)]
@@ -723,7 +710,7 @@ fn sccs_masked(
     adj: &[Vec<usize>],
     active: &[bool],
 ) -> Vec<Vec<usize>> {
-    let mut rev: Vec<Vec<usize>> = vec![Vec::new(); states];
+    let mut rev: Vec<Vec<usize>> = vec![vec![]; states];
     for u in 0..states {
         if !active[u] {
             continue;
@@ -736,7 +723,7 @@ fn sccs_masked(
     }
 
     let mut seen = vec![false; states];
-    let mut order = Vec::new();
+    let mut order = vec![];
 
     fn dfs1(
         u: usize,
@@ -760,7 +747,7 @@ fn sccs_masked(
         }
     }
 
-    let mut comps: Vec<Vec<usize>> = Vec::new();
+    let mut comps: Vec<Vec<usize>> = vec![];
     let mut comp_id = vec![usize::MAX; states];
 
     fn dfs2(
@@ -785,7 +772,7 @@ fn sccs_masked(
             continue;
         }
         let cid = comps.len();
-        let mut comp = Vec::new();
+        let mut comp = vec![];
         dfs2(u, &rev, active, cid, &mut comp_id, &mut comp);
         comps.push(comp);
     }
@@ -800,76 +787,6 @@ fn scc_has_cycle(comp: &[usize], adj: &[Vec<usize>]) -> bool {
     }
     let u = comp[0];
     adj[u].contains(&u)
-}
-
-/// In a strictly one-direction SCC, an infinite run from a blank tape
-/// is possible only if there is a `read=0` cycle whose transitions
-/// all have that same direction and stay within the SCC.
-fn has_zero_dir_cycle_in_comp<
-    const states: usize,
-    const colors: usize,
->(
-    prog: &Prog<states, colors>,
-    comp: &[usize],
-    dir_is_r: bool,
-) -> bool {
-    let mut in_comp = vec![false; states];
-    for &u in comp {
-        if u < states {
-            in_comp[u] = true;
-        }
-    }
-
-    // next[u] = dst on read=0 if it stays in comp and moves in `dir_is_r`.
-    let mut next: Vec<Option<usize>> = vec![None; states];
-    for &u in comp {
-        #[expect(clippy::cast_possible_truncation)]
-        let su = u as State;
-        if let Some(&(_write, sh, dst)) = prog.get(&(su, 0))
-            && sh == dir_is_r
-        {
-            let v = dst as usize;
-            if v < states && in_comp[v] {
-                next[u] = Some(v);
-            }
-        }
-    }
-
-    // Detect a directed cycle in this partial functional graph.
-    // 0 = unvisited, 1 = visiting, 2 = done
-    let mut mark = vec![0; states];
-
-    for &start in comp {
-        if mark[start] != 0 {
-            continue;
-        }
-        let mut u = start;
-        let mut stack: Vec<usize> = Vec::new();
-
-        while in_comp[u] {
-            if mark[u] == 1 {
-                // back-edge in functional walk => cycle
-                return true;
-            }
-            if mark[u] == 2 {
-                break;
-            }
-
-            mark[u] = 1;
-            stack.push(u);
-
-            let Some(v) = next[u] else {
-                break;
-            };
-            u = v;
-        }
-
-        for x in stack {
-            mark[x] = 2;
-        }
-    }
-
-    false
 }
 
 /**************************************/
