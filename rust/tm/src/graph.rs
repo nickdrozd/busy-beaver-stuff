@@ -205,12 +205,6 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                     } else {
                         has_l = true;
                     }
-
-                    // Bidirectional SCC: we cannot rule out an
-                    // infinite bounded "bouncing" run.
-                    if has_l && has_r {
-                        return false;
-                    }
                 }
 
                 // If we have a (cyclic) SCC but saw no internal
@@ -218,6 +212,37 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                 // transitions are absent; conservatively treat as
                 // trap.
                 if !has_l && !has_r {
+                    return false;
+                }
+
+                // Bidirectional SCC: try a stronger (still sound)
+                // drift-only check.
+                //
+                // If *every* directed cycle in the SCC has strictly
+                // positive net displacement (or strictly negative),
+                // then any infinite run trapped in the SCC must drift
+                // unboundedly and thus visit infinitely many fresh
+                // blank cells. Each first-visit to a fresh cell
+                // forces a `read=0` transition, so an infinite
+                // trapped run requires a cycle in the `read=0`
+                // induced subgraph.
+                //
+                // If we can prove the SCC is drift-only (no
+                // 0/opp-sign displacement cycles), we can safely rule
+                // it out unless it contains a `read=0` cycle
+                // (direction-free).
+                if has_l && has_r {
+                    if self.comp_has_uniform_drift(&comp) {
+                        if self.has_zero_cycle_in_comp(&comp) {
+                            return false;
+                        }
+                        // No `read=0` cycle => cannot be
+                        // an infinite trap from blank.
+                        continue;
+                    }
+
+                    // Otherwise, conservatively treat
+                    // as a possible bounded bounce trap.
                     return false;
                 }
 
@@ -514,6 +539,196 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         }
 
         seen
+    }
+
+    /// In an SCC where the head must drift unboundedly (all directed
+    /// cycles have strictly nonzero net displacement with the same
+    /// sign), an infinite trap run from blank requires a directed
+    /// cycle in the `read=0` induced subgraph restricted to that SCC.
+    fn has_zero_cycle_in_comp(&self, comp: &[usize]) -> bool {
+        let mut in_comp = vec![false; states];
+
+        for &u in comp {
+            if u < states {
+                in_comp[u] = true;
+            }
+        }
+
+        // next[u] = dst on read=0 if it stays in comp (direction ignored).
+        let mut next: Vec<Option<usize>> = vec![None; states];
+
+        for &u in comp {
+            #[expect(clippy::cast_possible_truncation)]
+            if let Some(&(_, _, dst)) = self.get(&(u as State, 0)) {
+                let v = dst as usize;
+
+                if in_comp[v] {
+                    next[u] = Some(v);
+                }
+            }
+        }
+
+        // Detect a directed cycle in this partial functional graph.
+        // 0 = unvisited, 1 = visiting, 2 = done
+        let mut mark = vec![0; states];
+
+        for &start in comp {
+            if mark[start] != 0 {
+                continue;
+            }
+            let mut u = start;
+            let mut stack: Vec<usize> = vec![];
+
+            while in_comp[u] {
+                if mark[u] == 1 {
+                    return true;
+                }
+                if mark[u] == 2 {
+                    break;
+                }
+
+                mark[u] = 1;
+                stack.push(u);
+
+                let Some(v) = next[u] else {
+                    break;
+                };
+                u = v;
+            }
+
+            for x in stack {
+                mark[x] = 2;
+            }
+        }
+
+        false
+    }
+
+    /// Returns true iff every directed cycle in `comp` has strictly
+    /// nonzero net displacement with the same sign (i.e. either all
+    /// cycles drift right, or all cycles drift left).
+    ///
+    /// This is a conservative check based only on internal transition
+    /// directions.
+    fn comp_has_uniform_drift(&self, comp: &[usize]) -> bool {
+        // Helper: compute the minimum cycle weight under a signed displacement.
+        // sign=+1 => weights are +1 for R, -1 for L
+        // sign=-1 => weights are -1 for R, +1 for L (inverted)
+        fn min_cycle_weight_in_comp<
+            const states: usize,
+            const colors: usize,
+        >(
+            prog: &Prog<states, colors>,
+            comp: &[usize],
+            sign: i32,
+        ) -> i32 {
+            const INF: i32 = 1_000_000;
+            let m = comp.len();
+            if m == 0 {
+                return i32::MIN;
+            }
+
+            let mut idx = vec![usize::MAX; states];
+            for (i, &u) in comp.iter().enumerate() {
+                if u < states {
+                    idx[u] = i;
+                }
+            }
+
+            let mut dist = vec![vec![INF; m]; m];
+            for i in 0..m {
+                dist[i][i] = 0;
+            }
+
+            // Direct edges
+            for ((src, _), &(_, sh, dst)) in prog.iter() {
+                let u = src as usize;
+                let v = dst as usize;
+                if u >= states || v >= states {
+                    continue;
+                }
+                let iu = idx[u];
+                let iv = idx[v];
+                if iu == usize::MAX || iv == usize::MAX {
+                    continue;
+                }
+
+                let w0: i32 = if sh { 1 } else { -1 };
+                let w = sign * w0;
+                if w < dist[iu][iv] {
+                    dist[iu][iv] = w;
+                }
+            }
+
+            // Floyd–Warshall
+            for k in 0..m {
+                for i in 0..m {
+                    if dist[i][k] >= INF / 2 {
+                        continue;
+                    }
+                    for j in 0..m {
+                        if dist[k][j] >= INF / 2 {
+                            continue;
+                        }
+                        let cand = dist[i][k] + dist[k][j];
+                        if cand < dist[i][j] {
+                            dist[i][j] = cand;
+                        }
+                    }
+                }
+            }
+
+            // Negative cycle => minimum cycle weight is effectively -∞ (certainly <= 0).
+            for i in 0..m {
+                if dist[i][i] < 0 {
+                    return i32::MIN;
+                }
+            }
+
+            // Minimum cycle weight: min over edges (u->v) of w(u,v) + dist[v][u].
+            let mut best = INF;
+            for ((src, _), &(_, sh, dst)) in prog.iter() {
+                let u = src as usize;
+                let v = dst as usize;
+                if u >= states || v >= states {
+                    continue;
+                }
+                let iu = idx[u];
+                let iv = idx[v];
+                if iu == usize::MAX || iv == usize::MAX {
+                    continue;
+                }
+
+                if dist[iv][iu] >= INF / 2 {
+                    continue;
+                }
+
+                let w0: i32 = if sh { 1 } else { -1 };
+                let w = sign * w0;
+                let cyc = w + dist[iv][iu];
+                if cyc < best {
+                    best = cyc;
+                }
+            }
+
+            if best >= INF / 2 {
+                // Couldn't form any cycle weight via edge + return path.
+                // Conservatively treat as "not uniformly drifting".
+                i32::MIN
+            } else {
+                best
+            }
+        }
+
+        // All cycles drift right  <=> minimum cycle displacement is > 0.
+        let min_pos = min_cycle_weight_in_comp(self, comp, 1);
+        if min_pos > 0 {
+            return true;
+        }
+
+        // All cycles drift left <=> minimum cycle displacement of inverted weights is > 0.
+        let min_neg = min_cycle_weight_in_comp(self, comp, -1);
+        min_neg > 0
     }
 
     /// In a strictly one-direction SCC, an infinite run from a blank tape
