@@ -48,7 +48,7 @@ macro_rules! assert_params {
 }
 
 fn params_2_2_0(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
-    prog.cant_halt(3).is_refuted() || prog.ctl_cant_halt(11)
+    prog.graph_cant_halt()
 }
 
 fn params_2_2_1(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
@@ -66,7 +66,8 @@ fn params_2_2_3(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
 //
 
 fn params_3_2_0(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
-    prog.cant_halt(13).is_refuted()
+    prog.graph_cant_halt()
+        || prog.cant_halt(13).is_refuted()
         || prog.ctl_cant_halt(20)
         || prog.cps_cant_halt(3)
 }
@@ -89,8 +90,8 @@ fn params_3_2_3(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
 //
 
 fn params_2_3_0(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
-    prog.cant_halt(8).is_refuted()
-        || prog.ctl_cant_halt(50)
+    prog.graph_cant_halt()
+        || prog.cant_halt(8).is_refuted()
         || prog.cps_cant_halt(3)
 }
 
@@ -115,7 +116,8 @@ fn params_2_3_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
 //
 
 fn params_4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
-    prog.cant_halt(46).is_refuted()
+    prog.graph_cant_halt()
+        || prog.cant_halt(46).is_refuted()
         || prog.ctl_cant_halt(130)
         || prog.cps_cant_halt(6)
 }
@@ -148,7 +150,7 @@ fn params_4_2_3(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
 //
 
 fn params_2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
-    prog.cant_halt(20).is_refuted()
+    prog.graph_cant_halt()
         || prog.ctl_cant_halt(190)
         || prog.cps_cant_halt(6)
 }

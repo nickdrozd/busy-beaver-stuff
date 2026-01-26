@@ -137,7 +137,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
     /// Fast sufficient condition (pure control/SCC + one-direction `read=0` cycle lemma).
     fn graph_cant_quasihalt_fast(&self) -> bool {
-        // Control adjacency: union of next-states over all read symbols.
+        // Control adjacency: union of next-states over all read colors.
         let mut adj: Vec<Vec<usize>> = vec![vec![]; states];
 
         for ((src, _), &(_, _, dst)) in self.iter() {
@@ -307,25 +307,56 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             return true;
         }
 
-        // Build control adjacency: union of next-states over all read symbols.
-        let mut adj: Vec<Vec<usize>> = vec![vec![]; states];
+        // Stronger (still sound) sufficient condition:
+        // prove that no reachable configuration can ever be in a halting *slot*
+        // (state + color-under-head).
+        //
+        // We use the abstract configuration graph to compute which head-read
+        // color sets are reachable in each state. If even this over-approx
+        // never reaches (st, co), then the concrete machine cannot halt there.
+        let (nodes, _adj) = self.build_abs_graph();
 
-        for ((src, _), &(_, _, dst)) in self.iter() {
-            adj[src as usize].push(dst as usize);
+        // If we hit the cap, conservatively give up.
+        if nodes.is_empty() || nodes.len() >= MAX_NODES {
+            return false;
         }
 
-        for u in 0..states {
-            adj[u].sort_unstable();
-            adj[u].dedup();
+        #[expect(clippy::cast_possible_truncation)]
+        let wild: u8 = colors as u8;
+
+        let mut reachable_head: Vec<Vec<bool>> =
+            vec![vec![false; colors]; states];
+
+        for cfg in &nodes {
+            let st = cfg.state as usize;
+            if st >= states {
+                continue;
+            }
+            let head = cfg.head as usize;
+            if head >= cfg.tape.len() {
+                continue;
+            }
+            let cell = cfg.tape[head];
+            if cell == wild {
+                for co in 0..colors {
+                    reachable_head[st][co] = true;
+                }
+            } else {
+                let co = cell as usize;
+                if co < colors {
+                    reachable_head[st][co] = true;
+                }
+            }
         }
 
-        let reachable = Self::reach_from(&adj);
+        // Every halting slot must be unreachable as a (state, head-color) pair.
+        for (st, co) in halts {
+            if reachable_head[st as usize][co as usize] {
+                return false;
+            }
+        }
 
-        // Sufficient condition: every halting slot belongs to a
-        // control state that is unreachable from the start (even in
-        // the over-approx control graph). Then we can never arrive at
-        // that missing slot.
-        halts.iter().all(|&(st, _)| !reachable[st as usize])
+        true
     }
 
     pub fn graph_cant_blank(&self) -> bool {
@@ -345,26 +376,20 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     }
 
     // Stronger (still sound) check using the bounded abstract configuration graph.
-    //
-    // Soundness rule:
-    // If a truly blank tape is reachable, then within *any* finite window the
-    // tape contents are all `0`. Our abstraction may contain `wild` (unknown)
-    // cells that could also be `0`, so we must treat "all cells are {0,wild}" as
-    // compatible with a concrete blank tape.
     fn graph_cant_blank_abs(&self) -> bool {
+        #[expect(clippy::cast_possible_truncation)]
+        let wild: u8 = colors as u8;
+
         let (nodes, _adj) = self.build_abs_graph();
 
-        // If we hit the cap, we conservatively give up.
         if nodes.is_empty() || nodes.len() >= MAX_NODES {
             return false;
         }
 
-        // If any reachable abstract node after the start has no *known* nonzero
-        // symbol in the tracked window, then a concrete blank tape is still
-        // compatible with that abstract state.
+        // If a configuration is compatible with a blank tape (all cells are 0
+        // or unknown), we cannot refute blanking.
         for cfg in nodes.iter().skip(1) {
-            if cfg.tape.iter().all(|&x| x == 0 || x as usize == colors)
-            {
+            if cfg.tape.iter().all(|&x| x == 0 || x == wild) {
                 return false;
             }
         }
@@ -390,23 +415,34 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             return true;
         }
 
-        // Control adjacency: union of next-states over all read symbols.
-        let mut adj: Vec<Vec<usize>> = vec![vec![]; states];
+        #[expect(clippy::cast_possible_truncation)]
+        let wild: u8 = colors as u8;
 
-        for ((src, _), &(_, _, dst)) in self.iter() {
-            adj[src as usize].push(dst as usize);
+        // Stronger (still sound): rule out spinout triggers by proving
+        // that the trigger *slot* (state, read=0 under head) is unreachable
+        // in the bounded abstract graph.
+        let (nodes, _adj) = self.build_abs_graph();
+
+        // If we hit the cap, conservatively give up.
+        if nodes.is_empty() || nodes.len() >= MAX_NODES {
+            return false;
         }
 
-        for u in 0..states {
-            adj[u].sort_unstable();
-            adj[u].dedup();
-        }
-
-        let reachable = Self::reach_from(&adj);
-
-        for (st, _) in spin_triggers {
-            if reachable[st as usize] {
-                return false;
+        for (st, _dir) in spin_triggers {
+            let target = st;
+            for cfg in &nodes {
+                if cfg.state != target {
+                    continue;
+                }
+                let head = cfg.head as usize;
+                if head >= cfg.tape.len() {
+                    continue;
+                }
+                let cell = cfg.tape[head];
+                // If reading 0 is possible here, the trigger slot might be reached.
+                if cell == 0 || cell == wild {
+                    return false;
+                }
             }
         }
 
@@ -470,9 +506,8 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         let mut reads: Vec<u8> = vec![];
 
         if cur == wild {
-            for r in 0..(colors as u8) {
-                reads.push(r);
-            }
+            // Unknown color at head: branch over all possible reads.
+            reads.extend(0..(colors as u8));
         } else {
             reads.push(cur);
         }
@@ -803,12 +838,12 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 /**************************************/
 // Abstract configuration graph (sound static over-approx)
 
-/// Abstract tape symbol: `0..colors-1` are concrete,
-/// and `wild` means "unknown".
+/// Abstract tape window for the symbolic execution graph.
 ///
-/// `left_unknown/right_unknown` indicate whether cells beyond the
-/// stored window may have been modified (unknown) or are still
-/// guaranteed blank 0.
+/// Each tracked tape cell stores a *set* of possible colors (bitmask).
+///
+/// `left_unknown/right_unknown` indicate whether cells beyond the stored
+/// window may have been modified (unknown) or are still guaranteed blank 0.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 struct AbsCfg {
     state: u8,

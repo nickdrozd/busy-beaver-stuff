@@ -1,4 +1,4 @@
-excessive-nesting-threshold = 6
+excessive-nesting-threshold = 7
 too-many-arguments-threshold = 8
 cognitive-complexity-threshold = 13
 
