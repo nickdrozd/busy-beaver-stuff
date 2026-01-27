@@ -65,33 +65,13 @@ trait Cps: GetInstr {
     fn cps_loop(&self, rad: Radius, goal: Goal) -> bool {
         (2..rad).any(|seg| cps_cant_reach(self, seg, goal))
     }
-}
 
-impl<P: GetInstr> Cps for P {}
-
-/**************************************/
-/* QH wrapper trait */
-
-trait CpsQh: GetInstr {
     fn cps_loop_qh(&self, rad: Radius) -> bool {
         (2..rad).any(|seg| cps_cant_quasihalt(self, seg))
     }
 }
-impl<P: GetInstr> CpsQh for P {}
 
-/**************************************/
-/* Observer hook: default no-op */
-
-trait CpsObs {
-    fn see(&mut self, _c: &Config) {}
-    fn edge(&mut self, _from: &Config, _to: &Config) {}
-}
-
-struct NoObs;
-impl CpsObs for NoObs {}
-
-/**************************************/
-/* Public wrapper remains unchanged */
+impl<P: GetInstr> Cps for P {}
 
 fn cps_cant_reach(
     prog: &impl GetInstr,
@@ -101,30 +81,23 @@ fn cps_cant_reach(
     cps_cant_reach_obs(prog, rad, goal, &mut NoObs)
 }
 
-/**************************************/
-/* New: QH certifier built as wrapper around the same CPS exploration */
-
 fn cps_cant_quasihalt(prog: &impl GetInstr, rad: Radius) -> bool {
-    // First: CPS must certify "cannot halt" (otherwise cannot certify "cannot quasihalt").
     let mut g = GraphObs::default();
+
     if !cps_cant_reach_obs(prog, rad, Halt, &mut g) {
         return false;
     }
 
-    // Deduplicate edges first; CPS expansion can add duplicates.
     g.dedup_edges();
 
-    // Optional fast-path: if the CPS graph is functional (deterministic), we can
-    // just check that the unique eventual cycle contains all observed states.
-    if let Some(ok) = cant_quasihalt_functional_fastpath(&g) {
+    if let Some(ok) = g.cant_quasihalt_functional_fastpath() {
         return ok;
     }
 
-    cant_quasihalt_no_avoidable_state_cycle(&g)
+    g.cant_quasihalt_no_avoidable_state_cycle()
 }
 
 /**************************************/
-/* Core CPS loop with observer (minimal changes inside) */
 
 fn cps_cant_reach_obs(
     prog: &impl GetInstr,
@@ -197,7 +170,6 @@ fn cps_cant_reach_obs(
                 tape: next_tape,
             };
 
-            // observer edge hook
             obs.edge(&config, &next_config);
 
             if configs.intern_config(&next_config) {
@@ -223,7 +195,6 @@ fn cps_cant_reach_obs(
                 tape: next_tape,
             };
 
-            // observer edge hook
             obs.edge(&config, &next_config);
 
             if configs.intern_config(&next_config) {
@@ -246,7 +217,14 @@ fn cps_cant_reach_obs(
 }
 
 /**************************************/
-/* Graph observer */
+
+trait CpsObs {
+    fn see(&mut self, _c: &Config) {}
+    fn edge(&mut self, _from: &Config, _to: &Config) {}
+}
+
+struct NoObs;
+impl CpsObs for NoObs {}
 
 #[derive(Default)]
 struct GraphObs {
@@ -254,27 +232,6 @@ struct GraphObs {
     nodes: Vec<Config>,
     succ: Vec<Vec<usize>>,
     states: Set<u8>,
-}
-
-impl GraphObs {
-    fn intern(&mut self, c: &Config) -> usize {
-        if let Some(&i) = self.id.get(c) {
-            return i;
-        }
-        let i = self.nodes.len();
-        self.nodes.push(c.clone());
-        self.id.insert(c.clone(), i);
-        self.succ.push(vec![]);
-        self.states.insert(c.state);
-        i
-    }
-
-    fn dedup_edges(&mut self) {
-        for outs in &mut self.succ {
-            outs.sort_unstable();
-            outs.dedup();
-        }
-    }
 }
 
 impl CpsObs for GraphObs {
@@ -289,132 +246,162 @@ impl CpsObs for GraphObs {
     }
 }
 
-/**************************************/
-/* QH checks on the recorded CPS graph */
-
-fn cant_quasihalt_functional_fastpath(g: &GraphObs) -> Option<bool> {
-    if g.nodes.is_empty() {
-        return Some(false);
-    }
-
-    // If any node has 0 or >1 successors, not functional.
-    if g.succ.iter().any(|outs| outs.len() != 1) {
-        return None;
-    }
-    // Follow successors from start node 0 to find the eventual cycle.
-    let n = g.nodes.len();
-    let mut seen_step: Vec<Option<usize>> = vec![None; n];
-    let mut order: Vec<usize> = vec![];
-
-    let mut cur = 0;
-
-    for _ in 0..=n {
-        if let Some(prev) = seen_step[cur] {
-            // If all states ever observed appear on the eventual
-            // cycle, then cannot quasihalt.
-            return Some(order[..prev].iter().all(|&u| {
-                let s = g.nodes[u].state;
-                order[prev..].iter().any(|&v| g.nodes[v].state == s)
-            }));
+impl GraphObs {
+    fn intern(&mut self, c: &Config) -> usize {
+        if let Some(&i) = self.id.get(c) {
+            return i;
         }
 
-        seen_step[cur] = Some(order.len());
-        order.push(cur);
-        cur = g.succ[cur][0];
+        let i = self.nodes.len();
+        self.nodes.push(c.clone());
+        self.id.insert(c.clone(), i);
+        self.succ.push(vec![]);
+        self.states.insert(c.state);
+
+        i
     }
 
-    Some(false)
-}
-
-fn cant_quasihalt_no_avoidable_state_cycle(g: &GraphObs) -> bool {
-    let n = g.nodes.len();
-    if n == 0 {
-        return false;
+    fn dedup_edges(&mut self) {
+        for outs in &mut self.succ {
+            outs.sort_unstable();
+            outs.dedup();
+        }
     }
 
-    // Nodes reachable in the full abstract graph (paths may pass through q).
-    let reachable = reachable_nodes(&g.succ, 0);
+    fn cant_quasihalt_functional_fastpath(&self) -> Option<bool> {
+        if self.nodes.is_empty() {
+            return Some(false);
+        }
 
-    // For each control-state q, check whether there exists any
-    // reachable directed cycle comprised only of nodes whose
-    // control-state != q.
-    for q in &g.states {
-        if induced_has_cycle_avoiding_q(g, &reachable, *q) {
+        // If any node has 0 or >1 successors, not functional.
+        if self.succ.iter().any(|outs| outs.len() != 1) {
+            return None;
+        }
+        // Follow successors from start node 0 to find the eventual cycle.
+        let n = self.nodes.len();
+        let mut seen_step: Vec<Option<usize>> = vec![None; n];
+        let mut order: Vec<usize> = vec![];
+
+        let mut cur = 0;
+
+        for _ in 0..=n {
+            if let Some(prev) = seen_step[cur] {
+                // If all states ever observed appear on the eventual
+                // cycle, then cannot quasihalt.
+                return Some(order[..prev].iter().all(|&u| {
+                    let s = self.nodes[u].state;
+                    order[prev..]
+                        .iter()
+                        .any(|&v| self.nodes[v].state == s)
+                }));
+            }
+
+            seen_step[cur] = Some(order.len());
+            order.push(cur);
+            cur = self.succ[cur][0];
+        }
+
+        Some(false)
+    }
+
+    fn cant_quasihalt_no_avoidable_state_cycle(&self) -> bool {
+        if self.nodes.is_empty() {
             return false;
         }
-    }
 
-    true
-}
+        let reachable = reachable_nodes(&self.succ, 0);
 
-fn induced_has_cycle_avoiding_q(
-    g: &GraphObs,
-    reachable: &[bool],
-    q: u8,
-) -> bool {
-    let n = g.nodes.len();
-    let mut include = vec![false; n];
-    let mut count = 0;
-    for u in 0..n {
-        if reachable[u] && g.nodes[u].state != q {
-            include[u] = true;
-            count += 1;
-        }
-    }
-
-    if count == 0 {
-        return false;
-    }
-
-    // Kahn-style cycle detection on the induced subgraph.
-    let mut indeg = vec![0; n];
-    for u in 0..n {
-        if !include[u] {
-            continue;
-        }
-        for &v in &g.succ[u] {
-            if include[v] {
-                indeg[v] += 1;
+        // For each control-state q, check whether there exists any
+        // reachable directed cycle comprised only of nodes whose
+        // control-state != q.
+        for q in &self.states {
+            if self.induced_has_cycle_avoiding_q(&reachable, *q) {
+                return false;
             }
         }
+
+        true
     }
 
-    let mut stack = Vec::new();
-    for u in 0..n {
-        if include[u] && indeg[u] == 0 {
-            stack.push(u);
+    fn induced_has_cycle_avoiding_q(
+        &self,
+        reachable: &[bool],
+        q: u8,
+    ) -> bool {
+        let n = self.nodes.len();
+
+        let mut include = vec![false; n];
+        let mut count = 0;
+
+        for u in 0..n {
+            if reachable[u] && self.nodes[u].state != q {
+                include[u] = true;
+                count += 1;
+            }
         }
-    }
 
-    let mut removed = 0;
-    while let Some(u) = stack.pop() {
-        removed += 1;
-        for &v in &g.succ[u] {
-            if !include[v] {
+        if count == 0 {
+            return false;
+        }
+
+        // Kahn-style cycle detection on the induced subgraph.
+        let mut indeg = vec![0; n];
+
+        for u in 0..n {
+            if !include[u] {
                 continue;
             }
-            let d = indeg[v];
-            if d > 0 {
-                indeg[v] = d - 1;
-                if indeg[v] == 0 {
-                    stack.push(v);
+
+            for &v in &self.succ[u] {
+                if include[v] {
+                    indeg[v] += 1;
                 }
             }
         }
+
+        let mut stack = vec![];
+
+        for u in 0..n {
+            if include[u] && indeg[u] == 0 {
+                stack.push(u);
+            }
+        }
+
+        let mut removed = 0;
+
+        while let Some(u) = stack.pop() {
+            removed += 1;
+
+            for &v in &self.succ[u] {
+                if !include[v] {
+                    continue;
+                }
+
+                let d = indeg[v];
+
+                if d > 0 {
+                    indeg[v] = d - 1;
+                    if indeg[v] == 0 {
+                        stack.push(v);
+                    }
+                }
+            }
+        }
+
+        removed != count
     }
-
-    removed != count
 }
-
-/**************************************/
-/* Graph utilities: reachability */
 
 fn reachable_nodes(succ: &[Vec<usize>], start: usize) -> Vec<bool> {
     let n = succ.len();
+
     let mut vis = vec![false; n];
     let mut stack = vec![];
+
     vis[start] = true;
+
     stack.push(start);
+
     while let Some(u) = stack.pop() {
         for &v in &succ[u] {
             if !vis[v] {
