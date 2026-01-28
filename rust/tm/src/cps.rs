@@ -55,7 +55,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     fn cps_run_macros(&self, rad: Radius, goal: Goal) -> bool {
         assert!(rad > 1);
 
-        self.make_transcript_macro(4).cps_loop(rad, goal)
+        self.make_transcript_macro(16).cps_loop(rad, goal)
+            || self.make_transcript_macro(4).cps_loop(rad, goal)
             || self.make_lru_macro().cps_loop(rad, goal)
             || self.cps_loop(rad, goal)
     }
