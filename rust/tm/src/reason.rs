@@ -101,6 +101,34 @@ type Entrypoints = Dict<State, (Entries, Entries)>;
 type AdjPossible<const S: usize, const C: usize> =
     [[[[bool; C]; 2]; C]; S];
 
+/// Per-state predecessor-entry neighbor constraints.
+///
+/// If a state has **no self-loop**, then (except for the true initial
+/// configuration) any occurrence of that state must have been entered
+/// by some transition moving into it.
+///
+/// A transition that moves **Right** into state `q` leaves its printed
+/// symbol immediately to the **left** of the head in `q`, and a
+/// transition that moves **Left** into `q` leaves its printed symbol
+/// immediately to the **right** of the head.
+///
+/// This yields a disjunctive necessary condition:
+/// - either the left neighbor matches the print of some incoming R-move
+/// - or the right neighbor matches the print of some incoming L-move
+///
+/// If one direction has *no* incoming moves (and there is no self-loop),
+/// the condition collapses to the other side.
+#[derive(Clone, Copy, Debug)]
+struct NeighborEntry<const C: usize> {
+    has_self_loop: bool,
+    // left_ok[k] is true if there exists an incoming R-move printing k
+    left_ok: [bool; C],
+    // right_ok[k] is true if there exists an incoming L-move printing k
+    right_ok: [bool; C],
+    has_in_r: bool,
+    has_in_l: bool,
+}
+
 fn cant_reach<const s: usize, const c: usize, T: Ord>(
     prog: &Prog<s, c>,
     steps: Steps,
@@ -138,7 +166,12 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     // blank tape. If a generated predecessor configuration demands an
     // immediate neighbor color that is impossible in this
     // over-approximation, we can safely prune it.
-    let adj_possible = prog.adj_possible_from_blank();
+    let adj_possible =
+        prog.adj_possible_from_blank(&forbid_left, &forbid_right);
+
+    // Sound predecessor-entry neighbor constraints (often stronger than
+    // adjacency alone for states with no self-loop).
+    let neighbor_entry = prog.neighbor_entry_constraints();
 
     let mut configs = get_configs(&slots);
 
@@ -179,6 +212,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             &forbid_left,
             &forbid_right,
             &adj_possible,
+            &neighbor_entry,
         ) {
             Err(err) => return err,
             Ok(stepped) => {
@@ -314,6 +348,7 @@ fn step_configs<const s: usize, const c: usize>(
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     adj_possible: &AdjPossible<s, c>,
+    neighbor_entry: &[NeighborEntry<c>; s],
 ) -> Result<Configs, BackwardResult> {
     let configs = branch_indef(configs);
 
@@ -327,6 +362,16 @@ fn step_configs<const s: usize, const c: usize>(
 
             tape.backstep(shift, color);
 
+            // If we've reached the true initial configuration (blank tape
+            // in the start state), report success immediately.
+            //
+            // This check must happen *before* any pruning filters: the
+            // initial configuration has no predecessor, so entry-based
+            // constraints do not apply.
+            if tape.blank() && state == 0 {
+                return Err(Init);
+            }
+
             // Prune configs that violate proven shift-side constraints.
             if tape.violates_shift_side(forbid_left, forbid_right) {
                 continue;
@@ -339,27 +384,24 @@ fn step_configs<const s: usize, const c: usize>(
             let st = state as usize;
             let sc = tape.scan as usize;
 
-            if st < s && sc < c {
-                if let Some(lc) = tape.left_neighbor_color()
-                    && !adj_possible[st][sc][0][lc as usize]
-                {
-                    continue;
-                }
-                if let Some(rc) = tape.right_neighbor_color()
-                    && !adj_possible[st][sc][1][rc as usize]
-                {
-                    continue;
-                }
+            if let Some(lc) = tape.left_neighbor_color()
+                && !adj_possible[st][sc][0][lc as usize]
+            {
+                continue;
+            }
+            if let Some(rc) = tape.right_neighbor_color()
+                && !adj_possible[st][sc][1][rc as usize]
+            {
+                continue;
             }
 
-            if tape.blank() {
-                if state == 0 {
-                    return Err(Init);
-                }
+            // Sound predecessor-entry pruning for states with no self-loop.
+            if !tape.satisfies_neighbor_entry(neighbor_entry[st]) {
+                continue;
+            }
 
-                if !blanks.insert(state) {
-                    continue;
-                }
+            if tape.blank() && !blanks.insert(state) {
+                continue;
             }
 
             let next_config = Config::descendant(state, tape, &config)?;
@@ -499,6 +541,46 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         (forbid_left, forbid_right)
     }
 
+    /// Compute per-state *sound* necessary neighbor constraints based
+    /// solely on the program's incoming transitions.
+    ///
+    /// If a state has **no self-loop transitions**, then any occurrence
+    /// of that state (except the true initial configuration) must have
+    /// been entered by a move into it.
+    ///
+    /// Incoming R-moves to `q` force the immediate **left** neighbor in
+    /// `q` to equal the printed symbol; incoming L-moves force the
+    /// immediate **right** neighbor.
+    fn neighbor_entry_constraints(&self) -> [NeighborEntry<c>; s] {
+        let mut out = [NeighborEntry {
+            has_self_loop: false,
+            left_ok: [false; c],
+            right_ok: [false; c],
+            has_in_r: false,
+            has_in_l: false,
+        }; s];
+
+        for ((from_state, _), &(print, shift, to_state)) in self.iter()
+        {
+            let to = to_state as usize;
+
+            if to_state == from_state {
+                out[to].has_self_loop = true;
+            }
+
+            let p = print as usize;
+            if shift {
+                out[to].left_ok[p] = true;
+                out[to].has_in_r = true;
+            } else {
+                out[to].right_ok[p] = true;
+                out[to].has_in_l = true;
+            }
+        }
+
+        out
+    }
+
     /// Compute a sound over-approximation of which *immediate neighbor
     /// colors* can appear next to the head in each (state, scanned
     /// color), starting from the blank tape.
@@ -512,7 +594,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// neighbor color is *not* possible here, it is not possible in any
     /// concrete run from blank.
     #[expect(clippy::cast_possible_truncation)]
-    fn adj_possible_from_blank(&self) -> AdjPossible<s, c> {
+    fn adj_possible_from_blank(
+        &self,
+        forbid_left: &[bool; c],
+        forbid_right: &[bool; c],
+    ) -> AdjPossible<s, c> {
         // Index helper for the compact visited table.
         let idx = |q: usize, l: usize, sc: usize, r: usize| {
             ((q * c + l) * c + sc) * c + r
@@ -545,14 +631,13 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             let p = print as usize;
             let ns = next_state as usize;
 
-            if ns >= s {
-                continue;
-            }
-
             if shift {
                 // Move Right: old scanned becomes left neighbor, old
                 // right becomes scanned, new right is unknown.
                 for new_r in 0..c {
+                    if forbid_right[new_r] {
+                        continue;
+                    }
                     let n = (ns, p, r, new_r);
                     let id = idx(n.0, n.1, n.2, n.3);
                     if !visited[id] {
@@ -564,6 +649,9 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 // Move Left: old scanned becomes right neighbor, old
                 // left becomes scanned, new left is unknown.
                 for new_l in 0..c {
+                    if forbid_left[new_l] {
+                        continue;
+                    }
                     let n = (ns, new_l, l, p);
                     let id = idx(n.0, n.1, n.2, n.3);
                     if !visited[id] {
@@ -1038,6 +1126,51 @@ impl Tape {
         };
 
         push.push_indef(self.scan);
+    }
+
+    /// Sound pruning helper for predecessor-entry neighbor constraints.
+    ///
+    /// If a state has no self-loop, then (except for the true initial
+    /// configuration) it must have been entered by some transition.
+    /// Incoming R-moves force the immediate **left** neighbor to equal
+    /// the transition's print symbol; incoming L-moves force the
+    /// immediate **right** neighbor.
+    ///
+    /// We only prune when the relevant neighbor color is determined by
+    /// this tape description (i.e. not `?`).
+    fn satisfies_neighbor_entry<const c: usize>(
+        &self,
+        ne: NeighborEntry<c>,
+    ) -> bool {
+        if ne.has_self_loop {
+            return true;
+        }
+
+        // No way to enter this state at all (and no self-loop):
+        // unreachable except possibly as the true initial config (which
+        // is handled earlier).
+        if !ne.has_in_r && !ne.has_in_l {
+            return false;
+        }
+
+        let l = self.left_neighbor_color();
+        let r = self.right_neighbor_color();
+
+        // If only one entry direction exists, it must be used.
+        if ne.has_in_r && !ne.has_in_l {
+            return l.is_none_or(|lc| ne.left_ok[lc as usize]);
+        }
+        if ne.has_in_l && !ne.has_in_r {
+            return r.is_none_or(|rc| ne.right_ok[rc as usize]);
+        }
+
+        // Both entry directions are possible: accept if either
+        // determined neighbor matches; reject only if both neighbors are
+        // determined and both are incompatible.
+        let l_ok = l.map(|lc| ne.left_ok[lc as usize]);
+        let r_ok = r.map(|rc| ne.right_ok[rc as usize]);
+
+        !matches!((l_ok, r_ok), (Some(false), Some(false)))
     }
 
     /// Returns true if this tape explicitly contains a color on a
