@@ -593,28 +593,44 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// over-approximation, and therefore safe for pruning: if a
     /// neighbor color is *not* possible here, it is not possible in any
     /// concrete run from blank.
-    #[expect(clippy::cast_possible_truncation)]
+    #[expect(clippy::cast_possible_truncation, clippy::similar_names)]
     fn adj_possible_from_blank(
         &self,
         forbid_left: &[bool; c],
         forbid_right: &[bool; c],
     ) -> AdjPossible<s, c> {
-        // Index helper for the compact visited table.
-        let idx = |q: usize, l: usize, sc: usize, r: usize| {
-            ((q * c + l) * c + sc) * c + r
-        };
+        // Abstract state: (st, lb, l, sc, r, rb)
+        // lb/rb = whether the cell immediately outside the 3-cell window
+        // on that side is known blank (unvisited).
+        fn idx<const C: usize, const S: usize>(
+            st: usize,
+            lb: usize,
+            l: usize,
+            sc: usize,
+            r: usize,
+            rb: usize,
+        ) -> usize {
+            // st * 2 * C^3 * 2 + ...
+            let mut x = st;
+            x = x * 2 + lb;
+            x = x * C + l;
+            x = x * C + sc;
+            x = x * C + r;
+            x = x * 2 + rb;
+            x
+        }
 
-        let mut visited = vec![false; s * c * c * c];
+        let total = s * 2 * c * c * c * 2;
+        let mut visited = vec![false; total];
         let mut q = std::collections::VecDeque::new();
 
-        // Start from the true initial configuration: state 0 on blank
-        // tape (all zeros).
-        q.push_back((0, 0, 0, 0));
-        visited[idx(0, 0, 0, 0)] = true;
+        // Start from true blank: window 0 0 0 and both outsides known blank.
+        q.push_back((0, 1, 0, 0, 0, 1));
+        visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = true;
 
         let mut possible = [[[[false; c]; 2]; c]; s];
 
-        while let Some((st, l, sc, r)) = q.pop_front() {
+        while let Some((st, lb, l, sc, r, rb)) = q.pop_front() {
             possible[st][sc][0][l] = true;
             possible[st][sc][1][r] = true;
 
@@ -624,7 +640,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             let Some(&(print, shift, next_state)) =
                 self.get(&(st_state, sc_color))
             else {
-                // Missing transition: treat as halting sink.
+                // Missing transition: halting sink.
                 continue;
             };
 
@@ -632,31 +648,69 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             let ns = next_state as usize;
 
             if shift {
-                // Move Right: old scanned becomes left neighbor, old
-                // right becomes scanned, new right is unknown.
-                for new_r in 0..c {
-                    if forbid_right[new_r] {
-                        continue;
-                    }
-                    let n = (ns, p, r, new_r);
-                    let id = idx(n.0, n.1, n.2, n.3);
+                // Move Right.
+                // New: left neighbor becomes printed symbol p, scanned becomes old r.
+                // Left outside-blank flag becomes unknown (0): we've moved right, so we
+                // lose exact knowledge about the far-left boundary.
+                let new_lb = 0;
+
+                if rb == 1 && r == 0 {
+                    // We were at the right boundary and stepped into fresh blank.
+                    // New right neighbor is known blank, and thus color 0.
+                    let new_r = 0;
+                    let new_rb = 1;
+                    let n = (ns, new_lb, p, r, new_r, new_rb);
+                    let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
                     if !visited[id] {
                         visited[id] = true;
                         q.push_back(n);
+                    }
+                } else {
+                    // We don't know whether we stepped within visited region or into unknown;
+                    // conservatively allow any right color (respecting forbid_right) and drop
+                    // boundary certainty.
+                    let new_rb = 0;
+                    for new_r in 0..c {
+                        if forbid_right[new_r] {
+                            continue;
+                        }
+                        let n = (ns, new_lb, p, r, new_r, new_rb);
+                        let id =
+                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
+                        if !visited[id] {
+                            visited[id] = true;
+                            q.push_back(n);
+                        }
                     }
                 }
             } else {
-                // Move Left: old scanned becomes right neighbor, old
-                // left becomes scanned, new left is unknown.
-                for new_l in 0..c {
-                    if forbid_left[new_l] {
-                        continue;
-                    }
-                    let n = (ns, new_l, l, p);
-                    let id = idx(n.0, n.1, n.2, n.3);
+                // Move Left.
+                let new_rb = 0;
+
+                if lb == 1 && l == 0 {
+                    // At left boundary, step into fresh blank. New left neighbor known blank (0).
+                    let new_l = 0;
+                    let new_lb = 1;
+                    let n = (ns, new_lb, new_l, l, p, new_rb);
+                    let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
                     if !visited[id] {
                         visited[id] = true;
                         q.push_back(n);
+                    }
+                } else {
+                    // Unknown on the left now; allow any (respect forbid_left), boundary certainty lost.
+                    let new_lb = 0;
+                    for new_l in 0..c {
+                        if forbid_left[new_l] {
+                            continue;
+                        }
+                        let n = (ns, new_lb, new_l, l, p, new_rb);
+                        let id =
+                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
+                        if !visited[id] {
+                            visited[id] = true;
+                            q.push_back(n);
+                        }
                     }
                 }
             }

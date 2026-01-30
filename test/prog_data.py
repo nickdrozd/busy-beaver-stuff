@@ -2036,7 +2036,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1RA ...  1LC 0LA ...  2RA 0LC 0RB": 2,
         "1RB 1RA ...  1LC 0LA ...  2RB 0LC 0RA": 2,
         "1RB 0LC 2LC  1LA 2RB ...  0RA 2RC 0LC": 60,
-        "1RB 2LA ...  1LA 0RC 2RC  0LB 2LC 0RC": 61,
+        "1RB 2LA ...  1LA 0RC 2RC  0LB 2LC 0RC": 60,
         "1RB 1LC 2RB  0LA 2LB 0RB  1RA 2LC ...": 62,
         "1RB 2LA ...  1RC 1LA 2RC  0LB 2LC 0RC": 62,
 
@@ -2358,7 +2358,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB ...  1RC 0RA  1LC 0LB",
             "1RB 0LB  1LC 1RB  ... 1LA",
             "1RB 0LC  0LC 1RA  ... 1LA",
-            "1RB 0LC  0RC ...  1LC 0RA",
             "1RB 0LC  1LB 1RA  ... 1LA",
             "1RB 0RB  0LB 1LC  0RA ...",
             "1RB 1LA  1LA 1RC  ... 1RB",
@@ -2847,7 +2846,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
         "step_limit": 4,
         "depth_limit": 47,
-        "linrec": 178,
+        "linrec": 177,
     },
     "blank": {
         "step_limit": 3,
