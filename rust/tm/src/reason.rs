@@ -159,6 +159,30 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     // configurations.
     let (forbid_left, forbid_right) = prog.shift_side_forbidden();
 
+    // If shift-side analysis proves that *no non-blank* symbol can ever
+    // appear on a given side of the head in any run from the blank
+    // tape, then that entire side is forced to be blank.
+    //
+    // This remains sound even if the program *can* print blank: the
+    // invariant is about which symbols can occur on each side, not
+    // about whether a cell has been visited.
+    let left_forced_blank = (1..c).all(|k| forbid_left[k]);
+    let right_forced_blank = (1..c).all(|k| forbid_right[k]);
+
+    // One-sided blank-write analysis (strictly stronger than the global
+    // "never writes blank" special case).
+    //
+    // For a cell to contain blank (0) *within the visited region* on the
+    // left of the head, the last time that cell was visited the head must
+    // have moved Right after writing 0 there. Therefore, if the program
+    // never writes 0 on a Right move, any 0 appearing to the *left* of the
+    // head must be unvisited, and thus all cells farther left must also be
+    // unvisited blanks. Symmetrically for the right side and Left moves.
+    let (writes_blank_on_r, writes_blank_on_l) =
+        prog.blank_writes_by_shift();
+    let left_fresh_zero = !writes_blank_on_r;
+    let right_fresh_zero = !writes_blank_on_l;
+
     // Optional *sound* adjacency reachability filter.
     //
     // We over-approximate the set of 3-cell windows (L,scan,R) that
@@ -213,6 +237,10 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             &forbid_right,
             &adj_possible,
             &neighbor_entry,
+            left_fresh_zero,
+            right_fresh_zero,
+            left_forced_blank,
+            right_forced_blank,
         ) {
             Err(err) => return err,
             Ok(stepped) => {
@@ -342,6 +370,7 @@ fn get_indef(
     Some((steps, next_config))
 }
 
+#[expect(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
 fn step_configs<const s: usize, const c: usize>(
     configs: ValidatedSteps,
     blanks: &mut BlankStates,
@@ -349,6 +378,10 @@ fn step_configs<const s: usize, const c: usize>(
     forbid_right: &[bool; c],
     adj_possible: &AdjPossible<s, c>,
     neighbor_entry: &[NeighborEntry<c>; s],
+    left_fresh_zero: bool,
+    right_fresh_zero: bool,
+    left_forced_blank: bool,
+    right_forced_blank: bool,
 ) -> Result<Configs, BackwardResult> {
     let configs = branch_indef(configs);
 
@@ -370,6 +403,35 @@ fn step_configs<const s: usize, const c: usize>(
             // constraints do not apply.
             if tape.blank() && state == 0 {
                 return Err(Init);
+            }
+
+            // Additional end-tightening based on shift-side analysis.
+            // If the transition table proves that no non-blank symbol can
+            // ever appear on a given side in any run from blank, then that
+            // side is forced to be all blanks and we can safely replace `?`
+            // with `0+` on that end.
+            tape.tighten_forced_blank_ends(
+                left_forced_blank,
+                right_forced_blank,
+            );
+
+            // Additional sound invariants when blanks (0) cannot be
+            // written *in the direction that would leave them on a given
+            // side*.
+            //
+            // - If the program never writes 0 on an R-move, then any 0 on
+            //   the left of the head must be unvisited, so nothing non-blank
+            //   can appear farther left.
+            // - If the program never writes 0 on an L-move, then any 0 on
+            //   the right of the head must be unvisited, so nothing non-blank
+            //   can appear farther right.
+            if (left_fresh_zero || right_fresh_zero)
+                && !tape.enforce_fresh_zero_side_invariants(
+                    left_fresh_zero,
+                    right_fresh_zero,
+                )
+            {
+                continue;
             }
 
             // Prune configs that violate proven shift-side constraints.
@@ -496,6 +558,35 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         }
 
         entrypoints
+    }
+
+    /// Returns (writes_blank_on_r, writes_blank_on_l):
+    /// - writes_blank_on_r is true if any transition writes 0 and moves Right.
+    /// - writes_blank_on_l is true if any transition writes 0 and moves Left.
+    ///
+    /// This enables one-sided "fresh blank" invariants: if blank is never
+    /// written on R-moves, then any 0 to the left of the head must be
+    /// unvisited; similarly for the right side with L-moves.
+    fn blank_writes_by_shift(&self) -> (bool, bool) {
+        let mut on_r = false;
+        let mut on_l = false;
+
+        for (_, &(print, shift, _)) in self.iter() {
+            if print != 0 {
+                continue;
+            }
+            if shift {
+                on_r = true;
+            } else {
+                on_l = true;
+            }
+
+            if on_r && on_l {
+                break;
+            }
+        }
+
+        (on_r, on_l)
     }
 
     /// Compute a *sound* shift-side restriction for each color.
@@ -1027,6 +1118,35 @@ impl Span {
     fn set_head_to_one(&mut self) {
         self.span.first_mut().unwrap().count = 1;
     }
+
+    /// If this span's end is known to be all blanks (`0+`), then any explicit
+    /// trailing blank blocks at the *far* end are redundant and can be dropped.
+    ///
+    /// This keeps canonical forms like `0+ 0 [x] ?` from persisting as distinct
+    /// configurations; it becomes `0+ [x] ?`.
+    fn absorb_trailing_blanks(&mut self) {
+        if self.end != TapeEnd::Blanks {
+            return;
+        }
+
+        // Collect blocks (ordered near->far) and drop blanks from the far end.
+        let mut blocks: Vec<Block> =
+            self.span.iter().cloned().collect();
+        while matches!(blocks.last(), Some(b) if b.color == 0) {
+            blocks.pop();
+        }
+
+        if blocks.len() == self.span.len() {
+            return;
+        }
+
+        // Rebuild span by pushing blocks from far->near (push_block is near-end).
+        let mut new_span = SpanT::init_blank();
+        for b in blocks.iter().rev() {
+            new_span.push_block(b.color, b.count);
+        }
+        self.span = new_span;
+    }
 }
 
 /**************************************/
@@ -1180,6 +1300,89 @@ impl Tape {
         };
 
         push.push_indef(self.scan);
+    }
+
+    /// One-sided "fresh blank" invariants.
+    ///
+    /// Starting from the blank tape and moving one cell at a time, visited
+    /// cells form a contiguous interval.
+    ///
+    /// - If the program never writes blank (`0`) on an R-move, then a cell
+    ///   to the **left** of the head cannot end up as `0` via being visited
+    ///   (because the last visit would have to leave it behind on a Right
+    ///   move). So any observed `0` on the left must be unvisited, and thus
+    ///   nothing non-blank can appear farther left.
+    /// - Symmetrically, if the program never writes `0` on an L-move, any
+    ///   observed `0` on the right must be unvisited, so nothing non-blank
+    ///   can appear farther right.
+    ///
+    /// This is a *sound* pruning/normalization step that rejects impossible
+    /// spans and can tighten `?` ends to `0+` when an explicit `0` block is
+    /// present on the applicable side.
+    fn enforce_fresh_zero_side_invariants(
+        &mut self,
+        left_fresh_zero: bool,
+        right_fresh_zero: bool,
+    ) -> bool {
+        fn check_side(span: &mut Span) -> bool {
+            let mut seen_zero = false;
+
+            for b in span.span.iter() {
+                if seen_zero && b.color != 0 {
+                    return false; // nonblank beyond an unvisited blank
+                }
+                if b.color == 0 {
+                    seen_zero = true;
+                }
+            }
+
+            if seen_zero {
+                // Beyond the outermost explicit cell is certainly blank.
+                span.end = TapeEnd::Blanks;
+                span.absorb_trailing_blanks();
+            }
+
+            true
+        }
+
+        (if left_fresh_zero {
+            check_side(&mut self.lspan)
+        } else {
+            true
+        }) && (if right_fresh_zero {
+            check_side(&mut self.rspan)
+        } else {
+            true
+        })
+    }
+
+    /// Tighten unknown ends to blank ends using global shift-side analysis.
+    ///
+    /// If shift-side analysis proves that **no non-blank** symbol can ever
+    /// appear on a given side of the head in any run from the blank tape,
+    /// then that entire side is forced to be blank (0) regardless of whether
+    /// the machine may write blank.
+    ///
+    /// This is a *sound* normalization step: it only strengthens `?` -> `0+`
+    /// when the program itself forbids non-blank symbols on that side.
+    fn tighten_forced_blank_ends(
+        &mut self,
+        left_forced_blank: bool,
+        right_forced_blank: bool,
+    ) {
+        if left_forced_blank {
+            self.lspan.end = TapeEnd::Blanks;
+        }
+        if right_forced_blank {
+            self.rspan.end = TapeEnd::Blanks;
+        }
+        // Canonicalize: with `0+` ends, drop redundant trailing 0-blocks.
+        if self.lspan.end == TapeEnd::Blanks {
+            self.lspan.absorb_trailing_blanks();
+        }
+        if self.rspan.end == TapeEnd::Blanks {
+            self.rspan.absorb_trailing_blanks();
+        }
     }
 
     /// Sound pruning helper for predecessor-entry neighbor constraints.
