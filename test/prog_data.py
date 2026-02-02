@@ -422,6 +422,7 @@ INIT_BLANK = {
 
     "1RB 0LA  1RC ...  0LC 0LA": 5,
     "1RB 1RC  0LA 0RA  0LB ...": 5,
+    "1RB 0RC  1LC 0LB  0RA 1LA": 17,
     "1RB 0LA  0LC 1RA  1LA 1LB": 18,
     "1RB 0LA  1LB 0LC  1RA 1RC": 18,
     "1RB 1LB  0RC 1LA  1LA 0RA": 21,
