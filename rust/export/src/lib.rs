@@ -419,7 +419,7 @@ type BigStep = BigCount;
 
 type Blanks = Dict<State, BigStep>;
 
-#[pyclass(eq, eq_int)]
+#[pyclass(eq, eq_int, from_py_object)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TermRes {
     xlimit,
