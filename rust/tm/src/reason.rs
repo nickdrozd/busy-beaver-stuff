@@ -960,18 +960,28 @@ impl Config {
             prev: Some(Rc::clone(prev)),
         };
 
-        if config.lin_rec() {
-            config.recs += 1;
+        let rec = config.lin_rec();
 
-            if config.recs > MAX_RECS {
+        if rec.is_some() {
+            if config.recs >= MAX_RECS {
+                #[cfg(debug_assertions)]
+                {
+                    #[expect(clippy::unnecessary_unwrap)]
+                    let rec = rec.unwrap();
+                    println!("--> {rec}");
+                    println!("--> {config}");
+                }
+
                 return Err(LinRec);
             }
+
+            config.recs += 1;
         }
 
         Ok(config)
     }
 
-    fn lin_rec(&self) -> bool {
+    fn lin_rec(&self) -> Option<&Self> {
         let head = self.tape.head();
         let mut leftmost = head;
         let mut rightmost = head;
@@ -994,13 +1004,13 @@ impl Config {
                     rightmost,
                 )
             {
-                return true;
+                return Some(config);
             }
 
             current = config.prev.as_deref();
         }
 
-        false
+        None
     }
 }
 
