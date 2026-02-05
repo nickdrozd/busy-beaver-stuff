@@ -46,11 +46,11 @@ def show_comp(comp: Prog) -> str: ...
 
 ## machine #############################
 
-class TermRes(Enum):  # type: ignore[misc]
-    undfnd: int
-    spnout: int
-    infrul: int
-    xlimit: int
+class TermRes(Enum):
+    undfnd = ...
+    spnout = ...
+    infrul = ...
+    xlimit = ...
 
 class MachineResult:
     result: TermRes
