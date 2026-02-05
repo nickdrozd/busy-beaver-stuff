@@ -497,11 +497,6 @@ impl MachineResult {
     }
 
     #[getter]
-    fn halted(&self) -> Option<BigStep> {
-        matches!(self.result, undfnd).then_some(self.steps())
-    }
-
-    #[getter]
     fn infrul(&self) -> Option<BigStep> {
         matches!(self.result, infrul).then_some(self.steps())
     }

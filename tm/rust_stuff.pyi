@@ -49,7 +49,6 @@ def show_comp(comp: Prog) -> str: ...
 class TermRes(Enum):  # type: ignore[misc]
     undfnd: int
     spnout: int
-    halted: int
     infrul: int
     xlimit: int
 
@@ -77,8 +76,6 @@ class MachineResult:
     def simple_termination(self) -> int | None: ...
     @property
     def undfnd(self) -> tuple[int, Slot] | None: ...
-    @property
-    def halted(self) -> int | None: ...
     @property
     def infrul(self) -> int | None: ...
     @property

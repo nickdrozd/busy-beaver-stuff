@@ -378,7 +378,6 @@ class LinRecMachine:
 
     blanks: dict[State, int]
 
-    halted: int | None = None
     spnout: int | None = None
     xlimit: int | None = None
 
