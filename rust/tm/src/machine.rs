@@ -309,26 +309,24 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 type Transcript = Vec<(Slot, Pos)>;
 
 fn has_recurrence(transcript: &Transcript) -> bool {
+    fn min_max(e: usize, min: &[Pos], max: &[Pos]) -> (Pos, Pos) {
+        (min[e - 1], max[e - 1])
+    }
+
     let t = transcript.len();
 
-    let min_max = |e: usize| -> (Pos, Pos) {
-        assert!(0 < e);
+    let mut min = vec![];
+    let mut max = vec![];
 
-        let mut it = transcript[..e].iter().map(|&(_, p)| p);
-        let first = it.next().unwrap();
-
-        let (mut min_p, mut max_p) = (first, first);
-
-        for p in it {
-            if p < min_p {
-                min_p = p;
-            } else if max_p < p {
-                max_p = p;
-            }
+    for (i, &(_, p)) in transcript.iter().enumerate() {
+        if i == 0 {
+            min.push(p);
+            max.push(p);
+        } else {
+            min.push(min[i - 1].min(p));
+            max.push(max[i - 1].max(p));
         }
-
-        (min_p, max_p)
-    };
+    }
 
     for l in 1..=t / 2 {
         let k = t - l;
@@ -351,8 +349,8 @@ fn has_recurrence(transcript: &Transcript) -> bool {
                     return true;
                 }
 
-                let (min_l, max_l) = min_max(end_l);
-                let (min_k, max_k) = min_max(end_k);
+                let (min_l, max_l) = min_max(end_l, &min, &max);
+                let (min_k, max_k) = min_max(end_k, &min, &max);
 
                 if pos_l == min_l && pos_k == min_k {
                     return true;
