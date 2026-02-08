@@ -46,7 +46,10 @@ if __name__ == '__main__':
         sys.exit()
 
     for prog in sys.stdin:
-        if (result := CANT_REACH(prog, CYCLES)).is_refuted():
-            continue
-
+        print()
+        print(prog)
+        result = CANT_REACH(prog, CYCLES)
+        print()
         print(result)
+        print()
+        print('||--------------------------------------')
