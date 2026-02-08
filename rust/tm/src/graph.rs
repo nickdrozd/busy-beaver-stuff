@@ -136,6 +136,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     }
 
     /// Fast sufficient condition (pure control/SCC + one-direction `read=0` cycle lemma).
+    #[expect(clippy::excessive_nesting)]
     fn graph_cant_quasihalt_fast(&self) -> bool {
         // Control adjacency: union of next-states over all read colors.
         let mut adj: Vec<Vec<usize>> = vec![vec![]; states];
@@ -154,6 +155,57 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         if reachable_all.iter().any(|&b| !b) {
             return false;
         }
+
+        // CEGAR-style refinement: when the coarse control/SCC logic finds a potential
+        // avoid-`t` trap SCC, try to confirm it in the bounded abstract configuration graph.
+        //
+        // If the abstract graph cannot witness *any* cycle that stays within the SCC's control
+        // states while avoiding `t`, we treat the SCC as spurious and keep searching.
+        //
+        // Soundness note: `build_abs_graph()` is an over-approx of BB-from-blank reachability, so
+        // a concrete trapped cycle implies an abstract trapped cycle. Therefore, absence of an
+        // abstract cycle is enough to rule the SCC out.
+        let mut abs_cache: Option<(Vec<AbsCfg>, Vec<Vec<usize>>)> =
+            None;
+
+        let mut cegar_confirms_trap = |comp: &[usize],
+                                       t: usize|
+         -> bool {
+            // If we can't build the abstract graph (cap hit), fall back to conservative behavior:
+            // treat as confirmed.
+            let (nodes, a_adj) = if let Some((nodes, a_adj)) =
+                &abs_cache
+            {
+                (nodes, a_adj)
+            } else {
+                let built = self.build_abs_graph();
+                if built.0.is_empty() || built.0.len() >= MAX_NODES {
+                    return true;
+                }
+                abs_cache = Some(built);
+                let (nodes, a_adj) = abs_cache.as_ref().unwrap();
+                (nodes, a_adj)
+            };
+
+            // Control-state membership mask for the SCC.
+            let mut in_comp = vec![false; states];
+            for &u in comp {
+                if u < states {
+                    in_comp[u] = true;
+                }
+            }
+
+            // Active abstract nodes: state in SCC and not equal to target t.
+            let mut active_abs = vec![false; nodes.len()];
+            for (i, cfg) in nodes.iter().enumerate() {
+                let st = cfg.state as usize;
+                if st < states && st != t && in_comp[st] {
+                    active_abs[i] = true;
+                }
+            }
+
+            dyn_cycle_exists(a_adj, &active_abs)
+        };
 
         // Shift-aware refinement:
         // For each target state `t`, look for a *realizable* infinite trap that avoids `t`.
@@ -221,7 +273,10 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                 // transitions are absent; conservatively treat as
                 // trap.
                 if !has_l && !has_r {
-                    return false;
+                    if cegar_confirms_trap(comp.as_slice(), t) {
+                        return false;
+                    }
+                    continue;
                 }
 
                 // Bidirectional SCC: try a stronger (still sound)
@@ -243,7 +298,11 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                 if has_l && has_r {
                     if self.comp_has_uniform_drift(&comp) {
                         if self.has_zero_cycle_in_comp(&comp) {
-                            return false;
+                            if cegar_confirms_trap(comp.as_slice(), t) {
+                                return false;
+                            }
+                            // Abstract refinement could not confirm a trapped cycle inside this SCC.
+                            continue;
                         }
                         // No `read=0` cycle => cannot be
                         // an infinite trap from blank.
@@ -259,20 +318,29 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                     // contains a directed cycle.
                     if !has_nonzero_read || !has_nonzero_write {
                         if self.has_zero_cycle_in_comp(&comp) {
-                            return false;
+                            if cegar_confirms_trap(comp.as_slice(), t) {
+                                return false;
+                            }
+                            // Abstract refinement could not confirm a trapped cycle inside this SCC.
+                            continue;
                         }
                         // No `read=0` cycle => cannot sustain an infinite run from blank.
                         continue;
                     }
 
-                    // Otherwise, conservatively treat
-                    // as a possible bounded bounce trap.
-                    return false;
+                    // Otherwise, conservatively treat as a possible bounded bounce trap,
+                    // but try to confirm it in the abstract graph first.
+                    if cegar_confirms_trap(comp.as_slice(), t) {
+                        return false;
+                    }
+                    continue;
                 }
 
                 // One-direction SCC: rule it out unless it contains a
                 // feasible `read=0` cycle in that same direction.
-                if self.has_zero_dir_cycle_in_comp(&comp, has_r) {
+                if self.has_zero_dir_cycle_in_comp(&comp, has_r)
+                    && cegar_confirms_trap(comp.as_slice(), t)
+                {
                     return false;
                 }
             }
