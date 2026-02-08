@@ -185,10 +185,12 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
                 let mut has_l = false;
                 let mut has_r = false;
+                let mut has_nonzero_read = false;
+                let mut has_nonzero_write = false;
 
                 // Also record which single direction it has (if any),
                 // so we can do the 0-cycle check.
-                for ((src, _), &(_, sh, dst)) in self.iter() {
+                for ((src, read), &(write, sh, dst)) in self.iter() {
                     let u = src as usize;
                     let v = dst as usize;
 
@@ -198,6 +200,13 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
 
                     if !comp.contains(&u) || !comp.contains(&v) {
                         continue;
+                    }
+
+                    if read != 0 {
+                        has_nonzero_read = true;
+                    }
+                    if write != 0 {
+                        has_nonzero_write = true;
                     }
 
                     if sh {
@@ -238,6 +247,21 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                         }
                         // No `read=0` cycle => cannot be
                         // an infinite trap from blank.
+                        continue;
+                    }
+
+                    // Bounce-feasibility refinement (sound):
+                    // If the SCC cannot *ever* read a nonzero symbol, then from a blank tape
+                    // any trapped execution in the SCC can only traverse `read=0` transitions.
+                    // Likewise, if the SCC can read nonzero but can never *write* a nonzero,
+                    // then nonzero reads are impossible from blank.
+                    // In either case, the SCC is a trap only if the `read=0` induced subgraph
+                    // contains a directed cycle.
+                    if !has_nonzero_read || !has_nonzero_write {
+                        if self.has_zero_cycle_in_comp(&comp) {
+                            return false;
+                        }
+                        // No `read=0` cycle => cannot sustain an infinite run from blank.
                         continue;
                     }
 
