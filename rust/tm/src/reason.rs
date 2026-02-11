@@ -1016,8 +1016,10 @@ impl Span {
 
     fn push_single(&mut self, color: Color) {
         match self.span.first_mut() {
-            Some(block) if block.color == color && block.count != 0 => {
-                block.count += 1;
+            Some(block) if block.color == color => {
+                if !block.is_indef() {
+                    block.count += 1;
+                }
             },
             None if color == 0 && self.end == TapeEnd::Blanks => {},
             _ => {
@@ -1607,7 +1609,7 @@ fn test_push_indef() {
 
     tape.backstep(false, 0);
 
-    tape.assert("0+ 1 0.. 1.. 0.. 0 [0] ?");
+    tape.assert("0+ 1 0.. 1.. 0.. [0] ?");
 }
 
 /**************************************/
