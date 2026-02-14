@@ -407,7 +407,7 @@ class TuringTest(TestCase):
 
 ########################################
 
-BACKWARD_REASONERS: dict[str, BackwardReasoner] = {
+BACKWARD_REASONERS: dict[Goal, BackwardReasoner] = {
     "halt": cant_halt,
     "blank": cant_blank,
     "spinout": cant_spinout,
