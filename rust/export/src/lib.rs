@@ -239,6 +239,11 @@ pub fn cant_spinout(prog: &str, steps: Steps) -> BackwardResult {
     parse!(prog, |p: Prog<_, _>| p.cant_spinout(steps).into())
 }
 
+#[pyfunction]
+pub fn cant_twostep(prog: &str, steps: Steps) -> BackwardResult {
+    parse!(prog, |p: Prog<_, _>| p.cant_twostep(steps).into())
+}
+
 /***************************************/
 
 use tm::segment::Segments;
@@ -620,15 +625,15 @@ mod rust_stuff {
     #[pymodule_export]
     use crate::{
         BackwardResult, MachineResult, PastConfigPy, TermRes,
-        cant_blank, cant_halt, cant_spinout, cps_cant_blank,
-        cps_cant_halt, cps_cant_quasihalt, cps_cant_spinout,
-        ctl_cant_blank, ctl_cant_halt, ctl_cant_spinout,
-        far_cant_blank, far_cant_halt, far_cant_spinout,
-        graph_cant_blank, graph_cant_halt, graph_cant_quasihalt,
-        graph_cant_spinout, is_connected, is_strict_cycle, opt_block,
-        read_instr, run_quick_machine, run_transcript,
-        segment_cant_blank, segment_cant_halt, segment_cant_spinout,
-        show_comp, show_instr, show_slot, show_state, tcompile,
-        term_or_rec,
+        cant_blank, cant_halt, cant_spinout, cant_twostep,
+        cps_cant_blank, cps_cant_halt, cps_cant_quasihalt,
+        cps_cant_spinout, ctl_cant_blank, ctl_cant_halt,
+        ctl_cant_spinout, far_cant_blank, far_cant_halt,
+        far_cant_spinout, graph_cant_blank, graph_cant_halt,
+        graph_cant_quasihalt, graph_cant_spinout, is_connected,
+        is_strict_cycle, opt_block, read_instr, run_quick_machine,
+        run_transcript, segment_cant_blank, segment_cant_halt,
+        segment_cant_spinout, show_comp, show_instr, show_slot,
+        show_state, tcompile, term_or_rec,
     };
 }

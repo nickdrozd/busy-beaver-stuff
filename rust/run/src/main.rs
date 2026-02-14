@@ -59,6 +59,10 @@ fn params_2_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_blank(2).is_refuted() || prog.ctl_cant_blank(14)
 }
 
+fn params_2_2_3(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+    prog.cant_twostep(0).is_refuted()
+}
+
 fn prover_2_2(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(16, config.to_mut()).is_settled()
 }
@@ -82,6 +86,10 @@ fn params_3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_blank(20).is_refuted()
         || prog.ctl_cant_blank(42)
         || prog.cps_cant_blank(10)
+}
+
+fn params_3_2_3(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+    prog.cant_twostep(10).is_refuted()
 }
 
 fn prover_3_2(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
@@ -110,6 +118,10 @@ fn params_2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(7)
 }
 
+fn params_2_3_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+    prog.cant_twostep(11).is_refuted()
+}
+
 fn prover_2_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(290, config.to_mut()).is_settled()
         || prog.check_inf(1_000, 50)
@@ -135,6 +147,10 @@ fn params_4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(130)
         || prog.cps_cant_blank(20)
+}
+
+fn params_4_2_3(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+    prog.cant_twostep(25).is_refuted()
 }
 
 fn prover_4_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
@@ -170,6 +186,10 @@ fn params_2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(20)
 }
 
+fn params_2_4_3(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+    prog.cant_twostep(21).is_refuted()
+}
+
 fn prover_2_4(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
     let config = config.to_mut();
 
@@ -186,26 +206,31 @@ fn test_deciders() {
             0 => (params_2_2_0, 2, (9, 23)),
             1 => (params_2_2_1, 4, (5, 32)),
             2 => (params_2_2_2, 4, (5, 53)),
+            3 => (params_2_2_3, 4, (7, 81)),
         ],
         (3, 2) => [
             0 => (params_3_2_0, 12, (842, 2_721)),
             1 => (params_3_2_1, 13, (471, 4_050)),
             2 => (params_3_2_2, 13, (632, 9_513)),
+            3 => (params_3_2_3, 13, (798, 11_758)),
         ],
         (2, 3) => [
             0 => (params_2_3_0, 7, (546, 2_335)),
             1 => (params_2_3_1, 20, (521, 3_510)),
             2 => (params_2_3_2, 20, (113, 5_962)),
+            3 => (params_2_3_3, 20, (544, 8_771)),
         ],
         (4, 2) => [
             0 => (params_4_2_0, 25, (114_648, 432_318)),
             1 => (params_4_2_1, 99, (84_538, 754_707)),
             2 => (params_4_2_2, 99, (98_218, 1_933_882)),
+            3 => (params_4_2_3, 99, (119_244, 2_135_991)),
         ],
         (2, 4) => [
             0 => (params_2_4_0, 109, (87_273, 309_759)),
             1 => (params_2_4_1, TREE_LIM, (86_805, 613_031)),
             2 => (params_2_4_2, TREE_LIM, (15_008, 1_190_832)),
+            3 => (params_2_4_3, TREE_LIM, (85_709, 1_699_887)),
         ],
     ];
 }
@@ -356,6 +381,7 @@ macro_rules! assert_reason {
                 0 => Prog::cant_halt,
                 1 => Prog::cant_spinout,
                 2 => Prog::cant_blank,
+                3 => Prog::cant_twostep,
                 _ => unreachable!(),
             };
 
@@ -382,26 +408,31 @@ fn test_reason() {
             0 => (5, 9),
             1 => (2, 5),
             2 => (4, 7),
+            3 => (0, 7),
         ],
         (3, 2) => [
             0 => (13, 1_132),
             1 => (13, 620),
             2 => (20, 1_287),
+            3 => (10, 798),
         ],
         (2, 3) => [
             0 => (11, 855),
             1 => (12, 909),
             2 => (14, 717),
+            3 => (11, 544),
         ],
         (4, 2) => [
             0 => (46, 195_280),
             1 => (36, 135_974),
             2 => (70, 306_491),
+            3 => (25, 119_244),
         ],
         (2, 4) => [
             0 => (30, 188_248),
             1 => (34, 253_461),
             2 => (100, 159_182),
+            3 => (21, 85_709),
         ],
     ];
 }

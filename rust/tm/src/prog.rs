@@ -155,6 +155,22 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             .collect()
     }
 
+    pub fn twostep_slots(&self) -> Set<(Slot, Slot)> {
+        self.iter()
+            .filter_map(|(slot @ (st, co), &(pr, sh, tr))| {
+                (sh && pr == co).then_some((slot, st, tr))
+            })
+            .flat_map(|(left, l_st, r_st)| {
+                self.iter().filter_map(
+                    move |(right @ (st, co), &(pr, sh, tr))| {
+                        (!sh && st == r_st && pr == co && tr == l_st)
+                            .then_some((left, right))
+                    },
+                )
+            })
+            .collect()
+    }
+
     pub fn reaches_both_sides(&self, st: State, co: Color) -> bool {
         let mut side = None;
 
@@ -233,5 +249,35 @@ fn test_halt_slots() {
     assert_eq!(
         Prog::<8, 8>::from("1RB ... ... ... ... ... ... ...  2LB 0LC ... ... ... ... ... ...  0LD ... ... ... ... ... ... ...  0LE ... ... ... ... ... ... ...  0LF ... ... ... ... ... ... ...  1LG ... ... ... ... ... ... ...  3RC ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...").halt_slots(),
         Set::from([(0, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 3), (4, 1), (4, 3), (5, 1), (5, 3), (6, 1), (6, 3)]),
+    );
+}
+
+#[test]
+fn test_twostep_slots() {
+    assert_eq!(
+        Prog::<4, 2>::from("1RB 0LA  0RC 1LC  1LA 1RD  0LC 0RD")
+            .twostep_slots(),
+        Set::from([((2, 1), (3, 0))]),
+    );
+
+    assert_eq!(
+        Prog::<4, 2>::from("1RB 1LD  0RC 1RC  1LA 1LB  0RA 0LD")
+            .twostep_slots(),
+        Set::from([
+            ((1, 0), (2, 1)),
+            ((1, 1), (2, 1)),
+            ((3, 0), (0, 1)),
+        ]),
+    );
+
+    assert_eq!(
+        Prog::<2, 4>::from("1RB 0RA 2RB 3RB  2LB 1LA 3LA 3LA")
+            .twostep_slots(),
+        Set::from([
+            ((0, 2), (1, 1)),
+            ((0, 2), (1, 3)),
+            ((0, 3), (1, 1)),
+            ((0, 3), (1, 3)),
+        ]),
     );
 }

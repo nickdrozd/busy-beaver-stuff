@@ -82,6 +82,20 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             false,
         )
     }
+
+    pub fn cant_twostep(&self, steps: Steps) -> BackwardResult {
+        cant_reach(
+            self,
+            steps,
+            self.twostep_slots()
+                .into_iter()
+                .map(|((st, l_co), (_, r_co))| (st, (l_co, r_co)))
+                .collect(),
+            None,
+            twostep_configs,
+            false,
+        )
+    }
 }
 
 /**************************************/
@@ -488,6 +502,13 @@ fn zr_configs(zr_shifts: &Set<(State, Shift)>) -> Configs {
         .collect()
 }
 
+fn twostep_configs(twosteps: &Set<(State, (Color, Color))>) -> Configs {
+    twosteps
+        .iter()
+        .map(|&(st, (l_co, r_co))| Config::init_twostep(st, l_co, r_co))
+        .collect()
+}
+
 fn get_blanks(configs: &Configs) -> BlankStates {
     configs
         .iter()
@@ -860,6 +881,10 @@ impl Config {
         Self::new(state, Tape::init_spinout(shift))
     }
 
+    fn init_twostep(state: State, l_co: Color, r_co: Color) -> Self {
+        Self::new(state, Tape::init_twostep(l_co, r_co))
+    }
+
     fn descendant(
         state: State,
         tape: Tape,
@@ -971,6 +996,17 @@ impl Span {
             span: SpanT::init_blank(),
             end: TapeEnd::Unknown,
         }
+    }
+
+    fn init_unknown_with(color: Color) -> Self {
+        let mut span = Self {
+            span: SpanT::init_blank(),
+            end: TapeEnd::Unknown,
+        };
+
+        span.push_single(color);
+
+        span
     }
 
     const fn end_str(&self) -> &str {
@@ -1147,6 +1183,15 @@ impl Tape {
             scan: 0,
             lspan: Span::init_blank(),
             rspan: Span::init_unknown(),
+            head: 0,
+        }
+    }
+
+    fn init_twostep(l_co: Color, r_co: Color) -> Self {
+        Self {
+            scan: l_co,
+            lspan: Span::init_unknown(),
+            rspan: Span::init_unknown_with(r_co),
             head: 0,
         }
     }

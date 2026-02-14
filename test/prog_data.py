@@ -4,6 +4,7 @@ type Goal = Literal[
     "halt",
     "blank",
     "spinout",
+    "twostep",
 ]
 
 ## test turing #######################################################
@@ -453,6 +454,35 @@ INIT_BLANK = {
     "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB": 18,
     "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD": 29,
     "1RB 0LA  1LC 1RE  0LD 1RC  1RA 0RB  0LA 0RC": 827,
+}
+
+TWOSTEPPERS = {
+    "1RB ...  0LB 1RB",
+    "1RB 1LB  1LA 1RA",
+    "1RB 1LB  1LB 1RA",
+    "1RB 1RB  0LA ...",
+    "1RB 1RB  0LB 1LA",
+    "1RB 1RB  1LA 1LA",
+    "1RB 1RB  1LB 1LA",
+    "1RB ... 2RB  1LB 2RB 2LA",
+    "1RB ... 2RB  2LB 2RB 2LA",
+    "1RB 0RA 2RB  2LA ... 2LA",
+    "1RB 1LA 2RA  2LA 2LB 2RB",
+    "1RB 1RA 2RB  2LA ... 2LA",
+    "1RB 1RB ...  2LA 1LA 0LB",
+    "1RB 1RB ...  2LA 1LA 1LB",
+    "1RB 1RB ...  2LA 1LA 2LB",
+    "1RB 2LA 2RB  1LB 1LA 1RA",
+    "1RB 2RA 2RB  2LA ... 2LA",
+    "1RB 1RC  1LC 0LB  1RA 1LA",
+    "1RB 1RC  1LC 1RA  1RA 1LA",
+    "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB",
+    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA",
+    "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA",
+    "1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB",
+    "1RB 2LA 1RA  1RC 2RB 2RC  1LA 1LB 1LC",
+    "1RB 2RC 1LA  2LA 1RB 2LB  2RB 2RA 1LC",
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RA 0LA",
 }
 
 QUASIHALT_FAST = {
@@ -2272,6 +2302,56 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB": 1151,
         "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA": 1249,
     },
+
+    "twostep": {
+        "1RB 0RA 2RB  2LB 1LA 2RB": 10,
+        "1RB 1RA 2RB  2LB 1LA 2RB": 10,
+        "1RB 2RA 2RB  2LB 1LA 2RB": 10,
+        "1RB 1LB 2LA  2LB 2RA 2RA": 11,
+
+        "1RB 0RC  1LB 1LC  1RA 1RB":  8,
+        "1RB 0LB  1LA 1RC  0RC 1LB": 10,
+        "1RB 1RC  0LA 0RB  1LC 1LA": 10,
+
+        "1RB 1RA 3LA 3LB  2LA 0RB 2RA 2LA": 20,
+        "1RB 1RB 1RA 0RB  2LA 2RB 3LB 3LA": 20,
+        "1RB 2RA 3LA 3RB  1LB 2RB 2LA 1LA": 20,
+        "1RB 3RA 0LA 3RB  1LB 2LA 2LA 1LA": 20,
+        "1RB 3RA 2RB 2LA  2LB 3RB 1LA 3LA": 20,
+        "1RB 1LB 0LA 1RB  2LA 3RB 2LB 3RA": 21,
+        "1RB 3RB 0LA 3LB  2LA 1RA 2LB 1RB": 21,
+
+        "1RB 0RA  1LB 0LC  1RA 1LD  0RC 0LD": 21,
+        "1RB 1LC  0RC 0RD  0RD 1LB  1LD 1LA": 21,
+        "1RB 1RC  0RC 0LA  0RD 1LB  1LD 1LA": 21,
+        "1RB 0LA  0RC 1RD  0RD 1LA  1LB 1LC": 24,
+        "1RB 0LA  0RC 1RD  1LA 1LB  0LC 0RD": 24,
+        "1RB 1RC  0RC 1LD  1LA 1LB  0LD 0RA": 24,
+        "1RB 0LA  0RC 1LC  1LA 1RD  0LC 0RD": 25,
+
+        "1RB 0LA 2LC  1LB 2RB 1LC  1LA 0LC 2RA": 55,
+        "1RB 0LA 2LC  1LB 2RB 1LC  2LA 0LC 2RA": 57,
+        "1RB 0LB 1RA  2LA 2LA 2RC  1RC 1LB 1LA": 60,
+        "1RB 1RC 1LA  1LB 2RC 1LC  0LA 0RB ...": 61,
+        "1RB 2RC 2RB  2LB 0RC 2LA  1LC 0LA 1LA": 66,
+
+        "1RB 2LB 2LA 1RA 3RB  2LA 4RA 3RA 3LB 4RB": 49,
+        "1RB 3RA 0LA 3LB 1RB  2LA 3RB 2LB 4RB 4RA": 49,
+        "1RB 3RB 0LA 4RA 4LB  2LA 1RA 2LB 4RB 1RB": 49,
+        "1RB 3RB 2LA 4RB 4LB  2LB 1RA 0LA 4RB 1RB": 49,
+        "1RB 3RB 2LA 4RB 4LB  2LB 3RB 0LA 3RA 1RB": 49,
+        "1RB 3LA 0LA 3RB 3LB  2LA 1RB 2LB 4RB 1RA": 51,
+        "1RB 3RA 4LB 3RB 4LA  2LB 2LA 2LA 1RA 0RA": 53,
+
+        "1RB 0LC  1LC 0RB  1RA 1LD  0RA 1LE  0RD 0LE": 71,
+        "1RB 1LE  0RC 0RD  1LD 0LA  1RC 1RD  0RA 0LE": 71,
+        "1RB 0LA  0RC 1RE  1RD 1LC  0RE 0LB  1LA 1LB": 73,
+        "1RB 1RA  1LC 1LD  1RA 0LC  0RA 1LE  0RD 0LE": 73,
+        "1RB 1LD  1RC 1LA  1LD 0RE  0RA 0LD  0LB 1RE": 87,
+        "1RB 0LA  0RC 1RD  0RD 0LE  1LA 1LE  1RC 1RD": 95,
+        "1RB 0RC  1RC 0LE  1LD 1LE  0LD 0RA  0RC 0RB": 95,
+        "1RB 0LA  0RC 0RD  1LA 1LD  1RE 1RC  1LB 1RC": 96,
+    },
 }
 
 type BackwardCats = dict[
@@ -2828,6 +2908,12 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 1RC  0RD 0RA  1LE 0LF  0RC 0RA  1LE 0LF  0LG 0RD  0RA 1LE",
         },
     },
+    "twostep": {
+        "linrec": {
+            "1RB 2RA 2RB  2LB 1LA 0RB",
+            "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC",
+        },
+    },
 }
 
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
@@ -2846,6 +2932,9 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
         "depth_limit": 66,
         "linrec": 123,
     },
+    "twostep": {
+        "linrec": 2,
+    },
 }
 
 BACKWARD_CANT_HALT_FALSE_NEGATIVES: set[str] = {
@@ -2863,6 +2952,12 @@ BACKWARD_CANT_BLANK_FALSE_NEGATIVES: set[str] = {
 BACKWARD_CANT_SPINOUT_FALSE_NEGATIVES: set[str] = {
     prog
     for progs in BACKWARD_FALSE_NEGATIVES['spinout'].values()
+    for prog in progs
+}
+
+BACKWARD_CANT_TWOSTEP_FALSE_NEGATIVES: set[str] = {
+    prog
+    for progs in BACKWARD_FALSE_NEGATIVES['twostep'].values()
     for prog in progs
 }
 
