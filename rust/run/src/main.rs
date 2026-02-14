@@ -52,7 +52,7 @@ fn params_2_2_0(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_2_2_1(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
-    prog.cant_spin_out(2).is_refuted()
+    prog.cant_spinout(2).is_refuted()
 }
 
 fn params_2_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
@@ -73,9 +73,9 @@ fn params_3_2_0(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_3_2_1(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
-    prog.cant_spin_out(7).is_refuted()
-        || prog.ctl_cant_spin_out(40)
-        || prog.cps_cant_spin_out(4)
+    prog.cant_spinout(7).is_refuted()
+        || prog.ctl_cant_spinout(40)
+        || prog.cps_cant_spinout(4)
 }
 fn params_3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_blank(20).is_refuted()
@@ -96,10 +96,10 @@ fn params_2_3_0(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_2_3_1(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
-    prog.cant_spin_out(7).is_refuted()
-        || prog.ctl_cant_spin_out(100)
-        || prog.cps_cant_spin_out(3)
-        || prog.seg_cant_spin_out(5).is_refuted()
+    prog.cant_spinout(7).is_refuted()
+        || prog.ctl_cant_spinout(100)
+        || prog.cps_cant_spinout(3)
+        || prog.seg_cant_spinout(5).is_refuted()
 }
 
 fn params_2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
@@ -123,10 +123,10 @@ fn params_4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
-    prog.cant_spin_out(15).is_refuted()
-        || prog.ctl_cant_spin_out(190)
-        || prog.cps_cant_spin_out(12)
-        || prog.seg_cant_spin_out(8).is_refuted()
+    prog.cant_spinout(15).is_refuted()
+        || prog.ctl_cant_spinout(190)
+        || prog.cps_cant_spinout(12)
+        || prog.seg_cant_spinout(8).is_refuted()
 }
 
 fn params_4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
@@ -156,10 +156,10 @@ fn params_2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
-    prog.cant_spin_out(14).is_refuted()
-        || prog.ctl_cant_spin_out(300)
-        || prog.cps_cant_spin_out(11)
-        || prog.seg_cant_spin_out(5).is_refuted()
+    prog.cant_spinout(14).is_refuted()
+        || prog.ctl_cant_spinout(300)
+        || prog.cps_cant_spinout(11)
+        || prog.seg_cant_spinout(5).is_refuted()
 }
 
 fn params_2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
@@ -288,7 +288,7 @@ fn params_5_2_0(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_5_2_1(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.cant_spin_out(2).is_refuted()
+    !prog.is_connected() || prog.cant_spinout(2).is_refuted()
 }
 
 fn params_5_2_2(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
@@ -302,7 +302,7 @@ fn params_3_3_0(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_3_3_1(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.cant_spin_out(2).is_refuted()
+    !prog.is_connected() || prog.cant_spinout(2).is_refuted()
 }
 
 fn params_3_3_2(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
@@ -316,7 +316,7 @@ fn params_2_5_0(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_2_5_1(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
-    prog.cant_spin_out(2).is_refuted()
+    prog.cant_spinout(2).is_refuted()
 }
 
 fn params_2_5_2(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
@@ -352,7 +352,7 @@ macro_rules! assert_reason {
         rayon::scope(|s| { $( $( s.spawn(move |_| {
             let cant_reach = match $goal {
                 0 => Prog::cant_halt,
-                1 => Prog::cant_spin_out,
+                1 => Prog::cant_spinout,
                 2 => Prog::cant_blank,
                 _ => unreachable!(),
             };

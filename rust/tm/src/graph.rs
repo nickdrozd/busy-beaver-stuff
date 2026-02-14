@@ -500,7 +500,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     /// We use a simple sufficient condition: if no such trigger state is
     /// reachable from the start (even in the over-approx control graph),
     /// then spinout is impossible.
-    pub fn graph_cant_spin_out(&self) -> bool {
+    pub fn graph_cant_spinout(&self) -> bool {
         let spin_triggers = self.zr_shifts();
 
         if spin_triggers.is_empty() {

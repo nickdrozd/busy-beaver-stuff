@@ -143,7 +143,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         unimplemented!()
     }
 
-    pub fn far_cant_spin_out(&self, _knob: usize) -> bool {
+    pub fn far_cant_spinout(&self, _knob: usize) -> bool {
         unimplemented!()
     }
 }

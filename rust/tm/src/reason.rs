@@ -72,7 +72,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         )
     }
 
-    pub fn cant_spin_out(&self, steps: Steps) -> BackwardResult {
+    pub fn cant_spinout(&self, steps: Steps) -> BackwardResult {
         cant_reach(
             self,
             steps,

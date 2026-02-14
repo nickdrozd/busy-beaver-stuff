@@ -2860,7 +2860,7 @@ BACKWARD_CANT_BLANK_FALSE_NEGATIVES: set[str] = {
     for prog in progs
 }
 
-BACKWARD_CANT_SPIN_OUT_FALSE_NEGATIVES: set[str] = {
+BACKWARD_CANT_SPINOUT_FALSE_NEGATIVES: set[str] = {
     prog
     for progs in BACKWARD_FALSE_NEGATIVES['spinout'].values()
     for prog in progs
@@ -5357,7 +5357,7 @@ DO_BLANK: set[str] = {
     "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
 }
 
-DO_SPIN_OUT: set[str] = {
+DO_SPINOUT: set[str] = {
     "1RB 1LD  1RC 0RA  1LA 0RE  0LD 1LE  0LA 1RB",  # 10^1089 TNF
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RD 0LA",  # 10^4079 TNF
     "1RB 1LE  0LC 0LB  0LE 1LC  1RD 1RA  1RD 0LA",  # 10^12978 TNF
@@ -5367,7 +5367,7 @@ DO_SPIN_OUT: set[str] = {
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA",  # 10^14006 TNF
 }
 
-DONT_SPIN_OUT: set[str] = {
+DONT_SPINOUT: set[str] = {
     "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
 
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
@@ -6677,7 +6677,7 @@ SPINNERS = set(
     | SPINOUT_BLANK
     | SPINOUT_BLANK_SLOW
     | PROVER_SPINOUT
-) | DO_SPIN_OUT | {
+) | DO_SPINOUT | {
     prog for steps in LIMITED['spinout'].values() for prog in steps
 }
 
@@ -6733,7 +6733,7 @@ NONBLANKERS = (
 )
 
 NONSPINNERS = (
-    DONT_SPIN_OUT
+    DONT_SPINOUT
     | HALTERS
     | RECURS
     | INFRUL

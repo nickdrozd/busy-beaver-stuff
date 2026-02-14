@@ -28,7 +28,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         self.ctl_loop(steps, Blank)
     }
 
-    pub fn ctl_cant_spin_out(&self, steps: Steps) -> bool {
+    pub fn ctl_cant_spinout(&self, steps: Steps) -> bool {
         self.ctl_loop_with_blocks(steps, Spinout, OPT_BLOCK)
     }
 

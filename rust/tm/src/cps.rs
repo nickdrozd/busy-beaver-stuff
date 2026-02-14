@@ -26,7 +26,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         self.cps_loop(rad, Blank)
     }
 
-    pub fn cps_cant_spin_out(&self, rad: Radius) -> bool {
+    pub fn cps_cant_spinout(&self, rad: Radius) -> bool {
         self.cps_run_macros(rad, Spinout)
     }
 

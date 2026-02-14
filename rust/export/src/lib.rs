@@ -94,8 +94,8 @@ pub fn graph_cant_blank(prog: &str) -> bool {
 }
 
 #[pyfunction]
-pub fn graph_cant_spin_out(prog: &str) -> bool {
-    parse!(prog, |p: Prog<_, _>| { p.graph_cant_spin_out() })
+pub fn graph_cant_spinout(prog: &str) -> bool {
+    parse!(prog, |p: Prog<_, _>| { p.graph_cant_spinout() })
 }
 
 #[pyfunction]
@@ -235,8 +235,8 @@ pub fn cant_blank(prog: &str, steps: Steps) -> BackwardResult {
 }
 
 #[pyfunction]
-pub fn cant_spin_out(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.cant_spin_out(steps).into())
+pub fn cant_spinout(prog: &str, steps: Steps) -> BackwardResult {
+    parse!(prog, |p: Prog<_, _>| p.cant_spinout(steps).into())
 }
 
 /***************************************/
@@ -290,11 +290,11 @@ pub fn segment_cant_blank(prog: &str, segs: Segments) -> SegmentResult {
 }
 
 #[pyfunction]
-pub fn segment_cant_spin_out(
+pub fn segment_cant_spinout(
     prog: &str,
     segs: Segments,
 ) -> SegmentResult {
-    parse!(prog, |p: Prog<_, _>| p.seg_cant_spin_out(segs).into())
+    parse!(prog, |p: Prog<_, _>| p.seg_cant_spinout(segs).into())
 }
 
 /***************************************/
@@ -324,13 +324,13 @@ pub fn cps_cant_blank(prog: &str, rad: Radius) -> bool {
 }
 
 #[pyfunction]
-pub fn cps_cant_spin_out(prog: &str, rad: Radius) -> bool {
+pub fn cps_cant_spinout(prog: &str, rad: Radius) -> bool {
     parse!(prog, |p: Prog<_, _>| {
         if p.zr_shifts().is_empty() {
             return true;
         }
 
-        p.cps_cant_spin_out(rad)
+        p.cps_cant_spinout(rad)
     })
 }
 
@@ -364,13 +364,13 @@ pub fn ctl_cant_blank(prog: &str, steps: Steps) -> bool {
 }
 
 #[pyfunction]
-pub fn ctl_cant_spin_out(prog: &str, steps: Steps) -> bool {
+pub fn ctl_cant_spinout(prog: &str, steps: Steps) -> bool {
     parse!(prog, |p: Prog<_, _>| {
         if p.zr_shifts().is_empty() {
             return true;
         }
 
-        p.ctl_cant_spin_out(steps)
+        p.ctl_cant_spinout(steps)
     })
 }
 
@@ -399,13 +399,13 @@ pub fn far_cant_blank(prog: &str, steps: Steps) -> bool {
 }
 
 #[pyfunction]
-pub fn far_cant_spin_out(prog: &str, steps: Steps) -> bool {
+pub fn far_cant_spinout(prog: &str, steps: Steps) -> bool {
     parse!(prog, |p: Prog<_, _>| {
         if p.zr_shifts().is_empty() {
             return true;
         }
 
-        p.far_cant_spin_out(steps)
+        p.far_cant_spinout(steps)
     })
 }
 
@@ -620,14 +620,14 @@ mod rust_stuff {
     #[pymodule_export]
     use crate::{
         BackwardResult, MachineResult, PastConfigPy, TermRes,
-        cant_blank, cant_halt, cant_spin_out, cps_cant_blank,
-        cps_cant_halt, cps_cant_quasihalt, cps_cant_spin_out,
-        ctl_cant_blank, ctl_cant_halt, ctl_cant_spin_out,
-        far_cant_blank, far_cant_halt, far_cant_spin_out,
+        cant_blank, cant_halt, cant_spinout, cps_cant_blank,
+        cps_cant_halt, cps_cant_quasihalt, cps_cant_spinout,
+        ctl_cant_blank, ctl_cant_halt, ctl_cant_spinout,
+        far_cant_blank, far_cant_halt, far_cant_spinout,
         graph_cant_blank, graph_cant_halt, graph_cant_quasihalt,
-        graph_cant_spin_out, is_connected, is_strict_cycle, opt_block,
+        graph_cant_spinout, is_connected, is_strict_cycle, opt_block,
         read_instr, run_quick_machine, run_transcript,
-        segment_cant_blank, segment_cant_halt, segment_cant_spin_out,
+        segment_cant_blank, segment_cant_halt, segment_cant_spinout,
         show_comp, show_instr, show_slot, show_state, tcompile,
         term_or_rec,
     };

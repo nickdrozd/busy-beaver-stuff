@@ -47,7 +47,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         segment_cant_reach(self, segs, Blank)
     }
 
-    pub fn seg_cant_spin_out(&self, segs: Segments) -> SegmentResult {
+    pub fn seg_cant_spinout(&self, segs: Segments) -> SegmentResult {
         segment_cant_reach(self, segs, Spinout)
     }
 }

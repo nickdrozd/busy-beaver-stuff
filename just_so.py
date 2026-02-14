@@ -4,13 +4,13 @@ import sys
 from tm.rust_stuff import (
     cant_blank,
     cant_halt,
-    cant_spin_out,
+    cant_spinout,
     ctl_cant_halt,
     segment_cant_halt,
 )
 
 CYCLES = 2_000
-CANT_REACH = cant_spin_out
+CANT_REACH = cant_spinout
 
 
 if __name__ == '__main__':
