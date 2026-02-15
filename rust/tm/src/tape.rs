@@ -546,6 +546,11 @@ impl<B: Block> IndexTape<B::Count> for Tape<B> {
 
 pub type Pos = isize;
 
+pub enum LinRec {
+    Stationary,
+    Translated,
+}
+
 pub trait Alignment: Scan {
     fn head(&self) -> Pos;
 
@@ -563,14 +568,14 @@ pub trait Alignment: Scan {
         prev: &Self,
         leftmost: Pos,
         rightmost: Pos,
-    ) -> bool {
+    ) -> Option<LinRec> {
         if self.scan() != prev.scan() {
-            return false;
+            return None;
         }
 
         if self.l_len() != prev.l_len() && self.r_len() != prev.r_len()
         {
-            return false;
+            return None;
         }
 
         let p_head = prev.head();
@@ -582,12 +587,15 @@ pub trait Alignment: Scan {
 
         #[expect(clippy::comparison_chain)]
         if 0 < diff {
-            self.l_compare_take(prev, l_take) && self.r_eq(prev)
+            (self.l_compare_take(prev, l_take) && self.r_eq(prev))
+                .then_some(LinRec::Translated)
         } else if diff < 0 {
-            self.r_compare_take(prev, r_take) && self.l_eq(prev)
+            (self.r_compare_take(prev, r_take) && self.l_eq(prev))
+                .then_some(LinRec::Translated)
         } else {
-            self.l_compare_take(prev, l_take)
-                && self.r_compare_take(prev, r_take)
+            (self.l_compare_take(prev, l_take)
+                && self.r_compare_take(prev, r_take))
+            .then_some(LinRec::Stationary)
         }
     }
 }

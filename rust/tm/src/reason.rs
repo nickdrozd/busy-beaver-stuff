@@ -935,11 +935,10 @@ impl Config {
             }
 
             if self.state == config.state
-                && self.tape.aligns_with(
-                    &config.tape,
-                    leftmost,
-                    rightmost,
-                )
+                && self
+                    .tape
+                    .aligns_with(&config.tape, leftmost, rightmost)
+                    .is_some()
             {
                 return Some(config);
             }

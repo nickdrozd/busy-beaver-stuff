@@ -4,14 +4,14 @@ use crate::{
     macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
     rules::ApplyRule,
-    tape::{Alignment as _, GetSig, MachineTape, Pos},
+    tape::{Alignment as _, GetSig, LinRec, MachineTape, Pos},
 };
 
 /**************************************/
 
 pub enum RunResult {
     Blank,
-    Recur,
+    Recur(LinRec),
     Spinout,
     MultRule,
     InfiniteRule,
@@ -40,7 +40,15 @@ impl RunResult {
     }
 
     pub const fn is_recur(&self) -> bool {
-        matches!(self, Self::Recur | Self::Spinout)
+        matches!(self, Self::Recur(_) | Self::Spinout)
+    }
+
+    pub const fn is_stationary(&self) -> bool {
+        matches!(self, Self::Recur(LinRec::Stationary))
+    }
+
+    pub const fn is_translated(&self) -> bool {
+        matches!(self, Self::Recur(LinRec::Translated))
     }
 
     pub const fn is_infinite(&self) -> bool {
@@ -241,13 +249,13 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             }
 
             if next_state == ref_config.state
-                && (head, &config.tape).aligns_with(
+                && let Some(linrec) = (head, &config.tape).aligns_with(
                     &(ref_head, &ref_config.tape),
                     leftmost,
                     rightmost,
                 )
             {
-                return Recur;
+                return Recur(linrec);
             }
 
             config.state = next_state;
@@ -298,8 +306,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             config.state = state;
         }
 
-        if has_recurrence(&transcript) {
-            return Recur;
+        if let Some(linrec) = has_recurrence(&transcript) {
+            return Recur(linrec);
         }
 
         StepLimit
@@ -308,7 +316,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
 type Transcript = Vec<(Slot, Pos)>;
 
-fn has_recurrence(transcript: &Transcript) -> bool {
+fn has_recurrence(transcript: &Transcript) -> Option<LinRec> {
     fn min_max(e: usize, min: &[Pos], max: &[Pos]) -> (Pos, Pos) {
         (min[e - 1], max[e - 1])
     }
@@ -346,18 +354,18 @@ fn has_recurrence(transcript: &Transcript) -> bool {
 
             if i == offset {
                 if pos_l == pos_k {
-                    return true;
+                    return Some(LinRec::Stationary);
                 }
 
                 let (min_l, max_l) = min_max(end_l, &min, &max);
                 let (min_k, max_k) = min_max(end_k, &min, &max);
 
                 if pos_l == min_l && pos_k == min_k {
-                    return true;
+                    return Some(LinRec::Translated);
                 }
 
                 if pos_l == max_l && pos_k == max_k {
-                    return true;
+                    return Some(LinRec::Translated);
                 }
 
                 offset += 1;
@@ -369,7 +377,7 @@ fn has_recurrence(transcript: &Transcript) -> bool {
         }
     }
 
-    false
+    None
 }
 
 /**************************************/

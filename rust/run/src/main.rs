@@ -88,8 +88,10 @@ fn params_3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(10)
 }
 
-fn params_3_2_3(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
-    prog.graph_cant_twostep() || prog.cant_twostep(2).is_refuted()
+fn params_3_2_3(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
+    prog.graph_cant_twostep()
+        || prog.cant_twostep(2).is_refuted()
+        || !prog.term_or_rec(100, config.to_mut()).is_stationary()
 }
 
 fn prover_3_2(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
@@ -118,8 +120,10 @@ fn params_2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(7)
 }
 
-fn params_2_3_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
-    prog.graph_cant_twostep() || prog.cant_twostep(2).is_refuted()
+fn params_2_3_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
+    prog.graph_cant_twostep()
+        || prog.cant_twostep(2).is_refuted()
+        || !prog.term_or_rec(100, config.to_mut()).is_stationary()
 }
 
 fn prover_2_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
@@ -149,8 +153,10 @@ fn params_4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(20)
 }
 
-fn params_4_2_3(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
-    prog.graph_cant_twostep() || prog.cant_twostep(18).is_refuted()
+fn params_4_2_3(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
+    prog.graph_cant_twostep()
+        || prog.cant_twostep(18).is_refuted()
+        || !prog.term_or_rec(100, config.to_mut()).is_stationary()
 }
 
 fn prover_4_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
@@ -186,8 +192,10 @@ fn params_2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(20)
 }
 
-fn params_2_4_3(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
-    prog.graph_cant_twostep() || prog.cant_twostep(11).is_refuted()
+fn params_2_4_3(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
+    prog.graph_cant_twostep()
+        || prog.cant_twostep(11).is_refuted()
+        || !prog.term_or_rec(600, config.to_mut()).is_stationary()
 }
 
 fn prover_2_4(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
@@ -212,25 +220,25 @@ fn test_deciders() {
             0 => (params_3_2_0, 12, (842, 2_721)),
             1 => (params_3_2_1, 13, (471, 4_050)),
             2 => (params_3_2_2, 13, (632, 9_513)),
-            3 => (params_3_2_3, 13, (777, 11_758)),
+            3 => (params_3_2_3, 13, (776, 11_758)),
         ],
         (2, 3) => [
             0 => (params_2_3_0, 7, (546, 2_335)),
             1 => (params_2_3_1, 20, (521, 3_510)),
             2 => (params_2_3_2, 20, (113, 5_962)),
-            3 => (params_2_3_3, 20, (439, 8_771)),
+            3 => (params_2_3_3, 20, (432, 8_771)),
         ],
         (4, 2) => [
             0 => (params_4_2_0, 25, (114_648, 432_318)),
             1 => (params_4_2_1, 99, (84_538, 754_707)),
             2 => (params_4_2_2, 99, (98_218, 1_933_882)),
-            3 => (params_4_2_3, 99, (107_470, 2_135_991)),
+            3 => (params_4_2_3, 99, (106_765, 2_135_991)),
         ],
         (2, 4) => [
             0 => (params_2_4_0, 109, (87_273, 309_759)),
             1 => (params_2_4_1, TREE_LIM, (86_805, 613_031)),
             2 => (params_2_4_2, TREE_LIM, (15_008, 1_190_832)),
-            3 => (params_2_4_3, TREE_LIM, (60_506, 1_699_887)),
+            3 => (params_2_4_3, TREE_LIM, (57_280, 1_699_887)),
         ],
     ];
 }
