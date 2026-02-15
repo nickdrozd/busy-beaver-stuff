@@ -135,6 +135,65 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             || self.graph_cant_quasihalt_abs()
     }
 
+    /// Sound sufficient condition: returns `true` iff the bounded abstract-from-blank
+    /// configuration graph cannot witness any reachable configuration that could enter
+    /// a 2-step R/L no-write oscillation ("twostep") as detected by `twostep_slots()`.
+    ///
+    /// If the abstract graph hits its node cap, we return `false` (can't conclude).
+    pub fn graph_cant_twostep(&self) -> bool {
+        let twos = self.twostep_slots();
+        if twos.is_empty() {
+            return true;
+        }
+
+        let (nodes, _adj) = self.build_abs_graph();
+        if nodes.is_empty() || nodes.len() >= MAX_NODES {
+            // Over-approx graph construction hit its cap (or failed); stay conservative.
+            return false;
+        }
+
+        #[expect(clippy::cast_possible_truncation)]
+        let wild = colors as u8;
+
+        for (left, right) in twos {
+            let (l_st, l_co) = left;
+            let (_r_st, r_co) = right;
+
+            for cfg in &nodes {
+                if cfg.state != l_st {
+                    continue;
+                }
+
+                let head = cfg.head as usize;
+                if head >= cfg.tape.len() {
+                    continue;
+                }
+
+                let cur = cfg.tape[head];
+                if cur != wild && cur != l_co {
+                    continue;
+                }
+
+                // The neighbor to the right may be in-window, guaranteed blank, or unknown.
+                let rcell = if head + 1 < cfg.tape.len() {
+                    cfg.tape[head + 1]
+                } else if cfg.right_unknown {
+                    wild
+                } else {
+                    0
+                };
+
+                if rcell == wild || rcell == r_co {
+                    // This reachable abstract node allows the required adjacent colors,
+                    // so a concrete twostep may be reachable; can't refute.
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+
     /// Fast sufficient condition (pure control/SCC + one-direction `read=0` cycle lemma).
     #[expect(clippy::excessive_nesting)]
     fn graph_cant_quasihalt_fast(&self) -> bool {
