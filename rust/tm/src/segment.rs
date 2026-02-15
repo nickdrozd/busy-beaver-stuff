@@ -882,6 +882,7 @@ impl Tape {
 }
 
 impl Display for Tape {
+    #[expect(clippy::str_to_string)]
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,

@@ -150,6 +150,7 @@ impl<B: Block> Span<B> {
         self.blocks.iter().rev()
     }
 
+    #[expect(clippy::str_to_string)]
     pub fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> {
         self.iter().map(ToString::to_string)
     }
