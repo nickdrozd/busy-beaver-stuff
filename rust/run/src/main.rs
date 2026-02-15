@@ -59,7 +59,7 @@ fn params_2_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_blank(2).is_refuted() || prog.ctl_cant_blank(14)
 }
 
-fn params_2_2_3(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
+fn prover_2_2(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(16, config.to_mut()).is_settled()
 }
 
@@ -77,12 +77,14 @@ fn params_3_2_1(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
         || prog.ctl_cant_spinout(40)
         || prog.cps_cant_spinout(4)
 }
+
 fn params_3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.cant_blank(20).is_refuted()
         || prog.ctl_cant_blank(42)
         || prog.cps_cant_blank(10)
 }
-fn params_3_2_3(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
+
+fn prover_3_2(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(190, config.to_mut()).is_settled()
         || prog.check_inf(500, 50)
 }
@@ -108,7 +110,7 @@ fn params_2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(7)
 }
 
-fn params_2_3_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
+fn prover_2_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(290, config.to_mut()).is_settled()
         || prog.check_inf(1_000, 50)
 }
@@ -135,7 +137,7 @@ fn params_4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(20)
 }
 
-fn params_4_2_3(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
+fn prover_4_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
     if !prog.is_connected() {
         return true;
     }
@@ -168,7 +170,7 @@ fn params_2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(20)
 }
 
-fn params_2_4_3(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
+fn prover_2_4(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
     let config = config.to_mut();
 
     prog.term_or_rec(500, config).is_settled()
@@ -213,19 +215,19 @@ fn test_prover() {
 
     assert_params![
         (2, 2) => [
-            3 => (params_2_2_3, 4, (4, 81)),
+            3 => (prover_2_2, 4, (4, 81)),
         ],
         (3, 2) => [
-            3 => (params_3_2_3, 13, (25, 11_758)),
+            3 => (prover_3_2, 13, (25, 11_758)),
         ],
         (2, 3) => [
-            3 => (params_2_3_3, 20, (63, 8_771)),
+            3 => (prover_2_3, 20, (63, 8_771)),
         ],
         (4, 2) => [
-            3 => (params_4_2_3, 99, (7_944, 2_135_991)),
+            3 => (prover_4_2, 99, (7_944, 2_135_991)),
         ],
         (2, 4) => [
-            3 => (params_2_4_3, TREE_LIM, (39_623, 1_699_887)),
+            3 => (prover_2_4, TREE_LIM, (39_623, 1_699_887)),
         ],
     ];
 }
