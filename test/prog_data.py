@@ -562,6 +562,7 @@ RECUR_COMPACT = {
     "1RB ...  1LB 0LC  1LA 1RA": ( 12,  7),
     "1RB 1LB  0LC 0RC  1LC 1LA": (  7, 17),
     "1RB 1LB  0RC 0RB  1LC 0LA": (  4, 38),
+    "1RB 1LB  1RC 1RB  0LA ...": (  4,  5),
     "1RB 0RB  1LC 0RC  0LA 1RA": (  2, 30),
     "1RB 0LA  0RC 1LA  1LC 0RB": (  0, 92),
     "1RB 0LA  1LB 0RC  1LC 1LA": (  0, 56),
@@ -1833,6 +1834,7 @@ GRAPH_CANT_QUASIHALT = {
     "1RB 1LB  0RC 0RB  1LC 0LA",
     "1RB 1LB  1LA 1RC  0RB 0LC",
     "1RB 1LB  1RC 0LA  1LA 1RC",
+    "1RB 1LB  1RC 1RB  0LA ...",
     "1RB 1LC  1LA 1RB  1RB 0LA",
     "1RB 1RC  1LB 1RA  0LC 0LB",
     "1RB 1RC  1LB 1RA  0LC 0RB",
@@ -2366,6 +2368,7 @@ type BackwardCats = dict[
 BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
     "halt": {
         "step_limit": {
+            "1RB 1LB  1RC 1RB  0LA ...",
             "1RB ...  0LC 0RD  1LA 1LC  0LA 0RB",
             "1RB 1LA  0RC 0RD  0LD ...  0LA 1RD",
             "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
@@ -2918,7 +2921,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
 
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
-        "step_limit": 4,
+        "step_limit": 5,
         "depth_limit": 36,
         "linrec": 168,
     },

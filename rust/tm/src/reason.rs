@@ -2431,3 +2431,15 @@ fn antichain_insert(set: &mut Vec<Tape>, tape: Tape) -> bool {
     set.push(tape);
     true
 }
+
+/**************************************/
+
+#[test]
+#[should_panic(expected = "attempt to add with overflow")]
+fn test_overflow() {
+    let prog = Prog::<3, 2>::from("1RB 1LB  1RC 1RB  0LA ...");
+
+    assert!(matches!(prog.cant_halt(1_021), StepLimit));
+
+    prog.cant_halt(1_022);
+}
