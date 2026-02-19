@@ -2168,6 +2168,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1LD  0RC 1RD  1LD 0RE  0LA 1RE  1RE 1LA": 40,
         "1RB 1LD  0RC 1RD  1RD 0RE  0LA 1RE  1RE 1LA": 40,
         "1RB 1LA  1RC 1RD  0LA 1RE  1LE 0RC  0RE 0LB": 52,
+        "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB": 68,
         "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB": 145,
         "1RB 1LC  0LA 0RD  1LA 1RB  0LE 1RC  1LE 0RB": 189,
         "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD": 223,
@@ -2274,6 +2275,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0RB 0RA 3LA 0LA  2LB 2RB 3RB 4LA 4RA": 310,
         "1RB 2LA 4LB 3LA 1LA  0LA 4RB 3RB 2RB 0RB": 343,
 
+        "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB": 65,
         "1RB 0RB  0LC 1RD  1LA 1LC  0LE 1RA  1LE 0RD": 254,
         "1RB 1RE  1RC 1LB  1LD 0LC  0RD 0RA  1LC 0RB": 261,
         "1RB 0RE  1LC 0LB  0RA 1LD  1LB 0LA  1RE 0LC": 268,
@@ -2598,7 +2600,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB ...  1LC 1RA  0LC 0LD  0RA 0RC",
             "1RB 0LC  1LC 0LB  1RD 1LA  0RD 0LA",
             "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
-            "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB",
         },
         "linrec": {
             "1RB 1LB  1LA 0RB",
@@ -2782,7 +2783,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 2RA 4LA 0RB ...  0LB 2LA 3LA 0LA 3RB",
             "1RB 2RA 4RA 0RB 3RB  0LB 2LA 3LA 4LA 0LA",
             "1RB 3RA 3LA 3LA 0RB  0LB 2LA 1RB 4RB 0LA",
-            "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB",
             "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         },
         "linrec": {
@@ -2927,12 +2927,12 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     },
     "blank": {
         "step_limit": 3,
-        "depth_limit": 9,
+        "depth_limit": 8,
         "linrec": 107,
     },
     "spinout": {
         "step_limit": 4,
-        "depth_limit": 66,
+        "depth_limit": 65,
         "linrec": 123,
     },
     "twostep": {
