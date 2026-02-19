@@ -1069,13 +1069,6 @@ impl Span {
             return;
         }
 
-        if let Some(block) = self.span.first_mut()
-            && block.color == color
-        {
-            block.count = 0;
-            return;
-        }
-
         self.span.push_block(color, 0);
     }
 
