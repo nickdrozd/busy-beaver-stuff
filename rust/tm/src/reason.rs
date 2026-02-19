@@ -13,7 +13,7 @@ use crate::{
 
 pub type Recs = usize;
 
-const MAX_RECS: Recs = 2;
+const MAX_RECS: Recs = 3;
 const MAX_STACK_DEPTH: usize = 31;
 
 /**************************************/
