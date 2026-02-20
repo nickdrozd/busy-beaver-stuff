@@ -183,12 +183,9 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut blanks = get_blanks(&configs);
 
-    let mut seen: Dict<Key, Vec<Tape>> = Dict::new();
+    let mut antichains = Antichains::default();
 
-    // In blank-mode, we can safely deduplicate configurations up to
-    // translation: the absolute head position does not affect
-    // predecessor generation.
-    let mut processed: Option<HashSet<(State, TapeSig)>> =
+    let mut seen: Option<HashSet<(State, TapeSig)>> =
         dedup_ignore_head.then(HashSet::new);
 
     for step in 1..=steps {
@@ -200,11 +197,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             println!();
         };
 
-        let valid_steps = get_valid_steps(
-            &mut configs,
-            &entrypoints,
-            processed.as_mut(),
-        );
+        let valid_steps =
+            get_valid_steps(&mut configs, &entrypoints, seen.as_mut());
 
         match valid_steps.len() {
             0 => return Refuted(step),
@@ -222,17 +216,10 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             right_forced_blank,
         ) {
             Err(err) => return err,
-            Ok(stepped) => {
-                let mut kept = Configs::new();
-                for cfg in stepped {
-                    let k = cfg_key(&cfg);
-                    let entry = seen.entry(k).or_default();
-                    if antichain_insert(entry, cfg.tape.clone()) {
-                        kept.push(cfg);
-                    }
-                }
-                kept
-            },
+            Ok(stepped) => stepped
+                .into_iter()
+                .filter(|config| antichains.insert(config))
+                .collect(),
         };
     }
 
@@ -244,14 +231,14 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-    mut processed: Option<&mut HashSet<(State, TapeSig)>>,
+    mut seen: Option<&mut HashSet<(State, TapeSig)>>,
 ) -> ValidatedSteps {
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
         let Config { state, tape, .. } = &config;
 
-        if let Some(set) = processed.as_deref_mut() {
+        if let Some(set) = seen.as_deref_mut() {
             let sig = TapeSig {
                 scan: tape.scan,
                 lspan: tape.lspan.clone(),
@@ -1350,6 +1337,13 @@ impl Tape {
             self.rspan.absorb_trailing_blanks();
         }
     }
+
+    fn subsumes(&self, other: &Self) -> bool {
+        self.scan == other.scan
+            && self.head == other.head
+            && self.lspan.subsumes(&other.lspan)
+            && self.rspan.subsumes(&other.rspan)
+    }
 }
 
 impl Alignment for Tape {
@@ -2337,27 +2331,8 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
     out
 }
 
-impl TapeEnd {
-    const fn subsumes(&self, other: &Self) -> bool {
-        #[expect(clippy::match_same_arms)]
-        match (self, other) {
-            (Self::Unknown, _) => true,
-            (Self::Blanks, Self::Blanks) => true,
-            (Self::Blanks, Self::Unknown) => false,
-        }
-    }
-}
-
 #[expect(clippy::multiple_inherent_impl)]
 impl Span {
-    /// `self` subsumes `other` (self is more general / less constrained).
-    fn subsumes(&self, other: &Self) -> bool {
-        if !self.end.subsumes(&other.end) {
-            return false;
-        }
-        self.span_subsumes(&other.span)
-    }
-
     /// Compare two block-spans from the head outward.
     /// Rule (sound and simple):
     /// - colors must match positionally
@@ -2366,9 +2341,16 @@ impl Span {
     /// - positive count must match exactly (conservative but sound)
     /// - if self runs out of blocks, it still subsumes if its end is
     ///   Unknown or Blanks compatible
-    fn span_subsumes(&self, other: &SpanT) -> bool {
+    fn subsumes(&self, other: &Self) -> bool {
+        if matches!(
+            (&self.end, &other.end),
+            (&TapeEnd::Blanks, &TapeEnd::Unknown)
+        ) {
+            return false;
+        }
+
         // Compare common prefix
-        for (a, b) in self.span.iter().zip(other.iter()) {
+        for (a, b) in self.span.iter().zip(other.span.iter()) {
             if a.color != b.color {
                 return false;
             }
@@ -2382,7 +2364,7 @@ impl Span {
 
         // Decide based on leftovers
         let a_len = self.span.len();
-        let b_len = other.len();
+        let b_len = other.span.len();
 
         // self has extra constraints beyond other => does NOT subsume
         if a_len > b_len {
@@ -2400,36 +2382,31 @@ impl Span {
     }
 }
 
-#[expect(clippy::multiple_inherent_impl)]
-impl Tape {
-    /// `self` subsumes `other` (self is more general / less constrained).
-    fn subsumes(&self, other: &Self) -> bool {
-        self.scan == other.scan
-            && self.head == other.head
-            && self.lspan.subsumes(&other.lspan)
-            && self.rspan.subsumes(&other.rspan)
+#[derive(Default)]
+struct Antichain(Vec<Tape>);
+
+impl Antichain {
+    fn insert(&mut self, tape: &Tape) -> bool {
+        // already covered
+        if self.0.iter().any(|old| old.subsumes(tape)) {
+            return false;
+        }
+        // remove things we cover
+        self.0.retain(|old| !tape.subsumes(old));
+        self.0.push(tape.clone());
+        true
     }
 }
 
-type Key = (State, Color, Pos);
+#[derive(Default)]
+struct Antichains(Dict<(State, Color, Pos), Antichain>);
 
-const fn cfg_key(cfg: &Config) -> Key {
-    (cfg.state, cfg.tape.scan, cfg.tape.head)
-}
+impl Antichains {
+    fn insert(&mut self, cfg: &Config) -> bool {
+        let key = (cfg.state, cfg.tape.scan, cfg.tape.head);
 
-/// Maintain an antichain of tapes under `subsumes`.
-/// Returns true if `tape` was kept (i.e. not subsumed by existing).
-fn antichain_insert(set: &mut Vec<Tape>, tape: Tape) -> bool {
-    // If any existing subsumes new, drop new
-    if set.iter().any(|old| old.subsumes(&tape)) {
-        return false;
+        self.0.entry(key).or_default().insert(&cfg.tape)
     }
-
-    // Remove any existing tapes subsumed by new
-    set.retain(|old| !tape.subsumes(old));
-
-    set.push(tape);
-    true
 }
 
 /**************************************/
