@@ -385,18 +385,10 @@ fn test_params_slow() {
 macro_rules! assert_reason {
     ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => $leaves:expr ),* $(,)? ] ),* $(,)? ) => {{
         rayon::scope(|s| { $( $( s.spawn(move |_| {
-            let cant_reach = match $goal {
-                0 => Prog::cant_halt,
-                1 => Prog::cant_spinout,
-                2 => Prog::cant_blank,
-                3 => Prog::cant_twostep,
-                _ => unreachable!(),
-            };
-
             let result = ReasonHarvester::<$states, $colors>::run_params(
                 get_goal($goal),
                 TREE_LIM,
-                &|| ReasonHarvester::new(cant_reach),
+                &|| ReasonHarvester::new($goal),
             );
 
             assert_eq!(

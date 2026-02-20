@@ -117,15 +117,25 @@ pub struct ReasonHarvester<const s: usize, const c: usize> {
     holdout: u64,
     refuted: usize,
 
+    goal: u8,
     cant_reach: Reasoner<s, c>,
 }
 
 impl<const s: usize, const c: usize> ReasonHarvester<s, c> {
-    pub const fn new(cant_reach: Reasoner<s, c>) -> Self {
+    pub const fn new(goal: u8) -> Self {
+        let cant_reach = match goal {
+            0 => Prog::cant_halt,
+            1 => Prog::cant_spinout,
+            2 => Prog::cant_blank,
+            3 => Prog::cant_twostep,
+            _ => unreachable!(),
+        };
+
         Self {
             holdout: 0,
             refuted: 0,
 
+            goal,
             cant_reach,
         }
     }
