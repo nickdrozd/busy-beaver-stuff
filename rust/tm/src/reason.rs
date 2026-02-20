@@ -358,14 +358,14 @@ fn step_configs<const s: usize, const c: usize>(
 
             tape.backstep(shift, color);
 
-            // If we've reached the true initial configuration (blank tape
-            // in the start state), report success immediately.
-            //
-            // This check must happen *before* any pruning filters: the
-            // initial configuration has no predecessor, so entry-based
-            // constraints do not apply.
-            if tape.blank() && state == 0 {
-                return Err(Init);
+            if tape.blank() {
+                if state == 0 {
+                    return Err(Init);
+                }
+
+                if !blanks.insert(state) {
+                    continue;
+                }
             }
 
             // Additional end-tightening based on shift-side analysis.
@@ -412,10 +412,6 @@ fn step_configs<const s: usize, const c: usize>(
             if let Some(rc) = tape.right_neighbor_color()
                 && !adj_possible[st][sc][1][rc as usize]
             {
-                continue;
-            }
-
-            if tape.blank() && !blanks.insert(state) {
                 continue;
             }
 
