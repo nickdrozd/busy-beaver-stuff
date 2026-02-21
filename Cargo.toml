@@ -70,6 +70,7 @@ multiple_inherent_impl = "deny"
 redundant_type_annotations = "deny"
 unseparated_literal_suffix = "deny"
 decimal_literal_representation = "deny"
+rest_pat_in_fully_bound_structs = "deny"
 
 doc_markdown = { level = "allow", priority = 1 }
 enum_glob_use = { level = "allow", priority = 1 }
