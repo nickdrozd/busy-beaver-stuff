@@ -84,7 +84,7 @@ RUN_SLOW = os.environ.get('RUN_SLOW')
 
 CPS_LIMIT = 33
 CTL_LIMIT = 3_200
-REASON_LIMIT = 2_000
+REASON_LIMIT = 1_000
 SEGMENT_LIMIT = 22
 
 ########################################
