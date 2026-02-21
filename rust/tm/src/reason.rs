@@ -100,13 +100,12 @@ type Entry = (Slot, (Color, Shift));
 type Entries = Vec<Entry>;
 type Entrypoints = Dict<State, (Entries, Entries)>;
 
-/// For each (state, scanned color), records which immediate neighbor
-/// colors are possible on each side in some run from the blank tape.
+/// For each (state, scanned color), records which 3-cell windows
+/// (L, scan, R) are possible in some run from the blank tape.
 ///
-/// Indexing: adj[state][scan][side][neighbor] where side=0 is left,
-/// side=1 is right.
-type AdjPossible<const S: usize, const C: usize> =
-    [[[[bool; C]; 2]; C]; S];
+/// Indexing: win[state][scan][left][right].
+type WinPossible<const S: usize, const C: usize> =
+    [[[[bool; C]; C]; C]; S];
 
 fn cant_reach<const s: usize, const c: usize, T: Ord>(
     prog: &Prog<s, c>,
@@ -169,8 +168,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     // blank tape. If a generated predecessor configuration demands an
     // immediate neighbor color that is impossible in this
     // over-approximation, we can safely prune it.
-    let adj_possible =
-        prog.adj_possible_from_blank(&forbid_left, &forbid_right);
+    let win_possible =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
 
     let mut configs = get_configs(&slots);
 
@@ -202,7 +201,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         configs = match step_configs::<s, c>(
             valid_steps,
             &mut blanks,
-            &adj_possible,
+            &win_possible,
             left_fresh_zero,
             right_fresh_zero,
             left_forced_blank,
@@ -333,7 +332,7 @@ fn get_indef(
 fn step_configs<const s: usize, const c: usize>(
     configs: ValidatedSteps,
     blanks: &mut BlankStates,
-    adj_possible: &AdjPossible<s, c>,
+    win_possible: &WinPossible<s, c>,
     left_fresh_zero: bool,
     right_fresh_zero: bool,
     left_forced_blank: bool,
@@ -388,22 +387,33 @@ fn step_configs<const s: usize, const c: usize>(
                 continue;
             }
 
-            // Optional adjacency pruning: if this predecessor
-            // configuration requires an immediate neighbor color that
-            // cannot occur (even in a sound over-approximation of
-            // reachable 3-cell windows from blank), prune it.
+            // Optional adjacency pruning: if this predecessor configuration
+            // requires an immediate neighbor color that cannot occur
+            // (even in a sound over-approximation of reachable 3-cell
+            // windows (L,scan,R) from blank), prune it.
             let st = state as usize;
             let sc = tape.scan as usize;
 
-            if let Some(lc) = tape.left_neighbor_color()
-                && !adj_possible[st][sc][0][lc as usize]
-            {
-                continue;
-            }
-            if let Some(rc) = tape.right_neighbor_color()
-                && !adj_possible[st][sc][1][rc as usize]
-            {
-                continue;
+            let l = tape.left_neighbor_color().map(|x| x as usize);
+            let r = tape.right_neighbor_color().map(|x| x as usize);
+
+            match (l, r) {
+                (Some(lc), Some(rc)) => {
+                    if !win_possible[st][sc][lc][rc] {
+                        continue;
+                    }
+                },
+                (Some(lc), None) => {
+                    if !(0..c).any(|rc| win_possible[st][sc][lc][rc]) {
+                        continue;
+                    }
+                },
+                (None, Some(rc)) => {
+                    if !(0..c).any(|lc| win_possible[st][sc][lc][rc]) {
+                        continue;
+                    }
+                },
+                (None, None) => {},
             }
 
             let next_config = Config::new(state, tape);
@@ -592,11 +602,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// neighbor color is *not* possible here, it is not possible in any
     /// concrete run from blank.
     #[expect(clippy::cast_possible_truncation, clippy::similar_names)]
-    fn adj_possible_from_blank(
+    fn win_possible_from_blank(
         &self,
         forbid_left: &[bool; c],
         forbid_right: &[bool; c],
-    ) -> AdjPossible<s, c> {
+    ) -> WinPossible<s, c> {
         // Abstract state: (st, lb, l, sc, r, rb)
         // lb/rb = whether the cell immediately outside the 3-cell window
         // on that side is known blank (unvisited).
@@ -626,11 +636,10 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         q.push_back((0, 1, 0, 0, 0, 1));
         visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = true;
 
-        let mut possible = [[[[false; c]; 2]; c]; s];
+        let mut possible = [[[[false; c]; c]; c]; s];
 
         while let Some((st, lb, l, sc, r, rb)) = q.pop_front() {
-            possible[st][sc][0][l] = true;
-            possible[st][sc][1][r] = true;
+            possible[st][sc][l][r] = true;
 
             let st_state = st as State;
             let sc_color = sc as Color;
