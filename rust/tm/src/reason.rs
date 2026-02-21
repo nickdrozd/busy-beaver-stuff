@@ -1,19 +1,13 @@
 use core::{fmt, iter::once};
 
-use std::{
-    collections::{BTreeMap as Dict, BTreeSet as Set, HashSet},
-    rc::Rc,
-};
+use std::collections::{BTreeMap as Dict, BTreeSet as Set, HashSet};
 
 use crate::{
     Color, Instr, Prog, Shift, Slot, State, Steps,
     instrs::Parse as _,
-    tape::{self, Alignment, Block as _, LilBlock as Block, Pos, Scan},
+    tape::{self, Block as _, LilBlock as Block, Pos, Scan},
 };
 
-pub type Recs = usize;
-
-const MAX_RECS: Recs = 3;
 const MAX_STACK_DEPTH: usize = 31;
 
 /**************************************/
@@ -21,7 +15,6 @@ const MAX_STACK_DEPTH: usize = 31;
 #[derive(Debug)]
 pub enum BackwardResult {
     Init,
-    LinRec,
     StepLimit,
     DepthLimit,
     Refuted(Steps),
@@ -236,7 +229,7 @@ fn get_valid_steps(
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
-        let Config { state, tape, .. } = &config;
+        let Config { state, tape } = &config;
 
         if let Some(set) = seen.as_deref_mut() {
             let sig = TapeSig {
@@ -351,8 +344,6 @@ fn step_configs<const s: usize, const c: usize>(
     let mut stepped = Configs::new();
 
     for (instrs, config) in configs {
-        let config = Rc::new(config);
-
         for (color, shift, state) in instrs {
             let mut tape = config.tape.clone();
 
@@ -415,7 +406,7 @@ fn step_configs<const s: usize, const c: usize>(
                 continue;
             }
 
-            let next_config = Config::descendant(state, tape, &config)?;
+            let next_config = Config::new(state, tape);
 
             stepped.push(next_config);
         }
@@ -838,18 +829,11 @@ fn test_entrypoints() {
 struct Config {
     state: State,
     tape: Tape,
-    recs: Recs,
-    prev: Option<Rc<Self>>,
 }
 
 impl Config {
     const fn new(state: State, tape: Tape) -> Self {
-        Self {
-            state,
-            tape,
-            recs: 0,
-            prev: None,
-        }
+        Self { state, tape }
     }
 
     const fn init_halt(state: State, color: Color) -> Self {
@@ -866,70 +850,6 @@ impl Config {
 
     fn init_twostep(state: State, l_co: Color, r_co: Color) -> Self {
         Self::new(state, Tape::init_twostep(l_co, r_co))
-    }
-
-    fn descendant(
-        state: State,
-        tape: Tape,
-        prev: &Rc<Self>,
-    ) -> Result<Self, BackwardResult> {
-        let mut config = Self {
-            state,
-            tape,
-            recs: prev.recs,
-            prev: Some(Rc::clone(prev)),
-        };
-
-        let rec = config.lin_rec();
-
-        if rec.is_some() {
-            if config.recs >= MAX_RECS {
-                #[cfg(debug_assertions)]
-                {
-                    #[expect(clippy::unnecessary_unwrap)]
-                    let rec = rec.unwrap();
-                    println!("--> {rec}");
-                    println!("--> {config}");
-                }
-
-                return Err(LinRec);
-            }
-
-            config.recs += 1;
-        }
-
-        Ok(config)
-    }
-
-    fn lin_rec(&self) -> Option<&Self> {
-        let head = self.tape.head();
-        let mut leftmost = head;
-        let mut rightmost = head;
-
-        let mut current = self.prev.as_deref();
-
-        while let Some(config) = current {
-            let pos = config.tape.head();
-
-            if pos < leftmost {
-                leftmost = pos;
-            } else if rightmost < pos {
-                rightmost = pos;
-            }
-
-            if self.state == config.state
-                && self
-                    .tape
-                    .aligns_with(&config.tape, leftmost, rightmost)
-                    .is_some()
-            {
-                return Some(config);
-            }
-
-            current = config.prev.as_deref();
-        }
-
-        None
     }
 }
 
@@ -1000,10 +920,6 @@ impl Span {
 
     fn blank(&self) -> bool {
         self.span.iter().all(Block::blank)
-    }
-
-    const fn len(&self) -> usize {
-        self.span.len()
     }
 
     fn matches_color(&self, print: Color) -> bool {
@@ -1339,36 +1255,6 @@ impl Tape {
             && self.head == other.head
             && self.lspan.subsumes(&other.lspan)
             && self.rspan.subsumes(&other.rspan)
-    }
-}
-
-impl Alignment for Tape {
-    fn head(&self) -> Pos {
-        self.head
-    }
-
-    fn l_len(&self) -> usize {
-        self.lspan.len()
-    }
-
-    fn r_len(&self) -> usize {
-        self.rspan.len()
-    }
-
-    fn l_eq(&self, prev: &Self) -> bool {
-        self.lspan == prev.lspan
-    }
-
-    fn r_eq(&self, prev: &Self) -> bool {
-        self.rspan == prev.rspan
-    }
-
-    fn l_compare_take(&self, prev: &Self, take: usize) -> bool {
-        self.lspan.span.compare_take(&prev.lspan.span, take)
-    }
-
-    fn r_compare_take(&self, prev: &Self, take: usize) -> bool {
-        self.rspan.span.compare_take(&prev.rspan.span, take)
     }
 }
 
