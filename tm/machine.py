@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from tm.macro import MacroInfLoop, make_macro
+from tm.parse import blank_loops
 from tm.prover import ConfigLimit, Prover
 from tm.rules import (
     InfiniteRule,
@@ -180,6 +181,12 @@ class Machine:
 
         self.blanks = {}
 
+        loops = (
+            {True: set(), False: set()}
+            if not isinstance(comp, dict) else
+            blank_loops(comp)
+        )
+
         step: int = 0
 
         state: State = 0
@@ -237,7 +244,8 @@ class Machine:
 
             color, shift, next_state = instr
 
-            if (same := state == next_state) and tape.at_edge(shift):
+            if (((same := state == next_state) or state in loops[shift])
+                    and tape.at_edge(shift)):
                 self.spnout = step
                 break
 

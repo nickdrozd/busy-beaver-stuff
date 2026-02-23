@@ -1175,6 +1175,10 @@ class Recur(TuringTest):
     prog: str
     machine: Machine | StrictLinRecMachine | LinRecSampler
 
+    def assert_spinout(self) -> None:
+        self.assertIsNotNone(
+            self.machine.spnout)
+
     def assert_quasihalt(self, qsihlt: bool | None):
         assert isinstance(self.machine, StrictLinRecMachine)
 
@@ -1318,6 +1322,15 @@ class Recur(TuringTest):
             self.assertFalse(run_transcript(prog, 1_000))
 
         assert not INFRUL & RECURS
+
+    def test_zloop(self):
+        too_long = {
+            "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE",
+        }
+
+        for prog in ZLOOPERS - too_long:
+            self.run_bb(prog)
+            self.assert_spinout()
 
     def assert_lin_rec(self, steps: int, recur: int):
         assert isinstance(self.machine, LinRecSampler)
@@ -1807,9 +1820,13 @@ class Prover(RunProver):
                             self.machine.undfnd,
                             f'"{prog}"')
                     case 'spinout':
-                        self.assertIsNone(
-                            self.machine.spnout,
-                            f'"{prog}"')
+                        try:
+                            self.assertIsNone(
+                                self.machine.spnout,
+                                f'"{prog}"')
+                        except AssertionError:
+                            if prog not in ZLOOPERS:
+                                raise
                     case 'blank':
                         self.assertFalse(
                             self.machine.blanks,
