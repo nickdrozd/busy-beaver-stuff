@@ -319,43 +319,43 @@ fn test_quasihalt() {
 }
 
 fn params_5_2_0(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.cant_halt(2).is_refuted()
+    !prog.is_connected() || prog.cant_halt(3).is_refuted()
 }
 
 fn params_5_2_1(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.cant_spinout(2).is_refuted()
+    !prog.is_connected() || prog.cant_spinout(3).is_refuted()
 }
 
 fn params_5_2_2(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.cant_blank(2).is_refuted()
+    !prog.is_connected() || prog.cant_blank(3).is_refuted()
 }
 
 //
 
 fn params_3_3_0(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.cant_halt(2).is_refuted()
+    !prog.is_connected() || prog.cant_halt(3).is_refuted()
 }
 
 fn params_3_3_1(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.cant_spinout(2).is_refuted()
+    !prog.is_connected() || prog.cant_spinout(3).is_refuted()
 }
 
 fn params_3_3_2(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.cant_blank(2).is_refuted()
+    !prog.is_connected() || prog.cant_blank(3).is_refuted()
 }
 
 //
 
 fn params_2_5_0(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
-    prog.cant_halt(2).is_refuted()
+    prog.cant_halt(3).is_refuted()
 }
 
 fn params_2_5_1(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
-    prog.cant_spinout(2).is_refuted()
+    prog.cant_spinout(3).is_refuted()
 }
 
 fn params_2_5_2(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
-    prog.cant_blank(2).is_refuted()
+    prog.cant_blank(3).is_refuted()
 }
 
 fn test_params_slow() {
@@ -363,19 +363,19 @@ fn test_params_slow() {
 
     assert_params![
         (5, 2) => [
-            0 => (params_5_2_0, 700, (54_599_465, 90_773_891)),
-            1 => (params_5_2_1, TREE_LIM, (65_877_715, 181_095_466)),
-            2 => (params_5_2_2, TREE_LIM, (239_378_704, 486_712_056)),
+            0 => (params_5_2_0, 700, (52_459_180, 90_773_891)),
+            1 => (params_5_2_1, TREE_LIM, (52_409_123, 181_095_466)),
+            2 => (params_5_2_2, TREE_LIM, (186_970_104, 486_712_056)),
         ],
         (3, 3) => [
-            0 => (params_3_3_0, 2_700, (19_016_426, 24_057_699)),
-            1 => (params_3_3_1, 3_000, (23_138_425, 51_028_928)),
-            2 => (params_3_3_2, 3_000, (40_933_104, 123_294_779)),
+            0 => (params_3_3_0, 2_700, (18_021_376, 24_057_699)),
+            1 => (params_3_3_1, 3_000, (21_783_777, 51_028_928)),
+            2 => (params_3_3_2, 3_000, (32_820_733, 123_294_779)),
         ],
         (2, 5) => [
-            0 => (params_2_5_0, TREE_LIM, (59_915_204, 69_999_829)),
-            1 => (params_2_5_1, TREE_LIM, (106_695_705, 163_068_753)),
-            2 => (params_2_5_2, TREE_LIM, (86_184_236, 367_061_568)),
+            0 => (params_2_5_0, TREE_LIM, (57_606_699, 69_999_829)),
+            1 => (params_2_5_1, TREE_LIM, (102_757_908, 163_068_753)),
+            2 => (params_2_5_2, TREE_LIM, (68_407_595, 367_061_568)),
         ],
     ];
 }
