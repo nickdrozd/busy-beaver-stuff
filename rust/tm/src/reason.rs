@@ -189,12 +189,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             println!();
         };
 
-        let valid_steps = get_valid_steps::<s, c>(
-            &mut configs,
-            &entrypoints,
-            &win_possible,
-            seen.as_mut(),
-        );
+        let valid_steps =
+            get_valid_steps(&mut configs, &entrypoints, seen.as_mut());
 
         match valid_steps.len() {
             0 => return Refuted(step),
@@ -224,29 +220,15 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
 type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 
-fn get_valid_steps<const s: usize, const c: usize>(
+fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-    win_possible: &WinPossible<s, c>,
     mut seen: Option<&mut HashSet<(State, TapeSig)>>,
 ) -> ValidatedSteps {
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
         let Config { state, tape } = &config;
-
-        // Derive *ephemeral* forced-neighbor constraints from the
-        // reachability over-approximation table.
-        //
-        // Important: we do NOT mutate the tape here. We only use the
-        // singleton-neighbor information to filter which predecessor
-        // transitions are worth considering. This preserves the
-        // generality that makes antichain/dedup effective.
-        let Some((forced_left, forced_right)) =
-            forced_neighbors::<s, c>(*state, tape, win_possible)
-        else {
-            continue;
-        };
 
         if let Some(set) = seen.as_deref_mut() {
             let sig = TapeSig {
@@ -272,27 +254,6 @@ fn get_valid_steps<const s: usize, const c: usize>(
                 continue;
             }
 
-            // If the (state,scan) window forces the neighbor on the
-            // "from" side, then only predecessor steps that write that
-            // forced color can be compatible.
-            if shift {
-                // shift = R: head came from left; predecessor wrote `print`
-                // on the left neighbor in the *current* configuration.
-                if let Some(fl) = forced_left
-                    && print != fl
-                {
-                    continue;
-                }
-            } else {
-                // shift = L: head came from right; predecessor wrote `print`
-                // on the right neighbor in the *current* configuration.
-                if let Some(fr) = forced_right
-                    && print != fr
-                {
-                    continue;
-                }
-            }
-
             steps.push((color, shift, next_state));
         }
 
@@ -301,33 +262,12 @@ fn get_valid_steps<const s: usize, const c: usize>(
                 continue;
             }
 
-            #[expect(clippy::collapsible_else_if)]
-            if shift {
-                if let Some(fl) = forced_left
-                    && print != fl
-                {
-                    continue;
-                }
-            } else {
-                if let Some(fr) = forced_right
-                    && print != fr
-                {
-                    continue;
-                }
-            }
-
             if !tape.is_spinout(shift, color) {
                 steps.push((color, shift, *state));
                 continue;
             }
 
-            if let Some(indef) = get_indef::<s, c>(
-                shift,
-                &config,
-                diff,
-                same,
-                win_possible,
-            ) {
+            if let Some(indef) = get_indef(shift, &config, diff, same) {
                 checked.push(indef);
             }
         }
@@ -342,12 +282,11 @@ fn get_valid_steps<const s: usize, const c: usize>(
     checked
 }
 
-fn get_indef<const s: usize, const c: usize>(
+fn get_indef(
     push: Shift,
     config: &Config,
     diff: &Entries,
     same: &Entries,
-    win_possible: &WinPossible<s, c>,
 ) -> Option<(Vec<Instr>, Config)> {
     let mut checked_entries = diff.clone();
 
@@ -367,32 +306,11 @@ fn get_indef<const s: usize, const c: usize>(
 
     tape.push_indef(push);
 
-    // Apply the same "ephemeral" forced-neighbor filtering logic for
-    // the pushed-indef config, since we return its validated step list
-    // directly.
-    let (forced_left, forced_right) =
-        forced_neighbors::<s, c>(config.state, &tape, win_possible)?;
-
     let mut steps = vec![];
 
     for ((state, color), (print, shift)) in checked_entries {
         if !tape.is_valid_step(shift, print) {
             continue;
-        }
-
-        #[expect(clippy::collapsible_else_if)]
-        if shift {
-            if let Some(fl) = forced_left
-                && print != fl
-            {
-                continue;
-            }
-        } else {
-            if let Some(fr) = forced_right
-                && print != fr
-            {
-                continue;
-            }
         }
 
         steps.push((color, shift, state));
@@ -580,93 +498,6 @@ fn get_blanks(configs: &Configs) -> BlankStates {
         .iter()
         .filter_map(|cfg| cfg.tape.blank().then_some(cfg.state))
         .collect()
-}
-
-/**************************************/
-
-/// Compute singleton forced-neighbor constraints from the sound
-/// 3-cell-window reachability over-approximation.
-///
-/// Returns None if the configuration's (state,scan) combined with any
-/// already-known immediate neighbors admits *no* possible (L,scan,R)
-/// window.
-///
-/// Otherwise returns (forced_left, forced_right), where each is Some(k)
-/// iff that neighbor color is uniquely determined by win_possible given
-/// the current known neighbor constraints.
-#[expect(clippy::cast_possible_truncation)]
-fn forced_neighbors<const s: usize, const c: usize>(
-    state: State,
-    tape: &Tape,
-    win_possible: &WinPossible<s, c>,
-) -> Option<(Option<Color>, Option<Color>)> {
-    let st = state as usize;
-    let sc = tape.scan as usize;
-
-    let known_l = tape.left_neighbor_color().map(|x| x as usize);
-    let known_r = tape.right_neighbor_color().map(|x| x as usize);
-
-    let mut any_pair = false;
-
-    // Track which left/right neighbor values occur in any compatible window.
-    let mut left_ok = [false; c];
-    let mut right_ok = [false; c];
-
-    for lc in 0..c {
-        if let Some(k) = known_l
-            && lc != k
-        {
-            continue;
-        }
-
-        for rc in 0..c {
-            if let Some(k) = known_r
-                && rc != k
-            {
-                continue;
-            }
-
-            if win_possible[st][sc][lc][rc] {
-                any_pair = true;
-                left_ok[lc] = true;
-                right_ok[rc] = true;
-            }
-        }
-    }
-
-    if !any_pair {
-        return None;
-    }
-
-    let forced_left = {
-        let mut v = None;
-        for lc in 0..c {
-            if left_ok[lc] {
-                if v.is_some() {
-                    v = None;
-                    break;
-                }
-                v = Some(lc as Color);
-            }
-        }
-        v
-    };
-
-    let forced_right = {
-        let mut v = None;
-        for rc in 0..c {
-            if right_ok[rc] {
-                if v.is_some() {
-                    v = None;
-                    break;
-                }
-                v = Some(rc as Color);
-            }
-        }
-        v
-    };
-
-    Some((forced_left, forced_right))
 }
 
 /**************************************/
