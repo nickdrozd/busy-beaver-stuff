@@ -171,10 +171,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             .collect()
     }
 
-    #[expect(
-        clippy::items_after_statements,
-        clippy::cast_possible_truncation
-    )]
+    #[expect(clippy::cast_possible_truncation)]
     pub fn blank_loops(&self) -> Set<(State, Shift)> {
         let mut next_r: [Option<State>; states] = [None; states];
         let mut next_l: [Option<State>; states] = [None; states];

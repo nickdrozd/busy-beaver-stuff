@@ -1105,7 +1105,6 @@ fn dyn_cycle_exists(adj: &[Vec<usize>], active: &[bool]) -> bool {
 
 /// Kosaraju SCC decomposition on a graph given as adjacency lists,
 /// restricted to `active` nodes.
-#[expect(clippy::items_after_statements)]
 fn sccs_masked(
     states: usize,
     adj: &[Vec<usize>],

@@ -2176,7 +2176,6 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
     // For S<=16 and no negative cycles, lo is typically >= -(S-1) (<= -15).
     // Keep a safe cap; if it somehow exceeds the cap, return
     // conservative "all nodes".
-    #[expect(clippy::items_after_statements)]
     const CAP: usize = 33; // supports lo down to -32
     let offset = -lo;
     #[expect(clippy::cast_sign_loss)]
