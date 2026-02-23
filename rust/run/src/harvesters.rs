@@ -128,6 +128,7 @@ impl<const s: usize, const c: usize> ReasonHarvester<s, c> {
             1 => Prog::cant_spinout,
             2 => Prog::cant_blank,
             3 => Prog::cant_twostep,
+            4 => Prog::cant_zloop,
             _ => unreachable!(),
         };
 

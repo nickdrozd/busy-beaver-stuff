@@ -6,6 +6,7 @@ from tm.rust_stuff import (
     cant_halt,
     cant_spinout,
     cant_twostep,
+    cant_zloop,
     ctl_cant_halt,
     segment_cant_halt,
 )
@@ -22,6 +23,7 @@ if __name__ == '__main__':
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--halt', action = 'store_true')
     group.add_argument('--blank', action = 'store_true')
+    group.add_argument('--zloop', action = 'store_true')
     group.add_argument('--spinout', action = 'store_true')
     group.add_argument('--twostep', action = 'store_true')
     group.add_argument('--segment', action = 'store_true')
@@ -36,6 +38,8 @@ if __name__ == '__main__':
         CANT_REACH = cant_halt
     elif args.blank:
         CANT_REACH = cant_blank
+    elif args.zloop:
+        CANT_REACH = cant_zloop
     elif args.twostep:
         CANT_REACH = cant_twostep
     elif args.segment:

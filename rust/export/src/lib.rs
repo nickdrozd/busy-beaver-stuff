@@ -237,6 +237,11 @@ pub fn cant_blank(prog: &str, steps: Steps) -> BackwardResult {
 }
 
 #[pyfunction]
+pub fn cant_zloop(prog: &str, steps: Steps) -> BackwardResult {
+    parse!(prog, |p: Prog<_, _>| p.cant_zloop(steps).into())
+}
+
+#[pyfunction]
 pub fn cant_spinout(prog: &str, steps: Steps) -> BackwardResult {
     parse!(prog, |p: Prog<_, _>| p.cant_spinout(steps).into())
 }
@@ -627,7 +632,7 @@ mod rust_stuff {
     #[pymodule_export]
     use crate::{
         BackwardResult, MachineResult, PastConfigPy, TermRes,
-        cant_blank, cant_halt, cant_spinout, cant_twostep,
+        cant_blank, cant_halt, cant_spinout, cant_twostep, cant_zloop,
         cps_cant_blank, cps_cant_halt, cps_cant_quasihalt,
         cps_cant_spinout, ctl_cant_blank, ctl_cant_halt,
         ctl_cant_spinout, far_cant_blank, far_cant_halt,

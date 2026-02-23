@@ -35,6 +35,7 @@ from tm.rust_stuff import (
     cant_halt,
     cant_spinout,
     cant_twostep,
+    cant_zloop,
     cps_cant_blank,
     cps_cant_halt,
     cps_cant_quasihalt,
@@ -402,6 +403,19 @@ class TuringTest(TestCase):
             cant_twostep(prog, depth).is_refuted(),
             f'twostep false negative: "{prog}"')
 
+    def assert_could_zloop_backward(self, prog: str):
+        self.assertFalse(
+            cant_zloop(prog, steps = REASON_LIMIT).is_refuted(),
+            f'zloop false positive: "{prog}"')
+
+    def assert_cant_zloop_backward(self, prog: str, depth: int):
+        if prog in BACKWARD_CANT_ZLOOP_FALSE_NEGATIVES:
+            return
+
+        self.assertTrue(
+            cant_zloop(prog, depth).is_refuted(),
+            f'zloop false negative: "{prog}"')
+
     ########################################
 
     def assert_could_quasihalt_cps(self, prog: str):
@@ -428,6 +442,7 @@ BACKWARD_REASONERS: dict[Goal, BackwardReasoner] = {
     "blank": cant_blank,
     "spinout": cant_spinout,
     "twostep": cant_twostep,
+    "zloop": cant_zloop,
 }
 
 class Reason(TuringTest):
@@ -471,6 +486,16 @@ class Reason(TuringTest):
         for prog in TWOSTEPPERS:
             self.assert_could_twostep_backward(prog)
 
+    def test_zloop(self):
+        for prog in HALTERS | SPINNERS:
+            self.assert_cant_zloop_backward(prog, 2)
+
+        for prog in RECURS - ZLOOPERS:
+            self.assert_cant_zloop_backward(prog, 4)
+
+        for prog in ZLOOPERS:
+            self.assert_could_zloop_backward(prog)
+
     def test_recur(self):
         for prog in RECURS | INFRUL:
             self.assert_cant_halt_backward(prog, 115)
@@ -487,6 +512,7 @@ class Reason(TuringTest):
         results: dict[Goal, BackwardCats] = {
             'halt': defaultdict(set),
             'blank': defaultdict(set),
+            'zloop': defaultdict(set),
             'spinout': defaultdict(set),
             'twostep': defaultdict(set),
         }

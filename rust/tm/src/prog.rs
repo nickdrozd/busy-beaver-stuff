@@ -171,6 +171,90 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             .collect()
     }
 
+    #[expect(
+        clippy::items_after_statements,
+        clippy::cast_possible_truncation
+    )]
+    pub fn blank_loops(&self) -> Set<(State, Shift)> {
+        let mut next_r: [Option<State>; states] = [None; states];
+        let mut next_l: [Option<State>; states] = [None; states];
+
+        for ((st, co), &(_, sh, tr)) in self.iter() {
+            if co != 0 {
+                continue;
+            }
+
+            if sh {
+                next_r[st as usize] = Some(tr);
+            } else {
+                next_l[st as usize] = Some(tr);
+            }
+        }
+
+        fn collect<const states: usize>(
+            next: &[Option<State>; states],
+            sh: Shift,
+            out: &mut Set<(State, Shift)>,
+        ) {
+            let mut done = [false; states];
+            let mut seen_run = [0; states];
+            let mut seen_step = [0; states];
+            let mut run_id: u32 = 1;
+            let mut path: Vec<State> = vec![];
+
+            for start in 0..states {
+                if done[start] {
+                    continue;
+                }
+
+                path.clear();
+                let mut cur = start as State;
+
+                loop {
+                    let cu = cur as usize;
+
+                    if done[cu] {
+                        break;
+                    }
+
+                    if seen_run[cu] == run_id {
+                        let begin = seen_step[cu];
+                        let cyc = &path[begin..];
+                        if 2 <= cyc.len()
+                            && let Some(&min_st) = cyc.iter().min()
+                        {
+                            out.insert((min_st, sh));
+                        }
+                        break;
+                    }
+
+                    seen_run[cu] = run_id;
+                    seen_step[cu] = path.len();
+                    path.push(cur);
+
+                    let Some(nx) = next[cu] else {
+                        break;
+                    };
+
+                    cur = nx;
+                }
+
+                for &st in &path {
+                    done[st as usize] = true;
+                }
+
+                run_id += 1;
+            }
+        }
+
+        let mut out: Set<(State, Shift)> = Set::new();
+
+        collect(&next_r, true, &mut out);
+        collect(&next_l, false, &mut out);
+
+        out
+    }
+
     pub fn reaches_both_sides(&self, st: State, co: Color) -> bool {
         let mut side = None;
 

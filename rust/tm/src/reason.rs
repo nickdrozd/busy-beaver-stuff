@@ -76,6 +76,17 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         )
     }
 
+    pub fn cant_zloop(&self, steps: Steps) -> BackwardResult {
+        cant_reach(
+            self,
+            steps,
+            self.blank_loops(),
+            None,
+            zr_configs,
+            false,
+        )
+    }
+
     pub fn cant_twostep(&self, steps: Steps) -> BackwardResult {
         cant_reach(
             self,
