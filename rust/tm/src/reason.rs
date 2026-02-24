@@ -196,6 +196,12 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         dedup_ignore_head.then(Set::new);
 
     for step in 1..=steps {
+        if let Some(set) = seen.as_mut() {
+            configs.retain(|Config { state, tape }| {
+                set.insert((*state, tape.hash()))
+            });
+        }
+
         #[cfg(debug_assertions)]
         {
             for config in &configs {
@@ -204,8 +210,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             println!();
         };
 
-        let valid_steps =
-            get_valid_steps(&mut configs, &entrypoints, seen.as_mut());
+        let valid_steps = get_valid_steps(&mut configs, &entrypoints);
 
         match valid_steps.len() {
             0 => return Refuted(step),
@@ -238,19 +243,11 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-    mut seen: Option<&mut Set<(State, u64)>>,
 ) -> ValidatedSteps {
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
         let Config { state, tape } = &config;
-
-        #[expect(clippy::collapsible_if)]
-        if let Some(set) = seen.as_deref_mut() {
-            if !set.insert((*state, tape.hash())) {
-                continue;
-            }
-        }
 
         let mut steps = vec![];
 
