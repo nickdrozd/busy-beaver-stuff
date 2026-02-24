@@ -1,6 +1,6 @@
 use core::{fmt, iter::once};
 
-use std::collections::{BTreeMap as Dict, BTreeSet as Set, HashSet};
+use ahash::{AHashMap as Dict, AHashSet as Set};
 
 use crate::{
     Color, Instr, Prog, Shift, Slot, State, Steps,
@@ -188,8 +188,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut antichains = Antichains::default();
 
-    let mut seen: Option<HashSet<(State, TapeSig)>> =
-        dedup_ignore_head.then(HashSet::new);
+    let mut seen: Option<Set<(State, TapeSig)>> =
+        dedup_ignore_head.then(Set::new);
 
     for step in 1..=steps {
         #[cfg(debug_assertions)]
@@ -234,7 +234,7 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-    mut seen: Option<&mut HashSet<(State, TapeSig)>>,
+    mut seen: Option<&mut Set<(State, TapeSig)>>,
 ) -> ValidatedSteps {
     let mut checked = ValidatedSteps::new();
 

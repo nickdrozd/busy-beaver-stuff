@@ -1,6 +1,6 @@
-use std::collections::{
-    BTreeMap as Dict, BTreeSet as Set, HashMap, VecDeque,
-};
+use std::collections::VecDeque;
+
+use ahash::{AHashMap as Dict, AHashSet as Set};
 
 use crate::{Color, Prog, State};
 
@@ -605,7 +605,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         let wild = colors as u8;
         let mut nodes: Vec<AbsCfg> = vec![];
         let mut adj: Vec<Vec<usize>> = vec![];
-        let mut map: HashMap<AbsCfg, usize> = HashMap::new();
+        let mut map: Dict<AbsCfg, usize> = Dict::new();
         let mut q: VecDeque<usize> = VecDeque::new();
 
         let start = AbsCfg::new_blank();

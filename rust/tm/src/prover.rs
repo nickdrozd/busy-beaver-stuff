@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use ahash::AHashMap as Dict;
 
 use crate::{
@@ -22,7 +20,7 @@ pub enum ProverResult {
 use ProverResult::*;
 
 pub struct Prover {
-    rules: BTreeMap<Slot, Vec<(MinSig, Rule)>>,
+    rules: Dict<Slot, Vec<(MinSig, Rule)>>,
 
     configs: Dict<Signature, PastConfigs>,
 }
@@ -30,7 +28,7 @@ pub struct Prover {
 impl Prover {
     pub fn new() -> Self {
         Self {
-            rules: BTreeMap::new(),
+            rules: Dict::new(),
             configs: Dict::new(),
         }
     }
@@ -262,13 +260,13 @@ impl PastConfig {
 }
 
 pub struct PastConfigs {
-    configs: BTreeMap<State, PastConfig>,
+    configs: Dict<State, PastConfig>,
 }
 
 impl PastConfigs {
     pub fn new(state: State, cycle: Steps) -> Self {
         Self {
-            configs: BTreeMap::from([(state, PastConfig::new(cycle))]),
+            configs: Dict::from([(state, PastConfig::new(cycle))]),
         }
     }
 

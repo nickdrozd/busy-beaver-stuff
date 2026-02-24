@@ -5,7 +5,7 @@ use core::{
     num::TryFromIntError,
 };
 
-use std::collections::BTreeMap as Dict;
+use ahash::AHashMap as Dict;
 
 use num_integer::Integer as _;
 
