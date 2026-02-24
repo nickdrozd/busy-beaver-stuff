@@ -1,6 +1,10 @@
-use core::{fmt, iter::once};
+use core::{
+    fmt,
+    hash::{Hash, Hasher as _},
+    iter::once,
+};
 
-use ahash::{AHashMap as Dict, AHashSet as Set};
+use ahash::{AHashMap as Dict, AHashSet as Set, AHasher};
 
 use crate::{
     Color, Instr, Prog, Shift, Slot, State, Steps,
@@ -188,7 +192,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut antichains = Antichains::default();
 
-    let mut seen: Option<Set<(State, TapeSig)>> =
+    let mut seen: Option<Set<(State, u64)>> =
         dedup_ignore_head.then(Set::new);
 
     for step in 1..=steps {
@@ -234,21 +238,16 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-    mut seen: Option<&mut Set<(State, TapeSig)>>,
+    mut seen: Option<&mut Set<(State, u64)>>,
 ) -> ValidatedSteps {
     let mut checked = ValidatedSteps::new();
 
     for config in configs.drain(..) {
         let Config { state, tape } = &config;
 
+        #[expect(clippy::collapsible_if)]
         if let Some(set) = seen.as_deref_mut() {
-            let sig = TapeSig {
-                scan: tape.scan,
-                lspan: tape.lspan.clone(),
-                rspan: tape.rspan.clone(),
-            };
-
-            if !set.insert((*state, sig)) {
+            if !set.insert((*state, tape.hash())) {
                 continue;
             }
         }
@@ -898,13 +897,6 @@ struct Span {
     end: TapeEnd,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct TapeSig {
-    scan: Color,
-    lspan: Span,
-    rspan: Span,
-}
-
 impl Span {
     const fn init_blank() -> Self {
         Self {
@@ -1027,7 +1019,7 @@ impl Span {
 
 /**************************************/
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone)]
 struct Tape {
     scan: Color,
     lspan: Span,
@@ -1116,6 +1108,14 @@ impl Tape {
 
     fn blank(&self) -> bool {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
+    }
+
+    fn hash(&self) -> u64 {
+        let mut h = AHasher::default();
+        self.scan.hash(&mut h);
+        self.lspan.hash(&mut h);
+        self.rspan.hash(&mut h);
+        h.finish()
     }
 
     /// Return the immediate left neighbor color if it is determined by
