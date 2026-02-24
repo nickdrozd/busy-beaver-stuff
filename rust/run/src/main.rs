@@ -533,8 +533,8 @@ fn test_9_instr() {
     println!("9 instrs");
 
     assert_eq!(
-        Visited::<9, 9>::run_instrs::<9>(500, &Visited::new),
-        777_451_909_539,
+        Visited::<9, 9>::run_instrs::<9>(1000, &Visited::new),
+        777_451_944_058,
     );
 }
 
