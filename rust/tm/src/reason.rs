@@ -1273,6 +1273,8 @@ impl Tape {
     fn subsumes(&self, other: &Self) -> bool {
         self.scan == other.scan
             && self.head == other.head
+            && self.lspan.maybe_subsumes(&other.lspan)
+            && self.rspan.maybe_subsumes(&other.rspan)
             && self.lspan.subsumes(&other.lspan)
             && self.rspan.subsumes(&other.rspan)
     }
@@ -2243,13 +2245,6 @@ impl Span {
     /// - if self runs out of blocks, it still subsumes if its end is
     ///   Unknown or Blanks compatible
     fn subsumes(&self, other: &Self) -> bool {
-        if matches!(
-            (&self.end, &other.end),
-            (&TapeEnd::Blanks, &TapeEnd::Unknown)
-        ) {
-            return false;
-        }
-
         // Compare common prefix
         for (a, b) in self.span.iter().zip(other.span.iter()) {
             if a.color != b.color {
@@ -2267,11 +2262,6 @@ impl Span {
         let a_len = self.span.len();
         let b_len = other.span.len();
 
-        // self has extra constraints beyond other => does NOT subsume
-        if a_len > b_len {
-            return false;
-        }
-
         if a_len == b_len {
             return true;
         }
@@ -2280,6 +2270,76 @@ impl Span {
             TapeEnd::Unknown => true,
             TapeEnd::Blanks => false,
         }
+    }
+
+    fn maybe_subsumes(&self, other: &Self) -> bool {
+        // Unknown/Blanks compatibility
+        if matches!(
+            (&self.end, &other.end),
+            (&TapeEnd::Blanks, &TapeEnd::Unknown)
+        ) {
+            return false;
+        }
+
+        let a_len = self.span.len();
+        let b_len = other.span.len();
+
+        // If we have more blocks than `other`, we impose extra structure => cannot subsume.
+        if a_len > b_len {
+            return false;
+        }
+
+        // If our end is Blanks, we cannot subsume a longer span with extra blocks.
+        if a_len < b_len && matches!(self.end, TapeEnd::Blanks) {
+            return false;
+        }
+
+        // Compare first (and second) block color + definiteness when present.
+        if let (Some(a0), Some(b0)) =
+            (self.span.first(), other.span.first())
+        {
+            if a0.color != b0.color {
+                return false;
+            }
+            // Fixed cannot subsume indefinite.
+            if a0.count != 0 && b0.count == 0 {
+                return false;
+            }
+            // Fixed counts must match.
+            if a0.count != 0 && b0.count != 0 && a0.count != b0.count {
+                return false;
+            }
+        } else if a_len == 0 {
+            // empty prefix ok (handled by end checks above)
+            return true;
+        } else {
+            // `self` has a block but `other` doesn't (should be covered by a_len > b_len)
+            return false;
+        }
+
+        if a_len >= 2 {
+            // only peek one more block to catch many mismatches cheaply
+            let mut ait = self.span.iter();
+            let mut bit = other.span.iter();
+            let _ = ait.next();
+            let _ = bit.next();
+            if let (Some(a1), Some(b1)) = (ait.next(), bit.next()) {
+                if a1.color != b1.color {
+                    return false;
+                }
+                if a1.count != 0 && b1.count == 0 {
+                    return false;
+                }
+                if a1.count != 0
+                    && b1.count != 0
+                    && a1.count != b1.count
+                {
+                    return false;
+                }
+            }
+        }
+
+        true
     }
 }
 
