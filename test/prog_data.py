@@ -2068,6 +2068,11 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
 
         "1RB 0LA  0RC 1RC  1LA ...": 13,
 
+        "1RB 2LA ... 0LB  2LB 3RB 1LB 1RA": 26,
+        "1RB 0LB 3RB 0LA  2LA 1RA 2LB ...": 28,
+        "1RB 1RA 2LB ...  2LA 3LA 0RA 0RB": 28,
+        "1RB 3LA ... 0RB  2LA 2RA 0RB 3LB": 29,
+
         "1RB 1LB  1LA 0RC  0LD 1RC  ... 1LA": 11,
         "1RB 0LA  0RC ...  1LC 1LD  0RA 0LD": 17,
         "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA": 40,
@@ -2413,6 +2418,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 1LB 0RB  1LA 2RB ...",
             "1RB ...  1LC 1RA  1LA 0LC",
             "1RB 1LB  1RC 1RB  0LA ...",
+            "1RB 0RA ... 0RB  2LB 3RB 3LA 2LA",
             "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...",
             "1RB 2LA 1LA 1RB  1LB 2RA 3RB ...",
             "1RB 3LA 1LA 1LA  2LB 2RA ... 0RB",
@@ -2965,7 +2971,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
 
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
-        "step_limit": 23,
+        "step_limit": 24,
         "depth_limit": 186,
     },
     "blank": {
@@ -3019,7 +3025,7 @@ BACKWARD_CANT_ZLOOP_FALSE_NEGATIVES: set[str] = {
 ########################################
 
 SEGMENT_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 98,
+    "halt": 100,
     "spinout": 112,
 }
 
@@ -3049,8 +3055,10 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LA  1LA 1RC  ... 1RB",
         "1RB 1LC  1LC 1RB  ... 1LA",
         "1RB 1LC  0LA 0RB  1LA ...",
+        "1RB 0RA ... 0RB  2LB 3RB 3LA 2LA",
         "1RB 0RA 2LB ...  2LA 1LB 3RA 1RA",
         "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",
+        "1RB 3LA ... 0RB  2LA 2RA 0RB 3LB",
         "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
         "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
         "1RB ...  1LC 1RA  0LC 0LD  0RA 0RC",
