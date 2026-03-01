@@ -44,14 +44,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
         let slots = self.halt_slots_disp_side(&idx);
 
-        cant_reach(
-            self,
-            steps,
-            slots,
-            Some(entrypoints),
-            halt_configs,
-            false,
-        )
+        cant_reach(self, steps, slots, Some(entrypoints), halt_configs)
     }
 
     pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
@@ -59,36 +52,15 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             return Refuted(0);
         }
 
-        cant_reach(
-            self,
-            steps,
-            self.erase_slots(),
-            None,
-            erase_configs,
-            true,
-        )
+        cant_reach(self, steps, self.erase_slots(), None, erase_configs)
     }
 
     pub fn cant_spinout(&self, steps: Steps) -> BackwardResult {
-        cant_reach(
-            self,
-            steps,
-            self.zr_shifts(),
-            None,
-            zr_configs,
-            false,
-        )
+        cant_reach(self, steps, self.zr_shifts(), None, zr_configs)
     }
 
     pub fn cant_zloop(&self, steps: Steps) -> BackwardResult {
-        cant_reach(
-            self,
-            steps,
-            self.blank_loops(),
-            None,
-            zr_configs,
-            false,
-        )
+        cant_reach(self, steps, self.blank_loops(), None, zr_configs)
     }
 
     pub fn cant_twostep(&self, steps: Steps) -> BackwardResult {
@@ -101,7 +73,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 .collect(),
             None,
             twostep_configs,
-            false,
         )
     }
 }
@@ -128,7 +99,6 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     mut slots: Set<(State, T)>,
     entrypoints: Option<Entrypoints>,
     get_configs: impl Fn(&Set<(State, T)>) -> Configs,
-    dedup_ignore_head: bool,
 ) -> BackwardResult {
     if slots.is_empty() {
         return Refuted(0);
@@ -192,15 +162,15 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut antichains = Antichains::default();
 
-    let mut seen: Option<Set<(State, u64)>> =
-        dedup_ignore_head.then(Set::new);
+    let mut seen: Set<(State, u64)> = Set::new();
 
     for step in 1..=steps {
-        if let Some(set) = seen.as_mut() {
-            configs.retain(|Config { state, tape }| {
-                set.insert((*state, tape.hash()))
-            });
-        }
+        configs.retain(|Config { state, tape }| {
+            let blank_ends = tape.lspan.end == TapeEnd::Blanks
+                && tape.rspan.end == TapeEnd::Blanks;
+
+            !blank_ends || seen.insert((*state, tape.hash()))
+        });
 
         #[cfg(debug_assertions)]
         {
