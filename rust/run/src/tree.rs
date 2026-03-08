@@ -462,10 +462,7 @@ impl<
     }
 
     fn is_nontrivial(&self, config: &mut Config) -> bool {
-        matches!(
-            self.prog.run_basic(states * colors, config),
-            StepLimit,
-        )
+        matches!(self.run(config), StepLimit)
     }
 
     fn harvest(&mut self, config: PassConfig<'_>) {
