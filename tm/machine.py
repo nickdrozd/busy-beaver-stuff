@@ -11,8 +11,8 @@ from tm.rules import (
     apply_rule,
 )
 from tm.rust_stuff import run_transcript, term_or_rec  # noqa: F401
-from tm.show import show_comp, show_slot, show_state
-from tm.tape import Tape, show_number
+from tm.show import show_comp, show_number, show_slot, show_state
+from tm.tape import Tape
 
 if TYPE_CHECKING:
     from typing import Final, Self

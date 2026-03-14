@@ -9,6 +9,10 @@ from math import ceil, floor, log, log2, log10, sqrt
 from math import gcd as pgcd
 from typing import ClassVar, Final, Never, Self
 
+from tm.show import show_number
+
+MAX_LEAVES: Final[int] = 120
+
 ########################################
 
 type Count = int | Num
@@ -183,7 +187,15 @@ class Add(Num):
             self.tower_est = max(l.tower_est, r.tower_est)
 
     def __repr__(self) -> str:
-        return f'({show_number(self.l)} + {self.r})'
+        l, r = self.l, self.r
+
+        if isinstance(l, int):
+            return f'({show_number(l)} + {r})'
+
+        if MAX_LEAVES < self.leaves:
+            return '(... + ...)'
+
+        return f'({l} + {r})'
 
     def __hash__(self) -> int:
         return id(self)
@@ -407,10 +419,18 @@ class Mul(Num):
             self.tower_est = max(l.tower_est, r.tower_est)
 
     def __repr__(self) -> str:
-        if self.l == -1:
-            return f'-{self.r}'
+        l, r = self.l, self.r
 
-        return f'({show_number(self.l)} * {self.r})'
+        if isinstance(l, int):
+            if l == -1:
+                return f'-{self.r}'
+
+            return f'({show_number(l)} * {r})'
+
+        if MAX_LEAVES < self.leaves:  # no-cover
+            return '(... * ...)'
+
+        return f'({l} * {r})'
 
     def __hash__(self) -> int:
         return id(self)
@@ -660,6 +680,9 @@ class Div(Num):
         self.tower_est = num.tower_est
 
     def __repr__(self) -> str:
+        if MAX_LEAVES < self.leaves:  # no-cover
+            return '(???)'
+
         return f'({self.num} // {self.den})'
 
     def __hash__(self) -> int:
@@ -854,7 +877,13 @@ class Exp(Num):
             self.tower_est = 1 + exp.tower_est
 
     def __repr__(self) -> str:
-        return f'({self.base} ** {show_number(self.exp)})'
+        exp = (
+            '...'
+            if MAX_LEAVES < self.leaves else
+            show_number(self.exp)
+        )
+
+        return f'({self.base} ** {exp})'
 
     def __hash__(self) -> int:
         return id(self)
@@ -1438,22 +1467,3 @@ def prime_factors(n: int) -> list[tuple[int, int]]:
             return res
 
     raise NotImplementedError  # no-cover
-
-########################################
-
-TRUNCATE_COUNT: Final[int] = 10 ** 12
-
-MAX_LEAVES: Final[int] = 120
-
-def show_number(num: Count) -> str:
-    if isinstance(num, int):
-        if abs(num) >= TRUNCATE_COUNT:
-            return "{}(~10^{:.0f})".format(
-                '-' if num < 0 else '',
-                log10(abs(num)),
-            )
-
-    elif num.leaves > MAX_LEAVES:  # no-cover
-        return "(???)"
-
-    return str(num)

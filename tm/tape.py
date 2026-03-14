@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from tm.num import show_number
+from tm.show import show_number
 
 if TYPE_CHECKING:
     from tm.num import Count
