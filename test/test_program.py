@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from test.prog_data import EXPAND, NORMALIZE, TNF
-from tools.normalize import compact, expand, normalize
+from tools.normalize import Normalizer, compact, expand, normalize
 from tools.tree_norm import tree_norm
 
 
@@ -43,3 +43,26 @@ class TestProgram(TestCase):
         self.assertEqual(
             tree_norm(normalize(prog)),
             "1RB ...  0RC 0RB  1LC 1RD  0LA 1LE  1RA 0LE")
+
+    def test_equiv(self):
+        prog_153 = "1RB 0LB 0RC  2LC 2LA 1RA  1RA 1LC ..."
+
+        prog_758 = "1RB 2LC 1RC  2LC ... 2RB  2LA 0LB 0RA"
+
+        normaliz = Normalizer(prog_153)
+
+        self.assertEqual(
+            "1RC 0LC 0RB  1RA 1LB ...  2LB 2LA 1RA",
+            str(normaliz.swap_states(1, 2)))
+
+        self.assertEqual(
+            "2RC 0RB 0LC  2RA ... 2LB  1LB 2RA 1LA",
+            str(normaliz.swap_colors(1, 2)))
+
+        self.assertEqual(
+            "1LB 2RC 1LC  2RC ... 2LB  2RA 0RB 0LA",
+            str(normaliz.swap_states(0, 2)))
+
+        self.assertEqual(
+            prog_758,
+            str(normaliz.swap_shifts()))

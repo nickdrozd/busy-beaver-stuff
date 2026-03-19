@@ -146,6 +146,12 @@ class Normalizer:
 
         return self
 
+    def swap_shifts(self) -> Self:
+        for slot, (color, shift, state) in self.used_instr_slots:
+            self[slot] = color, not shift, state
+
+        return self
+
     def normalize_states(self) -> Self:
         for _ in self.states:  # no-branch
             todo = sorted(self.states)[1:]
