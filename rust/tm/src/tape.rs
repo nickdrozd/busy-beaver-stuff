@@ -456,6 +456,11 @@ impl<B: Block> Tape<B> {
     pub const fn length_one_spans(&self) -> bool {
         self.lspan.len() == 1 && self.rspan.len() == 1
     }
+
+    pub const fn blocks(&self) -> usize {
+        self.lspan.len() + self.rspan.len()
+    }
+
     pub fn counts(&self) -> (Vec<B::Count>, Vec<B::Count>) {
         (self.lspan.counts(), self.rspan.counts())
     }

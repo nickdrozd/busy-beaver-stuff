@@ -29,10 +29,6 @@ impl Span {
 }
 
 impl Tape {
-    const fn blocks(&self) -> usize {
-        self.lspan.len() + self.rspan.len()
-    }
-
     fn unroll(&self) -> UnrolledTape {
         self.lspan
             .unroll()

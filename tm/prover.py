@@ -119,6 +119,9 @@ class Prover:
             if self.config_count > 100_000:  # no-cover
                 raise ConfigLimit
 
+            if tape.blocks > 350:  # no-cover
+                raise ConfigLimit
+
             self.configs[sig] = PastConfigs(state, cycle)
             return None
 

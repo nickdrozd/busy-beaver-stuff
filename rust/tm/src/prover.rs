@@ -96,6 +96,10 @@ impl Prover {
                 return Some(ConfigLimit);
             }
 
+            if config.tape.blocks() > 350 {
+                return Some(ConfigLimit);
+            }
+
             self.configs
                 .insert(sig, PastConfigs::new(config.state, cycle));
 

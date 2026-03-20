@@ -110,6 +110,10 @@ class Tape:
         )
 
     @property
+    def blocks(self) -> int:
+        return len(self.lspan) + len(self.rspan)
+
+    @property
     def signature(self) -> Signature:
         return (
             self.scan,
