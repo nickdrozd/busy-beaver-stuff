@@ -92,10 +92,6 @@ impl Prover {
         }
 
         if !self.configs.contains_key(&sig) {
-            if self.config_count() > 1_000 {
-                return Some(ConfigLimit);
-            }
-
             if config.tape.blocks() > 350 {
                 return Some(ConfigLimit);
             }

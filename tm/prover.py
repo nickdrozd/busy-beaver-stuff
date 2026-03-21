@@ -116,9 +116,6 @@ class Prover:
             return known
 
         if (past_configs := self.configs.get(sig)) is None:
-            if self.config_count > 100_000:  # no-cover
-                raise ConfigLimit
-
             if tape.blocks > 350:  # no-cover
                 raise ConfigLimit
 
