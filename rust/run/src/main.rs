@@ -1,6 +1,4 @@
 #![allow(dead_code)]
-use std::env;
-
 use rayon::prelude::*;
 
 use tm::{Goal, Prog, Steps};
@@ -596,7 +594,7 @@ const SLOW: &[fn()] =
 fn main() {
     FAST.par_iter().for_each(|f| f());
 
-    if !env::args().any(|x| x == "--all") {
+    if !std::env::args().any(|x| x == "--all") {
         return;
     }
 
