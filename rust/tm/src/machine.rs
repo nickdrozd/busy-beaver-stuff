@@ -129,7 +129,7 @@ pub trait RunProver: GetInstr + Sized {
             }
 
             let (color, shift, next_state) =
-                self.get_instr(&config.slot()).unwrap()?;
+                self.get_instr(&config.slot()).ok()??;
 
             config.tape.mstep(shift, color, config.state == next_state);
 
