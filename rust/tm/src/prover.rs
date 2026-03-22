@@ -13,7 +13,6 @@ use crate::{
 pub enum ProverResult {
     ConfigLimit,
     InfiniteRule,
-    MultRule,
     Got(Rule),
 }
 
@@ -158,10 +157,6 @@ impl Prover {
 
         if rule.is_infinite() {
             return Some(InfiniteRule);
-        }
-
-        if rule.is_mult() {
-            return Some(MultRule);
         }
 
         if config.tape.length_one_spans() && rule.has_two_values_same()

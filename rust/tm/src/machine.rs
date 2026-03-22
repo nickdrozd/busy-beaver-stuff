@@ -3,17 +3,18 @@ use crate::{
     config::{BigConfig, Config, MedConfig},
     macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
-    rules::ApplyRule,
+    rules::{ApplyRule, Rule},
     tape::{Alignment as _, GetSig, LinRec, MachineTape, Pos},
 };
 
 /**************************************/
 
+#[expect(variant_size_differences)]
 pub enum RunResult {
     Blank,
     Recur(LinRec),
     Spinout,
-    MultRule,
+    MultRule(Rule),
     InfiniteRule,
     Undefined(Slot),
     StepLimit,
@@ -56,7 +57,7 @@ impl RunResult {
     }
 
     pub const fn is_mult(&self) -> bool {
-        matches!(self, Self::MultRule)
+        matches!(self, Self::MultRule(_))
     }
 }
 
@@ -77,10 +78,11 @@ pub trait RunProver: GetInstr + Sized {
                     ProverResult::InfiniteRule => {
                         return InfiniteRule;
                     },
-                    ProverResult::MultRule => {
-                        return MultRule;
-                    },
                     ProverResult::Got(rule) => {
+                        if rule.is_mult() {
+                            return MultRule(rule);
+                        }
+
                         if config.tape.apply_rule(&rule).is_some() {
                             // println!("--> applying rule: {:?}", rule);
                             continue;
@@ -182,8 +184,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             self.make_block_macro(blocks).run_prover(steps)
         };
 
-        // if result.is_mult() {
-        //     self.print();
+        // if let MultRule(rule) = &result {
+        //     println!("{rule:?} | {self}");
         // }
 
         result.is_infinite()
