@@ -112,7 +112,7 @@ class Machine:
             else:
                 try:
                     rulapp_disp = str(rulapp.estimate())
-                except NotImplementedError as err:
+                except (NotImplementedError, RecursionError) as err:
                     err = err.args[0]
                     self.errors = err
                     rulapp_disp = err
@@ -228,7 +228,7 @@ class Machine:
                     step = -1
                     try:
                         self.rulapp += times
-                    except NotImplementedError as err:  # no-cover
+                    except (NotImplementedError, RecursionError) as err:  # no-cover
                         self.errors = err.args[0]
                         break
                     continue
