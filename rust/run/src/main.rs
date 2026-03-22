@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 use std::env;
 
+use rayon::prelude::*;
+
 use tm::{Goal, Prog, Steps};
 
 pub mod harvesters;
@@ -450,6 +452,44 @@ fn test_collect() {
     assert_eq!(result.len(), 81);
 }
 
+use std::{
+    fs::File,
+    io::{self, BufRead as _, BufReader},
+};
+
+use tm::parse;
+
+fn run_from_file(path: &str, steps: Steps) -> io::Result<()> {
+    println!("running {path}");
+
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    reader.lines().par_bridge().try_for_each(|line| {
+        let line = line?;
+        let line = line.as_str();
+
+        // println!(
+        //     "thread {:?}: {line}",
+        //     rayon::current_thread_index().unwrap(),
+        // );
+
+        parse!(line, |prog: Prog<_, _>| prog.check_inf(steps, 4_000));
+
+        Ok(())
+    })
+}
+
+fn test_from_file() {
+    let files = ["halt-6-2", "halt-7-instr"];
+
+    for file in files {
+        let filename = format!("test/data/holdouts/{file}.prog");
+
+        run_from_file(&filename, 10_000).unwrap();
+    }
+}
+
 /**************************************/
 
 macro_rules! assert_instrs {
@@ -543,15 +583,15 @@ fn test_9_instr() {
 const FAST: &[fn()] = &[
     test_collect,
     test_deciders,
+    test_from_file,
     test_instrs,
     test_prover,
     test_quasihalt,
     test_reason,
 ];
 
-const SLOW: &[fn()] = &[test_8_instr, test_9_instr, test_params_slow];
-
-use rayon::prelude::*;
+const SLOW: &[fn()] =
+    &[test_8_instr, test_9_instr, test_params_slow, test_from_file];
 
 fn main() {
     FAST.par_iter().for_each(|f| f());
