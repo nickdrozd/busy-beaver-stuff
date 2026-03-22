@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from tm.macro import MacroInfLoop, make_macro
+from tm.num import NumError
 from tm.parse import blank_loops
 from tm.prover import ConfigLimit, Prover
 from tm.rules import (
@@ -212,6 +213,9 @@ class Machine:
                 rule = None
             except MacroInfLoop:
                 rule = None
+            except NumError as err:  # no-cover
+                self.errors = err.args[0]
+                break
 
             if rule is not None:
                 try:

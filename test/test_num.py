@@ -5,6 +5,7 @@ from tm.num import (
     Add,
     Div,
     Mul,
+    NumError,
     Tet,
     show_number,
 )
@@ -442,6 +443,9 @@ class TestNum(TestCase):
             (2 * Exp(3, 13)) * ((-1 + Exp(3, 7)) // 2),
             3485190078,
             "(2186 * (3 ** 13))")
+
+        with self.assertRaises(NumError):
+            _ = Exp(3, 11) // 2
 
     def test_div_mod(self):
         for i in range(2, 1000):

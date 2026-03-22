@@ -19,6 +19,9 @@ type Count = int | Num
 
 ########################################
 
+class NumError(Exception):
+    pass
+
 class PeriodLimit(Exception):
     def __init__(self, base: int, mod: int):
         super().__init__(
@@ -1139,7 +1142,9 @@ class Exp(Num):
 
         if other > 1:
             assert base > other
-            assert base % other == 0
+
+            if base % other != 0:
+                raise NumError(f'bad div: {self} // {other}')
 
             return (base // other) * Exp.make(base, exp - 1)
 
