@@ -213,8 +213,8 @@ class Machine:
                 rule = None
             except MacroInfLoop:
                 rule = None
-            except NumError as err:  # no-cover
-                self.errors = err.args[0]
+            except NumError as num_err:  # no-cover
+                self.errors = num_err.args[0]
                 break
 
             if rule is not None:
@@ -223,8 +223,8 @@ class Machine:
                 except RuleLimit as lim:
                     self.limrul = str(lim)
                     break
-                except NotImplementedError as err:
-                    self.errors = err.args[0]
+                except NotImplementedError as not_impl:
+                    self.errors = not_impl.args[0]
                     break
 
                 if times is not None:
@@ -232,8 +232,8 @@ class Machine:
                     step = -1
                     try:
                         self.rulapp += times
-                    except (NotImplementedError, RecursionError) as err:  # no-cover
-                        self.errors = err.args[0]
+                    except (NotImplementedError, RecursionError) as rulapp_err:  # no-cover
+                        self.errors = rulapp_err.args[0]
                         break
                     continue
 
@@ -255,8 +255,8 @@ class Machine:
 
             try:
                 stepped = tape.step(shift, color, same)
-            except NotImplementedError as err:
-                self.errors = err.args[0]
+            except NotImplementedError as step_err:
+                self.errors = step_err.args[0]
                 break
 
             if step != -1:
