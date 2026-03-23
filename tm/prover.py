@@ -23,10 +23,13 @@ class Prover:
 
     configs: dict[Signature, PastConfigs]
 
+    attempts: int
+
     def __init__(self, prog: GetInstr):
         self.prog = prog
         self.rules = {}
         self.configs = {}
+        self.attempts = 0
 
     @property
     def has_mult_rules(self) -> bool:
@@ -122,11 +125,16 @@ class Prover:
             self.configs[sig] = PastConfigs(state, cycle)
             return None
 
+        if self.attempts > 400:
+            return None
+
         if (deltas := past_configs.next_deltas(state, cycle)) is None:
             return None
 
         if (rule := self.prove_rule(deltas, state, tape, sig)) is None:
             return None
+
+        self.attempts = 0
 
         past_configs.delete_configs(state)
 
@@ -143,6 +151,8 @@ class Prover:
             tape: Tape,
             sig: Signature,
     ) -> Rule | None:
+        self.attempts += 1
+
         tags = tape.clone()
 
         counts = []
