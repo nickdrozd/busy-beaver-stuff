@@ -1,4 +1,4 @@
-.PHONY : all clean clean-python compile coverage idris lint machines rust test test-all type
+.PHONY : all clean clean-python compile coverage idris lint machines profile rust test test-all type
 
 all : machines idris lint test tools
 
@@ -72,7 +72,7 @@ clean-rust :
 
 PYTHON = python3
 
-MODULES = tm tools test *.py
+MODULES = tm tools test perf *.py
 
 RUFF = $(PYTHON) -m ruff
 PYLINT = $(PYTHON) -m pylint
@@ -120,4 +120,7 @@ coverage : rust
 	$(COVERAGE) html
 
 diagrams :
-	pyreverse --only-classnames --no-standalone --colorized -o png tm tools test
+	pyreverse --only-classnames --no-standalone --colorized -o png tm tools test perf
+
+profile :
+	$(MAKE) -C perf
