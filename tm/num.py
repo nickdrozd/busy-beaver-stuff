@@ -683,10 +683,13 @@ class Div(Num):
         self.tower_est = num.tower_est
 
     def __repr__(self) -> str:
-        if MAX_LEAVES < self.leaves:  # no-cover
-            return '(???)'
+        num = (
+            '...'
+            if MAX_LEAVES < self.leaves else
+            str(self.num)
+        )
 
-        return f'({self.num} // {self.den})'
+        return f'({num} // {self.den})'
 
     def __hash__(self) -> int:
         return id(self)
