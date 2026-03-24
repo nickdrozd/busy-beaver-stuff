@@ -112,10 +112,8 @@ class Machine:
             else:
                 try:
                     rulapp_disp = str(rulapp.estimate())
-                except (NotImplementedError, RecursionError) as err:
-                    err = err.args[0]
-                    self.errors = err
-                    rulapp_disp = err
+                except (NotImplementedError, RecursionError):  # no-cover
+                    rulapp_disp = 'estimate-error'
 
             info.append(
                 f'RULAPP: {rulapp_disp}')
@@ -129,7 +127,7 @@ class Machine:
             info.append(
                 f'BLANKS: {blanks}')
 
-        if errors := self.errors:
+        if errors := self.errors:  # no-cover
             info.append(
                 f'ERRORS: {errors}')
 
@@ -237,11 +235,13 @@ class Machine:
                 if times is not None:
                     # print(f'--> applied rule: {rule}')
                     step = -1
-                    try:
-                        self.rulapp += times
-                    except (NotImplementedError, RecursionError) as rulapp_err:  # no-cover
-                        self.errors = rulapp_err.args[0]
-                        break
+
+                    if self.rulapp != -1:  # no-branch
+                        try:
+                            self.rulapp += times
+                        except (NotImplementedError, RecursionError):  # no-cover
+                            self.rulapp = -1
+
                     continue
 
             try:
