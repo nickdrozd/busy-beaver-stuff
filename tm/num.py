@@ -38,7 +38,7 @@ class Num:
 
     leaves: int
 
-    tower_est: int
+    tower_est: int | None
 
     @abstractmethod
     def __int__(self) -> int: ...
@@ -50,9 +50,12 @@ class Num:
     def __hash__(self) -> int: ...
 
     def estimate(self) -> Count:
+        if (tower := self.tower_est) is None:
+            return PentPlus()  # type: ignore[abstract]
+
         est: Exp | Tet
 
-        if (tower := self.tower_est) > 3:
+        if tower > 3:
             est = Tet(10, tower)
         else:
             try:
@@ -187,7 +190,11 @@ class Add(Num):
 
         else:
             self.leaves = l.leaves + r.leaves
-            self.tower_est = max(l.tower_est, r.tower_est)
+            self.tower_est = (
+                None
+                if l.tower_est is None or r.tower_est is None else
+                max(l.tower_est, r.tower_est)
+            )
 
     def __repr__(self) -> str:
         l, r = self.l, self.r
@@ -361,6 +368,9 @@ class Add(Num):
             if l < lo and r < ro:
                 return True
 
+            if self.tower_est is None and other.tower_est is not None:
+                return False
+
         if other == r:
             return l < 0
 
@@ -415,11 +425,13 @@ class Mul(Num):
             self.leaves = 1 + r.leaves
             self.tower_est = r.tower_est
 
-            assert isinstance(r, Exp), (l, r)
-
         else:
             self.leaves = l.leaves + r.leaves
-            self.tower_est = max(l.tower_est, r.tower_est)
+            self.tower_est = (
+                None
+                if l.tower_est is None or r.tower_est is None else
+                max(l.tower_est, r.tower_est)
+            )
 
     def __repr__(self) -> str:
         l, r = self.l, self.r
@@ -880,7 +892,11 @@ class Exp(Num):
         else:
             self.depth = 1 + exp.depth
             self.leaves = 1 + exp.leaves
-            self.tower_est = 1 + exp.tower_est
+            self.tower_est = (
+                None
+                if exp.tower_est is None else
+                1 + exp.tower_est
+            )
 
     def __repr__(self) -> str:
         exp = (
@@ -1175,10 +1191,12 @@ class Exp(Num):
 
             return self < r
 
-        if isinstance(other, Tet):
+        if isinstance(other, Tet | PentPlus):
             return other > self
 
-        assert isinstance(other, Mul)
+        if not isinstance(other, Mul):
+            assert self.tower_est is not None
+            return True
 
         l, r = other.l, other.r
 
@@ -1287,6 +1305,18 @@ class Tet(Num):
         raise NotImplementedError
 
 
+class PentPlus(Num):
+    # pylint: disable = abstract-method
+
+    def __repr__(self) -> str:
+        return '!!!'  # no-cover
+
+    def __lt__(self, other: Count) -> bool:
+        assert not isinstance(other, PentPlus)
+
+        return False
+
+
 def add_exponents(
         l: tuple[Exp, Count],
         r: tuple[Exp, Count],
@@ -1331,7 +1361,8 @@ def gcd(l: int, r: Count) -> int:
     if isinstance(r, Mul):
         return max(gcd(l, r.l), gcd(l, r.r))
 
-    assert isinstance(r, Exp), (l, r)
+    if not isinstance(r, Exp):
+        return 1
 
     if l == (base := r.base):
         return l

@@ -1734,7 +1734,7 @@ class Prover(RunProver):
             if isinstance(marks, int):
                 self.assertEqual(result, marks)
             elif isinstance(marks, str):
-                assert '↑↑' in marks
+                assert '↑↑' in marks or '!!!' in marks
                 assert not isinstance(result, int)
                 self.assertEqual(marks, str(result.estimate()))
             else:

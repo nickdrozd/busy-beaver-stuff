@@ -92,9 +92,14 @@ class Machine:
         )
 
     def __str__(self) -> str:
+        try:
+            marks = show_number(self.marks)
+        except NotImplementedError:  # no-cover
+            marks = '???'
+
         info = [
             f"CYCLES: {self.cycles}",
-            f"MARKS: {show_number(self.marks)}",
+            f"MARKS: {marks}",
             *[
                 "{}: {}".format(
                     cat.upper(),

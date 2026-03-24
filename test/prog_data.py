@@ -3047,7 +3047,7 @@ BACKWARD_CANT_ZLOOP_FALSE_NEGATIVES: set[str] = {
 
 SEGMENT_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 100,
-    "spinout": 129,
+    "spinout": 130,
 }
 
 SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3283,6 +3283,7 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
+        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
     },
 }
 
@@ -3477,7 +3478,7 @@ SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
 CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 7,
     "blank": 102,
-    "spinout": 289,
+    "spinout": 290,
 }
 
 CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3884,6 +3885,7 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
+        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
     },
 }
 
@@ -3985,7 +3987,7 @@ CPS_QUASIHALT_FALSE_NEGATIVES = {
 CTL_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 77,
     "blank": 321,
-    "spinout": 213,
+    "spinout": 214,
 }
 
 CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -4605,6 +4607,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
+        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
     },
 }
 
@@ -5498,6 +5501,7 @@ GRAPH_FALSE_NEGATIVES = {
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
         "1RB ... ... ...  2RC ... ... ...  2RD ... ... ...  2RE ... ... ...  3LE ... 3RE 0RE",
+        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
     },
 }
 
@@ -5767,6 +5771,9 @@ PROVER_HALT: ProverEst = {
 
     # Green-9
     "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": "(10 ↑↑ 30)",
+
+    # Green-10
+    "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": "!!!",
 }
 
 PROVER_SPINOUT: ProverEst = {
@@ -5908,11 +5915,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 366247,
-    "divs": 52371,
-    "exps": 233275,
-    "muls": 167664,
-    "totl": 819557,
+    "adds": 367560,
+    "divs": 52466,
+    "exps": 233427,
+    "muls": 167886,
+    "totl": 821339,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -6239,6 +6246,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(-13 + (5 * (2 ** ...)))",
             "(... // 21)",
         ),
+        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": (
+            2314,
+            "!!!",
+            "((1 + (7 * (3 ** ((-1 + (7 * (3 ** (19 + (6 * !!!))))) // 2)))) // 4)",
+            "(... // 4)",
+        ),
     },
 
     "period-limit: 2 ** ... % 48828125": {
@@ -6250,54 +6263,27 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
         ),
     },
 
-    "ops_times: (-3 + (2 ** ...))": {
-        "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF": (
-            6900,
-            "(10 ↑↑ 65534)",
-            "-1",
-            "(346 + (... + ...))",
-        ),
-    },
-
-    "ops_times: ((-23 + (7 * (3 ** ((-1 + (7 * (3 ** 31))) // 2)))) // 4)": {
-        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": (
-            1966,
-            "3",
-            "3",
-            "(... // 4)",
-        ),
-    },
-
-    "ops_times: (-4 + (2 ** ...))": {
-        "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": (
-            1967,
-            "(10 ↑↑ 65534)",
-            "(39 + (2 ** ...))",
-            "(1301 + (... * ...))",
-        ),
-    },
-
-    "ops_times: (-11 + (2 ** (-1 + (2 ** 23))))": {
-        "1RB ...  1RC 0RA  1RD 1RE  0LE 0LF  0RB 1LD  1LD 0LE": (
-            1503,
-            "(10 ↑↑ 4)",
-            "(-4 + ((2 ** (-1 + (2 ** 23))) * (1 + (2 ** ((2 ** 23) * (-1 + (2 ** (-24 + (2 ** 31)))))))))",
-            "(69 + ((2 ** 21) * (1799 + ((2 ** (-23 + (2 ** (-1 + (2 ** 31))))) + ((2 ** (-24 + (2 ** (-1 + (2 ** 31))))) + ((2 ** (-22 + (2 ** 31))) + ((2 ** (-23 + (2 ** 31))) + ((2 ** (-24 + (2 ** 23))) * (3 + (2 ** (255 * (2 ** 23))))))))))))",
-        ),
-        "1RB ...  1RC 0RA  1RD 1RE  0LE 0LF  0RB 1LD  1RD 0LE": (
-            2701,
-            "(10 ↑↑ 5)",
-            "(-5 + ((2 ** (-1 + (2 ** 23))) * (1 + (2 ** (-2 + ((2 ** 23) * (-1 + (2 ** (-24 + (2 ** (-1 + (2 ** 31))))))))))))",
-            "(456 + ((2 ** 21) * (4883 + ((2 ** (-22 + (2 ** (-1 + (2 ** 31))))) + ((2 ** (-22 + (2 ** (-1 + (2 ** 31))))) + ((2 ** (-22 + (2 ** (-1 + (2 ** 31))))) + ((2 ** (-23 + (2 ** (-1 + (2 ** 31))))) + ((2 ** (-23 + (2 ** (-1 + (2 ** 31))))) + ((2 ** (-23 + (2 ** (-1 + (2 ** 31))))) + ((2 ** (-24 + (2 ** (-1 + (2 ** 31))))) + ((2 ** (-22 + (2 ** 31))) + ((2 ** (-22 + (2 ** 31))) + ((2 ** (-22 + (2 ** 31))) + ((2 ** (-23 + (2 ** 31))) + ((2 ** (-23 + (2 ** 31))) + ((2 ** (-23 + (2 ** 31))) + ((2 ** (-24 + (2 ** 23))) * (15 + (2 ** (255 * (2 ** 23)))))))))))))))))))))",
-        ),
-    },
-
-    "ops_times: ((-49 + (5 * (2 ** (1 + (2 ** (1 + (2 ** (2 ** 5)))))))) // 9)": {
+    "OpSeqResult.__mod__": {
         "1RB 1LA 2LA  1LA 2RC 1LB  1RD 2RB 0LC  0RA ... 0RA": (
-            2269,
-            "(10 ↑↑ 8)",
-            "(-39 + ((2 ** (1 + (2 ** (1 + (2 ** (2 ** 5)))))) * (5 + (5 * (2 ** (-1 + ((2 ** (1 + (2 ** (2 ** 5)))) * (-1 + (2 ** ((2 ** (2 ** 5)) * (-1 + (2 ** ((2 ** 5) * (-1 + (2 ** (-4 + (2 ** (2 ** (1 + (2 ** (2 ** 5)))))))))))))))))))))",
-            "(835 + (... + ...))",
+            2274,
+            "!!!",
+            "(27 + !!!)",
+            "(... // 9)",
+        ),
+        "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF": (
+            6999,
+            "!!!",
+            "(38 + (... + ...))",
+            "(343 + (... + ...))",
+        ),
+    },
+
+    "Add.__lt__: (!!! + -!!!) < 1000": {
+        "1RB ...  1RC 0RA  1RD 1RE  0LE 0LF  0RB 1LD  1LD 0LE": (
+            3186,
+            "!!!",
+            "(-7 + ((2 ** (-1 + (2 ** (3 + !!!)))) + (2 ** (-1 + (2 ** (3 + !!!))))))",
+            "(-81 + (... + ...))",
         ),
     },
 
@@ -6325,6 +6311,18 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ↑↑ 8)",
             "(-4 + (3 * (2 ** (-2 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** 6143)))))))))))))))))))))",
             "(26805 + (... + ...))",
+        ),
+        "1RB ...  1RC 0RA  1RD 1RE  0LE 0LF  0RB 1LD  1RD 0LE": (
+            3817,
+            "!!!",
+            "(5 + (2 ** (23 + (4 * !!!))))",
+            "(492 + (... + ...))",
+        ),
+        "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": (
+            3828,
+            "!!!",
+            "(27 + ((2 ** 16) * (1 + (2 ** (-4 + (2 * !!!))))))",
+            "(1264 + (... + ...))",
         ),
     },
 

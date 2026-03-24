@@ -6,6 +6,7 @@ from tm.num import (
     Div,
     Exp,
     Mul,
+    Num,
     PeriodLimit,
 )
 
@@ -16,7 +17,7 @@ Plus = int
 if TYPE_CHECKING:
     from typing import Final
 
-    from tm.num import Count, Num
+    from tm.num import Count
     from tm.tape import Counts, Index
 
     type Mult = tuple[int, int]
@@ -368,8 +369,11 @@ def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
 
 def apply_ops(count: Count, times: Count, ops: OpSeq) -> Count:
     if not isinstance(times, int):
+        assert not isinstance(count, OpSeqResult)
+        assert not isinstance(times, OpSeqResult)
+
         if Exp.make(10, 5) < times.estimate():  # no-branch
-            raise RuleLimit(f'ops_times: {times}')
+            return OpSeqResult(count, times, ops)
 
         times = int(times)  # no-cover
 
@@ -401,3 +405,99 @@ def apply_ops(count: Count, times: Count, ops: OpSeq) -> Count:
                     result = result.exp
 
     return result
+
+
+class OpSeqResult(Num):
+    count: Count
+    times: Count
+    opseq: OpSeq
+
+    def __init__(self, count: Count, times: Count, opseq: OpSeq):
+        self.count = count
+        self.times = times
+        self.opseq = opseq
+
+        self.depth = 1
+        self.leaves = 2
+        self.tower_est = None
+
+    def __repr__(self) -> str:
+        return '!!!'
+
+    def __hash__(self) -> int:
+        return id(self)
+
+    def digits(self) -> int:  # noqa: PLR6301
+        raise OverflowError  # no-cover
+
+    @property
+    def pos(self) -> bool:
+        return True
+
+    def __int__(self) -> int:
+        raise NotImplementedError  # no-cover
+
+    def __neg__(self) -> Count:
+        return Mul.make(-1, self)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, OpSeqResult):
+            return False
+
+        return (
+            self.count == other.count
+                and self.times == other.times
+                and self.opseq == other.opseq
+        )
+
+    def __lt__(self, other: Count) -> bool:
+        if isinstance(other, int):
+            return False
+
+        if not isinstance(other, OpSeqResult):  # no-cover
+            assert other.tower_est is not None
+            return False
+
+        assert self.opseq == other.opseq
+
+        if self.count <= other.count and self.times <= other.times:
+            return True
+
+        if other.count < self.count and other.times < self.times:  # no-cover
+            return False
+
+        if self.count == other.count:
+            return self.times < other.times
+
+        if self.times == other.times:  # no-cover
+            return self.count < other.count
+
+        raise NotImplementedError(f'{self} < {other}')
+
+    def __add__(self, other: Count) -> Count:
+        if other == 0:
+            return self
+
+        assert other != self
+
+        return Add.make(other, self)
+
+    def __radd__(self, other: int) -> Count:
+        return self + other
+
+    def __sub__(self, other: Count) -> Count:
+        return -other + self
+
+    def __mul__(self, other: Count) -> Count:
+        assert isinstance(other, int)
+
+        return  Mul.make(other, self)
+
+    def __rmul__(self, other: int) -> Count:
+        return self * other
+
+    def __mod__(self, mod: int) -> int:
+        raise NotImplementedError('OpSeqResult.__mod__')
+
+    def __floordiv__(self, other: Count) -> Count:
+        raise NotImplementedError('OpSeqResult.__floordiv__')  # no-cover
