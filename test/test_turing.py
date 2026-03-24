@@ -1423,6 +1423,9 @@ class RunProver(TuringTest):
         opt_macro: int | None = None,
         **opts,
     ):
+        if blocks is not None:
+            opt_macro = None
+
         self.machine = Machine(
             prog,
             blocks = blocks,
@@ -1892,6 +1895,7 @@ class Prover(RunProver):
                     prog,
                     opt_macro = 4000,
                     analyze = False,
+                    blocks = MACRO_FAILURES.get(prog),
                     backsym = REQUIRES_BACKSYM.get(prog),
                     print_prog = not show,
                 )

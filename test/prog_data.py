@@ -5860,6 +5860,8 @@ MACRO_FAILURES = {
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC": 4,
 
+    "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": 0,
+
     "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  ... 2RB 2LA": 4,
 
     "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB": 0,
@@ -5899,9 +5901,6 @@ REQUIRES_BACKSYM = {
     # 2/5
     "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": 2,
 
-    # 3/4
-    "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": 1,
-
     # 6/2
     "1RB 1LD  0RC ...  1RD 0LA  1RE 1RF  1LC 1LE  1RA 0RD": 1,
 }
@@ -5909,11 +5908,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 366950,
-    "divs": 52394,
-    "exps": 298942,
-    "muls": 167773,
-    "totl": 886059,
+    "adds": 366247,
+    "divs": 52371,
+    "exps": 233275,
+    "muls": 167664,
+    "totl": 819557,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -6271,10 +6270,10 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
 
     "ops_times: (-4 + (2 ** ...))": {
         "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": (
-            3992,
-            "(10 ↑↑ 65533)",
-            "(11 + (... * ...))",
-            "(198165 + (... * ...))",
+            1967,
+            "(10 ↑↑ 65534)",
+            "(39 + (2 ** ...))",
+            "(1301 + (... * ...))",
         ),
     },
 
