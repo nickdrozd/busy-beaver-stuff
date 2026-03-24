@@ -36,6 +36,16 @@ RULE_DESCENT: Final[int] = 50
 
 
 class RuleLimit(Exception):
+    @staticmethod
+    def false_positive() -> bool:
+        return False
+
+class UnhandledOp(RuleLimit):
+    @staticmethod
+    def false_positive() -> bool:
+        return True
+
+class SecondDiffRule(RuleLimit):
     pass
 
 class UnknownRule(Exception):
@@ -45,12 +55,6 @@ class InfiniteRule(Exception):
     pass
 
 class SuspectedRule(Exception):
-    pass
-
-class SecondDiffRule(Exception):
-    pass
-
-class UnhandledOp(RuleLimit):
     pass
 
 

@@ -7,7 +7,6 @@ from tm.prover import ConfigLimit, Prover
 from tm.rules import (
     InfiniteRule,
     RuleLimit,
-    SecondDiffRule,
     SuspectedRule,
     apply_rule,
 )
@@ -152,6 +151,14 @@ class Machine:
 
         return ' | '.join(info)
 
+    def handle_rule_limit(self, lim: RuleLimit) -> None:
+        msg = str(lim)
+
+        if lim.false_positive():
+            self.errors = msg
+        else:
+            self.limrul = msg
+
     @property
     def simple_termination(self) -> Count | None:
         return (
@@ -202,8 +209,8 @@ class Machine:
             except InfiniteRule:
                 self.infrul = step
                 break
-            except (RuleLimit, NotImplementedError, SecondDiffRule) as lim:
-                self.limrul = str(lim)
+            except RuleLimit as lim:
+                self.handle_rule_limit(lim)
                 break
             except ConfigLimit:  # no-cover
                 self.cfglim = step
@@ -213,7 +220,7 @@ class Machine:
                 rule = None
             except MacroInfLoop:
                 rule = None
-            except NumError as num_err:  # no-cover
+            except (NumError, NotImplementedError) as num_err:  # no-cover
                 self.errors = num_err.args[0]
                 break
 
@@ -221,7 +228,7 @@ class Machine:
                 try:
                     times = apply_rule(rule, tape)
                 except RuleLimit as lim:
-                    self.limrul = str(lim)
+                    self.handle_rule_limit(lim)
                     break
                 except NotImplementedError as not_impl:
                     self.errors = not_impl.args[0]
