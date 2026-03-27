@@ -326,6 +326,8 @@ def apply_rule(rule: Rule, tape: IndexTape) -> Count | None:
 
     times, min_pos, min_res = apps
 
+    results: dict[Index, Count] = {}
+
     for pos, diff in rule.items():
         count = tape.get_count(pos)
 
@@ -341,6 +343,9 @@ def apply_rule(rule: Rule, tape: IndexTape) -> Count | None:
             case tuple() as ops:  # no-branch
                 result = apply_ops(count, times, ops)
 
+        results[pos] = result
+
+    for pos, result in results.items():
         tape.set_count(pos, result)
 
     return times
