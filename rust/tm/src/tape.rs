@@ -872,17 +872,60 @@ impl BigSpan {
 
 #[cfg(test)]
 macro_rules! tape {
-    (
-        $ scan : literal,
-        [ $ ( $ lspan : expr ), * ],
-        [ $ ( $ rspan : expr ), * ]
-    ) => {
-        BigTape {
-            scan: $ scan,
-            lspan: Span::from_data(vec! [ $ ( $ lspan ), * ]),
-            rspan: Span::from_data(vec! [ $ ( $ rspan ), * ]),
-        }
+    ($tape:expr) => {
+        BigTape::from($tape)
     };
+}
+
+#[cfg(test)]
+impl From<&str> for BigTape {
+    fn from(s: &str) -> Self {
+        fn parse_block(part: &str) -> (Color, usize) {
+            if let Some((color, count)) = part.split_once('^') {
+                (color.parse().unwrap(), count.parse().unwrap())
+            } else if let Some(color) = part.strip_suffix("..") {
+                (color.parse().unwrap(), 0)
+            } else {
+                (part.parse().unwrap(), 1)
+            }
+        }
+
+        let parts: Vec<&str> = s.split_whitespace().collect();
+
+        let scan_pos = parts
+            .iter()
+            .position(|p| p.starts_with('[') && p.ends_with(']'))
+            .unwrap();
+
+        let scan = parts[scan_pos]
+            .trim_matches(|c| c == '[' || c == ']')
+            .parse()
+            .unwrap();
+
+        let lspan = Span::from_data(
+            parts[..scan_pos]
+                .iter()
+                .rev()
+                .map(|part| parse_block(part))
+                .collect(),
+        );
+
+        let rspan = Span::from_data(
+            parts[scan_pos + 1..]
+                .iter()
+                .map(|part| parse_block(part))
+                .collect(),
+        );
+
+        Self { scan, lspan, rspan }
+    }
+}
+
+#[cfg(test)]
+impl From<&str> for EnumTape {
+    fn from(s: &str) -> Self {
+        (&BigTape::from(s)).into()
+    }
 }
 
 #[cfg(test)]
@@ -954,7 +997,7 @@ fn test_init() {
 
 #[test]
 fn test_clone() {
-    let tape = tape! { 2, [(1, 1), (0, 1), (1, 1)], [(2, 1), (1, 2)] };
+    let tape = tape!("1 0 1 [2] 2 1^2");
 
     let mut copy_1 = tape.clone();
     let mut copy_2 = tape.clone();
@@ -1001,11 +1044,7 @@ macro_rules! rule {
 
 #[test]
 fn test_apply_1() {
-    let mut tape = tape! {
-        3,
-        [(1, 12), (2, 3)],
-        [(4, 15), (5, 2), (6, 2)]
-    };
+    let mut tape = tape!("2^3 1^12 [3] 4^15 5^2 6^2");
 
     tape.assert(35, "2^3 1^12 [3] 4^15 5^2 6^2", "2 1 [3] 4 5 6");
 
@@ -1019,11 +1058,7 @@ fn test_apply_1() {
 
 #[test]
 fn test_apply_2() {
-    let mut tape = tape! {
-        4,
-        [(4, 2)],
-        [(5, 60), (2, 1), (4, 1), (5, 7), (1, 1)]
-    };
+    let mut tape = tape!("4^2 [4] 5^60 2 4 5^7 1");
 
     tape.assert(73, "4^2 [4] 5^60 2 4 5^7 1", "4 [4] 5 (2) (4) 5 (1)");
 
@@ -1041,11 +1076,7 @@ fn test_apply_2() {
 
 #[test]
 fn test_apply_3() {
-    let mut tape = tape! {
-        0,
-        [(1, 152), (2, 655_345), (3, 1)],
-        []
-    };
+    let mut tape = tape!("3 2^655345 1^152 [0]");
 
     tape.assert(655_498, "3 2^655345 1^152 [0]", "(3) 2 1 [0]");
 
@@ -1065,11 +1096,7 @@ fn test_apply_3() {
 
 #[test]
 fn test_apply_4() {
-    let mut tape = tape! {
-        2,
-        [(2, 506)],
-        [(2, 1), (1, 1), (0, 10), (1, 1)]
-    };
+    let mut tape = tape!("2^506 [2] 2 1 0^10 1");
 
     tape.assert(510, "2^506 [2] 2 1 0^10 1", "2 [2] (2) (1) 0 (1)");
 
@@ -1121,18 +1148,14 @@ impl EnumTape {
 
 #[cfg(test)]
 macro_rules! enum_tape {
-    ( $ scan : literal, [ $( $ lspan : expr ),* ], [ $( $ rspan : expr ),* ]) => {
-        EnumTape::from ( & tape! { $ scan, [ $( $ lspan ),* ], [ $( $ rspan ),* ] } )
+    ($tape:expr) => {
+        EnumTape::from($tape)
     };
 }
 
 #[test]
 fn test_offsets_1() {
-    let mut tape = enum_tape! {
-        0,
-        [(1, 11), (4, 1), (3, 11), (2, 1)],
-        []
-    };
+    let mut tape = enum_tape!("2 3^11 4 1^11 [0]");
 
     tape.assert("2 3^11 4 1^11 [0]", (0, 0), (0, 0));
 
@@ -1167,7 +1190,7 @@ fn test_offsets_1() {
 
 #[test]
 fn test_offsets_2() {
-    let mut tape = enum_tape! { 0, [(2, 414_422_565), (3, 6)], [] };
+    let mut tape = enum_tape!("3^6 2^414422565 [0]");
 
     tape.assert("3^6 2^414422565 [0]", (0, 0), (0, 0));
 
@@ -1190,7 +1213,7 @@ fn test_offsets_2() {
 
 #[test]
 fn test_offsets_3() {
-    let mut tape = enum_tape! { 3, [(3, 9)], [(1, 10)] };
+    let mut tape = enum_tape!("3^9 [3] 1^10");
 
     tape.tstep(0, 1, 0);
 
@@ -1199,11 +1222,7 @@ fn test_offsets_3() {
 
 #[test]
 fn test_offsets_4() {
-    let mut tape = enum_tape! {
-        28,
-        [(30, 6), (6, 1)],
-        [(27, 5), (12, 1)]
-    };
+    let mut tape = enum_tape!("6 30^6 [28] 27^5 12");
 
     tape.assert("6 30^6 [28] 27^5 12", (0, 0), (0, 0));
 
@@ -1223,7 +1242,7 @@ fn test_offsets_4() {
 
 #[test]
 fn test_edges_1() {
-    let mut tape = enum_tape! { 0, [], [] };
+    let mut tape = enum_tape!("[0]");
 
     tape.tstep(0, 1, 0);
 
@@ -1232,7 +1251,7 @@ fn test_edges_1() {
 
 #[test]
 fn test_edges_2() {
-    let mut tape = enum_tape! { 1, [(1, 3)], [] };
+    let mut tape = enum_tape!("1^3 [1]");
 
     tape.tstep(0, 2, 1);
 
