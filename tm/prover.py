@@ -44,6 +44,28 @@ class Prover:
     def config_count(self) -> int:
         return len(self.configs)
 
+
+    def _quick_sig_precheck(self, tape: Tape, sig: Signature) -> bool:
+        if tape.scan != sig[0]:
+            return False
+        lsig, rsig = sig[1], sig[2]
+        if len(tape.lspan) != len(lsig) or len(tape.rspan) != len(rsig):
+            return False
+        cur = tape.signature
+        if len(cur[1]) != len(lsig) or len(cur[2]) != len(rsig):
+            return False
+        # first/last family must match on each non-empty side
+        if lsig:
+            if cur[1][0] != lsig[0] or cur[1][-1] != lsig[-1]:
+                return False
+        if rsig:
+            if cur[2][0] != rsig[0] or cur[2][-1] != rsig[-1]:
+                return False
+        # count vectors must have same arity as the signature skeleton
+        lc, rc = tape.counts
+        return len(lc) == len(lsig) and len(rc) == len(rsig)
+
+
     def get_rule(
             self,
             state: State,
@@ -131,6 +153,9 @@ class Prover:
         if (deltas := past_configs.next_deltas(state, cycle)) is None:
             return None
 
+        if not self._quick_sig_precheck(tape, sig):
+            return None
+
         if (rule := self.prove_rule(deltas, state, tape, sig)) is None:
             return None
 
@@ -153,15 +178,19 @@ class Prover:
     ) -> Rule | None:
         self.attempts += 1
 
+        if not self._quick_sig_precheck(tape, sig):
+            return None
+
         tags = tape.clone()
 
         counts = []
 
         for delta in deltas:
-            if (
-                self.run_simulator(delta, state, tags) != state
-                or not tags.sig_compatible(sig)
-            ):
+            if self.run_simulator(delta, state, tags) != state:
+                return None
+            if not self._quick_sig_precheck(tags, sig):
+                return None
+            if not tags.sig_compatible(sig):
                 return None
 
             counts.append(tags.counts)

@@ -1892,10 +1892,7 @@ class Prover(RunProver):
             for prog, (cycles, est, string, rulapp) in progs.items():
                 self.run_bb(
                     prog,
-                    opt_macro = 4000,
                     analyze = False,
-                    blocks = MACRO_FAILURES.get(prog),
-                    backsym = REQUIRES_BACKSYM.get(prog),
                     print_prog = not show,
                 )
 
