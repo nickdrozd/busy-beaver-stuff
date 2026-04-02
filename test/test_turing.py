@@ -1226,10 +1226,9 @@ class Recur(TuringTest):
                 run_loose_linrec_machine(prog, steps).xlimit)
 
     def test_recur(self):
-        self._test_recur(
-            RECUR_COMPACT
-            | RECUR_DIFFUSE
-        )
+        recur = RECUR_COMPACT | RECUR_DIFFUSE
+
+        self._test_recur(recur)
 
         self._test_recur(
             RECUR_BLANK_IN_PERIOD,
