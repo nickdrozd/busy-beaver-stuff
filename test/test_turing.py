@@ -91,6 +91,7 @@ SEGMENT_LIMIT = 22
 ########################################
 
 HALT_HOLDOUT_FILES = (
+    'halt-2-5',
     'halt-6-2',
     'halt-7-instr',
 )
