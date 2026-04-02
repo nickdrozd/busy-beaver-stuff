@@ -103,8 +103,9 @@ class Num:
 
             assert self != l
 
-        if isinstance(other, Add):
-            if isinstance(l, int) and abs(l) < 10:
+            if (isinstance(other, Add)
+                    and isinstance(l, int)
+                    and abs(l) < 10):
                 return self < r
 
         raise_lt_not_implemented(self, other)
