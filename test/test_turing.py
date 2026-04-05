@@ -1708,7 +1708,6 @@ class Prover(RunProver):
 
             self.run_bb(
                 prog,
-                sim_lim = 10 ** 8,
                 opt_macro = 3_000,
                 backsym = REQUIRES_BACKSYM.get(prog),
                 normal = False,
