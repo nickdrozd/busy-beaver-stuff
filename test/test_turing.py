@@ -1703,7 +1703,7 @@ class Prover(RunProver):
             if prog in FAILURES:
                 continue
 
-            if prog in PROVER_HALT_TOO_SLOW and not RUN_SLOW:
+            if prog in PROVER_HALT_TOO_SLOW:
                 continue
 
             self.run_bb(
