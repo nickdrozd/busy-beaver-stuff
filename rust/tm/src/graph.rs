@@ -515,7 +515,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             return true;
         }
 
-        let (nodes, _adj) = self.build_abs_graph();
+        let (nodes, adj) = self.build_abs_graph();
 
         if nodes.is_empty() || nodes.len() >= MAX_NODES {
             return false;
@@ -540,73 +540,219 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                 #[expect(clippy::cast_possible_truncation)]
                 let wild: u8 = colors as u8;
 
-                let extremal_ok = erasers.iter().all(|&(st, shift)| {
-                    let reachable_eraser =
-                        nodes.iter().skip(1).any(|cfg| {
-                            if cfg.state != st {
-                                return false;
-                            }
+                let mut rev_adj: Vec<Vec<usize>> =
+                    vec![vec![]; nodes.len()];
+                for (u, outs) in adj.iter().enumerate() {
+                    for &v in outs {
+                        if v < nodes.len() {
+                            rev_adj[v].push(u);
+                        }
+                    }
+                }
 
-                            let head = cfg.head as usize;
-                            if head >= cfg.tape.len() {
-                                return false;
-                            }
+                let mut reachable_eraser = vec![false; nodes.len()];
+                let mut eraser_shift: Vec<Option<bool>> =
+                    vec![None; nodes.len()];
 
-                            let cell = cfg.tape[head];
-                            cell == wit || cell == wild
-                        });
-
-                    if !reachable_eraser {
-                        return true;
+                for (i, cfg) in nodes.iter().enumerate().skip(1) {
+                    let head = cfg.head as usize;
+                    if head >= cfg.tape.len() {
+                        continue;
                     }
 
-                    let mut saw_incoming = false;
+                    let cell = cfg.tape[head];
+                    if cell != wit && cell != wild {
+                        continue;
+                    }
 
-                    for ((_, read), &(write, in_shift, dst)) in
-                        self.iter()
-                    {
-                        if dst != st {
+                    for &(st, shift) in &erasers {
+                        if cfg.state == st {
+                            reachable_eraser[i] = true;
+                            eraser_shift[i] = Some(shift);
+                            break;
+                        }
+                    }
+                }
+
+                if !reachable_eraser.iter().any(|&b| b) {
+                    return false;
+                }
+
+                let witness_abs_ok =
+                    nodes.iter().enumerate().skip(1).all(|(i, cfg)| {
+                        if !reachable_eraser[i] {
+                            return true;
+                        }
+
+                        let Some(shift) = eraser_shift[i] else {
+                            return true;
+                        };
+
+                        let head = cfg.head as usize;
+                        if head >= cfg.tape.len() {
+                            return true;
+                        }
+
+                        if shift {
+                            cfg.tape[..head].contains(&wit)
+                        } else {
+                            cfg.tape[head + 1..].contains(&wit)
+                        }
+                    });
+
+                let mut safe_r = vec![false; nodes.len()];
+                let mut safe_l = vec![false; nodes.len()];
+
+                for (i, cfg) in nodes.iter().enumerate() {
+                    let head = cfg.head as usize;
+                    if head >= cfg.tape.len() {
+                        continue;
+                    }
+                    if cfg.tape[..head].contains(&wit) {
+                        safe_r[i] = true;
+                    }
+                    if cfg.tape[head + 1..].contains(&wit) {
+                        safe_l[i] = true;
+                    }
+                }
+
+                loop {
+                    let mut changed = false;
+
+                    for q in 1..nodes.len() {
+                        let Some(dir) = eraser_shift[q] else {
+                            continue;
+                        };
+
+                        let safe_q =
+                            if dir { safe_r[q] } else { safe_l[q] };
+                        if safe_q {
                             continue;
                         }
 
-                        saw_incoming = true;
+                        let mut saw_pred = false;
+                        let mut ok = true;
 
-                        if in_shift != shift {
-                            return false;
+                        'preds: for &pidx in &rev_adj[q] {
+                            let pred = &nodes[pidx];
+                            let head = pred.head as usize;
+                            if head >= pred.tape.len() {
+                                ok = false;
+                                break;
+                            }
+
+                            let cur = pred.tape[head];
+                            let mut reads: Vec<u8> = vec![];
+                            if cur == wild {
+                                reads.extend(0..(colors as u8));
+                            } else {
+                                reads.push(cur);
+                            }
+
+                            let mut matched_any = false;
+                            let mut pred_ok = true;
+
+                            for read in reads {
+                                let Some(&(write, sh, dst)) =
+                                    self.get(&(pred.state, read))
+                                else {
+                                    continue;
+                                };
+
+                                let mut nxt = pred.clone();
+                                nxt.state = dst;
+                                nxt.tape[head] = write;
+
+                                if sh {
+                                    let new_head = head + 1;
+                                    if new_head >= nxt.tape.len() {
+                                        let new_cell =
+                                            if nxt.right_unknown {
+                                                wild
+                                            } else {
+                                                0
+                                            };
+                                        nxt.tape.push(new_cell);
+                                    }
+                                    nxt.head = new_head as u8;
+                                } else {
+                                    if head == 0 {
+                                        let new_cell =
+                                            if nxt.left_unknown {
+                                                wild
+                                            } else {
+                                                0
+                                            };
+                                        nxt.tape.insert(0, new_cell);
+                                        nxt.head = 0;
+                                    } else {
+                                        nxt.head = (head - 1) as u8;
+                                    }
+                                }
+
+                                nxt.normalize();
+
+                                if nxt != nodes[q].clone() {
+                                    continue;
+                                }
+
+                                matched_any = true;
+
+                                if sh != dir {
+                                    pred_ok = false;
+                                    break;
+                                }
+
+                                let established =
+                                    read == wit || write == wit;
+                                let inherited = if dir {
+                                    safe_r[pidx]
+                                } else {
+                                    safe_l[pidx]
+                                };
+
+                                if !(established || inherited) {
+                                    pred_ok = false;
+                                    break;
+                                }
+                            }
+
+                            if !matched_any || !pred_ok {
+                                ok = false;
+                                break 'preds;
+                            }
+
+                            saw_pred = true;
                         }
 
-                        if read != wit && write != wit {
-                            return false;
+                        if saw_pred && ok {
+                            if dir {
+                                safe_r[q] = true;
+                            } else {
+                                safe_l[q] = true;
+                            }
+                            changed = true;
                         }
                     }
 
-                    saw_incoming
-                });
+                    if !changed {
+                        break;
+                    }
+                }
 
-                let witness_abs_ok =
-                    erasers.iter().all(|&(st, shift)| {
-                        nodes.iter().skip(1).all(|cfg| {
-                            if cfg.state != st {
-                                return true;
-                            }
+                let extremal_ok = nodes.iter().enumerate().skip(1).all(
+                    |(i, _cfg)| {
+                        if !reachable_eraser[i] {
+                            return true;
+                        }
 
-                            let head = cfg.head as usize;
-                            if head >= cfg.tape.len() {
-                                return true;
-                            }
-
-                            let cell = cfg.tape[head];
-                            if cell != wild && cell != wit {
-                                return true;
-                            }
-
-                            if shift {
-                                cfg.tape[..head].contains(&wit)
-                            } else {
-                                cfg.tape[head + 1..].contains(&wit)
-                            }
-                        })
-                    });
+                        match eraser_shift[i] {
+                            Some(true) => safe_r[i],
+                            Some(false) => safe_l[i],
+                            None => true,
+                        }
+                    },
+                );
 
                 extremal_ok || witness_abs_ok
             });
@@ -615,14 +761,13 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             return true;
         }
 
-        {
-            #[expect(clippy::cast_possible_truncation)]
-            let wild: u8 = colors as u8;
+        #[expect(clippy::cast_possible_truncation)]
+        let wild: u8 = colors as u8;
 
-            nodes.iter().skip(1).all(|cfg| {
-                !cfg.tape.iter().all(|&x| x == 0 || x == wild)
-            })
-        }
+        nodes
+            .iter()
+            .skip(1)
+            .all(|cfg| !cfg.tape.iter().all(|&x| x == 0 || x == wild))
     }
 
     fn graph_cant_blank_fast(&self) -> bool {
