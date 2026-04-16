@@ -510,6 +510,10 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         true
     }
 
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::excessive_nesting
+    )]
     pub fn graph_cant_blank(&self) -> bool {
         if self.graph_cant_blank_fast() {
             return true;
@@ -521,11 +525,13 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             return false;
         }
 
+        let wild: u8 = colors as u8;
+
         let witness_ok = self
             .get(&(0, 0))
             .and_then(|&(wit, _, _)| (wit != 0).then_some(wit))
             .is_some_and(|wit| {
-                let erasers: Vec<(State, bool)> = self
+                let mut eraser_kinds: Vec<(State, bool)> = self
                     .iter()
                     .filter_map(|((st, read), &(write, shift, _))| {
                         (read == wit && write == 0)
@@ -533,12 +539,12 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                     })
                     .collect();
 
-                if erasers.is_empty() {
+                eraser_kinds.sort_unstable();
+                eraser_kinds.dedup();
+
+                if eraser_kinds.is_empty() {
                     return false;
                 }
-
-                #[expect(clippy::cast_possible_truncation)]
-                let wild: u8 = colors as u8;
 
                 let mut rev_adj: Vec<Vec<usize>> =
                     vec![vec![]; nodes.len()];
@@ -550,133 +556,131 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                     }
                 }
 
-                let mut reachable_eraser = vec![false; nodes.len()];
-                let mut eraser_shift: Vec<Option<bool>> =
-                    vec![None; nodes.len()];
+                let mut any_kind_reachable = false;
 
-                for (i, cfg) in nodes.iter().enumerate().skip(1) {
-                    let head = cfg.head as usize;
-                    if head >= cfg.tape.len() {
-                        continue;
-                    }
-
-                    let cell = cfg.tape[head];
-                    if cell != wit && cell != wild {
-                        continue;
-                    }
-
-                    for &(st, shift) in &erasers {
-                        if cfg.state == st {
-                            reachable_eraser[i] = true;
-                            eraser_shift[i] = Some(shift);
-                            break;
+                for &(kind_state, kind_shift) in &eraser_kinds {
+                    let mut relevant = vec![false; nodes.len()];
+                    for (i, cfg) in nodes.iter().enumerate().skip(1) {
+                        if cfg.state != kind_state {
+                            continue;
                         }
-                    }
-                }
-
-                if !reachable_eraser.iter().any(|&b| b) {
-                    return false;
-                }
-
-                let witness_abs_ok =
-                    nodes.iter().enumerate().skip(1).all(|(i, cfg)| {
-                        if !reachable_eraser[i] {
-                            return true;
-                        }
-
-                        let Some(shift) = eraser_shift[i] else {
-                            return true;
-                        };
 
                         let head = cfg.head as usize;
                         if head >= cfg.tape.len() {
-                            return true;
+                            continue;
                         }
 
-                        if shift {
-                            cfg.tape[..head].contains(&wit)
-                        } else {
-                            cfg.tape[head + 1..].contains(&wit)
+                        let cell = cfg.tape[head];
+                        if cell == wit || cell == wild {
+                            relevant[i] = true;
                         }
-                    });
+                    }
 
-                let mut safe_r = vec![false; nodes.len()];
-                let mut safe_l = vec![false; nodes.len()];
-
-                for (i, cfg) in nodes.iter().enumerate() {
-                    let head = cfg.head as usize;
-                    if head >= cfg.tape.len() {
+                    if !relevant.iter().any(|&b| b) {
                         continue;
                     }
-                    if cfg.tape[..head].contains(&wit) {
-                        safe_r[i] = true;
+                    any_kind_reachable = true;
+
+                    let witness_abs_ok =
+                        nodes.iter().enumerate().skip(1).all(
+                            |(i, cfg)| {
+                                if !relevant[i] {
+                                    return true;
+                                }
+
+                                let head = cfg.head as usize;
+                                if head >= cfg.tape.len() {
+                                    return true;
+                                }
+
+                                if kind_shift {
+                                    cfg.tape[..head].contains(&wit)
+                                } else {
+                                    cfg.tape[head + 1..].contains(&wit)
+                                }
+                            },
+                        );
+
+                    if witness_abs_ok {
+                        continue;
                     }
-                    if cfg.tape[head + 1..].contains(&wit) {
-                        safe_l[i] = true;
-                    }
-                }
 
-                loop {
-                    let mut changed = false;
+                    let mut relevant_left = vec![false; nodes.len()];
+                    let mut relevant_right = vec![false; nodes.len()];
+                    let mut safe_left = vec![false; nodes.len()];
+                    let mut safe_right = vec![false; nodes.len()];
 
-                    for q in 1..nodes.len() {
-                        let Some(dir) = eraser_shift[q] else {
-                            continue;
-                        };
-
-                        let safe_q =
-                            if dir { safe_r[q] } else { safe_l[q] };
-                        if safe_q {
+                    for (i, cfg) in nodes.iter().enumerate() {
+                        let head = cfg.head as usize;
+                        if head >= cfg.tape.len() {
                             continue;
                         }
 
-                        let mut saw_pred = false;
-                        let mut ok = true;
+                        safe_left[i] = cfg.tape[..head].contains(&wit);
+                        safe_right[i] =
+                            cfg.tape[head + 1..].contains(&wit);
 
-                        'preds: for &pidx in &rev_adj[q] {
-                            let pred = &nodes[pidx];
-                            let head = pred.head as usize;
-                            if head >= pred.tape.len() {
-                                ok = false;
-                                break;
-                            }
-
-                            let cur = pred.tape[head];
-                            let mut reads: Vec<u8> = vec![];
-                            if cur == wild {
-                                reads.extend(0..(colors as u8));
+                        if relevant[i] {
+                            if kind_shift {
+                                relevant_left[i] = true;
                             } else {
-                                reads.push(cur);
+                                relevant_right[i] = true;
+                            }
+                        }
+                    }
+
+                    loop {
+                        let mut changed = false;
+
+                        for q in 1..nodes.len() {
+                            let need_left = relevant_left[q];
+                            let need_right = relevant_right[q];
+                            if !need_left && !need_right {
+                                continue;
                             }
 
-                            let mut matched_any = false;
-                            let mut pred_ok = true;
-
-                            for read in reads {
-                                let Some(&(write, sh, dst)) =
-                                    self.get(&(pred.state, read))
-                                else {
+                            for &pidx in &rev_adj[q] {
+                                let pred = &nodes[pidx];
+                                let head = pred.head as usize;
+                                if head >= pred.tape.len() {
                                     continue;
+                                }
+
+                                let cur = pred.tape[head];
+                                let reads: Vec<u8> = if cur == wild {
+                                    (0..(colors as u8)).collect()
+                                } else {
+                                    vec![cur]
                                 };
 
-                                let mut nxt = pred.clone();
-                                nxt.state = dst;
-                                nxt.tape[head] = write;
+                                for read in reads {
+                                    let Some(&(write, sh, dst)) =
+                                        self.get(&(pred.state, read))
+                                    else {
+                                        continue;
+                                    };
 
-                                if sh {
-                                    let new_head = head + 1;
-                                    if new_head >= nxt.tape.len() {
-                                        let new_cell =
-                                            if nxt.right_unknown {
-                                                wild
-                                            } else {
-                                                0
-                                            };
-                                        nxt.tape.push(new_cell);
+                                    if sh != kind_shift {
+                                        continue;
                                     }
-                                    nxt.head = new_head as u8;
-                                } else {
-                                    if head == 0 {
+
+                                    let mut nxt = pred.clone();
+                                    nxt.state = dst;
+                                    nxt.tape[head] = write;
+
+                                    if sh {
+                                        let new_head = head + 1;
+                                        if new_head >= nxt.tape.len() {
+                                            let new_cell =
+                                                if nxt.right_unknown {
+                                                    wild
+                                                } else {
+                                                    0
+                                                };
+                                            nxt.tape.push(new_cell);
+                                        }
+                                        nxt.head = new_head as u8;
+                                    } else if head == 0 {
                                         let new_cell =
                                             if nxt.left_unknown {
                                                 wild
@@ -688,81 +692,288 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
                                     } else {
                                         nxt.head = (head - 1) as u8;
                                     }
-                                }
 
-                                nxt.normalize();
+                                    nxt.normalize();
 
-                                if nxt != nodes[q].clone() {
-                                    continue;
-                                }
+                                    if nxt != nodes[q] {
+                                        continue;
+                                    }
 
-                                matched_any = true;
-
-                                if sh != dir {
-                                    pred_ok = false;
-                                    break;
-                                }
-
-                                let established =
-                                    read == wit || write == wit;
-                                let inherited = if dir {
-                                    safe_r[pidx]
-                                } else {
-                                    safe_l[pidx]
-                                };
-
-                                if !(established || inherited) {
-                                    pred_ok = false;
-                                    break;
+                                    if need_left && !relevant_left[pidx]
+                                    {
+                                        relevant_left[pidx] = true;
+                                        changed = true;
+                                    }
+                                    if need_right
+                                        && !relevant_right[pidx]
+                                    {
+                                        relevant_right[pidx] = true;
+                                        changed = true;
+                                    }
                                 }
                             }
-
-                            if !matched_any || !pred_ok {
-                                ok = false;
-                                break 'preds;
-                            }
-
-                            saw_pred = true;
                         }
 
-                        if saw_pred && ok {
-                            if dir {
-                                safe_r[q] = true;
-                            } else {
-                                safe_l[q] = true;
-                            }
-                            changed = true;
+                        if !changed {
+                            break;
                         }
                     }
 
-                    if !changed {
-                        break;
+                    loop {
+                        let mut changed = false;
+
+                        for q in 1..nodes.len() {
+                            if relevant_left[q] && !safe_left[q] {
+                                let mut saw_pred = false;
+                                let mut ok = true;
+
+                                'left_preds: for &pidx in &rev_adj[q] {
+                                    if !relevant_left[pidx] {
+                                        continue;
+                                    }
+
+                                    let pred = &nodes[pidx];
+                                    let head = pred.head as usize;
+                                    if head >= pred.tape.len() {
+                                        ok = false;
+                                        break;
+                                    }
+
+                                    let cur = pred.tape[head];
+                                    let reads: Vec<u8> = if cur == wild
+                                    {
+                                        (0..(colors as u8)).collect()
+                                    } else {
+                                        vec![cur]
+                                    };
+
+                                    let mut matched_any = false;
+                                    let mut pred_ok = true;
+
+                                    for read in reads {
+                                        let Some(&(write, sh, dst)) =
+                                            self.get(&(
+                                                pred.state, read,
+                                            ))
+                                        else {
+                                            continue;
+                                        };
+
+                                        if sh != kind_shift {
+                                            continue;
+                                        }
+
+                                        let mut nxt = pred.clone();
+                                        nxt.state = dst;
+                                        nxt.tape[head] = write;
+
+                                        if sh {
+                                            let new_head = head + 1;
+                                            if new_head
+                                                >= nxt.tape.len()
+                                            {
+                                                let new_cell = if nxt
+                                                    .right_unknown
+                                                {
+                                                    wild
+                                                } else {
+                                                    0
+                                                };
+                                                nxt.tape.push(new_cell);
+                                            }
+                                            nxt.head = new_head as u8;
+                                        } else if head == 0 {
+                                            let new_cell =
+                                                if nxt.left_unknown {
+                                                    wild
+                                                } else {
+                                                    0
+                                                };
+                                            nxt.tape
+                                                .insert(0, new_cell);
+                                            nxt.head = 0;
+                                        } else {
+                                            nxt.head = (head - 1) as u8;
+                                        }
+
+                                        nxt.normalize();
+
+                                        if nxt != nodes[q] {
+                                            continue;
+                                        }
+
+                                        matched_any = true;
+
+                                        let established = pred.tape
+                                            [..head]
+                                            .contains(&wit)
+                                            || read == wit
+                                            || write == wit;
+
+                                        if !(established
+                                            || safe_left[pidx])
+                                        {
+                                            pred_ok = false;
+                                            break;
+                                        }
+                                    }
+
+                                    if matched_any {
+                                        saw_pred = true;
+                                        if !pred_ok {
+                                            ok = false;
+                                            break 'left_preds;
+                                        }
+                                    }
+                                }
+
+                                if saw_pred && ok {
+                                    safe_left[q] = true;
+                                    changed = true;
+                                }
+                            }
+
+                            if relevant_right[q] && !safe_right[q] {
+                                let mut saw_pred = false;
+                                let mut ok = true;
+
+                                'right_preds: for &pidx in &rev_adj[q] {
+                                    if !relevant_right[pidx] {
+                                        continue;
+                                    }
+
+                                    let pred = &nodes[pidx];
+                                    let head = pred.head as usize;
+                                    if head >= pred.tape.len() {
+                                        ok = false;
+                                        break;
+                                    }
+
+                                    let cur = pred.tape[head];
+                                    let reads: Vec<u8> = if cur == wild
+                                    {
+                                        (0..(colors as u8)).collect()
+                                    } else {
+                                        vec![cur]
+                                    };
+
+                                    let mut matched_any = false;
+                                    let mut pred_ok = true;
+
+                                    for read in reads {
+                                        let Some(&(write, sh, dst)) =
+                                            self.get(&(
+                                                pred.state, read,
+                                            ))
+                                        else {
+                                            continue;
+                                        };
+
+                                        if sh != kind_shift {
+                                            continue;
+                                        }
+
+                                        let mut nxt = pred.clone();
+                                        nxt.state = dst;
+                                        nxt.tape[head] = write;
+
+                                        if sh {
+                                            let new_head = head + 1;
+                                            if new_head
+                                                >= nxt.tape.len()
+                                            {
+                                                let new_cell = if nxt
+                                                    .right_unknown
+                                                {
+                                                    wild
+                                                } else {
+                                                    0
+                                                };
+                                                nxt.tape.push(new_cell);
+                                            }
+                                            nxt.head = new_head as u8;
+                                        } else if head == 0 {
+                                            let new_cell =
+                                                if nxt.left_unknown {
+                                                    wild
+                                                } else {
+                                                    0
+                                                };
+                                            nxt.tape
+                                                .insert(0, new_cell);
+                                            nxt.head = 0;
+                                        } else {
+                                            nxt.head = (head - 1) as u8;
+                                        }
+
+                                        nxt.normalize();
+
+                                        if nxt != nodes[q] {
+                                            continue;
+                                        }
+
+                                        matched_any = true;
+
+                                        let established = pred.tape
+                                            [head + 1..]
+                                            .contains(&wit)
+                                            || read == wit
+                                            || write == wit;
+
+                                        if !(established
+                                            || safe_right[pidx])
+                                        {
+                                            pred_ok = false;
+                                            break;
+                                        }
+                                    }
+
+                                    if matched_any {
+                                        saw_pred = true;
+                                        if !pred_ok {
+                                            ok = false;
+                                            break 'right_preds;
+                                        }
+                                    }
+                                }
+
+                                if saw_pred && ok {
+                                    safe_right[q] = true;
+                                    changed = true;
+                                }
+                            }
+                        }
+
+                        if !changed {
+                            break;
+                        }
+                    }
+
+                    let kind_ok = nodes.iter().enumerate().skip(1).all(
+                        |(i, _cfg)| {
+                            if !relevant[i] {
+                                return true;
+                            }
+
+                            if kind_shift {
+                                safe_left[i]
+                            } else {
+                                safe_right[i]
+                            }
+                        },
+                    );
+
+                    if !kind_ok {
+                        return false;
                     }
                 }
 
-                let extremal_ok = nodes.iter().enumerate().skip(1).all(
-                    |(i, _cfg)| {
-                        if !reachable_eraser[i] {
-                            return true;
-                        }
-
-                        match eraser_shift[i] {
-                            Some(true) => safe_r[i],
-                            Some(false) => safe_l[i],
-                            None => true,
-                        }
-                    },
-                );
-
-                extremal_ok || witness_abs_ok
+                any_kind_reachable
             });
 
         if witness_ok {
             return true;
         }
-
-        #[expect(clippy::cast_possible_truncation)]
-        let wild: u8 = colors as u8;
 
         nodes
             .iter()
