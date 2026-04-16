@@ -4766,7 +4766,6 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD",
     },
     "blank": {
-        "1RB 0LB  0LB 1LA",
         "0LB 2RB ...  1RA 1LB 1LA",
         "1RB ... ...  0LB 2RB 0RB",
         "1RB 0LA ...  1LB 2LA 0RB",
@@ -4780,7 +4779,6 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 2LB 0LA  1LA 2RB 0RB",
         "1RB 2LB 1LA  1LA 2RB 0RB",
         "1RB ...  1LB 0RC  0LB 1RC",
-        "1RB ...  1LC ...  0LC 0LB",
         "1RB 1LA  0LA 0LC  0LC 1LC",
         "1RB 1LB  0LC 0LA  0LC 1LA",
         "1RB 1LB  1RC 1LC  0LA 0RC",
@@ -4983,7 +4981,6 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 0RE  1RC 0RB  1LD 0RA  0LA 0LC  0LE 1LA",
         "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
         "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB",
-        "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0LE 0LA",
         "1RB 1LE  1RC 0RA  0LD 0LC  1RD 1RE  1LB 0RB",
         "1RB 1RA  1LC 0LD  0RA 1LB  ... 0LE  1RC 1RB",
         "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",

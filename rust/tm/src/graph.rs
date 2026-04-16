@@ -511,7 +511,118 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     }
 
     pub fn graph_cant_blank(&self) -> bool {
-        self.graph_cant_blank_fast() || self.graph_cant_blank_abs()
+        if self.graph_cant_blank_fast() {
+            return true;
+        }
+
+        let (nodes, _adj) = self.build_abs_graph();
+
+        if nodes.is_empty() || nodes.len() >= MAX_NODES {
+            return false;
+        }
+
+        let witness_ok = self
+            .get(&(0, 0))
+            .and_then(|&(wit, _, _)| (wit != 0).then_some(wit))
+            .is_some_and(|wit| {
+                let erasers: Vec<(State, bool)> = self
+                    .iter()
+                    .filter_map(|((st, read), &(write, shift, _))| {
+                        (read == wit && write == 0)
+                            .then_some((st, shift))
+                    })
+                    .collect();
+
+                if erasers.is_empty() {
+                    return false;
+                }
+
+                #[expect(clippy::cast_possible_truncation)]
+                let wild: u8 = colors as u8;
+
+                let extremal_ok = erasers.iter().all(|&(st, shift)| {
+                    let reachable_eraser =
+                        nodes.iter().skip(1).any(|cfg| {
+                            if cfg.state != st {
+                                return false;
+                            }
+
+                            let head = cfg.head as usize;
+                            if head >= cfg.tape.len() {
+                                return false;
+                            }
+
+                            let cell = cfg.tape[head];
+                            cell == wit || cell == wild
+                        });
+
+                    if !reachable_eraser {
+                        return true;
+                    }
+
+                    let mut saw_incoming = false;
+
+                    for ((_, read), &(write, in_shift, dst)) in
+                        self.iter()
+                    {
+                        if dst != st {
+                            continue;
+                        }
+
+                        saw_incoming = true;
+
+                        if in_shift != shift {
+                            return false;
+                        }
+
+                        if read != wit && write != wit {
+                            return false;
+                        }
+                    }
+
+                    saw_incoming
+                });
+
+                let witness_abs_ok =
+                    erasers.iter().all(|&(st, shift)| {
+                        nodes.iter().skip(1).all(|cfg| {
+                            if cfg.state != st {
+                                return true;
+                            }
+
+                            let head = cfg.head as usize;
+                            if head >= cfg.tape.len() {
+                                return true;
+                            }
+
+                            let cell = cfg.tape[head];
+                            if cell != wild && cell != wit {
+                                return true;
+                            }
+
+                            if shift {
+                                cfg.tape[..head].contains(&wit)
+                            } else {
+                                cfg.tape[head + 1..].contains(&wit)
+                            }
+                        })
+                    });
+
+                extremal_ok || witness_abs_ok
+            });
+
+        if witness_ok {
+            return true;
+        }
+
+        {
+            #[expect(clippy::cast_possible_truncation)]
+            let wild: u8 = colors as u8;
+
+            nodes.iter().skip(1).all(|cfg| {
+                !cfg.tape.iter().all(|&x| x == 0 || x == wild)
+            })
+        }
     }
 
     fn graph_cant_blank_fast(&self) -> bool {
@@ -524,28 +635,6 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         };
 
         pr != 0
-    }
-
-    // Stronger (still sound) check using the bounded abstract configuration graph.
-    fn graph_cant_blank_abs(&self) -> bool {
-        #[expect(clippy::cast_possible_truncation)]
-        let wild: u8 = colors as u8;
-
-        let (nodes, _adj) = self.build_abs_graph();
-
-        if nodes.is_empty() || nodes.len() >= MAX_NODES {
-            return false;
-        }
-
-        // If a configuration is compatible with a blank tape (all cells are 0
-        // or unknown), we cannot refute blanking.
-        for cfg in nodes.iter().skip(1) {
-            if cfg.tape.iter().all(|&x| x == 0 || x == wild) {
-                return false;
-            }
-        }
-
-        true
     }
 
     /// Sound (but incomplete) static proof that the program cannot "spin out".
