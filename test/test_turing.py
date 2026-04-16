@@ -96,18 +96,22 @@ HALT_HOLDOUT_FILES = (
     'halt-7-instr',
 )
 
+BLANK_HOLDOUT_FILES = (
+    'blank-4-2',
+)
 
-def get_holdouts() -> set[str]:
+def get_holdouts(paths: tuple[str, ...]) -> set[str]:
     holdouts: set[str] = set()
 
-    for path in HALT_HOLDOUT_FILES:
+    for path in paths:
         with open(f'test/data/holdouts/{path}.prog') as progs:
             holdouts.update(prog.strip() for prog in progs)
 
     return holdouts
 
 
-HALT_HOLDOUTS = get_holdouts()
+HALT_HOLDOUTS = get_holdouts(HALT_HOLDOUT_FILES)
+BLANK_HOLDOUTS = get_holdouts(BLANK_HOLDOUT_FILES)
 
 ########################################
 
@@ -509,6 +513,9 @@ class Reason(TuringTest):
         for prog in HALT_HOLDOUTS:
             self.assert_could_halt_backward(prog)
 
+        for prog in BLANK_HOLDOUTS:
+            self.assert_could_blank_backward(prog)
+
     def test_false_negatives(self):
         results: dict[Goal, BackwardCats] = {
             'halt': defaultdict(set),
@@ -767,6 +774,9 @@ class Cps(TuringTest):
             self.assert_could_quasihalt_cps(prog)
 
     def test_holdouts(self):
+        for prog in BLANK_HOLDOUTS:
+            self.assert_could_blank_cps(prog)
+
         for prog in HALT_HOLDOUTS:
             self.assert_could_halt_cps(prog)
 
@@ -837,6 +847,9 @@ class Ctl(TuringTest):
             self.assert_cant_spinout_ctl(prog, CTL_LIMIT)
 
     def test_holdouts(self):
+        for prog in BLANK_HOLDOUTS:
+            self.assert_could_blank_ctl(prog)
+
         for prog in HALT_HOLDOUTS:
             self.assert_could_halt_ctl(prog)
 
@@ -1116,9 +1129,17 @@ class Graphx(TuringTest):
                 self.assertIn(prog, cant_quasihalt)
 
     def test_holdouts(self):
+        for prog in BLANK_HOLDOUTS:
+            self.assertFalse(
+                graph_cant_blank(prog))
+
         for prog in HALT_HOLDOUTS:
             self.assertFalse(
                 graph_cant_halt(prog))
+
+        for prog in BLANK_HOLDOUTS:
+            self.assertFalse(
+                graph_cant_blank(prog))
 
 ########################################
 
