@@ -1115,6 +1115,11 @@ class Graphx(TuringTest):
             if graph_cant_quasihalt(prog):
                 self.assertIn(prog, cant_quasihalt)
 
+    def test_holdouts(self):
+        for prog in HALT_HOLDOUTS:
+            self.assertFalse(
+                graph_cant_halt(prog))
+
 ########################################
 
 class Far(TuringTest):
@@ -1169,6 +1174,11 @@ class Far(TuringTest):
 
     def test_quasihalt(self):
         pass
+
+    def test_holdouts(self):
+        for prog in HALT_HOLDOUTS:
+            self.assertFalse(
+                far_cant_halt(prog, 3))
 
 ########################################
 
