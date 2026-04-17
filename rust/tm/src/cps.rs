@@ -131,8 +131,16 @@ fn cps_cant_reach_obs(
 
         configs.add_span(shift, push);
 
-        push.push(print, &mut configs.span_pool);
+        let dropped = push.push(print, &mut configs.span_pool);
         tape.scan = pull.pull(&mut configs.span_pool);
+
+        if shift {
+            tape.left_nz = tape.left_nz || dropped != 0;
+            tape.right_nz = false;
+        } else {
+            tape.right_nz = tape.right_nz || dropped != 0;
+            tape.left_nz = false;
+        }
 
         let (last_color, colors) = {
             let colors = if shift {
@@ -146,7 +154,11 @@ fn cps_cant_reach_obs(
                 && tape.scan == 0
                 && pull.blank_span(&configs.span_pool)
                 && match goal {
-                    Blank => push.all_blank(&configs.span_pool),
+                    Blank => {
+                        !tape.left_nz
+                            && !tape.right_nz
+                            && push.all_blank(&configs.span_pool)
+                    },
                     Spinout => state == next_state,
                     Halt => false,
                 }
@@ -163,8 +175,14 @@ fn cps_cant_reach_obs(
             let mut pull_clone = *pull;
             pull_clone.last = *color;
 
-            let next_tape =
-                Tape::from_spans(tape.scan, *push, pull_clone, shift);
+            let next_tape = Tape::from_spans(
+                tape.scan,
+                *push,
+                pull_clone,
+                shift,
+                tape.left_nz,
+                tape.right_nz,
+            );
 
             let next_config = Config {
                 state: next_state,
@@ -189,6 +207,8 @@ fn cps_cant_reach_obs(
                     last: last_color,
                 },
                 shift,
+                tape.left_nz,
+                tape.right_nz,
             );
 
             let next_config = Config {
@@ -569,6 +589,8 @@ struct Tape {
     scan: Color,
     lspan: Span,
     rspan: Span,
+    left_nz: bool,
+    right_nz: bool,
 }
 
 impl Tape {
@@ -577,6 +599,8 @@ impl Tape {
             scan: 0,
             lspan: Span::init(rad, pool),
             rspan: Span::init(rad, pool),
+            left_nz: false,
+            right_nz: false,
         }
     }
 
@@ -585,11 +609,19 @@ impl Tape {
         push: Span,
         pull: Span,
         shift: Shift,
+        left_nz: bool,
+        right_nz: bool,
     ) -> Self {
         let (lspan, rspan) =
             if shift { (push, pull) } else { (pull, push) };
 
-        Self { scan, lspan, rspan }
+        Self {
+            scan,
+            lspan,
+            rspan,
+            left_nz,
+            right_nz,
+        }
     }
 }
 
@@ -603,12 +635,14 @@ impl fmt::Display for Tape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "L(pat={}, last={}) [{}] R(pat={}, last={})",
+            "L(pat={}, last={}, nz={}) [{}] R(pat={}, last={}, nz={})",
             self.lspan.span,
             self.lspan.last,
+            self.left_nz,
             self.scan,
             self.rspan.span,
-            self.rspan.last
+            self.rspan.last,
+            self.right_nz
         )
     }
 }
@@ -631,12 +665,13 @@ impl Span {
         }
     }
 
-    fn push(&mut self, color: Color, pool: &mut SpanPool) {
+    fn push(&mut self, color: Color, pool: &mut SpanPool) -> Color {
         let key = (self.span, self.last, color);
 
         if let Some(&new_span) = pool.push_cache.get(&key) {
+            let dropped = self.last;
             *self = new_span;
-            return;
+            return dropped;
         }
 
         let mut v = pool.colors(self.span).clone();
@@ -650,7 +685,9 @@ impl Span {
         };
 
         pool.push_cache.insert(key, new_span);
+        let dropped = self.last;
         *self = new_span;
+        dropped
     }
 
     fn pull(&mut self, pool: &mut SpanPool) -> Color {
