@@ -13,7 +13,6 @@ use crate::{
 };
 
 const MAX_STACK_DEPTH: usize = 31;
-const PUMP_LOOKAHEAD: usize = 16;
 
 /**************************************/
 
@@ -82,46 +81,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
 type Configs = Vec<Config>;
 type BlankStates = Set<State>;
-
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct SpanSkeleton {
-    end: TapeEnd,
-    colors: Vec<Color>,
-    indef: Vec<bool>,
-}
-
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct TapeSkeleton {
-    scan: Color,
-    head: Pos,
-    lspan: SpanSkeleton,
-    rspan: SpanSkeleton,
-}
-
-#[derive(Clone)]
-struct TapeCounts {
-    lspan: Vec<u32>,
-    rspan: Vec<u32>,
-}
-
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct PumpKey {
-    state: State,
-    tape: TapeSkeleton,
-}
-
-#[derive(Clone)]
-struct PumpValue {
-    counts: TapeCounts,
-    step: usize,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Growth {
-    Same,
-    Increased,
-    Incomparable,
-}
 
 type Entry = (Slot, (Color, Shift));
 type Entries = Vec<Entry>;
@@ -241,17 +200,6 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             Err(err) => return err,
             Ok(stepped) => stepped
                 .into_iter()
-                .filter(|config| {
-                    !has_forced_pump::<s, c>(
-                        config,
-                        &entrypoints,
-                        &win_possible,
-                        left_fresh_zero,
-                        right_fresh_zero,
-                        left_forced_blank,
-                        right_forced_blank,
-                    )
-                })
                 .filter(|config| antichains.insert(config))
                 .collect(),
         };
@@ -261,125 +209,6 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 }
 
 type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
-
-#[expect(clippy::fn_params_excessive_bools)]
-fn step_once_forced<const s: usize, const c: usize>(
-    config: &Config,
-    entrypoints: &Entrypoints,
-    win_possible: &WinPossible<s, c>,
-    left_fresh_zero: bool,
-    right_fresh_zero: bool,
-    left_forced_blank: bool,
-    right_forced_blank: bool,
-) -> Option<Config> {
-    let mut blanks = BlankStates::new();
-    let validated =
-        get_valid_steps(&mut vec![config.clone()], entrypoints);
-
-    if validated.len() != 1 {
-        return None;
-    }
-
-    if validated[0].0.len() != 1 {
-        return None;
-    }
-
-    let branched = branch_indef(validated);
-
-    if branched.len() != 1 || branched[0].0.len() != 1 {
-        return None;
-    }
-
-    let Ok(stepped) = step_configs::<s, c>(
-        branched,
-        &mut blanks,
-        win_possible,
-        left_fresh_zero,
-        right_fresh_zero,
-        left_forced_blank,
-        right_forced_blank,
-    ) else {
-        return None;
-    };
-
-    if stepped.len() != 1 {
-        return None;
-    }
-
-    stepped.into_iter().next()
-}
-
-#[expect(clippy::fn_params_excessive_bools)]
-fn has_forced_pump<const s: usize, const c: usize>(
-    start: &Config,
-    entrypoints: &Entrypoints,
-    win_possible: &WinPossible<s, c>,
-    left_fresh_zero: bool,
-    right_fresh_zero: bool,
-    left_forced_blank: bool,
-    right_forced_blank: bool,
-) -> bool {
-    // Soundness guard:
-    // forced-pump refutation is only valid when both outer ends are known
-    // blank. If either end is `?`, a larger same-phase predecessor may just
-    // be backing farther into already-visited territory represented by the
-    // unknown side, which is exactly what happens for some real spinout runs.
-    if start.tape.lspan.end != TapeEnd::Blanks
-        || start.tape.rspan.end != TapeEnd::Blanks
-    {
-        return false;
-    }
-
-    let mut seen: Dict<PumpKey, Vec<PumpValue>> = Dict::new();
-    let mut current = start.clone();
-
-    for step in 0..=PUMP_LOOKAHEAD {
-        let key = current.pump_key();
-        let counts = current.pump_counts();
-
-        if let Some(prevs) = seen.get(&key) {
-            for prev in prevs {
-                if prev.step == step {
-                    continue;
-                }
-
-                if matches!(
-                    counts.growth_from(&prev.counts),
-                    Growth::Increased
-                ) {
-                    return true;
-                }
-            }
-        }
-
-        seen.entry(key)
-            .or_default()
-            .push(PumpValue { counts, step });
-
-        let Some(next) = step_once_forced::<s, c>(
-            &current,
-            entrypoints,
-            win_possible,
-            left_fresh_zero,
-            right_fresh_zero,
-            left_forced_blank,
-            right_forced_blank,
-        ) else {
-            return false;
-        };
-
-        // Preserve the soundness condition along the whole forced chain.
-        if next.tape.lspan.end != TapeEnd::Blanks
-            || next.tape.rspan.end != TapeEnd::Blanks
-        {
-            return false;
-        }
-
-        current = next;
-    }
-
-    false
-}
 
 fn get_valid_steps(
     configs: &mut Configs,
@@ -1019,88 +848,6 @@ impl fmt::Display for Config {
     }
 }
 
-#[expect(clippy::multiple_inherent_impl)]
-impl Config {
-    fn pump_key(&self) -> PumpKey {
-        PumpKey {
-            state: self.state,
-            tape: self.tape.skeleton(),
-        }
-    }
-
-    fn pump_counts(&self) -> TapeCounts {
-        self.tape.counts()
-    }
-}
-
-impl SpanSkeleton {
-    fn from_span(span: &Span) -> Self {
-        Self {
-            end: span.end.clone(),
-            colors: span.span.iter().map(|b| b.color).collect(),
-            indef: span.span.iter().map(|b| b.count == 0).collect(),
-        }
-    }
-}
-
-impl TapeCounts {
-    fn from_tape(tape: &Tape) -> Self {
-        Self {
-            lspan: tape
-                .lspan
-                .span
-                .iter()
-                .map(|b| b.count.into())
-                .collect(),
-            rspan: tape
-                .rspan
-                .span
-                .iter()
-                .map(|b| b.count.into())
-                .collect(),
-        }
-    }
-
-    fn growth_from(&self, other: &Self) -> Growth {
-        let left = cmp_counts(&self.lspan, &other.lspan);
-        let right = cmp_counts(&self.rspan, &other.rspan);
-
-        match (left, right) {
-            (Growth::Incomparable, _) | (_, Growth::Incomparable) => {
-                Growth::Incomparable
-            },
-            (Growth::Same, Growth::Same) => Growth::Same,
-            _ => Growth::Increased,
-        }
-    }
-}
-
-fn cmp_counts(now: &[u32], prev: &[u32]) -> Growth {
-    if now.len() != prev.len() {
-        return Growth::Incomparable;
-    }
-
-    let mut increased = false;
-
-    for (&n, &p) in now.iter().zip(prev) {
-        if n == 0 || p == 0 {
-            return Growth::Incomparable;
-        }
-        if n < p {
-            return Growth::Incomparable;
-        }
-        if n > p {
-            increased = true;
-        }
-    }
-
-    if increased {
-        Growth::Increased
-    } else {
-        Growth::Same
-    }
-}
-
 /**************************************/
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -1336,19 +1083,6 @@ impl Tape {
         self.lspan.hash(&mut h);
         self.rspan.hash(&mut h);
         h.finish()
-    }
-
-    fn skeleton(&self) -> TapeSkeleton {
-        TapeSkeleton {
-            scan: self.scan,
-            head: self.head,
-            lspan: SpanSkeleton::from_span(&self.lspan),
-            rspan: SpanSkeleton::from_span(&self.rspan),
-        }
-    }
-
-    fn counts(&self) -> TapeCounts {
-        TapeCounts::from_tape(self)
     }
 
     /// Return the immediate left neighbor color if it is determined by
