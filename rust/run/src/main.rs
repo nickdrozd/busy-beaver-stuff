@@ -140,6 +140,7 @@ fn params_4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.cant_halt(46).is_refuted()
         || prog.ctl_cant_halt(130)
         || prog.cps_cant_halt(6)
+        || prog.far_cant_halt(3)
 }
 
 fn params_4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
@@ -180,6 +181,7 @@ fn params_2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.ctl_cant_halt(190)
         || prog.cps_cant_halt(6)
+        || prog.far_cant_halt(3)
 }
 
 fn params_2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
@@ -233,13 +235,13 @@ fn test_deciders() {
             3 => (params_2_3_3, 20, (432, 8_766)),
         ],
         (4, 2) => [
-            0 => (params_4_2_0, 25, (114_280, 431_888)),
+            0 => (params_4_2_0, 25, (114_278, 431_888)),
             1 => (params_4_2_1, 99, (83_496, 753_582)),
             2 => (params_4_2_2, 99, (96_987, 1_932_610)),
             3 => (params_4_2_3, 99, (106_765, 2_134_923)),
         ],
         (2, 4) => [
-            0 => (params_2_4_0, 109, (86_517, 308_968)),
+            0 => (params_2_4_0, 109, (86_505, 308_968)),
             1 => (params_2_4_1, TREE_LIM, (85_889, 612_077)),
             2 => (params_2_4_2, TREE_LIM, (14_078, 1_189_643)),
             3 => (params_2_4_3, TREE_LIM, (57_280, 1_698_850)),
@@ -527,7 +529,6 @@ fn instrs_6(prog: &Prog<6, 6>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(304, config.to_mut()).is_settled()
         || prog.ctl_cant_halt(41)
         || prog.far_cant_halt(4)
-        || prog.cps_cant_halt(3)
 }
 
 fn instrs_7(prog: &Prog<7, 7>, mut config: PassConfig<'_>) -> bool {
@@ -547,8 +548,8 @@ fn test_instrs() {
     assert_instrs![
         4 => (instrs_4, 4, (0, 4_909)),
         5 => (instrs_5, 12, (0, 151_351)),
-        6 => (instrs_6, 22, (2, 5_568_167)),
-        7 => (instrs_7, 109, (123, 246_492_765)),
+        6 => (instrs_6, 22, (0, 5_568_167)),
+        7 => (instrs_7, 109, (16, 246_492_765)),
     ];
 }
 
@@ -567,7 +568,7 @@ fn test_8_instr() {
     println!("8 instrs");
 
     assert_instrs![
-        8 => (instrs_8, 500, (7_169, 12_835_863_274)),
+        8 => (instrs_8, 500, (1_478, 12_835_863_274)),
     ];
 }
 

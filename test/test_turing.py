@@ -1149,7 +1149,7 @@ class Far(TuringTest):
             self.assertFalse(
                 far_cant_halt(prog, 3))
 
-        for prog in NONHALTERS:
+        for prog in NONHALTERS | FAR_REFUTES:
             if not far_cant_halt(prog, 3):
                 self.assertIn(prog, FAR_FALSE_NEGATIVES['halt'])
 

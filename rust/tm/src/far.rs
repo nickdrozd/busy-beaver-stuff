@@ -76,7 +76,6 @@ const FAR_KNOB_MIN: usize = 2;
 /// - 64..127   => 4
 /// - 128..255  => 8
 /// - 256..     => 16
-#[inline]
 fn effort_factor(knob: usize) -> usize {
     (knob / 16).max(1)
 }
@@ -102,7 +101,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         let knob = knob.max(FAR_KNOB_MIN);
         let eff = effort_factor(knob);
 
-        // Choose a practical maximum block length based on alphabet size.
         let cap_by_colors = if COLORS <= 2 {
             FAR_BLOCK_LEN_CAP_COLORS_2
         } else if COLORS <= 4 {
@@ -114,10 +112,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         let max_block_len =
             knob.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
 
-        // Sweep block lengths like CPS-style "check 2..=X".
-        // Stop early if we find a proof.
         for block_len in 2..=max_block_len {
-            // Scale budgets with both block_len and knob (via eff).
             let max_work = FAR_WORK_PER_LEN
                 .saturating_mul(block_len)
                 .saturating_mul(eff);
@@ -126,7 +121,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 .saturating_mul(block_len)
                 .saturating_mul(eff);
 
-            if far_decide_ng::<STATES, COLORS>(
+            if far_decide_all::<STATES, COLORS>(
                 self,
                 block_len,
                 max_work,
@@ -175,12 +170,10 @@ impl Word {
         self.cells.iter().all(|&x| x == 0)
     }
 
-    #[inline]
     fn get(&self, idx: usize) -> Color {
         self.cells[idx]
     }
 
-    #[inline]
     fn set(&mut self, idx: usize, v: Color) {
         self.cells[idx] = v;
     }
@@ -313,46 +306,62 @@ impl WordUpdateLemma {
     }
 }
 
+/// History summarizer used by the FAR DFA.
+trait Summary: Clone + Ord {
+    fn new() -> Self;
+    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow>;
+}
+
+#[derive(Clone, Copy, Debug)]
+struct SummaryOverflow;
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+struct RepeatWord {
+    w: Word,
+    n: usize,
+    m: usize,
+}
+
+impl RepeatWord {
+    const fn new(w: Word, n: usize, m: usize) -> Self {
+        Self { w, n, m }
+    }
+}
+
 /// NG stack summary: keep bounded history (window + tail + mod counter).
 #[derive(Clone, Debug)]
 struct NgSummary {
     q: Vec<Word>,
     q0: Vec<Word>,
     modu: usize,
-
-    window: usize,
-    tail: usize,
-    pos_mod: usize,
 }
 
-impl NgSummary {
-    fn new(window: usize, tail: usize, pos_mod: usize) -> Self {
+impl Summary for NgSummary {
+    fn new() -> Self {
         Self {
             q: Vec::new(),
             q0: Vec::new(),
             modu: 0,
-            window,
-            tail,
-            pos_mod: pos_mod.max(1),
         }
     }
 
-    fn push(&mut self, w: Word) {
-        // Infinite blanks compression at the "front".
+    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
         if self.q.is_empty() && w.is_zero() {
-            return;
+            return Ok(());
         }
 
-        if self.window > 0 && self.q.len() == self.window {
+        if FAR_NG_WINDOW > 0 && self.q.len() == FAR_NG_WINDOW {
             self.q.remove(0);
         }
         self.q.push(w.clone());
 
-        if self.q0.len() < self.tail {
+        #[expect(clippy::absurd_extreme_comparisons)]
+        if self.q0.len() < FAR_NG_TAIL {
             self.q0.push(w);
         }
 
-        self.modu = (self.modu + 1) % self.pos_mod;
+        self.modu = (self.modu + 1) % FAR_NG_POS_MOD.max(1);
+        Ok(())
     }
 }
 
@@ -379,6 +388,256 @@ impl Ord for NgSummary {
             .then_with(|| self.q.cmp(&other.q))
             .then_with(|| self.q0.cmp(&other.q0))
     }
+}
+
+/// C++ FAR::NG1 default parameters.
+const FAR_NG1_N: usize = 3;
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+struct Ng1Summary {
+    q: Vec<Word>,
+}
+
+impl Summary for Ng1Summary {
+    fn new() -> Self {
+        Self { q: Vec::new() }
+    }
+
+    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
+        if self.q.is_empty() && w.is_zero() {
+            return Ok(());
+        }
+        if FAR_NG1_N > 0 && self.q.len() == FAR_NG1_N {
+            self.q.remove(0);
+        }
+        self.q.push(w);
+        Ok(())
+    }
+}
+
+/// C++ FAR::RWL_mod defaults.
+const FAR_RWL_LEN_H: usize = 8;
+const FAR_RWL_LEN_H_TAIL: usize = 0;
+const FAR_RWL_MNC: usize = 2;
+const FAR_RWL_MOD: usize = 1;
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+struct RwlModSummary {
+    q: Vec<RepeatWord>,
+}
+
+impl Summary for RwlModSummary {
+    fn new() -> Self {
+        Self { q: Vec::new() }
+    }
+
+    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
+        if self.q.is_empty() {
+            if !w.is_zero() {
+                self.q.push(RepeatWord::new(
+                    w,
+                    1,
+                    1 % FAR_RWL_MOD.max(1),
+                ));
+            }
+            return Ok(());
+        }
+
+        if let Some(last) = self.q.last_mut()
+            && last.w == w
+        {
+            last.n = last.n.saturating_add(1).min(FAR_RWL_MNC);
+            last.m = (last.m + 1) % FAR_RWL_MOD.max(1);
+            return Ok(());
+        }
+
+        self.q.push(RepeatWord::new(w, 1, 1 % FAR_RWL_MOD.max(1)));
+        if self.q.len() > FAR_RWL_LEN_H {
+            #[expect(clippy::unnecessary_min_or_max)]
+            let idx = FAR_RWL_LEN_H_TAIL.min(self.q.len() - 1);
+            self.q.remove(idx);
+        }
+        Ok(())
+    }
+}
+
+/// C++ FAR::CPS_LRU defaults.
+const FAR_CPS_LRU_LEN_H: usize = 8;
+const FAR_CPS_LRU_LEN_H_NO_LRU: usize = 2;
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+struct CpsLruSummary {
+    ls: Vec<Word>,
+}
+
+impl Summary for CpsLruSummary {
+    fn new() -> Self {
+        Self { ls: Vec::new() }
+    }
+
+    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
+        if self.ls.is_empty() && w.is_zero() {
+            return Ok(());
+        }
+        self.ls.insert(0, w);
+        if self.ls.len() <= FAR_CPS_LRU_LEN_H_NO_LRU {
+            return Ok(());
+        }
+        if FAR_CPS_LRU_LEN_H_NO_LRU + 1 > self.ls.len() {
+            return Ok(());
+        }
+        let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU].clone();
+        let start = FAR_CPS_LRU_LEN_H_NO_LRU + 1;
+        let mut remove_idx = None;
+        for i in start..self.ls.len() {
+            if self.ls[i] == key {
+                remove_idx = Some(i);
+                break;
+            }
+        }
+        if remove_idx.is_none() && self.ls.len() > FAR_CPS_LRU_LEN_H {
+            remove_idx = Some(self.ls.len() - 1);
+        }
+        if let Some(i) = remove_idx {
+            self.ls.remove(i);
+        }
+        Ok(())
+    }
+}
+
+/// C++ FAR::RNGS_mod defaults.
+const FAR_RNGS_NG_N: usize = 4;
+const FAR_RNGS_LEN_H: usize = 8;
+const FAR_RNGS_MNC: usize = 2;
+const FAR_RNGS_MOD: usize = 1;
+const FAR_RNGS_BS_N: usize = 0;
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+struct RngsModSummary {
+    q: Vec<RepeatWord>,
+    q0: Vec<Word>,
+    w1: Word,
+}
+
+impl Summary for RngsModSummary {
+    fn new() -> Self {
+        Self {
+            q: Vec::new(),
+            q0: Vec::new(),
+            w1: Word { cells: Vec::new() },
+        }
+    }
+
+    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
+        if self.w1.len() == 0 && w.is_zero() {
+            return Ok(());
+        }
+
+        self.w1 = ngram_word(&w, &self.w1, FAR_RNGS_NG_N);
+        let mut key = self.w1.clone();
+
+        self.q0.push(key.clone());
+        if self.q0.len() > FAR_RNGS_BS_N {
+            key = self.q0.remove(0);
+        } else {
+            return Ok(());
+        }
+
+        promote_repeat_word(
+            &mut self.q,
+            key,
+            FAR_RNGS_LEN_H,
+            FAR_RNGS_MNC,
+            FAR_RNGS_MOD,
+            false,
+        )
+    }
+}
+
+/// C++ FAR::RS_mod defaults.
+const FAR_RS_NG_N: usize = 4;
+const FAR_RS_LEN_H: usize = 8;
+const FAR_RS_MNC: usize = 2;
+const FAR_RS_MOD: usize = 1;
+const FAR_RS_STRICT: bool = true;
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+struct RsModSummary {
+    q: Vec<RepeatWord>,
+    q0: Vec<Word>,
+}
+
+impl Summary for RsModSummary {
+    fn new() -> Self {
+        Self {
+            q: Vec::new(),
+            q0: Vec::new(),
+        }
+    }
+
+    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
+        if self.q0.is_empty() && w.is_zero() {
+            return Ok(());
+        }
+
+        self.q0.push(w);
+        let key = if self.q0.len() > FAR_RS_NG_N {
+            self.q0.remove(0)
+        } else {
+            return Ok(());
+        };
+
+        promote_repeat_word(
+            &mut self.q,
+            key,
+            FAR_RS_LEN_H,
+            FAR_RS_MNC,
+            FAR_RS_MOD,
+            FAR_RS_STRICT,
+        )
+    }
+}
+
+fn ngram_word(head: &Word, tail: &Word, limit: usize) -> Word {
+    if limit == 0 {
+        return Word { cells: Vec::new() };
+    }
+    let mut cells = Vec::with_capacity(limit);
+    cells.extend(head.cells.iter().copied());
+    if cells.len() < limit {
+        cells.extend(tail.cells.iter().copied());
+    }
+    cells.truncate(limit);
+    Word { cells }
+}
+
+fn promote_repeat_word(
+    q: &mut Vec<RepeatWord>,
+    key: Word,
+    len_h: usize,
+    mnc: usize,
+    modu: usize,
+    strict: bool,
+) -> Result<(), SummaryOverflow> {
+    let modulo = modu.max(1);
+    for i in 0..q.len() {
+        if q[i].w == key {
+            let mut rep = q.remove(i);
+            rep.n = rep.n.saturating_add(1).min(mnc);
+            rep.m = (rep.m + 1) % modulo;
+            q.push(rep);
+            return Ok(());
+        }
+    }
+
+    q.push(RepeatWord::new(key, 1, 1 % modulo));
+    if q.len() > len_h {
+        if strict {
+            return Err(SummaryOverflow);
+        }
+        q.remove(0);
+    }
+    Ok(())
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
@@ -478,10 +737,16 @@ enum StopReason {
     WorkLimit,
     BlockTimeout,
     MayHalt,
+    SummaryOverflow,
 }
 
-/// FAR decider (NG summary specialization).
-struct FarDecider<'a, const STATES: usize, const COLORS: usize> {
+/// FAR decider with a pluggable DFA history summary.
+struct FarDecider<
+    'a,
+    S: Summary,
+    const STATES: usize,
+    const COLORS: usize,
+> {
     prog: &'a Prog<STATES, COLORS>,
 
     block_len: usize,
@@ -492,8 +757,8 @@ struct FarDecider<'a, const STATES: usize, const COLORS: usize> {
     work: usize,
 
     // DFA
-    id: BTreeMap<NgSummary, usize>,
-    idr: Vec<NgSummary>,
+    id: BTreeMap<S, usize>,
+    idr: Vec<S>,
 
     pop: Vec<Vec<DfaEdge>>,
     push: BTreeMap<(Word, usize), usize>,
@@ -515,21 +780,18 @@ struct FarDecider<'a, const STATES: usize, const COLORS: usize> {
     r_s: Vec<BTreeSet<i16>>,
 }
 
-impl<'a, const STATES: usize, const COLORS: usize>
-    FarDecider<'a, STATES, COLORS>
+impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
+    FarDecider<'a, S, STATES, COLORS>
 {
     fn new(
         prog: &'a Prog<STATES, COLORS>,
         block_len: usize,
         max_work: usize,
         block_step_limit: usize,
-        ng_window: usize,
-        ng_tail: usize,
-        ng_pos_mod: usize,
-    ) -> Self {
-        let idr = vec![NgSummary::new(0, 0, 1)];
+    ) -> Result<Self, StopReason> {
+        let idr = vec![S::new()];
 
-        Self {
+        let this = Self {
             prog,
             block_len,
             max_work: max_work.max(1),
@@ -556,31 +818,24 @@ impl<'a, const STATES: usize, const COLORS: usize>
             h2s: TodoSet::new(),
 
             r_s: Vec::new(),
-        }
-        .with_init_dfa(ng_window, ng_tail, ng_pos_mod)
+        };
+
+        this.with_init_dfa()
     }
 
-    fn with_init_dfa(
-        mut self,
-        ng_window: usize,
-        ng_tail: usize,
-        ng_pos_mod: usize,
-    ) -> Self {
-        // ensure vector sizes are at least 1 (dummy)
+    fn with_init_dfa(mut self) -> Result<Self, StopReason> {
         self.ensure_dfa_capacity(0);
 
-        let init = NgSummary::new(ng_window, ng_tail, ng_pos_mod);
-        let id0 = self.get_id(init);
+        let id0 = self.get_id(S::new());
         debug_assert_eq!(id0, 1);
 
         let blank = Word::zero(self.block_len);
-        let id1 = self.dfa_push(blank, id0);
+        let id1 = self.dfa_push(blank, id0)?;
         debug_assert_eq!(id1, id0);
 
-        self
+        Ok(self)
     }
 
-    #[inline]
     const fn bump(&mut self) -> Result<(), StopReason> {
         self.work = self.work.saturating_add(1);
         if self.work >= self.max_work {
@@ -598,7 +853,7 @@ impl<'a, const STATES: usize, const COLORS: usize>
         }
     }
 
-    fn get_id(&mut self, st: NgSummary) -> usize {
+    fn get_id(&mut self, st: S) -> usize {
         if let Some(&id) = self.id.get(&st) {
             return id;
         }
@@ -609,20 +864,23 @@ impl<'a, const STATES: usize, const COLORS: usize>
         id
     }
 
-    fn dfa_push(&mut self, w: Word, ls: usize) -> usize {
+    fn dfa_push(
+        &mut self,
+        w: Word,
+        ls: usize,
+    ) -> Result<usize, StopReason> {
         let key = (w.clone(), ls);
         if let Some(&to) = self.push.get(&key) {
-            return to;
+            return Ok(to);
         }
 
         let mut st = self.idr[ls].clone();
-        st.push(w.clone());
+        st.push(w.clone())
+            .map_err(|_| StopReason::SummaryOverflow)?;
         let to = self.get_id(st);
         self.push.insert(key, to);
-
-        // delay adding pop-edge until processed
         self.new_pops.push((to, DfaEdge { w, prev: ls }));
-        to
+        Ok(to)
     }
 
     fn tm_step(
@@ -650,10 +908,6 @@ impl<'a, const STATES: usize, const COLORS: usize>
         Ok(res)
     }
 
-    // -------------------------
-    // Event handlers (port of far.cpp)
-    // -------------------------
-
     fn on_h2_pop(
         &mut self,
         a: H2,
@@ -665,11 +919,9 @@ impl<'a, const STATES: usize, const COLORS: usize>
         let res = self.tm_step(w, s, 1)?;
 
         if res.is_back {
-            // <s1 w1 [r0]
-            let rr = self.dfa_push(res.w1, r0);
+            let rr = self.dfa_push(res.w1, r0)?;
             self.ret2.insert(a, H2b { s: res.s1, r: rr });
         } else {
-            // w1 s1> [r0]
             let c = H3 {
                 w: res.w1,
                 s: res.s1,
@@ -689,7 +941,6 @@ impl<'a, const STATES: usize, const COLORS: usize>
         let res = self.tm_step(w, *s0, -1)?;
 
         if res.is_back {
-            // w1 s1> [r0]
             let c0 = H3 {
                 w: res.w1,
                 s: res.s1,
@@ -698,8 +949,7 @@ impl<'a, const STATES: usize, const COLORS: usize>
             self.h3s.insert(c0.clone());
             self.pre33.insert(c0, c);
         } else {
-            // <s1 w1 [r0]
-            let rr = self.dfa_push(res.w1, *r0);
+            let rr = self.dfa_push(res.w1, *r0)?;
             self.ret3.insert(c, H2b { s: res.s1, r: rr });
         }
 
@@ -713,7 +963,6 @@ impl<'a, const STATES: usize, const COLORS: usize>
         let res = self.tm_step(blank, *s0, -1)?;
 
         if res.is_back {
-            // w1 s1> [r0]
             let c0 = H3 {
                 w: res.w1,
                 s: res.s1,
@@ -722,8 +971,7 @@ impl<'a, const STATES: usize, const COLORS: usize>
             self.h3s.insert(c0.clone());
             self.pre3l.insert(c0);
         } else {
-            // <s1 w1 [r0]
-            let rr = self.dfa_push(res.w1, *r0);
+            let rr = self.dfa_push(res.w1, *r0)?;
             self.retl.insert(H2b { s: res.s1, r: rr });
         }
 
@@ -739,7 +987,6 @@ impl<'a, const STATES: usize, const COLORS: usize>
         self.ensure_dfa_capacity(r);
         self.pop[r].push(e.clone());
 
-        // For all known H2(s,r), process this new pop-edge.
         let states: Vec<i16> = self.r_s[r].iter().copied().collect();
         for s in states {
             self.on_h2_pop(H2 { s, r }, e.clone())?;
@@ -755,7 +1002,6 @@ impl<'a, const STATES: usize, const COLORS: usize>
         self.ensure_dfa_capacity(*r);
         self.r_s[*r].insert(*s);
 
-        // apply all known pop edges out of r
         let edges = self.pop[*r].clone();
         for e in edges {
             self.on_h2_pop(a.clone(), e)?;
@@ -825,7 +1071,6 @@ impl<'a, const STATES: usize, const COLORS: usize>
     }
 
     fn run(mut self) -> Result<(), StopReason> {
-        // initial condition: H3(blank, A, r=1) and pre3L
         let blank = Word::zero(self.block_len);
         let c0 = H3 {
             w: blank,
@@ -876,8 +1121,6 @@ impl<'a, const STATES: usize, const COLORS: usize>
                 self.on_pre33(&a, &a0);
                 continue;
             }
-
-            // Fixed point reached => proved non-halting.
             break;
         }
 
@@ -885,10 +1128,11 @@ impl<'a, const STATES: usize, const COLORS: usize>
     }
 }
 
-/// Run FAR(decider) with NG summary for a single `(block_len, budgets)`.
-///
-/// Returns `true` iff it proves non-halting.
-fn far_decide_ng<const STATES: usize, const COLORS: usize>(
+fn far_decide_with<
+    S: Summary,
+    const STATES: usize,
+    const COLORS: usize,
+>(
     prog: &Prog<STATES, COLORS>,
     block_len: usize,
     max_work: usize,
@@ -898,15 +1142,53 @@ fn far_decide_ng<const STATES: usize, const COLORS: usize>(
         return false;
     }
 
-    let decider = FarDecider::new(
+    let Ok(decider) = FarDecider::<S, STATES, COLORS>::new(
         prog,
         block_len,
         max_work,
         block_step_limit,
-        FAR_NG_WINDOW,
-        FAR_NG_TAIL,
-        FAR_NG_POS_MOD,
-    );
+    ) else {
+        return false;
+    };
 
     decider.run().is_ok()
+}
+
+fn far_decide_all<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    block_len: usize,
+    max_work: usize,
+    block_step_limit: usize,
+) -> bool {
+    far_decide_with::<NgSummary, STATES, COLORS>(
+        prog,
+        block_len,
+        max_work,
+        block_step_limit,
+    ) || far_decide_with::<Ng1Summary, STATES, COLORS>(
+        prog,
+        block_len,
+        max_work,
+        block_step_limit,
+    ) || far_decide_with::<RwlModSummary, STATES, COLORS>(
+        prog,
+        block_len,
+        max_work,
+        block_step_limit,
+    ) || far_decide_with::<CpsLruSummary, STATES, COLORS>(
+        prog,
+        block_len,
+        max_work,
+        block_step_limit,
+    ) || far_decide_with::<RngsModSummary, STATES, COLORS>(
+        prog,
+        block_len,
+        max_work,
+        block_step_limit,
+    ) || far_decide_with::<RsModSummary, STATES, COLORS>(
+        prog,
+        block_len,
+        max_work,
+        block_step_limit,
+    )
 }
