@@ -94,6 +94,7 @@ HALT_HOLDOUT_FILES = (
     'halt-2-5',
     'halt-6-2',
     'halt-7-instr',
+    'halt-8-instr',
 )
 
 BLANK_HOLDOUT_FILES = (
