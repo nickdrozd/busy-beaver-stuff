@@ -46,6 +46,11 @@ class UnhandledOp(RuleLimit):
     def false_positive() -> bool:
         return True
 
+class CountDepth(RuleLimit):
+    @staticmethod
+    def false_positive() -> bool:
+        return True
+
 class SecondDiffRule(RuleLimit):
     pass
 
@@ -353,7 +358,7 @@ def apply_rule(rule: Rule, tape: IndexTape) -> Count | None:
 
 def apply_mult(count: Count, times: Count, mul: int, add: int) -> Count:
     if not isinstance(count, int) and count.depth > 20:
-        raise RuleLimit('count-depth')
+        raise CountDepth
 
     exp: int | Exp = (
         mul
