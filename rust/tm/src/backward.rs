@@ -39,7 +39,7 @@ impl BackwardResult {
 /**************************************/
 
 impl<const s: usize, const c: usize> Prog<s, c> {
-    pub fn cant_halt(&self, steps: Steps) -> BackwardResult {
+    pub fn bkw_cant_halt(&self, steps: Steps) -> BackwardResult {
         let (entrypoints, idx) = self.entrypoints_and_indices();
 
         let slots = self.halt_slots_disp_side(&idx);
@@ -47,7 +47,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         cant_reach(self, steps, slots, Some(entrypoints), halt_configs)
     }
 
-    pub fn cant_blank(&self, steps: Steps) -> BackwardResult {
+    pub fn bkw_cant_blank(&self, steps: Steps) -> BackwardResult {
         if self.cant_blank_by_color_graph() {
             return Refuted(0);
         }
@@ -55,15 +55,15 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         cant_reach(self, steps, self.erase_slots(), None, erase_configs)
     }
 
-    pub fn cant_spinout(&self, steps: Steps) -> BackwardResult {
+    pub fn bkw_cant_spinout(&self, steps: Steps) -> BackwardResult {
         cant_reach(self, steps, self.zr_shifts(), None, zr_configs)
     }
 
-    pub fn cant_zloop(&self, steps: Steps) -> BackwardResult {
+    pub fn bkw_cant_zloop(&self, steps: Steps) -> BackwardResult {
         cant_reach(self, steps, self.blank_loops(), None, zr_configs)
     }
 
-    pub fn cant_twostep(&self, steps: Steps) -> BackwardResult {
+    pub fn bkw_cant_twostep(&self, steps: Steps) -> BackwardResult {
         cant_reach(
             self,
             steps,
@@ -2344,7 +2344,7 @@ impl Antichains {
 fn test_overflow() {
     let prog = Prog::<3, 2>::from("1RB 1LB  1RC 1RB  0LA ...");
 
-    assert!(matches!(prog.cant_halt(1_021), StepLimit));
+    assert!(matches!(prog.bkw_cant_halt(1_021), StepLimit));
 
-    prog.cant_halt(1_022);
+    prog.bkw_cant_halt(1_022);
 }

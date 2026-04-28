@@ -4,9 +4,9 @@ use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
     Instr, Prog, Slot, State, Steps,
+    backward::{BackwardResult as BackwardResultRs, BackwardResult::*},
     instrs::{self, Parse as _},
     parse,
-    reason::{BackwardResult as BackwardResultRs, BackwardResult::*},
     segment::SegmentResult as SegmentResultRs,
 };
 
@@ -166,28 +166,28 @@ impl From<BackwardResultRs> for BackwardResult {
 }
 
 #[pyfunction]
-pub fn cant_halt(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.cant_halt(steps).into())
+pub fn bkw_cant_halt(prog: &str, steps: Steps) -> BackwardResult {
+    parse!(prog, |p: Prog<_, _>| p.bkw_cant_halt(steps).into())
 }
 
 #[pyfunction]
-pub fn cant_blank(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.cant_blank(steps).into())
+pub fn bkw_cant_blank(prog: &str, steps: Steps) -> BackwardResult {
+    parse!(prog, |p: Prog<_, _>| p.bkw_cant_blank(steps).into())
 }
 
 #[pyfunction]
-pub fn cant_zloop(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.cant_zloop(steps).into())
+pub fn bkw_cant_zloop(prog: &str, steps: Steps) -> BackwardResult {
+    parse!(prog, |p: Prog<_, _>| p.bkw_cant_zloop(steps).into())
 }
 
 #[pyfunction]
-pub fn cant_spinout(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.cant_spinout(steps).into())
+pub fn bkw_cant_spinout(prog: &str, steps: Steps) -> BackwardResult {
+    parse!(prog, |p: Prog<_, _>| p.bkw_cant_spinout(steps).into())
 }
 
 #[pyfunction]
-pub fn cant_twostep(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.cant_twostep(steps).into())
+pub fn bkw_cant_twostep(prog: &str, steps: Steps) -> BackwardResult {
+    parse!(prog, |p: Prog<_, _>| p.bkw_cant_twostep(steps).into())
 }
 
 /***************************************/
@@ -571,15 +571,16 @@ mod rust_stuff {
     #[pymodule_export]
     use crate::{
         BackwardResult, MachineResult, PastConfigPy, TermRes,
-        cant_blank, cant_halt, cant_spinout, cant_twostep, cant_zloop,
-        cps_cant_blank, cps_cant_halt, cps_cant_quasihalt,
-        cps_cant_spinout, ctl_cant_blank, ctl_cant_halt,
-        ctl_cant_spinout, far_cant_blank, far_cant_halt,
-        far_cant_spinout, graph_cant_blank, graph_cant_halt,
-        graph_cant_quasihalt, graph_cant_spinout, graph_cant_twostep,
-        is_connected, is_strict_cycle, opt_block, read_instr,
-        run_quick_machine, run_transcript, segment_cant_blank,
-        segment_cant_halt, segment_cant_spinout, show_comp, show_instr,
-        show_slot, show_state, tcompile, term_or_rec,
+        bkw_cant_blank, bkw_cant_halt, bkw_cant_spinout,
+        bkw_cant_twostep, bkw_cant_zloop, cps_cant_blank,
+        cps_cant_halt, cps_cant_quasihalt, cps_cant_spinout,
+        ctl_cant_blank, ctl_cant_halt, ctl_cant_spinout,
+        far_cant_blank, far_cant_halt, far_cant_spinout,
+        graph_cant_blank, graph_cant_halt, graph_cant_quasihalt,
+        graph_cant_spinout, graph_cant_twostep, is_connected,
+        is_strict_cycle, opt_block, read_instr, run_quick_machine,
+        run_transcript, segment_cant_blank, segment_cant_halt,
+        segment_cant_spinout, show_comp, show_instr, show_slot,
+        show_state, tcompile, term_or_rec,
     };
 }

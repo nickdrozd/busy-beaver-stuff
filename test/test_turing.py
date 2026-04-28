@@ -31,11 +31,11 @@ from tm.macro import (
 from tm.rust_stuff import (
     BackwardResult,
     MachineResult,
-    cant_blank,
-    cant_halt,
-    cant_spinout,
-    cant_twostep,
-    cant_zloop,
+    bkw_cant_blank,
+    bkw_cant_halt,
+    bkw_cant_spinout,
+    bkw_cant_twostep,
+    bkw_cant_zloop,
     cps_cant_blank,
     cps_cant_halt,
     cps_cant_quasihalt,
@@ -226,7 +226,7 @@ class TuringTest(TestCase):
             return
 
         self.assertFalse(
-            cant_halt(prog, steps = REASON_LIMIT).is_refuted(),
+            bkw_cant_halt(prog, steps = REASON_LIMIT).is_refuted(),
             f'halt false positive: "{prog}"')
 
     def assert_cant_halt_backward(self, prog: str, depth: int):
@@ -234,7 +234,7 @@ class TuringTest(TestCase):
             return
 
         self.assertTrue(
-            cant_halt(prog, depth).is_refuted(),
+            bkw_cant_halt(prog, depth).is_refuted(),
             f'halt false negative: "{prog}"')
 
     def assert_could_halt_segment(self, prog: str):
@@ -289,7 +289,7 @@ class TuringTest(TestCase):
 
     def assert_could_blank_backward(self, prog: str):
         self.assertFalse(
-            cant_blank(prog, steps = REASON_LIMIT).is_refuted(),
+            bkw_cant_blank(prog, steps = REASON_LIMIT).is_refuted(),
             f'blank false positive: "{prog}"')
 
     def assert_could_blank_segment(self, prog: str):
@@ -303,7 +303,7 @@ class TuringTest(TestCase):
             return
 
         self.assertTrue(
-            cant_blank(prog, depth).is_refuted(),
+            bkw_cant_blank(prog, depth).is_refuted(),
             f'blank false negative: "{prog}"')
 
     def assert_cant_blank_segment(self, prog: str, segs: int):
@@ -341,7 +341,7 @@ class TuringTest(TestCase):
 
     def assert_could_spinout_backward(self, prog: str):
         self.assertFalse(
-            cant_spinout(prog, steps = REASON_LIMIT).is_refuted(),
+            bkw_cant_spinout(prog, steps = REASON_LIMIT).is_refuted(),
             f'spinout false positive: "{prog}"')
 
     def assert_could_spinout_segment(self, prog: str):
@@ -357,7 +357,7 @@ class TuringTest(TestCase):
             return
 
         self.assertTrue(
-            cant_spinout(prog, depth).is_refuted(),
+            bkw_cant_spinout(prog, depth).is_refuted(),
             f'spinout false negative: "{prog}"')
 
     def assert_cant_spinout_segment(self, prog: str, segs: int):
@@ -398,7 +398,7 @@ class TuringTest(TestCase):
 
     def assert_could_twostep_backward(self, prog: str):
         self.assertFalse(
-            cant_twostep(prog, steps = REASON_LIMIT).is_refuted(),
+            bkw_cant_twostep(prog, steps = REASON_LIMIT).is_refuted(),
             f'twostep false positive: "{prog}"')
 
     def assert_cant_twostep_backward(self, prog: str, depth: int):
@@ -406,12 +406,12 @@ class TuringTest(TestCase):
             return
 
         self.assertTrue(
-            cant_twostep(prog, depth).is_refuted(),
+            bkw_cant_twostep(prog, depth).is_refuted(),
             f'twostep false negative: "{prog}"')
 
     def assert_could_zloop_backward(self, prog: str):
         self.assertFalse(
-            cant_zloop(prog, steps = REASON_LIMIT).is_refuted(),
+            bkw_cant_zloop(prog, steps = REASON_LIMIT).is_refuted(),
             f'zloop false positive: "{prog}"')
 
     def assert_cant_zloop_backward(self, prog: str, depth: int):
@@ -419,7 +419,7 @@ class TuringTest(TestCase):
             return
 
         self.assertTrue(
-            cant_zloop(prog, depth).is_refuted(),
+            bkw_cant_zloop(prog, depth).is_refuted(),
             f'zloop false negative: "{prog}"')
 
     ########################################
@@ -444,11 +444,11 @@ class TuringTest(TestCase):
 ########################################
 
 BACKWARD_REASONERS: dict[Goal, BackwardReasoner] = {
-    "halt": cant_halt,
-    "blank": cant_blank,
-    "spinout": cant_spinout,
-    "twostep": cant_twostep,
-    "zloop": cant_zloop,
+    "halt": bkw_cant_halt,
+    "blank": bkw_cant_blank,
+    "spinout": bkw_cant_spinout,
+    "twostep": bkw_cant_twostep,
+    "zloop": bkw_cant_zloop,
 }
 
 class Reason(TuringTest):
@@ -605,15 +605,15 @@ class Reason(TuringTest):
 
     def test_steps(self):
         for cat, data in BACKWARD_STEPS.items():
-            cant_reach = BACKWARD_REASONERS[cat]
+            bkw_cant_reach = BACKWARD_REASONERS[cat]
 
             for prog, steps in data.items():
                 self.assertEqual(
-                    cant_reach(prog, steps).step,
+                    bkw_cant_reach(prog, steps).step,
                     steps)
 
                 self.assertIsInstance(
-                    cant_reach(prog, steps - 1),
+                    bkw_cant_reach(prog, steps - 1),
                     BackwardResult.step_limit)
 
     def test_reason_only(self):
@@ -630,15 +630,15 @@ class Reason(TuringTest):
         for prog, (halt, blank, spin) in OMNIREASONABLE.items():
             self.assertEqual(
                 1 + halt,
-                cant_halt(prog, REASON_LIMIT).step)
+                bkw_cant_halt(prog, REASON_LIMIT).step)
 
             self.assertEqual(
                 1 + blank,
-                cant_blank(prog, REASON_LIMIT).step)
+                bkw_cant_blank(prog, REASON_LIMIT).step)
 
             self.assertEqual(
                 1 + spin,
-                cant_spinout(prog, REASON_LIMIT).step)
+                bkw_cant_spinout(prog, REASON_LIMIT).step)
 
     def test_simple(self):
         for prog in HALTERS | SPINNERS | RECURS | INFRUL:
@@ -688,21 +688,21 @@ class Segment(TuringTest):
             self.assert_could_spinout_segment(prog)
 
     def test_steps(self):
-        cant_reaches = {
+        bkw_cant_reaches = {
             "halt": segment_cant_halt,
             "spinout": segment_cant_spinout,
         }
 
         for cat, data in SEGMENT_STEPS.items():
-            cant_reach = cant_reaches[cat]
+            bkw_cant_reach = bkw_cant_reaches[cat]
 
             for prog, steps in data.items():
                 self.assertEqual(
                     steps,
-                    cant_reach(prog, steps).step)
+                    bkw_cant_reach(prog, steps).step)
 
                 self.assertFalse(
-                    cant_reach(prog, steps - 1).is_settled())
+                    bkw_cant_reach(prog, steps - 1).is_settled())
 
     def test_omnireasonable(self):
         for prog in OMNIREASONABLE:
@@ -1119,15 +1119,15 @@ class Graphx(TuringTest):
             self.assertFalse(
                 graph_cant_quasihalt(prog))
 
-        cant_quasihalt = GRAPH_CANT_QUASIHALT | STRICT_CYCLE
+        bkw_cant_quasihalt = GRAPH_CANT_QUASIHALT | STRICT_CYCLE
 
-        for prog in cant_quasihalt:
+        for prog in bkw_cant_quasihalt:
             self.assertTrue(
                 graph_cant_quasihalt(prog))
 
         for prog in RECURS - QUASIHALT:
             if graph_cant_quasihalt(prog):
-                self.assertIn(prog, cant_quasihalt)
+                self.assertIn(prog, bkw_cant_quasihalt)
 
     def test_holdouts(self):
         for prog in BLANK_HOLDOUTS:

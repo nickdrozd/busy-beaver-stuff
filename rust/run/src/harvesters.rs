@@ -108,27 +108,27 @@ impl<const s: usize, const c: usize> Harvester<s, c>
 
 /**************************************/
 
-use tm::reason::BackwardResult;
+use tm::backward::BackwardResult;
 
-type Reasoner<const s: usize, const c: usize> =
+type Backward<const s: usize, const c: usize> =
     fn(&Prog<s, c>, usize) -> BackwardResult;
 
-pub struct ReasonHarvester<const s: usize, const c: usize> {
+pub struct BackwardHarvester<const s: usize, const c: usize> {
     holdout: u64,
     refuted: usize,
 
     goal: u8,
-    cant_reach: Reasoner<s, c>,
+    cant_reach: Backward<s, c>,
 }
 
-impl<const s: usize, const c: usize> ReasonHarvester<s, c> {
+impl<const s: usize, const c: usize> BackwardHarvester<s, c> {
     pub const fn new(goal: u8) -> Self {
         let cant_reach = match goal {
-            0 => Prog::cant_halt,
-            1 => Prog::cant_spinout,
-            2 => Prog::cant_blank,
-            3 => Prog::cant_twostep,
-            4 => Prog::cant_zloop,
+            0 => Prog::bkw_cant_halt,
+            1 => Prog::bkw_cant_spinout,
+            2 => Prog::bkw_cant_blank,
+            3 => Prog::bkw_cant_twostep,
+            4 => Prog::bkw_cant_zloop,
             _ => unreachable!(),
         };
 
@@ -143,7 +143,7 @@ impl<const s: usize, const c: usize> ReasonHarvester<s, c> {
 }
 
 impl<const s: usize, const c: usize> Harvester<s, c>
-    for ReasonHarvester<s, c>
+    for BackwardHarvester<s, c>
 {
     fn harvest(&mut self, prog: &Prog<s, c>, _: PassConfig<'_>) {
         let result = (self.cant_reach)(prog, 256);

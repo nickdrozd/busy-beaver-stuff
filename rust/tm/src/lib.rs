@@ -2,6 +2,7 @@
 
 /**************************************/
 
+pub mod backward;
 pub mod blocks;
 pub mod config;
 pub mod cps;
@@ -13,7 +14,6 @@ pub mod machine;
 pub mod macros;
 pub mod prog;
 pub mod prover;
-pub mod reason;
 pub mod rules;
 pub mod segment;
 pub mod tape;

@@ -2,17 +2,17 @@ import argparse
 import sys
 
 from tm.rust_stuff import (
-    cant_blank,
-    cant_halt,
-    cant_spinout,
-    cant_twostep,
-    cant_zloop,
+    bkw_cant_blank,
+    bkw_cant_halt,
+    bkw_cant_spinout,
+    bkw_cant_twostep,
+    bkw_cant_zloop,
     ctl_cant_halt,
     segment_cant_halt,
 )
 
 CYCLES = 2_000
-CANT_REACH = cant_spinout
+CANT_REACH = bkw_cant_spinout
 
 
 if __name__ == '__main__':
@@ -35,13 +35,13 @@ if __name__ == '__main__':
         CYCLES = cycles
 
     if args.halt:
-        CANT_REACH = cant_halt
+        CANT_REACH = bkw_cant_halt
     elif args.blank:
-        CANT_REACH = cant_blank
+        CANT_REACH = bkw_cant_blank
     elif args.zloop:
-        CANT_REACH = cant_zloop
+        CANT_REACH = bkw_cant_zloop
     elif args.twostep:
-        CANT_REACH = cant_twostep
+        CANT_REACH = bkw_cant_twostep
     elif args.segment:
         CYCLES = 20
         CANT_REACH = segment_cant_halt  # type: ignore[assignment]
