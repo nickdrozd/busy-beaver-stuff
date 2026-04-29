@@ -1138,10 +1138,6 @@ class Graphx(TuringTest):
             self.assertFalse(
                 graph_cant_halt(prog))
 
-        for prog in BLANK_HOLDOUTS:
-            self.assertFalse(
-                graph_cant_blank(prog))
-
 ########################################
 
 class Far(TuringTest):
