@@ -2348,3 +2348,106 @@ fn test_overflow() {
 
     prog.bkw_cant_halt(1_022);
 }
+
+/**************************************/
+
+#[expect(clippy::multiple_inherent_impl)]
+impl<const s: usize, const c: usize> Prog<s, c> {
+    pub fn is_reversible(&self) -> bool {
+        self.get_entrypoints().values().all(|(same, diff)| {
+            let mut shift = None;
+            let mut seen_print = [false; c];
+
+            for &(_, (print, sh)) in same.iter().chain(diff) {
+                match shift {
+                    Some(prev) if prev != sh => return false,
+                    Some(_) => {},
+                    None => shift = Some(sh),
+                }
+
+                let print = print as usize;
+
+                if seen_print[print] {
+                    return false;
+                }
+
+                seen_print[print] = true;
+            }
+
+            true
+        })
+    }
+}
+
+#[test]
+fn test_is_reversible() {
+    assert!(Prog::<2, 2>::from("0RB ...  1LA 1RB").is_reversible());
+    assert!(Prog::<2, 2>::from("0RB 0LA  1LA 1RB").is_reversible());
+    assert!(!Prog::<2, 2>::from("0RB 1LA  1LA 1RB").is_reversible());
+
+    assert!(
+        Prog::<3, 2>::from("0RB ...  0LC 1RA  1RB 1LC").is_reversible()
+    );
+    assert!(
+        Prog::<3, 2>::from("0RB 0RA  0LC 1RA  1RB 1LC").is_reversible()
+    );
+    assert!(
+        !Prog::<3, 2>::from("0RB 0RB  0LC 1RA  1RB 1LC")
+            .is_reversible()
+    );
+
+    assert!(
+        Prog::<4, 2>::from("1RB 0LD  0LC 0RB  1LA 1LD  1LC ...")
+            .is_reversible()
+    );
+    assert!(
+        Prog::<4, 2>::from("1RB 0LD  0LC 0RB  1LA 1LD  1LC 0LA")
+            .is_reversible()
+    );
+    assert!(
+        !Prog::<4, 2>::from("1RB 0LD  0LC 0RB  1LA 1LD  1LC 1LA")
+            .is_reversible()
+    );
+
+    assert!(
+        Prog::<5, 2>::from(
+            "1RB 0RD  1RC 0RB  1RD ...  1LE 1LA  0LE 0LA"
+        )
+        .is_reversible()
+    );
+    assert!(
+        Prog::<5, 2>::from(
+            "1RB 0RD  1RC 0RB  1RD 0RC  1LE 1LA  0LE 0LA"
+        )
+        .is_reversible()
+    );
+    assert!(
+        !Prog::<5, 2>::from(
+            "1RB 0RD  1RC 0RB  1RD 1RC  1LE 1LA  0LE 0LA"
+        )
+        .is_reversible()
+    );
+
+    assert!(
+        Prog::<6, 2>::from(
+            "1RB 1LD  1LC 1RE  0LD 0LC  0RE 0RF  0RA ...  1RF 1RA"
+        )
+        .is_reversible()
+    );
+    assert!(
+        Prog::<6, 2>::from(
+            "1RB 1LD  1LC 1RE  0LD 0LC  0RE 0RF  0RA 0RB  1RF 1RA"
+        )
+        .is_reversible()
+    );
+    assert!(
+        !Prog::<6, 2>::from(
+            "1RB 1LD  1LC 1RE  0LD 0LC  0RE 0RF  0RA 1RB  1RF 1RA"
+        )
+        .is_reversible()
+    );
+
+    assert!(Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB ...").is_reversible());
+    assert!(Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB 1RG").is_reversible());
+    assert!(!Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB 1LG").is_reversible());
+}
