@@ -66,9 +66,3 @@ class TestProgram(TestCase):
         self.assertEqual(
             prog_758,
             str(normaliz.swap_shifts()))
-
-    def test_stale_swap(self):
-        prog = "1RB 0LA  0RC 1LD  1LE 0RA  0LF ...  1LB 1LC  0LE 0LF"
-
-        with self.assertRaises(KeyError):
-            tree_norm(prog)

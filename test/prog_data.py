@@ -7073,6 +7073,7 @@ TNF = {
     "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE": "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE",
     "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0LB 0RD": "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0LB 0RD",
     "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0RB 0RD": "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0RB 0RD",
+    "1RB 0LA  0RC 1LD  1LE 0RA  0LF ...  1LB 1LC  0LE 0LF": "1RB 0LA  0RC 1LE  1LD 0RA  1LB 1LC  0LF ...  0LD 0LF",
 }
 
 ## test graph ########################################################
