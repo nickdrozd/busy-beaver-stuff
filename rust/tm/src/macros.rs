@@ -32,11 +32,16 @@ pub type GetInstrResult = Result<Option<Instr>, MacroExc>;
 
 pub trait GetInstr: Display + Sized {
     fn get_instr(&self, slot: &Slot) -> GetInstrResult;
+    fn is_blank(&self, color: Color) -> bool;
 }
 
 impl<const s: usize, const c: usize> GetInstr for Prog<s, c> {
     fn get_instr(&self, slot: &Slot) -> GetInstrResult {
         Ok(self.get(slot).copied())
+    }
+
+    fn is_blank(&self, color: Color) -> bool {
+        color == 0
     }
 }
 
@@ -170,6 +175,10 @@ impl<const s: usize, const c: usize, L: Logic<s, c>> Display
 impl<const s: usize, const c: usize, L: Logic<s, c>> GetInstr
     for MacroProg<'_, s, c, L>
 {
+    fn is_blank(&self, _: Color) -> bool {
+        unimplemented!()
+    }
+
     fn get_instr(&self, slot: &Slot) -> GetInstrResult {
         if let Some(&instr) = self.instrs.borrow().get(slot) {
             return Ok(Some(instr));
@@ -596,6 +605,10 @@ impl<const s: usize, const c: usize> Display
 impl<const s: usize, const c: usize> GetInstr
     for HistoryMacro<'_, s, c>
 {
+    fn is_blank(&self, color: Color) -> bool {
+        self.colors.borrow()[color as usize].0 == 0
+    }
+
     fn get_instr(
         &self,
         macro_slot @ &(state, macro_color): &Slot,

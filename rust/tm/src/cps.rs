@@ -21,9 +21,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     }
 
     pub fn cps_cant_blank(&self, rad: Radius) -> bool {
-        assert!(rad > 1);
-
-        self.cps_loop(rad, Blank)
+        self.cps_run_macros(rad, Blank)
     }
 
     pub fn cps_cant_spinout(&self, rad: Radius) -> bool {
@@ -134,11 +132,21 @@ fn cps_cant_reach_obs(
         let dropped = push.push(print, &mut configs.span_pool);
         tape.scan = pull.pull(&mut configs.span_pool);
 
+        let dropped_nz = match goal {
+            // For blank, nz means nonblank in the base alphabet.
+            Blank => !prog.is_blank(dropped),
+            // For halt/spinout/quasihalt, preserve the old CPS meaning:
+            // canonical macro-zero versus nonzero.  In particular,
+            // Spinout should not treat history-decorated blank colors as
+            // interchangeable with the canonical blank ray.
+            Halt | Spinout => dropped != 0,
+        };
+
         if shift {
-            tape.left_nz = tape.left_nz || dropped != 0;
+            tape.left_nz = tape.left_nz || dropped_nz;
             tape.right_nz = false;
         } else {
-            tape.right_nz = tape.right_nz || dropped != 0;
+            tape.right_nz = tape.right_nz || dropped_nz;
             tape.left_nz = false;
         }
 
@@ -149,20 +157,26 @@ fn cps_cant_reach_obs(
                 configs.lspans.get_colors(pull)
             };
 
-            if !goal.is_halt()
-                && colors.contains(&0)
-                && tape.scan == 0
-                && pull.blank_span(&configs.span_pool)
-                && match goal {
-                    Blank => {
-                        !tape.left_nz
-                            && !tape.right_nz
-                            && push.all_blank(&configs.span_pool)
-                    },
-                    Spinout => state == next_state,
-                    Halt => false,
-                }
-            {
+            let reached_goal = match goal {
+                Blank => {
+                    colors.iter().any(|&c| prog.is_blank(c))
+                        && prog.is_blank(tape.scan)
+                        && pull
+                            .base_blank_span(prog, &configs.span_pool)
+                        && !tape.left_nz
+                        && !tape.right_nz
+                        && push.base_all_blank(prog, &configs.span_pool)
+                },
+                Spinout => {
+                    colors.contains(&0)
+                        && tape.scan == 0
+                        && pull.blank_span(&configs.span_pool)
+                        && state == next_state
+                },
+                Halt => false,
+            };
+
+            if reached_goal {
                 return false;
             }
 
@@ -717,8 +731,20 @@ impl Span {
         pool.colors(self.span).iter().all(|&c| c == 0)
     }
 
-    fn all_blank(&self, pool: &SpanPool) -> bool {
-        self.last == 0 && self.blank_span(pool)
+    fn base_blank_span(
+        &self,
+        prog: &impl GetInstr,
+        pool: &SpanPool,
+    ) -> bool {
+        pool.colors(self.span).iter().all(|&c| prog.is_blank(c))
+    }
+
+    fn base_all_blank(
+        &self,
+        prog: &impl GetInstr,
+        pool: &SpanPool,
+    ) -> bool {
+        prog.is_blank(self.last) && self.base_blank_span(prog, pool)
     }
 }
 
