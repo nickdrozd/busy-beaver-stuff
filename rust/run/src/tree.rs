@@ -630,8 +630,8 @@ pub trait Harvester<const states: usize, const colors: usize>:
         sim_lim: Steps,
         harvester: &(impl Send + Sync + Fn() -> Self),
     ) -> Self::Output {
-        assert!(states == instrs);
-        assert!(colors == instrs);
+        assert_eq!(states, instrs);
+        assert_eq!(colors, instrs);
 
         let results = Self::run_all(
             (instrs * instrs) - instrs,

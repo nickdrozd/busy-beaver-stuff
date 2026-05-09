@@ -212,7 +212,7 @@ impl Config {
 
         block.set_to_limit(count_limit);
 
-        assert!(block.count == count_limit);
+        assert_eq!(block.count, count_limit);
 
         clone
     }

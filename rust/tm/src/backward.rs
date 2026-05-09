@@ -222,7 +222,7 @@ fn get_valid_steps(
         let mut steps = vec![];
 
         let Some((same, diff)) = entrypoints.get(state) else {
-            assert!(*state == 0);
+            assert_eq!(*state, 0);
             continue;
         };
 
