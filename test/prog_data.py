@@ -1422,6 +1422,7 @@ LIMITED: dict[Goal, dict[int, dict[str, int]]] = {
             "1RB 2LA 0RB  1LA 0LB 1RA": 77,
         },
         7: {
+            "1RB 2RA 0LB  2LC 0RB 0LA  ... 1LA ...": 14,
             "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": 169,
             "1RB ... ...  1RC ... ...  1LC 2RC 0RD  0RC 2LD ...": 427,
             "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC": 429,
