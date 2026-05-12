@@ -337,6 +337,10 @@ SPINOUT_BLANK = {
 
     # 2/5
     "1RB 2RA 0RB 2RB 3RB  0LB 4LA 3LA 0RB 1RA": ({'B'}, 21),
+    "1RB 2RB 3LA 2RA 2RA  2LB 1LA 0RB 4RA 3RA": ({'B'}, 1012664081),
+    "1RB 2RB 3LA 2RA 2RA  2LB 1LA 0RB 4RA 4RA": ({'B'}, 1012664081),
+    "1RB 2RB 3LA 2RA 3LA  4LB 1LA 0RB 3RA 0RB": ({'B'}, 1012664081),
+    "1RB 2RB 3LA 4RA 3LA  4LB 1LA 0RB 3RA 0RB": ({'B'}, 1012664081),
 
     # 5/2
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RB 0LA": ({'B', 'C', 'D'}, 379),
@@ -400,6 +404,10 @@ SPINOUT_BLANK_SLOW = {
     # 3/4 copycat
     "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB": ({'B'}, 1367361263049),
 
+    # 2/5 copycat
+    "1RB 2RA 3RA 2RA 2RB  2LB 4LA 0RB 4LA 0RA": ({'B'}, 1367361263049),
+    "1RB 2RA 1RA 2RB 1RB  2LB 3LA 0RB 4RA 2LB": ({'B'}, 1367361263049),
+
     # 5/2 blank
     "1RB 1RA  0RC 0RB  1LC 1LD  1RE 1LB  ... 0RA": (
         {'B', 'C'}, 348098678511),
@@ -413,50 +421,75 @@ SPINOUT_BLANK_SLOW = {
         {'C', 'E', 'F', 'D'}, 65538552),
 }
 
-INIT_BLANK = {
-    "1RB ...  0LB 0RA": 3,
-    "1RB ...  0LB 0LA": 3,
-    "1RB 0RA  1LA ...": 4,
-    "1RB 0LA  1LB 1RA": 5,
-    "1RB 0RA  0LB 1LA": 7,
-    "1RB 1LA  0LA 0LB": 7,
-    "1RB 0RA  1LB 1LA": 8,
+TOTAL = True
+_ = not TOTAL
 
-    "1RB 0LA  1RC ...  0LC 0LA": 5,
-    "1RB 1RC  0LA 0RA  0LB ...": 5,
-    "1RB 0RC  1LC 0LB  0RA 1LA": 17,
-    "1RB 0LA  0LC 1RA  1LA 1LB": 18,
-    "1RB 0LA  1LB 0LC  1RA 1RC": 18,
-    "1RB 1LB  0RC 1LA  1LA 0RA": 21,
+INIT_BLANK: dict[str, tuple[int, bool]] = {
+    "1RB ...  0LB 0RA": (3, _),
+    "1RB ...  0LB 0LA": (3, _),
+    "1RB 0RA  1LA ...": (4, _),
+    "1RB 0LA  1LB 1RA": (5, _),
+    "1RB 0RA  0LB 1LA": (7, _),
+    "1RB 1LA  0LA 0LB": (7, TOTAL),
+    "1RB 0RA  1LB 1LA": (8, _),
 
-    "1RB 0RA 1LA  1LB 2RB 1LA": 20,
-    "1RB 2LB 0LA  1LA 0RB 2RA": 20,
-    "1RB 0RA 1LB  2LA 2LB 0LA": 21,
-    "1RB 0RA 2RB  2LA 1LB 1LA": 21,
-    "1RB 2RB 0RA  1LB 2LA 1LA": 21,
-    "1RB 2RB 0RA  2LA 1LA 1LB": 27,
+    "1RB 0LA  1RC ...  0LC 0LA": (5, _),
+    "1RB 1RC  0LA 0RA  0LB ...": (5, _),
+    "1RC 0RB  0RA 1LA  1LB 0LC": (17, TOTAL),
+    "1RB 0RC  1LC 0LB  0RA 1LA": (17, TOTAL),
+    "1RB 0LA  0LC 1RA  1LA 1LB": (18, _),
+    "1RB 0LA  1LB 0LC  1RA 1RC": (18, _),
+    "1RB 1LB  0RC 1LA  1LA 0RA": (21, _),
 
-    "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD": 21,
-    "1RB 1LA  0LA 1RC  0RB 0LD  0RC 1LD": 48,
-    "1RB 0RA  1RC 1RD  0LD 0LC  1LA 1LC": 77,
-    "1RB 1LC  1RC 0LD  1LA 0RB  0LB 0RA": 78,
-    "1RB 1LC  1RC 0RD  1LA 0LB  0LD 0RA": 84,
-    "1RB 0RA  1LC 1RD  1RD 1LD  1LA 0LC": 88,
-    "1RB 0RA  1LC 0RD  1LA 1LB  0LC 1RD": 90,
-    "1RB 0RA  1LC 0RB  0LD 1LD  1LA 0LA": 121,
+    "1RB 0RA 2RB  2LA 0LB 1LA": (18, TOTAL),
+    "1RB 0RA 1LA  1LB 2RB 1LA": (20, _),
+    "1RB 2LB 0LA  1LA 0RB 2RA": (20, _),
+    "1RB 0RA 1LB  2LA 2LB 0LA": (21, _),
+    "1RB 0RA 2RB  2LA 1LB 1LA": (21, _),
+    "1RB 2RB 0RA  1LB 2LA 1LA": (21, _),
+    "1RB 2RB 0RA  2LA 1LA 1LB": (27, _),
 
-    "1RB 2RB 0LB ...  1LA 2LB 3RA 0LA": 7,
-    "1RB ... 0RB ...  2LB 3RA 0RA 0RA": 9,
-    "1RB 3RA 0RB 0LA  2LA ... 3LA ...": 11,
-    "1RB 0RA ... 0LA  2LB 3LA 1LA 3RB": 12,
-    "1RB 3RB 0LA 2RA  2LB 0RB 3LA 1LA": 136,
-    "1RB 0RA 3LB 1LA  2LA 2LB 0LA 2RA": 139,
-    "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA": 224,
+    "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD": (21, _),
+    "1RB 0LB  1LC 1LD  0LA 1RC  0RC 0RD": (25, TOTAL),
+    "1RB 1RA  0LC 0LB  0RD 1LD  0RA 1LB": (40, TOTAL),
+    "1RB 1LA  0LA 1RC  0RB 0LD  0RC 1LD": (48, TOTAL),
+    "1RB 0RA  1RC 1RD  0LD 0LC  1LA 1LC": (77, _),
+    "1RB 1LC  1RC 0LD  1LA 0RB  0LB 0RA": (78, _),
+    "1RB 1LC  1RC 0RD  1LA 0LB  0LD 0RA": (84, _),
+    "1RB 0RA  1LC 1RD  1RD 1LD  1LA 0LC": (88, _),
+    "1RB 0RA  1LC 0RD  1LA 1LB  0LC 1RD": (90, _),
+    "1RB 0RA  1LC 0RB  0LD 1LD  1LA 0LA": (121, _),
 
-    "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB": 18,
-    "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD": 29,
-    "1RB 1LA  1RC 0LD  0LA 1RE  0RE 1LD  0RC 0RB": 102,
-    "1RB 0LA  1LC 1RE  0LD 1RC  1RA 0RB  0LA 0RC": 827,
+    "1RB 2RB 0LB ...  1LA 2LB 3RA 0LA": (7, _),
+    "1RB ... 0RB ...  2LB 3RA 0RA 0RA": (9, _),
+    "1RB 3RA 0RB 0LA  2LA ... 3LA ...": (11, _),
+    "1RB 0RA ... 0LA  2LB 3LA 1LA 3RB": (12, _),
+    "1RB 2RB 3RB 3LA  0LA 0LB 1LA 2LA": (23, TOTAL),
+    "1RB 2RB 3RB 3LA  0LA 0LB 1RA 1LA": (28, TOTAL),
+    "1RB 3RB 0LA 2RA  2LB 0RB 3LA 1LA": (136, _),
+    "1RB 0RA 3LB 1LA  2LA 2LB 0LA 2RA": (139, _),
+    "1RB 2LB 3LA 0RA  1LA 3RB 3LB 2RA": (224, _),
+
+    "1RB 0LE  0RC 1LB  1RD 0RD  0LA 1RC  1LE 0LB": (18, _),
+    "1RB 1LC  0LA 1RD  0RB 1RE  0RE 0LD  0LC 1LB": (21, TOTAL),
+    "1RB 1LC  0LC 0LD  1RD 0RB  0LE 1RB  0LA 1RE": (23, TOTAL),
+    "1RB 0RE  1RC 1LC  1LD 0LB  0RA 0LC  1RE 0LD": (29, _),
+    "1RB 1LC  0LC 0RD  1RD 0RB  0LE 1RA  0LA 1RE": (37, TOTAL),
+    "1RB 1LA  1RC 0LD  0LA 1RE  0RE 1LD  0RC 0RB": (102, _),
+    "1RB 1LC  0LC 0RD  1LA 0RB  0LE 1RE  0LA 1RE": (143, TOTAL),
+    "1RB 1LC  0LC 0RD  1LA 0RB  0LE 1RD  0LA 1RE": (165, TOTAL),
+    "1RB 1LC  0LC 0RD  1LA 0RB  0LE 1RD  0LA 0RA": (253, TOTAL),
+    "1RB 0LC  1LC 1RA  0RA 0LD  0RE 1LD  0RB 0LB": (253, TOTAL),
+    "1RB 0LA  1LC 1RE  0LD 1RC  1RA 0RB  0LA 0RC": (827, _),
+
+    "1RB 0RA 3LB 4LA 0RB  2LA 0RB 3LA 1LA 3RB": (      32, TOTAL),
+    "1RB 3RB 0LB 3RA 0LB  2LA 0RB 3RB 4LB 0RA": (      20, _),
+    "1RB 4RB 3LA 3LA 0RA  2LB 3RB 3LA 0LA 1RA": (      23, _),
+    "1RB 3LA 0RA 2LB 1LB  2LA 2RB 3LA 4RB 1RB": (    2822, _),
+    "1RB 1RA 4LB 3LA 0RA  2LB 3RB 4LA 4RB 2RB": (    9791, _),
+    "1RB 2RB 0RA 0LB 3RB  2LA 4RB 3RB 2LB 1LA": (   27256, _),
+    "1RB 2RB 0RA 0LB 1LA  2LA 4RB 3RB 2LB 1LA": (   75776, _),
+    "1RB 2RB 0RA 0LB 2RB  2LA 4LA 3RB 2LB 1RB": (62963743, _),
 }
 
 TWOSTEPPERS = {
@@ -914,6 +947,9 @@ RECUR_BLANK_IN_PERIOD = {
 
     # 2/4
     "1RB 2LA 0RA 1LA  3LA 0LB 1RA 2LA": (None, 52),
+
+    # 2/5
+    "1RB 2LA 3RB 2LB 0RA  3LA 4RA 4RA 0LB 0LB": (None, 17),
 }
 
 RECUR_BLANK_BEFORE_PERIOD = {
@@ -1989,6 +2025,7 @@ GRAPH_CANT_QUASIHALT = {
     "1RB 0RB 1RB 2RA 4LA  2LA 3RB 3LB 4RB 0LA",
     "1RB 0RB 3RA 1RB 4LA  2LA 2RB 3LB 4RB 0LA",
     "1RB 1RA 0RB 4LA 4LB  2LB 2RB 3RB 2LA 0LA",
+    "1RB 2LA 3RB 2LB 0RA  3LA 4RA 4RA 0LB 0LB",
     "1RB 2RA 0RB 4LA 3LB  2LB 2RB 3RB 2LA 0LA",
     "1RB 2RB 0RB 2RA 4LA  1LA 3LB 3RB 4RB 0LA",
     "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA",
@@ -2293,6 +2330,8 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1LA 0RC  2LB 2RC 1LA  0LA 0RB 0LB": 188,
         "1RB 1RC 2LA  1LA 0RC 0LA  2RC 2RB 0LB": 266,
 
+        "1RB 2LB 1LA 3LB 0RA  2LA 4LA 3RA 4RB 0RB": 108,
+        "1RB 3LB 4RB 4LA 0LA  2LA 2RB 1RA 3RA 0LB": 108,
         "1RB 3LB 2LA 3LA 0RB  2LB 3RB 0LA 4RB 4RA": 150,
         "1RB 1RA 0RB 4LA 4LB  2LB 2RB 3RB 2LA 0LA": 116,
         "1RB 2RA 0RB 4LA 3LB  2LB 2RB 3RB 2LA 0LA": 169,
@@ -2343,6 +2382,11 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0LC  1LC 0RD  0RE 1LA  0LA 1RD  0RB 1LB": 796,
         "1RB 0RB  1RC 1RA  1LC 0LD  0RA 0LE  1LD 1LE": 1328,
         "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE": 1328,
+
+        "1RB 1LB ...  1LC 0LB 0RD  2RD 0LB ...  0RA 1RD ...": 106,
+        "1RB 1LB ...  1LC 0LB 0RD  2RD 1RA ...  0RA 1RD ...": 128,
+        "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...": 180,
+        "1RB 2RA ...  1RC 0RA ...  1LD 0LC 1RC  0RB 1LC ...": 180,
 
         "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB": 1151,
         "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA": 1249,
@@ -2614,6 +2658,8 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
             "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC",
             "1RB ... ... ...  2RC ... ... ...  3LC 2LB 3RC 0RC",
+            "1RB ... 3RA ...  0RC 2RA 0RB 1RB  2LC 2LB 1RC ...",
+            "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
             "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB",
             "1RB ... ...  1RC ... ...  0RD 2LC ...  1LD 2RD 0RC",
             "1RB ... ...  1RC ... ...  1LC 2RC 0RD  0RC 2LD ...",
@@ -2996,7 +3042,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
         "step_limit": 24,
-        "depth_limit": 186,
+        "depth_limit": 188,
     },
     "blank": {
         "init": 1,
@@ -3049,8 +3095,8 @@ BACKWARD_CANT_ZLOOP_FALSE_NEGATIVES: set[str] = {
 ########################################
 
 SEGMENT_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 100,
-    "spinout": 130,
+    "halt": 101,
+    "spinout": 131,
 }
 
 SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3128,6 +3174,7 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
+        "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
         "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB",
         "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
         "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 0RF  1LA 0LA",
@@ -3275,6 +3322,7 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB",
         "1RB 0RE  1LC 0LB  0RA 1LD  1LB 0LA  1RE 0LC",
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
+        "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
         "1RB 2LD 2LA  1RC 0RD 2LA  1LA ... 0LC  2RD 2RC 0LD",
         "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
         "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
@@ -3480,7 +3528,7 @@ SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
 
 CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 7,
-    "blank": 37,
+    "blank": 43,
     "spinout": 290,
 }
 
@@ -3526,10 +3574,16 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 2LB 2LC  1LA 2RC 1LB  0RC 2RB 0LA",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
+        "1RB 2LB 1LA 3LB 0RA  2LA 4LA 3RA 4RB 0RB",
+        "1RB 3LB 4RB 4LA 0LA  2LA 2RB 1RA 3RA 0LB",
         "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA",
         "1RB 0RB  1RC 1RA  1LC 0LD  0RA 0LE  1LD 1LE",
         "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
         "1RB 0LE  1RC 1LB  0RD 0RB  1LD 0LE  0RC 1LA",
+        "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...",
+        "1RB 1LB ...  1LC 0LB 0RD  2RD 0LB ...  0RA 1RD ...",
+        "1RB 1LB ...  1LC 0LB 0RD  2RD 1RA ...  0RA 1RD ...",
+        "1RB 2RA ...  1RC 0RA ...  1LD 0LC 1RC  0RB 1LC ...",
         "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB",
         "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA",
     },
@@ -3925,9 +3979,9 @@ CPS_QUASIHALT_FALSE_NEGATIVES = {
 ########################################
 
 CTL_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 77,
-    "blank": 316,
-    "spinout": 214,
+    "halt": 78,
+    "blank": 322,
+    "spinout": 215,
 }
 
 CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3989,6 +4043,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LD  0RC 0LC  0RD 1RA  1LE ...  0RA 0LE",
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
+        "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
         "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB",
         "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
         "1RB ...  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE",
@@ -4268,6 +4323,8 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 2RC ...  1LB 2RB 0RC  2LB 1RC 0LA",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
+        "1RB 2LB 1LA 3LB 0RA  2LA 4LA 3RA 4RB 0RB",
+        "1RB 3LB 4RB 4LA 0LA  2LA 2RB 1RA 3RA 0LB",
         "1RB 0RA 3LA 2LA 0LA  2LA 0RB 4LB 2RB 4RA",
         "1RB 0RB 0RA 3LA 0LA  2LB 2RB 3RB 4LA 4RA",
         "1RB 1RB 0RB 3LA 0LA  2LA 2RA 3RB 4LB 4RA",
@@ -4325,6 +4382,10 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
         "1RB 1RE  1LC 0LA  1LA 0RD  0LB 1LB  0RE 0LD",
         "1RB 1RE  1RC 1LB  1LD 0LC  0RD 0RA  1LC 0RB",
+        "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...",
+        "1RB 1LB ...  1LC 0LB 0RD  2RD 0LB ...  0RA 1RD ...",
+        "1RB 1LB ...  1LC 0LB 0RD  2RD 1RA ...  0RA 1RD ...",
+        "1RB 2RA ...  1RC 0RA ...  1LD 0LC 1RC  0RB 1LC ...",
         "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB",
         "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA",
     },
@@ -4524,6 +4585,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
         "1RB 1RA  0LB 1RC  0LD 0LC  1RA 1LE  0LC 1LD",
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
+        "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
         "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA",
         "1RB 0LC 1RC  1LA 2RB 1LB  1RC 2LA 0RD  2LB ... 2LC",
         "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
@@ -4676,6 +4738,8 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
         "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC",
+        "1RB ... 3RA ...  0RC 2RA 0RB 1RB  2LC 2LB 1RC ...",
+        "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
         "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB",
         "1RB ... ...  1RC ... ...  0RD 2LC ...  1LD 2RD 0RC",
         "1RB ... ...  1RC ... ...  1LC 2RC 0RD  0RC 2LD ...",
@@ -4887,9 +4951,11 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
         "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
         "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA",
+        "1RB 2LB 1LA 3LB 0RA  2LA 4LA 3RA 4RB 0RB",
         "1RB 2LB 1RB 3LB ...  2LA 4LB 3RB 0RA 1RB",
         "1RB 3LA 1LB 4LA 0LA  2LA 0RB 3RA 4RA 2RA",
         "1RB 3LB 0LA 4LB 1LB  2LA 2RA 3RB 4RB 0RB",
+        "1RB 3LB 4RB 4LA 0LA  2LA 2RB 1RA 3RA 0LB",
         "1RB 3RA 1LA 4LA 0RB  2LA 3LB 0LA 2LA 4RB",
         "1RB 3RA 3LA 4LA 0RB  2LA 2LA 0LA 1LB 4RB",
         "1RB ...  0RC 0RD  1LC 1LA  0RC 0LE  1LD 0RC",
@@ -4915,6 +4981,10 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",
         "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  ... 1RD",
         "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
+        "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...",
+        "1RB 1LB ...  1LC 0LB 0RD  2RD 0LB ...  0RA 1RD ...",
+        "1RB 1LB ...  1LC 0LB 0RD  2RD 1RA ...  0RA 1RD ...",
+        "1RB 2RA ...  1RC 0RA ...  1LD 0LC 1RC  0RB 1LC ...",
         "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD",
         "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD",
         "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB",
@@ -5393,6 +5463,7 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 1RE  1LC 0LA  1LA 0RD  0LB 1LB  0RE 0LD",
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB ... ... ...  2RC ... 2RB ...  2LC 3RB 0RC ...",
+        "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
         "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA",
         "1RB 0LC 1RC  1LA 2RB 1LB  1RC 2LA 0RD  2LB ... 2LC",
         "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA",
@@ -5639,6 +5710,8 @@ DO_BLANK: set[str] = {
     "1RB 2LD 2LA  1RC 0RD 2LA  1LA 2LB 0LC  2RD 2RC 0LD",  # "(10 ↑↑ 53)"
 
     "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
+
+    "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
 }
 
 DO_SPINOUT: set[str] = {
@@ -5823,7 +5896,14 @@ PROVER_SPINOUT: ProverEst = {
     "1RB 0LB 0RB  2RC 0RA 1RB  2LC 1LB 0RC": 0,
 
     # 2/5
-    "1RB 2RA 4RA 2RB 1LA  2LB 3LA 0RB 1LA 2LA" : 0,
+    "1RB 4RB 3RA 2RA 2RB  2LB 3RB 0RB 4LA 2RA": 0,
+    "1RB 2RB 3LA 2RA 3RA  2LB 1LA 0RB 4RA 4LA": 0,
+    "1RB 2RA 3LA 4RB 2RA  2LB 1LA 0RB 0RA 0RB": 0,
+    "1RB 2RB 3RA 2LB 3LB  2LB 1LA 0RB 4LA 2RA": 2,
+    "1RB 2RB 3RA 2RA 2RB  2LB 1LA 0RB 4LA 0RA": 0,
+    "1RB 2RA 4RA 2RB 1LA  2LB 3LA 0RB 1LA 2LA": 0,
+    "1RB 2RB 4RA 0RB 2RA  2LB 3LA 0RB 0RA 1RB": 0,
+    "1RB 0LA 3RA 2RA 2LB  2LB 3RB 0RB 4LA 0RA": 0,
 
     # 5/2
     "1RB 1LE  1RC 0RA  0LD 0LC  1RD 1RE  1LB 0RB": 1195275720475,
@@ -5849,6 +5929,9 @@ PROVER_SPINOUT: ProverEst = {
     "1RB 1LC  0LD 0LB  1RE 0LA  0LC 1LD  1RE 1RA": 2,
     "1RB 1LC  0LD 0LB  0LE 0LA  0LE 1LD  1RE 1RA": 2,
     "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA": 2,
+
+    # 3/4
+    "1RB ... 3RA ...  0RC 2RA 0RB 1RB  2LC 2LB 1RC ...": 0,
 
     # 4/3
     "1RB 2LD 2LA  1RC 0RD 2LA  1LA 2LB 0LC  2RD 2RC 0LD": 0,
@@ -5933,11 +6016,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 360654,
-    "divs": 51369,
-    "exps": 231427,
-    "muls": 164532,
-    "totl": 807982,
+    "adds": 360699,
+    "divs": 51391,
+    "exps": 231431,
+    "muls": 164543,
+    "totl": 808064,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -6014,6 +6097,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "0",
             "0",
             "(537 + (... + ...))",
+        ),
+        "1RB ... 3RA ...  0RC 2RA 0RB 1RB  2LC 2LB 1RC ...": (
+            251,
+            "0",
+            "0",
+            "(4160 + (22 * (3 ** 2001)))",
         ),
     },
 
@@ -6459,6 +6548,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "infrul": {
+        "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA": (
+            326,
+            "3",
+            "3",
+            "(718 + (7 * (2 ** 11)))",
+        ),
         "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC": (
             163,
             "1",

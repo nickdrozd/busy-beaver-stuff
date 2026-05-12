@@ -913,9 +913,14 @@ class Simple(TuringTest):
         self._test_spinout(SPINOUT_BLANK, blank = True)
 
     def test_init_blank(self):
-        for prog, steps in INIT_BLANK.items():
+        for prog, (steps, total) in INIT_BLANK.items():
             self.run_bb(prog, sim_lim = steps, analyze = False)
-            self.assertEqual(self.machine.blanks[0], steps)
+            self.assertEqual((blanks := self.machine.blanks)[0], steps)
+
+            if total:
+                self.assertEqual(
+                    len(blanks),
+                    1 + prog.count('  '))
 
     def test_instr_seqs(self):
         self._test_instr_seqs(INSTR_SEQS)
@@ -1068,6 +1073,9 @@ class Graphx(TuringTest):
                 graph_cant_halt(prog))
 
     def test_blank(self):
+        self.assertFalse(
+            BLANKERS & GRAPH_FALSE_NEGATIVES['blank'])
+
         for prog in BLANKERS:
             self.assertFalse(
                 graph_cant_blank(prog))
