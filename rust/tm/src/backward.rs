@@ -162,15 +162,16 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut antichains = Antichains::default();
 
-    // Linear periodic-branch closer.
+    // Periodic branch closers.
     //
-    // This is deliberately much narrower than the earlier widening attempt:
-    // it only fires on a single-successor backward branch, after seeing a
-    // stable two-phase lasso where each phase grows by appending the same
-    // finite word to exactly one finite blank-ended side.  It does not add
-    // a general subsumption rule to the antichain; it only closes the
-    // current deterministic branch.
+    // `periodic_history` is the original single-chain closer.
+    // `frontier_periodic_history` is a stricter frontier-level extension: it
+    // closes only when the *entire live frontier* repeats as a two-phase
+    // periodic growth map.  This is aimed at halt cones, where there are often
+    // several independent linear branches rather than one global chain.
     let mut periodic_history = PeriodicHistory::default();
+    let mut frontier_periodic_history =
+        FrontierPeriodicHistory::default();
 
     let mut seen: Set<(State, u64)> = Set::new();
 
@@ -214,11 +215,11 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             Ok(stepped) => stepped,
         };
 
-        let close_periodic = linear_before_step
+        let close_linear_periodic = linear_before_step
             && stepped.len() == 1
             && periodic_history.push_and_detect(&stepped[0]);
 
-        if close_periodic {
+        if close_linear_periodic {
             configs.clear();
         } else {
             if !linear_before_step || stepped.len() != 1 {
@@ -229,6 +230,14 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
                 .into_iter()
                 .filter(|config| antichains.insert(config))
                 .collect();
+        }
+
+        // `configs` is the live frontier that will be printed/processed at
+        // backward depth `step + 1`, after antichain filtering.
+        if let Some(cycle_from) = frontier_periodic_history
+            .observe_frontier(step + 1, &configs)
+        {
+            return Refuted(cycle_from);
         }
     }
 
@@ -2469,6 +2478,398 @@ impl PeriodicHistory {
         }
         Some(out)
     }
+}
+
+/**************************************/
+
+/// Frontier-level periodic closer.
+///
+/// Same proof condition as the first frontier closer, but optimized so the
+/// common halt case does not do a full pairwise string-heavy matching pass.
+///
+/// The closer stores more history than it needs for detection.  Detection is
+/// performed on the most recent `NEED` frontiers, while the extra retained
+/// frontiers let us scan backward and report the first frontier that already
+/// participates in the same stable two-phase growth.  Thus callers can
+/// distinguish:
+///
+/// - `proved_at`: when enough samples existed to certify the periodic frontier;
+/// - `cycle_from`: the earliest retained frontier where that same cycle starts.
+#[derive(Default)]
+struct FrontierPeriodicHistory {
+    fronts: Vec<FrontierSnap>,
+}
+
+#[derive(Clone)]
+struct FrontierSnap {
+    step: Steps,
+    front: Vec<FastCfg>,
+}
+
+impl FrontierPeriodicHistory {
+    const NEED: usize = 8;
+
+    // Keep more than `NEED` so that, after a successful detection, we can
+    // extend the detected growth pattern to the left and recover the earliest
+    // stable frontier in recent history.
+    const KEEP: usize = 32;
+
+    // Keep this conservative.  If a frontier is huge, the closer should not
+    // become the bottleneck; ordinary antichain/search limits can handle it.
+    // Raising this is safe but may cost time on very wide halt cones.
+    const MAX_FRONTIER_FOR_CLOSER: usize = 20_000;
+
+    fn observe_frontier(
+        &mut self,
+        step: Steps,
+        frontier: &[Config],
+    ) -> Option<Steps> {
+        if frontier.is_empty() {
+            return None;
+        }
+
+        if frontier.len() > Self::MAX_FRONTIER_FOR_CLOSER {
+            self.clear();
+            return None;
+        }
+
+        let mut front = Vec::with_capacity(frontier.len());
+        for cfg in frontier {
+            let Some(fast) = FastCfg::from_config(cfg) else {
+                self.clear();
+                return None;
+            };
+            front.push(fast);
+        }
+
+        self.fronts.push(FrontierSnap { step, front });
+        if self.fronts.len() > Self::KEEP {
+            self.fronts.remove(0);
+        }
+
+        if self.fronts.len() < Self::NEED {
+            return None;
+        }
+
+        let detect_start = self.fronts.len() - Self::NEED;
+        let cycle_start_idx =
+            self.detect_two_phase_frontier_growth_from(detect_start)?;
+        Some(self.fronts[cycle_start_idx].step)
+    }
+
+    fn clear(&mut self) {
+        self.fronts.clear();
+    }
+
+    fn detect_two_phase_frontier_growth_from(
+        &self,
+        start: usize,
+    ) -> Option<usize> {
+        if start + Self::NEED > self.fronts.len() {
+            return None;
+        }
+
+        let expected = self.expected_two_phase_signatures(start)?;
+
+        // Verify the detection window.
+        for j in start..self.fronts.len().saturating_sub(2) {
+            if j < start || j + 2 >= start + Self::NEED {
+                continue;
+            }
+            let sig = Self::frontier_growth_signature(
+                &self.fronts[j].front,
+                &self.fronts[j + 2].front,
+            )?;
+            if sig != expected[j & 1] {
+                return None;
+            }
+        }
+
+        // Walk left as far as the same absolute-parity signatures continue to
+        // hold.  This recovers the first retained stable frontier, not merely
+        // the first frontier in the detection window.
+        let mut cycle_start = start;
+        while cycle_start > 0 && cycle_start + 1 < self.fronts.len() {
+            let candidate = cycle_start - 1;
+            if candidate + 2 >= self.fronts.len() {
+                break;
+            }
+
+            let Some(sig) = Self::frontier_growth_signature(
+                &self.fronts[candidate].front,
+                &self.fronts[candidate + 2].front,
+            ) else {
+                break;
+            };
+
+            if sig != expected[candidate & 1] {
+                break;
+            }
+
+            cycle_start = candidate;
+        }
+
+        Some(cycle_start)
+    }
+
+    fn expected_two_phase_signatures(
+        &self,
+        start: usize,
+    ) -> Option<[Vec<BranchSig>; 2]> {
+        let end = start + Self::NEED;
+        if end > self.fronts.len() {
+            return None;
+        }
+
+        let mut expected: [Option<Vec<BranchSig>>; 2] = [None, None];
+        let mut counts = [0, 0];
+
+        for j in start..end.saturating_sub(2) {
+            let sig = Self::frontier_growth_signature(
+                &self.fronts[j].front,
+                &self.fronts[j + 2].front,
+            )?;
+            if sig.is_empty() {
+                return None;
+            }
+
+            let parity = j & 1;
+            match &expected[parity] {
+                None => expected[parity] = Some(sig),
+                Some(prev) if *prev == sig => {},
+                Some(_) => return None,
+            }
+            counts[parity] += 1;
+        }
+
+        // With NEED=8 this gives three comparisons for each parity.  Requiring
+        // at least two keeps smaller experimental NEED values from accepting a
+        // single accidental pair.
+        if counts[0] < 2 || counts[1] < 2 {
+            return None;
+        }
+
+        Some([expected[0].clone()?, expected[1].clone()?])
+    }
+
+    fn frontier_growth_signature(
+        a: &[FastCfg],
+        b: &[FastCfg],
+    ) -> Option<Vec<BranchSig>> {
+        if a.is_empty() || a.len() != b.len() {
+            return None;
+        }
+
+        let mut index: Dict<BucketKey, Vec<usize>> = Dict::new();
+        for (j, cb) in b.iter().enumerate() {
+            // Candidate where the left side grows and the right side is fixed.
+            index
+                .entry(BucketKey {
+                    state: cb.state,
+                    scan: cb.scan,
+                    grow_side: Side::Left,
+                    grow_end: cb.l_end,
+                    same_end: cb.r_end,
+                    same: cb.right.clone(),
+                })
+                .or_default()
+                .push(j);
+
+            // Candidate where the right side grows and the left side is fixed.
+            index
+                .entry(BucketKey {
+                    state: cb.state,
+                    scan: cb.scan,
+                    grow_side: Side::Right,
+                    grow_end: cb.r_end,
+                    same_end: cb.l_end,
+                    same: cb.left.clone(),
+                })
+                .or_default()
+                .push(j);
+        }
+
+        let mut used = vec![false; b.len()];
+        let mut out = Vec::with_capacity(a.len());
+
+        for ca in a {
+            let mut found: Option<(usize, BranchSig)> = None;
+
+            // Try left-growth candidates.
+            let lkey = BucketKey {
+                state: ca.state,
+                scan: ca.scan,
+                grow_side: Side::Left,
+                grow_end: ca.l_end,
+                same_end: ca.r_end,
+                same: ca.right.clone(),
+            };
+            if let Some(cands) = index.get(&lkey) {
+                for &j in cands {
+                    if used[j] {
+                        continue;
+                    }
+                    let cb = &b[j];
+                    if let Some(delta) =
+                        suffix_after_prefix(&ca.left, &cb.left)
+                    {
+                        let sig = BranchSig {
+                            state: ca.state,
+                            scan: ca.scan,
+                            dh: cb.head - ca.head,
+                            grow_side: Side::Left,
+                            grow_end: ca.l_end,
+                            grow_delta: delta.to_vec(),
+                            same_end: ca.r_end,
+                            same: ca.right.clone(),
+                        };
+                        if found.is_some() {
+                            return None;
+                        }
+                        found = Some((j, sig));
+                    }
+                }
+            }
+
+            // Try right-growth candidates.
+            let rkey = BucketKey {
+                state: ca.state,
+                scan: ca.scan,
+                grow_side: Side::Right,
+                grow_end: ca.r_end,
+                same_end: ca.l_end,
+                same: ca.left.clone(),
+            };
+            if let Some(cands) = index.get(&rkey) {
+                for &j in cands {
+                    if used[j] {
+                        continue;
+                    }
+                    let cb = &b[j];
+                    if let Some(delta) =
+                        suffix_after_prefix(&ca.right, &cb.right)
+                    {
+                        let sig = BranchSig {
+                            state: ca.state,
+                            scan: ca.scan,
+                            dh: cb.head - ca.head,
+                            grow_side: Side::Right,
+                            grow_end: ca.r_end,
+                            grow_delta: delta.to_vec(),
+                            same_end: ca.l_end,
+                            same: ca.left.clone(),
+                        };
+                        if found.is_some() {
+                            return None;
+                        }
+                        found = Some((j, sig));
+                    }
+                }
+            }
+
+            let (j, sig) = found?;
+            used[j] = true;
+            out.push(sig);
+        }
+
+        if used.iter().any(|&x| !x) {
+            return None;
+        }
+
+        out.sort_unstable();
+        Some(out)
+    }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+struct FastCfg {
+    state: State,
+    scan: Color,
+    head: Pos,
+    l_end: EndSig,
+    r_end: EndSig,
+    left: Vec<Color>,
+    right: Vec<Color>,
+}
+
+impl FastCfg {
+    fn from_config(cfg: &Config) -> Option<Self> {
+        Some(Self {
+            state: cfg.state,
+            scan: cfg.tape.scan,
+            head: cfg.tape.head,
+            l_end: EndSig::from_end(&cfg.tape.lspan.end),
+            r_end: EndSig::from_end(&cfg.tape.rspan.end),
+            left: span_colors_exact(&cfg.tape.lspan)?,
+            right: span_colors_exact(&cfg.tape.rspan)?,
+        })
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+enum EndSig {
+    Blanks,
+    Unknown,
+}
+
+impl EndSig {
+    const fn from_end(end: &TapeEnd) -> Self {
+        match end {
+            TapeEnd::Blanks => Self::Blanks,
+            TapeEnd::Unknown => Self::Unknown,
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+enum Side {
+    Left,
+    Right,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct BucketKey {
+    state: State,
+    scan: Color,
+    grow_side: Side,
+    grow_end: EndSig,
+    same_end: EndSig,
+    same: Vec<Color>,
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct BranchSig {
+    state: State,
+    scan: Color,
+    dh: Pos,
+    grow_side: Side,
+    grow_end: EndSig,
+    grow_delta: Vec<Color>,
+    same_end: EndSig,
+    same: Vec<Color>,
+}
+
+fn span_colors_exact(span: &Span) -> Option<Vec<Color>> {
+    let mut out = Vec::new();
+    for b in span.span.iter() {
+        if b.count == 0 {
+            return None;
+        }
+        for _ in 0..b.count {
+            out.push(b.color);
+        }
+    }
+    Some(out)
+}
+
+fn suffix_after_prefix<'a>(
+    prefix: &[Color],
+    whole: &'a [Color],
+) -> Option<&'a [Color]> {
+    if whole.len() <= prefix.len() || !whole.starts_with(prefix) {
+        return None;
+    }
+    Some(&whole[prefix.len()..])
 }
 
 #[derive(Default)]
