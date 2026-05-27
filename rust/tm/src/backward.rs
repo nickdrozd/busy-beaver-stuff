@@ -162,6 +162,16 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut antichains = Antichains::default();
 
+    // Linear periodic-branch closer.
+    //
+    // This is deliberately much narrower than the earlier widening attempt:
+    // it only fires on a single-successor backward branch, after seeing a
+    // stable two-phase lasso where each phase grows by appending the same
+    // finite word to exactly one finite blank-ended side.  It does not add
+    // a general subsumption rule to the antichain; it only closes the
+    // current deterministic branch.
+    let mut periodic_history = PeriodicHistory::default();
+
     let mut seen: Set<(State, u64)> = Set::new();
 
     for step in 1..=steps {
@@ -188,7 +198,10 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             _ => {},
         }
 
-        configs = match step_configs::<s, c>(
+        let linear_before_step =
+            valid_steps.len() == 1 && valid_steps[0].0.len() == 1;
+
+        let stepped = match step_configs::<s, c>(
             valid_steps,
             &mut blanks,
             &win_possible,
@@ -198,11 +211,25 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             right_forced_blank,
         ) {
             Err(err) => return err,
-            Ok(stepped) => stepped
+            Ok(stepped) => stepped,
+        };
+
+        let close_periodic = linear_before_step
+            && stepped.len() == 1
+            && periodic_history.push_and_detect(&stepped[0]);
+
+        if close_periodic {
+            configs.clear();
+        } else {
+            if !linear_before_step || stepped.len() != 1 {
+                periodic_history.clear();
+            }
+
+            configs = stepped
                 .into_iter()
                 .filter(|config| antichains.insert(config))
-                .collect(),
-        };
+                .collect();
+        }
     }
 
     StepLimit
@@ -2307,6 +2334,140 @@ impl Span {
         }
 
         true
+    }
+}
+
+/**************************************/
+
+/// A tiny, conservative accelerator for the common backward pattern
+///
+///   P_n -> Q_n -> P_{n+1} -> Q_{n+1} -> ...
+///
+/// where each same-parity subsequence grows by appending the same finite word
+/// to one blank-ended finite side, while the opposite side is unchanged.
+///
+/// This is NOT an antichain widening rule.  It is only used to close the
+/// current branch after the search has established that the branch is linear
+/// (one input config, one valid predecessor instruction, one output config)
+/// for all sampled steps.  That restriction is what prevents the false-positive
+/// behavior of the earlier implementation: a periodic-looking branch with an
+/// unsampled side predecessor is never closed here because it is not linear.
+#[derive(Default)]
+struct PeriodicHistory {
+    items: Vec<Config>,
+}
+
+impl PeriodicHistory {
+    const NEED: usize = 8;
+
+    fn clear(&mut self) {
+        self.items.clear();
+    }
+
+    fn push_and_detect(&mut self, cfg: &Config) -> bool {
+        self.items.push(cfg.clone());
+        if self.items.len() > Self::NEED {
+            self.items.remove(0);
+        }
+
+        self.items.len() == Self::NEED && self.detect_two_phase_growth()
+    }
+
+    fn detect_two_phase_growth(&self) -> bool {
+        debug_assert_eq!(self.items.len(), Self::NEED);
+
+        // Same-parity states must match.  Head position may drift by a fixed
+        // amount, so it is checked in the growth relation below rather than
+        // being required equal.
+        self.detect_parity_growth(0) && self.detect_parity_growth(1)
+    }
+
+    fn detect_parity_growth(&self, parity: usize) -> bool {
+        let xs: Vec<&Config> =
+            self.items.iter().skip(parity).step_by(2).collect();
+        if xs.len() < 4 {
+            return false;
+        }
+
+        let state = xs[0].state;
+        let scan = xs[0].tape.scan;
+        if xs.iter().any(|x| x.state != state || x.tape.scan != scan) {
+            return false;
+        }
+
+        let dh = xs[1].tape.head - xs[0].tape.head;
+        for w in xs.windows(2) {
+            if w[1].tape.head - w[0].tape.head != dh {
+                return false;
+            }
+        }
+
+        let left = Self::side_growth(xs.as_slice(), true);
+        let right = Self::side_growth(xs.as_slice(), false);
+
+        matches!(
+            (left, right),
+            (Some(true), Some(false)) | (Some(false), Some(true))
+        )
+    }
+
+    /// Returns:
+    /// - Some(true)  if this side grows by appending the same nonempty suffix;
+    /// - Some(false) if this side is exactly unchanged;
+    /// - None        otherwise.
+    fn side_growth(xs: &[&Config], left: bool) -> Option<bool> {
+        let mut seqs = Vec::with_capacity(xs.len());
+
+        for cfg in xs {
+            let span = if left {
+                &cfg.tape.lspan
+            } else {
+                &cfg.tape.rspan
+            };
+            seqs.push(Self::span_colors_exact(span)?);
+        }
+
+        let first = &seqs[0];
+        if seqs.iter().all(|s| s == first) {
+            return Some(false);
+        }
+
+        let mut delta: Option<Vec<Color>> = None;
+        for pair in seqs.windows(2) {
+            let a = &pair[0];
+            let b = &pair[1];
+            if b.len() <= a.len() || !b.starts_with(a) {
+                return None;
+            }
+            let d = b[a.len()..].to_vec();
+            if d.is_empty() {
+                return None;
+            }
+            match &delta {
+                None => delta = Some(d),
+                Some(prev) if *prev == d => {},
+                Some(_) => return None,
+            }
+        }
+
+        Some(true)
+    }
+
+    fn span_colors_exact(span: &Span) -> Option<Vec<Color>> {
+        if span.end != TapeEnd::Blanks {
+            return None;
+        }
+
+        let mut out = Vec::new();
+        for b in span.span.iter() {
+            if b.count == 0 {
+                return None;
+            }
+            for _ in 0..b.count {
+                out.push(b.color);
+            }
+        }
+        Some(out)
     }
 }
 

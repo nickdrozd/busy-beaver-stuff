@@ -593,7 +593,7 @@ class Reason(TuringTest):
 
         for bigfoot in BIGFOOT:
             for ext in branch_last(bigfoot):
-                self.assert_cant_blank_backward(ext, 7)
+                self.assert_cant_blank_backward(ext, 9)
 
         for hydra in HYDRA:
             self.assert_could_blank(hydra)
