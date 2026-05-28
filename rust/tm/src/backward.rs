@@ -162,16 +162,12 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut antichains = Antichains::default();
 
-    // Periodic branch closers.
-    //
-    // `periodic_history` is the original single-chain closer.
-    // `frontier_periodic_history` is a stricter frontier-level extension: it
-    // closes only when the *entire live frontier* repeats as a two-phase
-    // periodic growth map.  This is aimed at halt cones, where there are often
-    // several independent linear branches rather than one global chain.
+    // Periodic branch closers.  These are separate histories over different
+    // streams, but they use the same periodic-growth certificate: the linear
+    // closer observes one-config snapshots, while the frontier closer observes
+    // the whole live frontier after antichain filtering.
     let mut periodic_history = PeriodicHistory::default();
-    let mut frontier_periodic_history =
-        FrontierPeriodicHistory::default();
+    let mut frontier_periodic_history = PeriodicHistory::default();
 
     let mut seen: Set<(State, u64)> = Set::new();
 
@@ -2348,176 +2344,61 @@ impl Span {
 
 /**************************************/
 
-/// A tiny, conservative accelerator for the common backward pattern
-///
-///   P_n -> Q_n -> P_{n+1} -> Q_{n+1} -> ...
-///
-/// where each same-parity subsequence grows by appending the same finite word
-/// to one blank-ended finite side, while the opposite side is unchanged.
-///
-/// This is NOT an antichain widening rule.  It is only used to close the
-/// current branch after the search has established that the branch is linear
-/// (one input config, one valid predecessor instruction, one output config)
-/// for all sampled steps.  That restriction is what prevents the false-positive
-/// behavior of the earlier implementation: a periodic-looking branch with an
-/// unsampled side predecessor is never closed here because it is not linear.
-#[derive(Default)]
-struct PeriodicHistory {
-    items: Vec<Config>,
+const PERIODIC_MIN_PERIOD: usize = 2;
+const PERIODIC_MAX_PERIOD: usize = 7;
+const PERIODIC_MIN_PAIRS_PER_PHASE: usize = 2;
+const PERIODIC_MAX_NEED: usize =
+    PERIODIC_MAX_PERIOD * (PERIODIC_MIN_PAIRS_PER_PHASE + 1);
+
+const fn periodic_periods() -> core::ops::RangeInclusive<usize> {
+    PERIODIC_MIN_PERIOD..=PERIODIC_MAX_PERIOD
 }
 
-impl PeriodicHistory {
-    const NEED: usize = 8;
-
-    fn clear(&mut self) {
-        self.items.clear();
-    }
-
-    fn push_and_detect(&mut self, cfg: &Config) -> bool {
-        self.items.push(cfg.clone());
-        if self.items.len() > Self::NEED {
-            self.items.remove(0);
-        }
-
-        self.items.len() == Self::NEED && self.detect_two_phase_growth()
-    }
-
-    fn detect_two_phase_growth(&self) -> bool {
-        debug_assert_eq!(self.items.len(), Self::NEED);
-
-        // Same-parity states must match.  Head position may drift by a fixed
-        // amount, so it is checked in the growth relation below rather than
-        // being required equal.
-        self.detect_parity_growth(0) && self.detect_parity_growth(1)
-    }
-
-    fn detect_parity_growth(&self, parity: usize) -> bool {
-        let xs: Vec<&Config> =
-            self.items.iter().skip(parity).step_by(2).collect();
-        if xs.len() < 4 {
-            return false;
-        }
-
-        let state = xs[0].state;
-        let scan = xs[0].tape.scan;
-        if xs.iter().any(|x| x.state != state || x.tape.scan != scan) {
-            return false;
-        }
-
-        let dh = xs[1].tape.head - xs[0].tape.head;
-        for w in xs.windows(2) {
-            if w[1].tape.head - w[0].tape.head != dh {
-                return false;
-            }
-        }
-
-        let left = Self::side_growth(xs.as_slice(), true);
-        let right = Self::side_growth(xs.as_slice(), false);
-
-        matches!(
-            (left, right),
-            (Some(true), Some(false)) | (Some(false), Some(true))
-        )
-    }
-
-    /// Returns:
-    /// - Some(true)  if this side grows by appending the same nonempty suffix;
-    /// - Some(false) if this side is exactly unchanged;
-    /// - None        otherwise.
-    fn side_growth(xs: &[&Config], left: bool) -> Option<bool> {
-        let mut seqs = Vec::with_capacity(xs.len());
-
-        for cfg in xs {
-            let span = if left {
-                &cfg.tape.lspan
-            } else {
-                &cfg.tape.rspan
-            };
-            seqs.push(Self::span_colors_exact(span)?);
-        }
-
-        let first = &seqs[0];
-        if seqs.iter().all(|s| s == first) {
-            return Some(false);
-        }
-
-        let mut delta: Option<Vec<Color>> = None;
-        for pair in seqs.windows(2) {
-            let a = &pair[0];
-            let b = &pair[1];
-            if b.len() <= a.len() || !b.starts_with(a) {
-                return None;
-            }
-            let d = b[a.len()..].to_vec();
-            if d.is_empty() {
-                return None;
-            }
-            match &delta {
-                None => delta = Some(d),
-                Some(prev) if *prev == d => {},
-                Some(_) => return None,
-            }
-        }
-
-        Some(true)
-    }
-
-    fn span_colors_exact(span: &Span) -> Option<Vec<Color>> {
-        if span.end != TapeEnd::Blanks {
-            return None;
-        }
-
-        let mut out = Vec::new();
-        for b in span.span.iter() {
-            if b.count == 0 {
-                return None;
-            }
-            for _ in 0..b.count {
-                out.push(b.color);
-            }
-        }
-        Some(out)
-    }
+const fn periodic_need(period: usize) -> usize {
+    period * (PERIODIC_MIN_PAIRS_PER_PHASE + 1)
 }
 
 /**************************************/
 
-/// Frontier-level periodic closer.
+/// A periodic-growth closer used for both:
 ///
-/// Same proof condition as the first frontier closer, but optimized so the
-/// common halt case does not do a full pairwise string-heavy matching pass.
+/// - linear branches, represented as a one-config frontier; and
+/// - full frontier snapshots, represented as a sorted list of configs.
 ///
-/// The closer stores more history than it needs for detection.  Detection is
-/// performed on the most recent `NEED` frontiers, while the extra retained
-/// frontiers let us scan backward and report the first frontier that already
-/// participates in the same stable two-phase growth.  Thus callers can
-/// distinguish:
-///
-/// - `proved_at`: when enough samples existed to certify the periodic frontier;
-/// - `cycle_from`: the earliest retained frontier where that same cycle starts.
+/// The two callers still keep separate histories because they observe different
+/// streams, but the certificate is identical: for each phase of a candidate
+/// period, every sampled `snapshot[n] -> snapshot[n + period]` pair must have
+/// the same growth signature.
 #[derive(Default)]
-struct FrontierPeriodicHistory {
-    fronts: Vec<FrontierSnap>,
+struct PeriodicHistory {
+    snaps: Vec<PeriodicSnap>,
 }
 
 #[derive(Clone)]
-struct FrontierSnap {
+struct PeriodicSnap {
     step: Steps,
     front: Vec<FastCfg>,
 }
 
-impl FrontierPeriodicHistory {
-    const NEED: usize = 8;
-
-    // Keep more than `NEED` so that, after a successful detection, we can
-    // extend the detected growth pattern to the left and recover the earliest
-    // stable frontier in recent history.
-    const KEEP: usize = 32;
+impl PeriodicHistory {
+    // Keep more than the detection window so that, after a successful frontier
+    // detection, we can extend the detected growth pattern to the left and
+    // recover the earliest stable frontier in recent history.
+    const KEEP: usize = PERIODIC_MAX_NEED * 2 + 6;
 
     // Keep this conservative.  If a frontier is huge, the closer should not
     // become the bottleneck; ordinary antichain/search limits can handle it.
     // Raising this is safe but may cost time on very wide halt cones.
     const MAX_FRONTIER_FOR_CLOSER: usize = 20_000;
+
+    fn clear(&mut self) {
+        self.snaps.clear();
+    }
+
+    fn push_and_detect(&mut self, cfg: &Config) -> bool {
+        self.push_snap(0, vec![FastCfg::from_config(cfg)]);
+        self.detect_any_phase_growth().is_some()
+    }
 
     fn observe_frontier(
         &mut self,
@@ -2533,76 +2414,100 @@ impl FrontierPeriodicHistory {
             return None;
         }
 
-        let mut front = Vec::with_capacity(frontier.len());
-        for cfg in frontier {
-            let Some(fast) = FastCfg::from_config(cfg) else {
-                self.clear();
-                return None;
-            };
-            front.push(fast);
-        }
+        let front = frontier.iter().map(FastCfg::from_config).collect();
+        self.push_snap(step, front);
 
-        self.fronts.push(FrontierSnap { step, front });
-        if self.fronts.len() > Self::KEEP {
-            self.fronts.remove(0);
-        }
-
-        if self.fronts.len() < Self::NEED {
-            return None;
-        }
-
-        let detect_start = self.fronts.len() - Self::NEED;
-        let cycle_start_idx =
-            self.detect_two_phase_frontier_growth_from(detect_start)?;
-        Some(self.fronts[cycle_start_idx].step)
+        let cycle_start_idx = self.detect_any_phase_growth()?;
+        Some(self.snaps[cycle_start_idx].step)
     }
 
-    fn clear(&mut self) {
-        self.fronts.clear();
+    fn push_snap(&mut self, step: Steps, mut front: Vec<FastCfg>) {
+        // Canonicalize frontier order before period matching.  The backward
+        // frontier may be built from hash sets / antichain buckets, so relying
+        // on iteration order can make the period closer flaky.
+        front.sort_unstable();
+
+        self.snaps.push(PeriodicSnap { step, front });
+        if self.snaps.len() > Self::KEEP {
+            self.snaps.remove(0);
+        }
     }
 
-    fn detect_two_phase_frontier_growth_from(
-        &self,
-        start: usize,
-    ) -> Option<usize> {
-        if start + Self::NEED > self.fronts.len() {
-            return None;
-        }
-
-        let expected = self.expected_two_phase_signatures(start)?;
-
-        // Verify the detection window.
-        for j in start..self.fronts.len().saturating_sub(2) {
-            if j < start || j + 2 >= start + Self::NEED {
+    fn detect_any_phase_growth(&self) -> Option<usize> {
+        for period in periodic_periods() {
+            let need = periodic_need(period);
+            if self.snaps.len() < need {
                 continue;
             }
-            let sig = Self::frontier_growth_signature(
-                &self.fronts[j].front,
-                &self.fronts[j + 2].front,
-            )?;
-            if sig != expected[j & 1] {
+
+            let start = self.snaps.len() - need;
+            if let Some(cycle_start) =
+                self.detect_period_growth_from(start, period)
+            {
+                return Some(cycle_start);
+            }
+        }
+        None
+    }
+
+    fn detect_period_growth_from(
+        &self,
+        start: usize,
+        period: usize,
+    ) -> Option<usize> {
+        let need = periodic_need(period);
+        if start + need > self.snaps.len() {
+            return None;
+        }
+
+        // Periods greater than two are useful for clean phase ladders such as
+        //     A_n -> B_n -> C_{n+1} -> A_{n+1}
+        // but a repeating split/merge frontier, e.g. widths 1,2,1, can be the
+        // reverse image of a finite forward countdown rather than a genuine
+        // closed periodic cone.  Keep multi-phase frontier certificates only
+        // when every sampled phase has the same frontier width.
+        if period > 2 {
+            let width = self.snaps[start].front.len();
+            if self.snaps[start..start + need]
+                .iter()
+                .any(|snap| snap.front.len() != width)
+            {
                 return None;
             }
         }
 
-        // Walk left as far as the same absolute-parity signatures continue to
+        let expected =
+            self.expected_period_signatures(start, period)?;
+
+        // Verify the detection window.
+        for j in start..start + need - period {
+            let sig = Self::frontier_growth_signature(
+                &self.snaps[j].front,
+                &self.snaps[j + period].front,
+            )?;
+            if sig != expected[(j - start) % period] {
+                return None;
+            }
+        }
+
+        // Walk left as far as the same absolute phase signatures continue to
         // hold.  This recovers the first retained stable frontier, not merely
         // the first frontier in the detection window.
         let mut cycle_start = start;
-        while cycle_start > 0 && cycle_start + 1 < self.fronts.len() {
+        while cycle_start > 0 {
             let candidate = cycle_start - 1;
-            if candidate + 2 >= self.fronts.len() {
+            if candidate + period >= self.snaps.len() {
                 break;
             }
 
             let Some(sig) = Self::frontier_growth_signature(
-                &self.fronts[candidate].front,
-                &self.fronts[candidate + 2].front,
+                &self.snaps[candidate].front,
+                &self.snaps[candidate + period].front,
             ) else {
                 break;
             };
 
-            if sig != expected[candidate & 1] {
+            if sig != expected[(candidate + period - start) % period] {
                 break;
             }
 
@@ -2612,46 +2517,50 @@ impl FrontierPeriodicHistory {
         Some(cycle_start)
     }
 
-    fn expected_two_phase_signatures(
+    fn expected_period_signatures(
         &self,
         start: usize,
-    ) -> Option<[Vec<BranchSig>; 2]> {
-        let end = start + Self::NEED;
-        if end > self.fronts.len() {
+        period: usize,
+    ) -> Option<Vec<Vec<BranchSig>>> {
+        let need = periodic_need(period);
+        let end = start + need;
+        if end > self.snaps.len() {
             return None;
         }
 
-        let mut expected: [Option<Vec<BranchSig>>; 2] = [None, None];
-        let mut counts = [0, 0];
+        let mut expected: Vec<Option<Vec<BranchSig>>> =
+            vec![None; period];
+        let mut counts = vec![0; period];
 
-        for j in start..end.saturating_sub(2) {
+        for j in start..end.saturating_sub(period) {
             let sig = Self::frontier_growth_signature(
-                &self.fronts[j].front,
-                &self.fronts[j + 2].front,
+                &self.snaps[j].front,
+                &self.snaps[j + period].front,
             )?;
             if sig.is_empty() {
                 return None;
             }
 
-            let parity = j & 1;
-            match &expected[parity] {
-                None => expected[parity] = Some(sig),
+            let phase = (j - start) % period;
+            match &expected[phase] {
+                None => expected[phase] = Some(sig),
                 Some(prev) if *prev == sig => {},
                 Some(_) => return None,
             }
-            counts[parity] += 1;
+            counts[phase] += 1;
         }
 
-        // With NEED=8 this gives three comparisons for each parity.  Requiring
-        // at least two keeps smaller experimental NEED values from accepting a
-        // single accidental pair.
-        if counts[0] < 2 || counts[1] < 2 {
+        if counts
+            .iter()
+            .any(|&count| count < PERIODIC_MIN_PAIRS_PER_PHASE)
+        {
             return None;
         }
 
-        Some([expected[0].clone()?, expected[1].clone()?])
+        expected.into_iter().collect()
     }
 
+    #[expect(clippy::shadow_unrelated)]
     fn frontier_growth_signature(
         a: &[FastCfg],
         b: &[FastCfg],
@@ -2659,6 +2568,16 @@ impl FrontierPeriodicHistory {
         if a.is_empty() || a.len() != b.len() {
             return None;
         }
+
+        // Be defensive: stored frontiers are sorted on insertion, but this
+        // function is the actual certificate builder.  Sort local copies so a
+        // caller cannot accidentally make the matching depend on input order.
+        let mut a_sorted = a.to_vec();
+        let mut b_sorted = b.to_vec();
+        a_sorted.sort_unstable();
+        b_sorted.sort_unstable();
+        let a = &a_sorted;
+        let b = &b_sorted;
 
         let mut index: Dict<BucketKey, Vec<usize>> = Dict::new();
         for (j, cb) in b.iter().enumerate() {
@@ -2710,23 +2629,34 @@ impl FrontierPeriodicHistory {
                         continue;
                     }
                     let cb = &b[j];
-                    if let Some(delta) =
-                        suffix_after_prefix(&ca.left, &cb.left)
+                    // `lspan` is stored nearest-head first, while display
+                    // prints it in reverse.  The common blank-growth ladder
+                    // grows at the far/outer end of this stored vector, e.g.
+                    //
+                    //     [0, 1^n] -> [0, 1^(n+1)]
+                    //
+                    // but some backward chains grow at the near/head end.
+                    // Try far growth first, then near growth as an additive
+                    // fallback so old detections are preserved.
+                    if let Some((grow_pos, delta)) =
+                        left_growth_delta(&ca.left, &cb.left)
                     {
                         let sig = BranchSig {
                             state: ca.state,
                             scan: ca.scan,
                             dh: cb.head - ca.head,
                             grow_side: Side::Left,
+                            grow_pos,
                             grow_end: ca.l_end,
-                            grow_delta: delta.to_vec(),
+                            grow_delta: delta,
                             same_end: ca.r_end,
                             same: ca.right.clone(),
                         };
-                        if found.is_some() {
-                            return None;
+                        match &found {
+                            None => found = Some((j, sig)),
+                            Some((_, prev)) if *prev == sig => {},
+                            Some(_) => return None,
                         }
-                        found = Some((j, sig));
                     }
                 }
             }
@@ -2746,23 +2676,25 @@ impl FrontierPeriodicHistory {
                         continue;
                     }
                     let cb = &b[j];
-                    if let Some(delta) =
-                        suffix_after_prefix(&ca.right, &cb.right)
+                    if let Some((grow_pos, delta)) =
+                        right_growth_delta(&ca.right, &cb.right)
                     {
                         let sig = BranchSig {
                             state: ca.state,
                             scan: ca.scan,
                             dh: cb.head - ca.head,
                             grow_side: Side::Right,
+                            grow_pos,
                             grow_end: ca.r_end,
-                            grow_delta: delta.to_vec(),
+                            grow_delta: delta,
                             same_end: ca.l_end,
                             same: ca.left.clone(),
                         };
-                        if found.is_some() {
-                            return None;
+                        match &found {
+                            None => found = Some((j, sig)),
+                            Some((_, prev)) if *prev == sig => {},
+                            Some(_) => return None,
                         }
-                        found = Some((j, sig));
                     }
                 }
             }
@@ -2781,29 +2713,36 @@ impl FrontierPeriodicHistory {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct FastCfg {
     state: State,
     scan: Color,
     head: Pos,
     l_end: EndSig,
     r_end: EndSig,
-    left: Vec<Color>,
-    right: Vec<Color>,
+    left: Vec<RunSig>,
+    right: Vec<RunSig>,
 }
 
 impl FastCfg {
-    fn from_config(cfg: &Config) -> Option<Self> {
-        Some(Self {
+    fn from_config(cfg: &Config) -> Self {
+        Self {
             state: cfg.state,
             scan: cfg.tape.scan,
             head: cfg.tape.head,
             l_end: EndSig::from_end(&cfg.tape.lspan.end),
             r_end: EndSig::from_end(&cfg.tape.rspan.end),
-            left: span_colors_exact(&cfg.tape.lspan)?,
-            right: span_colors_exact(&cfg.tape.rspan)?,
-        })
+            left: span_runs(&cfg.tape.lspan),
+            right: span_runs(&cfg.tape.rspan),
+        }
     }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+struct RunSig {
+    color: Color,
+    // count == 0 means the original span block was indefinite (`..`).
+    count: usize,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -2827,6 +2766,14 @@ enum Side {
     Right,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+enum GrowthPos {
+    // Growth is adjacent to the finite context/head side of the stored span.
+    Near,
+    // Growth is adjacent to the tape end side of the stored span.
+    Far,
+}
+
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct BucketKey {
     state: State,
@@ -2834,7 +2781,7 @@ struct BucketKey {
     grow_side: Side,
     grow_end: EndSig,
     same_end: EndSig,
-    same: Vec<Color>,
+    same: Vec<RunSig>,
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -2843,33 +2790,216 @@ struct BranchSig {
     scan: Color,
     dh: Pos,
     grow_side: Side,
+    grow_pos: GrowthPos,
     grow_end: EndSig,
-    grow_delta: Vec<Color>,
+    grow_delta: Vec<RunSig>,
     same_end: EndSig,
-    same: Vec<Color>,
+    same: Vec<RunSig>,
 }
 
-fn span_colors_exact(span: &Span) -> Option<Vec<Color>> {
+fn span_runs(span: &Span) -> Vec<RunSig> {
     let mut out = Vec::new();
     for b in span.span.iter() {
-        if b.count == 0 {
-            return None;
-        }
-        for _ in 0..b.count {
-            out.push(b.color);
-        }
+        out.push(RunSig {
+            color: b.color,
+            count: b.count as usize,
+        });
     }
-    Some(out)
+    out
 }
 
-fn suffix_after_prefix<'a>(
-    prefix: &[Color],
-    whole: &'a [Color],
-) -> Option<&'a [Color]> {
-    if whole.len() <= prefix.len() || !whole.starts_with(prefix) {
-        return None;
+fn left_growth_delta(
+    old: &[RunSig],
+    new: &[RunSig],
+) -> Option<(GrowthPos, Vec<RunSig>)> {
+    // Spans are stored nearest-head first.  Far growth is the usual outward
+    // blank-ladder case: old is a prefix of new, with delta at the tape-end
+    // side.  Near growth is retained as a fallback for older detections.
+    suffix_after_prefix_runs(old, new)
+        .map(|delta| (GrowthPos::Far, delta))
+        .or_else(|| {
+            prefix_before_suffix_runs(old, new)
+                .map(|delta| (GrowthPos::Near, delta))
+        })
+}
+
+fn right_growth_delta(
+    old: &[RunSig],
+    new: &[RunSig],
+) -> Option<(GrowthPos, Vec<RunSig>)> {
+    // Right spans use the same nearest-head-first storage.  Prefer far/outward
+    // growth, then fall back to near/head-side growth.
+    suffix_after_prefix_runs(old, new)
+        .map(|delta| (GrowthPos::Far, delta))
+        .or_else(|| {
+            prefix_before_suffix_runs(old, new)
+                .map(|delta| (GrowthPos::Near, delta))
+        })
+}
+
+fn suffix_after_prefix_runs(
+    prefix: &[RunSig],
+    whole: &[RunSig],
+) -> Option<Vec<RunSig>> {
+    let delta = remainder_after_prefix_runs(prefix, whole)?;
+    if delta.is_empty() { None } else { Some(delta) }
+}
+
+fn prefix_before_suffix_runs(
+    suffix: &[RunSig],
+    whole: &[RunSig],
+) -> Option<Vec<RunSig>> {
+    let delta = remainder_before_suffix_runs(suffix, whole)?;
+    if delta.is_empty() { None } else { Some(delta) }
+}
+
+/// Return the part of `whole` after removing `prefix` from the near/head end.
+/// Finite runs may be split, so `[1^2]` is a prefix of `[1^3]` with remainder
+/// `[1]`.  Indefinite runs must match as whole blocks; we do not treat a finite
+/// run as a prefix/suffix of an indefinite one because that would make the
+/// period witness depend on how much arbitrary `?` tail was materialized.
+fn remainder_after_prefix_runs(
+    prefix: &[RunSig],
+    whole: &[RunSig],
+) -> Option<Vec<RunSig>> {
+    let mut wi = 0;
+    let mut wskip = 0;
+
+    for &p in prefix {
+        if wi >= whole.len() {
+            return None;
+        }
+        let w = whole[wi];
+        if p.color != w.color {
+            return None;
+        }
+
+        match (p.count, w.count) {
+            (0, 0) if wskip == 0 => {
+                wi += 1;
+                wskip = 0;
+            },
+            (0, _) | (_, 0) => return None,
+            (pc, wc) => {
+                if wskip != 0 {
+                    return None;
+                }
+                #[expect(clippy::comparison_chain)]
+                if pc < wc {
+                    wskip = pc;
+                } else if pc == wc {
+                    wi += 1;
+                    wskip = 0;
+                } else {
+                    return None;
+                }
+            },
+        }
     }
-    Some(&whole[prefix.len()..])
+
+    Some(run_tail_from(whole, wi, wskip))
+}
+
+/// Return the part of `whole` before removing `suffix` from the far end.
+fn remainder_before_suffix_runs(
+    suffix: &[RunSig],
+    whole: &[RunSig],
+) -> Option<Vec<RunSig>> {
+    let mut wi = whole.len();
+    let mut wskip = 0; // cells already consumed from the far end of whole[wi - 1]
+
+    for &s in suffix.iter().rev() {
+        if wi == 0 {
+            return None;
+        }
+        let w = whole[wi - 1];
+        if s.color != w.color {
+            return None;
+        }
+
+        match (s.count, w.count) {
+            (0, 0) if wskip == 0 => {
+                wi -= 1;
+                wskip = 0;
+            },
+            (0, _) | (_, 0) => return None,
+            (sc, wc) => {
+                if wskip != 0 {
+                    return None;
+                }
+                #[expect(clippy::comparison_chain)]
+                if sc < wc {
+                    wskip = sc;
+                } else if sc == wc {
+                    wi -= 1;
+                    wskip = 0;
+                } else {
+                    return None;
+                }
+            },
+        }
+    }
+
+    Some(run_head_until(whole, wi, wskip))
+}
+
+fn run_tail_from(
+    runs: &[RunSig],
+    idx: usize,
+    skip: usize,
+) -> Vec<RunSig> {
+    if idx >= runs.len() {
+        return Vec::new();
+    }
+
+    let mut out = Vec::new();
+    let first = runs[idx];
+    if skip == 0 {
+        out.extend_from_slice(&runs[idx..]);
+    } else {
+        debug_assert!(first.count > skip);
+        out.push(RunSig {
+            color: first.color,
+            count: first.count - skip,
+        });
+        out.extend_from_slice(&runs[idx + 1..]);
+    }
+    normalize_run_sig_vec(out)
+}
+
+fn run_head_until(
+    runs: &[RunSig],
+    end_idx: usize,
+    far_skip: usize,
+) -> Vec<RunSig> {
+    let mut out = Vec::new();
+    if end_idx == 0 {
+        return out;
+    }
+
+    out.extend_from_slice(&runs[..end_idx]);
+    if far_skip != 0 {
+        let last = out.last_mut().unwrap();
+        debug_assert!(last.count > far_skip);
+        last.count -= far_skip;
+    }
+    normalize_run_sig_vec(out)
+}
+
+fn normalize_run_sig_vec(runs: Vec<RunSig>) -> Vec<RunSig> {
+    let mut out: Vec<RunSig> = Vec::with_capacity(runs.len());
+    for r in runs {
+        if r.count != 0
+            && let Some(last) = out.last_mut()
+            && last.count != 0
+            && last.color == r.color
+        {
+            last.count += r.count;
+            continue;
+        }
+        out.push(r);
+    }
+    out
 }
 
 #[derive(Default)]

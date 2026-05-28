@@ -1018,7 +1018,7 @@ class Simple(TuringTest):
 
             if self.machine.undfnd is not None:
                 self.assert_could_halt(prog)
-                self.assert_cant_spinout_backward(prog, 6)
+                self.assert_cant_spinout_backward(prog, 10)
 
             else:
                 self.assert_could_spinout(prog)
@@ -1797,7 +1797,7 @@ class Prover(RunProver):
                 self.assert_cant_blank_backward(prog, 14)
 
             if self.machine.undfnd is not None:
-                self.assert_cant_spinout_backward(prog, 5)
+                self.assert_cant_spinout_backward(prog, 11)
                 self.assert_could_halt(prog)
             else:
                 self.assert_cant_halt_backward(prog, 0)
