@@ -17,9 +17,9 @@ def get_reason(goal: Goal) -> tuple[BackwardReasoner, set[str]]:
 
 
 HOLDOUTS: dict[Goal, int] = {
-    'halt': 470,
-    'blank': 577,
-    'spinout': 449,
+    'halt': 403,
+    'blank': 462,
+    'spinout': 414,
 }
 
 

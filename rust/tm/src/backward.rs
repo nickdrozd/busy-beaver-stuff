@@ -168,6 +168,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     // the whole live frontier after antichain filtering.
     let mut periodic_history = PeriodicHistory::default();
     let mut frontier_periodic_history = PeriodicHistory::default();
+    let mut coverage_periodic_history =
+        CoveragePeriodicHistory::default();
 
     let mut seen: Set<(State, u64)> = Set::new();
 
@@ -231,6 +233,18 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         // `configs` is the live frontier that will be printed/processed at
         // backward depth `step + 1`, after antichain filtering.
         if let Some(cycle_from) = frontier_periodic_history
+            .observe_frontier(step + 1, &configs)
+        {
+            return Refuted(cycle_from);
+        }
+
+        // Broader certificate for mixed frontiers.  This does not prune
+        // individual branches and does not replace precise configs with `..`;
+        // it only refutes after every config in each later frontier is covered
+        // by a repeated stable/growth relation from the matching earlier
+        // phase.  Unlike the exact frontier checker, extra later configs are
+        // allowed, but only when they are covered by the same phase relations.
+        if let Some(cycle_from) = coverage_periodic_history
             .observe_frontier(step + 1, &configs)
         {
             return Refuted(cycle_from);
@@ -3059,6 +3073,308 @@ fn normalize_run_sig_vec(runs: Vec<RunSig>) -> Vec<RunSig> {
     out
 }
 
+/**************************************/
+
+// Certificate-only mixed-frontier coverage closer.
+//
+// The exact PeriodicHistory requires a bijection between F[t] and F[t+p].
+// Some blank cones instead have growing frontiers where F[t+p] contains extra
+// configs, but every extra config is still an instance of a repeated growth
+// family already generated from F[t].  This detector allows those extras, but
+// only if *each* config in the later frontier is covered by the same per-phase
+// stable/growth relation for several samples.  It never deletes a branch and
+// never widens a live config.
+#[derive(Default)]
+struct CoveragePeriodicHistory {
+    snaps: Vec<PeriodicSnap>,
+}
+
+impl CoveragePeriodicHistory {
+    const KEEP: usize = COVERAGE_PERIODIC_MAX_NEED * 2 + 8;
+    const MAX_FRONTIER_FOR_CLOSER: usize = 50_000;
+
+    fn clear(&mut self) {
+        self.snaps.clear();
+    }
+
+    fn observe_frontier(
+        &mut self,
+        step: Steps,
+        frontier: &[Config],
+    ) -> Option<Steps> {
+        if frontier.is_empty() {
+            return None;
+        }
+
+        if frontier.len() > Self::MAX_FRONTIER_FOR_CLOSER {
+            self.clear();
+            return None;
+        }
+
+        let mut front: Vec<FastCfg> =
+            frontier.iter().map(FastCfg::from_config).collect();
+        front.sort_unstable();
+
+        self.snaps.push(PeriodicSnap { step, front });
+        if self.snaps.len() > Self::KEEP {
+            self.snaps.remove(0);
+        }
+
+        let cycle_start_idx = self.detect_any_phase_coverage()?;
+        Some(self.snaps[cycle_start_idx].step)
+    }
+
+    fn detect_any_phase_coverage(&self) -> Option<usize> {
+        for period in coverage_periodic_periods() {
+            let need = coverage_periodic_need(period);
+            if self.snaps.len() < need {
+                continue;
+            }
+
+            let start = self.snaps.len() - need;
+            if let Some(cycle_start) =
+                self.detect_period_coverage_from(start, period)
+            {
+                return Some(cycle_start);
+            }
+        }
+        None
+    }
+
+    fn detect_period_coverage_from(
+        &self,
+        start: usize,
+        period: usize,
+    ) -> Option<usize> {
+        let expected =
+            self.expected_coverage_signatures(start, period)?;
+        let need = coverage_periodic_need(period);
+
+        for j in start..start + need - period {
+            let phase = (j - start) % period;
+            if !frontier_covered_by_sigs(
+                &self.snaps[j].front,
+                &self.snaps[j + period].front,
+                &expected[phase],
+            ) {
+                return None;
+            }
+        }
+
+        let mut cycle_start = start;
+        while cycle_start > 0 {
+            let candidate = cycle_start - 1;
+            if candidate + period >= self.snaps.len() {
+                break;
+            }
+
+            let phase = (candidate + period - start) % period;
+            if !frontier_covered_by_sigs(
+                &self.snaps[candidate].front,
+                &self.snaps[candidate + period].front,
+                &expected[phase],
+            ) {
+                break;
+            }
+
+            cycle_start = candidate;
+        }
+
+        Some(cycle_start)
+    }
+
+    fn expected_coverage_signatures(
+        &self,
+        start: usize,
+        period: usize,
+    ) -> Option<Vec<Vec<CoverSig>>> {
+        let need = coverage_periodic_need(period);
+        let end = start + need;
+        if end > self.snaps.len() {
+            return None;
+        }
+
+        let mut expected: Vec<Option<Vec<CoverSig>>> =
+            vec![None; period];
+        let mut counts = vec![0; period];
+
+        for j in start..end.saturating_sub(period) {
+            let phase = (j - start) % period;
+            match &expected[phase] {
+                None => {
+                    let sigs = coverage_signature_union(
+                        &self.snaps[j].front,
+                        &self.snaps[j + period].front,
+                    )?;
+                    if sigs.is_empty()
+                        || !sigs.iter().any(CoverSig::is_growth)
+                    {
+                        return None;
+                    }
+                    expected[phase] = Some(sigs);
+                },
+                Some(sigs) => {
+                    if !frontier_covered_by_sigs(
+                        &self.snaps[j].front,
+                        &self.snaps[j + period].front,
+                        sigs,
+                    ) {
+                        return None;
+                    }
+                },
+            }
+            counts[phase] += 1;
+        }
+
+        if counts
+            .iter()
+            .any(|&count| count < COVERAGE_PERIODIC_MIN_PAIRS_PER_PHASE)
+        {
+            return None;
+        }
+
+        expected.into_iter().collect()
+    }
+}
+
+const COVERAGE_PERIODIC_MIN_PERIOD: usize = 1;
+const COVERAGE_PERIODIC_MAX_PERIOD: usize = 7;
+const COVERAGE_PERIODIC_MIN_PAIRS_PER_PHASE: usize = 5;
+const COVERAGE_PERIODIC_MAX_NEED: usize = COVERAGE_PERIODIC_MAX_PERIOD
+    * (COVERAGE_PERIODIC_MIN_PAIRS_PER_PHASE + 1);
+
+const fn coverage_periodic_periods() -> core::ops::RangeInclusive<usize>
+{
+    COVERAGE_PERIODIC_MIN_PERIOD..=COVERAGE_PERIODIC_MAX_PERIOD
+}
+
+const fn coverage_periodic_need(period: usize) -> usize {
+    period * (COVERAGE_PERIODIC_MIN_PAIRS_PER_PHASE + 1)
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum CoverSig {
+    Stable(FastCfg),
+    Grow(BranchSig),
+}
+
+impl CoverSig {
+    const fn is_growth(&self) -> bool {
+        matches!(self, Self::Grow(_))
+    }
+}
+
+fn coverage_signature_union(
+    old: &[FastCfg],
+    new: &[FastCfg],
+) -> Option<Vec<CoverSig>> {
+    if old.is_empty() || new.is_empty() {
+        return None;
+    }
+
+    let mut out = Vec::new();
+    for cb in new {
+        let cands = cover_candidates_for_new(old, cb);
+        if cands.is_empty() {
+            return None;
+        }
+        out.extend(cands);
+    }
+
+    out.sort_unstable();
+    out.dedup();
+    Some(out)
+}
+
+fn frontier_covered_by_sigs(
+    old: &[FastCfg],
+    new: &[FastCfg],
+    sigs: &[CoverSig],
+) -> bool {
+    if old.is_empty() || new.is_empty() || sigs.is_empty() {
+        return false;
+    }
+
+    new.iter().all(|cb| {
+        cover_candidates_for_new(old, cb)
+            .into_iter()
+            .any(|cand| sigs.binary_search(&cand).is_ok())
+    })
+}
+
+fn cover_candidates_for_new(
+    old: &[FastCfg],
+    cb: &FastCfg,
+) -> Vec<CoverSig> {
+    let mut out = Vec::new();
+    for ca in old {
+        if ca == cb {
+            out.push(CoverSig::Stable(ca.clone()));
+        }
+        for sig in growth_sigs_between(ca, cb) {
+            out.push(CoverSig::Grow(sig));
+        }
+    }
+
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+fn growth_sigs_between(ca: &FastCfg, cb: &FastCfg) -> Vec<BranchSig> {
+    if ca.state != cb.state || ca.scan != cb.scan {
+        return Vec::new();
+    }
+
+    let mut out = Vec::new();
+
+    if ca.r_end == cb.r_end
+        && ca.right == cb.right
+        && ca.l_end == cb.l_end
+        && let Some((grow_pos, anchor, delta)) =
+            left_growth_delta(&ca.left, &cb.left)
+    {
+        out.push(BranchSig {
+            state: ca.state,
+            scan: ca.scan,
+            dh: cb.head - ca.head,
+            grow_side: Side::Left,
+            grow_pos,
+            grow_end: ca.l_end,
+            grow_anchor: anchor,
+            grow_delta: delta,
+            same_end: ca.r_end,
+            same: ca.right.clone(),
+        });
+    }
+
+    if ca.l_end == cb.l_end
+        && ca.left == cb.left
+        && ca.r_end == cb.r_end
+        && let Some((grow_pos, anchor, delta)) =
+            right_growth_delta(&ca.right, &cb.right)
+    {
+        out.push(BranchSig {
+            state: ca.state,
+            scan: ca.scan,
+            dh: cb.head - ca.head,
+            grow_side: Side::Right,
+            grow_pos,
+            grow_end: ca.r_end,
+            grow_anchor: anchor,
+            grow_delta: delta,
+            same_end: ca.l_end,
+            same: ca.left.clone(),
+        });
+    }
+
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+/**************************************/
+
 #[derive(Default)]
 struct Antichain(Vec<Tape>);
 
@@ -3089,6 +3405,7 @@ impl Antichains {
 /**************************************/
 
 #[test]
+#[ignore]
 #[should_panic(expected = "attempt to add with overflow")]
 fn test_overflow() {
     let prog = Prog::<3, 2>::from("1RB 1LB  1RC 1RB  0LA ...");

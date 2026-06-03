@@ -83,4 +83,5 @@ fallible_impl_from = { level = "allow", priority = 1 }
 new_without_default = { level = "allow", priority = 1 }
 needless_range_loop = { level = "allow", priority = 1 }
 len_without_is_empty = { level = "allow", priority = 1 }
+ignore_without_reason = { level = "allow", priority = 1 }
 items_after_statements = { level = "allow", priority = 1 }

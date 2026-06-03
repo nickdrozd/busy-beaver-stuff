@@ -496,7 +496,7 @@ class Reason(TuringTest):
         for prog in HALTERS | SPINNERS:
             self.assert_cant_zloop_backward(prog, 2)
 
-        for prog in RECURS - ZLOOPERS:
+        for prog in RECURS - ZLOOPERS - ZLOOPY:
             self.assert_cant_zloop_backward(prog, 4)
 
         for prog in ZLOOPERS:
@@ -1794,7 +1794,7 @@ class Prover(RunProver):
                 self.assert_could_blank(prog)
                 self.assert_no_init_blank()
             else:
-                self.assert_cant_blank_backward(prog, 14)
+                self.assert_cant_blank_backward(prog, 50)
 
             if self.machine.undfnd is not None:
                 self.assert_cant_spinout_backward(prog, 11)
