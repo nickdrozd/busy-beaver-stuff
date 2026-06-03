@@ -2638,7 +2638,7 @@ impl PeriodicHistory {
                     // but some backward chains grow at the near/head end.
                     // Try far growth first, then near growth as an additive
                     // fallback so old detections are preserved.
-                    if let Some((grow_pos, delta)) =
+                    if let Some((grow_pos, anchor, delta)) =
                         left_growth_delta(&ca.left, &cb.left)
                     {
                         let sig = BranchSig {
@@ -2648,6 +2648,7 @@ impl PeriodicHistory {
                             grow_side: Side::Left,
                             grow_pos,
                             grow_end: ca.l_end,
+                            grow_anchor: anchor,
                             grow_delta: delta,
                             same_end: ca.r_end,
                             same: ca.right.clone(),
@@ -2676,7 +2677,7 @@ impl PeriodicHistory {
                         continue;
                     }
                     let cb = &b[j];
-                    if let Some((grow_pos, delta)) =
+                    if let Some((grow_pos, anchor, delta)) =
                         right_growth_delta(&ca.right, &cb.right)
                     {
                         let sig = BranchSig {
@@ -2686,6 +2687,7 @@ impl PeriodicHistory {
                             grow_side: Side::Right,
                             grow_pos,
                             grow_end: ca.r_end,
+                            grow_anchor: anchor,
                             grow_delta: delta,
                             same_end: ca.l_end,
                             same: ca.left.clone(),
@@ -2772,6 +2774,12 @@ enum GrowthPos {
     Near,
     // Growth is adjacent to the tape end side of the stored span.
     Far,
+    // Growth is inserted immediately before a stable far-end suffix.
+    // This catches ladders such as
+    //     0 1 0 1 0 1^2 -> 0 1 0 1 0 1 0 1^2
+    // where the repeated block grows in front of a terminal marker rather
+    // than at the absolute tape end.
+    BeforeStableSuffix,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -2792,6 +2800,9 @@ struct BranchSig {
     grow_side: Side,
     grow_pos: GrowthPos,
     grow_end: EndSig,
+    // Empty for ordinary near/far-end growth.  For BeforeStableSuffix this is
+    // the far-end suffix that remains fixed while the middle block grows.
+    grow_anchor: Vec<RunSig>,
     grow_delta: Vec<RunSig>,
     same_end: EndSig,
     same: Vec<RunSig>,
@@ -2811,30 +2822,76 @@ fn span_runs(span: &Span) -> Vec<RunSig> {
 fn left_growth_delta(
     old: &[RunSig],
     new: &[RunSig],
-) -> Option<(GrowthPos, Vec<RunSig>)> {
+) -> Option<(GrowthPos, Vec<RunSig>, Vec<RunSig>)> {
     // Spans are stored nearest-head first.  Far growth is the usual outward
     // blank-ladder case: old is a prefix of new, with delta at the tape-end
     // side.  Near growth is retained as a fallback for older detections.
     suffix_after_prefix_runs(old, new)
-        .map(|delta| (GrowthPos::Far, delta))
+        .map(|delta| (GrowthPos::Far, Vec::new(), delta))
         .or_else(|| {
             prefix_before_suffix_runs(old, new)
-                .map(|delta| (GrowthPos::Near, delta))
+                .map(|delta| (GrowthPos::Near, Vec::new(), delta))
         })
+        .or_else(|| middle_growth_before_stable_suffix(old, new))
 }
 
 fn right_growth_delta(
     old: &[RunSig],
     new: &[RunSig],
-) -> Option<(GrowthPos, Vec<RunSig>)> {
+) -> Option<(GrowthPos, Vec<RunSig>, Vec<RunSig>)> {
     // Right spans use the same nearest-head-first storage.  Prefer far/outward
     // growth, then fall back to near/head-side growth.
     suffix_after_prefix_runs(old, new)
-        .map(|delta| (GrowthPos::Far, delta))
+        .map(|delta| (GrowthPos::Far, Vec::new(), delta))
         .or_else(|| {
             prefix_before_suffix_runs(old, new)
-                .map(|delta| (GrowthPos::Near, delta))
+                .map(|delta| (GrowthPos::Near, Vec::new(), delta))
         })
+        .or_else(|| middle_growth_before_stable_suffix(old, new))
+}
+
+fn middle_growth_before_stable_suffix(
+    old: &[RunSig],
+    new: &[RunSig],
+) -> Option<(GrowthPos, Vec<RunSig>, Vec<RunSig>)> {
+    // Some halt cones grow by inserting a repeated block in front of a stable
+    // terminal marker rather than by extending the absolute end of the span:
+    //
+    //     P S -> P D S -> P D D S -> ...
+    //
+    // where S is a fixed far-end suffix.  The normal prefix/suffix growth
+    // tests reject this because the whole old span is neither a prefix nor a
+    // suffix of the new span.  Try every non-empty far suffix S and require
+    // the inserted middle delta D to be non-empty.
+    if old.len() < 2 {
+        return None;
+    }
+
+    for split in (1..old.len()).rev() {
+        let prefix = &old[..split];
+        let suffix = &old[split..];
+        let Some(after_prefix) =
+            remainder_after_prefix_runs(prefix, new)
+        else {
+            continue;
+        };
+        let Some(delta) =
+            remainder_before_suffix_runs(suffix, &after_prefix)
+        else {
+            continue;
+        };
+        if delta.is_empty() {
+            continue;
+        }
+
+        return Some((
+            GrowthPos::BeforeStableSuffix,
+            suffix.to_vec(),
+            delta,
+        ));
+    }
+
+    None
 }
 
 fn suffix_after_prefix_runs(

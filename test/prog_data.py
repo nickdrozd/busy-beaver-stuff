@@ -2482,16 +2482,13 @@ type BackwardCats = dict[
 BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
     "halt": {
         "step_limit": {
-            "1RB ...  1LC 1RA  1LA 0LC",
             "1RB 1LB  1RC 1RB  0LA ...",
             "1RB 0RA ... 0RB  2LB 3RB 3LA 2LA",
             "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...",
-            "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC",
             "1RB ...  0LC 0RD  1LA 1LC  0LA 0RB",
             "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB",
             "1RB 1LA  0RC 0RD  0LD ...  0LA 1RD",
             "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
-            "1RB 1LD  1LC 0RB  0LC 0RA  1LA ...",
             "1RB 1RA  1LC ...  0RA 0LD  0RB 0LC",
         },
         "depth_limit": {
@@ -2687,14 +2684,11 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
     },
     "blank": {
         "step_limit": {
-            "1RB 0LA  1LC 1LD  1RD 1LB  1RA 0RD",
             "1RB 0RB  1LC 1LD  0LC 1RA  0LD 0RA",
             "1RB 0RB  1LC 1RD  0LC 1LA  0RD 0LA",
             "1RB 0RB  1RC 0LD  1LA 0RC  1LD 0LA",
             "1RB 1LD  1LC 0RA  1LA 0LB  0RB ...",
-            "1RB 1RC  1RD 0LC  1LD 0LD  1LB 0RA",
             "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC ... 0LC",
-            "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
             "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...",
         },
         "depth_limit": {
@@ -2756,7 +2750,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
     },
     "spinout": {
         "step_limit": {
-            "1RB 0LC  1LC ...  1RD 0LB  0RD 0LA",
             "1RB 0RB  1LC 1LD  0LC 1RA  0LD 0RA",
             "1RB 0RB  1LC 1RD  0LC 1LA  0RD 0LA",
             "1RB 0RB  1RC 0LD  1LA 0RC  1LD 0LA",
@@ -2948,15 +2941,15 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
 
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
-        "step_limit": 11,
+        "step_limit": 8,
         "depth_limit": 188,
     },
     "blank": {
-        "step_limit": 9,
+        "step_limit": 6,
         "depth_limit": 54,
     },
     "spinout": {
-        "step_limit": 5,
+        "step_limit": 4,
         "depth_limit": 165,
     },
     "twostep": {
