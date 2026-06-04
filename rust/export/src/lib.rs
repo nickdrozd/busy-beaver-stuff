@@ -144,12 +144,12 @@ impl BackwardResult {
         matches!(self, Self::refuted { .. } | init {})
     }
 
-    const fn __str__(&self) -> &str {
+    fn __str__(&self) -> String {
         match self {
-            refuted { .. } => "refuted",
-            init {} => "init",
-            step_limit {} => "step_limit",
-            depth_limit {} => "depth_limit",
+            refuted { step } => format!("refuted({step})"),
+            init {} => "init".into(),
+            step_limit {} => "step_limit".into(),
+            depth_limit {} => "depth_limit".into(),
         }
     }
 }
