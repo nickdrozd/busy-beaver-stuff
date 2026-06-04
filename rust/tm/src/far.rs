@@ -94,48 +94,27 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// - `true` iff FAR *proved* the machine cannot halt.
     /// - `false` otherwise.
     pub fn far_cant_halt(&self, knob: usize) -> bool {
-        if COLORS < 2 || STATES == 0 {
-            return false;
-        }
-
-        let knob = knob.max(FAR_KNOB_MIN);
-        let eff = effort_factor(knob);
-
-        let cap_by_colors = if COLORS <= 2 {
-            FAR_BLOCK_LEN_CAP_COLORS_2
-        } else if COLORS <= 4 {
-            FAR_BLOCK_LEN_CAP_COLORS_3_4
-        } else {
-            FAR_BLOCK_LEN_CAP_COLORS_5_8
-        };
-
-        let max_block_len =
-            knob.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
-
-        for block_len in 2..=max_block_len {
-            let max_work = FAR_WORK_PER_LEN
-                .saturating_mul(block_len)
-                .saturating_mul(eff);
-
-            let block_step_limit = FAR_STEP_PER_LEN
-                .saturating_mul(block_len)
-                .saturating_mul(eff);
-
-            if far_decide_all::<STATES, COLORS>(
-                self,
-                block_len,
-                max_work,
-                block_step_limit,
-            ) {
-                return true;
-            }
-        }
-
-        false
+        far_sweep_all::<STATES, COLORS>(self, knob, FarTarget::Halt)
     }
 
-    pub fn far_cant_blank(&self, _knob: usize) -> bool {
-        unimplemented!()
+    /// FAR blank-tape prover.
+    ///
+    /// Returns `true` iff FAR proved that the machine can never blank the tape
+    /// after time 0.  The initial all-zero tape is ignored.  This runs the same
+    /// FAR fixed-point computation as `far_cant_halt`, but tracks whether any
+    /// non-zero block has ever been seen and treats a derived all-zero
+    /// left-context / active-block configuration as the target.  If the FAR
+    /// over-approximation reaches a fixed point without deriving that target,
+    /// the tape cannot ever become globally blank.  Because FAR summaries remember
+    /// history rather than exact present contents, a zero context is recognized by
+    /// asking whether the summary is compatible with an all-zero block stack, not
+    /// by requiring the initial DFA state.
+    pub fn far_cant_blank(&self, knob: usize) -> bool {
+        far_sweep_all::<STATES, COLORS>(
+            self,
+            knob,
+            FarTarget::BlankTape,
+        )
     }
 
     pub fn far_cant_spinout(&self, _knob: usize) -> bool {
@@ -197,12 +176,20 @@ impl PartialOrd for Word {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum FarTarget {
+    Halt,
+    BlankTape,
+}
+
 /// Result of simulating the TM within one block until it exits or halts.
 #[derive(Clone, Debug)]
 struct WordUpdateLemma {
     w1: Word,
     s1: i16,
     is_back: bool,
+    saw_nonzero: bool,
+    hit_blank: bool,
     #[expect(dead_code)]
     n_step: usize,
 }
@@ -225,6 +212,9 @@ impl WordUpdateLemma {
         s: i16,
         sgn: i8,
         max_steps: usize,
+        target: FarTarget,
+        dirty_before: bool,
+        context_may_be_all_zero: bool,
     ) -> Option<Self> {
         debug_assert!(sgn == 1 || sgn == -1);
         if s < 0 {
@@ -236,6 +226,7 @@ impl WordUpdateLemma {
 
         let len = w.len() as i32;
         let mut w1 = w;
+        let mut saw_nonzero = !w1.is_zero();
         let mut s1 = s;
         let mut pos: i32 = 0;
 
@@ -260,6 +251,8 @@ impl WordUpdateLemma {
                     s1: -1,
                     n_step: t + 1,
                     is_back: false,
+                    saw_nonzero,
+                    hit_blank: false,
                 });
             };
 
@@ -273,6 +266,22 @@ impl WordUpdateLemma {
             w1.set(pos as usize, out_color);
             s1 = i16::from(next_state);
 
+            saw_nonzero |= !w1.is_zero();
+            if target == FarTarget::BlankTape
+                && context_may_be_all_zero
+                && (dirty_before || saw_nonzero)
+                && w1.is_zero()
+            {
+                return Some(Self {
+                    w1,
+                    s1,
+                    n_step: t + 1,
+                    is_back: false,
+                    saw_nonzero,
+                    hit_blank: true,
+                });
+            }
+
             let dir: i32 = if shift_right { 1 } else { -1 };
             pos += dir * i32::from(sgn);
 
@@ -282,6 +291,8 @@ impl WordUpdateLemma {
                     s1,
                     n_step: t + 1,
                     is_back: pos < 0,
+                    saw_nonzero,
+                    hit_blank: false,
                 });
             }
         }
@@ -297,8 +308,20 @@ impl WordUpdateLemma {
         s: i16,
         sgn: i8,
         max_steps: usize,
+        target: FarTarget,
+        dirty_before: bool,
+        context_may_be_all_zero: bool,
     ) -> Option<Self> {
-        let mut res = Self::from_prog(prog, w, s, sgn, max_steps)?;
+        let mut res = Self::from_prog(
+            prog,
+            w,
+            s,
+            sgn,
+            max_steps,
+            target,
+            dirty_before,
+            context_may_be_all_zero,
+        )?;
         if res.s1 >= 0 && !res.is_back {
             res.w1 = res.w1.reverse();
         }
@@ -310,6 +333,13 @@ impl WordUpdateLemma {
 trait Summary: Clone + Ord {
     fn new() -> Self;
     fn push(&mut self, w: Word) -> Result<(), SummaryOverflow>;
+
+    /// True iff this finite summary is compatible with a concrete stack whose
+    /// stored blocks are all zero.  FAR summaries are lossy history summaries:
+    /// after a non-zero block is erased, the summary may still be non-initial
+    /// while the represented concrete stack is all-zero.  Blank-tape target
+    /// detection must therefore use this predicate instead of `id == initial`.
+    fn may_be_all_zero_context(&self) -> bool;
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -363,6 +393,11 @@ impl Summary for NgSummary {
         self.modu = (self.modu + 1) % FAR_NG_POS_MOD.max(1);
         Ok(())
     }
+
+    fn may_be_all_zero_context(&self) -> bool {
+        self.q.iter().all(Word::is_zero)
+            && self.q0.iter().all(Word::is_zero)
+    }
 }
 
 impl PartialEq for NgSummary {
@@ -413,6 +448,10 @@ impl Summary for Ng1Summary {
         self.q.push(w);
         Ok(())
     }
+
+    fn may_be_all_zero_context(&self) -> bool {
+        self.q.iter().all(Word::is_zero)
+    }
 }
 
 /// C++ FAR::RWL_mod defaults.
@@ -459,6 +498,10 @@ impl Summary for RwlModSummary {
         }
         Ok(())
     }
+
+    fn may_be_all_zero_context(&self) -> bool {
+        self.q.iter().all(|rw| rw.w.is_zero())
+    }
 }
 
 /// C++ FAR::CPS_LRU defaults.
@@ -502,6 +545,10 @@ impl Summary for CpsLruSummary {
             self.ls.remove(i);
         }
         Ok(())
+    }
+
+    fn may_be_all_zero_context(&self) -> bool {
+        self.ls.iter().all(Word::is_zero)
     }
 }
 
@@ -552,6 +599,12 @@ impl Summary for RngsModSummary {
             false,
         )
     }
+
+    fn may_be_all_zero_context(&self) -> bool {
+        self.w1.is_zero()
+            && self.q0.iter().all(Word::is_zero)
+            && self.q.iter().all(|rw| rw.w.is_zero())
+    }
 }
 
 /// C++ FAR::RS_mod defaults.
@@ -595,6 +648,11 @@ impl Summary for RsModSummary {
             FAR_RS_MOD,
             FAR_RS_STRICT,
         )
+    }
+
+    fn may_be_all_zero_context(&self) -> bool {
+        self.q0.iter().all(Word::is_zero)
+            && self.q.iter().all(|rw| rw.w.is_zero())
     }
 }
 
@@ -640,16 +698,18 @@ fn promote_repeat_word(
     Ok(())
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug)]
 struct H2 {
     s: i16,
     r: usize,
+    dirty: bool,
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug)]
 struct H2b {
     s: i16,
     r: usize,
+    dirty: bool,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
@@ -657,6 +717,7 @@ struct H3 {
     w: Word,
     s: i16,
     r: usize,
+    dirty: bool,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
@@ -736,7 +797,7 @@ impl<K: Ord + Clone, V: Ord + Clone> TodoMap<K, V> {
 enum StopReason {
     WorkLimit,
     BlockTimeout,
-    MayHalt,
+    MayTarget,
     SummaryOverflow,
 }
 
@@ -748,6 +809,7 @@ struct FarDecider<
     const COLORS: usize,
 > {
     prog: &'a Prog<STATES, COLORS>,
+    target: FarTarget,
 
     block_len: usize,
     max_work: usize,
@@ -776,8 +838,8 @@ struct FarDecider<
     h3s: TodoSet<H3>,
     h2s: TodoSet<H2>,
 
-    // For each DFA state r, which machine states s have H2(s,r)
-    r_s: Vec<BTreeSet<i16>>,
+    // For each DFA state r, which (machine state, dirty) pairs have H2(s,r,dirty)
+    r_s: Vec<BTreeSet<(i16, bool)>>,
 }
 
 impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
@@ -788,11 +850,13 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         block_len: usize,
         max_work: usize,
         block_step_limit: usize,
+        target: FarTarget,
     ) -> Result<Self, StopReason> {
         let idr = vec![S::new()];
 
         let this = Self {
             prog,
+            target,
             block_len,
             max_work: max_work.max(1),
             block_step_limit: block_step_limit.max(1),
@@ -883,12 +947,76 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         Ok(to)
     }
 
+    fn summary_may_be_all_zero_context(&self, r: usize) -> bool {
+        self.idr
+            .get(r)
+            .is_some_and(Summary::may_be_all_zero_context)
+    }
+
+    fn blank_h3_target(&self, c: &H3) -> bool {
+        self.target == FarTarget::BlankTape
+            && c.dirty
+            && c.w.is_zero()
+            && self.summary_may_be_all_zero_context(c.r)
+            && self.h3s.contains(c)
+            && self.pre3l.contains(c)
+    }
+
+    fn blank_retl_target(&self, b: &H2b) -> bool {
+        self.target == FarTarget::BlankTape
+            && b.dirty
+            && self.summary_may_be_all_zero_context(b.r)
+    }
+
+    fn check_blank_h3(&self, c: &H3) -> Result<(), StopReason> {
+        if self.blank_h3_target(c) {
+            return Err(StopReason::MayTarget);
+        }
+        Ok(())
+    }
+
+    fn check_blank_retl(&self, b: &H2b) -> Result<(), StopReason> {
+        if self.blank_retl_target(b) {
+            return Err(StopReason::MayTarget);
+        }
+        Ok(())
+    }
+
+    fn insert_h3(&mut self, c: &H3) -> Result<(), StopReason> {
+        self.h3s.insert(c.clone());
+        self.check_blank_h3(c)
+    }
+
+    fn insert_h2(&mut self, a: H2) {
+        self.h2s.insert(a);
+    }
+
+    fn insert_pre3l(&mut self, c: &H3) -> Result<(), StopReason> {
+        self.pre3l.insert(c.clone());
+        self.check_blank_h3(c)
+    }
+
+    fn insert_retl(&mut self, b: &H2b) -> Result<(), StopReason> {
+        self.retl.insert(*b);
+        self.check_blank_retl(b)
+    }
+
+    fn insert_ret2(&mut self, a: H2, b: H2b) {
+        self.ret2.insert(a, b);
+    }
+
+    fn insert_ret3(&mut self, a: H3, b: H2b) {
+        self.ret3.insert(a, b);
+    }
+
     fn tm_step(
         &mut self,
         w: Word,
         s: i16,
         sgn: i8,
-    ) -> Result<WordUpdateLemma, StopReason> {
+        dirty_before: bool,
+        context_may_be_all_zero: bool,
+    ) -> Result<Option<WordUpdateLemma>, StopReason> {
         self.bump()?;
 
         let Some(res) = WordUpdateLemma::from_prog_v2::<STATES, COLORS>(
@@ -897,82 +1025,149 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             s,
             sgn,
             self.block_step_limit,
+            self.target,
+            dirty_before,
+            context_may_be_all_zero,
         ) else {
             return Err(StopReason::BlockTimeout);
         };
 
-        if res.s1 == -1 {
-            return Err(StopReason::MayHalt);
+        if res.hit_blank {
+            return Err(StopReason::MayTarget);
         }
 
-        Ok(res)
+        if res.s1 == -1 {
+            if self.target == FarTarget::Halt {
+                return Err(StopReason::MayTarget);
+            }
+            return Ok(None);
+        }
+
+        Ok(Some(res))
     }
 
     fn on_h2_pop(
         &mut self,
-        a: H2,
-        b: DfaEdge,
+        a: &H2,
+        b: &DfaEdge,
     ) -> Result<(), StopReason> {
-        let H2 { s, .. } = a;
-        let DfaEdge { w, prev: r0 } = b;
+        let H2 { s, dirty, .. } = *a;
+        let r0 = b.prev;
 
-        let res = self.tm_step(w, s, 1)?;
+        let context_zero = self.summary_may_be_all_zero_context(r0);
+        let Some(res) =
+            self.tm_step(b.w.clone(), s, 1, dirty, context_zero)?
+        else {
+            return Ok(());
+        };
 
+        let dirty1 = dirty || res.saw_nonzero;
         if res.is_back {
             let rr = self.dfa_push(res.w1, r0)?;
-            self.ret2.insert(a, H2b { s: res.s1, r: rr });
+            self.insert_ret2(
+                *a,
+                H2b {
+                    s: res.s1,
+                    r: rr,
+                    dirty: dirty1,
+                },
+            );
         } else {
             let c = H3 {
                 w: res.w1,
                 s: res.s1,
                 r: r0,
+                dirty: dirty1,
             };
-            self.h3s.insert(c.clone());
-            self.pre32.insert(c, a);
+            self.insert_h3(&c)?;
+            self.pre32.insert(c, *a);
         }
 
         Ok(())
     }
 
-    fn on_h3_back(&mut self, c: H3, b: &H2b) -> Result<(), StopReason> {
-        let H3 { w, .. } = c.clone();
-        let H2b { s: s0, r: r0 } = b;
+    fn on_h3_back(
+        &mut self,
+        c: &H3,
+        b: &H2b,
+    ) -> Result<(), StopReason> {
+        let H2b {
+            s: s0,
+            r: r0,
+            dirty: dirty_b,
+        } = *b;
 
-        let res = self.tm_step(w, *s0, -1)?;
+        let context_zero = self.summary_may_be_all_zero_context(c.r)
+            && self.summary_may_be_all_zero_context(r0);
+        let Some(res) = self.tm_step(
+            c.w.clone(),
+            s0,
+            -1,
+            c.dirty || dirty_b,
+            context_zero,
+        )?
+        else {
+            return Ok(());
+        };
 
+        let dirty1 = c.dirty || dirty_b || res.saw_nonzero;
         if res.is_back {
             let c0 = H3 {
                 w: res.w1,
                 s: res.s1,
-                r: *r0,
+                r: r0,
+                dirty: dirty1,
             };
-            self.h3s.insert(c0.clone());
-            self.pre33.insert(c0, c);
+            self.insert_h3(&c0)?;
+            self.pre33.insert(c0, c.clone());
         } else {
-            let rr = self.dfa_push(res.w1, *r0)?;
-            self.ret3.insert(c, H2b { s: res.s1, r: rr });
+            let rr = self.dfa_push(res.w1, r0)?;
+            self.insert_ret3(
+                c.clone(),
+                H2b {
+                    s: res.s1,
+                    r: rr,
+                    dirty: dirty1,
+                },
+            );
         }
 
         Ok(())
     }
 
     fn on_retl(&mut self, b: &H2b) -> Result<(), StopReason> {
-        let H2b { s: s0, r: r0 } = b;
+        let H2b {
+            s: s0,
+            r: r0,
+            dirty,
+        } = *b;
 
         let blank = Word::zero(self.block_len);
-        let res = self.tm_step(blank, *s0, -1)?;
+        let context_zero = self.summary_may_be_all_zero_context(r0);
+        let Some(res) =
+            self.tm_step(blank, s0, -1, dirty, context_zero)?
+        else {
+            return Ok(());
+        };
 
+        let dirty1 = dirty || res.saw_nonzero;
         if res.is_back {
             let c0 = H3 {
                 w: res.w1,
                 s: res.s1,
-                r: *r0,
+                r: r0,
+                dirty: dirty1,
             };
-            self.h3s.insert(c0.clone());
-            self.pre3l.insert(c0);
+            self.insert_h3(&c0)?;
+            self.insert_pre3l(&c0)?;
         } else {
-            let rr = self.dfa_push(res.w1, *r0)?;
-            self.retl.insert(H2b { s: res.s1, r: rr });
+            let rr = self.dfa_push(res.w1, r0)?;
+            let b0 = H2b {
+                s: res.s1,
+                r: rr,
+                dirty: dirty1,
+            };
+            self.insert_retl(&b0)?;
         }
 
         Ok(())
@@ -987,87 +1182,93 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         self.ensure_dfa_capacity(r);
         self.pop[r].push(e.clone());
 
-        let states: Vec<i16> = self.r_s[r].iter().copied().collect();
-        for s in states {
-            self.on_h2_pop(H2 { s, r }, e.clone())?;
+        let states: Vec<(i16, bool)> =
+            self.r_s[r].iter().copied().collect();
+        for (s, dirty) in states {
+            self.on_h2_pop(&H2 { s, r, dirty }, e)?;
         }
 
         Ok(())
     }
 
     fn on_h2(&mut self, a: &H2) -> Result<(), StopReason> {
-        let H2 { s, r } = a;
+        let H2 { s, r, .. } = a;
 
         self.bump()?;
         self.ensure_dfa_capacity(*r);
-        self.r_s[*r].insert(*s);
+        self.r_s[*r].insert((*s, a.dirty));
 
         let edges = self.pop[*r].clone();
         for e in edges {
-            self.on_h2_pop(a.clone(), e)?;
+            self.on_h2_pop(a, &e)?;
         }
 
         Ok(())
     }
 
     fn on_h3(&mut self, a: H3) {
-        let H3 { s, r, .. } = a;
-        let a0 = H2 { s, r };
-        self.h2s.insert(a0.clone());
+        let a0 = H2 {
+            s: a.s,
+            r: a.r,
+            dirty: a.dirty,
+        };
+        self.insert_h2(a0);
         self.pre23.insert(a0, a);
     }
 
     fn on_ret2(&mut self, a: &H2, b: &H2b) -> Result<(), StopReason> {
         let cs: Vec<H3> = self.pre23.values(a).cloned().collect();
         for c in cs {
-            self.on_h3_back(c, b)?;
+            self.on_h3_back(&c, b)?;
         }
         Ok(())
     }
 
-    fn on_ret3(&mut self, a: &H3, b: &H2b) {
-        let a0s: Vec<H2> = self.pre32.values(a).cloned().collect();
+    fn on_ret3(&mut self, a: &H3, b: &H2b) -> Result<(), StopReason> {
+        let a0s: Vec<H2> = self.pre32.values(a).copied().collect();
         for a0 in a0s {
-            self.ret2.insert(a0, b.clone());
+            self.insert_ret2(a0, *b);
         }
 
         let a1s: Vec<H3> = self.pre33.values(a).cloned().collect();
         for a1 in a1s {
-            self.ret3.insert(a1, b.clone());
+            self.insert_ret3(a1, *b);
         }
 
         if self.pre3l.contains(a) {
-            self.retl.insert(b.clone());
+            self.insert_retl(b)?;
         }
+        Ok(())
     }
 
     fn on_pre23(&mut self, a: &H2, c: &H3) -> Result<(), StopReason> {
-        let bs: Vec<H2b> = self.ret2.values(a).cloned().collect();
+        let bs: Vec<H2b> = self.ret2.values(a).copied().collect();
         for b in bs {
-            self.on_h3_back(c.clone(), &b)?;
+            self.on_h3_back(c, &b)?;
         }
         Ok(())
     }
 
     fn on_pre32(&mut self, a: &H3, a0: &H2) {
-        let bs: Vec<H2b> = self.ret3.values(a).cloned().collect();
+        let bs: Vec<H2b> = self.ret3.values(a).copied().collect();
         for b in bs {
-            self.ret2.insert(a0.clone(), b);
+            self.insert_ret2(*a0, b);
         }
     }
 
     fn on_pre33(&mut self, a: &H3, a0: &H3) {
-        let bs: Vec<H2b> = self.ret3.values(a).cloned().collect();
+        let bs: Vec<H2b> = self.ret3.values(a).copied().collect();
         for b in bs {
-            self.ret3.insert(a0.clone(), b);
+            self.insert_ret3(a0.clone(), b);
         }
     }
 
-    fn on_pre3l(&mut self, a: &H3) {
-        let bs: Vec<H2b> = self.ret3.values(a).cloned().collect();
+    fn on_pre3l(&mut self, a: &H3) -> Result<(), StopReason> {
+        let bs: Vec<H2b> = self.ret3.values(a).copied().collect();
         for b in bs {
-            self.retl.insert(b);
+            self.insert_retl(&b)?;
         }
+        Ok(())
     }
 
     fn run(mut self) -> Result<(), StopReason> {
@@ -1076,6 +1277,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             w: blank,
             s: 0,
             r: 1,
+            dirty: false,
         };
         self.h3s.insert(c0.clone());
         self.pre3l.insert(c0);
@@ -1098,7 +1300,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
                 continue;
             }
             if let Some(a) = self.pre3l.pop_todo() {
-                self.on_pre3l(&a);
+                self.on_pre3l(&a)?;
                 continue;
             }
             if let Some((a, b)) = self.ret2.pop_todo() {
@@ -1106,7 +1308,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
                 continue;
             }
             if let Some((a, b)) = self.ret3.pop_todo() {
-                self.on_ret3(&a, &b);
+                self.on_ret3(&a, &b)?;
                 continue;
             }
             if let Some((a, c)) = self.pre23.pop_todo() {
@@ -1137,6 +1339,7 @@ fn far_decide_with<
     block_len: usize,
     max_work: usize,
     block_step_limit: usize,
+    target: FarTarget,
 ) -> bool {
     if block_len == 0 {
         return false;
@@ -1147,6 +1350,7 @@ fn far_decide_with<
         block_len,
         max_work,
         block_step_limit,
+        target,
     ) else {
         return false;
     };
@@ -1154,41 +1358,94 @@ fn far_decide_with<
     decider.run().is_ok()
 }
 
+fn far_sweep_all<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    knob: usize,
+    target: FarTarget,
+) -> bool {
+    if COLORS < 2 || STATES == 0 {
+        return false;
+    }
+
+    let knob = knob.max(FAR_KNOB_MIN);
+    let eff = effort_factor(knob);
+
+    let cap_by_colors = if COLORS <= 2 {
+        FAR_BLOCK_LEN_CAP_COLORS_2
+    } else if COLORS <= 4 {
+        FAR_BLOCK_LEN_CAP_COLORS_3_4
+    } else {
+        FAR_BLOCK_LEN_CAP_COLORS_5_8
+    };
+
+    let max_block_len =
+        knob.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
+
+    for block_len in 2..=max_block_len {
+        let max_work = FAR_WORK_PER_LEN
+            .saturating_mul(block_len)
+            .saturating_mul(eff);
+
+        let block_step_limit = FAR_STEP_PER_LEN
+            .saturating_mul(block_len)
+            .saturating_mul(eff);
+
+        if far_decide_all::<STATES, COLORS>(
+            prog,
+            block_len,
+            max_work,
+            block_step_limit,
+            target,
+        ) {
+            return true;
+        }
+    }
+
+    false
+}
+
 fn far_decide_all<const STATES: usize, const COLORS: usize>(
     prog: &Prog<STATES, COLORS>,
     block_len: usize,
     max_work: usize,
     block_step_limit: usize,
+    target: FarTarget,
 ) -> bool {
     far_decide_with::<NgSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
+        target,
     ) || far_decide_with::<Ng1Summary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
+        target,
     ) || far_decide_with::<RwlModSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
+        target,
     ) || far_decide_with::<CpsLruSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
+        target,
     ) || far_decide_with::<RngsModSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
+        target,
     ) || far_decide_with::<RsModSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
+        target,
     )
 }

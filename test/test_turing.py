@@ -1162,23 +1162,18 @@ class Far(TuringTest):
             self.assertFalse(
                 far_cant_halt(prog, 3))
 
-    @skip('')
     def test_blank(self):
         for prog in BLANKERS:
-            try:
-                self.assertFalse(
-                    far_cant_blank(prog, 3))
-            except AssertionError:
-                print(f'--> {prog}')
+            self.assertFalse(
+                far_cant_blank(prog, 3))
 
         for prog in NONBLANKERS:
             if not far_cant_blank(prog, 3):
-                print(f'       "{prog}",')
-        #         self.assertIn(prog, FAR_FALSE_NEGATIVES['blank'])
+                self.assertIn(prog, FAR_FALSE_NEGATIVES['blank'])
 
-        # for prog in FAR_FALSE_NEGATIVES['blank']:
-        #     self.assertFalse(
-        #         far_cant_blank(prog, 3))
+        for prog in FAR_FALSE_NEGATIVES['blank']:
+            self.assertFalse(
+                far_cant_blank(prog, 3))
 
     @skip('')
     def test_spinout(self):
@@ -1202,6 +1197,10 @@ class Far(TuringTest):
         pass
 
     def test_holdouts(self):
+        for prog in BLANK_HOLDOUTS:
+            self.assertFalse(
+                far_cant_blank(prog, 3))
+
         for prog in HALT_HOLDOUTS:
             self.assertFalse(
                 far_cant_halt(prog, 3))
