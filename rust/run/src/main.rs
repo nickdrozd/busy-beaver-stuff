@@ -168,8 +168,8 @@ fn params_4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(15).is_refuted()
-        || prog.ctl_cant_spinout(190)
+    prog.bkw_cant_spinout(22).is_refuted()
+        || prog.ctl_cant_spinout(500)
         || prog.cps_cant_spinout(12)
         || prog.seg_cant_spinout(8).is_refuted()
 }
@@ -211,8 +211,8 @@ fn params_2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
 }
 
 fn params_2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(14).is_refuted()
-        || prog.ctl_cant_spinout(300)
+    prog.bkw_cant_spinout(22).is_refuted()
+        || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
         || prog.seg_cant_spinout(5).is_refuted()
 }
@@ -263,13 +263,13 @@ fn test_deciders() {
         ],
         (4, 2) => [
             0 => (params_4_2_0, 25, (0, 431_888)),
-            1 => (params_4_2_1, 99, (738, 753_582)),
+            1 => (params_4_2_1, 99, (731, 753_582)),
             2 => (params_4_2_2, 99, (589, 1_932_610)),
             3 => (params_4_2_3, 99, (0, 2_134_923)),
         ],
         (2, 4) => [
             0 => (params_2_4_0, 109, (0, 308_968)),
-            1 => (params_2_4_1, TREE_LIM, (2958, 612_077)),
+            1 => (params_2_4_1, TREE_LIM, (2953, 612_077)),
             2 => (params_2_4_2, TREE_LIM, (412, 1_189_643)),
             3 => (params_2_4_3, TREE_LIM, (0, 1_698_850)),
         ],

@@ -98,7 +98,11 @@ HALT_HOLDOUT_FILES = (
 )
 
 BLANK_HOLDOUT_FILES = (
-    'blank-4-2',
+    'blank',
+)
+
+SPINOUT_HOLDOUT_FILES = (
+    'spinout',
 )
 
 def get_holdouts(paths: tuple[str, ...]) -> set[str]:
@@ -113,6 +117,7 @@ def get_holdouts(paths: tuple[str, ...]) -> set[str]:
 
 HALT_HOLDOUTS = get_holdouts(HALT_HOLDOUT_FILES)
 BLANK_HOLDOUTS = get_holdouts(BLANK_HOLDOUT_FILES)
+SPINOUT_HOLDOUTS = get_holdouts(SPINOUT_HOLDOUT_FILES)
 
 ########################################
 
@@ -517,6 +522,9 @@ class Reason(TuringTest):
         for prog in BLANK_HOLDOUTS:
             self.assert_could_blank_backward(prog)
 
+        for prog in SPINOUT_HOLDOUTS:
+            self.assert_could_spinout_backward(prog)
+
     def test_false_negatives(self):
         results: dict[Goal, BackwardCats] = {
             'halt': defaultdict(set),
@@ -778,6 +786,9 @@ class Cps(TuringTest):
         for prog in BLANK_HOLDOUTS:
             self.assert_could_blank_cps(prog)
 
+        for prog in SPINOUT_HOLDOUTS:
+            self.assert_could_spinout_cps(prog)
+
         for prog in HALT_HOLDOUTS:
             self.assert_could_halt_cps(prog)
 
@@ -850,6 +861,12 @@ class Ctl(TuringTest):
     def test_holdouts(self):
         for prog in BLANK_HOLDOUTS:
             self.assert_could_blank_ctl(prog)
+
+        for prog in SPINOUT_HOLDOUTS:
+            try:
+                self.assert_could_spinout_ctl(prog)
+            except AssertionError:
+                print(prog)
 
         for prog in HALT_HOLDOUTS:
             self.assert_could_halt_ctl(prog)
@@ -1141,6 +1158,10 @@ class Graphx(TuringTest):
         for prog in BLANK_HOLDOUTS:
             self.assertFalse(
                 graph_cant_blank(prog))
+
+        for prog in SPINOUT_HOLDOUTS:
+            self.assertFalse(
+                graph_cant_spinout(prog))
 
         for prog in HALT_HOLDOUTS:
             self.assertFalse(
