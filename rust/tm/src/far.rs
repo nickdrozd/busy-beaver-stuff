@@ -1,6 +1,6 @@
-//! FAR non-halting prover (Finite Automaton Reduction)
+//! FAR/MITM non-halting prover
 //!
-//! Self-contained FAR decider, implemented as a method on `Prog`.
+//! Self-contained FAR decider with MITMWFAR folded into `far_cant_halt`, implemented as methods on `Prog`.
 //!
 //! Works for **any number of tape colors** (`COLORS >= 2`) and typical Busy Beaver
 //! sizes (e.g. `states <= 8`, `colors <= 8`).
@@ -13,8 +13,7 @@
 //! ```
 //!
 //! Behavior:
-//! - Returns `true` only when FAR reaches a fixed point (a sound proof that the
-//!   machine cannot halt).
+//! - Returns `true` only when FAR or MITM/WFAR proves that the machine cannot halt.
 //! - Returns `false` otherwise (it may halt, or FAR ran out of budgets).
 //!
 //! # How the knob works
@@ -24,6 +23,8 @@
 
 use core::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
+
+use ahash::{AHashMap as Map, AHashSet as Set};
 
 use crate::{Color, Goal, Instr, Prog, Slot, State};
 
@@ -91,10 +92,12 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// Higher means more analysis and more chances to prove non-halting.
     ///
     /// Returns:
-    /// - `true` iff FAR *proved* the machine cannot halt.
+    /// - `true` iff FAR or MITM/WFAR proved the machine cannot halt.
     /// - `false` otherwise.
     pub fn far_cant_halt(&self, knob: usize) -> bool {
-        far_sweep_all::<STATES, COLORS>(self, knob, Goal::Halt)
+        far_sweep_fast::<STATES, COLORS>(self, knob, Goal::Halt)
+            || mitm_cant_halt::<STATES, COLORS>(self)
+            || far_sweep_slow::<STATES, COLORS>(self, knob, Goal::Halt)
     }
 
     /// FAR blank-tape prover.
@@ -103,14 +106,16 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// after time 0.  The initial all-zero tape is ignored.  This runs the same
     /// FAR fixed-point computation as `far_cant_halt`, but tracks whether any
     /// non-zero block has ever been seen and treats a derived all-zero
-    /// left-context / active-block configuration as the target.  If the FAR
-    /// over-approximation reaches a fixed point without deriving that target,
+    /// left-context / active-block configuration as the goal.  If the FAR
+    /// over-approximation reaches a fixed point without deriving that goal,
     /// the tape cannot ever become globally blank.  Because FAR summaries remember
     /// history rather than exact present contents, a zero context is recognized by
     /// asking whether the summary is compatible with an all-zero block stack, not
     /// by requiring the initial DFA state.
     pub fn far_cant_blank(&self, knob: usize) -> bool {
-        far_sweep_all::<STATES, COLORS>(self, knob, Goal::Blank)
+        far_sweep_fast::<STATES, COLORS>(self, knob, Goal::Blank)
+            || mitm_cant_blank::<STATES, COLORS>(self)
+            || far_sweep_slow::<STATES, COLORS>(self, knob, Goal::Blank)
     }
 
     pub fn far_cant_spinout(&self, _knob: usize) -> bool {
@@ -327,7 +332,7 @@ trait Summary: Clone + Ord {
     /// True iff this finite summary is compatible with a concrete stack whose
     /// stored blocks are all zero.  FAR summaries are lossy history summaries:
     /// after a non-zero block is erased, the summary may still be non-initial
-    /// while the represented concrete stack is all-zero.  Blank-tape target
+    /// while the represented concrete stack is all-zero.  Blank-tape goal
     /// detection must therefore use this predicate instead of `id == initial`.
     fn may_be_all_zero_context(&self) -> bool;
 }
@@ -1348,10 +1353,43 @@ fn far_decide_with<
     decider.run().is_ok()
 }
 
-fn far_sweep_all<const STATES: usize, const COLORS: usize>(
+fn far_sweep_fast<const STATES: usize, const COLORS: usize>(
     prog: &Prog<STATES, COLORS>,
     knob: usize,
     goal: Goal,
+) -> bool {
+    far_sweep_with::<STATES, COLORS>(
+        prog,
+        knob,
+        goal,
+        far_decide_fast::<STATES, COLORS>,
+    )
+}
+
+fn far_sweep_slow<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    knob: usize,
+    goal: Goal,
+) -> bool {
+    far_sweep_with::<STATES, COLORS>(
+        prog,
+        knob,
+        goal,
+        far_decide_slow::<STATES, COLORS>,
+    )
+}
+
+fn far_sweep_with<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    knob: usize,
+    goal: Goal,
+    decide: fn(
+        &Prog<STATES, COLORS>,
+        usize,
+        usize,
+        usize,
+        Goal,
+    ) -> bool,
 ) -> bool {
     if COLORS < 2 || STATES == 0 {
         return false;
@@ -1380,13 +1418,7 @@ fn far_sweep_all<const STATES: usize, const COLORS: usize>(
             .saturating_mul(block_len)
             .saturating_mul(eff);
 
-        if far_decide_all::<STATES, COLORS>(
-            prog,
-            block_len,
-            max_work,
-            block_step_limit,
-            goal,
-        ) {
+        if decide(prog, block_len, max_work, block_step_limit, goal) {
             return true;
         }
     }
@@ -1394,26 +1426,14 @@ fn far_sweep_all<const STATES: usize, const COLORS: usize>(
     false
 }
 
-fn far_decide_all<const STATES: usize, const COLORS: usize>(
+fn far_decide_fast<const STATES: usize, const COLORS: usize>(
     prog: &Prog<STATES, COLORS>,
     block_len: usize,
     max_work: usize,
     block_step_limit: usize,
     goal: Goal,
 ) -> bool {
-    far_decide_with::<NgSummary, STATES, COLORS>(
-        prog,
-        block_len,
-        max_work,
-        block_step_limit,
-        goal,
-    ) || far_decide_with::<Ng1Summary, STATES, COLORS>(
-        prog,
-        block_len,
-        max_work,
-        block_step_limit,
-        goal,
-    ) || far_decide_with::<RwlModSummary, STATES, COLORS>(
+    far_decide_with::<Ng1Summary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
@@ -1425,7 +1445,23 @@ fn far_decide_all<const STATES: usize, const COLORS: usize>(
         max_work,
         block_step_limit,
         goal,
-    ) || far_decide_with::<RngsModSummary, STATES, COLORS>(
+    ) || far_decide_with::<RwlModSummary, STATES, COLORS>(
+        prog,
+        block_len,
+        max_work,
+        block_step_limit,
+        goal,
+    )
+}
+
+fn far_decide_slow<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    block_len: usize,
+    max_work: usize,
+    block_step_limit: usize,
+    goal: Goal,
+) -> bool {
+    far_decide_with::<RngsModSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
@@ -1437,5 +1473,876 @@ fn far_decide_all<const STATES: usize, const COLORS: usize>(
         max_work,
         block_step_limit,
         goal,
+    ) || far_decide_with::<NgSummary, STATES, COLORS>(
+        prog,
+        block_len,
+        max_work,
+        block_step_limit,
+        goal,
     )
+}
+
+// -----------------------------------------------------------------------------
+// MITMWFAR boolean-only decider
+// -----------------------------------------------------------------------------
+
+/**************************************/
+
+#[derive(Clone)]
+struct MitmWfa {
+    states: usize,
+    colors: usize,
+    trans: Vec<Vec<(usize, i32)>>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+struct MitmConfig {
+    st: usize,
+    co: usize,
+    left: usize,
+    right: usize,
+    dirty: bool,
+}
+
+#[derive(Clone, Copy)]
+struct MitmNext {
+    config: MitmConfig,
+    weight: i32,
+}
+
+#[derive(Clone, Copy, Default)]
+struct MitmBounds {
+    lo: Option<i32>,
+    hi: Option<i32>,
+}
+
+#[derive(Clone)]
+struct MitmSpecial {
+    nonneg: Vec<bool>,
+    nonpos: Vec<bool>,
+}
+
+type MitmAccept = Map<MitmConfig, MitmBounds>;
+
+#[derive(Clone, Copy)]
+enum MitmSide {
+    Left,
+    Right,
+}
+
+const MITM_DEAD: usize = 1;
+const MITM_MAX_FINITE_INTERVAL: i32 = 100;
+
+fn mitm_cant_halt<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+) -> bool {
+    mitm_cant_target::<STATES, COLORS>(prog, Goal::Halt)
+}
+
+fn mitm_cant_blank<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+) -> bool {
+    mitm_cant_target::<STATES, COLORS>(prog, Goal::Blank)
+}
+
+fn mitm_cant_target<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+) -> bool {
+    // Fast, boolean-only port of Iijil1/MITMWFAR's search path:
+    // enumerate closed MITM-DFA skeletons, then try one (+1,-1) WFA
+    // weight pair, deriving and verifying the accept set in memory.
+    const MAX_TRANSITIONS: usize = 9;
+    const MAX_WEIGHT_PAIRS: usize = 1;
+
+    if COLORS < 2 || STATES == 0 || prog.get(&(0, 0)).is_none() {
+        return false;
+    }
+
+    // Cheap passes first.  These preserve the same eventual prover power
+    // as the final pass, but avoid paying for memory expansion on easy TMs.
+    for added_memory in [0_usize, 1] {
+        for dfa_transitions in 2..=MAX_TRANSITIONS {
+            if mitm_decide_exact(
+                prog,
+                goal,
+                dfa_transitions,
+                dfa_transitions,
+                dfa_transitions,
+                MAX_WEIGHT_PAIRS,
+                added_memory,
+            ) {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+fn mitm_decide_exact<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    goal_transitions: usize,
+    max_left_states: usize,
+    max_right_states: usize,
+    max_weight_pairs: usize,
+    added_memory: usize,
+) -> bool {
+    let mut left = MitmWfa::new(COLORS);
+    let mut right = MitmWfa::new(COLORS);
+    left.trans[0][0] = (0, 0);
+    right.trans[0][0] = (0, 0);
+
+    mitm_recurse_dfa(
+        prog,
+        goal,
+        &left,
+        &right,
+        2,
+        goal_transitions,
+        max_left_states,
+        max_right_states,
+        max_weight_pairs,
+        added_memory,
+    )
+}
+
+#[expect(clippy::too_many_arguments, clippy::needless_borrow)]
+fn mitm_recurse_dfa<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    left: &MitmWfa,
+    right: &MitmWfa,
+    current_transitions: usize,
+    goal_transitions: usize,
+    max_left_states: usize,
+    max_right_states: usize,
+    max_weight_pairs: usize,
+    added_memory: usize,
+) -> bool {
+    match mitm_find_closure_break(prog, goal, left, right) {
+        None => {
+            current_transitions == goal_transitions
+                && mitm_recurse_weights(
+                    prog,
+                    goal,
+                    left,
+                    right,
+                    0,
+                    max_weight_pairs,
+                    added_memory,
+                )
+        },
+        Some((MitmSide::Left, state, color)) => {
+            if current_transitions >= goal_transitions {
+                return false;
+            }
+
+            if left.states < max_left_states {
+                let mut next = left.clone();
+                let new_state = next.push_dead_state();
+                next.trans[state][color] = (new_state, 0);
+                if mitm_recurse_dfa(
+                    prog,
+                    goal,
+                    &next,
+                    &right,
+                    current_transitions + 1,
+                    goal_transitions,
+                    max_left_states,
+                    max_right_states,
+                    max_weight_pairs,
+                    added_memory,
+                ) {
+                    return true;
+                }
+            }
+
+            for to_state in 0..left.states {
+                if to_state == MITM_DEAD {
+                    continue;
+                }
+                let mut next = left.clone();
+                next.trans[state][color] = (to_state, 0);
+                if mitm_recurse_dfa(
+                    prog,
+                    goal,
+                    &next,
+                    &right,
+                    current_transitions + 1,
+                    goal_transitions,
+                    max_left_states,
+                    max_right_states,
+                    max_weight_pairs,
+                    added_memory,
+                ) {
+                    return true;
+                }
+            }
+
+            false
+        },
+        Some((MitmSide::Right, state, color)) => {
+            if current_transitions >= goal_transitions {
+                return false;
+            }
+
+            if right.states < max_right_states {
+                let mut next = right.clone();
+                let new_state = next.push_dead_state();
+                next.trans[state][color] = (new_state, 0);
+                if mitm_recurse_dfa(
+                    prog,
+                    goal,
+                    &left,
+                    &next,
+                    current_transitions + 1,
+                    goal_transitions,
+                    max_left_states,
+                    max_right_states,
+                    max_weight_pairs,
+                    added_memory,
+                ) {
+                    return true;
+                }
+            }
+
+            for to_state in 0..right.states {
+                if to_state == MITM_DEAD {
+                    continue;
+                }
+                let mut next = right.clone();
+                next.trans[state][color] = (to_state, 0);
+                if mitm_recurse_dfa(
+                    prog,
+                    goal,
+                    &left,
+                    &next,
+                    current_transitions + 1,
+                    goal_transitions,
+                    max_left_states,
+                    max_right_states,
+                    max_weight_pairs,
+                    added_memory,
+                ) {
+                    return true;
+                }
+            }
+
+            false
+        },
+    }
+}
+
+fn mitm_find_closure_break<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    left: &MitmWfa,
+    right: &MitmWfa,
+) -> Option<(MitmSide, usize, usize)> {
+    let start = MitmConfig {
+        st: 0,
+        co: 0,
+        left: 0,
+        right: 0,
+        dirty: false,
+    };
+    let mut seen = Set::new();
+    let mut todo = vec![start];
+    seen.insert(start);
+
+    while let Some(cur) = todo.pop() {
+        if cur.st >= STATES || cur.co >= COLORS {
+            continue;
+        }
+        #[expect(clippy::cast_possible_truncation)]
+        let Some(&(write, shift, _)) =
+            prog.get(&(cur.st as State, cur.co as Color))
+        else {
+            continue;
+        };
+        let write = write as usize;
+
+        for next in mitm_next_configs(prog, goal, cur, left, right) {
+            let cfg = next.config;
+            if seen.contains(&cfg) {
+                continue;
+            }
+            if cfg.left == MITM_DEAD {
+                return Some((MitmSide::Left, cur.left, write));
+            }
+            if cfg.right == MITM_DEAD {
+                return Some((MitmSide::Right, cur.right, write));
+            }
+            seen.insert(cfg);
+            todo.push(cfg);
+        }
+
+        let _ = shift;
+    }
+
+    None
+}
+
+#[expect(clippy::similar_names)]
+fn mitm_recurse_weights<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    left: &MitmWfa,
+    right: &MitmWfa,
+    current_weight_pairs: usize,
+    max_weight_pairs: usize,
+    added_memory: usize,
+) -> bool {
+    let mut try_left = left.clone();
+    let mut try_right = right.clone();
+    for _ in 0..added_memory {
+        try_left = try_left.with_memory();
+        try_right = try_right.with_memory();
+    }
+
+    let left_special = try_left.derive_special();
+    let right_special = try_right.derive_special();
+    if let Some(accept) = mitm_find_accept_set(
+        prog,
+        goal,
+        &try_left,
+        &try_right,
+        &left_special,
+        &right_special,
+    ) && mitm_verify(
+        prog,
+        goal,
+        &try_left,
+        &try_right,
+        &left_special,
+        &right_special,
+        &accept,
+    ) {
+        return true;
+    }
+
+    if current_weight_pairs >= max_weight_pairs {
+        return false;
+    }
+
+    let weight_pairs: &[(i32, i32)] = if current_weight_pairs == 0 {
+        &[(1, -1)]
+    } else {
+        &[(1, -1), (-1, 1)]
+    };
+
+    for &(lw, rw) in weight_pairs {
+        for ls in 0..left.states {
+            for lc in 0..left.colors {
+                let (lt, old_lw) = left.trans[ls][lc];
+                if lt == MITM_DEAD || (ls == 0 && lc == 0) {
+                    continue;
+                }
+                let mut new_left = left.clone();
+                new_left.trans[ls][lc] = (lt, old_lw + lw);
+
+                for rs in 0..right.states {
+                    for rc in 0..right.colors {
+                        let (rt, old_rw) = right.trans[rs][rc];
+                        if rt == MITM_DEAD || (rs == 0 && rc == 0) {
+                            continue;
+                        }
+                        let mut new_right = right.clone();
+                        new_right.trans[rs][rc] = (rt, old_rw + rw);
+                        if mitm_recurse_weights(
+                            prog,
+                            goal,
+                            &new_left,
+                            &new_right,
+                            current_weight_pairs + 1,
+                            max_weight_pairs,
+                            added_memory,
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    false
+}
+
+fn mitm_find_accept_set<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    left: &MitmWfa,
+    right: &MitmWfa,
+    left_special: &MitmSpecial,
+    right_special: &MitmSpecial,
+) -> Option<MitmAccept> {
+    let start = MitmConfig {
+        st: 0,
+        co: 0,
+        left: 0,
+        right: 0,
+        dirty: false,
+    };
+    let mut accept = MitmAccept::new();
+    let mut todo = vec![start];
+    accept.insert(
+        start,
+        MitmBounds {
+            lo: Some(0),
+            hi: Some(0),
+        },
+    );
+
+    while let Some(cur) = todo.pop() {
+        let cur_bounds = accept[&cur];
+        let mut nexts = mitm_next_configs(prog, goal, cur, left, right);
+        if nexts.is_empty() {
+            if goal.is_halt() {
+                return None;
+            }
+            continue;
+        }
+        nexts.sort_by_key(|next| next.config);
+
+        for next in nexts {
+            if mitm_accept_contain_next(
+                next,
+                cur_bounds,
+                left_special,
+                right_special,
+                &mut accept,
+            ) {
+                todo.push(next.config);
+            }
+        }
+    }
+
+    Some(accept)
+}
+
+fn mitm_accept_contain_next(
+    next: MitmNext,
+    bounds: MitmBounds,
+    left_special: &MitmSpecial,
+    right_special: &MitmSpecial,
+    accept: &mut MitmAccept,
+) -> bool {
+    let cfg = next.config;
+    let mut lo = bounds.lo.map(|x| x + next.weight);
+    let mut hi = bounds.hi.map(|x| x + next.weight);
+
+    let hard_lo = left_special.nonneg[cfg.left]
+        && right_special.nonneg[cfg.right];
+    if hard_lo && lo.is_none_or(|x| x < 0) {
+        lo = Some(0);
+    }
+
+    let hard_hi = left_special.nonpos[cfg.left]
+        && right_special.nonpos[cfg.right];
+    if hard_hi && hi.is_none_or(|x| x > 0) {
+        hi = Some(0);
+    }
+
+    if let (Some(lo), Some(hi)) = (lo, hi)
+        && hi < lo
+    {
+        return false;
+    }
+
+    let next_bounds = MitmBounds { lo, hi };
+    let Some(old) = accept.get_mut(&cfg) else {
+        accept.insert(cfg, next_bounds);
+        return true;
+    };
+
+    let mut changed = false;
+
+    if let Some(old_lo) = old.lo
+        && (next_bounds.lo.is_none() || Some(old_lo) > next_bounds.lo)
+    {
+        changed = true;
+        if old.hi.is_none()
+            || next_bounds.lo.is_none()
+            || old.hi.unwrap() - next_bounds.lo.unwrap()
+                > MITM_MAX_FINITE_INTERVAL
+        {
+            old.lo = hard_lo.then_some(0);
+        } else {
+            old.lo = next_bounds.lo;
+        }
+    }
+
+    if let Some(old_hi) = old.hi
+        && (next_bounds.hi.is_none() || Some(old_hi) < next_bounds.hi)
+    {
+        changed = true;
+        if old.lo.is_none()
+            || next_bounds.hi.is_none()
+            || next_bounds.hi.unwrap() - old.lo.unwrap()
+                > MITM_MAX_FINITE_INTERVAL
+        {
+            old.hi = hard_hi.then_some(0);
+        } else {
+            old.hi = next_bounds.hi;
+        }
+    }
+
+    changed
+}
+
+fn mitm_verify<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    left: &MitmWfa,
+    right: &MitmWfa,
+    left_special: &MitmSpecial,
+    right_special: &MitmSpecial,
+    accept: &MitmAccept,
+) -> bool {
+    left.verify_leading_blank()
+        && right.verify_leading_blank()
+        && left.verify_special(left_special)
+        && right.verify_special(right_special)
+        && mitm_start_accepted(accept)
+        && mitm_target_not_accepted(prog, goal, accept)
+        && mitm_forward_closed(
+            prog,
+            goal,
+            left,
+            right,
+            left_special,
+            right_special,
+            accept,
+        )
+}
+
+fn mitm_start_accepted(accept: &MitmAccept) -> bool {
+    let start = MitmConfig {
+        st: 0,
+        co: 0,
+        left: 0,
+        right: 0,
+        dirty: false,
+    };
+    let Some(bounds) = accept.get(&start) else {
+        return false;
+    };
+    bounds.lo.is_none_or(|lo| lo <= 0)
+        && bounds.hi.is_none_or(|hi| hi >= 0)
+}
+
+#[expect(clippy::cast_possible_truncation)]
+fn mitm_target_not_accepted<
+    const STATES: usize,
+    const COLORS: usize,
+>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    accept: &MitmAccept,
+) -> bool {
+    match goal {
+        Goal::Halt => accept.keys().all(|cfg| {
+            cfg.st < STATES
+                && cfg.co < COLORS
+                && prog
+                    .get(&(cfg.st as State, cfg.co as Color))
+                    .is_some()
+        }),
+        Goal::Blank => accept.iter().all(|(cfg, bounds)| {
+            cfg.st < STATES
+                && cfg.co < COLORS
+                && !mitm_blank_config_possible(cfg, bounds)
+        }),
+        Goal::Spinout => unreachable!(),
+    }
+}
+
+fn mitm_blank_config_possible(
+    cfg: &MitmConfig,
+    bounds: &MitmBounds,
+) -> bool {
+    cfg.dirty
+        && cfg.co == 0
+        && cfg.left == 0
+        && cfg.right == 0
+        && bounds.lo.is_none_or(|lo| lo <= 0)
+        && bounds.hi.is_none_or(|hi| hi >= 0)
+}
+
+fn mitm_forward_closed<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    left: &MitmWfa,
+    right: &MitmWfa,
+    left_special: &MitmSpecial,
+    right_special: &MitmSpecial,
+    accept: &MitmAccept,
+) -> bool {
+    for (&cfg, &bounds) in accept {
+        for next in mitm_next_configs(prog, goal, cfg, left, right) {
+            if !mitm_next_accepted(
+                next,
+                bounds,
+                left_special,
+                right_special,
+                accept,
+            ) {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+fn mitm_next_accepted(
+    next: MitmNext,
+    bounds: MitmBounds,
+    left_special: &MitmSpecial,
+    right_special: &MitmSpecial,
+    accept: &MitmAccept,
+) -> bool {
+    let cfg = next.config;
+    let mut lo = bounds.lo.map(|x| x + next.weight);
+    let mut hi = bounds.hi.map(|x| x + next.weight);
+
+    if left_special.nonneg[cfg.left]
+        && right_special.nonneg[cfg.right]
+        && lo.is_none_or(|x| x < 0)
+    {
+        lo = Some(0);
+    }
+    if left_special.nonpos[cfg.left]
+        && right_special.nonpos[cfg.right]
+        && hi.is_none_or(|x| x > 0)
+    {
+        hi = Some(0);
+    }
+    if let (Some(lo), Some(hi)) = (lo, hi)
+        && hi < lo
+    {
+        return true;
+    }
+
+    let Some(accepted) = accept.get(&cfg) else {
+        return false;
+    };
+
+    if let Some(acc_lo) = accepted.lo
+        && lo.is_none_or(|next_lo| acc_lo > next_lo)
+    {
+        return false;
+    }
+    if let Some(acc_hi) = accepted.hi
+        && hi.is_none_or(|next_hi| acc_hi < next_hi)
+    {
+        return false;
+    }
+
+    true
+}
+
+fn mitm_next_configs<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    old: MitmConfig,
+    left: &MitmWfa,
+    right: &MitmWfa,
+) -> Vec<MitmNext> {
+    if old.st >= STATES || old.co >= COLORS {
+        return vec![];
+    }
+    #[expect(clippy::cast_possible_truncation)]
+    let Some(&(write, shift, next_st)) =
+        prog.get(&(old.st as State, old.co as Color))
+    else {
+        return vec![];
+    };
+
+    let write = write as usize;
+    let next_st = next_st as usize;
+    let next_dirty =
+        goal.is_blank() && (old.dirty || old.co != 0 || write != 0);
+    let mut out = vec![];
+
+    if shift {
+        // Move right: the written symbol joins the left half; the old right
+        // predecessor supplies the next scanned symbol.
+        let (new_left, left_weight) = left.trans[old.left][write];
+        for next_right in 0..right.states {
+            for next_symbol in 0..right.colors {
+                let (to, right_weight) =
+                    right.trans[next_right][next_symbol];
+                if to == old.right {
+                    out.push(MitmNext {
+                        config: MitmConfig {
+                            st: next_st,
+                            co: next_symbol,
+                            left: new_left,
+                            right: next_right,
+                            dirty: next_dirty,
+                        },
+                        weight: left_weight - right_weight,
+                    });
+                }
+            }
+        }
+    } else {
+        // Move left: symmetric case.
+        let (new_right, right_weight) = right.trans[old.right][write];
+        for next_left in 0..left.states {
+            for next_symbol in 0..left.colors {
+                let (to, left_weight) =
+                    left.trans[next_left][next_symbol];
+                if to == old.left {
+                    out.push(MitmNext {
+                        config: MitmConfig {
+                            st: next_st,
+                            co: next_symbol,
+                            left: next_left,
+                            right: new_right,
+                            dirty: next_dirty,
+                        },
+                        weight: right_weight - left_weight,
+                    });
+                }
+            }
+        }
+    }
+
+    out
+}
+
+impl MitmWfa {
+    fn new(colors: usize) -> Self {
+        Self {
+            states: 2,
+            colors,
+            trans: vec![vec![(MITM_DEAD, 0); colors]; 2],
+        }
+    }
+
+    fn push_dead_state(&mut self) -> usize {
+        let new_state = self.states;
+        self.states += 1;
+        self.trans.push(vec![(MITM_DEAD, 0); self.colors]);
+        new_state
+    }
+
+    fn verify_leading_blank(&self) -> bool {
+        self.trans[0][0] == (0, 0)
+    }
+
+    fn derive_special(&self) -> MitmSpecial {
+        let mut possible_neg = vec![false; self.states];
+        let mut possible_pos = vec![false; self.states];
+
+        #[expect(clippy::disallowed_names)]
+        for row in &self.trans {
+            for &(to, weight) in row {
+                if weight < 0 {
+                    possible_neg[to] = true;
+                }
+                if weight > 0 {
+                    possible_pos[to] = true;
+                }
+            }
+        }
+
+        self.complete_closure(&mut possible_neg);
+        self.complete_closure(&mut possible_pos);
+
+        MitmSpecial {
+            nonneg: possible_neg.into_iter().map(|x| !x).collect(),
+            nonpos: possible_pos.into_iter().map(|x| !x).collect(),
+        }
+    }
+
+    fn complete_closure(&self, states: &mut [bool]) {
+        let mut todo: Vec<usize> = states
+            .iter()
+            .enumerate()
+            .filter_map(|(state, &yes)| yes.then_some(state))
+            .collect();
+
+        while let Some(cur) = todo.pop() {
+            for &(next, _) in &self.trans[cur] {
+                if !states[next] {
+                    states[next] = true;
+                    todo.push(next);
+                }
+            }
+        }
+    }
+
+    fn verify_special(&self, special: &MitmSpecial) -> bool {
+        for from in 0..self.states {
+            for &(to, weight) in &self.trans[from] {
+                if special.nonpos[to]
+                    && (!special.nonpos[from] || weight > 0)
+                {
+                    return false;
+                }
+                if special.nonneg[to]
+                    && (!special.nonneg[from] || weight < 0)
+                {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    fn with_memory(&self) -> Self {
+        let mut new_state_numbers =
+            vec![vec![usize::MAX; self.colors]; self.states];
+        let mut next_state = 0;
+
+        #[expect(clippy::disallowed_names)]
+        for (old_state, row) in self.trans.iter().enumerate() {
+            for (old_symbol, &(to, _)) in row.iter().enumerate() {
+                if to != MITM_DEAD {
+                    new_state_numbers[old_state][old_symbol] =
+                        next_state;
+                    next_state += 1;
+                    if old_state == 0 && old_symbol == 0 {
+                        // Preserve upstream numbering quirk: state 1 remains dead.
+                        next_state += 1;
+                    }
+                }
+            }
+        }
+
+        let mut out = Self {
+            states: next_state,
+            colors: self.colors,
+            trans: vec![vec![(MITM_DEAD, 0); self.colors]; next_state],
+        };
+
+        for from_old_state in 0..self.states {
+            for from_old_symbol in 0..self.colors {
+                let from_new =
+                    new_state_numbers[from_old_state][from_old_symbol];
+                if from_new == usize::MAX {
+                    continue;
+                }
+                let to_old_state =
+                    self.trans[from_old_state][from_old_symbol].0;
+                for to_old_symbol in 0..self.colors {
+                    let (to_old_next, weight) =
+                        self.trans[to_old_state][to_old_symbol];
+                    if to_old_next != MITM_DEAD {
+                        let to_new = new_state_numbers[to_old_state]
+                            [to_old_symbol];
+                        out.trans[from_new][to_old_symbol] =
+                            (to_new, weight);
+                    }
+                }
+            }
+        }
+
+        out
+    }
 }
