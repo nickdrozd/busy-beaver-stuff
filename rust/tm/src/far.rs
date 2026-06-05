@@ -25,7 +25,7 @@
 use core::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{Color, Instr, Prog, Slot, State};
+use crate::{Color, Goal, Instr, Prog, Slot, State};
 
 // -----------------------------------------------------------------------------
 // Top-level tuning constants
@@ -94,7 +94,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// - `true` iff FAR *proved* the machine cannot halt.
     /// - `false` otherwise.
     pub fn far_cant_halt(&self, knob: usize) -> bool {
-        far_sweep_all::<STATES, COLORS>(self, knob, FarTarget::Halt)
+        far_sweep_all::<STATES, COLORS>(self, knob, Goal::Halt)
     }
 
     /// FAR blank-tape prover.
@@ -110,11 +110,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// asking whether the summary is compatible with an all-zero block stack, not
     /// by requiring the initial DFA state.
     pub fn far_cant_blank(&self, knob: usize) -> bool {
-        far_sweep_all::<STATES, COLORS>(
-            self,
-            knob,
-            FarTarget::BlankTape,
-        )
+        far_sweep_all::<STATES, COLORS>(self, knob, Goal::Blank)
     }
 
     pub fn far_cant_spinout(&self, _knob: usize) -> bool {
@@ -176,12 +172,6 @@ impl PartialOrd for Word {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum FarTarget {
-    Halt,
-    BlankTape,
-}
-
 /// Result of simulating the TM within one block until it exits or halts.
 #[derive(Clone, Debug)]
 struct WordUpdateLemma {
@@ -212,7 +202,7 @@ impl WordUpdateLemma {
         s: i16,
         sgn: i8,
         max_steps: usize,
-        target: FarTarget,
+        goal: Goal,
         dirty_before: bool,
         context_may_be_all_zero: bool,
     ) -> Option<Self> {
@@ -267,7 +257,7 @@ impl WordUpdateLemma {
             s1 = i16::from(next_state);
 
             saw_nonzero |= !w1.is_zero();
-            if target == FarTarget::BlankTape
+            if goal.is_blank()
                 && context_may_be_all_zero
                 && (dirty_before || saw_nonzero)
                 && w1.is_zero()
@@ -308,7 +298,7 @@ impl WordUpdateLemma {
         s: i16,
         sgn: i8,
         max_steps: usize,
-        target: FarTarget,
+        goal: Goal,
         dirty_before: bool,
         context_may_be_all_zero: bool,
     ) -> Option<Self> {
@@ -318,7 +308,7 @@ impl WordUpdateLemma {
             s,
             sgn,
             max_steps,
-            target,
+            goal,
             dirty_before,
             context_may_be_all_zero,
         )?;
@@ -809,7 +799,7 @@ struct FarDecider<
     const COLORS: usize,
 > {
     prog: &'a Prog<STATES, COLORS>,
-    target: FarTarget,
+    goal: Goal,
 
     block_len: usize,
     max_work: usize,
@@ -850,13 +840,13 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         block_len: usize,
         max_work: usize,
         block_step_limit: usize,
-        target: FarTarget,
+        goal: Goal,
     ) -> Result<Self, StopReason> {
         let idr = vec![S::new()];
 
         let this = Self {
             prog,
-            target,
+            goal,
             block_len,
             max_work: max_work.max(1),
             block_step_limit: block_step_limit.max(1),
@@ -953,8 +943,8 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             .is_some_and(Summary::may_be_all_zero_context)
     }
 
-    fn blank_h3_target(&self, c: &H3) -> bool {
-        self.target == FarTarget::BlankTape
+    fn blank_h3_goal(&self, c: &H3) -> bool {
+        self.goal.is_blank()
             && c.dirty
             && c.w.is_zero()
             && self.summary_may_be_all_zero_context(c.r)
@@ -962,21 +952,21 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             && self.pre3l.contains(c)
     }
 
-    fn blank_retl_target(&self, b: &H2b) -> bool {
-        self.target == FarTarget::BlankTape
+    fn blank_retl_goal(&self, b: &H2b) -> bool {
+        self.goal.is_blank()
             && b.dirty
             && self.summary_may_be_all_zero_context(b.r)
     }
 
     fn check_blank_h3(&self, c: &H3) -> Result<(), StopReason> {
-        if self.blank_h3_target(c) {
+        if self.blank_h3_goal(c) {
             return Err(StopReason::MayTarget);
         }
         Ok(())
     }
 
     fn check_blank_retl(&self, b: &H2b) -> Result<(), StopReason> {
-        if self.blank_retl_target(b) {
+        if self.blank_retl_goal(b) {
             return Err(StopReason::MayTarget);
         }
         Ok(())
@@ -1025,7 +1015,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             s,
             sgn,
             self.block_step_limit,
-            self.target,
+            self.goal,
             dirty_before,
             context_may_be_all_zero,
         ) else {
@@ -1037,7 +1027,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         }
 
         if res.s1 == -1 {
-            if self.target == FarTarget::Halt {
+            if self.goal.is_halt() {
                 return Err(StopReason::MayTarget);
             }
             return Ok(None);
@@ -1339,7 +1329,7 @@ fn far_decide_with<
     block_len: usize,
     max_work: usize,
     block_step_limit: usize,
-    target: FarTarget,
+    goal: Goal,
 ) -> bool {
     if block_len == 0 {
         return false;
@@ -1350,7 +1340,7 @@ fn far_decide_with<
         block_len,
         max_work,
         block_step_limit,
-        target,
+        goal,
     ) else {
         return false;
     };
@@ -1361,7 +1351,7 @@ fn far_decide_with<
 fn far_sweep_all<const STATES: usize, const COLORS: usize>(
     prog: &Prog<STATES, COLORS>,
     knob: usize,
-    target: FarTarget,
+    goal: Goal,
 ) -> bool {
     if COLORS < 2 || STATES == 0 {
         return false;
@@ -1395,7 +1385,7 @@ fn far_sweep_all<const STATES: usize, const COLORS: usize>(
             block_len,
             max_work,
             block_step_limit,
-            target,
+            goal,
         ) {
             return true;
         }
@@ -1409,43 +1399,43 @@ fn far_decide_all<const STATES: usize, const COLORS: usize>(
     block_len: usize,
     max_work: usize,
     block_step_limit: usize,
-    target: FarTarget,
+    goal: Goal,
 ) -> bool {
     far_decide_with::<NgSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
-        target,
+        goal,
     ) || far_decide_with::<Ng1Summary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
-        target,
+        goal,
     ) || far_decide_with::<RwlModSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
-        target,
+        goal,
     ) || far_decide_with::<CpsLruSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
-        target,
+        goal,
     ) || far_decide_with::<RngsModSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
-        target,
+        goal,
     ) || far_decide_with::<RsModSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
-        target,
+        goal,
     )
 }
