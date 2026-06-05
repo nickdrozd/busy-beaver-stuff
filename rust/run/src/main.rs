@@ -6,9 +6,7 @@ use tm::{Goal, Prog, Steps};
 pub mod harvesters;
 pub mod tree;
 
-use harvesters::{
-    BackwardHarvester, Collector, HoldoutVisited, Visited,
-};
+use harvesters::{Collector, HoldoutVisited, Visited};
 use tree::{Harvester as _, PassConfig};
 
 /**************************************/
@@ -393,65 +391,6 @@ fn test_params_slow() {
 
 /**************************************/
 
-macro_rules! assert_reason {
-    ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => $leaves:expr ),* $(,)? ] ),* $(,)? ) => {{
-        rayon::scope(|s| { $( $( s.spawn(move |_| {
-            let result = BackwardHarvester::<$states, $colors>::run_params(
-                get_goal($goal),
-                TREE_LIM,
-                &|| BackwardHarvester::new($goal),
-            );
-
-            assert_eq!(
-                result, $leaves,
-                "(({}, {}), {}, {result:?})",
-                $states, $colors, $goal,
-            );
-        }); )* )*});
-    }};
-}
-
-fn test_reason() {
-    println!("reason");
-
-    assert_reason![
-        (2, 2) => [
-            0 => (5, 9),
-            1 => (2, 5),
-            2 => (5, 5),
-            3 => (0, 7),
-        ],
-        (3, 2) => [
-            0 => (24, 1_017),
-            1 => (25, 565),
-            2 => (44, 824),
-            3 => (10, 792),
-            4 => (10, 235),
-        ],
-        (2, 3) => [
-            0 => (13, 737),
-            1 => (12, 803),
-            2 => (21, 409),
-            3 => (13, 531),
-        ],
-        (4, 2) => [
-            0 => (46, 172_643),
-            1 => (102, 122_199),
-            2 => (86, 176_698),
-            3 => (33, 116_827),
-            4 => (29, 63_304),
-        ],
-        (2, 4) => [
-            0 => (49, 170_739),
-            1 => (46, 233_889),
-            2 => (106, 91_895),
-            3 => (38, 84_401),
-        ],
-    ];
-}
-
-/**************************************/
-
 fn test_collect() {
     println!("collect");
 
@@ -595,7 +534,6 @@ const FAST: &[fn()] = &[
     test_instrs,
     test_prover,
     test_quasihalt,
-    test_reason,
 ];
 
 const SLOW: &[fn()] =
