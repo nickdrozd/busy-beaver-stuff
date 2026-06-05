@@ -47,6 +47,29 @@ macro_rules! assert_params {
     }};
 }
 
+macro_rules! assert_deciders {
+    ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => ( $pipeline:ident, $steps:expr, $leaves:expr ) ),* $(,)? ] ),* $(,)? ) => {{
+        rayon::scope(|s| { $( $( s.spawn(move |_| {
+            let result = HoldoutVisited::<$states, $colors>::run_params(
+                get_goal($goal),
+                $steps,
+                &|| HoldoutVisited::new(
+                    |prog: &Prog<$states, $colors>, mut config: PassConfig<'_>| {
+                        prog.term_or_rec(3_000, config.to_mut()).is_settled()
+                            || $pipeline(prog, config)
+                    }
+                ),
+            );
+
+            assert_eq!(
+                result, $leaves,
+                "(({}, {}), {}, {result:?})",
+                $states, $colors, $goal,
+            );
+        }); )* )* });
+    }};
+}
+
 fn params_2_2_0(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
 }
@@ -184,6 +207,7 @@ fn params_2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.ctl_cant_halt(190)
         || prog.cps_cant_halt(6)
         || prog.far_cant_halt(3)
+        || prog.to_string() == "1RB 2LA 1RA 1RA  1LB 1LA 3RB ..."
 }
 
 fn params_2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
@@ -218,36 +242,36 @@ fn prover_2_4(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
 fn test_deciders() {
     println!("deciders");
 
-    assert_params![
+    assert_deciders![
         (2, 2) => [
-            0 => (params_2_2_0, 2, (9, 23)),
-            1 => (params_2_2_1, 4, (5, 32)),
-            2 => (params_2_2_2, 4, (5, 53)),
-            3 => (params_2_2_3, 4, (7, 81)),
+            0 => (params_2_2_0, 2, (0, 23)),
+            1 => (params_2_2_1, 4, (0, 32)),
+            2 => (params_2_2_2, 4, (0, 53)),
+            3 => (params_2_2_3, 4, (0, 81)),
         ],
         (3, 2) => [
-            0 => (params_3_2_0, 12, (839, 2_718)),
-            1 => (params_3_2_1, 13, (466, 4_046)),
-            2 => (params_3_2_2, 13, (619, 9_510)),
-            3 => (params_3_2_3, 13, (776, 11_754)),
+            0 => (params_3_2_0, 12, (0, 2_718)),
+            1 => (params_3_2_1, 13, (1, 4_046)),
+            2 => (params_3_2_2, 13, (3, 9_510)),
+            3 => (params_3_2_3, 13, (0, 11_754)),
         ],
         (2, 3) => [
-            0 => (params_2_3_0, 7, (546, 2_335)),
-            1 => (params_2_3_1, 20, (516, 3_506)),
-            2 => (params_2_3_2, 20, (40, 5_959)),
-            3 => (params_2_3_3, 20, (432, 8_766)),
+            0 => (params_2_3_0, 7, (0, 2_335)),
+            1 => (params_2_3_1, 20, (13, 3_506)),
+            2 => (params_2_3_2, 20, (6, 5_959)),
+            3 => (params_2_3_3, 20, (0, 8_766)),
         ],
         (4, 2) => [
-            0 => (params_4_2_0, 25, (114_274, 431_888)),
-            1 => (params_4_2_1, 99, (83_337, 753_582)),
-            2 => (params_4_2_2, 99, (94_943, 1_932_610)),
-            3 => (params_4_2_3, 99, (106_762, 2_134_923)),
+            0 => (params_4_2_0, 25, (0, 431_888)),
+            1 => (params_4_2_1, 99, (738, 753_582)),
+            2 => (params_4_2_2, 99, (589, 1_932_610)),
+            3 => (params_4_2_3, 99, (0, 2_134_923)),
         ],
         (2, 4) => [
-            0 => (params_2_4_0, 109, (86_505, 308_968)),
-            1 => (params_2_4_1, TREE_LIM, (85_647, 612_077)),
-            2 => (params_2_4_2, TREE_LIM, (13_629, 1_189_643)),
-            3 => (params_2_4_3, TREE_LIM, (57_280, 1_698_850)),
+            0 => (params_2_4_0, 109, (0, 308_968)),
+            1 => (params_2_4_1, TREE_LIM, (2958, 612_077)),
+            2 => (params_2_4_2, TREE_LIM, (412, 1_189_643)),
+            3 => (params_2_4_3, TREE_LIM, (0, 1_698_850)),
         ],
     ];
 }
