@@ -503,12 +503,11 @@ fn instrs_6(prog: &Prog<6, 6>, mut config: PassConfig<'_>) -> bool {
 fn instrs_7(prog: &Prog<7, 7>, mut config: PassConfig<'_>) -> bool {
     let config = config.to_mut();
 
-    prog.term_or_rec(100, config).is_settled()
-        || prog.bkw_cant_halt(11).is_refuted()
-        || prog.ctl_cant_halt(51)
+    prog.term_or_rec(1_000, config).is_settled()
+        || prog.bkw_cant_halt(20).is_refuted()
+        || prog.ctl_cant_halt(200)
+        || prog.cps_cant_halt(6)
         || prog.far_cant_halt(4)
-        || prog.cps_cant_halt(7)
-        || prog.term_or_rec(1_000, config).is_settled()
 }
 
 fn test_instrs() {
@@ -528,9 +527,9 @@ fn instrs_8(prog: &Prog<8, 8>, mut config: PassConfig<'_>) -> bool {
     prog.term_or_rec(100, config).is_settled()
         || prog.bkw_cant_halt(3).is_settled()
         || prog.ctl_cant_halt(300)
+        || prog.term_or_rec(1_000, config).is_settled()
         || prog.cps_cant_halt(20)
         || prog.far_cant_halt(4)
-        || prog.term_or_rec(1_000, config).is_settled()
 }
 
 fn test_8_instr() {
