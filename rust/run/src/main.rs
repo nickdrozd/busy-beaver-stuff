@@ -453,7 +453,7 @@ fn run_from_file(path: &str, steps: Steps) -> io::Result<()> {
 }
 
 fn test_from_file() {
-    let files = ["halt-6-2", "halt-7-instr"];
+    let files = ["halt", "blank", "spinout"];
 
     for file in files {
         let filename = format!("test/data/holdouts/{file}.prog");
@@ -554,7 +554,6 @@ fn test_9_instr() {
 const FAST: &[fn()] = &[
     test_collect,
     test_deciders,
-    test_from_file,
     test_instrs,
     test_prover,
     test_quasihalt,

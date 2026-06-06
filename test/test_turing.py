@@ -90,34 +90,18 @@ SEGMENT_LIMIT = 22
 
 ########################################
 
-HALT_HOLDOUT_FILES = (
-    'halt-2-5',
-    'halt-6-2',
-    'halt-7-instr',
-    'halt-8-instr',
-)
-
-BLANK_HOLDOUT_FILES = (
-    'blank',
-)
-
-SPINOUT_HOLDOUT_FILES = (
-    'spinout',
-)
-
-def get_holdouts(paths: tuple[str, ...]) -> set[str]:
+def get_holdouts(path: str) -> set[str]:
     holdouts: set[str] = set()
 
-    for path in paths:
-        with open(f'test/data/holdouts/{path}.prog') as progs:
-            holdouts.update(prog.strip() for prog in progs)
+    with open(f'test/data/holdouts/{path}.prog') as progs:
+        holdouts.update(prog.strip() for prog in progs)
 
     return holdouts
 
 
-HALT_HOLDOUTS = get_holdouts(HALT_HOLDOUT_FILES)
-BLANK_HOLDOUTS = get_holdouts(BLANK_HOLDOUT_FILES)
-SPINOUT_HOLDOUTS = get_holdouts(SPINOUT_HOLDOUT_FILES)
+HALT_HOLDOUTS = get_holdouts('halt')
+BLANK_HOLDOUTS = get_holdouts('blank')
+SPINOUT_HOLDOUTS = get_holdouts('spinout')
 
 ########################################
 
