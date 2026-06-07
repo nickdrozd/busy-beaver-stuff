@@ -551,23 +551,22 @@ fn test_9_instr() {
 
 /**************************************/
 
-const FAST: &[fn()] = &[
-    test_collect,
-    test_deciders,
-    test_instrs,
-    test_prover,
-    test_quasihalt,
-];
+const CURR: &[fn()] = &[test_deciders];
+
+const FAST: &[fn()] =
+    &[test_collect, test_prover, test_quasihalt, test_instrs];
 
 const SLOW: &[fn()] =
     &[test_8_instr, test_9_instr, test_params_slow, test_from_file];
 
 fn main() {
-    FAST.par_iter().for_each(|f| f());
+    CURR.par_iter().for_each(|f| f());
 
     if !std::env::args().any(|x| x == "--all") {
         return;
     }
+
+    FAST.par_iter().for_each(|f| f());
 
     SLOW.par_iter().for_each(|f| f());
 }
