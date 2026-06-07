@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments)]
 //! FAR/MITM non-halting prover
 //!
 //! Self-contained FAR decider with MITMWFAR folded into `far_cant_halt`, implemented as methods on `Prog`.
@@ -21,8 +22,7 @@
 //! - the range of block lengths to try (roughly `2..=knob` but with a colors-based cap)
 //! - budgets for each FAR run (more work / deeper block simulation)
 
-use core::cmp::Ordering;
-use std::collections::{BTreeMap, BTreeSet};
+use core::{cmp::Ordering, hash::Hash};
 
 use ahash::{AHashMap as Map, AHashSet as Set};
 
@@ -130,7 +130,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 /// A block-word: a length-`len` vector of tape symbols.
 ///
 /// `Word` uses a `Vec<Color>` so it supports any number of colors.
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 struct Word {
     cells: Vec<Color>,
 }
@@ -177,10 +177,46 @@ impl PartialOrd for Word {
     }
 }
 
-/// Result of simulating the TM within one block until it exits or halts.
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct WordId(usize);
+
 #[derive(Clone, Debug)]
+struct WordInterner {
+    ids: Map<Word, WordId>,
+    words: Vec<Word>,
+}
+
+impl WordInterner {
+    fn new() -> Self {
+        Self {
+            ids: Map::new(),
+            words: Vec::new(),
+        }
+    }
+
+    fn intern(&mut self, w: Word) -> WordId {
+        if let Some(&id) = self.ids.get(&w) {
+            return id;
+        }
+        let id = WordId(self.words.len());
+        self.words.push(w.clone());
+        self.ids.insert(w, id);
+        id
+    }
+
+    fn get(&self, id: WordId) -> &Word {
+        &self.words[id.0]
+    }
+
+    fn clone_word(&self, id: WordId) -> Word {
+        self.get(id).clone()
+    }
+}
+
+/// Result of simulating the TM within one block until it exits or halts.
+#[derive(Clone, Copy, Debug)]
 struct WordUpdateLemma {
-    w1: Word,
+    w1: WordId,
     s1: i16,
     is_back: bool,
     saw_nonzero: bool,
@@ -189,7 +225,18 @@ struct WordUpdateLemma {
     n_step: usize,
 }
 
-impl WordUpdateLemma {
+/// Non-interned result used only while computing a cache miss.
+#[derive(Clone, Debug)]
+struct RawWordUpdateLemma {
+    w1: Word,
+    s1: i16,
+    is_back: bool,
+    saw_nonzero: bool,
+    hit_blank: bool,
+    n_step: usize,
+}
+
+impl RawWordUpdateLemma {
     /// Exact block simulation (matches C++ `WordUpdateLemma::from`).
     ///
     /// - `sgn = +1`: block is oriented in the natural direction
@@ -221,7 +268,9 @@ impl WordUpdateLemma {
 
         let len = w.len() as i32;
         let mut w1 = w;
-        let mut saw_nonzero = !w1.is_zero();
+        let mut nonzero_count =
+            w1.cells.iter().filter(|&&x| x != 0).count();
+        let mut saw_nonzero = nonzero_count != 0;
         let mut s1 = s;
         let mut pos: i32 = 0;
 
@@ -258,14 +307,22 @@ impl WordUpdateLemma {
                 return None;
             }
 
-            w1.set(pos as usize, out_color);
+            if input != out_color {
+                if input != 0 {
+                    nonzero_count -= 1;
+                }
+                if out_color != 0 {
+                    nonzero_count += 1;
+                }
+                w1.set(pos as usize, out_color);
+            }
             s1 = i16::from(next_state);
 
-            saw_nonzero |= !w1.is_zero();
+            saw_nonzero |= nonzero_count != 0;
             if goal.is_blank()
                 && context_may_be_all_zero
                 && (dirty_before || saw_nonzero)
-                && w1.is_zero()
+                && nonzero_count == 0
             {
                 return Some(Self {
                     w1,
@@ -325,39 +382,43 @@ impl WordUpdateLemma {
 }
 
 /// History summarizer used by the FAR DFA.
-trait Summary: Clone + Ord {
+trait Summary: Clone + Eq + Hash {
     fn new() -> Self;
-    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow>;
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow>;
 
     /// True iff this finite summary is compatible with a concrete stack whose
     /// stored blocks are all zero.  FAR summaries are lossy history summaries:
     /// after a non-zero block is erased, the summary may still be non-initial
     /// while the represented concrete stack is all-zero.  Blank-tape goal
     /// detection must therefore use this predicate instead of `id == initial`.
-    fn may_be_all_zero_context(&self) -> bool;
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool;
 }
 
 #[derive(Clone, Copy, Debug)]
 struct SummaryOverflow;
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RepeatWord {
-    w: Word,
+    w: WordId,
     n: usize,
     m: usize,
 }
 
 impl RepeatWord {
-    const fn new(w: Word, n: usize, m: usize) -> Self {
+    const fn new(w: WordId, n: usize, m: usize) -> Self {
         Self { w, n, m }
     }
 }
 
 /// NG stack summary: keep bounded history (window + tail + mod counter).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct NgSummary {
-    q: Vec<Word>,
-    q0: Vec<Word>,
+    q: Vec<WordId>,
+    q0: Vec<WordId>,
     modu: usize,
 }
 
@@ -370,15 +431,19 @@ impl Summary for NgSummary {
         }
     }
 
-    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
-        if self.q.is_empty() && w.is_zero() {
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        if self.q.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
 
         if FAR_NG_WINDOW > 0 && self.q.len() == FAR_NG_WINDOW {
             self.q.remove(0);
         }
-        self.q.push(w.clone());
+        self.q.push(w);
 
         #[expect(clippy::absurd_extreme_comparisons)]
         if self.q0.len() < FAR_NG_TAIL {
@@ -389,21 +454,11 @@ impl Summary for NgSummary {
         Ok(())
     }
 
-    fn may_be_all_zero_context(&self) -> bool {
-        self.q.iter().all(Word::is_zero)
-            && self.q0.iter().all(Word::is_zero)
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.q.iter().all(|&w| words.get(w).is_zero())
+            && self.q0.iter().all(|&w| words.get(w).is_zero())
     }
 }
-
-impl PartialEq for NgSummary {
-    fn eq(&self, other: &Self) -> bool {
-        self.modu == other.modu
-            && self.q == other.q
-            && self.q0 == other.q0
-    }
-}
-
-impl Eq for NgSummary {}
 
 impl PartialOrd for NgSummary {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -423,9 +478,9 @@ impl Ord for NgSummary {
 /// C++ FAR::NG1 default parameters.
 const FAR_NG1_N: usize = 3;
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct Ng1Summary {
-    q: Vec<Word>,
+    q: Vec<WordId>,
 }
 
 impl Summary for Ng1Summary {
@@ -433,8 +488,12 @@ impl Summary for Ng1Summary {
         Self { q: Vec::new() }
     }
 
-    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
-        if self.q.is_empty() && w.is_zero() {
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        if self.q.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
         if FAR_NG1_N > 0 && self.q.len() == FAR_NG1_N {
@@ -444,8 +503,8 @@ impl Summary for Ng1Summary {
         Ok(())
     }
 
-    fn may_be_all_zero_context(&self) -> bool {
-        self.q.iter().all(Word::is_zero)
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.q.iter().all(|&w| words.get(w).is_zero())
     }
 }
 
@@ -455,7 +514,7 @@ const FAR_RWL_LEN_H_TAIL: usize = 0;
 const FAR_RWL_MNC: usize = 2;
 const FAR_RWL_MOD: usize = 1;
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RwlModSummary {
     q: Vec<RepeatWord>,
 }
@@ -465,9 +524,13 @@ impl Summary for RwlModSummary {
         Self { q: Vec::new() }
     }
 
-    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
         if self.q.is_empty() {
-            if !w.is_zero() {
+            if !words.get(w).is_zero() {
                 self.q.push(RepeatWord::new(
                     w,
                     1,
@@ -494,8 +557,8 @@ impl Summary for RwlModSummary {
         Ok(())
     }
 
-    fn may_be_all_zero_context(&self) -> bool {
-        self.q.iter().all(|rw| rw.w.is_zero())
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.q.iter().all(|rw| words.get(rw.w).is_zero())
     }
 }
 
@@ -503,9 +566,9 @@ impl Summary for RwlModSummary {
 const FAR_CPS_LRU_LEN_H: usize = 8;
 const FAR_CPS_LRU_LEN_H_NO_LRU: usize = 2;
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct CpsLruSummary {
-    ls: Vec<Word>,
+    ls: Vec<WordId>,
 }
 
 impl Summary for CpsLruSummary {
@@ -513,8 +576,12 @@ impl Summary for CpsLruSummary {
         Self { ls: Vec::new() }
     }
 
-    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
-        if self.ls.is_empty() && w.is_zero() {
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        if self.ls.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
         self.ls.insert(0, w);
@@ -524,7 +591,7 @@ impl Summary for CpsLruSummary {
         if FAR_CPS_LRU_LEN_H_NO_LRU + 1 > self.ls.len() {
             return Ok(());
         }
-        let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU].clone();
+        let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU];
         let start = FAR_CPS_LRU_LEN_H_NO_LRU + 1;
         let mut remove_idx = None;
         for i in start..self.ls.len() {
@@ -542,8 +609,8 @@ impl Summary for CpsLruSummary {
         Ok(())
     }
 
-    fn may_be_all_zero_context(&self) -> bool {
-        self.ls.iter().all(Word::is_zero)
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.ls.iter().all(|&w| words.get(w).is_zero())
     }
 }
 
@@ -554,11 +621,11 @@ const FAR_RNGS_MNC: usize = 2;
 const FAR_RNGS_MOD: usize = 1;
 const FAR_RNGS_BS_N: usize = 0;
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RngsModSummary {
     q: Vec<RepeatWord>,
-    q0: Vec<Word>,
-    w1: Word,
+    q0: Vec<WordId>,
+    w1: Option<WordId>,
 }
 
 impl Summary for RngsModSummary {
@@ -566,19 +633,24 @@ impl Summary for RngsModSummary {
         Self {
             q: Vec::new(),
             q0: Vec::new(),
-            w1: Word { cells: Vec::new() },
+            w1: None,
         }
     }
 
-    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
-        if self.w1.len() == 0 && w.is_zero() {
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        if self.w1.is_none() && words.get(w).is_zero() {
             return Ok(());
         }
 
-        self.w1 = ngram_word(&w, &self.w1, FAR_RNGS_NG_N);
-        let mut key = self.w1.clone();
+        let w1 = ngram_word_id(w, self.w1, FAR_RNGS_NG_N, words);
+        self.w1 = Some(w1);
+        let mut key = w1;
 
-        self.q0.push(key.clone());
+        self.q0.push(key);
         if self.q0.len() > FAR_RNGS_BS_N {
             key = self.q0.remove(0);
         } else {
@@ -595,10 +667,10 @@ impl Summary for RngsModSummary {
         )
     }
 
-    fn may_be_all_zero_context(&self) -> bool {
-        self.w1.is_zero()
-            && self.q0.iter().all(Word::is_zero)
-            && self.q.iter().all(|rw| rw.w.is_zero())
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.w1.is_none_or(|w| words.get(w).is_zero())
+            && self.q0.iter().all(|&w| words.get(w).is_zero())
+            && self.q.iter().all(|rw| words.get(rw.w).is_zero())
     }
 }
 
@@ -609,10 +681,10 @@ const FAR_RS_MNC: usize = 2;
 const FAR_RS_MOD: usize = 1;
 const FAR_RS_STRICT: bool = true;
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RsModSummary {
     q: Vec<RepeatWord>,
-    q0: Vec<Word>,
+    q0: Vec<WordId>,
 }
 
 impl Summary for RsModSummary {
@@ -623,8 +695,12 @@ impl Summary for RsModSummary {
         }
     }
 
-    fn push(&mut self, w: Word) -> Result<(), SummaryOverflow> {
-        if self.q0.is_empty() && w.is_zero() {
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        if self.q0.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
 
@@ -645,28 +721,36 @@ impl Summary for RsModSummary {
         )
     }
 
-    fn may_be_all_zero_context(&self) -> bool {
-        self.q0.iter().all(Word::is_zero)
-            && self.q.iter().all(|rw| rw.w.is_zero())
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.q0.iter().all(|&w| words.get(w).is_zero())
+            && self.q.iter().all(|rw| words.get(rw.w).is_zero())
     }
 }
 
-fn ngram_word(head: &Word, tail: &Word, limit: usize) -> Word {
+fn ngram_word_id(
+    head: WordId,
+    tail: Option<WordId>,
+    limit: usize,
+    words: &mut WordInterner,
+) -> WordId {
     if limit == 0 {
-        return Word { cells: Vec::new() };
+        return words.intern(Word { cells: Vec::new() });
     }
+
     let mut cells = Vec::with_capacity(limit);
-    cells.extend(head.cells.iter().copied());
-    if cells.len() < limit {
-        cells.extend(tail.cells.iter().copied());
+    cells.extend(words.get(head).cells.iter().copied());
+    if cells.len() < limit
+        && let Some(tail) = tail
+    {
+        cells.extend(words.get(tail).cells.iter().copied());
     }
     cells.truncate(limit);
-    Word { cells }
+    words.intern(Word { cells })
 }
 
 fn promote_repeat_word(
     q: &mut Vec<RepeatWord>,
-    key: Word,
+    key: WordId,
     len_h: usize,
     mnc: usize,
     modu: usize,
@@ -693,45 +777,45 @@ fn promote_repeat_word(
     Ok(())
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct H2 {
     s: i16,
     r: usize,
     dirty: bool,
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct H2b {
     s: i16,
     r: usize,
     dirty: bool,
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct H3 {
-    w: Word,
+    w: WordId,
     s: i16,
     r: usize,
     dirty: bool,
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct DfaEdge {
-    w: Word,
+    w: WordId,
     prev: usize,
 }
 
 /// A set with a LIFO todo stack.
 #[derive(Clone, Debug)]
-struct TodoSet<K: Ord + Clone> {
-    st: BTreeSet<K>,
+struct TodoSet<K: Eq + Hash + Clone> {
+    st: Set<K>,
     todo: Vec<K>,
 }
 
-impl<K: Ord + Clone> TodoSet<K> {
-    const fn new() -> Self {
+impl<K: Eq + Hash + Clone> TodoSet<K> {
+    fn new() -> Self {
         Self {
-            st: BTreeSet::new(),
+            st: Set::new(),
             todo: Vec::new(),
         }
     }
@@ -756,15 +840,15 @@ impl<K: Ord + Clone> TodoSet<K> {
 
 /// A map K -> set(V) with a todo stack of inserted pairs.
 #[derive(Clone, Debug)]
-struct TodoMap<K: Ord + Clone, V: Ord + Clone> {
-    mp: BTreeMap<K, BTreeSet<V>>,
+struct TodoMap<K: Eq + Hash + Clone, V: Eq + Hash + Clone> {
+    mp: Map<K, Set<V>>,
     todo: Vec<(K, V)>,
 }
 
-impl<K: Ord + Clone, V: Ord + Clone> TodoMap<K, V> {
-    const fn new() -> Self {
+impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone> TodoMap<K, V> {
+    fn new() -> Self {
         Self {
-            mp: BTreeMap::new(),
+            mp: Map::new(),
             todo: Vec::new(),
         }
     }
@@ -796,6 +880,15 @@ enum StopReason {
     SummaryOverflow,
 }
 
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+struct StepKey {
+    w: WordId,
+    s: i16,
+    sgn: i8,
+    dirty_before: bool,
+    context_may_be_all_zero: bool,
+}
+
 /// FAR decider with a pluggable DFA history summary.
 struct FarDecider<
     'a,
@@ -810,15 +903,22 @@ struct FarDecider<
     max_work: usize,
     block_step_limit: usize,
 
+    // Interned FAR block words.  Relation keys, DFA edges, push cache keys,
+    // and step-cache keys carry compact WordId values instead of cloning Vecs.
+    words: WordInterner,
+
     // work counter
     work: usize,
 
+    // Cache exact block simulations by local FAR context.
+    step_cache: Map<StepKey, Option<WordUpdateLemma>>,
+
     // DFA
-    id: BTreeMap<S, usize>,
+    id: Map<S, usize>,
     idr: Vec<S>,
 
     pop: Vec<Vec<DfaEdge>>,
-    push: BTreeMap<(Word, usize), usize>,
+    push: Map<(WordId, usize), usize>,
     new_pops: Vec<(usize, DfaEdge)>,
 
     // relations
@@ -834,7 +934,15 @@ struct FarDecider<
     h2s: TodoSet<H2>,
 
     // For each DFA state r, which (machine state, dirty) pairs have H2(s,r,dirty)
-    r_s: Vec<BTreeSet<(i16, bool)>>,
+    r_s: Vec<Set<(i16, bool)>>,
+
+    // Reusable buffers for relation propagation. These avoid allocating short
+    // temporary Vecs just to break immutable borrows before mutating self.
+    scratch_states: Vec<(i16, bool)>,
+    scratch_edges: Vec<DfaEdge>,
+    scratch_h2: Vec<H2>,
+    scratch_h2b: Vec<H2b>,
+    scratch_h3: Vec<H3>,
 }
 
 impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
@@ -856,13 +964,17 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             max_work: max_work.max(1),
             block_step_limit: block_step_limit.max(1),
 
+            words: WordInterner::new(),
+
             work: 0,
 
-            id: BTreeMap::new(),
+            step_cache: Map::new(),
+
+            id: Map::new(),
             idr,
 
             pop: Vec::new(),
-            push: BTreeMap::new(),
+            push: Map::new(),
             new_pops: Vec::new(),
 
             ret2: TodoMap::new(),
@@ -877,6 +989,12 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             h2s: TodoSet::new(),
 
             r_s: Vec::new(),
+
+            scratch_states: Vec::new(),
+            scratch_edges: Vec::new(),
+            scratch_h2: Vec::new(),
+            scratch_h2b: Vec::new(),
+            scratch_h3: Vec::new(),
         };
 
         this.with_init_dfa()
@@ -908,7 +1026,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             self.pop.resize_with(id + 1, Vec::new);
         }
         if self.r_s.len() <= id {
-            self.r_s.resize_with(id + 1, BTreeSet::new);
+            self.r_s.resize_with(id + 1, Set::new);
         }
     }
 
@@ -928,30 +1046,39 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         w: Word,
         ls: usize,
     ) -> Result<usize, StopReason> {
-        let key = (w.clone(), ls);
+        let wid = self.words.intern(w);
+        self.dfa_push_id(wid, ls)
+    }
+
+    fn dfa_push_id(
+        &mut self,
+        wid: WordId,
+        ls: usize,
+    ) -> Result<usize, StopReason> {
+        let key = (wid, ls);
         if let Some(&to) = self.push.get(&key) {
             return Ok(to);
         }
 
         let mut st = self.idr[ls].clone();
-        st.push(w.clone())
+        st.push(wid, &mut self.words)
             .map_err(|_| StopReason::SummaryOverflow)?;
         let to = self.get_id(st);
         self.push.insert(key, to);
-        self.new_pops.push((to, DfaEdge { w, prev: ls }));
+        self.new_pops.push((to, DfaEdge { w: wid, prev: ls }));
         Ok(to)
     }
 
     fn summary_may_be_all_zero_context(&self, r: usize) -> bool {
         self.idr
             .get(r)
-            .is_some_and(Summary::may_be_all_zero_context)
+            .is_some_and(|st| st.may_be_all_zero_context(&self.words))
     }
 
     fn blank_h3_goal(&self, c: &H3) -> bool {
         self.goal.is_blank()
             && c.dirty
-            && c.w.is_zero()
+            && self.words.get(c.w).is_zero()
             && self.summary_may_be_all_zero_context(c.r)
             && self.h3s.contains(c)
             && self.pre3l.contains(c)
@@ -978,7 +1105,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     }
 
     fn insert_h3(&mut self, c: &H3) -> Result<(), StopReason> {
-        self.h3s.insert(c.clone());
+        self.h3s.insert(*c);
         self.check_blank_h3(c)
     }
 
@@ -987,7 +1114,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     }
 
     fn insert_pre3l(&mut self, c: &H3) -> Result<(), StopReason> {
-        self.pre3l.insert(c.clone());
+        self.pre3l.insert(*c);
         self.check_blank_h3(c)
     }
 
@@ -1006,7 +1133,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
 
     fn tm_step(
         &mut self,
-        w: Word,
+        w: WordId,
         s: i16,
         sgn: i8,
         dirty_before: bool,
@@ -1014,18 +1141,40 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     ) -> Result<Option<WordUpdateLemma>, StopReason> {
         self.bump()?;
 
-        let Some(res) = WordUpdateLemma::from_prog_v2::<STATES, COLORS>(
-            self.prog,
+        let key = StepKey {
             w,
             s,
             sgn,
-            self.block_step_limit,
-            self.goal,
             dirty_before,
             context_may_be_all_zero,
-        ) else {
-            return Err(StopReason::BlockTimeout);
         };
+
+        let res = (if let Some(&cached) = self.step_cache.get(&key) {
+            cached
+        } else {
+            let computed =
+                RawWordUpdateLemma::from_prog_v2::<STATES, COLORS>(
+                    self.prog,
+                    self.words.clone_word(key.w),
+                    key.s,
+                    key.sgn,
+                    self.block_step_limit,
+                    self.goal,
+                    key.dirty_before,
+                    key.context_may_be_all_zero,
+                )
+                .map(|raw| WordUpdateLemma {
+                    w1: self.words.intern(raw.w1),
+                    s1: raw.s1,
+                    is_back: raw.is_back,
+                    saw_nonzero: raw.saw_nonzero,
+                    hit_blank: raw.hit_blank,
+                    n_step: raw.n_step,
+                });
+            self.step_cache.insert(key, computed);
+            computed
+        })
+        .ok_or(StopReason::BlockTimeout)?;
 
         if res.hit_blank {
             return Err(StopReason::MayTarget);
@@ -1050,15 +1199,14 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         let r0 = b.prev;
 
         let context_zero = self.summary_may_be_all_zero_context(r0);
-        let Some(res) =
-            self.tm_step(b.w.clone(), s, 1, dirty, context_zero)?
+        let Some(res) = self.tm_step(b.w, s, 1, dirty, context_zero)?
         else {
             return Ok(());
         };
 
         let dirty1 = dirty || res.saw_nonzero;
         if res.is_back {
-            let rr = self.dfa_push(res.w1, r0)?;
+            let rr = self.dfa_push_id(res.w1, r0)?;
             self.insert_ret2(
                 *a,
                 H2b {
@@ -1095,7 +1243,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         let context_zero = self.summary_may_be_all_zero_context(c.r)
             && self.summary_may_be_all_zero_context(r0);
         let Some(res) = self.tm_step(
-            c.w.clone(),
+            c.w,
             s0,
             -1,
             c.dirty || dirty_b,
@@ -1114,11 +1262,11 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
                 dirty: dirty1,
             };
             self.insert_h3(&c0)?;
-            self.pre33.insert(c0, c.clone());
+            self.pre33.insert(c0, *c);
         } else {
-            let rr = self.dfa_push(res.w1, r0)?;
+            let rr = self.dfa_push_id(res.w1, r0)?;
             self.insert_ret3(
-                c.clone(),
+                *c,
                 H2b {
                     s: res.s1,
                     r: rr,
@@ -1137,7 +1285,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             dirty,
         } = *b;
 
-        let blank = Word::zero(self.block_len);
+        let blank = self.words.intern(Word::zero(self.block_len));
         let context_zero = self.summary_may_be_all_zero_context(r0);
         let Some(res) =
             self.tm_step(blank, s0, -1, dirty, context_zero)?
@@ -1156,7 +1304,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             self.insert_h3(&c0)?;
             self.insert_pre3l(&c0)?;
         } else {
-            let rr = self.dfa_push(res.w1, r0)?;
+            let rr = self.dfa_push_id(res.w1, r0)?;
             let b0 = H2b {
                 s: res.s1,
                 r: rr,
@@ -1175,11 +1323,11 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     ) -> Result<(), StopReason> {
         self.bump()?;
         self.ensure_dfa_capacity(r);
-        self.pop[r].push(e.clone());
+        self.pop[r].push(*e);
 
-        let states: Vec<(i16, bool)> =
-            self.r_s[r].iter().copied().collect();
-        for (s, dirty) in states {
+        self.scratch_states.clear();
+        self.scratch_states.extend(self.r_s[r].iter().copied());
+        while let Some((s, dirty)) = self.scratch_states.pop() {
             self.on_h2_pop(&H2 { s, r, dirty }, e)?;
         }
 
@@ -1193,8 +1341,9 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         self.ensure_dfa_capacity(*r);
         self.r_s[*r].insert((*s, a.dirty));
 
-        let edges = self.pop[*r].clone();
-        for e in edges {
+        self.scratch_edges.clear();
+        self.scratch_edges.extend(self.pop[*r].iter().copied());
+        while let Some(e) = self.scratch_edges.pop() {
             self.on_h2_pop(a, &e)?;
         }
 
@@ -1212,21 +1361,24 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     }
 
     fn on_ret2(&mut self, a: &H2, b: &H2b) -> Result<(), StopReason> {
-        let cs: Vec<H3> = self.pre23.values(a).cloned().collect();
-        for c in cs {
+        self.scratch_h3.clear();
+        self.scratch_h3.extend(self.pre23.values(a).copied());
+        while let Some(c) = self.scratch_h3.pop() {
             self.on_h3_back(&c, b)?;
         }
         Ok(())
     }
 
     fn on_ret3(&mut self, a: &H3, b: &H2b) -> Result<(), StopReason> {
-        let a0s: Vec<H2> = self.pre32.values(a).copied().collect();
-        for a0 in a0s {
+        self.scratch_h2.clear();
+        self.scratch_h2.extend(self.pre32.values(a).copied());
+        while let Some(a0) = self.scratch_h2.pop() {
             self.insert_ret2(a0, *b);
         }
 
-        let a1s: Vec<H3> = self.pre33.values(a).cloned().collect();
-        for a1 in a1s {
+        self.scratch_h3.clear();
+        self.scratch_h3.extend(self.pre33.values(a).copied());
+        while let Some(a1) = self.scratch_h3.pop() {
             self.insert_ret3(a1, *b);
         }
 
@@ -1237,44 +1389,48 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     }
 
     fn on_pre23(&mut self, a: &H2, c: &H3) -> Result<(), StopReason> {
-        let bs: Vec<H2b> = self.ret2.values(a).copied().collect();
-        for b in bs {
+        self.scratch_h2b.clear();
+        self.scratch_h2b.extend(self.ret2.values(a).copied());
+        while let Some(b) = self.scratch_h2b.pop() {
             self.on_h3_back(c, &b)?;
         }
         Ok(())
     }
 
     fn on_pre32(&mut self, a: &H3, a0: &H2) {
-        let bs: Vec<H2b> = self.ret3.values(a).copied().collect();
-        for b in bs {
+        self.scratch_h2b.clear();
+        self.scratch_h2b.extend(self.ret3.values(a).copied());
+        while let Some(b) = self.scratch_h2b.pop() {
             self.insert_ret2(*a0, b);
         }
     }
 
     fn on_pre33(&mut self, a: &H3, a0: &H3) {
-        let bs: Vec<H2b> = self.ret3.values(a).copied().collect();
-        for b in bs {
-            self.insert_ret3(a0.clone(), b);
+        self.scratch_h2b.clear();
+        self.scratch_h2b.extend(self.ret3.values(a).copied());
+        while let Some(b) = self.scratch_h2b.pop() {
+            self.insert_ret3(*a0, b);
         }
     }
 
     fn on_pre3l(&mut self, a: &H3) -> Result<(), StopReason> {
-        let bs: Vec<H2b> = self.ret3.values(a).copied().collect();
-        for b in bs {
+        self.scratch_h2b.clear();
+        self.scratch_h2b.extend(self.ret3.values(a).copied());
+        while let Some(b) = self.scratch_h2b.pop() {
             self.insert_retl(&b)?;
         }
         Ok(())
     }
 
     fn run(mut self) -> Result<(), StopReason> {
-        let blank = Word::zero(self.block_len);
+        let blank = self.words.intern(Word::zero(self.block_len));
         let c0 = H3 {
             w: blank,
             s: 0,
             r: 1,
             dirty: false,
         };
-        self.h3s.insert(c0.clone());
+        self.h3s.insert(c0);
         self.pre3l.insert(c0);
 
         loop {
@@ -1494,6 +1650,15 @@ struct MitmWfa {
     colors: usize,
     trans: Vec<Vec<(usize, i32)>>,
 }
+
+#[derive(Clone, Copy)]
+struct MitmRevEdge {
+    from: usize,
+    symbol: usize,
+    weight: i32,
+}
+
+type MitmRev = Vec<Vec<MitmRevEdge>>;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct MitmConfig {
@@ -1741,6 +1906,8 @@ fn mitm_find_closure_break<const STATES: usize, const COLORS: usize>(
     left: &MitmWfa,
     right: &MitmWfa,
 ) -> Option<(MitmSide, usize, usize)> {
+    let left_rev = left.rev_edges();
+    let right_rev = right.rev_edges();
     let start = MitmConfig {
         st: 0,
         co: 0,
@@ -1764,7 +1931,9 @@ fn mitm_find_closure_break<const STATES: usize, const COLORS: usize>(
         };
         let write = write as usize;
 
-        for next in mitm_next_configs(prog, goal, cur, left, right) {
+        for next in mitm_next_configs(
+            prog, goal, cur, left, right, &left_rev, &right_rev,
+        ) {
             let cfg = next.config;
             if seen.contains(&cfg) {
                 continue;
@@ -1804,11 +1973,15 @@ fn mitm_recurse_weights<const STATES: usize, const COLORS: usize>(
 
     let left_special = try_left.derive_special();
     let right_special = try_right.derive_special();
+    let left_rev = try_left.rev_edges();
+    let right_rev = try_right.rev_edges();
     if let Some(accept) = mitm_find_accept_set(
         prog,
         goal,
         &try_left,
         &try_right,
+        &left_rev,
+        &right_rev,
         &left_special,
         &right_special,
     ) && mitm_verify(
@@ -1816,6 +1989,8 @@ fn mitm_recurse_weights<const STATES: usize, const COLORS: usize>(
         goal,
         &try_left,
         &try_right,
+        &left_rev,
+        &right_rev,
         &left_special,
         &right_special,
         &accept,
@@ -1876,6 +2051,8 @@ fn mitm_find_accept_set<const STATES: usize, const COLORS: usize>(
     goal: Goal,
     left: &MitmWfa,
     right: &MitmWfa,
+    left_rev: &MitmRev,
+    right_rev: &MitmRev,
     left_special: &MitmSpecial,
     right_special: &MitmSpecial,
 ) -> Option<MitmAccept> {
@@ -1898,7 +2075,9 @@ fn mitm_find_accept_set<const STATES: usize, const COLORS: usize>(
 
     while let Some(cur) = todo.pop() {
         let cur_bounds = accept[&cur];
-        let mut nexts = mitm_next_configs(prog, goal, cur, left, right);
+        let mut nexts = mitm_next_configs(
+            prog, goal, cur, left, right, left_rev, right_rev,
+        );
         if nexts.is_empty() {
             if goal.is_halt() {
                 return None;
@@ -1998,6 +2177,8 @@ fn mitm_verify<const STATES: usize, const COLORS: usize>(
     goal: Goal,
     left: &MitmWfa,
     right: &MitmWfa,
+    left_rev: &MitmRev,
+    right_rev: &MitmRev,
     left_special: &MitmSpecial,
     right_special: &MitmSpecial,
     accept: &MitmAccept,
@@ -2013,6 +2194,8 @@ fn mitm_verify<const STATES: usize, const COLORS: usize>(
             goal,
             left,
             right,
+            left_rev,
+            right_rev,
             left_special,
             right_special,
             accept,
@@ -2077,12 +2260,16 @@ fn mitm_forward_closed<const STATES: usize, const COLORS: usize>(
     goal: Goal,
     left: &MitmWfa,
     right: &MitmWfa,
+    left_rev: &MitmRev,
+    right_rev: &MitmRev,
     left_special: &MitmSpecial,
     right_special: &MitmSpecial,
     accept: &MitmAccept,
 ) -> bool {
     for (&cfg, &bounds) in accept {
-        for next in mitm_next_configs(prog, goal, cfg, left, right) {
+        for next in mitm_next_configs(
+            prog, goal, cfg, left, right, left_rev, right_rev,
+        ) {
             if !mitm_next_accepted(
                 next,
                 bounds,
@@ -2150,6 +2337,8 @@ fn mitm_next_configs<const STATES: usize, const COLORS: usize>(
     old: MitmConfig,
     left: &MitmWfa,
     right: &MitmWfa,
+    left_rev: &MitmRev,
+    right_rev: &MitmRev,
 ) -> Vec<MitmNext> {
     if old.st >= STATES || old.co >= COLORS {
         return vec![];
@@ -2171,44 +2360,32 @@ fn mitm_next_configs<const STATES: usize, const COLORS: usize>(
         // Move right: the written symbol joins the left half; the old right
         // predecessor supplies the next scanned symbol.
         let (new_left, left_weight) = left.trans[old.left][write];
-        for next_right in 0..right.states {
-            for next_symbol in 0..right.colors {
-                let (to, right_weight) =
-                    right.trans[next_right][next_symbol];
-                if to == old.right {
-                    out.push(MitmNext {
-                        config: MitmConfig {
-                            st: next_st,
-                            co: next_symbol,
-                            left: new_left,
-                            right: next_right,
-                            dirty: next_dirty,
-                        },
-                        weight: left_weight - right_weight,
-                    });
-                }
-            }
+        for edge in &right_rev[old.right] {
+            out.push(MitmNext {
+                config: MitmConfig {
+                    st: next_st,
+                    co: edge.symbol,
+                    left: new_left,
+                    right: edge.from,
+                    dirty: next_dirty,
+                },
+                weight: left_weight - edge.weight,
+            });
         }
     } else {
         // Move left: symmetric case.
         let (new_right, right_weight) = right.trans[old.right][write];
-        for next_left in 0..left.states {
-            for next_symbol in 0..left.colors {
-                let (to, left_weight) =
-                    left.trans[next_left][next_symbol];
-                if to == old.left {
-                    out.push(MitmNext {
-                        config: MitmConfig {
-                            st: next_st,
-                            co: next_symbol,
-                            left: next_left,
-                            right: new_right,
-                            dirty: next_dirty,
-                        },
-                        weight: right_weight - left_weight,
-                    });
-                }
-            }
+        for edge in &left_rev[old.left] {
+            out.push(MitmNext {
+                config: MitmConfig {
+                    st: next_st,
+                    co: edge.symbol,
+                    left: edge.from,
+                    right: new_right,
+                    dirty: next_dirty,
+                },
+                weight: right_weight - edge.weight,
+            });
         }
     }
 
@@ -2229,6 +2406,21 @@ impl MitmWfa {
         self.states += 1;
         self.trans.push(vec![(MITM_DEAD, 0); self.colors]);
         new_state
+    }
+
+    fn rev_edges(&self) -> MitmRev {
+        let mut rev = vec![Vec::new(); self.states];
+        for from in 0..self.states {
+            for symbol in 0..self.colors {
+                let (to, weight) = self.trans[from][symbol];
+                rev[to].push(MitmRevEdge {
+                    from,
+                    symbol,
+                    weight,
+                });
+            }
+        }
+        rev
     }
 
     fn verify_leading_blank(&self) -> bool {
