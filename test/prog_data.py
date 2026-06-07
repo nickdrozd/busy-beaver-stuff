@@ -529,6 +529,7 @@ ZLOOPERS = {
     "1RB 1RA  1LC 0RD  1LB 1LD  1RA 0RB",
     "1RB 0RD  0RC 1RA  1LD 1LA  0LC 0LA",
     "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE",
+    "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
 }
 
 ZLOOPY = {
@@ -2927,7 +2928,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
     "zloop": {
         "depth_limit": {
             "1RB ...  1LC 0RB  1LB 1RC",
-            "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
             "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE",
         },
     },
@@ -2950,7 +2950,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
         "depth_limit": 2,
     },
     "zloop": {
-        "depth_limit": 3,
+        "depth_limit": 2,
     },
 }
 
@@ -7022,7 +7022,7 @@ HALTERS = set(
     prog for steps in LIMITED['halt'].values() for prog in steps
 }
 
-SPINNERS = set(
+SPINNERS = (set(
     SPINOUT
     | SPINOUT_SLOW
     | SPINOUT_BLANK
@@ -7030,7 +7030,7 @@ SPINNERS = set(
     | PROVER_SPINOUT
 ) | DO_SPINOUT | {
     prog for steps in LIMITED['spinout'].values() for prog in steps
-}
+}) - ZLOOPERS
 
 RECUR_NO_BLANK = set(
     RECUR_COMPACT
