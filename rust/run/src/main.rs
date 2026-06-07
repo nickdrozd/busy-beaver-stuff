@@ -103,6 +103,7 @@ fn params_3_2_1(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(7).is_refuted()
         || prog.ctl_cant_spinout(40)
         || prog.cps_cant_spinout(4)
+        || prog.far_cant_spinout(3)
 }
 
 fn params_3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
@@ -136,7 +137,7 @@ fn params_2_3_1(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(7).is_refuted()
         || prog.ctl_cant_spinout(100)
         || prog.cps_cant_spinout(3)
-        || prog.seg_cant_spinout(5).is_refuted()
+        || prog.far_cant_spinout(3)
 }
 
 fn params_2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
@@ -173,6 +174,7 @@ fn params_4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.ctl_cant_spinout(500)
         || prog.cps_cant_spinout(12)
         || prog.seg_cant_spinout(8).is_refuted()
+        || prog.far_cant_spinout(3)
 }
 
 fn params_4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
@@ -216,6 +218,7 @@ fn params_2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
         || prog.seg_cant_spinout(5).is_refuted()
+        || prog.far_cant_spinout(3)
 }
 
 fn params_2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
@@ -252,25 +255,25 @@ fn test_deciders() {
         ],
         (3, 2) => [
             0 => (params_3_2_0, 12, (0, 2_718)),
-            1 => (params_3_2_1, 13, (1, 4_046)),
+            1 => (params_3_2_1, 13, (0, 4_046)),
             2 => (params_3_2_2, 13, (0, 9_510)),
             3 => (params_3_2_3, 13, (0, 11_754)),
         ],
         (2, 3) => [
             0 => (params_2_3_0, 7, (0, 2_335)),
-            1 => (params_2_3_1, 20, (13, 3_506)),
+            1 => (params_2_3_1, 20, (7, 3_506)),
             2 => (params_2_3_2, 20, (0, 5_959)),
             3 => (params_2_3_3, 20, (0, 8_766)),
         ],
         (4, 2) => [
             0 => (params_4_2_0, 25, (0, 431_888)),
-            1 => (params_4_2_1, 99, (731, 753_582)),
+            1 => (params_4_2_1, 99, (533, 753_582)),
             2 => (params_4_2_2, 99, (224, 1_932_610)),
             3 => (params_4_2_3, 99, (0, 2_134_923)),
         ],
         (2, 4) => [
             0 => (params_2_4_0, 109, (0, 308_968)),
-            1 => (params_2_4_1, TREE_LIM, (2953, 612_077)),
+            1 => (params_2_4_1, TREE_LIM, (2157, 612_077)),
             2 => (params_2_4_2, TREE_LIM, (209, 1_189_643)),
             3 => (params_2_4_3, TREE_LIM, (0, 1_698_850)),
         ],

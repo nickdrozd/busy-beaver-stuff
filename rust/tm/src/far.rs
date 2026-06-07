@@ -118,8 +118,18 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             || far_sweep_slow::<STATES, COLORS>(self, knob, Goal::Blank)
     }
 
-    pub fn far_cant_spinout(&self, _knob: usize) -> bool {
-        unimplemented!()
+    /// FAR spinout prover.
+    ///
+    /// Returns `true` iff FAR proves that the machine can never enter a
+    /// one-sided all-zero same-state drift.
+    pub fn far_cant_spinout(&self, knob: usize) -> bool {
+        far_sweep_fast::<STATES, COLORS>(self, knob, Goal::Spinout)
+            || mitm_cant_spinout::<STATES, COLORS>(self)
+            || far_sweep_slow::<STATES, COLORS>(
+                self,
+                knob,
+                Goal::Spinout,
+            )
     }
 }
 
@@ -156,6 +166,14 @@ impl Word {
 
     fn set(&mut self, idx: usize, v: Color) {
         self.cells[idx] = v;
+    }
+
+    fn zero_to_left_of(&self, idx: usize) -> bool {
+        self.cells[..idx].iter().all(|&x| x == 0)
+    }
+
+    fn zero_to_right_of(&self, idx: usize) -> bool {
+        self.cells[idx + 1..].iter().all(|&x| x == 0)
     }
 
     /// Reverse the cell order in the word (length-preserving).
@@ -244,6 +262,7 @@ impl RawWordUpdateLemma {
     ///
     /// Returns `None` if we exceed `max_steps` or encounter an invalid transition.
     #[expect(
+        clippy::fn_params_excessive_bools,
         clippy::cast_possible_truncation,
         clippy::cast_possible_wrap,
         clippy::cast_sign_loss
@@ -256,7 +275,9 @@ impl RawWordUpdateLemma {
         max_steps: usize,
         goal: Goal,
         dirty_before: bool,
-        context_may_be_all_zero: bool,
+        blank_context_may_be_all_zero: bool,
+        spinout_back_context_may_be_all_zero: bool,
+        spinout_forward_context_may_be_all_zero: bool,
     ) -> Option<Self> {
         debug_assert!(sgn == 1 || sgn == -1);
         if s < 0 {
@@ -307,6 +328,32 @@ impl RawWordUpdateLemma {
                 return None;
             }
 
+            let dir: i32 = if shift_right { 1 } else { -1 };
+            let block_dir = dir * i32::from(sgn);
+            if goal.is_spinout()
+                && input == 0
+                && next_state == s1 as State
+            {
+                let zero_ray_ahead = if block_dir > 0 {
+                    w1.zero_to_right_of(pos as usize)
+                        && spinout_forward_context_may_be_all_zero
+                } else {
+                    w1.zero_to_left_of(pos as usize)
+                        && spinout_back_context_may_be_all_zero
+                };
+
+                if zero_ray_ahead {
+                    return Some(Self {
+                        w1,
+                        s1,
+                        n_step: t + 1,
+                        is_back: false,
+                        saw_nonzero,
+                        hit_blank: true,
+                    });
+                }
+            }
+
             if input != out_color {
                 if input != 0 {
                     nonzero_count -= 1;
@@ -320,7 +367,7 @@ impl RawWordUpdateLemma {
 
             saw_nonzero |= nonzero_count != 0;
             if goal.is_blank()
-                && context_may_be_all_zero
+                && blank_context_may_be_all_zero
                 && (dirty_before || saw_nonzero)
                 && nonzero_count == 0
             {
@@ -334,8 +381,7 @@ impl RawWordUpdateLemma {
                 });
             }
 
-            let dir: i32 = if shift_right { 1 } else { -1 };
-            pos += dir * i32::from(sgn);
+            pos += block_dir;
 
             if pos < 0 || pos >= len {
                 return Some(Self {
@@ -352,8 +398,7 @@ impl RawWordUpdateLemma {
         None
     }
 
-    /// C++ `WordUpdateLemma::from_v2`:
-    /// if we exit forward (not back) and did not halt, reverse the block.
+    #[expect(clippy::fn_params_excessive_bools)]
     fn from_prog_v2<const STATES: usize, const COLORS: usize>(
         prog: &Prog<STATES, COLORS>,
         w: Word,
@@ -362,7 +407,9 @@ impl RawWordUpdateLemma {
         max_steps: usize,
         goal: Goal,
         dirty_before: bool,
-        context_may_be_all_zero: bool,
+        blank_context_may_be_all_zero: bool,
+        spinout_back_context_may_be_all_zero: bool,
+        spinout_forward_context_may_be_all_zero: bool,
     ) -> Option<Self> {
         let mut res = Self::from_prog(
             prog,
@@ -372,7 +419,9 @@ impl RawWordUpdateLemma {
             max_steps,
             goal,
             dirty_before,
-            context_may_be_all_zero,
+            blank_context_may_be_all_zero,
+            spinout_back_context_may_be_all_zero,
+            spinout_forward_context_may_be_all_zero,
         )?;
         if res.s1 >= 0 && !res.is_back {
             res.w1 = res.w1.reverse();
@@ -880,13 +929,16 @@ enum StopReason {
     SummaryOverflow,
 }
 
+#[expect(clippy::struct_excessive_bools)]
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 struct StepKey {
     w: WordId,
     s: i16,
     sgn: i8,
     dirty_before: bool,
-    context_may_be_all_zero: bool,
+    blank_context_may_be_all_zero: bool,
+    spinout_back_context_may_be_all_zero: bool,
+    spinout_forward_context_may_be_all_zero: bool,
 }
 
 /// FAR decider with a pluggable DFA history summary.
@@ -1131,13 +1183,16 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         self.ret3.insert(a, b);
     }
 
+    #[expect(clippy::fn_params_excessive_bools)]
     fn tm_step(
         &mut self,
         w: WordId,
         s: i16,
         sgn: i8,
         dirty_before: bool,
-        context_may_be_all_zero: bool,
+        blank_context_may_be_all_zero: bool,
+        spinout_back_context_may_be_all_zero: bool,
+        spinout_forward_context_may_be_all_zero: bool,
     ) -> Result<Option<WordUpdateLemma>, StopReason> {
         self.bump()?;
 
@@ -1146,7 +1201,9 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             s,
             sgn,
             dirty_before,
-            context_may_be_all_zero,
+            blank_context_may_be_all_zero,
+            spinout_back_context_may_be_all_zero,
+            spinout_forward_context_may_be_all_zero,
         };
 
         let res = (if let Some(&cached) = self.step_cache.get(&key) {
@@ -1161,7 +1218,9 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
                     self.block_step_limit,
                     self.goal,
                     key.dirty_before,
-                    key.context_may_be_all_zero,
+                    key.blank_context_may_be_all_zero,
+                    key.spinout_back_context_may_be_all_zero,
+                    key.spinout_forward_context_may_be_all_zero,
                 )
                 .map(|raw| WordUpdateLemma {
                     w1: self.words.intern(raw.w1),
@@ -1199,7 +1258,15 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         let r0 = b.prev;
 
         let context_zero = self.summary_may_be_all_zero_context(r0);
-        let Some(res) = self.tm_step(b.w, s, 1, dirty, context_zero)?
+        let Some(res) = self.tm_step(
+            b.w,
+            s,
+            1,
+            dirty,
+            context_zero,
+            true,
+            context_zero,
+        )?
         else {
             return Ok(());
         };
@@ -1240,14 +1307,25 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             dirty: dirty_b,
         } = *b;
 
-        let context_zero = self.summary_may_be_all_zero_context(c.r)
-            && self.summary_may_be_all_zero_context(r0);
+        let c_context_zero = self.summary_may_be_all_zero_context(c.r);
+        let r0_context_zero = self.summary_may_be_all_zero_context(r0);
+        let context_zero = c_context_zero && r0_context_zero;
+        // For spinout, only the side in the direction of travel has to be an
+        // all-zero ray.  This call is reached with two abstract side contexts,
+        // but the local block orientation is deliberately generic here.  Using
+        // the OR for both one-sided spinout contexts is still sound: if either
+        // concrete side may be all zero, the over-approximation allows the
+        // spinout target; if neither side may be all zero, no one-sided zero
+        // ray can start outside this block.
+        let one_side_context_zero = c_context_zero || r0_context_zero;
         let Some(res) = self.tm_step(
             c.w,
             s0,
             -1,
             c.dirty || dirty_b,
             context_zero,
+            one_side_context_zero,
+            one_side_context_zero,
         )?
         else {
             return Ok(());
@@ -1287,8 +1365,15 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
 
         let blank = self.words.intern(Word::zero(self.block_len));
         let context_zero = self.summary_may_be_all_zero_context(r0);
-        let Some(res) =
-            self.tm_step(blank, s0, -1, dirty, context_zero)?
+        let Some(res) = self.tm_step(
+            blank,
+            s0,
+            -1,
+            dirty,
+            context_zero,
+            true,
+            true,
+        )?
         else {
             return Ok(());
         };
@@ -1708,6 +1793,12 @@ fn mitm_cant_blank<const STATES: usize, const COLORS: usize>(
     prog: &Prog<STATES, COLORS>,
 ) -> bool {
     mitm_cant_target::<STATES, COLORS>(prog, Goal::Blank)
+}
+
+fn mitm_cant_spinout<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+) -> bool {
+    mitm_cant_target::<STATES, COLORS>(prog, Goal::Spinout)
 }
 
 fn mitm_cant_target<const STATES: usize, const COLORS: usize>(
@@ -2239,8 +2330,27 @@ fn mitm_target_not_accepted<
                 && cfg.co < COLORS
                 && !mitm_blank_config_possible(cfg, bounds)
         }),
-        Goal::Spinout => unreachable!(),
+        Goal::Spinout => accept
+            .keys()
+            .all(|cfg| !mitm_spinout_config_possible(prog, cfg)),
     }
+}
+
+fn mitm_spinout_config_possible<
+    const STATES: usize,
+    const COLORS: usize,
+>(
+    prog: &Prog<STATES, COLORS>,
+    cfg: &MitmConfig,
+) -> bool {
+    if cfg.st >= STATES || cfg.co != 0 {
+        return false;
+    }
+    #[expect(clippy::cast_possible_truncation)]
+    let Some(&(_, _, next_st)) = prog.get(&(cfg.st as State, 0)) else {
+        return false;
+    };
+    next_st as usize == cfg.st
 }
 
 fn mitm_blank_config_possible(

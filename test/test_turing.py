@@ -1180,23 +1180,18 @@ class Far(TuringTest):
             self.assertFalse(
                 far_cant_blank(prog, 3))
 
-    @skip('')
     def test_spinout(self):
         for prog in SPINNERS:
-            try:
-                self.assertFalse(
-                    far_cant_spinout(prog, 3))
-            except AssertionError:
-                print(f'--> {prog}')
+            self.assertFalse(
+                far_cant_spinout(prog, 3))
 
         for prog in NONSPINNERS:
             if not far_cant_spinout(prog, 3):
-                print(f'       "{prog}",')
-        #         self.assertIn(prog, FAR_FALSE_NEGATIVES['spinout'])
+                self.assertIn(prog, FAR_FALSE_NEGATIVES['spinout'])
 
-        # for prog in FAR_FALSE_NEGATIVES['spinout']:
-        #     self.assertFalse(
-        #         far_cant_spinout(prog, 3))
+        for prog in FAR_FALSE_NEGATIVES['spinout']:
+            self.assertFalse(
+                far_cant_spinout(prog, 3))
 
     def test_quasihalt(self):
         pass
@@ -1205,6 +1200,10 @@ class Far(TuringTest):
         for prog in BLANK_HOLDOUTS:
             self.assertFalse(
                 far_cant_blank(prog, 3))
+
+        for prog in SPINOUT_HOLDOUTS:
+            self.assertFalse(
+                far_cant_spinout(prog, 3))
 
         for prog in HALT_HOLDOUTS:
             self.assertFalse(
