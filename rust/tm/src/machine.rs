@@ -524,7 +524,7 @@ fn test_macro_excess() {
 }
 
 #[test]
-#[should_panic(expected = "attempt to multiply with overflow")]
+#[should_panic(expected = "attempt to exponentiate with overflow")]
 fn test_macro_overflow() {
     assert!(
         !Prog::<2, 4>::from("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...")
