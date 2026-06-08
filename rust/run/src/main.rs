@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, clippy::used_underscore_items)]
 use rayon::prelude::*;
 
 use tm::{Goal, Prog, Steps};
@@ -70,19 +70,19 @@ macro_rules! assert_deciders {
     }};
 }
 
-fn params_2_2_0(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn _2_2_0(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
 }
 
-fn params_2_2_1(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn _2_2_1(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(2).is_refuted()
 }
 
-fn params_2_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn _2_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(2).is_refuted() || prog.ctl_cant_blank(14)
 }
 
-fn params_2_2_3(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn _2_2_3(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_twostep(0).is_refuted()
 }
 
@@ -92,21 +92,21 @@ fn prover_2_2(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
 
 //
 
-fn params_3_2_0(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn _3_2_0(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(13).is_refuted()
         || prog.ctl_cant_halt(20)
         || prog.cps_cant_halt(3)
 }
 
-fn params_3_2_1(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn _3_2_1(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(7).is_refuted()
         || prog.ctl_cant_spinout(40)
         || prog.cps_cant_spinout(4)
         || prog.far_cant_spinout(3)
 }
 
-fn params_3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn _3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(20).is_refuted()
         || prog.ctl_cant_blank(42)
@@ -114,7 +114,7 @@ fn params_3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
-fn params_3_2_3(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
+fn _3_2_3(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_twostep()
         || prog.bkw_cant_twostep(2).is_refuted()
         || !prog.term_or_rec(100, config.to_mut()).is_stationary()
@@ -127,20 +127,20 @@ fn prover_3_2(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
 
 //
 
-fn params_2_3_0(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn _2_3_0(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(8).is_refuted()
         || prog.cps_cant_halt(3)
 }
 
-fn params_2_3_1(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn _2_3_1(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(7).is_refuted()
         || prog.ctl_cant_spinout(100)
         || prog.cps_cant_spinout(3)
         || prog.far_cant_spinout(3)
 }
 
-fn params_2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn _2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(16).is_settled()
         || prog.ctl_cant_blank(50)
@@ -148,7 +148,7 @@ fn params_2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
-fn params_2_3_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
+fn _2_3_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_twostep()
         || prog.bkw_cant_twostep(2).is_refuted()
         || !prog.term_or_rec(100, config.to_mut()).is_stationary()
@@ -161,7 +161,7 @@ fn prover_2_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
 
 //
 
-fn params_4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn _4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(46).is_refuted()
         || prog.ctl_cant_halt(130)
@@ -169,7 +169,7 @@ fn params_4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_halt(3)
 }
 
-fn params_4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn _4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
         || prog.ctl_cant_spinout(500)
         || prog.cps_cant_spinout(12)
@@ -177,7 +177,7 @@ fn params_4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_spinout(3)
 }
 
-fn params_4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn _4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(130)
@@ -185,7 +185,7 @@ fn params_4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
-fn params_4_2_3(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
+fn _4_2_3(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_twostep()
         || prog.bkw_cant_twostep(18).is_refuted()
         || !prog.term_or_rec(100, config.to_mut()).is_stationary()
@@ -205,7 +205,7 @@ fn prover_4_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
 
 //
 
-fn params_2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn _2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.ctl_cant_halt(190)
         || prog.cps_cant_halt(6)
@@ -213,7 +213,7 @@ fn params_2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.to_string() == "1RB 2LA 1RA 1RA  1LB 1LA 3RB ..."
 }
 
-fn params_2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn _2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
         || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
@@ -221,7 +221,7 @@ fn params_2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_spinout(3)
 }
 
-fn params_2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn _2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(200)
@@ -229,7 +229,7 @@ fn params_2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
-fn params_2_4_3(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
+fn _2_4_3(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_twostep()
         || prog.bkw_cant_twostep(11).is_refuted()
         || !prog.term_or_rec(600, config.to_mut()).is_stationary()
@@ -248,34 +248,34 @@ fn test_deciders() {
 
     assert_deciders![
         (2, 2) => [
-            0 => (params_2_2_0, 2, (0, 23)),
-            1 => (params_2_2_1, 4, (0, 32)),
-            2 => (params_2_2_2, 4, (0, 53)),
-            3 => (params_2_2_3, 4, (0, 81)),
+            0 => (_2_2_0, 2, (0, 23)),
+            1 => (_2_2_1, 4, (0, 32)),
+            2 => (_2_2_2, 4, (0, 53)),
+            3 => (_2_2_3, 4, (0, 81)),
         ],
         (3, 2) => [
-            0 => (params_3_2_0, 12, (0, 2_718)),
-            1 => (params_3_2_1, 13, (0, 4_046)),
-            2 => (params_3_2_2, 13, (0, 9_510)),
-            3 => (params_3_2_3, 13, (0, 11_754)),
+            0 => (_3_2_0, 12, (0, 2_718)),
+            1 => (_3_2_1, 13, (0, 4_046)),
+            2 => (_3_2_2, 13, (0, 9_510)),
+            3 => (_3_2_3, 13, (0, 11_754)),
         ],
         (2, 3) => [
-            0 => (params_2_3_0, 7, (0, 2_335)),
-            1 => (params_2_3_1, 20, (7, 3_506)),
-            2 => (params_2_3_2, 20, (0, 5_959)),
-            3 => (params_2_3_3, 20, (0, 8_766)),
+            0 => (_2_3_0, 7, (0, 2_335)),
+            1 => (_2_3_1, 20, (7, 3_506)),
+            2 => (_2_3_2, 20, (0, 5_959)),
+            3 => (_2_3_3, 20, (0, 8_766)),
         ],
         (4, 2) => [
-            0 => (params_4_2_0, 25, (0, 431_888)),
-            1 => (params_4_2_1, 99, (533, 753_582)),
-            2 => (params_4_2_2, 99, (224, 1_932_610)),
-            3 => (params_4_2_3, 99, (0, 2_134_923)),
+            0 => (_4_2_0, 25, (0, 431_888)),
+            1 => (_4_2_1, 99, (533, 753_582)),
+            2 => (_4_2_2, 99, (224, 1_932_610)),
+            3 => (_4_2_3, 99, (0, 2_134_923)),
         ],
         (2, 4) => [
-            0 => (params_2_4_0, 109, (0, 308_968)),
-            1 => (params_2_4_1, TREE_LIM, (2157, 612_077)),
-            2 => (params_2_4_2, TREE_LIM, (209, 1_189_643)),
-            3 => (params_2_4_3, TREE_LIM, (0, 1_698_850)),
+            0 => (_2_4_0, 109, (0, 308_968)),
+            1 => (_2_4_1, TREE_LIM, (2157, 612_077)),
+            2 => (_2_4_2, TREE_LIM, (209, 1_189_643)),
+            3 => (_2_4_3, TREE_LIM, (0, 1_698_850)),
         ],
     ];
 }
@@ -355,43 +355,43 @@ fn test_quasihalt() {
     ];
 }
 
-fn params_5_2_0(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
+fn _5_2_0(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_halt(3).is_refuted()
 }
 
-fn params_5_2_1(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
+fn _5_2_1(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_spinout(3).is_refuted()
 }
 
-fn params_5_2_2(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
+fn _5_2_2(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_blank(3).is_refuted()
 }
 
 //
 
-fn params_3_3_0(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
+fn _3_3_0(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_halt(3).is_refuted()
 }
 
-fn params_3_3_1(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
+fn _3_3_1(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_spinout(3).is_refuted()
 }
 
-fn params_3_3_2(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
+fn _3_3_2(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_blank(3).is_refuted()
 }
 
 //
 
-fn params_2_5_0(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
+fn _2_5_0(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(3).is_refuted()
 }
 
-fn params_2_5_1(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
+fn _2_5_1(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(3).is_refuted()
 }
 
-fn params_2_5_2(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
+fn _2_5_2(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(3).is_refuted()
 }
 
@@ -400,19 +400,19 @@ fn test_params_slow() {
 
     assert_params![
         (5, 2) => [
-            0 => (params_5_2_0, 700, (52_376_526, 90_676_712)),
-            1 => (params_5_2_1, TREE_LIM, (52_113_379, 180_764_612)),
-            2 => (params_5_2_2, TREE_LIM, (186_790_222, 486_399_920)),
+            0 => (_5_2_0, 700, (52_376_526, 90_676_712)),
+            1 => (_5_2_1, TREE_LIM, (52_113_379, 180_764_612)),
+            2 => (_5_2_2, TREE_LIM, (186_790_222, 486_399_920)),
         ],
         (3, 3) => [
-            0 => (params_3_3_0, 2_700, (17_969_456, 24_003_381)),
-            1 => (params_3_3_1, 3_000, (21_689_893, 50_932_166)),
-            2 => (params_3_3_2, 3_000, (32_784_022, 123_182_486)),
+            0 => (_3_3_0, 2_700, (17_969_456, 24_003_381)),
+            1 => (_3_3_1, 3_000, (21_689_893, 50_932_166)),
+            2 => (_3_3_2, 3_000, (32_784_022, 123_182_486)),
         ],
         (2, 5) => [
-            0 => (params_2_5_0, TREE_LIM, (57_372_323, 69_763_571)),
-            1 => (params_2_5_1, TREE_LIM, (102_458_450, 162_767_964)),
-            2 => (params_2_5_2, TREE_LIM, (68_331_948, 366_717_085)),
+            0 => (_2_5_0, TREE_LIM, (57_372_323, 69_763_571)),
+            1 => (_2_5_1, TREE_LIM, (102_458_450, 162_767_964)),
+            2 => (_2_5_2, TREE_LIM, (68_331_948, 366_717_085)),
         ],
     ];
 }
