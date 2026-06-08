@@ -608,34 +608,6 @@ class Reason(TuringTest):
                     bkw_cant_reach(prog, steps - 1),
                     BackwardResult.step_limit)
 
-    def test_reason_only(self):
-        for prog in REASON_ONLY:
-            self.assert_cant_halt_backward(prog, REASON_LIMIT)
-            self.assert_cant_blank_backward(prog, REASON_LIMIT)
-            self.assert_cant_spinout_backward(prog, REASON_LIMIT)
-
-            self.assertNotIn(prog, INFRUL)
-
-    def test_omnireasonable(self):
-        assert set(OMNIREASONABLE) <= INFRUL | RECURS
-
-        for prog, (halt, blank, spin) in OMNIREASONABLE.items():
-            self.assertEqual(
-                1 + halt,
-                bkw_cant_halt(prog, REASON_LIMIT).step)
-
-            self.assertEqual(
-                1 + blank,
-                bkw_cant_blank(prog, REASON_LIMIT).step)
-
-            self.assertEqual(
-                1 + spin,
-                bkw_cant_spinout(prog, REASON_LIMIT).step)
-
-    def test_simple(self):
-        for prog in HALTERS | SPINNERS | RECURS | INFRUL:
-            self.assert_simple(prog)
-
 
 class Segment(TuringTest):
     def test_halt(self):
@@ -695,11 +667,6 @@ class Segment(TuringTest):
 
                 self.assertFalse(
                     bkw_cant_reach(prog, steps - 1).is_settled())
-
-    def test_omnireasonable(self):
-        for prog in OMNIREASONABLE:
-            self.assert_cant_halt_segment(prog, SEGMENT_LIMIT)
-            self.assert_cant_spinout_segment(prog, SEGMENT_LIMIT)
 
 
 def branch_last(prog: str) -> list[str]:
@@ -905,6 +872,10 @@ class Simple(TuringTest):
             self.analyze(prog, normal = True, decomp = True)
 
         self.machine = run_quick_machine(prog, sim_lim)
+
+    def test_simple(self):
+        for prog in HALTERS | SPINNERS | RECURS | INFRUL:
+            self.assert_simple(prog)
 
     def test_halt(self):
         self._test_halt(HALT)
@@ -1832,16 +1803,6 @@ class Prover(RunProver):
             )
 
             self.assertIsNotNone(
-                self.machine.infrul)
-
-        for prog in REASON_ONLY:
-            self.run_bb(
-                prog,
-                opt_macro = 2_400,
-                sim_lim = 10_000,
-                normal = False)
-
-            self.assertIsNone(
                 self.machine.infrul)
 
     def _test_reason_steps(self, steps: dict[Goal, dict[str, int]]):

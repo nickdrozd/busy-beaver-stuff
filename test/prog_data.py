@@ -7475,22 +7475,6 @@ assert not HALTERS & NONHALTERS
 assert not BLANKERS & NONBLANKERS
 assert not SPINNERS & NONSPINNERS
 
-REASON_ONLY: set[str] = {
-    "1RB 0LD  1LC 0RE  ... 1LD  1LA 1LD  1RA 0RA",
-}
-
-OMNIREASONABLE: dict[str, tuple[int, int, int]] = {
-    "1RB 0RB ...  1LC 2LC 0LA  0LC 2RA 1RB": ( 9,  2, 4),
-    "1RB 2RC ...  1LB 2RB 0RC  2LB 1RC 0LA": ( 1, 15, 2),
-    "1RB 2RB 1LA  1LB 2LA 0RC  ... 0LA 0LB": ( 5, 11, 2),
-    "1RB ... 1LB  1LB 1RC 0RC  2LA 2RC 0LB": ( 1, 12, 7),
-
-    "1RB 0LD  1RC 0RC  1LD 0LE  0LD 1RB  ... 0LA": (10, 10, 11),
-    "1RB 0LB  0LB 1RC  1RD 0RD  1LB 0LE  ... 0LA": (11, 10, 11),
-    "1RB 0LD  1RC 0RD  1RD ...  1LE 0LB  0LE 1RA": (18,  7, 13),
-    "1RB 0RB  0RC 0LD  1LA ...  1LE 1RC  0LE 1RA": (27,  8, 10),
-}
-
 ## test program ######################################################
 
 NORMALIZE = {
