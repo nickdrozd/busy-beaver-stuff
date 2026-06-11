@@ -44,15 +44,6 @@ const FAR_WORK_PER_LEN: usize = 12_500;
 /// `block_step_limit ≈ 200 * 16 = 3_200`.
 const FAR_STEP_PER_LEN: usize = 200;
 
-/// NG summary window: how many most-recent pushed blocks to remember.
-const FAR_NG_WINDOW: usize = 3;
-
-/// NG summary tail: how many earliest pushed blocks to remember (usually 0).
-const FAR_NG_TAIL: usize = 0;
-
-/// NG summary modulus (usually 1).
-const FAR_NG_POS_MOD: usize = 1;
-
 /// Hard cap on block lengths we will try.
 /// (Even if `knob` is bigger.)
 const FAR_BLOCK_LEN_HARD_CAP: usize = 256;
@@ -494,67 +485,6 @@ struct RepeatWord {
 impl RepeatWord {
     const fn new(w: WordId, n: usize, m: usize) -> Self {
         Self { w, n, m }
-    }
-}
-
-/// NG stack summary: keep bounded history (window + tail + mod counter).
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-struct NgSummary {
-    q: Vec<WordId>,
-    q0: Vec<WordId>,
-    modu: usize,
-}
-
-impl Summary for NgSummary {
-    fn new() -> Self {
-        Self {
-            q: Vec::new(),
-            q0: Vec::new(),
-            modu: 0,
-        }
-    }
-
-    fn push(
-        &mut self,
-        w: WordId,
-        words: &mut WordInterner,
-    ) -> Result<(), SummaryOverflow> {
-        if self.q.is_empty() && words.get(w).is_zero() {
-            return Ok(());
-        }
-
-        if FAR_NG_WINDOW > 0 && self.q.len() == FAR_NG_WINDOW {
-            self.q.remove(0);
-        }
-        self.q.push(w);
-
-        #[expect(clippy::absurd_extreme_comparisons)]
-        if self.q0.len() < FAR_NG_TAIL {
-            self.q0.push(w);
-        }
-
-        self.modu = (self.modu + 1) % FAR_NG_POS_MOD.max(1);
-        Ok(())
-    }
-
-    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
-        self.q.iter().all(|&w| words.get(w).is_zero())
-            && self.q0.iter().all(|&w| words.get(w).is_zero())
-    }
-}
-
-impl PartialOrd for NgSummary {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for NgSummary {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.modu
-            .cmp(&other.modu)
-            .then_with(|| self.q.cmp(&other.q))
-            .then_with(|| self.q0.cmp(&other.q0))
     }
 }
 
@@ -1803,13 +1733,6 @@ fn far_decide_slow<const STATES: usize, const COLORS: usize>(
         goal,
         mirrored,
     ) || far_decide_with::<RsModSummary, STATES, COLORS>(
-        prog,
-        block_len,
-        max_work,
-        block_step_limit,
-        goal,
-        mirrored,
-    ) || far_decide_with::<NgSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
