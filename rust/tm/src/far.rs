@@ -96,8 +96,18 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// - `false` otherwise.
     pub fn far_cant_halt(&self, knob: usize) -> bool {
         far_sweep_fast::<STATES, COLORS>(self, knob, Goal::Halt)
+            || far_sweep_fast_mirrored::<STATES, COLORS>(
+                self,
+                knob,
+                Goal::Halt,
+            )
             || mitm_cant_halt::<STATES, COLORS>(self)
             || far_sweep_slow::<STATES, COLORS>(self, knob, Goal::Halt)
+            || far_sweep_slow_mirrored::<STATES, COLORS>(
+                self,
+                knob,
+                Goal::Halt,
+            )
     }
 
     /// FAR blank-tape prover.
@@ -114,8 +124,18 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// by requiring the initial DFA state.
     pub fn far_cant_blank(&self, knob: usize) -> bool {
         far_sweep_fast::<STATES, COLORS>(self, knob, Goal::Blank)
+            || far_sweep_fast_mirrored::<STATES, COLORS>(
+                self,
+                knob,
+                Goal::Blank,
+            )
             || mitm_cant_blank::<STATES, COLORS>(self)
             || far_sweep_slow::<STATES, COLORS>(self, knob, Goal::Blank)
+            || far_sweep_slow_mirrored::<STATES, COLORS>(
+                self,
+                knob,
+                Goal::Blank,
+            )
     }
 
     /// FAR spinout prover.
@@ -124,8 +144,18 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// one-sided all-zero same-state drift.
     pub fn far_cant_spinout(&self, knob: usize) -> bool {
         far_sweep_fast::<STATES, COLORS>(self, knob, Goal::Spinout)
+            || far_sweep_fast_mirrored::<STATES, COLORS>(
+                self,
+                knob,
+                Goal::Spinout,
+            )
             || mitm_cant_spinout::<STATES, COLORS>(self)
             || far_sweep_slow::<STATES, COLORS>(
+                self,
+                knob,
+                Goal::Spinout,
+            )
+            || far_sweep_slow_mirrored::<STATES, COLORS>(
                 self,
                 knob,
                 Goal::Spinout,
@@ -278,6 +308,7 @@ impl RawWordUpdateLemma {
         blank_context_may_be_all_zero: bool,
         spinout_back_context_may_be_all_zero: bool,
         spinout_forward_context_may_be_all_zero: bool,
+        mirrored: bool,
     ) -> Option<Self> {
         debug_assert!(sgn == 1 || sgn == -1);
         if s < 0 {
@@ -329,6 +360,7 @@ impl RawWordUpdateLemma {
             }
 
             let dir: i32 = if shift_right { 1 } else { -1 };
+            let dir = if mirrored { -dir } else { dir };
             let block_dir = dir * i32::from(sgn);
             if goal.is_spinout()
                 && input == 0
@@ -410,6 +442,7 @@ impl RawWordUpdateLemma {
         blank_context_may_be_all_zero: bool,
         spinout_back_context_may_be_all_zero: bool,
         spinout_forward_context_may_be_all_zero: bool,
+        mirrored: bool,
     ) -> Option<Self> {
         let mut res = Self::from_prog(
             prog,
@@ -422,6 +455,7 @@ impl RawWordUpdateLemma {
             blank_context_may_be_all_zero,
             spinout_back_context_may_be_all_zero,
             spinout_forward_context_may_be_all_zero,
+            mirrored,
         )?;
         if res.s1 >= 0 && !res.is_back {
             res.w1 = res.w1.reverse();
@@ -950,6 +984,7 @@ struct FarDecider<
 > {
     prog: &'a Prog<STATES, COLORS>,
     goal: Goal,
+    mirrored: bool,
 
     block_len: usize,
     max_work: usize,
@@ -1006,12 +1041,14 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         max_work: usize,
         block_step_limit: usize,
         goal: Goal,
+        mirrored: bool,
     ) -> Result<Self, StopReason> {
         let idr = vec![S::new()];
 
         let this = Self {
             prog,
             goal,
+            mirrored,
             block_len,
             max_work: max_work.max(1),
             block_step_limit: block_step_limit.max(1),
@@ -1221,6 +1258,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
                     key.blank_context_may_be_all_zero,
                     key.spinout_back_context_may_be_all_zero,
                     key.spinout_forward_context_may_be_all_zero,
+                    self.mirrored,
                 )
                 .map(|raw| WordUpdateLemma {
                     w1: self.words.intern(raw.w1),
@@ -1412,6 +1450,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
 
         self.scratch_states.clear();
         self.scratch_states.extend(self.r_s[r].iter().copied());
+        self.scratch_states.sort_unstable();
         while let Some((s, dirty)) = self.scratch_states.pop() {
             self.on_h2_pop(&H2 { s, r, dirty }, e)?;
         }
@@ -1428,6 +1467,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
 
         self.scratch_edges.clear();
         self.scratch_edges.extend(self.pop[*r].iter().copied());
+        self.scratch_edges.sort_unstable();
         while let Some(e) = self.scratch_edges.pop() {
             self.on_h2_pop(a, &e)?;
         }
@@ -1448,6 +1488,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     fn on_ret2(&mut self, a: &H2, b: &H2b) -> Result<(), StopReason> {
         self.scratch_h3.clear();
         self.scratch_h3.extend(self.pre23.values(a).copied());
+        self.scratch_h3.sort_unstable();
         while let Some(c) = self.scratch_h3.pop() {
             self.on_h3_back(&c, b)?;
         }
@@ -1457,12 +1498,14 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     fn on_ret3(&mut self, a: &H3, b: &H2b) -> Result<(), StopReason> {
         self.scratch_h2.clear();
         self.scratch_h2.extend(self.pre32.values(a).copied());
+        self.scratch_h2.sort_unstable();
         while let Some(a0) = self.scratch_h2.pop() {
             self.insert_ret2(a0, *b);
         }
 
         self.scratch_h3.clear();
         self.scratch_h3.extend(self.pre33.values(a).copied());
+        self.scratch_h3.sort_unstable();
         while let Some(a1) = self.scratch_h3.pop() {
             self.insert_ret3(a1, *b);
         }
@@ -1476,6 +1519,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     fn on_pre23(&mut self, a: &H2, c: &H3) -> Result<(), StopReason> {
         self.scratch_h2b.clear();
         self.scratch_h2b.extend(self.ret2.values(a).copied());
+        self.scratch_h2b.sort_unstable();
         while let Some(b) = self.scratch_h2b.pop() {
             self.on_h3_back(c, &b)?;
         }
@@ -1485,6 +1529,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     fn on_pre32(&mut self, a: &H3, a0: &H2) {
         self.scratch_h2b.clear();
         self.scratch_h2b.extend(self.ret3.values(a).copied());
+        self.scratch_h2b.sort_unstable();
         while let Some(b) = self.scratch_h2b.pop() {
             self.insert_ret2(*a0, b);
         }
@@ -1493,6 +1538,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     fn on_pre33(&mut self, a: &H3, a0: &H3) {
         self.scratch_h2b.clear();
         self.scratch_h2b.extend(self.ret3.values(a).copied());
+        self.scratch_h2b.sort_unstable();
         while let Some(b) = self.scratch_h2b.pop() {
             self.insert_ret3(*a0, b);
         }
@@ -1501,6 +1547,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     fn on_pre3l(&mut self, a: &H3) -> Result<(), StopReason> {
         self.scratch_h2b.clear();
         self.scratch_h2b.extend(self.ret3.values(a).copied());
+        self.scratch_h2b.sort_unstable();
         while let Some(b) = self.scratch_h2b.pop() {
             self.insert_retl(&b)?;
         }
@@ -1576,6 +1623,7 @@ fn far_decide_with<
     max_work: usize,
     block_step_limit: usize,
     goal: Goal,
+    mirrored: bool,
 ) -> bool {
     if block_len == 0 {
         return false;
@@ -1587,6 +1635,7 @@ fn far_decide_with<
         max_work,
         block_step_limit,
         goal,
+        mirrored,
     ) else {
         return false;
     };
@@ -1603,6 +1652,21 @@ fn far_sweep_fast<const STATES: usize, const COLORS: usize>(
         prog,
         knob,
         goal,
+        false,
+        far_decide_fast::<STATES, COLORS>,
+    )
+}
+
+fn far_sweep_fast_mirrored<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    knob: usize,
+    goal: Goal,
+) -> bool {
+    far_sweep_with::<STATES, COLORS>(
+        prog,
+        knob,
+        goal,
+        true,
         far_decide_fast::<STATES, COLORS>,
     )
 }
@@ -1616,6 +1680,21 @@ fn far_sweep_slow<const STATES: usize, const COLORS: usize>(
         prog,
         knob,
         goal,
+        false,
+        far_decide_slow::<STATES, COLORS>,
+    )
+}
+
+fn far_sweep_slow_mirrored<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    knob: usize,
+    goal: Goal,
+) -> bool {
+    far_sweep_with::<STATES, COLORS>(
+        prog,
+        knob,
+        goal,
+        true,
         far_decide_slow::<STATES, COLORS>,
     )
 }
@@ -1624,12 +1703,14 @@ fn far_sweep_with<const STATES: usize, const COLORS: usize>(
     prog: &Prog<STATES, COLORS>,
     knob: usize,
     goal: Goal,
+    mirrored: bool,
     decide: fn(
         &Prog<STATES, COLORS>,
         usize,
         usize,
         usize,
         Goal,
+        bool,
     ) -> bool,
 ) -> bool {
     if COLORS < 2 || STATES == 0 {
@@ -1659,7 +1740,14 @@ fn far_sweep_with<const STATES: usize, const COLORS: usize>(
             .saturating_mul(block_len)
             .saturating_mul(eff);
 
-        if decide(prog, block_len, max_work, block_step_limit, goal) {
+        if decide(
+            prog,
+            block_len,
+            max_work,
+            block_step_limit,
+            goal,
+            mirrored,
+        ) {
             return true;
         }
     }
@@ -1673,6 +1761,7 @@ fn far_decide_fast<const STATES: usize, const COLORS: usize>(
     max_work: usize,
     block_step_limit: usize,
     goal: Goal,
+    mirrored: bool,
 ) -> bool {
     far_decide_with::<Ng1Summary, STATES, COLORS>(
         prog,
@@ -1680,18 +1769,21 @@ fn far_decide_fast<const STATES: usize, const COLORS: usize>(
         max_work,
         block_step_limit,
         goal,
+        mirrored,
     ) || far_decide_with::<CpsLruSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
         goal,
+        mirrored,
     ) || far_decide_with::<RwlModSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
         goal,
+        mirrored,
     )
 }
 
@@ -1701,6 +1793,7 @@ fn far_decide_slow<const STATES: usize, const COLORS: usize>(
     max_work: usize,
     block_step_limit: usize,
     goal: Goal,
+    mirrored: bool,
 ) -> bool {
     far_decide_with::<RngsModSummary, STATES, COLORS>(
         prog,
@@ -1708,18 +1801,21 @@ fn far_decide_slow<const STATES: usize, const COLORS: usize>(
         max_work,
         block_step_limit,
         goal,
+        mirrored,
     ) || far_decide_with::<RsModSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
         goal,
+        mirrored,
     ) || far_decide_with::<NgSummary, STATES, COLORS>(
         prog,
         block_len,
         max_work,
         block_step_limit,
         goal,
+        mirrored,
     )
 }
 
