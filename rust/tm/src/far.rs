@@ -305,10 +305,6 @@ impl RawWordUpdateLemma {
         if s < 0 {
             return None;
         }
-        if COLORS < 2 {
-            return None;
-        }
-
         let len = w.len() as i32;
         let mut w1 = w;
         let mut nonzero_count =
@@ -1723,10 +1719,6 @@ fn far_sweep_with<const STATES: usize, const COLORS: usize>(
         bool,
     ) -> bool,
 ) -> bool {
-    if COLORS < 2 || STATES == 0 {
-        return false;
-    }
-
     let knob = knob.max(FAR_KNOB_MIN);
     let eff = effort_factor(knob);
 
@@ -1909,10 +1901,6 @@ fn mitm_cant_target<const STATES: usize, const COLORS: usize>(
     // weight pair, deriving and verifying the accept set in memory.
     const MAX_TRANSITIONS: usize = 9;
     const MAX_WEIGHT_PAIRS: usize = 1;
-
-    if COLORS < 2 || STATES == 0 || prog.get(&(0, 0)).is_none() {
-        return false;
-    }
 
     // Cheap passes first.  These preserve the same eventual prover power
     // as the final pass, but avoid paying for memory expansion on easy TMs.
