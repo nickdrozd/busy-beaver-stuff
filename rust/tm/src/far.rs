@@ -87,10 +87,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// - `false` otherwise.
     pub fn far_cant_halt(&self, knob: usize) -> bool {
         self.far_sweep_fast(knob, Goal::Halt)
-            || self.far_sweep_fast_mirrored(knob, Goal::Halt)
             || self.mitm_cant_halt()
             || self.far_sweep_slow(knob, Goal::Halt)
-            || self.far_sweep_slow_mirrored(knob, Goal::Halt)
     }
 
     /// FAR blank-tape prover.
@@ -107,10 +105,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// by requiring the initial DFA state.
     pub fn far_cant_blank(&self, knob: usize) -> bool {
         self.far_sweep_fast(knob, Goal::Blank)
-            || self.far_sweep_fast_mirrored(knob, Goal::Blank)
             || self.mitm_cant_blank()
             || self.far_sweep_slow(knob, Goal::Blank)
-            || self.far_sweep_slow_mirrored(knob, Goal::Blank)
     }
 
     /// FAR spinout prover.
@@ -119,10 +115,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// one-sided all-zero same-state drift.
     pub fn far_cant_spinout(&self, knob: usize) -> bool {
         self.far_sweep_fast(knob, Goal::Spinout)
-            || self.far_sweep_fast_mirrored(knob, Goal::Spinout)
             || self.mitm_cant_spinout()
             || self.far_sweep_slow(knob, Goal::Spinout)
-            || self.far_sweep_slow_mirrored(knob, Goal::Spinout)
     }
 }
 
@@ -1616,26 +1610,17 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     }
 
     fn far_sweep_fast(&self, knob: usize, goal: Goal) -> bool {
-        self.far_sweep_with(goal, knob, false, Self::far_decide_fast)
-    }
-
-    fn far_sweep_fast_mirrored(&self, knob: usize, goal: Goal) -> bool {
-        self.far_sweep_with(goal, knob, true, Self::far_decide_fast)
+        self.far_sweep_with(goal, knob, Self::far_decide_fast)
     }
 
     fn far_sweep_slow(&self, knob: usize, goal: Goal) -> bool {
-        self.far_sweep_with(goal, knob, false, Self::far_decide_slow)
-    }
-
-    fn far_sweep_slow_mirrored(&self, knob: usize, goal: Goal) -> bool {
-        self.far_sweep_with(goal, knob, true, Self::far_decide_slow)
+        self.far_sweep_with(goal, knob, Self::far_decide_slow)
     }
 
     fn far_sweep_with(
         &self,
         goal: Goal,
         knob: usize,
-        mirrored: bool,
         decide: fn(&Self, usize, usize, usize, Goal, bool) -> bool,
     ) -> bool {
         let knob = knob.max(FAR_KNOB_MIN);
@@ -1661,15 +1646,17 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 .saturating_mul(block_len)
                 .saturating_mul(eff);
 
-            if decide(
-                self,
-                block_len,
-                max_work,
-                block_step_limit,
-                goal,
-                mirrored,
-            ) {
-                return true;
+            for mirrored in [false, true] {
+                if decide(
+                    self,
+                    block_len,
+                    max_work,
+                    block_step_limit,
+                    goal,
+                    mirrored,
+                ) {
+                    return true;
+                }
             }
         }
 
