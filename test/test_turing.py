@@ -1125,60 +1125,77 @@ class Graphx(TuringTest):
 ########################################
 
 class Far(TuringTest):
-    def test_halt(self):
-        for prog in HALTERS:
-            self.assertFalse(
-                far_cant_halt(prog, 3))
-
+    def test_true_positives(self):
         for prog in NONHALTERS | FAR_REFUTES:
             if not far_cant_halt(prog, 3):
                 self.assertIn(prog, FAR_FALSE_NEGATIVES['halt'])
-
-        for prog in FAR_FALSE_NEGATIVES['halt']:
-            self.assertFalse(
-                far_cant_halt(prog, 3))
-
-    def test_blank(self):
-        for prog in BLANKERS:
-            self.assertFalse(
-                far_cant_blank(prog, 3))
 
         for prog in NONBLANKERS:
             if not far_cant_blank(prog, 3):
                 self.assertIn(prog, FAR_FALSE_NEGATIVES['blank'])
 
-        for prog in FAR_FALSE_NEGATIVES['blank']:
-            self.assertFalse(
-                far_cant_blank(prog, 3))
-
-    def test_spinout(self):
-        for prog in SPINNERS:
-            self.assertFalse(
-                far_cant_spinout(prog, 3))
-
         for prog in NONSPINNERS:
             if not far_cant_spinout(prog, 3):
                 self.assertIn(prog, FAR_FALSE_NEGATIVES['spinout'])
 
-        for prog in FAR_FALSE_NEGATIVES['spinout']:
+    def test_true_negatives(self):
+        for prog in HALTERS:
             self.assertFalse(
-                far_cant_spinout(prog, 3))
+                far_cant_halt(prog, 3))
 
-    def test_quasihalt(self):
-        pass
-
-    def test_holdouts(self):
-        for prog in BLANK_HOLDOUTS:
+        for prog in BLANKERS:
             self.assertFalse(
                 far_cant_blank(prog, 3))
 
-        for prog in SPINOUT_HOLDOUTS:
+        for prog in SPINNERS:
             self.assertFalse(
                 far_cant_spinout(prog, 3))
 
+    def test_false_negatives(self):
+        new_solved = False
+
+        print('halt')
+        for prog in FAR_FALSE_NEGATIVES['halt']:
+            if far_cant_halt(prog, 3):
+                print(prog)
+                new_solved = True
+
+        print('blank')
+        for prog in FAR_FALSE_NEGATIVES['blank']:
+            if far_cant_blank(prog, 3):
+                print(prog)
+                new_solved = True
+
+        print('spinout')
+        for prog in FAR_FALSE_NEGATIVES['spinout']:
+            if far_cant_spinout(prog, 3):
+                print(prog)
+                new_solved = True
+
+        self.assertFalse(new_solved)
+
+    def test_holdouts(self):
+        new_solved = False
+
+        print('blank')
+        for prog in BLANK_HOLDOUTS:
+            if far_cant_blank(prog, 3):
+                print(prog)
+                new_solved = True
+
+        print('spinout')
+        for prog in SPINOUT_HOLDOUTS:
+            if far_cant_spinout(prog, 3):
+                print(prog)
+                new_solved = True
+
+        print('halt')
         for prog in HALT_HOLDOUTS:
-            self.assertFalse(
-                far_cant_halt(prog, 3))
+            if far_cant_halt(prog, 3):
+                print(prog)
+                new_solved = True
+
+        self.assertFalse(new_solved)
 
 ########################################
 
