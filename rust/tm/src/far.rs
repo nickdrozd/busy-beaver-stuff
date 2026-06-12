@@ -1094,6 +1094,25 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             .is_some_and(|st| st.may_be_all_zero_context(&self.words))
     }
 
+    const fn canonical_dirty(&self, dirty: bool) -> bool {
+        self.goal.is_blank() && dirty
+    }
+
+    const fn canonical_h2(&self, mut a: H2) -> H2 {
+        a.dirty = self.canonical_dirty(a.dirty);
+        a
+    }
+
+    const fn canonical_h2b(&self, mut b: H2b) -> H2b {
+        b.dirty = self.canonical_dirty(b.dirty);
+        b
+    }
+
+    const fn canonical_h3(&self, mut c: H3) -> H3 {
+        c.dirty = self.canonical_dirty(c.dirty);
+        c
+    }
+
     fn blank_h3_goal(&self, c: &H3) -> bool {
         self.goal.is_blank()
             && c.dirty
@@ -1123,31 +1142,41 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         Ok(())
     }
 
-    fn insert_h3(&mut self, c: &H3) -> Result<(), StopReason> {
-        self.h3s.insert(*c);
-        self.check_blank_h3(c)
+    fn insert_h3(&mut self, c: H3) -> Result<H3, StopReason> {
+        let c = self.canonical_h3(c);
+        self.h3s.insert(c);
+        self.check_blank_h3(&c)?;
+        Ok(c)
     }
 
-    fn insert_h2(&mut self, a: H2) {
+    fn insert_h2(&mut self, a: H2) -> H2 {
+        let a = self.canonical_h2(a);
         self.h2s.insert(a);
+        a
     }
 
-    fn insert_pre3l(&mut self, c: &H3) -> Result<(), StopReason> {
-        self.pre3l.insert(*c);
-        self.check_blank_h3(c)
+    fn insert_pre3l(&mut self, c: H3) -> Result<H3, StopReason> {
+        let c = self.canonical_h3(c);
+        self.pre3l.insert(c);
+        self.check_blank_h3(&c)?;
+        Ok(c)
     }
 
-    fn insert_retl(&mut self, b: &H2b) -> Result<(), StopReason> {
-        self.retl.insert(*b);
-        self.check_blank_retl(b)
+    fn insert_retl(&mut self, b: H2b) -> Result<H2b, StopReason> {
+        let b = self.canonical_h2b(b);
+        self.retl.insert(b);
+        self.check_blank_retl(&b)?;
+        Ok(b)
     }
 
     fn insert_ret2(&mut self, a: H2, b: H2b) {
-        self.ret2.insert(a, b);
+        self.ret2
+            .insert(self.canonical_h2(a), self.canonical_h2b(b));
     }
 
     fn insert_ret3(&mut self, a: H3, b: H2b) {
-        self.ret3.insert(a, b);
+        self.ret3
+            .insert(self.canonical_h3(a), self.canonical_h2b(b));
     }
 
     #[expect(clippy::fn_params_excessive_bools)]
@@ -1162,6 +1191,24 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         spinout_forward_context_may_be_all_zero: bool,
     ) -> Result<Option<WordUpdateLemma>, StopReason> {
         self.bump()?;
+
+        let (
+            dirty_before,
+            blank_context_may_be_all_zero,
+            spinout_back_context_may_be_all_zero,
+            spinout_forward_context_may_be_all_zero,
+        ) = if self.goal.is_halt() {
+            (false, false, false, false)
+        } else if self.goal.is_blank() {
+            (dirty_before, blank_context_may_be_all_zero, false, false)
+        } else {
+            (
+                false,
+                false,
+                spinout_back_context_may_be_all_zero,
+                spinout_forward_context_may_be_all_zero,
+            )
+        };
 
         let key = StepKey {
             w,
@@ -1222,28 +1269,40 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         a: &H2,
         b: &DfaEdge,
     ) -> Result<(), StopReason> {
-        let H2 { s, dirty, .. } = *a;
+        let a = self.canonical_h2(*a);
+        let H2 { s, dirty, .. } = a;
         let r0 = b.prev;
 
-        let context_zero = self.summary_may_be_all_zero_context(r0);
+        let (
+            blank_context_may_be_all_zero,
+            spinout_back_context_may_be_all_zero,
+            spinout_forward_context_may_be_all_zero,
+        ) = if self.goal.is_blank() {
+            (self.summary_may_be_all_zero_context(r0), false, false)
+        } else if self.goal.is_spinout() {
+            (false, true, self.summary_may_be_all_zero_context(r0))
+        } else {
+            (false, false, false)
+        };
+
         let Some(res) = self.tm_step(
             b.w,
             s,
             1,
             dirty,
-            context_zero,
-            true,
-            context_zero,
+            blank_context_may_be_all_zero,
+            spinout_back_context_may_be_all_zero,
+            spinout_forward_context_may_be_all_zero,
         )?
         else {
             return Ok(());
         };
 
-        let dirty1 = dirty || res.saw_nonzero;
+        let dirty1 = self.canonical_dirty(dirty || res.saw_nonzero);
         if res.is_back {
             let rr = self.dfa_push_id(res.w1, r0)?;
             self.insert_ret2(
-                *a,
+                a,
                 H2b {
                     s: res.s1,
                     r: rr,
@@ -1251,14 +1310,13 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
                 },
             );
         } else {
-            let c = H3 {
+            let c = self.insert_h3(H3 {
                 w: res.w1,
                 s: res.s1,
                 r: r0,
                 dirty: dirty1,
-            };
-            self.insert_h3(&c)?;
-            self.pre32.insert(c, *a);
+            })?;
+            self.pre32.insert(c, a);
         }
 
         Ok(())
@@ -1269,42 +1327,61 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         c: &H3,
         b: &H2b,
     ) -> Result<(), StopReason> {
+        let c = self.canonical_h3(*c);
+        let b = self.canonical_h2b(*b);
         let H2b {
             s: s0,
             r: r0,
             dirty: dirty_b,
-        } = *b;
+        } = b;
 
-        let c_context_zero = self.summary_may_be_all_zero_context(c.r);
-        let r0_context_zero = self.summary_may_be_all_zero_context(r0);
-        let context_zero = c_context_zero && r0_context_zero;
+        let (
+            blank_context_may_be_all_zero,
+            spinout_back_context_may_be_all_zero,
+            spinout_forward_context_may_be_all_zero,
+        ) = if self.goal.is_blank() {
+            let c_context_zero =
+                self.summary_may_be_all_zero_context(c.r);
+            let r0_context_zero =
+                self.summary_may_be_all_zero_context(r0);
+            (c_context_zero && r0_context_zero, false, false)
+        } else if self.goal.is_spinout() {
+            let c_context_zero =
+                self.summary_may_be_all_zero_context(c.r);
+            let r0_context_zero =
+                self.summary_may_be_all_zero_context(r0);
+            (false, r0_context_zero, c_context_zero)
+        } else {
+            (false, false, false)
+        };
+
         let Some(res) = self.tm_step(
             c.w,
             s0,
             -1,
             c.dirty || dirty_b,
-            context_zero,
-            r0_context_zero,
-            c_context_zero,
+            blank_context_may_be_all_zero,
+            spinout_back_context_may_be_all_zero,
+            spinout_forward_context_may_be_all_zero,
         )?
         else {
             return Ok(());
         };
 
-        let dirty1 = c.dirty || dirty_b || res.saw_nonzero;
+        let dirty1 =
+            self.canonical_dirty(c.dirty || dirty_b || res.saw_nonzero);
         if res.is_back {
-            let c0 = H3 {
+            let c0 = self.insert_h3(H3 {
                 w: res.w1,
                 s: res.s1,
                 r: r0,
                 dirty: dirty1,
-            };
-            self.insert_h3(&c0)?;
-            self.pre33.insert(c0, *c);
+            })?;
+            self.pre33.insert(c0, c);
         } else {
             let rr = self.dfa_push_id(res.w1, r0)?;
             self.insert_ret3(
-                *c,
+                c,
                 H2b {
                     s: res.s1,
                     r: rr,
@@ -1317,45 +1394,55 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     }
 
     fn on_retl(&mut self, b: &H2b) -> Result<(), StopReason> {
+        let b = self.canonical_h2b(*b);
         let H2b {
             s: s0,
             r: r0,
             dirty,
-        } = *b;
+        } = b;
 
         let blank = self.words.intern(Word::zero(self.block_len));
-        let context_zero = self.summary_may_be_all_zero_context(r0);
+        let (
+            blank_context_may_be_all_zero,
+            spinout_back_context_may_be_all_zero,
+            spinout_forward_context_may_be_all_zero,
+        ) = if self.goal.is_blank() {
+            (self.summary_may_be_all_zero_context(r0), false, false)
+        } else if self.goal.is_spinout() {
+            (false, true, true)
+        } else {
+            (false, false, false)
+        };
+
         let Some(res) = self.tm_step(
             blank,
             s0,
             -1,
             dirty,
-            context_zero,
-            true,
-            true,
+            blank_context_may_be_all_zero,
+            spinout_back_context_may_be_all_zero,
+            spinout_forward_context_may_be_all_zero,
         )?
         else {
             return Ok(());
         };
 
-        let dirty1 = dirty || res.saw_nonzero;
+        let dirty1 = self.canonical_dirty(dirty || res.saw_nonzero);
         if res.is_back {
-            let c0 = H3 {
+            let c0 = self.insert_h3(H3 {
                 w: res.w1,
                 s: res.s1,
                 r: r0,
                 dirty: dirty1,
-            };
-            self.insert_h3(&c0)?;
-            self.insert_pre3l(&c0)?;
+            })?;
+            self.insert_pre3l(c0)?;
         } else {
             let rr = self.dfa_push_id(res.w1, r0)?;
-            let b0 = H2b {
+            self.insert_retl(H2b {
                 s: res.s1,
                 r: rr,
                 dirty: dirty1,
-            };
-            self.insert_retl(&b0)?;
+            })?;
         }
 
         Ok(())
@@ -1381,29 +1468,30 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
     }
 
     fn on_h2(&mut self, a: &H2) -> Result<(), StopReason> {
+        let a = self.canonical_h2(*a);
         let H2 { s, r, .. } = a;
 
         self.bump()?;
-        self.ensure_dfa_capacity(*r);
-        self.r_s[*r].insert((*s, a.dirty));
+        self.ensure_dfa_capacity(r);
+        self.r_s[r].insert((s, a.dirty));
 
         self.scratch_edges.clear();
-        self.scratch_edges.extend(self.pop[*r].iter().copied());
+        self.scratch_edges.extend(self.pop[r].iter().copied());
         self.scratch_edges.sort_unstable();
         while let Some(e) = self.scratch_edges.pop() {
-            self.on_h2_pop(a, &e)?;
+            self.on_h2_pop(&a, &e)?;
         }
 
         Ok(())
     }
 
     fn on_h3(&mut self, a: H3) {
-        let a0 = H2 {
+        let a = self.canonical_h3(a);
+        let a0 = self.insert_h2(H2 {
             s: a.s,
             r: a.r,
             dirty: a.dirty,
-        };
-        self.insert_h2(a0);
+        });
         self.pre23.insert(a0, a);
     }
 
@@ -1433,7 +1521,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         }
 
         if self.pre3l.contains(a) {
-            self.insert_retl(b)?;
+            self.insert_retl(*b)?;
         }
         Ok(())
     }
@@ -1471,7 +1559,7 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         self.scratch_h2b.extend(self.ret3.values(a).copied());
         self.scratch_h2b.sort_unstable();
         while let Some(b) = self.scratch_h2b.pop() {
-            self.insert_retl(&b)?;
+            self.insert_retl(b)?;
         }
         Ok(())
     }
@@ -1484,8 +1572,8 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
             r: 1,
             dirty: false,
         };
-        self.h3s.insert(c0);
-        self.pre3l.insert(c0);
+        let c0 = self.insert_h3(c0)?;
+        self.insert_pre3l(c0)?;
 
         loop {
             if let Some((r, e)) = self.new_pops.pop() {
