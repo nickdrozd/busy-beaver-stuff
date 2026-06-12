@@ -1278,22 +1278,14 @@ impl<'a, S: Summary, const STATES: usize, const COLORS: usize>
         let c_context_zero = self.summary_may_be_all_zero_context(c.r);
         let r0_context_zero = self.summary_may_be_all_zero_context(r0);
         let context_zero = c_context_zero && r0_context_zero;
-        // For spinout, only the side in the direction of travel has to be an
-        // all-zero ray.  This call is reached with two abstract side contexts,
-        // but the local block orientation is deliberately generic here.  Using
-        // the OR for both one-sided spinout contexts is still sound: if either
-        // concrete side may be all zero, the over-approximation allows the
-        // spinout target; if neither side may be all zero, no one-sided zero
-        // ray can start outside this block.
-        let one_side_context_zero = c_context_zero || r0_context_zero;
         let Some(res) = self.tm_step(
             c.w,
             s0,
             -1,
             c.dirty || dirty_b,
             context_zero,
-            one_side_context_zero,
-            one_side_context_zero,
+            r0_context_zero,
+            c_context_zero,
         )?
         else {
             return Ok(());
