@@ -1637,7 +1637,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         let max_block_len =
             knob.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
 
-        for block_len in 2..=max_block_len {
+        for block_len in 1..=max_block_len {
             let max_work = FAR_WORK_PER_LEN
                 .saturating_mul(block_len)
                 .saturating_mul(eff);
