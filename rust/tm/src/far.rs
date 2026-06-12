@@ -1952,8 +1952,8 @@ fn mitm_decide_exact<const STATES: usize, const COLORS: usize>(
     mitm_recurse_dfa(
         prog,
         goal,
-        &left,
-        &right,
+        &mut left,
+        &mut right,
         2,
         goal_transitions,
         max_left_states,
@@ -1963,12 +1963,12 @@ fn mitm_decide_exact<const STATES: usize, const COLORS: usize>(
     )
 }
 
-#[expect(clippy::too_many_arguments, clippy::needless_borrow)]
+#[expect(clippy::too_many_arguments)]
 fn mitm_recurse_dfa<const STATES: usize, const COLORS: usize>(
     prog: &Prog<STATES, COLORS>,
     goal: Goal,
-    left: &MitmWfa,
-    right: &MitmWfa,
+    left: &mut MitmWfa,
+    right: &mut MitmWfa,
     current_transitions: usize,
     goal_transitions: usize,
     max_left_states: usize,
@@ -1995,14 +1995,14 @@ fn mitm_recurse_dfa<const STATES: usize, const COLORS: usize>(
             }
 
             if left.states < max_left_states {
-                let mut next = left.clone();
-                let new_state = next.push_dead_state();
-                next.trans[state][color] = (new_state, 0);
+                let old = left.trans[state][color];
+                let new_state = left.push_dead_state();
+                left.trans[state][color] = (new_state, 0);
                 if mitm_recurse_dfa(
                     prog,
                     goal,
-                    &next,
-                    &right,
+                    left,
+                    right,
                     current_transitions + 1,
                     goal_transitions,
                     max_left_states,
@@ -2010,21 +2010,26 @@ fn mitm_recurse_dfa<const STATES: usize, const COLORS: usize>(
                     max_weight_pairs,
                     added_memory,
                 ) {
+                    left.trans[state][color] = old;
+                    left.pop_state();
                     return true;
                 }
+                left.trans[state][color] = old;
+                left.pop_state();
             }
 
-            for to_state in 0..left.states {
+            let states = left.states;
+            for to_state in 0..states {
                 if to_state == MITM_DEAD {
                     continue;
                 }
-                let mut next = left.clone();
-                next.trans[state][color] = (to_state, 0);
+                let old = left.trans[state][color];
+                left.trans[state][color] = (to_state, 0);
                 if mitm_recurse_dfa(
                     prog,
                     goal,
-                    &next,
-                    &right,
+                    left,
+                    right,
                     current_transitions + 1,
                     goal_transitions,
                     max_left_states,
@@ -2032,8 +2037,10 @@ fn mitm_recurse_dfa<const STATES: usize, const COLORS: usize>(
                     max_weight_pairs,
                     added_memory,
                 ) {
+                    left.trans[state][color] = old;
                     return true;
                 }
+                left.trans[state][color] = old;
             }
 
             false
@@ -2044,14 +2051,14 @@ fn mitm_recurse_dfa<const STATES: usize, const COLORS: usize>(
             }
 
             if right.states < max_right_states {
-                let mut next = right.clone();
-                let new_state = next.push_dead_state();
-                next.trans[state][color] = (new_state, 0);
+                let old = right.trans[state][color];
+                let new_state = right.push_dead_state();
+                right.trans[state][color] = (new_state, 0);
                 if mitm_recurse_dfa(
                     prog,
                     goal,
-                    &left,
-                    &next,
+                    left,
+                    right,
                     current_transitions + 1,
                     goal_transitions,
                     max_left_states,
@@ -2059,21 +2066,26 @@ fn mitm_recurse_dfa<const STATES: usize, const COLORS: usize>(
                     max_weight_pairs,
                     added_memory,
                 ) {
+                    right.trans[state][color] = old;
+                    right.pop_state();
                     return true;
                 }
+                right.trans[state][color] = old;
+                right.pop_state();
             }
 
-            for to_state in 0..right.states {
+            let states = right.states;
+            for to_state in 0..states {
                 if to_state == MITM_DEAD {
                     continue;
                 }
-                let mut next = right.clone();
-                next.trans[state][color] = (to_state, 0);
+                let old = right.trans[state][color];
+                right.trans[state][color] = (to_state, 0);
                 if mitm_recurse_dfa(
                     prog,
                     goal,
-                    &left,
-                    &next,
+                    left,
+                    right,
                     current_transitions + 1,
                     goal_transitions,
                     max_left_states,
@@ -2081,8 +2093,10 @@ fn mitm_recurse_dfa<const STATES: usize, const COLORS: usize>(
                     max_weight_pairs,
                     added_memory,
                 ) {
+                    right.trans[state][color] = old;
                     return true;
                 }
+                right.trans[state][color] = old;
             }
 
             false
@@ -2148,43 +2162,13 @@ fn mitm_find_closure_break<const STATES: usize, const COLORS: usize>(
 fn mitm_recurse_weights<const STATES: usize, const COLORS: usize>(
     prog: &Prog<STATES, COLORS>,
     goal: Goal,
-    left: &MitmWfa,
-    right: &MitmWfa,
+    left: &mut MitmWfa,
+    right: &mut MitmWfa,
     current_weight_pairs: usize,
     max_weight_pairs: usize,
     added_memory: usize,
 ) -> bool {
-    let mut try_left = left.clone();
-    let mut try_right = right.clone();
-    for _ in 0..added_memory {
-        try_left = try_left.with_memory();
-        try_right = try_right.with_memory();
-    }
-
-    let left_special = try_left.derive_special();
-    let right_special = try_right.derive_special();
-    let left_rev = try_left.rev_edges();
-    let right_rev = try_right.rev_edges();
-    if let Some(accept) = mitm_find_accept_set(
-        prog,
-        goal,
-        &try_left,
-        &try_right,
-        &left_rev,
-        &right_rev,
-        &left_special,
-        &right_special,
-    ) && mitm_verify(
-        prog,
-        goal,
-        &try_left,
-        &try_right,
-        &left_rev,
-        &right_rev,
-        &left_special,
-        &right_special,
-        &accept,
-    ) {
+    if mitm_check_weight_candidate(prog, goal, left, right, added_memory) {
         return true;
     }
 
@@ -2199,38 +2183,104 @@ fn mitm_recurse_weights<const STATES: usize, const COLORS: usize>(
     };
 
     for &(lw, rw) in weight_pairs {
-        for ls in 0..left.states {
-            for lc in 0..left.colors {
+        let left_states = left.states;
+        let left_colors = left.colors;
+        let right_states = right.states;
+        let right_colors = right.colors;
+        for ls in 0..left_states {
+            for lc in 0..left_colors {
                 let (lt, old_lw) = left.trans[ls][lc];
                 if lt == MITM_DEAD || (ls == 0 && lc == 0) {
                     continue;
                 }
-                let mut new_left = left.clone();
-                new_left.trans[ls][lc] = (lt, old_lw + lw);
+                left.trans[ls][lc] = (lt, old_lw + lw);
 
-                for rs in 0..right.states {
-                    for rc in 0..right.colors {
+                for rs in 0..right_states {
+                    for rc in 0..right_colors {
                         let (rt, old_rw) = right.trans[rs][rc];
                         if rt == MITM_DEAD || (rs == 0 && rc == 0) {
                             continue;
                         }
-                        let mut new_right = right.clone();
-                        new_right.trans[rs][rc] = (rt, old_rw + rw);
+                        right.trans[rs][rc] = (rt, old_rw + rw);
                         if mitm_recurse_weights(
                             prog,
                             goal,
-                            &new_left,
-                            &new_right,
+                            left,
+                            right,
                             current_weight_pairs + 1,
                             max_weight_pairs,
                             added_memory,
                         ) {
+                            right.trans[rs][rc] = (rt, old_rw);
+                            left.trans[ls][lc] = (lt, old_lw);
                             return true;
                         }
+                        right.trans[rs][rc] = (rt, old_rw);
                     }
                 }
+
+                left.trans[ls][lc] = (lt, old_lw);
             }
         }
+    }
+
+    false
+}
+
+fn mitm_check_weight_candidate<const STATES: usize, const COLORS: usize>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    left: &MitmWfa,
+    right: &MitmWfa,
+    added_memory: usize,
+) -> bool {
+    if added_memory == 0 {
+        return mitm_check_weight_candidate_exact(prog, goal, left, right);
+    }
+
+    let mut try_left = left.clone();
+    let mut try_right = right.clone();
+    for _ in 0..added_memory {
+        try_left = try_left.with_memory();
+        try_right = try_right.with_memory();
+    }
+    mitm_check_weight_candidate_exact(prog, goal, &try_left, &try_right)
+}
+
+fn mitm_check_weight_candidate_exact<
+    const STATES: usize,
+    const COLORS: usize,
+>(
+    prog: &Prog<STATES, COLORS>,
+    goal: Goal,
+    left: &MitmWfa,
+    right: &MitmWfa,
+) -> bool {
+    let left_special = left.derive_special();
+    let right_special = right.derive_special();
+    let left_rev = left.rev_edges();
+    let right_rev = right.rev_edges();
+    if let Some(accept) = mitm_find_accept_set(
+        prog,
+        goal,
+        left,
+        right,
+        &left_rev,
+        &right_rev,
+        &left_special,
+        &right_special,
+    ) && mitm_verify(
+        prog,
+        goal,
+        left,
+        right,
+        &left_rev,
+        &right_rev,
+        &left_special,
+        &right_special,
+        &accept,
+    ) {
+        return true;
     }
 
     false
@@ -2615,6 +2665,11 @@ impl MitmWfa {
         self.states += 1;
         self.trans.push(vec![(MITM_DEAD, 0); self.colors]);
         new_state
+    }
+
+    fn pop_state(&mut self) {
+        self.states -= 1;
+        self.trans.pop();
     }
 
     fn rev_edges(&self) -> MitmRev {
