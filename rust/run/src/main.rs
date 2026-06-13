@@ -12,6 +12,7 @@ use tree::{Harvester as _, PassConfig};
 
 /**************************************/
 
+const LIN_REC: Steps = 3_000;
 const TREE_LIM: Steps = 876;
 
 /**************************************/
@@ -56,7 +57,7 @@ macro_rules! assert_deciders {
                 $steps,
                 &|| HoldoutVisited::new(
                     |prog: &Prog<$states, $colors>, mut config: PassConfig<'_>| {
-                        prog.term_or_rec(3_000, config.to_mut()).is_settled()
+                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
                             || $pipeline(prog, config)
                     }
                 ),
@@ -84,7 +85,7 @@ fn _4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
         || prog.ctl_cant_spinout(500)
         || prog.cps_cant_spinout(12)
-        || prog.seg_cant_spinout(8).is_refuted()
+        || prog.seg_cant_spinout(10).is_refuted()
         || prog.far_cant_spinout(3)
 }
 
@@ -97,10 +98,10 @@ fn _4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
 }
 
 fn _2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(22).is_refuted()
+    prog.bkw_cant_spinout(50).is_refuted()
         || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
-        || prog.seg_cant_spinout(5).is_refuted()
+        || prog.seg_cant_spinout(10).is_refuted()
         || prog.far_cant_spinout(3)
 }
 
@@ -120,11 +121,11 @@ fn test_deciders() {
             1 => (_2_3_1, 20, (7, 3_506)),
         ],
         (4, 2) => [
-            1 => (_4_2_1, 99, (387, 753_582)),
+            1 => (_4_2_1, 99, (386, 753_582)),
             2 => (_4_2_2, 99, (122, 1_932_610)),
         ],
         (2, 4) => [
-            1 => (_2_4_1, TREE_LIM, (2031, 612_077)),
+            1 => (_2_4_1, TREE_LIM, (1928, 612_077)),
             2 => (_2_4_2, TREE_LIM, (68, 1_189_643)),
         ],
     ];
@@ -403,24 +404,24 @@ fn _2_5_2(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(3).is_refuted()
 }
 
-fn test_params_slow() {
-    println!("params slow");
+fn test_deciders_slow() {
+    println!("deciders slow");
 
-    assert_params![
+    assert_deciders![
         (5, 2) => [
-            0 => (_5_2_0, 700, (52_376_526, 90_676_712)),
-            1 => (_5_2_1, TREE_LIM, (52_113_379, 180_764_612)),
-            2 => (_5_2_2, TREE_LIM, (186_790_222, 486_399_920)),
+            0 => (_5_2_0, 700, (1_396_906, 90_676_712)),
+            1 => (_5_2_1, TREE_LIM, (2_889_204, 180_764_612)),
+            2 => (_5_2_2, TREE_LIM, (9_561_157, 486_399_920)),
         ],
         (3, 3) => [
-            0 => (_3_3_0, 2_700, (17_969_456, 24_003_381)),
-            1 => (_3_3_1, 3_000, (21_689_893, 50_932_166)),
-            2 => (_3_3_2, 3_000, (32_784_022, 123_182_486)),
+            0 => (_3_3_0, 2_700, (769_902, 24_003_381)),
+            1 => (_3_3_1, 3_000, (1_745_865, 50_932_166)),
+            2 => (_3_3_2, 3_000, (2_638_570, 123_182_486)),
         ],
         (2, 5) => [
-            0 => (_2_5_0, TREE_LIM, (57_372_323, 69_763_571)),
-            1 => (_2_5_1, TREE_LIM, (102_458_450, 162_767_964)),
-            2 => (_2_5_2, TREE_LIM, (68_331_948, 366_717_085)),
+            0 => (_2_5_0, TREE_LIM, (4_290_346, 69_763_571)),
+            1 => (_2_5_1, TREE_LIM, (14_491_144, 162_767_964)),
+            2 => (_2_5_2, TREE_LIM, (9_732_773, 366_717_085)),
         ],
     ];
 }
@@ -514,7 +515,7 @@ fn instrs_6(prog: &Prog<6, 6>, mut config: PassConfig<'_>) -> bool {
 fn instrs_7(prog: &Prog<7, 7>, mut config: PassConfig<'_>) -> bool {
     let config = config.to_mut();
 
-    prog.term_or_rec(1_000, config).is_settled()
+    prog.term_or_rec(LIN_REC, config).is_settled()
         || prog.bkw_cant_halt(20).is_refuted()
         || prog.ctl_cant_halt(200)
         || prog.cps_cant_halt(6)
@@ -528,7 +529,7 @@ fn test_instrs() {
         4 => (instrs_4, 4, (0, 4_909)),
         5 => (instrs_5, 12, (0, 151_351)),
         6 => (instrs_6, 22, (0, 5_568_167)),
-        7 => (instrs_7, 109, (14, 246_492_765)),
+        7 => (instrs_7, 109, (9, 246_492_765)),
     ];
 }
 
@@ -536,9 +537,10 @@ fn instrs_8(prog: &Prog<8, 8>, mut config: PassConfig<'_>) -> bool {
     let config = config.to_mut();
 
     prog.term_or_rec(100, config).is_settled()
-        || prog.bkw_cant_halt(3).is_settled()
+        || prog.graph_cant_halt()
+        || prog.bkw_cant_halt(30).is_settled()
         || prog.ctl_cant_halt(300)
-        || prog.term_or_rec(1_000, config).is_settled()
+        || prog.term_or_rec(LIN_REC, config).is_settled()
         || prog.cps_cant_halt(20)
         || prog.far_cant_halt(4)
 }
@@ -547,7 +549,7 @@ fn test_8_instr() {
     println!("8 instrs");
 
     assert_instrs![
-        8 => (instrs_8, 500, (1_229, 12_835_863_274)),
+        8 => (instrs_8, 500, (763, 12_835_863_274)),
     ];
 }
 
@@ -572,8 +574,12 @@ const FAST: &[fn()] = &[
     test_solved,
 ];
 
-const SLOW: &[fn()] =
-    &[test_8_instr, test_9_instr, test_params_slow, test_from_file];
+const SLOW: &[fn()] = &[
+    test_8_instr,
+    test_9_instr,
+    test_deciders_slow,
+    test_from_file,
+];
 
 fn main() {
     CURR.par_iter().for_each(|f| f());
