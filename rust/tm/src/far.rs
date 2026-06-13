@@ -91,7 +91,7 @@ const FAR_RS_STRICT: bool = true;
 
 const MITM_DEAD: usize = 1;
 const MITM_MAX_FINITE_INTERVAL: i32 = 100;
-const MITM_MAX_TRANSITIONS: usize = 9;
+const MITM_MAX_TRANSITIONS: usize = 10;
 const MITM_MAX_WEIGHT_PAIRS: usize = 1;
 
 /// Compute an "effort factor" from the knob.
