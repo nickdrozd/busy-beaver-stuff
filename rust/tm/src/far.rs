@@ -1801,6 +1801,9 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         goal,
                         left,
                         right,
+                        &self.mitm_reachable_weight_slots(
+                            goal, left, right,
+                        ),
                         0,
                         max_weight_pairs,
                         added_memory,
@@ -1969,12 +1972,122 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         None
     }
 
-    #[expect(clippy::similar_names, clippy::excessive_nesting)]
+    fn mitm_reachable_weight_slots(
+        &self,
+        goal: Goal,
+        left: &MitmWfa,
+        right: &MitmWfa,
+    ) -> MitmWeightSlots {
+        let left_rev = left.rev_edges();
+        let right_rev = right.rev_edges();
+        let start = MitmConfig {
+            st: 0,
+            co: 0,
+            left: 0,
+            right: 0,
+            dirty: false,
+        };
+
+        let mut seen = Set::new();
+        let mut todo = vec![start];
+        let mut useful_left =
+            vec![vec![false; left.colors]; left.states];
+        let mut useful_right =
+            vec![vec![false; right.colors]; right.states];
+        seen.insert(start);
+
+        while let Some(cur) = todo.pop() {
+            if cur.st >= STATES
+                || cur.co >= COLORS
+                || cur.left >= left.states
+                || cur.right >= right.states
+            {
+                continue;
+            }
+            #[expect(clippy::cast_possible_truncation)]
+            let Some(&(write, shift, next_st)) =
+                self.get(&(cur.st as State, cur.co as Color))
+            else {
+                continue;
+            };
+
+            let write = write as usize;
+            let next_st = next_st as usize;
+            let next_dirty = goal.is_blank()
+                && (cur.dirty || cur.co != 0 || write != 0);
+
+            if shift {
+                useful_left[cur.left][write] = true;
+                let (new_left, _) = left.trans[cur.left][write];
+                for edge in &right_rev[cur.right] {
+                    useful_right[edge.from][edge.symbol] = true;
+                    let next = MitmConfig {
+                        st: next_st,
+                        co: edge.symbol,
+                        left: new_left,
+                        right: edge.from,
+                        dirty: next_dirty,
+                    };
+                    if next.left != MITM_DEAD
+                        && next.right != MITM_DEAD
+                        && seen.insert(next)
+                    {
+                        todo.push(next);
+                    }
+                }
+            } else {
+                useful_right[cur.right][write] = true;
+                let (new_right, _) = right.trans[cur.right][write];
+                for edge in &left_rev[cur.left] {
+                    useful_left[edge.from][edge.symbol] = true;
+                    let next = MitmConfig {
+                        st: next_st,
+                        co: edge.symbol,
+                        left: edge.from,
+                        right: new_right,
+                        dirty: next_dirty,
+                    };
+                    if next.left != MITM_DEAD
+                        && next.right != MITM_DEAD
+                        && seen.insert(next)
+                    {
+                        todo.push(next);
+                    }
+                }
+            }
+        }
+
+        let mut slots = MitmWeightSlots::default();
+        for (state, colors) in useful_left.into_iter().enumerate() {
+            for (color, useful) in colors.into_iter().enumerate() {
+                if useful
+                    && left.trans[state][color].0 != MITM_DEAD
+                    && !(state == 0 && color == 0)
+                {
+                    slots.left.push((state, color));
+                }
+            }
+        }
+        for (state, colors) in useful_right.into_iter().enumerate() {
+            for (color, useful) in colors.into_iter().enumerate() {
+                if useful
+                    && right.trans[state][color].0 != MITM_DEAD
+                    && !(state == 0 && color == 0)
+                {
+                    slots.right.push((state, color));
+                }
+            }
+        }
+        slots
+    }
+
+    #[expect(clippy::similar_names)]
     fn mitm_recurse_weights(
         &self,
         goal: Goal,
         left: &mut MitmWfa,
         right: &mut MitmWfa,
+        weight_slots: &MitmWeightSlots,
         current_weight_pairs: usize,
         max_weight_pairs: usize,
         added_memory: usize,
@@ -1999,43 +2112,30 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         };
 
         for &(lw, rw) in weight_pairs {
-            let left_states = left.states;
-            let left_colors = left.colors;
-            let right_states = right.states;
-            let right_colors = right.colors;
-            for ls in 0..left_states {
-                for lc in 0..left_colors {
-                    let (lt, old_lw) = left.trans[ls][lc];
-                    if lt == MITM_DEAD || (ls == 0 && lc == 0) {
-                        continue;
-                    }
-                    left.trans[ls][lc] = (lt, old_lw + lw);
+            for &(ls, lc) in &weight_slots.left {
+                let (lt, old_lw) = left.trans[ls][lc];
+                left.trans[ls][lc] = (lt, old_lw + lw);
 
-                    for rs in 0..right_states {
-                        for rc in 0..right_colors {
-                            let (rt, old_rw) = right.trans[rs][rc];
-                            if rt == MITM_DEAD || (rs == 0 && rc == 0) {
-                                continue;
-                            }
-                            right.trans[rs][rc] = (rt, old_rw + rw);
-                            if self.mitm_recurse_weights(
-                                goal,
-                                left,
-                                right,
-                                current_weight_pairs + 1,
-                                max_weight_pairs,
-                                added_memory,
-                            ) {
-                                right.trans[rs][rc] = (rt, old_rw);
-                                left.trans[ls][lc] = (lt, old_lw);
-                                return true;
-                            }
-                            right.trans[rs][rc] = (rt, old_rw);
-                        }
+                for &(rs, rc) in &weight_slots.right {
+                    let (rt, old_rw) = right.trans[rs][rc];
+                    right.trans[rs][rc] = (rt, old_rw + rw);
+                    if self.mitm_recurse_weights(
+                        goal,
+                        left,
+                        right,
+                        weight_slots,
+                        current_weight_pairs + 1,
+                        max_weight_pairs,
+                        added_memory,
+                    ) {
+                        right.trans[rs][rc] = (rt, old_rw);
+                        left.trans[ls][lc] = (lt, old_lw);
+                        return true;
                     }
-
-                    left.trans[ls][lc] = (lt, old_lw);
+                    right.trans[rs][rc] = (rt, old_rw);
                 }
+
+                left.trans[ls][lc] = (lt, old_lw);
             }
         }
 
@@ -2362,6 +2462,12 @@ struct MitmBounds {
 struct MitmSpecial {
     nonneg: Vec<bool>,
     nonpos: Vec<bool>,
+}
+
+#[derive(Default)]
+struct MitmWeightSlots {
+    left: Vec<(usize, usize)>,
+    right: Vec<(usize, usize)>,
 }
 
 type MitmAccept = Map<MitmConfig, MitmBounds>;
