@@ -2200,11 +2200,19 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             return false;
         }
         #[expect(clippy::cast_possible_truncation)]
-        let Some(&(_, _, next_st)) = self.get(&(cfg.st as State, 0))
+        let Some(&(_, shift, trans)) = self.get(&(cfg.st as State, 0))
         else {
             return false;
         };
-        next_st as usize == cfg.st
+
+        if trans as usize != cfg.st {
+            return false;
+        }
+
+        // Spinout is only possible when the ray ahead of the moving head may be
+        // all zero.  In the MITM WFA, state 0 is the distinguished all-zero ray:
+        // it is the start side state and has the required 0/0 self-loop.
+        if shift { cfg.right == 0 } else { cfg.left == 0 }
     }
 
     fn mitm_next_configs_into(
