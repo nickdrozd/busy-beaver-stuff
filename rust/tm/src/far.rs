@@ -1,4 +1,3 @@
-#![expect(clippy::too_many_arguments)]
 //! FAR/MITM non-halting prover
 //!
 //! Self-contained FAR decider with MITMWFAR folded into `far_cant_halt`, implemented as methods on `Prog`.
@@ -58,6 +57,42 @@ const FAR_BLOCK_LEN_CAP_COLORS_5_8: usize = 64;
 
 /// Minimum knob value.
 const FAR_KNOB_MIN: usize = 2;
+
+// Summary parameters ----------------------------------------------------------
+
+/// C++ FAR::NG1 default parameters.
+const FAR_NG1_N: usize = 3;
+
+/// C++ FAR::RWL_mod defaults.
+const FAR_RWL_LEN_H: usize = 8;
+const FAR_RWL_LEN_H_TAIL: usize = 0;
+const FAR_RWL_MNC: usize = 2;
+const FAR_RWL_MOD: usize = 1;
+
+/// C++ FAR::CPS_LRU defaults.
+const FAR_CPS_LRU_LEN_H: usize = 8;
+const FAR_CPS_LRU_LEN_H_NO_LRU: usize = 2;
+
+/// C++ FAR::RNGS_mod defaults.
+const FAR_RNGS_NG_N: usize = 4;
+const FAR_RNGS_LEN_H: usize = 8;
+const FAR_RNGS_MNC: usize = 2;
+const FAR_RNGS_MOD: usize = 1;
+const FAR_RNGS_BS_N: usize = 0;
+
+/// C++ FAR::RS_mod defaults.
+const FAR_RS_NG_N: usize = 4;
+const FAR_RS_LEN_H: usize = 8;
+const FAR_RS_MNC: usize = 2;
+const FAR_RS_MOD: usize = 1;
+const FAR_RS_STRICT: bool = true;
+
+// MITM parameters -------------------------------------------------------------
+
+const MITM_DEAD: usize = 1;
+const MITM_MAX_FINITE_INTERVAL: i32 = 100;
+const MITM_MAX_TRANSITIONS: usize = 9;
+const MITM_MAX_WEIGHT_PAIRS: usize = 1;
 
 /// Compute an "effort factor" from the knob.
 ///
@@ -222,23 +257,42 @@ impl WordInterner {
 #[derive(Clone, Copy, Debug)]
 struct WordUpdateLemma {
     w1: WordId,
-    s1: i16,
+    s1: Option<State>,
     is_back: bool,
     saw_nonzero: bool,
     hit_blank: bool,
-    #[expect(dead_code)]
-    n_step: usize,
 }
 
 /// Non-interned result used only while computing a cache miss.
 #[derive(Clone, Debug)]
 struct RawWordUpdateLemma {
     w1: Word,
-    s1: i16,
+    s1: Option<State>,
     is_back: bool,
     saw_nonzero: bool,
     hit_blank: bool,
-    n_step: usize,
+}
+
+impl RawWordUpdateLemma {
+    fn exit_oriented(
+        w1: Word,
+        s1: Option<State>,
+        is_back: bool,
+        saw_nonzero: bool,
+        hit_blank: bool,
+    ) -> Self {
+        let mut res = Self {
+            w1,
+            s1,
+            is_back,
+            saw_nonzero,
+            hit_blank,
+        };
+        if res.s1.is_some() && !res.is_back {
+            res.w1 = res.w1.reverse();
+        }
+        res
+    }
 }
 
 /// History summarizer used by the FAR DFA.
@@ -274,9 +328,6 @@ impl RepeatWord {
     }
 }
 
-/// C++ FAR::NG1 default parameters.
-const FAR_NG1_N: usize = 3;
-
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct Ng1Summary {
     q: Vec<WordId>,
@@ -306,12 +357,6 @@ impl Summary for Ng1Summary {
         self.q.iter().all(|&w| words.get(w).is_zero())
     }
 }
-
-/// C++ FAR::RWL_mod defaults.
-const FAR_RWL_LEN_H: usize = 8;
-const FAR_RWL_LEN_H_TAIL: usize = 0;
-const FAR_RWL_MNC: usize = 2;
-const FAR_RWL_MOD: usize = 1;
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RwlModSummary {
@@ -361,10 +406,6 @@ impl Summary for RwlModSummary {
     }
 }
 
-/// C++ FAR::CPS_LRU defaults.
-const FAR_CPS_LRU_LEN_H: usize = 8;
-const FAR_CPS_LRU_LEN_H_NO_LRU: usize = 2;
-
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct CpsLruSummary {
     ls: Vec<WordId>,
@@ -412,13 +453,6 @@ impl Summary for CpsLruSummary {
         self.ls.iter().all(|&w| words.get(w).is_zero())
     }
 }
-
-/// C++ FAR::RNGS_mod defaults.
-const FAR_RNGS_NG_N: usize = 4;
-const FAR_RNGS_LEN_H: usize = 8;
-const FAR_RNGS_MNC: usize = 2;
-const FAR_RNGS_MOD: usize = 1;
-const FAR_RNGS_BS_N: usize = 0;
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RngsModSummary {
@@ -472,13 +506,6 @@ impl Summary for RngsModSummary {
             && self.q.iter().all(|rw| words.get(rw.w).is_zero())
     }
 }
-
-/// C++ FAR::RS_mod defaults.
-const FAR_RS_NG_N: usize = 4;
-const FAR_RS_LEN_H: usize = 8;
-const FAR_RS_MNC: usize = 2;
-const FAR_RS_MOD: usize = 1;
-const FAR_RS_STRICT: bool = true;
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RsModSummary {
@@ -578,14 +605,14 @@ fn promote_repeat_word(
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct H2 {
-    s: i16,
+    s: State,
     r: usize,
     dirty: bool,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct H2b {
-    s: i16,
+    s: State,
     r: usize,
     dirty: bool,
 }
@@ -593,7 +620,7 @@ struct H2b {
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct H3 {
     w: WordId,
-    s: i16,
+    s: State,
     r: usize,
     dirty: bool,
 }
@@ -679,24 +706,65 @@ enum StopReason {
     SummaryOverflow,
 }
 
-#[expect(clippy::struct_excessive_bools)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug, Default)]
+enum StepContext {
+    #[default]
+    Normal,
+    Blank {
+        dirty_before: bool,
+        context_may_be_all_zero: bool,
+    },
+    Spinout {
+        back_context_may_be_all_zero: bool,
+        forward_context_may_be_all_zero: bool,
+    },
+}
+
+impl StepContext {
+    const fn blank(
+        dirty_before: bool,
+        context_may_be_all_zero: bool,
+    ) -> Self {
+        Self::Blank {
+            dirty_before,
+            context_may_be_all_zero,
+        }
+    }
+
+    const fn spinout(
+        back_context_may_be_all_zero: bool,
+        forward_context_may_be_all_zero: bool,
+    ) -> Self {
+        Self::Spinout {
+            back_context_may_be_all_zero,
+            forward_context_may_be_all_zero,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct FarRunParams {
+    block_len: usize,
+    max_work: usize,
+    block_step_limit: usize,
+    goal: Goal,
+    mirrored: bool,
+}
+
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 struct StepKey {
     w: WordId,
-    s: i16,
+    s: State,
     sgn: i8,
-    dirty_before: bool,
-    blank_context_may_be_all_zero: bool,
-    spinout_back_context_may_be_all_zero: bool,
-    spinout_forward_context_may_be_all_zero: bool,
+    ctx: StepContext,
 }
 
 /// FAR decider with a pluggable DFA history summary.
 struct FarDecider<
     'a,
-    S: Summary,
     const STATES: usize,
     const COLORS: usize,
+    S: Summary,
 > {
     prog: &'a Prog<STATES, COLORS>,
     goal: Goal,
@@ -737,19 +805,19 @@ struct FarDecider<
     h2s: TodoSet<H2>,
 
     // For each DFA state r, which (machine state, dirty) pairs have H2(s,r,dirty)
-    r_s: Vec<Set<(i16, bool)>>,
+    r_s: Vec<Set<(State, bool)>>,
 
     // Reusable buffers for relation propagation. These avoid allocating short
     // temporary Vecs just to break immutable borrows before mutating self.
-    scratch_states: Vec<(i16, bool)>,
+    scratch_states: Vec<(State, bool)>,
     scratch_edges: Vec<DfaEdge>,
     scratch_h2: Vec<H2>,
     scratch_h2b: Vec<H2b>,
     scratch_h3: Vec<H3>,
 }
 
-impl<S: Summary, const STATES: usize, const COLORS: usize>
-    FarDecider<'_, S, STATES, COLORS>
+impl<const STATES: usize, const COLORS: usize, S: Summary>
+    FarDecider<'_, STATES, COLORS, S>
 {
     fn with_init_dfa(mut self) -> Result<Self, StopReason> {
         self.ensure_dfa_capacity(0);
@@ -845,6 +913,58 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
         c
     }
 
+    fn h2_pop_step_context(
+        &self,
+        dirty: bool,
+        r0: usize,
+    ) -> StepContext {
+        match self.goal {
+            Goal::Halt => StepContext::Normal,
+            Goal::Blank => StepContext::blank(
+                dirty,
+                self.summary_may_be_all_zero_context(r0),
+            ),
+            Goal::Spinout => StepContext::spinout(
+                true,
+                self.summary_may_be_all_zero_context(r0),
+            ),
+        }
+    }
+
+    fn h3_back_step_context(&self, c: &H3, b: &H2b) -> StepContext {
+        match self.goal {
+            Goal::Halt => StepContext::Normal,
+            Goal::Blank => {
+                let c_context_zero =
+                    self.summary_may_be_all_zero_context(c.r);
+                let b_context_zero =
+                    self.summary_may_be_all_zero_context(b.r);
+                StepContext::blank(
+                    c.dirty || b.dirty,
+                    c_context_zero && b_context_zero,
+                )
+            },
+            Goal::Spinout => {
+                let c_context_zero =
+                    self.summary_may_be_all_zero_context(c.r);
+                let b_context_zero =
+                    self.summary_may_be_all_zero_context(b.r);
+                StepContext::spinout(b_context_zero, c_context_zero)
+            },
+        }
+    }
+
+    fn retl_step_context(&self, dirty: bool, r0: usize) -> StepContext {
+        match self.goal {
+            Goal::Halt => StepContext::Normal,
+            Goal::Blank => StepContext::blank(
+                dirty,
+                self.summary_may_be_all_zero_context(r0),
+            ),
+            Goal::Spinout => StepContext::spinout(true, true),
+        }
+    }
+
     fn blank_h3_goal(&self, c: &H3) -> bool {
         self.goal.is_blank()
             && c.dirty
@@ -911,62 +1031,29 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
             .insert(self.canonical_h3(a), self.canonical_h2b(b));
     }
 
-    #[expect(clippy::fn_params_excessive_bools)]
     fn tm_step(
         &mut self,
         w: WordId,
-        s: i16,
+        s: State,
         sgn: i8,
-        dirty_before: bool,
-        blank_context_may_be_all_zero: bool,
-        spinout_back_context_may_be_all_zero: bool,
-        spinout_forward_context_may_be_all_zero: bool,
+        ctx: StepContext,
     ) -> Result<Option<WordUpdateLemma>, StopReason> {
         self.bump()?;
 
-        let (
-            dirty_before,
-            blank_context_may_be_all_zero,
-            spinout_back_context_may_be_all_zero,
-            spinout_forward_context_may_be_all_zero,
-        ) = if self.goal.is_halt() {
-            (false, false, false, false)
-        } else if self.goal.is_blank() {
-            (dirty_before, blank_context_may_be_all_zero, false, false)
-        } else {
-            (
-                false,
-                false,
-                spinout_back_context_may_be_all_zero,
-                spinout_forward_context_may_be_all_zero,
-            )
-        };
-
-        let key = StepKey {
-            w,
-            s,
-            sgn,
-            dirty_before,
-            blank_context_may_be_all_zero,
-            spinout_back_context_may_be_all_zero,
-            spinout_forward_context_may_be_all_zero,
-        };
+        let key = StepKey { w, s, sgn, ctx };
 
         let res = (if let Some(&cached) = self.step_cache.get(&key) {
             cached
         } else {
             let computed = self
                 .prog
-                .raw_word_update_lemma_v2(
+                .raw_word_update_lemma(
                     self.words.clone_word(key.w),
                     key.s,
                     key.sgn,
                     self.block_step_limit,
                     self.goal,
-                    key.dirty_before,
-                    key.blank_context_may_be_all_zero,
-                    key.spinout_back_context_may_be_all_zero,
-                    key.spinout_forward_context_may_be_all_zero,
+                    key.ctx,
                     self.mirrored,
                 )
                 .map(|raw| WordUpdateLemma {
@@ -975,7 +1062,6 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
                     is_back: raw.is_back,
                     saw_nonzero: raw.saw_nonzero,
                     hit_blank: raw.hit_blank,
-                    n_step: raw.n_step,
                 });
             self.step_cache.insert(key, computed);
             computed
@@ -986,11 +1072,11 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
             return Err(StopReason::MayTarget);
         }
 
-        if res.s1 == -1 {
-            if self.goal.is_halt() {
-                return Err(StopReason::MayTarget);
-            }
-            return Ok(None);
+        if res.s1.is_none() {
+            return match self.goal {
+                Goal::Halt => Err(StopReason::MayTarget),
+                Goal::Blank | Goal::Spinout => Ok(None),
+            };
         }
 
         Ok(Some(res))
@@ -1005,30 +1091,16 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
         let H2 { s, dirty, .. } = a;
         let r0 = b.prev;
 
-        let (
-            blank_context_may_be_all_zero,
-            spinout_back_context_may_be_all_zero,
-            spinout_forward_context_may_be_all_zero,
-        ) = if self.goal.is_blank() {
-            (self.summary_may_be_all_zero_context(r0), false, false)
-        } else if self.goal.is_spinout() {
-            (false, true, self.summary_may_be_all_zero_context(r0))
-        } else {
-            (false, false, false)
-        };
-
         let Some(res) = self.tm_step(
             b.w,
             s,
             1,
-            dirty,
-            blank_context_may_be_all_zero,
-            spinout_back_context_may_be_all_zero,
-            spinout_forward_context_may_be_all_zero,
+            self.h2_pop_step_context(dirty, r0),
         )?
         else {
             return Ok(());
         };
+        let s1 = res.s1.unwrap();
 
         let dirty1 = self.canonical_dirty(dirty || res.saw_nonzero);
         if res.is_back {
@@ -1036,7 +1108,7 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
             self.insert_ret2(
                 a,
                 H2b {
-                    s: res.s1,
+                    s: s1,
                     r: rr,
                     dirty: dirty1,
                 },
@@ -1044,7 +1116,7 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
         } else {
             let c = self.insert_h3(H3 {
                 w: res.w1,
-                s: res.s1,
+                s: s1,
                 r: r0,
                 dirty: dirty1,
             })?;
@@ -1067,45 +1139,23 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
             dirty: dirty_b,
         } = b;
 
-        let (
-            blank_context_may_be_all_zero,
-            spinout_back_context_may_be_all_zero,
-            spinout_forward_context_may_be_all_zero,
-        ) = if self.goal.is_blank() {
-            let c_context_zero =
-                self.summary_may_be_all_zero_context(c.r);
-            let r0_context_zero =
-                self.summary_may_be_all_zero_context(r0);
-            (c_context_zero && r0_context_zero, false, false)
-        } else if self.goal.is_spinout() {
-            let c_context_zero =
-                self.summary_may_be_all_zero_context(c.r);
-            let r0_context_zero =
-                self.summary_may_be_all_zero_context(r0);
-            (false, r0_context_zero, c_context_zero)
-        } else {
-            (false, false, false)
-        };
-
         let Some(res) = self.tm_step(
             c.w,
             s0,
             -1,
-            c.dirty || dirty_b,
-            blank_context_may_be_all_zero,
-            spinout_back_context_may_be_all_zero,
-            spinout_forward_context_may_be_all_zero,
+            self.h3_back_step_context(&c, &b),
         )?
         else {
             return Ok(());
         };
+        let s1 = res.s1.unwrap();
 
         let dirty1 =
             self.canonical_dirty(c.dirty || dirty_b || res.saw_nonzero);
         if res.is_back {
             let c0 = self.insert_h3(H3 {
                 w: res.w1,
-                s: res.s1,
+                s: s1,
                 r: r0,
                 dirty: dirty1,
             })?;
@@ -1115,7 +1165,7 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
             self.insert_ret3(
                 c,
                 H2b {
-                    s: res.s1,
+                    s: s1,
                     r: rr,
                     dirty: dirty1,
                 },
@@ -1134,36 +1184,22 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
         } = b;
 
         let blank = self.words.intern(Word::zero(self.block_len));
-        let (
-            blank_context_may_be_all_zero,
-            spinout_back_context_may_be_all_zero,
-            spinout_forward_context_may_be_all_zero,
-        ) = if self.goal.is_blank() {
-            (self.summary_may_be_all_zero_context(r0), false, false)
-        } else if self.goal.is_spinout() {
-            (false, true, true)
-        } else {
-            (false, false, false)
-        };
-
         let Some(res) = self.tm_step(
             blank,
             s0,
             -1,
-            dirty,
-            blank_context_may_be_all_zero,
-            spinout_back_context_may_be_all_zero,
-            spinout_forward_context_may_be_all_zero,
+            self.retl_step_context(dirty, r0),
         )?
         else {
             return Ok(());
         };
+        let s1 = res.s1.unwrap();
 
         let dirty1 = self.canonical_dirty(dirty || res.saw_nonzero);
         if res.is_back {
             let c0 = self.insert_h3(H3 {
                 w: res.w1,
-                s: res.s1,
+                s: s1,
                 r: r0,
                 dirty: dirty1,
             })?;
@@ -1171,7 +1207,7 @@ impl<S: Summary, const STATES: usize, const COLORS: usize>
         } else {
             let rr = self.dfa_push_id(res.w1, r0)?;
             self.insert_retl(H2b {
-                s: res.s1,
+                s: s1,
                 r: rr,
                 dirty: dirty1,
             })?;
@@ -1364,7 +1400,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     ///
     /// Returns `None` if we exceed `max_steps` or encounter an invalid transition.
     #[expect(
-        clippy::fn_params_excessive_bools,
         clippy::cast_possible_truncation,
         clippy::cast_possible_wrap,
         clippy::cast_sign_loss
@@ -1372,20 +1407,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     fn raw_word_update_lemma(
         &self,
         w: Word,
-        s: i16,
+        s: State,
         sgn: i8,
         max_steps: usize,
         goal: Goal,
-        dirty_before: bool,
-        blank_context_may_be_all_zero: bool,
-        spinout_back_context_may_be_all_zero: bool,
-        spinout_forward_context_may_be_all_zero: bool,
+        ctx: StepContext,
         mirrored: bool,
     ) -> Option<RawWordUpdateLemma> {
         debug_assert!(sgn == 1 || sgn == -1);
-        if s < 0 {
-            return None;
-        }
         let len = w.len() as i32;
         let mut w1 = w;
         let mut nonzero_count =
@@ -1394,30 +1423,28 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         let mut s1 = s;
         let mut pos: i32 = 0;
 
-        for t in 0..max_steps {
+        for _ in 0..max_steps {
             let input = w1.get(pos as usize);
             if input as usize >= COLORS {
                 return None;
             }
-            let s_usize = s1 as usize;
-            if s_usize >= STATES {
+            if s1 as usize >= STATES {
                 return None;
             }
 
             // Lookup transition; missing transition means HALT.
-            let slot: Slot = (s1 as State, input);
+            let slot: Slot = (s1, input);
             let instr: Option<&Instr> = self.get(&slot);
 
             let Some(&(out_color, shift_right, next_state)) = instr
             else {
-                return Some(RawWordUpdateLemma {
+                return Some(RawWordUpdateLemma::exit_oriented(
                     w1,
-                    s1: -1,
-                    n_step: t + 1,
-                    is_back: false,
+                    None,
+                    false,
                     saw_nonzero,
-                    hit_blank: false,
-                });
+                    false,
+                ));
             };
 
             if out_color as usize >= COLORS {
@@ -1430,27 +1457,31 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             let dir: i32 = if shift_right { 1 } else { -1 };
             let dir = if mirrored { -dir } else { dir };
             let block_dir = dir * i32::from(sgn);
-            if goal.is_spinout()
-                && input == 0
-                && next_state == s1 as State
-            {
-                let zero_ray_ahead = if block_dir > 0 {
-                    w1.zero_to_right_of(pos as usize)
-                        && spinout_forward_context_may_be_all_zero
-                } else {
-                    w1.zero_to_left_of(pos as usize)
-                        && spinout_back_context_may_be_all_zero
+            if goal.is_spinout() && input == 0 && next_state == s1 {
+                let zero_ray_ahead = match ctx {
+                    StepContext::Spinout {
+                        back_context_may_be_all_zero,
+                        forward_context_may_be_all_zero,
+                    } => {
+                        if block_dir > 0 {
+                            w1.zero_to_right_of(pos as usize)
+                                && forward_context_may_be_all_zero
+                        } else {
+                            w1.zero_to_left_of(pos as usize)
+                                && back_context_may_be_all_zero
+                        }
+                    },
+                    _ => false,
                 };
 
                 if zero_ray_ahead {
-                    return Some(RawWordUpdateLemma {
+                    return Some(RawWordUpdateLemma::exit_oriented(
                         w1,
-                        s1,
-                        n_step: t + 1,
-                        is_back: false,
+                        Some(s1),
+                        false,
                         saw_nonzero,
-                        hit_blank: true,
-                    });
+                        true,
+                    ));
                 }
             }
 
@@ -1463,90 +1494,61 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 }
                 w1.set(pos as usize, out_color);
             }
-            s1 = i16::from(next_state);
+            s1 = next_state;
 
             saw_nonzero |= nonzero_count != 0;
-            if goal.is_blank()
-                && blank_context_may_be_all_zero
-                && (dirty_before || saw_nonzero)
-                && nonzero_count == 0
-            {
-                return Some(RawWordUpdateLemma {
-                    w1,
-                    s1,
-                    n_step: t + 1,
-                    is_back: false,
-                    saw_nonzero,
-                    hit_blank: true,
-                });
+            if goal.is_blank() && nonzero_count == 0 {
+                let blank_hit = match ctx {
+                    StepContext::Blank {
+                        dirty_before,
+                        context_may_be_all_zero,
+                    } => {
+                        context_may_be_all_zero
+                            && (dirty_before || saw_nonzero)
+                    },
+                    _ => false,
+                };
+
+                if blank_hit {
+                    return Some(RawWordUpdateLemma::exit_oriented(
+                        w1,
+                        Some(s1),
+                        false,
+                        saw_nonzero,
+                        true,
+                    ));
+                }
             }
 
             pos += block_dir;
 
             if pos < 0 || pos >= len {
-                return Some(RawWordUpdateLemma {
+                return Some(RawWordUpdateLemma::exit_oriented(
                     w1,
-                    s1,
-                    n_step: t + 1,
-                    is_back: pos < 0,
+                    Some(s1),
+                    pos < 0,
                     saw_nonzero,
-                    hit_blank: false,
-                });
+                    false,
+                ));
             }
         }
 
         None
     }
 
-    #[expect(clippy::fn_params_excessive_bools)]
-    fn raw_word_update_lemma_v2(
-        &self,
-        w: Word,
-        s: i16,
-        sgn: i8,
-        max_steps: usize,
-        goal: Goal,
-        dirty_before: bool,
-        blank_context_may_be_all_zero: bool,
-        spinout_back_context_may_be_all_zero: bool,
-        spinout_forward_context_may_be_all_zero: bool,
-        mirrored: bool,
-    ) -> Option<RawWordUpdateLemma> {
-        let mut res = self.raw_word_update_lemma(
-            w,
-            s,
-            sgn,
-            max_steps,
-            goal,
-            dirty_before,
-            blank_context_may_be_all_zero,
-            spinout_back_context_may_be_all_zero,
-            spinout_forward_context_may_be_all_zero,
-            mirrored,
-        )?;
-        if res.s1 >= 0 && !res.is_back {
-            res.w1 = res.w1.reverse();
-        }
-        Some(res)
-    }
-
     fn far_decider<S: Summary>(
         &self,
-        block_len: usize,
-        max_work: usize,
-        block_step_limit: usize,
-        goal: Goal,
-        mirrored: bool,
-    ) -> Result<FarDecider<'_, S, STATES, COLORS>, StopReason> {
+        params: FarRunParams,
+    ) -> Result<FarDecider<'_, STATES, COLORS, S>, StopReason> {
         let idr = vec![S::new()];
 
         let decider = FarDecider {
             prog: self,
-            goal,
-            mirrored,
-            block_len,
-            max_work: max_work.max(1),
-            block_step_limit: block_step_limit.max(1),
+            goal: params.goal,
+            mirrored: params.mirrored,
+            block_len: params.block_len,
+            max_work: params.max_work.max(1),
+            block_step_limit: params.block_step_limit.max(1),
 
             words: WordInterner::new(),
 
@@ -1586,23 +1588,13 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
     fn far_decide_with<S: Summary>(
         &self,
-        block_len: usize,
-        max_work: usize,
-        block_step_limit: usize,
-        goal: Goal,
-        mirrored: bool,
+        params: FarRunParams,
     ) -> bool {
-        if block_len == 0 {
+        if params.block_len == 0 {
             return false;
         }
 
-        let Ok(decider) = self.far_decider::<S>(
-            block_len,
-            max_work,
-            block_step_limit,
-            goal,
-            mirrored,
-        ) else {
+        let Ok(decider) = self.far_decider::<S>(params) else {
             return false;
         };
 
@@ -1621,7 +1613,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         &self,
         goal: Goal,
         knob: usize,
-        decide: fn(&Self, usize, usize, usize, Goal, bool) -> bool,
+        decide: fn(&Self, FarRunParams) -> bool,
     ) -> bool {
         let knob = knob.max(FAR_KNOB_MIN);
         let eff = effort_factor(knob);
@@ -1649,11 +1641,13 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             for mirrored in [false, true] {
                 if decide(
                     self,
-                    block_len,
-                    max_work,
-                    block_step_limit,
-                    goal,
-                    mirrored,
+                    FarRunParams {
+                        block_len,
+                        max_work,
+                        block_step_limit,
+                        goal,
+                        mirrored,
+                    },
                 ) {
                     return true;
                 }
@@ -1663,56 +1657,15 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         false
     }
 
-    fn far_decide_fast(
-        &self,
-        block_len: usize,
-        max_work: usize,
-        block_step_limit: usize,
-        goal: Goal,
-        mirrored: bool,
-    ) -> bool {
-        self.far_decide_with::<Ng1Summary>(
-            block_len,
-            max_work,
-            block_step_limit,
-            goal,
-            mirrored,
-        ) || self.far_decide_with::<CpsLruSummary>(
-            block_len,
-            max_work,
-            block_step_limit,
-            goal,
-            mirrored,
-        ) || self.far_decide_with::<RwlModSummary>(
-            block_len,
-            max_work,
-            block_step_limit,
-            goal,
-            mirrored,
-        )
+    fn far_decide_fast(&self, params: FarRunParams) -> bool {
+        self.far_decide_with::<Ng1Summary>(params)
+            || self.far_decide_with::<CpsLruSummary>(params)
+            || self.far_decide_with::<RwlModSummary>(params)
     }
 
-    fn far_decide_slow(
-        &self,
-        block_len: usize,
-        max_work: usize,
-        block_step_limit: usize,
-        goal: Goal,
-        mirrored: bool,
-    ) -> bool {
-        self.far_decide_with::<RngsModSummary>(
-            block_len,
-            max_work,
-            block_step_limit,
-            goal,
-            mirrored,
-        ) || self.far_decide_with::<RsModSummary>(
-            block_len,
-            max_work,
-            block_step_limit,
-            goal,
-            mirrored,
-        )
+    fn far_decide_slow(&self, params: FarRunParams) -> bool {
+        self.far_decide_with::<RngsModSummary>(params)
+            || self.far_decide_with::<RsModSummary>(params)
     }
 
     fn mitm_cant_halt(&self) -> bool {
@@ -1731,19 +1684,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         // Fast, boolean-only port of Iijil1/MITMWFAR's search path:
         // enumerate closed MITM-DFA skeletons, then try one (+1,-1) WFA
         // weight pair, deriving and verifying the accept set in memory.
-        const MAX_TRANSITIONS: usize = 9;
-        const MAX_WEIGHT_PAIRS: usize = 1;
-
         // Cheap passes first.  These preserve the same eventual prover power
         // as the final pass, but avoid paying for memory expansion on easy TMs.
         for added_memory in [0_usize, 1] {
-            for dfa_transitions in 2..=MAX_TRANSITIONS {
+            for dfa_transitions in 2..=MITM_MAX_TRANSITIONS {
                 if self.mitm_decide_exact(
                     goal,
                     dfa_transitions,
-                    dfa_transitions,
-                    dfa_transitions,
-                    MAX_WEIGHT_PAIRS,
+                    MITM_MAX_WEIGHT_PAIRS,
                     added_memory,
                 ) {
                     return true;
@@ -1757,9 +1705,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     fn mitm_decide_exact(
         &self,
         goal: Goal,
-        goal_transitions: usize,
-        max_left_states: usize,
-        max_right_states: usize,
+        dfa_transitions: usize,
         max_weight_pairs: usize,
         added_memory: usize,
     ) -> bool {
@@ -1773,30 +1719,25 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             &mut left,
             &mut right,
             2,
-            goal_transitions,
-            max_left_states,
-            max_right_states,
-            max_weight_pairs,
-            added_memory,
+            MitmSearchParams {
+                goal_transitions: dfa_transitions,
+                max_weight_pairs,
+                added_memory,
+            },
         )
     }
 
-    #[expect(clippy::too_many_arguments)]
     fn mitm_recurse_dfa(
         &self,
         goal: Goal,
         left: &mut MitmWfa,
         right: &mut MitmWfa,
         current_transitions: usize,
-        goal_transitions: usize,
-        max_left_states: usize,
-        max_right_states: usize,
-        max_weight_pairs: usize,
-        added_memory: usize,
+        params: MitmSearchParams,
     ) -> bool {
         match self.mitm_find_closure_break(goal, left, right) {
             None => {
-                current_transitions == goal_transitions
+                current_transitions == params.goal_transitions
                     && self.mitm_recurse_weights(
                         goal,
                         left,
@@ -1805,16 +1746,16 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                             goal, left, right,
                         ),
                         0,
-                        max_weight_pairs,
-                        added_memory,
+                        params.max_weight_pairs,
+                        params.added_memory,
                     )
             },
             Some((MitmSide::Left, state, color)) => {
-                if current_transitions >= goal_transitions {
+                if current_transitions >= params.goal_transitions {
                     return false;
                 }
 
-                if left.states < max_left_states {
+                if left.states < params.goal_transitions {
                     let old = left.trans[state][color];
                     let new_state = left.push_dead_state();
                     left.trans[state][color] = (new_state, 0);
@@ -1823,11 +1764,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         left,
                         right,
                         current_transitions + 1,
-                        goal_transitions,
-                        max_left_states,
-                        max_right_states,
-                        max_weight_pairs,
-                        added_memory,
+                        params,
                     ) {
                         left.trans[state][color] = old;
                         left.pop_state();
@@ -1849,11 +1786,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         left,
                         right,
                         current_transitions + 1,
-                        goal_transitions,
-                        max_left_states,
-                        max_right_states,
-                        max_weight_pairs,
-                        added_memory,
+                        params,
                     ) {
                         left.trans[state][color] = old;
                         return true;
@@ -1864,11 +1797,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 false
             },
             Some((MitmSide::Right, state, color)) => {
-                if current_transitions >= goal_transitions {
+                if current_transitions >= params.goal_transitions {
                     return false;
                 }
 
-                if right.states < max_right_states {
+                if right.states < params.goal_transitions {
                     let old = right.trans[state][color];
                     let new_state = right.push_dead_state();
                     right.trans[state][color] = (new_state, 0);
@@ -1877,11 +1810,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         left,
                         right,
                         current_transitions + 1,
-                        goal_transitions,
-                        max_left_states,
-                        max_right_states,
-                        max_weight_pairs,
-                        added_memory,
+                        params,
                     ) {
                         right.trans[state][color] = old;
                         right.pop_state();
@@ -1903,11 +1832,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         left,
                         right,
                         current_transitions + 1,
-                        goal_transitions,
-                        max_left_states,
-                        max_right_states,
-                        max_weight_pairs,
-                        added_memory,
+                        params,
                     ) {
                         right.trans[state][color] = old;
                         return true;
@@ -1928,15 +1853,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     ) -> Option<(MitmSide, usize, usize)> {
         let left_rev = left.rev_edges();
         let right_rev = right.rev_edges();
-        let start = MitmConfig {
-            st: 0,
-            co: 0,
-            left: 0,
-            right: 0,
-            dirty: false,
-        };
+        let start = MitmConfig::start();
         let mut seen = Set::new();
         let mut todo = vec![start];
+        let mut nexts = Vec::new();
         seen.insert(start);
 
         while let Some(cur) = todo.pop() {
@@ -1951,9 +1871,13 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             };
             let write = write as usize;
 
-            for next in self.mitm_next_configs(
+            nexts.clear();
+            self.mitm_next_configs_into(
                 goal, cur, left, right, &left_rev, &right_rev,
-            ) {
+                &mut nexts,
+            );
+            #[expect(clippy::iter_with_drain)]
+            for next in nexts.drain(..) {
                 let cfg = next.config;
                 if seen.contains(&cfg) {
                     continue;
@@ -1980,13 +1904,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     ) -> MitmWeightSlots {
         let left_rev = left.rev_edges();
         let right_rev = right.rev_edges();
-        let start = MitmConfig {
-            st: 0,
-            co: 0,
-            left: 0,
-            right: 0,
-            dirty: false,
-        };
+        let start = MitmConfig::start();
 
         let mut seen = Set::new();
         let mut todo = vec![start];
@@ -2173,33 +2091,28 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     ) -> bool {
         let left_special = left.derive_special();
         let right_special = right.derive_special();
-        let left_rev = left.rev_edges();
-        let right_rev = right.rev_edges();
-        if let Some(accept) = self.mitm_find_accept_set(
-            goal,
-            left,
-            right,
-            &left_rev,
-            &right_rev,
-            &left_special,
-            &right_special,
-        ) && self.mitm_verify(
-            goal,
-            left,
-            right,
-            &left_rev,
-            &right_rev,
-            &left_special,
-            &right_special,
-            &accept,
-        ) {
-            return true;
+        if !left.verify_leading_blank()
+            || !right.verify_leading_blank()
+            || !left.verify_special(&left_special)
+            || !right.verify_special(&right_special)
+        {
+            return false;
         }
 
-        false
+        let left_rev = left.rev_edges();
+        let right_rev = right.rev_edges();
+        self.mitm_build_accept_set_exact(
+            goal,
+            left,
+            right,
+            &left_rev,
+            &right_rev,
+            &left_special,
+            &right_special,
+        )
     }
 
-    fn mitm_find_accept_set(
+    fn mitm_build_accept_set_exact(
         &self,
         goal: Goal,
         left: &MitmWfa,
@@ -2208,105 +2121,77 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         right_rev: &MitmRev,
         left_special: &MitmSpecial,
         right_special: &MitmSpecial,
-    ) -> Option<MitmAccept> {
-        let start = MitmConfig {
-            st: 0,
-            co: 0,
-            left: 0,
-            right: 0,
-            dirty: false,
+    ) -> bool {
+        let start = MitmConfig::start();
+        let start_bounds = MitmBounds {
+            lo: Some(0),
+            hi: Some(0),
         };
+        if !self.mitm_config_allowed(goal, &start, &start_bounds) {
+            return false;
+        }
+
         let mut accept = MitmAccept::new();
         let mut todo = vec![start];
-        accept.insert(
-            start,
-            MitmBounds {
-                lo: Some(0),
-                hi: Some(0),
-            },
-        );
+        let mut nexts = Vec::new();
+        accept.insert(start, start_bounds);
 
         while let Some(cur) = todo.pop() {
             let cur_bounds = accept[&cur];
-            let mut nexts = self.mitm_next_configs(
-                goal, cur, left, right, left_rev, right_rev,
+            nexts.clear();
+            self.mitm_next_configs_into(
+                goal, cur, left, right, left_rev, right_rev, &mut nexts,
             );
-            if nexts.is_empty() {
-                if goal.is_halt() {
-                    return None;
-                }
-                continue;
-            }
             nexts.sort_by_key(|next| next.config);
 
-            for next in nexts {
-                if mitm_accept_contain_next(
+            #[expect(clippy::iter_with_drain)]
+            for next in nexts.drain(..) {
+                let Some(next) = mitm_step_bounds(
                     next,
                     cur_bounds,
                     left_special,
                     right_special,
-                    &mut accept,
-                ) {
-                    todo.push(next.config);
+                ) else {
+                    continue;
+                };
+
+                let Some((cfg, bounds)) =
+                    mitm_accept_insert_or_widen(&next, &mut accept)
+                else {
+                    continue;
+                };
+
+                if !self.mitm_config_allowed(goal, &cfg, &bounds) {
+                    return false;
                 }
+                todo.push(cfg);
             }
         }
 
-        Some(accept)
-    }
-
-    #[expect(clippy::too_many_arguments)]
-    fn mitm_verify(
-        &self,
-        goal: Goal,
-        left: &MitmWfa,
-        right: &MitmWfa,
-        left_rev: &MitmRev,
-        right_rev: &MitmRev,
-        left_special: &MitmSpecial,
-        right_special: &MitmSpecial,
-        accept: &MitmAccept,
-    ) -> bool {
-        left.verify_leading_blank()
-            && right.verify_leading_blank()
-            && left.verify_special(left_special)
-            && right.verify_special(right_special)
-            && mitm_start_accepted(accept)
-            && self.mitm_target_not_accepted(goal, accept)
-            && self.mitm_forward_closed(
-                goal,
-                left,
-                right,
-                left_rev,
-                right_rev,
-                left_special,
-                right_special,
-                accept,
-            )
+        true
     }
 
     #[expect(clippy::cast_possible_truncation)]
-    fn mitm_target_not_accepted(
+    fn mitm_config_allowed(
         &self,
         goal: Goal,
-        accept: &MitmAccept,
+        cfg: &MitmConfig,
+        bounds: &MitmBounds,
     ) -> bool {
         match goal {
-            Goal::Halt => accept.keys().all(|cfg| {
+            Goal::Halt => {
                 cfg.st < STATES
                     && cfg.co < COLORS
                     && self
                         .get(&(cfg.st as State, cfg.co as Color))
                         .is_some()
-            }),
-            Goal::Blank => accept.iter().all(|(cfg, bounds)| {
+            },
+            Goal::Blank => {
                 cfg.st < STATES
                     && cfg.co < COLORS
                     && !mitm_blank_config_possible(cfg, bounds)
-            }),
-            Goal::Spinout => accept
-                .keys()
-                .all(|cfg| !self.mitm_spinout_config_possible(cfg)),
+            },
+            Goal::Spinout => !self.mitm_spinout_config_possible(cfg),
         }
     }
 
@@ -2322,37 +2207,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         next_st as usize == cfg.st
     }
 
-    #[expect(clippy::too_many_arguments)]
-    fn mitm_forward_closed(
-        &self,
-        goal: Goal,
-        left: &MitmWfa,
-        right: &MitmWfa,
-        left_rev: &MitmRev,
-        right_rev: &MitmRev,
-        left_special: &MitmSpecial,
-        right_special: &MitmSpecial,
-        accept: &MitmAccept,
-    ) -> bool {
-        for (&cfg, &bounds) in accept {
-            for next in self.mitm_next_configs(
-                goal, cfg, left, right, left_rev, right_rev,
-            ) {
-                if !mitm_next_accepted(
-                    next,
-                    bounds,
-                    left_special,
-                    right_special,
-                    accept,
-                ) {
-                    return false;
-                }
-            }
-        }
-        true
-    }
-
-    fn mitm_next_configs(
+    fn mitm_next_configs_into(
         &self,
         goal: Goal,
         old: MitmConfig,
@@ -2360,22 +2215,22 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         right: &MitmWfa,
         left_rev: &MitmRev,
         right_rev: &MitmRev,
-    ) -> Vec<MitmNext> {
+        out: &mut Vec<MitmNext>,
+    ) {
         if old.st >= STATES || old.co >= COLORS {
-            return vec![];
+            return;
         }
         #[expect(clippy::cast_possible_truncation)]
         let Some(&(write, shift, next_st)) =
             self.get(&(old.st as State, old.co as Color))
         else {
-            return vec![];
+            return;
         };
 
         let write = write as usize;
         let next_st = next_st as usize;
         let next_dirty =
             goal.is_blank() && (old.dirty || old.co != 0 || write != 0);
-        let mut out = vec![];
 
         if shift {
             // Move right: the written symbol joins the left half; the old right
@@ -2410,8 +2265,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 });
             }
         }
-
-        out
     }
 }
 
@@ -2446,16 +2299,42 @@ struct MitmConfig {
     dirty: bool,
 }
 
+impl MitmConfig {
+    const fn start() -> Self {
+        Self {
+            st: 0,
+            co: 0,
+            left: 0,
+            right: 0,
+            dirty: false,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 struct MitmNext {
     config: MitmConfig,
     weight: i32,
 }
 
+#[derive(Clone, Copy)]
+struct MitmSearchParams {
+    goal_transitions: usize,
+    max_weight_pairs: usize,
+    added_memory: usize,
+}
+
 #[derive(Clone, Copy, Default)]
 struct MitmBounds {
     lo: Option<i32>,
     hi: Option<i32>,
+}
+
+impl MitmBounds {
+    fn contains_zero(&self) -> bool {
+        self.lo.is_none_or(|lo| lo <= 0)
+            && self.hi.is_none_or(|hi| hi >= 0)
+    }
 }
 
 #[derive(Clone)]
@@ -2478,16 +2357,19 @@ enum MitmSide {
     Right,
 }
 
-const MITM_DEAD: usize = 1;
-const MITM_MAX_FINITE_INTERVAL: i32 = 100;
+struct MitmNextBounds {
+    cfg: MitmConfig,
+    bounds: MitmBounds,
+    hard_lo: bool,
+    hard_hi: bool,
+}
 
-fn mitm_accept_contain_next(
+fn mitm_step_bounds(
     next: MitmNext,
     bounds: MitmBounds,
     left_special: &MitmSpecial,
     right_special: &MitmSpecial,
-    accept: &mut MitmAccept,
-) -> bool {
+) -> Option<MitmNextBounds> {
     let cfg = next.config;
     let mut lo = bounds.lo.map(|x| x + next.weight);
     let mut hi = bounds.hi.map(|x| x + next.weight);
@@ -2507,63 +2389,60 @@ fn mitm_accept_contain_next(
     if let (Some(lo), Some(hi)) = (lo, hi)
         && hi < lo
     {
-        return false;
+        return None;
     }
 
-    let next_bounds = MitmBounds { lo, hi };
-    let Some(old) = accept.get_mut(&cfg) else {
-        accept.insert(cfg, next_bounds);
-        return true;
+    Some(MitmNextBounds {
+        cfg,
+        bounds: MitmBounds { lo, hi },
+        hard_lo,
+        hard_hi,
+    })
+}
+
+#[expect(clippy::unwrap_in_result)]
+fn mitm_accept_insert_or_widen(
+    next: &MitmNextBounds,
+    accept: &mut MitmAccept,
+) -> Option<(MitmConfig, MitmBounds)> {
+    let Some(old) = accept.get_mut(&next.cfg) else {
+        accept.insert(next.cfg, next.bounds);
+        return Some((next.cfg, next.bounds));
     };
 
     let mut changed = false;
 
     if let Some(old_lo) = old.lo
-        && (next_bounds.lo.is_none() || Some(old_lo) > next_bounds.lo)
+        && (next.bounds.lo.is_none() || Some(old_lo) > next.bounds.lo)
     {
         changed = true;
         if old.hi.is_none()
-            || next_bounds.lo.is_none()
-            || old.hi.unwrap() - next_bounds.lo.unwrap()
+            || next.bounds.lo.is_none()
+            || old.hi.unwrap() - next.bounds.lo.unwrap()
                 > MITM_MAX_FINITE_INTERVAL
         {
-            old.lo = hard_lo.then_some(0);
+            old.lo = next.hard_lo.then_some(0);
         } else {
-            old.lo = next_bounds.lo;
+            old.lo = next.bounds.lo;
         }
     }
 
     if let Some(old_hi) = old.hi
-        && (next_bounds.hi.is_none() || Some(old_hi) < next_bounds.hi)
+        && (next.bounds.hi.is_none() || Some(old_hi) < next.bounds.hi)
     {
         changed = true;
         if old.lo.is_none()
-            || next_bounds.hi.is_none()
-            || next_bounds.hi.unwrap() - old.lo.unwrap()
+            || next.bounds.hi.is_none()
+            || next.bounds.hi.unwrap() - old.lo.unwrap()
                 > MITM_MAX_FINITE_INTERVAL
         {
-            old.hi = hard_hi.then_some(0);
+            old.hi = next.hard_hi.then_some(0);
         } else {
-            old.hi = next_bounds.hi;
+            old.hi = next.bounds.hi;
         }
     }
 
-    changed
-}
-
-fn mitm_start_accepted(accept: &MitmAccept) -> bool {
-    let start = MitmConfig {
-        st: 0,
-        co: 0,
-        left: 0,
-        right: 0,
-        dirty: false,
-    };
-    let Some(bounds) = accept.get(&start) else {
-        return false;
-    };
-    bounds.lo.is_none_or(|lo| lo <= 0)
-        && bounds.hi.is_none_or(|hi| hi >= 0)
+    changed.then_some((next.cfg, *old))
 }
 
 fn mitm_blank_config_possible(
@@ -2574,55 +2453,7 @@ fn mitm_blank_config_possible(
         && cfg.co == 0
         && cfg.left == 0
         && cfg.right == 0
-        && bounds.lo.is_none_or(|lo| lo <= 0)
-        && bounds.hi.is_none_or(|hi| hi >= 0)
-}
-
-fn mitm_next_accepted(
-    next: MitmNext,
-    bounds: MitmBounds,
-    left_special: &MitmSpecial,
-    right_special: &MitmSpecial,
-    accept: &MitmAccept,
-) -> bool {
-    let cfg = next.config;
-    let mut lo = bounds.lo.map(|x| x + next.weight);
-    let mut hi = bounds.hi.map(|x| x + next.weight);
-
-    if left_special.nonneg[cfg.left]
-        && right_special.nonneg[cfg.right]
-        && lo.is_none_or(|x| x < 0)
-    {
-        lo = Some(0);
-    }
-    if left_special.nonpos[cfg.left]
-        && right_special.nonpos[cfg.right]
-        && hi.is_none_or(|x| x > 0)
-    {
-        hi = Some(0);
-    }
-    if let (Some(lo), Some(hi)) = (lo, hi)
-        && hi < lo
-    {
-        return true;
-    }
-
-    let Some(accepted) = accept.get(&cfg) else {
-        return false;
-    };
-
-    if let Some(acc_lo) = accepted.lo
-        && lo.is_none_or(|next_lo| acc_lo > next_lo)
-    {
-        return false;
-    }
-    if let Some(acc_hi) = accepted.hi
-        && hi.is_none_or(|next_hi| acc_hi < next_hi)
-    {
-        return false;
-    }
-
-    true
+        && bounds.contains_zero()
 }
 
 impl MitmWfa {
