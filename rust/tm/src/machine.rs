@@ -319,7 +319,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 type Transcript = Vec<(Slot, Pos)>;
 
 fn has_recurrence(transcript: &Transcript) -> Option<LinRec> {
-    fn min_max(e: usize, min: &[Pos], max: &[Pos]) -> (Pos, Pos) {
+    const fn min_max(e: usize, min: &[Pos], max: &[Pos]) -> (Pos, Pos) {
         (min[e - 1], max[e - 1])
     }
 
