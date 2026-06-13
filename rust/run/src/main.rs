@@ -1,4 +1,5 @@
-#![allow(dead_code, clippy::used_underscore_items)]
+#![allow(dead_code)]
+#![expect(clippy::used_underscore_items)]
 use rayon::prelude::*;
 
 use tm::{Goal, Prog, Steps};
@@ -70,6 +71,67 @@ macro_rules! assert_deciders {
     }};
 }
 
+/**************************************/
+
+fn _2_3_1(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+    prog.bkw_cant_spinout(7).is_refuted()
+        || prog.ctl_cant_spinout(100)
+        || prog.cps_cant_spinout(3)
+        || prog.far_cant_spinout(3)
+}
+
+fn _4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+    prog.bkw_cant_spinout(22).is_refuted()
+        || prog.ctl_cant_spinout(500)
+        || prog.cps_cant_spinout(12)
+        || prog.seg_cant_spinout(8).is_refuted()
+        || prog.far_cant_spinout(3)
+}
+
+fn _4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_blank()
+        || prog.bkw_cant_blank(51).is_refuted()
+        || prog.ctl_cant_blank(130)
+        || prog.cps_cant_blank(20)
+        || prog.far_cant_blank(3)
+}
+
+fn _2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+    prog.bkw_cant_spinout(22).is_refuted()
+        || prog.ctl_cant_spinout(700)
+        || prog.cps_cant_spinout(11)
+        || prog.seg_cant_spinout(5).is_refuted()
+        || prog.far_cant_spinout(3)
+}
+
+fn _2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_blank()
+        || prog.bkw_cant_blank(51).is_refuted()
+        || prog.ctl_cant_blank(200)
+        || prog.cps_cant_blank(20)
+        || prog.far_cant_blank(3)
+}
+
+fn test_deciders() {
+    println!("deciders");
+
+    assert_deciders![
+        (2, 3) => [
+            1 => (_2_3_1, 20, (7, 3_506)),
+        ],
+        (4, 2) => [
+            1 => (_4_2_1, 99, (387, 753_582)),
+            2 => (_4_2_2, 99, (122, 1_932_610)),
+        ],
+        (2, 4) => [
+            1 => (_2_4_1, TREE_LIM, (2031, 612_077)),
+            2 => (_2_4_2, TREE_LIM, (68, 1_189_643)),
+        ],
+    ];
+}
+
+/**************************************/
+
 fn _2_2_0(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
 }
@@ -85,12 +147,6 @@ fn _2_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
 fn _2_2_3(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_twostep(0).is_refuted()
 }
-
-fn prover_2_2(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
-    prog.term_or_rec(16, config.to_mut()).is_settled()
-}
-
-//
 
 fn _3_2_0(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
@@ -120,24 +176,10 @@ fn _3_2_3(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
         || !prog.term_or_rec(100, config.to_mut()).is_stationary()
 }
 
-fn prover_3_2(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
-    prog.term_or_rec(190, config.to_mut()).is_settled()
-        || prog.check_inf(500, 50)
-}
-
-//
-
 fn _2_3_0(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(8).is_refuted()
         || prog.cps_cant_halt(3)
-}
-
-fn _2_3_1(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(7).is_refuted()
-        || prog.ctl_cant_spinout(100)
-        || prog.cps_cant_spinout(3)
-        || prog.far_cant_spinout(3)
 }
 
 fn _2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
@@ -154,13 +196,6 @@ fn _2_3_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
         || !prog.term_or_rec(100, config.to_mut()).is_stationary()
 }
 
-fn prover_2_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
-    prog.term_or_rec(290, config.to_mut()).is_settled()
-        || prog.check_inf(1_000, 50)
-}
-
-//
-
 fn _4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(46).is_refuted()
@@ -169,41 +204,11 @@ fn _4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_halt(3)
 }
 
-fn _4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(22).is_refuted()
-        || prog.ctl_cant_spinout(500)
-        || prog.cps_cant_spinout(12)
-        || prog.seg_cant_spinout(8).is_refuted()
-        || prog.far_cant_spinout(3)
-}
-
-fn _4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
-    prog.graph_cant_blank()
-        || prog.bkw_cant_blank(51).is_refuted()
-        || prog.ctl_cant_blank(130)
-        || prog.cps_cant_blank(20)
-        || prog.far_cant_blank(3)
-}
-
 fn _4_2_3(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_twostep()
         || prog.bkw_cant_twostep(18).is_refuted()
         || !prog.term_or_rec(100, config.to_mut()).is_stationary()
 }
-
-fn prover_4_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
-    if !prog.is_connected() {
-        return true;
-    }
-
-    let config = config.to_mut();
-
-    prog.term_or_rec(500, config).is_settled()
-        || prog.check_inf(2_000, 200)
-        || prog.term_or_rec(4_710, config).is_settled()
-}
-
-//
 
 fn _2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
@@ -213,38 +218,14 @@ fn _2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.to_string() == "1RB 2LA 1RA 1RA  1LB 1LA 3RB ..."
 }
 
-fn _2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(22).is_refuted()
-        || prog.ctl_cant_spinout(700)
-        || prog.cps_cant_spinout(11)
-        || prog.seg_cant_spinout(5).is_refuted()
-        || prog.far_cant_spinout(3)
-}
-
-fn _2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
-    prog.graph_cant_blank()
-        || prog.bkw_cant_blank(51).is_refuted()
-        || prog.ctl_cant_blank(200)
-        || prog.cps_cant_blank(20)
-        || prog.far_cant_blank(3)
-}
-
 fn _2_4_3(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_twostep()
         || prog.bkw_cant_twostep(11).is_refuted()
         || !prog.term_or_rec(600, config.to_mut()).is_stationary()
 }
 
-fn prover_2_4(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
-    let config = config.to_mut();
-
-    prog.term_or_rec(500, config).is_settled()
-        || prog.check_inf(1_000, 200)
-        || prog.term_or_rec(4_600, config).is_settled()
-}
-
-fn test_deciders() {
-    println!("deciders");
+fn test_solved() {
+    println!("solved");
 
     assert_deciders![
         (2, 2) => [
@@ -261,23 +242,54 @@ fn test_deciders() {
         ],
         (2, 3) => [
             0 => (_2_3_0, 7, (0, 2_335)),
-            1 => (_2_3_1, 20, (7, 3_506)),
             2 => (_2_3_2, 20, (0, 5_959)),
             3 => (_2_3_3, 20, (0, 8_766)),
         ],
         (4, 2) => [
             0 => (_4_2_0, 25, (0, 431_888)),
-            1 => (_4_2_1, 99, (387, 753_582)),
-            2 => (_4_2_2, 99, (122, 1_932_610)),
             3 => (_4_2_3, 99, (0, 2_134_923)),
         ],
         (2, 4) => [
             0 => (_2_4_0, 109, (0, 308_968)),
-            1 => (_2_4_1, TREE_LIM, (2031, 612_077)),
-            2 => (_2_4_2, TREE_LIM, (68, 1_189_643)),
             3 => (_2_4_3, TREE_LIM, (0, 1_698_850)),
         ],
     ];
+}
+
+/**************************************/
+
+fn prover_2_2(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
+    prog.term_or_rec(16, config.to_mut()).is_settled()
+}
+
+fn prover_3_2(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
+    prog.term_or_rec(190, config.to_mut()).is_settled()
+        || prog.check_inf(500, 50)
+}
+
+fn prover_2_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
+    prog.term_or_rec(290, config.to_mut()).is_settled()
+        || prog.check_inf(1_000, 50)
+}
+
+fn prover_4_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
+    if !prog.is_connected() {
+        return true;
+    }
+
+    let config = config.to_mut();
+
+    prog.term_or_rec(500, config).is_settled()
+        || prog.check_inf(2_000, 200)
+        || prog.term_or_rec(4_710, config).is_settled()
+}
+
+fn prover_2_4(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
+    let config = config.to_mut();
+
+    prog.term_or_rec(500, config).is_settled()
+        || prog.check_inf(1_000, 200)
+        || prog.term_or_rec(4_600, config).is_settled()
 }
 
 fn test_prover() {
@@ -302,7 +314,7 @@ fn test_prover() {
     ];
 }
 
-//
+/**************************************/
 
 fn qh_2_2(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt()
@@ -367,8 +379,6 @@ fn _5_2_2(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_blank(3).is_refuted()
 }
 
-//
-
 fn _3_3_0(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_halt(3).is_refuted()
 }
@@ -380,8 +390,6 @@ fn _3_3_1(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
 fn _3_3_2(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_blank(3).is_refuted()
 }
-
-//
 
 fn _2_5_0(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(3).is_refuted()
@@ -556,8 +564,13 @@ fn test_9_instr() {
 
 const CURR: &[fn()] = &[test_deciders];
 
-const FAST: &[fn()] =
-    &[test_collect, test_prover, test_quasihalt, test_instrs];
+const FAST: &[fn()] = &[
+    test_collect,
+    test_instrs,
+    test_prover,
+    test_quasihalt,
+    test_solved,
+];
 
 const SLOW: &[fn()] =
     &[test_8_instr, test_9_instr, test_params_slow, test_from_file];
