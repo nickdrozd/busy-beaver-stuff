@@ -63,6 +63,35 @@ const FAR_KNOB_MIN: usize = 2;
 /// C++ FAR::NG1 default parameters.
 const FAR_NG1_N: usize = 3;
 
+/// C++ FAR::NG parameters plus a few fixed internal variants.
+///
+/// The C++ default is `NG_n = 3, tH = 0, pos_mod = 1`, which is
+/// equivalent to `NG1` for a fixed block size.  The extra Rust variants use
+/// non-zero tail history and position modulo without changing the public API.
+const FAR_NG_N: usize = 3;
+const FAR_NG_TAIL_H_SMALL: usize = 1;
+const FAR_NG_TAIL_H_MED: usize = 2;
+const FAR_NG_POS_MOD_2: usize = 2;
+const FAR_NG_POS_MOD_3: usize = 3;
+
+/// C++ MitM_CTL::NGset defaults, usable as a FAR summary as well.
+const FAR_NGSET_NG_N: usize = 3;
+const FAR_NGSET_LEN_H: usize = 64;
+
+/// C++ MitM_CTL::LRUpair-style bounded recent-pair memory.
+///
+/// The published default has `len_h_tail = 0`, which degenerates to a short
+/// recent-block queue.  This internal FAR variant keeps one protected tail
+/// block so the pair LRU actually carries extra information.
+const FAR_LRU_PAIR_LEN_H: usize = 8;
+const FAR_LRU_PAIR_LEN_H_NO_LRU: usize = 2;
+const FAR_LRU_PAIR_LEN_H_TAIL: usize = 1;
+
+/// C++ MitM_CTL::set_pair defaults, usable as a FAR summary as well.
+const FAR_SET_PAIR_LEN_H: usize = 16;
+const FAR_SET_PAIR_LEN_H_NO_LRU: usize = 2;
+const FAR_SET_PAIR_LEN_H_TAIL: usize = 1;
+
 /// C++ FAR::RWL_mod defaults.
 const FAR_RWL_LEN_H: usize = 8;
 const FAR_RWL_LEN_H_TAIL: usize = 0;
@@ -355,6 +384,224 @@ impl Summary for Ng1Summary {
 
     fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
         self.q.iter().all(|&w| words.get(w).is_zero())
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct NgSummary<const TAIL_H: usize, const POS_MOD: usize> {
+    q: Vec<WordId>,
+    q0: Vec<WordId>,
+    mod_pos: usize,
+}
+
+impl<const TAIL_H: usize, const POS_MOD: usize> Summary
+    for NgSummary<TAIL_H, POS_MOD>
+{
+    fn new() -> Self {
+        Self {
+            q: Vec::new(),
+            q0: Vec::new(),
+            mod_pos: 0,
+        }
+    }
+
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        if self.q.is_empty() && words.get(w).is_zero() {
+            return Ok(());
+        }
+
+        if FAR_NG_N > 0 && self.q.len() == FAR_NG_N {
+            self.q.remove(0);
+        }
+        self.q.push(w);
+
+        if self.q0.len() < TAIL_H {
+            self.q0.push(w);
+        }
+
+        self.mod_pos = (self.mod_pos + 1) % POS_MOD.max(1);
+        Ok(())
+    }
+
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.q.iter().all(|&w| words.get(w).is_zero())
+            && self.q0.iter().all(|&w| words.get(w).is_zero())
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct NgSetSummary {
+    q: Vec<WordId>,
+    lru: Vec<Vec<WordId>>,
+}
+
+impl Summary for NgSetSummary {
+    fn new() -> Self {
+        Self {
+            q: Vec::new(),
+            lru: Vec::new(),
+        }
+    }
+
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        if self.q.is_empty() && words.get(w).is_zero() {
+            return Ok(());
+        }
+
+        let old_ngram = self.q.clone();
+        self.q.insert(0, w);
+
+        if self.q.len() > FAR_NGSET_NG_N {
+            self.q.truncate(FAR_NGSET_NG_N);
+
+            match self.lru.binary_search(&old_ngram) {
+                Ok(_) => {},
+                Err(pos) => {
+                    self.lru.insert(pos, old_ngram);
+                    if self.lru.len() > FAR_NGSET_LEN_H {
+                        return Err(SummaryOverflow);
+                    }
+                },
+            }
+        }
+
+        Ok(())
+    }
+
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.q.iter().all(|&w| words.get(w).is_zero())
+            && self.lru.iter().all(|ngram| {
+                ngram.iter().all(|&w| words.get(w).is_zero())
+            })
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct LruPairSummary {
+    q: Vec<WordId>,
+    lru: Vec<(WordId, WordId)>,
+}
+
+impl Summary for LruPairSummary {
+    fn new() -> Self {
+        Self {
+            q: Vec::new(),
+            lru: Vec::new(),
+        }
+    }
+
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        if self.q.is_empty() && words.get(w).is_zero() {
+            return Ok(());
+        }
+
+        self.q.push(w);
+        if self.q.len()
+            <= FAR_LRU_PAIR_LEN_H_NO_LRU + FAR_LRU_PAIR_LEN_H_TAIL
+        {
+            return Ok(());
+        }
+
+        if FAR_LRU_PAIR_LEN_H_TAIL > 0
+            && FAR_LRU_PAIR_LEN_H
+                > FAR_LRU_PAIR_LEN_H_NO_LRU + FAR_LRU_PAIR_LEN_H_TAIL
+        {
+            let i = FAR_LRU_PAIR_LEN_H_TAIL;
+            let pair = (self.q[i - 1], self.q[i]);
+            if let Some(pos) = self.lru.iter().position(|&p| p == pair)
+            {
+                self.lru.remove(pos);
+            } else {
+                let max_lru = FAR_LRU_PAIR_LEN_H
+                    - FAR_LRU_PAIR_LEN_H_NO_LRU
+                    - FAR_LRU_PAIR_LEN_H_TAIL;
+                if self.lru.len() >= max_lru && max_lru > 0 {
+                    self.lru.pop();
+                }
+            }
+            self.lru.insert(0, pair);
+        }
+
+        self.q.remove(FAR_LRU_PAIR_LEN_H_TAIL);
+        Ok(())
+    }
+
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.q.iter().all(|&w| words.get(w).is_zero())
+            && self.lru.iter().all(|&(a, b)| {
+                words.get(a).is_zero() && words.get(b).is_zero()
+            })
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct SetPairSummary {
+    q: Vec<WordId>,
+    lru: Vec<(WordId, WordId)>,
+}
+
+impl Summary for SetPairSummary {
+    fn new() -> Self {
+        Self {
+            q: Vec::new(),
+            lru: Vec::new(),
+        }
+    }
+
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        if self.q.is_empty() && words.get(w).is_zero() {
+            return Ok(());
+        }
+
+        self.q.push(w);
+        if self.q.len()
+            <= FAR_SET_PAIR_LEN_H_NO_LRU + FAR_SET_PAIR_LEN_H_TAIL
+        {
+            return Ok(());
+        }
+
+        if FAR_SET_PAIR_LEN_H_TAIL > 0
+            && FAR_SET_PAIR_LEN_H
+                > FAR_SET_PAIR_LEN_H_NO_LRU + FAR_SET_PAIR_LEN_H_TAIL
+        {
+            let i = FAR_SET_PAIR_LEN_H_TAIL;
+            let pair = (self.q[i - 1], self.q[i]);
+            match self.lru.binary_search(&pair) {
+                Ok(_) => {},
+                Err(pos) => {
+                    self.lru.insert(pos, pair);
+                    if self.lru.len() > FAR_SET_PAIR_LEN_H {
+                        return Err(SummaryOverflow);
+                    }
+                },
+            }
+        }
+
+        self.q.remove(FAR_SET_PAIR_LEN_H_TAIL);
+        Ok(())
+    }
+
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.q.iter().all(|&w| words.get(w).is_zero())
+            && self.lru.iter().all(|&(a, b)| {
+                words.get(a).is_zero() && words.get(b).is_zero()
+            })
     }
 }
 
@@ -1659,12 +1906,23 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
     fn far_decide_fast(&self, params: FarRunParams) -> bool {
         self.far_decide_with::<Ng1Summary>(params)
+            || self.far_decide_with::<NgSummary<
+                FAR_NG_TAIL_H_SMALL,
+                FAR_NG_POS_MOD_2,
+            >>(params)
             || self.far_decide_with::<CpsLruSummary>(params)
             || self.far_decide_with::<RwlModSummary>(params)
     }
 
     fn far_decide_slow(&self, params: FarRunParams) -> bool {
-        self.far_decide_with::<RngsModSummary>(params)
+        self.far_decide_with::<NgSummary<
+            FAR_NG_TAIL_H_MED,
+            FAR_NG_POS_MOD_3,
+        >>(params)
+            || self.far_decide_with::<NgSetSummary>(params)
+            || self.far_decide_with::<LruPairSummary>(params)
+            || self.far_decide_with::<SetPairSummary>(params)
+            || self.far_decide_with::<RngsModSummary>(params)
             || self.far_decide_with::<RsModSummary>(params)
     }
 

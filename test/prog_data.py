@@ -5398,8 +5398,6 @@ GRAPH_FALSE_NEGATIVES = {
 
 FAR_FALSE_NEGATIVES = {
     "halt": {
-        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
-        "1RB 0RC  0RC 0LD  1RD 1RA  1RE 0LA  1LF ...  1LB 1LF",
     },
     "blank": {
        "1RB ... ...  0LB 2RB 0RB",
