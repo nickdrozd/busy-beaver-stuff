@@ -123,6 +123,19 @@ const MITM_MAX_FINITE_INTERVAL: i32 = 100;
 const MITM_MAX_TRANSITIONS: usize = 10;
 const MITM_MAX_WEIGHT_PAIRS: usize = 1;
 
+// Direct FAR parameters -------------------------------------------------------
+
+/// Late direct-DFA FAR pass.
+///
+/// This searches arbitrary small one-cell DFAs, unlike the summary-based FAR
+/// passes above.  The search is intentionally bounded and runs only after the
+/// existing FAR/MITM portfolio fails.
+const DIRECT_FAR_MAX_DFA_STATES: usize = 7;
+const DIRECT_FAR_MAX_NFA_STATES: usize = 128;
+const DIRECT_FAR_TARGET_STATES: usize = 2;
+const DIRECT_FAR_MAX_DFA_ENTRIES: usize = 18;
+const DIRECT_FAR_MAX_WORK: usize = 350_000;
+
 /// Compute an "effort factor" from the knob.
 ///
 /// This increases budgets uniformly as knob grows:
@@ -134,6 +147,51 @@ const MITM_MAX_WEIGHT_PAIRS: usize = 1;
 /// - 256..     => 16
 fn effort_factor(knob: usize) -> usize {
     (knob / 16).max(1)
+}
+
+const fn direct_far_bit(idx: usize) -> u128 {
+    1_u128 << idx
+}
+
+const fn direct_far_idx(
+    dfa_state: usize,
+    ctrl_state: usize,
+    ctrl_states: usize,
+) -> usize {
+    dfa_state * ctrl_states + ctrl_state
+}
+
+const fn direct_far_move_code(shift_right: bool) -> u8 {
+    // TonyGuil's direct FAR uses 0 = right, 1 = left.
+    if shift_right { 0 } else { 1 }
+}
+
+const fn direct_far_vec_times_matrix(
+    mut v: u128,
+    matrix: &[u128],
+) -> u128 {
+    let mut out = 0_u128;
+    while v != 0 {
+        let idx = v.trailing_zeros() as usize;
+        out |= matrix[idx];
+        v &= v - 1;
+    }
+    out
+}
+
+fn direct_far_matrix_times_vec(
+    matrix: &[u128],
+    v: u128,
+    nfa_states: usize,
+) -> u128 {
+    let mut out = 0_u128;
+    #[expect(clippy::disallowed_names)]
+    for (idx, row) in matrix.iter().take(nfa_states).enumerate() {
+        if row & v != 0 {
+            out |= direct_far_bit(idx);
+        }
+    }
+    out
 }
 
 // -----------------------------------------------------------------------------
@@ -153,6 +211,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         self.far_sweep_fast(knob, Goal::Halt)
             || self.mitm_cant_halt()
             || self.far_sweep_slow(knob, Goal::Halt)
+            || self.direct_far_cant_target(Goal::Halt)
     }
 
     /// FAR blank-tape prover.
@@ -171,6 +230,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         self.far_sweep_fast(knob, Goal::Blank)
             || self.mitm_cant_blank()
             || self.far_sweep_slow(knob, Goal::Blank)
+            || self.direct_far_cant_target(Goal::Blank)
     }
 
     /// FAR spinout prover.
@@ -181,6 +241,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         self.far_sweep_fast(knob, Goal::Spinout)
             || self.mitm_cant_spinout()
             || self.far_sweep_slow(knob, Goal::Spinout)
+            || self.direct_far_cant_target(Goal::Spinout)
     }
 }
 
@@ -996,6 +1057,17 @@ struct FarRunParams {
     block_step_limit: usize,
     goal: Goal,
     mirrored: bool,
+}
+
+#[derive(Clone, Copy)]
+struct DirectFarParams {
+    goal: Goal,
+    direction: u8,
+    dfa_states: usize,
+    ctrl_states: usize,
+    nfa_states: usize,
+    any_sink: usize,
+    zero_sink: usize,
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
@@ -1924,6 +1996,459 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             || self.far_decide_with::<SetPairSummary>(params)
             || self.far_decide_with::<RngsModSummary>(params)
             || self.far_decide_with::<RsModSummary>(params)
+    }
+
+    fn direct_far_cant_target(&self, goal: Goal) -> bool {
+        let ctrl_states = Self::direct_far_ctrl_states(goal);
+        if ctrl_states == 0 || COLORS == 0 {
+            return false;
+        }
+
+        let max_by_nfa = DIRECT_FAR_MAX_NFA_STATES
+            .saturating_sub(DIRECT_FAR_TARGET_STATES)
+            / ctrl_states;
+        let max_by_entries = DIRECT_FAR_MAX_DFA_ENTRIES / COLORS;
+        let max_dfa_states = DIRECT_FAR_MAX_DFA_STATES
+            .min(max_by_nfa)
+            .min(max_by_entries);
+
+        if max_dfa_states == 0 || !self.direct_far_valid_program() {
+            return false;
+        }
+
+        let mut fuel = DIRECT_FAR_MAX_WORK;
+        for dfa_states in 1..=max_dfa_states {
+            if self.direct_far_decide_exact(goal, dfa_states, &mut fuel)
+            {
+                return true;
+            }
+            if fuel == 0 {
+                break;
+            }
+        }
+
+        false
+    }
+
+    fn direct_far_valid_program(&self) -> bool {
+        for state in 0..STATES {
+            for color in 0..COLORS {
+                #[expect(clippy::cast_possible_truncation)]
+                let slot: Slot = (state as State, color as Color);
+                #[expect(clippy::collapsible_if)]
+                if let Some(&(write, _, next_state)) = self.get(&slot) {
+                    if write as usize >= COLORS
+                        || next_state as usize >= STATES
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
+    }
+
+    const fn direct_far_ctrl_states(goal: Goal) -> usize {
+        match goal {
+            Goal::Blank => STATES * 2,
+            Goal::Halt | Goal::Spinout => STATES,
+        }
+    }
+
+    const fn direct_far_start_ctrl(_goal: Goal) -> usize {
+        0
+    }
+
+    const fn direct_far_ctrl_tm_state(
+        goal: Goal,
+        ctrl: usize,
+    ) -> usize {
+        match goal {
+            Goal::Blank => ctrl % STATES,
+            Goal::Halt | Goal::Spinout => ctrl,
+        }
+    }
+
+    const fn direct_far_ctrl_dirty(goal: Goal, ctrl: usize) -> bool {
+        match goal {
+            Goal::Blank => ctrl >= STATES,
+            Goal::Halt | Goal::Spinout => false,
+        }
+    }
+
+    fn direct_far_next_ctrl(
+        goal: Goal,
+        ctrl: usize,
+        read_symbol: usize,
+        write_symbol: usize,
+        next_state: usize,
+    ) -> usize {
+        match goal {
+            Goal::Blank => {
+                let dirty = Self::direct_far_ctrl_dirty(goal, ctrl)
+                    || read_symbol != 0
+                    || write_symbol != 0;
+                next_state + usize::from(dirty) * STATES
+            },
+            Goal::Halt | Goal::Spinout => next_state,
+        }
+    }
+
+    fn direct_far_decide_exact(
+        &self,
+        goal: Goal,
+        dfa_states: usize,
+        fuel: &mut usize,
+    ) -> bool {
+        let ctrl_states = Self::direct_far_ctrl_states(goal);
+        let nfa_states = ctrl_states
+            .saturating_mul(dfa_states)
+            .saturating_add(DIRECT_FAR_TARGET_STATES);
+        if dfa_states == 0
+            || nfa_states == 0
+            || nfa_states > DIRECT_FAR_MAX_NFA_STATES
+        {
+            return false;
+        }
+
+        self.direct_far_decide_direction(goal, dfa_states, 0, fuel)
+            || self
+                .direct_far_decide_direction(goal, dfa_states, 1, fuel)
+    }
+
+    fn direct_far_decide_direction(
+        &self,
+        goal: Goal,
+        dfa_states: usize,
+        direction: u8,
+        fuel: &mut usize,
+    ) -> bool {
+        if *fuel == 0 {
+            return false;
+        }
+
+        let ctrl_states = Self::direct_far_ctrl_states(goal);
+        let nfa_states =
+            ctrl_states * dfa_states + DIRECT_FAR_TARGET_STATES;
+        let any_sink = nfa_states - 2;
+        let zero_sink = nfa_states - 1;
+        let params = DirectFarParams {
+            goal,
+            direction,
+            dfa_states,
+            ctrl_states,
+            nfa_states,
+            any_sink,
+            zero_sink,
+        };
+
+        let mut r = vec![vec![0_u128; nfa_states]; COLORS];
+        let a = direct_far_bit(any_sink) | direct_far_bit(zero_sink);
+        self.direct_far_init_targets(params, &mut r);
+
+        let dfa_entries = COLORS * dfa_states;
+        let mut dfa = vec![0_usize; dfa_entries];
+        self.direct_far_search(params, &mut dfa, 0, 0, &r, a, fuel)
+    }
+
+    fn direct_far_init_targets(
+        &self,
+        params: DirectFarParams,
+        r: &mut [Vec<u128>],
+    ) {
+        let any_bit = direct_far_bit(params.any_sink);
+        let zero_bit = direct_far_bit(params.zero_sink);
+
+        // `any_sink` accepts an arbitrary suffix; `zero_sink` accepts only an
+        // all-zero suffix.  This lets the same direct-FAR machinery handle
+        // local halt targets, global blank targets, and one-sided spinout rays.
+        for color_matrix in r.iter_mut() {
+            color_matrix[params.any_sink] |= any_bit;
+        }
+        r[0][params.zero_sink] |= zero_bit;
+
+        match params.goal {
+            Goal::Halt => {
+                // Missing TM transitions are halting transitions.
+                for state in 0..STATES {
+                    for read_symbol in 0..COLORS {
+                        #[expect(clippy::cast_possible_truncation)]
+                        let slot: Slot =
+                            (state as State, read_symbol as Color);
+                        if self.get(&slot).is_none() {
+                            for dfa_state in 0..params.dfa_states {
+                                let src = direct_far_idx(
+                                    dfa_state,
+                                    state,
+                                    params.ctrl_states,
+                                );
+                                r[read_symbol][src] |= any_bit;
+                            }
+                        }
+                    }
+                }
+            },
+            Goal::Blank => {
+                // A dirty all-zero global tape is the blank target.  DFA state
+                // 0 is the all-zero left context because transition (0, 0) is
+                // fixed to 0 by the canonical direct-DFA search.
+                for state in 0..STATES {
+                    let dirty_ctrl = state + STATES;
+                    let src = direct_far_idx(
+                        0,
+                        dirty_ctrl,
+                        params.ctrl_states,
+                    );
+                    r[0][src] |= zero_bit;
+                }
+            },
+            Goal::Spinout => {
+                // Match the existing FAR/MITM spinout target: while scanning a
+                // zero, a same-state transition with an all-zero ray ahead.
+                for state in 0..STATES {
+                    #[expect(clippy::cast_possible_truncation)]
+                    let slot: Slot = (state as State, 0);
+                    let Some(&(_, shift_right, next_state)) =
+                        self.get(&slot)
+                    else {
+                        continue;
+                    };
+                    if next_state as usize != state {
+                        continue;
+                    }
+
+                    let move_code = direct_far_move_code(shift_right);
+                    if move_code == params.direction {
+                        // The forward ray is the NFA/right side in this
+                        // orientation, so it must be all zero.
+                        for dfa_state in 0..params.dfa_states {
+                            let src = direct_far_idx(
+                                dfa_state,
+                                state,
+                                params.ctrl_states,
+                            );
+                            r[0][src] |= zero_bit;
+                        }
+                    } else {
+                        // The forward ray is the DFA/left side in this
+                        // orientation; state 0 denotes the all-zero ray.  The
+                        // opposite side is irrelevant.
+                        let src = direct_far_idx(
+                            0,
+                            state,
+                            params.ctrl_states,
+                        );
+                        r[0][src] |= any_bit;
+                    }
+                }
+            },
+        }
+    }
+
+    fn direct_far_search(
+        &self,
+        params: DirectFarParams,
+        dfa: &mut [usize],
+        entry: usize,
+        max_seen: usize,
+        r: &[Vec<u128>],
+        a: u128,
+        fuel: &mut usize,
+    ) -> bool {
+        if *fuel == 0 {
+            return false;
+        }
+
+        let dfa_entries = COLORS * params.dfa_states;
+        if entry == dfa_entries {
+            return max_seen + 1 == params.dfa_states;
+        }
+
+        // Exact-state search: if even introducing one fresh state per remaining
+        // transition cannot reach `dfa_states`, this branch cannot be canonical.
+        let remaining = dfa_entries - entry;
+        if max_seen + 1 + remaining < params.dfa_states {
+            return false;
+        }
+
+        let max_to_state = if entry == 0 {
+            0
+        } else {
+            (max_seen + 1).min(params.dfa_states - 1)
+        };
+
+        for to_state in 0..=max_to_state {
+            if *fuel == 0 {
+                return false;
+            }
+            *fuel -= 1;
+
+            dfa[entry] = to_state;
+            let mut next_r = r.to_vec();
+            let mut next_a = a;
+            if !self.direct_far_extend_nfa(
+                params,
+                dfa,
+                &mut next_r,
+                &mut next_a,
+                entry,
+            ) {
+                continue;
+            }
+
+            if self.direct_far_search(
+                params,
+                dfa,
+                entry + 1,
+                max_seen.max(to_state),
+                &next_r,
+                next_a,
+                fuel,
+            ) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    fn direct_far_extend_nfa(
+        &self,
+        params: DirectFarParams,
+        dfa: &[usize],
+        r: &mut [Vec<u128>],
+        a: &mut u128,
+        entry: usize,
+    ) -> bool {
+        let dfa_src = entry / COLORS;
+        let write_symbol = entry % COLORS;
+        let dfa_dst = dfa[entry];
+        let fixed_entries = entry + 1;
+
+        // Right-rule for the one newly fixed DFA transition.
+        for ctrl in 0..params.ctrl_states {
+            let state =
+                Self::direct_far_ctrl_tm_state(params.goal, ctrl);
+            for read_symbol in 0..COLORS {
+                #[expect(clippy::cast_possible_truncation)]
+                let slot: Slot = (state as State, read_symbol as Color);
+                let Some(&(write, shift_right, next_state)) =
+                    self.get(&slot)
+                else {
+                    continue;
+                };
+
+                let written = write as usize;
+                if direct_far_move_code(shift_right) == params.direction
+                    && written == write_symbol
+                {
+                    let next_ctrl = Self::direct_far_next_ctrl(
+                        params.goal,
+                        ctrl,
+                        read_symbol,
+                        written,
+                        next_state as usize,
+                    );
+                    let src = direct_far_idx(
+                        dfa_src,
+                        ctrl,
+                        params.ctrl_states,
+                    );
+                    let dst = direct_far_idx(
+                        dfa_dst,
+                        next_ctrl,
+                        params.ctrl_states,
+                    );
+                    r[read_symbol][src] |= direct_far_bit(dst);
+                }
+            }
+        }
+
+        // Left-rule closure over all currently fixed DFA transitions.
+        loop {
+            let mut changed = false;
+
+            for ctrl in 0..params.ctrl_states {
+                let state =
+                    Self::direct_far_ctrl_tm_state(params.goal, ctrl);
+                for read_symbol in 0..COLORS {
+                    #[expect(clippy::cast_possible_truncation)]
+                    let slot: Slot =
+                        (state as State, read_symbol as Color);
+                    let Some(&(write, shift_right, next_state)) =
+                        self.get(&slot)
+                    else {
+                        continue;
+                    };
+
+                    let written = write as usize;
+                    if direct_far_move_code(shift_right)
+                        == params.direction
+                    {
+                        continue;
+                    }
+
+                    let next_ctrl = Self::direct_far_next_ctrl(
+                        params.goal,
+                        ctrl,
+                        read_symbol,
+                        written,
+                        next_state as usize,
+                    );
+                    for fixed_entry in 0..fixed_entries {
+                        let fixed_src = fixed_entry / COLORS;
+                        let fixed_symbol = fixed_entry % COLORS;
+                        let fixed_dst = dfa[fixed_entry];
+                        let middle = direct_far_idx(
+                            fixed_src,
+                            next_ctrl,
+                            params.ctrl_states,
+                        );
+                        let src = direct_far_idx(
+                            fixed_dst,
+                            ctrl,
+                            params.ctrl_states,
+                        );
+                        let inferred = direct_far_vec_times_matrix(
+                            r[fixed_symbol][middle],
+                            &r[written],
+                        );
+                        let new_bits = inferred & !r[read_symbol][src];
+                        if new_bits != 0 {
+                            r[read_symbol][src] |= inferred;
+                            changed = true;
+                        }
+                    }
+                }
+            }
+
+            if !changed {
+                break;
+            }
+        }
+
+        let mut prev_accept = *a;
+        loop {
+            let next_accept = direct_far_matrix_times_vec(
+                &r[0],
+                prev_accept,
+                params.nfa_states,
+            );
+            *a = next_accept;
+            if next_accept == prev_accept {
+                break;
+            }
+            prev_accept = next_accept;
+        }
+
+        // If the initial all-zero configuration is already accepted by this
+        // partial DFA/NFA lower bound, no completion can prove the target absent.
+        let start_idx = direct_far_idx(
+            0,
+            Self::direct_far_start_ctrl(params.goal),
+            params.ctrl_states,
+        );
+        (r[0][start_idx] & *a) == 0
     }
 
     fn mitm_cant_halt(&self) -> bool {
