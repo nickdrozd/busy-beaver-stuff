@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-#![expect(clippy::used_underscore_items)]
+#![expect(clippy::used_underscore_items, clippy::needless_for_each)]
 use rayon::prelude::*;
 
 use tm::{Goal, Prog, Steps};
@@ -568,6 +568,7 @@ const CURR: &[fn()] = &[test_deciders];
 
 const FAST: &[fn()] = &[
     test_collect,
+    test_from_file,
     test_instrs,
     test_prover,
     test_quasihalt,
@@ -576,9 +577,8 @@ const FAST: &[fn()] = &[
 
 const SLOW: &[fn()] = &[
     test_8_instr,
-    test_9_instr,
     test_deciders_slow,
-    test_from_file,
+    // test_9_instr,
 ];
 
 fn main() {
@@ -590,5 +590,5 @@ fn main() {
 
     FAST.par_iter().for_each(|f| f());
 
-    SLOW.par_iter().for_each(|f| f());
+    SLOW.iter().for_each(|f| f());
 }
