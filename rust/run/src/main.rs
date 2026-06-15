@@ -1,13 +1,15 @@
-#![allow(dead_code)]
+#![allow(dead_code, clippy::wildcard_imports)]
 #![expect(clippy::used_underscore_items, clippy::needless_for_each)]
 use rayon::prelude::*;
 
 use tm::{Goal, Prog, Steps};
 
 pub mod harvesters;
+pub mod holdouts;
 pub mod tree;
 
 use harvesters::{Collector, HoldoutVisited, Visited};
+use holdouts::*;
 use tree::{Harvester as _, PassConfig};
 
 /**************************************/
@@ -72,6 +74,160 @@ macro_rules! assert_deciders {
     }};
 }
 
+macro_rules! assert_holdouts {
+    ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => ( $pipeline:ident, $steps:expr, ( $holdouts:expr, $visited:expr ) ) ),* $(,)? ] ),* $(,)? ) => {{
+        rayon::scope(|s| { $( $( s.spawn(move |_| {
+            let (champs, holdouts) = $holdouts;
+
+            let mut seen_champs = std::collections::BTreeSet::new();
+            let mut duplicate_champs = std::collections::BTreeSet::new();
+
+            for &champ in champs {
+                if !seen_champs.insert(champ) {
+                    duplicate_champs.insert(champ);
+                }
+            }
+
+            let mut seen_holdouts = std::collections::BTreeSet::new();
+            let mut duplicate_holdouts = std::collections::BTreeSet::new();
+
+            for &holdout in holdouts {
+                if !seen_holdouts.insert(holdout) {
+                    duplicate_holdouts.insert(holdout);
+                }
+            }
+
+            let intersection = seen_champs
+                .intersection(&seen_holdouts)
+                .copied()
+                .collect::<Vec<_>>();
+
+            if !duplicate_champs.is_empty()
+                || !duplicate_holdouts.is_empty()
+                || !intersection.is_empty()
+            {
+                let mut message = format!(
+                    "(({}, {}), {})",
+                    $states, $colors, $goal,
+                );
+                use core::fmt::Write as _;
+
+                if !duplicate_champs.is_empty() {
+                    write!(
+                        &mut message,
+                        "\nduplicate champs: {duplicate_champs:#?}",
+                    )
+                    .unwrap();
+                }
+
+                if !duplicate_holdouts.is_empty() {
+                    write!(
+                        &mut message,
+                        "\nduplicate holdouts: {duplicate_holdouts:#?}",
+                    )
+                    .unwrap();
+                }
+
+                if !intersection.is_empty() {
+                    write!(
+                        &mut message,
+                        "\nchamp/holdout intersection: {intersection:#?}",
+                    )
+                    .unwrap();
+                }
+
+                panic!("{message}");
+            }
+
+            let (result, visited) = Collector::<$states, $colors>::run_params(
+                get_goal($goal),
+                $steps,
+                &|| Collector::new(
+                    |prog: &Prog<$states, $colors>, mut config: PassConfig<'_>| {
+                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+                            || $pipeline(prog, config)
+                    }
+                ),
+            );
+
+            let expected_holdouts = holdouts
+                .iter()
+                .map(ToString::to_string)
+                .collect::<std::collections::BTreeSet<_>>();
+            let expected_champs = champs
+                .iter()
+                .map(ToString::to_string)
+                .collect::<std::collections::BTreeSet<_>>();
+            let expected = expected_holdouts
+                .union(&expected_champs)
+                .cloned()
+                .collect::<std::collections::BTreeSet<_>>();
+            let result = result
+                .into_iter()
+                .collect::<std::collections::BTreeSet<_>>();
+
+            let missing_champs = expected_champs
+                .difference(&result)
+                .collect::<Vec<_>>();
+
+            if !missing_champs.is_empty() {
+                let mut message = format!(
+                    "(({}, {}), {})",
+                    $states, $colors, $goal,
+                );
+                use core::fmt::Write as _;
+
+                write!(
+                    &mut message,
+                    "\nmissing champs: {missing_champs:#?}",
+                )
+                .unwrap();
+
+                panic!("{message}");
+            }
+
+            if result != expected {
+                let collected_not_expected = result
+                    .difference(&expected)
+                    .collect::<Vec<_>>();
+                let expected_not_collected = expected
+                    .difference(&result)
+                    .collect::<Vec<_>>();
+
+                let mut message = format!(
+                    "(({}, {}), {})",
+                    $states, $colors, $goal,
+                );
+                use core::fmt::Write as _;
+
+                if !collected_not_expected.is_empty() {
+                    write!(
+                        &mut message,
+                        "\ncollected but not expected: {collected_not_expected:#?}",
+                    )
+                    .unwrap();
+                }
+
+                if !expected_not_collected.is_empty() {
+                    write!(
+                        &mut message,
+                        "\nexpected but not collected: {expected_not_collected:#?}",
+                    )
+                    .unwrap();
+                }
+
+                panic!("{message}");
+            }
+
+            assert_eq!(
+                visited, $visited,
+                "(({}, {}), {}, {visited:?})",
+                $states, $colors, $goal,
+            );
+        }); )* )* });
+    }};
+}
+
 /**************************************/
 
 fn _2_3_1(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
@@ -116,17 +272,17 @@ fn _2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
 fn test_deciders() {
     println!("deciders");
 
-    assert_deciders![
+    assert_holdouts![
         (2, 3) => [
-            1 => (_2_3_1, 20, (1, 3_506)),
+            1 => (_2_3_1, 20, (_2_3_1_, 3_506)),
         ],
         (4, 2) => [
-            1 => (_4_2_1, 99, (20, 753_582)),
-            2 => (_4_2_2, 99, (5, 1_932_610)),
+            1 => (_4_2_1, 99, (_4_2_1_, 753_582)),
+            2 => (_4_2_2, 99, (_4_2_2_, 1_932_610)),
         ],
         (2, 4) => [
-            1 => (_2_4_1, TREE_LIM, (821, 612_077)),
-            2 => (_2_4_2, TREE_LIM, (12, 1_189_643)),
+            1 => (_2_4_1, TREE_LIM, (_2_4_1_, 612_077)),
+            2 => (_2_4_2, TREE_LIM, (_2_4_2_, 1_189_643)),
         ],
     ];
 }
@@ -428,15 +584,6 @@ fn test_deciders_slow() {
 
 /**************************************/
 
-fn test_collect() {
-    println!("collect");
-
-    let result =
-        Collector::<2, 2>::run_params(None, 4, &Collector::new);
-
-    assert_eq!(result.len(), 81);
-}
-
 use std::{
     fs::File,
     io::{self, BufRead as _, BufReader},
@@ -567,7 +714,6 @@ fn test_9_instr() {
 const CURR: &[fn()] = &[test_deciders];
 
 const FAST: &[fn()] = &[
-    test_collect,
     test_from_file,
     test_instrs,
     test_prover,
