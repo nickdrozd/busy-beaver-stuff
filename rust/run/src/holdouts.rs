@@ -34,7 +34,6 @@ const _4_2_1_ho: &[&str] = &[
 ];
 
 const _2_4_2_ch: &[&str] = &[
-    "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA",
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA",
     "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA",
 ];
@@ -46,19 +45,14 @@ const _2_4_2_ho: &[&str] = &[
     "1RB 2RB 3LA 0RB  0LB 1LA 0LA 2RA",
     "1RB 3LB 0RB 2RB  2LA 0RA 0LB 3RA",
     "1RB 3RA 1LB 1RB  2LA 0LB 3RB 1LA",
-    "1RB 3RA 3LA 0LA  1LB 2LA 0RB 2RA",
-    "1RB 3RA 3LB 1LA  2LA 0RA 3LA 0LB",
     "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
 ];
 
 const _2_4_1_ch: &[&str] = &[
-    "1RB 0RA 1RA 0RB  2LB 3LA 1LA 0RA",
     "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",
     "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA",
-    "1RB 2RA 3LA 0LB  1LB 1LA 0RB 1RB",
     "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA",
-    "1RB 3LB 3LA 2RA  2LB 2RA 1RB 0RB",
     "1RB 3RB 1LA 1LB  1LB 2RA 3RB 2LA",
 ];
 
@@ -79,7 +73,6 @@ const _2_4_1_ho: &[&str] = &[
     "1RB 0LA 1LB 2RB  2LB 3RB 1LA 0RA",
     "1RB 0LA 2RB 1LB  2LB 3RA 0LB 1LA",
     "1RB 0LA 2RB 1LB  2LB 3RA 3RB 0LA",
-    "1RB 0LA 3LA 0LB  2LB 2RB 3RB 1RA",
     "1RB 0LA 3LA 0RB  2LB 2RB 3RB 1LA",
     "1RB 0LA 3LA 2LB  2LB 2RB 3RB 1LA",
     "1RB 0LA 3LA 2LB  2LB 2RB 3RB 2RA",
@@ -92,7 +85,6 @@ const _2_4_1_ho: &[&str] = &[
     "1RB 0LA 3LB 1RB  2LB 2RA 3LA 2RB",
     "1RB 0LA 3LB 1RB  2LB 3RB 3LA 2RB",
     "1RB 0LA 3LB 2RA  0LB 2RB 3LA 3RA",
-    "1RB 0LA 3RA 0LB  1LB 2RB 3LA 1RA",
     "1RB 0LA 3RA 0RB  1LB 2RB 2LA 1LA",
     "1RB 0LA 3RA 2LB  1LB 2RB 2LA 2LA",
     "1RB 0LA 3RA 2LB  1LB 2RB 3LA 2LA",
@@ -362,7 +354,6 @@ const _2_4_1_ho: &[&str] = &[
     "1RB 2LB 3LB 1LA  2LB 2RA 3RA 1RB",
     "1RB 2LB 3LB 1RA  2LB 2RA 3LA 3RB",
     "1RB 2LB 3LB 1RA  2LB 3LA 3RA 0RB",
-    "1RB 2LB 3RA 0LB  1LB 2RB 0LA 0LA",
     "1RB 2LB 3RA 0RA  2LB 2RB 3RB 1LA",
     "1RB 2LB 3RA 1LB  2LB 2RB 3RB 1LA",
     "1RB 2LB 3RB 1RA  2LB 2RA 3LA 2LB",
@@ -651,7 +642,6 @@ const _2_4_1_ho: &[&str] = &[
     "1RB 3LB 3LB 3LA  1LB 2RA 3RA 0LB",
     "1RB 3LB 3LB 3RA  2LB 2RA 1LA 2RB",
     "1RB 3LB 3RA 0LA  1LB 2LA 1RB 2RA",
-    "1RB 3LB 3RA 0LB  1LB 2RB 0LA 0LA",
     "1RB 3LB 3RA 0LB  2LB 3LA 2RA 1RB",
     "1RB 3LB 3RA 0RB  2LB 2RB 3RB 0LA",
     "1RB 3LB 3RB 1LA  2LB 3RA 3LA 0RB",
@@ -907,7 +897,7 @@ pub const _2_4_2_: (&[&str], &[&str]) = (_2_4_2_ch, _2_4_2_ho);
 use tm::Prog;
 
 #[cfg(test)]
-const LIN_CHECK: usize = 3_000;
+const LIN_CHECK: usize = 11_000;
 
 #[test]
 fn test_champs() {

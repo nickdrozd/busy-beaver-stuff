@@ -14,7 +14,7 @@ use tree::{Harvester as _, PassConfig};
 
 /**************************************/
 
-const LIN_REC: Steps = 3_000;
+const LIN_REC: Steps = 4_000;
 const TREE_LIM: Steps = 876;
 
 /**************************************/
@@ -245,27 +245,30 @@ fn _4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_spinout(3)
 }
 
-fn _4_2_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn _4_2_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(130)
         || prog.cps_cant_blank(20)
+        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
         || prog.far_cant_blank(3)
 }
 
-fn _2_4_1(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn _2_4_1(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
         || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
         || prog.seg_cant_spinout(10).is_refuted()
+        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
         || prog.far_cant_spinout(3)
 }
 
-fn _2_4_2(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn _2_4_2(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(200)
         || prog.cps_cant_blank(20)
+        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
         || prog.far_cant_blank(3)
 }
 
@@ -574,19 +577,19 @@ fn test_deciders_slow() {
 
     assert_deciders![
         (5, 2) => [
-            0 => (_5_2_0, 700, (1_396_906, 90_676_712)),
-            1 => (_5_2_1, TREE_LIM, (2_889_204, 180_764_612)),
-            2 => (_5_2_2, TREE_LIM, (9_561_157, 486_399_920)),
+            0 => (_5_2_0, 700, (1_396_770, 90_676_712)),
+            1 => (_5_2_1, TREE_LIM, (2_887_548, 180_764_612)),
+            2 => (_5_2_2, TREE_LIM, (9_549_864, 486_399_920)),
         ],
         (3, 3) => [
-            0 => (_3_3_0, 2_700, (769_902, 24_003_381)),
-            1 => (_3_3_1, 3_000, (1_745_865, 50_932_166)),
-            2 => (_3_3_2, 3_000, (2_638_570, 123_182_486)),
+            0 => (_3_3_0, 2_700, (769_835, 24_003_381)),
+            1 => (_3_3_1, 3_000, (1_744_815, 50_932_166)),
+            2 => (_3_3_2, 3_000, (2_634_833, 123_182_486)),
         ],
         (2, 5) => [
-            0 => (_2_5_0, TREE_LIM, (4_290_346, 69_763_571)),
-            1 => (_2_5_1, TREE_LIM, (14_491_144, 162_767_964)),
-            2 => (_2_5_2, TREE_LIM, (9_732_773, 366_717_085)),
+            0 => (_2_5_0, TREE_LIM, (4_289_417, 69_763_571)),
+            1 => (_2_5_1, TREE_LIM, (14_470_412, 162_767_964)),
+            2 => (_2_5_2, TREE_LIM, (9_698_645, 366_717_085)),
         ],
     ];
 }
@@ -705,7 +708,7 @@ fn test_8_instr() {
     println!("8 instrs");
 
     assert_instrs![
-        8 => (instrs_8, 500, (708, 12_835_863_274)),
+        8 => (instrs_8, 500, (586, 12_835_863_274)),
     ];
 }
 
