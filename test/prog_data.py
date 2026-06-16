@@ -2921,7 +2921,12 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
     },
     "twostep": {
         "depth_limit": {
+            "1RB 1RA 2RB  2LB 1LA 0RB",
+            "1RB 2LA 2LA  0LB 1LA 2RB",
+            "1RB 2RA 2LA  0LB 1LA 2RB",
+            "1RB 2RA 2RB  2LA 1LA 1LB",
             "1RB 2RA 2RB  2LB 1LA 0RB",
+            "1RB 1LA  0LA 1LC  0RB 1RC",
             "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC",
         },
     },
@@ -2947,7 +2952,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
         "depth_limit": 165,
     },
     "twostep": {
-        "depth_limit": 2,
+        "depth_limit": 7,
     },
     "zloop": {
         "depth_limit": 2,

@@ -880,7 +880,22 @@ const _2_4_1_ho: &[&str] = &[
 
 /**************************************/
 
+pub const _3_2_3_ch: &[&str] = &[];
+pub const _3_2_3_ho: &[&str] = &["1RB 1LA  0LA 1LC  0RB 1RC"];
+
+pub const _2_3_3_ch: &[&str] = &[];
+pub const _2_3_3_ho: &[&str] = &[
+    "1RB 1RA 2RB  2LB 1LA 0RB",
+    "1RB 2LA 2LA  0LB 1LA 2RB",
+    "1RB 2RA 2LA  0LB 1LA 2RB",
+    "1RB 2RA 2RB  2LA 1LA 1LB",
+];
+
+/**************************************/
+
 pub const _2_3_1_: (&[&str], &[&str]) = (&[], _2_3_1_ho);
+pub const _3_2_3_: (&[&str], &[&str]) = (&[], _3_2_3_ho);
+pub const _2_3_3_: (&[&str], &[&str]) = (&[], _2_3_3_ho);
 pub const _4_2_1_: (&[&str], &[&str]) = (_4_2_1_ch, _4_2_1_ho);
 pub const _4_2_2_: (&[&str], &[&str]) = (_4_2_2_ch, _4_2_2_ho);
 pub const _2_4_1_: (&[&str], &[&str]) = (_2_4_1_ch, _2_4_1_ho);

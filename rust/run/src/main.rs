@@ -287,6 +287,44 @@ fn test_deciders() {
     ];
 }
 
+fn _3_2_3(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_twostep() || prog.bkw_cant_twostep(10).is_refuted()
+}
+
+fn _2_3_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_twostep() || prog.bkw_cant_twostep(10).is_refuted()
+}
+
+fn _4_2_3(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_twostep() || prog.bkw_cant_twostep(50).is_refuted()
+}
+
+fn _2_4_3(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_twostep() || prog.bkw_cant_twostep(30).is_refuted()
+}
+
+fn test_twostep() {
+    println!("twostep");
+
+    assert_holdouts![
+        (3, 2) => [
+            3 => (_3_2_3, 13, (_3_2_3_, 11_754)),
+        ],
+        (2, 3) => [
+            3 => (_2_3_3, 20, (_2_3_3_, 8_766)),
+        ],
+    ];
+
+    assert_deciders![
+        (4, 2) => [
+            3 => (_4_2_3, 99, (507, 2_134_923)),
+        ],
+        (2, 4) => [
+            3 => (_2_4_3, TREE_LIM, (3085, 1_698_850)),
+        ],
+    ];
+}
+
 /**************************************/
 
 fn _2_2_0(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
@@ -327,12 +365,6 @@ fn _3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
-fn _3_2_3(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
-    prog.graph_cant_twostep()
-        || prog.bkw_cant_twostep(2).is_refuted()
-        || !prog.term_or_rec(100, config.to_mut()).is_stationary()
-}
-
 fn _2_3_0(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(8).is_refuted()
@@ -347,24 +379,12 @@ fn _2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
-fn _2_3_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
-    prog.graph_cant_twostep()
-        || prog.bkw_cant_twostep(2).is_refuted()
-        || !prog.term_or_rec(100, config.to_mut()).is_stationary()
-}
-
 fn _4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(46).is_refuted()
         || prog.ctl_cant_halt(130)
         || prog.cps_cant_halt(6)
         || prog.far_cant_halt(3)
-}
-
-fn _4_2_3(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
-    prog.graph_cant_twostep()
-        || prog.bkw_cant_twostep(18).is_refuted()
-        || !prog.term_or_rec(100, config.to_mut()).is_stationary()
 }
 
 fn _2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
@@ -375,12 +395,6 @@ fn _2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.to_string() == "1RB 2LA 1RA 1RA  1LB 1LA 3RB ..."
 }
 
-fn _2_4_3(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
-    prog.graph_cant_twostep()
-        || prog.bkw_cant_twostep(11).is_refuted()
-        || !prog.term_or_rec(600, config.to_mut()).is_stationary()
-}
-
 fn test_solved() {
     println!("solved");
 
@@ -389,26 +403,21 @@ fn test_solved() {
             0 => (_2_2_0, 2, (0, 23)),
             1 => (_2_2_1, 4, (0, 32)),
             2 => (_2_2_2, 4, (0, 53)),
-            3 => (_2_2_3, 4, (0, 81)),
         ],
         (3, 2) => [
             0 => (_3_2_0, 12, (0, 2_718)),
             1 => (_3_2_1, 13, (0, 4_046)),
             2 => (_3_2_2, 13, (0, 9_510)),
-            3 => (_3_2_3, 13, (0, 11_754)),
         ],
         (2, 3) => [
             0 => (_2_3_0, 7, (0, 2_335)),
             2 => (_2_3_2, 20, (0, 5_959)),
-            3 => (_2_3_3, 20, (0, 8_766)),
         ],
         (4, 2) => [
             0 => (_4_2_0, 25, (0, 431_888)),
-            3 => (_4_2_3, 99, (0, 2_134_923)),
         ],
         (2, 4) => [
             0 => (_2_4_0, 109, (0, 308_968)),
-            3 => (_2_4_3, TREE_LIM, (0, 1_698_850)),
         ],
     ];
 }
@@ -719,6 +728,7 @@ const FAST: &[fn()] = &[
     test_prover,
     test_quasihalt,
     test_solved,
+    test_twostep,
 ];
 
 const SLOW: &[fn()] = &[
