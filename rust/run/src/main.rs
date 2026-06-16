@@ -4,10 +4,12 @@ use rayon::prelude::*;
 
 use tm::{Goal, Prog, Steps};
 
+pub mod check;
 pub mod harvesters;
 pub mod holdouts;
 pub mod tree;
 
+use check::test_holdouts;
 use harvesters::{Collector, HoldoutVisited, Visited};
 use holdouts::*;
 use tree::{Harvester as _, PassConfig};
@@ -723,9 +725,10 @@ fn test_9_instr() {
 
 /**************************************/
 
-const CURR: &[fn()] = &[test_deciders];
+const CURR: &[fn()] = &[test_holdouts];
 
 const FAST: &[fn()] = &[
+    test_deciders,
     test_from_file,
     test_instrs,
     test_prover,

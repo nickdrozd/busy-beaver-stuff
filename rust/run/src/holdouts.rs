@@ -1,17 +1,17 @@
-const _2_3_1_ho: &[&str] = &["1RB 2LB 1LA  2LB 2RA 0LB"];
+pub const _2_3_1_ho: &[&str] = &["1RB 2LB 1LA  2LB 2RA 0LB"];
 
-const _4_2_2_ch: &[&str] = &["1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD"];
+pub const _4_2_2_ch: &[&str] = &["1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD"];
 
-const _4_2_2_ho: &[&str] = &[
+pub const _4_2_2_ho: &[&str] = &[
     "1RB 0LB  0LC 0LA  1RD 1LC  0RC 1RA",
     "1RB 0LC  0LC 1RA  0RA 1LD  1LC 0RA",
     "1RB 0LC  1LB 1RA  0RA 1LD  1LC 0RA",
     "1RB 1RC  0RC 0RD  1LD 0LA  1LC 0RB",
 ];
 
-const _4_2_1_ch: &[&str] = &["1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD"];
+pub const _4_2_1_ch: &[&str] = &["1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD"];
 
-const _4_2_1_ho: &[&str] = &[
+pub const _4_2_1_ho: &[&str] = &[
     "1RB 0LB  0RC 0RD  1LC 1LA  1RA 1RD",
     "1RB 0LC  1LB 1RC  1RB 0RD  1LD 1LA",
     "1RB 0LD  0RC 1RB  0RD 1RD  1LD 1LA",
@@ -33,12 +33,12 @@ const _4_2_1_ho: &[&str] = &[
     "1RB 1RC  1LC 0LB  0RC 1LD  1RA 0LD",
 ];
 
-const _2_4_2_ch: &[&str] = &[
+pub const _2_4_2_ch: &[&str] = &[
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA",
     "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA",
 ];
 
-const _2_4_2_ho: &[&str] = &[
+pub const _2_4_2_ho: &[&str] = &[
     "1RB 0RA 3RB 1LA  2LA 0LB 1LA 2RA",
     "1RB 0RB 2RA 0LB  1LB 2RB 3LA 0RA",
     "1RB 2RB 2LA 3LB  0LA 2RB 3RB 0RB",
@@ -48,7 +48,7 @@ const _2_4_2_ho: &[&str] = &[
     "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
 ];
 
-const _2_4_1_ch: &[&str] = &[
+pub const _2_4_1_ch: &[&str] = &[
     "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",
     "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA",
@@ -56,7 +56,7 @@ const _2_4_1_ch: &[&str] = &[
     "1RB 3RB 1LA 1LB  1LB 2RA 3RB 2LA",
 ];
 
-const _2_4_1_ho: &[&str] = &[
+pub const _2_4_1_ho: &[&str] = &[
     "1RB ... 0LB 1RA  2LB 0RB 3RB 2LA",
     "1RB ... 0RB 0RB  2LB 3RA 3RB 0LA",
     "1RB ... 1LA 2LB  2LB 0RB 3RB 2RA",
@@ -890,36 +890,3 @@ pub const _4_2_1_: (&[&str], &[&str]) = (_4_2_1_ch, _4_2_1_ho);
 pub const _4_2_2_: (&[&str], &[&str]) = (_4_2_2_ch, _4_2_2_ho);
 pub const _2_4_1_: (&[&str], &[&str]) = (_2_4_1_ch, _2_4_1_ho);
 pub const _2_4_2_: (&[&str], &[&str]) = (_2_4_2_ch, _2_4_2_ho);
-
-/**************************************/
-
-#[cfg(test)]
-use tm::Prog;
-
-#[cfg(test)]
-const LIN_CHECK: usize = 11_000;
-
-#[test]
-fn test_champs() {
-    for progs in [_4_2_1_ch, _4_2_1_ho, _4_2_2_ch, _4_2_2_ho] {
-        for &prog in progs {
-            assert!(
-                !Prog::<4, 2>::from(prog)
-                    .term_or_rec_fresh(LIN_CHECK)
-                    .is_settled(),
-                "{prog}",
-            );
-        }
-    }
-
-    for progs in [_2_4_1_ch, _2_4_1_ho, _2_4_2_ch, _2_4_2_ho] {
-        for &prog in progs {
-            assert!(
-                !Prog::<2, 4>::from(prog)
-                    .term_or_rec_fresh(LIN_CHECK)
-                    .is_settled(),
-                "{prog}",
-            );
-        }
-    }
-}
