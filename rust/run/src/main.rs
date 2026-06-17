@@ -9,7 +9,7 @@ pub mod harvesters;
 pub mod holdouts;
 pub mod tree;
 
-use check::test_holdouts;
+use check::{assert_holdouts_match, test_holdouts};
 use harvesters::{Collector, HoldoutVisited, Visited};
 use holdouts::*;
 use tree::{Harvester as _, PassConfig};
@@ -81,66 +81,6 @@ macro_rules! assert_holdouts {
         rayon::scope(|s| { $( $( s.spawn(move |_| {
             let (champs, holdouts) = $holdouts;
 
-            let mut seen_champs = std::collections::BTreeSet::new();
-            let mut duplicate_champs = std::collections::BTreeSet::new();
-
-            for &champ in champs {
-                if !seen_champs.insert(champ) {
-                    duplicate_champs.insert(champ);
-                }
-            }
-
-            let mut seen_holdouts = std::collections::BTreeSet::new();
-            let mut duplicate_holdouts = std::collections::BTreeSet::new();
-
-            for &holdout in holdouts {
-                if !seen_holdouts.insert(holdout) {
-                    duplicate_holdouts.insert(holdout);
-                }
-            }
-
-            let intersection = seen_champs
-                .intersection(&seen_holdouts)
-                .copied()
-                .collect::<Vec<_>>();
-
-            if !duplicate_champs.is_empty()
-                || !duplicate_holdouts.is_empty()
-                || !intersection.is_empty()
-            {
-                let mut message = format!(
-                    "(({}, {}), {})",
-                    $states, $colors, $goal,
-                );
-                use core::fmt::Write as _;
-
-                if !duplicate_champs.is_empty() {
-                    write!(
-                        &mut message,
-                        "\nduplicate champs: {duplicate_champs:#?}",
-                    )
-                    .unwrap();
-                }
-
-                if !duplicate_holdouts.is_empty() {
-                    write!(
-                        &mut message,
-                        "\nduplicate holdouts: {duplicate_holdouts:#?}",
-                    )
-                    .unwrap();
-                }
-
-                if !intersection.is_empty() {
-                    write!(
-                        &mut message,
-                        "\nchamp/holdout intersection: {intersection:#?}",
-                    )
-                    .unwrap();
-                }
-
-                panic!("{message}");
-            }
-
             let (result, visited) = Collector::<$states, $colors>::run_params(
                 get_goal($goal),
                 $steps,
@@ -152,74 +92,12 @@ macro_rules! assert_holdouts {
                 ),
             );
 
-            let expected_holdouts = holdouts
-                .iter()
-                .map(ToString::to_string)
-                .collect::<std::collections::BTreeSet<_>>();
-            let expected_champs = champs
-                .iter()
-                .map(ToString::to_string)
-                .collect::<std::collections::BTreeSet<_>>();
-            let expected = expected_holdouts
-                .union(&expected_champs)
-                .cloned()
-                .collect::<std::collections::BTreeSet<_>>();
-            let result = result
-                .into_iter()
-                .collect::<std::collections::BTreeSet<_>>();
-
-            let missing_champs = expected_champs
-                .difference(&result)
-                .collect::<Vec<_>>();
-
-            if !missing_champs.is_empty() {
-                let mut message = format!(
-                    "(({}, {}), {})",
-                    $states, $colors, $goal,
-                );
-                use core::fmt::Write as _;
-
-                write!(
-                    &mut message,
-                    "\nmissing champs: {missing_champs:#?}",
-                )
-                .unwrap();
-
-                panic!("{message}");
-            }
-
-            if result != expected {
-                let collected_not_expected = result
-                    .difference(&expected)
-                    .collect::<Vec<_>>();
-                let expected_not_collected = expected
-                    .difference(&result)
-                    .collect::<Vec<_>>();
-
-                let mut message = format!(
-                    "(({}, {}), {})",
-                    $states, $colors, $goal,
-                );
-                use core::fmt::Write as _;
-
-                if !collected_not_expected.is_empty() {
-                    write!(
-                        &mut message,
-                        "\ncollected but not expected: {collected_not_expected:#?}",
-                    )
-                    .unwrap();
-                }
-
-                if !expected_not_collected.is_empty() {
-                    write!(
-                        &mut message,
-                        "\nexpected but not collected: {expected_not_collected:#?}",
-                    )
-                    .unwrap();
-                }
-
-                panic!("{message}");
-            }
+            assert_holdouts_match(
+                format!("(({}, {}), {})", $states, $colors, $goal),
+                champs,
+                holdouts,
+                result,
+            );
 
             assert_eq!(
                 visited, $visited,
