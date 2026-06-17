@@ -4,6 +4,28 @@ use tm::Prog;
 
 /**************************************/
 
+pub fn test_holdouts() {
+    println!("lin rec");
+    test_linrec();
+
+    println!("backward");
+    test_backward();
+
+    println!("ctl");
+    test_ctl();
+
+    println!("cps");
+    test_cps();
+
+    println!("true negatives");
+    test_blank_true_negatives();
+
+    println!("far");
+    test_far();
+}
+
+/**************************************/
+
 const LIN_CHECK: usize = 11_000;
 
 fn check_linrec<const STATES: usize, const COLORS: usize>(
@@ -41,44 +63,147 @@ fn test_linrec() {
     assert_no_holdout_failures("lin rec", &failures);
 }
 
-#[expect(clippy::shadow_unrelated)]
+fn check_holdout_decider<const STATES: usize, const COLORS: usize>(
+    failures: &mut Vec<String>,
+    context: &str,
+    progs: &[&str],
+    decider: impl Fn(&Prog<STATES, COLORS>) -> bool,
+) {
+    println!("{context}");
+
+    let mut refuted = vec![];
+
+    for &prog_str in progs {
+        let prog = Prog::<STATES, COLORS>::from(prog_str);
+
+        if decider(&prog) {
+            refuted.push(prog_str.to_owned());
+        }
+    }
+
+    failures.extend(holdouts_match_errors(context, &[], &[], refuted));
+}
+
+fn test_backward() {
+    let mut failures = vec![];
+
+    check_holdout_decider::<4, 2>(
+        &mut failures,
+        "4-2-2",
+        _4_2_2_ho,
+        |prog| prog.bkw_cant_blank(2000).is_refuted(),
+    );
+    check_holdout_decider::<2, 4>(
+        &mut failures,
+        "2-4-2",
+        _2_4_2_ho,
+        |prog| prog.bkw_cant_blank(2000).is_refuted(),
+    );
+    check_holdout_decider::<4, 2>(
+        &mut failures,
+        "4-2-1",
+        _4_2_1_ho,
+        |prog| prog.bkw_cant_spinout(2000).is_refuted(),
+    );
+    check_holdout_decider::<2, 4>(
+        &mut failures,
+        "2-4-1",
+        _2_4_1_ho,
+        |prog| prog.bkw_cant_spinout(2000).is_refuted(),
+    );
+
+    assert_no_holdout_failures("backward", &failures);
+}
+
+fn test_ctl() {
+    let mut failures = vec![];
+
+    check_holdout_decider::<4, 2>(
+        &mut failures,
+        "4-2-2",
+        _4_2_2_ho,
+        |prog| prog.ctl_cant_blank(130),
+    );
+    check_holdout_decider::<2, 4>(
+        &mut failures,
+        "2-4-2",
+        _2_4_2_ho,
+        |prog| prog.ctl_cant_blank(200),
+    );
+    check_holdout_decider::<4, 2>(
+        &mut failures,
+        "4-2-1",
+        _4_2_1_ho,
+        |prog| prog.ctl_cant_spinout(500),
+    );
+    check_holdout_decider::<2, 4>(
+        &mut failures,
+        "2-4-1",
+        _2_4_1_ho,
+        |prog| prog.ctl_cant_spinout(700),
+    );
+
+    assert_no_holdout_failures("ctl", &failures);
+}
+
+fn test_cps() {
+    let mut failures = vec![];
+
+    check_holdout_decider::<4, 2>(
+        &mut failures,
+        "4-2-2",
+        _4_2_2_ho,
+        |prog| prog.cps_cant_blank(20),
+    );
+    check_holdout_decider::<2, 4>(
+        &mut failures,
+        "2-4-2",
+        _2_4_2_ho,
+        |prog| prog.cps_cant_blank(20),
+    );
+    check_holdout_decider::<4, 2>(
+        &mut failures,
+        "4-2-1",
+        _4_2_1_ho,
+        |prog| prog.cps_cant_spinout(12),
+    );
+    check_holdout_decider::<2, 4>(
+        &mut failures,
+        "2-4-1",
+        _2_4_1_ho,
+        |prog| prog.cps_cant_spinout(11),
+    );
+
+    assert_no_holdout_failures("cps", &failures);
+}
+
 fn test_far() {
     let mut failures = vec![];
-    println!("4-2-2");
-    let mut refuted = vec![];
-    for &prog in _4_2_2_ho {
-        if Prog::<4, 2>::from(prog).far_cant_blank(3) {
-            refuted.push(prog.to_owned());
-        }
-    }
-    failures.extend(holdouts_match_errors("4-2-2", &[], &[], refuted));
 
-    println!("2-4-2");
-    let mut refuted = vec![];
-    for &prog in _2_4_2_ho {
-        if Prog::<2, 4>::from(prog).far_cant_blank(3) {
-            refuted.push(prog.to_owned());
-        }
-    }
-    failures.extend(holdouts_match_errors("2-4-2", &[], &[], refuted));
-
-    println!("4-2-1");
-    let mut refuted = vec![];
-    for &prog in _4_2_1_ho {
-        if Prog::<4, 2>::from(prog).far_cant_spinout(3) {
-            refuted.push(prog.to_owned());
-        }
-    }
-    failures.extend(holdouts_match_errors("4-2-1", &[], &[], refuted));
-
-    println!("2-4-1");
-    let mut refuted = vec![];
-    for &prog in _2_4_1_ho {
-        if Prog::<2, 4>::from(prog).far_cant_spinout(3) {
-            refuted.push(prog.to_owned());
-        }
-    }
-    failures.extend(holdouts_match_errors("2-4-1", &[], &[], refuted));
+    check_holdout_decider::<4, 2>(
+        &mut failures,
+        "4-2-2",
+        _4_2_2_ho,
+        |prog| prog.far_cant_blank(3),
+    );
+    check_holdout_decider::<2, 4>(
+        &mut failures,
+        "2-4-2",
+        _2_4_2_ho,
+        |prog| prog.far_cant_blank(3),
+    );
+    check_holdout_decider::<4, 2>(
+        &mut failures,
+        "4-2-1",
+        _4_2_1_ho,
+        |prog| prog.far_cant_spinout(3),
+    );
+    check_holdout_decider::<2, 4>(
+        &mut failures,
+        "2-4-1",
+        _2_4_1_ho,
+        |prog| prog.far_cant_spinout(3),
+    );
 
     assert_no_holdout_failures("far", &failures);
 }
@@ -149,19 +274,6 @@ fn test_blank_true_negatives() {
     check_blank_true_negative::<6, 2>(&mut failures, "6-2-2", _6_2_2);
 
     assert_no_holdout_failures("true negatives", &failures);
-}
-
-/**************************************/
-
-pub fn test_holdouts() {
-    println!("lin rec");
-    test_linrec();
-
-    println!("true negatives");
-    test_blank_true_negatives();
-
-    println!("far");
-    test_far();
 }
 
 /**************************************/
