@@ -6,36 +6,44 @@ use tm::Prog;
 
 const LIN_CHECK: usize = 11_000;
 
-fn test_linrec() {
+fn check_linrec<const STATES: usize, const COLORS: usize>(
+    failures: &mut Vec<String>,
+    context: &str,
+    progs: &[&str],
+) {
     let mut settled = vec![];
 
-    for progs in [_4_2_1_ch, _4_2_1_ho, _4_2_2_ch, _4_2_2_ho] {
-        for &prog in progs {
-            if Prog::<4, 2>::from(prog)
-                .term_or_rec_fresh(LIN_CHECK)
-                .is_settled()
-            {
-                settled.push(prog.to_owned());
-            }
+    for &prog in progs {
+        if Prog::<STATES, COLORS>::from(prog)
+            .term_or_rec_fresh(LIN_CHECK)
+            .is_settled()
+        {
+            settled.push(prog.to_owned());
         }
     }
 
-    for progs in [_2_4_1_ch, _2_4_1_ho, _2_4_2_ch, _2_4_2_ho] {
-        for &prog in progs {
-            if Prog::<2, 4>::from(prog)
-                .term_or_rec_fresh(LIN_CHECK)
-                .is_settled()
-            {
-                settled.push(prog.to_owned());
-            }
-        }
-    }
+    failures.extend(holdouts_match_errors(context, &[], &[], settled));
+}
 
-    assert_holdouts_match("lin rec", &[], &[], settled);
+fn test_linrec() {
+    let mut failures = vec![];
+
+    check_linrec::<4, 2>(&mut failures, "4-2-1 champs", _4_2_1_ch);
+    check_linrec::<4, 2>(&mut failures, "4-2-1 holdouts", _4_2_1_ho);
+    check_linrec::<4, 2>(&mut failures, "4-2-2 champs", _4_2_2_ch);
+    check_linrec::<4, 2>(&mut failures, "4-2-2 holdouts", _4_2_2_ho);
+
+    check_linrec::<2, 4>(&mut failures, "2-4-1 champs", _2_4_1_ch);
+    check_linrec::<2, 4>(&mut failures, "2-4-1 holdouts", _2_4_1_ho);
+    check_linrec::<2, 4>(&mut failures, "2-4-2 champs", _2_4_2_ch);
+    check_linrec::<2, 4>(&mut failures, "2-4-2 holdouts", _2_4_2_ho);
+
+    assert_no_holdout_failures("lin rec", &failures);
 }
 
 #[expect(clippy::shadow_unrelated)]
 fn test_far() {
+    let mut failures = vec![];
     println!("4-2-2");
     let mut refuted = vec![];
     for &prog in _4_2_2_ho {
@@ -43,7 +51,7 @@ fn test_far() {
             refuted.push(prog.to_owned());
         }
     }
-    assert_holdouts_match("4-2-2 far", &[], &[], refuted);
+    failures.extend(holdouts_match_errors("4-2-2", &[], &[], refuted));
 
     println!("2-4-2");
     let mut refuted = vec![];
@@ -52,7 +60,7 @@ fn test_far() {
             refuted.push(prog.to_owned());
         }
     }
-    assert_holdouts_match("2-4-2 far", &[], &[], refuted);
+    failures.extend(holdouts_match_errors("2-4-2", &[], &[], refuted));
 
     println!("4-2-1");
     let mut refuted = vec![];
@@ -61,7 +69,7 @@ fn test_far() {
             refuted.push(prog.to_owned());
         }
     }
-    assert_holdouts_match("4-2-1 far", &[], &[], refuted);
+    failures.extend(holdouts_match_errors("4-2-1", &[], &[], refuted));
 
     println!("2-4-1");
     let mut refuted = vec![];
@@ -70,7 +78,9 @@ fn test_far() {
             refuted.push(prog.to_owned());
         }
     }
-    assert_holdouts_match("2-4-1 far", &[], &[], refuted);
+    failures.extend(holdouts_match_errors("2-4-1", &[], &[], refuted));
+
+    assert_no_holdout_failures("far", &failures);
 }
 
 /**************************************/
@@ -110,40 +120,35 @@ const _5_2_2: &[&str] =
 const _6_2_2: &[&str] =
     &["1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC"];
 
-fn test_blank_true_negatives() {
+fn check_blank_true_negative<
+    const STATES: usize,
+    const COLORS: usize,
+>(
+    failures: &mut Vec<String>,
+    context: &str,
+    progs: &[&str],
+) {
     let mut fp = vec![];
 
-    for &prog in _2_2_2 {
-        if Prog::<2, 2>::from(prog).far_cant_blank(3) {
+    for &prog in progs {
+        if Prog::<STATES, COLORS>::from(prog).far_cant_blank(3) {
             fp.push(prog);
         }
     }
 
-    for &prog in _3_2_2 {
-        if Prog::<3, 2>::from(prog).far_cant_blank(3) {
-            fp.push(prog);
-        }
-    }
+    failures.extend(holdouts_match_errors(context, &[], &[], fp));
+}
 
-    for &prog in _4_2_2 {
-        if Prog::<4, 2>::from(prog).far_cant_blank(3) {
-            fp.push(prog);
-        }
-    }
+fn test_blank_true_negatives() {
+    let mut failures = vec![];
 
-    for &prog in _5_2_2 {
-        if Prog::<5, 2>::from(prog).far_cant_blank(3) {
-            fp.push(prog);
-        }
-    }
+    check_blank_true_negative::<2, 2>(&mut failures, "2-2-2", _2_2_2);
+    check_blank_true_negative::<3, 2>(&mut failures, "3-2-2", _3_2_2);
+    check_blank_true_negative::<4, 2>(&mut failures, "4-2-2", _4_2_2);
+    check_blank_true_negative::<5, 2>(&mut failures, "5-2-2", _5_2_2);
+    check_blank_true_negative::<6, 2>(&mut failures, "6-2-2", _6_2_2);
 
-    for &prog in _6_2_2 {
-        if Prog::<6, 2>::from(prog).far_cant_blank(3) {
-            fp.push(prog);
-        }
-    }
-
-    assert_holdouts_match("blank true negatives", &[], &[], fp);
+    assert_no_holdout_failures("true negatives", &failures);
 }
 
 /**************************************/
@@ -161,15 +166,27 @@ pub fn test_holdouts() {
 
 /**************************************/
 
-#[expect(clippy::panic)]
-pub fn assert_holdouts_match<T>(
+fn assert_no_holdout_failures(context: &str, failures: &[String]) {
+    assert!(
+        failures.is_empty(),
+        "{context}: {} failure(s)\n\n{}",
+        failures.len(),
+        failures.join("\n\n"),
+    );
+}
+
+pub fn holdouts_match_errors<T>(
     context: impl core::fmt::Display,
     champs: &[&str],
     holdouts: &[&str],
     result: impl IntoIterator<Item = T>,
-) where
+) -> Vec<String>
+where
     T: ToString,
 {
+    let context = context.to_string();
+    let mut failures = vec![];
+
     let mut seen_champs = BTreeSet::new();
     let mut duplicate_champs = BTreeSet::new();
 
@@ -197,7 +214,7 @@ pub fn assert_holdouts_match<T>(
         || !duplicate_holdouts.is_empty()
         || !intersection.is_empty()
     {
-        let mut message = context.to_string();
+        let mut message = context.clone();
         use core::fmt::Write as _;
 
         if !duplicate_champs.is_empty() {
@@ -224,7 +241,7 @@ pub fn assert_holdouts_match<T>(
             .unwrap();
         }
 
-        panic!("{message}");
+        failures.push(message);
     }
 
     let expected_holdouts = holdouts
@@ -248,13 +265,13 @@ pub fn assert_holdouts_match<T>(
         expected_champs.difference(&result).collect::<Vec<_>>();
 
     if !missing_champs.is_empty() {
-        let mut message = context.to_string();
+        let mut message = context.clone();
         use core::fmt::Write as _;
 
         write!(&mut message, "\nmissing champs: {missing_champs:#?}")
             .unwrap();
 
-        panic!("{message}");
+        failures.push(message);
     }
 
     if result != expected {
@@ -263,7 +280,7 @@ pub fn assert_holdouts_match<T>(
         let expected_not_collected =
             expected.difference(&result).collect::<Vec<_>>();
 
-        let mut message = context.to_string();
+        let mut message = context;
         use core::fmt::Write as _;
 
         if !collected_not_expected.is_empty() {
@@ -282,6 +299,22 @@ pub fn assert_holdouts_match<T>(
             .unwrap();
         }
 
-        panic!("{message}");
+        failures.push(message);
     }
+
+    failures
+}
+
+pub fn assert_holdouts_match<T>(
+    context: impl core::fmt::Display,
+    champs: &[&str],
+    holdouts: &[&str],
+    result: impl IntoIterator<Item = T>,
+) where
+    T: ToString,
+{
+    assert_no_holdout_failures(
+        "holdout match",
+        &holdouts_match_errors(context, champs, holdouts, result),
+    );
 }
