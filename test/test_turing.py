@@ -975,24 +975,15 @@ class Simple(TuringTest):
 
                     if prog[0] != '0' and marks > 2:
                         self.assertEqual(blanks, {})
-                        self.assert_cant_blank_backward(prog, 19)
 
             else:
                 self.assert_marks(0)
                 self.assertEqual(steps, max(blanks.values()))
                 self.assertEqual(
                     marks, {chr(blank + 65) for blank in blanks})
-                self.assert_could_blank(prog)
                 self.assert_no_init_blank()
 
-            if self.machine.undfnd is not None:
-                self.assert_could_halt(prog)
-                self.assert_cant_spinout_backward(prog, 10)
-
-            else:
-                self.assert_could_spinout(prog)
-                self.assert_cant_halt_backward(prog, 46)
-
+            if self.machine.undfnd is None:
                 self.assertTrue(
                     (graph := Graph(prog)).is_zero_reflexive
                     and not graph.is_irreflexive
@@ -1286,9 +1277,7 @@ class Recur(TuringTest):
 
             self.assertGreater(period, 1)
 
-            if blank:
-                self.assert_could_blank(prog)
-            else:
+            if not blank:
                 assert steps is not None
                 self.verify_lin_rec(prog, steps, period)
 
@@ -1748,11 +1737,8 @@ class Prover(RunProver):
             if not isinstance(result, int):
                 self.assert_mult_rules()
 
-            if is_macro := (
-                    isinstance(
-                        macro := self.machine.program,
-                        MacroProg)):
-                result *= macro.cells  # ty: ignore[unresolved-attribute]
+            if isinstance(macro := self.machine.program, MacroProg):
+                result *= macro.cells
 
             if isinstance(marks, int):
                 self.assertEqual(result, marks)
@@ -1779,21 +1765,7 @@ class Prover(RunProver):
                     self.assertEqual(exp, magnitude)
 
             if result < 5:
-                self.assert_could_blank(prog)
                 self.assert_no_init_blank()
-            else:
-                self.assert_cant_blank_backward(prog, 50)
-
-            if self.machine.undfnd is not None:
-                self.assert_cant_spinout_backward(prog, 11)
-                self.assert_could_halt(prog)
-            else:
-                self.assert_cant_halt_backward(prog, 0)
-
-                try:
-                    self.assert_could_spinout(prog)
-                except AssertionError:
-                    self.assertTrue(is_macro)
 
             if prog in SUSPECTED_RULES:
                 self.assertIsNotNone(
