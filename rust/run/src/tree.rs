@@ -465,7 +465,7 @@ impl<
         matches!(self.run(config), StepLimit)
     }
 
-    fn harvest(&mut self, config: PassConfig<'_>) {
+    fn harvest(&mut self, config: &mut PassConfig<'_>) {
         self.harvester.harvest(&self.prog, config);
     }
 
@@ -474,7 +474,7 @@ impl<
             Undefined(slot) => slot,
             Blank | Spinout => return,
             StepLimit => {
-                self.harvest(PassConfig::Owned(config));
+                self.harvest(&mut PassConfig::Owned(config));
                 return;
             },
             _ => {
@@ -500,14 +500,14 @@ impl<
             for next_instr in instrs {
                 self.prog.insert(&slot, next_instr);
 
-                self.harvest(PassConfig::Borrowed(&config));
+                self.harvest(&mut PassConfig::Borrowed(&config));
             }
 
             {
                 self.prog.insert(&slot, last_instr);
 
                 if self.is_nontrivial(&mut config) {
-                    self.harvest(PassConfig::Owned(config));
+                    self.harvest(&mut PassConfig::Owned(config));
                 }
             }
 
@@ -599,7 +599,7 @@ pub trait Harvester<const states: usize, const colors: usize>:
     fn harvest(
         &mut self,
         prog: &Prog<states, colors>,
-        config: PassConfig<'_>,
+        config: &mut PassConfig<'_>,
     );
 
     type Output;

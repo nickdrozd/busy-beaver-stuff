@@ -52,7 +52,7 @@ macro_rules! assert_holdouts {
                 get_goal($goal),
                 $steps,
                 &|| Collector::new(
-                    |prog: &Prog<$states, $colors>, mut config: PassConfig<'_>| {
+                    |prog: &Prog<$states, $colors>, config: &mut PassConfig<'_>| {
                         prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
                             || $pipeline(prog, config)
                     }
@@ -80,7 +80,7 @@ macro_rules! assert_holdouts {
                 get_goal($goal),
                 $steps,
                 &|| HoldoutVisited::new(
-                    |prog: &Prog<$states, $colors>, mut config: PassConfig<'_>| {
+                    |prog: &Prog<$states, $colors>, config: &mut PassConfig<'_>| {
                         prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
                             || $pipeline(prog, config)
                     }
@@ -101,7 +101,7 @@ macro_rules! assert_holdouts {
             let result = HoldoutVisited::<$instrs, $instrs>::run_instrs::<$instrs>(
                 $steps,
                 &|| HoldoutVisited::new(
-                    |prog: &Prog<$instrs, $instrs>, mut config: PassConfig<'_>| {
+                    |prog: &Prog<$instrs, $instrs>, config: &mut PassConfig<'_>| {
                         prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
                             || $pipeline(prog, config)
                     }
@@ -124,7 +124,7 @@ macro_rules! assert_holdouts {
             let (result, visited) = Collector::<$instrs, $instrs>::run_instrs::<$instrs>(
                 $steps,
                 &|| Collector::new(
-                    |prog: &Prog<$instrs, $instrs>, mut config: PassConfig<'_>| {
+                    |prog: &Prog<$instrs, $instrs>, config: &mut PassConfig<'_>| {
                         prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
                             || $pipeline(prog, config)
                     }
@@ -149,14 +149,14 @@ macro_rules! assert_holdouts {
 
 /**************************************/
 
-fn _2_3_1(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn _2_3_1(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(7).is_refuted()
         || prog.ctl_cant_spinout(100)
         || prog.cps_cant_spinout(3)
         || prog.far_cant_spinout(3)
 }
 
-fn _4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn _4_2_1(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
         || prog.ctl_cant_spinout(500)
         || prog.cps_cant_spinout(12)
@@ -164,7 +164,7 @@ fn _4_2_1(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_spinout(3)
 }
 
-fn _4_2_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
+fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(130)
@@ -173,7 +173,7 @@ fn _4_2_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
-fn _2_4_1(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
+fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
         || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
@@ -182,7 +182,7 @@ fn _2_4_1(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
         || prog.far_cant_spinout(3)
 }
 
-fn _2_4_2(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
+fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(200)
@@ -209,19 +209,19 @@ fn test_deciders() {
     ];
 }
 
-fn _3_2_3(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn _3_2_3(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_twostep() || prog.bkw_cant_twostep(10).is_refuted()
 }
 
-fn _2_3_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn _2_3_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_twostep() || prog.bkw_cant_twostep(10).is_refuted()
 }
 
-fn _4_2_3(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn _4_2_3(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_twostep() || prog.bkw_cant_twostep(50).is_refuted()
 }
 
-fn _2_4_3(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn _2_4_3(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_twostep() || prog.bkw_cant_twostep(30).is_refuted()
 }
 
@@ -249,37 +249,37 @@ fn test_twostep() {
 
 /**************************************/
 
-fn _2_2_0(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn _2_2_0(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
 }
 
-fn _2_2_1(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn _2_2_1(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(2).is_refuted()
 }
 
-fn _2_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn _2_2_2(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(2).is_refuted() || prog.ctl_cant_blank(14)
 }
 
-fn _2_2_3(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn _2_2_3(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_twostep(0).is_refuted()
 }
 
-fn _3_2_0(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn _3_2_0(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(13).is_refuted()
         || prog.ctl_cant_halt(20)
         || prog.cps_cant_halt(3)
 }
 
-fn _3_2_1(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn _3_2_1(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(7).is_refuted()
         || prog.ctl_cant_spinout(40)
         || prog.cps_cant_spinout(4)
         || prog.far_cant_spinout(3)
 }
 
-fn _3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn _3_2_2(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(20).is_refuted()
         || prog.ctl_cant_blank(42)
@@ -287,13 +287,13 @@ fn _3_2_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
-fn _2_3_0(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn _2_3_0(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(8).is_refuted()
         || prog.cps_cant_halt(3)
 }
 
-fn _2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn _2_3_2(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
         || prog.bkw_cant_blank(16).is_settled()
         || prog.ctl_cant_blank(50)
@@ -301,7 +301,7 @@ fn _2_3_2(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
-fn _4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn _4_2_0(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(46).is_refuted()
         || prog.ctl_cant_halt(130)
@@ -309,7 +309,7 @@ fn _4_2_0(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
         || prog.far_cant_halt(3)
 }
 
-fn _2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn _2_4_0(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.ctl_cant_halt(190)
         || prog.cps_cant_halt(6)
@@ -317,15 +317,15 @@ fn _2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.to_string() == "1RB 2LA 1RA 1RA  1LB 1LA 3RB ..."
 }
 
-fn instrs_4(prog: &Prog<4, 4>, _: PassConfig<'_>) -> bool {
+fn instrs_4(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(0).is_refuted() || prog.ctl_cant_halt(11)
 }
 
-fn instrs_5(prog: &Prog<5, 5>, _: PassConfig<'_>) -> bool {
+fn instrs_5(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(3).is_refuted() || prog.cps_cant_halt(3)
 }
 
-fn instrs_6(prog: &Prog<6, 6>, _: PassConfig<'_>) -> bool {
+fn instrs_6(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
     prog.ctl_cant_halt(41) || prog.far_cant_halt(4)
 }
 
@@ -364,19 +364,19 @@ fn test_solved() {
 
 /**************************************/
 
-fn prover_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn prover_2_2(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.check_inf(100, 50)
 }
 
-fn prover_3_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn prover_3_2(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.check_inf(500, 50)
 }
 
-fn prover_2_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn prover_2_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
     prog.check_inf(1_000, 50)
 }
 
-fn prover_4_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn prover_4_2(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
     if !prog.is_connected() {
         return true;
     }
@@ -384,7 +384,7 @@ fn prover_4_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     prog.check_inf(3_000, 200)
 }
 
-fn prover_2_4(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn prover_2_4(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
     prog.check_inf(3_000, 200)
 }
 
@@ -412,23 +412,23 @@ fn test_prover() {
 
 /**************************************/
 
-fn qh_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+fn qh_2_2(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt()
 }
 
-fn qh_3_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+fn qh_3_2(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt() || prog.cps_cant_quasihalt(4)
 }
 
-fn qh_2_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+fn qh_2_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt() || prog.cps_cant_quasihalt(4)
 }
 
-fn qh_4_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+fn qh_4_2(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt() || prog.cps_cant_quasihalt(5)
 }
 
-fn qh_2_4(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+fn qh_2_4(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt() || prog.cps_cant_quasihalt(5)
 }
 
@@ -456,39 +456,39 @@ fn test_quasihalt() {
 
 /**************************************/
 
-fn _5_2_0(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
+fn _5_2_0(prog: &Prog<5, 2>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_halt(3).is_refuted()
 }
 
-fn _5_2_1(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
+fn _5_2_1(prog: &Prog<5, 2>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_spinout(3).is_refuted()
 }
 
-fn _5_2_2(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
+fn _5_2_2(prog: &Prog<5, 2>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_blank(3).is_refuted()
 }
 
-fn _3_3_0(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
+fn _3_3_0(prog: &Prog<3, 3>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_halt(3).is_refuted()
 }
 
-fn _3_3_1(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
+fn _3_3_1(prog: &Prog<3, 3>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_spinout(3).is_refuted()
 }
 
-fn _3_3_2(prog: &Prog<3, 3>, _: PassConfig<'_>) -> bool {
+fn _3_3_2(prog: &Prog<3, 3>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_blank(3).is_refuted()
 }
 
-fn _2_5_0(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
+fn _2_5_0(prog: &Prog<2, 5>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(3).is_refuted()
 }
 
-fn _2_5_1(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
+fn _2_5_1(prog: &Prog<2, 5>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(3).is_refuted()
 }
 
-fn _2_5_2(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
+fn _2_5_2(prog: &Prog<2, 5>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(3).is_refuted()
 }
 
@@ -556,7 +556,7 @@ fn test_from_file() {
 
 /**************************************/
 
-fn instrs_7(prog: &Prog<7, 7>, _: PassConfig<'_>) -> bool {
+fn instrs_7(prog: &Prog<7, 7>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(20).is_refuted()
         || prog.ctl_cant_halt(200)
         || prog.cps_cant_halt(6)
@@ -571,7 +571,7 @@ fn test_instrs() {
     ];
 }
 
-fn instrs_8(prog: &Prog<8, 8>, mut config: PassConfig<'_>) -> bool {
+fn instrs_8(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(30).is_settled()
         || prog.ctl_cant_halt(300)
