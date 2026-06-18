@@ -880,6 +880,21 @@ pub const _2_3_3_ho: &[&str] = &[
 
 /**************************************/
 
+pub const _7_0_ch: &[&str] = &[
+    "1RB 2LA 1RA  1LC 1LA 2RB  ... 1LA ...",
+    "1RB 2LA 1RA  1LC 2LA 2RB  ... 1LA ...",
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...",
+];
+pub const _7_0_ho: &[&str] = &[
+    "1RB ... ...  2RC 2RB 1LB  2LC 1RA 0LC",
+    "1RB ... ...  2RC 2RB 1LB  2LD ... ...  ... 1RA 0LD",
+    "1RB 1RA 0LA  2RC 2RB 1LB  2LA ... ...",
+    "1RB 2RA 1LA  2LA 0RC ...  ... 2RB 2LB",
+    "1RB 2RA 1LB  0LC 0RA 1LA  ... 2LA ...",
+];
+
+/**************************************/
+
 pub const _2_3_1_: (&[&str], &[&str]) = (&[], _2_3_1_ho);
 pub const _3_2_3_: (&[&str], &[&str]) = (&[], _3_2_3_ho);
 pub const _2_3_3_: (&[&str], &[&str]) = (&[], _2_3_3_ho);
@@ -887,3 +902,5 @@ pub const _4_2_1_: (&[&str], &[&str]) = (_4_2_1_ch, _4_2_1_ho);
 pub const _4_2_2_: (&[&str], &[&str]) = (_4_2_2_ch, _4_2_2_ho);
 pub const _2_4_1_: (&[&str], &[&str]) = (_2_4_1_ch, _2_4_1_ho);
 pub const _2_4_2_: (&[&str], &[&str]) = (_2_4_2_ch, _2_4_2_ho);
+
+pub const _7_0_: (&[&str], &[&str]) = (_7_0_ch, _7_0_ho);

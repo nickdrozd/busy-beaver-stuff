@@ -35,32 +35,17 @@ fn get_goal(goal: u8) -> Option<Goal> {
 
 /**************************************/
 
-macro_rules! assert_deciders {
-    ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => ( $pipeline:ident, $steps:expr, $leaves:expr ) ),* $(,)? ] ),* $(,)? ) => {{
-        rayon::scope(|s| { $( $( s.spawn(move |_| {
-            let result = HoldoutVisited::<$states, $colors>::run_params(
-                get_goal($goal),
-                $steps,
-                &|| HoldoutVisited::new(
-                    |prog: &Prog<$states, $colors>, mut config: PassConfig<'_>| {
-                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
-                            || $pipeline(prog, config)
-                    }
-                ),
-            );
-
-            assert_eq!(
-                result, $leaves,
-                "(({}, {}), {}, {result:?})",
-                $states, $colors, $goal,
-            );
-        }); )* )* });
-    }};
-}
-
 macro_rules! assert_holdouts {
-    ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => ( $pipeline:ident, $steps:expr, ( $holdouts:expr, $visited:expr ) ) ),* $(,)? ] ),* $(,)? ) => {{
-        rayon::scope(|s| { $( $( s.spawn(move |_| {
+    ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => ( $pipeline:ident, $steps:expr, ( $first:tt, $visited:expr ) ) ),* $(,)? ] ),* $(,)? ) => {{
+        rayon::scope(|s| { $( $( assert_holdouts!(@goal s, $states, $colors, $goal, $pipeline, $steps, $first, $visited); )* )* });
+    }};
+
+    ( $( $instrs:literal => ( $pipeline:ident, $steps:expr, ( $first:tt, $visited:expr ) ) ),* $(,)? ) => {{
+        rayon::scope(|s| { $( assert_holdouts!(@instrs s, $instrs, $pipeline, $steps, $first, $visited); )* });
+    }};
+
+    (@goal $scope:ident, $states:literal, $colors:literal, $goal:literal, $pipeline:ident, $steps:expr, $holdouts:ident, $visited:expr) => {{
+        $scope.spawn(move |_| {
             let (champs, holdouts) = $holdouts;
 
             let (result, visited) = Collector::<$states, $colors>::run_params(
@@ -86,7 +71,79 @@ macro_rules! assert_holdouts {
                 "(({}, {}), {}, {visited:?})",
                 $states, $colors, $goal,
             );
-        }); )* )* });
+        });
+    }};
+
+    (@goal $scope:ident, $states:literal, $colors:literal, $goal:literal, $pipeline:ident, $steps:expr, $leaves:literal, $visited:expr) => {{
+        $scope.spawn(move |_| {
+            let result = HoldoutVisited::<$states, $colors>::run_params(
+                get_goal($goal),
+                $steps,
+                &|| HoldoutVisited::new(
+                    |prog: &Prog<$states, $colors>, mut config: PassConfig<'_>| {
+                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+                            || $pipeline(prog, config)
+                    }
+                ),
+            );
+
+            assert_eq!(
+                result,
+                ($leaves, $visited),
+                "(({}, {}), {}, {result:?})",
+                $states, $colors, $goal,
+            );
+        });
+    }};
+
+    (@instrs $scope:ident, $instrs:literal, $pipeline:ident, $steps:expr, $leaves:literal, $visited:expr) => {{
+        $scope.spawn(move |_| {
+            let result = HoldoutVisited::<$instrs, $instrs>::run_instrs::<$instrs>(
+                $steps,
+                &|| HoldoutVisited::new(
+                    |prog: &Prog<$instrs, $instrs>, mut config: PassConfig<'_>| {
+                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+                            || $pipeline(prog, config)
+                    }
+                ),
+            );
+
+            assert_eq!(
+                result,
+                ($leaves, $visited),
+                "({}, {result:?})",
+                $instrs,
+            );
+        });
+    }};
+
+    (@instrs $scope:ident, $instrs:literal, $pipeline:ident, $steps:expr, $holdouts:ident, $visited:expr) => {{
+        $scope.spawn(move |_| {
+            let (champs, holdouts) = $holdouts;
+
+            let (result, visited) = Collector::<$instrs, $instrs>::run_instrs::<$instrs>(
+                $steps,
+                &|| Collector::new(
+                    |prog: &Prog<$instrs, $instrs>, mut config: PassConfig<'_>| {
+                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+                            || $pipeline(prog, config)
+                    }
+                ),
+            );
+
+            assert_holdouts_match(
+                format!("{}", $instrs),
+                champs,
+                holdouts,
+                result,
+            );
+
+            assert_eq!(
+                visited, $visited,
+                "({}, {visited:?})",
+                $instrs,
+            );
+        });
     }};
 }
 
@@ -180,7 +237,7 @@ fn test_twostep() {
         ],
     ];
 
-    assert_deciders![
+    assert_holdouts![
         (4, 2) => [
             3 => (_4_2_3, 99, (507, 2_134_923)),
         ],
@@ -260,10 +317,22 @@ fn _2_4_0(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
         || prog.to_string() == "1RB 2LA 1RA 1RA  1LB 1LA 3RB ..."
 }
 
+fn instrs_4(prog: &Prog<4, 4>, _: PassConfig<'_>) -> bool {
+    prog.bkw_cant_halt(0).is_refuted() || prog.ctl_cant_halt(11)
+}
+
+fn instrs_5(prog: &Prog<5, 5>, _: PassConfig<'_>) -> bool {
+    prog.bkw_cant_halt(3).is_refuted() || prog.cps_cant_halt(3)
+}
+
+fn instrs_6(prog: &Prog<6, 6>, _: PassConfig<'_>) -> bool {
+    prog.ctl_cant_halt(41) || prog.far_cant_halt(4)
+}
+
 fn test_solved() {
     println!("solved");
 
-    assert_deciders![
+    assert_holdouts![
         (2, 2) => [
             0 => (_2_2_0, 2, (0, 23)),
             1 => (_2_2_1, 4, (0, 32)),
@@ -284,6 +353,12 @@ fn test_solved() {
         (2, 4) => [
             0 => (_2_4_0, 109, (0, 308_968)),
         ],
+    ];
+
+    assert_holdouts![
+        4 => (instrs_4, 4, (0, 4_909)),
+        5 => (instrs_5, 12, (0, 151_351)),
+        6 => (instrs_6, 22, (0, 5_568_167)),
     ];
 }
 
@@ -316,7 +391,7 @@ fn prover_2_4(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
 fn test_prover() {
     println!("prover");
 
-    assert_deciders![
+    assert_holdouts![
         (2, 2) => [
             3 => (prover_2_2, 4, (1, 81)),
         ],
@@ -360,7 +435,7 @@ fn qh_2_4(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
 fn test_quasihalt() {
     println!("quasihalt");
 
-    assert_deciders![
+    assert_holdouts![
         (2, 2) => [
             3 => (qh_2_2, 4, (0, 81)),
         ],
@@ -420,7 +495,7 @@ fn _2_5_2(prog: &Prog<2, 5>, _: PassConfig<'_>) -> bool {
 fn test_deciders_slow() {
     println!("deciders slow");
 
-    assert_deciders![
+    assert_holdouts![
         (5, 2) => [
             0 => (_5_2_0, 700, (1_396_770, 90_676_712)),
             1 => (_5_2_1, TREE_LIM, (2_887_548, 180_764_612)),
@@ -481,46 +556,8 @@ fn test_from_file() {
 
 /**************************************/
 
-macro_rules! assert_instrs {
-    ( $( $instrs:literal => ($pipeline:ident, $steps:literal, $leaves:expr) ),* $(,)? ) => {{
-        rayon::scope(|s| { $( s.spawn(move |_| {
-            let result = HoldoutVisited::<$instrs, $instrs>::run_instrs::<$instrs>(
-                $steps,
-                &|| HoldoutVisited::new($pipeline),
-            );
-
-            assert_eq!(
-                result, $leaves,
-                "({}, {result:?})",
-                $instrs,
-            );
-        }); )* });
-    }};
-}
-
-fn instrs_4(prog: &Prog<4, 4>, mut config: PassConfig<'_>) -> bool {
-    prog.term_or_rec(16, config.to_mut()).is_settled()
-        || prog.bkw_cant_halt(0).is_refuted()
-        || prog.ctl_cant_halt(11)
-}
-
-fn instrs_5(prog: &Prog<5, 5>, mut config: PassConfig<'_>) -> bool {
-    prog.term_or_rec(301, config.to_mut()).is_settled()
-        || prog.bkw_cant_halt(3).is_refuted()
-        || prog.cps_cant_halt(3)
-}
-
-fn instrs_6(prog: &Prog<6, 6>, mut config: PassConfig<'_>) -> bool {
-    prog.term_or_rec(304, config.to_mut()).is_settled()
-        || prog.ctl_cant_halt(41)
-        || prog.far_cant_halt(4)
-}
-
-fn instrs_7(prog: &Prog<7, 7>, mut config: PassConfig<'_>) -> bool {
-    let config = config.to_mut();
-
-    prog.term_or_rec(LIN_REC, config).is_settled()
-        || prog.bkw_cant_halt(20).is_refuted()
+fn instrs_7(prog: &Prog<7, 7>, _: PassConfig<'_>) -> bool {
+    prog.bkw_cant_halt(20).is_refuted()
         || prog.ctl_cant_halt(200)
         || prog.cps_cant_halt(6)
         || prog.far_cant_halt(4)
@@ -529,22 +566,16 @@ fn instrs_7(prog: &Prog<7, 7>, mut config: PassConfig<'_>) -> bool {
 fn test_instrs() {
     println!("instrs");
 
-    assert_instrs![
-        4 => (instrs_4, 4, (0, 4_909)),
-        5 => (instrs_5, 12, (0, 151_351)),
-        6 => (instrs_6, 22, (0, 5_568_167)),
-        7 => (instrs_7, 109, (8, 246_492_765)),
+    assert_holdouts![
+        7 => (instrs_7, 109, (_7_0_, 246_492_765)),
     ];
 }
 
 fn instrs_8(prog: &Prog<8, 8>, mut config: PassConfig<'_>) -> bool {
-    let config = config.to_mut();
-
-    prog.term_or_rec(100, config).is_settled()
-        || prog.graph_cant_halt()
+    prog.graph_cant_halt()
         || prog.bkw_cant_halt(30).is_settled()
         || prog.ctl_cant_halt(300)
-        || prog.term_or_rec(LIN_REC, config).is_settled()
+        || prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
         || prog.cps_cant_halt(20)
         || prog.far_cant_halt(4)
 }
@@ -552,7 +583,7 @@ fn instrs_8(prog: &Prog<8, 8>, mut config: PassConfig<'_>) -> bool {
 fn test_8_instr() {
     println!("8 instrs");
 
-    assert_instrs![
+    assert_holdouts![
         8 => (instrs_8, 500, (586, 12_835_863_274)),
     ];
 }
@@ -568,12 +599,12 @@ fn test_9_instr() {
 
 /**************************************/
 
-const CURR: &[fn()] = &[test_holdouts];
+const CURR: &[fn()] = &[test_instrs];
 
 const FAST: &[fn()] = &[
     test_deciders,
     test_from_file,
-    test_instrs,
+    test_holdouts,
     test_prover,
     test_quasihalt,
     test_solved,
