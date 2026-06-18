@@ -35,24 +35,6 @@ fn get_goal(goal: u8) -> Option<Goal> {
 
 /**************************************/
 
-macro_rules! assert_params {
-    ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => ( $pipeline:ident, $steps:expr, $leaves:expr ) ),* $(,)? ] ),* $(,)? ) => {{
-        rayon::scope(|s| { $( $( s.spawn(move |_| {
-            let result = HoldoutVisited::<$states, $colors>::run_params(
-                get_goal($goal),
-                $steps,
-                &|| HoldoutVisited::new($pipeline),
-            );
-
-            assert_eq!(
-                result, $leaves,
-                "(({}, {}), {}, {result:?})",
-                $states, $colors, $goal,
-            );
-        }); )* )* });
-    }};
-}
-
 macro_rules! assert_deciders {
     ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => ( $pipeline:ident, $steps:expr, $leaves:expr ) ),* $(,)? ] ),* $(,)? ) => {{
         rayon::scope(|s| { $( $( s.spawn(move |_| {
@@ -307,46 +289,36 @@ fn test_solved() {
 
 /**************************************/
 
-fn prover_2_2(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
-    prog.term_or_rec(16, config.to_mut()).is_settled()
+fn prover_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
+    prog.check_inf(100, 50)
 }
 
-fn prover_3_2(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
-    prog.term_or_rec(190, config.to_mut()).is_settled()
-        || prog.check_inf(500, 50)
+fn prover_3_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+    prog.check_inf(500, 50)
 }
 
-fn prover_2_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
-    prog.term_or_rec(290, config.to_mut()).is_settled()
-        || prog.check_inf(1_000, 50)
+fn prover_2_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+    prog.check_inf(1_000, 50)
 }
 
-fn prover_4_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
+fn prover_4_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
     if !prog.is_connected() {
         return true;
     }
 
-    let config = config.to_mut();
-
-    prog.term_or_rec(500, config).is_settled()
-        || prog.check_inf(2_000, 200)
-        || prog.term_or_rec(4_710, config).is_settled()
+    prog.check_inf(3_000, 200)
 }
 
-fn prover_2_4(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
-    let config = config.to_mut();
-
-    prog.term_or_rec(500, config).is_settled()
-        || prog.check_inf(1_000, 200)
-        || prog.term_or_rec(4_600, config).is_settled()
+fn prover_2_4(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+    prog.check_inf(3_000, 200)
 }
 
 fn test_prover() {
     println!("prover");
 
-    assert_params![
+    assert_deciders![
         (2, 2) => [
-            3 => (prover_2_2, 4, (4, 81)),
+            3 => (prover_2_2, 4, (1, 81)),
         ],
         (3, 2) => [
             3 => (prover_3_2, 13, (25, 11_754)),
@@ -355,49 +327,40 @@ fn test_prover() {
             3 => (prover_2_3, 20, (63, 8_766)),
         ],
         (4, 2) => [
-            3 => (prover_4_2, 99, (7_912, 2_134_923)),
+            3 => (prover_4_2, 99, (7_740, 2_134_923)),
         ],
         (2, 4) => [
-            3 => (prover_2_4, TREE_LIM, (39_623, 1_698_850)),
+            3 => (prover_2_4, TREE_LIM, (34_346, 1_698_850)),
         ],
     ];
 }
 
 /**************************************/
 
-fn qh_2_2(prog: &Prog<2, 2>, mut config: PassConfig<'_>) -> bool {
+fn qh_2_2(prog: &Prog<2, 2>, _: PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt()
-        || prog.term_or_rec(5, config.to_mut()).is_settled()
 }
 
-fn qh_3_2(prog: &Prog<3, 2>, mut config: PassConfig<'_>) -> bool {
-    prog.graph_cant_quasihalt()
-        || prog.term_or_rec(50, config.to_mut()).is_settled()
-        || prog.cps_cant_quasihalt(4)
+fn qh_3_2(prog: &Prog<3, 2>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_quasihalt() || prog.cps_cant_quasihalt(4)
 }
 
-fn qh_2_3(prog: &Prog<2, 3>, mut config: PassConfig<'_>) -> bool {
-    prog.graph_cant_quasihalt()
-        || prog.term_or_rec(200, config.to_mut()).is_settled()
-        || prog.cps_cant_quasihalt(4)
+fn qh_2_3(prog: &Prog<2, 3>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_quasihalt() || prog.cps_cant_quasihalt(4)
 }
 
-fn qh_4_2(prog: &Prog<4, 2>, mut config: PassConfig<'_>) -> bool {
-    prog.graph_cant_quasihalt()
-        || prog.term_or_rec(1000, config.to_mut()).is_settled()
-        || prog.cps_cant_quasihalt(4)
+fn qh_4_2(prog: &Prog<4, 2>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_quasihalt() || prog.cps_cant_quasihalt(5)
 }
 
-fn qh_2_4(prog: &Prog<2, 4>, mut config: PassConfig<'_>) -> bool {
-    prog.graph_cant_quasihalt()
-        || prog.term_or_rec(1000, config.to_mut()).is_settled()
-        || prog.cps_cant_quasihalt(4)
+fn qh_2_4(prog: &Prog<2, 4>, _: PassConfig<'_>) -> bool {
+    prog.graph_cant_quasihalt() || prog.cps_cant_quasihalt(5)
 }
 
 fn test_quasihalt() {
     println!("quasihalt");
 
-    assert_params![
+    assert_deciders![
         (2, 2) => [
             3 => (qh_2_2, 4, (0, 81)),
         ],
@@ -408,13 +371,15 @@ fn test_quasihalt() {
             3 => (qh_2_3, 20, (470, 8_766)),
         ],
         (4, 2) => [
-            3 => (qh_4_2, 99, (126_318, 2_134_923)),
+            3 => (qh_4_2, 99, (126_019, 2_134_923)),
         ],
         (2, 4) => [
-            3 => (qh_2_4, TREE_LIM, (149_574, 1_698_850)),
+            3 => (qh_2_4, TREE_LIM, (148_279, 1_698_850)),
         ],
     ];
 }
+
+/**************************************/
 
 fn _5_2_0(prog: &Prog<5, 2>, _: PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_halt(3).is_refuted()
