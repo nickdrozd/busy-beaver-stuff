@@ -81,6 +81,90 @@ impl<const s: usize, const c: usize> Harvester<s, c>
     }
 }
 
+pub struct MultiCollector<
+    const s: usize,
+    const c: usize,
+    const n: usize,
+> {
+    progs: [Vec<String>; n],
+    visited: [u64; n],
+
+    shared: Pipeline<s, c>,
+    pipelines: [Pipeline<s, c>; n],
+}
+
+impl<const s: usize, const c: usize, const n: usize>
+    MultiCollector<s, c, n>
+{
+    pub fn new(
+        shared: Pipeline<s, c>,
+        pipelines: [Pipeline<s, c>; n],
+    ) -> Self {
+        Self {
+            progs: core::array::from_fn(|_| Vec::new()),
+            visited: [0; n],
+            shared,
+            pipelines,
+        }
+    }
+}
+
+impl<const s: usize, const c: usize, const n: usize> Harvester<s, c>
+    for MultiCollector<s, c, n>
+{
+    fn harvest(
+        &mut self,
+        prog: &Prog<s, c>,
+        config: &mut PassConfig<'_>,
+    ) {
+        let shared = (self.shared)(prog, config);
+
+        self.visited
+            .iter_mut()
+            .zip(self.pipelines.iter())
+            .zip(self.progs.iter_mut())
+            .for_each(|((visited, pipeline), progs)| {
+                *visited += 1;
+
+                if shared || pipeline(prog, config) {
+                    return;
+                }
+
+                progs.push(prog.to_string());
+            });
+    }
+
+    type Output = ([Vec<String>; n], u64);
+
+    fn combine(results: &TreeResult<Self>) -> Self::Output {
+        let mut progs: [Vec<String>; n] =
+            core::array::from_fn(|_| Vec::new());
+        let mut visited = [0; n];
+
+        results.values().for_each(|harv| {
+            progs.iter_mut().zip(harv.progs.iter()).for_each(
+                |(acc, progs)| acc.extend(progs.iter().cloned()),
+            );
+
+            visited
+                .iter_mut()
+                .zip(harv.visited.iter())
+                .for_each(|(acc, v)| *acc += v);
+        });
+
+        progs.iter_mut().for_each(|progs| progs.sort());
+
+        let total_visited = visited.first().copied().unwrap_or(0);
+
+        assert!(
+            visited.iter().all(|v| *v == total_visited),
+            "multi-collector visited counts differed: {visited:?}",
+        );
+
+        (progs, total_visited)
+    }
+}
+
 pub struct HoldoutVisited<const s: usize, const c: usize> {
     holdout: u64,
     visited: u64,

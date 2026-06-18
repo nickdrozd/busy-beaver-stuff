@@ -10,7 +10,7 @@ pub mod holdouts;
 pub mod tree;
 
 use check::{assert_holdouts_match, test_holdouts};
-use harvesters::{Collector, HoldoutVisited, Visited};
+use harvesters::{Collector, HoldoutVisited, MultiCollector, Visited};
 use holdouts::*;
 use tree::{Harvester as _, PassConfig};
 
@@ -38,6 +38,10 @@ fn get_goal(goal: u8) -> Option<Goal> {
 macro_rules! assert_holdouts {
     ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => ( $pipeline:ident, $steps:expr, ( $first:tt, $visited:expr ) ) ),* $(,)? ] ),* $(,)? ) => {{
         rayon::scope(|s| { $( $( assert_holdouts!(@goal s, $states, $colors, $goal, $pipeline, $steps, $first, $visited); )* )* });
+    }};
+
+    ( $( $instrs:literal => [ $steps:expr, $visited:expr, [ $( $goal:literal => ( $pipeline:ident, $first:tt ) ),* $(,)? ], $(,)? ] ),* $(,)? ) => {{
+        rayon::scope(|s| { $( assert_holdouts!(@instrs_multi s, $instrs, $steps, $visited, [ $( $goal => ( $pipeline, $first ) ),* ]); )* });
     }};
 
     ( $( $instrs:literal => ( $pipeline:ident, $steps:expr, ( $first:tt, $visited:expr ) ) ),* $(,)? ) => {{
@@ -117,25 +121,16 @@ macro_rules! assert_holdouts {
         });
     }};
 
-    (@instrs $scope:ident, $instrs:literal, $pipeline:ident, $steps:expr, $holdouts:ident, $visited:expr) => {{
+    (@instrs_multi $scope:ident, $instrs:literal, $steps:expr, $visited:expr, [ $( $goal:literal => ( $pipeline:ident, $first:tt ) ),* $(,)? ]) => {{
         $scope.spawn(move |_| {
-            let (champs, holdouts) = $holdouts;
-
-            let (result, visited) = Collector::<$instrs, $instrs>::run_instrs::<$instrs>(
+            let (result, visited) = MultiCollector::<$instrs, $instrs, { assert_holdouts!(@count $( $pipeline ),*) }>::run_instrs::<$instrs>(
                 $steps,
-                &|| Collector::new(
+                &|| MultiCollector::new(
                     |prog: &Prog<$instrs, $instrs>, config: &mut PassConfig<'_>| {
                         prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
-                            || $pipeline(prog, config)
-                    }
+                    },
+                    [ $( $pipeline ),* ],
                 ),
-            );
-
-            assert_holdouts_match(
-                format!("{}", $instrs),
-                champs,
-                holdouts,
-                result,
             );
 
             assert_eq!(
@@ -143,8 +138,60 @@ macro_rules! assert_holdouts {
                 "({}, {visited:?})",
                 $instrs,
             );
+
+            let mut results = IntoIterator::into_iter(result);
+            let mut failed = false;
+
+            $(
+                let result = results.next().expect("missing multi-collector result");
+
+                if std::panic::catch_unwind(
+                    core::panic::AssertUnwindSafe(|| {
+                        assert_holdouts!(
+                            @instrs_multi_result
+                            $instrs,
+                            $goal,
+                            result,
+                            $first
+                        );
+                    }),
+                )
+                .is_err()
+                {
+                    failed = true;
+                }
+            )*
+
+            assert!(
+                results.next().is_none(),
+                "extra multi-collector results for {}",
+                $instrs,
+            );
+
+            assert!(
+                !failed,
+                "multi-collector holdout mismatch for {}",
+                $instrs,
+            );
         });
     }};
+
+    (@instrs_multi_result $instrs:literal, $goal:literal, $result:ident, $holdouts:ident) => {{
+        let (champs, holdouts) = $holdouts;
+
+        assert_holdouts_match(
+            format!("{}:{}", $instrs, $goal),
+            champs,
+            holdouts,
+            $result,
+        );
+    }};
+
+    (@count $( $item:ident ),* $(,)?) => {
+        0 $( + assert_holdouts!(@replace $item 1) )*
+    };
+
+    (@replace $_item:ident $sub:expr) => { $sub };
 }
 
 /**************************************/
@@ -556,18 +603,44 @@ fn test_from_file() {
 
 /**************************************/
 
-fn instrs_7(prog: &Prog<7, 7>, _: &mut PassConfig<'_>) -> bool {
+fn _7_0(prog: &Prog<7, 7>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(20).is_refuted()
         || prog.ctl_cant_halt(200)
         || prog.cps_cant_halt(6)
         || prog.far_cant_halt(4)
 }
 
+fn _7_1(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_spinout(50).is_refuted()
+        || prog.ctl_cant_spinout(700)
+        || prog.cps_cant_spinout(11)
+        || prog.seg_cant_spinout(10).is_refuted()
+        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
+        || prog.far_cant_spinout(3)
+}
+
+fn _7_2(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
+    prog.graph_cant_blank()
+        || prog.bkw_cant_blank(51).is_refuted()
+        || prog.ctl_cant_blank(200)
+        || prog.cps_cant_blank(20)
+        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
+        || prog.far_cant_blank(3)
+}
+
 fn test_instrs() {
     println!("instrs");
 
     assert_holdouts![
-        7 => (instrs_7, 109, (_7_0_, 246_492_765)),
+        7 => [
+            109,
+            246_492_765,
+            [
+                0 => (_7_0, _7_0_),
+                1 => (_7_1, _7_1_),
+                2 => (_7_2, _7_2_),
+            ],
+        ],
     ];
 }
 
