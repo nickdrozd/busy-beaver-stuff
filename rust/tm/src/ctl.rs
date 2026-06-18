@@ -14,7 +14,6 @@ use Goal::*;
 
 const OPT_BLOCK: usize = 500;
 const COUNT_LIMIT: Count = 8;
-const DEPTH_LIMIT: usize = 20;
 const CONFIG_LIMIT: usize = 2_000;
 
 /**************************************/
@@ -99,10 +98,6 @@ fn ctl_run(
             Reached | StepLimit | Exception => return false,
             Branch(branched) => branched,
         };
-
-        if todo.len() > DEPTH_LIMIT {
-            return false;
-        }
 
         todo.push(config);
         todo.push(branched);

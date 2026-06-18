@@ -814,10 +814,7 @@ class Ctl(TuringTest):
             self.assert_could_blank_ctl(prog)
 
         for prog in SPINOUT_HOLDOUTS:
-            try:
-                self.assert_could_spinout_ctl(prog)
-            except AssertionError:
-                print(prog)
+            self.assert_could_spinout_ctl(prog)
 
         for prog in HALT_HOLDOUTS:
             self.assert_could_halt_ctl(prog)

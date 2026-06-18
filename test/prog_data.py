@@ -3876,9 +3876,9 @@ CPS_QUASIHALT_FALSE_NEGATIVES = {
 ########################################
 
 CTL_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 78,
-    "blank": 322,
-    "spinout": 215,
+    "halt": 76,
+    "blank": 321,
+    "spinout": 212,
 }
 
 CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3941,7 +3941,6 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
-        "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB",
         "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
         "1RB ...  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE",
         "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
@@ -3954,7 +3953,6 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0RC  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LF  0LD ...",
         "1RB 0RC  1LC 0LF  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD",
         "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  ... 0RD",
-        "1RB 0RD  0RC 0LD  1RD ...  1LE 1LF  1RB 1LD  1RF 0RA",
         "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD",
         "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
         "1RB 1LC  1LA 0LD  1RB 0LA  ... 1LE  1RF 0LB  1RB 0RE",
@@ -4066,7 +4064,6 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 2LB 3RB 1LA  2LA 2LA 3RA 0RB",
         "1RB 2RA 0LB 1LA  3LA 2RB 1LA 1RA",
         "1RB 2RA 0LB 2RB  3LA 1LB 3LA 1RA",
-        "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",
         "1RB 2RA 1LB 2RB  2LA 2RB 3LA 0RA",
         "1RB 2RA 3LA 0LA  1LB 2LA 0RB 3RA",
         "1RB 2RA 3RB 0LB  1LB 1LA 0LA 3LA",
@@ -4306,7 +4303,6 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0RC  0RC ...  1LC 0LA",
         "1RB 0RC  1LB 1RA  0RB 0RA",
         "1RB 1LA  0LB 1RC  1LA 0RB",
-        "1RB 0LA 1LA 0RA  2LB 2RB 3RB 0LA",
         "1RB 0LA 1RA 0LB  2LB 3LA 2RB 0RA",
         "1RB 0LA 1RA 0RB  2LB 3LA 3RA 3RA",
         "1RB 0LA 2RB 0RB  3LB 2LA 1RA 1RA",
@@ -4491,7 +4487,6 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD",
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",
-        "1RB 0RD  0RC 0LD  1RD ...  1LE 1LF  1RB 1LD  1RF 0RA",
         "1RB 0RF  0LB 1LC  1LD 0RC  1LE ...  1LF 0LD  1RA 0LE",
         "1RB 1LC  1LA 1RD  1LA 0LA  1LD 0RE  0RF 1RB  ... 1LB",
         "1RB 1LC  1LA 1RD  1LA 0LA  1LD 0RE  0RF 1RB  ... 1LC",
@@ -4499,7 +4494,6 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LD  1LC 1RE  ... 1LD  1LA 0LA  1LE 0RF  0RC 1RB",
         "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  ... 1RA",
         "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
-        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
     },
