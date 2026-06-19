@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments)]
 //! FAR/MITM non-halting prover
 //!
 //! Self-contained FAR decider with MITMWFAR folded into `far_cant_halt`, implemented as methods on `Prog`.
@@ -1051,18 +1052,26 @@ impl StepContext {
 }
 
 #[derive(Clone, Copy)]
+struct ReachedParams {
+    states: usize,
+    colors: usize,
+}
+
+#[derive(Clone, Copy)]
 struct FarRunParams {
     block_len: usize,
     max_work: usize,
     block_step_limit: usize,
     goal: Goal,
     mirrored: bool,
+    reached: ReachedParams,
 }
 
 #[derive(Clone, Copy)]
 struct DirectFarParams {
     goal: Goal,
     direction: u8,
+    reached: ReachedParams,
     dfa_states: usize,
     ctrl_states: usize,
     nfa_states: usize,
@@ -1088,6 +1097,7 @@ struct FarDecider<
     prog: &'a Prog<STATES, COLORS>,
     goal: Goal,
     mirrored: bool,
+    reached: ReachedParams,
 
     block_len: usize,
     max_work: usize,
@@ -1374,6 +1384,7 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
                     self.goal,
                     key.ctx,
                     self.mirrored,
+                    self.reached,
                 )
                 .map(|raw| WordUpdateLemma {
                     w1: self.words.intern(raw.w1),
@@ -1712,6 +1723,14 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
 
 #[expect(clippy::multiple_inherent_impl)]
 impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
+    fn far_reached_params(&self) -> ReachedParams {
+        let (max_state, max_color) = self.max_reached();
+        ReachedParams {
+            states: (max_state as usize + 1).min(STATES),
+            colors: (max_color as usize + 1).min(COLORS),
+        }
+    }
+
     /// Exact block simulation (matches C++ `WordUpdateLemma::from`).
     ///
     /// - `sgn = +1`: block is oriented in the natural direction
@@ -1732,6 +1751,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         ctx: StepContext,
         mirrored: bool,
+        reached: ReachedParams,
     ) -> Option<RawWordUpdateLemma> {
         debug_assert!(sgn == 1 || sgn == -1);
         let len = w.len() as i32;
@@ -1744,10 +1764,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
         for _ in 0..max_steps {
             let input = w1.get(pos as usize);
-            if input as usize >= COLORS {
+            if input as usize >= reached.colors {
                 return None;
             }
-            if s1 as usize >= STATES {
+            if s1 as usize >= reached.states {
                 return None;
             }
 
@@ -1766,10 +1786,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 ));
             };
 
-            if out_color as usize >= COLORS {
+            if out_color as usize >= reached.colors {
                 return None;
             }
-            if next_state as usize >= STATES {
+            if next_state as usize >= reached.states {
                 return None;
             }
 
@@ -1865,6 +1885,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             prog: self,
             goal: params.goal,
             mirrored: params.mirrored,
+            reached: params.reached,
             block_len: params.block_len,
             max_work: params.max_work.max(1),
             block_step_limit: params.block_step_limit.max(1),
@@ -1936,10 +1957,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     ) -> bool {
         let knob = knob.max(FAR_KNOB_MIN);
         let eff = effort_factor(knob);
+        let reached = self.far_reached_params();
 
-        let cap_by_colors = if COLORS <= 2 {
+        let cap_by_colors = if reached.colors <= 2 {
             FAR_BLOCK_LEN_CAP_COLORS_2
-        } else if COLORS <= 4 {
+        } else if reached.colors <= 4 {
             FAR_BLOCK_LEN_CAP_COLORS_3_4
         } else {
             FAR_BLOCK_LEN_CAP_COLORS_5_8
@@ -1966,6 +1988,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         block_step_limit,
                         goal,
                         mirrored,
+                        reached,
                     },
                 ) {
                     return true;
@@ -1999,27 +2022,32 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     }
 
     fn direct_far_cant_target(&self, goal: Goal) -> bool {
-        let ctrl_states = Self::direct_far_ctrl_states(goal);
-        if ctrl_states == 0 || COLORS == 0 {
+        let reached = self.far_reached_params();
+        let ctrl_states = Self::direct_far_ctrl_states(goal, reached);
+        if ctrl_states == 0 || reached.colors == 0 {
             return false;
         }
 
         let max_by_nfa = DIRECT_FAR_MAX_NFA_STATES
             .saturating_sub(DIRECT_FAR_TARGET_STATES)
             / ctrl_states;
-        let max_by_entries = DIRECT_FAR_MAX_DFA_ENTRIES / COLORS;
+        let max_by_entries =
+            DIRECT_FAR_MAX_DFA_ENTRIES / reached.colors;
         let max_dfa_states = DIRECT_FAR_MAX_DFA_STATES
             .min(max_by_nfa)
             .min(max_by_entries);
 
-        if max_dfa_states == 0 || !self.direct_far_valid_program() {
+        if max_dfa_states == 0
+            || !self.direct_far_valid_program(reached)
+        {
             return false;
         }
 
         let mut fuel = DIRECT_FAR_MAX_WORK;
         for dfa_states in 1..=max_dfa_states {
-            if self.direct_far_decide_exact(goal, dfa_states, &mut fuel)
-            {
+            if self.direct_far_decide_exact(
+                goal, reached, dfa_states, &mut fuel,
+            ) {
                 return true;
             }
             if fuel == 0 {
@@ -2030,15 +2058,15 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         false
     }
 
-    fn direct_far_valid_program(&self) -> bool {
-        for state in 0..STATES {
-            for color in 0..COLORS {
+    fn direct_far_valid_program(&self, reached: ReachedParams) -> bool {
+        for state in 0..reached.states {
+            for color in 0..reached.colors {
                 #[expect(clippy::cast_possible_truncation)]
                 let slot: Slot = (state as State, color as Color);
                 #[expect(clippy::collapsible_if)]
                 if let Some(&(write, _, next_state)) = self.get(&slot) {
-                    if write as usize >= COLORS
-                        || next_state as usize >= STATES
+                    if write as usize >= reached.colors
+                        || next_state as usize >= reached.states
                     {
                         return false;
                     }
@@ -2048,10 +2076,13 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         true
     }
 
-    const fn direct_far_ctrl_states(goal: Goal) -> usize {
+    const fn direct_far_ctrl_states(
+        goal: Goal,
+        reached: ReachedParams,
+    ) -> usize {
         match goal {
-            Goal::Blank => STATES * 2,
-            Goal::Halt | Goal::Spinout => STATES,
+            Goal::Blank => reached.states * 2,
+            Goal::Halt | Goal::Spinout => reached.states,
         }
     }
 
@@ -2062,16 +2093,21 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     const fn direct_far_ctrl_tm_state(
         goal: Goal,
         ctrl: usize,
+        reached: ReachedParams,
     ) -> usize {
         match goal {
-            Goal::Blank => ctrl % STATES,
+            Goal::Blank => ctrl % reached.states,
             Goal::Halt | Goal::Spinout => ctrl,
         }
     }
 
-    const fn direct_far_ctrl_dirty(goal: Goal, ctrl: usize) -> bool {
+    const fn direct_far_ctrl_dirty(
+        goal: Goal,
+        ctrl: usize,
+        reached: ReachedParams,
+    ) -> bool {
         match goal {
-            Goal::Blank => ctrl >= STATES,
+            Goal::Blank => ctrl >= reached.states,
             Goal::Halt | Goal::Spinout => false,
         }
     }
@@ -2082,13 +2118,15 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         read_symbol: usize,
         write_symbol: usize,
         next_state: usize,
+        reached: ReachedParams,
     ) -> usize {
         match goal {
             Goal::Blank => {
-                let dirty = Self::direct_far_ctrl_dirty(goal, ctrl)
-                    || read_symbol != 0
-                    || write_symbol != 0;
-                next_state + usize::from(dirty) * STATES
+                let dirty =
+                    Self::direct_far_ctrl_dirty(goal, ctrl, reached)
+                        || read_symbol != 0
+                        || write_symbol != 0;
+                next_state + usize::from(dirty) * reached.states
             },
             Goal::Halt | Goal::Spinout => next_state,
         }
@@ -2097,10 +2135,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     fn direct_far_decide_exact(
         &self,
         goal: Goal,
+        reached: ReachedParams,
         dfa_states: usize,
         fuel: &mut usize,
     ) -> bool {
-        let ctrl_states = Self::direct_far_ctrl_states(goal);
+        let ctrl_states = Self::direct_far_ctrl_states(goal, reached);
         let nfa_states = ctrl_states
             .saturating_mul(dfa_states)
             .saturating_add(DIRECT_FAR_TARGET_STATES);
@@ -2111,14 +2150,17 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             return false;
         }
 
-        self.direct_far_decide_direction(goal, dfa_states, 0, fuel)
-            || self
-                .direct_far_decide_direction(goal, dfa_states, 1, fuel)
+        self.direct_far_decide_direction(
+            goal, reached, dfa_states, 0, fuel,
+        ) || self.direct_far_decide_direction(
+            goal, reached, dfa_states, 1, fuel,
+        )
     }
 
     fn direct_far_decide_direction(
         &self,
         goal: Goal,
+        reached: ReachedParams,
         dfa_states: usize,
         direction: u8,
         fuel: &mut usize,
@@ -2127,7 +2169,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             return false;
         }
 
-        let ctrl_states = Self::direct_far_ctrl_states(goal);
+        let ctrl_states = Self::direct_far_ctrl_states(goal, reached);
         let nfa_states =
             ctrl_states * dfa_states + DIRECT_FAR_TARGET_STATES;
         let any_sink = nfa_states - 2;
@@ -2135,6 +2177,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         let params = DirectFarParams {
             goal,
             direction,
+            reached,
             dfa_states,
             ctrl_states,
             nfa_states,
@@ -2142,11 +2185,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             zero_sink,
         };
 
-        let mut r = vec![vec![0_u128; nfa_states]; COLORS];
+        let mut r = vec![vec![0_u128; nfa_states]; reached.colors];
         let a = direct_far_bit(any_sink) | direct_far_bit(zero_sink);
         self.direct_far_init_targets(params, &mut r);
 
-        let dfa_entries = COLORS * dfa_states;
+        let dfa_entries = reached.colors * dfa_states;
         let mut dfa = vec![0_usize; dfa_entries];
         self.direct_far_search(params, &mut dfa, 0, 0, &r, a, fuel)
     }
@@ -2170,8 +2213,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         match params.goal {
             Goal::Halt => {
                 // Missing TM transitions are halting transitions.
-                for state in 0..STATES {
-                    for read_symbol in 0..COLORS {
+                for state in 0..params.reached.states {
+                    for read_symbol in 0..params.reached.colors {
                         #[expect(clippy::cast_possible_truncation)]
                         let slot: Slot =
                             (state as State, read_symbol as Color);
@@ -2192,8 +2235,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 // A dirty all-zero global tape is the blank target.  DFA state
                 // 0 is the all-zero left context because transition (0, 0) is
                 // fixed to 0 by the canonical direct-DFA search.
-                for state in 0..STATES {
-                    let dirty_ctrl = state + STATES;
+                for state in 0..params.reached.states {
+                    let dirty_ctrl = state + params.reached.states;
                     let src = direct_far_idx(
                         0,
                         dirty_ctrl,
@@ -2205,7 +2248,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             Goal::Spinout => {
                 // Match the existing FAR/MITM spinout target: while scanning a
                 // zero, a same-state transition with an all-zero ray ahead.
-                for state in 0..STATES {
+                for state in 0..params.reached.states {
                     #[expect(clippy::cast_possible_truncation)]
                     let slot: Slot = (state as State, 0);
                     let Some(&(_, shift_right, next_state)) =
@@ -2259,7 +2302,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             return false;
         }
 
-        let dfa_entries = COLORS * params.dfa_states;
+        let dfa_entries = params.reached.colors * params.dfa_states;
         if entry == dfa_entries {
             return max_seen + 1 == params.dfa_states;
         }
@@ -2320,16 +2363,19 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         a: &mut u128,
         entry: usize,
     ) -> bool {
-        let dfa_src = entry / COLORS;
-        let write_symbol = entry % COLORS;
+        let dfa_src = entry / params.reached.colors;
+        let write_symbol = entry % params.reached.colors;
         let dfa_dst = dfa[entry];
         let fixed_entries = entry + 1;
 
         // Right-rule for the one newly fixed DFA transition.
         for ctrl in 0..params.ctrl_states {
-            let state =
-                Self::direct_far_ctrl_tm_state(params.goal, ctrl);
-            for read_symbol in 0..COLORS {
+            let state = Self::direct_far_ctrl_tm_state(
+                params.goal,
+                ctrl,
+                params.reached,
+            );
+            for read_symbol in 0..params.reached.colors {
                 #[expect(clippy::cast_possible_truncation)]
                 let slot: Slot = (state as State, read_symbol as Color);
                 let Some(&(write, shift_right, next_state)) =
@@ -2348,6 +2394,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         read_symbol,
                         written,
                         next_state as usize,
+                        params.reached,
                     );
                     let src = direct_far_idx(
                         dfa_src,
@@ -2369,9 +2416,12 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             let mut changed = false;
 
             for ctrl in 0..params.ctrl_states {
-                let state =
-                    Self::direct_far_ctrl_tm_state(params.goal, ctrl);
-                for read_symbol in 0..COLORS {
+                let state = Self::direct_far_ctrl_tm_state(
+                    params.goal,
+                    ctrl,
+                    params.reached,
+                );
+                for read_symbol in 0..params.reached.colors {
                     #[expect(clippy::cast_possible_truncation)]
                     let slot: Slot =
                         (state as State, read_symbol as Color);
@@ -2394,10 +2444,13 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         read_symbol,
                         written,
                         next_state as usize,
+                        params.reached,
                     );
                     for fixed_entry in 0..fixed_entries {
-                        let fixed_src = fixed_entry / COLORS;
-                        let fixed_symbol = fixed_entry % COLORS;
+                        let fixed_src =
+                            fixed_entry / params.reached.colors;
+                        let fixed_symbol =
+                            fixed_entry % params.reached.colors;
                         let fixed_dst = dfa[fixed_entry];
                         let middle = direct_far_idx(
                             fixed_src,
@@ -2464,6 +2517,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     }
 
     fn mitm_cant_target(&self, goal: Goal) -> bool {
+        let reached = self.far_reached_params();
+
         // Fast, boolean-only port of Iijil1/MITMWFAR's search path:
         // enumerate closed MITM-DFA skeletons, then try one (+1,-1) WFA
         // weight pair, deriving and verifying the accept set in memory.
@@ -2476,6 +2531,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     dfa_transitions,
                     MITM_MAX_WEIGHT_PAIRS,
                     added_memory,
+                    reached,
                 ) {
                     return true;
                 }
@@ -2491,9 +2547,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         dfa_transitions: usize,
         max_weight_pairs: usize,
         added_memory: usize,
+        reached: ReachedParams,
     ) -> bool {
-        let mut left = MitmWfa::new(COLORS);
-        let mut right = MitmWfa::new(COLORS);
+        let mut left = MitmWfa::new(reached.colors);
+        let mut right = MitmWfa::new(reached.colors);
         left.trans[0][0] = (0, 0);
         right.trans[0][0] = (0, 0);
 
@@ -2506,6 +2563,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 goal_transitions: dfa_transitions,
                 max_weight_pairs,
                 added_memory,
+                reached,
             },
         )
     }
@@ -2518,7 +2576,12 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         current_transitions: usize,
         params: MitmSearchParams,
     ) -> bool {
-        match self.mitm_find_closure_break(goal, left, right) {
+        match self.mitm_find_closure_break(
+            goal,
+            left,
+            right,
+            params.reached,
+        ) {
             None => {
                 current_transitions == params.goal_transitions
                     && self.mitm_recurse_weights(
@@ -2526,11 +2589,15 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         left,
                         right,
                         &self.mitm_reachable_weight_slots(
-                            goal, left, right,
+                            goal,
+                            left,
+                            right,
+                            params.reached,
                         ),
                         0,
                         params.max_weight_pairs,
                         params.added_memory,
+                        params.reached,
                     )
             },
             Some((MitmSide::Left, state, color)) => {
@@ -2633,6 +2700,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
+        reached: ReachedParams,
     ) -> Option<(MitmSide, usize, usize)> {
         let left_rev = left.rev_edges();
         let right_rev = right.rev_edges();
@@ -2643,7 +2711,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         seen.insert(start);
 
         while let Some(cur) = todo.pop() {
-            if cur.st >= STATES || cur.co >= COLORS {
+            if cur.st >= reached.states || cur.co >= reached.colors {
                 continue;
             }
             #[expect(clippy::cast_possible_truncation)]
@@ -2657,7 +2725,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             nexts.clear();
             self.mitm_next_configs_into(
                 goal, cur, left, right, &left_rev, &right_rev,
-                &mut nexts,
+                &mut nexts, reached,
             );
             #[expect(clippy::iter_with_drain)]
             for next in nexts.drain(..) {
@@ -2684,6 +2752,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
+        reached: ReachedParams,
     ) -> MitmWeightSlots {
         let left_rev = left.rev_edges();
         let right_rev = right.rev_edges();
@@ -2698,8 +2767,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         seen.insert(start);
 
         while let Some(cur) = todo.pop() {
-            if cur.st >= STATES
-                || cur.co >= COLORS
+            if cur.st >= reached.states
+                || cur.co >= reached.colors
                 || cur.left >= left.states
                 || cur.right >= right.states
             {
@@ -2792,12 +2861,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         current_weight_pairs: usize,
         max_weight_pairs: usize,
         added_memory: usize,
+        reached: ReachedParams,
     ) -> bool {
         if self.mitm_check_weight_candidate(
             goal,
             left,
             right,
             added_memory,
+            reached,
         ) {
             return true;
         }
@@ -2828,6 +2899,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         current_weight_pairs + 1,
                         max_weight_pairs,
                         added_memory,
+                        reached,
                     ) {
                         right.trans[rs][rc] = (rt, old_rw);
                         left.trans[ls][lc] = (lt, old_lw);
@@ -2849,10 +2921,12 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         left: &MitmWfa,
         right: &MitmWfa,
         added_memory: usize,
+        reached: ReachedParams,
     ) -> bool {
         if added_memory == 0 {
-            return self
-                .mitm_check_weight_candidate_exact(goal, left, right);
+            return self.mitm_check_weight_candidate_exact(
+                goal, left, right, reached,
+            );
         }
 
         let mut try_left = left.clone();
@@ -2862,7 +2936,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             try_right = try_right.with_memory();
         }
         self.mitm_check_weight_candidate_exact(
-            goal, &try_left, &try_right,
+            goal, &try_left, &try_right, reached,
         )
     }
 
@@ -2871,6 +2945,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
+        reached: ReachedParams,
     ) -> bool {
         let left_special = left.derive_special();
         let right_special = right.derive_special();
@@ -2892,6 +2967,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             &right_rev,
             &left_special,
             &right_special,
+            reached,
         )
     }
 
@@ -2904,13 +2980,19 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         right_rev: &MitmRev,
         left_special: &MitmSpecial,
         right_special: &MitmSpecial,
+        reached: ReachedParams,
     ) -> bool {
         let start = MitmConfig::start();
         let start_bounds = MitmBounds {
             lo: Some(0),
             hi: Some(0),
         };
-        if !self.mitm_config_allowed(goal, &start, &start_bounds) {
+        if !self.mitm_config_allowed(
+            goal,
+            &start,
+            &start_bounds,
+            reached,
+        ) {
             return false;
         }
 
@@ -2923,7 +3005,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             let cur_bounds = accept[&cur];
             nexts.clear();
             self.mitm_next_configs_into(
-                goal, cur, left, right, left_rev, right_rev, &mut nexts,
+                goal, cur, left, right, left_rev, right_rev,
+                &mut nexts, reached,
             );
             nexts.sort_by_key(|next| next.config);
 
@@ -2944,7 +3027,9 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     continue;
                 };
 
-                if !self.mitm_config_allowed(goal, &cfg, &bounds) {
+                if !self
+                    .mitm_config_allowed(goal, &cfg, &bounds, reached)
+                {
                     return false;
                 }
                 todo.push(cfg);
@@ -2960,26 +3045,33 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         cfg: &MitmConfig,
         bounds: &MitmBounds,
+        reached: ReachedParams,
     ) -> bool {
         match goal {
             Goal::Halt => {
-                cfg.st < STATES
-                    && cfg.co < COLORS
+                cfg.st < reached.states
+                    && cfg.co < reached.colors
                     && self
                         .get(&(cfg.st as State, cfg.co as Color))
                         .is_some()
             },
             Goal::Blank => {
-                cfg.st < STATES
-                    && cfg.co < COLORS
+                cfg.st < reached.states
+                    && cfg.co < reached.colors
                     && !mitm_blank_config_possible(cfg, bounds)
             },
-            Goal::Spinout => !self.mitm_spinout_config_possible(cfg),
+            Goal::Spinout => {
+                !self.mitm_spinout_config_possible(cfg, reached)
+            },
         }
     }
 
-    fn mitm_spinout_config_possible(&self, cfg: &MitmConfig) -> bool {
-        if cfg.st >= STATES || cfg.co != 0 {
+    fn mitm_spinout_config_possible(
+        &self,
+        cfg: &MitmConfig,
+        reached: ReachedParams,
+    ) -> bool {
+        if cfg.st >= reached.states || cfg.co != 0 {
             return false;
         }
         #[expect(clippy::cast_possible_truncation)]
@@ -3007,8 +3099,9 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         left_rev: &MitmRev,
         right_rev: &MitmRev,
         out: &mut Vec<MitmNext>,
+        reached: ReachedParams,
     ) {
-        if old.st >= STATES || old.co >= COLORS {
+        if old.st >= reached.states || old.co >= reached.colors {
             return;
         }
         #[expect(clippy::cast_possible_truncation)]
@@ -3113,6 +3206,7 @@ struct MitmSearchParams {
     goal_transitions: usize,
     max_weight_pairs: usize,
     added_memory: usize,
+    reached: ReachedParams,
 }
 
 #[derive(Clone, Copy, Default)]
