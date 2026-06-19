@@ -644,7 +644,7 @@ fn test_instrs() {
     ];
 }
 
-fn instrs_8(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
+fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
         || prog.bkw_cant_halt(30).is_settled()
         || prog.ctl_cant_halt(300)
@@ -657,7 +657,13 @@ fn test_8_instr() {
     println!("8 instrs");
 
     assert_holdouts![
-        8 => (instrs_8, 500, (586, 12_835_863_274)),
+        8 => [
+            500,
+            12_835_863_274,
+            [
+                0 => (_8_0, _8_0_),
+            ],
+        ],
     ];
 }
 
