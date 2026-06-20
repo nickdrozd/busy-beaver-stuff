@@ -653,6 +653,15 @@ fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
         || prog.far_cant_halt(4)
 }
 
+fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
+    prog.graph_cant_blank()
+        || prog.bkw_cant_blank(50).is_settled()
+        || prog.ctl_cant_blank(300)
+        || prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+        || prog.cps_cant_blank(20)
+        || prog.far_cant_blank(4)
+}
+
 fn test_8_instr() {
     println!("8 instrs");
 
@@ -662,6 +671,7 @@ fn test_8_instr() {
             12_835_863_274,
             [
                 0 => (_8_0, _8_0_),
+                2 => (_8_2, _8_2_),
             ],
         ],
     ];
