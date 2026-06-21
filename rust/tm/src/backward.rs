@@ -619,20 +619,22 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// We explore the abstract state space (q, L, S, R) where L and R
     /// are the colors immediately to the left/right of the head, and S
     /// is the scanned color. When the head moves off the 3-cell
-    /// window, we conservatively treat the newly exposed cell as
+    /// window, a known-blank outside tail exposes an exact zero;
+    /// otherwise we conservatively treat the newly exposed cell as
     /// *unknown* (any color 0..c-1). This makes the analysis an
     /// over-approximation, and therefore safe for pruning: if a
     /// neighbor color is *not* possible here, it is not possible in any
     /// concrete run from blank.
-    #[expect(clippy::cast_possible_truncation, clippy::similar_names)]
+    #[expect(clippy::cast_possible_truncation)]
     fn win_possible_from_blank(
         &self,
         forbid_left: &[bool; c],
         forbid_right: &[bool; c],
     ) -> WinPossible<s, c> {
-        // Abstract state: (st, lb, l, sc, r, rb)
-        // lb/rb = whether the cell immediately outside the 3-cell window
-        // on that side is known blank (unvisited).
+        // Abstract state: (st, lb, l, sc, r, rb).
+        // lb/rb = whether the whole tail immediately outside the 3-cell
+        // window on that side is known blank.  The cells need not be
+        // unvisited: only their current colors matter to this abstraction.
         fn idx<const C: usize, const S: usize>(
             st: usize,
             lb: usize,
@@ -680,31 +682,28 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             if shift {
                 // Move Right.
                 // New: left neighbor becomes printed symbol p, scanned becomes old r.
-                // Left outside-blank flag becomes unknown (0): we've moved right, so we
-                // lose exact knowledge about the far-left boundary.
-                let new_lb = 0;
+                // The new left tail starts at old l, so it remains known blank exactly
+                // when old l is blank and the old farther-left tail was known blank.
+                let new_lb = usize::from(lb == 1 && l == 0);
 
-                if rb == 1 && r == 0 {
-                    // We were at the right boundary and stepped into fresh blank.
-                    // New right neighbor is known blank, and thus color 0.
-                    let new_r = 0;
-                    let new_rb = 1;
-                    let n = (ns, new_lb, p, r, new_r, new_rb);
+                if rb == 1 {
+                    // The old right tail starts at the newly exposed cell, so both
+                    // that cell and everything beyond it are known blank.  This does
+                    // not depend on the old right neighbor r.
+                    let n = (ns, new_lb, p, r, 0, 1);
                     let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
                     if !visited[id] {
                         visited[id] = true;
                         q.push_back(n);
                     }
                 } else {
-                    // We don't know whether we stepped within visited region or into unknown;
-                    // conservatively allow any right color (respecting forbid_right) and drop
-                    // boundary certainty.
-                    let new_rb = 0;
+                    // The newly exposed cell is unknown; conservatively allow any
+                    // right-side color and drop right-tail certainty.
                     for new_r in 0..c {
                         if forbid_right[new_r] {
                             continue;
                         }
-                        let n = (ns, new_lb, p, r, new_r, new_rb);
+                        let n = (ns, new_lb, p, r, new_r, 0);
                         let id =
                             idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
                         if !visited[id] {
@@ -714,27 +713,26 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                     }
                 }
             } else {
-                // Move Left.
-                let new_rb = 0;
+                // Move Left.  Symmetrically, the new right tail starts at old r.
+                let new_rb = usize::from(rb == 1 && r == 0);
 
-                if lb == 1 && l == 0 {
-                    // At left boundary, step into fresh blank. New left neighbor known blank (0).
-                    let new_l = 0;
-                    let new_lb = 1;
-                    let n = (ns, new_lb, new_l, l, p, new_rb);
+                if lb == 1 {
+                    // The old left tail starts at the newly exposed cell, so that
+                    // cell and everything beyond it are known blank.
+                    let n = (ns, 1, 0, l, p, new_rb);
                     let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
                     if !visited[id] {
                         visited[id] = true;
                         q.push_back(n);
                     }
                 } else {
-                    // Unknown on the left now; allow any (respect forbid_left), boundary certainty lost.
-                    let new_lb = 0;
+                    // The newly exposed cell is unknown; conservatively allow any
+                    // left-side color and drop left-tail certainty.
                     for new_l in 0..c {
                         if forbid_left[new_l] {
                             continue;
                         }
-                        let n = (ns, new_lb, new_l, l, p, new_rb);
+                        let n = (ns, 0, new_l, l, p, new_rb);
                         let id =
                             idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
                         if !visited[id] {
