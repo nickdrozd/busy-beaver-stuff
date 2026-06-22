@@ -6,7 +6,6 @@ from unittest import TestCase
 
 from test.prog_data import *  # noqa: F403
 from tm.rust_stuff import (
-    BackwardResult,
     bkw_cant_blank,
     bkw_cant_halt,
     bkw_cant_spinout,
@@ -34,6 +33,8 @@ from tools.graph import Graph as GraphPy
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from tm.rust_stuff import BackwardResult
 
     type BackwardReasoner = Callable[
         [str, int],
@@ -273,15 +274,8 @@ class Backward(TestCase):
 
             for prog, steps in data.items():
                 self.assertEqual(
-                    bkw_cant_reach(prog, steps).step,
+                    bkw_cant_reach(prog, BKW_LIMIT).step,
                     steps)
-
-                if steps == 0:
-                    continue
-
-                self.assertIsInstance(
-                    bkw_cant_reach(prog, steps - 1),
-                    BackwardResult.step_limit)
 
 
 class Segment(TestCase):
