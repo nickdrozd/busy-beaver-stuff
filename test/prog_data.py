@@ -155,14 +155,6 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 0LC  0RC ...  1LC 0RA": (1,  6),
     "1RB 1LA  0LA 0LC  0LC 1LC": (1,  6),
     "1RB ...  1LC ...  0LC 0LB": (2,  4),
-    "1RB ...  1LB 0RC  0LB 1RC": (0,  7),
-    "1RB 0RB  1LB 1RC  0LA 0LB": (0,  7),
-    "1RB 0RB  0LB 1RC  1LB 0LA": (0,  7),
-    "1RB 0LC  0LB 1LC  1RA 0RB": (0,  6),
-    "1RB 0RB  1LB 1RC  ... 0LA": (0,  5),
-    "1RB 0LC  1LB 1RA  ... 0RB": (0,  5),
-    "1RB 0RB  0LB 1LC  0RA ...": (0,  5),
-    "1RB 0RB  0LB 1RC  0LA ...": (0,  5),
 
     # 2/3
     "1RB 2LB 1LA  2LB 2RA 0RA": ( 8, 59),  # BBB(2, 3)
@@ -176,7 +168,6 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB ... 2LB  2LB 2RA 0RA": ( 1,  6),
     "1RB 1LB ...  1LB 2RA 0RA": ( 1,  6),
     "1RB ... 1LB  2LB 2RA 0LB": ( 1,  5),
-    "1RB ... ...  0LB 2RB 0RB": ( 0,  5),
 
     # 4/2
     "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819),  # BBB sigma
@@ -193,23 +184,9 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 0RB  1LC 0LC  0RC 0LD  1RA 1LD": ( 2,   45),
     "1RB 1LB  1LA 1RC  1RC 0LD  0RB 1LD": ( 1,   37),
     "1RB 0LB  1LA 1LC  0LD 0RC  0RD 1RA": ( 1,   25),
-    "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": ( 1,   15),
     "1RB ...  0RC 1LC  1LC 0RD  0LB 1RD": ( 1,   13),
-    "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA": ( 1,   11),
     "1RB ...  1RC 1LC  0LB 1RD  0RD 0LC": ( 1,    7),
     "1RB ...  1LB 0RC  0LD 1RC  ... 1LB": ( 1,    6),
-    "1RB ...  1RC ...  1LC 0RD  0LC 1RD": ( 0,   22),
-    "1RB ...  1LB 1RC  0LD 0RB  1LD 0RC": ( 0,   20),
-    "1RB ...  0RC 1LB  1LC 0RD  0LB 1RD": ( 0,   19),
-    "1RB ...  1LC 1LC  0RD 0LB  1RD 0LC": ( 0,   15),
-    "1RB ...  0RC ...  1LC 0RD  0LC 1RD": ( 0,   16),
-    "1RB ...  1LC ...  0LD 1RC  1LD 0RC": ( 0,   13),
-    "1RB ...  1LC ...  0RD 1LC  1RD 0LC": ( 0,   12),
-    "1RB ...  1RC ...  0LD 1RC  1LD 0RC": ( 0,   11),
-    "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD": ( 0,   10),
-    "1RB ...  1LC ...  1RC 0LD  0RC 1LD": ( 0,   10),
-    "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB": ( 0,    9),
-    "1RB ...  0RC ...  0LD 1RC  1LD 0RC": ( 0,    9),
 
     # 7/4 block-compiled from 4/2 BBB sigma
     "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...": (35, 1434),
@@ -246,8 +223,6 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB ... ... ... ...  0LB 2RB 3RB 4RB 2LB": (1, 9),
     "1RB ... ... ... ...  0LB 2RB 3RB 4RB 3LB": (1, 9),
     "1RB ... ... ... ...  0LB 2RB 3RB 4RB 4LB": (1, 9),
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB": (0, 9),
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB": (0, 9),
     "1RB ... ... ... ...  0LB 2RB 3RB 4LB ...": (1, 7),
 
     # 5/2
@@ -255,9 +230,6 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  1LE 0LA": (7, 57),
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": (19670, 193023636),
     "1RB ...  0RC 0RD  1LC 1LA  0RC 0LE  1LD 0RC": (33, 1199),
-
-    # 10/2 backsym-compile from 5/2 spaghetti
-    "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA": (1, 10675),
 }
 
 SPINOUT_BLANK = {
@@ -279,19 +251,21 @@ SPINOUT_BLANK = {
     "1RB 0LC  1LB 1LA  1RC 0LC": ({'C'}, 20),
     "1RB ...  1LC 0LC  1RC 0LB": ({'B', 'C'}, 20),
     "1RB ...  0RC 0LB  0LC 1LA": ({'B', 'C'}, 9),
+    "1RB ...  1LB 0RC  0LB 1RC": ({'B', 'C'}, 7),
     "1RB 0RB  0LB 1RC  1LB 0LA": ({'B'},  7),
     "1RB 0RB  1LB 1RC  0LA 0LB": ({'B'},  7),
     "1RB 0LC  0LB 1LC  1RA 0RB": ({'B'},  6),
+    "1RB 0RB  1LB 1RC  ... 0LA": ({'B'},  5),
     "1RB 0LC  1LB 1RA  ... 0RB": ({'B'},  5),
     "1RB 0RB  0LB 1LC  0RA ...": ({'B'},  5),
     "1RB 0RB  0LB 1RC  0LA ...": ({'B'},  5),
-    "1RB 0RB  1LB 1RC  ... 0LA": ({'B'},  5),
     "1RB ...  1LB 0RC  ... 0RB": ({'B'},  4),
 
     # 2/3
     "1RB 2RA 2RB  2LB 1LA 0RB": ({'B'}, 29),
     "1RB 2RB 2RA  2LB 1LA 0RB": ({'B'}, 24),
     "1RB 0RA 0RB  2LB 0RB 2LA": ({'B'},  8),
+    "1RB ... ...  0LB 2RB 0RB": ({'B'}, 5),
     "1RB ... ...  2LB 0RB 0RB": ({'B'},  4),
 
     # 4/2
@@ -311,7 +285,18 @@ SPINOUT_BLANK = {
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD": ({'D'},           77),
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA": ({'C'},           66),
     "1RB 1LC  0LB 1LA  1RC 0LD  0RC 1LD": ({'C', 'D'}, 26),
+    "1RB ...  1RC ...  1LC 0RD  0LC 1RD": ({'D', 'C'}, 22),
+    "1RB ...  1LB 1RC  0LD 0RB  1LD 0RC": ({'D', 'C'}, 20),
+    "1RB ...  0RC 1LB  1LC 0RD  0LB 1RD": ({'D', 'B', 'C'}, 19),
     "1RB 0RB  0RC 0LD  1LC 1RD  0RA 1LD": ({'B', 'C'}, 17),
+    "1RB ...  0RC ...  1LC 0RD  0LC 1RD": ({'D', 'C'}, 16),
+    "1RB ...  1LC 1LC  0RD 0LB  1RD 0LC": ({'D', 'C'}, 15),
+    "1RB ...  1LC ...  0LD 1RC  1LD 0RC": ({'D', 'C'}, 13),
+    "1RB ...  1LC ...  0RD 1LC  1RD 0LC": ({'D', 'C'}, 12),
+    "1RB ...  1RC ...  0LD 1RC  1LD 0RC": ({'D', 'C'}, 11),
+    "1RB ...  1LC ...  1RC 0LD  0RC 1LD": ({'D', 'C'}, 10),
+    "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD": ({'D', 'B', 'C'}, 10),
+    "1RB ...  0RC ...  0LD 1RC  1LD 0RC": ({'D', 'C'}, 9),
     "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB": ({'C', 'D'}, 9),
 
     # 2/4
@@ -336,6 +321,8 @@ SPINOUT_BLANK = {
     "1RB 2RC 2RA  0LC 1RA 2RB  2LC 1LA 0RB": ({'B', 'C'}, 606),
 
     # 2/5
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB": ({'B'}, 9),
+    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB": ({'B'}, 9),
     "1RB 2RA 0RB 2RB 3RB  0LB 4LA 3LA 0RB 1RA": ({'B'}, 21),
     "1RB 2RB 3LA 2RA 2RA  2LB 1LA 0RB 4RA 3RA": ({'B'}, 1012664081),
     "1RB 2RB 3LA 2RA 2RA  2LB 1LA 0RB 4RA 4RA": ({'B'}, 1012664081),
@@ -388,6 +375,8 @@ SPINOUT_BLANK = {
     # 6/2 inverted from 4/2 BLB
     "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": ({'C', 'F'}, 32779478),
 }
+
+assert not set(SPINOUT) & set(SPINOUT_BLANK)
 
 SPINOUT_SLOW = {
     # 2/4
@@ -957,6 +946,14 @@ RECUR_BLANK_IN_PERIOD = {
 
     # 2/5
     "1RB 2LA 3RB 2LB 0RA  3LA 4RA 4RA 0LB 0LB": (None, 17),
+}
+
+BLANK_BEFORE_SPINOUT = {
+    "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA",
+    "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA",
+
+    # 10/2 backsym-compile from 5/2 spaghetti
+    "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
 }
 
 RECUR_BLANK_BEFORE_PERIOD = {
@@ -3417,7 +3414,7 @@ SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
 
 CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 7,
-    "blank": 37,
+    "blank": 22,
     "spinout": 290,
 }
 
@@ -3432,31 +3429,16 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
     },
     "blank": {
-        "1RB ... ...  0LB 2RB 0RB",
         "1RB 1LA 2LA  0LA 2RB 0RB",
         "1RB 2LA 1LA  0LA 0RB 2RB",
         "1RB 2LA 0LA  1LA 2RA 0RB",
-        "1RB ...  1LB 0RC  0LB 1RC",
         "1RB 2LB 0LA 1LB  3LA 0RA 3RA 2RB",
         "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
         "1RB 1LC  1LB 1RC  0LD 0RC  1LA 0RA",
-        "1RB ...  0RC ...  0LD 1RC  1LD 0RC",
         "1RB 1LC  0LA 1RD  0RB 0LC  1LA 0RD",
-        "1RB ...  1LC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  1LC ...  1RC 0LD  0RC 1LD",
         "1RB 1LC  0LA 1RD  1LA 0LC  0RB 0RD",
-        "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD",
-        "1RB ...  1RC ...  1LC 0RD  0LC 1RD",
-        "1RB ...  0RC ...  1LC 0RD  0LC 1RD",
-        "1RB ...  0RC 1LB  1LC 0RD  0LB 1RD",
-        "1RB ...  1LC 1LC  0RD 0LB  1RD 0LC",
-        "1RB ...  1RC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  1LC ...  0RD 1LC  1RD 0LC",
-        "1RB ...  1LB 1RC  0LD 0RB  1LD 0RC",
         "1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC",
         "1RB 2LB 2LC  1LA 2RC 1LB  0RC 2RB 0LA",
-        "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
-        "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
         "1RB 2LB 1LA 3LB 0RA  2LA 4LA 3RA 4RB 0RB",
         "1RB 3LB 4RB 4LA 0LA  2LA 2RB 1RA 3RA 0LB",
         "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA",
@@ -3838,7 +3820,7 @@ CPS_QUASIHALT_FALSE_NEGATIVES = {
 
 CTL_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 76,
-    "blank": 321,
+    "blank": 306,
     "spinout": 212,
 }
 
@@ -3924,7 +3906,6 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
     "blank": {
         "1RB 0RB  1LB 1RA",
         "1RB 1LA  1LB 0RA",
-        "1RB ... ...  0LB 2RB 0RB",
         "1RB 0LA ...  1LB 2LA 0RB",
         "1RB 0LB ...  2LA 1LA 1RA",
         "1RB 0LB 0LA  2LA 0RA 2LB",
@@ -3952,7 +3933,6 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 2LB 1LA  1LA 2RB 0RB",
         "1RB 2RB 1LB  1LA 2RB 0LA",
         "1RB 2RB 2LA  1LB 1RA 0LA",
-        "1RB ...  1LB 0RC  0LB 1RC",
         "1RB ...  1LC 1RA  1LA 0LC",
         "1RB ...  1LC 1RC  0RA 0LC",
         "1RB 0LA  0RC 0RC  1LC 1LA",
@@ -4043,19 +4023,8 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 3RA 1LB 2RB  1LB 2LA 1LA 0LA",
         "1RB 3RA 3LA 1LB  2LA 0RB 1RB 0LA",
         "1RB 3RB 0LA 0LB  2LA 0RA 2LB 1RA",
-        "1RB ...  0RC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  0RC ...  1LC 0RD  0LC 1RD",
         "1RB ...  0RC 0LA  1RD 0LD  1LC 0LB",
         "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC",
-        "1RB ...  0RC 1LB  1LC 0RD  0LB 1RD",
-        "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD",
-        "1RB ...  1LB 1RC  0LD 0RB  1LD 0RC",
-        "1RB ...  1LC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  1LC ...  0RD 1LC  1RD 0LC",
-        "1RB ...  1LC ...  1RC 0LD  0RC 1LD",
-        "1RB ...  1LC 1LC  0RD 0LB  1RD 0LC",
-        "1RB ...  1RC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  1RC ...  1LC 0RD  0LC 1RD",
         "1RB 0LA  0RC 0RD  1LA 0RA  0LC 1RA",
         "1RB 0LA  0RC 0RD  1LC 1LA  0RB 1RD",
         "1RB 0LA  0RC 1LA  1RD 0RD  1LB 1RB",
@@ -4176,8 +4145,6 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 2RA 1LC  2LB 0RB 2LA  2RB 0LB 1LA",
         "1RB 2RB 1LA  1LB 2LA 0RC  ... 0LA 0LB",
         "1RB 2RC ...  1LB 2RB 0RC  2LB 1RC 0LA",
-        "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
-        "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
         "1RB 2LB 1LA 3LB 0RA  2LA 4LA 3RA 4RB 0RB",
         "1RB 3LB 4RB 4LA 0LA  2LA 2RB 1RA 3RA 0LB",
         "1RB 0RA 3LA 2LA 0LA  2LA 0RB 4LB 2RB 4RA",
@@ -4618,7 +4585,6 @@ GRAPH_FALSE_NEGATIVES = {
     },
     "blank": {
         "0LB 2RB ...  1RA 1LB 1LA",
-        "1RB ... ...  0LB 2RB 0RB",
         "1RB 0LA ...  1LB 2LA 0RB",
         "1RB 0LB 0RA  1LB 2LA 2RA",
         "1RB 1LA 0RA  2LA 0LB 2RB",
@@ -4629,7 +4595,6 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 2LA 1LA  2LA 2RB 0RA",
         "1RB 2LB 0LA  1LA 2RB 0RB",
         "1RB 2LB 1LA  1LA 2RB 0RB",
-        "1RB ...  1LB 0RC  0LB 1RC",
         "1RB 1LB  1RC 1LC  0LA 0RC",
         "1RB 0LA 0RB 2LB  3LB 3RA 0RA 1LA",
         "1RB 0LA 0RB 2LB  3LB 3RA 1RB 1LA",
@@ -4695,17 +4660,6 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 2RB 1LA 0LB  2LB 3RB 0RB 1LA",
         "1RB 2RB 3LB 0RA  1LA 3RB 2LA 2RA",
         "1RB 2RB 3RB 2LA  1LB 3RA 0LA 0RA",
-        "1RB ...  0RC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  0RC ...  1LC 0RD  0LC 1RD",
-        "1RB ...  0RC 1LB  1LC 0RD  0LB 1RD",
-        "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD",
-        "1RB ...  1LB 1RC  0LD 0RB  1LD 0RC",
-        "1RB ...  1LC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  1LC ...  0RD 1LC  1RD 0LC",
-        "1RB ...  1LC ...  1RC 0LD  0RC 1LD",
-        "1RB ...  1LC 1LC  0RD 0LB  1RD 0LC",
-        "1RB ...  1RC ...  0LD 1RC  1LD 0RC",
-        "1RB ...  1RC ...  1LC 0RD  0LC 1RD",
         "1RB 0LA  0RC 0RD  1LA 0RA  0LC 1RA",
         "1RB 0LA  0RC 0RD  1LC 1LA  0RB 1RD",
         "1RB 0LA  0RC 1LA  1RD 0RD  1LB 1RB",
@@ -4800,8 +4754,6 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 2RA 0RB  2LB 1LC 0LA  1LA 2RA 2LA",
         "1RB 2RA 1LC  2LB 0RB 2LA  1LA 0LB 1LA",
         "1RB 2RA 1LC  2LB 0RB 2LA  2RB 0LB 1LA",
-        "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
-        "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
         "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA",
         "1RB 2LB 1LA 3LB 0RA  2LA 4LA 3RA 4RB 0RB",
         "1RB 2LB 1RB 3LB ...  2LA 4LB 3RB 0RA 1RB",
@@ -5359,25 +5311,10 @@ GRAPH_FALSE_NEGATIVES = {
 FAR_FALSE_NEGATIVES = {
     "halt": set(),
     "blank": {
-       "1RB ... ...  0LB 2RB 0RB",
-       "1RB ...  1LB 0RC  0LB 1RC",
        "1RB 0LB 3LA 0LA  2LA 2RA 3RA 0RB",
        "1RB 2LB 0LA 1RA  2LA 0RB 3RB 0RA",
        "1RB 2RB 0LB 0LA  1LA 3LA 0RB 2RA",
-       "1RB ...  0RC ...  0LD 1RC  1LD 0RC",
-       "1RB ...  0RC ...  1LC 0RD  0LC 1RD",
-       "1RB ...  0RC 1LB  1LC 0RD  0LB 1RD",
-       "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD",
-       "1RB ...  1LB 1RC  0LD 0RB  1LD 0RC",
-       "1RB ...  1LC ...  0LD 1RC  1LD 0RC",
-       "1RB ...  1LC ...  0RD 1LC  1RD 0LC",
-       "1RB ...  1LC ...  1RC 0LD  0RC 1LD",
-       "1RB ...  1LC 1LC  0RD 0LB  1RD 0LC",
-       "1RB ...  1RC ...  0LD 1RC  1LD 0RC",
-       "1RB ...  1RC ...  1LC 0RD  0LC 1RD",
        "1RB 0RB 2LA  2LB 2RC 0RC  0LB 1RC 1LA",
-       "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
-       "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
        "1RB 3LA 1LB 4LA 0LA  2LA 0RB 4LA 4RA 2RA",
        "1RB 0LB  1LC 1LD  1RD 0LD  1LB 0RE  0RA 1RE",
        "1RB 0LD  1RC 0LA  1LD 0RA  1LE 1RE  0RC 1LC",
@@ -6771,7 +6708,7 @@ SPINNERS = (set(
     | SPINOUT_BLANK
     | SPINOUT_BLANK_SLOW
     | PROVER_SPINOUT
-) | DO_SPINOUT | GIANT_CHILDREN | {
+) | DO_SPINOUT | BLANK_BEFORE_SPINOUT | GIANT_CHILDREN | {
     prog for steps in LIMITED['spinout'].values() for prog in steps
 }) - ZLOOPERS
 
@@ -6812,6 +6749,7 @@ BLANKERS = (
         | BLANK_AFTER_TREE
         | INIT_BLANK
         | RECUR_BLANK_IN_PERIOD)
+    | BLANK_BEFORE_SPINOUT
     | RECUR_BLANK_BEFORE_PERIOD
     | GIANT_CHILDREN
     | {prog for prog, marks in PROVER_SPINOUT.items()

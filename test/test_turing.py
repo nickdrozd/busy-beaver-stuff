@@ -265,8 +265,7 @@ class TuringTest(TestCase):
             f'segment blank false positive: "{prog}"')
 
     def assert_cant_blank_backward(self, prog: str, depth: int):
-        if (prog in BACKWARD_CANT_BLANK_FALSE_NEGATIVES
-                or Machine(prog).run(sim_lim = 30).blanks):
+        if prog in BACKWARD_CANT_BLANK_FALSE_NEGATIVES:
             return
 
         self.assertTrue(
