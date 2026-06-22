@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 
 CPS_LIMIT = 33
 CTL_LIMIT = 3_200
-BKW_LIMIT = 1_000
+BKW_LIMIT = 3_000
 SEG_LIMIT = 22
 
 ########################################

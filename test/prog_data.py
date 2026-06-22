@@ -2491,7 +2491,6 @@ type BackwardCats = dict[
 BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
     "halt": {
         "step_limit": {
-            "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...",
             "1RB ...  0LC 0RD  1LA 1LC  0LA 0RB",
             "1RB 1LA  0RC 0RD  0LD ...  0LA 1RD",
             "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
@@ -2529,6 +2528,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 0RA 2LB ...  2LA 1LB 3RA 1RA",
             "1RB 1LA ... 1RB  2LA 3LB 1RB 0RA",
             "1RB 1LA ... 3LA  2LA 3RB 3LA 0RA",
+            "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...",
             "1RB 2LA 0RB ...  2LB 3LA 1RA 1LA",
             "1RB 2LA 3RA 0LB  2LA ... 2RB 2LA",
             "1RB 2LA 3RB 0LB  0LB 1LA 0RA ...",
@@ -2922,8 +2922,8 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
 
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
-        "step_limit": 5,
-        "depth_limit": 173,
+        "step_limit": 4,
+        "depth_limit": 174,
     },
     "blank": {
         "step_limit": 3,
