@@ -5357,8 +5357,7 @@ GRAPH_FALSE_NEGATIVES = {
 ########################################
 
 FAR_FALSE_NEGATIVES = {
-    "halt": {
-    },
+    "halt": set(),
     "blank": {
        "1RB ... ...  0LB 2RB 0RB",
        "1RB ...  1LB 0RC  0LB 1RC",
@@ -6951,6 +6950,10 @@ NONSPINNERS = (
 assert not HALTERS & NONHALTERS
 assert not BLANKERS & NONBLANKERS
 assert not SPINNERS & NONSPINNERS
+
+assert not RECURS & HALTERS
+assert not RECURS & SPINNERS
+assert not HALTERS & SPINNERS
 
 ## test program ######################################################
 

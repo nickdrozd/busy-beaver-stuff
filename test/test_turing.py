@@ -954,6 +954,9 @@ class SimpleSlow(Simple):
 
 class Graphx(TuringTest):
     def test_halt(self):
+        self.assertFalse(
+            HALTERS & GRAPH_FALSE_NEGATIVES['halt'])
+
         for prog in HALTERS:
             self.assertFalse(
                 graph_cant_halt(prog))
@@ -983,6 +986,9 @@ class Graphx(TuringTest):
                 graph_cant_blank(prog))
 
     def test_spinout(self):
+        self.assertFalse(
+            SPINNERS & GRAPH_FALSE_NEGATIVES['spinout'])
+
         for prog in SPINNERS - MACRO_SPINOUT:
             self.assertFalse(
                 graph_cant_spinout(prog))
@@ -1048,6 +1054,15 @@ class Graphx(TuringTest):
 
 class Far(TuringTest):
     def test_true_positives(self):
+        self.assertFalse(
+            HALTERS & FAR_FALSE_NEGATIVES['halt'])
+
+        self.assertFalse(
+            BLANKERS & FAR_FALSE_NEGATIVES['blank'])
+
+        self.assertFalse(
+            SPINNERS & FAR_FALSE_NEGATIVES['spinout'])
+
         for prog in NONHALTERS | FAR_REFUTES:
             if not far_cant_halt(prog, 3):
                 self.assertIn(prog, FAR_FALSE_NEGATIVES['halt'])
