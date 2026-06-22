@@ -205,9 +205,6 @@ class TuringTest(TestCase):
     ########################################
 
     def assert_could_halt_backward(self, prog: str):
-        if prog == "1RB ...  ... ...":
-            return
-
         self.assertFalse(
             bkw_cant_halt(prog, steps = REASON_LIMIT).is_refuted(),
             f'halt false positive: "{prog}"')
@@ -221,9 +218,6 @@ class TuringTest(TestCase):
             f'halt false negative: "{prog}"')
 
     def assert_could_halt_segment(self, prog: str):
-        if prog == "1RB ...  ... ...":
-            return
-
         self.assertFalse(
             segment_cant_halt(prog, segs = SEGMENT_LIMIT).is_refuted(),
             f'segment halt false positive: "{prog}"')
@@ -237,9 +231,6 @@ class TuringTest(TestCase):
             f'segment halt false negative: "{prog}"')
 
     def assert_could_halt_cps(self, prog: str):
-        if prog == '1RB ...  ... ...':
-            return
-
         self.assertFalse(
             cps_cant_halt(prog, CPS_LIMIT))
 
@@ -251,9 +242,6 @@ class TuringTest(TestCase):
             cps_cant_halt(prog, segs))
 
     def assert_could_halt_ctl(self, prog: str):
-        if prog == '1RB ...  ... ...':
-            return
-
         self.assertFalse(
             ctl_cant_halt(prog, CTL_LIMIT))
 
