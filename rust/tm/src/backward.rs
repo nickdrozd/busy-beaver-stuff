@@ -158,6 +158,23 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut configs = get_configs(&slots);
 
+    // Apply the same static reachability facts to the target frontier that
+    // are applied after each backward step.  In particular, halt targets
+    // begin with two unknown neighbors, so skipping this check would retain
+    // targets whose (state, scanned color) is unreachable from blank.
+    configs.retain_mut(|Config { state, tape }| {
+        tape.obeys_shift_side(&forbid_left, &forbid_right)
+            && tape.tighten_forced_blank_ends(
+                left_forced_blank,
+                right_forced_blank,
+            )
+            && window_possible(*state, tape, &win_possible)
+    });
+
+    if configs.is_empty() {
+        return Refuted(0);
+    }
+
     let mut blanks = get_blanks(&configs);
 
     let mut antichains = Antichains::default();
@@ -204,6 +221,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             valid_steps,
             &mut blanks,
             &win_possible,
+            &forbid_left,
+            &forbid_right,
             left_fresh_zero,
             right_fresh_zero,
             left_forced_blank,
@@ -351,11 +370,37 @@ fn get_indef(
     Some((steps, next_config))
 }
 
-#[expect(clippy::fn_params_excessive_bools)]
+fn window_possible<const s: usize, const c: usize>(
+    state: State,
+    tape: &Tape,
+    win_possible: &WinPossible<s, c>,
+) -> bool {
+    let st = state as usize;
+    let sc = tape.scan as usize;
+
+    let l = tape.left_neighbor_color().map(|x| x as usize);
+    let r = tape.right_neighbor_color().map(|x| x as usize);
+
+    match (l, r) {
+        (Some(lc), Some(rc)) => win_possible[st][sc][lc][rc],
+        (Some(lc), None) => {
+            (0..c).any(|rc| win_possible[st][sc][lc][rc])
+        },
+        (None, Some(rc)) => {
+            (0..c).any(|lc| win_possible[st][sc][lc][rc])
+        },
+        (None, None) => (0..c)
+            .any(|lc| (0..c).any(|rc| win_possible[st][sc][lc][rc])),
+    }
+}
+
+#[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
 fn step_configs<const s: usize, const c: usize>(
     configs: ValidatedSteps,
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
+    forbid_left: &[bool; c],
+    forbid_right: &[bool; c],
     left_fresh_zero: bool,
     right_fresh_zero: bool,
     left_forced_blank: bool,
@@ -381,15 +426,21 @@ fn step_configs<const s: usize, const c: usize>(
                 }
             }
 
-            // Additional end-tightening based on shift-side analysis.
-            // If the transition table proves that no non-blank symbol can
-            // ever appear on a given side in any run from blank, then that
-            // side is forced to be all blanks and we can safely replace `?`
-            // with `0+` on that end.
-            tape.tighten_forced_blank_ends(
+            // Enforce every per-color shift-side restriction over the whole
+            // explicit span, not just the immediate neighbor used by the
+            // three-cell window analysis.
+            if !tape.obeys_shift_side(forbid_left, forbid_right) {
+                continue;
+            }
+
+            // If a whole side is forced blank, reject contradictory explicit
+            // nonblank blocks and otherwise canonicalize the side to `0+`.
+            if !tape.tighten_forced_blank_ends(
                 left_forced_blank,
                 right_forced_blank,
-            );
+            ) {
+                continue;
+            }
 
             // Additional sound invariants when blanks (0) cannot be
             // written *in the direction that would leave them on a given
@@ -410,33 +461,11 @@ fn step_configs<const s: usize, const c: usize>(
                 continue;
             }
 
-            // Optional adjacency pruning: if this predecessor configuration
-            // requires an immediate neighbor color that cannot occur
-            // (even in a sound over-approximation of reachable 3-cell
-            // windows (L,scan,R) from blank), prune it.
-            let st = state as usize;
-            let sc = tape.scan as usize;
-
-            let l = tape.left_neighbor_color().map(|x| x as usize);
-            let r = tape.right_neighbor_color().map(|x| x as usize);
-
-            match (l, r) {
-                (Some(lc), Some(rc)) => {
-                    if !win_possible[st][sc][lc][rc] {
-                        continue;
-                    }
-                },
-                (Some(lc), None) => {
-                    if !(0..c).any(|rc| win_possible[st][sc][lc][rc]) {
-                        continue;
-                    }
-                },
-                (None, Some(rc)) => {
-                    if !(0..c).any(|lc| win_possible[st][sc][lc][rc]) {
-                        continue;
-                    }
-                },
-                (None, None) => {},
+            // Adjacency pruning, including the unknown/unknown case.  Even
+            // when neither neighbor is fixed, the (state, scanned color) must
+            // occur in at least one reachable three-cell window.
+            if !window_possible(state, &tape, win_possible) {
+                continue;
             }
 
             let next_config = Config::new(state, tape);
@@ -1252,33 +1281,50 @@ impl Tape {
         })
     }
 
-    /// Tighten unknown ends to blank ends using global shift-side analysis.
+    /// Reject explicit side colors forbidden by shift-side analysis.
     ///
-    /// If shift-side analysis proves that **no non-blank** symbol can ever
-    /// appear on a given side of the head in any run from the blank tape,
-    /// then that entire side is forced to be blank (0) regardless of whether
-    /// the machine may write blank.
+    /// The three-cell window filter sees only immediate neighbors.  This
+    /// check carries the same per-color invariant across every explicit block
+    /// in both spans, so impossible colors cannot survive farther from the
+    /// head.
+    fn obeys_shift_side<const C: usize>(
+        &self,
+        forbid_left: &[bool; C],
+        forbid_right: &[bool; C],
+    ) -> bool {
+        self.lspan
+            .span
+            .iter()
+            .all(|block| !forbid_left[block.color as usize])
+            && self
+                .rspan
+                .span
+                .iter()
+                .all(|block| !forbid_right[block.color as usize])
+    }
+
+    /// Enforce sides proved to contain blanks only.
     ///
-    /// This is a *sound* normalization step: it only strengthens `?` -> `0+`
-    /// when the program itself forbids non-blank symbols on that side.
+    /// Merely changing an unknown end to `0+` is insufficient when an
+    /// explicit nonblank block is already present.  Such a tape contradicts
+    /// the invariant and must be rejected.  Otherwise every explicit zero is
+    /// redundant and the whole side can be canonicalized to a blank span.
     fn tighten_forced_blank_ends(
         &mut self,
         left_forced_blank: bool,
         right_forced_blank: bool,
-    ) {
-        if left_forced_blank {
-            self.lspan.end = TapeEnd::Blanks;
+    ) -> bool {
+        fn force_blank(span: &mut Span) -> bool {
+            if span.span.iter().any(|block| block.color != 0) {
+                return false;
+            }
+
+            *span = Span::init_blank();
+            true
         }
-        if right_forced_blank {
-            self.rspan.end = TapeEnd::Blanks;
-        }
-        // Canonicalize: with `0+` ends, drop redundant trailing 0-blocks.
-        if self.lspan.end == TapeEnd::Blanks {
-            self.lspan.absorb_trailing_blanks();
-        }
-        if self.rspan.end == TapeEnd::Blanks {
-            self.rspan.absorb_trailing_blanks();
-        }
+
+        (!left_forced_blank || force_blank(&mut self.lspan))
+            && (!right_forced_blank || force_blank(&mut self.rspan))
     }
 
     fn subsumes(&self, other: &Self) -> bool {

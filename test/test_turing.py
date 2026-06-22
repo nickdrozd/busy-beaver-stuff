@@ -604,6 +604,9 @@ class Reason(TuringTest):
                     bkw_cant_reach(prog, steps).step,
                     steps)
 
+                if steps == 0:
+                    continue
+
                 self.assertIsInstance(
                     bkw_cant_reach(prog, steps - 1),
                     BackwardResult.step_limit)
