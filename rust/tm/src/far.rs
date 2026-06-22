@@ -1136,6 +1136,15 @@ struct FarDecider<
     // For each DFA state r, which (machine state, dirty) pairs have H2(s,r,dirty)
     r_s: Vec<Set<(State, bool)>>,
 
+    // Exact existential zero-context information for the lossy summary DFA.
+    // `zero_context[r]` means that state `r` is reachable from the initial
+    // summary using only all-zero blocks.  Looking only at the contents of a
+    // lossy summary is too permissive: a forgotten non-zero block can leave a
+    // summary that happens to contain only zero-looking data even though no
+    // all-zero stack reaches that state.
+    zero_context: Vec<bool>,
+    zero_push: Vec<Vec<usize>>,
+
     // Reusable buffers for relation propagation. These avoid allocating short
     // temporary Vecs just to break immutable borrows before mutating self.
     scratch_states: Vec<(State, bool)>,
@@ -1153,6 +1162,7 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
 
         let id0 = self.get_id(S::new());
         debug_assert_eq!(id0, 1);
+        self.mark_zero_context(id0);
 
         let blank = Word::zero(self.block_len);
         let id1 = self.dfa_push(blank, id0)?;
@@ -1162,10 +1172,10 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
     }
 
     const fn bump(&mut self) -> Result<(), StopReason> {
-        self.work = self.work.saturating_add(1);
         if self.work >= self.max_work {
             return Err(StopReason::WorkLimit);
         }
+        self.work += 1;
         Ok(())
     }
 
@@ -1175,6 +1185,24 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         }
         if self.r_s.len() <= id {
             self.r_s.resize_with(id + 1, Set::new);
+        }
+        if self.zero_context.len() <= id {
+            self.zero_context.resize(id + 1, false);
+        }
+        if self.zero_push.len() <= id {
+            self.zero_push.resize_with(id + 1, Vec::new);
+        }
+    }
+
+    fn mark_zero_context(&mut self, start: usize) {
+        let mut todo = vec![start];
+        while let Some(r) = todo.pop() {
+            self.ensure_dfa_capacity(r);
+            if self.zero_context[r] {
+                continue;
+            }
+            self.zero_context[r] = true;
+            todo.extend(self.zero_push[r].iter().copied());
         }
     }
 
@@ -1214,13 +1242,29 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         let to = self.get_id(st);
         self.push.insert(key, to);
         self.new_pops.push((to, DfaEdge { w: wid, prev: ls }));
+
+        if self.words.get(wid).is_zero() {
+            self.ensure_dfa_capacity(ls.max(to));
+            if !self.zero_push[ls].contains(&to) {
+                self.zero_push[ls].push(to);
+            }
+            if self.zero_context[ls] {
+                self.mark_zero_context(to);
+            }
+        }
+
         Ok(to)
     }
 
     fn summary_may_be_all_zero_context(&self, r: usize) -> bool {
-        self.idr
-            .get(r)
-            .is_some_and(|st| st.may_be_all_zero_context(&self.words))
+        let exact = self.zero_context.get(r).copied().unwrap_or(false);
+        debug_assert!(
+            !exact
+                || self.idr.get(r).is_some_and(|st| {
+                    st.may_be_all_zero_context(&self.words)
+                })
+        );
+        exact
     }
 
     const fn canonical_dirty(&self, dirty: bool) -> bool {
@@ -1290,7 +1334,10 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
                 dirty,
                 self.summary_may_be_all_zero_context(r0),
             ),
-            Goal::Spinout => StepContext::spinout(true, true),
+            Goal::Spinout => StepContext::spinout(
+                self.summary_may_be_all_zero_context(r0),
+                true,
+            ),
         }
     }
 
@@ -1915,6 +1962,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             h2s: TodoSet::new(),
 
             r_s: Vec::new(),
+            zero_context: Vec::new(),
+            zero_push: Vec::new(),
 
             scratch_states: Vec::new(),
             scratch_edges: Vec::new(),
