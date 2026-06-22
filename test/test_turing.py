@@ -812,6 +812,21 @@ class Simple(TuringTest):
                     len(blanks),
                     1 + prog.count('  '))
 
+    def test_false_negatives(self):
+        for goal, progs in FALSE_NEGATIVES.items():
+            for prog in progs:
+                self.run_bb(prog, 10_000, analyze = False)
+
+                match goal:
+                    case 'halt':
+                        check = bool(self.machine.undfnd)
+                    case 'blank':
+                        check = bool(self.machine.blanks)
+                    case 'spinout':
+                        check = bool(self.machine.spnout)
+
+                self.assertFalse(check, (goal, prog))
+
     def test_instr_seqs(self):
         self._test_instr_seqs(INSTR_SEQS)
 

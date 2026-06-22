@@ -35,7 +35,6 @@ HALT: BasicTermData = {
     "1RB 0RB ...  2LA ... 0LB": (1,  7),
     "1RB 2LB ...  2LA 2RB 1LB": (9, 38),
     "1RB 0LB ...  2LA 1RB 1RA": (8, 29),
-    "0LB 2RB ...  1RA 1LB 1LA": (6, 27),
     "1RB 1LA 1LB  0LA 2RA ...": (6, 26),
     "1RB 2LA ...  1LB 1LA 0RA": (6, 26),
     "1RB 2RB ...  2LA 1LA 2LB": (5, 13),
@@ -324,6 +323,7 @@ SPINOUT_BLANK = {
     "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB": ({'B'}, 9),
     "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB": ({'B'}, 9),
     "1RB 2RA 0RB 2RB 3RB  0LB 4LA 3LA 0RB 1RA": ({'B'}, 21),
+    "1RB 2RA 3RA 4RB 0RB  0LB 2LA 4LA 0LA 3LA": ({'B'}, 23),
     "1RB 2RB 3LA 2RA 2RA  2LB 1LA 0RB 4RA 3RA": ({'B'}, 1012664081),
     "1RB 2RB 3LA 2RA 2RA  2LB 1LA 0RB 4RA 4RA": ({'B'}, 1012664081),
     "1RB 2RB 3LA 2RA 3LA  4LB 1LA 0RB 3RA 0RB": ({'B'}, 1012664081),
@@ -2616,7 +2616,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB ... ...  2LB 0RB 1LC  2RB ... 0LB",
             "1RB ... ...  2RC ... ...  2LC 2LB 0RC",
             "1RB 0RB ...  1LC 2LB 0RB  0LC 2RA 1RC",
-            "1RB 1RC 2LA  1LB 2RB 1LC  ... 0RB 1LA",
             "1RB ...  0RC 0RD  1LC 1LA  0RC 0LE  1LD 0RC",
             "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
             "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC",
@@ -2783,7 +2782,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 1LA 3LA 0RB  2LB 2RA 0LB 2LA",
             "1RB 1LB 1LA 0LB  2LB 2RA 3RB 0LB",
             "1RB 1LB 1LA 3RA  2LB 2RA 3RB 0LB",
-            "1RB 1LB 2LA 2RA  2LB 3RA 1RB 0RA",
             "1RB 1LB 3LA 3RA  1LB 2RB 0LA 0RA",
             "1RB 1RA 1LB 2RB  1LB 3LA 3LB 0RA",
             "1RB 1RA 3RB 0RB  1LB 2RB 0LA 2LA",
@@ -2794,7 +2792,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 2LB 1RA 2LA  2LB 3LA 0RA 2RA",
             "1RB 2RA 0RB 0LA  1LB 2LA 3RB 3RA",
             "1RB 2RA 1LB 1LA  2LB 3RB 3LA 3RA",
-            "1RB 2RA 2LA 3LB  2LB 0RA 3RB 1RA",
             "1RB 2RA 2RB 0RA  2LB 3RB 1LB 1LA",
             "1RB 2RA 3RB 0LB  1LB 1LA 0LA 3LA",
             "1RB 2RA 3RB 0LB  1LB 1LA 3RB 2LA",
@@ -2814,8 +2811,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 3RA 1LA 1LB  2LB 2RA 1LB 2LA",
             "1RB 3RA 1LB 2RB  1LB 2LA 1LA 0LA",
             "1RB 3RA 1RA 1LB  1LB 2LA 0RA 0LB",
-            "1RB 3RA 2LA 1LB  2LB 0RA 3RB 2RA",
-            "1RB 3RA 2LA 3LB  2LB 0RA 3RB 2RA",
             "1RB 3RA 2LA 3LB  2LB 2RA 1RB 0RA",
             "1RB 3RA 3LA 3LB  1LB 2LA 1RB 0LA",
             "1RB 3RA 3RA 0LB  1LB 2LA 0RB 2LA",
@@ -2889,7 +2884,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 2LA 4RB 2RA 0RB  0LB 1LA 3RA 0LA 3LA",
             "1RB 2RA 3LA ... 0RB  0LB 2LA 1RB 4RB 0LA",
             "1RB 2RA 4LA 0RB ...  0LB 2LA 3LA 0LA 3RB",
-            "1RB 2RA 4RA 0RB 3RB  0LB 2LA 3LA 4LA 0LA",
             "1RB 3RA 3LA 3LA 0RB  0LB 2LA 1RB 4RB 0LA",
             "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA",
             "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",
@@ -2905,7 +2899,6 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
             "1RB 2LD 2LA  1RC 0RD 2LA  1LA ... 0LC  2RD 2RC 0LD",
             "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
-            "1RB 1RC  0RD 0RA  1LE 0LF  0RC 0RA  1LE 0LF  0LG 0RD  0RA 1LE",
         },
     },
     "twostep": {
@@ -2930,7 +2923,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
         "step_limit": 5,
-        "depth_limit": 174,
+        "depth_limit": 173,
     },
     "blank": {
         "step_limit": 3,
@@ -2938,7 +2931,7 @@ BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     },
     "spinout": {
         "step_limit": 3,
-        "depth_limit": 164,
+        "depth_limit": 158,
     },
     "twostep": {
         "depth_limit": 7,
@@ -2982,7 +2975,7 @@ BACKWARD_CANT_ZLOOP_FALSE_NEGATIVES: set[str] = {
 
 SEGMENT_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
     "halt": 101,
-    "spinout": 131,
+    "spinout": 130,
 }
 
 SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
@@ -3216,7 +3209,6 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE",
         "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD",
-        "1RB 1RC  0RD 0RA  1LE 0LF  0RC 0RA  1LE 0LF  0LG 0RD  0RA 1LE",
         "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
         "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF",
         "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG",
@@ -4584,7 +4576,6 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD",
     },
     "blank": {
-        "0LB 2RB ...  1RA 1LB 1LA",
         "1RB 0LA ...  1LB 2LA 0RB",
         "1RB 0LB 0RA  1LB 2LA 2RA",
         "1RB 1LA 0RA  2LA 0LB 2RB",
@@ -6783,6 +6774,32 @@ assert not SPINNERS & NONSPINNERS
 assert not RECURS & HALTERS
 assert not RECURS & SPINNERS
 assert not HALTERS & SPINNERS
+
+FALSE_NEGATIVES = {
+    "halt": (
+        BACKWARD_CANT_HALT_FALSE_NEGATIVES
+        | CPS_FALSE_NEGATIVES["halt"]
+        | CTL_FALSE_NEGATIVES["halt"]
+        | FAR_FALSE_NEGATIVES["halt"]
+        | GRAPH_FALSE_NEGATIVES["halt"]
+        | SEGMENT_FALSE_NEGATIVES["halt"]
+    ),
+    "blank": (
+        BACKWARD_CANT_BLANK_FALSE_NEGATIVES
+        | CPS_FALSE_NEGATIVES["blank"]
+        | CTL_FALSE_NEGATIVES["blank"]
+        | FAR_FALSE_NEGATIVES["blank"]
+        | GRAPH_FALSE_NEGATIVES["blank"]
+    ),
+    "spinout": (
+        BACKWARD_CANT_SPINOUT_FALSE_NEGATIVES
+        | CPS_FALSE_NEGATIVES["spinout"]
+        | CTL_FALSE_NEGATIVES["spinout"]
+        | FAR_FALSE_NEGATIVES["spinout"]
+        | GRAPH_FALSE_NEGATIVES["spinout"]
+        | SEGMENT_FALSE_NEGATIVES["spinout"]
+    ),
+}
 
 ## test program ######################################################
 
