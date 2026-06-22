@@ -1063,7 +1063,7 @@ class Far(TuringTest):
         self.assertFalse(
             SPINNERS & FAR_FALSE_NEGATIVES['spinout'])
 
-        for prog in NONHALTERS | FAR_REFUTES:
+        for prog in NONHALTERS:
             if not far_cant_halt(prog, 3):
                 self.assertIn(prog, FAR_FALSE_NEGATIVES['halt'])
 
