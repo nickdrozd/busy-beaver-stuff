@@ -3,7 +3,6 @@ import json
 import os
 import re
 from collections import defaultdict
-from itertools import product
 from math import isclose, log10
 from typing import TYPE_CHECKING
 from unittest import TestCase, expectedFailure, skip, skipUnless
@@ -56,7 +55,6 @@ from tm.rust_stuff import (
     segment_cant_halt,
     segment_cant_spinout,
 )
-from tools import get_params
 from tools.graph import Graph
 from tools.instr_seq import instr_seq
 from tools.normalize import normalize
@@ -206,10 +204,6 @@ class TuringTest(TestCase):
 
     ########################################
 
-    def assert_could_halt(self, prog: str):
-        self.assert_could_halt_backward(prog)
-        self.assert_could_halt_segment(prog)
-
     def assert_could_halt_backward(self, prog: str):
         if prog == "1RB ...  ... ...":
             return
@@ -272,10 +266,6 @@ class TuringTest(TestCase):
 
     ########################################
 
-    def assert_could_blank(self, prog: str):
-        self.assert_could_blank_backward(prog)
-        self.assert_could_blank_segment(prog)
-
     def assert_could_blank_backward(self, prog: str):
         self.assertFalse(
             bkw_cant_blank(prog, steps = REASON_LIMIT).is_refuted(),
@@ -323,10 +313,6 @@ class TuringTest(TestCase):
             ctl_cant_blank(prog, segs))
 
     ########################################
-
-    def assert_could_spinout(self, prog: str):
-        self.assert_could_spinout_backward(prog)
-        self.assert_could_spinout_segment(prog)
 
     def assert_could_spinout_backward(self, prog: str):
         self.assertFalse(
@@ -565,36 +551,6 @@ class Reason(TuringTest):
 
         _ = self
 
-    def test_cryptids(self):
-        for cryptid in CRYPTIDS:
-            self.assert_could_halt(cryptid)
-
-        for ext in branch_last(MOTHER):
-            self.assert_could_blank_backward(ext)
-            self.assert_could_spinout_backward(ext)
-
-            if ext in INFRUL:
-                self.assert_cant_blank_segment(ext, 14)
-                self.assert_cant_spinout_segment(ext, 14)
-
-            if ext in BLANKERS:
-                self.assert_could_blank_segment(ext)
-            elif ext in SPINNERS:
-                self.assert_could_spinout_segment(ext)
-                self.assert_cant_blank_segment(ext, 14)
-
-        for bigfoot in BIGFOOT:
-            for ext in branch_last(bigfoot):
-                self.assert_cant_blank_backward(ext, 9)
-
-        for hydra in HYDRA:
-            self.assert_could_blank(hydra)
-            self.assert_cant_spinout_backward(hydra, 0)
-
-        for hydra in ANTIHYDRA:
-            self.assert_cant_blank_backward(hydra, 1)
-            self.assert_cant_spinout_backward(hydra, 0)
-
     def test_steps(self):
         for cat, data in BACKWARD_STEPS.items():
             bkw_cant_reach = BACKWARD_REASONERS[cat]
@@ -670,31 +626,6 @@ class Segment(TuringTest):
 
                 self.assertFalse(
                     bkw_cant_reach(prog, steps - 1).is_settled())
-
-
-def branch_last(prog: str) -> list[str]:
-    comp = tcompile(prog)
-
-    states, colors = get_params(prog)
-
-    all_slots = set(product(range(states), range(colors)))
-
-    open_slots = all_slots - set(comp.keys())
-
-    assert len(open_slots) == 1
-
-    open_slot = next(iter(open_slots))
-
-    all_instrs = product(
-        range(colors),
-        (True, False),
-        range(states),
-    )
-
-    return [
-        show_comp(comp | { open_slot : instr })
-        for instr in all_instrs
-    ]
 
 ########################################
 

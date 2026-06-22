@@ -1515,8 +1515,6 @@ LIMITED: dict[Goal, dict[int, dict[str, int]]] = {
     },
 }
 
-MOTHER = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
-
 BIGFOOT = {
     "1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA",
     "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  ... 1LC",
@@ -1527,13 +1525,20 @@ HYDRA = {
     "1RB 3RB ... 3LA 1RA  2LA 3RA 4LB 0LB 1LB",
 }
 
-ANTIHYDRA = {
-    "1RB 1RA  0LC 1LE  1LD 1LC  1LA 0LB  1LF 1RE  ... 0RA",
-}
+ANTIHYDRA = "1RB 1RA  0LC 1LE  1LD 1LC  1LA 0LB  1LF 1RE  ... 0RA"
 
 MOONLIGHT = "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  ... 0RA"
 
-CRYPTIDS = { MOTHER } | BIGFOOT | HYDRA | ANTIHYDRA | { MOONLIGHT }
+CRYPTIDS = BIGFOOT | HYDRA | { ANTIHYDRA, MOONLIGHT }
+
+MOTHER = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
+
+GIANT_CHILDREN = {
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0LC 0LA",
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  1RC 0LA",
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  1LA 0LA",
+    "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  1LC 0LA",
+}
 
 SPAGHETTI = {
     # Halt
@@ -6860,7 +6865,7 @@ MAYBE_HALTERS = {
     "1RB 2LC 1RC  2LC ... 2RB  2LA 0LB 0RA",
     "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  ... 0RA",
     "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 1LD  ... 0LC",
-}
+} | CRYPTIDS
 
 HALTERS = set(
     HALT
@@ -6876,7 +6881,7 @@ SPINNERS = (set(
     | SPINOUT_BLANK
     | SPINOUT_BLANK_SLOW
     | PROVER_SPINOUT
-) | DO_SPINOUT | {
+) | DO_SPINOUT | GIANT_CHILDREN | {
     prog for steps in LIMITED['spinout'].values() for prog in steps
 }) - ZLOOPERS
 
@@ -6918,6 +6923,7 @@ BLANKERS = (
         | INIT_BLANK
         | RECUR_BLANK_IN_PERIOD)
     | RECUR_BLANK_BEFORE_PERIOD
+    | GIANT_CHILDREN
     | {prog for prog, marks in PROVER_SPINOUT.items()
            if marks == 0}
     | {prog for steps in LIMITED['blank'].values() for prog in steps}
