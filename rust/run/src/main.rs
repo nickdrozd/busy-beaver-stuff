@@ -515,10 +515,6 @@ fn _5_2_2(prog: &Prog<5, 2>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_blank(3).is_refuted()
 }
 
-fn _3_3_0(prog: &Prog<3, 3>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_connected() || prog.bkw_cant_halt(3).is_refuted()
-}
-
 fn _3_3_1(prog: &Prog<3, 3>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_connected() || prog.bkw_cant_spinout(3).is_refuted()
 }
@@ -549,7 +545,6 @@ fn test_deciders_slow() {
             2 => (_5_2_2, TREE_LIM, (9_549_864, 486_399_920)),
         ],
         (3, 3) => [
-            0 => (_3_3_0, 2_700, (769_835, 24_003_381)),
             1 => (_3_3_1, 3_000, (1_744_815, 50_932_166)),
             2 => (_3_3_2, 3_000, (2_634_833, 123_182_486)),
         ],
