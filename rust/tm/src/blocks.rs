@@ -161,3 +161,12 @@ fn get_compr(tape: &UnrolledTape) -> usize {
 
     opt_size
 }
+
+/**************************************/
+
+#[test]
+fn test_opt_block() {
+    let prog = Prog::<4, 2>::from("1RB 0LB  0LC 0LA  1RD 1LC  0RC 1RA");
+
+    assert_eq!(prog.opt_block(500), 2);
+}
