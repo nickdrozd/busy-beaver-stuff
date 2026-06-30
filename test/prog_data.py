@@ -1040,6 +1040,9 @@ RECUR_TOO_SLOW = {
     "1RB 0LA  0RC 1RD  1LD 0RB  1LA 1RB": (  5_248_647_886, 212_081_736),
     "1RB 1LC  0LA 1RD  1LA 0LC  0RB 0RD": ( 59_560_191_024,     483_328),
     "1RB 1LC  0LA 1RD  0RB 0LC  1LA 0RD": (119_120_230_102,     966_716),
+
+    # skelet 1
+    "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC": (0, 8_468_569_863),
 }
 
 LR_NEGATIVES = {
@@ -2630,6 +2633,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
             "1RB 1RC  1LC 0RB  0RC 0LD  1LA 0LE  0LA ...",
             "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA",
             "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA",
+            "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
             "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
             "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
             "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC",
@@ -2923,7 +2927,7 @@ BACKWARD_FALSE_NEGATIVES: dict[Goal, BackwardCats] = {
 BACKWARD_FALSE_NEGATIVES_COUNTS: dict[Goal, dict[str, int]] = {
     "halt": {
         "step_limit": 4,
-        "depth_limit": 174,
+        "depth_limit": 175,
     },
     "blank": {
         "step_limit": 3,
@@ -2974,7 +2978,7 @@ BACKWARD_CANT_ZLOOP_FALSE_NEGATIVES: set[str] = {
 ########################################
 
 SEGMENT_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 101,
+    "halt": 102,
     "spinout": 130,
 }
 
@@ -3050,6 +3054,7 @@ SEGMENT_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1RC  0LD ...  0LE 0LC  1LE 1LD  1RE 1RA",
         "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA",
         "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA",
+        "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
@@ -3405,7 +3410,7 @@ SEGMENT_STEPS: dict[Goal, dict[str, int]] = {
 ########################################
 
 CPS_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 7,
+    "halt": 8,
     "blank": 22,
     "spinout": 290,
 }
@@ -3414,6 +3419,7 @@ CPS_FALSE_NEGATIVES: dict[Goal, set[str]] = {
     "halt": {
         "1RB 0RB  1LC 1RB  ... 0LD  1RA 1LD",
         "1RB 1LA  1LA 0RC  1LD 1RC  ... 0LA",
+        "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
         "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
@@ -3806,13 +3812,14 @@ CPS_QUASIHALT_FALSE_NEGATIVES = {
     "1RB 1RA  1LC 0RD  1LB 1LD  1RA 0RB",
     "1RB 1RC  1LC 0LD  1RA 0LB  0RA 0RC",
     "1RB 1RC  1LD 1RD  1LB 0RA  1LA 0LC",
+    "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
 }
 
 ########################################
 
 CTL_FALSE_NEGATIVE_COUNTS: dict[Goal, int] = {
-    "halt": 76,
-    "blank": 306,
+    "halt": 77,
+    "blank": 307,
     "spinout": 212,
 }
 
@@ -3873,6 +3880,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1LA  0LC 1RC  0RE 1RD  0LA 0RD  0LA ...",
         "1RB 1LA  0LC 1RC  1RE 1RD  0LA 0RD  0LD ...",
         "1RB 1LD  0RC 0LC  0RD 1RA  1LE ...  0RA 0LE",
+        "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
         "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
@@ -4194,6 +4202,7 @@ CTL_FALSE_NEGATIVES: dict[Goal, set[str]] = {
         "1RB 1RC  1LC 0RC  1RA 0LD  0LE 1LD  1LA 0RA",
         "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  ... 1RD",
         "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
+        "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
         "1RB 1RE  1LC 0LA  1LA 0RD  0LB 1LB  0RE 0LD",
         "1RB 1RE  1RC 1LB  1LD 0LC  0RD 0RA  1LC 0RB",
         "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...",
@@ -4546,6 +4555,7 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 1RC  0LD ...  0LE 0LC  1LE 1LD  1RE 1RA",
         "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA",
         "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA",
+        "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
         "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
         "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB",
         "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC",
@@ -4776,6 +4786,7 @@ GRAPH_FALSE_NEGATIVES = {
         "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE",
         "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  ... 1RD",
         "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
+        "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
         "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...",
         "1RB 1LB ...  1LC 0LB 0RD  2RD 0LB ...  0RA 1RD ...",
         "1RB 1LB ...  1LC 0LB 0RD  2RD 1RA ...  0RA 1RD ...",
@@ -5300,7 +5311,9 @@ GRAPH_FALSE_NEGATIVES = {
 ########################################
 
 FAR_FALSE_NEGATIVES = {
-    "halt": set(),
+    "halt": {
+        "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
+    },
     "blank": {
        "1RB 0LB 3LA 0LA  2LA 2RA 3RA 0RB",
        "1RB 2LB 0LA 1RA  2LA 0RB 3RB 0RA",
