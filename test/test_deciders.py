@@ -330,6 +330,9 @@ class Segment(TestCase):
         for prog in HALT_HOLDOUTS:
             self.assert_could_halt_segment(prog)
 
+        for prog in SPINOUT_HOLDOUTS:
+            self.assert_could_spinout_segment(prog)
+
     def test_false_negatives(self):
         counts = {
             cat: len(progs)
