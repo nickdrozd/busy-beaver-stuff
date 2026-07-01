@@ -586,7 +586,6 @@ impl Config {
 
 #[expect(clippy::multiple_inherent_impl)]
 impl<const s: usize, const c: usize> Prog<s, c> {
-    #[expect(clippy::unwrap_in_result)]
     fn run_to_edge(
         &self,
         config: &mut Config,
@@ -595,8 +594,9 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     ) -> Option<SearchResult> {
         config.tape.scan?;
 
-        let mut step = false;
-        let mut copy = config.clone();
+        let mut checkpoint = config.clone();
+        let mut power: usize = 1;
+        let mut period = 0;
 
         while let Some(slot) = config.slot() {
             let Some(instr @ &(print, _, state)) = self.get(&slot)
@@ -640,18 +640,19 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 }
             }
 
-            if !step {
-                step = true;
-                continue;
-            }
+            period += 1;
 
-            copy.step(self.get(&copy.slot().unwrap()).unwrap());
-
-            if copy.state == config.state && copy.tape == config.tape {
+            if checkpoint.state == config.state
+                && checkpoint.tape == config.tape
+            {
                 return Some(Repeat);
             }
 
-            step = false;
+            if period == power {
+                checkpoint.clone_from(config);
+                power = power.saturating_mul(2);
+                period = 0;
+            }
         }
 
         None
