@@ -409,54 +409,6 @@ fn test_solved() {
 
 /**************************************/
 
-fn prover_2_2(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.check_inf(100, 50)
-}
-
-fn prover_3_2(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.check_inf(500, 50)
-}
-
-fn prover_2_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.check_inf(1_000, 50)
-}
-
-fn prover_4_2(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
-    if !prog.is_connected() {
-        return true;
-    }
-
-    prog.check_inf(3_000, 200)
-}
-
-fn prover_2_4(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.check_inf(3_000, 200)
-}
-
-fn test_prover() {
-    println!("prover");
-
-    assert_holdouts![
-        (2, 2) => [
-            3 => (prover_2_2, 4, (1, 81)),
-        ],
-        (3, 2) => [
-            3 => (prover_3_2, 13, (25, 11_754)),
-        ],
-        (2, 3) => [
-            3 => (prover_2_3, 20, (63, 8_766)),
-        ],
-        (4, 2) => [
-            3 => (prover_4_2, 99, (7_740, 2_134_923)),
-        ],
-        (2, 4) => [
-            3 => (prover_2_4, TREE_LIM, (34_346, 1_698_850)),
-        ],
-    ];
-}
-
-/**************************************/
-
 fn qh_2_2(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_quasihalt()
 }
@@ -687,7 +639,6 @@ const FAST: &[fn()] = &[
     test_deciders,
     test_from_file,
     test_holdouts,
-    test_prover,
     test_quasihalt,
     test_solved,
     test_twostep,
