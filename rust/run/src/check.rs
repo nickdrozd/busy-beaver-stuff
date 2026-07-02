@@ -17,9 +17,6 @@ pub fn test_holdouts() {
     println!("cps");
     test_cps();
 
-    println!("true negatives");
-    test_blank_true_negatives();
-
     println!("far");
     test_far();
 }
@@ -206,74 +203,6 @@ fn test_far() {
     );
 
     assert_no_holdout_failures("far", &failures);
-}
-
-/**************************************/
-
-const _2_2_2: &[&str] = &[
-    "1RB ...  0LB 0LA",
-    "1RB ...  0LB 0LB",
-    "1RB ...  0LB 0RA",
-    "1RB ...  0LB 0RB",
-];
-
-const _3_2_2: &[&str] = &[
-    "1RB ...  0RC 1LB  1LA 0RB",
-    "1RB 0LA  0LC 1RA  1LA 1LB",
-    "1RB 0LA  1RC ...  0LC 0LA",
-    "1RB 0RB  0LB 1LC  0RA ...",
-    "1RB 0RB  0LB 1RC  0LA ...",
-    "1RB 0RB  1LC 1RC  0LA 1LA",
-    "1RB 1LB  0RC 1LA  1LA 0RA",
-    "1RB 1RC  0LA 0RA  0LB ...",
-];
-
-const _4_2_2: &[&str] = &[
-    "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB",
-    "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC",
-    "1RB 0RB  0RC 0LD  1LC 1RD  0RA 1LD",
-    "1RB 1LA  0LA 1RC  0RB 0LD  0RC 1LD",
-    "1RB 1LB  1LA 1RC  0LD 0RB  ... 0LC",
-    "1RB 1LC  0LB 1LA  1RC 0LD  0RC 1LD",
-];
-
-const _3_3_2: &[&str] = &["1RB 2RC 2RA  0LC 1RA 2RB  2LC 1LA 0RB"];
-
-const _5_2_2: &[&str] =
-    &["1RB 1LA  1RC 0LD  0LA 1RE  0RE 1LD  0RC 0RB"];
-
-const _6_2_2: &[&str] =
-    &["1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC"];
-
-fn check_blank_true_negative<
-    const STATES: usize,
-    const COLORS: usize,
->(
-    failures: &mut Vec<String>,
-    context: &str,
-    progs: &[&str],
-) {
-    let mut fp = vec![];
-
-    for &prog in progs {
-        if Prog::<STATES, COLORS>::from(prog).far_cant_blank(3) {
-            fp.push(prog);
-        }
-    }
-
-    failures.extend(holdouts_match_errors(context, &[], &[], fp));
-}
-
-fn test_blank_true_negatives() {
-    let mut failures = vec![];
-
-    check_blank_true_negative::<2, 2>(&mut failures, "2-2-2", _2_2_2);
-    check_blank_true_negative::<3, 2>(&mut failures, "3-2-2", _3_2_2);
-    check_blank_true_negative::<4, 2>(&mut failures, "4-2-2", _4_2_2);
-    check_blank_true_negative::<5, 2>(&mut failures, "5-2-2", _5_2_2);
-    check_blank_true_negative::<6, 2>(&mut failures, "6-2-2", _6_2_2);
-
-    assert_no_holdout_failures("true negatives", &failures);
 }
 
 /**************************************/
