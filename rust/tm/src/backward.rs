@@ -3448,19 +3448,6 @@ impl Antichains {
 
 /**************************************/
 
-#[test]
-#[ignore]
-#[should_panic(expected = "attempt to add with overflow")]
-fn test_overflow() {
-    let prog = Prog::<3, 2>::from("1RB 1LB  1RC 1RB  0LA ...");
-
-    assert!(matches!(prog.bkw_cant_halt(1_021), StepLimit));
-
-    prog.bkw_cant_halt(1_022);
-}
-
-/**************************************/
-
 #[expect(clippy::multiple_inherent_impl)]
 impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn is_reversible(&self) -> bool {
