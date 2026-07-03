@@ -690,15 +690,13 @@ class Graph(TestCase):
             self.assertFalse(
                 graph_cant_quasihalt(prog))
 
-        bkw_cant_quasihalt = GRAPH_CANT_QUASIHALT | STRICT_CYCLE
-
-        for prog in bkw_cant_quasihalt:
+        for prog in GRAPH_CANT_QUASIHALT | STRICT_CYCLE:
             self.assertTrue(
                 graph_cant_quasihalt(prog))
 
         for prog in RECURS - QUASIHALT:
             if graph_cant_quasihalt(prog):
-                self.assertIn(prog, bkw_cant_quasihalt)
+                self.assertIn(prog, GRAPH_CANT_QUASIHALT | STRICT_CYCLE)
 
     def test_holdouts(self):
         for prog in BLANK_HOLDOUTS:
