@@ -457,7 +457,7 @@ class Cps(TestCase):
         for prog in QUASIHALT_HOLDOUTS:
             self.assert_could_quasihalt_cps(prog)
 
-        for prog in RECURS - QUASIHALT:
+        for prog in (RECURS | INFRUL) - QUASIHALT:
             self.assert_cant_quasihalt_cps(prog, 30)
 
         for prog in QUASIHALT:
@@ -675,7 +675,7 @@ class Graph(TestCase):
             self.assertFalse(
                 GraphPy(prog).is_strict_cycle)
 
-        for prog in RECURS - QUASIHALT:
+        for prog in (RECURS | INFRUL) - QUASIHALT:
             if GraphPy(prog).is_strict_cycle:
                 self.assertIn(prog, STRICT_CYCLE)
 
@@ -694,7 +694,7 @@ class Graph(TestCase):
             self.assertTrue(
                 graph_cant_quasihalt(prog))
 
-        for prog in RECURS - QUASIHALT:
+        for prog in (RECURS | INFRUL) - QUASIHALT:
             if graph_cant_quasihalt(prog):
                 self.assertIn(prog, GRAPH_CANT_QUASIHALT | STRICT_CYCLE)
 
