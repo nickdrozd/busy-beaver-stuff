@@ -61,6 +61,7 @@ def get_holdouts(path: str) -> set[str]:
 HALT_HOLDOUTS = get_holdouts('halt')
 BLANK_HOLDOUTS = get_holdouts('blank')
 SPINOUT_HOLDOUTS = get_holdouts('spinout')
+QUASIHALT_HOLDOUTS = get_holdouts('quasihalt')
 
 ########################################
 
@@ -453,6 +454,9 @@ class Cps(TestCase):
             self.assert_cant_spinout_cps(prog, 19)
 
     def test_quasihalt(self):
+        for prog in QUASIHALT_HOLDOUTS:
+            self.assert_could_quasihalt_cps(prog)
+
         for prog in RECURS - QUASIHALT:
             self.assert_cant_quasihalt_cps(prog, 30)
 
@@ -677,6 +681,10 @@ class Graph(TestCase):
 
     def test_quasihalt(self):
         assert not GRAPH_CANT_QUASIHALT & STRICT_CYCLE
+
+        for prog in QUASIHALT_HOLDOUTS:
+            self.assertFalse(
+                graph_cant_quasihalt(prog))
 
         for prog in QUASIHALT:
             self.assertFalse(
