@@ -3,120 +3,56 @@
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
-    Instr, Prog, Slot, State, Steps,
+    Instr, Prog as ProgGen, Slot, State, Steps,
     backward::{BackwardResult as BackwardResultRs, BackwardResult::*},
     instrs::{self, Parse as _},
     segment::SegmentResult as SegmentResultRs,
 };
 
+type Prog = ProgGen<10, 10>;
+
 /***************************************/
-
-macro_rules! parse {
-    ($prog:ident, $action:expr) => {{
-        let prog = $prog;
-
-        let mut split = prog.split("  ");
-
-        let colors = split.next().unwrap().split(" ").count();
-        let states = 1 + split.count();
-
-        match (states, colors) {
-            (2, 2) => $action(Prog::<2, 2>::from(prog)),
-
-            (3, 2) => $action(Prog::<3, 2>::from(prog)),
-            (4, 2) => $action(Prog::<4, 2>::from(prog)),
-            (5, 2) => $action(Prog::<5, 2>::from(prog)),
-            (6, 2) => $action(Prog::<6, 2>::from(prog)),
-            (7, 2) => $action(Prog::<7, 2>::from(prog)),
-            (8, 2) => $action(Prog::<8, 2>::from(prog)),
-            (9, 2) => $action(Prog::<9, 2>::from(prog)),
-            (10, 2) => $action(Prog::<10, 2>::from(prog)),
-
-            (2, 3) => $action(Prog::<2, 3>::from(prog)),
-            (3, 3) => $action(Prog::<3, 3>::from(prog)),
-            (4, 3) => $action(Prog::<4, 3>::from(prog)),
-            (5, 3) => $action(Prog::<5, 3>::from(prog)),
-            (6, 3) => $action(Prog::<6, 3>::from(prog)),
-            (7, 3) => $action(Prog::<7, 3>::from(prog)),
-
-            (2, 4) => $action(Prog::<2, 4>::from(prog)),
-            (3, 4) => $action(Prog::<3, 4>::from(prog)),
-            (4, 4) => $action(Prog::<4, 4>::from(prog)),
-            (5, 4) => $action(Prog::<5, 4>::from(prog)),
-            (6, 4) => $action(Prog::<6, 4>::from(prog)),
-            (7, 4) => $action(Prog::<7, 4>::from(prog)),
-            (8, 4) => $action(Prog::<8, 4>::from(prog)),
-
-            (2, 5) => $action(Prog::<2, 5>::from(prog)),
-            (3, 5) => $action(Prog::<3, 5>::from(prog)),
-            (4, 5) => $action(Prog::<4, 5>::from(prog)),
-            (5, 5) => $action(Prog::<5, 5>::from(prog)),
-            (6, 5) => $action(Prog::<6, 5>::from(prog)),
-
-            (2, 6) => $action(Prog::<2, 6>::from(prog)),
-            (3, 6) => $action(Prog::<3, 6>::from(prog)),
-            (4, 6) => $action(Prog::<4, 6>::from(prog)),
-            (5, 6) => $action(Prog::<5, 6>::from(prog)),
-            (6, 6) => $action(Prog::<6, 6>::from(prog)),
-
-            (2, 7) => $action(Prog::<2, 7>::from(prog)),
-            (3, 7) => $action(Prog::<3, 7>::from(prog)),
-            (4, 7) => $action(Prog::<4, 7>::from(prog)),
-            (5, 7) => $action(Prog::<5, 7>::from(prog)),
-            (6, 7) => $action(Prog::<6, 7>::from(prog)),
-            (7, 7) => $action(Prog::<7, 7>::from(prog)),
-
-            _ => panic!("({states}, {colors}) {prog}"),
-        }
-    }};
-}
-
-/**************************************/
 
 #[pyfunction]
 pub fn graph_cant_halt(prog: &str) -> bool {
-    parse!(prog, |p: Prog<_, _>| { p.graph_cant_halt() })
+    Prog::from(prog).graph_cant_halt()
 }
 
 #[pyfunction]
 pub fn graph_cant_blank(prog: &str) -> bool {
-    parse!(prog, |p: Prog<_, _>| { p.graph_cant_blank() })
+    Prog::from(prog).graph_cant_blank()
 }
 
 #[pyfunction]
 pub fn graph_cant_spinout(prog: &str) -> bool {
-    parse!(prog, |p: Prog<_, _>| { p.graph_cant_spinout() })
+    Prog::from(prog).graph_cant_spinout()
 }
 
 #[pyfunction]
 pub fn graph_cant_twostep(prog: &str) -> bool {
-    parse!(prog, |p: Prog<_, _>| { p.graph_cant_twostep() })
+    Prog::from(prog).graph_cant_twostep()
 }
 
 #[pyfunction]
 pub fn graph_cant_quasihalt(prog: &str) -> bool {
-    parse!(prog, |p: Prog<_, _>| { p.graph_cant_quasihalt() })
+    Prog::from(prog).graph_cant_quasihalt()
 }
 
 /***************************************/
 
 #[pyfunction]
 pub fn opt_block(prog: &str, steps: Steps) -> usize {
-    parse!(prog, |p: Prog<_, _>| p.opt_block(steps))
+    Prog::from(prog).opt_block(steps)
 }
 
 #[pyfunction]
 pub fn term_or_rec(prog: &str, sim_lim: Steps) -> bool {
-    parse!(prog, |p: Prog<_, _>| p
-        .term_or_rec_fresh(sim_lim)
-        .is_settled())
+    Prog::from(prog).term_or_rec_fresh(sim_lim).is_settled()
 }
 
 #[pyfunction]
 pub fn run_transcript(prog: &str, sim_lim: Steps) -> bool {
-    parse!(prog, |p: Prog<_, _>| p
-        .run_transcript_fresh(sim_lim)
-        .is_settled())
+    Prog::from(prog).run_transcript_fresh(sim_lim).is_settled()
 }
 
 #[pyfunction]
@@ -147,15 +83,14 @@ pub fn show_comp(comp: Instrs) -> String {
 
 #[pyfunction]
 pub fn tcompile(prog: &str) -> Instrs {
-    parse!(prog, |p: Prog<_, _>| {
-        let mut instrs = Instrs::new();
+    let p = Prog::from(prog);
+    let mut instrs = Instrs::new();
 
-        for (slot, instr) in p.iter() {
-            instrs.insert(slot, *instr);
-        }
+    for (slot, instr) in p.iter() {
+        instrs.insert(slot, *instr);
+    }
 
-        instrs
-    })
+    instrs
 }
 
 #[pyfunction]
@@ -218,27 +153,27 @@ impl From<BackwardResultRs> for BackwardResult {
 
 #[pyfunction]
 pub fn bkw_cant_halt(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.bkw_cant_halt(steps).into())
+    Prog::from(prog).bkw_cant_halt(steps).into()
 }
 
 #[pyfunction]
 pub fn bkw_cant_blank(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.bkw_cant_blank(steps).into())
+    Prog::from(prog).bkw_cant_blank(steps).into()
 }
 
 #[pyfunction]
 pub fn bkw_cant_zloop(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.bkw_cant_zloop(steps).into())
+    Prog::from(prog).bkw_cant_zloop(steps).into()
 }
 
 #[pyfunction]
 pub fn bkw_cant_spinout(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.bkw_cant_spinout(steps).into())
+    Prog::from(prog).bkw_cant_spinout(steps).into()
 }
 
 #[pyfunction]
 pub fn bkw_cant_twostep(prog: &str, steps: Steps) -> BackwardResult {
-    parse!(prog, |p: Prog<_, _>| p.bkw_cant_twostep(steps).into())
+    Prog::from(prog).bkw_cant_twostep(steps).into()
 }
 
 /***************************************/
@@ -283,12 +218,12 @@ impl From<SegmentResultRs> for SegmentResult {
 
 #[pyfunction]
 pub fn segment_cant_halt(prog: &str, segs: Segments) -> SegmentResult {
-    parse!(prog, |p: Prog<_, _>| p.seg_cant_halt(segs).into())
+    Prog::from(prog).seg_cant_halt(segs).into()
 }
 
 #[pyfunction]
 pub fn segment_cant_blank(prog: &str, segs: Segments) -> SegmentResult {
-    parse!(prog, |p: Prog<_, _>| p.seg_cant_blank(segs).into())
+    Prog::from(prog).seg_cant_blank(segs).into()
 }
 
 #[pyfunction]
@@ -296,7 +231,7 @@ pub fn segment_cant_spinout(
     prog: &str,
     segs: Segments,
 ) -> SegmentResult {
-    parse!(prog, |p: Prog<_, _>| p.seg_cant_spinout(segs).into())
+    Prog::from(prog).seg_cant_spinout(segs).into()
 }
 
 /***************************************/
@@ -305,110 +240,110 @@ use tm::cps::Radius;
 
 #[pyfunction]
 pub fn cps_cant_halt(prog: &str, rad: Radius) -> bool {
-    parse!(prog, |p: Prog<_, _>| {
-        if p.halt_slots().is_empty() {
-            return true;
-        }
+    let p = Prog::from(prog);
 
-        p.cps_cant_halt(rad)
-    })
+    if p.halt_slots().is_empty() {
+        return true;
+    }
+
+    p.cps_cant_halt(rad)
 }
 
 #[pyfunction]
 pub fn cps_cant_blank(prog: &str, rad: Radius) -> bool {
-    parse!(prog, |p: Prog<_, _>| {
-        if p.erase_slots().is_empty() {
-            return true;
-        }
+    let p = Prog::from(prog);
 
-        p.cps_cant_blank(rad)
-    })
+    if p.erase_slots().is_empty() {
+        return true;
+    }
+
+    p.cps_cant_blank(rad)
 }
 
 #[pyfunction]
 pub fn cps_cant_spinout(prog: &str, rad: Radius) -> bool {
-    parse!(prog, |p: Prog<_, _>| {
-        if p.zr_shifts().is_empty() {
-            return true;
-        }
+    let p = Prog::from(prog);
 
-        p.cps_cant_spinout(rad)
-    })
+    if p.zr_shifts().is_empty() {
+        return true;
+    }
+
+    p.cps_cant_spinout(rad)
 }
 
 #[pyfunction]
 pub fn cps_cant_quasihalt(prog: &str, rad: Radius) -> bool {
-    parse!(prog, |p: Prog<_, _>| { p.cps_cant_quasihalt(rad) })
+    Prog::from(prog).cps_cant_quasihalt(rad)
 }
 
 /***************************************/
 
 #[pyfunction]
 pub fn ctl_cant_halt(prog: &str, steps: Steps) -> bool {
-    parse!(prog, |p: Prog<_, _>| {
-        if p.halt_slots().is_empty() {
-            return true;
-        }
+    let p = Prog::from(prog);
 
-        p.ctl_cant_halt(steps)
-    })
+    if p.halt_slots().is_empty() {
+        return true;
+    }
+
+    p.ctl_cant_halt(steps)
 }
 
 #[pyfunction]
 pub fn ctl_cant_blank(prog: &str, steps: Steps) -> bool {
-    parse!(prog, |p: Prog<_, _>| {
-        if p.erase_slots().is_empty() {
-            return true;
-        }
+    let p = Prog::from(prog);
 
-        p.ctl_cant_blank(steps)
-    })
+    if p.erase_slots().is_empty() {
+        return true;
+    }
+
+    p.ctl_cant_blank(steps)
 }
 
 #[pyfunction]
 pub fn ctl_cant_spinout(prog: &str, steps: Steps) -> bool {
-    parse!(prog, |p: Prog<_, _>| {
-        if p.zr_shifts().is_empty() {
-            return true;
-        }
+    let p = Prog::from(prog);
 
-        p.ctl_cant_spinout(steps)
-    })
+    if p.zr_shifts().is_empty() {
+        return true;
+    }
+
+    p.ctl_cant_spinout(steps)
 }
 
 /***************************************/
 
 #[pyfunction]
 pub fn far_cant_halt(prog: &str, steps: Steps) -> bool {
-    parse!(prog, |p: Prog<_, _>| {
-        if p.halt_slots().is_empty() {
-            return true;
-        }
+    let p = Prog::from(prog);
 
-        p.far_cant_halt(steps)
-    })
+    if p.halt_slots().is_empty() {
+        return true;
+    }
+
+    p.far_cant_halt(steps)
 }
 
 #[pyfunction]
 pub fn far_cant_blank(prog: &str, steps: Steps) -> bool {
-    parse!(prog, |p: Prog<_, _>| {
-        if p.erase_slots().is_empty() {
-            return true;
-        }
+    let p = Prog::from(prog);
 
-        p.far_cant_blank(steps)
-    })
+    if p.erase_slots().is_empty() {
+        return true;
+    }
+
+    p.far_cant_blank(steps)
 }
 
 #[pyfunction]
 pub fn far_cant_spinout(prog: &str, steps: Steps) -> bool {
-    parse!(prog, |p: Prog<_, _>| {
-        if p.zr_shifts().is_empty() {
-            return true;
-        }
+    let p = Prog::from(prog);
 
-        p.far_cant_spinout(steps)
-    })
+    if p.zr_shifts().is_empty() {
+        return true;
+    }
+
+    p.far_cant_spinout(steps)
 }
 
 /***************************************/
@@ -521,13 +456,8 @@ impl MachineResult {
 
 #[pyfunction]
 pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
-    parse!(prog, |p: Prog<_, _>| run_quick_machine_impl(&p, sim_lim))
-}
+    let prog = Prog::from(prog);
 
-pub fn run_quick_machine_impl<const s: usize, const c: usize>(
-    prog: &Prog<s, c>,
-    sim_lim: Steps,
-) -> MachineResult {
     let mut config = BigConfig::init();
 
     let mut blanks = Blanks::new();
