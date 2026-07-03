@@ -77,19 +77,21 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     /// Fast sufficient condition (pure control/SCC + one-direction `read=0` cycle lemma).
     #[expect(clippy::excessive_nesting)]
     fn graph_cant_quasihalt_fast(&self) -> bool {
+        let (state_count, _) = self.reached_params();
+
         // Control adjacency: union of next-states over all read colors.
-        let mut adj: Vec<Vec<usize>> = vec![vec![]; states];
+        let mut adj: Vec<Vec<usize>> = vec![vec![]; state_count];
 
         for ((src, _), &(_, _, dst)) in self.iter() {
             adj[src as usize].push(dst as usize);
         }
 
-        for st in 0..states {
+        for st in 0..state_count {
             adj[st].sort_unstable();
             adj[st].dedup();
         }
 
-        let reachable_all = Self::reach_from(&adj);
+        let reachable_all = self.reach_from(&adj);
 
         if reachable_all.iter().any(|&b| !b) {
             return false;
@@ -127,9 +129,9 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             };
 
             // Control-state membership mask for the SCC.
-            let mut in_comp = vec![false; states];
+            let mut in_comp = vec![false; state_count];
             for &u in comp {
-                if u < states {
+                if u < state_count {
                     in_comp[u] = true;
                 }
             }
@@ -138,7 +140,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             let mut active_abs = vec![false; nodes.len()];
             for (i, cfg) in nodes.iter().enumerate() {
                 let st = cfg.state as usize;
-                if st < states && st != t && in_comp[st] {
+                if st < state_count && st != t && in_comp[st] {
                     active_abs[i] = true;
                 }
             }
@@ -159,15 +161,15 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         // - Starting from a blank tape, every newly visited cell is `0`, so from that point on only
         //   `read=0` transitions can occur. Thus an infinite run inside such an SCC requires a
         //   `read=0` cycle with the same direction.
-        for t in 0..states {
+        for t in 0..state_count {
             // Active nodes: reachable from start and not equal to t.
-            let mut active = vec![false; states];
-            for u in 0..states {
+            let mut active = vec![false; state_count];
+            for u in 0..state_count {
                 active[u] = reachable_all[u] && u != t;
             }
 
             // Compute SCCs in the induced subgraph.
-            let sccs = sccs_masked(states, &adj, &active);
+            let sccs = sccs_masked(state_count, &adj, &active);
 
             for comp in sccs {
                 if !scc_has_cycle(&comp, &adj) {
@@ -295,6 +297,8 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     /// checks for the existence of an abstract cycle that avoids each
     /// control state.
     fn graph_cant_quasihalt_abs(&self) -> bool {
+        let (state_count, _) = self.reached_params();
+
         let (nodes, adj) = self.build_abs_graph();
 
         // If we hit the cap, we conservatively give up (no false proofs).
@@ -307,7 +311,7 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         // *any* cycle that avoids t, even if reaching it required
         // visiting t earlier (eventual avoidance). Therefore we MUST
         // NOT recompute reachability on the filtered graph.
-        for st in 0..states {
+        for st in 0..state_count {
             let mut active = vec![true; nodes.len()];
 
             for (i, cfg) in nodes.iter().enumerate() {
@@ -681,8 +685,10 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         out
     }
 
-    fn reach_from(adj: &[Vec<usize>]) -> Vec<bool> {
-        let mut seen = vec![false; states];
+    fn reach_from(&self, adj: &[Vec<usize>]) -> Vec<bool> {
+        let (state_count, _) = self.reached_params();
+
+        let mut seen = vec![false; state_count];
 
         let mut stack = vec![0];
 
