@@ -12,6 +12,6 @@ crate-type = ["lib"]
 [dependencies]
 ahash = "*"
 mimalloc = "*"
-num-bigint = "*"
+num-bigint = "0.4"
 num-traits = "*"
 num-integer = "*"
