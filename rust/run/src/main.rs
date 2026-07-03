@@ -513,8 +513,6 @@ use std::{
     io::{self, BufRead as _, BufReader},
 };
 
-use tm::parse;
-
 fn run_from_file(path: &str, steps: Steps) -> io::Result<()> {
     println!("running {path}");
 
@@ -530,7 +528,9 @@ fn run_from_file(path: &str, steps: Steps) -> io::Result<()> {
         //     rayon::current_thread_index().unwrap(),
         // );
 
-        parse!(line, |prog: Prog<_, _>| prog.check_inf(steps, 4_000));
+        let prog = Prog::<8, 8>::from(line);
+
+        prog.check_inf(steps, 4_000);
 
         Ok(())
     })
