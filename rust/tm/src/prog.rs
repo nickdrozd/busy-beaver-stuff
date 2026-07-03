@@ -124,6 +124,18 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         (st, co)
     }
 
+    pub fn reached_params(&self) -> (usize, usize) {
+        let (state, color) = self.max_reached();
+
+        (1 + state as usize, 1 + color as usize)
+    }
+
+    pub fn is_complete(&self) -> bool {
+        let (s, c) = self.reached_params();
+
+        s == states && c == colors
+    }
+
     pub fn halt_slots(&self) -> Set<Slot> {
         let (states_reached, colors_reached) = self.max_reached();
 
