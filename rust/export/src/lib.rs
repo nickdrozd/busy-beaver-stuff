@@ -74,11 +74,6 @@ macro_rules! parse {
 /**************************************/
 
 #[pyfunction]
-pub fn is_connected(prog: &str) -> bool {
-    parse!(prog, |p: Prog<_, _>| p.is_connected())
-}
-
-#[pyfunction]
 pub fn graph_cant_halt(prog: &str) -> bool {
     parse!(prog, |p: Prog<_, _>| { p.graph_cant_halt() })
 }
@@ -633,10 +628,9 @@ mod rust_stuff {
         ctl_cant_blank, ctl_cant_halt, ctl_cant_spinout,
         far_cant_blank, far_cant_halt, far_cant_spinout,
         graph_cant_blank, graph_cant_halt, graph_cant_quasihalt,
-        graph_cant_spinout, graph_cant_twostep, is_connected,
-        opt_block, read_instr, run_quick_machine, run_transcript,
-        segment_cant_blank, segment_cant_halt, segment_cant_spinout,
-        show_comp, show_instr, show_slot, show_state, tcompile,
-        term_or_rec,
+        graph_cant_spinout, graph_cant_twostep, opt_block, read_instr,
+        run_quick_machine, run_transcript, segment_cant_blank,
+        segment_cant_halt, segment_cant_spinout, show_comp, show_instr,
+        show_slot, show_state, tcompile, term_or_rec,
     };
 }

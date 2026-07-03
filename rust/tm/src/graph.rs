@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use ahash::{AHashMap as Dict, AHashSet as Set};
+use ahash::AHashMap as Dict;
 
 use crate::{Prog, State};
 
@@ -10,55 +10,6 @@ const MAX_TAPE: usize = 15;
 const MAX_NODES: usize = 1_000;
 
 impl<const states: usize, const colors: usize> Prog<states, colors> {
-    pub fn is_connected(&self) -> bool {
-        if self.instrs().all(|&(_, _, state)| state != 0) {
-            return false;
-        }
-
-        let exitpoints = self.get_exitpoints();
-
-        if exitpoints.len() < states {
-            return false;
-        }
-
-        #[expect(clippy::cast_possible_truncation)]
-        let last_state = (states as State) - 1;
-
-        let last_exits = &exitpoints[&last_state];
-
-        if last_exits.contains(&0) {
-            return true;
-        }
-
-        let mut reached: Set<State> = Set::from([last_state]);
-
-        let mut todo: Vec<State> = last_exits.clone();
-
-        for _ in 0..states {
-            let Some(state) = todo.pop() else {
-                break;
-            };
-
-            if state == 0 {
-                return true;
-            }
-
-            if reached.contains(&state) {
-                continue;
-            }
-
-            reached.insert(state);
-
-            for &exit in &exitpoints[&state] {
-                if !reached.contains(&exit) && !todo.contains(&exit) {
-                    todo.push(exit);
-                }
-            }
-        }
-
-        false
-    }
-
     pub fn graph_cant_quasihalt(&self) -> bool {
         self.graph_cant_quasihalt_fast()
             || self.graph_cant_quasihalt_abs()
@@ -1214,98 +1165,4 @@ fn scc_has_cycle(comp: &[usize], adj: &[Vec<usize>]) -> bool {
     }
     let u = comp[0];
     adj[u].contains(&u)
-}
-
-/**************************************/
-
-#[cfg(test)]
-macro_rules! assert_connected {
-    ($prog:literal, ($s:literal, $c:literal), $conn:literal) => {{
-        let result = Prog::<$s, $c>::from($prog).is_connected();
-        assert!(if $conn { result } else { !result });
-    }};
-}
-
-#[test]
-fn test_connected() {
-    assert_connected!("1RB 1LB  1LA 1LC  1RC 0LC", (3, 2), false);
-    assert_connected!(
-        "1RB 0LC  1LA 0LD  1LA ...  1LE 0RE  1RD 0LD",
-        (5, 2),
-        false
-    );
-
-    assert_connected!(
-        "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA",
-        (4, 2),
-        true
-    );
-    assert_connected!(
-        "1RB 0LB  0LC 0RD  1RD 1LB  1LE 0RA  ... 1LA",
-        (5, 2),
-        true
-    );
-    assert_connected!(
-        "1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC",
-        (5, 2),
-        true
-    );
-}
-
-/**************************************/
-
-type Exitpoints = Dict<State, Vec<State>>;
-
-impl<const s: usize, const c: usize> Prog<s, c> {
-    fn get_exitpoints(&self) -> Exitpoints {
-        let mut exitpoints = Exitpoints::new();
-
-        for ((src, _), &(_, _, dst)) in self.iter() {
-            if src == dst {
-                continue;
-            }
-
-            exitpoints.entry(src).or_default().push(dst);
-        }
-
-        for conns in exitpoints.values_mut() {
-            conns.sort_unstable();
-            conns.dedup();
-        }
-
-        exitpoints
-    }
-}
-
-#[cfg(test)]
-macro_rules! assert_exitpoints {
-    ( $( ($prog:literal, ($s:literal, $c:literal)) => { $($key:literal => [$($val:expr),* $(,)?]),* $(,)? } ),* $(,)? ) => { $(
-        assert_eq!(
-            Prog::<$s, $c>::from($prog).get_exitpoints(),
-            Dict::from( [$(($key, vec![$($val),*]),)*] ),
-        );
-    )* };
-}
-
-#[test]
-fn test_exitpoints() {
-    assert_exitpoints!(
-        ("1RB 1LB  1LA 1LC  1RC 0LC", (3, 2)) => {
-            0 => [1],
-            1 => [0, 2],
-        },
-        ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", (4, 2)) => {
-            0 => [1, 2],
-            1 => [3],
-            2 => [3],
-            3 => [0],
-        },
-        ("1RB ...  0RC 0RE  0LD 1RC  1LB 0RA  1RD 1LC", (5, 2)) => {
-            0 => [1],
-            1 => [2, 4],
-            2 => [3],
-            3 => [0, 1],
-            4 => [2, 3],
-        },
-    );
 }
