@@ -12,7 +12,7 @@ use crate::{
     tape::{self, Block as _, LilBlock as Block, Pos, Scan},
 };
 
-const MAX_STACK_DEPTH: usize = 31;
+const MAX_STACK_DEPTH: usize = 64;
 
 /**************************************/
 

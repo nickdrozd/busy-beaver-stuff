@@ -69,7 +69,6 @@ pub const _3_2_3_ho: &[&str] = &["1RB 1LA  0LA 1LC  0RB 1RC"];
 pub const _2_3_3_ch: &[&str] = &[];
 pub const _2_3_3_ho: &[&str] = &[
     "1RB 1RA 2RB  2LB 1LA 0RB",
-    "1RB 2LA 2LA  0LB 1LA 2RB",
     "1RB 2RA 2LA  0LB 1LA 2RB",
     "1RB 2RA 2RB  2LA 1LA 1LB",
 ];
