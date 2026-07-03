@@ -25,7 +25,6 @@ from tm.rust_stuff import (
     graph_cant_halt,
     graph_cant_quasihalt,
     graph_cant_spinout,
-    is_strict_cycle,
     segment_cant_halt,
     segment_cant_spinout,
 )
@@ -668,18 +667,12 @@ class Graph(TestCase):
             self.assertTrue(
                 GraphPy(prog).is_strict_cycle)
 
-            self.assertTrue(
-                is_strict_cycle(prog))
-
         for prog in QUASIHALT:
             self.assertFalse(
                 GraphPy(prog).is_strict_cycle)
 
-            self.assertFalse(
-                is_strict_cycle(prog))
-
         for prog in RECURS - QUASIHALT:
-            if GraphPy(prog).is_strict_cycle or is_strict_cycle(prog):
+            if GraphPy(prog).is_strict_cycle:
                 self.assertIn(prog, STRICT_CYCLE)
 
     def test_quasihalt(self):
