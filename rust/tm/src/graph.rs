@@ -551,9 +551,11 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         #[expect(clippy::cast_possible_truncation)]
         let wild: u8 = colors as u8;
 
-        // Stronger (still sound): rule out spinout triggers by proving
-        // that the trigger *slot* (state, read=0 under head) is unreachable
-        // in the bounded abstract graph.
+        // Stronger (still sound): a trigger can spin forever only if the
+        // current cell and every tracked cell ahead in its shift direction
+        // can all be 0. A known nonzero cell on that ray blocks uninterrupted
+        // spinout. Cells beyond the tracked window remain conservative: both
+        // unknown cells and untouched blank cells may be 0.
         let (nodes, _adj) = self.build_abs_graph();
 
         // If we hit the cap, conservatively give up.
@@ -561,19 +563,31 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
             return false;
         }
 
-        for (st, _dir) in spin_triggers {
-            let target = st;
+        for (st, dir) in spin_triggers {
             for cfg in &nodes {
-                if cfg.state != target {
+                if cfg.state != st {
                     continue;
                 }
                 let head = cfg.head as usize;
                 if head >= cfg.tape.len() {
                     continue;
                 }
-                let cell = cfg.tape[head];
-                // If reading 0 is possible here, the trigger slot might be reached.
-                if cell == 0 || cell == wild {
+
+                let zero_ray_possible = if dir {
+                    // Moving right: include the current cell and all tracked
+                    // cells to its right.
+                    cfg.tape[head..]
+                        .iter()
+                        .all(|&cell| cell == 0 || cell == wild)
+                } else {
+                    // Moving left: include the current cell and all tracked
+                    // cells to its left.
+                    cfg.tape[..=head]
+                        .iter()
+                        .all(|&cell| cell == 0 || cell == wild)
+                };
+
+                if zero_ray_possible {
                     return false;
                 }
             }
