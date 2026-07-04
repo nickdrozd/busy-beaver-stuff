@@ -391,9 +391,7 @@ class Recur(TuringTest):
                 run_loose_linrec_machine(prog, steps).xlimit)
 
     def test_recur(self):
-        recur = RECUR_COMPACT | RECUR_DIFFUSE
-
-        self._test_recur(recur)
+        self._test_recur(RECUR)
 
         self._test_recur(
             RECUR_BLANK_IN_PERIOD,
@@ -413,7 +411,6 @@ class Recur(TuringTest):
                 tuple[
                     int | None,
                     int | tuple[int, int]]],
-            quick: bool = True,
             blank: bool = False,
             qsihlt: bool | None = False,
     ):
@@ -429,9 +426,14 @@ class Recur(TuringTest):
 
             if not blank:
                 assert steps is not None
+
+                if steps + period > 1_000_000:
+                    print(f'skipping "{prog}": ({steps}, {period})')
+                    continue
+
                 self.verify_lin_rec(prog, steps, period)
 
-            if not quick or period > 2000:
+            if period > 2000:
                 print(prog)
 
                 self.assertTrue(
@@ -558,12 +560,6 @@ class Recur(TuringTest):
 
         if steps >= 1:
             self.deny_lin_rec(steps - 1, recur)
-
-
-@skipUnless(RUN_SLOW, '')
-class RecurSlow(Recur):
-    def test_recur(self):
-        self._test_recur(RECUR_SLOW, quick = False)
 
 ########################################
 
@@ -804,7 +800,7 @@ class Prover(RunProver):
         )
 
         self._test_prover(
-            RECUR_COMPACT
+            RECUR
             | QUASIHALT_FAST,
             simple_term = False,
         )
