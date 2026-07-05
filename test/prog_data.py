@@ -2137,6 +2137,8 @@ GRAPH_CANT_QUASIHALT = {
     "1RB 1RE  1LC 0LA  1LA 0RD  0LB 1LB  0RE 0LD",
 }
 
+assert not GRAPH_CANT_QUASIHALT & STRICT_CYCLE
+
 ########################################
 
 BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
@@ -6649,6 +6651,8 @@ RECURS = (
     | RECUR_BLANK_BEFORE_PERIOD
 )
 
+assert not INFRUL & RECURS
+
 NONHALTERS = (
     SPINNERS
     | RECURS
@@ -6724,6 +6728,10 @@ FALSE_NEGATIVES = {
         | SEGMENT_FALSE_NEGATIVES["spinout"]
     ),
 }
+
+assert not HALTERS & FALSE_NEGATIVES['halt']
+assert not BLANKERS & FALSE_NEGATIVES['blank']
+assert not SPINNERS & FALSE_NEGATIVES['spinout']
 
 ## test program ######################################################
 

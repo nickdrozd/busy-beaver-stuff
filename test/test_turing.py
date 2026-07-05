@@ -486,8 +486,6 @@ class Recur(TuringTest):
             self.assertFalse(term_or_rec(prog, 10_000))
             self.assertFalse(run_transcript(prog, 1_000))
 
-        assert not INFRUL & RECURS
-
     def test_zloop(self):
         too_long = {
             "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE",
