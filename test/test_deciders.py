@@ -166,20 +166,14 @@ class Backward(TestCase):
             self.assert_could_blank_backward(prog)
 
     def test_twostep(self):
-        for prog in HALTERS | SPINNERS:
-            self.assert_cant_twostep_backward(prog, 0)
-
-        for prog in RECURS - TWOSTEPPERS:
+        for prog in HALTERS | SPINNERS | (RECURS - TWOSTEPPERS):
             self.assert_cant_twostep_backward(prog, 0)
 
         for prog in TWOSTEPPERS:
             self.assert_could_twostep_backward(prog)
 
     def test_zloop(self):
-        for prog in HALTERS | SPINNERS:
-            self.assert_cant_zloop_backward(prog, 2)
-
-        for prog in RECURS - ZLOOPERS - ZLOOPY:
+        for prog in HALTERS | SPINNERS | (RECURS - ZLOOPERS - ZLOOPY):
             self.assert_cant_zloop_backward(prog, 4)
 
         for prog in ZLOOPERS:
