@@ -5375,10 +5375,6 @@ DONT_SPINOUT: set[str] = {
     "1RB 1LE  0RC 1LD  1RD 0RD  1RE 1RC  0LA 1LB",  # 10^46
 }
 
-MACRO_SPINOUT: set[str] = {
-    "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
-}
-
 DIFFUSE = {
     # 5/2
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": 3,  # BB(5)

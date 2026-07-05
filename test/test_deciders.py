@@ -152,7 +152,7 @@ class Backward(TestCase):
             self.assert_cant_halt_backward(prog, 200)
 
     def test_spinout(self):
-        for prog in SPINNERS - MACRO_SPINOUT:
+        for prog in SPINNERS:
             self.assert_could_spinout_backward(prog)
 
         for prog in NONSPINNERS:
@@ -304,7 +304,7 @@ class Segment(TestCase):
             self.assert_cant_halt_segment(prog, SEG_LIMIT)
 
     def test_spinout(self):
-        for prog in SPINNERS - MACRO_SPINOUT:
+        for prog in SPINNERS:
             self.assert_could_spinout_segment(prog)
 
         for prog in NONSPINNERS:
@@ -422,7 +422,7 @@ class Cps(TestCase):
             self.assert_cant_blank_cps(prog, 33)
 
     def test_spinout(self):
-        for prog in SPINNERS - MACRO_SPINOUT:
+        for prog in SPINNERS:
             self.assert_could_spinout_cps(prog)
 
         for prog in NONSPINNERS:
@@ -532,7 +532,7 @@ class Ctl(TestCase):
             self.assert_cant_blank_ctl(prog, CTL_LIMIT)
 
     def test_spinout(self):
-        for prog in SPINNERS - MACRO_SPINOUT:
+        for prog in SPINNERS:
             self.assert_could_spinout_ctl(prog)
 
         for prog in NONSPINNERS:
@@ -611,7 +611,7 @@ class Graph(TestCase):
                 graph_cant_blank(prog))
 
     def test_spinout(self):
-        for prog in SPINNERS - MACRO_SPINOUT:
+        for prog in SPINNERS:
             self.assertFalse(
                 graph_cant_spinout(prog))
 
