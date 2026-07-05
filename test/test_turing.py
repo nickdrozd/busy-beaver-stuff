@@ -935,7 +935,9 @@ class Prover(RunProver):
             self.assertIsNotNone(
                 self.machine.infrul)
 
-    def _test_reason_steps(self, steps: dict[Goal, dict[str, int]]):
+    def test_steps(self):
+        steps: dict[Goal, dict[str, int]] = BACKWARD_STEPS | SEGMENT_STEPS
+
         for cat, progs in steps.items():
             for prog in progs:
                 if prog in PROVER_FAILURES:
@@ -963,12 +965,6 @@ class Prover(RunProver):
                         self.assertFalse(
                             self.machine.blanks,
                             f'"{prog}"')
-
-    def test_backwards_steps(self):
-        self._test_reason_steps(BACKWARD_STEPS)
-
-    def test_segment_steps(self):
-        self._test_reason_steps(SEGMENT_STEPS)
 
     def test_rule_limit(self):
         for prog, reason in RULE_LIMIT.items():

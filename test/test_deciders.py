@@ -144,48 +144,44 @@ class Backward(TestCase):
 
     ########################################
 
-    def test_halt(self):
-        for prog in HALTERS:
-            self.assert_could_halt_backward(prog)
-
+    def test_true_positives(self):
         for prog in NONHALTERS:
             self.assert_cant_halt_backward(prog, 200)
-
-    def test_spinout(self):
-        for prog in SPINNERS:
-            self.assert_could_spinout_backward(prog)
 
         for prog in NONSPINNERS:
             self.assert_cant_spinout_backward(prog, 256)
 
-    def test_blank(self):
         for prog in NONBLANKERS:
             self.assert_cant_blank_backward(prog, 1331)
 
-        for prog in BLANKERS:
-            self.assert_could_blank_backward(prog)
-
-    def test_twostep(self):
         for prog in HALTERS | SPINNERS | (RECURS - TWOSTEPPERS):
             self.assert_cant_twostep_backward(prog, 0)
 
-        for prog in TWOSTEPPERS:
-            self.assert_could_twostep_backward(prog)
-
-    def test_zloop(self):
         for prog in HALTERS | SPINNERS | (RECURS - ZLOOPERS - ZLOOPY):
             self.assert_cant_zloop_backward(prog, 4)
 
-        for prog in ZLOOPERS:
-            self.assert_could_zloop_backward(prog)
-
-    def test_recur(self):
         for prog in RECURS | INFRUL:
             self.assert_cant_halt_backward(prog, 115)
             self.assert_cant_spinout_backward(prog, 256)
 
             if prog not in BLANKERS:
                 self.assert_cant_blank_backward(prog, 1331)
+
+    def test_true_negatives(self):
+        for prog in HALTERS:
+            self.assert_could_halt_backward(prog)
+
+        for prog in SPINNERS:
+            self.assert_could_spinout_backward(prog)
+
+        for prog in BLANKERS:
+            self.assert_could_blank_backward(prog)
+
+        for prog in TWOSTEPPERS:
+            self.assert_could_twostep_backward(prog)
+
+        for prog in ZLOOPERS:
+            self.assert_could_zloop_backward(prog)
 
     def test_holdouts(self):
         for prog in HALT_HOLDOUTS:
@@ -290,19 +286,19 @@ class Segment(TestCase):
             segment_cant_spinout(prog, segs).is_settled(),
             f'segment spinout false negative: "{prog}"')
 
-    def test_halt(self):
-        for prog in HALTERS:
-            self.assert_could_halt_segment(prog)
-
+    def test_true_positives(self):
         for prog in NONHALTERS:
             self.assert_cant_halt_segment(prog, SEG_LIMIT)
 
-    def test_spinout(self):
-        for prog in SPINNERS:
-            self.assert_could_spinout_segment(prog)
-
         for prog in NONSPINNERS:
             self.assert_cant_spinout_segment(prog, 26)
+
+    def test_true_negatives(self):
+        for prog in HALTERS:
+            self.assert_could_halt_segment(prog)
+
+        for prog in SPINNERS:
+            self.assert_could_spinout_segment(prog)
 
     def test_holdouts(self):
         for prog in HALT_HOLDOUTS:
@@ -401,26 +397,25 @@ class Cps(TestCase):
             cps_cant_quasihalt(prog, segs),
             f'cps quasihalt false negative: "{prog}"')
 
-    def test_halt(self):
-        for prog in HALTERS:
-            self.assert_could_halt_cps(prog)
-
+    def test_true_positives(self):
         for prog in NONHALTERS:
             self.assert_cant_halt_cps(prog, 7)
-
-    def test_blank(self):
-        for prog in BLANKERS:
-            self.assert_could_blank_cps(prog)
 
         for prog in NONBLANKERS:
             self.assert_cant_blank_cps(prog, 33)
 
-    def test_spinout(self):
-        for prog in SPINNERS:
-            self.assert_could_spinout_cps(prog)
-
         for prog in NONSPINNERS:
             self.assert_cant_spinout_cps(prog, 19)
+
+    def test_true_negatives(self):
+        for prog in HALTERS:
+            self.assert_could_halt_cps(prog)
+
+        for prog in BLANKERS:
+            self.assert_could_blank_cps(prog)
+
+        for prog in SPINNERS:
+            self.assert_could_spinout_cps(prog)
 
     def test_quasihalt(self):
         for prog in QUASIHALT_HOLDOUTS:
@@ -511,26 +506,25 @@ class Ctl(TestCase):
         self.assertTrue(
             ctl_cant_spinout(prog, segs))
 
-    def test_halt(self):
-        for prog in HALTERS:
-            self.assert_could_halt_ctl(prog)
-
+    def test_true_positives(self):
         for prog in NONHALTERS:
             self.assert_cant_halt_ctl(prog, CTL_LIMIT)
-
-    def test_blank(self):
-        for prog in BLANKERS:
-            self.assert_could_blank_ctl(prog)
 
         for prog in NONBLANKERS:
             self.assert_cant_blank_ctl(prog, CTL_LIMIT)
 
-    def test_spinout(self):
-        for prog in SPINNERS:
-            self.assert_could_spinout_ctl(prog)
-
         for prog in NONSPINNERS:
             self.assert_cant_spinout_ctl(prog, CTL_LIMIT)
+
+    def test_true_negatives(self):
+        for prog in HALTERS:
+            self.assert_could_halt_ctl(prog)
+
+        for prog in BLANKERS:
+            self.assert_could_blank_ctl(prog)
+
+        for prog in SPINNERS:
+            self.assert_could_spinout_ctl(prog)
 
     def test_holdouts(self):
         for prog in BLANK_HOLDOUTS:
@@ -578,40 +572,40 @@ class Ctl(TestCase):
 ########################################
 
 class Graph(TestCase):
-    def test_halt(self):
-        for prog in HALTERS:
-            self.assertFalse(
-                graph_cant_halt(prog))
-
+    def test_true_positives(self):
         for prog in NONHALTERS:
             if not graph_cant_halt(prog):
                 self.assertIn(prog, GRAPH_FALSE_NEGATIVES['halt'])
-
-        for prog in GRAPH_FALSE_NEGATIVES['halt']:
-            self.assertFalse(
-                graph_cant_halt(prog))
-
-    def test_blank(self):
-        for prog in BLANKERS:
-            self.assertFalse(
-                graph_cant_blank(prog))
 
         for prog in NONBLANKERS:
             if not graph_cant_blank(prog):
                 self.assertIn(prog, GRAPH_FALSE_NEGATIVES['blank'])
 
-        for prog in GRAPH_FALSE_NEGATIVES['blank']:
+        for prog in NONSPINNERS:
+            if not graph_cant_spinout(prog):
+                self.assertIn(prog, GRAPH_FALSE_NEGATIVES['spinout'])
+
+    def test_true_negatives(self):
+        for prog in HALTERS:
+            self.assertFalse(
+                graph_cant_halt(prog))
+
+        for prog in BLANKERS:
             self.assertFalse(
                 graph_cant_blank(prog))
 
-    def test_spinout(self):
         for prog in SPINNERS:
             self.assertFalse(
                 graph_cant_spinout(prog))
 
-        for prog in NONSPINNERS:
-            if not graph_cant_spinout(prog):
-                self.assertIn(prog, GRAPH_FALSE_NEGATIVES['spinout'])
+    def test_false_negatives(self):
+        for prog in GRAPH_FALSE_NEGATIVES['halt']:
+            self.assertFalse(
+                graph_cant_halt(prog))
+
+        for prog in GRAPH_FALSE_NEGATIVES['blank']:
+            self.assertFalse(
+                graph_cant_blank(prog))
 
         for prog in GRAPH_FALSE_NEGATIVES['spinout']:
             self.assertFalse(
