@@ -207,7 +207,6 @@ fn _4_2_1(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
         || prog.ctl_cant_spinout(500)
         || prog.cps_cant_spinout(12)
-        || prog.seg_cant_spinout(10).is_refuted()
         || prog.far_cant_spinout(3)
 }
 
@@ -224,7 +223,6 @@ fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
         || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
-        || prog.seg_cant_spinout(10).is_refuted()
         || prog.term_or_rec(10_000, config.to_mut()).is_settled()
         || prog.far_cant_spinout(3)
 }
@@ -559,7 +557,6 @@ fn _7_1(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
         || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
-        || prog.seg_cant_spinout(10).is_refuted()
         || prog.term_or_rec(10_000, config.to_mut()).is_settled()
         || prog.far_cant_spinout(3)
 }

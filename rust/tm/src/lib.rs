@@ -15,7 +15,6 @@ pub mod macros;
 pub mod prog;
 pub mod prover;
 pub mod rules;
-pub mod segment;
 pub mod tape;
 
 /**************************************/

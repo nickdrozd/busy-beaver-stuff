@@ -936,9 +936,7 @@ class Prover(RunProver):
                 self.machine.infrul)
 
     def test_steps(self):
-        steps: dict[Goal, dict[str, int]] = BACKWARD_STEPS | SEGMENT_STEPS
-
-        for cat, progs in steps.items():
+        for cat, progs in BACKWARD_STEPS.items():
             for prog in progs:
                 if prog in PROVER_FAILURES:
                     continue

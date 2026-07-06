@@ -8,7 +8,6 @@ from tm.rust_stuff import (
     bkw_cant_twostep,
     bkw_cant_zloop,
     ctl_cant_halt,
-    segment_cant_halt,
 )
 
 CYCLES = 2_000
@@ -26,7 +25,6 @@ if __name__ == '__main__':
     group.add_argument('--zloop', action = 'store_true')
     group.add_argument('--spinout', action = 'store_true')
     group.add_argument('--twostep', action = 'store_true')
-    group.add_argument('--segment', action = 'store_true')
     group.add_argument('--ctl', action = 'store_true')
 
     args = parser.parse_args()
@@ -42,9 +40,6 @@ if __name__ == '__main__':
         CANT_REACH = bkw_cant_zloop
     elif args.twostep:
         CANT_REACH = bkw_cant_twostep
-    elif args.segment:
-        CYCLES = 20
-        CANT_REACH = segment_cant_halt  # type: ignore[assignment]
     elif args.ctl:
         CYCLES = 100
 

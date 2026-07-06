@@ -6,7 +6,6 @@ use tm::{
     Instr, Prog as ProgGen, Slot, State, Steps,
     backward::{BackwardResult as BackwardResultRs, BackwardResult::*},
     instrs::{self, Parse as _},
-    segment::SegmentResult as SegmentResultRs,
 };
 
 type Prog = ProgGen<10, 10>;
@@ -174,64 +173,6 @@ pub fn bkw_cant_spinout(prog: &str, steps: Steps) -> BackwardResult {
 #[pyfunction]
 pub fn bkw_cant_twostep(prog: &str, steps: Steps) -> BackwardResult {
     Prog::from(prog).bkw_cant_twostep(steps).into()
-}
-
-/***************************************/
-
-use tm::segment::Segments;
-
-#[pyclass]
-pub enum SegmentResult {
-    halt {},
-    blank {},
-    repeat {},
-    spinout {},
-    depth_limit {},
-    segment_limit {},
-    refuted { step: Segments },
-}
-
-#[pymethods]
-impl SegmentResult {
-    const fn is_refuted(&self) -> bool {
-        matches!(self, Self::refuted { .. })
-    }
-
-    const fn is_settled(&self) -> bool {
-        !matches!(self, Self::depth_limit {} | Self::segment_limit {})
-    }
-}
-
-impl From<SegmentResultRs> for SegmentResult {
-    fn from(result: SegmentResultRs) -> Self {
-        match result {
-            SegmentResultRs::Halt => Self::halt {},
-            SegmentResultRs::Blank => Self::blank {},
-            SegmentResultRs::Repeat => Self::repeat {},
-            SegmentResultRs::Spinout => Self::spinout {},
-            SegmentResultRs::DepthLimit => Self::depth_limit {},
-            SegmentResultRs::SegmentLimit => Self::segment_limit {},
-            SegmentResultRs::Refuted(step) => Self::refuted { step },
-        }
-    }
-}
-
-#[pyfunction]
-pub fn segment_cant_halt(prog: &str, segs: Segments) -> SegmentResult {
-    Prog::from(prog).seg_cant_halt(segs).into()
-}
-
-#[pyfunction]
-pub fn segment_cant_blank(prog: &str, segs: Segments) -> SegmentResult {
-    Prog::from(prog).seg_cant_blank(segs).into()
-}
-
-#[pyfunction]
-pub fn segment_cant_spinout(
-    prog: &str,
-    segs: Segments,
-) -> SegmentResult {
-    Prog::from(prog).seg_cant_spinout(segs).into()
 }
 
 /***************************************/
@@ -559,8 +500,7 @@ mod rust_stuff {
         far_cant_blank, far_cant_halt, far_cant_spinout,
         graph_cant_blank, graph_cant_halt, graph_cant_quasihalt,
         graph_cant_spinout, graph_cant_twostep, opt_block, read_instr,
-        run_quick_machine, run_transcript, segment_cant_blank,
-        segment_cant_halt, segment_cant_spinout, show_comp, show_instr,
+        run_quick_machine, run_transcript, show_comp, show_instr,
         show_slot, show_state, tcompile, term_or_rec,
     };
 }

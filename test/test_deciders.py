@@ -25,8 +25,6 @@ from tm.rust_stuff import (
     graph_cant_halt,
     graph_cant_quasihalt,
     graph_cant_spinout,
-    segment_cant_halt,
-    segment_cant_spinout,
 )
 from tools.graph import Graph as GraphPy
 
@@ -45,7 +43,6 @@ if TYPE_CHECKING:
 CPS_LIMIT = 33
 CTL_LIMIT = 3_200
 BKW_LIMIT = 3_000
-SEG_LIMIT = 22
 
 ########################################
 
@@ -258,88 +255,6 @@ class Backward(TestCase):
                     bkw_cant_reach(prog, BKW_LIMIT).step,
                     steps)
 
-
-class Segment(TestCase):
-    def assert_could_halt_segment(self, prog: str):
-        self.assertFalse(
-            segment_cant_halt(prog, segs = SEG_LIMIT).is_refuted(),
-            f'segment halt false positive: "{prog}"')
-
-    def assert_cant_halt_segment(self, prog: str, segs: int):
-        if prog in SEGMENT_FALSE_NEGATIVES['halt']:
-            return
-
-        self.assertTrue(
-            segment_cant_halt(prog, segs).is_settled(),
-            f'segment halt false negative: "{prog}"')
-
-    def assert_could_spinout_segment(self, prog: str):
-        self.assertFalse(
-            segment_cant_spinout(prog, segs = SEG_LIMIT).is_refuted(),
-            f'segment spinout false positive: "{prog}"')
-
-    def assert_cant_spinout_segment(self, prog: str, segs: int):
-        if prog in SEGMENT_FALSE_NEGATIVES['spinout']:
-            return
-
-        self.assertTrue(
-            segment_cant_spinout(prog, segs).is_settled(),
-            f'segment spinout false negative: "{prog}"')
-
-    def test_true_positives(self):
-        for prog in NONHALTERS:
-            self.assert_cant_halt_segment(prog, SEG_LIMIT)
-
-        for prog in NONSPINNERS:
-            self.assert_cant_spinout_segment(prog, 26)
-
-    def test_true_negatives(self):
-        for prog in HALTERS:
-            self.assert_could_halt_segment(prog)
-
-        for prog in SPINNERS:
-            self.assert_could_spinout_segment(prog)
-
-    def test_holdouts(self):
-        for prog in HALT_HOLDOUTS:
-            self.assert_could_halt_segment(prog)
-
-        for prog in SPINOUT_HOLDOUTS:
-            self.assert_could_spinout_segment(prog)
-
-    def test_false_negatives(self):
-        counts = {
-            cat: len(progs)
-            for cat, progs in SEGMENT_FALSE_NEGATIVES.items()
-        }
-
-        self.assertEqual(
-            SEGMENT_FALSE_NEGATIVE_COUNTS,
-            counts,
-            json.dumps(counts, indent = 4))
-
-        for prog in SEGMENT_FALSE_NEGATIVES['halt']:
-            self.assert_could_halt_segment(prog)
-
-        for prog in SEGMENT_FALSE_NEGATIVES['spinout']:
-            self.assert_could_spinout_segment(prog)
-
-    def test_steps(self):
-        bkw_cant_reaches = {
-            "halt": segment_cant_halt,
-            "spinout": segment_cant_spinout,
-        }
-
-        for cat, data in SEGMENT_STEPS.items():
-            bkw_cant_reach = bkw_cant_reaches[cat]
-
-            for prog, steps in data.items():
-                self.assertEqual(
-                    steps,
-                    bkw_cant_reach(prog, steps).step)
-
-                self.assertFalse(
-                    bkw_cant_reach(prog, steps - 1).is_settled())
 
 ########################################
 
