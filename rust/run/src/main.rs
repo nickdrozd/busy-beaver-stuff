@@ -334,7 +334,7 @@ fn _2_3_0(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
 
 fn _2_3_2(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
-        || prog.bkw_cant_blank(16).is_settled()
+        || prog.bkw_cant_blank(16).is_refuted()
         || prog.ctl_cant_blank(50)
         || prog.cps_cant_blank(7)
 }
@@ -584,7 +584,7 @@ fn test_instrs() {
 
 fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_halt()
-        || prog.bkw_cant_halt(30).is_settled()
+        || prog.bkw_cant_halt(30).is_refuted()
         || prog.ctl_cant_halt(300)
         || prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
         || prog.cps_cant_halt(20)
@@ -593,7 +593,7 @@ fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
 
 fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.graph_cant_blank()
-        || prog.bkw_cant_blank(50).is_settled()
+        || prog.bkw_cant_blank(50).is_refuted()
         || prog.ctl_cant_blank(300)
         || prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
         || prog.cps_cant_blank(20)
