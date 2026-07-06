@@ -105,8 +105,10 @@ fn cps_cant_reach_obs(
     {
         obs.see(&config);
 
+        let init_scan = tape.scan;
+
         let (print, shift, next_state) =
-            match prog.get_instr(&(state, tape.scan)) {
+            match prog.get_instr(&(state, init_scan)) {
                 Err(_) => return false,
                 Ok(None) => match goal {
                     Halt => return false,
@@ -162,7 +164,12 @@ fn cps_cant_reach_obs(
                         && push.base_all_blank(prog, &configs.span_pool)
                 },
                 Spinout => {
-                    colors.contains(&0)
+                    // The transition must itself be the state's blank
+                    // transition.  Merely entering a blank ray from a
+                    // nonblank cell does not imply that the next step
+                    // repeats the same instruction.
+                    init_scan == 0
+                        && colors.contains(&0)
                         && tape.scan == 0
                         && pull.blank_span(&configs.span_pool)
                         && state == next_state
