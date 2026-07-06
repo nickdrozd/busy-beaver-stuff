@@ -43,32 +43,28 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn cps_cant_quasihalt(&self, rad: Radius) -> bool {
         assert!(rad > 1);
 
-        self.make_transcript_macro(4).cps_loop_qh(rad)
-            || self.make_lru_macro().cps_loop_qh(rad)
-            || self.cps_loop_qh(rad)
+        (2..rad).any(|seg| {
+            cps_cant_quasihalt(&self.make_transcript_macro(4), seg)
+                || cps_cant_quasihalt(&self.make_lru_macro(), seg)
+                || cps_cant_quasihalt(self, seg)
+        })
     }
 
     fn cps_run_macros(&self, rad: Radius, goal: Goal) -> bool {
         assert!(rad > 1);
 
-        self.make_transcript_macro(16).cps_loop(rad, goal)
-            || self.make_transcript_macro(4).cps_loop(rad, goal)
-            || self.make_lru_macro().cps_loop(rad, goal)
-            || self.cps_loop(rad, goal)
+        (2..rad).any(|seg| {
+            cps_cant_reach(&self.make_transcript_macro(16), seg, goal)
+                || cps_cant_reach(
+                    &self.make_transcript_macro(4),
+                    seg,
+                    goal,
+                )
+                || cps_cant_reach(&self.make_lru_macro(), seg, goal)
+                || cps_cant_reach(self, seg, goal)
+        })
     }
 }
-
-trait Cps: GetInstr {
-    fn cps_loop(&self, rad: Radius, goal: Goal) -> bool {
-        (2..rad).any(|seg| cps_cant_reach(self, seg, goal))
-    }
-
-    fn cps_loop_qh(&self, rad: Radius) -> bool {
-        (2..rad).any(|seg| cps_cant_quasihalt(self, seg))
-    }
-}
-
-impl<P: GetInstr> Cps for P {}
 
 fn cps_cant_reach(
     prog: &impl GetInstr,

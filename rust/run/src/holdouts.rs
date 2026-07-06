@@ -10,7 +10,6 @@ pub const _4_2_2_ho: &[&str] = &[
 pub const _4_2_1_ch: &[&str] = &["1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD"];
 
 pub const _4_2_1_ho: &[&str] = &[
-    "1RB 0RC  1LC 1RA  1RA 0LD  1RD 0LB",
     "1RB 0RD  1LC 1LB  1RD 0LB  0RD 1RA",
     "1RB 1LC  1LB 1RA  0LC 0LD  0RA 0RD",
     "1RB 1LC  1LC 1RA  0LC 0LD  0RA 0RD",
