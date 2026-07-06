@@ -92,6 +92,8 @@ fn cps_cant_quasihalt(prog: &impl GetInstr, rad: Radius) -> bool {
 
 /**************************************/
 
+const NZ_CAP: u8 = 2;
+
 fn cps_cant_reach_obs(
     prog: &impl GetInstr,
     rad: Radius,
@@ -117,61 +119,126 @@ fn cps_cant_reach_obs(
                 Ok(Some(instr)) => instr,
             };
 
+        // The count on the pushed side describes the hidden tail beyond
+        // push.last.  Record it together with that continuation color so a
+        // later pull cannot combine the color from one occurrence with the
+        // tail evidence from another.
+        let push_tail_nz =
+            if shift { tape.left_nz } else { tape.right_nz };
+
         let (pull, push): (&mut Span, &mut Span) = if shift {
             (&mut tape.rspan, &mut tape.lspan)
         } else {
             (&mut tape.lspan, &mut tape.rspan)
         };
 
-        configs.add_span(shift, push);
+        configs.add_span(shift, push, push_tail_nz);
 
         let dropped = push.push(print, &mut configs.span_pool);
         tape.scan = pull.pull(&mut configs.span_pool);
 
-        let dropped_nz = match goal {
-            // For blank, nz means nonblank in the base alphabet.
-            Blank => !prog.is_blank(dropped),
-            // For halt/spinout/quasihalt, preserve the old CPS meaning:
-            // canonical macro-zero versus nonzero.  In particular,
-            // Spinout should not treat history-decorated blank colors as
-            // interchangeable with the canonical blank ray.
-            Halt | Spinout => dropped != 0,
-        };
+        match goal {
+            Halt => {},
+            Blank | Spinout => {
+                let dropped_nz = match goal {
+                    // For blank, nz means nonblank in the base alphabet.
+                    Blank => !prog.is_blank(dropped),
+                    // Spinout distinguishes canonical macro-zero from
+                    // nonzero.  In particular, history-decorated blank
+                    // colors are not interchangeable with a canonical
+                    // blank ray.
+                    Spinout => dropped != 0,
+                    Halt => unreachable!(),
+                };
 
-        if shift {
-            tape.left_nz = tape.left_nz || dropped_nz;
-            tape.right_nz = false;
-        } else {
-            tape.right_nz = tape.right_nz || dropped_nz;
-            tape.left_nz = false;
+                // The pushed-away cell becomes part of the hidden ray.
+                // Keep a small saturated lower bound on how many known
+                // nonzero cells are hidden on each side.
+                if shift {
+                    tape.left_nz = tape
+                        .left_nz
+                        .saturating_add(u8::from(dropped_nz))
+                        .min(NZ_CAP);
+                } else {
+                    tape.right_nz = tape
+                        .right_nz
+                        .saturating_add(u8::from(dropped_nz))
+                        .min(NZ_CAP);
+                }
+            },
         }
 
-        let (last_color, colors) = {
-            let colors = if shift {
-                configs.rspans.get_colors(pull)
-            } else {
-                configs.lspans.get_colors(pull)
+        let continuations = if shift {
+            configs.rspans.get_continuations(pull)
+        } else {
+            configs.lspans.get_continuations(pull)
+        }
+        .clone();
+
+        for Continuation { color, tail_nz } in continuations {
+            let (left_nz, right_nz) = match goal {
+                // Halt and quasihalt do not use hidden nonzero evidence.
+                // Keeping both counters at zero avoids splitting otherwise
+                // identical CPS configurations.
+                Halt => (0, 0),
+                Blank | Spinout => {
+                    let entered_nz = match goal {
+                        Blank => !prog.is_blank(color),
+                        Spinout => color != 0,
+                        Halt => unreachable!(),
+                    };
+
+                    // The current count constrains the whole hidden ray:
+                    // after its first color enters the represented window,
+                    // at least current_nz - entered_nz remain.  The learned
+                    // continuation independently supplies a lower bound for
+                    // that exact tail.  Both facts hold, so retain their max.
+                    if shift {
+                        (
+                            tape.left_nz,
+                            tail_nz.max(
+                                tape.right_nz.saturating_sub(u8::from(
+                                    entered_nz,
+                                )),
+                            ),
+                        )
+                    } else {
+                        (
+                            tail_nz.max(
+                                tape.left_nz.saturating_sub(u8::from(
+                                    entered_nz,
+                                )),
+                            ),
+                            tape.right_nz,
+                        )
+                    }
+                },
             };
 
             let reached_goal = match goal {
                 Blank => {
-                    colors.iter().any(|&c| prog.is_blank(c))
+                    prog.is_blank(color)
                         && prog.is_blank(tape.scan)
                         && pull
                             .base_blank_span(prog, &configs.span_pool)
-                        && !tape.left_nz
-                        && !tape.right_nz
+                        && left_nz == 0
+                        && right_nz == 0
                         && push.base_all_blank(prog, &configs.span_pool)
                 },
                 Spinout => {
                     // The transition must itself be the state's blank
                     // transition.  Merely entering a blank ray from a
                     // nonblank cell does not imply that the next step
-                    // repeats the same instruction.
+                    // repeats the same instruction.  Any retained nonzero
+                    // evidence ahead also rules out a canonical blank ray.
+                    let ahead_nz =
+                        if shift { right_nz } else { left_nz };
+
                     init_scan == 0
-                        && colors.contains(&0)
+                        && color == 0
                         && tape.scan == 0
                         && pull.blank_span(&configs.span_pool)
+                        && ahead_nz == 0
                         && state == next_state
                 },
                 Halt => false,
@@ -181,22 +248,11 @@ fn cps_cant_reach_obs(
                 return false;
             }
 
-            let (last_color, colors) = colors.split_last().unwrap();
-
-            (*last_color, colors.to_vec())
-        };
-
-        for color in &colors {
             let mut pull_clone = *pull;
-            pull_clone.last = *color;
+            pull_clone.last = color;
 
             let next_tape = Tape::from_spans(
-                tape.scan,
-                *push,
-                pull_clone,
-                shift,
-                tape.left_nz,
-                tape.right_nz,
+                tape.scan, *push, pull_clone, shift, left_nz, right_nz,
             );
 
             let next_config = Config {
@@ -212,31 +268,6 @@ fn cps_cant_reach_obs(
         }
 
         let pull_key = pull.span;
-
-        {
-            let next_tape = Tape::from_spans(
-                tape.scan,
-                *push,
-                Span {
-                    span: pull.span,
-                    last: last_color,
-                },
-                shift,
-                tape.left_nz,
-                tape.right_nz,
-            );
-
-            let next_config = Config {
-                state: next_state,
-                tape: next_tape,
-            };
-
-            obs.edge(&config, &next_config);
-
-            if configs.intern_config(&next_config) {
-                configs.todo.push_back(next_config);
-            }
-        }
 
         if shift {
             configs.r_watch.entry(pull_key).or_default().push(config);
@@ -454,7 +485,15 @@ fn reachable_nodes(succ: &[Vec<usize>], start: usize) -> Vec<bool> {
 type SpanId = usize;
 
 type Colors = Vec<Color>;
-type Spans = Dict<SpanId, Colors>;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct Continuation {
+    color: Color,
+    tail_nz: u8,
+}
+
+type Continuations = Vec<Continuation>;
+type Spans = Dict<SpanId, Continuations>;
 type Watch = Dict<SpanId, Vec<Config>>;
 
 /**************************************/
@@ -524,10 +563,12 @@ impl Configs {
 
         let init = Config::init(rad, &mut configs.span_pool);
 
-        configs.lspans.add_span(&init.tape.lspan);
-        configs.rspans.add_span(&init.tape.rspan);
+        configs.lspans.add_span(&init.tape.lspan, init.tape.left_nz);
+        configs
+            .rspans
+            .add_span(&init.tape.rspan, init.tape.right_nz);
 
-        configs.seen.insert(init.clone());
+        assert!(configs.intern_config(&init));
         configs.todo.push_back(init);
 
         configs
@@ -541,14 +582,14 @@ impl Configs {
         MAX_DEPTH < self.seen.len()
     }
 
-    fn add_span(&mut self, shift: Shift, span: &Span) {
+    fn add_span(&mut self, shift: Shift, span: &Span, tail_nz: u8) {
         let (spans, watch) = if shift {
             (&mut self.lspans, &mut self.l_watch)
         } else {
             (&mut self.rspans, &mut self.r_watch)
         };
 
-        if spans.add_span(span)
+        if spans.add_span(span, tail_nz)
             && let Some(waiting) = watch.remove(&span.span)
         {
             self.todo.extend(waiting);
@@ -559,25 +600,42 @@ impl Configs {
 /**************************************/
 
 trait AddSpan {
-    fn add_span(&mut self, span: &Span) -> bool;
-    fn get_colors(&self, span: &Span) -> &Colors;
+    fn add_span(&mut self, span: &Span, tail_nz: u8) -> bool;
+    fn get_continuations(&self, span: &Span) -> &Continuations;
 }
 
 impl AddSpan for Spans {
-    fn add_span(&mut self, span: &Span) -> bool {
-        if let Some(colors) = self.get_mut(&span.span) {
-            if let Err(pos) = colors.binary_search(&span.last) {
-                colors.insert(pos, span.last);
-                return true;
+    fn add_span(&mut self, span: &Span, tail_nz: u8) -> bool {
+        let continuation = Continuation {
+            color: span.last,
+            tail_nz,
+        };
+
+        if let Some(continuations) = self.get_mut(&span.span) {
+            match continuations
+                .binary_search_by_key(&span.last, |cnt| cnt.color)
+            {
+                Ok(pos) => {
+                    // Counts are lower bounds.  For the same continuation
+                    // color, a smaller bound subsumes every larger one.
+                    if tail_nz < continuations[pos].tail_nz {
+                        continuations[pos].tail_nz = tail_nz;
+                        return true;
+                    }
+                    return false;
+                },
+                Err(pos) => {
+                    continuations.insert(pos, continuation);
+                    return true;
+                },
             }
-            return false;
         }
 
-        self.insert(span.span, vec![span.last]);
+        self.insert(span.span, vec![continuation]);
         true
     }
 
-    fn get_colors(&self, span: &Span) -> &Colors {
+    fn get_continuations(&self, span: &Span) -> &Continuations {
         self.get(&span.span).unwrap()
     }
 }
@@ -602,8 +660,8 @@ struct Tape {
     scan: Color,
     lspan: Span,
     rspan: Span,
-    left_nz: bool,
-    right_nz: bool,
+    left_nz: u8,
+    right_nz: u8,
 }
 
 impl Tape {
@@ -612,8 +670,8 @@ impl Tape {
             scan: 0,
             lspan: Span::init(rad, pool),
             rspan: Span::init(rad, pool),
-            left_nz: false,
-            right_nz: false,
+            left_nz: 0,
+            right_nz: 0,
         }
     }
 
@@ -622,8 +680,8 @@ impl Tape {
         push: Span,
         pull: Span,
         shift: Shift,
-        left_nz: bool,
-        right_nz: bool,
+        left_nz: u8,
+        right_nz: u8,
     ) -> Self {
         let (lspan, rspan) =
             if shift { (push, pull) } else { (pull, push) };

@@ -1,7 +1,6 @@
 pub const _4_2_2_ch: &[&str] = &["1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD"];
 
 pub const _4_2_2_ho: &[&str] = &[
-    "1RB 0LB  0LC 0LA  1RD 1LC  0RC 1RA",
     "1RB 0LC  0LC 1RA  0RA 1LD  1LC 0RA",
     "1RB 0LC  1LB 1RA  0RA 1LD  1LC 0RA",
     "1RB 1RC  0RC 0RD  1LD 0LA  1LC 0RB",
@@ -21,10 +20,7 @@ pub const _2_4_2_ch: &[&str] = &[
 ];
 
 pub const _2_4_2_ho: &[&str] = &[
-    "1RB 0RA 3RB 1LA  2LA 0LB 1LA 2RA",
-    "1RB 0RB 2RA 0LB  1LB 2RB 3LA 0RA",
     "1RB 2RB 3LA 0RB  0LB 1LA 0LA 2RA",
-    "1RB 3LB 0RB 2RB  2LA 0RA 0LB 3RA",
     "1RB 3RA 1LB 1RB  2LA 0LB 3RB 1LA",
     "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
 ];
