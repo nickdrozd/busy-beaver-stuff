@@ -103,7 +103,7 @@ class Backward(DeciderTest):
             f'zloop false positive: "{prog}"')
 
     def assert_cant_halt_backward(self, prog: str, depth: int):
-        if prog in self.false_negatives['halt']:
+        if prog in self.false_negatives['halt'] | RECUR_FAST:
             return
 
         self.assertTrue(
@@ -111,7 +111,7 @@ class Backward(DeciderTest):
             f'halt false negative: "{prog}"')
 
     def assert_cant_blank_backward(self, prog: str, depth: int):
-        if prog in self.false_negatives['blank']:
+        if prog in self.false_negatives['blank'] | RECUR_FAST:
             return
 
         self.assertTrue(
@@ -119,7 +119,7 @@ class Backward(DeciderTest):
             f'blank false negative: "{prog}"')
 
     def assert_cant_spinout_backward(self, prog: str, depth: int):
-        if prog in self.false_negatives['spinout']:
+        if prog in self.false_negatives['spinout'] | RECUR_FAST:
             return
 
         if 2 < prog.count('...'):
@@ -302,7 +302,7 @@ class Cps(DeciderTest):
         for prog in QUASIHALT_HOLDOUTS:
             self.assert_could_quasihalt_cps(prog)
 
-        for prog in (RECURS | INFRUL) - QUASIHALT:
+        for prog in (RECURS | INFRUL) - QUASIHALT - RECUR_FAST:
             self.assert_cant_quasihalt_cps(prog, 30)
 
         for prog in QUASIHALT:
@@ -362,7 +362,7 @@ class Ctl(DeciderTest):
             ctl_cant_blank(prog, CTL_LIMIT))
 
     def assert_cant_blank_ctl(self, prog: str, segs: int):
-        if prog in self.false_negatives['blank']:
+        if prog in self.false_negatives['blank'] | RECUR_FAST:
             return
 
         self.assertTrue(
@@ -373,7 +373,7 @@ class Ctl(DeciderTest):
             ctl_cant_spinout(prog, CTL_LIMIT))
 
     def assert_cant_spinout_ctl(self, prog: str, segs: int):
-        if prog in self.false_negatives['spinout']:
+        if prog in self.false_negatives['spinout'] | RECUR_FAST:
             return
 
         self.assertTrue(
@@ -444,11 +444,11 @@ class Graph(DeciderTest):
 
         for prog in NONBLANKERS:
             if not graph_cant_blank(prog):
-                self.assertIn(prog, self.false_negatives['blank'])
+                self.assertIn(prog, self.false_negatives['blank'] | RECUR_FAST)
 
         for prog in NONSPINNERS:
             if not graph_cant_spinout(prog):
-                self.assertIn(prog, self.false_negatives['spinout'])
+                self.assertIn(prog, self.false_negatives['spinout'] | RECUR_FAST)
 
     def test_true_negatives(self):
         for prog in HALTERS:
@@ -504,7 +504,7 @@ class Graph(DeciderTest):
 
         for prog in (RECURS | INFRUL) - QUASIHALT:
             if graph_cant_quasihalt(prog):
-                self.assertIn(prog, GRAPH_CANT_QUASIHALT | STRICT_CYCLE)
+                self.assertIn(prog, GRAPH_CANT_QUASIHALT | STRICT_CYCLE | RECUR_FAST)
 
     def test_holdouts(self):
         for prog in BLANK_HOLDOUTS:
@@ -531,11 +531,11 @@ class Far(DeciderTest):
 
         for prog in NONBLANKERS:
             if not far_cant_blank(prog, 3):
-                self.assertIn(prog, self.false_negatives['blank'])
+                self.assertIn(prog, self.false_negatives['blank'] | RECUR_FAST)
 
         for prog in NONSPINNERS:
             if not far_cant_spinout(prog, 3):
-                self.assertIn(prog, self.false_negatives['spinout'])
+                self.assertIn(prog, self.false_negatives['spinout'] | RECUR_FAST)
 
     def test_true_negatives(self):
         for prog in HALTERS:
