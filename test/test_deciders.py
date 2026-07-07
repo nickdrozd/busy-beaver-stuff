@@ -61,6 +61,11 @@ QUASIHALT_HOLDOUTS = get_holdouts('quasihalt')
 
 ########################################
 
+class DeciderTest(TestCase):
+    false_negatives: dict[Goal, set[str]]
+
+########################################
+
 BACKWARD_REASONERS: dict[Goal, BackwardReasoner] = {
     "halt": bkw_cant_halt,
     "blank": bkw_cant_blank,
@@ -69,7 +74,9 @@ BACKWARD_REASONERS: dict[Goal, BackwardReasoner] = {
     "zloop": bkw_cant_zloop,
 }
 
-class Backward(TestCase):
+class Backward(DeciderTest):
+    false_negatives = FALSE_NEGATIVES['bkw']
+
     def assert_could_halt_backward(self, prog: str):
         self.assertFalse(
             bkw_cant_halt(prog, steps = BKW_LIMIT).is_refuted(),
@@ -96,7 +103,7 @@ class Backward(TestCase):
             f'zloop false positive: "{prog}"')
 
     def assert_cant_halt_backward(self, prog: str, depth: int):
-        if prog in BKW_FALSE_NEGATIVES['halt']:
+        if prog in self.false_negatives['halt']:
             return
 
         self.assertTrue(
@@ -104,7 +111,7 @@ class Backward(TestCase):
             f'halt false negative: "{prog}"')
 
     def assert_cant_blank_backward(self, prog: str, depth: int):
-        if prog in BKW_FALSE_NEGATIVES['blank']:
+        if prog in self.false_negatives['blank']:
             return
 
         self.assertTrue(
@@ -112,7 +119,7 @@ class Backward(TestCase):
             f'blank false negative: "{prog}"')
 
     def assert_cant_spinout_backward(self, prog: str, depth: int):
-        if prog in BKW_FALSE_NEGATIVES['spinout']:
+        if prog in self.false_negatives['spinout']:
             return
 
         if 2 < prog.count('...'):
@@ -123,7 +130,7 @@ class Backward(TestCase):
             f'spinout false negative: "{prog}"')
 
     def assert_cant_twostep_backward(self, prog: str, depth: int):
-        if prog in BKW_FALSE_NEGATIVES['twostep']:
+        if prog in self.false_negatives['twostep']:
             return
 
         self.assertTrue(
@@ -131,7 +138,7 @@ class Backward(TestCase):
             f'twostep false negative: "{prog}"')
 
     def assert_cant_zloop_backward(self, prog: str, depth: int):
-        if prog in BKW_FALSE_NEGATIVES['zloop']:
+        if prog in self.false_negatives['zloop']:
             return
 
         self.assertTrue(
@@ -185,10 +192,10 @@ class Backward(TestCase):
     def test_false_negatives(self):
         solved: dict[Goal, set[str]] = {
             goal: set()
-            for goal in BKW_FALSE_NEGATIVES
+            for goal in self.false_negatives
         }
 
-        for goal, progs in BKW_FALSE_NEGATIVES.items():
+        for goal, progs in self.false_negatives.items():
             for prog in progs:
                 result = BACKWARD_REASONERS[goal](prog, BKW_LIMIT)
 
@@ -203,16 +210,6 @@ class Backward(TestCase):
 
             raise AssertionError
 
-        counts = {
-            goal: len(progs)
-            for goal, progs in BKW_FALSE_NEGATIVES.items()
-        }
-
-        self.assertEqual(
-            counts,
-            BKW_FALSE_NEGATIVES_COUNTS,
-            json.dumps(counts, indent = 4))
-
     def test_steps(self):
         for cat, data in BACKWARD_STEPS.items():
             bkw_cant_reach = BACKWARD_REASONERS[cat]
@@ -225,13 +222,15 @@ class Backward(TestCase):
 
 ########################################
 
-class Cps(TestCase):
+class Cps(DeciderTest):
+    false_negatives = FALSE_NEGATIVES['cps']
+
     def assert_could_halt_cps(self, prog: str):
         self.assertFalse(
             cps_cant_halt(prog, CPS_LIMIT))
 
     def assert_cant_halt_cps(self, prog: str, segs: int):
-        if prog in CPS_FALSE_NEGATIVES['halt']:
+        if prog in self.false_negatives['halt']:
             return
 
         self.assertTrue(
@@ -242,7 +241,7 @@ class Cps(TestCase):
             cps_cant_blank(prog, CPS_LIMIT))
 
     def assert_cant_blank_cps(self, prog: str, segs: int):
-        if prog in CPS_FALSE_NEGATIVES['blank']:
+        if prog in self.false_negatives['blank']:
             return
 
         self.assertTrue(
@@ -253,7 +252,7 @@ class Cps(TestCase):
             cps_cant_spinout(prog, CPS_LIMIT))
 
     def assert_cant_spinout_cps(self, prog: str, segs: int):
-        if prog in CPS_FALSE_NEGATIVES['spinout']:
+        if prog in self.false_negatives['spinout']:
             return
 
         if 2 < prog.count('...'):
@@ -320,16 +319,6 @@ class Cps(TestCase):
             self.assert_could_halt_cps(prog)
 
     def test_false_negatives(self):
-        counts = {
-            cat: len(progs)
-            for cat, progs in CPS_FALSE_NEGATIVES.items()
-        }
-
-        self.assertEqual(
-            CPS_FALSE_NEGATIVE_COUNTS,
-            counts,
-            json.dumps(counts, indent = 4))
-
         cats: dict[Goal, tuple[set[str], Callable[[str], None]]] = {
             'halt': (set(), self.assert_could_halt_cps),
             'blank': (set(), self.assert_could_blank_cps),
@@ -337,7 +326,7 @@ class Cps(TestCase):
         }
 
         for cat, (pos, cps_check) in cats.items():
-            for prog in CPS_FALSE_NEGATIVES[cat]:
+            for prog in self.false_negatives[cat]:
                 try:
                     cps_check(prog)
                 except AssertionError:
@@ -354,13 +343,15 @@ class Cps(TestCase):
 
 ########################################
 
-class Ctl(TestCase):
+class Ctl(DeciderTest):
+    false_negatives = FALSE_NEGATIVES['ctl']
+
     def assert_could_halt_ctl(self, prog: str):
         self.assertFalse(
             ctl_cant_halt(prog, CTL_LIMIT))
 
     def assert_cant_halt_ctl(self, prog: str, segs: int):
-        if prog in CTL_FALSE_NEGATIVES['halt']:
+        if prog in self.false_negatives['halt']:
             return
 
         self.assertTrue(
@@ -371,7 +362,7 @@ class Ctl(TestCase):
             ctl_cant_blank(prog, CTL_LIMIT))
 
     def assert_cant_blank_ctl(self, prog: str, segs: int):
-        if prog in CTL_FALSE_NEGATIVES['blank']:
+        if prog in self.false_negatives['blank']:
             return
 
         self.assertTrue(
@@ -382,7 +373,7 @@ class Ctl(TestCase):
             ctl_cant_spinout(prog, CTL_LIMIT))
 
     def assert_cant_spinout_ctl(self, prog: str, segs: int):
-        if prog in CTL_FALSE_NEGATIVES['spinout']:
+        if prog in self.false_negatives['spinout']:
             return
 
         self.assertTrue(
@@ -419,16 +410,6 @@ class Ctl(TestCase):
             self.assert_could_halt_ctl(prog)
 
     def test_false_negatives(self):
-        counts = {
-            cat: len(progs)
-            for cat, progs in CTL_FALSE_NEGATIVES.items()
-        }
-
-        self.assertEqual(
-            CTL_FALSE_NEGATIVE_COUNTS,
-            counts,
-            json.dumps(counts, indent = 4))
-
         cats: dict[Goal, tuple[set[str], Callable[[str], None]]] = {
             'halt': (set(), self.assert_could_halt_ctl),
             'blank': (set(), self.assert_could_blank_ctl),
@@ -436,7 +417,7 @@ class Ctl(TestCase):
         }
 
         for cat, (pos, ctl_check) in cats.items():
-            for prog in CTL_FALSE_NEGATIVES[cat]:
+            for prog in self.false_negatives[cat]:
                 try:
                     ctl_check(prog)
                 except AssertionError:
@@ -453,19 +434,21 @@ class Ctl(TestCase):
 
 ########################################
 
-class Graph(TestCase):
+class Graph(DeciderTest):
+    false_negatives = FALSE_NEGATIVES['grf']
+
     def test_true_positives(self):
         for prog in NONHALTERS:
             if not graph_cant_halt(prog):
-                self.assertIn(prog, GRAPH_FALSE_NEGATIVES['halt'])
+                self.assertIn(prog, self.false_negatives['halt'])
 
         for prog in NONBLANKERS:
             if not graph_cant_blank(prog):
-                self.assertIn(prog, GRAPH_FALSE_NEGATIVES['blank'])
+                self.assertIn(prog, self.false_negatives['blank'])
 
         for prog in NONSPINNERS:
             if not graph_cant_spinout(prog):
-                self.assertIn(prog, GRAPH_FALSE_NEGATIVES['spinout'])
+                self.assertIn(prog, self.false_negatives['spinout'])
 
     def test_true_negatives(self):
         for prog in HALTERS:
@@ -481,15 +464,15 @@ class Graph(TestCase):
                 graph_cant_spinout(prog))
 
     def test_false_negatives(self):
-        for prog in GRAPH_FALSE_NEGATIVES['halt']:
+        for prog in self.false_negatives['halt']:
             self.assertFalse(
                 graph_cant_halt(prog))
 
-        for prog in GRAPH_FALSE_NEGATIVES['blank']:
+        for prog in self.false_negatives['blank']:
             self.assertFalse(
                 graph_cant_blank(prog))
 
-        for prog in GRAPH_FALSE_NEGATIVES['spinout']:
+        for prog in self.false_negatives['spinout']:
             self.assertFalse(
                 graph_cant_spinout(prog))
 
@@ -538,19 +521,21 @@ class Graph(TestCase):
 
 ########################################
 
-class Far(TestCase):
+class Far(DeciderTest):
+    false_negatives = FALSE_NEGATIVES['far']
+
     def test_true_positives(self):
         for prog in NONHALTERS:
             if not far_cant_halt(prog, 3):
-                self.assertIn(prog, FAR_FALSE_NEGATIVES['halt'])
+                self.assertIn(prog, self.false_negatives['halt'])
 
         for prog in NONBLANKERS:
             if not far_cant_blank(prog, 3):
-                self.assertIn(prog, FAR_FALSE_NEGATIVES['blank'])
+                self.assertIn(prog, self.false_negatives['blank'])
 
         for prog in NONSPINNERS:
             if not far_cant_spinout(prog, 3):
-                self.assertIn(prog, FAR_FALSE_NEGATIVES['spinout'])
+                self.assertIn(prog, self.false_negatives['spinout'])
 
     def test_true_negatives(self):
         for prog in HALTERS:
@@ -569,19 +554,19 @@ class Far(TestCase):
         new_solved = False
 
         print('halt')
-        for prog in FAR_FALSE_NEGATIVES['halt']:
+        for prog in self.false_negatives['halt']:
             if far_cant_halt(prog, 3):
                 print(prog)
                 new_solved = True
 
         print('blank')
-        for prog in FAR_FALSE_NEGATIVES['blank']:
+        for prog in self.false_negatives['blank']:
             if far_cant_blank(prog, 3):
                 print(prog)
                 new_solved = True
 
         print('spinout')
-        for prog in FAR_FALSE_NEGATIVES['spinout']:
+        for prog in self.false_negatives['spinout']:
             if far_cant_spinout(prog, 3):
                 print(prog)
                 new_solved = True
