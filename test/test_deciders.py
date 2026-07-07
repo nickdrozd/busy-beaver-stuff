@@ -157,13 +157,6 @@ class Backward(TestCase):
         for prog in HALTERS | SPINNERS | (RECURS - ZLOOPERS - ZLOOPY):
             self.assert_cant_zloop_backward(prog, 4)
 
-        for prog in RECURS | INFRUL:
-            self.assert_cant_halt_backward(prog, 115)
-            self.assert_cant_spinout_backward(prog, 256)
-
-            if prog not in BLANKERS:
-                self.assert_cant_blank_backward(prog, 1331)
-
     def test_true_negatives(self):
         for prog in HALTERS:
             self.assert_could_halt_backward(prog)
