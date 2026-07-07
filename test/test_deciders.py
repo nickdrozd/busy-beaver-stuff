@@ -1,6 +1,5 @@
 # ruff: noqa: F405
 import json
-from collections import defaultdict
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
@@ -97,7 +96,7 @@ class Backward(TestCase):
             f'zloop false positive: "{prog}"')
 
     def assert_cant_halt_backward(self, prog: str, depth: int):
-        if prog in BACKWARD_CANT_HALT_FALSE_NEGATIVES:
+        if prog in BKW_FALSE_NEGATIVES['halt']:
             return
 
         self.assertTrue(
@@ -105,7 +104,7 @@ class Backward(TestCase):
             f'halt false negative: "{prog}"')
 
     def assert_cant_blank_backward(self, prog: str, depth: int):
-        if prog in BACKWARD_CANT_BLANK_FALSE_NEGATIVES:
+        if prog in BKW_FALSE_NEGATIVES['blank']:
             return
 
         self.assertTrue(
@@ -113,7 +112,7 @@ class Backward(TestCase):
             f'blank false negative: "{prog}"')
 
     def assert_cant_spinout_backward(self, prog: str, depth: int):
-        if prog in BACKWARD_CANT_SPINOUT_FALSE_NEGATIVES:
+        if prog in BKW_FALSE_NEGATIVES['spinout']:
             return
 
         if 2 < prog.count('...'):
@@ -124,7 +123,7 @@ class Backward(TestCase):
             f'spinout false negative: "{prog}"')
 
     def assert_cant_twostep_backward(self, prog: str, depth: int):
-        if prog in BACKWARD_CANT_TWOSTEP_FALSE_NEGATIVES:
+        if prog in BKW_FALSE_NEGATIVES['twostep']:
             return
 
         self.assertTrue(
@@ -132,7 +131,7 @@ class Backward(TestCase):
             f'twostep false negative: "{prog}"')
 
     def assert_cant_zloop_backward(self, prog: str, depth: int):
-        if prog in BACKWARD_CANT_ZLOOP_FALSE_NEGATIVES:
+        if prog in BKW_FALSE_NEGATIVES['zloop']:
             return
 
         self.assertTrue(
@@ -184,60 +183,35 @@ class Backward(TestCase):
             self.assert_could_spinout_backward(prog)
 
     def test_false_negatives(self):
-        results: dict[Goal, BackwardCats] = {
-            'halt': defaultdict(set),
-            'blank': defaultdict(set),
-            'zloop': defaultdict(set),
-            'spinout': defaultdict(set),
-            'twostep': defaultdict(set),
+        solved: dict[Goal, set[str]] = {
+            goal: set()
+            for goal in BKW_FALSE_NEGATIVES
         }
 
-        for term, cats in BACKWARD_FALSE_NEGATIVES.items():
-            term_results = results[term]
-            reasoner = BACKWARD_REASONERS[term]
+        for goal, progs in BKW_FALSE_NEGATIVES.items():
+            for prog in progs:
+                result = BACKWARD_REASONERS[goal](prog, BKW_LIMIT)
 
-            for progs in cats.values():
+                if result.is_refuted():
+                    solved[goal].add(prog)
+
+        if any(progs for progs in solved.values()):
+            for goal, progs in solved.items():
+                print(goal)
                 for prog in progs:
-                    result = str(reasoner(prog, BKW_LIMIT))
-
-                    term_results[result].add(prog)  # type: ignore[index]  # ty: ignore[invalid-argument-type]
-
-        def assert_counts(data: dict[Goal, BackwardCats]):
-            counts = {
-                term: {
-                    cat: len(progs)
-                    for cat, progs in cats.items()
-                }
-                for term, cats in data.items()
-            }
-
-            if counts != BACKWARD_FALSE_NEGATIVES_COUNTS:
-                print(json.dumps(counts, indent = 4))
-                for cat, res in data.items():
-                    if progs := res['refuted']:  # type: ignore[index]  # ty: ignore[invalid-argument-type]
-                        print(cat)
-                        for prog in progs:
-                            print(prog)
-                raise AssertionError
-
-        assert_counts(results)
-
-        if results != BACKWARD_FALSE_NEGATIVES:
-            dump = {
-                term: {
-                    cat: sorted(sorted(progs), key = len)
-                    for cat, progs in cats.items()
-                }
-                for term, cats in results.items()
-            }
-
-            print(json.dumps(dump, indent = 4))
+                    print(prog)
 
             raise AssertionError
 
-        assert_counts(BACKWARD_FALSE_NEGATIVES)
+        counts = {
+            goal: len(progs)
+            for goal, progs in BKW_FALSE_NEGATIVES.items()
+        }
 
-        _ = self
+        self.assertEqual(
+            counts,
+            BKW_FALSE_NEGATIVES_COUNTS,
+            json.dumps(counts, indent = 4))
 
     def test_steps(self):
         for cat, data in BACKWARD_STEPS.items():
