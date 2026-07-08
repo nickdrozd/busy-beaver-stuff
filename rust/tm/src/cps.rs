@@ -33,13 +33,15 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// Strategy:
     /// 1) Run CPS closure for non-halting (Goal::Halt) while
     ///    recording the CPS transition graph.
-    /// 2) On the resulting finite CPS over-approx graph, certify
-    ///    *non-quasihalt* by a sound sufficient condition: - for
-    ///    every control-state q, the induced subgraph on reachable
-    ///    nodes with state != q is acyclic (has no directed cycle).
-    ///    If a directed cycle exists avoiding q, then there exists an
-    ///    infinite path that can avoid q after some finite prefix, so
-    ///    we cannot certify.
+    /// 2) For every control-state q, decompose the reachable CPS
+    ///    graph induced by state != q into SCCs.  Any eventual path
+    ///    avoiding q must become trapped in a cyclic SCC.
+    /// 3) Repeatedly discard recurrent edges whose nonzero read color
+    ///    is not written by any remaining recurrent edge.
+    /// 4) Reject strictly one-directional SCCs unless their canonical
+    ///    `read=0` edges contain a cycle in that direction.  On a blank
+    ///    tape, a monotone infinite run must eventually read only fresh
+    ///    canonical-zero cells.
     pub fn cps_cant_quasihalt(&self, rad: Radius) -> bool {
         assert!(rad > 1);
 
@@ -83,8 +85,11 @@ fn cps_cant_quasihalt(prog: &impl GetInstr, rad: Radius) -> bool {
 
     g.dedup_edges();
 
-    if let Some(ok) = g.cant_quasihalt_functional_fastpath() {
-        return ok;
+    // A positive functional result is final.  A negative result still
+    // goes through SCC refinement, which may reject a spurious monotone
+    // CPS cycle that cannot persist on fresh canonical-zero cells.
+    if g.cant_quasihalt_functional_fastpath() == Some(true) {
+        return true;
     }
 
     g.cant_quasihalt_no_avoidable_state_cycle()
@@ -268,7 +273,7 @@ fn cps_cant_reach_obs(
                 tape: next_tape,
             };
 
-            obs.edge(&config, &next_config);
+            obs.edge(&config, &next_config, init_scan, print, shift);
 
             if configs.intern_config(&next_config) {
                 configs.todo.push_back(next_config);
@@ -295,17 +300,33 @@ fn cps_cant_reach_obs(
 
 trait CpsObs {
     fn see(&mut self, _c: &Config) {}
-    fn edge(&mut self, _from: &Config, _to: &Config) {}
+    fn edge(
+        &mut self,
+        _from: &Config,
+        _to: &Config,
+        _read: Color,
+        _write: Color,
+        _shift: Shift,
+    ) {
+    }
 }
 
 struct NoObs;
 impl CpsObs for NoObs {}
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+struct CpsEdge {
+    to: usize,
+    read: Color,
+    write: Color,
+    shift: Shift,
+}
+
 #[derive(Default)]
 struct GraphObs {
     id: Dict<Config, usize>,
     nodes: Vec<Config>,
-    succ: Vec<Vec<usize>>,
+    succ: Vec<Vec<CpsEdge>>,
     states: Set<u8>,
 }
 
@@ -314,10 +335,22 @@ impl CpsObs for GraphObs {
         self.intern(c);
     }
 
-    fn edge(&mut self, from: &Config, to: &Config) {
+    fn edge(
+        &mut self,
+        from: &Config,
+        to: &Config,
+        read: Color,
+        write: Color,
+        shift: Shift,
+    ) {
         let u = self.intern(from);
         let v = self.intern(to);
-        self.succ[u].push(v);
+        self.succ[u].push(CpsEdge {
+            to: v,
+            read,
+            write,
+            shift,
+        });
     }
 }
 
@@ -373,7 +406,7 @@ impl GraphObs {
 
             seen_step[cur] = Some(order.len());
             order.push(cur);
-            cur = self.succ[cur][0];
+            cur = self.succ[cur][0].to;
         }
 
         Some(false)
@@ -385,59 +418,219 @@ impl GraphObs {
         }
 
         let reachable = reachable_nodes(&self.succ, 0);
+        let n = self.nodes.len();
+        let mut active = vec![false; n];
+        let mut in_comp = vec![false; n];
+        let mut zero_indeg = vec![0; n];
 
-        // For each control-state q, check whether there exists any
-        // reachable directed cycle comprised only of nodes whose
-        // control-state != q.
+        // Any infinite path that eventually avoids q must eventually stay
+        // inside a cyclic SCC of the graph induced by state != q.
         for q in &self.states {
-            if self.induced_has_cycle_avoiding_q(&reachable, *q) {
-                return false;
+            for u in 0..n {
+                active[u] = reachable[u] && self.nodes[u].state != *q;
+            }
+
+            for comp in sccs_masked(&self.succ, &active) {
+                if !scc_has_cycle(&comp, &self.succ) {
+                    continue;
+                }
+
+                for &u in &comp {
+                    in_comp[u] = true;
+                }
+
+                let possible_trap = self.scc_can_be_infinite_trap(
+                    &comp,
+                    &in_comp,
+                    &mut zero_indeg,
+                );
+
+                for &u in &comp {
+                    in_comp[u] = false;
+                }
+
+                if possible_trap {
+                    return false;
+                }
             }
         }
 
         true
     }
 
-    fn induced_has_cycle_avoiding_q(
+    /// Keep only a greatest fixed point of recurrently supportable edges.
+    /// A nonzero color read infinitely often must also be written
+    /// infinitely often: only finitely many nonzero cells exist when the
+    /// eventual SCC is entered.  Edges outside cyclic SCCs are discarded
+    /// before collecting writes so transient writes cannot supply support.
+    fn scc_can_be_infinite_trap(
         &self,
-        reachable: &[bool],
-        q: u8,
+        comp: &[usize],
+        in_comp: &[bool],
+        zero_indeg: &mut [usize],
     ) -> bool {
         let n = self.nodes.len();
+        let mut live = vec![vec![]; n];
 
-        let mut include = vec![false; n];
-        let mut count = 0;
+        for &u in comp {
+            live[u] = self.succ[u]
+                .iter()
+                .map(|edge| in_comp[edge.to])
+                .collect();
+        }
 
-        for u in 0..n {
-            if reachable[u] && self.nodes[u].state != q {
-                include[u] = true;
-                count += 1;
+        loop {
+            let subcomps =
+                sccs_masked_filtered(&self.succ, in_comp, &live);
+            let mut cyclic_id = vec![usize::MAX; n];
+            let mut cyclic_comps = vec![];
+
+            for subcomp in subcomps {
+                if !scc_has_cycle_filtered(&subcomp, &self.succ, &live)
+                {
+                    continue;
+                }
+
+                let id = cyclic_comps.len();
+                for &u in &subcomp {
+                    cyclic_id[u] = id;
+                }
+                cyclic_comps.push(subcomp);
             }
-        }
 
-        if count == 0 {
-            return false;
-        }
+            if cyclic_comps.is_empty() {
+                return false;
+            }
 
-        // Kahn-style cycle detection on the induced subgraph.
-        let mut indeg = vec![0; n];
+            // Only edges internal to a cyclic SCC can recur infinitely.
+            for &u in comp {
+                for (edge_idx, edge) in self.succ[u].iter().enumerate()
+                {
+                    if live[u][edge_idx]
+                        && (cyclic_id[u] == usize::MAX
+                            || cyclic_id[u] != cyclic_id[edge.to])
+                    {
+                        live[u][edge_idx] = false;
+                    }
+                }
+            }
 
-        for u in 0..n {
-            if !include[u] {
+            let mut written: Vec<Set<Color>> = (0..cyclic_comps.len())
+                .map(|_| Set::default())
+                .collect();
+            for &u in comp {
+                for (edge_idx, edge) in self.succ[u].iter().enumerate()
+                {
+                    if live[u][edge_idx] && edge.write != 0 {
+                        written[cyclic_id[u]].insert(edge.write);
+                    }
+                }
+            }
+
+            let mut pruned = false;
+            for &u in comp {
+                for (edge_idx, edge) in self.succ[u].iter().enumerate()
+                {
+                    if live[u][edge_idx]
+                        && edge.read != 0
+                        && !written[cyclic_id[u]].contains(&edge.read)
+                    {
+                        live[u][edge_idx] = false;
+                        pruned = true;
+                    }
+                }
+            }
+
+            if pruned {
                 continue;
             }
 
-            for &v in &self.succ[u] {
-                if include[v] {
-                    indeg[v] += 1;
+            return cyclic_comps.iter().enumerate().any(
+                |(id, recurrent_comp)| {
+                    self.recurrent_scc_can_be_infinite_trap(
+                        recurrent_comp,
+                        &cyclic_id,
+                        id,
+                        &live,
+                        zero_indeg,
+                    )
+                },
+            );
+        }
+    }
+
+    /// A bidirectional recurrent SCC remains a possible trap.  A strictly
+    /// one-directional SCC can trap a run from a blank tape only if its
+    /// canonical-zero edges contain a directed cycle in that direction.
+    fn recurrent_scc_can_be_infinite_trap(
+        &self,
+        comp: &[usize],
+        cyclic_id: &[usize],
+        id: usize,
+        live: &[Vec<bool>],
+        zero_indeg: &mut [usize],
+    ) -> bool {
+        let mut has_l = false;
+        let mut has_r = false;
+
+        for &u in comp {
+            for (edge_idx, edge) in self.succ[u].iter().enumerate() {
+                if !live[u][edge_idx] || cyclic_id[edge.to] != id {
+                    continue;
+                }
+
+                if edge.shift {
+                    has_r = true;
+                } else {
+                    has_l = true;
                 }
             }
         }
 
-        let mut stack = vec![];
+        if has_l && has_r {
+            return true;
+        }
 
-        for u in 0..n {
-            if include[u] && indeg[u] == 0 {
+        // A cyclic SCC necessarily has an internal edge, so one of these
+        // directions must be present.  Keep the conservative answer if an
+        // inconsistent graph ever violates that invariant.
+        if !has_l && !has_r {
+            return true;
+        }
+
+        self.has_zero_dir_cycle_in_comp(
+            comp, cyclic_id, id, live, zero_indeg, has_r,
+        )
+    }
+
+    fn has_zero_dir_cycle_in_comp(
+        &self,
+        comp: &[usize],
+        cyclic_id: &[usize],
+        id: usize,
+        live: &[Vec<bool>],
+        indeg: &mut [usize],
+        dir_is_r: bool,
+    ) -> bool {
+        for &u in comp {
+            indeg[u] = 0;
+        }
+
+        for &u in comp {
+            for (edge_idx, edge) in self.succ[u].iter().enumerate() {
+                if live[u][edge_idx]
+                    && cyclic_id[edge.to] == id
+                    && edge.read == 0
+                    && edge.shift == dir_is_r
+                {
+                    indeg[edge.to] += 1;
+                }
+            }
+        }
+
+        let mut stack = Vec::with_capacity(comp.len());
+        for &u in comp {
+            if indeg[u] == 0 {
                 stack.push(u);
             }
         }
@@ -447,45 +640,176 @@ impl GraphObs {
         while let Some(u) = stack.pop() {
             removed += 1;
 
-            for &v in &self.succ[u] {
-                if !include[v] {
+            for (edge_idx, edge) in self.succ[u].iter().enumerate() {
+                if !live[u][edge_idx]
+                    || cyclic_id[edge.to] != id
+                    || edge.read != 0
+                    || edge.shift != dir_is_r
+                {
                     continue;
                 }
 
-                let d = indeg[v];
-
-                if d > 0 {
-                    indeg[v] = d - 1;
-                    if indeg[v] == 0 {
-                        stack.push(v);
-                    }
+                indeg[edge.to] -= 1;
+                if indeg[edge.to] == 0 {
+                    stack.push(edge.to);
                 }
             }
         }
 
-        removed != count
+        removed != comp.len()
     }
 }
 
-fn reachable_nodes(succ: &[Vec<usize>], start: usize) -> Vec<bool> {
+fn reachable_nodes(succ: &[Vec<CpsEdge>], start: usize) -> Vec<bool> {
     let n = succ.len();
 
     let mut vis = vec![false; n];
     let mut stack = vec![];
 
     vis[start] = true;
-
     stack.push(start);
 
     while let Some(u) = stack.pop() {
-        for &v in &succ[u] {
-            if !vis[v] {
-                vis[v] = true;
-                stack.push(v);
+        for edge in &succ[u] {
+            if !vis[edge.to] {
+                vis[edge.to] = true;
+                stack.push(edge.to);
             }
         }
     }
+
     vis
+}
+
+/// Iterative Kosaraju decomposition restricted to active nodes.
+fn sccs_masked(
+    succ: &[Vec<CpsEdge>],
+    active: &[bool],
+) -> Vec<Vec<usize>> {
+    sccs_masked_impl(succ, active, None)
+}
+
+/// Iterative Kosaraju decomposition restricted to active nodes and live
+/// edges.  `live[u]` has the same indexing as `succ[u]` for active nodes.
+fn sccs_masked_filtered(
+    succ: &[Vec<CpsEdge>],
+    active: &[bool],
+    live: &[Vec<bool>],
+) -> Vec<Vec<usize>> {
+    sccs_masked_impl(succ, active, Some(live))
+}
+
+fn sccs_masked_impl(
+    succ: &[Vec<CpsEdge>],
+    active: &[bool],
+    live: Option<&[Vec<bool>]>,
+) -> Vec<Vec<usize>> {
+    let n = succ.len();
+    let mut rev = vec![vec![]; n];
+
+    for u in 0..n {
+        if !active[u] {
+            continue;
+        }
+
+        for (edge_idx, edge) in succ[u].iter().enumerate() {
+            if edge_is_live(live, u, edge_idx) && active[edge.to] {
+                rev[edge.to].push(u);
+            }
+        }
+    }
+
+    let mut seen = vec![false; n];
+    let mut order = Vec::with_capacity(n);
+
+    for start in 0..n {
+        if !active[start] || seen[start] {
+            continue;
+        }
+
+        seen[start] = true;
+        let mut stack = vec![(start, 0)];
+
+        while let Some((u, edge_idx)) = stack.pop() {
+            if edge_idx == succ[u].len() {
+                order.push(u);
+                continue;
+            }
+
+            stack.push((u, edge_idx + 1));
+            if !edge_is_live(live, u, edge_idx) {
+                continue;
+            }
+
+            let v = succ[u][edge_idx].to;
+
+            if active[v] && !seen[v] {
+                seen[v] = true;
+                stack.push((v, 0));
+            }
+        }
+    }
+
+    let mut assigned = vec![false; n];
+    let mut comps = vec![];
+
+    while let Some(start) = order.pop() {
+        if assigned[start] {
+            continue;
+        }
+
+        assigned[start] = true;
+        let mut stack = vec![start];
+        let mut comp = vec![];
+
+        while let Some(u) = stack.pop() {
+            comp.push(u);
+
+            for &v in &rev[u] {
+                if !assigned[v] {
+                    assigned[v] = true;
+                    stack.push(v);
+                }
+            }
+        }
+
+        comps.push(comp);
+    }
+
+    comps
+}
+
+fn edge_is_live(
+    live: Option<&[Vec<bool>]>,
+    u: usize,
+    edge_idx: usize,
+) -> bool {
+    live.is_none_or(|live| live[u][edge_idx])
+}
+
+fn scc_has_cycle(comp: &[usize], succ: &[Vec<CpsEdge>]) -> bool {
+    if comp.len() > 1 {
+        return true;
+    }
+
+    let u = comp[0];
+    succ[u].iter().any(|edge| edge.to == u)
+}
+
+fn scc_has_cycle_filtered(
+    comp: &[usize],
+    succ: &[Vec<CpsEdge>],
+    live: &[Vec<bool>],
+) -> bool {
+    if comp.len() > 1 {
+        return true;
+    }
+
+    let u = comp[0];
+    succ[u]
+        .iter()
+        .enumerate()
+        .any(|(edge_idx, edge)| live[u][edge_idx] && edge.to == u)
 }
 
 /**************************************/
