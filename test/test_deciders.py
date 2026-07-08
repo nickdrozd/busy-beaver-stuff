@@ -20,10 +20,6 @@ from tm.rust_stuff import (
     far_cant_blank,
     far_cant_halt,
     far_cant_spinout,
-    graph_cant_blank,
-    graph_cant_halt,
-    graph_cant_quasihalt,
-    graph_cant_spinout,
 )
 from tools.graph import Graph as GraphPy
 
@@ -435,47 +431,6 @@ class Ctl(DeciderTest):
 ########################################
 
 class Graph(DeciderTest):
-    false_negatives = FALSE_NEGATIVES['grf']
-
-    def test_true_positives(self):
-        for prog in NONHALTERS:
-            if not graph_cant_halt(prog):
-                self.assertIn(prog, self.false_negatives['halt'])
-
-        for prog in NONBLANKERS:
-            if not graph_cant_blank(prog):
-                self.assertIn(prog, self.false_negatives['blank'] | RECUR_FAST)
-
-        for prog in NONSPINNERS:
-            if not graph_cant_spinout(prog):
-                self.assertIn(prog, self.false_negatives['spinout'] | RECUR_FAST)
-
-    def test_true_negatives(self):
-        for prog in HALTERS:
-            self.assertFalse(
-                graph_cant_halt(prog))
-
-        for prog in BLANKERS:
-            self.assertFalse(
-                graph_cant_blank(prog))
-
-        for prog in SPINNERS:
-            self.assertFalse(
-                graph_cant_spinout(prog))
-
-    def test_false_negatives(self):
-        for prog in self.false_negatives['halt']:
-            self.assertFalse(
-                graph_cant_halt(prog))
-
-        for prog in self.false_negatives['blank']:
-            self.assertFalse(
-                graph_cant_blank(prog))
-
-        for prog in self.false_negatives['spinout']:
-            self.assertFalse(
-                graph_cant_spinout(prog))
-
     def test_strict_cycle(self):
         for prog in STRICT_CYCLE:
             self.assertTrue(
@@ -488,36 +443,6 @@ class Graph(DeciderTest):
         for prog in (RECURS | INFRUL) - QUASIHALT:
             if GraphPy(prog).is_strict_cycle:
                 self.assertIn(prog, STRICT_CYCLE)
-
-    def test_quasihalt(self):
-        for prog in QUASIHALT_HOLDOUTS:
-            self.assertFalse(
-                graph_cant_quasihalt(prog))
-
-        for prog in QUASIHALT:
-            self.assertFalse(
-                graph_cant_quasihalt(prog))
-
-        for prog in GRAPH_CANT_QUASIHALT | STRICT_CYCLE:
-            self.assertTrue(
-                graph_cant_quasihalt(prog))
-
-        for prog in (RECURS | INFRUL) - QUASIHALT:
-            if graph_cant_quasihalt(prog):
-                self.assertIn(prog, GRAPH_CANT_QUASIHALT | STRICT_CYCLE | RECUR_FAST)
-
-    def test_holdouts(self):
-        for prog in BLANK_HOLDOUTS:
-            self.assertFalse(
-                graph_cant_blank(prog))
-
-        for prog in SPINOUT_HOLDOUTS:
-            self.assertFalse(
-                graph_cant_spinout(prog))
-
-        for prog in HALT_HOLDOUTS:
-            self.assertFalse(
-                graph_cant_halt(prog))
 
 ########################################
 

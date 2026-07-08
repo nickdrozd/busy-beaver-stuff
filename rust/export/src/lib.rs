@@ -13,33 +13,6 @@ type Prog = ProgGen<10, 10>;
 /***************************************/
 
 #[pyfunction]
-pub fn graph_cant_halt(prog: &str) -> bool {
-    Prog::from(prog).graph_cant_halt()
-}
-
-#[pyfunction]
-pub fn graph_cant_blank(prog: &str) -> bool {
-    Prog::from(prog).graph_cant_blank()
-}
-
-#[pyfunction]
-pub fn graph_cant_spinout(prog: &str) -> bool {
-    Prog::from(prog).graph_cant_spinout()
-}
-
-#[pyfunction]
-pub fn graph_cant_twostep(prog: &str) -> bool {
-    Prog::from(prog).graph_cant_twostep()
-}
-
-#[pyfunction]
-pub fn graph_cant_quasihalt(prog: &str) -> bool {
-    Prog::from(prog).graph_cant_quasihalt()
-}
-
-/***************************************/
-
-#[pyfunction]
 pub fn opt_block(prog: &str, steps: Steps) -> usize {
     Prog::from(prog).opt_block(steps)
 }
@@ -497,10 +470,8 @@ mod rust_stuff {
         bkw_cant_twostep, bkw_cant_zloop, cps_cant_blank,
         cps_cant_halt, cps_cant_quasihalt, cps_cant_spinout,
         ctl_cant_blank, ctl_cant_halt, ctl_cant_spinout,
-        far_cant_blank, far_cant_halt, far_cant_spinout,
-        graph_cant_blank, graph_cant_halt, graph_cant_quasihalt,
-        graph_cant_spinout, graph_cant_twostep, opt_block, read_instr,
-        run_quick_machine, run_transcript, show_comp, show_instr,
-        show_slot, show_state, tcompile, term_or_rec,
+        far_cant_blank, far_cant_halt, far_cant_spinout, opt_block,
+        read_instr, run_quick_machine, run_transcript, show_comp,
+        show_instr, show_slot, show_state, tcompile, term_or_rec,
     };
 }
