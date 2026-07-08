@@ -406,12 +406,14 @@ fn qh_2_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
     prog.cps_cant_quasihalt(3)
 }
 
-fn qh_4_2(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_quasihalt(18)
+fn qh_4_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
+    prog.term_or_rec(10_000, config.to_mut()).is_settled()
+        || prog.cps_cant_quasihalt(18)
 }
 
-fn qh_2_4(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_quasihalt(18)
+fn qh_2_4(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
+    prog.term_or_rec(10_000, config.to_mut()).is_settled()
+        || prog.cps_cant_quasihalt(18)
 }
 
 fn test_quasihalt() {
@@ -437,7 +439,7 @@ fn test_quasihalt() {
 
     assert_holdouts![
         (4, 2) => [
-            3 => (qh_4_2, 99, (5_540, 2_134_923)),
+            3 => (qh_4_2, 99, (5_539, 2_134_923)),
         ],
     ];
 }
