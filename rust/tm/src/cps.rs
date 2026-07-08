@@ -168,14 +168,22 @@ fn cps_cant_reach_obs(
             },
         }
 
-        let continuations = if shift {
-            configs.rspans.get_continuations(pull)
+        let continuation_count = if shift {
+            configs.rspans.get_continuations(pull).len()
         } else {
-            configs.lspans.get_continuations(pull)
-        }
-        .clone();
+            configs.lspans.get_continuations(pull).len()
+        };
 
-        for Continuation { color, tail_nz } in continuations {
+        for i in 0..continuation_count {
+            let Continuation { color, tail_nz } = {
+                let continuations = if shift {
+                    configs.rspans.get_continuations(pull)
+                } else {
+                    configs.lspans.get_continuations(pull)
+                };
+
+                continuations[i]
+            };
             let (left_nz, right_nz) = match goal {
                 // Halt and quasihalt do not use hidden nonzero evidence.
                 // Keeping both counters at zero avoids splitting otherwise
@@ -745,10 +753,21 @@ impl Span {
             return dropped;
         }
 
-        let mut v = pool.colors(self.span).clone();
+        let (v, new_last) = {
+            let colors = pool.colors(self.span);
+            let mut v = Vec::with_capacity(colors.len());
 
-        v.insert(0, color);
-        let new_last = v.pop().unwrap();
+            let new_last =
+                if let Some((&last, prefix)) = colors.split_last() {
+                    v.push(color);
+                    v.extend_from_slice(prefix);
+                    last
+                } else {
+                    color
+                };
+
+            (v, new_last)
+        };
 
         let new_span = Self {
             span: pool.intern(v),
@@ -769,10 +788,21 @@ impl Span {
             return pulled;
         }
 
-        let mut v = pool.colors(self.span).clone();
+        let (v, pulled) = {
+            let colors = pool.colors(self.span);
+            let mut v = Vec::with_capacity(colors.len());
 
-        v.push(self.last);
-        let pulled = v.remove(0);
+            let pulled =
+                if let Some((&first, rest)) = colors.split_first() {
+                    v.extend_from_slice(rest);
+                    v.push(self.last);
+                    first
+                } else {
+                    self.last
+                };
+
+            (v, pulled)
+        };
 
         let new_span = Self {
             span: pool.intern(v),
