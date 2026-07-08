@@ -51,15 +51,17 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let ignored_state = self.quasihalt_ignored_start_state();
 
         (2..rad).any(|seg| {
-            cps_cant_quasihalt(
-                &self.make_transcript_macro(4),
-                seg,
-                ignored_state,
-            ) || cps_cant_quasihalt(
+            (1..8).any(|tr| {
+                cps_cant_quasihalt(
+                    &self.make_transcript_macro(tr),
+                    seg,
+                    ignored_state,
+                )
+            }) || cps_cant_quasihalt(
                 &self.make_lru_macro(),
                 seg,
                 ignored_state,
-            ) || cps_cant_quasihalt(self, seg, ignored_state)
+            )
         })
     }
 

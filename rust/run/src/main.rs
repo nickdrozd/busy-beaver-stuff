@@ -399,19 +399,19 @@ fn qh_2_2(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
 }
 
 fn qh_3_2(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_quasihalt(4)
+    prog.cps_cant_quasihalt(3)
 }
 
 fn qh_2_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_quasihalt(4)
+    prog.cps_cant_quasihalt(3)
 }
 
 fn qh_4_2(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_quasihalt(5)
+    prog.cps_cant_quasihalt(18)
 }
 
 fn qh_2_4(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_quasihalt(5)
+    prog.cps_cant_quasihalt(18)
 }
 
 fn test_quasihalt() {
@@ -422,16 +422,16 @@ fn test_quasihalt() {
             3 => (qh_2_2, 4, (0, 81)),
         ],
         (3, 2) => [
-            3 => (qh_3_2, 13, (3, 11_754)),
+            3 => (qh_3_2, 13, (0, 11_754)),
         ],
         (2, 3) => [
-            3 => (qh_2_3, 20, (2, 8_766)),
+            3 => (qh_2_3, 20, (0, 8_766)),
         ],
         (4, 2) => [
-            3 => (qh_4_2, 99, (5_898, 2_134_923)),
+            3 => (qh_4_2, 99, (5_540, 2_134_923)),
         ],
         (2, 4) => [
-            3 => (qh_2_4, TREE_LIM, (521, 1_698_850)),
+            3 => (qh_2_4, TREE_LIM, (316, 1_698_850)),
         ],
     ];
 }
