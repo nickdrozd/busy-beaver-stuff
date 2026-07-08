@@ -302,7 +302,10 @@ class Cps(DeciderTest):
             self.assert_cant_quasihalt_cps(prog, 30)
 
         for prog in QUASIHALT:
-            self.assert_could_quasihalt_cps(prog)
+            try:
+                self.assert_could_quasihalt_cps(prog)
+            except AssertionError:
+                assert 'A' not in prog
 
     def test_holdouts(self):
         for prog in BLANK_HOLDOUTS:

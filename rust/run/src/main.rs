@@ -422,16 +422,16 @@ fn test_quasihalt() {
             3 => (qh_2_2, 4, (0, 81)),
         ],
         (3, 2) => [
-            3 => (qh_3_2, 13, (22, 11_754)),
+            3 => (qh_3_2, 13, (3, 11_754)),
         ],
         (2, 3) => [
-            3 => (qh_2_3, 20, (3, 8_766)),
+            3 => (qh_2_3, 20, (2, 8_766)),
         ],
         (4, 2) => [
-            3 => (qh_4_2, 99, (8_419, 2_134_923)),
+            3 => (qh_4_2, 99, (5_898, 2_134_923)),
         ],
         (2, 4) => [
-            3 => (qh_2_4, TREE_LIM, (528, 1_698_850)),
+            3 => (qh_2_4, TREE_LIM, (521, 1_698_850)),
         ],
     ];
 }
@@ -614,13 +614,13 @@ fn test_9_instr() {
 
 /**************************************/
 
-const CURR: &[fn()] = &[test_instrs];
+const CURR: &[fn()] = &[test_quasihalt];
 
 const FAST: &[fn()] = &[
     test_deciders,
     test_from_file,
     test_holdouts,
-    test_quasihalt,
+    test_instrs,
     test_solved,
     test_twostep,
 ];

@@ -140,7 +140,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 1LB  0LB 1LA": (2, 6),
     "1RB 0LB  0LB 1LA": (1, 6),
     "1RB 1LB  1LB 0RA": (1, 4),
-    "1RB 1LA  0LB 1LB": (1, 3),
+    "1RB ...  0LB 1LB": (1, 3),
 
     # 3/2
     "1RB 0LB  1LA 0RC  1LC 1LA": (6, 55),  # BBB(3, 2)
@@ -1686,6 +1686,7 @@ KERNEL = {
 }
 
 MODULAR = {
+    "1RB ...  0LB 1LB",
     "1RB 1LA  0LB 1LB",
 
     "1RB 1LB  1LA 1LC  1RC 0LC",  # BLB(3) | 34
@@ -4882,10 +4883,9 @@ assert FALSE_NEGATIVE_COUNTS == (_counts := {
 
 ########################################
 
-CPS_QUASIHALT_FALSE_NEGATIVE_COUNT = 38
+CPS_QUASIHALT_FALSE_NEGATIVE_COUNT = 37
 
 CPS_QUASIHALT_FALSE_NEGATIVES = {
-    "1RB ...  1LC 0RB  0LC 1RB",
     "1RB 0RC  0RC ...  1LC 0LA",
     "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC",
     "1RB 0LB  1RC 0RA  1LD 0RB  1LB 0LC",

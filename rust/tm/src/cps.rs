@@ -26,16 +26,19 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         self.cps_run_macros(rad, Spinout)
     }
 
-    /// Sound-but-incomplete CPS-based certifier for:
-    /// "cannot quasihalt" under your definition:
-    ///   no reachable state is visited only finitely often.
+    /// Sound-but-incomplete CPS-based certifier for non-quasihalting,
+    /// except that a one-time initial visit to state A is ignored when
+    /// the raw control-flow graph proves A cannot be reached again after
+    /// the first step.
     ///
     /// Strategy:
     /// 1) Run CPS closure for non-halting (Goal::Halt) while
     ///    recording the CPS transition graph.
-    /// 2) For every control-state q, decompose the reachable CPS
+    /// 2) For every relevant control-state q, decompose the reachable CPS
     ///    graph induced by state != q into SCCs.  Any eventual path
-    ///    avoiding q must become trapped in a cyclic SCC.
+    ///    avoiding q must become trapped in a cyclic SCC.  If A is
+    ///    statically unreachable after the first step, both A nodes and
+    ///    the q = A check are omitted from this cycle analysis.
     /// 3) Repeatedly discard recurrent edges whose nonzero read color
     ///    is not written by any remaining recurrent edge.
     /// 4) Reject strictly one-directional SCCs unless their canonical
@@ -45,10 +48,18 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn cps_cant_quasihalt(&self, rad: Radius) -> bool {
         assert!(rad > 1);
 
+        let ignored_state = self.quasihalt_ignored_start_state();
+
         (2..rad).any(|seg| {
-            cps_cant_quasihalt(&self.make_transcript_macro(4), seg)
-                || cps_cant_quasihalt(&self.make_lru_macro(), seg)
-                || cps_cant_quasihalt(self, seg)
+            cps_cant_quasihalt(
+                &self.make_transcript_macro(4),
+                seg,
+                ignored_state,
+            ) || cps_cant_quasihalt(
+                &self.make_lru_macro(),
+                seg,
+                ignored_state,
+            ) || cps_cant_quasihalt(self, seg, ignored_state)
         })
     }
 
@@ -66,6 +77,50 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 || cps_cant_reach(self, seg, goal)
         })
     }
+
+    /// State A is an ignorable initial transient exactly when the concrete
+    /// blank-tape first step leaves A and the raw control-flow graph cannot
+    /// reach A from that post-step state.  This is computed on the base
+    /// program so the same decision can be used by every tape macro.
+    fn quasihalt_ignored_start_state(&self) -> Option<u8> {
+        let Ok(Some((_, _, post_start))) = self.get_instr(&(0, 0))
+        else {
+            return None;
+        };
+
+        let mut seen = vec![false; s];
+        let mut todo = vec![post_start];
+
+        while let Some(state) = todo.pop() {
+            let state_idx = usize::from(state);
+
+            // Be conservative for a malformed/out-of-range program.
+            if state_idx >= s {
+                return None;
+            }
+            if seen[state_idx] {
+                continue;
+            }
+            if state == 0 {
+                return None;
+            }
+
+            seen[state_idx] = true;
+
+            #[expect(clippy::cast_possible_truncation)]
+            for color in 0..c as Color {
+                match self.get_instr(&(state, color)) {
+                    Ok(Some((_, _, next_state))) => {
+                        todo.push(next_state);
+                    },
+                    Ok(None) => {},
+                    Err(_) => return None,
+                }
+            }
+        }
+
+        Some(0)
+    }
 }
 
 fn cps_cant_reach(
@@ -76,7 +131,11 @@ fn cps_cant_reach(
     cps_cant_reach_obs(prog, rad, goal, &mut NoObs)
 }
 
-fn cps_cant_quasihalt(prog: &impl GetInstr, rad: Radius) -> bool {
+fn cps_cant_quasihalt(
+    prog: &impl GetInstr,
+    rad: Radius,
+    ignored_state: Option<u8>,
+) -> bool {
     let mut g = GraphObs::default();
 
     if !cps_cant_reach_obs(prog, rad, Halt, &mut g) {
@@ -88,11 +147,12 @@ fn cps_cant_quasihalt(prog: &impl GetInstr, rad: Radius) -> bool {
     // A positive functional result is final.  A negative result still
     // goes through SCC refinement, which may reject a spurious monotone
     // CPS cycle that cannot persist on fresh canonical-zero cells.
-    if g.cant_quasihalt_functional_fastpath() == Some(true) {
+    if g.cant_quasihalt_functional_fastpath(ignored_state) == Some(true)
+    {
         return true;
     }
 
-    g.cant_quasihalt_no_avoidable_state_cycle()
+    g.cant_quasihalt_no_avoidable_state_cycle(ignored_state)
 }
 
 /**************************************/
@@ -376,7 +436,10 @@ impl GraphObs {
         }
     }
 
-    fn cant_quasihalt_functional_fastpath(&self) -> Option<bool> {
+    fn cant_quasihalt_functional_fastpath(
+        &self,
+        ignored_state: Option<u8>,
+    ) -> Option<bool> {
         if self.nodes.is_empty() {
             return Some(false);
         }
@@ -394,13 +457,15 @@ impl GraphObs {
 
         for _ in 0..=n {
             if let Some(prev) = seen_step[cur] {
-                // If all states ever observed appear on the eventual
-                // cycle, then cannot quasihalt.
+                // If every non-ignored state seen before the eventual
+                // cycle also appears on it, then cannot quasihalt.
                 return Some(order[..prev].iter().all(|&u| {
-                    let s = self.nodes[u].state;
-                    order[prev..]
-                        .iter()
-                        .any(|&v| self.nodes[v].state == s)
+                    let state = self.nodes[u].state;
+
+                    ignored_state == Some(state)
+                        || order[prev..]
+                            .iter()
+                            .any(|&v| self.nodes[v].state == state)
                 }));
             }
 
@@ -412,7 +477,10 @@ impl GraphObs {
         Some(false)
     }
 
-    fn cant_quasihalt_no_avoidable_state_cycle(&self) -> bool {
+    fn cant_quasihalt_no_avoidable_state_cycle(
+        &self,
+        ignored_state: Option<u8>,
+    ) -> bool {
         if self.nodes.is_empty() {
             return false;
         }
@@ -424,10 +492,19 @@ impl GraphObs {
         let mut zero_indeg = vec![0; n];
 
         // Any infinite path that eventually avoids q must eventually stay
-        // inside a cyclic SCC of the graph induced by state != q.
-        for q in &self.states {
+        // inside a cyclic SCC of the graph induced by state != q, with an
+        // optional statically transient start state removed throughout.
+        for q in self
+            .states
+            .iter()
+            .copied()
+            .filter(|&state| ignored_state != Some(state))
+        {
             for u in 0..n {
-                active[u] = reachable[u] && self.nodes[u].state != *q;
+                let state = self.nodes[u].state;
+                active[u] = reachable[u]
+                    && ignored_state != Some(state)
+                    && state != q;
             }
 
             for comp in sccs_masked(&self.succ, &active) {
