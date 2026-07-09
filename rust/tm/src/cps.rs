@@ -1,5 +1,5 @@
 use core::fmt;
-use std::collections::VecDeque;
+use std::collections::{VecDeque, hash_map::Entry};
 
 use ahash::{AHashMap as Dict, AHashSet as Set};
 
@@ -169,10 +169,10 @@ fn cps_cant_reach_obs(
 ) -> bool {
     let mut configs = Configs::init(rad);
 
-    while let Some(config @ Config { state, mut tape }) =
+    while let Some((config_id, config @ Config { state, mut tape })) =
         configs.todo.pop_front()
     {
-        obs.see(&config);
+        obs.see(config_id, &config);
 
         let init_scan = tape.scan;
 
@@ -335,19 +335,23 @@ fn cps_cant_reach_obs(
                 tape: next_tape,
             };
 
-            obs.edge(&config, &next_config, init_scan, print, shift);
+            let (next_id, is_new) = configs.intern_config(&next_config);
 
-            if configs.intern_config(&next_config) {
-                configs.todo.push_back(next_config);
+            obs.edge(config_id, next_id, init_scan, print, shift);
+
+            if is_new {
+                configs.todo.push_back((next_id, next_config));
             }
         }
 
         let pull_key = pull.span;
 
+        let waiting = (config_id, config);
+
         if shift {
-            configs.r_watch.entry(pull_key).or_default().push(config);
+            configs.r_watch.entry(pull_key).or_default().push(waiting);
         } else {
-            configs.l_watch.entry(pull_key).or_default().push(config);
+            configs.l_watch.entry(pull_key).or_default().push(waiting);
         }
 
         if configs.at_capacity() {
@@ -361,11 +365,11 @@ fn cps_cant_reach_obs(
 /**************************************/
 
 trait CpsObs {
-    fn see(&mut self, _c: &Config) {}
+    fn see(&mut self, _id: ConfigId, _c: &Config) {}
     fn edge(
         &mut self,
-        _from: &Config,
-        _to: &Config,
+        _from: ConfigId,
+        _to: ConfigId,
         _read: Color,
         _write: Color,
         _shift: Shift,
@@ -386,29 +390,39 @@ struct CpsEdge {
 
 #[derive(Default)]
 struct GraphObs {
-    id: Dict<Config, usize>,
-    nodes: Vec<Config>,
+    node_states: Vec<u8>,
     succ: Vec<Vec<CpsEdge>>,
+    edge_offsets: Vec<usize>,
     states: Set<u8>,
 }
 
 impl CpsObs for GraphObs {
-    fn see(&mut self, c: &Config) {
-        self.intern(c);
+    fn see(&mut self, id: ConfigId, c: &Config) {
+        if self.succ.len() <= id {
+            self.succ.resize_with(id + 1, Vec::new);
+            self.node_states.resize(id + 1, 0);
+        }
+
+        self.node_states[id] = c.state;
+        self.states.insert(c.state);
     }
 
     fn edge(
         &mut self,
-        from: &Config,
-        to: &Config,
+        from: ConfigId,
+        to: ConfigId,
         read: Color,
         write: Color,
         shift: Shift,
     ) {
-        let u = self.intern(from);
-        let v = self.intern(to);
-        self.succ[u].push(CpsEdge {
-            to: v,
+        let needed = from.max(to) + 1;
+        if self.succ.len() < needed {
+            self.succ.resize_with(needed, Vec::new);
+            self.node_states.resize(needed, 0);
+        }
+
+        self.succ[from].push(CpsEdge {
+            to,
             read,
             write,
             shift,
@@ -417,32 +431,33 @@ impl CpsObs for GraphObs {
 }
 
 impl GraphObs {
-    fn intern(&mut self, c: &Config) -> usize {
-        if let Some(&i) = self.id.get(c) {
-            return i;
-        }
-
-        let i = self.nodes.len();
-        self.nodes.push(c.clone());
-        self.id.insert(c.clone(), i);
-        self.succ.push(vec![]);
-        self.states.insert(c.state);
-
-        i
-    }
-
     fn dedup_edges(&mut self) {
         for outs in &mut self.succ {
             outs.sort_unstable();
             outs.dedup();
         }
+
+        self.edge_offsets.clear();
+        self.edge_offsets.reserve(self.succ.len() + 1);
+        self.edge_offsets.push(0);
+
+        for outs in &self.succ {
+            let next =
+                self.edge_offsets.last().copied().unwrap() + outs.len();
+            self.edge_offsets.push(next);
+        }
+    }
+
+    #[inline]
+    fn edge_id(&self, u: usize, edge_idx: usize) -> usize {
+        self.edge_offsets[u] + edge_idx
     }
 
     fn cant_quasihalt_functional_fastpath(
         &self,
         ignored_state: Option<u8>,
     ) -> Option<bool> {
-        if self.nodes.is_empty() {
+        if self.node_states.is_empty() {
             return Some(false);
         }
 
@@ -451,7 +466,7 @@ impl GraphObs {
             return None;
         }
         // Follow successors from start node 0 to find the eventual cycle.
-        let n = self.nodes.len();
+        let n = self.node_states.len();
         let mut seen_step: Vec<Option<usize>> = vec![None; n];
         let mut order: Vec<usize> = vec![];
 
@@ -462,12 +477,12 @@ impl GraphObs {
                 // If every non-ignored state seen before the eventual
                 // cycle also appears on it, then cannot quasihalt.
                 return Some(order[..prev].iter().all(|&u| {
-                    let state = self.nodes[u].state;
+                    let state = self.node_states[u];
 
                     ignored_state == Some(state)
                         || order[prev..]
                             .iter()
-                            .any(|&v| self.nodes[v].state == state)
+                            .any(|&v| self.node_states[v] == state)
                 }));
             }
 
@@ -483,15 +498,22 @@ impl GraphObs {
         &self,
         ignored_state: Option<u8>,
     ) -> bool {
-        if self.nodes.is_empty() {
+        if self.node_states.is_empty() {
             return false;
         }
 
-        let reachable = reachable_nodes(&self.succ, 0);
-        let n = self.nodes.len();
+        let n = self.node_states.len();
+        let edge_count = self.edge_offsets.last().copied().unwrap_or(0);
+
+        let mut reachable = vec![false; n];
+        let mut reach_stack = Vec::with_capacity(n);
+        mark_reachable(&self.succ, 0, &mut reachable, &mut reach_stack);
+
         let mut active = vec![false; n];
         let mut in_comp = vec![false; n];
-        let mut zero_indeg = vec![0; n];
+        let mut outer_scc = SccScratch::new(n);
+        let mut inner_scc = SccScratch::new(n);
+        let mut trap = TrapScratch::new(n, edge_count);
 
         // Any infinite path that eventually avoids q must eventually stay
         // inside a cyclic SCC of the graph induced by state != q, with an
@@ -503,28 +525,38 @@ impl GraphObs {
             .filter(|&state| ignored_state != Some(state))
         {
             for u in 0..n {
-                let state = self.nodes[u].state;
+                let state = self.node_states[u];
                 active[u] = reachable[u]
                     && ignored_state != Some(state)
                     && state != q;
             }
 
-            for comp in sccs_masked(&self.succ, &active) {
-                if !scc_has_cycle(&comp, &self.succ) {
+            outer_scc.decompose(
+                &self.succ,
+                &self.edge_offsets,
+                &active,
+                None,
+            );
+
+            for comp_idx in 0..outer_scc.comps.len() {
+                let comp = &outer_scc.comps[comp_idx];
+
+                if !scc_has_cycle(comp, &self.succ) {
                     continue;
                 }
 
-                for &u in &comp {
+                for &u in comp {
                     in_comp[u] = true;
                 }
 
                 let possible_trap = self.scc_can_be_infinite_trap(
-                    &comp,
+                    comp,
                     &in_comp,
-                    &mut zero_indeg,
+                    &mut inner_scc,
+                    &mut trap,
                 );
 
-                for &u in &comp {
+                for &u in comp {
                     in_comp[u] = false;
                 }
 
@@ -546,38 +578,55 @@ impl GraphObs {
         &self,
         comp: &[usize],
         in_comp: &[bool],
-        zero_indeg: &mut [usize],
+        scc: &mut SccScratch,
+        scratch: &mut TrapScratch,
     ) -> bool {
-        let n = self.nodes.len();
-        let mut live = vec![vec![]; n];
+        // Reuse the graph-wide liveness bit-vector for every candidate.
+        scratch.live.fill(false);
 
         for &u in comp {
-            live[u] = self.succ[u]
-                .iter()
-                .map(|edge| in_comp[edge.to])
-                .collect();
+            for (edge_idx, edge) in self.succ[u].iter().enumerate() {
+                if in_comp[edge.to] {
+                    let edge_id = self.edge_id(u, edge_idx);
+                    scratch.live[edge_id] = true;
+                }
+            }
         }
 
         loop {
-            let subcomps =
-                sccs_masked_filtered(&self.succ, in_comp, &live);
-            let mut cyclic_id = vec![usize::MAX; n];
-            let mut cyclic_comps = vec![];
+            scc.decompose(
+                &self.succ,
+                &self.edge_offsets,
+                in_comp,
+                Some(&scratch.live),
+            );
 
-            for subcomp in subcomps {
-                if !scc_has_cycle_filtered(&subcomp, &self.succ, &live)
-                {
+            // Reset only nodes assigned a cyclic ID in the prior iteration.
+            while let Some(u) = scratch.cyclic_nodes.pop() {
+                scratch.cyclic_id[u] = usize::MAX;
+            }
+            scratch.cyclic_comp_indices.clear();
+
+            for (comp_idx, subcomp) in scc.comps.iter().enumerate() {
+                if !scc_has_cycle_filtered(
+                    subcomp,
+                    &self.succ,
+                    &self.edge_offsets,
+                    &scratch.live,
+                ) {
                     continue;
                 }
 
-                let id = cyclic_comps.len();
-                for &u in &subcomp {
-                    cyclic_id[u] = id;
+                let id = scratch.cyclic_comp_indices.len();
+                for &u in subcomp {
+                    scratch.cyclic_id[u] = id;
+                    scratch.cyclic_nodes.push(u);
                 }
-                cyclic_comps.push(subcomp);
+                scratch.cyclic_comp_indices.push(comp_idx);
             }
 
-            if cyclic_comps.is_empty() {
+            let cyclic_count = scratch.cyclic_comp_indices.len();
+            if cyclic_count == 0 {
                 return false;
             }
 
@@ -585,23 +634,32 @@ impl GraphObs {
             for &u in comp {
                 for (edge_idx, edge) in self.succ[u].iter().enumerate()
                 {
-                    if live[u][edge_idx]
-                        && (cyclic_id[u] == usize::MAX
-                            || cyclic_id[u] != cyclic_id[edge.to])
+                    let edge_id = self.edge_id(u, edge_idx);
+                    if scratch.live[edge_id]
+                        && (scratch.cyclic_id[u] == usize::MAX
+                            || scratch.cyclic_id[u]
+                                != scratch.cyclic_id[edge.to])
                     {
-                        live[u][edge_idx] = false;
+                        scratch.live[edge_id] = false;
                     }
                 }
             }
 
-            let mut written: Vec<Set<Color>> = (0..cyclic_comps.len())
-                .map(|_| Set::default())
-                .collect();
+            while scratch.written.len() < cyclic_count {
+                scratch.written.push(Set::default());
+            }
+            for written in &mut scratch.written[..cyclic_count] {
+                written.clear();
+            }
+
             for &u in comp {
                 for (edge_idx, edge) in self.succ[u].iter().enumerate()
                 {
-                    if live[u][edge_idx] && edge.write != 0 {
-                        written[cyclic_id[u]].insert(edge.write);
+                    if scratch.live[self.edge_id(u, edge_idx)]
+                        && edge.write != 0
+                    {
+                        scratch.written[scratch.cyclic_id[u]]
+                            .insert(edge.write);
                     }
                 }
             }
@@ -610,11 +668,13 @@ impl GraphObs {
             for &u in comp {
                 for (edge_idx, edge) in self.succ[u].iter().enumerate()
                 {
-                    if live[u][edge_idx]
+                    let edge_id = self.edge_id(u, edge_idx);
+                    if scratch.live[edge_id]
                         && edge.read != 0
-                        && !written[cyclic_id[u]].contains(&edge.read)
+                        && !scratch.written[scratch.cyclic_id[u]]
+                            .contains(&edge.read)
                     {
-                        live[u][edge_idx] = false;
+                        scratch.live[edge_id] = false;
                         pruned = true;
                     }
                 }
@@ -624,17 +684,23 @@ impl GraphObs {
                 continue;
             }
 
-            return cyclic_comps.iter().enumerate().any(
-                |(id, recurrent_comp)| {
-                    self.recurrent_scc_can_be_infinite_trap(
-                        recurrent_comp,
-                        &cyclic_id,
-                        id,
-                        &live,
-                        zero_indeg,
-                    )
-                },
-            );
+            for pos in 0..cyclic_count {
+                let comp_idx = scratch.cyclic_comp_indices[pos];
+                let recurrent_comp = &scc.comps[comp_idx];
+
+                if self.recurrent_scc_can_be_infinite_trap(
+                    recurrent_comp,
+                    &scratch.cyclic_id,
+                    pos,
+                    &scratch.live,
+                    &mut scratch.zero_indeg,
+                    &mut scratch.node_stack,
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 
@@ -646,15 +712,18 @@ impl GraphObs {
         comp: &[usize],
         cyclic_id: &[usize],
         id: usize,
-        live: &[Vec<bool>],
+        live: &[bool],
         zero_indeg: &mut [usize],
+        node_stack: &mut Vec<usize>,
     ) -> bool {
         let mut has_l = false;
         let mut has_r = false;
 
         for &u in comp {
             for (edge_idx, edge) in self.succ[u].iter().enumerate() {
-                if !live[u][edge_idx] || cyclic_id[edge.to] != id {
+                if !live[self.edge_id(u, edge_idx)]
+                    || cyclic_id[edge.to] != id
+                {
                     continue;
                 }
 
@@ -678,7 +747,7 @@ impl GraphObs {
         }
 
         self.has_zero_dir_cycle_in_comp(
-            comp, cyclic_id, id, live, zero_indeg, has_r,
+            comp, cyclic_id, id, live, zero_indeg, node_stack, has_r,
         )
     }
 
@@ -687,8 +756,9 @@ impl GraphObs {
         comp: &[usize],
         cyclic_id: &[usize],
         id: usize,
-        live: &[Vec<bool>],
+        live: &[bool],
         indeg: &mut [usize],
+        stack: &mut Vec<usize>,
         dir_is_r: bool,
     ) -> bool {
         for &u in comp {
@@ -697,7 +767,7 @@ impl GraphObs {
 
         for &u in comp {
             for (edge_idx, edge) in self.succ[u].iter().enumerate() {
-                if live[u][edge_idx]
+                if live[self.edge_id(u, edge_idx)]
                     && cyclic_id[edge.to] == id
                     && edge.read == 0
                     && edge.shift == dir_is_r
@@ -707,7 +777,10 @@ impl GraphObs {
             }
         }
 
-        let mut stack = Vec::with_capacity(comp.len());
+        stack.clear();
+        if stack.capacity() < comp.len() {
+            stack.reserve(comp.len() - stack.capacity());
+        }
         for &u in comp {
             if indeg[u] == 0 {
                 stack.push(u);
@@ -720,7 +793,7 @@ impl GraphObs {
             removed += 1;
 
             for (edge_idx, edge) in self.succ[u].iter().enumerate() {
-                if !live[u][edge_idx]
+                if !live[self.edge_id(u, edge_idx)]
                     || cyclic_id[edge.to] != id
                     || edge.read != 0
                     || edge.shift != dir_is_r
@@ -739,11 +812,18 @@ impl GraphObs {
     }
 }
 
-fn reachable_nodes(succ: &[Vec<CpsEdge>], start: usize) -> Vec<bool> {
-    let n = succ.len();
+fn mark_reachable(
+    succ: &[Vec<CpsEdge>],
+    start: usize,
+    vis: &mut [bool],
+    stack: &mut Vec<usize>,
+) {
+    vis.fill(false);
+    stack.clear();
 
-    let mut vis = vec![false; n];
-    let mut stack = vec![];
+    if succ.is_empty() {
+        return;
+    }
 
     vis[start] = true;
     stack.push(start);
@@ -756,114 +836,187 @@ fn reachable_nodes(succ: &[Vec<CpsEdge>], start: usize) -> Vec<bool> {
             }
         }
     }
-
-    vis
 }
 
-/// Iterative Kosaraju decomposition restricted to active nodes.
-fn sccs_masked(
-    succ: &[Vec<CpsEdge>],
-    active: &[bool],
-) -> Vec<Vec<usize>> {
-    sccs_masked_impl(succ, active, None)
+/// Reusable storage for one iterative Kosaraju decomposition.  Reverse
+/// adjacency is rebuilt for the current node/edge mask, but its vectors,
+/// DFS stacks, visit marks, finishing order, and component buffers retain
+/// their allocations across calls.
+struct SccScratch {
+    generation: u32,
+    seen_mark: Vec<u32>,
+    assigned_mark: Vec<u32>,
+    order: Vec<usize>,
+    dfs_stack: Vec<(usize, usize)>,
+    node_stack: Vec<usize>,
+    rev: Vec<Vec<usize>>,
+    comps: Vec<Vec<usize>>,
+    spare_comps: Vec<Vec<usize>>,
 }
 
-/// Iterative Kosaraju decomposition restricted to active nodes and live
-/// edges.  `live[u]` has the same indexing as `succ[u]` for active nodes.
-fn sccs_masked_filtered(
-    succ: &[Vec<CpsEdge>],
-    active: &[bool],
-    live: &[Vec<bool>],
-) -> Vec<Vec<usize>> {
-    sccs_masked_impl(succ, active, Some(live))
-}
-
-fn sccs_masked_impl(
-    succ: &[Vec<CpsEdge>],
-    active: &[bool],
-    live: Option<&[Vec<bool>]>,
-) -> Vec<Vec<usize>> {
-    let n = succ.len();
-    let mut rev = vec![vec![]; n];
-
-    for u in 0..n {
-        if !active[u] {
-            continue;
-        }
-
-        for (edge_idx, edge) in succ[u].iter().enumerate() {
-            if edge_is_live(live, u, edge_idx) && active[edge.to] {
-                rev[edge.to].push(u);
-            }
+impl SccScratch {
+    fn new(n: usize) -> Self {
+        Self {
+            generation: 0,
+            seen_mark: vec![0; n],
+            assigned_mark: vec![0; n],
+            order: Vec::with_capacity(n),
+            dfs_stack: Vec::with_capacity(n),
+            node_stack: Vec::with_capacity(n),
+            rev: (0..n).map(|_| Vec::new()).collect(),
+            comps: Vec::with_capacity(n),
+            spare_comps: Vec::with_capacity(n),
         }
     }
 
-    let mut seen = vec![false; n];
-    let mut order = Vec::with_capacity(n);
+    fn next_generation(&mut self) -> u32 {
+        self.generation = self.generation.wrapping_add(1);
 
-    for start in 0..n {
-        if !active[start] || seen[start] {
-            continue;
+        if self.generation == 0 {
+            self.seen_mark.fill(0);
+            self.assigned_mark.fill(0);
+            self.generation = 1;
         }
 
-        seen[start] = true;
-        let mut stack = vec![(start, 0)];
+        self.generation
+    }
 
-        while let Some((u, edge_idx)) = stack.pop() {
-            if edge_idx == succ[u].len() {
-                order.push(u);
-                continue;
-            }
-
-            stack.push((u, edge_idx + 1));
-            if !edge_is_live(live, u, edge_idx) {
-                continue;
-            }
-
-            let v = succ[u][edge_idx].to;
-
-            if active[v] && !seen[v] {
-                seen[v] = true;
-                stack.push((v, 0));
-            }
+    fn recycle_components(&mut self) {
+        while let Some(mut comp) = self.comps.pop() {
+            comp.clear();
+            self.spare_comps.push(comp);
         }
     }
 
-    let mut assigned = vec![false; n];
-    let mut comps = vec![];
+    /// Iterative Kosaraju decomposition restricted to active nodes and,
+    /// when supplied, flat edge liveness indexed by
+    /// `edge_offsets[u] + edge_idx`.
+    fn decompose(
+        &mut self,
+        succ: &[Vec<CpsEdge>],
+        edge_offsets: &[usize],
+        active: &[bool],
+        live: Option<&[bool]>,
+    ) {
+        let n = succ.len();
+        debug_assert_eq!(active.len(), n);
+        debug_assert_eq!(self.seen_mark.len(), n);
+        debug_assert_eq!(self.assigned_mark.len(), n);
+        debug_assert_eq!(self.rev.len(), n);
 
-    while let Some(start) = order.pop() {
-        if assigned[start] {
-            continue;
+        let generation = self.next_generation();
+        self.order.clear();
+        self.dfs_stack.clear();
+        self.node_stack.clear();
+        self.recycle_components();
+
+        // Build only the currently active/live reverse graph while
+        // retaining all inner vector capacities between SCC passes.
+        for incoming in &mut self.rev {
+            incoming.clear();
         }
+        for u in 0..n {
+            if !active[u] {
+                continue;
+            }
 
-        assigned[start] = true;
-        let mut stack = vec![start];
-        let mut comp = vec![];
-
-        while let Some(u) = stack.pop() {
-            comp.push(u);
-
-            for &v in &rev[u] {
-                if !assigned[v] {
-                    assigned[v] = true;
-                    stack.push(v);
+            for (edge_idx, edge) in succ[u].iter().enumerate() {
+                if active[edge.to]
+                    && edge_is_live(live, edge_offsets, u, edge_idx)
+                {
+                    self.rev[edge.to].push(u);
                 }
             }
         }
 
-        comps.push(comp);
-    }
+        for start in 0..n {
+            if !active[start] || self.seen_mark[start] == generation {
+                continue;
+            }
 
-    comps
+            self.seen_mark[start] = generation;
+            self.dfs_stack.push((start, 0));
+
+            while let Some((u, edge_idx)) = self.dfs_stack.pop() {
+                if edge_idx == succ[u].len() {
+                    self.order.push(u);
+                    continue;
+                }
+
+                self.dfs_stack.push((u, edge_idx + 1));
+                if !edge_is_live(live, edge_offsets, u, edge_idx) {
+                    continue;
+                }
+
+                let v = succ[u][edge_idx].to;
+                if active[v] && self.seen_mark[v] != generation {
+                    self.seen_mark[v] = generation;
+                    self.dfs_stack.push((v, 0));
+                }
+            }
+        }
+
+        while let Some(start) = self.order.pop() {
+            if self.assigned_mark[start] == generation {
+                continue;
+            }
+
+            self.assigned_mark[start] = generation;
+            self.node_stack.push(start);
+
+            let mut comp = self.spare_comps.pop().unwrap_or_default();
+            comp.clear();
+
+            while let Some(u) = self.node_stack.pop() {
+                comp.push(u);
+
+                for &from in &self.rev[u] {
+                    if self.assigned_mark[from] == generation {
+                        continue;
+                    }
+
+                    self.assigned_mark[from] = generation;
+                    self.node_stack.push(from);
+                }
+            }
+
+            self.comps.push(comp);
+        }
+    }
 }
 
+struct TrapScratch {
+    live: Vec<bool>,
+    cyclic_id: Vec<usize>,
+    cyclic_nodes: Vec<usize>,
+    cyclic_comp_indices: Vec<usize>,
+    written: Vec<Set<Color>>,
+    zero_indeg: Vec<usize>,
+    node_stack: Vec<usize>,
+}
+
+impl TrapScratch {
+    fn new(n: usize, edge_count: usize) -> Self {
+        Self {
+            live: vec![false; edge_count],
+            cyclic_id: vec![usize::MAX; n],
+            cyclic_nodes: Vec::with_capacity(n),
+            cyclic_comp_indices: Vec::with_capacity(n),
+            written: vec![],
+            zero_indeg: vec![0; n],
+            node_stack: Vec::with_capacity(n),
+        }
+    }
+}
+
+#[inline]
 fn edge_is_live(
-    live: Option<&[Vec<bool>]>,
+    live: Option<&[bool]>,
+    edge_offsets: &[usize],
     u: usize,
     edge_idx: usize,
 ) -> bool {
-    live.is_none_or(|live| live[u][edge_idx])
+    live.is_none_or(|live| live[edge_offsets[u] + edge_idx])
 }
 
 fn scc_has_cycle(comp: &[usize], succ: &[Vec<CpsEdge>]) -> bool {
@@ -878,17 +1031,17 @@ fn scc_has_cycle(comp: &[usize], succ: &[Vec<CpsEdge>]) -> bool {
 fn scc_has_cycle_filtered(
     comp: &[usize],
     succ: &[Vec<CpsEdge>],
-    live: &[Vec<bool>],
+    edge_offsets: &[usize],
+    live: &[bool],
 ) -> bool {
     if comp.len() > 1 {
         return true;
     }
 
     let u = comp[0];
-    succ[u]
-        .iter()
-        .enumerate()
-        .any(|(edge_idx, edge)| live[u][edge_idx] && edge.to == u)
+    succ[u].iter().enumerate().any(|(edge_idx, edge)| {
+        live[edge_offsets[u] + edge_idx] && edge.to == u
+    })
 }
 
 /**************************************/
@@ -905,7 +1058,9 @@ struct Continuation {
 
 type Continuations = Vec<Continuation>;
 type Spans = Dict<SpanId, Continuations>;
-type Watch = Dict<SpanId, Vec<Config>>;
+type ConfigId = usize;
+type PendingConfig = (ConfigId, Config);
+type Watch = Dict<SpanId, Vec<PendingConfig>>;
 
 /**************************************/
 
@@ -953,8 +1108,8 @@ struct Configs {
     lspans: Spans,
     rspans: Spans,
 
-    seen: Set<Config>,
-    todo: VecDeque<Config>,
+    seen: Dict<Config, ConfigId>,
+    todo: VecDeque<PendingConfig>,
 
     l_watch: Watch,
     r_watch: Watch,
@@ -966,7 +1121,7 @@ impl Configs {
             span_pool: SpanPool::new(),
             lspans: Dict::new(),
             rspans: Dict::new(),
-            seen: Set::new(),
+            seen: Dict::new(),
             todo: VecDeque::new(),
             l_watch: Dict::new(),
             r_watch: Dict::new(),
@@ -979,14 +1134,24 @@ impl Configs {
             .rspans
             .add_span(&init.tape.rspan, init.tape.right_nz);
 
-        assert!(configs.intern_config(&init));
-        configs.todo.push_back(init);
+        let (init_id, is_new) = configs.intern_config(&init);
+        assert!(is_new);
+        debug_assert_eq!(init_id, 0);
+        configs.todo.push_back((init_id, init));
 
         configs
     }
 
-    fn intern_config(&mut self, config: &Config) -> bool {
-        self.seen.insert(config.clone())
+    fn intern_config(&mut self, config: &Config) -> (ConfigId, bool) {
+        let next_id = self.seen.len();
+
+        match self.seen.entry(config.clone()) {
+            Entry::Occupied(entry) => (*entry.get(), false),
+            Entry::Vacant(entry) => {
+                entry.insert(next_id);
+                (next_id, true)
+            },
+        }
     }
 
     fn at_capacity(&self) -> bool {
