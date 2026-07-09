@@ -218,15 +218,13 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// FAR blank-tape prover.
     ///
     /// Returns `true` iff FAR proved that the machine can never blank the tape
-    /// after time 0.  The initial all-zero tape is ignored.  This runs the same
-    /// FAR fixed-point computation as `far_cant_halt`, but tracks whether any
-    /// non-zero block has ever been seen and treats a derived all-zero
-    /// left-context / active-block configuration as the goal.  If the FAR
-    /// over-approximation reaches a fixed point without deriving that goal,
-    /// the tape cannot ever become globally blank.  Because FAR summaries remember
-    /// history rather than exact present contents, a zero context is recognized by
-    /// asking whether the summary is compatible with an all-zero block stack, not
-    /// by requiring the initial DFA state.
+    /// after time 0.  The initial all-zero tape is ignored.  Every blanking event
+    /// after time 0 has a first occurrence, and that occurrence must be a concrete
+    /// transition that reads a nonzero symbol, writes zero, and leaves every other
+    /// tape cell zero.  FAR, MITM, and direct FAR all use that last-erasing
+    /// transition as the target rather than a history-tagged all-zero endpoint.
+    /// Lossy summary states still use the exact zero-only DFA reachability relation
+    /// to decide whether the surrounding block context may be all zero.
     pub fn far_cant_blank(&self, knob: usize) -> bool {
         self.far_sweep_fast(knob, Goal::Blank)
             || self.mitm_cant_blank()
@@ -350,7 +348,6 @@ struct WordUpdateLemma {
     w1: WordId,
     s1: Option<State>,
     is_back: bool,
-    saw_nonzero: bool,
     hit_blank: bool,
 }
 
@@ -360,7 +357,6 @@ struct RawWordUpdateLemma {
     w1: Word,
     s1: Option<State>,
     is_back: bool,
-    saw_nonzero: bool,
     hit_blank: bool,
 }
 
@@ -369,14 +365,12 @@ impl RawWordUpdateLemma {
         w1: Word,
         s1: Option<State>,
         is_back: bool,
-        saw_nonzero: bool,
         hit_blank: bool,
     ) -> Self {
         let mut res = Self {
             w1,
             s1,
             is_back,
-            saw_nonzero,
             hit_blank,
         };
         if res.s1.is_some() && !res.is_back {
@@ -916,14 +910,12 @@ fn promote_repeat_word(
 struct H2 {
     s: State,
     r: usize,
-    dirty: bool,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct H2b {
     s: State,
     r: usize,
-    dirty: bool,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
@@ -931,7 +923,6 @@ struct H3 {
     w: WordId,
     s: State,
     r: usize,
-    dirty: bool,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
@@ -1020,7 +1011,6 @@ enum StepContext {
     #[default]
     Normal,
     Blank {
-        dirty_before: bool,
         context_may_be_all_zero: bool,
     },
     Spinout {
@@ -1030,12 +1020,8 @@ enum StepContext {
 }
 
 impl StepContext {
-    const fn blank(
-        dirty_before: bool,
-        context_may_be_all_zero: bool,
-    ) -> Self {
+    const fn blank(context_may_be_all_zero: bool) -> Self {
         Self::Blank {
-            dirty_before,
             context_may_be_all_zero,
         }
     }
@@ -1133,8 +1119,8 @@ struct FarDecider<
     h3s: TodoSet<H3>,
     h2s: TodoSet<H2>,
 
-    // For each DFA state r, which (machine state, dirty) pairs have H2(s,r,dirty)
-    r_s: Vec<Set<(State, bool)>>,
+    // For each DFA state r, which machine states have H2(s,r).
+    r_s: Vec<Set<State>>,
 
     // Exact existential zero-context information for the lossy summary DFA.
     // `zero_context[r]` means that state `r` is reachable from the initial
@@ -1147,7 +1133,7 @@ struct FarDecider<
 
     // Reusable buffers for relation propagation. These avoid allocating short
     // temporary Vecs just to break immutable borrows before mutating self.
-    scratch_states: Vec<(State, bool)>,
+    scratch_states: Vec<State>,
     scratch_edges: Vec<DfaEdge>,
     scratch_h2: Vec<H2>,
     scratch_h2b: Vec<H2b>,
@@ -1267,34 +1253,10 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         exact
     }
 
-    const fn canonical_dirty(&self, dirty: bool) -> bool {
-        self.goal.is_blank() && dirty
-    }
-
-    const fn canonical_h2(&self, mut a: H2) -> H2 {
-        a.dirty = self.canonical_dirty(a.dirty);
-        a
-    }
-
-    const fn canonical_h2b(&self, mut b: H2b) -> H2b {
-        b.dirty = self.canonical_dirty(b.dirty);
-        b
-    }
-
-    const fn canonical_h3(&self, mut c: H3) -> H3 {
-        c.dirty = self.canonical_dirty(c.dirty);
-        c
-    }
-
-    fn h2_pop_step_context(
-        &self,
-        dirty: bool,
-        r0: usize,
-    ) -> StepContext {
+    fn h2_pop_step_context(&self, r0: usize) -> StepContext {
         match self.goal {
             Goal::Halt => StepContext::Normal,
             Goal::Blank => StepContext::blank(
-                dirty,
                 self.summary_may_be_all_zero_context(r0),
             ),
             Goal::Spinout => StepContext::spinout(
@@ -1312,10 +1274,7 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
                     self.summary_may_be_all_zero_context(c.r);
                 let b_context_zero =
                     self.summary_may_be_all_zero_context(b.r);
-                StepContext::blank(
-                    c.dirty || b.dirty,
-                    c_context_zero && b_context_zero,
-                )
+                StepContext::blank(c_context_zero && b_context_zero)
             },
             Goal::Spinout => {
                 let c_context_zero =
@@ -1327,11 +1286,10 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         }
     }
 
-    fn retl_step_context(&self, dirty: bool, r0: usize) -> StepContext {
+    fn retl_step_context(&self, r0: usize) -> StepContext {
         match self.goal {
             Goal::Halt => StepContext::Normal,
             Goal::Blank => StepContext::blank(
-                dirty,
                 self.summary_may_be_all_zero_context(r0),
             ),
             Goal::Spinout => StepContext::spinout(
@@ -1341,70 +1299,32 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         }
     }
 
-    fn blank_h3_goal(&self, c: &H3) -> bool {
-        self.goal.is_blank()
-            && c.dirty
-            && self.words.get(c.w).is_zero()
-            && self.summary_may_be_all_zero_context(c.r)
-            && self.h3s.contains(c)
-            && self.pre3l.contains(c)
-    }
-
-    fn blank_retl_goal(&self, b: &H2b) -> bool {
-        self.goal.is_blank()
-            && b.dirty
-            && self.summary_may_be_all_zero_context(b.r)
-    }
-
-    fn check_blank_h3(&self, c: &H3) -> Result<(), StopReason> {
-        if self.blank_h3_goal(c) {
-            return Err(StopReason::MayTarget);
-        }
-        Ok(())
-    }
-
-    fn check_blank_retl(&self, b: &H2b) -> Result<(), StopReason> {
-        if self.blank_retl_goal(b) {
-            return Err(StopReason::MayTarget);
-        }
-        Ok(())
-    }
-
-    fn insert_h3(&mut self, c: H3) -> Result<H3, StopReason> {
-        let c = self.canonical_h3(c);
+    fn insert_h3(&mut self, c: H3) -> H3 {
         self.h3s.insert(c);
-        self.check_blank_h3(&c)?;
-        Ok(c)
+        c
     }
 
     fn insert_h2(&mut self, a: H2) -> H2 {
-        let a = self.canonical_h2(a);
         self.h2s.insert(a);
         a
     }
 
-    fn insert_pre3l(&mut self, c: H3) -> Result<H3, StopReason> {
-        let c = self.canonical_h3(c);
+    fn insert_pre3l(&mut self, c: H3) -> H3 {
         self.pre3l.insert(c);
-        self.check_blank_h3(&c)?;
-        Ok(c)
+        c
     }
 
-    fn insert_retl(&mut self, b: H2b) -> Result<H2b, StopReason> {
-        let b = self.canonical_h2b(b);
+    fn insert_retl(&mut self, b: H2b) -> H2b {
         self.retl.insert(b);
-        self.check_blank_retl(&b)?;
-        Ok(b)
+        b
     }
 
     fn insert_ret2(&mut self, a: H2, b: H2b) {
-        self.ret2
-            .insert(self.canonical_h2(a), self.canonical_h2b(b));
+        self.ret2.insert(a, b);
     }
 
     fn insert_ret3(&mut self, a: H3, b: H2b) {
-        self.ret3
-            .insert(self.canonical_h3(a), self.canonical_h2b(b));
+        self.ret3.insert(a, b);
     }
 
     fn tm_step(
@@ -1437,7 +1357,6 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
                     w1: self.words.intern(raw.w1),
                     s1: raw.s1,
                     is_back: raw.is_back,
-                    saw_nonzero: raw.saw_nonzero,
                     hit_blank: raw.hit_blank,
                 });
             self.step_cache.insert(key, computed);
@@ -1464,39 +1383,26 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         a: &H2,
         b: &DfaEdge,
     ) -> Result<(), StopReason> {
-        let a = self.canonical_h2(*a);
-        let H2 { s, dirty, .. } = a;
+        let a = *a;
+        let H2 { s, .. } = a;
         let r0 = b.prev;
 
-        let Some(res) = self.tm_step(
-            b.w,
-            s,
-            1,
-            self.h2_pop_step_context(dirty, r0),
-        )?
+        let Some(res) =
+            self.tm_step(b.w, s, 1, self.h2_pop_step_context(r0))?
         else {
             return Ok(());
         };
         let s1 = res.s1.unwrap();
 
-        let dirty1 = self.canonical_dirty(dirty || res.saw_nonzero);
         if res.is_back {
             let rr = self.dfa_push_id(res.w1, r0)?;
-            self.insert_ret2(
-                a,
-                H2b {
-                    s: s1,
-                    r: rr,
-                    dirty: dirty1,
-                },
-            );
+            self.insert_ret2(a, H2b { s: s1, r: rr });
         } else {
             let c = self.insert_h3(H3 {
                 w: res.w1,
                 s: s1,
                 r: r0,
-                dirty: dirty1,
-            })?;
+            });
             self.pre32.insert(c, a);
         }
 
@@ -1508,13 +1414,9 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         c: &H3,
         b: &H2b,
     ) -> Result<(), StopReason> {
-        let c = self.canonical_h3(*c);
-        let b = self.canonical_h2b(*b);
-        let H2b {
-            s: s0,
-            r: r0,
-            dirty: dirty_b,
-        } = b;
+        let c = *c;
+        let b = *b;
+        let H2b { s: s0, r: r0 } = b;
 
         let Some(res) = self.tm_step(
             c.w,
@@ -1527,67 +1429,43 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         };
         let s1 = res.s1.unwrap();
 
-        let dirty1 =
-            self.canonical_dirty(c.dirty || dirty_b || res.saw_nonzero);
         if res.is_back {
             let c0 = self.insert_h3(H3 {
                 w: res.w1,
                 s: s1,
                 r: r0,
-                dirty: dirty1,
-            })?;
+            });
             self.pre33.insert(c0, c);
         } else {
             let rr = self.dfa_push_id(res.w1, r0)?;
-            self.insert_ret3(
-                c,
-                H2b {
-                    s: s1,
-                    r: rr,
-                    dirty: dirty1,
-                },
-            );
+            self.insert_ret3(c, H2b { s: s1, r: rr });
         }
 
         Ok(())
     }
 
     fn on_retl(&mut self, b: &H2b) -> Result<(), StopReason> {
-        let b = self.canonical_h2b(*b);
-        let H2b {
-            s: s0,
-            r: r0,
-            dirty,
-        } = b;
+        let b = *b;
+        let H2b { s: s0, r: r0 } = b;
 
         let blank = self.words.intern(Word::zero(self.block_len));
-        let Some(res) = self.tm_step(
-            blank,
-            s0,
-            -1,
-            self.retl_step_context(dirty, r0),
-        )?
+        let Some(res) =
+            self.tm_step(blank, s0, -1, self.retl_step_context(r0))?
         else {
             return Ok(());
         };
         let s1 = res.s1.unwrap();
 
-        let dirty1 = self.canonical_dirty(dirty || res.saw_nonzero);
         if res.is_back {
             let c0 = self.insert_h3(H3 {
                 w: res.w1,
                 s: s1,
                 r: r0,
-                dirty: dirty1,
-            })?;
-            self.insert_pre3l(c0)?;
+            });
+            self.insert_pre3l(c0);
         } else {
             let rr = self.dfa_push_id(res.w1, r0)?;
-            self.insert_retl(H2b {
-                s: s1,
-                r: rr,
-                dirty: dirty1,
-            })?;
+            self.insert_retl(H2b { s: s1, r: rr });
         }
 
         Ok(())
@@ -1605,20 +1483,20 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         self.scratch_states.clear();
         self.scratch_states.extend(self.r_s[r].iter().copied());
         self.scratch_states.sort_unstable();
-        while let Some((s, dirty)) = self.scratch_states.pop() {
-            self.on_h2_pop(&H2 { s, r, dirty }, e)?;
+        while let Some(s) = self.scratch_states.pop() {
+            self.on_h2_pop(&H2 { s, r }, e)?;
         }
 
         Ok(())
     }
 
     fn on_h2(&mut self, a: &H2) -> Result<(), StopReason> {
-        let a = self.canonical_h2(*a);
-        let H2 { s, r, .. } = a;
+        let a = *a;
+        let H2 { s, r } = a;
 
         self.bump()?;
         self.ensure_dfa_capacity(r);
-        self.r_s[r].insert((s, a.dirty));
+        self.r_s[r].insert(s);
 
         self.scratch_edges.clear();
         self.scratch_edges.extend(self.pop[r].iter().copied());
@@ -1631,12 +1509,7 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
     }
 
     fn on_h3(&mut self, a: H3) {
-        let a = self.canonical_h3(a);
-        let a0 = self.insert_h2(H2 {
-            s: a.s,
-            r: a.r,
-            dirty: a.dirty,
-        });
+        let a0 = self.insert_h2(H2 { s: a.s, r: a.r });
         self.pre23.insert(a0, a);
     }
 
@@ -1650,7 +1523,7 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         Ok(())
     }
 
-    fn on_ret3(&mut self, a: &H3, b: &H2b) -> Result<(), StopReason> {
+    fn on_ret3(&mut self, a: &H3, b: &H2b) {
         self.scratch_h2.clear();
         self.scratch_h2.extend(self.pre32.values(a).copied());
         self.scratch_h2.sort_unstable();
@@ -1666,9 +1539,8 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         }
 
         if self.pre3l.contains(a) {
-            self.insert_retl(*b)?;
+            self.insert_retl(*b);
         }
-        Ok(())
     }
 
     fn on_pre23(&mut self, a: &H2, c: &H3) -> Result<(), StopReason> {
@@ -1699,14 +1571,13 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         }
     }
 
-    fn on_pre3l(&mut self, a: &H3) -> Result<(), StopReason> {
+    fn on_pre3l(&mut self, a: &H3) {
         self.scratch_h2b.clear();
         self.scratch_h2b.extend(self.ret3.values(a).copied());
         self.scratch_h2b.sort_unstable();
         while let Some(b) = self.scratch_h2b.pop() {
-            self.insert_retl(b)?;
+            self.insert_retl(b);
         }
-        Ok(())
     }
 
     fn run(mut self) -> Result<(), StopReason> {
@@ -1715,10 +1586,9 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
             w: blank,
             s: 0,
             r: 1,
-            dirty: false,
         };
-        let c0 = self.insert_h3(c0)?;
-        self.insert_pre3l(c0)?;
+        let c0 = self.insert_h3(c0);
+        self.insert_pre3l(c0);
 
         loop {
             if let Some((r, e)) = self.new_pops.pop() {
@@ -1738,7 +1608,7 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
                 continue;
             }
             if let Some(a) = self.pre3l.pop_todo() {
-                self.on_pre3l(&a)?;
+                self.on_pre3l(&a);
                 continue;
             }
             if let Some((a, b)) = self.ret2.pop_todo() {
@@ -1746,7 +1616,7 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
                 continue;
             }
             if let Some((a, b)) = self.ret3.pop_todo() {
-                self.on_ret3(&a, &b)?;
+                self.on_ret3(&a, &b);
                 continue;
             }
             if let Some((a, c)) = self.pre23.pop_todo() {
@@ -1805,7 +1675,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         let mut w1 = w;
         let mut nonzero_count =
             w1.cells.iter().filter(|&&x| x != 0).count();
-        let mut saw_nonzero = nonzero_count != 0;
         let mut s1 = s;
         let mut pos: i32 = 0;
 
@@ -1825,11 +1694,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             let Some(&(out_color, shift_right, next_state)) = instr
             else {
                 return Some(RawWordUpdateLemma::exit_oriented(
-                    w1,
-                    None,
-                    false,
-                    saw_nonzero,
-                    false,
+                    w1, None, false, false,
                 ));
             };
 
@@ -1865,11 +1730,17 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         w1,
                         Some(s1),
                         false,
-                        saw_nonzero,
                         true,
                     ));
                 }
             }
+
+            // The first globally blank tape after time 0 must be created
+            // by erasing the final non-zero cell.  Requiring this concrete
+            // non-zero-to-zero write avoids reporting an already-zero abstract
+            // configuration as a new blank event solely because a history bit
+            // came from a merged path.
+            let erased_nonzero = input != 0 && out_color == 0;
 
             if input != out_color {
                 if input != 0 {
@@ -1882,16 +1753,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             }
             s1 = next_state;
 
-            saw_nonzero |= nonzero_count != 0;
-            if goal.is_blank() && nonzero_count == 0 {
+            if goal.is_blank() && erased_nonzero && nonzero_count == 0 {
                 let blank_hit = match ctx {
                     StepContext::Blank {
-                        dirty_before,
                         context_may_be_all_zero,
-                    } => {
-                        context_may_be_all_zero
-                            && (dirty_before || saw_nonzero)
-                    },
+                    } => context_may_be_all_zero,
                     _ => false,
                 };
 
@@ -1900,7 +1766,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         w1,
                         Some(s1),
                         false,
-                        saw_nonzero,
                         true,
                     ));
                 }
@@ -1913,7 +1778,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     w1,
                     Some(s1),
                     pos < 0,
-                    saw_nonzero,
                     false,
                 ));
             }
@@ -2072,7 +1936,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
     fn direct_far_cant_target(&self, goal: Goal) -> bool {
         let reached = self.far_reached_params();
-        let ctrl_states = Self::direct_far_ctrl_states(goal, reached);
+        let ctrl_states = reached.states;
         if ctrl_states == 0 || reached.colors == 0 {
             return false;
         }
@@ -2125,62 +1989,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         true
     }
 
-    const fn direct_far_ctrl_states(
-        goal: Goal,
-        reached: ReachedParams,
-    ) -> usize {
-        match goal {
-            Goal::Blank => reached.states * 2,
-            Goal::Halt | Goal::Spinout => reached.states,
-        }
-    }
-
-    const fn direct_far_start_ctrl(_goal: Goal) -> usize {
-        0
-    }
-
-    const fn direct_far_ctrl_tm_state(
-        goal: Goal,
-        ctrl: usize,
-        reached: ReachedParams,
-    ) -> usize {
-        match goal {
-            Goal::Blank => ctrl % reached.states,
-            Goal::Halt | Goal::Spinout => ctrl,
-        }
-    }
-
-    const fn direct_far_ctrl_dirty(
-        goal: Goal,
-        ctrl: usize,
-        reached: ReachedParams,
-    ) -> bool {
-        match goal {
-            Goal::Blank => ctrl >= reached.states,
-            Goal::Halt | Goal::Spinout => false,
-        }
-    }
-
-    fn direct_far_next_ctrl(
-        goal: Goal,
-        ctrl: usize,
-        read_symbol: usize,
-        write_symbol: usize,
-        next_state: usize,
-        reached: ReachedParams,
-    ) -> usize {
-        match goal {
-            Goal::Blank => {
-                let dirty =
-                    Self::direct_far_ctrl_dirty(goal, ctrl, reached)
-                        || read_symbol != 0
-                        || write_symbol != 0;
-                next_state + usize::from(dirty) * reached.states
-            },
-            Goal::Halt | Goal::Spinout => next_state,
-        }
-    }
-
     fn direct_far_decide_exact(
         &self,
         goal: Goal,
@@ -2188,7 +1996,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         dfa_states: usize,
         fuel: &mut usize,
     ) -> bool {
-        let ctrl_states = Self::direct_far_ctrl_states(goal, reached);
+        let ctrl_states = reached.states;
         let nfa_states = ctrl_states
             .saturating_mul(dfa_states)
             .saturating_add(DIRECT_FAR_TARGET_STATES);
@@ -2218,7 +2026,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             return false;
         }
 
-        let ctrl_states = Self::direct_far_ctrl_states(goal, reached);
+        let ctrl_states = reached.states;
         let nfa_states =
             ctrl_states * dfa_states + DIRECT_FAR_TARGET_STATES;
         let any_sink = nfa_states - 2;
@@ -2281,17 +2089,30 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 }
             },
             Goal::Blank => {
-                // A dirty all-zero global tape is the blank target.  DFA state
-                // 0 is the all-zero left context because transition (0, 0) is
-                // fixed to 0 by the canonical direct-DFA search.
+                // The first blank tape after time 0 is created by a transition
+                // that reads a nonzero symbol and writes zero while every other
+                // tape cell is already zero.  DFA state 0 denotes the all-zero
+                // left context, and `zero_sink` requires an all-zero right ray.
                 for state in 0..params.reached.states {
-                    let dirty_ctrl = state + params.reached.states;
-                    let src = direct_far_idx(
-                        0,
-                        dirty_ctrl,
-                        params.ctrl_states,
-                    );
-                    r[0][src] |= zero_bit;
+                    for read_symbol in 1..params.reached.colors {
+                        #[expect(clippy::cast_possible_truncation)]
+                        let slot: Slot =
+                            (state as State, read_symbol as Color);
+                        let Some(&(write, _, _)) = self.get(&slot)
+                        else {
+                            continue;
+                        };
+                        if write != 0 {
+                            continue;
+                        }
+
+                        let src = direct_far_idx(
+                            0,
+                            state,
+                            params.ctrl_states,
+                        );
+                        r[read_symbol][src] |= zero_bit;
+                    }
                 }
             },
             Goal::Spinout => {
@@ -2419,11 +2240,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
         // Right-rule for the one newly fixed DFA transition.
         for ctrl in 0..params.ctrl_states {
-            let state = Self::direct_far_ctrl_tm_state(
-                params.goal,
-                ctrl,
-                params.reached,
-            );
+            let state = ctrl;
             for read_symbol in 0..params.reached.colors {
                 #[expect(clippy::cast_possible_truncation)]
                 let slot: Slot = (state as State, read_symbol as Color);
@@ -2437,14 +2254,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 if direct_far_move_code(shift_right) == params.direction
                     && written == write_symbol
                 {
-                    let next_ctrl = Self::direct_far_next_ctrl(
-                        params.goal,
-                        ctrl,
-                        read_symbol,
-                        written,
-                        next_state as usize,
-                        params.reached,
-                    );
+                    let next_ctrl = next_state as usize;
                     let src = direct_far_idx(
                         dfa_src,
                         ctrl,
@@ -2465,11 +2275,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             let mut changed = false;
 
             for ctrl in 0..params.ctrl_states {
-                let state = Self::direct_far_ctrl_tm_state(
-                    params.goal,
-                    ctrl,
-                    params.reached,
-                );
+                let state = ctrl;
                 for read_symbol in 0..params.reached.colors {
                     #[expect(clippy::cast_possible_truncation)]
                     let slot: Slot =
@@ -2487,14 +2293,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         continue;
                     }
 
-                    let next_ctrl = Self::direct_far_next_ctrl(
-                        params.goal,
-                        ctrl,
-                        read_symbol,
-                        written,
-                        next_state as usize,
-                        params.reached,
-                    );
+                    let next_ctrl = next_state as usize;
                     for fixed_entry in 0..fixed_entries {
                         let fixed_src =
                             fixed_entry / params.reached.colors;
@@ -2545,11 +2344,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
         // If the initial all-zero configuration is already accepted by this
         // partial DFA/NFA lower bound, no completion can prove the target absent.
-        let start_idx = direct_far_idx(
-            0,
-            Self::direct_far_start_ctrl(params.goal),
-            params.ctrl_states,
-        );
+        let start_idx = direct_far_idx(0, 0, params.ctrl_states);
         (r[0][start_idx] & *a) == 0
     }
 
@@ -2638,7 +2433,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         left,
                         right,
                         &self.mitm_reachable_weight_slots(
-                            goal,
                             left,
                             right,
                             params.reached,
@@ -2764,7 +2558,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 continue;
             }
             #[expect(clippy::cast_possible_truncation)]
-            let Some(&(write, _shift, _)) =
+            let Some(&(write, ..)) =
                 self.get(&(cur.st as State, cur.co as Color))
             else {
                 continue;
@@ -2798,7 +2592,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
     fn mitm_reachable_weight_slots(
         &self,
-        goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
         reached: ReachedParams,
@@ -2832,9 +2625,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
             let write = write as usize;
             let next_st = next_st as usize;
-            let next_dirty = goal.is_blank()
-                && (cur.dirty || cur.co != 0 || write != 0);
-
             if shift {
                 useful_left[cur.left][write] = true;
                 let (new_left, _) = left.trans[cur.left][write];
@@ -2845,7 +2635,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         co: edge.symbol,
                         left: new_left,
                         right: edge.from,
-                        dirty: next_dirty,
                     };
                     if next.left != MITM_DEAD
                         && next.right != MITM_DEAD
@@ -2864,7 +2653,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         co: edge.symbol,
                         left: edge.from,
                         right: new_right,
-                        dirty: next_dirty,
                     };
                     if next.left != MITM_DEAD
                         && next.right != MITM_DEAD
@@ -3036,12 +2824,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             lo: Some(0),
             hi: Some(0),
         };
-        if !self.mitm_config_allowed(
-            goal,
-            &start,
-            &start_bounds,
-            reached,
-        ) {
+        if !self.mitm_config_allowed(goal, &start, reached) {
             return false;
         }
 
@@ -3070,15 +2853,19 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     continue;
                 };
 
-                let Some((cfg, bounds)) =
+                if goal.is_blank()
+                    && mitm_blank_transition_possible(&next)
+                {
+                    return false;
+                }
+
+                let Some((cfg, _)) =
                     mitm_accept_insert_or_widen(&next, &mut accept)
                 else {
                     continue;
                 };
 
-                if !self
-                    .mitm_config_allowed(goal, &cfg, &bounds, reached)
-                {
+                if !self.mitm_config_allowed(goal, &cfg, reached) {
                     return false;
                 }
                 todo.push(cfg);
@@ -3093,7 +2880,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         &self,
         goal: Goal,
         cfg: &MitmConfig,
-        bounds: &MitmBounds,
         reached: ReachedParams,
     ) -> bool {
         match goal {
@@ -3105,9 +2891,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         .is_some()
             },
             Goal::Blank => {
-                cfg.st < reached.states
-                    && cfg.co < reached.colors
-                    && !mitm_blank_config_possible(cfg, bounds)
+                cfg.st < reached.states && cfg.co < reached.colors
             },
             Goal::Spinout => {
                 !self.mitm_spinout_config_possible(cfg, reached)
@@ -3162,9 +2946,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
         let write = write as usize;
         let next_st = next_st as usize;
-        let next_dirty =
-            goal.is_blank() && (old.dirty || old.co != 0 || write != 0);
-
         if shift {
             // Move right: the written symbol joins the left half; the old right
             // predecessor supplies the next scanned symbol.
@@ -3176,9 +2957,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         co: edge.symbol,
                         left: new_left,
                         right: edge.from,
-                        dirty: next_dirty,
                     },
                     weight: left_weight - edge.weight,
+                    erased_nonzero: goal.is_blank()
+                        && old.co != 0
+                        && write == 0,
                 });
             }
         } else {
@@ -3192,9 +2975,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         co: edge.symbol,
                         left: edge.from,
                         right: new_right,
-                        dirty: next_dirty,
                     },
                     weight: right_weight - edge.weight,
+                    erased_nonzero: goal.is_blank()
+                        && old.co != 0
+                        && write == 0,
                 });
             }
         }
@@ -3229,7 +3014,6 @@ struct MitmConfig {
     co: usize,
     left: usize,
     right: usize,
-    dirty: bool,
 }
 
 impl MitmConfig {
@@ -3239,7 +3023,6 @@ impl MitmConfig {
             co: 0,
             left: 0,
             right: 0,
-            dirty: false,
         }
     }
 }
@@ -3248,6 +3031,7 @@ impl MitmConfig {
 struct MitmNext {
     config: MitmConfig,
     weight: i32,
+    erased_nonzero: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -3296,6 +3080,7 @@ struct MitmNextBounds {
     bounds: MitmBounds,
     hard_lo: bool,
     hard_hi: bool,
+    erased_nonzero: bool,
 }
 
 fn mitm_step_bounds(
@@ -3331,6 +3116,7 @@ fn mitm_step_bounds(
         bounds: MitmBounds { lo, hi },
         hard_lo,
         hard_hi,
+        erased_nonzero: next.erased_nonzero,
     })
 }
 
@@ -3379,15 +3165,12 @@ fn mitm_accept_insert_or_widen(
     changed.then_some((next.cfg, *old))
 }
 
-fn mitm_blank_config_possible(
-    cfg: &MitmConfig,
-    bounds: &MitmBounds,
-) -> bool {
-    cfg.dirty
-        && cfg.co == 0
-        && cfg.left == 0
-        && cfg.right == 0
-        && bounds.contains_zero()
+fn mitm_blank_transition_possible(next: &MitmNextBounds) -> bool {
+    next.erased_nonzero
+        && next.cfg.co == 0
+        && next.cfg.left == 0
+        && next.cfg.right == 0
+        && next.bounds.contains_zero()
 }
 
 impl MitmWfa {
