@@ -1,5 +1,5 @@
 use core::fmt;
-use std::collections::{VecDeque, hash_map::Entry};
+use std::collections::VecDeque;
 
 use ahash::{AHashMap as Dict, AHashSet as Set};
 
@@ -159,7 +159,14 @@ fn cps_cant_quasihalt(
 
 /**************************************/
 
-const NZ_CAP: u8 = 2;
+const fn parity_lower_bound(nz: usize, odd: bool) -> usize {
+    let nz_odd = nz & 1 != 0;
+    if nz_odd == odd {
+        nz
+    } else {
+        nz.saturating_add(1)
+    }
+}
 
 fn cps_cant_reach_obs(
     prog: &impl GetInstr,
@@ -172,6 +179,10 @@ fn cps_cant_reach_obs(
     while let Some((config_id, config @ Config { state, mut tape })) =
         configs.todo.pop_front()
     {
+        if !configs.is_active(config_id) {
+            continue;
+        }
+
         obs.see(config_id, &config);
 
         let init_scan = tape.scan;
@@ -186,12 +197,17 @@ fn cps_cant_reach_obs(
                 Ok(Some(instr)) => instr,
             };
 
-        // The count on the pushed side describes the hidden tail beyond
+        // The summary on the pushed side describes the hidden tail beyond
         // push.last.  Record it together with that continuation color so a
         // later pull cannot combine the color from one occurrence with the
         // tail evidence from another.
         let push_tail_nz =
             if shift { tape.left_nz } else { tape.right_nz };
+        let push_tail_parity = match goal {
+            Blank | Spinout if shift => tape.left_parity,
+            Blank | Spinout => tape.right_parity,
+            Halt => false,
+        };
 
         let (pull, push): (&mut Span, &mut Span) = if shift {
             (&mut tape.rspan, &mut tape.lspan)
@@ -199,7 +215,7 @@ fn cps_cant_reach_obs(
             (&mut tape.lspan, &mut tape.rspan)
         };
 
-        configs.add_span(shift, push, push_tail_nz);
+        configs.add_span(shift, push, push_tail_nz, push_tail_parity);
 
         let dropped = push.push(print, &mut configs.span_pool);
         tape.scan = pull.pull(&mut configs.span_pool);
@@ -219,18 +235,18 @@ fn cps_cant_reach_obs(
                 };
 
                 // The pushed-away cell becomes part of the hidden ray.
-                // Keep a small saturated lower bound on how many known
-                // nonzero cells are hidden on each side.
+                // Keep an uncapped lower bound on how many known nonzero
+                // cells are hidden on each side.
                 if shift {
-                    tape.left_nz = tape
-                        .left_nz
-                        .saturating_add(u8::from(dropped_nz))
-                        .min(NZ_CAP);
+                    tape.left_nz =
+                        tape.left_nz.saturating_add(dropped_nz.into());
+
+                    tape.left_parity ^= dropped_nz;
                 } else {
-                    tape.right_nz = tape
-                        .right_nz
-                        .saturating_add(u8::from(dropped_nz))
-                        .min(NZ_CAP);
+                    tape.right_nz =
+                        tape.right_nz.saturating_add(dropped_nz.into());
+
+                    tape.right_parity ^= dropped_nz;
                 }
             },
         }
@@ -242,7 +258,11 @@ fn cps_cant_reach_obs(
         };
 
         for i in 0..continuation_count {
-            let Continuation { color, tail_nz } = {
+            let Continuation {
+                color,
+                tail_nz,
+                tail_parity,
+            } = {
                 let continuations = if shift {
                     configs.rspans.get_continuations(pull)
                 } else {
@@ -251,44 +271,123 @@ fn cps_cant_reach_obs(
 
                 continuations[i]
             };
-            let (left_nz, right_nz) = match goal {
-                // Halt and quasihalt do not use hidden nonzero evidence.
-                // Keeping both counters at zero avoids splitting otherwise
-                // identical CPS configurations.
-                Halt => (0, 0),
-                Blank | Spinout => {
-                    let entered_nz = match goal {
-                        Blank => !prog.is_blank(color),
-                        Spinout => color != 0,
-                        Halt => unreachable!(),
-                    };
+            let (left_nz, right_nz, left_parity, right_parity) =
+                match goal {
+                    // Halt and quasihalt do not use hidden nonzero evidence.
+                    // Keeping all summaries zero avoids splitting otherwise
+                    // identical CPS configurations.
+                    Halt => (0, 0, false, false),
+                    Blank => {
+                        let entered_nz = !prog.is_blank(color);
 
-                    // The current count constrains the whole hidden ray:
-                    // after its first color enters the represented window,
-                    // at least current_nz - entered_nz remain.  The learned
-                    // continuation independently supplies a lower bound for
-                    // that exact tail.  Both facts hold, so retain their max.
-                    if shift {
-                        (
-                            tape.left_nz,
-                            tail_nz.max(
-                                tape.right_nz.saturating_sub(u8::from(
-                                    entered_nz,
-                                )),
-                            ),
+                        // The current hidden ray consists of the entering
+                        // color followed by the continuation's hidden tail.
+                        // Exact base-nonblank parities must agree.
+                        let current_parity = if shift {
+                            tape.right_parity
+                        } else {
+                            tape.left_parity
+                        };
+
+                        if current_parity != (entered_nz ^ tail_parity)
+                        {
+                            continue;
+                        }
+
+                        // Normalize each lower bound to the least count with
+                        // the required exact parity before removing the
+                        // entering color, then combine it with the
+                        // continuation's independently learned tail bound.
+                        let current_nz = if shift {
+                            tape.right_nz
+                        } else {
+                            tape.left_nz
+                        };
+                        let current_tail_nz = parity_lower_bound(
+                            current_nz,
+                            current_parity,
                         )
-                    } else {
-                        (
-                            tail_nz.max(
-                                tape.left_nz.saturating_sub(u8::from(
-                                    entered_nz,
-                                )),
-                            ),
-                            tape.right_nz,
+                        .saturating_sub(entered_nz.into());
+                        let continuation_tail_nz =
+                            parity_lower_bound(tail_nz, tail_parity);
+                        let next_tail_nz =
+                            current_tail_nz.max(continuation_tail_nz);
+
+                        // The current count constrains the whole hidden ray:
+                        // after its first color enters the represented window,
+                        // at least current_nz - entered_nz remain.  The learned
+                        // continuation independently supplies a lower bound for
+                        // that exact tail.  Both facts hold, so retain their max.
+                        if shift {
+                            (
+                                tape.left_nz,
+                                next_tail_nz,
+                                tape.left_parity,
+                                tail_parity,
+                            )
+                        } else {
+                            (
+                                next_tail_nz,
+                                tape.right_nz,
+                                tail_parity,
+                                tape.right_parity,
+                            )
+                        }
+                    },
+                    Spinout => {
+                        let entered_nz = color != 0;
+
+                        // For Spinout, parity counts non-canonical-zero macro
+                        // cells.  The current hidden ray consists of the
+                        // entering color followed by the continuation tail,
+                        // so their exact parities must agree.
+                        let current_parity = if shift {
+                            tape.right_parity
+                        } else {
+                            tape.left_parity
+                        };
+
+                        if current_parity != (entered_nz ^ tail_parity)
+                        {
+                            continue;
+                        }
+
+                        // As for Blank, normalize the lower bound to its exact
+                        // parity before removing the entering color, then
+                        // merge that fact with the continuation's tail
+                        // evidence.
+                        let current_nz = if shift {
+                            tape.right_nz
+                        } else {
+                            tape.left_nz
+                        };
+                        let current_tail_nz = parity_lower_bound(
+                            current_nz,
+                            current_parity,
                         )
-                    }
-                },
-            };
+                        .saturating_sub(entered_nz.into());
+                        let continuation_tail_nz =
+                            parity_lower_bound(tail_nz, tail_parity);
+                        let next_tail_nz =
+                            current_tail_nz.max(continuation_tail_nz);
+
+                        if shift {
+                            (
+                                tape.left_nz,
+                                next_tail_nz,
+                                tape.left_parity,
+                                tail_parity,
+                            )
+                        } else {
+                            (
+                                next_tail_nz,
+                                tape.right_nz,
+                                tail_parity,
+                                tape.right_parity,
+                            )
+                        }
+                    },
+                };
 
             let reached_goal = match goal {
                 Blank => {
@@ -298,6 +397,8 @@ fn cps_cant_reach_obs(
                             .base_blank_span(prog, &configs.span_pool)
                         && left_nz == 0
                         && right_nz == 0
+                        && !left_parity
+                        && !right_parity
                         && push.base_all_blank(prog, &configs.span_pool)
                 },
                 Spinout => {
@@ -306,14 +407,18 @@ fn cps_cant_reach_obs(
                     // nonblank cell does not imply that the next step
                     // repeats the same instruction.  Any retained nonzero
                     // evidence ahead also rules out a canonical blank ray.
-                    let ahead_nz =
-                        if shift { right_nz } else { left_nz };
+                    let (ahead_nz, ahead_parity) = if shift {
+                        (right_nz, right_parity)
+                    } else {
+                        (left_nz, left_parity)
+                    };
 
                     init_scan == 0
                         && color == 0
                         && tape.scan == 0
                         && pull.blank_span(&configs.span_pool)
                         && ahead_nz == 0
+                        && !ahead_parity
                         && state == next_state
                 },
                 Halt => false,
@@ -327,7 +432,14 @@ fn cps_cant_reach_obs(
             pull_clone.last = color;
 
             let next_tape = Tape::from_spans(
-                tape.scan, *push, pull_clone, shift, left_nz, right_nz,
+                tape.scan,
+                *push,
+                pull_clone,
+                shift,
+                left_nz,
+                right_nz,
+                left_parity,
+                right_parity,
             );
 
             let next_config = Config {
@@ -346,12 +458,22 @@ fn cps_cant_reach_obs(
 
         let pull_key = pull.span;
 
-        let waiting = (config_id, config);
+        if configs.is_active(config_id) {
+            let waiting = (config_id, config);
 
-        if shift {
-            configs.r_watch.entry(pull_key).or_default().push(waiting);
-        } else {
-            configs.l_watch.entry(pull_key).or_default().push(waiting);
+            if shift {
+                configs
+                    .r_watch
+                    .entry(pull_key)
+                    .or_default()
+                    .push(waiting);
+            } else {
+                configs
+                    .l_watch
+                    .entry(pull_key)
+                    .or_default()
+                    .push(waiting);
+            }
         }
 
         if configs.at_capacity() {
@@ -1053,7 +1175,8 @@ type Colors = Vec<Color>;
 #[derive(Clone, Copy, PartialEq, Eq)]
 struct Continuation {
     color: Color,
-    tail_nz: u8,
+    tail_nz: usize,
+    tail_parity: bool,
 }
 
 type Continuations = Vec<Continuation>;
@@ -1061,6 +1184,36 @@ type Spans = Dict<SpanId, Continuations>;
 type ConfigId = usize;
 type PendingConfig = (ConfigId, Config);
 type Watch = Dict<SpanId, Vec<PendingConfig>>;
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct ConfigShape {
+    state: u8,
+    scan: Color,
+    lspan: Span,
+    rspan: Span,
+    left_parity: bool,
+    right_parity: bool,
+}
+
+impl From<&Config> for ConfigShape {
+    fn from(config: &Config) -> Self {
+        Self {
+            state: config.state,
+            scan: config.tape.scan,
+            lspan: config.tape.lspan,
+            rspan: config.tape.rspan,
+            left_parity: config.tape.left_parity,
+            right_parity: config.tape.right_parity,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct AntichainEntry {
+    left_nz: usize,
+    right_nz: usize,
+    id: ConfigId,
+}
 
 /**************************************/
 
@@ -1108,7 +1261,9 @@ struct Configs {
     lspans: Spans,
     rspans: Spans,
 
-    seen: Dict<Config, ConfigId>,
+    seen: Dict<ConfigShape, Vec<AntichainEntry>>,
+    active: Vec<bool>,
+    active_count: usize,
     todo: VecDeque<PendingConfig>,
 
     l_watch: Watch,
@@ -1122,6 +1277,8 @@ impl Configs {
             lspans: Dict::new(),
             rspans: Dict::new(),
             seen: Dict::new(),
+            active: Vec::new(),
+            active_count: 0,
             todo: VecDeque::new(),
             l_watch: Dict::new(),
             r_watch: Dict::new(),
@@ -1129,10 +1286,16 @@ impl Configs {
 
         let init = Config::init(rad, &mut configs.span_pool);
 
-        configs.lspans.add_span(&init.tape.lspan, init.tape.left_nz);
-        configs
-            .rspans
-            .add_span(&init.tape.rspan, init.tape.right_nz);
+        configs.lspans.add_span(
+            &init.tape.lspan,
+            init.tape.left_nz,
+            init.tape.left_parity,
+        );
+        configs.rspans.add_span(
+            &init.tape.rspan,
+            init.tape.right_nz,
+            init.tape.right_parity,
+        );
 
         let (init_id, is_new) = configs.intern_config(&init);
         assert!(is_new);
@@ -1143,32 +1306,86 @@ impl Configs {
     }
 
     fn intern_config(&mut self, config: &Config) -> (ConfigId, bool) {
-        let next_id = self.seen.len();
+        let shape = ConfigShape::from(config);
+        let left_nz = parity_lower_bound(
+            config.tape.left_nz,
+            config.tape.left_parity,
+        );
+        let right_nz = parity_lower_bound(
+            config.tape.right_nz,
+            config.tape.right_parity,
+        );
+        let (seen, active, active_count) =
+            (&mut self.seen, &mut self.active, &mut self.active_count);
+        let entries = seen.entry(shape).or_default();
 
-        match self.seen.entry(config.clone()) {
-            Entry::Occupied(entry) => (*entry.get(), false),
-            Entry::Vacant(entry) => {
-                entry.insert(next_id);
-                (next_id, true)
-            },
+        // Smaller lower bounds are more general: they represent every tape
+        // represented by a configuration with larger bounds.  If an active
+        // representative already subsumes this pair, redirect to it.
+        if let Some(entry) = entries.iter().find(|entry| {
+            entry.left_nz <= left_nz && entry.right_nz <= right_nz
+        }) {
+            return (entry.id, false);
         }
+
+        // This pair is genuinely broader than every existing representative.
+        // Retire all narrower pairs it subsumes, leaving only a componentwise
+        // antichain for this structural configuration shape.
+        entries.retain(|entry| {
+            let dominated =
+                left_nz <= entry.left_nz && right_nz <= entry.right_nz;
+
+            if dominated {
+                debug_assert!(active[entry.id]);
+                active[entry.id] = false;
+                *active_count -= 1;
+            }
+
+            !dominated
+        });
+
+        let next_id = active.len();
+        active.push(true);
+        *active_count += 1;
+        entries.push(AntichainEntry {
+            left_nz,
+            right_nz,
+            id: next_id,
+        });
+
+        (next_id, true)
     }
 
-    fn at_capacity(&self) -> bool {
-        MAX_DEPTH < self.seen.len()
+    fn is_active(&self, id: ConfigId) -> bool {
+        self.active.get(id).copied().unwrap_or(false)
     }
 
-    fn add_span(&mut self, shift: Shift, span: &Span, tail_nz: u8) {
+    const fn at_capacity(&self) -> bool {
+        MAX_DEPTH < self.active_count
+    }
+
+    fn add_span(
+        &mut self,
+        shift: Shift,
+        span: &Span,
+        tail_nz: usize,
+        tail_parity: bool,
+    ) {
         let (spans, watch) = if shift {
             (&mut self.lspans, &mut self.l_watch)
         } else {
             (&mut self.rspans, &mut self.r_watch)
         };
 
-        if spans.add_span(span, tail_nz)
+        if spans.add_span(span, tail_nz, tail_parity)
             && let Some(waiting) = watch.remove(&span.span)
         {
-            self.todo.extend(waiting);
+            let active = &self.active;
+            self.todo.extend(
+                waiting
+                    .into_iter()
+                    .filter(|(id, _)| active.get(*id) == Some(&true)),
+            );
         }
     }
 }
@@ -1176,24 +1393,38 @@ impl Configs {
 /**************************************/
 
 trait AddSpan {
-    fn add_span(&mut self, span: &Span, tail_nz: u8) -> bool;
+    fn add_span(
+        &mut self,
+        span: &Span,
+        tail_nz: usize,
+        tail_parity: bool,
+    ) -> bool;
     fn get_continuations(&self, span: &Span) -> &Continuations;
 }
 
 impl AddSpan for Spans {
-    fn add_span(&mut self, span: &Span, tail_nz: u8) -> bool {
+    fn add_span(
+        &mut self,
+        span: &Span,
+        tail_nz: usize,
+        tail_parity: bool,
+    ) -> bool {
+        let tail_nz = parity_lower_bound(tail_nz, tail_parity);
         let continuation = Continuation {
             color: span.last,
             tail_nz,
+            tail_parity,
         };
 
         if let Some(continuations) = self.get_mut(&span.span) {
-            match continuations
-                .binary_search_by_key(&span.last, |cnt| cnt.color)
-            {
+            match continuations.binary_search_by_key(
+                &(span.last, tail_parity),
+                |cnt| (cnt.color, cnt.tail_parity),
+            ) {
                 Ok(pos) => {
                     // Counts are lower bounds.  For the same continuation
-                    // color, a smaller bound subsumes every larger one.
+                    // color and exact tail parity, a smaller bound subsumes
+                    // every larger one.
                     if tail_nz < continuations[pos].tail_nz {
                         continuations[pos].tail_nz = tail_nz;
                         return true;
@@ -1236,8 +1467,10 @@ struct Tape {
     scan: Color,
     lspan: Span,
     rspan: Span,
-    left_nz: u8,
-    right_nz: u8,
+    left_nz: usize,
+    right_nz: usize,
+    left_parity: bool,
+    right_parity: bool,
 }
 
 impl Tape {
@@ -1248,6 +1481,8 @@ impl Tape {
             rspan: Span::init(rad, pool),
             left_nz: 0,
             right_nz: 0,
+            left_parity: false,
+            right_parity: false,
         }
     }
 
@@ -1256,8 +1491,10 @@ impl Tape {
         push: Span,
         pull: Span,
         shift: Shift,
-        left_nz: u8,
-        right_nz: u8,
+        left_nz: usize,
+        right_nz: usize,
+        left_parity: bool,
+        right_parity: bool,
     ) -> Self {
         let (lspan, rspan) =
             if shift { (push, pull) } else { (pull, push) };
@@ -1268,6 +1505,8 @@ impl Tape {
             rspan,
             left_nz,
             right_nz,
+            left_parity,
+            right_parity,
         }
     }
 }
@@ -1282,14 +1521,16 @@ impl fmt::Display for Tape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "L(pat={}, last={}, nz={}) [{}] R(pat={}, last={}, nz={})",
+            "L(pat={}, last={}, nz={}, odd={}) [{}] R(pat={}, last={}, nz={}, odd={})",
             self.lspan.span,
             self.lspan.last,
             self.left_nz,
+            self.left_parity,
             self.scan,
             self.rspan.span,
             self.rspan.last,
-            self.right_nz
+            self.right_nz,
+            self.right_parity
         )
     }
 }

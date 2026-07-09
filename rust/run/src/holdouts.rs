@@ -21,7 +21,6 @@ pub const _2_4_2_ch: &[&str] = &[
 
 pub const _2_4_2_ho: &[&str] = &[
     "1RB 2RB 3LA 0RB  0LB 1LA 0LA 2RA",
-    "1RB 3RA 1LB 1RB  2LA 0LB 3RB 1LA",
     "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
 ];
 
