@@ -200,14 +200,11 @@ macro_rules! assert_holdouts {
 /**************************************/
 
 fn _2_3_1(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(7).is_refuted()
-        || prog.ctl_cant_spinout(100)
-        || prog.cps_cant_spinout(3)
+    prog.bkw_cant_spinout(7).is_refuted() || prog.cps_cant_spinout(3)
 }
 
 fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
-        || prog.ctl_cant_spinout(500)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_spinout(12)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
@@ -216,7 +213,6 @@ fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
 
 fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(51).is_refuted()
-        || prog.ctl_cant_blank(130)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
@@ -225,7 +221,6 @@ fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
 
 fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
-        || prog.ctl_cant_spinout(700)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_spinout(11)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
@@ -234,7 +229,6 @@ fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
 
 fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(51).is_refuted()
-        || prog.ctl_cant_blank(200)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
@@ -305,7 +299,7 @@ fn _2_2_1(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
 }
 
 fn _2_2_2(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(2).is_refuted() || prog.ctl_cant_blank(14)
+    prog.bkw_cant_blank(2).is_refuted()
 }
 
 fn _2_2_3(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
@@ -313,21 +307,15 @@ fn _2_2_3(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
 }
 
 fn _3_2_0(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(13).is_refuted()
-        || prog.ctl_cant_halt(20)
-        || prog.cps_cant_halt(3)
+    prog.bkw_cant_halt(13).is_refuted() || prog.cps_cant_halt(3)
 }
 
 fn _3_2_1(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(7).is_refuted()
-        || prog.ctl_cant_spinout(40)
-        || prog.cps_cant_spinout(4)
+    prog.bkw_cant_spinout(7).is_refuted() || prog.cps_cant_spinout(4)
 }
 
 fn _3_2_2(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(20).is_refuted()
-        || prog.ctl_cant_blank(42)
-        || prog.cps_cant_blank(10)
+    prog.bkw_cant_blank(20).is_refuted() || prog.cps_cant_blank(10)
 }
 
 fn _2_3_0(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
@@ -335,27 +323,23 @@ fn _2_3_0(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
 }
 
 fn _2_3_2(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(16).is_refuted()
-        || prog.ctl_cant_blank(50)
-        || prog.cps_cant_blank(7)
+    prog.bkw_cant_blank(16).is_refuted() || prog.cps_cant_blank(7)
 }
 
 fn _4_2_0(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(46).is_refuted()
-        || prog.ctl_cant_halt(130)
         || prog.cps_cant_halt(6)
         || prog.far_cant_halt(3)
 }
 
 fn _2_4_0(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.ctl_cant_halt(190)
-        || prog.cps_cant_halt(6)
+    prog.cps_cant_halt(6)
         || prog.far_cant_halt(3)
         || prog.to_string() == "1RB 2LA 1RA 1RA  1LB 1LA 3RB ..."
 }
 
 fn instrs_4(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(0).is_refuted() || prog.ctl_cant_halt(11)
+    prog.bkw_cant_halt(0).is_refuted() || prog.cps_cant_halt(3)
 }
 
 fn instrs_5(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
@@ -363,7 +347,7 @@ fn instrs_5(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
 }
 
 fn instrs_6(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
-    prog.ctl_cant_halt(41) || prog.far_cant_halt(4)
+    prog.cps_cant_halt(3) || prog.far_cant_halt(4)
 }
 
 fn test_solved() {
@@ -548,14 +532,12 @@ fn test_from_file() {
 
 fn _7_0(prog: &Prog<7, 7>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(20).is_refuted()
-        || prog.ctl_cant_halt(200)
         || prog.cps_cant_halt(6)
         || prog.far_cant_halt(4)
 }
 
 fn _7_1(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
-        || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.far_cant_spinout(3)
@@ -563,7 +545,6 @@ fn _7_1(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
 
 fn _7_2(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(51).is_refuted()
-        || prog.ctl_cant_blank(200)
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.far_cant_blank(3)
@@ -587,7 +568,6 @@ fn test_instrs() {
 
 fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(30).is_refuted()
-        || prog.ctl_cant_halt(300)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_halt(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
@@ -596,7 +576,6 @@ fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
 
 fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(50).is_refuted()
-        || prog.ctl_cant_blank(300)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()

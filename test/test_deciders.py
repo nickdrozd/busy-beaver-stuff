@@ -14,9 +14,6 @@ from tm.rust_stuff import (
     cps_cant_halt,
     cps_cant_quasihalt,
     cps_cant_spinout,
-    ctl_cant_blank,
-    ctl_cant_halt,
-    ctl_cant_spinout,
     far_cant_blank,
     far_cant_halt,
     far_cant_spinout,
@@ -36,7 +33,6 @@ if TYPE_CHECKING:
 ########################################
 
 CPS_LIMIT = 33
-CTL_LIMIT = 3_200
 BKW_LIMIT = 3_000
 
 ########################################
@@ -328,97 +324,6 @@ class Cps(DeciderTest):
             for prog in self.false_negatives[cat]:
                 try:
                     cps_check(prog)
-                except AssertionError:
-                    pos.add(prog)
-
-        true_pos = {
-            cat: sorted(pos, key = len)
-            for cat, (pos, _) in cats.items()
-        }
-
-        if any(pos for pos in true_pos.values()):
-            print(json.dumps(true_pos, indent = 4))
-            raise AssertionError
-
-########################################
-
-class Ctl(DeciderTest):
-    false_negatives = FALSE_NEGATIVES['ctl']
-
-    def assert_could_halt_ctl(self, prog: str):
-        self.assertFalse(
-            ctl_cant_halt(prog, CTL_LIMIT))
-
-    def assert_cant_halt_ctl(self, prog: str, segs: int):
-        if prog in self.false_negatives['halt']:
-            return
-
-        self.assertTrue(
-            ctl_cant_halt(prog, segs), prog)
-
-    def assert_could_blank_ctl(self, prog: str):
-        self.assertFalse(
-            ctl_cant_blank(prog, CTL_LIMIT))
-
-    def assert_cant_blank_ctl(self, prog: str, segs: int):
-        if prog in self.false_negatives['blank'] | RECUR_FAST:
-            return
-
-        self.assertTrue(
-            ctl_cant_blank(prog, segs))
-
-    def assert_could_spinout_ctl(self, prog: str):
-        self.assertFalse(
-            ctl_cant_spinout(prog, CTL_LIMIT))
-
-    def assert_cant_spinout_ctl(self, prog: str, segs: int):
-        if prog in self.false_negatives['spinout'] | RECUR_FAST:
-            return
-
-        self.assertTrue(
-            ctl_cant_spinout(prog, segs))
-
-    def test_true_positives(self):
-        for prog in NONHALTERS:
-            self.assert_cant_halt_ctl(prog, CTL_LIMIT)
-
-        for prog in NONBLANKERS:
-            self.assert_cant_blank_ctl(prog, CTL_LIMIT)
-
-        for prog in NONSPINNERS:
-            self.assert_cant_spinout_ctl(prog, CTL_LIMIT)
-
-    def test_true_negatives(self):
-        for prog in HALTERS:
-            self.assert_could_halt_ctl(prog)
-
-        for prog in BLANKERS:
-            self.assert_could_blank_ctl(prog)
-
-        for prog in SPINNERS:
-            self.assert_could_spinout_ctl(prog)
-
-    def test_holdouts(self):
-        for prog in BLANK_HOLDOUTS:
-            self.assert_could_blank_ctl(prog)
-
-        for prog in SPINOUT_HOLDOUTS:
-            self.assert_could_spinout_ctl(prog)
-
-        for prog in HALT_HOLDOUTS:
-            self.assert_could_halt_ctl(prog)
-
-    def test_false_negatives(self):
-        cats: dict[Goal, tuple[set[str], Callable[[str], None]]] = {
-            'halt': (set(), self.assert_could_halt_ctl),
-            'blank': (set(), self.assert_could_blank_ctl),
-            'spinout': (set(), self.assert_could_spinout_ctl),
-        }
-
-        for cat, (pos, ctl_check) in cats.items():
-            for prog in self.false_negatives[cat]:
-                try:
-                    ctl_check(prog)
                 except AssertionError:
                     pos.add(prog)
 

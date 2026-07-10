@@ -193,41 +193,6 @@ pub fn cps_cant_quasihalt(prog: &str, rad: Radius) -> bool {
 /***************************************/
 
 #[pyfunction]
-pub fn ctl_cant_halt(prog: &str, steps: Steps) -> bool {
-    let p = Prog::from(prog);
-
-    if p.halt_slots().is_empty() {
-        return true;
-    }
-
-    p.ctl_cant_halt(steps)
-}
-
-#[pyfunction]
-pub fn ctl_cant_blank(prog: &str, steps: Steps) -> bool {
-    let p = Prog::from(prog);
-
-    if p.erase_slots().is_empty() {
-        return true;
-    }
-
-    p.ctl_cant_blank(steps)
-}
-
-#[pyfunction]
-pub fn ctl_cant_spinout(prog: &str, steps: Steps) -> bool {
-    let p = Prog::from(prog);
-
-    if p.zr_shifts().is_empty() {
-        return true;
-    }
-
-    p.ctl_cant_spinout(steps)
-}
-
-/***************************************/
-
-#[pyfunction]
 pub fn far_cant_halt(prog: &str, steps: Steps) -> bool {
     let p = Prog::from(prog);
 
@@ -469,7 +434,6 @@ mod rust_stuff {
         bkw_cant_blank, bkw_cant_halt, bkw_cant_spinout,
         bkw_cant_twostep, bkw_cant_zloop, cps_cant_blank,
         cps_cant_halt, cps_cant_quasihalt, cps_cant_spinout,
-        ctl_cant_blank, ctl_cant_halt, ctl_cant_spinout,
         far_cant_blank, far_cant_halt, far_cant_spinout, opt_block,
         read_instr, run_quick_machine, run_transcript, show_comp,
         show_instr, show_slot, show_state, tcompile, term_or_rec,
