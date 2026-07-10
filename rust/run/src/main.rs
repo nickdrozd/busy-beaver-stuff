@@ -16,8 +16,11 @@ use tree::{Harvester as _, PassConfig};
 
 /**************************************/
 
-const LIN_REC: Steps = 4_000;
 const TREE_LIM: Steps = 876;
+
+const LIN_MIN: Steps = 4_000;
+const LIN_MOR: Steps = 10_000;
+const LIN_MAX: Steps = 1_000_000;
 
 /**************************************/
 
@@ -57,7 +60,7 @@ macro_rules! assert_holdouts {
                 $steps,
                 &|| Collector::new(
                     |prog: &Prog<$states, $colors>, config: &mut PassConfig<'_>| {
-                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+                        prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
                             || $pipeline(prog, config)
                     }
                 ),
@@ -85,7 +88,7 @@ macro_rules! assert_holdouts {
                 $steps,
                 &|| HoldoutVisited::new(
                     |prog: &Prog<$states, $colors>, config: &mut PassConfig<'_>| {
-                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+                        prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
                             || $pipeline(prog, config)
                     }
                 ),
@@ -106,7 +109,7 @@ macro_rules! assert_holdouts {
                 $steps,
                 &|| HoldoutVisited::new(
                     |prog: &Prog<$instrs, $instrs>, config: &mut PassConfig<'_>| {
-                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+                        prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
                             || $pipeline(prog, config)
                     }
                 ),
@@ -127,7 +130,7 @@ macro_rules! assert_holdouts {
                 $steps,
                 &|| MultiCollector::new(
                     |prog: &Prog<$instrs, $instrs>, config: &mut PassConfig<'_>| {
-                        prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+                        prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
                     },
                     [ $( $pipeline ),* ],
                 ),
@@ -202,34 +205,39 @@ fn _2_3_1(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_spinout(3)
 }
 
-fn _4_2_1(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
+fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
         || prog.ctl_cant_spinout(500)
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_spinout(12)
+        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.far_cant_spinout(3)
 }
 
 fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(130)
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_blank(20)
-        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
+        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.far_cant_blank(3)
 }
 
 fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
         || prog.ctl_cant_spinout(700)
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_spinout(11)
-        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
+        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.far_cant_spinout(3)
 }
 
 fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(200)
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_blank(20)
-        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
+        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.far_cant_blank(3)
 }
 
@@ -410,13 +418,19 @@ fn qh_2_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
 }
 
 fn qh_4_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
-    prog.term_or_rec(10_000, config.to_mut()).is_settled()
+    let config = config.to_mut();
+
+    prog.term_or_rec(LIN_MOR, config).is_settled()
         || prog.cps_cant_quasihalt(18)
+        || prog.term_or_rec(LIN_MAX, config).is_settled()
 }
 
 fn qh_2_4(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
-    prog.term_or_rec(10_000, config.to_mut()).is_settled()
+    let config = config.to_mut();
+
+    prog.term_or_rec(LIN_MOR, config).is_settled()
         || prog.cps_cant_quasihalt(18)
+        || prog.term_or_rec(LIN_MAX, config).is_settled()
 }
 
 fn test_quasihalt() {
@@ -430,7 +444,7 @@ fn test_quasihalt() {
 
     assert_holdouts![
         (4, 2) => [
-            3 => (qh_4_2, 99, (5_539, 2_134_923)),
+            3 => (qh_4_2, 99, (3_368, 2_134_923)),
         ],
     ];
 }
@@ -543,7 +557,7 @@ fn _7_1(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
         || prog.ctl_cant_spinout(700)
         || prog.cps_cant_spinout(11)
-        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.far_cant_spinout(3)
 }
 
@@ -551,7 +565,7 @@ fn _7_2(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(51).is_refuted()
         || prog.ctl_cant_blank(200)
         || prog.cps_cant_blank(20)
-        || prog.term_or_rec(10_000, config.to_mut()).is_settled()
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.far_cant_blank(3)
 }
 
@@ -574,16 +588,18 @@ fn test_instrs() {
 fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(30).is_refuted()
         || prog.ctl_cant_halt(300)
-        || prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_halt(20)
+        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.far_cant_halt(4)
 }
 
 fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(50).is_refuted()
         || prog.ctl_cant_blank(300)
-        || prog.term_or_rec(LIN_REC, config.to_mut()).is_settled()
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.cps_cant_blank(20)
+        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.far_cant_blank(4)
 }
 
