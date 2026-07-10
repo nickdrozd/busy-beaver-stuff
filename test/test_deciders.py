@@ -259,7 +259,7 @@ class Cps(DeciderTest):
             f'cps quasihalt false positive: "{prog}"')
 
     def assert_cant_quasihalt_cps(self, prog: str, segs: int):
-        if prog in CPS_QUASIHALT_FALSE_NEGATIVES:
+        if prog in self.false_negatives['quasihalt']:
             self.assertFalse(
                 cps_cant_quasihalt(prog, CPS_LIMIT),
                 f'unexpected cps quasihalt positive: "{prog}"')

@@ -7,6 +7,7 @@ type Goal = Literal[
     "zloop",
     "spinout",
     "twostep",
+    "quasihalt",
 ]
 
 ## test turing #######################################################
@@ -3903,6 +3904,7 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
         "halt": 8,
         "blank": 6,
         "spinout": 7,
+        "quasihalt": 26,
     },
     "bkw": {
         "halt": 167,
@@ -3971,6 +3973,34 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
             "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
+        },
+        "quasihalt": {
+            "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC",
+            "1RB 0LC  1LB 1LC  1RD 0RB  0RC 1LA",
+            "1RB 0LD  0LC 1RA  ... 1LA  0RA 1LD",
+            "1RB 0LD  1LC 1RA  ... 1LA  0RA 1LD",
+            "1RB 0LD  1LC 1RA  0RB 0LC  ... 1LA",
+            "1RB 0RB  1LC 0LC  1RA 0LD  1LB 0LB",
+            "1RB 0RB  1LC 1LD  0LC 1RA  0LD 0RA",
+            "1RB 0RB  1LC 1RB  ... 0LD  1RA 1LD",
+            "1RB 0RC  1LB 1LC  1LA 0LD  1RD 0RB",
+            "1RB 0RD  0RC 1RD  1LC 1RB  1LD 0LA",
+            "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
+            "1RB 1LA  1LA 0RC  1LD 1RC  ... 0LA",
+            "1RB 1LC  1LA 0RD  1LA ...  0LD 0RB",
+            "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
+            "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA",
+            "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
+            "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
+            "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
+            "1RB 0RD  0RC 0RB  1LC 0LA  0RA 1RE  0LB 1RB",
+            "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB",
+            "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
+            "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
+            "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
+            "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...",
+            "1RB 1LC  0RC 1RE  1LD 1RA  0RE 0LF  1RC 0RD  1LE 1LD",
+            "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
         },
     },
     "bkw": {
@@ -4350,6 +4380,9 @@ for _fns in FALSE_NEGATIVES.values():
     if 'zloop' in _fns:
         assert not ZLOOPERS & _fns['zloop']
 
+    if 'quasihalt' in _fns:
+        assert not QUASIHALT & _fns['quasihalt']
+
 assert FALSE_NEGATIVE_COUNTS == (_counts := {
     decider: {
         goal: len(progs)
@@ -4357,43 +4390,6 @@ assert FALSE_NEGATIVE_COUNTS == (_counts := {
     }
     for decider, fns in FALSE_NEGATIVES.items()
 }), json.dumps(_counts, indent = 4)
-
-########################################
-
-CPS_QUASIHALT_FALSE_NEGATIVE_COUNT = 26
-
-CPS_QUASIHALT_FALSE_NEGATIVES = {
-    "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC",
-    "1RB 0LC  1LB 1LC  1RD 0RB  0RC 1LA",
-    "1RB 0LD  0LC 1RA  ... 1LA  0RA 1LD",
-    "1RB 0LD  1LC 1RA  ... 1LA  0RA 1LD",
-    "1RB 0LD  1LC 1RA  0RB 0LC  ... 1LA",
-    "1RB 0RB  1LC 0LC  1RA 0LD  1LB 0LB",
-    "1RB 0RB  1LC 1LD  0LC 1RA  0LD 0RA",
-    "1RB 0RB  1LC 1RB  ... 0LD  1RA 1LD",
-    "1RB 0RC  1LB 1LC  1LA 0LD  1RD 0RB",
-    "1RB 0RD  0RC 1RD  1LC 1RB  1LD 0LA",
-    "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
-    "1RB 1LA  1LA 0RC  1LD 1RC  ... 0LA",
-    "1RB 1LC  1LA 0RD  1LA ...  0LD 0RB",
-    "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
-    "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA",
-    "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
-    "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
-    "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
-    "1RB 0RD  0RC 0RB  1LC 0LA  0RA 1RE  0LB 1RB",
-    "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB",
-    "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
-    "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
-    "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
-    "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...",
-    "1RB 1LC  0RC 1RE  1LD 1RA  0RE 0LF  1RC 0RD  1LE 1LD",
-    "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
-}
-
-assert CPS_QUASIHALT_FALSE_NEGATIVE_COUNT == (_count := len(CPS_QUASIHALT_FALSE_NEGATIVES)), _count
-
-assert not QUASIHALT & CPS_QUASIHALT_FALSE_NEGATIVES
 
 ########################################
 
@@ -4408,5 +4404,3 @@ assert not any(
     for fns in FALSE_NEGATIVES.values()
     for progs in fns.values()
 )
-
-assert not CPS_QUASIHALT_FALSE_NEGATIVES & RECUR_FAST
