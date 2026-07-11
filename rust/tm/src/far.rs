@@ -8,19 +8,19 @@
 //!
 //! # Public API
 //! ```ignore
-//! // Single effort knob: higher => more analysis / more chances to prove non-halting.
-//! // Reasonable values: 2 .. 64/128/256.
-//! let proved = prog.far_cant_halt(64);
+//! // The argument is the largest FAR block length to try.
+//! // Higher values include every smaller block length.
+//! let proved = prog.far_cant_halt(16);
 //! ```
 //!
 //! Behavior:
 //! - Returns `true` only when FAR or MITM/WFAR proves that the machine cannot halt.
 //! - Returns `false` otherwise (it may halt, or FAR ran out of budgets).
 //!
-//! # How the knob works
-//! `knob` controls *both*:
-//! - the range of block lengths to try (roughly `2..=knob` but with a colors-based cap)
-//! - budgets for each FAR run (more work / deeper block simulation)
+//! # How the argument works
+//! `block` controls only the cumulative FAR block-length sweep:
+//! block lengths `1..=block` are tried, subject to the alphabet-size
+//! and hard safety caps.  Per-run budgets are fixed functions of `block_len`.
 
 use core::{cmp::Ordering, hash::Hash};
 
@@ -34,18 +34,18 @@ use crate::{Color, Goal, Instr, Prog, Slot, State};
 
 /// Base exploration budget per block length unit.
 ///
-/// With `knob = 16`, `block_len = 16`, effort factor = 1, this gives:
+/// With `block_len = 16`, this gives:
 /// `max_work ≈ 12_500 * 16 = 200_000` (matching the previous single-run default).
 const FAR_WORK_PER_LEN: usize = 12_500;
 
 /// Base per-block raw-step budget per block length unit.
 ///
-/// With `knob = 16`, `block_len = 16`, effort factor = 1, this gives:
+/// With `block_len = 16`, this gives:
 /// `block_step_limit ≈ 200 * 16 = 3_200`.
 const FAR_STEP_PER_LEN: usize = 200;
 
 /// Hard cap on block lengths we will try.
-/// (Even if `knob` is bigger.)
+/// (Even if `block` is bigger.)
 const FAR_BLOCK_LEN_HARD_CAP: usize = 256;
 
 /// Practical caps by alphabet size (keeps the parameter sweep sane).
@@ -55,9 +55,6 @@ const FAR_BLOCK_LEN_HARD_CAP: usize = 256;
 const FAR_BLOCK_LEN_CAP_COLORS_2: usize = 256;
 const FAR_BLOCK_LEN_CAP_COLORS_3_4: usize = 128;
 const FAR_BLOCK_LEN_CAP_COLORS_5_8: usize = 64;
-
-/// Minimum knob value.
-const FAR_KNOB_MIN: usize = 2;
 
 // Summary parameters ----------------------------------------------------------
 
@@ -137,19 +134,6 @@ const DIRECT_FAR_TARGET_STATES: usize = 2;
 const DIRECT_FAR_MAX_DFA_ENTRIES: usize = 18;
 const DIRECT_FAR_MAX_WORK: usize = 350_000;
 
-/// Compute an "effort factor" from the knob.
-///
-/// This increases budgets uniformly as knob grows:
-/// - knob < 16 => 1
-/// - 16..31    => 1
-/// - 32..63    => 2
-/// - 64..127   => 4
-/// - 128..255  => 8
-/// - 256..     => 16
-fn effort_factor(knob: usize) -> usize {
-    (knob / 16).max(1)
-}
-
 const fn direct_far_bit(idx: usize) -> u128 {
     1_u128 << idx
 }
@@ -202,16 +186,17 @@ fn direct_far_matrix_times_vec(
 impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// FAR non-halting prover (Finite Automaton Reduction).
     ///
-    /// `knob` is the only user-facing parameter.
-    /// Higher means more analysis and more chances to prove non-halting.
+    /// `block` is the only user-facing parameter.
+    /// Higher values try every block length attempted by lower values, plus
+    /// additional larger block lengths (up to the internal safety caps).
     ///
     /// Returns:
     /// - `true` iff FAR or MITM/WFAR proved the machine cannot halt.
     /// - `false` otherwise.
-    pub fn far_cant_halt(&self, knob: usize) -> bool {
-        self.far_sweep_fast(knob, Goal::Halt)
+    pub fn far_cant_halt(&self, block: usize) -> bool {
+        self.far_sweep_fast(block, Goal::Halt)
             || self.mitm_cant_halt()
-            || self.far_sweep_slow(knob, Goal::Halt)
+            || self.far_sweep_slow(block, Goal::Halt)
             || self.direct_far_cant_target(Goal::Halt)
     }
 
@@ -225,10 +210,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// transition as the target rather than a history-tagged all-zero endpoint.
     /// Lossy summary states still use the exact zero-only DFA reachability relation
     /// to decide whether the surrounding block context may be all zero.
-    pub fn far_cant_blank(&self, knob: usize) -> bool {
-        self.far_sweep_fast(knob, Goal::Blank)
+    pub fn far_cant_blank(&self, block: usize) -> bool {
+        self.far_sweep_fast(block, Goal::Blank)
             || self.mitm_cant_blank()
-            || self.far_sweep_slow(knob, Goal::Blank)
+            || self.far_sweep_slow(block, Goal::Blank)
             || self.direct_far_cant_target(Goal::Blank)
     }
 
@@ -236,10 +221,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     ///
     /// Returns `true` iff FAR proves that the machine can never enter a
     /// one-sided all-zero same-state drift.
-    pub fn far_cant_spinout(&self, knob: usize) -> bool {
-        self.far_sweep_fast(knob, Goal::Spinout)
+    pub fn far_cant_spinout(&self, block: usize) -> bool {
+        self.far_sweep_fast(block, Goal::Spinout)
             || self.mitm_cant_spinout()
-            || self.far_sweep_slow(knob, Goal::Spinout)
+            || self.far_sweep_slow(block, Goal::Spinout)
             || self.direct_far_cant_target(Goal::Spinout)
     }
 }
@@ -1854,22 +1839,20 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         decider.run().is_ok()
     }
 
-    fn far_sweep_fast(&self, knob: usize, goal: Goal) -> bool {
-        self.far_sweep_with(goal, knob, Self::far_decide_fast)
+    fn far_sweep_fast(&self, block: usize, goal: Goal) -> bool {
+        self.far_sweep_with(goal, block, Self::far_decide_fast)
     }
 
-    fn far_sweep_slow(&self, knob: usize, goal: Goal) -> bool {
-        self.far_sweep_with(goal, knob, Self::far_decide_slow)
+    fn far_sweep_slow(&self, block: usize, goal: Goal) -> bool {
+        self.far_sweep_with(goal, block, Self::far_decide_slow)
     }
 
     fn far_sweep_with(
         &self,
         goal: Goal,
-        knob: usize,
+        block: usize,
         decide: fn(&Self, FarRunParams) -> bool,
     ) -> bool {
-        let knob = knob.max(FAR_KNOB_MIN);
-        let eff = effort_factor(knob);
         let reached = self.far_reached_params();
 
         let cap_by_colors = if reached.colors <= 2 {
@@ -1880,17 +1863,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             FAR_BLOCK_LEN_CAP_COLORS_5_8
         };
 
-        let max_block_len =
-            knob.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
+        let block =
+            block.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
 
-        for block_len in 1..=max_block_len {
-            let max_work = FAR_WORK_PER_LEN
-                .saturating_mul(block_len)
-                .saturating_mul(eff);
+        for block_len in 1..=block {
+            let max_work = FAR_WORK_PER_LEN.saturating_mul(block_len);
 
-            let block_step_limit = FAR_STEP_PER_LEN
-                .saturating_mul(block_len)
-                .saturating_mul(eff);
+            let block_step_limit =
+                FAR_STEP_PER_LEN.saturating_mul(block_len);
 
             for mirrored in [false, true] {
                 if decide(
