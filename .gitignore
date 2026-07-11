@@ -14,4 +14,3 @@ target/
 Cargo.lock
 .cargo
 *callgrind
-mypyc-report.html

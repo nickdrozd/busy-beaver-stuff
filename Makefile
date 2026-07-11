@@ -3,7 +3,7 @@
 all : machines idris lint test tools
 
 clean-python :
-	rm -rf __pycache__ **/__pycache__ .mypy_cache .ruff_cache .coverage* html* build/ *.so **/*.so classes.png packages.png mypyc_annotation.html
+	rm -rf __pycache__ **/__pycache__ .mypy_cache .ruff_cache .coverage* html* build/ *.so **/*.so classes.png packages.png
 
 clean : clean-python clean-rust
 	$(MAKE) -C machines clean
@@ -98,10 +98,6 @@ MYPYC = $(PYTHON) -m mypyc
 compile : rust
 	$(MYPYC) --version
 	$(MYPYC) tm tools test/lin_rec.py --exclude rust_stuff
-
-mypyc-report : rust
-	$(MYPYC) --version
-	$(MYPYC) tm tools --exclude rust_stuff -a mypyc-report.html
 
 PYTEST = $(PYTHON) -m unittest
 
