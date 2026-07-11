@@ -1,25 +1,21 @@
-.PHONY : all clean clean-python compile coverage idris lint machines profile rust test test-all type
+.PHONY : all clean clean-python compile coverage lint machines profile rust test test-all type
 
-all : machines idris lint test tools
+all : machines lint test tools
 
 clean-python :
 	rm -rf __pycache__ **/__pycache__ .mypy_cache .ruff_cache .coverage* html* build/ *.so **/*.so classes.png packages.png
 
 clean : clean-python clean-rust
 	$(MAKE) -C machines clean
-	$(MAKE) -C idris clean
 
 refresh : clean-python rust
 
 quick-check : refresh trust lint coverage
 
-## Odd langs ###########################
+## C ###################################
 
 machines :
 	$(MAKE) -C machines
-
-idris :
-	$(MAKE) -C idris
 
 ## Rust ################################
 
