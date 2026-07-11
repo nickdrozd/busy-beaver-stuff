@@ -72,7 +72,7 @@ clean-rust :
 
 PYTHON = python3
 
-MODULES = tm tools test perf *.py
+MODULES = tm tools test *.py
 
 RUFF = $(PYTHON) -m ruff
 PYLINT = $(PYTHON) -m pylint
@@ -119,7 +119,4 @@ coverage : rust
 	$(COVERAGE) html
 
 diagrams :
-	pyreverse --only-classnames --no-standalone --colorized -o png tm tools test perf
-
-profile :
-	$(MAKE) -C perf
+	pyreverse --only-classnames --no-standalone --colorized -o png tm tools test
