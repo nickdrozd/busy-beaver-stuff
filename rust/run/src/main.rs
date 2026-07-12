@@ -619,11 +619,7 @@ const FAST: &[fn()] = &[
     test_twostep,
 ];
 
-const SLOW: &[fn()] = &[
-    test_8_instr,
-    test_deciders_slow,
-    // test_9_instr,
-];
+const SLOW: &[fn()] = &[test_deciders_slow, test_9_instr];
 
 fn main() {
     CURR.par_iter().for_each(|f| f());
@@ -633,6 +629,12 @@ fn main() {
     }
 
     FAST.par_iter().for_each(|f| f());
+
+    test_8_instr();
+
+    if !std::env::args().any(|x| x == "--extra") {
+        return;
+    }
 
     SLOW.iter().for_each(|f| f());
 }
