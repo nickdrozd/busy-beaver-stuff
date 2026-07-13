@@ -5,7 +5,6 @@ pub const _4_2_2_ho: &[&str] = &[
 ];
 
 pub const _4_2_1_ho: &[&str] = &[
-    "1RB 0RD  1LC 1LB  1RD 0LB  0RD 1RA",
     "1RB 1LC  1LB 1RA  0LC 0LD  0RA 0RD",
     "1RB 1LC  1LC 1RA  0LC 0LD  0RA 0RD",
 ];
@@ -79,6 +78,12 @@ pub const _8_0_ch: &[&str] = &[
     "1RB 2RC 1LA  2LA 1RB ...  2RB 2RA 1LC",
 ];
 
+pub const _8_1_ch: &[&str] = &[
+    "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",
+    "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",
+    "1RB 3RB 1LA 1LB  1LB 2RA 3RB 2LA",
+];
+
 pub const _8_2_ch: &[&str] = &[];
 
 /**************************************/
@@ -125,6 +130,7 @@ macro_rules! holdouts {
 }
 
 holdouts!(_8_0_ch, _8_0_ho, _8_0_, "halt");
+holdouts!(_8_1_ch, _8_1_ho, _8_1_, "spinout");
 holdouts!(_8_2_ch, _8_2_ho, _8_2_, "blank");
 
 holdouts!(_2_4_q_ch, _2_4_q_ho, _2_4_q_, "quasihalt");

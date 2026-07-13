@@ -206,7 +206,7 @@ fn _2_3_1(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
 fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.cps_cant_spinout(12)
+        || prog.cps_cant_spinout(21)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.far_cant_spinout(3)
 }
@@ -574,6 +574,14 @@ fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
         || prog.far_cant_halt(4)
 }
 
+fn _8_1(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_spinout(50).is_refuted()
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.cps_cant_spinout(21)
+        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.far_cant_spinout(3)
+}
+
 fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(50).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
@@ -591,6 +599,7 @@ fn test_8_instr() {
             12_835_863_274,
             [
                 0 => (_8_0, _8_0_),
+                1 => (_8_1, _8_1_),
                 2 => (_8_2, _8_2_),
             ],
         ],

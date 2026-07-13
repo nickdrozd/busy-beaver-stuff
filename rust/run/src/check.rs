@@ -5,6 +5,9 @@ use tm::Prog;
 /**************************************/
 
 pub fn test_holdouts() {
+    println!("subsets");
+    test_subsets();
+
     println!("lin rec");
     test_linrec();
 
@@ -132,6 +135,53 @@ fn test_far() {
     });
 
     assert_no_holdout_failures("far", &failures);
+}
+
+/**************************************/
+
+fn holdout_subset_errors(
+    context: impl core::fmt::Display,
+    subset: &[&str],
+    superset: &[&str],
+) -> Vec<String> {
+    let subset = subset.iter().copied().collect::<BTreeSet<_>>();
+    let superset = superset.iter().copied().collect::<BTreeSet<_>>();
+    let missing = subset.difference(&superset).collect::<Vec<_>>();
+
+    if missing.is_empty() {
+        vec![]
+    } else {
+        vec![format!(
+            "{context}\nnot in general 8-instruction holdouts: {missing:#?}",
+        )]
+    }
+}
+
+fn test_subsets() {
+    let mut failures = vec![];
+
+    failures.extend(holdout_subset_errors(
+        "4-2-1 spinout holdouts",
+        _4_2_1_ho,
+        _8_1_ho.as_slice(),
+    ));
+    failures.extend(holdout_subset_errors(
+        "2-4-1 spinout holdouts",
+        _2_4_1_ho,
+        _8_1_ho.as_slice(),
+    ));
+    failures.extend(holdout_subset_errors(
+        "4-2-2 blank holdouts",
+        _4_2_2_ho,
+        _8_2_ho.as_slice(),
+    ));
+    failures.extend(holdout_subset_errors(
+        "2-4-2 blank holdouts",
+        _2_4_2_ho,
+        _8_2_ho.as_slice(),
+    ));
+
+    assert_no_holdout_failures("subsets", &failures);
 }
 
 /**************************************/
