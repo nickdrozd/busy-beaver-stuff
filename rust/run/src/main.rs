@@ -622,7 +622,6 @@ const CURR: &[fn()] = &[test_quasihalt];
 const FAST: &[fn()] = &[
     test_deciders,
     test_from_file,
-    test_holdouts,
     test_instrs,
     test_solved,
     test_twostep,
@@ -638,6 +637,8 @@ fn main() {
     }
 
     FAST.par_iter().for_each(|f| f());
+
+    test_holdouts();
 
     test_8_instr();
 

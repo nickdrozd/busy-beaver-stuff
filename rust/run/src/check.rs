@@ -49,12 +49,12 @@ fn test_linrec() {
 
     check_linrec(&mut failures, "8-0 champs", _8_0_ch);
     check_linrec(&mut failures, "8-0 holdouts", _8_0_ho.as_slice());
+
+    check_linrec(&mut failures, "8-1 champs", _8_1_ch);
+    check_linrec(&mut failures, "8-1 holdouts", _8_1_ho.as_slice());
+
     check_linrec(&mut failures, "8-2 champs", _8_2_ch);
     check_linrec(&mut failures, "8-2 holdouts", _8_2_ho.as_slice());
-
-    check_linrec(&mut failures, "4-2-1 holdouts", _4_2_1_ho);
-    check_linrec(&mut failures, "2-4-1 champs", _2_4_1_ch);
-    check_linrec(&mut failures, "2-4-1 holdouts", _2_4_1_ho);
 
     assert_no_holdout_failures("lin rec", &failures);
 }
@@ -83,18 +83,24 @@ fn check_holdout_decider(
 fn test_backward() {
     let mut failures = vec![];
 
-    check_holdout_decider(&mut failures, "4-2-2", _4_2_2_ho, |prog| {
-        prog.bkw_cant_blank(2000).is_refuted()
-    });
-    check_holdout_decider(&mut failures, "2-4-2", _2_4_2_ho, |prog| {
-        prog.bkw_cant_blank(2000).is_refuted()
-    });
-    check_holdout_decider(&mut failures, "4-2-1", _4_2_1_ho, |prog| {
-        prog.bkw_cant_spinout(2000).is_refuted()
-    });
-    check_holdout_decider(&mut failures, "2-4-1", _2_4_1_ho, |prog| {
-        prog.bkw_cant_spinout(2000).is_refuted()
-    });
+    check_holdout_decider(
+        &mut failures,
+        "8-0 halt",
+        _8_0_ho.as_slice(),
+        |prog| prog.bkw_cant_halt(2000).is_refuted(),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "8-1 spinout",
+        _8_1_ho.as_slice(),
+        |prog| prog.bkw_cant_spinout(2000).is_refuted(),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "8-2 blank",
+        _8_2_ho.as_slice(),
+        |prog| prog.bkw_cant_blank(2000).is_refuted(),
+    );
 
     assert_no_holdout_failures("backward", &failures);
 }
@@ -102,18 +108,30 @@ fn test_backward() {
 fn test_cps() {
     let mut failures = vec![];
 
-    check_holdout_decider(&mut failures, "4-2-2", _4_2_2_ho, |prog| {
-        prog.cps_cant_blank(20)
-    });
-    check_holdout_decider(&mut failures, "2-4-2", _2_4_2_ho, |prog| {
-        prog.cps_cant_blank(20)
-    });
-    check_holdout_decider(&mut failures, "4-2-1", _4_2_1_ho, |prog| {
-        prog.cps_cant_spinout(12)
-    });
-    check_holdout_decider(&mut failures, "2-4-1", _2_4_1_ho, |prog| {
-        prog.cps_cant_spinout(11)
-    });
+    check_holdout_decider(
+        &mut failures,
+        "8-0 halt",
+        _8_0_ho.as_slice(),
+        |prog| prog.cps_cant_halt(20),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "8-1 spinout",
+        _8_1_ho.as_slice(),
+        |prog| prog.cps_cant_spinout(20),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "8-2 blank",
+        _8_2_ho.as_slice(),
+        |prog| prog.cps_cant_blank(20),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "2-4 quasihalt",
+        _2_4_q_ho.as_slice(),
+        |prog| prog.cps_cant_quasihalt(18),
+    );
 
     assert_no_holdout_failures("cps", &failures);
 }
@@ -121,18 +139,24 @@ fn test_cps() {
 fn test_far() {
     let mut failures = vec![];
 
-    check_holdout_decider(&mut failures, "4-2-2", _4_2_2_ho, |prog| {
-        prog.far_cant_blank(3)
-    });
-    check_holdout_decider(&mut failures, "2-4-2", _2_4_2_ho, |prog| {
-        prog.far_cant_blank(3)
-    });
-    check_holdout_decider(&mut failures, "4-2-1", _4_2_1_ho, |prog| {
-        prog.far_cant_spinout(3)
-    });
-    check_holdout_decider(&mut failures, "2-4-1", _2_4_1_ho, |prog| {
-        prog.far_cant_spinout(3)
-    });
+    check_holdout_decider(
+        &mut failures,
+        "8-0 halt",
+        _8_0_ho.as_slice(),
+        |prog| prog.far_cant_halt(3),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "8-1 spinout",
+        _8_1_ho.as_slice(),
+        |prog| prog.far_cant_spinout(3),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "8-2 blank",
+        _8_2_ho.as_slice(),
+        |prog| prog.far_cant_blank(3),
+    );
 
     assert_no_holdout_failures("far", &failures);
 }
@@ -161,6 +185,11 @@ fn test_subsets() {
     let mut failures = vec![];
 
     failures.extend(holdout_subset_errors(
+        "7 halt holdouts",
+        _7_0_ho,
+        _8_0_ho.as_slice(),
+    ));
+    failures.extend(holdout_subset_errors(
         "4-2-1 spinout holdouts",
         _4_2_1_ho,
         _8_1_ho.as_slice(),
@@ -169,6 +198,11 @@ fn test_subsets() {
         "2-4-1 spinout holdouts",
         _2_4_1_ho,
         _8_1_ho.as_slice(),
+    ));
+    failures.extend(holdout_subset_errors(
+        "2-4-1 spinout champs",
+        _2_4_1_ch,
+        _8_1_ch,
     ));
     failures.extend(holdout_subset_errors(
         "4-2-2 blank holdouts",
