@@ -206,9 +206,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// - `true` iff FAR or MITM/WFAR proved the machine cannot halt.
     /// - `false` otherwise.
     pub fn far_cant_halt(&self, block: usize) -> bool {
-        self.far_sweep_fast(block, Goal::Halt)
+        self.far_sweep(block, Goal::Halt)
             || self.mitm_cant_halt()
-            || self.far_sweep_slow(block, Goal::Halt)
             || self.direct_far_cant_target(Goal::Halt)
     }
 
@@ -223,9 +222,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// Lossy summary states still use the exact zero-only DFA reachability relation
     /// to decide whether the surrounding block context may be all zero.
     pub fn far_cant_blank(&self, block: usize) -> bool {
-        self.far_sweep_fast(block, Goal::Blank)
+        self.far_sweep(block, Goal::Blank)
             || self.mitm_cant_blank()
-            || self.far_sweep_slow(block, Goal::Blank)
             || self.direct_far_cant_target(Goal::Blank)
     }
 
@@ -234,9 +232,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// Returns `true` iff FAR proves that the machine can never enter a
     /// one-sided all-zero same-state drift.
     pub fn far_cant_spinout(&self, block: usize) -> bool {
-        self.far_sweep_fast(block, Goal::Spinout)
+        self.far_sweep(block, Goal::Spinout)
             || self.mitm_cant_spinout()
-            || self.far_sweep_slow(block, Goal::Spinout)
             || self.direct_far_cant_target(Goal::Spinout)
     }
 }
@@ -1917,20 +1914,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         decider.run().is_ok()
     }
 
-    fn far_sweep_fast(&self, block: usize, goal: Goal) -> bool {
-        self.far_sweep_with(goal, block, Self::far_decide_fast)
-    }
-
-    fn far_sweep_slow(&self, block: usize, goal: Goal) -> bool {
-        self.far_sweep_with(goal, block, Self::far_decide_slow)
-    }
-
-    fn far_sweep_with(
-        &self,
-        goal: Goal,
-        block: usize,
-        decide: fn(&Self, FarRunParams) -> bool,
-    ) -> bool {
+    fn far_sweep(&self, block: usize, goal: Goal) -> bool {
         let reached = self.far_reached_params();
 
         let cap_by_colors = if reached.colors <= 2 {
@@ -1951,17 +1935,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 FAR_STEP_PER_LEN.saturating_mul(block_len);
 
             for mirrored in [false, true] {
-                if decide(
-                    self,
-                    FarRunParams {
-                        block_len,
-                        max_work,
-                        block_step_limit,
-                        goal,
-                        mirrored,
-                        reached,
-                    },
-                ) {
+                if self.far_decide(FarRunParams {
+                    block_len,
+                    max_work,
+                    block_step_limit,
+                    goal,
+                    mirrored,
+                    reached,
+                }) {
                     return true;
                 }
             }
@@ -1970,7 +1951,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         false
     }
 
-    fn far_decide_fast(&self, params: FarRunParams) -> bool {
+    fn far_decide(&self, params: FarRunParams) -> bool {
         self.far_decide_with::<Ng1Summary>(params)
             || self.far_decide_with::<NgSummary<
                 FAR_NG_TAIL_H_SMALL,
@@ -1978,13 +1959,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             >>(params)
             || self.far_decide_with::<CpsLruSummary>(params)
             || self.far_decide_with::<RwlModSummary>(params)
-    }
-
-    fn far_decide_slow(&self, params: FarRunParams) -> bool {
-        self.far_decide_with::<NgSummary<
-            FAR_NG_TAIL_H_MED,
-            FAR_NG_POS_MOD_3,
-        >>(params)
+            || self.far_decide_with::<NgSummary<
+                FAR_NG_TAIL_H_MED,
+                FAR_NG_POS_MOD_3,
+            >>(params)
             || self.far_decide_with::<NgSetSummary>(params)
             || self.far_decide_with::<LruPairSummary>(params)
             || self.far_decide_with::<SetPairSummary>(params)
