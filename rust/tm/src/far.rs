@@ -1934,7 +1934,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             let block_step_limit =
                 FAR_STEP_PER_LEN.saturating_mul(block_len);
 
-            for mirrored in [false, true] {
+            for mirrored in [true, false] {
                 if self.far_decide(FarRunParams {
                     block_len,
                     max_work,
