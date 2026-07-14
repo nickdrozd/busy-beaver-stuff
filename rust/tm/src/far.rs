@@ -121,6 +121,18 @@ const MITM_MAX_FINITE_INTERVAL: i32 = 100;
 const MITM_MAX_TRANSITIONS: usize = 10;
 const MITM_MAX_WEIGHT_PAIRS: usize = 1;
 
+/// MITM finite-memory refinements tried for every closed DFA skeleton and
+/// every weight assignment.  Keeping these in one shared portfolio avoids
+/// re-enumerating the same DFA skeleton separately for each memory profile.
+const MITM_MEMORY_PROFILES: &[MitmMemory] = &[
+    MitmMemory::new(0, 0),
+    MitmMemory::new(1, 0),
+    MitmMemory::new(0, 1),
+    MitmMemory::new(1, 1),
+    MitmMemory::new(2, 0),
+    MitmMemory::new(0, 2),
+];
+
 // Direct FAR parameters -------------------------------------------------------
 
 /// Late direct-DFA FAR pass.
@@ -336,6 +348,17 @@ struct WordUpdateLemma {
     hit_blank: bool,
 }
 
+/// Cached result of an exact simulation within one FAR block.
+#[derive(Clone, Copy, Debug)]
+enum WordUpdateOutcome {
+    Exit(WordUpdateLemma),
+    /// The exact local configuration repeated before leaving the block.
+    /// Determinism then guarantees that this branch stays in the block forever.
+    LocalLoop,
+    /// The simulation reached its step bound or encountered invalid data.
+    Incomplete,
+}
+
 /// Non-interned result used only while computing a cache miss.
 #[derive(Clone, Debug)]
 struct RawWordUpdateLemma {
@@ -343,6 +366,13 @@ struct RawWordUpdateLemma {
     s1: Option<State>,
     is_back: bool,
     hit_blank: bool,
+}
+
+#[derive(Clone, Debug)]
+enum RawWordUpdateOutcome {
+    Exit(RawWordUpdateLemma),
+    LocalLoop,
+    Incomplete,
 }
 
 impl RawWordUpdateLemma {
@@ -1082,7 +1112,7 @@ struct FarDecider<
     work: usize,
 
     // Cache exact block simulations by local FAR context.
-    step_cache: Map<StepKey, Option<WordUpdateLemma>>,
+    step_cache: Map<StepKey, WordUpdateOutcome>,
 
     // DFA
     id: Map<S, usize>,
@@ -1323,31 +1353,45 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
 
         let key = StepKey { w, s, sgn, ctx };
 
-        let res = (if let Some(&cached) = self.step_cache.get(&key) {
+        let outcome = if let Some(&cached) = self.step_cache.get(&key) {
             cached
         } else {
-            let computed = self
-                .prog
-                .raw_word_update_lemma(
-                    self.words.clone_word(key.w),
-                    key.s,
-                    key.sgn,
-                    self.block_step_limit,
-                    self.goal,
-                    key.ctx,
-                    self.mirrored,
-                    self.reached,
-                )
-                .map(|raw| WordUpdateLemma {
-                    w1: self.words.intern(raw.w1),
-                    s1: raw.s1,
-                    is_back: raw.is_back,
-                    hit_blank: raw.hit_blank,
-                });
+            let computed = match self.prog.raw_word_update_lemma(
+                self.words.clone_word(key.w),
+                key.s,
+                key.sgn,
+                self.block_step_limit,
+                self.goal,
+                key.ctx,
+                self.mirrored,
+                self.reached,
+            ) {
+                RawWordUpdateOutcome::Exit(raw) => {
+                    WordUpdateOutcome::Exit(WordUpdateLemma {
+                        w1: self.words.intern(raw.w1),
+                        s1: raw.s1,
+                        is_back: raw.is_back,
+                        hit_blank: raw.hit_blank,
+                    })
+                },
+                RawWordUpdateOutcome::LocalLoop => {
+                    WordUpdateOutcome::LocalLoop
+                },
+                RawWordUpdateOutcome::Incomplete => {
+                    WordUpdateOutcome::Incomplete
+                },
+            };
             self.step_cache.insert(key, computed);
             computed
-        })
-        .ok_or(StopReason::BlockTimeout)?;
+        };
+
+        let res = match outcome {
+            WordUpdateOutcome::Exit(res) => res,
+            WordUpdateOutcome::LocalLoop => return Ok(None),
+            WordUpdateOutcome::Incomplete => {
+                return Err(StopReason::BlockTimeout);
+            },
+        };
 
         if res.hit_blank {
             return Err(StopReason::MayTarget);
@@ -1638,7 +1682,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// - `sgn = +1`: block is oriented in the natural direction
     /// - `sgn = -1`: motion is flipped in the block
     ///
-    /// Returns `None` if we exceed `max_steps` or encounter an invalid transition.
+    /// A repeated exact local configuration is reported separately from an
+    /// incomplete bounded simulation. Since the TM is deterministic, such a
+    /// repetition proves that this branch can never leave the block or reach a
+    /// target that was not already encountered.
     #[expect(
         clippy::cast_possible_truncation,
         clippy::cast_possible_wrap,
@@ -1654,7 +1701,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         ctx: StepContext,
         mirrored: bool,
         reached: ReachedParams,
-    ) -> Option<RawWordUpdateLemma> {
+    ) -> RawWordUpdateOutcome {
         debug_assert!(sgn == 1 || sgn == -1);
         let len = w.len() as i32;
         let mut w1 = w;
@@ -1663,13 +1710,29 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         let mut s1 = s;
         let mut pos: i32 = 0;
 
-        for _ in 0..max_steps {
+        // Intern local tape words so configurations can be recorded exactly
+        // without cloning the whole block on steps that do not change it.
+        let mut local_words = Map::new();
+        local_words.insert(w1.clone(), 0_usize);
+        let mut local_word_id = 0_usize;
+        let mut seen = Set::new();
+        let mut steps = 0_usize;
+
+        loop {
+            if !seen.insert((local_word_id, s1, pos)) {
+                return RawWordUpdateOutcome::LocalLoop;
+            }
+            if steps == max_steps {
+                return RawWordUpdateOutcome::Incomplete;
+            }
+            steps += 1;
+
             let input = w1.get(pos as usize);
             if input as usize >= reached.colors {
-                return None;
+                return RawWordUpdateOutcome::Incomplete;
             }
             if s1 as usize >= reached.states {
-                return None;
+                return RawWordUpdateOutcome::Incomplete;
             }
 
             // Lookup transition; missing transition means HALT.
@@ -1678,16 +1741,18 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
             let Some(&(out_color, shift_right, next_state)) = instr
             else {
-                return Some(RawWordUpdateLemma::exit_oriented(
-                    w1, None, false, false,
-                ));
+                return RawWordUpdateOutcome::Exit(
+                    RawWordUpdateLemma::exit_oriented(
+                        w1, None, false, false,
+                    ),
+                );
             };
 
             if out_color as usize >= reached.colors {
-                return None;
+                return RawWordUpdateOutcome::Incomplete;
             }
             if next_state as usize >= reached.states {
-                return None;
+                return RawWordUpdateOutcome::Incomplete;
             }
 
             let dir: i32 = if shift_right { 1 } else { -1 };
@@ -1711,12 +1776,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 };
 
                 if zero_ray_ahead {
-                    return Some(RawWordUpdateLemma::exit_oriented(
-                        w1,
-                        Some(s1),
-                        false,
-                        true,
-                    ));
+                    return RawWordUpdateOutcome::Exit(
+                        RawWordUpdateLemma::exit_oriented(
+                            w1,
+                            Some(s1),
+                            false,
+                            true,
+                        ),
+                    );
                 }
             }
 
@@ -1735,6 +1802,15 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     nonzero_count += 1;
                 }
                 w1.set(pos as usize, out_color);
+
+                local_word_id = if let Some(&id) = local_words.get(&w1)
+                {
+                    id
+                } else {
+                    let id = local_words.len();
+                    local_words.insert(w1.clone(), id);
+                    id
+                };
             }
             s1 = next_state;
 
@@ -1747,28 +1823,30 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 };
 
                 if blank_hit {
-                    return Some(RawWordUpdateLemma::exit_oriented(
-                        w1,
-                        Some(s1),
-                        false,
-                        true,
-                    ));
+                    return RawWordUpdateOutcome::Exit(
+                        RawWordUpdateLemma::exit_oriented(
+                            w1,
+                            Some(s1),
+                            false,
+                            true,
+                        ),
+                    );
                 }
             }
 
             pos += block_dir;
 
             if pos < 0 || pos >= len {
-                return Some(RawWordUpdateLemma::exit_oriented(
-                    w1,
-                    Some(s1),
-                    pos < 0,
-                    false,
-                ));
+                return RawWordUpdateOutcome::Exit(
+                    RawWordUpdateLemma::exit_oriented(
+                        w1,
+                        Some(s1),
+                        pos < 0,
+                        false,
+                    ),
+                );
             }
         }
-
-        None
     }
 
     fn far_decider<S: Summary>(
@@ -2343,22 +2421,17 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     fn mitm_cant_target(&self, goal: Goal) -> bool {
         let reached = self.far_reached_params();
 
-        // Fast, boolean-only port of Iijil1/MITMWFAR's search path:
-        // enumerate closed MITM-DFA skeletons, then try one (+1,-1) WFA
-        // weight pair, deriving and verifying the accept set in memory.
-        // Cheap passes first.  These preserve the same eventual prover power
-        // as the final pass, but avoid paying for memory expansion on easy TMs.
-        for added_memory in [0_usize, 1] {
-            for dfa_transitions in 2..=MITM_MAX_TRANSITIONS {
-                if self.mitm_decide_exact(
-                    goal,
-                    dfa_transitions,
-                    MITM_MAX_WEIGHT_PAIRS,
-                    added_memory,
-                    reached,
-                ) {
-                    return true;
-                }
+        // Enumerate every closed MITM-DFA skeleton once.  At each closed
+        // skeleton, enumerate its weight assignments once and test the full
+        // asymmetric finite-memory portfolio against each candidate.
+        for dfa_transitions in 2..=MITM_MAX_TRANSITIONS {
+            if self.mitm_decide_exact(
+                goal,
+                dfa_transitions,
+                MITM_MAX_WEIGHT_PAIRS,
+                reached,
+            ) {
+                return true;
             }
         }
 
@@ -2370,7 +2443,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         dfa_transitions: usize,
         max_weight_pairs: usize,
-        added_memory: usize,
         reached: ReachedParams,
     ) -> bool {
         let mut left = MitmWfa::new(reached.colors);
@@ -2386,7 +2458,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             MitmSearchParams {
                 goal_transitions: dfa_transitions,
                 max_weight_pairs,
-                added_memory,
                 reached,
             },
         )
@@ -2419,7 +2490,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         ),
                         0,
                         params.max_weight_pairs,
-                        params.added_memory,
                         params.reached,
                     )
             },
@@ -2677,16 +2747,9 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         weight_slots: &MitmWeightSlots,
         current_weight_pairs: usize,
         max_weight_pairs: usize,
-        added_memory: usize,
         reached: ReachedParams,
     ) -> bool {
-        if self.mitm_check_weight_candidate(
-            goal,
-            left,
-            right,
-            added_memory,
-            reached,
-        ) {
+        if self.mitm_check_memory_profiles(goal, left, right, reached) {
             return true;
         }
 
@@ -2715,7 +2778,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         weight_slots,
                         current_weight_pairs + 1,
                         max_weight_pairs,
-                        added_memory,
                         reached,
                     ) {
                         right.trans[rs][rc] = (rt, old_rw);
@@ -2732,15 +2794,29 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         false
     }
 
+    fn mitm_check_memory_profiles(
+        &self,
+        goal: Goal,
+        left: &MitmWfa,
+        right: &MitmWfa,
+        reached: ReachedParams,
+    ) -> bool {
+        MITM_MEMORY_PROFILES.iter().any(|memory| {
+            self.mitm_check_weight_candidate(
+                goal, left, right, *memory, reached,
+            )
+        })
+    }
+
     fn mitm_check_weight_candidate(
         &self,
         goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
-        added_memory: usize,
+        memory: MitmMemory,
         reached: ReachedParams,
     ) -> bool {
-        if added_memory == 0 {
+        if memory.left == 0 && memory.right == 0 {
             return self.mitm_check_weight_candidate_exact(
                 goal, left, right, reached,
             );
@@ -2748,8 +2824,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
         let mut try_left = left.clone();
         let mut try_right = right.clone();
-        for _ in 0..added_memory {
+        for _ in 0..memory.left {
             try_left = try_left.with_memory();
+        }
+        for _ in 0..memory.right {
             try_right = try_right.with_memory();
         }
         self.mitm_check_weight_candidate_exact(
@@ -3018,8 +3096,19 @@ struct MitmNext {
 struct MitmSearchParams {
     goal_transitions: usize,
     max_weight_pairs: usize,
-    added_memory: usize,
     reached: ReachedParams,
+}
+
+#[derive(Clone, Copy)]
+struct MitmMemory {
+    left: usize,
+    right: usize,
+}
+
+impl MitmMemory {
+    const fn new(left: usize, right: usize) -> Self {
+        Self { left, right }
+    }
 }
 
 #[derive(Clone, Copy, Default)]
