@@ -20,7 +20,7 @@ const TREE_LIM: Steps = 876;
 
 const LIN_MIN: Steps = 4_000;
 const LIN_MOR: Steps = 10_000;
-const LIN_MAX: Steps = 1_000_000;
+const LIN_MAX: Steps = 5_000_000;
 
 /**************************************/
 
@@ -428,7 +428,7 @@ fn test_quasihalt() {
 
     assert_holdouts![
         (4, 2) => [
-            3 => (qh_4_2, 99, (3_368, 2_134_923)),
+            3 => (qh_4_2, 99, (3_366, 2_134_923)),
         ],
     ];
 }

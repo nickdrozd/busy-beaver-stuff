@@ -14,18 +14,13 @@ pub const _2_4_2_ho: &[&str] = &[
     "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
 ];
 
-pub const _2_4_1_ch: &[&str] = &[
-    "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",
-    "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",
-    "1RB 3RB 1LA 1LB  1LB 2RA 3RB 2LA",
-];
+pub const _2_4_1_ch: &[&str] = &["1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA"];
 
 pub const _2_4_1_ho: &[&str] = &[
     "1RB 2LB 0RA 1LB  2LB 3LA 1RA 0RB",
     "1RB 2RA 3LA 0RB  2LB 3LA 1LB 2RB",
     "1RB 2RA 3LB 2RA  0LB 2LA 3LA 0RA",
     "1RB 2RB 3LA 2RA  2LB 1LA 1LB 3RB",
-    "1RB 3LA 1LB 0RB  2LB 2RA 3LA 1RA",
     "1RB 3LA 3LB 2RA  0LB 2RB 1LA 0RA",
     "1RB 3RA 3RA 1LB  2LB 2RB 3LA 1LA",
     "1RB 3RB 1RA 0RA  2LB 2LA 1LA 3LB",
@@ -33,11 +28,7 @@ pub const _2_4_1_ho: &[&str] = &[
 
 /**************************************/
 
-pub const _2_4_q_ch: &[&str] = &[
-    "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",
-    "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",
-    "1RB 3RB 1LA 1LB  1LB 2RA 3RB 2LA",
-];
+pub const _2_4_q_ch: &[&str] = &["1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA"];
 
 /**************************************/
 
@@ -73,16 +64,10 @@ pub const _7_1_ho: &[&str] = &["1RB ... ...  2RC 2RB 1LB  2LC 1RA 0LC"];
 
 pub const _8_0_ch: &[&str] = &[
     "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC",
-    "1RB 2LA 1LC  0LA 2RB 1LB  ... 1RA 1RC",
-    "1RB 2LA 1RA  1RC 2RB 0RC  1LA ... 1LA",
     "1RB 2RC 1LA  2LA 1RB ...  2RB 2RA 1LC",
 ];
 
-pub const _8_1_ch: &[&str] = &[
-    "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",
-    "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",
-    "1RB 3RB 1LA 1LB  1LB 2RA 3RB 2LA",
-];
+pub const _8_1_ch: &[&str] = &["1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA"];
 
 pub const _8_2_ch: &[&str] = &[];
 

@@ -23,7 +23,7 @@ pub fn test_holdouts() {
 
 /**************************************/
 
-const LIN_CHECK: usize = 1_000_000;
+const LIN_CHECK: usize = 5_000_000;
 
 fn check_linrec(
     failures: &mut Vec<String>,
