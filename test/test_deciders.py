@@ -66,7 +66,7 @@ BACKWARD_REASONERS: dict[Goal, BackwardReasoner] = {
     "zloop": bkw_cant_zloop,
 }
 
-class Backward(DeciderTest):
+class Bkw(DeciderTest):
     false_negatives = FALSE_NEGATIVES['bkw']
 
     def assert_could_halt_backward(self, prog: str):

@@ -4,7 +4,7 @@ use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 
 use tm::{
     Instr, Prog as ProgGen, Slot, State, Steps,
-    backward::{BackwardResult as BackwardResultRs, BackwardResult::*},
+    bkw::{BackwardResult as BackwardResultRs, BackwardResult::*},
     instrs::{self, Parse as _},
 };
 
