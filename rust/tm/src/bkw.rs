@@ -82,12 +82,19 @@ type Entry = (Slot, (Color, Shift));
 type Entries = Vec<Entry>;
 type Entrypoints = Dict<State, (Entries, Entries)>;
 
-/// For each (state, scanned color), records which 3-cell windows
-/// (L, scan, R) are possible in some run from the blank tape.
+/// Compact lookup tables for which 3-cell windows `(L, scan, R)` are
+/// possible in some run from the blank tape.
 ///
-/// Indexing: win[state][scan][left][right].
-type WinPossible<const S: usize, const C: usize> =
-    [[[[bool; C]; C]; C]; S];
+/// - `right[st][scan][left]` is a bitmask of possible right colors.
+/// - `left[st][scan][right]` is a bitmask of possible left colors.
+/// - `any[st][scan]` records whether at least one neighbor pair is possible.
+///
+/// This makes all four known/unknown-neighbor lookup cases constant-time.
+struct WinPossible<const S: usize, const C: usize> {
+    right: [[[u64; C]; C]; S],
+    left: [[[u64; C]; C]; S],
+    any: [[bool; C]; S],
+}
 
 fn cant_reach<const s: usize, const c: usize, T: Ord>(
     prog: &Prog<s, c>,
@@ -142,6 +149,23 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     let left_fresh_zero = !writes_blank_on_r;
     let right_fresh_zero = !writes_blank_on_l;
 
+    let mut configs = get_configs(&slots);
+
+    // Apply the cheap static side filters before constructing the window
+    // fixed point. This preserves the old short-circuit order while avoiding
+    // window construction when every target is already impossible.
+    configs.retain_mut(|Config { tape, .. }| {
+        tape.obeys_shift_side(&forbid_left, &forbid_right)
+            && tape.tighten_forced_blank_ends(
+                left_forced_blank,
+                right_forced_blank,
+            )
+    });
+
+    if configs.is_empty() {
+        return Refuted(0);
+    }
+
     // Optional *sound* adjacency reachability filter.
     //
     // We over-approximate the set of 3-cell windows (L,scan,R) that
@@ -152,19 +176,11 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     let win_possible =
         prog.win_possible_from_blank(&forbid_left, &forbid_right);
 
-    let mut configs = get_configs(&slots);
-
-    // Apply the same static reachability facts to the target frontier that
-    // are applied after each backward step.  In particular, halt targets
-    // begin with two unknown neighbors, so skipping this check would retain
-    // targets whose (state, scanned color) is unreachable from blank.
-    configs.retain_mut(|Config { state, tape }| {
-        tape.obeys_shift_side(&forbid_left, &forbid_right)
-            && tape.tighten_forced_blank_ends(
-                left_forced_blank,
-                right_forced_blank,
-            )
-            && window_possible(*state, tape, &win_possible)
+    // Halt targets begin with two unknown neighbors, so the
+    // `(state, scanned color)` pair must still occur in at least one reachable
+    // window after the cheaper side filters above have canonicalized the tape.
+    configs.retain(|Config { state, tape }| {
+        window_possible(*state, tape, &win_possible)
     });
 
     if configs.is_empty() {
@@ -247,22 +263,37 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
         // `configs` is the live frontier that will be printed/processed at
         // backward depth `step + 1`, after antichain filtering.
-        if let Some(cycle_from) = frontier_periodic_history
-            .observe_frontier(step + 1, &configs)
+        //
+        // Both periodic closers consume the same canonical FastCfg snapshot.
+        // Build and sort it once, then share the immutable allocation between
+        // their separate histories.  Previously each closer converted and
+        // sorted the whole frontier independently.
+        if configs.len()
+            > CoveragePeriodicHistory::MAX_FRONTIER_FOR_CLOSER
         {
-            return Refuted(cycle_from);
-        }
+            frontier_periodic_history.clear();
+            coverage_periodic_history.clear();
+        } else if !configs.is_empty() {
+            let fast_front = sorted_fast_frontier(&configs);
 
-        // Broader certificate for mixed frontiers.  This does not prune
-        // individual branches and does not replace precise configs with `..`;
-        // it only refutes after every config in each later frontier is covered
-        // by a repeated stable/growth relation from the matching earlier
-        // phase.  Unlike the exact frontier checker, extra later configs are
-        // allowed, but only when they are covered by the same phase relations.
-        if let Some(cycle_from) = coverage_periodic_history
-            .observe_frontier(step + 1, &configs)
-        {
-            return Refuted(cycle_from);
+            if let Some(cycle_from) = frontier_periodic_history
+                .observe_frontier(step + 1, Arc::clone(&fast_front))
+            {
+                return Refuted(cycle_from);
+            }
+
+            // Broader certificate for mixed frontiers.  This does not prune
+            // individual branches and does not replace precise configs with
+            // `..`; it only refutes after every config in each later frontier
+            // is covered by a repeated stable/growth relation from the
+            // matching earlier phase.  Unlike the exact frontier checker,
+            // extra later configs are allowed, but only when they are covered
+            // by the same phase relations.
+            if let Some(cycle_from) = coverage_periodic_history
+                .observe_frontier(step + 1, fast_front)
+            {
+                return Refuted(cycle_from);
+            }
         }
     }
 
@@ -275,17 +306,17 @@ fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
 ) -> ValidatedSteps {
-    let mut checked = ValidatedSteps::new();
+    let mut checked = ValidatedSteps::with_capacity(configs.len());
 
     for config in configs.drain(..) {
         let Config { state, tape } = &config;
-
-        let mut steps = vec![];
 
         let Some((same, diff)) = entrypoints.get(state) else {
             assert_eq!(*state, 0);
             continue;
         };
+
+        let mut steps = Vec::with_capacity(same.len() + diff.len());
 
         for &((next_state, color), (print, shift)) in diff {
             if !tape.is_valid_step(shift, print) {
@@ -326,32 +357,24 @@ fn get_indef(
     diff: &Entries,
     same: &Entries,
 ) -> Option<(Vec<Instr>, Config)> {
-    let mut checked_entries = diff.clone();
-
-    for &entry @ ((_, color), (_, shift)) in same {
-        if shift == push && color == config.tape.scan {
-            continue;
-        }
-
-        checked_entries.push(entry);
-    }
-
-    if checked_entries.is_empty() {
-        return None;
-    }
-
     let mut tape = config.tape.clone();
-
     tape.push_indef(push);
 
-    let mut steps = vec![];
+    // Avoid cloning `diff` and constructing a temporary combined entry list.
+    // Preserve the original order: different-state entries first, followed by
+    // eligible same-state entries.
+    let same_entries =
+        same.iter().copied().filter(|&((_, color), (_, shift))| {
+            shift != push || color != config.tape.scan
+        });
+    let mut steps = Vec::with_capacity(diff.len() + same.len());
 
-    for ((state, color), (print, shift)) in checked_entries {
-        if !tape.is_valid_step(shift, print) {
-            continue;
+    for ((state, color), (print, shift)) in
+        diff.iter().copied().chain(same_entries)
+    {
+        if tape.is_valid_step(shift, print) {
+            steps.push((color, shift, state));
         }
-
-        steps.push((color, shift, state));
     }
 
     if steps.is_empty() {
@@ -378,16 +401,74 @@ fn window_possible<const s: usize, const c: usize>(
     let r = tape.right_neighbor_color().map(|x| x as usize);
 
     match (l, r) {
-        (Some(lc), Some(rc)) => win_possible[st][sc][lc][rc],
-        (Some(lc), None) => {
-            (0..c).any(|rc| win_possible[st][sc][lc][rc])
+        (Some(lc), Some(rc)) => {
+            (win_possible.right[st][sc][lc] & (1_u64 << rc)) != 0
         },
-        (None, Some(rc)) => {
-            (0..c).any(|lc| win_possible[st][sc][lc][rc])
-        },
-        (None, None) => (0..c)
-            .any(|lc| (0..c).any(|rc| win_possible[st][sc][lc][rc])),
+        (Some(lc), None) => win_possible.right[st][sc][lc] != 0,
+        (None, Some(rc)) => win_possible.left[st][sc][rc] != 0,
+        (None, None) => win_possible.any[st][sc],
     }
+}
+
+#[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
+fn step_instrs<const s: usize, const c: usize>(
+    instrs: impl IntoIterator<Item = Instr>,
+    config: &Config,
+    blanks: &mut BlankStates,
+    win_possible: &WinPossible<s, c>,
+    forbid_left: &[bool; c],
+    forbid_right: &[bool; c],
+    left_fresh_zero: bool,
+    right_fresh_zero: bool,
+    left_forced_blank: bool,
+    right_forced_blank: bool,
+    stepped: &mut Configs,
+) -> Result<(), BackwardResult> {
+    for (color, shift, state) in instrs {
+        let mut tape = config.tape.clone();
+
+        tape.backstep(shift, color);
+
+        if tape.blank() {
+            if state == 0 {
+                return Err(Init);
+            }
+
+            if !blanks.insert(state) {
+                continue;
+            }
+        }
+
+        // Retain the original full-span static checks. This helper only avoids
+        // the temporary `branch_indef` frontier and its instruction vectors.
+        if !tape.obeys_shift_side(forbid_left, forbid_right) {
+            continue;
+        }
+
+        if !tape.tighten_forced_blank_ends(
+            left_forced_blank,
+            right_forced_blank,
+        ) {
+            continue;
+        }
+
+        if (left_fresh_zero || right_fresh_zero)
+            && !tape.enforce_fresh_zero_side_invariants(
+                left_fresh_zero,
+                right_fresh_zero,
+            )
+        {
+            continue;
+        }
+
+        if !window_possible(state, &tape, win_possible) {
+            continue;
+        }
+
+        stepped.push(Config::new(state, tape));
+    }
+
+    Ok(())
 }
 
 #[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
@@ -402,113 +483,68 @@ fn step_configs<const s: usize, const c: usize>(
     left_forced_blank: bool,
     right_forced_blank: bool,
 ) -> Result<Configs, BackwardResult> {
-    let configs = branch_indef(configs);
-
     let mut stepped = Configs::new();
 
     for (instrs, config) in configs {
-        for (color, shift, state) in instrs {
-            let mut tape = config.tape.clone();
+        // Fuse `branch_indef` into stepping. The old processing order is
+        // preserved: left count-one branch, right count-one branch, original.
+        let pulls_left = config.tape.pulls_indef(true);
+        let pulls_right = config.tape.pulls_indef(false);
 
-            tape.backstep(shift, color);
-
-            if tape.blank() {
-                if state == 0 {
-                    return Err(Init);
-                }
-
-                if !blanks.insert(state) {
-                    continue;
-                }
-            }
-
-            // Enforce every per-color shift-side restriction over the whole
-            // explicit span, not just the immediate neighbor used by the
-            // three-cell window analysis.
-            if !tape.obeys_shift_side(forbid_left, forbid_right) {
-                continue;
-            }
-
-            // If a whole side is forced blank, reject contradictory explicit
-            // nonblank blocks and otherwise canonicalize the side to `0+`.
-            if !tape.tighten_forced_blank_ends(
-                left_forced_blank,
-                right_forced_blank,
-            ) {
-                continue;
-            }
-
-            // Additional sound invariants when blanks (0) cannot be
-            // written *in the direction that would leave them on a given
-            // side*.
-            //
-            // - If the program never writes 0 on an R-move, then any 0 on
-            //   the left of the head must be unvisited, so nothing non-blank
-            //   can appear farther left.
-            // - If the program never writes 0 on an L-move, then any 0 on
-            //   the right of the head must be unvisited, so nothing non-blank
-            //   can appear farther right.
-            if (left_fresh_zero || right_fresh_zero)
-                && !tape.enforce_fresh_zero_side_invariants(
-                    left_fresh_zero,
-                    right_fresh_zero,
-                )
-            {
-                continue;
-            }
-
-            // Adjacency pruning, including the unknown/unknown case.  Even
-            // when neither neighbor is fixed, the (state, scanned color) must
-            // occur in at least one reachable three-cell window.
-            if !window_possible(state, &tape, win_possible) {
-                continue;
-            }
-
-            let next_config = Config::new(state, tape);
-
-            stepped.push(next_config);
-        }
-    }
-
-    Ok(stepped)
-}
-
-fn branch_indef(configs: ValidatedSteps) -> ValidatedSteps {
-    let mut branched = ValidatedSteps::new();
-
-    for (instrs, config) in configs {
-        let mut indef_left = vec![];
-        let mut indef_right = vec![];
-
-        for instr @ &(_, shift, _) in &instrs {
-            if config.tape.pulls_indef(shift) {
-                if shift {
-                    &mut indef_left
-                } else {
-                    &mut indef_right
-                }
-                .push(*instr);
-            }
-        }
-
-        if !indef_left.is_empty() {
+        if pulls_left && instrs.iter().any(|&(_, shift, _)| shift) {
             let mut count_1 = config.clone();
             count_1.tape.lspan.set_head_to_one();
 
-            branched.push((indef_left, count_1));
+            step_instrs(
+                instrs.iter().copied().filter(|&(_, shift, _)| shift),
+                &count_1,
+                blanks,
+                win_possible,
+                forbid_left,
+                forbid_right,
+                left_fresh_zero,
+                right_fresh_zero,
+                left_forced_blank,
+                right_forced_blank,
+                &mut stepped,
+            )?;
         }
 
-        if !indef_right.is_empty() {
+        if pulls_right && instrs.iter().any(|&(_, shift, _)| !shift) {
             let mut count_1 = config.clone();
             count_1.tape.rspan.set_head_to_one();
 
-            branched.push((indef_right, count_1));
+            step_instrs(
+                instrs.iter().copied().filter(|&(_, shift, _)| !shift),
+                &count_1,
+                blanks,
+                win_possible,
+                forbid_left,
+                forbid_right,
+                left_fresh_zero,
+                right_fresh_zero,
+                left_forced_blank,
+                right_forced_blank,
+                &mut stepped,
+            )?;
         }
 
-        branched.push((instrs, config));
+        step_instrs(
+            instrs,
+            &config,
+            blanks,
+            win_possible,
+            forbid_left,
+            forbid_right,
+            left_fresh_zero,
+            right_fresh_zero,
+            left_forced_blank,
+            right_forced_blank,
+            &mut stepped,
+        )?;
     }
 
-    branched
+    Ok(stepped)
 }
 
 /**************************************/
@@ -686,10 +722,18 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         q.push_back((0, 1, 0, 0, 0, 1));
         visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = true;
 
-        let mut possible = [[[[false; c]; c]; c]; s];
+        assert!(c <= 64, "window bitmasks support at most 64 colors");
+
+        let mut possible = WinPossible {
+            right: [[[0; c]; c]; s],
+            left: [[[0; c]; c]; s],
+            any: [[false; c]; s],
+        };
 
         while let Some((st, lb, l, sc, r, rb)) = q.pop_front() {
-            possible[st][sc][l][r] = true;
+            possible.right[st][sc][l] |= 1_u64 << r;
+            possible.left[st][sc][r] |= 1_u64 << l;
+            possible.any[st][sc] = true;
 
             let st_state = st as State;
             let sc_color = sc as Color;
@@ -1055,7 +1099,7 @@ impl Span {
 
 /**************************************/
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 struct Tape {
     scan: Color,
     lspan: Span,
@@ -1326,8 +1370,6 @@ impl Tape {
     fn subsumes(&self, other: &Self) -> bool {
         self.scan == other.scan
             && self.head == other.head
-            && self.lspan.maybe_subsumes(&other.lspan)
-            && self.rspan.maybe_subsumes(&other.rspan)
             && self.lspan.subsumes(&other.lspan)
             && self.rspan.subsumes(&other.rspan)
     }
@@ -1608,7 +1650,7 @@ fn test_push_indef() {
 /**************************************/
 
 use core::array::from_fn;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, sync::Arc};
 
 type Adj<const S: usize> = [Vec<usize>; S];
 type Preds<const S: usize> = [[Vec<usize>; 2]; S]; // preds[v][dir] -> u
@@ -2292,13 +2334,29 @@ impl Span {
     /// Compare two block-spans from the head outward.
     /// Rule (sound and simple):
     /// - colors must match positionally
-    /// - count 0 means "indefinitely many" (≥1), so it subsumes any
+    /// - count 0 means "indefinitely many" (>=1), so it subsumes any
     ///   positive count
     /// - positive count must match exactly (conservative but sound)
-    /// - if self runs out of blocks, it still subsumes if its end is
-    ///   Unknown or Blanks compatible
+    /// - if self runs out of blocks, it only subsumes a longer span when its
+    ///   end is Unknown
     fn subsumes(&self, other: &Self) -> bool {
-        // Compare common prefix
+        // These cheap length/end checks previously lived in
+        // `maybe_subsumes`, causing the leading runs to be examined twice.
+        if self.end == TapeEnd::Blanks && other.end == TapeEnd::Unknown
+        {
+            return false;
+        }
+
+        let self_len = self.span.len();
+        let other_len = other.span.len();
+
+        if self_len > other_len {
+            return false;
+        }
+        if self_len < other_len && self.end == TapeEnd::Blanks {
+            return false;
+        }
+
         for (a, b) in self.span.iter().zip(other.span.iter()) {
             if a.color != b.color {
                 return false;
@@ -2308,87 +2366,6 @@ impl Span {
                 (_, 0) => return false, // self fixed cannot subsume indefinite
                 (ac, bc) if ac == bc => {},
                 _ => return false,
-            }
-        }
-
-        // Decide based on leftovers
-        let a_len = self.span.len();
-        let b_len = other.span.len();
-
-        if a_len == b_len {
-            return true;
-        }
-
-        match self.end {
-            TapeEnd::Unknown => true,
-            TapeEnd::Blanks => false,
-        }
-    }
-
-    fn maybe_subsumes(&self, other: &Self) -> bool {
-        // Unknown/Blanks compatibility
-        if matches!(
-            (&self.end, &other.end),
-            (&TapeEnd::Blanks, &TapeEnd::Unknown)
-        ) {
-            return false;
-        }
-
-        let a_len = self.span.len();
-        let b_len = other.span.len();
-
-        // If we have more blocks than `other`, we impose extra structure => cannot subsume.
-        if a_len > b_len {
-            return false;
-        }
-
-        // If our end is Blanks, we cannot subsume a longer span with extra blocks.
-        if a_len < b_len && matches!(self.end, TapeEnd::Blanks) {
-            return false;
-        }
-
-        // Compare first (and second) block color + definiteness when present.
-        if let (Some(a0), Some(b0)) =
-            (self.span.first(), other.span.first())
-        {
-            if a0.color != b0.color {
-                return false;
-            }
-            // Fixed cannot subsume indefinite.
-            if a0.count != 0 && b0.count == 0 {
-                return false;
-            }
-            // Fixed counts must match.
-            if a0.count != 0 && b0.count != 0 && a0.count != b0.count {
-                return false;
-            }
-        } else if a_len == 0 {
-            // empty prefix ok (handled by end checks above)
-            return true;
-        } else {
-            // `self` has a block but `other` doesn't (should be covered by a_len > b_len)
-            return false;
-        }
-
-        if a_len >= 2 {
-            // only peek one more block to catch many mismatches cheaply
-            let mut ait = self.span.iter();
-            let mut bit = other.span.iter();
-            let _ = ait.next();
-            let _ = bit.next();
-            if let (Some(a1), Some(b1)) = (ait.next(), bit.next()) {
-                if a1.color != b1.color {
-                    return false;
-                }
-                if a1.count != 0 && b1.count == 0 {
-                    return false;
-                }
-                if a1.count != 0
-                    && b1.count != 0
-                    && a1.count != b1.count
-                {
-                    return false;
-                }
             }
         }
 
@@ -2428,10 +2405,12 @@ struct PeriodicHistory {
     snaps: Vec<PeriodicSnap>,
 }
 
+type FastFrontier = Arc<[FastCfg]>;
+
 #[derive(Clone)]
 struct PeriodicSnap {
     step: Steps,
-    front: Vec<FastCfg>,
+    front: FastFrontier,
 }
 
 impl PeriodicHistory {
@@ -2450,37 +2429,34 @@ impl PeriodicHistory {
     }
 
     fn push_and_detect(&mut self, cfg: &Config) -> bool {
-        self.push_snap(0, vec![FastCfg::from_config(cfg)]);
+        self.push_snap(
+            0,
+            Arc::<[FastCfg]>::from(vec![FastCfg::from_config(cfg)]),
+        );
         self.detect_any_phase_growth().is_some()
     }
 
     fn observe_frontier(
         &mut self,
         step: Steps,
-        frontier: &[Config],
+        front: FastFrontier,
     ) -> Option<Steps> {
-        if frontier.is_empty() {
+        if front.is_empty() {
             return None;
         }
 
-        if frontier.len() > Self::MAX_FRONTIER_FOR_CLOSER {
+        if front.len() > Self::MAX_FRONTIER_FOR_CLOSER {
             self.clear();
             return None;
         }
 
-        let front = frontier.iter().map(FastCfg::from_config).collect();
         self.push_snap(step, front);
 
         let cycle_start_idx = self.detect_any_phase_growth()?;
         Some(self.snaps[cycle_start_idx].step)
     }
 
-    fn push_snap(&mut self, step: Steps, mut front: Vec<FastCfg>) {
-        // Canonicalize frontier order before period matching.  The backward
-        // frontier may be built from hash sets / antichain buckets, so relying
-        // on iteration order can make the period closer flaky.
-        front.sort_unstable();
-
+    fn push_snap(&mut self, step: Steps, front: FastFrontier) {
         self.snaps.push(PeriodicSnap { step, front });
         if self.snaps.len() > Self::KEEP {
             self.snaps.remove(0);
@@ -2614,7 +2590,6 @@ impl PeriodicHistory {
         expected.into_iter().collect()
     }
 
-    #[expect(clippy::shadow_unrelated)]
     fn frontier_growth_signature(
         a: &[FastCfg],
         b: &[FastCfg],
@@ -2623,15 +2598,8 @@ impl PeriodicHistory {
             return None;
         }
 
-        // Be defensive: stored frontiers are sorted on insertion, but this
-        // function is the actual certificate builder.  Sort local copies so a
-        // caller cannot accidentally make the matching depend on input order.
-        let mut a_sorted = a.to_vec();
-        let mut b_sorted = b.to_vec();
-        a_sorted.sort_unstable();
-        b_sorted.sort_unstable();
-        let a = &a_sorted;
-        let b = &b_sorted;
+        // Stored snapshots are canonicalized once before insertion.  Do not
+        // clone and re-sort them for every candidate period/pair.
 
         let mut index: Dict<BucketKey, Vec<usize>> = Dict::new();
         for (j, cb) in b.iter().enumerate() {
@@ -2767,6 +2735,13 @@ impl PeriodicHistory {
         out.sort_unstable();
         Some(out)
     }
+}
+
+fn sorted_fast_frontier(frontier: &[Config]) -> FastFrontier {
+    let mut front: Vec<FastCfg> =
+        frontier.iter().map(FastCfg::from_config).collect();
+    front.sort_unstable();
+    Arc::from(front)
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -3140,20 +3115,16 @@ impl CoveragePeriodicHistory {
     fn observe_frontier(
         &mut self,
         step: Steps,
-        frontier: &[Config],
+        front: FastFrontier,
     ) -> Option<Steps> {
-        if frontier.is_empty() {
+        if front.is_empty() {
             return None;
         }
 
-        if frontier.len() > Self::MAX_FRONTIER_FOR_CLOSER {
+        if front.len() > Self::MAX_FRONTIER_FOR_CLOSER {
             self.clear();
             return None;
         }
-
-        let mut front: Vec<FastCfg> =
-            frontier.iter().map(FastCfg::from_config).collect();
-        front.sort_unstable();
 
         self.snaps.push(PeriodicSnap { step, front });
         if self.snaps.len() > Self::KEEP {
@@ -3415,18 +3386,161 @@ fn growth_sigs_between(ca: &FastCfg, cb: &FastCfg) -> Vec<BranchSig> {
 
 /**************************************/
 
+struct AntichainEntry {
+    hash: u64,
+    tape: Tape,
+}
+
+/// Exact near-head class for one span.  Subsumption can only hold when the
+/// first explicit runs are compatible, except that an empty unknown span is a
+/// wildcard prefix.  Including the first run count makes the common fixed-run
+/// case especially selective; count 0 is the indefinite (`..`) run.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum SpanBucketKey {
+    EmptyUnknown,
+    EmptyBlanks,
+    Run(Color, u8),
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct AntichainBucketKey {
+    left: SpanBucketKey,
+    right: SpanBucketKey,
+}
+
+fn span_bucket_key(span: &Span) -> SpanBucketKey {
+    #[expect(clippy::option_if_let_else)]
+    match span.span.first() {
+        Some(block) => SpanBucketKey::Run(block.color, block.count),
+        None => match span.end {
+            TapeEnd::Unknown => SpanBucketKey::EmptyUnknown,
+            TapeEnd::Blanks => SpanBucketKey::EmptyBlanks,
+        },
+    }
+}
+
+fn antichain_bucket_key(tape: &Tape) -> AntichainBucketKey {
+    AntichainBucketKey {
+        left: span_bucket_key(&tape.lspan),
+        right: span_bucket_key(&tape.rspan),
+    }
+}
+
+/// Fill the exact bucket classes whose members may subsume `span`.
+///
+/// - Empty unknown is the wildcard prefix and is always a candidate.
+/// - Empty blank can cover only another empty blank span.
+/// - A nonempty span can be covered by an indefinite first run of the same
+///   color, or by the same fixed first run.
+fn covering_span_bucket_keys(
+    span: &Span,
+) -> ([SpanBucketKey; 3], usize) {
+    let mut keys = [SpanBucketKey::EmptyUnknown; 3];
+    let mut len = 1;
+
+    match span.span.first() {
+        None if span.end == TapeEnd::Blanks => {
+            keys[len] = SpanBucketKey::EmptyBlanks;
+            len += 1;
+        },
+        Some(block) => {
+            keys[len] = SpanBucketKey::Run(block.color, 0);
+            len += 1;
+
+            if block.count != 0 {
+                keys[len] =
+                    SpanBucketKey::Run(block.color, block.count);
+                len += 1;
+            }
+        },
+        None => {},
+    }
+
+    (keys, len)
+}
+
+/// Cheap necessary condition for `candidate` to subsume a member of `bucket`.
+/// Exact span comparison is still performed afterwards.
+fn span_can_subsume_bucket(
+    candidate: &Span,
+    bucket: SpanBucketKey,
+) -> bool {
+    match candidate.span.first() {
+        None => match candidate.end {
+            TapeEnd::Unknown => true,
+            TapeEnd::Blanks => bucket == SpanBucketKey::EmptyBlanks,
+        },
+        Some(block) if block.count == 0 => {
+            matches!(bucket, SpanBucketKey::Run(color, _) if color == block.color)
+        },
+        Some(block) => {
+            bucket == SpanBucketKey::Run(block.color, block.count)
+        },
+    }
+}
+
 #[derive(Default)]
-struct Antichain(Vec<Tape>);
+struct Antichain(Dict<AntichainBucketKey, Vec<AntichainEntry>>);
 
 impl Antichain {
     fn insert(&mut self, tape: &Tape) -> bool {
-        // already covered
-        if self.0.iter().any(|old| old.subsumes(tape)) {
-            return false;
+        let hash = tape.hash();
+
+        // An existing tape that covers the candidate must lie in one of at
+        // most 3 x 3 exact near-head buckets.  This avoids scanning unrelated
+        // first colors/counts in a large (state, scan, head) antichain.
+        let (left_keys, left_len) =
+            covering_span_bucket_keys(&tape.lspan);
+        let (right_keys, right_len) =
+            covering_span_bucket_keys(&tape.rspan);
+
+        for &left in &left_keys[..left_len] {
+            for &right in &right_keys[..right_len] {
+                let key = AntichainBucketKey { left, right };
+                let Some(entries) = self.0.get(&key) else {
+                    continue;
+                };
+
+                for old in entries {
+                    if old.hash == hash && old.tape == *tape {
+                        return false;
+                    }
+                    if old.tape.subsumes(tape) {
+                        return false;
+                    }
+                }
+            }
         }
-        // remove things we cover
-        self.0.retain(|old| !tape.subsumes(old));
-        self.0.push(tape.clone());
+
+        // Remove entries covered by the candidate.  The bucket predicate is a
+        // necessary condition, so exact subsumption remains the authority.
+        // There are at most (colors/count classes + 2)^2 buckets, usually far
+        // fewer than tapes; scanning bucket headers is much cheaper than
+        // comparing every tape structurally.
+        self.0.retain(|key, entries| {
+            if !span_can_subsume_bucket(&tape.lspan, key.left)
+                || !span_can_subsume_bucket(&tape.rspan, key.right)
+            {
+                return true;
+            }
+
+            let mut index = 0;
+            while index < entries.len() {
+                if tape.subsumes(&entries[index].tape) {
+                    entries.swap_remove(index);
+                } else {
+                    index += 1;
+                }
+            }
+
+            !entries.is_empty()
+        });
+
+        let key = antichain_bucket_key(tape);
+        self.0.entry(key).or_default().push(AntichainEntry {
+            hash,
+            tape: tape.clone(),
+        });
         true
     }
 }
