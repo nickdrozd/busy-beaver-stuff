@@ -96,6 +96,18 @@ struct WinPossible<const S: usize, const C: usize> {
     any: [[bool; C]; S],
 }
 
+/// Bit `p` of `possible[state]` is set when the transition graph admits a
+/// run from the blank initial configuration to `state` with
+/// `p == (# nonblank tape cells mod 2)`.
+///
+/// This deliberately forgets the tape contents and therefore computes an
+/// over-approximation. A missing bit is nevertheless a sound invariant and
+/// can be used to prune backward configurations whose complete finite tape has
+/// the wrong parity.
+struct NonblankParity<const S: usize> {
+    possible: [u8; S],
+}
+
 fn cant_reach<const s: usize, const c: usize, T: Ord>(
     prog: &Prog<s, c>,
     steps: Steps,
@@ -149,6 +161,11 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     let left_fresh_zero = !writes_blank_on_r;
     let right_fresh_zero = !writes_blank_on_l;
 
+    // Sound state/nonblank-count parity invariant. This is especially useful
+    // after the fresh-zero rules turn a formerly unknown tape end into `0+`,
+    // making the total nonblank parity exact.
+    let nonblank_parity = prog.nonblank_parity_from_blank();
+
     let mut configs = get_configs(&slots);
 
     // Apply the cheap static side filters before constructing the window
@@ -160,6 +177,14 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
                 left_forced_blank,
                 right_forced_blank,
             )
+            && tape.enforce_fresh_zero_side_invariants(
+                left_fresh_zero,
+                right_fresh_zero,
+            )
+    });
+
+    configs.retain(|Config { state, tape }| {
+        nonblank_parity_possible(*state, tape, &nonblank_parity)
     });
 
     if configs.is_empty() {
@@ -239,6 +264,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             right_fresh_zero,
             left_forced_blank,
             right_forced_blank,
+            &nonblank_parity,
         ) {
             Err(err) => return err,
             Ok(stepped) => stepped,
@@ -410,6 +436,16 @@ fn window_possible<const s: usize, const c: usize>(
     }
 }
 
+fn nonblank_parity_possible<const s: usize>(
+    state: State,
+    tape: &Tape,
+    parity: &NonblankParity<s>,
+) -> bool {
+    let st = state as usize;
+
+    st < s && (parity.possible[st] & tape.nonblank_parity_mask()) != 0
+}
+
 #[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
 fn step_instrs<const s: usize, const c: usize>(
     instrs: impl IntoIterator<Item = Instr>,
@@ -422,6 +458,7 @@ fn step_instrs<const s: usize, const c: usize>(
     right_fresh_zero: bool,
     left_forced_blank: bool,
     right_forced_blank: bool,
+    nonblank_parity: &NonblankParity<s>,
     stepped: &mut Configs,
 ) -> Result<(), BackwardResult> {
     for (color, shift, state) in instrs {
@@ -461,6 +498,10 @@ fn step_instrs<const s: usize, const c: usize>(
             continue;
         }
 
+        if !nonblank_parity_possible(state, &tape, nonblank_parity) {
+            continue;
+        }
+
         if !window_possible(state, &tape, win_possible) {
             continue;
         }
@@ -482,6 +523,7 @@ fn step_configs<const s: usize, const c: usize>(
     right_fresh_zero: bool,
     left_forced_blank: bool,
     right_forced_blank: bool,
+    nonblank_parity: &NonblankParity<s>,
 ) -> Result<Configs, BackwardResult> {
     let mut stepped = Configs::new();
 
@@ -506,6 +548,7 @@ fn step_configs<const s: usize, const c: usize>(
                 right_fresh_zero,
                 left_forced_blank,
                 right_forced_blank,
+                nonblank_parity,
                 &mut stepped,
             )?;
         }
@@ -525,6 +568,7 @@ fn step_configs<const s: usize, const c: usize>(
                 right_fresh_zero,
                 left_forced_blank,
                 right_forced_blank,
+                nonblank_parity,
                 &mut stepped,
             )?;
         }
@@ -540,6 +584,7 @@ fn step_configs<const s: usize, const c: usize>(
             right_fresh_zero,
             left_forced_blank,
             right_forced_blank,
+            nonblank_parity,
             &mut stepped,
         )?;
     }
@@ -628,6 +673,55 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         }
 
         (on_r, on_l)
+    }
+
+    /// Compute a sound over-approximation of the parity of the number of
+    /// nonblank tape cells in each state, starting from the blank tape.
+    ///
+    /// A transition changes this parity exactly when one of `read` and
+    /// `print` is blank and the other is nonblank. We retain only the state
+    /// and this one parity bit, so every concrete run maps to a path in this
+    /// finite abstract graph. Consequently, any absent parity bit is a valid
+    /// invariant for backward pruning.
+    fn nonblank_parity_from_blank(&self) -> NonblankParity<s> {
+        let mut possible = [0_u8; s];
+        possible[0] = 0b01; // initial state, entirely blank tape
+
+        loop {
+            let mut changed = false;
+
+            for ((state, read), &(print, _, next_state)) in self.iter()
+            {
+                let state = state as usize;
+                let next_state = next_state as usize;
+
+                if state >= s || next_state >= s {
+                    continue;
+                }
+
+                let source = possible[state];
+                if source == 0 {
+                    continue;
+                }
+
+                let flips = (read == 0) != (print == 0);
+                let reached = if flips {
+                    ((source & 0b01) << 1) | ((source & 0b10) >> 1)
+                } else {
+                    source
+                };
+
+                let old = possible[next_state];
+                possible[next_state] |= reached;
+                changed |= possible[next_state] != old;
+            }
+
+            if !changed {
+                break;
+            }
+        }
+
+        NonblankParity { possible }
     }
 
     /// Compute a *sound* shift-side restriction for each color.
@@ -1190,6 +1284,35 @@ impl Tape {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
     }
 
+    /// Return the possible parities of the total number of nonblank cells.
+    /// Bit 0 means even is possible; bit 1 means odd is possible.
+    ///
+    /// A fully bounded tape with fixed run counts has an exact parity. An
+    /// unknown end or an indefinite nonblank run can realize either parity,
+    /// so returning `0b11` is the sound conservative answer.
+    fn nonblank_parity_mask(&self) -> u8 {
+        let mut parity = u8::from(self.scan != 0);
+
+        for span in [&self.lspan, &self.rspan] {
+            if span.end == TapeEnd::Unknown {
+                return 0b11;
+            }
+
+            for block in span.span.iter() {
+                if block.color == 0 {
+                    continue;
+                }
+                if block.count == 0 {
+                    return 0b11;
+                }
+
+                parity ^= block.count & 1;
+            }
+        }
+
+        1_u8 << parity
+    }
+
     fn hash(&self) -> u64 {
         let mut h = AHasher::default();
         self.scan.hash(&mut h);
@@ -1310,7 +1433,7 @@ impl Tape {
             true
         }
 
-        (if left_fresh_zero {
+        let sides_ok = (if left_fresh_zero {
             check_side(&mut self.lspan)
         } else {
             true
@@ -1318,7 +1441,32 @@ impl Tape {
             check_side(&mut self.rspan)
         } else {
             true
-        })
+        });
+
+        if !sides_ok {
+            return false;
+        }
+
+        // If blank is never written in either direction, a scanned blank is
+        // being visited for the first time. The previously visited interval
+        // must therefore lie wholly on one side of the head. If an explicit
+        // nonblank cell identifies that side, the opposite tail is forced to
+        // be blank. Explicit nonblank cells on both sides are impossible.
+        if self.scan == 0 && left_fresh_zero && right_fresh_zero {
+            let left_nonblank =
+                self.lspan.span.iter().any(|block| block.color != 0);
+            let right_nonblank =
+                self.rspan.span.iter().any(|block| block.color != 0);
+
+            match (left_nonblank, right_nonblank) {
+                (true, true) => return false,
+                (true, false) => self.rspan = Span::init_blank(),
+                (false, true) => self.lspan = Span::init_blank(),
+                (false, false) => {},
+            }
+        }
+
+        true
     }
 
     /// Reject explicit side colors forbidden by shift-side analysis.
@@ -1645,6 +1793,57 @@ fn test_push_indef() {
     tape.backstep(false, 0);
 
     tape.assert("0+ 1 0.. 1.. 0.. 0 [0] ?");
+}
+
+#[test]
+fn test_nonblank_parity_pruning() {
+    let prog =
+        Prog::<3, 3>::from("1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA");
+    let parity = prog.nonblank_parity_from_blank();
+
+    // For this machine, A and C always have even support while B always has
+    // odd support.
+    assert_eq!(parity.possible, [0b01, 0b10, 0b01]);
+
+    let even: Tape = "0+ 2 1 [0] 0+".into();
+    assert_eq!(even.nonblank_parity_mask(), 0b01);
+    assert!(nonblank_parity_possible(0, &even, &parity));
+    assert!(!nonblank_parity_possible(1, &even, &parity));
+    assert!(nonblank_parity_possible(2, &even, &parity));
+
+    let odd: Tape = "0+ 2 [0] 0+".into();
+    assert_eq!(odd.nonblank_parity_mask(), 0b10);
+    assert!(!nonblank_parity_possible(0, &odd, &parity));
+    assert!(nonblank_parity_possible(1, &odd, &parity));
+
+    // An unresolved tail or an indefinite nonblank run remains conservative.
+    let unknown: Tape = "0+ 2 1 [0] ?".into();
+    assert_eq!(unknown.nonblank_parity_mask(), 0b11);
+    assert!(nonblank_parity_possible(1, &unknown, &parity));
+
+    let indefinite: Tape = "0+ 1.. [0] 0+".into();
+    assert_eq!(indefinite.nonblank_parity_mask(), 0b11);
+}
+
+#[test]
+fn test_scanned_fresh_zero_closes_opposite_tail() {
+    let prog =
+        Prog::<3, 3>::from("1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA");
+    let parity = prog.nonblank_parity_from_blank();
+
+    // This is one of the backward B0 branches from the example. Since the
+    // program never writes blank, the scanned 0 is fresh; the unknown tail to
+    // its right is therefore all blank. Its support parity is then exactly
+    // even, contradicting state B.
+    let mut branch: Tape = "0+ 2 1 [0] ?".into();
+    assert!(branch.enforce_fresh_zero_side_invariants(true, true));
+    branch.assert("0+ 2 1 [0] 0+");
+    assert!(!nonblank_parity_possible(1, &branch, &parity));
+
+    // A fresh scanned blank cannot have previously visited/nonblank cells on
+    // both sides.
+    let mut impossible: Tape = "? 1 [0] 2 ?".into();
+    assert!(!impossible.enforce_fresh_zero_side_invariants(true, true));
 }
 
 /**************************************/
