@@ -1,4 +1,4 @@
-# ruff: noqa: FBT001
+# ruff:file-ignore[boolean-type-hint-positional-argument]
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 

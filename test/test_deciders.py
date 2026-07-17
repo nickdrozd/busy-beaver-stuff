@@ -1,9 +1,9 @@
-# ruff: noqa: F405
+# ruff:file-ignore[undefined-local-with-import-star-usage]
 import json
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
-from test.prog_data import *  # noqa: F403
+from test.prog_data import *  # ruff:ignore[undefined-local-with-import-star]
 from tm.rust_stuff import (
     bkw_cant_blank,
     bkw_cant_halt,

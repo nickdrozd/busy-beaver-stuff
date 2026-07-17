@@ -39,7 +39,7 @@ class TestLinRado(TestCase):
         self.progs_strict, self.progs_loose = set(), set()
 
         for prog in yield_programs(states, colors, bool(halt), rejects):
-            prog = prog.replace('1R_', '...')  # noqa: PLW2901
+            prog = prog.replace('1R_', '...')  # ruff:ignore[redefined-loop-name]
 
             if not term_or_rec(prog, loose):
                 self.progs_loose.add(prog)

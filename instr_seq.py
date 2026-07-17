@@ -9,7 +9,7 @@ def format_sequence(prog: str) -> None:
 
     for partial, step, slot in instr_seq(prog):
         print(
-            "        \"{}\": ({:2d}, '{}'),".format(  # noqa: UP032
+            "        \"{}\": ({:2d}, '{}'),".format(  # ruff:ignore[f-string]
                 partial,
                 step,
                 show_slot(slot),

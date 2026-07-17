@@ -1,4 +1,4 @@
-# ruff: noqa: F401, I001
+# ruff:file-ignore[unused-import, unsorted-imports]
 from tm.rust_stuff import (
     show_comp,
     show_slot,
@@ -24,7 +24,7 @@ def show_int(num: int) -> str:
     return f'{sign}(~10^{est:.0f})'
 
 
-def show_number(num: Any) -> str:  # type: ignore[explicit-any]  # noqa: ANN401
+def show_number(num: Any) -> str:  # type: ignore[explicit-any]  # ruff:ignore[any-type]
     return (
         show_int(num)
         if isinstance(num, int) else

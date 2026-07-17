@@ -1,4 +1,4 @@
-# ruff: noqa: SIM102, PLR0911
+# ruff:file-ignore[collapsible-if, too-many-return-statements]
 # pylint: disable = confusing-consecutive-elif
 
 import itertools
@@ -539,7 +539,7 @@ class Mul(Num):
 
             if l != -1 and l == lo:
                 if (not isinstance(nr := r + ro, Add)  # no-branch
-                        or (nr.l != r and nr.l != ro)):  # noqa: PLR1714
+                        or (nr.l != r and nr.l != ro)):  # ruff:ignore[repeated-equality-comparison]
                     return l * nr
 
             if l == ro:
@@ -576,7 +576,7 @@ class Mul(Num):
                     if ro.l == l:
                         return lo + (self + ro)
 
-        elif isinstance(other, Exp):  # noqa: SIM114
+        elif isinstance(other, Exp):  # ruff:ignore[if-with-same-arms]
             return other + self
 
         elif isinstance(other, Div):
@@ -1239,7 +1239,7 @@ class Tet(Num):
     def __hash__(self) -> int:
         return id(self)
 
-    def digits(self) -> int:  # noqa: PLR6301
+    def digits(self) -> int:  # ruff:ignore[no-self-use]
         raise OverflowError
 
     def estimate(self) -> Tet:
@@ -1449,7 +1449,7 @@ def carmichael(mod: int) -> tuple[int, int]:
 
         res = lcm(res, lam_pk)
 
-        if k > max_k:  # noqa: PLR1730  # pylint: disable = consider-using-max-builtin
+        if k > max_k:  # ruff:ignore[if-stmt-min-max]  # pylint: disable = consider-using-max-builtin
             max_k = k
 
     return res, max_k

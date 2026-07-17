@@ -1,4 +1,4 @@
-# ruff: noqa: Q001
+# ruff:file-ignore[bad-quotes-multiline-string]
 from typing import TYPE_CHECKING
 
 from tm.show import show_state
@@ -96,7 +96,7 @@ def make_while(
         st: State,
         loop_in: Instr,
         rest_in: Instr,
-        mark: bool,  # noqa: FBT001
+        mark: bool,  # ruff:ignore[boolean-type-hint-positional-argument]
 ) -> str:
     test = 'BLANK' if not mark else '!BLANK'
     loop = make_instruction(st, int(mark), loop_in, skip_trans = True)

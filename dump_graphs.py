@@ -1,4 +1,4 @@
-# ruff: noqa: S404, S603
+# ruff:file-ignore[suspicious-subprocess-import, subprocess-without-shell-equals-true]
 import shlex
 import subprocess
 import sys

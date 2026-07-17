@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-# ruff: noqa: F401
+# ruff:file-ignore[unused-import]
 from tm.rust_stuff import tcompile
 
 if TYPE_CHECKING:

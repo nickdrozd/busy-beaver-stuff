@@ -111,7 +111,7 @@ class TestNum(TestCase):
 
             self.assertEqual(
                 val,
-                eval(str(num)))  # pylint: disable = eval-used  # noqa: S307
+                eval(str(num)))  # pylint: disable = eval-used  # ruff:ignore[suspicious-eval-usage]
 
         if rep is not None:
             self.assertEqual(rep, str(num))

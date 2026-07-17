@@ -437,7 +437,7 @@ class OpSeqResult(Num):
     def __hash__(self) -> int:
         return id(self)
 
-    def digits(self) -> int:  # noqa: PLR6301
+    def digits(self) -> int:  # ruff:ignore[no-self-use]
         raise OverflowError  # no-cover
 
     @property

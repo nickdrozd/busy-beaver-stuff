@@ -1,4 +1,4 @@
-# ruff: noqa: F405
+# ruff:file-ignore[undefined-local-with-import-star-usage]
 import os
 import re
 from math import isclose, log10
@@ -10,7 +10,7 @@ from test.lin_rec import (
     StrictLinRecMachine,
     run_loose_linrec_machine,
 )
-from test.prog_data import *  # noqa: F403
+from test.prog_data import *  # ruff:ignore[undefined-local-with-import-star]
 from test.test_num import assert_num_counts, clear_caches
 from tm.machine import (
     Machine,
@@ -419,7 +419,7 @@ class Recur(TuringTest):
     ):
         for prog, (steps, period) in prog_data.items():
             if isinstance(period, tuple):
-                period, qsihlt_diff = period  # noqa: PLW2901
+                period, qsihlt_diff = period  # ruff:ignore[redefined-loop-name]
             else:
                 qsihlt_diff = 0
 
