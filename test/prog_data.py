@@ -1527,6 +1527,11 @@ GIANT_CHILDREN = {
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  1LC 0LA",
 }
 
+IRREGULAR = {
+    "1RB ...  0LC 1RE  0LD 1LC  1RA 1LB  0RB 0RA",  # skelet 17
+    "1RB 1RE  1LC 1RB  0RA 0LD  1LB 1LD  ... 0RA",  # finned 3
+}
+
 SPAGHETTI = {
     # Halt
     "1RB 2RA 2RC  1LC ... 1LA  1RA 2LB 1LC",  # 310341163
@@ -3552,6 +3557,7 @@ NONHALTERS = (
     | RECURS
     | INFRUL
     | set(BACKWARD_STEPS['halt'])
+    | IRREGULAR
 )
 
 BLANKERS = (

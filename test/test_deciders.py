@@ -95,7 +95,7 @@ class Bkw(DeciderTest):
             f'zloop false positive: "{prog}"')
 
     def assert_cant_halt_backward(self, prog: str, depth: int):
-        if prog in self.false_negatives['halt'] | RECUR_FAST:
+        if prog in self.false_negatives['halt'] | RECUR_FAST | IRREGULAR:
             return
 
         self.assertTrue(
@@ -172,7 +172,7 @@ class Bkw(DeciderTest):
             self.assert_could_zloop_backward(prog)
 
     def test_holdouts(self):
-        for prog in HALT_HOLDOUTS:
+        for prog in HALT_HOLDOUTS | IRREGULAR:
             self.assert_could_halt_backward(prog)
 
         for prog in BLANK_HOLDOUTS:
@@ -222,7 +222,7 @@ class Cps(DeciderTest):
             cps_cant_halt(prog, CPS_LIMIT))
 
     def assert_cant_halt_cps(self, prog: str, segs: int):
-        if prog in self.false_negatives['halt']:
+        if prog in self.false_negatives['halt'] | IRREGULAR:
             return
 
         self.assertTrue(
@@ -310,7 +310,7 @@ class Cps(DeciderTest):
         for prog in SPINOUT_HOLDOUTS:
             self.assert_could_spinout_cps(prog)
 
-        for prog in HALT_HOLDOUTS:
+        for prog in HALT_HOLDOUTS | IRREGULAR:
             self.assert_could_halt_cps(prog)
 
     def test_false_negatives(self):
@@ -360,7 +360,7 @@ class Far(DeciderTest):
     def test_true_positives(self):
         for prog in NONHALTERS:
             if not far_cant_halt(prog, 3):
-                self.assertIn(prog, self.false_negatives['halt'])
+                self.assertIn(prog, self.false_negatives['halt'] | IRREGULAR)
 
         for prog in NONBLANKERS:
             if not far_cant_blank(prog, 3):
@@ -422,7 +422,7 @@ class Far(DeciderTest):
                 new_solved = True
 
         print('halt')
-        for prog in HALT_HOLDOUTS:
+        for prog in HALT_HOLDOUTS | IRREGULAR:
             if far_cant_halt(prog, 3):
                 print(prog)
                 new_solved = True

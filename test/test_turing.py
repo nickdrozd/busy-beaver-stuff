@@ -175,7 +175,7 @@ class Simple(TuringTest):
         self.machine = run_quick_machine(prog, sim_lim)
 
     def test_simple(self):
-        for prog in HALTERS | SPINNERS | RECURS | INFRUL:
+        for prog in HALTERS | SPINNERS | RECURS | INFRUL | IRREGULAR:
             self.assert_simple(prog)
 
     def test_halt(self):
