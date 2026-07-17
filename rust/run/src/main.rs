@@ -43,12 +43,8 @@ macro_rules! assert_holdouts {
         rayon::scope(|s| { $( $( assert_holdouts!(@goal s, $states, $colors, $goal, $pipeline, $steps, $first, $visited); )* )* });
     }};
 
-    ( $( $instrs:literal => [ $steps:expr, $visited:expr, [ $( $goal:literal => ( $pipeline:ident, $first:tt ) ),* $(,)? ], $(,)? ] ),* $(,)? ) => {{
-        rayon::scope(|s| { $( assert_holdouts!(@instrs_multi s, $instrs, $steps, $visited, [ $( $goal => ( $pipeline, $first ) ),* ]); )* });
-    }};
-
-    ( $( $instrs:literal => ( $pipeline:ident, $steps:expr, ( $first:tt, $visited:expr ) ) ),* $(,)? ) => {{
-        rayon::scope(|s| { $( assert_holdouts!(@instrs s, $instrs, $pipeline, $steps, $first, $visited); )* });
+    ( $( $instrs:literal => [ $steps:expr, $visited:expr, [ $( $goal:literal => $case:tt ),* $(,)? ], $(,)? ] ),* $(,)? ) => {{
+        rayon::scope(|s| { $( assert_holdouts!(@instrs_multi s, $instrs, $steps, $visited, [ $( $goal => $case ),* ]); )* });
     }};
 
     (@goal $scope:ident, $states:literal, $colors:literal, $goal:literal, $pipeline:ident, $steps:expr, $holdouts:ident, $visited:expr) => {{
@@ -103,36 +99,15 @@ macro_rules! assert_holdouts {
         });
     }};
 
-    (@instrs $scope:ident, $instrs:literal, $pipeline:ident, $steps:expr, $leaves:literal, $visited:expr) => {{
+    (@instrs_multi $scope:ident, $instrs:literal, $steps:expr, $visited:expr, [ $( $goal:literal => $case:tt ),* $(,)? ]) => {{
         $scope.spawn(move |_| {
-            let result = HoldoutVisited::<$instrs, $instrs>::run_instrs::<$instrs>(
-                $steps,
-                &|| HoldoutVisited::new(
-                    |prog: &Prog<$instrs, $instrs>, config: &mut PassConfig<'_>| {
-                        prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
-                            || $pipeline(prog, config)
-                    }
-                ),
-            );
-
-            assert_eq!(
-                result,
-                ($leaves, $visited),
-                "({}, {result:?})",
-                $instrs,
-            );
-        });
-    }};
-
-    (@instrs_multi $scope:ident, $instrs:literal, $steps:expr, $visited:expr, [ $( $goal:literal => ( $pipeline:ident, $first:tt ) ),* $(,)? ]) => {{
-        $scope.spawn(move |_| {
-            let (result, visited) = MultiCollector::<$instrs, $instrs, { assert_holdouts!(@count $( $pipeline ),*) }>::run_instrs::<$instrs>(
+            let (result, visited) = MultiCollector::<$instrs, $instrs, { assert_holdouts!(@count $( $case ),*) }>::run_instrs::<$instrs>(
                 $steps,
                 &|| MultiCollector::new(
                     |prog: &Prog<$instrs, $instrs>, config: &mut PassConfig<'_>| {
                         prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
                     },
-                    [ $( $pipeline ),* ],
+                    [ $( assert_holdouts!(@pipeline $case) ),* ],
                 ),
             );
 
@@ -155,7 +130,7 @@ macro_rules! assert_holdouts {
                             $instrs,
                             $goal,
                             result,
-                            $first
+                            $case
                         );
                     }),
                 )
@@ -179,7 +154,36 @@ macro_rules! assert_holdouts {
         });
     }};
 
-    (@instrs_multi_result $instrs:literal, $goal:literal, $result:ident, $holdouts:ident) => {{
+    (@pipeline ($pipeline:ident, $first:tt)) => { $pipeline };
+    (@pipeline $pipeline:ident) => { $pipeline };
+
+    (@instrs_multi_result $instrs:literal, $goal:literal, $result:ident, $pipeline:ident) => {{
+        assert_eq!(
+            $result.len(),
+            0,
+            "{}:{}, {result:?}",
+            $instrs,
+            $goal,
+            result = $result,
+        );
+    }};
+
+    (@instrs_multi_result $instrs:literal, $goal:literal, $result:ident, ($pipeline:ident, $first:tt)) => {{
+        assert_holdouts!(@instrs_multi_expected $instrs, $goal, $result, $first);
+    }};
+
+    (@instrs_multi_expected $instrs:literal, $goal:literal, $result:ident, $leaves:literal) => {{
+        assert_eq!(
+            $result.len(),
+            $leaves,
+            "{}:{}, {result:?}",
+            $instrs,
+            $goal,
+            result = $result,
+        );
+    }};
+
+    (@instrs_multi_expected $instrs:literal, $goal:literal, $result:ident, $holdouts:ident) => {{
         let (champs, holdouts) = $holdouts;
 
         assert_holdouts_match(
@@ -190,18 +194,14 @@ macro_rules! assert_holdouts {
         );
     }};
 
-    (@count $( $item:ident ),* $(,)?) => {
+    (@count $( $item:tt ),* $(,)?) => {
         0 $( + assert_holdouts!(@replace $item 1) )*
     };
 
-    (@replace $_item:ident $sub:expr) => { $sub };
+    (@replace $_item:tt $sub:expr) => { $sub };
 }
 
 /**************************************/
-
-fn _2_3_1(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(7).is_refuted() || prog.cps_cant_spinout(3)
-}
 
 fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
@@ -250,6 +250,12 @@ fn test_deciders() {
     ];
 }
 
+/**************************************/
+
+fn _2_2_3(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_twostep(0).is_refuted()
+}
+
 fn _3_2_3(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_twostep(10).is_refuted()
 }
@@ -270,15 +276,15 @@ fn test_twostep() {
     println!("twostep");
 
     assert_holdouts![
+        (2, 2) => [
+            3 => (_2_2_3, 4, (0, 81)),
+        ],
         (3, 2) => [
             3 => (_3_2_3, 13, (_3_2_3_, 11_754)),
         ],
         (2, 3) => [
             3 => (_2_3_3, 20, (_2_3_3_, 8_766)),
         ],
-    ];
-
-    assert_holdouts![
         (4, 2) => [
             3 => (_4_2_3, 99, (506, 2_134_923)),
         ],
@@ -290,100 +296,73 @@ fn test_twostep() {
 
 /**************************************/
 
-const fn _2_2_0(_: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
-    false
+fn instrs_4_0(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_halt(2).is_refuted()
 }
 
-fn _2_2_1(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(2).is_refuted()
+fn instrs_4_1(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_spinout(3).is_refuted()
 }
 
-fn _2_2_2(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
+fn instrs_4_2(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(2).is_refuted()
 }
 
-fn _2_2_3(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(0).is_refuted()
-}
-
-fn _3_2_0(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(13).is_refuted() || prog.cps_cant_halt(3)
-}
-
-fn _3_2_1(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(7).is_refuted() || prog.cps_cant_spinout(4)
-}
-
-fn _3_2_2(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(20).is_refuted() || prog.cps_cant_blank(10)
-}
-
-fn _2_3_0(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(8).is_refuted() || prog.cps_cant_halt(3)
-}
-
-fn _2_3_2(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(16).is_refuted() || prog.cps_cant_blank(7)
-}
-
-fn _4_2_0(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(46).is_refuted()
-        || prog.cps_cant_halt(6)
-        || prog.far_cant_halt(3)
-}
-
-fn _2_4_0(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_halt(6)
-        || prog.far_cant_halt(3)
-        || prog.to_string() == "1RB 2LA 1RA 1RA  1LB 1LA 3RB ..."
-}
-
-fn instrs_4(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(0).is_refuted() || prog.cps_cant_halt(3)
-}
-
-fn instrs_5(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
+fn instrs_5_0(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(3).is_refuted() || prog.cps_cant_halt(3)
 }
 
-fn instrs_6(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
+fn instrs_5_1(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_spinout(7).is_refuted() || prog.cps_cant_spinout(4)
+}
+
+fn instrs_5_2(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_blank(20).is_refuted() || prog.cps_cant_blank(10)
+}
+
+fn instrs_6_0(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
     prog.cps_cant_halt(3) || prog.far_cant_halt(3)
+}
+
+fn instrs_6_1(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_spinout(7).is_refuted() || prog.cps_cant_spinout(4)
+}
+
+fn instrs_6_2(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_blank(20).is_refuted() || prog.cps_cant_blank(10)
 }
 
 fn test_solved() {
     println!("solved");
 
     assert_holdouts![
-        (2, 2) => [
-            0 => (_2_2_0, 2, (0, 23)),
-            1 => (_2_2_1, 4, (0, 32)),
-            2 => (_2_2_2, 4, (0, 53)),
-            3 => (qh_2_2, 4, (0, 81)),
+        4 => [
+            4,
+            4_909,
+            [
+                0 => (instrs_4_0, 1),
+                1 => instrs_4_1,
+                2 => instrs_4_2,
+            ],
         ],
-        (3, 2) => [
-            0 => (_3_2_0, 12, (0, 2_718)),
-            1 => (_3_2_1, 13, (0, 4_046)),
-            2 => (_3_2_2, 13, (0, 9_510)),
-            3 => (qh_3_2, 13, (0, 11_754)),
+        5 => [
+            12,
+            151_351,
+            [
+                0 => (instrs_5_0, 0),
+                1 => (instrs_5_1, 0),
+                2 => (instrs_5_2, 0),
+            ],
         ],
-        (2, 3) => [
-            0 => (_2_3_0, 7, (0, 2_335)),
-            1 => (_2_3_1, 20, (0, 3_506)),
-            2 => (_2_3_2, 20, (0, 5_959)),
-            3 => (qh_2_3, 20, (0, 8_766)),
+        6 => [
+            22,
+            5_568_167,
+            [
+                0 => (instrs_6_0, 0),
+                1 => (instrs_6_1, 0),
+                2 => (instrs_6_2, 0),
+            ],
         ],
-        (4, 2) => [
-            0 => (_4_2_0, 25, (0, 431_888)),
-        ],
-        (2, 4) => [
-            0 => (_2_4_0, 109, (0, 308_968)),
-        ],
-    ];
-
-    assert_holdouts![
-        4 => (instrs_4, 4, (0, 4_909)),
-        5 => (instrs_5, 12, (0, 151_351)),
-        6 => (instrs_6, 22, (0, 5_568_167)),
     ];
 }
 
@@ -421,14 +400,20 @@ fn test_quasihalt() {
     println!("quasihalt");
 
     assert_holdouts![
-        (2, 4) => [
-            3 => (qh_2_4, TREE_LIM, (_2_4_q_, 1_698_850)),
+        (2, 2) => [
+            4 => (qh_2_2, 4, (0, 81)),
         ],
-    ];
-
-    assert_holdouts![
+        (3, 2) => [
+            4 => (qh_3_2, 13, (0, 11_754)),
+        ],
+        (2, 3) => [
+            4 => (qh_2_3, 20, (0, 8_766)),
+        ],
+        (2, 4) => [
+            4 => (qh_2_4, TREE_LIM, (_2_4_q_, 1_698_850)),
+        ],
         (4, 2) => [
-            3 => (qh_4_2, 99, (3_366, 2_134_923)),
+            4 => (qh_4_2, 99, (3_366, 2_134_923)),
         ],
     ];
 }
@@ -617,13 +602,13 @@ fn test_9_instr() {
 
 /**************************************/
 
-const CURR: &[fn()] = &[test_quasihalt];
+const CURR: &[fn()] = &[test_solved];
 
 const FAST: &[fn()] = &[
     test_deciders,
     test_from_file,
     test_instrs,
-    test_solved,
+    test_quasihalt,
     test_twostep,
 ];
 
