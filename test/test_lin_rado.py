@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 from test.lin_rec import StrictLinRecMachine
-from tm.machine import term_or_rec
+from tm.rust_stuff import term_or_rec
 from tm.show import show_state
 
 if TYPE_CHECKING:

@@ -14,10 +14,8 @@ from test.prog_data import *  # noqa: F403
 from test.test_num import assert_num_counts, clear_caches
 from tm.machine import (
     Machine,
-    run_transcript,
     show_number,
     show_slot,
-    term_or_rec,
 )
 from tm.macro import (
     MacroProg,
@@ -28,6 +26,8 @@ from tm.macro import (
 from tm.rust_stuff import (
     MachineResult,
     run_quick_machine,
+    run_transcript,
+    term_or_rec,
 )
 from tools.graph import Graph
 from tools.instr_seq import instr_seq
