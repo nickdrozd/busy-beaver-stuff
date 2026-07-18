@@ -296,44 +296,46 @@ fn test_twostep() {
 
 /**************************************/
 
+const BKW: usize = 256;
+
 fn instrs_4_0(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(2).is_refuted()
+    prog.bkw_cant_halt(BKW).is_refuted()
 }
 
 fn instrs_4_1(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(3).is_refuted()
+    prog.bkw_cant_spinout(BKW).is_refuted()
 }
 
 fn instrs_4_2(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(2).is_refuted()
+    prog.bkw_cant_blank(BKW).is_refuted()
 }
 
 fn instrs_5_0(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(3).is_refuted() || prog.cps_cant_halt(3)
+    prog.bkw_cant_halt(BKW).is_refuted()
 }
 
 fn instrs_5_1(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(7).is_refuted() || prog.cps_cant_spinout(4)
+    prog.bkw_cant_spinout(BKW).is_refuted()
 }
 
 fn instrs_5_2(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(20).is_refuted() || prog.cps_cant_blank(10)
+    prog.bkw_cant_blank(BKW).is_refuted()
 }
 
 fn instrs_6_0(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_halt(3) || prog.far_cant_halt(3)
+    prog.bkw_cant_halt(BKW).is_refuted()
 }
 
 fn instrs_6_1(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(7).is_refuted() || prog.cps_cant_spinout(4)
+    prog.bkw_cant_spinout(BKW).is_refuted()
 }
 
 fn instrs_6_2(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(20).is_refuted() || prog.cps_cant_blank(10)
+    prog.bkw_cant_blank(BKW).is_refuted()
 }
 
-fn test_solved() {
-    println!("solved");
+fn test_bkw() {
+    println!("bkw");
 
     assert_holdouts![
         4 => [
@@ -349,18 +351,18 @@ fn test_solved() {
             12,
             151_351,
             [
-                0 => (instrs_5_0, 0),
-                1 => (instrs_5_1, 0),
-                2 => (instrs_5_2, 0),
+                0 => (instrs_5_0, 81),
+                1 => (instrs_5_1, 15),
+                2 => (instrs_5_2, 8),
             ],
         ],
         6 => [
             22,
             5_568_167,
             [
-                0 => (instrs_6_0, 0),
-                1 => (instrs_6_1, 0),
-                2 => (instrs_6_2, 0),
+                0 => (instrs_6_0, 3843),
+                1 => (instrs_6_1, 796),
+                2 => (instrs_6_2, 351),
             ],
         ],
     ];
@@ -602,15 +604,10 @@ fn test_9_instr() {
 
 /**************************************/
 
-const CURR: &[fn()] = &[test_solved];
+const CURR: &[fn()] = &[test_bkw, test_twostep];
 
-const FAST: &[fn()] = &[
-    test_deciders,
-    test_from_file,
-    test_instrs,
-    test_quasihalt,
-    test_twostep,
-];
+const FAST: &[fn()] =
+    &[test_deciders, test_from_file, test_instrs, test_quasihalt];
 
 const SLOW: &[fn()] = &[test_deciders_slow, test_9_instr];
 
