@@ -22,6 +22,9 @@ const LIN_MIN: Steps = 4_000;
 const LIN_MOR: Steps = 10_000;
 const LIN_MAX: Steps = 5_000_000;
 
+const INF_MIN: Steps = 500;
+const INF_MOR: Steps = 10_000;
+
 /**************************************/
 
 use Goal::*;
@@ -206,32 +209,40 @@ macro_rules! assert_holdouts {
 fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(22).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MIN)
         || prog.cps_cant_spinout(21)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MOR)
         || prog.far_cant_spinout(3)
 }
 
 fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(51).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MIN)
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MOR)
         || prog.far_cant_blank(3)
 }
 
 fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MIN)
         || prog.cps_cant_spinout(11)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MOR)
         || prog.far_cant_spinout(2)
 }
 
 fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(51).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MIN)
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MOR)
         || prog.far_cant_blank(2)
 }
 
@@ -257,19 +268,19 @@ fn _2_2_3(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
 }
 
 fn _3_2_3(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(10).is_refuted()
+    prog.bkw_cant_twostep(10).is_refuted() || prog.check_inf(INF_MIN)
 }
 
 fn _2_3_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(10).is_refuted()
+    prog.bkw_cant_twostep(10).is_refuted() || prog.check_inf(INF_MIN)
 }
 
 fn _4_2_3(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(50).is_refuted()
+    prog.bkw_cant_twostep(50).is_refuted() || prog.check_inf(INF_MIN)
 }
 
 fn _2_4_3(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(30).is_refuted()
+    prog.bkw_cant_twostep(30).is_refuted() || prog.check_inf(INF_MIN)
 }
 
 fn test_twostep() {
@@ -280,16 +291,16 @@ fn test_twostep() {
             3 => (_2_2_3, 4, (0, 81)),
         ],
         (3, 2) => [
-            3 => (_3_2_3, 13, (_3_2_3_, 11_754)),
+            3 => (_3_2_3, 13, (0, 11_754)),
         ],
         (2, 3) => [
-            3 => (_2_3_3, 20, (_2_3_3_, 8_766)),
+            3 => (_2_3_3, 20, (0, 8_766)),
         ],
         (4, 2) => [
-            3 => (_4_2_3, 99, (506, 2_134_923)),
+            3 => (_4_2_3, 99, (44, 2_134_923)),
         ],
         (2, 4) => [
-            3 => (_2_4_3, TREE_LIM, (3065, 1_698_850)),
+            3 => (_2_4_3, TREE_LIM, (701, 1_698_850)),
         ],
     ];
 }
@@ -386,16 +397,20 @@ fn qh_4_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     let config = config.to_mut();
 
     prog.term_or_rec(LIN_MOR, config).is_settled()
+        || prog.check_inf(INF_MIN)
         || prog.cps_cant_quasihalt(18)
         || prog.term_or_rec(LIN_MAX, config).is_settled()
+        || prog.check_inf(INF_MOR)
 }
 
 fn qh_2_4(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     let config = config.to_mut();
 
     prog.term_or_rec(LIN_MOR, config).is_settled()
+        || prog.check_inf(INF_MIN)
         || prog.cps_cant_quasihalt(18)
         || prog.term_or_rec(LIN_MAX, config).is_settled()
+        || prog.check_inf(INF_MOR)
 }
 
 fn test_quasihalt() {
@@ -415,7 +430,7 @@ fn test_quasihalt() {
             4 => (qh_2_4, TREE_LIM, (_2_4_q_, 1_698_850)),
         ],
         (4, 2) => [
-            4 => (qh_4_2, 99, (3_366, 2_134_923)),
+            4 => (qh_4_2, 99, (1_421, 2_134_923)),
         ],
     ];
 }
@@ -556,24 +571,30 @@ fn test_instrs() {
 fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(30).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MIN)
         || prog.cps_cant_halt(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MOR)
         || prog.far_cant_halt(4)
 }
 
 fn _8_1(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MIN)
         || prog.cps_cant_spinout(21)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MOR)
         || prog.far_cant_spinout(3)
 }
 
 fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(50).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MIN)
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MOR)
         || prog.far_cant_blank(3)
 }
 
@@ -604,10 +625,10 @@ fn test_9_instr() {
 
 /**************************************/
 
-const CURR: &[fn()] = &[test_bkw, test_twostep];
+const CURR: &[fn()] = &[test_deciders, test_quasihalt];
 
 const FAST: &[fn()] =
-    &[test_deciders, test_from_file, test_instrs, test_quasihalt];
+    &[test_bkw, test_from_file, test_instrs, test_twostep];
 
 const SLOW: &[fn()] = &[test_deciders_slow, test_9_instr];
 

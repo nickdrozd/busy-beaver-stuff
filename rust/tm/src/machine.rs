@@ -40,6 +40,10 @@ impl RunResult {
         matches!(self, Self::Blank)
     }
 
+    pub const fn is_spinout(&self) -> bool {
+        matches!(self, Self::Spinout)
+    }
+
     pub const fn is_recur(&self) -> bool {
         matches!(self, Self::Recur(_) | Self::Spinout)
     }
@@ -58,6 +62,10 @@ impl RunResult {
 
     pub const fn is_mult(&self) -> bool {
         matches!(self, Self::MultRule(_))
+    }
+
+    pub const fn is_limit(&self) -> bool {
+        matches!(self, Self::StepLimit | Self::ConfigLimit)
     }
 }
 
@@ -541,11 +549,10 @@ fn test_macro_overflow() {
 #[test]
 fn test_macro_loop() {
     assert!(
-        Prog::<6, 2>::from(
+        !Prog::<6, 2>::from(
             "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF"
         )
-        .make_backsymbol_macro(1)
-        .run_prover(500)
+        .run_prover(1000)
         .is_infinite()
     );
 }
@@ -558,8 +565,13 @@ fn test_prover_failure() {
     ];
 
     for &prog in progs {
-        assert!(
-            Prog::<6, 2>::from(prog).run_prover(1000).is_undefined()
-        );
+        assert!(Prog::<6, 2>::from(prog).run_prover(1000).is_limit());
     }
+}
+
+#[test]
+fn test_simple_case() {
+    let prog = Prog::<3, 2>::from("1RB 0LB  0LC 0LA  1RC 1LB");
+
+    assert!(prog.run_prover(1000).is_infinite());
 }

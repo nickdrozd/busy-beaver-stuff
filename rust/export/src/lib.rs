@@ -28,6 +28,11 @@ pub fn run_transcript(prog: &str, sim_lim: Steps) -> bool {
 }
 
 #[pyfunction]
+pub fn check_inf(prog: &str, sim_lim: Steps) -> bool {
+    Prog::from(prog).check_inf(sim_lim)
+}
+
+#[pyfunction]
 pub fn show_slot(slot: Slot) -> String {
     slot.show()
 }
@@ -432,7 +437,7 @@ mod rust_stuff {
     use crate::{
         BackwardResult, MachineResult, PastConfigPy, TermRes,
         bkw_cant_blank, bkw_cant_halt, bkw_cant_spinout,
-        bkw_cant_twostep, bkw_cant_zloop, cps_cant_blank,
+        bkw_cant_twostep, bkw_cant_zloop, check_inf, cps_cant_blank,
         cps_cant_halt, cps_cant_quasihalt, cps_cant_spinout,
         far_cant_blank, far_cant_halt, far_cant_spinout, opt_block,
         read_instr, run_quick_machine, run_transcript, show_comp,

@@ -25,6 +25,7 @@ from tm.macro import (
 )
 from tm.rust_stuff import (
     MachineResult,
+    check_inf,
     run_quick_machine,
     run_transcript,
     term_or_rec,
@@ -1006,6 +1007,21 @@ class Prover(RunProver):
                 self.assertIsInstance(
                     self.machine.rulapp,
                     int)
+
+    def test_check_inf(self):
+        for progs in HALTERS, SPINNERS:
+            for prog in progs:
+                self.assertFalse(
+                    check_inf(prog, 100_000))
+
+        missed = 0
+
+        for prog in INFRUL:
+            if not check_inf(prog, 100_000):
+                missed += 1
+                print(prog)
+
+        self.assertEqual(missed, 101)
 
     def test_algebra(self):
         clear_caches()

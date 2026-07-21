@@ -1,6 +1,6 @@
 use crate::holdouts::*;
 use std::collections::BTreeSet;
-use tm::Prog;
+use tm::{Prog, machine::RunProver as _};
 
 /**************************************/
 
@@ -8,8 +8,14 @@ pub fn test_holdouts() {
     println!("subsets");
     test_subsets();
 
+    println!("champs");
+    test_champs();
+
     println!("lin rec");
     test_linrec();
+
+    println!("prover");
+    test_prover();
 
     println!("backward");
     test_backward();
@@ -78,6 +84,59 @@ fn check_holdout_decider(
     }
 
     failures.extend(holdouts_match_errors(context, &[], &[], refuted));
+}
+
+fn test_champs() {
+    assert!(
+        Prog::<3, 3>::from("1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC")
+            .run_prover(1000)
+            .is_mult()
+    );
+
+    assert!(
+        Prog::<5, 2>::from(
+            "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB",
+        )
+        .make_block_macro(2)
+        .run_prover(337_356)
+        .is_spinout()
+    );
+
+    assert!(
+        Prog::<5, 2>::from(
+            "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA",
+        )
+        .make_block_macro(2)
+        .run_prover(600_000)
+        .is_spinout()
+    );
+}
+
+const PROVER: usize = 10_000;
+
+fn test_prover() {
+    let mut failures = vec![];
+
+    check_holdout_decider(
+        &mut failures,
+        "8-0 halt",
+        _8_0_ho.as_slice(),
+        |prog| prog.check_inf(PROVER),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "8-1 spinout",
+        _8_1_ho.as_slice(),
+        |prog| prog.check_inf(PROVER),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "8-2 blank",
+        _8_2_ho.as_slice(),
+        |prog| prog.check_inf(PROVER),
+    );
+
+    assert_no_holdout_failures("prover", &failures);
 }
 
 fn test_backward() {
