@@ -144,6 +144,8 @@ impl<T: GetInstr> RunProver for T {}
 
 /**************************************/
 
+const OPT_BLOCK: usize = 500;
+
 impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn run_basic(
         &self,
@@ -175,8 +177,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         StepLimit
     }
 
-    pub fn check_inf(&self, steps: Steps, block_steps: Steps) -> bool {
-        let blocks = self.opt_block(block_steps);
+    pub fn check_inf(&self, steps: Steps) -> bool {
+        let blocks = self.opt_block(OPT_BLOCK);
 
         let result = if blocks == 1 {
             self.run_prover(steps)
@@ -497,12 +499,12 @@ fn test_mult_rule() {
 fn test_check_inf() {
     assert!(
         Prog::<2, 4>::from("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
-            .check_inf(209, 209)
+            .check_inf(209)
     );
 
     assert!(
         Prog::<2, 4>::from("1RB 0LA 3LB 1RA  2LB 3LA 0RB 2RA")
-            .check_inf(756, 300)
+            .check_inf(756)
     );
 }
 
@@ -526,9 +528,13 @@ fn test_macro_excess() {
 #[test]
 #[should_panic(expected = "attempt to exponentiate with overflow")]
 fn test_macro_overflow() {
+    let prog = Prog::<2, 4>::from("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...");
+
     assert!(
-        !Prog::<2, 4>::from("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...")
-            .check_inf(118, 3_219)
+        !prog
+            .make_block_macro(prog.opt_block(3_219))
+            .run_prover(118)
+            .is_infinite()
     );
 }
 

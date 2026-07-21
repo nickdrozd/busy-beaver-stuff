@@ -499,7 +499,7 @@ fn run_from_file(path: &str, steps: Steps) -> io::Result<()> {
 
         let prog = Prog::<8, 8>::from(line);
 
-        prog.check_inf(steps, 4_000);
+        prog.check_inf(steps);
 
         Ok(())
     })
