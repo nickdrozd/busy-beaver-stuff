@@ -549,3 +549,17 @@ fn test_macro_loop() {
         .is_infinite()
     );
 }
+
+#[test]
+fn test_prover_failure() {
+    let progs = &[
+        "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
+        "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
+    ];
+
+    for &prog in progs {
+        assert!(
+            Prog::<6, 2>::from(prog).run_prover(1000).is_undefined()
+        );
+    }
+}
