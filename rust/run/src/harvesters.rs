@@ -198,7 +198,7 @@ impl<const s: usize, const c: usize> Harvester<s, c>
 
         self.holdout += 1;
 
-        // prog.print();
+        prog.print();
     }
 
     type Output = (u64, u64);

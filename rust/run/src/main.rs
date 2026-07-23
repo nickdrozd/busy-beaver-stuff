@@ -445,10 +445,6 @@ fn _5_2_1(prog: &Prog<5, 2>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_complete() || prog.bkw_cant_spinout(3).is_refuted()
 }
 
-fn _5_2_2(prog: &Prog<5, 2>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_complete() || prog.bkw_cant_blank(3).is_refuted()
-}
-
 fn _3_3_1(prog: &Prog<3, 3>, _: &mut PassConfig<'_>) -> bool {
     !prog.is_complete() || prog.bkw_cant_spinout(3).is_refuted()
 }
@@ -632,12 +628,27 @@ const FAST: &[fn()] =
 
 const SLOW: &[fn()] = &[test_deciders_slow, test_9_instr];
 
+fn _5_2_2(prog: &Prog<5, 2>, config: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_blank(256).is_refuted()
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MIN)
+        || prog.cps_cant_blank(20)
+        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.check_inf(INF_MOR)
+}
+
 fn main() {
-    CURR.par_iter().for_each(|f| f());
+    assert_holdouts![
+        (5, 2) => [
+            2 => (_5_2_2, TREE_LIM, (9_700_355, 486_399_920)),
+        ],
+    ];
 
     if !std::env::args().any(|x| x == "--all") {
         return;
     }
+
+    CURR.par_iter().for_each(|f| f());
 
     FAST.par_iter().for_each(|f| f());
 
