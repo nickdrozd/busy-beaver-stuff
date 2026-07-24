@@ -575,3 +575,15 @@ fn test_simple_case() {
 
     assert!(prog.run_prover(1000).is_infinite());
 }
+
+#[test]
+#[should_panic = "attempt to add with overflow"]
+fn test_overflow() {
+    assert!(
+        !Prog::<5, 2>::from(
+            "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA"
+        )
+        .term_or_rec_fresh(1_000_000)
+        .is_settled()
+    );
+}
