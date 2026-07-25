@@ -394,7 +394,6 @@ class Recur(TuringTest):
             self.assertIsNotNone(
                 run_loose_linrec_machine(prog, steps).xlimit)
 
-    @expectedFailure
     def test_overflow(self):
         self.assertFalse(
             term_or_rec(

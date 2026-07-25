@@ -40,7 +40,7 @@ impl Countable for BigCount {}
 
 /**************************************/
 
-pub trait Block: PartialEq + Eq + Display {
+pub trait Block: Clone + PartialEq + Eq + Display {
     type Count: Countable;
 
     fn new(color: Color, count: Self::Count) -> Self;
@@ -372,6 +372,30 @@ pub type LilTape = Tape<LilBlock>;
 pub type MedTape = Tape<MedBlock>;
 pub type BigTape = Tape<BigBlock>;
 
+impl From<&MedTape> for BigTape {
+    fn from(tape: &MedTape) -> Self {
+        fn convert_span(span: &MedSpan) -> Span<BigBlock> {
+            Span::new(
+                span.iter()
+                    .rev()
+                    .map(|block| {
+                        BigBlock::new(
+                            block.color,
+                            BigCount::from(block.count),
+                        )
+                    })
+                    .collect(),
+            )
+        }
+
+        Self {
+            scan: tape.scan,
+            lspan: convert_span(&tape.lspan),
+            rspan: convert_span(&tape.rspan),
+        }
+    }
+}
+
 impl<B: Block> Display for Tape<B> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
@@ -607,7 +631,7 @@ impl<B: Block> HeadTape<'_, B> {
 
 /**************************************/
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 struct EnumBlock {
     block: BigBlock,
     index: Option<Index>,

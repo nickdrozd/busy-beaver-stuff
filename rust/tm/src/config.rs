@@ -52,3 +52,14 @@ impl<Tape: Scan + Display> Display for Config<Tape> {
         write!(f, "{slot} | {tape}")
     }
 }
+
+/**************************************/
+
+impl From<&MedConfig> for BigConfig {
+    fn from(config: &MedConfig) -> Self {
+        Self {
+            state: config.state,
+            tape: BigTape::from(&config.tape),
+        }
+    }
+}

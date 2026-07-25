@@ -1,10 +1,12 @@
+use num_traits::ToPrimitive as _;
+
 use crate::{
     Prog, Slot, State, Steps,
     config::{BigConfig, Config, MedConfig},
     macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
     rules::{ApplyRule, Rule},
-    tape::{GetSig, HeadTape, LinRec, MachineTape, Pos},
+    tape::{Block, GetSig, HeadTape, LinRec, MachineTape, Pos, Tape},
 };
 
 /**************************************/
@@ -153,6 +155,7 @@ impl<T: GetInstr> RunProver for T {}
 /**************************************/
 
 const OPT_BLOCK: usize = 500;
+const MED_LIMIT: Steps = 1 << 16;
 
 impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn run_basic(
@@ -210,6 +213,21 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         sim_lim: Steps,
         config: &mut MedConfig,
     ) -> RunResult {
+        if sim_lim < MED_LIMIT {
+            self.term_or_rec_config(sim_lim, config)
+        } else {
+            self.term_or_rec_config(
+                sim_lim,
+                &mut BigConfig::from(&*config),
+            )
+        }
+    }
+
+    fn term_or_rec_config<B: Block>(
+        &self,
+        sim_lim: Steps,
+        config: &mut Config<Tape<B>>,
+    ) -> RunResult {
         let mut head = 1;
 
         let (mut ref_config, mut ref_head, mut leftmost, mut rightmost) =
@@ -241,8 +259,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 reset = cycle - 1;
             }
 
-            #[expect(clippy::cast_possible_wrap)]
-            let stepped = config.tape.step(shift, color, same) as Pos;
+            let stepped = config
+                .tape
+                .step(shift, color, same)
+                .to_isize()
+                .unwrap();
 
             if shift {
                 head += stepped;
@@ -578,7 +599,6 @@ fn test_simple_case() {
 }
 
 #[test]
-#[should_panic = "attempt to add with overflow"]
 fn test_overflow() {
     assert!(
         !Prog::<5, 2>::from(
