@@ -4,7 +4,7 @@ use crate::{
     macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
     rules::{ApplyRule, Rule},
-    tape::{Alignment as _, GetSig, LinRec, MachineTape, Pos},
+    tape::{GetSig, HeadTape, LinRec, MachineTape, Pos},
 };
 
 /**************************************/
@@ -261,11 +261,12 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             }
 
             if next_state == ref_config.state
-                && let Some(linrec) = (head, &config.tape).aligns_with(
-                    &(ref_head, &ref_config.tape),
-                    leftmost,
-                    rightmost,
-                )
+                && let Some(linrec) = HeadTape::new(head, &config.tape)
+                    .aligns_with(
+                        &HeadTape::new(ref_head, &ref_config.tape),
+                        leftmost,
+                        rightmost,
+                    )
             {
                 return Recur(linrec);
             }

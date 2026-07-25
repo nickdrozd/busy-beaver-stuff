@@ -7,7 +7,7 @@ use core::{
 };
 
 use num_bigint::BigUint;
-use num_traits::{One, Zero};
+use num_traits::{One, ToPrimitive, Zero};
 
 use crate::{Color, Shift};
 
@@ -23,8 +23,10 @@ pub trait Countable:
     AddAssign
     + Clone
     + Display
+    + PartialEq
     + Eq
     + From<bool>
+    + ToPrimitive
     + One
     + SubAssign
     + Sum
@@ -38,7 +40,7 @@ impl Countable for BigCount {}
 
 /**************************************/
 
-pub trait Block: Display {
+pub trait Block: PartialEq + Eq + Display {
     type Count: Countable;
 
     fn new(color: Color, count: Self::Count) -> Self;
@@ -256,17 +258,8 @@ impl<B: Block> IndexMut<usize> for Span<B> {
 
 pub type MedSpan = Span<MedBlock>;
 
-pub trait UsizeBlock: Block {
-    fn count_usize(&self) -> usize;
-}
-
-impl<C: Countable + Copy + Into<usize>> UsizeBlock for BasicBlock<C> {
-    fn count_usize(&self) -> usize {
-        self.count.into()
-    }
-}
-
-impl<B: UsizeBlock> Span<B> {
+#[expect(clippy::multiple_inherent_impl)]
+impl<B: Block> Span<B> {
     pub fn compare_take(&self, prev: &Self, mut take: usize) -> bool {
         let mut s_blocks = self.iter();
         let mut p_blocks = prev.iter();
@@ -278,13 +271,14 @@ impl<B: UsizeBlock> Span<B> {
             match (s_next, p_next) {
                 (None, None) => return true,
                 (None, Some(_)) | (Some(_), None) => return false,
+
                 (Some(s_block), Some(p_block)) => {
                     if s_block.get_color() != p_block.get_color() {
                         return false;
                     }
 
-                    let s_rem = s_block.count_usize();
-                    let p_rem = p_block.count_usize();
+                    let s_rem = s_block.get_count().to_usize().unwrap();
+                    let p_rem = p_block.get_count().to_usize().unwrap();
 
                     if s_rem == 0 || p_rem == 0 {
                         return false;
@@ -551,100 +545,69 @@ impl<B: Block> IndexTape<B::Count> for Tape<B> {
 
 pub type Pos = isize;
 
+pub struct HeadTape<'t, B: Block> {
+    head: Pos,
+    tape: &'t Tape<B>,
+}
+
+impl<'t, B: Block> HeadTape<'t, B> {
+    pub const fn new(head: Pos, tape: &'t Tape<B>) -> Self {
+        Self { head, tape }
+    }
+}
+
 pub enum LinRec {
     Stationary,
     Translated,
 }
 
-pub trait Alignment: Scan {
-    fn head(&self) -> Pos;
-
-    fn l_len(&self) -> usize;
-    fn r_len(&self) -> usize;
-
-    fn l_eq(&self, prev: &Self) -> bool;
-    fn r_eq(&self, prev: &Self) -> bool;
-
-    fn l_compare_take(&self, prev: &Self, take: usize) -> bool;
-    fn r_compare_take(&self, prev: &Self, take: usize) -> bool;
-
-    fn aligns_with(
+impl<B: Block> HeadTape<'_, B> {
+    pub fn aligns_with(
         &self,
         prev: &Self,
         leftmost: Pos,
         rightmost: Pos,
     ) -> Option<LinRec> {
-        if self.scan() != prev.scan() {
+        if self.tape.scan != prev.tape.scan {
             return None;
         }
 
-        if self.l_len() != prev.l_len() && self.r_len() != prev.r_len()
+        if self.tape.lspan.len() != prev.tape.lspan.len()
+            && self.tape.rspan.len() != prev.tape.rspan.len()
         {
             return None;
         }
 
-        let p_head = prev.head();
+        let (l_take, r_take): (usize, usize) = (
+            prev.head.abs_diff(leftmost),
+            prev.head.abs_diff(rightmost),
+        );
 
-        let (l_take, r_take): (usize, usize) =
-            (p_head.abs_diff(leftmost), p_head.abs_diff(rightmost));
-
-        let diff = self.head() - p_head;
+        let diff = self.head - prev.head;
 
         #[expect(clippy::comparison_chain)]
         if 0 < diff {
-            (self.l_compare_take(prev, l_take) && self.r_eq(prev))
+            (self.tape.lspan.compare_take(&prev.tape.lspan, l_take)
+                && self.tape.rspan == prev.tape.rspan)
                 .then_some(LinRec::Translated)
         } else if diff < 0 {
-            (self.r_compare_take(prev, r_take) && self.l_eq(prev))
+            (self.tape.rspan.compare_take(&prev.tape.rspan, r_take)
+                && self.tape.lspan == prev.tape.lspan)
                 .then_some(LinRec::Translated)
         } else {
-            (self.l_compare_take(prev, l_take)
-                && self.r_compare_take(prev, r_take))
+            (self.tape.lspan.compare_take(&prev.tape.lspan, l_take)
+                && self
+                    .tape
+                    .rspan
+                    .compare_take(&prev.tape.rspan, r_take))
             .then_some(LinRec::Stationary)
         }
     }
 }
 
-type HeadTape<'t> = (Pos, &'t MedTape);
-
-impl Scan for HeadTape<'_> {
-    fn scan(&self) -> Color {
-        self.1.scan
-    }
-}
-
-impl Alignment for HeadTape<'_> {
-    fn head(&self) -> Pos {
-        self.0
-    }
-
-    fn l_len(&self) -> usize {
-        self.1.lspan.len()
-    }
-
-    fn r_len(&self) -> usize {
-        self.1.rspan.len()
-    }
-
-    fn l_eq(&self, prev: &Self) -> bool {
-        self.1.lspan == prev.1.lspan
-    }
-
-    fn r_eq(&self, prev: &Self) -> bool {
-        self.1.rspan == prev.1.rspan
-    }
-
-    fn l_compare_take(&self, prev: &Self, take: usize) -> bool {
-        self.1.lspan.compare_take(&prev.1.lspan, take)
-    }
-
-    fn r_compare_take(&self, prev: &Self, take: usize) -> bool {
-        self.1.rspan.compare_take(&prev.1.rspan, take)
-    }
-}
-
 /**************************************/
 
+#[derive(PartialEq, Eq)]
 struct EnumBlock {
     block: BigBlock,
     index: Option<Index>,
