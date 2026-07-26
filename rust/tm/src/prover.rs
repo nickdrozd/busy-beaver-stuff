@@ -151,12 +151,8 @@ impl Prover {
         };
 
         let counts = CountSnapshot::from_config(config, &sig);
-        let (delta, delta_2, delta_3, domain) = past_configs
+        let (delta, _delta_2, _delta_3, domain) = past_configs
             .next_deltas_with_domain(config.state, cycle, counts)?;
-
-        if [delta, delta_2, delta_3].into_iter().any(|d| d > 90_000) {
-            return None;
-        }
 
         let proved =
             self.prove_rule(delta, config, &sig, &domain, prog)?;
