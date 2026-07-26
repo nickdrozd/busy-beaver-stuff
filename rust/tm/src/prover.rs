@@ -7,11 +7,11 @@ use num_traits::{One as _, Signed as _, ToPrimitive as _, Zero as _};
 
 use crate::{
     Color, Shift, Slot, State, Steps,
-    config::BigConfig,
+    config::AlgConfig,
     machine::RunProver,
     rules::{Op, Rule},
     tape::{
-        BigCount, Block as _, ColorCount, GetSig, Index, IndexTape,
+        AlgCount, Block as _, ColorCount, GetSig, Index, IndexTape,
         MinSig, Signature,
     },
 };
@@ -62,7 +62,7 @@ impl Prover {
         rule: &Rule,
         min_sig: MinSig,
         domain: CountDomain,
-        config: &BigConfig,
+        config: &AlgConfig,
     ) {
         if domain.is_empty() {
             self.rules
@@ -103,7 +103,7 @@ impl Prover {
 
     fn get_guarded_rule(
         &self,
-        config: &BigConfig,
+        config: &AlgConfig,
         sig: &Signature,
     ) -> Option<&Rule> {
         self.guarded_rules
@@ -119,7 +119,7 @@ impl Prover {
     pub fn try_rule(
         &mut self,
         cycle: usize,
-        config: &BigConfig,
+        config: &AlgConfig,
         prog: &impl RunProver,
     ) -> Option<ProverResult> {
         let sig = config.tape.signature();
@@ -181,7 +181,7 @@ impl Prover {
     fn prove_rule(
         &self,
         delta: Steps,
-        config: &BigConfig,
+        config: &AlgConfig,
         sig: &Signature,
         domain: &CountDomain,
         prog: &impl RunProver,
@@ -464,10 +464,10 @@ impl AlgebraicValue {
 
     fn is_congruent(
         &self,
-        modulus: &BigCount,
-        residue: &BigCount,
+        modulus: &AlgCount,
+        residue: &AlgCount,
     ) -> bool {
-        if modulus == &BigCount::from(2_u8) {
+        if modulus == &AlgCount::from(2_u8) {
             return self
                 .terms
                 .values()
@@ -525,7 +525,7 @@ impl AlgebraicContext {
     fn variable(
         &mut self,
         index: Index,
-        witness: &BigCount,
+        witness: &AlgCount,
         domain: &CountDomain,
     ) -> ProofResult<AlgebraicValue> {
         let raw_witness =
@@ -642,7 +642,7 @@ struct AlgebraicTape {
 
 impl AlgebraicTape {
     fn from_concrete(
-        tape: &crate::tape::BigTape,
+        tape: &crate::tape::AlgTape,
         sig: &Signature,
         domain: &CountDomain,
         context: &mut AlgebraicContext,
@@ -656,7 +656,7 @@ impl AlgebraicTape {
 
         fn make_span<'a>(
             side: Shift,
-            blocks: impl Iterator<Item = &'a crate::tape::BigBlock>,
+            blocks: impl Iterator<Item = &'a crate::tape::AlgBlock>,
             sig: &[ColorCount],
             domain: &CountDomain,
             context: &mut AlgebraicContext,
@@ -1058,10 +1058,10 @@ impl AlgebraicTape {
 
                     let scale = mul.pow(repetitions);
                     let geometric = if add.is_zero() {
-                        BigCount::zero()
+                        AlgCount::zero()
                     } else {
-                        add * ((&scale - BigCount::one())
-                            / (mul - BigCount::one()))
+                        add * ((&scale - AlgCount::one())
+                            / (mul - AlgCount::one()))
                     };
                     let scale = BigInt::from_biguint(Sign::Plus, scale);
                     let geometric =
@@ -1264,7 +1264,7 @@ mod algebraic_tests {
 
     #[test]
     fn extracts_additive_countdown_with_exact_minimum() {
-        let tape = crate::tape::BigTape::from("1^5 [0]");
+        let tape = crate::tape::AlgTape::from("1^5 [0]");
         let sig = tape.signature();
         let mut context = AlgebraicContext::new();
         let mut symbolic = AlgebraicTape::from_concrete(
@@ -1291,7 +1291,7 @@ mod algebraic_tests {
 
     #[test]
     fn rejects_cross_variable_output() {
-        let tape = crate::tape::BigTape::from("1^3 [0] 2^4");
+        let tape = crate::tape::AlgTape::from("1^3 [0] 2^4");
         let sig = tape.signature();
         let mut context = AlgebraicContext::new();
         let mut symbolic = AlgebraicTape::from_concrete(
@@ -1338,13 +1338,13 @@ mod algebraic_tests {
 
     #[test]
     fn divides_symbolic_even_countdown_exactly() {
-        let tape = crate::tape::BigTape::from("1^10 [0]");
+        let tape = crate::tape::AlgTape::from("1^10 [0]");
         let sig = tape.signature();
         let domain = CountDomain(TreeDict::from([(
             (false, 0),
             Congruence {
-                modulus: BigCount::from(2_u8),
-                residue: BigCount::zero(),
+                modulus: AlgCount::from(2_u8),
+                residue: AlgCount::zero(),
             },
         )]));
         let mut context = AlgebraicContext::new();
@@ -1375,10 +1375,10 @@ const PAST_CONFIG_LIMIT: usize = 5;
 // BTreeMap on every concrete cycle.  The Index is retained to make the
 // invariant explicit and to reject mismatched histories defensively.
 #[derive(Clone)]
-struct CountSnapshot(Vec<(Index, BigCount)>);
+struct CountSnapshot(Vec<(Index, AlgCount)>);
 
 impl CountSnapshot {
-    fn from_config(config: &BigConfig, sig: &Signature) -> Self {
+    fn from_config(config: &AlgConfig, sig: &Signature) -> Self {
         let mut counts = Vec::with_capacity(config.tape.blocks());
 
         for (side, (span, signature)) in [
@@ -1406,13 +1406,13 @@ impl CountSnapshot {
 
 #[derive(Clone, Debug)]
 struct Congruence {
-    modulus: BigCount,
-    residue: BigCount,
+    modulus: AlgCount,
+    residue: AlgCount,
 }
 
 impl Congruence {
-    fn matches(&self, count: &BigCount) -> bool {
-        if self.modulus == BigCount::from(2_u8) {
+    fn matches(&self, count: &AlgCount) -> bool {
+        if self.modulus == AlgCount::from(2_u8) {
             return count.is_even() == self.residue.is_zero();
         }
 
@@ -1441,7 +1441,7 @@ impl CountDomain {
 
         for (offset, (index, first_count)) in first.0.iter().enumerate()
         {
-            let mut modulus = BigCount::zero();
+            let mut modulus = AlgCount::zero();
             let mut previous = first_count;
             let mut complete = true;
 
@@ -1468,7 +1468,7 @@ impl CountDomain {
                 previous = current;
             }
 
-            if complete && modulus > BigCount::one() {
+            if complete && modulus > AlgCount::one() {
                 constraints.insert(
                     *index,
                     Congruence {
@@ -1482,16 +1482,16 @@ impl CountDomain {
         Self(constraints)
     }
 
-    fn constraint(&self, index: Index) -> (BigCount, BigCount) {
+    fn constraint(&self, index: Index) -> (AlgCount, AlgCount) {
         self.0.get(&index).map_or_else(
-            || (BigCount::one(), BigCount::zero()),
+            || (AlgCount::one(), AlgCount::zero()),
             |constraint| {
                 (constraint.modulus.clone(), constraint.residue.clone())
             },
         )
     }
 
-    fn matches<T: IndexTape<BigCount>>(&self, tape: &T) -> bool {
+    fn matches<T: IndexTape<AlgCount>>(&self, tape: &T) -> bool {
         self.0.iter().all(|(index, constraint)| {
             constraint.matches(tape.get_count(index))
         })

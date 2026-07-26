@@ -2,7 +2,7 @@ use num_traits::ToPrimitive as _;
 
 use crate::{
     Prog, Slot, State, Steps,
-    config::{BigConfig, Config, MedConfig},
+    config::{AlgConfig, BigConfig, Config, MedConfig},
     macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
     rules::{ApplyRule, Rule},
@@ -75,7 +75,7 @@ impl RunResult {
 
 pub trait RunProver: GetInstr + Sized {
     fn run_prover(&self, sim_lim: Steps) -> RunResult {
-        let mut config = BigConfig::init();
+        let mut config = AlgConfig::init();
 
         let mut prover = Prover::new();
 

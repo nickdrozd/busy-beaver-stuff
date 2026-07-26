@@ -6,7 +6,7 @@ use num_traits::{
     CheckedMul as _, One as _, Signed as _, ToPrimitive as _, Zero as _,
 };
 
-use crate::tape::{BigCount as Count, Index, IndexTape};
+use crate::tape::{AlgCount as Count, Index, IndexTape};
 
 /**************************************/
 

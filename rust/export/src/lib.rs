@@ -234,9 +234,9 @@ pub fn far_cant_spinout(prog: &str, steps: Steps) -> bool {
 
 use std::collections::BTreeMap as Dict;
 
-use tm::{config::BigConfig, tape::BigCount};
+use tm::{config::AlgConfig, tape::AlgCount};
 
-type BigStep = BigCount;
+type BigStep = AlgCount;
 
 type Blanks = Dict<State, BigStep>;
 
@@ -258,7 +258,7 @@ pub struct MachineResult {
 
     pub steps: BigStep,
     pub cycles: BigStep,
-    pub marks: BigCount,
+    pub marks: AlgCount,
 
     pub blanks: Blanks,
 
@@ -272,7 +272,7 @@ impl MachineResult {
         result: TermRes,
         steps: BigStep,
         cycles: BigStep,
-        marks: BigCount,
+        marks: AlgCount,
         blanks: Blanks,
         last_slot: Option<Slot>,
     ) -> Self {
@@ -297,7 +297,7 @@ impl MachineResult {
     }
 
     #[getter]
-    fn marks(&self) -> BigCount {
+    fn marks(&self) -> AlgCount {
         self.marks.clone()
     }
 
@@ -342,13 +342,13 @@ impl MachineResult {
 pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
     let prog = Prog::from(prog);
 
-    let mut config = BigConfig::init();
+    let mut config = AlgConfig::init();
 
     let mut blanks = Blanks::new();
 
     let mut cycles = 0;
 
-    let mut steps = BigCount::ZERO;
+    let mut steps = AlgCount::ZERO;
 
     let mut result: Option<TermRes> = None;
     let mut last_slot: Option<Slot> = None;

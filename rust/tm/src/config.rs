@@ -3,7 +3,7 @@ use core::fmt::{self, Display};
 use crate::{
     Slot, State,
     instrs::Parse as _,
-    tape::{BigTape, Init, LilTape, MedTape},
+    tape::{AlgTape, BigTape, Init, LilTape, MedTape},
 };
 
 pub use crate::tape::Scan;
@@ -11,6 +11,7 @@ pub use crate::tape::Scan;
 pub type LilConfig = Config<LilTape>;
 pub type MedConfig = Config<MedTape>;
 pub type BigConfig = Config<BigTape>;
+pub type AlgConfig = Config<AlgTape>;
 
 /**************************************/
 

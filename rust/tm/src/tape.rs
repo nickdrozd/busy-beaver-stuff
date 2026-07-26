@@ -15,7 +15,8 @@ use crate::{Color, Shift};
 
 pub type LilCount = u8;
 pub type MedCount = u16;
-pub type BigCount = BigUint;
+pub type BigCount = u64;
+pub type AlgCount = BigUint;
 
 /**************************************/
 
@@ -37,6 +38,7 @@ pub trait Countable:
 impl Countable for LilCount {}
 impl Countable for MedCount {}
 impl Countable for BigCount {}
+impl Countable for AlgCount {}
 
 /**************************************/
 
@@ -77,6 +79,7 @@ pub struct BasicBlock<Count> {
 pub type LilBlock = BasicBlock<LilCount>;
 pub type MedBlock = BasicBlock<MedCount>;
 pub type BigBlock = BasicBlock<BigCount>;
+pub type AlgBlock = BasicBlock<AlgCount>;
 
 impl<Count: Countable> Block for BasicBlock<Count> {
     type Count = Count;
@@ -371,6 +374,7 @@ pub struct Tape<B: Block> {
 pub type LilTape = Tape<LilBlock>;
 pub type MedTape = Tape<MedBlock>;
 pub type BigTape = Tape<BigBlock>;
+pub type AlgTape = Tape<AlgBlock>;
 
 impl From<&MedTape> for BigTape {
     fn from(tape: &MedTape) -> Self {
@@ -633,16 +637,16 @@ impl<B: Block> HeadTape<'_, B> {
 
 #[derive(Clone, PartialEq, Eq)]
 struct EnumBlock {
-    block: BigBlock,
+    block: AlgBlock,
     index: Option<Index>,
 }
 
 impl Block for EnumBlock {
-    type Count = BigCount;
+    type Count = AlgCount;
 
     fn new(color: Color, count: Self::Count) -> Self {
         Self {
-            block: BigBlock::new(color, count),
+            block: AlgBlock::new(color, count),
             index: None,
         }
     }
@@ -690,11 +694,11 @@ impl Display for EnumTape {
     }
 }
 
-type BigSpan = Span<BigBlock>;
+type AlgSpan = Span<AlgBlock>;
 type EnumSpan = Span<EnumBlock>;
 
 impl EnumSpan {
-    fn from(span: &BigSpan, side: Shift) -> Self {
+    fn from(span: &AlgSpan, side: Shift) -> Self {
         let len = span.len();
 
         Self::new(
@@ -710,8 +714,8 @@ impl EnumSpan {
     }
 }
 
-impl From<&BigTape> for EnumTape {
-    fn from(tape: &BigTape) -> Self {
+impl From<&AlgTape> for EnumTape {
+    fn from(tape: &AlgTape) -> Self {
         Self {
             tape: Tape {
                 scan: tape.scan,
@@ -798,12 +802,12 @@ impl EnumTape {
     }
 }
 
-impl IndexTape<BigCount> for EnumTape {
-    fn get_count(&self, index: &Index) -> &BigCount {
+impl IndexTape<AlgCount> for EnumTape {
+    fn get_count(&self, index: &Index) -> &AlgCount {
         self.tape.get_count(index)
     }
 
-    fn set_count(&mut self, index: &Index, val: BigCount) {
+    fn set_count(&mut self, index: &Index, val: AlgCount) {
         self.tape.set_count(index, val);
     }
 }
@@ -819,7 +823,7 @@ impl MachineTape for EnumTape {
 /**************************************/
 
 #[cfg(test)]
-impl BigTape {
+impl AlgTape {
     #[track_caller]
     fn assert(&self, marks: u32, tape_str: &str, sig: &str) {
         assert_eq!(self.blank(), marks == 0);
@@ -846,11 +850,11 @@ impl BigTape {
 }
 
 #[cfg(test)]
-impl BigSpan {
+impl AlgSpan {
     fn from_data(data: Vec<(Color, usize)>) -> Self {
         Self::new(
             data.into_iter()
-                .map(|(cr, ct)| BigBlock::new(cr, BigCount::from(ct)))
+                .map(|(cr, ct)| AlgBlock::new(cr, AlgCount::from(ct)))
                 .rev()
                 .collect(),
         )
@@ -860,12 +864,12 @@ impl BigSpan {
 #[cfg(test)]
 macro_rules! tape {
     ($tape:expr) => {
-        BigTape::from($tape)
+        AlgTape::from($tape)
     };
 }
 
 #[cfg(test)]
-impl From<&str> for BigTape {
+impl From<&str> for AlgTape {
     fn from(s: &str) -> Self {
         fn parse_block(part: &str) -> (Color, usize) {
             if let Some((color, count)) = part.split_once('^') {
@@ -911,7 +915,7 @@ impl From<&str> for BigTape {
 #[cfg(test)]
 impl From<&str> for EnumTape {
     fn from(s: &str) -> Self {
-        (&BigTape::from(s)).into()
+        (&AlgTape::from(s)).into()
     }
 }
 
@@ -1013,8 +1017,8 @@ macro_rules! mult {
     ($mul:literal, $add:literal) => {
         #[expect(trivial_numeric_casts)]
         Op::Mult((
-            BigCount::from($mul as u8),
-            BigCount::from($add as u8),
+            AlgCount::from($mul as u8),
+            AlgCount::from($add as u8),
         ))
     };
 }
