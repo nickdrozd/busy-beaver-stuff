@@ -233,7 +233,7 @@ fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_spinout(11)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.check_inf(INF_MOR)
-        || prog.far_cant_spinout(2)
+        || prog.far_cant_spinout(4)
 }
 
 fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
@@ -243,7 +243,7 @@ fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.check_inf(INF_MOR)
-        || prog.far_cant_blank(2)
+        || prog.far_cant_blank(6)
 }
 
 fn test_deciders() {
@@ -585,7 +585,7 @@ fn _8_1(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_spinout(21)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.check_inf(INF_MOR)
-        || prog.far_cant_spinout(3)
+        || prog.far_cant_spinout(6)
 }
 
 fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
@@ -595,7 +595,7 @@ fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.check_inf(INF_MOR)
-        || prog.far_cant_blank(3)
+        || prog.far_cant_blank(6)
 }
 
 fn test_8_instr() {
