@@ -147,7 +147,19 @@ fn cps_cant_reach(
     goal: Goal,
     configs: &mut Configs,
 ) -> bool {
-    cps_cant_reach_obs(prog, rad, goal, &mut NoObs, configs)
+    // Level 0 is the legacy abstraction.  A reachable abstract goal is
+    // the only outcome that enables the next, strictly finer level.
+    for refinement_level in 0..=TAIL_SIG_REFINEMENTS.len() {
+        configs.refinement_level = refinement_level;
+
+        match cps_cant_reach_obs(prog, rad, goal, &mut NoObs, configs) {
+            CpsOutcome::Proved => return true,
+            CpsOutcome::Counterexample => {},
+            CpsOutcome::Inconclusive => return false,
+        }
+    }
+
+    false
 }
 
 fn cps_cant_quasihalt(
@@ -157,30 +169,46 @@ fn cps_cant_quasihalt(
     configs: &mut Configs,
     scratch: &mut QuasihaltScratch,
 ) -> bool {
-    scratch.graph.reset();
+    // The same refinement ladder is applied to both a reachable halt and
+    // a surviving avoidable-state trap in the quasihalt graph.
+    for refinement_level in 0..=TAIL_SIG_REFINEMENTS.len() {
+        configs.refinement_level = refinement_level;
+        scratch.graph.reset();
 
-    if !cps_cant_reach_obs(prog, rad, Halt, &mut scratch.graph, configs)
-    {
-        return false;
+        match cps_cant_reach_obs(
+            prog,
+            rad,
+            Halt,
+            &mut scratch.graph,
+            configs,
+        ) {
+            CpsOutcome::Proved => {},
+            CpsOutcome::Counterexample => continue,
+            CpsOutcome::Inconclusive => return false,
+        }
+
+        scratch.graph.dedup_edges();
+
+        // A positive functional result is final.  A negative result still
+        // goes through SCC refinement, which may reject a spurious monotone
+        // CPS cycle that cannot persist on fresh canonical-zero cells.
+        if scratch.graph.cant_quasihalt_functional_fastpath(
+            ignored_state,
+            &mut scratch.analysis,
+        ) == Some(true)
+        {
+            return true;
+        }
+
+        if scratch.graph.cant_quasihalt_no_avoidable_state_cycle(
+            ignored_state,
+            &mut scratch.analysis,
+        ) {
+            return true;
+        }
     }
 
-    scratch.graph.dedup_edges();
-
-    // A positive functional result is final.  A negative result still
-    // goes through SCC refinement, which may reject a spurious monotone
-    // CPS cycle that cannot persist on fresh canonical-zero cells.
-    if scratch.graph.cant_quasihalt_functional_fastpath(
-        ignored_state,
-        &mut scratch.analysis,
-    ) == Some(true)
-    {
-        return true;
-    }
-
-    scratch.graph.cant_quasihalt_no_avoidable_state_cycle(
-        ignored_state,
-        &mut scratch.analysis,
-    )
+    false
 }
 
 /**************************************/
@@ -200,7 +228,7 @@ fn cps_cant_reach_obs(
     goal: Goal,
     obs: &mut impl CpsObs,
     configs: &mut Configs,
-) -> bool {
+) -> CpsOutcome {
     configs.reset(rad);
 
     while configs.todo_head < configs.todo.len() {
@@ -220,9 +248,9 @@ fn cps_cant_reach_obs(
 
         let (print, shift, next_state) =
             match prog.get_instr(&(state, init_scan)) {
-                Err(_) => return false,
+                Err(_) => return CpsOutcome::Inconclusive,
                 Ok(None) => match goal {
-                    Halt => return false,
+                    Halt => return CpsOutcome::Counterexample,
                     _ => continue,
                 },
                 Ok(Some(instr)) => instr,
@@ -232,8 +260,11 @@ fn cps_cant_reach_obs(
         // push.last.  Record it together with that continuation color so a
         // later pull cannot combine the color from one occurrence with the
         // tail evidence from another.
+        let refinement_level = configs.refinement_level;
         let push_tail_nz =
             if shift { tape.left_nz } else { tape.right_nz };
+        let push_tail_sig =
+            if shift { tape.left_sig } else { tape.right_sig };
         let push_tail_parity = match goal {
             Blank | Spinout if shift => tape.left_parity,
             Blank | Spinout => tape.right_parity,
@@ -246,10 +277,24 @@ fn cps_cant_reach_obs(
             (&mut tape.lspan, &mut tape.rspan)
         };
 
-        configs.add_span(shift, push, push_tail_nz, push_tail_parity);
+        configs.add_span(
+            shift,
+            push,
+            push_tail_nz,
+            push_tail_parity,
+            push_tail_sig,
+        );
 
         let dropped = push.push(print, &mut configs.span_pool);
         tape.scan = pull.pull(&mut configs.span_pool);
+
+        if shift {
+            tape.left_sig =
+                tape.left_sig.prepend(dropped, refinement_level);
+        } else {
+            tape.right_sig =
+                tape.right_sig.prepend(dropped, refinement_level);
+        }
 
         match goal {
             Halt => {},
@@ -313,10 +358,32 @@ fn cps_cant_reach_obs(
         } = &mut *configs;
 
         macro_rules! process_continuation {
-            ($color:expr, $tail_nz:expr, $tail_parity:expr) => {{
+            (
+                $color:expr,
+                $tail_nz:expr,
+                $tail_parity:expr,
+                $tail_sig:expr
+            ) => {{
                 let color = $color;
                 let tail_nz = $tail_nz;
                 let tail_parity = $tail_parity;
+                let tail_sig = $tail_sig;
+
+                let current_sig =
+                    if shift { tape.right_sig } else { tape.left_sig };
+                if !current_sig.is_prepend_of(
+                    color,
+                    tail_sig,
+                    refinement_level,
+                ) {
+                    continue;
+                }
+
+                let (left_sig, right_sig) = if shift {
+                    (tape.left_sig, tail_sig)
+                } else {
+                    (tail_sig, tape.right_sig)
+                };
 
                 let (left_nz, right_nz, left_parity, right_parity) =
                     match goal {
@@ -453,22 +520,24 @@ fn cps_cant_reach_obs(
                         // nonblank cell does not imply that the next step
                         // repeats the same instruction.  Any retained nonzero
                         // evidence ahead also rules out a canonical blank ray.
-                        let (ahead_nz, ahead_parity) = if shift {
-                            (right_nz, right_parity)
-                        } else {
-                            (left_nz, left_parity)
-                        };
+                        let (ahead_nz, ahead_parity, ahead_sig) =
+                            if shift {
+                                (right_nz, right_parity, right_sig)
+                            } else {
+                                (left_nz, left_parity, left_sig)
+                            };
 
                         blank_window
                             && color == 0
                             && ahead_nz == 0
                             && !ahead_parity
+                            && ahead_sig == TailSig::default()
                     },
                     Halt => false,
                 };
 
                 if reached_goal {
-                    return false;
+                    return CpsOutcome::Counterexample;
                 }
 
                 let mut pull_clone = *pull;
@@ -483,6 +552,8 @@ fn cps_cant_reach_obs(
                     right_nz,
                     left_parity,
                     right_parity,
+                    left_sig,
+                    right_sig,
                 );
 
                 let next_config = Config {
@@ -505,34 +576,25 @@ fn cps_cant_reach_obs(
             }};
         }
 
-        match goal {
-            Halt => {
-                let colors = if shift {
-                    rspans.get_halt_colors(pull)
-                } else {
-                    lspans.get_halt_colors(pull)
-                };
+        let continuations = if shift {
+            rspans.get_continuations(pull)
+        } else {
+            lspans.get_continuations(pull)
+        };
 
-                for &color in colors {
-                    process_continuation!(color, 0, false);
-                }
-            },
-            Blank | Spinout => {
-                let continuations = if shift {
-                    rspans.get_continuations(pull)
-                } else {
-                    lspans.get_continuations(pull)
-                };
-
-                for &Continuation {
-                    color,
-                    tail_nz,
-                    tail_parity,
-                } in continuations
-                {
-                    process_continuation!(color, tail_nz, tail_parity);
-                }
-            },
+        for &Continuation {
+            color,
+            tail_nz,
+            tail_parity,
+            tail_sig,
+        } in continuations
+        {
+            process_continuation!(
+                color,
+                tail_nz,
+                tail_parity,
+                tail_sig
+            );
         }
 
         let pull_key = pull.span;
@@ -554,11 +616,11 @@ fn cps_cant_reach_obs(
             .interner
             .at_capacity(configs.by_id.len(), configs.active_count)
         {
-            return false;
+            return CpsOutcome::Inconclusive;
         }
     }
 
-    true
+    CpsOutcome::Proved
 }
 
 /**************************************/
@@ -1360,6 +1422,54 @@ fn scc_has_cycle_filtered(
 
 /**************************************/
 
+/// Hidden-tail predicates added after a coarse CPS counterexample.  Level 0
+/// uses no signatures; level n uses the first n modular channels.  Each
+/// channel is an exact homomorphism of a finite-support ray, so collisions
+/// can only preserve spurious behavior, never remove concrete behavior.
+/// Entries are `(polynomial_base, modulus)`.
+const TAIL_SIG_REFINEMENTS: [(u16, u16); 2] = [(2, 3), (3, 4)];
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum CpsOutcome {
+    Proved,
+    Counterexample,
+    Inconclusive,
+}
+
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
+struct TailSig([u16; TAIL_SIG_REFINEMENTS.len()]);
+
+impl TailSig {
+    fn prepend(self, color: Color, level: usize) -> Self {
+        debug_assert!(level <= TAIL_SIG_REFINEMENTS.len());
+
+        let color = u64::from(color);
+        let mut next = self;
+        for (slot, &(base, modulus)) in next
+            .0
+            .iter_mut()
+            .zip(TAIL_SIG_REFINEMENTS.iter())
+            .take(level)
+        {
+            let value = color + u64::from(base) * u64::from(*slot);
+            *slot = u16::try_from(value % u64::from(modulus))
+                .expect("tail-signature residue must fit in u16");
+        }
+        next
+    }
+
+    fn is_prepend_of(
+        self,
+        color: Color,
+        tail: Self,
+        level: usize,
+    ) -> bool {
+        self == tail.prepend(color, level)
+    }
+}
+
 type SpanId = usize;
 
 type Colors = Vec<Color>;
@@ -1369,11 +1479,12 @@ struct Continuation {
     color: Color,
     tail_nz: usize,
     tail_parity: bool,
+    tail_sig: TailSig,
 }
 
 type Continuations = Vec<Continuation>;
 type RichSpans = Vec<Continuations>;
-type HaltSpans = Vec<Vec<Color>>;
+type HaltSpans = Vec<Continuations>;
 
 enum Spans {
     Halt(HaltSpans),
@@ -1389,6 +1500,8 @@ struct HaltConfigShape {
     scan: Color,
     lspan: Span,
     rspan: Span,
+    left_sig: TailSig,
+    right_sig: TailSig,
 }
 
 impl From<&Config> for HaltConfigShape {
@@ -1398,6 +1511,8 @@ impl From<&Config> for HaltConfigShape {
             scan: config.tape.scan,
             lspan: config.tape.lspan,
             rspan: config.tape.rspan,
+            left_sig: config.tape.left_sig,
+            right_sig: config.tape.right_sig,
         }
     }
 }
@@ -1410,6 +1525,8 @@ struct ConfigShape {
     rspan: Span,
     left_parity: bool,
     right_parity: bool,
+    left_sig: TailSig,
+    right_sig: TailSig,
 }
 
 impl From<&Config> for ConfigShape {
@@ -1421,6 +1538,8 @@ impl From<&Config> for ConfigShape {
             rspan: config.tape.rspan,
             left_parity: config.tape.left_parity,
             right_parity: config.tape.right_parity,
+            left_sig: config.tape.left_sig,
+            right_sig: config.tape.right_sig,
         }
     }
 }
@@ -1742,6 +1861,7 @@ struct Configs {
     active_count: usize,
     todo: Vec<ConfigId>,
     todo_head: usize,
+    refinement_level: usize,
 
     l_watch: Watch,
     r_watch: Watch,
@@ -1766,6 +1886,7 @@ impl Configs {
             active_count: 0,
             todo: Vec::new(),
             todo_head: 0,
+            refinement_level: 0,
             l_watch: Vec::new(),
             r_watch: Vec::new(),
         }
@@ -1803,11 +1924,13 @@ impl Configs {
             &init.tape.lspan,
             init.tape.left_nz,
             init.tape.left_parity,
+            init.tape.left_sig,
         );
         self.rspans.add_span(
             &init.tape.rspan,
             init.tape.right_nz,
             init.tape.right_parity,
+            init.tape.right_sig,
         );
 
         let (init_id, is_new) = self.intern_config(init);
@@ -1840,6 +1963,7 @@ impl Configs {
         span: &Span,
         tail_nz: usize,
         tail_parity: bool,
+        tail_sig: TailSig,
     ) {
         let exact = matches!(&self.interner, ConfigInterner::Exact(_));
         let (spans, watch) = if shift {
@@ -1848,7 +1972,7 @@ impl Configs {
             (&mut self.rspans, &mut self.r_watch)
         };
 
-        if spans.add_span(span, tail_nz, tail_parity)
+        if spans.add_span(span, tail_nz, tail_parity, tail_sig)
             && let Some(waiting) = watch.get_mut(span.span)
         {
             if exact {
@@ -1877,12 +2001,7 @@ impl Spans {
 
     fn clear(&mut self, span_count: usize) {
         match self {
-            Self::Halt(spans) => {
-                for colors in spans.iter_mut().take(span_count) {
-                    colors.clear();
-                }
-            },
-            Self::Rich(spans) => {
+            Self::Halt(spans) | Self::Rich(spans) => {
                 for continuations in spans.iter_mut().take(span_count) {
                     continuations.clear();
                 }
@@ -1895,21 +2014,32 @@ impl Spans {
         span: &Span,
         tail_nz: usize,
         tail_parity: bool,
+        tail_sig: TailSig,
     ) -> bool {
         match self {
             Self::Halt(spans) => {
                 debug_assert_eq!(tail_nz, 0);
                 debug_assert!(!tail_parity);
 
+                let continuation = Continuation {
+                    color: span.last,
+                    tail_nz: 0,
+                    tail_parity: false,
+                    tail_sig,
+                };
+
                 if spans.len() <= span.span {
                     spans.resize_with(span.span + 1, Vec::new);
                 }
 
-                let colors = &mut spans[span.span];
-                match colors.binary_search(&span.last) {
+                let continuations = &mut spans[span.span];
+                match continuations.binary_search_by_key(
+                    &(span.last, tail_sig),
+                    |cnt| (cnt.color, cnt.tail_sig),
+                ) {
                     Ok(_) => false,
                     Err(pos) => {
-                        colors.insert(pos, span.last);
+                        continuations.insert(pos, continuation);
                         true
                     },
                 }
@@ -1920,6 +2050,7 @@ impl Spans {
                     color: span.last,
                     tail_nz,
                     tail_parity,
+                    tail_sig,
                 };
 
                 if spans.len() <= span.span {
@@ -1928,13 +2059,13 @@ impl Spans {
 
                 let continuations = &mut spans[span.span];
                 match continuations.binary_search_by_key(
-                    &(span.last, tail_parity),
-                    |cnt| (cnt.color, cnt.tail_parity),
+                    &(span.last, tail_parity, tail_sig),
+                    |cnt| (cnt.color, cnt.tail_parity, cnt.tail_sig),
                 ) {
                     Ok(pos) => {
                         // Counts are lower bounds.  For the same continuation
-                        // color and exact tail parity, a smaller bound subsumes
-                        // every larger one.
+                        // color, exact tail parity, and exact active signature,
+                        // a smaller bound subsumes every larger one.
                         if tail_nz < continuations[pos].tail_nz {
                             continuations[pos].tail_nz = tail_nz;
                             return true;
@@ -1950,22 +2081,10 @@ impl Spans {
         }
     }
 
-    fn get_halt_colors(&self, span: &Span) -> &[Color] {
-        let Self::Halt(spans) = self else {
-            unreachable!(
-                "color-only continuations are only used for Halt"
-            );
-        };
-        let colors = &spans[span.span];
-        debug_assert!(!colors.is_empty());
-        colors
-    }
-
     fn get_continuations(&self, span: &Span) -> &Continuations {
-        let Self::Rich(spans) = self else {
-            unreachable!("full continuations are not used for Halt");
+        let continuations = match self {
+            Self::Halt(spans) | Self::Rich(spans) => &spans[span.span],
         };
-        let continuations = &spans[span.span];
         debug_assert!(!continuations.is_empty());
         continuations
     }
@@ -1995,6 +2114,8 @@ struct Tape {
     right_nz: usize,
     left_parity: bool,
     right_parity: bool,
+    left_sig: TailSig,
+    right_sig: TailSig,
 }
 
 impl Tape {
@@ -2007,9 +2128,12 @@ impl Tape {
             right_nz: 0,
             left_parity: false,
             right_parity: false,
+            left_sig: TailSig::default(),
+            right_sig: TailSig::default(),
         }
     }
 
+    #[expect(clippy::too_many_arguments)]
     const fn from_spans(
         scan: Color,
         push: Span,
@@ -2019,6 +2143,8 @@ impl Tape {
         right_nz: usize,
         left_parity: bool,
         right_parity: bool,
+        left_sig: TailSig,
+        right_sig: TailSig,
     ) -> Self {
         let (lspan, rspan) =
             if shift { (push, pull) } else { (pull, push) };
@@ -2031,6 +2157,8 @@ impl Tape {
             right_nz,
             left_parity,
             right_parity,
+            left_sig,
+            right_sig,
         }
     }
 }
@@ -2045,16 +2173,18 @@ impl fmt::Display for Tape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "L(pat={}, last={}, nz={}, odd={}) [{}] R(pat={}, last={}, nz={}, odd={})",
+            "L(pat={}, last={}, nz={}, odd={}, sig={:?}) [{}] R(pat={}, last={}, nz={}, odd={}, sig={:?})",
             self.lspan.span,
             self.lspan.last,
             self.left_nz,
             self.left_parity,
+            self.left_sig,
             self.scan,
             self.rspan.span,
             self.rspan.last,
             self.right_nz,
-            self.right_parity
+            self.right_parity,
+            self.right_sig
         )
     }
 }
@@ -2183,6 +2313,20 @@ impl Span {
         pool: &mut SpanPool,
     ) -> bool {
         prog.is_blank(self.last) && self.base_blank_span(prog, pool)
+    }
+}
+
+#[test]
+fn test_tail_sig() {
+    let zero = TailSig::default();
+
+    for level in 1..=TAIL_SIG_REFINEMENTS.len() {
+        let tail = zero.prepend(2, level);
+        let whole = tail.prepend(1, level);
+
+        assert!(whole.is_prepend_of(1, tail, level));
+        assert!(!whole.is_prepend_of(0, tail, level));
+        assert_eq!(zero.prepend(0, level), zero);
     }
 }
 
