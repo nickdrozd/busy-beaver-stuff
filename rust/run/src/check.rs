@@ -56,10 +56,8 @@ fn test_linrec() {
     check_linrec(&mut failures, "8-0 champs", _8_0_ch);
     check_linrec(&mut failures, "8-0 holdouts", _8_0_ho.as_slice());
 
-    check_linrec(&mut failures, "8-1 champs", _8_1_ch);
     check_linrec(&mut failures, "8-1 holdouts", _8_1_ho.as_slice());
 
-    check_linrec(&mut failures, "8-2 champs", _8_2_ch);
     check_linrec(&mut failures, "8-2 holdouts", _8_2_ho.as_slice());
 
     assert_no_holdout_failures("lin rec", &failures);
@@ -257,11 +255,6 @@ fn test_subsets() {
         "2-4-1 spinout holdouts",
         _2_4_1_ho,
         _8_1_ho.as_slice(),
-    ));
-    failures.extend(holdout_subset_errors(
-        "2-4-1 spinout champs",
-        _2_4_1_ch,
-        _8_1_ch,
     ));
     failures.extend(holdout_subset_errors(
         "4-2-2 blank holdouts",

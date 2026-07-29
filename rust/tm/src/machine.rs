@@ -188,7 +188,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         StepLimit
     }
 
-    pub fn check_inf(&self, steps: Steps) -> bool {
+    pub fn run_prover_block(&self, steps: Steps) -> RunResult {
         let blocks = self.opt_block(OPT_BLOCK);
 
         let result = if blocks == 1 {
@@ -201,7 +201,15 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         //     println!("{rule:?} | {self}");
         // }
 
-        result.is_infinite()
+        result
+    }
+
+    pub fn prover_settled(&self, steps: Steps) -> bool {
+        self.run_prover_block(steps).is_settled()
+    }
+
+    pub fn check_inf(&self, steps: Steps) -> bool {
+        self.run_prover_block(steps).is_infinite()
     }
 
     pub fn term_or_rec_fresh(&self, sim_lim: Steps) -> RunResult {
