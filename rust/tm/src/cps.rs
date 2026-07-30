@@ -77,22 +77,21 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let mut configs = Configs::new(goal);
 
         (2..rad).any(|seg| {
-            cps_cant_reach(
-                &self.make_transcript_macro(16),
-                seg,
-                goal,
-                &mut configs,
-            ) || cps_cant_reach(
-                &self.make_transcript_macro(4),
-                seg,
-                goal,
-                &mut configs,
-            ) || cps_cant_reach(
-                &self.make_lru_macro(),
-                seg,
-                goal,
-                &mut configs,
-            ) || cps_cant_reach(self, seg, goal, &mut configs)
+            cps_cant_reach(self, seg, goal, &mut configs)
+                || [1, 4, 16].iter().any(|tr| {
+                    cps_cant_reach(
+                        &self.make_transcript_macro(*tr),
+                        seg,
+                        goal,
+                        &mut configs,
+                    )
+                })
+                || cps_cant_reach(
+                    &self.make_lru_macro(),
+                    seg,
+                    goal,
+                    &mut configs,
+                )
         })
     }
 

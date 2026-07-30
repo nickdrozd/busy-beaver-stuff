@@ -261,11 +261,6 @@ fn test_subsets() {
         _4_2_2_ho,
         _8_2_ho.as_slice(),
     ));
-    failures.extend(holdout_subset_errors(
-        "2-4-2 blank holdouts",
-        _2_4_2_ho,
-        _8_2_ho.as_slice(),
-    ));
 
     assert_no_holdout_failures("subsets", &failures);
 }

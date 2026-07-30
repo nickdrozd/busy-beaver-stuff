@@ -8,8 +8,6 @@ pub const _4_2_1_ho: &[&str] = &[
     "1RB 1LC  1LC 1RA  0LC 0LD  0RA 0RD",
 ];
 
-pub const _2_4_2_ho: &[&str] = &["1RB 2RB 3LA 0RB  0LB 1LA 0LA 2RA"];
-
 pub const _2_4_1_ho: &[&str] = &[
     "1RB 2LB 0RA 1LB  2LB 3LA 1RA 0RB",
     "1RB 2RA 3LA 0RB  2LB 3LA 1LB 2RB",
@@ -46,7 +44,6 @@ pub const _8_0_ch: &[&str] =
 pub const _4_2_1_: (&[&str], &[&str]) = (&[], _4_2_1_ho);
 pub const _4_2_2_: (&[&str], &[&str]) = (&[], _4_2_2_ho);
 pub const _2_4_1_: (&[&str], &[&str]) = (&[], _2_4_1_ho);
-pub const _2_4_2_: (&[&str], &[&str]) = (&[], _2_4_2_ho);
 
 pub const _7_0_: (&[&str], &[&str]) = (_7_0_ch, _7_0_ho);
 pub const _7_1_: (&[&str], &[&str]) = (&[], _7_1_ho);
@@ -130,11 +127,6 @@ mod tests {
     #[test]
     fn four_two_two_holdouts_are_a_subset_of_eight_two() {
         assert_subset(_4_2_2_ho, _8_2_ho.as_slice());
-    }
-
-    #[test]
-    fn two_four_two_holdouts_are_a_subset_of_eight_two() {
-        assert_subset(_2_4_2_ho, _8_2_ho.as_slice());
     }
 
     #[test]
