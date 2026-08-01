@@ -1,47 +1,17 @@
-pub const _4_2_2_ho: &[&str] = &[
-    "1RB 0LC  0LC 1RA  0RA 1LD  1LC 0RA",
-    "1RB 0LC  1LB 1RA  0RA 1LD  1LC 0RA",
-];
-
-pub const _4_2_1_ho: &[&str] = &[
-    "1RB 1LC  1LB 1RA  0LC 0LD  0RA 0RD",
-    "1RB 1LC  1LC 1RA  0LC 0LD  0RA 0RD",
-];
-
 pub const _2_4_1_ho: &[&str] = &[
     "1RB 2LB 0RA 1LB  2LB 3LA 1RA 0RB",
-    "1RB 2RA 3LA 0RB  2LB 3LA 1LB 2RB",
-    "1RB 2RA 3LB 2RA  0LB 2LA 3LA 0RA",
     "1RB 2RB 3LA 2RA  2LB 1LA 1LB 3RB",
-    "1RB 3RB 1RA 0RA  2LB 2LA 1LA 3LB",
 ];
 
-/**************************************/
-
-pub const _7_0_ho: &[&str] = &[
-    "1RB ... ...  2RC 2RB 1LB  2LC 1RA 0LC",
-    "1RB ... ...  2RC 2RB 1LB  2LD ... ...  ... 1RA 0LD",
-    "1RB 1RA 0LA  2RC 2RB 1LB  2LA ... ...",
-    "1RB 2RA 1LA  2LA 0RC ...  ... 2RB 2LB",
-    "1RB 2RA 1LB  0LC 0RA 1LA  ... 2LA ...",
-];
-
-pub const _7_1_ho: &[&str] = &["1RB ... ...  2RC 2RB 1LB  2LC 1RA 0LC"];
-
-/**************************************/
-
-pub const _8_0_ch: &[&str] =
-    &["1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC"];
-
-/**************************************/
-
-pub const _4_2_1_: (&[&str], &[&str]) = (&[], _4_2_1_ho);
-pub const _4_2_2_: (&[&str], &[&str]) = (&[], _4_2_2_ho);
 pub const _2_4_1_: (&[&str], &[&str]) = (&[], _2_4_1_ho);
 
-pub const _7_0_: (&[&str], &[&str]) = (&[], _7_0_ho);
-pub const _7_1_: (&[&str], &[&str]) = (&[], _7_1_ho);
-pub const _7_2_: (&[&str], &[&str]) = (&[], &[]);
+/**************************************/
+
+pub const _8_0_ch: &[&str] = &[
+    "1RB 2RC 1LA  2LA 1RB ...  2RB 2RA 1LC",
+    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC",
+    "1RB 1RA ...  2RC ... ...  2LD 2RD ...  2RA 2RC 1LD",
+];
 
 /**************************************/
 
@@ -116,15 +86,5 @@ mod tests {
     #[test]
     fn eight_two_holdouts_have_no_duplicates() {
         assert_no_duplicates(_8_2_ho.as_slice());
-    }
-
-    #[test]
-    fn four_two_two_holdouts_are_a_subset_of_eight_two() {
-        assert_subset(_4_2_2_ho, _8_2_ho.as_slice());
-    }
-
-    #[test]
-    fn seven_zero_holdouts_are_a_subset_of_eight_zero() {
-        assert_subset(_7_0_ho, _8_0_ho.as_slice());
     }
 }

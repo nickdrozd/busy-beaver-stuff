@@ -1027,7 +1027,7 @@ class Prover(RunProver):
                 missed += 1
                 print(prog)
 
-        self.assertEqual(missed, 101)
+        self.assertEqual(missed, 48)
 
     def test_algebra(self):
         clear_caches()

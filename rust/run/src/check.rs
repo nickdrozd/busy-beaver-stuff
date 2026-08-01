@@ -242,24 +242,9 @@ fn test_subsets() {
     let mut failures = vec![];
 
     failures.extend(holdout_subset_errors(
-        "7 halt holdouts",
-        _7_0_ho,
-        _8_0_ho.as_slice(),
-    ));
-    failures.extend(holdout_subset_errors(
-        "4-2-1 spinout holdouts",
-        _4_2_1_ho,
-        _8_1_ho.as_slice(),
-    ));
-    failures.extend(holdout_subset_errors(
         "2-4-1 spinout holdouts",
         _2_4_1_ho,
         _8_1_ho.as_slice(),
-    ));
-    failures.extend(holdout_subset_errors(
-        "4-2-2 blank holdouts",
-        _4_2_2_ho,
-        _8_2_ho.as_slice(),
     ));
 
     assert_no_holdout_failures("subsets", &failures);

@@ -1,10 +1,12 @@
 use core::{
     cell::Cell,
     fmt::{self, Debug, Display, Formatter},
-    hash::Hash,
+    hash::{Hash, Hasher},
     iter::{Sum, once},
     ops::{AddAssign, Index as IndexTrait, IndexMut, SubAssign},
 };
+
+use std::{collections::hash_map::DefaultHasher, sync::Arc};
 
 use num_bigint::BigUint;
 use num_traits::{One, ToPrimitive, Zero};
@@ -317,7 +319,7 @@ pub enum ColorCount {
 use ColorCount::*;
 
 impl ColorCount {
-    const fn get_color(&self) -> Color {
+    pub(crate) const fn get_color(&self) -> Color {
         match self {
             Just(color) | Mult(color) => *color,
         }
@@ -817,6 +819,1207 @@ impl MachineTape for EnumTape {
         self.check_step(shift, color, skip);
 
         self.tape.step(shift, color, skip);
+    }
+}
+
+/**************************************/
+/* Dynamic prover tape               */
+/**************************************/
+
+const DYNAMIC_REBALANCE_WINDOW: usize = 64;
+const DYNAMIC_MAX_PATTERN: usize = 16;
+const DYNAMIC_MIN_PATTERN_REPEATS: usize = 3;
+
+pub type DynamicWord = Arc<[Color]>;
+
+fn dynamic_word_hash(word: &[Color]) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    word.hash(&mut hasher);
+    hasher.finish()
+}
+
+fn dynamic_primitive(word: &[Color]) -> (&[Color], usize) {
+    for width in 1..=word.len() / 2 {
+        if !word.len().is_multiple_of(width) {
+            continue;
+        }
+
+        let root = &word[..width];
+        if word.chunks_exact(width).all(|chunk| chunk == root) {
+            return (root, word.len() / width);
+        }
+    }
+
+    (word, 1)
+}
+
+fn dynamic_word_display(word: &[Color], reverse: bool) -> String {
+    let shown: Vec<String> = if reverse {
+        word.iter().rev().map(ToString::to_string).collect()
+    } else {
+        word.iter().map(ToString::to_string).collect()
+    };
+
+    if shown.len() == 1 {
+        shown[0].clone()
+    } else {
+        format!("({})", shown.join(" "))
+    }
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct DynamicBlock {
+    word: DynamicWord,
+    count: AlgCount,
+    origins: Vec<Index>,
+    word_hash: u64,
+}
+
+impl DynamicBlock {
+    fn new(color: Color, count: AlgCount) -> Self {
+        Self::new_word(&[color], count)
+    }
+
+    fn new_word(word: &[Color], count: AlgCount) -> Self {
+        assert!(
+            !word.is_empty(),
+            "a tape block cannot have an empty word"
+        );
+
+        let (root, factor) = dynamic_primitive(word);
+        let count = if factor == 1 {
+            count
+        } else {
+            count * AlgCount::from(factor)
+        };
+        #[expect(clippy::shadow_unrelated)]
+        let word = DynamicWord::from(root.to_vec());
+        let word_hash = dynamic_word_hash(&word);
+
+        Self {
+            word,
+            count,
+            origins: vec![],
+            word_hash,
+        }
+    }
+
+    fn fragment(&self, word: &[Color], count: AlgCount) -> Self {
+        let mut block = Self::new_word(word, count);
+        block.origins.clone_from(&self.origins);
+        block
+    }
+
+    fn first(&self) -> Color {
+        self.word[0]
+    }
+
+    fn width(&self) -> usize {
+        self.word.len()
+    }
+
+    fn homogeneous(&self) -> bool {
+        self.word.len() == 1
+    }
+
+    fn is_single(&self) -> bool {
+        self.count.is_one()
+    }
+
+    fn is_indef(&self) -> bool {
+        self.count.is_zero()
+    }
+
+    fn blank(&self) -> bool {
+        self.word.iter().all(|&color| color == 0)
+    }
+
+    fn marked_width(&self) -> usize {
+        self.word.iter().filter(|&&color| color != 0).count()
+    }
+
+    fn merge_origins(&mut self, other: &Self) {
+        for origin in &other.origins {
+            if !self.origins.contains(origin) {
+                self.origins.push(*origin);
+            }
+        }
+    }
+
+    fn normalize_word(&mut self) {
+        let (root, factor) = dynamic_primitive(&self.word);
+        if factor == 1 {
+            return;
+        }
+
+        let root = root.to_vec();
+        self.word = DynamicWord::from(root);
+        self.word_hash = dynamic_word_hash(&self.word);
+        self.count *= AlgCount::from(factor);
+    }
+
+    fn display(&self, reverse: bool) -> String {
+        let shown = dynamic_word_display(&self.word, reverse);
+
+        if self.count.is_one() {
+            shown
+        } else if self.count.is_zero() {
+            format!("{shown}..")
+        } else {
+            format!("{shown}^{}", self.count)
+        }
+    }
+}
+
+impl Display for DynamicBlock {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}", self.display(false))
+    }
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct DynamicSpan {
+    // Farthest-to-nearest, matching the original Span storage convention.
+    blocks: Vec<DynamicBlock>,
+}
+
+impl DynamicSpan {
+    const fn new(blocks: Vec<DynamicBlock>) -> Self {
+        Self { blocks }
+    }
+
+    const fn init_blank() -> Self {
+        Self::new(vec![])
+    }
+
+    fn init_stepped() -> Self {
+        Self::new(vec![DynamicBlock::new(1, AlgCount::one())])
+    }
+
+    const fn len(&self) -> usize {
+        self.blocks.len()
+    }
+
+    const fn blank(&self) -> bool {
+        self.blocks.is_empty()
+    }
+
+    fn iter(&self) -> impl DoubleEndedIterator<Item = &DynamicBlock> {
+        self.blocks.iter().rev()
+    }
+
+    fn first(&self) -> Option<&DynamicBlock> {
+        self.blocks.last()
+    }
+
+    fn first_mut(&mut self) -> Option<&mut DynamicBlock> {
+        self.blocks.last_mut()
+    }
+
+    fn pop_block(&mut self) -> DynamicBlock {
+        self.blocks.pop().unwrap()
+    }
+
+    fn index(&self, pos: usize) -> &DynamicBlock {
+        &self.blocks[self.blocks.len() - 1 - pos]
+    }
+
+    fn index_mut(&mut self, pos: usize) -> &mut DynamicBlock {
+        let physical = self.blocks.len() - 1 - pos;
+        &mut self.blocks[physical]
+    }
+
+    fn merge_metadata(
+        into: &mut Option<DynamicBlock>,
+        block: &DynamicBlock,
+    ) {
+        if let Some(into) = into {
+            into.merge_origins(block);
+        } else {
+            *into = Some(block.clone());
+        }
+    }
+
+    fn subtract_usize(count: &mut AlgCount, value: usize) {
+        *count -= AlgCount::from(value);
+    }
+
+    fn discard_prefix_from_first_block(&mut self, cells: usize) {
+        let block = self.pop_block();
+        let full_copies = cells / block.width();
+        let offset = cells % block.width();
+        let mut copies_left = block.count.clone();
+        Self::subtract_usize(&mut copies_left, full_copies);
+
+        if offset != 0 {
+            copies_left -= AlgCount::one();
+        }
+
+        if !copies_left.is_zero() {
+            self.blocks.push(block.fragment(&block.word, copies_left));
+        }
+
+        if offset != 0 {
+            self.blocks.push(
+                block.fragment(&block.word[offset..], AlgCount::one()),
+            );
+        }
+    }
+
+    fn consume_matching_prefix(
+        &mut self,
+        color: Color,
+    ) -> (AlgCount, Option<DynamicBlock>) {
+        let mut consumed = AlgCount::zero();
+        let mut metadata = None;
+
+        while let Some(block) = self.first() {
+            if block.homogeneous() {
+                if block.first() != color {
+                    break;
+                }
+
+                #[expect(clippy::shadow_unrelated)]
+                let block = self.pop_block();
+                consumed += &block.count;
+                Self::merge_metadata(&mut metadata, &block);
+                continue;
+            }
+
+            let prefix = block
+                .word
+                .iter()
+                .take_while(|&&symbol| symbol == color)
+                .count();
+
+            if prefix == 0 {
+                break;
+            }
+
+            consumed += AlgCount::from(prefix);
+            let block = block.clone();
+            Self::merge_metadata(&mut metadata, &block);
+            self.discard_prefix_from_first_block(prefix);
+            break;
+        }
+
+        (consumed, metadata)
+    }
+
+    fn pop_symbol(&mut self) -> Color {
+        let Some(block) = self.first().cloned() else {
+            return 0;
+        };
+
+        let next_scan = block.first();
+
+        if block.homogeneous() {
+            if block.is_single() {
+                self.pop_block();
+            } else {
+                self.first_mut().unwrap().count -= AlgCount::one();
+            }
+
+            return next_scan;
+        }
+
+        self.pop_block();
+
+        let mut remaining = block.count.clone();
+        remaining -= AlgCount::one();
+
+        if !remaining.is_zero() {
+            self.blocks.push(block.fragment(&block.word, remaining));
+        }
+
+        self.blocks
+            .push(block.fragment(&block.word[1..], AlgCount::one()));
+
+        next_scan
+    }
+
+    fn pull(
+        &mut self,
+        scan: Color,
+        skip: bool,
+    ) -> (Color, AlgCount, Option<DynamicBlock>) {
+        let (skipped, metadata) = if skip {
+            self.consume_matching_prefix(scan)
+        } else {
+            (AlgCount::zero(), None)
+        };
+
+        let stepped = AlgCount::one() + skipped;
+
+        (self.pop_symbol(), stepped, metadata)
+    }
+
+    fn push(
+        &mut self,
+        print: Color,
+        stepped: &AlgCount,
+        metadata: Option<&DynamicBlock>,
+    ) {
+        match self.first_mut() {
+            Some(block)
+                if block.homogeneous() && block.first() == print =>
+            {
+                block.count += stepped;
+                if let Some(metadata) = metadata {
+                    block.merge_origins(metadata);
+                }
+            },
+            None if print == 0 => {},
+            _ => {
+                let mut block =
+                    DynamicBlock::new(print, stepped.clone());
+                if let Some(metadata) = metadata {
+                    block.merge_origins(metadata);
+                }
+                self.blocks.push(block);
+            },
+        }
+    }
+
+    fn counts(&self) -> Vec<AlgCount> {
+        self.iter().map(|block| block.count.clone()).collect()
+    }
+
+    fn signature(&self) -> Vec<DynamicColorCount> {
+        self.iter().map(DynamicColorCount::from).collect()
+    }
+
+    fn sig_compatible(&self, span: &[DynamicColorCount]) -> bool {
+        self.len() == span.len()
+            && self
+                .iter()
+                .zip(span)
+                .all(|(block, sig)| block.word.as_ref() == sig.word())
+    }
+
+    fn merge_equal_neighbors(&mut self) {
+        let mut merged: Vec<DynamicBlock> =
+            Vec::with_capacity(self.blocks.len());
+
+        for block in self.blocks.drain(..) {
+            if let Some(previous) = merged.last_mut()
+                && previous.word == block.word
+            {
+                previous.count += &block.count;
+                previous.merge_origins(&block);
+            } else {
+                merged.push(block);
+            }
+        }
+
+        self.blocks = merged;
+    }
+
+    fn merge_near_neighbors(&mut self) {
+        while self.blocks.len() >= 2 {
+            let near_pos = self.blocks.len() - 1;
+            let far_pos = near_pos - 1;
+
+            if self.blocks[far_pos].word != self.blocks[near_pos].word {
+                break;
+            }
+
+            let near = self.blocks.pop().unwrap();
+            let far = self.blocks.last_mut().unwrap();
+            far.count += &near.count;
+            far.merge_origins(&near);
+        }
+    }
+
+    fn trim_blank_edge(&mut self) {
+        while self.blocks.first().is_some_and(DynamicBlock::blank) {
+            self.blocks.remove(0);
+        }
+
+        let Some(block) = self.blocks.first().cloned() else {
+            return;
+        };
+
+        let Some(last_mark) =
+            block.word.iter().rposition(|&color| color != 0)
+        else {
+            return;
+        };
+
+        if last_mark + 1 == block.width() || block.is_indef() {
+            return;
+        }
+
+        self.blocks.remove(0);
+
+        if !block.is_single() {
+            let mut remaining = block.count.clone();
+            remaining -= AlgCount::one();
+            self.blocks
+                .insert(0, block.fragment(&block.word, remaining));
+        }
+
+        self.blocks.insert(
+            0,
+            block.fragment(&block.word[..=last_mark], AlgCount::one()),
+        );
+    }
+
+    fn prefix_cells(
+        &self,
+        outward_index: usize,
+        cells: &mut [Color; DYNAMIC_REBALANCE_WINDOW],
+    ) -> usize {
+        let mut size = 0;
+
+        for block in self.iter().skip(outward_index) {
+            if !block.homogeneous() || block.is_indef() {
+                break;
+            }
+
+            let remaining = DYNAMIC_REBALANCE_WINDOW - size;
+            if remaining == 0 {
+                break;
+            }
+
+            let count = block.count.to_usize().unwrap_or(usize::MAX);
+            let take = count.min(remaining);
+            cells[size..size + take].fill(block.first());
+            size += take;
+
+            if take < count {
+                break;
+            }
+        }
+
+        size
+    }
+
+    fn best_prefix_repeat(
+        &self,
+        outward_index: usize,
+    ) -> Option<(Vec<Color>, usize, usize)> {
+        let mut cells = [0; DYNAMIC_REBALANCE_WINDOW];
+        let size = self.prefix_cells(outward_index, &mut cells);
+        let mut best: Option<(usize, usize, usize)> = None;
+
+        for width in 1..=DYNAMIC_MAX_PATTERN.min(size / 2) {
+            let word = &cells[..width];
+            let mut copies = 1;
+
+            while (copies + 1) * width <= size
+                && &cells[copies * width..(copies + 1) * width] == word
+            {
+                copies += 1;
+            }
+
+            if copies < DYNAMIC_MIN_PATTERN_REPEATS {
+                continue;
+            }
+
+            let covered = width * copies;
+            let replace = best.is_none_or(
+                |(best_width, best_copies, best_covered)| {
+                    copies > best_copies
+                        || (copies == best_copies
+                            && covered > best_covered)
+                        || (copies == best_copies
+                            && covered == best_covered
+                            && width < best_width)
+                },
+            );
+
+            if replace {
+                best = Some((width, copies, covered));
+            }
+        }
+
+        best.map(|(width, copies, covered)| {
+            (cells[..width].to_vec(), copies, covered)
+        })
+    }
+
+    fn consume_prefix_at(
+        &mut self,
+        outward_index: usize,
+        mut cells: usize,
+    ) -> (usize, Option<DynamicBlock>) {
+        let mut physical = self.blocks.len() - 1 - outward_index;
+        let insertion;
+        let mut metadata = None;
+
+        loop {
+            let block = self.blocks[physical].clone();
+            debug_assert!(block.homogeneous());
+            let available =
+                block.count.to_usize().unwrap_or(usize::MAX);
+
+            if cells < available {
+                self.blocks[physical].count -= AlgCount::from(cells);
+                Self::merge_metadata(&mut metadata, &block);
+                insertion = physical + 1;
+                break;
+            }
+
+            cells -= available;
+            let removed = self.blocks.remove(physical);
+            Self::merge_metadata(&mut metadata, &removed);
+
+            if cells == 0 {
+                insertion = physical;
+                break;
+            }
+
+            assert!(
+                physical > 0,
+                "adaptive reblock consumed past span"
+            );
+            physical -= 1;
+        }
+
+        (insertion, metadata)
+    }
+
+    fn discover_at(&mut self, outward_index: usize) -> bool {
+        let Some((word, copies, covered)) =
+            self.best_prefix_repeat(outward_index)
+        else {
+            return false;
+        };
+
+        let (insertion, metadata) =
+            self.consume_prefix_at(outward_index, covered);
+        let mut compound =
+            DynamicBlock::new_word(&word, AlgCount::from(copies));
+        if let Some(metadata) = &metadata {
+            compound.merge_origins(metadata);
+        }
+        self.blocks.insert(insertion, compound);
+
+        self.merge_equal_neighbors();
+        self.trim_blank_edge();
+        true
+    }
+
+    fn discover_boundary(&mut self) -> bool {
+        let Some((word, copies, covered)) = self.best_prefix_repeat(0)
+        else {
+            return false;
+        };
+
+        let (insertion, metadata) = self.consume_prefix_at(0, covered);
+        let mut compound =
+            DynamicBlock::new_word(&word, AlgCount::from(copies));
+        if let Some(metadata) = &metadata {
+            compound.merge_origins(metadata);
+        }
+        self.blocks.insert(insertion, compound);
+
+        self.merge_near_neighbors();
+        if self.blocks.first().is_some_and(DynamicBlock::blank) {
+            self.trim_blank_edge();
+        }
+        true
+    }
+
+    fn normalize_boundary(&mut self) {
+        self.merge_near_neighbors();
+
+        if self.blocks.first().is_some_and(DynamicBlock::blank) {
+            self.trim_blank_edge();
+        }
+
+        if self.blocks.len() >= 2 {
+            self.discover_boundary();
+        }
+    }
+
+    fn normalize(&mut self, full: bool) {
+        for block in &mut self.blocks {
+            block.normalize_word();
+        }
+
+        self.merge_equal_neighbors();
+        self.trim_blank_edge();
+
+        if self.blocks.len() < 2 {
+            return;
+        }
+
+        let mut outward_index = 0;
+        let mut operations = 0;
+        let operation_limit = 4 * self.blocks.len() + 32;
+
+        while outward_index + 1 < self.blocks.len()
+            && operations < operation_limit
+        {
+            if self.discover_at(outward_index) {
+                operations += 1;
+                if !full {
+                    break;
+                }
+                outward_index = outward_index.saturating_sub(1);
+            } else if full {
+                outward_index += 1;
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn visit_dependency_prefix(
+        &self,
+        mut visit: impl FnMut(&DynamicBlock),
+    ) {
+        let mut cells = 0_usize;
+
+        for block in self.iter() {
+            visit(block);
+
+            if block.is_indef() {
+                break;
+            }
+
+            let Some(count) = block.count.to_usize() else {
+                break;
+            };
+
+            cells = cells
+                .saturating_add(block.width().saturating_mul(count));
+            if cells >= DYNAMIC_REBALANCE_WINDOW {
+                break;
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum DynamicSigWord {
+    Single(Color),
+    Compound { word: DynamicWord, hash: u64 },
+}
+
+impl DynamicSigWord {
+    fn from_block(block: &DynamicBlock) -> Self {
+        if block.homogeneous() {
+            Self::Single(block.first())
+        } else {
+            Self::Compound {
+                word: Arc::clone(&block.word),
+                hash: block.word_hash,
+            }
+        }
+    }
+
+    fn word(&self) -> &[Color] {
+        match self {
+            Self::Single(color) => core::slice::from_ref(color),
+            Self::Compound { word, .. } => word,
+        }
+    }
+}
+
+impl PartialEq for DynamicSigWord {
+    fn eq(&self, other: &Self) -> bool {
+        self.word() == other.word()
+    }
+}
+
+impl Eq for DynamicSigWord {}
+
+impl Hash for DynamicSigWord {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Single(color) => {
+                0_u8.hash(state);
+                color.hash(state);
+            },
+            Self::Compound { hash, .. } => {
+                1_u8.hash(state);
+                hash.hash(state);
+            },
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum DynamicColorCount {
+    Just(DynamicSigWord),
+    Mult(DynamicSigWord),
+}
+
+impl DynamicColorCount {
+    fn word(&self) -> &[Color] {
+        match self {
+            Self::Just(word) | Self::Mult(word) => word.word(),
+        }
+    }
+}
+
+impl From<&DynamicBlock> for DynamicColorCount {
+    fn from(block: &DynamicBlock) -> Self {
+        let word = DynamicSigWord::from_block(block);
+        if block.is_single() {
+            Self::Just(word)
+        } else {
+            Self::Mult(word)
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct DynamicSignature {
+    pub scan: Color,
+    pub lspan: Vec<DynamicColorCount>,
+    pub rspan: Vec<DynamicColorCount>,
+}
+
+pub type DynamicMinSig = (DynamicSignature, (bool, bool));
+
+impl DynamicSignature {
+    pub fn matches(&self, (other, (lex, rex)): &DynamicMinSig) -> bool {
+        self.scan == other.scan
+            && (if *lex {
+                self.lspan == other.lspan
+            } else {
+                self.lspan.starts_with(&other.lspan)
+            })
+            && (if *rex {
+                self.rspan == other.rspan
+            } else {
+                self.rspan.starts_with(&other.rspan)
+            })
+    }
+}
+
+impl From<&Signature> for DynamicSignature {
+    fn from(sig: &Signature) -> Self {
+        fn convert(span: &[ColorCount]) -> Vec<DynamicColorCount> {
+            span.iter()
+                .map(|entry| {
+                    let word =
+                        DynamicSigWord::Single(entry.get_color());
+                    match entry {
+                        ColorCount::Just(_) => {
+                            DynamicColorCount::Just(word)
+                        },
+                        ColorCount::Mult(_) => {
+                            DynamicColorCount::Mult(word)
+                        },
+                    }
+                })
+                .collect()
+        }
+
+        Self {
+            scan: sig.scan,
+            lspan: convert(&sig.lspan),
+            rspan: convert(&sig.rspan),
+        }
+    }
+}
+
+pub trait DynamicGetSig: Scan {
+    fn dynamic_signature(&self) -> DynamicSignature;
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct DynamicTape {
+    pub scan: Color,
+    pub lspan: DynamicSpan,
+    pub rspan: DynamicSpan,
+}
+
+impl DynamicTape {
+    pub const fn at_edge(&self, edge: Shift) -> bool {
+        self.scan == 0
+            && (if edge { &self.rspan } else { &self.lspan }).blank()
+    }
+
+    pub const fn blank(&self) -> bool {
+        self.scan == 0 && self.lspan.blank() && self.rspan.blank()
+    }
+
+    pub fn step(
+        &mut self,
+        shift: Shift,
+        color: Color,
+        skip: bool,
+    ) -> AlgCount {
+        let (pull, push) = if shift {
+            (&mut self.rspan, &mut self.lspan)
+        } else {
+            (&mut self.lspan, &mut self.rspan)
+        };
+
+        let (next_scan, stepped, metadata) = pull.pull(self.scan, skip);
+        push.push(color, &stepped, metadata.as_ref());
+        self.scan = next_scan;
+
+        pull.normalize_boundary();
+        push.normalize_boundary();
+
+        stepped
+    }
+
+    pub fn normalize(&mut self) {
+        self.lspan.normalize(false);
+        self.rspan.normalize(false);
+    }
+
+    pub fn rebalance(&mut self) {
+        self.lspan.normalize(true);
+        self.rspan.normalize(true);
+    }
+
+    pub fn marks(&self) -> AlgCount {
+        let mut marks = AlgCount::from(self.scan != 0);
+
+        for block in self.lspan.iter().chain(self.rspan.iter()) {
+            marks += block.count.clone()
+                * AlgCount::from(block.marked_width());
+        }
+
+        marks
+    }
+
+    pub const fn blocks(&self) -> usize {
+        self.lspan.len() + self.rspan.len()
+    }
+
+    pub const fn length_one_spans(&self) -> bool {
+        self.lspan.len() == 1 && self.rspan.len() == 1
+    }
+
+    pub fn counts(&self) -> (Vec<AlgCount>, Vec<AlgCount>) {
+        (self.lspan.counts(), self.rspan.counts())
+    }
+
+    pub fn sig_compatible(&self, sig: &DynamicSignature) -> bool {
+        self.scan == sig.scan
+            && self.lspan.sig_compatible(&sig.lspan)
+            && self.rspan.sig_compatible(&sig.rspan)
+    }
+}
+
+impl Display for DynamicTape {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let left =
+            self.lspan.iter().rev().map(|block| block.display(true));
+        let right = self.rspan.iter().map(|block| block.display(false));
+
+        write!(
+            f,
+            "{}",
+            left.chain(once(format!("[{}]", self.scan)))
+                .chain(right)
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
+    }
+}
+
+impl Scan for DynamicTape {
+    fn scan(&self) -> Color {
+        self.scan
+    }
+}
+
+impl Init for DynamicTape {
+    fn init() -> Self {
+        Self {
+            scan: 0,
+            lspan: DynamicSpan::init_blank(),
+            rspan: DynamicSpan::init_blank(),
+        }
+    }
+
+    fn init_stepped() -> Self {
+        Self {
+            scan: 0,
+            lspan: DynamicSpan::init_stepped(),
+            rspan: DynamicSpan::init_blank(),
+        }
+    }
+}
+
+impl DynamicGetSig for DynamicTape {
+    fn dynamic_signature(&self) -> DynamicSignature {
+        DynamicSignature {
+            scan: self.scan,
+            lspan: self.lspan.signature(),
+            rspan: self.rspan.signature(),
+        }
+    }
+}
+
+impl MachineTape for DynamicTape {
+    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
+        self.step(shift, color, skip);
+    }
+}
+
+impl IndexTape<AlgCount> for DynamicTape {
+    fn get_count(&self, &(side, pos): &Index) -> &AlgCount {
+        let span = if side { &self.rspan } else { &self.lspan };
+        &span.index(pos).count
+    }
+
+    fn set_count(&mut self, &(side, pos): &Index, val: AlgCount) {
+        let span = if side {
+            &mut self.rspan
+        } else {
+            &mut self.lspan
+        };
+        span.index_mut(pos).count = val;
+    }
+}
+
+impl From<&AlgTape> for DynamicTape {
+    fn from(tape: &AlgTape) -> Self {
+        fn convert(span: &Span<AlgBlock>) -> DynamicSpan {
+            DynamicSpan::new(
+                span.iter()
+                    .rev()
+                    .map(|block| {
+                        DynamicBlock::new(
+                            block.color,
+                            block.count.clone(),
+                        )
+                    })
+                    .collect(),
+            )
+        }
+
+        let mut dynamic = Self {
+            scan: tape.scan,
+            lspan: convert(&tape.lspan),
+            rspan: convert(&tape.rspan),
+        };
+        dynamic.rebalance();
+        dynamic
+    }
+}
+
+pub trait DynamicTapeOps:
+    DynamicGetSig + MachineTape + IndexTape<AlgCount>
+{
+    fn normalize_dynamic(&mut self);
+}
+
+impl DynamicTapeOps for DynamicTape {
+    fn normalize_dynamic(&mut self) {
+        self.normalize();
+    }
+}
+
+#[derive(Clone)]
+pub struct DynamicEnumTape {
+    tape: DynamicTape,
+    l_offset: Cell<usize>,
+    r_offset: Cell<usize>,
+    l_edge: Cell<bool>,
+    r_edge: Cell<bool>,
+}
+
+impl From<&DynamicTape> for DynamicEnumTape {
+    fn from(tape: &DynamicTape) -> Self {
+        fn convert(span: &DynamicSpan, side: Shift) -> DynamicSpan {
+            let len = span.len();
+
+            DynamicSpan::new(
+                span.iter()
+                    .rev()
+                    .enumerate()
+                    .map(|(i, block)| {
+                        let mut block = block.clone();
+                        block.origins = vec![(side, len - i)];
+                        block
+                    })
+                    .collect(),
+            )
+        }
+
+        Self {
+            tape: DynamicTape {
+                scan: tape.scan,
+                lspan: convert(&tape.lspan, false),
+                rspan: convert(&tape.rspan, true),
+            },
+            l_offset: 0.into(),
+            r_offset: 0.into(),
+            l_edge: false.into(),
+            r_edge: false.into(),
+        }
+    }
+}
+
+impl DynamicEnumTape {
+    fn touch_edge(&self, shift: Shift) {
+        (if shift { &self.r_edge } else { &self.l_edge }).set(true);
+    }
+
+    fn check_offsets(&self, block: &DynamicBlock) {
+        for &(side, offset) in &block.origins {
+            let target =
+                if side { &self.r_offset } else { &self.l_offset };
+            target.set(target.get().max(offset));
+        }
+    }
+
+    fn check_dependency_prefix(&self, span: &DynamicSpan) {
+        span.visit_dependency_prefix(|block| self.check_offsets(block));
+    }
+
+    fn check_step(&self, shift: Shift, skip: bool) {
+        let (pull, push) = if shift {
+            (&self.tape.rspan, &self.tape.lspan)
+        } else {
+            (&self.tape.lspan, &self.tape.rspan)
+        };
+
+        if pull.blank() {
+            self.touch_edge(shift);
+        } else {
+            self.check_dependency_prefix(pull);
+
+            let near = pull.index(0);
+            if skip
+                && near.homogeneous()
+                && near.first() == self.tape.scan
+            {
+                if pull.len() == 1 {
+                    self.touch_edge(shift);
+                } else {
+                    self.check_offsets(pull.index(1));
+                }
+            }
+        }
+
+        self.check_dependency_prefix(push);
+    }
+
+    pub fn get_min_sig(&self, sig: &DynamicSignature) -> DynamicMinSig {
+        let lmax = self.l_offset.get().min(sig.lspan.len());
+        let rmax = self.r_offset.get().min(sig.rspan.len());
+
+        (
+            DynamicSignature {
+                scan: sig.scan,
+                lspan: sig.lspan[..lmax].to_vec(),
+                rspan: sig.rspan[..rmax].to_vec(),
+            },
+            (self.l_edge.get(), self.r_edge.get()),
+        )
+    }
+}
+
+impl Display for DynamicEnumTape {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}", self.tape)
+    }
+}
+
+impl Scan for DynamicEnumTape {
+    fn scan(&self) -> Color {
+        self.tape.scan
+    }
+}
+
+impl DynamicGetSig for DynamicEnumTape {
+    fn dynamic_signature(&self) -> DynamicSignature {
+        self.tape.dynamic_signature()
+    }
+}
+
+impl MachineTape for DynamicEnumTape {
+    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
+        self.check_step(shift, skip);
+        self.tape.step(shift, color, skip);
+    }
+}
+
+impl IndexTape<AlgCount> for DynamicEnumTape {
+    fn get_count(&self, &(side, pos): &Index) -> &AlgCount {
+        let span = if side {
+            &self.tape.rspan
+        } else {
+            &self.tape.lspan
+        };
+        let block = span.index(pos);
+        self.check_offsets(block);
+        &block.count
+    }
+
+    fn set_count(&mut self, index: &Index, val: AlgCount) {
+        self.tape.set_count(index, val);
+    }
+}
+
+impl DynamicTapeOps for DynamicEnumTape {
+    fn normalize_dynamic(&mut self) {
+        self.tape.normalize();
+    }
+}
+
+#[cfg(test)]
+mod dynamic_tape_tests {
+    use super::*;
+
+    fn dynamic_from_cells(cells: &[Color]) -> DynamicTape {
+        let blocks = cells
+            .iter()
+            .rev()
+            .map(|&color| DynamicBlock::new(color, AlgCount::one()))
+            .collect();
+
+        let mut tape = DynamicTape {
+            scan: 0,
+            lspan: DynamicSpan::new(blocks),
+            rspan: DynamicSpan::init_blank(),
+        };
+        tape.rebalance();
+        tape
+    }
+
+    #[test]
+    fn dynamic_discovers_repeated_word() {
+        let tape =
+            dynamic_from_cells(&[0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]);
+        let block = tape.lspan.index(0);
+
+        assert_eq!(block.word.as_ref(), &[0, 0, 0, 1]);
+        assert_eq!(block.count, AlgCount::from(3_u8));
+    }
+
+    #[test]
+    fn dynamic_sides_rebalance_independently() {
+        let mut tape = DynamicTape {
+            scan: 2,
+            lspan: DynamicSpan::new(
+                [0, 1, 0, 1, 0, 1]
+                    .into_iter()
+                    .rev()
+                    .map(|color| {
+                        DynamicBlock::new(color, AlgCount::one())
+                    })
+                    .collect(),
+            ),
+            rspan: DynamicSpan::new(
+                [1, 0, 0, 1, 0, 0, 1, 0, 0]
+                    .into_iter()
+                    .rev()
+                    .map(|color| {
+                        DynamicBlock::new(color, AlgCount::one())
+                    })
+                    .collect(),
+            ),
+        };
+
+        tape.rebalance();
+
+        assert_eq!(tape.lspan.index(0).word.as_ref(), &[0, 1]);
+        assert_eq!(tape.rspan.index(0).word.as_ref(), &[1]);
     }
 }
 

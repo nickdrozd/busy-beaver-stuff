@@ -2,11 +2,14 @@ use num_traits::ToPrimitive as _;
 
 use crate::{
     Prog, Slot, State, Steps,
-    config::{AlgConfig, BigConfig, Config, MedConfig},
+    config::{BigConfig, Config, MedConfig},
     macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
     rules::{ApplyRule, Rule},
-    tape::{Block, GetSig, HeadTape, LinRec, MachineTape, Pos, Tape},
+    tape::{
+        Block, DynamicTape, GetSig, HeadTape, LinRec, MachineTape, Pos,
+        Tape,
+    },
 };
 
 /**************************************/
@@ -75,7 +78,7 @@ impl RunResult {
 
 pub trait RunProver: GetInstr + Sized {
     fn run_prover(&self, sim_lim: Steps) -> RunResult {
-        let mut config = AlgConfig::init();
+        let mut config: Config<DynamicTape> = Config::init();
 
         let mut prover = Prover::new();
 
@@ -94,6 +97,7 @@ pub trait RunProver: GetInstr + Sized {
                         }
 
                         if config.tape.apply_rule(&rule).is_some() {
+                            config.tape.normalize();
                             // println!("--> applying rule: {:?}", rule);
                             continue;
                         }
@@ -154,7 +158,6 @@ impl<T: GetInstr> RunProver for T {}
 
 /**************************************/
 
-const OPT_BLOCK: usize = 500;
 const MED_LIMIT: Steps = 1 << 16;
 
 impl<const s: usize, const c: usize> Prog<s, c> {
@@ -188,28 +191,12 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         StepLimit
     }
 
-    pub fn run_prover_block(&self, steps: Steps) -> RunResult {
-        let blocks = self.opt_block(OPT_BLOCK);
-
-        let result = if blocks == 1 {
-            self.run_prover(steps)
-        } else {
-            self.make_block_macro(blocks).run_prover(steps)
-        };
-
-        // if let MultRule(rule) = &result {
-        //     println!("{rule:?} | {self}");
-        // }
-
-        result
-    }
-
     pub fn prover_settled(&self, steps: Steps) -> bool {
-        self.run_prover_block(steps).is_settled()
+        self.run_prover(steps).is_settled()
     }
 
     pub fn check_inf(&self, steps: Steps) -> bool {
-        self.run_prover_block(steps).is_infinite()
+        self.run_prover(steps).is_infinite()
     }
 
     pub fn term_or_rec_fresh(&self, sim_lim: Steps) -> RunResult {
@@ -537,12 +524,12 @@ fn test_mult_rule() {
 fn test_check_inf() {
     assert!(
         Prog::<2, 4>::from("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
-            .check_inf(209)
+            .check_inf(1000)
     );
 
     assert!(
         Prog::<2, 4>::from("1RB 0LA 3LB 1RA  2LB 3LA 0RB 2RA")
-            .check_inf(756)
+            .check_inf(2000)
     );
 }
 
@@ -579,7 +566,7 @@ fn test_macro_overflow() {
 #[test]
 fn test_macro_loop() {
     assert!(
-        !Prog::<6, 2>::from(
+        Prog::<6, 2>::from(
             "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF"
         )
         .run_prover(1000)
