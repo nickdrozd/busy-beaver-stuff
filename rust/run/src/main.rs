@@ -157,21 +157,9 @@ macro_rules! assert_holdouts {
         });
     }};
 
-    (@pipeline ($pipeline:ident, $first:tt)) => { $pipeline };
-    (@pipeline $pipeline:ident) => { $pipeline };
+    (@pipeline ($pipeline:expr, $first:tt)) => { $pipeline };
 
-    (@instrs_multi_result $instrs:literal, $goal:literal, $result:ident, $pipeline:ident) => {{
-        assert_eq!(
-            $result.len(),
-            0,
-            "{}:{}, {result:?}",
-            $instrs,
-            $goal,
-            result = $result,
-        );
-    }};
-
-    (@instrs_multi_result $instrs:literal, $goal:literal, $result:ident, ($pipeline:ident, $first:tt)) => {{
+    (@instrs_multi_result $instrs:literal, $goal:literal, $result:ident, ($pipeline:expr, $first:tt)) => {{
         assert_holdouts!(@instrs_multi_expected $instrs, $goal, $result, $first);
     }};
 
@@ -202,6 +190,32 @@ macro_rules! assert_holdouts {
     };
 
     (@replace $_item:tt $sub:expr) => { $sub };
+}
+
+macro_rules! assert_bkw {
+    ( $( $instrs:literal => [
+        $steps:expr,
+        $visited:expr,
+        [
+            0 => $halt:tt,
+            1 => $spinout:tt,
+            2 => $blank:tt,
+        ],
+    ] ),* $(,)? ) => {{
+        assert_holdouts![
+            $(
+                $instrs => [
+                    $steps,
+                    $visited,
+                    [
+                        0 => ( |prog, _| { prog.bkw_cant_halt(BKW).is_refuted() }, $halt ),
+                        1 => ( |prog, _| { prog.bkw_cant_spinout(BKW).is_refuted() }, $spinout ),
+                        2 => ( |prog, _| { prog.bkw_cant_blank(BKW).is_refuted() }, $blank ),
+                    ],
+                ],
+            )*
+        ];
+    }};
 }
 
 /**************************************/
@@ -313,71 +327,35 @@ fn test_twostep() {
 
 const BKW: usize = 256;
 
-fn instrs_4_0(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(BKW).is_refuted()
-}
-
-fn instrs_4_1(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(BKW).is_refuted()
-}
-
-fn instrs_4_2(prog: &Prog<4, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(BKW).is_refuted()
-}
-
-fn instrs_5_0(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(BKW).is_refuted()
-}
-
-fn instrs_5_1(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(BKW).is_refuted()
-}
-
-fn instrs_5_2(prog: &Prog<5, 5>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(BKW).is_refuted()
-}
-
-fn instrs_6_0(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(BKW).is_refuted()
-}
-
-fn instrs_6_1(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(BKW).is_refuted()
-}
-
-fn instrs_6_2(prog: &Prog<6, 6>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(BKW).is_refuted()
-}
-
 fn test_bkw() {
     println!("bkw");
 
-    assert_holdouts![
+    assert_bkw![
         4 => [
             4,
             4_909,
             [
-                0 => (instrs_4_0, 1),
-                1 => instrs_4_1,
-                2 => instrs_4_2,
+                0 => 1,
+                1 => 0,
+                2 => 0,
             ],
         ],
         5 => [
             12,
             151_351,
             [
-                0 => (instrs_5_0, 77),
-                1 => (instrs_5_1, 15),
-                2 => (instrs_5_2, 8),
+                0 => 77,
+                1 => 15,
+                2 => 8,
             ],
         ],
         6 => [
             22,
             5_568_167,
             [
-                0 => (instrs_6_0, 3764),
-                1 => (instrs_6_1, 796),
-                2 => (instrs_6_2, 350),
+                0 => 3764,
+                1 => 796,
+                2 => 350,
             ],
         ],
     ];
