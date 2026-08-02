@@ -536,9 +536,11 @@ fn test_from_file() {
 
 /**************************************/
 
-fn _7_0(prog: &Prog<7, 7>, _: &mut PassConfig<'_>) -> bool {
+fn _7_0(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(20).is_refuted()
         || prog.cps_cant_halt(6)
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.prover_settled(INF_MOR)
         || prog.far_cant_halt(3)
 }
 
@@ -546,6 +548,7 @@ fn _7_1(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(50).is_refuted()
         || prog.cps_cant_spinout(11)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.prover_settled(INF_MOR)
         || prog.far_cant_spinout(2)
 }
 
@@ -553,7 +556,7 @@ fn _7_2(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(51).is_refuted()
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.far_cant_blank(2)
+        || prog.prover_settled(INF_MOR)
 }
 
 fn test_instrs() {
