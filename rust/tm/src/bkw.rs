@@ -96,6 +96,21 @@ struct WinPossible<const S: usize, const C: usize> {
     any: [[bool; C]; S],
 }
 
+const LEFT_SIDE: usize = 0;
+const RIGHT_SIDE: usize = 1;
+
+/// State-aware over-approximation of every color and adjacent color pair that
+/// can occur on either whole side of the head in a run from the blank tape.
+///
+/// Pairs are oriented from the head toward the tape end.  Thus
+/// `pairs[state][side][near]` is a bitmask of possible `far` colors directly
+/// adjacent to `near` somewhere on that side.  The infinite blank tail is part
+/// of each side, so reachable states always admit color 0 and pair (0, 0).
+struct SidePossible<const S: usize, const C: usize> {
+    colors: [[u64; 2]; S],
+    pairs: [[[u64; C]; 2]; S],
+}
+
 /// Bit `p` of `possible[state]` is set when the transition graph admits a
 /// run from the blank initial configuration to `state` with
 /// `p == (# nonblank tape cells mod 2)`.
@@ -200,12 +215,14 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     // over-approximation, we can safely prune it.
     let win_possible =
         prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let side_possible = prog.side_possible_from_blank(&win_possible);
 
     // Halt targets begin with two unknown neighbors, so the
     // `(state, scanned color)` pair must still occur in at least one reachable
     // window after the cheaper side filters above have canonicalized the tape.
     configs.retain(|Config { state, tape }| {
         window_possible(*state, tape, &win_possible)
+            && tape.obeys_state_side(*state, &side_possible)
     });
 
     if configs.is_empty() {
@@ -258,6 +275,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             valid_steps,
             &mut blanks,
             &win_possible,
+            &side_possible,
             &forbid_left,
             &forbid_right,
             left_fresh_zero,
@@ -452,6 +470,7 @@ fn step_instrs<const s: usize, const c: usize>(
     config: &Config,
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
+    side_possible: &SidePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -502,7 +521,9 @@ fn step_instrs<const s: usize, const c: usize>(
             continue;
         }
 
-        if !window_possible(state, &tape, win_possible) {
+        if !window_possible(state, &tape, win_possible)
+            || !tape.obeys_state_side(state, side_possible)
+        {
             continue;
         }
 
@@ -517,6 +538,7 @@ fn step_configs<const s: usize, const c: usize>(
     configs: ValidatedSteps,
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
+    side_possible: &SidePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -542,6 +564,7 @@ fn step_configs<const s: usize, const c: usize>(
                 &count_1,
                 blanks,
                 win_possible,
+                side_possible,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -562,6 +585,7 @@ fn step_configs<const s: usize, const c: usize>(
                 &count_1,
                 blanks,
                 win_possible,
+                side_possible,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -578,6 +602,7 @@ fn step_configs<const s: usize, const c: usize>(
             &config,
             blanks,
             win_possible,
+            side_possible,
             forbid_left,
             forbid_right,
             left_fresh_zero,
@@ -904,6 +929,112 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         }
                     }
                 }
+            }
+        }
+
+        possible
+    }
+
+    /// Compute a sound state-aware over-approximation of all colors and
+    /// adjacent pairs that may occur anywhere on each side of the head.
+    ///
+    /// The fixed point is seeded by the two infinite blank sides.  On an
+    /// R-move the printed color is prepended to the left side, creating the
+    /// pair `(print, old-left-neighbor)`; the right side becomes a suffix of
+    /// its former value, so propagating its old summary is conservative.
+    /// L-moves are symmetric.  Summaries are joined by state, deliberately
+    /// forgetting correlations with the scanned color.
+    fn side_possible_from_blank(
+        &self,
+        win_possible: &WinPossible<s, c>,
+    ) -> SidePossible<s, c> {
+        assert!(c <= 64, "side bitmasks support at most 64 colors");
+
+        let mut possible = SidePossible {
+            colors: [[0; 2]; s],
+            pairs: [[[0; c]; 2]; s],
+        };
+
+        if s == 0 || c == 0 {
+            return possible;
+        }
+
+        for side in [LEFT_SIDE, RIGHT_SIDE] {
+            possible.colors[0][side] = 1;
+            possible.pairs[0][side][0] = 1;
+        }
+
+        loop {
+            let mut changed = false;
+
+            for ((state, read), &(print, shift, next_state)) in
+                self.iter()
+            {
+                let st = state as usize;
+                let sc = read as usize;
+                let pr = print as usize;
+                let ns = next_state as usize;
+
+                if st >= s
+                    || sc >= c
+                    || pr >= c
+                    || ns >= s
+                    || !win_possible.any[st][sc]
+                {
+                    continue;
+                }
+
+                // Moving onto a side removes its nearest cell, while moving
+                // away from the other side prepends one cell.  In either case
+                // all colors/pairs surviving afterwards already occurred in
+                // the source side, so copying both source summaries is safe.
+                for side in [LEFT_SIDE, RIGHT_SIDE] {
+                    let source_colors = possible.colors[st][side];
+                    let old_colors = possible.colors[ns][side];
+                    possible.colors[ns][side] =
+                        old_colors | source_colors;
+                    changed |= possible.colors[ns][side] != old_colors;
+
+                    for near in 0..c {
+                        let source_pairs =
+                            possible.pairs[st][side][near];
+                        let old_pairs = possible.pairs[ns][side][near];
+                        possible.pairs[ns][side][near] =
+                            old_pairs | source_pairs;
+                        changed |=
+                            possible.pairs[ns][side][near] != old_pairs;
+                    }
+                }
+
+                #[expect(clippy::branches_sharing_code)]
+                let (push_side, neighbor_mask) = if shift {
+                    // R: printed cell becomes the new immediate left neighbor.
+                    let mut mask = 0;
+                    for right in 0..c {
+                        mask |= win_possible.left[st][sc][right];
+                    }
+                    (LEFT_SIDE, mask)
+                } else {
+                    // L: printed cell becomes the new immediate right neighbor.
+                    let mut mask = 0;
+                    for left in 0..c {
+                        mask |= win_possible.right[st][sc][left];
+                    }
+                    (RIGHT_SIDE, mask)
+                };
+
+                let old_colors = possible.colors[ns][push_side];
+                possible.colors[ns][push_side] |= 1_u64 << pr;
+                changed |= possible.colors[ns][push_side] != old_colors;
+
+                let old_pairs = possible.pairs[ns][push_side][pr];
+                possible.pairs[ns][push_side][pr] |= neighbor_mask;
+                changed |=
+                    possible.pairs[ns][push_side][pr] != old_pairs;
+            }
+
+            if !changed {
+                break;
             }
         }
 
@@ -1491,6 +1622,74 @@ impl Tape {
                 .all(|block| !forbid_right[block.color as usize])
     }
 
+    /// Check every explicit side color and adjacent pair against the
+    /// state-aware forward fixed point.  Span blocks are stored nearest-head
+    /// first, matching the pair orientation used by `SidePossible`.
+    fn obeys_state_side<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &SidePossible<S, C>,
+    ) -> bool {
+        fn check_span<const C: usize>(
+            span: &Span,
+            color_mask: u64,
+            pair_masks: &[u64; C],
+        ) -> bool {
+            let pair_possible = |near: Color, far: Color| {
+                let near = near as usize;
+                let far = far as usize;
+                near < C
+                    && far < C
+                    && (pair_masks[near] & (1_u64 << far)) != 0
+            };
+
+            let mut previous = None;
+
+            for block in span.span.iter() {
+                let color = block.color as usize;
+                if color >= C || (color_mask & (1_u64 << color)) == 0 {
+                    return false;
+                }
+
+                if block.count > 1
+                    && !pair_possible(block.color, block.color)
+                {
+                    return false;
+                }
+
+                if let Some(near) = previous
+                    && !pair_possible(near, block.color)
+                {
+                    return false;
+                }
+
+                previous = Some(block.color);
+            }
+
+            match (span.end.clone(), previous) {
+                (TapeEnd::Blanks, Some(near)) => pair_possible(near, 0),
+                (TapeEnd::Blanks, None) => pair_possible(0, 0),
+                (TapeEnd::Unknown, Some(near)) => {
+                    pair_masks[near as usize] != 0
+                },
+                (TapeEnd::Unknown, None) => true,
+            }
+        }
+
+        let st = state as usize;
+        st < S
+            && check_span(
+                &self.lspan,
+                possible.colors[st][LEFT_SIDE],
+                &possible.pairs[st][LEFT_SIDE],
+            )
+            && check_span(
+                &self.rspan,
+                possible.colors[st][RIGHT_SIDE],
+                &possible.pairs[st][RIGHT_SIDE],
+            )
+    }
+
     /// Enforce sides proved to contain blanks only.
     ///
     /// Merely changing an unknown end to `0+` is insufficient when an
@@ -1844,6 +2043,38 @@ fn test_scanned_fresh_zero_closes_opposite_tail() {
     // both sides.
     let mut impossible: Tape = "? 1 [0] 2 ?".into();
     assert!(!impossible.enforce_fresh_zero_side_invariants(true, true));
+}
+
+#[test]
+fn test_state_side_colors_and_pairs() {
+    let prog = Prog::<2, 2>::from("1RB ...  ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let sides = prog.side_possible_from_blank(&windows);
+
+    // After the only step, state B has `1 0+` on the left and `0+` on the
+    // right.  The whole-side abstraction retains the infinite (0,0) tail and
+    // the newly created boundary pair (1,0).
+    assert_eq!(sides.colors[1][LEFT_SIDE], 0b11);
+    assert_eq!(sides.colors[1][RIGHT_SIDE], 0b01);
+    assert_ne!(sides.pairs[1][LEFT_SIDE][1] & 0b01, 0);
+    assert_eq!(sides.pairs[1][LEFT_SIDE][1] & 0b10, 0);
+
+    let valid: Tape = "0+ 1 [0] 0+".into();
+    assert!(valid.obeys_state_side(1, &sides));
+
+    let impossible_right: Tape = "0+ [0] 1 0+".into();
+    assert!(!impossible_right.obeys_state_side(1, &sides));
+
+    // A fixed run of length two requires (1,1), which never occurs here.
+    let impossible_pair: Tape = "0+ 1^2 [0] 0+".into();
+    assert!(!impossible_pair.obeys_state_side(1, &sides));
+
+    // An indefinite run denotes one-or-more cells, so it can still choose
+    // length one and must not require the self-pair.
+    let indefinite: Tape = "0+ 1.. [0] 0+".into();
+    assert!(indefinite.obeys_state_side(1, &sides));
 }
 
 /**************************************/
