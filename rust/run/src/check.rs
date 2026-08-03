@@ -119,19 +119,19 @@ fn test_prover() {
         &mut failures,
         "8-0 halt",
         _8_0_ho.as_slice(),
-        |prog| prog.check_inf(PROVER),
+        |prog| prog.prover_settled(PROVER),
     );
     check_holdout_decider(
         &mut failures,
         "8-1 spinout",
         _8_1_ho.as_slice(),
-        |prog| prog.check_inf(PROVER),
+        |prog| prog.prover_settled(PROVER),
     );
     check_holdout_decider(
         &mut failures,
         "8-2 blank",
         _8_2_ho.as_slice(),
-        |prog| prog.check_inf(PROVER),
+        |prog| prog.prover_settled(PROVER),
     );
 
     assert_no_holdout_failures("prover", &failures);
