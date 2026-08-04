@@ -110,7 +110,7 @@ fn test_champs() {
     );
 }
 
-const PROVER: usize = 10_000;
+const PROVER: usize = 100_000;
 
 fn test_prover() {
     let mut failures = vec![];
