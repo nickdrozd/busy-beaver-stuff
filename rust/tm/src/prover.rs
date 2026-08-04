@@ -142,8 +142,11 @@ impl Prover {
         sig: &DynamicSignature,
         prog: &impl RunProver,
     ) {
-        let mut replay_tape = config.tape.clone();
-        replay_tape.rebalance();
+        // Keep dependency replay in the exact block coordinate system in
+        // which the candidate signature and rule were observed. Rebalancing
+        // here would change block indices while `sig` and `rule` still refer
+        // to the live tape's original coordinates.
+        let replay_tape = config.tape.clone();
         let mut enum_tape = DynamicEnumTape::from(&replay_tape);
 
         let _ = self.run_simulator(
@@ -244,8 +247,10 @@ impl Prover {
     ) -> Option<Rule> {
         self.attempts += 1;
 
+        // Replay from the live tape representation without rebalancing.
+        // The initial counts, candidate signature, replay counts, and
+        // generated rule must all use the same block coordinates.
         let mut tape = config.tape.clone();
-        tape.rebalance();
         let mut counts = Vec::with_capacity(3);
 
         #[expect(clippy::tuple_array_conversions)]
