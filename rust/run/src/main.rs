@@ -339,6 +339,16 @@ fn test_bkw() {
                 3 => 6,
             ],
         ],
+        7 => [
+            109,
+            246_492_765,
+            [
+                0 => 179569,
+                1 => 24315,
+                2 => 10465,
+                3 => 409,
+            ],
+        ],
     ];
 }
 
@@ -455,44 +465,6 @@ fn test_deciders_slow() {
 
 /**************************************/
 
-fn _7_0(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(20).is_refuted()
-        || prog.cps_cant_halt(6)
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-        || prog.far_cant_halt(3)
-}
-
-fn _7_1(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(50).is_refuted()
-        || prog.cps_cant_spinout(11)
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-}
-
-fn _7_2(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(51).is_refuted()
-        || prog.cps_cant_blank(20)
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-}
-
-fn test_instrs() {
-    println!("instrs");
-
-    assert_holdouts![
-        7 => [
-            109,
-            246_492_765,
-            [
-                0 => (_7_0, 0),
-                1 => (_7_1, 0),
-                2 => (_7_2, 0),
-            ],
-        ],
-    ];
-}
-
 fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(30).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
@@ -552,7 +524,7 @@ fn test_9_instr() {
 
 const CURR: &[fn()] = &[test_deciders, test_quasihalt];
 
-const FAST: &[fn()] = &[test_bkw, test_instrs, test_twostep];
+const FAST: &[fn()] = &[test_bkw, test_twostep];
 
 const SLOW: &[fn()] = &[test_deciders_slow, test_9_instr];
 
