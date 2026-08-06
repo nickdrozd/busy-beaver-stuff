@@ -455,46 +455,6 @@ fn test_deciders_slow() {
 
 /**************************************/
 
-use std::{
-    fs::File,
-    io::{self, BufRead as _, BufReader},
-};
-
-fn run_from_file(path: &str, steps: Steps) -> io::Result<()> {
-    println!("running {path}");
-
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-
-    reader.lines().par_bridge().try_for_each(|line| {
-        let line = line?;
-        let line = line.as_str();
-
-        // println!(
-        //     "thread {:?}: {line}",
-        //     rayon::current_thread_index().unwrap(),
-        // );
-
-        let prog = Prog::<8, 8>::from(line);
-
-        prog.prover_settled(steps);
-
-        Ok(())
-    })
-}
-
-fn test_from_file() {
-    let files = ["halt", "blank", "spinout"];
-
-    for file in files {
-        let filename = format!("test/data/holdouts/{file}.prog");
-
-        run_from_file(&filename, 10_000).unwrap();
-    }
-}
-
-/**************************************/
-
 fn _7_0(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(20).is_refuted()
         || prog.cps_cant_halt(6)
@@ -592,8 +552,7 @@ fn test_9_instr() {
 
 const CURR: &[fn()] = &[test_deciders, test_quasihalt];
 
-const FAST: &[fn()] =
-    &[test_bkw, test_from_file, test_instrs, test_twostep];
+const FAST: &[fn()] = &[test_bkw, test_instrs, test_twostep];
 
 const SLOW: &[fn()] = &[test_deciders_slow, test_9_instr];
 

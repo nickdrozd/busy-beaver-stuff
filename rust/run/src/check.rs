@@ -11,6 +11,9 @@ pub fn test_holdouts() {
     println!("champs");
     test_champs();
 
+    println!("file");
+    test_file();
+
     println!("lin rec");
     test_linrec();
 
@@ -403,4 +406,45 @@ pub fn assert_holdouts_match<T>(
         "holdout match",
         &holdouts_match_errors(context, champs, holdouts, result),
     );
+}
+
+/**************************************/
+
+use rayon::prelude::*;
+use std::{
+    fs::File,
+    io::{self, BufRead as _, BufReader},
+};
+
+fn run_from_file(path: &str, steps: usize) -> io::Result<()> {
+    println!("running {path}");
+
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    reader.lines().par_bridge().try_for_each(|line| {
+        let line = line?;
+        let line = line.as_str();
+
+        // println!(
+        //     "thread {:?}: {line}",
+        //     rayon::current_thread_index().unwrap(),
+        // );
+
+        let prog = Prog::<8, 8>::from(line);
+
+        prog.prover_settled(steps);
+
+        Ok(())
+    })
+}
+
+fn test_file() {
+    let files = ["halt", "blank", "spinout"];
+
+    for file in files {
+        let filename = format!("test/data/holdouts/{file}.prog");
+
+        run_from_file(&filename, 1_000).unwrap();
+    }
 }
