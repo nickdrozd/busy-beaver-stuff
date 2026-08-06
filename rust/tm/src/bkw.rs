@@ -9,7 +9,7 @@ use ahash::{AHashMap as Dict, AHashSet as Set, AHasher};
 use crate::{
     Color, Instr, Prog, Shift, Slot, State, Steps,
     instrs::Parse as _,
-    tape::{self, Block as _, LilBlock as Block, Pos, Scan},
+    tape::{Pos, Scan},
 };
 
 const MAX_STACK_DEPTH: usize = 64;
@@ -590,10 +590,10 @@ fn step_configs<const s: usize, const c: usize>(
     for (instrs, config) in configs {
         // Fuse `branch_indef` into stepping. The old processing order is
         // preserved: left count-one branch, right count-one branch, original.
-        let pulls_left = config.tape.pulls_indef(true);
-        let pulls_right = config.tape.pulls_indef(false);
+        let split_left = config.tape.pull_needs_count_one_split(true);
+        let split_right = config.tape.pull_needs_count_one_split(false);
 
-        if pulls_left && instrs.iter().any(|&(_, shift, _)| shift) {
+        if split_left && instrs.iter().any(|&(_, shift, _)| shift) {
             let mut count_1 = config.clone();
             count_1.tape.lspan.set_head_to_one();
 
@@ -614,7 +614,7 @@ fn step_configs<const s: usize, const c: usize>(
             )?;
         }
 
-        if pulls_right && instrs.iter().any(|&(_, shift, _)| !shift) {
+        if split_right && instrs.iter().any(|&(_, shift, _)| !shift) {
             let mut count_1 = config.clone();
             count_1.tape.rspan.set_head_to_one();
 
@@ -1232,7 +1232,206 @@ enum TapeEnd {
     Unknown,
 }
 
-type SpanT = tape::Span<Block>;
+type Count = u8;
+
+/// A run count used only by the backward prover.
+///
+/// `Exact(n)` denotes exactly `n` cells. `AtLeast(n)` denotes an arbitrary
+/// finite run of at least `n` cells.  Keeping the lower bound allows a run
+/// created as `c..` to become `c^2..`, `c^3..`, ... as definite cells are
+/// prepended, rather than losing that information forever.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+enum BlockCount {
+    Exact(Count),
+    AtLeast(Count),
+}
+
+impl BlockCount {
+    const fn exact(count: Count) -> Self {
+        debug_assert!(count > 0);
+        Self::Exact(count)
+    }
+
+    const fn at_least(count: Count) -> Self {
+        debug_assert!(count > 0);
+        Self::AtLeast(count)
+    }
+
+    const fn minimum(self) -> Count {
+        match self {
+            Self::Exact(count) | Self::AtLeast(count) => count,
+        }
+    }
+
+    const fn is_exact(self) -> bool {
+        matches!(self, Self::Exact(_))
+    }
+
+    const fn is_single(self) -> bool {
+        matches!(self, Self::Exact(1))
+    }
+
+    const fn is_indef(self) -> bool {
+        matches!(self, Self::AtLeast(_))
+    }
+
+    const fn can_be_one(self) -> bool {
+        matches!(self, Self::AtLeast(1))
+    }
+
+    const fn add_exact(&mut self, add: Count) {
+        debug_assert!(add > 0);
+        *self = match *self {
+            Self::Exact(count) => Self::Exact(count + add),
+            Self::AtLeast(count) => Self::AtLeast(count + add),
+        };
+    }
+
+    const fn add_at_least(&mut self, add: Count) {
+        debug_assert!(add > 0);
+        *self = Self::AtLeast(self.minimum() + add);
+    }
+
+    /// Remove one definitely present cell.
+    ///
+    /// `AtLeast(1)` is used only on the residual branch where the concrete
+    /// run had length at least two, so its residual is again `AtLeast(1)`.
+    const fn decrement_after_pull(&mut self) {
+        *self = match *self {
+            Self::Exact(count) => {
+                debug_assert!(count > 1);
+                Self::Exact(count - 1)
+            },
+            Self::AtLeast(1) => Self::AtLeast(1),
+            Self::AtLeast(count) => Self::AtLeast(count - 1),
+        };
+    }
+
+    const fn subsumes(self, other: Self) -> bool {
+        match (self, other) {
+            (Self::Exact(a), Self::Exact(b)) => a == b,
+            (Self::Exact(_), Self::AtLeast(_)) => false,
+            (Self::AtLeast(a), Self::Exact(b) | Self::AtLeast(b)) => {
+                a <= b
+            },
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct Block {
+    color: Color,
+    count: BlockCount,
+}
+
+impl Block {
+    const fn exact(color: Color, count: Count) -> Self {
+        Self {
+            color,
+            count: BlockCount::exact(count),
+        }
+    }
+
+    const fn at_least(color: Color, count: Count) -> Self {
+        Self {
+            color,
+            count: BlockCount::at_least(count),
+        }
+    }
+
+    const fn blank(&self) -> bool {
+        self.color == 0
+    }
+}
+
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.count {
+            BlockCount::Exact(1) => write!(f, "{}", self.color),
+            BlockCount::Exact(count) => {
+                write!(f, "{}^{count}", self.color)
+            },
+            BlockCount::AtLeast(1) => write!(f, "{}..", self.color),
+            BlockCount::AtLeast(count) => {
+                write!(f, "{}^{count}..", self.color)
+            },
+        }
+    }
+}
+
+/// Minimal near-head span implementation for BKW.  Storage matches the shared
+/// tape span: farthest block first, nearest block last.
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct SpanT {
+    blocks: Vec<Block>,
+}
+
+impl SpanT {
+    const fn init_blank() -> Self {
+        Self { blocks: vec![] }
+    }
+
+    const fn len(&self) -> usize {
+        self.blocks.len()
+    }
+
+    const fn blank(&self) -> bool {
+        self.blocks.is_empty()
+    }
+
+    fn iter(&self) -> impl DoubleEndedIterator<Item = &Block> {
+        self.blocks.iter().rev()
+    }
+
+    fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> + '_ {
+        self.iter().map(ToString::to_string)
+    }
+
+    fn first(&self) -> Option<&Block> {
+        self.blocks.last()
+    }
+
+    fn first_mut(&mut self) -> Option<&mut Block> {
+        self.blocks.last_mut()
+    }
+
+    fn pop_block(&mut self) -> Block {
+        self.blocks.pop().unwrap()
+    }
+
+    fn push_exact(&mut self, color: Color, count: Count) {
+        if let Some(block) = self.first_mut()
+            && block.color == color
+        {
+            block.count.add_exact(count);
+            return;
+        }
+
+        self.blocks.push(Block::exact(color, count));
+    }
+
+    fn push_at_least(&mut self, color: Color, count: Count) {
+        if let Some(block) = self.first_mut()
+            && block.color == color
+        {
+            block.count.add_at_least(count);
+            return;
+        }
+
+        self.blocks.push(Block::at_least(color, count));
+    }
+
+    fn push_block(&mut self, block: &Block) {
+        match block.count {
+            BlockCount::Exact(count) => {
+                self.push_exact(block.color, count);
+            },
+            BlockCount::AtLeast(count) => {
+                self.push_at_least(block.color, count);
+            },
+        }
+    }
+}
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct Span {
@@ -1292,27 +1491,22 @@ impl Span {
             return;
         };
 
-        match block.count {
-            1 => {
-                self.span.pop_block();
-            },
-            0 => {},
-            _ => {
-                block.decrement();
-            },
+        if block.count.is_single() {
+            self.span.pop_block();
+        } else {
+            block.count.decrement_after_pull();
         }
     }
 
     fn push_single(&mut self, color: Color) {
-        match self.span.first_mut() {
-            Some(block) if block.color == color && block.count != 0 => {
-                block.count += 1;
-            },
-            None if color == 0 && self.end == TapeEnd::Blanks => {},
-            _ => {
-                self.span.push_block(color, 1);
-            },
+        if self.span.first().is_none()
+            && color == 0
+            && self.end == TapeEnd::Blanks
+        {
+            return;
         }
+
+        self.span.push_exact(color, 1);
     }
 
     fn push_indef(&mut self, color: Color) {
@@ -1323,11 +1517,13 @@ impl Span {
             return;
         }
 
-        self.span.push_block(color, 0);
+        self.span.push_at_least(color, 1);
     }
 
     fn set_head_to_one(&mut self) {
-        self.span.first_mut().unwrap().count = 1;
+        let block = self.span.first_mut().unwrap();
+        debug_assert!(block.count.can_be_one());
+        block.count = BlockCount::Exact(1);
     }
 
     /// If this span's end is known to be all blanks (`0+`), then any explicit
@@ -1353,8 +1549,8 @@ impl Span {
 
         // Rebuild span by pushing blocks from far->near (push_block is near-end).
         let mut new_span = SpanT::init_blank();
-        for b in blocks.iter().rev() {
-            new_span.push_block(b.color, b.count);
+        for b in blocks.into_iter().rev() {
+            new_span.push_block(&b);
         }
         self.span = new_span;
     }
@@ -1471,11 +1667,11 @@ impl Tape {
                 if block.color == 0 {
                     continue;
                 }
-                if block.count == 0 {
+                if block.count.is_indef() {
                     return 0b11;
                 }
 
-                parity ^= block.count & 1;
+                parity ^= u8::from(block.count.minimum() & 1 != 0);
             }
         }
 
@@ -1523,14 +1719,17 @@ impl Tape {
         pull.span.blank()
     }
 
-    fn pulls_indef(&self, shift: Shift) -> bool {
+    /// `AtLeast(1)` needs two predecessor branches when pulled: concrete
+    /// length one disappears, while concrete length at least two leaves an
+    /// `AtLeast(1)` residual. Larger lower bounds decrement without a split.
+    fn pull_needs_count_one_split(&self, shift: Shift) -> bool {
         let pull = if shift { &self.lspan } else { &self.rspan };
 
         let Some(block) = pull.span.first() else {
             return false;
         };
 
-        block.is_indef()
+        block.count.can_be_one()
     }
 
     fn backstep(&mut self, shift: Shift, read: Color) {
@@ -1689,7 +1888,7 @@ impl Tape {
                     return false;
                 }
 
-                if block.count > 1
+                if block.count.minimum() > 1
                     && !pair_possible(block.color, block.color)
                 {
                     return false;
@@ -1765,16 +1964,25 @@ impl Tape {
 #[cfg(test)]
 impl From<&str> for Block {
     fn from(s: &str) -> Self {
-        let (color, count) = if s.ends_with("..") {
-            (s.trim_end_matches("..").parse().unwrap(), 0)
-        } else if s.contains('^') {
-            let parts: Vec<&str> = s.split('^').collect();
-            (parts[0].parse().unwrap(), parts[1].parse().unwrap())
-        } else {
-            (s.parse().unwrap(), 1)
-        };
+        if let Some(body) = s.strip_suffix("..") {
+            if let Some((color, count)) = body.split_once('^') {
+                return Self::at_least(
+                    color.parse().unwrap(),
+                    count.parse().unwrap(),
+                );
+            }
 
-        Self { color, count }
+            return Self::at_least(body.parse().unwrap(), 1);
+        }
+
+        if let Some((color, count)) = s.split_once('^') {
+            return Self::exact(
+                color.parse().unwrap(),
+                count.parse().unwrap(),
+            );
+        }
+
+        Self::exact(s.parse().unwrap(), 1)
     }
 }
 
@@ -1788,7 +1996,7 @@ impl Span {
         })();
 
         for block in blocks {
-            span.span.push_block(block.color, block.count);
+            span.span.push_block(&block);
         }
 
         span
@@ -2029,7 +2237,48 @@ fn test_push_indef() {
 
     tape.backstep(false, 0);
 
-    tape.assert("0+ 1 0.. 1.. 0.. 0 [0] ?");
+    tape.assert("0+ 1 0.. 1.. 0^2.. [0] ?");
+}
+
+#[test]
+fn test_lower_bounded_indefinite_runs() {
+    let mut tape: Tape = "0+ [0] 1^3.. ?".into();
+
+    assert!(!tape.pull_needs_count_one_split(false));
+    tape.backstep(false, 0);
+    tape.assert("0+ [0] 1^2.. ?");
+
+    // Definite and indefinite same-color pushes both raise the lower bound.
+    let mut pushed: Tape = "0+ 1^2.. [1] ?".into();
+    pushed.backstep(false, 0);
+    pushed.assert("0+ 1^3.. [0] ?");
+    pushed.scan = 1;
+    pushed.push_indef(false);
+    pushed.assert("0+ 1^4.. [1] ?");
+
+    let merged: Tape = "0+ [0] 1 1^2.. ?".into();
+    merged.assert("0+ [0] 1^3.. ?");
+    assert!(!merged.pull_needs_count_one_split(false));
+
+    let mut split: Tape = "0+ [0] 1.. ?".into();
+    assert!(split.pull_needs_count_one_split(false));
+    split.rspan.set_head_to_one();
+    split.assert("0+ [0] 1 ?");
+}
+
+#[test]
+fn test_lower_bounded_subsumption() {
+    let broad: Tape = "? [0] 1^3.. ?".into();
+    let exact_large: Tape = "? [0] 1^5 ?".into();
+    let narrower: Tape = "? [0] 1^4.. ?".into();
+    let too_small: Tape = "? [0] 1^2 ?".into();
+    let too_broad: Tape = "? [0] 1^2.. ?".into();
+
+    assert!(broad.subsumes(&exact_large));
+    assert!(broad.subsumes(&narrower));
+    assert!(!broad.subsumes(&too_small));
+    assert!(!broad.subsumes(&too_broad));
+    assert!(!exact_large.subsumes(&broad));
 }
 
 #[test]
@@ -2113,6 +2362,10 @@ fn test_state_side_colors_and_pairs() {
     // length one and must not require the self-pair.
     let indefinite: Tape = "0+ 1.. [0] 0+".into();
     assert!(indefinite.obeys_state_side(1, &sides));
+
+    // A lower bound of two guarantees an internal (1,1) adjacency.
+    let at_least_two: Tape = "0+ 1^2.. [0] 0+".into();
+    assert!(!at_least_two.obeys_state_side(1, &sides));
 }
 
 #[test]
@@ -3473,13 +3726,10 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
 #[expect(clippy::multiple_inherent_impl)]
 impl Span {
     /// Compare two block-spans from the head outward.
-    /// Rule (sound and simple):
-    /// - colors must match positionally
-    /// - count 0 means "indefinitely many" (>=1), so it subsumes any
-    ///   positive count
-    /// - positive count must match exactly (conservative but sound)
-    /// - if self runs out of blocks, it only subsumes a longer span when its
-    ///   end is Unknown
+    ///
+    /// Exact counts match exactly. `AtLeast(a)` subsumes `Exact(b)` and
+    /// `AtLeast(b)` precisely when `a <= b`. If self runs out of blocks, it
+    /// only subsumes a longer span when its end is Unknown.
     fn subsumes(&self, other: &Self) -> bool {
         // These cheap length/end checks previously lived in
         // `maybe_subsumes`, causing the leading runs to be examined twice.
@@ -3502,11 +3752,8 @@ impl Span {
             if a.color != b.color {
                 return false;
             }
-            match (a.count, b.count) {
-                (0, _) => {},           // self indefinite subsumes any b
-                (_, 0) => return false, // self fixed cannot subsume indefinite
-                (ac, bc) if ac == bc => {},
-                _ => return false,
+            if !a.count.subsumes(b.count) {
+                return false;
             }
         }
 
@@ -3913,8 +4160,7 @@ impl FastCfg {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct RunSig {
     color: Color,
-    // count == 0 means the original span block was indefinite (`..`).
-    count: usize,
+    count: BlockCount,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -3983,7 +4229,7 @@ fn span_runs(span: &Span) -> Vec<RunSig> {
     for b in span.span.iter() {
         out.push(RunSig {
             color: b.color,
-            count: b.count as usize,
+            count: b.count,
         });
     }
     out
@@ -4080,51 +4326,73 @@ fn prefix_before_suffix_runs(
     if delta.is_empty() { None } else { Some(delta) }
 }
 
+/// Result of subtracting one compatible run count from another.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RunCountRemainder {
+    Consumed,
+    Remaining(BlockCount),
+}
+
+/// Return how much of `whole` remains after removing `prefix`.
+///
+/// Exact runs may split exact runs. Lower-bounded runs may split another
+/// lower-bounded run: `AtLeast(a)` plus an exact suffix of `b-a` cells is
+/// exactly `AtLeast(b)`. Mixed exact/lower-bounded matching is deliberately
+/// rejected so a periodic certificate never chooses a particular realization
+/// of an indefinite run.
+const fn subtract_run_count(
+    prefix: BlockCount,
+    whole: BlockCount,
+) -> Option<RunCountRemainder> {
+    match (prefix, whole) {
+        (BlockCount::Exact(p), BlockCount::Exact(w))
+        | (BlockCount::AtLeast(p), BlockCount::AtLeast(w)) => {
+            if p > w {
+                None
+            } else if p == w {
+                Some(RunCountRemainder::Consumed)
+            } else {
+                Some(RunCountRemainder::Remaining(BlockCount::Exact(
+                    w - p,
+                )))
+            }
+        },
+        _ => None,
+    }
+}
+
 /// Return the part of `whole` after removing `prefix` from the near/head end.
-/// Finite runs may be split, so `[1^2]` is a prefix of `[1^3]` with remainder
-/// `[1]`.  Indefinite runs must match as whole blocks; we do not treat a finite
-/// run as a prefix/suffix of an indefinite one because that would make the
-/// period witness depend on how much arbitrary `?` tail was materialized.
 fn remainder_after_prefix_runs(
     prefix: &[RunSig],
     whole: &[RunSig],
 ) -> Option<Vec<RunSig>> {
     let mut wi = 0;
-    let mut wskip = 0;
 
-    for &p in prefix {
-        if wi >= whole.len() {
-            return None;
-        }
-        let w = whole[wi];
+    for (pi, &p) in prefix.iter().enumerate() {
+        let &w = whole.get(wi)?;
         if p.color != w.color {
             return None;
         }
 
-        match (p.count, w.count) {
-            (0, 0) if wskip == 0 => {
-                wi += 1;
-                wskip = 0;
-            },
-            (0, _) | (_, 0) => return None,
-            (pc, wc) => {
-                if wskip != 0 {
+        match subtract_run_count(p.count, w.count)? {
+            RunCountRemainder::Consumed => wi += 1,
+            RunCountRemainder::Remaining(count) => {
+                if pi + 1 != prefix.len() {
                     return None;
                 }
-                #[expect(clippy::comparison_chain)]
-                if pc < wc {
-                    wskip = pc;
-                } else if pc == wc {
-                    wi += 1;
-                    wskip = 0;
-                } else {
-                    return None;
-                }
+
+                let mut out = Vec::with_capacity(whole.len() - wi);
+                out.push(RunSig {
+                    color: w.color,
+                    count,
+                });
+                out.extend_from_slice(&whole[wi + 1..]);
+                return Some(normalize_run_sig_vec(out));
             },
         }
     }
 
-    Some(run_tail_from(whole, wi, wskip))
+    Some(whole[wi..].to_vec())
 }
 
 /// Return the part of `whole` before removing `suffix` from the far end.
@@ -4133,95 +4401,52 @@ fn remainder_before_suffix_runs(
     whole: &[RunSig],
 ) -> Option<Vec<RunSig>> {
     let mut wi = whole.len();
-    let mut wskip = 0; // cells already consumed from the far end of whole[wi - 1]
 
-    for &s in suffix.iter().rev() {
-        if wi == 0 {
-            return None;
-        }
-        let w = whole[wi - 1];
+    for (si, &s) in suffix.iter().rev().enumerate() {
+        let &w = whole.get(wi.checked_sub(1)?)?;
         if s.color != w.color {
             return None;
         }
 
-        match (s.count, w.count) {
-            (0, 0) if wskip == 0 => {
-                wi -= 1;
-                wskip = 0;
-            },
-            (0, _) | (_, 0) => return None,
-            (sc, wc) => {
-                if wskip != 0 {
+        match subtract_run_count(s.count, w.count)? {
+            RunCountRemainder::Consumed => wi -= 1,
+            RunCountRemainder::Remaining(count) => {
+                if si + 1 != suffix.len() {
                     return None;
                 }
-                #[expect(clippy::comparison_chain)]
-                if sc < wc {
-                    wskip = sc;
-                } else if sc == wc {
-                    wi -= 1;
-                    wskip = 0;
-                } else {
-                    return None;
-                }
+
+                let mut out = whole[..wi - 1].to_vec();
+                out.push(RunSig {
+                    color: w.color,
+                    count,
+                });
+                return Some(normalize_run_sig_vec(out));
             },
         }
     }
 
-    Some(run_head_until(whole, wi, wskip))
+    Some(whole[..wi].to_vec())
 }
 
-fn run_tail_from(
-    runs: &[RunSig],
-    idx: usize,
-    skip: usize,
-) -> Vec<RunSig> {
-    if idx >= runs.len() {
-        return Vec::new();
-    }
-
-    let mut out = Vec::new();
-    let first = runs[idx];
-    if skip == 0 {
-        out.extend_from_slice(&runs[idx..]);
+const fn add_run_counts(
+    left: BlockCount,
+    right: BlockCount,
+) -> BlockCount {
+    let minimum = left.minimum() + right.minimum();
+    if left.is_exact() && right.is_exact() {
+        BlockCount::Exact(minimum)
     } else {
-        debug_assert!(first.count > skip);
-        out.push(RunSig {
-            color: first.color,
-            count: first.count - skip,
-        });
-        out.extend_from_slice(&runs[idx + 1..]);
+        BlockCount::AtLeast(minimum)
     }
-    normalize_run_sig_vec(out)
-}
-
-fn run_head_until(
-    runs: &[RunSig],
-    end_idx: usize,
-    far_skip: usize,
-) -> Vec<RunSig> {
-    let mut out = Vec::new();
-    if end_idx == 0 {
-        return out;
-    }
-
-    out.extend_from_slice(&runs[..end_idx]);
-    if far_skip != 0 {
-        let last = out.last_mut().unwrap();
-        debug_assert!(last.count > far_skip);
-        last.count -= far_skip;
-    }
-    normalize_run_sig_vec(out)
 }
 
 fn normalize_run_sig_vec(runs: Vec<RunSig>) -> Vec<RunSig> {
     let mut out: Vec<RunSig> = Vec::with_capacity(runs.len());
     for r in runs {
-        if r.count != 0
-            && let Some(last) = out.last_mut()
-            && last.count != 0
+        if let Some(last) = out.last_mut()
             && last.color == r.color
         {
-            last.count += r.count;
+            last.count = add_run_counts(last.count, r.count);
             continue;
         }
         out.push(r);
@@ -4532,15 +4757,16 @@ struct AntichainEntry {
     tape: Tape,
 }
 
-/// Exact near-head class for one span.  Subsumption can only hold when the
+/// Exact near-head class for one span. Subsumption can only hold when the
 /// first explicit runs are compatible, except that an empty unknown span is a
-/// wildcard prefix.  Including the first run count makes the common fixed-run
-/// case especially selective; count 0 is the indefinite (`..`) run.
+/// wildcard prefix. Lower-bounded runs share a color bucket because their
+/// minimums are ordered and are checked by exact subsumption afterwards.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum SpanBucketKey {
     EmptyUnknown,
     EmptyBlanks,
-    Run(Color, u8),
+    RunExact(Color, Count),
+    RunAtLeast(Color),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -4550,14 +4776,20 @@ struct AntichainBucketKey {
 }
 
 fn span_bucket_key(span: &Span) -> SpanBucketKey {
-    #[expect(clippy::option_if_let_else)]
-    match span.span.first() {
-        Some(block) => SpanBucketKey::Run(block.color, block.count),
-        None => match span.end {
+    span.span.first().map_or_else(
+        || match span.end {
             TapeEnd::Unknown => SpanBucketKey::EmptyUnknown,
             TapeEnd::Blanks => SpanBucketKey::EmptyBlanks,
         },
-    }
+        |block| match block.count {
+            BlockCount::Exact(count) => {
+                SpanBucketKey::RunExact(block.color, count)
+            },
+            BlockCount::AtLeast(_) => {
+                SpanBucketKey::RunAtLeast(block.color)
+            },
+        },
+    )
 }
 
 fn antichain_bucket_key(tape: &Tape) -> AntichainBucketKey {
@@ -4567,12 +4799,12 @@ fn antichain_bucket_key(tape: &Tape) -> AntichainBucketKey {
     }
 }
 
-/// Fill the exact bucket classes whose members may subsume `span`.
+/// Fill the bucket classes whose members may subsume `span`.
 ///
-/// - Empty unknown is the wildcard prefix and is always a candidate.
-/// - Empty blank can cover only another empty blank span.
-/// - A nonempty span can be covered by an indefinite first run of the same
-///   color, or by the same fixed first run.
+/// - Empty unknown is always a candidate.
+/// - Empty blank covers only another empty blank span.
+/// - Any nonempty run may be covered by a lower-bounded run of the same color.
+/// - An exact run may additionally be covered by the identical exact bucket.
 fn covering_span_bucket_keys(
     span: &Span,
 ) -> ([SpanBucketKey; 3], usize) {
@@ -4585,12 +4817,11 @@ fn covering_span_bucket_keys(
             len += 1;
         },
         Some(block) => {
-            keys[len] = SpanBucketKey::Run(block.color, 0);
+            keys[len] = SpanBucketKey::RunAtLeast(block.color);
             len += 1;
 
-            if block.count != 0 {
-                keys[len] =
-                    SpanBucketKey::Run(block.color, block.count);
+            if let BlockCount::Exact(count) = block.count {
+                keys[len] = SpanBucketKey::RunExact(block.color, count);
                 len += 1;
             }
         },
@@ -4606,18 +4837,23 @@ fn span_can_subsume_bucket(
     candidate: &Span,
     bucket: SpanBucketKey,
 ) -> bool {
-    match candidate.span.first() {
-        None => match candidate.end {
+    candidate.span.first().map_or_else(
+        || match candidate.end {
             TapeEnd::Unknown => true,
             TapeEnd::Blanks => bucket == SpanBucketKey::EmptyBlanks,
         },
-        Some(block) if block.count == 0 => {
-            matches!(bucket, SpanBucketKey::Run(color, _) if color == block.color)
+        |block| match block.count {
+            BlockCount::AtLeast(_) => matches!(
+                bucket,
+                SpanBucketKey::RunExact(color, _)
+                    | SpanBucketKey::RunAtLeast(color)
+                    if color == block.color
+            ),
+            BlockCount::Exact(count) => {
+                bucket == SpanBucketKey::RunExact(block.color, count)
+            },
         },
-        Some(block) => {
-            bucket == SpanBucketKey::Run(block.color, block.count)
-        },
-    }
+    )
 }
 
 #[derive(Default)]
