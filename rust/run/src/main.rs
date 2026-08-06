@@ -200,6 +200,7 @@ macro_rules! assert_bkw {
             0 => $halt:tt,
             1 => $spinout:tt,
             2 => $blank:tt,
+            3 => $twostep:tt,
         ],
     ] ),* $(,)? ) => {{
         assert_holdouts![
@@ -211,6 +212,7 @@ macro_rules! assert_bkw {
                         0 => ( |prog, _| { prog.bkw_cant_halt(BKW).is_refuted() }, $halt ),
                         1 => ( |prog, _| { prog.bkw_cant_spinout(BKW).is_refuted() }, $spinout ),
                         2 => ( |prog, _| { prog.bkw_cant_blank(BKW).is_refuted() }, $blank ),
+                        3 => ( |prog, _| { prog.bkw_cant_twostep(BKW).is_refuted() }, $twostep ),
                     ],
                 ],
             )*
@@ -277,20 +279,6 @@ fn test_deciders() {
 
 /**************************************/
 
-fn _2_2_3(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(0).is_refuted()
-}
-
-fn _3_2_3(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(10).is_refuted()
-        || prog.prover_settled(INF_MIN)
-}
-
-fn _2_3_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(10).is_refuted()
-        || prog.prover_settled(INF_MIN)
-}
-
 fn _4_2_3(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_twostep(50).is_refuted()
         || prog.prover_settled(INF_MIN)
@@ -305,15 +293,6 @@ fn test_twostep() {
     println!("twostep");
 
     assert_holdouts![
-        (2, 2) => [
-            3 => (_2_2_3, 4, (0, 81)),
-        ],
-        (3, 2) => [
-            3 => (_3_2_3, 13, (0, 11_754)),
-        ],
-        (2, 3) => [
-            3 => (_2_3_3, 20, (0, 8_766)),
-        ],
         (4, 2) => [
             3 => (_4_2_3, 99, (19, 2_134_923)),
         ],
@@ -338,6 +317,7 @@ fn test_bkw() {
                 0 => 1,
                 1 => 0,
                 2 => 0,
+                3 => 0,
             ],
         ],
         5 => [
@@ -347,6 +327,7 @@ fn test_bkw() {
                 0 => 67,
                 1 => 10,
                 2 => 7,
+                3 => 0,
             ],
         ],
         6 => [
@@ -356,6 +337,7 @@ fn test_bkw() {
                 0 => 3291,
                 1 => 514,
                 2 => 258,
+                3 => 6,
             ],
         ],
     ];
