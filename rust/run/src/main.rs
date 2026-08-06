@@ -239,7 +239,6 @@ fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_blank(20)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MOR)
-        || prog.far_cant_blank(3)
 }
 
 fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
@@ -509,7 +508,6 @@ fn _7_1(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_spinout(11)
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MOR)
-        || prog.far_cant_spinout(2)
 }
 
 fn _7_2(prog: &Prog<7, 7>, config: &mut PassConfig<'_>) -> bool {
