@@ -261,7 +261,6 @@ class EnumTape:
 
         s_offset = ('r' if side else 'l') + '_offset'
 
-        # pylint: disable = bad-builtin
         if offset > getattr(self, s_offset):
             setattr(self, s_offset, offset)
 

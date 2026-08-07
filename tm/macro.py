@@ -246,7 +246,7 @@ class MacroProg:
 
             else:
                 if shift:
-                    while tape[pos] == scan:  # pylint: disable = while-used
+                    while tape[pos] == scan:
                         tape[pos] = color
                         pos += 1
                         if cells <= pos:
@@ -255,7 +255,7 @@ class MacroProg:
                         continue
 
                 else:
-                    while tape[pos] == scan:  # pylint: disable = while-used
+                    while tape[pos] == scan:
                         tape[pos] = color
                         if pos == 0:
                             break

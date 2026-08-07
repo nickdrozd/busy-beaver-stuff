@@ -318,7 +318,6 @@ def count_apps(rule: Rule, tape: IndexTape) -> Apps | None:
             (div - 1, absdiff)
         )
 
-        # pylint: disable = unsubscriptable-object
         if apps is None or times < apps[0]:
             apps = times, pos, min_res
 

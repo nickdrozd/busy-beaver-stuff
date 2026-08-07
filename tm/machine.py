@@ -104,7 +104,6 @@ class Machine:
                     cat.upper(),
                     data if isinstance(data, int|str|tuple) else "...")
                 for cat in TERM_CATS
-                # pylint: disable = bad-builtin
                 if (data := getattr(self, cat, None)) is not None
             ],
             f"TPCFGS: {self.prover.config_count}",

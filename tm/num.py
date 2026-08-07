@@ -1,5 +1,4 @@
 # ruff:file-ignore[collapsible-if, too-many-return-statements]
-# pylint: disable = confusing-consecutive-elif
 
 import itertools
 from abc import abstractmethod
@@ -461,7 +460,7 @@ class Mul(Num):
         r_dig = self.r.digits()
 
         return r_dig + (
-            l.digits()  # pylint: disable = used-before-assignment
+            l.digits()
             if not isinstance(l := self.l, int) else
             round(log10(l))
             if l > 0 else
@@ -982,7 +981,7 @@ class Exp(Num):
         if k0 < exp:
             exp = k0 + (exp - k0) % kp
 
-        try:  # pylint: disable = too-many-try-statements
+        try:
             if (period := find_period(base, mod, exp)) > 0:
                 exp %= period
         except PeriodLimit:
@@ -1307,8 +1306,6 @@ class Tet(Num):
 
 
 class PentPlus(Num):
-    # pylint: disable = abstract-method
-
     def __repr__(self) -> str:
         return '!!!'  # no-cover
 
@@ -1449,7 +1446,7 @@ def carmichael(mod: int) -> tuple[int, int]:
 
         res = lcm(res, lam_pk)
 
-        if k > max_k:  # ruff:ignore[if-stmt-min-max]  # pylint: disable = consider-using-max-builtin
+        if k > max_k:  # ruff:ignore[if-stmt-min-max]
             max_k = k
 
     return res, max_k
@@ -1496,7 +1493,7 @@ def prime_factors(n: int) -> list[tuple[int, int]]:
     for p in PRIMES:  # no-branch
         k = 0
 
-        while n % p == 0:  # pylint: disable = while-used
+        while n % p == 0:
             k += 1
             n //= p
 

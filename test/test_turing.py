@@ -578,7 +578,7 @@ class RunProver(TuringTest):
         self.assertIsNotNone(
             self.machine.spnout)
 
-    def run_bb(  # pylint: disable = too-many-arguments
+    def run_bb(
         self,
         prog: str,
         *,

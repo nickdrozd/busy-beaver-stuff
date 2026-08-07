@@ -71,14 +71,11 @@ PYTHON = python3
 MODULES = tm tools test *.py
 
 RUFF = $(PYTHON) -m ruff
-PYLINT = $(PYTHON) -m pylint
 
 lint : clippy rust
 	$(RUFF) --version
 	$(RUFF) check $(MODULES)
 	$(MAKE) type
-	$(PYLINT) --version
-	$(PYLINT) --enable-all-extensions $(MODULES) --ignore-patterns=.*.pyi
 
 TY = $(PYTHON) -m ty
 MYPY = $(PYTHON) -m mypy

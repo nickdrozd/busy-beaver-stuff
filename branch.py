@@ -12,7 +12,7 @@ def run_branch(prog: str) -> None:
 
     todo: list[str] = [prog]
 
-    while todo:  # pylint: disable = while-used
+    while todo:
         branch = todo.pop()
 
         machine = Machine(

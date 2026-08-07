@@ -520,7 +520,6 @@ def run_loose_linrec_machine(
         program: str,
         sim_lim: int = 100_000_000,
 ) -> MachineResult:
-    # pylint: disable = while-used, too-many-locals
     blanks = {}
 
     comp = tcompile(program)

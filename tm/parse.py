@@ -44,7 +44,7 @@ def blank_loops(prog: Prog) -> dict[Shift, set[State]]:
             stack: list[State] = []
             pos: dict[State, int] = {}
 
-            while True:  # pylint: disable = while-used
+            while True:
                 if color[cur] == 2:
                     for v in stack:
                         color[v] = 2

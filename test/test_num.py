@@ -111,7 +111,7 @@ class TestNum(TestCase):
 
             self.assertEqual(
                 val,
-                eval(str(num)))  # pylint: disable = eval-used  # ruff:ignore[suspicious-eval-usage]
+                eval(str(num)))  # ruff:ignore[suspicious-eval-usage]
 
         if rep is not None:
             self.assertEqual(rep, str(num))
@@ -1555,7 +1555,6 @@ class TestNum(TestCase):
             "(10 ↑↑ 3)")
 
     def test_tet_error(self):
-        # pylint: disable = expression-not-assigned
         with self.assertRaises(NotImplementedError):
             int(Tet(10, 3))
 
@@ -1640,7 +1639,6 @@ class TestNum(TestCase):
             "(5 * (2 ** (-259 + (2 ** (2 ** 258)))))")
 
     def test_recursion_error(self):
-        # pylint: disable = pointless-statement
         num1 = (
             253398
             + (130 * (2 ** ((61 + (13 * Exp(2, 803))) // 15)))
