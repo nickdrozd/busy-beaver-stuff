@@ -132,8 +132,8 @@ def prog_params(comp: GetInstr) -> Params:
     else:
         assert isinstance(comp, dict)
 
-        base_states = len(range(1 + max(s[2] for s in comp.values())))  # ty: ignore[not-subscriptable]
-        base_colors = len(range(1 + max(s[0] for s in comp.values())))  # ty: ignore[not-subscriptable]
+        base_states = len(range(1 + max(s[2] for s in comp.values())))
+        base_colors = len(range(1 + max(s[0] for s in comp.values())))
 
     return base_states, base_colors
 
@@ -162,7 +162,7 @@ class MacroProg:
 
     def __str__(self) -> str:
         comp_str = (
-            show_comp(comp)  # ty: ignore[invalid-argument-type]
+            show_comp(comp)
             if isinstance(comp := self.comp, dict) else
             str(comp)
         )
