@@ -39,6 +39,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let (entrypoints, idx) = self.entrypoints_and_indices();
 
         let slots = self.halt_slots_disp_side(&idx);
+        let slots = self.halt_slots_side_excursion(slots);
 
         cant_reach(self, steps, slots, Some(entrypoints), halt_configs)
     }
@@ -48,15 +49,33 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             return Refuted(0);
         }
 
-        cant_reach(self, steps, self.erase_slots(), None, erase_configs)
+        cant_reach(
+            self,
+            steps,
+            self.blank_slots_side_clean(),
+            None,
+            erase_configs,
+        )
     }
 
     pub fn bkw_cant_spinout(&self, steps: Steps) -> BackwardResult {
-        cant_reach(self, steps, self.zr_shifts(), None, zr_configs)
+        cant_reach(
+            self,
+            steps,
+            self.spinout_shifts_side_clean(),
+            None,
+            zr_configs,
+        )
     }
 
     pub fn bkw_cant_zloop(&self, steps: Steps) -> BackwardResult {
-        cant_reach(self, steps, self.blank_loops(), None, zr_configs)
+        cant_reach(
+            self,
+            steps,
+            self.zloop_shifts_side_clean(),
+            None,
+            zr_configs,
+        )
     }
 
     pub fn bkw_cant_twostep(&self, steps: Steps) -> BackwardResult {
@@ -451,6 +470,25 @@ fn window_possible<const s: usize, const c: usize>(
         (Some(lc), None) => win_possible.right[st][sc][lc] != 0,
         (None, Some(rc)) => win_possible.left[st][sc][rc] != 0,
         (None, None) => win_possible.any[st][sc],
+    }
+}
+
+fn window_neighbor_mask<const S: usize, const C: usize>(
+    state: usize,
+    scan: usize,
+    shift: Shift,
+    possible: &WinPossible<S, C>,
+) -> u64 {
+    if shift {
+        possible.right[state][scan]
+            .iter()
+            .copied()
+            .fold(0, |mask, colors| mask | colors)
+    } else {
+        possible.left[state][scan]
+            .iter()
+            .copied()
+            .fold(0, |mask, colors| mask | colors)
     }
 }
 
@@ -2077,6 +2115,110 @@ fn test_state_side_colors_and_pairs() {
     assert!(indefinite.obeys_state_side(1, &sides));
 }
 
+#[test]
+#[expect(clippy::shadow_unrelated)]
+fn test_halfblank_direction() {
+    // A0 writes 1 and moves right.  At B0 the right side is still all blank,
+    // but the left side contains the written 1.
+    let prog = Prog::<2, 2>::from("1RB ...  ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let left_clean = side_excursions(&prog, &windows, false, true);
+    let right_clean = side_excursions(&prog, &windows, true, true);
+    let left_any = side_excursions(&prog, &windows, false, false);
+    let right_any = side_excursions(&prog, &windows, true, false);
+    let left = halfblank_slots(
+        &prog,
+        &windows,
+        false,
+        &left_clean,
+        &right_any,
+    );
+    let right =
+        halfblank_slots(&prog, &windows, true, &right_clean, &left_any);
+
+    assert!(!left[1][0]);
+    assert!(right[1][0]);
+
+    // Leaving 0 behind preserves both one-sided-blank abstractions.
+    let prog = Prog::<2, 2>::from("0RB ...  ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let left_clean = side_excursions(&prog, &windows, false, true);
+    let right_clean = side_excursions(&prog, &windows, true, true);
+    let left_any = side_excursions(&prog, &windows, false, false);
+    let right_any = side_excursions(&prog, &windows, true, false);
+    let left = halfblank_slots(
+        &prog,
+        &windows,
+        false,
+        &left_clean,
+        &right_any,
+    );
+    let right =
+        halfblank_slots(&prog, &windows, true, &right_clean, &left_any);
+
+    assert!(left[1][0]);
+    assert!(right[1][0]);
+}
+
+#[test]
+fn test_parent_color_aware_excursions() {
+    // A0 pushes right, writing 0 on the parent. B1 pops left into C, then C0
+    // pops left across A's outer boundary into D.  The synthetic forward-window
+    // abstraction permits child color 1 at A0 only when A0's own back/left
+    // neighbor is 1, not when it is 0.  The old union-over-back-colors relation
+    // would therefore invent an outer return for back color 0 as well.
+    let prog = Prog::<4, 2>::from("0RB ...  ... 0LC  0LD ...  ... ...");
+    let mut windows = WinPossible {
+        right: [[[0; 2]; 2]; 4],
+        left: [[[0; 2]; 2]; 4],
+        any: [[false; 2]; 4],
+    };
+
+    // A0: with left/back 0, right child must be 0; with left/back 1, child 1.
+    windows.right[0][0][0] = 1 << 0;
+    windows.right[0][0][1] = 1 << 1;
+
+    // B1 with parent/back 0 can pop back to A's cell in state C.
+    windows.right[1][1][0] = 1 << 0;
+
+    // C0 can then pop across the outer boundary for either outer back color.
+    windows.right[2][0][0] = 1 << 0;
+    windows.right[2][0][1] = 1 << 0;
+
+    let ex = side_excursions(&prog, &windows, true, false);
+
+    assert_eq!(ex.ret_states(0, 0, 0) & (1 << 3), 0);
+    assert_ne!(ex.ret_states(1, 0, 0) & (1 << 3), 0);
+}
+
+#[test]
+#[expect(clippy::shadow_unrelated, clippy::iter_on_single_items)]
+fn test_halt_side_excursion_filter() {
+    // Fresh zero at a right frontier: after A0 moves right, B0 is a valid
+    // halting shape because the newly scanned cell is blank and the right
+    // side is still globally blank.
+    let prog = Prog::<2, 2>::from("1RB ...  ... ...");
+    let slots: Set<Slot> = [(1, 0)].into_iter().collect();
+    assert!(prog.halt_slots_side_excursion(slots).contains(&(1, 0)));
+
+    // Nonzero halt after a genuine one-sided return.  A0 writes 1 and moves
+    // right; B0 returns left into C, so C1 is a realizable halt slot.
+    let prog = Prog::<3, 2>::from("1RB ...  0LC ...  ... ...");
+    let slots: Set<Slot> = [(2, 1)].into_iter().collect();
+    assert!(prog.halt_slots_side_excursion(slots).contains(&(2, 1)));
+
+    // If the child side has no way to return across the parent boundary, the
+    // same nonzero halt slot has no last-departure witness.
+    let prog = Prog::<3, 2>::from("1RB ...  0RB ...  ... ...");
+    #[expect(clippy::shadow_unrelated)]
+    let slots: Set<Slot> = [(2, 1)].into_iter().collect();
+    assert!(prog.halt_slots_side_excursion(slots).is_empty());
+}
+
 /**************************************/
 
 use core::array::from_fn;
@@ -2165,6 +2307,335 @@ fn reachability<const S: usize>(adj: &Adj<S>) -> [[bool; S]; S] {
     }
 
     reach
+}
+
+/// Color-aware one-sided excursion summary with exact parent/back color.
+///
+/// `ret[back][st][co]` is a bitmask of states that can be entered by a
+/// balanced one-sided computation starting in exact `(st, co)` with immediate
+/// parent/back color `back` and finishing by moving back across that boundary.
+/// With `clean == true`, every matched pop writes 0, so all cells touched on
+/// that side are restored to blank recursively.
+///
+/// A return has a direct recursive form, so we do not need the old all-pairs
+/// `same` transitive closure.  If the first move pops, it returns immediately.
+/// If the first move pushes, the child must itself return; after that return we
+/// are back on the current cell in the returned state scanning exactly the
+/// color printed by the push, and continue from there.  Saturating those
+/// return-state masks computes the same grammar with far less work.
+struct SideExcursions<const S: usize, const C: usize> {
+    // Flattened [back][state][color]. Bit `tr` means a balanced return into
+    // state `tr` is possible.
+    ret: Vec<u64>,
+}
+
+impl<const S: usize, const C: usize> SideExcursions<S, C> {
+    const fn node(st: usize, co: usize) -> usize {
+        st * C + co
+    }
+
+    const fn decode(node: usize) -> (usize, usize) {
+        (node / C, node % C)
+    }
+
+    const fn ret_index(back: usize, st: usize, co: usize) -> usize {
+        (back * S + st) * C + co
+    }
+
+    fn ret_states(&self, back: usize, st: usize, co: usize) -> u64 {
+        self.ret[Self::ret_index(back, st, co)]
+    }
+
+    fn ret_states_from_mask(
+        &self,
+        back: usize,
+        st: usize,
+        mut colors: u64,
+    ) -> u64 {
+        let mut out = 0;
+        while colors != 0 {
+            let co = colors.trailing_zeros() as usize;
+            colors &= colors - 1;
+            out |= self.ret_states(back, st, co);
+        }
+        out
+    }
+
+    fn ret_from_mask_possible(
+        &self,
+        back: usize,
+        st: usize,
+        colors: u64,
+        tr: usize,
+    ) -> bool {
+        (self.ret_states_from_mask(back, st, colors) & (1_u64 << tr))
+            != 0
+    }
+}
+
+/// Exact possible color mask of the child-side neighbor when the source's
+/// parent/back neighbor is known.
+fn window_child_mask<const S: usize, const C: usize>(
+    state: usize,
+    scan: usize,
+    push: Shift,
+    back: usize,
+    possible: &WinPossible<S, C>,
+) -> u64 {
+    if push {
+        possible.right[state][scan][back]
+    } else {
+        possible.left[state][scan][back]
+    }
+}
+
+fn side_excursions<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+    push: Shift,
+    clean: bool,
+) -> SideExcursions<S, C> {
+    struct PushEq {
+        source: usize,
+        back: usize,
+        print: usize,
+    }
+
+    fn add_returns(
+        ret: &mut [u64],
+        q: &mut VecDeque<(usize, u64)>,
+        node: usize,
+        bits: u64,
+    ) {
+        let added = bits & !ret[node];
+        if added != 0 {
+            ret[node] |= added;
+            q.push_back((node, added));
+        }
+    }
+
+    let pop = !push;
+    let ret_len = C * S * C;
+    let mut ret = vec![0_u64; ret_len];
+    let mut trans = [[None; C]; S];
+
+    for ((st, co), &(print, shift, tr)) in prog.iter() {
+        trans[st as usize][co as usize] =
+            Some((print as usize, shift, tr as usize));
+    }
+
+    // For fixed `push`, both window tables have exactly the indexing we need:
+    // [state][scan][known back color] -> possible child colors.
+    let child_masks = if push { &windows.right } else { &windows.left };
+
+    let mut pushes = Vec::new();
+    let mut child_users = vec![Vec::<usize>::new(); ret_len];
+    let mut seeds = Vec::new();
+
+    for back in 0..C {
+        for st in 0..S {
+            for co in 0..C {
+                let child_colors = child_masks[st][co][back];
+                if child_colors == 0 {
+                    continue;
+                }
+
+                let Some((print, shift, tr)) = trans[st][co] else {
+                    continue;
+                };
+
+                let source =
+                    SideExcursions::<S, C>::ret_index(back, st, co);
+
+                if shift == pop {
+                    if !clean || print == 0 {
+                        seeds.push((source, 1_u64 << tr));
+                    }
+                    continue;
+                }
+
+                let eq = pushes.len();
+                pushes.push(PushEq {
+                    source,
+                    back,
+                    print,
+                });
+
+                // This push equation depends on the return relation of every
+                // child color allowed by the exact forward window.
+                let mut colors = child_colors;
+                while colors != 0 {
+                    let child_co = colors.trailing_zeros() as usize;
+                    colors &= colors - 1;
+                    let child = SideExcursions::<S, C>::ret_index(
+                        print, tr, child_co,
+                    );
+                    child_users[child].push(eq);
+                }
+            }
+        }
+    }
+
+    // Once child return state `r` becomes possible for a push equation, that
+    // equation depends on the continuation `(back, r, print)`.  These reverse
+    // dependencies are discovered lazily, so each return bit is propagated
+    // only to equations that can actually use it.
+    let mut continuation_users = vec![Vec::<usize>::new(); ret_len];
+    let mut child_returns = vec![0_u64; pushes.len()];
+    let mut q = VecDeque::new();
+
+    for (node, bits) in seeds {
+        add_returns(&mut ret, &mut q, node, bits);
+    }
+
+    while let Some((node, added_states)) = q.pop_front() {
+        // `node` is used as a nested child by these equations.  Newly returned
+        // states expose newly relevant same-level continuation nodes.
+        for &eq_i in &child_users[node] {
+            let fresh = added_states & !child_returns[eq_i];
+            if fresh == 0 {
+                continue;
+            }
+            child_returns[eq_i] |= fresh;
+
+            let eq = &pushes[eq_i];
+            let mut states = fresh;
+            while states != 0 {
+                let return_st = states.trailing_zeros() as usize;
+                states &= states - 1;
+
+                let continuation = SideExcursions::<S, C>::ret_index(
+                    eq.back, return_st, eq.print,
+                );
+                continuation_users[continuation].push(eq_i);
+
+                // The continuation may already have returns from earlier
+                // events; consume its full current value when registering.
+                let current = ret[continuation];
+                add_returns(&mut ret, &mut q, eq.source, current);
+            }
+        }
+
+        // `node` is a same-level continuation for these equations.  Every new
+        // outer return state immediately becomes a return of their sources.
+        for &eq_i in &continuation_users[node] {
+            let source = pushes[eq_i].source;
+            add_returns(&mut ret, &mut q, source, added_states);
+        }
+    }
+
+    SideExcursions { ret }
+}
+
+/// Sound over-approximation of reachable one-sided-blank configurations.
+///
+/// `blank_side == false` describes `0+ [color] ?`.
+/// `blank_side == true`  describes `? [color] 0+`.
+///
+/// The worklist keeps the blank side clean at abstract checkpoints, but may
+/// cross through dirty intermediate configurations via `clean` excursions.
+/// The unconstrained side may use arbitrary balanced excursions.
+fn halfblank_slots<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+    blank_side: Shift,
+    clean: &SideExcursions<S, C>,
+    away: &SideExcursions<S, C>,
+) -> [[bool; C]; S] {
+    let mut possible = [[false; C]; S];
+    let mut trans = [[None; C]; S];
+
+    for ((st, co), &(print, shift, tr)) in prog.iter() {
+        trans[st as usize][co as usize] =
+            Some((print as usize, shift, tr as usize));
+    }
+
+    let mut q = VecDeque::new();
+
+    #[expect(clippy::shadow_unrelated)]
+    let push = |st: usize,
+                co: usize,
+                possible: &mut [[bool; C]; S],
+                q: &mut VecDeque<usize>| {
+        let away_side = !blank_side;
+        if window_child_mask(st, co, away_side, 0, windows) != 0
+            && !possible[st][co]
+        {
+            possible[st][co] = true;
+            q.push_back(SideExcursions::<S, C>::node(st, co));
+        }
+    };
+
+    push(0, 0, &mut possible, &mut q);
+
+    while let Some(node) = q.pop_front() {
+        let (st, co) = SideExcursions::<S, C>::decode(node);
+
+        let Some((print, shift, tr)) = trans[st][co] else {
+            continue;
+        };
+
+        let away_side = !blank_side;
+
+        if shift == away_side {
+            // A complete excursion into the unconstrained side returns to this
+            // same boundary without requiring the printed parent cell to be
+            // blank.  The source's blank-side/back neighbor is exactly 0; the
+            // child's back color is exactly `print`.
+            let child_colors =
+                window_child_mask(st, co, shift, 0, windows);
+            let mut return_states =
+                away.ret_states_from_mask(print, tr, child_colors);
+            while return_states != 0 {
+                let return_st = return_states.trailing_zeros() as usize;
+                return_states &= return_states - 1;
+                push(return_st, print, &mut possible, &mut q);
+            }
+        }
+
+        if shift == blank_side {
+            // The source's opposite neighbor is on the unconstrained side, so
+            // it is not fixed.  Union over that back color only for deciding
+            // whether the exact blank child color 0 can occur.
+            let child_colors =
+                window_neighbor_mask(st, co, shift, windows);
+            // The blank-side neighbor is exactly zero.  If zero is not even a
+            // possible neighbor in the forward window abstraction, this
+            // halfblank checkpoint cannot take this step.
+            if child_colors & 1 == 0 {
+                continue;
+            }
+
+            // Move into the blank side.  The newly scanned cell is exactly 0;
+            // the old head joins the unconstrained side, so its print is free.
+            push(tr, 0, &mut possible, &mut q);
+
+            // Or make a complete clean excursion into that side and return to
+            // the same boundary.  The child starts in exact color 0.
+            // Once we enter the child, its parent/back cell contains the
+            // exact color printed by the departure transition.
+            let mut return_states = clean.ret_states(print, tr, 0);
+            while return_states != 0 {
+                let return_st = return_states.trailing_zeros() as usize;
+                return_states &= return_states - 1;
+                push(return_st, print, &mut possible, &mut q);
+            }
+        } else if print == 0 {
+            // Move away from the blank side.  The old head cell joins that
+            // side and must be left as 0.  Since the blank-side neighbor of
+            // the source is exactly 0, condition the forward window on that
+            // exact parent/back color instead of unioning over all neighbors.
+            let mut colors =
+                window_child_mask(st, co, shift, 0, windows);
+            while colors != 0 {
+                let out_co = colors.trailing_zeros() as usize;
+                colors &= colors - 1;
+                push(tr, out_co, &mut possible, &mut q);
+            }
+        }
+    }
+
+    possible
 }
 
 fn scc_from_reach<const S: usize>(
@@ -2596,6 +3067,246 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                     })
             })
             .collect()
+    }
+
+    /// Strengthen candidate halt slots with the color-aware one-sided
+    /// excursion relation.
+    ///
+    /// For a nonblank scanned color, take the last departure from the eventual
+    /// halting cell.  That transition must write the halting color and move
+    /// into one side; until the final return, the head stays strictly on that
+    /// side, so an ordinary balanced excursion from the entered child state
+    /// must be able to return into the halting state.
+    ///
+    /// A halt scanning 0 has one additional possibility: the cell may be a
+    /// first visit to a fresh blank frontier.  Such a configuration necessarily
+    /// has one whole side blank, which is exactly what the halfblank abstraction
+    /// records.  Previously visited zero cells are covered by the same
+    /// last-departure rule, with a transition that writes 0.
+    fn halt_slots_side_excursion(&self, slots: Set<Slot>) -> Set<Slot> {
+        if slots.is_empty() {
+            return slots;
+        }
+
+        let (forbid_left, forbid_right) = self.shift_side_forbidden();
+        let windows =
+            self.win_possible_from_blank(&forbid_left, &forbid_right);
+        let left_any = side_excursions(self, &windows, false, false);
+        let right_any = side_excursions(self, &windows, true, false);
+
+        let halfblank =
+            slots.iter().any(|&(_, color)| color == 0).then(|| {
+                let left_clean =
+                    side_excursions(self, &windows, false, true);
+                let right_clean =
+                    side_excursions(self, &windows, true, true);
+                let left_half = halfblank_slots(
+                    self,
+                    &windows,
+                    false,
+                    &left_clean,
+                    &right_any,
+                );
+                let right_half = halfblank_slots(
+                    self,
+                    &windows,
+                    true,
+                    &right_clean,
+                    &left_any,
+                );
+                (left_half, right_half)
+            });
+
+        slots
+            .into_iter()
+            .filter(|&(state, color)| {
+                let h = state as usize;
+                let co = color as usize;
+
+                if !windows.any[h][co] {
+                    return false;
+                }
+
+                if color == 0
+                    && let Some((left_half, right_half)) = &halfblank
+                    && (left_half[h][0] || right_half[h][0])
+                {
+                    return true;
+                }
+
+                self.iter().any(
+                    |((st, read), &(print, shift, child_st))| {
+                        if print != color {
+                            return false;
+                        }
+
+                        let st = st as usize;
+                        let read = read as usize;
+                        let child_st = child_st as usize;
+                        let child_colors = window_neighbor_mask(
+                            st, read, shift, &windows,
+                        );
+                        let excursions =
+                            if shift { &right_any } else { &left_any };
+
+                        excursions.ret_from_mask_possible(
+                            co,
+                            child_st,
+                            child_colors,
+                            h,
+                        )
+                    },
+                )
+            })
+            .collect()
+    }
+
+    /// Static target-shape filter for `0+ [color] 0+` blank predecessors.
+    ///
+    /// `halfblank_slots` tracks the stronger necessary condition that one
+    /// whole side is blank in a reachable `(state, scanned color)` checkpoint.
+    /// Every exact blank target must occur in both the left-blank and
+    /// right-blank abstractions.
+    ///
+    /// For a nonblank scanned color, also take the last departure from that
+    /// target cell.  The untouched opposite side must already be blank at the
+    /// departure, replacing the old weak `control state is reachable` gate.
+    /// The departed side must then admit a clean return to the target state.
+    fn blank_slots_side_clean(&self) -> Set<Slot> {
+        let (forbid_left, forbid_right) = self.shift_side_forbidden();
+        let windows =
+            self.win_possible_from_blank(&forbid_left, &forbid_right);
+        let left_clean = side_excursions(self, &windows, false, true);
+        let right_clean = side_excursions(self, &windows, true, true);
+        let left_any = side_excursions(self, &windows, false, false);
+        let right_any = side_excursions(self, &windows, true, false);
+
+        // false = left side blank:  0+ [color] ?
+        // true  = right side blank: ? [color] 0+
+        let left_half = halfblank_slots(
+            self,
+            &windows,
+            false,
+            &left_clean,
+            &right_any,
+        );
+        let right_half = halfblank_slots(
+            self,
+            &windows,
+            true,
+            &right_clean,
+            &left_any,
+        );
+
+        self.erase_slots()
+            .into_iter()
+            .filter(|&(state, color)| {
+                let h = state as usize;
+                let co = color as usize;
+
+                // An exact `0+ [color] 0+` occurrence witnesses both
+                // one-sided abstractions on the same concrete run.
+                if !left_half[h][co] || !right_half[h][co] {
+                    return false;
+                }
+
+                // A scanned 0 may be a first visit to a fresh blank cell, so
+                // there need not be an earlier departure from this cell.
+                if color == 0 {
+                    return true;
+                }
+
+                // For a nonzero scanned color, the cell was written earlier.
+                // At its last departure before the target, the opposite side
+                // is never touched again and therefore must already be blank.
+                for ((st, read), &(print, shift, child_st)) in
+                    self.iter()
+                {
+                    let st = st as usize;
+                    let read = read as usize;
+                    let child_st = child_st as usize;
+                    if print != color {
+                        continue;
+                    }
+
+                    let (opposite_half, clean) = if shift {
+                        // Depart right: left side remains untouched.
+                        (&left_half, &right_clean)
+                    } else {
+                        // Depart left: right side remains untouched.
+                        (&right_half, &left_clean)
+                    };
+
+                    if !opposite_half[st][read] {
+                        continue;
+                    }
+
+                    let child_colors =
+                        window_child_mask(st, read, shift, 0, &windows);
+                    if clean.ret_from_mask_possible(
+                        co,
+                        child_st,
+                        child_colors,
+                        h,
+                    ) {
+                        return true;
+                    }
+                }
+
+                false
+            })
+            .collect()
+    }
+
+    /// Filter one-sided zero targets by reachable halfblank shape:
+    ///
+    ///  ? [0] 0+  (side = R)
+    ///  0+ [0] ?  (side = L)
+    fn shifts_side_clean(
+        &self,
+        shifts: Set<(State, Shift)>,
+    ) -> Set<(State, Shift)> {
+        let (forbid_left, forbid_right) = self.shift_side_forbidden();
+        let windows =
+            self.win_possible_from_blank(&forbid_left, &forbid_right);
+        let left_clean = side_excursions(self, &windows, false, true);
+        let right_clean = side_excursions(self, &windows, true, true);
+        let left_any = side_excursions(self, &windows, false, false);
+        let right_any = side_excursions(self, &windows, true, false);
+        let left_half = halfblank_slots(
+            self,
+            &windows,
+            false,
+            &left_clean,
+            &right_any,
+        );
+        let right_half = halfblank_slots(
+            self,
+            &windows,
+            true,
+            &right_clean,
+            &left_any,
+        );
+
+        shifts
+            .into_iter()
+            .filter(|&(state, side)| {
+                let h = state as usize;
+                if side {
+                    right_half[h][0]
+                } else {
+                    left_half[h][0]
+                }
+            })
+            .collect()
+    }
+
+    fn spinout_shifts_side_clean(&self) -> Set<(State, Shift)> {
+        self.shifts_side_clean(self.zr_shifts())
+    }
+
+    fn zloop_shifts_side_clean(&self) -> Set<(State, Shift)> {
+        self.shifts_side_clean(self.blank_loops())
     }
 
     fn cant_blank_by_color_graph(&self) -> bool {
