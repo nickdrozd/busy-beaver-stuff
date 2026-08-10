@@ -167,10 +167,14 @@ macro_rules! assert_holdouts {
         assert_eq!(
             $result.len(),
             $leaves,
-            "{}:{}, {result:?}",
+            "{}:{}{}",
             $instrs,
             $goal,
-            result = $result,
+            if $result.len() < 50 {
+                format!(", {result:?}", result = $result)
+            } else {
+                String::new()
+            },
         );
     }};
 
