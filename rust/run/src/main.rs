@@ -282,35 +282,27 @@ fn test_deciders() {
 
 /**************************************/
 
+const BKW: usize = 256;
+
 fn _4_2_3(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(50).is_refuted()
-        || prog.prover_settled(INF_MIN)
+    prog.bkw_cant_twostep(BKW).is_refuted()
 }
 
 fn _2_4_3(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(30).is_refuted()
-        || prog.prover_settled(INF_MIN)
+    prog.bkw_cant_twostep(BKW).is_refuted()
 }
-
-fn test_twostep() {
-    println!("twostep");
-
-    assert_holdouts![
-        (4, 2) => [
-            3 => (_4_2_3, 99, (19, 2_134_923)),
-        ],
-        (2, 4) => [
-            3 => (_2_4_3, TREE_LIM, (310, 1_698_850)),
-        ],
-    ];
-}
-
-/**************************************/
-
-const BKW: usize = 256;
 
 fn test_bkw() {
     println!("bkw");
+
+    assert_holdouts![
+        (4, 2) => [
+            3 => (_4_2_3, 99, (502, 2_134_923)),
+        ],
+        (2, 4) => [
+            3 => (_2_4_3, TREE_LIM, (2800, 1_698_850)),
+        ],
+    ];
 
     assert_bkw![
         4 => [
@@ -526,20 +518,16 @@ fn test_9_instr() {
 
 /**************************************/
 
-const CURR: &[fn()] = &[test_deciders, test_quasihalt];
-
-const FAST: &[fn()] = &[test_bkw, test_twostep];
+const FAST: &[fn()] = &[test_bkw, test_deciders, test_quasihalt];
 
 const SLOW: &[fn()] = &[test_deciders_slow, test_9_instr];
 
 fn main() {
-    CURR.par_iter().for_each(|f| f());
+    FAST.par_iter().for_each(|f| f());
 
     if !std::env::args().any(|x| x == "--all") {
         return;
     }
-
-    FAST.par_iter().for_each(|f| f());
 
     test_holdouts();
 
