@@ -41,7 +41,14 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let slots = self.halt_slots_disp_side(&idx);
         let slots = self.halt_slots_side_excursion(slots);
 
-        cant_reach(self, steps, slots, Some(entrypoints), halt_configs)
+        cant_reach(
+            self,
+            steps,
+            slots,
+            Some(entrypoints),
+            halt_configs,
+            false,
+        )
     }
 
     pub fn bkw_cant_blank(&self, steps: Steps) -> BackwardResult {
@@ -55,6 +62,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             self.blank_slots_side_clean(),
             None,
             erase_configs,
+            false,
         )
     }
 
@@ -65,6 +73,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             self.spinout_shifts_side_clean(),
             None,
             zr_configs,
+            false,
         )
     }
 
@@ -75,6 +84,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             self.zloop_shifts_side_clean(),
             None,
             zr_configs,
+            false,
         )
     }
 
@@ -88,6 +98,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 .collect(),
             None,
             twostep_configs,
+            true,
         )
     }
 }
@@ -148,6 +159,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     mut slots: Set<(State, T)>,
     entrypoints: Option<Entrypoints>,
     get_configs: impl Fn(&Set<(State, T)>) -> Configs,
+    use_exact_seen: bool,
 ) -> BackwardResult {
     if slots.is_empty() {
         return Refuted(0);
@@ -250,12 +262,16 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut blanks = get_blanks(&configs);
 
-    let mut antichains = Antichains::default();
+    // Optional exact historical repeat filter, enabled only for `twostep`.
+    // Tape::hash() deliberately omits head, so include it in the bucket key;
+    // exact Tape equality resolves collisions without relying on hash uniqueness.
+    let mut exact_seen: Option<Dict<(State, Pos, u64), Vec<Tape>>> =
+        use_exact_seen.then(Dict::new);
 
     // Periodic branch closers.  These are separate histories over different
     // streams, but they use the same periodic-growth certificate: the linear
     // closer observes one-config snapshots, while the frontier closer observes
-    // the whole live frontier after antichain filtering.
+    // the whole live frontier.
     let mut periodic_history = PeriodicHistory::default();
     let mut frontier_periodic_history = PeriodicHistory::default();
     let mut coverage_periodic_history =
@@ -318,14 +334,31 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
                 periodic_history.clear();
             }
 
-            configs = stepped
-                .into_iter()
-                .filter(|config| antichains.insert(config))
-                .collect();
+            if let Some(exact_seen) = &mut exact_seen {
+                let mut kept = Configs::with_capacity(stepped.len());
+                for config in stepped {
+                    let key = (
+                        config.state,
+                        config.tape.head,
+                        config.tape.hash(),
+                    );
+                    let bucket = exact_seen.entry(key).or_default();
+
+                    if bucket.contains(&config.tape) {
+                        continue;
+                    }
+
+                    bucket.push(config.tape.clone());
+                    kept.push(config);
+                }
+                configs = kept;
+            } else {
+                configs = stepped;
+            }
         }
 
         // `configs` is the live frontier that will be printed/processed at
-        // backward depth `step + 1`, after antichain filtering.
+        // backward depth `step + 1`.
         //
         // Both periodic closers consume the same canonical FastCfg snapshot.
         // Build and sort it once, then share the immutable allocation between
@@ -1306,16 +1339,6 @@ impl BlockCount {
             Self::AtLeast(count) => Self::AtLeast(count - 1),
         };
     }
-
-    const fn subsumes(self, other: Self) -> bool {
-        match (self, other) {
-            (Self::Exact(a), Self::Exact(b)) => a == b,
-            (Self::Exact(_), Self::AtLeast(_)) => false,
-            (Self::AtLeast(a), Self::Exact(b) | Self::AtLeast(b)) => {
-                a <= b
-            },
-        }
-    }
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -1950,13 +1973,6 @@ impl Tape {
         (!left_forced_blank || force_blank(&mut self.lspan))
             && (!right_forced_blank || force_blank(&mut self.rspan))
     }
-
-    fn subsumes(&self, other: &Self) -> bool {
-        self.scan == other.scan
-            && self.head == other.head
-            && self.lspan.subsumes(&other.lspan)
-            && self.rspan.subsumes(&other.rspan)
-    }
 }
 
 /**************************************/
@@ -2264,21 +2280,6 @@ fn test_lower_bounded_indefinite_runs() {
     assert!(split.pull_needs_count_one_split(false));
     split.rspan.set_head_to_one();
     split.assert("0+ [0] 1 ?");
-}
-
-#[test]
-fn test_lower_bounded_subsumption() {
-    let broad: Tape = "? [0] 1^3.. ?".into();
-    let exact_large: Tape = "? [0] 1^5 ?".into();
-    let narrower: Tape = "? [0] 1^4.. ?".into();
-    let too_small: Tape = "? [0] 1^2 ?".into();
-    let too_broad: Tape = "? [0] 1^2.. ?".into();
-
-    assert!(broad.subsumes(&exact_large));
-    assert!(broad.subsumes(&narrower));
-    assert!(!broad.subsumes(&too_small));
-    assert!(!broad.subsumes(&too_broad));
-    assert!(!exact_large.subsumes(&broad));
 }
 
 #[test]
@@ -3723,44 +3724,6 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
     out
 }
 
-#[expect(clippy::multiple_inherent_impl)]
-impl Span {
-    /// Compare two block-spans from the head outward.
-    ///
-    /// Exact counts match exactly. `AtLeast(a)` subsumes `Exact(b)` and
-    /// `AtLeast(b)` precisely when `a <= b`. If self runs out of blocks, it
-    /// only subsumes a longer span when its end is Unknown.
-    fn subsumes(&self, other: &Self) -> bool {
-        // These cheap length/end checks previously lived in
-        // `maybe_subsumes`, causing the leading runs to be examined twice.
-        if self.end == TapeEnd::Blanks && other.end == TapeEnd::Unknown
-        {
-            return false;
-        }
-
-        let self_len = self.span.len();
-        let other_len = other.span.len();
-
-        if self_len > other_len {
-            return false;
-        }
-        if self_len < other_len && self.end == TapeEnd::Blanks {
-            return false;
-        }
-
-        for (a, b) in self.span.iter().zip(other.span.iter()) {
-            if a.color != b.color {
-                return false;
-            }
-            if !a.count.subsumes(b.count) {
-                return false;
-            }
-        }
-
-        true
-    }
-}
-
 /**************************************/
 
 const PERIODIC_MIN_PERIOD: usize = 2;
@@ -3808,7 +3771,7 @@ impl PeriodicHistory {
     const KEEP: usize = PERIODIC_MAX_NEED * 2 + 6;
 
     // Keep this conservative.  If a frontier is huge, the closer should not
-    // become the bottleneck; ordinary antichain/search limits can handle it.
+    // become the bottleneck; ordinary search limits can handle it.
     // Raising this is safe but may cost time on very wide halt cones.
     const MAX_FRONTIER_FOR_CLOSER: usize = 20_000;
 
@@ -4749,191 +4712,6 @@ fn growth_sigs_between(ca: &FastCfg, cb: &FastCfg) -> Vec<BranchSig> {
     out.dedup();
     out
 }
-
-/**************************************/
-
-struct AntichainEntry {
-    hash: u64,
-    tape: Tape,
-}
-
-/// Exact near-head class for one span. Subsumption can only hold when the
-/// first explicit runs are compatible, except that an empty unknown span is a
-/// wildcard prefix. Lower-bounded runs share a color bucket because their
-/// minimums are ordered and are checked by exact subsumption afterwards.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-enum SpanBucketKey {
-    EmptyUnknown,
-    EmptyBlanks,
-    RunExact(Color, Count),
-    RunAtLeast(Color),
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct AntichainBucketKey {
-    left: SpanBucketKey,
-    right: SpanBucketKey,
-}
-
-fn span_bucket_key(span: &Span) -> SpanBucketKey {
-    span.span.first().map_or_else(
-        || match span.end {
-            TapeEnd::Unknown => SpanBucketKey::EmptyUnknown,
-            TapeEnd::Blanks => SpanBucketKey::EmptyBlanks,
-        },
-        |block| match block.count {
-            BlockCount::Exact(count) => {
-                SpanBucketKey::RunExact(block.color, count)
-            },
-            BlockCount::AtLeast(_) => {
-                SpanBucketKey::RunAtLeast(block.color)
-            },
-        },
-    )
-}
-
-fn antichain_bucket_key(tape: &Tape) -> AntichainBucketKey {
-    AntichainBucketKey {
-        left: span_bucket_key(&tape.lspan),
-        right: span_bucket_key(&tape.rspan),
-    }
-}
-
-/// Fill the bucket classes whose members may subsume `span`.
-///
-/// - Empty unknown is always a candidate.
-/// - Empty blank covers only another empty blank span.
-/// - Any nonempty run may be covered by a lower-bounded run of the same color.
-/// - An exact run may additionally be covered by the identical exact bucket.
-fn covering_span_bucket_keys(
-    span: &Span,
-) -> ([SpanBucketKey; 3], usize) {
-    let mut keys = [SpanBucketKey::EmptyUnknown; 3];
-    let mut len = 1;
-
-    match span.span.first() {
-        None if span.end == TapeEnd::Blanks => {
-            keys[len] = SpanBucketKey::EmptyBlanks;
-            len += 1;
-        },
-        Some(block) => {
-            keys[len] = SpanBucketKey::RunAtLeast(block.color);
-            len += 1;
-
-            if let BlockCount::Exact(count) = block.count {
-                keys[len] = SpanBucketKey::RunExact(block.color, count);
-                len += 1;
-            }
-        },
-        None => {},
-    }
-
-    (keys, len)
-}
-
-/// Cheap necessary condition for `candidate` to subsume a member of `bucket`.
-/// Exact span comparison is still performed afterwards.
-fn span_can_subsume_bucket(
-    candidate: &Span,
-    bucket: SpanBucketKey,
-) -> bool {
-    candidate.span.first().map_or_else(
-        || match candidate.end {
-            TapeEnd::Unknown => true,
-            TapeEnd::Blanks => bucket == SpanBucketKey::EmptyBlanks,
-        },
-        |block| match block.count {
-            BlockCount::AtLeast(_) => matches!(
-                bucket,
-                SpanBucketKey::RunExact(color, _)
-                    | SpanBucketKey::RunAtLeast(color)
-                    if color == block.color
-            ),
-            BlockCount::Exact(count) => {
-                bucket == SpanBucketKey::RunExact(block.color, count)
-            },
-        },
-    )
-}
-
-#[derive(Default)]
-struct Antichain(Dict<AntichainBucketKey, Vec<AntichainEntry>>);
-
-impl Antichain {
-    fn insert(&mut self, tape: &Tape) -> bool {
-        let hash = tape.hash();
-
-        // An existing tape that covers the candidate must lie in one of at
-        // most 3 x 3 exact near-head buckets.  This avoids scanning unrelated
-        // first colors/counts in a large (state, scan, head) antichain.
-        let (left_keys, left_len) =
-            covering_span_bucket_keys(&tape.lspan);
-        let (right_keys, right_len) =
-            covering_span_bucket_keys(&tape.rspan);
-
-        for &left in &left_keys[..left_len] {
-            for &right in &right_keys[..right_len] {
-                let key = AntichainBucketKey { left, right };
-                let Some(entries) = self.0.get(&key) else {
-                    continue;
-                };
-
-                for old in entries {
-                    if old.hash == hash && old.tape == *tape {
-                        return false;
-                    }
-                    if old.tape.subsumes(tape) {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        // Remove entries covered by the candidate.  The bucket predicate is a
-        // necessary condition, so exact subsumption remains the authority.
-        // There are at most (colors/count classes + 2)^2 buckets, usually far
-        // fewer than tapes; scanning bucket headers is much cheaper than
-        // comparing every tape structurally.
-        self.0.retain(|key, entries| {
-            if !span_can_subsume_bucket(&tape.lspan, key.left)
-                || !span_can_subsume_bucket(&tape.rspan, key.right)
-            {
-                return true;
-            }
-
-            let mut index = 0;
-            while index < entries.len() {
-                if tape.subsumes(&entries[index].tape) {
-                    entries.swap_remove(index);
-                } else {
-                    index += 1;
-                }
-            }
-
-            !entries.is_empty()
-        });
-
-        let key = antichain_bucket_key(tape);
-        self.0.entry(key).or_default().push(AntichainEntry {
-            hash,
-            tape: tape.clone(),
-        });
-        true
-    }
-}
-
-#[derive(Default)]
-struct Antichains(Dict<(State, Color, Pos), Antichain>);
-
-impl Antichains {
-    fn insert(&mut self, cfg: &Config) -> bool {
-        let key = (cfg.state, cfg.tape.scan, cfg.tape.head);
-
-        self.0.entry(key).or_default().insert(&cfg.tape)
-    }
-}
-
-/**************************************/
 
 #[expect(clippy::multiple_inherent_impl)]
 impl<const s: usize, const c: usize> Prog<s, c> {
