@@ -3917,7 +3917,7 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
     "bkw": {
         "halt": 119,
         "blank": 33,
-        "spinout": 101,
+        "spinout": 100,
         "twostep": 0,
         "zloop": 2,
     },
@@ -4204,7 +4204,6 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 3RA 3RB 3LA  1LB 2LA 0RA 2LB",
             "1RB 3RB 1LA 0LB  2LB 2RA 3RB 0LB",
             "1RB 3RB 1LA 2LA  2LB 3RA 2RA 0LB",
-            "1RB 3RB 1LA 2LA  2LB 3RA 2RA 3LB",
             "1RB 3RB 1RA 0LA  1LB 2RB 2LA 0LB",
             "1RB 3RB 2LA 1LA  1LB 2RB 3RA 3LB",
             "1RB 3RB 3RA 2RA  1LB 2LA 1RB 0LB",

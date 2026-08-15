@@ -577,6 +577,15 @@ fn get_indef(
     let mut tape = config.tape.clone();
     tape.push_indef(push);
 
+    // Extending an already-known blank tail with an indefinite run of 0s is
+    // canonicalized away by `push_indef`. In that case this branch is exactly
+    // the ordinary non-spinout branch: same tape and, because the spinout edge
+    // itself is excluded below, the same eligible predecessor instructions.
+    // Returning it again only duplicates the whole subsequent frontier.
+    if tape == config.tape {
+        return None;
+    }
+
     // Avoid cloning `diff` and constructing a temporary combined entry list.
     // Preserve the original order: different-state entries first, followed by
     // eligible same-state entries.
@@ -2568,6 +2577,18 @@ fn test_spinout() {
 
     assert!(!tape.is_spinout(false, 1));
     assert!(tape.is_spinout(true, 1));
+}
+
+#[test]
+fn test_get_indef_skips_noop_blank_extension() {
+    let config = Config::new(1, Tape::init_l_spinout());
+    let diff = Entries::new();
+    let same = Entries::new();
+
+    // `init_l_spinout` is `0+ [0] ?`. Pushing an indefinite 0 run onto the
+    // left `0+` tail changes nothing, so there is no distinct indefinite
+    // branch to add.
+    assert!(get_indef(false, &config, &diff, &same).is_none());
 }
 
 #[test]
