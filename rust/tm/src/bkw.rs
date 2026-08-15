@@ -129,16 +129,73 @@ struct WinPossible<const S: usize, const C: usize> {
 const LEFT_SIDE: usize = 0;
 const RIGHT_SIDE: usize = 1;
 
-/// State-aware over-approximation of every color and adjacent color pair that
-/// can occur on either whole side of the head in a run from the blank tape.
+/// Whole-side color/pair summaries conditioned on an exact reachable local
+/// window `(left, scan, right)` as well as the control state.
 ///
-/// Pairs are oriented from the head toward the tape end.  Thus
-/// `pairs[state][side][near]` is a bitmask of possible `far` colors directly
-/// adjacent to `near` somewhere on that side.  The infinite blank tail is part
-/// of each side, so reachable states always admit color 0 and pair (0, 0).
+/// Pairs are oriented from the head toward the tape end.  A summary therefore
+/// retains correlations that the state-and-scan-only version joined away:
+/// two configurations with the same `(state, scan)` but different immediate
+/// neighbors no longer automatically share all whole-side colors and pairs.
+///
+/// Storage is flattened onto the heap because the full `S * C^3` family of
+/// summaries can otherwise become a large stack value for bigger alphabets.
+#[derive(Clone, Copy)]
+struct WindowSideSummary<const C: usize> {
+    reachable: bool,
+    colors: [u64; 2],
+    pairs: [[u64; C]; 2],
+}
+
+impl<const C: usize> WindowSideSummary<C> {
+    const fn empty() -> Self {
+        Self {
+            reachable: false,
+            colors: [0; 2],
+            pairs: [[0; C]; 2],
+        }
+    }
+}
+
 struct SidePossible<const S: usize, const C: usize> {
-    colors: [[u64; 2]; S],
-    pairs: [[[u64; C]; 2]; S],
+    windows: Vec<WindowSideSummary<C>>,
+}
+
+impl<const S: usize, const C: usize> SidePossible<S, C> {
+    const fn index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    fn new() -> Self {
+        Self {
+            windows: vec![WindowSideSummary::empty(); S * C * C * C],
+        }
+    }
+
+    fn window(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> &WindowSideSummary<C> {
+        &self.windows[Self::index(st, scan, left, right)]
+    }
+
+    fn window_mut(
+        &mut self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> &mut WindowSideSummary<C> {
+        let index = Self::index(st, scan, left, right);
+        &mut self.windows[index]
+    }
 }
 
 /// Bit `p` of `possible[state]` is set when the transition graph admits a
@@ -1006,106 +1063,188 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         possible
     }
 
-    /// Compute a sound state-aware over-approximation of all colors and
-    /// adjacent pairs that may occur anywhere on each side of the head.
+    /// Compute a sound over-approximation of whole-side colors and adjacent
+    /// pairs for each exact local window `(left, scan, right)`.
     ///
-    /// The fixed point is seeded by the two infinite blank sides.  On an
-    /// R-move the printed color is prepended to the left side, creating the
-    /// pair `(print, old-left-neighbor)`; the right side becomes a suffix of
-    /// its former value, so propagating its old summary is conservative.
-    /// L-moves are symmetric.  Summaries are joined by state, deliberately
-    /// forgetting correlations with the scanned color.
+    /// The fixed point starts at the true blank window `(A, 0, 0, 0)`.  For a
+    /// reachable source window, the summary itself over-approximates the color
+    /// immediately beyond each known neighbor: if the right neighbor is `r`,
+    /// `pairs[RIGHT][r]` contains every color that may follow it.  On an
+    /// R-move we intersect that mask with the already-sound target
+    /// `WinPossible` mask and propagate separately to each resulting exact
+    /// target window `(print, r, new_right)`.  L-moves are symmetric.
+    ///
+    /// This retains local-window/whole-side correlation without increasing the
+    /// forward window radius.  Copying the complete source side summaries is
+    /// conservative (the moved-over neighbor may remain in the summary), while
+    /// the newly pushed boundary pair is exact for the source window.
     fn side_possible_from_blank(
         &self,
         win_possible: &WinPossible<s, c>,
     ) -> SidePossible<s, c> {
         assert!(c <= 64, "side bitmasks support at most 64 colors");
 
-        let mut possible = SidePossible {
-            colors: [[0; 2]; s],
-            pairs: [[[0; c]; 2]; s],
-        };
+        let mut possible = SidePossible::new();
 
         if s == 0 || c == 0 {
             return possible;
         }
 
-        for side in [LEFT_SIDE, RIGHT_SIDE] {
-            possible.colors[0][side] = 1;
-            possible.pairs[0][side][0] = 1;
+        {
+            let initial = possible.window_mut(0, 0, 0, 0);
+            initial.reachable = true;
+            for side in [LEFT_SIDE, RIGHT_SIDE] {
+                initial.colors[side] = 1;
+                initial.pairs[side][0] = 1;
+            }
         }
 
-        loop {
+        #[expect(clippy::useless_let_if_seq)]
+        fn merge<const C: usize>(
+            target: &mut WindowSideSummary<C>,
+            source: WindowSideSummary<C>,
+            push_side: usize,
+            print: usize,
+            old_neighbor: usize,
+            target_left: usize,
+            target_right: usize,
+        ) -> bool {
             let mut changed = false;
 
-            for ((state, read), &(print, shift, next_state)) in
-                self.iter()
-            {
-                let st = state as usize;
-                let sc = read as usize;
-                let pr = print as usize;
-                let ns = next_state as usize;
-
-                if st >= s
-                    || sc >= c
-                    || pr >= c
-                    || ns >= s
-                    || !win_possible.any[st][sc]
-                {
-                    continue;
-                }
-
-                // Moving onto a side removes its nearest cell, while moving
-                // away from the other side prepends one cell.  In either case
-                // all colors/pairs surviving afterwards already occurred in
-                // the source side, so copying both source summaries is safe.
-                for side in [LEFT_SIDE, RIGHT_SIDE] {
-                    let source_colors = possible.colors[st][side];
-                    let old_colors = possible.colors[ns][side];
-                    possible.colors[ns][side] =
-                        old_colors | source_colors;
-                    changed |= possible.colors[ns][side] != old_colors;
-
-                    for near in 0..c {
-                        let source_pairs =
-                            possible.pairs[st][side][near];
-                        let old_pairs = possible.pairs[ns][side][near];
-                        possible.pairs[ns][side][near] =
-                            old_pairs | source_pairs;
-                        changed |=
-                            possible.pairs[ns][side][near] != old_pairs;
-                    }
-                }
-
-                #[expect(clippy::branches_sharing_code)]
-                let (push_side, neighbor_mask) = if shift {
-                    // R: printed cell becomes the new immediate left neighbor.
-                    let mut mask = 0;
-                    for right in 0..c {
-                        mask |= win_possible.left[st][sc][right];
-                    }
-                    (LEFT_SIDE, mask)
-                } else {
-                    // L: printed cell becomes the new immediate right neighbor.
-                    let mut mask = 0;
-                    for left in 0..c {
-                        mask |= win_possible.right[st][sc][left];
-                    }
-                    (RIGHT_SIDE, mask)
-                };
-
-                let old_colors = possible.colors[ns][push_side];
-                possible.colors[ns][push_side] |= 1_u64 << pr;
-                changed |= possible.colors[ns][push_side] != old_colors;
-
-                let old_pairs = possible.pairs[ns][push_side][pr];
-                possible.pairs[ns][push_side][pr] |= neighbor_mask;
-                changed |=
-                    possible.pairs[ns][push_side][pr] != old_pairs;
+            if !target.reachable {
+                target.reachable = true;
+                changed = true;
             }
 
-            if !changed {
-                break;
+            for side in [LEFT_SIDE, RIGHT_SIDE] {
+                let old_colors = target.colors[side];
+                target.colors[side] |= source.colors[side];
+                changed |= target.colors[side] != old_colors;
+
+                for near in 0..C {
+                    let old_pairs = target.pairs[side][near];
+                    target.pairs[side][near] |=
+                        source.pairs[side][near];
+                    changed |= target.pairs[side][near] != old_pairs;
+                }
+            }
+
+            // Both exact target neighbors must occur on their respective
+            // sides.  Usually these bits are already inherited, but setting
+            // them explicitly keeps the representation self-contained.
+            let old_left_colors = target.colors[LEFT_SIDE];
+            target.colors[LEFT_SIDE] |= 1_u64 << target_left;
+            changed |= target.colors[LEFT_SIDE] != old_left_colors;
+
+            let old_right_colors = target.colors[RIGHT_SIDE];
+            target.colors[RIGHT_SIDE] |= 1_u64 << target_right;
+            changed |= target.colors[RIGHT_SIDE] != old_right_colors;
+
+            let old_colors = target.colors[push_side];
+            target.colors[push_side] |= 1_u64 << print;
+            changed |= target.colors[push_side] != old_colors;
+
+            let old_pairs = target.pairs[push_side][print];
+            target.pairs[push_side][print] |= 1_u64 << old_neighbor;
+            changed |= target.pairs[push_side][print] != old_pairs;
+
+            changed
+        }
+
+        let mut trans = [[None; c]; s];
+        for ((state, read), &(print, shift, next_state)) in self.iter()
+        {
+            let st = state as usize;
+            let sc = read as usize;
+            let pr = print as usize;
+            let ns = next_state as usize;
+            if st < s && sc < c && pr < c && ns < s {
+                trans[st][sc] = Some((pr, shift, ns));
+            }
+        }
+
+        // Worklist fixed point: only revisit an exact local window when its
+        // whole-side summary actually gains information. The previous
+        // implementation rescanned every transition and every C^2 source
+        // window after any merge anywhere in the lattice.
+        let initial_index = SidePossible::<s, c>::index(0, 0, 0, 0);
+        let mut queued = vec![false; possible.windows.len()];
+        let mut q = VecDeque::new();
+        queued[initial_index] = true;
+        q.push_back((0_usize, 0_usize, 0_usize, 0_usize));
+
+        while let Some((st, sc, left, right)) = q.pop_front() {
+            let index =
+                SidePossible::<s, c>::index(st, sc, left, right);
+            queued[index] = false;
+
+            let source = possible.windows[index];
+            debug_assert!(source.reachable);
+
+            let Some((pr, shift, ns)) = trans[st][sc] else {
+                continue;
+            };
+
+            if shift {
+                // Move R:
+                //   (left, scan, right) -> (print, right, new_right)
+                // The old right side knows which colors can follow its exact
+                // nearest color `right`; intersect that with the target
+                // 3-cell window relation.
+                let mut new_rights = source.pairs[RIGHT_SIDE][right]
+                    & win_possible.right[ns][right][pr];
+
+                while new_rights != 0 {
+                    let new_right =
+                        new_rights.trailing_zeros() as usize;
+                    new_rights &= new_rights - 1;
+
+                    let target_index = SidePossible::<s, c>::index(
+                        ns, right, pr, new_right,
+                    );
+                    let changed = merge(
+                        &mut possible.windows[target_index],
+                        source,
+                        LEFT_SIDE,
+                        pr,
+                        left,
+                        pr,
+                        new_right,
+                    );
+
+                    if changed && !queued[target_index] {
+                        queued[target_index] = true;
+                        q.push_back((ns, right, pr, new_right));
+                    }
+                }
+            } else {
+                // Move L:
+                //   (left, scan, right) -> (new_left, left, print)
+                let mut new_lefts = source.pairs[LEFT_SIDE][left]
+                    & win_possible.left[ns][left][pr];
+
+                while new_lefts != 0 {
+                    let new_left = new_lefts.trailing_zeros() as usize;
+                    new_lefts &= new_lefts - 1;
+
+                    let target_index = SidePossible::<s, c>::index(
+                        ns, left, new_left, pr,
+                    );
+                    let changed = merge(
+                        &mut possible.windows[target_index],
+                        source,
+                        RIGHT_SIDE,
+                        pr,
+                        right,
+                        new_left,
+                        pr,
+                    );
+
+                    if changed && !queued[target_index] {
+                        queued[target_index] = true;
+                        q.push_back((ns, left, new_left, pr));
+                    }
+                }
             }
         }
 
@@ -1882,72 +2021,144 @@ impl Tape {
                 .all(|block| !forbid_right[block.color as usize])
     }
 
-    /// Check every explicit side color and adjacent pair against the
-    /// state-aware forward fixed point.  Span blocks are stored nearest-head
-    /// first, matching the pair orientation used by `SidePossible`.
+    /// Check every explicit side color and adjacent pair against a *single*
+    /// compatible exact-window summary.  If one or both immediate neighbors
+    /// are unknown, existentially try reachable local windows, but require the
+    /// left and right whole-side constraints to be satisfied by the same
+    /// window so their correlation is not joined away again at query time.
     fn obeys_state_side<const S: usize, const C: usize>(
         &self,
         state: State,
         possible: &SidePossible<S, C>,
     ) -> bool {
-        fn check_span<const C: usize>(
-            span: &Span,
-            color_mask: u64,
-            pair_masks: &[u64; C],
-        ) -> bool {
-            let pair_possible = |near: Color, far: Color| {
-                let near = near as usize;
-                let far = far as usize;
-                near < C
-                    && far < C
-                    && (pair_masks[near] & (1_u64 << far)) != 0
-            };
+        struct SideRequirements<const C: usize> {
+            colors: u64,
+            pairs: [u64; C],
+            pair_nears: u64,
+            tail_any: Option<usize>,
+        }
 
+        fn compile_span<const C: usize>(
+            span: &Span,
+        ) -> Option<SideRequirements<C>> {
+            let mut req = SideRequirements {
+                colors: 0,
+                pairs: [0; C],
+                pair_nears: 0,
+                tail_any: None,
+            };
             let mut previous = None;
 
             for block in span.span.iter() {
                 let color = block.color as usize;
-                if color >= C || (color_mask & (1_u64 << color)) == 0 {
-                    return false;
+                if color >= C {
+                    return None;
                 }
 
-                if block.count.minimum() > 1
-                    && !pair_possible(block.color, block.color)
-                {
-                    return false;
+                req.colors |= 1_u64 << color;
+
+                if block.count.minimum() > 1 {
+                    req.pairs[color] |= 1_u64 << color;
+                    req.pair_nears |= 1_u64 << color;
                 }
 
-                if let Some(near) = previous
-                    && !pair_possible(near, block.color)
-                {
-                    return false;
+                if let Some(near) = previous {
+                    req.pairs[near] |= 1_u64 << color;
+                    req.pair_nears |= 1_u64 << near;
                 }
 
-                previous = Some(block.color);
+                previous = Some(color);
             }
 
-            match (span.end.clone(), previous) {
-                (TapeEnd::Blanks, Some(near)) => pair_possible(near, 0),
-                (TapeEnd::Blanks, None) => pair_possible(0, 0),
-                (TapeEnd::Unknown, Some(near)) => {
-                    pair_masks[near as usize] != 0
+            match (&span.end, previous) {
+                (TapeEnd::Blanks, Some(near)) => {
+                    req.pairs[near] |= 1;
+                    req.pair_nears |= 1_u64 << near;
                 },
-                (TapeEnd::Unknown, None) => true,
+                (TapeEnd::Blanks, None) => {
+                    if C == 0 {
+                        return None;
+                    }
+                    req.pairs[0] |= 1;
+                    req.pair_nears |= 1;
+                },
+                (TapeEnd::Unknown, Some(near)) => {
+                    req.tail_any = Some(near);
+                },
+                (TapeEnd::Unknown, None) => {},
             }
+
+            Some(req)
+        }
+
+        fn check_requirements<const C: usize>(
+            req: &SideRequirements<C>,
+            color_mask: u64,
+            pair_masks: &[u64; C],
+        ) -> bool {
+            if req.colors & !color_mask != 0 {
+                return false;
+            }
+
+            let mut nears = req.pair_nears;
+            while nears != 0 {
+                let near = nears.trailing_zeros() as usize;
+                nears &= nears - 1;
+                if req.pairs[near] & !pair_masks[near] != 0 {
+                    return false;
+                }
+            }
+
+            req.tail_any.is_none_or(|near| pair_masks[near] != 0)
         }
 
         let st = state as usize;
-        st < S
-            && check_span(
-                &self.lspan,
-                possible.colors[st][LEFT_SIDE],
-                &possible.pairs[st][LEFT_SIDE],
-            )
-            && check_span(
-                &self.rspan,
-                possible.colors[st][RIGHT_SIDE],
-                &possible.pairs[st][RIGHT_SIDE],
-            )
+        let sc = self.scan as usize;
+        if st >= S || sc >= C {
+            return false;
+        }
+
+        let Some(left_req) = compile_span::<C>(&self.lspan) else {
+            return false;
+        };
+        let Some(right_req) = compile_span::<C>(&self.rspan) else {
+            return false;
+        };
+
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        let matches_window = |left: usize, right: usize| {
+            let summary = possible.window(st, sc, left, right);
+            summary.reachable
+                && check_requirements(
+                    &left_req,
+                    summary.colors[LEFT_SIDE],
+                    &summary.pairs[LEFT_SIDE],
+                )
+                && check_requirements(
+                    &right_req,
+                    summary.colors[RIGHT_SIDE],
+                    &summary.pairs[RIGHT_SIDE],
+                )
+        };
+
+        match (known_left, known_right) {
+            (Some(left), Some(right)) => {
+                left < C && right < C && matches_window(left, right)
+            },
+            (Some(left), None) => {
+                left < C
+                    && (0..C).any(|right| matches_window(left, right))
+            },
+            (None, Some(right)) => {
+                right < C
+                    && (0..C).any(|left| matches_window(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| matches_window(left, right))
+            }),
+        }
     }
 
     /// Enforce sides proved to contain blanks only.
@@ -2341,13 +2552,20 @@ fn test_state_side_colors_and_pairs() {
         prog.win_possible_from_blank(&forbid_left, &forbid_right);
     let sides = prog.side_possible_from_blank(&windows);
 
-    // After the only step, state B has `1 0+` on the left and `0+` on the
-    // right.  The whole-side abstraction retains the infinite (0,0) tail and
-    // the newly created boundary pair (1,0).
-    assert_eq!(sides.colors[1][LEFT_SIDE], 0b11);
-    assert_eq!(sides.colors[1][RIGHT_SIDE], 0b01);
-    assert_ne!(sides.pairs[1][LEFT_SIDE][1] & 0b01, 0);
-    assert_eq!(sides.pairs[1][LEFT_SIDE][1] & 0b10, 0);
+    // After the only step the exact local window is `1 [0] 0` in state B.
+    // Its whole-left summary contains the newly created (1,0) boundary pair,
+    // while the right side remains blank.
+    let b = sides.window(1, 0, 1, 0);
+    assert!(b.reachable);
+    assert_eq!(b.colors[LEFT_SIDE], 0b11);
+    assert_eq!(b.colors[RIGHT_SIDE], 0b01);
+    assert_ne!(b.pairs[LEFT_SIDE][1] & 0b01, 0);
+    assert_eq!(b.pairs[LEFT_SIDE][1] & 0b10, 0);
+
+    // No state-B window scanning 1 is reachable.
+    assert!((0..2).all(|left| {
+        (0..2).all(|right| !sides.window(1, 1, left, right).reachable)
+    }));
 
     let valid: Tape = "0+ 1 [0] 0+".into();
     assert!(valid.obeys_state_side(1, &sides));
@@ -2367,6 +2585,42 @@ fn test_state_side_colors_and_pairs() {
     // A lower bound of two guarantees an internal (1,1) adjacency.
     let at_least_two: Tape = "0+ 1^2.. [0] 0+".into();
     assert!(!at_least_two.obeys_state_side(1, &sides));
+}
+
+#[test]
+fn test_state_side_window_conditioning() {
+    // Two reachable summaries have the same `(state, scan, left)` but
+    // different right neighbors.  Only the right=1 window admits left pair
+    // (1,1).  A state+scan summary would union that pair into the right=0
+    // case and incorrectly accept the length-two left run below.
+    let mut sides = SidePossible::<1, 2>::new();
+
+    {
+        let summary = sides.window_mut(0, 0, 1, 0);
+        summary.reachable = true;
+        summary.colors[LEFT_SIDE] = 0b11;
+        summary.colors[RIGHT_SIDE] = 0b01;
+        summary.pairs[LEFT_SIDE][0] = 0b01;
+        summary.pairs[LEFT_SIDE][1] = 0b01;
+        summary.pairs[RIGHT_SIDE][0] = 0b01;
+    }
+
+    {
+        let summary = sides.window_mut(0, 0, 1, 1);
+        summary.reachable = true;
+        summary.colors[LEFT_SIDE] = 0b11;
+        summary.colors[RIGHT_SIDE] = 0b11;
+        summary.pairs[LEFT_SIDE][0] = 0b01;
+        summary.pairs[LEFT_SIDE][1] = 0b11;
+        summary.pairs[RIGHT_SIDE][0] = 0b01;
+        summary.pairs[RIGHT_SIDE][1] = 0b01;
+    }
+
+    let valid: Tape = "0+ 1 [0] 0+".into();
+    assert!(valid.obeys_state_side(0, &sides));
+
+    let cross_window_union_only: Tape = "0+ 1^2 [0] 0+".into();
+    assert!(!cross_window_union_only.obeys_state_side(0, &sides));
 }
 
 #[test]
