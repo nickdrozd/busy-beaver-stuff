@@ -518,16 +518,18 @@ fn test_9_instr() {
 
 /**************************************/
 
-const FAST: &[fn()] = &[test_bkw, test_deciders, test_quasihalt];
+const FAST: &[fn()] = &[test_deciders, test_quasihalt];
 
 const SLOW: &[fn()] = &[test_deciders_slow, test_9_instr];
 
 fn main() {
-    FAST.par_iter().for_each(|f| f());
+    test_bkw();
 
     if !std::env::args().any(|x| x == "--all") {
         return;
     }
+
+    FAST.par_iter().for_each(|f| f());
 
     test_holdouts();
 

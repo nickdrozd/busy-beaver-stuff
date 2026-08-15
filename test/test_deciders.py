@@ -203,14 +203,19 @@ class Bkw(DeciderTest):
             raise AssertionError
 
     def test_steps(self):
+        changed = False
+
         for cat, data in BACKWARD_STEPS.items():
-            bkw_cant_reach = BACKWARD_REASONERS[cat]
+            print(cat)
+
+            bkw = BACKWARD_REASONERS[cat]
 
             for prog, steps in data.items():
-                self.assertEqual(
-                    bkw_cant_reach(prog, BKW_LIMIT).step,
-                    steps)
+                if (result := bkw(prog, BKW_LIMIT).step) != steps:
+                    print(f'"{prog}" {result}')
+                    changed = True
 
+        self.assertFalse(changed)
 
 ########################################
 
