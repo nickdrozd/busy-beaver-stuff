@@ -2272,6 +2272,7 @@ DO_SPINOUT: set[str] = {
 DONT_SPINOUT: set[str] = {
     "1RB 2LA 1LA  2LA 2RB 0RA",  # wolfram
 
+    "1RB 0RB 0RA 0LB  1LB 2RA 3LA 2RB",  # cps 16
     "1RB 2LB 1LB 2RB  2LB 3LA 1RA 0RB",  # cps lru
 
     "1RB 0LB  1RC 0RC  0RD 1LA  1LE 1RD  0LC 0RE",  # 10^26
@@ -3906,7 +3907,7 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
     "far": {
         "halt": 1,
         "blank": 15,
-        "spinout": 7,
+        "spinout": 8,
     },
     "cps": {
         "halt": 6,
@@ -3917,7 +3918,7 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
     "bkw": {
         "halt": 119,
         "blank": 33,
-        "spinout": 100,
+        "spinout": 101,
         "twostep": 0,
         "zloop": 2,
     },
@@ -3946,6 +3947,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA",
         },
         "spinout": {
+            "1RB 0RB 0RA 0LB  1LB 2RA 3LA 2RB",
             "1RB 2LB 1LB 2RB  2LB 3LA 1RA 0RB",
             "1RB 0LD  1LB 1LC  1RD 0LA  0RD 0RB",
             "1RB 0LD  1RC 0RC  1LC 1LA  0RD 0LB",
@@ -4180,6 +4182,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0RA 3LA 1LB  0LB 2LA 3RA 2RA",
             "1RB 0RA 3LB 2RB  2LB 3LA 1LA 0RB",
             "1RB 0RA 3LB 3RB  0LB 2LA 2RA 1LB",
+            "1RB 0RB 0RA 0LB  1LB 2RA 3LA 2RB",
             "1RB 0RB 3LA 1LB  2LB 3LA 3RA 0RB",
             "1RB 0RB 3LB 0RA  1LB 2LA 3RA 3LB",
             "1RB 0RB 3LB 1LB  1LB 2LA 2RA 0RA",
