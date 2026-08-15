@@ -210,6 +210,65 @@ struct NonblankParity<const S: usize> {
     possible: [u8; S],
 }
 
+/// Joint whole-side status carried by the forward abstraction.
+///
+/// Bit 0 of a concrete `flags` value means the whole left side is blank and
+/// bit 1 means the whole right side is blank. A clear bit means that side is
+/// definitely dirty (contains at least one nonblank), not merely unknown.
+const LEFT_BLANK_FLAG: u8 = 1;
+const RIGHT_BLANK_FLAG: u8 = 2;
+const BOTH_BLANK_FLAGS: u8 = LEFT_BLANK_FLAG | RIGHT_BLANK_FLAG;
+
+/// Same-run blank/dirty possibilities, both aggregated by `(state, scan)` and
+/// conditioned on an exact reachable local window `(left, scan, right)`.
+///
+/// Each stored byte is a set of the four concrete side-status combinations:
+/// bit `1 << flags` is set when that exact status pair is possible.
+struct JointBlankPossible<const S: usize, const C: usize> {
+    any: [[u8; C]; S],
+    windows: Vec<u8>,
+}
+
+impl<const S: usize, const C: usize> JointBlankPossible<S, C> {
+    const fn index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    fn new() -> Self {
+        Self {
+            any: [[0; C]; S],
+            windows: vec![0; S * C * C * C],
+        }
+    }
+
+    fn window_mask(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> u8 {
+        self.windows[Self::index(st, scan, left, right)]
+    }
+}
+
+/// Forward over-approximations used whenever a backward configuration proves
+/// something about a whole side.
+///
+/// The excursion-derived halfblank tables remain the strongest checks for an
+/// exactly blank single side. `joint` additionally retains all four same-run
+/// blank/dirty combinations and correlates them with the exact local window.
+struct BlankSidePossible<const S: usize, const C: usize> {
+    left_half: [[bool; C]; S],
+    right_half: [[bool; C]; S],
+    joint: JointBlankPossible<S, C>,
+}
+
 fn cant_reach<const s: usize, const c: usize, T: Ord>(
     prog: &Prog<s, c>,
     steps: Steps,
@@ -304,6 +363,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     let win_possible =
         prog.win_possible_from_blank(&forbid_left, &forbid_right);
     let side_possible = prog.side_possible_from_blank(&win_possible);
+    let blank_side_possible =
+        blank_side_possible_from_blank(prog, &win_possible);
 
     // Halt targets begin with two unknown neighbors, so the
     // `(state, scanned color)` pair must still occur in at least one reachable
@@ -311,6 +372,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     configs.retain(|Config { state, tape }| {
         window_possible(*state, tape, &win_possible)
             && tape.obeys_state_side(*state, &side_possible)
+            && tape
+                .obeys_blank_side_possible(*state, &blank_side_possible)
     });
 
     if configs.is_empty() {
@@ -368,6 +431,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             &mut blanks,
             &win_possible,
             &side_possible,
+            &blank_side_possible,
             &forbid_left,
             &forbid_right,
             left_fresh_zero,
@@ -599,6 +663,7 @@ fn step_instrs<const s: usize, const c: usize>(
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
+    blank_side_possible: &BlankSidePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -651,6 +716,8 @@ fn step_instrs<const s: usize, const c: usize>(
 
         if !window_possible(state, &tape, win_possible)
             || !tape.obeys_state_side(state, side_possible)
+            || !tape
+                .obeys_blank_side_possible(state, blank_side_possible)
         {
             continue;
         }
@@ -667,6 +734,7 @@ fn step_configs<const s: usize, const c: usize>(
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
+    blank_side_possible: &BlankSidePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -693,6 +761,7 @@ fn step_configs<const s: usize, const c: usize>(
                 blanks,
                 win_possible,
                 side_possible,
+                blank_side_possible,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -714,6 +783,7 @@ fn step_configs<const s: usize, const c: usize>(
                 blanks,
                 win_possible,
                 side_possible,
+                blank_side_possible,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -731,6 +801,7 @@ fn step_configs<const s: usize, const c: usize>(
             blanks,
             win_possible,
             side_possible,
+            blank_side_possible,
             forbid_left,
             forbid_right,
             left_fresh_zero,
@@ -1801,6 +1872,119 @@ impl Tape {
         self.scan == 0 && self.lspan.blank() && self.rspan.blank()
     }
 
+    /// Check whole-side facts against the same-run forward abstraction.
+    ///
+    /// A backward span can prove one of three things about each side:
+    /// - wholly blank (`0+` with no explicit nonblank),
+    /// - definitely dirty (some explicit nonblank), or
+    /// - unknown.
+    ///
+    /// The cheap state/scan status table is checked first, then the same status
+    /// requirement must coexist with a compatible exact local window. Exact
+    /// blank single-side facts additionally retain the stronger excursion-based
+    /// halfblank checks.
+    fn obeys_blank_side_possible<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &BlankSidePossible<S, C>,
+    ) -> bool {
+        #[derive(Clone, Copy)]
+        enum RequiredStatus {
+            Blank,
+            Dirty,
+            Unknown,
+        }
+
+        fn status(span: &Span) -> RequiredStatus {
+            // One pass over explicit blocks.  An explicit nonblank proves the
+            // side dirty even when the far end is unknown; otherwise a blank
+            // end proves the whole side blank.
+            if span.span.iter().any(|block| block.color != 0) {
+                RequiredStatus::Dirty
+            } else if span.end == TapeEnd::Blanks {
+                RequiredStatus::Blank
+            } else {
+                RequiredStatus::Unknown
+            }
+        }
+
+        const fn allowed_status_mask(
+            left: RequiredStatus,
+            right: RequiredStatus,
+        ) -> u8 {
+            use RequiredStatus::{Blank, Dirty, Unknown};
+
+            match (left, right) {
+                (Blank, Blank) => 1_u8 << BOTH_BLANK_FLAGS,
+                (Blank, Dirty) => 1_u8 << LEFT_BLANK_FLAG,
+                (Blank, Unknown) => {
+                    (1_u8 << LEFT_BLANK_FLAG)
+                        | (1_u8 << BOTH_BLANK_FLAGS)
+                },
+                (Dirty, Blank) => 1_u8 << RIGHT_BLANK_FLAG,
+                (Dirty, Dirty) => 1_u8,
+                (Dirty, Unknown) => 1_u8 | (1_u8 << RIGHT_BLANK_FLAG),
+                (Unknown, Blank) => {
+                    (1_u8 << RIGHT_BLANK_FLAG)
+                        | (1_u8 << BOTH_BLANK_FLAGS)
+                },
+                (Unknown, Dirty) => 1_u8 | (1_u8 << LEFT_BLANK_FLAG),
+                (Unknown, Unknown) => 0b1111,
+            }
+        }
+
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let left_status = status(&self.lspan);
+        let right_status = status(&self.rspan);
+
+        // No whole-side fact is known, so this abstraction cannot add any
+        // pruning.  In particular avoid the C/C^2 exact-window scan common in
+        // halt cones with two unknown tails.
+        if matches!(left_status, RequiredStatus::Unknown)
+            && matches!(right_status, RequiredStatus::Unknown)
+        {
+            return true;
+        }
+
+        if matches!(left_status, RequiredStatus::Blank)
+            && !possible.left_half[st][sc]
+        {
+            return false;
+        }
+        if matches!(right_status, RequiredStatus::Blank)
+            && !possible.right_half[st][sc]
+        {
+            return false;
+        }
+
+        let allowed = allowed_status_mask(left_status, right_status);
+        if possible.joint.any[st][sc] & allowed == 0 {
+            return false;
+        }
+
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        let matches_window = |left: usize, right: usize| {
+            possible.joint.window_mask(st, sc, left, right) & allowed
+                != 0
+        };
+
+        match (known_left, known_right) {
+            (Some(left), Some(right)) => matches_window(left, right),
+            (Some(left), None) => {
+                (0..C).any(|right| matches_window(left, right))
+            },
+            (None, Some(right)) => {
+                (0..C).any(|left| matches_window(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| matches_window(left, right))
+            }),
+        }
+    }
+
     /// Return the possible parities of the total number of nonblank cells.
     /// Bit 0 means even is possible; bit 1 means odd is possible.
     ///
@@ -2645,6 +2829,83 @@ fn test_halfblank_direction() {
 }
 
 #[test]
+#[expect(clippy::shadow_unrelated)]
+fn test_same_run_joint_blank_dirty_flags() {
+    // Writing a nonblank while moving onto fresh blank reaches B0 with a dirty
+    // left side and blank right side, but not with both sides blank.
+    let prog = Prog::<2, 2>::from("1RB ...  ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let joint = joint_blank_status_from_blank(&prog, &windows);
+    let both_bit = 1_u8 << BOTH_BLANK_FLAGS;
+    let dirty_left_blank_right = 1_u8 << RIGHT_BLANK_FLAG;
+    assert_ne!(joint.any[0][0] & both_bit, 0);
+    assert_eq!(joint.any[1][0] & both_bit, 0);
+    assert_ne!(joint.any[1][0] & dirty_left_blank_right, 0);
+
+    // Leaving zero behind preserves an exact blank tape as the head moves.
+    let prog = Prog::<2, 2>::from("0RB ...  ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let joint = joint_blank_status_from_blank(&prog, &windows);
+    assert_ne!(joint.any[1][0] & both_bit, 0);
+}
+
+#[test]
+fn test_dynamic_blank_side_filter() {
+    let prog = Prog::<2, 2>::from("1RB ...  ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let possible = blank_side_possible_from_blank(&prog, &windows);
+
+    // The actual B0 shape has a blank right side and a dirty left side.
+    let reachable: Tape = "? 1 [0] 0+".into();
+    assert!(reachable.obeys_blank_side_possible(1, &possible));
+
+    // Requiring both sides blank adds the same-run correlation and rejects B0.
+    let impossible: Tape = "0+ [0] 0+".into();
+    assert!(!impossible.obeys_blank_side_possible(1, &possible));
+}
+
+#[test]
+fn test_blank_dirty_status_is_window_conditioned() {
+    // Synthetic same-state/scan join: left-blank is possible only with right
+    // neighbor 0, while right neighbor 1 is possible only with a dirty left.
+    // A state/scan-only status table would incorrectly accept `0+ [0] 1 ?`.
+    let mut joint = JointBlankPossible::<1, 2>::new();
+    let left_blank_flags = LEFT_BLANK_FLAG;
+    let left_dirty_flags = 0_u8;
+    let blank_bit = 1_u8 << left_blank_flags;
+    let dirty_bit = 1_u8 << left_dirty_flags;
+
+    let w0 = JointBlankPossible::<1, 2>::index(0, 0, 0, 0);
+    joint.windows[w0] |= blank_bit;
+    joint.any[0][0] |= blank_bit;
+
+    let w1 = JointBlankPossible::<1, 2>::index(0, 0, 0, 1);
+    joint.windows[w1] |= dirty_bit;
+    joint.any[0][0] |= dirty_bit;
+
+    let possible = BlankSidePossible {
+        left_half: [[true; 2]; 1],
+        right_half: [[true; 2]; 1],
+        joint,
+    };
+
+    let impossible: Tape = "0+ [0] 1 ?".into();
+    assert!(!impossible.obeys_blank_side_possible(0, &possible));
+
+    let valid_blank: Tape = "0+ [0] 0 ?".into();
+    assert!(valid_blank.obeys_blank_side_possible(0, &possible));
+
+    let valid_dirty: Tape = "? [0] 1 ?".into();
+    assert!(valid_dirty.obeys_blank_side_possible(0, &possible));
+}
+
+#[test]
 fn test_parent_color_aware_excursions() {
     // A0 pushes right, writing 0 on the parent. B1 pops left into C, then C0
     // pops left across A's outer boundary into D.  The synthetic forward-window
@@ -3116,6 +3377,266 @@ fn halfblank_slots<const S: usize, const C: usize>(
     }
 
     possible
+}
+
+/// Joint forward abstraction of whether each whole side is exactly blank or
+/// definitely dirty (contains at least one nonblank), conditioned on the exact
+/// local window `(left, scan, right)`.
+///
+/// Unlike a state/scan-only table, the status pair and local neighbor colors
+/// travel through one abstract run. When moving into a dirty side, consuming
+/// its nearest nonblank may expose either an all-blank or still-dirty residual;
+/// consuming a blank from a dirty side leaves the residual definitely dirty.
+/// The global `WinPossible` relation is used only as a sound cap on newly
+/// exposed neighbor colors.
+fn joint_blank_status_from_blank<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+) -> JointBlankPossible<S, C> {
+    let mut trans = [[None; C]; S];
+    for ((st, co), &(print, shift, tr)) in prog.iter() {
+        trans[st as usize][co as usize] =
+            Some((print as usize, shift, tr as usize));
+    }
+
+    let mut possible = JointBlankPossible::new();
+    let mut q = VecDeque::new();
+
+    #[expect(clippy::shadow_unrelated)]
+    let push =
+        |st: usize,
+         left: usize,
+         scan: usize,
+         right: usize,
+         flags: u8,
+         possible: &mut JointBlankPossible<S, C>,
+         q: &mut VecDeque<(usize, usize, usize, usize, u8)>| {
+            // Exact blank-side facts force the corresponding immediate neighbor
+            // to zero. Reject inconsistent abstract states rather than letting a
+            // later join make them useful.
+            if flags & LEFT_BLANK_FLAG != 0 && left != 0 {
+                return;
+            }
+            if flags & RIGHT_BLANK_FLAG != 0 && right != 0 {
+                return;
+            }
+
+            // Keep only globally reachable exact windows. This is conservative:
+            // the status product may still join dirty-tail contents, but can never
+            // invent a local window that the existing forward abstraction rejects.
+            if windows.right[st][scan][left] & (1_u64 << right) == 0 {
+                return;
+            }
+
+            let bit = 1_u8 << flags;
+            let index = JointBlankPossible::<S, C>::index(
+                st, scan, left, right,
+            );
+            if possible.windows[index] & bit != 0 {
+                return;
+            }
+
+            possible.windows[index] |= bit;
+            possible.any[st][scan] |= bit;
+            q.push_back((st, left, scan, right, flags));
+        };
+
+    push(0, 0, 0, 0, BOTH_BLANK_FLAGS, &mut possible, &mut q);
+
+    while let Some((st, left, scan, right, flags)) = q.pop_front() {
+        let Some((print, shift, tr)) = trans[st][scan] else {
+            continue;
+        };
+
+        let left_blank = flags & LEFT_BLANK_FLAG != 0;
+        let right_blank = flags & RIGHT_BLANK_FLAG != 0;
+
+        if shift {
+            // Move R:
+            //   (left, scan, right) -> (print, right, new_right)
+            // The old head joins the left side. The old right neighbor is
+            // consumed into the scan, so the new right-side status describes
+            // the residual beyond that consumed cell.
+            let new_left_blank = left_blank && print == 0;
+            let mut new_rights = windows.right[tr][right][print];
+
+            if right_blank {
+                debug_assert_eq!(right, 0);
+                new_rights &= 1; // residual of an all-blank side is blank
+                while new_rights != 0 {
+                    let new_right =
+                        new_rights.trailing_zeros() as usize;
+                    new_rights &= new_rights - 1;
+                    let new_flags =
+                        u8::from(new_left_blank) | RIGHT_BLANK_FLAG;
+                    push(
+                        tr,
+                        print,
+                        right,
+                        new_right,
+                        new_flags,
+                        &mut possible,
+                        &mut q,
+                    );
+                }
+                continue;
+            }
+
+            if right == 0 {
+                // The side was dirty and its nearest cell was blank, so some
+                // nonblank remains farther out. The residual is definitely
+                // dirty regardless of the newly exposed neighbor color.
+                while new_rights != 0 {
+                    let new_right =
+                        new_rights.trailing_zeros() as usize;
+                    new_rights &= new_rights - 1;
+                    let new_flags = u8::from(new_left_blank);
+                    push(
+                        tr,
+                        print,
+                        right,
+                        new_right,
+                        new_flags,
+                        &mut possible,
+                        &mut q,
+                    );
+                }
+                continue;
+            }
+
+            // Consuming a nonblank from a dirty side may have consumed its
+            // last nonblank, or dirt may remain farther out. The blank branch
+            // requires the newly exposed neighbor to be zero; the dirty branch
+            // allows every target-window color.
+            let mut dirty_rights = new_rights;
+            while dirty_rights != 0 {
+                let new_right = dirty_rights.trailing_zeros() as usize;
+                dirty_rights &= dirty_rights - 1;
+                let new_flags = u8::from(new_left_blank);
+                push(
+                    tr,
+                    print,
+                    right,
+                    new_right,
+                    new_flags,
+                    &mut possible,
+                    &mut q,
+                );
+            }
+
+            if new_rights & 1 != 0 {
+                let new_flags =
+                    u8::from(new_left_blank) | RIGHT_BLANK_FLAG;
+                push(
+                    tr,
+                    print,
+                    right,
+                    0,
+                    new_flags,
+                    &mut possible,
+                    &mut q,
+                );
+            }
+        } else {
+            // Move L, symmetrically:
+            //   (left, scan, right) -> (new_left, left, print)
+            let new_right_blank = right_blank && print == 0;
+            let mut new_lefts = windows.left[tr][left][print];
+
+            if left_blank {
+                debug_assert_eq!(left, 0);
+                new_lefts &= 1;
+                while new_lefts != 0 {
+                    let new_left = new_lefts.trailing_zeros() as usize;
+                    new_lefts &= new_lefts - 1;
+                    let new_flags = LEFT_BLANK_FLAG
+                        | (u8::from(new_right_blank) << 1);
+                    push(
+                        tr,
+                        new_left,
+                        left,
+                        print,
+                        new_flags,
+                        &mut possible,
+                        &mut q,
+                    );
+                }
+                continue;
+            }
+
+            if left == 0 {
+                while new_lefts != 0 {
+                    let new_left = new_lefts.trailing_zeros() as usize;
+                    new_lefts &= new_lefts - 1;
+                    let new_flags = u8::from(new_right_blank) << 1;
+                    push(
+                        tr,
+                        new_left,
+                        left,
+                        print,
+                        new_flags,
+                        &mut possible,
+                        &mut q,
+                    );
+                }
+                continue;
+            }
+
+            let mut dirty_lefts = new_lefts;
+            while dirty_lefts != 0 {
+                let new_left = dirty_lefts.trailing_zeros() as usize;
+                dirty_lefts &= dirty_lefts - 1;
+                let new_flags = u8::from(new_right_blank) << 1;
+                push(
+                    tr,
+                    new_left,
+                    left,
+                    print,
+                    new_flags,
+                    &mut possible,
+                    &mut q,
+                );
+            }
+
+            if new_lefts & 1 != 0 {
+                let new_flags =
+                    LEFT_BLANK_FLAG | (u8::from(new_right_blank) << 1);
+                push(
+                    tr,
+                    0,
+                    left,
+                    print,
+                    new_flags,
+                    &mut possible,
+                    &mut q,
+                );
+            }
+        }
+    }
+
+    possible
+}
+
+fn blank_side_possible_from_blank<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+) -> BlankSidePossible<S, C> {
+    let left_clean = side_excursions(prog, windows, false, true);
+    let right_clean = side_excursions(prog, windows, true, true);
+    let left_any = side_excursions(prog, windows, false, false);
+    let right_any = side_excursions(prog, windows, true, false);
+
+    let left_half =
+        halfblank_slots(prog, windows, false, &left_clean, &right_any);
+    let right_half =
+        halfblank_slots(prog, windows, true, &right_clean, &left_any);
+    let joint = joint_blank_status_from_blank(prog, windows);
+
+    BlankSidePossible {
+        left_half,
+        right_half,
+        joint,
+    }
 }
 
 fn scc_from_reach<const S: usize>(
