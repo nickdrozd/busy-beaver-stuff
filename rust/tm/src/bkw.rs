@@ -589,7 +589,7 @@ fn nonblank_parity_possible<const s: usize>(
 ) -> bool {
     let st = state as usize;
 
-    st < s && (parity.possible[st] & tape.nonblank_parity_mask()) != 0
+    (parity.possible[st] & tape.nonblank_parity_mask()) != 0
 }
 
 #[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
@@ -848,10 +848,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 let state = state as usize;
                 let next_state = next_state as usize;
 
-                if state >= s || next_state >= s {
-                    continue;
-                }
-
                 let source = possible[state];
                 if source == 0 {
                     continue;
@@ -1086,10 +1082,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
         let mut possible = SidePossible::new();
 
-        if s == 0 || c == 0 {
-            return possible;
-        }
-
         {
             let initial = possible.window_mut(0, 0, 0, 0);
             initial.reachable = true;
@@ -1158,9 +1150,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             let sc = read as usize;
             let pr = print as usize;
             let ns = next_state as usize;
-            if st < s && sc < c && pr < c && ns < s {
-                trans[st][sc] = Some((pr, shift, ns));
-            }
+            trans[st][sc] = Some((pr, shift, ns));
         }
 
         // Worklist fixed point: only revisit an exact local window when its
@@ -2040,7 +2030,7 @@ impl Tape {
 
         fn compile_span<const C: usize>(
             span: &Span,
-        ) -> Option<SideRequirements<C>> {
+        ) -> SideRequirements<C> {
             let mut req = SideRequirements {
                 colors: 0,
                 pairs: [0; C],
@@ -2051,10 +2041,6 @@ impl Tape {
 
             for block in span.span.iter() {
                 let color = block.color as usize;
-                if color >= C {
-                    return None;
-                }
-
                 req.colors |= 1_u64 << color;
 
                 if block.count.minimum() > 1 {
@@ -2076,9 +2062,6 @@ impl Tape {
                     req.pair_nears |= 1_u64 << near;
                 },
                 (TapeEnd::Blanks, None) => {
-                    if C == 0 {
-                        return None;
-                    }
                     req.pairs[0] |= 1;
                     req.pair_nears |= 1;
                 },
@@ -2088,7 +2071,7 @@ impl Tape {
                 (TapeEnd::Unknown, None) => {},
             }
 
-            Some(req)
+            req
         }
 
         fn check_requirements<const C: usize>(
@@ -2114,16 +2097,9 @@ impl Tape {
 
         let st = state as usize;
         let sc = self.scan as usize;
-        if st >= S || sc >= C {
-            return false;
-        }
 
-        let Some(left_req) = compile_span::<C>(&self.lspan) else {
-            return false;
-        };
-        let Some(right_req) = compile_span::<C>(&self.rspan) else {
-            return false;
-        };
+        let left_req = compile_span::<C>(&self.lspan);
+        let right_req = compile_span::<C>(&self.rspan);
 
         let known_left = self.left_neighbor_color().map(usize::from);
         let known_right = self.right_neighbor_color().map(usize::from);
@@ -2144,16 +2120,12 @@ impl Tape {
         };
 
         match (known_left, known_right) {
-            (Some(left), Some(right)) => {
-                left < C && right < C && matches_window(left, right)
-            },
+            (Some(left), Some(right)) => matches_window(left, right),
             (Some(left), None) => {
-                left < C
-                    && (0..C).any(|right| matches_window(left, right))
+                (0..C).any(|right| matches_window(left, right))
             },
             (None, Some(right)) => {
-                right < C
-                    && (0..C).any(|left| matches_window(left, right))
+                (0..C).any(|left| matches_window(left, right))
             },
             (None, None) => (0..C).any(|left| {
                 (0..C).any(|right| matches_window(left, right))
@@ -3384,10 +3356,7 @@ fn printed_mask<const S: usize, const C: usize>(
 ) -> ColorMask {
     let mut m = 0;
     for ((_, _read), &(pr, _, _)) in prog.iter() {
-        let pr = pr as usize;
-        if pr < C {
-            m |= 1 << pr;
-        }
+        m |= 1 << pr;
     }
     m
 }
@@ -3401,11 +3370,7 @@ fn color_closure<const S: usize, const C: usize>(
 
     // direct edges: read -> print
     for ((_, read), &(pr, _, _)) in prog.iter() {
-        let a = read as usize;
-        let b = pr as usize;
-        if a < C && b < C {
-            clo[a] |= 1 << b;
-        }
+        clo[read as usize] |= 1 << pr;
     }
 
     // include self
@@ -3507,9 +3472,6 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                     && (co == 0 || {
                         let h = st as usize;
                         let co = co as usize;
-                        if h >= S || co >= C {
-                            return false;
-                        }
 
                         for w in 0..2 {
                             let need = w ^ 1;
@@ -3527,9 +3489,6 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
                                     // same SCC
                                     let cid = comp[p];
-                                    if cid >= k {
-                                        return true; // conservative
-                                    }
 
                                     // residue gate (necessary; conservative if weak)
                                     if res[s0] != res[p] {

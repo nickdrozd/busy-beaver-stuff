@@ -111,10 +111,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         while let Some(state) = todo.pop() {
             let state_idx = usize::from(state);
 
-            // Be conservative for a malformed/out-of-range program.
-            if state_idx >= s {
-                return None;
-            }
             if seen[state_idx] {
                 continue;
             }
@@ -125,8 +121,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             seen[state_idx] = true;
 
             #[expect(clippy::cast_possible_truncation)]
-            for color in 0..c as Color {
-                match self.get_instr(&(state, color)) {
+            for color in 0..c {
+                match self.get_instr(&(state, color as Color)) {
                     Ok(Some((_, _, next_state))) => {
                         todo.push(next_state);
                     },

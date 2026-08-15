@@ -1,4 +1,3 @@
-#![expect(clippy::too_many_arguments)]
 //! FAR/MITM non-halting prover
 //!
 //! Self-contained FAR decider with MITMWFAR folded into `far_cant_halt`, implemented as methods on `Prog`.
@@ -92,9 +91,7 @@ const FAR_SET_PAIR_LEN_H_TAIL: usize = 1;
 
 /// C++ FAR::RWL_mod defaults.
 const FAR_RWL_LEN_H: usize = 8;
-const FAR_RWL_LEN_H_TAIL: usize = 0;
-const FAR_RWL_MNC: usize = 2;
-const FAR_RWL_MOD: usize = 1;
+const FAR_RWL_MNC: u8 = 2;
 
 /// C++ FAR::CPS_LRU defaults.
 const FAR_CPS_LRU_LEN_H: usize = 8;
@@ -103,15 +100,12 @@ const FAR_CPS_LRU_LEN_H_NO_LRU: usize = 2;
 /// C++ FAR::RNGS_mod defaults.
 const FAR_RNGS_NG_N: usize = 4;
 const FAR_RNGS_LEN_H: usize = 8;
-const FAR_RNGS_MNC: usize = 2;
-const FAR_RNGS_MOD: usize = 1;
-const FAR_RNGS_BS_N: usize = 0;
+const FAR_RNGS_MNC: u8 = 2;
 
 /// C++ FAR::RS_mod defaults.
 const FAR_RS_NG_N: usize = 4;
 const FAR_RS_LEN_H: usize = 8;
-const FAR_RS_MNC: usize = 2;
-const FAR_RS_MOD: usize = 1;
+const FAR_RS_MNC: u8 = 2;
 const FAR_RS_STRICT: bool = true;
 
 // MITM parameters -------------------------------------------------------------
@@ -352,7 +346,7 @@ enum WordUpdateOutcome {
     /// The exact local configuration repeated before leaving the block.
     /// Determinism then guarantees that this branch stays in the block forever.
     LocalLoop,
-    /// The simulation reached its step bound or encountered invalid data.
+    /// The simulation reached its step bound.
     Incomplete,
 }
 
@@ -415,13 +409,12 @@ struct SummaryOverflow;
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RepeatWord {
     w: WordId,
-    n: usize,
-    m: usize,
+    n: u8,
 }
 
 impl RepeatWord {
-    const fn new(w: WordId, n: usize, m: usize) -> Self {
-        Self { w, n, m }
+    const fn new(w: WordId, n: u8) -> Self {
+        Self { w, n }
     }
 }
 
@@ -443,7 +436,7 @@ impl Summary for Ng1Summary {
         if self.q.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
-        if FAR_NG1_N > 0 && self.q.len() == FAR_NG1_N {
+        if self.q.len() == FAR_NG1_N {
             self.q.remove(0);
         }
         self.q.push(w);
@@ -482,7 +475,7 @@ impl<const TAIL_H: usize, const POS_MOD: usize> Summary
             return Ok(());
         }
 
-        if FAR_NG_N > 0 && self.q.len() == FAR_NG_N {
+        if self.q.len() == FAR_NG_N {
             self.q.remove(0);
         }
         self.q.push(w);
@@ -491,7 +484,7 @@ impl<const TAIL_H: usize, const POS_MOD: usize> Summary
             self.q0.push(w);
         }
 
-        self.mod_pos = (self.mod_pos + 1) % POS_MOD.max(1);
+        self.mod_pos = (self.mod_pos + 1) % POS_MOD;
         Ok(())
     }
 
@@ -582,25 +575,19 @@ impl Summary for LruPairSummary {
             return Ok(());
         }
 
-        if FAR_LRU_PAIR_LEN_H_TAIL > 0
-            && FAR_LRU_PAIR_LEN_H
-                > FAR_LRU_PAIR_LEN_H_NO_LRU + FAR_LRU_PAIR_LEN_H_TAIL
-        {
-            let i = FAR_LRU_PAIR_LEN_H_TAIL;
-            let pair = (self.q[i - 1], self.q[i]);
-            if let Some(pos) = self.lru.iter().position(|&p| p == pair)
-            {
-                self.lru.remove(pos);
-            } else {
-                let max_lru = FAR_LRU_PAIR_LEN_H
-                    - FAR_LRU_PAIR_LEN_H_NO_LRU
-                    - FAR_LRU_PAIR_LEN_H_TAIL;
-                if self.lru.len() >= max_lru && max_lru > 0 {
-                    self.lru.pop();
-                }
+        let i = FAR_LRU_PAIR_LEN_H_TAIL;
+        let pair = (self.q[i - 1], self.q[i]);
+        if let Some(pos) = self.lru.iter().position(|&p| p == pair) {
+            self.lru.remove(pos);
+        } else {
+            let max_lru = FAR_LRU_PAIR_LEN_H
+                - FAR_LRU_PAIR_LEN_H_NO_LRU
+                - FAR_LRU_PAIR_LEN_H_TAIL;
+            if self.lru.len() >= max_lru {
+                self.lru.pop();
             }
-            self.lru.insert(0, pair);
         }
+        self.lru.insert(0, pair);
 
         self.q.remove(FAR_LRU_PAIR_LEN_H_TAIL);
         Ok(())
@@ -644,21 +631,16 @@ impl Summary for SetPairSummary {
             return Ok(());
         }
 
-        if FAR_SET_PAIR_LEN_H_TAIL > 0
-            && FAR_SET_PAIR_LEN_H
-                > FAR_SET_PAIR_LEN_H_NO_LRU + FAR_SET_PAIR_LEN_H_TAIL
-        {
-            let i = FAR_SET_PAIR_LEN_H_TAIL;
-            let pair = (self.q[i - 1], self.q[i]);
-            match self.lru.binary_search(&pair) {
-                Ok(_) => {},
-                Err(pos) => {
-                    self.lru.insert(pos, pair);
-                    if self.lru.len() > FAR_SET_PAIR_LEN_H {
-                        return Err(SummaryOverflow);
-                    }
-                },
-            }
+        let i = FAR_SET_PAIR_LEN_H_TAIL;
+        let pair = (self.q[i - 1], self.q[i]);
+        match self.lru.binary_search(&pair) {
+            Ok(_) => {},
+            Err(pos) => {
+                self.lru.insert(pos, pair);
+                if self.lru.len() > FAR_SET_PAIR_LEN_H {
+                    return Err(SummaryOverflow);
+                }
+            },
         }
 
         self.q.remove(FAR_SET_PAIR_LEN_H_TAIL);
@@ -690,11 +672,7 @@ impl Summary for RwlModSummary {
     ) -> Result<(), SummaryOverflow> {
         if self.q.is_empty() {
             if !words.get(w).is_zero() {
-                self.q.push(RepeatWord::new(
-                    w,
-                    1,
-                    1 % FAR_RWL_MOD.max(1),
-                ));
+                self.q.push(RepeatWord::new(w, 1));
             }
             return Ok(());
         }
@@ -703,15 +681,12 @@ impl Summary for RwlModSummary {
             && last.w == w
         {
             last.n = last.n.saturating_add(1).min(FAR_RWL_MNC);
-            last.m = (last.m + 1) % FAR_RWL_MOD.max(1);
             return Ok(());
         }
 
-        self.q.push(RepeatWord::new(w, 1, 1 % FAR_RWL_MOD.max(1)));
+        self.q.push(RepeatWord::new(w, 1));
         if self.q.len() > FAR_RWL_LEN_H {
-            #[expect(clippy::unnecessary_min_or_max)]
-            let idx = FAR_RWL_LEN_H_TAIL.min(self.q.len() - 1);
-            self.q.remove(idx);
+            self.q.remove(0);
         }
         Ok(())
     }
@@ -743,9 +718,6 @@ impl Summary for CpsLruSummary {
         if self.ls.len() <= FAR_CPS_LRU_LEN_H_NO_LRU {
             return Ok(());
         }
-        if FAR_CPS_LRU_LEN_H_NO_LRU + 1 > self.ls.len() {
-            return Ok(());
-        }
         let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU];
         let start = FAR_CPS_LRU_LEN_H_NO_LRU + 1;
         let mut remove_idx = None;
@@ -772,7 +744,6 @@ impl Summary for CpsLruSummary {
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RngsModSummary {
     q: Vec<RepeatWord>,
-    q0: Vec<WordId>,
     w1: Option<WordId>,
 }
 
@@ -780,7 +751,6 @@ impl Summary for RngsModSummary {
     fn new() -> Self {
         Self {
             q: Vec::new(),
-            q0: Vec::new(),
             w1: None,
         }
     }
@@ -794,30 +764,20 @@ impl Summary for RngsModSummary {
             return Ok(());
         }
 
-        let w1 = ngram_word_id(w, self.w1, FAR_RNGS_NG_N, words);
-        self.w1 = Some(w1);
-        let mut key = w1;
-
-        self.q0.push(key);
-        if self.q0.len() > FAR_RNGS_BS_N {
-            key = self.q0.remove(0);
-        } else {
-            return Ok(());
-        }
+        let key = ngram_word_id(w, self.w1, words);
+        self.w1 = Some(key);
 
         promote_repeat_word(
             &mut self.q,
             key,
             FAR_RNGS_LEN_H,
             FAR_RNGS_MNC,
-            FAR_RNGS_MOD,
             false,
         )
     }
 
     fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
         self.w1.is_none_or(|w| words.get(w).is_zero())
-            && self.q0.iter().all(|&w| words.get(w).is_zero())
             && self.q.iter().all(|rw| words.get(rw.w).is_zero())
     }
 }
@@ -857,7 +817,6 @@ impl Summary for RsModSummary {
             key,
             FAR_RS_LEN_H,
             FAR_RS_MNC,
-            FAR_RS_MOD,
             FAR_RS_STRICT,
         )
     }
@@ -871,21 +830,16 @@ impl Summary for RsModSummary {
 fn ngram_word_id(
     head: WordId,
     tail: Option<WordId>,
-    limit: usize,
     words: &mut WordInterner,
 ) -> WordId {
-    if limit == 0 {
-        return words.intern(Word { cells: Vec::new() });
-    }
-
-    let mut cells = Vec::with_capacity(limit);
+    let mut cells = Vec::with_capacity(FAR_RNGS_NG_N);
     cells.extend(words.get(head).cells.iter().copied());
-    if cells.len() < limit
+    if cells.len() < FAR_RNGS_NG_N
         && let Some(tail) = tail
     {
         cells.extend(words.get(tail).cells.iter().copied());
     }
-    cells.truncate(limit);
+    cells.truncate(FAR_RNGS_NG_N);
     words.intern(Word { cells })
 }
 
@@ -893,22 +847,19 @@ fn promote_repeat_word(
     q: &mut Vec<RepeatWord>,
     key: WordId,
     len_h: usize,
-    mnc: usize,
-    modu: usize,
+    mnc: u8,
     strict: bool,
 ) -> Result<(), SummaryOverflow> {
-    let modulo = modu.max(1);
     for i in 0..q.len() {
         if q[i].w == key {
             let mut rep = q.remove(i);
             rep.n = rep.n.saturating_add(1).min(mnc);
-            rep.m = (rep.m + 1) % modulo;
             q.push(rep);
             return Ok(());
         }
     }
 
-    q.push(RepeatWord::new(key, 1, 1 % modulo));
+    q.push(RepeatWord::new(key, 1));
     if q.len() > len_h {
         if strict {
             return Err(SummaryOverflow);
@@ -1062,7 +1013,6 @@ struct FarRunParams {
     block_step_limit: usize,
     goal: Goal,
     mirrored: bool,
-    reached: ReachedParams,
 }
 
 #[derive(Clone, Copy)]
@@ -1095,8 +1045,6 @@ struct FarDecider<
     prog: &'a Prog<STATES, COLORS>,
     goal: Goal,
     mirrored: bool,
-    reached: ReachedParams,
-
     block_len: usize,
     max_work: usize,
     block_step_limit: usize,
@@ -1361,7 +1309,6 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
                 self.goal,
                 key.ctx,
                 self.mirrored,
-                self.reached,
             ) {
                 RawWordUpdateOutcome::Exit(raw) => {
                     WordUpdateOutcome::Exit(WordUpdateLemma {
@@ -1669,8 +1616,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     fn far_reached_params(&self) -> ReachedParams {
         let (max_state, max_color) = self.max_reached();
         ReachedParams {
-            states: (max_state as usize + 1).min(STATES),
-            colors: (max_color as usize + 1).min(COLORS),
+            states: max_state as usize + 1,
+            colors: max_color as usize + 1,
         }
     }
 
@@ -1697,7 +1644,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         ctx: StepContext,
         mirrored: bool,
-        reached: ReachedParams,
     ) -> RawWordUpdateOutcome {
         debug_assert!(sgn == 1 || sgn == -1);
         let len = w.len() as i32;
@@ -1725,12 +1671,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             steps += 1;
 
             let input = w1.get(pos as usize);
-            if input as usize >= reached.colors {
-                return RawWordUpdateOutcome::Incomplete;
-            }
-            if s1 as usize >= reached.states {
-                return RawWordUpdateOutcome::Incomplete;
-            }
 
             // Lookup transition; missing transition means HALT.
             let slot: Slot = (s1, input);
@@ -1744,13 +1684,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     ),
                 );
             };
-
-            if out_color as usize >= reached.colors {
-                return RawWordUpdateOutcome::Incomplete;
-            }
-            if next_state as usize >= reached.states {
-                return RawWordUpdateOutcome::Incomplete;
-            }
 
             let dir: i32 = if shift_right { 1 } else { -1 };
             let dir = if mirrored { -dir } else { dir };
@@ -1856,10 +1789,9 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             prog: self,
             goal: params.goal,
             mirrored: params.mirrored,
-            reached: params.reached,
             block_len: params.block_len,
-            max_work: params.max_work.max(1),
-            block_step_limit: params.block_step_limit.max(1),
+            max_work: params.max_work,
+            block_step_limit: params.block_step_limit,
 
             words: WordInterner::new(),
 
@@ -1903,10 +1835,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         &self,
         params: FarRunParams,
     ) -> bool {
-        if params.block_len == 0 {
-            return false;
-        }
-
         let Ok(decider) = self.far_decider::<S>(params) else {
             return false;
         };
@@ -1929,10 +1857,9 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             block.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
 
         for block_len in 1..=block {
-            let max_work = FAR_WORK_PER_LEN.saturating_mul(block_len);
+            let max_work = FAR_WORK_PER_LEN * block_len;
 
-            let block_step_limit =
-                FAR_STEP_PER_LEN.saturating_mul(block_len);
+            let block_step_limit = FAR_STEP_PER_LEN * block_len;
 
             for mirrored in [true, false] {
                 if self.far_decide(FarRunParams {
@@ -1941,7 +1868,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     block_step_limit,
                     goal,
                     mirrored,
-                    reached,
                 }) {
                     return true;
                 }
@@ -1973,12 +1899,9 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     fn direct_far_cant_target(&self, goal: Goal) -> bool {
         let reached = self.far_reached_params();
         let ctrl_states = reached.states;
-        if ctrl_states == 0 || reached.colors == 0 {
-            return false;
-        }
 
-        let max_by_nfa = DIRECT_FAR_MAX_NFA_STATES
-            .saturating_sub(DIRECT_FAR_TARGET_STATES)
+        let max_by_nfa = (DIRECT_FAR_MAX_NFA_STATES
+            - DIRECT_FAR_TARGET_STATES)
             / ctrl_states;
         let max_by_entries =
             DIRECT_FAR_MAX_DFA_ENTRIES / reached.colors;
@@ -1986,9 +1909,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             .min(max_by_nfa)
             .min(max_by_entries);
 
-        if max_dfa_states == 0
-            || !self.direct_far_valid_program(reached)
-        {
+        if max_dfa_states == 0 {
             return false;
         }
 
@@ -2007,24 +1928,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         false
     }
 
-    fn direct_far_valid_program(&self, reached: ReachedParams) -> bool {
-        for state in 0..reached.states {
-            for color in 0..reached.colors {
-                #[expect(clippy::cast_possible_truncation)]
-                let slot: Slot = (state as State, color as Color);
-                #[expect(clippy::collapsible_if)]
-                if let Some(&(write, _, next_state)) = self.get(&slot) {
-                    if write as usize >= reached.colors
-                        || next_state as usize >= reached.states
-                    {
-                        return false;
-                    }
-                }
-            }
-        }
-        true
-    }
-
     fn direct_far_decide_exact(
         &self,
         goal: Goal,
@@ -2033,15 +1936,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         fuel: &mut usize,
     ) -> bool {
         let ctrl_states = reached.states;
-        let nfa_states = ctrl_states
-            .saturating_mul(dfa_states)
-            .saturating_add(DIRECT_FAR_TARGET_STATES);
-        if dfa_states == 0
-            || nfa_states == 0
-            || nfa_states > DIRECT_FAR_MAX_NFA_STATES
-        {
-            return false;
-        }
+        debug_assert!(
+            ctrl_states * dfa_states + DIRECT_FAR_TARGET_STATES
+                <= DIRECT_FAR_MAX_NFA_STATES
+        );
 
         self.direct_far_decide_direction(
             goal, reached, dfa_states, 0, fuel,
@@ -2397,7 +2295,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     }
 
     fn mitm_cant_target(&self, goal: Goal) -> bool {
-        let reached = self.far_reached_params();
+        let colors = self.far_reached_params().colors;
 
         // Enumerate every closed MITM-DFA skeleton once.  At each closed
         // skeleton, enumerate its weight assignments once and test the full
@@ -2407,7 +2305,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 goal,
                 dfa_transitions,
                 MITM_MAX_WEIGHT_PAIRS,
-                reached,
+                colors,
             ) {
                 return true;
             }
@@ -2421,10 +2319,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         dfa_transitions: usize,
         max_weight_pairs: usize,
-        reached: ReachedParams,
+        colors: usize,
     ) -> bool {
-        let mut left = MitmWfa::new(reached.colors);
-        let mut right = MitmWfa::new(reached.colors);
+        let mut left = MitmWfa::new(colors);
+        let mut right = MitmWfa::new(colors);
         left.trans[0][0] = (0, 0);
         right.trans[0][0] = (0, 0);
 
@@ -2436,7 +2334,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             MitmSearchParams {
                 goal_transitions: dfa_transitions,
                 max_weight_pairs,
-                reached,
             },
         )
     }
@@ -2449,26 +2346,16 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         current_transitions: usize,
         params: MitmSearchParams,
     ) -> bool {
-        match self.mitm_find_closure_break(
-            goal,
-            left,
-            right,
-            params.reached,
-        ) {
+        match self.mitm_find_closure_break(goal, left, right) {
             None => {
                 current_transitions == params.goal_transitions
                     && self.mitm_recurse_weights(
                         goal,
                         left,
                         right,
-                        &self.mitm_reachable_weight_slots(
-                            left,
-                            right,
-                            params.reached,
-                        ),
+                        &self.mitm_reachable_weight_slots(left, right),
                         0,
                         params.max_weight_pairs,
-                        params.reached,
                     )
             },
             Some((MitmSide::Left, state, color)) => {
@@ -2571,7 +2458,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
-        reached: ReachedParams,
     ) -> Option<(MitmSide, usize, usize)> {
         let left_rev = left.rev_edges();
         let right_rev = right.rev_edges();
@@ -2582,13 +2468,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         seen.insert(start);
 
         while let Some(cur) = todo.pop() {
-            if cur.st >= reached.states || cur.co >= reached.colors {
-                continue;
-            }
-            #[expect(clippy::cast_possible_truncation)]
-            let Some(&(write, ..)) =
-                self.get(&(cur.st as State, cur.co as Color))
-            else {
+            let Some(&(write, ..)) = self.get(&(cur.st, cur.co)) else {
                 continue;
             };
             let write = write as usize;
@@ -2596,7 +2476,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             nexts.clear();
             self.mitm_next_configs_into(
                 goal, cur, left, right, &left_rev, &right_rev,
-                &mut nexts, reached,
+                &mut nexts,
             );
             #[expect(clippy::iter_with_drain)]
             for next in nexts.drain(..) {
@@ -2622,7 +2502,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         &self,
         left: &MitmWfa,
         right: &MitmWfa,
-        reached: ReachedParams,
     ) -> MitmWeightSlots {
         let left_rev = left.rev_edges();
         let right_rev = right.rev_edges();
@@ -2637,27 +2516,19 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         seen.insert(start);
 
         while let Some(cur) = todo.pop() {
-            if cur.st >= reached.states
-                || cur.co >= reached.colors
-                || cur.left >= left.states
-                || cur.right >= right.states
-            {
-                continue;
-            }
-            #[expect(clippy::cast_possible_truncation)]
             let Some(&(write, shift, next_st)) =
-                self.get(&(cur.st as State, cur.co as Color))
+                self.get(&(cur.st, cur.co))
             else {
                 continue;
             };
 
             let write = write as usize;
-            let next_st = next_st as usize;
             if shift {
                 useful_left[cur.left][write] = true;
                 let (new_left, _) = left.trans[cur.left][write];
                 for edge in &right_rev[cur.right] {
-                    useful_right[edge.from][edge.symbol] = true;
+                    useful_right[edge.from][edge.symbol as usize] =
+                        true;
                     let next = MitmConfig {
                         st: next_st,
                         co: edge.symbol,
@@ -2675,7 +2546,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 useful_right[cur.right][write] = true;
                 let (new_right, _) = right.trans[cur.right][write];
                 for edge in &left_rev[cur.left] {
-                    useful_left[edge.from][edge.symbol] = true;
+                    useful_left[edge.from][edge.symbol as usize] = true;
                     let next = MitmConfig {
                         st: next_st,
                         co: edge.symbol,
@@ -2725,9 +2596,8 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         weight_slots: &MitmWeightSlots,
         current_weight_pairs: usize,
         max_weight_pairs: usize,
-        reached: ReachedParams,
     ) -> bool {
-        if self.mitm_check_memory_profiles(goal, left, right, reached) {
+        if self.mitm_check_memory_profiles(goal, left, right) {
             return true;
         }
 
@@ -2756,7 +2626,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         weight_slots,
                         current_weight_pairs + 1,
                         max_weight_pairs,
-                        reached,
                     ) {
                         right.trans[rs][rc] = (rt, old_rw);
                         left.trans[ls][lc] = (lt, old_lw);
@@ -2777,12 +2646,9 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
-        reached: ReachedParams,
     ) -> bool {
         MITM_MEMORY_PROFILES.iter().any(|memory| {
-            self.mitm_check_weight_candidate(
-                goal, left, right, *memory, reached,
-            )
+            self.mitm_check_weight_candidate(goal, left, right, *memory)
         })
     }
 
@@ -2792,12 +2658,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         left: &MitmWfa,
         right: &MitmWfa,
         memory: MitmMemory,
-        reached: ReachedParams,
     ) -> bool {
         if memory.left == 0 && memory.right == 0 {
-            return self.mitm_check_weight_candidate_exact(
-                goal, left, right, reached,
-            );
+            return self
+                .mitm_check_weight_candidate_exact(goal, left, right);
         }
 
         let mut try_left = left.clone();
@@ -2809,7 +2673,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             try_right = try_right.with_memory();
         }
         self.mitm_check_weight_candidate_exact(
-            goal, &try_left, &try_right, reached,
+            goal, &try_left, &try_right,
         )
     }
 
@@ -2818,7 +2682,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
-        reached: ReachedParams,
     ) -> bool {
         let left_special = left.derive_special();
         let right_special = right.derive_special();
@@ -2840,7 +2703,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             &right_rev,
             &left_special,
             &right_special,
-            reached,
         )
     }
 
@@ -2853,14 +2715,13 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         right_rev: &MitmRev,
         left_special: &MitmSpecial,
         right_special: &MitmSpecial,
-        reached: ReachedParams,
     ) -> bool {
         let start = MitmConfig::start();
         let start_bounds = MitmBounds {
             lo: Some(0),
             hi: Some(0),
         };
-        if !self.mitm_config_allowed(goal, &start, reached) {
+        if !self.mitm_config_allowed(goal, &start) {
             return false;
         }
 
@@ -2873,8 +2734,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             let cur_bounds = accept[&cur];
             nexts.clear();
             self.mitm_next_configs_into(
-                goal, cur, left, right, left_rev, right_rev,
-                &mut nexts, reached,
+                goal, cur, left, right, left_rev, right_rev, &mut nexts,
             );
             nexts.sort_by_key(|next| next.config);
 
@@ -2901,7 +2761,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     continue;
                 };
 
-                if !self.mitm_config_allowed(goal, &cfg, reached) {
+                if !self.mitm_config_allowed(goal, &cfg) {
                     return false;
                 }
                 todo.push(cfg);
@@ -2911,45 +2771,27 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         true
     }
 
-    #[expect(clippy::cast_possible_truncation)]
     fn mitm_config_allowed(
         &self,
         goal: Goal,
         cfg: &MitmConfig,
-        reached: ReachedParams,
     ) -> bool {
         match goal {
-            Goal::Halt => {
-                cfg.st < reached.states
-                    && cfg.co < reached.colors
-                    && self
-                        .get(&(cfg.st as State, cfg.co as Color))
-                        .is_some()
-            },
-            Goal::Blank => {
-                cfg.st < reached.states && cfg.co < reached.colors
-            },
-            Goal::Spinout => {
-                !self.mitm_spinout_config_possible(cfg, reached)
-            },
+            Goal::Halt => self.get(&(cfg.st, cfg.co)).is_some(),
+            Goal::Blank => true,
+            Goal::Spinout => !self.mitm_spinout_config_possible(cfg),
         }
     }
 
-    fn mitm_spinout_config_possible(
-        &self,
-        cfg: &MitmConfig,
-        reached: ReachedParams,
-    ) -> bool {
-        if cfg.st >= reached.states || cfg.co != 0 {
+    fn mitm_spinout_config_possible(&self, cfg: &MitmConfig) -> bool {
+        if cfg.co != 0 {
             return false;
         }
-        #[expect(clippy::cast_possible_truncation)]
-        let Some(&(_, shift, trans)) = self.get(&(cfg.st as State, 0))
-        else {
+        let Some(&(_, shift, trans)) = self.get(&(cfg.st, 0)) else {
             return false;
         };
 
-        if trans as usize != cfg.st {
+        if trans != cfg.st {
             return false;
         }
 
@@ -2968,20 +2810,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         left_rev: &MitmRev,
         right_rev: &MitmRev,
         out: &mut Vec<MitmNext>,
-        reached: ReachedParams,
     ) {
-        if old.st >= reached.states || old.co >= reached.colors {
-            return;
-        }
-        #[expect(clippy::cast_possible_truncation)]
         let Some(&(write, shift, next_st)) =
-            self.get(&(old.st as State, old.co as Color))
+            self.get(&(old.st, old.co))
         else {
             return;
         };
 
         let write = write as usize;
-        let next_st = next_st as usize;
         if shift {
             // Move right: the written symbol joins the left half; the old right
             // predecessor supplies the next scanned symbol.
@@ -3038,7 +2874,7 @@ struct MitmWfa {
 #[derive(Clone, Copy)]
 struct MitmRevEdge {
     from: usize,
-    symbol: usize,
+    symbol: Color,
     weight: i32,
 }
 
@@ -3046,8 +2882,8 @@ type MitmRev = Vec<Vec<MitmRevEdge>>;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct MitmConfig {
-    st: usize,
-    co: usize,
+    st: State,
+    co: Color,
     left: usize,
     right: usize,
 }
@@ -3074,7 +2910,6 @@ struct MitmNext {
 struct MitmSearchParams {
     goal_transitions: usize,
     max_weight_pairs: usize,
-    reached: ReachedParams,
 }
 
 #[derive(Clone, Copy)]
@@ -3246,9 +3081,10 @@ impl MitmWfa {
         for from in 0..self.states {
             for symbol in 0..self.colors {
                 let (to, weight) = self.trans[from][symbol];
+                #[expect(clippy::cast_possible_truncation)]
                 rev[to].push(MitmRevEdge {
                     from,
-                    symbol,
+                    symbol: symbol as Color,
                     weight,
                 });
             }
