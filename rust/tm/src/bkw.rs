@@ -4575,19 +4575,18 @@ impl PeriodicHistory {
             return None;
         }
 
-        // Periods greater than two are useful for clean phase ladders such as
-        //     A_n -> B_n -> C_{n+1} -> A_{n+1}
-        // but a repeating split/merge frontier, e.g. widths 1,2,1, can be the
-        // reverse image of a finite forward countdown rather than a genuine
-        // closed periodic cone.  Keep multi-phase frontier certificates only
-        // when every sampled phase has the same frontier width.
+        // Periods greater than two may have different frontier widths in
+        // different phases, e.g. 1,2,4,1,2,4,... .  Require only that each
+        // phase repeats its own width across periods.  This still rejects a
+        // drifting split/merge shape whose width changes from one occurrence
+        // of the same phase to the next.
         if period > 2 {
-            let width = self.snaps[start].front.len();
-            if self.snaps[start..start + need]
-                .iter()
-                .any(|snap| snap.front.len() != width)
-            {
-                return None;
+            for j in start..start + need - period {
+                if self.snaps[j].front.len()
+                    != self.snaps[j + period].front.len()
+                {
+                    return None;
+                }
             }
         }
 
