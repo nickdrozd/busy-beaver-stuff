@@ -4496,6 +4496,104 @@ type FastFrontier = Arc<[FastCfg]>;
 struct PeriodicSnap {
     step: Steps,
     front: FastFrontier,
+    shape: PeriodicShape,
+}
+
+/// Cheap, necessary-only periodicity summary.
+///
+/// `exact_*` fingerprints the multiset of `(state, scan, left-end, right-end)`
+/// keys. Every exact `BranchSig` preserves that key, so a genuine exact
+/// periodic frontier must repeat both the frontier width and this fingerprint
+/// phase-by-phase. Hash collisions only cause extra expensive checks; they
+/// cannot suppress a valid certificate.
+///
+/// `cover_bits` is a small Bloom-style set summary of the same key. Coverage
+/// permits frontier widths and multiplicities to change, but every later config
+/// must still have a same-key parent. Therefore later bits must be a subset of
+/// earlier bits. Collisions again only make the prefilter weaker, never unsafe.
+#[derive(Clone, Copy)]
+struct PeriodicShape {
+    width: usize,
+    exact_sum: u64,
+    exact_sum2: u64,
+    exact_xor: u64,
+    cover_bits: [u64; 2],
+}
+
+impl PeriodicShape {
+    const fn mix(mut x: u64) -> u64 {
+        // SplitMix64 finalizer: deterministic and cheap. We only use this as a
+        // prefilter, not as part of the certificate itself.
+        x ^= x >> 30;
+        x = x.wrapping_mul(0xbf58_476d_1ce4_e5b9);
+        x ^= x >> 27;
+        x = x.wrapping_mul(0x94d0_49bb_1331_11eb);
+        x ^ (x >> 31)
+    }
+
+    const fn end_code(end: EndSig) -> u64 {
+        match end {
+            EndSig::Blanks => 0,
+            EndSig::Unknown => 1,
+        }
+    }
+
+    fn from_front(front: &[FastCfg]) -> Self {
+        let mut out = Self {
+            width: front.len(),
+            exact_sum: 0,
+            exact_sum2: 0,
+            exact_xor: 0,
+            cover_bits: [0; 2],
+        };
+
+        for cfg in front {
+            // This encoding need not be injective for correctness: collisions
+            // merely nominate an extra candidate period. Equal shape keys are
+            // always encoded identically, which is the only required property.
+            let key = u64::from(cfg.state)
+                .wrapping_mul(257)
+                .wrapping_add(u64::from(cfg.scan))
+                .wrapping_mul(3)
+                .wrapping_add(Self::end_code(cfg.l_end))
+                .wrapping_mul(3)
+                .wrapping_add(Self::end_code(cfg.r_end));
+
+            let mixed = Self::mix(key);
+            out.exact_sum = out.exact_sum.wrapping_add(mixed);
+            out.exact_sum2 = out
+                .exact_sum2
+                .wrapping_add(mixed.wrapping_mul(mixed | 1));
+            out.exact_xor ^= mixed;
+
+            // Two independent-ish bit positions in a 128-bit set summary.
+            let b0 = (mixed & 127) as usize;
+            let b1 = ((mixed >> 17) & 127) as usize;
+            out.cover_bits[b0 >> 6] |= 1_u64 << (b0 & 63);
+            out.cover_bits[b1 >> 6] |= 1_u64 << (b1 & 63);
+        }
+
+        out
+    }
+
+    const fn exact_compatible(self, later: Self) -> bool {
+        self.width == later.width
+            && self.exact_sum == later.exact_sum
+            && self.exact_sum2 == later.exact_sum2
+            && self.exact_xor == later.exact_xor
+    }
+
+    const fn coverage_compatible(self, later: Self) -> bool {
+        (later.cover_bits[0] & !self.cover_bits[0]) == 0
+            && (later.cover_bits[1] & !self.cover_bits[1]) == 0
+    }
+}
+
+impl PeriodicSnap {
+    fn new(step: Steps, front: FastFrontier) -> Self {
+        let shape = PeriodicShape::from_front(&front);
+        Self { step, front, shape }
+    }
 }
 
 impl PeriodicHistory {
@@ -4542,10 +4640,35 @@ impl PeriodicHistory {
     }
 
     fn push_snap(&mut self, step: Steps, front: FastFrontier) {
-        self.snaps.push(PeriodicSnap { step, front });
+        self.snaps.push(PeriodicSnap::new(step, front));
         if self.snaps.len() > Self::KEEP {
             self.snaps.remove(0);
         }
+    }
+
+    /// Cheap candidate-period gate. Width is the first discriminator because
+    /// it costs essentially nothing and was already a necessary condition of
+    /// exact frontier matching. The shape fingerprint then rejects periods
+    /// whose phase repeats cannot possibly preserve `(state, scan, ends)`.
+    fn exact_period_candidate(
+        &self,
+        start: usize,
+        period: usize,
+    ) -> bool {
+        let end = start + periodic_need(period);
+        for j in start..end - period {
+            let old = self.snaps[j].shape;
+            let new = self.snaps[j + period].shape;
+
+            if old.width != new.width {
+                return false;
+            }
+            if !old.exact_compatible(new) {
+                return false;
+            }
+        }
+
+        true
     }
 
     fn detect_any_phase_growth(&self) -> Option<usize> {
@@ -4556,6 +4679,10 @@ impl PeriodicHistory {
             }
 
             let start = self.snaps.len() - need;
+            if !self.exact_period_candidate(start, period) {
+                continue;
+            }
+
             if let Some(cycle_start) =
                 self.detect_period_growth_from(start, period)
             {
@@ -4575,20 +4702,8 @@ impl PeriodicHistory {
             return None;
         }
 
-        // Periods greater than two may have different frontier widths in
-        // different phases, e.g. 1,2,4,1,2,4,... .  Require only that each
-        // phase repeats its own width across periods.  This still rejects a
-        // drifting split/merge shape whose width changes from one occurrence
-        // of the same phase to the next.
-        if period > 2 {
-            for j in start..start + need - period {
-                if self.snaps[j].front.len()
-                    != self.snaps[j + period].front.len()
-                {
-                    return None;
-                }
-            }
-        }
+        // Width/phase-shape compatibility was already checked by
+        // `exact_period_candidate` before entering the expensive matcher.
 
         let expected =
             self.expected_period_signatures(start, period)?;
@@ -5188,13 +5303,35 @@ impl CoveragePeriodicHistory {
             return None;
         }
 
-        self.snaps.push(PeriodicSnap { step, front });
+        self.snaps.push(PeriodicSnap::new(step, front));
         if self.snaps.len() > Self::KEEP {
             self.snaps.remove(0);
         }
 
         let cycle_start_idx = self.detect_any_phase_coverage()?;
         Some(self.snaps[cycle_start_idx].step)
+    }
+
+    /// Coverage may change frontier width and multiplicity, so do not use the
+    /// exact width/fingerprint gate here. It still necessarily preserves the
+    /// `(state, scan, ends)` key of every covered later config; a tiny Bloom
+    /// subset check cheaply rejects periods that violate even that condition.
+    fn coverage_period_candidate(
+        &self,
+        start: usize,
+        period: usize,
+    ) -> bool {
+        let end = start + coverage_periodic_need(period);
+        for j in start..end - period {
+            if !self.snaps[j]
+                .shape
+                .coverage_compatible(self.snaps[j + period].shape)
+            {
+                return false;
+            }
+        }
+
+        true
     }
 
     fn detect_any_phase_coverage(&self) -> Option<usize> {
@@ -5205,6 +5342,10 @@ impl CoveragePeriodicHistory {
             }
 
             let start = self.snaps.len() - need;
+            if !self.coverage_period_candidate(start, period) {
+                continue;
+            }
+
             if let Some(cycle_start) =
                 self.detect_period_coverage_from(start, period)
             {
