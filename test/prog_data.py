@@ -1898,7 +1898,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1LB  1LB 0RC  1LD 1LA  1LD 1LA": 14,
         "1RB 1RC  1LC 0RB  1RC 0LD  1RA 1LD": 14,
         "1RB 0LD  1LC 1LA  0RB 1RD  1LD 0RC": 14,
-        "1RB 1LB  0RC 1LD  1LA 1RC  1LD 0RC": 13,
+        "1RB 1LB  0RC 1LD  1LA 1RC  1LD 0RC": 12,
         "1RB 1LB  1RC 0LA  1LA 0RD  1RD 1LA": 15,
         "1RB 1LB  1RC 0LA  1LB 0RD  1RD 1LA": 15,
         "1RB 0LD  1LC 0RC  1RC 1LD  1RA 1LA": 15,

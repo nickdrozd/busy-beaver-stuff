@@ -124,6 +124,112 @@ struct WinPossible<const S: usize, const C: usize> {
     right: [[[u64; C]; C]; S],
     left: [[[u64; C]; C]; S],
     any: [[bool; C]; S],
+
+    // Two-bit masks of possible total nonblank-cell parities.  The exact
+    // table retains `(state, left, scan, right)` correlation; the three
+    // aggregate tables mirror `right`/`left`/`any` so queries with unknown
+    // neighbors remain constant-time. Bit 0 is even, bit 1 is odd.
+    parity: Vec<u8>,
+    parity_right: [[[u8; C]; C]; S],
+    parity_left: [[[u8; C]; C]; S],
+    parity_any: [[u8; C]; S],
+
+    // Four-bit masks of possible `(left nonblank parity, right nonblank
+    // parity)` combinations.  Combination `lp | (rp << 1)` is represented by
+    // bit `1 << combination`.  Keeping the two side parities jointly is
+    // strictly stronger than total support parity: the latter is recovered as
+    // `lp ^ rp ^ (scan != 0)`.
+    side_parity: Vec<u8>,
+    side_parity_right: [[[u8; C]; C]; S],
+    side_parity_left: [[[u8; C]; C]; S],
+    side_parity_any: [[u8; C]; S],
+
+    // Nine-bit masks of possible `(left nonblank count mod 3, right nonblank
+    // count mod 3)` combinations.  Combination `left + 3 * right` is bit
+    // `1 << combination`.  This is kept in addition to side parity so the
+    // mod-3 refinement cannot lose any parity pruning power.
+    side_mod3: Vec<u16>,
+    side_mod3_right: [[[u16; C]; C]; S],
+    side_mod3_left: [[[u16; C]; C]; S],
+    side_mod3_any: [[u16; C]; S],
+
+    // Bitset of possible global per-color parity vectors, conditioned on the
+    // exact local window.  Vector bit `k - 1` is the parity of the number of
+    // cells of nonblank color `k`.  The outer u64 bitset therefore supports
+    // up to 2^6 vectors, i.e. alphabets with at most 7 colors including 0.
+    // Larger alphabets conservatively skip this refinement.
+    color_parity: Vec<u64>,
+    color_parity_right: [[[u64; C]; C]; S],
+    color_parity_left: [[[u64; C]; C]; S],
+    color_parity_any: [[u64; C]; S],
+}
+
+impl<const S: usize, const C: usize> WinPossible<S, C> {
+    const fn parity_index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    fn exact_parity_mask(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> u8 {
+        self.parity[Self::parity_index(st, scan, left, right)]
+    }
+
+    fn exact_side_parity_mask(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> u8 {
+        self.side_parity[Self::parity_index(st, scan, left, right)]
+    }
+
+    fn exact_side_mod3_mask(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> u16 {
+        self.side_mod3[Self::parity_index(st, scan, left, right)]
+    }
+
+    fn exact_color_parity_mask(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> u64 {
+        self.color_parity[Self::parity_index(st, scan, left, right)]
+    }
+
+    const fn color_parity_enabled() -> bool {
+        C <= 7
+    }
+
+    const fn all_color_parity_vectors() -> u64 {
+        if !Self::color_parity_enabled() {
+            return u64::MAX;
+        }
+
+        let states = 1_usize << C.saturating_sub(1);
+        if states == 64 {
+            u64::MAX
+        } else {
+            (1_u64 << states) - 1
+        }
+    }
 }
 
 const LEFT_SIDE: usize = 0;
@@ -370,7 +476,19 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     // `(state, scanned color)` pair must still occur in at least one reachable
     // window after the cheaper side filters above have canonicalized the tape.
     configs.retain(|Config { state, tape }| {
-        window_possible(*state, tape, &win_possible)
+        window_nonblank_parity_possible(*state, tape, &win_possible)
+            && window_side_nonblank_parity_possible(
+                *state,
+                tape,
+                &win_possible,
+            )
+            && window_side_nonblank_mod3_possible(
+                *state,
+                tape,
+                &win_possible,
+            )
+            && window_color_parity_possible(*state, tape, &win_possible)
+            && window_possible(*state, tape, &win_possible)
             && tape.obeys_state_side(*state, &side_possible)
             && tape
                 .obeys_blank_side_possible(*state, &blank_side_possible)
@@ -665,6 +783,164 @@ fn nonblank_parity_possible<const s: usize>(
     (parity.possible[st] & tape.nonblank_parity_mask()) != 0
 }
 
+fn window_nonblank_parity_possible<const S: usize, const C: usize>(
+    state: State,
+    tape: &Tape,
+    possible: &WinPossible<S, C>,
+) -> bool {
+    let required = tape.nonblank_parity_mask();
+
+    // Unknown ends or indefinite nonblank runs permit either parity, so this
+    // invariant cannot prune them. Avoid even the small window lookup in the
+    // common halt-target case.
+    if required == 0b11 {
+        return true;
+    }
+
+    let st = state as usize;
+    let sc = tape.scan as usize;
+    let left = tape.left_neighbor_color().map(usize::from);
+    let right = tape.right_neighbor_color().map(usize::from);
+
+    let parity_mask = match (left, right) {
+        (Some(left), Some(right)) => {
+            possible.exact_parity_mask(st, sc, left, right)
+        },
+        (Some(left), None) => possible.parity_right[st][sc][left],
+        (None, Some(right)) => possible.parity_left[st][sc][right],
+        (None, None) => possible.parity_any[st][sc],
+    };
+
+    (parity_mask & required) != 0
+}
+
+fn window_side_nonblank_parity_possible<
+    const S: usize,
+    const C: usize,
+>(
+    state: State,
+    tape: &Tape,
+    possible: &WinPossible<S, C>,
+) -> bool {
+    let (left_required, right_required) =
+        tape.side_nonblank_parity_masks();
+
+    // If neither side has a fixed parity, this abstraction cannot prune.
+    if left_required == 0b11 && right_required == 0b11 {
+        return true;
+    }
+
+    let mut required_pairs = 0_u8;
+    for left_parity in 0..2 {
+        if left_required & (1_u8 << left_parity) == 0 {
+            continue;
+        }
+        for right_parity in 0..2 {
+            if right_required & (1_u8 << right_parity) == 0 {
+                continue;
+            }
+            let pair = left_parity | (right_parity << 1);
+            required_pairs |= 1_u8 << pair;
+        }
+    }
+
+    let st = state as usize;
+    let sc = tape.scan as usize;
+    let left = tape.left_neighbor_color().map(usize::from);
+    let right = tape.right_neighbor_color().map(usize::from);
+
+    let possible_pairs = match (left, right) {
+        (Some(left), Some(right)) => {
+            possible.exact_side_parity_mask(st, sc, left, right)
+        },
+        (Some(left), None) => possible.side_parity_right[st][sc][left],
+        (None, Some(right)) => possible.side_parity_left[st][sc][right],
+        (None, None) => possible.side_parity_any[st][sc],
+    };
+
+    possible_pairs & required_pairs != 0
+}
+
+fn window_side_nonblank_mod3_possible<
+    const S: usize,
+    const C: usize,
+>(
+    state: State,
+    tape: &Tape,
+    possible: &WinPossible<S, C>,
+) -> bool {
+    let (left_required, right_required) =
+        tape.side_nonblank_mod3_masks();
+
+    // Unknown ends or indefinite nonblank runs allow every residue.
+    if left_required == 0b111 && right_required == 0b111 {
+        return true;
+    }
+
+    let mut required_pairs = 0_u16;
+    for left_residue in 0..3 {
+        if left_required & (1_u8 << left_residue) == 0 {
+            continue;
+        }
+        for right_residue in 0..3 {
+            if right_required & (1_u8 << right_residue) == 0 {
+                continue;
+            }
+            let pair = left_residue + 3 * right_residue;
+            required_pairs |= 1_u16 << pair;
+        }
+    }
+
+    let st = state as usize;
+    let sc = tape.scan as usize;
+    let left = tape.left_neighbor_color().map(usize::from);
+    let right = tape.right_neighbor_color().map(usize::from);
+
+    let possible_pairs = match (left, right) {
+        (Some(left), Some(right)) => {
+            possible.exact_side_mod3_mask(st, sc, left, right)
+        },
+        (Some(left), None) => possible.side_mod3_right[st][sc][left],
+        (None, Some(right)) => possible.side_mod3_left[st][sc][right],
+        (None, None) => possible.side_mod3_any[st][sc],
+    };
+
+    possible_pairs & required_pairs != 0
+}
+
+fn window_color_parity_possible<const S: usize, const C: usize>(
+    state: State,
+    tape: &Tape,
+    possible: &WinPossible<S, C>,
+) -> bool {
+    if !WinPossible::<S, C>::color_parity_enabled() {
+        return true;
+    }
+
+    let required = tape.color_parity_mask::<C>();
+    if required == WinPossible::<S, C>::all_color_parity_vectors() {
+        return true;
+    }
+
+    let st = state as usize;
+    let sc = tape.scan as usize;
+    let left = tape.left_neighbor_color().map(usize::from);
+    let right = tape.right_neighbor_color().map(usize::from);
+
+    let possible_vectors = match (left, right) {
+        (Some(left), Some(right)) => {
+            possible.exact_color_parity_mask(st, sc, left, right)
+        },
+        (Some(left), None) => possible.color_parity_right[st][sc][left],
+        (None, Some(right)) => {
+            possible.color_parity_left[st][sc][right]
+        },
+        (None, None) => possible.color_parity_any[st][sc],
+    };
+
+    possible_vectors & required != 0
+}
+
 #[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
 fn step_instrs<const s: usize, const c: usize>(
     instrs: impl IntoIterator<Item = Instr>,
@@ -719,7 +995,24 @@ fn step_instrs<const s: usize, const c: usize>(
             continue;
         }
 
-        if !nonblank_parity_possible(state, &tape, nonblank_parity) {
+        if !nonblank_parity_possible(state, &tape, nonblank_parity)
+            || !window_nonblank_parity_possible(
+                state,
+                &tape,
+                win_possible,
+            )
+            || !window_side_nonblank_parity_possible(
+                state,
+                &tape,
+                win_possible,
+            )
+            || !window_side_nonblank_mod3_possible(
+                state,
+                &tape,
+                win_possible,
+            )
+            || !window_color_parity_possible(state, &tape, win_possible)
+        {
             continue;
         }
 
@@ -1009,7 +1302,10 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// over-approximation, and therefore safe for pruning: if a
     /// neighbor color is *not* possible here, it is not possible in any
     /// concrete run from blank.
-    #[expect(clippy::cast_possible_truncation)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::excessive_nesting
+    )]
     fn win_possible_from_blank(
         &self,
         forbid_left: &[bool; c],
@@ -1038,12 +1334,15 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         }
 
         let total = s * 2 * c * c * c * 2;
-        let mut visited = vec![false; total];
+        // Four-bit mask per abstract window state.  Each bit is one exact
+        // `(left-side parity, right-side parity)` combination.  Total support
+        // parity is derived from those two bits plus the scanned color.
+        let mut visited = vec![0_u8; total];
         let mut q = std::collections::VecDeque::new();
 
-        // Start from true blank: window 0 0 0 and both outsides known blank.
-        q.push_back((0, 1, 0, 0, 0, 1));
-        visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = true;
+        // Start from true blank: both whole sides have even nonblank parity.
+        q.push_back((0, 1, 0, 0, 0, 1, 0_u8));
+        visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = 0b0001;
 
         assert!(c <= 64, "window bitmasks support at most 64 colors");
 
@@ -1051,12 +1350,49 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             right: [[[0; c]; c]; s],
             left: [[[0; c]; c]; s],
             any: [[false; c]; s],
+            parity: vec![0; s * c * c * c],
+            parity_right: [[[0; c]; c]; s],
+            parity_left: [[[0; c]; c]; s],
+            parity_any: [[0; c]; s],
+            side_parity: vec![0; s * c * c * c],
+            side_parity_right: [[[0; c]; c]; s],
+            side_parity_left: [[[0; c]; c]; s],
+            side_parity_any: [[0; c]; s],
+            side_mod3: vec![0; s * c * c * c],
+            side_mod3_right: [[[0; c]; c]; s],
+            side_mod3_left: [[[0; c]; c]; s],
+            side_mod3_any: [[0; c]; s],
+            color_parity: vec![0; s * c * c * c],
+            color_parity_right: [[[0; c]; c]; s],
+            color_parity_left: [[[0; c]; c]; s],
+            color_parity_any: [[0; c]; s],
         };
 
-        while let Some((st, lb, l, sc, r, rb)) = q.pop_front() {
+        while let Some((st, lb, l, sc, r, rb, side_parity)) =
+            q.pop_front()
+        {
             possible.right[st][sc][l] |= 1_u64 << r;
             possible.left[st][sc][r] |= 1_u64 << l;
             possible.any[st][sc] = true;
+
+            let left_parity = side_parity & 1;
+            let right_parity = (side_parity >> 1) & 1;
+            let total_parity =
+                left_parity ^ right_parity ^ u8::from(sc != 0);
+            let parity_bit = 1_u8 << total_parity;
+            let side_parity_bit = 1_u8 << side_parity;
+            let parity_index =
+                WinPossible::<s, c>::parity_index(st, sc, l, r);
+
+            possible.parity[parity_index] |= parity_bit;
+            possible.parity_right[st][sc][l] |= parity_bit;
+            possible.parity_left[st][sc][r] |= parity_bit;
+            possible.parity_any[st][sc] |= parity_bit;
+
+            possible.side_parity[parity_index] |= side_parity_bit;
+            possible.side_parity_right[st][sc][l] |= side_parity_bit;
+            possible.side_parity_left[st][sc][r] |= side_parity_bit;
+            possible.side_parity_any[st][sc] |= side_parity_bit;
 
             let st_state = st as State;
             let sc_color = sc as Color;
@@ -1077,6 +1413,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 // The new left tail starts at old l, so it remains known blank exactly
                 // when old l is blank and the old farther-left tail was known blank.
                 let new_lb = usize::from(lb == 1 && l == 0);
+                let next_left_parity = left_parity ^ u8::from(p != 0);
+                let next_right_parity = right_parity ^ u8::from(r != 0);
+                let next_side_parity =
+                    next_left_parity | (next_right_parity << 1);
+                let next_side_parity_bit = 1_u8 << next_side_parity;
 
                 if rb == 1 {
                     // The old right tail starts at the newly exposed cell, so both
@@ -1084,9 +1425,17 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                     // not depend on the old right neighbor r.
                     let n = (ns, new_lb, p, r, 0, 1);
                     let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                    if !visited[id] {
-                        visited[id] = true;
-                        q.push_back(n);
+                    if visited[id] & next_side_parity_bit == 0 {
+                        visited[id] |= next_side_parity_bit;
+                        q.push_back((
+                            n.0,
+                            n.1,
+                            n.2,
+                            n.3,
+                            n.4,
+                            n.5,
+                            next_side_parity,
+                        ));
                     }
                 } else {
                     // The newly exposed cell is unknown; conservatively allow any
@@ -1098,24 +1447,45 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         let n = (ns, new_lb, p, r, new_r, 0);
                         let id =
                             idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                        if !visited[id] {
-                            visited[id] = true;
-                            q.push_back(n);
+                        if visited[id] & next_side_parity_bit == 0 {
+                            visited[id] |= next_side_parity_bit;
+                            q.push_back((
+                                n.0,
+                                n.1,
+                                n.2,
+                                n.3,
+                                n.4,
+                                n.5,
+                                next_side_parity,
+                            ));
                         }
                     }
                 }
             } else {
                 // Move Left.  Symmetrically, the new right tail starts at old r.
                 let new_rb = usize::from(rb == 1 && r == 0);
+                let next_left_parity = left_parity ^ u8::from(l != 0);
+                let next_right_parity = right_parity ^ u8::from(p != 0);
+                let next_side_parity =
+                    next_left_parity | (next_right_parity << 1);
+                let next_side_parity_bit = 1_u8 << next_side_parity;
 
                 if lb == 1 {
                     // The old left tail starts at the newly exposed cell, so that
                     // cell and everything beyond it are known blank.
                     let n = (ns, 1, 0, l, p, new_rb);
                     let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                    if !visited[id] {
-                        visited[id] = true;
-                        q.push_back(n);
+                    if visited[id] & next_side_parity_bit == 0 {
+                        visited[id] |= next_side_parity_bit;
+                        q.push_back((
+                            n.0,
+                            n.1,
+                            n.2,
+                            n.3,
+                            n.4,
+                            n.5,
+                            next_side_parity,
+                        ));
                     }
                 } else {
                     // The newly exposed cell is unknown; conservatively allow any
@@ -1127,9 +1497,253 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         let n = (ns, 0, new_l, l, p, new_rb);
                         let id =
                             idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                        if !visited[id] {
-                            visited[id] = true;
-                            q.push_back(n);
+                        if visited[id] & next_side_parity_bit == 0 {
+                            visited[id] |= next_side_parity_bit;
+                            q.push_back((
+                                n.0,
+                                n.1,
+                                n.2,
+                                n.3,
+                                n.4,
+                                n.5,
+                                next_side_parity,
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        // A second tiny worklist retains joint left/right nonblank counts
+        // modulo 3.  It is intentionally separate from side parity: joining
+        // the two abstractions independently costs 4 + 9 residue states per
+        // abstract window instead of 36, while preserving every existing
+        // parity rejection and adding the mod-3 rejection on top.
+        let mut mod3_visited = vec![0_u16; total];
+        let mut mod3_q = std::collections::VecDeque::new();
+        mod3_q.push_back((0, 1, 0, 0, 0, 1, 0_u8));
+        mod3_visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = 1;
+
+        while let Some((st, lb, l, sc, r, rb, side_mod3)) =
+            mod3_q.pop_front()
+        {
+            let left_residue = side_mod3 % 3;
+            let right_residue = side_mod3 / 3;
+            let residue_bit = 1_u16 << side_mod3;
+            let residue_index =
+                WinPossible::<s, c>::parity_index(st, sc, l, r);
+
+            possible.side_mod3[residue_index] |= residue_bit;
+            possible.side_mod3_right[st][sc][l] |= residue_bit;
+            possible.side_mod3_left[st][sc][r] |= residue_bit;
+            possible.side_mod3_any[st][sc] |= residue_bit;
+
+            let st_state = st as State;
+            let sc_color = sc as Color;
+            let Some(&(print, shift, next_state)) =
+                self.get(&(st_state, sc_color))
+            else {
+                continue;
+            };
+
+            let p = print as usize;
+            let ns = next_state as usize;
+
+            if shift {
+                let new_lb = usize::from(lb == 1 && l == 0);
+                let next_left = (left_residue + u8::from(p != 0)) % 3;
+                let next_right =
+                    (right_residue + 3 - u8::from(r != 0)) % 3;
+                let next_code = next_left + 3 * next_right;
+                let next_bit = 1_u16 << next_code;
+
+                if rb == 1 {
+                    let n = (ns, new_lb, p, r, 0, 1);
+                    let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
+                    if mod3_visited[id] & next_bit == 0 {
+                        mod3_visited[id] |= next_bit;
+                        mod3_q.push_back((
+                            n.0, n.1, n.2, n.3, n.4, n.5, next_code,
+                        ));
+                    }
+                } else {
+                    for new_r in 0..c {
+                        if forbid_right[new_r] {
+                            continue;
+                        }
+                        let n = (ns, new_lb, p, r, new_r, 0);
+                        let id =
+                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
+                        if mod3_visited[id] & next_bit == 0 {
+                            mod3_visited[id] |= next_bit;
+                            mod3_q.push_back((
+                                n.0, n.1, n.2, n.3, n.4, n.5, next_code,
+                            ));
+                        }
+                    }
+                }
+            } else {
+                let new_rb = usize::from(rb == 1 && r == 0);
+                let next_left =
+                    (left_residue + 3 - u8::from(l != 0)) % 3;
+                let next_right = (right_residue + u8::from(p != 0)) % 3;
+                let next_code = next_left + 3 * next_right;
+                let next_bit = 1_u16 << next_code;
+
+                if lb == 1 {
+                    let n = (ns, 1, 0, l, p, new_rb);
+                    let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
+                    if mod3_visited[id] & next_bit == 0 {
+                        mod3_visited[id] |= next_bit;
+                        mod3_q.push_back((
+                            n.0, n.1, n.2, n.3, n.4, n.5, next_code,
+                        ));
+                    }
+                } else {
+                    for new_l in 0..c {
+                        if forbid_left[new_l] {
+                            continue;
+                        }
+                        let n = (ns, 0, new_l, l, p, new_rb);
+                        let id =
+                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
+                        if mod3_visited[id] & next_bit == 0 {
+                            mod3_visited[id] |= next_bit;
+                            mod3_q.push_back((
+                                n.0, n.1, n.2, n.3, n.4, n.5, next_code,
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Global per-color parity is a separate product component.  Keeping it
+        // independent from side parity/mod-3 avoids multiplying all residue
+        // domains together.  A transition changes global tape composition only
+        // by replacing the scanned color `sc` with `print`; head movement merely
+        // changes which existing cell is scanned.
+        if WinPossible::<s, c>::color_parity_enabled() {
+            let mut color_visited = vec![0_u64; total];
+            let mut color_q = std::collections::VecDeque::new();
+            color_q.push_back((0, 1, 0, 0, 0, 1, 0_u8));
+            color_visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = 1;
+
+            while let Some((st, lb, l, sc, r, rb, color_parity)) =
+                color_q.pop_front()
+            {
+                let vector_bit = 1_u64 << color_parity;
+                let vector_index =
+                    WinPossible::<s, c>::parity_index(st, sc, l, r);
+
+                possible.color_parity[vector_index] |= vector_bit;
+                possible.color_parity_right[st][sc][l] |= vector_bit;
+                possible.color_parity_left[st][sc][r] |= vector_bit;
+                possible.color_parity_any[st][sc] |= vector_bit;
+
+                let st_state = st as State;
+                let sc_color = sc as Color;
+                let Some(&(print, shift, next_state)) =
+                    self.get(&(st_state, sc_color))
+                else {
+                    continue;
+                };
+
+                let p = print as usize;
+                let ns = next_state as usize;
+                let mut next_color_parity = color_parity;
+                if sc != 0 {
+                    next_color_parity ^= 1_u8 << (sc - 1);
+                }
+                if p != 0 {
+                    next_color_parity ^= 1_u8 << (p - 1);
+                }
+                let next_vector_bit = 1_u64 << next_color_parity;
+
+                if shift {
+                    let new_lb = usize::from(lb == 1 && l == 0);
+
+                    if rb == 1 {
+                        let n = (ns, new_lb, p, r, 0, 1);
+                        let id =
+                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
+                        if color_visited[id] & next_vector_bit == 0 {
+                            color_visited[id] |= next_vector_bit;
+                            color_q.push_back((
+                                n.0,
+                                n.1,
+                                n.2,
+                                n.3,
+                                n.4,
+                                n.5,
+                                next_color_parity,
+                            ));
+                        }
+                    } else {
+                        for new_r in 0..c {
+                            if forbid_right[new_r] {
+                                continue;
+                            }
+                            let n = (ns, new_lb, p, r, new_r, 0);
+                            let id = idx::<c, s>(
+                                n.0, n.1, n.2, n.3, n.4, n.5,
+                            );
+                            if color_visited[id] & next_vector_bit == 0
+                            {
+                                color_visited[id] |= next_vector_bit;
+                                color_q.push_back((
+                                    n.0,
+                                    n.1,
+                                    n.2,
+                                    n.3,
+                                    n.4,
+                                    n.5,
+                                    next_color_parity,
+                                ));
+                            }
+                        }
+                    }
+                } else {
+                    let new_rb = usize::from(rb == 1 && r == 0);
+
+                    if lb == 1 {
+                        let n = (ns, 1, 0, l, p, new_rb);
+                        let id =
+                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
+                        if color_visited[id] & next_vector_bit == 0 {
+                            color_visited[id] |= next_vector_bit;
+                            color_q.push_back((
+                                n.0,
+                                n.1,
+                                n.2,
+                                n.3,
+                                n.4,
+                                n.5,
+                                next_color_parity,
+                            ));
+                        }
+                    } else {
+                        for new_l in 0..c {
+                            if forbid_left[new_l] {
+                                continue;
+                            }
+                            let n = (ns, 0, new_l, l, p, new_rb);
+                            let id = idx::<c, s>(
+                                n.0, n.1, n.2, n.3, n.4, n.5,
+                            );
+                            if color_visited[id] & next_vector_bit == 0
+                            {
+                                color_visited[id] |= next_vector_bit;
+                                color_q.push_back((
+                                    n.0,
+                                    n.1,
+                                    n.2,
+                                    n.3,
+                                    n.4,
+                                    n.5,
+                                    next_color_parity,
+                                ));
+                            }
                         }
                     }
                 }
@@ -1994,6 +2608,115 @@ impl Tape {
         }
     }
 
+    /// Return possible nonblank-count parities for the left and right spans
+    /// separately. Bit 0 means even, bit 1 means odd. Unknown ends and
+    /// indefinite nonblank runs permit either parity; indefinite blank runs do
+    /// not affect nonblank parity.
+    fn side_nonblank_parity_masks(&self) -> (u8, u8) {
+        fn span_mask(span: &Span) -> u8 {
+            if span.end == TapeEnd::Unknown {
+                return 0b11;
+            }
+
+            let mut parity = 0_u8;
+            for block in span.span.iter() {
+                if block.color == 0 {
+                    continue;
+                }
+                if block.count.is_indef() {
+                    return 0b11;
+                }
+                parity ^= u8::from(block.count.minimum() & 1 != 0);
+            }
+
+            1_u8 << parity
+        }
+
+        (span_mask(&self.lspan), span_mask(&self.rspan))
+    }
+
+    /// Return possible nonblank-count residues modulo 3 for the left and right
+    /// spans separately. Bits 0..=2 correspond to residues 0..=2. Unknown
+    /// ends and indefinite nonblank runs permit every residue.
+    fn side_nonblank_mod3_masks(&self) -> (u8, u8) {
+        fn span_mask(span: &Span) -> u8 {
+            if span.end == TapeEnd::Unknown {
+                return 0b111;
+            }
+
+            let mut residue = 0_u8;
+            for block in span.span.iter() {
+                if block.color == 0 {
+                    continue;
+                }
+                if block.count.is_indef() {
+                    return 0b111;
+                }
+                residue = (residue + block.count.minimum() % 3) % 3;
+            }
+
+            1_u8 << residue
+        }
+
+        (span_mask(&self.lspan), span_mask(&self.rspan))
+    }
+
+    /// Return the possible global per-color parity vectors.  Vector bit
+    /// `color - 1` is the parity of the number of cells of that nonblank color;
+    /// the returned u64 is a bitset over those vectors. Unknown tape ends make
+    /// every vector possible. An indefinite run makes only its own color bit
+    /// unknown, preserving exact parity information for the other colors.
+    fn color_parity_mask<const C: usize>(&self) -> u64 {
+        if !WinPossible::<1, C>::color_parity_enabled() {
+            return u64::MAX;
+        }
+
+        let all = WinPossible::<1, C>::all_color_parity_vectors();
+        if self.lspan.end == TapeEnd::Unknown
+            || self.rspan.end == TapeEnd::Unknown
+        {
+            return all;
+        }
+
+        let mut vector = 0_u8;
+        let mut unknown_bits = 0_u8;
+
+        let mut add_color =
+            |color: Color, odd: bool, indefinite: bool| {
+                if color == 0 {
+                    return;
+                }
+                let bit = 1_u8 << (color as usize - 1);
+                if indefinite {
+                    unknown_bits |= bit;
+                } else if odd {
+                    vector ^= bit;
+                }
+            };
+
+        add_color(self.scan, true, false);
+        for span in [&self.lspan, &self.rspan] {
+            for block in span.span.iter() {
+                add_color(
+                    block.color,
+                    block.count.minimum() & 1 != 0,
+                    block.count.is_indef(),
+                );
+            }
+        }
+
+        let mut out = 0_u64;
+        let mut subset = unknown_bits;
+        loop {
+            out |= 1_u64 << (vector ^ subset);
+            if subset == 0 {
+                break;
+            }
+            subset = (subset - 1) & unknown_bits;
+        }
+        out
+    }
+
     /// Return the possible parities of the total number of nonblank cells.
     /// Bit 0 means even is possible; bit 1 means odd is possible.
     ///
@@ -2701,6 +3424,270 @@ fn test_nonblank_parity_pruning() {
 }
 
 #[test]
+fn test_window_nonblank_parity_pruning() {
+    // The window BFS starts with exact even support at the all-zero initial
+    // window and propagates parity independently of local-window reachability.
+    let prog = Prog::<2, 2>::from("1RB 1RB  1LA ...");
+    let state_parity = prog.nonblank_parity_from_blank();
+    assert_eq!(state_parity.possible[1], 0b11);
+
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+
+    // State B admits both support parities overall, but an exact local window
+    // can retain a single parity.
+    let mut found_exact = false;
+    for scan in 0..2 {
+        for left in 0..2 {
+            for right in 0..2 {
+                let mask =
+                    windows.exact_parity_mask(1, scan, left, right);
+                if matches!(mask, 0b01 | 0b10) {
+                    found_exact = true;
+                }
+            }
+        }
+    }
+    assert!(found_exact);
+
+    // Query-time matching existentially joins only unknown neighbors.  With
+    // both neighbors fixed, an incompatible exact support parity is rejected.
+    let mut synthetic = WinPossible::<1, 2> {
+        right: [[[0; 2]; 2]; 1],
+        left: [[[0; 2]; 2]; 1],
+        any: [[false; 2]; 1],
+        parity: vec![0; 2 * 2 * 2],
+        parity_right: [[[0; 2]; 2]; 1],
+        parity_left: [[[0; 2]; 2]; 1],
+        parity_any: [[0; 2]; 1],
+        side_parity: vec![0; 2 * 2 * 2],
+        side_parity_right: [[[0; 2]; 2]; 1],
+        side_parity_left: [[[0; 2]; 2]; 1],
+        side_parity_any: [[0; 2]; 1],
+        side_mod3: vec![0; 2 * 2 * 2],
+        side_mod3_right: [[[0; 2]; 2]; 1],
+        side_mod3_left: [[[0; 2]; 2]; 1],
+        side_mod3_any: [[0; 2]; 1],
+        color_parity: vec![0; 2 * 2 * 2],
+        color_parity_right: [[[0; 2]; 2]; 1],
+        color_parity_left: [[[0; 2]; 2]; 1],
+        color_parity_any: [[0; 2]; 1],
+    };
+    synthetic.right[0][0][1] = 1 << 0;
+    synthetic.left[0][0][0] = 1 << 1;
+    synthetic.any[0][0] = true;
+    let index = WinPossible::<1, 2>::parity_index(0, 0, 1, 0);
+    synthetic.parity[index] = 0b10; // exact window allows odd only
+    synthetic.parity_right[0][0][1] = 0b10;
+    synthetic.parity_left[0][0][0] = 0b10;
+    synthetic.parity_any[0][0] = 0b10;
+
+    let odd: Tape = "0+ 1 [0] 0+".into();
+    assert_eq!(odd.nonblank_parity_mask(), 0b10);
+    assert!(window_nonblank_parity_possible(0, &odd, &synthetic));
+
+    let even: Tape = "0+ 1^2 [0] 0+".into();
+    assert_eq!(even.nonblank_parity_mask(), 0b01);
+    assert!(!window_nonblank_parity_possible(0, &even, &synthetic));
+}
+
+#[test]
+fn test_window_side_nonblank_parity_pruning() {
+    // Same exact local window and same total odd parity, but only the
+    // `(left odd, right even)` distribution is forward-reachable.
+    let mut synthetic = WinPossible::<1, 2> {
+        right: [[[0; 2]; 2]; 1],
+        left: [[[0; 2]; 2]; 1],
+        any: [[false; 2]; 1],
+        parity: vec![0; 2 * 2 * 2],
+        parity_right: [[[0; 2]; 2]; 1],
+        parity_left: [[[0; 2]; 2]; 1],
+        parity_any: [[0; 2]; 1],
+        side_parity: vec![0; 2 * 2 * 2],
+        side_parity_right: [[[0; 2]; 2]; 1],
+        side_parity_left: [[[0; 2]; 2]; 1],
+        side_parity_any: [[0; 2]; 1],
+        side_mod3: vec![0; 2 * 2 * 2],
+        side_mod3_right: [[[0; 2]; 2]; 1],
+        side_mod3_left: [[[0; 2]; 2]; 1],
+        side_mod3_any: [[0; 2]; 1],
+        color_parity: vec![0; 2 * 2 * 2],
+        color_parity_right: [[[0; 2]; 2]; 1],
+        color_parity_left: [[[0; 2]; 2]; 1],
+        color_parity_any: [[0; 2]; 1],
+    };
+
+    synthetic.right[0][0][1] = 1 << 1;
+    synthetic.left[0][0][1] = 1 << 1;
+    synthetic.any[0][0] = true;
+    let index = WinPossible::<1, 2>::parity_index(0, 0, 1, 1);
+    synthetic.parity[index] = 0b10;
+    synthetic.parity_right[0][0][1] = 0b10;
+    synthetic.parity_left[0][0][1] = 0b10;
+    synthetic.parity_any[0][0] = 0b10;
+
+    // side-parity code 1 = left odd, right even.
+    synthetic.side_parity[index] = 1 << 1;
+    synthetic.side_parity_right[0][0][1] = 1 << 1;
+    synthetic.side_parity_left[0][0][1] = 1 << 1;
+    synthetic.side_parity_any[0][0] = 1 << 1;
+
+    let matching: Tape = "0+ 1 [0] 1^2 0+".into();
+    assert_eq!(matching.side_nonblank_parity_masks(), (0b10, 0b01));
+    assert!(window_side_nonblank_parity_possible(
+        0, &matching, &synthetic,
+    ));
+
+    // Move the odd support to the right. Total parity is still odd, so the
+    // total-parity filter accepts it, while the joint side-parity filter does
+    // not.
+    let wrong_distribution: Tape = "0+ 1^2 [0] 1 0+".into();
+    assert_eq!(wrong_distribution.nonblank_parity_mask(), 0b10);
+    assert!(window_nonblank_parity_possible(
+        0,
+        &wrong_distribution,
+        &synthetic,
+    ));
+    assert!(!window_side_nonblank_parity_possible(
+        0,
+        &wrong_distribution,
+        &synthetic,
+    ));
+}
+
+#[test]
+fn test_window_side_nonblank_mod3_pruning() {
+    // Same exact local window and same side parities, but different left-side
+    // nonblank count modulo 3.  The parity checks alone cannot distinguish
+    // one nonblank from three nonblanks.
+    let mut synthetic = WinPossible::<1, 2> {
+        right: [[[0; 2]; 2]; 1],
+        left: [[[0; 2]; 2]; 1],
+        any: [[false; 2]; 1],
+        parity: vec![0; 2 * 2 * 2],
+        parity_right: [[[0; 2]; 2]; 1],
+        parity_left: [[[0; 2]; 2]; 1],
+        parity_any: [[0; 2]; 1],
+        side_parity: vec![0; 2 * 2 * 2],
+        side_parity_right: [[[0; 2]; 2]; 1],
+        side_parity_left: [[[0; 2]; 2]; 1],
+        side_parity_any: [[0; 2]; 1],
+        side_mod3: vec![0; 2 * 2 * 2],
+        side_mod3_right: [[[0; 2]; 2]; 1],
+        side_mod3_left: [[[0; 2]; 2]; 1],
+        side_mod3_any: [[0; 2]; 1],
+        color_parity: vec![0; 2 * 2 * 2],
+        color_parity_right: [[[0; 2]; 2]; 1],
+        color_parity_left: [[[0; 2]; 2]; 1],
+        color_parity_any: [[0; 2]; 1],
+    };
+
+    synthetic.right[0][0][1] = 1 << 0;
+    synthetic.left[0][0][0] = 1 << 1;
+    synthetic.any[0][0] = true;
+    let index = WinPossible::<1, 2>::parity_index(0, 0, 1, 0);
+
+    // Odd total, left odd/right even: both parity filters accept either tape.
+    synthetic.parity[index] = 0b10;
+    synthetic.parity_right[0][0][1] = 0b10;
+    synthetic.parity_left[0][0][0] = 0b10;
+    synthetic.parity_any[0][0] = 0b10;
+    synthetic.side_parity[index] = 1 << 1;
+    synthetic.side_parity_right[0][0][1] = 1 << 1;
+    synthetic.side_parity_left[0][0][0] = 1 << 1;
+    synthetic.side_parity_any[0][0] = 1 << 1;
+
+    // Mod-3 code 1 = left residue 1, right residue 0.
+    synthetic.side_mod3[index] = 1 << 1;
+    synthetic.side_mod3_right[0][0][1] = 1 << 1;
+    synthetic.side_mod3_left[0][0][0] = 1 << 1;
+    synthetic.side_mod3_any[0][0] = 1 << 1;
+
+    let one: Tape = "0+ 1 [0] 0+".into();
+    assert_eq!(one.side_nonblank_mod3_masks(), (0b010, 0b001));
+    assert!(window_side_nonblank_mod3_possible(0, &one, &synthetic));
+
+    let three: Tape = "0+ 1^3 [0] 0+".into();
+    assert_eq!(three.side_nonblank_parity_masks(), (0b10, 0b01));
+    assert!(window_side_nonblank_parity_possible(
+        0, &three, &synthetic
+    ));
+    assert_eq!(three.side_nonblank_mod3_masks(), (0b001, 0b001));
+    assert!(!window_side_nonblank_mod3_possible(0, &three, &synthetic));
+}
+
+#[test]
+fn test_window_per_color_parity_pruning() {
+    // Three colors: vector bit 0 is parity of color 1, bit 1 of color 2.
+    // The exact window admits only vector `01` (odd #1, even #2).  Both tapes
+    // below have odd total nonblank parity, so total parity alone cannot
+    // distinguish them.
+    let mut synthetic = WinPossible::<1, 3> {
+        right: [[[0; 3]; 3]; 1],
+        left: [[[0; 3]; 3]; 1],
+        any: [[false; 3]; 1],
+        parity: vec![0; 3 * 3 * 3],
+        parity_right: [[[0; 3]; 3]; 1],
+        parity_left: [[[0; 3]; 3]; 1],
+        parity_any: [[0; 3]; 1],
+        side_parity: vec![0; 3 * 3 * 3],
+        side_parity_right: [[[0; 3]; 3]; 1],
+        side_parity_left: [[[0; 3]; 3]; 1],
+        side_parity_any: [[0; 3]; 1],
+        side_mod3: vec![0; 3 * 3 * 3],
+        side_mod3_right: [[[0; 3]; 3]; 1],
+        side_mod3_left: [[[0; 3]; 3]; 1],
+        side_mod3_any: [[0; 3]; 1],
+        color_parity: vec![0; 3 * 3 * 3],
+        color_parity_right: [[[0; 3]; 3]; 1],
+        color_parity_left: [[[0; 3]; 3]; 1],
+        color_parity_any: [[0; 3]; 1],
+    };
+
+    synthetic.right[0][0][1] = 1 << 0;
+    synthetic.left[0][0][0] = 1 << 1;
+    synthetic.any[0][0] = true;
+    let index = WinPossible::<1, 3>::parity_index(0, 0, 1, 0);
+    let vector_odd_1_even_2 = 0b01_u8;
+    let vector_bit = 1_u64 << vector_odd_1_even_2;
+    synthetic.color_parity[index] = vector_bit;
+    synthetic.color_parity_right[0][0][1] = vector_bit;
+    synthetic.color_parity_left[0][0][0] = vector_bit;
+    synthetic.color_parity_any[0][0] = vector_bit;
+
+    let color_1: Tape = "0+ 1 [0] 0+".into();
+    assert_eq!(color_1.color_parity_mask::<3>(), 1 << 0b01);
+    assert!(window_color_parity_possible(0, &color_1, &synthetic));
+
+    let color_2: Tape = "0+ 2 [0] 0+".into();
+    assert_eq!(color_2.nonblank_parity_mask(), 0b10);
+    assert_eq!(color_2.color_parity_mask::<3>(), 1 << 0b10);
+    assert!(!window_color_parity_possible(0, &color_2, &synthetic));
+
+    // An indefinite run of color 1 makes only the color-1 parity unknown; it
+    // does not erase information about color 2.
+    let indefinite: Tape = "0+ 1.. [0] 0+".into();
+    assert_eq!(
+        indefinite.color_parity_mask::<3>(),
+        (1 << 0b00) | (1 << 0b01)
+    );
+}
+
+#[test]
+fn test_forward_per_color_parity_propagation() {
+    let prog = Prog::<2, 3>::from("1RB ... ...  ... ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+
+    // A0 writes one 1 and moves right onto blank, so B0 has vector 01.
+    let index = WinPossible::<2, 3>::parity_index(1, 0, 1, 0);
+    assert_ne!(windows.color_parity[index] & (1_u64 << 0b01), 0);
+    assert_eq!(windows.color_parity[index] & (1_u64 << 0b10), 0);
+}
+
+#[test]
 fn test_scanned_fresh_zero_closes_opposite_tail() {
     let prog =
         Prog::<3, 3>::from("1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA");
@@ -2938,6 +3925,22 @@ fn test_parent_color_aware_excursions() {
         right: [[[0; 2]; 2]; 4],
         left: [[[0; 2]; 2]; 4],
         any: [[false; 2]; 4],
+        parity: vec![0; 4 * 2 * 2 * 2],
+        parity_right: [[[0; 2]; 2]; 4],
+        parity_left: [[[0; 2]; 2]; 4],
+        parity_any: [[0; 2]; 4],
+        side_parity: vec![0; 4 * 2 * 2 * 2],
+        side_parity_right: [[[0; 2]; 2]; 4],
+        side_parity_left: [[[0; 2]; 2]; 4],
+        side_parity_any: [[0; 2]; 4],
+        side_mod3: vec![0; 4 * 2 * 2 * 2],
+        side_mod3_right: [[[0; 2]; 2]; 4],
+        side_mod3_left: [[[0; 2]; 2]; 4],
+        side_mod3_any: [[0; 2]; 4],
+        color_parity: vec![0; 4 * 2 * 2 * 2],
+        color_parity_right: [[[0; 2]; 2]; 4],
+        color_parity_left: [[[0; 2]; 2]; 4],
+        color_parity_any: [[0; 2]; 4],
     };
 
     // A0: with left/back 0, right child must be 0; with left/back 1, child 1.
