@@ -2958,6 +2958,35 @@ fn test_parent_color_aware_excursions() {
 }
 
 #[test]
+fn test_fresh_frontier_direction() {
+    // A0 moves right onto a fresh blank.  B0 is therefore a right frontier,
+    // but not a left frontier: the A cell has already been visited.
+    let prog = Prog::<2, 2>::from("1RB ...  ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let left_any = side_excursions(&prog, &windows, false, false);
+    let right_any = side_excursions(&prog, &windows, true, false);
+    let left = frontier_slots(&prog, &windows, false, &right_any);
+    let right = frontier_slots(&prog, &windows, true, &left_any);
+
+    assert_eq!(left[1][0], 0);
+    assert_eq!(right[1][0], 1 << 1);
+}
+
+#[test]
+fn test_spinout_fresh_frontier_filter() {
+    // These trigger states can occur scanning erased blank territory, but not
+    // at the fresh frontier required for the self-looping zero transition to
+    // spin out forever.
+    let left = Prog::<3, 2>::from("1RB 0LB  1LA 0RC  1LC 1RB");
+    assert!(!left.spinout_shifts_side_clean().contains(&(2, false)));
+
+    let right = Prog::<3, 2>::from("1RB 0LC  1LA 0RA  1RC 1LA");
+    assert!(!right.spinout_shifts_side_clean().contains(&(2, true)));
+}
+
+#[test]
 #[expect(clippy::shadow_unrelated, clippy::iter_on_single_items)]
 fn test_halt_side_excursion_filter() {
     // Fresh zero at a right frontier: after A0 moves right, B0 is a valid
@@ -3089,6 +3118,11 @@ struct SideExcursions<const S: usize, const C: usize> {
     // Flattened [back][state][color]. Bit `tr` means a balanced return into
     // state `tr` is possible.
     ret: Vec<u64>,
+
+    // For ordinary excursions, flattened
+    // [back][state][color][return_state] -> final pop-color mask.
+    // Clean excursions do not need this extra summary.
+    pop: Option<Vec<u64>>,
 }
 
 impl<const S: usize, const C: usize> SideExcursions<S, C> {
@@ -3133,6 +3167,17 @@ impl<const S: usize, const C: usize> SideExcursions<S, C> {
         (self.ret_states_from_mask(back, st, colors) & (1_u64 << tr))
             != 0
     }
+
+    fn pop_colors(
+        &self,
+        back: usize,
+        st: usize,
+        co: usize,
+        tr: usize,
+    ) -> u64 {
+        let node = Self::ret_index(back, st, co);
+        self.pop.as_ref().map_or(0, |pop| pop[node * S + tr])
+    }
 }
 
 /// Exact possible color mask of the child-side neighbor when the source's
@@ -3151,6 +3196,7 @@ fn window_child_mask<const S: usize, const C: usize>(
     }
 }
 
+#[expect(clippy::shadow_unrelated)]
 fn side_excursions<const S: usize, const C: usize>(
     prog: &Prog<S, C>,
     windows: &WinPossible<S, C>,
@@ -3161,6 +3207,8 @@ fn side_excursions<const S: usize, const C: usize>(
         source: usize,
         back: usize,
         print: usize,
+        child_st: usize,
+        child_colors: u64,
     }
 
     fn add_returns(
@@ -3193,6 +3241,7 @@ fn side_excursions<const S: usize, const C: usize>(
     let mut pushes = Vec::new();
     let mut child_users = vec![Vec::<usize>::new(); ret_len];
     let mut seeds = Vec::new();
+    let mut pop_seeds = Vec::new();
 
     for back in 0..C {
         for st in 0..S {
@@ -3212,6 +3261,9 @@ fn side_excursions<const S: usize, const C: usize>(
                 if shift == pop {
                     if !clean || print == 0 {
                         seeds.push((source, 1_u64 << tr));
+                        if !clean {
+                            pop_seeds.push((source, tr, print));
+                        }
                     }
                     continue;
                 }
@@ -3221,6 +3273,8 @@ fn side_excursions<const S: usize, const C: usize>(
                     source,
                     back,
                     print,
+                    child_st: tr,
+                    child_colors,
                 });
 
                 // This push equation depends on the return relation of every
@@ -3286,7 +3340,67 @@ fn side_excursions<const S: usize, const C: usize>(
         }
     }
 
-    SideExcursions { ret }
+    let pop = if clean {
+        None
+    } else {
+        // With the return-state relation saturated, build the same-level
+        // continuation graph induced by push/child-return pairs.  Final pop
+        // colors then propagate backwards through that graph.  This keeps the
+        // ordinary excursion relation small while retaining exactly the one
+        // extra fact needed by fresh-frontier analysis.
+        let mut continuation_users = vec![Vec::<usize>::new(); ret_len];
+
+        for eq in &pushes {
+            let mut return_states = 0;
+            let mut colors = eq.child_colors;
+            while colors != 0 {
+                let child_co = colors.trailing_zeros() as usize;
+                colors &= colors - 1;
+                let child = SideExcursions::<S, C>::ret_index(
+                    eq.print,
+                    eq.child_st,
+                    child_co,
+                );
+                return_states |= ret[child];
+            }
+
+            while return_states != 0 {
+                let return_st = return_states.trailing_zeros() as usize;
+                return_states &= return_states - 1;
+                let continuation = SideExcursions::<S, C>::ret_index(
+                    eq.back, return_st, eq.print,
+                );
+                continuation_users[continuation].push(eq.source);
+            }
+        }
+
+        let mut pop = vec![0_u64; ret_len * S];
+        let mut q = VecDeque::new();
+
+        for (source, tr, color) in pop_seeds {
+            let index = source * S + tr;
+            let bit = 1_u64 << color;
+            if pop[index] & bit == 0 {
+                pop[index] |= bit;
+                q.push_back((source, tr, bit));
+            }
+        }
+
+        while let Some((node, tr, colors)) = q.pop_front() {
+            for &source in &continuation_users[node] {
+                let index = source * S + tr;
+                let added = colors & !pop[index];
+                if added != 0 {
+                    pop[index] |= added;
+                    q.push_back((source, tr, added));
+                }
+            }
+        }
+
+        Some(pop)
+    };
+
+    SideExcursions { ret, pop }
 }
 
 /// Sound over-approximation of reachable one-sided-blank configurations.
@@ -3393,6 +3507,108 @@ fn halfblank_slots<const S: usize, const C: usize>(
                 let out_co = colors.trailing_zeros() as usize;
                 colors &= colors - 1;
                 push(tr, out_co, &mut possible, &mut q);
+            }
+        }
+    }
+
+    possible
+}
+
+/// Sound over-approximation of reachable fresh-frontier configurations.
+///
+/// `frontier_side == false` describes a head at the left edge of the visited
+/// interval, with the immediate cell to the left still an unvisited blank.
+/// `frontier_side == true` is the symmetric right edge.
+///
+/// From a frontier checkpoint the machine may make an arbitrary balanced
+/// excursion inward and return to the same frontier cell, or it may move
+/// outward onto the next fresh cell, whose scanned color is exactly 0.  A
+/// direct inward move that does not return is not itself a frontier checkpoint.
+fn frontier_slots<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+    frontier_side: Shift,
+    inward: &SideExcursions<S, C>,
+) -> [[u64; C]; S] {
+    debug_assert!(inward.pop.is_some());
+
+    let mut possible = [[0_u64; C]; S];
+    let mut trans = [[None; C]; S];
+
+    for ((st, co), &(print, shift, tr)) in prog.iter() {
+        trans[st as usize][co as usize] =
+            Some((print as usize, shift, tr as usize));
+    }
+
+    let mut q = VecDeque::new();
+
+    #[expect(clippy::shadow_unrelated)]
+    let push = |st: usize,
+                co: usize,
+                near: usize,
+                possible: &mut [[u64; C]; S],
+                q: &mut VecDeque<(usize, usize)>| {
+        // Exact frontier checkpoint:
+        //   left frontier:  0 [scan] near
+        //   right frontier: near [scan] 0
+        // The outward zero is still unvisited, while `near` is the exact
+        // immediate color on the already visited/inward side.
+        let window_ok = if frontier_side {
+            windows.right[st][co][near] & 1 != 0
+        } else {
+            windows.right[st][co][0] & (1_u64 << near) != 0
+        };
+        let bit = 1_u64 << near;
+
+        if window_ok && possible[st][co] & bit == 0 {
+            possible[st][co] |= bit;
+            q.push_back((SideExcursions::<S, C>::node(st, co), near));
+        }
+    };
+
+    // The initial blank configuration is simultaneously both frontiers, and
+    // its inward neighbor is also exact blank.
+    push(0, 0, 0, &mut possible, &mut q);
+
+    let inward_side = !frontier_side;
+
+    while let Some((node, near)) = q.pop_front() {
+        let (st, co) = SideExcursions::<S, C>::decode(node);
+
+        let Some((print, shift, tr)) = trans[st][co] else {
+            continue;
+        };
+
+        if shift == frontier_side {
+            // Advance onto a fresh blank.  The old frontier cell becomes the
+            // new exact inward neighbor with the transition's printed color.
+            push(tr, 0, print, &mut possible, &mut q);
+            continue;
+        }
+
+        debug_assert_eq!(shift, inward_side);
+
+        // Move onto the exact inward neighbor.  The old frontier cell is the
+        // child's parent/back cell and contains exactly `print` after the
+        // departure.  When the excursion returns, its final pop color is the
+        // new exact inward-neighbor color at this frontier checkpoint.
+        let mut return_states = inward.ret_states(print, tr, near);
+        while return_states != 0 {
+            let return_st = return_states.trailing_zeros() as usize;
+            return_states &= return_states - 1;
+
+            let mut pop_colors =
+                inward.pop_colors(print, tr, near, return_st);
+            while pop_colors != 0 {
+                let pop_color = pop_colors.trailing_zeros() as usize;
+                pop_colors &= pop_colors - 1;
+                push(
+                    return_st,
+                    print,
+                    pop_color,
+                    &mut possible,
+                    &mut q,
+                );
             }
         }
     }
@@ -4088,9 +4304,9 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     /// must be able to return into the halting state.
     ///
     /// A halt scanning 0 has one additional possibility: the cell may be a
-    /// first visit to a fresh blank frontier.  Such a configuration necessarily
-    /// has one whole side blank, which is exactly what the halfblank abstraction
-    /// records.  Previously visited zero cells are covered by the same
+    /// first visit to a fresh blank frontier.  The dedicated frontier
+    /// abstraction tracks that stronger visited-interval boundary property.
+    /// Previously visited zero cells are covered by the same
     /// last-departure rule, with a transition that writes 0.
     fn halt_slots_side_excursion(&self, slots: Set<Slot>) -> Set<Slot> {
         if slots.is_empty() {
@@ -4103,27 +4319,15 @@ impl<const S: usize, const C: usize> Prog<S, C> {
         let left_any = side_excursions(self, &windows, false, false);
         let right_any = side_excursions(self, &windows, true, false);
 
-        let halfblank =
+        let frontiers =
             slots.iter().any(|&(_, color)| color == 0).then(|| {
-                let left_clean =
-                    side_excursions(self, &windows, false, true);
-                let right_clean =
-                    side_excursions(self, &windows, true, true);
-                let left_half = halfblank_slots(
-                    self,
-                    &windows,
-                    false,
-                    &left_clean,
-                    &right_any,
-                );
-                let right_half = halfblank_slots(
-                    self,
-                    &windows,
-                    true,
-                    &right_clean,
-                    &left_any,
-                );
-                (left_half, right_half)
+                // At the left frontier, arbitrary balanced work is to the
+                // right/inward side.  At the right frontier it is to the left.
+                let left =
+                    frontier_slots(self, &windows, false, &right_any);
+                let right =
+                    frontier_slots(self, &windows, true, &left_any);
+                (left, right)
             });
 
         slots
@@ -4137,8 +4341,10 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                 }
 
                 if color == 0
-                    && let Some((left_half, right_half)) = &halfblank
-                    && (left_half[h][0] || right_half[h][0])
+                    && let Some((left_frontier, right_frontier)) =
+                        &frontiers
+                    && (left_frontier[h][0] != 0
+                        || right_frontier[h][0] != 0)
                 {
                     return true;
                 }
@@ -4311,7 +4517,32 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     }
 
     fn spinout_shifts_side_clean(&self) -> Set<(State, Shift)> {
-        self.shifts_side_clean(self.zr_shifts())
+        let shifts = self.zr_shifts();
+        if shifts.is_empty() {
+            return shifts;
+        }
+
+        let (forbid_left, forbid_right) = self.shift_side_forbidden();
+        let windows =
+            self.win_possible_from_blank(&forbid_left, &forbid_right);
+        let left_any = side_excursions(self, &windows, false, false);
+        let right_any = side_excursions(self, &windows, true, false);
+        let left_frontier =
+            frontier_slots(self, &windows, false, &right_any);
+        let right_frontier =
+            frontier_slots(self, &windows, true, &left_any);
+
+        shifts
+            .into_iter()
+            .filter(|&(state, side)| {
+                let h = state as usize;
+                if side {
+                    right_frontier[h][0] != 0
+                } else {
+                    left_frontier[h][0] != 0
+                }
+            })
+            .collect()
     }
 
     fn zloop_shifts_side_clean(&self) -> Set<(State, Shift)> {
