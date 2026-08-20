@@ -375,6 +375,91 @@ struct BlankSidePossible<const S: usize, const C: usize> {
     joint: JointBlankPossible<S, C>,
 }
 
+/// Independent per-color whole-side presence possibilities, conditioned on the
+/// exact local window.  For each nonblank color `k`, a four-bit mask stores
+/// which `(left contains k, right contains k)` combinations can occur in a run
+/// from blank.  Colors are tracked independently, keeping the product tiny.
+struct ColorSidePresencePossible<const S: usize, const C: usize> {
+    exact: Vec<u8>,
+    by_left: Vec<u8>,
+    by_right: Vec<u8>,
+    any: Vec<u8>,
+}
+
+impl<const S: usize, const C: usize> ColorSidePresencePossible<S, C> {
+    const fn exact_index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        color: usize,
+    ) -> usize {
+        ((((st * C) + scan) * C + left) * C + right) * C + color
+    }
+
+    const fn side_index(
+        st: usize,
+        scan: usize,
+        neighbor: usize,
+        color: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + neighbor) * C + color
+    }
+
+    const fn any_index(st: usize, scan: usize, color: usize) -> usize {
+        ((st * C) + scan) * C + color
+    }
+
+    fn new() -> Self {
+        Self {
+            exact: vec![0; S * C * C * C * C],
+            by_left: vec![0; S * C * C * C],
+            by_right: vec![0; S * C * C * C],
+            any: vec![0; S * C * C],
+        }
+    }
+
+    fn add(
+        &mut self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        color: usize,
+        status: u8,
+    ) {
+        let bit = 1_u8 << status;
+        self.exact[Self::exact_index(st, scan, left, right, color)] |=
+            bit;
+        self.by_left[Self::side_index(st, scan, left, color)] |= bit;
+        self.by_right[Self::side_index(st, scan, right, color)] |= bit;
+        self.any[Self::any_index(st, scan, color)] |= bit;
+    }
+
+    fn mask(
+        &self,
+        st: usize,
+        scan: usize,
+        left: Option<usize>,
+        right: Option<usize>,
+        color: usize,
+    ) -> u8 {
+        match (left, right) {
+            (Some(left), Some(right)) => {
+                self.exact
+                    [Self::exact_index(st, scan, left, right, color)]
+            },
+            (Some(left), None) => {
+                self.by_left[Self::side_index(st, scan, left, color)]
+            },
+            (None, Some(right)) => {
+                self.by_right[Self::side_index(st, scan, right, color)]
+            },
+            (None, None) => self.any[Self::any_index(st, scan, color)],
+        }
+    }
+}
+
 fn cant_reach<const s: usize, const c: usize, T: Ord>(
     prog: &Prog<s, c>,
     steps: Steps,
@@ -471,6 +556,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     let side_possible = prog.side_possible_from_blank(&win_possible);
     let blank_side_possible =
         blank_side_possible_from_blank(prog, &win_possible);
+    let color_side_presence =
+        color_side_presence_from_blank(prog, &win_possible);
 
     // Halt targets begin with two unknown neighbors, so the
     // `(state, scanned color)` pair must still occur in at least one reachable
@@ -492,6 +579,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             && tape.obeys_state_side(*state, &side_possible)
             && tape
                 .obeys_blank_side_possible(*state, &blank_side_possible)
+            && tape
+                .obeys_color_side_presence(*state, &color_side_presence)
     });
 
     if configs.is_empty() {
@@ -550,6 +639,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             &win_possible,
             &side_possible,
             &blank_side_possible,
+            &color_side_presence,
             &forbid_left,
             &forbid_right,
             left_fresh_zero,
@@ -949,6 +1039,7 @@ fn step_instrs<const s: usize, const c: usize>(
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
+    color_side_presence: &ColorSidePresencePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -1020,6 +1111,8 @@ fn step_instrs<const s: usize, const c: usize>(
             || !tape.obeys_state_side(state, side_possible)
             || !tape
                 .obeys_blank_side_possible(state, blank_side_possible)
+            || !tape
+                .obeys_color_side_presence(state, color_side_presence)
         {
             continue;
         }
@@ -1037,6 +1130,7 @@ fn step_configs<const s: usize, const c: usize>(
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
+    color_side_presence: &ColorSidePresencePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -1064,6 +1158,7 @@ fn step_configs<const s: usize, const c: usize>(
                 win_possible,
                 side_possible,
                 blank_side_possible,
+                color_side_presence,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -1086,6 +1181,7 @@ fn step_configs<const s: usize, const c: usize>(
                 win_possible,
                 side_possible,
                 blank_side_possible,
+                color_side_presence,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -1104,6 +1200,7 @@ fn step_configs<const s: usize, const c: usize>(
             win_possible,
             side_possible,
             blank_side_possible,
+            color_side_presence,
             forbid_left,
             forbid_right,
             left_fresh_zero,
@@ -2608,6 +2705,88 @@ impl Tape {
         }
     }
 
+    /// Check independently, for every nonblank color, whether the
+    /// backward tape's proved left/right presence facts occur in the forward
+    /// abstraction for a compatible local window.
+    fn obeys_color_side_presence<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &ColorSidePresencePossible<S, C>,
+    ) -> bool {
+        #[derive(Clone, Copy)]
+        enum RequiredPresence {
+            Absent,
+            Present,
+            Unknown,
+        }
+
+        fn requirement(span: &Span, color: usize) -> RequiredPresence {
+            if span
+                .span
+                .iter()
+                .any(|block| block.color as usize == color)
+            {
+                RequiredPresence::Present
+            } else if span.end == TapeEnd::Blanks {
+                RequiredPresence::Absent
+            } else {
+                RequiredPresence::Unknown
+            }
+        }
+
+        const fn matches(
+            required: RequiredPresence,
+            present: bool,
+        ) -> bool {
+            match required {
+                RequiredPresence::Absent => !present,
+                RequiredPresence::Present => present,
+                RequiredPresence::Unknown => true,
+            }
+        }
+
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let left_neighbor = self.left_neighbor_color().map(usize::from);
+        let right_neighbor =
+            self.right_neighbor_color().map(usize::from);
+
+        for color in 1..C {
+            let left_required = requirement(&self.lspan, color);
+            let right_required = requirement(&self.rspan, color);
+
+            if matches!(left_required, RequiredPresence::Unknown)
+                && matches!(right_required, RequiredPresence::Unknown)
+            {
+                continue;
+            }
+
+            let mut allowed = 0_u8;
+            for status in 0..4_u8 {
+                let left_present = status & 1 != 0;
+                let right_present = status & 2 != 0;
+                if matches(left_required, left_present)
+                    && matches(right_required, right_present)
+                {
+                    allowed |= 1_u8 << status;
+                }
+            }
+
+            let forward = possible.mask(
+                st,
+                sc,
+                left_neighbor,
+                right_neighbor,
+                color,
+            );
+            if forward & allowed == 0 {
+                return false;
+            }
+        }
+
+        true
+    }
+
     /// Return possible nonblank-count parities for the left and right spans
     /// separately. Bit 0 means even, bit 1 means odd. Unknown ends and
     /// indefinite nonblank runs permit either parity; indefinite blank runs do
@@ -3862,6 +4041,28 @@ fn test_same_run_joint_blank_dirty_flags() {
 }
 
 #[test]
+fn test_per_color_side_presence_filter() {
+    let prog = Prog::<2, 3>::from("1RB ... ...  ... ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let presence = color_side_presence_from_blank(&prog, &windows);
+
+    // After A0 writes 1 and moves right, B0 has color 1 present on the
+    // left and color 2 absent from both sides.
+    assert_eq!(presence.mask(1, 0, Some(1), Some(0), 1), 1_u8 << 1);
+    assert_eq!(presence.mask(1, 0, Some(1), Some(0), 2), 1_u8 << 0);
+
+    let actual: Tape = "? 1 [0] 0+".into();
+    assert!(actual.obeys_color_side_presence(1, &presence));
+
+    // Same immediate window `1 [0] 0`, but demanding a hidden color 2
+    // farther left is rejected by the new whole-side presence summary.
+    let hidden_two: Tape = "? 2 1 [0] 0+".into();
+    assert!(!hidden_two.obeys_color_side_presence(1, &presence));
+}
+
+#[test]
 fn test_dynamic_blank_side_filter() {
     let prog = Prog::<2, 2>::from("1RB ...  ... ...");
     let (forbid_left, forbid_right) = prog.shift_side_forbidden();
@@ -4612,6 +4813,164 @@ fn frontier_slots<const S: usize, const C: usize>(
                     &mut possible,
                     &mut q,
                 );
+            }
+        }
+    }
+
+    possible
+}
+
+/// Independent per-color forward abstraction of whole-side presence.
+///
+/// For one nonblank color at a time, status bit 0 says that color occurs
+/// somewhere left of the head and bit 1 says it occurs somewhere right of the
+/// head.  When the head consumes an occurrence from a present side, the
+/// residual may either lose the last occurrence or remain present; tracking
+/// each color independently keeps this sound and small.
+#[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn color_side_presence_from_blank<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+) -> ColorSidePresencePossible<S, C> {
+    let mut trans = [[None; C]; S];
+    for ((st, co), &(print, shift, tr)) in prog.iter() {
+        trans[st as usize][co as usize] =
+            Some((print as usize, shift, tr as usize));
+    }
+
+    let mut possible = ColorSidePresencePossible::new();
+    let mut q = VecDeque::new();
+
+    #[expect(clippy::shadow_unrelated)]
+    let push = |st: usize,
+                left: usize,
+                scan: usize,
+                right: usize,
+                color: usize,
+                status: u8,
+                possible: &mut ColorSidePresencePossible<S, C>,
+                q: &mut VecDeque<(
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        u8,
+    )>| {
+        if windows.right[st][scan][left] & (1_u64 << right) == 0 {
+            return;
+        }
+
+        let left_present = status & 1 != 0;
+        let right_present = status & 2 != 0;
+        if left == color && !left_present {
+            return;
+        }
+        if right == color && !right_present {
+            return;
+        }
+
+        let index = ColorSidePresencePossible::<S, C>::exact_index(
+            st, scan, left, right, color,
+        );
+        let bit = 1_u8 << status;
+        if possible.exact[index] & bit != 0 {
+            return;
+        }
+
+        possible.add(st, scan, left, right, color, status);
+        q.push_back((st, left, scan, right, color, status));
+    };
+
+    for color in 1..C {
+        push(0, 0, 0, 0, color, 0, &mut possible, &mut q);
+    }
+
+    while let Some((st, left, scan, right, color, status)) =
+        q.pop_front()
+    {
+        let Some((print, shift, tr)) = trans[st][scan] else {
+            continue;
+        };
+
+        let left_present = status & 1 != 0;
+        let right_present = status & 2 != 0;
+
+        if shift {
+            // Move R. The written old head joins the left side; the exact
+            // right neighbor is consumed from the right side.
+            let new_left_present = left_present || print == color;
+            let residual_right_mask = if right == color {
+                // The consumed neighbor witnesses presence, but may or may not
+                // have been the final occurrence on this side.
+                0b11
+            } else if right_present {
+                0b10
+            } else {
+                0b01
+            };
+
+            let mut new_rights = windows.right[tr][right][print];
+            while new_rights != 0 {
+                let new_right = new_rights.trailing_zeros() as usize;
+                new_rights &= new_rights - 1;
+
+                for residual_right in 0..2 {
+                    if residual_right_mask & (1_u8 << residual_right)
+                        == 0
+                    {
+                        continue;
+                    }
+
+                    let new_status = u8::from(new_left_present)
+                        | ((residual_right as u8) << 1);
+                    push(
+                        tr,
+                        print,
+                        right,
+                        new_right,
+                        color,
+                        new_status,
+                        &mut possible,
+                        &mut q,
+                    );
+                }
+            }
+        } else {
+            // Move L, symmetrically.
+            let new_right_present = right_present || print == color;
+            let residual_left_mask = if left == color {
+                0b11
+            } else if left_present {
+                0b10
+            } else {
+                0b01
+            };
+
+            let mut new_lefts = windows.left[tr][left][print];
+            while new_lefts != 0 {
+                let new_left = new_lefts.trailing_zeros() as usize;
+                new_lefts &= new_lefts - 1;
+
+                for residual_left in 0..2 {
+                    if residual_left_mask & (1_u8 << residual_left) == 0
+                    {
+                        continue;
+                    }
+
+                    let new_status = (residual_left as u8)
+                        | (u8::from(new_right_present) << 1);
+                    push(
+                        tr,
+                        new_left,
+                        left,
+                        print,
+                        color,
+                        new_status,
+                        &mut possible,
+                        &mut q,
+                    );
+                }
             }
         }
     }
