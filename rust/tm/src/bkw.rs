@@ -369,8 +369,13 @@ impl<const S: usize, const C: usize> JointBlankPossible<S, C> {
 /// exactly blank single side. `joint` additionally retains all four same-run
 /// blank/dirty combinations and correlates them with the exact local window.
 struct BlankSidePossible<const S: usize, const C: usize> {
-    left_half: [[bool; C]; S],
-    right_half: [[bool; C]; S],
+    // For a left-blank checkpoint `0+ [scan] near`, bit `near` is set in
+    // `left_half[state][scan]`.  `right_half` is symmetric for
+    // `near [scan] 0+`.  Retaining the exact inward-neighbor color keeps the
+    // clean-excursion proof correlated with the local window instead of
+    // collapsing it to a state/scan boolean.
+    left_half: [[u64; C]; S],
+    right_half: [[u64; C]; S],
     joint: JointBlankPossible<S, C>,
 }
 
@@ -2596,24 +2601,34 @@ impl Tape {
             return true;
         }
 
-        if matches!(left_status, RequiredStatus::Blank)
-            && !possible.left_half[st][sc]
-        {
-            return false;
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        if matches!(left_status, RequiredStatus::Blank) {
+            let inward = possible.left_half[st][sc];
+            let halfblank_ok = match known_right {
+                Some(right) => inward & (1_u64 << right) != 0,
+                None => inward != 0,
+            };
+            if !halfblank_ok {
+                return false;
+            }
         }
-        if matches!(right_status, RequiredStatus::Blank)
-            && !possible.right_half[st][sc]
-        {
-            return false;
+        if matches!(right_status, RequiredStatus::Blank) {
+            let inward = possible.right_half[st][sc];
+            let halfblank_ok = match known_left {
+                Some(left) => inward & (1_u64 << left) != 0,
+                None => inward != 0,
+            };
+            if !halfblank_ok {
+                return false;
+            }
         }
 
         let allowed = allowed_status_mask(left_status, right_status);
         if possible.joint.any[st][sc] & allowed == 0 {
             return false;
         }
-
-        let known_left = self.left_neighbor_color().map(usize::from);
-        let known_right = self.right_neighbor_color().map(usize::from);
 
         let matches_window = |left: usize, right: usize| {
             possible.joint.window_mask(st, sc, left, right) & allowed
@@ -3935,8 +3950,8 @@ fn test_halfblank_direction() {
     let right =
         halfblank_slots(&prog, &windows, true, &right_clean, &left_any);
 
-    assert!(!left[1][0]);
-    assert!(right[1][0]);
+    assert_eq!(left[1][0], 0);
+    assert_eq!(right[1][0], 1 << 1);
 
     // Leaving 0 behind preserves both one-sided-blank abstractions.
     let prog = Prog::<2, 2>::from("0RB ...  ... ...");
@@ -3957,8 +3972,8 @@ fn test_halfblank_direction() {
     let right =
         halfblank_slots(&prog, &windows, true, &right_clean, &left_any);
 
-    assert!(left[1][0]);
-    assert!(right[1][0]);
+    assert_ne!(left[1][0] & 1, 0);
+    assert_ne!(right[1][0] & 1, 0);
 }
 
 #[test]
@@ -4028,6 +4043,33 @@ fn test_dynamic_blank_side_filter() {
 }
 
 #[test]
+fn test_halfblank_inward_neighbor_is_enforced_dynamically() {
+    // The joint blank/dirty abstraction allows either local right neighbor,
+    // but the stronger clean halfblank abstraction allows a blank left side
+    // only when the exact inward/right neighbor is 0.
+    let mut joint = JointBlankPossible::<1, 2>::new();
+    let left_blank_bit = 1_u8 << LEFT_BLANK_FLAG;
+
+    for right in 0..2 {
+        let index = JointBlankPossible::<1, 2>::index(0, 0, 0, right);
+        joint.windows[index] |= left_blank_bit;
+        joint.any[0][0] |= left_blank_bit;
+    }
+
+    let possible = BlankSidePossible {
+        left_half: [[1; 2]; 1], // only inward neighbor 0
+        right_half: [[0b11; 2]; 1],
+        joint,
+    };
+
+    let valid: Tape = "0+ [0] 0 ?".into();
+    assert!(valid.obeys_blank_side_possible(0, &possible));
+
+    let wrong_near: Tape = "0+ [0] 1 ?".into();
+    assert!(!wrong_near.obeys_blank_side_possible(0, &possible));
+}
+
+#[test]
 fn test_blank_dirty_status_is_window_conditioned() {
     // Synthetic same-state/scan join: left-blank is possible only with right
     // neighbor 0, while right neighbor 1 is possible only with a dirty left.
@@ -4047,8 +4089,8 @@ fn test_blank_dirty_status_is_window_conditioned() {
     joint.any[0][0] |= dirty_bit;
 
     let possible = BlankSidePossible {
-        left_half: [[true; 2]; 1],
-        right_half: [[true; 2]; 1],
+        left_half: [[0b11; 2]; 1],
+        right_half: [[0b11; 2]; 1],
         joint,
     };
 
@@ -4124,6 +4166,18 @@ fn test_fresh_frontier_direction() {
 
     assert_eq!(left[1][0], 0);
     assert_eq!(right[1][0], 1 << 1);
+}
+
+#[test]
+fn test_halfblank_neighbor_blank_target_regression() {
+    // This machine really blanks. Its final erase is A2, whose actual last
+    // departure is A3 -> 2RA with inward neighbor 1. The recursive `clean`
+    // excursion abstraction finds a conservative witness only after joining
+    // child colors at the source window, so the neighbor-aware halfblank mask
+    // must not be used to narrow that static last-departure child set.
+    let prog = Prog::<2, 4>::from("1RB 3RB 0LA 2RA  2LB 0RB 3LA 1LA");
+
+    assert!(prog.blank_slots_side_clean().contains(&(0, 2)));
 }
 
 #[test]
@@ -4569,8 +4623,10 @@ fn halfblank_slots<const S: usize, const C: usize>(
     blank_side: Shift,
     clean: &SideExcursions<S, C>,
     away: &SideExcursions<S, C>,
-) -> [[bool; C]; S] {
-    let mut possible = [[false; C]; S];
+) -> [[u64; C]; S] {
+    debug_assert!(away.pop.is_some());
+
+    let mut possible = [[0_u64; C]; S];
     let mut trans = [[None; C]; S];
 
     for ((st, co), &(print, shift, tr)) in prog.iter() {
@@ -4579,86 +4635,93 @@ fn halfblank_slots<const S: usize, const C: usize>(
     }
 
     let mut q = VecDeque::new();
+    let away_side = !blank_side;
 
     #[expect(clippy::shadow_unrelated)]
     let push = |st: usize,
                 co: usize,
-                possible: &mut [[bool; C]; S],
-                q: &mut VecDeque<usize>| {
-        let away_side = !blank_side;
-        if window_child_mask(st, co, away_side, 0, windows) != 0
-            && !possible[st][co]
-        {
-            possible[st][co] = true;
-            q.push_back(SideExcursions::<S, C>::node(st, co));
+                near: usize,
+                possible: &mut [[u64; C]; S],
+                q: &mut VecDeque<(usize, usize)>| {
+        // Exact halfblank checkpoint:
+        //   left blank:  0 [scan] near
+        //   right blank: near [scan] 0
+        // Keep only exact local windows admitted by the forward abstraction.
+        let child_colors =
+            window_child_mask(st, co, away_side, 0, windows);
+        let bit = 1_u64 << near;
+        if child_colors & bit != 0 && possible[st][co] & bit == 0 {
+            possible[st][co] |= bit;
+            q.push_back((SideExcursions::<S, C>::node(st, co), near));
         }
     };
 
-    push(0, 0, &mut possible, &mut q);
+    // The true blank initial configuration has exact zero on both sides.
+    push(0, 0, 0, &mut possible, &mut q);
 
-    while let Some(node) = q.pop_front() {
+    while let Some((node, near)) = q.pop_front() {
         let (st, co) = SideExcursions::<S, C>::decode(node);
 
         let Some((print, shift, tr)) = trans[st][co] else {
             continue;
         };
 
-        let away_side = !blank_side;
-
         if shift == away_side {
-            // A complete excursion into the unconstrained side returns to this
-            // same boundary without requiring the printed parent cell to be
-            // blank.  The source's blank-side/back neighbor is exactly 0; the
-            // child's back color is exactly `print`.
-            let child_colors =
-                window_child_mask(st, co, shift, 0, windows);
-            let mut return_states =
-                away.ret_states_from_mask(print, tr, child_colors);
+            // A complete arbitrary excursion into the unconstrained side can
+            // return to this same boundary.  Because `near` is exact, start
+            // the excursion in that exact child color.  Its final pop color
+            // is the new exact inward-neighbor color at the returned
+            // halfblank checkpoint.
+            let mut return_states = away.ret_states(print, tr, near);
             while return_states != 0 {
                 let return_st = return_states.trailing_zeros() as usize;
                 return_states &= return_states - 1;
-                push(return_st, print, &mut possible, &mut q);
+
+                let mut pop_colors =
+                    away.pop_colors(print, tr, near, return_st);
+                while pop_colors != 0 {
+                    let pop_color =
+                        pop_colors.trailing_zeros() as usize;
+                    pop_colors &= pop_colors - 1;
+                    push(
+                        return_st,
+                        print,
+                        pop_color,
+                        &mut possible,
+                        &mut q,
+                    );
+                }
             }
         }
 
         if shift == blank_side {
-            // The source's opposite neighbor is on the unconstrained side, so
-            // it is not fixed.  Union over that back color only for deciding
-            // whether the exact blank child color 0 can occur.
-            let child_colors =
-                window_neighbor_mask(st, co, shift, windows);
-            // The blank-side neighbor is exactly zero.  If zero is not even a
-            // possible neighbor in the forward window abstraction, this
-            // halfblank checkpoint cannot take this step.
-            if child_colors & 1 == 0 {
-                continue;
-            }
+            // Move into the blank side.  The source checkpoint already proves
+            // that exact neighbor is zero.  The old head joins the opposite
+            // side, so the transition's print becomes the new exact inward
+            // neighbor.
+            push(tr, 0, print, &mut possible, &mut q);
 
-            // Move into the blank side.  The newly scanned cell is exactly 0;
-            // the old head joins the unconstrained side, so its print is free.
-            push(tr, 0, &mut possible, &mut q);
-
-            // Or make a complete clean excursion into that side and return to
-            // the same boundary.  The child starts in exact color 0.
-            // Once we enter the child, its parent/back cell contains the
-            // exact color printed by the departure transition.
+            // Or make a complete clean excursion into the blank side and
+            // return to the original boundary.  The unconstrained side is
+            // untouched by that excursion, so its exact neighbor remains
+            // `near`.
             let mut return_states = clean.ret_states(print, tr, 0);
             while return_states != 0 {
                 let return_st = return_states.trailing_zeros() as usize;
                 return_states &= return_states - 1;
-                push(return_st, print, &mut possible, &mut q);
+                push(return_st, print, near, &mut possible, &mut q);
             }
         } else if print == 0 {
-            // Move away from the blank side.  The old head cell joins that
-            // side and must be left as 0.  Since the blank-side neighbor of
-            // the source is exactly 0, condition the forward window on that
-            // exact parent/back color instead of unioning over all neighbors.
-            let mut colors =
-                window_child_mask(st, co, shift, 0, windows);
-            while colors != 0 {
-                let out_co = colors.trailing_zeros() as usize;
-                colors &= colors - 1;
-                push(tr, out_co, &mut possible, &mut q);
+            // Move directly away from the blank side while leaving zero on
+            // the old head cell.  The old exact `near` becomes the new scan;
+            // enumerate the next outward neighbor from the exact target
+            // window with blank back/parent color 0.
+            let mut next_nears =
+                window_child_mask(tr, near, away_side, 0, windows);
+            while next_nears != 0 {
+                let next_near = next_nears.trailing_zeros() as usize;
+                next_nears &= next_nears - 1;
+                push(tr, near, next_near, &mut possible, &mut q);
             }
         }
     }
@@ -5678,9 +5741,10 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     /// Static target-shape filter for `0+ [color] 0+` blank predecessors.
     ///
     /// `halfblank_slots` tracks the stronger necessary condition that one
-    /// whole side is blank in a reachable `(state, scanned color)` checkpoint.
-    /// Every exact blank target must occur in both the left-blank and
-    /// right-blank abstractions.
+    /// whole side is blank in a reachable `(state, scanned color)` checkpoint,
+    /// while retaining the exact immediate neighbor on the opposite side.
+    /// Every exact blank target must therefore admit inward neighbor 0 in both
+    /// the left-blank and right-blank abstractions.
     ///
     /// For a nonblank scanned color, also take the last departure from that
     /// target cell.  The untouched opposite side must already be blank at the
@@ -5720,7 +5784,9 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
                 // An exact `0+ [color] 0+` occurrence witnesses both
                 // one-sided abstractions on the same concrete run.
-                if !left_half[h][co] || !right_half[h][co] {
+                if left_half[h][co] & 1 == 0
+                    || right_half[h][co] & 1 == 0
+                {
                     return false;
                 }
 
@@ -5751,12 +5817,20 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                         (&right_half, &left_clean)
                     };
 
-                    if !opposite_half[st][read] {
+                    if opposite_half[st][read] == 0 {
                         continue;
                     }
 
+                    // Do not narrow the clean-return child colors to the
+                    // neighbor-aware halfblank mask here. `clean` is a
+                    // deliberately restrictive recursive summary; the old
+                    // window-level existential join is needed to keep this
+                    // static last-departure test conservative. The refined
+                    // halfblank mask remains useful for the dynamic tape
+                    // filter and for the exact blank-neighbor target gate.
                     let child_colors =
                         window_child_mask(st, read, shift, 0, &windows);
+
                     if clean.ret_from_mask_possible(
                         co,
                         child_st,
@@ -5807,9 +5881,9 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             .filter(|&(state, side)| {
                 let h = state as usize;
                 if side {
-                    right_half[h][0]
+                    right_half[h][0] != 0
                 } else {
-                    left_half[h][0]
+                    left_half[h][0] != 0
                 }
             })
             .collect()
