@@ -374,18 +374,20 @@ struct BlankSidePossible<const S: usize, const C: usize> {
     joint: JointBlankPossible<S, C>,
 }
 
-/// Independent per-color whole-side presence possibilities, conditioned on the
-/// exact local window.  For each nonblank color `k`, a four-bit mask stores
-/// which `(left contains k, right contains k)` combinations can occur in a run
-/// from blank.  Colors are tracked independently, keeping the product tiny.
-struct ColorSidePresencePossible<const S: usize, const C: usize> {
+/// Independent per-color tail-presence possibilities, conditioned on the
+/// exact local window.  For each nonblank color `k`, status bit 0 says `k`
+/// occurs somewhere strictly beyond the immediate left neighbor, and bit 1 is
+/// the symmetric fact on the right.  The immediate neighbors themselves are
+/// already exact in `WinPossible`, so this spends the same four-state product
+/// on information the 3-cell window does not already contain.
+struct ColorTailPresencePossible<const S: usize, const C: usize> {
     exact: Vec<u8>,
     by_left: Vec<u8>,
     by_right: Vec<u8>,
     any: Vec<u8>,
 }
 
-impl<const S: usize, const C: usize> ColorSidePresencePossible<S, C> {
+impl<const S: usize, const C: usize> ColorTailPresencePossible<S, C> {
     const fn exact_index(
         st: usize,
         scan: usize,
@@ -555,8 +557,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     let side_possible = prog.side_possible_from_blank(&win_possible);
     let blank_side_possible =
         blank_side_possible_from_blank(prog, &win_possible);
-    let color_side_presence =
-        color_side_presence_from_blank(prog, &win_possible);
+    let color_tail_presence =
+        color_tail_presence_from_blank(prog, &win_possible);
 
     // Halt targets begin with two unknown neighbors, so the
     // `(state, scanned color)` pair must still occur in at least one reachable
@@ -579,7 +581,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             && tape
                 .obeys_blank_side_possible(*state, &blank_side_possible)
             && tape
-                .obeys_color_side_presence(*state, &color_side_presence)
+                .obeys_color_tail_presence(*state, &color_tail_presence)
     });
 
     if configs.is_empty() {
@@ -627,7 +629,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             &win_possible,
             &side_possible,
             &blank_side_possible,
-            &color_side_presence,
+            &color_tail_presence,
             &forbid_left,
             &forbid_right,
             left_fresh_zero,
@@ -976,7 +978,7 @@ fn step_instrs<const s: usize, const c: usize>(
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
-    color_side_presence: &ColorSidePresencePossible<s, c>,
+    color_tail_presence: &ColorTailPresencePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -1049,7 +1051,7 @@ fn step_instrs<const s: usize, const c: usize>(
             || !tape
                 .obeys_blank_side_possible(state, blank_side_possible)
             || !tape
-                .obeys_color_side_presence(state, color_side_presence)
+                .obeys_color_tail_presence(state, color_tail_presence)
         {
             continue;
         }
@@ -1067,7 +1069,7 @@ fn step_configs<const s: usize, const c: usize>(
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
-    color_side_presence: &ColorSidePresencePossible<s, c>,
+    color_tail_presence: &ColorTailPresencePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -1095,7 +1097,7 @@ fn step_configs<const s: usize, const c: usize>(
                 win_possible,
                 side_possible,
                 blank_side_possible,
-                color_side_presence,
+                color_tail_presence,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -1118,7 +1120,7 @@ fn step_configs<const s: usize, const c: usize>(
                 win_possible,
                 side_possible,
                 blank_side_possible,
-                color_side_presence,
+                color_tail_presence,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -1137,7 +1139,7 @@ fn step_configs<const s: usize, const c: usize>(
             win_possible,
             side_possible,
             blank_side_possible,
-            color_side_presence,
+            color_tail_presence,
             forbid_left,
             forbid_right,
             left_fresh_zero,
@@ -2633,12 +2635,14 @@ impl Tape {
     }
 
     /// Check independently, for every nonblank color, whether the
-    /// backward tape's proved left/right presence facts occur in the forward
-    /// abstraction for a compatible local window.
-    fn obeys_color_side_presence<const S: usize, const C: usize>(
+    /// backward tape's proved *tail* presence facts occur in the forward
+    /// abstraction for a compatible local window.  A tail excludes exactly
+    /// the immediate neighbor, whose color is already represented by the
+    /// local window.
+    fn obeys_color_tail_presence<const S: usize, const C: usize>(
         &self,
         state: State,
-        possible: &ColorSidePresencePossible<S, C>,
+        possible: &ColorTailPresencePossible<S, C>,
     ) -> bool {
         #[derive(Clone, Copy)]
         enum RequiredPresence {
@@ -2648,16 +2652,34 @@ impl Tape {
         }
 
         fn requirement(span: &Span, color: usize) -> RequiredPresence {
-            if span
-                .span
-                .iter()
-                .any(|block| block.color as usize == color)
-            {
-                RequiredPresence::Present
-            } else if span.end == TapeEnd::Blanks {
-                RequiredPresence::Absent
-            } else {
+            // Remove exactly the nearest cell from consideration.  Explicit
+            // farther blocks are definite witnesses.  An `AtLeast(1)` nearest
+            // run of this color may or may not extend beyond that first cell.
+            let mut first = true;
+            let mut nearest_may_extend = false;
+
+            for block in span.span.iter() {
+                if first {
+                    first = false;
+                    if block.color as usize != color {
+                        continue;
+                    }
+                    if block.count.minimum() > 1 {
+                        return RequiredPresence::Present;
+                    }
+                    nearest_may_extend = block.count.is_indef();
+                    continue;
+                }
+
+                if block.color as usize == color {
+                    return RequiredPresence::Present;
+                }
+            }
+
+            if span.end == TapeEnd::Unknown || nearest_may_extend {
                 RequiredPresence::Unknown
+            } else {
+                RequiredPresence::Absent
             }
         }
 
@@ -3965,25 +3987,27 @@ fn test_same_run_joint_blank_dirty_flags() {
 }
 
 #[test]
-fn test_per_color_side_presence_filter() {
+fn test_per_color_tail_presence_filter() {
     let prog = Prog::<2, 3>::from("1RB ... ...  ... ... ...");
     let (forbid_left, forbid_right) = prog.shift_side_forbidden();
     let windows =
         prog.win_possible_from_blank(&forbid_left, &forbid_right);
-    let presence = color_side_presence_from_blank(&prog, &windows);
+    let presence = color_tail_presence_from_blank(&prog, &windows);
 
-    // After A0 writes 1 and moves right, B0 has color 1 present on the
-    // left and color 2 absent from both sides.
-    assert_eq!(presence.mask(1, 0, Some(1), Some(0), 1), 1_u8 << 1);
-    assert_eq!(presence.mask(1, 0, Some(1), Some(0), 2), 1_u8 << 0);
+    // After the only move, B0 has immediate left neighbor 1 but nothing
+    // farther left.  Tail presence therefore records color 1 as absent.
+    assert_eq!(presence.mask(1, 0, Some(1), Some(0), 1), 1_u8 << 0);
 
     let actual: Tape = "? 1 [0] 0+".into();
-    assert!(actual.obeys_color_side_presence(1, &presence));
+    assert!(actual.obeys_color_tail_presence(1, &presence));
 
-    // Same immediate window `1 [0] 0`, but demanding a hidden color 2
-    // farther left is rejected by the new whole-side presence summary.
+    // Same immediate window, but requiring another 1 farther left is rejected.
+    let hidden_one: Tape = "? 1^2 [0] 0+".into();
+    assert!(!hidden_one.obeys_color_tail_presence(1, &presence));
+
+    // A different hidden color is also rejected.
     let hidden_two: Tape = "? 2 1 [0] 0+".into();
-    assert!(!hidden_two.obeys_color_side_presence(1, &presence));
+    assert!(!hidden_two.obeys_color_tail_presence(1, &presence));
 }
 
 #[test]
@@ -4744,25 +4768,27 @@ fn frontier_slots<const S: usize, const C: usize>(
     possible
 }
 
-/// Independent per-color forward abstraction of whole-side presence.
+/// Independent per-color forward abstraction of presence strictly beyond the
+/// immediate neighbors.
 ///
-/// For one nonblank color at a time, status bit 0 says that color occurs
-/// somewhere left of the head and bit 1 says it occurs somewhere right of the
-/// head.  When the head consumes an occurrence from a present side, the
-/// residual may either lose the last occurrence or remain present; tracking
-/// each color independently keeps this sound and small.
+/// For one nonblank color at a time, status bit 0 describes the left tail
+/// beyond `left`, and bit 1 the right tail beyond `right`.  On an R move the
+/// old left neighbor becomes part of the new left tail.  The newly exposed
+/// right neighbor is consumed from the old right tail, so if it has the tracked
+/// color the residual tail may either lose the last occurrence or remain
+/// present.  L moves are symmetric.
 #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn color_side_presence_from_blank<const S: usize, const C: usize>(
+fn color_tail_presence_from_blank<const S: usize, const C: usize>(
     prog: &Prog<S, C>,
     windows: &WinPossible<S, C>,
-) -> ColorSidePresencePossible<S, C> {
+) -> ColorTailPresencePossible<S, C> {
     let mut trans = [[None; C]; S];
     for ((st, co), &(print, shift, tr)) in prog.iter() {
         trans[st as usize][co as usize] =
             Some((print as usize, shift, tr as usize));
     }
 
-    let mut possible = ColorSidePresencePossible::new();
+    let mut possible = ColorTailPresencePossible::new();
     let mut q = VecDeque::new();
 
     #[expect(clippy::shadow_unrelated)]
@@ -4772,7 +4798,7 @@ fn color_side_presence_from_blank<const S: usize, const C: usize>(
                 right: usize,
                 color: usize,
                 status: u8,
-                possible: &mut ColorSidePresencePossible<S, C>,
+                possible: &mut ColorTailPresencePossible<S, C>,
                 q: &mut VecDeque<(
         usize,
         usize,
@@ -4785,16 +4811,7 @@ fn color_side_presence_from_blank<const S: usize, const C: usize>(
             return;
         }
 
-        let left_present = status & 1 != 0;
-        let right_present = status & 2 != 0;
-        if left == color && !left_present {
-            return;
-        }
-        if right == color && !right_present {
-            return;
-        }
-
-        let index = ColorSidePresencePossible::<S, C>::exact_index(
+        let index = ColorTailPresencePossible::<S, C>::exact_index(
             st, scan, left, right, color,
         );
         let bit = 1_u8 << status;
@@ -4817,37 +4834,34 @@ fn color_side_presence_from_blank<const S: usize, const C: usize>(
             continue;
         };
 
-        let left_present = status & 1 != 0;
-        let right_present = status & 2 != 0;
+        let left_tail = status & 1 != 0;
+        let right_tail = status & 2 != 0;
 
         if shift {
-            // Move R. The written old head joins the left side; the exact
-            // right neighbor is consumed from the right side.
-            let new_left_present = left_present || print == color;
-            let residual_right_mask = if right == color {
-                // The consumed neighbor witnesses presence, but may or may not
-                // have been the final occurrence on this side.
-                0b11
-            } else if right_present {
-                0b10
-            } else {
-                0b01
-            };
+            // New left tail consists of old `left` plus the old left tail.
+            let new_left_tail = left_tail || left == color;
 
             let mut new_rights = windows.right[tr][right][print];
             while new_rights != 0 {
                 let new_right = new_rights.trailing_zeros() as usize;
                 new_rights &= new_rights - 1;
 
-                for residual_right in 0..2 {
-                    if residual_right_mask & (1_u8 << residual_right)
-                        == 0
-                    {
+                // `new_right` is the nearest cell of the old right tail.
+                // Remove it to obtain the new right-tail status.
+                let residual_mask = if !right_tail {
+                    u8::from(new_right != color)
+                } else if new_right == color {
+                    0b11
+                } else {
+                    0b10
+                };
+
+                for residual in 0..2 {
+                    if residual_mask & (1_u8 << residual) == 0 {
                         continue;
                     }
-
-                    let new_status = u8::from(new_left_present)
-                        | ((residual_right as u8) << 1);
+                    let new_status = u8::from(new_left_tail)
+                        | ((residual as u8) << 1);
                     push(
                         tr,
                         print,
@@ -4861,29 +4875,28 @@ fn color_side_presence_from_blank<const S: usize, const C: usize>(
                 }
             }
         } else {
-            // Move L, symmetrically.
-            let new_right_present = right_present || print == color;
-            let residual_left_mask = if left == color {
-                0b11
-            } else if left_present {
-                0b10
-            } else {
-                0b01
-            };
+            // New right tail consists of old `right` plus the old right tail.
+            let new_right_tail = right_tail || right == color;
 
             let mut new_lefts = windows.left[tr][left][print];
             while new_lefts != 0 {
                 let new_left = new_lefts.trailing_zeros() as usize;
                 new_lefts &= new_lefts - 1;
 
-                for residual_left in 0..2 {
-                    if residual_left_mask & (1_u8 << residual_left) == 0
-                    {
+                let residual_mask = if !left_tail {
+                    u8::from(new_left != color)
+                } else if new_left == color {
+                    0b11
+                } else {
+                    0b10
+                };
+
+                for residual in 0..2 {
+                    if residual_mask & (1_u8 << residual) == 0 {
                         continue;
                     }
-
-                    let new_status = (residual_left as u8)
-                        | (u8::from(new_right_present) << 1);
+                    let new_status = (residual as u8)
+                        | (u8::from(new_right_tail) << 1);
                     push(
                         tr,
                         new_left,
