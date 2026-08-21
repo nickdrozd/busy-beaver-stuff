@@ -379,20 +379,26 @@ struct BlankSidePossible<const S: usize, const C: usize> {
     joint: JointBlankPossible<S, C>,
 }
 
-/// Independent per-color tail-presence possibilities, conditioned on the
-/// exact local window.  For each nonblank color `k`, status bit 0 says `k`
-/// occurs somewhere strictly beyond the immediate left neighbor, and bit 1 is
-/// the symmetric fact on the right.  The immediate neighbors themselves are
-/// already exact in `WinPossible`, so this spends the same four-state product
-/// on information the 3-cell window does not already contain.
-struct ColorTailPresencePossible<const S: usize, const C: usize> {
-    exact: Vec<u8>,
-    by_left: Vec<u8>,
-    by_right: Vec<u8>,
-    any: Vec<u8>,
+/// Independent per-color capped tail-count possibilities, conditioned on the
+/// exact local window. For each nonblank color `k`, the left and right tails
+/// (strictly beyond the immediate neighbors) are each summarized as:
+///
+/// - 0: no `k`,
+/// - 1: exactly one `k`,
+/// - 2: at least two `k`.
+///
+/// A concrete status is `left_count + 3 * right_count`, so each stored `u16`
+/// is a set of the nine possible `(left_count, right_count)` combinations.
+/// This strictly refines the old single-color presence abstraction while
+/// retaining the same exact-window conditioning.
+struct ColorTailCountPossible<const S: usize, const C: usize> {
+    exact: Vec<u16>,
+    by_left: Vec<u16>,
+    by_right: Vec<u16>,
+    any: Vec<u16>,
 }
 
-impl<const S: usize, const C: usize> ColorTailPresencePossible<S, C> {
+impl<const S: usize, const C: usize> ColorTailCountPossible<S, C> {
     const fn exact_index(
         st: usize,
         scan: usize,
@@ -434,7 +440,8 @@ impl<const S: usize, const C: usize> ColorTailPresencePossible<S, C> {
         color: usize,
         status: u8,
     ) {
-        let bit = 1_u8 << status;
+        debug_assert!(status < 9);
+        let bit = 1_u16 << status;
         self.exact[Self::exact_index(st, scan, left, right, color)] |=
             bit;
         self.by_left[Self::side_index(st, scan, left, color)] |= bit;
@@ -449,7 +456,7 @@ impl<const S: usize, const C: usize> ColorTailPresencePossible<S, C> {
         left: Option<usize>,
         right: Option<usize>,
         color: usize,
-    ) -> u8 {
+    ) -> u16 {
         match (left, right) {
             (Some(left), Some(right)) => {
                 self.exact
@@ -673,8 +680,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     let side_possible = prog.side_possible_from_blank(&win_possible);
     let blank_side_possible =
         blank_side_possible_from_blank(prog, &win_possible);
-    let color_tail_presence =
-        color_tail_presence_from_blank(prog, &win_possible);
+    let color_tail_count =
+        color_tail_count_from_blank(prog, &win_possible);
     let pair_tail_presence =
         pair_tail_presence_from_blank(prog, &win_possible);
 
@@ -700,7 +707,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
                 .obeys_blank_side_possible(*state, &blank_side_possible)
             && tape.obeys_tail_presence(
                 *state,
-                &color_tail_presence,
+                &color_tail_count,
                 &pair_tail_presence,
             )
     });
@@ -750,7 +757,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             &win_possible,
             &side_possible,
             &blank_side_possible,
-            &color_tail_presence,
+            &color_tail_count,
             &pair_tail_presence,
             &forbid_left,
             &forbid_right,
@@ -1100,7 +1107,7 @@ fn step_instrs<const s: usize, const c: usize>(
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
-    color_tail_presence: &ColorTailPresencePossible<s, c>,
+    color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
@@ -1175,7 +1182,7 @@ fn step_instrs<const s: usize, const c: usize>(
                 .obeys_blank_side_possible(state, blank_side_possible)
             || !tape.obeys_tail_presence(
                 state,
-                color_tail_presence,
+                color_tail_count,
                 pair_tail_presence,
             )
         {
@@ -1195,7 +1202,7 @@ fn step_configs<const s: usize, const c: usize>(
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
-    color_tail_presence: &ColorTailPresencePossible<s, c>,
+    color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
@@ -1224,7 +1231,7 @@ fn step_configs<const s: usize, const c: usize>(
                 win_possible,
                 side_possible,
                 blank_side_possible,
-                color_tail_presence,
+                color_tail_count,
                 pair_tail_presence,
                 forbid_left,
                 forbid_right,
@@ -1248,7 +1255,7 @@ fn step_configs<const s: usize, const c: usize>(
                 win_possible,
                 side_possible,
                 blank_side_possible,
-                color_tail_presence,
+                color_tail_count,
                 pair_tail_presence,
                 forbid_left,
                 forbid_right,
@@ -1268,7 +1275,7 @@ fn step_configs<const s: usize, const c: usize>(
             win_possible,
             side_possible,
             blank_side_possible,
-            color_tail_presence,
+            color_tail_count,
             pair_tail_presence,
             forbid_left,
             forbid_right,
@@ -2773,80 +2780,103 @@ impl Tape {
         }
     }
 
-    /// Check independent and pairwise same-run tail-presence facts.
+    /// Check capped per-color tail counts and pairwise same-run presence.
     ///
-    /// Compile the backward tape's per-color requirements once, use them for
-    /// the cheap independent filter first, then test only pairs for which both
-    /// colors are constrained.  The pair allowance is the Cartesian product
-    /// of two four-state masks and is assembled with four shifts instead of
-    /// enumerating all 16 concrete pair statuses on every predecessor.
+    /// Each color first gets the stronger independent `0 / 1 / 2+` count
+    /// check on both tails. The same count requirements are then coarsened to
+    /// absent/present masks for the pairwise same-run filter, so the stronger
+    /// count layer does not add another backward tape scan.
     fn obeys_tail_presence<const S: usize, const C: usize>(
         &self,
         state: State,
-        single: &ColorTailPresencePossible<S, C>,
+        count: &ColorTailCountPossible<S, C>,
         pair: &PairTailPresencePossible<S, C>,
     ) -> bool {
-        #[derive(Clone, Copy)]
-        enum RequiredPresence {
-            Absent,
-            Present,
-            Unknown,
-        }
+        /// Possible capped counts of `color` strictly beyond the immediate
+        /// neighbor represented by `span`.
+        ///
+        /// Bit 0 = zero, bit 1 = exactly one, bit 2 = at least two.
+        fn side_count_masks<const C: usize>(span: &Span) -> [u8; C] {
+            let mut minimum = [0_u8; C];
+            let mut variable = [span.end == TapeEnd::Unknown; C];
 
-        fn requirement(span: &Span, color: usize) -> RequiredPresence {
-            // Remove exactly the nearest cell from consideration.  Explicit
-            // farther blocks are definite witnesses.  An `AtLeast(1)` nearest
-            // run of this color may or may not extend beyond that first cell.
-            let mut first = true;
-            let mut nearest_may_extend = false;
-
-            for block in span.span.iter() {
-                if first {
-                    first = false;
-                    if block.color as usize != color {
-                        continue;
-                    }
-                    if block.count.minimum() > 1 {
-                        return RequiredPresence::Present;
-                    }
-                    nearest_may_extend = block.count.is_indef();
+            for (index, block) in span.span.iter().enumerate() {
+                let color = block.color as usize;
+                if color == 0 {
                     continue;
                 }
 
-                if block.color as usize == color {
-                    return RequiredPresence::Present;
+                // The first explicit block contains the immediate neighbor.
+                // Remove exactly that nearest cell from the tail count.
+                let contribution = if index == 0 {
+                    block.count.minimum().saturating_sub(1)
+                } else {
+                    block.count.minimum()
+                };
+
+                minimum[color] =
+                    minimum[color].saturating_add(contribution).min(2);
+                variable[color] |= block.count.is_indef();
+            }
+
+            let mut out = [0_u8; C];
+            for color in 1..C {
+                out[color] = match (minimum[color], variable[color]) {
+                    (2, _) => 0b100,
+                    (1, true) => 0b110,
+                    (0, true) => 0b111,
+                    (count, false) => 1_u8 << count,
+                    _ => unreachable!(),
+                };
+            }
+            out
+        }
+
+        /// Nine-bit set of allowed `(left_count, right_count)` statuses.
+        /// Status is `left_count + 3 * right_count`.
+        const fn count_allowed_mask(left: u8, right: u8) -> u16 {
+            let mut out = 0_u16;
+            let mut l = 0_u8;
+            while l < 3 {
+                if left & (1_u8 << l) != 0 {
+                    let mut r = 0_u8;
+                    while r < 3 {
+                        if right & (1_u8 << r) != 0 {
+                            out |= 1_u16 << (l + 3 * r);
+                        }
+                        r += 1;
+                    }
                 }
+                l += 1;
             }
-
-            if span.end == TapeEnd::Unknown || nearest_may_extend {
-                RequiredPresence::Unknown
-            } else {
-                RequiredPresence::Absent
-            }
+            out
         }
 
-        /// Four-bit set of allowed `(left_present, right_present)` statuses.
-        const fn allowed_mask(
-            left: RequiredPresence,
-            right: RequiredPresence,
-        ) -> u8 {
-            use RequiredPresence::{Absent, Present, Unknown};
+        /// Coarsen capped count masks to the old four-state presence product.
+        const fn presence_allowed_mask(left: u8, right: u8) -> u8 {
+            let left_absent = left & 0b001 != 0;
+            let left_present = left & 0b110 != 0;
+            let right_absent = right & 0b001 != 0;
+            let right_present = right & 0b110 != 0;
 
-            match (left, right) {
-                (Absent, Absent) => 0b0001,
-                (Present, Absent) => 0b0010,
-                (Unknown, Absent) => 0b0011,
-                (Absent, Present) => 0b0100,
-                (Absent, Unknown) => 0b0101,
-                (Present, Present) => 0b1000,
-                (Present, Unknown) => 0b1010,
-                (Unknown, Present) => 0b1100,
-                (Unknown, Unknown) => 0b1111,
+            let mut out = 0_u8;
+            if left_absent && right_absent {
+                out |= 1 << 0;
             }
+            if left_present && right_absent {
+                out |= 1 << 1;
+            }
+            if left_absent && right_present {
+                out |= 1 << 2;
+            }
+            if left_present && right_present {
+                out |= 1 << 3;
+            }
+            out
         }
 
-        /// Lift two four-state single-color masks to the 16-state pair mask.
-        /// Pair status is `a_status | (b_status << 2)`.
+        /// Lift two four-state single-color presence masks to the 16-state
+        /// pair mask. Pair status is `a_status | (b_status << 2)`.
         const fn pair_allowed_mask(a: u8, b: u8) -> u16 {
             let a = a as u16;
             let mut out = 0_u16;
@@ -2871,41 +2901,45 @@ impl Tape {
         let right_neighbor =
             self.right_neighbor_color().map(usize::from);
 
-        let mut allowed = [0b1111_u8; C];
-        let mut constrained = 0_u64;
+        let left_counts = side_count_masks::<C>(&self.lspan);
+        let right_counts = side_count_masks::<C>(&self.rspan);
+        let mut presence_allowed = [0b1111_u8; C];
+        let mut constrained_presence = 0_u64;
 
         for color in 1..C {
-            let left = requirement(&self.lspan, color);
-            let right = requirement(&self.rspan, color);
-            let required = allowed_mask(left, right);
-            allowed[color] = required;
+            let left_count = left_counts[color];
+            let right_count = right_counts[color];
+            let required_count =
+                count_allowed_mask(left_count, right_count);
 
-            if required == 0b1111 {
-                continue;
+            // Both unknown tails permit all nine count combinations, so the
+            // independent count layer cannot prune this color.
+            if required_count != 0x01ff {
+                let forward = count.mask(
+                    st,
+                    sc,
+                    left_neighbor,
+                    right_neighbor,
+                    color,
+                );
+                if forward & required_count == 0 {
+                    return false;
+                }
             }
 
-            constrained |= 1_u64 << color;
-
-            let forward = single.mask(
-                st,
-                sc,
-                left_neighbor,
-                right_neighbor,
-                color,
-            );
-            if forward & required == 0 {
-                return false;
+            let required_presence =
+                presence_allowed_mask(left_count, right_count);
+            presence_allowed[color] = required_presence;
+            if required_presence != 0b1111 {
+                constrained_presence |= 1_u64 << color;
             }
         }
 
-        if C < 3 || constrained.count_ones() < 2 {
+        if C < 3 || constrained_presence.count_ones() < 2 {
             return true;
         }
 
-        // Iterate only constrained colors.  This is especially helpful for
-        // unknown-ended halt cones, while bounded blank cones retain all of the
-        // pairwise absence/presence power.
-        let mut a_colors = constrained;
+        let mut a_colors = constrained_presence;
         while a_colors != 0 {
             let a = a_colors.trailing_zeros() as usize;
             a_colors &= a_colors - 1;
@@ -2915,8 +2949,10 @@ impl Tape {
                 let b = b_colors.trailing_zeros() as usize;
                 b_colors &= b_colors - 1;
 
-                let required =
-                    pair_allowed_mask(allowed[a], allowed[b]);
+                let required = pair_allowed_mask(
+                    presence_allowed[a],
+                    presence_allowed[b],
+                );
                 let forward = pair.mask(
                     st,
                     sc,
@@ -2935,55 +2971,60 @@ impl Tape {
     }
 
     #[cfg(test)]
-    fn obeys_color_tail_presence<const S: usize, const C: usize>(
+    fn obeys_color_tail_count<const S: usize, const C: usize>(
         &self,
         state: State,
-        possible: &ColorTailPresencePossible<S, C>,
+        possible: &ColorTailCountPossible<S, C>,
     ) -> bool {
-        // Keep a single-color-only test hook without paying for duplicate
-        // requirement compilation in production.
-        #[derive(Clone, Copy)]
-        enum RequiredPresence {
-            Absent,
-            Present,
-            Unknown,
-        }
+        fn side_count_masks<const C: usize>(span: &Span) -> [u8; C] {
+            let mut minimum = [0_u8; C];
+            let mut variable = [span.end == TapeEnd::Unknown; C];
 
-        fn requirement(span: &Span, color: usize) -> RequiredPresence {
-            let mut first = true;
-            let mut nearest_may_extend = false;
-            for block in span.span.iter() {
-                if first {
-                    first = false;
-                    if block.color as usize != color {
-                        continue;
-                    }
-                    if block.count.minimum() > 1 {
-                        return RequiredPresence::Present;
-                    }
-                    nearest_may_extend = block.count.is_indef();
+            for (index, block) in span.span.iter().enumerate() {
+                let color = block.color as usize;
+                if color == 0 {
                     continue;
                 }
-                if block.color as usize == color {
-                    return RequiredPresence::Present;
-                }
+
+                let contribution = if index == 0 {
+                    block.count.minimum().saturating_sub(1)
+                } else {
+                    block.count.minimum()
+                };
+                minimum[color] =
+                    minimum[color].saturating_add(contribution).min(2);
+                variable[color] |= block.count.is_indef();
             }
-            if span.end == TapeEnd::Unknown || nearest_may_extend {
-                RequiredPresence::Unknown
-            } else {
-                RequiredPresence::Absent
+
+            let mut out = [0_u8; C];
+            for color in 1..C {
+                out[color] = match (minimum[color], variable[color]) {
+                    (2, _) => 0b100,
+                    (1, true) => 0b110,
+                    (0, true) => 0b111,
+                    (count, false) => 1_u8 << count,
+                    _ => unreachable!(),
+                };
             }
+            out
         }
 
-        const fn matches(
-            required: RequiredPresence,
-            present: bool,
-        ) -> bool {
-            match required {
-                RequiredPresence::Absent => !present,
-                RequiredPresence::Present => present,
-                RequiredPresence::Unknown => true,
+        const fn allowed_mask(left: u8, right: u8) -> u16 {
+            let mut out = 0_u16;
+            let mut l = 0_u8;
+            while l < 3 {
+                if left & (1_u8 << l) != 0 {
+                    let mut r = 0_u8;
+                    while r < 3 {
+                        if right & (1_u8 << r) != 0 {
+                            out |= 1_u16 << (l + 3 * r);
+                        }
+                        r += 1;
+                    }
+                }
+                l += 1;
             }
+            out
         }
 
         let st = state as usize;
@@ -2992,32 +3033,21 @@ impl Tape {
         let right_neighbor =
             self.right_neighbor_color().map(usize::from);
 
+        let left_counts = side_count_masks::<C>(&self.lspan);
+        let right_counts = side_count_masks::<C>(&self.rspan);
+
         for color in 1..C {
-            let left_required = requirement(&self.lspan, color);
-            let right_required = requirement(&self.rspan, color);
-            if matches!(left_required, RequiredPresence::Unknown)
-                && matches!(right_required, RequiredPresence::Unknown)
-            {
-                continue;
-            }
-
-            let mut allowed = 0_u8;
-            for status in 0..4_u8 {
-                if matches(left_required, status & 1 != 0)
-                    && matches(right_required, status & 2 != 0)
-                {
-                    allowed |= 1_u8 << status;
-                }
-            }
-
-            if possible.mask(
-                st,
-                sc,
-                left_neighbor,
-                right_neighbor,
-                color,
-            ) & allowed
-                == 0
+            let required =
+                allowed_mask(left_counts[color], right_counts[color]);
+            if required != 0x01ff
+                && possible.mask(
+                    st,
+                    sc,
+                    left_neighbor,
+                    right_neighbor,
+                    color,
+                ) & required
+                    == 0
             {
                 return false;
             }
@@ -4387,27 +4417,46 @@ fn test_same_run_joint_blank_dirty_flags() {
 }
 
 #[test]
-fn test_per_color_tail_presence_filter() {
+fn test_per_color_tail_count_filter() {
     let prog = Prog::<2, 3>::from("1RB ... ...  ... ... ...");
     let (forbid_left, forbid_right) = prog.shift_side_forbidden();
     let windows =
         prog.win_possible_from_blank(&forbid_left, &forbid_right);
-    let presence = color_tail_presence_from_blank(&prog, &windows);
+    let count = color_tail_count_from_blank(&prog, &windows);
 
     // After the only move, B0 has immediate left neighbor 1 but nothing
     // farther left.  Tail presence therefore records color 1 as absent.
-    assert_eq!(presence.mask(1, 0, Some(1), Some(0), 1), 1_u8 << 0);
+    assert_eq!(count.mask(1, 0, Some(1), Some(0), 1), 1_u16 << 0);
 
     let actual: Tape = "? 1 [0] 0+".into();
-    assert!(actual.obeys_color_tail_presence(1, &presence));
+    assert!(actual.obeys_color_tail_count(1, &count));
 
     // Same immediate window, but requiring another 1 farther left is rejected.
     let hidden_one: Tape = "? 1^2 [0] 0+".into();
-    assert!(!hidden_one.obeys_color_tail_presence(1, &presence));
+    assert!(!hidden_one.obeys_color_tail_count(1, &count));
 
     // A different hidden color is also rejected.
     let hidden_two: Tape = "? 2 1 [0] 0+".into();
-    assert!(!hidden_two.obeys_color_tail_presence(1, &presence));
+    assert!(!hidden_two.obeys_color_tail_count(1, &count));
+}
+
+#[test]
+fn test_per_color_tail_count_distinguishes_one_from_two_plus() {
+    let mut possible = ColorTailCountPossible::<1, 2>::new();
+
+    // Exact local window `0 [0] 0`; only one color-1 cell exists in the left
+    // tail and none in the right tail. Status code 1 = (left=1, right=0).
+    possible.add(0, 0, 0, 0, 1, 1);
+
+    let one: Tape = "0+ 1 0 [0] 0+".into();
+    assert!(one.obeys_color_tail_count(0, &possible));
+
+    let two: Tape = "0+ 1^2 0 [0] 0+".into();
+    assert!(!two.obeys_color_tail_count(0, &possible));
+
+    // A lower-bounded run of two also proves the `2+` category.
+    let at_least_two: Tape = "0+ 1^2.. 0 [0] 0+".into();
+    assert!(!at_least_two.obeys_color_tail_count(0, &possible));
 }
 
 #[test]
@@ -5252,27 +5301,45 @@ fn frontier_slots<const S: usize, const C: usize>(
     possible
 }
 
-/// Independent per-color forward abstraction of presence strictly beyond the
-/// immediate neighbors.
+/// Independent per-color forward abstraction of capped counts strictly beyond
+/// the immediate neighbors.
 ///
-/// For one nonblank color at a time, status bit 0 describes the left tail
-/// beyond `left`, and bit 1 the right tail beyond `right`.  On an R move the
-/// old left neighbor becomes part of the new left tail.  The newly exposed
-/// right neighbor is consumed from the old right tail, so if it has the tracked
-/// color the residual tail may either lose the last occurrence or remain
-/// present.  L moves are symmetric.
-#[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn color_tail_presence_from_blank<const S: usize, const C: usize>(
+/// For one nonblank color at a time, each side count is `0`, `1`, or `2+`.
+/// On an R move, old `left` enters the new left tail. The newly exposed
+/// `new_right` is removed from the old right tail count; removing one tracked
+/// color from `2+` leaves either `1` or `2+`. L moves are symmetric.
+#[expect(clippy::cast_possible_truncation)]
+fn color_tail_count_from_blank<const S: usize, const C: usize>(
     prog: &Prog<S, C>,
     windows: &WinPossible<S, C>,
-) -> ColorTailPresencePossible<S, C> {
+) -> ColorTailCountPossible<S, C> {
+    fn add_neighbor(count: u8, matches: bool) -> u8 {
+        if matches { (count + 1).min(2) } else { count }
+    }
+
+    /// Bitset over residual capped counts after exposing one cell from a tail.
+    ///
+    /// A zero bitset means the exposed color contradicts the old capped count.
+    const fn residual_mask(count: u8, exposed_matches: bool) -> u8 {
+        #[expect(clippy::match_same_arms)]
+        match (count, exposed_matches) {
+            (0, false) => 0b001,
+            (0, true) => 0,
+            (1, false) => 0b010,
+            (1, true) => 0b001,
+            (2, false) => 0b100,
+            (2, true) => 0b110,
+            _ => 0,
+        }
+    }
+
     let mut trans = [[None; C]; S];
     for ((st, co), &(print, shift, tr)) in prog.iter() {
         trans[st as usize][co as usize] =
             Some((print as usize, shift, tr as usize));
     }
 
-    let mut possible = ColorTailPresencePossible::new();
+    let mut possible = ColorTailCountPossible::new();
     let mut q = VecDeque::new();
 
     #[expect(clippy::shadow_unrelated)]
@@ -5282,7 +5349,7 @@ fn color_tail_presence_from_blank<const S: usize, const C: usize>(
                 right: usize,
                 color: usize,
                 status: u8,
-                possible: &mut ColorTailPresencePossible<S, C>,
+                possible: &mut ColorTailCountPossible<S, C>,
                 q: &mut VecDeque<(
         usize,
         usize,
@@ -5295,10 +5362,10 @@ fn color_tail_presence_from_blank<const S: usize, const C: usize>(
             return;
         }
 
-        let index = ColorTailPresencePossible::<S, C>::exact_index(
+        let index = ColorTailCountPossible::<S, C>::exact_index(
             st, scan, left, right, color,
         );
-        let bit = 1_u8 << status;
+        let bit = 1_u16 << status;
         if possible.exact[index] & bit != 0 {
             return;
         }
@@ -5318,34 +5385,26 @@ fn color_tail_presence_from_blank<const S: usize, const C: usize>(
             continue;
         };
 
-        let left_tail = status & 1 != 0;
-        let right_tail = status & 2 != 0;
+        let left_count = status % 3;
+        let right_count = status / 3;
 
         if shift {
-            // New left tail consists of old `left` plus the old left tail.
-            let new_left_tail = left_tail || left == color;
+            let new_left = add_neighbor(left_count, left == color);
 
             let mut new_rights = windows.right[tr][right][print];
             while new_rights != 0 {
                 let new_right = new_rights.trailing_zeros() as usize;
                 new_rights &= new_rights - 1;
 
-                // `new_right` is the nearest cell of the old right tail.
-                // Remove it to obtain the new right-tail status.
-                let residual_mask = if !right_tail {
-                    u8::from(new_right != color)
-                } else if new_right == color {
-                    0b11
-                } else {
-                    0b10
-                };
+                let residual =
+                    residual_mask(right_count, new_right == color);
+                let mut residuals = residual;
+                while residuals != 0 {
+                    let new_right_count =
+                        residuals.trailing_zeros() as u8;
+                    residuals &= residuals - 1;
 
-                for residual in 0..2 {
-                    if residual_mask & (1_u8 << residual) == 0 {
-                        continue;
-                    }
-                    let new_status = u8::from(new_left_tail)
-                        | ((residual as u8) << 1);
+                    let new_status = new_left + 3 * new_right_count;
                     push(
                         tr,
                         print,
@@ -5359,28 +5418,22 @@ fn color_tail_presence_from_blank<const S: usize, const C: usize>(
                 }
             }
         } else {
-            // New right tail consists of old `right` plus the old right tail.
-            let new_right_tail = right_tail || right == color;
+            let new_right = add_neighbor(right_count, right == color);
 
             let mut new_lefts = windows.left[tr][left][print];
             while new_lefts != 0 {
                 let new_left = new_lefts.trailing_zeros() as usize;
                 new_lefts &= new_lefts - 1;
 
-                let residual_mask = if !left_tail {
-                    u8::from(new_left != color)
-                } else if new_left == color {
-                    0b11
-                } else {
-                    0b10
-                };
+                let residual =
+                    residual_mask(left_count, new_left == color);
+                let mut residuals = residual;
+                while residuals != 0 {
+                    let new_left_count =
+                        residuals.trailing_zeros() as u8;
+                    residuals &= residuals - 1;
 
-                for residual in 0..2 {
-                    if residual_mask & (1_u8 << residual) == 0 {
-                        continue;
-                    }
-                    let new_status = (residual as u8)
-                        | (u8::from(new_right_tail) << 1);
+                    let new_status = new_left_count + 3 * new_right;
                     push(
                         tr,
                         new_left,
@@ -5399,7 +5452,7 @@ fn color_tail_presence_from_blank<const S: usize, const C: usize>(
     possible
 }
 
-/// Pairwise same-run version of `color_tail_presence_from_blank`.
+/// Pairwise same-run presence abstraction retained alongside the capped-count layer.
 ///
 /// A newly exposed cell can equal at most one member of an unordered color
 /// pair, so consuming it makes at most one pair component uncertain. This

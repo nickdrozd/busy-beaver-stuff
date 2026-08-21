@@ -1815,9 +1815,9 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
 
         "1RB 1LB  1LA 0RC  0LD 1RC  ... 1LA": 11,
         "1RB 0LA  0RC ...  1LC 1LD  0RA 0LD": 17,
-        "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA": 27,
+        "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA": 18,
         "1RB 0LA  0RC 1RC  1RD 1LA  1LA ...": 40,
-        "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": 46,
+        "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": 22,
         "1RB 0LA  0RC 1RC  1RD 1LA  1LB ...": 46,
 
         "1RB 0RC ...  2LC 0RB 0LA  1LA 1LC ...": 0,
@@ -1842,7 +1842,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LB ...": 107,
         "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": 115,
         "1RB 0RB  1RC 1LE  1RD 1LA  1LB ...  0LE 0RA": 115,
-        "1RB 0RB  0RC 1LE  1RD 0LC  1LA ...  0LE 0RA": 118,
+        "1RB 0RB  0RC 1LE  1RD 0LC  1LA ...  0LE 0RA": 38,
 
         "1RB ... 3LA 2LB  2LC ... 0RB 3LC  0RA 0LC ... ...": 0,
 
@@ -1878,14 +1878,14 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0RA 0RB  1LB 2LA 0RB": 2,
 
         "1RB 1RC  1LB 1LA  0RC 0LA": 0,
-        "1RB 1LB  1LB 0RC  1LC 1LA": 12,
+        "1RB 1LB  1LB 0RC  1LC 1LA": 5,
 
         "1RB 0RA 2LA 0RB  2LB 2RA 3LA 0RB": 2,
         "1RB 2RB 0RB 2LA  2LB 3RB 3LA 0RB": 2,
         "1RB 3RA 0RB 0RA  2LB 3LA 1RA 0RB": 6,
         "1RB 3RA 0RB 0RA  2LB 3LA 3LA 0RB": 6,
         "1RB 3RB 2LA 0RB  2LB 2RB 3LA 0RB": 3,
-        "1RB 0RA 3LA 0RB  1LB 2LA 0RB 2RB": 11,
+        "1RB 0RA 3LA 0RB  1LB 2LA 0RB 2RB": 9,
         "1RB 3RB 3LA 3LB  2LB 2RA 1LB 1RA": 10,
         "1RB 3RB 2LA 3LA  2LB 1RA 1LA 1LB": 14,
         "1RB 3RB 1LA 1LB  2LB 2RA 1RB 2RB": 14,
@@ -1895,10 +1895,10 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1LB 1LA 3RB  2LB 2RA 3LB 1RB": 27,
         "1RB 0RA 0RB 2RB  2LB 1RB 3LA 0RB": 25,
 
-        "1RB 1LB  1LB 0RC  1LD 1LA  1LD 1LA": 13,
+        "1RB 1LB  1LB 0RC  1LD 1LA  1LD 1LA": 6,
         "1RB 1RC  1LC 0RB  1RC 0LD  1RA 1LD": 14,
         "1RB 0LD  1LC 1LA  0RB 1RD  1LD 0RC": 2,
-        "1RB 1LB  0RC 1LD  1LA 1RC  1LD 0RC": 8,
+        "1RB 1LB  0RC 1LD  1LA 1RC  1LD 0RC": 5,
         "1RB 1LB  1RC 0LA  1LA 0RD  1RD 1LA": 15,
         "1RB 1LB  1RC 0LA  1LB 0RD  1RD 1LA": 15,
         "1RB 0LD  1LC 0RC  1RC 1LD  1RA 1LA": 15,
@@ -1962,8 +1962,8 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0LB 0LA  2LA 0RB 1RA": 12,
         "1RB 2LB 0LA  2LA 0RB 0RA": 12,
 
-        "1RB 0LB  1RC 0RC  1LC 0LA": 6,
-        "1RB 0LC  1LC 0LA  0RA 1LB":  7,
+        "1RB 0LB  1RC 0RC  1LC 0LA": 0,
+        "1RB 0LC  1LC 0LA  0RA 1LB": 5,
         "1RB ...  1LC 1RC  0RA 0LC": 12,
         "1RB 1LB  0LC 0RB  1LA 1LA": 12,
         "1RB 1LB  1RC 1LC  0LA 0RC": 8,
@@ -2104,9 +2104,9 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
 
         "1RB 1RA 3LA 3LB  2LA 0RB 2RA 2LA":  0,
         "1RB 1RB 1RA 0RB  2LA 2RB 3LB 3LA":  0,
-        "1RB 2RA 3LA 3RB  1LB 2RB 2LA 1LA": 12,
+        "1RB 2RA 3LA 3RB  1LB 2RB 2LA 1LA": 11,
         "1RB 3RA 0LA 3RB  1LB 2LA 2LA 1LA":  0,
-        "1RB 3RA 2RB 2LA  2LB 3RB 1LA 3LA": 14,
+        "1RB 3RA 2RB 2LA  2LB 3RB 1LA 3LA": 13,
         "1RB 1LB 0LA 1RB  2LA 3RB 2LB 3RA":  0,
         "1RB 3RB 0LA 3LB  2LA 1RA 2LB 1RB":  0,
 
@@ -2115,7 +2115,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1RC  0RC 0LA  0RD 1LB  1LD 1LA": 21,
         "1RB 0LA  0RC 1RD  0RD 1LA  1LB 1LC": 24,
         "1RB 0LA  0RC 1RD  1LA 1LB  0LC 0RD": 24,
-        "1RB 1RC  0RC 1LD  1LA 1LB  0LD 0RA": 24,
+        "1RB 1RC  0RC 1LD  1LA 1LB  0LD 0RA": 15,
         "1RB 0LA  0RC 1LC  1LA 1RD  0LC 0RD": 24,
         "1RB 0RD  0RC 0RA  1LC 1LD  0RB 1RC": 25,
 
@@ -2139,7 +2139,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1RA  1LC 1LD  1RA 0LC  0RA 1LE  0RD 0LE": 73,
         "1RB 1LD  1RC 1LA  1LD 0RE  0RA 0LD  0LB 1RE": 87,
         "1RB 0LA  0RC 1RD  0RD 0LE  1LA 1LE  1RC 1RD": 95,
-        "1RB 0RC  1RC 0LE  1LD 1LE  0LD 0RA  0RC 0RB": 95,
+        "1RB 0RC  1RC 0LE  1LD 1LE  0LD 0RA  0RC 0RB": 39,
         "1RB 0LA  0RC 0RD  1LA 1LD  1RE 1RC  1LB 1RC": 96,
     },
 
