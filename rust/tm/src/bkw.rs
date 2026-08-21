@@ -466,6 +466,117 @@ impl<const S: usize, const C: usize> ColorTailPresencePossible<S, C> {
     }
 }
 
+/// Same-run pairwise tail-presence possibilities, conditioned on the exact
+/// local window. For each unordered nonblank color pair `(a, b)`, a concrete
+/// status has four bits:
+///
+/// - bit 0: `a` occurs in the left tail,
+/// - bit 1: `a` occurs in the right tail,
+/// - bit 2: `b` occurs in the left tail,
+/// - bit 3: `b` occurs in the right tail.
+///
+/// Each stored `u16` is a set of those 16 concrete statuses. This retains the
+/// correlation between two colors that the independent per-color abstraction
+/// deliberately joins away.
+struct PairTailPresencePossible<const S: usize, const C: usize> {
+    exact: Vec<u16>,
+    by_left: Vec<u16>,
+    by_right: Vec<u16>,
+    any: Vec<u16>,
+}
+
+impl<const S: usize, const C: usize> PairTailPresencePossible<S, C> {
+    const fn pair_count() -> usize {
+        C.saturating_sub(1) * C.saturating_sub(2) / 2
+    }
+
+    /// Dense index for `1 <= a < b < C`, in lexicographic pair order.
+    const fn pair_index(a: usize, b: usize) -> usize {
+        debug_assert!(0 < a && a < b && b < C);
+        let before = (a - 1) * (2 * C - a - 2) / 2;
+        before + (b - a - 1)
+    }
+
+    const fn exact_index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        pair: usize,
+    ) -> usize {
+        let window = (((st * C) + scan) * C + left) * C + right;
+        window * Self::pair_count() + pair
+    }
+
+    const fn side_index(
+        st: usize,
+        scan: usize,
+        neighbor: usize,
+        pair: usize,
+    ) -> usize {
+        let side = ((st * C) + scan) * C + neighbor;
+        side * Self::pair_count() + pair
+    }
+
+    const fn any_index(st: usize, scan: usize, pair: usize) -> usize {
+        ((st * C) + scan) * Self::pair_count() + pair
+    }
+
+    fn new() -> Self {
+        let pairs = Self::pair_count();
+        Self {
+            exact: vec![0; S * C * C * C * pairs],
+            by_left: vec![0; S * C * C * pairs],
+            by_right: vec![0; S * C * C * pairs],
+            any: vec![0; S * C * pairs],
+        }
+    }
+
+    fn add(
+        &mut self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        a: usize,
+        b: usize,
+        status: u8,
+    ) {
+        let pair = Self::pair_index(a, b);
+        let bit = 1_u16 << status;
+        self.exact[Self::exact_index(st, scan, left, right, pair)] |=
+            bit;
+        self.by_left[Self::side_index(st, scan, left, pair)] |= bit;
+        self.by_right[Self::side_index(st, scan, right, pair)] |= bit;
+        self.any[Self::any_index(st, scan, pair)] |= bit;
+    }
+
+    fn mask(
+        &self,
+        st: usize,
+        scan: usize,
+        left: Option<usize>,
+        right: Option<usize>,
+        a: usize,
+        b: usize,
+    ) -> u16 {
+        let pair = Self::pair_index(a, b);
+        match (left, right) {
+            (Some(left), Some(right)) => {
+                self.exact
+                    [Self::exact_index(st, scan, left, right, pair)]
+            },
+            (Some(left), None) => {
+                self.by_left[Self::side_index(st, scan, left, pair)]
+            },
+            (None, Some(right)) => {
+                self.by_right[Self::side_index(st, scan, right, pair)]
+            },
+            (None, None) => self.any[Self::any_index(st, scan, pair)],
+        }
+    }
+}
+
 fn cant_reach<const s: usize, const c: usize, T: Ord>(
     prog: &Prog<s, c>,
     steps: Steps,
@@ -564,6 +675,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         blank_side_possible_from_blank(prog, &win_possible);
     let color_tail_presence =
         color_tail_presence_from_blank(prog, &win_possible);
+    let pair_tail_presence =
+        pair_tail_presence_from_blank(prog, &win_possible);
 
     // Halt targets begin with two unknown neighbors, so the
     // `(state, scanned color)` pair must still occur in at least one reachable
@@ -585,8 +698,11 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             && tape.obeys_state_side(*state, &side_possible)
             && tape
                 .obeys_blank_side_possible(*state, &blank_side_possible)
-            && tape
-                .obeys_color_tail_presence(*state, &color_tail_presence)
+            && tape.obeys_tail_presence(
+                *state,
+                &color_tail_presence,
+                &pair_tail_presence,
+            )
     });
 
     if configs.is_empty() {
@@ -635,6 +751,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             &side_possible,
             &blank_side_possible,
             &color_tail_presence,
+            &pair_tail_presence,
             &forbid_left,
             &forbid_right,
             left_fresh_zero,
@@ -984,6 +1101,7 @@ fn step_instrs<const s: usize, const c: usize>(
     side_possible: &SidePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_presence: &ColorTailPresencePossible<s, c>,
+    pair_tail_presence: &PairTailPresencePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -1055,8 +1173,11 @@ fn step_instrs<const s: usize, const c: usize>(
             || !tape.obeys_state_side(state, side_possible)
             || !tape
                 .obeys_blank_side_possible(state, blank_side_possible)
-            || !tape
-                .obeys_color_tail_presence(state, color_tail_presence)
+            || !tape.obeys_tail_presence(
+                state,
+                color_tail_presence,
+                pair_tail_presence,
+            )
         {
             continue;
         }
@@ -1075,6 +1196,7 @@ fn step_configs<const s: usize, const c: usize>(
     side_possible: &SidePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_presence: &ColorTailPresencePossible<s, c>,
+    pair_tail_presence: &PairTailPresencePossible<s, c>,
     forbid_left: &[bool; c],
     forbid_right: &[bool; c],
     left_fresh_zero: bool,
@@ -1103,6 +1225,7 @@ fn step_configs<const s: usize, const c: usize>(
                 side_possible,
                 blank_side_possible,
                 color_tail_presence,
+                pair_tail_presence,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -1126,6 +1249,7 @@ fn step_configs<const s: usize, const c: usize>(
                 side_possible,
                 blank_side_possible,
                 color_tail_presence,
+                pair_tail_presence,
                 forbid_left,
                 forbid_right,
                 left_fresh_zero,
@@ -1145,6 +1269,7 @@ fn step_configs<const s: usize, const c: usize>(
             side_possible,
             blank_side_possible,
             color_tail_presence,
+            pair_tail_presence,
             forbid_left,
             forbid_right,
             left_fresh_zero,
@@ -2606,20 +2731,19 @@ impl Tape {
 
         if matches!(left_status, RequiredStatus::Blank) {
             let inward = possible.left_half[st][sc];
-            let halfblank_ok = match known_right {
-                Some(right) => inward & (1_u64 << right) != 0,
-                None => inward != 0,
-            };
+            let halfblank_ok = known_right
+                .map_or(inward != 0, |right| {
+                    inward & (1_u64 << right) != 0
+                });
             if !halfblank_ok {
                 return false;
             }
         }
         if matches!(right_status, RequiredStatus::Blank) {
             let inward = possible.right_half[st][sc];
-            let halfblank_ok = match known_left {
-                Some(left) => inward & (1_u64 << left) != 0,
-                None => inward != 0,
-            };
+            let halfblank_ok = known_left.map_or(inward != 0, |left| {
+                inward & (1_u64 << left) != 0
+            });
             if !halfblank_ok {
                 return false;
             }
@@ -2649,15 +2773,18 @@ impl Tape {
         }
     }
 
-    /// Check independently, for every nonblank color, whether the
-    /// backward tape's proved *tail* presence facts occur in the forward
-    /// abstraction for a compatible local window.  A tail excludes exactly
-    /// the immediate neighbor, whose color is already represented by the
-    /// local window.
-    fn obeys_color_tail_presence<const S: usize, const C: usize>(
+    /// Check independent and pairwise same-run tail-presence facts.
+    ///
+    /// Compile the backward tape's per-color requirements once, use them for
+    /// the cheap independent filter first, then test only pairs for which both
+    /// colors are constrained.  The pair allowance is the Cartesian product
+    /// of two four-state masks and is assembled with four shifts instead of
+    /// enumerating all 16 concrete pair statuses on every predecessor.
+    fn obeys_tail_presence<const S: usize, const C: usize>(
         &self,
         state: State,
-        possible: &ColorTailPresencePossible<S, C>,
+        single: &ColorTailPresencePossible<S, C>,
+        pair: &PairTailPresencePossible<S, C>,
     ) -> bool {
         #[derive(Clone, Copy)]
         enum RequiredPresence {
@@ -2698,6 +2825,156 @@ impl Tape {
             }
         }
 
+        /// Four-bit set of allowed `(left_present, right_present)` statuses.
+        const fn allowed_mask(
+            left: RequiredPresence,
+            right: RequiredPresence,
+        ) -> u8 {
+            use RequiredPresence::{Absent, Present, Unknown};
+
+            match (left, right) {
+                (Absent, Absent) => 0b0001,
+                (Present, Absent) => 0b0010,
+                (Unknown, Absent) => 0b0011,
+                (Absent, Present) => 0b0100,
+                (Absent, Unknown) => 0b0101,
+                (Present, Present) => 0b1000,
+                (Present, Unknown) => 0b1010,
+                (Unknown, Present) => 0b1100,
+                (Unknown, Unknown) => 0b1111,
+            }
+        }
+
+        /// Lift two four-state single-color masks to the 16-state pair mask.
+        /// Pair status is `a_status | (b_status << 2)`.
+        const fn pair_allowed_mask(a: u8, b: u8) -> u16 {
+            let a = a as u16;
+            let mut out = 0_u16;
+            if b & 0b0001 != 0 {
+                out |= a;
+            }
+            if b & 0b0010 != 0 {
+                out |= a << 4;
+            }
+            if b & 0b0100 != 0 {
+                out |= a << 8;
+            }
+            if b & 0b1000 != 0 {
+                out |= a << 12;
+            }
+            out
+        }
+
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let left_neighbor = self.left_neighbor_color().map(usize::from);
+        let right_neighbor =
+            self.right_neighbor_color().map(usize::from);
+
+        let mut allowed = [0b1111_u8; C];
+        let mut constrained = 0_u64;
+
+        for color in 1..C {
+            let left = requirement(&self.lspan, color);
+            let right = requirement(&self.rspan, color);
+            let required = allowed_mask(left, right);
+            allowed[color] = required;
+
+            if required == 0b1111 {
+                continue;
+            }
+
+            constrained |= 1_u64 << color;
+
+            let forward = single.mask(
+                st,
+                sc,
+                left_neighbor,
+                right_neighbor,
+                color,
+            );
+            if forward & required == 0 {
+                return false;
+            }
+        }
+
+        if C < 3 || constrained.count_ones() < 2 {
+            return true;
+        }
+
+        // Iterate only constrained colors.  This is especially helpful for
+        // unknown-ended halt cones, while bounded blank cones retain all of the
+        // pairwise absence/presence power.
+        let mut a_colors = constrained;
+        while a_colors != 0 {
+            let a = a_colors.trailing_zeros() as usize;
+            a_colors &= a_colors - 1;
+
+            let mut b_colors = a_colors;
+            while b_colors != 0 {
+                let b = b_colors.trailing_zeros() as usize;
+                b_colors &= b_colors - 1;
+
+                let required =
+                    pair_allowed_mask(allowed[a], allowed[b]);
+                let forward = pair.mask(
+                    st,
+                    sc,
+                    left_neighbor,
+                    right_neighbor,
+                    a,
+                    b,
+                );
+                if forward & required == 0 {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+
+    #[cfg(test)]
+    fn obeys_color_tail_presence<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &ColorTailPresencePossible<S, C>,
+    ) -> bool {
+        // Keep a single-color-only test hook without paying for duplicate
+        // requirement compilation in production.
+        #[derive(Clone, Copy)]
+        enum RequiredPresence {
+            Absent,
+            Present,
+            Unknown,
+        }
+
+        fn requirement(span: &Span, color: usize) -> RequiredPresence {
+            let mut first = true;
+            let mut nearest_may_extend = false;
+            for block in span.span.iter() {
+                if first {
+                    first = false;
+                    if block.color as usize != color {
+                        continue;
+                    }
+                    if block.count.minimum() > 1 {
+                        return RequiredPresence::Present;
+                    }
+                    nearest_may_extend = block.count.is_indef();
+                    continue;
+                }
+                if block.color as usize == color {
+                    return RequiredPresence::Present;
+                }
+            }
+            if span.end == TapeEnd::Unknown || nearest_may_extend {
+                RequiredPresence::Unknown
+            } else {
+                RequiredPresence::Absent
+            }
+        }
+
         const fn matches(
             required: RequiredPresence,
             present: bool,
@@ -2718,7 +2995,6 @@ impl Tape {
         for color in 1..C {
             let left_required = requirement(&self.lspan, color);
             let right_required = requirement(&self.rspan, color);
-
             if matches!(left_required, RequiredPresence::Unknown)
                 && matches!(right_required, RequiredPresence::Unknown)
             {
@@ -2727,24 +3003,133 @@ impl Tape {
 
             let mut allowed = 0_u8;
             for status in 0..4_u8 {
-                let left_present = status & 1 != 0;
-                let right_present = status & 2 != 0;
-                if matches(left_required, left_present)
-                    && matches(right_required, right_present)
+                if matches(left_required, status & 1 != 0)
+                    && matches(right_required, status & 2 != 0)
                 {
                     allowed |= 1_u8 << status;
                 }
             }
 
-            let forward = possible.mask(
+            if possible.mask(
                 st,
                 sc,
                 left_neighbor,
                 right_neighbor,
                 color,
-            );
-            if forward & allowed == 0 {
+            ) & allowed
+                == 0
+            {
                 return false;
+            }
+        }
+
+        true
+    }
+
+    #[cfg(test)]
+    fn obeys_pair_tail_presence<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &PairTailPresencePossible<S, C>,
+    ) -> bool {
+        #[derive(Clone, Copy)]
+        enum RequiredPresence {
+            Absent,
+            Present,
+            Unknown,
+        }
+
+        fn requirement(span: &Span, color: usize) -> RequiredPresence {
+            let mut first = true;
+            let mut nearest_may_extend = false;
+            for block in span.span.iter() {
+                if first {
+                    first = false;
+                    if block.color as usize != color {
+                        continue;
+                    }
+                    if block.count.minimum() > 1 {
+                        return RequiredPresence::Present;
+                    }
+                    nearest_may_extend = block.count.is_indef();
+                    continue;
+                }
+                if block.color as usize == color {
+                    return RequiredPresence::Present;
+                }
+            }
+            if span.end == TapeEnd::Unknown || nearest_may_extend {
+                RequiredPresence::Unknown
+            } else {
+                RequiredPresence::Absent
+            }
+        }
+
+        const fn matches(
+            required: RequiredPresence,
+            present: bool,
+        ) -> bool {
+            match required {
+                RequiredPresence::Absent => !present,
+                RequiredPresence::Present => present,
+                RequiredPresence::Unknown => true,
+            }
+        }
+
+        if C < 3 {
+            return true;
+        }
+
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let left_neighbor = self.left_neighbor_color().map(usize::from);
+        let right_neighbor =
+            self.right_neighbor_color().map(usize::from);
+        let mut left_required = [RequiredPresence::Unknown; C];
+        let mut right_required = [RequiredPresence::Unknown; C];
+        let mut constrained = [false; C];
+
+        for color in 1..C {
+            left_required[color] = requirement(&self.lspan, color);
+            right_required[color] = requirement(&self.rspan, color);
+            constrained[color] = !matches!(
+                (left_required[color], right_required[color]),
+                (RequiredPresence::Unknown, RequiredPresence::Unknown)
+            );
+        }
+
+        for a in 1..C {
+            if !constrained[a] {
+                continue;
+            }
+            for b in (a + 1)..C {
+                if !constrained[b] {
+                    continue;
+                }
+
+                let mut allowed = 0_u16;
+                for status in 0..16_u8 {
+                    if matches(left_required[a], status & 1 != 0)
+                        && matches(right_required[a], status & 2 != 0)
+                        && matches(left_required[b], status & 4 != 0)
+                        && matches(right_required[b], status & 8 != 0)
+                    {
+                        allowed |= 1_u16 << status;
+                    }
+                }
+
+                if possible.mask(
+                    st,
+                    sc,
+                    left_neighbor,
+                    right_neighbor,
+                    a,
+                    b,
+                ) & allowed
+                    == 0
+                {
+                    return false;
+                }
             }
         }
 
@@ -4026,6 +4411,42 @@ fn test_per_color_tail_presence_filter() {
 }
 
 #[test]
+fn test_pair_tail_presence_same_run_filter() {
+    let mut possible = PairTailPresencePossible::<1, 3>::new();
+
+    // Same exact local window. One abstract run supplies only color 1 in the
+    // left tail; another supplies only color 2 in the right tail. Independent
+    // per-color projections would accept both requirements, but no single run
+    // supplies them together.
+    possible.add(0, 0, 0, 0, 1, 2, 0b0001);
+    possible.add(0, 0, 0, 0, 1, 2, 0b1000);
+
+    let requires_both: Tape = "0+ 1 0 [0] 0 2 0+".into();
+    assert!(!requires_both.obeys_pair_tail_presence(0, &possible));
+
+    // Add the genuinely correlated status: color 1 left-tail present and
+    // color 2 right-tail present.
+    possible.add(0, 0, 0, 0, 1, 2, 0b1001);
+    assert!(requires_both.obeys_pair_tail_presence(0, &possible));
+}
+
+#[test]
+fn test_forward_pair_tail_presence_propagation() {
+    // A0 writes 1 and moves right; B0 writes 2 and moves right. At C0 the
+    // immediate left neighbor is 2, while the older 1 is strictly in the left
+    // tail. For pair (1,2), only the color-1-left presence bit is therefore set.
+    let prog =
+        Prog::<3, 3>::from("1RB ... ...  2RC ... ...  ... ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let possible = pair_tail_presence_from_blank(&prog, &windows);
+
+    let mask = possible.mask(2, 0, Some(2), Some(0), 1, 2);
+    assert_ne!(mask & (1_u16 << 0b0001), 0);
+}
+
+#[test]
 fn test_dynamic_blank_side_filter() {
     let prog = Prog::<2, 2>::from("1RB ...  ... ...");
     let (forbid_left, forbid_right) = prog.shift_side_forbidden();
@@ -4970,6 +5391,181 @@ fn color_tail_presence_from_blank<const S: usize, const C: usize>(
                         &mut possible,
                         &mut q,
                     );
+                }
+            }
+        }
+    }
+
+    possible
+}
+
+/// Pairwise same-run version of `color_tail_presence_from_blank`.
+///
+/// A newly exposed cell can equal at most one member of an unordered color
+/// pair, so consuming it makes at most one pair component uncertain. This
+/// keeps each transition to at most two residual-status branches in concrete
+/// runs, while the stored 16-bit mask retains all same-run correlations.
+#[expect(clippy::similar_names)]
+fn pair_tail_presence_from_blank<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+) -> PairTailPresencePossible<S, C> {
+    fn residual_mask(
+        present: bool,
+        exposed: usize,
+        color: usize,
+    ) -> u8 {
+        if !present {
+            u8::from(exposed != color)
+        } else if exposed == color {
+            0b11
+        } else {
+            0b10
+        }
+    }
+
+    let mut trans = [[None; C]; S];
+    for ((st, co), &(print, shift, tr)) in prog.iter() {
+        trans[st as usize][co as usize] =
+            Some((print as usize, shift, tr as usize));
+    }
+
+    let mut possible = PairTailPresencePossible::new();
+    if C < 3 {
+        return possible;
+    }
+
+    let mut q = VecDeque::new();
+
+    #[expect(clippy::shadow_unrelated)]
+    let push = |st: usize,
+                left: usize,
+                scan: usize,
+                right: usize,
+                a: usize,
+                b: usize,
+                status: u8,
+                possible: &mut PairTailPresencePossible<S, C>,
+                q: &mut VecDeque<(
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        usize,
+        u8,
+    )>| {
+        if windows.right[st][scan][left] & (1_u64 << right) == 0 {
+            return;
+        }
+
+        let pair = PairTailPresencePossible::<S, C>::pair_index(a, b);
+        let index = PairTailPresencePossible::<S, C>::exact_index(
+            st, scan, left, right, pair,
+        );
+        let bit = 1_u16 << status;
+        if possible.exact[index] & bit != 0 {
+            return;
+        }
+
+        possible.add(st, scan, left, right, a, b, status);
+        q.push_back((st, left, scan, right, a, b, status));
+    };
+
+    for a in 1..C {
+        for b in (a + 1)..C {
+            push(0, 0, 0, 0, a, b, 0, &mut possible, &mut q);
+        }
+    }
+
+    while let Some((st, left, scan, right, a, b, status)) =
+        q.pop_front()
+    {
+        let Some((print, shift, tr)) = trans[st][scan] else {
+            continue;
+        };
+
+        let a_left = status & 1 != 0;
+        let a_right = status & 2 != 0;
+        let b_left = status & 4 != 0;
+        let b_right = status & 8 != 0;
+
+        if shift {
+            let new_a_left = a_left || left == a;
+            let new_b_left = b_left || left == b;
+
+            let mut new_rights = windows.right[tr][right][print];
+            while new_rights != 0 {
+                let new_right = new_rights.trailing_zeros() as usize;
+                new_rights &= new_rights - 1;
+
+                let a_residual = residual_mask(a_right, new_right, a);
+                let b_residual = residual_mask(b_right, new_right, b);
+
+                for new_a_right in 0..2_u8 {
+                    if a_residual & (1_u8 << new_a_right) == 0 {
+                        continue;
+                    }
+                    for new_b_right in 0..2_u8 {
+                        if b_residual & (1_u8 << new_b_right) == 0 {
+                            continue;
+                        }
+
+                        let new_status = u8::from(new_a_left)
+                            | (new_a_right << 1)
+                            | (u8::from(new_b_left) << 2)
+                            | (new_b_right << 3);
+                        push(
+                            tr,
+                            print,
+                            right,
+                            new_right,
+                            a,
+                            b,
+                            new_status,
+                            &mut possible,
+                            &mut q,
+                        );
+                    }
+                }
+            }
+        } else {
+            let new_a_right = a_right || right == a;
+            let new_b_right = b_right || right == b;
+
+            let mut new_lefts = windows.left[tr][left][print];
+            while new_lefts != 0 {
+                let new_left = new_lefts.trailing_zeros() as usize;
+                new_lefts &= new_lefts - 1;
+
+                let a_residual = residual_mask(a_left, new_left, a);
+                let b_residual = residual_mask(b_left, new_left, b);
+
+                for new_a_left in 0..2_u8 {
+                    if a_residual & (1_u8 << new_a_left) == 0 {
+                        continue;
+                    }
+                    for new_b_left in 0..2_u8 {
+                        if b_residual & (1_u8 << new_b_left) == 0 {
+                            continue;
+                        }
+
+                        let new_status = new_a_left
+                            | (u8::from(new_a_right) << 1)
+                            | (new_b_left << 2)
+                            | (u8::from(new_b_right) << 3);
+                        push(
+                            tr,
+                            new_left,
+                            left,
+                            print,
+                            a,
+                            b,
+                            new_status,
+                            &mut possible,
+                            &mut q,
+                        );
+                    }
                 }
             }
         }
