@@ -303,6 +303,147 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
     }
 }
 
+/// Ordered whole-side provenance abstraction.  Provenance node 0 denotes an
+/// unvisited/fresh blank cell; node `1 + state * C + read` denotes a cell whose
+/// current color was produced by that transition slot on the last crossing
+/// that left the cell behind on this side.
+///
+/// `near[window][side]` is the possible provenance of the exact immediate
+/// neighbor. `next[window][side][p]` is the possible provenance of the cell
+/// immediately farther from the head after a cell with provenance `p`.  Thus a
+/// backward explicit side must be accepted as one path through the provenance
+/// graph, rather than merely having each color adjacency appear somewhere.
+struct SideProvenancePossible<const S: usize, const C: usize> {
+    enabled: bool,
+    nodes: usize,
+    near: Vec<[u64; 2]>,
+    next: Vec<u64>,
+    color_masks: Vec<u64>,
+    // For each exact window/side, blank-colored provenance nodes that can
+    // reach the fresh-blank sentinel through only blank-colored nodes.
+    // Query-time blank-tail checks are therefore one mask intersection
+    // instead of a per-configuration fixed point.
+    blank_to_fresh: Vec<[u64; 2]>,
+}
+
+impl<const S: usize, const C: usize> SideProvenancePossible<S, C> {
+    const fn window_index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    fn new(writer_color: &[usize]) -> Self {
+        let nodes = 1 + S * C;
+        let windows = S * C * C * C;
+        let enabled = nodes <= 64;
+        let mut color_masks = vec![0_u64; C];
+        if enabled {
+            for (writer, &color) in writer_color.iter().enumerate() {
+                color_masks[color] |= 1_u64 << writer;
+            }
+        }
+        Self {
+            enabled,
+            nodes,
+            near: if enabled {
+                vec![[0; 2]; windows]
+            } else {
+                Vec::new()
+            },
+            next: if enabled {
+                vec![0; windows * 2 * nodes]
+            } else {
+                Vec::new()
+            },
+            color_masks,
+            blank_to_fresh: if enabled {
+                vec![[0; 2]; windows]
+            } else {
+                Vec::new()
+            },
+        }
+    }
+
+    const fn writer(st: usize, read: usize) -> usize {
+        1 + st * C + read
+    }
+
+    const fn next_index(
+        &self,
+        window: usize,
+        side: usize,
+        writer: usize,
+    ) -> usize {
+        (window * 2 + side) * self.nodes + writer
+    }
+
+    fn next_mask(
+        &self,
+        window: usize,
+        side: usize,
+        writer: usize,
+    ) -> u64 {
+        self.next[self.next_index(window, side, writer)]
+    }
+
+    fn next_mask_mut(
+        &mut self,
+        window: usize,
+        side: usize,
+        writer: usize,
+    ) -> &mut u64 {
+        let index = self.next_index(window, side, writer);
+        &mut self.next[index]
+    }
+
+    fn color_mask(&self, color: usize) -> u64 {
+        self.color_masks[color]
+    }
+
+    fn finalize_blank_to_fresh(&mut self) {
+        if !self.enabled {
+            return;
+        }
+
+        let blank = self.color_mask(0);
+        for window in 0..self.near.len() {
+            if self.near[window] == [0; 2] {
+                continue;
+            }
+
+            for side in [LEFT_SIDE, RIGHT_SIDE] {
+                // Node 0 is the fresh blank sentinel and therefore reaches
+                // itself. Add blank writer nodes backwards until saturated.
+                let mut reaches = 1_u64;
+                loop {
+                    let old = reaches;
+                    let mut candidates = blank & !reaches;
+                    while candidates != 0 {
+                        let writer =
+                            candidates.trailing_zeros() as usize;
+                        candidates &= candidates - 1;
+                        if self.next_mask(window, side, writer)
+                            & reaches
+                            != 0
+                        {
+                            reaches |= 1_u64 << writer;
+                        }
+                    }
+                    if reaches == old {
+                        break;
+                    }
+                }
+
+                self.blank_to_fresh[window][side] = reaches & blank;
+            }
+        }
+    }
+}
+
 /// Bit `p` of `possible[state]` is set when the transition graph admits a
 /// run from the blank initial configuration to `state` with
 /// `p == (# nonblank tape cells mod 2)`.
@@ -716,6 +857,18 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         return Refuted(0);
     }
 
+    // Provenance is the most expensive forward refinement. Build it only
+    // after every cheaper static target filter has failed to refute the cone.
+    let side_provenance =
+        prog.side_provenance_from_blank(&win_possible);
+    configs.retain(|Config { state, tape }| {
+        tape.obeys_side_provenance(*state, &side_provenance)
+    });
+
+    if configs.is_empty() {
+        return Refuted(0);
+    }
+
     let mut blanks = get_blanks(&configs);
 
     // Optional exact historical repeat filter, enabled only for `twostep`.
@@ -756,6 +909,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             &mut blanks,
             &win_possible,
             &side_possible,
+            &side_provenance,
             &blank_side_possible,
             &color_tail_count,
             &pair_tail_presence,
@@ -1106,6 +1260,7 @@ fn step_instrs<const s: usize, const c: usize>(
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
+    side_provenance: &SideProvenancePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -1185,6 +1340,7 @@ fn step_instrs<const s: usize, const c: usize>(
                 color_tail_count,
                 pair_tail_presence,
             )
+            || !tape.obeys_side_provenance(state, side_provenance)
         {
             continue;
         }
@@ -1201,6 +1357,7 @@ fn step_configs<const s: usize, const c: usize>(
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
+    side_provenance: &SideProvenancePossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -1230,6 +1387,7 @@ fn step_configs<const s: usize, const c: usize>(
                 blanks,
                 win_possible,
                 side_possible,
+                side_provenance,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -1254,6 +1412,7 @@ fn step_configs<const s: usize, const c: usize>(
                 blanks,
                 win_possible,
                 side_possible,
+                side_provenance,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -1274,6 +1433,7 @@ fn step_configs<const s: usize, const c: usize>(
             blanks,
             win_possible,
             side_possible,
+            side_provenance,
             blank_side_possible,
             color_tail_count,
             pair_tail_presence,
@@ -2105,6 +2265,255 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             }
         }
 
+        possible
+    }
+
+    /// Build a writer-provenance adjacency automaton for each exact local
+    /// window.  The abstraction is disabled conservatively when the program
+    /// has more than 63 transition slots, because one u64 bit is reserved for
+    /// the fresh-blank sentinel.
+    #[expect(clippy::shadow_unrelated)]
+    fn side_provenance_from_blank(
+        &self,
+        win_possible: &WinPossible<s, c>,
+    ) -> SideProvenancePossible<s, c> {
+        let nodes = 1 + s * c;
+        let mut writer_color = vec![0_usize; nodes];
+        for ((state, read), &(print, _, _)) in self.iter() {
+            let writer = SideProvenancePossible::<s, c>::writer(
+                state as usize,
+                read as usize,
+            );
+            writer_color[writer] = print as usize;
+        }
+
+        let mut possible = SideProvenancePossible::new(&writer_color);
+        if !possible.enabled {
+            return possible;
+        }
+
+        let mut trans = [[None; c]; s];
+        for ((state, read), &(print, shift, next_state)) in self.iter()
+        {
+            trans[state as usize][read as usize] =
+                Some((print as usize, shift, next_state as usize));
+        }
+
+        let initial =
+            SideProvenancePossible::<s, c>::window_index(0, 0, 0, 0);
+        possible.near[initial] = [1, 1];
+        *possible.next_mask_mut(initial, LEFT_SIDE, 0) = 1;
+        *possible.next_mask_mut(initial, RIGHT_SIDE, 0) = 1;
+
+        let windows = s * c * c * c;
+        let mut queued = vec![false; windows];
+        let mut q = VecDeque::new();
+        queued[initial] = true;
+        q.push_back((0_usize, 0_usize, 0_usize, 0_usize));
+
+        let nodes = possible.nodes;
+        let source_len = 2 * nodes;
+        let mut source_next = [0_u64; 128];
+        let mut nonzero_offsets = [0_usize; 128];
+
+        while let Some((st, scan, left, right)) = q.pop_front() {
+            let source_window =
+                SideProvenancePossible::<s, c>::window_index(
+                    st, scan, left, right,
+                );
+            queued[source_window] = false;
+
+            let Some((print, shift, next_state)) = trans[st][scan]
+            else {
+                continue;
+            };
+
+            let source_near = possible.near[source_window];
+            let source_start = source_window * source_len;
+            source_next[..source_len].copy_from_slice(
+                &possible.next[source_start..source_start + source_len],
+            );
+
+            // Only provenance rows reachable from an actual near-side writer
+            // can occur on a concrete side represented by this source window.
+            // Disconnected rows are historical join debris: copying them into
+            // later windows costs work and can let unrelated histories become
+            // connected after subsequent merges.  If a later fixed-point
+            // update makes such a row reachable, this source window is queued
+            // again and the row is propagated then.
+            let reachable = |side: usize, near: u64| {
+                let mut seen = near;
+                let mut frontier = near;
+
+                while frontier != 0 {
+                    let mut next = 0_u64;
+                    let mut writers = frontier;
+                    while writers != 0 {
+                        let writer = writers.trailing_zeros() as usize;
+                        writers &= writers - 1;
+                        next |= source_next[side * nodes + writer];
+                    }
+
+                    frontier = next & !seen;
+                    seen |= frontier;
+                }
+
+                seen
+            };
+            let live = [
+                reachable(LEFT_SIDE, source_near[LEFT_SIDE]),
+                reachable(RIGHT_SIDE, source_near[RIGHT_SIDE]),
+            ];
+
+            let mut nonzero_len = 0_usize;
+            for side in [LEFT_SIDE, RIGHT_SIDE] {
+                let mut writers = live[side];
+                while writers != 0 {
+                    let writer = writers.trailing_zeros() as usize;
+                    writers &= writers - 1;
+                    let offset = side * nodes + writer;
+                    if source_next[offset] != 0 {
+                        nonzero_offsets[nonzero_len] = offset;
+                        nonzero_len += 1;
+                    }
+                }
+            }
+
+            let writer =
+                SideProvenancePossible::<s, c>::writer(st, scan);
+            let writer_bit = 1_u64 << writer;
+
+            let farther = |side: usize, near_writers: u64| {
+                let mut out = 0_u64;
+                let mut writers = near_writers;
+                while writers != 0 {
+                    let near_writer = writers.trailing_zeros() as usize;
+                    writers &= writers - 1;
+                    out |= source_next[side * nodes + near_writer];
+                }
+                out
+            };
+
+            if shift {
+                let exposed =
+                    farther(RIGHT_SIDE, source_near[RIGHT_SIDE]);
+                let mut new_rights =
+                    win_possible.right[next_state][right][print];
+                while new_rights != 0 {
+                    let new_right =
+                        new_rights.trailing_zeros() as usize;
+                    new_rights &= new_rights - 1;
+                    let new_near =
+                        exposed & possible.color_mask(new_right);
+                    if new_near == 0 {
+                        continue;
+                    }
+
+                    let target_window =
+                        SideProvenancePossible::<s, c>::window_index(
+                            next_state, right, print, new_right,
+                        );
+                    let mut changed = false;
+
+                    let old = possible.near[target_window][LEFT_SIDE];
+                    possible.near[target_window][LEFT_SIDE] |=
+                        writer_bit;
+                    changed |=
+                        possible.near[target_window][LEFT_SIDE] != old;
+
+                    let old = possible.near[target_window][RIGHT_SIDE];
+                    possible.near[target_window][RIGHT_SIDE] |=
+                        new_near;
+                    changed |=
+                        possible.near[target_window][RIGHT_SIDE] != old;
+
+                    let target_start = target_window * source_len;
+                    for &offset in &nonzero_offsets[..nonzero_len] {
+                        let add = source_next[offset];
+                        let target =
+                            &mut possible.next[target_start + offset];
+                        let old = *target;
+                        *target |= add;
+                        changed |= *target != old;
+                    }
+
+                    let target = possible.next_mask_mut(
+                        target_window,
+                        LEFT_SIDE,
+                        writer,
+                    );
+                    let old = *target;
+                    *target |= source_near[LEFT_SIDE];
+                    changed |= *target != old;
+
+                    if changed && !queued[target_window] {
+                        queued[target_window] = true;
+                        q.push_back((
+                            next_state, right, print, new_right,
+                        ));
+                    }
+                }
+            } else {
+                let exposed =
+                    farther(LEFT_SIDE, source_near[LEFT_SIDE]);
+                let mut new_lefts =
+                    win_possible.left[next_state][left][print];
+                while new_lefts != 0 {
+                    let new_left = new_lefts.trailing_zeros() as usize;
+                    new_lefts &= new_lefts - 1;
+                    let new_near =
+                        exposed & possible.color_mask(new_left);
+                    if new_near == 0 {
+                        continue;
+                    }
+
+                    let target_window =
+                        SideProvenancePossible::<s, c>::window_index(
+                            next_state, left, new_left, print,
+                        );
+                    let mut changed = false;
+
+                    let old = possible.near[target_window][RIGHT_SIDE];
+                    possible.near[target_window][RIGHT_SIDE] |=
+                        writer_bit;
+                    changed |=
+                        possible.near[target_window][RIGHT_SIDE] != old;
+
+                    let old = possible.near[target_window][LEFT_SIDE];
+                    possible.near[target_window][LEFT_SIDE] |= new_near;
+                    changed |=
+                        possible.near[target_window][LEFT_SIDE] != old;
+
+                    let target_start = target_window * source_len;
+                    for &offset in &nonzero_offsets[..nonzero_len] {
+                        let add = source_next[offset];
+                        let target =
+                            &mut possible.next[target_start + offset];
+                        let old = *target;
+                        *target |= add;
+                        changed |= *target != old;
+                    }
+
+                    let target = possible.next_mask_mut(
+                        target_window,
+                        RIGHT_SIDE,
+                        writer,
+                    );
+                    let old = *target;
+                    *target |= source_near[RIGHT_SIDE];
+                    changed |= *target != old;
+
+                    if changed && !queued[target_window] {
+                        queued[target_window] = true;
+                        q.push_back((
+                            next_state, left, new_left, print,
+                        ));
+                    }
+                }
+            }
+        }
+
+        possible.finalize_blank_to_fresh();
         possible
     }
 }
@@ -3605,6 +4014,142 @@ impl Tape {
         }
     }
 
+    /// Validate each explicit side as one path through the ordered
+    /// transition-provenance graph for a single compatible exact local window.
+    fn obeys_side_provenance<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &SideProvenancePossible<S, C>,
+    ) -> bool {
+        if !possible.enabled {
+            return true;
+        }
+
+        fn next_from<const S: usize, const C: usize>(
+            possible: &SideProvenancePossible<S, C>,
+            window: usize,
+            side: usize,
+            mut writers: u64,
+        ) -> u64 {
+            let mut out = 0_u64;
+            while writers != 0 {
+                let writer = writers.trailing_zeros() as usize;
+                writers &= writers - 1;
+                out |= possible.next_mask(window, side, writer);
+            }
+            out
+        }
+
+        fn span_matches<const S: usize, const C: usize>(
+            span: &Span,
+            side: usize,
+            window: usize,
+            possible: &SideProvenancePossible<S, C>,
+        ) -> bool {
+            let mut writers = possible.near[window][side];
+            let mut had_explicit = false;
+
+            for block in span.span.iter() {
+                let color_mask =
+                    possible.color_mask(block.color as usize);
+                let mut remaining = block.count.minimum();
+                while remaining != 0 {
+                    let before = writers;
+                    writers &= color_mask;
+                    if writers == 0 {
+                        return false;
+                    }
+                    had_explicit = true;
+                    writers =
+                        next_from(possible, window, side, writers);
+                    remaining -= 1;
+
+                    // Repeating this same color applies the same deterministic
+                    // set transformer. Once its writer set is a fixed point,
+                    // all remaining cells in the run are free.
+                    if remaining != 0 && writers == before {
+                        break;
+                    }
+                }
+            }
+
+            match span.end {
+                TapeEnd::Unknown => true,
+                TapeEnd::Blanks => {
+                    if !had_explicit {
+                        writers = possible.near[window][side];
+                    }
+                    writers & possible.blank_to_fresh[window][side] != 0
+                },
+            }
+        }
+
+        fn span_needs_provenance(span: &Span) -> bool {
+            // With an unknown far end, zero or one explicit cell cannot add
+            // anything beyond the exact local-window color check: provenance
+            // becomes informative only once an ordered two-cell prefix exists.
+            // A known-blank end is retained because the provenance chain to
+            // fresh blank can still prune.
+            if span.end == TapeEnd::Blanks {
+                return true;
+            }
+
+            let mut cells = 0_u16;
+            for block in span.span.iter() {
+                cells += u16::from(block.count.minimum());
+                if cells >= 2 {
+                    return true;
+                }
+            }
+            false
+        }
+
+        let check_left = span_needs_provenance(&self.lspan);
+        let check_right = span_needs_provenance(&self.rspan);
+        if !check_left && !check_right {
+            return true;
+        }
+
+        let st = state as usize;
+        let scan = self.scan as usize;
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        let matches_window = |left: usize, right: usize| {
+            let window = SideProvenancePossible::<S, C>::window_index(
+                st, scan, left, right,
+            );
+            possible.near[window] != [0; 2]
+                && (!check_left
+                    || span_matches(
+                        &self.lspan,
+                        LEFT_SIDE,
+                        window,
+                        possible,
+                    ))
+                && (!check_right
+                    || span_matches(
+                        &self.rspan,
+                        RIGHT_SIDE,
+                        window,
+                        possible,
+                    ))
+        };
+
+        match (known_left, known_right) {
+            (Some(left), Some(right)) => matches_window(left, right),
+            (Some(left), None) => {
+                (0..C).any(|right| matches_window(left, right))
+            },
+            (None, Some(right)) => {
+                (0..C).any(|left| matches_window(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| matches_window(left, right))
+            }),
+        }
+    }
+
     /// Enforce sides proved to contain blanks only.
     ///
     /// Merely changing an unknown end to `0+` is insufficient when an
@@ -4340,6 +4885,42 @@ fn test_state_side_window_conditioning() {
 
     let cross_window_union_only: Tape = "0+ 1^2 [0] 0+".into();
     assert!(!cross_window_union_only.obeys_state_side(0, &sides));
+}
+
+#[test]
+fn test_forward_side_provenance_chain() {
+    let prog =
+        Prog::<3, 3>::from("1RB ... ...  2RC ... ...  ... ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let provenance = prog.side_provenance_from_blank(&windows);
+
+    // A0 then B0 leaves, from near to far, writer B0 -> writer A0 -> fresh.
+    let actual: Tape = "0+ 1 2 [0] 0+".into();
+    assert!(actual.obeys_side_provenance(2, &provenance));
+}
+
+#[test]
+fn test_side_provenance_requires_one_writer_path() {
+    // Projected color adjacencies 1->2 and 2->3 both exist, but the two
+    // occurrences of color 2 have different provenance and cannot be stitched
+    // into one 1,2,3 path.
+    let mut possible =
+        SideProvenancePossible::<1, 4>::new(&[0, 1, 2, 2, 3]);
+    let window =
+        SideProvenancePossible::<1, 4>::window_index(0, 0, 1, 0);
+    possible.near[window][LEFT_SIDE] = 1 << 1;
+    possible.near[window][RIGHT_SIDE] = 1;
+    *possible.next_mask_mut(window, LEFT_SIDE, 1) = 1 << 2;
+    *possible.next_mask_mut(window, LEFT_SIDE, 3) = 1 << 4;
+    *possible.next_mask_mut(window, RIGHT_SIDE, 0) = 1;
+
+    let impossible: Tape = "? 3 2 1 [0] ?".into();
+    assert!(!impossible.obeys_side_provenance(0, &possible));
+
+    *possible.next_mask_mut(window, LEFT_SIDE, 2) = 1 << 4;
+    assert!(impossible.obeys_side_provenance(0, &possible));
 }
 
 #[test]
