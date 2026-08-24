@@ -585,14 +585,17 @@ impl<const S: usize, const C: usize> PairTailPresencePossible<S, C> {
     }
 }
 
-fn cant_reach<const s: usize, const c: usize, T: Ord>(
+fn cant_reach<const s: usize, const c: usize, T: Ord, F>(
     prog: &Prog<s, c>,
     steps: Steps,
     mut slots: Set<(State, T)>,
     entrypoints: Option<Entrypoints>,
-    get_configs: impl Fn(&Set<(State, T)>) -> Configs,
+    get_configs: F,
     use_exact_seen: bool,
-) -> BackwardResult {
+) -> BackwardResult
+where
+    F: Fn(&Set<(State, T)>) -> Configs,
+{
     if slots.is_empty() {
         return Refuted(0);
     }
@@ -606,6 +609,65 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         return Refuted(0);
     }
 
+    // The common path is still one ordinary BKW pass: no cycle-edge history
+    // is built unless a real u8 count overflow is encountered.
+    let first = cant_reach_once::<s, c, T, F, false>(
+        prog,
+        steps,
+        &slots,
+        &entrypoints,
+        &get_configs,
+        use_exact_seen,
+    );
+
+    match first {
+        CountLimit => {},
+        other => return other,
+    }
+
+    // Certificate-only fallback. Count overflow is only the trigger for the
+    // expensive cycle pass. The retry keeps exact tape/count semantics and
+    // records recurring predecessor edges. When one particular edge would
+    // overflow after a stable increasing recurrence, only that edge is cut;
+    // sibling exits and unrelated frontier branches remain live. Thus cycle
+    // handling cannot invent a new predecessor entrance.
+    //
+    // This pass has its own budget.  Cutting one overflowing lineage can leave
+    // finite sibling/exit cones that need more predecessor layers than the
+    // caller's cheap-pass budget.  Restoring the larger overflow-only budget
+    // cannot affect programs that did not first hit CountLimit.
+    let cycle_steps = steps.max(4_096);
+
+    match cant_reach_once::<s, c, T, F, true>(
+        prog,
+        cycle_steps,
+        &slots,
+        &entrypoints,
+        &get_configs,
+        use_exact_seen,
+    ) {
+        Refuted(step) => Refuted(step),
+        _ => CountLimit,
+    }
+}
+
+fn cant_reach_once<
+    const s: usize,
+    const c: usize,
+    T: Ord,
+    F,
+    const CYCLE_ANALYSIS: bool,
+>(
+    prog: &Prog<s, c>,
+    steps: Steps,
+    slots: &Set<(State, T)>,
+    entrypoints: &Entrypoints,
+    get_configs: &F,
+    use_exact_seen: bool,
+) -> BackwardResult
+where
+    F: Fn(&Set<(State, T)>) -> Configs,
+{
     // Shift-side analysis:
     // For some colors, the transition table itself proves they can
     // never appear on one side of the head in any run from the blank
@@ -644,7 +706,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     // making the total nonblank parity exact.
     let nonblank_parity = prog.nonblank_parity_from_blank();
 
-    let mut configs = get_configs(&slots);
+    let mut configs = get_configs(slots);
 
     // Apply the cheap static side filters before constructing the window
     // fixed point. This preserves the old short-circuit order while avoiding
@@ -719,6 +781,15 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
 
     let mut blanks = get_blanks(&configs);
 
+    // In cycle mode, exact repeats are ordinary graph cycles and can be
+    // discarded immediately. Growing-count cycles are handled more narrowly:
+    // the retry records exact predecessor *edges* and only cuts an edge when
+    // that very edge would overflow a run after a long, stable recurrence.
+    // No tape is widened and no whole-frontier periodicity is assumed.
+    let mut cycle_seen: Option<Dict<(State, u64), Vec<Tape>>> =
+        CYCLE_ANALYSIS.then(Dict::new);
+    let mut overflow_cycle_history = OverflowCycleHistory::default();
+
     // Optional exact historical repeat filter, enabled only for `twostep`.
     // Exact Tape equality resolves hash collisions without relying on hash
     // uniqueness.  Absolute head position is intentionally not tracked: the
@@ -729,12 +800,26 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
     let mut seen: Set<(State, u64)> = Set::new();
 
     for step in 1..=steps {
-        configs.retain(|Config { state, tape }| {
-            let blank_ends = tape.lspan.end == TapeEnd::Blanks
-                && tape.rspan.end == TapeEnd::Blanks;
+        if let Some(cycle_seen) = &mut cycle_seen {
+            configs.retain(|Config { state, tape }| {
+                let key = (*state, tape.hash());
+                let bucket = cycle_seen.entry(key).or_default();
 
-            !blank_ends || seen.insert((*state, tape.hash()))
-        });
+                if bucket.contains(tape) {
+                    return false;
+                }
+
+                bucket.push(tape.clone());
+                true
+            });
+        } else {
+            configs.retain(|Config { state, tape }| {
+                let blank_ends = tape.lspan.end == TapeEnd::Blanks
+                    && tape.rspan.end == TapeEnd::Blanks;
+
+                !blank_ends || seen.insert((*state, tape.hash()))
+            });
+        }
 
         #[cfg(debug_assertions)]
         {
@@ -745,7 +830,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
         };
 
         let valid_steps =
-            match get_valid_steps(&mut configs, &entrypoints) {
+            match get_valid_steps(&mut configs, entrypoints) {
                 Err(err) => return err,
                 Ok(valid_steps) => valid_steps,
             };
@@ -756,8 +841,10 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             _ => {},
         }
 
-        let stepped = match step_configs::<s, c>(
+        let stepped = match step_configs::<s, c, CYCLE_ANALYSIS>(
             valid_steps,
+            step,
+            &mut overflow_cycle_history,
             &mut blanks,
             &win_possible,
             &side_possible,
@@ -1106,9 +1193,15 @@ fn window_color_parity_possible<const S: usize, const C: usize>(
 }
 
 #[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
-fn step_instrs<const s: usize, const c: usize>(
+fn step_instrs<
+    const s: usize,
+    const c: usize,
+    const CYCLE_ANALYSIS: bool,
+>(
     instrs: impl IntoIterator<Item = Instr>,
     config: &Config,
+    step: Steps,
+    overflow_cycle_history: &mut OverflowCycleHistory,
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
@@ -1125,8 +1218,30 @@ fn step_instrs<const s: usize, const c: usize>(
     stepped: &mut Configs,
 ) -> Result<(), BackwardResult> {
     for (color, shift, state) in instrs {
-        let mut tape = config.tape.clone();
+        let instr = (color, shift, state);
+        let growth = CYCLE_ANALYSIS
+            .then(|| growth_edge_observation(config, instr))
+            .flatten();
 
+        if let Some((key, count)) = growth {
+            if count == Count::MAX {
+                if overflow_cycle_history.certifies(&key, step, count) {
+                    #[cfg(debug_assertions)]
+                    println!("cycle-cut | {config} via {instr:?}");
+                    continue;
+                }
+
+                return Err(CountLimit);
+            }
+
+            // Record the exact attempted edge, not merely children surviving
+            // later static filters. This is important for count-one splits of
+            // an indefinite run: such an auxiliary branch can hit the same
+            // overflowing push before its child would have been pruned.
+            overflow_cycle_history.observe(key, step, count);
+        }
+
+        let mut tape = config.tape.clone();
         tape.backstep(shift, color)?;
 
         if tape.blank() {
@@ -1202,8 +1317,14 @@ fn step_instrs<const s: usize, const c: usize>(
 }
 
 #[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
-fn step_configs<const s: usize, const c: usize>(
+fn step_configs<
+    const s: usize,
+    const c: usize,
+    const CYCLE_ANALYSIS: bool,
+>(
     configs: ValidatedSteps,
+    step: Steps,
+    overflow_cycle_history: &mut OverflowCycleHistory,
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
@@ -1230,9 +1351,11 @@ fn step_configs<const s: usize, const c: usize>(
             let mut count_1 = config.clone();
             count_1.tape.lspan.set_head_to_one();
 
-            step_instrs(
+            step_instrs::<s, c, CYCLE_ANALYSIS>(
                 instrs.iter().copied().filter(|&(_, shift, _)| shift),
                 &count_1,
+                step,
+                overflow_cycle_history,
                 blanks,
                 win_possible,
                 side_possible,
@@ -1254,9 +1377,11 @@ fn step_configs<const s: usize, const c: usize>(
             let mut count_1 = config.clone();
             count_1.tape.rspan.set_head_to_one();
 
-            step_instrs(
+            step_instrs::<s, c, CYCLE_ANALYSIS>(
                 instrs.iter().copied().filter(|&(_, shift, _)| !shift),
                 &count_1,
+                step,
+                overflow_cycle_history,
                 blanks,
                 win_possible,
                 side_possible,
@@ -1274,9 +1399,11 @@ fn step_configs<const s: usize, const c: usize>(
             )?;
         }
 
-        step_instrs(
+        step_instrs::<s, c, CYCLE_ANALYSIS>(
             instrs,
             &config,
+            step,
+            overflow_cycle_history,
             blanks,
             win_possible,
             side_possible,
@@ -2257,6 +2384,208 @@ impl fmt::Display for Config {
 
         write!(f, "{slot} | {tape}")
     }
+}
+
+/**************************************/
+
+// Expensive growing-edge history used only after the ordinary pass has
+// actually reached CountLimit. The retry never widens counts. Instead, it
+// remembers exact predecessor edges that increase the near run on the push
+// side. If that same edge reaches u8::MAX after recurring with a stable
+// (step,count) period, only the overflowing edge is cut; sibling exits and
+// unrelated frontier branches remain live.
+const OVERFLOW_CYCLE_MIN_PRIOR: usize = 6;
+const OVERFLOW_CYCLE_KEEP: usize = 96;
+
+#[derive(Default)]
+struct OverflowCycleHistory {
+    edges: Dict<GrowthEdgeKey, Vec<(Steps, Count)>>,
+}
+
+impl OverflowCycleHistory {
+    fn observe(
+        &mut self,
+        key: GrowthEdgeKey,
+        step: Steps,
+        count: Count,
+    ) {
+        let obs = self.edges.entry(key).or_default();
+        let pair = (step, count);
+        if obs.contains(&pair) {
+            return;
+        }
+
+        obs.push(pair);
+        if obs.len() > OVERFLOW_CYCLE_KEEP {
+            obs.remove(0);
+        }
+    }
+
+    fn certifies(
+        &self,
+        key: &GrowthEdgeKey,
+        step: Steps,
+        count: Count,
+    ) -> bool {
+        let Some(obs) = self.edges.get(key) else {
+            return false;
+        };
+
+        // The current overflowing parent is the newest point. Infer a
+        // candidate macro-period from a previous occurrence of the same exact
+        // edge skeleton, then demand several earlier occurrences at exactly
+        // that step/count spacing. This is deliberately much stronger than
+        // "the count got large": overflow merely triggers the check.
+        for &(prev_step, prev_count) in obs.iter().rev().take(32) {
+            if prev_step >= step || prev_count >= count {
+                continue;
+            }
+
+            let period = step - prev_step;
+            let delta = count - prev_count;
+            if period == 0 || delta == 0 {
+                continue;
+            }
+
+            let mut want_step = prev_step;
+            let mut want_count = prev_count;
+            let mut prior = 1;
+
+            while prior < OVERFLOW_CYCLE_MIN_PRIOR {
+                let Some(next_step) = want_step.checked_sub(period)
+                else {
+                    break;
+                };
+                let Some(next_count) = want_count.checked_sub(delta)
+                else {
+                    break;
+                };
+
+                if !obs.contains(&(next_step, next_count)) {
+                    break;
+                }
+
+                want_step = next_step;
+                want_count = next_count;
+                prior += 1;
+            }
+
+            if prior >= OVERFLOW_CYCLE_MIN_PRIOR {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct GrowthEdgeKey {
+    state: State,
+    scan: Color,
+    read: Color,
+    shift: Shift,
+    prev_state: State,
+    grow_side: Side,
+    l_end: EndSig,
+    r_end: EndSig,
+    left: Vec<RunSig>,
+    right: Vec<RunSig>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct RunSig {
+    color: Color,
+    count: usize,
+    indef: bool,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum EndSig {
+    Blanks,
+    Unknown,
+}
+
+impl EndSig {
+    const fn from_end(end: &TapeEnd) -> Self {
+        match end {
+            TapeEnd::Blanks => Self::Blanks,
+            TapeEnd::Unknown => Self::Unknown,
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum Side {
+    Left,
+    Right,
+}
+
+fn span_runs(span: &Span) -> Vec<RunSig> {
+    span.span
+        .iter()
+        .map(|block| match block.count {
+            BlockCount::Exact(count) => RunSig {
+                color: block.color,
+                count: usize::from(count),
+                indef: false,
+            },
+            BlockCount::AtLeast(count) => RunSig {
+                color: block.color,
+                count: usize::from(count),
+                indef: true,
+            },
+        })
+        .collect()
+}
+
+fn growth_edge_observation(
+    config: &Config,
+    instr: Instr,
+) -> Option<(GrowthEdgeKey, Count)> {
+    let (read, shift, prev_state) = instr;
+    let tape = &config.tape;
+    let (grow_side, push) = if shift {
+        (Side::Right, &tape.rspan)
+    } else {
+        (Side::Left, &tape.lspan)
+    };
+
+    let block = push.span.first()?;
+    if block.color != tape.scan {
+        return None;
+    }
+
+    let count = block.count.minimum();
+    let mut left = span_runs(&tape.lspan);
+    let mut right = span_runs(&tape.rspan);
+    let grow = match grow_side {
+        Side::Left => &mut left,
+        Side::Right => &mut right,
+    };
+
+    // `SpanT::iter()` is near-to-far, so the run merged by push_single is the
+    // first run. Zero is only a wildcard in this key; real runs are nonzero.
+    #[expect(clippy::unwrap_in_result)]
+    let nearest = grow.first_mut().unwrap();
+    debug_assert_eq!(nearest.color, tape.scan);
+    nearest.count = 0;
+
+    Some((
+        GrowthEdgeKey {
+            state: config.state,
+            scan: tape.scan,
+            read,
+            shift,
+            prev_state,
+            grow_side,
+            l_end: EndSig::from_end(&tape.lspan.end),
+            r_end: EndSig::from_end(&tape.rspan.end),
+            left,
+            right,
+        },
+        count,
+    ))
 }
 
 /**************************************/
@@ -3979,6 +4308,53 @@ fn test_count_limit() {
         get_indef(false, &config, &diff, &same),
         Err(CountLimit)
     ));
+}
+
+#[test]
+fn test_count_limit_triggers_overflow_edge_cycle_cut() {
+    // Precise BKW reaches u8 CountLimit on the A/C growth ladder. The retry
+    // must recognize the recurring overflowing edge and cut only that edge;
+    // in particular it must not widen the run and invent a B-state entrance.
+    let prog = Prog::<3, 2>::from("1RB 1LC  1LC 1RB  ... 1LA");
+    assert!(prog.bkw_cant_halt(300).is_refuted());
+}
+
+#[test]
+#[expect(clippy::shadow_unrelated)]
+fn test_overflow_edge_history_requires_stable_recurrence() {
+    let instr: Instr = (2, true, 2);
+    let mut history = OverflowCycleHistory::default();
+
+    for (step, count) in (20..=25).zip(249_u8..=254) {
+        let tape_text = format!("0+ 3.. [2] 2^{count} 0 ?");
+        let config = Config::new(2, tape_text.as_str().into());
+        let (key, observed) =
+            growth_edge_observation(&config, instr).unwrap();
+        assert_eq!(observed, count);
+        history.observe(key, step, count);
+    }
+
+    let overflow = Config::new(2, "0+ 3.. [2] 2^255 0 ?".into());
+    let (key, count) =
+        growth_edge_observation(&overflow, instr).unwrap();
+    assert!(history.certifies(&key, 26, count));
+
+    // Same tape family but irregular step spacing is not a certificate.
+    let mut irregular = OverflowCycleHistory::default();
+    for (step, count) in [
+        (10, 249_u8),
+        (11, 250),
+        (13, 251),
+        (14, 252),
+        (17, 253),
+        (18, 254),
+    ] {
+        let tape_text = format!("0+ 3.. [2] 2^{count} 0 ?");
+        let config = Config::new(2, tape_text.as_str().into());
+        let (key, _) = growth_edge_observation(&config, instr).unwrap();
+        irregular.observe(key, step, count);
+    }
+    assert!(!irregular.certifies(&key, 26, count));
 }
 
 #[test]
