@@ -94,66 +94,63 @@ class Bkw(DeciderTest):
             bkw_cant_zloop(prog, steps = BKW_LIMIT).is_refuted(),
             f'zloop false positive: "{prog}"')
 
-    def assert_cant_halt_backward(self, prog: str, depth: int):
+    def assert_cant_halt_backward(self, prog: str):
         if prog in self.false_negatives['halt'] | RECUR_FAST | IRREGULAR:
             return
 
         self.assertTrue(
-            bkw_cant_halt(prog, depth).is_refuted(),
+            bkw_cant_halt(prog, steps = BKW_LIMIT).is_refuted(),
             f'halt false negative: "{prog}"')
 
-    def assert_cant_blank_backward(self, prog: str, depth: int):
+    def assert_cant_blank_backward(self, prog: str):
         if prog in self.false_negatives['blank'] | RECUR_FAST:
             return
 
         self.assertTrue(
-            bkw_cant_blank(prog, depth).is_refuted(),
+            bkw_cant_blank(prog, steps = BKW_LIMIT).is_refuted(),
             f'blank false negative: "{prog}"')
 
-    def assert_cant_spinout_backward(self, prog: str, depth: int):
+    def assert_cant_spinout_backward(self, prog: str):
         if prog in self.false_negatives['spinout'] | RECUR_FAST:
             return
 
-        if 2 < prog.count('...'):
-            return
-
         self.assertTrue(
-            bkw_cant_spinout(prog, depth).is_refuted(),
+            bkw_cant_spinout(prog, steps = BKW_LIMIT).is_refuted(),
             f'spinout false negative: "{prog}"')
 
-    def assert_cant_twostep_backward(self, prog: str, depth: int):
+    def assert_cant_twostep_backward(self, prog: str):
         if prog in self.false_negatives['twostep']:
             return
 
         self.assertTrue(
-            bkw_cant_twostep(prog, depth).is_refuted(),
+            bkw_cant_twostep(prog, steps = BKW_LIMIT).is_refuted(),
             f'twostep false negative: "{prog}"')
 
-    def assert_cant_zloop_backward(self, prog: str, depth: int):
+    def assert_cant_zloop_backward(self, prog: str):
         if prog in self.false_negatives['zloop']:
             return
 
         self.assertTrue(
-            bkw_cant_zloop(prog, depth).is_refuted(),
+            bkw_cant_zloop(prog, steps = BKW_LIMIT).is_refuted(),
             f'zloop false negative: "{prog}"')
 
     ########################################
 
     def test_true_positives(self):
         for prog in NONHALTERS:
-            self.assert_cant_halt_backward(prog, 200)
+            self.assert_cant_halt_backward(prog)
 
         for prog in NONSPINNERS:
-            self.assert_cant_spinout_backward(prog, 256)
+            self.assert_cant_spinout_backward(prog)
 
         for prog in NONBLANKERS:
-            self.assert_cant_blank_backward(prog, 1331)
+            self.assert_cant_blank_backward(prog)
 
         for prog in HALTERS | SPINNERS | (RECURS - TWOSTEPPERS):
-            self.assert_cant_twostep_backward(prog, 0)
+            self.assert_cant_twostep_backward(prog)
 
         for prog in HALTERS | SPINNERS | (RECURS - ZLOOPERS - ZLOOPY):
-            self.assert_cant_zloop_backward(prog, 4)
+            self.assert_cant_zloop_backward(prog)
 
     def test_true_negatives(self):
         for prog in HALTERS:
@@ -226,44 +223,41 @@ class Cps(DeciderTest):
         self.assertFalse(
             cps_cant_halt(prog, CPS_LIMIT))
 
-    def assert_cant_halt_cps(self, prog: str, segs: int):
+    def assert_cant_halt_cps(self, prog: str):
         if prog in self.false_negatives['halt'] | IRREGULAR:
             return
 
         self.assertTrue(
-            cps_cant_halt(prog, segs))
+            cps_cant_halt(prog, CPS_LIMIT))
 
     def assert_could_blank_cps(self, prog: str):
         self.assertFalse(
             cps_cant_blank(prog, CPS_LIMIT))
 
-    def assert_cant_blank_cps(self, prog: str, segs: int):
+    def assert_cant_blank_cps(self, prog: str):
         if prog in self.false_negatives['blank']:
             return
 
         self.assertTrue(
-            cps_cant_blank(prog, segs))
+            cps_cant_blank(prog, CPS_LIMIT))
 
     def assert_could_spinout_cps(self, prog: str):
         self.assertFalse(
             cps_cant_spinout(prog, CPS_LIMIT))
 
-    def assert_cant_spinout_cps(self, prog: str, segs: int):
+    def assert_cant_spinout_cps(self, prog: str):
         if prog in self.false_negatives['spinout']:
             return
 
-        if 2 < prog.count('...'):
-            return
-
         self.assertTrue(
-            cps_cant_spinout(prog, segs), prog)
+            cps_cant_spinout(prog, CPS_LIMIT), prog)
 
     def assert_could_quasihalt_cps(self, prog: str):
         self.assertFalse(
             cps_cant_quasihalt(prog, CPS_LIMIT),
             f'cps quasihalt false positive: "{prog}"')
 
-    def assert_cant_quasihalt_cps(self, prog: str, segs: int):
+    def assert_cant_quasihalt_cps(self, prog: str):
         if prog in self.false_negatives['quasihalt']:
             self.assertFalse(
                 cps_cant_quasihalt(prog, CPS_LIMIT),
@@ -272,18 +266,18 @@ class Cps(DeciderTest):
             return
 
         self.assertTrue(
-            cps_cant_quasihalt(prog, segs),
+            cps_cant_quasihalt(prog, CPS_LIMIT),
             f'cps quasihalt false negative: "{prog}"')
 
     def test_true_positives(self):
         for prog in NONHALTERS:
-            self.assert_cant_halt_cps(prog, 7)
+            self.assert_cant_halt_cps(prog)
 
         for prog in NONBLANKERS:
-            self.assert_cant_blank_cps(prog, 33)
+            self.assert_cant_blank_cps(prog)
 
         for prog in NONSPINNERS:
-            self.assert_cant_spinout_cps(prog, 19)
+            self.assert_cant_spinout_cps(prog)
 
     def test_true_negatives(self):
         for prog in HALTERS:
@@ -300,7 +294,7 @@ class Cps(DeciderTest):
             self.assert_could_quasihalt_cps(prog)
 
         for prog in (RECURS | INFRUL) - QUASIHALT - RECUR_FAST:
-            self.assert_cant_quasihalt_cps(prog, 30)
+            self.assert_cant_quasihalt_cps(prog)
 
         for prog in QUASIHALT:
             try:
