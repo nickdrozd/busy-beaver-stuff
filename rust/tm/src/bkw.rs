@@ -20,6 +20,7 @@ pub enum BackwardResult {
     Init,
     StepLimit,
     DepthLimit,
+    CountLimit,
     Refuted(Steps),
 }
 
@@ -743,7 +744,11 @@ fn cant_reach<const s: usize, const c: usize, T: Ord>(
             println!();
         };
 
-        let valid_steps = get_valid_steps(&mut configs, &entrypoints);
+        let valid_steps =
+            match get_valid_steps(&mut configs, &entrypoints) {
+                Err(err) => return err,
+                Ok(valid_steps) => valid_steps,
+            };
 
         match valid_steps.len() {
             0 => return Refuted(step),
@@ -798,7 +803,7 @@ type ValidatedSteps = Vec<(Vec<Instr>, Config)>;
 fn get_valid_steps(
     configs: &mut Configs,
     entrypoints: &Entrypoints,
-) -> ValidatedSteps {
+) -> Result<ValidatedSteps, BackwardResult> {
     let mut checked = ValidatedSteps::with_capacity(configs.len());
 
     for config in configs.drain(..) {
@@ -829,7 +834,8 @@ fn get_valid_steps(
                 continue;
             }
 
-            if let Some(indef) = get_indef(shift, &config, diff, same) {
+            if let Some(indef) = get_indef(shift, &config, diff, same)?
+            {
                 checked.push(indef);
             }
         }
@@ -841,7 +847,7 @@ fn get_valid_steps(
         checked.push((steps, config));
     }
 
-    checked
+    Ok(checked)
 }
 
 fn get_indef(
@@ -849,9 +855,9 @@ fn get_indef(
     config: &Config,
     diff: &Entries,
     same: &Entries,
-) -> Option<(Vec<Instr>, Config)> {
+) -> Result<Option<(Vec<Instr>, Config)>, BackwardResult> {
     let mut tape = config.tape.clone();
-    tape.push_indef(push);
+    tape.push_indef(push)?;
 
     // Extending an already-known blank tail with an indefinite run of 0s is
     // canonicalized away by `push_indef`. In that case this branch is exactly
@@ -859,7 +865,7 @@ fn get_indef(
     // itself is excluded below, the same eligible predecessor instructions.
     // Returning it again only duplicates the whole subsequent frontier.
     if tape == config.tape {
-        return None;
+        return Ok(None);
     }
 
     // Avoid cloning `diff` and constructing a temporary combined entry list.
@@ -880,7 +886,7 @@ fn get_indef(
     }
 
     if steps.is_empty() {
-        return None;
+        return Ok(None);
     }
 
     let next_config = Config::new(config.state, tape);
@@ -888,7 +894,7 @@ fn get_indef(
     #[cfg(debug_assertions)]
     println!("~ | {next_config}");
 
-    Some((steps, next_config))
+    Ok(Some((steps, next_config)))
 }
 
 fn window_possible<const s: usize, const c: usize>(
@@ -1121,7 +1127,7 @@ fn step_instrs<const s: usize, const c: usize>(
     for (color, shift, state) in instrs {
         let mut tape = config.tape.clone();
 
-        tape.backstep(shift, color);
+        tape.backstep(shift, color)?;
 
         if tape.blank() {
             if state == 0 {
@@ -2304,17 +2310,28 @@ impl BlockCount {
         matches!(self, Self::AtLeast(1))
     }
 
-    const fn add_exact(&mut self, add: Count) {
+    fn add_exact(&mut self, add: Count) -> Result<(), BackwardResult> {
         debug_assert!(add > 0);
         *self = match *self {
-            Self::Exact(count) => Self::Exact(count + add),
-            Self::AtLeast(count) => Self::AtLeast(count + add),
+            Self::Exact(count) => {
+                Self::Exact(count.checked_add(add).ok_or(CountLimit)?)
+            },
+            Self::AtLeast(count) => {
+                Self::AtLeast(count.checked_add(add).ok_or(CountLimit)?)
+            },
         };
+        Ok(())
     }
 
-    const fn add_at_least(&mut self, add: Count) {
+    fn add_at_least(
+        &mut self,
+        add: Count,
+    ) -> Result<(), BackwardResult> {
         debug_assert!(add > 0);
-        *self = Self::AtLeast(self.minimum() + add);
+        let count =
+            self.minimum().checked_add(add).ok_or(CountLimit)?;
+        *self = Self::AtLeast(count);
+        Ok(())
     }
 
     /// Remove one definitely present cell.
@@ -2414,35 +2431,46 @@ impl SpanT {
         self.blocks.pop().unwrap()
     }
 
-    fn push_exact(&mut self, color: Color, count: Count) {
+    fn push_exact(
+        &mut self,
+        color: Color,
+        count: Count,
+    ) -> Result<(), BackwardResult> {
         if let Some(block) = self.first_mut()
             && block.color == color
         {
-            block.count.add_exact(count);
-            return;
+            return block.count.add_exact(count);
         }
 
         self.blocks.push(Block::exact(color, count));
+        Ok(())
     }
 
-    fn push_at_least(&mut self, color: Color, count: Count) {
+    fn push_at_least(
+        &mut self,
+        color: Color,
+        count: Count,
+    ) -> Result<(), BackwardResult> {
         if let Some(block) = self.first_mut()
             && block.color == color
         {
-            block.count.add_at_least(count);
-            return;
+            return block.count.add_at_least(count);
         }
 
         self.blocks.push(Block::at_least(color, count));
+        Ok(())
     }
 
-    fn push_block(&mut self, block: &Block) {
+    fn push_block(
+        &mut self,
+        block: &Block,
+    ) -> Result<(), BackwardResult> {
         match block.count {
             BlockCount::Exact(count) => {
-                self.push_exact(block.color, count);
+                self.push_exact(block.color, count)
             },
             BlockCount::AtLeast(count) => {
-                self.push_at_least(block.color, count);
+                self.push_at_least(block.color, count)
             },
         }
     }
@@ -2475,7 +2503,8 @@ impl Span {
             end: TapeEnd::Unknown,
         };
 
-        span.push_single(color);
+        span.push_single(color)
+            .expect("single cell cannot overflow an empty span");
 
         span
     }
@@ -2513,26 +2542,32 @@ impl Span {
         }
     }
 
-    fn push_single(&mut self, color: Color) {
+    fn push_single(
+        &mut self,
+        color: Color,
+    ) -> Result<(), BackwardResult> {
         if self.span.first().is_none()
             && color == 0
             && self.end == TapeEnd::Blanks
         {
-            return;
+            return Ok(());
         }
 
-        self.span.push_exact(color, 1);
+        self.span.push_exact(color, 1)
     }
 
-    fn push_indef(&mut self, color: Color) {
+    fn push_indef(
+        &mut self,
+        color: Color,
+    ) -> Result<(), BackwardResult> {
         if color == 0
             && self.span.blank()
             && self.end == TapeEnd::Blanks
         {
-            return;
+            return Ok(());
         }
 
-        self.span.push_at_least(color, 1);
+        self.span.push_at_least(color, 1)
     }
 
     fn set_head_to_one(&mut self) {
@@ -2565,7 +2600,9 @@ impl Span {
         // Rebuild span by pushing blocks from far->near (push_block is near-end).
         let mut new_span = SpanT::init_blank();
         for b in blocks.into_iter().rev() {
-            new_span.push_block(&b);
+            new_span.push_block(&b).expect(
+                "canonical span rebuild cannot increase counts",
+            );
         }
         self.span = new_span;
     }
@@ -3358,7 +3395,11 @@ impl Tape {
         block.count.can_be_one()
     }
 
-    fn backstep(&mut self, shift: Shift, read: Color) {
+    fn backstep(
+        &mut self,
+        shift: Shift,
+        read: Color,
+    ) -> Result<(), BackwardResult> {
         let (pull, push) = if shift {
             (&mut self.lspan, &mut self.rspan)
         } else {
@@ -3367,19 +3408,23 @@ impl Tape {
 
         pull.pull();
 
-        push.push_single(self.scan);
+        push.push_single(self.scan)?;
 
         self.scan = read;
+        Ok(())
     }
 
-    fn push_indef(&mut self, shift: Shift) {
+    fn push_indef(
+        &mut self,
+        shift: Shift,
+    ) -> Result<(), BackwardResult> {
         let push = if shift {
             &mut self.rspan
         } else {
             &mut self.lspan
         };
 
-        push.push_indef(self.scan);
+        push.push_indef(self.scan)
     }
 
     /// One-sided "fresh blank" invariants.
@@ -3667,7 +3712,7 @@ impl Span {
         })();
 
         for block in blocks {
-            span.span.push_block(&block);
+            span.span.push_block(&block).unwrap();
         }
 
         span
@@ -3751,7 +3796,7 @@ impl Tape {
             return;
         }
 
-        self.backstep(shift, read);
+        self.backstep(shift, read).unwrap();
     }
 }
 
@@ -3849,7 +3894,7 @@ fn test_spinout() {
     assert!(!tape.is_valid_step(false, 1));
     assert!(tape.is_spinout(true, 1));
 
-    tape.push_indef(true);
+    tape.push_indef(true).unwrap();
 
     tape.assert("0+ [1] 1.. 0^2 ?");
 
@@ -3866,7 +3911,7 @@ fn test_get_indef_skips_noop_blank_extension() {
     // `init_l_spinout` is `0+ [0] ?`. Pushing an indefinite 0 run onto the
     // left `0+` tail changes nothing, so there is no distinct indefinite
     // branch to add.
-    assert!(get_indef(false, &config, &diff, &same).is_none());
+    assert!(get_indef(false, &config, &diff, &same).unwrap().is_none());
 }
 
 #[test]
@@ -3892,7 +3937,7 @@ fn test_parse() {
 fn test_backstep_indef() {
     let mut tape: Tape = "0+ [1] 1.. 0^2 ?".into();
 
-    tape.backstep(false, 1);
+    tape.backstep(false, 1).unwrap();
 
     tape.assert("0+ 1 [1] 1.. 0^2 ?");
 }
@@ -3901,25 +3946,39 @@ fn test_backstep_indef() {
 fn test_push_indef() {
     let mut tape: Tape = "0+ 1 [0] ?".into();
 
-    tape.push_indef(false);
+    tape.push_indef(false).unwrap();
 
     tape.assert("0+ 1 0.. [0] ?");
 
     tape.assert("0+ 1 0.. [0] ?");
 
     tape.scan = 1;
-    tape.push_indef(false);
+    tape.push_indef(false).unwrap();
 
     tape.assert("0+ 1 0.. 1.. [1] ?");
 
     tape.scan = 0;
-    tape.push_indef(false);
+    tape.push_indef(false).unwrap();
 
     tape.assert("0+ 1 0.. 1.. 0.. [0] ?");
 
-    tape.backstep(false, 0);
+    tape.backstep(false, 0).unwrap();
 
     tape.assert("0+ 1 0.. 1.. 0^2.. [0] ?");
+}
+
+#[test]
+fn test_count_limit() {
+    let mut exact: Tape = "? 1^255 [1] 0 ?".into();
+    assert!(matches!(exact.backstep(false, 0), Err(CountLimit)));
+
+    let config = Config::new(0, "? 1^255.. [1] ?".into());
+    let diff = Entries::new();
+    let same = Entries::new();
+    assert!(matches!(
+        get_indef(false, &config, &diff, &same),
+        Err(CountLimit)
+    ));
 }
 
 #[test]
@@ -3927,15 +3986,15 @@ fn test_lower_bounded_indefinite_runs() {
     let mut tape: Tape = "0+ [0] 1^3.. ?".into();
 
     assert!(!tape.pull_needs_count_one_split(false));
-    tape.backstep(false, 0);
+    tape.backstep(false, 0).unwrap();
     tape.assert("0+ [0] 1^2.. ?");
 
     // Definite and indefinite same-color pushes both raise the lower bound.
     let mut pushed: Tape = "0+ 1^2.. [1] ?".into();
-    pushed.backstep(false, 0);
+    pushed.backstep(false, 0).unwrap();
     pushed.assert("0+ 1^3.. [0] ?");
     pushed.scan = 1;
-    pushed.push_indef(false);
+    pushed.push_indef(false).unwrap();
     pushed.assert("0+ 1^4.. [1] ?");
 
     let merged: Tape = "0+ [0] 1 1^2.. ?".into();

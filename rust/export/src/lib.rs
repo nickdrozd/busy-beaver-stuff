@@ -92,6 +92,7 @@ pub enum BackwardResult {
     refuted { step: Steps },
     init {},
     step_limit {},
+    count_limit {},
     depth_limit {},
 }
 
@@ -112,6 +113,7 @@ impl BackwardResult {
             refuted { step } => format!("refuted({step})"),
             init {} => "init".into(),
             step_limit {} => "step_limit".into(),
+            count_limit {} => "count_limit".into(),
             depth_limit {} => "depth_limit".into(),
         }
     }
@@ -123,6 +125,7 @@ impl From<BackwardResultRs> for BackwardResult {
             Refuted(step) => Self::refuted { step },
             Init => Self::init {},
             StepLimit => Self::step_limit {},
+            CountLimit => Self::count_limit {},
             DepthLimit => Self::depth_limit {},
         }
     }
