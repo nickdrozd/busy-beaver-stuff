@@ -306,15 +306,20 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
 
 /// Near-to-far run prefix of the tape strictly beyond one immediate neighbor.
 ///
-/// At most two complete runs are retained. Counts 1/2/3 are exact; 4 means
-/// four-or-more. `rest_blank` is an exact alternative, not an unknown bit:
-/// true means everything beyond the retained runs is blank, false means the
-/// forgotten remainder definitely contains at least one nonblank. Whenever a
-/// transition cannot determine which case holds, the forward worklist keeps
-/// both alternatives.
+/// Two complete runs keep the original 1/2/3/4+ count precision.  One extra
+/// spill run remembers the next run color and only whether its length is 1 or
+/// 2+.  This delays the old collapse to `dirty_unknown()` by one run boundary
+/// without paying for a full third precise run.
+///
+/// The spill's `farther_dirty` bit is exact for each alternative: false means
+/// everything after that spill run is blank; true means there is definitely a
+/// nonblank cell farther out.  When that distinction is not known, the
+/// forward worklist retains both alternatives.  `DirtyUnknown` is used only
+/// after the spill itself has been consumed/lost.
 const SIDE_PREFIX_MANY: u8 = 4;
+const SIDE_PREFIX_SPILL_MANY: u8 = 2;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct SidePrefixRun {
     color: Color,
     count: u8,
@@ -324,11 +329,39 @@ impl SidePrefixRun {
     const EMPTY: Self = Self { color: 0, count: 0 };
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum SidePrefixSpill {
+    Blank,
+    Run {
+        color: Color,
+        // 1 is exact; 2 means two-or-more.
+        count: u8,
+        // Some nonblank cell exists strictly beyond this spill run.
+        farther_dirty: bool,
+    },
+    // The forgotten remainder is definitely dirty, but its next run is lost.
+    DirtyUnknown,
+}
+
+impl SidePrefixSpill {
+    const fn definitely_dirty(self) -> bool {
+        match self {
+            Self::Blank => false,
+            Self::Run {
+                color,
+                farther_dirty,
+                ..
+            } => color != 0 || farther_dirty,
+            Self::DirtyUnknown => true,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct SidePrefix {
     runs: [SidePrefixRun; 2],
     len: u8,
-    rest_blank: bool,
+    spill: SidePrefixSpill,
 }
 
 impl SidePrefix {
@@ -336,7 +369,7 @@ impl SidePrefix {
         Self {
             runs: [SidePrefixRun::EMPTY; 2],
             len: 0,
-            rest_blank: true,
+            spill: SidePrefixSpill::Blank,
         }
     }
 
@@ -344,21 +377,85 @@ impl SidePrefix {
         Self {
             runs: [SidePrefixRun::EMPTY; 2],
             len: 0,
-            rest_blank: false,
+            spill: SidePrefixSpill::DirtyUnknown,
         }
     }
 
+    #[cfg(test)]
+    fn definitely_dirty(self) -> bool {
+        let mut index = 0;
+        while index < usize::from(self.len) {
+            if self.runs[index].color != 0 {
+                return true;
+            }
+            index += 1;
+        }
+        self.spill.definitely_dirty()
+    }
+
+    /// Denotational subsumption used by the regression tests for the broad
+    /// antichain state. No structural-prefix heuristic is used.
+    #[cfg(test)]
+    fn subsumes(self, other: Self) -> bool {
+        self == other
+            || (matches!(self.spill, SidePrefixSpill::DirtyUnknown)
+                && self.len == 0
+                && other.definitely_dirty())
+    }
+
     fn canonicalize(&mut self) {
-        // A finite zero run immediately followed by an all-blank remainder is
-        // just part of that blank remainder. Removing it also keeps run
-        // boundaries canonical for equality/deduplication.
-        while self.rest_blank && self.len != 0 {
-            let far = self.len as usize - 1;
+        // A zero spill followed by an all-blank remainder is itself just blank
+        // remainder.  Retain a zero spill only when it separates the retained
+        // runs from known farther dirt.
+        if matches!(
+            self.spill,
+            SidePrefixSpill::Run {
+                color: 0,
+                farther_dirty: false,
+                ..
+            }
+        ) {
+            self.spill = SidePrefixSpill::Blank;
+        }
+
+        // Finite zero runs immediately followed by an all-blank remainder are
+        // likewise redundant.  This keeps the exact blank alternative unique.
+        while matches!(self.spill, SidePrefixSpill::Blank)
+            && self.len != 0
+        {
+            let far = usize::from(self.len) - 1;
             if self.runs[far].color != 0 {
                 break;
             }
             self.runs[far] = SidePrefixRun::EMPTY;
             self.len -= 1;
+        }
+    }
+
+    fn spill_after_dropped(
+        dropped: SidePrefixRun,
+        old: SidePrefixSpill,
+    ) -> SidePrefixSpill {
+        let count = if dropped.count == 1 {
+            1
+        } else {
+            SIDE_PREFIX_SPILL_MANY
+        };
+
+        SidePrefixSpill::Run {
+            color: dropped.color,
+            count,
+            farther_dirty: old.definitely_dirty(),
+        }
+    }
+
+    const fn suffix_after_spill(
+        farther_dirty: bool,
+    ) -> SidePrefixSpill {
+        if farther_dirty {
+            SidePrefixSpill::DirtyUnknown
+        } else {
+            SidePrefixSpill::Blank
         }
     }
 
@@ -371,48 +468,105 @@ impl SidePrefix {
         mut emit: impl FnMut(Self),
     ) {
         if self.len == 0 {
-            if self.rest_blank {
-                if color == 0 {
-                    emit(self);
+            match self.spill {
+                SidePrefixSpill::Blank => {
+                    if color == 0 {
+                        emit(self);
+                        return;
+                    }
+
+                    emit(Self {
+                        runs: [
+                            SidePrefixRun { color, count: 1 },
+                            SidePrefixRun::EMPTY,
+                        ],
+                        len: 1,
+                        spill: SidePrefixSpill::Blank,
+                    });
                     return;
-                }
+                },
+                SidePrefixSpill::Run {
+                    color: spill_color,
+                    count,
+                    farther_dirty,
+                } => {
+                    if color == spill_color {
+                        // The exact prepended cell merges into the known spill
+                        // run.  1 becomes exact 2; 2+ becomes either exact 3
+                        // or 4+, which is exactly the old full-run cap.
+                        let suffix =
+                            Self::suffix_after_spill(farther_dirty);
+                        if count == 1 {
+                            emit(Self {
+                                runs: [
+                                    SidePrefixRun { color, count: 2 },
+                                    SidePrefixRun::EMPTY,
+                                ],
+                                len: 1,
+                                spill: suffix,
+                            });
+                        } else {
+                            debug_assert_eq!(
+                                count,
+                                SIDE_PREFIX_SPILL_MANY
+                            );
+                            for next_count in [3, SIDE_PREFIX_MANY] {
+                                emit(Self {
+                                    runs: [
+                                        SidePrefixRun {
+                                            color,
+                                            count: next_count,
+                                        },
+                                        SidePrefixRun::EMPTY,
+                                    ],
+                                    len: 1,
+                                    spill: suffix,
+                                });
+                            }
+                        }
+                        return;
+                    }
 
-                emit(Self {
-                    runs: [
-                        SidePrefixRun { color, count: 1 },
-                        SidePrefixRun::EMPTY,
-                    ],
-                    len: 1,
-                    rest_blank: true,
-                });
-                return;
+                    // The prepended cell starts a new exact run.  Keep the old
+                    // spill as the next known run instead of forgetting it.
+                    emit(Self {
+                        runs: [
+                            SidePrefixRun { color, count: 1 },
+                            SidePrefixRun::EMPTY,
+                        ],
+                        len: 1,
+                        spill: self.spill,
+                    });
+                    return;
+                },
+                SidePrefixSpill::DirtyUnknown => {
+                    // The old remainder is known dirty but its near run is
+                    // forgotten. Conservatively enumerate every capped length
+                    // of the new run. A nonzero new run may consume the last
+                    // dirty cells, so both blank and dirty residuals are
+                    // possible. A zero run cannot account for the old dirt.
+                    for count in 1..=SIDE_PREFIX_MANY {
+                        let mut dirty = Self {
+                            runs: [
+                                SidePrefixRun { color, count },
+                                SidePrefixRun::EMPTY,
+                            ],
+                            len: 1,
+                            spill: SidePrefixSpill::DirtyUnknown,
+                        };
+                        dirty.canonicalize();
+                        emit(dirty);
+
+                        if color != 0 {
+                            let mut blank = dirty;
+                            blank.spill = SidePrefixSpill::Blank;
+                            blank.canonicalize();
+                            emit(blank);
+                        }
+                    }
+                    return;
+                },
             }
-
-            // The old remainder is known dirty but its near run is forgotten.
-            // Conservatively enumerate every capped length of the new run.
-            // A nonzero new run may consume the last dirty cells, so both a
-            // blank and dirty residual are possible. A finite zero run cannot
-            // itself account for the old dirt, so its residual stays dirty.
-            for count in 1..=SIDE_PREFIX_MANY {
-                let mut dirty = Self {
-                    runs: [
-                        SidePrefixRun { color, count },
-                        SidePrefixRun::EMPTY,
-                    ],
-                    len: 1,
-                    rest_blank: false,
-                };
-                dirty.canonicalize();
-                emit(dirty);
-
-                if color != 0 {
-                    let mut blank = dirty;
-                    blank.rest_blank = true;
-                    blank.canonicalize();
-                    emit(blank);
-                }
-            }
-            return;
         }
 
         let mut out = self;
@@ -438,9 +592,9 @@ impl SidePrefix {
         out.runs[1] = out.runs[0];
         out.runs[0] = new_near;
 
-        // The dropped third run becomes part of the forgotten remainder. It
-        // is blank only when that whole dropped suffix is blank.
-        out.rest_blank &= dropped.color == 0;
+        // Keep one more run boundary instead of immediately degrading to a
+        // blank/dirty bit. Only structure strictly beyond this spill is joined.
+        out.spill = Self::spill_after_dropped(dropped, out.spill);
         out.canonicalize();
         emit(out);
     }
@@ -452,23 +606,60 @@ impl SidePrefix {
         mut emit: impl FnMut(Color, Self),
     ) {
         if self.len == 0 {
-            if self.rest_blank {
-                emit(0, self);
-                return;
-            }
-
-            // The forgotten remainder is dirty. Consuming a zero cannot remove
-            // that dirt. Consuming a nonzero may remove the last nonblank or
-            // may leave more dirt farther out.
-            for color in 0..C {
-                #[expect(clippy::cast_possible_truncation)]
-                let color = color as Color;
-                if color == 0 {
-                    emit(color, Self::dirty_unknown());
-                } else {
-                    emit(color, Self::blank());
-                    emit(color, Self::dirty_unknown());
-                }
+            match self.spill {
+                SidePrefixSpill::Blank => {
+                    emit(0, self);
+                },
+                SidePrefixSpill::Run {
+                    color,
+                    count,
+                    farther_dirty,
+                } => {
+                    if count == 1 {
+                        emit(
+                            color,
+                            Self {
+                                runs: [SidePrefixRun::EMPTY; 2],
+                                len: 0,
+                                spill: Self::suffix_after_spill(
+                                    farther_dirty,
+                                ),
+                            },
+                        );
+                    } else {
+                        debug_assert_eq!(count, SIDE_PREFIX_SPILL_MANY);
+                        // Removing one cell from 2+ leaves either exactly one
+                        // or still 2+ cells of the same spill run.
+                        for next_count in [1, SIDE_PREFIX_SPILL_MANY] {
+                            let mut next = Self {
+                                runs: [SidePrefixRun::EMPTY; 2],
+                                len: 0,
+                                spill: SidePrefixSpill::Run {
+                                    color,
+                                    count: next_count,
+                                    farther_dirty,
+                                },
+                            };
+                            next.canonicalize();
+                            emit(color, next);
+                        }
+                    }
+                },
+                SidePrefixSpill::DirtyUnknown => {
+                    // The forgotten remainder is dirty. Consuming a zero cannot
+                    // remove that dirt. Consuming a nonzero may remove the last
+                    // nonblank or may leave more dirt farther out.
+                    for color in 0..C {
+                        #[expect(clippy::cast_possible_truncation)]
+                        let color = color as Color;
+                        if color == 0 {
+                            emit(color, Self::dirty_unknown());
+                        } else {
+                            emit(color, Self::blank());
+                            emit(color, Self::dirty_unknown());
+                        }
+                    }
+                },
             }
             return;
         }
@@ -2544,14 +2735,16 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         possible
     }
 
-    /// Reachable two-run prefixes strictly beyond each immediate neighbor.
+    /// Reachable two-run-plus-spill prefixes strictly beyond each immediate
+    /// neighbor.
     ///
     /// The two sides are projected independently to keep the lattice small,
     /// but every alternative remains conditioned on the same exact
     /// `(state, left, scan, right)` window. Moving away from the tracked side
     /// prepends the old immediate neighbor; moving into it consumes one cell
-    /// from the prefix. Once two complete runs have been retained, farther
-    /// structure is forgotten only as the exact blank/dirty remainder status.
+    /// from the prefix. Once two complete runs have been retained, the next
+    /// run is kept as a cheap color + 1/2+ spill before farther structure
+    /// finally degrades to exact blank/dirty status.
     #[expect(clippy::cast_possible_truncation)]
     fn side_prefix_possible_from_blank(
         &self,
@@ -4558,8 +4751,8 @@ impl Tape {
         }
     }
 
-    /// Match the ordered two-run forward prefixes on both sides against one
-    /// compatible exact local window.
+    /// Match the ordered two-run-plus-spill forward prefixes on both sides
+    /// against one compatible exact local window.
     fn obeys_side_prefix_possible<const S: usize, const C: usize>(
         &self,
         state: State,
@@ -4582,25 +4775,27 @@ impl Tape {
 
         #[derive(Clone, Copy)]
         struct Requirement {
-            // Only the first two runs can be compared with a SidePrefix.
-            runs: [ReqRun; 2],
+            // The two full runs plus the one spill run can all be compared
+            // directly with the backward residual description.
+            runs: [ReqRun; 3],
 
-            // Number of explicit residual runs, capped at two. This is enough
-            // to answer whether a prefix of length 0..=2 extends past them.
+            // Number of explicit residual runs, capped at three. This is enough
+            // to answer whether the known two-run-plus-spill prefix extends
+            // past them.
             run_count: u8,
 
             // `suffix_nonblank[i]` says some explicit nonblank residual run
-            // occurs at position i or farther, for i in 0..=2. Position 2
-            // summarizes every run beyond the two retained descriptors.
-            suffix_nonblank: [bool; 3],
+            // occurs at position i or farther, for i in 0..=3. Position 3
+            // summarizes every run beyond the spill descriptor.
+            suffix_nonblank: [bool; 4],
             end_unknown: bool,
         }
 
         impl Requirement {
             const EMPTY: Self = Self {
-                runs: [ReqRun::EMPTY; 2],
+                runs: [ReqRun::EMPTY; 3],
                 run_count: 0,
-                suffix_nonblank: [false; 3],
+                suffix_nonblank: [false; 4],
                 end_unknown: false,
             };
 
@@ -4676,12 +4871,12 @@ impl Tape {
                     continue;
                 };
 
-                if count < 2 {
+                if count < 3 {
                     out.runs[count] = req_run(block.color, residual);
                 }
 
                 if block.color != 0 {
-                    let highest = count.min(2);
+                    let highest = count.min(3);
                     for from in 0..=highest {
                         out.suffix_nonblank[from] = true;
                     }
@@ -4690,12 +4885,12 @@ impl Tape {
                 count += 1;
             }
 
-            out.run_count = count.min(2) as u8;
+            out.run_count = count.min(3) as u8;
 
             // With an unknown tape end, the final explicit run may continue
             // into that end with the same color. Preserve the old unbounded
             // upper-bound semantics without building a temporary Vec.
-            if end_unknown && (1..=2).contains(&count) {
+            if end_unknown && (1..=3).contains(&count) {
                 out.runs[count - 1].max = None;
             }
 
@@ -4759,6 +4954,16 @@ impl Tape {
             }
         }
 
+        fn spill_count_bounds(count: u8) -> (u16, Option<u16>) {
+            match count {
+                1 => (1, Some(1)),
+                SIDE_PREFIX_SPILL_MANY => {
+                    (u16::from(SIDE_PREFIX_SPILL_MANY), None)
+                },
+                _ => unreachable!(),
+            }
+        }
+
         const fn intervals_overlap(
             a_min: u16,
             a_max: Option<u16>,
@@ -4770,24 +4975,25 @@ impl Tape {
             !a_before_b && !b_before_a
         }
 
+        fn run_matches(
+            color: Color,
+            min: u16,
+            max: Option<u16>,
+            req: ReqRun,
+        ) -> bool {
+            color == req.color
+                && intervals_overlap(min, max, req.min, req.max)
+        }
+
         fn matches(prefix: SidePrefix, req: Requirement) -> bool {
-            let prefix_len = prefix.len as usize;
+            let prefix_len = usize::from(prefix.len);
             let req_len = req.run_count as usize;
             let common = prefix_len.min(req_len);
 
             for index in 0..common {
-                let req_run = req.runs[index];
                 let run = prefix.runs[index];
-                if run.color != req_run.color {
-                    return false;
-                }
                 let (min, max) = count_bounds(run.count);
-                if !intervals_overlap(
-                    min,
-                    max,
-                    req_run.min,
-                    req_run.max,
-                ) {
+                if !run_matches(run.color, min, max, req.runs[index]) {
                     return false;
                 }
             }
@@ -4798,10 +5004,41 @@ impl Tape {
                 return req.end_unknown;
             }
 
-            if prefix.rest_blank {
-                !req.suffix_nonblank[prefix_len]
+            let (known_len, tail_dirty) = match prefix.spill {
+                SidePrefixSpill::Blank => (prefix_len, false),
+                SidePrefixSpill::DirtyUnknown => (prefix_len, true),
+                SidePrefixSpill::Run {
+                    color,
+                    count,
+                    farther_dirty,
+                } => {
+                    // The spill is the next exact run after the two precise
+                    // descriptors (or sooner after pulls have shortened the
+                    // precise prefix). Compare its color and 1/2+ count too.
+                    if req_len <= prefix_len {
+                        return req.end_unknown;
+                    }
+                    let (min, max) = spill_count_bounds(count);
+                    if !run_matches(
+                        color,
+                        min,
+                        max,
+                        req.runs[prefix_len],
+                    ) {
+                        return false;
+                    }
+                    (prefix_len + 1, farther_dirty)
+                },
+            };
+
+            if known_len > req_len {
+                return req.end_unknown;
+            }
+
+            if tail_dirty {
+                req.end_unknown || req.suffix_nonblank[known_len]
             } else {
-                req.end_unknown || req.suffix_nonblank[prefix_len]
+                !req.suffix_nonblank[known_len]
             }
         }
 
@@ -4847,7 +5084,7 @@ impl Tape {
         // Before compiling either backward span, look for an exact reachable
         // window whose two forward side antichains are already universal. This
         // also handles unknown immediate neighbors and is common once the
-        // two-run horizon has been crossed.
+        // two-run-plus-spill horizon has been crossed.
         let has_unconstrained_window = match (known_left, known_right) {
             (Some(left), Some(right)) => {
                 candidate_unconstrained(left, right)
@@ -5701,7 +5938,7 @@ fn test_side_prefix_dirty_unknown_subsumption() {
             SidePrefixRun::EMPTY,
         ],
         len: 1,
-        rest_blank: true,
+        spill: SidePrefixSpill::Blank,
     };
     let dirty_zero = SidePrefix {
         runs: [
@@ -5709,7 +5946,7 @@ fn test_side_prefix_dirty_unknown_subsumption() {
             SidePrefixRun::EMPTY,
         ],
         len: 1,
-        rest_blank: false,
+        spill: SidePrefixSpill::DirtyUnknown,
     };
 
     assert!(dirty.subsumes(dirty));
@@ -5717,6 +5954,97 @@ fn test_side_prefix_dirty_unknown_subsumption() {
     assert!(dirty.subsumes(dirty_zero));
     assert!(!dirty.subsumes(blank));
     assert!(!blank.subsumes(one));
+}
+
+#[test]
+fn test_side_prefix_spill_survives_pulls() {
+    // Near-to-far retained runs are 2,3. Prepending a new run 1 must keep the
+    // dropped 3 as the spill rather than immediately degrading it to dirty.
+    let base = SidePrefix {
+        runs: [
+            SidePrefixRun { color: 2, count: 1 },
+            SidePrefixRun { color: 3, count: 1 },
+        ],
+        len: 2,
+        spill: SidePrefixSpill::Blank,
+    };
+
+    let mut prepended = Vec::new();
+    base.for_each_prepend(1, |prefix| prepended.push(prefix));
+    assert_eq!(prepended.len(), 1);
+    let prefix = prepended[0];
+    assert_eq!(prefix.runs[0], SidePrefixRun { color: 1, count: 1 });
+    assert_eq!(prefix.runs[1], SidePrefixRun { color: 2, count: 1 });
+    assert_eq!(
+        prefix.spill,
+        SidePrefixSpill::Run {
+            color: 3,
+            count: 1,
+            farther_dirty: false,
+        }
+    );
+
+    let mut first = Vec::new();
+    prefix.for_each_pull::<4>(|color, next| first.push((color, next)));
+    assert_eq!(first.len(), 1);
+    assert_eq!(first[0].0, 1);
+
+    let mut second = Vec::new();
+    first[0]
+        .1
+        .for_each_pull::<4>(|color, next| second.push((color, next)));
+    assert_eq!(second.len(), 1);
+    assert_eq!(second[0].0, 2);
+    assert_eq!(second[0].1.len, 0);
+    assert_eq!(
+        second[0].1.spill,
+        SidePrefixSpill::Run {
+            color: 3,
+            count: 1,
+            farther_dirty: false,
+        }
+    );
+
+    let mut third = Vec::new();
+    second[0]
+        .1
+        .for_each_pull::<4>(|color, next| third.push((color, next)));
+    assert_eq!(third.len(), 1);
+    assert_eq!(third[0].0, 3);
+    assert_eq!(third[0].1, SidePrefix::blank());
+}
+
+#[test]
+fn test_side_prefix_spill_matches_third_run() {
+    // Synthetic exact window with a left side whose tail beyond immediate 4
+    // is exactly 3,2,1,blank. The old two-run prefix could see only 3,2 plus
+    // "dirty"; the spill retains the distinguishing third color 1.
+    let mut possible = SidePrefixPossible::<1, 5>::new();
+    let left_index =
+        SidePrefixPossible::<1, 5>::index(0, 0, 4, 0, LEFT_SIDE);
+    possible.windows[left_index].push(SidePrefix {
+        runs: [
+            SidePrefixRun { color: 3, count: 1 },
+            SidePrefixRun { color: 2, count: 1 },
+        ],
+        len: 2,
+        spill: SidePrefixSpill::Run {
+            color: 1,
+            count: 1,
+            farther_dirty: false,
+        },
+    });
+
+    let right_index =
+        SidePrefixPossible::<1, 5>::index(0, 0, 4, 0, RIGHT_SIDE);
+    possible.windows[right_index].push(SidePrefix::blank());
+    possible.flags[right_index] |= SIDE_PREFIX_HAS_BLANK;
+
+    let actual: Tape = "0+ 1 2 3 4 [0] 0+".into();
+    assert!(actual.obeys_side_prefix_possible(0, &possible));
+
+    let wrong_third: Tape = "0+ 4 2 3 4 [0] 0+".into();
+    assert!(!wrong_third.obeys_side_prefix_possible(0, &possible));
 }
 
 #[test]
