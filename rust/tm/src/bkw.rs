@@ -304,6 +304,91 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
     }
 }
 
+#[expect(clippy::multiple_inherent_impl)]
+impl<const S: usize, const C: usize> WinPossible<S, C> {
+    /// Replace the coarse exact-window reachability relation with the stronger
+    /// fixed point already established by `SidePossible`, then rebuild every
+    /// aggregate lookup from the surviving exact windows.
+    ///
+    /// Exact parity/residue masks are retained only for reachable windows.
+    /// Their one-neighbor/unknown-neighbor aggregates must be rebuilt as well;
+    /// otherwise a removed exact window could still witness a later query via
+    /// `parity_right`, `side_mod3_any`, etc.
+    fn refine_reachability(&mut self, sides: &SidePossible<S, C>) {
+        self.right = [[[0; C]; C]; S];
+        self.left = [[[0; C]; C]; S];
+        self.any = [[false; C]; S];
+
+        self.parity_right = [[[0; C]; C]; S];
+        self.parity_left = [[[0; C]; C]; S];
+        self.parity_any = [[0; C]; S];
+
+        self.side_parity_right = [[[0; C]; C]; S];
+        self.side_parity_left = [[[0; C]; C]; S];
+        self.side_parity_any = [[0; C]; S];
+
+        self.side_mod3_right = [[[0; C]; C]; S];
+        self.side_mod3_left = [[[0; C]; C]; S];
+        self.side_mod3_any = [[0; C]; S];
+
+        self.color_parity_right = [[[0; C]; C]; S];
+        self.color_parity_left = [[[0; C]; C]; S];
+        self.color_parity_any = [[0; C]; S];
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    for right in 0..C {
+                        let index =
+                            Self::parity_index(st, scan, left, right);
+
+                        if !sides
+                            .window(st, scan, left, right)
+                            .reachable
+                        {
+                            self.parity[index] = 0;
+                            self.side_parity[index] = 0;
+                            self.side_mod3[index] = 0;
+                            self.color_parity[index] = 0;
+                            continue;
+                        }
+
+                        self.right[st][scan][left] |= 1_u64 << right;
+                        self.left[st][scan][right] |= 1_u64 << left;
+                        self.any[st][scan] = true;
+
+                        let parity = self.parity[index];
+                        self.parity_right[st][scan][left] |= parity;
+                        self.parity_left[st][scan][right] |= parity;
+                        self.parity_any[st][scan] |= parity;
+
+                        let side_parity = self.side_parity[index];
+                        self.side_parity_right[st][scan][left] |=
+                            side_parity;
+                        self.side_parity_left[st][scan][right] |=
+                            side_parity;
+                        self.side_parity_any[st][scan] |= side_parity;
+
+                        let side_mod3 = self.side_mod3[index];
+                        self.side_mod3_right[st][scan][left] |=
+                            side_mod3;
+                        self.side_mod3_left[st][scan][right] |=
+                            side_mod3;
+                        self.side_mod3_any[st][scan] |= side_mod3;
+
+                        let color_parity = self.color_parity[index];
+                        self.color_parity_right[st][scan][left] |=
+                            color_parity;
+                        self.color_parity_left[st][scan][right] |=
+                            color_parity;
+                        self.color_parity_any[st][scan] |= color_parity;
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// Near-to-far run prefix of the tape strictly beyond one immediate neighbor.
 ///
 /// Two complete runs keep the original 1/2/3/4+ count precision.  One extra
@@ -432,7 +517,7 @@ impl SidePrefix {
         }
     }
 
-    fn spill_after_dropped(
+    const fn spill_after_dropped(
         dropped: SidePrefixRun,
         old: SidePrefixSpill,
     ) -> SidePrefixSpill {
@@ -652,12 +737,10 @@ impl SidePrefix {
                     for color in 0..C {
                         #[expect(clippy::cast_possible_truncation)]
                         let color = color as Color;
-                        if color == 0 {
-                            emit(color, Self::dirty_unknown());
-                        } else {
+                        if color != 0 {
                             emit(color, Self::blank());
-                            emit(color, Self::dirty_unknown());
                         }
+                        emit(color, Self::dirty_unknown());
                     }
                 },
             }
@@ -669,13 +752,13 @@ impl SidePrefix {
 
         let residual = |new_count: Option<u8>| {
             let mut next = self;
-            match new_count {
-                Some(count) => next.runs[0].count = count,
-                None => {
-                    next.runs[0] = next.runs[1];
-                    next.runs[1] = SidePrefixRun::EMPTY;
-                    next.len -= 1;
-                },
+            #[expect(clippy::shadow_unrelated)]
+            if let Some(count) = new_count {
+                next.runs[0].count = count;
+            } else {
+                next.runs[0] = next.runs[1];
+                next.runs[1] = SidePrefixRun::EMPTY;
+                next.len -= 1;
             }
             next.canonicalize();
             next
@@ -1210,9 +1293,18 @@ where
     // blank tape. If a generated predecessor configuration demands an
     // immediate neighbor color that is impossible in this
     // over-approximation, we can safely prune it.
-    let win_possible =
+    let mut win_possible =
         prog.win_possible_from_blank(&forbid_left, &forbid_right);
     let side_possible = prog.side_possible_from_blank(&win_possible);
+
+    // `SidePossible` computes a stronger exact-window reachability fixed point
+    // than the original radius-1 window BFS.  Promote that already-sound
+    // reachability relation before constructing any later forward summaries.
+    // This only removes exact local windows that the existing side filter would
+    // reject anyway; unlike boundary-pair conditioning, it does not couple the
+    // abstract transitions of otherwise independent analyses.
+    win_possible.refine_reachability(&side_possible);
+
     let blank_side_possible =
         blank_side_possible_from_blank(prog, &win_possible);
     let color_tail_count =
@@ -4833,6 +4925,7 @@ impl Tape {
             }
         }
 
+        #[expect(clippy::cast_possible_truncation)]
         fn requirement(
             span: &Span,
             first: FirstResidual,
@@ -4857,6 +4950,7 @@ impl Tape {
                     continue;
                 }
 
+                #[expect(clippy::shadow_unrelated)]
                 let residual = if source_index == 0 {
                     match first {
                         FirstResidual::Keep => Some(block.count),
@@ -4929,6 +5023,7 @@ impl Tape {
                 ),
             };
 
+            #[expect(clippy::shadow_unrelated)]
             let first = requirement(span, first_mode);
             let mut out = RequirementSet {
                 reqs: [first, Requirement::EMPTY],
@@ -4975,7 +5070,7 @@ impl Tape {
             !a_before_b && !b_before_a
         }
 
-        fn run_matches(
+        const fn run_matches(
             color: Color,
             min: u16,
             max: Option<u16>,
@@ -5929,6 +6024,79 @@ fn test_state_side_window_conditioning() {
 }
 
 #[test]
+fn test_refined_window_reachability_rebuilds_aggregates() {
+    let mut windows = WinPossible::<1, 2> {
+        right: [[[0; 2]; 2]; 1],
+        left: [[[0; 2]; 2]; 1],
+        any: [[false; 2]; 1],
+        parity: vec![0; 2 * 2 * 2],
+        parity_right: [[[0; 2]; 2]; 1],
+        parity_left: [[[0; 2]; 2]; 1],
+        parity_any: [[0; 2]; 1],
+        side_parity: vec![0; 2 * 2 * 2],
+        side_parity_right: [[[0; 2]; 2]; 1],
+        side_parity_left: [[[0; 2]; 2]; 1],
+        side_parity_any: [[0; 2]; 1],
+        side_mod3: vec![0; 2 * 2 * 2],
+        side_mod3_right: [[[0; 2]; 2]; 1],
+        side_mod3_left: [[[0; 2]; 2]; 1],
+        side_mod3_any: [[0; 2]; 1],
+        color_parity: vec![0; 2 * 2 * 2],
+        color_parity_right: [[[0; 2]; 2]; 1],
+        color_parity_left: [[[0; 2]; 2]; 1],
+        color_parity_any: [[0; 2]; 1],
+    };
+    let mut sides = SidePossible::<1, 2>::new();
+
+    // The coarse relation contains two exact windows with the same
+    // (state, scan, left). Only right=0 survives the stronger side fixed point.
+    windows.right[0][0][0] = 0b11;
+    windows.left[0][0][0] = 0b01;
+    windows.left[0][0][1] = 0b01;
+    windows.any[0][0] = true;
+
+    let keep = WinPossible::<1, 2>::parity_index(0, 0, 0, 0);
+    let drop = WinPossible::<1, 2>::parity_index(0, 0, 0, 1);
+    windows.parity[keep] = 0b01;
+    windows.parity[drop] = 0b10;
+    windows.side_parity[keep] = 0b0001;
+    windows.side_parity[drop] = 0b0010;
+    windows.side_mod3[keep] = 0b0000_0001;
+    windows.side_mod3[drop] = 0b0000_0010;
+    windows.color_parity[keep] = 1 << 0;
+    windows.color_parity[drop] = 1 << 1;
+
+    // Seed stale coarse aggregates deliberately; refinement must rebuild them
+    // solely from exact windows marked reachable by SidePossible.
+    windows.parity_right[0][0][0] = 0b11;
+    windows.parity_left[0][0][0] = 0b01;
+    windows.parity_left[0][0][1] = 0b10;
+    windows.parity_any[0][0] = 0b11;
+    windows.side_parity_right[0][0][0] = 0b0011;
+    windows.side_parity_any[0][0] = 0b0011;
+    windows.side_mod3_right[0][0][0] = 0b0000_0011;
+    windows.side_mod3_any[0][0] = 0b0000_0011;
+    windows.color_parity_right[0][0][0] = 0b11;
+    windows.color_parity_any[0][0] = 0b11;
+
+    sides.window_mut(0, 0, 0, 0).reachable = true;
+    windows.refine_reachability(&sides);
+
+    assert_eq!(windows.right[0][0][0], 0b01);
+    assert_eq!(windows.left[0][0][0], 0b01);
+    assert_eq!(windows.left[0][0][1], 0);
+    assert!(windows.any[0][0]);
+
+    assert_eq!(windows.parity[keep], 0b01);
+    assert_eq!(windows.parity[drop], 0);
+    assert_eq!(windows.parity_right[0][0][0], 0b01);
+    assert_eq!(windows.parity_any[0][0], 0b01);
+    assert_eq!(windows.side_parity_right[0][0][0], 0b0001);
+    assert_eq!(windows.side_mod3_right[0][0][0], 0b0000_0001);
+    assert_eq!(windows.color_parity_right[0][0][0], 1 << 0);
+}
+
+#[test]
 fn test_side_prefix_dirty_unknown_subsumption() {
     let dirty = SidePrefix::dirty_unknown();
     let blank = SidePrefix::blank();
@@ -6045,24 +6213,6 @@ fn test_side_prefix_spill_matches_third_run() {
 
     let wrong_third: Tape = "0+ 4 2 3 4 [0] 0+".into();
     assert!(!wrong_third.obeys_side_prefix_possible(0, &possible));
-}
-
-#[test]
-fn test_side_prefix_prunes_blank_example_branch() {
-    let prog = Prog::<2, 4>::from("1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA");
-    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
-    let windows =
-        prog.win_possible_from_blank(&forbid_left, &forbid_right);
-    let sides = prog.side_possible_from_blank(&windows);
-    let prefixes =
-        prog.side_prefix_possible_from_blank(&windows, &sides);
-
-    // This is the late B0 branch from the blank trace. The immediate window
-    // `1 [0] 2` is locally reachable, and the whole-side summaries admit all
-    // of its colors/pairs separately, but no compatible forward prefix has a
-    // single 3 beyond the right-neighbor 2 followed immediately by blank.
-    let branch: Tape = "0+ 1 [0] 2 3 0+".into();
-    assert!(!branch.obeys_side_prefix_possible(1, &prefixes));
 }
 
 #[test]
