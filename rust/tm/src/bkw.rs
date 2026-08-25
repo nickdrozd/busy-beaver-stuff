@@ -304,6 +304,287 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
     }
 }
 
+/// Near-to-far run prefix of the tape strictly beyond one immediate neighbor.
+///
+/// At most two complete runs are retained. Counts 1/2/3 are exact; 4 means
+/// four-or-more. `rest_blank` is an exact alternative, not an unknown bit:
+/// true means everything beyond the retained runs is blank, false means the
+/// forgotten remainder definitely contains at least one nonblank. Whenever a
+/// transition cannot determine which case holds, the forward worklist keeps
+/// both alternatives.
+const SIDE_PREFIX_MANY: u8 = 4;
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct SidePrefixRun {
+    color: Color,
+    count: u8,
+}
+
+impl SidePrefixRun {
+    const EMPTY: Self = Self { color: 0, count: 0 };
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct SidePrefix {
+    runs: [SidePrefixRun; 2],
+    len: u8,
+    rest_blank: bool,
+}
+
+impl SidePrefix {
+    const fn blank() -> Self {
+        Self {
+            runs: [SidePrefixRun::EMPTY; 2],
+            len: 0,
+            rest_blank: true,
+        }
+    }
+
+    const fn dirty_unknown() -> Self {
+        Self {
+            runs: [SidePrefixRun::EMPTY; 2],
+            len: 0,
+            rest_blank: false,
+        }
+    }
+
+    fn canonicalize(&mut self) {
+        // A finite zero run immediately followed by an all-blank remainder is
+        // just part of that blank remainder. Removing it also keeps run
+        // boundaries canonical for equality/deduplication.
+        while self.rest_blank && self.len != 0 {
+            let far = self.len as usize - 1;
+            if self.runs[far].color != 0 {
+                break;
+            }
+            self.runs[far] = SidePrefixRun::EMPTY;
+            self.len -= 1;
+        }
+    }
+
+    /// Prepend one exact cell at the near end of the represented tail.
+    /// Successors are emitted directly to avoid allocating a temporary `Vec`
+    /// for every abstract edge in the fixed point.
+    fn for_each_prepend(
+        self,
+        color: Color,
+        mut emit: impl FnMut(Self),
+    ) {
+        if self.len == 0 {
+            if self.rest_blank {
+                if color == 0 {
+                    emit(self);
+                    return;
+                }
+
+                emit(Self {
+                    runs: [
+                        SidePrefixRun { color, count: 1 },
+                        SidePrefixRun::EMPTY,
+                    ],
+                    len: 1,
+                    rest_blank: true,
+                });
+                return;
+            }
+
+            // The old remainder is known dirty but its near run is forgotten.
+            // Conservatively enumerate every capped length of the new run.
+            // A nonzero new run may consume the last dirty cells, so both a
+            // blank and dirty residual are possible. A finite zero run cannot
+            // itself account for the old dirt, so its residual stays dirty.
+            for count in 1..=SIDE_PREFIX_MANY {
+                let mut dirty = Self {
+                    runs: [
+                        SidePrefixRun { color, count },
+                        SidePrefixRun::EMPTY,
+                    ],
+                    len: 1,
+                    rest_blank: false,
+                };
+                dirty.canonicalize();
+                emit(dirty);
+
+                if color != 0 {
+                    let mut blank = dirty;
+                    blank.rest_blank = true;
+                    blank.canonicalize();
+                    emit(blank);
+                }
+            }
+            return;
+        }
+
+        let mut out = self;
+        if out.runs[0].color == color {
+            out.runs[0].count =
+                (out.runs[0].count + 1).min(SIDE_PREFIX_MANY);
+            emit(out);
+            return;
+        }
+
+        let new_near = SidePrefixRun { color, count: 1 };
+        if out.len == 1 {
+            out.runs[1] = out.runs[0];
+            out.runs[0] = new_near;
+            out.len = 2;
+            out.canonicalize();
+            emit(out);
+            return;
+        }
+
+        debug_assert_eq!(out.len, 2);
+        let dropped = out.runs[1];
+        out.runs[1] = out.runs[0];
+        out.runs[0] = new_near;
+
+        // The dropped third run becomes part of the forgotten remainder. It
+        // is blank only when that whole dropped suffix is blank.
+        out.rest_blank &= dropped.color == 0;
+        out.canonicalize();
+        emit(out);
+    }
+
+    /// Consume the nearest represented tail cell, emitting the exposed color
+    /// and residual prefix directly without a temporary allocation.
+    fn for_each_pull<const C: usize>(
+        self,
+        mut emit: impl FnMut(Color, Self),
+    ) {
+        if self.len == 0 {
+            if self.rest_blank {
+                emit(0, self);
+                return;
+            }
+
+            // The forgotten remainder is dirty. Consuming a zero cannot remove
+            // that dirt. Consuming a nonzero may remove the last nonblank or
+            // may leave more dirt farther out.
+            for color in 0..C {
+                #[expect(clippy::cast_possible_truncation)]
+                let color = color as Color;
+                if color == 0 {
+                    emit(color, Self::dirty_unknown());
+                } else {
+                    emit(color, Self::blank());
+                    emit(color, Self::dirty_unknown());
+                }
+            }
+            return;
+        }
+
+        let color = self.runs[0].color;
+        let count = self.runs[0].count;
+
+        let residual = |new_count: Option<u8>| {
+            let mut next = self;
+            match new_count {
+                Some(count) => next.runs[0].count = count,
+                None => {
+                    next.runs[0] = next.runs[1];
+                    next.runs[1] = SidePrefixRun::EMPTY;
+                    next.len -= 1;
+                },
+            }
+            next.canonicalize();
+            next
+        };
+
+        match count {
+            1 => emit(color, residual(None)),
+            2 | 3 => emit(color, residual(Some(count - 1))),
+            SIDE_PREFIX_MANY => {
+                emit(color, residual(Some(3)));
+                emit(color, residual(Some(SIDE_PREFIX_MANY)));
+            },
+            _ => unreachable!(),
+        }
+    }
+}
+
+/// Same exact-window conditioning as `SidePossible`, but keeps alternatives
+/// instead of unioning their ordered near-tail run structure.
+const SIDE_PREFIX_HAS_BLANK: u8 = 1;
+const SIDE_PREFIX_HAS_DIRTY_UNKNOWN: u8 = 2;
+const SIDE_PREFIX_UNCONSTRAINED: u8 =
+    SIDE_PREFIX_HAS_BLANK | SIDE_PREFIX_HAS_DIRTY_UNKNOWN;
+
+struct SidePrefixPossible<const S: usize, const C: usize> {
+    // Flattened [window][side] -> reachable prefix alternatives.
+    windows: Vec<Vec<SidePrefix>>,
+
+    // Cached membership of the two broad alternatives. Besides making query
+    // time O(1), this avoids scanning an antichain on every forward insertion
+    // just to discover that `dirty_unknown()` already subsumes the candidate.
+    flags: Vec<u8>,
+}
+
+impl<const S: usize, const C: usize> SidePrefixPossible<S, C> {
+    const fn window_index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    const fn index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        side: usize,
+    ) -> usize {
+        Self::window_index(st, scan, left, right) * 2 + side
+    }
+
+    fn new() -> Self {
+        let len = S * C * C * C * 2;
+        Self {
+            windows: (0..len).map(|_| Vec::new()).collect(),
+            flags: vec![0; len],
+        }
+    }
+
+    fn prefixes(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        side: usize,
+    ) -> &[SidePrefix] {
+        &self.windows[Self::index(st, scan, left, right, side)]
+    }
+
+    fn side_unconstrained(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        side: usize,
+    ) -> bool {
+        self.flags[Self::index(st, scan, left, right, side)]
+            == SIDE_PREFIX_UNCONSTRAINED
+    }
+
+    fn has_dirty_unknown_index(&self, index: usize) -> bool {
+        self.flags[index] & SIDE_PREFIX_HAS_DIRTY_UNKNOWN != 0
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct SidePrefixNode {
+    side: usize,
+    st: usize,
+    scan: usize,
+    left: usize,
+    right: usize,
+    prefix: SidePrefix,
+}
+
 /// Bit `p` of `possible[state]` is set when the transition graph admits a
 /// run from the blank initial configuration to `state` with
 /// `p == (# nonblank tape cells mod 2)`.
@@ -779,6 +1060,20 @@ where
         return Refuted(0);
     }
 
+    // Side-prefix propagation is substantially more expensive than the older
+    // summaries. Build it only after every pre-existing target filter has
+    // failed to refute the query, so easy programs pay no prefix fixed-point
+    // cost at all.
+    let side_prefix_possible = prog
+        .side_prefix_possible_from_blank(&win_possible, &side_possible);
+    configs.retain(|Config { state, tape }| {
+        tape.obeys_side_prefix_possible(*state, &side_prefix_possible)
+    });
+
+    if configs.is_empty() {
+        return Refuted(0);
+    }
+
     let mut blanks = get_blanks(&configs);
 
     // In cycle mode, exact repeats are ordinary graph cycles and can be
@@ -848,6 +1143,7 @@ where
             &mut blanks,
             &win_possible,
             &side_possible,
+            &side_prefix_possible,
             &blank_side_possible,
             &color_tail_count,
             &pair_tail_presence,
@@ -1205,6 +1501,7 @@ fn step_instrs<
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
+    side_prefix_possible: &SidePrefixPossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -1306,6 +1603,8 @@ fn step_instrs<
                 color_tail_count,
                 pair_tail_presence,
             )
+            || !tape
+                .obeys_side_prefix_possible(state, side_prefix_possible)
         {
             continue;
         }
@@ -1328,6 +1627,7 @@ fn step_configs<
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
+    side_prefix_possible: &SidePrefixPossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -1359,6 +1659,7 @@ fn step_configs<
                 blanks,
                 win_possible,
                 side_possible,
+                side_prefix_possible,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -1385,6 +1686,7 @@ fn step_configs<
                 blanks,
                 win_possible,
                 side_possible,
+                side_prefix_possible,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -1407,6 +1709,7 @@ fn step_configs<
             blanks,
             win_possible,
             side_possible,
+            side_prefix_possible,
             blank_side_possible,
             color_tail_count,
             pair_tail_presence,
@@ -2235,6 +2538,282 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         q.push_back((ns, left, new_left, pr));
                     }
                 }
+            }
+        }
+
+        possible
+    }
+
+    /// Reachable two-run prefixes strictly beyond each immediate neighbor.
+    ///
+    /// The two sides are projected independently to keep the lattice small,
+    /// but every alternative remains conditioned on the same exact
+    /// `(state, left, scan, right)` window. Moving away from the tracked side
+    /// prepends the old immediate neighbor; moving into it consumes one cell
+    /// from the prefix. Once two complete runs have been retained, farther
+    /// structure is forgotten only as the exact blank/dirty remainder status.
+    #[expect(clippy::cast_possible_truncation)]
+    fn side_prefix_possible_from_blank(
+        &self,
+        windows: &WinPossible<s, c>,
+        sides: &SidePossible<s, c>,
+    ) -> SidePrefixPossible<s, c> {
+        let mut trans = [[None; c]; s];
+        for ((state, read), &(print, shift, next_state)) in self.iter()
+        {
+            trans[state as usize][read as usize] =
+                Some((print as usize, shift, next_state as usize));
+        }
+
+        // The newly exposed opposite-side neighbor depends only on the exact
+        // source window, not on which prefix alternative is being propagated.
+        // Cache that intersection once per window instead of repeating the
+        // SidePossible/WinPossible lookup for every worklist node.
+        let mut exposed = vec![0_u64; s * c * c * c];
+        for st in 0..s {
+            for scan in 0..c {
+                let Some((print, shift, tr)) = trans[st][scan] else {
+                    continue;
+                };
+                for left in 0..c {
+                    for right in 0..c {
+                        if windows.right[st][scan][left]
+                            & (1_u64 << right)
+                            == 0
+                        {
+                            continue;
+                        }
+
+                        let source =
+                            sides.window(st, scan, left, right);
+                        let index =
+                            SidePrefixPossible::<s, c>::window_index(
+                                st, scan, left, right,
+                            );
+                        exposed[index] = if shift {
+                            source.pairs[RIGHT_SIDE][right]
+                                & windows.right[tr][right][print]
+                        } else {
+                            source.pairs[LEFT_SIDE][left]
+                                & windows.left[tr][left][print]
+                        };
+                    }
+                }
+            }
+        }
+
+        let mut possible = SidePrefixPossible::new();
+        let mut q = VecDeque::new();
+
+        #[expect(clippy::shadow_unrelated)]
+        let push =
+            |side: usize,
+             st: usize,
+             scan: usize,
+             left: usize,
+             right: usize,
+             prefix: SidePrefix,
+             possible: &mut SidePrefixPossible<s, c>,
+             q: &mut VecDeque<SidePrefixNode>| {
+                if windows.right[st][scan][left] & (1_u64 << right) == 0
+                {
+                    return;
+                }
+
+                let index = SidePrefixPossible::<s, c>::index(
+                    st, scan, left, right, side,
+                );
+                let flags = possible.flags[index];
+
+                // Once both broad alternatives are present, this exact side is
+                // universal and no later prefix can add information.
+                if flags == SIDE_PREFIX_UNCONSTRAINED {
+                    return;
+                }
+
+                let blank = prefix == SidePrefix::blank();
+                let dirty_unknown =
+                    prefix == SidePrefix::dirty_unknown();
+
+                if blank {
+                    if flags & SIDE_PREFIX_HAS_BLANK != 0 {
+                        return;
+                    }
+                    possible.flags[index] |= SIDE_PREFIX_HAS_BLANK;
+                } else if dirty_unknown {
+                    if flags & SIDE_PREFIX_HAS_DIRTY_UNKNOWN != 0 {
+                        return;
+                    }
+
+                    // `dirty_unknown()` subsumes every specific dirty prefix. The
+                    // only incomparable alternative is exact blank, so discard all
+                    // specifics in one pass and remember the broad state in a flag.
+                    possible.flags[index] |=
+                        SIDE_PREFIX_HAS_DIRTY_UNKNOWN;
+                    possible.windows[index]
+                        .retain(|&old| old == SidePrefix::blank());
+                } else {
+                    // Any specific nonblank prefix is already covered by the broad
+                    // dirty alternative. Otherwise only exact deduplication is
+                    // needed; there are no other subsumption relations.
+                    if flags & SIDE_PREFIX_HAS_DIRTY_UNKNOWN != 0
+                        || possible.windows[index].contains(&prefix)
+                    {
+                        return;
+                    }
+                }
+
+                possible.windows[index].push(prefix);
+
+                q.push_back(SidePrefixNode {
+                    side,
+                    st,
+                    scan,
+                    left,
+                    right,
+                    prefix,
+                });
+            };
+
+        for side in [LEFT_SIDE, RIGHT_SIDE] {
+            push(
+                side,
+                0,
+                0,
+                0,
+                0,
+                SidePrefix::blank(),
+                &mut possible,
+                &mut q,
+            );
+        }
+
+        while let Some(node) = q.pop_front() {
+            let SidePrefixNode {
+                side,
+                st,
+                scan,
+                left,
+                right,
+                prefix,
+            } = node;
+
+            // The only event that can remove a queued specific prefix is
+            // arrival of `dirty_unknown()`. Test that cached flag in O(1)
+            // instead of rescanning the antichain for every popped node.
+            let index = SidePrefixPossible::<s, c>::index(
+                st, scan, left, right, side,
+            );
+            if prefix != SidePrefix::blank()
+                && prefix != SidePrefix::dirty_unknown()
+                && possible.has_dirty_unknown_index(index)
+            {
+                continue;
+            }
+
+            let Some((print, shift, tr)) = trans[st][scan] else {
+                continue;
+            };
+
+            match (side, shift) {
+                // Track the left side while moving Right: the printed old head
+                // becomes the new immediate neighbor and the old left neighbor
+                // is prepended to the retained tail.
+                (LEFT_SIDE, true) => {
+                    let window =
+                        SidePrefixPossible::<s, c>::window_index(
+                            st, scan, left, right,
+                        );
+                    let new_rights = exposed[window];
+                    prefix.for_each_prepend(
+                        left as Color,
+                        |next_prefix| {
+                            let mut colors = new_rights;
+                            while colors != 0 {
+                                let new_right =
+                                    colors.trailing_zeros() as usize;
+                                colors &= colors - 1;
+                                push(
+                                    side,
+                                    tr,
+                                    right,
+                                    print,
+                                    new_right,
+                                    next_prefix,
+                                    &mut possible,
+                                    &mut q,
+                                );
+                            }
+                        },
+                    );
+                },
+
+                // Track the left side while moving Left: old `left` becomes
+                // scanned and one cell from its farther tail becomes the new
+                // immediate left neighbor.
+                (LEFT_SIDE, false) => {
+                    prefix.for_each_pull::<c>(
+                        |new_left, next_prefix| {
+                            push(
+                                side,
+                                tr,
+                                left,
+                                usize::from(new_left),
+                                print,
+                                next_prefix,
+                                &mut possible,
+                                &mut q,
+                            );
+                        },
+                    );
+                },
+
+                // Right-side symmetric cases.
+                (RIGHT_SIDE, false) => {
+                    let window =
+                        SidePrefixPossible::<s, c>::window_index(
+                            st, scan, left, right,
+                        );
+                    let new_lefts = exposed[window];
+                    prefix.for_each_prepend(
+                        right as Color,
+                        |next_prefix| {
+                            let mut colors = new_lefts;
+                            while colors != 0 {
+                                let new_left =
+                                    colors.trailing_zeros() as usize;
+                                colors &= colors - 1;
+                                push(
+                                    side,
+                                    tr,
+                                    left,
+                                    new_left,
+                                    print,
+                                    next_prefix,
+                                    &mut possible,
+                                    &mut q,
+                                );
+                            }
+                        },
+                    );
+                },
+                (RIGHT_SIDE, true) => {
+                    prefix.for_each_pull::<c>(
+                        |new_right, next_prefix| {
+                            push(
+                                side,
+                                tr,
+                                right,
+                                print,
+                                usize::from(new_right),
+                                next_prefix,
+                                &mut possible,
+                                &mut q,
+                            );
+                        },
+                    );
+                },
+                _ => unreachable!(),
             }
         }
 
@@ -3979,6 +4558,341 @@ impl Tape {
         }
     }
 
+    /// Match the ordered two-run forward prefixes on both sides against one
+    /// compatible exact local window.
+    fn obeys_side_prefix_possible<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &SidePrefixPossible<S, C>,
+    ) -> bool {
+        #[derive(Clone, Copy)]
+        struct ReqRun {
+            color: Color,
+            min: u16,
+            max: Option<u16>,
+        }
+
+        impl ReqRun {
+            const EMPTY: Self = Self {
+                color: 0,
+                min: 0,
+                max: Some(0),
+            };
+        }
+
+        #[derive(Clone, Copy)]
+        struct Requirement {
+            // Only the first two runs can be compared with a SidePrefix.
+            runs: [ReqRun; 2],
+
+            // Number of explicit residual runs, capped at two. This is enough
+            // to answer whether a prefix of length 0..=2 extends past them.
+            run_count: u8,
+
+            // `suffix_nonblank[i]` says some explicit nonblank residual run
+            // occurs at position i or farther, for i in 0..=2. Position 2
+            // summarizes every run beyond the two retained descriptors.
+            suffix_nonblank: [bool; 3],
+            end_unknown: bool,
+        }
+
+        impl Requirement {
+            const EMPTY: Self = Self {
+                runs: [ReqRun::EMPTY; 2],
+                run_count: 0,
+                suffix_nonblank: [false; 3],
+                end_unknown: false,
+            };
+
+            const fn unconstrained(self) -> bool {
+                self.run_count == 0 && self.end_unknown
+            }
+        }
+
+        #[derive(Clone, Copy)]
+        struct RequirementSet {
+            reqs: [Requirement; 2],
+            len: u8,
+            unconstrained: bool,
+        }
+
+        #[derive(Clone, Copy)]
+        enum FirstResidual {
+            Keep,
+            Drop,
+            Replace(BlockCount),
+        }
+
+        fn req_run(color: Color, count: BlockCount) -> ReqRun {
+            match count {
+                BlockCount::Exact(count) => ReqRun {
+                    color,
+                    min: u16::from(count),
+                    max: Some(u16::from(count)),
+                },
+                BlockCount::AtLeast(count) => ReqRun {
+                    color,
+                    min: u16::from(count),
+                    max: None,
+                },
+            }
+        }
+
+        fn requirement(
+            span: &Span,
+            first: FirstResidual,
+        ) -> Requirement {
+            let end_unknown = span.end == TapeEnd::Unknown;
+            let block_count = span.span.len();
+            let trim_far_zero = !end_unknown
+                && span
+                    .span
+                    .iter()
+                    .next_back()
+                    .is_some_and(|block| block.color == 0);
+
+            let mut out = Requirement {
+                end_unknown,
+                ..Requirement::EMPTY
+            };
+            let mut count = 0_usize;
+
+            for (source_index, block) in span.span.iter().enumerate() {
+                if trim_far_zero && source_index + 1 == block_count {
+                    continue;
+                }
+
+                let residual = if source_index == 0 {
+                    match first {
+                        FirstResidual::Keep => Some(block.count),
+                        FirstResidual::Drop => None,
+                        FirstResidual::Replace(count) => Some(count),
+                    }
+                } else {
+                    Some(block.count)
+                };
+
+                let Some(residual) = residual else {
+                    continue;
+                };
+
+                if count < 2 {
+                    out.runs[count] = req_run(block.color, residual);
+                }
+
+                if block.color != 0 {
+                    let highest = count.min(2);
+                    for from in 0..=highest {
+                        out.suffix_nonblank[from] = true;
+                    }
+                }
+
+                count += 1;
+            }
+
+            out.run_count = count.min(2) as u8;
+
+            // With an unknown tape end, the final explicit run may continue
+            // into that end with the same color. Preserve the old unbounded
+            // upper-bound semantics without building a temporary Vec.
+            if end_unknown && (1..=2).contains(&count) {
+                out.runs[count - 1].max = None;
+            }
+
+            out
+        }
+
+        fn requirements(span: &Span) -> RequirementSet {
+            let Some(first) = span.span.first() else {
+                let req = requirement(span, FirstResidual::Keep);
+                return RequirementSet {
+                    reqs: [req, Requirement::EMPTY],
+                    len: 1,
+                    unconstrained: req.unconstrained(),
+                };
+            };
+
+            let (first_mode, second_mode) = match first.count {
+                BlockCount::Exact(1) => (FirstResidual::Drop, None),
+                BlockCount::Exact(count) => (
+                    FirstResidual::Replace(BlockCount::Exact(
+                        count - 1,
+                    )),
+                    None,
+                ),
+                BlockCount::AtLeast(1) => (
+                    FirstResidual::Drop,
+                    Some(FirstResidual::Replace(BlockCount::AtLeast(
+                        1,
+                    ))),
+                ),
+                BlockCount::AtLeast(count) => (
+                    FirstResidual::Replace(BlockCount::AtLeast(
+                        count - 1,
+                    )),
+                    None,
+                ),
+            };
+
+            let first = requirement(span, first_mode);
+            let mut out = RequirementSet {
+                reqs: [first, Requirement::EMPTY],
+                len: 1,
+                unconstrained: first.unconstrained(),
+            };
+
+            if let Some(second_mode) = second_mode {
+                let second = requirement(span, second_mode);
+                out.reqs[1] = second;
+                out.len = 2;
+                out.unconstrained |= second.unconstrained();
+            }
+
+            out
+        }
+
+        fn count_bounds(count: u8) -> (u16, Option<u16>) {
+            match count {
+                1..=3 => (u16::from(count), Some(u16::from(count))),
+                SIDE_PREFIX_MANY => (u16::from(SIDE_PREFIX_MANY), None),
+                _ => unreachable!(),
+            }
+        }
+
+        const fn intervals_overlap(
+            a_min: u16,
+            a_max: Option<u16>,
+            b_min: u16,
+            b_max: Option<u16>,
+        ) -> bool {
+            let a_before_b = matches!(a_max, Some(max) if max < b_min);
+            let b_before_a = matches!(b_max, Some(max) if max < a_min);
+            !a_before_b && !b_before_a
+        }
+
+        fn matches(prefix: SidePrefix, req: Requirement) -> bool {
+            let prefix_len = prefix.len as usize;
+            let req_len = req.run_count as usize;
+            let common = prefix_len.min(req_len);
+
+            for index in 0..common {
+                let req_run = req.runs[index];
+                let run = prefix.runs[index];
+                if run.color != req_run.color {
+                    return false;
+                }
+                let (min, max) = count_bounds(run.count);
+                if !intervals_overlap(
+                    min,
+                    max,
+                    req_run.min,
+                    req_run.max,
+                ) {
+                    return false;
+                }
+            }
+
+            if prefix_len > req_len {
+                // The backward description can supply additional run
+                // structure only when its explicit prefix ends in `?`.
+                return req.end_unknown;
+            }
+
+            if prefix.rest_blank {
+                !req.suffix_nonblank[prefix_len]
+            } else {
+                req.end_unknown || req.suffix_nonblank[prefix_len]
+            }
+        }
+
+        fn matches_side<const S: usize, const C: usize>(
+            possible: &SidePrefixPossible<S, C>,
+            st: usize,
+            sc: usize,
+            left: usize,
+            right: usize,
+            side: usize,
+            reqs: RequirementSet,
+        ) -> bool {
+            let prefixes = possible.prefixes(st, sc, left, right, side);
+            if prefixes.is_empty() {
+                return false;
+            }
+
+            // Either the backward side or the forward antichain is universal.
+            if reqs.unconstrained
+                || possible
+                    .side_unconstrained(st, sc, left, right, side)
+            {
+                return true;
+            }
+
+            prefixes.iter().copied().any(|prefix| {
+                (0..usize::from(reqs.len))
+                    .any(|index| matches(prefix, reqs.reqs[index]))
+            })
+        }
+
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        let candidate_unconstrained = |left: usize, right: usize| {
+            possible.side_unconstrained(st, sc, left, right, LEFT_SIDE)
+                && possible
+                    .side_unconstrained(st, sc, left, right, RIGHT_SIDE)
+        };
+
+        // Before compiling either backward span, look for an exact reachable
+        // window whose two forward side antichains are already universal. This
+        // also handles unknown immediate neighbors and is common once the
+        // two-run horizon has been crossed.
+        let has_unconstrained_window = match (known_left, known_right) {
+            (Some(left), Some(right)) => {
+                candidate_unconstrained(left, right)
+            },
+            (Some(left), None) => {
+                (0..C).any(|right| candidate_unconstrained(left, right))
+            },
+            (None, Some(right)) => {
+                (0..C).any(|left| candidate_unconstrained(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| candidate_unconstrained(left, right))
+            }),
+        };
+        if has_unconstrained_window {
+            return true;
+        }
+
+        // Fixed-size requirement compilation: no Vec construction, cloning,
+        // or per-configuration heap allocation remains on this hot path.
+        let left_req = requirements(&self.lspan);
+        let right_req = requirements(&self.rspan);
+
+        let matches_window = |left: usize, right: usize| {
+            matches_side(
+                possible, st, sc, left, right, LEFT_SIDE, left_req,
+            ) && matches_side(
+                possible, st, sc, left, right, RIGHT_SIDE, right_req,
+            )
+        };
+
+        match (known_left, known_right) {
+            (Some(left), Some(right)) => matches_window(left, right),
+            (Some(left), None) => {
+                (0..C).any(|right| matches_window(left, right))
+            },
+            (None, Some(right)) => {
+                (0..C).any(|left| matches_window(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| matches_window(left, right))
+            }),
+        }
+    }
+
     /// Enforce sides proved to contain blanks only.
     ///
     /// Merely changing an unknown end to `0+` is insufficient when an
@@ -4775,6 +5689,82 @@ fn test_state_side_window_conditioning() {
 
     let cross_window_union_only: Tape = "0+ 1^2 [0] 0+".into();
     assert!(!cross_window_union_only.obeys_state_side(0, &sides));
+}
+
+#[test]
+fn test_side_prefix_dirty_unknown_subsumption() {
+    let dirty = SidePrefix::dirty_unknown();
+    let blank = SidePrefix::blank();
+    let one = SidePrefix {
+        runs: [
+            SidePrefixRun { color: 1, count: 1 },
+            SidePrefixRun::EMPTY,
+        ],
+        len: 1,
+        rest_blank: true,
+    };
+    let dirty_zero = SidePrefix {
+        runs: [
+            SidePrefixRun { color: 0, count: 1 },
+            SidePrefixRun::EMPTY,
+        ],
+        len: 1,
+        rest_blank: false,
+    };
+
+    assert!(dirty.subsumes(dirty));
+    assert!(dirty.subsumes(one));
+    assert!(dirty.subsumes(dirty_zero));
+    assert!(!dirty.subsumes(blank));
+    assert!(!blank.subsumes(one));
+}
+
+#[test]
+fn test_side_prefix_prunes_blank_example_branch() {
+    let prog = Prog::<2, 4>::from("1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let sides = prog.side_possible_from_blank(&windows);
+    let prefixes =
+        prog.side_prefix_possible_from_blank(&windows, &sides);
+
+    // This is the late B0 branch from the blank trace. The immediate window
+    // `1 [0] 2` is locally reachable, and the whole-side summaries admit all
+    // of its colors/pairs separately, but no compatible forward prefix has a
+    // single 3 beyond the right-neighbor 2 followed immediately by blank.
+    let branch: Tape = "0+ 1 [0] 2 3 0+".into();
+    assert!(!branch.obeys_side_prefix_possible(1, &prefixes));
+}
+
+#[test]
+fn test_ordered_side_prefix_pruning() {
+    // Walk right while writing 1,2,3. At D0 the exact local window is
+    // `3 [0] 0`; strictly beyond the immediate left neighbor the ordered runs
+    // are exactly `2, 1`, followed by blank tape.
+    let prog = Prog::<4, 4>::from(
+        "1RB ... ... ...  2RC ... ... ...  3RD ... ... ...  ... ... ... ...",
+    );
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let sides = prog.side_possible_from_blank(&windows);
+    let prefixes =
+        prog.side_prefix_possible_from_blank(&windows, &sides);
+
+    let actual: Tape = "0+ 1 2 3 [0] 0+".into();
+    assert!(actual.obeys_side_prefix_possible(3, &prefixes));
+
+    // Same colors and same immediate window, but the two farther runs are in
+    // the wrong order. Whole-side color/pair unions can join this away; the
+    // ordered prefix cannot.
+    let wrong_order: Tape = "0+ 2 1 3 [0] 0+".into();
+    assert!(!wrong_order.obeys_side_prefix_possible(3, &prefixes));
+
+    // The forward prefix also knows that the second retained run reaches the
+    // blank end; an additional nonblank farther out is impossible.
+    let hidden_nonblank: Tape = "0+ 2 1 2 3 [0] 0+".into();
+    assert!(!hidden_nonblank.obeys_side_prefix_possible(3, &prefixes));
 }
 
 #[test]
