@@ -142,15 +142,52 @@ fn cps_cant_reach(
     goal: Goal,
     configs: &mut Configs,
 ) -> bool {
-    // Level 0 is the legacy abstraction.  A reachable abstract goal is
-    // the only outcome that enables the next, strictly finer level.
+    // Run each expensive refinement independently so one state-space blow-up
+    // does not prevent a qualitatively different quotient from being tried.
+    let mut saw_counterexample = false;
+
     for refinement_level in 0..=TAIL_SIG_REFINEMENTS.len() {
         configs.refinement_level = refinement_level;
+        configs.color_refinement = false;
+        configs.skeleton_refinement = false;
 
         match cps_cant_reach_obs(prog, rad, goal, &mut NoObs, configs) {
             CpsOutcome::Proved => return true,
-            CpsOutcome::Counterexample => {},
-            CpsOutcome::Inconclusive => return false,
+            CpsOutcome::Counterexample => saw_counterexample = true,
+            CpsOutcome::Inconclusive => break,
+        }
+    }
+
+    if saw_counterexample {
+        // Per-color supply is useful for Blank/Spinout and is also tested as
+        // a final Halt refinement.  For Halt it constrains continuation reuse
+        // but is not part of the halt predicate.
+        configs.refinement_level = 0;
+        configs.color_refinement = true;
+        configs.skeleton_refinement = false;
+
+        if matches!(
+            cps_cant_reach_obs(prog, rad, goal, &mut NoObs, configs),
+            CpsOutcome::Proved
+        ) {
+            return true;
+        }
+
+        // Blank gets one additional independent quotient: the first two
+        // semantic-nonblank colors on each hidden ray, in boundary order.
+        if matches!(goal, Blank) {
+            configs.refinement_level = 0;
+            configs.color_refinement = false;
+            configs.skeleton_refinement = true;
+
+            if matches!(
+                cps_cant_reach_obs(
+                    prog, rad, goal, &mut NoObs, configs
+                ),
+                CpsOutcome::Proved
+            ) {
+                return true;
+            }
         }
     }
 
@@ -164,10 +201,13 @@ fn cps_cant_quasihalt(
     configs: &mut Configs,
     scratch: &mut QuasihaltScratch,
 ) -> bool {
-    // The same refinement ladder is applied to both a reachable halt and
-    // a surviving avoidable-state trap in the quasihalt graph.
+    // First run the existing signature ladder.  If none decides, build one
+    // independent per-color refined Halt graph and feed it through exactly
+    // the same quasihalt SCC analysis.
     for refinement_level in 0..=TAIL_SIG_REFINEMENTS.len() {
         configs.refinement_level = refinement_level;
+        configs.color_refinement = false;
+        configs.skeleton_refinement = false;
         scratch.graph.reset();
 
         match cps_cant_reach_obs(
@@ -179,23 +219,12 @@ fn cps_cant_quasihalt(
         ) {
             CpsOutcome::Proved => {},
             CpsOutcome::Counterexample => continue,
-            CpsOutcome::Inconclusive => return false,
+            CpsOutcome::Inconclusive => break,
         }
 
         scratch.graph.dedup_edges();
-
-        // A positive functional result is final.  A negative result still
-        // goes through SCC refinement, which may reject a spurious monotone
-        // CPS cycle that cannot persist on fresh canonical-zero cells.
-        if scratch.graph.cant_quasihalt_functional_fastpath(
-            ignored_state,
-            &mut scratch.analysis,
-        ) == Some(true)
-        {
-            return true;
-        }
-
-        if scratch.graph.cant_quasihalt_no_avoidable_state_cycle(
+        if quasihalt_graph_proves(
+            &scratch.graph,
             ignored_state,
             &mut scratch.analysis,
         ) {
@@ -203,7 +232,47 @@ fn cps_cant_quasihalt(
         }
     }
 
+    configs.refinement_level = 0;
+    configs.color_refinement = true;
+    configs.skeleton_refinement = false;
+    scratch.graph.reset();
+
+    if matches!(
+        cps_cant_reach_obs(
+            prog,
+            rad,
+            Halt,
+            &mut scratch.graph,
+            configs,
+        ),
+        CpsOutcome::Proved
+    ) {
+        scratch.graph.dedup_edges();
+        return quasihalt_graph_proves(
+            &scratch.graph,
+            ignored_state,
+            &mut scratch.analysis,
+        );
+    }
+
     false
+}
+
+fn quasihalt_graph_proves(
+    graph: &GraphObs,
+    ignored_state: Option<u8>,
+    analysis: &mut QuasihaltAnalysisScratch,
+) -> bool {
+    if graph.cant_quasihalt_functional_fastpath(ignored_state, analysis)
+        == Some(true)
+    {
+        return true;
+    }
+
+    graph.cant_quasihalt_no_avoidable_state_cycle(
+        ignored_state,
+        analysis,
+    )
 }
 
 /**************************************/
@@ -256,8 +325,28 @@ fn cps_cant_reach_obs(
         // later pull cannot combine the color from one occurrence with the
         // tail evidence from another.
         let refinement_level = configs.refinement_level;
+        let color_refinement = configs.color_refinement;
+        let skeleton_refinement = configs.skeleton_refinement;
         let push_tail_nz =
             if shift { tape.left_nz } else { tape.right_nz };
+        let push_tail_colors = if color_refinement {
+            if shift {
+                tape.left_colors
+            } else {
+                tape.right_colors
+            }
+        } else {
+            ColorSummary::default()
+        };
+        let push_tail_skeleton = if skeleton_refinement {
+            if shift {
+                tape.left_skeleton
+            } else {
+                tape.right_skeleton
+            }
+        } else {
+            NonblankSkeleton::default()
+        };
         let push_tail_sig =
             if shift { tape.left_sig } else { tape.right_sig };
         let push_tail_parity = match goal {
@@ -278,6 +367,8 @@ fn cps_cant_reach_obs(
             push_tail_nz,
             push_tail_parity,
             push_tail_sig,
+            push_tail_colors,
+            push_tail_skeleton,
         );
 
         let dropped = push.push(print, &mut configs.span_pool);
@@ -291,35 +382,48 @@ fn cps_cant_reach_obs(
                 tape.right_sig.prepend(dropped, refinement_level);
         }
 
-        match goal {
-            Halt => {},
-            Blank | Spinout => {
-                let dropped_nz = match goal {
-                    // For blank, nz means nonblank in the base alphabet.
-                    Blank => !prog.is_blank(dropped),
-                    // Spinout distinguishes canonical macro-zero from
-                    // nonzero.  In particular, history-decorated blank
-                    // colors are not interchangeable with a canonical
-                    // blank ray.
-                    Spinout => dropped != 0,
-                    Halt => unreachable!(),
-                };
+        let dropped_goal_nonblank = match goal {
+            Blank => !prog.is_blank(dropped),
+            Spinout => dropped != 0,
+            Halt => false,
+        };
+        let dropped_color_tracked = color_refinement
+            && match goal {
+                Blank => !prog.is_blank(dropped),
+                Spinout | Halt => dropped != 0,
+            };
 
-                // The pushed-away cell becomes part of the hidden ray.
-                // Keep an uncapped lower bound on how many known nonzero
-                // cells are hidden on each side.
-                if shift {
-                    tape.left_nz =
-                        tape.left_nz.saturating_add(dropped_nz.into());
-
-                    tape.left_parity ^= dropped_nz;
-                } else {
-                    tape.right_nz =
-                        tape.right_nz.saturating_add(dropped_nz.into());
-
-                    tape.right_parity ^= dropped_nz;
-                }
-            },
+        // The pushed-away cell becomes part of the hidden ray.
+        if shift {
+            if !matches!(goal, Halt) {
+                tape.left_nz = tape
+                    .left_nz
+                    .saturating_add(dropped_goal_nonblank.into());
+                tape.left_parity ^= dropped_goal_nonblank;
+            }
+            if dropped_color_tracked {
+                tape.left_colors.add_nonblank(dropped);
+            }
+            if skeleton_refinement && matches!(goal, Blank) {
+                tape.left_skeleton = tape
+                    .left_skeleton
+                    .prepend(dropped, !prog.is_blank(dropped));
+            }
+        } else {
+            if !matches!(goal, Halt) {
+                tape.right_nz = tape
+                    .right_nz
+                    .saturating_add(dropped_goal_nonblank.into());
+                tape.right_parity ^= dropped_goal_nonblank;
+            }
+            if dropped_color_tracked {
+                tape.right_colors.add_nonblank(dropped);
+            }
+            if skeleton_refinement && matches!(goal, Blank) {
+                tape.right_skeleton = tape
+                    .right_skeleton
+                    .prepend(dropped, !prog.is_blank(dropped));
+            }
         }
 
         // These whole-window predicates do not depend on which
@@ -357,12 +461,16 @@ fn cps_cant_reach_obs(
                 $color:expr,
                 $tail_nz:expr,
                 $tail_parity:expr,
-                $tail_sig:expr
+                $tail_sig:expr,
+                $tail_colors:expr,
+                $tail_skeleton:expr
             ) => {{
                 let color = $color;
                 let tail_nz = $tail_nz;
                 let tail_parity = $tail_parity;
                 let tail_sig = $tail_sig;
+                let tail_colors = $tail_colors;
+                let tail_skeleton = $tail_skeleton;
 
                 let current_sig =
                     if shift { tape.right_sig } else { tape.left_sig };
@@ -380,12 +488,94 @@ fn cps_cant_reach_obs(
                     (tail_sig, tape.right_sig)
                 };
 
-                let (left_nz, right_nz, left_parity, right_parity) =
-                    match goal {
-                        // Halt and quasihalt do not use hidden nonzero evidence.
-                        // Keeping all summaries zero avoids splitting otherwise
-                        // identical CPS configurations.
-                        Halt => (0, 0, false, false),
+                let current_colors = if color_refinement {
+                    if shift { tape.right_colors } else { tape.left_colors }
+                } else {
+                    ColorSummary::default()
+                };
+
+                let entered_color_tracked = color_refinement
+                    && match goal {
+                        Blank => !prog.is_blank(color),
+                        Spinout | Halt => color != 0,
+                    };
+                let current_tail_colors = current_colors
+                    .tail_after_entering(color, entered_color_tracked);
+                if color_refinement
+                    && !current_tail_colors.same_parity(&tail_colors)
+                {
+                    continue;
+                }
+                let next_tail_colors = if color_refinement {
+                    current_tail_colors.merge_lower(tail_colors)
+                } else {
+                    ColorSummary::default()
+                };
+
+                if skeleton_refinement {
+                    debug_assert!(matches!(goal, Blank));
+                    let current_skeleton = if shift {
+                        tape.right_skeleton
+                    } else {
+                        tape.left_skeleton
+                    };
+                    if !current_skeleton.compatible_tail(
+                        color,
+                        !prog.is_blank(color),
+                        tail_skeleton,
+                    ) {
+                        continue;
+                    }
+                }
+
+                let (left_skeleton, right_skeleton) =
+                    if skeleton_refinement {
+                        if shift {
+                            (tape.left_skeleton, tail_skeleton)
+                        } else {
+                            (tail_skeleton, tape.right_skeleton)
+                        }
+                    } else {
+                        (
+                            NonblankSkeleton::default(),
+                            NonblankSkeleton::default(),
+                        )
+                    };
+
+                let (
+                    left_nz,
+                    right_nz,
+                    left_parity,
+                    right_parity,
+                    left_colors,
+                    right_colors,
+                ) = match goal {
+                        // Halt/quasihalt keep total nz/parity disabled, but
+                        // the independent per-color pass retains scarce-color
+                        // supply solely to constrain continuation composition.
+                        Halt => {
+                            let (left_colors, right_colors) =
+                                if color_refinement {
+                                    if shift {
+                                        (tape.left_colors, next_tail_colors)
+                                    } else {
+                                        (next_tail_colors, tape.right_colors)
+                                    }
+                                } else {
+                                    (
+                                        ColorSummary::default(),
+                                        ColorSummary::default(),
+                                    )
+                                };
+                            (
+                                0,
+                                0,
+                                false,
+                                false,
+                                left_colors,
+                                right_colors,
+                            )
+                        },
                         Blank => {
                             let entered_nz = !prog.is_blank(color);
 
@@ -434,6 +624,12 @@ fn cps_cant_reach_obs(
                                     next_tail_nz,
                                     tape.left_parity,
                                     tail_parity,
+                                    if color_refinement {
+                                        tape.left_colors
+                                    } else {
+                                        ColorSummary::default()
+                                    },
+                                    next_tail_colors,
                                 )
                             } else {
                                 (
@@ -441,6 +637,12 @@ fn cps_cant_reach_obs(
                                     tape.right_nz,
                                     tail_parity,
                                     tape.right_parity,
+                                    next_tail_colors,
+                                    if color_refinement {
+                                        tape.right_colors
+                                    } else {
+                                        ColorSummary::default()
+                                    },
                                 )
                             }
                         },
@@ -488,6 +690,12 @@ fn cps_cant_reach_obs(
                                     next_tail_nz,
                                     tape.left_parity,
                                     tail_parity,
+                                    if color_refinement {
+                                        tape.left_colors
+                                    } else {
+                                        ColorSummary::default()
+                                    },
+                                    next_tail_colors,
                                 )
                             } else {
                                 (
@@ -495,6 +703,12 @@ fn cps_cant_reach_obs(
                                     tape.right_nz,
                                     tail_parity,
                                     tape.right_parity,
+                                    next_tail_colors,
+                                    if color_refinement {
+                                        tape.right_colors
+                                    } else {
+                                        ColorSummary::default()
+                                    },
                                 )
                             }
                         },
@@ -508,6 +722,12 @@ fn cps_cant_reach_obs(
                             && right_nz == 0
                             && !left_parity
                             && !right_parity
+                            && (!color_refinement
+                                || (left_colors.is_empty()
+                                    && right_colors.is_empty()))
+                            && (!skeleton_refinement
+                                || (left_skeleton.is_empty()
+                                    && right_skeleton.is_empty()))
                     },
                     Spinout => {
                         // The transition must itself be the state's blank
@@ -515,18 +735,34 @@ fn cps_cant_reach_obs(
                         // nonblank cell does not imply that the next step
                         // repeats the same instruction.  Any retained nonzero
                         // evidence ahead also rules out a canonical blank ray.
-                        let (ahead_nz, ahead_parity, ahead_sig) =
-                            if shift {
-                                (right_nz, right_parity, right_sig)
-                            } else {
-                                (left_nz, left_parity, left_sig)
-                            };
+                        let (
+                            ahead_nz,
+                            ahead_parity,
+                            ahead_sig,
+                            ahead_colors,
+                        ) = if shift {
+                            (
+                                right_nz,
+                                right_parity,
+                                right_sig,
+                                right_colors,
+                            )
+                        } else {
+                            (
+                                left_nz,
+                                left_parity,
+                                left_sig,
+                                left_colors,
+                            )
+                        };
 
                         blank_window
                             && color == 0
                             && ahead_nz == 0
                             && !ahead_parity
                             && ahead_sig == TailSig::default()
+                            && (!color_refinement
+                                || ahead_colors.is_empty())
                     },
                     Halt => false,
                 };
@@ -549,6 +785,10 @@ fn cps_cant_reach_obs(
                     right_parity,
                     left_sig,
                     right_sig,
+                    left_colors,
+                    right_colors,
+                    left_skeleton,
+                    right_skeleton,
                 );
 
                 let next_config = Config {
@@ -582,13 +822,17 @@ fn cps_cant_reach_obs(
             tail_nz,
             tail_parity,
             tail_sig,
+            tail_colors,
+            tail_skeleton,
         } in continuations
         {
             process_continuation!(
                 color,
                 tail_nz,
                 tail_parity,
-                tail_sig
+                tail_sig,
+                tail_colors,
+                tail_skeleton
             );
         }
 
@@ -1465,6 +1709,200 @@ impl TailSig {
     }
 }
 
+// `Color` is the compact macro-cell alphabet used by transcript/LRU
+// macros (u8 in this crate), so four words cover every possible color.
+// For Blank we track each semantic-nonblank macro color separately.
+// `one` / `two` are saturated lower bounds >=1 / >=2; `odd` is exact.
+// Distinguishing decorated macro colors is conservative and strictly
+// finer than collapsing all base-nonblank cells into one counter.
+const COLOR_WORDS: usize = 4;
+
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
+/// Per-macro-color lower-bound/parity summary used by the independent
+/// color refinement.  For Blank, tracked colors are those for which
+/// `prog.is_blank(color)` is false; for Spinout and Halt/quasihalt they are
+/// the non-canonical macro colors `color != 0`.
+struct ColorSummary {
+    one: [u64; COLOR_WORDS],
+    two: [u64; COLOR_WORDS],
+    odd: [u64; COLOR_WORDS],
+}
+
+impl ColorSummary {
+    fn bit(color: Color) -> (usize, u64) {
+        let idx = usize::from(color);
+        debug_assert!(idx < COLOR_WORDS * 64);
+        (idx / 64, 1_u64 << (idx % 64))
+    }
+
+    const fn normalize_word(&mut self, word: usize) {
+        // >=2 implies >=1; odd implies >=1; and an even count known to
+        // be >=1 is necessarily >=2.  The lower bound saturates at two.
+        self.one[word] |= self.two[word] | self.odd[word];
+        self.two[word] |= self.one[word] & !self.odd[word];
+        self.one[word] |= self.two[word];
+    }
+
+    fn normalize(&mut self) {
+        for word in 0..COLOR_WORDS {
+            self.normalize_word(word);
+        }
+    }
+
+    fn add_nonblank(&mut self, color: Color) {
+        let (word, bit) = Self::bit(color);
+        if self.one[word] & bit != 0 {
+            self.two[word] |= bit;
+        } else {
+            self.one[word] |= bit;
+        }
+        self.odd[word] ^= bit;
+        self.normalize_word(word);
+    }
+
+    fn tail_after_entering(
+        mut self,
+        color: Color,
+        entered: bool,
+    ) -> Self {
+        if !entered {
+            return self;
+        }
+
+        let (word, bit) = Self::bit(color);
+
+        // The entering cell itself proves that the whole hidden ray has at
+        // least one occurrence of this color.  Combine that fact with exact
+        // parity before subtracting the entering occurrence.
+        self.one[word] |= bit;
+        self.normalize_word(word);
+
+        let was_two = self.two[word] & bit != 0;
+        let was_odd = self.odd[word] & bit != 0;
+        self.odd[word] ^= bit;
+
+        if was_two {
+            self.one[word] |= bit;
+            // >=2 with odd parity means >=3, so after removing one we
+            // still know >=2.  Even >=2 only leaves a >=1 guarantee.
+            if was_odd {
+                self.two[word] |= bit;
+            } else {
+                self.two[word] &= !bit;
+            }
+        } else {
+            self.one[word] &= !bit;
+            self.two[word] &= !bit;
+        }
+
+        self.normalize_word(word);
+        self
+    }
+
+    fn same_parity(&self, other: &Self) -> bool {
+        self.odd == other.odd
+    }
+
+    fn merge_lower(mut self, other: Self) -> Self {
+        debug_assert!(self.same_parity(&other));
+        for word in 0..COLOR_WORDS {
+            self.one[word] |= other.one[word];
+            self.two[word] |= other.two[word];
+        }
+        self.normalize();
+        self
+    }
+
+    fn lower_le(&self, other: &Self) -> bool {
+        self.odd == other.odd
+            && (0..COLOR_WORDS).all(|word| {
+                self.one[word] & !other.one[word] == 0
+                    && self.two[word] & !other.two[word] == 0
+            })
+    }
+
+    fn is_empty(&self) -> bool {
+        self.one.iter().all(|&word| word == 0)
+            && self.two.iter().all(|&word| word == 0)
+            && self.odd.iter().all(|&word| word == 0)
+    }
+}
+
+const SKELETON_LEN: usize = 2;
+
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
+/// First semantic-nonblank colors of a hidden ray, ordered from the
+/// represented-window boundary outward.  `len < SKELETON_LEN` is exact:
+/// the ray contains exactly `len` semantic nonblank colors.  A full skeleton
+/// records only the first `SKELETON_LEN` and may have further nonblanks.
+struct NonblankSkeleton {
+    colors: [Color; SKELETON_LEN],
+    len: u8,
+}
+
+impl NonblankSkeleton {
+    fn prepend(mut self, color: Color, nonblank: bool) -> Self {
+        if !nonblank {
+            return self;
+        }
+
+        let old_len = usize::from(self.len);
+        let copy = old_len.min(SKELETON_LEN.saturating_sub(1));
+        for idx in (0..copy).rev() {
+            self.colors[idx + 1] = self.colors[idx];
+        }
+        self.colors[0] = color;
+        self.len = u8::try_from((old_len + 1).min(SKELETON_LEN))
+            .expect("skeleton length fits in u8");
+        self
+    }
+
+    /// Check whether a learned continuation tail can be the tail obtained
+    /// after the entering color is removed from the current hidden ray.
+    /// If the current skeleton is full, removing its first nonblank leaves
+    /// only a known prefix; the unknown next nonblank is supplied by the
+    /// learned continuation occurrence.
+    fn compatible_tail(
+        self,
+        entering: Color,
+        entering_nonblank: bool,
+        tail: Self,
+    ) -> bool {
+        if !entering_nonblank {
+            return self == tail;
+        }
+
+        let len = usize::from(self.len);
+        if len == 0 || self.colors[0] != entering {
+            return false;
+        }
+
+        if len < SKELETON_LEN {
+            let expected_len = len - 1;
+            if usize::from(tail.len) != expected_len {
+                return false;
+            }
+            return (0..expected_len)
+                .all(|idx| tail.colors[idx] == self.colors[idx + 1]);
+        }
+
+        // Full current skeleton: after removal we know the first K-1 tail
+        // nonblanks but not whether/how the sequence continues.
+        let known = SKELETON_LEN - 1;
+        usize::from(tail.len) >= known
+            && (0..known)
+                .all(|idx| tail.colors[idx] == self.colors[idx + 1])
+    }
+
+    const fn is_empty(self) -> bool {
+        self.len == 0
+    }
+}
+
 type SpanId = usize;
 
 type Colors = Vec<Color>;
@@ -1475,6 +1913,8 @@ struct Continuation {
     tail_nz: usize,
     tail_parity: bool,
     tail_sig: TailSig,
+    tail_colors: ColorSummary,
+    tail_skeleton: NonblankSkeleton,
 }
 
 type Continuations = Vec<Continuation>;
@@ -1497,6 +1937,8 @@ struct HaltConfigShape {
     rspan: Span,
     left_sig: TailSig,
     right_sig: TailSig,
+    left_colors: ColorSummary,
+    right_colors: ColorSummary,
 }
 
 impl From<&Config> for HaltConfigShape {
@@ -1508,6 +1950,8 @@ impl From<&Config> for HaltConfigShape {
             rspan: config.tape.rspan,
             left_sig: config.tape.left_sig,
             right_sig: config.tape.right_sig,
+            left_colors: config.tape.left_colors,
+            right_colors: config.tape.right_colors,
         }
     }
 }
@@ -1520,8 +1964,12 @@ struct ConfigShape {
     rspan: Span,
     left_parity: bool,
     right_parity: bool,
+    left_color_odd: [u64; COLOR_WORDS],
+    right_color_odd: [u64; COLOR_WORDS],
     left_sig: TailSig,
     right_sig: TailSig,
+    left_skeleton: NonblankSkeleton,
+    right_skeleton: NonblankSkeleton,
 }
 
 impl From<&Config> for ConfigShape {
@@ -1533,8 +1981,12 @@ impl From<&Config> for ConfigShape {
             rspan: config.tape.rspan,
             left_parity: config.tape.left_parity,
             right_parity: config.tape.right_parity,
+            left_color_odd: config.tape.left_colors.odd,
+            right_color_odd: config.tape.right_colors.odd,
             left_sig: config.tape.left_sig,
             right_sig: config.tape.right_sig,
+            left_skeleton: config.tape.left_skeleton,
+            right_skeleton: config.tape.right_skeleton,
         }
     }
 }
@@ -1543,6 +1995,8 @@ impl From<&Config> for ConfigShape {
 struct AntichainEntry {
     left_nz: usize,
     right_nz: usize,
+    left_colors: ColorSummary,
+    right_colors: ColorSummary,
     id: ConfigId,
 }
 
@@ -1557,18 +2011,20 @@ enum ConfigInterner {
 impl ConfigInterner {
     fn intern(
         &mut self,
-        config: Config,
+        mut config: Config,
         by_id: &mut Vec<Config>,
         active: &mut Vec<bool>,
         active_count: &mut usize,
     ) -> (ConfigId, bool) {
+        config.tape.left_colors.normalize();
+        config.tape.right_colors.normalize();
+
         match self {
             Self::Exact(seen) => {
                 debug_assert_eq!(config.tape.left_nz, 0);
                 debug_assert_eq!(config.tape.right_nz, 0);
                 debug_assert!(!config.tape.left_parity);
                 debug_assert!(!config.tape.right_parity);
-
                 let shape = HaltConfigShape::from(&config);
                 match seen.entry(shape) {
                     Entry::Occupied(entry) => (*entry.get(), false),
@@ -1594,6 +2050,8 @@ impl ConfigInterner {
                     config.tape.right_nz,
                     config.tape.right_parity,
                 );
+                let left_colors = config.tape.left_colors;
+                let right_colors = config.tape.right_colors;
                 let entries = match seen.entry(shape) {
                     Entry::Occupied(entry) => entry.into_mut(),
                     Entry::Vacant(entry) => {
@@ -1611,6 +2069,8 @@ impl ConfigInterner {
                 if let Some(entry) = entries.iter().find(|entry| {
                     entry.left_nz <= left_nz
                         && entry.right_nz <= right_nz
+                        && entry.left_colors.lower_le(&left_colors)
+                        && entry.right_colors.lower_le(&right_colors)
                 }) {
                     return (entry.id, false);
                 }
@@ -1621,7 +2081,9 @@ impl ConfigInterner {
                 // configuration shape.
                 entries.retain(|entry| {
                     let dominated = left_nz <= entry.left_nz
-                        && right_nz <= entry.right_nz;
+                        && right_nz <= entry.right_nz
+                        && left_colors.lower_le(&entry.left_colors)
+                        && right_colors.lower_le(&entry.right_colors);
 
                     if dominated {
                         debug_assert!(active[entry.id]);
@@ -1640,6 +2102,8 @@ impl ConfigInterner {
                 entries.push(AntichainEntry {
                     left_nz,
                     right_nz,
+                    left_colors,
+                    right_colors,
                     id: next_id,
                 });
 
@@ -1857,6 +2321,8 @@ struct Configs {
     todo: Vec<ConfigId>,
     todo_head: usize,
     refinement_level: usize,
+    color_refinement: bool,
+    skeleton_refinement: bool,
 
     l_watch: Watch,
     r_watch: Watch,
@@ -1882,6 +2348,8 @@ impl Configs {
             todo: Vec::new(),
             todo_head: 0,
             refinement_level: 0,
+            color_refinement: false,
+            skeleton_refinement: false,
             l_watch: Vec::new(),
             r_watch: Vec::new(),
         }
@@ -1914,18 +2382,28 @@ impl Configs {
         self.todo_head = 0;
 
         let init = Config::init(rad, &mut self.span_pool);
+        let color_refinement = self.color_refinement;
+        let skeleton_refinement = self.skeleton_refinement;
 
         self.lspans.add_span(
             &init.tape.lspan,
             init.tape.left_nz,
             init.tape.left_parity,
             init.tape.left_sig,
+            init.tape.left_colors,
+            init.tape.left_skeleton,
+            color_refinement,
+            skeleton_refinement,
         );
         self.rspans.add_span(
             &init.tape.rspan,
             init.tape.right_nz,
             init.tape.right_parity,
             init.tape.right_sig,
+            init.tape.right_colors,
+            init.tape.right_skeleton,
+            color_refinement,
+            skeleton_refinement,
         );
 
         let (init_id, is_new) = self.intern_config(init);
@@ -1959,16 +2437,28 @@ impl Configs {
         tail_nz: usize,
         tail_parity: bool,
         tail_sig: TailSig,
+        tail_colors: ColorSummary,
+        tail_skeleton: NonblankSkeleton,
     ) {
         let exact = matches!(&self.interner, ConfigInterner::Exact(_));
+        let color_refinement = self.color_refinement;
+        let skeleton_refinement = self.skeleton_refinement;
         let (spans, watch) = if shift {
             (&mut self.lspans, &mut self.l_watch)
         } else {
             (&mut self.rspans, &mut self.r_watch)
         };
 
-        if spans.add_span(span, tail_nz, tail_parity, tail_sig)
-            && let Some(waiting) = watch.get_mut(span.span)
+        if spans.add_span(
+            span,
+            tail_nz,
+            tail_parity,
+            tail_sig,
+            tail_colors,
+            tail_skeleton,
+            color_refinement,
+            skeleton_refinement,
+        ) && let Some(waiting) = watch.get_mut(span.span)
         {
             if exact {
                 self.todo.append(waiting);
@@ -2004,23 +2494,36 @@ impl Spans {
         }
     }
 
+    #[expect(clippy::too_many_arguments)]
     fn add_span(
         &mut self,
         span: &Span,
         tail_nz: usize,
         tail_parity: bool,
         tail_sig: TailSig,
+        mut tail_colors: ColorSummary,
+        tail_skeleton: NonblankSkeleton,
+        color_refinement: bool,
+        skeleton_refinement: bool,
     ) -> bool {
+        tail_colors.normalize();
         match self {
             Self::Halt(spans) => {
                 debug_assert_eq!(tail_nz, 0);
                 debug_assert!(!tail_parity);
+                debug_assert!(!skeleton_refinement);
 
                 let continuation = Continuation {
                     color: span.last,
                     tail_nz: 0,
                     tail_parity: false,
                     tail_sig,
+                    tail_colors: if color_refinement {
+                        tail_colors
+                    } else {
+                        ColorSummary::default()
+                    },
+                    tail_skeleton: NonblankSkeleton::default(),
                 };
 
                 if spans.len() <= span.span {
@@ -2028,16 +2531,47 @@ impl Spans {
                 }
 
                 let continuations = &mut spans[span.span];
-                match continuations.binary_search_by_key(
-                    &(span.last, tail_sig),
-                    |cnt| (cnt.color, cnt.tail_sig),
-                ) {
-                    Ok(_) => false,
-                    Err(pos) => {
-                        continuations.insert(pos, continuation);
-                        true
-                    },
+                if !color_refinement {
+                    return match continuations.binary_search_by_key(
+                        &(span.last, tail_sig),
+                        |cnt| (cnt.color, cnt.tail_sig),
+                    ) {
+                        Ok(_) => false,
+                        Err(pos) => {
+                            continuations.insert(pos, continuation);
+                            true
+                        },
+                    };
                 }
+
+                let key = (span.last, tail_sig, tail_colors.odd);
+                let key_of = |cnt: &Continuation| {
+                    (cnt.color, cnt.tail_sig, cnt.tail_colors.odd)
+                };
+                let start = continuations
+                    .partition_point(|cnt| key_of(cnt) < key);
+                let mut end = continuations
+                    .partition_point(|cnt| key_of(cnt) <= key);
+
+                if continuations[start..end]
+                    .iter()
+                    .any(|cnt| cnt.tail_colors.lower_le(&tail_colors))
+                {
+                    return false;
+                }
+
+                let mut idx = end;
+                while idx > start {
+                    idx -= 1;
+                    if tail_colors
+                        .lower_le(&continuations[idx].tail_colors)
+                    {
+                        continuations.remove(idx);
+                        end -= 1;
+                    }
+                }
+
+                continuations.insert(end, continuation);
             },
             Self::Rich(spans) => {
                 let tail_nz = parity_lower_bound(tail_nz, tail_parity);
@@ -2046,6 +2580,12 @@ impl Spans {
                     tail_nz,
                     tail_parity,
                     tail_sig,
+                    tail_colors,
+                    tail_skeleton: if skeleton_refinement {
+                        tail_skeleton
+                    } else {
+                        NonblankSkeleton::default()
+                    },
                 };
 
                 if spans.len() <= span.span {
@@ -2053,27 +2593,57 @@ impl Spans {
                 }
 
                 let continuations = &mut spans[span.span];
-                match continuations.binary_search_by_key(
-                    &(span.last, tail_parity, tail_sig),
-                    |cnt| (cnt.color, cnt.tail_parity, cnt.tail_sig),
-                ) {
-                    Ok(pos) => {
-                        // Counts are lower bounds.  For the same continuation
-                        // color, exact tail parity, and exact active signature,
-                        // a smaller bound subsumes every larger one.
-                        if tail_nz < continuations[pos].tail_nz {
-                            continuations[pos].tail_nz = tail_nz;
-                            return true;
-                        }
-                        false
+                let key = (
+                    span.last,
+                    tail_parity,
+                    tail_sig,
+                    tail_colors.odd,
+                    if skeleton_refinement {
+                        tail_skeleton
+                    } else {
+                        NonblankSkeleton::default()
                     },
-                    Err(pos) => {
-                        continuations.insert(pos, continuation);
-                        true
-                    },
+                );
+                let key_of = |cnt: &Continuation| {
+                    (
+                        cnt.color,
+                        cnt.tail_parity,
+                        cnt.tail_sig,
+                        cnt.tail_colors.odd,
+                        cnt.tail_skeleton,
+                    )
+                };
+                let start = continuations
+                    .partition_point(|cnt| key_of(cnt) < key);
+                let mut end = continuations
+                    .partition_point(|cnt| key_of(cnt) <= key);
+
+                // For identical continuation color, exact total parity,
+                // exact per-color parities and active tail signature, keep
+                // a componentwise antichain of total/per-color lower bounds.
+                if continuations[start..end].iter().any(|cnt| {
+                    cnt.tail_nz <= tail_nz
+                        && cnt.tail_colors.lower_le(&tail_colors)
+                }) {
+                    return false;
                 }
+
+                let mut idx = end;
+                while idx > start {
+                    idx -= 1;
+                    if tail_nz <= continuations[idx].tail_nz
+                        && tail_colors
+                            .lower_le(&continuations[idx].tail_colors)
+                    {
+                        continuations.remove(idx);
+                        end -= 1;
+                    }
+                }
+
+                continuations.insert(end, continuation);
             },
         }
+        true
     }
 
     fn get_continuations(&self, span: &Span) -> &Continuations {
@@ -2111,6 +2681,10 @@ struct Tape {
     right_parity: bool,
     left_sig: TailSig,
     right_sig: TailSig,
+    left_colors: ColorSummary,
+    right_colors: ColorSummary,
+    left_skeleton: NonblankSkeleton,
+    right_skeleton: NonblankSkeleton,
 }
 
 impl Tape {
@@ -2125,6 +2699,10 @@ impl Tape {
             right_parity: false,
             left_sig: TailSig::default(),
             right_sig: TailSig::default(),
+            left_colors: ColorSummary::default(),
+            right_colors: ColorSummary::default(),
+            left_skeleton: NonblankSkeleton::default(),
+            right_skeleton: NonblankSkeleton::default(),
         }
     }
 
@@ -2140,6 +2718,10 @@ impl Tape {
         right_parity: bool,
         left_sig: TailSig,
         right_sig: TailSig,
+        left_colors: ColorSummary,
+        right_colors: ColorSummary,
+        left_skeleton: NonblankSkeleton,
+        right_skeleton: NonblankSkeleton,
     ) -> Self {
         let (lspan, rspan) =
             if shift { (push, pull) } else { (pull, push) };
@@ -2154,6 +2736,10 @@ impl Tape {
             right_parity,
             left_sig,
             right_sig,
+            left_colors,
+            right_colors,
+            left_skeleton,
+            right_skeleton,
         }
     }
 }
@@ -2323,6 +2909,52 @@ fn test_tail_sig() {
         assert!(!whole.is_prepend_of(0, tail, level));
         assert_eq!(zero.prepend(0, level), zero);
     }
+}
+
+#[test]
+#[expect(clippy::manual_assert_eq, clippy::shadow_unrelated)]
+fn test_color_summary() {
+    let mut summary = ColorSummary::default();
+    summary.add_nonblank(1);
+    assert!(!summary.is_empty());
+
+    let tail = summary.tail_after_entering(1, true);
+    assert!(tail.is_empty());
+
+    summary.add_nonblank(1);
+    let tail = summary.tail_after_entering(1, true);
+    let (word, bit) = ColorSummary::bit(1);
+    assert!(tail.one[word] & bit != 0);
+    assert!(tail.odd[word] & bit != 0);
+    assert!(tail.two[word] & bit == 0);
+
+    summary.add_nonblank(1);
+    let tail = summary.tail_after_entering(1, true);
+    assert!(tail.two[word] & bit != 0);
+    assert!(tail.odd[word] & bit == 0);
+}
+
+#[test]
+fn test_nonblank_skeleton() {
+    let empty = NonblankSkeleton::default();
+    assert!(empty.prepend(0, false).is_empty());
+
+    let one = empty.prepend(2, true);
+    let full = one.prepend(1, true);
+    assert_eq!(full.len, 2);
+    assert_eq!(full.colors, [1, 2]);
+    assert!(full.compatible_tail(1, true, one));
+
+    // A full current skeleton only fixes the first K-1 entries after pull.
+    let longer_tail = one.prepend(3, true);
+    assert_eq!(longer_tail.colors, [3, 2]);
+    assert!(!full.compatible_tail(1, true, longer_tail));
+    let same_prefix_longer = empty.prepend(3, true).prepend(2, true);
+    assert!(full.compatible_tail(1, true, same_prefix_longer));
+
+    let exact_one = empty.prepend(1, true);
+    assert!(exact_one.compatible_tail(1, true, empty));
+    assert!(!exact_one.compatible_tail(1, true, one));
 }
 
 #[test]
