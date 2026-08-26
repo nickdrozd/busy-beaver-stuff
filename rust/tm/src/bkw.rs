@@ -387,6 +387,121 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
             }
         }
     }
+
+    /// Rebuild the cheap transposed/aggregate window relation from `right`.
+    ///
+    /// Intermediate ordered-prefix refinement only needs exact local-window
+    /// reachability.  Parity/count aggregates are deliberately left untouched
+    /// until the refinement fixed point is complete.
+    fn rebuild_window_relation(&mut self) {
+        self.left = [[[0; C]; C]; S];
+        self.any = [[false; C]; S];
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    let mut rights = self.right[st][scan][left];
+                    if rights != 0 {
+                        self.any[st][scan] = true;
+                    }
+                    while rights != 0 {
+                        let right = rights.trailing_zeros() as usize;
+                        rights &= rights - 1;
+                        self.left[st][scan][right] |= 1_u64 << left;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Shrink only the exact local-window relation to windows reachable in the
+    /// supplied `SidePossible` fixed point.  This is the fast intermediate
+    /// counterpart of `refine_reachability`: it does not rebuild parity,
+    /// residue, or color-count aggregates.
+    fn refine_side_reachability_relation(
+        &mut self,
+        sides: &SidePossible<S, C>,
+    ) -> bool {
+        let mut changed = false;
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    let old = self.right[st][scan][left];
+                    if old == 0 {
+                        continue;
+                    }
+
+                    let mut keep = 0_u64;
+                    let mut rights = old;
+                    while rights != 0 {
+                        let right = rights.trailing_zeros() as usize;
+                        rights &= rights - 1;
+                        if sides.window(st, scan, left, right).reachable
+                        {
+                            keep |= 1_u64 << right;
+                        }
+                    }
+
+                    changed |= keep != old;
+                    self.right[st][scan][left] = keep;
+                }
+            }
+        }
+
+        if changed {
+            self.rebuild_window_relation();
+        }
+        changed
+    }
+
+    /// Remove exact local windows for which ordered-prefix propagation found
+    /// no witness on at least one side.  This only edits the compact
+    /// `right/left/any` relation; expensive aggregate tables are rebuilt once
+    /// after the refinement fixed point is complete.
+    fn refine_prefix_reachability_relation(
+        &mut self,
+        prefixes: &SidePrefixPossible<S, C>,
+    ) -> bool {
+        let mut changed = false;
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    let old = self.right[st][scan][left];
+                    if old == 0 {
+                        continue;
+                    }
+
+                    let mut keep = old;
+                    let mut rights = old;
+                    while rights != 0 {
+                        let right = rights.trailing_zeros() as usize;
+                        rights &= rights - 1;
+
+                        let left_ok = !prefixes
+                            .prefixes(st, scan, left, right, LEFT_SIDE)
+                            .is_empty();
+                        let right_ok = !prefixes
+                            .prefixes(st, scan, left, right, RIGHT_SIDE)
+                            .is_empty();
+
+                        if !left_ok || !right_ok {
+                            keep &= !(1_u64 << right);
+                        }
+                    }
+
+                    changed |= keep != old;
+                    self.right[st][scan][left] = keep;
+                }
+            }
+        }
+
+        if changed {
+            self.rebuild_window_relation();
+        }
+        changed
+    }
 }
 
 /// Near-to-far run prefix of the tape strictly beyond one immediate neighbor.
@@ -1295,21 +1410,23 @@ where
     // over-approximation, we can safely prune it.
     let mut win_possible =
         prog.win_possible_from_blank(&forbid_left, &forbid_right);
-    let side_possible = prog.side_possible_from_blank(&win_possible);
+    let mut side_possible =
+        prog.side_possible_from_blank(&win_possible);
 
     // `SidePossible` computes a stronger exact-window reachability fixed point
-    // than the original radius-1 window BFS.  Promote that already-sound
-    // reachability relation before constructing any later forward summaries.
-    // This only removes exact local windows that the existing side filter would
-    // reject anyway; unlike boundary-pair conditioning, it does not couple the
-    // abstract transitions of otherwise independent analyses.
+    // than the original radius-1 window BFS. Promote that already-sound
+    // reachability relation first.
     win_possible.refine_reachability(&side_possible);
 
-    let blank_side_possible =
+    // Preserve the original lazy ordering: build/check every cheaper forward
+    // summary before paying for ordered-prefix propagation.  Easy targets that
+    // these summaries already refute never enter the expensive prefix/window
+    // feedback fixed point.
+    let mut blank_side_possible =
         blank_side_possible_from_blank(prog, &win_possible);
-    let color_tail_count =
+    let mut color_tail_count =
         color_tail_count_from_blank(prog, &win_possible);
-    let pair_tail_presence =
+    let mut pair_tail_presence =
         pair_tail_presence_from_blank(prog, &win_possible);
 
     // Halt targets begin with two unknown neighbors, so the
@@ -1343,12 +1460,79 @@ where
         return Refuted(0);
     }
 
-    // Side-prefix propagation is substantially more expensive than the older
-    // summaries. Build it only after every pre-existing target filter has
-    // failed to refute the query, so easy programs pay no prefix fixed-point
-    // cost at all.
-    let side_prefix_possible = prog
-        .side_prefix_possible_from_blank(&win_possible, &side_possible);
+    // Ordered-prefix propagation can prove additional exact windows
+    // unreachable.  Intermediate rounds now shrink only the compact exact
+    // window relation; parity/count aggregates are intentionally stale during
+    // these rounds because SidePossible/SidePrefixPossible consult only
+    // `right/left/any`.  If the relation actually shrinks, rebuild all
+    // aggregates and cheap summaries exactly once at the final fixed point.
+    let mut prefix_refined_windows = false;
+    let side_prefix_possible = loop {
+        let prefixes = prog.side_prefix_possible_from_blank(
+            &win_possible,
+            &side_possible,
+        );
+
+        if !win_possible.refine_prefix_reachability_relation(&prefixes)
+        {
+            break prefixes;
+        }
+
+        prefix_refined_windows = true;
+        side_possible = prog.side_possible_from_blank(&win_possible);
+        win_possible.refine_side_reachability_relation(&side_possible);
+    };
+
+    if prefix_refined_windows {
+        // Finalize every exact/aggregate table once.  `side_possible` was
+        // computed on the already-prefix-refined relation, so this cannot
+        // resurrect a removed exact window.
+        win_possible.refine_reachability(&side_possible);
+
+        blank_side_possible =
+            blank_side_possible_from_blank(prog, &win_possible);
+        color_tail_count =
+            color_tail_count_from_blank(prog, &win_possible);
+        pair_tail_presence =
+            pair_tail_presence_from_blank(prog, &win_possible);
+
+        // The smaller final window graph can sharpen all of the cheap filters
+        // too, so recheck only the targets that survived their first pass.
+        configs.retain(|Config { state, tape }| {
+            window_nonblank_parity_possible(*state, tape, &win_possible)
+                && window_side_nonblank_parity_possible(
+                    *state,
+                    tape,
+                    &win_possible,
+                )
+                && window_side_nonblank_mod3_possible(
+                    *state,
+                    tape,
+                    &win_possible,
+                )
+                && window_color_parity_possible(
+                    *state,
+                    tape,
+                    &win_possible,
+                )
+                && window_possible(*state, tape, &win_possible)
+                && tape.obeys_state_side(*state, &side_possible)
+                && tape.obeys_blank_side_possible(
+                    *state,
+                    &blank_side_possible,
+                )
+                && tape.obeys_tail_presence(
+                    *state,
+                    &color_tail_count,
+                    &pair_tail_presence,
+                )
+        });
+
+        if configs.is_empty() {
+            return Refuted(0);
+        }
+    }
+
     configs.retain(|Config { state, tape }| {
         tape.obeys_side_prefix_possible(*state, &side_prefix_possible)
     });
@@ -2889,9 +3073,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
         let mut possible = SidePrefixPossible::new();
         let mut q = VecDeque::new();
+        let mut seen_specific: Vec<Set<SidePrefix>> =
+            (0..possible.windows.len()).map(|_| Set::new()).collect();
 
         #[expect(clippy::shadow_unrelated)]
-        let push =
+        let mut push =
             |side: usize,
              st: usize,
              scan: usize,
@@ -2937,12 +3123,13 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         SIDE_PREFIX_HAS_DIRTY_UNKNOWN;
                     possible.windows[index]
                         .retain(|&old| old == SidePrefix::blank());
+                    seen_specific[index].clear();
                 } else {
                     // Any specific nonblank prefix is already covered by the broad
                     // dirty alternative. Otherwise only exact deduplication is
                     // needed; there are no other subsumption relations.
                     if flags & SIDE_PREFIX_HAS_DIRTY_UNKNOWN != 0
-                        || possible.windows[index].contains(&prefix)
+                        || !seen_specific[index].insert(prefix)
                     {
                         return;
                     }
