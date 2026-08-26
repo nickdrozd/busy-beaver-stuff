@@ -52,23 +52,36 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let mut configs = Configs::new(Halt);
         let mut qh = QuasihaltScratch::default();
 
-        (2..rad).any(|seg| {
-            (1..8).any(|tr| {
-                cps_cant_quasihalt(
-                    &self.make_transcript_macro(tr),
+        // Adaptive ladder per candidate: coarse first, then the strongest
+        // tail-signature + ColorSummary product.  Intermediate/color-only
+        // runs are capacity fallbacks rather than routine extra sweeps.
+        for seg in 2..rad {
+            for tr in 1..8 {
+                let macro_prog = self.make_transcript_macro(tr);
+                if cps_quasihalt_adaptive(
+                    &macro_prog,
                     seg,
                     ignored_state,
                     &mut configs,
                     &mut qh,
-                )
-            }) || cps_cant_quasihalt(
-                &self.make_lru_macro(),
+                ) {
+                    return true;
+                }
+            }
+
+            let macro_prog = self.make_lru_macro();
+            if cps_quasihalt_adaptive(
+                &macro_prog,
                 seg,
                 ignored_state,
                 &mut configs,
                 &mut qh,
-            )
-        })
+            ) {
+                return true;
+            }
+        }
+
+        false
     }
 
     fn cps_run_macros(&self, rad: Radius, goal: Goal) -> bool {
@@ -76,23 +89,135 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
         let mut configs = Configs::new(goal);
 
-        (2..rad).any(|seg| {
-            cps_cant_reach(self, seg, goal, &mut configs)
-                || [1, 4, 16].iter().any(|tr| {
-                    cps_cant_reach(
-                        &self.make_transcript_macro(*tr),
+        // Halt/Spinout normally need only coarse + strongest fused runs.
+        // Old sig-only/color-only avenues are retained only as MAX_DEPTH
+        // fallbacks inside cps_reach_adaptive.
+        if !matches!(goal, Blank) {
+            for seg in 2..rad {
+                let (proved, _) =
+                    cps_reach_adaptive(self, seg, goal, &mut configs);
+                if proved {
+                    return true;
+                }
+
+                for tr in [1, 4, 16] {
+                    let macro_prog = self.make_transcript_macro(tr);
+                    let (proved, _) = cps_reach_adaptive(
+                        &macro_prog,
                         seg,
                         goal,
                         &mut configs,
-                    )
-                })
-                || cps_cant_reach(
-                    &self.make_lru_macro(),
+                    );
+                    if proved {
+                        return true;
+                    }
+                }
+
+                let macro_prog = self.make_lru_macro();
+                let (proved, _) = cps_reach_adaptive(
+                    &macro_prog,
                     seg,
                     goal,
                     &mut configs,
-                )
-        })
+                );
+                if proved {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Blank has shown no ColorSummary wins.  It normally tries coarse then
+        // the strongest signature directly, falling back to intermediate
+        // signatures only on MAX_DEPTH.  Record counterexample candidates
+        // for the independent skeleton pass.
+        const CANDIDATE_COUNT: usize = 5;
+        const BASE: usize = 0;
+        const TR1: usize = 1;
+        const TR4: usize = 2;
+        const TR16: usize = 3;
+        const LRU: usize = 4;
+
+        let seg_count = rad.saturating_sub(2);
+        let mut skeleton_candidate =
+            vec![[false; CANDIDATE_COUNT]; seg_count];
+
+        for seg in 2..rad {
+            let seg_idx = seg - 2;
+
+            let (proved, saw_counterexample) =
+                cps_reach_adaptive(self, seg, goal, &mut configs);
+            if proved {
+                return true;
+            }
+            skeleton_candidate[seg_idx][BASE] = saw_counterexample;
+
+            for (candidate, tr) in [(TR1, 1), (TR4, 4), (TR16, 16)] {
+                let macro_prog = self.make_transcript_macro(tr);
+                let (proved, saw_counterexample) = cps_reach_adaptive(
+                    &macro_prog,
+                    seg,
+                    goal,
+                    &mut configs,
+                );
+                if proved {
+                    return true;
+                }
+                skeleton_candidate[seg_idx][candidate] = saw_counterexample;
+            }
+
+            let macro_prog = self.make_lru_macro();
+            let (proved, saw_counterexample) = cps_reach_adaptive(
+                &macro_prog,
+                seg,
+                goal,
+                &mut configs,
+            );
+            if proved {
+                return true;
+            }
+            skeleton_candidate[seg_idx][LRU] = saw_counterexample;
+        }
+
+        for seg in 2..rad {
+            let seg_idx = seg - 2;
+
+            if skeleton_candidate[seg_idx][BASE]
+                && cps_reach_skeleton(self, seg, goal, &mut configs)
+            {
+                return true;
+            }
+
+            for (candidate, tr) in [(TR1, 1), (TR4, 4), (TR16, 16)] {
+                if !skeleton_candidate[seg_idx][candidate] {
+                    continue;
+                }
+                let macro_prog = self.make_transcript_macro(tr);
+                if cps_reach_skeleton(
+                    &macro_prog,
+                    seg,
+                    goal,
+                    &mut configs,
+                ) {
+                    return true;
+                }
+            }
+
+            if skeleton_candidate[seg_idx][LRU] {
+                let macro_prog = self.make_lru_macro();
+                if cps_reach_skeleton(
+                    &macro_prog,
+                    seg,
+                    goal,
+                    &mut configs,
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 
     /// State A is an ignorable initial transient exactly when the concrete
@@ -136,126 +261,284 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     }
 }
 
-fn cps_cant_reach(
+fn cps_reach_once(
+    prog: &impl GetInstr,
+    rad: Radius,
+    goal: Goal,
+    configs: &mut Configs,
+    refinement_level: usize,
+    color_refinement: bool,
+) -> CpsOutcome {
+    configs.refinement_level = refinement_level;
+    configs.color_refinement = color_refinement;
+    configs.skeleton_refinement = false;
+    cps_cant_reach_obs(prog, rad, goal, &mut NoObs, configs)
+}
+
+fn cps_reach_adaptive(
+    prog: &impl GetInstr,
+    rad: Radius,
+    goal: Goal,
+    configs: &mut Configs,
+) -> (bool, bool) {
+    let final_level = TAIL_SIG_REFINEMENTS.len();
+
+    // Always start with the cheapest quotient.  If even it exceeds the
+    // capacity, finer quotients are not useful escalation candidates.
+    match cps_reach_once(prog, rad, goal, configs, 0, false) {
+        CpsOutcome::Proved => return (true, false),
+        CpsOutcome::Counterexample => {},
+        CpsOutcome::Inconclusive => return (false, false),
+    }
+
+    if matches!(goal, Blank) {
+        // Level `final_level` strictly refines every intermediate signature
+        // level.  Try it directly; the middle level is needed only if the
+        // strongest signature run itself exceeds MAX_DEPTH.
+        return match cps_reach_once(
+            prog,
+            rad,
+            goal,
+            configs,
+            final_level,
+            false,
+        ) {
+            CpsOutcome::Proved => (true, true),
+            CpsOutcome::Counterexample => (false, true),
+            CpsOutcome::Inconclusive => {
+                for refinement_level in (1..final_level).rev() {
+                    match cps_reach_once(
+                        prog,
+                        rad,
+                        goal,
+                        configs,
+                        refinement_level,
+                        false,
+                    ) {
+                        CpsOutcome::Proved => return (true, true),
+                        // A counterexample in a finer fallback implies every
+                        // still-coarser signature quotient also has one.
+                        CpsOutcome::Counterexample => break,
+                        CpsOutcome::Inconclusive => {},
+                    }
+                }
+                (false, true)
+            },
+        };
+    }
+
+    // Halt/Spinout: fuse ColorSummary with the strongest signature quotient.
+    // This product subsumes both old refinements when it completes, so the
+    // normal path needs only coarse + strongest runs.
+    match cps_reach_once(
+        prog,
+        rad,
+        goal,
+        configs,
+        final_level,
+        true,
+    ) {
+        CpsOutcome::Proved => return (true, true),
+        CpsOutcome::Counterexample => return (false, true),
+        CpsOutcome::Inconclusive => {},
+    }
+
+    // Capacity fallback only.  Recover the old sig-only proof avenues without
+    // paying for them on normal candidates.  Try the strongest sig-only run
+    // first; an actual counterexample there makes all lower signature levels
+    // redundant.
+    let mut sig_needs_coarser_fallback = false;
+    match cps_reach_once(
+        prog,
+        rad,
+        goal,
+        configs,
+        final_level,
+        false,
+    ) {
+        CpsOutcome::Proved => return (true, true),
+        CpsOutcome::Counterexample => {},
+        CpsOutcome::Inconclusive => sig_needs_coarser_fallback = true,
+    }
+
+    if sig_needs_coarser_fallback {
+        for refinement_level in (1..final_level).rev() {
+            match cps_reach_once(
+                prog,
+                rad,
+                goal,
+                configs,
+                refinement_level,
+                false,
+            ) {
+                CpsOutcome::Proved => return (true, true),
+                CpsOutcome::Counterexample => break,
+                CpsOutcome::Inconclusive => {},
+            }
+        }
+    }
+
+    // The old color-only quotient is independent of signatures, so retain it
+    // as the final fallback only when their fused product overflowed.
+    if matches!(
+        cps_reach_once(prog, rad, goal, configs, 0, true),
+        CpsOutcome::Proved
+    ) {
+        return (true, true);
+    }
+
+    (false, true)
+}
+
+fn cps_reach_skeleton(
     prog: &impl GetInstr,
     rad: Radius,
     goal: Goal,
     configs: &mut Configs,
 ) -> bool {
-    // Run each expensive refinement independently so one state-space blow-up
-    // does not prevent a qualitatively different quotient from being tried.
-    let mut saw_counterexample = false;
+    debug_assert!(matches!(goal, Blank));
+    configs.refinement_level = 0;
+    configs.color_refinement = false;
+    configs.skeleton_refinement = true;
 
-    for refinement_level in 0..=TAIL_SIG_REFINEMENTS.len() {
-        configs.refinement_level = refinement_level;
-        configs.color_refinement = false;
-        configs.skeleton_refinement = false;
-
-        match cps_cant_reach_obs(prog, rad, goal, &mut NoObs, configs) {
-            CpsOutcome::Proved => return true,
-            CpsOutcome::Counterexample => saw_counterexample = true,
-            CpsOutcome::Inconclusive => break,
-        }
-    }
-
-    if saw_counterexample {
-        // Per-color supply is useful for Blank/Spinout and is also tested as
-        // a final Halt refinement.  For Halt it constrains continuation reuse
-        // but is not part of the halt predicate.
-        configs.refinement_level = 0;
-        configs.color_refinement = true;
-        configs.skeleton_refinement = false;
-
-        if matches!(
-            cps_cant_reach_obs(prog, rad, goal, &mut NoObs, configs),
-            CpsOutcome::Proved
-        ) {
-            return true;
-        }
-
-        // Blank gets one additional independent quotient: the first two
-        // semantic-nonblank colors on each hidden ray, in boundary order.
-        if matches!(goal, Blank) {
-            configs.refinement_level = 0;
-            configs.color_refinement = false;
-            configs.skeleton_refinement = true;
-
-            if matches!(
-                cps_cant_reach_obs(
-                    prog, rad, goal, &mut NoObs, configs
-                ),
-                CpsOutcome::Proved
-            ) {
-                return true;
-            }
-        }
-    }
-
-    false
+    matches!(
+        cps_cant_reach_obs(prog, rad, goal, &mut NoObs, configs),
+        CpsOutcome::Proved
+    )
 }
 
-fn cps_cant_quasihalt(
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum QhAttempt {
+    Proved,
+    Open,
+    Counterexample,
+    Inconclusive,
+}
+
+fn cps_quasihalt_once(
+    prog: &impl GetInstr,
+    rad: Radius,
+    ignored_state: Option<u8>,
+    configs: &mut Configs,
+    scratch: &mut QuasihaltScratch,
+    refinement_level: usize,
+    color_refinement: bool,
+) -> QhAttempt {
+    configs.refinement_level = refinement_level;
+    configs.color_refinement = color_refinement;
+    configs.skeleton_refinement = false;
+    scratch.graph.reset();
+
+    match cps_cant_reach_obs(
+        prog,
+        rad,
+        Halt,
+        &mut scratch.graph,
+        configs,
+    ) {
+        CpsOutcome::Counterexample => QhAttempt::Counterexample,
+        CpsOutcome::Inconclusive => QhAttempt::Inconclusive,
+        CpsOutcome::Proved => {
+            scratch.graph.dedup_edges();
+            if quasihalt_graph_proves(
+                &scratch.graph,
+                ignored_state,
+                &mut scratch.analysis,
+            ) {
+                QhAttempt::Proved
+            } else {
+                QhAttempt::Open
+            }
+        },
+    }
+}
+
+fn cps_quasihalt_adaptive(
     prog: &impl GetInstr,
     rad: Radius,
     ignored_state: Option<u8>,
     configs: &mut Configs,
     scratch: &mut QuasihaltScratch,
 ) -> bool {
-    // First run the existing signature ladder.  If none decides, build one
-    // independent per-color refined Halt graph and feed it through exactly
-    // the same quasihalt SCC analysis.
-    for refinement_level in 0..=TAIL_SIG_REFINEMENTS.len() {
-        configs.refinement_level = refinement_level;
-        configs.color_refinement = false;
-        configs.skeleton_refinement = false;
-        scratch.graph.reset();
+    let final_level = TAIL_SIG_REFINEMENTS.len();
 
-        match cps_cant_reach_obs(
-            prog,
-            rad,
-            Halt,
-            &mut scratch.graph,
-            configs,
-        ) {
-            CpsOutcome::Proved => {},
-            CpsOutcome::Counterexample => continue,
-            CpsOutcome::Inconclusive => break,
-        }
-
-        scratch.graph.dedup_edges();
-        if quasihalt_graph_proves(
-            &scratch.graph,
-            ignored_state,
-            &mut scratch.analysis,
-        ) {
-            return true;
-        }
-    }
-
-    configs.refinement_level = 0;
-    configs.color_refinement = true;
-    configs.skeleton_refinement = false;
-    scratch.graph.reset();
-
-    if matches!(
-        cps_cant_reach_obs(
-            prog,
-            rad,
-            Halt,
-            &mut scratch.graph,
-            configs,
-        ),
-        CpsOutcome::Proved
+    match cps_quasihalt_once(
+        prog,
+        rad,
+        ignored_state,
+        configs,
+        scratch,
+        0,
+        false,
     ) {
-        scratch.graph.dedup_edges();
-        return quasihalt_graph_proves(
-            &scratch.graph,
-            ignored_state,
-            &mut scratch.analysis,
-        );
+        QhAttempt::Proved => return true,
+        QhAttempt::Inconclusive => return false,
+        QhAttempt::Open | QhAttempt::Counterexample => {},
     }
 
-    false
+    // The strongest product is tried immediately.  If it builds a graph and
+    // that graph remains open, coarser quotients only admit more recurrent
+    // behavior, so there is no reason to run them.  Fallbacks are needed only
+    // when the product itself exceeds MAX_DEPTH.
+    match cps_quasihalt_once(
+        prog,
+        rad,
+        ignored_state,
+        configs,
+        scratch,
+        final_level,
+        true,
+    ) {
+        QhAttempt::Proved => return true,
+        QhAttempt::Open | QhAttempt::Counterexample => return false,
+        QhAttempt::Inconclusive => {},
+    }
+
+    let sig_final = cps_quasihalt_once(
+        prog,
+        rad,
+        ignored_state,
+        configs,
+        scratch,
+        final_level,
+        false,
+    );
+    match sig_final {
+        QhAttempt::Proved => return true,
+        QhAttempt::Open | QhAttempt::Counterexample => {},
+        QhAttempt::Inconclusive => {
+            for refinement_level in (1..final_level).rev() {
+                match cps_quasihalt_once(
+                    prog,
+                    rad,
+                    ignored_state,
+                    configs,
+                    scratch,
+                    refinement_level,
+                    false,
+                ) {
+                    QhAttempt::Proved => return true,
+                    QhAttempt::Open | QhAttempt::Counterexample => break,
+                    QhAttempt::Inconclusive => {},
+                }
+            }
+        },
+    }
+
+    // Independent color-only fallback preserves the old color proof route in
+    // precisely the cases where the fused strongest run could not complete.
+    matches!(
+        cps_quasihalt_once(
+            prog,
+            rad,
+            ignored_state,
+            configs,
+            scratch,
+            0,
+            true,
+        ),
+        QhAttempt::Proved
+    )
 }
 
 fn quasihalt_graph_proves(
@@ -1712,8 +1995,10 @@ impl TailSig {
 // `Color` is the compact macro-cell alphabet used by transcript/LRU
 // macros (u8 in this crate), so four words cover every possible color.
 // For Blank we track each semantic-nonblank macro color separately.
-// `one` / `two` are saturated lower bounds >=1 / >=2; `odd` is exact.
-// Distinguishing decorated macro colors is conservative and strictly
+// `two` is the saturated lower bound >=2 and `odd` is exact parity;
+// together they encode the same four normalized states as the former
+// one/two/odd representation. Distinguishing decorated macro colors is
+// conservative and strictly
 // finer than collapsing all base-nonblank cells into one counter.
 const COLOR_WORDS: usize = 4;
 
@@ -1721,11 +2006,16 @@ const COLOR_WORDS: usize = 4;
     Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 /// Per-macro-color lower-bound/parity summary used by the independent
-/// color refinement.  For Blank, tracked colors are those for which
-/// `prog.is_blank(color)` is false; for Spinout and Halt/quasihalt they are
-/// the non-canonical macro colors `color != 0`.
+/// color refinement.  The old normalized `(one, two, odd)` representation
+/// had only four reachable states per color:
+///   0: even, lower bound 0
+///   1: odd,  lower bound 1
+///   2: even, lower bound 2
+///   3: odd,  lower bound 3
+/// `one` is therefore redundant: `one == two | odd`.  Keeping only `two`
+/// and exact parity `odd` preserves the abstraction exactly while shrinking
+/// every summary, continuation, tape and hash key by one third.
 struct ColorSummary {
-    one: [u64; COLOR_WORDS],
     two: [u64; COLOR_WORDS],
     odd: [u64; COLOR_WORDS],
 }
@@ -1737,29 +2027,17 @@ impl ColorSummary {
         (idx / 64, 1_u64 << (idx % 64))
     }
 
-    const fn normalize_word(&mut self, word: usize) {
-        // >=2 implies >=1; odd implies >=1; and an even count known to
-        // be >=1 is necessarily >=2.  The lower bound saturates at two.
-        self.one[word] |= self.two[word] | self.odd[word];
-        self.two[word] |= self.one[word] & !self.odd[word];
-        self.one[word] |= self.two[word];
-    }
-
-    fn normalize(&mut self) {
-        for word in 0..COLOR_WORDS {
-            self.normalize_word(word);
-        }
-    }
+    // Representation is canonical by construction; retained so callers do
+    // not need special cases when switching between coarse/color runs.
+    const fn normalize(&mut self) {}
 
     fn add_nonblank(&mut self, color: Color) {
         let (word, bit) = Self::bit(color);
-        if self.one[word] & bit != 0 {
-            self.two[word] |= bit;
-        } else {
-            self.one[word] |= bit;
-        }
+        let existed = (self.two[word] | self.odd[word]) & bit != 0;
         self.odd[word] ^= bit;
-        self.normalize_word(word);
+        if existed {
+            self.two[word] |= bit;
+        }
     }
 
     fn tail_after_entering(
@@ -1773,31 +2051,25 @@ impl ColorSummary {
 
         let (word, bit) = Self::bit(color);
 
-        // The entering cell itself proves that the whole hidden ray has at
-        // least one occurrence of this color.  Combine that fact with exact
-        // parity before subtracting the entering occurrence.
-        self.one[word] |= bit;
-        self.normalize_word(word);
+        // The entering cell proves at least one occurrence in the whole ray.
+        // If exact parity is even and no lower bound was known, the least
+        // compatible whole-ray count is therefore two.
+        if (self.two[word] | self.odd[word]) & bit == 0 {
+            self.two[word] |= bit;
+        }
 
         let was_two = self.two[word] & bit != 0;
         let was_odd = self.odd[word] & bit != 0;
         self.odd[word] ^= bit;
 
-        if was_two {
-            self.one[word] |= bit;
-            // >=2 with odd parity means >=3, so after removing one we
-            // still know >=2.  Even >=2 only leaves a >=1 guarantee.
-            if was_odd {
-                self.two[word] |= bit;
-            } else {
-                self.two[word] &= !bit;
-            }
+        // Remove one occurrence from the saturated lower bound:
+        // 1 -> 0, 2 -> 1, 3 -> 2.  State 0 was first promoted to 2 above.
+        if was_two && was_odd {
+            self.two[word] |= bit;
         } else {
-            self.one[word] &= !bit;
             self.two[word] &= !bit;
         }
 
-        self.normalize_word(word);
         self
     }
 
@@ -1808,24 +2080,20 @@ impl ColorSummary {
     fn merge_lower(mut self, other: Self) -> Self {
         debug_assert!(self.same_parity(&other));
         for word in 0..COLOR_WORDS {
-            self.one[word] |= other.one[word];
             self.two[word] |= other.two[word];
         }
-        self.normalize();
         self
     }
 
     fn lower_le(&self, other: &Self) -> bool {
         self.odd == other.odd
             && (0..COLOR_WORDS).all(|word| {
-                self.one[word] & !other.one[word] == 0
-                    && self.two[word] & !other.two[word] == 0
+                self.two[word] & !other.two[word] == 0
             })
     }
 
     fn is_empty(&self) -> bool {
-        self.one.iter().all(|&word| word == 0)
-            && self.two.iter().all(|&word| word == 0)
+        self.two.iter().all(|&word| word == 0)
             && self.odd.iter().all(|&word| word == 0)
     }
 }
@@ -2924,7 +3192,6 @@ fn test_color_summary() {
     summary.add_nonblank(1);
     let tail = summary.tail_after_entering(1, true);
     let (word, bit) = ColorSummary::bit(1);
-    assert!(tail.one[word] & bit != 0);
     assert!(tail.odd[word] & bit != 0);
     assert!(tail.two[word] & bit == 0);
 
