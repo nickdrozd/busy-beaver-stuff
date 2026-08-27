@@ -203,19 +203,19 @@ fn test_far() {
         &mut failures,
         "8-0 halt",
         _8_0_ho.as_slice(),
-        |prog| prog.far_cant_halt(3),
+        |prog| prog.far_cant_halt(6),
     );
     check_holdout_decider(
         &mut failures,
         "8-1 spinout",
         _8_1_ho.as_slice(),
-        |prog| prog.far_cant_spinout(3),
+        |prog| prog.far_cant_spinout(6),
     );
     check_holdout_decider(
         &mut failures,
         "8-2 blank",
         _8_2_ho.as_slice(),
-        |prog| prog.far_cant_blank(3),
+        |prog| prog.far_cant_blank(6),
     );
 
     assert_no_holdout_failures("far", &failures);

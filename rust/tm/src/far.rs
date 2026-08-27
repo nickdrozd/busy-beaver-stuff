@@ -97,6 +97,16 @@ const FAR_RWL_MNC: u8 = 2;
 const FAR_CPS_LRU_LEN_H: usize = 8;
 const FAR_CPS_LRU_LEN_H_NO_LRU: usize = 2;
 
+/// Exact finite tail-signature channels borrowed from standalone CPS.
+///
+/// Each channel stores the polynomial residue of the entire pushed FAR-block
+/// stack, including blocks that have fallen out of the bounded CPS-LRU list.
+/// For a tape sequence c0,c1,... from nearest to farthest, the residue is
+/// c0 + base*c1 + base^2*c2 + ... (mod modulus).  Prepending a block is thus
+/// an exact finite-state update.  Collisions only merge histories, so this is
+/// a sound refinement of the ordinary CPS-LRU summary.
+const FAR_CPS_SIG_REFINEMENTS: [(u16, u16); 2] = [(2, 3), (3, 4)];
+
 /// C++ FAR::RNGS_mod defaults.
 const FAR_RNGS_NG_N: usize = 4;
 const FAR_RNGS_LEN_H: usize = 8;
@@ -738,6 +748,88 @@ impl Summary for CpsLruSummary {
 
     fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
         self.ls.iter().all(|&w| words.get(w).is_zero())
+    }
+}
+
+/// CPS-LRU plus permanent modular information about the entire pushed block
+/// stack.  The bounded LRU retains strong recent ordering information; the
+/// residues retain weak information about arbitrarily old blocks after LRU
+/// eviction.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct CpsLruSigSummary {
+    ls: Vec<WordId>,
+    sig: [u16; FAR_CPS_SIG_REFINEMENTS.len()],
+}
+
+impl Summary for CpsLruSigSummary {
+    fn new() -> Self {
+        Self {
+            ls: Vec::new(),
+            sig: [0; FAR_CPS_SIG_REFINEMENTS.len()],
+        }
+    }
+
+    #[expect(clippy::unwrap_in_result)]
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        let word = words.get(w);
+
+        // The block is prepended to the represented hidden stack.  Iterate the
+        // block from farthest to nearest so repeated single-cell prepend updates
+        // produce the polynomial residue of [word || old_tail].
+        for &color in word.cells.iter().rev() {
+            for (slot, &(base, modulus)) in
+                self.sig.iter_mut().zip(FAR_CPS_SIG_REFINEMENTS.iter())
+            {
+                let value = u64::from(color)
+                    + u64::from(base) * u64::from(*slot);
+                *slot = u16::try_from(value % u64::from(modulus))
+                    .expect("CPS-LRU tail-signature residue must fit in u16");
+            }
+        }
+
+        // Preserve the ordinary CPS-LRU convention that an arbitrarily long
+        // leading all-zero tail is represented by the initial state.  The
+        // polynomial residues are also unchanged by prepended zero blocks while
+        // they are zero.
+        if self.ls.is_empty() && word.is_zero() {
+            debug_assert!(self.sig.iter().all(|&x| x == 0));
+            return Ok(());
+        }
+
+        self.ls.insert(0, w);
+        if self.ls.len() <= FAR_CPS_LRU_LEN_H_NO_LRU {
+            return Ok(());
+        }
+
+        let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU];
+        let start = FAR_CPS_LRU_LEN_H_NO_LRU + 1;
+        let mut remove_idx = None;
+        for i in start..self.ls.len() {
+            if self.ls[i] == key {
+                remove_idx = Some(i);
+                break;
+            }
+        }
+        if remove_idx.is_none() && self.ls.len() > FAR_CPS_LRU_LEN_H {
+            remove_idx = Some(self.ls.len() - 1);
+        }
+        if let Some(i) = remove_idx {
+            self.ls.remove(i);
+        }
+
+        Ok(())
+    }
+
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        // Every genuinely all-zero stack has zero residues.  Non-zero stacks may
+        // collide to zero, which is harmless: the exact zero_context DFA
+        // reachability remains the authoritative blank-context test.
+        self.sig.iter().all(|&x| x == 0)
+            && self.ls.iter().all(|&w| words.get(w).is_zero())
     }
 }
 
@@ -1884,6 +1976,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 FAR_NG_POS_MOD_2,
             >>(params)
             || self.far_decide_with::<CpsLruSummary>(params)
+            || self.far_decide_with::<CpsLruSigSummary>(params)
             || self.far_decide_with::<RwlModSummary>(params)
             || self.far_decide_with::<NgSummary<
                 FAR_NG_TAIL_H_MED,
