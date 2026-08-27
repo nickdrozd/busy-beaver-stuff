@@ -3912,8 +3912,8 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
     "cps": {
         "halt": 6,
         "blank": 6,
-        "spinout": 6,
-        "quasihalt": 22,
+        "spinout": 7,
+        "quasihalt": 24,
     },
     "bkw": {
         "halt": 94,
@@ -3976,6 +3976,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
         },
         "spinout": {
             "1RB 0RB  1LC 1LD  0LC 1RA  0LD 0RA",
+            "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
             "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
@@ -3990,8 +3991,10 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0LD  1LC 1RA  0RB 0LC  ... 1LA",
             "1RB 0RB  1LC 0LC  1RA 0LD  1LB 0LB",
             "1RB 0RB  1LC 1LD  0LC 1RA  0LD 0RA",
+            "1RB 0RB  1LC 1RB  ... 0LD  1RA 1LD",
             "1RB 0RC  1LB 1LC  1LA 0LD  1RD 0RB",
             "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
+            "1RB 1LA  1LA 0RC  1LD 1RC  ... 0LA",
             "1RB 1LC  1LA 0RD  1LA ...  0LD 0RB",
             "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
             "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA",

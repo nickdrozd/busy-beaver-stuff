@@ -1,4 +1,7 @@
-pub const _2_4_1_ho: &[&str] = &["1RB 2RB 3LA 2RA  2LB 1LA 1LB 3RB"];
+pub const _2_4_1_ho: &[&str] = &[
+    "1RB 2LB 0RA 1LB  2LB 3LA 1RA 0RB",
+    "1RB 2RB 3LA 2RA  2LB 1LA 1LB 3RB",
+];
 
 pub const _2_4_1_: (&[&str], &[&str]) = (&[], _2_4_1_ho);
 

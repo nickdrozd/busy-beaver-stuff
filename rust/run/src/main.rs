@@ -233,6 +233,7 @@ fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_spinout(21)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MOR)
+        || prog.far_cant_spinout(3)
 }
 
 fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
@@ -398,7 +399,7 @@ fn test_quasihalt() {
             4 => (qh_2_4, TREE_LIM, (_2_4_q_, 1_698_850)),
         ],
         (4, 2) => [
-            4 => (qh_4_2, 99, (62, 2_134_923)),
+            4 => (qh_4_2, 99, (63, 2_134_923)),
         ],
     ];
 }
