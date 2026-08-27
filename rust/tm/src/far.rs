@@ -25,7 +25,7 @@ use core::{cmp::Ordering, hash::Hash};
 
 use ahash::{AHashMap as Map, AHashSet as Set};
 
-use crate::{Color, Goal, Instr, Prog, Slot, State};
+use crate::{Color, Goal, Prog, Slot, State, macros::GetInstr};
 
 // -----------------------------------------------------------------------------
 // Top-level tuning constants
@@ -106,6 +106,10 @@ const FAR_CPS_LRU_LEN_H_NO_LRU: usize = 2;
 /// an exact finite-state update.  Collisions only merge histories, so this is
 /// a sound refinement of the ordinary CPS-LRU summary.
 const FAR_CPS_SIG_REFINEMENTS: [(u16, u16); 2] = [(2, 3), (3, 4)];
+
+/// Full per-macro-color supply summary borrowed from standalone CPS.
+/// `Color` is u8, so four u64 words cover every possible raw or macro color.
+const FAR_CPS_COLOR_WORDS: usize = 4;
 
 /// C++ FAR::RNGS_mod defaults.
 const FAR_RNGS_NG_N: usize = 4;
@@ -211,6 +215,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// - `false` otherwise.
     pub fn far_cant_halt(&self, block: usize) -> bool {
         self.far_sweep(block, Goal::Halt)
+            || self.far_macro_cps_sweep(block, Goal::Halt)
             || self.mitm_cant_halt()
             || self.direct_far_cant_target(Goal::Halt)
     }
@@ -227,6 +232,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// to decide whether the surrounding block context may be all zero.
     pub fn far_cant_blank(&self, block: usize) -> bool {
         self.far_sweep(block, Goal::Blank)
+            || self.far_macro_cps_sweep(block, Goal::Blank)
             || self.mitm_cant_blank()
             || self.direct_far_cant_target(Goal::Blank)
     }
@@ -237,6 +243,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// one-sided all-zero same-state drift.
     pub fn far_cant_spinout(&self, block: usize) -> bool {
         self.far_sweep(block, Goal::Spinout)
+            || self.far_macro_cps_sweep(block, Goal::Spinout)
             || self.mitm_cant_spinout()
             || self.direct_far_cant_target(Goal::Spinout)
     }
@@ -833,6 +840,136 @@ impl Summary for CpsLruSigSummary {
     }
 }
 
+/// Per-color saturated lower bounds plus exact parity, as in standalone CPS.
+/// For each non-canonical-zero color independently, `one` means count >= 1,
+/// `two` means count >= 2, and `odd` is exact parity.
+#[derive(
+    Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Default,
+)]
+struct FarCpsColorSummary {
+    one: [u64; FAR_CPS_COLOR_WORDS],
+    two: [u64; FAR_CPS_COLOR_WORDS],
+    odd: [u64; FAR_CPS_COLOR_WORDS],
+}
+
+impl FarCpsColorSummary {
+    fn bit(color: Color) -> (usize, u64) {
+        let idx = usize::from(color);
+        debug_assert!(idx < FAR_CPS_COLOR_WORDS * 64);
+        (idx / 64, 1_u64 << (idx % 64))
+    }
+
+    const fn normalize_word(&mut self, word: usize) {
+        self.one[word] |= self.two[word] | self.odd[word];
+        self.two[word] |= self.one[word] & !self.odd[word];
+        self.one[word] |= self.two[word];
+    }
+
+    fn add_nonzero(&mut self, color: Color) {
+        debug_assert_ne!(color, 0);
+        let (word, bit) = Self::bit(color);
+        if self.one[word] & bit != 0 {
+            self.two[word] |= bit;
+        } else {
+            self.one[word] |= bit;
+        }
+        self.odd[word] ^= bit;
+        self.normalize_word(word);
+    }
+
+    fn add_word(&mut self, word: &Word) {
+        for &color in &word.cells {
+            if color != 0 {
+                self.add_nonzero(color);
+            }
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.one.iter().all(|&x| x == 0)
+            && self.two.iter().all(|&x| x == 0)
+            && self.odd.iter().all(|&x| x == 0)
+    }
+}
+
+/// The useful full-color FAR-CPS variant: bounded CPS-LRU + permanent
+/// polynomial tail signatures + the standalone CPS per-color supply/parity
+/// component. This is kept as a separate late quotient because it is more
+/// expensive than signature-only CPS-LRU but has produced an additional Halt
+/// proof on the current holdout set.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct CpsLruSigColorSummary {
+    ls: Vec<WordId>,
+    sig: [u16; FAR_CPS_SIG_REFINEMENTS.len()],
+    colors: FarCpsColorSummary,
+}
+
+impl Summary for CpsLruSigColorSummary {
+    fn new() -> Self {
+        Self {
+            ls: Vec::new(),
+            sig: [0; FAR_CPS_SIG_REFINEMENTS.len()],
+            colors: FarCpsColorSummary::default(),
+        }
+    }
+
+    #[expect(clippy::unwrap_in_result)]
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        let word = words.get(w);
+
+        for &color in word.cells.iter().rev() {
+            for (slot, &(base, modulus)) in
+                self.sig.iter_mut().zip(FAR_CPS_SIG_REFINEMENTS.iter())
+            {
+                let value = u64::from(color)
+                    + u64::from(base) * u64::from(*slot);
+                *slot = u16::try_from(value % u64::from(modulus))
+                    .expect("CPS-LRU tail-signature residue must fit in u16");
+            }
+        }
+        self.colors.add_word(word);
+
+        if self.ls.is_empty() && word.is_zero() {
+            debug_assert!(self.sig.iter().all(|&x| x == 0));
+            debug_assert!(self.colors.is_empty());
+            return Ok(());
+        }
+
+        self.ls.insert(0, w);
+        if self.ls.len() <= FAR_CPS_LRU_LEN_H_NO_LRU {
+            return Ok(());
+        }
+
+        let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU];
+        let start = FAR_CPS_LRU_LEN_H_NO_LRU + 1;
+        let mut remove_idx = None;
+        for i in start..self.ls.len() {
+            if self.ls[i] == key {
+                remove_idx = Some(i);
+                break;
+            }
+        }
+        if remove_idx.is_none() && self.ls.len() > FAR_CPS_LRU_LEN_H {
+            remove_idx = Some(self.ls.len() - 1);
+        }
+        if let Some(i) = remove_idx {
+            self.ls.remove(i);
+        }
+
+        Ok(())
+    }
+
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.colors.is_empty()
+            && self.sig.iter().all(|&x| x == 0)
+            && self.ls.iter().all(|&w| words.get(w).is_zero())
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RngsModSummary {
     q: Vec<RepeatWord>,
@@ -1128,13 +1265,8 @@ struct StepKey {
 }
 
 /// FAR decider with a pluggable DFA history summary.
-struct FarDecider<
-    'a,
-    const STATES: usize,
-    const COLORS: usize,
-    S: Summary,
-> {
-    prog: &'a Prog<STATES, COLORS>,
+struct FarDecider<'a, P: GetInstr, S: Summary> {
+    prog: &'a P,
     goal: Goal,
     mirrored: bool,
     block_len: usize,
@@ -1171,6 +1303,11 @@ struct FarDecider<
     h3s: TodoSet<H3>,
     h2s: TodoSet<H2>,
 
+    // Spinout witnesses found in h2_pop that depend on the tape side
+    // forgotten by the H3 -> H2 projection. They are validated only after
+    // relation saturation against the H3 generators recorded in `pre23`.
+    pending_h2_spinout_targets: Set<H2>,
+
     // For each DFA state r, which machine states have H2(s,r).
     r_s: Vec<Set<State>>,
 
@@ -1192,9 +1329,7 @@ struct FarDecider<
     scratch_h3: Vec<H3>,
 }
 
-impl<const STATES: usize, const COLORS: usize, S: Summary>
-    FarDecider<'_, STATES, COLORS, S>
-{
+impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
     fn with_init_dfa(mut self) -> Result<Self, StopReason> {
         self.ensure_dfa_capacity(0);
 
@@ -1244,6 +1379,20 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         }
     }
 
+    /// For Blank on a tape macro, decorated macro colors may still represent
+    /// a semantically blank base-tape cell. Spinout deliberately requires the
+    /// canonical zero ray, so only literal color 0 counts there.
+    fn word_is_zero_context(&self, wid: WordId) -> bool {
+        let word = self.words.get(wid);
+        match self.goal {
+            Goal::Blank => word
+                .cells
+                .iter()
+                .all(|&color| self.prog.is_blank(color)),
+            Goal::Halt | Goal::Spinout => word.is_zero(),
+        }
+    }
+
     fn get_id(&mut self, st: S) -> usize {
         if let Some(&id) = self.id.get(&st) {
             return id;
@@ -1281,7 +1430,7 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         self.push.insert(key, to);
         self.new_pops.push((to, DfaEdge { w: wid, prev: ls }));
 
-        if self.words.get(wid).is_zero() {
+        if self.word_is_zero_context(wid) {
             self.ensure_dfa_capacity(ls.max(to));
             if !self.zero_push[ls].contains(&to) {
                 self.zero_push[ls].push(to);
@@ -1295,13 +1444,15 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
     }
 
     fn summary_may_be_all_zero_context(&self, r: usize) -> bool {
+        // `zero_context` is authoritative. On transcript/LRU macros, Blank
+        // context also includes decorated colors for which `is_blank` is true,
+        // while legacy Summary predicates know only canonical color 0.
         let exact = self.zero_context.get(r).copied().unwrap_or(false);
-        debug_assert!(
-            !exact
-                || self.idr.get(r).is_some_and(|st| {
-                    st.may_be_all_zero_context(&self.words)
-                })
-        );
+        if exact && !self.goal.is_blank() {
+            debug_assert!(self.idr.get(r).is_some_and(|st| {
+                st.may_be_all_zero_context(&self.words)
+            }));
+        }
         exact
     }
 
@@ -1393,7 +1544,8 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         let outcome = if let Some(&cached) = self.step_cache.get(&key) {
             cached
         } else {
-            let computed = match self.prog.raw_word_update_lemma(
+            let computed = match far_raw_word_update_lemma(
+                self.prog,
                 self.words.clone_word(key.w),
                 key.s,
                 key.sgn,
@@ -1452,9 +1604,43 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         let H2 { s, .. } = a;
         let r0 = b.prev;
 
-        let Some(res) =
-            self.tm_step(b.w, s, 1, self.h2_pop_step_context(r0))?
-        else {
+        let ctx = self.h2_pop_step_context(r0);
+        let first = self.tm_step(b.w, s, 1, ctx);
+
+        // H2 is the projection of an H3 node and therefore forgets the H3
+        // block on one side of the head. For Spinout only, the ordinary H2
+        // context historically substitutes `back_zero = true` for that side.
+        // If a spinout target disappears when only that assumed-zero side is
+        // disabled, defer the witness until the H3 generators of this H2 fact
+        // are known. A target supported by the explicit forward/r0 side still
+        // fails immediately.
+        //
+        // Blank deliberately keeps the original behavior. A previous attempt
+        // to apply this provenance pruning to Blank was unsound because the
+        // two-sided global blank condition does not admit this local H2 filter.
+        let step = match first {
+            Err(StopReason::MayTarget) if self.goal.is_spinout() => {
+                let forward_zero =
+                    self.summary_may_be_all_zero_context(r0);
+                match self.tm_step(
+                    b.w,
+                    s,
+                    1,
+                    StepContext::spinout(false, forward_zero),
+                ) {
+                    Err(StopReason::MayTarget) => {
+                        return Err(StopReason::MayTarget);
+                    },
+                    other => {
+                        self.pending_h2_spinout_targets.insert(a);
+                        other
+                    },
+                }
+            },
+            other => other,
+        };
+
+        let Some(res) = step? else {
             return Ok(());
         };
         let s1 = res.s1.unwrap();
@@ -1645,6 +1831,24 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
         }
     }
 
+    /// A deferred H2 Spinout witness remains possible iff its H2 node has
+    /// some H3 generator whose forgotten side may really be all zero: the
+    /// adjacent H3 block is zero and the summary beyond it is reachable from
+    /// the initial summary using only zero blocks.
+    ///
+    /// Every H2 fact is introduced only by `on_h3`, which simultaneously adds
+    /// the corresponding `pre23` edge. Therefore `pre23.values(a)` is the full
+    /// set of H3 generators for that H2 fact. The check is delayed until the
+    /// relation fixed point because more generators may be discovered later.
+    fn pending_h2_spinout_target_still_possible(&self) -> bool {
+        self.pending_h2_spinout_targets.iter().any(|a| {
+            self.pre23.values(a).any(|c| {
+                self.words.get(c.w).is_zero()
+                    && self.summary_may_be_all_zero_context(c.r)
+            })
+        })
+    }
+
     fn run(mut self) -> Result<(), StopReason> {
         let blank = self.words.intern(Word::zero(self.block_len));
         let c0 = H3 {
@@ -1699,8 +1903,302 @@ impl<const STATES: usize, const COLORS: usize, S: Summary>
             break;
         }
 
+        if self.pending_h2_spinout_target_still_possible() {
+            return Err(StopReason::MayTarget);
+        }
+
         Ok(())
     }
+}
+
+/// Exact one-block simulation shared by the raw TM and transcript/LRU macro
+/// machines through `GetInstr`.
+///
+/// A macro instruction lookup may fail with `Err`; as in standalone CPS this
+/// makes the proof attempt inconclusive rather than turning the macro error into
+/// a halting transition.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss
+)]
+fn far_raw_word_update_lemma<P: GetInstr>(
+    prog: &P,
+    w: Word,
+    s: State,
+    sgn: i8,
+    max_steps: usize,
+    goal: Goal,
+    ctx: StepContext,
+    mirrored: bool,
+) -> RawWordUpdateOutcome {
+    debug_assert!(sgn == 1 || sgn == -1);
+    let len = w.len() as i32;
+    let mut w1 = w;
+    let mut nonblank_count = match goal {
+        Goal::Blank => w1
+            .cells
+            .iter()
+            .filter(|&&color| !prog.is_blank(color))
+            .count(),
+        Goal::Halt | Goal::Spinout => {
+            w1.cells.iter().filter(|&&color| color != 0).count()
+        },
+    };
+    let mut s1 = s;
+    let mut pos: i32 = 0;
+
+    let mut local_words = Map::new();
+    local_words.insert(w1.clone(), 0_usize);
+    let mut local_word_id = 0_usize;
+    let mut seen = Set::new();
+    let mut steps = 0_usize;
+
+    loop {
+        if !seen.insert((local_word_id, s1, pos)) {
+            return RawWordUpdateOutcome::LocalLoop;
+        }
+        if steps == max_steps {
+            return RawWordUpdateOutcome::Incomplete;
+        }
+        steps += 1;
+
+        let input = w1.get(pos as usize);
+        let (out_color, shift_right, next_state) =
+            match prog.get_instr(&(s1, input)) {
+                Err(_) => return RawWordUpdateOutcome::Incomplete,
+                Ok(None) => {
+                    return RawWordUpdateOutcome::Exit(
+                        RawWordUpdateLemma::exit_oriented(
+                            w1, None, false, false,
+                        ),
+                    );
+                },
+                Ok(Some(instr)) => instr,
+            };
+
+        let dir: i32 = if shift_right { 1 } else { -1 };
+        let dir = if mirrored { -dir } else { dir };
+        let block_dir = dir * i32::from(sgn);
+
+        // Spinout is specifically a same-state transition while scanning the
+        // canonical macro zero, with a canonical-zero ray ahead.
+        if goal.is_spinout() && input == 0 && next_state == s1 {
+            let zero_ray_ahead = match ctx {
+                StepContext::Spinout {
+                    back_context_may_be_all_zero,
+                    forward_context_may_be_all_zero,
+                } => {
+                    if block_dir > 0 {
+                        w1.zero_to_right_of(pos as usize)
+                            && forward_context_may_be_all_zero
+                    } else {
+                        w1.zero_to_left_of(pos as usize)
+                            && back_context_may_be_all_zero
+                    }
+                },
+                _ => false,
+            };
+
+            if zero_ray_ahead {
+                return RawWordUpdateOutcome::Exit(
+                    RawWordUpdateLemma::exit_oriented(
+                        w1,
+                        Some(s1),
+                        false,
+                        true,
+                    ),
+                );
+            }
+        }
+
+        let input_goal_nonblank = match goal {
+            Goal::Blank => !prog.is_blank(input),
+            Goal::Halt | Goal::Spinout => input != 0,
+        };
+        let output_goal_nonblank = match goal {
+            Goal::Blank => !prog.is_blank(out_color),
+            Goal::Halt | Goal::Spinout => out_color != 0,
+        };
+        let erased_final_nonblank = goal.is_blank()
+            && input_goal_nonblank
+            && !output_goal_nonblank;
+
+        if input != out_color {
+            if input_goal_nonblank {
+                nonblank_count -= 1;
+            }
+            if output_goal_nonblank {
+                nonblank_count += 1;
+            }
+            w1.set(pos as usize, out_color);
+
+            local_word_id = if let Some(&id) = local_words.get(&w1) {
+                id
+            } else {
+                let id = local_words.len();
+                local_words.insert(w1.clone(), id);
+                id
+            };
+        }
+        s1 = next_state;
+
+        if erased_final_nonblank && nonblank_count == 0 {
+            let blank_hit = match ctx {
+                StepContext::Blank {
+                    context_may_be_all_zero,
+                } => context_may_be_all_zero,
+                _ => false,
+            };
+
+            if blank_hit {
+                return RawWordUpdateOutcome::Exit(
+                    RawWordUpdateLemma::exit_oriented(
+                        w1,
+                        Some(s1),
+                        false,
+                        true,
+                    ),
+                );
+            }
+        }
+
+        pos += block_dir;
+        if pos < 0 || pos >= len {
+            return RawWordUpdateOutcome::Exit(
+                RawWordUpdateLemma::exit_oriented(
+                    w1,
+                    Some(s1),
+                    pos < 0,
+                    false,
+                ),
+            );
+        }
+    }
+}
+
+/// Build one summary-FAR decider over any raw or macro machine implementing
+/// the same instruction interface used by standalone CPS.
+fn far_decider_for<P: GetInstr, S: Summary>(
+    prog: &P,
+    params: FarRunParams,
+) -> Result<FarDecider<'_, P, S>, StopReason> {
+    let idr = vec![S::new()];
+    let decider = FarDecider {
+        prog,
+        goal: params.goal,
+        mirrored: params.mirrored,
+        block_len: params.block_len,
+        max_work: params.max_work,
+        block_step_limit: params.block_step_limit,
+        words: WordInterner::new(),
+        work: 0,
+        step_cache: Map::new(),
+        id: Map::new(),
+        idr,
+        pop: Vec::new(),
+        push: Map::new(),
+        new_pops: Vec::new(),
+        ret2: TodoMap::new(),
+        ret3: TodoMap::new(),
+        pre23: TodoMap::new(),
+        pre32: TodoMap::new(),
+        pre33: TodoMap::new(),
+        pre3l: TodoSet::new(),
+        retl: TodoSet::new(),
+        h3s: TodoSet::new(),
+        h2s: TodoSet::new(),
+        pending_h2_spinout_targets: Set::new(),
+        r_s: Vec::new(),
+        zero_context: Vec::new(),
+        zero_push: Vec::new(),
+        scratch_states: Vec::new(),
+        scratch_edges: Vec::new(),
+        scratch_h2: Vec::new(),
+        scratch_h2b: Vec::new(),
+        scratch_h3: Vec::new(),
+    };
+    decider.with_init_dfa()
+}
+
+fn far_decide_with_for<P: GetInstr, S: Summary>(
+    prog: &P,
+    params: FarRunParams,
+) -> bool {
+    let Ok(decider) = far_decider_for::<P, S>(prog, params) else {
+        return false;
+    };
+    decider.run().is_ok()
+}
+
+/// Full raw summary portfolio. The extra CPS experiments that produced no new
+/// holdout proofs were removed; keep only ordinary CPS-LRU, signature CPS-LRU,
+/// and the full-color signature variant that did add a Halt proof.
+fn far_decide_summary_portfolio<P: GetInstr>(
+    prog: &P,
+    params: FarRunParams,
+) -> bool {
+    far_decide_with_for::<_, Ng1Summary>(prog, params)
+        || far_decide_with_for::<
+            _,
+            NgSummary<FAR_NG_TAIL_H_SMALL, FAR_NG_POS_MOD_2>,
+        >(prog, params)
+        || far_decide_with_for::<_, CpsLruSummary>(prog, params)
+        || far_decide_with_for::<_, CpsLruSigSummary>(prog, params)
+        || far_decide_with_for::<_, CpsLruSigColorSummary>(prog, params)
+        || far_decide_with_for::<_, RwlModSummary>(prog, params)
+        || far_decide_with_for::<
+            _,
+            NgSummary<FAR_NG_TAIL_H_MED, FAR_NG_POS_MOD_3>,
+        >(prog, params)
+        || far_decide_with_for::<_, NgSetSummary>(prog, params)
+        || far_decide_with_for::<_, LruPairSummary>(prog, params)
+        || far_decide_with_for::<_, SetPairSummary>(prog, params)
+        || far_decide_with_for::<_, RngsModSummary>(prog, params)
+        || far_decide_with_for::<_, RsModSummary>(prog, params)
+}
+
+/// Macro FAR intentionally tries only the FAR-CPS family. These summaries are
+/// the ones designed to benefit from the richer transcript/LRU macro alphabet,
+/// and restricting the portfolio avoids multiplying every expensive FAR pass by
+/// all four macro machines.
+fn far_decide_macro_cps_portfolio<P: GetInstr>(
+    prog: &P,
+    params: FarRunParams,
+) -> bool {
+    far_decide_with_for::<_, CpsLruSummary>(prog, params)
+        || far_decide_with_for::<_, CpsLruSigSummary>(prog, params)
+        || far_decide_with_for::<_, CpsLruSigColorSummary>(prog, params)
+}
+
+fn far_macro_cps_sweep_for<P: GetInstr>(
+    prog: &P,
+    block: usize,
+    goal: Goal,
+) -> bool {
+    let block = block
+        .min(FAR_BLOCK_LEN_CAP_COLORS_5_8)
+        .min(FAR_BLOCK_LEN_HARD_CAP);
+
+    for block_len in 1..=block {
+        let params_base = FarRunParams {
+            block_len,
+            max_work: FAR_WORK_PER_LEN * block_len,
+            block_step_limit: FAR_STEP_PER_LEN * block_len,
+            goal,
+            mirrored: false,
+        };
+        for mirrored in [true, false] {
+            let params = FarRunParams {
+                mirrored,
+                ..params_base
+            };
+            if far_decide_macro_cps_portfolio(prog, params) {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 #[expect(clippy::multiple_inherent_impl)]
@@ -1711,227 +2209,6 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             states: max_state as usize + 1,
             colors: max_color as usize + 1,
         }
-    }
-
-    /// Exact block simulation (matches C++ `WordUpdateLemma::from`).
-    ///
-    /// - `sgn = +1`: block is oriented in the natural direction
-    /// - `sgn = -1`: motion is flipped in the block
-    ///
-    /// A repeated exact local configuration is reported separately from an
-    /// incomplete bounded simulation. Since the TM is deterministic, such a
-    /// repetition proves that this branch can never leave the block or reach a
-    /// target that was not already encountered.
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_possible_wrap,
-        clippy::cast_sign_loss
-    )]
-    fn raw_word_update_lemma(
-        &self,
-        w: Word,
-        s: State,
-        sgn: i8,
-        max_steps: usize,
-        goal: Goal,
-        ctx: StepContext,
-        mirrored: bool,
-    ) -> RawWordUpdateOutcome {
-        debug_assert!(sgn == 1 || sgn == -1);
-        let len = w.len() as i32;
-        let mut w1 = w;
-        let mut nonzero_count =
-            w1.cells.iter().filter(|&&x| x != 0).count();
-        let mut s1 = s;
-        let mut pos: i32 = 0;
-
-        // Intern local tape words so configurations can be recorded exactly
-        // without cloning the whole block on steps that do not change it.
-        let mut local_words = Map::new();
-        local_words.insert(w1.clone(), 0_usize);
-        let mut local_word_id = 0_usize;
-        let mut seen = Set::new();
-        let mut steps = 0_usize;
-
-        loop {
-            if !seen.insert((local_word_id, s1, pos)) {
-                return RawWordUpdateOutcome::LocalLoop;
-            }
-            if steps == max_steps {
-                return RawWordUpdateOutcome::Incomplete;
-            }
-            steps += 1;
-
-            let input = w1.get(pos as usize);
-
-            // Lookup transition; missing transition means HALT.
-            let slot: Slot = (s1, input);
-            let instr: Option<&Instr> = self.get(&slot);
-
-            let Some(&(out_color, shift_right, next_state)) = instr
-            else {
-                return RawWordUpdateOutcome::Exit(
-                    RawWordUpdateLemma::exit_oriented(
-                        w1, None, false, false,
-                    ),
-                );
-            };
-
-            let dir: i32 = if shift_right { 1 } else { -1 };
-            let dir = if mirrored { -dir } else { dir };
-            let block_dir = dir * i32::from(sgn);
-            if goal.is_spinout() && input == 0 && next_state == s1 {
-                let zero_ray_ahead = match ctx {
-                    StepContext::Spinout {
-                        back_context_may_be_all_zero,
-                        forward_context_may_be_all_zero,
-                    } => {
-                        if block_dir > 0 {
-                            w1.zero_to_right_of(pos as usize)
-                                && forward_context_may_be_all_zero
-                        } else {
-                            w1.zero_to_left_of(pos as usize)
-                                && back_context_may_be_all_zero
-                        }
-                    },
-                    _ => false,
-                };
-
-                if zero_ray_ahead {
-                    return RawWordUpdateOutcome::Exit(
-                        RawWordUpdateLemma::exit_oriented(
-                            w1,
-                            Some(s1),
-                            false,
-                            true,
-                        ),
-                    );
-                }
-            }
-
-            // The first globally blank tape after time 0 must be created
-            // by erasing the final non-zero cell.  Requiring this concrete
-            // non-zero-to-zero write avoids reporting an already-zero abstract
-            // configuration as a new blank event solely because a history bit
-            // came from a merged path.
-            let erased_nonzero = input != 0 && out_color == 0;
-
-            if input != out_color {
-                if input != 0 {
-                    nonzero_count -= 1;
-                }
-                if out_color != 0 {
-                    nonzero_count += 1;
-                }
-                w1.set(pos as usize, out_color);
-
-                local_word_id = if let Some(&id) = local_words.get(&w1)
-                {
-                    id
-                } else {
-                    let id = local_words.len();
-                    local_words.insert(w1.clone(), id);
-                    id
-                };
-            }
-            s1 = next_state;
-
-            if goal.is_blank() && erased_nonzero && nonzero_count == 0 {
-                let blank_hit = match ctx {
-                    StepContext::Blank {
-                        context_may_be_all_zero,
-                    } => context_may_be_all_zero,
-                    _ => false,
-                };
-
-                if blank_hit {
-                    return RawWordUpdateOutcome::Exit(
-                        RawWordUpdateLemma::exit_oriented(
-                            w1,
-                            Some(s1),
-                            false,
-                            true,
-                        ),
-                    );
-                }
-            }
-
-            pos += block_dir;
-
-            if pos < 0 || pos >= len {
-                return RawWordUpdateOutcome::Exit(
-                    RawWordUpdateLemma::exit_oriented(
-                        w1,
-                        Some(s1),
-                        pos < 0,
-                        false,
-                    ),
-                );
-            }
-        }
-    }
-
-    fn far_decider<S: Summary>(
-        &self,
-        params: FarRunParams,
-    ) -> Result<FarDecider<'_, STATES, COLORS, S>, StopReason> {
-        let idr = vec![S::new()];
-
-        let decider = FarDecider {
-            prog: self,
-            goal: params.goal,
-            mirrored: params.mirrored,
-            block_len: params.block_len,
-            max_work: params.max_work,
-            block_step_limit: params.block_step_limit,
-
-            words: WordInterner::new(),
-
-            work: 0,
-
-            step_cache: Map::new(),
-
-            id: Map::new(),
-            idr,
-
-            pop: Vec::new(),
-            push: Map::new(),
-            new_pops: Vec::new(),
-
-            ret2: TodoMap::new(),
-            ret3: TodoMap::new(),
-            pre23: TodoMap::new(),
-            pre32: TodoMap::new(),
-            pre33: TodoMap::new(),
-
-            pre3l: TodoSet::new(),
-            retl: TodoSet::new(),
-            h3s: TodoSet::new(),
-            h2s: TodoSet::new(),
-
-            r_s: Vec::new(),
-            zero_context: Vec::new(),
-            zero_push: Vec::new(),
-
-            scratch_states: Vec::new(),
-            scratch_edges: Vec::new(),
-            scratch_h2: Vec::new(),
-            scratch_h2b: Vec::new(),
-            scratch_h3: Vec::new(),
-        };
-
-        decider.with_init_dfa()
-    }
-
-    fn far_decide_with<S: Summary>(
-        &self,
-        params: FarRunParams,
-    ) -> bool {
-        let Ok(decider) = self.far_decider::<S>(params) else {
-            return false;
-        };
-
-        decider.run().is_ok()
     }
 
     fn far_sweep(&self, block: usize, goal: Goal) -> bool {
@@ -1949,18 +2226,19 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             block.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
 
         for block_len in 1..=block {
-            let max_work = FAR_WORK_PER_LEN * block_len;
-
-            let block_step_limit = FAR_STEP_PER_LEN * block_len;
-
+            let params_base = FarRunParams {
+                block_len,
+                max_work: FAR_WORK_PER_LEN * block_len,
+                block_step_limit: FAR_STEP_PER_LEN * block_len,
+                goal,
+                mirrored: false,
+            };
             for mirrored in [true, false] {
-                if self.far_decide(FarRunParams {
-                    block_len,
-                    max_work,
-                    block_step_limit,
-                    goal,
+                let params = FarRunParams {
                     mirrored,
-                }) {
+                    ..params_base
+                };
+                if far_decide_summary_portfolio(self, params) {
                     return true;
                 }
             }
@@ -1969,24 +2247,23 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         false
     }
 
-    fn far_decide(&self, params: FarRunParams) -> bool {
-        self.far_decide_with::<Ng1Summary>(params)
-            || self.far_decide_with::<NgSummary<
-                FAR_NG_TAIL_H_SMALL,
-                FAR_NG_POS_MOD_2,
-            >>(params)
-            || self.far_decide_with::<CpsLruSummary>(params)
-            || self.far_decide_with::<CpsLruSigSummary>(params)
-            || self.far_decide_with::<RwlModSummary>(params)
-            || self.far_decide_with::<NgSummary<
-                FAR_NG_TAIL_H_MED,
-                FAR_NG_POS_MOD_3,
-            >>(params)
-            || self.far_decide_with::<NgSetSummary>(params)
-            || self.far_decide_with::<LruPairSummary>(params)
-            || self.far_decide_with::<SetPairSummary>(params)
-            || self.far_decide_with::<RngsModSummary>(params)
-            || self.far_decide_with::<RsModSummary>(params)
+    /// Run the useful FAR-CPS summaries over the same tape macros used by
+    /// standalone CPS: transcript macros 1/4/16 and the LRU macro.
+    ///
+    /// This is deliberately a late pass in the public FAR methods so machines
+    /// already solved by raw FAR/MITM/direct FAR pay no macro overhead.
+    fn far_macro_cps_sweep(&self, block: usize, goal: Goal) -> bool {
+        [1, 4, 16].into_iter().any(|tr| {
+            far_macro_cps_sweep_for(
+                &self.make_transcript_macro(tr),
+                block,
+                goal,
+            )
+        }) || far_macro_cps_sweep_for(
+            &self.make_lru_macro(),
+            block,
+            goal,
+        )
     }
 
     fn direct_far_cant_target(&self, goal: Goal) -> bool {
