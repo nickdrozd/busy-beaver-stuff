@@ -263,7 +263,12 @@ impl<const C: usize> WindowSideSummary<C> {
 }
 
 struct SidePossible<const S: usize, const C: usize> {
+    // Dense exact-window index -> compact summary index. `usize::MAX` means
+    // the window has never been reached. This avoids eagerly zero-filling a
+    // full `S * C^3` array of large `WindowSideSummary<C>` values.
+    lookup: Vec<usize>,
     windows: Vec<WindowSideSummary<C>>,
+    empty: WindowSideSummary<C>,
 }
 
 impl<const S: usize, const C: usize> SidePossible<S, C> {
@@ -277,8 +282,26 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
     }
 
     fn new() -> Self {
+        let len = S * C * C * C;
         Self {
-            windows: vec![WindowSideSummary::empty(); S * C * C * C],
+            lookup: vec![usize::MAX; len],
+            // Reserve address space for the worst case without initializing
+            // any summaries. Reached windows are constructed on demand.
+            windows: Vec::with_capacity(len),
+            empty: WindowSideSummary::empty(),
+        }
+    }
+
+    const fn slot_count(&self) -> usize {
+        self.lookup.len()
+    }
+
+    fn window_by_index(&self, index: usize) -> &WindowSideSummary<C> {
+        let compact = self.lookup[index];
+        if compact == usize::MAX {
+            &self.empty
+        } else {
+            &self.windows[compact]
         }
     }
 
@@ -289,9 +312,10 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
         left: usize,
         right: usize,
     ) -> &WindowSideSummary<C> {
-        &self.windows[Self::index(st, scan, left, right)]
+        self.window_by_index(Self::index(st, scan, left, right))
     }
 
+    #[cfg(test)]
     fn window_mut(
         &mut self,
         st: usize,
@@ -300,7 +324,25 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
         right: usize,
     ) -> &mut WindowSideSummary<C> {
         let index = Self::index(st, scan, left, right);
-        &mut self.windows[index]
+        if self.lookup[index] == usize::MAX {
+            self.insert_window_by_index(
+                index,
+                WindowSideSummary::empty(),
+            );
+        }
+        let compact = self.lookup[index];
+        &mut self.windows[compact]
+    }
+
+    fn insert_window_by_index(
+        &mut self,
+        index: usize,
+        summary: WindowSideSummary<C>,
+    ) {
+        debug_assert_eq!(self.lookup[index], usize::MAX);
+        let compact = self.windows.len();
+        self.windows.push(summary);
+        self.lookup[index] = compact;
     }
 }
 
@@ -2853,17 +2895,19 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let mut possible = SidePossible::new();
 
         {
-            let initial = possible.window_mut(0, 0, 0, 0);
+            let mut initial = WindowSideSummary::empty();
             initial.reachable = true;
             for side in [LEFT_SIDE, RIGHT_SIDE] {
                 initial.colors[side] = 1;
                 initial.pairs[side][0] = 1;
             }
+            let index = SidePossible::<s, c>::index(0, 0, 0, 0);
+            possible.insert_window_by_index(index, initial);
         }
 
-        #[expect(clippy::useless_let_if_seq)]
-        fn merge<const C: usize>(
-            target: &mut WindowSideSummary<C>,
+        fn merge<const S: usize, const C: usize>(
+            possible: &mut SidePossible<S, C>,
+            target_index: usize,
             source: WindowSideSummary<C>,
             push_side: usize,
             print: usize,
@@ -2871,12 +2915,26 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             target_left: usize,
             target_right: usize,
         ) -> bool {
+            let compact = possible.lookup[target_index];
+
+            // First reach: construct the target directly from the source
+            // instead of initializing a zero summary and OR-ing every field
+            // into it.
+            if compact == usize::MAX {
+                let mut target = source;
+                target.reachable = true;
+                target.colors[LEFT_SIDE] |= 1_u64 << target_left;
+                target.colors[RIGHT_SIDE] |= 1_u64 << target_right;
+                target.colors[push_side] |= 1_u64 << print;
+                target.pairs[push_side][print] |= 1_u64 << old_neighbor;
+                possible.insert_window_by_index(target_index, target);
+                return true;
+            }
+
+            let target = &mut possible.windows[compact];
             let mut changed = false;
 
-            if !target.reachable {
-                target.reachable = true;
-                changed = true;
-            }
+            debug_assert!(target.reachable);
 
             for side in [LEFT_SIDE, RIGHT_SIDE] {
                 let old_colors = target.colors[side];
@@ -2892,7 +2950,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             }
 
             // Both exact target neighbors must occur on their respective
-            // sides.  Usually these bits are already inherited, but setting
+            // sides. Usually these bits are already inherited, but setting
             // them explicitly keeps the representation self-contained.
             let old_left_colors = target.colors[LEFT_SIDE];
             target.colors[LEFT_SIDE] |= 1_u64 << target_left;
@@ -2928,7 +2986,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         // implementation rescanned every transition and every C^2 source
         // window after any merge anywhere in the lattice.
         let initial_index = SidePossible::<s, c>::index(0, 0, 0, 0);
-        let mut queued = vec![false; possible.windows.len()];
+        let mut queued = vec![false; possible.slot_count()];
         let mut q = VecDeque::new();
         queued[initial_index] = true;
         q.push_back((0_usize, 0_usize, 0_usize, 0_usize));
@@ -2938,7 +2996,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 SidePossible::<s, c>::index(st, sc, left, right);
             queued[index] = false;
 
-            let source = possible.windows[index];
+            let source = *possible.window_by_index(index);
             debug_assert!(source.reachable);
 
             let Some((pr, shift, ns)) = trans[st][sc] else {
@@ -2963,7 +3021,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         ns, right, pr, new_right,
                     );
                     let changed = merge(
-                        &mut possible.windows[target_index],
+                        &mut possible,
+                        target_index,
                         source,
                         LEFT_SIDE,
                         pr,
@@ -2991,7 +3050,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         ns, left, new_left, pr,
                     );
                     let changed = merge(
-                        &mut possible.windows[target_index],
+                        &mut possible,
+                        target_index,
                         source,
                         RIGHT_SIDE,
                         pr,
