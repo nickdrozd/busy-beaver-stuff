@@ -3073,8 +3073,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
         let mut possible = SidePrefixPossible::new();
         let mut q = VecDeque::new();
-        let mut seen_specific: Vec<Set<SidePrefix>> =
-            (0..possible.windows.len()).map(|_| Set::new()).collect();
+        let mut seen_specific: Set<(usize, SidePrefix)> = Set::new();
 
         #[expect(clippy::shadow_unrelated)]
         let mut push =
@@ -3123,13 +3122,12 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         SIDE_PREFIX_HAS_DIRTY_UNKNOWN;
                     possible.windows[index]
                         .retain(|&old| old == SidePrefix::blank());
-                    seen_specific[index].clear();
                 } else {
                     // Any specific nonblank prefix is already covered by the broad
                     // dirty alternative. Otherwise only exact deduplication is
                     // needed; there are no other subsumption relations.
                     if flags & SIDE_PREFIX_HAS_DIRTY_UNKNOWN != 0
-                        || !seen_specific[index].insert(prefix)
+                        || !seen_specific.insert((index, prefix))
                     {
                         return;
                     }
