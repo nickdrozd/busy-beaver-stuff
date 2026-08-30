@@ -5124,7 +5124,10 @@ impl Tape {
             // `suffix_nonblank[i]` says some explicit nonblank residual run
             // occurs at position i or farther, for i in 0..=3. Position 3
             // summarizes every run beyond the spill descriptor.
-            suffix_nonblank: [bool; 4],
+            // Bit i says some explicit nonblank residual run occurs at
+            // position i or farther. A mask avoids repeatedly zeroing and
+            // updating four separate bools on this hot query path.
+            suffix_nonblank: u8,
             end_unknown: bool,
         }
 
@@ -5132,7 +5135,7 @@ impl Tape {
             const EMPTY: Self = Self {
                 runs: [ReqRun::EMPTY; 3],
                 run_count: 0,
-                suffix_nonblank: [false; 4],
+                suffix_nonblank: 0,
                 end_unknown: false,
             };
 
@@ -5150,7 +5153,6 @@ impl Tape {
 
         #[derive(Clone, Copy)]
         enum FirstResidual {
-            Keep,
             Drop,
             Replace(BlockCount),
         }
@@ -5171,74 +5173,13 @@ impl Tape {
         }
 
         #[expect(clippy::cast_possible_truncation)]
-        fn requirement(
-            span: &Span,
-            first: FirstResidual,
-        ) -> Requirement {
-            let end_unknown = span.end == TapeEnd::Unknown;
-            let block_count = span.span.len();
-            let trim_far_zero = !end_unknown
-                && span
-                    .span
-                    .iter()
-                    .next_back()
-                    .is_some_and(|block| block.color == 0);
-
-            let mut out = Requirement {
-                end_unknown,
-                ..Requirement::EMPTY
-            };
-            let mut count = 0_usize;
-
-            for (source_index, block) in span.span.iter().enumerate() {
-                if trim_far_zero && source_index + 1 == block_count {
-                    continue;
-                }
-
-                #[expect(clippy::shadow_unrelated)]
-                let residual = if source_index == 0 {
-                    match first {
-                        FirstResidual::Keep => Some(block.count),
-                        FirstResidual::Drop => None,
-                        FirstResidual::Replace(count) => Some(count),
-                    }
-                } else {
-                    Some(block.count)
-                };
-
-                let Some(residual) = residual else {
-                    continue;
-                };
-
-                if count < 3 {
-                    out.runs[count] = req_run(block.color, residual);
-                }
-
-                if block.color != 0 {
-                    let highest = count.min(3);
-                    for from in 0..=highest {
-                        out.suffix_nonblank[from] = true;
-                    }
-                }
-
-                count += 1;
-            }
-
-            out.run_count = count.min(3) as u8;
-
-            // With an unknown tape end, the final explicit run may continue
-            // into that end with the same color. Preserve the old unbounded
-            // upper-bound semantics without building a temporary Vec.
-            if end_unknown && (1..=3).contains(&count) {
-                out.runs[count - 1].max = None;
-            }
-
-            out
-        }
-
         fn requirements(span: &Span) -> RequirementSet {
+            let end_unknown = span.end == TapeEnd::Unknown;
             let Some(first) = span.span.first() else {
-                let req = requirement(span, FirstResidual::Keep);
+                let req = Requirement {
+                    end_unknown,
+                    ..Requirement::EMPTY
+                };
                 return RequirementSet {
                     reqs: [req, Requirement::EMPTY],
                     len: 1,
@@ -5246,6 +5187,9 @@ impl Tape {
                 };
             };
 
+            // `AtLeast(1)` is the only case with two residual alternatives.
+            // Build both during one span traversal instead of calling the old
+            // requirement builder twice.
             let (first_mode, second_mode) = match first.count {
                 BlockCount::Exact(1) => (FirstResidual::Drop, None),
                 BlockCount::Exact(count) => (
@@ -5268,22 +5212,94 @@ impl Tape {
                 ),
             };
 
-            #[expect(clippy::shadow_unrelated)]
-            let first = requirement(span, first_mode);
-            let mut out = RequirementSet {
-                reqs: [first, Requirement::EMPTY],
-                len: 1,
-                unconstrained: first.unconstrained(),
-            };
+            let len = if second_mode.is_some() { 2 } else { 1 };
+            let modes = [first_mode, second_mode.unwrap_or(first_mode)];
+            let mut reqs = [
+                Requirement {
+                    end_unknown,
+                    ..Requirement::EMPTY
+                },
+                Requirement {
+                    end_unknown,
+                    ..Requirement::EMPTY
+                },
+            ];
+            let mut counts = [0_usize; 2];
 
-            if let Some(second_mode) = second_mode {
-                let second = requirement(span, second_mode);
-                out.reqs[1] = second;
-                out.len = 2;
-                out.unconstrained |= second.unconstrained();
+            let block_count = span.span.len();
+            // SpanT stores farthest first, so this is the far-end block.
+            let trim_far_zero = !end_unknown
+                && span
+                    .span
+                    .blocks
+                    .first()
+                    .is_some_and(|block| block.color == 0);
+
+            for (source_index, block) in span.span.iter().enumerate() {
+                if trim_far_zero && source_index + 1 == block_count {
+                    continue;
+                }
+
+                for alt in 0..len {
+                    let residual = if source_index == 0 {
+                        match modes[alt] {
+                            FirstResidual::Drop => None,
+                            FirstResidual::Replace(count) => {
+                                Some(count)
+                            },
+                        }
+                    } else {
+                        Some(block.count)
+                    };
+
+                    let Some(residual) = residual else {
+                        continue;
+                    };
+
+                    let count = counts[alt];
+                    if count < 3 {
+                        reqs[alt].runs[count] =
+                            req_run(block.color, residual);
+                    }
+
+                    if block.color != 0 {
+                        // For a nonblank at residual position `count`, every
+                        // suffix starting at 0..=min(count,3) is dirty.
+                        reqs[alt].suffix_nonblank |=
+                            (1_u8 << (count.min(3) + 1)) - 1;
+                    }
+
+                    counts[alt] += 1;
+                }
+
+                // Once both alternatives have at least three retained runs
+                // and position-3-or-farther is known dirty, later blocks can
+                // no longer change any field used by matching.
+                if (0..len).all(|alt| {
+                    counts[alt] > 3
+                        && reqs[alt].suffix_nonblank & (1 << 3) != 0
+                }) {
+                    break;
+                }
             }
 
-            out
+            for alt in 0..len {
+                let count = counts[alt];
+                reqs[alt].run_count = count.min(3) as u8;
+
+                // With an unknown tape end, the final explicit run may
+                // continue into that end with the same color.
+                if end_unknown && (1..=3).contains(&count) {
+                    reqs[alt].runs[count - 1].max = None;
+                }
+            }
+
+            RequirementSet {
+                reqs,
+                len: len as u8,
+                unconstrained: (0..len)
+                    .any(|alt| reqs[alt].unconstrained()),
+            }
         }
 
         fn count_bounds(count: u8) -> (u16, Option<u16>) {
@@ -5376,9 +5392,10 @@ impl Tape {
             }
 
             if tail_dirty {
-                req.end_unknown || req.suffix_nonblank[known_len]
+                req.end_unknown
+                    || req.suffix_nonblank & (1_u8 << known_len) != 0
             } else {
-                !req.suffix_nonblank[known_len]
+                req.suffix_nonblank & (1_u8 << known_len) == 0
             }
         }
 
