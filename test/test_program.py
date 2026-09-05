@@ -66,3 +66,13 @@ class TestProgram(TestCase):
         self.assertEqual(
             prog_758,
             str(normaliz.swap_shifts()))
+
+    def test_blank_holdout_equiv(self):
+        h1 = "1RB 1LA ...  2LA 0RC 1RB  2LC 2LB 0RC"
+        h2 = "1RB 2LA 0LC  2LA ... 2RB  1RC 0LC 1RA"
+
+        norm = Normalizer(h1).swap_shifts().swap_colors(1, 2).swap_states(0, 1)
+
+        self.assertEqual(
+            h2,
+            str(norm))
