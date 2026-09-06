@@ -5,6 +5,7 @@ use core::{
 };
 
 use ahash::{AHashMap as Dict, AHashSet as Set, AHasher};
+use std::sync::Arc;
 
 use crate::{
     Color, Instr, Prog, Shift, Slot, State, Steps, instrs::Parse as _,
@@ -1338,8 +1339,9 @@ where
     }
 
     // Certificate-only fallback. Count overflow is only the trigger for the
-    // expensive cycle pass. The retry keeps exact tape/count semantics and
-    // records recurring predecessor edges. When one particular edge would
+    // expensive cycle pass. The retry keeps the original single-color run
+    // counts exact and records recurring predecessor edges. Repeated-word
+    // widening is the separate sound abstraction used in both passes. When one particular edge would
     // overflow after a stable increasing recurrence, only that edge is cut;
     // sibling exits and unrelated frontier branches remain live. Thus cycle
     // handling cannot invent a new predecessor entrance.
@@ -1589,10 +1591,17 @@ where
     // discarded immediately. Growing-count cycles are handled more narrowly:
     // the retry records exact predecessor *edges* and only cuts an edge when
     // that very edge would overflow a run after a long, stable recurrence.
-    // No tape is widened and no whole-frontier periodicity is assumed.
+    // This overflow analysis never widens a monochromatic run; compound-word
+    // widening is handled independently below.
     let mut cycle_seen: Option<Dict<(State, u64), Vec<Tape>>> =
         CYCLE_ANALYSIS.then(Dict::new);
     let mut overflow_cycle_history = OverflowCycleHistory::default();
+    let mut word_widening_history = WordWideningHistory::default();
+    let mut word_widening_active = false;
+
+    // Widened word states can recur even with unknown tape ends. Unlike the
+    // old hash-only blank-end shortcut, resolve collisions by exact equality.
+    let mut word_seen: Dict<(State, u64), Vec<Tape>> = Dict::new();
 
     // Optional exact historical repeat filter, enabled only for `twostep`.
     // Exact Tape equality resolves hash collisions without relying on hash
@@ -1618,6 +1627,16 @@ where
             });
         } else {
             configs.retain(|Config { state, tape }| {
+                if word_widening_active && tape.has_indef_word() {
+                    let key = (*state, tape.hash());
+                    let bucket = word_seen.entry(key).or_default();
+                    if bucket.contains(tape) {
+                        return false;
+                    }
+                    bucket.push(tape.clone());
+                    return true;
+                }
+
                 let blank_ends = tape.lspan.end == TapeEnd::Blanks
                     && tape.rspan.end == TapeEnd::Blanks;
 
@@ -1645,7 +1664,7 @@ where
             _ => {},
         }
 
-        let stepped = match step_configs::<s, c, CYCLE_ANALYSIS>(
+        let mut stepped = match step_configs::<s, c, CYCLE_ANALYSIS>(
             valid_steps,
             step,
             &mut overflow_cycle_history,
@@ -1667,6 +1686,14 @@ where
             Err(err) => return err,
             Ok(stepped) => stepped,
         };
+
+        for config in &mut stepped {
+            if word_widening_history.widen(config, step) {
+                word_widening_active = true;
+                #[cfg(debug_assertions)]
+                println!("word-widen | {config}");
+            }
+        }
 
         if let Some(exact_seen) = &mut exact_seen {
             let mut kept = Configs::with_capacity(stepped.len());
@@ -3497,9 +3524,204 @@ impl fmt::Display for Config {
 
 /**************************************/
 
-// Expensive growing-edge history used only after the ordinary pass has
-// actually reached CountLimit. The retry never widens counts. Instead, it
-// remembers exact predecessor edges that increase the near run on the push
+// Multi-step repeated-word widening.  Unlike the single-transition spinout
+// path, this recognizes a recurring whole configuration skeleton whose one
+// compound block grows by a stable number of copies every stable number of
+// backward steps.  The recurrence is only a trigger: replacing one exact
+// `(word)^k` configuration by `(word)^m..` for m <= k is itself a sound
+// over-approximation, so a mistaken recurrence guess cannot create a false
+// refutation.
+const WORD_WIDEN_OBSERVATIONS: usize = 3;
+const WORD_WIDEN_KEEP: usize = 12;
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct WordGrowthKey {
+    state: State,
+    scan: Color,
+    side: Side,
+    position: usize,
+    l_end: EndSig,
+    r_end: EndSig,
+    left: Vec<BlockSig>,
+    right: Vec<BlockSig>,
+}
+
+#[derive(Default)]
+struct WordGrowthObservations {
+    samples: Vec<(Steps, usize)>,
+    widened_min: Option<usize>,
+}
+
+#[derive(Default)]
+struct WordWideningHistory {
+    entries: Dict<WordGrowthKey, WordGrowthObservations>,
+}
+
+impl WordWideningHistory {
+    fn skeleton(span: &Span) -> Vec<BlockSig> {
+        let mut sig = span_runs(span);
+        for block in &mut sig {
+            if let BlockSig::Word { count, indef, .. } = block
+                && !*indef
+            {
+                *count = 0;
+            }
+        }
+        sig
+    }
+
+    fn threshold(
+        &mut self,
+        key: WordGrowthKey,
+        step: Steps,
+        count: usize,
+    ) -> Option<usize> {
+        let entry = self.entries.entry(key).or_default();
+        if let Some(minimum) = entry.widened_min {
+            return (count >= minimum).then_some(minimum);
+        }
+
+        if let Some(last) = entry.samples.last_mut()
+            && last.0 == step
+        {
+            if count <= last.1 {
+                return None;
+            }
+            last.1 = count;
+        } else {
+            if entry
+                .samples
+                .last()
+                .is_some_and(|&(_, old)| old == count)
+            {
+                return None;
+            }
+            entry.samples.push((step, count));
+            if entry.samples.len() > WORD_WIDEN_KEEP {
+                entry.samples.remove(0);
+            }
+        }
+
+        if entry.samples.len() < WORD_WIDEN_OBSERVATIONS {
+            return None;
+        }
+
+        // Use the newest point and look through recent history for two points
+        // at the same positive (step,count) spacing. This tolerates unrelated
+        // branches interleaved between observations of the growing macro-edge.
+        let (now_step, now_count) =
+            entry.samples[entry.samples.len() - 1];
+        for &(prev_step, prev_count) in entry.samples
+            [..entry.samples.len() - 1]
+            .iter()
+            .rev()
+            .take(8)
+        {
+            if prev_step >= now_step || prev_count >= now_count {
+                continue;
+            }
+
+            let period = now_step - prev_step;
+            let delta = now_count - prev_count;
+            let Some(first_step) = prev_step.checked_sub(period) else {
+                continue;
+            };
+            let Some(first_count) = prev_count.checked_sub(delta)
+            else {
+                continue;
+            };
+            if first_count == 0 {
+                continue;
+            }
+
+            if entry.samples.contains(&(first_step, first_count)) {
+                entry.widened_min = Some(first_count);
+                return Some(first_count);
+            }
+        }
+
+        None
+    }
+
+    #[expect(clippy::shadow_unrelated)]
+    fn widen(&mut self, config: &mut Config, step: Steps) -> bool {
+        // Keep the common non-periodic path allocation-free. Only after an
+        // exact compound block exists do we build the structural signatures.
+        let mut candidates = Vec::new();
+        for (side, span) in [
+            (Side::Left, &config.tape.lspan),
+            (Side::Right, &config.tape.rspan),
+        ] {
+            for (position, block) in span.span.iter().enumerate() {
+                let Block::Word {
+                    word,
+                    count: WordCount::Exact(count),
+                } = block
+                else {
+                    continue;
+                };
+                if word.len() > 1 {
+                    candidates.push((side, position, *count));
+                }
+            }
+        }
+
+        if candidates.is_empty() {
+            return false;
+        }
+
+        let left = Self::skeleton(&config.tape.lspan);
+        let right = Self::skeleton(&config.tape.rspan);
+        let l_end = EndSig::from_end(&config.tape.lspan.end);
+        let r_end = EndSig::from_end(&config.tape.rspan.end);
+
+        let mut changed = false;
+        for (side, position, count) in candidates {
+            let key = WordGrowthKey {
+                state: config.state,
+                scan: config.tape.scan,
+                side,
+                position,
+                l_end,
+                r_end,
+                left: left.clone(),
+                right: right.clone(),
+            };
+
+            let Some(minimum) = self.threshold(key, step, count) else {
+                continue;
+            };
+
+            let span = if side == Side::Left {
+                &mut config.tape.lspan
+            } else {
+                &mut config.tape.rspan
+            };
+            let physical = span.span.len() - 1 - position;
+            let Some(Block::Word { count, .. }) =
+                span.span.blocks.get_mut(physical)
+            else {
+                continue;
+            };
+
+            if matches!(count, WordCount::Exact(exact) if *exact >= minimum)
+            {
+                *count = WordCount::AtLeast(minimum);
+                changed = true;
+            }
+        }
+
+        if changed {
+            config.tape.lspan.span.normalize_boundary();
+            config.tape.rspan.span.normalize_boundary();
+        }
+        changed
+    }
+}
+
+// Expensive single-color growing-edge history used only after the ordinary
+// pass has actually reached CountLimit. This mechanism never widens those run
+// counts. Instead, it remembers exact predecessor edges that increase the near
 // side. If that same edge reaches u8::MAX after recurring with a stable
 // (step,count) period, only the overflowing edge is cut; sibling exits and
 // unrelated frontier branches remain live.
@@ -3598,15 +3820,22 @@ struct GrowthEdgeKey {
     grow_side: Side,
     l_end: EndSig,
     r_end: EndSig,
-    left: Vec<RunSig>,
-    right: Vec<RunSig>,
+    left: Vec<BlockSig>,
+    right: Vec<BlockSig>,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct RunSig {
-    color: Color,
-    count: usize,
-    indef: bool,
+#[derive(Clone, PartialEq, Eq, Hash)]
+enum BlockSig {
+    Run {
+        color: Color,
+        count: usize,
+        indef: bool,
+    },
+    Word {
+        word: BlockWord,
+        count: usize,
+        indef: bool,
+    },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -3630,24 +3859,25 @@ enum Side {
     Right,
 }
 
-fn span_runs(span: &Span) -> Vec<RunSig> {
+fn span_runs(span: &Span) -> Vec<BlockSig> {
     span.span
         .iter()
-        .map(|block| match block.count {
-            BlockCount::Exact(count) => RunSig {
-                color: block.color,
-                count: usize::from(count),
-                indef: false,
+        .map(|block| match block {
+            Block::Run { color, count } => BlockSig::Run {
+                color: *color,
+                count: usize::from(count.minimum()),
+                indef: count.is_indef(),
             },
-            BlockCount::AtLeast(count) => RunSig {
-                color: block.color,
-                count: usize::from(count),
-                indef: true,
+            Block::Word { word, count } => BlockSig::Word {
+                word: Arc::clone(word),
+                count: count.minimum(),
+                indef: count.is_indef(),
             },
         })
         .collect()
 }
 
+#[expect(clippy::shadow_unrelated)]
 fn growth_edge_observation(
     config: &Config,
     instr: Instr,
@@ -3661,11 +3891,12 @@ fn growth_edge_observation(
     };
 
     let block = push.span.first()?;
-    if block.color != tape.scan {
+    let (color, block_count) = block.run()?;
+    if color != tape.scan {
         return None;
     }
 
-    let count = block.count.minimum();
+    let count = block_count.minimum();
     let mut left = span_runs(&tape.lspan);
     let mut right = span_runs(&tape.rspan);
     let grow = match grow_side {
@@ -3677,8 +3908,16 @@ fn growth_edge_observation(
     // first run. Zero is only a wildcard in this key; real runs are nonzero.
     #[expect(clippy::unwrap_in_result)]
     let nearest = grow.first_mut().unwrap();
-    debug_assert_eq!(nearest.color, tape.scan);
-    nearest.count = 0;
+    let BlockSig::Run {
+        color,
+        count: signature_count,
+        ..
+    } = nearest
+    else {
+        unreachable!("single-color growth edge must start with a run")
+    };
+    debug_assert_eq!(*color, tape.scan);
+    *signature_count = 0;
 
     Some((
         GrowthEdgeKey {
@@ -3788,49 +4027,258 @@ impl BlockCount {
     }
 }
 
+/// Copy count for a repeated compound word.  `AtLeast(n)` is the word-level
+/// counterpart of an indefinite monochromatic run: it denotes any finite
+/// number of complete copies greater than or equal to `n`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+enum WordCount {
+    Exact(usize),
+    AtLeast(usize),
+}
+
+impl WordCount {
+    const fn exact(count: usize) -> Self {
+        debug_assert!(count > 0);
+        Self::Exact(count)
+    }
+
+    const fn at_least(count: usize) -> Self {
+        debug_assert!(count > 0);
+        Self::AtLeast(count)
+    }
+
+    const fn minimum(self) -> usize {
+        match self {
+            Self::Exact(count) | Self::AtLeast(count) => count,
+        }
+    }
+
+    const fn is_indef(self) -> bool {
+        matches!(self, Self::AtLeast(_))
+    }
+
+    const fn can_be_one(self) -> bool {
+        matches!(self, Self::AtLeast(1))
+    }
+
+    const fn exact_copies(self) -> Option<usize> {
+        match self {
+            Self::Exact(count) => Some(count),
+            Self::AtLeast(_) => None,
+        }
+    }
+
+    /// Merge adjacent copies of the same periodic word.  If either side was
+    /// widened, retain its established lower bound instead of strengthening it
+    /// with newly materialized exact copies.  This is a deliberate widening:
+    /// it is a sound superset and makes the abstract macro-cycle stable.
+    fn merge(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::Exact(left), Self::Exact(right)) => Self::Exact(
+                left.checked_add(right)
+                    .expect("BKW word count overflow"),
+            ),
+            (Self::AtLeast(min), Self::Exact(_))
+            | (Self::Exact(_), Self::AtLeast(min)) => {
+                Self::AtLeast(min)
+            },
+            (Self::AtLeast(left), Self::AtLeast(right)) => {
+                Self::AtLeast(left.min(right))
+            },
+        }
+    }
+}
+
+const BKW_REBALANCE_WINDOW: usize = 64;
+const BKW_MAX_PATTERN: usize = 16;
+const BKW_MIN_PATTERN_REPEATS: usize = 3;
+
+type BlockWord = Arc<[Color]>;
+
+fn bkw_primitive_word(word: &[Color]) -> (&[Color], usize) {
+    for width in 1..=word.len() / 2 {
+        if !word.len().is_multiple_of(width) {
+            continue;
+        }
+
+        let root = &word[..width];
+        if word.chunks_exact(width).all(|chunk| chunk == root) {
+            return (root, word.len() / width);
+        }
+    }
+
+    (word, 1)
+}
+
+/// One exact/indefinite monochromatic run, or a repeated short word.
+///
+/// `Run` retains the original BKW semantics. `Word` uses the same exact versus
+/// at-least distinction at copy granularity; symbols inside the primitive word
+/// are stored from the head outward. This lets multi-step periodic growth reach
+/// a finite abstract state such as `(1 2)^3..` instead of an unbounded ladder.
 #[derive(Clone, PartialEq, Eq, Hash)]
-struct Block {
-    color: Color,
-    count: BlockCount,
+enum Block {
+    Run { color: Color, count: BlockCount },
+    Word { word: BlockWord, count: WordCount },
 }
 
 impl Block {
     const fn exact(color: Color, count: Count) -> Self {
-        Self {
+        Self::Run {
             color,
             count: BlockCount::exact(count),
         }
     }
 
     const fn at_least(color: Color, count: Count) -> Self {
-        Self {
+        Self::Run {
             color,
             count: BlockCount::at_least(count),
         }
     }
 
-    const fn blank(&self) -> bool {
-        self.color == 0
-    }
-}
+    fn exact_word(word: &[Color], copies: usize) -> Self {
+        debug_assert_ne!(word, []);
+        debug_assert!(copies > 0);
 
-impl fmt::Display for Block {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.count {
-            BlockCount::Exact(1) => write!(f, "{}", self.color),
-            BlockCount::Exact(count) => {
-                write!(f, "{}^{count}", self.color)
+        let (root, factor) = bkw_primitive_word(word);
+        let copies = copies
+            .checked_mul(factor)
+            .expect("BKW word copy count overflow");
+
+        if root.len() == 1 && copies <= usize::from(Count::MAX) {
+            #[expect(clippy::cast_possible_truncation)]
+            return Self::exact(root[0], copies as Count);
+        }
+
+        Self::Word {
+            word: BlockWord::from(root.to_vec()),
+            count: WordCount::exact(copies),
+        }
+    }
+
+    fn at_least_word(word: &[Color], copies: usize) -> Self {
+        debug_assert_ne!(word, []);
+        debug_assert!(copies > 0);
+
+        let (root, factor) = bkw_primitive_word(word);
+        let copies = copies
+            .checked_mul(factor)
+            .expect("BKW word copy count overflow");
+
+        if root.len() == 1 && copies <= usize::from(Count::MAX) {
+            #[expect(clippy::cast_possible_truncation)]
+            return Self::at_least(root[0], copies as Count);
+        }
+
+        Self::Word {
+            word: BlockWord::from(root.to_vec()),
+            count: WordCount::at_least(copies),
+        }
+    }
+
+    const fn run(&self) -> Option<(Color, BlockCount)> {
+        match self {
+            Self::Run { color, count } => Some((*color, *count)),
+            Self::Word { .. } => None,
+        }
+    }
+
+    fn word(&self) -> &[Color] {
+        match self {
+            Self::Run { color, .. } => core::slice::from_ref(color),
+            Self::Word { word, .. } => word,
+        }
+    }
+
+    const fn exact_copies(&self) -> Option<usize> {
+        match self {
+            Self::Run {
+                count: BlockCount::Exact(count),
+                ..
+            } => Some(*count as usize),
+            Self::Run {
+                count: BlockCount::AtLeast(_),
+                ..
+            } => None,
+            Self::Word { count, .. } => count.exact_copies(),
+        }
+    }
+
+    const fn can_be_one(&self) -> bool {
+        match self {
+            Self::Run { count, .. } => count.can_be_one(),
+            Self::Word { count, .. } => count.can_be_one(),
+        }
+    }
+
+    fn first_color(&self) -> Color {
+        self.word()[0]
+    }
+
+    fn width(&self) -> usize {
+        self.word().len()
+    }
+
+    fn blank(&self) -> bool {
+        self.word().iter().all(|&color| color == 0)
+    }
+
+    fn contains_nonblank(&self) -> bool {
+        self.word().iter().any(|&color| color != 0)
+    }
+
+    fn total_exact_cells(&self) -> Option<usize> {
+        self.exact_copies()
+            .and_then(|copies| self.width().checked_mul(copies))
+    }
+
+    fn display(&self, reverse: bool) -> String {
+        match self {
+            Self::Run { color, count } => match count {
+                BlockCount::Exact(1) => color.to_string(),
+                BlockCount::Exact(count) => format!("{color}^{count}"),
+                BlockCount::AtLeast(1) => format!("{color}.."),
+                BlockCount::AtLeast(count) => {
+                    format!("{color}^{count}..")
+                },
             },
-            BlockCount::AtLeast(1) => write!(f, "{}..", self.color),
-            BlockCount::AtLeast(count) => {
-                write!(f, "{}^{count}..", self.color)
+            Self::Word { word, count } => {
+                let symbols = if reverse {
+                    word.iter()
+                        .rev()
+                        .map(ToString::to_string)
+                        .collect::<Vec<_>>()
+                } else {
+                    word.iter()
+                        .map(ToString::to_string)
+                        .collect::<Vec<_>>()
+                };
+                let shown = format!("({})", symbols.join(" "));
+                match count {
+                    WordCount::Exact(1) => shown,
+                    WordCount::Exact(count) => {
+                        format!("{shown}^{count}")
+                    },
+                    WordCount::AtLeast(1) => format!("{shown}.."),
+                    WordCount::AtLeast(count) => {
+                        format!("{shown}^{count}..")
+                    },
+                }
             },
         }
     }
 }
 
-/// Minimal near-head span implementation for BKW.  Storage matches the shared
-/// tape span: farthest block first, nearest block last.
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.display(false))
+    }
+}
+
+/// Minimal near-head span implementation for BKW. Storage matches the shared
+/// tape span: farthest block first, nearest block last. Compound block words
+/// themselves are stored in near-to-far order.
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct SpanT {
     blocks: Vec<Block>,
@@ -3853,10 +4301,6 @@ impl SpanT {
         self.blocks.iter().rev()
     }
 
-    fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> + '_ {
-        self.iter().map(ToString::to_string)
-    }
-
     fn first(&self) -> Option<&Block> {
         self.blocks.last()
     }
@@ -3874,10 +4318,13 @@ impl SpanT {
         color: Color,
         count: Count,
     ) -> Result<(), BackwardResult> {
-        if let Some(block) = self.first_mut()
-            && block.color == color
+        if let Some(Block::Run {
+            color: near_color,
+            count: near_count,
+        }) = self.first_mut()
+            && *near_color == color
         {
-            return block.count.add_exact(count);
+            return near_count.add_exact(count);
         }
 
         self.blocks.push(Block::exact(color, count));
@@ -3889,28 +4336,382 @@ impl SpanT {
         color: Color,
         count: Count,
     ) -> Result<(), BackwardResult> {
-        if let Some(block) = self.first_mut()
-            && block.color == color
+        if let Some(Block::Run {
+            color: near_color,
+            count: near_count,
+        }) = self.first_mut()
+            && *near_color == color
         {
-            return block.count.add_at_least(count);
+            return near_count.add_at_least(count);
         }
 
         self.blocks.push(Block::at_least(color, count));
         Ok(())
     }
 
+    #[cfg(test)]
     fn push_block(
         &mut self,
         block: &Block,
     ) -> Result<(), BackwardResult> {
-        match block.count {
-            BlockCount::Exact(count) => {
-                self.push_exact(block.color, count)
+        match block {
+            Block::Run { color, count } => match count {
+                BlockCount::Exact(count) => {
+                    self.push_exact(*color, *count)
+                },
+                BlockCount::AtLeast(count) => {
+                    self.push_at_least(*color, *count)
+                },
             },
-            BlockCount::AtLeast(count) => {
-                self.push_at_least(block.color, count)
+            Block::Word { .. } => {
+                self.blocks.push(block.clone());
+                Ok(())
             },
         }
+    }
+
+    /// Copy up to the rebalance window of exact cells from the head outward.
+    /// An `AtLeast` run is a semantic boundary: periodic structure must never
+    /// be inferred through an unknown amount of tape.
+    fn boundary_cells(
+        &self,
+        cells: &mut [Color; BKW_REBALANCE_WINDOW],
+    ) -> usize {
+        let mut size = 0;
+
+        for block in self.iter() {
+            let Some(copies) = block.exact_copies() else {
+                break;
+            };
+
+            let word = block.word();
+            let total = word.len().saturating_mul(copies);
+            let take = total.min(BKW_REBALANCE_WINDOW - size);
+
+            for offset in 0..take {
+                cells[size + offset] = word[offset % word.len()];
+            }
+            size += take;
+
+            if take < total || size == BKW_REBALANCE_WINDOW {
+                break;
+            }
+        }
+
+        size
+    }
+
+    fn best_boundary_repeat(
+        &self,
+    ) -> Option<(Vec<Color>, usize, usize)> {
+        let mut cells = [0; BKW_REBALANCE_WINDOW];
+        let size = self.boundary_cells(&mut cells);
+        let mut best: Option<(usize, usize, usize)> = None;
+
+        for width in
+            2..=BKW_MAX_PATTERN.min(size / BKW_MIN_PATTERN_REPEATS)
+        {
+            let word = &cells[..width];
+            let mut copies = 1;
+
+            while (copies + 1) * width <= size
+                && &cells[copies * width..(copies + 1) * width] == word
+            {
+                copies += 1;
+            }
+
+            if copies < BKW_MIN_PATTERN_REPEATS {
+                continue;
+            }
+
+            let (root, factor) = bkw_primitive_word(word);
+            if root.len() == 1 {
+                continue;
+            }
+
+            let root_copies = copies * factor;
+            let covered = width * copies;
+            let root_width = root.len();
+            let replace = best.is_none_or(
+                |(best_width, best_copies, best_covered)| {
+                    root_copies > best_copies
+                        || (root_copies == best_copies
+                            && covered > best_covered)
+                        || (root_copies == best_copies
+                            && covered == best_covered
+                            && root_width < best_width)
+                },
+            );
+
+            if replace {
+                best = Some((root_width, root_copies, covered));
+            }
+        }
+
+        best.map(|(width, copies, covered)| {
+            (cells[..width].to_vec(), copies, covered)
+        })
+    }
+
+    /// Remove exactly `cells` known cells from the near end. The caller only
+    /// supplies a prefix returned by `boundary_cells`, so no `AtLeast` block is
+    /// ever consumed here.
+    fn consume_near_exact_cells(&mut self, mut cells: usize) {
+        while cells != 0 {
+            let block = self.pop_block();
+            let total = block
+                .total_exact_cells()
+                .expect("rebalance cannot consume an indefinite run");
+
+            if cells >= total {
+                cells -= total;
+                continue;
+            }
+
+            #[expect(clippy::match_same_arms)]
+            match block {
+                Block::Run {
+                    color,
+                    count: BlockCount::Exact(count),
+                } => {
+                    debug_assert!(cells < usize::from(count));
+                    #[expect(clippy::cast_possible_truncation)]
+                    self.blocks.push(Block::exact(
+                        color,
+                        count - cells as Count,
+                    ));
+                },
+                Block::Word {
+                    word,
+                    count: WordCount::Exact(count),
+                } => {
+                    let width = word.len();
+                    let whole = cells / width;
+                    let offset = cells % width;
+                    let mut remaining = count - whole;
+
+                    if offset != 0 {
+                        remaining -= 1;
+                    }
+
+                    if remaining != 0 {
+                        self.blocks.push(Block::Word {
+                            word: Arc::clone(&word),
+                            count: WordCount::exact(remaining),
+                        });
+                    }
+                    if offset != 0 {
+                        self.blocks.push(Block::exact_word(
+                            &word[offset..],
+                            1,
+                        ));
+                    }
+                },
+                Block::Word {
+                    count: WordCount::AtLeast(_),
+                    ..
+                } => unreachable!(),
+                Block::Run {
+                    count: BlockCount::AtLeast(_),
+                    ..
+                } => unreachable!(),
+            }
+
+            cells = 0;
+        }
+    }
+
+    fn merge_near_equal_words(&mut self) {
+        while self.blocks.len() >= 2 {
+            let near = self.blocks.len() - 1;
+            let far = near - 1;
+
+            let merge = match (&self.blocks[far], &self.blocks[near]) {
+                (
+                    Block::Word {
+                        word: far_word,
+                        count: far_count,
+                    },
+                    Block::Word {
+                        word: near_word,
+                        count: near_count,
+                    },
+                ) if far_word == near_word => Some(Block::Word {
+                    word: Arc::clone(far_word),
+                    count: far_count.merge(*near_count),
+                }),
+                _ => None,
+            };
+
+            let Some(merged) = merge else {
+                break;
+            };
+
+            self.blocks.pop();
+            self.blocks.pop();
+            self.blocks.push(merged);
+        }
+    }
+
+    fn discover_boundary(&mut self) -> bool {
+        if self.blocks.len() < 2 {
+            return false;
+        }
+
+        let Some((word, copies, covered)) = self.best_boundary_repeat()
+        else {
+            return false;
+        };
+
+        if self.first().is_some_and(|block| {
+            matches!(
+                block,
+                Block::Word { word: near_word, .. }
+                    if near_word.as_ref() == word.as_slice()
+            )
+        }) {
+            return false;
+        }
+
+        self.consume_near_exact_cells(covered);
+        self.blocks.push(Block::exact_word(&word, copies));
+        self.merge_near_equal_words();
+        true
+    }
+
+    fn absorb_exact_prefix_into_indef_word(&mut self) -> bool {
+        let Some((position, word)) =
+            self.iter().enumerate().find_map(|(position, block)| {
+                match block {
+                    Block::Word {
+                        word,
+                        count: WordCount::AtLeast(_),
+                    } => Some((position, Arc::clone(word))),
+                    _ => None,
+                }
+            })
+        else {
+            return false;
+        };
+
+        if position == 0 {
+            return false;
+        }
+
+        let mut cells = [0; BKW_REBALANCE_WINDOW];
+        let mut size = 0_usize;
+        for block in self.iter().take(position) {
+            let Some(copies) = block.exact_copies() else {
+                return false;
+            };
+            let block_word = block.word();
+            let total = block_word.len().saturating_mul(copies);
+            if total > BKW_REBALANCE_WINDOW - size {
+                return false;
+            }
+            for offset in 0..total {
+                cells[size + offset] =
+                    block_word[offset % block_word.len()];
+            }
+            size += total;
+        }
+
+        if size == 0 || !size.is_multiple_of(word.len()) {
+            return false;
+        }
+        if (0..size)
+            .any(|offset| cells[offset] != word[offset % word.len()])
+        {
+            return false;
+        }
+
+        // The exact copies are guaranteed, but an already-widened word is
+        // intentionally stable under adding complete copies. Dropping this
+        // exact prefix therefore widens `(word)^r (word)^m..` back to the
+        // existing `(word)^m..`, a sound superset that closes the macro-cycle.
+        self.consume_near_exact_cells(size);
+        true
+    }
+
+    fn normalize_boundary(&mut self) {
+        self.merge_near_equal_words();
+        self.absorb_exact_prefix_into_indef_word();
+        self.merge_near_equal_words();
+
+        // Before the first compound block exists, three repeats of a
+        // non-homogeneous primitive word require at least six ordinary runs.
+        // Keep the overwhelmingly common short-span path O(1). Once a word is
+        // at the boundary, however, even one newly pushed cell may change its
+        // phase and should trigger rebalancing.
+        let near_word = self
+            .iter()
+            .take(2)
+            .any(|block| matches!(block, Block::Word { .. }));
+        if !near_word && self.blocks.len() < 6 {
+            return;
+        }
+
+        // One rewrite is normally sufficient. A small bounded loop handles a
+        // phase change that exposes a second identical word boundary without
+        // turning normalization into an unbounded search.
+        for _ in 0..4 {
+            if !self.discover_boundary() {
+                break;
+            }
+        }
+    }
+
+    fn pull_one(&mut self) {
+        let Some(block) = self.first().cloned() else {
+            return;
+        };
+
+        match block {
+            Block::Run { count, .. } if count.is_single() => {
+                self.pop_block();
+            },
+            Block::Run { .. } => {
+                let Block::Run { count, .. } =
+                    self.first_mut().unwrap()
+                else {
+                    unreachable!()
+                };
+                count.decrement_after_pull();
+            },
+            Block::Word { word, count } => {
+                self.pop_block();
+
+                match count {
+                    WordCount::Exact(count) => {
+                        if count > 1 {
+                            self.blocks.push(Block::Word {
+                                word: Arc::clone(&word),
+                                count: WordCount::exact(count - 1),
+                            });
+                        }
+                    },
+                    WordCount::AtLeast(1) => {
+                        // `step_configs` separately explores the exact-one-copy
+                        // branch. This residual branch therefore represents two
+                        // or more copies before the pull, leaving one-or-more.
+                        self.blocks
+                            .push(Block::at_least_word(&word, 1));
+                    },
+                    WordCount::AtLeast(count) => {
+                        self.blocks.push(Block::at_least_word(
+                            &word,
+                            count - 1,
+                        ));
+                    },
+                }
+
+                if word.len() > 1 {
+                    self.blocks.push(Block::exact_word(&word[1..], 1));
+                }
+            },
+        }
+
+        self.normalize_boundary();
     }
 }
 
@@ -3964,20 +4765,12 @@ impl Span {
                 TapeEnd::Blanks => print == 0,
                 TapeEnd::Unknown => true,
             },
-            |block| block.color == print,
+            |block| block.first_color() == print,
         )
     }
 
     fn pull(&mut self) {
-        let Some(block) = self.span.first_mut() else {
-            return;
-        };
-
-        if block.count.is_single() {
-            self.span.pop_block();
-        } else {
-            block.count.decrement_after_pull();
-        }
+        self.span.pull_one();
     }
 
     fn push_single(
@@ -3991,7 +4784,9 @@ impl Span {
             return Ok(());
         }
 
-        self.span.push_exact(color, 1)
+        self.span.push_exact(color, 1)?;
+        self.span.normalize_boundary();
+        Ok(())
     }
 
     fn push_indef(
@@ -4010,8 +4805,16 @@ impl Span {
 
     fn set_head_to_one(&mut self) {
         let block = self.span.first_mut().unwrap();
-        debug_assert!(block.count.can_be_one());
-        block.count = BlockCount::Exact(1);
+        match block {
+            Block::Run { count, .. } => {
+                debug_assert!(count.can_be_one());
+                *count = BlockCount::Exact(1);
+            },
+            Block::Word { count, .. } => {
+                debug_assert!(count.can_be_one());
+                *count = WordCount::Exact(1);
+            },
+        }
     }
 
     /// If this span's end is known to be all blanks (`0+`), then any explicit
@@ -4024,25 +4827,170 @@ impl Span {
             return;
         }
 
-        // Collect blocks (ordered near->far) and drop blanks from the far end.
-        let mut blocks: Vec<Block> =
-            self.span.iter().cloned().collect();
-        while matches!(blocks.last(), Some(b) if b.color == 0) {
-            blocks.pop();
+        // Storage is farthest-to-nearest, so whole blank blocks at index zero
+        // are already absorbed by the known blank tail. A mixed compound word
+        // is retained: only its far suffix is redundant, and keeping it explicit
+        // is semantically exact and avoids splitting a periodic block here.
+        while self.span.blocks.first().is_some_and(Block::blank) {
+            self.span.blocks.remove(0);
+        }
+    }
+}
+
+#[expect(clippy::multiple_inherent_impl)]
+impl Span {
+    fn explicit_nonblank(&self) -> bool {
+        self.span.iter().any(Block::contains_nonblank)
+    }
+
+    #[expect(clippy::cast_possible_truncation)]
+    fn tail_color_count_masks<const C: usize>(&self) -> [u8; C] {
+        let mut minimum = [0_u8; C];
+        let mut variable = [self.end == TapeEnd::Unknown; C];
+        let mut first_block = true;
+
+        for block in self.span.iter() {
+            match block {
+                Block::Run { color, count } => {
+                    let color = *color as usize;
+                    if color != 0 {
+                        // Tail summaries are strictly beyond the immediate
+                        // neighbor. Remove that cell before applying the 2+
+                        // cap; capping first would turn a true tail count of
+                        // 2+ into an unsound exact-one requirement for a near
+                        // run of length at least three.
+                        let contribution = usize::from(count.minimum())
+                            .saturating_sub(usize::from(first_block));
+                        minimum[color] = minimum[color]
+                            .saturating_add(contribution.min(2) as u8)
+                            .min(2);
+                        variable[color] |= count.is_indef();
+                    }
+                },
+                Block::Word { word, count } => {
+                    for color in 1..C {
+                        let per_word = word
+                            .iter()
+                            .filter(|&&symbol| symbol as usize == color)
+                            .count();
+                        if per_word == 0 {
+                            continue;
+                        }
+
+                        let mut contribution =
+                            per_word.saturating_mul(count.minimum());
+                        if first_block && word[0] as usize == color {
+                            contribution =
+                                contribution.saturating_sub(1);
+                        }
+
+                        minimum[color] = minimum[color]
+                            .saturating_add(contribution.min(2) as u8)
+                            .min(2);
+                        variable[color] |= count.is_indef();
+                    }
+                },
+            }
+
+            first_block = false;
         }
 
-        if blocks.len() == self.span.len() {
-            return;
+        let mut out = [0_u8; C];
+        for color in 1..C {
+            out[color] = match (minimum[color], variable[color]) {
+                (2, _) => 0b100,
+                (1, true) => 0b110,
+                (0, true) => 0b111,
+                (count, false) => 1_u8 << count,
+                _ => unreachable!(),
+            };
+        }
+        out
+    }
+
+    /// Exact nonblank residue modulo `modulus`, or `None` if an unknown end or
+    /// an indefinite nonblank run makes the residue unconstrained.
+    #[expect(clippy::cast_possible_truncation)]
+    fn nonblank_residue(&self, modulus: u8) -> Option<u8> {
+        if self.end == TapeEnd::Unknown {
+            return None;
         }
 
-        // Rebuild span by pushing blocks from far->near (push_block is near-end).
-        let mut new_span = SpanT::init_blank();
-        for b in blocks.into_iter().rev() {
-            new_span.push_block(&b).expect(
-                "canonical span rebuild cannot increase counts",
-            );
+        let mut residue = 0_u8;
+        for block in self.span.iter() {
+            match block {
+                Block::Run { color, count } => {
+                    if *color == 0 {
+                        continue;
+                    }
+                    if count.is_indef() {
+                        return None;
+                    }
+                    residue =
+                        (residue + count.minimum() % modulus) % modulus;
+                },
+                Block::Word { word, count } => {
+                    let marked = word
+                        .iter()
+                        .filter(|&&color| color != 0)
+                        .count();
+                    let per_copy = marked % usize::from(modulus);
+                    if count.is_indef() && per_copy != 0 {
+                        return None;
+                    }
+                    let add = per_copy
+                        * (count.minimum() % usize::from(modulus));
+                    residue = (residue + add as u8) % modulus;
+                },
+            }
         }
-        self.span = new_span;
+        Some(residue)
+    }
+
+    fn colors_allowed<const C: usize>(
+        &self,
+        forbidden: &[bool; C],
+    ) -> bool {
+        self.span.iter().all(|block| {
+            block.word().iter().all(|&color| !forbidden[color as usize])
+        })
+    }
+
+    /// Check the fresh-zero ordering rule on one side. Only two copies of a
+    /// periodic word ever need inspection: if a zero in one copy can be
+    /// followed by a nonzero in a later copy, the second copy witnesses it.
+    fn fresh_zero_order_valid(&self) -> (bool, bool) {
+        let mut seen_zero = false;
+
+        for block in self.span.iter() {
+            match block {
+                Block::Run { color, .. } => {
+                    if seen_zero && *color != 0 {
+                        return (false, seen_zero);
+                    }
+                    if *color == 0 {
+                        seen_zero = true;
+                    }
+                },
+                Block::Word { word, count } => {
+                    // Only guaranteed copies may witness a contradiction. For
+                    // `AtLeast(1)`, a violation that appears only across the
+                    // first/second-copy boundary is not universal.
+                    for _ in 0..count.minimum().min(2) {
+                        for &color in word.iter() {
+                            if seen_zero && color != 0 {
+                                return (false, seen_zero);
+                            }
+                            if color == 0 {
+                                seen_zero = true;
+                            }
+                        }
+                    }
+                },
+            }
+        }
+
+        (true, seen_zero)
     }
 }
 
@@ -4069,10 +5017,16 @@ impl fmt::Display for Tape {
             self.lspan.end_str(),
             self.lspan
                 .span
-                .str_iter()
+                .iter()
                 .rev()
+                .map(|block| block.display(true))
                 .chain(once(format!("[{}]", self.scan)))
-                .chain(self.rspan.span.str_iter())
+                .chain(
+                    self.rspan
+                        .span
+                        .iter()
+                        .map(|block| block.display(false)),
+                )
                 .collect::<Vec<_>>()
                 .join(" "),
             self.rspan.end_str(),
@@ -4160,7 +5114,7 @@ impl Tape {
             // One pass over explicit blocks.  An explicit nonblank proves the
             // side dirty even when the far end is unknown; otherwise a blank
             // end proves the whole side blank.
-            if span.span.iter().any(|block| block.color != 0) {
+            if span.explicit_nonblank() {
                 RequiredStatus::Dirty
             } else if span.end == TapeEnd::Blanks {
                 RequiredStatus::Blank
@@ -4267,46 +5221,6 @@ impl Tape {
         count: &ColorTailCountPossible<S, C>,
         pair: &PairTailPresencePossible<S, C>,
     ) -> bool {
-        /// Possible capped counts of `color` strictly beyond the immediate
-        /// neighbor represented by `span`.
-        ///
-        /// Bit 0 = zero, bit 1 = exactly one, bit 2 = at least two.
-        fn side_count_masks<const C: usize>(span: &Span) -> [u8; C] {
-            let mut minimum = [0_u8; C];
-            let mut variable = [span.end == TapeEnd::Unknown; C];
-
-            for (index, block) in span.span.iter().enumerate() {
-                let color = block.color as usize;
-                if color == 0 {
-                    continue;
-                }
-
-                // The first explicit block contains the immediate neighbor.
-                // Remove exactly that nearest cell from the tail count.
-                let contribution = if index == 0 {
-                    block.count.minimum().saturating_sub(1)
-                } else {
-                    block.count.minimum()
-                };
-
-                minimum[color] =
-                    minimum[color].saturating_add(contribution).min(2);
-                variable[color] |= block.count.is_indef();
-            }
-
-            let mut out = [0_u8; C];
-            for color in 1..C {
-                out[color] = match (minimum[color], variable[color]) {
-                    (2, _) => 0b100,
-                    (1, true) => 0b110,
-                    (0, true) => 0b111,
-                    (count, false) => 1_u8 << count,
-                    _ => unreachable!(),
-                };
-            }
-            out
-        }
-
         /// Nine-bit set of allowed `(left_count, right_count)` statuses.
         /// Status is `left_count + 3 * right_count`.
         const fn count_allowed_mask(left: u8, right: u8) -> u16 {
@@ -4376,8 +5290,8 @@ impl Tape {
         let right_neighbor =
             self.right_neighbor_color().map(usize::from);
 
-        let left_counts = side_count_masks::<C>(&self.lspan);
-        let right_counts = side_count_masks::<C>(&self.rspan);
+        let left_counts = self.lspan.tail_color_count_masks::<C>();
+        let right_counts = self.rspan.tail_color_count_masks::<C>();
         let mut presence_allowed = [0b1111_u8; C];
         let mut constrained_presence = 0_u64;
 
@@ -4451,39 +5365,6 @@ impl Tape {
         state: State,
         possible: &ColorTailCountPossible<S, C>,
     ) -> bool {
-        fn side_count_masks<const C: usize>(span: &Span) -> [u8; C] {
-            let mut minimum = [0_u8; C];
-            let mut variable = [span.end == TapeEnd::Unknown; C];
-
-            for (index, block) in span.span.iter().enumerate() {
-                let color = block.color as usize;
-                if color == 0 {
-                    continue;
-                }
-
-                let contribution = if index == 0 {
-                    block.count.minimum().saturating_sub(1)
-                } else {
-                    block.count.minimum()
-                };
-                minimum[color] =
-                    minimum[color].saturating_add(contribution).min(2);
-                variable[color] |= block.count.is_indef();
-            }
-
-            let mut out = [0_u8; C];
-            for color in 1..C {
-                out[color] = match (minimum[color], variable[color]) {
-                    (2, _) => 0b100,
-                    (1, true) => 0b110,
-                    (0, true) => 0b111,
-                    (count, false) => 1_u8 << count,
-                    _ => unreachable!(),
-                };
-            }
-            out
-        }
-
         const fn allowed_mask(left: u8, right: u8) -> u16 {
             let mut out = 0_u16;
             let mut l = 0_u8;
@@ -4508,8 +5389,8 @@ impl Tape {
         let right_neighbor =
             self.right_neighbor_color().map(usize::from);
 
-        let left_counts = side_count_masks::<C>(&self.lspan);
-        let right_counts = side_count_masks::<C>(&self.rspan);
+        let left_counts = self.lspan.tail_color_count_masks::<C>();
+        let right_counts = self.rspan.tail_color_count_masks::<C>();
 
         for color in 1..C {
             let required =
@@ -4544,29 +5425,17 @@ impl Tape {
             Unknown,
         }
 
-        fn requirement(span: &Span, color: usize) -> RequiredPresence {
-            let mut first = true;
-            let mut nearest_may_extend = false;
-            for block in span.span.iter() {
-                if first {
-                    first = false;
-                    if block.color as usize != color {
-                        continue;
-                    }
-                    if block.count.minimum() > 1 {
-                        return RequiredPresence::Present;
-                    }
-                    nearest_may_extend = block.count.is_indef();
-                    continue;
-                }
-                if block.color as usize == color {
-                    return RequiredPresence::Present;
-                }
-            }
-            if span.end == TapeEnd::Unknown || nearest_may_extend {
-                RequiredPresence::Unknown
-            } else {
+        fn requirement<const C: usize>(
+            span: &Span,
+            color: usize,
+        ) -> RequiredPresence {
+            let mask = span.tail_color_count_masks::<C>()[color];
+            if mask == 0b001 {
                 RequiredPresence::Absent
+            } else if mask & 0b001 == 0 {
+                RequiredPresence::Present
+            } else {
+                RequiredPresence::Unknown
             }
         }
 
@@ -4595,8 +5464,9 @@ impl Tape {
         let mut constrained = [false; C];
 
         for color in 1..C {
-            left_required[color] = requirement(&self.lspan, color);
-            right_required[color] = requirement(&self.rspan, color);
+            left_required[color] = requirement::<C>(&self.lspan, color);
+            right_required[color] =
+                requirement::<C>(&self.rspan, color);
             constrained[color] = !matches!(
                 (left_required[color], right_required[color]),
                 (RequiredPresence::Unknown, RequiredPresence::Unknown)
@@ -4647,22 +5517,8 @@ impl Tape {
     /// not affect nonblank parity.
     fn side_nonblank_parity_masks(&self) -> (u8, u8) {
         fn span_mask(span: &Span) -> u8 {
-            if span.end == TapeEnd::Unknown {
-                return 0b11;
-            }
-
-            let mut parity = 0_u8;
-            for block in span.span.iter() {
-                if block.color == 0 {
-                    continue;
-                }
-                if block.count.is_indef() {
-                    return 0b11;
-                }
-                parity ^= u8::from(block.count.minimum() & 1 != 0);
-            }
-
-            1_u8 << parity
+            span.nonblank_residue(2)
+                .map_or(0b11, |parity| 1_u8 << parity)
         }
 
         (span_mask(&self.lspan), span_mask(&self.rspan))
@@ -4673,22 +5529,8 @@ impl Tape {
     /// ends and indefinite nonblank runs permit every residue.
     fn side_nonblank_mod3_masks(&self) -> (u8, u8) {
         fn span_mask(span: &Span) -> u8 {
-            if span.end == TapeEnd::Unknown {
-                return 0b111;
-            }
-
-            let mut residue = 0_u8;
-            for block in span.span.iter() {
-                if block.color == 0 {
-                    continue;
-                }
-                if block.count.is_indef() {
-                    return 0b111;
-                }
-                residue = (residue + block.count.minimum() % 3) % 3;
-            }
-
-            1_u8 << residue
+            span.nonblank_residue(3)
+                .map_or(0b111, |residue| 1_u8 << residue)
         }
 
         (span_mask(&self.lspan), span_mask(&self.rspan))
@@ -4699,6 +5541,7 @@ impl Tape {
     /// the returned u64 is a bitset over those vectors. Unknown tape ends make
     /// every vector possible. An indefinite run makes only its own color bit
     /// unknown, preserving exact parity information for the other colors.
+    #[expect(clippy::cast_possible_truncation)]
     fn color_parity_mask<const C: usize>(&self) -> u64 {
         if !WinPossible::<1, C>::color_parity_enabled() {
             return u64::MAX;
@@ -4711,72 +5554,107 @@ impl Tape {
             return all;
         }
 
-        let mut vector = 0_u8;
-        let mut unknown_bits = 0_u8;
-
-        let mut add_color =
-            |color: Color, odd: bool, indefinite: bool| {
-                if color == 0 {
-                    return;
-                }
-                let bit = 1_u8 << (color as usize - 1);
-                if indefinite {
-                    unknown_bits |= bit;
-                } else if odd {
-                    vector ^= bit;
-                }
-            };
-
-        add_color(self.scan, true, false);
-        for span in [&self.lspan, &self.rspan] {
-            for block in span.span.iter() {
-                add_color(
-                    block.color,
-                    block.count.minimum() & 1 != 0,
-                    block.count.is_indef(),
-                );
+        const fn color_bit(color: Color) -> u8 {
+            if color == 0 {
+                0
+            } else {
+                1_u8 << (color as usize - 1)
             }
         }
 
-        let mut out = 0_u64;
-        let mut subset = unknown_bits;
-        loop {
-            out |= 1_u64 << (vector ^ subset);
-            if subset == 0 {
-                break;
-            }
-            subset = (subset - 1) & unknown_bits;
+        fn word_vector(word: &[Color]) -> u8 {
+            word.iter()
+                .fold(0_u8, |vector, &color| vector ^ color_bit(color))
         }
-        out
+
+        fn block_deltas(block: &Block) -> u64 {
+            match block {
+                Block::Run { color, count } => {
+                    let toggle = color_bit(*color);
+                    let base = if count.minimum() & 1 == 0 {
+                        0
+                    } else {
+                        toggle
+                    };
+                    let mut out = 1_u64 << base;
+                    if count.is_indef() && toggle != 0 {
+                        out |= 1_u64 << (base ^ toggle);
+                    }
+                    out
+                },
+                Block::Word { word, count } => {
+                    let toggle = word_vector(word);
+                    let base = if count.minimum() & 1 == 0 {
+                        0
+                    } else {
+                        toggle
+                    };
+                    let mut out = 1_u64 << base;
+                    if count.is_indef() && toggle != 0 {
+                        // The optional number of extra copies toggles the
+                        // complete per-word parity vector jointly, retaining
+                        // correlation between colors inside the word.
+                        out |= 1_u64 << (base ^ toggle);
+                    }
+                    out
+                },
+            }
+        }
+
+        let scan_vector = color_bit(self.scan);
+        let mut possible = 1_u64 << scan_vector;
+
+        for block in
+            self.lspan.span.iter().chain(self.rspan.span.iter())
+        {
+            let deltas = block_deltas(block);
+            let mut next = 0_u64;
+            let mut sources = possible;
+            while sources != 0 {
+                let source = sources.trailing_zeros() as u8;
+                sources &= sources - 1;
+
+                let mut choices = deltas;
+                while choices != 0 {
+                    let delta = choices.trailing_zeros() as u8;
+                    choices &= choices - 1;
+                    next |= 1_u64 << (source ^ delta);
+                }
+            }
+            possible = next;
+        }
+
+        possible
     }
 
     /// Return the possible parities of the total number of nonblank cells.
     /// Bit 0 means even is possible; bit 1 means odd is possible.
     ///
-    /// A fully bounded tape with fixed run counts has an exact parity. An
-    /// unknown end or an indefinite nonblank run can realize either parity,
-    /// so returning `0b11` is the sound conservative answer.
+    /// A fully bounded tape with fixed counts has an exact parity. Unknown
+    /// ends or an indefinite block whose primitive contributes odd support
+    /// permit either parity; even-support repeated words remain exact.
     fn nonblank_parity_mask(&self) -> u8 {
         let mut parity = u8::from(self.scan != 0);
 
         for span in [&self.lspan, &self.rspan] {
-            if span.end == TapeEnd::Unknown {
+            let Some(side) = span.nonblank_residue(2) else {
                 return 0b11;
-            }
-
-            for block in span.span.iter() {
-                if block.color == 0 {
-                    continue;
-                }
-                if block.count.is_indef() {
-                    return 0b11;
-                }
-
-                parity ^= u8::from(block.count.minimum() & 1 != 0);
-            }
+            };
+            parity ^= side;
         }
 
         1_u8 << parity
+    }
+
+    fn has_indef_word(&self) -> bool {
+        [&self.lspan, &self.rspan].into_iter().any(|span| {
+            span.span.iter().any(|block| {
+                matches!(
+                    block,
+                    Block::Word { count, .. } if count.is_indef()
+                )
+            })
+        })
     }
 
     fn hash(&self) -> u64 {
@@ -4791,7 +5669,7 @@ impl Tape {
     /// this tape description. If the left side is completely unknown
     /// (`?`) and there are no explicit blocks, returns None.
     fn left_neighbor_color(&self) -> Option<Color> {
-        self.lspan.span.first().map(|b| b.color).or_else(|| {
+        self.lspan.span.first().map(Block::first_color).or_else(|| {
             matches!(self.lspan.end, TapeEnd::Blanks).then_some(0)
         })
     }
@@ -4800,7 +5678,7 @@ impl Tape {
     /// this tape description. If the right side is completely unknown
     /// (`?`) and there are no explicit blocks, returns None.
     fn right_neighbor_color(&self) -> Option<Color> {
-        self.rspan.span.first().map(|b| b.color).or_else(|| {
+        self.rspan.span.first().map(Block::first_color).or_else(|| {
             matches!(self.rspan.end, TapeEnd::Blanks).then_some(0)
         })
     }
@@ -4830,7 +5708,7 @@ impl Tape {
             return false;
         };
 
-        block.count.can_be_one()
+        block.can_be_one()
     }
 
     fn backstep(
@@ -4888,15 +5766,9 @@ impl Tape {
         right_fresh_zero: bool,
     ) -> bool {
         fn check_side(span: &mut Span) -> bool {
-            let mut seen_zero = false;
-
-            for b in span.span.iter() {
-                if seen_zero && b.color != 0 {
-                    return false; // nonblank beyond an unvisited blank
-                }
-                if b.color == 0 {
-                    seen_zero = true;
-                }
+            let (valid, seen_zero) = span.fresh_zero_order_valid();
+            if !valid {
+                return false;
             }
 
             if seen_zero {
@@ -4928,10 +5800,8 @@ impl Tape {
         // nonblank cell identifies that side, the opposite tail is forced to
         // be blank. Explicit nonblank cells on both sides are impossible.
         if self.scan == 0 && left_fresh_zero && right_fresh_zero {
-            let left_nonblank =
-                self.lspan.span.iter().any(|block| block.color != 0);
-            let right_nonblank =
-                self.rspan.span.iter().any(|block| block.color != 0);
+            let left_nonblank = self.lspan.explicit_nonblank();
+            let right_nonblank = self.rspan.explicit_nonblank();
 
             match (left_nonblank, right_nonblank) {
                 (true, true) => return false,
@@ -4955,15 +5825,8 @@ impl Tape {
         forbid_left: &[bool; C],
         forbid_right: &[bool; C],
     ) -> bool {
-        self.lspan
-            .span
-            .iter()
-            .all(|block| !forbid_left[block.color as usize])
-            && self
-                .rspan
-                .span
-                .iter()
-                .all(|block| !forbid_right[block.color as usize])
+        self.lspan.colors_allowed(forbid_left)
+            && self.rspan.colors_allowed(forbid_right)
     }
 
     /// Check every explicit side color and adjacent pair against a *single*
@@ -4994,21 +5857,57 @@ impl Tape {
             };
             let mut previous = None;
 
+            #[expect(clippy::shadow_unrelated)]
+            let add_pair = |req: &mut SideRequirements<C>,
+                            near: usize,
+                            far: usize| {
+                req.pairs[near] |= 1_u64 << far;
+                req.pair_nears |= 1_u64 << near;
+            };
+
             for block in span.span.iter() {
-                let color = block.color as usize;
-                req.colors |= 1_u64 << color;
+                match block {
+                    Block::Run { color, count } => {
+                        let color = *color as usize;
+                        req.colors |= 1_u64 << color;
 
-                if block.count.minimum() > 1 {
-                    req.pairs[color] |= 1_u64 << color;
-                    req.pair_nears |= 1_u64 << color;
+                        if let Some(near) = previous {
+                            add_pair(&mut req, near, color);
+                        }
+                        if count.minimum() > 1 {
+                            add_pair(&mut req, color, color);
+                        }
+
+                        previous = Some(color);
+                    },
+                    Block::Word { word, count } => {
+                        for &color in word.iter() {
+                            req.colors |= 1_u64 << color as usize;
+                        }
+
+                        let first = word[0] as usize;
+                        if let Some(near) = previous {
+                            add_pair(&mut req, near, first);
+                        }
+
+                        for pair in word.windows(2) {
+                            add_pair(
+                                &mut req,
+                                pair[0] as usize,
+                                pair[1] as usize,
+                            );
+                        }
+                        if count.minimum() > 1 {
+                            add_pair(
+                                &mut req,
+                                *word.last().unwrap() as usize,
+                                first,
+                            );
+                        }
+
+                        previous = Some(*word.last().unwrap() as usize);
+                    },
                 }
-
-                if let Some(near) = previous {
-                    req.pairs[near] |= 1_u64 << color;
-                    req.pair_nears |= 1_u64 << near;
-                }
-
-                previous = Some(color);
             }
 
             match (&span.end, previous) {
@@ -5155,6 +6054,7 @@ impl Tape {
         enum FirstResidual {
             Drop,
             Replace(BlockCount),
+            ConsumeWord,
         }
 
         fn req_run(color: Color, count: BlockCount) -> ReqRun {
@@ -5172,8 +6072,148 @@ impl Tape {
             }
         }
 
-        #[expect(clippy::cast_possible_truncation)]
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::excessive_nesting
+        )]
         fn requirements(span: &Span) -> RequirementSet {
+            #[derive(Clone, Copy)]
+            struct Builder {
+                req: Requirement,
+                runs: usize,
+                last_color: Option<Color>,
+                blocked: bool,
+            }
+
+            fn exact_bounds(value: usize) -> (u16, Option<u16>) {
+                u16::try_from(value).map_or((u16::MAX, None), |value| {
+                    (value, Some(value))
+                })
+            }
+
+            fn emit(
+                builder: &mut Builder,
+                color: Color,
+                min: u16,
+                max: Option<u16>,
+            ) {
+                debug_assert!(min != 0);
+
+                if builder.last_color == Some(color) {
+                    let index = builder.runs - 1;
+                    if index < 3 {
+                        let run = &mut builder.req.runs[index];
+                        run.min = run.min.saturating_add(min);
+                        run.max = match (run.max, max) {
+                            (Some(left), Some(right)) => {
+                                left.checked_add(right)
+                            },
+                            _ => None,
+                        };
+                    }
+                    return;
+                }
+
+                let index = builder.runs;
+                if index < 3 {
+                    builder.req.runs[index] =
+                        ReqRun { color, min, max };
+                }
+
+                if color != 0 {
+                    builder.req.suffix_nonblank |=
+                        (1_u8 << (index.min(3) + 1)) - 1;
+                }
+
+                builder.runs += 1;
+                builder.last_color = Some(color);
+            }
+
+            fn emit_run(
+                builder: &mut Builder,
+                color: Color,
+                count: BlockCount,
+            ) {
+                let req = req_run(color, count);
+                emit(builder, req.color, req.min, req.max);
+            }
+
+            const fn settled(builder: &Builder) -> bool {
+                builder.runs > 3
+                    && builder.req.suffix_nonblank & (1 << 3) != 0
+            }
+
+            fn emit_word(
+                builder: &mut Builder,
+                word: &[Color],
+                count: WordCount,
+                skip_first: bool,
+            ) {
+                debug_assert_ne!(word, []);
+                let copies = count.minimum();
+                debug_assert!(copies != 0);
+
+                if word.iter().all(|&color| color == word[0]) {
+                    let total = word
+                        .len()
+                        .checked_mul(copies)
+                        .and_then(|cells| {
+                            cells.checked_sub(usize::from(skip_first))
+                        })
+                        .unwrap_or(usize::MAX);
+                    if total != 0 {
+                        let (min, max) = exact_bounds(total);
+                        emit(builder, word[0], min, max);
+                    }
+                    if count.is_indef() {
+                        builder.req.end_unknown = true;
+                        builder.blocked = true;
+                    }
+                    return;
+                }
+
+                let mut copy = 0_usize;
+                while copy < copies {
+                    let start = usize::from(skip_first && copy == 0);
+                    for &color in &word[start..] {
+                        emit(builder, color, 1, Some(1));
+                    }
+                    copy += 1;
+
+                    // For a non-homogeneous periodic word, four logical runs
+                    // are reached after only a few copies. Once one of the
+                    // runs at/after position three is nonblank, farther exact
+                    // content cannot change any field consulted by matching.
+                    if settled(builder) {
+                        break;
+                    }
+                }
+
+                if count.is_indef() {
+                    // Extra copies are optional and add more logical runs, so
+                    // farther explicit blocks no longer occupy a fixed prefix
+                    // position. Keep the guaranteed prefix and conservatively
+                    // forget everything beyond it.
+                    builder.req.end_unknown = true;
+                    builder.blocked = true;
+                }
+            }
+
+            fn emit_full_block(builder: &mut Builder, block: &Block) {
+                if builder.blocked {
+                    return;
+                }
+
+                match block {
+                    Block::Run { color, count } => {
+                        emit_run(builder, *color, *count);
+                    },
+                    Block::Word { word, count } => {
+                        emit_word(builder, word, *count, false);
+                    },
+                }
+            }
+
             let end_unknown = span.end == TapeEnd::Unknown;
             let Some(first) = span.span.first() else {
                 let req = Requirement {
@@ -5187,111 +6227,115 @@ impl Tape {
                 };
             };
 
-            // `AtLeast(1)` is the only case with two residual alternatives.
-            // Build both during one span traversal instead of calling the old
-            // requirement builder twice.
-            let (first_mode, second_mode) = match first.count {
-                BlockCount::Exact(1) => (FirstResidual::Drop, None),
-                BlockCount::Exact(count) => (
-                    FirstResidual::Replace(BlockCount::Exact(
-                        count - 1,
-                    )),
-                    None,
-                ),
-                BlockCount::AtLeast(1) => (
-                    FirstResidual::Drop,
-                    Some(FirstResidual::Replace(BlockCount::AtLeast(
-                        1,
-                    ))),
-                ),
-                BlockCount::AtLeast(count) => (
-                    FirstResidual::Replace(BlockCount::AtLeast(
-                        count - 1,
-                    )),
-                    None,
-                ),
+            let (first_mode, second_mode) = match first {
+                Block::Run { count, .. } => match count {
+                    BlockCount::Exact(1) => (FirstResidual::Drop, None),
+                    BlockCount::Exact(count) => (
+                        FirstResidual::Replace(BlockCount::Exact(
+                            count - 1,
+                        )),
+                        None,
+                    ),
+                    BlockCount::AtLeast(1) => (
+                        FirstResidual::Drop,
+                        Some(FirstResidual::Replace(
+                            BlockCount::AtLeast(1),
+                        )),
+                    ),
+                    BlockCount::AtLeast(count) => (
+                        FirstResidual::Replace(BlockCount::AtLeast(
+                            count - 1,
+                        )),
+                        None,
+                    ),
+                },
+                Block::Word { .. } => {
+                    (FirstResidual::ConsumeWord, None)
+                },
             };
 
             let len = if second_mode.is_some() { 2 } else { 1 };
             let modes = [first_mode, second_mode.unwrap_or(first_mode)];
-            let mut reqs = [
-                Requirement {
-                    end_unknown,
-                    ..Requirement::EMPTY
+            let mut builders = [
+                Builder {
+                    req: Requirement {
+                        end_unknown,
+                        ..Requirement::EMPTY
+                    },
+                    runs: 0,
+                    last_color: None,
+                    blocked: false,
                 },
-                Requirement {
-                    end_unknown,
-                    ..Requirement::EMPTY
+                Builder {
+                    req: Requirement {
+                        end_unknown,
+                        ..Requirement::EMPTY
+                    },
+                    runs: 0,
+                    last_color: None,
+                    blocked: false,
                 },
             ];
-            let mut counts = [0_usize; 2];
 
             let block_count = span.span.len();
-            // SpanT stores farthest first, so this is the far-end block.
-            let trim_far_zero = !end_unknown
-                && span
-                    .span
-                    .blocks
-                    .first()
-                    .is_some_and(|block| block.color == 0);
-
             for (source_index, block) in span.span.iter().enumerate() {
-                if trim_far_zero && source_index + 1 == block_count {
+                // A whole explicit blank block at a known-blank far end is
+                // redundant, matching absorb_trailing_blanks/the old builder.
+                if !end_unknown
+                    && source_index + 1 == block_count
+                    && block.blank()
+                {
                     continue;
                 }
 
                 for alt in 0..len {
-                    let residual = if source_index == 0 {
+                    if source_index == 0 {
                         match modes[alt] {
-                            FirstResidual::Drop => None,
+                            FirstResidual::Drop => {},
                             FirstResidual::Replace(count) => {
-                                Some(count)
+                                let (color, _) = block.run().expect(
+                                    "Replace applies only to runs",
+                                );
+                                emit_run(
+                                    &mut builders[alt],
+                                    color,
+                                    count,
+                                );
+                            },
+                            FirstResidual::ConsumeWord => {
+                                let Block::Word { word, count } = block
+                                else {
+                                    unreachable!()
+                                };
+                                emit_word(
+                                    &mut builders[alt],
+                                    word,
+                                    *count,
+                                    true,
+                                );
                             },
                         }
                     } else {
-                        Some(block.count)
-                    };
-
-                    let Some(residual) = residual else {
-                        continue;
-                    };
-
-                    let count = counts[alt];
-                    if count < 3 {
-                        reqs[alt].runs[count] =
-                            req_run(block.color, residual);
+                        emit_full_block(&mut builders[alt], block);
                     }
-
-                    if block.color != 0 {
-                        // For a nonblank at residual position `count`, every
-                        // suffix starting at 0..=min(count,3) is dirty.
-                        reqs[alt].suffix_nonblank |=
-                            (1_u8 << (count.min(3) + 1)) - 1;
-                    }
-
-                    counts[alt] += 1;
                 }
 
-                // Once both alternatives have at least three retained runs
-                // and position-3-or-farther is known dirty, later blocks can
-                // no longer change any field used by matching.
-                if (0..len).all(|alt| {
-                    counts[alt] > 3
-                        && reqs[alt].suffix_nonblank & (1 << 3) != 0
-                }) {
+                if (0..len).all(|alt| settled(&builders[alt])) {
                     break;
                 }
             }
 
+            let mut reqs = [Requirement::EMPTY; 2];
             for alt in 0..len {
-                let count = counts[alt];
-                reqs[alt].run_count = count.min(3) as u8;
+                let builder = &mut builders[alt];
+                builder.req.run_count = builder.runs.min(3) as u8;
 
-                // With an unknown tape end, the final explicit run may
-                // continue into that end with the same color.
-                if end_unknown && (1..=3).contains(&count) {
-                    reqs[alt].runs[count - 1].max = None;
+                if builder.req.end_unknown
+                    && (1..=3).contains(&builder.runs)
+                {
+                    builder.req.runs[builder.runs - 1].max = None;
                 }
+                reqs[alt] = builder.req;
             }
 
             RequirementSet {
@@ -5499,7 +6543,7 @@ impl Tape {
         right_forced_blank: bool,
     ) -> bool {
         fn force_blank(span: &mut Span) -> bool {
-            if span.span.iter().any(|block| block.color != 0) {
+            if span.explicit_nonblank() {
                 return false;
             }
 
@@ -5802,6 +6846,199 @@ fn test_push_indef() {
     tape.backstep(false, 0).unwrap();
 
     tape.assert("0+ 1 0.. 1.. 0^2.. [0] ?");
+}
+
+#[test]
+#[expect(clippy::shadow_unrelated)]
+fn test_tail_color_count_excludes_neighbor_before_cap() {
+    let run = Span {
+        span: SpanT {
+            blocks: vec![Block::exact(1, 3)],
+        },
+        end: TapeEnd::Blanks,
+    };
+    let counts = run.tail_color_count_masks::<3>();
+    assert_eq!(counts[1], 0b100); // two 1s remain in the tail
+
+    let word = Span {
+        span: SpanT {
+            blocks: vec![Block::exact_word(&[1, 2], 3)],
+        },
+        end: TapeEnd::Blanks,
+    };
+    let counts = word.tail_color_count_masks::<3>();
+    assert_eq!(counts[1], 0b100); // 3 occurrences minus near 1 => 2
+    assert_eq!(counts[2], 0b100); // all 3 twos are in the tail
+
+    let indefinite = Span {
+        span: SpanT {
+            blocks: vec![Block::at_least_word(&[1, 2], 1)],
+        },
+        end: TapeEnd::Blanks,
+    };
+    let counts = indefinite.tail_color_count_masks::<3>();
+    assert_eq!(counts[1], 0b111); // near 1 removed; extra copies optional
+    assert_eq!(counts[2], 0b110); // at least the 2 in the first copy
+}
+
+#[test]
+fn test_indef_word_parity_keeps_word_correlation() {
+    let tape = Tape {
+        scan: 0,
+        lspan: Span {
+            span: SpanT {
+                blocks: vec![Block::at_least_word(&[1, 2], 1)],
+            },
+            end: TapeEnd::Blanks,
+        },
+        rspan: Span::init_blank(),
+    };
+
+    // Every copy contributes two nonblank cells, so support parity is fixed.
+    assert_eq!(tape.nonblank_parity_mask(), 0b01);
+
+    // Copy parity toggles colors 1 and 2 together: vectors 00 or 11, never
+    // the spurious independently-toggled 01/10 alternatives.
+    assert_eq!(
+        tape.color_parity_mask::<3>(),
+        (1_u64 << 0) | (1_u64 << 3)
+    );
+}
+
+#[test]
+#[expect(clippy::shadow_unrelated, clippy::panic)]
+fn test_dynamic_word_rebalance() {
+    let mut span = Span::init_unknown();
+
+    // push_single prepends at the head boundary, so this produces the
+    // near-to-far tape 1 2 1 2 1 2.
+    for color in [2, 1, 2, 1, 2, 1] {
+        span.push_single(color).unwrap();
+    }
+
+    let Block::Word { word, count } = span.span.first().unwrap() else {
+        panic!("alternating prefix was not dynamically reblocked")
+    };
+    assert_eq!(word.as_ref(), &[1, 2]);
+    assert_eq!(*count, WordCount::Exact(3));
+
+    // Reorganize through the opposite phase, then recover the original phase
+    // with one additional whole period. This is the key behavior needed by
+    // backward cones containing (1 2)+ rather than same-color runs.
+    span.push_single(2).unwrap();
+    span.push_single(1).unwrap();
+
+    let Block::Word { word, count } = span.span.first().unwrap() else {
+        panic!("grown alternating prefix lost its word block")
+    };
+    assert_eq!(word.as_ref(), &[1, 2]);
+    assert_eq!(*count, WordCount::Exact(4));
+
+    span.pull();
+    let mut cells = [0; BKW_REBALANCE_WINDOW];
+    let size = span.span.boundary_cells(&mut cells);
+    assert!(size >= 7);
+    assert_eq!(&cells[..7], &[2, 1, 2, 1, 2, 1, 2]);
+}
+
+#[test]
+#[expect(clippy::shadow_unrelated, clippy::panic)]
+fn test_indef_word_pull_split_and_absorb() {
+    let mut span = Span {
+        span: SpanT {
+            blocks: vec![Block::at_least_word(&[1, 2], 3)],
+        },
+        end: TapeEnd::Unknown,
+    };
+
+    span.pull();
+    assert_eq!(span.span.len(), 2);
+    let near = span.span.first().unwrap();
+    assert_eq!(near.word(), &[2]);
+    assert_eq!(near.exact_copies(), Some(1));
+
+    let Block::Word { word, count } = &span.span.blocks[0] else {
+        panic!("far residual should remain an indefinite word")
+    };
+    assert_eq!(word.as_ref(), &[1, 2]);
+    assert_eq!(*count, WordCount::AtLeast(2));
+
+    // Completing the missing phase forms one exact copy immediately before
+    // the indefinite family. Boundary normalization absorbs that exact copy
+    // without increasing the widening lower bound.
+    span.push_single(1).unwrap();
+    assert_eq!(span.span.len(), 1);
+    let Block::Word { word, count } = span.span.first().unwrap() else {
+        panic!("completed phase should return to one periodic block")
+    };
+    assert_eq!(word.as_ref(), &[1, 2]);
+    assert_eq!(*count, WordCount::AtLeast(2));
+}
+
+#[test]
+#[expect(clippy::panic)]
+fn test_indef_word_count_one_split() {
+    let mut span = Span {
+        span: SpanT {
+            blocks: vec![Block::at_least_word(&[1, 2], 1)],
+        },
+        end: TapeEnd::Unknown,
+    };
+
+    assert!(span.span.first().unwrap().can_be_one());
+    span.set_head_to_one();
+    let Block::Word { count, .. } = span.span.first().unwrap() else {
+        panic!("word split changed representation")
+    };
+    assert_eq!(*count, WordCount::Exact(1));
+}
+
+#[test]
+#[expect(clippy::shadow_unrelated, clippy::panic)]
+fn test_word_growth_widens_stable_macro_cycle() {
+    fn config(copies: usize) -> Config {
+        Config::new(
+            0,
+            Tape {
+                scan: 0,
+                lspan: Span {
+                    span: SpanT {
+                        blocks: vec![Block::exact_word(
+                            &[1, 2],
+                            copies,
+                        )],
+                    },
+                    end: TapeEnd::Unknown,
+                },
+                rspan: Span::init_unknown(),
+            },
+        )
+    }
+
+    let mut history = WordWideningHistory::default();
+    let mut c3 = config(3);
+    let mut c4 = config(4);
+    let mut c5 = config(5);
+
+    assert!(!history.widen(&mut c3, 1));
+    assert!(!history.widen(&mut c4, 3));
+    assert!(history.widen(&mut c5, 5));
+
+    let Block::Word { count, .. } = c5.tape.lspan.span.first().unwrap()
+    else {
+        panic!("stable growth should widen the compound block")
+    };
+    assert_eq!(*count, WordCount::AtLeast(3));
+
+    // Once certified, a later exact member of the same skeleton is widened
+    // immediately to the same stable lower bound.
+    let mut c6 = config(6);
+    assert!(history.widen(&mut c6, 7));
+    let Block::Word { count, .. } = c6.tape.lspan.span.first().unwrap()
+    else {
+        unreachable!()
+    };
+    assert_eq!(*count, WordCount::AtLeast(3));
 }
 
 #[test]
@@ -6475,6 +7712,68 @@ fn test_side_prefix_spill_matches_third_run() {
 
     let wrong_third: Tape = "0+ 4 2 3 4 [0] 0+".into();
     assert!(!wrong_third.obeys_side_prefix_possible(0, &possible));
+}
+
+#[test]
+fn test_side_prefix_matches_dynamic_word() {
+    let mut possible = SidePrefixPossible::<1, 4>::new();
+    let left_index =
+        SidePrefixPossible::<1, 4>::index(0, 0, 3, 0, LEFT_SIDE);
+    possible.windows[left_index].push(SidePrefix {
+        runs: [
+            SidePrefixRun { color: 2, count: 1 },
+            SidePrefixRun { color: 1, count: 1 },
+        ],
+        len: 2,
+        spill: SidePrefixSpill::Run {
+            color: 2,
+            count: 1,
+            farther_dirty: true,
+        },
+    });
+
+    let right_index =
+        SidePrefixPossible::<1, 4>::index(0, 0, 3, 0, RIGHT_SIDE);
+    possible.windows[right_index].push(SidePrefix::blank());
+    possible.flags[right_index] |= SIDE_PREFIX_HAS_BLANK;
+
+    let compressed = Tape {
+        scan: 0,
+        lspan: Span {
+            // Farthest block first. The word is near-to-far [2,1]^3, so on
+            // the displayed left side this is 1 2 1 2 1 2 3 [0].
+            span: SpanT {
+                blocks: vec![
+                    Block::exact_word(&[2, 1], 3),
+                    Block::exact(3, 1),
+                ],
+            },
+            end: TapeEnd::Blanks,
+        },
+        rspan: Span::init_blank(),
+    };
+
+    assert_eq!(compressed.to_string(), "0+ (1 2)^3 3 [0] 0+");
+    assert!(compressed.obeys_side_prefix_possible(0, &possible));
+
+    let expanded: Tape = "0+ 1 2 1 2 1 2 3 [0] 0+".into();
+    assert!(expanded.obeys_side_prefix_possible(0, &possible));
+    assert_eq!(
+        compressed.lspan.tail_color_count_masks::<4>(),
+        expanded.lspan.tail_color_count_masks::<4>(),
+    );
+    assert_eq!(
+        compressed.side_nonblank_parity_masks(),
+        expanded.side_nonblank_parity_masks(),
+    );
+    assert_eq!(
+        compressed.side_nonblank_mod3_masks(),
+        expanded.side_nonblank_mod3_masks(),
+    );
+    assert_eq!(
+        compressed.color_parity_mask::<4>(),
+        expanded.color_parity_mask::<4>(),
+    );
 }
 
 #[test]
